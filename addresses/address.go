@@ -6,6 +6,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain"
 	"pandora-pay/crypto"
+	"pandora-pay/helpers"
 	base58 "pandora-pay/helpers/base58"
 )
 
@@ -58,7 +59,7 @@ func (a *Address) EncodeAddr() (string, error) {
 
 	buffer := serialised.Bytes()
 
-	checksum := crypto.RIPEMD(buffer)[0:4]
+	checksum := crypto.RIPEMD(buffer)[0:crypto.ChecksumSize]
 	buffer = append(buffer, checksum...)
 	ret := base58.Encode(buffer)
 
@@ -67,7 +68,7 @@ func (a *Address) EncodeAddr() (string, error) {
 
 func DecodeAddr(input string) (*Address, error) {
 
-	adr := Address{}
+	adr := Address{PublicKey: []byte{}, PaymentID: []byte{}}
 
 	prefix := input[0:blockchain.NETWORK_BYTE_PREFIX_LENGTH]
 
@@ -86,18 +87,19 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, err
 	}
 
-	checksum := crypto.RIPEMD(buf[:len(buf)-4])[0:4]
+	checksum := crypto.RIPEMD(buf[:len(buf)-crypto.ChecksumSize])[0:crypto.ChecksumSize]
 
-	if !bytes.Equal(checksum[:], buf[len(buf)-4:]) {
+	if !bytes.Equal(checksum[:], buf[len(buf)-crypto.ChecksumSize:]) {
 		return nil, errors.New("Invalid Checksum")
 	}
-	buf = buf[0 : len(buf)-4] // remove the checksum
+	buf = buf[0 : len(buf)-crypto.ChecksumSize] // remove the checksum
 
-	version, n := binary.Uvarint(buf)
-	if n <= 0 {
+	var version uint64
+
+	version, buf, err = helpers.DeserializeNumber(buf)
+	if err != nil {
 		return nil, err
 	}
-	buf = buf[n:]
 	adr.Version = AddressVersion(version)
 
 	var readBytes int
@@ -111,26 +113,30 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, errors.New("Invalid Address Version")
 	}
 
-	adr.PublicKey = buf[0:readBytes]
-	buf = buf[readBytes:]
-
-	integrationByte := buf[0]
-	buf = buf[1:]
-
-	if integrationByte&1 != 0 {
-
-		adr.PaymentID = buf[0:8]
-		buf = buf[8:]
-
+	adr.PublicKey, buf, err = helpers.DeserializeBuffer(buf, readBytes)
+	if err != nil {
+		return nil, err
 	}
 
-	if integrationByte&(1<<1) != 0 {
+	var integrationByte []byte
+	integrationByte, buf, err = helpers.DeserializeBuffer(buf, 1)
+	if err != nil {
+		return nil, err
+	}
 
-		adr.Amount, n = binary.Uvarint(buf)
-		if n <= 0 {
-			return nil, errors.New("Invalid amount")
+	if integrationByte[0]&1 != 0 {
+		adr.PaymentID, buf, err = helpers.DeserializeBuffer(buf, 8)
+		if err != nil {
+			return nil, err
 		}
-		buf = buf[n:]
+	}
+
+	if integrationByte[0]&(1<<1) != 0 {
+
+		adr.Amount, buf, err = helpers.DeserializeNumber(buf)
+		if err != nil {
+			return nil, err
+		}
 
 	}
 

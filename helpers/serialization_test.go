@@ -57,7 +57,7 @@ func TestSerializeNumber(t *testing.T) {
 
 }
 
-func TestUnserializeNumber(t *testing.T) {
+func TestDeserializeNumber(t *testing.T) {
 
 	b := make([]byte, binary.MaxVarintLen64)
 	for i := 0; i < 100; i++ {

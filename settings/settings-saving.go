@@ -36,7 +36,7 @@ func saveSettings() error {
 			return gui.Error("Error storing saved status", err)
 		}
 
-		checksum = crypto.RIPEMD(checksum)[0:4]
+		checksum = crypto.RIPEMD(checksum)[0:crypto.ChecksumSize]
 		err = writer.Put([]byte("settings-check-sum"), checksum)
 		if err != nil {
 			return gui.Error("Error storing checksum", err)
@@ -76,7 +76,7 @@ func loadSettings() error {
 				return gui.Error("Error unmarshaling wallet saved", err)
 			}
 
-			checksum = crypto.RIPEMD(checksum)[0:4]
+			checksum = crypto.RIPEMD(checksum)[0:crypto.ChecksumSize]
 			walletChecksum := reader.Get([]byte("settings-check-sum"))
 			if !bytes.Equal(checksum, walletChecksum) {
 				return gui.Error("Settings Checksum is not matching", errors.New("Settings checksum mismatch !"))

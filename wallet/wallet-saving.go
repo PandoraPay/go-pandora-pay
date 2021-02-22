@@ -86,7 +86,7 @@ func saveWallet() error {
 			return gui.Error("Error deleting next address", err)
 		}
 
-		checksum = crypto.RIPEMD(checksum)[0:4]
+		checksum = crypto.RIPEMD(checksum)[0:crypto.ChecksumSize]
 		err = writer.Put([]byte("wallet-check-sum"), checksum)
 		if err != nil {
 			return gui.Error("Error storing checksum", err)
@@ -144,7 +144,7 @@ func loadWallet() error {
 				newWallet.Addresses = append(newWallet.Addresses, &newWalletAddress)
 			}
 
-			checksum = crypto.RIPEMD(checksum)[0:4]
+			checksum = crypto.RIPEMD(checksum)[0:crypto.ChecksumSize]
 			walletChecksum := reader.Get([]byte("wallet-check-sum"))
 			if !bytes.Equal(checksum, walletChecksum) {
 				return gui.Error("Wallet Checksum is not matching", errors.New("Wallet checksum mismatch !"))

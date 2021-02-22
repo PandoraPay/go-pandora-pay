@@ -2,11 +2,14 @@ package crypto
 
 import "math/rand"
 
-type Hash [32]byte
-type Checksum [4]byte
+const HashSize = 32
+const ChecksumSize = 4
+
+type Hash [HashSize]byte
+type Checksum [ChecksumSize]byte
 
 func RandomHash() (hash Hash) {
-	a := make([]byte, 32)
+	a := make([]byte, HashSize)
 	rand.Read(a)
 
 	copy(hash[:], a)
