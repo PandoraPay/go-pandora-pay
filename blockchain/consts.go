@@ -1,0 +1,13 @@
+package blockchain
+
+const (
+	NETWORK_SELECTED uint64 = 0
+
+	MAIN_NET_NETWORK_BYTE        uint64 = 0
+	MAIN_NET_NETWORK_BYTE_PREFIX string = "PANDORA"
+
+	TEST_NET_NETWORK_BYTE        uint64 = 1033
+	TEST_NET_NETWORK_BYTE_PREFIX string = "PANDORA_TEST"
+
+	BLOCK_MAX_SIZE uint64 = 1 << 10
+)
