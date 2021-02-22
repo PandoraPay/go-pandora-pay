@@ -2,10 +2,10 @@ package addresses
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"pandora-pay/blockchain"
 	"pandora-pay/crypto"
-	"pandora-pay/helpers"
 	base58 "pandora-pay/helpers/base58"
 )
 
@@ -26,6 +26,9 @@ type Address struct {
 
 func (a *Address) EncodeAddr() (string, error) {
 
+	var serialised bytes.Buffer
+	buf := make([]byte, binary.MaxVarintLen64)
+
 	var prefix string
 	if a.Network == blockchain.MAIN_NET_NETWORK_BYTE {
 		prefix = blockchain.MAIN_NET_NETWORK_BYTE_PREFIX
@@ -37,24 +40,27 @@ func (a *Address) EncodeAddr() (string, error) {
 		return "", errors.New("Invalid network")
 	}
 
-	bytes := append([]byte{}, helpers.SerializeNumber(uint64(a.Version))...)
-	bytes = append(bytes, a.PublicKey...)
+	n := binary.PutUvarint(buf, uint64(a.Version))
+	serialised.Write(buf[:n])
+
+	serialised.Write(a.PublicKey)
 
 	integrationByte := a.IntegrationByte()
-	bytes = append(bytes, integrationByte)
+	serialised.Write([]byte{integrationByte})
 
 	if a.IsIntegratedAddress() {
-		bytes = append(bytes, a.PaymentID...)
+		serialised.Write(a.PaymentID)
 	}
 	if a.IsIntegratedAmount() {
-		bytes = append(bytes, helpers.SerializeNumber(a.Amount)...)
+		n = binary.PutUvarint(buf, a.Amount)
+		serialised.Write(buf[:n])
 	}
 
-	checksum := crypto.RIPEMD(bytes)[0:4]
+	buffer := serialised.Bytes()
 
-	bytes = append(bytes, checksum...)
-
-	ret := base58.Encode(bytes)
+	checksum := crypto.RIPEMD(buffer)[0:4]
+	buffer = append(buffer, checksum...)
+	ret := base58.Encode(buffer)
 
 	return prefix + ret, nil
 }
@@ -81,56 +87,63 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, errors.New("Invalid Address Network PREFIX!")
 	}
 
-	raw, err := base58.Decode(input[:blockchain.NETWORK_BYTE_PREFIX_LENGTH])
+	buf, err := base58.Decode(input[:blockchain.NETWORK_BYTE_PREFIX_LENGTH])
 	if err != nil {
 		return nil, err
 	}
 
-	position := 0
-
-	version, err := helpers.UnserializeNumber(raw, &position)
-	if err != nil {
+	version, n := binary.Uvarint(buf)
+	if n <= 0 {
 		return nil, err
 	}
+	buf = buf[n:]
+	addressVersion := AddressVersion(version)
 
 	var readBytes int
-	addressVersion := AddressVersion(version)
-	if addressVersion == AddressVersionTransparentPublicKeyHash {
+
+	switch addressVersion {
+	case AddressVersionTransparentPublicKeyHash:
 		readBytes = 20
-	} else if addressVersion == AddressVersionTransparentPublicKey {
+	case AddressVersionTransparentPublicKey:
 		readBytes = 33
-	} else {
+	default:
 		return nil, errors.New("Invalid Address Version")
 	}
 
-	publicKey, err := helpers.UnserializeBuffer(raw, &position, readBytes)
-	if err != nil {
-		return nil, err
+	var publicKey []byte
+	n = copy(publicKey[:], buf[:readBytes])
+	if n <= readBytes {
+		return nil, errors.New("Invalid Address Public Key/Hash")
 	}
+	buf = buf[:n]
 
-	integrationByte, err := helpers.UnserializeBuffer(raw, &position, 1)
-	if err != nil {
-		return nil, err
+	var integrationByte [1]byte
+	n = copy(integrationByte[:], buf[:1])
+	if n < 1 {
+		return nil, errors.New("Invalid Integration Byte")
 	}
+	buf = buf[:1]
 
 	var paymentId []byte
 	var amount uint64
 
 	if integrationByte[0]&1 == 1 {
 
-		paymentId, err = helpers.UnserializeBuffer(raw, &position, 8)
-		if err != nil {
-			return nil, err
+		n = copy(paymentId[:], buf[:8])
+		if n < 8 {
+			return nil, errors.New("Invalid Payment Id")
 		}
+		buf = buf[:8]
 
 	}
 
 	if integrationByte[0]&(1<<1) == 1 {
 
-		amount, err = helpers.UnserializeNumber(raw, &position)
-		if err != nil {
-			return nil, err
+		amount, n = binary.Uvarint(buf)
+		if n <= 0 {
+			return nil, errors.New("Invalid amount")
 		}
+		buf = buf[n:]
 
 	}
 

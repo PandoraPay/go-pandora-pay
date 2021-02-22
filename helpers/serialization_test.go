@@ -1,63 +1,57 @@
 package helpers
 
 import (
+	"encoding/binary"
 	"testing"
 )
 
 func TestSerializeNumber(t *testing.T) {
 
-	a := SerializeNumber(0)
-	if len(a) != 1 || a[0] != 0 {
-		t.Errorf("Invalid serialization %d %d %s", len(a), a[0], string(a))
+	b := make([]byte, binary.MaxVarintLen64)
+	n := binary.PutUvarint(b, 0)
+	if n != 1 || b[0] != 0 {
+		t.Errorf("Invalid serialization %d %d %s", len(b), b[0], string(b))
 	}
 
-	a = SerializeNumber(1)
-	if len(a) != 1 || a[0] != 1 {
-		t.Errorf("Invalid serialization %d %d %s", len(a), a[0], string(a))
+	n = binary.PutUvarint(b, 1)
+	if n != 1 || b[0] != 1 {
+		t.Errorf("Invalid serialization %d %d %s", len(b), b[0], string(b))
 	}
 
-	a = SerializeNumber(2)
-	if len(a) != 1 || a[0] != 2 {
-		t.Errorf("Invalid serialization %d %d %s", len(a), a[0], string(a))
+	n = binary.PutUvarint(b, 120)
+	if n != 1 || b[0] != 120 {
+		t.Errorf("Invalid serialization %d %d %s", len(b), b[0], string(b))
 	}
 
-	a = SerializeNumber(120)
-	if len(a) != 1 || a[0] != 120 {
-		t.Errorf("Invalid serialization %d %d %s", len(a), a[0], string(a))
+	n = binary.PutUvarint(b, 126)
+	if n != 1 || b[0] != 126 {
+		t.Errorf("Invalid serialization %d %d %s", len(b), b[0], string(b))
 	}
 
-	a = SerializeNumber(126)
-	if len(a) != 1 || a[0] != 126 {
-		t.Errorf("Invalid serialization %d %d %s", len(a), a[0], string(a))
+	n = binary.PutUvarint(b, 127)
+	if n != 1 || b[0] != 127 {
+		t.Errorf("Invalid serialization %d %d %s", len(b), b[0], string(b))
 	}
 
-	a = SerializeNumber(127)
-	if len(a) != 1 || a[0] != 127 {
-		t.Errorf("Invalid serialization %d %d %s", len(a), a[0], string(a))
+	n = binary.PutUvarint(b, 128)
+	if n != 2 || b[0] != 128 {
+		t.Errorf("Invalid serialization %d %d %s", len(b), b[0], string(b))
 	}
 
-	a = SerializeNumber(128)
-	if len(a) != 2 || a[0] != 128 {
-		t.Errorf("Invalid serialization %d %d %s", len(a), a[0], string(a))
-	}
-
-	pos := 0
-	b, err := UnserializeNumber(a, &pos)
-	if b != 128 || err != nil {
+	a, done := binary.Uvarint(b)
+	if a != 128 || done <= 0 {
 		t.Errorf("Invalid serialization %d %d", a, b)
 	}
 
-	a = SerializeNumber(0xFFFFFFFFFFFFFFFF)
-	pos = 0
-	b, err = UnserializeNumber(a, &pos)
-	if b != 0xFFFFFFFFFFFFFFFF || err != nil {
-		t.Errorf("Invalid serialization %d %d", a, b)
+	binary.PutUvarint(b, 0xFFFFFFFFFFFFFFFF)
+	a, done = binary.Uvarint(b)
+	if a != 0xFFFFFFFFFFFFFFFF || done <= 0 {
+		t.Errorf("Invalid serialization %d %d", b, a)
 	}
 
-	a = SerializeNumber(0xFFFFFFFFFFFFFFFC)
-	pos = 0
-	b, err = UnserializeNumber(a, &pos)
-	if b != 0xFFFFFFFFFFFFFFFC || err != nil {
+	binary.PutUvarint(b, 0xFFFFFFFFFFFFFFFC)
+	a, done = binary.Uvarint(b)
+	if a != 0xFFFFFFFFFFFFFFFC {
 		t.Errorf("Invalid serialization %d %d", a, b)
 	}
 
@@ -65,16 +59,16 @@ func TestSerializeNumber(t *testing.T) {
 
 func TestUnserializeNumber(t *testing.T) {
 
+	b := make([]byte, binary.MaxVarintLen64)
 	for i := 0; i < 100; i++ {
 
 		no := Uint64()
 
-		a := SerializeNumber(no)
+		binary.PutUvarint(b, no)
 
-		pos := 0
-		b, err := UnserializeNumber(a, &pos)
-		if b != no || err != nil {
-			t.Errorf("Invalid serialization deserialization %d %d %s", no, b, string(a))
+		a, done := binary.Uvarint(b)
+		if a != no || done <= 0 {
+			t.Errorf("Invalid serialization deserialization %d %s %d", no, string(b), a)
 		}
 	}
 
