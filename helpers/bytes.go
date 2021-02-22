@@ -17,3 +17,7 @@ func RandomBytes(size int) []byte {
 	rand.Read(a)
 	return a
 }
+
+func EmptyBytes(size int) []byte {
+	return make([]byte, 65)
+}

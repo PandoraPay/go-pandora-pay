@@ -49,7 +49,7 @@ func ECDSASignVerify(t *testing.T) {
 		t.Errorf("Signature length is invalid %d", len(key))
 	}
 
-	emptySignature := make([]byte, 65)
+	emptySignature := helpers.EmptyBytes(65)
 	if bytes.Equal(emptySignature, signature) {
 		t.Errorf("Signature is empty %d", len(key))
 	}

@@ -11,7 +11,7 @@ type PrivateKey struct {
 	Key []byte
 }
 
-func (pk *PrivateKey) GenerateTransparentAddress(usePublicKeyHash bool, amount uint64, paymentID *[]byte) *Address {
+func (pk *PrivateKey) GenerateTransparentAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) *Address {
 
 	publicKey, err := crypto.GeneratePublicKey(pk.Key)
 	if err != nil {

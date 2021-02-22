@@ -30,7 +30,7 @@ func addNewAddress() error {
 	}
 
 	privateKey := addresses.PrivateKey{Key: key.Key}
-	address := privateKey.GenerateTransparentAddress(true, 0, &[]byte{})
+	address := privateKey.GenerateTransparentAddress(true, 0, []byte{})
 
 	walletAddress := WalletAddress{Version: WalletAddressTransparent, Name: "Addr " + strconv.Itoa(wallet.Count), PrivateKey: &privateKey, Address: address, IsSeedGenerated: true}
 
