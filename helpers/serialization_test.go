@@ -42,22 +42,22 @@ func TestSerializeNumber(t *testing.T) {
 	}
 
 	pos := 0
-	b := UnserializeNumber(a, &pos)
-	if b != 128 {
+	b, err := UnserializeNumber(a, &pos)
+	if b != 128 || err != nil {
 		t.Errorf("Invalid serialization %d %d", a, b)
 	}
 
 	a = SerializeNumber(0xFFFFFFFFFFFFFFFF)
 	pos = 0
-	b = UnserializeNumber(a, &pos)
-	if b != 0xFFFFFFFFFFFFFFFF {
+	b, err = UnserializeNumber(a, &pos)
+	if b != 0xFFFFFFFFFFFFFFFF || err != nil {
 		t.Errorf("Invalid serialization %d %d", a, b)
 	}
 
 	a = SerializeNumber(0xFFFFFFFFFFFFFFFC)
 	pos = 0
-	b = UnserializeNumber(a, &pos)
-	if b != 0xFFFFFFFFFFFFFFFC {
+	b, err = UnserializeNumber(a, &pos)
+	if b != 0xFFFFFFFFFFFFFFFC || err != nil {
 		t.Errorf("Invalid serialization %d %d", a, b)
 	}
 
@@ -72,8 +72,8 @@ func TestUnserializeNumber(t *testing.T) {
 		a := SerializeNumber(no)
 
 		pos := 0
-		b := UnserializeNumber(a, &pos)
-		if b != no {
+		b, err := UnserializeNumber(a, &pos)
+		if b != no || err != nil {
 			t.Errorf("Invalid serialization deserialization %d %d %s", no, b, string(a))
 		}
 	}

@@ -23,9 +23,24 @@ func TestPrivateKey_GenerateTransparentAddress(t *testing.T) {
 
 	privateKey := GenerateNewPrivateKey()
 
-	address := privateKey.GenerateTransparentAddress(false, 0, helpers.EmptyBytes(0))
-	if len(address.PublicKey) != 33 || bytes.Equal(address.PublicKey, helpers.EmptyBytes(33)) {
-		t.Errorf("Public Key is invalid")
+	address, err := privateKey.GenerateTransparentAddress(false, 0, helpers.EmptyBytes(0))
+	if err != nil {
+		t.Errorf("Address Generation raised an error")
+	}
+
+	if len(address.PublicKey) != 33 || bytes.Equal(address.PublicKey, helpers.EmptyBytes(33)) ||
+		address.Amount != 0 || len(address.PaymentID) != 0 {
+		t.Errorf("Generated Address is invalid")
+	}
+
+	address, err = privateKey.GenerateTransparentAddress(true, 0, helpers.EmptyBytes(0))
+	if len(address.PublicKey) != 20 || err != nil || address.Amount != 0 || len(address.PaymentID) != 0 {
+		t.Errorf("Generated Address is invalid")
+	}
+
+	address, err = privateKey.GenerateTransparentAddress(true, 20, helpers.RandomBytes(8))
+	if len(address.PublicKey) != 20 || err != nil || address.Amount != 20 || len(address.PaymentID) != 8 {
+		t.Errorf("Generated Address is invalid")
 	}
 
 }

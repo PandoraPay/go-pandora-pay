@@ -1,9 +1,9 @@
 package helpers
 
-// serialize number
-func SerializeNumber(n uint64) []byte {
+import "errors"
 
-	var b []byte
+// serialize number
+func SerializeNumber(n uint64) (b []byte) {
 
 	for n >= 0x80 {
 
@@ -14,14 +14,14 @@ func SerializeNumber(n uint64) []byte {
 	}
 	b = append(b, byte(n))
 
-	return b
+	return
 }
 
 // Variable-Length Encoding of Integers based on ReadVarInt
-func UnserializeNumber(b []byte, pos *int) uint64 {
+func UnserializeNumber(b []byte, pos *int) (r uint64, err error) {
 
 	power := uint64(1)
-	r := uint64(0)
+	r = 0
 
 	for *pos < len(b) {
 
@@ -30,10 +30,21 @@ func UnserializeNumber(b []byte, pos *int) uint64 {
 
 		r += uint64(a&0x7f) * power
 		if a&0x80 == 0 {
-			return r
+			return
 		}
 		power <<= 7
 	}
 
-	return r
+	return
+}
+
+func UnserializeBuffer(b []byte, pos *int, count int) (result []byte, err error) {
+	if *pos+count >= len(b) {
+		err = errors.New("Buffer exceeded")
+		return
+	}
+
+	copy(result[:], b[*pos:*pos+count])
+	*pos += count
+	return
 }

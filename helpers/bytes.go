@@ -19,5 +19,5 @@ func RandomBytes(size int) []byte {
 }
 
 func EmptyBytes(size int) []byte {
-	return make([]byte, 65)
+	return make([]byte, size)
 }
