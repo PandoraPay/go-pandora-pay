@@ -67,41 +67,42 @@ func (a *Address) EncodeAddr() (string, error) {
 
 func DecodeAddr(input string) (*Address, error) {
 
-	checksum := crypto.RIPEMD([]byte(input[:len(input)-4]))[0:4]
-
-	if bytes.Equal(checksum[:], []byte(input[len(input)-4:])) {
-		return nil, errors.New("Invalid Checksum")
-	}
-	input = input[0 : len(input)-4] // remove the checksum
+	adr := Address{}
 
 	prefix := input[0:blockchain.NETWORK_BYTE_PREFIX_LENGTH]
 
-	var network uint64
 	if prefix == blockchain.MAIN_NET_NETWORK_BYTE_PREFIX {
-		network = blockchain.MAIN_NET_NETWORK_BYTE
+		adr.Network = blockchain.MAIN_NET_NETWORK_BYTE
 	} else if prefix == blockchain.TEST_NET_NETWORK_BYTE_PREFIX {
-		network = blockchain.TEST_NET_NETWORK_BYTE
+		adr.Network = blockchain.TEST_NET_NETWORK_BYTE
 	} else if prefix == blockchain.DEV_NET_NETWORK_BYTE_PREFIX {
-		network = blockchain.DEV_NET_NETWORK_BYTE
+		adr.Network = blockchain.DEV_NET_NETWORK_BYTE
 	} else {
 		return nil, errors.New("Invalid Address Network PREFIX!")
 	}
 
-	buf, err := base58.Decode(input[:blockchain.NETWORK_BYTE_PREFIX_LENGTH])
+	buf, err := base58.Decode(input[blockchain.NETWORK_BYTE_PREFIX_LENGTH:])
 	if err != nil {
 		return nil, err
 	}
+
+	checksum := crypto.RIPEMD(buf[:len(buf)-4])[0:4]
+
+	if !bytes.Equal(checksum[:], buf[len(buf)-4:]) {
+		return nil, errors.New("Invalid Checksum")
+	}
+	buf = buf[0 : len(buf)-4] // remove the checksum
 
 	version, n := binary.Uvarint(buf)
 	if n <= 0 {
 		return nil, err
 	}
 	buf = buf[n:]
-	addressVersion := AddressVersion(version)
+	adr.Version = AddressVersion(version)
 
 	var readBytes int
 
-	switch addressVersion {
+	switch adr.Version {
 	case AddressVersionTransparentPublicKeyHash:
 		readBytes = 20
 	case AddressVersionTransparentPublicKey:
@@ -110,36 +111,22 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, errors.New("Invalid Address Version")
 	}
 
-	var publicKey []byte
-	n = copy(publicKey[:], buf[:readBytes])
-	if n <= readBytes {
-		return nil, errors.New("Invalid Address Public Key/Hash")
-	}
-	buf = buf[:n]
+	adr.PublicKey = buf[0:readBytes]
+	buf = buf[readBytes:]
 
-	var integrationByte [1]byte
-	n = copy(integrationByte[:], buf[:1])
-	if n < 1 {
-		return nil, errors.New("Invalid Integration Byte")
-	}
-	buf = buf[:1]
+	integrationByte := buf[0]
+	buf = buf[1:]
 
-	var paymentId []byte
-	var amount uint64
+	if integrationByte&1 != 0 {
 
-	if integrationByte[0]&1 == 1 {
-
-		n = copy(paymentId[:], buf[:8])
-		if n < 8 {
-			return nil, errors.New("Invalid Payment Id")
-		}
-		buf = buf[:8]
+		adr.PaymentID = buf[0:8]
+		buf = buf[8:]
 
 	}
 
-	if integrationByte[0]&(1<<1) == 1 {
+	if integrationByte&(1<<1) != 0 {
 
-		amount, n = binary.Uvarint(buf)
+		adr.Amount, n = binary.Uvarint(buf)
 		if n <= 0 {
 			return nil, errors.New("Invalid amount")
 		}
@@ -147,7 +134,7 @@ func DecodeAddr(input string) (*Address, error) {
 
 	}
 
-	return &Address{Network: network, Version: addressVersion, PublicKey: publicKey, Amount: amount, PaymentID: paymentId}, nil
+	return &adr, nil
 }
 
 func (a *Address) IntegrationByte() (out byte) {
