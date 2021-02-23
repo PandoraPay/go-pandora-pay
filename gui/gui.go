@@ -18,7 +18,7 @@ var cmdStatus string = "cmd"
 var cmdInput string = ""
 var cmdInputChannel = make(chan string)
 
-func IsLetter(s string) bool {
+func isLetter(s string) bool {
 	for _, r := range s {
 		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && !unicode.IsSpace(r) {
 			return false
@@ -155,7 +155,7 @@ func GUIInit() {
 
 				}
 
-				if cmdStatus == "read" && (IsLetter(e.ID) || e.ID == "<Backspace>" || e.ID == "<Space>") {
+				if cmdStatus == "read" && (isLetter(e.ID) || e.ID == "<Backspace>" || e.ID == "<Space>") {
 					char := e.ID
 					if char == "<Space>" {
 						char = " "
@@ -213,21 +213,30 @@ func InfoUpdate(key string, text string) {
 	ui.Render(info)
 }
 
-func processArgument(any interface{}) string {
-	switch v := any.(type) {
-	case string:
-		return v
-	case int:
-		return strconv.Itoa(v)
-	case []byte:
-		return hex.EncodeToString(v)
-	case [32]byte:
-		return hex.EncodeToString(v[:])
-	case error:
-		return v.Error()
-	default:
-		return "invalid log type"
+func processArgument(any ...interface{}) string {
+
+	var s = ""
+
+	for _, it := range any {
+
+		switch v := it.(type) {
+		case string:
+			s += v
+		case int:
+			s += strconv.Itoa(v)
+		case []byte:
+			s += hex.EncodeToString(v)
+		case [32]byte:
+			s += hex.EncodeToString(v[:])
+		case error:
+			s += v.Error()
+		default:
+			s += "invalid log type"
+		}
+
 	}
+
+	return s
 }
 
 func OutputWrite(any interface{}) {
@@ -282,27 +291,36 @@ func OutputDone() {
 	cmdStatus = "output done"
 }
 
-func message(any interface{}, color ui.Color) {
+func message(color ui.Color, any ...interface{}) {
 	logs.TextStyle = ui.NewStyle(color)
-	logs.Text = logs.Text + processArgument(any) + "\n"
+	logs.Text = logs.Text + processArgument(any...) + "\n"
 	ui.Render(logs)
 }
 
-func Fatal(any interface{}) {
-	message(any, ui.ColorRed)
+func Fatal(any ...interface{}) {
+	message(ui.ColorRed, any...)
 	os.Exit(1)
 }
 
-func Log(any interface{}) {
-	message(any, ui.ColorClear)
+func Log(any ...interface{}) {
+	message(ui.ColorClear, any...)
 }
 
-func Info(any interface{}) {
-	message(any, ui.ColorBlue)
+func Info(any ...interface{}) {
+	message(ui.ColorBlue, any...)
 }
 
-func Error(any interface{}, err error) error {
-	message(any, ui.ColorRed)
-	message(err, ui.ColorRed)
-	return err
+func Error(any ...interface{}) error {
+	message(ui.ColorRed, any...)
+	for _, it := range any {
+
+		switch v := it.(type) {
+		case error:
+			return v
+		default:
+
+		}
+
+	}
+	return nil
 }

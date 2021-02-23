@@ -2,7 +2,7 @@ package addresses
 
 import (
 	"bytes"
-	"pandora-pay/blockchain"
+	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/base58"
 	"testing"
@@ -19,7 +19,7 @@ func TestAddress_EncodeAddr(t *testing.T) {
 		t.Errorf("Address Generation raised an error")
 	}
 	encoded, _ := address.EncodeAddr()
-	decoded, err := base58.Decode(encoded[blockchain.NETWORK_BYTE_PREFIX_LENGTH:])
+	decoded, err := base58.Decode(encoded[config.NETWORK_BYTE_PREFIX_LENGTH:])
 	if err != nil || len(decoded) != 1+20+1+4 {
 		t.Errorf("AddressEncoded length is invalid")
 	}

@@ -1,6 +1,9 @@
-package blockchain
+package config
 
 const (
+	NAME    string = "PANDORA PAY"
+	VERSION string = "0.0"
+
 	NETWORK_SELECTED uint64 = 0
 
 	MAIN_NET_NETWORK_BYTE        uint64 = 0

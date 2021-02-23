@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"pandora-pay/block"
-	"pandora-pay/blockchain"
+	"pandora-pay/config"
 	"time"
 )
 
@@ -45,11 +45,11 @@ func CreateGenesisBlock(network uint64) (*block.Block, error) {
 	var genesis Genesis
 
 	switch network {
-	case blockchain.MAIN_NET_NETWORK_BYTE:
+	case config.MAIN_NET_NETWORK_BYTE:
 		genesis = genesisMainet
-	case blockchain.TEST_NET_NETWORK_BYTE:
+	case config.TEST_NET_NETWORK_BYTE:
 		genesis = genesisTestnet
-	case blockchain.DEV_NET_NETWORK_BYTE:
+	case config.DEV_NET_NETWORK_BYTE:
 		genesis = genesisDevnet
 	default:
 		return nil, errors.New("Invalid network")

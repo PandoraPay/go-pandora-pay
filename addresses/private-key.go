@@ -2,7 +2,7 @@ package addresses
 
 import (
 	"errors"
-	"pandora-pay/blockchain"
+	"pandora-pay/config"
 	"pandora-pay/crypto"
 	"pandora-pay/crypto/ecdsa"
 	"pandora-pay/helpers"
@@ -44,7 +44,7 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 		version = AddressVersionTransparentPublicKey
 	}
 
-	return &Address{Network: blockchain.NETWORK_SELECTED, Version: version, PublicKey: finalPublicKey[:], Amount: amount, PaymentID: paymentID}, nil
+	return &Address{Network: config.NETWORK_SELECTED, Version: version, PublicKey: finalPublicKey[:], Amount: amount, PaymentID: paymentID}, nil
 }
 
 func (pk *PrivateKey) Sign(message *crypto.Hash) ([]byte, error) {

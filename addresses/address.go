@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"pandora-pay/blockchain"
+	"pandora-pay/config"
 	"pandora-pay/crypto"
 	"pandora-pay/helpers"
 	base58 "pandora-pay/helpers/base58"
@@ -32,12 +32,12 @@ func (a *Address) EncodeAddr() (string, error) {
 
 	var prefix string
 	switch a.Network {
-	case blockchain.MAIN_NET_NETWORK_BYTE:
-		prefix = blockchain.MAIN_NET_NETWORK_BYTE_PREFIX
-	case blockchain.TEST_NET_NETWORK_BYTE:
-		prefix = blockchain.TEST_NET_NETWORK_BYTE_PREFIX
-	case blockchain.DEV_NET_NETWORK_BYTE:
-		prefix = blockchain.DEV_NET_NETWORK_BYTE_PREFIX
+	case config.MAIN_NET_NETWORK_BYTE:
+		prefix = config.MAIN_NET_NETWORK_BYTE_PREFIX
+	case config.TEST_NET_NETWORK_BYTE:
+		prefix = config.TEST_NET_NETWORK_BYTE_PREFIX
+	case config.DEV_NET_NETWORK_BYTE:
+		prefix = config.DEV_NET_NETWORK_BYTE_PREFIX
 	default:
 		return "", errors.New("Invalid network")
 	}
@@ -71,19 +71,19 @@ func DecodeAddr(input string) (*Address, error) {
 
 	adr := Address{PublicKey: []byte{}, PaymentID: []byte{}}
 
-	prefix := input[0:blockchain.NETWORK_BYTE_PREFIX_LENGTH]
+	prefix := input[0:config.NETWORK_BYTE_PREFIX_LENGTH]
 
-	if prefix == blockchain.MAIN_NET_NETWORK_BYTE_PREFIX {
-		adr.Network = blockchain.MAIN_NET_NETWORK_BYTE
-	} else if prefix == blockchain.TEST_NET_NETWORK_BYTE_PREFIX {
-		adr.Network = blockchain.TEST_NET_NETWORK_BYTE
-	} else if prefix == blockchain.DEV_NET_NETWORK_BYTE_PREFIX {
-		adr.Network = blockchain.DEV_NET_NETWORK_BYTE
+	if prefix == config.MAIN_NET_NETWORK_BYTE_PREFIX {
+		adr.Network = config.MAIN_NET_NETWORK_BYTE
+	} else if prefix == config.TEST_NET_NETWORK_BYTE_PREFIX {
+		adr.Network = config.TEST_NET_NETWORK_BYTE
+	} else if prefix == config.DEV_NET_NETWORK_BYTE_PREFIX {
+		adr.Network = config.DEV_NET_NETWORK_BYTE
 	} else {
 		return nil, errors.New("Invalid Address Network PREFIX!")
 	}
 
-	buf, err := base58.Decode(input[blockchain.NETWORK_BYTE_PREFIX_LENGTH:])
+	buf, err := base58.Decode(input[config.NETWORK_BYTE_PREFIX_LENGTH:])
 	if err != nil {
 		return nil, err
 	}
