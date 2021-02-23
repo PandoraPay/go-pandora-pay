@@ -31,13 +31,14 @@ func (a *Address) EncodeAddr() (string, error) {
 	buf := make([]byte, binary.MaxVarintLen64)
 
 	var prefix string
-	if a.Network == blockchain.MAIN_NET_NETWORK_BYTE {
+	switch a.Network {
+	case blockchain.MAIN_NET_NETWORK_BYTE:
 		prefix = blockchain.MAIN_NET_NETWORK_BYTE_PREFIX
-	} else if a.Network == blockchain.TEST_NET_NETWORK_BYTE {
+	case blockchain.TEST_NET_NETWORK_BYTE:
 		prefix = blockchain.TEST_NET_NETWORK_BYTE_PREFIX
-	} else if a.Network == blockchain.DEV_NET_NETWORK_BYTE {
+	case blockchain.DEV_NET_NETWORK_BYTE:
 		prefix = blockchain.DEV_NET_NETWORK_BYTE_PREFIX
-	} else {
+	default:
 		return "", errors.New("Invalid network")
 	}
 
