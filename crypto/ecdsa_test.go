@@ -19,7 +19,7 @@ func PrivateKeyPublicKeyCreation(t *testing.T) {
 		t.Errorf("Generatated Key length is invalid %d", len(key))
 	}
 
-	publicKey, err := GeneratePublicKey(key)
+	publicKey, err := ComputePublicKey(key)
 	if err != nil {
 		t.Errorf("Generate Pub Key failed %s", err)
 	}
@@ -54,7 +54,7 @@ func ECDSASignVerify(t *testing.T) {
 		t.Errorf("Signature is empty %d", len(key))
 	}
 
-	publicKey, _ := GeneratePublicKey(key)
+	publicKey, _ := ComputePublicKey(key)
 	if !ecdsa.VerifySignature(publicKey, SHA3(message), signature) {
 		t.Errorf("Signature was not validated")
 	}

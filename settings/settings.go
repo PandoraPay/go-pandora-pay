@@ -12,7 +12,7 @@ type Settings struct {
 
 var settings Settings
 
-func InitSettings() {
+func SettingsInit() {
 
 	err := loadSettings()
 	if err != nil {

@@ -46,7 +46,7 @@ var commands = []Command{
 var infoMap = make(map[string]string)
 
 //test
-func InitGUI() {
+func GUIInit() {
 
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)

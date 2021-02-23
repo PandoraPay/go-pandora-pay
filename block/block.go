@@ -2,7 +2,6 @@ package block
 
 import (
 	"bytes"
-	"encoding/binary"
 	"pandora-pay/crypto"
 	"pandora-pay/helpers"
 )
@@ -11,8 +10,8 @@ type Block struct {
 	BlockHeader
 	MerkleHash crypto.Hash
 
-	Forger    [33]byte // public key
-	Signature [65]byte // signature
+	Forger    []byte // 33 byte public key
+	Signature []byte // 65 byte signature
 
 }
 
@@ -21,13 +20,13 @@ type BlockComplete struct {
 	//txs []*transaction
 }
 
-func (block *Block) ComputeHash() (crypto.Hash, error) {
-
-}
-
-func (block *Block) ComputeKernelHash() (crypto.Hash, error) {
-
-}
+//func (block *Block) ComputeHash() (crypto.Hash, error) {
+//
+//}
+//
+//func (block *Block) ComputeKernelHash() (crypto.Hash, error) {
+//
+//}
 
 func (block *Block) Serialize() []byte {
 

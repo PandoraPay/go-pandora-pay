@@ -36,13 +36,13 @@ func (store *Store) close() {
 	gui.Log("Store Closed " + store.Name)
 }
 
-func InitDB() {
+func DBInit() {
 	StoreBlockchain.init()
 	StoreWallet.init()
 	StoreSettings.init()
 }
 
-func CloseDB() {
+func DBClose() {
 	StoreBlockchain.close()
 	StoreWallet.close()
 	StoreSettings.close()

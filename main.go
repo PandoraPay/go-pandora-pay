@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"pandora-pay/blockchain"
 	"pandora-pay/gui"
 	"pandora-pay/settings"
 	"pandora-pay/store"
@@ -16,19 +17,21 @@ func mainloop() {
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 	<-exitSignal
 
-	store.CloseDB()
+	store.DBClose()
 
 	fmt.Println("Shutting down")
 }
 
 func main() {
 
-	gui.InitGUI()
+	gui.GUIInit()
 
-	store.InitDB()
+	store.DBInit()
 
-	wallet.InitWallet()
-	settings.InitSettings()
+	wallet.WalletInit()
+	settings.SettingsInit()
+
+	blockchain.BlockchainInit()
 
 	gui.Log("Main Loop")
 

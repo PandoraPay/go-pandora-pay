@@ -25,7 +25,7 @@ func RIPEMD(b []byte) []byte {
 	return h.Sum(nil)
 }
 
-func GeneratePublicKey(key []byte) ([]byte, error) {
+func ComputePublicKey(key []byte) ([]byte, error) {
 
 	privateKey, err := ecdsa.ToECDSA(key)
 	if err != nil {

@@ -11,9 +11,19 @@ type PrivateKey struct {
 	Key []byte
 }
 
-func (pk *PrivateKey) GenerateTransparentAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) (*Address, error) {
+func (pk *PrivateKey) GeneratePublicKey() (publicKey []byte, err error) {
 
-	publicKey, err := crypto.GeneratePublicKey(pk.Key)
+	publicKey, err = crypto.ComputePublicKey(pk.Key)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) (*Address, error) {
+
+	publicKey, err := crypto.ComputePublicKey(pk.Key)
 	if err != nil {
 		return nil, errors.New("Strange error. Your private key was invalid")
 	}
@@ -37,6 +47,5 @@ func (pk *PrivateKey) GenerateTransparentAddress(usePublicKeyHash bool, amount u
 }
 
 func GenerateNewPrivateKey() *PrivateKey {
-
 	return &PrivateKey{Key: helpers.RandomBytes(32)}
 }

@@ -20,7 +20,7 @@ func (e Version) String() string {
 	}
 }
 
-func InitWallet() {
+func WalletInit() {
 
 	err := loadWallet()
 	if err != nil {

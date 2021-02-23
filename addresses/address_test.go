@@ -14,7 +14,7 @@ func TestAddress_EncodeAddr(t *testing.T) {
 	//1+20+1+4
 
 	privateKey := GenerateNewPrivateKey()
-	address, err := privateKey.GenerateTransparentAddress(true, 0, helpers.EmptyBytes(0))
+	address, err := privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
 	if err != nil || len(address.PublicKey) != 20 || len(address.PaymentID) != 0 {
 		t.Errorf("Address Generation raised an error")
 	}
@@ -24,7 +24,7 @@ func TestAddress_EncodeAddr(t *testing.T) {
 		t.Errorf("AddressEncoded length is invalid")
 	}
 
-	address, err = privateKey.GenerateTransparentAddress(true, 20, helpers.EmptyBytes(0))
+	address, err = privateKey.GenerateAddress(true, 20, helpers.EmptyBytes(0))
 	if err != nil || len(address.PublicKey) != 20 || len(address.PaymentID) != 0 {
 		t.Errorf("Address Generation raised an error")
 	}
@@ -34,7 +34,7 @@ func TestAddress_EncodeAddr(t *testing.T) {
 		t.Errorf("Encoded Amounts are invalid")
 	}
 
-	address, err = privateKey.GenerateTransparentAddress(true, 20, helpers.EmptyBytes(8))
+	address, err = privateKey.GenerateAddress(true, 20, helpers.EmptyBytes(8))
 	if err != nil || len(address.PublicKey) != 20 || len(address.PaymentID) == 0 {
 		t.Errorf("Address Generation raised an error")
 	}
@@ -49,7 +49,7 @@ func TestAddress_EncodeAddr(t *testing.T) {
 func TestDecodeAddr(t *testing.T) {
 
 	privateKey := GenerateNewPrivateKey()
-	address, _ := privateKey.GenerateTransparentAddress(true, 0, helpers.EmptyBytes(0))
+	address, _ := privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
 	encoded, _ := address.EncodeAddr()
 
 	decodedAddress, err := DecodeAddr(encoded)
@@ -61,7 +61,7 @@ func TestDecodeAddr(t *testing.T) {
 		t.Errorf("Decoded Address is not identical")
 	}
 
-	address, _ = privateKey.GenerateTransparentAddress(false, 40, helpers.EmptyBytes(8))
+	address, _ = privateKey.GenerateAddress(false, 40, helpers.EmptyBytes(8))
 	encoded, _ = address.EncodeAddr()
 	decodedAddress, err = DecodeAddr(encoded)
 	if !bytes.Equal(decodedAddress.PublicKey, address.PublicKey) || decodedAddress.Amount != address.Amount || !bytes.Equal(decodedAddress.PaymentID, address.PaymentID) {
