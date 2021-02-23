@@ -96,3 +96,13 @@ func CompressPubkey(pubkey *ecdsa.PublicKey) []byte {
 func S256() elliptic.Curve {
 	return btcec.S256()
 }
+
+func ComputePublicKey(key []byte) ([]byte, error) {
+
+	privateKey, err := ToECDSA(key)
+	if err != nil {
+		return nil, err
+	}
+
+	return CompressPubkey(&privateKey.PublicKey), nil
+}

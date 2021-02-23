@@ -1,20 +1,19 @@
-package crypto
+package ecdsa
 
 import (
 	"bytes"
-	"pandora-pay/crypto/ecdsa"
 	"pandora-pay/helpers"
 	"testing"
 )
 
-func PrivateKeyPublicKeyCreation(t *testing.T) {
+func TestPrivateKeyPublicKeyCreation(t *testing.T) {
 
-	privateKey, err := ecdsa.GenerateKey()
+	privateKey, err := GenerateKey()
 	if err != nil {
 		t.Errorf("Generate Key failed %s", err)
 	}
 
-	key := ecdsa.FromECDSA(privateKey)
+	key := FromECDSA(privateKey)
 	if len(key) != 32 {
 		t.Errorf("Generatated Key length is invalid %d", len(key))
 	}
@@ -29,37 +28,39 @@ func PrivateKeyPublicKeyCreation(t *testing.T) {
 
 }
 
-func ECDSASignVerify(t *testing.T) {
+func TestECDSASignVerify(t *testing.T) {
 
-	privateKey, _ := ecdsa.GenerateKey()
+	privateKey, _ := GenerateKey()
 
-	key := ecdsa.FromECDSA(privateKey)
+	key := FromECDSA(privateKey)
 	if len(key) != 32 {
 		t.Errorf("Generatated Key length is invalid %d", len(key))
 	}
 
-	message := helpers.RandomBytes(40)
+	message := helpers.RandomBytes(32)
 
-	signature, err := ecdsa.Sign(SHA3(message), privateKey)
+	signature, err := Sign(message, privateKey)
+
+	signature = signature[0:64]
 	if err != nil {
 		t.Errorf("Signing raised an error %s", err)
 	}
 
-	if len(signature) != 65 {
-		t.Errorf("Signature length is invalid %d", len(key))
+	if len(signature) != 64 {
+		t.Errorf("Signature length is invalid %d", len(signature))
 	}
 
-	emptySignature := helpers.EmptyBytes(65)
+	emptySignature := helpers.EmptyBytes(64)
 	if bytes.Equal(emptySignature, signature) {
 		t.Errorf("Signature is empty %d", len(key))
 	}
 
 	publicKey, _ := ComputePublicKey(key)
-	if !ecdsa.VerifySignature(publicKey, SHA3(message), signature) {
+	if !VerifySignature(publicKey, message, signature) {
 		t.Errorf("Signature was not validated")
 	}
 
-	if ecdsa.VerifySignature(publicKey, SHA3(message), emptySignature) {
+	if VerifySignature(publicKey, message, emptySignature) {
 		t.Errorf("Empty Signature was validated")
 	}
 
@@ -69,7 +70,7 @@ func ECDSASignVerify(t *testing.T) {
 	} else {
 		signature2[2] = 5
 	}
-	if ecdsa.VerifySignature(publicKey, SHA3(message), signature2) {
+	if VerifySignature(publicKey, message, signature2) {
 		t.Errorf("Signature2 was validated")
 	}
 }

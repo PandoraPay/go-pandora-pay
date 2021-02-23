@@ -3,6 +3,7 @@ package block
 import (
 	"bytes"
 	"pandora-pay/crypto"
+	"pandora-pay/crypto/ecdsa"
 	"pandora-pay/helpers"
 )
 
@@ -20,28 +21,44 @@ type BlockComplete struct {
 	//txs []*transaction
 }
 
-//func (block *Block) ComputeHash() (crypto.Hash, error) {
-//
-//}
-//
-//func (block *Block) ComputeKernelHash() (crypto.Hash, error) {
-//
-//}
+func (block *Block) ComputeHash() crypto.Hash {
+	buf := block.Serialize()
+	return crypto.SHA3Hash(buf)
+}
 
-func (block *Block) Serialize() []byte {
+func (block *Block) ComputeKernelHash() crypto.Hash {
+	return crypto.SHA3Hash(block.serializeBlock(false, false))
+}
 
+func (block *Block) SerializeForSigning() crypto.Hash {
+	return crypto.SHA3Hash(block.serializeBlock(true, false))
+}
+
+func (block *Block) VerifySignature() bool {
+	hash := block.SerializeForSigning()
+	return ecdsa.VerifySignature(block.Forger, hash[:], block.Signature[0:64])
+}
+
+func (block *Block) serializeBlock(inclMerkleHash bool, inclSignature bool) []byte {
 	var serialized bytes.Buffer
 
-	header := block.BlockHeader.Serialize()
-	serialized.Write(header)
+	serialized.Write(block.BlockHeader.Serialize())
 
-	serialized.Write(block.MerkleHash[:])
+	if inclMerkleHash {
+		serialized.Write(block.MerkleHash[:])
+	}
 
 	serialized.Write(block.Forger[:])
 
-	serialized.Write(block.Signature[:])
+	if inclSignature {
+		serialized.Write(block.Signature[:])
+	}
 
 	return serialized.Bytes()
+}
+
+func (block *Block) Serialize() []byte {
+	return block.serializeBlock(true, true)
 }
 
 func (block *Block) Deserialize(buf []byte) (out []byte, err error) {
