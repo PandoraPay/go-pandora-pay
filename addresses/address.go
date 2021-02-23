@@ -27,7 +27,7 @@ type Address struct {
 
 func (a *Address) EncodeAddr() (string, error) {
 
-	var serialised bytes.Buffer
+	var serialized bytes.Buffer
 	buf := make([]byte, binary.MaxVarintLen64)
 
 	var prefix string
@@ -42,22 +42,22 @@ func (a *Address) EncodeAddr() (string, error) {
 	}
 
 	n := binary.PutUvarint(buf, uint64(a.Version))
-	serialised.Write(buf[:n])
+	serialized.Write(buf[:n])
 
-	serialised.Write(a.PublicKey)
+	serialized.Write(a.PublicKey)
 
 	integrationByte := a.IntegrationByte()
-	serialised.Write([]byte{integrationByte})
+	serialized.Write([]byte{integrationByte})
 
 	if a.IsIntegratedAddress() {
-		serialised.Write(a.PaymentID)
+		serialized.Write(a.PaymentID)
 	}
 	if a.IsIntegratedAmount() {
 		n = binary.PutUvarint(buf, a.Amount)
-		serialised.Write(buf[:n])
+		serialized.Write(buf[:n])
 	}
 
-	buffer := serialised.Bytes()
+	buffer := serialized.Bytes()
 
 	checksum := crypto.RIPEMD(buffer)[0:crypto.ChecksumSize]
 	buffer = append(buffer, checksum...)

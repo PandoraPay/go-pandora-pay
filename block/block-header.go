@@ -16,22 +16,22 @@ type BlockHeader struct {
 
 func (blockHeader *BlockHeader) Serialize() []byte {
 
-	var serialised bytes.Buffer
+	var serialized bytes.Buffer
 	buf := make([]byte, binary.MaxVarintLen64)
 
 	n := binary.PutUvarint(buf, blockHeader.MajorVersion)
-	serialised.Write(buf[:n])
+	serialized.Write(buf[:n])
 
 	n = binary.PutUvarint(buf, blockHeader.MinorVersion)
-	serialised.Write(buf[:n])
+	serialized.Write(buf[:n])
 
 	n = binary.PutUvarint(buf, blockHeader.Timestamp)
-	serialised.Write(buf[:n])
+	serialized.Write(buf[:n])
 
 	n = binary.PutUvarint(buf, blockHeader.Height)
-	serialised.Write(buf[:n])
+	serialized.Write(buf[:n])
 
-	return serialised.Bytes()
+	return serialized.Bytes()
 }
 
 func (blockHeader *BlockHeader) Deserialize(buf []byte) (out []byte, err error) {

@@ -11,9 +11,11 @@ type Block struct {
 	BlockHeader
 	MerkleHash crypto.Hash
 
+	PrevHash       crypto.Hash
+	PrevKernelHash crypto.Hash
+
 	Forger    []byte // 33 byte public key
 	Signature []byte // 65 byte signature
-
 }
 
 type BlockComplete struct {
@@ -27,11 +29,11 @@ func (block *Block) ComputeHash() crypto.Hash {
 }
 
 func (block *Block) ComputeKernelHash() crypto.Hash {
-	return crypto.SHA3Hash(block.serializeBlock(false, false))
+	return crypto.SHA3Hash(block.serializeBlock(false, false, false))
 }
 
 func (block *Block) SerializeForSigning() crypto.Hash {
-	return crypto.SHA3Hash(block.serializeBlock(true, false))
+	return crypto.SHA3Hash(block.serializeBlock(true, true, false))
 }
 
 func (block *Block) VerifySignature() bool {
@@ -39,7 +41,7 @@ func (block *Block) VerifySignature() bool {
 	return ecdsa.VerifySignature(block.Forger, hash[:], block.Signature[0:64])
 }
 
-func (block *Block) serializeBlock(inclMerkleHash bool, inclSignature bool) []byte {
+func (block *Block) serializeBlock(inclMerkleHash bool, inclPrevHash bool, inclSignature bool) []byte {
 	var serialized bytes.Buffer
 
 	serialized.Write(block.BlockHeader.Serialize())
@@ -47,6 +49,12 @@ func (block *Block) serializeBlock(inclMerkleHash bool, inclSignature bool) []by
 	if inclMerkleHash {
 		serialized.Write(block.MerkleHash[:])
 	}
+
+	if inclPrevHash {
+		serialized.Write(block.PrevHash[:])
+	}
+
+	serialized.Write(block.PrevKernelHash[:])
 
 	serialized.Write(block.Forger[:])
 
@@ -58,7 +66,7 @@ func (block *Block) serializeBlock(inclMerkleHash bool, inclSignature bool) []by
 }
 
 func (block *Block) Serialize() []byte {
-	return block.serializeBlock(true, true)
+	return block.serializeBlock(true, true, true)
 }
 
 func (block *Block) Deserialize(buf []byte) (out []byte, err error) {
@@ -76,6 +84,18 @@ func (block *Block) Deserialize(buf []byte) (out []byte, err error) {
 		return
 	}
 	copy(block.MerkleHash[:], hash)
+
+	hash, out, err = helpers.DeserializeBuffer(out, crypto.HashSize)
+	if err != nil {
+		return
+	}
+	copy(block.PrevHash[:], hash)
+
+	hash, out, err = helpers.DeserializeBuffer(out, crypto.HashSize)
+	if err != nil {
+		return
+	}
+	copy(block.PrevKernelHash[:], hash)
 
 	block.Forger, out, err = helpers.DeserializeBuffer(out, 33)
 	if err != nil {

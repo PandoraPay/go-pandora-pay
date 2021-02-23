@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+var (
+	merkleHash     = crypto.SHA3Hash([]byte("MerkleHash"))
+	prevHash       = crypto.SHA3Hash([]byte("PrevHash"))
+	prevKernelHash = crypto.SHA3Hash([]byte("PrevKernelHash"))
+)
+
 func TestBlock_Serialize(t *testing.T) {
 
 	var err error
@@ -17,7 +23,7 @@ func TestBlock_Serialize(t *testing.T) {
 	publicKey, _ := privateKey.GeneratePublicKey()
 
 	blockHeader := BlockHeader{MajorVersion: 0, MinorVersion: 0, Timestamp: uint64(time.Now().Unix()), Height: 0}
-	block := Block{BlockHeader: blockHeader, MerkleHash: crypto.SHA3Hash([]byte("TEST")), Forger: publicKey[:], Signature: helpers.EmptyBytes(65)}
+	block := Block{BlockHeader: blockHeader, MerkleHash: merkleHash, PrevHash: prevHash, PrevKernelHash: prevKernelHash, Forger: publicKey[:], Signature: helpers.EmptyBytes(65)}
 
 	buf := block.Serialize()
 	if len(buf) < 30 {
@@ -46,7 +52,7 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 	publicKey, _ := privateKey.GeneratePublicKey()
 
 	blockHeader := BlockHeader{MajorVersion: 0, MinorVersion: 0, Timestamp: uint64(time.Now().Unix()), Height: 0}
-	block := Block{BlockHeader: blockHeader, MerkleHash: crypto.SHA3Hash([]byte("TEST")), Forger: publicKey[:], Signature: helpers.EmptyBytes(65)}
+	block := Block{BlockHeader: blockHeader, MerkleHash: merkleHash, PrevHash: prevHash, PrevKernelHash: prevKernelHash, Forger: publicKey[:], Signature: helpers.EmptyBytes(65)}
 
 	hash := block.SerializeForSigning()
 	signature, err := privateKey.Sign(&hash)
