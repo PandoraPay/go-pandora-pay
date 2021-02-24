@@ -86,7 +86,7 @@ func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.
 					serializationForSigning := blkComplete.Block.SerializeForSigning()
 					signature, _ := addresses[i].PrivateKey.Sign(&serializationForSigning)
 
-					copy(blkComplete.Block.Signature[:], signature[:])
+					copy(blkComplete.Block.Signature[:], signature)
 
 					var array []*block.BlockComplete
 					array = append(array, blkComplete)

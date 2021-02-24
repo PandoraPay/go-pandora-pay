@@ -118,7 +118,7 @@ func (blk *Block) Deserialize(buf []byte) (out []byte, err error) {
 	if err != nil {
 		return
 	}
-	copy(blk.Forger[:], hash)
+	copy(blk.Signature[:], hash)
 
 	return
 }

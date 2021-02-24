@@ -24,16 +24,15 @@ func TestBlock_Serialize(t *testing.T) {
 
 	blockHeader := BlockHeader{Version: 0, Height: 0}
 	blk := Block{
-		BlockHeader: blockHeader,
-		MerkleHash: merkleHash,
-		PrevHash: prevHash,
+		BlockHeader:    blockHeader,
+		MerkleHash:     merkleHash,
+		PrevHash:       prevHash,
 		PrevKernelHash: prevKernelHash,
-		Timestamp: uint64(time.Now().Unix()),
-		Forger: publicKey[:],
-		Signature: helpers.EmptyBytes(65)
+		Timestamp:      uint64(time.Now().Unix()),
 	}
+	copy(blk.Forger[:], publicKey)
 
-	buf := blk.Serialize(nil)
+	buf := blk.Serialize()
 	if len(buf) < 30 {
 		t.Errorf("Invalid serialization")
 	}
@@ -61,14 +60,13 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 
 	blockHeader := BlockHeader{Version: 0, Height: 0}
 	blk := Block{
-		BlockHeader: blockHeader,
-		MerkleHash: merkleHash,
-		PrevHash: prevHash,
+		BlockHeader:    blockHeader,
+		MerkleHash:     merkleHash,
+		PrevHash:       prevHash,
 		PrevKernelHash: prevKernelHash,
-		Timestamp: uint64(time.Now().Unix())
-		Forger: publicKey[:],
-		Signature: helpers.EmptyBytes(65)
+		Timestamp:      uint64(time.Now().Unix()),
 	}
+	copy(blk.Forger[:], publicKey)
 
 	hash := blk.SerializeForSigning()
 	signature, err := privateKey.Sign(&hash)
@@ -78,7 +76,7 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 	if len(signature) != 65 || bytes.Equal(signature, helpers.EmptyBytes(65)) {
 		t.Errorf("Invalid signature")
 	}
-	blk.Signature = signature
+	copy(blk.Signature[:], signature)
 
 	if blk.VerifySignature() != true {
 		t.Errorf("Signature Validation failed")
