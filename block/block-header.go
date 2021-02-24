@@ -3,14 +3,12 @@ package block
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"pandora-pay/helpers"
 )
 
 type BlockHeader struct {
-	MajorVersion uint64
-	MinorVersion uint64
-	Height       uint64
+	Version uint64
+	Height  uint64
 }
 
 func (blockHeader *BlockHeader) Serialize() []byte {
@@ -18,10 +16,7 @@ func (blockHeader *BlockHeader) Serialize() []byte {
 	var serialized bytes.Buffer
 	buf := make([]byte, binary.MaxVarintLen64)
 
-	n := binary.PutUvarint(buf, blockHeader.MajorVersion)
-	serialized.Write(buf[:n])
-
-	n = binary.PutUvarint(buf, blockHeader.MinorVersion)
+	n := binary.PutUvarint(buf, blockHeader.Version)
 	serialized.Write(buf[:n])
 
 	n = binary.PutUvarint(buf, blockHeader.Height)
@@ -34,21 +29,8 @@ func (blockHeader *BlockHeader) Deserialize(buf []byte) (out []byte, err error) 
 
 	out = buf
 
-	blockHeader.MajorVersion, out, err = helpers.DeserializeNumber(out)
+	blockHeader.Version, out, err = helpers.DeserializeNumber(out)
 	if err != nil {
-		return
-	}
-	if blockHeader.MajorVersion != 0 {
-		err = errors.New("MajorVersion is Invalid")
-		return
-	}
-
-	blockHeader.MinorVersion, out, err = helpers.DeserializeNumber(out)
-	if err != nil {
-		return
-	}
-	if blockHeader.MinorVersion != 0 {
-		err = errors.New("MinorVersion is Invalid")
 		return
 	}
 

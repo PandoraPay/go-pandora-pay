@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+var mutex = &sync.Mutex{}
+
 func createNextBlock(height uint64) (*block.Block, error) {
 
 	if height == 0 {
@@ -20,11 +22,10 @@ func createNextBlock(height uint64) (*block.Block, error) {
 	} else {
 
 		var blockHeader = block.BlockHeader{
-			MajorVersion: 0,
-			MinorVersion: 0,
-			Height:       blockchain.Chain.Height,
+			Version: 0,
+			Height:  blockchain.Chain.Height,
 		}
-		var block = block.Block{
+		var blk = block.Block{
 			BlockHeader:    blockHeader,
 			MerkleHash:     crypto.SHA3Hash([]byte{}),
 			PrevHash:       blockchain.Chain.Hash,
@@ -32,23 +33,23 @@ func createNextBlock(height uint64) (*block.Block, error) {
 			Timestamp:      0,
 		}
 
-		return &block, nil
+		return &blk, nil
 	}
 
 }
 
 //inside a thread
-func forge(block *block.Block, threads, threadIndex int, wg *sync.WaitGroup) {
+func forge(blk *block.Block, threads, threadIndex int, wg *sync.WaitGroup) {
 
 	buf := make([]byte, binary.MaxVarintLen64)
 
-	serialized := block.SerializeBlock(false, false, false, false, false)
+	serialized := blk.SerializeBlock(false, false, false, false, false)
 	now := time.Now()
 	timestamp := uint64(now.Unix())
 
 	addresses := wallet.GetAddresses()
 
-	for {
+	for forging {
 
 		if timestamp > uint64(now.Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
 			time.Sleep(100 * time.Millisecond)
@@ -56,7 +57,7 @@ func forge(block *block.Block, threads, threadIndex int, wg *sync.WaitGroup) {
 		}
 
 		//forge with my wallets
-		for i := 0; i < len(addresses); i++ {
+		for i := 0; i < len(addresses) && forging; i++ {
 
 			if i%threads == threadIndex {
 
@@ -66,16 +67,26 @@ func forge(block *block.Block, threads, threadIndex int, wg *sync.WaitGroup) {
 				serialized = append(serialized, addresses[i].PublicKey...)
 				kernelHash := crypto.SHA3Hash(serialized)
 
-				if difficulty.CheckKernelHashBig(kernelHash, blockchain.Chain.BigDifficulty) == true {
+				if difficulty.CheckKernelHashBig(kernelHash, blockchain.Chain.BigDifficulty) {
 
-					copy(block.Forger[:], addresses[i].PublicKey[:])
-					block.Timestamp = timestamp
-					serializationForSigning := block.SerializeForSigning()
+					mutex.Lock()
+
+					copy(blk.Forger[:], addresses[i].PublicKey[:])
+					blk.Timestamp = timestamp
+					serializationForSigning := blk.SerializeForSigning()
 					signature, _ := addresses[i].PrivateKey.Sign(&serializationForSigning)
 
-					copy(block.Signature[:], signature[:])
+					copy(blk.Signature[:], signature[:])
 
-					blockchain.Chain.AddBlock(block)
+					var array []*block.Block
+					array = append(array, blk)
+
+					result, err := blockchain.Chain.AddBlocks(array)
+					if err == nil && result {
+						forging = false
+					}
+
+					mutex.Unlock()
 
 				} else {
 					serialized = serialized[:len(serialized)-n-33]

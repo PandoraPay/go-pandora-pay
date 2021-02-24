@@ -9,6 +9,7 @@ import (
 )
 
 var started = false
+var forging bool
 
 func ForgingInit() {
 
@@ -22,7 +23,7 @@ func startForging(threads int) {
 	started = true
 	for started {
 
-		block, err := createNextBlock(blockchain.Chain.Height)
+		blk, err := createNextBlock(blockchain.Chain.Height)
 		if err != nil {
 			gui.Error("Error creating new block", err)
 			time.Sleep(5 * time.Second)
@@ -31,8 +32,9 @@ func startForging(threads int) {
 		wg := sync.WaitGroup{}
 		wg.Add(threads)
 
+		forging = true
 		for i := 0; i < threads; i++ {
-			go forge(block, threads, i, &wg)
+			go forge(blk, threads, i, &wg)
 		}
 
 		wg.Wait()

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type GenesisStruct struct {
+type GenesisType struct {
 	Hash          crypto.Hash
 	HashHex       string
 	KernelHash    crypto.Hash
@@ -19,30 +19,30 @@ type GenesisStruct struct {
 	Difficulty    uint64
 }
 
-var genesisMainet = GenesisStruct{
+var genesisMainet = GenesisType{
 	HashHex:       "e6849c309a8e48dd1518ce1f756b9feb0ce1be585510a32b40bcd6bec066d808",
 	KernelHashHex: "0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
 	Timestamp:     uint64(time.Date(2021, time.February, 23, 0, 0, 0, 0, time.UTC).Unix()),
 	Difficulty:    1,
 }
 
-var genesisTestnet = GenesisStruct{
+var genesisTestnet = GenesisType{
 	HashHex:       "f4a2f9d1a71d1dfc448be029e381df81acc2e80ebf3607e51c60f085b16ca34b",
 	KernelHashHex: "0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
 	Timestamp:     uint64(time.Date(2021, time.February, 23, 0, 0, 0, 0, time.UTC).Unix()),
 	Difficulty:    1,
 }
 
-var genesisDevnet = GenesisStruct{
+var genesisDevnet = GenesisType{
 	HashHex:       "cc423820a65ec26892c0a0c7f1a6e7731fb3ac76b9ad98ec775dd33c7271b443",
 	KernelHashHex: "0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
 	Timestamp:     uint64(time.Date(2021, time.February, 23, 0, 0, 0, 0, time.UTC).Unix()),
 	Difficulty:    1,
 }
 
-var Genesis *GenesisStruct
+var Genesis *GenesisType
 
-func getGenesis() (*GenesisStruct, error) {
+func getGenesis() (*GenesisType, error) {
 
 	switch config.NETWORK_SELECTED {
 	case config.MAIN_NET_NETWORK_BYTE:
@@ -59,12 +59,11 @@ func getGenesis() (*GenesisStruct, error) {
 func CreateGenesisBlock() (*block.Block, error) {
 
 	var blockHeader = block.BlockHeader{
-		MajorVersion: 0,
-		MinorVersion: 0,
-		Height:       0,
+		Version: 0,
+		Height:  0,
 	}
 
-	var block = block.Block{
+	var blk = block.Block{
 		BlockHeader:    blockHeader,
 		MerkleHash:     crypto.SHA3Hash([]byte{}),
 		Timestamp:      Genesis.Timestamp,
@@ -72,7 +71,7 @@ func CreateGenesisBlock() (*block.Block, error) {
 		PrevKernelHash: Genesis.KernelHash,
 	}
 
-	return &block, nil
+	return &blk, nil
 }
 
 func GenesisInit() {

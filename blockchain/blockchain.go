@@ -6,9 +6,11 @@ import (
 	"pandora-pay/block"
 	"pandora-pay/block/difficulty"
 	"pandora-pay/blockchain/genesis"
+	"pandora-pay/config"
 	"pandora-pay/crypto"
 	"pandora-pay/gui"
 	"sync"
+	"time"
 )
 
 type Blockchain struct {
@@ -25,21 +27,45 @@ type Blockchain struct {
 
 var Chain Blockchain
 
-func (chain *Blockchain) AddBlock(block *block.Block) (result bool, err error) {
+func (chain *Blockchain) AddBlocks(blocks []*block.Block) (result bool, err error) {
 
 	result = false
 
 	chain.Lock()
 	defer chain.Unlock() //when the function exists
 
-	if difficulty.CheckKernelHashBig(block.ComputeKernelHash(), Chain.BigDifficulty) != true {
-		err = errors.New("KernelHash Difficulty is not met")
-		return
-	}
+	for _, blk := range blocks {
 
-	if block.VerifySignature() != true {
-		err = errors.New("Forger Signature is invalid!")
-		return
+		if difficulty.CheckKernelHashBig(blk.ComputeKernelHash(), Chain.BigDifficulty) != true {
+			err = errors.New("KernelHash Difficulty is not met")
+			return
+		}
+
+		if blk.VerifySignature() != true {
+			err = errors.New("Forger Signature is invalid!")
+			return
+		}
+
+		if blk.BlockHeader.Version != 0 {
+			err = errors.New("Invalid Version Version")
+			return
+		}
+
+		if blk.Timestamp > uint64(time.Now().UTC().Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
+			err = errors.New("Timestamp is too much into the future")
+			return
+		}
+
+		if blk.Height == 0 {
+
+			//verify genesis
+
+		} else {
+
+			//verify block
+
+		}
+
 	}
 
 	result = true
