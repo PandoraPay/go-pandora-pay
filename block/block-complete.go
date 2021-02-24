@@ -30,6 +30,13 @@ func (blkComplete *BlockComplete) MerkleHash() crypto.Hash {
 
 }
 
+func (blkComplete *BlockComplete) VerifyMerkleHash() bool {
+
+	merkleHash := blkComplete.MerkleHash()
+	return bytes.Equal(merkleHash[:], blkComplete.Block.MerkleHash[:])
+
+}
+
 func (blkComplete *BlockComplete) Serialize() []byte {
 
 	var serialized bytes.Buffer

@@ -3,6 +3,7 @@ package blockchain
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/block"
@@ -21,11 +22,11 @@ type Blockchain struct {
 	KernelHash    crypto.Hash
 	Height        uint64
 	Difficulty    uint64
-	BigDifficulty *big.Int //named also as target
+	BigDifficulty *big.Int `json:"-"` //named also as target
 
-	Sync bool
+	Sync bool `json:"-"`
 
-	sync.RWMutex
+	sync.RWMutex `json:"-"`
 }
 
 var Chain Blockchain
@@ -41,6 +42,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 	chain.Lock()
 	defer chain.Unlock() //when the function exists
 
+	gui.Log(fmt.Sprintf("Including blocks %d ... %d", chain.Height, chain.Height+uint64(len(blocksComplete))))
+
+	var newChain = Blockchain{
+		Hash:          chain.Hash,
+		KernelHash:    chain.KernelHash,
+		Height:        chain.Height,
+		Difficulty:    chain.Difficulty,
+		BigDifficulty: chain.BigDifficulty,
+	}
+
 	err = store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 
 		var writer *bolt.Bucket
@@ -53,18 +64,18 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 		if blocksComplete[0].Block.Height == 0 {
 			prevBlk = genesis.Genesis
 		} else {
-			prevBlk, err = LoadBlock(writer, chain.Hash)
+			prevBlk, err = LoadBlock(writer, newChain.Hash)
 			if err != nil {
 				return
 			}
 		}
 
-		if !bytes.Equal(blocksComplete[0].Block.PrevHash[:], chain.Hash[:]) {
+		if !bytes.Equal(blocksComplete[0].Block.PrevHash[:], newChain.Hash[:]) {
 			err = errors.New("First block hash is not matching chain hash")
 			return
 		}
 
-		if !bytes.Equal(blocksComplete[0].Block.PrevKernelHash[:], chain.KernelHash[:]) {
+		if !bytes.Equal(blocksComplete[0].Block.PrevKernelHash[:], newChain.KernelHash[:]) {
 			err = errors.New("First block kernel hash is not matching chain prev kerneh lash")
 			return
 		}
@@ -108,7 +119,25 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 				return
 			}
 
+			if blkComplete.VerifyMerkleHash() != true {
+				err = errors.New("Verify Merkle Hash failed")
+				return
+			}
+
+			err = SaveBlock(writer, blkComplete)
+			if err != nil {
+				return
+			}
+
+			newChain.Hash = blkComplete.Block.ComputeHash()
+			newChain.KernelHash = blkComplete.Block.ComputeKernelHash()
+			newChain.Height += 1
+
+			//calculate new difficulty
+
 		}
+
+		err = SaveBlockchain(writer, &newChain)
 
 		return
 	})
@@ -116,6 +145,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 	if err != nil {
 		return
 	}
+
+	chain.Height = newChain.Height
+	chain.Hash = newChain.Hash
+	chain.KernelHash = newChain.KernelHash
+
+	gui.Log(fmt.Sprintf("Including blocks SUCCESS"))
 
 	result = true
 	return

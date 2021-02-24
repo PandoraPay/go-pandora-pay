@@ -1,6 +1,8 @@
 package blockchain
 
 import (
+	"encoding/json"
+	"errors"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/block"
 	"pandora-pay/crypto"
@@ -27,10 +29,10 @@ func (chain *Blockchain) LoadBlockFromHash(hash crypto.Hash) (blk *block.Block, 
 
 func LoadBlock(bucket *bolt.Bucket, hash crypto.Hash) (blk *block.Block, err error) {
 
-	adr := []byte("block")
-	adr = append(adr, hash[:]...)
+	key := []byte("block")
+	key = append(key, hash[:]...)
 
-	blockData := bucket.Get(adr)
+	blockData := bucket.Get(key)
 	if blockData == nil {
 		return
 	}
@@ -39,4 +41,27 @@ func LoadBlock(bucket *bolt.Bucket, hash crypto.Hash) (blk *block.Block, err err
 	_, err = blk.Deserialize(blockData)
 
 	return
+}
+
+func SaveBlock(bucket *bolt.Bucket, blkComplete *block.BlockComplete) error {
+
+	hash := blkComplete.Block.ComputeHash()
+
+	key := []byte("block")
+	key = append(key, hash[:]...)
+
+	return bucket.Put(key, blkComplete.Block.Serialize())
+
+}
+
+func SaveBlockchain(bucket *bolt.Bucket, chain *Blockchain) error {
+
+	marshal, err := json.Marshal(chain)
+	if err != nil {
+		return errors.New("Error marshaling chain")
+	}
+
+	err = bucket.Put([]byte("chain"), marshal)
+	return err
+
 }
