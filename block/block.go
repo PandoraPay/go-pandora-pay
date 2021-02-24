@@ -14,6 +14,8 @@ type Block struct {
 	PrevHash       crypto.Hash
 	PrevKernelHash crypto.Hash
 
+	Difficulty uint64
+
 	Forger    []byte // 33 byte public key
 	Signature []byte // 65 byte signature
 }
@@ -29,11 +31,11 @@ func (block *Block) ComputeHash() crypto.Hash {
 }
 
 func (block *Block) ComputeKernelHash() crypto.Hash {
-	return crypto.SHA3Hash(block.serializeBlock(false, false, false))
+	return crypto.SHA3Hash(block.SerializeBlock(false, false, true, false))
 }
 
 func (block *Block) SerializeForSigning() crypto.Hash {
-	return crypto.SHA3Hash(block.serializeBlock(true, true, false))
+	return crypto.SHA3Hash(block.SerializeBlock(true, true, true, false))
 }
 
 func (block *Block) VerifySignature() bool {
@@ -41,7 +43,7 @@ func (block *Block) VerifySignature() bool {
 	return ecdsa.VerifySignature(block.Forger, hash[:], block.Signature[0:64])
 }
 
-func (block *Block) serializeBlock(inclMerkleHash bool, inclPrevHash bool, inclSignature bool) []byte {
+func (block *Block) SerializeBlock(inclMerkleHash bool, inclPrevHash bool, inclForger bool, inclSignature bool) []byte {
 	var serialized bytes.Buffer
 
 	serialized.Write(block.BlockHeader.Serialize())
@@ -56,7 +58,9 @@ func (block *Block) serializeBlock(inclMerkleHash bool, inclPrevHash bool, inclS
 
 	serialized.Write(block.PrevKernelHash[:])
 
-	serialized.Write(block.Forger[:])
+	if inclForger {
+		serialized.Write(block.Forger[:])
+	}
 
 	if inclSignature {
 		serialized.Write(block.Signature[:])
@@ -66,7 +70,7 @@ func (block *Block) serializeBlock(inclMerkleHash bool, inclPrevHash bool, inclS
 }
 
 func (block *Block) Serialize() []byte {
-	return block.serializeBlock(true, true, true)
+	return block.SerializeBlock(true, true, true, true)
 }
 
 func (block *Block) Deserialize(buf []byte) (out []byte, err error) {

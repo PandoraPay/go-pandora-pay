@@ -21,6 +21,10 @@ type Wallet struct {
 
 var wallet Wallet
 
+func GetAddresses() []*WalletAddress {
+	return wallet.Addresses
+}
+
 func addNewAddress() error {
 
 	masterKey, _ := bip32.NewMasterKey(wallet.Seed[:])

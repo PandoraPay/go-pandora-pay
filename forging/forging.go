@@ -1,31 +1,47 @@
 package forging
 
 import (
-	"pandora-pay/block"
 	"pandora-pay/blockchain"
-	"pandora-pay/blockchain/genesis"
-	"pandora-pay/crypto"
+	"pandora-pay/config"
+	"pandora-pay/gui"
+	"sync"
 	"time"
 )
 
-func createNextBlock(height uint64) (*block.Block, error) {
+var started = false
 
-	if height == 0 {
-		return genesis.CreateGenesisBlock()
-	} else {
-		now := time.Now()
-		var blockHeader = block.BlockHeader{
-			MajorVersion: 0,
-			MinorVersion: 0,
-			Timestamp:    uint64(now.Unix()),
-			Height:       blockchain.Chain.Height,
+func ForgingInit() {
+
+	gui.Log("Forging Init")
+	startForging(config.CPU_THREADS)
+
+}
+
+func startForging(threads int) {
+
+	started = true
+	for started {
+
+		block, err := createNextBlock(blockchain.Chain.Height)
+		if err != nil {
+			gui.Error("Error creating new block", err)
+			time.Sleep(5 * time.Second)
 		}
-		var block = block.Block{
-			BlockHeader:    blockHeader,
-			MerkleHash:     crypto.SHA3Hash([]byte{}),
-			PrevHash:       blockchain.Chain.Hash,
-			PrevKernelHash: blockchain.Chain.KernelHash,
+
+		wg := sync.WaitGroup{}
+		wg.Add(threads)
+
+		for i := 0; i < threads; i++ {
+			go forge(block, i)
 		}
+
+		wg.Wait()
+
+		time.Sleep(1 * time.Second)
 	}
 
+}
+
+func stopForging() {
+	started = false
 }

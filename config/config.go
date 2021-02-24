@@ -4,6 +4,10 @@ import "pandora-pay/globals"
 
 var (
 	NETWORK_SELECTED uint64 = 0
+	DEBUG            bool   = false
+	CPU_THREADS      int    = 1
+	ARHITECTURE      string = ""
+	OS               string = ""
 )
 
 const (
@@ -32,6 +36,10 @@ func InitConfig() {
 
 	if globals.Arguments["--devnet"] != nil {
 		NETWORK_SELECTED = DEV_NET_NETWORK_BYTE
+	}
+
+	if globals.Arguments["--debug"] == true {
+		DEBUG = true
 	}
 
 }

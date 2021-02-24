@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"pandora-pay/block"
+	"pandora-pay/blockchain/genesis"
 	"pandora-pay/crypto"
 	"pandora-pay/gui"
 	"sync"
@@ -31,5 +32,13 @@ func (chain *Blockchain) AddBlock(block *block.Block) {
 func BlockchainInit() {
 
 	gui.Info("Blockchain init...")
+
+	genesis.GenesisInit()
+
+	Chain.Height = 0
+	Chain.Hash = genesis.Genesis.Hash
+	Chain.KernelHash = genesis.Genesis.KernelHash
+	Chain.Difficulty = genesis.Genesis.Difficulty
+	Chain.Sync = false
 
 }

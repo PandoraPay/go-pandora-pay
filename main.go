@@ -7,11 +7,13 @@ import (
 	"os/signal"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
+	"pandora-pay/forging"
 	"pandora-pay/globals"
 	"pandora-pay/gui"
 	"pandora-pay/settings"
 	"pandora-pay/store"
 	"pandora-pay/wallet"
+	"runtime"
 	"syscall"
 )
 
@@ -48,6 +50,13 @@ func main() {
 	var err error
 
 	gui.GUIInit()
+	gui.Info("GO PANDORA PAY")
+
+	config.CPU_THREADS = runtime.GOMAXPROCS(0)
+	config.ARHITECTURE = runtime.GOARCH
+	config.OS = runtime.GOOS
+
+	gui.Info(fmt.Sprintf("OS:%s ARCH:%s CPU:%d", config.OS, config.ARHITECTURE, config.CPU_THREADS))
 
 	globals.Arguments, err = docopt.Parse(commands, nil, false, config.VERSION, false, false)
 	if err != nil {
@@ -62,6 +71,8 @@ func main() {
 	settings.SettingsInit()
 
 	blockchain.BlockchainInit()
+
+	forging.ForgingInit()
 
 	gui.Log("Main Loop")
 
