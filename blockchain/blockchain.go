@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	bolt "go.etcd.io/bbolt"
@@ -21,6 +22,7 @@ type Blockchain struct {
 	Hash          crypto.Hash
 	KernelHash    crypto.Hash
 	Height        uint64
+	Timestamp     uint64
 	Difficulty    uint64
 	BigDifficulty *big.Int `json:"-"` //named also as target
 
@@ -48,6 +50,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 		Hash:          chain.Hash,
 		KernelHash:    chain.KernelHash,
 		Height:        chain.Height,
+		Timestamp:     chain.Timestamp,
 		Difficulty:    chain.Difficulty,
 		BigDifficulty: chain.BigDifficulty,
 	}
@@ -114,6 +117,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 				return
 			}
 
+			if blkComplete.Block.Timestamp < newChain.Timestamp {
+				err = errors.New("Timestamp has to be greather than the last timestmap")
+				return
+			}
+
 			if blkComplete.Block.Timestamp > uint64(time.Now().UTC().Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
 				err = errors.New("Timestamp is too much into the future")
 				return
@@ -132,6 +140,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			newChain.Hash = blkComplete.Block.ComputeHash()
 			newChain.KernelHash = blkComplete.Block.ComputeKernelHash()
 			newChain.Height += 1
+			newChain.Timestamp = blkComplete.Block.Timestamp
 
 			//calculate new difficulty
 
@@ -149,8 +158,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 	chain.Height = newChain.Height
 	chain.Hash = newChain.Hash
 	chain.KernelHash = newChain.KernelHash
+	chain.Timestamp = newChain.Timestamp
 
-	gui.Log(fmt.Sprintf("Including blocks SUCCESS"))
+	gui.Log(fmt.Sprintf("Including blocks SUCCESS %s", hex.EncodeToString(chain.Hash[:])))
 
 	result = true
 	return

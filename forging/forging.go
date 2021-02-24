@@ -39,7 +39,6 @@ func startForging(threads int) {
 
 		wg.Wait()
 
-		time.Sleep(1 * time.Second)
 	}
 
 }

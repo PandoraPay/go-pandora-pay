@@ -71,6 +71,7 @@ func (blkComplete *BlockComplete) Deserialize(buf []byte) (out []byte, err error
 		return
 	}
 
+	//todo
 	for i := uint64(0); i < txsCount; i++ {
 
 	}

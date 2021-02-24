@@ -27,7 +27,7 @@ func createNextBlockComplete(height uint64) (blkComplete *block.BlockComplete, e
 
 		var blockHeader = block.BlockHeader{
 			Version: 0,
-			Height:  blockchain.Chain.Height,
+			Height:  height,
 		}
 
 		blk = &block.Block{
@@ -35,7 +35,7 @@ func createNextBlockComplete(height uint64) (blkComplete *block.BlockComplete, e
 			MerkleHash:     crypto.SHA3Hash([]byte{}),
 			PrevHash:       blockchain.Chain.Hash,
 			PrevKernelHash: blockchain.Chain.KernelHash,
-			Timestamp:      0,
+			Timestamp:      blockchain.Chain.Timestamp,
 		}
 
 	}
