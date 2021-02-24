@@ -18,7 +18,7 @@ var mutex = &sync.Mutex{}
 func createNextBlock(height uint64) (*block.Block, error) {
 
 	if height == 0 {
-		return genesis.CreateGenesisBlock()
+		return genesis.CreateNewGenesisBlock()
 	} else {
 
 		var blockHeader = block.BlockHeader{

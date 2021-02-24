@@ -15,8 +15,6 @@ type Block struct {
 	PrevHash       crypto.Hash
 	PrevKernelHash crypto.Hash
 
-	Difficulty uint64
-
 	Timestamp uint64
 
 	Forger    [33]byte // 33 byte public key
