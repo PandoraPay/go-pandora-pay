@@ -11,9 +11,8 @@ type BlockHeader struct {
 	Height  uint64
 }
 
-func (blockHeader *BlockHeader) Serialize() []byte {
+func (blockHeader *BlockHeader) Serialize(serialized *bytes.Buffer) []byte {
 
-	var serialized bytes.Buffer
 	buf := make([]byte, binary.MaxVarintLen64)
 
 	n := binary.PutUvarint(buf, blockHeader.Version)

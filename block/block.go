@@ -21,14 +21,8 @@ type Block struct {
 	Signature [65]byte // 65 byte signature
 }
 
-type BlockComplete struct {
-	blk *Block
-	//txs []*transaction
-}
-
 func (blk *Block) ComputeHash() crypto.Hash {
-	buf := blk.Serialize()
-	return crypto.SHA3Hash(buf)
+	return crypto.SHA3Hash(blk.Serialize())
 }
 
 func (blk *Block) ComputeKernelHash() crypto.Hash {
@@ -49,7 +43,7 @@ func (blk *Block) SerializeBlock(inclMerkleHash bool, inclPrevHash bool, inclTim
 	var serialized bytes.Buffer
 	buf := make([]byte, binary.MaxVarintLen64)
 
-	serialized.Write(blk.BlockHeader.Serialize())
+	blk.BlockHeader.Serialize(&serialized)
 
 	if inclMerkleHash {
 		serialized.Write(blk.MerkleHash[:])

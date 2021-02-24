@@ -15,17 +15,22 @@ import (
 
 var mutex = &sync.Mutex{}
 
-func createNextBlock(height uint64) (*block.Block, error) {
+func createNextBlockComplete(height uint64) (blkComplete *block.BlockComplete, err error) {
 
+	var blk *block.Block
 	if height == 0 {
-		return genesis.CreateNewGenesisBlock()
+		blk, err = genesis.CreateNewGenesisBlock()
+		if err != nil {
+			return
+		}
 	} else {
 
 		var blockHeader = block.BlockHeader{
 			Version: 0,
 			Height:  blockchain.Chain.Height,
 		}
-		var blk = block.Block{
+
+		blk = &block.Block{
 			BlockHeader:    blockHeader,
 			MerkleHash:     crypto.SHA3Hash([]byte{}),
 			PrevHash:       blockchain.Chain.Hash,
@@ -33,17 +38,22 @@ func createNextBlock(height uint64) (*block.Block, error) {
 			Timestamp:      0,
 		}
 
-		return &blk, nil
 	}
+
+	blkComplete = &block.BlockComplete{
+		Block: blk,
+	}
+
+	return
 
 }
 
 //inside a thread
-func forge(blk *block.Block, threads, threadIndex int, wg *sync.WaitGroup) {
+func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.WaitGroup) {
 
 	buf := make([]byte, binary.MaxVarintLen64)
 
-	serialized := blk.SerializeBlock(false, false, false, false, false)
+	serialized := blkComplete.Block.SerializeBlock(false, false, false, false, false)
 	now := time.Now()
 	timestamp := uint64(now.Unix())
 
@@ -71,15 +81,15 @@ func forge(blk *block.Block, threads, threadIndex int, wg *sync.WaitGroup) {
 
 					mutex.Lock()
 
-					copy(blk.Forger[:], addresses[i].PublicKey[:])
-					blk.Timestamp = timestamp
-					serializationForSigning := blk.SerializeForSigning()
+					copy(blkComplete.Block.Forger[:], addresses[i].PublicKey[:])
+					blkComplete.Block.Timestamp = timestamp
+					serializationForSigning := blkComplete.Block.SerializeForSigning()
 					signature, _ := addresses[i].PrivateKey.Sign(&serializationForSigning)
 
-					copy(blk.Signature[:], signature[:])
+					copy(blkComplete.Block.Signature[:], signature[:])
 
-					var array []*block.Block
-					array = append(array, blk)
+					var array []*block.BlockComplete
+					array = append(array, blkComplete)
 
 					result, err := blockchain.Chain.AddBlocks(array)
 					if err == nil && result {

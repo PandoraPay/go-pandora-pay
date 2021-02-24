@@ -22,10 +22,18 @@ func TestBlock_Serialize(t *testing.T) {
 	privateKey := addresses.GenerateNewPrivateKey()
 	publicKey, _ := privateKey.GeneratePublicKey()
 
-	blockHeader := BlockHeader{Version: 0, Timestamp: uint64(time.Now().Unix()), Height: 0}
-	blk := Block{BlockHeader: blockHeader, MerkleHash: merkleHash, PrevHash: prevHash, PrevKernelHash: prevKernelHash, Forger: publicKey[:], Signature: helpers.EmptyBytes(65)}
+	blockHeader := BlockHeader{Version: 0, Height: 0}
+	blk := Block{
+		BlockHeader: blockHeader,
+		MerkleHash: merkleHash,
+		PrevHash: prevHash,
+		PrevKernelHash: prevKernelHash,
+		Timestamp: uint64(time.Now().Unix()),
+		Forger: publicKey[:],
+		Signature: helpers.EmptyBytes(65)
+	}
 
-	buf := blk.Serialize()
+	buf := blk.Serialize(nil)
 	if len(buf) < 30 {
 		t.Errorf("Invalid serialization")
 	}
@@ -51,8 +59,16 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 	privateKey := addresses.GenerateNewPrivateKey()
 	publicKey, _ := privateKey.GeneratePublicKey()
 
-	blockHeader := BlockHeader{Version: 0, Timestamp: uint64(time.Now().Unix()), Height: 0}
-	blk := Block{BlockHeader: blockHeader, MerkleHash: merkleHash, PrevHash: prevHash, PrevKernelHash: prevKernelHash, Forger: publicKey[:], Signature: helpers.EmptyBytes(65)}
+	blockHeader := BlockHeader{Version: 0, Height: 0}
+	blk := Block{
+		BlockHeader: blockHeader,
+		MerkleHash: merkleHash,
+		PrevHash: prevHash,
+		PrevKernelHash: prevKernelHash,
+		Timestamp: uint64(time.Now().Unix())
+		Forger: publicKey[:],
+		Signature: helpers.EmptyBytes(65)
+	}
 
 	hash := blk.SerializeForSigning()
 	signature, err := privateKey.Sign(&hash)

@@ -30,10 +30,10 @@ type Blockchain struct {
 
 var Chain Blockchain
 
-func (chain *Blockchain) AddBlocks(blocks []*block.Block) (result bool, err error) {
+func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (result bool, err error) {
 
 	result = false
-	if len(blocks) == 0 {
+	if len(blocksComplete) == 0 {
 		err = errors.New("Blocks length is ZERO")
 		return
 	}
@@ -50,7 +50,7 @@ func (chain *Blockchain) AddBlocks(blocks []*block.Block) (result bool, err erro
 		}
 
 		var prevBlk = &block.Block{}
-		if blocks[0].Height == 0 {
+		if blocksComplete[0].Block.Height == 0 {
 			prevBlk = genesis.Genesis
 		} else {
 			prevBlk, err = LoadBlock(writer, chain.Hash)
@@ -59,19 +59,19 @@ func (chain *Blockchain) AddBlocks(blocks []*block.Block) (result bool, err erro
 			}
 		}
 
-		if !bytes.Equal(blocks[0].PrevHash[:], chain.Hash[:]) {
+		if !bytes.Equal(blocksComplete[0].Block.PrevHash[:], chain.Hash[:]) {
 			err = errors.New("First block hash is not matching chain hash")
 			return
 		}
 
-		if !bytes.Equal(blocks[0].PrevKernelHash[:], chain.KernelHash[:]) {
+		if !bytes.Equal(blocksComplete[0].Block.PrevKernelHash[:], chain.KernelHash[:]) {
 			err = errors.New("First block kernel hash is not matching chain prev kerneh lash")
 			return
 		}
 
-		for i, blk := range blocks {
+		for i, blkComplete := range blocksComplete {
 
-			if difficulty.CheckKernelHashBig(blk.ComputeKernelHash(), Chain.BigDifficulty) != true {
+			if difficulty.CheckKernelHashBig(blkComplete.Block.ComputeKernelHash(), Chain.BigDifficulty) != true {
 				err = errors.New("KernelHash Difficulty is not met")
 				return
 			}
@@ -80,30 +80,30 @@ func (chain *Blockchain) AddBlocks(blocks []*block.Block) (result bool, err erro
 			if i > 0 {
 
 				prevHash := prevBlk.ComputeHash()
-				if !bytes.Equal(blk.PrevHash[:], prevHash[:]) {
+				if !bytes.Equal(blkComplete.Block.PrevHash[:], prevHash[:]) {
 					err = errors.New("PrevHash doesn't match Genesis prevHash")
 					return
 				}
 
 				prevKernelHash := prevBlk.ComputeKernelHash()
-				if !bytes.Equal(blk.PrevKernelHash[:], prevKernelHash[:]) {
+				if !bytes.Equal(blkComplete.Block.PrevKernelHash[:], prevKernelHash[:]) {
 					err = errors.New("PrevHash doesn't match Genesis prevKernelHash")
 					return
 				}
 
 			}
 
-			if blk.VerifySignature() != true {
+			if blkComplete.Block.VerifySignature() != true {
 				err = errors.New("Forger Signature is invalid!")
 				return
 			}
 
-			if blk.BlockHeader.Version != 0 {
+			if blkComplete.Block.BlockHeader.Version != 0 {
 				err = errors.New("Invalid Version Version")
 				return
 			}
 
-			if blk.Timestamp > uint64(time.Now().UTC().Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
+			if blkComplete.Block.Timestamp > uint64(time.Now().UTC().Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
 				err = errors.New("Timestamp is too much into the future")
 				return
 			}
