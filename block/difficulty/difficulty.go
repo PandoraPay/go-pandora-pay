@@ -25,21 +25,22 @@ func HashToBig(buf crypto.Hash) *big.Int {
 	return new(big.Int).SetBytes(buf[:])
 }
 
-func ConvertIntegerDifficultyToBig(difficulty *big.Int) *big.Int {
-
-	if difficulty.Cmp(bigZero) == 0 {
-		panic("Difficulty can never be zero. Division by zero")
+// this function calculates the difficulty in big num form
+func ConvertDifficultyToBig(difficulty uint64) *big.Int {
+	if difficulty == 0 {
+		panic("difficulty can never be zero")
 	}
-
-	return new(big.Int).Div(oneMAX256, difficulty)
+	// (1 << 256) / (difficultyNum )
+	difficultyInt := new(big.Int).SetUint64(difficulty)
+	denominator := new(big.Int).Add(difficultyInt, bigZero) // above 2 lines can be merged
+	return new(big.Int).Div(oneMAX256, denominator)
 }
 
 func CheckKernelHashBig(kernelHash crypto.Hash, difficulty *big.Int) bool {
 
 	bigKernelHash := HashToBig(kernelHash)
 
-	bigDifficulty := ConvertIntegerDifficultyToBig(difficulty)
-	if bigKernelHash.Cmp(bigDifficulty) <= 0 {
+	if bigKernelHash.Cmp(difficulty) <= 0 {
 		return true
 	}
 	return false

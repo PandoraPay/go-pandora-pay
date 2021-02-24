@@ -32,7 +32,7 @@ func startForging(threads int) {
 		wg.Add(threads)
 
 		for i := 0; i < threads; i++ {
-			go forge(block, i)
+			go forge(block, threads, i)
 		}
 
 		wg.Wait()
