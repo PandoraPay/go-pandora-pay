@@ -67,7 +67,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 		if blocksComplete[0].Block.Height == 0 {
 			prevBlk = genesis.Genesis
 		} else {
-			prevBlk, err = LoadBlock(writer, newChain.Hash)
+			prevBlk, err = loadBlock(writer, newChain.Hash)
 			if err != nil {
 				return
 			}
@@ -132,7 +132,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 				return
 			}
 
-			err = SaveBlock(writer, blkComplete)
+			err = saveBlock(writer, blkComplete)
 			if err != nil {
 				return
 			}
@@ -146,7 +146,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 
 		}
 
-		err = SaveBlockchain(writer, &newChain)
+		err = saveBlockchain(writer, &newChain)
 
 		return
 	})
@@ -173,10 +173,18 @@ func BlockchainInit() {
 
 	genesis.GenesisInit()
 
-	Chain.Height = 0
-	Chain.Hash = genesis.GenesisData.Hash
-	Chain.KernelHash = genesis.GenesisData.KernelHash
-	Chain.Difficulty = genesis.GenesisData.Difficulty
+	success, err := loadBlockchain()
+	if err != nil {
+		gui.Fatal("Loading a blockchain info raised an error", err)
+	}
+
+	if !success {
+		Chain.Height = 0
+		Chain.Hash = genesis.GenesisData.Hash
+		Chain.KernelHash = genesis.GenesisData.KernelHash
+		Chain.Difficulty = genesis.GenesisData.Difficulty
+	}
+
 	Chain.BigDifficulty = difficulty.ConvertDifficultyToBig(Chain.Difficulty)
 	Chain.Sync = false
 
