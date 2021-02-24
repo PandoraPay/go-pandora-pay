@@ -58,8 +58,8 @@ func loadSettings() error {
 
 		reader := tx.Bucket([]byte("Settings"))
 		if reader == nil {
-			createEmptySettings()
-			return nil
+			err := createEmptySettings()
+			return err
 		}
 
 		saved := reader.Get([]byte("saved"))

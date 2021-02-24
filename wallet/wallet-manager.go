@@ -26,13 +26,13 @@ func addNewAddress() error {
 	masterKey, _ := bip32.NewMasterKey(wallet.Seed[:])
 	key, err := masterKey.NewChildKey(wallet.SequenceIndex)
 	if err != nil {
-		gui.Fatal("Couldn't derivate the marker key")
+		gui.Fatal("Couldn't derivate the marker key", err)
 	}
 
 	privateKey := addresses.PrivateKey{Key: key.Key}
 	address, err := privateKey.GenerateAddress(true, 0, []byte{})
 	if err != nil {
-		gui.Fatal("Generating Address raised an error")
+		gui.Fatal("Generating Address raised an error", err)
 	}
 
 	walletAddress := WalletAddress{Version: WalletAddressTransparent, Name: "Addr " + strconv.Itoa(wallet.Count), PrivateKey: &privateKey, Address: address, IsSeedGenerated: true}

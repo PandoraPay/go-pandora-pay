@@ -1,10 +1,14 @@
 package config
 
+import "pandora-pay/globals"
+
+var (
+	NETWORK_SELECTED uint64 = 0
+)
+
 const (
 	NAME    string = "PANDORA PAY"
 	VERSION string = "0.0"
-
-	NETWORK_SELECTED uint64 = 0
 
 	MAIN_NET_NETWORK_BYTE        uint64 = 0
 	MAIN_NET_NETWORK_BYTE_PREFIX string = "PANDORA" // must have 7 characters
@@ -19,3 +23,15 @@ const (
 
 	BLOCK_MAX_SIZE uint64 = 1 << 10
 )
+
+func InitConfig() {
+
+	if globals.Arguments["--testnet"] != nil {
+		NETWORK_SELECTED = TEST_NET_NETWORK_BYTE
+	}
+
+	if globals.Arguments["--devnet"] != nil {
+		NETWORK_SELECTED = DEV_NET_NETWORK_BYTE
+	}
+
+}

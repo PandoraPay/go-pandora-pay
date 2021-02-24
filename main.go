@@ -29,9 +29,8 @@ func mainloop() {
 var commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--version] [--testnet] [--devnet] [--debug]
+  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--node-name=<name>]
   pandorapay -h | --help
-  pandorapay [--node-name=<unique name>]
 
 Options:
   -h --help     				Show this screen.
@@ -39,7 +38,8 @@ Options:
   --testnet     				Run in TESTNET mode.
   --devnet     					Run in DEVNET mode.
   --debug     					Debug mode enabled (print log message).
-  --node-name=<unique name>   	Change node name
+  --staking     				Start staking
+  --node-name=<name>   			Change node name
 
 `
 
@@ -53,6 +53,8 @@ func main() {
 	if err != nil {
 		gui.Fatal("Error processing arguments", err)
 	}
+
+	config.InitConfig()
 
 	store.DBInit()
 

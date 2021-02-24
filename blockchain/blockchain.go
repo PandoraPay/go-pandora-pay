@@ -9,7 +9,8 @@ import (
 
 type Blockchain struct {
 	Hash       crypto.Hash
-	Height     int64
+	KernelHash crypto.Hash
+	Height     uint64
 	Difficulty uint64
 
 	Sync bool

@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 	"unicode"
 )
@@ -293,13 +294,13 @@ func OutputDone() {
 
 func message(color ui.Color, any ...interface{}) {
 	logs.TextStyle = ui.NewStyle(color)
-	logs.Text = logs.Text + processArgument(any...) + "\n"
+	ss := strings.Split(logs.Text, "\n")
+	pos := len(ss) - 8
+	if pos < 0 {
+		pos = 0
+	}
+	logs.Text = strings.Join(ss[pos:], "\n") + processArgument(any...) + "\n"
 	ui.Render(logs)
-}
-
-func Fatal(any ...interface{}) {
-	message(ui.ColorRed, any...)
-	os.Exit(1)
 }
 
 func Log(any ...interface{}) {
@@ -308,6 +309,12 @@ func Log(any ...interface{}) {
 
 func Info(any ...interface{}) {
 	message(ui.ColorBlue, any...)
+}
+
+func Fatal(any ...interface{}) error {
+	message(ui.ColorRed, any...)
+	os.Exit(1)
+	return nil
 }
 
 func Error(any ...interface{}) error {

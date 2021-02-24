@@ -83,6 +83,10 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, errors.New("Invalid Address Network PREFIX!")
 	}
 
+	if adr.Network != config.NETWORK_SELECTED {
+		return nil, errors.New("Address network is invalid")
+	}
+
 	buf, err := base58.Decode(input[config.NETWORK_BYTE_PREFIX_LENGTH:])
 	if err != nil {
 		return nil, err

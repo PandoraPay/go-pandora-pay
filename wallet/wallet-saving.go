@@ -107,8 +107,7 @@ func loadWallet() error {
 
 		reader := tx.Bucket([]byte("Wallet"))
 		if reader == nil {
-			createEmptyWallet()
-			return nil
+			return createEmptyWallet()
 		}
 
 		saved := reader.Get([]byte("saved"))
