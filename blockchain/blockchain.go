@@ -42,6 +42,7 @@ func (chain *Blockchain) AddBlock(block *block.Block) (result bool, err error) {
 		return
 	}
 
+	result = true
 	return
 
 }

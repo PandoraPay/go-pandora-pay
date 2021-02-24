@@ -1,12 +1,15 @@
 package forging
 
 import (
+	"encoding/binary"
 	"pandora-pay/block"
 	"pandora-pay/block/difficulty"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/genesis"
+	"pandora-pay/config"
 	"pandora-pay/crypto"
 	"pandora-pay/wallet"
+	"sync"
 	"time"
 )
 
@@ -15,11 +18,10 @@ func createNextBlock(height uint64) (*block.Block, error) {
 	if height == 0 {
 		return genesis.CreateGenesisBlock()
 	} else {
-		now := time.Now()
+
 		var blockHeader = block.BlockHeader{
 			MajorVersion: 0,
 			MinorVersion: 0,
-			Timestamp:    uint64(now.Unix()),
 			Height:       blockchain.Chain.Height,
 		}
 		var block = block.Block{
@@ -27,6 +29,7 @@ func createNextBlock(height uint64) (*block.Block, error) {
 			MerkleHash:     crypto.SHA3Hash([]byte{}),
 			PrevHash:       blockchain.Chain.Hash,
 			PrevKernelHash: blockchain.Chain.KernelHash,
+			Timestamp:      0,
 		}
 
 		return &block, nil
@@ -35,29 +38,55 @@ func createNextBlock(height uint64) (*block.Block, error) {
 }
 
 //inside a thread
-func forge(block *block.Block, threads, threadIndex int) {
+func forge(block *block.Block, threads, threadIndex int, wg *sync.WaitGroup) {
 
-	serialized := block.SerializeBlock(false, false, false, false)
+	buf := make([]byte, binary.MaxVarintLen64)
+
+	serialized := block.SerializeBlock(false, false, false, false, false)
+	now := time.Now()
+	timestamp := uint64(now.Unix())
 
 	addresses := wallet.GetAddresses()
-	//forge with my wallets
-	for i := 0; i < len(addresses); i++ {
 
-		if i%threads == threadIndex {
+	for {
 
-			finalSerialized := append(serialized, addresses[i].Address.PublicKey...)
-			kernelHash := crypto.SHA3Hash(finalSerialized)
+		if timestamp > uint64(now.Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
 
-			if difficulty.CheckKernelHashBig(kernelHash, blockchain.Chain.BigDifficulty) == true {
+		//forge with my wallets
+		for i := 0; i < len(addresses); i++ {
 
-				serializationForSigning := block.SerializeForSigning()
-				block.Signature, _ = addresses[i].PrivateKey.Sign(&serializationForSigning)
+			if i%threads == threadIndex {
 
-				blockchain.Chain.AddBlock(block)
+				n := binary.PutUvarint(buf, timestamp)
+				serialized = append(serialized, buf[:n]...)
+
+				serialized = append(serialized, addresses[i].PublicKey...)
+				kernelHash := crypto.SHA3Hash(serialized)
+
+				if difficulty.CheckKernelHashBig(kernelHash, blockchain.Chain.BigDifficulty) == true {
+
+					copy(block.Forger[:], addresses[i].PublicKey[:])
+					block.Timestamp = timestamp
+					serializationForSigning := block.SerializeForSigning()
+					signature, _ := addresses[i].PrivateKey.Sign(&serializationForSigning)
+
+					copy(block.Signature[:], signature[:])
+
+					blockchain.Chain.AddBlock(block)
+
+				} else {
+					serialized = serialized[:len(serialized)-n-33]
+				}
 
 			}
 
 		}
+		timestamp += 1
+
 	}
 
+	wg.Done()
 }

@@ -2,6 +2,7 @@ package block
 
 import (
 	"bytes"
+	"encoding/binary"
 	"pandora-pay/crypto"
 	"pandora-pay/crypto/ecdsa"
 	"pandora-pay/helpers"
@@ -16,8 +17,10 @@ type Block struct {
 
 	Difficulty uint64
 
-	Forger    []byte // 33 byte public key
-	Signature []byte // 65 byte signature
+	Timestamp uint64
+
+	Forger    [33]byte // 33 byte public key
+	Signature [65]byte // 65 byte signature
 }
 
 type BlockComplete struct {
@@ -31,20 +34,22 @@ func (block *Block) ComputeHash() crypto.Hash {
 }
 
 func (block *Block) ComputeKernelHash() crypto.Hash {
-	return crypto.SHA3Hash(block.SerializeBlock(false, false, true, false))
+	return crypto.SHA3Hash(block.SerializeBlock(false, false, true, true, false))
 }
 
 func (block *Block) SerializeForSigning() crypto.Hash {
-	return crypto.SHA3Hash(block.SerializeBlock(true, true, true, false))
+	return crypto.SHA3Hash(block.SerializeBlock(true, true, true, true, false))
 }
 
 func (block *Block) VerifySignature() bool {
 	hash := block.SerializeForSigning()
-	return ecdsa.VerifySignature(block.Forger, hash[:], block.Signature[0:64])
+	return ecdsa.VerifySignature(block.Forger[:], hash[:], block.Signature[0:64])
 }
 
-func (block *Block) SerializeBlock(inclMerkleHash bool, inclPrevHash bool, inclForger bool, inclSignature bool) []byte {
+func (block *Block) SerializeBlock(inclMerkleHash bool, inclPrevHash bool, inclTimestamp bool, inclForger bool, inclSignature bool) []byte {
+
 	var serialized bytes.Buffer
+	buf := make([]byte, binary.MaxVarintLen64)
 
 	serialized.Write(block.BlockHeader.Serialize())
 
@@ -58,6 +63,11 @@ func (block *Block) SerializeBlock(inclMerkleHash bool, inclPrevHash bool, inclF
 
 	serialized.Write(block.PrevKernelHash[:])
 
+	if inclTimestamp {
+		n := binary.PutUvarint(buf, block.Timestamp)
+		serialized.Write(buf[:n])
+	}
+
 	if inclForger {
 		serialized.Write(block.Forger[:])
 	}
@@ -70,7 +80,7 @@ func (block *Block) SerializeBlock(inclMerkleHash bool, inclPrevHash bool, inclF
 }
 
 func (block *Block) Serialize() []byte {
-	return block.SerializeBlock(true, true, true, true)
+	return block.SerializeBlock(true, true, true, true, true)
 }
 
 func (block *Block) Deserialize(buf []byte) (out []byte, err error) {
@@ -101,15 +111,22 @@ func (block *Block) Deserialize(buf []byte) (out []byte, err error) {
 	}
 	copy(block.PrevKernelHash[:], hash)
 
-	block.Forger, out, err = helpers.DeserializeBuffer(out, 33)
+	block.Timestamp, out, err = helpers.DeserializeNumber(out)
 	if err != nil {
 		return
 	}
 
-	block.Signature, out, err = helpers.DeserializeBuffer(out, 65)
+	hash, out, err = helpers.DeserializeBuffer(out, 33)
 	if err != nil {
 		return
 	}
+	copy(block.Forger[:], hash)
+
+	hash, out, err = helpers.DeserializeBuffer(out, 65)
+	if err != nil {
+		return
+	}
+	copy(block.Forger[:], hash)
 
 	return
 }

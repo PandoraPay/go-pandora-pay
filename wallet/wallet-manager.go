@@ -11,12 +11,12 @@ import (
 )
 
 type Wallet struct {
-	Version       Version
-	Mnemonic      string
-	Seed          [32]byte
-	SequenceIndex uint32
-	Count         int
-	Addresses     []*WalletAddress `json:"-"`
+	Version   Version
+	Mnemonic  string
+	Seed      [32]byte
+	SeedIndex uint32
+	Count     int
+	Addresses []*WalletAddress `json:"-"`
 }
 
 var wallet Wallet
@@ -28,22 +28,35 @@ func GetAddresses() []*WalletAddress {
 func addNewAddress() error {
 
 	masterKey, _ := bip32.NewMasterKey(wallet.Seed[:])
-	key, err := masterKey.NewChildKey(wallet.SequenceIndex)
+	key, err := masterKey.NewChildKey(wallet.SeedIndex)
 	if err != nil {
 		gui.Fatal("Couldn't derivate the marker key", err)
 	}
 
 	privateKey := addresses.PrivateKey{Key: key.Key}
+
+	publicKey, err := privateKey.GeneratePublicKey()
+	if err != nil {
+		gui.Fatal("Generating Public Key from Private key raised an error", err)
+	}
+
 	address, err := privateKey.GenerateAddress(true, 0, []byte{})
 	if err != nil {
 		gui.Fatal("Generating Address raised an error", err)
 	}
 
-	walletAddress := WalletAddress{Version: WalletAddressTransparent, Name: "Addr " + strconv.Itoa(wallet.Count), PrivateKey: &privateKey, Address: address, IsSeedGenerated: true}
+	walletAddress := WalletAddress{
+		Version:    WalletAddressTransparent,
+		Name:       "Addr " + strconv.Itoa(wallet.Count),
+		PrivateKey: &privateKey,
+		PublicKey:  publicKey,
+		Address:    address,
+		SeedIndex:  wallet.SeedIndex,
+	}
 
 	wallet.Addresses = append(wallet.Addresses, &walletAddress)
 	wallet.Count += 1
-	wallet.SequenceIndex += 1
+	wallet.SeedIndex += 1
 
 	updateWallet()
 	return saveWallet()

@@ -10,7 +10,6 @@ import (
 type BlockHeader struct {
 	MajorVersion uint64
 	MinorVersion uint64
-	Timestamp    uint64
 	Height       uint64
 }
 
@@ -23,9 +22,6 @@ func (blockHeader *BlockHeader) Serialize() []byte {
 	serialized.Write(buf[:n])
 
 	n = binary.PutUvarint(buf, blockHeader.MinorVersion)
-	serialized.Write(buf[:n])
-
-	n = binary.PutUvarint(buf, blockHeader.Timestamp)
 	serialized.Write(buf[:n])
 
 	n = binary.PutUvarint(buf, blockHeader.Height)
@@ -53,11 +49,6 @@ func (blockHeader *BlockHeader) Deserialize(buf []byte) (out []byte, err error) 
 	}
 	if blockHeader.MinorVersion != 0 {
 		err = errors.New("MinorVersion is Invalid")
-		return
-	}
-
-	blockHeader.Timestamp, out, err = helpers.DeserializeNumber(out)
-	if err != nil {
 		return
 	}
 

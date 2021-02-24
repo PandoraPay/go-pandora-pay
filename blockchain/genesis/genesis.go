@@ -58,13 +58,19 @@ func getGenesis() (*GenesisStruct, error) {
 
 func CreateGenesisBlock() (*block.Block, error) {
 
-	var block block.Block
+	var blockHeader = block.BlockHeader{
+		MajorVersion: 0,
+		MinorVersion: 0,
+		Height:       0,
+	}
 
-	block.BlockHeader.Height = 0
-	block.BlockHeader.Timestamp = Genesis.Timestamp
-
-	copy(block.PrevHash[:], Genesis.Hash[:])
-	copy(block.PrevKernelHash[:], Genesis.KernelHash[:])
+	var block = block.Block{
+		BlockHeader:    blockHeader,
+		MerkleHash:     crypto.SHA3Hash([]byte{}),
+		Timestamp:      Genesis.Timestamp,
+		PrevHash:       Genesis.Hash,
+		PrevKernelHash: Genesis.KernelHash,
+	}
 
 	return &block, nil
 }

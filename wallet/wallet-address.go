@@ -18,9 +18,10 @@ func (e WalletAddressVersion) String() string {
 }
 
 type WalletAddress struct {
-	Version         WalletAddressVersion
-	Name            string
-	PrivateKey      *addresses.PrivateKey
-	Address         *addresses.Address
-	IsSeedGenerated bool
+	Version    WalletAddressVersion
+	Name       string
+	PrivateKey *addresses.PrivateKey
+	PublicKey  []byte
+	Address    *addresses.Address
+	SeedIndex  uint32
 }
