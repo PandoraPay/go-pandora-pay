@@ -43,7 +43,7 @@ func (blk *Block) SerializeBlock(inclMerkleHash bool, inclPrevHash bool, inclTim
 	var serialized bytes.Buffer
 	buf := make([]byte, binary.MaxVarintLen64)
 
-	blk.BlockHeader.Serialize(&serialized)
+	blk.BlockHeader.Serialize(&serialized, buf)
 
 	if inclMerkleHash {
 		serialized.Write(blk.MerkleHash[:])
@@ -77,48 +77,47 @@ func (blk *Block) Serialize() []byte {
 
 func (blk *Block) Deserialize(buf []byte) (out []byte, err error) {
 
-	out = buf
-
-	out, err = blk.BlockHeader.Deserialize(out)
+	buf, err = blk.BlockHeader.Deserialize(buf)
 	if err != nil {
 		return
 	}
 
 	var hash []byte
-	hash, out, err = helpers.DeserializeBuffer(out, crypto.HashSize)
+	hash, buf, err = helpers.DeserializeBuffer(buf, crypto.HashSize)
 	if err != nil {
 		return
 	}
 	copy(blk.MerkleHash[:], hash)
 
-	hash, out, err = helpers.DeserializeBuffer(out, crypto.HashSize)
+	hash, buf, err = helpers.DeserializeBuffer(buf, crypto.HashSize)
 	if err != nil {
 		return
 	}
 	copy(blk.PrevHash[:], hash)
 
-	hash, out, err = helpers.DeserializeBuffer(out, crypto.HashSize)
+	hash, buf, err = helpers.DeserializeBuffer(buf, crypto.HashSize)
 	if err != nil {
 		return
 	}
 	copy(blk.PrevKernelHash[:], hash)
 
-	blk.Timestamp, out, err = helpers.DeserializeNumber(out)
+	blk.Timestamp, buf, err = helpers.DeserializeNumber(buf)
 	if err != nil {
 		return
 	}
 
-	hash, out, err = helpers.DeserializeBuffer(out, 33)
+	hash, buf, err = helpers.DeserializeBuffer(buf, 33)
 	if err != nil {
 		return
 	}
 	copy(blk.Forger[:], hash)
 
-	hash, out, err = helpers.DeserializeBuffer(out, 65)
+	hash, buf, err = helpers.DeserializeBuffer(buf, 65)
 	if err != nil {
 		return
 	}
 	copy(blk.Signature[:], hash)
 
+	out = buf
 	return
 }

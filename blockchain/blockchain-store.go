@@ -6,7 +6,7 @@ import (
 	"errors"
 	bolt "go.etcd.io/bbolt"
 	"math/big"
-	"pandora-pay/block"
+	"pandora-pay/blockchain/block"
 	"pandora-pay/crypto"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -70,6 +70,7 @@ func saveTotalDifficultyExtra(bucket *bolt.Bucket, chain *Blockchain) error {
 
 func loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64, err error) {
 	key := []byte("totalDifficulty" + strconv.Itoa(int(height)))
+
 	buf := bucket.Get(key)
 	if buf == nil {
 		err = errors.New("Couldn't ready difficulty from DB")

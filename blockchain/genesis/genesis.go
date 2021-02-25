@@ -3,7 +3,7 @@ package genesis
 import (
 	"encoding/hex"
 	"errors"
-	"pandora-pay/block"
+	"pandora-pay/blockchain/block"
 	"pandora-pay/config"
 	"pandora-pay/crypto"
 	"pandora-pay/gui"

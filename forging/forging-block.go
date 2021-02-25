@@ -2,9 +2,9 @@ package forging
 
 import (
 	"encoding/binary"
-	"pandora-pay/block"
-	"pandora-pay/block/difficulty"
 	"pandora-pay/blockchain"
+	"pandora-pay/blockchain/block"
+	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config"
 	"pandora-pay/crypto"
