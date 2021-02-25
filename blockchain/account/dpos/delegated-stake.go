@@ -81,3 +81,7 @@ func (delegatedStake *DelegatedStake) Deserialize(buf []byte) (out []byte, err e
 	out = buf
 	return
 }
+
+func (delegatedStake *DelegatedStake) IsDelegatedStakeEmpty() bool {
+	return delegatedStake.StakeConfirmed == 0 && len(delegatedStake.StakesPending) == 0
+}

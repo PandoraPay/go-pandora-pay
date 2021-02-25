@@ -77,6 +77,31 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			}
 		}
 
+		//let's filter existing blocks
+		for i := len(blocksComplete) - 1; i >= 0; i-- {
+
+			blkComplete := blocksComplete[i]
+
+			if blkComplete.Block.Height > chain.Height {
+				var hash crypto.Hash
+				hash, err = newChain.loadBlockHash(writer, blkComplete.Block.Height)
+				if err != nil {
+					return err
+				}
+
+				hash2 := blkComplete.Block.ComputeHash()
+				if bytes.Equal(hash[:], hash2[:]) {
+					blocksComplete = append(blocksComplete[:i], blocksComplete[i+1:]...)
+					i--
+				}
+			}
+		}
+
+		if blocksComplete[0].Block.Height != newChain.Height {
+			err = errors.New("First Block has is not matching")
+			return
+		}
+
 		if !bytes.Equal(blocksComplete[0].Block.PrevHash[:], newChain.Hash[:]) {
 			err = errors.New("First block hash is not matching chain hash")
 			return
@@ -157,7 +182,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			}
 
 			newChain.BigTotalDifficulty = new(big.Int).Add(newChain.BigTotalDifficulty, new(big.Int).SetUint64(difficultyKernelHash))
-			err = saveTotalDifficultyExtra(writer, &newChain)
+			err = newChain.saveTotalDifficultyExtra(writer)
 			if err != nil {
 				return
 			}
@@ -275,7 +300,7 @@ func BlockchainInit() {
 }
 
 func updateChainInfo() {
-	gui.InfoUpdate("Blocks", strconv.Itoa(int(Chain.Height)))
+	gui.InfoUpdate("Blocks", strconv.FormatUint(Chain.Height, 10))
 	gui.InfoUpdate("Chain Hash", hex.EncodeToString(Chain.Hash[:]))
 	gui.InfoUpdate("Chain Diff", Chain.Target.String())
 }

@@ -92,3 +92,8 @@ func (account *Account) Deserialize(buf []byte) (out []byte, err error) {
 func (account *Account) HasDelegatedStake() bool {
 	return account.Version == 1
 }
+
+func (account *Account) IsAccountEmpty() bool {
+	return (account.Version == 0 && len(account.Balances) == 0) ||
+		(account.HasDelegatedStake() && account.DelegatedStake.IsDelegatedStakeEmpty())
+}

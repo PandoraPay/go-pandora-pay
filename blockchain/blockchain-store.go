@@ -33,7 +33,7 @@ func (chain *Blockchain) LoadBlockFromHash(hash crypto.Hash) (blk *block.Block, 
 
 func loadBlock(bucket *bolt.Bucket, hash crypto.Hash) (blk *block.Block, err error) {
 
-	key := []byte("block")
+	key := []byte("blockHash")
 	key = append(key, hash[:]...)
 
 	blockData := bucket.Get(key)
@@ -49,15 +49,33 @@ func loadBlock(bucket *bolt.Bucket, hash crypto.Hash) (blk *block.Block, err err
 
 func saveBlock(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash crypto.Hash) error {
 
-	key := []byte("block")
+	key := []byte("blockHash")
 	key = append(key, hash[:]...)
 
-	return bucket.Put(key, blkComplete.Block.Serialize())
+	err := bucket.Put(key, blkComplete.Block.Serialize())
+	if err != nil {
+		return err
+	}
+
+	key = []byte("blockHeight" + strconv.FormatUint(blkComplete.Block.Height, 10))
+	return bucket.Put(key, hash[:])
 
 }
 
-func saveTotalDifficultyExtra(bucket *bolt.Bucket, chain *Blockchain) error {
-	key := []byte("totalDifficulty" + strconv.Itoa(int(chain.Height)))
+func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) (hash crypto.Hash, err error) {
+	if height < 0 || height > chain.Height {
+		err = errors.New("Height is invalid")
+		return
+	}
+
+	key := []byte("blockHeight" + strconv.FormatUint(height, 10))
+	out := bucket.Get(key)
+	copy(hash[:], out)
+	return
+}
+
+func (chain *Blockchain) saveTotalDifficultyExtra(bucket *bolt.Bucket) error {
+	key := []byte("totalDifficulty" + strconv.FormatUint(chain.Height, 10))
 
 	buf := make([]byte, binary.MaxVarintLen64)
 	n := binary.PutUvarint(buf, chain.Timestamp)
@@ -69,7 +87,7 @@ func saveTotalDifficultyExtra(bucket *bolt.Bucket, chain *Blockchain) error {
 }
 
 func loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64, err error) {
-	key := []byte("totalDifficulty" + strconv.Itoa(int(height)))
+	key := []byte("totalDifficulty" + strconv.FormatUint(height, 10))
 
 	buf := bucket.Get(key)
 	if buf == nil {
