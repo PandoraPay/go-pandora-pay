@@ -42,12 +42,9 @@ func saveWallet() error {
 
 		var marshal, checksum []byte
 
-		writer, err := tx.CreateBucketIfNotExists([]byte("Wallet"))
-		if err != nil {
-			return gui.Error("Error saving Wallet", err)
-		}
+		writer := tx.Bucket([]byte("Wallet"))
 
-		err = writer.Put([]byte("saved"), []byte{2})
+		err := writer.Put([]byte("saved"), []byte{2})
 		if err != nil {
 			return gui.Error("Error deleting saved status", err)
 		}
@@ -106,11 +103,12 @@ func loadWallet() error {
 	return store.StoreWallet.DB.View(func(tx *bolt.Tx) error {
 
 		reader := tx.Bucket([]byte("Wallet"))
-		if reader == nil {
+
+		saved := reader.Get([]byte("saved"))
+		if saved == nil {
 			return createEmptyWallet()
 		}
 
-		saved := reader.Get([]byte("saved"))
 		if bytes.Equal(saved, []byte{1}) {
 			gui.Log("Wallet Loading... ")
 

@@ -16,12 +16,9 @@ func saveSettings() error {
 
 		var marshal, checksum []byte
 
-		writer, err := tx.CreateBucketIfNotExists([]byte("Settings"))
-		if err != nil {
-			return gui.Error("Error saving Wallet", err)
-		}
+		writer := tx.Bucket([]byte("Settings"))
 
-		err = writer.Put([]byte("saved"), []byte{2})
+		err := writer.Put([]byte("saved"), []byte{2})
 		if err != nil {
 			return gui.Error("Error deleting saved status", err)
 		}
@@ -57,12 +54,11 @@ func loadSettings() error {
 	return store.StoreSettings.DB.View(func(tx *bolt.Tx) error {
 
 		reader := tx.Bucket([]byte("Settings"))
-		if reader == nil {
-			err := createEmptySettings()
-			return err
-		}
 
 		saved := reader.Get([]byte("saved"))
+		if saved == nil {
+			return createEmptySettings()
+		}
 		if bytes.Equal(saved, []byte{1}) {
 			gui.Log("Settings Loading... ")
 

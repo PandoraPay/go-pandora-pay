@@ -61,11 +61,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 
 	err = store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 
-		var writer *bolt.Bucket
-		writer, err = tx.CreateBucketIfNotExists([]byte("Chain"))
-		if err != nil {
-			return
-		}
+		writer := tx.Bucket([]byte("Chain"))
 
 		var prevBlk = &block.Block{}
 		if blocksComplete[0].Block.Height == 0 {
@@ -92,7 +88,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 				hash2 := blkComplete.Block.ComputeHash()
 				if bytes.Equal(hash[:], hash2[:]) {
 					blocksComplete = append(blocksComplete[:i], blocksComplete[i+1:]...)
-					i--
 				}
 			}
 		}
@@ -176,7 +171,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			bigKernelHash := difficulty.HashToBig(kernelHash)
 			difficultyKernelHash := difficulty.ConvertDifficultyBigToUInt64(bigKernelHash)
 
-			newChain.Target, err = newChain.nextDifficultyBig(writer)
+			newChain.Target, err = newChain.computeNextDifficultyBig(writer)
 			if err != nil {
 				return
 			}
@@ -215,18 +210,17 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 
 }
 
-func (chain *Blockchain) nextDifficultyBig(bucket *bolt.Bucket) (final *big.Int, err error) {
+func (chain *Blockchain) computeNextDifficultyBig(bucket *bolt.Bucket) (*big.Int, error) {
 
 	if config.DIFFICULTY_BLOCK_WINDOW > chain.Height {
-		final = chain.Target
-		return
+		return chain.Target, nil
 	}
 
 	first := chain.Height - config.DIFFICULTY_BLOCK_WINDOW
 
 	firstDifficulty, firstTimestamp, err := loadTotalDifficultyExtra(bucket, first)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	lastDifficulty := chain.BigTotalDifficulty
@@ -236,42 +230,10 @@ func (chain *Blockchain) nextDifficultyBig(bucket *bolt.Bucket) (final *big.Int,
 	gui.Log("lastDifficulty " + lastDifficulty.String())
 
 	deltaTotalDifficulty := new(big.Int).Sub(lastDifficulty, firstDifficulty)
-
 	deltaTime := lastTimestamp - firstTimestamp
 
-	expectedTime := config.BLOCK_TIME * config.DIFFICULTY_BLOCK_WINDOW
+	return difficulty.NextDifficultyBig(deltaTotalDifficulty, deltaTime)
 
-	change := new(big.Float).Quo(new(big.Float).SetUint64(deltaTime), new(big.Float).SetUint64(expectedTime))
-
-	if change.Cmp(difficulty.DIFFICULTY_MIN_CHANGE_FACTOR) < 0 {
-		change = difficulty.DIFFICULTY_MIN_CHANGE_FACTOR
-	}
-	if change.Cmp(difficulty.DIFFICULTY_MAX_CHANGE_FACTOR) > 0 {
-		change = difficulty.DIFFICULTY_MAX_CHANGE_FACTOR
-	}
-
-	averageDifficulty := new(big.Float).Quo(new(big.Float).SetInt(deltaTotalDifficulty), new(big.Float).SetUint64(config.DIFFICULTY_BLOCK_WINDOW))
-	averageTarget := new(big.Float).Quo(config.BIG_FLOAT_MAX_256, averageDifficulty)
-
-	newTarget := new(big.Float).Mul(averageTarget, change)
-
-	var success bool
-	str := fmt.Sprintf("%.0f", newTarget)
-	final, success = new(big.Int).SetString(str, 10)
-	if success == false {
-		err = errors.New("Error rounding new target")
-		return
-	}
-
-	if final.Cmp(config.BIG_INT_ZERO) < 0 {
-		final = config.BIG_INT_ONE
-	}
-
-	if final.Cmp(config.BIG_INT_MAX_256) > 0 {
-		final = config.BIG_INT_MAX_256
-	}
-
-	return
 }
 
 func BlockchainInit() {

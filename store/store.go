@@ -40,6 +40,28 @@ func DBInit() {
 	StoreBlockchain.init()
 	StoreWallet.init()
 	StoreSettings.init()
+
+	err1 := StoreWallet.DB.Update(func(tx *bolt.Tx) (err error) {
+		_, err = tx.CreateBucketIfNotExists([]byte("Wallet"))
+		return
+	})
+	err2 := StoreSettings.DB.Update(func(tx *bolt.Tx) (err error) {
+		_, err = tx.CreateBucketIfNotExists([]byte("Settings"))
+		return
+	})
+	err3 := StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
+		_, err = tx.CreateBucketIfNotExists([]byte("Chain"))
+		if err != nil {
+			return
+		}
+		_, err = tx.CreateBucketIfNotExists([]byte("Accounts"))
+		return
+	})
+
+	if err1 != nil || err2 != nil || err3 != nil {
+		gui.Log("Wallet bucket creation raised an error")
+	}
+
 }
 
 func DBClose() {

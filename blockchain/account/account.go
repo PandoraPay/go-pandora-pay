@@ -8,9 +8,9 @@ import (
 )
 
 type Account struct {
-	Version   uint64
-	Nonce     uint64
-	PublicKey [20]byte
+	Version       uint64
+	Nonce         uint64
+	PublicKeyHash [20]byte
 
 	Balances       []*Balance
 	DelegatedStake *dpos.DelegatedStake
@@ -27,7 +27,7 @@ func (account *Account) Serialize() []byte {
 	n = binary.PutUvarint(temp, account.Nonce)
 	serialized.Write(temp[:n])
 
-	serialized.Write(account.PublicKey[:])
+	serialized.Write(account.PublicKeyHash[:])
 
 	n = binary.PutUvarint(temp, uint64(len(account.Balances)))
 	serialized.Write(temp[:n])
@@ -60,7 +60,7 @@ func (account *Account) Deserialize(buf []byte) (out []byte, err error) {
 	if err != nil {
 		return
 	}
-	copy(account.PublicKey[:], data)
+	copy(account.PublicKeyHash[:], data)
 
 	var n uint64
 	n, buf, err = helpers.DeserializeNumber(buf)

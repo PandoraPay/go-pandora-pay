@@ -1,6 +1,8 @@
 package difficulty
 
 import (
+	"errors"
+	"fmt"
 	"math/big"
 	"pandora-pay/config"
 	"pandora-pay/crypto"
@@ -49,4 +51,39 @@ func CheckKernelHashBig(kernelHash crypto.Hash, difficulty *big.Int) bool {
 		return true
 	}
 	return false
+}
+
+func NextDifficultyBig(deltaTotalDifficulty *big.Int, deltaTime uint64) (*big.Int, error) {
+
+	expectedTime := config.BLOCK_TIME * config.DIFFICULTY_BLOCK_WINDOW
+
+	change := new(big.Float).Quo(new(big.Float).SetUint64(deltaTime), new(big.Float).SetUint64(expectedTime))
+
+	if change.Cmp(DIFFICULTY_MIN_CHANGE_FACTOR) < 0 {
+		change = DIFFICULTY_MIN_CHANGE_FACTOR
+	}
+	if change.Cmp(DIFFICULTY_MAX_CHANGE_FACTOR) > 0 {
+		change = DIFFICULTY_MAX_CHANGE_FACTOR
+	}
+
+	averageDifficulty := new(big.Float).Quo(new(big.Float).SetInt(deltaTotalDifficulty), new(big.Float).SetUint64(config.DIFFICULTY_BLOCK_WINDOW))
+	averageTarget := new(big.Float).Quo(config.BIG_FLOAT_MAX_256, averageDifficulty)
+
+	newTarget := new(big.Float).Mul(averageTarget, change)
+
+	str := fmt.Sprintf("%.0f", newTarget)
+	final, success := new(big.Int).SetString(str, 10)
+	if success == false {
+		return nil, errors.New("Error rounding new target")
+	}
+
+	if final.Cmp(config.BIG_INT_ZERO) < 0 {
+		final = config.BIG_INT_ONE
+	}
+
+	if final.Cmp(config.BIG_INT_MAX_256) > 0 {
+		final = config.BIG_INT_MAX_256
+	}
+
+	return final, nil
 }
