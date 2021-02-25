@@ -11,13 +11,13 @@ type BlockHeader struct {
 	Height  uint64
 }
 
-func (blockHeader *BlockHeader) Serialize(serialized *bytes.Buffer, buf []byte) {
+func (blockHeader *BlockHeader) Serialize(serialized *bytes.Buffer, temp []byte) {
 
-	n := binary.PutUvarint(buf, blockHeader.Version)
-	serialized.Write(buf[:n])
+	n := binary.PutUvarint(temp, blockHeader.Version)
+	serialized.Write(temp[:n])
 
-	n = binary.PutUvarint(buf, blockHeader.Height)
-	serialized.Write(buf[:n])
+	n = binary.PutUvarint(temp, blockHeader.Height)
+	serialized.Write(temp[:n])
 
 }
 

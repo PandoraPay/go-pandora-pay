@@ -3,6 +3,7 @@ package helpers
 import (
 	"encoding/binary"
 	"errors"
+	"pandora-pay/crypto"
 )
 
 func DeserializeNumber(buf []byte) (uint64, []byte, error) {
@@ -22,4 +23,16 @@ func DeserializeBuffer(buf []byte, count int) ([]byte, []byte, error) {
 	}
 
 	return buf[:count], buf[count:], nil
+}
+
+func DeserializeHash(buf []byte, count int) (crypto.Hash, []byte, error) {
+
+	var out = crypto.Hash{}
+
+	if count > len(buf) {
+		return out, buf, errors.New("Deserializing buffer exceeded")
+	}
+
+	copy(out[:], buf[count:])
+	return out, buf[count:], nil
 }

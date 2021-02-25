@@ -19,25 +19,25 @@ type Account struct {
 func (account *Account) Serialize() []byte {
 
 	var serialized bytes.Buffer
-	buf := make([]byte, binary.MaxVarintLen64)
+	temp := make([]byte, binary.MaxVarintLen64)
 
-	n := binary.PutUvarint(buf, account.Version)
-	serialized.Write(buf[:n])
+	n := binary.PutUvarint(temp, account.Version)
+	serialized.Write(temp[:n])
 
-	n = binary.PutUvarint(buf, account.Nonce)
-	serialized.Write(buf[:n])
+	n = binary.PutUvarint(temp, account.Nonce)
+	serialized.Write(temp[:n])
 
 	serialized.Write(account.PublicKey[:])
 
-	n = binary.PutUvarint(buf, uint64(len(account.Balances)))
-	serialized.Write(buf[:n])
+	n = binary.PutUvarint(temp, uint64(len(account.Balances)))
+	serialized.Write(temp[:n])
 
 	for i := 0; i < len(account.Balances); i++ {
-		account.Balances[i].Serialize(&serialized, buf)
+		account.Balances[i].Serialize(&serialized, temp)
 	}
 
 	if account.HasDelegatedStake() {
-		account.DelegatedStake.Serialize(&serialized, buf)
+		account.DelegatedStake.Serialize(&serialized, temp)
 	}
 
 	return serialized.Bytes()

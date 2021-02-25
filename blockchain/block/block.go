@@ -41,9 +41,9 @@ func (blk *Block) VerifySignature() bool {
 func (blk *Block) SerializeBlock(inclMerkleHash bool, inclPrevHash bool, inclTimestamp bool, inclForger bool, inclSignature bool) []byte {
 
 	var serialized bytes.Buffer
-	buf := make([]byte, binary.MaxVarintLen64)
+	temp := make([]byte, binary.MaxVarintLen64)
 
-	blk.BlockHeader.Serialize(&serialized, buf)
+	blk.BlockHeader.Serialize(&serialized, temp)
 
 	if inclMerkleHash {
 		serialized.Write(blk.MerkleHash[:])
@@ -56,8 +56,8 @@ func (blk *Block) SerializeBlock(inclMerkleHash bool, inclPrevHash bool, inclTim
 	serialized.Write(blk.PrevKernelHash[:])
 
 	if inclTimestamp {
-		n := binary.PutUvarint(buf, blk.Timestamp)
-		serialized.Write(buf[:n])
+		n := binary.PutUvarint(temp, blk.Timestamp)
+		serialized.Write(temp[:n])
 	}
 
 	if inclForger {
@@ -82,41 +82,38 @@ func (blk *Block) Deserialize(buf []byte) (out []byte, err error) {
 		return
 	}
 
-	var hash []byte
-	hash, buf, err = helpers.DeserializeBuffer(buf, crypto.HashSize)
+	blk.MerkleHash, buf, err = helpers.DeserializeHash(buf, crypto.HashSize)
 	if err != nil {
 		return
 	}
-	copy(blk.MerkleHash[:], hash)
 
-	hash, buf, err = helpers.DeserializeBuffer(buf, crypto.HashSize)
+	blk.PrevHash, buf, err = helpers.DeserializeHash(buf, crypto.HashSize)
 	if err != nil {
 		return
 	}
-	copy(blk.PrevHash[:], hash)
 
-	hash, buf, err = helpers.DeserializeBuffer(buf, crypto.HashSize)
+	blk.PrevKernelHash, buf, err = helpers.DeserializeHash(buf, crypto.HashSize)
 	if err != nil {
 		return
 	}
-	copy(blk.PrevKernelHash[:], hash)
 
 	blk.Timestamp, buf, err = helpers.DeserializeNumber(buf)
 	if err != nil {
 		return
 	}
 
-	hash, buf, err = helpers.DeserializeBuffer(buf, 33)
+	var data []byte
+	data, buf, err = helpers.DeserializeBuffer(buf, 33)
 	if err != nil {
 		return
 	}
-	copy(blk.Forger[:], hash)
+	copy(blk.Forger[:], data)
 
-	hash, buf, err = helpers.DeserializeBuffer(buf, 65)
+	data, buf, err = helpers.DeserializeBuffer(buf, 65)
 	if err != nil {
 		return
 	}
-	copy(blk.Signature[:], hash)
+	copy(blk.Signature[:], data)
 
 	out = buf
 	return
