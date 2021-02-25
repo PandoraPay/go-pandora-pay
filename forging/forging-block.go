@@ -2,14 +2,12 @@ package forging
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"pandora-pay/block"
 	"pandora-pay/block/difficulty"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config"
 	"pandora-pay/crypto"
-	"pandora-pay/gui"
 	"pandora-pay/wallet"
 	"sync"
 	"time"
@@ -99,7 +97,8 @@ func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.
 					mutex.Unlock()
 
 				} else {
-					gui.Log(hex.EncodeToString(kernelHash[:]))
+					// for debugging only
+					// gui.Log(hex.EncodeToString(kernelHash[:]))
 				}
 
 				serialized = serialized[:len(serialized)-n-33]
