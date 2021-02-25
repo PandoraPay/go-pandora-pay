@@ -2,12 +2,14 @@ package forging
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"pandora-pay/block"
 	"pandora-pay/block/difficulty"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config"
 	"pandora-pay/crypto"
+	"pandora-pay/gui"
 	"pandora-pay/wallet"
 	"sync"
 	"time"
@@ -54,14 +56,13 @@ func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.
 	buf := make([]byte, binary.MaxVarintLen64)
 
 	serialized := blkComplete.Block.SerializeBlock(false, false, false, false, false)
-	now := time.Now()
-	timestamp := uint64(now.Unix())
+	timestamp := blkComplete.Block.Timestamp + 1
 
 	addresses := wallet.GetAddresses()
 
 	for forging {
 
-		if timestamp > uint64(now.Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
+		if timestamp > uint64(time.Now().Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
@@ -73,7 +74,6 @@ func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.
 
 				n := binary.PutUvarint(buf, timestamp)
 				serialized = append(serialized, buf[:n]...)
-
 				serialized = append(serialized, addresses[i].PublicKey...)
 				kernelHash := crypto.SHA3Hash(serialized)
 
@@ -99,8 +99,10 @@ func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.
 					mutex.Unlock()
 
 				} else {
-					serialized = serialized[:len(serialized)-n-33]
+					gui.Log(hex.EncodeToString(kernelHash[:]))
 				}
+
+				serialized = serialized[:len(serialized)-n-33]
 
 			}
 

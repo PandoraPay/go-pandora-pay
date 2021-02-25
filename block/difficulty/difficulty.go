@@ -24,7 +24,7 @@ func HashToBig(buf crypto.Hash) *big.Int {
 
 func ConvertDifficultyBigToUInt64(difficulty *big.Int) uint64 {
 
-	if difficulty.Cmp(config.BIG_INT_ZERO) == 0 { // if work_pow is less than difficulty
+	if difficulty.Cmp(config.BIG_INT_ZERO) == 0 {
 		panic("difficulty can never be zero")
 	}
 
