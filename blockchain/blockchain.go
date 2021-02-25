@@ -157,12 +157,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			}
 
 			newChain.BigTotalDifficulty = new(big.Int).Add(newChain.BigTotalDifficulty, new(big.Int).SetUint64(difficultyKernelHash))
-			err = saveTotalDifficulty(writer, &newChain)
-			if err != nil {
-				return
-			}
-
-			err = saveTimestamp(writer, &newChain)
+			err = saveTotalDifficultyExtra(writer, &newChain)
 			if err != nil {
 				return
 			}
@@ -204,22 +199,24 @@ func (chain *Blockchain) nextDifficultyBig(bucket *bolt.Bucket) (final *big.Int,
 
 	first := chain.Height - config.DIFFICULTY_BLOCK_WINDOW
 
-	firstDifficulty := loadTotalDifficulty(bucket, first)
+	firstDifficulty, firstTimestamp, err := loadTotalDifficultyExtra(bucket, first)
+	if err != nil {
+		return
+	}
+
 	lastDifficulty := chain.BigTotalDifficulty
+	lastTimestamp := chain.Timestamp
 
 	gui.Log("firstDifficulty " + firstDifficulty.String())
 	gui.Log("lastDifficulty " + lastDifficulty.String())
 
 	deltaTotalDifficulty := new(big.Int).Sub(lastDifficulty, firstDifficulty)
 
-	firstTimestamp := loadTimestamp(bucket, first)
-	lastTimestamp := chain.Timestamp
-
-	actualTime := lastTimestamp - firstTimestamp
+	deltaTime := lastTimestamp - firstTimestamp
 
 	expectedTime := config.BLOCK_TIME * config.DIFFICULTY_BLOCK_WINDOW
 
-	change := new(big.Float).Quo(new(big.Float).SetUint64(actualTime), new(big.Float).SetUint64(expectedTime))
+	change := new(big.Float).Quo(new(big.Float).SetUint64(deltaTime), new(big.Float).SetUint64(expectedTime))
 
 	if change.Cmp(difficulty.DIFFICULTY_MIN_CHANGE_FACTOR) < 0 {
 		change = difficulty.DIFFICULTY_MIN_CHANGE_FACTOR

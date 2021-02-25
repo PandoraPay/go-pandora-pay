@@ -14,7 +14,7 @@ Status of Blockchain implementation:
 - [x] Commit/Rollback Database
     - [x] Wallet
         - [x] Save and Load
-        - [x] Export and import JSON        
+        - [ ] Export and import JSON        
     - [ ] Wallet Encryption
 - [x] Merkle Tree
 - [x] Block
@@ -51,3 +51,7 @@ Status of Blockchain implementation:
     - [ ] HTTP server
     - [ ] HTTP websocket
     - [ ] TOR Integration
+- [ ] API
+    - [ ] API blockchain explorers
+    - [ ] API wallets    
+    

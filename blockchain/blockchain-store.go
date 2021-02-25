@@ -56,31 +56,33 @@ func saveBlock(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash crypt
 
 }
 
-func saveTotalDifficulty(bucket *bolt.Bucket, chain *Blockchain) error {
+func saveTotalDifficultyExtra(bucket *bolt.Bucket, chain *Blockchain) error {
 	key := []byte("totalDifficulty" + strconv.Itoa(int(chain.Height)))
-	return bucket.Put(key, chain.BigTotalDifficulty.Bytes())
-}
 
-func saveTimestamp(bucket *bolt.Bucket, chain *Blockchain) error {
-	key := []byte("timestamp" + strconv.Itoa(int(chain.Height)))
 	buf := make([]byte, binary.MaxVarintLen64)
 	n := binary.PutUvarint(buf, chain.Timestamp)
-	return bucket.Put(key, buf[:n])
+	buf = buf[:n]
+
+	buf = append(buf, chain.BigTotalDifficulty.Bytes()...)
+
+	return bucket.Put(key, buf)
 }
 
-func loadTotalDifficulty(bucket *bolt.Bucket, height uint64) *big.Int {
+func loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64, err error) {
 	key := []byte("totalDifficulty" + strconv.Itoa(int(height)))
-	buff := bucket.Get(key)
-	if buff == nil {
-		return nil
+	buf := bucket.Get(key)
+	if buf == nil {
+		err = errors.New("Couldn't ready difficulty from DB")
+		return
 	}
-	return new(big.Int).SetBytes(buff)
-}
 
-func loadTimestamp(bucket *bolt.Bucket, height uint64) (n uint64) {
-	key := []byte("timestamp" + strconv.Itoa(int(height)))
-	buff := bucket.Get(key)
-	n, buff, _ = helpers.DeserializeNumber(buff)
+	timestamp, buf, err = helpers.DeserializeNumber(buf)
+	if err != nil {
+		return
+	}
+
+	difficulty = new(big.Int).SetBytes(buf)
+
 	return
 }
 
