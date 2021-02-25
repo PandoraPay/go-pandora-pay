@@ -58,7 +58,7 @@ func saveBlock(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash crypt
 
 func saveTotalDifficulty(bucket *bolt.Bucket, chain *Blockchain) error {
 	key := []byte("totalDifficulty" + strconv.Itoa(int(chain.Height)))
-	return bucket.Put(key, []byte(chain.BigTotalDifficulty.String()))
+	return bucket.Put(key, chain.BigTotalDifficulty.Bytes())
 }
 
 func saveTimestamp(bucket *bolt.Bucket, chain *Blockchain) error {

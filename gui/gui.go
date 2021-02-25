@@ -7,6 +7,7 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -210,6 +211,7 @@ func InfoUpdate(key string, text string) {
 	for key, value := range infoMap {
 		rows = append(rows, key+": "+value)
 	}
+	sort.Strings(rows)
 	info.Rows = rows
 	ui.Render(info)
 }

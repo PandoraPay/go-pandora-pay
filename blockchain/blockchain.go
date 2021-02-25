@@ -151,7 +151,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			bigKernelHash := difficulty.HashToBig(kernelHash)
 			difficultyKernelHash := difficulty.ConvertDifficultyBigToUInt64(bigKernelHash)
 
-			newChain.Target = newChain.nextDifficultyBig(writer)
+			newChain.Target, err = newChain.nextDifficultyBig(writer)
+			if err != nil {
+				return
+			}
 
 			newChain.BigTotalDifficulty = new(big.Int).Add(newChain.BigTotalDifficulty, new(big.Int).SetUint64(difficultyKernelHash))
 			err = saveTotalDifficulty(writer, &newChain)
@@ -185,25 +188,27 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 	chain.BigTotalDifficulty = newChain.BigTotalDifficulty
 
 	gui.Log(fmt.Sprintf("Including blocks SUCCESS %s", hex.EncodeToString(chain.Hash[:])))
-	gui.InfoUpdate("Blocks", strconv.Itoa(int(chain.Height)))
-	gui.InfoUpdate("Chain Hash", hex.EncodeToString(chain.Hash[:]))
-	gui.InfoUpdate("Chain Diff", chain.Target.String())
+	updateChainInfo()
 
 	result = true
 	return
 
 }
 
-func (chain *Blockchain) nextDifficultyBig(bucket *bolt.Bucket) *big.Int {
+func (chain *Blockchain) nextDifficultyBig(bucket *bolt.Bucket) (final *big.Int, err error) {
 
 	if config.DIFFICULTY_BLOCK_WINDOW > chain.Height {
-		return chain.Target
+		final = chain.Target
+		return
 	}
 
 	first := chain.Height - config.DIFFICULTY_BLOCK_WINDOW
 
 	firstDifficulty := loadTotalDifficulty(bucket, first)
 	lastDifficulty := chain.BigTotalDifficulty
+
+	gui.Log("firstDifficulty " + firstDifficulty.String())
+	gui.Log("lastDifficulty " + lastDifficulty.String())
 
 	deltaTotalDifficulty := new(big.Int).Sub(lastDifficulty, firstDifficulty)
 
@@ -227,18 +232,24 @@ func (chain *Blockchain) nextDifficultyBig(bucket *bolt.Bucket) *big.Int {
 	averageTarget := new(big.Float).Quo(config.BIG_FLOAT_MAX_256, averageDifficulty)
 
 	newTarget := new(big.Float).Mul(averageTarget, change)
-	if newTarget.Cmp(config.BIG_FLOAT_ONE) < 0 {
-		newTarget = config.BIG_FLOAT_ONE
-	}
 
-	if newTarget.Cmp(config.BIG_FLOAT_MAX_256) > 0 {
-		newTarget = config.BIG_FLOAT_MAX_256
-	}
-
+	var success bool
 	str := fmt.Sprintf("%.0f", newTarget)
-	final := new(big.Int)
-	final.SetString(str, 10)
-	return final
+	final, success = new(big.Int).SetString(str, 10)
+	if success == false {
+		err = errors.New("Error rounding new target")
+		return
+	}
+
+	if final.Cmp(config.BIG_INT_ZERO) < 0 {
+		final = config.BIG_INT_ONE
+	}
+
+	if final.Cmp(config.BIG_INT_MAX_256) > 0 {
+		final = config.BIG_INT_MAX_256
+	}
+
+	return
 }
 
 func BlockchainInit() {
@@ -260,7 +271,14 @@ func BlockchainInit() {
 		Chain.Target = difficulty.ConvertDifficultyToBig(Chain.Difficulty)
 		Chain.BigTotalDifficulty = new(big.Int).SetUint64(0)
 	}
+	updateChainInfo()
 
 	Chain.Sync = false
 
+}
+
+func updateChainInfo() {
+	gui.InfoUpdate("Blocks", strconv.Itoa(int(Chain.Height)))
+	gui.InfoUpdate("Chain Hash", hex.EncodeToString(Chain.Hash[:]))
+	gui.InfoUpdate("Chain Diff", Chain.Target.String())
 }
