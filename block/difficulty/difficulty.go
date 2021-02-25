@@ -2,16 +2,13 @@ package difficulty
 
 import (
 	"math/big"
+	"pandora-pay/config"
 	"pandora-pay/crypto"
 )
 
 var (
-	bigZero = big.NewInt(0)
-
-	bigOne = big.NewInt(1)
-
-	oneMAX256 = new(big.Int).Lsh(bigOne, 256) // 0xFFFFFFFF....
-
+	DIFFICULTY_MIN_CHANGE_FACTOR = new(big.Float).SetFloat64(0.5)
+	DIFFICULTY_MAX_CHANGE_FACTOR = new(big.Float).SetFloat64(2)
 )
 
 func HashToBig(buf crypto.Hash) *big.Int {
@@ -25,6 +22,15 @@ func HashToBig(buf crypto.Hash) *big.Int {
 	return new(big.Int).SetBytes(buf[:])
 }
 
+func ConvertDifficultyBigToUInt64(difficulty *big.Int) uint64 {
+
+	if difficulty.Cmp(config.BIG_INT_ZERO) == 0 { // if work_pow is less than difficulty
+		panic("difficulty can never be zero")
+	}
+
+	return new(big.Int).Div(config.BIG_INT_MAX_256, difficulty).Uint64()
+}
+
 // this function calculates the difficulty in big num form
 func ConvertDifficultyToBig(difficulty uint64) *big.Int {
 	if difficulty == 0 {
@@ -32,8 +38,7 @@ func ConvertDifficultyToBig(difficulty uint64) *big.Int {
 	}
 	// (1 << 256) / (difficultyNum )
 	difficultyInt := new(big.Int).SetUint64(difficulty)
-	denominator := new(big.Int).Add(difficultyInt, bigZero) // above 2 lines can be merged
-	return new(big.Int).Div(oneMAX256, denominator)
+	return new(big.Int).Div(config.BIG_INT_MAX_256, difficultyInt)
 }
 
 func CheckKernelHashBig(kernelHash crypto.Hash, difficulty *big.Int) bool {

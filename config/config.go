@@ -1,6 +1,9 @@
 package config
 
-import "pandora-pay/globals"
+import (
+	"math/big"
+	"pandora-pay/globals"
+)
 
 var (
 	NETWORK_SELECTED uint64 = 0
@@ -10,24 +13,34 @@ var (
 	OS               string = ""
 )
 
-const (
-	NAME    string = "PANDORA PAY"
-	VERSION string = "0.0"
+var (
+	NAME    = "PANDORA PAY"
+	VERSION = "0.0"
 
 	MAIN_NET_NETWORK_BYTE        uint64 = 0
-	MAIN_NET_NETWORK_BYTE_PREFIX string = "PANDORA" // must have 7 characters
+	MAIN_NET_NETWORK_BYTE_PREFIX        = "PANDORA" // must have 7 characters
 
 	TEST_NET_NETWORK_BYTE        uint64 = 1033
-	TEST_NET_NETWORK_BYTE_PREFIX string = "PANTEST" // must have 7 characters
+	TEST_NET_NETWORK_BYTE_PREFIX        = "PANTEST" // must have 7 characters
 
 	DEV_NET_NETWORK_BYTE        uint64 = 4255
-	DEV_NET_NETWORK_BYTE_PREFIX string = "PANDDEV" // must have 7 characters
+	DEV_NET_NETWORK_BYTE_PREFIX        = "PANDDEV" // must have 7 characters
 
 	NETWORK_BYTE_PREFIX_LENGTH = 7
 
-	NETWORK_TIMESTAMP_DRIFT_MAX = 10
+	NETWORK_TIMESTAMP_DRIFT_MAX uint64 = 10
 
-	BLOCK_MAX_SIZE uint64 = 1 << 10
+	BLOCK_MAX_SIZE          uint64 = 1 << 10
+	BLOCK_TIME              uint64 = 60 //seconds
+	DIFFICULTY_BLOCK_WINDOW uint64 = 10
+
+	BIG_INT_ZERO    = big.NewInt(0)
+	BIG_INT_ONE     = big.NewInt(1)
+	BIG_INT_MAX_256 = new(big.Int).Lsh(BIG_INT_ONE, 256) // 0xFFFFFFFF....
+
+	BIG_FLOAT_ZERO    = big.NewFloat(0)
+	BIG_FLOAT_ONE     = big.NewFloat(1)
+	BIG_FLOAT_MAX_256 = new(big.Float).SetInt(BIG_INT_MAX_256) // 0xFFFFFFFF....
 )
 
 func InitConfig() {

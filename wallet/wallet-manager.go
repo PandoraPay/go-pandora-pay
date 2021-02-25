@@ -111,6 +111,6 @@ func createEmptyWallet() error {
 }
 
 func updateWallet() {
-	gui.InfoUpdate("Wallet Encrypted", walletSaved.Encrypted.String())
+	gui.InfoUpdate("Wallet", walletSaved.Encrypted.String())
 	gui.InfoUpdate("Wallet Addrs", strconv.Itoa(wallet.Count))
 }

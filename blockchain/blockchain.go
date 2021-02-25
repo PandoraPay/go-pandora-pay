@@ -14,17 +14,20 @@ import (
 	"pandora-pay/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/store"
+	"strconv"
 	"sync"
 	"time"
 )
 
 type Blockchain struct {
-	Hash          crypto.Hash
-	KernelHash    crypto.Hash
-	Height        uint64
-	Timestamp     uint64
-	Difficulty    uint64
-	BigDifficulty *big.Int `json:"-"` //named also as target
+	Hash       crypto.Hash
+	KernelHash crypto.Hash
+	Height     uint64
+	Timestamp  uint64
+
+	Difficulty         uint64
+	Target             *big.Int
+	BigTotalDifficulty *big.Int
 
 	Sync bool `json:"-"`
 
@@ -47,12 +50,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 	gui.Log(fmt.Sprintf("Including blocks %d ... %d", chain.Height, chain.Height+uint64(len(blocksComplete))))
 
 	var newChain = Blockchain{
-		Hash:          chain.Hash,
-		KernelHash:    chain.KernelHash,
-		Height:        chain.Height,
-		Timestamp:     chain.Timestamp,
-		Difficulty:    chain.Difficulty,
-		BigDifficulty: chain.BigDifficulty,
+		Hash:               chain.Hash,
+		KernelHash:         chain.KernelHash,
+		Height:             chain.Height,
+		Timestamp:          chain.Timestamp,
+		Difficulty:         chain.Difficulty,
+		Target:             chain.Target,
+		BigTotalDifficulty: chain.BigTotalDifficulty,
 	}
 
 	err = store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
@@ -85,7 +89,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 
 		for i, blkComplete := range blocksComplete {
 
-			if difficulty.CheckKernelHashBig(blkComplete.Block.ComputeKernelHash(), Chain.BigDifficulty) != true {
+			hash := blkComplete.Block.ComputeHash()
+			kernelHash := blkComplete.Block.ComputeKernelHash()
+
+			if difficulty.CheckKernelHashBig(kernelHash, Chain.Target) != true {
 				err = errors.New("KernelHash Difficulty is not met")
 				return
 			}
@@ -132,17 +139,32 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 				return
 			}
 
-			err = saveBlock(writer, blkComplete)
+			err = saveBlock(writer, blkComplete, hash)
 			if err != nil {
 				return
 			}
 
-			newChain.Hash = blkComplete.Block.ComputeHash()
-			newChain.KernelHash = blkComplete.Block.ComputeKernelHash()
-			newChain.Height += 1
+			newChain.Hash = hash
+			newChain.KernelHash = kernelHash
 			newChain.Timestamp = blkComplete.Block.Timestamp
 
-			//calculate new difficulty
+			bigKernelHash := difficulty.HashToBig(kernelHash)
+			difficultyKernelHash := difficulty.ConvertDifficultyBigToUInt64(bigKernelHash)
+
+			newChain.Target = newChain.nextDifficultyBig(writer)
+
+			newChain.BigTotalDifficulty = new(big.Int).Add(newChain.BigTotalDifficulty, new(big.Int).SetUint64(difficultyKernelHash))
+			err = saveTotalDifficulty(writer, &newChain)
+			if err != nil {
+				return
+			}
+
+			err = saveTimestamp(writer, &newChain)
+			if err != nil {
+				return
+			}
+
+			newChain.Height += 1
 
 		}
 
@@ -159,12 +181,64 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 	chain.Hash = newChain.Hash
 	chain.KernelHash = newChain.KernelHash
 	chain.Timestamp = newChain.Timestamp
+	chain.Target = newChain.Target
+	chain.BigTotalDifficulty = newChain.BigTotalDifficulty
 
 	gui.Log(fmt.Sprintf("Including blocks SUCCESS %s", hex.EncodeToString(chain.Hash[:])))
+	gui.InfoUpdate("Blocks", strconv.Itoa(int(chain.Height)))
+	gui.InfoUpdate("Chain Hash", hex.EncodeToString(chain.Hash[:]))
+	gui.InfoUpdate("Chain Diff", chain.Target.String())
 
 	result = true
 	return
 
+}
+
+func (chain *Blockchain) nextDifficultyBig(bucket *bolt.Bucket) *big.Int {
+
+	if config.DIFFICULTY_BLOCK_WINDOW > chain.Height {
+		return chain.Target
+	}
+
+	first := chain.Height - config.DIFFICULTY_BLOCK_WINDOW
+
+	firstDifficulty := loadTotalDifficulty(bucket, first)
+	lastDifficulty := chain.BigTotalDifficulty
+
+	deltaTotalDifficulty := new(big.Int).Sub(lastDifficulty, firstDifficulty)
+
+	firstTimestamp := loadTimestamp(bucket, first)
+	lastTimestamp := chain.Timestamp
+
+	actualTime := lastTimestamp - firstTimestamp
+
+	expectedTime := config.BLOCK_TIME * config.DIFFICULTY_BLOCK_WINDOW
+
+	change := new(big.Float).Quo(new(big.Float).SetUint64(actualTime), new(big.Float).SetUint64(expectedTime))
+
+	if change.Cmp(difficulty.DIFFICULTY_MIN_CHANGE_FACTOR) < 0 {
+		change = difficulty.DIFFICULTY_MIN_CHANGE_FACTOR
+	}
+	if change.Cmp(difficulty.DIFFICULTY_MAX_CHANGE_FACTOR) > 0 {
+		change = difficulty.DIFFICULTY_MAX_CHANGE_FACTOR
+	}
+
+	averageDifficulty := new(big.Float).Quo(new(big.Float).SetInt(deltaTotalDifficulty), new(big.Float).SetUint64(config.DIFFICULTY_BLOCK_WINDOW))
+	averageTarget := new(big.Float).Quo(config.BIG_FLOAT_MAX_256, averageDifficulty)
+
+	newTarget := new(big.Float).Mul(averageTarget, change)
+	if newTarget.Cmp(config.BIG_FLOAT_ONE) < 0 {
+		newTarget = config.BIG_FLOAT_ONE
+	}
+
+	if newTarget.Cmp(config.BIG_FLOAT_MAX_256) > 0 {
+		newTarget = config.BIG_FLOAT_MAX_256
+	}
+
+	str := fmt.Sprintf("%.0f", newTarget)
+	final := new(big.Int)
+	final.SetString(str, 10)
+	return final
 }
 
 func BlockchainInit() {
@@ -183,9 +257,10 @@ func BlockchainInit() {
 		Chain.Hash = genesis.GenesisData.Hash
 		Chain.KernelHash = genesis.GenesisData.KernelHash
 		Chain.Difficulty = genesis.GenesisData.Difficulty
+		Chain.Target = difficulty.ConvertDifficultyToBig(Chain.Difficulty)
+		Chain.BigTotalDifficulty = new(big.Int).SetUint64(0)
 	}
 
-	Chain.BigDifficulty = difficulty.ConvertDifficultyToBig(Chain.Difficulty)
 	Chain.Sync = false
 
 }

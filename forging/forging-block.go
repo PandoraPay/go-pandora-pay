@@ -77,7 +77,7 @@ func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.
 				serialized = append(serialized, addresses[i].PublicKey...)
 				kernelHash := crypto.SHA3Hash(serialized)
 
-				if difficulty.CheckKernelHashBig(kernelHash, blockchain.Chain.BigDifficulty) {
+				if difficulty.CheckKernelHashBig(kernelHash, blockchain.Chain.Target) {
 
 					mutex.Lock()
 
