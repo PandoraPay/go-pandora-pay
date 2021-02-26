@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"errors"
+	"github.com/jinzhu/copier"
 	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/account"
 )
@@ -31,8 +32,7 @@ func CreateNewAccounts(tx *bbolt.Tx) (accounts *Accounts, err error) {
 }
 
 func (accounts *Accounts) GetAccountEvenEmpty(publicKeyHash [20]byte) (acc *account.Account, err error) {
-	acc, err = accounts.GetAccount(publicKeyHash)
-	if err != nil {
+	if acc, err = accounts.GetAccount(publicKeyHash); err != nil {
 		return
 	}
 	if acc == nil {
@@ -41,11 +41,12 @@ func (accounts *Accounts) GetAccountEvenEmpty(publicKeyHash [20]byte) (acc *acco
 	return
 }
 
-func (accounts *Accounts) GetAccount(publicKeyHash [20]byte) (acc *account.Account, err error) {
+func (accounts *Accounts) GetAccount(publicKeyHash [20]byte) (acc2 *account.Account, err error) {
 
 	exists := accounts.virtual[publicKeyHash]
 	if exists != nil {
-		acc = exists.account
+		acc2 = new(account.Account)
+		copier.Copy(acc2, exists.account)
 		return
 	}
 
@@ -57,7 +58,7 @@ func (accounts *Accounts) GetAccount(publicKeyHash [20]byte) (acc *account.Accou
 		}
 		return
 	} else {
-		acc = new(account.Account)
+		acc := new(account.Account)
 		if _, err = acc.Deserialize(data); err != nil {
 			return nil, err
 		}
@@ -65,9 +66,12 @@ func (accounts *Accounts) GetAccount(publicKeyHash [20]byte) (acc *account.Accou
 			acc,
 			"view",
 		}
+
+		acc2 = new(account.Account)
+		copier.Copy(&acc2, acc)
+		return
 	}
 
-	return
 }
 
 func (accounts *Accounts) UpdateAccount(publicKeyHash [20]byte, acc *account.Account) (err error) {
@@ -75,17 +79,17 @@ func (accounts *Accounts) UpdateAccount(publicKeyHash [20]byte, acc *account.Acc
 	if acc.IsAccountEmpty() {
 		return accounts.DeleteAccount(publicKeyHash)
 	} else {
+
+		var acc2 = new(account.Account)
+		copier.Copy(acc2, acc)
+
 		exists := accounts.virtual[publicKeyHash]
-		if exists != nil {
-			exists.account = acc
-			exists.status = "update"
-			return
-		} else {
-			accounts.virtual[publicKeyHash] = &VirtualAccount{
-				acc,
-				"update",
-			}
+		if exists == nil {
+			exists = new(VirtualAccount)
+			accounts.virtual[publicKeyHash] = exists
 		}
+		exists.account = acc2
+		exists.status = "update"
 	}
 
 	return
@@ -96,6 +100,7 @@ func (accounts *Accounts) DeleteAccount(publicKeyHash [20]byte) (err error) {
 	exists := accounts.virtual[publicKeyHash]
 	if exists != nil {
 		exists.status = "del"
+		exists.account = nil
 	} else {
 		accounts.virtual[publicKeyHash] = &VirtualAccount{
 			nil,
@@ -115,6 +120,7 @@ func (accounts *Accounts) Commit() (err error) {
 				return
 			}
 			v.status = "empty"
+			v.account = nil
 		} else if v.status == "update" {
 			data := v.account.Serialize()
 			if err = accounts.Bucket.Put(k[:], data); err != nil {
