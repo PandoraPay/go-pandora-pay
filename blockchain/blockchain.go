@@ -63,7 +63,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 	err = store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 
 		var accs *accounts.Accounts
-		if accs, err = accounts.CreateNewAccounts(tx, false); err != nil {
+		if accs, err = accounts.CreateNewAccounts(tx); err != nil {
 			return
 		}
 
@@ -158,6 +158,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			}
 
 			if err = saveBlock(writer, blkComplete, hash); err != nil {
+				return
+			}
+
+			if err = accs.Commit(); err != nil {
 				return
 			}
 

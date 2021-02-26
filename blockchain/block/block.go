@@ -30,7 +30,7 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts) (err error) {
 	forgerPublicKeyHash := blk.GetForgerPublicKeyHash()
 	var acc *account.Account
 
-	if acc, err = acs.GetAccount(forgerPublicKeyHash, true); err != nil {
+	if acc, err = acs.GetAccountEvenEmpty(forgerPublicKeyHash); err != nil {
 		return
 	}
 
@@ -51,7 +51,7 @@ func (blk *Block) RemoveBlock(acs *accounts.Accounts) (err error) {
 	forgerPublicKeyHash := blk.GetForgerPublicKeyHash()
 	var acc *account.Account
 
-	if acc, err = acs.GetAccount(forgerPublicKeyHash, true); err != nil {
+	if acc, err = acs.GetAccount(forgerPublicKeyHash); err != nil {
 		return
 	}
 
