@@ -5,6 +5,7 @@ import (
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
 	"pandora-pay/addresses"
+	"pandora-pay/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"strconv"
@@ -46,12 +47,18 @@ func addNewAddress() (err error) {
 		gui.Fatal("Generating Address raised an error", err)
 	}
 
+	var publicKeyHash [20]byte
+	copy(publicKeyHash[:], crypto.ComputePublicKeyHash(publicKey))
+
+	var finalPublicKey [33]byte
+	copy(finalPublicKey[:], publicKey)
 	walletAddress := WalletAddress{
-		Name:       "Addr " + strconv.Itoa(wallet.Count),
-		PrivateKey: &privateKey,
-		PublicKey:  publicKey,
-		Address:    address,
-		SeedIndex:  wallet.SeedIndex,
+		Name:          "Addr " + strconv.Itoa(wallet.Count),
+		PrivateKey:    &privateKey,
+		PublicKeyHash: publicKeyHash,
+		PublicKey:     finalPublicKey,
+		Address:       address,
+		SeedIndex:     wallet.SeedIndex,
 	}
 
 	wallet.Addresses = append(wallet.Addresses, &walletAddress)

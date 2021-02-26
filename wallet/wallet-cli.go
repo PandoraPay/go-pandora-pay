@@ -7,7 +7,6 @@ import (
 	"pandora-pay/blockchain/account"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/config"
-	"pandora-pay/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/store"
 	"strconv"
@@ -66,16 +65,8 @@ func cliListAddresses(cmd string) {
 			if walletAddress.Address.Version == addresses.TransparentPublicKeyHash ||
 				walletAddress.Address.Version == addresses.TransparentPublicKey {
 
-				publicKeyHash := walletAddress.Address.PublicKey
-				if walletAddress.Address.Version == addresses.TransparentPublicKey {
-					publicKeyHash = crypto.ComputePublicKeyHash(publicKeyHash)
-				}
-
-				var finaPublicKeyHash [20]byte
-				copy(finaPublicKeyHash[:], publicKeyHash)
-
 				var acc *account.Account
-				if acc, err = accs.GetAccount(finaPublicKeyHash, false); err != nil {
+				if acc, err = accs.GetAccount(walletAddress.PublicKeyHash, false); err != nil {
 					return
 				}
 

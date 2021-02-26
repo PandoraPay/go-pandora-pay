@@ -72,7 +72,7 @@ func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.
 
 				n := binary.PutUvarint(buf, timestamp)
 				serialized = append(serialized, buf[:n]...)
-				serialized = append(serialized, addresses[i].PublicKey...)
+				serialized = append(serialized, addresses[i].PublicKey[:]...)
 				kernelHash := crypto.SHA3Hash(serialized)
 
 				if difficulty.CheckKernelHashBig(kernelHash, blockchain.Chain.Target) {
