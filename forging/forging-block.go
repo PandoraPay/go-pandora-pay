@@ -9,6 +9,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/crypto"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -57,7 +58,7 @@ func forge(threads, threadIndex int, wg *sync.WaitGroup) {
 	serialized := forging.blkComplete.Block.SerializeBlock(false, false, false, false, false)
 	timestamp := forging.blkComplete.Block.Timestamp + 1
 
-	for forging.safeIsProcessing() {
+	for atomic.LoadInt32(&forgingWorking) == 1 {
 
 		if timestamp > uint64(time.Now().Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
 			time.Sleep(100 * time.Millisecond)
@@ -69,7 +70,7 @@ func forge(threads, threadIndex int, wg *sync.WaitGroup) {
 
 			if i%threads == threadIndex {
 
-				if !forging.safeIsProcessing() {
+				if atomic.LoadInt32(&forgingWorking) == 0 {
 					break
 				}
 

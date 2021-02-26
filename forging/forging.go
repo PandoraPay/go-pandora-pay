@@ -12,16 +12,14 @@ import (
 )
 
 var started int32
+var forgingWorking int32
 
 type forgingType struct {
-	processing  bool
 	blkComplete *block.BlockComplete
 
 	solution          bool
 	solutionTimestamp uint64
 	solutionAddress   *ForgingWalletAddress
-
-	sync.RWMutex
 }
 
 var forging forgingType
@@ -29,7 +27,6 @@ var forging forgingType
 func ForgingInit() {
 
 	gui.Log("Forging Init")
-
 	go startForging(config.CPU_THREADS)
 
 }
@@ -38,13 +35,7 @@ func startForging(threads int) {
 
 	var err error
 
-	if atomic.LoadInt32(&started) > 0 {
-		return
-	}
-	sum := atomic.AddInt32(&started, 1)
-
-	if sum > 1 {
-		atomic.AddInt32(&started, -1)
+	if !atomic.CompareAndSwapInt32(&started, 0, 1) {
 		return
 	}
 
@@ -59,7 +50,10 @@ func startForging(threads int) {
 			}
 
 		}
-		forging.processing = true
+		if !atomic.CompareAndSwapInt32(&forgingWorking, 0, 1) {
+			gui.Error("A strange error as forgingWorking couldn't be set to 1 ")
+			return
+		}
 
 		wg := sync.WaitGroup{}
 
@@ -70,7 +64,7 @@ func startForging(threads int) {
 
 		wg.Wait()
 
-		if forging.solution {
+		if forging.solution && forging.blkComplete != nil {
 			forging.publishSolution()
 			forging.blkComplete = nil
 		}
@@ -84,12 +78,9 @@ func stopForging() {
 }
 
 //thread safe
-func (forging *forgingType) RestartForging(stakeNewBlock bool) {
+func RestartForging(stakeNewBlock bool) {
 
-	forging.Lock()
-	defer forging.Unlock()
-
-	forging.processing = false
+	atomic.CompareAndSwapInt32(&forgingWorking, 1, 0)
 
 	if stakeNewBlock == true {
 		forging.blkComplete = nil
@@ -100,18 +91,11 @@ func (forging *forgingType) RestartForging(stakeNewBlock bool) {
 //thread safe
 func (forging *forgingType) foundSolution(address *ForgingWalletAddress, timestamp uint64) {
 
-	forging.Lock()
-	defer forging.Unlock()
-
-	if !forging.processing {
-		return
+	if atomic.CompareAndSwapInt32(&forgingWorking, 1, 0) {
+		forging.solution = true
+		forging.solutionTimestamp = timestamp
+		forging.solutionAddress = address
 	}
-
-	forging.processing = false
-
-	forging.solution = true
-	forging.solutionTimestamp = timestamp
-	forging.solutionAddress = address
 
 }
 
@@ -136,12 +120,4 @@ func (forging *forgingType) publishSolution() {
 		gui.Error("Error forging block "+strconv.FormatUint(forging.blkComplete.Block.Height, 10), err)
 	}
 
-}
-
-//thread safe
-func (forging *forgingType) safeIsProcessing() (r bool) {
-	forging.RLock()
-	r = forging.processing
-	forging.RUnlock()
-	return
 }
