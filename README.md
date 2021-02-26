@@ -66,3 +66,9 @@ Status of Blockchain implementation:
     - [ ] API blockchain explorers
     - [ ] API wallets    
     
+    
+The main reasons why DPOS has been chosen over POS:
+1. Delegating your stake increases security 
+2. Delegating your stake to someone to stake increases anonymity as you don't need to be online for staking.
+3. DPOS avoids using the griding technique to solve the POS short range vulnerability
+4. Future proposals of using macro blocks and state trie proofs to prove to light clients the state. 
