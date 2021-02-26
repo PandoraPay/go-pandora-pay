@@ -3,12 +3,13 @@ package crypto
 import (
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/sha3"
+	"pandora-pay/helpers"
 )
 
-func SHA3Hash(b []byte) (result Hash) {
+func SHA3Hash(b []byte) (result helpers.Hash) {
 	h := sha3.New256()
 	h.Write(b)
-	return *ConvertHash(h.Sum(nil))
+	return *helpers.ConvertHash(h.Sum(nil))
 }
 
 func SHA3(b []byte) []byte {

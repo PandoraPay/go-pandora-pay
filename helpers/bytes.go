@@ -5,6 +5,19 @@ import (
 	"unsafe"
 )
 
+const HashSize = 32
+const ChecksumSize = 4
+
+type Hash [HashSize]byte
+type Checksum [ChecksumSize]byte
+
+func ConvertHash(s []byte) (a *Hash) {
+	if len(a) <= len(s) {
+		a = (*Hash)(unsafe.Pointer(&s[0]))
+	}
+	return a
+}
+
 func Byte32(s []byte) (a *[32]byte) {
 	if len(a) <= len(s) {
 		a = (*[len(a)]byte)(unsafe.Pointer(&s[0]))

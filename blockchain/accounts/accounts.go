@@ -8,8 +8,9 @@ import (
 )
 
 type VirtualAccount struct {
-	account *account.Account
-	status  string
+	account   *account.Account
+	status    string
+	committed string
 }
 
 type Accounts struct {
@@ -55,6 +56,7 @@ func (accounts *Accounts) GetAccount(publicKeyHash [20]byte) (acc2 *account.Acco
 		accounts.virtual[publicKeyHash] = &VirtualAccount{
 			nil,
 			"empty",
+			"",
 		}
 		return
 	} else {
@@ -65,8 +67,8 @@ func (accounts *Accounts) GetAccount(publicKeyHash [20]byte) (acc2 *account.Acco
 		accounts.virtual[publicKeyHash] = &VirtualAccount{
 			acc,
 			"view",
+			"",
 		}
-
 		acc2 = new(account.Account)
 		copier.Copy(&acc2, acc)
 		return
@@ -98,16 +100,12 @@ func (accounts *Accounts) UpdateAccount(publicKeyHash [20]byte, acc *account.Acc
 func (accounts *Accounts) DeleteAccount(publicKeyHash [20]byte) (err error) {
 
 	exists := accounts.virtual[publicKeyHash]
-	if exists != nil {
-		exists.status = "del"
-		exists.account = nil
-	} else {
-		accounts.virtual[publicKeyHash] = &VirtualAccount{
-			nil,
-			"del",
-		}
+	if exists == nil {
+		exists = new(VirtualAccount)
+		accounts.virtual[publicKeyHash] = exists
 	}
-
+	exists.status = "del"
+	exists.account = nil
 	return
 }
 
@@ -120,12 +118,15 @@ func (accounts *Accounts) Commit() (err error) {
 				return
 			}
 			v.status = "empty"
+			v.committed = "del"
 			v.account = nil
 		} else if v.status == "update" {
 			data := v.account.Serialize()
 			if err = accounts.Bucket.Put(k[:], data); err != nil {
-				v.status = "view"
+				return
 			}
+			v.committed = "update"
+			v.status = "view"
 		}
 
 	}

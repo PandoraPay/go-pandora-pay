@@ -7,6 +7,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/crypto"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"pandora-pay/store"
 )
 
@@ -33,7 +34,7 @@ func saveSettings() error {
 			return gui.Error("Error storing saved status", err)
 		}
 
-		checksum = crypto.RIPEMD(checksum)[0:crypto.ChecksumSize]
+		checksum = crypto.RIPEMD(checksum)[0:helpers.ChecksumSize]
 		err = writer.Put([]byte("settings-check-sum"), checksum)
 		if err != nil {
 			return gui.Error("Error storing checksum", err)
@@ -72,7 +73,7 @@ func loadSettings() error {
 				return gui.Error("Error unmarshaling wallet saved", err)
 			}
 
-			checksum = crypto.RIPEMD(checksum)[0:crypto.ChecksumSize]
+			checksum = crypto.RIPEMD(checksum)[0:helpers.ChecksumSize]
 			walletChecksum := reader.Get([]byte("settings-check-sum"))
 			if !bytes.Equal(checksum, walletChecksum) {
 				return gui.Error("Settings Checksum is not matching", errors.New("Settings checksum mismatch !"))

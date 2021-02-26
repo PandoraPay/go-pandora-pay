@@ -71,7 +71,7 @@ func (a *Address) EncodeAddr() (string, error) {
 
 	buffer := serialized.Bytes()
 
-	checksum := crypto.RIPEMD(buffer)[0:crypto.ChecksumSize]
+	checksum := crypto.RIPEMD(buffer)[0:helpers.ChecksumSize]
 	buffer = append(buffer, checksum...)
 	ret := base58.Encode(buffer)
 
@@ -103,12 +103,12 @@ func DecodeAddr(input string) (addr2 *Address, err error) {
 		return
 	}
 
-	checksum := crypto.RIPEMD(buf[:len(buf)-crypto.ChecksumSize])[0:crypto.ChecksumSize]
+	checksum := crypto.RIPEMD(buf[:len(buf)-helpers.ChecksumSize])[0:helpers.ChecksumSize]
 
-	if !bytes.Equal(checksum[:], buf[len(buf)-crypto.ChecksumSize:]) {
+	if !bytes.Equal(checksum[:], buf[len(buf)-helpers.ChecksumSize:]) {
 		return nil, errors.New("Invalid Checksum")
 	}
-	buf = buf[0 : len(buf)-crypto.ChecksumSize] // remove the checksum
+	buf = buf[0 : len(buf)-helpers.ChecksumSize] // remove the checksum
 
 	var version uint64
 

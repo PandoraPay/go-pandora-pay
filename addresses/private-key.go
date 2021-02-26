@@ -52,7 +52,7 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 	}, nil
 }
 
-func (pk *PrivateKey) Sign(message *crypto.Hash) ([]byte, error) {
+func (pk *PrivateKey) Sign(message *helpers.Hash) ([]byte, error) {
 	if len(message) != 32 {
 		return nil, errors.New("Message must be a hash")
 	}

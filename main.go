@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
-	"pandora-pay/forging"
 	"pandora-pay/globals"
 	"pandora-pay/gui"
 	"pandora-pay/settings"
@@ -71,7 +70,13 @@ func main() {
 
 	blockchain.BlockchainInit()
 
-	forging.ForgingInit()
+	go func() {
+
+		for {
+			_ = <-blockchain.Chain.UpdateChannel
+		}
+
+	}()
 
 	gui.Log("Main Loop")
 

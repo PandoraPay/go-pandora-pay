@@ -10,10 +10,11 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block/difficulty"
+	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config"
-	"pandora-pay/crypto"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"strconv"
 	"sync"
@@ -21,8 +22,8 @@ import (
 )
 
 type Blockchain struct {
-	Hash       crypto.Hash
-	KernelHash crypto.Hash
+	Hash       helpers.Hash
+	KernelHash helpers.Hash
 	Height     uint64
 	Timestamp  uint64
 
@@ -31,6 +32,8 @@ type Blockchain struct {
 	BigTotalDifficulty *big.Int
 
 	Sync bool `json:"-"`
+
+	UpdateChannel chan int `json:"-"`
 
 	mutex        sync.Mutex `json:"-"`
 	sync.RWMutex `json:"-"`
@@ -64,9 +67,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 		BigTotalDifficulty: chain.BigTotalDifficulty,
 	}
 
+	var accs *accounts.Accounts
+
 	err = store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 
-		var accs *accounts.Accounts
 		if accs, err = accounts.CreateNewAccounts(tx); err != nil {
 			return
 		}
@@ -88,7 +92,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			blkComplete := blocksComplete[i]
 
 			if blkComplete.Block.Height > chain.Height {
-				var hash crypto.Hash
+				var hash helpers.Hash
 				hash, err = newChain.loadBlockHash(writer, blkComplete.Block.Height)
 				if err != nil {
 					return err
@@ -213,35 +217,25 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 	gui.Log(fmt.Sprintf("Including blocks SUCCESS %s", hex.EncodeToString(chain.Hash[:])))
 	updateChainInfo()
 
+	chain.UpdateChannel <- 1 //sending 1
+
+	go chain.createBlockForForging()
+
 	result = true
 	return
 
 }
 
-func (chain *Blockchain) computeNextDifficultyBig(bucket *bolt.Bucket) (*big.Int, error) {
+func (chain *Blockchain) createBlockForForging() {
 
-	if config.DIFFICULTY_BLOCK_WINDOW > chain.Height {
-		return chain.Target, nil
+	var err error
+
+	var nextBlock *block.BlockComplete
+	if nextBlock, err = Chain.createNextBlockComplete(); err == nil {
+		gui.Error("Error creating next block", err)
 	}
 
-	first := chain.Height - config.DIFFICULTY_BLOCK_WINDOW
-
-	firstDifficulty, firstTimestamp, err := loadTotalDifficultyExtra(bucket, first)
-	if err != nil {
-		return nil, err
-	}
-
-	lastDifficulty := chain.BigTotalDifficulty
-	lastTimestamp := chain.Timestamp
-
-	//gui.Log("firstDifficulty " + firstDifficulty.String())
-	//gui.Log("lastDifficulty " + lastDifficulty.String())
-
-	deltaTotalDifficulty := new(big.Int).Sub(lastDifficulty, firstDifficulty)
-	deltaTime := lastTimestamp - firstTimestamp
-
-	return difficulty.NextDifficultyBig(deltaTotalDifficulty, deltaTime)
-
+	forging.Forging.RestartForgingWorkers(nextBlock, chain.Target)
 }
 
 func BlockchainInit() {
@@ -263,9 +257,33 @@ func BlockchainInit() {
 		Chain.Target = difficulty.ConvertDifficultyToBig(Chain.Difficulty)
 		Chain.BigTotalDifficulty = new(big.Int).SetUint64(0)
 	}
+	Chain.UpdateChannel = make(chan int)
 	updateChainInfo()
 
 	Chain.Sync = false
+
+	forging.ForgingInit()
+
+	go func() {
+
+		for {
+			_ = <-forging.Forging.SolutionChannel
+
+			var array []*block.BlockComplete
+			array = append(array, forging.Forging.BlkComplete)
+
+			result, err := Chain.AddBlocks(array)
+			if err == nil && result {
+				gui.Info("Block was forged! " + strconv.FormatUint(forging.Forging.BlkComplete.Block.Height, 10))
+			} else {
+				gui.Error("Error forging block "+strconv.FormatUint(forging.Forging.BlkComplete.Block.Height, 10), err)
+			}
+
+		}
+
+	}()
+
+	go Chain.createBlockForForging()
 
 }
 

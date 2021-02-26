@@ -3,6 +3,7 @@ package merkle_tree
 import (
 	"math"
 	"pandora-pay/crypto"
+	"pandora-pay/helpers"
 )
 
 /**
@@ -10,7 +11,7 @@ Fast Merkle Tree Construction
 It can't generate efficient proofs
 */
 
-type Hash = crypto.Hash
+type Hash = helpers.Hash
 
 func roundNextPowerOfTwo(number int) int {
 

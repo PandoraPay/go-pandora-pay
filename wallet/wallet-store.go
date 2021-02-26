@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	bolt "go.etcd.io/bbolt"
+	"pandora-pay/blockchain/forging"
 	"pandora-pay/crypto"
-	"pandora-pay/forging"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"strconv"
 )
@@ -78,7 +79,7 @@ func saveWallet() error {
 			return gui.Error("Error deleting next address", err)
 		}
 
-		checksum = crypto.RIPEMD(checksum)[0:crypto.ChecksumSize]
+		checksum = crypto.RIPEMD(checksum)[0:helpers.ChecksumSize]
 		if err = writer.Put([]byte("wallet-check-sum"), checksum); err != nil {
 			return gui.Error("Error storing checksum", err)
 		}
@@ -133,7 +134,7 @@ func loadWallet() error {
 				go forging.ForgingW.AddWallet(newWalletAddress.PublicKey, newWalletAddress.PrivateKey.Key, newWalletAddress.PublicKeyHash)
 			}
 
-			checksum = crypto.RIPEMD(checksum)[0:crypto.ChecksumSize]
+			checksum = crypto.RIPEMD(checksum)[0:helpers.ChecksumSize]
 			walletChecksum := reader.Get([]byte("wallet-check-sum"))
 			if !bytes.Equal(checksum, walletChecksum) {
 				return gui.Error("Wallet Checksum is not matching", errors.New("Wallet checksum mismatch !"))

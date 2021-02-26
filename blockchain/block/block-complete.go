@@ -15,7 +15,7 @@ type BlockComplete struct {
 	Txs   []*transaction.Transaction
 }
 
-func (blkComplete *BlockComplete) MerkleHash() crypto.Hash {
+func (blkComplete *BlockComplete) MerkleHash() helpers.Hash {
 
 	var buffer = []byte{}
 

@@ -7,13 +7,12 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/block"
-	"pandora-pay/crypto"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"strconv"
 )
 
-func (chain *Blockchain) LoadBlockFromHash(hash crypto.Hash) (blk *block.Block, err error) {
+func (chain *Blockchain) LoadBlockFromHash(hash helpers.Hash) (blk *block.Block, err error) {
 
 	err = store.StoreBlockchain.DB.View(func(tx *bolt.Tx) error {
 
@@ -31,7 +30,7 @@ func (chain *Blockchain) LoadBlockFromHash(hash crypto.Hash) (blk *block.Block, 
 
 }
 
-func loadBlock(bucket *bolt.Bucket, hash crypto.Hash) (blk *block.Block, err error) {
+func loadBlock(bucket *bolt.Bucket, hash helpers.Hash) (blk *block.Block, err error) {
 
 	key := []byte("blockHash")
 	key = append(key, hash[:]...)
@@ -47,7 +46,7 @@ func loadBlock(bucket *bolt.Bucket, hash crypto.Hash) (blk *block.Block, err err
 	return
 }
 
-func saveBlock(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash crypto.Hash) error {
+func saveBlock(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash helpers.Hash) error {
 
 	key := []byte("blockHash")
 	key = append(key, hash[:]...)
@@ -62,14 +61,14 @@ func saveBlock(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash crypt
 
 }
 
-func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) (hash crypto.Hash, err error) {
+func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) (hash helpers.Hash, err error) {
 	if height < 0 || height > chain.Height {
 		err = errors.New("Height is invalid")
 		return
 	}
 
 	key := []byte("blockHeight" + strconv.FormatUint(height, 10))
-	hash = *crypto.ConvertHash(bucket.Get(key))
+	hash = *helpers.ConvertHash(bucket.Get(key))
 	return
 }
 

@@ -7,16 +7,17 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/crypto"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"time"
 )
 
 type GenesisDataType struct {
-	Hash          crypto.Hash
+	Hash          helpers.Hash
 	HashHex       string
-	KernelHash    crypto.Hash
+	KernelHash    helpers.Hash
 	KernelHashHex string
 	Timestamp     uint64
-	Target        crypto.Hash
+	Target        helpers.Hash
 	Difficulty    uint64
 }
 
@@ -85,10 +86,10 @@ func GenesisInit() {
 
 	var buf []byte
 	buf, _ = hex.DecodeString(GenesisData.HashHex)
-	GenesisData.Hash = *crypto.ConvertHash(buf)
+	GenesisData.Hash = *helpers.ConvertHash(buf)
 
 	buf, _ = hex.DecodeString(GenesisData.KernelHashHex)
-	GenesisData.KernelHash = *crypto.ConvertHash(buf)
+	GenesisData.KernelHash = *helpers.ConvertHash(buf)
 
 	if Genesis, err = CreateNewGenesisBlock(); err != nil {
 		gui.Fatal("Error generating init Genesis")

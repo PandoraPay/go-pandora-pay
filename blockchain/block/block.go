@@ -14,10 +14,10 @@ import (
 
 type Block struct {
 	BlockHeader
-	MerkleHash crypto.Hash
+	MerkleHash helpers.Hash
 
-	PrevHash       crypto.Hash
-	PrevKernelHash crypto.Hash
+	PrevHash       helpers.Hash
+	PrevKernelHash helpers.Hash
 
 	Timestamp uint64
 
@@ -70,15 +70,15 @@ func (blk *Block) GetForgerPublicKeyHash() [20]byte {
 	return *helpers.Byte20(crypto.ComputePublicKeyHash(blk.Forger[:]))
 }
 
-func (blk *Block) ComputeHash() crypto.Hash {
+func (blk *Block) ComputeHash() helpers.Hash {
 	return crypto.SHA3Hash(blk.Serialize())
 }
 
-func (blk *Block) ComputeKernelHash() crypto.Hash {
+func (blk *Block) ComputeKernelHash() helpers.Hash {
 	return crypto.SHA3Hash(blk.SerializeBlock(false, false, true, true, false))
 }
 
-func (blk *Block) SerializeForSigning() crypto.Hash {
+func (blk *Block) SerializeForSigning() helpers.Hash {
 	return crypto.SHA3Hash(blk.SerializeBlock(true, true, true, true, false))
 }
 
@@ -130,15 +130,15 @@ func (blk *Block) Deserialize(buf []byte) (out []byte, err error) {
 		return
 	}
 
-	if blk.MerkleHash, buf, err = helpers.DeserializeHash(buf, crypto.HashSize); err != nil {
+	if blk.MerkleHash, buf, err = helpers.DeserializeHash(buf, helpers.HashSize); err != nil {
 		return
 	}
 
-	if blk.PrevHash, buf, err = helpers.DeserializeHash(buf, crypto.HashSize); err != nil {
+	if blk.PrevHash, buf, err = helpers.DeserializeHash(buf, helpers.HashSize); err != nil {
 		return
 	}
 
-	if blk.PrevKernelHash, buf, err = helpers.DeserializeHash(buf, crypto.HashSize); err != nil {
+	if blk.PrevKernelHash, buf, err = helpers.DeserializeHash(buf, helpers.HashSize); err != nil {
 		return
 	}
 
