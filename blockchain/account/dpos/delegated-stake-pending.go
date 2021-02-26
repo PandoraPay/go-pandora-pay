@@ -15,25 +15,23 @@ type DelegatedStakePending struct {
 	StakePendingHeight uint64
 }
 
-func (delegatedStakePending *DelegatedStakePending) Serialize(serialized *bytes.Buffer, buf []byte) {
+func (delegatedStakePending *DelegatedStakePending) Serialize(serialized *bytes.Buffer, temp []byte) {
 
-	n := binary.PutUvarint(buf, delegatedStakePending.StakePending)
-	serialized.Write(buf[:n])
+	n := binary.PutUvarint(temp, delegatedStakePending.StakePending)
+	serialized.Write(temp[:n])
 
-	n = binary.PutUvarint(buf, delegatedStakePending.StakePendingHeight)
-	serialized.Write(buf[:n])
+	n = binary.PutUvarint(temp, delegatedStakePending.StakePendingHeight)
+	serialized.Write(temp[:n])
 
 }
 
 func (delegatedStakePending *DelegatedStakePending) Deserialize(buf []byte) (out []byte, err error) {
 
-	delegatedStakePending.StakePending, buf, err = helpers.DeserializeNumber(buf)
-	if err != nil {
+	if delegatedStakePending.StakePending, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return
 	}
 
-	delegatedStakePending.StakePendingHeight, buf, err = helpers.DeserializeNumber(buf)
-	if err != nil {
+	if delegatedStakePending.StakePendingHeight, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return
 	}
 

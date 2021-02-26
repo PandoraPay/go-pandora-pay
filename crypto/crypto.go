@@ -23,3 +23,7 @@ func RIPEMD(b []byte) []byte {
 	h.Write(b)
 	return h.Sum(nil)
 }
+
+func ComputePublicKeyHash(publicKey []byte) []byte {
+	return RIPEMD(SHA3(publicKey))
+}

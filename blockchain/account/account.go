@@ -3,17 +3,76 @@ package account
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"pandora-pay/blockchain/account/dpos"
 	"pandora-pay/helpers"
 )
 
 type Account struct {
-	Version       uint64
-	Nonce         uint64
-	PublicKeyHash [20]byte
+	Version uint64
+	Nonce   uint64
 
 	Balances       []*Balance
 	DelegatedStake *dpos.DelegatedStake
+}
+
+func (account *Account) HasDelegatedStake() bool {
+	return account.Version == 1
+}
+
+func (account *Account) IsAccountEmpty() bool {
+	return (account.Version == 0 && len(account.Balances) == 0) ||
+		(account.HasDelegatedStake() && account.DelegatedStake.IsDelegatedStakeEmpty())
+}
+
+func (account *Account) IncrementNonce(sign bool) error {
+
+	if sign {
+		account.Nonce += 1
+	} else {
+		if account.Nonce == 0 {
+			return errors.New("Nonce would become negative")
+		}
+		account.Nonce -= 1
+	}
+
+	return nil
+}
+
+func (account *Account) AddBalance(sign bool, amount uint64, currency []byte) error {
+
+	var foundBalance *Balance
+	var foundBalanceIndex int
+
+	for i, balance := range account.Balances {
+		if bytes.Equal(balance.Currency[:], currency[:]) {
+			foundBalance = balance
+			foundBalanceIndex = i
+			break
+		}
+	}
+
+	if sign {
+		if foundBalance == nil {
+			foundBalance = new(Balance)
+			copy(foundBalance.Currency[:], currency[:])
+			account.Balances = append(account.Balances, foundBalance)
+		}
+		foundBalance.Amount += amount
+	} else {
+
+		if foundBalance == nil || foundBalance.Amount < amount {
+			return errors.New("Balance doesn't exist or would become negative")
+		}
+
+		foundBalance.Amount -= amount
+		if foundBalance.Amount == 0 {
+			account.Balances = append(account.Balances[:foundBalanceIndex], account.Balances[:foundBalanceIndex+1]...)
+		}
+
+	}
+
+	return nil
 }
 
 func (account *Account) Serialize() []byte {
@@ -26,8 +85,6 @@ func (account *Account) Serialize() []byte {
 
 	n = binary.PutUvarint(temp, account.Nonce)
 	serialized.Write(temp[:n])
-
-	serialized.Write(account.PublicKeyHash[:])
 
 	n = binary.PutUvarint(temp, uint64(len(account.Balances)))
 	serialized.Write(temp[:n])
@@ -45,33 +102,22 @@ func (account *Account) Serialize() []byte {
 
 func (account *Account) Deserialize(buf []byte) (out []byte, err error) {
 
-	account.Version, buf, err = helpers.DeserializeNumber(buf)
-	if err != nil {
+	if account.Version, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return
 	}
 
-	account.Nonce, buf, err = helpers.DeserializeNumber(buf)
-	if err != nil {
+	if account.Nonce, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return
 	}
-
-	var data []byte
-	data, buf, err = helpers.DeserializeBuffer(buf, 20)
-	if err != nil {
-		return
-	}
-	copy(account.PublicKeyHash[:], data)
 
 	var n uint64
-	n, buf, err = helpers.DeserializeNumber(buf)
-	if err != nil {
+	if n, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return
 	}
 
 	for i := uint64(0); i < n; i++ {
 		var balance = new(Balance)
-		buf, err = balance.Deserialize(buf)
-		if err != nil {
+		if buf, err = balance.Deserialize(buf); err != nil {
 			return
 		}
 		account.Balances = append(account.Balances, balance)
@@ -79,21 +125,11 @@ func (account *Account) Deserialize(buf []byte) (out []byte, err error) {
 
 	if account.HasDelegatedStake() {
 		account.DelegatedStake = new(dpos.DelegatedStake)
-		buf, err = account.DelegatedStake.Deserialize(buf)
-		if err != nil {
+		if buf, err = account.DelegatedStake.Deserialize(buf); err != nil {
 			return
 		}
 	}
 
 	out = buf
 	return
-}
-
-func (account *Account) HasDelegatedStake() bool {
-	return account.Version == 1
-}
-
-func (account *Account) IsAccountEmpty() bool {
-	return (account.Version == 0 && len(account.Balances) == 0) ||
-		(account.HasDelegatedStake() && account.DelegatedStake.IsDelegatedStakeEmpty())
 }

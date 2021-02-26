@@ -8,31 +8,43 @@ import (
 
 type Balance struct {
 	Amount   uint64
-	Currency [20]byte
+	Currency []byte
 }
 
-func (balance *Balance) Serialize(serialized *bytes.Buffer, buf []byte) {
+func (balance *Balance) Serialize(serialized *bytes.Buffer, temp []byte) {
 
-	n := binary.PutUvarint(buf, balance.Amount)
-	serialized.Write(buf[:n])
+	n := binary.PutUvarint(temp, balance.Amount)
+	serialized.Write(temp[:n])
 
-	serialized.Write(balance.Currency[:])
+	if len(balance.Currency) == 0 {
+		serialized.Write([]byte{0})
+	} else {
+		serialized.Write([]byte{1})
+		serialized.Write(balance.Currency[:])
+	}
+
+	serialized.Write(temp[:1])
 
 }
 
 func (balance *Balance) Deserialize(buf []byte) (out []byte, err error) {
 
-	balance.Amount, buf, err = helpers.DeserializeNumber(buf)
-	if err != nil {
+	if balance.Amount, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return
 	}
 
-	var data []byte
-	data, buf, err = helpers.DeserializeBuffer(buf, 20)
-	if err != nil {
+	var currencyType []byte
+	if currencyType, buf, err = helpers.DeserializeBuffer(buf, 1); err != nil {
 		return
 	}
-	copy(balance.Currency[:], data)
+
+	if currencyType[0] == 0 {
+		if balance.Currency, buf, err = helpers.DeserializeBuffer(buf, 20); err != nil {
+			return
+		}
+	} else {
+		balance.Currency = []byte{}
+	}
 
 	out = buf
 	return

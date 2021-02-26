@@ -46,32 +46,27 @@ func (delegatedStake *DelegatedStake) Serialize(serialized *bytes.Buffer, temp [
 func (delegatedStake *DelegatedStake) Deserialize(buf []byte) (out []byte, err error) {
 
 	var data []byte
-	data, buf, err = helpers.DeserializeBuffer(buf, 33)
-	if err != nil {
+	if data, buf, err = helpers.DeserializeBuffer(buf, 33); err != nil {
 		return
 	}
 	copy(delegatedStake.DelegatedPublicKey[:], data)
 
-	delegatedStake.StakeConfirmed, buf, err = helpers.DeserializeNumber(buf)
-	if err != nil {
+	if delegatedStake.StakeConfirmed, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return
 	}
 
-	delegatedStake.UnstakeHeight, buf, err = helpers.DeserializeNumber(buf)
-	if err != nil {
+	if delegatedStake.UnstakeHeight, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return
 	}
 
 	var n uint64
-	n, buf, err = helpers.DeserializeNumber(buf)
-	if err != nil {
+	if n, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return
 	}
 
 	for i := uint64(0); i < n; i++ {
 		var delegatedStakePending = new(DelegatedStakePending)
-		buf, err = delegatedStakePending.Deserialize(buf)
-		if err != nil {
+		if buf, err = delegatedStakePending.Deserialize(buf); err != nil {
 			return
 		}
 

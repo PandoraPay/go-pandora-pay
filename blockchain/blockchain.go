@@ -7,6 +7,7 @@ import (
 	"fmt"
 	bolt "go.etcd.io/bbolt"
 	"math/big"
+	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/blockchain/genesis"
@@ -61,14 +62,15 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 
 	err = store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 
+		accs := accounts.CreateNewAccounts(tx, false)
+
 		writer := tx.Bucket([]byte("Chain"))
 
 		var prevBlk = &block.Block{}
 		if blocksComplete[0].Block.Height == 0 {
 			prevBlk = genesis.Genesis
 		} else {
-			prevBlk, err = loadBlock(writer, newChain.Hash)
-			if err != nil {
+			if prevBlk, err = loadBlock(writer, newChain.Hash); err != nil {
 				return
 			}
 		}
@@ -93,18 +95,15 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 		}
 
 		if blocksComplete[0].Block.Height != newChain.Height {
-			err = errors.New("First Block has is not matching")
-			return
+			return errors.New("First Block has is not matching")
 		}
 
 		if !bytes.Equal(blocksComplete[0].Block.PrevHash[:], newChain.Hash[:]) {
-			err = errors.New("First block hash is not matching chain hash")
-			return
+			return errors.New("First block hash is not matching chain hash")
 		}
 
 		if !bytes.Equal(blocksComplete[0].Block.PrevKernelHash[:], newChain.KernelHash[:]) {
-			err = errors.New("First block kernel hash is not matching chain prev kerneh lash")
-			return
+			return errors.New("First block kernel hash is not matching chain prev kerneh lash")
 		}
 
 		for i, blkComplete := range blocksComplete {
@@ -113,8 +112,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			kernelHash := blkComplete.Block.ComputeKernelHash()
 
 			if difficulty.CheckKernelHashBig(kernelHash, Chain.Target) != true {
-				err = errors.New("KernelHash Difficulty is not met")
-				return
+				return errors.New("KernelHash Difficulty is not met")
 			}
 
 			//already verified for i == 0
@@ -122,45 +120,41 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 
 				prevHash := prevBlk.ComputeHash()
 				if !bytes.Equal(blkComplete.Block.PrevHash[:], prevHash[:]) {
-					err = errors.New("PrevHash doesn't match Genesis prevHash")
-					return
+					return errors.New("PrevHash doesn't match Genesis prevHash")
 				}
 
 				prevKernelHash := prevBlk.ComputeKernelHash()
 				if !bytes.Equal(blkComplete.Block.PrevKernelHash[:], prevKernelHash[:]) {
-					err = errors.New("PrevHash doesn't match Genesis prevKernelHash")
-					return
+					return errors.New("PrevHash doesn't match Genesis prevKernelHash")
 				}
 
 			}
 
 			if blkComplete.Block.VerifySignature() != true {
-				err = errors.New("Forger Signature is invalid!")
-				return
+				return errors.New("Forger Signature is invalid!")
 			}
 
 			if blkComplete.Block.BlockHeader.Version != 0 {
-				err = errors.New("Invalid Version Version")
-				return
+				return errors.New("Invalid Version Version")
 			}
 
 			if blkComplete.Block.Timestamp < newChain.Timestamp {
-				err = errors.New("Timestamp has to be greather than the last timestmap")
-				return
+				return errors.New("Timestamp has to be greather than the last timestmap")
 			}
 
 			if blkComplete.Block.Timestamp > uint64(time.Now().UTC().Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
-				err = errors.New("Timestamp is too much into the future")
-				return
+				return errors.New("Timestamp is too much into the future")
 			}
 
 			if blkComplete.VerifyMerkleHash() != true {
-				err = errors.New("Verify Merkle Hash failed")
+				return errors.New("Verify Merkle Hash failed")
+			}
+
+			if err = blkComplete.Block.IncludeBlock(accs); err != nil {
 				return
 			}
 
-			err = saveBlock(writer, blkComplete, hash)
-			if err != nil {
+			if err = saveBlock(writer, blkComplete, hash); err != nil {
 				return
 			}
 
@@ -171,14 +165,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			bigKernelHash := difficulty.HashToBig(kernelHash)
 			difficultyKernelHash := difficulty.ConvertDifficultyBigToUInt64(bigKernelHash)
 
-			newChain.Target, err = newChain.computeNextDifficultyBig(writer)
-			if err != nil {
+			if newChain.Target, err = newChain.computeNextDifficultyBig(writer); err != nil {
 				return
 			}
 
 			newChain.BigTotalDifficulty = new(big.Int).Add(newChain.BigTotalDifficulty, new(big.Int).SetUint64(difficultyKernelHash))
-			err = newChain.saveTotalDifficultyExtra(writer)
-			if err != nil {
+			if err = newChain.saveTotalDifficultyExtra(writer); err != nil {
 				return
 			}
 

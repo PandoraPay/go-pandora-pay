@@ -3,6 +3,10 @@ package block
 import (
 	"bytes"
 	"encoding/binary"
+	"pandora-pay/blockchain/account"
+	"pandora-pay/blockchain/accounts"
+	"pandora-pay/config"
+	"pandora-pay/config/reward"
 	"pandora-pay/crypto"
 	"pandora-pay/crypto/ecdsa"
 	"pandora-pay/helpers"
@@ -19,6 +23,51 @@ type Block struct {
 
 	Forger    [33]byte // 33 byte public key
 	Signature [65]byte // 65 byte signature
+}
+
+func (blk *Block) IncludeBlock(acs *accounts.Accounts) (err error) {
+
+	forgerPublicKeyHash := blk.GetForgerPublicKeyHash()
+	var acc *account.Account
+
+	if acc, err = acs.GetAccount(forgerPublicKeyHash, true); err != nil {
+		return
+	}
+
+	if err = acc.AddBalance(true, reward.GetRewardAt(blk.Height), config.NATIVE_CURRENCY); err != nil {
+		return
+	}
+
+	if err = acs.UpdateAccount(forgerPublicKeyHash, acc); err != nil {
+		return
+	}
+
+	return
+}
+
+func (blk *Block) RemoveBlock(acs *accounts.Accounts) (err error) {
+
+	forgerPublicKeyHash := blk.GetForgerPublicKeyHash()
+	var acc *account.Account
+
+	if acc, err = acs.GetAccount(forgerPublicKeyHash, true); err != nil {
+		return
+	}
+
+	if err = acc.AddBalance(false, reward.GetRewardAt(blk.Height), config.NATIVE_CURRENCY); err != nil {
+		return
+	}
+
+	if err = acs.UpdateAccount(forgerPublicKeyHash, acc); err != nil {
+		return
+	}
+
+	return
+}
+
+func (blk *Block) GetForgerPublicKeyHash() (forgerPublicKeyHash [20]byte) {
+	copy(forgerPublicKeyHash[:], crypto.ComputePublicKeyHash(blk.Forger[:]))
+	return
 }
 
 func (blk *Block) ComputeHash() crypto.Hash {
@@ -77,40 +126,33 @@ func (blk *Block) Serialize() []byte {
 
 func (blk *Block) Deserialize(buf []byte) (out []byte, err error) {
 
-	buf, err = blk.BlockHeader.Deserialize(buf)
-	if err != nil {
+	if buf, err = blk.BlockHeader.Deserialize(buf); err != nil {
 		return
 	}
 
-	blk.MerkleHash, buf, err = helpers.DeserializeHash(buf, crypto.HashSize)
-	if err != nil {
+	if blk.MerkleHash, buf, err = helpers.DeserializeHash(buf, crypto.HashSize); err != nil {
 		return
 	}
 
-	blk.PrevHash, buf, err = helpers.DeserializeHash(buf, crypto.HashSize)
-	if err != nil {
+	if blk.PrevHash, buf, err = helpers.DeserializeHash(buf, crypto.HashSize); err != nil {
 		return
 	}
 
-	blk.PrevKernelHash, buf, err = helpers.DeserializeHash(buf, crypto.HashSize)
-	if err != nil {
+	if blk.PrevKernelHash, buf, err = helpers.DeserializeHash(buf, crypto.HashSize); err != nil {
 		return
 	}
 
-	blk.Timestamp, buf, err = helpers.DeserializeNumber(buf)
-	if err != nil {
+	if blk.Timestamp, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return
 	}
 
 	var data []byte
-	data, buf, err = helpers.DeserializeBuffer(buf, 33)
-	if err != nil {
+	if data, buf, err = helpers.DeserializeBuffer(buf, 33); err != nil {
 		return
 	}
 	copy(blk.Forger[:], data)
 
-	data, buf, err = helpers.DeserializeBuffer(buf, 65)
-	if err != nil {
+	if data, buf, err = helpers.DeserializeBuffer(buf, 65); err != nil {
 		return
 	}
 	copy(blk.Signature[:], data)

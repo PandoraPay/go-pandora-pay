@@ -37,7 +37,7 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 	var version AddressVersion
 
 	if usePublicKeyHash {
-		finalPublicKey = crypto.RIPEMD(publicKey)
+		finalPublicKey = crypto.ComputePublicKeyHash(publicKey)
 		version = AddressVersionTransparentPublicKeyHash
 	} else {
 		finalPublicKey = publicKey
