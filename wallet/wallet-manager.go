@@ -9,6 +9,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"strconv"
+	"sync"
 )
 
 type Wallet struct {
@@ -18,20 +19,19 @@ type Wallet struct {
 	SeedIndex uint32
 	Count     int
 	Addresses []*WalletAddress `json:"-"`
+
+	// forging creates multiple threads and it will read the wallet.Addresses
+	sync.RWMutex `json:"-"`
 }
 
-var wallet Wallet
+var W Wallet
 
-func GetAddresses() []*WalletAddress {
-	return wallet.Addresses
-}
+func (W *Wallet) addNewAddress() (err error) {
 
-func addNewAddress() (err error) {
-
-	masterKey, _ := bip32.NewMasterKey(wallet.Seed[:])
+	masterKey, _ := bip32.NewMasterKey(W.Seed[:])
 
 	var key *bip32.Key
-	if key, err = masterKey.NewChildKey(wallet.SeedIndex); err != nil {
+	if key, err = masterKey.NewChildKey(W.SeedIndex); err != nil {
 		gui.Fatal("Couldn't derivate the marker key", err)
 	}
 
@@ -52,42 +52,57 @@ func addNewAddress() (err error) {
 
 	var finalPublicKey [33]byte
 	copy(finalPublicKey[:], publicKey)
+
+	W.Lock()
+	defer W.Unlock()
 	walletAddress := WalletAddress{
-		Name:          "Addr " + strconv.Itoa(wallet.Count),
+		Name:          "Addr " + strconv.Itoa(W.Count),
 		PrivateKey:    &privateKey,
 		PublicKeyHash: publicKeyHash,
 		PublicKey:     finalPublicKey,
 		Address:       address,
-		SeedIndex:     wallet.SeedIndex,
+		SeedIndex:     W.SeedIndex,
 	}
 
-	wallet.Addresses = append(wallet.Addresses, &walletAddress)
-	wallet.Count += 1
-	wallet.SeedIndex += 1
+	W.Addresses = append(W.Addresses, &walletAddress)
+	W.Count += 1
+	W.SeedIndex += 1
 
 	updateWallet()
 	return saveWallet()
 }
 
-func removeAddress(index int) error {
-	if index < 0 || index > len(wallet.Addresses) {
+func (W *Wallet) removeAddress(index int) error {
+
+	W.Lock()
+	defer W.Unlock()
+
+	if index < 0 || index > len(W.Addresses) {
 		return errors.New("Invalid Address Index")
 	}
-	wallet.Addresses = append(wallet.Addresses[:index], wallet.Addresses[index+1:]...)
-	wallet.Count -= 1
+
+	W.Addresses = append(W.Addresses[:index], W.Addresses[index+1:]...)
+	W.Count -= 1
 
 	updateWallet()
 	return saveWallet()
 }
 
-func showPrivateKey(index int) ([]byte, error) {
-	if index < 0 || index > len(wallet.Addresses) {
+func (W *Wallet) showPrivateKey(index int) ([]byte, error) {
+
+	W.RLock()
+	defer W.RUnlock()
+
+	if index < 0 || index > len(W.Addresses) {
 		return nil, errors.New("Invalid Address Index")
 	}
-	return wallet.Addresses[index].PrivateKey.Key, nil
+	return W.Addresses[index].PrivateKey.Key, nil
 }
 
-func createSeed() (err error) {
+func (W *Wallet) createSeed() (err error) {
+
+	W.Lock()
+	defer W.Unlock()
 
 	var entropy []byte
 	if entropy, err = bip39.NewEntropy(256); err != nil {
@@ -98,25 +113,24 @@ func createSeed() (err error) {
 	if mnemonic, err = bip39.NewMnemonic(entropy); err != nil {
 		return gui.Error("Mnemonic couldn't be created", err)
 	}
-	wallet.Mnemonic = mnemonic
+
+	W.Mnemonic = mnemonic
 
 	// Generate a Bip32 HD wallet for the mnemonic and a user supplied password
 	seed := bip39.NewSeed(mnemonic, "SEED Secret Passphrase")
-	wallet.Seed = *helpers.Byte32(seed)
+	W.Seed = *helpers.Byte32(seed)
 
 	return nil
 }
 
-func createEmptyWallet() error {
-	wallet = Wallet{}
-
-	if err := createSeed(); err != nil {
+func (W *Wallet) createEmptyWallet() error {
+	if err := W.createSeed(); err != nil {
 		return gui.Error("Error creating seed", err)
 	}
-	return addNewAddress()
+	return W.addNewAddress()
 }
 
 func updateWallet() {
-	gui.InfoUpdate("Wallet", walletSaved.Encrypted.String())
-	gui.InfoUpdate("Wallet Addrs", strconv.Itoa(wallet.Count))
+	gui.InfoUpdate("Wallet", wSaved.Encrypted.String())
+	gui.InfoUpdate("Wallet Addrs", strconv.Itoa(W.Count))
 }

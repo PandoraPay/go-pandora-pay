@@ -13,8 +13,6 @@ import (
 	"time"
 )
 
-var mutex = &sync.Mutex{}
-
 func createNextBlockComplete(height uint64) (blkComplete *block.BlockComplete, err error) {
 
 	var blk *block.Block
@@ -49,16 +47,14 @@ func createNextBlockComplete(height uint64) (blkComplete *block.BlockComplete, e
 }
 
 //inside a thread
-func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.WaitGroup) {
+func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.WaitGroup, addresses []*wallet.WalletAddress) {
 
 	buf := make([]byte, binary.MaxVarintLen64)
 
 	serialized := blkComplete.Block.SerializeBlock(false, false, false, false, false)
 	timestamp := blkComplete.Block.Timestamp + 1
 
-	addresses := wallet.GetAddresses()
-
-	for forging {
+	for forging.safeIsProcessing() {
 
 		if timestamp > uint64(time.Now().Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
 			time.Sleep(100 * time.Millisecond)
@@ -66,9 +62,13 @@ func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.
 		}
 
 		//forge with my wallets
-		for i := 0; i < len(addresses) && forging; i++ {
+		for i := 0; i < len(addresses); i++ {
 
 			if i%threads == threadIndex {
+
+				if !forging.safeIsProcessing() {
+					break
+				}
 
 				n := binary.PutUvarint(buf, timestamp)
 				serialized = append(serialized, buf[:n]...)
@@ -77,24 +77,7 @@ func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.
 
 				if difficulty.CheckKernelHashBig(kernelHash, blockchain.Chain.Target) {
 
-					mutex.Lock()
-
-					copy(blkComplete.Block.Forger[:], addresses[i].PublicKey[:])
-					blkComplete.Block.Timestamp = timestamp
-					serializationForSigning := blkComplete.Block.SerializeForSigning()
-					signature, _ := addresses[i].PrivateKey.Sign(&serializationForSigning)
-
-					copy(blkComplete.Block.Signature[:], signature)
-
-					var array []*block.BlockComplete
-					array = append(array, blkComplete)
-
-					result, err := blockchain.Chain.AddBlocks(array)
-					if err == nil && result {
-						forging = false
-					}
-
-					mutex.Unlock()
+					foundSolution(addresses[i].PublicKey, timestamp)
 
 				} else {
 					// for debugging only

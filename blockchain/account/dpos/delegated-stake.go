@@ -52,7 +52,7 @@ func (delegatedStake *DelegatedStake) Deserialize(buf []byte) (out []byte, err e
 	if data, buf, err = helpers.DeserializeBuffer(buf, 33); err != nil {
 		return
 	}
-	copy(delegatedStake.DelegatedPublicKey[:], data)
+	delegatedStake.DelegatedPublicKey = *helpers.Byte33(data)
 
 	if delegatedStake.StakeConfirmed, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return

@@ -66,9 +66,8 @@ func (blk *Block) RemoveBlock(acs *accounts.Accounts) (err error) {
 	return
 }
 
-func (blk *Block) GetForgerPublicKeyHash() (forgerPublicKeyHash [20]byte) {
-	copy(forgerPublicKeyHash[:], crypto.ComputePublicKeyHash(blk.Forger[:]))
-	return
+func (blk *Block) GetForgerPublicKeyHash() [20]byte {
+	return *helpers.Byte20(crypto.ComputePublicKeyHash(blk.Forger[:]))
 }
 
 func (blk *Block) ComputeHash() crypto.Hash {
@@ -151,12 +150,12 @@ func (blk *Block) Deserialize(buf []byte) (out []byte, err error) {
 	if data, buf, err = helpers.DeserializeBuffer(buf, 33); err != nil {
 		return
 	}
-	copy(blk.Forger[:], data)
+	blk.Forger = *helpers.Byte33(data)
 
 	if data, buf, err = helpers.DeserializeBuffer(buf, 65); err != nil {
 		return
 	}
-	copy(blk.Signature[:], data)
+	blk.Signature = *helpers.Byte65(data)
 
 	out = buf
 	return

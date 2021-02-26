@@ -35,7 +35,7 @@ type WalletSaved struct {
 	Checksum  [4]byte
 }
 
-var walletSaved = WalletSaved{}
+var wSaved = WalletSaved{}
 
 func saveWallet() error {
 	return store.StoreWallet.DB.Update(func(tx *bolt.Tx) (err error) {
@@ -48,7 +48,7 @@ func saveWallet() error {
 			return gui.Error("Error deleting saved status", err)
 		}
 
-		if marshal, err = json.Marshal(walletSaved); err != nil {
+		if marshal, err = json.Marshal(wSaved); err != nil {
 			return gui.Error("Error marshaling wallet saved", err)
 		}
 		checksum = append(checksum, marshal...)
@@ -56,7 +56,7 @@ func saveWallet() error {
 			return gui.Error("Error storing saved status", err)
 		}
 
-		if marshal, err = json.Marshal(wallet); err != nil {
+		if marshal, err = json.Marshal(W); err != nil {
 			return gui.Error("Error marshaling wallet", err)
 		}
 
@@ -65,15 +65,15 @@ func saveWallet() error {
 			return gui.Error("Error storing saved status", err)
 		}
 
-		for i := 0; i < wallet.Count; i++ {
-			if marshal, err = json.Marshal(wallet.Addresses[i]); err != nil {
+		for i := 0; i < W.Count; i++ {
+			if marshal, err = json.Marshal(W.Addresses[i]); err != nil {
 				return gui.Error("Error marshaling address "+strconv.Itoa(i), err)
 			}
 			checksum = append(checksum, marshal...)
 			err = writer.Put([]byte("wallet-address-"+strconv.Itoa(i)), marshal)
 		}
 
-		if err = writer.Delete([]byte("wallet-address-" + strconv.Itoa(wallet.Count))); err != nil {
+		if err = writer.Delete([]byte("wallet-address-" + strconv.Itoa(W.Count))); err != nil {
 			return gui.Error("Error deleting next address", err)
 		}
 
@@ -110,7 +110,7 @@ func loadWallet() error {
 			unmarshal = reader.Get([]byte("wallet-saved"))
 			checksum = append(checksum, unmarshal...)
 
-			if err = json.Unmarshal(unmarshal, &walletSaved); err != nil {
+			if err = json.Unmarshal(unmarshal, &wSaved); err != nil {
 				return gui.Error("Error unmarshaling wallet saved", err)
 			}
 
@@ -137,9 +137,9 @@ func loadWallet() error {
 				return gui.Error("Wallet Checksum is not matching", errors.New("Wallet checksum mismatch !"))
 			}
 
-			wallet = newWallet
+			W = newWallet
 			updateWallet()
-			gui.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
+			gui.Log("Wallet Loaded! " + strconv.Itoa(W.Count))
 
 		} else {
 			gui.Fatal("Error loading wallet ?")

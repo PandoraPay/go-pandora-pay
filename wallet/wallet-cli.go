@@ -24,7 +24,7 @@ func initWalletCLI() {
 
 func cliCreateNewAddress(cmd string) {
 
-	if err := addNewAddress(); err != nil {
+	if err := W.addNewAddress(); err != nil {
 		gui.Error("Error creating a new Address", err)
 	}
 
@@ -35,7 +35,7 @@ func cliRemoveAddress(cmd string) {
 	cliListAddresses("")
 	index := <-gui.OutputReadInt("Select Address to be Removed")
 
-	if err := removeAddress(index); err != nil {
+	if err := W.removeAddress(index); err != nil {
 		gui.Error(err)
 	} else {
 		cliListAddresses("")
@@ -47,9 +47,9 @@ func cliRemoveAddress(cmd string) {
 func cliListAddresses(cmd string) {
 
 	gui.OutputWrite("Wallet")
-	gui.OutputWrite("Version: " + wallet.Version.String())
-	gui.OutputWrite("Encrypted: " + walletSaved.Encrypted.String())
-	gui.OutputWrite("Count: " + strconv.Itoa(wallet.Count))
+	gui.OutputWrite("Version: " + W.Version.String())
+	gui.OutputWrite("Encrypted: " + wSaved.Encrypted.String())
+	gui.OutputWrite("Count: " + strconv.Itoa(W.Count))
 
 	gui.OutputWrite("")
 
@@ -58,7 +58,7 @@ func cliListAddresses(cmd string) {
 		var accs *accounts.Accounts
 		accs, err = accounts.CreateNewAccounts(tx, true)
 
-		for _, walletAddress := range wallet.Addresses {
+		for _, walletAddress := range W.Addresses {
 			addressStr, _ := walletAddress.Address.EncodeAddr()
 			gui.OutputWrite(walletAddress.Name + " : " + walletAddress.Address.Version.String() + " : " + addressStr)
 
@@ -95,10 +95,10 @@ func cliListAddresses(cmd string) {
 
 func cliShowMnemonic(string) {
 	gui.OutputWrite("Mnemonic \n")
-	gui.OutputWrite(wallet.Mnemonic)
+	gui.OutputWrite(W.Mnemonic)
 
 	gui.OutputWrite("Seed \n")
-	gui.OutputWrite(wallet.Seed)
+	gui.OutputWrite(W.Seed)
 	gui.OutputDone()
 }
 
@@ -108,7 +108,7 @@ func cliShowPrivateKey(cmd string) {
 
 	index := <-gui.OutputReadInt("Select Address")
 
-	if key, err := showPrivateKey(index); err != nil {
+	if key, err := W.showPrivateKey(index); err != nil {
 		gui.Error(err)
 	} else {
 		gui.OutputWrite(key)
