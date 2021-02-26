@@ -24,7 +24,6 @@ func WalletInit() {
 	err := loadWallet()
 	if err != nil && err.Error() == "Wallet doesn't exist" {
 		err = createEmptyWallet()
-
 	}
 	if err != nil {
 		gui.Fatal("Error loading wallet", err)

@@ -12,9 +12,11 @@ Status of Blockchain implementation:
     - [x] Public Address (amount and paymentId)
     - [x] HD Wallet
 - [x] Commit/Rollback Database
-    - [x] Wallet
-        - [x] Save and Load
-        - [ ] Export and import JSON        
+- [x] Wallet
+    - [x] Save and Load
+    - [x] Print Wallet Transparent Balances
+    - [ ] Print Wallet Homomorphic Balances
+    - [ ] Export and import JSON        
     - [ ] Wallet Encryption
 - [x] Merkle Tree
 - [x] Block
@@ -32,10 +34,19 @@ Status of Blockchain implementation:
     - [x] Forging with wallets Multithreading    
     - [ ] Forging with delegated stakes
         - [ ] Accepting to delegate stakes from network  
-- [ ] Balance
-    - [ ] Balance Update
-    - [ ] Tokens
+- [x] Balances
+    - [x] Balance and Nonce Update
+    - [x] Delegating stake
+    - [x] Multiple Currencies
     - [ ] Patricia Trie ?
+- [ ] Homomorphic Balances
+    - [ ] Homomorphic balance and nonce   
+    - [ ] Multiple Currencies
+    - [ ] Patricia Trie ?
+- [ ] Currencies
+    - [ ] Currency
+    - [ ] Creation
+    - [ ] Update  
 - [ ] Transactions
     - [ ] Transparent Transactions
     - [ ] Transaction Builder

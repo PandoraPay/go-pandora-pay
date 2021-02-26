@@ -57,7 +57,7 @@ func loadSettings() error {
 
 		saved := reader.Get([]byte("saved"))
 		if saved == nil {
-			return createEmptySettings()
+			return errors.New("Settings doesn't exist")
 		}
 		if bytes.Equal(saved, []byte{1}) {
 			gui.Log("Settings Loading... ")

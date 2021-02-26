@@ -6,6 +6,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/account"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/config"
 	"pandora-pay/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/store"
@@ -77,11 +78,12 @@ func cliListAddresses(cmd string) {
 				if acc, err = accs.GetAccount(finaPublicKeyHash, false); err != nil {
 					return
 				}
+
 				if acc == nil {
 					gui.OutputWrite("      -> " + "EMPTY")
 				} else {
 					for _, balance := range acc.Balances {
-						gui.OutputWrite("      -> " + strconv.FormatUint(balance.Amount, 10) + " " + hex.EncodeToString(balance.Currency))
+						gui.OutputWrite("      -> " + strconv.FormatUint(config.ConvertToBase(balance.Amount), 10) + " " + hex.EncodeToString(balance.Currency))
 					}
 				}
 

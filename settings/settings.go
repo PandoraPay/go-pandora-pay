@@ -16,6 +16,9 @@ var settings Settings
 func SettingsInit() {
 
 	err := loadSettings()
+	if err != nil && err.Error() == "Settings doesn't exist" {
+		err = createEmptySettings()
+	}
 	if err != nil {
 		gui.Fatal("Error loading settings", err)
 	}

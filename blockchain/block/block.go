@@ -34,7 +34,8 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts) (err error) {
 		return
 	}
 
-	if err = acc.AddBalance(true, reward.GetRewardAt(blk.Height), config.NATIVE_CURRENCY); err != nil {
+	reward := config.ConvertToUnits(reward.GetRewardAt(blk.Height))
+	if err = acc.AddBalance(true, reward, config.NATIVE_CURRENCY); err != nil {
 		return
 	}
 
