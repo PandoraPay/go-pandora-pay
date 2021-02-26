@@ -38,10 +38,10 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 
 	if usePublicKeyHash {
 		finalPublicKey = crypto.ComputePublicKeyHash(publicKey)
-		version = AddressVersionTransparentPublicKeyHash
+		version = TransparentPublicKeyHash
 	} else {
 		finalPublicKey = publicKey
-		version = AddressVersionTransparentPublicKey
+		version = TransparentPublicKey
 	}
 
 	return &Address{Network: config.NETWORK_SELECTED, Version: version, PublicKey: finalPublicKey[:], Amount: amount, PaymentID: paymentID}, nil

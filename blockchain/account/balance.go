@@ -39,11 +39,11 @@ func (balance *Balance) Deserialize(buf []byte) (out []byte, err error) {
 	}
 
 	if currencyType[0] == 0 {
+		balance.Currency = []byte{}
+	} else {
 		if balance.Currency, buf, err = helpers.DeserializeBuffer(buf, 20); err != nil {
 			return
 		}
-	} else {
-		balance.Currency = []byte{}
 	}
 
 	out = buf

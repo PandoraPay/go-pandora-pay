@@ -106,7 +106,7 @@ func loadWallet() error {
 
 		saved := reader.Get([]byte("saved"))
 		if saved == nil {
-			return createEmptyWallet()
+			return errors.New("Wallet doesn't exist")
 		}
 
 		if bytes.Equal(saved, []byte{1}) {

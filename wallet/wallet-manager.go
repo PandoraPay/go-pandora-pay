@@ -25,28 +25,28 @@ func GetAddresses() []*WalletAddress {
 	return wallet.Addresses
 }
 
-func addNewAddress() error {
+func addNewAddress() (err error) {
 
 	masterKey, _ := bip32.NewMasterKey(wallet.Seed[:])
-	key, err := masterKey.NewChildKey(wallet.SeedIndex)
-	if err != nil {
+
+	var key *bip32.Key
+	if key, err = masterKey.NewChildKey(wallet.SeedIndex); err != nil {
 		gui.Fatal("Couldn't derivate the marker key", err)
 	}
 
 	privateKey := addresses.PrivateKey{Key: key.Key}
 
-	publicKey, err := privateKey.GeneratePublicKey()
-	if err != nil {
+	var publicKey []byte
+	if publicKey, err = privateKey.GeneratePublicKey(); err != nil {
 		gui.Fatal("Generating Public Key from Private key raised an error", err)
 	}
 
-	address, err := privateKey.GenerateAddress(true, 0, []byte{})
-	if err != nil {
+	var address *addresses.Address
+	if address, err = privateKey.GenerateAddress(true, 0, []byte{}); err != nil {
 		gui.Fatal("Generating Address raised an error", err)
 	}
 
 	walletAddress := WalletAddress{
-		Version:    WalletAddressTransparent,
 		Name:       "Addr " + strconv.Itoa(wallet.Count),
 		PrivateKey: &privateKey,
 		PublicKey:  publicKey,

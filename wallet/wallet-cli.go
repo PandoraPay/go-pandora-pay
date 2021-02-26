@@ -1,7 +1,14 @@
 package wallet
 
 import (
+	"encoding/hex"
+	bolt "go.etcd.io/bbolt"
+	"pandora-pay/addresses"
+	"pandora-pay/blockchain/account"
+	"pandora-pay/blockchain/accounts"
+	"pandora-pay/crypto"
 	"pandora-pay/gui"
+	"pandora-pay/store"
 	"strconv"
 )
 
@@ -46,9 +53,46 @@ func cliListAddresses(cmd string) {
 
 	gui.OutputWrite("")
 
-	for _, walletAddress := range wallet.Addresses {
-		addressStr, _ := walletAddress.Address.EncodeAddr()
-		gui.OutputWrite(walletAddress.Name + " : " + walletAddress.Version.String() + " : " + addressStr)
+	err := store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
+
+		var accs *accounts.Accounts
+		accs, err = accounts.CreateNewAccounts(tx, true)
+
+		for _, walletAddress := range wallet.Addresses {
+			addressStr, _ := walletAddress.Address.EncodeAddr()
+			gui.OutputWrite(walletAddress.Name + " : " + walletAddress.Address.Version.String() + " : " + addressStr)
+
+			if walletAddress.Address.Version == addresses.TransparentPublicKeyHash ||
+				walletAddress.Address.Version == addresses.TransparentPublicKey {
+
+				publicKeyHash := walletAddress.Address.PublicKey
+				if walletAddress.Address.Version == addresses.TransparentPublicKey {
+					publicKeyHash = crypto.ComputePublicKeyHash(publicKeyHash)
+				}
+
+				var finaPublicKeyHash [20]byte
+				copy(finaPublicKeyHash[:], publicKeyHash)
+
+				var acc *account.Account
+				if acc, err = accs.GetAccount(finaPublicKeyHash, false); err != nil {
+					return
+				}
+				if acc == nil {
+					gui.OutputWrite("      -> " + "EMPTY")
+				} else {
+					for _, balance := range acc.Balances {
+						gui.OutputWrite("      -> " + strconv.FormatUint(balance.Amount, 10) + " " + hex.EncodeToString(balance.Currency))
+					}
+				}
+
+			}
+
+		}
+
+		return
+	})
+	if err != nil {
+		gui.Error(err)
 	}
 
 	if cmd != "" {

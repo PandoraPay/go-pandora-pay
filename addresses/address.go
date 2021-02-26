@@ -13,8 +13,8 @@ import (
 type AddressVersion uint64
 
 const (
-	AddressVersionTransparentPublicKeyHash AddressVersion = 0
-	AddressVersionTransparentPublicKey     AddressVersion = 1
+	TransparentPublicKeyHash AddressVersion = 0
+	TransparentPublicKey     AddressVersion = 1
 )
 
 type Address struct {
@@ -23,6 +23,17 @@ type Address struct {
 	PublicKey []byte // publicKey or PublicKeyHash
 	Amount    uint64 // amount to be paid
 	PaymentID []byte // payment id
+}
+
+func (e AddressVersion) String() string {
+	switch e {
+	case TransparentPublicKeyHash:
+		return "Transparent PubKeyHash"
+	case TransparentPublicKey:
+		return "Transparent PubKey"
+	default:
+		return "Unknown Address Version"
+	}
 }
 
 func (a *Address) EncodeAddr() (string, error) {
@@ -110,9 +121,9 @@ func DecodeAddr(input string) (*Address, error) {
 	var readBytes int
 
 	switch adr.Version {
-	case AddressVersionTransparentPublicKeyHash:
+	case TransparentPublicKeyHash:
 		readBytes = 20
-	case AddressVersionTransparentPublicKey:
+	case TransparentPublicKey:
 		readBytes = 33
 	default:
 		return nil, errors.New("Invalid Address Version")

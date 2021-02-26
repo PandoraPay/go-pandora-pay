@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"errors"
 	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/account"
 )
@@ -10,7 +11,12 @@ type Accounts struct {
 	ReadyOnly bool
 }
 
-func CreateNewAccounts(tx *bbolt.Tx, ReadyOnly bool) (accounts *Accounts) {
+func CreateNewAccounts(tx *bbolt.Tx, ReadyOnly bool) (accounts *Accounts, err error) {
+
+	if tx == nil {
+		err = errors.New("DB Transaction is not set")
+		return
+	}
 
 	accounts = new(Accounts)
 	accounts.Bucket = tx.Bucket([]byte("Accounts"))
