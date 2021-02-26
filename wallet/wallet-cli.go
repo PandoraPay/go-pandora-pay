@@ -23,10 +23,11 @@ func initWalletCLI() {
 }
 
 func cliCreateNewAddress(cmd string) {
-	err := addNewAddress()
-	if err != nil {
+
+	if err := addNewAddress(); err != nil {
 		gui.Error("Error creating a new Address", err)
 	}
+
 	cliListAddresses(cmd)
 }
 
@@ -34,8 +35,7 @@ func cliRemoveAddress(cmd string) {
 	cliListAddresses("")
 	index := <-gui.OutputReadInt("Select Address to be Removed")
 
-	err := removeAddress(index)
-	if err != nil {
+	if err := removeAddress(index); err != nil {
 		gui.Error(err)
 	} else {
 		cliListAddresses("")
@@ -107,8 +107,8 @@ func cliShowPrivateKey(cmd string) {
 	cliListAddresses("")
 
 	index := <-gui.OutputReadInt("Select Address")
-	key, err := showPrivateKey(index)
-	if err != nil {
+
+	if key, err := showPrivateKey(index); err != nil {
 		gui.Error(err)
 	} else {
 		gui.OutputWrite(key)

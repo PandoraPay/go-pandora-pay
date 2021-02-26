@@ -87,15 +87,15 @@ func showPrivateKey(index int) ([]byte, error) {
 	return wallet.Addresses[index].PrivateKey.Key, nil
 }
 
-func createSeed() error {
+func createSeed() (err error) {
 
-	entropy, err := bip39.NewEntropy(256)
-	if err != nil {
+	var entropy []byte
+	if entropy, err = bip39.NewEntropy(256); err != nil {
 		return gui.Error("Entropy of the address raised an error", err)
 	}
 
-	mnemonic, err := bip39.NewMnemonic(entropy)
-	if err != nil {
+	var mnemonic string
+	if mnemonic, err = bip39.NewMnemonic(entropy); err != nil {
 		return gui.Error("Mnemonic couldn't be created", err)
 	}
 	wallet.Mnemonic = mnemonic
@@ -110,8 +110,7 @@ func createSeed() error {
 func createEmptyWallet() error {
 	wallet = Wallet{}
 
-	err := createSeed()
-	if err != nil {
+	if err := createSeed(); err != nil {
 		return gui.Error("Error creating seed", err)
 	}
 	return addNewAddress()

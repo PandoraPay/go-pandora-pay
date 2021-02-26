@@ -2,14 +2,18 @@ package ecdsa
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"pandora-pay/helpers"
 	"testing"
 )
 
 func TestPrivateKeyPublicKeyCreation(t *testing.T) {
 
-	privateKey, err := GenerateKey()
-	if err != nil {
+	var err error
+	var privateKey *ecdsa.PrivateKey
+	var publicKey []byte
+
+	if privateKey, err = GenerateKey(); err != nil {
 		t.Errorf("Generate Key failed %s", err)
 	}
 
@@ -18,8 +22,7 @@ func TestPrivateKeyPublicKeyCreation(t *testing.T) {
 		t.Errorf("Generatated Key length is invalid %d", len(key))
 	}
 
-	publicKey, err := ComputePublicKey(key)
-	if err != nil {
+	if publicKey, err = ComputePublicKey(key); err != nil {
 		t.Errorf("Generate Pub Key failed %s", err)
 	}
 	if len(publicKey) != 33 {
@@ -30,6 +33,7 @@ func TestPrivateKeyPublicKeyCreation(t *testing.T) {
 
 func TestECDSASignVerify(t *testing.T) {
 
+	var err error
 	privateKey, _ := GenerateKey()
 
 	key := FromECDSA(privateKey)
@@ -38,13 +42,13 @@ func TestECDSASignVerify(t *testing.T) {
 	}
 
 	message := helpers.RandomBytes(32)
+	var signature []byte
 
-	signature, err := Sign(message, privateKey)
-
-	signature = signature[0:64]
-	if err != nil {
+	if signature, err = Sign(message, privateKey); err != nil {
 		t.Errorf("Signing raised an error %s", err)
 	}
+
+	signature = signature[0:64]
 
 	if len(signature) != 64 {
 		t.Errorf("Signature length is invalid %d", len(signature))

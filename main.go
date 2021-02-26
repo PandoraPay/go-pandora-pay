@@ -58,8 +58,7 @@ func main() {
 
 	gui.Info(fmt.Sprintf("OS:%s ARCH:%s CPU:%d", config.OS, config.ARHITECTURE, config.CPU_THREADS))
 
-	globals.Arguments, err = docopt.Parse(commands, nil, false, config.VERSION, false, false)
-	if err != nil {
+	if globals.Arguments, err = docopt.Parse(commands, nil, false, config.VERSION, false, false); err != nil {
 		gui.Fatal("Error processing arguments", err)
 	}
 

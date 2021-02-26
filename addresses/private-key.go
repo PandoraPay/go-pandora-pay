@@ -14,8 +14,7 @@ type PrivateKey struct {
 
 func (pk *PrivateKey) GeneratePublicKey() (publicKey []byte, err error) {
 
-	publicKey, err = ecdsa.ComputePublicKey(pk.Key)
-	if err != nil {
+	if publicKey, err = ecdsa.ComputePublicKey(pk.Key); err != nil {
 		return
 	}
 

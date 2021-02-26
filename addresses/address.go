@@ -78,7 +78,7 @@ func (a *Address) EncodeAddr() (string, error) {
 	return prefix + ret, nil
 }
 
-func DecodeAddr(input string) (*Address, error) {
+func DecodeAddr(input string) (addr2 *Address, err error) {
 
 	adr := Address{PublicKey: []byte{}, PaymentID: []byte{}}
 
@@ -98,9 +98,9 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, errors.New("Address network is invalid")
 	}
 
-	buf, err := base58.Decode(input[config.NETWORK_BYTE_PREFIX_LENGTH:])
-	if err != nil {
-		return nil, err
+	var buf []byte
+	if buf, err = base58.Decode(input[config.NETWORK_BYTE_PREFIX_LENGTH:]); err != nil {
+		return
 	}
 
 	checksum := crypto.RIPEMD(buf[:len(buf)-crypto.ChecksumSize])[0:crypto.ChecksumSize]
@@ -112,9 +112,8 @@ func DecodeAddr(input string) (*Address, error) {
 
 	var version uint64
 
-	version, buf, err = helpers.DeserializeNumber(buf)
-	if err != nil {
-		return nil, err
+	if version, buf, err = helpers.DeserializeNumber(buf); err != nil {
+		return
 	}
 	adr.Version = AddressVersion(version)
 
@@ -129,34 +128,31 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, errors.New("Invalid Address Version")
 	}
 
-	adr.PublicKey, buf, err = helpers.DeserializeBuffer(buf, readBytes)
-	if err != nil {
-		return nil, err
+	if adr.PublicKey, buf, err = helpers.DeserializeBuffer(buf, readBytes); err != nil {
+		return
 	}
 
 	var integrationByte []byte
-	integrationByte, buf, err = helpers.DeserializeBuffer(buf, 1)
-	if err != nil {
-		return nil, err
+	if integrationByte, buf, err = helpers.DeserializeBuffer(buf, 1); err != nil {
+		return
 	}
 
 	if integrationByte[0]&1 != 0 {
-		adr.PaymentID, buf, err = helpers.DeserializeBuffer(buf, 8)
-		if err != nil {
-			return nil, err
+		if adr.PaymentID, buf, err = helpers.DeserializeBuffer(buf, 8); err != nil {
+			return
 		}
 	}
 
 	if integrationByte[0]&(1<<1) != 0 {
 
-		adr.Amount, buf, err = helpers.DeserializeNumber(buf)
-		if err != nil {
-			return nil, err
+		if adr.Amount, buf, err = helpers.DeserializeNumber(buf); err != nil {
+			return
 		}
 
 	}
 
-	return &adr, nil
+	addr2 = &adr
+	return
 }
 
 func (a *Address) IntegrationByte() (out byte) {

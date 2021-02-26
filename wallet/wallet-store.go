@@ -38,59 +38,51 @@ type WalletSaved struct {
 var walletSaved = WalletSaved{}
 
 func saveWallet() error {
-	return store.StoreWallet.DB.Update(func(tx *bolt.Tx) error {
+	return store.StoreWallet.DB.Update(func(tx *bolt.Tx) (err error) {
 
 		var marshal, checksum []byte
 
 		writer := tx.Bucket([]byte("Wallet"))
 
-		err := writer.Put([]byte("saved"), []byte{2})
-		if err != nil {
+		if err = writer.Put([]byte("saved"), []byte{2}); err != nil {
 			return gui.Error("Error deleting saved status", err)
 		}
 
-		marshal, err = json.Marshal(walletSaved)
-		if err != nil {
+		if marshal, err = json.Marshal(walletSaved); err != nil {
 			return gui.Error("Error marshaling wallet saved", err)
 		}
 		checksum = append(checksum, marshal...)
-		err = writer.Put([]byte("wallet-saved"), marshal)
-		if err != nil {
+		if err = writer.Put([]byte("wallet-saved"), marshal); err != nil {
 			return gui.Error("Error storing saved status", err)
 		}
 
-		marshal, err = json.Marshal(wallet)
-		if err != nil {
+		if marshal, err = json.Marshal(wallet); err != nil {
 			return gui.Error("Error marshaling wallet", err)
 		}
+
 		checksum = append(checksum, marshal...)
-		err = writer.Put([]byte("wallet"), marshal)
-		if err != nil {
+		if err = writer.Put([]byte("wallet"), marshal); err != nil {
 			return gui.Error("Error storing saved status", err)
 		}
 
 		for i := 0; i < wallet.Count; i++ {
-			marshal, err = json.Marshal(wallet.Addresses[i])
-			checksum = append(checksum, marshal...)
-			if err != nil {
+			if marshal, err = json.Marshal(wallet.Addresses[i]); err != nil {
 				return gui.Error("Error marshaling address "+strconv.Itoa(i), err)
 			}
+			checksum = append(checksum, marshal...)
 			err = writer.Put([]byte("wallet-address-"+strconv.Itoa(i)), marshal)
 		}
 
-		err = writer.Delete([]byte("wallet-address-" + strconv.Itoa(wallet.Count)))
-		if err != nil {
+		if err = writer.Delete([]byte("wallet-address-" + strconv.Itoa(wallet.Count))); err != nil {
 			return gui.Error("Error deleting next address", err)
 		}
 
 		checksum = crypto.RIPEMD(checksum)[0:crypto.ChecksumSize]
-		err = writer.Put([]byte("wallet-check-sum"), checksum)
-		if err != nil {
+		if err = writer.Put([]byte("wallet-check-sum"), checksum); err != nil {
 			return gui.Error("Error storing checksum", err)
 		}
 
-		err = writer.Put([]byte("saved"), []byte{1})
-		if err != nil {
+		if err = writer.Put([]byte("saved"), []byte{1}); err != nil {
 			return gui.Error("Error storing final wallet saved", err)
 		}
 
@@ -100,13 +92,13 @@ func saveWallet() error {
 
 func loadWallet() error {
 
-	return store.StoreWallet.DB.View(func(tx *bolt.Tx) error {
+	return store.StoreWallet.DB.View(func(tx *bolt.Tx) (err error) {
 
 		reader := tx.Bucket([]byte("Wallet"))
 
 		saved := reader.Get([]byte("saved"))
 		if saved == nil {
-			return errors.New("Wallet doesn't exist")
+			return errors.New("Settings doesn't exist")
 		}
 
 		if bytes.Equal(saved, []byte{1}) {
@@ -117,15 +109,14 @@ func loadWallet() error {
 
 			unmarshal = reader.Get([]byte("wallet-saved"))
 			checksum = append(checksum, unmarshal...)
-			err := json.Unmarshal(unmarshal, &walletSaved)
-			if err != nil {
+
+			if err = json.Unmarshal(unmarshal, &walletSaved); err != nil {
 				return gui.Error("Error unmarshaling wallet saved", err)
 			}
 
 			unmarshal = reader.Get([]byte("wallet"))
 			checksum = append(checksum, unmarshal...)
-			err = json.Unmarshal(unmarshal, &newWallet)
-			if err != nil {
+			if err = json.Unmarshal(unmarshal, &newWallet); err != nil {
 				return gui.Error("Error unmarshaling wallet", err)
 			}
 
@@ -134,8 +125,7 @@ func loadWallet() error {
 				checksum = append(checksum, unmarshal...)
 
 				newWalletAddress := WalletAddress{}
-				err := json.Unmarshal(unmarshal, &newWalletAddress)
-				if err != nil {
+				if err = json.Unmarshal(unmarshal, &newWalletAddress); err != nil {
 					return gui.Error("Error unmarshaling address "+strconv.Itoa(i), err)
 				}
 				newWallet.Addresses = append(newWallet.Addresses, &newWalletAddress)

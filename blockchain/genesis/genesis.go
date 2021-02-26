@@ -79,8 +79,7 @@ func CreateNewGenesisBlock() (*block.Block, error) {
 func GenesisInit() {
 
 	var err error
-	GenesisData, err = getGenesis()
-	if err != nil {
+	if GenesisData, err = getGenesis(); err != nil {
 		gui.Fatal("Invalid Network for Genesis")
 	}
 
@@ -91,8 +90,7 @@ func GenesisInit() {
 	buf, _ = hex.DecodeString(GenesisData.KernelHashHex)
 	copy(GenesisData.KernelHash[:], buf)
 
-	Genesis, err = CreateNewGenesisBlock()
-	if err != nil {
+	if Genesis, err = CreateNewGenesisBlock(); err != nil {
 		gui.Fatal("Error generating init Genesis")
 	}
 }
