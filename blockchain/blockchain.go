@@ -32,6 +32,7 @@ type Blockchain struct {
 
 	Sync bool `json:"-"`
 
+	mutex        sync.Mutex `json:"-"`
 	sync.RWMutex `json:"-"`
 }
 
@@ -45,8 +46,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 		return
 	}
 
-	chain.Lock()
-	defer chain.Unlock() //when the function exists
+	//avoid processing the same function twice
+	chain.mutex.Lock()
+	defer chain.mutex.Unlock()
+
+	var wasChainLocked bool
 
 	gui.Log(fmt.Sprintf("Including blocks %d ... %d", chain.Height, chain.Height+uint64(len(blocksComplete))))
 
@@ -187,19 +191,24 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 
 		err = saveBlockchain(writer, &newChain)
 
+		chain.Lock()
+		wasChainLocked = true
+		chain.Height = newChain.Height
+		chain.Hash = newChain.Hash
+		chain.KernelHash = newChain.KernelHash
+		chain.Timestamp = newChain.Timestamp
+		chain.Target = newChain.Target
+		chain.BigTotalDifficulty = newChain.BigTotalDifficulty
+
 		return
 	})
 
+	if wasChainLocked {
+		chain.Unlock()
+	}
 	if err != nil {
 		return
 	}
-
-	chain.Height = newChain.Height
-	chain.Hash = newChain.Hash
-	chain.KernelHash = newChain.KernelHash
-	chain.Timestamp = newChain.Timestamp
-	chain.Target = newChain.Target
-	chain.BigTotalDifficulty = newChain.BigTotalDifficulty
 
 	gui.Log(fmt.Sprintf("Including blocks SUCCESS %s", hex.EncodeToString(chain.Hash[:])))
 	updateChainInfo()
@@ -225,8 +234,8 @@ func (chain *Blockchain) computeNextDifficultyBig(bucket *bolt.Bucket) (*big.Int
 	lastDifficulty := chain.BigTotalDifficulty
 	lastTimestamp := chain.Timestamp
 
-	gui.Log("firstDifficulty " + firstDifficulty.String())
-	gui.Log("lastDifficulty " + lastDifficulty.String())
+	//gui.Log("firstDifficulty " + firstDifficulty.String())
+	//gui.Log("lastDifficulty " + lastDifficulty.String())
 
 	deltaTotalDifficulty := new(big.Int).Sub(lastDifficulty, firstDifficulty)
 	deltaTime := lastTimestamp - firstTimestamp

@@ -8,8 +8,7 @@ import (
 func SHA3Hash(b []byte) (result Hash) {
 	h := sha3.New256()
 	h.Write(b)
-	copy(result[:], h.Sum(nil))
-	return
+	return *ConvertHash(h.Sum(nil))
 }
 
 func SHA3(b []byte) []byte {

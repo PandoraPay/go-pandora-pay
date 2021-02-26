@@ -37,7 +37,7 @@ Status of Blockchain implementation:
 - [x] Balances
     - [x] Balance and Nonce Update
     - [x] Delegating stake
-    - [x] Multiple Currencies
+    - [x] Support for Multiple Currencies   
     - [ ] Patricia Trie ?
 - [ ] Homomorphic Balances
     - [ ] Homomorphic balance and nonce   

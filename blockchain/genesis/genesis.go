@@ -85,10 +85,10 @@ func GenesisInit() {
 
 	var buf []byte
 	buf, _ = hex.DecodeString(GenesisData.HashHex)
-	copy(GenesisData.Hash[:], buf)
+	GenesisData.Hash = *crypto.ConvertHash(buf)
 
 	buf, _ = hex.DecodeString(GenesisData.KernelHashHex)
-	copy(GenesisData.KernelHash[:], buf)
+	GenesisData.KernelHash = *crypto.ConvertHash(buf)
 
 	if Genesis, err = CreateNewGenesisBlock(); err != nil {
 		gui.Fatal("Error generating init Genesis")

@@ -69,8 +69,7 @@ func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) (hash
 	}
 
 	key := []byte("blockHeight" + strconv.FormatUint(height, 10))
-	out := bucket.Get(key)
-	copy(hash[:], out)
+	hash = *crypto.ConvertHash(bucket.Get(key))
 	return
 }
 

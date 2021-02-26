@@ -89,7 +89,6 @@ func (w *ForgingWallets) loadBalances() error {
 		}
 
 		return
-
 	})
 
 }

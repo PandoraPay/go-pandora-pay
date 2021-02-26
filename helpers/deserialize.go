@@ -33,6 +33,5 @@ func DeserializeHash(buf []byte, count int) (crypto.Hash, []byte, error) {
 		return out, buf, errors.New("Deserializing buffer exceeded")
 	}
 
-	copy(out[:], buf[count:])
-	return out, buf[count:], nil
+	return *crypto.ConvertHash(buf[count:]), buf[count:], nil
 }
