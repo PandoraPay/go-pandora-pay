@@ -43,7 +43,13 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 		version = TransparentPublicKey
 	}
 
-	return &Address{Network: config.NETWORK_SELECTED, Version: version, PublicKey: finalPublicKey[:], Amount: amount, PaymentID: paymentID}, nil
+	return &Address{
+		config.NETWORK_SELECTED,
+		version,
+		finalPublicKey[:],
+		amount,
+		paymentID,
+	}, nil
 }
 
 func (pk *PrivateKey) Sign(message *crypto.Hash) ([]byte, error) {

@@ -27,6 +27,9 @@ var forging forgingType
 func ForgingInit() {
 
 	gui.Log("Forging Init")
+	if err := ForgingW.loadBalances(); err != nil {
+		gui.Error("Error reading balances", err)
+	}
 	go startForging(config.CPU_THREADS)
 
 }
@@ -102,11 +105,11 @@ func (forging *forgingType) foundSolution(address *ForgingWalletAddress, timesta
 // thread not safe
 func (forging *forgingType) publishSolution() {
 
-	forging.blkComplete.Block.Forger = forging.solutionAddress.publicKey
+	forging.blkComplete.Block.Forger = forging.solutionAddress.delegatedPublicKey
 	forging.blkComplete.Block.Timestamp = forging.solutionTimestamp
 	serializationForSigning := forging.blkComplete.Block.SerializeForSigning()
 
-	signature, _ := forging.solutionAddress.privateKey.Sign(&serializationForSigning)
+	signature, _ := forging.solutionAddress.delegatedPrivateKey.Sign(&serializationForSigning)
 
 	copy(forging.blkComplete.Block.Signature[:], signature)
 

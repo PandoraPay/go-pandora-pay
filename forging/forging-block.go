@@ -76,7 +76,7 @@ func forge(threads, threadIndex int, wg *sync.WaitGroup) {
 
 				n := binary.PutUvarint(buf, timestamp)
 				serialized = append(serialized, buf[:n]...)
-				serialized = append(serialized, address.publicKey[:]...)
+				serialized = append(serialized, address.delegatedPublicKey[:]...)
 				kernelHash := crypto.SHA3Hash(serialized)
 
 				if difficulty.CheckKernelHashBig(kernelHash, blockchain.Chain.Target) {

@@ -57,19 +57,19 @@ func (W *Wallet) addNewAddress() (err error) {
 	W.Lock()
 	defer W.Unlock()
 	walletAddress := WalletAddress{
-		Name:          "Addr " + strconv.Itoa(W.Count),
-		PrivateKey:    &privateKey,
-		PublicKeyHash: publicKeyHash,
-		PublicKey:     finalPublicKey,
-		Address:       address,
-		SeedIndex:     W.SeedIndex,
+		"Addr " + strconv.Itoa(W.Count),
+		&privateKey,
+		finalPublicKey,
+		publicKeyHash,
+		address,
+		W.SeedIndex,
 	}
 
 	W.Addresses = append(W.Addresses, &walletAddress)
 	W.Count += 1
 	W.SeedIndex += 1
 
-	go forging.ForgingW.AddWallet(finalPublicKey, privateKey.Key)
+	go forging.ForgingW.AddWallet(finalPublicKey, privateKey.Key, publicKeyHash)
 
 	updateWallet()
 	return saveWallet()

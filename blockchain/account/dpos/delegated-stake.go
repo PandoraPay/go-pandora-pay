@@ -12,7 +12,7 @@ type DelegatedStake struct {
 	DelegatedPublicKey [33]byte
 
 	//confirmed stake
-	StakeConfirmed uint64
+	StakeAvailable uint64
 
 	//amount of the unstake
 	UnstakeAmount uint64
@@ -28,7 +28,7 @@ func (delegatedStake *DelegatedStake) Serialize(serialized *bytes.Buffer, temp [
 
 	serialized.Write(delegatedStake.DelegatedPublicKey[:])
 
-	n := binary.PutUvarint(temp, delegatedStake.StakeConfirmed)
+	n := binary.PutUvarint(temp, delegatedStake.StakeAvailable)
 	serialized.Write(temp[:n])
 
 	n = binary.PutUvarint(temp, delegatedStake.UnstakeAmount)
@@ -54,7 +54,7 @@ func (delegatedStake *DelegatedStake) Deserialize(buf []byte) (out []byte, err e
 	}
 	delegatedStake.DelegatedPublicKey = *helpers.Byte33(data)
 
-	if delegatedStake.StakeConfirmed, buf, err = helpers.DeserializeNumber(buf); err != nil {
+	if delegatedStake.StakeAvailable, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return
 	}
 
@@ -85,12 +85,12 @@ func (delegatedStake *DelegatedStake) Deserialize(buf []byte) (out []byte, err e
 }
 
 func (delegatedStake *DelegatedStake) IsDelegatedStakeEmpty() bool {
-	return delegatedStake.StakeConfirmed == 0 && delegatedStake.UnstakeAmount == 0 && len(delegatedStake.StakesPending) == 0
+	return delegatedStake.StakeAvailable == 0 && delegatedStake.UnstakeAmount == 0 && len(delegatedStake.StakesPending) == 0
 }
 
-func (delegatedStake *DelegatedStake) GetDelegatedStakeConfirmed(blockHeight uint64) (result uint64) {
+func (delegatedStake *DelegatedStake) GetDelegatedStakeAvailable(blockHeight uint64) (result uint64) {
 
-	result = delegatedStake.StakeConfirmed
+	result = delegatedStake.StakeAvailable
 	for _, stakePending := range delegatedStake.StakesPending {
 		if stakePending.StakePendingHeight >= blockHeight {
 			result += stakePending.StakePending

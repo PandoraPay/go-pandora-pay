@@ -75,11 +75,11 @@ func (account *Account) AddBalance(sign bool, amount uint64, currency []byte) er
 	return nil
 }
 
-func (account *Account) GetDelegatedStakeConfirmed(blockHeight uint64) uint64 {
+func (account *Account) GetDelegatedStakeAvailable(blockHeight uint64) uint64 {
 	if !account.HasDelegatedStake() {
 		return 0
 	}
-	return account.DelegatedStake.GetDelegatedStakeConfirmed(blockHeight)
+	return account.DelegatedStake.GetDelegatedStakeAvailable(blockHeight)
 }
 
 func (account *Account) Serialize() []byte {

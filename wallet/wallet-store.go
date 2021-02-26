@@ -130,7 +130,7 @@ func loadWallet() error {
 					return gui.Error("Error unmarshaling address "+strconv.Itoa(i), err)
 				}
 				newWallet.Addresses = append(newWallet.Addresses, &newWalletAddress)
-				go forging.ForgingW.AddWallet(newWalletAddress.PublicKey, newWalletAddress.PrivateKey.Key)
+				go forging.ForgingW.AddWallet(newWalletAddress.PublicKey, newWalletAddress.PrivateKey.Key, newWalletAddress.PublicKeyHash)
 			}
 
 			checksum = crypto.RIPEMD(checksum)[0:crypto.ChecksumSize]
