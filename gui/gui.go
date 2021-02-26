@@ -223,6 +223,8 @@ func processArgument(any ...interface{}) string {
 	for _, it := range any {
 
 		switch v := it.(type) {
+		case nil:
+			s += " "
 		case string:
 			s += v
 		case int:

@@ -84,6 +84,7 @@ func cliListAddresses(cmd string) {
 
 		return
 	})
+
 	if err != nil {
 		gui.Error(err)
 	}
@@ -111,7 +112,7 @@ func cliShowPrivateKey(cmd string) {
 	if key, err := W.showPrivateKey(index); err != nil {
 		gui.Error(err)
 	} else {
-		gui.OutputWrite(key)
+		gui.OutputWrite(*key)
 	}
 
 	gui.OutputDone()

@@ -219,7 +219,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 
 	chain.UpdateChannel <- 1 //sending 1
 
-	go chain.createBlockForForging()
+	forging.ForgingW.UpdateBalanceChanges(accs)
+	chain.createBlockForForging()
 
 	result = true
 	return
@@ -285,6 +286,10 @@ func BlockchainInit() {
 
 	go Chain.createBlockForForging()
 
+}
+
+func BlockchainClose() {
+	forging.StopForging()
 }
 
 func updateChainInfo() {

@@ -19,7 +19,7 @@ type forgingType struct {
 
 	solution          bool
 	solutionTimestamp uint64
-	solutionAddress   *ForgingWalletAddress
+	solutionAddress   *forgingWalletAddress
 
 	SolutionChannel chan int
 }
@@ -65,7 +65,7 @@ func startForging(threads int) {
 
 		wg.Wait()
 
-		if Forging.solution && Forging.BlkComplete != nil {
+		if Forging.solution {
 			Forging.publishSolution()
 		}
 
@@ -73,7 +73,8 @@ func startForging(threads int) {
 
 }
 
-func stopForging() {
+func StopForging() {
+	StopForgingWorkers()
 	atomic.AddInt32(&started, -1)
 }
 
@@ -95,7 +96,7 @@ func (forging *forgingType) RestartForgingWorkers(BlkComplete *block.BlockComple
 }
 
 //thread safe
-func (forging *forgingType) foundSolution(address *ForgingWalletAddress, timestamp uint64) {
+func (forging *forgingType) foundSolution(address *forgingWalletAddress, timestamp uint64) {
 
 	if atomic.CompareAndSwapInt32(&forgingWorking, 1, 0) {
 		forging.solution = true

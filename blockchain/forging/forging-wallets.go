@@ -10,22 +10,27 @@ import (
 	"sync"
 )
 
-type ForgingWallets struct {
-	addresses []*ForgingWalletAddress
+type forgingWallets struct {
+	addresses    []*forgingWalletAddress
+	addressesMap map[[20]byte]*forgingWalletAddress
+
 	sync.RWMutex
 }
 
-type ForgingWalletAddress struct {
+type forgingWalletAddress struct {
 	delegatedPrivateKey *addresses.PrivateKey
 	delegatedPublicKey  [33]byte
 
-	publicKeyHash  [20]byte
-	stakeAvailable uint64
+	publicKeyHash [20]byte
+
+	account *account.Account
 }
 
-var ForgingW = ForgingWallets{}
+var ForgingW = forgingWallets{
+	addressesMap: make(map[[20]byte]*forgingWalletAddress),
+}
 
-func (w *ForgingWallets) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte, pubKeyHash [20]byte) {
+func (w *forgingWallets) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte, pubKeyHash [20]byte) {
 
 	w.Lock()
 	defer w.Unlock()
@@ -41,17 +46,48 @@ func (w *ForgingWallets) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte
 
 	private := addresses.PrivateKey{Key: privateKey}
 
-	address := ForgingWalletAddress{
-		&private,
-		publicKey,
-		publicKeyHash,
-		0,
-	}
-	w.addresses = append(w.addresses, &address)
+	store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
+
+		var accs *accounts.Accounts
+		accs, err = accounts.CreateNewAccounts(tx)
+
+		var acc *account.Account
+		if acc, err = accs.GetAccount(publicKeyHash); err != nil {
+			return
+		}
+
+		address := forgingWalletAddress{
+			&private,
+			publicKey,
+			publicKeyHash,
+			acc,
+		}
+		w.addresses = append(w.addresses, &address)
+		w.addressesMap[pubKeyHash] = &address
+
+		return
+	})
 
 }
 
-func (w *ForgingWallets) RemoveWallet(publicKey [33]byte) {
+func (w *forgingWallets) UpdateBalanceChanges(accs *accounts.Accounts) {
+
+	w.Lock()
+
+	for k, v := range accs.Virtual {
+
+		if w.addressesMap[k] != nil && (v.Committed == "update" || v.Committed == "del") {
+
+			w.addressesMap[k].account = v.Account
+
+		}
+
+	}
+
+	w.Unlock()
+}
+
+func (w *forgingWallets) RemoveWallet(publicKey [33]byte) {
 
 	w.Lock()
 	defer w.Unlock()
@@ -65,7 +101,7 @@ func (w *ForgingWallets) RemoveWallet(publicKey [33]byte) {
 
 }
 
-func (w *ForgingWallets) loadBalances() error {
+func (w *forgingWallets) loadBalances() error {
 
 	w.Lock()
 	defer w.Unlock()
@@ -82,10 +118,7 @@ func (w *ForgingWallets) loadBalances() error {
 				return
 			}
 
-			if account != nil {
-				address.stakeAvailable = account.GetDelegatedStakeAvailable(0)
-			}
-
+			address.account = account
 		}
 
 		return

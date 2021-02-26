@@ -22,6 +22,7 @@ func mainloop() {
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 	<-exitSignal
 
+	blockchain.BlockchainClose()
 	store.DBClose()
 
 	fmt.Println("Shutting down")

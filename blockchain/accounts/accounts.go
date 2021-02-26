@@ -8,14 +8,14 @@ import (
 )
 
 type VirtualAccount struct {
-	account   *account.Account
-	status    string
-	committed string
+	Account   *account.Account
+	Status    string
+	Committed string
 }
 
 type Accounts struct {
 	Bucket  *bbolt.Bucket
-	virtual map[[20]byte]*VirtualAccount
+	Virtual map[[20]byte]*VirtualAccount
 }
 
 func CreateNewAccounts(tx *bbolt.Tx) (accounts *Accounts, err error) {
@@ -26,7 +26,7 @@ func CreateNewAccounts(tx *bbolt.Tx) (accounts *Accounts, err error) {
 	}
 
 	accounts = new(Accounts)
-	accounts.virtual = make(map[[20]byte]*VirtualAccount)
+	accounts.Virtual = make(map[[20]byte]*VirtualAccount)
 	accounts.Bucket = tx.Bucket([]byte("Accounts"))
 	return
 
@@ -44,16 +44,16 @@ func (accounts *Accounts) GetAccountEvenEmpty(publicKeyHash [20]byte) (acc *acco
 
 func (accounts *Accounts) GetAccount(publicKeyHash [20]byte) (acc2 *account.Account, err error) {
 
-	exists := accounts.virtual[publicKeyHash]
+	exists := accounts.Virtual[publicKeyHash]
 	if exists != nil {
 		acc2 = new(account.Account)
-		copier.Copy(acc2, exists.account)
+		copier.Copy(acc2, exists.Account)
 		return
 	}
 
 	data := accounts.Bucket.Get(publicKeyHash[:])
 	if data == nil {
-		accounts.virtual[publicKeyHash] = &VirtualAccount{
+		accounts.Virtual[publicKeyHash] = &VirtualAccount{
 			nil,
 			"empty",
 			"",
@@ -64,7 +64,7 @@ func (accounts *Accounts) GetAccount(publicKeyHash [20]byte) (acc2 *account.Acco
 		if _, err = acc.Deserialize(data); err != nil {
 			return nil, err
 		}
-		accounts.virtual[publicKeyHash] = &VirtualAccount{
+		accounts.Virtual[publicKeyHash] = &VirtualAccount{
 			acc,
 			"view",
 			"",
@@ -85,13 +85,13 @@ func (accounts *Accounts) UpdateAccount(publicKeyHash [20]byte, acc *account.Acc
 		var acc2 = new(account.Account)
 		copier.Copy(acc2, acc)
 
-		exists := accounts.virtual[publicKeyHash]
+		exists := accounts.Virtual[publicKeyHash]
 		if exists == nil {
 			exists = new(VirtualAccount)
-			accounts.virtual[publicKeyHash] = exists
+			accounts.Virtual[publicKeyHash] = exists
 		}
-		exists.account = acc2
-		exists.status = "update"
+		exists.Account = acc2
+		exists.Status = "update"
 	}
 
 	return
@@ -99,34 +99,34 @@ func (accounts *Accounts) UpdateAccount(publicKeyHash [20]byte, acc *account.Acc
 
 func (accounts *Accounts) DeleteAccount(publicKeyHash [20]byte) (err error) {
 
-	exists := accounts.virtual[publicKeyHash]
+	exists := accounts.Virtual[publicKeyHash]
 	if exists == nil {
 		exists = new(VirtualAccount)
-		accounts.virtual[publicKeyHash] = exists
+		accounts.Virtual[publicKeyHash] = exists
 	}
-	exists.status = "del"
-	exists.account = nil
+	exists.Status = "del"
+	exists.Account = nil
 	return
 }
 
 func (accounts *Accounts) Commit() (err error) {
 
-	for k, v := range accounts.virtual {
+	for k, v := range accounts.Virtual {
 
-		if v.status == "del" {
+		if v.Status == "del" {
 			if err = accounts.Bucket.Delete(k[:]); err != nil {
 				return
 			}
-			v.status = "empty"
-			v.committed = "del"
-			v.account = nil
-		} else if v.status == "update" {
-			data := v.account.Serialize()
+			v.Status = "empty"
+			v.Committed = "del"
+			v.Account = nil
+		} else if v.Status == "update" {
+			data := v.Account.Serialize()
 			if err = accounts.Bucket.Put(k[:], data); err != nil {
 				return
 			}
-			v.committed = "update"
-			v.status = "view"
+			v.Committed = "update"
+			v.Status = "view"
 		}
 
 	}
