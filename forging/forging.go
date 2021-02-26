@@ -2,20 +2,24 @@ package forging
 
 import (
 	"pandora-pay/blockchain"
+	"pandora-pay/blockchain/block"
 	"pandora-pay/config"
 	"pandora-pay/gui"
-	"pandora-pay/wallet"
+	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
-var started = false
+var started int32
 
 type forgingType struct {
-	processing bool
+	processing  bool
+	blkComplete *block.BlockComplete
 
+	solution          bool
 	solutionTimestamp uint64
-	solutionPublicKey [33]byte
+	solutionAddress   *ForgingWalletAddress
 
 	sync.RWMutex
 }
@@ -25,64 +29,116 @@ var forging forgingType
 func ForgingInit() {
 
 	gui.Log("Forging Init")
+
 	go startForging(config.CPU_THREADS)
 
 }
 
 func startForging(threads int) {
 
-	started = true
-	for started {
+	var err error
 
-		blkComplete, err := createNextBlockComplete(blockchain.Chain.Height)
-		if err != nil {
-			gui.Error("Error creating new block", err)
-			time.Sleep(5 * time.Second)
+	if atomic.LoadInt32(&started) > 0 {
+		return
+	}
+	sum := atomic.AddInt32(&started, 1)
+
+	if sum > 1 {
+		atomic.AddInt32(&started, -1)
+		return
+	}
+
+	for atomic.LoadInt32(&started) == 1 {
+
+		if forging.blkComplete == nil {
+
+			forging.blkComplete, err = createNextBlockComplete(blockchain.Chain.Height)
+			if err != nil {
+				gui.Error("Error creating new block", err)
+				time.Sleep(5 * time.Second)
+			}
+
 		}
-
-		wallet.W.RLock()
-		addresses := wallet.W.Addresses
-
-		forging.Lock()
 		forging.processing = true
-		forging.Unlock()
 
 		wg := sync.WaitGroup{}
-		wg.Add(threads)
 
 		for i := 0; i < threads; i++ {
-			go forge(blkComplete, threads, i, &wg, addresses)
+			wg.Add(1)
+			go forge(threads, i, &wg)
 		}
 
 		wg.Wait()
-		wallet.W.RUnlock()
+
+		if forging.solution {
+			forging.publishSolution()
+			forging.blkComplete = nil
+		}
 
 	}
 
 }
 
 func stopForging() {
-	started = false
+	atomic.AddInt32(&started, -1)
 }
 
-func foundSolution(publicKey [33]byte, timestamp uint64) {
+//thread safe
+func (forging *forgingType) RestartForging(stakeNewBlock bool) {
 
 	forging.Lock()
 	defer forging.Unlock()
 
-	if forging.processing {
+	forging.processing = false
+
+	if stakeNewBlock == true {
+		forging.blkComplete = nil
+	}
+
+}
+
+//thread safe
+func (forging *forgingType) foundSolution(address *ForgingWalletAddress, timestamp uint64) {
+
+	forging.Lock()
+	defer forging.Unlock()
+
+	if !forging.processing {
 		return
 	}
 
 	forging.processing = false
-	forging.solutionTimestamp = timestamp
 
-	//copy publicKey
-	//to make it thread safe and unlock the wallet
-	copy(forging.solutionPublicKey[:], publicKey[:])
+	forging.solution = true
+	forging.solutionTimestamp = timestamp
+	forging.solutionAddress = address
 
 }
 
+// thread not safe
+func (forging *forgingType) publishSolution() {
+
+	forging.blkComplete.Block.Forger = forging.solutionAddress.publicKey
+	forging.blkComplete.Block.Timestamp = forging.solutionTimestamp
+	serializationForSigning := forging.blkComplete.Block.SerializeForSigning()
+
+	signature, _ := forging.solutionAddress.privateKey.Sign(&serializationForSigning)
+
+	copy(forging.blkComplete.Block.Signature[:], signature)
+
+	var array []*block.BlockComplete
+	array = append(array, forging.blkComplete)
+
+	result, err := blockchain.Chain.AddBlocks(array)
+	if err == nil && result {
+		gui.Info("Block was forged! " + strconv.FormatUint(forging.blkComplete.Block.Height, 10))
+	} else {
+		gui.Error("Error forging block "+strconv.FormatUint(forging.blkComplete.Block.Height, 10), err)
+	}
+
+}
+
+//thread safe
 func (forging *forgingType) safeIsProcessing() (r bool) {
 	forging.RLock()
 	r = forging.processing

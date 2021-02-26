@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config"
 	"pandora-pay/crypto"
-	"pandora-pay/wallet"
 	"sync"
 	"time"
 )
@@ -47,12 +46,16 @@ func createNextBlockComplete(height uint64) (blkComplete *block.BlockComplete, e
 }
 
 //inside a thread
-func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.WaitGroup, addresses []*wallet.WalletAddress) {
+func forge(threads, threadIndex int, wg *sync.WaitGroup) {
 
 	buf := make([]byte, binary.MaxVarintLen64)
 
-	serialized := blkComplete.Block.SerializeBlock(false, false, false, false, false)
-	timestamp := blkComplete.Block.Timestamp + 1
+	ForgingW.RLock()
+	defer ForgingW.RUnlock()
+	defer wg.Done()
+
+	serialized := forging.blkComplete.Block.SerializeBlock(false, false, false, false, false)
+	timestamp := forging.blkComplete.Block.Timestamp + 1
 
 	for forging.safeIsProcessing() {
 
@@ -62,7 +65,7 @@ func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.
 		}
 
 		//forge with my wallets
-		for i := 0; i < len(addresses); i++ {
+		for i, address := range ForgingW.addresses {
 
 			if i%threads == threadIndex {
 
@@ -72,12 +75,12 @@ func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.
 
 				n := binary.PutUvarint(buf, timestamp)
 				serialized = append(serialized, buf[:n]...)
-				serialized = append(serialized, addresses[i].PublicKey[:]...)
+				serialized = append(serialized, address.publicKey[:]...)
 				kernelHash := crypto.SHA3Hash(serialized)
 
 				if difficulty.CheckKernelHashBig(kernelHash, blockchain.Chain.Target) {
 
-					foundSolution(addresses[i].PublicKey, timestamp)
+					forging.foundSolution(address, timestamp)
 
 				} else {
 					// for debugging only
@@ -93,5 +96,4 @@ func forge(blkComplete *block.BlockComplete, threads, threadIndex int, wg *sync.
 
 	}
 
-	wg.Done()
 }

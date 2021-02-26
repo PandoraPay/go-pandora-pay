@@ -6,6 +6,7 @@ import (
 	"errors"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/crypto"
+	"pandora-pay/forging"
 	"pandora-pay/gui"
 	"pandora-pay/store"
 	"strconv"
@@ -98,7 +99,7 @@ func loadWallet() error {
 
 		saved := reader.Get([]byte("saved"))
 		if saved == nil {
-			return errors.New("Settings doesn't exist")
+			return errors.New("Wallet doesn't exist")
 		}
 
 		if bytes.Equal(saved, []byte{1}) {
@@ -129,6 +130,7 @@ func loadWallet() error {
 					return gui.Error("Error unmarshaling address "+strconv.Itoa(i), err)
 				}
 				newWallet.Addresses = append(newWallet.Addresses, &newWalletAddress)
+				go forging.ForgingW.AddWallet(newWalletAddress.PublicKey, newWalletAddress.PrivateKey.Key)
 			}
 
 			checksum = crypto.RIPEMD(checksum)[0:crypto.ChecksumSize]

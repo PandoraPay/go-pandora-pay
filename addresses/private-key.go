@@ -9,12 +9,12 @@ import (
 )
 
 type PrivateKey struct {
-	Key []byte
+	Key [32]byte
 }
 
 func (pk *PrivateKey) GeneratePublicKey() (publicKey []byte, err error) {
 
-	if publicKey, err = ecdsa.ComputePublicKey(pk.Key); err != nil {
+	if publicKey, err = ecdsa.ComputePublicKey(pk.Key[:]); err != nil {
 		return
 	}
 
@@ -23,7 +23,7 @@ func (pk *PrivateKey) GeneratePublicKey() (publicKey []byte, err error) {
 
 func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) (*Address, error) {
 
-	publicKey, err := ecdsa.ComputePublicKey(pk.Key)
+	publicKey, err := ecdsa.ComputePublicKey(pk.Key[:])
 	if err != nil {
 		return nil, errors.New("Strange error. Your private key was invalid")
 	}
@@ -50,7 +50,7 @@ func (pk *PrivateKey) Sign(message *crypto.Hash) ([]byte, error) {
 	if len(message) != 32 {
 		return nil, errors.New("Message must be a hash")
 	}
-	privateKey, err := ecdsa.ToECDSA(pk.Key)
+	privateKey, err := ecdsa.ToECDSA(pk.Key[:])
 	if err != nil {
 		return nil, err
 	}
@@ -58,5 +58,6 @@ func (pk *PrivateKey) Sign(message *crypto.Hash) ([]byte, error) {
 }
 
 func GenerateNewPrivateKey() *PrivateKey {
-	return &PrivateKey{Key: helpers.RandomBytes(32)}
+	key := helpers.Byte32(helpers.RandomBytes(32))
+	return &PrivateKey{Key: *key}
 }

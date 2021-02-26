@@ -6,6 +6,7 @@ import (
 	"github.com/tyler-smith/go-bip39"
 	"pandora-pay/addresses"
 	"pandora-pay/crypto"
+	"pandora-pay/forging"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"strconv"
@@ -35,7 +36,7 @@ func (W *Wallet) addNewAddress() (err error) {
 		gui.Fatal("Couldn't derivate the marker key", err)
 	}
 
-	privateKey := addresses.PrivateKey{Key: key.Key}
+	privateKey := addresses.PrivateKey{Key: *helpers.Byte32(key.Key)}
 
 	var publicKey []byte
 	if publicKey, err = privateKey.GeneratePublicKey(); err != nil {
@@ -68,6 +69,8 @@ func (W *Wallet) addNewAddress() (err error) {
 	W.Count += 1
 	W.SeedIndex += 1
 
+	go forging.ForgingW.AddWallet(finalPublicKey, privateKey.Key)
+
 	updateWallet()
 	return saveWallet()
 }
@@ -81,14 +84,18 @@ func (W *Wallet) removeAddress(index int) error {
 		return errors.New("Invalid Address Index")
 	}
 
+	removing := W.Addresses[index]
+
 	W.Addresses = append(W.Addresses[:index], W.Addresses[index+1:]...)
 	W.Count -= 1
+
+	go forging.ForgingW.RemoveWallet(removing.PublicKey)
 
 	updateWallet()
 	return saveWallet()
 }
 
-func (W *Wallet) showPrivateKey(index int) ([]byte, error) {
+func (W *Wallet) showPrivateKey(index int) (*[32]byte, error) {
 
 	W.RLock()
 	defer W.RUnlock()
@@ -96,7 +103,7 @@ func (W *Wallet) showPrivateKey(index int) ([]byte, error) {
 	if index < 0 || index > len(W.Addresses) {
 		return nil, errors.New("Invalid Address Index")
 	}
-	return W.Addresses[index].PrivateKey.Key, nil
+	return &W.Addresses[index].PrivateKey.Key, nil
 }
 
 func (W *Wallet) createSeed() (err error) {
