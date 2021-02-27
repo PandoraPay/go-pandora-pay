@@ -66,7 +66,7 @@ func cliListAddresses(cmd string) {
 				walletAddress.Address.Version == addresses.TransparentPublicKey {
 
 				var acc *account.Account
-				if acc, err = accs.GetAccount(walletAddress.PublicKeyHash); err != nil {
+				if acc, err = accs.GetAccount(string(walletAddress.PublicKeyHash[:])); err != nil {
 					return
 				}
 

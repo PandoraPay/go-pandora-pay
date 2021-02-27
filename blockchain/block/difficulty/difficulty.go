@@ -13,17 +13,6 @@ var (
 	DIFFICULTY_MAX_CHANGE_FACTOR = new(big.Float).SetFloat64(2)
 )
 
-func HashToBig(buf helpers.Hash) *big.Int {
-
-	// little-endian to big-endian
-	blen := helpers.HashSize
-	for i := 0; i < blen/2; i++ {
-		buf[i], buf[blen-1-i] = buf[blen-1-i], buf[i]
-	}
-
-	return new(big.Int).SetBytes(buf[:])
-}
-
 func ConvertDifficultyBigToUInt64(difficulty *big.Int) uint64 {
 
 	if difficulty.Cmp(config.BIG_INT_ZERO) == 0 {
@@ -45,7 +34,7 @@ func ConvertDifficultyToBig(difficulty uint64) *big.Int {
 
 func CheckKernelHashBig(kernelHash helpers.Hash, difficulty *big.Int) bool {
 
-	bigKernelHash := HashToBig(kernelHash)
+	bigKernelHash := new(big.Int).SetBytes(kernelHash[:])
 
 	if bigKernelHash.Cmp(difficulty) <= 0 {
 		return true

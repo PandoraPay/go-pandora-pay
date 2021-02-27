@@ -12,7 +12,7 @@ import (
 
 type forgingWallets struct {
 	addresses    []*forgingWalletAddress
-	addressesMap map[[20]byte]*forgingWalletAddress
+	addressesMap map[string]*forgingWalletAddress
 
 	sync.RWMutex
 }
@@ -27,7 +27,7 @@ type forgingWalletAddress struct {
 }
 
 var ForgingW = forgingWallets{
-	addressesMap: make(map[[20]byte]*forgingWalletAddress),
+	addressesMap: make(map[string]*forgingWalletAddress),
 }
 
 func (w *forgingWallets) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte, pubKeyHash [20]byte) {
@@ -52,7 +52,7 @@ func (w *forgingWallets) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte
 		accs, err = accounts.CreateNewAccounts(tx)
 
 		var acc *account.Account
-		if acc, err = accs.GetAccount(publicKeyHash); err != nil {
+		if acc, err = accs.GetAccount(string(publicKeyHash[:])); err != nil {
 			return
 		}
 
@@ -63,7 +63,7 @@ func (w *forgingWallets) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte
 			acc,
 		}
 		w.addresses = append(w.addresses, &address)
-		w.addressesMap[pubKeyHash] = &address
+		w.addressesMap[string(pubKeyHash[:])] = &address
 
 		return
 	})
@@ -74,11 +74,16 @@ func (w *forgingWallets) UpdateBalanceChanges(accs *accounts.Accounts) {
 
 	w.Lock()
 
-	for k, v := range accs.Virtual {
+	for k, v := range accs.HashMap.Virtual {
 
-		if w.addressesMap[k] != nil && (v.Committed == "update" || v.Committed == "del") {
+		if w.addressesMap[k] != nil {
 
-			w.addressesMap[k].account = v.Account
+			if v.Committed == "update" {
+				w.addressesMap[k].account = new(account.Account)
+				_, _ = w.addressesMap[k].account.Deserialize(v.Data)
+			} else if v.Committed == "delete" {
+				w.addressesMap[k].account = nil
+			}
 
 		}
 
@@ -114,7 +119,7 @@ func (w *forgingWallets) loadBalances() error {
 		for _, address := range w.addresses {
 
 			var account *account.Account
-			if account, err = accs.GetAccount(address.publicKeyHash); err != nil {
+			if account, err = accs.GetAccount(string(address.publicKeyHash[:])); err != nil {
 				return
 			}
 

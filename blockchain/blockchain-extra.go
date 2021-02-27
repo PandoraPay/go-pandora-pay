@@ -5,9 +5,11 @@ import (
 	"math/big"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block/difficulty"
+	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config"
 	"pandora-pay/crypto"
+	"pandora-pay/gui"
 )
 
 func (chain *Blockchain) computeNextDifficultyBig(bucket *bolt.Bucket) (*big.Int, error) {
@@ -65,4 +67,16 @@ func (chain *Blockchain) createNextBlockComplete() (blkComplete *block.BlockComp
 	}
 
 	return
+}
+
+func (chain *Blockchain) createBlockForForging() {
+
+	var err error
+
+	var nextBlock *block.BlockComplete
+	if nextBlock, err = Chain.createNextBlockComplete(); err == nil {
+		gui.Error("Error creating next block", err)
+	}
+
+	forging.Forging.RestartForgingWorkers(nextBlock, chain.Target)
 }

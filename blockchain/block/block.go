@@ -3,6 +3,7 @@ package block
 import (
 	"bytes"
 	"encoding/binary"
+	"math/big"
 	"pandora-pay/blockchain/account"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/config"
@@ -21,6 +22,8 @@ type Block struct {
 
 	Timestamp uint64
 
+	StakingAmount uint64
+
 	Forger    [33]byte // 33 byte public key
 	Signature [65]byte // 65 byte signature
 }
@@ -30,7 +33,7 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts) (err error) {
 	forgerPublicKeyHash := blk.GetForgerPublicKeyHash()
 	var acc *account.Account
 
-	if acc, err = acs.GetAccountEvenEmpty(forgerPublicKeyHash); err != nil {
+	if acc, err = acs.GetAccountEvenEmpty(string(forgerPublicKeyHash[:])); err != nil {
 		return
 	}
 
@@ -39,7 +42,7 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts) (err error) {
 		return
 	}
 
-	if err = acs.UpdateAccount(forgerPublicKeyHash, acc); err != nil {
+	if err = acs.UpdateAccount(string(forgerPublicKeyHash[:]), acc); err != nil {
 		return
 	}
 
@@ -51,7 +54,7 @@ func (blk *Block) RemoveBlock(acs *accounts.Accounts) (err error) {
 	forgerPublicKeyHash := blk.GetForgerPublicKeyHash()
 	var acc *account.Account
 
-	if acc, err = acs.GetAccount(forgerPublicKeyHash); err != nil {
+	if acc, err = acs.GetAccount(string(forgerPublicKeyHash[:])); err != nil {
 		return
 	}
 
@@ -59,7 +62,7 @@ func (blk *Block) RemoveBlock(acs *accounts.Accounts) (err error) {
 		return
 	}
 
-	if err = acs.UpdateAccount(forgerPublicKeyHash, acc); err != nil {
+	if err = acs.UpdateAccount(string(forgerPublicKeyHash[:]), acc); err != nil {
 		return
 	}
 
@@ -74,12 +77,29 @@ func (blk *Block) ComputeHash() helpers.Hash {
 	return crypto.SHA3Hash(blk.Serialize())
 }
 
+func (blk *Block) ComputeKernelHashOnly() helpers.Hash {
+	return crypto.SHA3Hash(blk.SerializeBlock(true, false))
+}
+
 func (blk *Block) ComputeKernelHash() helpers.Hash {
-	return crypto.SHA3Hash(blk.SerializeBlock(false, false, true, true, false))
+
+	hash := blk.ComputeKernelHashOnly()
+
+	if blk.Height == 0 {
+		return hash
+	}
+
+	number := new(big.Int).Div(new(big.Int).SetBytes(hash[:]), new(big.Int).SetUint64(blk.StakingAmount))
+
+	buf := number.Bytes()
+	var finalHash helpers.Hash
+	copy(finalHash[helpers.HashSize-len(buf):], buf)
+
+	return finalHash
 }
 
 func (blk *Block) SerializeForSigning() helpers.Hash {
-	return crypto.SHA3Hash(blk.SerializeBlock(true, true, true, true, false))
+	return crypto.SHA3Hash(blk.SerializeBlock(false, false))
 }
 
 func (blk *Block) VerifySignature() bool {
@@ -87,31 +107,29 @@ func (blk *Block) VerifySignature() bool {
 	return ecdsa.VerifySignature(blk.Forger[:], hash[:], blk.Signature[0:64])
 }
 
-func (blk *Block) SerializeBlock(inclMerkleHash bool, inclPrevHash bool, inclTimestamp bool, inclForger bool, inclSignature bool) []byte {
+func (blk *Block) SerializeBlock(kernelHash bool, inclSignature bool) []byte {
 
 	var serialized bytes.Buffer
 	temp := make([]byte, binary.MaxVarintLen64)
 
 	blk.BlockHeader.Serialize(&serialized, temp)
 
-	if inclMerkleHash {
+	if !kernelHash {
 		serialized.Write(blk.MerkleHash[:])
-	}
-
-	if inclPrevHash {
 		serialized.Write(blk.PrevHash[:])
 	}
 
 	serialized.Write(blk.PrevKernelHash[:])
 
-	if inclTimestamp {
+	if !kernelHash {
 		n := binary.PutUvarint(temp, blk.Timestamp)
+		serialized.Write(temp[:n])
+
+		n = binary.PutUvarint(temp, blk.StakingAmount)
 		serialized.Write(temp[:n])
 	}
 
-	if inclForger {
-		serialized.Write(blk.Forger[:])
-	}
+	serialized.Write(blk.Forger[:])
 
 	if inclSignature {
 		serialized.Write(blk.Signature[:])
@@ -121,7 +139,7 @@ func (blk *Block) SerializeBlock(inclMerkleHash bool, inclPrevHash bool, inclTim
 }
 
 func (blk *Block) Serialize() []byte {
-	return blk.SerializeBlock(true, true, true, true, true)
+	return blk.SerializeBlock(false, true)
 }
 
 func (blk *Block) Deserialize(buf []byte) (out []byte, err error) {
@@ -143,6 +161,10 @@ func (blk *Block) Deserialize(buf []byte) (out []byte, err error) {
 	}
 
 	if blk.Timestamp, buf, err = helpers.DeserializeNumber(buf); err != nil {
+		return
+	}
+
+	if blk.StakingAmount, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return
 	}
 

@@ -18,7 +18,8 @@ func forge(threads, threadIndex int) {
 	defer ForgingW.RUnlock()
 	defer wg.Done()
 
-	serialized := Forging.BlkComplete.Block.SerializeBlock(false, false, false, false, false)
+	serialized := Forging.BlkComplete.Block.SerializeBlock(true, false)
+	serialized = serialized[:len(serialized)-33]
 	timestamp := Forging.BlkComplete.Block.Timestamp + 1
 
 	for atomic.LoadInt32(&forgingWorking) == 1 {

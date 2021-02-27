@@ -7,6 +7,7 @@ import (
 	"fmt"
 	bolt "go.etcd.io/bbolt"
 	"math/big"
+	"pandora-pay/blockchain/account"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block/difficulty"
@@ -119,6 +120,23 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 
 		for i, blkComplete := range blocksComplete {
 
+			//check block height
+			if blkComplete.Block.Height != newChain.Height {
+				return errors.New("Block Height is not right!")
+			}
+
+			//check blkComplete balance
+			var acc *account.Account
+			if acc, err = accs.GetAccount(string(blkComplete.Block.Forger[:])); err != nil {
+				return
+			}
+			if acc == nil {
+				return errors.New("Forger account doesn't exist")
+			}
+			if acc.GetDelegatedStakeAvailable(blkComplete.Block.Height) != blkComplete.Block.StakingAmount {
+				return errors.New("Delegated stake amount is not matching")
+			}
+
 			hash := blkComplete.Block.ComputeHash()
 			kernelHash := blkComplete.Block.ComputeKernelHash()
 
@@ -177,7 +195,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			newChain.KernelHash = kernelHash
 			newChain.Timestamp = blkComplete.Block.Timestamp
 
-			bigKernelHash := difficulty.HashToBig(kernelHash)
+			bigKernelHash := new(big.Int).SetBytes(kernelHash[:])
 			difficultyKernelHash := difficulty.ConvertDifficultyBigToUInt64(bigKernelHash)
 
 			if newChain.Target, err = newChain.computeNextDifficultyBig(writer); err != nil {
@@ -220,23 +238,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 	chain.UpdateChannel <- 1 //sending 1
 
 	forging.ForgingW.UpdateBalanceChanges(accs)
-	chain.createBlockForForging()
+	go chain.createBlockForForging()
 
 	result = true
 	return
 
-}
-
-func (chain *Blockchain) createBlockForForging() {
-
-	var err error
-
-	var nextBlock *block.BlockComplete
-	if nextBlock, err = Chain.createNextBlockComplete(); err == nil {
-		gui.Error("Error creating next block", err)
-	}
-
-	forging.Forging.RestartForgingWorkers(nextBlock, chain.Target)
 }
 
 func BlockchainInit() {
