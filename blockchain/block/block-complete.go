@@ -2,7 +2,6 @@ package block
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 	"pandora-pay/config"
 	"pandora-pay/crypto"
@@ -39,16 +38,13 @@ func (blkComplete *BlockComplete) VerifyMerkleHash() bool {
 
 func (blkComplete *BlockComplete) Serialize() []byte {
 
-	var serialized bytes.Buffer
-	buf := make([]byte, binary.MaxVarintLen64)
+	writer := helpers.NewBufferWriter()
 
-	blockSerialized := blkComplete.Block.Serialize()
-	serialized.Write(blockSerialized)
+	writer.Write(blkComplete.Block.Serialize())
 
-	n := binary.PutUvarint(buf, uint64(len(blkComplete.Txs)))
-	serialized.Write(buf[:n])
+	writer.WriteUint64(uint64(len(blkComplete.Txs)))
 
-	return serialized.Bytes()
+	return writer.Bytes()
 }
 
 func (blkComplete *BlockComplete) Deserialize(buf []byte) (err error) {

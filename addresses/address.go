@@ -2,7 +2,6 @@ package addresses
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 	"pandora-pay/config"
 	"pandora-pay/crypto"
@@ -38,8 +37,7 @@ func (e AddressVersion) String() string {
 
 func (a *Address) EncodeAddr() (string, error) {
 
-	var serialized bytes.Buffer
-	buf := make([]byte, binary.MaxVarintLen64)
+	writer := helpers.NewBufferWriter()
 
 	var prefix string
 	switch a.Network {
@@ -53,23 +51,20 @@ func (a *Address) EncodeAddr() (string, error) {
 		return "", errors.New("Invalid network")
 	}
 
-	n := binary.PutUvarint(buf, uint64(a.Version))
-	serialized.Write(buf[:n])
+	writer.WriteUint64(uint64(a.Version))
 
-	serialized.Write(a.PublicKey)
+	writer.Write(a.PublicKey)
 
-	integrationByte := a.IntegrationByte()
-	serialized.Write([]byte{integrationByte})
+	writer.WriteByte(a.IntegrationByte())
 
 	if a.IsIntegratedAddress() {
-		serialized.Write(a.PaymentID)
+		writer.Write(a.PaymentID)
 	}
 	if a.IsIntegratedAmount() {
-		n = binary.PutUvarint(buf, a.Amount)
-		serialized.Write(buf[:n])
+		writer.WriteUint64(a.Amount)
 	}
 
-	buffer := serialized.Bytes()
+	buffer := writer.Bytes()
 
 	checksum := crypto.RIPEMD(buffer)[0:helpers.ChecksumSize]
 	buffer = append(buffer, checksum...)

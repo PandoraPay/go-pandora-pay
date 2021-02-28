@@ -1,8 +1,6 @@
 package token
 
 import (
-	"bytes"
-	"encoding/binary"
 	"pandora-pay/helpers"
 )
 
@@ -35,34 +33,30 @@ type Token struct {
 
 func (token *Token) Serialize() []byte {
 
-	var serialized bytes.Buffer
-	temp := make([]byte, binary.MaxVarintLen64)
+	writer := helpers.NewBufferWriter()
 
-	n := binary.PutUvarint(temp, token.Version)
-	serialized.Write(temp[:n])
+	writer.WriteUint64(token.Version)
 
-	serialized.WriteByte(helpers.SerializeBoolToByte(token.canUpgrade))
-	serialized.WriteByte(helpers.SerializeBoolToByte(token.canMint))
-	serialized.WriteByte(helpers.SerializeBoolToByte(token.canBurn))
-	serialized.WriteByte(helpers.SerializeBoolToByte(token.canChangeKey))
-	serialized.WriteByte(helpers.SerializeBoolToByte(token.canPause))
-	serialized.WriteByte(helpers.SerializeBoolToByte(token.canFreeze))
-	serialized.WriteByte(token.decimalSeparator)
+	writer.WriteBool(token.canUpgrade)
+	writer.WriteBool(token.canMint)
+	writer.WriteBool(token.canBurn)
+	writer.WriteBool(token.canChangeKey)
+	writer.WriteBool(token.canPause)
+	writer.WriteBool(token.canFreeze)
+	writer.WriteByte(token.decimalSeparator)
 
-	n = binary.PutUvarint(temp, token.maxSupply)
-	serialized.Write(temp[:n])
+	writer.WriteUint64(token.maxSupply)
 
-	n = binary.PutUvarint(temp, token.supply)
-	serialized.Write(temp[:n])
+	writer.WriteUint64(token.supply)
 
-	serialized.Write(token.key[:])
-	serialized.Write(token.supplyKey[:])
+	writer.Write(token.key[:])
+	writer.Write(token.supplyKey[:])
 
-	serialized.Write([]byte(token.name))
-	serialized.Write([]byte(token.ticker))
-	serialized.Write([]byte(token.description))
+	writer.Write([]byte(token.name))
+	writer.Write([]byte(token.ticker))
+	writer.Write([]byte(token.description))
 
-	return serialized.Bytes()
+	return writer.Bytes()
 }
 
 func (token *Token) Deserialize(buf []byte) (err error) {

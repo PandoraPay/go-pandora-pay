@@ -1,8 +1,6 @@
 package dpos
 
 import (
-	"bytes"
-	"encoding/binary"
 	"pandora-pay/helpers"
 )
 
@@ -24,26 +22,22 @@ type DelegatedStake struct {
 	StakesPending []*DelegatedStakePending
 }
 
-func (delegatedStake *DelegatedStake) Serialize(serialized *bytes.Buffer, temp []byte) {
+func (delegatedStake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
 
-	serialized.Write(delegatedStake.DelegatedPublicKey[:])
+	writer.Write(delegatedStake.DelegatedPublicKey[:])
 
-	n := binary.PutUvarint(temp, delegatedStake.StakeAvailable)
-	serialized.Write(temp[:n])
+	writer.WriteUint64(delegatedStake.StakeAvailable)
 
-	n = binary.PutUvarint(temp, delegatedStake.UnstakeAmount)
-	serialized.Write(temp[:n])
+	writer.WriteUint64(delegatedStake.UnstakeAmount)
 
 	if delegatedStake.UnstakeAmount > 0 {
-		n = binary.PutUvarint(temp, delegatedStake.UnstakeHeight)
-		serialized.Write(temp[:n])
+		writer.WriteUint64(delegatedStake.UnstakeHeight)
 	}
 
-	n = binary.PutUvarint(temp, uint64(len(delegatedStake.StakesPending)))
-	serialized.Write(temp[:n])
+	writer.WriteUint64(uint64(len(delegatedStake.StakesPending)))
 
 	for _, stakePending := range delegatedStake.StakesPending {
-		stakePending.Serialize(serialized, temp)
+		stakePending.Serialize(writer)
 	}
 
 }

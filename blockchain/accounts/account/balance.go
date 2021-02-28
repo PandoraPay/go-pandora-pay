@@ -1,8 +1,6 @@
 package account
 
 import (
-	"bytes"
-	"encoding/binary"
 	"errors"
 	"pandora-pay/helpers"
 )
@@ -12,20 +10,16 @@ type Balance struct {
 	Token  []byte
 }
 
-func (balance *Balance) Serialize(serialized *bytes.Buffer, temp []byte) {
+func (balance *Balance) Serialize(writer *helpers.BufferWriter) {
 
-	n := binary.PutUvarint(temp, balance.Amount)
-	serialized.Write(temp[:n])
+	writer.WriteUint64(balance.Amount)
 
 	if len(balance.Token) == 0 {
-		serialized.Write([]byte{0})
+		writer.WriteByte(0)
 	} else {
-		serialized.Write([]byte{1})
-		serialized.Write(balance.Token[:])
+		writer.WriteByte(1)
+		writer.Write(balance.Token[:])
 	}
-
-	serialized.Write(temp[:1])
-
 }
 
 func (balance *Balance) Deserialize(reader *helpers.BufferReader) (err error) {

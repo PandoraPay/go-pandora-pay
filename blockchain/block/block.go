@@ -1,8 +1,6 @@
 package block
 
 import (
-	"bytes"
-	"encoding/binary"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/accounts/account/dpos"
@@ -102,37 +100,32 @@ func (blk *Block) VerifySignature() bool {
 
 func (blk *Block) SerializeBlock(kernelHash bool, inclSignature bool) []byte {
 
-	var n int
-	var serialized bytes.Buffer
-	temp := make([]byte, binary.MaxVarintLen64)
+	writer := helpers.NewBufferWriter()
 
-	blk.BlockHeader.Serialize(&serialized, temp)
+	blk.BlockHeader.Serialize(writer)
 
 	if !kernelHash {
-		serialized.Write(blk.MerkleHash[:])
-		serialized.Write(blk.PrevHash[:])
+		writer.Write(blk.MerkleHash[:])
+		writer.Write(blk.PrevHash[:])
 	}
 
-	serialized.Write(blk.PrevKernelHash[:])
+	writer.Write(blk.PrevKernelHash[:])
 
 	if !kernelHash {
 
-		n = binary.PutUvarint(temp, blk.StakingAmount)
-		serialized.Write(temp[:n])
-
-		serialized.Write(blk.DelegatedPublicKey[:])
+		writer.WriteUint64(blk.StakingAmount)
+		writer.Write(blk.DelegatedPublicKey[:])
 	}
 
-	n = binary.PutUvarint(temp, blk.Timestamp)
-	serialized.Write(temp[:n])
+	writer.WriteUint64(blk.Timestamp)
 
-	serialized.Write(blk.Forger[:])
+	writer.Write(blk.Forger[:])
 
 	if inclSignature {
-		serialized.Write(blk.Signature[:])
+		writer.Write(blk.Signature[:])
 	}
 
-	return serialized.Bytes()
+	return writer.Bytes()
 }
 
 func (blk *Block) Serialize() []byte {

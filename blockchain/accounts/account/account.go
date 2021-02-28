@@ -2,7 +2,6 @@ package account
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/config/reward"
@@ -115,30 +114,22 @@ func (account *Account) refreshDelegatedStake(blockHeight uint64) {
 
 func (account *Account) Serialize() []byte {
 
-	var serialized bytes.Buffer
-	temp := make([]byte, binary.MaxVarintLen64)
-
-	n := binary.PutUvarint(temp, account.Version)
-	serialized.Write(temp[:n])
-
-	n = binary.PutUvarint(temp, account.Nonce)
-	serialized.Write(temp[:n])
-
-	n = binary.PutUvarint(temp, uint64(len(account.Balances)))
-	serialized.Write(temp[:n])
+	writer := helpers.NewBufferWriter()
+	writer.WriteUint64(account.Version)
+	writer.WriteUint64(account.Nonce)
+	writer.WriteUint64(uint64(len(account.Balances)))
 
 	for i := 0; i < len(account.Balances); i++ {
-		account.Balances[i].Serialize(&serialized, temp)
+		account.Balances[i].Serialize(writer)
 	}
 
-	n = binary.PutUvarint(temp, account.DelegatedStakeVersion)
-	serialized.Write(temp[:n])
+	writer.WriteUint64(account.DelegatedStakeVersion)
 
 	if account.DelegatedStakeVersion == 1 {
-		account.DelegatedStake.Serialize(&serialized, temp)
+		account.DelegatedStake.Serialize(writer)
 	}
 
-	return serialized.Bytes()
+	return writer.Bytes()
 }
 
 func (account *Account) Deserialize(buf []byte) (err error) {

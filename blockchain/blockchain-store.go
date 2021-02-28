@@ -1,7 +1,6 @@
 package blockchain
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	bolt "go.etcd.io/bbolt"
@@ -77,13 +76,14 @@ func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) (hash
 func (chain *Blockchain) saveTotalDifficultyExtra(bucket *bolt.Bucket) error {
 	key := []byte("totalDifficulty" + strconv.FormatUint(chain.Height, 10))
 
-	buf := make([]byte, binary.MaxVarintLen64)
-	n := binary.PutUvarint(buf, chain.Timestamp)
-	buf = buf[:n]
+	writer := helpers.NewBufferWriter()
+	writer.WriteUint64(chain.Timestamp)
 
-	buf = append(buf, chain.BigTotalDifficulty.Bytes()...)
+	bytes := chain.BigTotalDifficulty.Bytes()
+	writer.WriteUint64(uint64(len(bytes)))
+	writer.Write(bytes)
 
-	return bucket.Put(key, buf)
+	return bucket.Put(key, writer.Bytes())
 }
 
 func loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64, err error) {
@@ -101,7 +101,18 @@ func loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *b
 		return
 	}
 
-	difficulty = new(big.Int).SetBytes(buf)
+	var length uint64
+	length, err = reader.ReadUvarint()
+	if err != nil {
+		return
+	}
+
+	var bytes []byte
+	bytes, err = reader.ReadBytes(int(length))
+	if err != nil {
+		return
+	}
+	difficulty = new(big.Int).SetBytes(bytes)
 
 	return
 }
