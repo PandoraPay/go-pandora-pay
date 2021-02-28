@@ -83,7 +83,6 @@ func (account *Account) AddReward(sign bool, amount, blockHeight uint64) {
 
 	if sign {
 		account.DelegatedStake.StakeAvailable += amount
-
 	} else {
 		if account.DelegatedStake.StakeAvailable < amount {
 			panic("Strange. Stake available is less than reward. ")

@@ -30,7 +30,6 @@ type Blockchain struct {
 	Height     uint64
 	Timestamp  uint64
 
-	Difficulty         uint64
 	Target             *big.Int
 	BigTotalDifficulty *big.Int
 
@@ -44,7 +43,7 @@ type Blockchain struct {
 
 var Chain Blockchain
 
-func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (result bool, err error) {
+func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, calledByForging bool) (result bool, err error) {
 
 	result = false
 	if len(blocksComplete) == 0 {
@@ -65,7 +64,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 		KernelHash:         chain.KernelHash,
 		Height:             chain.Height,
 		Timestamp:          chain.Timestamp,
-		Difficulty:         chain.Difficulty,
 		Target:             chain.Target,
 		BigTotalDifficulty: chain.BigTotalDifficulty,
 	}
@@ -218,12 +216,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			newChain.KernelHash = kernelHash
 			newChain.Timestamp = blkComplete.Block.Timestamp
 
-			if newChain.Target, err = newChain.computeNextDifficultyBig(writer); err != nil {
+			difficultyBigInt := difficulty.ConvertTargetToDifficulty(newChain.Target)
+			newChain.BigTotalDifficulty = new(big.Int).Add(newChain.BigTotalDifficulty, difficultyBigInt)
+			if err = newChain.saveTotalDifficultyExtra(writer); err != nil {
 				return
 			}
 
-			newChain.BigTotalDifficulty = new(big.Int).Add(newChain.BigTotalDifficulty, difficulty.ConvertHashToDifficulty(kernelHash))
-			if err = newChain.saveTotalDifficultyExtra(writer); err != nil {
+			if newChain.Target, err = newChain.computeNextTargetBig(writer); err != nil {
 				return
 			}
 
@@ -248,7 +247,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 	if wasChainLocked {
 		chain.Unlock()
 	}
+
 	if err != nil {
+		if calledByForging {
+			go chain.createBlockForForging()
+		}
 		return
 	}
 
@@ -298,7 +301,7 @@ func BlockchainInit() {
 			var array []*block.BlockComplete
 			array = append(array, forging.Forging.BlkComplete)
 
-			result, err := Chain.AddBlocks(array)
+			result, err := Chain.AddBlocks(array, true)
 			if err == nil && result {
 				gui.Info("Block was forged! " + strconv.FormatUint(forging.Forging.BlkComplete.Block.Height, 10))
 			} else {

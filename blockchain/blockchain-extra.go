@@ -20,8 +20,7 @@ func (chain *Blockchain) init() (err error) {
 	chain.Height = 0
 	chain.Hash = genesis.GenesisData.Hash
 	chain.KernelHash = genesis.GenesisData.KernelHash
-	chain.Difficulty = genesis.GenesisData.Difficulty
-	chain.Target = difficulty.ConvertDifficultyToBig(chain.Difficulty)
+	chain.Target = new(big.Int).SetBytes(genesis.GenesisData.Target[:])
 	chain.BigTotalDifficulty = new(big.Int).SetUint64(0)
 
 	var tok = token.Token{
@@ -57,7 +56,7 @@ func (chain *Blockchain) init() (err error) {
 	return
 }
 
-func (chain *Blockchain) computeNextDifficultyBig(bucket *bolt.Bucket) (*big.Int, error) {
+func (chain *Blockchain) computeNextTargetBig(bucket *bolt.Bucket) (*big.Int, error) {
 
 	if config.DIFFICULTY_BLOCK_WINDOW > chain.Height {
 		return chain.Target, nil
@@ -76,7 +75,7 @@ func (chain *Blockchain) computeNextDifficultyBig(bucket *bolt.Bucket) (*big.Int
 	deltaTotalDifficulty := new(big.Int).Sub(lastDifficulty, firstDifficulty)
 	deltaTime := lastTimestamp - firstTimestamp
 
-	return difficulty.NextDifficultyBig(deltaTotalDifficulty, deltaTime)
+	return difficulty.NextTargetBig(deltaTotalDifficulty, deltaTime)
 }
 
 func (chain *Blockchain) createNextBlockComplete() (blkComplete *block.BlockComplete, err error) {

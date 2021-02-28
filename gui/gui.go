@@ -93,10 +93,10 @@ func GUIInit() {
 			ui.NewCol(1.0/2, info),
 			ui.NewCol(1.0/2, statistics),
 		),
-		ui.NewRow(2.0/4,
+		ui.NewRow(1.0/4,
 			ui.NewCol(1.0/1, cmd),
 		),
-		ui.NewRow(1.0/4, logs),
+		ui.NewRow(2.0/4, logs),
 	)
 
 	ui.Render(grid)
@@ -308,7 +308,7 @@ func OutputDone() {
 func message(color ui.Color, any ...interface{}) {
 	logs.TextStyle = ui.NewStyle(color)
 	ss := strings.Split(logs.Text, "\n")
-	pos := len(ss) - 8
+	pos := len(ss) - 16
 	if pos < 0 {
 		pos = 0
 	}
