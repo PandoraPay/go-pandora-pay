@@ -218,14 +218,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			newChain.KernelHash = kernelHash
 			newChain.Timestamp = blkComplete.Block.Timestamp
 
-			bigKernelHash := new(big.Int).SetBytes(kernelHash[:])
-			difficultyKernelHash := difficulty.ConvertDifficultyBigToUInt64(bigKernelHash)
-
 			if newChain.Target, err = newChain.computeNextDifficultyBig(writer); err != nil {
 				return
 			}
 
-			newChain.BigTotalDifficulty = new(big.Int).Add(newChain.BigTotalDifficulty, new(big.Int).SetUint64(difficultyKernelHash))
+			newChain.BigTotalDifficulty = new(big.Int).Add(newChain.BigTotalDifficulty, difficulty.ConvertHashToDifficulty(kernelHash))
 			if err = newChain.saveTotalDifficultyExtra(writer); err != nil {
 				return
 			}

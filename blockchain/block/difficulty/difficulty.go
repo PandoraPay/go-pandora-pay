@@ -13,13 +13,8 @@ var (
 	DIFFICULTY_MAX_CHANGE_FACTOR = new(big.Float).SetFloat64(2)
 )
 
-func ConvertDifficultyBigToUInt64(difficulty *big.Int) uint64 {
-
-	if difficulty.Cmp(config.BIG_INT_ZERO) == 0 {
-		panic("difficulty can never be zero")
-	}
-
-	return new(big.Int).Div(config.BIG_INT_MAX_256, difficulty).Uint64()
+func ConvertHashToDifficulty(hash helpers.Hash) *big.Int {
+	return new(big.Int).Div(config.BIG_INT_MAX_256, new(big.Int).SetBytes(hash[:]))
 }
 
 // this function calculates the difficulty in big num form
@@ -49,11 +44,16 @@ func NextDifficultyBig(deltaTotalDifficulty *big.Int, deltaTime uint64) (*big.In
 		change = DIFFICULTY_MAX_CHANGE_FACTOR
 	}
 
+	// gui.Log( strconv.FormatUint(deltaTime, 10) + "  expected " + strconv.FormatUint(expectedTime, 10) )
+	// gui.Log( "change "+ change.String() )
+
 	averageDifficulty := new(big.Float).Quo(new(big.Float).SetInt(deltaTotalDifficulty), new(big.Float).SetUint64(config.DIFFICULTY_BLOCK_WINDOW))
 	averageTarget := new(big.Float).Quo(config.BIG_FLOAT_MAX_256, averageDifficulty)
 
 	newTarget := new(big.Float).Mul(averageTarget, change)
 
+	// gui.Log( "before "+ averageTarget.String() )
+	// gui.Log( "after "+ newTarget.String() )
 	str := fmt.Sprintf("%.0f", newTarget)
 	final, success := new(big.Int).SetString(str, 10)
 	if success == false {
@@ -67,6 +67,8 @@ func NextDifficultyBig(deltaTotalDifficulty *big.Int, deltaTime uint64) (*big.In
 	if final.Cmp(config.BIG_INT_MAX_256) > 0 {
 		final = config.BIG_INT_MAX_256
 	}
+
+	// gui.Log( "final "+ final.String() )
 
 	return final, nil
 }
