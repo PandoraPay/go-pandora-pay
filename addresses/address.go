@@ -110,9 +110,11 @@ func DecodeAddr(input string) (addr2 *Address, err error) {
 	}
 	buf = buf[0 : len(buf)-helpers.ChecksumSize] // remove the checksum
 
+	reader := helpers.NewBufferReader(buf)
+
 	var version uint64
 
-	if version, buf, err = helpers.DeserializeNumber(buf); err != nil {
+	if version, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 	adr.Version = AddressVersion(version)
@@ -128,24 +130,24 @@ func DecodeAddr(input string) (addr2 *Address, err error) {
 		return nil, errors.New("Invalid Address Version")
 	}
 
-	if adr.PublicKey, buf, err = helpers.DeserializeBuffer(buf, readBytes); err != nil {
+	if adr.PublicKey, err = reader.ReadBytes(readBytes); err != nil {
 		return
 	}
 
-	var integrationByte []byte
-	if integrationByte, buf, err = helpers.DeserializeBuffer(buf, 1); err != nil {
+	var integrationByte byte
+	if integrationByte, err = reader.ReadByte(); err != nil {
 		return
 	}
 
-	if integrationByte[0]&1 != 0 {
-		if adr.PaymentID, buf, err = helpers.DeserializeBuffer(buf, 8); err != nil {
+	if integrationByte&1 != 0 {
+		if adr.PaymentID, err = reader.ReadBytes(8); err != nil {
 			return
 		}
 	}
 
-	if integrationByte[0]&(1<<1) != 0 {
+	if integrationByte&(1<<1) != 0 {
 
-		if adr.Amount, buf, err = helpers.DeserializeNumber(buf); err != nil {
+		if adr.Amount, err = reader.ReadUvarint(); err != nil {
 			return
 		}
 

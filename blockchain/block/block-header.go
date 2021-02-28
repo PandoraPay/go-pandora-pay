@@ -21,18 +21,15 @@ func (blockHeader *BlockHeader) Serialize(serialized *bytes.Buffer, temp []byte)
 
 }
 
-func (blockHeader *BlockHeader) Deserialize(buf []byte) (out []byte, err error) {
+func (blockHeader *BlockHeader) Deserialize(reader *helpers.BufferReader) (err error) {
 
-	blockHeader.Version, buf, err = helpers.DeserializeNumber(buf)
-	if err != nil {
+	if blockHeader.Version, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
-	blockHeader.Height, buf, err = helpers.DeserializeNumber(buf)
-	if err != nil {
+	if blockHeader.Height, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
-	out = buf
 	return
 }

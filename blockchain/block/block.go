@@ -3,13 +3,11 @@ package block
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/hex"
-	"pandora-pay/blockchain/account"
-	"pandora-pay/blockchain/account/dpos"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/crypto"
 	"pandora-pay/crypto/ecdsa"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 )
 
@@ -79,7 +77,6 @@ func (blk *Block) ComputeHash() helpers.Hash {
 
 func (blk *Block) ComputeKernelHashOnly() helpers.Hash {
 	out := blk.SerializeBlock(true, false)
-	gui.Log(hex.EncodeToString(out[:]))
 	return crypto.SHA3Hash(out)
 }
 
@@ -142,48 +139,47 @@ func (blk *Block) Serialize() []byte {
 	return blk.SerializeBlock(false, true)
 }
 
-func (blk *Block) Deserialize(buf []byte) (out []byte, err error) {
+func (blk *Block) Deserialize(reader *helpers.BufferReader) (err error) {
 
-	if buf, err = blk.BlockHeader.Deserialize(buf); err != nil {
+	if err = blk.BlockHeader.Deserialize(reader); err != nil {
 		return
 	}
 
-	if blk.MerkleHash, buf, err = helpers.DeserializeHash(buf, helpers.HashSize); err != nil {
+	if blk.MerkleHash, err = reader.ReadHash(); err != nil {
 		return
 	}
 
-	if blk.PrevHash, buf, err = helpers.DeserializeHash(buf, helpers.HashSize); err != nil {
+	if blk.PrevHash, err = reader.ReadHash(); err != nil {
 		return
 	}
 
-	if blk.PrevKernelHash, buf, err = helpers.DeserializeHash(buf, helpers.HashSize); err != nil {
+	if blk.PrevKernelHash, err = reader.ReadHash(); err != nil {
 		return
 	}
 
-	if blk.StakingAmount, buf, err = helpers.DeserializeNumber(buf); err != nil {
+	if blk.StakingAmount, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
 	var data []byte
-	if data, buf, err = helpers.DeserializeBuffer(buf, 33); err != nil {
+	if data, err = reader.ReadBytes(33); err != nil {
 		return
 	}
 	blk.DelegatedPublicKey = *helpers.Byte33(data)
 
-	if blk.Timestamp, buf, err = helpers.DeserializeNumber(buf); err != nil {
+	if blk.Timestamp, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
-	if data, buf, err = helpers.DeserializeBuffer(buf, 20); err != nil {
+	if data, err = reader.ReadBytes(20); err != nil {
 		return
 	}
 	blk.Forger = *helpers.Byte20(data)
 
-	if data, buf, err = helpers.DeserializeBuffer(buf, 65); err != nil {
+	if data, err = reader.ReadBytes(65); err != nil {
 		return
 	}
 	blk.Signature = *helpers.Byte65(data)
 
-	out = buf
 	return
 }

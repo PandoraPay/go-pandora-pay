@@ -3,7 +3,7 @@ package accounts
 import (
 	"errors"
 	"go.etcd.io/bbolt"
-	"pandora-pay/blockchain/account"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/store"
 )
 
@@ -48,7 +48,7 @@ func (accounts *Accounts) GetAccount(key string) (acc *account.Account, err erro
 	}
 
 	acc = new(account.Account)
-	_, err = acc.Deserialize(data)
+	err = acc.Deserialize(data)
 	return
 }
 

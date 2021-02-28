@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"pandora-pay/blockchain/account/dpos"
+	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/config/reward"
 	"pandora-pay/helpers"
 )
@@ -41,13 +41,13 @@ func (account *Account) IncrementNonce(sign bool) error {
 	return nil
 }
 
-func (account *Account) AddBalance(sign bool, amount uint64, currency []byte) error {
+func (account *Account) AddBalance(sign bool, amount uint64, token []byte) error {
 
 	var foundBalance *Balance
 	var foundBalanceIndex int
 
 	for i, balance := range account.Balances {
-		if bytes.Equal(balance.Currency[:], currency[:]) {
+		if bytes.Equal(balance.Token[:], token[:]) {
 			foundBalance = balance
 			foundBalanceIndex = i
 			break
@@ -57,7 +57,7 @@ func (account *Account) AddBalance(sign bool, amount uint64, currency []byte) er
 	if sign {
 		if foundBalance == nil {
 			foundBalance = new(Balance)
-			copy(foundBalance.Currency[:], currency[:])
+			copy(foundBalance.Token[:], token[:])
 			account.Balances = append(account.Balances, foundBalance)
 		}
 		foundBalance.Amount += amount
@@ -141,9 +141,11 @@ func (account *Account) Serialize() []byte {
 	return serialized.Bytes()
 }
 
-func (account *Account) Deserialize(buf []byte) (out []byte, err error) {
+func (account *Account) Deserialize(buf []byte) (err error) {
 
-	if account.Version, buf, err = helpers.DeserializeNumber(buf); err != nil {
+	reader := helpers.NewBufferReader(buf)
+
+	if account.Version, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 	if account.Version != 0 {
@@ -151,24 +153,24 @@ func (account *Account) Deserialize(buf []byte) (out []byte, err error) {
 		return
 	}
 
-	if account.Nonce, buf, err = helpers.DeserializeNumber(buf); err != nil {
+	if account.Nonce, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
 	var n uint64
-	if n, buf, err = helpers.DeserializeNumber(buf); err != nil {
+	if n, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
 	for i := uint64(0); i < n; i++ {
 		var balance = new(Balance)
-		if buf, err = balance.Deserialize(buf); err != nil {
+		if err = balance.Deserialize(reader); err != nil {
 			return
 		}
 		account.Balances = append(account.Balances, balance)
 	}
 
-	if account.DelegatedStakeVersion, buf, err = helpers.DeserializeNumber(buf); err != nil {
+	if account.DelegatedStakeVersion, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 	if account.DelegatedStakeVersion > 1 {
@@ -178,11 +180,10 @@ func (account *Account) Deserialize(buf []byte) (out []byte, err error) {
 
 	if account.DelegatedStakeVersion == 1 {
 		account.DelegatedStake = new(dpos.DelegatedStake)
-		if buf, err = account.DelegatedStake.Deserialize(buf); err != nil {
+		if err = account.DelegatedStake.Deserialize(reader); err != nil {
 			return
 		}
 	}
 
-	out = buf
 	return
 }

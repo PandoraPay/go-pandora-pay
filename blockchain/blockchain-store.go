@@ -41,7 +41,9 @@ func loadBlock(bucket *bolt.Bucket, hash helpers.Hash) (blk *block.Block, err er
 	}
 
 	blk = &block.Block{}
-	_, err = blk.Deserialize(blockData)
+
+	reader := helpers.NewBufferReader(blockData)
+	err = blk.Deserialize(reader)
 
 	return
 }
@@ -93,7 +95,8 @@ func loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *b
 		return
 	}
 
-	timestamp, buf, err = helpers.DeserializeNumber(buf)
+	reader := helpers.NewBufferReader(buf)
+	timestamp, err = reader.ReadUvarint()
 	if err != nil {
 		return
 	}

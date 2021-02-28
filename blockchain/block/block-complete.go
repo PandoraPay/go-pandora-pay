@@ -51,23 +51,21 @@ func (blkComplete *BlockComplete) Serialize() []byte {
 	return serialized.Bytes()
 }
 
-func (blkComplete *BlockComplete) Deserialize(buf []byte) (out []byte, err error) {
+func (blkComplete *BlockComplete) Deserialize(buf []byte) (err error) {
+
+	reader := helpers.NewBufferReader(buf)
 
 	if uint64(len(buf)) > config.BLOCK_MAX_SIZE {
 		err = errors.New("COMPLETE BLOCK EXCEEDS MAX SIZE")
 		return
 	}
 
-	out = buf
-
-	out, err = blkComplete.Block.Deserialize(out)
-	if err != nil {
+	if err = blkComplete.Block.Deserialize(reader); err != nil {
 		return
 	}
 
 	var txsCount uint64
-	txsCount, out, err = helpers.DeserializeNumber(out)
-	if err != nil {
+	if txsCount, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
@@ -76,6 +74,5 @@ func (blkComplete *BlockComplete) Deserialize(buf []byte) (out []byte, err error
 
 	}
 
-	buf = out
 	return
 }

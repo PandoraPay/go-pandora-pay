@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/account"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/store"
@@ -74,7 +74,7 @@ func cliListAddresses(cmd string) {
 					gui.OutputWrite("      -> " + "EMPTY")
 				} else {
 					for _, balance := range acc.Balances {
-						gui.OutputWrite("      -> " + strconv.FormatUint(config.ConvertToBase(balance.Amount), 10) + " " + hex.EncodeToString(balance.Currency))
+						gui.OutputWrite("      -> " + strconv.FormatUint(config.ConvertToBase(balance.Amount), 10) + " " + hex.EncodeToString(balance.Token))
 					}
 					if acc.HasDelegatedStake() {
 						gui.OutputWrite("      ->   Stake Available   " + strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.StakeAvailable), 10))

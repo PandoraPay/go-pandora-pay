@@ -25,16 +25,15 @@ func (delegatedStakePending *DelegatedStakePending) Serialize(serialized *bytes.
 
 }
 
-func (delegatedStakePending *DelegatedStakePending) Deserialize(buf []byte) (out []byte, err error) {
+func (delegatedStakePending *DelegatedStakePending) Deserialize(reader *helpers.BufferReader) (err error) {
 
-	if delegatedStakePending.StakePending, buf, err = helpers.DeserializeNumber(buf); err != nil {
+	if delegatedStakePending.StakePending, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
-	if delegatedStakePending.StakePendingHeight, buf, err = helpers.DeserializeNumber(buf); err != nil {
+	if delegatedStakePending.StakePendingHeight, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
-	out = buf
 	return
 }

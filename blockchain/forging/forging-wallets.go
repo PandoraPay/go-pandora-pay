@@ -4,8 +4,8 @@ import (
 	"bytes"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/account"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/store"
 	"sync"
 )
@@ -80,7 +80,7 @@ func (w *forgingWallets) UpdateBalanceChanges(accs *accounts.Accounts) {
 
 			if v.Committed == "update" {
 				w.addressesMap[k].account = new(account.Account)
-				_, _ = w.addressesMap[k].account.Deserialize(v.Data)
+				_ = w.addressesMap[k].account.Deserialize(v.Data)
 			} else if v.Committed == "delete" {
 				w.addressesMap[k].account = nil
 			}

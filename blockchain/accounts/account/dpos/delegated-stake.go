@@ -48,43 +48,42 @@ func (delegatedStake *DelegatedStake) Serialize(serialized *bytes.Buffer, temp [
 
 }
 
-func (delegatedStake *DelegatedStake) Deserialize(buf []byte) (out []byte, err error) {
+func (delegatedStake *DelegatedStake) Deserialize(reader *helpers.BufferReader) (err error) {
 
 	var data []byte
-	if data, buf, err = helpers.DeserializeBuffer(buf, 33); err != nil {
+	if data, err = reader.ReadBytes(33); err != nil {
 		return
 	}
 	delegatedStake.DelegatedPublicKey = *helpers.Byte33(data)
 
-	if delegatedStake.StakeAvailable, buf, err = helpers.DeserializeNumber(buf); err != nil {
+	if delegatedStake.StakeAvailable, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
-	if delegatedStake.UnstakeAmount, buf, err = helpers.DeserializeNumber(buf); err != nil {
+	if delegatedStake.UnstakeAmount, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
 	if delegatedStake.UnstakeAmount > 0 {
-		if delegatedStake.UnstakeHeight, buf, err = helpers.DeserializeNumber(buf); err != nil {
+		if delegatedStake.UnstakeHeight, err = reader.ReadUvarint(); err != nil {
 			return
 		}
 	}
 
 	var n uint64
-	if n, buf, err = helpers.DeserializeNumber(buf); err != nil {
+	if n, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
 	for i := uint64(0); i < n; i++ {
 		var delegatedStakePending = new(DelegatedStakePending)
-		if buf, err = delegatedStakePending.Deserialize(buf); err != nil {
+		if err = delegatedStakePending.Deserialize(reader); err != nil {
 			return
 		}
 
 		delegatedStake.StakesPending = append(delegatedStake.StakesPending, delegatedStakePending)
 	}
 
-	out = buf
 	return
 }
 
