@@ -32,7 +32,7 @@ Status of Blockchain implementation:
     - [x] Timestamp maximum drift    
 - [x] Forging
     - [x] Forging with wallets Multithreading    
-    - [ ] Forging with delegated stakes
+    - [X] Forging with delegated stakes
         - [ ] Accepting to delegate stakes from network  
 - [x] Balances
     - [x] Balance and Nonce Update
@@ -44,7 +44,7 @@ Status of Blockchain implementation:
     - [ ] Multiple Tokens
     - [ ] Patricia Trie ?
 - [ ] Tokens
-    - [ ] Token
+    - [X] Token
     - [ ] Creation
     - [ ] Update  
 - [ ] Transactions
