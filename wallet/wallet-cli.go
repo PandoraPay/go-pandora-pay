@@ -2,7 +2,10 @@ package wallet
 
 import (
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	bolt "go.etcd.io/bbolt"
+	"os"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
@@ -19,6 +22,53 @@ func initWalletCLI() {
 	gui.CommandDefineCallback("Show Mnemnonic", cliShowMnemonic)
 	gui.CommandDefineCallback("Show Private Key", cliShowPrivateKey)
 	gui.CommandDefineCallback("Remove Address", cliRemoveAddress)
+	gui.CommandDefineCallback("Export (JSON) Wallet", cliExportJSONWallet)
+
+}
+
+func cliExportJSONWallet(cmd string) {
+
+	defer gui.OutputDone()
+
+	var err error
+	var f *os.File
+
+	str := <-gui.OutputReadString("Path to export")
+	if f, err = os.Create(str); err != nil {
+		gui.Error("File can not be written")
+		return
+	}
+	defer f.Close()
+
+	cliListAddresses("")
+	index := <-gui.OutputReadInt("Select Address to be Exported")
+	W.RLock()
+	defer W.RUnlock()
+
+	if index < 0 {
+		gui.Error("Invalid index")
+		return
+	}
+
+	var marshal []byte
+	var obj interface{}
+
+	if index > len(W.Addresses) {
+		obj = W
+	} else {
+		obj = W.Addresses[index]
+	}
+
+	if marshal, err = json.Marshal(obj); err != nil {
+		gui.Error("Error marshaling wallet", err)
+	}
+
+	if _, err = fmt.Fprint(f, string(marshal)); err != nil {
+		gui.Error("Error writing into file")
+		return
+	}
+
+	gui.Info("Exported successfully")
 
 }
 
@@ -32,6 +82,9 @@ func cliCreateNewAddress(cmd string) {
 }
 
 func cliRemoveAddress(cmd string) {
+
+	defer gui.OutputDone()
+
 	cliListAddresses("")
 	index := <-gui.OutputReadInt("Select Address to be Removed")
 
@@ -41,10 +94,13 @@ func cliRemoveAddress(cmd string) {
 		cliListAddresses("")
 		gui.OutputWrite("Address removed")
 	}
-	gui.OutputDone()
 }
 
 func cliListAddresses(cmd string) {
+
+	if cmd != "" {
+		defer gui.OutputDone()
+	}
 
 	gui.OutputWrite("Wallet")
 	gui.OutputWrite("Version: " + W.Version.String())
@@ -93,21 +149,21 @@ func cliListAddresses(cmd string) {
 		gui.Error(err)
 	}
 
-	if cmd != "" {
-		gui.OutputDone()
-	}
 }
 
 func cliShowMnemonic(string) {
+	defer gui.OutputDone()
+
 	gui.OutputWrite("Mnemonic \n")
 	gui.OutputWrite(W.Mnemonic)
 
 	gui.OutputWrite("Seed \n")
 	gui.OutputWrite(W.Seed)
-	gui.OutputDone()
 }
 
 func cliShowPrivateKey(cmd string) {
+
+	defer gui.OutputDone()
 
 	cliListAddresses("")
 
@@ -119,5 +175,4 @@ func cliShowPrivateKey(cmd string) {
 		gui.OutputWrite(*key)
 	}
 
-	gui.OutputDone()
 }

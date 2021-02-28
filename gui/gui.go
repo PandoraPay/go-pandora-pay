@@ -41,7 +41,8 @@ var commands = []Command{
 	{Text: "Show Private Key"},
 	{Text: "Remove Address"},
 	{Text: "Create New Address"},
-	{Text: "Save (JSON) Address"},
+	{Text: "Export (JSON) Wallet"},
+	{Text: "Import (JSON) Wallet"},
 	{Text: "Exit"},
 }
 

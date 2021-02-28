@@ -16,7 +16,8 @@ Status of Blockchain implementation:
     - [x] Save and Load
     - [x] Print Wallet Transparent Balances
     - [ ] Print Wallet Homomorphic Balances
-    - [ ] Export and import JSON        
+    - [X] Export JSON        
+    - [ ] Import JSON        
     - [ ] Wallet Encryption
 - [x] Merkle Tree
 - [x] Block
