@@ -41,9 +41,7 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts) (err error) {
 	}
 	acc.AddReward(true, blk.Height)
 
-	if err = acs.UpdateAccount(string(blk.Forger[:]), acc); err != nil {
-		return
-	}
+	acs.UpdateAccount(string(blk.Forger[:]), acc)
 
 	return
 }
@@ -58,9 +56,7 @@ func (blk *Block) RemoveBlock(acs *accounts.Accounts) (err error) {
 
 	acc.AddReward(false, blk.Height)
 
-	if err = acs.UpdateAccount(string(blk.Forger[:]), acc); err != nil {
-		return
-	}
+	acs.UpdateAccount(string(blk.Forger[:]), acc)
 
 	return
 }

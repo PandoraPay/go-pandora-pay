@@ -43,6 +43,21 @@ func (reader *BufferReader) ReadBytes(count int) (out []byte, err error) {
 	return
 }
 
+func (reader *BufferReader) ReadString() (str string, err error) {
+	var length uint64
+	if length, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+
+	var bytes []byte
+	if bytes, err = reader.ReadBytes(int(length)); err != nil {
+		return
+	}
+	str = string(bytes)
+
+	return
+}
+
 func (reader *BufferReader) ReadHash() (out Hash, err error) {
 	if len(reader.buf) > HashSize {
 		out = *ConvertHash(reader.buf[:HashSize])

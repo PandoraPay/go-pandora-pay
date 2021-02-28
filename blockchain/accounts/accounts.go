@@ -31,19 +31,21 @@ func CreateNewAccounts(tx *bbolt.Tx) (accounts *Accounts, err error) {
 
 func (accounts *Accounts) GetAccountEvenEmpty(key string) (acc *account.Account, err error) {
 
-	if acc, err = accounts.GetAccount(key); err != nil {
+	acc = new(account.Account)
+
+	data := accounts.HashMap.Get(key)
+	if data == nil {
 		return
 	}
-	if acc == nil {
-		acc = new(account.Account)
-	}
+
+	err = acc.Deserialize(data)
 	return
 }
 
 func (accounts *Accounts) GetAccount(key string) (acc *account.Account, err error) {
 
-	var data []byte
-	if data, err = accounts.HashMap.Get(key); err != nil || data == nil {
+	data := accounts.HashMap.Get(key)
+	if data == nil {
 		return
 	}
 
@@ -52,18 +54,22 @@ func (accounts *Accounts) GetAccount(key string) (acc *account.Account, err erro
 	return
 }
 
-func (accounts *Accounts) UpdateAccount(key string, acc *account.Account) (err error) {
+func (accounts *Accounts) UpdateAccount(key string, acc *account.Account) {
 
 	if acc.IsAccountEmpty() {
-		return accounts.HashMap.Delete(key)
+		accounts.HashMap.Delete(key)
 	} else {
 		data := acc.Serialize()
-		return accounts.HashMap.Update(key, data)
+		accounts.HashMap.Update(key, data)
 	}
 }
 
-func (accounts *Accounts) DeleteAccount(key string) error {
-	return accounts.HashMap.Delete(key)
+func (accounts *Accounts) ExistsAccount(key string) bool {
+	return accounts.HashMap.Exists(key)
+}
+
+func (accounts *Accounts) DeleteAccount(key string) {
+	accounts.HashMap.Delete(key)
 }
 
 func (accounts *Accounts) Commit() error {

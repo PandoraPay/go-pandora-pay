@@ -18,6 +18,13 @@ func (writer *BufferWriter) Write(value []byte) {
 	writer.len += len(value)
 }
 
+func (writer *BufferWriter) WriteString(string string) {
+	value := []byte(string)
+	writer.WriteUint64(uint64(len(value)))
+	writer.array = append(writer.array, value)
+	writer.len += len(value)
+}
+
 func (writer *BufferWriter) WriteBool(value bool) {
 	var value2 byte
 	if value {

@@ -30,7 +30,7 @@ func CreateNewHashMap(tx *bbolt.Tx, name string) (hashMap *HashMap, err error) {
 
 }
 
-func (hashMap *HashMap) Get(key string) (out []byte, err error) {
+func (hashMap *HashMap) Get(key string) (out []byte) {
 
 	exists := hashMap.Virtual[key]
 	if exists != nil {
@@ -39,24 +39,29 @@ func (hashMap *HashMap) Get(key string) (out []byte, err error) {
 	}
 
 	out = hashMap.Bucket.Get([]byte(key))
-	if out == nil {
-		hashMap.Virtual[key] = &VirtualHashMapElement{
-			nil,
-			"empty",
-			"",
-		}
-	} else {
-		hashMap.Virtual[key] = &VirtualHashMapElement{
-			out,
-			"view",
-			"",
-		}
+	hashMap.Virtual[key] = &VirtualHashMapElement{
+		out,
+		"view",
+		"",
 	}
-
 	return
 }
 
-func (hashMap *HashMap) Update(key string, data []byte) (err error) {
+func (hashMap *HashMap) Exists(key string) bool {
+	exists := hashMap.Virtual[key]
+	if exists != nil {
+		return exists.Data != nil
+	}
+	out := hashMap.Bucket.Get([]byte(key))
+	hashMap.Virtual[key] = &VirtualHashMapElement{
+		out,
+		"view",
+		"",
+	}
+	return out != nil
+}
+
+func (hashMap *HashMap) Update(key string, data []byte) {
 
 	exists := hashMap.Virtual[key]
 	if exists == nil {
@@ -69,7 +74,7 @@ func (hashMap *HashMap) Update(key string, data []byte) (err error) {
 	return
 }
 
-func (hashMap *HashMap) Delete(key string) (err error) {
+func (hashMap *HashMap) Delete(key string) {
 
 	exists := hashMap.Virtual[key]
 	if exists == nil {
@@ -86,10 +91,8 @@ func (hashMap *HashMap) Commit() (err error) {
 	for k, v := range hashMap.Virtual {
 
 		if v.Status == "del" {
-			if err = hashMap.Bucket.Delete([]byte(k)); err != nil {
-				return
-			}
-			v.Status = "empty"
+			hashMap.Bucket.Delete([]byte(k))
+			v.Status = "view"
 			v.Committed = "del"
 			v.Data = nil
 		} else if v.Status == "update" {

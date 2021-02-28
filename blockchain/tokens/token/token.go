@@ -7,28 +7,30 @@ import (
 type Token struct {
 	Version uint64
 	//upgrade different settings
-	canUpgrade bool
+	CanUpgrade bool
 	//increase supply
-	canMint bool
+	CanMint bool
 	//decrease supply
-	canBurn bool
+	CanBurn bool
 	//can change key
-	canChangeKey bool
+	CanChangeKey bool
+	//can change supply key
+	CanChangeSupplyKey bool
 	//can pause (suspend transactions)
-	canPause bool
+	CanPause bool
 	//freeze supply changes
-	canFreeze bool
+	CanFreeze bool
 
-	decimalSeparator byte
-	maxSupply        uint64
-	supply           uint64
+	DecimalSeparator byte
+	MaxSupply        uint64
+	Supply           uint64
 
-	key       [20]byte
-	supplyKey [20]byte
+	Key       [20]byte
+	SupplyKey [20]byte
 
-	name        string
-	ticker      string
-	description string
+	Name        string
+	Ticker      string
+	Description string
 }
 
 func (token *Token) Serialize() []byte {
@@ -37,28 +39,87 @@ func (token *Token) Serialize() []byte {
 
 	writer.WriteUint64(token.Version)
 
-	writer.WriteBool(token.canUpgrade)
-	writer.WriteBool(token.canMint)
-	writer.WriteBool(token.canBurn)
-	writer.WriteBool(token.canChangeKey)
-	writer.WriteBool(token.canPause)
-	writer.WriteBool(token.canFreeze)
-	writer.WriteByte(token.decimalSeparator)
+	writer.WriteBool(token.CanUpgrade)
+	writer.WriteBool(token.CanMint)
+	writer.WriteBool(token.CanBurn)
+	writer.WriteBool(token.CanChangeKey)
+	writer.WriteBool(token.CanChangeSupplyKey)
+	writer.WriteBool(token.CanPause)
+	writer.WriteBool(token.CanFreeze)
+	writer.WriteByte(token.DecimalSeparator)
 
-	writer.WriteUint64(token.maxSupply)
+	writer.WriteUint64(token.MaxSupply)
+	writer.WriteUint64(token.Supply)
 
-	writer.WriteUint64(token.supply)
+	writer.Write(token.Key[:])
+	writer.Write(token.SupplyKey[:])
 
-	writer.Write(token.key[:])
-	writer.Write(token.supplyKey[:])
-
-	writer.Write([]byte(token.name))
-	writer.Write([]byte(token.ticker))
-	writer.Write([]byte(token.description))
+	writer.WriteString(token.Name)
+	writer.WriteString(token.Ticker)
+	writer.WriteString(token.Description)
 
 	return writer.Bytes()
 }
 
 func (token *Token) Deserialize(buf []byte) (err error) {
+
+	reader := helpers.NewBufferReader(buf)
+
+	if token.Version, err = reader.ReadUvarint(); err != nil {
+		return err
+	}
+
+	if token.CanUpgrade, err = reader.ReadBool(); err != nil {
+		return err
+	}
+	if token.CanMint, err = reader.ReadBool(); err != nil {
+		return err
+	}
+	if token.CanBurn, err = reader.ReadBool(); err != nil {
+		return err
+	}
+	if token.CanChangeKey, err = reader.ReadBool(); err != nil {
+		return err
+	}
+	if token.CanChangeSupplyKey, err = reader.ReadBool(); err != nil {
+		return err
+	}
+	if token.CanPause, err = reader.ReadBool(); err != nil {
+		return err
+	}
+	if token.CanFreeze, err = reader.ReadBool(); err != nil {
+		return err
+	}
+	if token.DecimalSeparator, err = reader.ReadByte(); err != nil {
+		return err
+	}
+	if token.MaxSupply, err = reader.ReadUvarint(); err != nil {
+		return err
+	}
+	if token.Supply, err = reader.ReadUvarint(); err != nil {
+		return err
+	}
+
+	var data []byte
+	if data, err = reader.ReadBytes(20); err != nil {
+		return err
+	}
+	token.Key = *helpers.Byte20(data)
+
+	if data, err = reader.ReadBytes(20); err != nil {
+		return err
+	}
+	token.SupplyKey = *helpers.Byte20(data)
+
+	if token.Name, err = reader.ReadString(); err != nil {
+		return
+	}
+	if token.Ticker, err = reader.ReadString(); err != nil {
+		return err
+	}
+	if token.Description, err = reader.ReadString(); err != nil {
+		return err
+	}
+
 	return
 }
