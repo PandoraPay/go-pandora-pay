@@ -31,7 +31,7 @@ func mainloop() {
 var commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--node-name=<name>]
+  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-genesis] [--node-name=<name>]
   pandorapay -h | --help
 
 Options:
@@ -39,6 +39,7 @@ Options:
   --version     				Show version.
   --testnet     				Run in TESTNET mode.
   --devnet     					Run in DEVNET mode.
+  --new-genesis     			Create a new genesis.
   --debug     					Debug mode enabled (print log message).
   --staking     				Start staking
   --node-name=<name>   			Change node name

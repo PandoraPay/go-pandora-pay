@@ -43,11 +43,11 @@ var (
 
 func InitConfig() {
 
-	if globals.Arguments["--testnet"] != nil {
+	if globals.Arguments["--testnet"] == true {
 		NETWORK_SELECTED = TEST_NET_NETWORK_BYTE
 	}
 
-	if globals.Arguments["--devnet"] != nil {
+	if globals.Arguments["--devnet"] == true {
 		NETWORK_SELECTED = DEV_NET_NETWORK_BYTE
 	}
 
