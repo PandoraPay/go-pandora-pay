@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"pandora-pay/blockchain/account/dpos"
+	"pandora-pay/config/reward"
 	"pandora-pay/helpers"
 )
 
@@ -12,16 +13,17 @@ type Account struct {
 	Version uint64
 	Nonce   uint64
 
-	Balances       []*Balance
-	DelegatedStake *dpos.DelegatedStake
+	Balances              []*Balance
+	DelegatedStakeVersion uint64
+	DelegatedStake        *dpos.DelegatedStake
 }
 
 func (account *Account) HasDelegatedStake() bool {
-	return account.Version == 1
+	return account.DelegatedStakeVersion == 1
 }
 
 func (account *Account) IsAccountEmpty() bool {
-	return (account.Version == 0 && len(account.Balances) == 0) ||
+	return (!account.HasDelegatedStake() && len(account.Balances) == 0) ||
 		(account.HasDelegatedStake() && account.DelegatedStake.IsDelegatedStakeEmpty())
 }
 
@@ -75,11 +77,40 @@ func (account *Account) AddBalance(sign bool, amount uint64, currency []byte) er
 	return nil
 }
 
-func (account *Account) GetDelegatedStakeAvailable(blockHeight uint64) uint64 {
+func (account *Account) AddReward(sign bool, blockHeight uint64) {
+
 	if !account.HasDelegatedStake() {
+		panic("Strange. The accoun't doesn't have a delegated stake")
+	}
+
+	amount := reward.GetRewardAt(blockHeight)
+
+	if sign {
+		account.DelegatedStake.StakeAvailable += amount
+
+	} else {
+		if account.DelegatedStake.StakeAvailable < amount {
+			panic("Strange. Stake available is less than reward. ")
+		}
+		account.DelegatedStake.StakeAvailable -= amount
+	}
+
+	account.refreshDelegatedStake(blockHeight)
+}
+
+func (account *Account) GetDelegatedStakeAvailable(blockHeight uint64) uint64 {
+	if account.DelegatedStakeVersion == 0 {
 		return 0
 	}
 	return account.DelegatedStake.GetDelegatedStakeAvailable(blockHeight)
+}
+
+func (account *Account) refreshDelegatedStake(blockHeight uint64) {
+	account.DelegatedStake.RefreshDelegatedStake(blockHeight)
+	if account.DelegatedStake.IsDelegatedStakeEmpty() {
+		account.DelegatedStakeVersion = 0
+		account.DelegatedStake = nil
+	}
 }
 
 func (account *Account) Serialize() []byte {
@@ -100,7 +131,10 @@ func (account *Account) Serialize() []byte {
 		account.Balances[i].Serialize(&serialized, temp)
 	}
 
-	if account.HasDelegatedStake() {
+	n = binary.PutUvarint(temp, account.DelegatedStakeVersion)
+	serialized.Write(temp[:n])
+
+	if account.DelegatedStakeVersion == 1 {
 		account.DelegatedStake.Serialize(&serialized, temp)
 	}
 
@@ -110,6 +144,10 @@ func (account *Account) Serialize() []byte {
 func (account *Account) Deserialize(buf []byte) (out []byte, err error) {
 
 	if account.Version, buf, err = helpers.DeserializeNumber(buf); err != nil {
+		return
+	}
+	if account.Version != 0 {
+		err = errors.New("Version is invalid")
 		return
 	}
 
@@ -130,7 +168,15 @@ func (account *Account) Deserialize(buf []byte) (out []byte, err error) {
 		account.Balances = append(account.Balances, balance)
 	}
 
-	if account.HasDelegatedStake() {
+	if account.DelegatedStakeVersion, buf, err = helpers.DeserializeNumber(buf); err != nil {
+		return
+	}
+	if account.DelegatedStakeVersion > 1 {
+		err = errors.New("Invalid DelegatedStakeVersion version")
+		return
+	}
+
+	if account.DelegatedStakeVersion == 1 {
 		account.DelegatedStake = new(dpos.DelegatedStake)
 		if buf, err = account.DelegatedStake.Deserialize(buf); err != nil {
 			return

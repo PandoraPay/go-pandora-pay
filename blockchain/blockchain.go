@@ -14,6 +14,7 @@ import (
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config"
+	"pandora-pay/config/stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -126,15 +127,30 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			}
 
 			//check blkComplete balance
-			var acc *account.Account
-			if acc, err = accs.GetAccount(string(blkComplete.Block.Forger[:])); err != nil {
-				return
+			var stakingAmount uint64
+			if blkComplete.Block.Height > 0 {
+
+				var acc *account.Account
+				if acc, err = accs.GetAccount(string(blkComplete.Block.Forger[:])); err != nil {
+					return
+				}
+				if acc == nil || !acc.HasDelegatedStake() {
+					return errors.New("Forger Account deson't exist or hasn't delegated stake")
+				}
+				stakingAmount = acc.GetDelegatedStakeAvailable(blkComplete.Block.Height)
+
+				if !bytes.Equal(blkComplete.Block.DelegatedPublicKey[:], acc.DelegatedStake.DelegatedPublicKey[:]) {
+					return errors.New("Block Staking Delegated Public Key is not matching")
+				}
+
 			}
-			if acc == nil {
-				return errors.New("Forger account doesn't exist")
+
+			if blkComplete.Block.StakingAmount != stakingAmount {
+				return errors.New("Block Staking Amount doesn't match")
 			}
-			if acc.GetDelegatedStakeAvailable(blkComplete.Block.Height) != blkComplete.Block.StakingAmount {
-				return errors.New("Delegated stake amount is not matching")
+
+			if blkComplete.Block.StakingAmount < stake.GetRequiredStake(0) {
+				return errors.New("Delegated stake ready amount is not enought")
 			}
 
 			hash := blkComplete.Block.ComputeHash()

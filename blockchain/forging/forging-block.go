@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/config"
+	"pandora-pay/config/stake"
 	"pandora-pay/crypto"
 	"sync/atomic"
 	"time"
@@ -18,6 +19,7 @@ func forge(threads, threadIndex int) {
 	defer ForgingW.RUnlock()
 	defer wg.Done()
 
+	height := Forging.BlkComplete.Block.Height
 	serialized := Forging.BlkComplete.Block.SerializeBlock(true, false)
 	serialized = serialized[:len(serialized)-33]
 	timestamp := Forging.BlkComplete.Block.Timestamp + 1
@@ -32,27 +34,40 @@ func forge(threads, threadIndex int) {
 		//forge with my wallets
 		for i, address := range ForgingW.addresses {
 
-			if i%threads == threadIndex {
+			if i%threads == threadIndex && (address.account != nil || height == 0) {
 
-				if atomic.LoadInt32(&forgingWorking) == 0 {
-					break
+				var stakingAmount uint64
+				if address.account != nil {
+					stakingAmount = address.account.GetDelegatedStakeAvailable(height)
 				}
 
-				n := binary.PutUvarint(buf, timestamp)
-				serialized = append(serialized, buf[:n]...)
-				serialized = append(serialized, address.delegatedPublicKey[:]...)
-				kernelHash := crypto.SHA3Hash(serialized)
+				if stakingAmount >= stake.GetRequiredStake(height) {
 
-				if difficulty.CheckKernelHashBig(kernelHash, Forging.target) {
+					if atomic.LoadInt32(&forgingWorking) == 0 {
+						break
+					}
 
-					Forging.foundSolution(address, timestamp)
+					n := binary.PutUvarint(buf, timestamp)
+					serialized = append(serialized, buf[:n]...)
+					serialized = append(serialized, address.publicKeyHash[:]...)
+					kernelHash := crypto.SHA3Hash(serialized)
 
-				} else {
-					// for debugging only
-					// gui.Log(hex.EncodeToString(kernelHash[:]))
+					if height > 0 {
+						kernelHash = crypto.ComputeKernelHash(kernelHash, stakingAmount)
+					}
+
+					if difficulty.CheckKernelHashBig(kernelHash, Forging.target) {
+
+						Forging.foundSolution(address, timestamp)
+
+					} else {
+						// for debugging only
+						// gui.Log(hex.EncodeToString(kernelHash[:]))
+					}
+
+					serialized = serialized[:len(serialized)-n-20]
+
 				}
-
-				serialized = serialized[:len(serialized)-n-33]
 
 			}
 

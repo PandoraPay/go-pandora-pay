@@ -74,7 +74,7 @@ func (chain *Blockchain) createBlockForForging() {
 	var err error
 
 	var nextBlock *block.BlockComplete
-	if nextBlock, err = Chain.createNextBlockComplete(); err == nil {
+	if nextBlock, err = Chain.createNextBlockComplete(); err != nil {
 		gui.Error("Error creating next block", err)
 	}
 

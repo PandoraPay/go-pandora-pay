@@ -3,11 +3,9 @@ package block
 import (
 	"bytes"
 	"encoding/binary"
-	"math/big"
 	"pandora-pay/blockchain/account"
+	"pandora-pay/blockchain/account/dpos"
 	"pandora-pay/blockchain/accounts"
-	"pandora-pay/config"
-	"pandora-pay/config/reward"
 	"pandora-pay/crypto"
 	"pandora-pay/crypto/ecdsa"
 	"pandora-pay/helpers"
@@ -24,25 +22,28 @@ type Block struct {
 
 	StakingAmount uint64
 
-	Forger    [33]byte // 33 byte public key
-	Signature [65]byte // 65 byte signature
+	DelegatedPublicKey [33]byte //33 byte public key. It IS NOT included in the kernel hash
+	Forger             [20]byte // 20 byte public key hash
+	Signature          [65]byte // 65 byte signature
 }
 
 func (blk *Block) IncludeBlock(acs *accounts.Accounts) (err error) {
 
-	forgerPublicKeyHash := blk.GetForgerPublicKeyHash()
 	var acc *account.Account
 
-	if acc, err = acs.GetAccountEvenEmpty(string(forgerPublicKeyHash[:])); err != nil {
+	if acc, err = acs.GetAccountEvenEmpty(string(blk.Forger[:])); err != nil {
 		return
 	}
 
-	reward := config.ConvertToUnits(reward.GetRewardAt(blk.Height))
-	if err = acc.AddBalance(true, reward, config.NATIVE_CURRENCY); err != nil {
-		return
+	//for genesis block
+	if blk.Height == 0 && !acc.HasDelegatedStake() {
+		acc.DelegatedStakeVersion = 1
+		acc.DelegatedStake = new(dpos.DelegatedStake)
+		acc.DelegatedStake.DelegatedPublicKey = blk.DelegatedPublicKey
 	}
+	acc.AddReward(true, blk.Height)
 
-	if err = acs.UpdateAccount(string(forgerPublicKeyHash[:]), acc); err != nil {
+	if err = acs.UpdateAccount(string(blk.Forger[:]), acc); err != nil {
 		return
 	}
 
@@ -51,25 +52,22 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts) (err error) {
 
 func (blk *Block) RemoveBlock(acs *accounts.Accounts) (err error) {
 
-	forgerPublicKeyHash := blk.GetForgerPublicKeyHash()
 	var acc *account.Account
 
-	if acc, err = acs.GetAccount(string(forgerPublicKeyHash[:])); err != nil {
+	if acc, err = acs.GetAccount(string(blk.Forger[:])); err != nil {
 		return
 	}
 
-	if err = acc.AddBalance(false, reward.GetRewardAt(blk.Height), config.NATIVE_CURRENCY); err != nil {
-		return
-	}
+	acc.AddReward(false, blk.Height)
 
-	if err = acs.UpdateAccount(string(forgerPublicKeyHash[:]), acc); err != nil {
+	if err = acs.UpdateAccount(string(blk.Forger[:]), acc); err != nil {
 		return
 	}
 
 	return
 }
 
-func (blk *Block) GetForgerPublicKeyHash() [20]byte {
+func (blk *Block) GetDelegatePublicKeyHash() [20]byte {
 	return *helpers.Byte20(crypto.ComputePublicKeyHash(blk.Forger[:]))
 }
 
@@ -89,13 +87,7 @@ func (blk *Block) ComputeKernelHash() helpers.Hash {
 		return hash
 	}
 
-	number := new(big.Int).Div(new(big.Int).SetBytes(hash[:]), new(big.Int).SetUint64(blk.StakingAmount))
-
-	buf := number.Bytes()
-	var finalHash helpers.Hash
-	copy(finalHash[helpers.HashSize-len(buf):], buf)
-
-	return finalHash
+	return crypto.ComputeKernelHash(hash, blk.StakingAmount)
 }
 
 func (blk *Block) SerializeForSigning() helpers.Hash {
@@ -104,7 +96,7 @@ func (blk *Block) SerializeForSigning() helpers.Hash {
 
 func (blk *Block) VerifySignature() bool {
 	hash := blk.SerializeForSigning()
-	return ecdsa.VerifySignature(blk.Forger[:], hash[:], blk.Signature[0:64])
+	return ecdsa.VerifySignature(blk.DelegatedPublicKey[:], hash[:], blk.Signature[0:64])
 }
 
 func (blk *Block) SerializeBlock(kernelHash bool, inclSignature bool) []byte {
@@ -127,6 +119,8 @@ func (blk *Block) SerializeBlock(kernelHash bool, inclSignature bool) []byte {
 
 		n = binary.PutUvarint(temp, blk.StakingAmount)
 		serialized.Write(temp[:n])
+
+		serialized.Write(blk.DelegatedPublicKey[:])
 	}
 
 	serialized.Write(blk.Forger[:])
@@ -172,7 +166,12 @@ func (blk *Block) Deserialize(buf []byte) (out []byte, err error) {
 	if data, buf, err = helpers.DeserializeBuffer(buf, 33); err != nil {
 		return
 	}
-	blk.Forger = *helpers.Byte33(data)
+	blk.DelegatedPublicKey = *helpers.Byte33(data)
+
+	if data, buf, err = helpers.DeserializeBuffer(buf, 20); err != nil {
+		return
+	}
+	blk.Forger = *helpers.Byte20(data)
 
 	if data, buf, err = helpers.DeserializeBuffer(buf, 65); err != nil {
 		return

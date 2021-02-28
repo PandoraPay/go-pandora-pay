@@ -3,6 +3,7 @@ package crypto
 import (
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/sha3"
+	"math/big"
 	"pandora-pay/helpers"
 )
 
@@ -26,4 +27,14 @@ func RIPEMD(b []byte) []byte {
 
 func ComputePublicKeyHash(publicKey []byte) []byte {
 	return RIPEMD(SHA3(publicKey))
+}
+
+func ComputeKernelHash(hash helpers.Hash, stakingAmount uint64) (out helpers.Hash) {
+
+	number := new(big.Int).Div(new(big.Int).SetBytes(hash[:]), new(big.Int).SetUint64(stakingAmount))
+
+	buf := number.Bytes()
+	copy(out[helpers.HashSize-len(buf):], buf)
+
+	return out
 }

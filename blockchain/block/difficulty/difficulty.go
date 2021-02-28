@@ -33,13 +33,7 @@ func ConvertDifficultyToBig(difficulty uint64) *big.Int {
 }
 
 func CheckKernelHashBig(kernelHash helpers.Hash, difficulty *big.Int) bool {
-
-	bigKernelHash := new(big.Int).SetBytes(kernelHash[:])
-
-	if bigKernelHash.Cmp(difficulty) <= 0 {
-		return true
-	}
-	return false
+	return new(big.Int).SetBytes(kernelHash[:]).Cmp(difficulty) <= 0
 }
 
 func NextDifficultyBig(deltaTotalDifficulty *big.Int, deltaTime uint64) (*big.Int, error) {

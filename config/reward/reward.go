@@ -7,10 +7,6 @@ import (
 
 func GetRewardAt(blockHeight uint64) (reward uint64) {
 
-	if blockHeight == 0 {
-		return 1
-	}
-
 	cycle := int(math.Floor(float64(blockHeight) / blocksPerCycle()))
 
 	reward = 4000 / (1 << cycle)
@@ -19,7 +15,7 @@ func GetRewardAt(blockHeight uint64) (reward uint64) {
 		reward = 0
 	}
 
-	return
+	return config.ConvertToUnits(reward)
 }
 
 // halving every year

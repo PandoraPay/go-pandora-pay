@@ -51,6 +51,7 @@ func startForging(threads int) {
 		if Forging.solution || Forging.BlkComplete == nil {
 			// gui.Error("No block for staking..." )
 			time.Sleep(10 * time.Millisecond)
+			continue
 		}
 
 		if !atomic.CompareAndSwapInt32(&forgingWorking, 0, 1) {
@@ -109,8 +110,13 @@ func (forging *forgingType) foundSolution(address *forgingWalletAddress, timesta
 // thread not safe
 func (forging *forgingType) publishSolution() {
 
-	forging.BlkComplete.Block.Forger = forging.solutionAddress.delegatedPublicKey
+	forging.BlkComplete.Block.Forger = forging.solutionAddress.publicKeyHash
+	forging.BlkComplete.Block.DelegatedPublicKey = forging.solutionAddress.delegatedPublicKey
 	forging.BlkComplete.Block.Timestamp = forging.solutionTimestamp
+	if forging.BlkComplete.Block.Height > 0 {
+		forging.BlkComplete.Block.StakingAmount = forging.solutionAddress.account.GetDelegatedStakeAvailable(forging.BlkComplete.Block.Height)
+	}
+
 	serializationForSigning := forging.BlkComplete.Block.SerializeForSigning()
 
 	signature, _ := forging.solutionAddress.delegatedPrivateKey.Sign(&serializationForSigning)
