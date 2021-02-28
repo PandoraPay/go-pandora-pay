@@ -3,6 +3,7 @@ package wallet
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	bolt "go.etcd.io/bbolt"
 	"os"
@@ -26,27 +27,26 @@ func initWalletCLI() {
 
 }
 
-func cliExportJSONWallet(cmd string) {
+func cliExportJSONWallet(cmd string) (err error) {
 
-	defer gui.OutputDone()
-
-	var err error
 	var f *os.File
 
 	str := <-gui.OutputReadString("Path to export")
 	if f, err = os.Create(str); err != nil {
-		gui.Error("File can not be written")
+		err = errors.New("File can not be written")
 		return
 	}
 	defer f.Close()
 
-	cliListAddresses("")
+	if err = cliListAddresses(""); err != nil {
+		return
+	}
 	index := <-gui.OutputReadInt("Select Address to be Exported")
 	W.RLock()
 	defer W.RUnlock()
 
 	if index < 0 {
-		gui.Error("Invalid index")
+		err = errors.New("Invalid index")
 		return
 	}
 
@@ -64,43 +64,41 @@ func cliExportJSONWallet(cmd string) {
 	}
 
 	if _, err = fmt.Fprint(f, string(marshal)); err != nil {
-		gui.Error("Error writing into file")
+		err = errors.New("Error writing into file")
 		return
 	}
 
 	gui.Info("Exported successfully")
-
+	return
 }
 
-func cliCreateNewAddress(cmd string) {
+func cliCreateNewAddress(cmd string) (err error) {
 
-	if err := W.addNewAddress(); err != nil {
-		gui.Error("Error creating a new Address", err)
+	if err = W.addNewAddress(); err == nil {
+		err = cliListAddresses(cmd)
+		return
 	}
 
-	cliListAddresses(cmd)
+	return
 }
 
-func cliRemoveAddress(cmd string) {
+func cliRemoveAddress(cmd string) (err error) {
 
-	defer gui.OutputDone()
+	if err = cliListAddresses(""); err != nil {
+		return
+	}
 
-	cliListAddresses("")
 	index := <-gui.OutputReadInt("Select Address to be Removed")
 
-	if err := W.removeAddress(index); err != nil {
-		gui.Error(err)
-	} else {
-		cliListAddresses("")
+	if err = W.removeAddress(index); err == nil {
+		_ = cliListAddresses("")
 		gui.OutputWrite("Address removed")
 	}
+
+	return
 }
 
-func cliListAddresses(cmd string) {
-
-	if cmd != "" {
-		defer gui.OutputDone()
-	}
+func cliListAddresses(cmd string) (err error) {
 
 	gui.OutputWrite("Wallet")
 	gui.OutputWrite("Version: " + W.Version.String())
@@ -109,7 +107,7 @@ func cliListAddresses(cmd string) {
 
 	gui.OutputWrite("")
 
-	err := store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
+	err = store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
 
 		var accs *accounts.Accounts
 		accs, err = accounts.NewAccounts(tx)
@@ -145,34 +143,31 @@ func cliListAddresses(cmd string) {
 		return
 	})
 
-	if err != nil {
-		gui.Error(err)
-	}
-
+	return
 }
 
-func cliShowMnemonic(string) {
-	defer gui.OutputDone()
-
+func cliShowMnemonic(string) (err error) {
 	gui.OutputWrite("Mnemonic \n")
 	gui.OutputWrite(W.Mnemonic)
 
 	gui.OutputWrite("Seed \n")
 	gui.OutputWrite(W.Seed)
+
+	return
 }
 
-func cliShowPrivateKey(cmd string) {
+func cliShowPrivateKey(cmd string) (err error) {
 
-	defer gui.OutputDone()
-
-	cliListAddresses("")
+	if err = cliListAddresses(""); err != nil {
+		return
+	}
 
 	index := <-gui.OutputReadInt("Select Address")
 
-	if key, err := W.showPrivateKey(index); err != nil {
-		gui.Error(err)
-	} else {
+	var key *[32]byte
+	if key, err = W.showPrivateKey(index); err == nil {
 		gui.OutputWrite(*key)
 	}
 
+	return
 }

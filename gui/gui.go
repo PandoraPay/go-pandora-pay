@@ -31,7 +31,7 @@ func isLetter(s string) bool {
 
 type Command struct {
 	Text     string
-	Callback func(string)
+	Callback func(string) error
 }
 
 var commands = []Command{
@@ -145,7 +145,14 @@ func GUIInit() {
 						cmd.SelectedRow = 0
 						if command.Callback != nil {
 							OutputClear()
-							go command.Callback(command.Text)
+							go func() {
+								err := command.Callback(command.Text)
+								if err != nil {
+									Error(err)
+								} else {
+									OutputDone()
+								}
+							}()
 						}
 					} else if cmdStatus == "output done" {
 						OutputClear()
@@ -185,15 +192,16 @@ func GUIInit() {
 
 	go run()
 
-	CommandDefineCallback("Exit", func(string) {
+	CommandDefineCallback("Exit", func(string) error {
 		os.Exit(1)
+		return nil
 	})
 
 	Log("GUI Initialized")
 
 }
 
-func CommandDefineCallback(Text string, callback func(string)) {
+func CommandDefineCallback(Text string, callback func(string) error) {
 
 	for i := range commands {
 		if commands[i].Text == Text {
