@@ -3,11 +3,13 @@ package block
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"pandora-pay/blockchain/account"
 	"pandora-pay/blockchain/account/dpos"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/crypto"
 	"pandora-pay/crypto/ecdsa"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 )
 
@@ -76,7 +78,9 @@ func (blk *Block) ComputeHash() helpers.Hash {
 }
 
 func (blk *Block) ComputeKernelHashOnly() helpers.Hash {
-	return crypto.SHA3Hash(blk.SerializeBlock(true, false))
+	out := blk.SerializeBlock(true, false)
+	gui.Log(hex.EncodeToString(out[:]))
+	return crypto.SHA3Hash(out)
 }
 
 func (blk *Block) ComputeKernelHash() helpers.Hash {
@@ -101,6 +105,7 @@ func (blk *Block) VerifySignature() bool {
 
 func (blk *Block) SerializeBlock(kernelHash bool, inclSignature bool) []byte {
 
+	var n int
 	var serialized bytes.Buffer
 	temp := make([]byte, binary.MaxVarintLen64)
 
@@ -114,14 +119,15 @@ func (blk *Block) SerializeBlock(kernelHash bool, inclSignature bool) []byte {
 	serialized.Write(blk.PrevKernelHash[:])
 
 	if !kernelHash {
-		n := binary.PutUvarint(temp, blk.Timestamp)
-		serialized.Write(temp[:n])
 
 		n = binary.PutUvarint(temp, blk.StakingAmount)
 		serialized.Write(temp[:n])
 
 		serialized.Write(blk.DelegatedPublicKey[:])
 	}
+
+	n = binary.PutUvarint(temp, blk.Timestamp)
+	serialized.Write(temp[:n])
 
 	serialized.Write(blk.Forger[:])
 
@@ -154,10 +160,6 @@ func (blk *Block) Deserialize(buf []byte) (out []byte, err error) {
 		return
 	}
 
-	if blk.Timestamp, buf, err = helpers.DeserializeNumber(buf); err != nil {
-		return
-	}
-
 	if blk.StakingAmount, buf, err = helpers.DeserializeNumber(buf); err != nil {
 		return
 	}
@@ -167,6 +169,10 @@ func (blk *Block) Deserialize(buf []byte) (out []byte, err error) {
 		return
 	}
 	blk.DelegatedPublicKey = *helpers.Byte33(data)
+
+	if blk.Timestamp, buf, err = helpers.DeserializeNumber(buf); err != nil {
+		return
+	}
 
 	if data, buf, err = helpers.DeserializeBuffer(buf, 20); err != nil {
 		return

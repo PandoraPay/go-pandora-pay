@@ -76,6 +76,10 @@ func cliListAddresses(cmd string) {
 					for _, balance := range acc.Balances {
 						gui.OutputWrite("      -> " + strconv.FormatUint(config.ConvertToBase(balance.Amount), 10) + " " + hex.EncodeToString(balance.Currency))
 					}
+					if acc.HasDelegatedStake() {
+						gui.OutputWrite("      ->   Stake Available   " + strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.StakeAvailable), 10))
+						gui.OutputWrite("      ->   Unstake Available " + strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.UnstakeAmount), 10))
+					}
 				}
 
 			}

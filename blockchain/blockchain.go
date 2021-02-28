@@ -149,7 +149,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 				return errors.New("Block Staking Amount doesn't match")
 			}
 
-			if blkComplete.Block.StakingAmount < stake.GetRequiredStake(0) {
+			if blkComplete.Block.StakingAmount < stake.GetRequiredStake(blkComplete.Block.Height) {
 				return errors.New("Delegated stake ready amount is not enought")
 			}
 
@@ -316,6 +316,7 @@ func BlockchainClose() {
 
 func updateChainInfo() {
 	gui.InfoUpdate("Blocks", strconv.FormatUint(Chain.Height, 10))
-	gui.InfoUpdate("Chain Hash", hex.EncodeToString(Chain.Hash[:]))
-	gui.InfoUpdate("Chain Diff", Chain.Target.String())
+	gui.InfoUpdate("Chain  Hash", hex.EncodeToString(Chain.Hash[:]))
+	gui.InfoUpdate("Chain KHash", hex.EncodeToString(Chain.KernelHash[:]))
+	gui.InfoUpdate("Chain  Diff", Chain.Target.String())
 }

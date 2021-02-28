@@ -21,7 +21,9 @@ func forge(threads, threadIndex int) {
 
 	height := Forging.BlkComplete.Block.Height
 	serialized := Forging.BlkComplete.Block.SerializeBlock(true, false)
-	serialized = serialized[:len(serialized)-33]
+	n := binary.PutUvarint(buf, Forging.BlkComplete.Block.Timestamp)
+
+	serialized = serialized[:len(serialized)-n-20]
 	timestamp := Forging.BlkComplete.Block.Timestamp + 1
 
 	for atomic.LoadInt32(&forgingWorking) == 1 {
@@ -47,7 +49,7 @@ func forge(threads, threadIndex int) {
 						break
 					}
 
-					n := binary.PutUvarint(buf, timestamp)
+					n = binary.PutUvarint(buf, timestamp)
 					serialized = append(serialized, buf[:n]...)
 					serialized = append(serialized, address.publicKeyHash[:]...)
 					kernelHash := crypto.SHA3Hash(serialized)
