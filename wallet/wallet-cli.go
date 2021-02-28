@@ -56,7 +56,7 @@ func cliListAddresses(cmd string) {
 	err := store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
 
 		var accs *accounts.Accounts
-		accs, err = accounts.CreateNewAccounts(tx)
+		accs, err = accounts.NewAccounts(tx)
 
 		for _, walletAddress := range W.Addresses {
 			addressStr, _ := walletAddress.Address.EncodeAddr()
@@ -66,7 +66,7 @@ func cliListAddresses(cmd string) {
 				walletAddress.Address.Version == addresses.TransparentPublicKey {
 
 				var acc *account.Account
-				if acc, err = accs.GetAccount(string(walletAddress.PublicKeyHash[:])); err != nil {
+				if acc, err = accs.GetAccount(walletAddress.PublicKeyHash); err != nil {
 					return
 				}
 

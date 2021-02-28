@@ -50,11 +50,13 @@ func DBInit() {
 		return
 	})
 	err3 := StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
-		_, err = tx.CreateBucketIfNotExists([]byte("Chain"))
-		if err != nil {
+		if _, err = tx.CreateBucketIfNotExists([]byte("Chain")); err != nil {
 			return
 		}
-		_, err = tx.CreateBucketIfNotExists([]byte("Accounts"))
+		if _, err = tx.CreateBucketIfNotExists([]byte("Accounts")); err != nil {
+			return
+		}
+		_, err = tx.CreateBucketIfNotExists([]byte("Tokens"))
 		return
 	})
 

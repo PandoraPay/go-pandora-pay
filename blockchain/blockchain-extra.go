@@ -7,10 +7,55 @@ import (
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
+	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/crypto"
 	"pandora-pay/gui"
+	"pandora-pay/store"
 )
+
+func (chain *Blockchain) init() (err error) {
+
+	chain.Height = 0
+	chain.Hash = genesis.GenesisData.Hash
+	chain.KernelHash = genesis.GenesisData.KernelHash
+	chain.Difficulty = genesis.GenesisData.Difficulty
+	chain.Target = difficulty.ConvertDifficultyToBig(chain.Difficulty)
+	chain.BigTotalDifficulty = new(big.Int).SetUint64(0)
+
+	var tok = token.Token{
+		Version:          0,
+		Name:             config.NATIVE_TOKEN_NAME,
+		Ticker:           config.NATIVE_TOKEN_TICKER,
+		Description:      config.NATIVE_TOKEN_DESCRIPTION,
+		DecimalSeparator: config.DECIMAL_SEPARATOR,
+		CanBurn:          true,
+		CanMint:          true,
+		Supply:           0,
+		MaxSupply:        config.ConvertToUnits(config.MAX_SUPPLY_COINS),
+		Key:              config.BURN_PUBLIC_KEY_HASH,
+		SupplyKey:        config.BURN_PUBLIC_KEY_HASH,
+	}
+
+	if err = store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
+
+		var toks *tokens.Tokens
+		if toks, err = tokens.NewTokens(tx); err != nil {
+			return
+		}
+		toks.UpdateToken(config.NATIVE_TOKEN_FULL, &tok)
+
+		toks.Commit()
+
+		return
+
+	}); err != nil {
+		return
+	}
+
+	return
+}
 
 func (chain *Blockchain) computeNextDifficultyBig(bucket *bolt.Bucket) (*big.Int, error) {
 

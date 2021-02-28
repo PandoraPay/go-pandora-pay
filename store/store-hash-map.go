@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/hex"
 	"errors"
 	"go.etcd.io/bbolt"
 )
@@ -12,34 +13,38 @@ type VirtualHashMapElement struct {
 }
 
 type HashMap struct {
-	Bucket  *bbolt.Bucket
-	Virtual map[string]*VirtualHashMapElement
+	Bucket    *bbolt.Bucket
+	Virtual   map[string]*VirtualHashMapElement
+	KeyLength int
 }
 
-func CreateNewHashMap(tx *bbolt.Tx, name string) (hashMap *HashMap, err error) {
+func CreateNewHashMap(tx *bbolt.Tx, name string, keyLength int) (hashMap *HashMap, err error) {
 
 	if tx == nil {
 		err = errors.New("DB Transaction is not set")
 		return
 	}
 
-	hashMap = new(HashMap)
-	hashMap.Virtual = make(map[string]*VirtualHashMapElement)
-	hashMap.Bucket = tx.Bucket([]byte(name))
+	hashMap = &HashMap{
+		Virtual:   make(map[string]*VirtualHashMapElement),
+		Bucket:    tx.Bucket([]byte(name)),
+		KeyLength: keyLength,
+	}
 	return
-
 }
 
-func (hashMap *HashMap) Get(key string) (out []byte) {
+func (hashMap *HashMap) Get(key []byte) (out []byte) {
 
-	exists := hashMap.Virtual[key]
+	keyStr := hex.EncodeToString(key)
+
+	exists := hashMap.Virtual[keyStr]
 	if exists != nil {
 		out = exists.Data
 		return
 	}
 
-	out = hashMap.Bucket.Get([]byte(key))
-	hashMap.Virtual[key] = &VirtualHashMapElement{
+	out = hashMap.Bucket.Get(key)
+	hashMap.Virtual[keyStr] = &VirtualHashMapElement{
 		out,
 		"view",
 		"",
@@ -47,13 +52,15 @@ func (hashMap *HashMap) Get(key string) (out []byte) {
 	return
 }
 
-func (hashMap *HashMap) Exists(key string) bool {
-	exists := hashMap.Virtual[key]
+func (hashMap *HashMap) Exists(key []byte) bool {
+	keyStr := hex.EncodeToString(key)
+
+	exists := hashMap.Virtual[keyStr]
 	if exists != nil {
 		return exists.Data != nil
 	}
-	out := hashMap.Bucket.Get([]byte(key))
-	hashMap.Virtual[key] = &VirtualHashMapElement{
+	out := hashMap.Bucket.Get(key)
+	hashMap.Virtual[keyStr] = &VirtualHashMapElement{
 		out,
 		"view",
 		"",
@@ -61,12 +68,14 @@ func (hashMap *HashMap) Exists(key string) bool {
 	return out != nil
 }
 
-func (hashMap *HashMap) Update(key string, data []byte) {
+func (hashMap *HashMap) Update(key []byte, data []byte) {
 
-	exists := hashMap.Virtual[key]
+	keyStr := hex.EncodeToString(key)
+
+	exists := hashMap.Virtual[keyStr]
 	if exists == nil {
 		exists = new(VirtualHashMapElement)
-		hashMap.Virtual[key] = exists
+		hashMap.Virtual[keyStr] = exists
 	}
 	exists.Data = data
 	exists.Status = "update"
@@ -74,12 +83,14 @@ func (hashMap *HashMap) Update(key string, data []byte) {
 	return
 }
 
-func (hashMap *HashMap) Delete(key string) {
+func (hashMap *HashMap) Delete(key []byte) {
 
-	exists := hashMap.Virtual[key]
+	keyStr := hex.EncodeToString(key)
+
+	exists := hashMap.Virtual[keyStr]
 	if exists == nil {
 		exists = new(VirtualHashMapElement)
-		hashMap.Virtual[key] = exists
+		hashMap.Virtual[keyStr] = exists
 	}
 	exists.Status = "del"
 	exists.Data = nil
@@ -90,13 +101,22 @@ func (hashMap *HashMap) Commit() (err error) {
 
 	for k, v := range hashMap.Virtual {
 
+		var key []byte
+		if key, err = hex.DecodeString(k); err != nil {
+			return
+		}
+		if len(key) != hashMap.KeyLength {
+			err = errors.New("KeyLength is invalid")
+			return
+		}
+
 		if v.Status == "del" {
-			hashMap.Bucket.Delete([]byte(k))
+			hashMap.Bucket.Delete(key)
 			v.Status = "view"
 			v.Committed = "del"
 			v.Data = nil
 		} else if v.Status == "update" {
-			if err = hashMap.Bucket.Put([]byte(k), v.Data); err != nil {
+			if err = hashMap.Bucket.Put(key, v.Data); err != nil {
 				return
 			}
 			v.Committed = "update"

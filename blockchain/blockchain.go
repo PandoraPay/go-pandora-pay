@@ -13,6 +13,7 @@ import (
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
+	"pandora-pay/blockchain/tokens"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
 	"pandora-pay/gui"
@@ -70,13 +71,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 	}
 
 	var accs *accounts.Accounts
+	var toks *tokens.Tokens
 
 	err = store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 
-		if accs, err = accounts.CreateNewAccounts(tx); err != nil {
+		if accs, err = accounts.NewAccounts(tx); err != nil {
 			return
 		}
-
+		if toks, err = tokens.NewTokens(tx); err != nil {
+			return
+		}
 		writer := tx.Bucket([]byte("Chain"))
 
 		var prevBlk = &block.Block{}
@@ -131,7 +135,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			if blkComplete.Block.Height > 0 {
 
 				var acc *account.Account
-				if acc, err = accs.GetAccount(string(blkComplete.Block.Forger[:])); err != nil {
+				if acc, err = accs.GetAccount(blkComplete.Block.Forger); err != nil {
 					return
 				}
 				if acc == nil || !acc.HasDelegatedStake() {
@@ -195,7 +199,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 				return errors.New("Verify Merkle Hash failed")
 			}
 
-			if err = blkComplete.Block.IncludeBlock(accs); err != nil {
+			if err = blkComplete.Block.IncludeBlock(accs, toks); err != nil {
 				return
 			}
 
@@ -204,6 +208,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete) (resul
 			}
 
 			if err = accs.Commit(); err != nil {
+				return
+			}
+			if err = toks.Commit(); err != nil {
 				return
 			}
 
@@ -273,12 +280,11 @@ func BlockchainInit() {
 	}
 
 	if !success {
-		Chain.Height = 0
-		Chain.Hash = genesis.GenesisData.Hash
-		Chain.KernelHash = genesis.GenesisData.KernelHash
-		Chain.Difficulty = genesis.GenesisData.Difficulty
-		Chain.Target = difficulty.ConvertDifficultyToBig(Chain.Difficulty)
-		Chain.BigTotalDifficulty = new(big.Int).SetUint64(0)
+
+		if err = Chain.init(); err != nil {
+			return
+		}
+
 	}
 	Chain.UpdateChannel = make(chan int)
 	updateChainInfo()

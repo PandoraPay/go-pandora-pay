@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"pandora-pay/blockchain/accounts/account/dpos"
-	"pandora-pay/config/reward"
 	"pandora-pay/helpers"
 )
 
@@ -40,13 +39,13 @@ func (account *Account) IncrementNonce(sign bool) error {
 	return nil
 }
 
-func (account *Account) AddBalance(sign bool, amount uint64, token []byte) error {
+func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) error {
 
 	var foundBalance *Balance
 	var foundBalanceIndex int
 
 	for i, balance := range account.Balances {
-		if bytes.Equal(balance.Token[:], token[:]) {
+		if bytes.Equal(balance.Token[:], tok[:]) {
 			foundBalance = balance
 			foundBalanceIndex = i
 			break
@@ -56,7 +55,7 @@ func (account *Account) AddBalance(sign bool, amount uint64, token []byte) error
 	if sign {
 		if foundBalance == nil {
 			foundBalance = new(Balance)
-			copy(foundBalance.Token[:], token[:])
+			copy(foundBalance.Token[:], tok[:])
 			account.Balances = append(account.Balances, foundBalance)
 		}
 		foundBalance.Amount += amount
@@ -76,13 +75,11 @@ func (account *Account) AddBalance(sign bool, amount uint64, token []byte) error
 	return nil
 }
 
-func (account *Account) AddReward(sign bool, blockHeight uint64) {
+func (account *Account) AddReward(sign bool, amount, blockHeight uint64) {
 
 	if !account.HasDelegatedStake() {
 		panic("Strange. The accoun't doesn't have a delegated stake")
 	}
-
-	amount := reward.GetRewardAt(blockHeight)
 
 	if sign {
 		account.DelegatedStake.StakeAvailable += amount

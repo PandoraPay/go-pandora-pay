@@ -49,10 +49,10 @@ func (w *forgingWallets) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte
 	store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
 
 		var accs *accounts.Accounts
-		accs, err = accounts.CreateNewAccounts(tx)
+		accs, err = accounts.NewAccounts(tx)
 
 		var acc *account.Account
-		if acc, err = accs.GetAccount(string(publicKeyHash[:])); err != nil {
+		if acc, err = accs.GetAccount(publicKeyHash); err != nil {
 			return
 		}
 
@@ -114,12 +114,12 @@ func (w *forgingWallets) loadBalances() error {
 	return store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
 
 		var accs *accounts.Accounts
-		accs, err = accounts.CreateNewAccounts(tx)
+		accs, err = accounts.NewAccounts(tx)
 
 		for _, address := range w.addresses {
 
 			var account *account.Account
-			if account, err = accs.GetAccount(string(address.publicKeyHash[:])); err != nil {
+			if account, err = accs.GetAccount(address.publicKeyHash); err != nil {
 				return
 			}
 

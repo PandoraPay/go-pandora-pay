@@ -11,7 +11,7 @@ type Accounts struct {
 	HashMap *store.HashMap
 }
 
-func CreateNewAccounts(tx *bbolt.Tx) (accounts *Accounts, err error) {
+func NewAccounts(tx *bbolt.Tx) (accounts *Accounts, err error) {
 
 	if tx == nil {
 		err = errors.New("DB Transaction is not set")
@@ -19,21 +19,20 @@ func CreateNewAccounts(tx *bbolt.Tx) (accounts *Accounts, err error) {
 	}
 
 	var hashMap *store.HashMap
-	if hashMap, err = store.CreateNewHashMap(tx, "Accounts"); err != nil {
+	if hashMap, err = store.CreateNewHashMap(tx, "Accounts", 20); err != nil {
 		return
 	}
 
 	accounts = new(Accounts)
 	accounts.HashMap = hashMap
 	return
-
 }
 
-func (accounts *Accounts) GetAccountEvenEmpty(key string) (acc *account.Account, err error) {
+func (accounts *Accounts) GetAccountEvenEmpty(key [20]byte) (acc *account.Account, err error) {
 
 	acc = new(account.Account)
 
-	data := accounts.HashMap.Get(key)
+	data := accounts.HashMap.Get(key[:])
 	if data == nil {
 		return
 	}
@@ -42,9 +41,9 @@ func (accounts *Accounts) GetAccountEvenEmpty(key string) (acc *account.Account,
 	return
 }
 
-func (accounts *Accounts) GetAccount(key string) (acc *account.Account, err error) {
+func (accounts *Accounts) GetAccount(key [20]byte) (acc *account.Account, err error) {
 
-	data := accounts.HashMap.Get(key)
+	data := accounts.HashMap.Get(key[:])
 	if data == nil {
 		return
 	}
@@ -54,22 +53,20 @@ func (accounts *Accounts) GetAccount(key string) (acc *account.Account, err erro
 	return
 }
 
-func (accounts *Accounts) UpdateAccount(key string, acc *account.Account) {
-
+func (accounts *Accounts) UpdateAccount(key [20]byte, acc *account.Account) {
 	if acc.IsAccountEmpty() {
-		accounts.HashMap.Delete(key)
+		accounts.HashMap.Delete(key[:])
 	} else {
-		data := acc.Serialize()
-		accounts.HashMap.Update(key, data)
+		accounts.HashMap.Update(key[:], acc.Serialize())
 	}
 }
 
-func (accounts *Accounts) ExistsAccount(key string) bool {
-	return accounts.HashMap.Exists(key)
+func (accounts *Accounts) ExistsAccount(key [20]byte) bool {
+	return accounts.HashMap.Exists(key[:])
 }
 
-func (accounts *Accounts) DeleteAccount(key string) {
-	accounts.HashMap.Delete(key)
+func (accounts *Accounts) DeleteAccount(key [20]byte) {
+	accounts.HashMap.Delete(key[:])
 }
 
 func (accounts *Accounts) Commit() error {

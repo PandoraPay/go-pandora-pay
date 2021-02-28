@@ -1,6 +1,7 @@
 package token
 
 import (
+	"errors"
 	"pandora-pay/helpers"
 )
 
@@ -31,6 +32,30 @@ type Token struct {
 	Name        string
 	Ticker      string
 	Description string
+}
+
+func (token *Token) AddSupply(sign bool, amount uint64) error {
+
+	if sign {
+		if !token.CanMint {
+			return errors.New("Can't mint")
+		}
+		if token.Supply+amount > token.MaxSupply {
+			return errors.New("Supply exceeded max supply")
+		}
+		token.Supply += amount
+	} else {
+		if !token.CanBurn {
+			return errors.New("Can't burn")
+		}
+		if token.Supply < amount {
+			return errors.New("Supply would become negative")
+		}
+
+		token.Supply -= amount
+	}
+
+	return nil
 }
 
 func (token *Token) Serialize() []byte {
@@ -93,6 +118,10 @@ func (token *Token) Deserialize(buf []byte) (err error) {
 	if token.DecimalSeparator, err = reader.ReadByte(); err != nil {
 		return err
 	}
+	if token.DecimalSeparator > 10 {
+		err = errors.New("token decimal separator is invalid")
+		return
+	}
 	if token.MaxSupply, err = reader.ReadUvarint(); err != nil {
 		return err
 	}
@@ -114,11 +143,24 @@ func (token *Token) Deserialize(buf []byte) (err error) {
 	if token.Name, err = reader.ReadString(); err != nil {
 		return
 	}
+	if len(token.Name) > 15 || len(token.Name) < 3 {
+		err = errors.New("token name length is invalid")
+		return
+	}
+
 	if token.Ticker, err = reader.ReadString(); err != nil {
 		return err
 	}
+	if len(token.Ticker) > 7 || len(token.Ticker) < 2 {
+		err = errors.New("token ticker length is invalid")
+		return
+	}
+
 	if token.Description, err = reader.ReadString(); err != nil {
 		return err
+	}
+	if len(token.Description) > 512 {
+		err = errors.New("token  description length is invalid")
 	}
 
 	return

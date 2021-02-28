@@ -4,6 +4,10 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/accounts/account/dpos"
+	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/tokens/token"
+	"pandora-pay/config"
+	"pandora-pay/config/reward"
 	"pandora-pay/crypto"
 	"pandora-pay/crypto/ecdsa"
 	"pandora-pay/helpers"
@@ -25,11 +29,11 @@ type Block struct {
 	Signature          [65]byte // 65 byte signature
 }
 
-func (blk *Block) IncludeBlock(acs *accounts.Accounts) (err error) {
+func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens) (err error) {
 
 	var acc *account.Account
 
-	if acc, err = acs.GetAccountEvenEmpty(string(blk.Forger[:])); err != nil {
+	if acc, err = acs.GetAccountEvenEmpty(blk.Forger); err != nil {
 		return
 	}
 
@@ -39,24 +43,44 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts) (err error) {
 		acc.DelegatedStake = new(dpos.DelegatedStake)
 		acc.DelegatedStake.DelegatedPublicKey = blk.DelegatedPublicKey
 	}
-	acc.AddReward(true, blk.Height)
 
-	acs.UpdateAccount(string(blk.Forger[:]), acc)
+	reward := reward.GetRewardAt(blk.Height)
+	acc.AddReward(true, reward, blk.Height)
+	acs.UpdateAccount(blk.Forger, acc)
+
+	var tok *token.Token
+	if tok, err = toks.GetToken(config.NATIVE_TOKEN_FULL); err != nil {
+		return
+	}
+	if err = tok.AddSupply(true, reward); err != nil {
+		return
+	}
+	toks.UpdateToken(config.NATIVE_TOKEN_FULL, tok)
 
 	return
 }
 
-func (blk *Block) RemoveBlock(acs *accounts.Accounts) (err error) {
+func (blk *Block) RemoveBlock(acs *accounts.Accounts, toks *tokens.Tokens) (err error) {
 
 	var acc *account.Account
 
-	if acc, err = acs.GetAccount(string(blk.Forger[:])); err != nil {
+	if acc, err = acs.GetAccount(blk.Forger); err != nil {
 		return
 	}
 
-	acc.AddReward(false, blk.Height)
+	reward := reward.GetRewardAt(blk.Height)
+	acc.AddReward(false, reward, blk.Height)
 
-	acs.UpdateAccount(string(blk.Forger[:]), acc)
+	acs.UpdateAccount(blk.Forger, acc)
+
+	var tok *token.Token
+	if tok, err = toks.GetToken(config.NATIVE_TOKEN_FULL); err != nil {
+		return
+	}
+	if err = tok.AddSupply(false, reward); err != nil {
+		return
+	}
+	toks.UpdateToken(config.NATIVE_TOKEN_FULL, tok)
 
 	return
 }
