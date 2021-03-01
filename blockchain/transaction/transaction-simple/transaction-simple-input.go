@@ -1,25 +1,24 @@
-package transaction_transparent
+package transaction_simple
 
 import (
-	"errors"
 	"pandora-pay/helpers"
 )
 
-type TransactionTransparentInput struct {
+type TransactionSimpleInput struct {
 	PublicKey [33]byte
 	Amount    uint64
 	Signature [65]byte
 	Token     []byte
 }
 
-func (vin *TransactionTransparentInput) Serialize(writer *helpers.BufferWriter) {
+func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter) {
 	writer.Write(vin.PublicKey[:])
 	writer.WriteUint64(vin.Amount)
 	writer.Write(vin.Signature[:])
 	writer.WriteToken(vin.Token)
 }
 
-func (vin *TransactionTransparentInput) Deserialize(reader *helpers.BufferReader) (err error) {
+func (vin *TransactionSimpleInput) Deserialize(reader *helpers.BufferReader) (err error) {
 
 	if vin.PublicKey, err = reader.Read33(); err != nil {
 		return
@@ -35,5 +34,4 @@ func (vin *TransactionTransparentInput) Deserialize(reader *helpers.BufferReader
 	}
 
 	return
-
 }

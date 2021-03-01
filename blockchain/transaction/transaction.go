@@ -2,19 +2,20 @@ package transaction
 
 import (
 	"errors"
+	transaction_simple "pandora-pay/blockchain/transaction/transaction-simple"
 	"pandora-pay/helpers"
 )
 
 type TransactionType uint64
 
 const (
-	TransactionTransparent TransactionType = 0
+	TransactionTypeSimple TransactionType = 0
 )
 
 func (t TransactionType) String() string {
 	switch t {
-	case TransactionTransparent:
-		return "TransactionTransparent"
+	case TransactionTypeSimple:
+		return "TransactionSimple"
 	default:
 		return "Unknown transaction type"
 	}
@@ -51,7 +52,15 @@ func (tx *Transaction) Deserialize(buf []byte) (err error) {
 		return
 	}
 	tx.TransactionType = TransactionType(n)
-	if tx.TransactionType != TransactionTransparent {
+	if tx.TransactionType == TransactionTypeSimple {
+
+		base := new(transaction_simple.TransactionSimple)
+		if err = base.Deserialize(reader); err != nil {
+			return err
+		}
+		tx.TransactionBase = base
+
+	} else {
 		errors.New("Transaction Type is invalid")
 		return
 	}

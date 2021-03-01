@@ -116,8 +116,8 @@ func cliListAddresses(cmd string) (err error) {
 			addressStr, _ := walletAddress.Address.EncodeAddr()
 			gui.OutputWrite(walletAddress.Name + " : " + walletAddress.Address.Version.String() + " : " + addressStr)
 
-			if walletAddress.Address.Version == addresses.TransparentPublicKeyHash ||
-				walletAddress.Address.Version == addresses.TransparentPublicKey {
+			if walletAddress.Address.Version == addresses.SimplePublicKeyHash ||
+				walletAddress.Address.Version == addresses.SimplePublicKey {
 
 				var acc *account.Account
 				if acc, err = accs.GetAccount(walletAddress.PublicKeyHash); err != nil {

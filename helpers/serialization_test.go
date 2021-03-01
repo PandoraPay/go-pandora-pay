@@ -62,7 +62,7 @@ func TestDeserializeNumber(t *testing.T) {
 	b := make([]byte, binary.MaxVarintLen64)
 	for i := 0; i < 100; i++ {
 
-		no := Uint64()
+		no := RandomUint64()
 
 		binary.PutUvarint(b, no)
 

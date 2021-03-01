@@ -37,10 +37,10 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 
 	if usePublicKeyHash {
 		finalPublicKey = crypto.ComputePublicKeyHash(publicKey)
-		version = TransparentPublicKeyHash
+		version = SimplePublicKeyHash
 	} else {
 		finalPublicKey = publicKey
-		version = TransparentPublicKey
+		version = SimplePublicKey
 	}
 
 	return &Address{

@@ -14,7 +14,7 @@ Status of Blockchain implementation:
 - [x] Commit/Rollback Database
 - [x] Wallet
     - [x] Save and Load
-    - [x] Print Wallet Transparent Balances
+    - [x] Print Wallet Simple Balances
     - [ ] Print Wallet Homomorphic Balances
     - [X] Export JSON        
     - [ ] Import JSON        
@@ -49,7 +49,7 @@ Status of Blockchain implementation:
     - [ ] Creation
     - [ ] Update  
 - [ ] Transactions
-    - [ ] Transparent Transactions
+    - [ ] Simple Transactions
     - [ ] Transaction Builder
     - [ ] Zether Deposit Transactions
     - [ ] Zether Withdraw Transactions
