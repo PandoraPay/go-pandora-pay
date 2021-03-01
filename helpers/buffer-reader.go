@@ -13,37 +13,35 @@ func NewBufferReader(buf []byte) *BufferReader {
 	return &BufferReader{buf: buf}
 }
 
-func (reader *BufferReader) ReadBool() (out bool, err error) {
+func (reader *BufferReader) ReadBool() (bool, error) {
 	if len(reader.buf) > 0 {
-		out = reader.buf[0] == 1
+		out := reader.buf[0] == 1
 		reader.buf = reader.buf[1:]
-		return
+		return out, nil
 	}
-	err = errors.New("Error reading bool")
-	return
+	return false, errors.New("Error reading bool")
 }
 
-func (reader *BufferReader) ReadByte() (out byte, err error) {
+func (reader *BufferReader) ReadByte() (byte, error) {
 	if len(reader.buf) > 0 {
-		out = reader.buf[0]
+		out := reader.buf[0]
 		reader.buf = reader.buf[1:]
-		return
+		return out, nil
 	}
-	err = errors.New("Error reading byte")
-	return
+	return 0, errors.New("Error reading byte")
 }
 
-func (reader *BufferReader) ReadBytes(count int) (out []byte, err error) {
+func (reader *BufferReader) ReadBytes(count int) ([]byte, error) {
 	if len(reader.buf) >= count {
-		out = reader.buf[:count]
+		out := reader.buf[:count]
 		reader.buf = reader.buf[count:]
-		return
+		return out, nil
 	}
-	err = errors.New("Error reading bytes")
-	return
+	return nil, errors.New("Error reading bytes")
 }
 
 func (reader *BufferReader) ReadString() (str string, err error) {
+
 	var length uint64
 	if length, err = reader.ReadUvarint(); err != nil {
 		return
@@ -58,13 +56,56 @@ func (reader *BufferReader) ReadString() (str string, err error) {
 	return
 }
 
-func (reader *BufferReader) ReadHash() (out Hash, err error) {
-	if len(reader.buf) > HashSize {
-		out = *ConvertHash(reader.buf[:HashSize])
+func (reader *BufferReader) ReadHash() (Hash, error) {
+	if len(reader.buf) >= HashSize {
+		out := *ConvertHash(reader.buf[:HashSize])
 		reader.buf = reader.buf[HashSize:]
+		return out, nil
+	}
+	return Hash{}, errors.New("Error reading hash")
+}
+
+func (reader *BufferReader) Read33() ([33]byte, error) {
+	if len(reader.buf) >= 33 {
+		out := *Byte33(reader.buf[:33])
+		reader.buf = reader.buf[33:]
+		return out, nil
+	}
+	return [33]byte{}, errors.New("Error reading 33byte")
+}
+func (reader *BufferReader) Read20() ([20]byte, error) {
+	if len(reader.buf) >= 20 {
+		out := *Byte20(reader.buf[:20])
+		reader.buf = reader.buf[20:]
+		return out, nil
+	}
+	return [20]byte{}, errors.New("Error reading 20byte")
+}
+func (reader *BufferReader) Read65() ([65]byte, error) {
+	if len(reader.buf) >= 65 {
+		out := *Byte65(reader.buf[:65])
+		reader.buf = reader.buf[65:]
+		return out, nil
+	}
+	return [65]byte{}, errors.New("Error reading 65byte ")
+}
+
+func (reader *BufferReader) ReadToken() (out []byte, err error) {
+
+	var tokenType byte
+	if tokenType, err = reader.ReadByte(); err != nil {
 		return
 	}
-	err = errors.New("Error reading hash")
+
+	if tokenType == 0 {
+		out = []byte{}
+	} else if tokenType == 1 {
+		out, err = reader.ReadBytes(20)
+	} else {
+		err = errors.New("invalid token type")
+		return
+	}
+
 	return
 }
 

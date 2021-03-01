@@ -129,16 +129,13 @@ func (token *Token) Deserialize(buf []byte) (err error) {
 		return err
 	}
 
-	var data []byte
-	if data, err = reader.ReadBytes(20); err != nil {
+	if token.Key, err = reader.Read20(); err != nil {
 		return err
 	}
-	token.Key = *helpers.Byte20(data)
 
-	if data, err = reader.ReadBytes(20); err != nil {
+	if token.SupplyKey, err = reader.Read20(); err != nil {
 		return err
 	}
-	token.SupplyKey = *helpers.Byte20(data)
 
 	if token.Name, err = reader.ReadString(); err != nil {
 		return

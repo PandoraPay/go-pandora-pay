@@ -1,7 +1,6 @@
 package account
 
 import (
-	"errors"
 	"pandora-pay/helpers"
 )
 
@@ -13,13 +12,8 @@ type Balance struct {
 func (balance *Balance) Serialize(writer *helpers.BufferWriter) {
 
 	writer.WriteUint64(balance.Amount)
+	writer.WriteToken(balance.Token)
 
-	if len(balance.Token) == 0 {
-		writer.WriteByte(0)
-	} else {
-		writer.WriteByte(1)
-		writer.Write(balance.Token[:])
-	}
 }
 
 func (balance *Balance) Deserialize(reader *helpers.BufferReader) (err error) {
@@ -28,19 +22,7 @@ func (balance *Balance) Deserialize(reader *helpers.BufferReader) (err error) {
 		return
 	}
 
-	var tokenType byte
-	if tokenType, err = reader.ReadByte(); err != nil {
-		return
-	}
-
-	if tokenType == 0 {
-		balance.Token = []byte{}
-	} else if tokenType == 1 {
-		if balance.Token, err = reader.ReadBytes(20); err != nil {
-			return
-		}
-	} else {
-		err = errors.New("invalid token type")
+	if balance.Token, err = reader.ReadToken(); err != nil {
 		return
 	}
 

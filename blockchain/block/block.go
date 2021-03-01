@@ -174,25 +174,21 @@ func (blk *Block) Deserialize(reader *helpers.BufferReader) (err error) {
 		return
 	}
 
-	var data []byte
-	if data, err = reader.ReadBytes(33); err != nil {
+	if blk.DelegatedPublicKey, err = reader.Read33(); err != nil {
 		return
 	}
-	blk.DelegatedPublicKey = *helpers.Byte33(data)
 
 	if blk.Timestamp, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
-	if data, err = reader.ReadBytes(20); err != nil {
+	if blk.Forger, err = reader.Read20(); err != nil {
 		return
 	}
-	blk.Forger = *helpers.Byte20(data)
 
-	if data, err = reader.ReadBytes(65); err != nil {
+	if blk.Signature, err = reader.Read65(); err != nil {
 		return
 	}
-	blk.Signature = *helpers.Byte65(data)
 
 	return
 }

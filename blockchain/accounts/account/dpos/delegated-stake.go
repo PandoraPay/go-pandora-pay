@@ -44,11 +44,9 @@ func (delegatedStake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
 
 func (delegatedStake *DelegatedStake) Deserialize(reader *helpers.BufferReader) (err error) {
 
-	var data []byte
-	if data, err = reader.ReadBytes(33); err != nil {
+	if delegatedStake.DelegatedPublicKey, err = reader.Read33(); err != nil {
 		return
 	}
-	delegatedStake.DelegatedPublicKey = *helpers.Byte33(data)
 
 	if delegatedStake.StakeAvailable, err = reader.ReadUvarint(); err != nil {
 		return

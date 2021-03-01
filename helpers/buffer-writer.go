@@ -49,6 +49,15 @@ func (writer *BufferWriter) WriteUint64(value uint64) {
 
 }
 
+func (writer *BufferWriter) WriteToken(token []byte) {
+	if len(token) == 0 {
+		writer.WriteByte(0)
+	} else {
+		writer.WriteByte(1)
+		writer.Write(token)
+	}
+}
+
 func (writer *BufferWriter) Bytes() (out []byte) {
 	out = make([]byte, writer.len)
 	c := 0
