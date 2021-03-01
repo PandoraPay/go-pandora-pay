@@ -12,12 +12,14 @@ type PrivateKey struct {
 	Key [32]byte
 }
 
-func (pk *PrivateKey) GeneratePublicKey() (publicKey []byte, err error) {
+func (pk *PrivateKey) GeneratePublicKey() (publicKey [33]byte, err error) {
 
-	if publicKey, err = ecdsa.ComputePublicKey(pk.Key[:]); err != nil {
+	var pub []byte
+	if pub, err = ecdsa.ComputePublicKey(pk.Key[:]); err != nil {
 		return
 	}
 
+	publicKey = *helpers.Byte33(pub)
 	return
 }
 

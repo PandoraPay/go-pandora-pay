@@ -11,10 +11,12 @@ type TransactionSimpleInput struct {
 	Token     []byte
 }
 
-func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter) {
+func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter, inclSignature bool) {
 	writer.Write(vin.PublicKey[:])
 	writer.WriteUint64(vin.Amount)
-	writer.Write(vin.Signature[:])
+	if inclSignature {
+		writer.Write(vin.Signature[:])
+	}
 	writer.WriteToken(vin.Token)
 }
 

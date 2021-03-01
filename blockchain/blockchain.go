@@ -57,7 +57,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 	var wasChainLocked bool
 
-	gui.Log(fmt.Sprintf("Including blocks %d ... %d", chain.Height, chain.Height+uint64(len(blocksComplete))))
+	gui.Info(fmt.Sprintf("Including blocks %d ... %d", chain.Height, chain.Height+uint64(len(blocksComplete))))
 
 	var newChain = Blockchain{
 		Hash:               chain.Hash,
@@ -255,7 +255,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 		return
 	}
 
-	gui.Log(fmt.Sprintf("Including blocks SUCCESS %s", hex.EncodeToString(chain.Hash[:])))
+	gui.Warning("-------------------------------------------")
+	gui.Warning(fmt.Sprintf("Including blocks SUCCESS %s", hex.EncodeToString(chain.Hash[:])))
+	gui.Warning("-------------------------------------------")
 	updateChainInfo()
 
 	chain.UpdateChannel <- 1 //sending 1

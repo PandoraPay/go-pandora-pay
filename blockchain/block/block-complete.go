@@ -3,10 +3,10 @@ package block
 import (
 	"bytes"
 	"errors"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/crypto"
 	"pandora-pay/helpers"
-	"pandora-pay/transaction"
 )
 
 type BlockComplete struct {

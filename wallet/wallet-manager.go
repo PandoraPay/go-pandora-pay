@@ -38,7 +38,7 @@ func (W *Wallet) addNewAddress() (err error) {
 
 	privateKey := addresses.PrivateKey{Key: *helpers.Byte32(key.Key)}
 
-	var publicKey []byte
+	var publicKey [33]byte
 	if publicKey, err = privateKey.GeneratePublicKey(); err != nil {
 		gui.Fatal("Generating Public Key from Private key raised an error", err)
 	}
@@ -48,15 +48,14 @@ func (W *Wallet) addNewAddress() (err error) {
 		gui.Fatal("Generating Address raised an error", err)
 	}
 
-	publicKeyHash := *helpers.Byte20(crypto.ComputePublicKeyHash(publicKey))
-	finalPublicKey := *helpers.Byte33(publicKey)
+	publicKeyHash := *helpers.Byte20(crypto.ComputePublicKeyHash(publicKey[:]))
 
 	W.Lock()
 	defer W.Unlock()
 	walletAddress := WalletAddress{
 		"Addr " + strconv.Itoa(W.Count),
 		&privateKey,
-		finalPublicKey,
+		publicKey,
 		publicKeyHash,
 		address,
 		W.SeedIndex,
@@ -66,7 +65,7 @@ func (W *Wallet) addNewAddress() (err error) {
 	W.Count += 1
 	W.SeedIndex += 1
 
-	go forging.ForgingW.AddWallet(finalPublicKey, privateKey.Key, publicKeyHash)
+	go forging.ForgingW.AddWallet(publicKey, privateKey.Key, publicKeyHash)
 
 	updateWallet()
 	return saveWallet()
