@@ -33,6 +33,11 @@ func (tx *Transaction) Serialize() []byte {
 	writer.WriteUint64(tx.Version)
 	writer.WriteUint64(uint64(tx.TransactionType))
 
+	if tx.TransactionType == TransactionTypeSimple {
+		base := tx.TransactionBase.(transaction_simple.TransactionSimple)
+		base.Serialize(writer)
+	}
+
 	return writer.Bytes()
 }
 
@@ -61,7 +66,7 @@ func (tx *Transaction) Deserialize(buf []byte) (err error) {
 		tx.TransactionBase = base
 
 	} else {
-		errors.New("Transaction Type is invalid")
+		err = errors.New("Transaction Type is invalid")
 		return
 	}
 

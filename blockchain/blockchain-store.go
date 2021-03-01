@@ -124,9 +124,7 @@ func saveBlockchain(bucket *bolt.Bucket, chain *Blockchain) error {
 		return errors.New("Error marshaling chain")
 	}
 
-	err = bucket.Put([]byte("blockchainInfo"), marshal)
-	return err
-
+	return bucket.Put([]byte("blockchainInfo"), marshal)
 }
 
 func loadBlockchain() (success bool, err error) {
