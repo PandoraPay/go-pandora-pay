@@ -17,7 +17,6 @@ type BlockComplete struct {
 func (blkComplete *BlockComplete) MerkleHash() helpers.Hash {
 
 	var buffer = []byte{}
-
 	if len(blkComplete.Txs) > 0 {
 
 		//todo

@@ -8,9 +8,13 @@ import (
 func TestCreateUnstake(t *testing.T) {
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	_, err := CreateUnstake(0, privateKey.Key, 534)
+	tx, err := CreateUnstake(0, privateKey.Key, 534)
 	if err != nil {
 		t.Errorf("error creating unstake")
+	}
+
+	if tx.VerifySignature() == false {
+		t.Errorf("Verify signature failed")
 	}
 
 }

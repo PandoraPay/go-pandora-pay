@@ -19,14 +19,16 @@ func (tx *Transaction) SerializeForSigning() helpers.Hash {
 }
 
 func (tx *Transaction) VerifySignature() bool {
+
 	hash := tx.SerializeForSigning()
-	if tx.IsTransactionSimple() {
+	switch tx.TxType {
+	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
 		base := tx.TxBase.(transaction_simple.TransactionSimple)
 		return base.VerifySignature(hash)
-	} else {
-		//not implemented
+	default:
+		return false
 	}
-	return false
+
 }
 
 func (tx *Transaction) ComputeHash() helpers.Hash {

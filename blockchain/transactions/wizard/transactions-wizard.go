@@ -10,10 +10,6 @@ import (
 
 func CreateUnstake(nonce uint64, priv [32]byte, amount uint64) (tx *transaction.Transaction, err error) {
 
-	txExtra := transaction_simple_unstake.TransactionSimpleUnstake{
-		Fee: 0,
-	}
-
 	privateKey := addresses.PrivateKey{Key: priv}
 	var publicKey [33]byte
 	if publicKey, err = privateKey.GeneratePublicKey(); err != nil {
@@ -27,22 +23,25 @@ func CreateUnstake(nonce uint64, priv [32]byte, amount uint64) (tx *transaction.
 	var vin []*transaction_simple.TransactionSimpleInput
 	vin = append(vin, &in)
 
-	txBase := transaction_simple.TransactionSimple{
-		Nonce: nonce,
-		Extra: txExtra,
-		Vin:   vin,
-	}
-
 	tx = &transaction.Transaction{
 		Version: 0,
 		TxType:  transaction_type.TransactionTypeSimpleUnstake,
-		TxBase:  txBase,
+		TxBase: transaction_simple.TransactionSimple{
+			Nonce: nonce,
+			Extra: transaction_simple_unstake.TransactionSimpleUnstake{
+				Fee: 0,
+			},
+			Vin: vin,
+		},
 	}
 
 	hash := tx.SerializeForSigning()
 	var signature [65]byte
 
-	signature, err = privateKey.Sign(&hash)
+	if signature, err = privateKey.Sign(&hash); err != nil {
+		return
+	}
+
 	tx.TxBase.(transaction_simple.TransactionSimple).Vin[0].Signature = signature
 
 	return

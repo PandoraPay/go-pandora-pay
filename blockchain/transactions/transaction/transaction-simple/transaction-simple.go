@@ -4,6 +4,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction_simple_unstake"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	"pandora-pay/crypto/ecdsa"
 	"pandora-pay/helpers"
 )
 
@@ -15,7 +16,16 @@ type TransactionSimple struct {
 }
 
 func (tx *TransactionSimple) VerifySignature(hash helpers.Hash) bool {
-	return false
+	if len(tx.Vin) == 0 {
+		return false
+	}
+
+	for _, vin := range tx.Vin {
+		if ecdsa.VerifySignature(vin.PublicKey[:], hash[:], vin.Signature[0:64]) == false {
+			return false
+		}
+	}
+	return true
 }
 
 func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignature bool, txType transaction_type.TransactionType) {
