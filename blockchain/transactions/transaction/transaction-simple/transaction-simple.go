@@ -1,6 +1,8 @@
 package transaction_simple
 
 import (
+	"errors"
+	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction_simple_unstake"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/helpers"
 )
@@ -29,6 +31,12 @@ func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignatu
 		for _, vout := range tx.Vout {
 			vout.Serialize(writer)
 		}
+	}
+
+	switch txType {
+	case transaction_type.TransactionTypeSimpleUnstake:
+		extra := tx.Extra.(transaction_simple_unstake.TransactionSimpleUnstake)
+		extra.Serialize(writer)
 	}
 }
 
@@ -62,6 +70,15 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader, txType tr
 			}
 			tx.Vout = append(tx.Vout, vout)
 		}
+	}
+
+	switch txType {
+	case transaction_type.TransactionTypeSimple:
+	case transaction_type.TransactionTypeSimpleUnstake:
+		extra := tx.Extra.(transaction_simple_unstake.TransactionSimpleUnstake)
+		err = extra.Deserialize(reader)
+	default:
+		err = errors.New("Invalid txType")
 	}
 
 	return

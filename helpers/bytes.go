@@ -15,35 +15,35 @@ func ConvertHash(s []byte) (a *Hash) {
 	if len(a) <= len(s) {
 		a = (*Hash)(unsafe.Pointer(&s[0]))
 	}
-	return a
+	return
 }
 
 func Byte32(s []byte) (a *[32]byte) {
 	if len(a) <= len(s) {
 		a = (*[len(a)]byte)(unsafe.Pointer(&s[0]))
 	}
-	return a
+	return
 }
 
 func Byte20(s []byte) (a *[20]byte) {
 	if len(a) <= len(s) {
 		a = (*[len(a)]byte)(unsafe.Pointer(&s[0]))
 	}
-	return a
+	return
 }
 
 func Byte33(s []byte) (a *[33]byte) {
 	if len(a) <= len(s) {
 		a = (*[len(a)]byte)(unsafe.Pointer(&s[0]))
 	}
-	return a
+	return
 }
 
 func Byte65(s []byte) (a *[65]byte) {
 	if len(a) <= len(s) {
 		a = (*[len(a)]byte)(unsafe.Pointer(&s[0]))
 	}
-	return a
+	return
 }
 
 func RandomBytes(size int) []byte {

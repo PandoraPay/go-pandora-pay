@@ -67,7 +67,10 @@ func startForging(threads int) {
 		wg.Wait()
 
 		if Forging.solution {
-			Forging.publishSolution()
+			err := Forging.publishSolution()
+			if err != nil {
+				Forging.solution = false
+			}
 		}
 
 	}
@@ -108,7 +111,7 @@ func (forging *forgingType) foundSolution(address *forgingWalletAddress, timesta
 }
 
 // thread not safe
-func (forging *forgingType) publishSolution() {
+func (forging *forgingType) publishSolution() (err error) {
 
 	forging.BlkComplete.Block.Forger = forging.solutionAddress.publicKeyHash
 	forging.BlkComplete.Block.DelegatedPublicKey = forging.solutionAddress.delegatedPublicKey
@@ -119,9 +122,10 @@ func (forging *forgingType) publishSolution() {
 
 	serializationForSigning := forging.BlkComplete.Block.SerializeForSigning()
 
-	signature, _ := forging.solutionAddress.delegatedPrivateKey.Sign(&serializationForSigning)
-
-	copy(forging.BlkComplete.Block.Signature[:], signature)
+	if forging.BlkComplete.Block.Signature, err = forging.solutionAddress.delegatedPrivateKey.Sign(&serializationForSigning); err != nil {
+		gui.Error("Error signing forged block", err)
+		return
+	}
 
 	//send message to blockchain
 	Forging.SolutionChannel <- 1

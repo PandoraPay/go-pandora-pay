@@ -39,5 +39,11 @@ func CreateUnstake(nonce uint64, priv [32]byte, amount uint64) (tx *transaction.
 		TxBase:  txBase,
 	}
 
+	hash := tx.SerializeForSigning()
+	var signature [65]byte
+
+	signature, err = privateKey.Sign(&hash)
+	tx.TxBase.(transaction_simple.TransactionSimple).Vin[0].Signature = signature
+
 	return
 }

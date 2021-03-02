@@ -21,16 +21,18 @@ func TestBlock_Serialize(t *testing.T) {
 
 	privateKey := addresses.GenerateNewPrivateKey()
 	publicKey, _ := privateKey.GeneratePublicKey()
+	publicKeyHash := crypto.ComputePublicKeyHash(publicKey)
 
 	blockHeader := BlockHeader{Version: 0, Height: 0}
 	blk := Block{
-		BlockHeader:    blockHeader,
-		MerkleHash:     merkleHash,
-		PrevHash:       prevHash,
-		PrevKernelHash: prevKernelHash,
-		Timestamp:      uint64(time.Now().Unix()),
+		BlockHeader:        blockHeader,
+		MerkleHash:         merkleHash,
+		PrevHash:           prevHash,
+		PrevKernelHash:     prevKernelHash,
+		Forger:             publicKeyHash,
+		DelegatedPublicKey: publicKey,
+		Timestamp:          uint64(time.Now().Unix()),
 	}
-	copy(blk.Forger[:], publicKey)
 
 	buf := blk.Serialize()
 	if len(buf) < 30 {
@@ -38,11 +40,10 @@ func TestBlock_Serialize(t *testing.T) {
 	}
 
 	blk2 := Block{}
-	buf, err = blk2.Deserialize(buf)
+
+	reader := helpers.NewBufferReader(buf)
+	err = blk2.Deserialize(reader)
 	if err != nil {
-		t.Errorf("Final buff should be empty")
-	}
-	if len(buf) != 0 {
 		t.Errorf("Final buff should be empty")
 	}
 	if !bytes.Equal(blk2.Serialize(), blk.Serialize()) {
@@ -57,26 +58,30 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 
 	privateKey := addresses.GenerateNewPrivateKey()
 	publicKey, _ := privateKey.GeneratePublicKey()
+	publicKeyHash := crypto.ComputePublicKeyHash(publicKey)
 
 	blockHeader := BlockHeader{Version: 0, Height: 0}
 	blk := Block{
-		BlockHeader:    blockHeader,
-		MerkleHash:     merkleHash,
-		PrevHash:       prevHash,
-		PrevKernelHash: prevKernelHash,
-		Timestamp:      uint64(time.Now().Unix()),
+		BlockHeader:        blockHeader,
+		MerkleHash:         merkleHash,
+		PrevHash:           prevHash,
+		PrevKernelHash:     prevKernelHash,
+		Forger:             publicKeyHash,
+		DelegatedPublicKey: publicKey,
+		Timestamp:          uint64(time.Now().Unix()),
 	}
-	copy(blk.Forger[:], publicKey)
 
 	hash := blk.SerializeForSigning()
-	signature, err := privateKey.Sign(&hash)
+	var signature [65]byte
+
+	signature, err = privateKey.Sign(&hash)
 	if err != nil {
 		t.Errorf("Signing raised an error")
 	}
-	if len(signature) != 65 || bytes.Equal(signature, helpers.EmptyBytes(65)) {
+	if bytes.Equal(signature[:], helpers.EmptyBytes(65)) {
 		t.Errorf("Invalid signature")
 	}
-	copy(blk.Signature[:], signature)
+	blk.Signature = signature
 
 	if blk.VerifySignature() != true {
 		t.Errorf("Signature Validation failed")

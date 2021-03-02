@@ -85,10 +85,6 @@ func (blk *Block) RemoveBlock(acs *accounts.Accounts, toks *tokens.Tokens) (err 
 	return
 }
 
-func (blk *Block) GetDelegatePublicKeyHash() [20]byte {
-	return *helpers.Byte20(crypto.ComputePublicKeyHash(blk.Forger[:]))
-}
-
 func (blk *Block) ComputeHash() helpers.Hash {
 	return crypto.SHA3Hash(blk.Serialize())
 }

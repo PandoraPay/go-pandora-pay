@@ -39,9 +39,11 @@ func (tx *Transaction) Serialize(inclSignature bool) []byte {
 	writer.WriteUint64(tx.Version)
 	writer.WriteUint64(uint64(tx.TxType))
 
-	if tx.IsTransactionSimple() {
+	switch tx.TxType {
+	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
 		base := tx.TxBase.(transaction_simple.TransactionSimple)
 		base.Serialize(writer, inclSignature, tx.TxType)
+	default:
 	}
 
 	return writer.Bytes()
@@ -63,16 +65,17 @@ func (tx *Transaction) Deserialize(buf []byte) (err error) {
 		return
 	}
 	tx.TxType = transaction_type.TransactionType(n)
-	if tx.IsTransactionSimple() {
 
-		base := new(transaction_simple.TransactionSimple)
-		if err = base.Deserialize(reader, tx.TxType); err != nil {
-			return err
-		}
-		tx.TxBase = base
+	switch tx.TxType {
+	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
+		txBase := new(transaction_simple.TransactionSimple)
+		err = txBase.Deserialize(reader, tx.TxType)
+		tx.TxBase = txBase
+	default:
+		err = errors.New("Transaction type is invalid")
+	}
 
-	} else {
-		err = errors.New("Transaction Type is invalid")
+	if err != nil {
 		return
 	}
 

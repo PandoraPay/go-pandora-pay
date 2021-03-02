@@ -25,8 +25,8 @@ func RIPEMD(b []byte) []byte {
 	return h.Sum(nil)
 }
 
-func ComputePublicKeyHash(publicKey []byte) []byte {
-	return RIPEMD(SHA3(publicKey))
+func ComputePublicKeyHash(publicKey [33]byte) [20]byte {
+	return *helpers.Byte20(RIPEMD(SHA3(publicKey[:])))
 }
 
 func ComputeKernelHash(hash helpers.Hash, stakingAmount uint64) (out helpers.Hash) {
