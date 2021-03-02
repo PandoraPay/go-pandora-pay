@@ -13,7 +13,7 @@ func TestGenerateNewPrivateKey(t *testing.T) {
 		t.Errorf("Invalid private key length")
 	}
 
-	if bytes.Equal(privateKey.Key, helpers.EmptyBytes(32)) {
+	if bytes.Equal(privateKey.Key[:], helpers.EmptyBytes(32)) {
 		t.Errorf("Invalid private key is empty")
 	}
 
