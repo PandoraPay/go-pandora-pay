@@ -2,7 +2,6 @@ package forging
 
 import (
 	"bytes"
-	"encoding/hex"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
@@ -64,7 +63,7 @@ func (w *forgingWallets) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte
 			acc,
 		}
 		w.addresses = append(w.addresses, &address)
-		w.addressesMap[hex.EncodeToString(pubKeyHash[:])] = &address
+		w.addressesMap[string(pubKeyHash[:])] = &address
 
 		return
 	})

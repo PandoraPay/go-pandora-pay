@@ -7,7 +7,8 @@ import (
 )
 
 type TransactionSimpleUnstake struct {
-	UnstakeAmount uint64
+	UnstakeAmount   uint64
+	UnstakeFeeExtra uint64
 }
 
 func (tx *TransactionSimpleUnstake) Validate(txType transaction_type.TransactionType) error {
@@ -19,11 +20,15 @@ func (tx *TransactionSimpleUnstake) Validate(txType transaction_type.Transaction
 
 func (tx *TransactionSimpleUnstake) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(tx.UnstakeAmount)
+	writer.WriteUvarint(tx.UnstakeFeeExtra)
 }
 
 func (tx *TransactionSimpleUnstake) Deserialize(reader *helpers.BufferReader) (err error) {
 
 	if tx.UnstakeAmount, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	if tx.UnstakeFeeExtra, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 

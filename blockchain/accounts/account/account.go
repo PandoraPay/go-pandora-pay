@@ -3,6 +3,7 @@ package account
 import (
 	"bytes"
 	"errors"
+	"math"
 	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/helpers"
 )
@@ -28,6 +29,9 @@ func (account *Account) IsAccountEmpty() bool {
 func (account *Account) IncrementNonce(sign bool) error {
 
 	if sign {
+		if math.MaxUint64-account.Nonce <= 1 {
+			return errors.New("Nonce exceeded max MaxUint64")
+		}
 		account.Nonce += 1
 	} else {
 		if account.Nonce == 0 {
@@ -58,6 +62,9 @@ func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) error {
 			copy(foundBalance.Token[:], tok[:])
 			account.Balances = append(account.Balances, foundBalance)
 		}
+		if math.MaxUint64-foundBalance.Amount <= amount {
+			return errors.New("Balance would exceed MaxUint64")
+		}
 		foundBalance.Amount += amount
 	} else {
 
@@ -75,22 +82,26 @@ func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) error {
 	return nil
 }
 
-func (account *Account) AddReward(sign bool, amount, blockHeight uint64) {
+func (account *Account) AddReward(sign bool, amount, blockHeight uint64) error {
 
 	if !account.HasDelegatedStake() {
 		panic("Strange. The accoun't doesn't have a delegated stake")
 	}
 
 	if sign {
+		if math.MaxUint64-account.DelegatedStake.StakeAvailable <= amount {
+			return errors.New("Stake available would exceed MaxUint64")
+		}
 		account.DelegatedStake.StakeAvailable += amount
 	} else {
 		if account.DelegatedStake.StakeAvailable < amount {
-			panic("Strange. Stake available is less than reward. ")
+			return errors.New("Stake available is less than reward. ")
 		}
 		account.DelegatedStake.StakeAvailable -= amount
 	}
 
 	account.refreshDelegatedStake(blockHeight)
+	return nil
 }
 
 func (account *Account) GetDelegatedStakeAvailable(blockHeight uint64) uint64 {

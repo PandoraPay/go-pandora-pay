@@ -48,7 +48,7 @@ func (W *Wallet) addNewAddress() (err error) {
 		gui.Fatal("Generating Address raised an error", err)
 	}
 
-	publicKeyHash := *helpers.Byte20(crypto.ComputePublicKeyHash(publicKey[:]))
+	publicKeyHash := crypto.ComputePublicKeyHash(publicKey)
 
 	W.Lock()
 	defer W.Unlock()

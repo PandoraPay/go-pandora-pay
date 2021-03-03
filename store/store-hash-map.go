@@ -1,7 +1,6 @@
 package store
 
 import (
-	"encoding/hex"
 	"errors"
 	"go.etcd.io/bbolt"
 )
@@ -35,7 +34,7 @@ func CreateNewHashMap(tx *bbolt.Tx, name string, keyLength int) (hashMap *HashMa
 
 func (hashMap *HashMap) Get(key []byte) (out []byte) {
 
-	keyStr := hex.EncodeToString(key)
+	keyStr := string(key)
 
 	exists := hashMap.Virtual[keyStr]
 	if exists != nil {
@@ -53,7 +52,7 @@ func (hashMap *HashMap) Get(key []byte) (out []byte) {
 }
 
 func (hashMap *HashMap) Exists(key []byte) bool {
-	keyStr := hex.EncodeToString(key)
+	keyStr := string(key)
 
 	exists := hashMap.Virtual[keyStr]
 	if exists != nil {
@@ -70,7 +69,7 @@ func (hashMap *HashMap) Exists(key []byte) bool {
 
 func (hashMap *HashMap) Update(key []byte, data []byte) {
 
-	keyStr := hex.EncodeToString(key)
+	keyStr := string(key)
 
 	exists := hashMap.Virtual[keyStr]
 	if exists == nil {
@@ -85,7 +84,7 @@ func (hashMap *HashMap) Update(key []byte, data []byte) {
 
 func (hashMap *HashMap) Delete(key []byte) {
 
-	keyStr := hex.EncodeToString(key)
+	keyStr := string(key)
 
 	exists := hashMap.Virtual[keyStr]
 	if exists == nil {
@@ -101,10 +100,7 @@ func (hashMap *HashMap) Commit() (err error) {
 
 	for k, v := range hashMap.Virtual {
 
-		var key []byte
-		if key, err = hex.DecodeString(k); err != nil {
-			return
-		}
+		key := []byte(k)
 		if len(key) != hashMap.KeyLength {
 			err = errors.New("KeyLength is invalid")
 			return

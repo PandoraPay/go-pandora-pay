@@ -129,4 +129,5 @@ func (forging *forgingType) publishSolution() (err error) {
 
 	//send message to blockchain
 	Forging.SolutionChannel <- 1
+	return
 }

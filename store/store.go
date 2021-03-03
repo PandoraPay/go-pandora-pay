@@ -41,6 +41,7 @@ func DBInit() (err error) {
 	StoreBlockchain.init()
 	StoreWallet.init()
 	StoreSettings.init()
+	StoreMempool.init()
 
 	if err = StoreWallet.DB.Update(func(tx *bolt.Tx) (err error) {
 		_, err = tx.CreateBucketIfNotExists([]byte("Wallet"))

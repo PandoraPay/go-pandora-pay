@@ -316,6 +316,7 @@ func BlockchainInit() (err error) {
 
 	go Chain.createBlockForForging()
 
+	return
 }
 
 func BlockchainClose() {

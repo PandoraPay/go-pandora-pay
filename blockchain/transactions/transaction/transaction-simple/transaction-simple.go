@@ -2,6 +2,7 @@ package transaction_simple
 
 import (
 	"errors"
+	"math"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction_simple_unstake"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/crypto/ecdsa"
@@ -25,27 +26,30 @@ func (tx *TransactionSimple) ComputeFees(out map[string]uint64) (err error) {
 	return
 }
 
-func (tx *TransactionSimple) ComputeVin(out map[string]uint64) (err error) {
+func (tx *TransactionSimple) ComputeVin(out map[string]uint64) error {
 	for _, vin := range tx.Vin {
-		out[string(vin.Token)] += vin.Amount
+		token := string(vin.Token)
+		if math.MaxUint64-out[token] <= vin.Amount {
+			return errors.New("Vin exceeded MaxUint64")
+		}
+		out[token] += vin.Amount
 	}
-	return
+	return nil
 }
 
-func (tx *TransactionSimple) ComputeVout(out map[string]uint64) (err error) {
+func (tx *TransactionSimple) ComputeVout(out map[string]uint64) error {
 	for _, vout := range tx.Vout {
 
 		token := string(vout.Token)
 		if out[token] < vout.Amount {
-			err = errors.New("Balance exceeded")
-			return
+			return errors.New("Balance exceeded")
 		}
 		out[token] -= vout.Amount
 		if out[token] == 0 {
 			delete(out, token)
 		}
 	}
-	return
+	return nil
 }
 
 func (tx *TransactionSimple) VerifySignature(hash helpers.Hash) bool {

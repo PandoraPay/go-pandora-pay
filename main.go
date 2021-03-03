@@ -9,7 +9,6 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/globals"
 	"pandora-pay/gui"
-	"pandora-pay/mem-pool"
 	"pandora-pay/mempool"
 	"pandora-pay/settings"
 	"pandora-pay/store"

@@ -45,7 +45,9 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens) (err
 	}
 
 	reward := reward.GetRewardAt(blk.Height)
-	acc.AddReward(true, reward, blk.Height)
+	if err = acc.AddReward(true, reward, blk.Height); err != nil {
+		return
+	}
 	acs.UpdateAccount(blk.Forger, acc)
 
 	var tok *token.Token
@@ -69,7 +71,9 @@ func (blk *Block) RemoveBlock(acs *accounts.Accounts, toks *tokens.Tokens) (err 
 	}
 
 	reward := reward.GetRewardAt(blk.Height)
-	acc.AddReward(false, reward, blk.Height)
+	if err = acc.AddReward(false, reward, blk.Height); err != nil {
+		return
+	}
 
 	acs.UpdateAccount(blk.Forger, acc)
 
