@@ -14,6 +14,22 @@ type Transaction struct {
 	TxBase  interface{}
 }
 
+func (tx *Transaction) ComputeFees() (fees map[string]uint64, err error) {
+
+	fees = make(map[string]uint64)
+
+	switch tx.TxType {
+	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
+		base := tx.TxBase.(transaction_simple.TransactionSimple)
+		if err = base.ComputeFees(fees); err != nil {
+			return
+		}
+	default:
+		err = errors.New("Invalid type")
+	}
+	return
+}
+
 func (tx *Transaction) SerializeForSigning() helpers.Hash {
 	return crypto.SHA3Hash(tx.Serialize(false))
 }
@@ -51,18 +67,33 @@ func (tx *Transaction) Serialize(inclSignature bool) []byte {
 	return writer.Bytes()
 }
 
+func (tx *Transaction) Validate() (err error) {
+	if tx.Version != 0 {
+		return errors.New("Version is invalid")
+	}
+	if transaction_type.TransactionTypeEND < tx.TxType {
+		return errors.New("VersionType is invalid")
+	}
+
+	switch tx.TxType {
+	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
+		base := tx.TxBase.(transaction_simple.TransactionSimple)
+		if err = base.Validate(tx.TxType); err != nil {
+			return
+		}
+	}
+
+	return
+}
+
 func (tx *Transaction) Deserialize(buf []byte) (err error) {
 	reader := helpers.NewBufferReader(buf)
+	var n uint64
 
 	if tx.Version, err = reader.ReadUvarint(); err != nil {
 		return
 	}
-	if tx.Version != 0 {
-		err = errors.New("Version is invalid")
-		return
-	}
 
-	var n uint64
 	if n, err = reader.ReadUvarint(); err != nil {
 		return
 	}
@@ -71,14 +102,12 @@ func (tx *Transaction) Deserialize(buf []byte) (err error) {
 	switch tx.TxType {
 	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
 		base := transaction_simple.TransactionSimple{}
-		err = base.Deserialize(reader, tx.TxType)
+		if err = base.Deserialize(reader, tx.TxType); err != nil {
+			return
+		}
 		tx.TxBase = base
 	default:
-		err = errors.New("Transaction type is invalid")
-	}
-
-	if err != nil {
-		return
+		return errors.New("Transaction type is invalid")
 	}
 
 	return

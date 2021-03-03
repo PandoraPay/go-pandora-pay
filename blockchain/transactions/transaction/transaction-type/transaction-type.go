@@ -3,8 +3,10 @@ package transaction_type
 type TransactionType uint64
 
 const (
-	TransactionTypeSimple        TransactionType = 0
-	TransactionTypeSimpleUnstake TransactionType = 1
+	TransactionTypeSimple TransactionType = iota
+	TransactionTypeSimpleUnstake
+
+	TransactionTypeEND
 )
 
 func (t TransactionType) String() string {

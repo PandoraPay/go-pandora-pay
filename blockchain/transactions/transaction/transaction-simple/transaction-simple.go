@@ -15,6 +15,39 @@ type TransactionSimple struct {
 	Extra interface{}
 }
 
+func (tx *TransactionSimple) ComputeFees(out map[string]uint64) (err error) {
+	if err = tx.ComputeVin(out); err != nil {
+		return
+	}
+	if err = tx.ComputeVout(out); err != nil {
+		return
+	}
+	return
+}
+
+func (tx *TransactionSimple) ComputeVin(out map[string]uint64) (err error) {
+	for _, vin := range tx.Vin {
+		out[string(vin.Token)] += vin.Amount
+	}
+	return
+}
+
+func (tx *TransactionSimple) ComputeVout(out map[string]uint64) (err error) {
+	for _, vout := range tx.Vout {
+
+		token := string(vout.Token)
+		if out[token] < vout.Amount {
+			err = errors.New("Balance exceeded")
+			return
+		}
+		out[token] -= vout.Amount
+		if out[token] == 0 {
+			delete(out, token)
+		}
+	}
+	return
+}
+
 func (tx *TransactionSimple) VerifySignature(hash helpers.Hash) bool {
 	if len(tx.Vin) == 0 {
 		return false
@@ -28,6 +61,38 @@ func (tx *TransactionSimple) VerifySignature(hash helpers.Hash) bool {
 	return true
 }
 
+func (tx *TransactionSimple) Validate(txType transaction_type.TransactionType) (err error) {
+
+	switch txType {
+	case transaction_type.TransactionTypeSimple:
+		if len(tx.Vin) == 0 || len(tx.Vin) > 255 {
+			return errors.New("Invalid vin")
+		}
+		if len(tx.Vout) == 0 || len(tx.Vout) > 255 {
+			return errors.New("Invalid vout")
+		}
+	case transaction_type.TransactionTypeSimpleUnstake:
+		if len(tx.Vin) != 1 {
+			return errors.New("Invalid vin")
+		}
+		if len(tx.Vout) != 0 {
+			return errors.New("Invalid vout")
+		}
+		extra := tx.Extra.(transaction_simple_unstake.TransactionSimpleUnstake)
+		extra.Validate(txType)
+	}
+
+	final := make(map[string]uint64)
+	if err = tx.ComputeVin(final); err != nil {
+		return
+	}
+	if err = tx.ComputeVout(final); err != nil {
+		return
+	}
+
+	return
+}
+
 func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignature bool, txType transaction_type.TransactionType) {
 	writer.WriteUvarint(tx.Nonce)
 
@@ -36,12 +101,9 @@ func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignatu
 		vin.Serialize(writer, inclSignature)
 	}
 
-	//vout only TransactionTypeSimple
-	if txType == transaction_type.TransactionTypeSimple {
-		writer.WriteUvarint(uint64(len(tx.Vout)))
-		for _, vout := range tx.Vout {
-			vout.Serialize(writer)
-		}
+	writer.WriteUvarint(uint64(len(tx.Vout)))
+	for _, vout := range tx.Vout {
+		vout.Serialize(writer)
 	}
 
 	switch txType {
@@ -71,27 +133,24 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader, txType tr
 	}
 
 	//vout only TransactionTypeSimple
-	if txType == transaction_type.TransactionTypeSimple {
-		if n, err = reader.ReadUvarint(); err != nil {
+	if n, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	for i := 0; i < int(n); i++ {
+		vout := TransactionSimpleOutput{}
+		if err = vout.Deserialize(reader); err != nil {
 			return
 		}
-		for i := 0; i < int(n); i++ {
-			vout := TransactionSimpleOutput{}
-			if err = vout.Deserialize(reader); err != nil {
-				return
-			}
-			tx.Vout = append(tx.Vout, vout)
-		}
+		tx.Vout = append(tx.Vout, vout)
 	}
 
 	switch txType {
-	case transaction_type.TransactionTypeSimple:
 	case transaction_type.TransactionTypeSimpleUnstake:
 		extra := transaction_simple_unstake.TransactionSimpleUnstake{}
-		err = extra.Deserialize(reader)
+		if err = extra.Deserialize(reader); err != nil {
+			return err
+		}
 		tx.Extra = extra
-	default:
-		err = errors.New("Invalid txType")
 	}
 
 	return

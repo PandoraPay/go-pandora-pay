@@ -14,9 +14,12 @@ func TestCreateSimpleTx(t *testing.T) {
 	dstAddressEncoded, _ := dstAddress.EncodeAddr()
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateSimpleTx(0, [][32]byte{privateKey.Key}, []uint64{1252}, [][]byte{{}}, []string{dstAddressEncoded}, []uint64{1252}, [][]byte{{}}, -1, []byte{})
+	tx, err := CreateSimpleTx(0, [][32]byte{privateKey.Key}, []uint64{1252}, [][]byte{{}}, []string{dstAddressEncoded}, []uint64{1250}, [][]byte{{}}, -1, []byte{})
 	if err != nil {
 		t.Errorf("error creating simple tx")
+	}
+	if err = tx.Validate(); err != nil {
+		t.Errorf("error validating tx")
 	}
 
 	if tx.VerifySignature() == false {
@@ -29,9 +32,20 @@ func TestCreateSimpleTx(t *testing.T) {
 	if err = tx2.Deserialize(serialized); err != nil {
 		t.Errorf("Verify signature failed")
 	}
+	if err = tx2.Validate(); err != nil {
+		t.Errorf("error validating tx")
+	}
 
 	if tx2.VerifySignature() == false {
 		t.Errorf("Verify signature failed2")
+	}
+
+	fees, err := tx.ComputeFees()
+	if err != nil {
+		t.Errorf("Error validating fees")
+	}
+	if fees[string([]byte{})] != 2 {
+		t.Errorf("Fees were calculated invalid")
 	}
 
 }
@@ -43,6 +57,9 @@ func TestCreateUnstakeTx(t *testing.T) {
 	if err != nil {
 		t.Errorf("error creating unstake")
 	}
+	if err = tx.Validate(); err != nil {
+		t.Errorf("error validating tx")
+	}
 
 	if tx.VerifySignature() == false {
 		t.Errorf("Verify signature failed")
@@ -53,6 +70,10 @@ func TestCreateUnstakeTx(t *testing.T) {
 	tx2 := new(transaction.Transaction)
 	if err = tx2.Deserialize(serialized); err != nil {
 		t.Errorf("Verify signature failed")
+	}
+
+	if err = tx2.Validate(); err != nil {
+		t.Errorf("error validating tx")
 	}
 
 	if tx2.VerifySignature() == false {
