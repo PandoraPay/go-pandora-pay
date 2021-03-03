@@ -14,6 +14,7 @@ type Store struct {
 var StoreBlockchain = Store{Name: "blockchain"}
 var StoreWallet = Store{Name: "wallet"}
 var StoreSettings = Store{Name: "settings"}
+var StoreMempool = Store{Name: "mempool"}
 
 func (store *Store) init() {
 
@@ -36,20 +37,26 @@ func (store *Store) close() {
 	gui.Log("Store Closed " + store.Name)
 }
 
-func DBInit() {
+func DBInit() (err error) {
 	StoreBlockchain.init()
 	StoreWallet.init()
 	StoreSettings.init()
 
-	err1 := StoreWallet.DB.Update(func(tx *bolt.Tx) (err error) {
+	if err = StoreWallet.DB.Update(func(tx *bolt.Tx) (err error) {
 		_, err = tx.CreateBucketIfNotExists([]byte("Wallet"))
 		return
-	})
-	err2 := StoreSettings.DB.Update(func(tx *bolt.Tx) (err error) {
+	}); err != nil {
+		return
+	}
+
+	if err = StoreSettings.DB.Update(func(tx *bolt.Tx) (err error) {
 		_, err = tx.CreateBucketIfNotExists([]byte("Settings"))
 		return
-	})
-	err3 := StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
+	}); err != nil {
+		return
+	}
+
+	if err = StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 		if _, err = tx.CreateBucketIfNotExists([]byte("Chain")); err != nil {
 			return
 		}
@@ -58,16 +65,23 @@ func DBInit() {
 		}
 		_, err = tx.CreateBucketIfNotExists([]byte("Tokens"))
 		return
-	})
-
-	if err1 != nil || err2 != nil || err3 != nil {
-		gui.Log("Wallet bucket creation raised an error")
+	}); err != nil {
+		return
 	}
 
+	if err = StoreMempool.DB.Update(func(tx *bolt.Tx) (err error) {
+
+		return
+	}); err != nil {
+		return
+	}
+
+	return
 }
 
 func DBClose() {
 	StoreBlockchain.close()
 	StoreWallet.close()
 	StoreSettings.close()
+	StoreMempool.close()
 }

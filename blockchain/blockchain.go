@@ -270,24 +270,24 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 }
 
-func BlockchainInit() {
+func BlockchainInit() (err error) {
 
 	gui.Info("Blockchain init...")
 
 	genesis.GenesisInit()
 
-	success, err := loadBlockchain()
+	var success bool
+	success, err = loadBlockchain()
 	if err != nil {
-		gui.Fatal("Loading a blockchain info raised an error", err)
+		return
 	}
 
 	if !success {
-
 		if err = Chain.init(); err != nil {
 			return
 		}
-
 	}
+
 	Chain.UpdateChannel = make(chan int)
 	updateChainInfo()
 

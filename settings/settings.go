@@ -13,14 +13,14 @@ type Settings struct {
 
 var settings Settings
 
-func SettingsInit() {
+func SettingsInit() (err error) {
 
-	err := loadSettings()
+	err = loadSettings()
 	if err != nil && err.Error() == "Settings doesn't exist" {
 		err = createEmptySettings()
 	}
 	if err != nil {
-		gui.Fatal("Error loading settings", err)
+		return
 	}
 
 	var changed bool
@@ -30,14 +30,13 @@ func SettingsInit() {
 	}
 	if changed {
 		updateSettings()
-		err = saveSettings()
-		if err != nil {
-			gui.Fatal("Error saving new", err)
+		if err = saveSettings(); err != nil {
+			return
 		}
 	}
 
 	gui.Log("Settings Initialized")
-
+	return
 }
 
 func createEmptySettings() (err error) {

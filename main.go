@@ -9,6 +9,8 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/globals"
 	"pandora-pay/gui"
+	"pandora-pay/mem-pool"
+	"pandora-pay/mempool"
 	"pandora-pay/settings"
 	"pandora-pay/store"
 	"pandora-pay/wallet"
@@ -63,14 +65,29 @@ func main() {
 		gui.Fatal("Error processing arguments", err)
 	}
 
-	config.InitConfig()
+	if err = config.InitConfig(); err != nil {
+		gui.Fatal("Error initializing Config", err)
+	}
 
-	store.DBInit()
+	if err = store.DBInit(); err != nil {
+		gui.Fatal("Error initializing Database", err)
+	}
 
-	wallet.WalletInit()
-	settings.SettingsInit()
+	if err = wallet.WalletInit(); err != nil {
+		gui.Fatal("Error initializing Wallet", err)
+	}
 
-	blockchain.BlockchainInit()
+	if err = settings.SettingsInit(); err != nil {
+		gui.Fatal("Error initializing Settings", err)
+	}
+
+	if err = blockchain.BlockchainInit(); err != nil {
+		gui.Fatal("Error Initializing Blockchain", err)
+	}
+
+	if err = mempool.InitMemPool(); err != nil {
+		gui.Fatal("Error initializing Mempool", err)
+	}
 
 	go func() {
 
