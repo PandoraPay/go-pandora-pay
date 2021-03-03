@@ -76,7 +76,7 @@ func main() {
 		gui.Fatal("Error initializing Wallet", err)
 	}
 
-	if err = settings.SettingsInit(); err != nil {
+	if globals.Data["settings"], err = settings.SettingsInit(); err != nil {
 		gui.Fatal("Error initializing Settings", err)
 	}
 

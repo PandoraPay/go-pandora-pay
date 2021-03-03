@@ -1,23 +1,29 @@
 package settings
 
 import (
+	"pandora-pay/crypto"
 	"pandora-pay/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"sync"
 )
 
 type Settings struct {
 	Name string
 	Port uint16
+
+	Checksum [4]byte
+
+	sync.RWMutex `json:"-"`
 }
 
-var settings Settings
+func SettingsInit() (settings *Settings, err error) {
 
-func SettingsInit() (err error) {
+	settings = new(Settings)
 
-	err = loadSettings()
+	err = settings.loadSettings()
 	if err != nil && err.Error() == "Settings doesn't exist" {
-		err = createEmptySettings()
+		err = settings.createEmptySettings()
 	}
 	if err != nil {
 		return
@@ -29,8 +35,8 @@ func SettingsInit() (err error) {
 		changed = true
 	}
 	if changed {
-		updateSettings()
-		if err = saveSettings(); err != nil {
+		settings.updateSettings()
+		if err = settings.saveSettings(); err != nil {
 			return
 		}
 	}
@@ -39,18 +45,35 @@ func SettingsInit() (err error) {
 	return
 }
 
-func createEmptySettings() (err error) {
-	settings = Settings{Name: helpers.RandString(10), Port: 5231}
-	updateSettings()
+func (settings *Settings) createEmptySettings() (err error) {
 
-	err = saveSettings()
-	if err != nil {
+	settings.Lock()
+	defer settings.Unlock()
+
+	settings.Name = helpers.RandString(10)
+	settings.Port = 5231
+	settings.updateSettings()
+
+	if err = settings.saveSettings(); err != nil {
 		return
 	}
 
 	return
 }
 
-func updateSettings() {
+func (settings *Settings) updateSettings() {
 	gui.InfoUpdate("Node", settings.Name)
+}
+
+func (settings *Settings) computeChecksum() (checksum [4]byte, err error) {
+
+	var data []byte
+	if data, err = helpers.GetJSON(settings, "Checksum"); err != nil {
+		return
+	}
+
+	out := crypto.RIPEMD(data)[0:helpers.ChecksumSize]
+	copy(checksum[:], out[:])
+
+	return
 }

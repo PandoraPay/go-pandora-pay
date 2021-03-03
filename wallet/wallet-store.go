@@ -7,11 +7,12 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"strconv"
 )
 
-func (wallet *Wallet) saveWallet() error {
+func (wallet *Wallet) saveWallet(start, end, deleteIndex int) error {
 	return store.StoreWallet.DB.Update(func(tx *bolt.Tx) (err error) {
 
 		if wallet.Checksum, err = wallet.computeChecksum(); err != nil {
@@ -22,34 +23,31 @@ func (wallet *Wallet) saveWallet() error {
 		var marshal []byte
 
 		if err = writer.Put([]byte("saved"), []byte{2}); err != nil {
-			return gui.Error("Error deleting saved status", err)
+			return
 		}
 
-		if marshal, err = json.Marshal(wallet); err != nil {
-			return gui.Error("Error marshaling wallet", err)
+		if marshal, err = helpers.GetJSON(wallet, "Addresses"); err != nil {
+			return
 		}
-
 		if err = writer.Put([]byte("wallet"), marshal); err != nil {
-			return gui.Error("Error storing saved status", err)
+			return
 		}
 
-		for i := 0; i < wallet.Count; i++ {
+		for i := start; i < end; i++ {
 			if marshal, err = json.Marshal(wallet.Addresses[i]); err != nil {
-				return gui.Error("Error marshaling address "+strconv.Itoa(i), err)
+				return
 			}
 			err = writer.Put([]byte("wallet-address-"+strconv.Itoa(i)), marshal)
 		}
 
-		if err = writer.Delete([]byte("wallet-address-" + strconv.Itoa(wallet.Count))); err != nil {
-			return gui.Error("Error deleting next address", err)
-		}
-
-		if err = writer.Put([]byte("wallet-checksum"), wallet.Checksum[:]); err != nil {
-			return gui.Error("Error storing checksum", err)
+		if deleteIndex != -1 {
+			if err = writer.Delete([]byte("wallet-address-" + strconv.Itoa(deleteIndex))); err != nil {
+				return
+			}
 		}
 
 		if err = writer.Put([]byte("saved"), []byte{1}); err != nil {
-			return gui.Error("Error storing final wallet saved", err)
+			return
 		}
 
 		return nil
@@ -68,6 +66,7 @@ func (wallet *Wallet) loadWallet() error {
 		}
 
 		if bytes.Equal(saved, []byte{1}) {
+
 			gui.Log("Wallet Loading... ")
 
 			var unmarshal []byte
@@ -75,7 +74,7 @@ func (wallet *Wallet) loadWallet() error {
 			unmarshal = reader.Get([]byte("wallet"))
 
 			if err = json.Unmarshal(unmarshal, &wallet); err != nil {
-				return gui.Error("Error unmarshaling wallet", err)
+				return errors.New("Error unmarshaling wallet")
 			}
 
 			for i := 0; i < wallet.Count; i++ {
@@ -83,28 +82,25 @@ func (wallet *Wallet) loadWallet() error {
 
 				newWalletAddress := WalletAddress{}
 				if err = json.Unmarshal(unmarshal, &newWalletAddress); err != nil {
-					return gui.Error("Error unmarshaling address "+strconv.Itoa(i), err)
+					return errors.New("Error unmarshaling address " + strconv.Itoa(i))
 				}
 				wallet.Addresses = append(wallet.Addresses, &newWalletAddress)
 				go forging.ForgingW.AddWallet(newWalletAddress.PublicKey, newWalletAddress.PrivateKey.Key, newWalletAddress.PublicKeyHash)
 			}
-
-			unmarshal = reader.Get([]byte("wallet-checksum"))
-			copy(wallet.Checksum[:], unmarshal[:])
 
 			var checksum [4]byte
 			if checksum, err = wallet.computeChecksum(); err != nil {
 				return
 			}
 			if !bytes.Equal(checksum[:], wallet.Checksum[:]) {
-				return gui.Error("Wallet Checksum is not matching", errors.New("Wallet checksum mismatch !"))
+				return errors.New("Wallet checksum mismatch !")
 			}
 
 			wallet.updateWallet()
 			gui.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
 
 		} else {
-			gui.Fatal("Error loading wallet ?")
+			errors.New("Error loading wallet ?")
 		}
 		return nil
 	})

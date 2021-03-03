@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
@@ -11,42 +10,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"strconv"
-	"sync"
 )
-
-type EncryptedVersion int
-
-const (
-	PlainText EncryptedVersion = iota
-	Encrypted
-)
-
-func (e EncryptedVersion) String() string {
-	switch e {
-	case PlainText:
-		return "PlainText"
-	case Encrypted:
-		return "Encrypted"
-	default:
-		return "Unknown EncryptedVersion"
-	}
-}
-
-type Wallet struct {
-	Encrypted EncryptedVersion
-
-	Version   Version
-	Mnemonic  string
-	Seed      [32]byte
-	SeedIndex uint32
-	Count     int
-
-	Addresses []*WalletAddress `json:"-"` //stored separately
-	Checksum  [4]byte          `json:"-"`
-
-	// forging creates multiple threads and it will read the wallet.Addresses
-	sync.RWMutex `json:"-"`
-}
 
 func (wallet *Wallet) addNewAddress() (err error) {
 
@@ -89,7 +53,7 @@ func (wallet *Wallet) addNewAddress() (err error) {
 	go forging.ForgingW.AddWallet(publicKey, privateKey.Key, publicKeyHash)
 
 	wallet.updateWallet()
-	return wallet.saveWallet()
+	return wallet.saveWallet(wallet.Count-1, wallet.Count, -1)
 }
 
 func (wallet *Wallet) removeAddress(index int) error {
@@ -109,7 +73,7 @@ func (wallet *Wallet) removeAddress(index int) error {
 	go forging.ForgingW.RemoveWallet(removing.PublicKey)
 
 	wallet.updateWallet()
-	return wallet.saveWallet()
+	return wallet.saveWallet(index, wallet.Count, wallet.Count)
 }
 
 func (wallet *Wallet) showPrivateKey(index int) (*[32]byte, error) {
@@ -161,20 +125,11 @@ func (wallet *Wallet) updateWallet() {
 
 func (wallet *Wallet) computeChecksum() (checksum [4]byte, err error) {
 
-	writer := helpers.NewBufferWriter()
-
 	var data []byte
-	if data, err = json.Marshal(wallet); err != nil {
+	if data, err = helpers.GetJSON(wallet, "Checksum"); err != nil {
 		return
 	}
-	writer.Write(data)
 
-	for _, walletAddress := range wallet.Addresses {
-		data, err = json.Marshal(walletAddress)
-		writer.Write(data)
-	}
-
-	data = writer.Bytes()
 	out := crypto.RIPEMD(data)[0:helpers.ChecksumSize]
 	copy(checksum[:], out[:])
 
