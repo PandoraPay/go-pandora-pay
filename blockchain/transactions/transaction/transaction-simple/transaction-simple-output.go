@@ -10,7 +10,7 @@ type TransactionSimpleOutput struct {
 
 func (vout *TransactionSimpleOutput) Serialize(writer *helpers.BufferWriter) {
 	writer.Write(vout.PublicKeyHash[:])
-	writer.WriteUint64(vout.Amount)
+	writer.WriteUvarint(vout.Amount)
 	writer.WriteToken(vout.Token[:])
 }
 

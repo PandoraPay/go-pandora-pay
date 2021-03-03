@@ -10,8 +10,8 @@ import (
 
 type TransactionSimple struct {
 	Nonce uint64
-	Vin   []*TransactionSimpleInput
-	Vout  []*TransactionSimpleOutput
+	Vin   []TransactionSimpleInput
+	Vout  []TransactionSimpleOutput
 	Extra interface{}
 }
 
@@ -29,15 +29,16 @@ func (tx *TransactionSimple) VerifySignature(hash helpers.Hash) bool {
 }
 
 func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignature bool, txType transaction_type.TransactionType) {
-	writer.WriteUint64(tx.Nonce)
-	writer.WriteUint64(uint64(len(tx.Vin)))
+	writer.WriteUvarint(tx.Nonce)
+
+	writer.WriteUvarint(uint64(len(tx.Vin)))
 	for _, vin := range tx.Vin {
 		vin.Serialize(writer, inclSignature)
 	}
 
 	//vout only TransactionTypeSimple
 	if txType == transaction_type.TransactionTypeSimple {
-		writer.WriteUint64(uint64(len(tx.Vout)))
+		writer.WriteUvarint(uint64(len(tx.Vout)))
 		for _, vout := range tx.Vout {
 			vout.Serialize(writer)
 		}
@@ -52,16 +53,17 @@ func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignatu
 
 func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader, txType transaction_type.TransactionType) (err error) {
 
+	var n uint64
+
 	if tx.Nonce, err = reader.ReadUvarint(); err != nil {
 		return
 	}
-	var n uint64
 
 	if n, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 	for i := 0; i < int(n); i++ {
-		vin := new(TransactionSimpleInput)
+		vin := TransactionSimpleInput{}
 		if err = vin.Deserialize(reader); err != nil {
 			return
 		}
@@ -74,7 +76,7 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader, txType tr
 			return
 		}
 		for i := 0; i < int(n); i++ {
-			vout := new(TransactionSimpleOutput)
+			vout := TransactionSimpleOutput{}
 			if err = vout.Deserialize(reader); err != nil {
 				return
 			}
@@ -85,8 +87,9 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader, txType tr
 	switch txType {
 	case transaction_type.TransactionTypeSimple:
 	case transaction_type.TransactionTypeSimpleUnstake:
-		extra := tx.Extra.(transaction_simple_unstake.TransactionSimpleUnstake)
+		extra := transaction_simple_unstake.TransactionSimpleUnstake{}
 		err = extra.Deserialize(reader)
+		tx.Extra = extra
 	default:
 		err = errors.New("Invalid txType")
 	}

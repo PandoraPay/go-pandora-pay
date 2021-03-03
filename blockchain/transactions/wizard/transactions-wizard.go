@@ -29,7 +29,7 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 
 	var privateKeys []addresses.PrivateKey
 
-	var vin []*transaction_simple.TransactionSimpleInput
+	var vin []transaction_simple.TransactionSimpleInput
 	for i := 0; i < len(keys); i++ {
 
 		privateKeys = append(privateKeys, addresses.PrivateKey{Key: keys[i]})
@@ -39,15 +39,14 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 			return
 		}
 
-		in := transaction_simple.TransactionSimpleInput{
+		vin = append(vin, transaction_simple.TransactionSimpleInput{
 			Amount:    amounts[i],
 			PublicKey: publicKey,
 			Token:     tokens[i],
-		}
-		vin = append(vin, &in)
+		})
 	}
 
-	var vout []*transaction_simple.TransactionSimpleOutput
+	var vout []transaction_simple.TransactionSimpleOutput
 	for i := 0; i < len(dsts); i++ {
 
 		var outAddress *addresses.Address
@@ -63,12 +62,11 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 			publicKeyHash = crypto.ComputePublicKeyHash(*helpers.Byte33(outAddress.PublicKey))
 		}
 
-		out := transaction_simple.TransactionSimpleOutput{
+		vout = append(vout, transaction_simple.TransactionSimpleOutput{
 			PublicKeyHash: publicKeyHash,
 			Amount:        dstsAmounts[i],
 			Token:         dstsTokens[i],
-		}
-		vout = append(vout, &out)
+		})
 	}
 
 	tx = &transaction.Transaction{
@@ -121,7 +119,7 @@ func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount, fee, computeFeeB
 			Extra: transaction_simple_unstake.TransactionSimpleUnstake{
 				UnstakeAmount: unstakeAmount,
 			},
-			Vin: []*transaction_simple.TransactionSimpleInput{
+			Vin: []transaction_simple.TransactionSimpleInput{
 				{
 					Amount:    fee,
 					PublicKey: publicKey,

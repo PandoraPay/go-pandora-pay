@@ -129,11 +129,11 @@ func (blk *Block) SerializeBlock(kernelHash bool, inclSignature bool) []byte {
 
 	if !kernelHash {
 
-		writer.WriteUint64(blk.StakingAmount)
+		writer.WriteUvarint(blk.StakingAmount)
 		writer.Write(blk.DelegatedPublicKey[:])
 	}
 
-	writer.WriteUint64(blk.Timestamp)
+	writer.WriteUvarint(blk.Timestamp)
 
 	writer.Write(blk.Forger[:])
 

@@ -111,15 +111,15 @@ func (account *Account) refreshDelegatedStake(blockHeight uint64) {
 func (account *Account) Serialize() []byte {
 
 	writer := helpers.NewBufferWriter()
-	writer.WriteUint64(account.Version)
-	writer.WriteUint64(account.Nonce)
-	writer.WriteUint64(uint64(len(account.Balances)))
+	writer.WriteUvarint(account.Version)
+	writer.WriteUvarint(account.Nonce)
+	writer.WriteUvarint(uint64(len(account.Balances)))
 
 	for i := 0; i < len(account.Balances); i++ {
 		account.Balances[i].Serialize(writer)
 	}
 
-	writer.WriteUint64(account.DelegatedStakeVersion)
+	writer.WriteUvarint(account.DelegatedStakeVersion)
 
 	if account.DelegatedStakeVersion == 1 {
 		account.DelegatedStake.Serialize(writer)

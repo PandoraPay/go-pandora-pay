@@ -20,7 +20,7 @@ func (writer *BufferWriter) Write(value []byte) {
 
 func (writer *BufferWriter) WriteString(string string) {
 	value := []byte(string)
-	writer.WriteUint64(uint64(len(value)))
+	writer.WriteUvarint(uint64(len(value)))
 	writer.array = append(writer.array, value)
 	writer.len += len(value)
 }
@@ -39,7 +39,7 @@ func (writer *BufferWriter) WriteByte(value byte) {
 	writer.len += 1
 }
 
-func (writer *BufferWriter) WriteUint64(value uint64) {
+func (writer *BufferWriter) WriteUvarint(value uint64) {
 
 	n := binary.PutUvarint(writer.temp, value)
 	buf := make([]byte, n)

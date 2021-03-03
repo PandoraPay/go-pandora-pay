@@ -62,7 +62,7 @@ func (token *Token) Serialize() []byte {
 
 	writer := helpers.NewBufferWriter()
 
-	writer.WriteUint64(token.Version)
+	writer.WriteUvarint(token.Version)
 
 	writer.WriteBool(token.CanUpgrade)
 	writer.WriteBool(token.CanMint)
@@ -73,8 +73,8 @@ func (token *Token) Serialize() []byte {
 	writer.WriteBool(token.CanFreeze)
 	writer.WriteByte(token.DecimalSeparator)
 
-	writer.WriteUint64(token.MaxSupply)
-	writer.WriteUint64(token.Supply)
+	writer.WriteUvarint(token.MaxSupply)
+	writer.WriteUvarint(token.Supply)
 
 	writer.Write(token.Key[:])
 	writer.Write(token.SupplyKey[:])

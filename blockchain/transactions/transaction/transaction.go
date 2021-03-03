@@ -38,8 +38,8 @@ func (tx *Transaction) ComputeHash() helpers.Hash {
 func (tx *Transaction) Serialize(inclSignature bool) []byte {
 	writer := helpers.NewBufferWriter()
 
-	writer.WriteUint64(tx.Version)
-	writer.WriteUint64(uint64(tx.TxType))
+	writer.WriteUvarint(tx.Version)
+	writer.WriteUvarint(uint64(tx.TxType))
 
 	switch tx.TxType {
 	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
@@ -70,9 +70,9 @@ func (tx *Transaction) Deserialize(buf []byte) (err error) {
 
 	switch tx.TxType {
 	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
-		txBase := new(transaction_simple.TransactionSimple)
-		err = txBase.Deserialize(reader, tx.TxType)
-		tx.TxBase = txBase
+		base := transaction_simple.TransactionSimple{}
+		err = base.Deserialize(reader, tx.TxType)
+		tx.TxBase = base
 	default:
 		err = errors.New("Transaction type is invalid")
 	}

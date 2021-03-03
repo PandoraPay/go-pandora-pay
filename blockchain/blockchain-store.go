@@ -77,10 +77,10 @@ func (chain *Blockchain) saveTotalDifficultyExtra(bucket *bolt.Bucket) error {
 	key := []byte("totalDifficulty" + strconv.FormatUint(chain.Height, 10))
 
 	writer := helpers.NewBufferWriter()
-	writer.WriteUint64(chain.Timestamp)
+	writer.WriteUvarint(chain.Timestamp)
 
 	bytes := chain.BigTotalDifficulty.Bytes()
-	writer.WriteUint64(uint64(len(bytes)))
+	writer.WriteUvarint(uint64(len(bytes)))
 	writer.Write(bytes)
 
 	return bucket.Put(key, writer.Bytes())

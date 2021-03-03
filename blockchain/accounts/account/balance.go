@@ -11,7 +11,7 @@ type Balance struct {
 
 func (balance *Balance) Serialize(writer *helpers.BufferWriter) {
 
-	writer.WriteUint64(balance.Amount)
+	writer.WriteUvarint(balance.Amount)
 	writer.WriteToken(balance.Token)
 
 }

@@ -51,7 +51,7 @@ func (a *Address) EncodeAddr() (string, error) {
 		return "", errors.New("Invalid network")
 	}
 
-	writer.WriteUint64(uint64(a.Version))
+	writer.WriteUvarint(uint64(a.Version))
 
 	writer.Write(a.PublicKey)
 
@@ -61,7 +61,7 @@ func (a *Address) EncodeAddr() (string, error) {
 		writer.Write(a.PaymentID)
 	}
 	if a.IsIntegratedAmount() {
-		writer.WriteUint64(a.Amount)
+		writer.WriteUvarint(a.Amount)
 	}
 
 	buffer := writer.Bytes()

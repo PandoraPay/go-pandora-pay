@@ -15,8 +15,8 @@ type DelegatedStakePending struct {
 
 func (delegatedStakePending *DelegatedStakePending) Serialize(writer *helpers.BufferWriter) {
 
-	writer.WriteUint64(delegatedStakePending.StakePending)
-	writer.WriteUint64(delegatedStakePending.StakePendingHeight)
+	writer.WriteUvarint(delegatedStakePending.StakePending)
+	writer.WriteUvarint(delegatedStakePending.StakePendingHeight)
 
 }
 

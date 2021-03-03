@@ -10,8 +10,8 @@ type BlockHeader struct {
 }
 
 func (blockHeader *BlockHeader) Serialize(writer *helpers.BufferWriter) {
-	writer.WriteUint64(blockHeader.Version)
-	writer.WriteUint64(blockHeader.Height)
+	writer.WriteUvarint(blockHeader.Version)
+	writer.WriteUvarint(blockHeader.Height)
 }
 
 func (blockHeader *BlockHeader) Deserialize(reader *helpers.BufferReader) (err error) {

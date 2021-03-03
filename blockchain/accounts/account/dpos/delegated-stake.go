@@ -26,15 +26,15 @@ func (delegatedStake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
 
 	writer.Write(delegatedStake.DelegatedPublicKey[:])
 
-	writer.WriteUint64(delegatedStake.StakeAvailable)
+	writer.WriteUvarint(delegatedStake.StakeAvailable)
 
-	writer.WriteUint64(delegatedStake.UnstakeAmount)
+	writer.WriteUvarint(delegatedStake.UnstakeAmount)
 
 	if delegatedStake.UnstakeAmount > 0 {
-		writer.WriteUint64(delegatedStake.UnstakeHeight)
+		writer.WriteUvarint(delegatedStake.UnstakeHeight)
 	}
 
-	writer.WriteUint64(uint64(len(delegatedStake.StakesPending)))
+	writer.WriteUvarint(uint64(len(delegatedStake.StakesPending)))
 
 	for _, stakePending := range delegatedStake.StakesPending {
 		stakePending.Serialize(writer)

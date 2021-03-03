@@ -7,7 +7,7 @@ type TransactionSimpleUnstake struct {
 }
 
 func (tx *TransactionSimpleUnstake) Serialize(writer *helpers.BufferWriter) {
-	writer.WriteUint64(tx.UnstakeAmount)
+	writer.WriteUvarint(tx.UnstakeAmount)
 }
 
 func (tx *TransactionSimpleUnstake) Deserialize(reader *helpers.BufferReader) (err error) {

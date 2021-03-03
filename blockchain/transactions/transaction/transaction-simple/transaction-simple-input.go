@@ -13,7 +13,7 @@ type TransactionSimpleInput struct {
 
 func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter, inclSignature bool) {
 	writer.Write(vin.PublicKey[:])
-	writer.WriteUint64(vin.Amount)
+	writer.WriteUvarint(vin.Amount)
 	if inclSignature {
 		writer.Write(vin.Signature[:])
 	}
