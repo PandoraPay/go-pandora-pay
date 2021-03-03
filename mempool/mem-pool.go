@@ -12,20 +12,21 @@ var FeesPerByteAccepted map[string]uint64
 
 type MemPoolTx struct {
 	Tx         *transaction.Transaction
+	Height     uint64
 	FeePerByte uint64
 	FeeToken   []byte
 }
 
-type MemPoolType struct {
+type MemPoolStruct struct {
 	txs          sync.Map
 	sortedByFees []helpers.Hash
 
 	sync.Mutex
 }
 
-var MemPool MemPoolType
+var MemPool MemPoolStruct
 
-func (mempool *MemPoolType) AddTxToMemPool(tx *transaction.Transaction) (result bool) {
+func (mempool *MemPoolStruct) AddTxToMemPool(tx *transaction.Transaction, height uint64) (result bool) {
 
 	var err error
 
@@ -42,28 +43,52 @@ func (mempool *MemPoolType) AddTxToMemPool(tx *transaction.Transaction) (result 
 		return false
 	}
 	size := uint64(len(tx.Serialize(true)))
-	var selectedFeeToken string
+	var selectedFeeToken *string
 	for token, feePerByteAccepted := range FeesPerByteAccepted {
 		if fees[token] != 0 {
 			feePerByte := fees[token] / size
 			if feePerByte >= feePerByteAccepted {
-				selectedFeeToken = token
+				selectedFeeToken = &token
 				break
 			}
 		}
 	}
-	if selectedFeeToken == "" {
+	if selectedFeeToken == nil {
 		return
 	}
 
 	object := MemPoolTx{
 		Tx:         tx,
-		FeePerByte: fees[selectedFeeToken] / size,
-		FeeToken:   []byte(selectedFeeToken),
+		Height:     height,
+		FeePerByte: fees[*selectedFeeToken] / size,
+		FeeToken:   []byte(*selectedFeeToken),
 	}
+
 	mempool.txs.Store(hash, object)
 
 	return true
+}
+
+func (mempool *MemPoolStruct) Exists(txId helpers.Hash) bool {
+	if _, exists := mempool.txs.Load(txId); exists {
+		return true
+	}
+	return false
+}
+
+func (mempool *MemPoolStruct) Delete(txId helpers.Hash) (tx *transaction.Transaction) {
+
+	var exists bool
+	var objInterface interface{}
+	if objInterface, exists = mempool.txs.Load(txId); exists {
+		return nil
+	}
+
+	object := objInterface.(*MemPoolTx)
+	tx = object.Tx
+	mempool.txs.Delete(txId)
+
+	return
 }
 
 func InitMemPool() (err error) {

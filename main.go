@@ -72,7 +72,7 @@ func main() {
 		gui.Fatal("Error initializing Database", err)
 	}
 
-	if err = wallet.WalletInit(); err != nil {
+	if globals.Data["wallet"], err = wallet.WalletInit(); err != nil {
 		gui.Fatal("Error initializing Wallet", err)
 	}
 

@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
@@ -13,26 +14,46 @@ import (
 	"sync"
 )
 
+type EncryptedVersion int
+
+const (
+	PlainText EncryptedVersion = iota
+	Encrypted
+)
+
+func (e EncryptedVersion) String() string {
+	switch e {
+	case PlainText:
+		return "PlainText"
+	case Encrypted:
+		return "Encrypted"
+	default:
+		return "Unknown EncryptedVersion"
+	}
+}
+
 type Wallet struct {
+	Encrypted EncryptedVersion
+
 	Version   Version
 	Mnemonic  string
 	Seed      [32]byte
 	SeedIndex uint32
 	Count     int
-	Addresses []*WalletAddress `json:"-"`
+
+	Addresses []*WalletAddress `json:"-"` //stored separately
+	Checksum  [4]byte          `json:"-"`
 
 	// forging creates multiple threads and it will read the wallet.Addresses
 	sync.RWMutex `json:"-"`
 }
 
-var W Wallet
+func (wallet *Wallet) addNewAddress() (err error) {
 
-func (W *Wallet) addNewAddress() (err error) {
-
-	masterKey, _ := bip32.NewMasterKey(W.Seed[:])
+	masterKey, _ := bip32.NewMasterKey(wallet.Seed[:])
 
 	var key *bip32.Key
-	if key, err = masterKey.NewChildKey(W.SeedIndex); err != nil {
+	if key, err = masterKey.NewChildKey(wallet.SeedIndex); err != nil {
 		gui.Fatal("Couldn't derivate the marker key", err)
 	}
 
@@ -50,62 +71,62 @@ func (W *Wallet) addNewAddress() (err error) {
 
 	publicKeyHash := crypto.ComputePublicKeyHash(publicKey)
 
-	W.Lock()
-	defer W.Unlock()
+	wallet.Lock()
+	defer wallet.Unlock()
 	walletAddress := WalletAddress{
-		"Addr " + strconv.Itoa(W.Count),
+		"Addr " + strconv.Itoa(wallet.Count),
 		&privateKey,
 		publicKey,
 		publicKeyHash,
 		address,
-		W.SeedIndex,
+		wallet.SeedIndex,
 	}
 
-	W.Addresses = append(W.Addresses, &walletAddress)
-	W.Count += 1
-	W.SeedIndex += 1
+	wallet.Addresses = append(wallet.Addresses, &walletAddress)
+	wallet.Count += 1
+	wallet.SeedIndex += 1
 
 	go forging.ForgingW.AddWallet(publicKey, privateKey.Key, publicKeyHash)
 
-	updateWallet()
-	return saveWallet()
+	wallet.updateWallet()
+	return wallet.saveWallet()
 }
 
-func (W *Wallet) removeAddress(index int) error {
+func (wallet *Wallet) removeAddress(index int) error {
 
-	W.Lock()
-	defer W.Unlock()
+	wallet.Lock()
+	defer wallet.Unlock()
 
-	if index < 0 || index > len(W.Addresses) {
+	if index < 0 || index > len(wallet.Addresses) {
 		return errors.New("Invalid Address Index")
 	}
 
-	removing := W.Addresses[index]
+	removing := wallet.Addresses[index]
 
-	W.Addresses = append(W.Addresses[:index], W.Addresses[index+1:]...)
-	W.Count -= 1
+	wallet.Addresses = append(wallet.Addresses[:index], wallet.Addresses[index+1:]...)
+	wallet.Count -= 1
 
 	go forging.ForgingW.RemoveWallet(removing.PublicKey)
 
-	updateWallet()
-	return saveWallet()
+	wallet.updateWallet()
+	return wallet.saveWallet()
 }
 
-func (W *Wallet) showPrivateKey(index int) (*[32]byte, error) {
+func (wallet *Wallet) showPrivateKey(index int) (*[32]byte, error) {
 
-	W.RLock()
-	defer W.RUnlock()
+	wallet.RLock()
+	defer wallet.RUnlock()
 
-	if index < 0 || index > len(W.Addresses) {
+	if index < 0 || index > len(wallet.Addresses) {
 		return nil, errors.New("Invalid Address Index")
 	}
-	return &W.Addresses[index].PrivateKey.Key, nil
+	return &wallet.Addresses[index].PrivateKey.Key, nil
 }
 
-func (W *Wallet) createSeed() (err error) {
+func (wallet *Wallet) createSeed() (err error) {
 
-	W.Lock()
-	defer W.Unlock()
+	wallet.Lock()
+	defer wallet.Unlock()
 
 	var entropy []byte
 	if entropy, err = bip39.NewEntropy(256); err != nil {
@@ -117,23 +138,45 @@ func (W *Wallet) createSeed() (err error) {
 		return gui.Error("Mnemonic couldn't be created", err)
 	}
 
-	W.Mnemonic = mnemonic
+	wallet.Mnemonic = mnemonic
 
 	// Generate a Bip32 HD wallet for the mnemonic and a user supplied password
 	seed := bip39.NewSeed(mnemonic, "SEED Secret Passphrase")
-	W.Seed = *helpers.Byte32(seed)
+	wallet.Seed = *helpers.Byte32(seed)
 
 	return nil
 }
 
-func (W *Wallet) createEmptyWallet() error {
-	if err := W.createSeed(); err != nil {
+func (wallet *Wallet) createEmptyWallet() error {
+	if err := wallet.createSeed(); err != nil {
 		return gui.Error("Error creating seed", err)
 	}
-	return W.addNewAddress()
+	return wallet.addNewAddress()
 }
 
-func updateWallet() {
-	gui.InfoUpdate("Wallet", wSaved.Encrypted.String())
-	gui.InfoUpdate("Wallet Addrs", strconv.Itoa(W.Count))
+func (wallet *Wallet) updateWallet() {
+	gui.InfoUpdate("Wallet", wallet.Encrypted.String())
+	gui.InfoUpdate("Wallet Addrs", strconv.Itoa(wallet.Count))
+}
+
+func (wallet *Wallet) computeChecksum() (checksum [4]byte, err error) {
+
+	writer := helpers.NewBufferWriter()
+
+	var data []byte
+	if data, err = json.Marshal(wallet); err != nil {
+		return
+	}
+	writer.Write(data)
+
+	for _, walletAddress := range wallet.Addresses {
+		data, err = json.Marshal(walletAddress)
+		writer.Write(data)
+	}
+
+	data = writer.Bytes()
+	out := crypto.RIPEMD(data)[0:helpers.ChecksumSize]
+	copy(checksum[:], out[:])
+
+	return
 }

@@ -49,15 +49,17 @@ Status of Blockchain implementation:
     - [ ] Creation
     - [ ] Update  
 - [ ] Transactions
-    - [ ] Simple Transactions
-    - [ ] Transaction Builder
+    - [x] Transaction Wizard
+    - [x] Simple Transactions
+    - [x] Unstake Transaction
+    - [ ] Delegate Stake    
     - [ ] Zether Deposit Transactions
     - [ ] Zether Withdraw Transactions
     - [ ] Zether Transfer Transactions
     - [ ] Multi Threading signature verification
 - [ ] Mem Pool
     - [ ] Saving/Loading
-    - [ ] Inserting Txs
+    - [X] Inserting Txs
     - [ ] Network propagation
 - [ ] Network
     - [ ] HTTP server

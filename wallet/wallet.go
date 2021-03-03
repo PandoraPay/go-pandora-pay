@@ -19,17 +19,19 @@ func (e Version) String() string {
 	}
 }
 
-func WalletInit() (err error) {
+func WalletInit() (wallet *Wallet, err error) {
 
-	err = loadWallet()
+	wallet = new(Wallet)
+
+	err = wallet.loadWallet()
 	if err != nil && err.Error() == "Wallet doesn't exist" {
-		err = W.createEmptyWallet()
+		err = wallet.createEmptyWallet()
 	}
 	if err != nil {
 		return
 	}
 
-	initWalletCLI()
+	initWalletCLI(wallet)
 
 	gui.Log("Initialized Wallet")
 	return
