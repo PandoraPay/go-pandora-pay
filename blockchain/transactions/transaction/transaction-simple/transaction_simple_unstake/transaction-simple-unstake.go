@@ -3,16 +3,16 @@ package transaction_simple_unstake
 import "pandora-pay/helpers"
 
 type TransactionSimpleUnstake struct {
-	Fee uint64
+	UnstakeAmount uint64
 }
 
 func (tx *TransactionSimpleUnstake) Serialize(writer *helpers.BufferWriter) {
-	writer.WriteUint64(tx.Fee)
+	writer.WriteUint64(tx.UnstakeAmount)
 }
 
 func (tx *TransactionSimpleUnstake) Deserialize(reader *helpers.BufferReader) (err error) {
 
-	if tx.Fee, err = reader.ReadUvarint(); err != nil {
+	if tx.UnstakeAmount, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 

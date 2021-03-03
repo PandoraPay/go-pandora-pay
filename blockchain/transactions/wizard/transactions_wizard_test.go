@@ -13,7 +13,7 @@ func TestCreateSimpleTx(t *testing.T) {
 	dstAddressEncoded, _ := dstAddress.EncodeAddr()
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateSimpleTx(0, [][32]byte{privateKey.Key}, []uint64{1252}, [][]byte{{0}}, []string{dstAddressEncoded}, []uint64{1252}, [][]byte{{0}})
+	tx, err := CreateSimpleTx(0, [][32]byte{privateKey.Key}, []uint64{1252}, [][]byte{{0}}, []string{dstAddressEncoded}, []uint64{1252}, [][]byte{{0}}, 0, 1)
 	if err != nil {
 		t.Errorf("error creating simple tx")
 	}
@@ -27,7 +27,7 @@ func TestCreateSimpleTx(t *testing.T) {
 func TestCreateUnstakeTx(t *testing.T) {
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateUnstakeTx(0, privateKey.Key, 534)
+	tx, err := CreateUnstakeTx(0, privateKey.Key, 534, 0, 1)
 	if err != nil {
 		t.Errorf("error creating unstake")
 	}

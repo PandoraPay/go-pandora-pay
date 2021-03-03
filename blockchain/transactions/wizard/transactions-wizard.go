@@ -7,15 +7,17 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction_simple_unstake"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	"pandora-pay/config/fees"
 	"pandora-pay/crypto"
 	"pandora-pay/helpers"
 )
 
-func CreateSimpleTxOneInOneOut(nonce uint64, key [32]byte, amount uint64, token []byte, dst string, dstAmount uint64) (tx *transaction.Transaction, err error) {
-	return CreateSimpleTx(nonce, [][32]byte{key}, []uint64{amount}, [][]byte{token}, []string{dst}, []uint64{dstAmount}, [][]byte{token})
+func CreateSimpleTxOneInOneOut(nonce uint64, key [32]byte, amount uint64, token []byte, dst string, dstAmount uint64, fee, computeFeeBlockHeight uint64) (tx *transaction.Transaction, err error) {
+	return CreateSimpleTx(nonce, [][32]byte{key}, []uint64{amount}, [][]byte{token}, []string{dst}, []uint64{dstAmount}, [][]byte{token}, fee, computeFeeBlockHeight)
 }
 
-func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte) (tx *transaction.Transaction, err error) {
+func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, fee, computeFeeBlockHeight uint64) (tx *transaction.Transaction, err error) {
+
 	if len(keys) != len(amounts) || len(amounts) != len(tokens) || len(amounts) == 0 {
 		err = errors.New("Input lengths are a mismatch")
 		return
@@ -79,6 +81,15 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 		},
 	}
 
+	if computeFeeBlockHeight > 0 && fee == 0 {
+		oldFee := uint64(1)
+		for oldFee != fee {
+			fee = fees.ComputeTxFees(uint64(len(tx.Serialize(true))), computeFeeBlockHeight)
+			oldFee = fee
+			tx.TxBase.(transaction_simple.TransactionSimple).Vin[0].Amount = amounts[0] + fee
+		}
+	}
+
 	hash := tx.SerializeForSigning()
 	for i, privateKey := range privateKeys {
 
@@ -94,7 +105,7 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 	return
 }
 
-func CreateUnstakeTx(nonce uint64, key [32]byte, amount uint64) (tx *transaction.Transaction, err error) {
+func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount, fee, computeFeeBlockHeight uint64) (tx *transaction.Transaction, err error) {
 
 	privateKey := addresses.PrivateKey{Key: key}
 	var publicKey [33]byte
@@ -108,15 +119,24 @@ func CreateUnstakeTx(nonce uint64, key [32]byte, amount uint64) (tx *transaction
 		TxBase: transaction_simple.TransactionSimple{
 			Nonce: nonce,
 			Extra: transaction_simple_unstake.TransactionSimpleUnstake{
-				Fee: 0,
+				UnstakeAmount: unstakeAmount,
 			},
 			Vin: []*transaction_simple.TransactionSimpleInput{
 				{
-					Amount:    amount,
+					Amount:    fee,
 					PublicKey: publicKey,
 				},
 			},
 		},
+	}
+
+	if computeFeeBlockHeight > 0 && fee == 0 {
+		oldFee := uint64(1)
+		for oldFee != fee {
+			fee = fees.ComputeTxFees(uint64(len(tx.Serialize(true))), computeFeeBlockHeight)
+			oldFee = fee
+			tx.TxBase.(transaction_simple.TransactionSimple).Vin[0].Amount = fee
+		}
 	}
 
 	hash := tx.SerializeForSigning()
