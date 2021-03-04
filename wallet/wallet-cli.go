@@ -72,8 +72,7 @@ func initWalletCLI(wallet *Wallet) {
 
 		str := <-gui.OutputReadString("Path to export")
 		if f, err = os.Create(str); err != nil {
-			err = errors.New("File can not be written")
-			return
+			return errors.New("File can not be written")
 		}
 		defer f.Close()
 
@@ -85,8 +84,7 @@ func initWalletCLI(wallet *Wallet) {
 		defer wallet.RUnlock()
 
 		if index < 0 {
-			err = errors.New("Invalid index")
-			return
+			return errors.New("Invalid index")
 		}
 
 		var marshal []byte
@@ -103,8 +101,7 @@ func initWalletCLI(wallet *Wallet) {
 		}
 
 		if _, err = fmt.Fprint(f, string(marshal)); err != nil {
-			err = errors.New("Error writing into file")
-			return
+			return errors.New("Error writing into file")
 		}
 
 		gui.Info("Exported successfully")

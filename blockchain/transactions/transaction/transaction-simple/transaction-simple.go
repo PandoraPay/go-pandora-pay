@@ -11,8 +11,8 @@ import (
 
 type TransactionSimple struct {
 	Nonce uint64
-	Vin   []TransactionSimpleInput
-	Vout  []TransactionSimpleOutput
+	Vin   []*TransactionSimpleInput
+	Vout  []*TransactionSimpleOutput
 	Extra interface{}
 }
 
@@ -28,6 +28,7 @@ func (tx *TransactionSimple) ComputeFees(out map[string]uint64) (err error) {
 
 func (tx *TransactionSimple) ComputeVin(out map[string]uint64) error {
 	for _, vin := range tx.Vin {
+
 		token := string(vin.Token)
 		if math.MaxUint64-out[token] <= vin.Amount {
 			return errors.New("Vin exceeded MaxUint64")
@@ -129,7 +130,7 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader, txType tr
 		return
 	}
 	for i := 0; i < int(n); i++ {
-		vin := TransactionSimpleInput{}
+		vin := &TransactionSimpleInput{}
 		if err = vin.Deserialize(reader); err != nil {
 			return
 		}
@@ -141,7 +142,7 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader, txType tr
 		return
 	}
 	for i := 0; i < int(n); i++ {
-		vout := TransactionSimpleOutput{}
+		vout := &TransactionSimpleOutput{}
 		if err = vout.Deserialize(reader); err != nil {
 			return
 		}

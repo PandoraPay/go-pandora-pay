@@ -51,8 +51,7 @@ func (blkComplete *BlockComplete) Deserialize(buf []byte) (err error) {
 	reader := helpers.NewBufferReader(buf)
 
 	if uint64(len(buf)) > config.BLOCK_MAX_SIZE {
-		err = errors.New("COMPLETE BLOCK EXCEEDS MAX SIZE")
-		return
+		return errors.New("COMPLETE BLOCK EXCEEDS MAX SIZE")
 	}
 
 	if err = blkComplete.Block.Deserialize(reader); err != nil {

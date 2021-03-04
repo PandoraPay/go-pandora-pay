@@ -97,9 +97,9 @@ func (delegatedStake *DelegatedStake) RefreshDelegatedStake(blockHeight uint64) 
 func (delegatedStake *DelegatedStake) GetDelegatedStakeAvailable(blockHeight uint64) (result uint64) {
 
 	result = delegatedStake.StakeAvailable
-	for _, stakePending := range delegatedStake.StakesPending {
-		if stakePending.StakePendingHeight >= blockHeight {
-			result += stakePending.StakePending
+	for i := range delegatedStake.StakesPending {
+		if delegatedStake.StakesPending[i].StakePendingHeight >= blockHeight {
+			result += delegatedStake.StakesPending[i].StakePending
 		}
 	}
 

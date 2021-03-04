@@ -21,9 +21,7 @@ func (tx *Transaction) ComputeFees() (fees map[string]uint64, err error) {
 	switch tx.TxType {
 	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
 		base := tx.TxBase.(transaction_simple.TransactionSimple)
-		if err = base.ComputeFees(fees); err != nil {
-			return
-		}
+		err = base.ComputeFees(fees)
 	default:
 		err = errors.New("Invalid type")
 	}

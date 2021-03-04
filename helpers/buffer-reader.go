@@ -103,7 +103,6 @@ func (reader *BufferReader) ReadToken() (out []byte, err error) {
 		out, err = reader.ReadBytes(20)
 	} else {
 		err = errors.New("invalid token type")
-		return
 	}
 
 	return

@@ -15,7 +15,7 @@ func TestCreateSimpleTx(t *testing.T) {
 	dstAddressEncoded, _ := dstAddress.EncodeAddr()
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateSimpleTx(0, [][32]byte{privateKey.Key}, []uint64{1252}, [][]byte{{}}, []string{dstAddressEncoded}, []uint64{1250}, [][]byte{{}}, -1, []byte{})
+	tx, err := CreateSimpleTx(0, [][32]byte{privateKey.Key}, []uint64{1252}, [][]byte{{}}, []string{dstAddressEncoded}, []uint64{1250}, [][]byte{{}}, 0, []byte{})
 	assert.NotNil(t, tx, "error creating simple tx")
 	assert.Nil(t, err, "error creating simple tx")
 	assert.Nil(t, tx.Validate(), "error validating tx")
@@ -56,6 +56,6 @@ func TestCreateUnstakeTx(t *testing.T) {
 
 	fees, err := tx.ComputeFees()
 	assert.Nil(t, err, "Error validating fees")
-	assert.Equal(t, fees[string([]byte{})], uint64(2), "Fees were calculated invalid")
+	assert.Equal(t, fees[string([]byte{})] > uint64(100), true, "Fees were calculated invalid")
 
 }

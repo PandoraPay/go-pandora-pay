@@ -12,7 +12,10 @@ import (
 func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte) (err error) {
 
 	if feePerByte == -1 {
-		feePerByte = fees.FEE_PER_BYTE_DEFAULT
+		feePerByte = int(fees.FEES_PER_BYTE[string(feeToken)])
+		if feePerByte == 0 {
+			return errors.New("The token will most like not be accepted by other miners")
+		}
 	}
 
 	if feePerByte != 0 {
@@ -20,28 +23,24 @@ func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte) (err e
 		switch tx.TxType {
 		case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
 
-			var vinFee *transaction_simple.TransactionSimpleInput
 			for _, vin := range tx.TxBase.(transaction_simple.TransactionSimple).Vin {
 				if bytes.Equal(vin.Token, feeToken) {
-					vinFee = &vin
-					break
+
+					var initialAmount = vin.Amount
+
+					var fee uint64
+					oldFee := uint64(1)
+					for oldFee != fee {
+						fee = fees.ComputeTxFees(uint64(len(tx.Serialize(true))), uint64(feePerByte))
+						oldFee = fee
+						vin.Amount = initialAmount + fee
+					}
+
+					return
 				}
 			}
 
-			if vinFee == nil {
-				err = errors.New("There is no input to set the fee!")
-				return
-			}
-
-			var initialAmount = vinFee.Amount
-
-			var fee uint64
-			oldFee := uint64(1)
-			for oldFee != fee {
-				fee = fees.ComputeTxFees(uint64(len(tx.Serialize(true))), uint64(feePerByte))
-				oldFee = fee
-				vinFee.Amount = initialAmount + fee
-			}
+			return errors.New("There is no input to set the fee!")
 
 		}
 

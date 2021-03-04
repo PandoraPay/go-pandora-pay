@@ -2,13 +2,11 @@ package mempool
 
 import (
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/config"
+	"pandora-pay/config/fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"sync"
 )
-
-var FeesPerByteAccepted map[string]uint64
 
 type MemPoolTx struct {
 	Tx         *transaction.Transaction
@@ -36,16 +34,16 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 		return
 	}
 
-	var fees map[string]uint64
-	if fees, err = tx.ComputeFees(); err != nil {
+	var minerFees map[string]uint64
+	if minerFees, err = tx.ComputeFees(); err != nil {
 		return false
 	}
 	size := uint64(len(tx.Serialize(true)))
 	var selectedFeeToken *string
-	for token, feePerByteAccepted := range FeesPerByteAccepted {
-		if fees[token] != 0 {
-			feePerByte := fees[token] / size
-			if feePerByte >= feePerByteAccepted {
+	for token := range fees.FEES_PER_BYTE {
+		if minerFees[token] != 0 {
+			feePerByte := minerFees[token] / size
+			if feePerByte >= fees.FEES_PER_BYTE[token] {
 				selectedFeeToken = &token
 				break
 			}
@@ -58,7 +56,7 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 	object := MemPoolTx{
 		Tx:         tx,
 		Height:     height,
-		FeePerByte: fees[*selectedFeeToken] / size,
+		FeePerByte: minerFees[*selectedFeeToken] / size,
 		FeeToken:   []byte(*selectedFeeToken),
 	}
 
@@ -94,9 +92,6 @@ func InitMemPool() (mempool *MemPool, err error) {
 	gui.Log("MemPool init...")
 
 	mempool = new(MemPool)
-
-	FeesPerByteAccepted = make(map[string]uint64)
-	FeesPerByteAccepted[string(config.NATIVE_TOKEN)] = 10
 
 	return
 }

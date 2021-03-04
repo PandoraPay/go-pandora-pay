@@ -17,8 +17,8 @@ func GetJSON(obj interface{}, ignoreFields ...string) (out []byte, err error) {
 	toMap := map[string]interface{}{}
 	json.Unmarshal(toJson, &toMap)
 
-	for _, field := range ignoreFields {
-		delete(toMap, field)
+	for key := range ignoreFields {
+		delete(toMap, ignoreFields[key])
 	}
 
 	if toJson, err = json.Marshal(toMap); err != nil {

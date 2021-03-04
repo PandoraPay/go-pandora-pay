@@ -147,8 +147,7 @@ func (account *Account) Deserialize(buf []byte) (err error) {
 		return
 	}
 	if account.Version != 0 {
-		err = errors.New("Version is invalid")
-		return
+		return errors.New("Version is invalid")
 	}
 
 	if account.Nonce, err = reader.ReadUvarint(); err != nil {
@@ -172,8 +171,7 @@ func (account *Account) Deserialize(buf []byte) (err error) {
 		return
 	}
 	if account.DelegatedStakeVersion > 1 {
-		err = errors.New("Invalid DelegatedStakeVersion version")
-		return
+		return errors.New("Invalid DelegatedStakeVersion version")
 	}
 
 	if account.DelegatedStakeVersion == 1 {

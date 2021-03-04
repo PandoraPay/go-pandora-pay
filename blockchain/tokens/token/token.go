@@ -119,8 +119,7 @@ func (token *Token) Deserialize(buf []byte) (err error) {
 		return err
 	}
 	if token.DecimalSeparator > 10 {
-		err = errors.New("token decimal separator is invalid")
-		return
+		return errors.New("token decimal separator is invalid")
 	}
 	if token.MaxSupply, err = reader.ReadUvarint(); err != nil {
 		return err
@@ -141,23 +140,21 @@ func (token *Token) Deserialize(buf []byte) (err error) {
 		return
 	}
 	if len(token.Name) > 15 || len(token.Name) < 3 {
-		err = errors.New("token name length is invalid")
-		return
+		return errors.New("token name length is invalid")
 	}
 
 	if token.Ticker, err = reader.ReadString(); err != nil {
 		return err
 	}
 	if len(token.Ticker) > 7 || len(token.Ticker) < 2 {
-		err = errors.New("token ticker length is invalid")
-		return
+		return errors.New("token ticker length is invalid")
 	}
 
 	if token.Description, err = reader.ReadString(); err != nil {
 		return err
 	}
 	if len(token.Description) > 512 {
-		err = errors.New("token  description length is invalid")
+		return errors.New("token  description length is invalid")
 	}
 
 	return

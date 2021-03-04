@@ -102,8 +102,7 @@ func (hashMap *HashMap) Commit() (err error) {
 
 		key := []byte(k)
 		if len(key) != hashMap.KeyLength {
-			err = errors.New("KeyLength is invalid")
-			return
+			return errors.New("KeyLength is invalid")
 		}
 
 		if v.Status == "del" {

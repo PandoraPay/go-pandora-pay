@@ -28,7 +28,7 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 
 	var privateKeys []addresses.PrivateKey
 
-	var vin []transaction_simple.TransactionSimpleInput
+	var vin []*transaction_simple.TransactionSimpleInput
 	for i := 0; i < len(keys); i++ {
 
 		privateKeys = append(privateKeys, addresses.PrivateKey{Key: keys[i]})
@@ -38,14 +38,14 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 			return
 		}
 
-		vin = append(vin, transaction_simple.TransactionSimpleInput{
+		vin = append(vin, &transaction_simple.TransactionSimpleInput{
 			Amount:    amounts[i],
 			PublicKey: publicKey,
 			Token:     tokens[i],
 		})
 	}
 
-	var vout []transaction_simple.TransactionSimpleOutput
+	var vout []*transaction_simple.TransactionSimpleOutput
 	for i := 0; i < len(dsts); i++ {
 
 		var outAddress *addresses.Address
@@ -61,7 +61,7 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 			publicKeyHash = crypto.ComputePublicKeyHash(*helpers.Byte33(outAddress.PublicKey))
 		}
 
-		vout = append(vout, transaction_simple.TransactionSimpleOutput{
+		vout = append(vout, &transaction_simple.TransactionSimpleOutput{
 			PublicKeyHash: publicKeyHash,
 			Amount:        dstsAmounts[i],
 			Token:         dstsTokens[i],
@@ -78,7 +78,9 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 		},
 	}
 
-	setFee(tx, feePerByte, feeToken)
+	if err = setFee(tx, feePerByte, feeToken); err != nil {
+		return
+	}
 
 	hash := tx.SerializeForSigning()
 	for i, privateKey := range privateKeys {
@@ -111,7 +113,7 @@ func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount uint64, feePerByt
 			Extra: transaction_simple_unstake.TransactionSimpleUnstake{
 				UnstakeAmount: unstakeAmount,
 			},
-			Vin: []transaction_simple.TransactionSimpleInput{
+			Vin: []*transaction_simple.TransactionSimpleInput{
 				{
 					Amount:    0,
 					PublicKey: publicKey,
@@ -120,7 +122,9 @@ func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount uint64, feePerByt
 		},
 	}
 
-	setFee(tx, feePerByte, feeToken)
+	if err = setFee(tx, feePerByte, feeToken); err != nil {
+		return
+	}
 
 	hash := tx.SerializeForSigning()
 	var signature [65]byte
