@@ -5,7 +5,6 @@ import (
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/forging"
 	"pandora-pay/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -50,7 +49,7 @@ func (wallet *Wallet) addNewAddress() (err error) {
 	wallet.Count += 1
 	wallet.SeedIndex += 1
 
-	go forging.ForgingW.AddWallet(publicKey, privateKey.Key, publicKeyHash)
+	go wallet.forging.Wallet.AddWallet(publicKey, privateKey.Key, publicKeyHash)
 
 	wallet.updateWallet()
 	return wallet.saveWallet(wallet.Count-1, wallet.Count, -1)
@@ -70,7 +69,7 @@ func (wallet *Wallet) removeAddress(index int) error {
 	wallet.Addresses = append(wallet.Addresses[:index], wallet.Addresses[index+1:]...)
 	wallet.Count -= 1
 
-	go forging.ForgingW.RemoveWallet(removing.PublicKey)
+	go wallet.forging.Wallet.RemoveWallet(removing.PublicKey)
 
 	wallet.updateWallet()
 	return wallet.saveWallet(index, wallet.Count, wallet.Count)

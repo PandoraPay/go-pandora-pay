@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"pandora-pay/forging"
 	"pandora-pay/gui"
 	"sync"
 )
@@ -51,13 +52,17 @@ type Wallet struct {
 
 	Checksum [4]byte
 
+	forging *forging.Forging `json:"-"`
+
 	// forging creates multiple threads and it will read the wallet.Addresses
 	sync.RWMutex `json:"-"`
 }
 
-func WalletInit() (wallet *Wallet, err error) {
+func WalletInit(forging *forging.Forging) (wallet *Wallet, err error) {
 
-	wallet = &Wallet{}
+	wallet = &Wallet{
+		forging: forging,
+	}
 
 	err = wallet.loadWallet()
 	if err != nil && err.Error() == "Wallet doesn't exist" {

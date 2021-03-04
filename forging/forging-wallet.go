@@ -10,14 +10,14 @@ import (
 	"sync"
 )
 
-type forgingWallets struct {
-	addresses    []*forgingWalletAddress
-	addressesMap map[string]*forgingWalletAddress
+type ForgingWallet struct {
+	addresses    []*ForgingWalletAddress
+	addressesMap map[string]*ForgingWalletAddress
 
 	sync.RWMutex
 }
 
-type forgingWalletAddress struct {
+type ForgingWalletAddress struct {
 	delegatedPrivateKey *addresses.PrivateKey
 	delegatedPublicKey  [33]byte
 
@@ -26,11 +26,7 @@ type forgingWalletAddress struct {
 	account *account.Account
 }
 
-var ForgingW = forgingWallets{
-	addressesMap: make(map[string]*forgingWalletAddress),
-}
-
-func (w *forgingWallets) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte, pubKeyHash [20]byte) {
+func (w *ForgingWallet) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte, pubKeyHash [20]byte) {
 
 	w.Lock()
 	defer w.Unlock()
@@ -56,7 +52,7 @@ func (w *forgingWallets) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte
 			return
 		}
 
-		address := forgingWalletAddress{
+		address := ForgingWalletAddress{
 			&private,
 			publicKey,
 			publicKeyHash,
@@ -70,9 +66,10 @@ func (w *forgingWallets) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte
 
 }
 
-func (w *forgingWallets) UpdateBalanceChanges(accs *accounts.Accounts) {
+func (w *ForgingWallet) UpdateBalanceChanges(accs *accounts.Accounts) {
 
 	w.Lock()
+	defer w.Unlock()
 
 	for k, v := range accs.HashMap.Virtual {
 
@@ -89,10 +86,9 @@ func (w *forgingWallets) UpdateBalanceChanges(accs *accounts.Accounts) {
 
 	}
 
-	w.Unlock()
 }
 
-func (w *forgingWallets) RemoveWallet(delegatedPublicKey [33]byte) {
+func (w *ForgingWallet) RemoveWallet(delegatedPublicKey [33]byte) {
 
 	w.Lock()
 	defer w.Unlock()
@@ -106,7 +102,7 @@ func (w *forgingWallets) RemoveWallet(delegatedPublicKey [33]byte) {
 
 }
 
-func (w *forgingWallets) loadBalances() error {
+func (w *ForgingWallet) loadBalances() error {
 
 	w.Lock()
 	defer w.Unlock()

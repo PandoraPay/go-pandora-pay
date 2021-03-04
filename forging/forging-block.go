@@ -11,20 +11,20 @@ import (
 )
 
 //inside a thread
-func forge(threads, threadIndex int) {
+func forge(forging *Forging, threads, threadIndex int) {
 
 	buf := make([]byte, binary.MaxVarintLen64)
 
-	ForgingW.RLock()
-	defer ForgingW.RUnlock()
+	forging.Wallet.RLock()
+	defer forging.Wallet.RUnlock()
 	defer wg.Done()
 
-	height := Forging.BlkComplete.Block.Height
-	serialized := Forging.BlkComplete.Block.SerializeBlock(true, false)
-	n := binary.PutUvarint(buf, Forging.BlkComplete.Block.Timestamp)
+	height := forging.blkComplete.Block.Height
+	serialized := forging.blkComplete.Block.SerializeBlock(true, false)
+	n := binary.PutUvarint(buf, forging.blkComplete.Block.Timestamp)
 
 	serialized = serialized[:len(serialized)-n-20]
-	timestamp := Forging.BlkComplete.Block.Timestamp + 1
+	timestamp := forging.blkComplete.Block.Timestamp + 1
 
 	for atomic.LoadInt32(&forgingWorking) == 1 {
 
@@ -34,7 +34,7 @@ func forge(threads, threadIndex int) {
 		}
 
 		//forge with my wallets
-		for i, address := range ForgingW.addresses {
+		for i, address := range forging.Wallet.addresses {
 
 			if i%threads == threadIndex && (address.account != nil || height == 0) {
 
@@ -58,9 +58,9 @@ func forge(threads, threadIndex int) {
 						kernelHash = crypto.ComputeKernelHash(kernelHash, stakingAmount)
 					}
 
-					if difficulty.CheckKernelHashBig(kernelHash, Forging.target) {
+					if difficulty.CheckKernelHashBig(kernelHash, forging.target) {
 
-						Forging.foundSolution(address, timestamp)
+						forging.foundSolution(address, timestamp)
 
 					} else {
 						// for debugging only

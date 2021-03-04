@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
+	"pandora-pay/forging"
 	"pandora-pay/globals"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
@@ -72,34 +73,40 @@ func main() {
 		gui.Fatal("Error initializing Database", err)
 	}
 
-	var Wallet *wallet.Wallet
-	if Wallet, err = wallet.WalletInit(); err != nil {
+	forging, err := forging.ForgingInit()
+	if err != nil {
+		gui.Fatal("Error initializing Forging", err)
+	}
+	globals.Data["forging"] = forging
+
+	wallet, err := wallet.WalletInit(forging)
+	if err != nil {
 		gui.Fatal("Error initializing Wallet", err)
 	}
-	globals.Data["wallet"] = Wallet
+	globals.Data["wallet"] = wallet
 
-	var Settings *settings.Settings
-	if Settings, err = settings.SettingsInit(); err != nil {
+	settings, err := settings.SettingsInit()
+	if err != nil {
 		gui.Fatal("Error initializing Settings", err)
 	}
-	globals.Data["settings"] = Settings
+	globals.Data["settings"] = settings
 
-	var Chain *blockchain.Blockchain
-	if Chain, err = blockchain.BlockchainInit(); err != nil {
+	chain, err := blockchain.BlockchainInit(forging)
+	if err != nil {
 		gui.Fatal("Error Initializing Blockchain", err)
 	}
-	globals.Data["chain"] = Chain
+	globals.Data["chain"] = chain
 
-	var Mempool *mempool.MemPool
-	if Mempool, err = mempool.InitMemPool(); err != nil {
+	mempool, err := mempool.InitMemPool()
+	if err != nil {
 		gui.Fatal("Error initializing Mempool", err)
 	}
-	globals.Data["mempool"] = Mempool
+	globals.Data["mempool"] = mempool
 
 	go func() {
 
 		for {
-			_ = <-Chain.UpdateChannel
+			_ = <-chain.UpdateChannel
 		}
 
 	}()

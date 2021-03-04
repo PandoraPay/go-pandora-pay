@@ -11,11 +11,11 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block/difficulty"
-	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
+	"pandora-pay/forging"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -36,6 +36,8 @@ type Blockchain struct {
 	Sync bool `json:"-"`
 
 	UpdateChannel chan int `json:"-"`
+
+	forging *forging.Forging `json:"-"`
 
 	mutex        sync.Mutex `json:"-"`
 	sync.RWMutex `json:"-"`
@@ -260,7 +262,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 	chain.UpdateChannel <- 1 //sending 1
 
-	forging.ForgingW.UpdateBalanceChanges(accs)
+	chain.forging.Wallet.UpdateBalanceChanges(accs)
 	go chain.createBlockForForging()
 
 	result = true
@@ -268,16 +270,19 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 }
 
-func BlockchainInit() (chain *Blockchain, err error) {
+func BlockchainInit(forging *forging.Forging) (chain *Blockchain, err error) {
 
 	gui.Log("Blockchain init...")
 
 	genesis.GenesisInit()
 
-	chain = new(Blockchain)
+	chain = &Blockchain{
+		forging:       forging,
+		Sync:          false,
+		UpdateChannel: make(chan int),
+	}
 
-	var success bool
-	success, err = chain.loadBlockchain()
+	success, err := chain.loadBlockchain()
 	if err != nil {
 		return
 	}
@@ -288,26 +293,27 @@ func BlockchainInit() (chain *Blockchain, err error) {
 		}
 	}
 
-	chain.UpdateChannel = make(chan int)
 	chain.updateChainInfo()
 
-	chain.Sync = false
+	return
+}
 
-	forging.ForgingInit()
+func (chain *Blockchain) initForging(forging *forging.Forging) {
 
 	go func() {
 
 		for {
-			_ = <-forging.Forging.SolutionChannel
+
+			blkComplete := <-forging.SolutionChannel
 
 			var array []*block.BlockComplete
-			array = append(array, forging.Forging.BlkComplete)
+			array = append(array, blkComplete)
 
 			result, err := chain.AddBlocks(array, true)
 			if err == nil && result {
-				gui.Info("Block was forged! " + strconv.FormatUint(forging.Forging.BlkComplete.Block.Height, 10))
+				gui.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
 			} else {
-				gui.Error("Error forging block "+strconv.FormatUint(forging.Forging.BlkComplete.Block.Height, 10), err)
+				gui.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
 			}
 
 		}
@@ -316,7 +322,6 @@ func BlockchainInit() (chain *Blockchain, err error) {
 
 	go chain.createBlockForForging()
 
-	return
 }
 
 func BlockchainClose() {

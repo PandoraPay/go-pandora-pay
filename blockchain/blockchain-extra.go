@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block/difficulty"
-	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
@@ -124,7 +123,7 @@ func (chain *Blockchain) createBlockForForging() {
 		gui.Error("Error creating next block", err)
 	}
 
-	forging.Forging.RestartForgingWorkers(nextBlock, chain.Target)
+	chain.forging.RestartForgingWorkers(nextBlock, chain.Target)
 }
 
 func (chain *Blockchain) updateChainInfo() {

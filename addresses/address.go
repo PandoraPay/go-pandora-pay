@@ -122,7 +122,8 @@ func DecodeAddr(input string) (addr2 *Address, err error) {
 	case SimplePublicKey:
 		readBytes = 33
 	default:
-		return nil, errors.New("Invalid Address Version")
+		err = errors.New("Invalid Address Version")
+		return
 	}
 
 	if adr.PublicKey, err = reader.ReadBytes(readBytes); err != nil {

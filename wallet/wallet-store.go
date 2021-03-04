@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	bolt "go.etcd.io/bbolt"
-	"pandora-pay/blockchain/forging"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -85,7 +84,7 @@ func (wallet *Wallet) loadWallet() error {
 					return errors.New("Error unmarshaling address " + strconv.Itoa(i))
 				}
 				wallet.Addresses = append(wallet.Addresses, &newWalletAddress)
-				go forging.ForgingW.AddWallet(newWalletAddress.PublicKey, newWalletAddress.PrivateKey.Key, newWalletAddress.PublicKeyHash)
+				go wallet.forging.Wallet.AddWallet(newWalletAddress.PublicKey, newWalletAddress.PrivateKey.Key, newWalletAddress.PublicKeyHash)
 			}
 
 			var checksum [4]byte
