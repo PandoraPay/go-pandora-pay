@@ -5,7 +5,7 @@ import (
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
 	"pandora-pay/addresses"
-	"pandora-pay/crypto"
+	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"strconv"
@@ -32,7 +32,7 @@ func (wallet *Wallet) addNewAddress() (err error) {
 		gui.Fatal("Generating Address raised an error", err)
 	}
 
-	publicKeyHash := crypto.ComputePublicKeyHash(publicKey)
+	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
 
 	wallet.Lock()
 	defer wallet.Unlock()
@@ -129,7 +129,7 @@ func (wallet *Wallet) computeChecksum() (checksum [4]byte, err error) {
 		return
 	}
 
-	out := crypto.RIPEMD(data)[0:helpers.ChecksumSize]
+	out := cryptography.RIPEMD(data)[0:helpers.ChecksumSize]
 	copy(checksum[:], out[:])
 
 	return

@@ -4,7 +4,7 @@ import (
 	"errors"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
-	"pandora-pay/crypto"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
@@ -29,7 +29,7 @@ func (tx *Transaction) ComputeFees() (fees map[string]uint64, err error) {
 }
 
 func (tx *Transaction) SerializeForSigning() helpers.Hash {
-	return crypto.SHA3Hash(tx.Serialize(false))
+	return cryptography.SHA3Hash(tx.Serialize(false))
 }
 
 func (tx *Transaction) VerifySignature() bool {
@@ -46,7 +46,7 @@ func (tx *Transaction) VerifySignature() bool {
 }
 
 func (tx *Transaction) ComputeHash() helpers.Hash {
-	return crypto.SHA3Hash(tx.Serialize(true))
+	return cryptography.SHA3Hash(tx.Serialize(true))
 }
 
 func (tx *Transaction) Serialize(inclSignature bool) []byte {

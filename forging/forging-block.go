@@ -5,7 +5,7 @@ import (
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
-	"pandora-pay/crypto"
+	"pandora-pay/cryptography"
 	"sync/atomic"
 	"time"
 )
@@ -52,10 +52,10 @@ func forge(forging *Forging, threads, threadIndex int) {
 					n = binary.PutUvarint(buf, timestamp)
 					serialized = append(serialized, buf[:n]...)
 					serialized = append(serialized, address.publicKeyHash[:]...)
-					kernelHash := crypto.SHA3Hash(serialized)
+					kernelHash := cryptography.SHA3Hash(serialized)
 
 					if height > 0 {
-						kernelHash = crypto.ComputeKernelHash(kernelHash, stakingAmount)
+						kernelHash = cryptography.ComputeKernelHash(kernelHash, stakingAmount)
 					}
 
 					if difficulty.CheckKernelHashBig(kernelHash, forging.target) {

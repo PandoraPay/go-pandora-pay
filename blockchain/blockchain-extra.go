@@ -10,7 +10,7 @@ import (
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
-	"pandora-pay/crypto"
+	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/store"
 	"strconv"
@@ -97,7 +97,7 @@ func (chain *Blockchain) createNextBlockComplete() (blkComplete *block.BlockComp
 
 		blk = &block.Block{
 			BlockHeader:    blockHeader,
-			MerkleHash:     crypto.SHA3Hash([]byte{}),
+			MerkleHash:     cryptography.SHA3Hash([]byte{}),
 			PrevHash:       chain.Hash,
 			PrevKernelHash: chain.KernelHash,
 			Timestamp:      chain.Timestamp,

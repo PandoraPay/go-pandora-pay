@@ -3,8 +3,8 @@ package addresses
 import (
 	"errors"
 	"pandora-pay/config"
-	"pandora-pay/crypto"
-	"pandora-pay/crypto/ecdsa"
+	"pandora-pay/cryptography"
+	"pandora-pay/cryptography/ecdsa"
 	"pandora-pay/helpers"
 )
 
@@ -38,7 +38,7 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 	var version AddressVersion
 
 	if usePublicKeyHash {
-		publicKeyHash := crypto.ComputePublicKeyHash(*helpers.Byte33(publicKey))
+		publicKeyHash := cryptography.ComputePublicKeyHash(*helpers.Byte33(publicKey))
 		finalPublicKey = publicKeyHash[:]
 		version = SimplePublicKeyHash
 	} else {

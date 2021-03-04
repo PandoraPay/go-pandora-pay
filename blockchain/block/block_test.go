@@ -3,16 +3,16 @@ package block
 import (
 	"github.com/stretchr/testify/assert"
 	"pandora-pay/addresses"
-	"pandora-pay/crypto"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"testing"
 	"time"
 )
 
 var (
-	merkleHash     = crypto.SHA3Hash([]byte("MerkleHash"))
-	prevHash       = crypto.SHA3Hash([]byte("PrevHash"))
-	prevKernelHash = crypto.SHA3Hash([]byte("PrevKernelHash"))
+	merkleHash     = cryptography.SHA3Hash([]byte("MerkleHash"))
+	prevHash       = cryptography.SHA3Hash([]byte("PrevHash"))
+	prevKernelHash = cryptography.SHA3Hash([]byte("PrevKernelHash"))
 )
 
 func TestBlock_Serialize(t *testing.T) {
@@ -21,7 +21,7 @@ func TestBlock_Serialize(t *testing.T) {
 	publicKey, err := privateKey.GeneratePublicKey()
 	assert.Nil(t, err)
 
-	publicKeyHash := crypto.ComputePublicKeyHash(publicKey)
+	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
 
 	blockHeader := BlockHeader{Version: 0, Height: 0}
 	blk := Block{
@@ -53,7 +53,7 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 	publicKey, err := privateKey.GeneratePublicKey()
 	assert.Nil(t, err)
 
-	publicKeyHash := crypto.ComputePublicKeyHash(publicKey)
+	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
 
 	blockHeader := BlockHeader{Version: 0, Height: 0}
 	blk := Block{

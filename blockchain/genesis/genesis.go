@@ -5,7 +5,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/config"
-	"pandora-pay/crypto"
+	"pandora-pay/cryptography"
 	"pandora-pay/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -69,7 +69,7 @@ func CreateNewGenesisBlock() (*block.Block, error) {
 
 	var blk = block.Block{
 		BlockHeader:    blockHeader,
-		MerkleHash:     crypto.SHA3Hash([]byte{}),
+		MerkleHash:     cryptography.SHA3Hash([]byte{}),
 		Timestamp:      GenesisData.Timestamp,
 		PrevHash:       GenesisData.Hash,
 		PrevKernelHash: GenesisData.KernelHash,

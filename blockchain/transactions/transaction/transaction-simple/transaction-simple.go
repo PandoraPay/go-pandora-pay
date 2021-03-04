@@ -5,7 +5,7 @@ import (
 	"math"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction_simple_unstake"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
-	"pandora-pay/crypto/ecdsa"
+	"pandora-pay/cryptography/ecdsa"
 	"pandora-pay/helpers"
 )
 

@@ -1,4 +1,4 @@
-package crypto
+package cryptography
 
 import (
 	"math/rand"

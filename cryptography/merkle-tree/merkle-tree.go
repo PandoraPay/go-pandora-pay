@@ -2,7 +2,7 @@ package merkle_tree
 
 import (
 	"math"
-	"pandora-pay/crypto"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
@@ -29,7 +29,7 @@ func hashMerkleNode(left *Hash, right *Hash) *Hash {
 	copy(hash[:len(left)], left[:])
 	copy(hash[len(left):], right[:])
 
-	hash2 := crypto.SHA3Hash(hash[:])
+	hash2 := cryptography.SHA3Hash(hash[:])
 	return &hash2
 }
 

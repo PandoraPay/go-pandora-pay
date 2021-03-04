@@ -5,7 +5,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
-	"pandora-pay/crypto"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
@@ -20,10 +20,10 @@ func (blkComplete *BlockComplete) MerkleHash() helpers.Hash {
 	if len(blkComplete.Txs) > 0 {
 
 		//todo
-		return crypto.SHA3Hash(buffer)
+		return cryptography.SHA3Hash(buffer)
 
 	} else {
-		return crypto.SHA3Hash(buffer)
+		return cryptography.SHA3Hash(buffer)
 	}
 
 }

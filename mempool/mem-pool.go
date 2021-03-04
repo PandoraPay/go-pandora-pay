@@ -1,28 +1,32 @@
 package mempool
 
 import (
+	"fmt"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"sync"
+	"time"
 )
 
 type MemPoolTx struct {
-	Tx         *transaction.Transaction
-	Height     uint64
-	FeePerByte uint64
-	FeeToken   []byte
+	tx         *transaction.Transaction
+	added      int64
+	mine       bool
+	height     uint64
+	feePerByte uint64
+	feeToken   []byte
 }
 
 type MemPool struct {
 	txs          sync.Map
 	sortedByFees []helpers.Hash
 
-	sync.Mutex
+	sync.RWMutex
 }
 
-func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint64) (result bool) {
+func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) (result bool) {
 
 	var err error
 
@@ -54,10 +58,12 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 	}
 
 	object := MemPoolTx{
-		Tx:         tx,
-		Height:     height,
-		FeePerByte: minerFees[*selectedFeeToken] / size,
-		FeeToken:   []byte(*selectedFeeToken),
+		tx:         tx,
+		added:      time.Now().Unix(),
+		height:     height,
+		feePerByte: minerFees[*selectedFeeToken] / size,
+		feeToken:   []byte(*selectedFeeToken),
+		mine:       mine,
 	}
 
 	mempool.txs.Store(hash, object)
@@ -81,10 +87,38 @@ func (mempool *MemPool) Delete(txId helpers.Hash) (tx *transaction.Transaction) 
 	}
 
 	object := objInterface.(*MemPoolTx)
-	tx = object.Tx
+	tx = object.tx
 	mempool.txs.Delete(txId)
 
 	return
+}
+
+func (mempool *MemPool) Print() {
+
+	type Output struct {
+		hash helpers.Hash
+		tx   *MemPoolTx
+	}
+	var list []*Output
+
+	mempool.txs.Range(func(key, value interface{}) bool {
+		hash := key.(helpers.Hash)
+		tx := value.(*MemPoolTx)
+		list = append(list, &Output{
+			hash,
+			tx,
+		})
+
+		return true
+	})
+
+	gui.Log("")
+	gui.Log(fmt.Sprintf("TX mempool: %d", len(list)))
+	for _, out := range list {
+		gui.Log(fmt.Sprintf("%20s %7d B %5d %32s", time.Unix(out.tx.added, 0).UTC().Format(time.RFC3339), len(out.tx.tx.Serialize(true)), out.tx.height, out.hash))
+	}
+	gui.Log("")
+
 }
 
 func InitMemPool() (mempool *MemPool, err error) {
@@ -92,6 +126,13 @@ func InitMemPool() (mempool *MemPool, err error) {
 	gui.Log("MemPool init...")
 
 	mempool = new(MemPool)
+
+	go func() {
+		for {
+			time.Sleep(60 * time.Second)
+			mempool.Print()
+		}
+	}()
 
 	return
 }

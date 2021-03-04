@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"pandora-pay/config"
-	"pandora-pay/crypto"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	base58 "pandora-pay/helpers/base58"
 )
@@ -66,7 +66,7 @@ func (a *Address) EncodeAddr() (string, error) {
 
 	buffer := writer.Bytes()
 
-	checksum := crypto.RIPEMD(buffer)[0:helpers.ChecksumSize]
+	checksum := cryptography.RIPEMD(buffer)[0:helpers.ChecksumSize]
 	buffer = append(buffer, checksum...)
 	ret := base58.Encode(buffer)
 
@@ -98,7 +98,7 @@ func DecodeAddr(input string) (addr2 *Address, err error) {
 		return
 	}
 
-	checksum := crypto.RIPEMD(buf[:len(buf)-helpers.ChecksumSize])[0:helpers.ChecksumSize]
+	checksum := cryptography.RIPEMD(buf[:len(buf)-helpers.ChecksumSize])[0:helpers.ChecksumSize]
 
 	if !bytes.Equal(checksum[:], buf[len(buf)-helpers.ChecksumSize:]) {
 		return nil, errors.New("Invalid Checksum")

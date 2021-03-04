@@ -8,8 +8,8 @@ import (
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/config/reward"
-	"pandora-pay/crypto"
-	"pandora-pay/crypto/ecdsa"
+	"pandora-pay/cryptography"
+	"pandora-pay/cryptography/ecdsa"
 	"pandora-pay/helpers"
 )
 
@@ -90,12 +90,12 @@ func (blk *Block) RemoveBlock(acs *accounts.Accounts, toks *tokens.Tokens) (err 
 }
 
 func (blk *Block) ComputeHash() helpers.Hash {
-	return crypto.SHA3Hash(blk.Serialize())
+	return cryptography.SHA3Hash(blk.Serialize())
 }
 
 func (blk *Block) ComputeKernelHashOnly() helpers.Hash {
 	out := blk.SerializeBlock(true, false)
-	return crypto.SHA3Hash(out)
+	return cryptography.SHA3Hash(out)
 }
 
 func (blk *Block) ComputeKernelHash() helpers.Hash {
@@ -106,11 +106,11 @@ func (blk *Block) ComputeKernelHash() helpers.Hash {
 		return hash
 	}
 
-	return crypto.ComputeKernelHash(hash, blk.StakingAmount)
+	return cryptography.ComputeKernelHash(hash, blk.StakingAmount)
 }
 
 func (blk *Block) SerializeForSigning() helpers.Hash {
-	return crypto.SHA3Hash(blk.SerializeBlock(false, false))
+	return cryptography.SHA3Hash(blk.SerializeBlock(false, false))
 }
 
 func (blk *Block) VerifySignature() bool {

@@ -1,7 +1,7 @@
 package settings
 
 import (
-	"pandora-pay/crypto"
+	"pandora-pay/cryptography"
 	"pandora-pay/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -72,7 +72,7 @@ func (settings *Settings) computeChecksum() (checksum [4]byte, err error) {
 		return
 	}
 
-	out := crypto.RIPEMD(data)[0:helpers.ChecksumSize]
+	out := cryptography.RIPEMD(data)[0:helpers.ChecksumSize]
 	copy(checksum[:], out[:])
 
 	return

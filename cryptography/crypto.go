@@ -1,4 +1,4 @@
-package crypto
+package cryptography
 
 import (
 	"golang.org/x/crypto/ripemd160"
