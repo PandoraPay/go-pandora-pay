@@ -4,6 +4,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
+	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
+	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction_simple_unstake"
+	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"testing"
 )
@@ -38,7 +41,7 @@ func TestCreateSimpleTx(t *testing.T) {
 func TestCreateUnstakeTx(t *testing.T) {
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateUnstakeTx(0, privateKey.Key, 534, -1, []byte{})
+	tx, err := CreateUnstakeTx(0, privateKey.Key, 534, -1, []byte{}, false)
 	assert.NotNil(t, tx, "creating unstake tx is nil")
 	assert.Nil(t, err, "error creating unstake tx")
 
@@ -56,6 +59,44 @@ func TestCreateUnstakeTx(t *testing.T) {
 
 	fees, err := tx.ComputeFees()
 	assert.Nil(t, err, "Error validating fees")
-	assert.Equal(t, fees[string([]byte{})] > uint64(100), true, "Fees were calculated invalid")
+	assert.Equal(t, fees[string(config.NATIVE_TOKEN)] > uint64(100), true, "Fees were calculated invalid")
 
+	base := tx2.TxBase.(*transaction_simple.TransactionSimple)
+	assert.Equal(t, fees[string(config.NATIVE_TOKEN)], base.Vin[0].Amount, "Fees are not paid by vin")
+
+	unstake := base.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
+	assert.Equal(t, unstake.UnstakeAmount, uint64(534), "Fees are not paid by vin")
+	assert.Equal(t, unstake.UnstakeFeeExtra, uint64(0), "Fees must be paid by vin")
+
+}
+
+func TestCreateUnstakeTxPayExtra(t *testing.T) {
+
+	privateKey := addresses.GenerateNewPrivateKey()
+	tx, err := CreateUnstakeTx(0, privateKey.Key, 534, -1, []byte{}, true)
+	assert.NotNil(t, tx, "creating unstake tx is nil")
+	assert.Nil(t, err, "error creating unstake tx")
+
+	assert.Nil(t, tx.Validate(), "error validating tx")
+
+	assert.Equal(t, tx.VerifySignature(), true, "Verify signature failed")
+
+	serialized := tx.Serialize(true)
+	assert.NotNil(t, serialized, "serialized is nil")
+
+	tx2 := new(transaction.Transaction)
+	assert.Nil(t, tx2.Deserialize(serialized), "deserialize failed")
+	assert.Nil(t, tx2.Validate(), "error validating tx")
+	assert.Equal(t, tx2.VerifySignature(), true, "Verify signature failed2")
+
+	fees, err := tx.ComputeFees()
+	assert.Nil(t, err, "Error validating fees")
+	assert.Equal(t, fees[string(config.NATIVE_TOKEN)] > uint64(100), true, "Fees were calculated invalid")
+
+	base := tx2.TxBase.(*transaction_simple.TransactionSimple)
+	assert.Equal(t, uint64(0), base.Vin[0].Amount, "Fees are not paid by vin")
+
+	unstake := base.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
+	assert.Equal(t, unstake.UnstakeAmount, uint64(534), "Fees are not paid by vin")
+	assert.Equal(t, unstake.UnstakeFeeExtra, fees[string(config.NATIVE_TOKEN)], "Fees are not paid by vin")
 }

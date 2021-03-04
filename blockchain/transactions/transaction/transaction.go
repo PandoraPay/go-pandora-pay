@@ -20,8 +20,8 @@ func (tx *Transaction) ComputeFees() (fees map[string]uint64, err error) {
 
 	switch tx.TxType {
 	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
-		base := tx.TxBase.(transaction_simple.TransactionSimple)
-		err = base.ComputeFees(fees)
+		base := tx.TxBase.(*transaction_simple.TransactionSimple)
+		err = base.ComputeFees(fees, tx.TxType)
 	default:
 		err = errors.New("Invalid type")
 	}
@@ -37,7 +37,7 @@ func (tx *Transaction) VerifySignature() bool {
 	hash := tx.SerializeForSigning()
 	switch tx.TxType {
 	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
-		base := tx.TxBase.(transaction_simple.TransactionSimple)
+		base := tx.TxBase.(*transaction_simple.TransactionSimple)
 		return base.VerifySignature(hash)
 	default:
 		return false
@@ -57,7 +57,7 @@ func (tx *Transaction) Serialize(inclSignature bool) []byte {
 
 	switch tx.TxType {
 	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
-		base := tx.TxBase.(transaction_simple.TransactionSimple)
+		base := tx.TxBase.(*transaction_simple.TransactionSimple)
 		base.Serialize(writer, inclSignature, tx.TxType)
 	default:
 	}
@@ -75,7 +75,7 @@ func (tx *Transaction) Validate() (err error) {
 
 	switch tx.TxType {
 	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
-		base := tx.TxBase.(transaction_simple.TransactionSimple)
+		base := tx.TxBase.(*transaction_simple.TransactionSimple)
 		if err = base.Validate(tx.TxType); err != nil {
 			return
 		}
@@ -99,7 +99,7 @@ func (tx *Transaction) Deserialize(buf []byte) (err error) {
 
 	switch tx.TxType {
 	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
-		base := transaction_simple.TransactionSimple{}
+		base := &transaction_simple.TransactionSimple{}
 		if err = base.Deserialize(reader, tx.TxType); err != nil {
 			return
 		}

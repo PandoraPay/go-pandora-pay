@@ -71,14 +71,14 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 	tx = &transaction.Transaction{
 		Version: 0,
 		TxType:  transaction_type.TransactionTypeSimple,
-		TxBase: transaction_simple.TransactionSimple{
+		TxBase: &transaction_simple.TransactionSimple{
 			Nonce: nonce,
 			Vin:   vin,
 			Vout:  vout,
 		},
 	}
 
-	if err = setFee(tx, feePerByte, feeToken); err != nil {
+	if err = setFee(tx, feePerByte, feeToken, false); err != nil {
 		return
 	}
 
@@ -90,14 +90,14 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 			return
 		}
 
-		tx.TxBase.(transaction_simple.TransactionSimple).Vin[i].Signature = signature
+		tx.TxBase.(*transaction_simple.TransactionSimple).Vin[i].Signature = signature
 
 	}
 
 	return
 }
 
-func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount uint64, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err error) {
+func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction, err error) {
 
 	privateKey := addresses.PrivateKey{Key: key}
 	var publicKey [33]byte
@@ -108,9 +108,9 @@ func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount uint64, feePerByt
 	tx = &transaction.Transaction{
 		Version: 0,
 		TxType:  transaction_type.TransactionTypeSimpleUnstake,
-		TxBase: transaction_simple.TransactionSimple{
+		TxBase: &transaction_simple.TransactionSimple{
 			Nonce: nonce,
-			Extra: transaction_simple_unstake.TransactionSimpleUnstake{
+			Extra: &transaction_simple_unstake.TransactionSimpleUnstake{
 				UnstakeAmount: unstakeAmount,
 			},
 			Vin: []*transaction_simple.TransactionSimpleInput{
@@ -122,7 +122,7 @@ func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount uint64, feePerByt
 		},
 	}
 
-	if err = setFee(tx, feePerByte, feeToken); err != nil {
+	if err = setFee(tx, feePerByte, feeToken, payFeeInExtra); err != nil {
 		return
 	}
 
@@ -133,7 +133,7 @@ func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount uint64, feePerByt
 		return
 	}
 
-	tx.TxBase.(transaction_simple.TransactionSimple).Vin[0].Signature = signature
+	tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature = signature
 
 	return
 }

@@ -5,6 +5,7 @@ import (
 	"math"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction_simple_unstake"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	"pandora-pay/config"
 	"pandora-pay/cryptography/ecdsa"
 	"pandora-pay/helpers"
 )
@@ -16,19 +17,26 @@ type TransactionSimple struct {
 	Extra interface{}
 }
 
-func (tx *TransactionSimple) ComputeFees(out map[string]uint64) (err error) {
+func (tx *TransactionSimple) ComputeFees(out map[string]uint64, txType transaction_type.TransactionType) (err error) {
 	if err = tx.ComputeVin(out); err != nil {
 		return
 	}
 	if err = tx.ComputeVout(out); err != nil {
 		return
 	}
+	switch txType {
+	case transaction_type.TransactionTypeSimpleUnstake:
+		extra := tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
+		if math.MaxUint64-out[string(config.NATIVE_TOKEN)] < extra.UnstakeFeeExtra {
+			return errors.New("Unstake exceeded MaxUint64")
+		}
+		out[string(config.NATIVE_TOKEN)] += extra.UnstakeFeeExtra
+	}
 	return
 }
 
 func (tx *TransactionSimple) ComputeVin(out map[string]uint64) error {
 	for _, vin := range tx.Vin {
-
 		token := string(vin.Token)
 		if math.MaxUint64-out[token] <= vin.Amount {
 			return errors.New("Vin exceeded MaxUint64")
@@ -40,7 +48,6 @@ func (tx *TransactionSimple) ComputeVin(out map[string]uint64) error {
 
 func (tx *TransactionSimple) ComputeVout(out map[string]uint64) error {
 	for _, vout := range tx.Vout {
-
 		token := string(vout.Token)
 		if out[token] < vout.Amount {
 			return errors.New("Balance exceeded")
@@ -83,7 +90,7 @@ func (tx *TransactionSimple) Validate(txType transaction_type.TransactionType) (
 		if len(tx.Vout) != 0 {
 			return errors.New("Invalid vout")
 		}
-		extra := tx.Extra.(transaction_simple_unstake.TransactionSimpleUnstake)
+		extra := tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
 		extra.Validate(txType)
 	}
 
@@ -113,7 +120,7 @@ func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignatu
 
 	switch txType {
 	case transaction_type.TransactionTypeSimpleUnstake:
-		extra := tx.Extra.(transaction_simple_unstake.TransactionSimpleUnstake)
+		extra := tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
 		extra.Serialize(writer)
 	}
 }
@@ -151,7 +158,7 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader, txType tr
 
 	switch txType {
 	case transaction_type.TransactionTypeSimpleUnstake:
-		extra := transaction_simple_unstake.TransactionSimpleUnstake{}
+		extra := &transaction_simple_unstake.TransactionSimpleUnstake{}
 		if err = extra.Deserialize(reader); err != nil {
 			return err
 		}

@@ -5,11 +5,27 @@ import (
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
+	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction_simple_unstake"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config/fees"
 )
 
-func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte) (err error) {
+func setFeeTxNow(tx *transaction.Transaction, feePerByte, initAmount uint64, value *uint64) {
+	var fee uint64
+	oldFee := uint64(1)
+	for oldFee != fee {
+		fee = fees.ComputeTxFees(uint64(len(tx.Serialize(true))), feePerByte)
+		oldFee = fee
+		*value = initAmount + fee
+	}
+	return
+}
+
+func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFeeInExtra bool) (err error) {
+
+	if feePerByte == 0 {
+		return
+	}
 
 	if feePerByte == -1 {
 		feePerByte = int(fees.FEES_PER_BYTE[string(feeToken)])
@@ -20,31 +36,33 @@ func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte) (err e
 
 	if feePerByte != 0 {
 
-		switch tx.TxType {
-		case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
+		if payFeeInExtra {
 
-			for _, vin := range tx.TxBase.(transaction_simple.TransactionSimple).Vin {
-				if bytes.Equal(vin.Token, feeToken) {
-
-					var initialAmount = vin.Amount
-
-					var fee uint64
-					oldFee := uint64(1)
-					for oldFee != fee {
-						fee = fees.ComputeTxFees(uint64(len(tx.Serialize(true))), uint64(feePerByte))
-						oldFee = fee
-						vin.Amount = initialAmount + fee
-					}
-
-					return
-				}
+			switch tx.TxType {
+			case transaction_type.TransactionTypeSimpleUnstake:
+				unstake := tx.TxBase.(*transaction_simple.TransactionSimple).Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
+				setFeeTxNow(tx, uint64(feePerByte), 0, &unstake.UnstakeFeeExtra)
+				return
 			}
 
-			return errors.New("There is no input to set the fee!")
+		} else {
+
+			switch tx.TxType {
+			case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
+
+				for _, vin := range tx.TxBase.(*transaction_simple.TransactionSimple).Vin {
+					if bytes.Equal(vin.Token, feeToken) {
+						setFeeTxNow(tx, uint64(feePerByte), vin.Amount, &vin.Amount)
+						return
+					}
+				}
+
+				return errors.New("There is no input to set the fee!")
+			}
 
 		}
 
 	}
 
-	return
+	return errors.New("Couldn't set fee")
 }
