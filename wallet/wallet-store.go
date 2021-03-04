@@ -15,12 +15,12 @@ import (
 func (wallet *Wallet) saveWallet(start, end, deleteIndex int) error {
 	return store.StoreWallet.DB.Update(func(tx *bolt.Tx) (err error) {
 
+		writer := tx.Bucket([]byte("Wallet"))
+		var marshal []byte
+
 		if wallet.Checksum, err = wallet.computeChecksum(); err != nil {
 			return
 		}
-
-		writer := tx.Bucket([]byte("Wallet"))
-		var marshal []byte
 
 		if err = writer.Put([]byte("saved"), []byte{2}); err != nil {
 			return

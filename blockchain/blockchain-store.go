@@ -20,7 +20,7 @@ func (chain *Blockchain) LoadBlockFromHash(hash helpers.Hash) (blk *block.Block,
 			return nil
 		}
 
-		blk, err = loadBlock(reader, hash)
+		blk, err = chain.loadBlock(reader, hash)
 
 		return err
 	})
@@ -29,7 +29,7 @@ func (chain *Blockchain) LoadBlockFromHash(hash helpers.Hash) (blk *block.Block,
 
 }
 
-func loadBlock(bucket *bolt.Bucket, hash helpers.Hash) (blk *block.Block, err error) {
+func (chain *Blockchain) loadBlock(bucket *bolt.Bucket, hash helpers.Hash) (blk *block.Block, err error) {
 
 	key := []byte("blockHash")
 	key = append(key, hash[:]...)
@@ -47,7 +47,7 @@ func loadBlock(bucket *bolt.Bucket, hash helpers.Hash) (blk *block.Block, err er
 	return
 }
 
-func saveBlock(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash helpers.Hash) error {
+func (chain *Blockchain) saveBlock(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash helpers.Hash) error {
 
 	key := []byte("blockHash")
 	key = append(key, hash[:]...)
@@ -86,7 +86,7 @@ func (chain *Blockchain) saveTotalDifficultyExtra(bucket *bolt.Bucket) error {
 	return bucket.Put(key, writer.Bytes())
 }
 
-func loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64, err error) {
+func (chain *Blockchain) loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64, err error) {
 	key := []byte("totalDifficulty" + strconv.FormatUint(height, 10))
 
 	buf := bucket.Get(key)
@@ -117,7 +117,7 @@ func loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *b
 	return
 }
 
-func saveBlockchain(bucket *bolt.Bucket, chain *Blockchain) error {
+func (chain *Blockchain) saveBlockchain(bucket *bolt.Bucket) error {
 
 	marshal, err := json.Marshal(chain)
 	if err != nil {
@@ -127,7 +127,7 @@ func saveBlockchain(bucket *bolt.Bucket, chain *Blockchain) error {
 	return bucket.Put([]byte("blockchainInfo"), marshal)
 }
 
-func loadBlockchain() (success bool, err error) {
+func (chain *Blockchain) loadBlockchain() (success bool, err error) {
 
 	err = store.StoreBlockchain.DB.View(func(tx *bolt.Tx) error {
 
@@ -141,7 +141,7 @@ func loadBlockchain() (success bool, err error) {
 			return nil
 		}
 
-		err = json.Unmarshal(chainData, &Chain)
+		err = json.Unmarshal(chainData, &chain)
 		if err != nil {
 			return err
 		}

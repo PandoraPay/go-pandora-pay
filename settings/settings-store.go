@@ -16,18 +16,19 @@ func (settings *Settings) saveSettings() error {
 		var marshal []byte
 		writer := tx.Bucket([]byte("Settings"))
 
+		if settings.Checksum, err = settings.computeChecksum(); err != nil {
+			return
+		}
+
 		if err = writer.Put([]byte("saved"), []byte{2}); err != nil {
 			return
 		}
-
 		if marshal, err = json.Marshal(settings); err != nil {
 			return
 		}
-
 		if err = writer.Put([]byte("settings"), marshal); err != nil {
 			return
 		}
-
 		if err = writer.Put([]byte("saved"), []byte{1}); err != nil {
 			return
 		}
@@ -50,9 +51,7 @@ func (settings *Settings) loadSettings() error {
 		if bytes.Equal(saved, []byte{1}) {
 			gui.Log("Settings Loading... ")
 
-			var unmarshal []byte
-
-			unmarshal = reader.Get([]byte("settings"))
+			unmarshal := reader.Get([]byte("settings"))
 			if err = json.Unmarshal(unmarshal, &settings); err != nil {
 				return errors.New("Error unmarshaling settings saved")
 			}

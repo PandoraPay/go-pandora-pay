@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"encoding/hex"
 	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/block"
@@ -13,6 +14,7 @@ import (
 	"pandora-pay/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/store"
+	"strconv"
 )
 
 func (chain *Blockchain) init() (err error) {
@@ -64,7 +66,7 @@ func (chain *Blockchain) computeNextTargetBig(bucket *bolt.Bucket) (*big.Int, er
 
 	first := chain.Height - config.DIFFICULTY_BLOCK_WINDOW
 
-	firstDifficulty, firstTimestamp, err := loadTotalDifficultyExtra(bucket, first)
+	firstDifficulty, firstTimestamp, err := chain.loadTotalDifficultyExtra(bucket, first)
 	if err != nil {
 		return nil, err
 	}
@@ -118,9 +120,16 @@ func (chain *Blockchain) createBlockForForging() {
 	var err error
 
 	var nextBlock *block.BlockComplete
-	if nextBlock, err = Chain.createNextBlockComplete(); err != nil {
+	if nextBlock, err = chain.createNextBlockComplete(); err != nil {
 		gui.Error("Error creating next block", err)
 	}
 
 	forging.Forging.RestartForgingWorkers(nextBlock, chain.Target)
+}
+
+func (chain *Blockchain) updateChainInfo() {
+	gui.InfoUpdate("Blocks", strconv.FormatUint(chain.Height, 10))
+	gui.InfoUpdate("Chain  Hash", hex.EncodeToString(chain.Hash[:]))
+	gui.InfoUpdate("Chain KHash", hex.EncodeToString(chain.KernelHash[:]))
+	gui.InfoUpdate("Chain  Diff", chain.Target.String())
 }

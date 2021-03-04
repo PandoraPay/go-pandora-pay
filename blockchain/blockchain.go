@@ -41,8 +41,6 @@ type Blockchain struct {
 	sync.RWMutex `json:"-"`
 }
 
-var Chain Blockchain
-
 func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, calledByForging bool) (result bool, err error) {
 
 	result = false
@@ -85,7 +83,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 		if blocksComplete[0].Block.Height == 0 {
 			prevBlk = genesis.Genesis
 		} else {
-			if prevBlk, err = loadBlock(writer, newChain.Hash); err != nil {
+			if prevBlk, err = newChain.loadBlock(writer, newChain.Hash); err != nil {
 				return
 			}
 		}
@@ -158,7 +156,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			hash := blkComplete.Block.ComputeHash()
 			kernelHash := blkComplete.Block.ComputeKernelHash()
 
-			if difficulty.CheckKernelHashBig(kernelHash, Chain.Target) != true {
+			if difficulty.CheckKernelHashBig(kernelHash, chain.Target) != true {
 				return errors.New("KernelHash Difficulty is not met")
 			}
 
@@ -201,7 +199,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 				return
 			}
 
-			if err = saveBlock(writer, blkComplete, hash); err != nil {
+			if err = newChain.saveBlock(writer, blkComplete, hash); err != nil {
 				return
 			}
 
@@ -230,7 +228,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 		}
 
-		err = saveBlockchain(writer, &newChain)
+		err = newChain.saveBlockchain(writer)
 
 		chain.Lock()
 		wasChainLocked = true
@@ -258,7 +256,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	gui.Warning("-------------------------------------------")
 	gui.Warning(fmt.Sprintf("Including blocks SUCCESS %s", hex.EncodeToString(chain.Hash[:])))
 	gui.Warning("-------------------------------------------")
-	updateChainInfo()
+	chain.updateChainInfo()
 
 	chain.UpdateChannel <- 1 //sending 1
 
@@ -270,28 +268,30 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 }
 
-func BlockchainInit() (err error) {
+func BlockchainInit() (chain *Blockchain, err error) {
 
-	gui.Info("Blockchain init...")
+	gui.Log("Blockchain init...")
 
 	genesis.GenesisInit()
 
+	chain = new(Blockchain)
+
 	var success bool
-	success, err = loadBlockchain()
+	success, err = chain.loadBlockchain()
 	if err != nil {
 		return
 	}
 
 	if !success {
-		if err = Chain.init(); err != nil {
+		if err = chain.init(); err != nil {
 			return
 		}
 	}
 
-	Chain.UpdateChannel = make(chan int)
-	updateChainInfo()
+	chain.UpdateChannel = make(chan int)
+	chain.updateChainInfo()
 
-	Chain.Sync = false
+	chain.Sync = false
 
 	forging.ForgingInit()
 
@@ -303,7 +303,7 @@ func BlockchainInit() (err error) {
 			var array []*block.BlockComplete
 			array = append(array, forging.Forging.BlkComplete)
 
-			result, err := Chain.AddBlocks(array, true)
+			result, err := chain.AddBlocks(array, true)
 			if err == nil && result {
 				gui.Info("Block was forged! " + strconv.FormatUint(forging.Forging.BlkComplete.Block.Height, 10))
 			} else {
@@ -314,18 +314,11 @@ func BlockchainInit() (err error) {
 
 	}()
 
-	go Chain.createBlockForForging()
+	go chain.createBlockForForging()
 
 	return
 }
 
 func BlockchainClose() {
 	forging.StopForging()
-}
-
-func updateChainInfo() {
-	gui.InfoUpdate("Blocks", strconv.FormatUint(Chain.Height, 10))
-	gui.InfoUpdate("Chain  Hash", hex.EncodeToString(Chain.Hash[:]))
-	gui.InfoUpdate("Chain KHash", hex.EncodeToString(Chain.KernelHash[:]))
-	gui.InfoUpdate("Chain  Diff", Chain.Target.String())
 }

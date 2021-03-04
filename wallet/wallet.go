@@ -57,7 +57,7 @@ type Wallet struct {
 
 func WalletInit() (wallet *Wallet, err error) {
 
-	wallet = new(Wallet)
+	wallet = &Wallet{}
 
 	err = wallet.loadWallet()
 	if err != nil && err.Error() == "Wallet doesn't exist" {

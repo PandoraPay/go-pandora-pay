@@ -17,16 +17,14 @@ type MemPoolTx struct {
 	FeeToken   []byte
 }
 
-type MemPoolStruct struct {
+type MemPool struct {
 	txs          sync.Map
 	sortedByFees []helpers.Hash
 
 	sync.Mutex
 }
 
-var MemPool MemPoolStruct
-
-func (mempool *MemPoolStruct) AddTxToMemPool(tx *transaction.Transaction, height uint64) (result bool) {
+func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint64) (result bool) {
 
 	var err error
 
@@ -69,14 +67,14 @@ func (mempool *MemPoolStruct) AddTxToMemPool(tx *transaction.Transaction, height
 	return true
 }
 
-func (mempool *MemPoolStruct) Exists(txId helpers.Hash) bool {
+func (mempool *MemPool) Exists(txId helpers.Hash) bool {
 	if _, exists := mempool.txs.Load(txId); exists {
 		return true
 	}
 	return false
 }
 
-func (mempool *MemPoolStruct) Delete(txId helpers.Hash) (tx *transaction.Transaction) {
+func (mempool *MemPool) Delete(txId helpers.Hash) (tx *transaction.Transaction) {
 
 	var exists bool
 	var objInterface interface{}
@@ -91,9 +89,12 @@ func (mempool *MemPoolStruct) Delete(txId helpers.Hash) (tx *transaction.Transac
 	return
 }
 
-func InitMemPool() (err error) {
+func InitMemPool() (mempool *MemPool, err error) {
 
-	gui.Info("MemPool init...")
+	gui.Log("MemPool init...")
+
+	mempool = new(MemPool)
+
 	FeesPerByteAccepted = make(map[string]uint64)
 	FeesPerByteAccepted[string(config.NATIVE_TOKEN)] = 10
 
