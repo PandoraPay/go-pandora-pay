@@ -72,30 +72,34 @@ func main() {
 		gui.Fatal("Error initializing Database", err)
 	}
 
-	var wal *wallet.Wallet
-	if wal, err = wallet.WalletInit(); err != nil {
+	var Wallet *wallet.Wallet
+	if Wallet, err = wallet.WalletInit(); err != nil {
 		gui.Fatal("Error initializing Wallet", err)
 	}
-	globals.Data["wallet"] = wal
+	globals.Data["wallet"] = Wallet
 
-	if globals.Data["settings"], err = settings.SettingsInit(); err != nil {
+	var Settings *settings.Settings
+	if Settings, err = settings.SettingsInit(); err != nil {
 		gui.Fatal("Error initializing Settings", err)
 	}
+	globals.Data["settings"] = Settings
 
-	var chain *blockchain.Blockchain
-	if chain, err = blockchain.BlockchainInit(); err != nil {
+	var Chain *blockchain.Blockchain
+	if Chain, err = blockchain.BlockchainInit(); err != nil {
 		gui.Fatal("Error Initializing Blockchain", err)
 	}
-	globals.Data["chain"] = chain
+	globals.Data["chain"] = Chain
 
-	if globals.Data["mempool"], err = mempool.InitMemPool(); err != nil {
+	var Mempool *mempool.MemPool
+	if Mempool, err = mempool.InitMemPool(); err != nil {
 		gui.Fatal("Error initializing Mempool", err)
 	}
+	globals.Data["mempool"] = Mempool
 
 	go func() {
 
 		for {
-			_ = <-chain.UpdateChannel
+			_ = <-Chain.UpdateChannel
 		}
 
 	}()

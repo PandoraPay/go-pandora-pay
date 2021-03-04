@@ -1,72 +1,49 @@
 package ecdsa
 
 import (
-	"bytes"
-	"crypto/ecdsa"
+	"github.com/stretchr/testify/assert"
 	"pandora-pay/helpers"
 	"testing"
 )
 
 func TestPrivateKeyPublicKeyCreation(t *testing.T) {
 
-	var err error
-	var privateKey *ecdsa.PrivateKey
-	var publicKey []byte
-
-	if privateKey, err = GenerateKey(); err != nil {
-		t.Errorf("Generate Key failed %s", err)
-	}
+	privateKey, err := GenerateKey()
+	assert.Nil(t, err, "Error generating key")
 
 	key := FromECDSA(privateKey)
-	if len(key) != 32 {
-		t.Errorf("Generatated Key length is invalid %d", len(key))
-	}
+	assert.Equal(t, len(key), 32, "Generatated Key length is invalid")
 
-	if publicKey, err = ComputePublicKey(key); err != nil {
-		t.Errorf("Generate Pub Key failed %s", err)
-	}
-	if len(publicKey) != 33 {
-		t.Errorf("Generatated Key length is invalid %d", len(publicKey))
-	}
+	publicKey, err := ComputePublicKey(key)
+	assert.Nil(t, err, "Error generating key")
+	assert.Equal(t, len(publicKey), 33, "Generatated Public Key Key length is invalid")
 
 }
 
 func TestECDSASignVerify(t *testing.T) {
 
-	var err error
-	privateKey, _ := GenerateKey()
+	privateKey, err := GenerateKey()
+	assert.Nil(t, err, "Error generating key")
 
 	key := FromECDSA(privateKey)
-	if len(key) != 32 {
-		t.Errorf("Generatated Key length is invalid %d", len(key))
-	}
+	assert.Equal(t, len(key), 32, "Generatated Key length is invalid")
 
 	message := helpers.RandomBytes(32)
-	var signature []byte
 
-	if signature, err = Sign(message, privateKey); err != nil {
-		t.Errorf("Signing raised an error %s", err)
-	}
+	signature, err := Sign(message, privateKey)
+	assert.Nil(t, err, "Error signing")
+	assert.Equal(t, len(signature), 65, "Signing raised an error")
 
 	signature = signature[0:64]
 
-	if len(signature) != 64 {
-		t.Errorf("Signature length is invalid %d", len(signature))
-	}
-
 	emptySignature := helpers.EmptyBytes(64)
-	if bytes.Equal(emptySignature, signature) {
-		t.Errorf("Signature is empty %d", len(key))
-	}
+	assert.NotEqual(t, signature, emptySignature, "Signing is empty...")
 
-	publicKey, _ := ComputePublicKey(key)
-	if !VerifySignature(publicKey, message, signature) {
-		t.Errorf("Signature was not validated")
-	}
+	publicKey, err := ComputePublicKey(key)
+	assert.Nil(t, err, "Error generating publickey")
 
-	if VerifySignature(publicKey, message, emptySignature) {
-		t.Errorf("Empty Signature was validated")
-	}
+	assert.Equal(t, VerifySignature(publicKey, message, signature), true, "Signature was not validated")
+	assert.Equal(t, VerifySignature(publicKey, message, emptySignature), false, "Empty Signature was validated")
 
 	signature2 := signature[:]
 	if signature2[2] == 5 {
@@ -74,7 +51,6 @@ func TestECDSASignVerify(t *testing.T) {
 	} else {
 		signature2[2] = 5
 	}
-	if VerifySignature(publicKey, message, signature2) {
-		t.Errorf("Signature2 was validated")
-	}
+
+	assert.Equal(t, VerifySignature(publicKey, message, signature2), false, "Changed Signature was validated")
 }

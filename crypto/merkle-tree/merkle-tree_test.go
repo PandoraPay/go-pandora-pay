@@ -1,7 +1,7 @@
 package merkle_tree
 
 import (
-	"bytes"
+	"github.com/stretchr/testify/assert"
 	"pandora-pay/crypto"
 	"testing"
 )
@@ -15,8 +15,6 @@ func TestMerkleRoot(t *testing.T) {
 	root := MerkleRoot(hashes[:])
 
 	hash := *hashMerkleNode(&hashes[0], &hashes[1])
-	if !bytes.Equal(root[:], hash[:]) {
-		t.Errorf("Merkle Tree Hashes are invalid %s %s %s", string(hashes[0][:]), string(hashes[1][:]), string(root[:]))
-	}
+	assert.Equal(t, root, hash, "Merkle Tree Hashes are invalid")
 
 }

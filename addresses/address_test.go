@@ -1,7 +1,7 @@
 package addresses
 
 import (
-	"bytes"
+	"github.com/stretchr/testify/assert"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/base58"
@@ -15,57 +15,70 @@ func TestAddress_EncodeAddr(t *testing.T) {
 
 	privateKey := GenerateNewPrivateKey()
 	address, err := privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
-	if err != nil || len(address.PublicKey) != 20 || len(address.PaymentID) != 0 {
-		t.Errorf("Address Generation raised an error")
-	}
-	encoded, _ := address.EncodeAddr()
+	assert.Nil(t, err, "Address Generation raised an error")
+	assert.Equal(t, len(address.PublicKey), 20, "Address Generated is invalid")
+	assert.Equal(t, len(address.PaymentID), 0, "Address Generated is invalid")
+
+	encoded, err := address.EncodeAddr()
+	assert.Nil(t, err, "Address EncodeAddr raised an error")
+
 	decoded, err := base58.Decode(encoded[config.NETWORK_BYTE_PREFIX_LENGTH:])
-	if err != nil || len(decoded) != 1+20+1+4 {
-		t.Errorf("AddressEncoded length is invalid")
-	}
+	assert.Nil(t, err, "Address Decoding raised an error")
+	assert.Equal(t, len(decoded), 1+20+1+4, "AddressEncoded length is invalid")
 
 	address, err = privateKey.GenerateAddress(true, 20, helpers.EmptyBytes(0))
-	if err != nil || len(address.PublicKey) != 20 || len(address.PaymentID) != 0 {
-		t.Errorf("Address Generation raised an error")
-	}
+	assert.Nil(t, err, "Address Generating Address raised an error")
+	assert.Equal(t, len(address.PublicKey), 20, "Address Generated is invalid")
+	assert.Equal(t, len(address.PaymentID), 0, "Address Generated is invalid")
+	assert.Equal(t, address.Amount, uint64(20), "Address Generated Amount is invalid")
 
-	encodedAmount, _ := address.EncodeAddr()
-	if len(encoded) == len(encodedAmount) || encoded == encodedAmount {
-		t.Errorf("Encoded Amounts are invalid")
-	}
+	encodedAmount, err := address.EncodeAddr()
+	assert.Nil(t, err, "Encoding Address raised an error")
+	assert.NotEqual(t, len(encoded), len(encodedAmount), "Encoded Amounts are invalid")
+	assert.NotEqual(t, encoded, encodedAmount, "Encoded Amounts are invalid")
 
 	address, err = privateKey.GenerateAddress(true, 20, helpers.EmptyBytes(8))
-	if err != nil || len(address.PublicKey) != 20 || len(address.PaymentID) == 0 {
-		t.Errorf("Address Generation raised an error")
-	}
+	assert.Nil(t, err, "Encoding Address raised an error")
+	assert.Equal(t, len(address.PublicKey), 20, "Address Generated is invalid")
+	assert.Equal(t, len(address.PaymentID), 8, "Address Generated is invalid")
+	assert.Equal(t, address.Amount, uint64(20), "Address Generated Amount is invalid")
 
-	encodedAmountPaymentId, _ := address.EncodeAddr()
-	if len(encoded) == len(encodedAmount) || len(encodedAmount) == len(encodedAmountPaymentId) || encoded == encodedAmount || encodedAmount == encodedAmountPaymentId {
-		t.Errorf("Encoded Amounts are invalid")
-	}
+	encodedAmountPaymentId, err := address.EncodeAddr()
+	assert.Nil(t, err, "Encoding Address raised an error")
+	assert.NotEqual(t, len(encodedAmount), len(encodedAmountPaymentId), "Encoded Amounts are invalid")
+	assert.NotEqual(t, len(encoded), len(encodedAmountPaymentId), "Encoded Amounts are invalid")
+	assert.NotEqual(t, encodedAmount, encodedAmountPaymentId, "Encoded Amounts are invalid")
+	assert.NotEqual(t, encoded, encodedAmountPaymentId, "Encoded Amounts are invalid")
 
 }
 
 func TestDecodeAddr(t *testing.T) {
 
 	privateKey := GenerateNewPrivateKey()
-	address, _ := privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
-	encoded, _ := address.EncodeAddr()
+	address, err := privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
+	assert.Nil(t, err)
+
+	encoded, err := address.EncodeAddr()
+	assert.Nil(t, err)
 
 	decodedAddress, err := DecodeAddr(encoded)
-	if err != nil {
-		t.Errorf("Invalid Decoded Address")
-	}
+	assert.Nil(t, err, "Invalid Decoded Address")
 
-	if !bytes.Equal(decodedAddress.PublicKey, address.PublicKey) || decodedAddress.Amount != address.Amount || !bytes.Equal(decodedAddress.PaymentID, address.PaymentID) {
-		t.Errorf("Decoded Address is not identical")
-	}
+	assert.Equal(t, decodedAddress.PublicKey, address.PublicKey, "Decoded Address is not identical")
+	assert.Equal(t, decodedAddress.Amount, address.Amount, "Decoded Address is not identical")
+	assert.Equal(t, decodedAddress.PaymentID, address.PaymentID, "Decoded Address is not identical")
 
-	address, _ = privateKey.GenerateAddress(false, 40, helpers.EmptyBytes(8))
-	encoded, _ = address.EncodeAddr()
+	address, err = privateKey.GenerateAddress(false, 40, helpers.EmptyBytes(8))
+	assert.Nil(t, err)
+
+	encoded, err = address.EncodeAddr()
+	assert.Nil(t, err)
+
 	decodedAddress, err = DecodeAddr(encoded)
-	if !bytes.Equal(decodedAddress.PublicKey, address.PublicKey) || decodedAddress.Amount != address.Amount || !bytes.Equal(decodedAddress.PaymentID, address.PaymentID) {
-		t.Errorf("Decoded Address is not identical")
-	}
+	assert.Nil(t, err)
+
+	assert.Equal(t, decodedAddress.PublicKey, address.PublicKey, "Decoded Address is not identical")
+	assert.Equal(t, decodedAddress.Amount, address.Amount, "Decoded Address is not identical")
+	assert.Equal(t, decodedAddress.PaymentID, address.PaymentID, "Decoded Address is not identical")
 
 }

@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"encoding/binary"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -9,51 +10,42 @@ func TestSerializeNumber(t *testing.T) {
 
 	b := make([]byte, binary.MaxVarintLen64)
 	n := binary.PutUvarint(b, 0)
-	if n != 1 || b[0] != 0 {
-		t.Errorf("Invalid serialization %d %d %s", len(b), b[0], string(b))
-	}
+	assert.Equal(t, n, 1)
+	assert.Equal(t, b[0], uint8(0))
 
 	n = binary.PutUvarint(b, 1)
-	if n != 1 || b[0] != 1 {
-		t.Errorf("Invalid serialization %d %d %s", len(b), b[0], string(b))
-	}
+	assert.Equal(t, n, 1)
+	assert.Equal(t, b[0], uint8(1))
 
 	n = binary.PutUvarint(b, 120)
-	if n != 1 || b[0] != 120 {
-		t.Errorf("Invalid serialization %d %d %s", len(b), b[0], string(b))
-	}
+	assert.Equal(t, n, 1)
+	assert.Equal(t, b[0], uint8(120))
 
 	n = binary.PutUvarint(b, 126)
-	if n != 1 || b[0] != 126 {
-		t.Errorf("Invalid serialization %d %d %s", len(b), b[0], string(b))
-	}
+	assert.Equal(t, n, 1)
+	assert.Equal(t, b[0], uint8(126))
 
 	n = binary.PutUvarint(b, 127)
-	if n != 1 || b[0] != 127 {
-		t.Errorf("Invalid serialization %d %d %s", len(b), b[0], string(b))
-	}
+	assert.Equal(t, n, 1)
+	assert.Equal(t, b[0], uint8(127))
 
 	n = binary.PutUvarint(b, 128)
-	if n != 2 || b[0] != 128 {
-		t.Errorf("Invalid serialization %d %d %s", len(b), b[0], string(b))
-	}
+	assert.Equal(t, n, 2)
+	assert.Equal(t, b[0], uint8(128))
 
 	a, done := binary.Uvarint(b)
-	if a != 128 || done <= 0 {
-		t.Errorf("Invalid serialization %d %d", a, b)
-	}
+	assert.Equal(t, a, uint64(128))
+	assert.Equal(t, done > 0, true)
 
 	binary.PutUvarint(b, 0xFFFFFFFFFFFFFFFF)
 	a, done = binary.Uvarint(b)
-	if a != 0xFFFFFFFFFFFFFFFF || done <= 0 {
-		t.Errorf("Invalid serialization %d %d", b, a)
-	}
+	assert.Equal(t, a, uint64(0xFFFFFFFFFFFFFFFF))
+	assert.Equal(t, done > 0, true)
 
 	binary.PutUvarint(b, 0xFFFFFFFFFFFFFFFC)
 	a, done = binary.Uvarint(b)
-	if a != 0xFFFFFFFFFFFFFFFC {
-		t.Errorf("Invalid serialization %d %d", a, b)
-	}
+	assert.Equal(t, a, uint64(0xFFFFFFFFFFFFFFFC))
+	assert.Equal(t, done > 0, true)
 
 }
 
@@ -67,9 +59,9 @@ func TestDeserializeNumber(t *testing.T) {
 		binary.PutUvarint(b, no)
 
 		a, done := binary.Uvarint(b)
-		if a != no || done <= 0 {
-			t.Errorf("Invalid serialization deserialization %d %s %d", no, string(b), a)
-		}
+		assert.Equal(t, a, no)
+		assert.Equal(t, done > 0, true)
+
 	}
 
 }
