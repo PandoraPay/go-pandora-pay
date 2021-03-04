@@ -294,17 +294,18 @@ func BlockchainInit(forging *forging.Forging) (chain *Blockchain, err error) {
 	}
 
 	chain.updateChainInfo()
+	chain.initForging()
 
 	return
 }
 
-func (chain *Blockchain) initForging(forging *forging.Forging) {
+func (chain *Blockchain) initForging() {
 
 	go func() {
 
 		for {
 
-			blkComplete := <-forging.SolutionChannel
+			blkComplete := <-chain.forging.SolutionChannel
 
 			var array []*block.BlockComplete
 			array = append(array, blkComplete)
@@ -324,6 +325,5 @@ func (chain *Blockchain) initForging(forging *forging.Forging) {
 
 }
 
-func BlockchainClose() {
-	forging.StopForging()
+func (chain *Blockchain) Close() {
 }

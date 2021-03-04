@@ -18,18 +18,6 @@ import (
 	"syscall"
 )
 
-func mainloop() {
-
-	exitSignal := make(chan os.Signal)
-	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
-	<-exitSignal
-
-	blockchain.BlockchainClose()
-	store.DBClose()
-
-	fmt.Println("Shutting down")
-}
-
 var commands = `PANDORA PAY.
 
 Usage:
@@ -113,5 +101,13 @@ func main() {
 
 	gui.Log("Main Loop")
 
-	mainloop()
+	exitSignal := make(chan os.Signal)
+	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
+	<-exitSignal
+
+	chain.Close()
+	forging.Close()
+	store.DBClose()
+
+	fmt.Println("Shutting down")
 }

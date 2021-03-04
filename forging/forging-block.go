@@ -17,7 +17,7 @@ func forge(forging *Forging, threads, threadIndex int) {
 
 	forging.Wallet.RLock()
 	defer forging.Wallet.RUnlock()
-	defer wg.Done()
+	defer forging.wg.Done()
 
 	height := forging.blkComplete.Block.Height
 	serialized := forging.blkComplete.Block.SerializeBlock(true, false)
@@ -26,7 +26,7 @@ func forge(forging *Forging, threads, threadIndex int) {
 	serialized = serialized[:len(serialized)-n-20]
 	timestamp := forging.blkComplete.Block.Timestamp + 1
 
-	for atomic.LoadInt32(&forgingWorking) == 1 {
+	for atomic.LoadInt32(&forging.forgingWorking) == 1 {
 
 		if timestamp > uint64(time.Now().Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
 			time.Sleep(100 * time.Millisecond)
@@ -45,7 +45,7 @@ func forge(forging *Forging, threads, threadIndex int) {
 
 				if stakingAmount >= stake.GetRequiredStake(height) {
 
-					if atomic.LoadInt32(&forgingWorking) == 0 {
+					if atomic.LoadInt32(&forging.forgingWorking) == 0 {
 						break
 					}
 

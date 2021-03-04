@@ -10,9 +10,6 @@ import (
 	"time"
 )
 
-var started int32
-var forgingWorking int32
-
 type Forging struct {
 	blkComplete *block.BlockComplete
 	target      *big.Int
@@ -21,12 +18,14 @@ type Forging struct {
 	solutionTimestamp uint64
 	solutionAddress   *ForgingWalletAddress
 
-	Wallet ForgingWallet
+	started        int32
+	forgingWorking int32
 
+	wg sync.WaitGroup
+
+	Wallet          ForgingWallet
 	SolutionChannel chan *block.BlockComplete
 }
-
-var wg = sync.WaitGroup{}
 
 func ForgingInit() (forging *Forging, err error) {
 
@@ -49,11 +48,11 @@ func ForgingInit() (forging *Forging, err error) {
 
 func (forging *Forging) startForging(threads int) {
 
-	if !atomic.CompareAndSwapInt32(&started, 0, 1) {
+	if !atomic.CompareAndSwapInt32(&forging.started, 0, 1) {
 		return
 	}
 
-	for atomic.LoadInt32(&started) == 1 {
+	for atomic.LoadInt32(&forging.started) == 1 {
 
 		if forging.solution || forging.blkComplete == nil {
 			// gui.Error("No block for staking..." )
@@ -61,17 +60,17 @@ func (forging *Forging) startForging(threads int) {
 			continue
 		}
 
-		if !atomic.CompareAndSwapInt32(&forgingWorking, 0, 1) {
+		if !atomic.CompareAndSwapInt32(&forging.forgingWorking, 0, 1) {
 			gui.Error("A strange error as forgingWorking couldn't be set to 1 ")
 			return
 		}
 
 		for i := 0; i < threads; i++ {
-			wg.Add(1)
+			forging.wg.Add(1)
 			go forge(forging, threads, i)
 		}
 
-		wg.Wait()
+		forging.wg.Wait()
 
 		if forging.solution {
 			err := forging.publishSolution()
@@ -84,21 +83,21 @@ func (forging *Forging) startForging(threads int) {
 
 }
 
-func StopForging() {
-	StopForgingWorkers()
-	atomic.AddInt32(&started, -1)
+func (forging *Forging) StopForging() {
+	forging.StopForgingWorkers()
+	atomic.AddInt32(&forging.started, -1)
 }
 
-func StopForgingWorkers() {
-	atomic.CompareAndSwapInt32(&forgingWorking, 1, 0)
+func (forging *Forging) StopForgingWorkers() {
+	atomic.CompareAndSwapInt32(&forging.forgingWorking, 1, 0)
 }
 
 //thread safe
 func (forging *Forging) RestartForgingWorkers(blkComplete *block.BlockComplete, target *big.Int) {
 
-	atomic.CompareAndSwapInt32(&forgingWorking, 1, 0)
+	atomic.CompareAndSwapInt32(&forging.forgingWorking, 1, 0)
 
-	wg.Wait()
+	forging.wg.Wait()
 
 	forging.solution = false
 	forging.blkComplete = blkComplete
@@ -109,7 +108,7 @@ func (forging *Forging) RestartForgingWorkers(blkComplete *block.BlockComplete, 
 //thread safe
 func (forging *Forging) foundSolution(address *ForgingWalletAddress, timestamp uint64) {
 
-	if atomic.CompareAndSwapInt32(&forgingWorking, 1, 0) {
+	if atomic.CompareAndSwapInt32(&forging.forgingWorking, 1, 0) {
 		forging.solution = true
 		forging.solutionTimestamp = timestamp
 		forging.solutionAddress = address
@@ -137,4 +136,8 @@ func (forging *Forging) publishSolution() (err error) {
 	//send message to blockchain
 	forging.SolutionChannel <- forging.blkComplete
 	return
+}
+
+func (forging *Forging) Close() {
+	forging.StopForging()
 }
