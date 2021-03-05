@@ -58,18 +58,18 @@ type Wallet struct {
 	sync.RWMutex `json:"-"`
 }
 
-func WalletInit(forging *forging.Forging) (wallet *Wallet, err error) {
+func WalletInit(forging *forging.Forging) (wallet *Wallet) {
 
 	wallet = &Wallet{
 		forging: forging,
 	}
 
-	err = wallet.loadWallet()
+	err := wallet.loadWallet()
 	if err != nil && err.Error() == "Wallet doesn't exist" {
 		err = wallet.createEmptyWallet()
 	}
 	if err != nil {
-		return
+		panic(err)
 	}
 
 	initWalletCLI(wallet)

@@ -20,7 +20,7 @@ func forge(forging *Forging, threads, threadIndex int) {
 	defer forging.wg.Done()
 
 	height := forging.blkComplete.Block.Height
-	serialized := forging.blkComplete.Block.serializeBlockForForging()
+	serialized := forging.blkComplete.Block.SerializeForForging()
 	n := binary.PutUvarint(buf, forging.blkComplete.Block.Timestamp)
 
 	serialized = serialized[:len(serialized)-n-20]

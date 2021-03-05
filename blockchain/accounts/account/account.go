@@ -81,7 +81,7 @@ func (account *Account) GetDelegatedStakeAvailable(blockHeight uint64) uint64 {
 	return account.DelegatedStake.GetDelegatedStakeAvailable(blockHeight)
 }
 
-func (account *Account) refreshDelegatedStake(blockHeight uint64) {
+func (account *Account) RefreshDelegatedStake(blockHeight uint64) {
 	account.DelegatedStake.RefreshDelegatedStake(blockHeight)
 	if account.DelegatedStake.IsDelegatedStakeEmpty() {
 		account.DelegatedStakeVersion = 0

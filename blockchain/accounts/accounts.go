@@ -49,12 +49,13 @@ func (accounts *Accounts) GetAccount(key [20]byte) *account.Account {
 	return acc
 }
 
-func (accounts *Accounts) UpdateAccount(key [20]byte, acc *account.Account) {
+func (accounts *Accounts) UpdateAccount(key [20]byte, blockHeight uint64, acc *account.Account) {
+	acc.RefreshDelegatedStake(blockHeight)
 	if acc.IsAccountEmpty() {
 		accounts.HashMap.Delete(key[:])
-	} else {
-		accounts.HashMap.Update(key[:], acc.Serialize())
+		return
 	}
+	accounts.HashMap.Update(key[:], acc.Serialize())
 }
 
 func (accounts *Accounts) ExistsAccount(key [20]byte) bool {

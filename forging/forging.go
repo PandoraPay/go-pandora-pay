@@ -28,7 +28,7 @@ type Forging struct {
 	SolutionChannel chan *block.BlockComplete
 }
 
-func ForgingInit() (forging *Forging, err error) {
+func ForgingInit() (forging *Forging) {
 
 	forging = &Forging{
 		SolutionChannel: make(chan *block.BlockComplete),
@@ -38,8 +38,8 @@ func ForgingInit() (forging *Forging, err error) {
 	}
 
 	gui.Log("Forging Init")
-	if err = forging.Wallet.loadBalances(); err != nil {
-		return
+	if err := forging.Wallet.loadBalances(); err != nil {
+		panic(err)
 	}
 
 	go forging.startForging(config.CPU_THREADS)

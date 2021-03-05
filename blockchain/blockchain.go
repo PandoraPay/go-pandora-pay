@@ -35,7 +35,7 @@ type Blockchain struct {
 
 	Sync bool `json:"-"`
 
-	UpdateChannel chan int `json:"-"`
+	UpdateChannel chan uint64 `json:"-"`
 
 	forging *forging.Forging `json:"-"`
 	mempool *mempool.MemPool `json:"-"`
@@ -244,7 +244,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	gui.Warning("-------------------------------------------")
 	chain.updateChainInfo()
 
-	chain.UpdateChannel <- 1 //sending 1
+	chain.UpdateChannel <- chain.Height //sending 1
 
 	chain.forging.Wallet.UpdateBalanceChanges(accs)
 	chain.mempool.UpdateChanges(chain.Hash, chain.Height, accs, toks)
@@ -256,7 +256,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 }
 
-func BlockchainInit(forging *forging.Forging, mempool *mempool.MemPool) (chain *Blockchain, err error) {
+func BlockchainInit(forging *forging.Forging, mempool *mempool.MemPool) (chain *Blockchain) {
 
 	gui.Log("Blockchain init...")
 
@@ -266,18 +266,16 @@ func BlockchainInit(forging *forging.Forging, mempool *mempool.MemPool) (chain *
 		forging:       forging,
 		mempool:       mempool,
 		Sync:          false,
-		UpdateChannel: make(chan int),
+		UpdateChannel: make(chan uint64),
 	}
 
 	success, err := chain.loadBlockchain()
 	if err != nil {
-		return
+		panic(err)
 	}
 
 	if !success {
-		if err = chain.init(); err != nil {
-			return
-		}
+		chain.init()
 	}
 
 	chain.updateChainInfo()

@@ -16,7 +16,7 @@ import (
 	"strconv"
 )
 
-func (chain *Blockchain) init() (err error) {
+func (chain *Blockchain) init() {
 
 	chain.Height = 0
 	chain.Hash = genesis.GenesisData.Hash
@@ -38,7 +38,7 @@ func (chain *Blockchain) init() (err error) {
 		SupplyKey:        config.BURN_PUBLIC_KEY_HASH,
 	}
 
-	if err = store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
+	if err := store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 
 		toks := tokens.NewTokens(tx)
 		toks.UpdateToken(config.NATIVE_TOKEN_FULL, &tok)
@@ -48,10 +48,8 @@ func (chain *Blockchain) init() (err error) {
 		return
 
 	}); err != nil {
-		return
+		panic(err)
 	}
-
-	return
 }
 
 func (chain *Blockchain) computeNextTargetBig(bucket *bolt.Bucket) *big.Int {

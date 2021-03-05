@@ -30,10 +30,7 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 
 		privateKeys = append(privateKeys, addresses.PrivateKey{Key: keys[i]})
 
-		publicKey, err := privateKeys[i].GeneratePublicKey()
-		if err != nil {
-			panic(err)
-		}
+		publicKey := privateKeys[i].GeneratePublicKey()
 
 		vin = append(vin, &transaction_simple.TransactionSimpleInput{
 			Amount:    amounts[i],
@@ -85,13 +82,10 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 	return
 }
 
-func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction, err error) {
+func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction) {
 
 	privateKey := addresses.PrivateKey{Key: key}
-	var publicKey [33]byte
-	if publicKey, err = privateKey.GeneratePublicKey(); err != nil {
-		return
-	}
+	publicKey := privateKey.GeneratePublicKey()
 
 	tx = &transaction.Transaction{
 		Version: 0,

@@ -12,15 +12,25 @@ type PrivateKey struct {
 	Key [32]byte
 }
 
-func (pk *PrivateKey) GeneratePublicKey() (publicKey [33]byte, err error) {
+func (pk *PrivateKey) GeneratePublicKeySilent() (publicKey [33]byte, err error) {
 
-	var pub []byte
-	if pub, err = ecdsa.ComputePublicKey(pk.Key[:]); err != nil {
-		return
+	defer func() {
+		if err2 := recover(); err2 != nil {
+			err = helpers.ConvertRecoverError(err2)
+		}
+	}()
+	publicKey = pk.GeneratePublicKey()
+	return
+}
+
+func (pk *PrivateKey) GeneratePublicKey() [33]byte {
+
+	pub, err := ecdsa.ComputePublicKey(pk.Key[:])
+	if err != nil {
+		panic(err)
 	}
 
-	publicKey = *helpers.Byte33(pub)
-	return
+	return *helpers.Byte33(pub)
 }
 
 func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) (*Address, error) {

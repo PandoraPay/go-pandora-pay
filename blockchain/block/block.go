@@ -43,8 +43,8 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens) {
 	}
 
 	reward := reward.GetRewardAt(blk.Height)
-	acc.DelegatedStake.AddDelegatedStake(true, reward, blk.Height)
-	acs.UpdateAccount(blk.Forger, acc)
+	acc.DelegatedStake.AddDelegatedStake(true, reward)
+	acs.UpdateAccount(blk.Forger, blk.Height, acc)
 
 	tok := toks.GetToken(config.NATIVE_TOKEN_FULL)
 	tok.AddSupply(true, reward)
@@ -57,8 +57,8 @@ func (blk *Block) RemoveBlock(acs *accounts.Accounts, toks *tokens.Tokens) {
 	acc := acs.GetAccount(blk.Forger)
 
 	reward := reward.GetRewardAt(blk.Height)
-	acc.DelegatedStake.AddDelegatedStake(false, reward, blk.Height)
-	acs.UpdateAccount(blk.Forger, acc)
+	acc.DelegatedStake.AddDelegatedStake(false, reward)
+	acs.UpdateAccount(blk.Forger, blk.Height, acc)
 
 	tok := toks.GetToken(config.NATIVE_TOKEN_FULL)
 

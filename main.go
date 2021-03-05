@@ -13,6 +13,8 @@ import (
 	"pandora-pay/mempool"
 	"pandora-pay/settings"
 	"pandora-pay/store"
+	"pandora-pay/testnet"
+	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
 	"runtime"
 	"syscall"
@@ -53,51 +55,32 @@ func main() {
 		gui.Fatal("Error processing arguments", err)
 	}
 
-	if err = config.InitConfig(); err != nil {
-		gui.Fatal("Error initializing Config", err)
+	config.InitConfig()
+	store.DBInit()
+	myForging := forging.ForgingInit()
+	globals.Data["forging"] = myForging
+
+	myMempool := mempool.InitMemPool()
+	globals.Data["mempool"] = myMempool
+
+	myWallet := wallet.WalletInit(myForging)
+	globals.Data["wallet"] = myWallet
+
+	mySettings := settings.SettingsInit()
+	globals.Data["settings"] = mySettings
+
+	myChain := blockchain.BlockchainInit(myForging, myMempool)
+	globals.Data["chain"] = myChain
+
+	myTransactionsBuilder := transactions_builder.TransactionsBuilderInit(myWallet, myChain)
+	globals.Data["transactionsBuilder"] = myTransactionsBuilder
+
+	if globals.Arguments["--new-genesis"] == true {
+
+		myTestnet := testnet.TestnetInit(myWallet, myMempool, myChain, myTransactionsBuilder)
+		globals.Data["testnet"] = myTestnet
+
 	}
-
-	if err = store.DBInit(); err != nil {
-		gui.Fatal("Error initializing Database", err)
-	}
-
-	forging, err := forging.ForgingInit()
-	if err != nil {
-		gui.Fatal("Error initializing Forging", err)
-	}
-	globals.Data["forging"] = forging
-
-	mempool, err := mempool.InitMemPool()
-	if err != nil {
-		gui.Fatal("Error initializing Mempool", err)
-	}
-	globals.Data["mempool"] = mempool
-
-	wallet, err := wallet.WalletInit(forging)
-	if err != nil {
-		gui.Fatal("Error initializing Wallet", err)
-	}
-	globals.Data["wallet"] = wallet
-
-	settings, err := settings.SettingsInit()
-	if err != nil {
-		gui.Fatal("Error initializing Settings", err)
-	}
-	globals.Data["settings"] = settings
-
-	chain, err := blockchain.BlockchainInit(forging, mempool)
-	if err != nil {
-		gui.Fatal("Error Initializing Blockchain", err)
-	}
-	globals.Data["chain"] = chain
-
-	go func() {
-
-		for {
-			_ = <-chain.UpdateChannel
-		}
-
-	}()
 
 	gui.Log("Main Loop")
 
@@ -105,8 +88,8 @@ func main() {
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 	<-exitSignal
 
-	chain.Close()
-	forging.Close()
+	myChain.Close()
+	myForging.Close()
 	store.DBClose()
 
 	fmt.Println("Shutting down")

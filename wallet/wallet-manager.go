@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"bytes"
 	"errors"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
@@ -10,6 +11,20 @@ import (
 	"pandora-pay/helpers"
 	"strconv"
 )
+
+func (wallet *Wallet) GetWalletAddressByAddress(addressEncoded string) (out *WalletAddress) {
+
+	address := addresses.DecodeAddr(addressEncoded)
+
+	for _, addr := range wallet.Addresses {
+		if bytes.Equal(addr.PublicKey[:], address.PublicKey) || bytes.Equal(addr.PublicKeyHash[:], address.PublicKey) {
+			out = addr
+			return
+		}
+	}
+
+	panic("address was not found")
+}
 
 func (wallet *Wallet) addNewAddress() (err error) {
 
@@ -23,7 +38,7 @@ func (wallet *Wallet) addNewAddress() (err error) {
 	privateKey := addresses.PrivateKey{Key: *helpers.Byte32(key.Key)}
 
 	var publicKey [33]byte
-	if publicKey, err = privateKey.GeneratePublicKey(); err != nil {
+	if publicKey, err = privateKey.GeneratePublicKeySilent(); err != nil {
 		gui.Fatal("Generating Public Key from Private key raised an error", err)
 	}
 

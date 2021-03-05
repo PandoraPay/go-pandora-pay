@@ -37,27 +37,27 @@ func (store *Store) close() {
 	gui.Log("Store Closed " + store.Name)
 }
 
-func DBInit() (err error) {
+func DBInit() {
 	StoreBlockchain.init()
 	StoreWallet.init()
 	StoreSettings.init()
 	StoreMempool.init()
 
-	if err = StoreWallet.DB.Update(func(tx *bolt.Tx) (err error) {
-		_, err = tx.CreateBucketIfNotExists([]byte("Wallet"))
-		return
-	}); err != nil {
-		return
-	}
-
-	if err = StoreSettings.DB.Update(func(tx *bolt.Tx) (err error) {
+	if err := StoreSettings.DB.Update(func(tx *bolt.Tx) (err error) {
 		_, err = tx.CreateBucketIfNotExists([]byte("Settings"))
 		return
 	}); err != nil {
-		return
+		panic(err)
 	}
 
-	if err = StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
+	if err := StoreWallet.DB.Update(func(tx *bolt.Tx) (err error) {
+		_, err = tx.CreateBucketIfNotExists([]byte("Wallet"))
+		return
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 		if _, err = tx.CreateBucketIfNotExists([]byte("Chain")); err != nil {
 			return
 		}
@@ -67,17 +67,14 @@ func DBInit() (err error) {
 		_, err = tx.CreateBucketIfNotExists([]byte("Tokens"))
 		return
 	}); err != nil {
-		return
+		panic(err)
 	}
 
-	if err = StoreMempool.DB.Update(func(tx *bolt.Tx) (err error) {
-
+	if err := StoreMempool.DB.Update(func(tx *bolt.Tx) (err error) {
 		return
 	}); err != nil {
-		return
+		panic(err)
 	}
-
-	return
 }
 
 func DBClose() {

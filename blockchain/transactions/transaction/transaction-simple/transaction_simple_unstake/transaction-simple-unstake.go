@@ -1,6 +1,7 @@
 package transaction_simple_unstake
 
 import (
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/helpers"
 )
 
@@ -9,23 +10,17 @@ type TransactionSimpleUnstake struct {
 	UnstakeFeeExtra uint64
 }
 
-//func (tx *TransactionSimpleUnstake) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
-//	if !acc.HasDelegatedStake() {
-//		panic("Account has no delegated stake")
-//	}
-//	acc.AddDelegatedStake( false, tx.UnstakeAmount, blockHeight );
-//	if err = acc.AddDelegatedStake( false, tx.UnstakeFeeExtra, blockHeight ); err != nil {
-//		return
-//	}
-//	return
-//}
-//
-//func (tx *TransactionSimpleUnstake) RemoveTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
-//	if err = acc.AddBalance( true, tx.UnstakeFeeExtra, config.NATIVE_TOKEN ); err != nil {
-//		return
-//	}
-//	return
-//}
+func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) {
+	acc.DelegatedStake.AddDelegatedStake(false, tx.UnstakeAmount)
+	acc.DelegatedStake.AddDelegatedStake(false, tx.UnstakeFeeExtra)
+	acc.DelegatedStake.AddDelegatedUnstake(true, tx.UnstakeAmount, blockHeight)
+}
+
+func (tx *TransactionSimpleUnstake) RemoveTransactionVin0(blockHeight uint64, acc *account.Account) {
+	acc.DelegatedStake.AddDelegatedUnstake(false, tx.UnstakeAmount, blockHeight)
+	acc.DelegatedStake.AddDelegatedStake(true, tx.UnstakeFeeExtra)
+	acc.DelegatedStake.AddDelegatedStake(true, tx.UnstakeAmount)
+}
 
 func (tx *TransactionSimpleUnstake) Validate() {
 	if tx.UnstakeAmount == 0 {

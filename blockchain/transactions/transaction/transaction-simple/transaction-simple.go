@@ -28,16 +28,20 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 				panic("Account nonce doesn't match")
 			}
 			acc.IncrementNonce(true)
+			switch tx.TxScript {
+			case TxSimpleScriptUnstake:
+				tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake).IncludeTransactionVin0(blockHeight, acc)
+			}
 		}
 
 		acc.AddBalance(false, vin.Amount, vin.Token)
-		accs.UpdateAccount(vin.GetPublicKeyHash(), acc)
+		accs.UpdateAccount(vin.GetPublicKeyHash(), blockHeight, acc)
 	}
 
 	for _, vout := range tx.Vout {
 		acc := accs.GetAccountEvenEmpty(vout.PublicKeyHash)
 		acc.AddBalance(true, vout.Amount, vout.Token)
-		accs.UpdateAccount(vout.PublicKeyHash, acc)
+		accs.UpdateAccount(vout.PublicKeyHash, blockHeight, acc)
 	}
 
 	//switch tx.TxScript {
@@ -58,7 +62,7 @@ func (tx *TransactionSimple) RemoveTransaction(blockHeight uint64, accs *account
 		vout := tx.Vout[i]
 		acc := accs.GetAccountEvenEmpty(vout.PublicKeyHash)
 		acc.AddBalance(false, vout.Amount, vout.Token)
-		accs.UpdateAccount(vout.PublicKeyHash, acc)
+		accs.UpdateAccount(vout.PublicKeyHash, blockHeight, acc)
 	}
 
 	for i := len(tx.Vin) - 1; i >= 0; i-- {
@@ -66,6 +70,11 @@ func (tx *TransactionSimple) RemoveTransaction(blockHeight uint64, accs *account
 		acc := accs.GetAccountEvenEmpty(vin.GetPublicKeyHash())
 
 		if i == 0 {
+			switch tx.TxScript {
+			case TxSimpleScriptUnstake:
+				tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake).RemoveTransactionVin0(blockHeight, acc)
+			}
+
 			acc.IncrementNonce(false)
 			if acc.Nonce != tx.Nonce {
 				panic("Account nonce doesn't match")
@@ -73,7 +82,7 @@ func (tx *TransactionSimple) RemoveTransaction(blockHeight uint64, accs *account
 		}
 
 		acc.AddBalance(true, vin.Amount, vin.Token)
-		accs.UpdateAccount(vin.GetPublicKeyHash(), acc)
+		accs.UpdateAccount(vin.GetPublicKeyHash(), blockHeight, acc)
 	}
 
 }

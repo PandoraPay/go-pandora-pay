@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"errors"
 	"fmt"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
@@ -48,7 +49,7 @@ type MemPool struct {
 	mutex sync.Mutex `json:"-"`
 }
 
-func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) (result bool) {
+func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) (result bool, err error) {
 
 	//making sure that the transaction is not inserted twice
 	mempool.mutex.Lock()
@@ -73,6 +74,7 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 		}
 	}
 	if selectedFeeToken == nil {
+		err = errors.New("Transaction fee was not accepted")
 		return
 	}
 
@@ -87,7 +89,8 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 
 	mempool.txs.Store(hash, object)
 
-	return true
+	result = true
+	return
 }
 
 func (mempool *MemPool) Exists(txId helpers.Hash) bool {
@@ -174,6 +177,7 @@ func (mempool *MemPool) Refresh() {
 		if hasWorkToDo {
 
 			if listIndex == -1 {
+
 				list = mempool.getTxsList()
 				sort.Slice(list, func(i, j int) bool {
 
@@ -212,11 +216,11 @@ func (mempool *MemPool) Refresh() {
 	}
 }
 
-func InitMemPool() (mempool *MemPool, err error) {
+func InitMemPool() (mempool *MemPool) {
 
 	gui.Log("MemPool init...")
 
-	mempool = new(MemPool)
+	mempool = &MemPool{}
 
 	go func() {
 		for {

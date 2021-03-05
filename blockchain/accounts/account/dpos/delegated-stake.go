@@ -28,7 +28,7 @@ func (delegatedStake *DelegatedStake) AddDelegatedUnstake(sign bool, amount, blo
 	delegatedStake.UnstakeHeight = blockHeight + config.UNSTAKE_BLOCK_WINDOW
 }
 
-func (delegatedStake *DelegatedStake) AddDelegatedStake(sign bool, amount, blockHeight uint64) {
+func (delegatedStake *DelegatedStake) AddDelegatedStake(sign bool, amount uint64) {
 	helpers.SafeUint64Update(sign, &delegatedStake.StakeAvailable, amount)
 }
 

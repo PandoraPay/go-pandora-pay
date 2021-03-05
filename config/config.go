@@ -43,7 +43,7 @@ var (
 	BIG_FLOAT_MAX_256 = new(big.Float).SetInt(BIG_INT_MAX_256) // 0xFFFFFFFF....
 )
 
-func InitConfig() (err error) {
+func InitConfig() {
 
 	if globals.Arguments["--testnet"] == true {
 		NETWORK_SELECTED = TEST_NET_NETWORK_BYTE

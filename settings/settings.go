@@ -17,16 +17,16 @@ type Settings struct {
 	sync.RWMutex `json:"-"`
 }
 
-func SettingsInit() (settings *Settings, err error) {
+func SettingsInit() (settings *Settings) {
 
 	settings = new(Settings)
 
-	err = settings.loadSettings()
+	err := settings.loadSettings()
 	if err != nil && err.Error() == "Settings doesn't exist" {
 		err = settings.createEmptySettings()
 	}
 	if err != nil {
-		return
+		panic(err)
 	}
 
 	var changed bool

@@ -39,9 +39,8 @@ func TestCreateSimpleTx(t *testing.T) {
 func TestCreateUnstakeTx(t *testing.T) {
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateUnstakeTx(0, privateKey.Key, 534, -1, []byte{}, false)
+	tx := CreateUnstakeTx(0, privateKey.Key, 534, -1, []byte{}, false)
 	assert.NotNil(t, tx, "creating unstake tx is nil")
-	assert.Nil(t, err, "error creating unstake tx")
 
 	assert.NotPanics(t, tx.Validate, "error validating tx")
 
@@ -56,7 +55,6 @@ func TestCreateUnstakeTx(t *testing.T) {
 	assert.Equal(t, tx2.VerifySignature(), true, "Verify signature failed2")
 
 	fees := tx.ComputeFees()
-	assert.Nil(t, err, "Error validating fees")
 	assert.Equal(t, fees[string(config.NATIVE_TOKEN)] > uint64(100), true, "Fees were calculated invalid")
 
 	base := tx2.TxBase.(*transaction_simple.TransactionSimple)
@@ -71,9 +69,8 @@ func TestCreateUnstakeTx(t *testing.T) {
 func TestCreateUnstakeTxPayExtra(t *testing.T) {
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateUnstakeTx(0, privateKey.Key, 534, -1, []byte{}, true)
+	tx := CreateUnstakeTx(0, privateKey.Key, 534, -1, []byte{}, true)
 	assert.NotNil(t, tx, "creating unstake tx is nil")
-	assert.Nil(t, err, "error creating unstake tx")
 
 	assert.NotPanics(t, tx.Validate, "error validating tx")
 
