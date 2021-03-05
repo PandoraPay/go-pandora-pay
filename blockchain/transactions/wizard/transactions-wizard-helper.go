@@ -2,7 +2,6 @@ package wizard
 
 import (
 	"bytes"
-	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction_simple_unstake"
@@ -21,7 +20,7 @@ func setFeeTxNow(tx *transaction.Transaction, feePerByte, initAmount uint64, val
 	return
 }
 
-func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFeeInExtra bool) (err error) {
+func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFeeInExtra bool) {
 
 	if feePerByte == 0 {
 		return
@@ -30,25 +29,26 @@ func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFee
 	if feePerByte == -1 {
 		feePerByte = int(fees.FEES_PER_BYTE[string(feeToken)])
 		if feePerByte == 0 {
-			return errors.New("The token will most like not be accepted by other miners")
+			panic("The token will most like not be accepted by other miners")
 		}
 	}
 
 	if feePerByte != 0 {
 
-		if payFeeInExtra {
+		switch tx.TxType {
+		case transaction_type.TxSimple:
+			base := tx.TxBase.(*transaction_simple.TransactionSimple)
 
-			switch tx.TxType {
-			case transaction_type.TransactionTypeSimpleUnstake:
-				unstake := tx.TxBase.(*transaction_simple.TransactionSimple).Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
-				setFeeTxNow(tx, uint64(feePerByte), 0, &unstake.UnstakeFeeExtra)
-				return
-			}
+			if payFeeInExtra {
 
-		} else {
+				switch base.TxScript {
+				case transaction_simple.TxSimpleScriptUnstake:
+					unstake := base.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
+					setFeeTxNow(tx, uint64(feePerByte), 0, &unstake.UnstakeFeeExtra)
+					return
+				}
 
-			switch tx.TxType {
-			case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
+			} else {
 
 				for _, vin := range tx.TxBase.(*transaction_simple.TransactionSimple).Vin {
 					if bytes.Equal(vin.Token, feeToken) {
@@ -57,12 +57,13 @@ func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFee
 					}
 				}
 
-				return errors.New("There is no input to set the fee!")
+				panic("There is no input to set the fee!")
+
 			}
 
 		}
 
 	}
 
-	return errors.New("Couldn't set fee")
+	panic("Couldn't set fee")
 }

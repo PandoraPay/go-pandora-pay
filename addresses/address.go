@@ -73,83 +73,74 @@ func (a *Address) EncodeAddr() (string, error) {
 	return prefix + ret, nil
 }
 
-func DecodeAddr(input string) (addr2 *Address, err error) {
+func DecodeAddrSilent(input string) (adr *Address, err error) {
+	defer func() {
+		if err2 := recover(); err2 != nil {
+			err = helpers.ConvertRecoverError(err2)
+		}
+	}()
+	adr = DecodeAddr(input)
+	return
+}
 
-	adr := Address{PublicKey: []byte{}, PaymentID: []byte{}}
+func DecodeAddr(input string) (adr *Address) {
+
+	adr = &Address{PublicKey: []byte{}, PaymentID: []byte{}}
 
 	prefix := input[0:config.NETWORK_BYTE_PREFIX_LENGTH]
 
-	if prefix == config.MAIN_NET_NETWORK_BYTE_PREFIX {
+	switch prefix {
+	case config.MAIN_NET_NETWORK_BYTE_PREFIX:
 		adr.Network = config.MAIN_NET_NETWORK_BYTE
-	} else if prefix == config.TEST_NET_NETWORK_BYTE_PREFIX {
+	case config.TEST_NET_NETWORK_BYTE_PREFIX:
 		adr.Network = config.TEST_NET_NETWORK_BYTE
-	} else if prefix == config.DEV_NET_NETWORK_BYTE_PREFIX {
+	case config.DEV_NET_NETWORK_BYTE_PREFIX:
 		adr.Network = config.DEV_NET_NETWORK_BYTE
-	} else {
-		return nil, errors.New("Invalid Address Network PREFIX!")
+	default:
+		panic("Invalid Address Network PREFIX!")
 	}
 
 	if adr.Network != config.NETWORK_SELECTED {
-		return nil, errors.New("Address network is invalid")
+		panic("Address network is invalid")
 	}
 
 	var buf []byte
+	var err error
 	if buf, err = base58.Decode(input[config.NETWORK_BYTE_PREFIX_LENGTH:]); err != nil {
-		return
+		panic("Error decoding base58")
 	}
 
 	checksum := cryptography.RIPEMD(buf[:len(buf)-helpers.ChecksumSize])[0:helpers.ChecksumSize]
 
 	if !bytes.Equal(checksum[:], buf[len(buf)-helpers.ChecksumSize:]) {
-		return nil, errors.New("Invalid Checksum")
+		panic("Invalid Checksum")
 	}
 	buf = buf[0 : len(buf)-helpers.ChecksumSize] // remove the checksum
 
 	reader := helpers.NewBufferReader(buf)
 
-	var version uint64
-
-	if version, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-	adr.Version = AddressVersion(version)
+	adr.Version = AddressVersion(reader.ReadUvarint())
 
 	var readBytes int
-
 	switch adr.Version {
 	case SimplePublicKeyHash:
 		readBytes = 20
 	case SimplePublicKey:
 		readBytes = 33
 	default:
-		err = errors.New("Invalid Address Version")
-		return
+		panic("Invalid Address Version")
 	}
 
-	if adr.PublicKey, err = reader.ReadBytes(readBytes); err != nil {
-		return
-	}
-
-	var integrationByte byte
-	if integrationByte, err = reader.ReadByte(); err != nil {
-		return
-	}
+	adr.PublicKey = reader.ReadBytes(readBytes)
+	integrationByte := reader.ReadByte()
 
 	if integrationByte&1 != 0 {
-		if adr.PaymentID, err = reader.ReadBytes(8); err != nil {
-			return
-		}
+		adr.PaymentID = reader.ReadBytes(8)
 	}
-
 	if integrationByte&(1<<1) != 0 {
-
-		if adr.Amount, err = reader.ReadUvarint(); err != nil {
-			return
-		}
-
+		adr.Amount = reader.ReadUvarint()
 	}
 
-	addr2 = &adr
 	return
 }
 

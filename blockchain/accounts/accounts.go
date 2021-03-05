@@ -1,7 +1,6 @@
 package accounts
 
 import (
-	"errors"
 	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/store"
@@ -11,24 +10,20 @@ type Accounts struct {
 	HashMap *store.HashMap
 }
 
-func NewAccounts(tx *bbolt.Tx) (accounts *Accounts, err error) {
+func NewAccounts(tx *bbolt.Tx) (accounts *Accounts) {
 
 	if tx == nil {
-		err = errors.New("DB Transaction is not set")
-		return
+		panic("DB Transaction is not set")
 	}
 
-	var hashMap *store.HashMap
-	if hashMap, err = store.CreateNewHashMap(tx, "Accounts", 20); err != nil {
-		return
-	}
+	hashMap := store.CreateNewHashMap(tx, "Accounts", 20)
 
 	accounts = new(Accounts)
 	accounts.HashMap = hashMap
 	return
 }
 
-func (accounts *Accounts) GetAccountEvenEmpty(key [20]byte) (acc *account.Account, err error) {
+func (accounts *Accounts) GetAccountEvenEmpty(key [20]byte) (acc *account.Account) {
 
 	acc = new(account.Account)
 
@@ -37,20 +32,21 @@ func (accounts *Accounts) GetAccountEvenEmpty(key [20]byte) (acc *account.Accoun
 		return
 	}
 
-	err = acc.Deserialize(data)
+	acc.Deserialize(data)
 	return
 }
 
-func (accounts *Accounts) GetAccount(key [20]byte) (acc *account.Account, err error) {
+func (accounts *Accounts) GetAccount(key [20]byte) *account.Account {
 
 	data := accounts.HashMap.Get(key[:])
 	if data == nil {
-		return
+		return nil
 	}
 
-	acc = new(account.Account)
-	err = acc.Deserialize(data)
-	return
+	acc := new(account.Account)
+	acc.Deserialize(data)
+
+	return acc
 }
 
 func (accounts *Accounts) UpdateAccount(key [20]byte, acc *account.Account) {
@@ -69,6 +65,6 @@ func (accounts *Accounts) DeleteAccount(key [20]byte) {
 	accounts.HashMap.Delete(key[:])
 }
 
-func (accounts *Accounts) Commit() error {
-	return accounts.HashMap.Commit()
+func (accounts *Accounts) Commit() {
+	accounts.HashMap.Commit()
 }

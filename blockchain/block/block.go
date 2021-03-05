@@ -2,10 +2,8 @@ package block
 
 import (
 	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/config/reward"
 	"pandora-pay/cryptography"
@@ -29,13 +27,13 @@ type Block struct {
 	Signature          [65]byte // 65 byte signature
 }
 
-func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens) (err error) {
+func (blk *Block) Validate() {
+	blk.BlockHeader.Validate()
+}
 
-	var acc *account.Account
+func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens) {
 
-	if acc, err = acs.GetAccountEvenEmpty(blk.Forger); err != nil {
-		return
-	}
+	acc := acs.GetAccountEvenEmpty(blk.Forger)
 
 	//for genesis block
 	if blk.Height == 0 && !acc.HasDelegatedStake() {
@@ -45,48 +43,27 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens) (err
 	}
 
 	reward := reward.GetRewardAt(blk.Height)
-	if err = acc.AddReward(true, reward, blk.Height); err != nil {
-		return
-	}
+	acc.DelegatedStake.AddDelegatedStake(true, reward, blk.Height)
 	acs.UpdateAccount(blk.Forger, acc)
 
-	var tok *token.Token
-	if tok, err = toks.GetToken(config.NATIVE_TOKEN_FULL); err != nil {
-		return
-	}
-	if err = tok.AddSupply(true, reward); err != nil {
-		return
-	}
+	tok := toks.GetToken(config.NATIVE_TOKEN_FULL)
+	tok.AddSupply(true, reward)
 	toks.UpdateToken(config.NATIVE_TOKEN_FULL, tok)
 
-	return
 }
 
-func (blk *Block) RemoveBlock(acs *accounts.Accounts, toks *tokens.Tokens) (err error) {
+func (blk *Block) RemoveBlock(acs *accounts.Accounts, toks *tokens.Tokens) {
 
-	var acc *account.Account
-
-	if acc, err = acs.GetAccount(blk.Forger); err != nil {
-		return
-	}
+	acc := acs.GetAccount(blk.Forger)
 
 	reward := reward.GetRewardAt(blk.Height)
-	if err = acc.AddReward(false, reward, blk.Height); err != nil {
-		return
-	}
-
+	acc.DelegatedStake.AddDelegatedStake(false, reward, blk.Height)
 	acs.UpdateAccount(blk.Forger, acc)
 
-	var tok *token.Token
-	if tok, err = toks.GetToken(config.NATIVE_TOKEN_FULL); err != nil {
-		return
-	}
-	if err = tok.AddSupply(false, reward); err != nil {
-		return
-	}
-	toks.UpdateToken(config.NATIVE_TOKEN_FULL, tok)
+	tok := toks.GetToken(config.NATIVE_TOKEN_FULL)
 
-	return
+	tok.AddSupply(false, reward)
+	toks.UpdateToken(config.NATIVE_TOKEN_FULL, tok)
 }
 
 func (blk *Block) ComputeHash() helpers.Hash {
@@ -152,43 +129,16 @@ func (blk *Block) Serialize() []byte {
 	return blk.SerializeBlock(false, true)
 }
 
-func (blk *Block) Deserialize(reader *helpers.BufferReader) (err error) {
+func (blk *Block) Deserialize(reader *helpers.BufferReader) {
 
-	if err = blk.BlockHeader.Deserialize(reader); err != nil {
-		return
-	}
+	blk.BlockHeader.Deserialize(reader)
+	blk.MerkleHash = reader.ReadHash()
+	blk.PrevHash = reader.ReadHash()
+	blk.PrevKernelHash = reader.ReadHash()
+	blk.StakingAmount = reader.ReadUvarint()
+	blk.DelegatedPublicKey = reader.Read33()
+	blk.Timestamp = reader.ReadUvarint()
+	blk.Forger = reader.Read20()
+	blk.Signature = reader.Read65()
 
-	if blk.MerkleHash, err = reader.ReadHash(); err != nil {
-		return
-	}
-
-	if blk.PrevHash, err = reader.ReadHash(); err != nil {
-		return
-	}
-
-	if blk.PrevKernelHash, err = reader.ReadHash(); err != nil {
-		return
-	}
-
-	if blk.StakingAmount, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-
-	if blk.DelegatedPublicKey, err = reader.Read33(); err != nil {
-		return
-	}
-
-	if blk.Timestamp, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-
-	if blk.Forger, err = reader.Read20(); err != nil {
-		return
-	}
-
-	if blk.Signature, err = reader.Read65(); err != nil {
-		return
-	}
-
-	return
 }

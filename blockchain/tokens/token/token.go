@@ -1,7 +1,6 @@
 package token
 
 import (
-	"errors"
 	"pandora-pay/helpers"
 )
 
@@ -34,28 +33,43 @@ type Token struct {
 	Description string
 }
 
-func (token *Token) AddSupply(sign bool, amount uint64) error {
+func (token *Token) Validate() {
+	if token.DecimalSeparator > 10 {
+		panic("token decimal separator is invalid")
+	}
+	if len(token.Name) > 15 || len(token.Name) < 3 {
+		panic("token name length is invalid")
+	}
+	if len(token.Ticker) > 7 || len(token.Ticker) < 2 {
+		panic("token ticker length is invalid")
+	}
+	if len(token.Description) > 512 {
+		panic("token  description length is invalid")
+	}
+
+}
+
+func (token *Token) AddSupply(sign bool, amount uint64) {
 
 	if sign {
 		if !token.CanMint {
-			return errors.New("Can't mint")
+			panic("Can't mint")
 		}
-		if token.Supply+amount > token.MaxSupply {
-			return errors.New("Supply exceeded max supply")
+		if token.MaxSupply-token.Supply < amount {
+			panic("Supply exceeded max supply")
 		}
-		token.Supply += amount
+		helpers.SafeUint64Add(&token.Supply, amount)
 	} else {
 		if !token.CanBurn {
-			return errors.New("Can't burn")
+			panic("Can't burn")
 		}
 		if token.Supply < amount {
-			return errors.New("Supply would become negative")
+			panic("Supply would become negative")
 		}
 
-		token.Supply -= amount
+		helpers.SafeUint64Sub(&token.Supply, amount)
 	}
 
-	return nil
 }
 
 func (token *Token) Serialize() []byte {
@@ -86,76 +100,26 @@ func (token *Token) Serialize() []byte {
 	return writer.Bytes()
 }
 
-func (token *Token) Deserialize(buf []byte) (err error) {
+func (token *Token) Deserialize(buf []byte) {
 
 	reader := helpers.NewBufferReader(buf)
 
-	if token.Version, err = reader.ReadUvarint(); err != nil {
-		return err
-	}
-
-	if token.CanUpgrade, err = reader.ReadBool(); err != nil {
-		return err
-	}
-	if token.CanMint, err = reader.ReadBool(); err != nil {
-		return err
-	}
-	if token.CanBurn, err = reader.ReadBool(); err != nil {
-		return err
-	}
-	if token.CanChangeKey, err = reader.ReadBool(); err != nil {
-		return err
-	}
-	if token.CanChangeSupplyKey, err = reader.ReadBool(); err != nil {
-		return err
-	}
-	if token.CanPause, err = reader.ReadBool(); err != nil {
-		return err
-	}
-	if token.CanFreeze, err = reader.ReadBool(); err != nil {
-		return err
-	}
-	if token.DecimalSeparator, err = reader.ReadByte(); err != nil {
-		return err
-	}
-	if token.DecimalSeparator > 10 {
-		return errors.New("token decimal separator is invalid")
-	}
-	if token.MaxSupply, err = reader.ReadUvarint(); err != nil {
-		return err
-	}
-	if token.Supply, err = reader.ReadUvarint(); err != nil {
-		return err
-	}
-
-	if token.Key, err = reader.Read20(); err != nil {
-		return err
-	}
-
-	if token.SupplyKey, err = reader.Read20(); err != nil {
-		return err
-	}
-
-	if token.Name, err = reader.ReadString(); err != nil {
-		return
-	}
-	if len(token.Name) > 15 || len(token.Name) < 3 {
-		return errors.New("token name length is invalid")
-	}
-
-	if token.Ticker, err = reader.ReadString(); err != nil {
-		return err
-	}
-	if len(token.Ticker) > 7 || len(token.Ticker) < 2 {
-		return errors.New("token ticker length is invalid")
-	}
-
-	if token.Description, err = reader.ReadString(); err != nil {
-		return err
-	}
-	if len(token.Description) > 512 {
-		return errors.New("token  description length is invalid")
-	}
+	token.Version = reader.ReadUvarint()
+	token.CanUpgrade = reader.ReadBool()
+	token.CanMint = reader.ReadBool()
+	token.CanBurn = reader.ReadBool()
+	token.CanChangeKey = reader.ReadBool()
+	token.CanChangeSupplyKey = reader.ReadBool()
+	token.CanPause = reader.ReadBool()
+	token.CanFreeze = reader.ReadBool()
+	token.DecimalSeparator = reader.ReadByte()
+	token.MaxSupply = reader.ReadUvarint()
+	token.Supply = reader.ReadUvarint()
+	token.Key = reader.Read20()
+	token.SupplyKey = reader.Read20()
+	token.Name = reader.ReadString()
+	token.Ticker = reader.ReadString()
+	token.Description = reader.ReadString()
 
 	return
 }

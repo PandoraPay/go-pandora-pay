@@ -55,20 +55,28 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 	}, nil
 }
 
-func (pk *PrivateKey) Sign(message *helpers.Hash) ([65]byte, error) {
-	if len(message) != 32 {
-		return [65]byte{}, errors.New("Message must be a hash")
-	}
+func (pk *PrivateKey) SignSilent(message helpers.Hash) (out [65]byte, err error) {
+	defer func() {
+		if err2 := recover(); err2 != nil {
+			err = helpers.ConvertRecoverError(err2)
+		}
+	}()
+	out = pk.Sign(message)
+	return
+}
+
+func (pk *PrivateKey) Sign(message helpers.Hash) [65]byte {
+
 	privateKey, err := ecdsa.ToECDSA(pk.Key[:])
 	if err != nil {
-		return [65]byte{}, err
+		panic(err)
 	}
 
 	var signature []byte
 	if signature, err = ecdsa.Sign(message[:], privateKey); err != nil {
-		return [65]byte{}, err
+		panic(err)
 	}
-	return *helpers.Byte65(signature), nil
+	return *helpers.Byte65(signature)
 }
 
 func GenerateNewPrivateKey() *PrivateKey {

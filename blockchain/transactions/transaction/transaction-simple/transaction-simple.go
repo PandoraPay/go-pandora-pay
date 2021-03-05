@@ -1,63 +1,107 @@
 package transaction_simple
 
 import (
-	"errors"
-	"math"
+	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction_simple_unstake"
-	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/ecdsa"
 	"pandora-pay/helpers"
 )
 
 type TransactionSimple struct {
-	Nonce uint64
-	Vin   []*TransactionSimpleInput
-	Vout  []*TransactionSimpleOutput
-	Extra interface{}
+	TxScript TransactionSimpleScriptType
+	Nonce    uint64
+	Vin      []*TransactionSimpleInput
+	Vout     []*TransactionSimpleOutput
+	Extra    interface{}
 }
 
-func (tx *TransactionSimple) ComputeFees(out map[string]uint64, txType transaction_type.TransactionType) (err error) {
-	if err = tx.ComputeVin(out); err != nil {
-		return
-	}
-	if err = tx.ComputeVout(out); err != nil {
-		return
-	}
-	switch txType {
-	case transaction_type.TransactionTypeSimpleUnstake:
-		extra := tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
-		if math.MaxUint64-out[string(config.NATIVE_TOKEN)] < extra.UnstakeFeeExtra {
-			return errors.New("Unstake exceeded MaxUint64")
+func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
+
+	for i, vin := range tx.Vin {
+
+		acc := accs.GetAccountEvenEmpty(vin.GetPublicKeyHash())
+
+		if i == 0 {
+			if acc.Nonce != tx.Nonce {
+				panic("Account nonce doesn't match")
+			}
+			acc.IncrementNonce(true)
 		}
-		out[string(config.NATIVE_TOKEN)] += extra.UnstakeFeeExtra
+
+		acc.AddBalance(false, vin.Amount, vin.Token)
+		accs.UpdateAccount(vin.GetPublicKeyHash(), acc)
+	}
+
+	for _, vout := range tx.Vout {
+		acc := accs.GetAccountEvenEmpty(vout.PublicKeyHash)
+		acc.AddBalance(true, vout.Amount, vout.Token)
+		accs.UpdateAccount(vout.PublicKeyHash, acc)
+	}
+
+	//switch tx.TxScript {
+	//case TxSimpleScriptUnstake:
+	//	tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake).RemoveTransaction(blockHeight, accs, toks)
+	//}
+
+}
+
+func (tx *TransactionSimple) RemoveTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
+
+	//switch tx.TxScript {
+	//case TxSimpleScriptUnstake:
+	//	tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake).RemoveTransaction(blockHeight, accs, toks)
+	//}
+
+	for i := len(tx.Vout) - 1; i >= 0; i-- {
+		vout := tx.Vout[i]
+		acc := accs.GetAccountEvenEmpty(vout.PublicKeyHash)
+		acc.AddBalance(false, vout.Amount, vout.Token)
+		accs.UpdateAccount(vout.PublicKeyHash, acc)
+	}
+
+	for i := len(tx.Vin) - 1; i >= 0; i-- {
+		vin := tx.Vin[i]
+		acc := accs.GetAccountEvenEmpty(vin.GetPublicKeyHash())
+
+		if i == 0 {
+			acc.IncrementNonce(false)
+			if acc.Nonce != tx.Nonce {
+				panic("Account nonce doesn't match")
+			}
+		}
+
+		acc.AddBalance(true, vin.Amount, vin.Token)
+		accs.UpdateAccount(vin.GetPublicKeyHash(), acc)
+	}
+
+}
+
+func (tx *TransactionSimple) ComputeFees(out map[string]uint64) {
+	tx.ComputeVin(out)
+	tx.ComputeVout(out)
+	switch tx.TxScript {
+	case TxSimpleScriptUnstake:
+		helpers.SafeMapUint64Add(out, string(config.NATIVE_TOKEN), tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake).UnstakeFeeExtra)
 	}
 	return
 }
 
-func (tx *TransactionSimple) ComputeVin(out map[string]uint64) error {
+func (tx *TransactionSimple) ComputeVin(out map[string]uint64) {
 	for _, vin := range tx.Vin {
-		token := string(vin.Token)
-		if math.MaxUint64-out[token] <= vin.Amount {
-			return errors.New("Vin exceeded MaxUint64")
-		}
-		out[token] += vin.Amount
+		helpers.SafeMapUint64Add(out, string(vin.Token), vin.Amount)
 	}
-	return nil
 }
 
-func (tx *TransactionSimple) ComputeVout(out map[string]uint64) error {
+func (tx *TransactionSimple) ComputeVout(out map[string]uint64) {
 	for _, vout := range tx.Vout {
 		token := string(vout.Token)
-		if out[token] < vout.Amount {
-			return errors.New("Balance exceeded")
-		}
-		out[token] -= vout.Amount
+		helpers.SafeMapUint64Sub(out, token, vout.Amount)
 		if out[token] == 0 {
 			delete(out, token)
 		}
 	}
-	return nil
 }
 
 func (tx *TransactionSimple) VerifySignature(hash helpers.Hash) bool {
@@ -73,39 +117,40 @@ func (tx *TransactionSimple) VerifySignature(hash helpers.Hash) bool {
 	return true
 }
 
-func (tx *TransactionSimple) Validate(txType transaction_type.TransactionType) (err error) {
+func (tx *TransactionSimple) Validate() {
 
-	switch txType {
-	case transaction_type.TransactionTypeSimple:
+	switch tx.TxScript {
+	case TxSimpleScriptNormal:
 		if len(tx.Vin) == 0 || len(tx.Vin) > 255 {
-			return errors.New("Invalid vin")
+			panic("Invalid vin")
 		}
 		if len(tx.Vout) == 0 || len(tx.Vout) > 255 {
-			return errors.New("Invalid vout")
+			panic("Invalid vout")
 		}
-	case transaction_type.TransactionTypeSimpleUnstake:
+	case TxSimpleScriptUnstake, TxSimpleScriptWithdraw, TxSimpleScriptDelegate:
 		if len(tx.Vin) != 1 {
-			return errors.New("Invalid vin")
+			panic("Invalid vin")
 		}
 		if len(tx.Vout) != 0 {
-			return errors.New("Invalid vout")
+			panic("Invalid vout")
 		}
-		extra := tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
-		extra.Validate(txType)
+	default:
+		panic("Invalid TxScript")
+	}
+
+	switch tx.TxScript {
+	case TxSimpleScriptUnstake:
+		tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake).Validate()
 	}
 
 	final := make(map[string]uint64)
-	if err = tx.ComputeVin(final); err != nil {
-		return
-	}
-	if err = tx.ComputeVout(final); err != nil {
-		return
-	}
-
-	return
+	tx.ComputeVin(final)
+	tx.ComputeVout(final)
 }
 
-func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignature bool, txType transaction_type.TransactionType) {
+func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignature bool) {
+
+	writer.WriteUvarint(uint64(tx.TxScript))
 	writer.WriteUvarint(tx.Nonce)
 
 	writer.WriteUvarint(uint64(len(tx.Vin)))
@@ -118,50 +163,37 @@ func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignatu
 		vout.Serialize(writer)
 	}
 
-	switch txType {
-	case transaction_type.TransactionTypeSimpleUnstake:
-		extra := tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
-		extra.Serialize(writer)
+	switch tx.TxScript {
+	case TxSimpleScriptUnstake:
+		tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake).Serialize(writer)
 	}
 }
 
-func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader, txType transaction_type.TransactionType) (err error) {
+func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) {
 
-	var n uint64
+	n := reader.ReadUvarint()
+	tx.TxScript = TransactionSimpleScriptType(n)
+	tx.Nonce = reader.ReadUvarint()
 
-	if tx.Nonce, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-
-	if n, err = reader.ReadUvarint(); err != nil {
-		return
-	}
+	n = reader.ReadUvarint()
 	for i := 0; i < int(n); i++ {
 		vin := &TransactionSimpleInput{}
-		if err = vin.Deserialize(reader); err != nil {
-			return
-		}
+		vin.Deserialize(reader)
 		tx.Vin = append(tx.Vin, vin)
 	}
 
 	//vout only TransactionTypeSimple
-	if n, err = reader.ReadUvarint(); err != nil {
-		return
-	}
+	n = reader.ReadUvarint()
 	for i := 0; i < int(n); i++ {
 		vout := &TransactionSimpleOutput{}
-		if err = vout.Deserialize(reader); err != nil {
-			return
-		}
+		vout.Deserialize(reader)
 		tx.Vout = append(tx.Vout, vout)
 	}
 
-	switch txType {
-	case transaction_type.TransactionTypeSimpleUnstake:
+	switch tx.TxScript {
+	case TxSimpleScriptUnstake:
 		extra := &transaction_simple_unstake.TransactionSimpleUnstake{}
-		if err = extra.Deserialize(reader); err != nil {
-			return err
-		}
+		extra.Deserialize(reader)
 		tx.Extra = extra
 	}
 

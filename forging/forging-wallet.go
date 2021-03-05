@@ -44,13 +44,9 @@ func (w *ForgingWallet) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte,
 
 	store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
 
-		var accs *accounts.Accounts
-		accs, err = accounts.NewAccounts(tx)
+		accs := accounts.NewAccounts(tx)
 
-		var acc *account.Account
-		if acc, err = accs.GetAccount(publicKeyHash); err != nil {
-			return
-		}
+		acc := accs.GetAccount(publicKeyHash)
 
 		address := ForgingWalletAddress{
 			&private,
@@ -77,7 +73,7 @@ func (w *ForgingWallet) UpdateBalanceChanges(accs *accounts.Accounts) {
 
 			if v.Committed == "update" {
 				w.addressesMap[k].account = new(account.Account)
-				_ = w.addressesMap[k].account.Deserialize(v.Data)
+				w.addressesMap[k].account.Deserialize(v.Data)
 			} else if v.Committed == "delete" {
 				w.addressesMap[k].account = nil
 			}
@@ -109,17 +105,13 @@ func (w *ForgingWallet) loadBalances() error {
 
 	return store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
 
-		var accs *accounts.Accounts
-		accs, err = accounts.NewAccounts(tx)
+		accs := accounts.NewAccounts(tx)
 
 		for _, address := range w.addresses {
 
-			var account *account.Account
-			if account, err = accs.GetAccount(address.publicKeyHash); err != nil {
-				return
-			}
-
+			account := accs.GetAccount(address.publicKeyHash)
 			address.account = account
+
 		}
 
 		return

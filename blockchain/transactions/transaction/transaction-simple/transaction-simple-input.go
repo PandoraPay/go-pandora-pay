@@ -1,6 +1,7 @@
 package transaction_simple
 
 import (
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
@@ -9,6 +10,9 @@ type TransactionSimpleInput struct {
 	Amount    uint64
 	Signature [65]byte
 	Token     []byte
+
+	_publicKeyHash         [20]byte
+	_publicKeyHashComputed bool
 }
 
 func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter, inclSignature bool) {
@@ -20,20 +24,19 @@ func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter, inclS
 	writer.WriteToken(vin.Token)
 }
 
-func (vin *TransactionSimpleInput) Deserialize(reader *helpers.BufferReader) (err error) {
+func (vin *TransactionSimpleInput) Deserialize(reader *helpers.BufferReader) {
 
-	if vin.PublicKey, err = reader.Read33(); err != nil {
-		return
-	}
-	if vin.Amount, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-	if vin.Signature, err = reader.Read65(); err != nil {
-		return
-	}
-	if vin.Token, err = reader.ReadToken(); err != nil {
-		return
-	}
+	vin.PublicKey = reader.Read33()
+	vin.Amount = reader.ReadUvarint()
+	vin.Signature = reader.Read65()
+	vin.Token = reader.ReadToken()
 
-	return
+}
+
+func (vin *TransactionSimpleInput) GetPublicKeyHash() [20]byte {
+	if !vin._publicKeyHashComputed {
+		vin._publicKeyHash = cryptography.ComputePublicKeyHash(vin.PublicKey)
+		vin._publicKeyHashComputed = true
+	}
+	return vin._publicKeyHash
 }

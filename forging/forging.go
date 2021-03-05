@@ -5,6 +5,7 @@ import (
 	"pandora-pay/blockchain/block"
 	"pandora-pay/config"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -119,6 +120,13 @@ func (forging *Forging) foundSolution(address *ForgingWalletAddress, timestamp u
 // thread not safe
 func (forging *Forging) publishSolution() (err error) {
 
+	defer func() {
+		if err2 := recover(); err2 != nil {
+			err = helpers.ConvertRecoverError(err2)
+			gui.Error("Error signing forged block", err)
+		}
+	}()
+
 	forging.blkComplete.Block.Forger = forging.solutionAddress.publicKeyHash
 	forging.blkComplete.Block.DelegatedPublicKey = forging.solutionAddress.delegatedPublicKey
 	forging.blkComplete.Block.Timestamp = forging.solutionTimestamp
@@ -128,10 +136,7 @@ func (forging *Forging) publishSolution() (err error) {
 
 	serializationForSigning := forging.blkComplete.Block.SerializeForSigning()
 
-	if forging.blkComplete.Block.Signature, err = forging.solutionAddress.delegatedPrivateKey.Sign(&serializationForSigning); err != nil {
-		gui.Error("Error signing forged block", err)
-		return
-	}
+	forging.blkComplete.Block.Signature = forging.solutionAddress.delegatedPrivateKey.Sign(serializationForSigning)
 
 	//send message to blockchain
 	forging.SolutionChannel <- forging.blkComplete

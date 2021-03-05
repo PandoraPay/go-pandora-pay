@@ -14,15 +14,8 @@ func (vout *TransactionSimpleOutput) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteToken(vout.Token[:])
 }
 
-func (vout *TransactionSimpleOutput) Deserialize(reader *helpers.BufferReader) (err error) {
-	if vout.PublicKeyHash, err = reader.Read20(); err != nil {
-		return
-	}
-	if vout.Amount, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-	if vout.Token, err = reader.ReadToken(); err != nil {
-		return
-	}
-	return
+func (vout *TransactionSimpleOutput) Deserialize(reader *helpers.BufferReader) {
+	vout.PublicKeyHash = reader.Read20()
+	vout.Amount = reader.ReadUvarint()
+	vout.Token = reader.ReadToken()
 }

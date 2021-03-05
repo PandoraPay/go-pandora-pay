@@ -2,7 +2,6 @@ package block
 
 import (
 	"bytes"
-	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
@@ -36,37 +35,28 @@ func (blkComplete *BlockComplete) VerifyMerkleHash() bool {
 }
 
 func (blkComplete *BlockComplete) Serialize() []byte {
-
 	writer := helpers.NewBufferWriter()
 
 	writer.Write(blkComplete.Block.Serialize())
-
 	writer.WriteUvarint(uint64(len(blkComplete.Txs)))
 
 	return writer.Bytes()
 }
 
-func (blkComplete *BlockComplete) Deserialize(buf []byte) (err error) {
+func (blkComplete *BlockComplete) Deserialize(buf []byte) {
 
 	reader := helpers.NewBufferReader(buf)
 
 	if uint64(len(buf)) > config.BLOCK_MAX_SIZE {
-		return errors.New("COMPLETE BLOCK EXCEEDS MAX SIZE")
+		panic("COMPLETE BLOCK EXCEEDS MAX SIZE")
 	}
 
-	if err = blkComplete.Block.Deserialize(reader); err != nil {
-		return
-	}
+	blkComplete.Block.Deserialize(reader)
 
-	var txsCount uint64
-	if txsCount, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-
+	txsCount := reader.ReadUvarint()
 	//todo
 	for i := uint64(0); i < txsCount; i++ {
 
 	}
 
-	return
 }

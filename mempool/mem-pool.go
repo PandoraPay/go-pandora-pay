@@ -2,15 +2,21 @@ package mempool
 
 import (
 	"fmt"
+	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
+	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
+	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config/fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
-type MemPoolTx struct {
+type memPoolTx struct {
 	tx         *transaction.Transaction
 	added      int64
 	mine       bool
@@ -19,29 +25,42 @@ type MemPoolTx struct {
 	feeToken   []byte
 }
 
-type MemPool struct {
-	txs          sync.Map
-	sortedByFees []helpers.Hash
+type memPoolUpdateTask struct {
+	hash   helpers.Hash
+	height uint64
+	accs   *accounts.Accounts
+	toks   *tokens.Tokens
 
 	sync.RWMutex
 }
 
+type memPoolOutput struct {
+	hash helpers.Hash
+	tx   *memPoolTx
+}
+
+type MemPool struct {
+	txs sync.Map
+
+	updateTask      memPoolUpdateTask
+	updateTaskReset int32
+
+	mutex sync.Mutex `json:"-"`
+}
+
 func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) (result bool) {
 
-	var err error
-
-	mempool.Lock()
-	defer mempool.Unlock()
+	//making sure that the transaction is not inserted twice
+	mempool.mutex.Lock()
+	defer mempool.mutex.Unlock()
 
 	hash := tx.ComputeHash()
 	if _, found := mempool.txs.Load(hash); found {
 		return
 	}
 
-	var minerFees map[string]uint64
-	if minerFees, err = tx.ComputeFees(); err != nil {
-		return false
-	}
+	minerFees := tx.ComputeFees()
+
 	size := uint64(len(tx.Serialize(true)))
 	var selectedFeeToken *string
 	for token := range fees.FEES_PER_BYTE {
@@ -57,7 +76,7 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 		return
 	}
 
-	object := MemPoolTx{
+	object := memPoolTx{
 		tx:         tx,
 		added:      time.Now().Unix(),
 		height:     height,
@@ -86,31 +105,31 @@ func (mempool *MemPool) Delete(txId helpers.Hash) (tx *transaction.Transaction) 
 		return nil
 	}
 
-	object := objInterface.(*MemPoolTx)
+	object := objInterface.(*memPoolTx)
 	tx = object.tx
 	mempool.txs.Delete(txId)
 
 	return
 }
 
-func (mempool *MemPool) Print() {
-
-	type Output struct {
-		hash helpers.Hash
-		tx   *MemPoolTx
-	}
-	var list []*Output
+func (mempool *MemPool) getTxsList() (list []*memPoolOutput) {
 
 	mempool.txs.Range(func(key, value interface{}) bool {
 		hash := key.(helpers.Hash)
-		tx := value.(*MemPoolTx)
-		list = append(list, &Output{
+		tx := value.(*memPoolTx)
+		list = append(list, &memPoolOutput{
 			hash,
 			tx,
 		})
-
 		return true
 	})
+
+	return
+}
+
+func (mempool *MemPool) Print() {
+
+	list := mempool.getTxsList()
 
 	gui.Log("")
 	gui.Log(fmt.Sprintf("TX mempool: %d", len(list)))
@@ -119,6 +138,78 @@ func (mempool *MemPool) Print() {
 	}
 	gui.Log("")
 
+}
+
+func (mempool *MemPool) UpdateChanges(hash helpers.Hash, height uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
+	mempool.updateTask.Lock()
+	defer mempool.updateTask.Unlock()
+	copy(mempool.updateTask.hash[:], hash[:])
+	mempool.updateTask.height = height
+	mempool.updateTask.accs = accs
+	mempool.updateTask.toks = toks
+	atomic.StoreInt32(&mempool.updateTaskReset, 1)
+}
+
+func (mempool *MemPool) Refresh() {
+
+	updateTask := memPoolUpdateTask{}
+	hasWorkToDo := false
+	var list []*memPoolOutput
+	listIndex := -1
+	for {
+
+		value := atomic.LoadInt32(&mempool.updateTaskReset)
+		if value == 1 {
+			mempool.updateTask.RLock()
+			copy(updateTask.hash[:], mempool.updateTask.hash[:])
+			updateTask.height = mempool.updateTask.height
+			updateTask.accs = mempool.updateTask.accs
+			updateTask.toks = mempool.updateTask.toks
+			hasWorkToDo = true
+			listIndex = -1
+			atomic.StoreInt32(&mempool.updateTaskReset, 2)
+			mempool.updateTask.RUnlock()
+		}
+
+		if hasWorkToDo {
+
+			if listIndex == -1 {
+				list = mempool.getTxsList()
+				sort.Slice(list, func(i, j int) bool {
+
+					if list[i].tx.feePerByte == list[j].tx.feePerByte {
+
+						if list[i].tx.tx.TxType == transaction_type.TxSimple && list[i].tx.tx.TxType == list[j].tx.tx.TxType {
+
+							base1 := list[i].tx.tx.TxBase.(*transaction_simple.TransactionSimple)
+							base2 := list[i].tx.tx.TxBase.(*transaction_simple.TransactionSimple)
+							return base1.Nonce < base2.Nonce
+
+						}
+
+					}
+
+					return list[i].tx.feePerByte < list[j].tx.feePerByte
+				})
+				listIndex = 0
+
+			} else {
+
+				if listIndex == len(list) {
+					hasWorkToDo = false
+					continue
+				} else {
+					list[listIndex].tx.height = updateTask.height
+					continue
+				}
+
+			}
+
+		} else {
+			time.Sleep(100 * time.Millisecond)
+		}
+
+	}
 }
 
 func InitMemPool() (mempool *MemPool, err error) {
@@ -133,6 +224,8 @@ func InitMemPool() (mempool *MemPool, err error) {
 			mempool.Print()
 		}
 	}()
+
+	go mempool.Refresh()
 
 	return
 }

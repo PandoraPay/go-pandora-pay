@@ -1,6 +1,7 @@
 package dpos
 
 import (
+	"pandora-pay/config"
 	"pandora-pay/helpers"
 )
 
@@ -22,12 +23,19 @@ type DelegatedStake struct {
 	StakesPending []*DelegatedStakePending
 }
 
+func (delegatedStake *DelegatedStake) AddDelegatedUnstake(sign bool, amount, blockHeight uint64) {
+	helpers.SafeUint64Update(sign, &delegatedStake.UnstakeAmount, amount)
+	delegatedStake.UnstakeHeight = blockHeight + config.UNSTAKE_BLOCK_WINDOW
+}
+
+func (delegatedStake *DelegatedStake) AddDelegatedStake(sign bool, amount, blockHeight uint64) {
+	helpers.SafeUint64Update(sign, &delegatedStake.StakeAvailable, amount)
+}
+
 func (delegatedStake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
 
 	writer.Write(delegatedStake.DelegatedPublicKey[:])
-
 	writer.WriteUvarint(delegatedStake.StakeAvailable)
-
 	writer.WriteUvarint(delegatedStake.UnstakeAmount)
 
 	if delegatedStake.UnstakeAmount > 0 {
@@ -42,37 +50,20 @@ func (delegatedStake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
 
 }
 
-func (delegatedStake *DelegatedStake) Deserialize(reader *helpers.BufferReader) (err error) {
+func (delegatedStake *DelegatedStake) Deserialize(reader *helpers.BufferReader) {
 
-	if delegatedStake.DelegatedPublicKey, err = reader.Read33(); err != nil {
-		return
-	}
-
-	if delegatedStake.StakeAvailable, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-
-	if delegatedStake.UnstakeAmount, err = reader.ReadUvarint(); err != nil {
-		return
-	}
+	delegatedStake.DelegatedPublicKey = reader.Read33()
+	delegatedStake.StakeAvailable = reader.ReadUvarint()
+	delegatedStake.UnstakeAmount = reader.ReadUvarint()
 
 	if delegatedStake.UnstakeAmount > 0 {
-		if delegatedStake.UnstakeHeight, err = reader.ReadUvarint(); err != nil {
-			return
-		}
+		delegatedStake.UnstakeHeight = reader.ReadUvarint()
 	}
 
-	var n uint64
-	if n, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-
+	n := reader.ReadUvarint()
 	for i := uint64(0); i < n; i++ {
 		var delegatedStakePending = new(DelegatedStakePending)
-		if err = delegatedStakePending.Deserialize(reader); err != nil {
-			return
-		}
-
+		delegatedStakePending.Deserialize(reader)
 		delegatedStake.StakesPending = append(delegatedStake.StakesPending, delegatedStakePending)
 	}
 

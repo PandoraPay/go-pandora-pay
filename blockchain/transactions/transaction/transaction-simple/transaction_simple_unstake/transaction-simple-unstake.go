@@ -1,8 +1,6 @@
 package transaction_simple_unstake
 
 import (
-	"errors"
-	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/helpers"
 )
 
@@ -11,11 +9,28 @@ type TransactionSimpleUnstake struct {
 	UnstakeFeeExtra uint64
 }
 
-func (tx *TransactionSimpleUnstake) Validate(txType transaction_type.TransactionType) error {
+//func (tx *TransactionSimpleUnstake) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
+//	if !acc.HasDelegatedStake() {
+//		panic("Account has no delegated stake")
+//	}
+//	acc.AddDelegatedStake( false, tx.UnstakeAmount, blockHeight );
+//	if err = acc.AddDelegatedStake( false, tx.UnstakeFeeExtra, blockHeight ); err != nil {
+//		return
+//	}
+//	return
+//}
+//
+//func (tx *TransactionSimpleUnstake) RemoveTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
+//	if err = acc.AddBalance( true, tx.UnstakeFeeExtra, config.NATIVE_TOKEN ); err != nil {
+//		return
+//	}
+//	return
+//}
+
+func (tx *TransactionSimpleUnstake) Validate() {
 	if tx.UnstakeAmount == 0 {
-		return errors.New("Unstake must be greather than zero")
+		panic("Unstake must be greather than zero")
 	}
-	return nil
 }
 
 func (tx *TransactionSimpleUnstake) Serialize(writer *helpers.BufferWriter) {
@@ -23,14 +38,7 @@ func (tx *TransactionSimpleUnstake) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(tx.UnstakeFeeExtra)
 }
 
-func (tx *TransactionSimpleUnstake) Deserialize(reader *helpers.BufferReader) (err error) {
-
-	if tx.UnstakeAmount, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-	if tx.UnstakeFeeExtra, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-
-	return
+func (tx *TransactionSimpleUnstake) Deserialize(reader *helpers.BufferReader) {
+	tx.UnstakeAmount = reader.ReadUvarint()
+	tx.UnstakeFeeExtra = reader.ReadUvarint()
 }

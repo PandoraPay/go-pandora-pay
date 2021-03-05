@@ -9,7 +9,6 @@ import (
 	"os"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/store"
@@ -29,8 +28,7 @@ func initWalletCLI(wallet *Wallet) {
 
 		err = store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
 
-			var accs *accounts.Accounts
-			accs, err = accounts.NewAccounts(tx)
+			accs := accounts.NewAccounts(tx)
 
 			for _, walletAddress := range wallet.Addresses {
 				addressStr, _ := walletAddress.Address.EncodeAddr()
@@ -39,10 +37,7 @@ func initWalletCLI(wallet *Wallet) {
 				if walletAddress.Address.Version == addresses.SimplePublicKeyHash ||
 					walletAddress.Address.Version == addresses.SimplePublicKey {
 
-					var acc *account.Account
-					if acc, err = accs.GetAccount(walletAddress.PublicKeyHash); err != nil {
-						return
-					}
+					acc := accs.GetAccount(walletAddress.PublicKeyHash)
 
 					if acc == nil {
 						gui.OutputWrite("      -> " + "EMPTY")

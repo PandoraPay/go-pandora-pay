@@ -16,15 +16,8 @@ func (balance *Balance) Serialize(writer *helpers.BufferWriter) {
 
 }
 
-func (balance *Balance) Deserialize(reader *helpers.BufferReader) (err error) {
-
-	if balance.Amount, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-
-	if balance.Token, err = reader.ReadToken(); err != nil {
-		return
-	}
-
+func (balance *Balance) Deserialize(reader *helpers.BufferReader) {
+	balance.Amount = reader.ReadUvarint()
+	balance.Token = reader.ReadToken()
 	return
 }

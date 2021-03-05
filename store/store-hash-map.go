@@ -1,7 +1,6 @@
 package store
 
 import (
-	"errors"
 	"go.etcd.io/bbolt"
 )
 
@@ -17,11 +16,10 @@ type HashMap struct {
 	KeyLength int
 }
 
-func CreateNewHashMap(tx *bbolt.Tx, name string, keyLength int) (hashMap *HashMap, err error) {
+func CreateNewHashMap(tx *bbolt.Tx, name string, keyLength int) (hashMap *HashMap) {
 
 	if tx == nil {
-		err = errors.New("DB Transaction is not set")
-		return
+		panic("DB Transaction is not set")
 	}
 
 	hashMap = &HashMap{
@@ -96,23 +94,25 @@ func (hashMap *HashMap) Delete(key []byte) {
 	return
 }
 
-func (hashMap *HashMap) Commit() (err error) {
+func (hashMap *HashMap) Commit() {
 
 	for k, v := range hashMap.Virtual {
 
 		key := []byte(k)
 		if len(key) != hashMap.KeyLength {
-			return errors.New("KeyLength is invalid")
+			panic("KeyLength is invalid")
 		}
 
 		if v.Status == "del" {
-			hashMap.Bucket.Delete(key)
+			if err := hashMap.Bucket.Delete(key); err != nil {
+				panic(err)
+			}
 			v.Status = "view"
 			v.Committed = "del"
 			v.Data = nil
 		} else if v.Status == "update" {
-			if err = hashMap.Bucket.Put(key, v.Data); err != nil {
-				return
+			if err := hashMap.Bucket.Put(key, v.Data); err != nil {
+				panic(err)
 			}
 			v.Committed = "update"
 			v.Status = "view"

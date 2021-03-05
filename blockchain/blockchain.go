@@ -8,7 +8,6 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/blockchain/genesis"
@@ -18,6 +17,7 @@ import (
 	"pandora-pay/forging"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/mempool"
 	"pandora-pay/store"
 	"strconv"
 	"sync"
@@ -38,6 +38,7 @@ type Blockchain struct {
 	UpdateChannel chan int `json:"-"`
 
 	forging *forging.Forging `json:"-"`
+	mempool *mempool.MemPool `json:"-"`
 
 	mutex        sync.Mutex `json:"-"`
 	sync.RWMutex `json:"-"`
@@ -73,21 +74,22 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 	err = store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 
-		if accs, err = accounts.NewAccounts(tx); err != nil {
-			return
-		}
-		if toks, err = tokens.NewTokens(tx); err != nil {
-			return
-		}
+		defer func() {
+			if err2 := recover(); err2 != nil {
+				err = helpers.ConvertRecoverError(err2)
+			}
+		}()
+
+		accs = accounts.NewAccounts(tx)
+		toks = tokens.NewTokens(tx)
+
 		writer := tx.Bucket([]byte("Chain"))
 
 		var prevBlk = &block.Block{}
 		if blocksComplete[0].Block.Height == 0 {
 			prevBlk = genesis.Genesis
 		} else {
-			if prevBlk, err = newChain.loadBlock(writer, newChain.Hash); err != nil {
-				return
-			}
+			prevBlk = newChain.loadBlock(writer, newChain.Hash)
 		}
 
 		//let's filter existing blocks
@@ -97,10 +99,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 			if blkComplete.Block.Height > chain.Height {
 				var hash helpers.Hash
-				hash, err = newChain.loadBlockHash(writer, blkComplete.Block.Height)
-				if err != nil {
-					return err
-				}
+				hash = newChain.loadBlockHash(writer, blkComplete.Block.Height)
 
 				hash2 := blkComplete.Block.ComputeHash()
 				if bytes.Equal(hash[:], hash2[:]) {
@@ -110,39 +109,36 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 		}
 
 		if blocksComplete[0].Block.Height != newChain.Height {
-			return errors.New("First Block has is not matching")
+			panic("First Block has is not matching")
 		}
 
 		if !bytes.Equal(blocksComplete[0].Block.PrevHash[:], newChain.Hash[:]) {
-			return errors.New("First block hash is not matching chain hash")
+			panic("First block hash is not matching chain hash")
 		}
 
 		if !bytes.Equal(blocksComplete[0].Block.PrevKernelHash[:], newChain.KernelHash[:]) {
-			return errors.New("First block kernel hash is not matching chain prev kerneh lash")
+			panic("First block kernel hash is not matching chain prev kerneh lash")
 		}
 
 		for i, blkComplete := range blocksComplete {
 
 			//check block height
 			if blkComplete.Block.Height != newChain.Height {
-				return errors.New("Block Height is not right!")
+				panic("Block Height is not right!")
 			}
 
 			//check blkComplete balance
 			var stakingAmount uint64
 			if blkComplete.Block.Height > 0 {
 
-				var acc *account.Account
-				if acc, err = accs.GetAccount(blkComplete.Block.Forger); err != nil {
-					return
-				}
+				acc := accs.GetAccount(blkComplete.Block.Forger)
 				if acc == nil || !acc.HasDelegatedStake() {
-					return errors.New("Forger Account deson't exist or hasn't delegated stake")
+					panic("Forger Account deson't exist or hasn't delegated stake")
 				}
 				stakingAmount = acc.GetDelegatedStakeAvailable(blkComplete.Block.Height)
 
 				if !bytes.Equal(blkComplete.Block.DelegatedPublicKey[:], acc.DelegatedStake.DelegatedPublicKey[:]) {
-					return errors.New("Block Staking Delegated Public Key is not matching")
+					panic("Block Staking Delegated Public Key is not matching")
 				}
 
 			}
@@ -152,14 +148,14 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			}
 
 			if blkComplete.Block.StakingAmount < stake.GetRequiredStake(blkComplete.Block.Height) {
-				return errors.New("Delegated stake ready amount is not enought")
+				panic("Delegated stake ready amount is not enought")
 			}
 
 			hash := blkComplete.Block.ComputeHash()
 			kernelHash := blkComplete.Block.ComputeKernelHash()
 
 			if difficulty.CheckKernelHashBig(kernelHash, chain.Target) != true {
-				return errors.New("KernelHash Difficulty is not met")
+				panic("KernelHash Difficulty is not met")
 			}
 
 			//already verified for i == 0
@@ -167,50 +163,42 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 				prevHash := prevBlk.ComputeHash()
 				if !bytes.Equal(blkComplete.Block.PrevHash[:], prevHash[:]) {
-					return errors.New("PrevHash doesn't match Genesis prevHash")
+					panic("PrevHash doesn't match Genesis prevHash")
 				}
 
 				prevKernelHash := prevBlk.ComputeKernelHash()
 				if !bytes.Equal(blkComplete.Block.PrevKernelHash[:], prevKernelHash[:]) {
-					return errors.New("PrevHash doesn't match Genesis prevKernelHash")
+					panic("PrevHash doesn't match Genesis prevKernelHash")
 				}
 
 			}
 
 			if blkComplete.Block.VerifySignature() != true {
-				return errors.New("Forger Signature is invalid!")
+				panic("Forger Signature is invalid!")
 			}
 
 			if blkComplete.Block.BlockHeader.Version != 0 {
-				return errors.New("Invalid Version Version")
+				panic("Invalid Version Version")
 			}
 
 			if blkComplete.Block.Timestamp < newChain.Timestamp {
-				return errors.New("Timestamp has to be greather than the last timestmap")
+				panic("Timestamp has to be greather than the last timestmap")
 			}
 
 			if blkComplete.Block.Timestamp > uint64(time.Now().UTC().Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
-				return errors.New("Timestamp is too much into the future")
+				panic("Timestamp is too much into the future")
 			}
 
 			if blkComplete.VerifyMerkleHash() != true {
-				return errors.New("Verify Merkle Hash failed")
+				panic("Verify Merkle Hash failed")
 			}
 
-			if err = blkComplete.Block.IncludeBlock(accs, toks); err != nil {
-				return
-			}
+			blkComplete.Block.IncludeBlock(accs, toks)
 
-			if err = newChain.saveBlock(writer, blkComplete, hash); err != nil {
-				return
-			}
+			newChain.saveBlock(writer, blkComplete, hash)
 
-			if err = accs.Commit(); err != nil {
-				return
-			}
-			if err = toks.Commit(); err != nil {
-				return
-			}
+			accs.Commit()
+			toks.Commit()
 
 			newChain.Hash = hash
 			newChain.KernelHash = kernelHash
@@ -218,19 +206,15 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 			difficultyBigInt := difficulty.ConvertTargetToDifficulty(newChain.Target)
 			newChain.BigTotalDifficulty = new(big.Int).Add(newChain.BigTotalDifficulty, difficultyBigInt)
-			if err = newChain.saveTotalDifficultyExtra(writer); err != nil {
-				return
-			}
+			newChain.saveTotalDifficultyExtra(writer)
 
-			if newChain.Target, err = newChain.computeNextTargetBig(writer); err != nil {
-				return
-			}
+			newChain.Target = newChain.computeNextTargetBig(writer)
 
 			newChain.Height += 1
 
 		}
 
-		err = newChain.saveBlockchain(writer)
+		newChain.saveBlockchain(writer)
 
 		chain.Lock()
 		wasChainLocked = true
@@ -263,6 +247,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	chain.UpdateChannel <- 1 //sending 1
 
 	chain.forging.Wallet.UpdateBalanceChanges(accs)
+	chain.mempool.UpdateChanges(chain.Hash, chain.Height, accs, toks)
+
 	go chain.createBlockForForging()
 
 	result = true
@@ -270,7 +256,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 }
 
-func BlockchainInit(forging *forging.Forging) (chain *Blockchain, err error) {
+func BlockchainInit(forging *forging.Forging, mempool *mempool.MemPool) (chain *Blockchain, err error) {
 
 	gui.Log("Blockchain init...")
 
@@ -278,6 +264,7 @@ func BlockchainInit(forging *forging.Forging) (chain *Blockchain, err error) {
 
 	chain = &Blockchain{
 		forging:       forging,
+		mempool:       mempool,
 		Sync:          false,
 		UpdateChannel: make(chan int),
 	}

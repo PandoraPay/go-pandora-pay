@@ -40,8 +40,7 @@ func TestBlock_Serialize(t *testing.T) {
 	blk2 := Block{}
 
 	reader := helpers.NewBufferReader(buf)
-	err = blk2.Deserialize(reader)
-	assert.Nil(t, err, "Final buff should be empty")
+	blk2.Deserialize(reader)
 
 	assert.Equal(t, blk2.Serialize(), blk.Serialize(), "Serialization/Deserialization doesn't work")
 
@@ -69,10 +68,9 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 	hash := blk.SerializeForSigning()
 	var signature [65]byte
 
-	signature, err = privateKey.Sign(&hash)
-	assert.Nil(t, err, "Signing raised an error")
+	assert.NotPanics(t, func() { signature = privateKey.Sign(hash) }, "Signing raised an error")
 
-	assert.Equal(t, signature, helpers.EmptyBytes(65), "Invalid signature")
+	assert.NotEqual(t, signature, helpers.EmptyBytes(65), "Invalid signature")
 	blk.Signature = signature
 
 	assert.Equal(t, blk.VerifySignature(), true, "Signature Validation failed")

@@ -40,10 +40,7 @@ func (chain *Blockchain) init() (err error) {
 
 	if err = store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 
-		var toks *tokens.Tokens
-		if toks, err = tokens.NewTokens(tx); err != nil {
-			return
-		}
+		toks := tokens.NewTokens(tx)
 		toks.UpdateToken(config.NATIVE_TOKEN_FULL, &tok)
 
 		toks.Commit()
@@ -57,18 +54,15 @@ func (chain *Blockchain) init() (err error) {
 	return
 }
 
-func (chain *Blockchain) computeNextTargetBig(bucket *bolt.Bucket) (*big.Int, error) {
+func (chain *Blockchain) computeNextTargetBig(bucket *bolt.Bucket) *big.Int {
 
 	if config.DIFFICULTY_BLOCK_WINDOW > chain.Height {
-		return chain.Target, nil
+		return chain.Target
 	}
 
 	first := chain.Height - config.DIFFICULTY_BLOCK_WINDOW
 
-	firstDifficulty, firstTimestamp, err := chain.loadTotalDifficultyExtra(bucket, first)
-	if err != nil {
-		return nil, err
-	}
+	firstDifficulty, firstTimestamp := chain.loadTotalDifficultyExtra(bucket, first)
 
 	lastDifficulty := chain.BigTotalDifficulty
 	lastTimestamp := chain.Timestamp

@@ -67,6 +67,12 @@ func main() {
 	}
 	globals.Data["forging"] = forging
 
+	mempool, err := mempool.InitMemPool()
+	if err != nil {
+		gui.Fatal("Error initializing Mempool", err)
+	}
+	globals.Data["mempool"] = mempool
+
 	wallet, err := wallet.WalletInit(forging)
 	if err != nil {
 		gui.Fatal("Error initializing Wallet", err)
@@ -79,17 +85,11 @@ func main() {
 	}
 	globals.Data["settings"] = settings
 
-	chain, err := blockchain.BlockchainInit(forging)
+	chain, err := blockchain.BlockchainInit(forging, mempool)
 	if err != nil {
 		gui.Fatal("Error Initializing Blockchain", err)
 	}
 	globals.Data["chain"] = chain
-
-	mempool, err := mempool.InitMemPool()
-	if err != nil {
-		gui.Fatal("Error initializing Mempool", err)
-	}
-	globals.Data["mempool"] = mempool
 
 	go func() {
 

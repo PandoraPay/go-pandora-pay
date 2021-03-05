@@ -1,7 +1,8 @@
 package transaction
 
 import (
-	"errors"
+	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/tokens"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/cryptography"
@@ -14,16 +15,27 @@ type Transaction struct {
 	TxBase  interface{}
 }
 
-func (tx *Transaction) ComputeFees() (fees map[string]uint64, err error) {
+func (tx *Transaction) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
+	switch tx.TxType {
+	case transaction_type.TxSimple:
+		tx.TxBase.(*transaction_simple.TransactionSimple).IncludeTransaction(blockHeight, accs, toks)
+	}
+}
+
+func (tx *Transaction) RemoveTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
+	switch tx.TxType {
+	case transaction_type.TxSimple:
+		tx.TxBase.(*transaction_simple.TransactionSimple).RemoveTransaction(blockHeight, accs, toks)
+	}
+}
+
+func (tx *Transaction) ComputeFees() (fees map[string]uint64) {
 
 	fees = make(map[string]uint64)
 
 	switch tx.TxType {
-	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
-		base := tx.TxBase.(*transaction_simple.TransactionSimple)
-		err = base.ComputeFees(fees, tx.TxType)
-	default:
-		err = errors.New("Invalid type")
+	case transaction_type.TxSimple:
+		tx.TxBase.(*transaction_simple.TransactionSimple).ComputeFees(fees)
 	}
 	return
 }
@@ -36,9 +48,8 @@ func (tx *Transaction) VerifySignature() bool {
 
 	hash := tx.SerializeForSigning()
 	switch tx.TxType {
-	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
-		base := tx.TxBase.(*transaction_simple.TransactionSimple)
-		return base.VerifySignature(hash)
+	case transaction_type.TxSimple:
+		return tx.TxBase.(*transaction_simple.TransactionSimple).VerifySignature(hash)
 	default:
 		return false
 	}
@@ -56,61 +67,41 @@ func (tx *Transaction) Serialize(inclSignature bool) []byte {
 	writer.WriteUvarint(uint64(tx.TxType))
 
 	switch tx.TxType {
-	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
-		base := tx.TxBase.(*transaction_simple.TransactionSimple)
-		base.Serialize(writer, inclSignature, tx.TxType)
-	default:
+	case transaction_type.TxSimple:
+		tx.TxBase.(*transaction_simple.TransactionSimple).Serialize(writer, inclSignature)
 	}
 
 	return writer.Bytes()
 }
 
-func (tx *Transaction) Validate() (err error) {
+func (tx *Transaction) Validate() {
 	if tx.Version != 0 {
-		return errors.New("Version is invalid")
+		panic("Version is invalid")
 	}
-	if transaction_type.TransactionTypeEND < tx.TxType {
-		return errors.New("VersionType is invalid")
+	if transaction_type.TxEND < tx.TxType {
+		panic("VersionType is invalid")
 	}
 
 	switch tx.TxType {
-	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
-		base := tx.TxBase.(*transaction_simple.TransactionSimple)
-		if err = base.Validate(tx.TxType); err != nil {
-			return
-		}
+	case transaction_type.TxSimple:
+		tx.TxBase.(*transaction_simple.TransactionSimple).Validate()
 	}
 
 	return
 }
 
-func (tx *Transaction) Deserialize(buf []byte) (err error) {
+func (tx *Transaction) Deserialize(buf []byte) {
 	reader := helpers.NewBufferReader(buf)
-	var n uint64
 
-	if tx.Version, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-
-	if n, err = reader.ReadUvarint(); err != nil {
-		return
-	}
+	tx.Version = reader.ReadUvarint()
+	n := reader.ReadUvarint()
 	tx.TxType = transaction_type.TransactionType(n)
 
 	switch tx.TxType {
-	case transaction_type.TransactionTypeSimple, transaction_type.TransactionTypeSimpleUnstake:
+	case transaction_type.TxSimple:
 		base := &transaction_simple.TransactionSimple{}
-		if err = base.Deserialize(reader, tx.TxType); err != nil {
-			return
-		}
+		base.Deserialize(reader)
 		tx.TxBase = base
-	default:
-		return errors.New("Transaction type is invalid")
 	}
 
-	return
-}
-
-func (tx *Transaction) IsTransactionSimple() bool {
-	return tx.TxType == transaction_type.TransactionTypeSimple || tx.TxType == transaction_type.TransactionTypeSimpleUnstake
 }

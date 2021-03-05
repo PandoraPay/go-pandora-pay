@@ -2,19 +2,25 @@ package account
 
 import (
 	"bytes"
-	"errors"
-	"math"
 	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/helpers"
 )
 
 type Account struct {
-	Version uint64
-	Nonce   uint64
-
+	Version               uint64
+	Nonce                 uint64
 	Balances              []*Balance
 	DelegatedStakeVersion uint64
 	DelegatedStake        *dpos.DelegatedStake
+}
+
+func (account *Account) Validate() {
+	if account.Version != 0 {
+		panic("Version is invalid")
+	}
+	if account.DelegatedStakeVersion > 1 {
+		panic("Invalid DelegatedStakeVersion version")
+	}
 }
 
 func (account *Account) HasDelegatedStake() bool {
@@ -26,24 +32,11 @@ func (account *Account) IsAccountEmpty() bool {
 		(account.HasDelegatedStake() && account.DelegatedStake.IsDelegatedStakeEmpty())
 }
 
-func (account *Account) IncrementNonce(sign bool) error {
-
-	if sign {
-		if math.MaxUint64-account.Nonce <= 1 {
-			return errors.New("Nonce exceeded max MaxUint64")
-		}
-		account.Nonce += 1
-	} else {
-		if account.Nonce == 0 {
-			return errors.New("Nonce would become negative")
-		}
-		account.Nonce -= 1
-	}
-
-	return nil
+func (account *Account) IncrementNonce(sign bool) {
+	helpers.SafeUint64Update(sign, &account.Nonce, 1)
 }
 
-func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) error {
+func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) {
 
 	var foundBalance *Balance
 	var foundBalanceIndex int
@@ -58,50 +51,27 @@ func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) error {
 
 	if sign {
 		if foundBalance == nil {
-			foundBalance = new(Balance)
-			copy(foundBalance.Token[:], tok[:])
+			foundBalance = &Balance{
+				Token: tok,
+			}
 			account.Balances = append(account.Balances, foundBalance)
 		}
-		if math.MaxUint64-foundBalance.Amount <= amount {
-			return errors.New("Balance would exceed MaxUint64")
-		}
-		foundBalance.Amount += amount
+		helpers.SafeUint64Add(&foundBalance.Amount, amount)
 	} else {
 
-		if foundBalance == nil || foundBalance.Amount < amount {
-			return errors.New("Balance doesn't exist or would become negative")
+		if foundBalance == nil {
+			panic("Balance doesn't exist or would become negative")
 		}
+		helpers.SafeUint64Sub(&foundBalance.Amount, amount)
 
-		foundBalance.Amount -= amount
 		if foundBalance.Amount == 0 {
-			account.Balances = append(account.Balances[:foundBalanceIndex], account.Balances[:foundBalanceIndex+1]...)
+			//fast removal
+			account.Balances[foundBalanceIndex] = account.Balances[len(account.Balances)-1]
+			account.Balances = account.Balances[:len(account.Balances)-1]
 		}
 
 	}
 
-	return nil
-}
-
-func (account *Account) AddReward(sign bool, amount, blockHeight uint64) error {
-
-	if !account.HasDelegatedStake() {
-		panic("Strange. The accoun't doesn't have a delegated stake")
-	}
-
-	if sign {
-		if math.MaxUint64-account.DelegatedStake.StakeAvailable <= amount {
-			return errors.New("Stake available would exceed MaxUint64")
-		}
-		account.DelegatedStake.StakeAvailable += amount
-	} else {
-		if account.DelegatedStake.StakeAvailable < amount {
-			return errors.New("Stake available is less than reward. ")
-		}
-		account.DelegatedStake.StakeAvailable -= amount
-	}
-
-	account.refreshDelegatedStake(blockHeight)
-	return nil
 }
 
 func (account *Account) GetDelegatedStakeAvailable(blockHeight uint64) uint64 {
@@ -139,47 +109,24 @@ func (account *Account) Serialize() []byte {
 	return writer.Bytes()
 }
 
-func (account *Account) Deserialize(buf []byte) (err error) {
+func (account *Account) Deserialize(buf []byte) {
 
 	reader := helpers.NewBufferReader(buf)
 
-	if account.Version, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-	if account.Version != 0 {
-		return errors.New("Version is invalid")
-	}
+	account.Version = reader.ReadUvarint()
+	account.Nonce = reader.ReadUvarint()
 
-	if account.Nonce, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-
-	var n uint64
-	if n, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-
+	n := reader.ReadUvarint()
 	for i := uint64(0); i < n; i++ {
 		var balance = new(Balance)
-		if err = balance.Deserialize(reader); err != nil {
-			return
-		}
+		balance.Deserialize(reader)
 		account.Balances = append(account.Balances, balance)
 	}
 
-	if account.DelegatedStakeVersion, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-	if account.DelegatedStakeVersion > 1 {
-		return errors.New("Invalid DelegatedStakeVersion version")
-	}
-
+	account.DelegatedStakeVersion = reader.ReadUvarint()
 	if account.DelegatedStakeVersion == 1 {
 		account.DelegatedStake = new(dpos.DelegatedStake)
-		if err = account.DelegatedStake.Deserialize(reader); err != nil {
-			return
-		}
+		account.DelegatedStake.Deserialize(reader)
 	}
 
-	return
 }

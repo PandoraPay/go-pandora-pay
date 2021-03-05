@@ -34,6 +34,8 @@ var (
 	BLOCK_TIME              uint64 = 60 //seconds
 	DIFFICULTY_BLOCK_WINDOW uint64 = 10
 
+	UNSTAKE_BLOCK_WINDOW uint64 = 1000
+
 	BIG_INT_ZERO    = big.NewInt(0)
 	BIG_INT_ONE     = big.NewInt(1)
 	BIG_INT_MAX_256 = new(big.Int).Lsh(BIG_INT_ONE, 256) // 0xFFFFFFFF....
@@ -49,6 +51,7 @@ func InitConfig() (err error) {
 
 	if globals.Arguments["--devnet"] == true {
 		NETWORK_SELECTED = DEV_NET_NETWORK_BYTE
+		UNSTAKE_BLOCK_WINDOW = 10
 	}
 
 	if globals.Arguments["--debug"] == true {

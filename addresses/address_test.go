@@ -61,7 +61,7 @@ func TestDecodeAddr(t *testing.T) {
 	encoded, err := address.EncodeAddr()
 	assert.Nil(t, err)
 
-	decodedAddress, err := DecodeAddr(encoded)
+	decodedAddress, err := DecodeAddrSilent(encoded)
 	assert.Nil(t, err, "Invalid Decoded Address")
 
 	assert.Equal(t, decodedAddress.PublicKey, address.PublicKey, "Decoded Address is not identical")
@@ -74,7 +74,7 @@ func TestDecodeAddr(t *testing.T) {
 	encoded, err = address.EncodeAddr()
 	assert.Nil(t, err)
 
-	decodedAddress, err = DecodeAddr(encoded)
+	decodedAddress, err = DecodeAddrSilent(encoded)
 	assert.Nil(t, err)
 
 	assert.Equal(t, decodedAddress.PublicKey, address.PublicKey, "Decoded Address is not identical")

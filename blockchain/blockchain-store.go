@@ -2,7 +2,6 @@ package blockchain
 
 import (
 	"encoding/json"
-	"errors"
 	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/block"
@@ -13,14 +12,20 @@ import (
 
 func (chain *Blockchain) LoadBlockFromHash(hash helpers.Hash) (blk *block.Block, err error) {
 
-	err = store.StoreBlockchain.DB.View(func(tx *bolt.Tx) error {
+	err = store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
+
+		defer func() {
+			if err2 := recover(); err2 != nil {
+				err = helpers.ConvertRecoverError(err2)
+			}
+		}()
 
 		reader := tx.Bucket([]byte("Chain"))
 		if reader == nil {
 			return nil
 		}
 
-		blk, err = chain.loadBlock(reader, hash)
+		blk = chain.loadBlock(reader, hash)
 
 		return err
 	})
@@ -29,7 +34,7 @@ func (chain *Blockchain) LoadBlockFromHash(hash helpers.Hash) (blk *block.Block,
 
 }
 
-func (chain *Blockchain) loadBlock(bucket *bolt.Bucket, hash helpers.Hash) (blk *block.Block, err error) {
+func (chain *Blockchain) loadBlock(bucket *bolt.Bucket, hash helpers.Hash) (blk *block.Block) {
 
 	key := []byte("blockHash")
 	key = append(key, hash[:]...)
@@ -42,30 +47,32 @@ func (chain *Blockchain) loadBlock(bucket *bolt.Bucket, hash helpers.Hash) (blk 
 	blk = &block.Block{}
 
 	reader := helpers.NewBufferReader(blockData)
-	err = blk.Deserialize(reader)
+	blk.Deserialize(reader)
 
 	return
 }
 
-func (chain *Blockchain) saveBlock(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash helpers.Hash) error {
+func (chain *Blockchain) saveBlock(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash helpers.Hash) {
 
 	key := []byte("blockHash")
 	key = append(key, hash[:]...)
 
 	err := bucket.Put(key, blkComplete.Block.Serialize())
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	key = []byte("blockHeight" + strconv.FormatUint(blkComplete.Block.Height, 10))
-	return bucket.Put(key, hash[:])
+	if err := bucket.Put(key, hash[:]); err != nil {
+		panic(err)
+	}
 
 }
 
-func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) (hash helpers.Hash, err error) {
+func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) (hash helpers.Hash) {
+
 	if height < 0 || height > chain.Height {
-		err = errors.New("Height is invalid")
-		return
+		panic("Height is invalid")
 	}
 
 	key := []byte("blockHeight" + strconv.FormatUint(height, 10))
@@ -73,7 +80,7 @@ func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) (hash
 	return
 }
 
-func (chain *Blockchain) saveTotalDifficultyExtra(bucket *bolt.Bucket) error {
+func (chain *Blockchain) saveTotalDifficultyExtra(bucket *bolt.Bucket) {
 	key := []byte("totalDifficulty" + strconv.FormatUint(chain.Height, 10))
 
 	writer := helpers.NewBufferWriter()
@@ -83,48 +90,37 @@ func (chain *Blockchain) saveTotalDifficultyExtra(bucket *bolt.Bucket) error {
 	writer.WriteUvarint(uint64(len(bytes)))
 	writer.Write(bytes)
 
-	return bucket.Put(key, writer.Bytes())
+	if err := bucket.Put(key, writer.Bytes()); err != nil {
+		panic(err)
+	}
 }
 
-func (chain *Blockchain) loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64, err error) {
+func (chain *Blockchain) loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64) {
 	key := []byte("totalDifficulty" + strconv.FormatUint(height, 10))
 
 	buf := bucket.Get(key)
 	if buf == nil {
-		err = errors.New("Couldn't ready difficulty from DB")
-		return
+		panic("Couldn't ready difficulty from DB")
 	}
 
 	reader := helpers.NewBufferReader(buf)
-	timestamp, err = reader.ReadUvarint()
-	if err != nil {
-		return
-	}
-
-	var length uint64
-	length, err = reader.ReadUvarint()
-	if err != nil {
-		return
-	}
-
-	var bytes []byte
-	bytes, err = reader.ReadBytes(int(length))
-	if err != nil {
-		return
-	}
+	timestamp = reader.ReadUvarint()
+	length := reader.ReadUvarint()
+	bytes := reader.ReadBytes(int(length))
 	difficulty = new(big.Int).SetBytes(bytes)
-
 	return
 }
 
-func (chain *Blockchain) saveBlockchain(bucket *bolt.Bucket) error {
+func (chain *Blockchain) saveBlockchain(bucket *bolt.Bucket) {
 
 	marshal, err := json.Marshal(chain)
 	if err != nil {
-		return errors.New("Error marshaling chain")
+		panic("Error marshaling chain")
 	}
 
-	return bucket.Put([]byte("blockchainInfo"), marshal)
+	if err := bucket.Put([]byte("blockchainInfo"), marshal); err != nil {
+		return
+	}
 }
 
 func (chain *Blockchain) loadBlockchain() (success bool, err error) {

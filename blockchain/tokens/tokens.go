@@ -1,7 +1,6 @@
 package tokens
 
 import (
-	"errors"
 	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/store"
@@ -11,33 +10,29 @@ type Tokens struct {
 	HashMap *store.HashMap
 }
 
-func NewTokens(tx *bbolt.Tx) (tokens *Tokens, err error) {
+func NewTokens(tx *bbolt.Tx) (tokens *Tokens) {
 
 	if tx == nil {
-		err = errors.New("DB Transaction is not set")
-		return
+		panic("DB Transaction is not set")
 	}
 
-	var hashMap *store.HashMap
-	if hashMap, err = store.CreateNewHashMap(tx, "Tokens", 20); err != nil {
-		return
-	}
+	hashMap := store.CreateNewHashMap(tx, "Tokens", 20)
 
 	tokens = new(Tokens)
 	tokens.HashMap = hashMap
 	return
 }
 
-func (tokens *Tokens) GetToken(key [20]byte) (tok *token.Token, err error) {
+func (tokens *Tokens) GetToken(key [20]byte) *token.Token {
 
 	data := tokens.HashMap.Get(key[:])
 	if data == nil {
-		return
+		return nil
 	}
 
-	tok = new(token.Token)
-	err = tok.Deserialize(data)
-	return
+	tok := new(token.Token)
+	tok.Deserialize(data)
+	return tok
 }
 
 func (tokens *Tokens) UpdateToken(key [20]byte, tok *token.Token) {
@@ -52,6 +47,6 @@ func (tokens *Tokens) DeleteAccount(key [20]byte) {
 	tokens.HashMap.Delete(key[:])
 }
 
-func (tokens *Tokens) Commit() error {
-	return tokens.HashMap.Commit()
+func (tokens *Tokens) Commit() {
+	tokens.HashMap.Commit()
 }
