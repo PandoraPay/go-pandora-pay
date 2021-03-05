@@ -2,7 +2,6 @@ package testnet
 
 import (
 	"pandora-pay/blockchain"
-	"pandora-pay/gui"
 	"pandora-pay/mempool"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
@@ -25,14 +24,14 @@ func (testnet *Testnet) run() {
 		blockHeight := <-testnet.chain.UpdateChannel
 		if blockHeight > 50 {
 
-			if !testnet.unstake {
-				testnet.unstake = true
-				tx, err := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wa)
-				if err != nil {
-					gui.Error("Error creating testnet transaction", err)
-					continue
-				}
-			}
+			//if !testnet.unstake {
+			//	testnet.unstake = true
+			//	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].)
+			//	if err != nil {
+			//		gui.Error("Error creating testnet transaction", err)
+			//		continue
+			//	}
+			//}
 
 		}
 

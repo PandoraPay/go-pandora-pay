@@ -2,7 +2,6 @@ package addresses
 
 import (
 	"bytes"
-	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -35,7 +34,7 @@ func (e AddressVersion) String() string {
 	}
 }
 
-func (a *Address) EncodeAddr() (string, error) {
+func (a *Address) EncodeAddr() string {
 
 	writer := helpers.NewBufferWriter()
 
@@ -48,7 +47,7 @@ func (a *Address) EncodeAddr() (string, error) {
 	case config.DEV_NET_NETWORK_BYTE:
 		prefix = config.DEV_NET_NETWORK_BYTE_PREFIX
 	default:
-		return "", errors.New("Invalid network")
+		panic("Invalid network")
 	}
 
 	writer.WriteUvarint(uint64(a.Version))
@@ -70,7 +69,7 @@ func (a *Address) EncodeAddr() (string, error) {
 	buffer = append(buffer, checksum...)
 	ret := base58.Encode(buffer)
 
-	return prefix + ret, nil
+	return prefix + ret
 }
 
 func DecodeAddrSilent(input string) (adr *Address, err error) {

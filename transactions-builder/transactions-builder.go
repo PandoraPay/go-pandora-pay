@@ -30,7 +30,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount u
 
 	fromWalletAddress := builder.wallet.GetWalletAddressByAddress(from)
 
-	store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+	if err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
 
 		accs := accounts.NewAccounts(boltTx)
 		account := accs.GetAccount(fromWalletAddress.PublicKeyHash)
@@ -41,7 +41,9 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount u
 		tx = wizard.CreateUnstakeTx(account.Nonce, fromWalletAddress.PrivateKey.Key, unstakeAmount, feePerByte, feeToken, payFeeInExtra)
 
 		return nil
-	})
+	}); err != nil {
+		panic(err)
+	}
 
 	return
 }

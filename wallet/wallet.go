@@ -3,6 +3,7 @@ package wallet
 import (
 	"pandora-pay/forging"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"sync"
 )
 
@@ -60,17 +61,21 @@ type Wallet struct {
 
 func WalletInit(forging *forging.Forging) (wallet *Wallet) {
 
+	defer func() {
+		if err := recover(); err != nil {
+			if helpers.ConvertRecoverError(err).Error() == "Wallet doesn't exist" {
+				wallet.createEmptyWallet()
+			} else {
+				panic(err)
+			}
+		}
+	}()
+
 	wallet = &Wallet{
 		forging: forging,
 	}
 
-	err := wallet.loadWallet()
-	if err != nil && err.Error() == "Wallet doesn't exist" {
-		err = wallet.createEmptyWallet()
-	}
-	if err != nil {
-		panic(err)
-	}
+	wallet.loadWallet()
 
 	initWalletCLI(wallet)
 

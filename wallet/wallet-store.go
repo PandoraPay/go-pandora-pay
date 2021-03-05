@@ -3,7 +3,6 @@ package wallet
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -11,57 +10,52 @@ import (
 	"strconv"
 )
 
-func (wallet *Wallet) saveWallet(start, end, deleteIndex int) error {
-	return store.StoreWallet.DB.Update(func(tx *bolt.Tx) (err error) {
+func (wallet *Wallet) saveWallet(start, end, deleteIndex int) {
+
+	if err := store.StoreWallet.DB.Update(func(tx *bolt.Tx) error {
 
 		writer := tx.Bucket([]byte("Wallet"))
 		var marshal []byte
 
-		if wallet.Checksum, err = wallet.computeChecksum(); err != nil {
-			return
+		wallet.Checksum = wallet.computeChecksum()
+
+		writer.Put([]byte("saved"), []byte{2})
+
+		marshal, err := helpers.GetJSON(wallet, "Addresses")
+		if err != nil {
+			panic(err)
 		}
 
-		if err = writer.Put([]byte("saved"), []byte{2}); err != nil {
-			return
-		}
-
-		if marshal, err = helpers.GetJSON(wallet, "Addresses"); err != nil {
-			return
-		}
-		if err = writer.Put([]byte("wallet"), marshal); err != nil {
-			return
-		}
+		writer.Put([]byte("wallet"), marshal)
 
 		for i := start; i < end; i++ {
 			if marshal, err = json.Marshal(wallet.Addresses[i]); err != nil {
-				return
+				panic(err)
 			}
-			err = writer.Put([]byte("wallet-address-"+strconv.Itoa(i)), marshal)
+			writer.Put([]byte("wallet-address-"+strconv.Itoa(i)), marshal)
 		}
 
 		if deleteIndex != -1 {
-			if err = writer.Delete([]byte("wallet-address-" + strconv.Itoa(deleteIndex))); err != nil {
-				return
-			}
+			writer.Delete([]byte("wallet-address-" + strconv.Itoa(deleteIndex)))
 		}
 
-		if err = writer.Put([]byte("saved"), []byte{1}); err != nil {
-			return
-		}
+		writer.Put([]byte("saved"), []byte{1})
 
 		return nil
-	})
+	}); err != nil {
+		panic(err)
+	}
 }
 
-func (wallet *Wallet) loadWallet() error {
+func (wallet *Wallet) loadWallet() {
 
-	return store.StoreWallet.DB.View(func(tx *bolt.Tx) (err error) {
+	if err := store.StoreWallet.DB.View(func(tx *bolt.Tx) error {
 
 		reader := tx.Bucket([]byte("Wallet"))
 
 		saved := reader.Get([]byte("saved"))
 		if saved == nil {
-			return errors.New("Wallet doesn't exist")
+			panic("Wallet doesn't exist")
 		}
 
 		if bytes.Equal(saved, []byte{1}) {
@@ -72,35 +66,34 @@ func (wallet *Wallet) loadWallet() error {
 
 			unmarshal = reader.Get([]byte("wallet"))
 
-			if err = json.Unmarshal(unmarshal, &wallet); err != nil {
-				return errors.New("Error unmarshaling wallet")
+			if err := json.Unmarshal(unmarshal, &wallet); err != nil {
+				panic("Error unmarshaling wallet")
 			}
 
 			for i := 0; i < wallet.Count; i++ {
 				unmarshal = reader.Get([]byte("wallet-address-" + strconv.Itoa(i)))
 
 				newWalletAddress := WalletAddress{}
-				if err = json.Unmarshal(unmarshal, &newWalletAddress); err != nil {
-					return errors.New("Error unmarshaling address " + strconv.Itoa(i))
+				if err := json.Unmarshal(unmarshal, &newWalletAddress); err != nil {
+					panic("Error unmarshaling address " + strconv.Itoa(i))
 				}
 				wallet.Addresses = append(wallet.Addresses, &newWalletAddress)
 				go wallet.forging.Wallet.AddWallet(newWalletAddress.PublicKey, newWalletAddress.PrivateKey.Key, newWalletAddress.PublicKeyHash)
 			}
 
-			var checksum [4]byte
-			if checksum, err = wallet.computeChecksum(); err != nil {
-				return
-			}
+			checksum := wallet.computeChecksum()
 			if !bytes.Equal(checksum[:], wallet.Checksum[:]) {
-				return errors.New("Wallet checksum mismatch !")
+				panic("Wallet checksum mismatch !")
 			}
 
 			wallet.updateWallet()
 			gui.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
 
 		} else {
-			errors.New("Error loading wallet ?")
+			panic("Error loading wallet ?")
 		}
 		return nil
-	})
+	}); err != nil {
+		panic(err)
+	}
 }

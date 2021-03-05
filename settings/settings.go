@@ -19,15 +19,18 @@ type Settings struct {
 
 func SettingsInit() (settings *Settings) {
 
-	settings = new(Settings)
+	defer func() {
+		if err := recover(); err != nil {
+			if helpers.ConvertRecoverError(err).Error() == "Settings doesn't exist" {
+				settings.createEmptySettings()
+			} else {
+				panic(err)
+			}
+		}
+	}()
 
-	err := settings.loadSettings()
-	if err != nil && err.Error() == "Settings doesn't exist" {
-		err = settings.createEmptySettings()
-	}
-	if err != nil {
-		panic(err)
-	}
+	settings = &Settings{}
+	settings.loadSettings()
 
 	var changed bool
 	if globals.Arguments["--node-name"] != nil {
@@ -36,16 +39,14 @@ func SettingsInit() (settings *Settings) {
 	}
 	if changed {
 		settings.updateSettings()
-		if err = settings.saveSettings(); err != nil {
-			return
-		}
+		settings.saveSettings()
 	}
 
 	gui.Log("Settings Initialized")
 	return
 }
 
-func (settings *Settings) createEmptySettings() (err error) {
+func (settings *Settings) createEmptySettings() {
 
 	settings.Lock()
 	defer settings.Unlock()
@@ -54,9 +55,7 @@ func (settings *Settings) createEmptySettings() (err error) {
 	settings.Port = 5231
 	settings.updateSettings()
 
-	if err = settings.saveSettings(); err != nil {
-		return
-	}
+	settings.saveSettings()
 
 	return
 }
@@ -65,15 +64,15 @@ func (settings *Settings) updateSettings() {
 	gui.InfoUpdate("Node", settings.Name)
 }
 
-func (settings *Settings) computeChecksum() (checksum [4]byte, err error) {
+func (settings *Settings) computeChecksum() (checksum [4]byte) {
 
-	var data []byte
-	if data, err = helpers.GetJSON(settings, "Checksum"); err != nil {
-		return
+	data, err := helpers.GetJSON(settings, "Checksum")
+	if err != nil {
+		panic(err)
 	}
 
 	out := cryptography.RIPEMD(data)[0:helpers.ChecksumSize]
 	copy(checksum[:], out[:])
-
 	return
+
 }

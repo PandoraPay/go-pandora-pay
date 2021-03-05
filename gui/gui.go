@@ -7,6 +7,7 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 	"log"
 	"os"
+	"pandora-pay/helpers"
 	"sort"
 	"strconv"
 	"strings"
@@ -31,7 +32,7 @@ func isLetter(s string) bool {
 
 type Command struct {
 	Text     string
-	Callback func(string) error
+	Callback func(string)
 }
 
 var commands = []Command{
@@ -160,12 +161,17 @@ func GUIInit() {
 						if command.Callback != nil {
 							OutputClear()
 							go func() {
-								err := command.Callback(command.Text)
-								if err != nil {
-									Error(err)
-								} else {
-									OutputDone()
-								}
+
+								defer func() {
+									if err := recover(); err != nil {
+										Error(helpers.ConvertRecoverError(err))
+									} else {
+										OutputDone()
+									}
+								}()
+
+								command.Callback(command.Text)
+
 							}()
 						}
 					} else if cmdStatus == "output done" {
@@ -204,16 +210,16 @@ func GUIInit() {
 		}
 	}()
 
-	CommandDefineCallback("Exit", func(string) error {
+	CommandDefineCallback("Exit", func(string) {
 		os.Exit(1)
-		return nil
+		return
 	})
 
 	Log("GUI Initialized")
 
 }
 
-func CommandDefineCallback(Text string, callback func(string) error) {
+func CommandDefineCallback(Text string, callback func(string)) {
 
 	for i := range commands {
 		if commands[i].Text == Text {
