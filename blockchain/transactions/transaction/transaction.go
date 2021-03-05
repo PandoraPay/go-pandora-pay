@@ -41,7 +41,7 @@ func (tx *Transaction) ComputeFees() (fees map[string]uint64) {
 }
 
 func (tx *Transaction) SerializeForSigning() helpers.Hash {
-	return cryptography.SHA3Hash(tx.Serialize(false))
+	return cryptography.SHA3Hash(tx.serializeTx(false))
 }
 
 func (tx *Transaction) VerifySignature() bool {
@@ -57,10 +57,11 @@ func (tx *Transaction) VerifySignature() bool {
 }
 
 func (tx *Transaction) ComputeHash() helpers.Hash {
-	return cryptography.SHA3Hash(tx.Serialize(true))
+	return cryptography.SHA3Hash(tx.Serialize())
 }
 
-func (tx *Transaction) Serialize(inclSignature bool) []byte {
+func (tx *Transaction) serializeTx(inclSignature bool) []byte {
+
 	writer := helpers.NewBufferWriter()
 
 	writer.WriteUvarint(tx.Version)
@@ -72,6 +73,10 @@ func (tx *Transaction) Serialize(inclSignature bool) []byte {
 	}
 
 	return writer.Bytes()
+}
+
+func (tx *Transaction) Serialize() []byte {
+	return tx.serializeTx(true)
 }
 
 func (tx *Transaction) Validate() {

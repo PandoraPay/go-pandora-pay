@@ -13,7 +13,7 @@ func setFeeTxNow(tx *transaction.Transaction, feePerByte, initAmount uint64, val
 	var fee uint64
 	oldFee := uint64(1)
 	for oldFee != fee {
-		fee = fees.ComputeTxFees(uint64(len(tx.Serialize(true))), feePerByte)
+		fee = fees.ComputeTxFees(uint64(len(tx.Serialize())), feePerByte)
 		oldFee = fee
 		*value = initAmount + fee
 	}

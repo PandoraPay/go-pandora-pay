@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-func (chain *Blockchain) LoadBlockFromHash(hash helpers.Hash) (blk *block.Block, err error) {
+func (chain *Blockchain) LoadBlockFromHashSilent(hash helpers.Hash) (blk *block.Block, err error) {
 
 	err = store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
 
@@ -31,7 +31,6 @@ func (chain *Blockchain) LoadBlockFromHash(hash helpers.Hash) (blk *block.Block,
 	})
 
 	return
-
 }
 
 func (chain *Blockchain) loadBlock(bucket *bolt.Bucket, hash helpers.Hash) (blk *block.Block) {
@@ -54,11 +53,9 @@ func (chain *Blockchain) loadBlock(bucket *bolt.Bucket, hash helpers.Hash) (blk 
 
 func (chain *Blockchain) saveBlock(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash helpers.Hash) {
 
-	key := []byte("blockHash")
-	key = append(key, hash[:]...)
+	key := append([]byte("blockHash"), hash[:]...)
 
-	err := bucket.Put(key, blkComplete.Block.Serialize())
-	if err != nil {
+	if err := bucket.Put(key, blkComplete.Block.Serialize()); err != nil {
 		panic(err)
 	}
 
@@ -69,15 +66,14 @@ func (chain *Blockchain) saveBlock(bucket *bolt.Bucket, blkComplete *block.Block
 
 }
 
-func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) (hash helpers.Hash) {
+func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) helpers.Hash {
 
 	if height < 0 || height > chain.Height {
 		panic("Height is invalid")
 	}
 
 	key := []byte("blockHeight" + strconv.FormatUint(height, 10))
-	hash = *helpers.ConvertHash(bucket.Get(key))
-	return
+	return *helpers.ConvertHash(bucket.Get(key))
 }
 
 func (chain *Blockchain) saveTotalDifficultyExtra(bucket *bolt.Bucket) {
@@ -112,14 +108,13 @@ func (chain *Blockchain) loadTotalDifficultyExtra(bucket *bolt.Bucket, height ui
 }
 
 func (chain *Blockchain) saveBlockchain(bucket *bolt.Bucket) {
-
 	marshal, err := json.Marshal(chain)
 	if err != nil {
-		panic("Error marshaling chain")
+		panic(err)
 	}
 
 	if err := bucket.Put([]byte("blockchainInfo"), marshal); err != nil {
-		return
+		panic(err)
 	}
 }
 
@@ -137,8 +132,7 @@ func (chain *Blockchain) loadBlockchain() (success bool, err error) {
 			return nil
 		}
 
-		err = json.Unmarshal(chainData, &chain)
-		if err != nil {
+		if err = json.Unmarshal(chainData, &chain); err != nil {
 			return err
 		}
 		success = true

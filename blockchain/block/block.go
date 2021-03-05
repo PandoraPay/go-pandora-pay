@@ -71,7 +71,7 @@ func (blk *Block) ComputeHash() helpers.Hash {
 }
 
 func (blk *Block) ComputeKernelHashOnly() helpers.Hash {
-	out := blk.SerializeBlock(true, false)
+	out := blk.serializeBlock(true, false)
 	return cryptography.SHA3Hash(out)
 }
 
@@ -87,7 +87,7 @@ func (blk *Block) ComputeKernelHash() helpers.Hash {
 }
 
 func (blk *Block) SerializeForSigning() helpers.Hash {
-	return cryptography.SHA3Hash(blk.SerializeBlock(false, false))
+	return cryptography.SHA3Hash(blk.serializeBlock(false, false))
 }
 
 func (blk *Block) VerifySignature() bool {
@@ -95,7 +95,7 @@ func (blk *Block) VerifySignature() bool {
 	return ecdsa.VerifySignature(blk.DelegatedPublicKey[:], hash[:], blk.Signature[0:64])
 }
 
-func (blk *Block) SerializeBlock(kernelHash bool, inclSignature bool) []byte {
+func (blk *Block) serializeBlock(kernelHash bool, inclSignature bool) []byte {
 
 	writer := helpers.NewBufferWriter()
 
@@ -125,8 +125,12 @@ func (blk *Block) SerializeBlock(kernelHash bool, inclSignature bool) []byte {
 	return writer.Bytes()
 }
 
+func (blk *Block) SerializeForForging() []byte {
+	return blk.serializeBlock(true, false)
+}
+
 func (blk *Block) Serialize() []byte {
-	return blk.SerializeBlock(false, true)
+	return blk.serializeBlock(false, true)
 }
 
 func (blk *Block) Deserialize(reader *helpers.BufferReader) {

@@ -61,7 +61,7 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 
 	minerFees := tx.ComputeFees()
 
-	size := uint64(len(tx.Serialize(true)))
+	size := uint64(len(tx.Serialize()))
 	var selectedFeeToken *string
 	for token := range fees.FEES_PER_BYTE {
 		if minerFees[token] != 0 {
@@ -134,7 +134,7 @@ func (mempool *MemPool) Print() {
 	gui.Log("")
 	gui.Log(fmt.Sprintf("TX mempool: %d", len(list)))
 	for _, out := range list {
-		gui.Log(fmt.Sprintf("%20s %7d B %5d %32s", time.Unix(out.tx.added, 0).UTC().Format(time.RFC3339), len(out.tx.tx.Serialize(true)), out.tx.height, out.hash))
+		gui.Log(fmt.Sprintf("%20s %7d B %5d %32s", time.Unix(out.tx.added, 0).UTC().Format(time.RFC3339), len(out.tx.tx.Serialize()), out.tx.height, out.hash))
 	}
 	gui.Log("")
 
