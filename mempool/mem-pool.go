@@ -87,7 +87,7 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 	object := memPoolTx{
 		tx:         tx,
 		added:      time.Now().Unix(),
-		height:     0,
+		height:     height,
 		feePerByte: minerFees[*selectedFeeToken] / size,
 		feeToken:   []byte(*selectedFeeToken),
 		mine:       mine,
@@ -209,7 +209,21 @@ func (mempool *MemPool) Refresh() {
 					hasWorkToDo = false
 					continue
 				} else {
-					list[listIndex].tx.height = updateTask.height
+
+					func() {
+						defer func() {
+							err := helpers.ConvertRecoverError(recover())
+							if err != nil {
+								updateTask.accs.Rollback()
+								updateTask.toks.Rollback()
+							} else {
+								list[listIndex].tx.height = updateTask.height
+							}
+						}()
+
+						list[listIndex].tx.tx.IncludeTransaction(updateTask.height, updateTask.accs, updateTask.toks)
+					}()
+
 					continue
 				}
 

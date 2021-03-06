@@ -135,7 +135,7 @@ func (hashMap *HashMap) Commit() {
 				committed.Data = nil
 			} else if v.Status == "update" && committed.Status != "update" {
 				committed.Status = "update"
-				committed.Commit = "nil"
+				committed.Commit = ""
 				committed.Data = v.Data
 			}
 
@@ -149,7 +149,7 @@ func (hashMap *HashMap) Rollback() {
 	hashMap.Changes = make(map[string]*ChangesMapElement)
 }
 
-func (hashMap *HashMap) CommitToStore() {
+func (hashMap *HashMap) WriteToStore() {
 
 	for k, v := range hashMap.Committed {
 

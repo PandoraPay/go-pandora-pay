@@ -74,6 +74,6 @@ func (accounts *Accounts) Commit() {
 	accounts.HashMap.Commit()
 }
 
-func (accounts *Accounts) CommitToStore() {
-	accounts.HashMap.CommitToStore()
+func (accounts *Accounts) WriteToStore() {
+	accounts.HashMap.WriteToStore()
 }

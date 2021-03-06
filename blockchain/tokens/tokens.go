@@ -55,6 +55,6 @@ func (tokens *Tokens) Commit() {
 	tokens.HashMap.Commit()
 }
 
-func (tokens *Tokens) CommitToStore() {
-	tokens.HashMap.CommitToStore()
+func (tokens *Tokens) WriteToStore() {
+	tokens.HashMap.WriteToStore()
 }

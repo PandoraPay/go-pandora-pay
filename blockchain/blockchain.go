@@ -53,10 +53,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	}
 
 	//avoid processing the same function twice
-	chain.mutex.Lock()
-	defer chain.mutex.Unlock()
-
-	var wasChainLocked bool
+	chain.Lock()
 
 	gui.Info(fmt.Sprintf("Including blocks %d ... %d", chain.Height, chain.Height+uint64(len(blocksComplete))))
 
@@ -67,29 +64,35 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 		Timestamp:          chain.Timestamp,
 		Target:             chain.Target,
 		BigTotalDifficulty: chain.BigTotalDifficulty,
+		forging:            chain.forging,
+		mempool:            chain.mempool,
 	}
 
 	var accs *accounts.Accounts
 	var toks *tokens.Tokens
 
-	err = store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
+	tx, err := store.StoreBlockchain.DB.Begin(true)
+	if err != nil {
+		return
+	}
 
-		writer := tx.Bucket([]byte("Chain"))
-		savedBlock := false
+	var writer *bolt.Bucket
+	savedBlock := false
+	func() {
 
 		defer func() {
 			err = helpers.ConvertRecoverError(recover())
+			//recover, but in case the chain was correctly saved and the mewChainDifficulty is higher than
+			//we should store it
 			if savedBlock && chain.BigTotalDifficulty.Cmp(newChain.BigTotalDifficulty) < 0 {
 
 				newChain.saveBlockchain(writer)
 
 				accs.Rollback()
 				toks.Rollback()
-				accs.CommitToStore()
-				toks.CommitToStore()
+				accs.WriteToStore()
+				toks.WriteToStore()
 
-				chain.Lock()
-				wasChainLocked = true
 				chain.Height = newChain.Height
 				chain.Hash = newChain.Hash
 				chain.KernelHash = newChain.KernelHash
@@ -97,9 +100,15 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 				chain.Target = newChain.Target
 				chain.BigTotalDifficulty = newChain.BigTotalDifficulty
 
-				err = nil
+				err = tx.Commit()
+			}
+
+			if err != nil {
+				err = tx.Rollback()
 			}
 		}()
+
+		writer = tx.Bucket([]byte("Chain"))
 
 		accs = accounts.NewAccounts(tx)
 		toks = tokens.NewTokens(tx)
@@ -163,7 +172,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			}
 
 			if blkComplete.Block.StakingAmount != stakingAmount {
-				return errors.New("Block Staking Amount doesn't match")
+				panic("Block Staking Amount doesn't match")
 			}
 
 			if blkComplete.Block.StakingAmount < stake.GetRequiredStake(blkComplete.Block.Height) {
@@ -214,7 +223,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 			blkComplete.Block.IncludeBlock(accs, toks)
 
-			//to detect if the savedBlock was done
+			//to detect if the savedBlock was done correctly
 			savedBlock = false
 
 			accs.Commit() //it will commit the changes but not save them
@@ -236,16 +245,14 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			savedBlock = true
 		}
 
-		return
-	})
+	}()
 
-	if wasChainLocked {
-		chain.Unlock()
-	}
+	newChainHeight := newChain.Height
+	chain.Unlock()
 
 	if err != nil {
 		if calledByForging {
-			chain.createBlockForForging()
+			chain.createNextBlockForForging()
 		}
 		return
 	}
@@ -253,16 +260,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	gui.Warning("-------------------------------------------")
 	gui.Warning(fmt.Sprintf("Including blocks SUCCESS %s", hex.EncodeToString(chain.Hash[:])))
 	gui.Warning("-------------------------------------------")
-	chain.updateChainInfo()
+	newChain.updateChainInfo()
 
-	chain.UpdateChannel <- chain.Height //sending 1
+	chain.UpdateChannel <- newChainHeight //sending 1
 
 	//accs will only be read only
-	chain.forging.Wallet.UpdateBalanceChanges(accs)
-	chain.createBlockForForging()
+	newChain.forging.Wallet.UpdateBalanceChanges(accs)
+	newChain.createNextBlockForForging()
 
 	//accs and toks will be overwritten by the simulation
-	chain.mempool.UpdateChanges(chain.Hash, chain.Height, accs, toks)
+	newChain.mempool.UpdateChanges(newChain.Hash, newChain.Height, accs, toks)
 
 	result = true
 	return
@@ -319,7 +326,7 @@ func (chain *Blockchain) initForging() {
 
 	}()
 
-	go chain.createBlockForForging()
+	go chain.createNextBlockForForging()
 
 }
 
