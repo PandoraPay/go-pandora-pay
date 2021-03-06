@@ -44,6 +44,7 @@ func (chain *Blockchain) init() {
 		toks.UpdateToken(config.NATIVE_TOKEN_FULL, &tok)
 
 		toks.Commit()
+		toks.WriteToStore()
 
 		return
 
@@ -71,16 +72,29 @@ func (chain *Blockchain) computeNextTargetBig(bucket *bolt.Bucket) *big.Int {
 	return difficulty.NextTargetBig(deltaTotalDifficulty, deltaTime)
 }
 
+//make sure that chain is RLocked
 func (chain *Blockchain) createNextBlockComplete() (blkComplete *block.BlockComplete, err error) {
 
+	chain.RLock()
+	defer chain.RUnlock()
+
+	return
+}
+
+func (chain *Blockchain) createNextBlockForForging() {
+
+	chain.RLock()
+	target := chain.Target
+
 	var blk *block.Block
+	var err error
 	if chain.Height == 0 {
 		if blk, err = genesis.CreateNewGenesisBlock(); err != nil {
+			chain.RUnlock()
+			gui.Error("Error creating next block", err)
 			return
 		}
 	} else {
-
-		chain.RLock()
 
 		var blockHeader = block.BlockHeader{
 			Version: 0,
@@ -95,27 +109,15 @@ func (chain *Blockchain) createNextBlockComplete() (blkComplete *block.BlockComp
 			Timestamp:      chain.Timestamp,
 		}
 
-		chain.RUnlock()
-
 	}
 
-	blkComplete = &block.BlockComplete{
+	blkComplete := &block.BlockComplete{
 		Block: blk,
 	}
 
-	return
-}
+	chain.RUnlock()
 
-func (chain *Blockchain) createBlockForForging() {
-
-	var err error
-
-	var nextBlock *block.BlockComplete
-	if nextBlock, err = chain.createNextBlockComplete(); err != nil {
-		gui.Error("Error creating next block", err)
-	}
-
-	chain.forging.RestartForgingWorkers(nextBlock, chain.Target)
+	chain.forging.RestartForgingWorkers(blkComplete, target)
 }
 
 func (chain *Blockchain) updateChainInfo() {

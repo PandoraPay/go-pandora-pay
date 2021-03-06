@@ -266,6 +266,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 	//accs will only be read only
 	newChain.forging.Wallet.UpdateBalanceChanges(accs)
+
+	//create next block and the workers will be automatically reset
 	newChain.createNextBlockForForging()
 
 	//accs and toks will be overwritten by the simulation

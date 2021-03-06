@@ -9,18 +9,25 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unsafe"
 )
 
-type Forging struct {
+type ForgingWork struct {
 	blkComplete *block.BlockComplete
 	target      *big.Int
+}
 
-	solution          bool
-	solutionTimestamp uint64
-	solutionAddress   *ForgingWalletAddress
+type ForgingSolution struct {
+	timestamp uint64
+	address   *ForgingWalletAddress
+	work      *ForgingWork
+}
 
-	started        int32
-	forgingWorking int32
+type Forging struct {
+	work     unsafe.Pointer
+	solution unsafe.Pointer
+
+	started int32
 
 	wg sync.WaitGroup
 
@@ -55,29 +62,44 @@ func (forging *Forging) startForging(threads int) {
 
 	for atomic.LoadInt32(&forging.started) == 1 {
 
-		if forging.solution || forging.blkComplete == nil {
+		workPointer := atomic.LoadPointer(&forging.work)
+		if atomic.LoadPointer(&forging.work) == nil {
 			// gui.Error("No block for staking..." )
 			time.Sleep(10 * time.Millisecond)
 			continue
 		}
+		work := (*ForgingWork)(workPointer)
 
-		if !atomic.CompareAndSwapInt32(&forging.forgingWorking, 0, 1) {
-			gui.Error("A strange error as forgingWorking couldn't be set to 1 ")
-			return
+		//distributing the wallets to each thread uniformly
+		forging.Wallet.RLock()
+		wallets := [][]*ForgingWalletAddress{{}}
+		for i := 0; i < threads; i++ {
+			wallets = append(wallets, []*ForgingWalletAddress{})
 		}
+		for i, walletAdr := range forging.Wallet.addresses {
+			if walletAdr.account != nil || work.blkComplete.Block.Height == 0 {
+				wallets[i%threads] = append(wallets[i%threads], &ForgingWalletAddress{
+					delegatedPublicKey:  walletAdr.delegatedPublicKey,
+					delegatedPrivateKey: walletAdr.delegatedPrivateKey,
+					publicKeyHash:       walletAdr.publicKeyHash,
+					account:             walletAdr.account,
+				})
+			}
+		}
+		forging.Wallet.RUnlock()
 
 		for i := 0; i < threads; i++ {
 			forging.wg.Add(1)
-			go forge(forging, threads, i)
+			go forge(forging, workPointer, work, wallets[i])
 		}
 
 		forging.wg.Wait()
 
-		if forging.solution {
+		if atomic.LoadPointer(&forging.solution) != nil {
 			err := forging.publishSolution()
 			if err != nil {
 				gui.Error("Error publishing solution", err)
-				forging.solution = false
+				atomic.StorePointer(&forging.solution, nil)
 			}
 		}
 
@@ -86,57 +108,66 @@ func (forging *Forging) startForging(threads int) {
 }
 
 func (forging *Forging) StopForging() {
-	forging.StopForgingWorkers()
-	atomic.AddInt32(&forging.started, -1)
-}
-
-func (forging *Forging) StopForgingWorkers() {
-	atomic.CompareAndSwapInt32(&forging.forgingWorking, 1, 0)
+	atomic.StorePointer(&forging.work, nil)
+	atomic.StorePointer(&forging.solution, nil)
+	atomic.CompareAndSwapInt32(&forging.started, 1, 0)
 }
 
 //thread safe
 func (forging *Forging) RestartForgingWorkers(blkComplete *block.BlockComplete, target *big.Int) {
 
-	atomic.CompareAndSwapInt32(&forging.forgingWorking, 1, 0)
-
-	forging.wg.Wait()
-
-	forging.solution = false
-	forging.blkComplete = blkComplete
-	forging.target = target
+	work := ForgingWork{
+		blkComplete: blkComplete,
+		target:      target,
+	}
+	atomic.StorePointer(&forging.work, unsafe.Pointer(&work))
+	atomic.StorePointer(&forging.solution, nil)
 
 }
 
-//thread safe
-func (forging *Forging) foundSolution(address *ForgingWalletAddress, timestamp uint64) {
+func (forging *Forging) StopForgingWorkers() {
+	atomic.StorePointer(&forging.work, nil)
+	atomic.StorePointer(&forging.solution, nil)
+}
 
-	if atomic.CompareAndSwapInt32(&forging.forgingWorking, 1, 0) {
-		forging.solution = true
-		forging.solutionTimestamp = timestamp
-		forging.solutionAddress = address
+//thread safe
+func (forging *Forging) foundSolution(address *ForgingWalletAddress, timestamp uint64, work *ForgingWork) {
+
+	solution := ForgingSolution{
+		timestamp: timestamp,
+		address:   address,
+		work:      work,
 	}
 
+	atomic.StorePointer(&forging.solution, unsafe.Pointer(&solution))
+	atomic.StorePointer(&forging.work, nil)
 }
 
 // thread not safe
 func (forging *Forging) publishSolution() (err error) {
+
 	defer func() {
 		err = helpers.ConvertRecoverError(recover())
 	}()
 
-	forging.blkComplete.Block.Forger = forging.solutionAddress.publicKeyHash
-	forging.blkComplete.Block.DelegatedPublicKey = forging.solutionAddress.delegatedPublicKey
-	forging.blkComplete.Block.Timestamp = forging.solutionTimestamp
-	if forging.blkComplete.Block.Height > 0 {
-		forging.blkComplete.Block.StakingAmount = forging.solutionAddress.account.GetDelegatedStakeAvailable(forging.blkComplete.Block.Height)
+	solutionPointer := atomic.LoadPointer(&forging.solution)
+	solution := (*ForgingSolution)(solutionPointer)
+
+	work := solution.work
+
+	work.blkComplete.Block.Forger = solution.address.publicKeyHash
+	work.blkComplete.Block.DelegatedPublicKey = solution.address.delegatedPublicKey
+	work.blkComplete.Block.Timestamp = solution.timestamp
+	if work.blkComplete.Block.Height > 0 {
+		work.blkComplete.Block.StakingAmount = solution.address.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height)
 	}
 
-	serializationForSigning := forging.blkComplete.Block.SerializeForSigning()
+	serializationForSigning := work.blkComplete.Block.SerializeForSigning()
 
-	forging.blkComplete.Block.Signature = forging.solutionAddress.delegatedPrivateKey.Sign(serializationForSigning)
+	work.blkComplete.Block.Signature = solution.address.delegatedPrivateKey.Sign(serializationForSigning)
 
 	//send message to blockchain
-	forging.SolutionChannel <- forging.blkComplete
+	forging.SolutionChannel <- work.blkComplete
 	return
 }
 
