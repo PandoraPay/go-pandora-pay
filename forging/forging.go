@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/config"
+	"pandora-pay/config/stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"sync"
@@ -72,18 +73,26 @@ func (forging *Forging) startForging(threads int) {
 
 		//distributing the wallets to each thread uniformly
 		forging.Wallet.RLock()
-		wallets := [][]*ForgingWalletAddress{{}}
+		wallets := [][]*ForgingWalletAddressRequired{{}}
 		for i := 0; i < threads; i++ {
-			wallets = append(wallets, []*ForgingWalletAddress{})
+			wallets = append(wallets, []*ForgingWalletAddressRequired{})
 		}
+		c := 0
 		for i, walletAdr := range forging.Wallet.addresses {
 			if walletAdr.account != nil || work.blkComplete.Block.Height == 0 {
-				wallets[i%threads] = append(wallets[i%threads], &ForgingWalletAddress{
-					delegatedPublicKey:  walletAdr.delegatedPublicKey,
-					delegatedPrivateKey: walletAdr.delegatedPrivateKey,
-					publicKeyHash:       walletAdr.publicKeyHash,
-					account:             walletAdr.account,
-				})
+
+				var stakingAmount uint64
+				if walletAdr.account != nil {
+					stakingAmount = walletAdr.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height)
+				}
+				if stakingAmount >= stake.GetRequiredStake(work.blkComplete.Block.Height) {
+					wallets[c%threads] = append(wallets[i%threads], &ForgingWalletAddressRequired{
+						publicKeyHash: walletAdr.publicKeyHash,
+						wallet:        walletAdr,
+						stakingAmount: stakingAmount,
+					})
+					c++
+				}
 			}
 		}
 		forging.Wallet.RUnlock()
@@ -92,7 +101,6 @@ func (forging *Forging) startForging(threads int) {
 			forging.wg.Add(1)
 			go forge(forging, workPointer, work, wallets[i])
 		}
-
 		forging.wg.Wait()
 
 		if atomic.LoadPointer(&forging.solution) != nil {
@@ -138,7 +146,6 @@ func (forging *Forging) foundSolution(address *ForgingWalletAddress, timestamp u
 		address:   address,
 		work:      work,
 	}
-
 	atomic.StorePointer(&forging.solution, unsafe.Pointer(&solution))
 	atomic.StorePointer(&forging.work, nil)
 }

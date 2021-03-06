@@ -26,6 +26,12 @@ type ForgingWalletAddress struct {
 	account *account.Account
 }
 
+type ForgingWalletAddressRequired struct {
+	publicKeyHash [20]byte
+	wallet        *ForgingWalletAddress
+	stakingAmount uint64
+}
+
 func (w *ForgingWallet) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte, pubKeyHash [20]byte) {
 
 	w.Lock()

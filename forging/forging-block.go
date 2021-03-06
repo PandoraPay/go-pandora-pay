@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/config"
-	"pandora-pay/config/stake"
 	"pandora-pay/cryptography"
 	"sync/atomic"
 	"time"
@@ -12,7 +11,7 @@ import (
 )
 
 //inside a thread
-func forge(forging *Forging, workPointer unsafe.Pointer, work *ForgingWork, wallets []*ForgingWalletAddress) {
+func forge(forging *Forging, workPointer unsafe.Pointer, work *ForgingWork, wallets []*ForgingWalletAddressRequired) {
 
 	buf := make([]byte, binary.MaxVarintLen64)
 
@@ -35,39 +34,26 @@ func forge(forging *Forging, workPointer unsafe.Pointer, work *ForgingWork, wall
 		//forge with my wallets
 		for _, address := range wallets {
 
-			var stakingAmount uint64
-			if address.account != nil {
-				stakingAmount = address.account.GetDelegatedStakeAvailable(height)
+			n = binary.PutUvarint(buf, timestamp)
+			serialized = append(serialized, buf[:n]...)
+			serialized = append(serialized, address.publicKeyHash[:]...)
+			kernelHash := cryptography.SHA3Hash(serialized)
+
+			if height > 0 {
+				kernelHash = cryptography.ComputeKernelHash(kernelHash, address.stakingAmount)
 			}
 
-			if stakingAmount >= stake.GetRequiredStake(height) {
+			if difficulty.CheckKernelHashBig(kernelHash, work.target) {
 
-				if atomic.LoadPointer(&forging.work) != workPointer {
-					break
-				}
+				forging.foundSolution(address.wallet, timestamp, work)
+				return
 
-				n = binary.PutUvarint(buf, timestamp)
-				serialized = append(serialized, buf[:n]...)
-				serialized = append(serialized, address.publicKeyHash[:]...)
-				kernelHash := cryptography.SHA3Hash(serialized)
-
-				if height > 0 {
-					kernelHash = cryptography.ComputeKernelHash(kernelHash, stakingAmount)
-				}
-
-				if difficulty.CheckKernelHashBig(kernelHash, work.target) {
-
-					forging.foundSolution(address, timestamp, work)
-					return
-
-				} else {
-					// for debugging only
-					// gui.Log(hex.EncodeToString(kernelHash[:]))
-				}
-
-				serialized = serialized[:len(serialized)-n-20]
-
+			} else {
+				// for debugging only
+				// gui.Log(hex.EncodeToString(kernelHash[:]))
 			}
+
+			serialized = serialized[:len(serialized)-n-20]
 
 		}
 		timestamp += 1
