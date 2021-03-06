@@ -4,15 +4,21 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-type VirtualHashMapElement struct {
-	Data      []byte
-	Status    string
-	Committed string
+type CommitedMapElement struct {
+	Data   []byte
+	Status string
+	Commit string
+}
+
+type ChangesMapElement struct {
+	Data   []byte
+	Status string
 }
 
 type HashMap struct {
 	Bucket    *bbolt.Bucket
-	Virtual   map[string]*VirtualHashMapElement
+	Changes   map[string]*ChangesMapElement
+	Committed map[string]*CommitedMapElement
 	KeyLength int
 }
 
@@ -23,7 +29,8 @@ func CreateNewHashMap(tx *bbolt.Tx, name string, keyLength int) (hashMap *HashMa
 	}
 
 	hashMap = &HashMap{
-		Virtual:   make(map[string]*VirtualHashMapElement),
+		Committed: make(map[string]*CommitedMapElement),
+		Changes:   make(map[string]*ChangesMapElement),
 		Bucket:    tx.Bucket([]byte(name)),
 		KeyLength: keyLength,
 	}
@@ -34,14 +41,20 @@ func (hashMap *HashMap) Get(key []byte) (out []byte) {
 
 	keyStr := string(key)
 
-	exists := hashMap.Virtual[keyStr]
+	exists := hashMap.Changes[keyStr]
 	if exists != nil {
 		out = exists.Data
 		return
 	}
 
+	exists2 := hashMap.Committed[keyStr]
+	if exists2 != nil {
+		out = exists2.Data
+		return
+	}
+
 	out = hashMap.Bucket.Get(key)
-	hashMap.Virtual[keyStr] = &VirtualHashMapElement{
+	hashMap.Committed[keyStr] = &CommitedMapElement{
 		out,
 		"view",
 		"",
@@ -52,12 +65,18 @@ func (hashMap *HashMap) Get(key []byte) (out []byte) {
 func (hashMap *HashMap) Exists(key []byte) bool {
 	keyStr := string(key)
 
-	exists := hashMap.Virtual[keyStr]
+	exists := hashMap.Changes[keyStr]
 	if exists != nil {
 		return exists.Data != nil
 	}
+
+	exists2 := hashMap.Committed[keyStr]
+	if exists2 != nil {
+		return exists2.Data != nil
+	}
+
 	out := hashMap.Bucket.Get(key)
-	hashMap.Virtual[keyStr] = &VirtualHashMapElement{
+	hashMap.Committed[keyStr] = &CommitedMapElement{
 		out,
 		"view",
 		"",
@@ -69,10 +88,10 @@ func (hashMap *HashMap) Update(key []byte, data []byte) {
 
 	keyStr := string(key)
 
-	exists := hashMap.Virtual[keyStr]
+	exists := hashMap.Changes[keyStr]
 	if exists == nil {
-		exists = new(VirtualHashMapElement)
-		hashMap.Virtual[keyStr] = exists
+		exists = new(ChangesMapElement)
+		hashMap.Changes[keyStr] = exists
 	}
 	exists.Data = data
 	exists.Status = "update"
@@ -84,10 +103,10 @@ func (hashMap *HashMap) Delete(key []byte) {
 
 	keyStr := string(key)
 
-	exists := hashMap.Virtual[keyStr]
+	exists := hashMap.Changes[keyStr]
 	if exists == nil {
-		exists = new(VirtualHashMapElement)
-		hashMap.Virtual[keyStr] = exists
+		exists = new(ChangesMapElement)
+		hashMap.Changes[keyStr] = exists
 	}
 	exists.Status = "del"
 	exists.Data = nil
@@ -95,8 +114,44 @@ func (hashMap *HashMap) Delete(key []byte) {
 }
 
 func (hashMap *HashMap) Commit() {
+	for k, v := range hashMap.Changes {
 
-	for k, v := range hashMap.Virtual {
+		key := []byte(k)
+		if len(key) != hashMap.KeyLength {
+			panic("KeyLength is invalid")
+		}
+
+		if v.Status == "del" || v.Status == "update" {
+
+			committed := hashMap.Committed[k]
+			if committed == nil {
+				committed = new(CommitedMapElement)
+				hashMap.Committed[k] = committed
+			}
+
+			if v.Status == "del" && committed.Status != "del" {
+				committed.Status = "del"
+				committed.Commit = ""
+				committed.Data = nil
+			} else if v.Status == "update" && committed.Status != "update" {
+				committed.Status = "update"
+				committed.Commit = "nil"
+				committed.Data = v.Data
+			}
+
+		}
+
+	}
+	hashMap.Changes = make(map[string]*ChangesMapElement)
+}
+
+func (hashMap *HashMap) Rollback() {
+	hashMap.Changes = make(map[string]*ChangesMapElement)
+}
+
+func (hashMap *HashMap) CommitToStore() {
+
+	for k, v := range hashMap.Committed {
 
 		key := []byte(k)
 		if len(key) != hashMap.KeyLength {
@@ -108,13 +163,13 @@ func (hashMap *HashMap) Commit() {
 				panic(err)
 			}
 			v.Status = "view"
-			v.Committed = "del"
+			v.Commit = "del"
 			v.Data = nil
 		} else if v.Status == "update" {
 			if err := hashMap.Bucket.Put(key, v.Data); err != nil {
 				panic(err)
 			}
-			v.Committed = "update"
+			v.Commit = "update"
 			v.Status = "view"
 		}
 

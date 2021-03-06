@@ -67,14 +67,14 @@ func (w *ForgingWallet) UpdateBalanceChanges(accs *accounts.Accounts) {
 	w.Lock()
 	defer w.Unlock()
 
-	for k, v := range accs.HashMap.Virtual {
+	for k, v := range accs.HashMap.Committed {
 
 		if w.addressesMap[k] != nil {
 
-			if v.Committed == "update" {
+			if v.Commit == "update" {
 				w.addressesMap[k].account = new(account.Account)
 				w.addressesMap[k].account.Deserialize(v.Data)
-			} else if v.Committed == "delete" {
+			} else if v.Commit == "delete" {
 				w.addressesMap[k].account = nil
 			}
 

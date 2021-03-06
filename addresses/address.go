@@ -74,9 +74,7 @@ func (a *Address) EncodeAddr() string {
 
 func DecodeAddrSilent(input string) (adr *Address, err error) {
 	defer func() {
-		if err2 := recover(); err2 != nil {
-			err = helpers.ConvertRecoverError(err2)
-		}
+		err = helpers.ConvertRecoverError(recover())
 	}()
 	adr = DecodeAddr(input)
 	return

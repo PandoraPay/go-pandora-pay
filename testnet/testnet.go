@@ -25,9 +25,7 @@ type Testnet struct {
 
 func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64) (err error) {
 	defer func() {
-		if err2 := recover(); err2 != nil {
-			err = helpers.ConvertRecoverError(err2)
-		}
+		err = helpers.ConvertRecoverError(recover())
 	}()
 
 	tx := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].AddressEncoded, testnet.nodes*stake.GetRequiredStake(blockHeight), -1, []byte{}, true)

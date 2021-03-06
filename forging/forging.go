@@ -121,9 +121,7 @@ func (forging *Forging) foundSolution(address *ForgingWalletAddress, timestamp u
 // thread not safe
 func (forging *Forging) publishSolution() (err error) {
 	defer func() {
-		if err2 := recover(); err2 != nil {
-			err = helpers.ConvertRecoverError(err2)
-		}
+		err = helpers.ConvertRecoverError(recover())
 	}()
 
 	forging.blkComplete.Block.Forger = forging.solutionAddress.publicKeyHash

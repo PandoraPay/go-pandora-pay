@@ -50,9 +50,7 @@ type MemPool struct {
 
 func (mempool *MemPool) AddTxToMemPoolSilent(tx *transaction.Transaction, height uint64, mine bool) (result bool, err error) {
 	defer func() {
-		if err2 := recover(); err2 != nil {
-			err = helpers.ConvertRecoverError(err2)
-		}
+		err = helpers.ConvertRecoverError(recover())
 	}()
 	result = mempool.AddTxToMemPool(tx, height, mine)
 	return
@@ -89,7 +87,7 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 	object := memPoolTx{
 		tx:         tx,
 		added:      time.Now().Unix(),
-		height:     height,
+		height:     0,
 		feePerByte: minerFees[*selectedFeeToken] / size,
 		feeToken:   []byte(*selectedFeeToken),
 		mine:       mine,
@@ -155,6 +153,7 @@ func (mempool *MemPool) Print() {
 func (mempool *MemPool) UpdateChanges(hash helpers.Hash, height uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
 	mempool.updateTask.Lock()
 	defer mempool.updateTask.Unlock()
+
 	copy(mempool.updateTask.hash[:], hash[:])
 	mempool.updateTask.height = height
 	mempool.updateTask.accs = accs

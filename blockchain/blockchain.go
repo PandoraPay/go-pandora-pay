@@ -74,16 +74,35 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 	err = store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 
+		writer := tx.Bucket([]byte("Chain"))
+		savedBlock := false
+
 		defer func() {
-			if err2 := recover(); err2 != nil {
-				err = helpers.ConvertRecoverError(err2)
+			err = helpers.ConvertRecoverError(recover())
+			if savedBlock && chain.BigTotalDifficulty.Cmp(newChain.BigTotalDifficulty) < 0 {
+
+				newChain.saveBlockchain(writer)
+
+				accs.Rollback()
+				toks.Rollback()
+				accs.CommitToStore()
+				toks.CommitToStore()
+
+				chain.Lock()
+				wasChainLocked = true
+				chain.Height = newChain.Height
+				chain.Hash = newChain.Hash
+				chain.KernelHash = newChain.KernelHash
+				chain.Timestamp = newChain.Timestamp
+				chain.Target = newChain.Target
+				chain.BigTotalDifficulty = newChain.BigTotalDifficulty
+
+				err = nil
 			}
 		}()
 
 		accs = accounts.NewAccounts(tx)
 		toks = tokens.NewTokens(tx)
-
-		writer := tx.Bucket([]byte("Chain"))
 
 		var prevBlk = &block.Block{}
 		if blocksComplete[0].Block.Height == 0 {
@@ -195,10 +214,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 			blkComplete.Block.IncludeBlock(accs, toks)
 
-			newChain.saveBlock(writer, blkComplete, hash)
+			//to detect if the savedBlock was done
+			savedBlock = false
 
-			accs.Commit()
-			toks.Commit()
+			accs.Commit() //it will commit the changes but not save them
+			toks.Commit() //it will commit the changes but not save them
+
+			newChain.saveBlock(writer, blkComplete, hash)
 
 			newChain.Hash = hash
 			newChain.KernelHash = kernelHash
@@ -211,19 +233,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			newChain.Target = newChain.computeNextTargetBig(writer)
 
 			newChain.Height += 1
-
+			savedBlock = true
 		}
-
-		newChain.saveBlockchain(writer)
-
-		chain.Lock()
-		wasChainLocked = true
-		chain.Height = newChain.Height
-		chain.Hash = newChain.Hash
-		chain.KernelHash = newChain.KernelHash
-		chain.Timestamp = newChain.Timestamp
-		chain.Target = newChain.Target
-		chain.BigTotalDifficulty = newChain.BigTotalDifficulty
 
 		return
 	})
@@ -234,7 +245,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 	if err != nil {
 		if calledByForging {
-			go chain.createBlockForForging()
+			chain.createBlockForForging()
 		}
 		return
 	}
@@ -246,10 +257,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 	chain.UpdateChannel <- chain.Height //sending 1
 
+	//accs will only be read only
 	chain.forging.Wallet.UpdateBalanceChanges(accs)
-	chain.mempool.UpdateChanges(chain.Hash, chain.Height, accs, toks)
+	chain.createBlockForForging()
 
-	go chain.createBlockForForging()
+	//accs and toks will be overwritten by the simulation
+	chain.mempool.UpdateChanges(chain.Hash, chain.Height, accs, toks)
 
 	result = true
 	return

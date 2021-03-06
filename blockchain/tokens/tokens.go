@@ -47,6 +47,14 @@ func (tokens *Tokens) DeleteAccount(key [20]byte) {
 	tokens.HashMap.Delete(key[:])
 }
 
+func (tokens *Tokens) Rollback() {
+	tokens.HashMap.Rollback()
+}
+
 func (tokens *Tokens) Commit() {
 	tokens.HashMap.Commit()
+}
+
+func (tokens *Tokens) CommitToStore() {
+	tokens.HashMap.CommitToStore()
 }

@@ -66,6 +66,14 @@ func (accounts *Accounts) DeleteAccount(key [20]byte) {
 	accounts.HashMap.Delete(key[:])
 }
 
+func (accounts *Accounts) Rollback() {
+	accounts.HashMap.Rollback()
+}
+
 func (accounts *Accounts) Commit() {
 	accounts.HashMap.Commit()
+}
+
+func (accounts *Accounts) CommitToStore() {
+	accounts.HashMap.CommitToStore()
 }

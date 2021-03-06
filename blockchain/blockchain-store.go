@@ -15,19 +15,13 @@ func (chain *Blockchain) LoadBlockFromHashSilent(hash helpers.Hash) (blk *block.
 	err = store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
 
 		defer func() {
-			if err2 := recover(); err2 != nil {
-				err = helpers.ConvertRecoverError(err2)
-			}
+			err = helpers.ConvertRecoverError(recover())
 		}()
 
 		reader := tx.Bucket([]byte("Chain"))
-		if reader == nil {
-			return nil
-		}
-
 		blk = chain.loadBlock(reader, hash)
 
-		return err
+		return
 	})
 
 	return
@@ -55,15 +49,10 @@ func (chain *Blockchain) saveBlock(bucket *bolt.Bucket, blkComplete *block.Block
 
 	key := append([]byte("blockHash"), hash[:]...)
 
-	if err := bucket.Put(key, blkComplete.Block.Serialize()); err != nil {
-		panic(err)
-	}
+	bucket.Put(key, blkComplete.Block.Serialize())
 
 	key = []byte("blockHeight" + strconv.FormatUint(blkComplete.Block.Height, 10))
-	if err := bucket.Put(key, hash[:]); err != nil {
-		panic(err)
-	}
-
+	bucket.Put(key, hash[:])
 }
 
 func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) helpers.Hash {
@@ -86,9 +75,7 @@ func (chain *Blockchain) saveTotalDifficultyExtra(bucket *bolt.Bucket) {
 	writer.WriteUvarint(uint64(len(bytes)))
 	writer.Write(bytes)
 
-	if err := bucket.Put(key, writer.Bytes()); err != nil {
-		panic(err)
-	}
+	bucket.Put(key, writer.Bytes())
 }
 
 func (chain *Blockchain) loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64) {
@@ -113,9 +100,7 @@ func (chain *Blockchain) saveBlockchain(bucket *bolt.Bucket) {
 		panic(err)
 	}
 
-	if err := bucket.Put([]byte("blockchainInfo"), marshal); err != nil {
-		panic(err)
-	}
+	bucket.Put([]byte("blockchainInfo"), marshal)
 }
 
 func (chain *Blockchain) loadBlockchain() (success bool, err error) {
@@ -123,10 +108,6 @@ func (chain *Blockchain) loadBlockchain() (success bool, err error) {
 	err = store.StoreBlockchain.DB.View(func(tx *bolt.Tx) error {
 
 		reader := tx.Bucket([]byte("Chain"))
-		if reader == nil {
-			return nil
-		}
-
 		chainData := reader.Get([]byte("blockchainInfo"))
 		if chainData == nil {
 			return nil
