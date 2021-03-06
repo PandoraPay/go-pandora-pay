@@ -13,8 +13,8 @@ func setFeeTxNow(tx *transaction.Transaction, feePerByte, initAmount uint64, val
 	var fee uint64
 	oldFee := uint64(1)
 	for oldFee != fee {
-		fee = fees.ComputeTxFees(uint64(len(tx.Serialize())), feePerByte)
 		oldFee = fee
+		fee = fees.ComputeTxFees(uint64(len(tx.Serialize())), feePerByte)
 		*value = initAmount + fee
 	}
 	return
@@ -43,8 +43,7 @@ func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFee
 
 				switch base.TxScript {
 				case transaction_simple.TxSimpleScriptUnstake:
-					unstake := base.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
-					setFeeTxNow(tx, uint64(feePerByte), 0, &unstake.UnstakeFeeExtra)
+					setFeeTxNow(tx, uint64(feePerByte), 0, &base.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake).UnstakeFeeExtra)
 					return
 				}
 

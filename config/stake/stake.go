@@ -2,13 +2,20 @@ package stake
 
 import "pandora-pay/config"
 
-func GetRequiredStake(blockHeight uint64) (stake uint64) {
+func GetRequiredStake(blockHeight uint64) uint64 {
 
 	if blockHeight == 0 {
-		stake = 0
+		return config.ConvertToUnits(0)
 	} else {
-		stake = 100
+		return config.ConvertToUnits(100)
 	}
 
-	return config.ConvertToUnits(stake)
+}
+
+func GetUnstakeWindow(blockHeight uint64) uint64 {
+	if blockHeight < 10000 {
+		return 5
+	} else {
+		return 5000
+	}
 }

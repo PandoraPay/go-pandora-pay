@@ -1,7 +1,6 @@
 package mempool
 
 import (
-	"errors"
 	"fmt"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
@@ -49,7 +48,17 @@ type MemPool struct {
 	mutex sync.Mutex `json:"-"`
 }
 
-func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) (result bool, err error) {
+func (mempool *MemPool) AddTxToMemPoolSilent(tx *transaction.Transaction, height uint64, mine bool) (result bool, err error) {
+	defer func() {
+		if err2 := recover(); err2 != nil {
+			err = helpers.ConvertRecoverError(err2)
+		}
+	}()
+	result = mempool.AddTxToMemPool(tx, height, mine)
+	return
+}
+
+func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) bool {
 
 	//making sure that the transaction is not inserted twice
 	mempool.mutex.Lock()
@@ -57,7 +66,7 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 
 	hash := tx.ComputeHash()
 	if _, found := mempool.txs.Load(hash); found {
-		return
+		return false
 	}
 
 	minerFees := tx.ComputeFees()
@@ -74,8 +83,7 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 		}
 	}
 	if selectedFeeToken == nil {
-		err = errors.New("Transaction fee was not accepted")
-		return
+		panic("Transaction fee was not accepted")
 	}
 
 	object := memPoolTx{
@@ -87,10 +95,9 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 		mine:       mine,
 	}
 
-	mempool.txs.Store(hash, object)
+	mempool.txs.Store(hash, &object)
 
-	result = true
-	return
+	return true
 }
 
 func (mempool *MemPool) Exists(txId helpers.Hash) bool {
@@ -115,7 +122,9 @@ func (mempool *MemPool) Delete(txId helpers.Hash) (tx *transaction.Transaction) 
 	return
 }
 
-func (mempool *MemPool) getTxsList() (list []*memPoolOutput) {
+func (mempool *MemPool) getTxsList() []*memPoolOutput {
+
+	list := []*memPoolOutput{}
 
 	mempool.txs.Range(func(key, value interface{}) bool {
 		hash := key.(helpers.Hash)
@@ -127,7 +136,7 @@ func (mempool *MemPool) getTxsList() (list []*memPoolOutput) {
 		return true
 	})
 
-	return
+	return list
 }
 
 func (mempool *MemPool) Print() {
@@ -179,22 +188,20 @@ func (mempool *MemPool) Refresh() {
 			if listIndex == -1 {
 
 				list = mempool.getTxsList()
-				sort.Slice(list, func(i, j int) bool {
+				if len(list) > 0 {
+					sort.Slice(list, func(i, j int) bool {
 
-					if list[i].tx.feePerByte == list[j].tx.feePerByte {
+						if list[i].tx.feePerByte == list[j].tx.feePerByte {
 
-						if list[i].tx.tx.TxType == transaction_type.TxSimple && list[i].tx.tx.TxType == list[j].tx.tx.TxType {
-
-							base1 := list[i].tx.tx.TxBase.(*transaction_simple.TransactionSimple)
-							base2 := list[i].tx.tx.TxBase.(*transaction_simple.TransactionSimple)
-							return base1.Nonce < base2.Nonce
+							if list[i].tx.tx.TxType == transaction_type.TxSimple && list[j].tx.tx.TxType == transaction_type.TxSimple {
+								return list[i].tx.tx.TxBase.(*transaction_simple.TransactionSimple).Nonce < list[j].tx.tx.TxBase.(*transaction_simple.TransactionSimple).Nonce
+							}
 
 						}
 
-					}
-
-					return list[i].tx.feePerByte < list[j].tx.feePerByte
-				})
+						return list[i].tx.feePerByte < list[j].tx.feePerByte
+					})
+				}
 				listIndex = 0
 
 			} else {

@@ -1,7 +1,7 @@
 package dpos
 
 import (
-	"pandora-pay/config"
+	"pandora-pay/config/stake"
 	"pandora-pay/helpers"
 )
 
@@ -25,7 +25,7 @@ type DelegatedStake struct {
 
 func (delegatedStake *DelegatedStake) AddDelegatedUnstake(sign bool, amount, blockHeight uint64) {
 	helpers.SafeUint64Update(sign, &delegatedStake.UnstakeAmount, amount)
-	delegatedStake.UnstakeHeight = blockHeight + config.UNSTAKE_BLOCK_WINDOW
+	delegatedStake.UnstakeHeight = blockHeight + stake.GetUnstakeWindow(blockHeight)
 }
 
 func (delegatedStake *DelegatedStake) AddDelegatedStake(sign bool, amount uint64) {

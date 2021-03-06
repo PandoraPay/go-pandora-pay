@@ -1,7 +1,11 @@
 package testnet
 
 import (
+	"encoding/hex"
 	"pandora-pay/blockchain"
+	"pandora-pay/config/stake"
+	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
@@ -15,6 +19,27 @@ type Testnet struct {
 
 	unstake  bool
 	withdraw bool
+
+	nodes uint64
+}
+
+func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64) (err error) {
+	defer func() {
+		if err2 := recover(); err2 != nil {
+			err = helpers.ConvertRecoverError(err2)
+		}
+	}()
+
+	tx := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].AddressEncoded, testnet.nodes*stake.GetRequiredStake(blockHeight), -1, []byte{}, true)
+	hash := tx.ComputeHash()
+	gui.Info("Unstake transaction was created: " + hex.EncodeToString(hash[:]))
+
+	result := testnet.mempool.AddTxToMemPool(tx, blockHeight, true)
+	if !result {
+		panic("transaction was not isnerted in mempool")
+	}
+
+	return
 }
 
 func (testnet *Testnet) run() {
@@ -22,16 +47,12 @@ func (testnet *Testnet) run() {
 	for {
 
 		blockHeight := <-testnet.chain.UpdateChannel
-		if blockHeight > 50 {
+		if blockHeight == 40 {
 
-			//if !testnet.unstake {
-			//	testnet.unstake = true
-			//	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].)
-			//	if err != nil {
-			//		gui.Error("Error creating testnet transaction", err)
-			//		continue
-			//	}
-			//}
+			testnet.unstake = true
+			if err := testnet.testnetCreateUnstakeTx(blockHeight); err != nil {
+				gui.Error("Error creating unstake Tx", err)
+			}
 
 		}
 
@@ -45,6 +66,7 @@ func TestnetInit(wallet *wallet.Wallet, mempool *mempool.MemPool, chain *blockch
 		mempool:             mempool,
 		chain:               chain,
 		transactionsBuilder: transactionsBuilder,
+		nodes:               uint64(5),
 	}
 
 	go testnet.run()

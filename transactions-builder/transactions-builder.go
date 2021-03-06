@@ -6,7 +6,6 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/wizard"
-	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"pandora-pay/wallet"
 )
@@ -16,21 +15,15 @@ type TransactionsBuilder struct {
 	chain  *blockchain.Blockchain
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err error) {
+func (builder *TransactionsBuilder) CreateSimpleTxSilent(from []string, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err error) {
 	return
 }
 
-func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction, err error) {
-
-	defer func() {
-		if err2 := recover(); err2 != nil {
-			err = helpers.ConvertRecoverError(err2)
-		}
-	}()
+func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction) {
 
 	fromWalletAddress := builder.wallet.GetWalletAddressByAddress(from)
 
-	if err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
 
 		accs := accounts.NewAccounts(boltTx)
 		account := accs.GetAccount(fromWalletAddress.PublicKeyHash)

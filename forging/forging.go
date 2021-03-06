@@ -76,6 +76,7 @@ func (forging *Forging) startForging(threads int) {
 		if forging.solution {
 			err := forging.publishSolution()
 			if err != nil {
+				gui.Error("Error publishing solution", err)
 				forging.solution = false
 			}
 		}
@@ -119,11 +120,9 @@ func (forging *Forging) foundSolution(address *ForgingWalletAddress, timestamp u
 
 // thread not safe
 func (forging *Forging) publishSolution() (err error) {
-
 	defer func() {
 		if err2 := recover(); err2 != nil {
 			err = helpers.ConvertRecoverError(err2)
-			gui.Error("Error signing forged block", err)
 		}
 	}()
 
