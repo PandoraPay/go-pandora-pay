@@ -33,6 +33,8 @@ type Blockchain struct {
 	Target             *big.Int
 	BigTotalDifficulty *big.Int
 
+	Transactions uint64 //count of the number of txs
+
 	Sync bool `json:"-"`
 
 	UpdateChannel chan uint64 `json:"-"`
@@ -64,6 +66,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 		Timestamp:          chain.Timestamp,
 		Target:             chain.Target,
 		BigTotalDifficulty: chain.BigTotalDifficulty,
+		Transactions:       chain.Transactions,
 		forging:            chain.forging,
 		mempool:            chain.mempool,
 	}
@@ -107,6 +110,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 					chain.KernelHash = newChain.KernelHash
 					chain.Timestamp = newChain.Timestamp
 					chain.Target = newChain.Target
+					chain.Transactions = newChain.Transactions
 					chain.BigTotalDifficulty = newChain.BigTotalDifficulty
 				}
 
@@ -248,6 +252,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			newChain.Target = newChain.computeNextTargetBig(writer)
 
 			newChain.Height += 1
+			newChain.Transactions += uint64(len(blkComplete.Txs))
 			insertedBlocks = append(insertedBlocks, blkComplete)
 
 			savedBlock = true

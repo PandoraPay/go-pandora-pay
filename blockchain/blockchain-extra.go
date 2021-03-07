@@ -125,4 +125,5 @@ func (chain *Blockchain) updateChainInfo() {
 	gui.InfoUpdate("Chain  Hash", hex.EncodeToString(chain.Hash[:]))
 	gui.InfoUpdate("Chain KHash", hex.EncodeToString(chain.KernelHash[:]))
 	gui.InfoUpdate("Chain  Diff", chain.Target.String())
+	gui.InfoUpdate("TXs", strconv.FormatUint(chain.Transactions, 10))
 }

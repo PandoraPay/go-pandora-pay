@@ -38,6 +38,10 @@ func (account *Account) IncrementNonce(sign bool) {
 
 func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) {
 
+	if amount == 0 {
+		return
+	}
+
 	var foundBalance *Balance
 	var foundBalanceIndex int
 
