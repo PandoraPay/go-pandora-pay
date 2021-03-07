@@ -7,6 +7,7 @@ import (
 	"pandora-pay/config/stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/mempool"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -32,15 +33,18 @@ type Forging struct {
 
 	wg sync.WaitGroup
 
-	Wallet          ForgingWallet
+	mempool         *mempool.MemPool
+	Wallet          *ForgingWallet
 	SolutionChannel chan *block.BlockComplete
 }
 
-func ForgingInit() (forging *Forging) {
+func ForgingInit(mempool *mempool.MemPool) (forging *Forging) {
 
 	forging = &Forging{
+
+		mempool:         mempool,
 		SolutionChannel: make(chan *block.BlockComplete),
-		Wallet: ForgingWallet{
+		Wallet: &ForgingWallet{
 			addressesMap: make(map[string]*ForgingWalletAddress),
 		},
 	}
@@ -165,9 +169,13 @@ func (forging *Forging) publishSolution() (err error) {
 	work.blkComplete.Block.Forger = solution.address.publicKeyHash
 	work.blkComplete.Block.DelegatedPublicKey = solution.address.delegatedPublicKey
 	work.blkComplete.Block.Timestamp = solution.timestamp
+
 	if work.blkComplete.Block.Height > 0 {
 		work.blkComplete.Block.StakingAmount = solution.address.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height)
 	}
+
+	work.blkComplete.Txs = forging.mempool.GetTransactions(work.blkComplete.Block.Height)
+	work.blkComplete.Block.MerkleHash = work.blkComplete.MerkleHash()
 
 	serializationForSigning := work.blkComplete.Block.SerializeForSigning()
 

@@ -53,7 +53,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	}
 
 	//avoid processing the same function twice
-	chain.Lock()
+	chain.mutex.Lock()
 
 	gui.Info(fmt.Sprintf("Including blocks %d ... %d", chain.Height, chain.Height+uint64(len(blocksComplete))))
 
@@ -67,6 +67,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 		forging:            chain.forging,
 		mempool:            chain.mempool,
 	}
+	mainChainBigTotalDifficulty := chain.BigTotalDifficulty
 
 	var accs *accounts.Accounts
 	var toks *tokens.Tokens
@@ -81,10 +82,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	func() {
 
 		defer func() {
-			err = helpers.ConvertRecoverError(recover())
+
+			_ = helpers.ConvertRecoverError(recover())
+
 			//recover, but in case the chain was correctly saved and the mewChainDifficulty is higher than
 			//we should store it
-			if savedBlock && chain.BigTotalDifficulty.Cmp(newChain.BigTotalDifficulty) < 0 {
+			if savedBlock && mainChainBigTotalDifficulty.Cmp(newChain.BigTotalDifficulty) < 0 {
 
 				newChain.saveBlockchain(writer)
 
@@ -93,19 +96,29 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 				accs.WriteToStore()
 				toks.WriteToStore()
 
-				chain.Height = newChain.Height
-				chain.Hash = newChain.Hash
-				chain.KernelHash = newChain.KernelHash
-				chain.Timestamp = newChain.Timestamp
-				chain.Target = newChain.Target
-				chain.BigTotalDifficulty = newChain.BigTotalDifficulty
+				chain.Lock()
 
 				err = tx.Commit()
+				if err == nil {
+					chain.Height = newChain.Height
+					chain.Hash = newChain.Hash
+					chain.KernelHash = newChain.KernelHash
+					chain.Timestamp = newChain.Timestamp
+					chain.Target = newChain.Target
+					chain.BigTotalDifficulty = newChain.BigTotalDifficulty
+				}
+
+				chain.Unlock()
+
+			} else {
+
+				err = tx.Rollback()
+				if err == nil {
+					err = errors.New("Blocks were not saved")
+				}
+
 			}
 
-			if err != nil {
-				err = tx.Rollback()
-			}
 		}()
 
 		writer = tx.Bucket([]byte("Chain"))
@@ -125,7 +138,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 			blkComplete := blocksComplete[i]
 
-			if blkComplete.Block.Height > chain.Height {
+			if blkComplete.Block.Height > newChain.Height {
 				var hash helpers.Hash
 				hash = newChain.loadBlockHash(writer, blkComplete.Block.Height)
 
@@ -247,8 +260,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 	}()
 
-	newChainHeight := newChain.Height
-	chain.Unlock()
+	chain.mutex.Unlock()
 
 	if err != nil {
 		if calledByForging {
@@ -262,7 +274,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	gui.Warning("-------------------------------------------")
 	newChain.updateChainInfo()
 
-	chain.UpdateChannel <- newChainHeight //sending 1
+	chain.UpdateChannel <- newChain.Height //sending 1
 
 	//accs will only be read only
 	newChain.forging.Wallet.UpdateBalanceChanges(accs)

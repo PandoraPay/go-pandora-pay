@@ -57,11 +57,12 @@ func main() {
 
 	config.InitConfig()
 	store.DBInit()
-	myForging := forging.ForgingInit()
-	globals.Data["forging"] = myForging
 
 	myMempool := mempool.InitMemPool()
 	globals.Data["mempool"] = myMempool
+
+	myForging := forging.ForgingInit(myMempool)
+	globals.Data["forging"] = myForging
 
 	myWallet := wallet.WalletInit(myForging)
 	globals.Data["wallet"] = myWallet

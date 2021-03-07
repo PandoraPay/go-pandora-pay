@@ -120,9 +120,22 @@ func (mempool *MemPool) Delete(txId helpers.Hash) (tx *transaction.Transaction) 
 	return
 }
 
-func (mempool *MemPool) getTxsList() []*memPoolOutput {
+func (mempool *MemPool) GetTxsList() []*memPoolTx {
 
-	list := []*memPoolOutput{}
+	list := []*memPoolTx{{}}
+
+	mempool.txs.Range(func(key, value interface{}) bool {
+		tx := value.(*memPoolTx)
+		list = append(list, tx)
+		return true
+	})
+
+	return list
+}
+
+func (mempool *MemPool) GetTxsListKeyValue() []*memPoolOutput {
+
+	list := []*memPoolOutput{{}}
 
 	mempool.txs.Range(func(key, value interface{}) bool {
 		hash := key.(helpers.Hash)
@@ -139,14 +152,13 @@ func (mempool *MemPool) getTxsList() []*memPoolOutput {
 
 func (mempool *MemPool) Print() {
 
-	list := mempool.getTxsList()
+	list := mempool.GetTxsListKeyValue()
 
 	gui.Log("")
 	gui.Log(fmt.Sprintf("TX mempool: %d", len(list)))
 	for _, out := range list {
 		gui.Log(fmt.Sprintf("%20s %7d B %5d %32s", time.Unix(out.tx.added, 0).UTC().Format(time.RFC3339), len(out.tx.tx.Serialize()), out.tx.height, out.hash))
 	}
-	gui.Log("")
 
 }
 
@@ -154,10 +166,11 @@ func (mempool *MemPool) UpdateChanges(hash helpers.Hash, height uint64, accs *ac
 	mempool.updateTask.Lock()
 	defer mempool.updateTask.Unlock()
 
-	copy(mempool.updateTask.hash[:], hash[:])
+	mempool.updateTask.hash = hash
 	mempool.updateTask.height = height
 	mempool.updateTask.accs = accs
 	mempool.updateTask.toks = toks
+
 	atomic.StoreInt32(&mempool.updateTaskReset, 1)
 }
 
@@ -165,7 +178,8 @@ func (mempool *MemPool) Refresh() {
 
 	updateTask := memPoolUpdateTask{}
 	hasWorkToDo := false
-	var list []*memPoolOutput
+	var list []*memPoolTx
+
 	listIndex := -1
 	for {
 
@@ -186,19 +200,16 @@ func (mempool *MemPool) Refresh() {
 
 			if listIndex == -1 {
 
-				list = mempool.getTxsList()
+				list = mempool.GetTxsList()
+
 				if len(list) > 0 {
 					sort.Slice(list, func(i, j int) bool {
 
-						if list[i].tx.feePerByte == list[j].tx.feePerByte {
-
-							if list[i].tx.tx.TxType == transaction_type.TxSimple && list[j].tx.tx.TxType == transaction_type.TxSimple {
-								return list[i].tx.tx.TxBase.(*transaction_simple.TransactionSimple).Nonce < list[j].tx.tx.TxBase.(*transaction_simple.TransactionSimple).Nonce
-							}
-
+						if list[i].feePerByte == list[j].feePerByte && list[i].tx.TxType == transaction_type.TxSimple && list[j].tx.TxType == transaction_type.TxSimple {
+							return list[i].tx.TxBase.(*transaction_simple.TransactionSimple).Nonce < list[j].tx.TxBase.(*transaction_simple.TransactionSimple).Nonce
 						}
 
-						return list[i].tx.feePerByte < list[j].tx.feePerByte
+						return list[i].feePerByte < list[j].feePerByte
 					})
 				}
 				listIndex = 0
@@ -217,11 +228,12 @@ func (mempool *MemPool) Refresh() {
 								updateTask.accs.Rollback()
 								updateTask.toks.Rollback()
 							} else {
-								list[listIndex].tx.height = updateTask.height
+								list[listIndex].height = updateTask.height
 							}
+							listIndex += 1
 						}()
 
-						list[listIndex].tx.tx.IncludeTransaction(updateTask.height, updateTask.accs, updateTask.toks)
+						list[listIndex].tx.IncludeTransaction(updateTask.height, updateTask.accs, updateTask.toks)
 					}()
 
 					continue
@@ -234,6 +246,20 @@ func (mempool *MemPool) Refresh() {
 		}
 
 	}
+}
+
+func (mempool *MemPool) GetTransactions(blockHeight uint64) []*transaction.Transaction {
+
+	out := []*transaction.Transaction{{}}
+
+	list := mempool.GetTxsList()
+	for _, mempoolTx := range list {
+		if mempoolTx.height == blockHeight {
+			out = append(out, mempoolTx.tx)
+		}
+	}
+
+	return out
 }
 
 func InitMemPool() (mempool *MemPool) {

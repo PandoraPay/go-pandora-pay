@@ -57,7 +57,7 @@ func (chain *Blockchain) saveBlock(bucket *bolt.Bucket, blkComplete *block.Block
 
 func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) helpers.Hash {
 
-	if height < 0 || height > chain.Height {
+	if height < 0 {
 		panic("Height is invalid")
 	}
 
@@ -65,6 +65,7 @@ func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) helpe
 	return *helpers.ConvertHash(bucket.Get(key))
 }
 
+//chain must be locked before
 func (chain *Blockchain) saveTotalDifficultyExtra(bucket *bolt.Bucket) {
 	key := []byte("totalDifficulty" + strconv.FormatUint(chain.Height, 10))
 
@@ -79,6 +80,9 @@ func (chain *Blockchain) saveTotalDifficultyExtra(bucket *bolt.Bucket) {
 }
 
 func (chain *Blockchain) loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64) {
+	if height < 0 {
+		panic("height is invalid")
+	}
 	key := []byte("totalDifficulty" + strconv.FormatUint(height, 10))
 
 	buf := bucket.Get(key)
@@ -106,6 +110,9 @@ func (chain *Blockchain) saveBlockchain(bucket *bolt.Bucket) {
 func (chain *Blockchain) loadBlockchain() (success bool, err error) {
 
 	err = store.StoreBlockchain.DB.View(func(tx *bolt.Tx) error {
+
+		chain.Lock()
+		defer chain.Unlock()
 
 		reader := tx.Bucket([]byte("Chain"))
 		chainData := reader.Get([]byte("blockchainInfo"))
