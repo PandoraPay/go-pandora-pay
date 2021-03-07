@@ -2,6 +2,8 @@ package block
 
 import (
 	"bytes"
+	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
@@ -13,8 +15,24 @@ type BlockComplete struct {
 	Txs   []*transaction.Transaction
 }
 
-func (blkComplete *BlockComplete) MerkleHash() helpers.Hash {
+func (blkComplete *BlockComplete) Validate() {
+	blkComplete.Block.Validate()
+	for _, tx := range blkComplete.Txs {
+		tx.Validate()
+	}
+}
 
+func (blkComplete *BlockComplete) Verify() {
+	blkComplete.Block.Verify()
+	if blkComplete.VerifyMerkleHash() != true {
+		panic("Verify Merkle Hash failed")
+	}
+	for _, tx := range blkComplete.Txs {
+		tx.Verify()
+	}
+}
+
+func (blkComplete *BlockComplete) MerkleHash() helpers.Hash {
 	var buffer = []byte{}
 	if len(blkComplete.Txs) > 0 {
 
@@ -24,14 +42,25 @@ func (blkComplete *BlockComplete) MerkleHash() helpers.Hash {
 	} else {
 		return cryptography.SHA3Hash(buffer)
 	}
-
 }
 
 func (blkComplete *BlockComplete) VerifyMerkleHash() bool {
-
 	merkleHash := blkComplete.MerkleHash()
 	return bytes.Equal(merkleHash[:], blkComplete.Block.MerkleHash[:])
+}
 
+func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, toks *tokens.Tokens) {
+	blkComplete.Block.IncludeBlock(accs, toks)
+	for _, tx := range blkComplete.Txs {
+		tx.IncludeTransaction(blkComplete.Block.Height, accs, toks)
+	}
+}
+
+func (blkComplete *BlockComplete) RemoveBlockComplete(accs *accounts.Accounts, toks *tokens.Tokens) {
+	for i := len(blkComplete.Txs) - 1; i >= 0; i-- {
+		blkComplete.Txs[i].RemoveTransaction(blkComplete.Block.Height, accs, toks)
+	}
+	blkComplete.Block.RemoveBlock(accs, toks)
 }
 
 func (blkComplete *BlockComplete) Serialize() []byte {

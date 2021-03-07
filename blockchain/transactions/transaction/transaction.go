@@ -95,6 +95,12 @@ func (tx *Transaction) Validate() {
 	return
 }
 
+func (tx *Transaction) Verify() {
+	if tx.VerifySignature() == false {
+		panic("Verify signature failed")
+	}
+}
+
 func (tx *Transaction) Deserialize(buf []byte) {
 	reader := helpers.NewBufferReader(buf)
 

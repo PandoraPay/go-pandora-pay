@@ -31,6 +31,12 @@ func (blk *Block) Validate() {
 	blk.BlockHeader.Validate()
 }
 
+func (blk *Block) Verify() {
+	if blk.VerifySignature() != true {
+		panic("Forger Signature is invalid!")
+	}
+}
+
 func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens) {
 
 	acc := acs.GetAccountEvenEmpty(blk.Forger)
@@ -76,13 +82,10 @@ func (blk *Block) ComputeKernelHashOnly() helpers.Hash {
 }
 
 func (blk *Block) ComputeKernelHash() helpers.Hash {
-
 	hash := blk.ComputeKernelHashOnly()
-
 	if blk.Height == 0 {
 		return hash
 	}
-
 	return cryptography.ComputeKernelHash(hash, blk.StakingAmount)
 }
 

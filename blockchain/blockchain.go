@@ -77,6 +77,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 		return
 	}
 
+	insertedBlocks := make([]*block.BlockComplete, 0)
+
 	var writer *bolt.Bucket
 	savedBlock := false
 	func() {
@@ -184,7 +186,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 			}
 
-			if blkComplete.Block.StakingAmount != stakingAmount {
+			if blkComplete.Block.StakingAmount > stakingAmount {
 				panic("Block Staking Amount doesn't match")
 			}
 
@@ -195,7 +197,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			hash := blkComplete.Block.ComputeHash()
 			kernelHash := blkComplete.Block.ComputeKernelHash()
 
-			if difficulty.CheckKernelHashBig(kernelHash, chain.Target) != true {
+			if difficulty.CheckKernelHashBig(kernelHash, newChain.Target) != true {
 				panic("KernelHash Difficulty is not met")
 			}
 
@@ -214,13 +216,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 			}
 
-			if blkComplete.Block.VerifySignature() != true {
-				panic("Forger Signature is invalid!")
-			}
-
-			if blkComplete.Block.BlockHeader.Version != 0 {
-				panic("Invalid Version Version")
-			}
+			blkComplete.Validate()
+			blkComplete.Verify()
 
 			if blkComplete.Block.Timestamp < newChain.Timestamp {
 				panic("Timestamp has to be greather than the last timestmap")
@@ -230,11 +227,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 				panic("Timestamp is too much into the future")
 			}
 
-			if blkComplete.VerifyMerkleHash() != true {
-				panic("Verify Merkle Hash failed")
-			}
-
-			blkComplete.Block.IncludeBlock(accs, toks)
+			blkComplete.IncludeBlockComplete(accs, toks)
 
 			//to detect if the savedBlock was done correctly
 			savedBlock = false
@@ -255,6 +248,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			newChain.Target = newChain.computeNextTargetBig(writer)
 
 			newChain.Height += 1
+			insertedBlocks = append(insertedBlocks, blkComplete)
+
 			savedBlock = true
 		}
 
@@ -281,6 +276,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 	//create next block and the workers will be automatically reset
 	newChain.createNextBlockForForging()
+
+	for _, blkComplete := range insertedBlocks {
+		for _, tx := range blkComplete.Txs {
+			newChain.mempool.Delete(tx.ComputeHash())
+		}
+	}
 
 	//accs and toks will be overwritten by the simulation
 	newChain.mempool.UpdateChanges(newChain.Hash, newChain.Height, accs, toks)
