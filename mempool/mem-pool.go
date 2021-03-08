@@ -127,7 +127,7 @@ func (mempool *MemPool) Exists(txId helpers.Hash) bool {
 func (mempool *MemPool) Delete(txId helpers.Hash) (tx *transaction.Transaction) {
 
 	var exists bool
-	if _, exists = mempool.txs.Load(txId); exists {
+	if _, exists = mempool.txs.Load(txId); exists == false {
 		return
 	}
 
@@ -185,7 +185,7 @@ func (mempool *MemPool) Print() {
 
 	gui.Log("")
 	for _, out := range list {
-		gui.Log(fmt.Sprintf("%20s %7d B %5d %32s", time.Unix(out.tx.added, 0).UTC().Format(time.RFC3339), len(out.tx.tx.Serialize()), out.tx.chainHeight, out.hash))
+		gui.Log(fmt.Sprintf("%20s %7d B %5d %32s", time.Unix(out.tx.added, 0).UTC().Format(time.RFC3339), len(out.tx.tx.Serialize()), out.tx.chainHeight, out.hash.String()))
 	}
 	gui.Log("")
 

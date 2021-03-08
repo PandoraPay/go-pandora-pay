@@ -29,6 +29,8 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 			}
 			acc.IncrementNonce(true)
 			switch tx.TxScript {
+			case TxSimpleScriptDelegate:
+				tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).IncludeTransactionVin0(blockHeight, acc)
 			case TxSimpleScriptUnstake:
 				tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).IncludeTransactionVin0(blockHeight, acc)
 			case TxSimpleScriptWithdraw:
@@ -46,19 +48,15 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 		accs.UpdateAccount(vout.PublicKeyHash, blockHeight, acc)
 	}
 
-	//switch tx.TxScript {
-	//case TxSimpleScriptUnstake:
-	//	tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).RemoveTransaction(blockHeight, accs, toks)
-	//}
+	switch tx.TxScript {
+	}
 
 }
 
 func (tx *TransactionSimple) RemoveTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
 
-	//switch tx.TxScript {
-	//case TxSimpleScriptUnstake:
-	//	tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).RemoveTransaction(blockHeight, accs, toks)
-	//}
+	switch tx.TxScript {
+	}
 
 	for i := len(tx.Vout) - 1; i >= 0; i-- {
 		vout := tx.Vout[i]
@@ -73,6 +71,8 @@ func (tx *TransactionSimple) RemoveTransaction(blockHeight uint64, accs *account
 
 		if i == 0 {
 			switch tx.TxScript {
+			case TxSimpleScriptDelegate:
+				tx.Extra.(*transaction_simple_extra.TransactionSimpleWithdraw).RemoveTransactionVin0(blockHeight, acc)
 			case TxSimpleScriptUnstake:
 				tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).RemoveTransactionVin0(blockHeight, acc)
 			case TxSimpleScriptWithdraw:
@@ -92,6 +92,7 @@ func (tx *TransactionSimple) RemoveTransaction(blockHeight uint64, accs *account
 }
 
 func (tx *TransactionSimple) ComputeFees(out map[string]uint64) {
+
 	tx.ComputeVin(out)
 	tx.ComputeVout(out)
 
@@ -143,7 +144,7 @@ func (tx *TransactionSimple) Validate() {
 		if len(tx.Vout) == 0 || len(tx.Vout) > 255 {
 			panic("Invalid vout")
 		}
-	case TxSimpleScriptUnstake, TxSimpleScriptWithdraw, TxSimpleScriptDelegate:
+	case TxSimpleScriptDelegate, TxSimpleScriptUnstake, TxSimpleScriptWithdraw:
 		if len(tx.Vin) != 1 {
 			panic("Invalid vin")
 		}
@@ -155,6 +156,8 @@ func (tx *TransactionSimple) Validate() {
 	}
 
 	switch tx.TxScript {
+	case TxSimpleScriptDelegate:
+		tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).Validate()
 	case TxSimpleScriptUnstake:
 		tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).Validate()
 	case TxSimpleScriptWithdraw:
@@ -182,7 +185,11 @@ func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignatu
 	}
 
 	switch tx.TxScript {
+	case TxSimpleScriptDelegate:
+		tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).Serialize(writer)
 	case TxSimpleScriptUnstake:
+		tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).Serialize(writer)
+	case TxSimpleScriptWithdraw:
 		tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).Serialize(writer)
 	}
 }
@@ -209,6 +216,10 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) {
 	}
 
 	switch tx.TxScript {
+	case TxSimpleScriptDelegate:
+		extra := &transaction_simple_extra.TransactionSimpleDelegate{}
+		extra.Deserialize(reader)
+		tx.Extra = extra
 	case TxSimpleScriptUnstake:
 		extra := &transaction_simple_extra.TransactionSimpleUnstake{}
 		extra.Deserialize(reader)
