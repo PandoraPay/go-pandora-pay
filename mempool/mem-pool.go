@@ -13,6 +13,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"sort"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -43,12 +44,13 @@ type memPoolOutput struct {
 }
 
 type MemPool struct {
-	txs sync.Map
+	txs      sync.Map
+	txsCount uint64
 
 	updateTask      memPoolUpdateTask
 	updateTaskReset int32
 
-	mutex sync.Mutex `json:"-"`
+	sync.RWMutex `json:"-"`
 }
 
 func (mempool *MemPool) AddTxToMemPoolSilent(tx *transaction.Transaction, height uint64, mine bool) (result bool, err error) {
@@ -62,13 +64,16 @@ func (mempool *MemPool) AddTxToMemPoolSilent(tx *transaction.Transaction, height
 func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) bool {
 
 	//making sure that the transaction is not inserted twice
-	mempool.mutex.Lock()
-	defer mempool.mutex.Unlock()
+	mempool.Lock()
+	defer mempool.Unlock()
 
 	hash := tx.ComputeHash()
 	if _, found := mempool.txs.Load(hash); found {
 		return false
 	}
+
+	mempool.txsCount += 1
+	gui.Info2Update("mempool", strconv.FormatUint(mempool.txsCount, 10))
 
 	minerFees := tx.ComputeFees()
 
@@ -122,14 +127,17 @@ func (mempool *MemPool) Exists(txId helpers.Hash) bool {
 func (mempool *MemPool) Delete(txId helpers.Hash) (tx *transaction.Transaction) {
 
 	var exists bool
-	var objInterface interface{}
-	if objInterface, exists = mempool.txs.Load(txId); exists {
-		return nil
+	if _, exists = mempool.txs.Load(txId); exists {
+		return
 	}
 
-	object := objInterface.(*memPoolTx)
-	tx = object.tx
+	mempool.Lock()
+	defer mempool.Unlock()
+
 	mempool.txs.Delete(txId)
+
+	mempool.txsCount -= 1
+	gui.Info2Update("mempool", strconv.FormatUint(mempool.txsCount, 10))
 
 	return
 }
@@ -166,17 +174,25 @@ func (mempool *MemPool) GetTxsListKeyValue() []*memPoolOutput {
 
 func (mempool *MemPool) Print() {
 
+	mempool.RLock()
+	defer mempool.RUnlock()
+
+	if mempool.txsCount == 0 {
+		return
+	}
+
 	list := mempool.GetTxsListKeyValue()
 
 	gui.Log("")
-	gui.Log(fmt.Sprintf("TX mempool: %d", len(list)))
 	for _, out := range list {
 		gui.Log(fmt.Sprintf("%20s %7d B %5d %32s", time.Unix(out.tx.added, 0).UTC().Format(time.RFC3339), len(out.tx.tx.Serialize()), out.tx.chainHeight, out.hash))
 	}
+	gui.Log("")
 
 }
 
 func (mempool *MemPool) UpdateChanges(hash helpers.Hash, height uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
+
 	mempool.updateTask.Lock()
 	defer mempool.updateTask.Unlock()
 

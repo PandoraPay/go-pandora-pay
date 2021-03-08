@@ -11,14 +11,15 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 )
 
-var logs, statistics *widgets.Paragraph
-var cmd, info *widgets.List
-var cmdStatus string = "cmd"
-var cmdInput string = ""
+var logs *widgets.Paragraph
+var cmd, info, info2 *widgets.List
+var cmdStatus = "cmd"
+var cmdInput = ""
 var cmdInputChannel = make(chan string)
 
 func isLetter(s string) bool {
@@ -47,7 +48,8 @@ var commands = []Command{
 	{Text: "Exit"},
 }
 
-var infoMap = make(map[string]string)
+var infoMap sync.Map
+var info2Map sync.Map
 
 //test
 func GUIInit() {
@@ -60,6 +62,9 @@ func GUIInit() {
 	info = widgets.NewList()
 	info.Title = "Node Info"
 
+	info2 = widgets.NewList()
+	info2.Title = "Statistics"
+
 	cmd = widgets.NewList()
 	cmd.Title = "Commands"
 	var rows []string
@@ -70,20 +75,10 @@ func GUIInit() {
 	cmd.TextStyle = ui.NewStyle(ui.ColorYellow)
 	cmd.WrapText = true
 
-	ui.Render(cmd)
-
 	logs = widgets.NewParagraph()
 	logs.Title = "Logs"
 	logs.Text = ""
 	logs.WrapText = true
-
-	ui.Render(logs)
-
-	statistics = widgets.NewParagraph()
-	statistics.Title = "Statistics"
-	statistics.Text = "empty"
-
-	ui.Render(statistics)
 
 	grid := ui.NewGrid()
 	termWidth, termHeight := ui.TerminalDimensions()
@@ -92,7 +87,7 @@ func GUIInit() {
 	grid.Set(
 		ui.NewRow(1.0/4,
 			ui.NewCol(1.0/2, info),
-			ui.NewCol(1.0/2, statistics),
+			ui.NewCol(1.0/2, info2),
 		),
 		ui.NewRow(1.0/4,
 			ui.NewCol(1.0/1, cmd),
@@ -100,33 +95,25 @@ func GUIInit() {
 		ui.NewRow(2.0/4, logs),
 	)
 
-	//go func(){
-	//	for{
-	//		termWidth2, termHeight2 := ui.TerminalDimensions()
-	//		if termWidth != termWidth2 || termHeight2 != termHeight {
-	//			termWidth = termWidth2
-	//			termHeight = termHeight2
-	//			grid.SetRect(0, 0, termWidth, termHeight)
-	//			ui.Render(grid)
-	//		}
-	//		time.Sleep(1000 * time.Millisecond)
-	//
-	//	}
-	//}()
+	go func() {
+		for {
+			termWidth2, termHeight2 := ui.TerminalDimensions()
+			if termWidth != termWidth2 || termHeight2 != termHeight {
+				termWidth = termWidth2
+				termHeight = termHeight2
+				grid.SetRect(0, 0, termWidth, termHeight)
+				ui.Render(grid)
+			}
+			time.Sleep(2 * time.Second)
+
+		}
+	}()
 
 	ui.Render(grid)
 
-	drawStatistics := func(count int) {
-		statistics.Text = "Time: " + time.Now().Format("2006.01.02 15:04:05") + "\n"
-		ui.Render(statistics)
-	}
-
 	go func() {
 
-		ticker := time.NewTicker(time.Second).C
-		tickerCount := 1
-		drawStatistics(tickerCount)
-		tickerCount++
+		ticker := time.NewTicker(250 * time.Millisecond).C
 
 		uiEvents := ui.PollEvents()
 		for {
@@ -203,8 +190,24 @@ func GUIInit() {
 
 				ui.Render(cmd)
 			case <-ticker:
-				drawStatistics(tickerCount)
-				tickerCount++
+				Info2Update("time", time.Now().Format("2006.01.02 15:04:05"))
+				rows := []string{}
+				infoMap.Range(func(key, value interface{}) bool {
+					rows = append(rows, key.(string)+": "+value.(string))
+					return true
+				})
+				sort.Strings(rows)
+				info.Rows = rows
+				ui.Render(info)
+
+				rows = []string{}
+				info2Map.Range(func(key, value interface{}) bool {
+					rows = append(rows, key.(string)+": "+value.(string))
+					return true
+				})
+				sort.Strings(rows)
+				info2.Rows = rows
+				ui.Render(info2)
 			}
 
 		}
@@ -232,14 +235,11 @@ func CommandDefineCallback(Text string, callback func(string)) {
 }
 
 func InfoUpdate(key string, text string) {
-	infoMap[key] = text
-	rows := []string{}
-	for key, value := range infoMap {
-		rows = append(rows, key+": "+value)
-	}
-	sort.Strings(rows)
-	info.Rows = rows
-	ui.Render(info)
+	infoMap.Store(key, text)
+}
+
+func Info2Update(key string, text string) {
+	info2Map.Store(key, text)
 }
 
 func processArgument(any ...interface{}) string {
