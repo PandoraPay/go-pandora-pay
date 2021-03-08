@@ -8,17 +8,17 @@ import (
 
 type TransactionSimpleWithdraw struct {
 	WithdrawAmount   uint64
-	WithdrawFeeExtra uint64 //this will be subtracted UnstakeAmount
+	WithdrawFeeExtra uint64 //this will be subtracted UnstakeAvailable
 }
 
 func (tx *TransactionSimpleWithdraw) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) {
 	acc.DelegatedStake.AddStakeAvailable(false, tx.WithdrawAmount)
 	acc.AddBalance(true, tx.WithdrawAmount, config.NATIVE_TOKEN)
-	acc.DelegatedStake.AddUnstakeAmount(false, tx.WithdrawFeeExtra, blockHeight)
+	acc.DelegatedStake.AddUnstakeAvailable(false, tx.WithdrawFeeExtra, blockHeight)
 }
 
 func (tx *TransactionSimpleWithdraw) RemoveTransactionVin0(blockHeight uint64, acc *account.Account) {
-	acc.DelegatedStake.AddUnstakeAmount(true, tx.WithdrawFeeExtra, blockHeight)
+	acc.DelegatedStake.AddUnstakeAvailable(true, tx.WithdrawFeeExtra, blockHeight)
 	acc.AddBalance(false, tx.WithdrawAmount, config.NATIVE_TOKEN)
 	acc.DelegatedStake.AddStakeAvailable(true, tx.WithdrawAmount)
 }

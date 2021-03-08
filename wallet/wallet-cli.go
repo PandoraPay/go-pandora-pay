@@ -39,14 +39,29 @@ func initWalletCLI(wallet *Wallet) {
 					acc := accs.GetAccount(walletAddress.PublicKeyHash)
 
 					if acc == nil {
-						gui.OutputWrite("      -> " + "EMPTY")
+						gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "", "EMPTY"))
 					} else {
-						for _, balance := range acc.Balances {
-							gui.OutputWrite("      -> " + strconv.FormatUint(config.ConvertToBase(balance.Amount), 10) + " " + hex.EncodeToString(balance.Token))
+						if len(acc.Balances) > 0 {
+							gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "BALANCES:", ""))
+							for _, balance := range acc.Balances {
+								gui.OutputWrite(fmt.Sprintf("%20s ->  %s", strconv.FormatUint(config.ConvertToBase(balance.Amount), 10), hex.EncodeToString(balance.Token)))
+							}
+						} else {
+							gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "BALANCES", "EMPTY"))
 						}
 						if acc.HasDelegatedStake() {
-							gui.OutputWrite("      ->   Stake Available   " + strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.StakeAvailable), 10))
-							gui.OutputWrite("      ->   Unstake Available " + strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.UnstakeAmount), 10))
+							gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "Stake Available", strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.StakeAvailable), 10)))
+							gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "Unstake Available", strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.UnstakeAvailable), 10)))
+							gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "Unstake Height", strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.UnstakeHeight), 10)))
+
+							if len(acc.DelegatedStake.StakesPending) > 0 {
+								gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "PENDING STAKES:", ""))
+								for _, stakePending := range acc.DelegatedStake.StakesPending {
+									gui.OutputWrite(fmt.Sprintf("%20s ->  %s", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatUint(config.ConvertToBase(stakePending.PendingAmount), 10)))
+								}
+							} else {
+								gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "PENDING STAKES:", "EMPTY"))
+							}
 						}
 					}
 

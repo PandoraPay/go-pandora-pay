@@ -13,11 +13,11 @@ type TransactionSimpleUnstake struct {
 func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) {
 	acc.DelegatedStake.AddStakeAvailable(false, tx.UnstakeAmount)
 	acc.DelegatedStake.AddStakeAvailable(false, tx.UnstakeFeeExtra)
-	acc.DelegatedStake.AddUnstakeAmount(true, tx.UnstakeAmount, blockHeight)
+	acc.DelegatedStake.AddUnstakeAvailable(true, tx.UnstakeAmount, blockHeight)
 }
 
 func (tx *TransactionSimpleUnstake) RemoveTransactionVin0(blockHeight uint64, acc *account.Account) {
-	acc.DelegatedStake.AddUnstakeAmount(false, tx.UnstakeAmount, blockHeight)
+	acc.DelegatedStake.AddUnstakeAvailable(false, tx.UnstakeAmount, blockHeight)
 	acc.DelegatedStake.AddStakeAvailable(true, tx.UnstakeFeeExtra)
 	acc.DelegatedStake.AddStakeAvailable(true, tx.UnstakeAmount)
 }
