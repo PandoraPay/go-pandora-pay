@@ -41,7 +41,7 @@ func (chain *Blockchain) init() {
 	if err := store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 
 		toks := tokens.NewTokens(tx)
-		toks.UpdateToken(config.NATIVE_TOKEN_FULL, &tok)
+		toks.CreateToken(config.NATIVE_TOKEN_FULL, &tok)
 
 		toks.Commit()
 		toks.WriteToStore()

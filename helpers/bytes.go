@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"encoding/hex"
 	"math/rand"
 	"unsafe"
 )
@@ -10,6 +11,14 @@ const ChecksumSize = 4
 
 type Hash [HashSize]byte
 type Checksum [ChecksumSize]byte
+
+func (h *Hash) String() string {
+	return hex.EncodeToString(h[:])
+}
+
+func (c *Checksum) String() string {
+	return hex.EncodeToString(c[:])
+}
 
 func ConvertHash(s []byte) *Hash {
 	if HashSize <= len(s) {

@@ -35,6 +35,14 @@ func (tokens *Tokens) GetToken(key [20]byte) *token.Token {
 	return tok
 }
 
+func (tokens *Tokens) CreateToken(key [20]byte, tok *token.Token) {
+	tok.Validate()
+	if tokens.ExistsToken(key) {
+		panic("token already exists")
+	}
+	tokens.UpdateToken(key, tok)
+}
+
 func (tokens *Tokens) UpdateToken(key [20]byte, tok *token.Token) {
 	tokens.HashMap.Update(key[:], tok.Serialize())
 }

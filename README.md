@@ -50,6 +50,7 @@ Status of Blockchain implementation:
     - [ ] Update  
 - [ ] Transactions
     - [x] Transaction Wizard
+    - [x] Transaction Builder
     - [x] Simple Transactions
     - [x] Unstake Transaction
     - [ ] Delegate Stake    

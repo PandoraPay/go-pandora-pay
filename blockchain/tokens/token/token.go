@@ -2,7 +2,12 @@ package token
 
 import (
 	"pandora-pay/helpers"
+	"regexp"
 )
+
+var regexTokenName = regexp.MustCompile("^([a-zA-Z0-9]+ )+[a-zA-Z0-9]+$|^[a-zA-Z0-9]+")
+var regexTokenTicker = regexp.MustCompile("^[A-Z0-9]+$") // only lowercase ascii is allowed. No space allowed
+var regexTokenDescription = regexp.MustCompile("[\\w|\\W]+")
 
 type Token struct {
 	Version uint64
@@ -34,6 +39,7 @@ type Token struct {
 }
 
 func (token *Token) Validate() {
+
 	if token.DecimalSeparator > 10 {
 		panic("token decimal separator is invalid")
 	}
@@ -45,6 +51,16 @@ func (token *Token) Validate() {
 	}
 	if len(token.Description) > 512 {
 		panic("token  description length is invalid")
+	}
+
+	if !regexTokenName.MatchString(token.Name) {
+		panic("Token name is invalid")
+	}
+	if !regexTokenTicker.MatchString(token.Ticker) {
+		panic("Token ticker is invalid")
+	}
+	if !regexTokenDescription.MatchString(token.Description) {
+		panic("Token description is invalid")
 	}
 
 }
