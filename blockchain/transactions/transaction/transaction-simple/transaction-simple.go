@@ -3,7 +3,8 @@ package transaction_simple
 import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction_simple_unstake"
+	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-unstake"
+	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-withdraw"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/ecdsa"
 	"pandora-pay/helpers"
@@ -31,6 +32,8 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 			switch tx.TxScript {
 			case TxSimpleScriptUnstake:
 				tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake).IncludeTransactionVin0(blockHeight, acc)
+			case TxSimpleScriptWithdraw:
+				tx.Extra.(*transaction_simple_withdraw.TransactionSimpleWithdraw).IncludeTransactionVin0(blockHeight, acc)
 			}
 		}
 
@@ -73,6 +76,8 @@ func (tx *TransactionSimple) RemoveTransaction(blockHeight uint64, accs *account
 			switch tx.TxScript {
 			case TxSimpleScriptUnstake:
 				tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake).RemoveTransactionVin0(blockHeight, acc)
+			case TxSimpleScriptWithdraw:
+				tx.Extra.(*transaction_simple_withdraw.TransactionSimpleWithdraw).RemoveTransactionVin0(blockHeight, acc)
 			}
 
 			acc.IncrementNonce(false)
@@ -90,9 +95,12 @@ func (tx *TransactionSimple) RemoveTransaction(blockHeight uint64, accs *account
 func (tx *TransactionSimple) ComputeFees(out map[string]uint64) {
 	tx.ComputeVin(out)
 	tx.ComputeVout(out)
+
 	switch tx.TxScript {
 	case TxSimpleScriptUnstake:
 		helpers.SafeMapUint64Add(out, string(config.NATIVE_TOKEN), tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake).UnstakeFeeExtra)
+	case TxSimpleScriptWithdraw:
+		helpers.SafeMapUint64Add(out, string(config.NATIVE_TOKEN), tx.Extra.(*transaction_simple_withdraw.TransactionSimpleWithdraw).WithdrawFeeExtra)
 	}
 	return
 }
@@ -150,6 +158,8 @@ func (tx *TransactionSimple) Validate() {
 	switch tx.TxScript {
 	case TxSimpleScriptUnstake:
 		tx.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake).Validate()
+	case TxSimpleScriptWithdraw:
+		tx.Extra.(*transaction_simple_withdraw.TransactionSimpleWithdraw).Validate()
 	}
 
 	final := make(map[string]uint64)
@@ -202,6 +212,10 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) {
 	switch tx.TxScript {
 	case TxSimpleScriptUnstake:
 		extra := &transaction_simple_unstake.TransactionSimpleUnstake{}
+		extra.Deserialize(reader)
+		tx.Extra = extra
+	case TxSimpleScriptWithdraw:
+		extra := &transaction_simple_withdraw.TransactionSimpleWithdraw{}
 		extra.Deserialize(reader)
 		tx.Extra = extra
 	}

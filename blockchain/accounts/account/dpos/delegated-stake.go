@@ -23,74 +23,113 @@ type DelegatedStake struct {
 	StakesPending []*DelegatedStakePending
 }
 
-func (delegatedStake *DelegatedStake) AddDelegatedUnstake(sign bool, amount, blockHeight uint64) {
-	helpers.SafeUint64Update(sign, &delegatedStake.UnstakeAmount, amount)
-	delegatedStake.UnstakeHeight = blockHeight + stake.GetUnstakeWindow(blockHeight)
+func (dstake *DelegatedStake) AddUnstakeAmount(sign bool, amount, blockHeight uint64) {
+	if sign {
+		helpers.SafeUint64Update(sign, &dstake.UnstakeAmount, amount)
+		dstake.UnstakeHeight = blockHeight + stake.GetUnstakeWindow(blockHeight)
+	} else {
+		if blockHeight < dstake.UnstakeHeight {
+			panic("You can't withdraw now")
+		}
+		helpers.SafeUint64Update(sign, &dstake.UnstakeAmount, amount)
+	}
 }
 
-func (delegatedStake *DelegatedStake) AddDelegatedStake(sign bool, amount uint64) {
-	helpers.SafeUint64Update(sign, &delegatedStake.StakeAvailable, amount)
+func (dstake *DelegatedStake) AddStakeAvailable(sign bool, amount uint64) {
+	helpers.SafeUint64Update(sign, &dstake.StakeAvailable, amount)
 }
 
-func (delegatedStake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
+func (dstake *DelegatedStake) AddStakePending(sign bool, amount, blockHeight uint64) {
 
-	writer.Write(delegatedStake.DelegatedPublicKey[:])
-	writer.WriteUvarint(delegatedStake.StakeAvailable)
-	writer.WriteUvarint(delegatedStake.UnstakeAmount)
+	finalBlockHeight := blockHeight + stake.GetPendingStakeWindow(blockHeight)
+	if sign {
 
-	if delegatedStake.UnstakeAmount > 0 {
-		writer.WriteUvarint(delegatedStake.UnstakeHeight)
+		for _, stakePending := range dstake.StakesPending {
+			if stakePending.StakePendingHeight == finalBlockHeight {
+				helpers.SafeUint64Add(&stakePending.StakePending, amount)
+				return
+			}
+		}
+		dstake.StakesPending = append(dstake.StakesPending, &DelegatedStakePending{
+			StakePendingHeight: finalBlockHeight,
+			StakePending:       amount,
+		})
+
+	} else {
+
+		for i, stakePending := range dstake.StakesPending {
+			if stakePending.StakePendingHeight == finalBlockHeight {
+				helpers.SafeUint64Sub(&stakePending.StakePending, amount)
+				if stakePending.StakePending == 0 {
+					dstake.StakesPending = append(dstake.StakesPending[:i], dstake.StakesPending[i+1:]...)
+				}
+				return
+			}
+		}
+
+		panic("Stake pending was not found!")
+	}
+}
+
+func (dstake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
+
+	writer.Write(dstake.DelegatedPublicKey[:])
+	writer.WriteUvarint(dstake.StakeAvailable)
+	writer.WriteUvarint(dstake.UnstakeAmount)
+
+	if dstake.UnstakeAmount > 0 {
+		writer.WriteUvarint(dstake.UnstakeHeight)
 	}
 
-	writer.WriteUvarint(uint64(len(delegatedStake.StakesPending)))
+	writer.WriteUvarint(uint64(len(dstake.StakesPending)))
 
-	for _, stakePending := range delegatedStake.StakesPending {
+	for _, stakePending := range dstake.StakesPending {
 		stakePending.Serialize(writer)
 	}
 
 }
 
-func (delegatedStake *DelegatedStake) Deserialize(reader *helpers.BufferReader) {
+func (dstake *DelegatedStake) Deserialize(reader *helpers.BufferReader) {
 
-	delegatedStake.DelegatedPublicKey = reader.Read33()
-	delegatedStake.StakeAvailable = reader.ReadUvarint()
-	delegatedStake.UnstakeAmount = reader.ReadUvarint()
+	dstake.DelegatedPublicKey = reader.Read33()
+	dstake.StakeAvailable = reader.ReadUvarint()
+	dstake.UnstakeAmount = reader.ReadUvarint()
 
-	if delegatedStake.UnstakeAmount > 0 {
-		delegatedStake.UnstakeHeight = reader.ReadUvarint()
+	if dstake.UnstakeAmount > 0 {
+		dstake.UnstakeHeight = reader.ReadUvarint()
 	}
 
 	n := reader.ReadUvarint()
 	for i := uint64(0); i < n; i++ {
 		var delegatedStakePending = new(DelegatedStakePending)
 		delegatedStakePending.Deserialize(reader)
-		delegatedStake.StakesPending = append(delegatedStake.StakesPending, delegatedStakePending)
+		dstake.StakesPending = append(dstake.StakesPending, delegatedStakePending)
 	}
 
 	return
 }
 
-func (delegatedStake *DelegatedStake) IsDelegatedStakeEmpty() bool {
-	return delegatedStake.StakeAvailable == 0 && delegatedStake.UnstakeAmount == 0 && len(delegatedStake.StakesPending) == 0
+func (dstake *DelegatedStake) IsDelegatedStakeEmpty() bool {
+	return dstake.StakeAvailable == 0 && dstake.UnstakeAmount == 0 && len(dstake.StakesPending) == 0
 }
 
-func (delegatedStake *DelegatedStake) RefreshDelegatedStake(blockHeight uint64) {
+func (dstake *DelegatedStake) RefreshDelegatedStake(blockHeight uint64) {
 
-	for i := len(delegatedStake.StakesPending) - 1; i >= 0; i-- {
-		if delegatedStake.StakesPending[i].StakePendingHeight < blockHeight {
-			delegatedStake.StakeAvailable += delegatedStake.StakesPending[i].StakePending
-			delegatedStake.StakesPending = append(delegatedStake.StakesPending[:i], delegatedStake.StakesPending[i+1:]...)
+	for i := len(dstake.StakesPending) - 1; i >= 0; i-- {
+		if dstake.StakesPending[i].StakePendingHeight < blockHeight {
+			dstake.StakeAvailable += dstake.StakesPending[i].StakePending
+			dstake.StakesPending = append(dstake.StakesPending[:i], dstake.StakesPending[i+1:]...)
 		}
 	}
 
 }
 
-func (delegatedStake *DelegatedStake) GetDelegatedStakeAvailable(blockHeight uint64) (result uint64) {
+func (dstake *DelegatedStake) GetDelegatedStakeAvailable(blockHeight uint64) (result uint64) {
 
-	result = delegatedStake.StakeAvailable
-	for i := range delegatedStake.StakesPending {
-		if delegatedStake.StakesPending[i].StakePendingHeight >= blockHeight {
-			result += delegatedStake.StakesPending[i].StakePending
+	result = dstake.StakeAvailable
+	for i := range dstake.StakesPending {
+		if dstake.StakesPending[i].StakePendingHeight >= blockHeight {
+			result += dstake.StakesPending[i].StakePending
 		}
 	}
 

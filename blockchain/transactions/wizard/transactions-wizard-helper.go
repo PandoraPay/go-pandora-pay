@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
-	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction_simple_unstake"
+	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-unstake"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config/fees"
 )

@@ -95,19 +95,19 @@ func GUIInit() {
 		ui.NewRow(2.0/4, logs),
 	)
 
-	go func() {
-		for {
-			termWidth2, termHeight2 := ui.TerminalDimensions()
-			if termWidth != termWidth2 || termHeight2 != termHeight {
-				termWidth = termWidth2
-				termHeight = termHeight2
-				grid.SetRect(0, 0, termWidth, termHeight)
-				ui.Render(grid)
-			}
-			time.Sleep(2 * time.Second)
-
-		}
-	}()
+	//go func() {
+	//	for {
+	//		termWidth2, termHeight2 := ui.TerminalDimensions()
+	//		if termWidth != termWidth2 || termHeight2 != termHeight {
+	//			termWidth = termWidth2
+	//			termHeight = termHeight2
+	//			grid.SetRect(0, 0, termWidth, termHeight)
+	//			ui.Render(grid)
+	//		}
+	//		time.Sleep(2 * time.Second)
+	//
+	//	}
+	//}()
 
 	ui.Render(grid)
 
@@ -183,14 +183,12 @@ func GUIInit() {
 					}
 					cmdInput = cmdInput + char
 					cmd.Rows[len(cmd.Rows)-1] = "-> " + cmdInput
-					ui.Render(cmd)
 				}
 
 				// previousKey = e.ID
 
 				ui.Render(cmd)
 			case <-ticker:
-				Info2Update("time", time.Now().Format("2006.01.02 15:04:05"))
 				rows := []string{}
 				infoMap.Range(func(key, value interface{}) bool {
 					rows = append(rows, key.(string)+": "+value.(string))
@@ -198,8 +196,8 @@ func GUIInit() {
 				})
 				sort.Strings(rows)
 				info.Rows = rows
-				ui.Render(info)
 
+				Info2Update("time", time.Now().Format("2006.01.02 15:04:05"))
 				rows = []string{}
 				info2Map.Range(func(key, value interface{}) bool {
 					rows = append(rows, key.(string)+": "+value.(string))
@@ -207,7 +205,7 @@ func GUIInit() {
 				})
 				sort.Strings(rows)
 				info2.Rows = rows
-				ui.Render(info2)
+				ui.Render(info, info2)
 			}
 
 		}
