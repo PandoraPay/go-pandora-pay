@@ -1,4 +1,4 @@
-package transaction_simple_withdraw
+package transaction_simple_extra
 
 import (
 	"pandora-pay/blockchain/accounts/account"
@@ -8,7 +8,7 @@ import (
 
 type TransactionSimpleWithdraw struct {
 	WithdrawAmount   uint64
-	WithdrawFeeExtra uint64
+	WithdrawFeeExtra uint64 //this will be subtracted UnstakeAmount
 }
 
 func (tx *TransactionSimpleWithdraw) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) {

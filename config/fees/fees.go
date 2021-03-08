@@ -4,7 +4,7 @@ import "pandora-pay/config"
 
 var (
 	FEES_PER_BYTE = map[string]uint64{
-		string(config.NATIVE_TOKEN): 10,
+		config.NATIVE_TOKEN_STRING: 10,
 	}
 )
 

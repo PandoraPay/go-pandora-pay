@@ -4,7 +4,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
-	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-unstake"
+	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -93,7 +93,7 @@ func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount uint64, feePerByt
 		TxBase: &transaction_simple.TransactionSimple{
 			TxScript: transaction_simple.TxSimpleScriptUnstake,
 			Nonce:    nonce,
-			Extra: &transaction_simple_unstake.TransactionSimpleUnstake{
+			Extra: &transaction_simple_extra.TransactionSimpleUnstake{
 				UnstakeAmount: unstakeAmount,
 			},
 			Vin: []*transaction_simple.TransactionSimpleInput{

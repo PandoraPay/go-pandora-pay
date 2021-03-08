@@ -41,6 +41,10 @@ func (dstake *DelegatedStake) AddStakeAvailable(sign bool, amount uint64) {
 
 func (dstake *DelegatedStake) AddStakePending(sign bool, amount, blockHeight uint64) {
 
+	if amount == 0 {
+		return
+	}
+
 	finalBlockHeight := blockHeight + stake.GetPendingStakeWindow(blockHeight)
 	if sign {
 

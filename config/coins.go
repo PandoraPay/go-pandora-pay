@@ -16,8 +16,9 @@ var (
 	NATIVE_TOKEN_TICKER      = "PANDORA"
 	NATIVE_TOKEN_DESCRIPTION = "PANDORA NATIVE TOKEN"
 
-	NATIVE_TOKEN      = []byte{}
-	NATIVE_TOKEN_FULL = [20]byte{}
+	NATIVE_TOKEN        = []byte{}
+	NATIVE_TOKEN_STRING = string(NATIVE_TOKEN)
+	NATIVE_TOKEN_FULL   = [20]byte{}
 )
 
 func ConvertToUnits(number uint64) uint64 {

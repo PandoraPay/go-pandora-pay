@@ -50,17 +50,27 @@ func (blkComplete *BlockComplete) VerifyMerkleHash() bool {
 }
 
 func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, toks *tokens.Tokens) {
-	blkComplete.Block.IncludeBlock(accs, toks)
+
+	allFees := make(map[string]uint64)
+	for _, tx := range blkComplete.Txs {
+		tx.AddFees(allFees)
+	}
+
+	blkComplete.Block.IncludeBlock(accs, toks, allFees)
+
 	for _, tx := range blkComplete.Txs {
 		tx.IncludeTransaction(blkComplete.Block.Height, accs, toks)
 	}
 }
 
 func (blkComplete *BlockComplete) RemoveBlockComplete(accs *accounts.Accounts, toks *tokens.Tokens) {
+
+	allFees := make(map[string]uint64)
 	for i := len(blkComplete.Txs) - 1; i >= 0; i-- {
+		blkComplete.Txs[i].AddFees(allFees)
 		blkComplete.Txs[i].RemoveTransaction(blkComplete.Block.Height, accs, toks)
 	}
-	blkComplete.Block.RemoveBlock(accs, toks)
+	blkComplete.Block.RemoveBlock(accs, toks, allFees)
 }
 
 func (blkComplete *BlockComplete) Serialize() []byte {

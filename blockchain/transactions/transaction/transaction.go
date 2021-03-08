@@ -29,14 +29,17 @@ func (tx *Transaction) RemoveTransaction(blockHeight uint64, accs *accounts.Acco
 	}
 }
 
-func (tx *Transaction) ComputeFees() (fees map[string]uint64) {
-
-	fees = make(map[string]uint64)
-
+func (tx *Transaction) AddFees(fees map[string]uint64) {
 	switch tx.TxType {
 	case transaction_type.TxSimple:
 		tx.TxBase.(*transaction_simple.TransactionSimple).ComputeFees(fees)
 	}
+	return
+}
+
+func (tx *Transaction) ComputeFees() (fees map[string]uint64) {
+	fees = make(map[string]uint64)
+	tx.AddFees(fees)
 	return
 }
 

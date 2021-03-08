@@ -94,9 +94,9 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 
 	//if it is mine and no fee was paid, let's fake a fee
 	if mine && selectedFeeToken == nil {
-		nativeFee := string(config.NATIVE_TOKEN)
+		nativeFee := config.NATIVE_TOKEN_STRING
 		selectedFeeToken = &nativeFee
-		selectedFee = fees.FEES_PER_BYTE[string(config.NATIVE_TOKEN)]
+		selectedFee = fees.FEES_PER_BYTE[config.NATIVE_TOKEN_STRING]
 	}
 
 	if selectedFeeToken == nil {

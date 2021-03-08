@@ -1,4 +1,4 @@
-package transaction_simple_unstake
+package transaction_simple_extra
 
 import (
 	"pandora-pay/blockchain/accounts/account"
@@ -7,7 +7,7 @@ import (
 
 type TransactionSimpleUnstake struct {
 	UnstakeAmount   uint64
-	UnstakeFeeExtra uint64
+	UnstakeFeeExtra uint64 //this will be subtracted StakeAvailable
 }
 
 func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) {

@@ -5,7 +5,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
-	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction_simple_unstake"
+	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"testing"
@@ -55,12 +55,12 @@ func TestCreateUnstakeTx(t *testing.T) {
 	assert.Equal(t, tx2.VerifySignature(), true, "Verify signature failed2")
 
 	fees := tx.ComputeFees()
-	assert.Equal(t, fees[string(config.NATIVE_TOKEN)] > uint64(100), true, "Fees were calculated invalid")
+	assert.Equal(t, fees[config.NATIVE_TOKEN_STRING] > uint64(100), true, "Fees were calculated invalid")
 
 	base := tx2.TxBase.(*transaction_simple.TransactionSimple)
-	assert.Equal(t, fees[string(config.NATIVE_TOKEN)], base.Vin[0].Amount, "Fees are not paid by vin")
+	assert.Equal(t, fees[config.NATIVE_TOKEN_STRING], base.Vin[0].Amount, "Fees are not paid by vin")
 
-	unstake := base.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
+	unstake := base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake)
 	assert.Equal(t, unstake.UnstakeAmount, uint64(534), "Fees are not paid by vin")
 	assert.Equal(t, unstake.UnstakeFeeExtra, uint64(0), "Fees must be paid by vin")
 
@@ -85,12 +85,12 @@ func TestCreateUnstakeTxPayExtra(t *testing.T) {
 	assert.Equal(t, tx2.VerifySignature(), true, "Verify signature failed2")
 
 	fees := tx.ComputeFees()
-	assert.Equal(t, fees[string(config.NATIVE_TOKEN)] > uint64(100), true, "Fees were calculated invalid")
+	assert.Equal(t, fees[config.NATIVE_TOKEN_STRING] > uint64(100), true, "Fees were calculated invalid")
 
 	base := tx2.TxBase.(*transaction_simple.TransactionSimple)
 	assert.Equal(t, uint64(0), base.Vin[0].Amount, "Fees are not paid by vin")
 
-	unstake := base.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake)
+	unstake := base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake)
 	assert.Equal(t, unstake.UnstakeAmount, uint64(534), "Fees are not paid by vin")
-	assert.Equal(t, unstake.UnstakeFeeExtra, fees[string(config.NATIVE_TOKEN)], "Fees are not paid by vin")
+	assert.Equal(t, unstake.UnstakeFeeExtra, fees[config.NATIVE_TOKEN_STRING], "Fees are not paid by vin")
 }

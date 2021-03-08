@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
-	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-unstake"
+	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config/fees"
 )
@@ -43,7 +43,7 @@ func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFee
 
 				switch base.TxScript {
 				case transaction_simple.TxSimpleScriptUnstake:
-					setFeeTxNow(tx, uint64(feePerByte), 0, &base.Extra.(*transaction_simple_unstake.TransactionSimpleUnstake).UnstakeFeeExtra)
+					setFeeTxNow(tx, uint64(feePerByte), 0, &base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).UnstakeFeeExtra)
 					return
 				}
 
