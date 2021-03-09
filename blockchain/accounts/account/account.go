@@ -111,6 +111,19 @@ func (account *Account) GetDelegatedStakeAvailable(blockHeight uint64) uint64 {
 	return account.DelegatedStake.GetDelegatedStakeAvailable(blockHeight)
 }
 
+func (account *Account) GetAvailableBalance(blockHeight uint64, token []byte) (result uint64) {
+	for _, balance := range account.Balances {
+		if bytes.Equal(balance.Token, token) {
+			result = balance.Amount
+			if bytes.Equal(token, config.NATIVE_TOKEN) && account.DelegatedStakeVersion == 1 {
+				helpers.SafeUint64Add(&result, account.DelegatedStake.GetDelegatedUnstakeAvailable(blockHeight))
+			}
+			return
+		}
+	}
+	return
+}
+
 func (account *Account) Serialize() []byte {
 
 	writer := helpers.NewBufferWriter()

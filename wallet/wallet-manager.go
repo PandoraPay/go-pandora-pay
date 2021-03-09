@@ -25,7 +25,7 @@ func (wallet *Wallet) GetWalletAddressByAddress(addressEncoded string) (out *Wal
 	panic("address was not found")
 }
 
-func (wallet *Wallet) addNewAddress() {
+func (wallet *Wallet) AddNewAddress() *WalletAddress {
 
 	//avoid generating the same address twice
 	wallet.Lock()
@@ -62,9 +62,11 @@ func (wallet *Wallet) addNewAddress() {
 
 	wallet.updateWallet()
 	wallet.saveWallet(wallet.Count-1, wallet.Count, -1)
+
+	return &walletAddress
 }
 
-func (wallet *Wallet) removeAddress(index int) {
+func (wallet *Wallet) RemoveAddress(index int) bool {
 
 	wallet.Lock()
 	defer wallet.Unlock()
@@ -82,9 +84,10 @@ func (wallet *Wallet) removeAddress(index int) {
 
 	wallet.updateWallet()
 	wallet.saveWallet(index, wallet.Count, wallet.Count)
+	return true
 }
 
-func (wallet *Wallet) showPrivateKey(index int) [32]byte {
+func (wallet *Wallet) ShowPrivateKey(index int) [32]byte {
 
 	wallet.RLock()
 	defer wallet.RUnlock()
@@ -120,7 +123,7 @@ func (wallet *Wallet) createSeed() {
 
 func (wallet *Wallet) createEmptyWallet() {
 	wallet.createSeed()
-	wallet.addNewAddress()
+	wallet.AddNewAddress()
 }
 
 func (wallet *Wallet) updateWallet() {

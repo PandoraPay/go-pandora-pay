@@ -20,7 +20,9 @@ func (chain *Blockchain) init() {
 
 	chain.Height = 0
 	chain.Hash = genesis.GenesisData.Hash
+	chain.PrevHash = genesis.GenesisData.Hash
 	chain.KernelHash = genesis.GenesisData.KernelHash
+	chain.PrevKernelHash = genesis.GenesisData.KernelHash
 	chain.Target = new(big.Int).SetBytes(genesis.GenesisData.Target[:])
 	chain.BigTotalDifficulty = new(big.Int).SetUint64(0)
 

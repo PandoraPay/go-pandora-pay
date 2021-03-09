@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -25,10 +26,12 @@ import (
 )
 
 type Blockchain struct {
-	Hash       helpers.Hash
-	KernelHash helpers.Hash
-	Height     uint64
-	Timestamp  uint64
+	Hash           helpers.Hash
+	PrevHash       helpers.Hash
+	KernelHash     helpers.Hash
+	PrevKernelHash helpers.Hash
+	Height         uint64
+	Timestamp      uint64
 
 	Target             *big.Int
 	BigTotalDifficulty *big.Int
@@ -61,7 +64,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 	var newChain = Blockchain{
 		Hash:               chain.Hash,
+		PrevHash:           chain.PrevHash,
 		KernelHash:         chain.KernelHash,
+		PrevKernelHash:     chain.PrevKernelHash,
 		Height:             chain.Height,
 		Timestamp:          chain.Timestamp,
 		Target:             chain.Target,
@@ -107,7 +112,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 				if err == nil {
 					chain.Height = newChain.Height
 					chain.Hash = newChain.Hash
+					chain.PrevHash = newChain.PrevHash
 					chain.KernelHash = newChain.KernelHash
+					chain.PrevKernelHash = newChain.PrevKernelHash
 					chain.Timestamp = newChain.Timestamp
 					chain.Target = newChain.Target
 					chain.Transactions = newChain.Transactions
@@ -131,13 +138,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 		accs = accounts.NewAccounts(tx)
 		toks = tokens.NewTokens(tx)
-
-		var prevBlk = &block.Block{}
-		if blocksComplete[0].Block.Height == 0 {
-			prevBlk = genesis.Genesis
-		} else {
-			prevBlk = newChain.loadBlock(writer, newChain.Hash)
-		}
 
 		//let's filter existing blocks
 		for i := len(blocksComplete) - 1; i >= 0; i-- {
@@ -208,13 +208,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			//already verified for i == 0
 			if i > 0 {
 
-				prevHash := prevBlk.ComputeHash()
-				if !bytes.Equal(blkComplete.Block.PrevHash[:], prevHash[:]) {
+				if !bytes.Equal(blkComplete.Block.PrevHash[:], newChain.Hash[:]) {
 					panic("PrevHash doesn't match Genesis prevHash")
 				}
-
-				prevKernelHash := prevBlk.ComputeKernelHash()
-				if !bytes.Equal(blkComplete.Block.PrevKernelHash[:], prevKernelHash[:]) {
+				if !bytes.Equal(blkComplete.Block.PrevKernelHash[:], newChain.KernelHash[:]) {
 					panic("PrevHash doesn't match Genesis prevKernelHash")
 				}
 
@@ -241,7 +238,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 			newChain.saveBlock(writer, blkComplete, hash)
 
+			newChain.PrevHash = newChain.Hash
 			newChain.Hash = hash
+			newChain.PrevKernelHash = newChain.KernelHash
 			newChain.KernelHash = kernelHash
 			newChain.Timestamp = blkComplete.Block.Timestamp
 
@@ -254,6 +253,15 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			newChain.Height += 1
 			newChain.Transactions += uint64(len(blkComplete.Txs))
 			insertedBlocks = append(insertedBlocks, blkComplete)
+
+			writer.Put([]byte("chainHash"), newChain.Hash[:])
+			writer.Put([]byte("chainPrevHash"), newChain.PrevHash[:])
+			writer.Put([]byte("chainKernelHash"), newChain.KernelHash[:])
+			writer.Put([]byte("chainPrevKernelHash"), newChain.PrevKernelHash[:])
+
+			buf := make([]byte, binary.MaxVarintLen64)
+			n := binary.PutUvarint(buf, newChain.Height)
+			writer.Put([]byte("chainHeight"), buf[:n])
 
 			savedBlock = true
 		}

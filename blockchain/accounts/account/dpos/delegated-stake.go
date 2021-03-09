@@ -94,7 +94,19 @@ func (dstake *DelegatedStake) GetDelegatedStakeAvailable(blockHeight uint64) (re
 	result = dstake.StakeAvailable
 	for i := range dstake.StakesPending {
 		if dstake.StakesPending[i].ActivationHeight >= blockHeight && dstake.StakesPending[i].PendingType {
-			result += dstake.StakesPending[i].PendingAmount
+			helpers.SafeUint64Add(&result, dstake.StakesPending[i].PendingAmount)
+		}
+	}
+
+	return
+}
+
+func (dstake *DelegatedStake) GetDelegatedUnstakeAvailable(blockHeight uint64) (result uint64) {
+
+	result = dstake.StakeAvailable
+	for i := range dstake.StakesPending {
+		if dstake.StakesPending[i].ActivationHeight >= blockHeight && !dstake.StakesPending[i].PendingType {
+			helpers.SafeUint64Add(&result, dstake.StakesPending[i].PendingAmount)
 		}
 	}
 

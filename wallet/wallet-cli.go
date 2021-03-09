@@ -117,7 +117,7 @@ func initWalletCLI(wallet *Wallet) {
 	}
 
 	cliCreateNewAddress := func(cmd string) {
-		wallet.addNewAddress()
+		wallet.AddNewAddress()
 		cliListAddresses(cmd)
 	}
 
@@ -126,7 +126,7 @@ func initWalletCLI(wallet *Wallet) {
 		cliListAddresses("")
 		index := <-gui.OutputReadInt("Select Address to be Removed")
 
-		wallet.removeAddress(index)
+		wallet.RemoveAddress(index)
 		cliListAddresses("")
 		gui.OutputWrite("Address removed")
 	}
@@ -145,7 +145,7 @@ func initWalletCLI(wallet *Wallet) {
 
 		index := <-gui.OutputReadInt("Select Address")
 
-		gui.OutputWrite(wallet.showPrivateKey(index))
+		gui.OutputWrite(wallet.ShowPrivateKey(index))
 	}
 
 	gui.CommandDefineCallback("List Addresses", cliListAddresses)
