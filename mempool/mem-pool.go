@@ -183,7 +183,9 @@ func (mempool *MemPool) Print() {
 
 	gui.Log("")
 	for _, out := range list {
+		out.tx.RLock()
 		gui.Log(fmt.Sprintf("%20s %7d B %5d %32s", time.Unix(out.tx.added, 0).UTC().Format(time.RFC3339), len(out.tx.tx.Serialize()), out.tx.chainHeight, out.hash.String()))
+		out.tx.RUnlock()
 	}
 	gui.Log("")
 
@@ -254,12 +256,12 @@ func (mempool *MemPool) Refresh() {
 
 				if listIndex == len(txList) {
 					listIndex = -1
+					time.Sleep(50 * time.Millisecond)
 					continue
 				} else {
 
 					if txMap[txList[listIndex].hashStr] {
 						listIndex += 1
-						time.Sleep(10 * time.Millisecond)
 						continue
 					}
 
@@ -272,6 +274,9 @@ func (mempool *MemPool) Refresh() {
 								mempool.result.Lock()
 								mempool.result.txs = append(mempool.result.txs, txList[listIndex].tx)
 								mempool.result.Unlock()
+								txList[listIndex].tx.Lock()
+								txList[listIndex].tx.chainHeight = updateTask.chainHeight
+								txList[listIndex].tx.Unlock()
 							}
 							listIndex += 1
 						}()
