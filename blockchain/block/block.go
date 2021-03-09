@@ -151,7 +151,6 @@ func (blk *Block) Serialize() []byte {
 }
 
 func (blk *Block) Deserialize(reader *helpers.BufferReader) {
-
 	blk.BlockHeader.Deserialize(reader)
 	blk.MerkleHash = reader.ReadHash()
 	blk.PrevHash = reader.ReadHash()
@@ -161,5 +160,4 @@ func (blk *Block) Deserialize(reader *helpers.BufferReader) {
 	blk.Timestamp = reader.ReadUvarint()
 	blk.Forger = reader.Read20()
 	blk.Signature = reader.Read65()
-
 }

@@ -15,7 +15,6 @@ import (
 	"sort"
 	"strconv"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -23,10 +22,11 @@ type memPoolTx struct {
 	tx          *transaction.Transaction
 	added       int64
 	mine        bool
-	chainHeight uint64
-	chainHash   helpers.Hash
 	feePerByte  uint64
 	feeToken    []byte
+	chainHeight uint64
+
+	sync.RWMutex `json:"-"`
 }
 
 type memPoolUpdateTask struct {
@@ -34,23 +34,32 @@ type memPoolUpdateTask struct {
 	chainHeight uint64
 	accs        *accounts.Accounts
 	toks        *tokens.Tokens
+	status      int
 
-	sync.RWMutex
+	sync.RWMutex `json:"-"`
+}
+
+type memPoolResult struct {
+	txs          []*memPoolTx
+	chainHash    helpers.Hash
+	chainHeight  uint64
+	sync.RWMutex `json:"-"`
 }
 
 type memPoolOutput struct {
-	hash helpers.Hash
-	tx   *memPoolTx
+	hash    helpers.Hash
+	hashStr string
+	tx      *memPoolTx `json:"-"`
 }
 
 type MemPool struct {
 	txs      sync.Map
 	txsCount uint64
 
-	updateTask      memPoolUpdateTask
-	updateTaskReset int32
+	updateTask memPoolUpdateTask
+	result     memPoolResult
 
-	sync.RWMutex `json:"-"`
+	lockWritingTxs sync.RWMutex `json:"-"`
 }
 
 func (mempool *MemPool) AddTxToMemPoolSilent(tx *transaction.Transaction, height uint64, mine bool) (result bool, err error) {
@@ -64,8 +73,8 @@ func (mempool *MemPool) AddTxToMemPoolSilent(tx *transaction.Transaction, height
 func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) bool {
 
 	//making sure that the transaction is not inserted twice
-	mempool.Lock()
-	defer mempool.Unlock()
+	mempool.lockWritingTxs.Lock()
+	defer mempool.lockWritingTxs.Unlock()
 
 	hash := tx.ComputeHash()
 	if _, found := mempool.txs.Load(hash); found {
@@ -106,10 +115,10 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 	object := memPoolTx{
 		tx:          tx,
 		added:       time.Now().Unix(),
-		chainHeight: height,
 		feePerByte:  selectedFee / size,
 		feeToken:    []byte(*selectedFeeToken),
 		mine:        mine,
+		chainHeight: height,
 	}
 
 	mempool.txs.Store(hash, &object)
@@ -131,8 +140,8 @@ func (mempool *MemPool) Delete(txId helpers.Hash) (tx *transaction.Transaction) 
 		return
 	}
 
-	mempool.Lock()
-	defer mempool.Unlock()
+	mempool.lockWritingTxs.Lock()
+	defer mempool.lockWritingTxs.Unlock()
 
 	mempool.txs.Delete(txId)
 
@@ -140,19 +149,6 @@ func (mempool *MemPool) Delete(txId helpers.Hash) (tx *transaction.Transaction) 
 	gui.Info2Update("mempool", strconv.FormatUint(mempool.txsCount, 10))
 
 	return
-}
-
-func (mempool *MemPool) GetTxsList() []*memPoolTx {
-
-	list := make([]*memPoolTx, 0)
-
-	mempool.txs.Range(func(key, value interface{}) bool {
-		tx := value.(*memPoolTx)
-		list = append(list, tx)
-		return true
-	})
-
-	return list
 }
 
 func (mempool *MemPool) GetTxsListKeyValue() []*memPoolOutput {
@@ -163,8 +159,9 @@ func (mempool *MemPool) GetTxsListKeyValue() []*memPoolOutput {
 		hash := key.(helpers.Hash)
 		tx := value.(*memPoolTx)
 		list = append(list, &memPoolOutput{
-			hash,
-			tx,
+			hash:    hash,
+			hashStr: string(hash[:]),
+			tx:      tx,
 		})
 		return true
 	})
@@ -174,10 +171,11 @@ func (mempool *MemPool) GetTxsListKeyValue() []*memPoolOutput {
 
 func (mempool *MemPool) Print() {
 
-	mempool.RLock()
-	defer mempool.RUnlock()
+	mempool.lockWritingTxs.RLock()
+	txsCount := mempool.txsCount
+	mempool.lockWritingTxs.RUnlock()
 
-	if mempool.txsCount == 0 {
+	if txsCount == 0 {
 		return
 	}
 
@@ -200,72 +198,86 @@ func (mempool *MemPool) UpdateChanges(hash helpers.Hash, height uint64, accs *ac
 	mempool.updateTask.chainHeight = height
 	mempool.updateTask.accs = accs
 	mempool.updateTask.toks = toks
+	mempool.updateTask.status = 1
 
-	atomic.StoreInt32(&mempool.updateTaskReset, 1)
 }
 
 func (mempool *MemPool) Refresh() {
 
 	updateTask := memPoolUpdateTask{}
 	hasWorkToDo := false
-	var list []*memPoolTx
+
+	var txList []*memPoolOutput
+	var txMap map[string]bool
 
 	listIndex := -1
 	for {
 
-		value := atomic.LoadInt32(&mempool.updateTaskReset)
-		if value == 1 {
-
-			mempool.updateTask.RLock()
+		mempool.updateTask.RLock()
+		if mempool.updateTask.status == 1 {
 			updateTask.chainHash = mempool.updateTask.chainHash
 			updateTask.chainHeight = mempool.updateTask.chainHeight
 			updateTask.accs = mempool.updateTask.accs
 			updateTask.toks = mempool.updateTask.toks
+			mempool.updateTask.status = 0
 			hasWorkToDo = true
+
+			txMap = make(map[string]bool)
 			listIndex = -1
-			atomic.StoreInt32(&mempool.updateTaskReset, 2)
-			mempool.updateTask.RUnlock()
+
+			mempool.result.Lock()
+			mempool.result.chainHash = mempool.updateTask.chainHash
+			mempool.result.chainHeight = mempool.updateTask.chainHeight
+			mempool.result.txs = make([]*memPoolTx, 0)
+			mempool.result.Unlock()
 		}
+		mempool.updateTask.RUnlock()
 
 		if hasWorkToDo {
 
 			if listIndex == -1 {
 
-				list = mempool.GetTxsList()
+				txList = mempool.GetTxsListKeyValue()
+				if len(txList) > 0 {
+					sort.Slice(txList, func(i, j int) bool {
 
-				if len(list) > 0 {
-					sort.Slice(list, func(i, j int) bool {
-
-						if list[i].feePerByte == list[j].feePerByte && list[i].tx.TxType == transaction_type.TxSimple && list[j].tx.TxType == transaction_type.TxSimple {
-							return list[i].tx.TxBase.(*transaction_simple.TransactionSimple).Nonce < list[j].tx.TxBase.(*transaction_simple.TransactionSimple).Nonce
+						if txList[i].tx.feePerByte == txList[j].tx.feePerByte && txList[i].tx.tx.TxType == transaction_type.TxSimple && txList[j].tx.tx.TxType == transaction_type.TxSimple {
+							return txList[i].tx.tx.TxBase.(*transaction_simple.TransactionSimple).Nonce < txList[j].tx.tx.TxBase.(*transaction_simple.TransactionSimple).Nonce
 						}
 
-						return list[i].feePerByte < list[j].feePerByte
+						return txList[i].tx.feePerByte < txList[j].tx.feePerByte
 					})
 				}
 				listIndex = 0
 
 			} else {
 
-				if listIndex == len(list) {
-					hasWorkToDo = false
+				if listIndex == len(txList) {
+					listIndex = -1
 					continue
 				} else {
 
+					if txMap[txList[listIndex].hashStr] {
+						listIndex += 1
+						time.Sleep(10 * time.Millisecond)
+						continue
+					}
+
 					func() {
 						defer func() {
-							err := helpers.ConvertRecoverError(recover())
-							if err != nil {
+							if err := helpers.ConvertRecoverError(recover()); err != nil {
 								updateTask.accs.Rollback()
 								updateTask.toks.Rollback()
 							} else {
-								list[listIndex].chainHeight = updateTask.chainHeight
-								list[listIndex].chainHash = updateTask.chainHash
+								mempool.result.Lock()
+								mempool.result.txs = append(mempool.result.txs, txList[listIndex].tx)
+								mempool.result.Unlock()
 							}
 							listIndex += 1
 						}()
 
-						list[listIndex].tx.IncludeTransaction(updateTask.chainHeight, updateTask.accs, updateTask.toks)
+						txMap[txList[listIndex].hashStr] = true
+						txList[listIndex].tx.tx.IncludeTransaction(updateTask.chainHeight, updateTask.accs, updateTask.toks)
 					}()
 
 					continue
@@ -284,12 +296,13 @@ func (mempool *MemPool) GetTransactions(blockHeight uint64, chainHash helpers.Ha
 
 	out := make([]*transaction.Transaction, 0)
 
-	list := mempool.GetTxsList()
-	for _, mempoolTx := range list {
-		if mempoolTx.chainHeight == blockHeight && bytes.Equal(mempoolTx.chainHash[:], chainHash[:]) {
+	mempool.result.RLock()
+	for _, mempoolTx := range mempool.result.txs {
+		if bytes.Equal(mempool.result.chainHash[:], chainHash[:]) {
 			out = append(out, mempoolTx.tx)
 		}
 	}
+	mempool.result.RUnlock()
 
 	return out
 }
