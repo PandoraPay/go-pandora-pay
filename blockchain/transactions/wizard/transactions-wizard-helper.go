@@ -45,6 +45,9 @@ func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFee
 				case transaction_simple.TxSimpleScriptUnstake:
 					setFeeTxNow(tx, uint64(feePerByte), 0, &base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).UnstakeFeeExtra)
 					return
+				case transaction_simple.TxSimpleScriptWithdraw:
+					setFeeTxNow(tx, uint64(feePerByte), 0, &base.Extra.(*transaction_simple_extra.TransactionSimpleWithdraw).WithdrawFeeExtra)
+					return
 				}
 
 			} else {

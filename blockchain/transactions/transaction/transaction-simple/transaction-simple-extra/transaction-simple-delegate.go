@@ -6,15 +6,15 @@ import (
 )
 
 type TransactionSimpleDelegate struct {
-	DelegateAmount       uint64
-	DelegateNewPublicKey bool
-	DelegatePublicKey    [33]byte
+	DelegateAmount          uint64
+	DelegateHasNewPublicKey bool
+	DelegateNewPublicKey    [33]byte
 }
 
 func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) {
 	acc.DelegatedStake.AddStakePending(true, tx.DelegateAmount, blockHeight)
-	if tx.DelegateNewPublicKey {
-		acc.DelegatedStake.DelegatedPublicKey = tx.DelegatePublicKey
+	if tx.DelegateHasNewPublicKey {
+		acc.DelegatedStake.DelegatedPublicKey = tx.DelegateNewPublicKey
 	}
 }
 
@@ -30,16 +30,16 @@ func (tx *TransactionSimpleDelegate) Validate() {
 
 func (tx *TransactionSimpleDelegate) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(tx.DelegateAmount)
-	writer.WriteBool(tx.DelegateNewPublicKey)
-	if tx.DelegateNewPublicKey {
-		writer.Write(tx.DelegatePublicKey[:])
+	writer.WriteBool(tx.DelegateHasNewPublicKey)
+	if tx.DelegateHasNewPublicKey {
+		writer.Write(tx.DelegateNewPublicKey[:])
 	}
 }
 
 func (tx *TransactionSimpleDelegate) Deserialize(reader *helpers.BufferReader) {
 	tx.DelegateAmount = reader.ReadUvarint()
-	tx.DelegateNewPublicKey = reader.ReadBool()
-	if tx.DelegateNewPublicKey {
-		tx.DelegatePublicKey = reader.Read33()
+	tx.DelegateHasNewPublicKey = reader.ReadBool()
+	if tx.DelegateHasNewPublicKey {
+		tx.DelegateNewPublicKey = reader.Read33()
 	}
 }

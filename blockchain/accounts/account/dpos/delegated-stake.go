@@ -26,9 +26,10 @@ type DelegatedStake struct {
 func (dstake *DelegatedStake) AddUnstakeAvailable(sign bool, amount, blockHeight uint64) {
 	if sign {
 		helpers.SafeUint64Update(sign, &dstake.UnstakeAvailable, amount)
-		dstake.UnstakeHeight = blockHeight + stake.GetUnstakeWindow(blockHeight)
+		dstake.UnstakeHeight = blockHeight
+		helpers.SafeUint64Update(sign, &dstake.UnstakeHeight, stake.GetUnstakeWindow(blockHeight))
 	} else {
-		if blockHeight < dstake.UnstakeHeight {
+		if blockHeight < dstake.UnstakeHeight && dstake.UnstakeHeight != 0 {
 			panic("You can't withdraw now")
 		}
 		helpers.SafeUint64Update(sign, &dstake.UnstakeAvailable, amount)
@@ -118,6 +119,10 @@ func (dstake *DelegatedStake) IsDelegatedStakeEmpty() bool {
 }
 
 func (dstake *DelegatedStake) RefreshDelegatedStake(blockHeight uint64) {
+
+	if dstake.UnstakeHeight >= blockHeight {
+		dstake.UnstakeHeight = 0
+	}
 
 	for i := len(dstake.StakesPending) - 1; i >= 0; i-- {
 		if dstake.StakesPending[i].ActivationHeight < blockHeight {

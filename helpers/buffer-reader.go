@@ -14,6 +14,9 @@ func NewBufferReader(buf []byte) *BufferReader {
 
 func (reader *BufferReader) ReadBool() bool {
 	if len(reader.buf) > 0 {
+		if reader.buf[0] > 1 {
+			panic("buf[0] is invalid")
+		}
 		out := reader.buf[0] == 1
 		reader.buf = reader.buf[1:]
 		return out
