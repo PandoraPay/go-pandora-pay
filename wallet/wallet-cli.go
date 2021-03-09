@@ -1,13 +1,13 @@
 package wallet
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	bolt "go.etcd.io/bbolt"
 	"os"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/tokens"
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/store"
@@ -28,6 +28,7 @@ func initWalletCLI(wallet *Wallet) {
 		if err := store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
 
 			accs := accounts.NewAccounts(tx)
+			toks := tokens.NewTokens(tx)
 
 			for _, walletAddress := range wallet.Addresses {
 				addressStr := walletAddress.Address.EncodeAddr()
@@ -44,7 +45,9 @@ func initWalletCLI(wallet *Wallet) {
 						if len(acc.Balances) > 0 {
 							gui.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", ""))
 							for _, balance := range acc.Balances {
-								gui.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatUint(config.ConvertToBase(balance.Amount), 10), hex.EncodeToString(balance.Token)))
+
+								token := toks.GetAnyToken(balance.Token)
+								gui.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatUint(config.ConvertToBase(balance.Amount), 10), token.Name))
 							}
 						} else {
 							gui.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", "EMPTY"))

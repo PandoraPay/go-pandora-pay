@@ -1,8 +1,11 @@
 package tokens
 
 import (
+	"bytes"
 	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/tokens/token"
+	"pandora-pay/config"
+	"pandora-pay/helpers"
 	"pandora-pay/store"
 )
 
@@ -21,6 +24,13 @@ func NewTokens(tx *bbolt.Tx) (tokens *Tokens) {
 	tokens = new(Tokens)
 	tokens.HashMap = hashMap
 	return
+}
+
+func (tokens *Tokens) GetAnyToken(key []byte) *token.Token {
+	if bytes.Equal(key, config.NATIVE_TOKEN) {
+		return tokens.GetToken(config.NATIVE_TOKEN_FULL)
+	}
+	return tokens.GetToken(*helpers.Byte20(key))
 }
 
 func (tokens *Tokens) GetToken(key [20]byte) *token.Token {

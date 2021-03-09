@@ -10,10 +10,8 @@ type Balance struct {
 }
 
 func (balance *Balance) Serialize(writer *helpers.BufferWriter) {
-
 	writer.WriteUvarint(balance.Amount)
 	writer.WriteToken(balance.Token)
-
 }
 
 func (balance *Balance) Deserialize(reader *helpers.BufferReader) {

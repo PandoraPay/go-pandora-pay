@@ -261,6 +261,7 @@ func (mempool *MemPool) Refresh() {
 				} else {
 
 					if txMap[txList[listIndex].hashStr] {
+						time.Sleep(5 * time.Millisecond)
 						listIndex += 1
 						continue
 					}
