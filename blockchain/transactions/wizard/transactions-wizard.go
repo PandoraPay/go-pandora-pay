@@ -108,32 +108,6 @@ func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount uint64, feePerByt
 	return
 }
 
-func CreateWithdrawTx(nonce uint64, key [32]byte, withdrawAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction) {
-
-	privateKey := addresses.PrivateKey{Key: key}
-	tx = &transaction.Transaction{
-		Version: 0,
-		TxType:  transaction_type.TxSimple,
-		TxBase: &transaction_simple.TransactionSimple{
-			TxScript: transaction_simple.TxSimpleScriptWithdraw,
-			Nonce:    nonce,
-			Extra: &transaction_simple_extra.TransactionSimpleWithdraw{
-				WithdrawAmount: withdrawAmount,
-			},
-			Vin: []*transaction_simple.TransactionSimpleInput{
-				{
-					Amount:    0,
-					PublicKey: privateKey.GeneratePublicKey(),
-				},
-			},
-		},
-	}
-
-	setFee(tx, feePerByte, feeToken, payFeeInExtra)
-	tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature = privateKey.Sign(tx.SerializeForSigning())
-	return
-}
-
 func CreateDelegateTx(nonce uint64, key [32]byte, delegateAmount uint64, delegateNewPubKey []byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction) {
 
 	delegateHasNewPublicKey := false

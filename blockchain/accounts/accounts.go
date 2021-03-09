@@ -49,8 +49,7 @@ func (accounts *Accounts) GetAccount(key [20]byte) *account.Account {
 	return acc
 }
 
-func (accounts *Accounts) UpdateAccount(key [20]byte, blockHeight uint64, acc *account.Account) {
-	acc.RefreshDelegatedStake(blockHeight)
+func (accounts *Accounts) UpdateAccount(key [20]byte, acc *account.Account) {
 	if acc.IsAccountEmpty() {
 		accounts.HashMap.Delete(key[:])
 		return

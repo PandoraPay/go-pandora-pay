@@ -20,20 +20,18 @@ func (builder *TransactionsBuilder) CreateSimpleTxSilent(from []string, amounts 
 }
 
 func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction) {
-
 	fromWalletAddress := builder.wallet.GetWalletAddressByAddress(from)
 
 	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
 
-		accs := accounts.NewAccounts(boltTx)
-		account := accs.GetAccount(fromWalletAddress.PublicKeyHash)
+		account := accounts.NewAccounts(boltTx).GetAccount(fromWalletAddress.PublicKeyHash)
 		if account == nil {
 			panic("Account doesn't exist")
 		}
 
 		tx = wizard.CreateUnstakeTx(account.Nonce, fromWalletAddress.PrivateKey.Key, unstakeAmount, feePerByte, feeToken, payFeeInExtra)
-
 		return nil
+
 	}); err != nil {
 		panic(err)
 	}
@@ -41,12 +39,9 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount u
 	return
 }
 
-func TransactionsBuilderInit(wallet *wallet.Wallet, chain *blockchain.Blockchain) (builder *TransactionsBuilder) {
-
-	builder = &TransactionsBuilder{
+func TransactionsBuilderInit(wallet *wallet.Wallet, chain *blockchain.Blockchain) *TransactionsBuilder {
+	return &TransactionsBuilder{
 		wallet: wallet,
 		chain:  chain,
 	}
-
-	return
 }

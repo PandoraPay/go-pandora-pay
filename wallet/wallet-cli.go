@@ -39,28 +39,26 @@ func initWalletCLI(wallet *Wallet) {
 					acc := accs.GetAccount(walletAddress.PublicKeyHash)
 
 					if acc == nil {
-						gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "", "EMPTY"))
+						gui.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))
 					} else {
 						if len(acc.Balances) > 0 {
-							gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "BALANCES:", ""))
+							gui.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", ""))
 							for _, balance := range acc.Balances {
-								gui.OutputWrite(fmt.Sprintf("%20s ->  %s", strconv.FormatUint(config.ConvertToBase(balance.Amount), 10), hex.EncodeToString(balance.Token)))
+								gui.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatUint(config.ConvertToBase(balance.Amount), 10), hex.EncodeToString(balance.Token)))
 							}
 						} else {
-							gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "BALANCES", "EMPTY"))
+							gui.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", "EMPTY"))
 						}
 						if acc.HasDelegatedStake() {
-							gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "Stake Available", strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.StakeAvailable), 10)))
-							gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "Unstake Available", strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.UnstakeAvailable), 10)))
-							gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "Unstake Height", strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.UnstakeHeight), 10)))
+							gui.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.StakeAvailable), 10)))
 
 							if len(acc.DelegatedStake.StakesPending) > 0 {
-								gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "PENDING STAKES:", ""))
+								gui.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES", ""))
 								for _, stakePending := range acc.DelegatedStake.StakesPending {
-									gui.OutputWrite(fmt.Sprintf("%20s ->  %s", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatUint(config.ConvertToBase(stakePending.PendingAmount), 10)))
+									gui.OutputWrite(fmt.Sprintf("%18s: %10s %t", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatUint(config.ConvertToBase(stakePending.PendingAmount), 10), stakePending.PendingType))
 								}
 							} else {
-								gui.OutputWrite(fmt.Sprintf("%20s ->  %s", "PENDING STAKES:", "EMPTY"))
+								gui.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES:", "EMPTY"))
 							}
 						}
 					}

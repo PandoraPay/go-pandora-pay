@@ -22,6 +22,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 	for i, vin := range tx.Vin {
 
 		acc := accs.GetAccountEvenEmpty(vin.GetPublicKeyHash())
+		acc.RefreshDelegatedStake(blockHeight)
 
 		if i == 0 {
 			if acc.Nonce != tx.Nonce {
@@ -33,19 +34,19 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 				tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).IncludeTransactionVin0(blockHeight, acc)
 			case TxSimpleScriptUnstake:
 				tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).IncludeTransactionVin0(blockHeight, acc)
-			case TxSimpleScriptWithdraw:
-				tx.Extra.(*transaction_simple_extra.TransactionSimpleWithdraw).IncludeTransactionVin0(blockHeight, acc)
 			}
 		}
 
 		acc.AddBalance(false, vin.Amount, vin.Token)
-		accs.UpdateAccount(vin.GetPublicKeyHash(), blockHeight, acc)
+		accs.UpdateAccount(vin.GetPublicKeyHash(), acc)
 	}
 
 	for _, vout := range tx.Vout {
 		acc := accs.GetAccountEvenEmpty(vout.PublicKeyHash)
+		acc.RefreshDelegatedStake(blockHeight)
+
 		acc.AddBalance(true, vout.Amount, vout.Token)
-		accs.UpdateAccount(vout.PublicKeyHash, blockHeight, acc)
+		accs.UpdateAccount(vout.PublicKeyHash, acc)
 	}
 
 	switch tx.TxScript {
@@ -62,7 +63,7 @@ func (tx *TransactionSimple) RemoveTransaction(blockHeight uint64, accs *account
 		vout := tx.Vout[i]
 		acc := accs.GetAccountEvenEmpty(vout.PublicKeyHash)
 		acc.AddBalance(false, vout.Amount, vout.Token)
-		accs.UpdateAccount(vout.PublicKeyHash, blockHeight, acc)
+		accs.UpdateAccount(vout.PublicKeyHash, acc)
 	}
 
 	for i := len(tx.Vin) - 1; i >= 0; i-- {
@@ -72,11 +73,9 @@ func (tx *TransactionSimple) RemoveTransaction(blockHeight uint64, accs *account
 		if i == 0 {
 			switch tx.TxScript {
 			case TxSimpleScriptDelegate:
-				tx.Extra.(*transaction_simple_extra.TransactionSimpleWithdraw).RemoveTransactionVin0(blockHeight, acc)
+				tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).RemoveTransactionVin0(blockHeight, acc)
 			case TxSimpleScriptUnstake:
 				tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).RemoveTransactionVin0(blockHeight, acc)
-			case TxSimpleScriptWithdraw:
-				tx.Extra.(*transaction_simple_extra.TransactionSimpleWithdraw).RemoveTransactionVin0(blockHeight, acc)
 			}
 
 			acc.IncrementNonce(false)
@@ -86,7 +85,7 @@ func (tx *TransactionSimple) RemoveTransaction(blockHeight uint64, accs *account
 		}
 
 		acc.AddBalance(true, vin.Amount, vin.Token)
-		accs.UpdateAccount(vin.GetPublicKeyHash(), blockHeight, acc)
+		accs.UpdateAccount(vin.GetPublicKeyHash(), acc)
 	}
 
 }
@@ -99,8 +98,6 @@ func (tx *TransactionSimple) ComputeFees(out map[string]uint64) {
 	switch tx.TxScript {
 	case TxSimpleScriptUnstake:
 		helpers.SafeMapUint64Add(out, config.NATIVE_TOKEN_STRING, tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).UnstakeFeeExtra)
-	case TxSimpleScriptWithdraw:
-		helpers.SafeMapUint64Add(out, config.NATIVE_TOKEN_STRING, tx.Extra.(*transaction_simple_extra.TransactionSimpleWithdraw).WithdrawFeeExtra)
 	}
 	return
 }
@@ -160,8 +157,6 @@ func (tx *TransactionSimple) Validate() {
 		tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).Validate()
 	case TxSimpleScriptUnstake:
 		tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).Validate()
-	case TxSimpleScriptWithdraw:
-		tx.Extra.(*transaction_simple_extra.TransactionSimpleWithdraw).Validate()
 	}
 
 	final := make(map[string]uint64)
@@ -222,10 +217,6 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) {
 		tx.Extra = extra
 	case TxSimpleScriptUnstake:
 		extra := &transaction_simple_extra.TransactionSimpleUnstake{}
-		extra.Deserialize(reader)
-		tx.Extra = extra
-	case TxSimpleScriptWithdraw:
-		extra := &transaction_simple_extra.TransactionSimpleWithdraw{}
 		extra.Deserialize(reader)
 		tx.Extra = extra
 	}

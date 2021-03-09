@@ -3,6 +3,7 @@ package account
 import (
 	"bytes"
 	"pandora-pay/blockchain/accounts/account/dpos"
+	"pandora-pay/config"
 	"pandora-pay/helpers"
 )
 
@@ -78,19 +79,36 @@ func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) {
 
 }
 
+func (account *Account) RefreshDelegatedStake(blockHeight uint64) {
+	if account.DelegatedStakeVersion == 0 {
+		return
+	}
+
+	for i := len(account.DelegatedStake.StakesPending) - 1; i >= 0; i-- {
+		stakePending := account.DelegatedStake.StakesPending[i]
+		if stakePending.ActivationHeight <= blockHeight {
+
+			if stakePending.PendingType == true {
+				helpers.SafeUint64Add(&account.DelegatedStake.StakeAvailable, stakePending.PendingAmount)
+			} else {
+				account.AddBalance(true, stakePending.PendingAmount, config.NATIVE_TOKEN)
+			}
+			account.DelegatedStake.StakesPending = append(account.DelegatedStake.StakesPending[:i], account.DelegatedStake.StakesPending[i+1:]...)
+		}
+	}
+
+	if account.DelegatedStake.IsDelegatedStakeEmpty() {
+		account.DelegatedStakeVersion = 0
+		account.DelegatedStake = nil
+	}
+
+}
+
 func (account *Account) GetDelegatedStakeAvailable(blockHeight uint64) uint64 {
 	if account.DelegatedStakeVersion == 0 {
 		return 0
 	}
 	return account.DelegatedStake.GetDelegatedStakeAvailable(blockHeight)
-}
-
-func (account *Account) RefreshDelegatedStake(blockHeight uint64) {
-	account.DelegatedStake.RefreshDelegatedStake(blockHeight)
-	if account.DelegatedStake.IsDelegatedStakeEmpty() {
-		account.DelegatedStakeVersion = 0
-		account.DelegatedStake = nil
-	}
 }
 
 func (account *Account) Serialize() []byte {
