@@ -6,6 +6,8 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/transactions/transaction"
+	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
+	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/blockchain/transactions/wizard"
 	"pandora-pay/store"
 	"pandora-pay/wallet"
@@ -29,7 +31,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint
 		var keys [][32]byte
 		for i, fromAddress := range from {
 			fromWalletAddress := builder.wallet.GetWalletAddressByAddress(fromAddress)
-			account := accs.GetAccountEvenEmpty(fromWalletAddress.PublicKeyHash)
+			account := accs.GetAccount(fromWalletAddress.PublicKeyHash)
 			if account == nil {
 				panic("Account doesn't exist")
 			}
@@ -45,6 +47,13 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint
 		}
 
 		tx = wizard.CreateSimpleTx(nonce, keys, amounts, tokens, dsts, dstsAmounts, dstsTokens, feePerByte, feeToken)
+		for i, fromAddress := range from {
+			fromWalletAddress := builder.wallet.GetWalletAddressByAddress(fromAddress)
+			account := accs.GetAccountEvenEmpty(fromWalletAddress.PublicKeyHash)
+			if account.GetAvailableBalance(chainHeight, tokens[i]) < tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Amount {
+				panic("You don't have enough coins to pay for the fee")
+			}
+		}
 		return nil
 
 	}); err != nil {
@@ -71,6 +80,10 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount u
 		}
 
 		tx = wizard.CreateUnstakeTx(account.Nonce, fromWalletAddress.PrivateKey.Key, unstakeAmount, feePerByte, feeToken, payFeeInExtra)
+		if account.GetDelegatedStakeAvailable(chainHeight) < tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Amount+tx.TxBase.(*transaction_simple.TransactionSimple).Extra.(*transaction_simple_extra.TransactionSimpleUnstake).UnstakeFeeExtra {
+			panic("You don't have enough staked coins to pay for the fee")
+		}
+
 		return nil
 
 	}); err != nil {

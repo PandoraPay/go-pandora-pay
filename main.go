@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/docopt/docopt.go"
+	"math/rand"
 	"os"
 	"os/signal"
 	"pandora-pay/blockchain"
@@ -18,6 +19,7 @@ import (
 	"pandora-pay/wallet"
 	"runtime"
 	"syscall"
+	"time"
 )
 
 var commands = `PANDORA PAY.
@@ -41,6 +43,8 @@ Options:
 func main() {
 
 	var err error
+
+	rand.Seed(time.Now().UnixNano())
 
 	gui.GUIInit()
 	gui.Info("GO PANDORA PAY")

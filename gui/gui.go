@@ -244,7 +244,11 @@ func processArgument(any ...interface{}) string {
 
 	var s = ""
 
-	for _, it := range any {
+	for i, it := range any {
+
+		if i > 0 {
+			s += "\n"
+		}
 
 		switch v := it.(type) {
 		case nil:
