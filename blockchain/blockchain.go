@@ -80,7 +80,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	var accs *accounts.Accounts
 	var toks *tokens.Tokens
 
-	tx, err := store.StoreBlockchain.DB.Begin(true)
+	boltTx, err := store.StoreBlockchain.DB.Begin(true)
 	if err != nil {
 		return
 	}
@@ -108,7 +108,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 				chain.Lock()
 
-				err = tx.Commit()
+				err = boltTx.Commit()
 				if err == nil {
 					chain.Height = newChain.Height
 					chain.Hash = newChain.Hash
@@ -125,7 +125,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 			} else {
 
-				err = tx.Rollback()
+				err = boltTx.Rollback()
 				if err == nil {
 					err = errors.New("Blocks were not saved")
 				}
@@ -134,10 +134,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 		}()
 
-		writer = tx.Bucket([]byte("Chain"))
+		writer = boltTx.Bucket([]byte("Chain"))
 
-		accs = accounts.NewAccounts(tx)
-		toks = tokens.NewTokens(tx)
+		accs = accounts.NewAccounts(boltTx)
+		toks = tokens.NewTokens(boltTx)
 
 		//let's filter existing blocks
 		for i := len(blocksComplete) - 1; i >= 0; i-- {
@@ -296,8 +296,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 		}
 	}
 
-	//accs and toks will be overwritten by the simulation
-	newChain.mempool.UpdateChanges(newChain.Hash, newChain.Height, accs, toks)
+	newChain.mempool.UpdateChanges(newChain.Hash, newChain.Height)
 
 	result = true
 	return

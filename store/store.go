@@ -2,6 +2,8 @@ package store
 
 import (
 	bolt "go.etcd.io/bbolt"
+	"os"
+	"pandora-pay/config"
 	"pandora-pay/gui"
 )
 
@@ -11,10 +13,7 @@ type Store struct {
 	DB     *bolt.DB
 }
 
-var StoreBlockchain = Store{Name: "blockchain"}
-var StoreWallet = Store{Name: "wallet"}
-var StoreSettings = Store{Name: "settings"}
-var StoreMempool = Store{Name: "mempool"}
+var StoreBlockchain, StoreWallet, StoreSettings, StoreMempool *Store
 
 func (store *Store) init() {
 
@@ -38,6 +37,34 @@ func (store *Store) close() {
 }
 
 func DBInit() {
+
+	var prefix = "network"
+	switch config.NETWORK_SELECTED {
+	case config.MAIN_NET_NETWORK_BYTE:
+		prefix = "main"
+	case config.TEST_NET_NETWORK_BYTE:
+		prefix = "test"
+	case config.DEV_NET_NETWORK_BYTE:
+		prefix = "dev"
+	}
+
+	if _, err := os.Stat("./_build"); os.IsNotExist(err) {
+		if err := os.Mkdir("./_build", 0755); err != nil {
+			panic(err)
+		}
+	}
+
+	if _, err := os.Stat("./_build/" + prefix); os.IsNotExist(err) {
+		if err := os.Mkdir("./_build/"+prefix, 0755); err != nil {
+			panic(err)
+		}
+	}
+
+	StoreBlockchain = &Store{Name: prefix + "/blockchain"}
+	StoreWallet = &Store{Name: prefix + "/wallet"}
+	StoreSettings = &Store{Name: prefix + "/settings"}
+	StoreMempool = &Store{Name: prefix + "/mempool"}
+
 	StoreBlockchain.init()
 	StoreWallet.init()
 	StoreSettings.init()

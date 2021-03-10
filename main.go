@@ -23,7 +23,7 @@ import (
 var commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-genesis] [--node-name=<name>]
+  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>]
   pandorapay -h | --help
 
 Options:
@@ -31,7 +31,7 @@ Options:
   --version     				Show version.
   --testnet     				Run in TESTNET mode.
   --devnet     					Run in DEVNET mode.
-  --new-genesis     			Create a new genesis.
+  --new-devnet     				Create a new devnet genesis.
   --debug     					Debug mode enabled (print log message).
   --staking     				Start staking
   --node-name=<name>   			Change node name
@@ -76,7 +76,7 @@ func main() {
 	myTransactionsBuilder := transactions_builder.TransactionsBuilderInit(myWallet, myChain)
 	globals.Data["transactionsBuilder"] = myTransactionsBuilder
 
-	if globals.Arguments["--new-genesis"] == true {
+	if globals.Arguments["--new-devnet"] == true {
 
 		myTestnet := testnet.TestnetInit(myWallet, myMempool, myChain, myTransactionsBuilder)
 		globals.Data["testnet"] = myTestnet

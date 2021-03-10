@@ -132,8 +132,9 @@ func (forging *Forging) RestartForgingWorkers(blkComplete *block.BlockComplete, 
 		blkComplete: blkComplete,
 		target:      target,
 	}
-	atomic.StorePointer(&forging.work, unsafe.Pointer(&work))
+
 	atomic.StorePointer(&forging.solution, nil)
+	atomic.StorePointer(&forging.work, unsafe.Pointer(&work))
 
 }
 

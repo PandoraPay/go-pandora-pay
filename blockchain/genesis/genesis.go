@@ -85,7 +85,7 @@ func GenesisInit() {
 		gui.Fatal("Invalid Network for Genesis")
 	}
 
-	if globals.Arguments["--new-genesis"] == true {
+	if globals.Arguments["--new-devnet"] == true {
 		GenesisData.HashHex = hex.EncodeToString(helpers.RandomBytes(helpers.HashSize))
 		GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 	}

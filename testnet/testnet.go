@@ -57,7 +57,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 
 	tx := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
 	hash := tx.ComputeHash()
-	gui.Info("Unstake transaction was created: " + hex.EncodeToString(hash[:]))
+	gui.Info("Create Transfers transaction was created: " + hex.EncodeToString(hash[:]))
 
 	result := testnet.mempool.AddTxToMemPool(tx, blockHeight, true)
 	if !result {
@@ -72,7 +72,7 @@ func (testnet *Testnet) run() {
 	for {
 
 		blockHeight := <-testnet.chain.UpdateChannel
-		if blockHeight == 40 {
+		if blockHeight == 30 {
 
 			testnet.unstake = true
 			if err := testnet.testnetCreateUnstakeTx(blockHeight); err != nil {

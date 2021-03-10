@@ -1,6 +1,9 @@
 package stake
 
-import "pandora-pay/config"
+import (
+	"pandora-pay/config"
+	"pandora-pay/globals"
+)
 
 func GetRequiredStake(blockHeight uint64) uint64 {
 	if blockHeight == 0 {
@@ -11,16 +14,24 @@ func GetRequiredStake(blockHeight uint64) uint64 {
 }
 
 func GetPendingStakeWindow(blockHeight uint64) uint64 {
-	if blockHeight == 0 {
-		return 1
+
+	if globals.Arguments["--new-devnet"] == true {
+
+		if blockHeight == 0 {
+			return 1
+		}
+
+		return 10
 	}
-	return 20
+
+	return 60
 }
 
 func GetUnstakeWindow(blockHeight uint64) uint64 {
-	if blockHeight < 10000 {
-		return 5
-	} else {
-		return 5000
+
+	if globals.Arguments["--new-devnet"] == true {
+		return 10
 	}
+
+	return 5000
 }

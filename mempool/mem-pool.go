@@ -3,6 +3,7 @@ package mempool
 import (
 	"bytes"
 	"fmt"
+	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -12,6 +13,7 @@ import (
 	"pandora-pay/config/fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/store"
 	"sort"
 	"strconv"
 	"sync"
@@ -30,6 +32,7 @@ type memPoolTx struct {
 }
 
 type memPoolUpdateTask struct {
+	boltTx      *bbolt.Tx
 	chainHash   helpers.Hash
 	chainHeight uint64
 	accs        *accounts.Accounts
@@ -60,6 +63,15 @@ type MemPool struct {
 	result     memPoolResult
 
 	lockWritingTxs sync.RWMutex `json:"-"`
+}
+
+func (mempoolUpdateTask *memPoolUpdateTask) CloseDB() {
+	if mempoolUpdateTask.boltTx != nil {
+		mempoolUpdateTask.boltTx.Rollback()
+		mempoolUpdateTask.boltTx = nil
+		mempoolUpdateTask.accs = nil
+		mempoolUpdateTask.toks = nil
+	}
 }
 
 func (mempool *MemPool) AddTxToMemPoolSilent(tx *transaction.Transaction, height uint64, mine bool) (result bool, err error) {
@@ -169,6 +181,26 @@ func (mempool *MemPool) GetTxsListKeyValue() []*memPoolOutput {
 	return list
 }
 
+func (mempool *MemPool) GetTxsListKeyValueFilter(filter map[string]bool) []*memPoolOutput {
+
+	list := make([]*memPoolOutput, 0)
+
+	mempool.txs.Range(func(key, value interface{}) bool {
+		hash := key.(helpers.Hash)
+		tx := value.(*memPoolTx)
+		if !filter[string(hash[:])] {
+			list = append(list, &memPoolOutput{
+				hash:    hash,
+				hashStr: string(hash[:]),
+				tx:      tx,
+			})
+		}
+		return true
+	})
+
+	return list
+}
+
 func (mempool *MemPool) Print() {
 
 	mempool.lockWritingTxs.RLock()
@@ -191,15 +223,13 @@ func (mempool *MemPool) Print() {
 
 }
 
-func (mempool *MemPool) UpdateChanges(hash helpers.Hash, height uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
+func (mempool *MemPool) UpdateChanges(hash helpers.Hash, height uint64) {
 
 	mempool.updateTask.Lock()
 	defer mempool.updateTask.Unlock()
 
 	mempool.updateTask.chainHash = hash
 	mempool.updateTask.chainHeight = height
-	mempool.updateTask.accs = accs
-	mempool.updateTask.toks = toks
 	mempool.updateTask.status = 1
 
 }
@@ -217,10 +247,10 @@ func (mempool *MemPool) Refresh() {
 
 		mempool.updateTask.RLock()
 		if mempool.updateTask.status == 1 {
+
+			updateTask.CloseDB()
 			updateTask.chainHash = mempool.updateTask.chainHash
 			updateTask.chainHeight = mempool.updateTask.chainHeight
-			updateTask.accs = mempool.updateTask.accs
-			updateTask.toks = mempool.updateTask.toks
 			mempool.updateTask.status = 0
 			hasWorkToDo = true
 
@@ -239,7 +269,7 @@ func (mempool *MemPool) Refresh() {
 
 			if listIndex == -1 {
 
-				txList = mempool.GetTxsListKeyValue()
+				txList = mempool.GetTxsListKeyValueFilter(txMap)
 				if len(txList) > 0 {
 					sort.Slice(txList, func(i, j int) bool {
 
@@ -249,22 +279,34 @@ func (mempool *MemPool) Refresh() {
 
 						return txList[i].tx.feePerByte < txList[j].tx.feePerByte
 					})
+
+					var err error
+					updateTask.boltTx, err = store.StoreBlockchain.DB.Begin(false)
+					if err != nil {
+						updateTask.CloseDB()
+						time.Sleep(1000 * time.Millisecond)
+						continue
+					}
+					reader := updateTask.boltTx.Bucket([]byte("Chain"))
+					if !bytes.Equal(reader.Get([]byte("chainHash")), updateTask.chainHash[:]) {
+						updateTask.CloseDB()
+						time.Sleep(1000 * time.Millisecond)
+						continue
+					}
+					updateTask.accs = accounts.NewAccounts(updateTask.boltTx)
+					updateTask.toks = tokens.NewTokens(updateTask.boltTx)
+
 				}
 				listIndex = 0
 
 			} else {
 
 				if listIndex == len(txList) {
+					updateTask.CloseDB()
 					listIndex = -1
-					time.Sleep(50 * time.Millisecond)
+					time.Sleep(1000 * time.Millisecond)
 					continue
 				} else {
-
-					if txMap[txList[listIndex].hashStr] {
-						time.Sleep(5 * time.Millisecond)
-						listIndex += 1
-						continue
-					}
 
 					func() {
 						defer func() {
