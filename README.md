@@ -53,7 +53,7 @@ Status of Blockchain implementation:
     - [x] Transaction Builder
     - [x] Simple Transactions
     - [x] Unstake Transaction
-    - [ ] Delegate Stake    
+    - [x] Delegate Stake    
     - [ ] Zether Deposit Transactions
     - [ ] Zether Withdraw Transactions
     - [ ] Zether Transfer Transactions
@@ -61,6 +61,7 @@ Status of Blockchain implementation:
 - [ ] Mem Pool
     - [ ] Saving/Loading
     - [X] Inserting Txs
+    - [x] Sorting by fee per byte
     - [ ] Network propagation
 - [ ] Network
     - [ ] HTTP server
