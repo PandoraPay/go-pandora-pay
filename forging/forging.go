@@ -180,7 +180,7 @@ func (forging *Forging) publishSolution() (err error) {
 		work.blkComplete.Block.StakingAmount = solution.address.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height)
 	}
 
-	work.blkComplete.Txs = forging.mempool.GetTransactions(work.blkComplete.Block.Size(), work.blkComplete.Block.Height, work.blkComplete.Block.PrevHash)
+	work.blkComplete.Txs = forging.mempool.GetTransactions(work.blkComplete.Block.Height, work.blkComplete.Block.PrevHash)
 	work.blkComplete.Block.MerkleHash = work.blkComplete.MerkleHash()
 
 	serializationForSigning := work.blkComplete.Block.SerializeForSigning()

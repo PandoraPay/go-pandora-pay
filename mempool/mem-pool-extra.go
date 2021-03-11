@@ -6,7 +6,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
-	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"time"
@@ -88,19 +87,14 @@ func (mempool *MemPool) GetNonce(publicKeyHash [20]byte) (result bool, nonce uin
 	return
 }
 
-func (mempool *MemPool) GetTransactions(blockSize, blockHeight uint64, chainHash cryptography.Hash) []*transaction.Transaction {
+func (mempool *MemPool) GetTransactions(blockHeight uint64, chainHash cryptography.Hash) []*transaction.Transaction {
 
 	out := make([]*transaction.Transaction, 0)
 
-	blockSize += 100 //making sure to not overflow creating invalid blocks
-
 	mempool.result.RLock()
-	for _, mempoolTx := range mempool.result.txs {
-		if bytes.Equal(mempool.result.chainHash[:], chainHash[:]) {
-			if blockSize+mempoolTx.size < config.BLOCK_MAX_SIZE {
-				out = append(out, mempoolTx.tx)
-				blockSize += mempoolTx.size
-			}
+	if bytes.Equal(mempool.result.chainHash[:], chainHash[:]) {
+		for _, mempoolTx := range mempool.result.txs {
+			out = append(out, mempoolTx.tx)
 		}
 	}
 	mempool.result.RUnlock()

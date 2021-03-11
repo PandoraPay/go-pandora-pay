@@ -32,6 +32,7 @@ type memPoolTx struct {
 
 type memPoolResult struct {
 	txs          []*memPoolTx
+	totalSize    uint64
 	chainHash    cryptography.Hash
 	chainHeight  uint64
 	sync.RWMutex `json:"-"`
@@ -175,6 +176,7 @@ func (mempool *MemPool) Refresh() {
 			mempool.result.chainHash = mempool.updateTask.chainHash
 			mempool.result.chainHeight = mempool.updateTask.chainHeight
 			mempool.result.txs = make([]*memPoolTx, 0)
+			mempool.result.totalSize = 0
 			mempool.result.Unlock()
 		}
 		mempool.updateTask.RUnlock()
@@ -222,7 +224,10 @@ func (mempool *MemPool) Refresh() {
 								updateTask.toks.Rollback()
 							} else {
 								mempool.result.Lock()
-								mempool.result.txs = append(mempool.result.txs, txList[listIndex].tx)
+								if mempool.result.totalSize+txList[listIndex].tx.size < config.BLOCK_MAX_SIZE {
+									mempool.result.txs = append(mempool.result.txs, txList[listIndex].tx)
+									mempool.result.totalSize += txList[listIndex].tx.size
+								}
 								mempool.result.Unlock()
 								txList[listIndex].tx.Lock()
 								txList[listIndex].tx.chainHeight = updateTask.chainHeight

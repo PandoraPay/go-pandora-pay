@@ -30,7 +30,7 @@ var (
 
 	NETWORK_TIMESTAMP_DRIFT_MAX uint64 = 10
 
-	BLOCK_MAX_SIZE          uint64 = 1 << 10
+	BLOCK_MAX_SIZE          uint64 = 1024 * 1024
 	BLOCK_TIME              uint64 = 60 //seconds
 	DIFFICULTY_BLOCK_WINDOW uint64 = 10
 
