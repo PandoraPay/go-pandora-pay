@@ -1,7 +1,6 @@
 package mempool
 
 import (
-	"bytes"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -35,12 +34,6 @@ type memPoolResult struct {
 	chainHash    cryptography.Hash
 	chainHeight  uint64
 	sync.RWMutex `json:"-"`
-}
-
-type memPoolOutput struct {
-	hash    cryptography.Hash
-	hashStr string
-	tx      *memPoolTx `json:"-"`
 }
 
 type MemPool struct {
@@ -206,15 +199,8 @@ func (mempool *MemPool) Refresh() {
 						time.Sleep(1000 * time.Millisecond)
 						continue
 					}
-					reader := updateTask.boltTx.Bucket([]byte("Chain"))
-					if !bytes.Equal(reader.Get([]byte("chainHash")), updateTask.chainHash[:]) {
-						updateTask.CloseDB()
-						time.Sleep(1000 * time.Millisecond)
-						continue
-					}
 					updateTask.accs = accounts.NewAccounts(updateTask.boltTx)
 					updateTask.toks = tokens.NewTokens(updateTask.boltTx)
-
 				}
 				listIndex = 0
 

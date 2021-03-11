@@ -11,6 +11,12 @@ import (
 	"time"
 )
 
+type memPoolOutput struct {
+	hash    cryptography.Hash
+	hashStr string
+	tx      *memPoolTx `json:"-"`
+}
+
 func (mempool *MemPool) GetTxsList() []*transaction.Transaction {
 
 	list := make([]*transaction.Transaction, 0)
