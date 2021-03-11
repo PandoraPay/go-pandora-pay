@@ -22,6 +22,7 @@ type memPoolTx struct {
 	tx          *transaction.Transaction
 	added       int64
 	mine        bool
+	size        uint64
 	feePerByte  uint64
 	feeToken    []byte
 	chainHeight uint64
@@ -99,6 +100,7 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 	object := memPoolTx{
 		tx:          tx,
 		added:       time.Now().Unix(),
+		size:        size,
 		feePerByte:  selectedFee / size,
 		feeToken:    []byte(*selectedFeeToken),
 		mine:        mine,

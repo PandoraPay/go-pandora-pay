@@ -94,8 +94,7 @@ func (tx *Transaction) Validate() {
 func (tx *Transaction) Verify() {
 }
 
-func (tx *Transaction) Deserialize(buf []byte) {
-	reader := helpers.NewBufferReader(buf)
+func (tx *Transaction) Deserialize(reader *helpers.BufferReader) {
 
 	tx.Version = reader.ReadUvarint()
 	n := reader.ReadUvarint()

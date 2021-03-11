@@ -140,3 +140,7 @@ func (blk *Block) Deserialize(reader *helpers.BufferReader) {
 	blk.Forger = reader.Read20()
 	blk.Signature = reader.Read65()
 }
+
+func (blk *Block) Size() uint64 {
+	return uint64(len(blk.Serialize()))
+}

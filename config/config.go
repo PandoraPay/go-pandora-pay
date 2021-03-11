@@ -34,6 +34,8 @@ var (
 	BLOCK_TIME              uint64 = 60 //seconds
 	DIFFICULTY_BLOCK_WINDOW uint64 = 10
 
+	HARD_FORK_MAX_ALLOWED uint64 = 500
+
 	BIG_INT_ZERO    = big.NewInt(0)
 	BIG_INT_ONE     = big.NewInt(1)
 	BIG_INT_MAX_256 = new(big.Int).Lsh(BIG_INT_ONE, 256) // 0xFFFFFFFF....

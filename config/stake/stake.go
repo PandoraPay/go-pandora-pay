@@ -20,7 +20,6 @@ func GetPendingStakeWindow(blockHeight uint64) uint64 {
 		if blockHeight == 0 {
 			return 1
 		}
-
 		return 10
 	}
 
@@ -33,5 +32,5 @@ func GetUnstakeWindow(blockHeight uint64) uint64 {
 		return 10
 	}
 
-	return 5000
+	return 6000
 }

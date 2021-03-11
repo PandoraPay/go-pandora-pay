@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/config"
+	"pandora-pay/config/globals"
 	"pandora-pay/config/stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -84,6 +85,10 @@ func (forging *Forging) startForging(threads int) {
 		c := 0
 		for i, walletAdr := range forging.Wallet.addresses {
 			if walletAdr.account != nil || work.blkComplete.Block.Height == 0 {
+
+				if work.blkComplete.Block.Height == 0 && i > 0 && globals.Arguments["--new-devnet"] == true {
+					break
+				}
 
 				var stakingAmount uint64
 				if walletAdr.account != nil {
@@ -175,7 +180,7 @@ func (forging *Forging) publishSolution() (err error) {
 		work.blkComplete.Block.StakingAmount = solution.address.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height)
 	}
 
-	work.blkComplete.Txs = forging.mempool.GetTransactions(work.blkComplete.Block.Height, work.blkComplete.Block.PrevHash)
+	work.blkComplete.Txs = forging.mempool.GetTransactions(work.blkComplete.Block.Size(), work.blkComplete.Block.Height, work.blkComplete.Block.PrevHash)
 	work.blkComplete.Block.MerkleHash = work.blkComplete.MerkleHash()
 
 	serializationForSigning := work.blkComplete.Block.SerializeForSigning()

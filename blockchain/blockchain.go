@@ -151,20 +151,31 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 				hash2 := blkComplete.Block.ComputeHash()
 				if bytes.Equal(hash[:], hash2[:]) {
-					blocksComplete = append(blocksComplete[:i], blocksComplete[i+1:]...)
+					blocksComplete = blocksComplete[i+1:]
+					break
 				}
 			}
+
+		}
+
+		if len(blocksComplete) == 0 {
+			panic("blocks are identical now")
+		}
+
+		firstBlockComplete := blocksComplete[0]
+		if firstBlockComplete.Block.Height < newChain.Height {
+
 		}
 
 		if blocksComplete[0].Block.Height != newChain.Height {
 			panic("First Block has is not matching")
 		}
 
-		if !bytes.Equal(blocksComplete[0].Block.PrevHash[:], newChain.Hash[:]) {
+		if !bytes.Equal(firstBlockComplete.Block.PrevHash[:], newChain.Hash[:]) {
 			panic("First block hash is not matching chain hash")
 		}
 
-		if !bytes.Equal(blocksComplete[0].Block.PrevKernelHash[:], newChain.KernelHash[:]) {
+		if !bytes.Equal(firstBlockComplete.Block.PrevKernelHash[:], newChain.KernelHash[:]) {
 			panic("First block kernel hash is not matching chain prev kerneh lash")
 		}
 

@@ -70,6 +70,11 @@ func (blkComplete *BlockComplete) Serialize() []byte {
 	writer.Write(blkComplete.Block.Serialize())
 	writer.WriteUvarint(uint64(len(blkComplete.Txs)))
 
+	for _, tx := range blkComplete.Txs {
+		serialized := tx.Serialize()
+		writer.Write(serialized)
+	}
+
 	return writer.Bytes()
 }
 
@@ -84,9 +89,12 @@ func (blkComplete *BlockComplete) Deserialize(buf []byte) {
 	blkComplete.Block.Deserialize(reader)
 
 	txsCount := reader.ReadUvarint()
-	//todo
 	for i := uint64(0); i < txsCount; i++ {
-
+		txLength := reader.ReadUvarint()
+		reader.ReadBytes(int(txLength))
+		tx := new(transaction.Transaction)
+		tx.Deserialize(reader)
+		blkComplete.Txs = append(blkComplete.Txs, tx)
 	}
 
 }

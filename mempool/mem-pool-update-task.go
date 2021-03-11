@@ -23,7 +23,5 @@ func (mempoolUpdateTask *memPoolUpdateTask) CloseDB() {
 	if mempoolUpdateTask.boltTx != nil {
 		mempoolUpdateTask.boltTx.Rollback()
 		mempoolUpdateTask.boltTx = nil
-		mempoolUpdateTask.accs = nil
-		mempoolUpdateTask.toks = nil
 	}
 }
