@@ -13,10 +13,10 @@ func SHA3Hash(b []byte) (result Hash) {
 	return *ConvertHash(h.Sum(nil))
 }
 
-func SHA3(b []byte) (result Hash) {
+func SHA3(b []byte) []byte {
 	h := sha3.New256()
 	h.Write(b)
-	return *ConvertHash(h.Sum(nil))
+	return h.Sum(nil)
 }
 
 func RIPEMD(b []byte) [20]byte {
@@ -35,8 +35,7 @@ func GetChecksum(b []byte) Checksum {
 }
 
 func ComputePublicKeyHash(publicKey [33]byte) [20]byte {
-	hash := SHA3(publicKey[:])
-	return RIPEMD(hash[:])
+	return RIPEMD(SHA3(publicKey[:]))
 }
 
 func ComputeKernelHash(hash Hash, stakingAmount uint64) (out Hash) {

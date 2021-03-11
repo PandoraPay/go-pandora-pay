@@ -2,7 +2,7 @@ package stake
 
 import (
 	"pandora-pay/config"
-	"pandora-pay/globals"
+	"pandora-pay/config/globals"
 )
 
 func GetRequiredStake(blockHeight uint64) uint64 {

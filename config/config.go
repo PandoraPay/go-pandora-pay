@@ -2,7 +2,7 @@ package config
 
 import (
 	"math/big"
-	"pandora-pay/globals"
+	"pandora-pay/config/globals"
 )
 
 var (

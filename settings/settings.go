@@ -1,8 +1,8 @@
 package settings
 
 import (
+	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
-	"pandora-pay/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"sync"
