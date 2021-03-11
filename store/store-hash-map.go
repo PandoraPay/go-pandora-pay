@@ -38,13 +38,18 @@ func CreateNewHashMap(tx *bbolt.Tx, name string, keyLength int) (hashMap *HashMa
 }
 
 func (hashMap *HashMap) Get(key []byte) (out []byte) {
+	return hashMap.get(key, true)
+}
 
+func (hashMap *HashMap) get(key []byte, includeChanges bool) (out []byte) {
 	keyStr := string(key)
 
-	exists := hashMap.Changes[keyStr]
-	if exists != nil {
-		out = exists.Data
-		return
+	if includeChanges {
+		exists := hashMap.Changes[keyStr]
+		if exists != nil {
+			out = exists.Data
+			return
+		}
 	}
 
 	exists2 := hashMap.Committed[keyStr]
@@ -164,7 +169,6 @@ func (hashMap *HashMap) WriteToStore() {
 			}
 			v.Status = "view"
 			v.Commit = "del"
-			v.Data = nil
 		} else if v.Status == "update" {
 			if err := hashMap.Bucket.Put(key, v.Data); err != nil {
 				panic(err)

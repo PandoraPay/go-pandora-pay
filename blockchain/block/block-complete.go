@@ -61,16 +61,7 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, 
 	for _, tx := range blkComplete.Txs {
 		tx.IncludeTransaction(blkComplete.Block.Height, accs, toks)
 	}
-}
 
-func (blkComplete *BlockComplete) RemoveBlockComplete(accs *accounts.Accounts, toks *tokens.Tokens) {
-
-	allFees := make(map[string]uint64)
-	for i := len(blkComplete.Txs) - 1; i >= 0; i-- {
-		blkComplete.Txs[i].AddFees(allFees)
-		blkComplete.Txs[i].RemoveTransaction(blkComplete.Block.Height, accs, toks)
-	}
-	blkComplete.Block.RemoveBlock(accs, toks, allFees)
 }
 
 func (blkComplete *BlockComplete) Serialize() []byte {

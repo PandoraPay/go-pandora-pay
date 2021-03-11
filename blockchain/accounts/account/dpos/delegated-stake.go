@@ -21,47 +21,45 @@ func (dstake *DelegatedStake) AddStakeAvailable(sign bool, amount uint64) {
 	helpers.SafeUint64Update(sign, &dstake.StakeAvailable, amount)
 }
 
-func (dstake *DelegatedStake) AddStakePending(sign bool, amount uint64, pendingType bool, blockHeight uint64) {
-
+func (dstake *DelegatedStake) AddStakePendingStake(amount, blockHeight uint64) {
 	if amount == 0 {
 		return
 	}
+	finalBlockHeight := blockHeight + stake.GetPendingStakeWindow(blockHeight)
 
-	finalBlockHeight := blockHeight
-	if pendingType {
-		finalBlockHeight += stake.GetPendingStakeWindow(blockHeight)
-	} else {
-		finalBlockHeight += stake.GetUnstakeWindow(blockHeight)
-	}
-
-	if sign {
-
-		for _, stakePending := range dstake.StakesPending {
-			if stakePending.ActivationHeight == finalBlockHeight && stakePending.PendingType == pendingType {
-				helpers.SafeUint64Add(&stakePending.PendingAmount, amount)
-				return
-			}
+	for _, stakePending := range dstake.StakesPending {
+		if stakePending.ActivationHeight == finalBlockHeight && stakePending.PendingType == true {
+			helpers.SafeUint64Add(&stakePending.PendingAmount, amount)
+			return
 		}
-		dstake.StakesPending = append(dstake.StakesPending, &DelegatedStakePending{
-			ActivationHeight: finalBlockHeight,
-			PendingAmount:    amount,
-			PendingType:      pendingType,
-		})
-
-	} else {
-
-		for i, stakePending := range dstake.StakesPending {
-			if stakePending.ActivationHeight == finalBlockHeight && stakePending.PendingType == pendingType {
-				helpers.SafeUint64Sub(&stakePending.PendingAmount, amount)
-				if stakePending.PendingAmount == 0 {
-					dstake.StakesPending = append(dstake.StakesPending[:i], dstake.StakesPending[i+1:]...)
-				}
-				return
-			}
-		}
-
-		panic("Stake pending was not found!")
 	}
+	dstake.StakesPending = append(dstake.StakesPending, &DelegatedStakePending{
+		ActivationHeight: finalBlockHeight,
+		PendingAmount:    amount,
+		PendingType:      true,
+	})
+
+}
+
+func (dstake *DelegatedStake) AddStakePendingUnstake(amount, blockHeight uint64) {
+	if amount == 0 {
+		return
+	}
+	finalBlockHeight := blockHeight + stake.GetUnstakeWindow(blockHeight)
+
+	for _, stakePending := range dstake.StakesPending {
+		if stakePending.ActivationHeight == finalBlockHeight && stakePending.PendingType == false {
+			helpers.SafeUint64Add(&stakePending.PendingAmount, amount)
+			stakePending.ActivationHeight = finalBlockHeight
+			return
+		}
+	}
+	dstake.StakesPending = append(dstake.StakesPending, &DelegatedStakePending{
+		ActivationHeight: finalBlockHeight,
+		PendingAmount:    amount,
+		PendingType:      false,
+	})
+
 }
 
 func (dstake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {

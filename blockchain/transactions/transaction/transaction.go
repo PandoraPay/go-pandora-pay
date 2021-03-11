@@ -22,13 +22,6 @@ func (tx *Transaction) IncludeTransaction(blockHeight uint64, accs *accounts.Acc
 	}
 }
 
-func (tx *Transaction) RemoveTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
-	switch tx.TxType {
-	case transaction_type.TxSimple:
-		tx.TxBase.(*transaction_simple.TransactionSimple).RemoveTransaction(blockHeight, accs, toks)
-	}
-}
-
 func (tx *Transaction) AddFees(fees map[string]uint64) {
 	switch tx.TxType {
 	case transaction_type.TxSimple:

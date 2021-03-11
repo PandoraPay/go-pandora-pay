@@ -55,42 +55,6 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 
 }
 
-func (tx *TransactionSimple) RemoveTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
-
-	switch tx.TxScript {
-	}
-
-	for i := len(tx.Vout) - 1; i >= 0; i-- {
-		vout := tx.Vout[i]
-		acc := accs.GetAccountEvenEmpty(vout.PublicKeyHash)
-		acc.AddBalance(false, vout.Amount, vout.Token)
-		accs.UpdateAccount(vout.PublicKeyHash, acc)
-	}
-
-	for i := len(tx.Vin) - 1; i >= 0; i-- {
-		vin := tx.Vin[i]
-		acc := accs.GetAccountEvenEmpty(vin.GetPublicKeyHash())
-
-		if i == 0 {
-			switch tx.TxScript {
-			case TxSimpleScriptDelegate:
-				tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).RemoveTransactionVin0(blockHeight, acc)
-			case TxSimpleScriptUnstake:
-				tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).RemoveTransactionVin0(blockHeight, acc)
-			}
-
-			acc.IncrementNonce(false)
-			if acc.Nonce != tx.Nonce {
-				panic("Account nonce doesn't match")
-			}
-		}
-
-		acc.AddBalance(true, vin.Amount, vin.Token)
-		accs.UpdateAccount(vin.GetPublicKeyHash(), acc)
-	}
-
-}
-
 func (tx *TransactionSimple) ComputeFees(out map[string]uint64) {
 
 	tx.ComputeVin(out)

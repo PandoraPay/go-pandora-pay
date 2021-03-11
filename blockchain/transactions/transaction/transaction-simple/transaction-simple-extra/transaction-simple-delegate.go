@@ -12,14 +12,10 @@ type TransactionSimpleDelegate struct {
 }
 
 func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) {
-	acc.DelegatedStake.AddStakePending(true, tx.DelegateAmount, true, blockHeight)
+	acc.DelegatedStake.AddStakePendingStake(tx.DelegateAmount, blockHeight)
 	if tx.DelegateHasNewPublicKey {
 		acc.DelegatedStake.DelegatedPublicKey = tx.DelegateNewPublicKey
 	}
-}
-
-func (tx *TransactionSimpleDelegate) RemoveTransactionVin0(blockHeight uint64, acc *account.Account) {
-	acc.DelegatedStake.AddStakePending(false, tx.DelegateAmount, true, blockHeight)
 }
 
 func (tx *TransactionSimpleDelegate) Validate() {

@@ -76,3 +76,11 @@ func (accounts *Accounts) Commit() {
 func (accounts *Accounts) WriteToStore() {
 	accounts.HashMap.WriteToStore()
 }
+
+func (accounts *Accounts) WriteTransitionalChangesToStore(prefix string) {
+	accounts.HashMap.WriteTransitionalChangesToStore(prefix)
+}
+
+func (accounts *Accounts) ReadTransitionalChangesFromStore(prefix string) {
+	accounts.HashMap.ReadTransitionalChangesFromStore(prefix)
+}

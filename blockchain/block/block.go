@@ -50,8 +50,8 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 		acc.DelegatedStake.DelegatedPublicKey = blk.DelegatedPublicKey
 	}
 
-	acc.DelegatedStake.AddStakePending(true, reward, true, blk.Height)
-	acc.DelegatedStake.AddStakePending(true, allFees[config.NATIVE_TOKEN_STRING], true, blk.Height)
+	acc.DelegatedStake.AddStakePendingStake(reward, blk.Height)
+	acc.DelegatedStake.AddStakePendingStake(allFees[config.NATIVE_TOKEN_STRING], blk.Height)
 	for key, value := range allFees {
 		if key != config.NATIVE_TOKEN_STRING {
 			acc.AddBalance(true, value, []byte(key))
@@ -62,27 +62,6 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 	tok := toks.GetToken(config.NATIVE_TOKEN_FULL)
 	tok.AddSupply(true, reward)
 	toks.UpdateToken(config.NATIVE_TOKEN_FULL, tok)
-
-}
-
-func (blk *Block) RemoveBlock(acs *accounts.Accounts, toks *tokens.Tokens, allFees map[string]uint64) {
-
-	reward := reward.GetRewardAt(blk.Height)
-
-	tok := toks.GetToken(config.NATIVE_TOKEN_FULL)
-	tok.AddSupply(false, reward)
-	toks.UpdateToken(config.NATIVE_TOKEN_FULL, tok)
-
-	acc := acs.GetAccount(blk.Forger)
-
-	for key, value := range allFees {
-		if key != config.NATIVE_TOKEN_STRING {
-			acc.AddBalance(false, value, []byte(key))
-		}
-	}
-	acc.DelegatedStake.AddStakePending(false, allFees[config.NATIVE_TOKEN_STRING], true, blk.Height)
-	acc.DelegatedStake.AddStakePending(false, reward, true, blk.Height)
-	acs.UpdateAccount(blk.Forger, acc)
 
 }
 

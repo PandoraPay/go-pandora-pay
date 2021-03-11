@@ -234,6 +234,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			//to detect if the savedBlock was done correctly
 			savedBlock = false
 
+			accs.WriteTransitionalChangesToStore(strconv.FormatUint(blkComplete.Block.Height, 10))
+			toks.WriteTransitionalChangesToStore(strconv.FormatUint(blkComplete.Block.Height, 10))
 			accs.Commit() //it will commit the changes but not save them
 			toks.Commit() //it will commit the changes but not save them
 
