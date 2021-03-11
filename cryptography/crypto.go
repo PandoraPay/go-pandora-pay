@@ -10,7 +10,7 @@ import (
 func SHA3Hash(b []byte) (result Hash) {
 	h := sha3.New256()
 	h.Write(b)
-	return *ConvertHash(h.Sum(nil))
+	return ConvertHash(h.Sum(nil))
 }
 
 func SHA3(b []byte) []byte {

@@ -38,7 +38,7 @@ func (wallet *Wallet) AddNewAddress() *WalletAddress {
 		panic("Couldn't derivate the marker key")
 	}
 
-	privateKey := addresses.PrivateKey{Key: *helpers.Byte32(key.Key)}
+	privateKey := addresses.PrivateKey{Key: helpers.Byte32(key.Key)}
 	publicKey := privateKey.GeneratePublicKey()
 	address := privateKey.GenerateAddress(true, 0, []byte{})
 	addressEncoded := address.EncodeAddr()
@@ -117,7 +117,7 @@ func (wallet *Wallet) createSeed() {
 
 	// Generate a Bip32 HD wallet for the mnemonic and a user supplied password
 	seed := bip39.NewSeed(mnemonic, "SEED Secret Passphrase")
-	wallet.Seed = *helpers.Byte32(seed)
+	wallet.Seed = helpers.Byte32(seed)
 
 }
 

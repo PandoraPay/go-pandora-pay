@@ -30,7 +30,7 @@ func (tokens *Tokens) GetAnyToken(key []byte) *token.Token {
 	if bytes.Equal(key, config.NATIVE_TOKEN) {
 		return tokens.GetToken(config.NATIVE_TOKEN_FULL)
 	}
-	return tokens.GetToken(*helpers.Byte20(key))
+	return tokens.GetToken(helpers.Byte20(key))
 }
 
 func (tokens *Tokens) GetToken(key [20]byte) *token.Token {
@@ -80,7 +80,9 @@ func (tokens *Tokens) WriteToStore() {
 func (tokens *Tokens) WriteTransitionalChangesToStore(prefix string) {
 	tokens.HashMap.WriteTransitionalChangesToStore(prefix)
 }
-
 func (tokens *Tokens) ReadTransitionalChangesFromStore(prefix string) {
 	tokens.HashMap.ReadTransitionalChangesFromStore(prefix)
+}
+func (tokens *Tokens) DeleteTransitionalChangesFromStore(prefix string) {
+	tokens.HashMap.DeleteTransitionalChangesFromStore(prefix)
 }

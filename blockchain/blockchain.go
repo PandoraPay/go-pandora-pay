@@ -145,10 +145,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 			blkComplete := blocksComplete[i]
 
-			if blkComplete.Block.Height > newChain.Height {
-				var hash cryptography.Hash
-				hash = newChain.loadBlockHash(writer, blkComplete.Block.Height)
-
+			if blkComplete.Block.Height < newChain.Height {
+				hash := newChain.loadBlockHash(writer, blkComplete.Block.Height)
 				hash2 := blkComplete.Block.ComputeHash()
 				if bytes.Equal(hash[:], hash2[:]) {
 					blocksComplete = blocksComplete[i+1:]
@@ -162,9 +160,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			panic("blocks are identical now")
 		}
 
+		//remove blocks which are different
 		firstBlockComplete := blocksComplete[0]
 		if firstBlockComplete.Block.Height < newChain.Height {
-
+			for i := newChain.Height - 1; i >= newChain.Height; i-- {
+				newChain.deleteBlockComplete(writer, i, accs, toks)
+			}
 		}
 
 		if blocksComplete[0].Block.Height != newChain.Height {
@@ -219,14 +220,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 			//already verified for i == 0
 			if i > 0 {
-
 				if !bytes.Equal(blkComplete.Block.PrevHash[:], newChain.Hash[:]) {
 					panic("PrevHash doesn't match Genesis prevHash")
 				}
 				if !bytes.Equal(blkComplete.Block.PrevKernelHash[:], newChain.KernelHash[:]) {
 					panic("PrevHash doesn't match Genesis prevKernelHash")
 				}
-
 			}
 
 			blkComplete.Validate()
@@ -245,12 +244,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			//to detect if the savedBlock was done correctly
 			savedBlock = false
 
-			accs.WriteTransitionalChangesToStore(strconv.FormatUint(blkComplete.Block.Height, 10))
-			toks.WriteTransitionalChangesToStore(strconv.FormatUint(blkComplete.Block.Height, 10))
+			newChain.saveBlockComplete(writer, blkComplete, hash, accs, toks)
+
 			accs.Commit() //it will commit the changes but not save them
 			toks.Commit() //it will commit the changes but not save them
-
-			newChain.saveBlock(writer, blkComplete, hash)
 
 			newChain.PrevHash = newChain.Hash
 			newChain.Hash = hash

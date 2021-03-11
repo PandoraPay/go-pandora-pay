@@ -20,9 +20,9 @@ func (c *Checksum) String() string {
 	return hex.EncodeToString(c[:])
 }
 
-func ConvertHash(s []byte) *Hash {
+func ConvertHash(s []byte) Hash {
 	if HashSize <= len(s) {
-		return (*Hash)(unsafe.Pointer(&s[0]))
+		return *(*Hash)(unsafe.Pointer(&s[0]))
 	}
 	panic("invalid hash")
 }
@@ -30,5 +30,5 @@ func ConvertHash(s []byte) *Hash {
 func RandomHash() (hash Hash) {
 	a := make([]byte, HashSize)
 	rand.Read(a)
-	return *ConvertHash(a)
+	return ConvertHash(a)
 }

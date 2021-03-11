@@ -53,7 +53,7 @@ func (reader *BufferReader) ReadString() string {
 
 func (reader *BufferReader) ReadHash() cryptography.Hash {
 	if len(reader.buf) >= cryptography.HashSize {
-		out := *cryptography.ConvertHash(reader.buf[:cryptography.HashSize])
+		out := cryptography.ConvertHash(reader.buf[:cryptography.HashSize])
 		reader.buf = reader.buf[cryptography.HashSize:]
 		return out
 	}
@@ -62,7 +62,7 @@ func (reader *BufferReader) ReadHash() cryptography.Hash {
 
 func (reader *BufferReader) Read33() [33]byte {
 	if len(reader.buf) >= 33 {
-		out := *Byte33(reader.buf[:33])
+		out := Byte33(reader.buf[:33])
 		reader.buf = reader.buf[33:]
 		return out
 	}
@@ -70,7 +70,7 @@ func (reader *BufferReader) Read33() [33]byte {
 }
 func (reader *BufferReader) Read20() [20]byte {
 	if len(reader.buf) >= 20 {
-		out := *Byte20(reader.buf[:20])
+		out := Byte20(reader.buf[:20])
 		reader.buf = reader.buf[20:]
 		return out
 	}
@@ -78,7 +78,7 @@ func (reader *BufferReader) Read20() [20]byte {
 }
 func (reader *BufferReader) Read65() [65]byte {
 	if len(reader.buf) >= 65 {
-		out := *Byte65(reader.buf[:65])
+		out := Byte65(reader.buf[:65])
 		reader.buf = reader.buf[65:]
 		return out
 	}

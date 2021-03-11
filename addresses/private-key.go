@@ -18,7 +18,7 @@ func (pk *PrivateKey) GeneratePublicKey() [33]byte {
 		panic(err)
 	}
 
-	return *helpers.Byte33(pub)
+	return helpers.Byte33(pub)
 }
 
 func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) *Address {
@@ -36,7 +36,7 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 	var version AddressVersion
 
 	if usePublicKeyHash {
-		publicKeyHash := cryptography.ComputePublicKeyHash(*helpers.Byte33(publicKey))
+		publicKeyHash := cryptography.ComputePublicKeyHash(helpers.Byte33(publicKey))
 		finalPublicKey = publicKeyHash[:]
 		version = SimplePublicKeyHash
 	} else {
@@ -63,10 +63,9 @@ func (pk *PrivateKey) Sign(message cryptography.Hash) [65]byte {
 	if signature, err = ecdsa.Sign(message[:], privateKey); err != nil {
 		panic(err)
 	}
-	return *helpers.Byte65(signature)
+	return helpers.Byte65(signature)
 }
 
 func GenerateNewPrivateKey() *PrivateKey {
-	key := helpers.Byte32(helpers.RandomBytes(32))
-	return &PrivateKey{Key: *key}
+	return &PrivateKey{Key: helpers.Byte32(helpers.RandomBytes(32))}
 }

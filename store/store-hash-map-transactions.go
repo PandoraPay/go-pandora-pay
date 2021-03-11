@@ -26,9 +26,11 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) {
 		panic(err)
 	}
 
-	if err := hashMap.Bucket.Put([]byte("transitions_"+prefix), marshal); err != nil {
-		panic(err)
-	}
+	hashMap.Bucket.Put([]byte("transitions_"+prefix), marshal)
+}
+
+func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) {
+	hashMap.Bucket.Delete([]byte("transitions_" + prefix))
 }
 
 func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) {
@@ -38,7 +40,7 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) {
 	}
 
 	values := make([]transactionChange, 0)
-	if err := json.Unmarshal(data, values); err != nil {
+	if err := json.Unmarshal(data, &values); err != nil {
 		panic(err)
 	}
 

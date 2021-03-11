@@ -80,7 +80,9 @@ func (accounts *Accounts) WriteToStore() {
 func (accounts *Accounts) WriteTransitionalChangesToStore(prefix string) {
 	accounts.HashMap.WriteTransitionalChangesToStore(prefix)
 }
-
 func (accounts *Accounts) ReadTransitionalChangesFromStore(prefix string) {
 	accounts.HashMap.ReadTransitionalChangesFromStore(prefix)
+}
+func (accounts *Accounts) DeleteTransitionalChangesFromStore(prefix string) {
+	accounts.HashMap.DeleteTransitionalChangesFromStore(prefix)
 }

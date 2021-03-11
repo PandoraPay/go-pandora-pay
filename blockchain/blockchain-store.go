@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	bolt "go.etcd.io/bbolt"
 	"math/big"
+	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
+	"pandora-pay/blockchain/tokens"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -46,24 +48,59 @@ func (chain *Blockchain) loadBlock(bucket *bolt.Bucket, hash cryptography.Hash) 
 	return
 }
 
-func (chain *Blockchain) saveBlock(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash cryptography.Hash) {
+func (chain *Blockchain) deleteBlockComplete(bucket *bolt.Bucket, blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
 
-	key := append([]byte("blockHash"), hash[:]...)
+	blockHeightStr := strconv.FormatUint(blockHeight, 10)
+	accs.DeleteTransitionalChangesFromStore(blockHeightStr)
+	toks.DeleteTransitionalChangesFromStore(blockHeightStr)
 
-	bucket.Put(key, blkComplete.Block.Serialize())
+	hash := bucket.Get([]byte("blockHeight" + blockHeightStr))
+	bucket.Delete(append([]byte("blockHash"), hash[:]...))
+	bucket.Delete([]byte("blockHeight" + blockHeightStr))
 
-	key = []byte("blockHeight" + strconv.FormatUint(blkComplete.Block.Height, 10))
-	bucket.Put(key, hash[:])
+	data := bucket.Get([]byte("blockTxs" + blockHeightStr))
+	txHashes := make([]cryptography.Hash, 0)
+
+	if err := json.Unmarshal(data, &txHashes); err != nil {
+		panic(err)
+	}
+	for _, txHash := range txHashes {
+		bucket.Delete(append([]byte("tx"), txHash[:]...))
+	}
+
+	bucket.Delete([]byte("blockTxs" + blockHeightStr))
+}
+
+func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash cryptography.Hash, accs *accounts.Accounts, toks *tokens.Tokens) {
+
+	blockHeightStr := strconv.FormatUint(blkComplete.Block.Height, 10)
+	accs.WriteTransitionalChangesToStore(blockHeightStr)
+	toks.WriteTransitionalChangesToStore(blockHeightStr)
+
+	bucket.Put(append([]byte("blockHash"), hash[:]...), blkComplete.Block.Serialize())
+	bucket.Put([]byte("blockHeight"+blockHeightStr), hash[:])
+
+	txHashes := make([]cryptography.Hash, 0)
+	for _, tx := range blkComplete.Txs {
+		hash := tx.ComputeHash()
+		txHashes = append(txHashes, hash)
+		bucket.Put(append([]byte("tx"), hash[:]...), tx.Serialize())
+	}
+
+	marshal, err := json.Marshal(txHashes)
+	if err != nil {
+		panic(err)
+	}
+	bucket.Put([]byte("blockTxs"+blockHeightStr), marshal)
 }
 
 func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) cryptography.Hash {
-
 	if height < 0 {
 		panic("Height is invalid")
 	}
 
 	key := []byte("blockHeight" + strconv.FormatUint(height, 10))
-	return *cryptography.ConvertHash(bucket.Get(key))
+	return cryptography.ConvertHash(bucket.Get(key))
 }
 
 //chain must be locked before

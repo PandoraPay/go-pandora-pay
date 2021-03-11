@@ -47,9 +47,9 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][]
 		var publicKeyHash [20]byte
 		switch outAddress.Version {
 		case addresses.SimplePublicKeyHash:
-			publicKeyHash = *helpers.Byte20(outAddress.PublicKey)
+			publicKeyHash = helpers.Byte20(outAddress.PublicKey)
 		case addresses.SimplePublicKey:
-			publicKeyHash = cryptography.ComputePublicKeyHash(*helpers.Byte33(outAddress.PublicKey))
+			publicKeyHash = cryptography.ComputePublicKeyHash(helpers.Byte33(outAddress.PublicKey))
 		}
 
 		vout = append(vout, &transaction_simple.TransactionSimpleOutput{
@@ -114,7 +114,7 @@ func CreateDelegateTx(nonce uint64, key [32]byte, delegateAmount uint64, delegat
 	var delegateNewPublicKey [33]byte
 	if delegateNewPubKey != nil {
 		delegateHasNewPublicKey = true
-		delegateNewPublicKey = *helpers.Byte33(delegateNewPubKey)
+		delegateNewPublicKey = helpers.Byte33(delegateNewPubKey)
 	}
 
 	privateKey := addresses.PrivateKey{Key: key}
