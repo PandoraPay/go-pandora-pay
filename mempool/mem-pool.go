@@ -3,7 +3,6 @@ package mempool
 import (
 	"bytes"
 	"fmt"
-	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -31,17 +30,6 @@ type memPoolTx struct {
 	sync.RWMutex `json:"-"`
 }
 
-type memPoolUpdateTask struct {
-	boltTx      *bbolt.Tx
-	chainHash   helpers.Hash
-	chainHeight uint64
-	accs        *accounts.Accounts
-	toks        *tokens.Tokens
-	status      int
-
-	sync.RWMutex `json:"-"`
-}
-
 type memPoolResult struct {
 	txs          []*memPoolTx
 	chainHash    helpers.Hash
@@ -63,15 +51,6 @@ type MemPool struct {
 	result     memPoolResult
 
 	lockWritingTxs sync.RWMutex `json:"-"`
-}
-
-func (mempoolUpdateTask *memPoolUpdateTask) CloseDB() {
-	if mempoolUpdateTask.boltTx != nil {
-		mempoolUpdateTask.boltTx.Rollback()
-		mempoolUpdateTask.boltTx = nil
-		mempoolUpdateTask.accs = nil
-		mempoolUpdateTask.toks = nil
-	}
 }
 
 func (mempool *MemPool) AddTxToMemPoolSilent(tx *transaction.Transaction, height uint64, mine bool) (result bool, err error) {
@@ -163,6 +142,19 @@ func (mempool *MemPool) Delete(txId helpers.Hash) (tx *transaction.Transaction) 
 	return
 }
 
+func (mempool *MemPool) GetTxsList() []*transaction.Transaction {
+
+	list := make([]*transaction.Transaction, 0)
+
+	mempool.txs.Range(func(key, value interface{}) bool {
+		tx := value.(*memPoolTx)
+		list = append(list, tx.tx)
+		return true
+	})
+
+	return list
+}
+
 func (mempool *MemPool) GetTxsListKeyValue() []*memPoolOutput {
 
 	list := make([]*memPoolOutput, 0)
@@ -187,8 +179,8 @@ func (mempool *MemPool) GetTxsListKeyValueFilter(filter map[string]bool) []*memP
 
 	mempool.txs.Range(func(key, value interface{}) bool {
 		hash := key.(helpers.Hash)
-		tx := value.(*memPoolTx)
 		if !filter[string(hash[:])] {
+			tx := value.(*memPoolTx)
 			list = append(list, &memPoolOutput{
 				hash:    hash,
 				hashStr: string(hash[:]),
@@ -338,6 +330,25 @@ func (mempool *MemPool) Refresh() {
 		}
 
 	}
+}
+
+func (mempool *MemPool) GetNonce(publicKeyHash [20]byte) (result bool, nonce uint64) {
+
+	txs := mempool.GetTxsList()
+	for _, tx := range txs {
+		if tx.TxType == transaction_type.TxSimple {
+			base := tx.TxBase.(*transaction_simple.TransactionSimple)
+			txPublicKeyHash := base.Vin[0].GetPublicKeyHash()
+			if bytes.Equal(txPublicKeyHash[:], publicKeyHash[:]) {
+				result = true
+				if nonce <= base.Nonce {
+					nonce = base.Nonce + 1
+				}
+			}
+		}
+	}
+
+	return
 }
 
 func (mempool *MemPool) GetTransactions(blockHeight uint64, chainHash helpers.Hash) []*transaction.Transaction {

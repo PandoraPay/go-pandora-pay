@@ -9,13 +9,15 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/blockchain/transactions/wizard"
+	"pandora-pay/mempool"
 	"pandora-pay/store"
 	"pandora-pay/wallet"
 )
 
 type TransactionsBuilder struct {
-	wallet *wallet.Wallet
-	chain  *blockchain.Blockchain
+	wallet  *wallet.Wallet
+	memPool *mempool.MemPool
+	chain   *blockchain.Blockchain
 }
 
 func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction) {
@@ -41,7 +43,11 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint
 				panic("Not enough funds")
 			}
 			if i == 0 {
-				nonce = account.Nonce
+				var result bool
+				result, nonce = builder.memPool.GetNonce(fromWalletAddress.PublicKeyHash)
+				if !result {
+					nonce = account.Nonce
+				}
 			}
 			keys = append(keys, fromWalletAddress.PrivateKey.Key)
 		}
@@ -79,7 +85,12 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount u
 			panic("You don't have enough staked coins")
 		}
 
-		tx = wizard.CreateUnstakeTx(account.Nonce, fromWalletAddress.PrivateKey.Key, unstakeAmount, feePerByte, feeToken, payFeeInExtra)
+		result, nonce := builder.memPool.GetNonce(fromWalletAddress.PublicKeyHash)
+		if !result {
+			nonce = account.Nonce
+		}
+
+		tx = wizard.CreateUnstakeTx(nonce, fromWalletAddress.PrivateKey.Key, unstakeAmount, feePerByte, feeToken, payFeeInExtra)
 		if account.GetDelegatedStakeAvailable(chainHeight) < tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Amount+tx.TxBase.(*transaction_simple.TransactionSimple).Extra.(*transaction_simple_extra.TransactionSimpleUnstake).UnstakeFeeExtra {
 			panic("You don't have enough staked coins to pay for the fee")
 		}
@@ -93,9 +104,10 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount u
 	return
 }
 
-func TransactionsBuilderInit(wallet *wallet.Wallet, chain *blockchain.Blockchain) *TransactionsBuilder {
+func TransactionsBuilderInit(wallet *wallet.Wallet, memPool *mempool.MemPool, chain *blockchain.Blockchain) *TransactionsBuilder {
 	return &TransactionsBuilder{
-		wallet: wallet,
-		chain:  chain,
+		wallet:  wallet,
+		chain:   chain,
+		memPool: memPool,
 	}
 }

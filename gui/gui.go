@@ -62,7 +62,15 @@ func GUIInit() {
 
 			select {
 			case e := <-uiEvents:
-				cmdProcess(e)
+				switch e.ID {
+				case "<Resize>":
+					payload := e.Payload.(ui.Resize)
+					grid.SetRect(0, 0, payload.Width, payload.Height)
+					ui.Clear()
+					ui.Render(grid)
+				default:
+					cmdProcess(e)
+				}
 			case <-ticker:
 				infoProcess()
 				info2Process()

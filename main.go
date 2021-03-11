@@ -77,7 +77,7 @@ func main() {
 	myChain := blockchain.BlockchainInit(myForging, myMempool)
 	globals.Data["chain"] = myChain
 
-	myTransactionsBuilder := transactions_builder.TransactionsBuilderInit(myWallet, myChain)
+	myTransactionsBuilder := transactions_builder.TransactionsBuilderInit(myWallet, myMempool, myChain)
 	globals.Data["transactionsBuilder"] = myTransactionsBuilder
 
 	if globals.Arguments["--new-devnet"] == true {
