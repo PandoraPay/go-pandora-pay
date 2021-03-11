@@ -1,6 +1,10 @@
 package helpers
 
-import "encoding/binary"
+import (
+	"bytes"
+	"encoding/binary"
+	"pandora-pay/config"
+)
 
 type BufferWriter struct {
 	array [][]byte
@@ -49,12 +53,12 @@ func (writer *BufferWriter) WriteUvarint(value uint64) {
 
 }
 
-func (writer *BufferWriter) WriteToken(token []byte) {
-	if len(token) == 0 {
+func (writer *BufferWriter) WriteToken(token *[20]byte) {
+	if bytes.Equal(token[:], config.EMPTY_20BYTES[:]) {
 		writer.WriteByte(0)
 	} else {
 		writer.WriteByte(1)
-		writer.Write(token)
+		writer.Write(token[:])
 	}
 }
 

@@ -19,22 +19,22 @@ func SHA3(b []byte) []byte {
 	return h.Sum(nil)
 }
 
-func RIPEMD(b []byte) [20]byte {
+func RIPEMD(b []byte) *[20]byte {
 	h := ripemd160.New()
 	h.Write(b)
 	s := h.Sum(nil)
 	if 20 <= len(s) {
-		return *(*[20]byte)(unsafe.Pointer(&s[0]))
+		return (*[20]byte)(unsafe.Pointer(&s[0]))
 	}
 	panic("invalid byte20 length")
 }
 
 func GetChecksum(b []byte) Checksum {
-	s := RIPEMD(b)
+	s := *RIPEMD(b)
 	return *(*[ChecksumSize]byte)(unsafe.Pointer(&s[0]))
 }
 
-func ComputePublicKeyHash(publicKey [33]byte) [20]byte {
+func ComputePublicKeyHash(publicKey *[33]byte) *[20]byte {
 	return RIPEMD(SHA3(publicKey[:]))
 }
 

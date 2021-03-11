@@ -1,6 +1,7 @@
 package block
 
 import (
+	"bytes"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/blockchain/tokens"
@@ -37,10 +38,10 @@ func (blk *Block) Verify() {
 	}
 }
 
-func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allFees map[string]uint64) {
+func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allFees map[[20]byte]uint64) {
 
 	reward := reward.GetRewardAt(blk.Height)
-	acc := acs.GetAccountEvenEmpty(blk.Forger)
+	acc := acs.GetAccountEvenEmpty(&blk.Forger)
 	acc.RefreshDelegatedStake(blk.Height)
 
 	//for genesis block
@@ -51,17 +52,17 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 	}
 
 	acc.DelegatedStake.AddStakePendingStake(reward, blk.Height)
-	acc.DelegatedStake.AddStakePendingStake(allFees[config.NATIVE_TOKEN_STRING], blk.Height)
+	acc.DelegatedStake.AddStakePendingStake(allFees[config.NATIVE_TOKEN_FULL], blk.Height)
 	for key, value := range allFees {
-		if key != config.NATIVE_TOKEN_STRING {
-			acc.AddBalance(true, value, []byte(key))
+		if bytes.Equal(key[:], config.NATIVE_TOKEN_FULL[:]) {
+			acc.AddBalance(true, value, &key)
 		}
 	}
-	acs.UpdateAccount(blk.Forger, acc)
+	acs.UpdateAccount(&blk.Forger, acc)
 
-	tok := toks.GetToken(config.NATIVE_TOKEN_FULL)
+	tok := toks.GetToken(&config.NATIVE_TOKEN_FULL)
 	tok.AddSupply(true, reward)
-	toks.UpdateToken(config.NATIVE_TOKEN_FULL, tok)
+	toks.UpdateToken(&config.NATIVE_TOKEN_FULL, tok)
 
 }
 

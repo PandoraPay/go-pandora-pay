@@ -23,11 +23,11 @@ func NewAccounts(tx *bbolt.Tx) (accounts *Accounts) {
 	return
 }
 
-func (accounts *Accounts) GetAccountEvenEmpty(key [20]byte) (acc *account.Account) {
+func (accounts *Accounts) GetAccountEvenEmpty(key *[20]byte) (acc *account.Account) {
 
 	acc = new(account.Account)
 
-	data := accounts.HashMap.Get(key[:])
+	data := accounts.HashMap.Get(key)
 	if data == nil {
 		return
 	}
@@ -36,9 +36,9 @@ func (accounts *Accounts) GetAccountEvenEmpty(key [20]byte) (acc *account.Accoun
 	return
 }
 
-func (accounts *Accounts) GetAccount(key [20]byte) *account.Account {
+func (accounts *Accounts) GetAccount(key *[20]byte) *account.Account {
 
-	data := accounts.HashMap.Get(key[:])
+	data := accounts.HashMap.Get(key)
 	if data == nil {
 		return nil
 	}
@@ -49,20 +49,20 @@ func (accounts *Accounts) GetAccount(key [20]byte) *account.Account {
 	return acc
 }
 
-func (accounts *Accounts) UpdateAccount(key [20]byte, acc *account.Account) {
+func (accounts *Accounts) UpdateAccount(key *[20]byte, acc *account.Account) {
 	if acc.IsAccountEmpty() {
-		accounts.HashMap.Delete(key[:])
+		accounts.HashMap.Delete(key)
 		return
 	}
-	accounts.HashMap.Update(key[:], acc.Serialize())
+	accounts.HashMap.Update(key, acc.Serialize())
 }
 
-func (accounts *Accounts) ExistsAccount(key [20]byte) bool {
-	return accounts.HashMap.Exists(key[:])
+func (accounts *Accounts) ExistsAccount(key *[20]byte) bool {
+	return accounts.HashMap.Exists(key)
 }
 
-func (accounts *Accounts) DeleteAccount(key [20]byte) {
-	accounts.HashMap.Delete(key[:])
+func (accounts *Accounts) DeleteAccount(key *[20]byte) {
+	accounts.HashMap.Delete(key)
 }
 
 func (accounts *Accounts) Rollback() {

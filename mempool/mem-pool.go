@@ -24,7 +24,7 @@ type memPoolTx struct {
 	mine        bool
 	size        uint64
 	feePerByte  uint64
-	feeToken    []byte
+	feeToken    *[20]byte
 	chainHeight uint64
 
 	sync.RWMutex `json:"-"`
@@ -73,7 +73,7 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 	minerFees := tx.ComputeFees()
 
 	size := uint64(len(tx.Serialize()))
-	var selectedFeeToken *string
+	var selectedFeeToken *[20]byte
 	var selectedFee uint64
 
 	for token := range fees.FEES_PER_BYTE {
@@ -89,9 +89,8 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 
 	//if it is mine and no fee was paid, let's fake a fee
 	if mine && selectedFeeToken == nil {
-		nativeFee := config.NATIVE_TOKEN_STRING
-		selectedFeeToken = &nativeFee
-		selectedFee = fees.FEES_PER_BYTE[config.NATIVE_TOKEN_STRING]
+		selectedFeeToken = &config.NATIVE_TOKEN_FULL
+		selectedFee = fees.FEES_PER_BYTE[config.NATIVE_TOKEN_FULL]
 	}
 
 	if selectedFeeToken == nil {
@@ -103,7 +102,7 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 		added:       time.Now().Unix(),
 		size:        size,
 		feePerByte:  selectedFee / size,
-		feeToken:    []byte(*selectedFeeToken),
+		feeToken:    selectedFeeToken,
 		mine:        mine,
 		chainHeight: height,
 	}

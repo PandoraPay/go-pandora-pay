@@ -12,7 +12,7 @@ import (
 
 type ForgingWallet struct {
 	addresses    []*ForgingWalletAddress
-	addressesMap map[string]*ForgingWalletAddress
+	addressesMap map[[20]byte]*ForgingWalletAddress
 
 	sync.RWMutex
 }
@@ -37,31 +37,22 @@ func (w *ForgingWallet) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte,
 	w.Lock()
 	defer w.Unlock()
 
-	//make a clone to be memory safe
-	var privateKey [32]byte
-	var publicKey [33]byte
-	var publicKeyHash [20]byte
-
-	copy(privateKey[:], delegatedPriv[:])
-	copy(publicKey[:], delegatedPub[:])
-	copy(publicKeyHash[:], pubKeyHash[:])
-
-	private := addresses.PrivateKey{Key: privateKey}
+	private := addresses.PrivateKey{Key: delegatedPriv}
 
 	store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
 
 		accs := accounts.NewAccounts(tx)
 
-		acc := accs.GetAccount(publicKeyHash)
+		acc := accs.GetAccount(&pubKeyHash)
 
 		address := ForgingWalletAddress{
 			&private,
-			publicKey,
-			publicKeyHash,
+			delegatedPub,
+			pubKeyHash,
 			acc,
 		}
 		w.addresses = append(w.addresses, &address)
-		w.addressesMap[string(pubKeyHash[:])] = &address
+		w.addressesMap[pubKeyHash] = &address
 
 		return
 	})
@@ -115,7 +106,7 @@ func (w *ForgingWallet) loadBalances() error {
 
 		for _, address := range w.addresses {
 
-			account := accs.GetAccount(address.publicKeyHash)
+			account := accs.GetAccount(&address.publicKeyHash)
 			address.account = account
 
 		}

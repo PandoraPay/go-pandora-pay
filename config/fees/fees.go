@@ -3,8 +3,8 @@ package fees
 import "pandora-pay/config"
 
 var (
-	FEES_PER_BYTE = map[string]uint64{
-		config.NATIVE_TOKEN_STRING: 10,
+	FEES_PER_BYTE = map[[20]byte]uint64{
+		config.NATIVE_TOKEN_FULL: 10,
 	}
 )
 

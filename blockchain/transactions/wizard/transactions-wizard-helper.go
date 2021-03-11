@@ -20,14 +20,14 @@ func setFeeTxNow(tx *transaction.Transaction, feePerByte, initAmount uint64, val
 	return
 }
 
-func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFeeInExtra bool) {
+func setFee(tx *transaction.Transaction, feePerByte int, feeToken *[20]byte, payFeeInExtra bool) {
 
 	if feePerByte == 0 {
 		return
 	}
 
 	if feePerByte == -1 {
-		feePerByte = int(fees.FEES_PER_BYTE[string(feeToken)])
+		feePerByte = int(fees.FEES_PER_BYTE[*feeToken])
 		if feePerByte == 0 {
 			panic("The token will most like not be accepted by other miners")
 		}
@@ -50,7 +50,7 @@ func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFee
 			} else {
 
 				for _, vin := range tx.TxBase.(*transaction_simple.TransactionSimple).Vin {
-					if bytes.Equal(vin.Token, feeToken) {
+					if bytes.Equal(vin.Token[:], feeToken[:]) {
 						setFeeTxNow(tx, uint64(feePerByte), vin.Amount, &vin.Amount)
 						return
 					}

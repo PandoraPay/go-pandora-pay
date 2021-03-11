@@ -5,13 +5,13 @@ import "pandora-pay/helpers"
 type TransactionSimpleOutput struct {
 	PublicKeyHash [20]byte
 	Amount        uint64
-	Token         []byte
+	Token         [20]byte
 }
 
 func (vout *TransactionSimpleOutput) Serialize(writer *helpers.BufferWriter) {
 	writer.Write(vout.PublicKeyHash[:])
 	writer.WriteUvarint(vout.Amount)
-	writer.WriteToken(vout.Token[:])
+	writer.WriteToken(&vout.Token)
 }
 
 func (vout *TransactionSimpleOutput) Deserialize(reader *helpers.BufferReader) {

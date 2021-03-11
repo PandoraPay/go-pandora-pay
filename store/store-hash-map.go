@@ -17,8 +17,8 @@ type ChangesMapElement struct {
 
 type HashMap struct {
 	Bucket    *bbolt.Bucket
-	Changes   map[string]*ChangesMapElement
-	Committed map[string]*CommitedMapElement
+	Changes   map[[20]byte]*ChangesMapElement
+	Committed map[[20]byte]*CommitedMapElement
 	KeyLength int
 }
 
@@ -29,37 +29,36 @@ func CreateNewHashMap(tx *bbolt.Tx, name string, keyLength int) (hashMap *HashMa
 	}
 
 	hashMap = &HashMap{
-		Committed: make(map[string]*CommitedMapElement),
-		Changes:   make(map[string]*ChangesMapElement),
+		Committed: make(map[[20]byte]*CommitedMapElement),
+		Changes:   make(map[[20]byte]*ChangesMapElement),
 		Bucket:    tx.Bucket([]byte(name)),
 		KeyLength: keyLength,
 	}
 	return
 }
 
-func (hashMap *HashMap) Get(key []byte) (out []byte) {
+func (hashMap *HashMap) Get(key *[20]byte) (out []byte) {
 	return hashMap.get(key, true)
 }
 
-func (hashMap *HashMap) get(key []byte, includeChanges bool) (out []byte) {
-	keyStr := string(key)
+func (hashMap *HashMap) get(key *[20]byte, includeChanges bool) (out []byte) {
 
 	if includeChanges {
-		exists := hashMap.Changes[keyStr]
+		exists := hashMap.Changes[*key]
 		if exists != nil {
 			out = exists.Data
 			return
 		}
 	}
 
-	exists2 := hashMap.Committed[keyStr]
+	exists2 := hashMap.Committed[*key]
 	if exists2 != nil {
 		out = exists2.Data
 		return
 	}
 
-	out = hashMap.Bucket.Get(key)
-	hashMap.Committed[keyStr] = &CommitedMapElement{
+	out = hashMap.Bucket.Get(key[:])
+	hashMap.Committed[*key] = &CommitedMapElement{
 		out,
 		"view",
 		"",
@@ -67,21 +66,20 @@ func (hashMap *HashMap) get(key []byte, includeChanges bool) (out []byte) {
 	return
 }
 
-func (hashMap *HashMap) Exists(key []byte) bool {
-	keyStr := string(key)
+func (hashMap *HashMap) Exists(key *[20]byte) bool {
 
-	exists := hashMap.Changes[keyStr]
+	exists := hashMap.Changes[*key]
 	if exists != nil {
 		return exists.Data != nil
 	}
 
-	exists2 := hashMap.Committed[keyStr]
+	exists2 := hashMap.Committed[*key]
 	if exists2 != nil {
 		return exists2.Data != nil
 	}
 
-	out := hashMap.Bucket.Get(key)
-	hashMap.Committed[keyStr] = &CommitedMapElement{
+	out := hashMap.Bucket.Get(key[:])
+	hashMap.Committed[*key] = &CommitedMapElement{
 		out,
 		"view",
 		"",
@@ -89,14 +87,12 @@ func (hashMap *HashMap) Exists(key []byte) bool {
 	return out != nil
 }
 
-func (hashMap *HashMap) Update(key []byte, data []byte) {
+func (hashMap *HashMap) Update(key *[20]byte, data []byte) {
 
-	keyStr := string(key)
-
-	exists := hashMap.Changes[keyStr]
+	exists := hashMap.Changes[*key]
 	if exists == nil {
 		exists = new(ChangesMapElement)
-		hashMap.Changes[keyStr] = exists
+		hashMap.Changes[*key] = exists
 	}
 	exists.Data = data
 	exists.Status = "update"
@@ -104,14 +100,12 @@ func (hashMap *HashMap) Update(key []byte, data []byte) {
 	return
 }
 
-func (hashMap *HashMap) Delete(key []byte) {
+func (hashMap *HashMap) Delete(key *[20]byte) {
 
-	keyStr := string(key)
-
-	exists := hashMap.Changes[keyStr]
+	exists := hashMap.Changes[*key]
 	if exists == nil {
 		exists = new(ChangesMapElement)
-		hashMap.Changes[keyStr] = exists
+		hashMap.Changes[*key] = exists
 	}
 	exists.Status = "del"
 	exists.Data = nil
@@ -120,11 +114,6 @@ func (hashMap *HashMap) Delete(key []byte) {
 
 func (hashMap *HashMap) Commit() {
 	for k, v := range hashMap.Changes {
-
-		key := []byte(k)
-		if len(key) != hashMap.KeyLength {
-			panic("KeyLength is invalid")
-		}
 
 		if v.Status == "del" || v.Status == "update" {
 
@@ -147,30 +136,25 @@ func (hashMap *HashMap) Commit() {
 		}
 
 	}
-	hashMap.Changes = make(map[string]*ChangesMapElement)
+	hashMap.Changes = make(map[[20]byte]*ChangesMapElement)
 }
 
 func (hashMap *HashMap) Rollback() {
-	hashMap.Changes = make(map[string]*ChangesMapElement)
+	hashMap.Changes = make(map[[20]byte]*ChangesMapElement)
 }
 
 func (hashMap *HashMap) WriteToStore() {
 
 	for k, v := range hashMap.Committed {
 
-		key := []byte(k)
-		if len(key) != hashMap.KeyLength {
-			panic("KeyLength is invalid")
-		}
-
 		if v.Status == "del" {
-			if err := hashMap.Bucket.Delete(key); err != nil {
+			if err := hashMap.Bucket.Delete(k[:]); err != nil {
 				panic(err)
 			}
 			v.Status = "view"
 			v.Commit = "del"
 		} else if v.Status == "update" {
-			if err := hashMap.Bucket.Put(key, v.Data); err != nil {
+			if err := hashMap.Bucket.Put(k[:], v.Data); err != nil {
 				panic(err)
 			}
 			v.Commit = "update"

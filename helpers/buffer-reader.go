@@ -62,7 +62,7 @@ func (reader *BufferReader) ReadHash() cryptography.Hash {
 
 func (reader *BufferReader) Read33() [33]byte {
 	if len(reader.buf) >= 33 {
-		out := Byte33(reader.buf[:33])
+		out := *Byte33(reader.buf[:33])
 		reader.buf = reader.buf[33:]
 		return out
 	}
@@ -70,7 +70,7 @@ func (reader *BufferReader) Read33() [33]byte {
 }
 func (reader *BufferReader) Read20() [20]byte {
 	if len(reader.buf) >= 20 {
-		out := Byte20(reader.buf[:20])
+		out := *Byte20(reader.buf[:20])
 		reader.buf = reader.buf[20:]
 		return out
 	}
@@ -78,21 +78,21 @@ func (reader *BufferReader) Read20() [20]byte {
 }
 func (reader *BufferReader) Read65() [65]byte {
 	if len(reader.buf) >= 65 {
-		out := Byte65(reader.buf[:65])
+		out := *Byte65(reader.buf[:65])
 		reader.buf = reader.buf[65:]
 		return out
 	}
 	panic("Error reading 65byte ")
 }
 
-func (reader *BufferReader) ReadToken() []byte {
+func (reader *BufferReader) ReadToken() [20]byte {
 
 	tokenType := reader.ReadByte()
 
 	if tokenType == 0 {
-		return []byte{}
+		return [20]byte{}
 	} else if tokenType == 1 {
-		return reader.ReadBytes(20)
+		return *Byte20(reader.ReadBytes(20))
 	}
 	panic("invalid token type")
 }

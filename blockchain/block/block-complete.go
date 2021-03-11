@@ -51,7 +51,7 @@ func (blkComplete *BlockComplete) VerifyMerkleHash() bool {
 
 func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, toks *tokens.Tokens) {
 
-	allFees := make(map[string]uint64)
+	allFees := make(map[[20]byte]uint64)
 	for _, tx := range blkComplete.Txs {
 		tx.AddFees(allFees)
 	}

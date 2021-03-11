@@ -11,7 +11,7 @@ type PrivateKey struct {
 	Key [32]byte
 }
 
-func (pk *PrivateKey) GeneratePublicKey() [33]byte {
+func (pk *PrivateKey) GeneratePublicKey() *[33]byte {
 
 	pub, err := ecdsa.ComputePublicKey(pk.Key[:])
 	if err != nil {
@@ -53,7 +53,7 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 	}
 }
 
-func (pk *PrivateKey) Sign(message cryptography.Hash) [65]byte {
+func (pk *PrivateKey) Sign(message cryptography.Hash) *[65]byte {
 	privateKey, err := ecdsa.ToECDSA(pk.Key[:])
 	if err != nil {
 		panic(err)
@@ -67,5 +67,5 @@ func (pk *PrivateKey) Sign(message cryptography.Hash) [65]byte {
 }
 
 func GenerateNewPrivateKey() *PrivateKey {
-	return &PrivateKey{Key: helpers.Byte32(helpers.RandomBytes(32))}
+	return &PrivateKey{Key: *helpers.Byte32(helpers.RandomBytes(32))}
 }

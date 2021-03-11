@@ -20,7 +20,7 @@ type TransactionsBuilder struct {
 	chain   *blockchain.Blockchain
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction) {
+func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint64, tokens [][20]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][20]byte, feePerByte int, feeToken [20]byte) (tx *transaction.Transaction) {
 
 	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
 		reader := boltTx.Bucket([]byte("Chain"))
@@ -33,12 +33,12 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint
 		var keys [][32]byte
 		for i, fromAddress := range from {
 			fromWalletAddress := builder.wallet.GetWalletAddressByAddress(fromAddress)
-			account := accs.GetAccount(fromWalletAddress.PublicKeyHash)
+			account := accs.GetAccount(&fromWalletAddress.PublicKeyHash)
 			if account == nil {
 				panic("Account doesn't exist")
 			}
 
-			available := account.GetAvailableBalance(chainHeight, tokens[i])
+			available := account.GetAvailableBalance(chainHeight, &tokens[i])
 			if available < amounts[i] {
 				panic("Not enough funds")
 			}
@@ -55,8 +55,8 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint
 		tx = wizard.CreateSimpleTx(nonce, keys, amounts, tokens, dsts, dstsAmounts, dstsTokens, feePerByte, feeToken)
 		for i, fromAddress := range from {
 			fromWalletAddress := builder.wallet.GetWalletAddressByAddress(fromAddress)
-			account := accs.GetAccountEvenEmpty(fromWalletAddress.PublicKeyHash)
-			if account.GetAvailableBalance(chainHeight, tokens[i]) < tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Amount {
+			account := accs.GetAccountEvenEmpty(&fromWalletAddress.PublicKeyHash)
+			if account.GetAvailableBalance(chainHeight, &tokens[i]) < tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Amount {
 				panic("You don't have enough coins to pay for the fee")
 			}
 		}
@@ -69,7 +69,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint
 	return
 }
 
-func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction) {
+func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount uint64, feePerByte int, feeToken [20]byte, payFeeInExtra bool) (tx *transaction.Transaction) {
 	fromWalletAddress := builder.wallet.GetWalletAddressByAddress(from)
 
 	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
@@ -77,7 +77,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount u
 		buffer := reader.Get([]byte("chainHeight"))
 		chainHeight, _ := binary.Uvarint(buffer)
 
-		account := accounts.NewAccounts(boltTx).GetAccount(fromWalletAddress.PublicKeyHash)
+		account := accounts.NewAccounts(boltTx).GetAccount(&fromWalletAddress.PublicKeyHash)
 		if account == nil {
 			panic("Account doesn't exist")
 		}

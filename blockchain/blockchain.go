@@ -191,7 +191,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			var stakingAmount uint64
 			if blkComplete.Block.Height > 0 {
 
-				acc := accs.GetAccount(blkComplete.Block.Forger)
+				acc := accs.GetAccount(&blkComplete.Block.Forger)
 				if acc == nil || !acc.HasDelegatedStake() {
 					panic("Forger Account deson't exist or hasn't delegated stake")
 				}

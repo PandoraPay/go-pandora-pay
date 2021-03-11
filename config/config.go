@@ -41,6 +41,8 @@ var (
 	BIG_INT_MAX_256 = new(big.Int).Lsh(BIG_INT_ONE, 256) // 0xFFFFFFFF....
 
 	BIG_FLOAT_MAX_256 = new(big.Float).SetInt(BIG_INT_MAX_256) // 0xFFFFFFFF....
+
+	EMPTY_20BYTES = [20]byte{}
 )
 
 func InitConfig() {

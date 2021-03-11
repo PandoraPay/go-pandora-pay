@@ -25,7 +25,7 @@ type Testnet struct {
 
 func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight, amount uint64) {
 
-	tx := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].AddressEncoded, amount, -1, []byte{}, true)
+	tx := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].AddressEncoded, amount, -1, [20]byte{}, true)
 	hash := tx.ComputeHash()
 	gui.Info("Unstake transaction was created: " + hex.EncodeToString(hash[:]))
 
@@ -38,17 +38,17 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight, amount uint64) {
 func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) {
 	dsts := make([]string, 0)
 	dstsAmounts := make([]uint64, 0)
-	dstsTokens := make([][]byte, 0)
+	dstsTokens := make([][20]byte, 0)
 	for i := uint64(0); i < testnet.nodes; i++ {
 		if uint64(len(testnet.wallet.Addresses)) <= i+1 {
 			testnet.wallet.AddNewAddress()
 		}
 		dsts = append(dsts, testnet.wallet.Addresses[i+1].AddressEncoded)
 		dstsAmounts = append(dstsAmounts, stake.GetRequiredStake(blockHeight))
-		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
+		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN_FULL)
 	}
 
-	tx := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
+	tx := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][20]byte{config.NATIVE_TOKEN_FULL}, dsts, dstsAmounts, dstsTokens, 0, [20]byte{})
 	hash := tx.ComputeHash()
 	gui.Info("Create Transfers transaction was created: " + hex.EncodeToString(hash[:]))
 
@@ -61,7 +61,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) {
 func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) {
 	dsts := make([]string, 0)
 	dstsAmounts := make([]uint64, 0)
-	dstsTokens := make([][]byte, 0)
+	dstsTokens := make([][20]byte, 0)
 
 	count := rand.Intn(19) + 1
 	sum := uint64(0)
@@ -71,11 +71,11 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) {
 		dsts = append(dsts, addr.EncodeAddr())
 		amount := uint64(rand.Int63n(6))
 		dstsAmounts = append(dstsAmounts, amount)
-		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
+		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN_FULL)
 		sum += amount
 	}
 
-	tx := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
+	tx := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, []uint64{sum}, [][20]byte{config.NATIVE_TOKEN_FULL}, dsts, dstsAmounts, dstsTokens, 0, [20]byte{})
 	hash := tx.ComputeHash()
 	gui.Info("Create Transfers transaction was created: " + hex.EncodeToString(hash[:]))
 

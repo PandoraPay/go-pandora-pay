@@ -37,7 +37,7 @@ func (account *Account) IncrementNonce(sign bool) {
 	helpers.SafeUint64Update(sign, &account.Nonce, 1)
 }
 
-func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) {
+func (account *Account) AddBalance(sign bool, amount uint64, tok *[20]byte) {
 
 	if amount == 0 {
 		return
@@ -57,7 +57,7 @@ func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) {
 	if sign {
 		if foundBalance == nil {
 			foundBalance = &Balance{
-				Token: tok,
+				Token: *tok,
 			}
 			account.Balances = append(account.Balances, foundBalance)
 		}
@@ -91,7 +91,7 @@ func (account *Account) RefreshDelegatedStake(blockHeight uint64) {
 			if stakePending.PendingType == true {
 				helpers.SafeUint64Add(&account.DelegatedStake.StakeAvailable, stakePending.PendingAmount)
 			} else {
-				account.AddBalance(true, stakePending.PendingAmount, config.NATIVE_TOKEN)
+				account.AddBalance(true, stakePending.PendingAmount, &config.NATIVE_TOKEN_FULL)
 			}
 			account.DelegatedStake.StakesPending = append(account.DelegatedStake.StakesPending[:i], account.DelegatedStake.StakesPending[i+1:]...)
 		}
@@ -111,11 +111,11 @@ func (account *Account) GetDelegatedStakeAvailable(blockHeight uint64) uint64 {
 	return account.DelegatedStake.GetDelegatedStakeAvailable(blockHeight)
 }
 
-func (account *Account) GetAvailableBalance(blockHeight uint64, token []byte) (result uint64) {
+func (account *Account) GetAvailableBalance(blockHeight uint64, token *[20]byte) (result uint64) {
 	for _, balance := range account.Balances {
-		if bytes.Equal(balance.Token, token) {
+		if bytes.Equal(balance.Token[:], token[:]) {
 			result = balance.Amount
-			if bytes.Equal(token, config.NATIVE_TOKEN) && account.DelegatedStakeVersion == 1 {
+			if bytes.Equal(token[:], config.NATIVE_TOKEN_FULL[:]) && account.DelegatedStakeVersion == 1 {
 				helpers.SafeUint64Add(&result, account.DelegatedStake.GetDelegatedUnstakeAvailable(blockHeight))
 			}
 			return

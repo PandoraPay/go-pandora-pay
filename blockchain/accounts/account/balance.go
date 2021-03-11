@@ -6,12 +6,12 @@ import (
 
 type Balance struct {
 	Amount uint64
-	Token  []byte
+	Token  [20]byte
 }
 
 func (balance *Balance) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(balance.Amount)
-	writer.WriteToken(balance.Token)
+	writer.WriteToken(&balance.Token)
 }
 
 func (balance *Balance) Deserialize(reader *helpers.BufferReader) {

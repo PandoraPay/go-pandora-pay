@@ -37,7 +37,7 @@ func initWalletCLI(wallet *Wallet) {
 				if walletAddress.Address.Version == addresses.SimplePublicKeyHash ||
 					walletAddress.Address.Version == addresses.SimplePublicKey {
 
-					acc := accs.GetAccount(walletAddress.PublicKeyHash)
+					acc := accs.GetAccount(&walletAddress.PublicKeyHash)
 
 					if acc == nil {
 						gui.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))
@@ -46,7 +46,7 @@ func initWalletCLI(wallet *Wallet) {
 							gui.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", ""))
 							for _, balance := range acc.Balances {
 
-								token := toks.GetAnyToken(balance.Token)
+								token := toks.GetAnyToken(&balance.Token)
 								gui.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatUint(config.ConvertToBase(balance.Amount), 10), token.Name))
 							}
 						} else {
