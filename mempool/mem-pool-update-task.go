@@ -4,13 +4,13 @@ import (
 	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
-	"pandora-pay/helpers"
+	"pandora-pay/cryptography"
 	"sync"
 )
 
 type memPoolUpdateTask struct {
 	boltTx      *bbolt.Tx
-	chainHash   helpers.Hash
+	chainHash   cryptography.Hash
 	chainHeight uint64
 	accs        *accounts.Accounts
 	toks        *tokens.Tokens

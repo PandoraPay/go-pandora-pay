@@ -12,7 +12,7 @@ type Settings struct {
 	Name string
 	Port uint16
 
-	Checksum [4]byte
+	Checksum cryptography.Checksum
 
 	sync.RWMutex `json:"-"`
 }
@@ -64,14 +64,14 @@ func (settings *Settings) updateSettings() {
 	gui.InfoUpdate("Node", settings.Name)
 }
 
-func (settings *Settings) computeChecksum() (checksum [4]byte) {
+func (settings *Settings) computeChecksum() (checksum cryptography.Checksum) {
 
 	data, err := helpers.GetJSON(settings, "Checksum")
 	if err != nil {
 		panic(err)
 	}
 
-	out := cryptography.RIPEMD(data)[0:helpers.ChecksumSize]
+	out := cryptography.GetChecksum(data)
 	copy(checksum[:], out[:])
 	return
 

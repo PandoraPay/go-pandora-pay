@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"pandora-pay/config"
+	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"strconv"
@@ -15,7 +16,7 @@ var (
 	DIFFICULTY_MAX_CHANGE_FACTOR = new(big.Float).SetFloat64(2)
 )
 
-func ConvertHashToDifficulty(hash helpers.Hash) *big.Int {
+func ConvertHashToDifficulty(hash cryptography.Hash) *big.Int {
 	return new(big.Int).Div(config.BIG_INT_MAX_256, new(big.Int).SetBytes(hash[:]))
 }
 
@@ -33,7 +34,7 @@ func ConvertDifficultyToBig(difficulty uint64) *big.Int {
 	return new(big.Int).Div(config.BIG_INT_MAX_256, difficultyInt)
 }
 
-func CheckKernelHashBig(kernelHash helpers.Hash, difficulty *big.Int) bool {
+func CheckKernelHashBig(kernelHash cryptography.Hash, difficulty *big.Int) bool {
 	return new(big.Int).SetBytes(kernelHash[:]).Cmp(difficulty) <= 0
 }
 

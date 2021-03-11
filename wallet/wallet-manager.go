@@ -131,14 +131,14 @@ func (wallet *Wallet) updateWallet() {
 	gui.InfoUpdate("Wallet Addrs", strconv.Itoa(wallet.Count))
 }
 
-func (wallet *Wallet) computeChecksum() (checksum [4]byte) {
+func (wallet *Wallet) computeChecksum() (checksum cryptography.Checksum) {
 
 	data, err := helpers.GetJSON(wallet, "Checksum")
 	if err != nil {
 		panic(err)
 	}
 
-	out := cryptography.RIPEMD(data)[0:helpers.ChecksumSize]
+	out := cryptography.GetChecksum(data)
 	copy(checksum[:], out[:])
 
 	return

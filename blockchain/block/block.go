@@ -13,10 +13,10 @@ import (
 
 type Block struct {
 	BlockHeader
-	MerkleHash helpers.Hash
+	MerkleHash cryptography.Hash
 
-	PrevHash       helpers.Hash
-	PrevKernelHash helpers.Hash
+	PrevHash       cryptography.Hash
+	PrevKernelHash cryptography.Hash
 
 	Timestamp uint64
 
@@ -86,16 +86,16 @@ func (blk *Block) RemoveBlock(acs *accounts.Accounts, toks *tokens.Tokens, allFe
 
 }
 
-func (blk *Block) ComputeHash() helpers.Hash {
+func (blk *Block) ComputeHash() cryptography.Hash {
 	return cryptography.SHA3Hash(blk.Serialize())
 }
 
-func (blk *Block) ComputeKernelHashOnly() helpers.Hash {
+func (blk *Block) ComputeKernelHashOnly() cryptography.Hash {
 	out := blk.serializeBlock(true, false)
 	return cryptography.SHA3Hash(out)
 }
 
-func (blk *Block) ComputeKernelHash() helpers.Hash {
+func (blk *Block) ComputeKernelHash() cryptography.Hash {
 	hash := blk.ComputeKernelHashOnly()
 	if blk.Height == 0 {
 		return hash
@@ -103,7 +103,7 @@ func (blk *Block) ComputeKernelHash() helpers.Hash {
 	return cryptography.ComputeKernelHash(hash, blk.StakingAmount)
 }
 
-func (blk *Block) SerializeForSigning() helpers.Hash {
+func (blk *Block) SerializeForSigning() cryptography.Hash {
 	return cryptography.SHA3Hash(blk.serializeBlock(false, false))
 }
 

@@ -69,7 +69,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) {
 		privateKey := addresses.GenerateNewPrivateKey()
 		addr := privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
 		dsts = append(dsts, addr.EncodeAddr())
-		amount := uint64(rand.Int63n(10))
+		amount := uint64(rand.Int63n(6))
 		dstsAmounts = append(dstsAmounts, amount)
 		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
 		sum += amount
@@ -108,9 +108,11 @@ func (testnet *Testnet) run() {
 
 			if blockHeight >= 60 {
 				if blockHeight%20 == 0 {
-					testnet.testnetCreateUnstakeTx(blockHeight, 20*20*10)
+					testnet.testnetCreateUnstakeTx(blockHeight, 20*20*20*5)
 				} else {
-					testnet.testnetCreateTransfers(blockHeight)
+					for i := 0; i < 20; i++ {
+						testnet.testnetCreateTransfers(blockHeight)
+					}
 				}
 			}
 

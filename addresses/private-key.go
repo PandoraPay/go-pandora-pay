@@ -53,7 +53,7 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 	}
 }
 
-func (pk *PrivateKey) Sign(message helpers.Hash) [65]byte {
+func (pk *PrivateKey) Sign(message cryptography.Hash) [65]byte {
 	privateKey, err := ecdsa.ToECDSA(pk.Key[:])
 	if err != nil {
 		panic(err)

@@ -32,7 +32,7 @@ func (blkComplete *BlockComplete) Verify() {
 	}
 }
 
-func (blkComplete *BlockComplete) MerkleHash() helpers.Hash {
+func (blkComplete *BlockComplete) MerkleHash() cryptography.Hash {
 	var buffer = []byte{}
 	if len(blkComplete.Txs) > 0 {
 

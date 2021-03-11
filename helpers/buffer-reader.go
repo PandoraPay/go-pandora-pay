@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"encoding/binary"
+	"pandora-pay/cryptography"
 )
 
 type BufferReader struct {
@@ -50,10 +51,10 @@ func (reader *BufferReader) ReadString() string {
 	return string(bytes)
 }
 
-func (reader *BufferReader) ReadHash() Hash {
-	if len(reader.buf) >= HashSize {
-		out := *ConvertHash(reader.buf[:HashSize])
-		reader.buf = reader.buf[HashSize:]
+func (reader *BufferReader) ReadHash() cryptography.Hash {
+	if len(reader.buf) >= cryptography.HashSize {
+		out := *cryptography.ConvertHash(reader.buf[:cryptography.HashSize])
+		reader.buf = reader.buf[cryptography.HashSize:]
 		return out
 	}
 	panic("Error reading hash")

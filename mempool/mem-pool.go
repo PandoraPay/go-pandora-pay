@@ -10,6 +10,7 @@ import (
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
 	"pandora-pay/config/fees"
+	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -32,13 +33,13 @@ type memPoolTx struct {
 
 type memPoolResult struct {
 	txs          []*memPoolTx
-	chainHash    helpers.Hash
+	chainHash    cryptography.Hash
 	chainHeight  uint64
 	sync.RWMutex `json:"-"`
 }
 
 type memPoolOutput struct {
-	hash    helpers.Hash
+	hash    cryptography.Hash
 	hashStr string
 	tx      *memPoolTx `json:"-"`
 }
@@ -117,14 +118,14 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 	return true
 }
 
-func (mempool *MemPool) Exists(txId helpers.Hash) bool {
+func (mempool *MemPool) Exists(txId cryptography.Hash) bool {
 	if _, exists := mempool.txs.Load(txId); exists {
 		return true
 	}
 	return false
 }
 
-func (mempool *MemPool) Delete(txId helpers.Hash) (tx *transaction.Transaction) {
+func (mempool *MemPool) Delete(txId cryptography.Hash) (tx *transaction.Transaction) {
 
 	var exists bool
 	if _, exists = mempool.txs.Load(txId); exists == false {
@@ -160,7 +161,7 @@ func (mempool *MemPool) GetTxsListKeyValue() []*memPoolOutput {
 	list := make([]*memPoolOutput, 0)
 
 	mempool.txs.Range(func(key, value interface{}) bool {
-		hash := key.(helpers.Hash)
+		hash := key.(cryptography.Hash)
 		tx := value.(*memPoolTx)
 		list = append(list, &memPoolOutput{
 			hash:    hash,
@@ -178,7 +179,7 @@ func (mempool *MemPool) GetTxsListKeyValueFilter(filter map[string]bool) []*memP
 	list := make([]*memPoolOutput, 0)
 
 	mempool.txs.Range(func(key, value interface{}) bool {
-		hash := key.(helpers.Hash)
+		hash := key.(cryptography.Hash)
 		if !filter[string(hash[:])] {
 			tx := value.(*memPoolTx)
 			list = append(list, &memPoolOutput{
@@ -215,7 +216,7 @@ func (mempool *MemPool) Print() {
 
 }
 
-func (mempool *MemPool) UpdateChanges(hash helpers.Hash, height uint64) {
+func (mempool *MemPool) UpdateChanges(hash cryptography.Hash, height uint64) {
 
 	mempool.updateTask.Lock()
 	defer mempool.updateTask.Unlock()
@@ -351,7 +352,7 @@ func (mempool *MemPool) GetNonce(publicKeyHash [20]byte) (result bool, nonce uin
 	return
 }
 
-func (mempool *MemPool) GetTransactions(blockHeight uint64, chainHash helpers.Hash) []*transaction.Transaction {
+func (mempool *MemPool) GetTransactions(blockHeight uint64, chainHash cryptography.Hash) []*transaction.Transaction {
 
 	out := make([]*transaction.Transaction, 0)
 

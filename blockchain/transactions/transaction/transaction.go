@@ -43,7 +43,7 @@ func (tx *Transaction) ComputeFees() (fees map[string]uint64) {
 	return
 }
 
-func (tx *Transaction) SerializeForSigning() helpers.Hash {
+func (tx *Transaction) SerializeForSigning() cryptography.Hash {
 	return cryptography.SHA3Hash(tx.serializeTx(false))
 }
 
@@ -59,7 +59,7 @@ func (tx *Transaction) VerifySignature() bool {
 
 }
 
-func (tx *Transaction) ComputeHash() helpers.Hash {
+func (tx *Transaction) ComputeHash() cryptography.Hash {
 	return cryptography.SHA3Hash(tx.Serialize())
 }
 

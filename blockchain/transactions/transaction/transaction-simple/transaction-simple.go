@@ -5,6 +5,7 @@ import (
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/config"
+	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/ecdsa"
 	"pandora-pay/helpers"
 )
@@ -118,7 +119,7 @@ func (tx *TransactionSimple) ComputeVout(out map[string]uint64) {
 	}
 }
 
-func (tx *TransactionSimple) VerifySignature(hash helpers.Hash) bool {
+func (tx *TransactionSimple) VerifySignature(hash cryptography.Hash) bool {
 	if len(tx.Vin) == 0 {
 		return false
 	}

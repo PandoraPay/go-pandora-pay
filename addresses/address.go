@@ -65,8 +65,8 @@ func (a *Address) EncodeAddr() string {
 
 	buffer := writer.Bytes()
 
-	checksum := cryptography.RIPEMD(buffer)[0:helpers.ChecksumSize]
-	buffer = append(buffer, checksum...)
+	checksum := cryptography.GetChecksum(buffer)
+	buffer = append(buffer, checksum[:]...)
 	ret := base58.Encode(buffer)
 
 	return prefix + ret
@@ -107,12 +107,12 @@ func DecodeAddr(input string) (adr *Address) {
 		panic("Error decoding base58")
 	}
 
-	checksum := cryptography.RIPEMD(buf[:len(buf)-helpers.ChecksumSize])[0:helpers.ChecksumSize]
+	checksum := cryptography.GetChecksum(buf[:len(buf)-cryptography.ChecksumSize])
 
-	if !bytes.Equal(checksum[:], buf[len(buf)-helpers.ChecksumSize:]) {
+	if !bytes.Equal(checksum[:], buf[len(buf)-cryptography.ChecksumSize:]) {
 		panic("Invalid Checksum")
 	}
-	buf = buf[0 : len(buf)-helpers.ChecksumSize] // remove the checksum
+	buf = buf[0 : len(buf)-cryptography.ChecksumSize] // remove the checksum
 
 	reader := helpers.NewBufferReader(buf)
 

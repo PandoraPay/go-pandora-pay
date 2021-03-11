@@ -15,6 +15,7 @@ import (
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
+	"pandora-pay/cryptography"
 	"pandora-pay/forging"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -26,10 +27,10 @@ import (
 )
 
 type Blockchain struct {
-	Hash           helpers.Hash
-	PrevHash       helpers.Hash
-	KernelHash     helpers.Hash
-	PrevKernelHash helpers.Hash
+	Hash           cryptography.Hash
+	PrevHash       cryptography.Hash
+	KernelHash     cryptography.Hash
+	PrevKernelHash cryptography.Hash
 	Height         uint64
 	Timestamp      uint64
 
@@ -145,7 +146,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			blkComplete := blocksComplete[i]
 
 			if blkComplete.Block.Height > newChain.Height {
-				var hash helpers.Hash
+				var hash cryptography.Hash
 				hash = newChain.loadBlockHash(writer, blkComplete.Block.Height)
 
 				hash2 := blkComplete.Block.ComputeHash()

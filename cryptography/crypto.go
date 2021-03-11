@@ -4,37 +4,47 @@ import (
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/sha3"
 	"math/big"
-	"pandora-pay/helpers"
+	"unsafe"
 )
 
-func SHA3Hash(b []byte) (result helpers.Hash) {
+func SHA3Hash(b []byte) (result Hash) {
 	h := sha3.New256()
 	h.Write(b)
-	return *helpers.ConvertHash(h.Sum(nil))
+	return *ConvertHash(h.Sum(nil))
 }
 
-func SHA3(b []byte) []byte {
+func SHA3(b []byte) (result Hash) {
 	h := sha3.New256()
 	h.Write(b)
-	return h.Sum(nil)
+	return *ConvertHash(h.Sum(nil))
 }
 
-func RIPEMD(b []byte) []byte {
+func RIPEMD(b []byte) [20]byte {
 	h := ripemd160.New()
 	h.Write(b)
-	return h.Sum(nil)
+	s := h.Sum(nil)
+	if 20 <= len(s) {
+		return *(*[20]byte)(unsafe.Pointer(&s[0]))
+	}
+	panic("invalid byte20 length")
+}
+
+func GetChecksum(b []byte) Checksum {
+	s := RIPEMD(b)
+	return *(*[ChecksumSize]byte)(unsafe.Pointer(&s[0]))
 }
 
 func ComputePublicKeyHash(publicKey [33]byte) [20]byte {
-	return *helpers.Byte20(RIPEMD(SHA3(publicKey[:])))
+	hash := SHA3(publicKey[:])
+	return RIPEMD(hash[:])
 }
 
-func ComputeKernelHash(hash helpers.Hash, stakingAmount uint64) (out helpers.Hash) {
+func ComputeKernelHash(hash Hash, stakingAmount uint64) (out Hash) {
 
 	number := new(big.Int).Div(new(big.Int).SetBytes(hash[:]), new(big.Int).SetUint64(stakingAmount))
 
 	buf := number.Bytes()
-	copy(out[helpers.HashSize-len(buf):], buf)
+	copy(out[HashSize-len(buf):], buf)
 
 	return out
 }

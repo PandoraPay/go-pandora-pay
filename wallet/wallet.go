@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"pandora-pay/cryptography"
 	"pandora-pay/forging"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -51,7 +52,7 @@ type Wallet struct {
 
 	Addresses []*WalletAddress
 
-	Checksum [4]byte
+	Checksum cryptography.Checksum
 
 	forging *forging.Forging `json:"-"`
 
