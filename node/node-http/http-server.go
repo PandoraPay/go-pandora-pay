@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"pandora-pay/config"
+	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 )
@@ -70,6 +71,10 @@ func (server *HttpServer) initialize() {
 	}
 
 	port := "8090"
+	if globals.Arguments["--http-server-port"] != nil {
+		port = globals.Arguments["--http-server-port"].(string)
+	}
+
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		panic(err)
 	}

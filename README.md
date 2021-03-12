@@ -70,7 +70,7 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [x] Sorting by fee per byte
     - [ ] Network propagation
 - [ ] Network
-    - [ ] HTTP server
+    - [X] HTTP server
     - [ ] HTTP websocket
     - [ ] TOR Integration
 - [ ] API

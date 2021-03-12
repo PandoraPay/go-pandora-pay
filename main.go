@@ -26,7 +26,7 @@ import (
 var commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>]
+  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--http-server=<port>]
   pandorapay -h | --help
 
 Options:
@@ -38,6 +38,7 @@ Options:
   --debug     					Debug mode enabled (print log message).
   --staking     				Start staking
   --node-name=<name>   			Change node name
+  --http-server=<port>			Change node http server port
 
 `
 
