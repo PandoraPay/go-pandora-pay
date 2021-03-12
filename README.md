@@ -3,7 +3,13 @@ PandoraPay blockchain in go
 
 The main design pattern that has been taken in consideration is to be **dead-simple**. A source code that is simple is bug free and easy to be developed and improved over time.
 
-Status of Blockchain implementation:
+## Running
+
+### Running your own devnet
+
+`go build main.go --devnet --new-devnet` 
+
+## Status of Blockchain implementation:
 
 - [x] Simple GUI
 - [x] CLI commands

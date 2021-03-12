@@ -101,6 +101,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte 
 
 	setFee(tx, feePerByte, feeToken, payFeeInExtra)
 	tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature = privateKey.Sign(tx.SerializeForSigning())
+	tx.Validate()
 	return
 }
 

@@ -92,6 +92,9 @@ func (tx *Transaction) Validate() {
 }
 
 func (tx *Transaction) Verify() {
+	if !tx.VerifySignature() {
+		panic("Signature is invalid")
+	}
 }
 
 func (tx *Transaction) Deserialize(reader *helpers.BufferReader) {
