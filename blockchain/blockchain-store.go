@@ -47,15 +47,24 @@ func (chain *Blockchain) loadBlock(bucket *bolt.Bucket, hash []byte) (blk *block
 	return
 }
 
-func (chain *Blockchain) deleteBlockComplete(bucket *bolt.Bucket, blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
+func (chain *Blockchain) deleteUnusedBlocksComplete(bucket *bolt.Bucket, blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
 
 	blockHeightStr := strconv.FormatUint(blockHeight, 10)
 	accs.DeleteTransitionalChangesFromStore(blockHeightStr)
 	toks.DeleteTransitionalChangesFromStore(blockHeightStr)
 
+	bucket.Delete([]byte("blockHeight" + blockHeightStr))
+	bucket.Delete([]byte("blockTxs" + blockHeightStr))
+}
+
+func (chain *Blockchain) removeBlockComplete(bucket *bolt.Bucket, blockHeight uint64, removedTxHashes map[string]bool, accs *accounts.Accounts, toks *tokens.Tokens) {
+
+	blockHeightStr := strconv.FormatUint(blockHeight, 10)
+	accs.ReadTransitionalChangesFromStore(blockHeightStr)
+	toks.ReadTransitionalChangesFromStore(blockHeightStr)
+
 	hash := bucket.Get([]byte("blockHeight" + blockHeightStr))
 	bucket.Delete(append([]byte("blockHash"), hash...))
-	bucket.Delete([]byte("blockHeight" + blockHeightStr))
 
 	data := bucket.Get([]byte("blockTxs" + blockHeightStr))
 	txHashes := make([][]byte, 0) //32 byte
@@ -64,13 +73,12 @@ func (chain *Blockchain) deleteBlockComplete(bucket *bolt.Bucket, blockHeight ui
 		panic(err)
 	}
 	for _, txHash := range txHashes {
-		bucket.Delete(append([]byte("tx"), txHash...))
+		removedTxHashes[string(txHash)] = true
 	}
 
-	bucket.Delete([]byte("blockTxs" + blockHeightStr))
 }
 
-func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash []byte, accs *accounts.Accounts, toks *tokens.Tokens) {
+func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash []byte, removedTxHashes map[string]bool, accs *accounts.Accounts, toks *tokens.Tokens) {
 
 	blockHeightStr := strconv.FormatUint(blkComplete.Block.Height, 10)
 	accs.WriteTransitionalChangesToStore(blockHeightStr)
@@ -83,7 +91,14 @@ func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *blo
 	for _, tx := range blkComplete.Txs {
 		hash := tx.ComputeHash()
 		txHashes = append(txHashes, hash)
-		bucket.Put(append([]byte("tx"), hash...), tx.Serialize())
+
+		//let's check to see if the tx block is already stored, if yes, we will skip it
+		hashStr := string(hash)
+		if !removedTxHashes[hashStr] {
+			bucket.Put(append([]byte("tx"), hash...), tx.Serialize())
+		} else {
+			delete(removedTxHashes, hashStr)
+		}
 	}
 
 	marshal, err := json.Marshal(txHashes)
@@ -91,6 +106,8 @@ func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *blo
 		panic(err)
 	}
 	bucket.Put([]byte("blockTxs"+blockHeightStr), marshal)
+
+	return
 }
 
 func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) []byte {

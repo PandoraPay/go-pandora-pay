@@ -89,6 +89,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 	var writer *bolt.Bucket
 	savedBlock := false
+	//remove blocks which are different
+	removedTxHashes := make(map[string]bool)
+	removedBlocksHeights := make([]uint64, 0)
+
 	func() {
 
 		defer func() {
@@ -100,6 +104,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			if savedBlock && mainChainBigTotalDifficulty.Cmp(newChain.BigTotalDifficulty) < 0 {
 
 				newChain.saveBlockchain(writer)
+
+				for _, removedBlock := range removedBlocksHeights {
+					newChain.deleteUnusedBlocksComplete(writer, removedBlock, accs, toks)
+				}
+				for txHash := range removedTxHashes {
+					writer.Delete([]byte("tx" + txHash))
+				}
 
 				accs.Rollback()
 				toks.Rollback()
@@ -159,11 +170,14 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			panic("blocks are identical now")
 		}
 
-		//remove blocks which are different
 		firstBlockComplete := blocksComplete[0]
 		if firstBlockComplete.Block.Height < newChain.Height {
 			for i := newChain.Height - 1; i >= newChain.Height; i-- {
-				newChain.deleteBlockComplete(writer, i, accs, toks)
+				removedBlocksHeights = append(removedBlocksHeights, 0)
+				copy(removedBlocksHeights[1:], removedBlocksHeights)
+				removedBlocksHeights[0] = i
+
+				newChain.removeBlockComplete(writer, i, removedTxHashes, accs, toks)
 			}
 		}
 
@@ -243,7 +257,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			//to detect if the savedBlock was done correctly
 			savedBlock = false
 
-			newChain.saveBlockComplete(writer, blkComplete, hash, accs, toks)
+			newChain.saveBlockComplete(writer, blkComplete, hash, removedTxHashes, accs, toks)
+
+			if len(removedBlocksHeights) > 0 {
+				removedBlocksHeights = removedBlocksHeights[1:]
+			}
 
 			accs.Commit() //it will commit the changes but not save them
 			toks.Commit() //it will commit the changes but not save them
