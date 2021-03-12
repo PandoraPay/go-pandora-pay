@@ -13,6 +13,7 @@ import (
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
 	"pandora-pay/forging"
@@ -86,11 +87,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	}
 
 	insertedBlocks := make([]*block.BlockComplete, 0)
+	insertedTxHashes := make([][]byte, 0)
 
 	var writer *bolt.Bucket
 	savedBlock := false
 	//remove blocks which are different
-	removedTxHashes := make(map[string]bool)
+	removedTxHashes := make(map[string][]byte)
+	removedTx := make([][]byte, 0)
 	removedBlocksHeights := make([]uint64, 0)
 
 	func() {
@@ -109,6 +112,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 					newChain.deleteUnusedBlocksComplete(writer, removedBlock, accs, toks)
 				}
 				for txHash := range removedTxHashes {
+					data := writer.Get([]byte("tx" + txHash))
+					removedTx = append(removedTx, data)
+
 					writer.Delete([]byte("tx" + txHash))
 				}
 
@@ -318,10 +324,14 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	//create next block and the workers will be automatically reset
 	newChain.createNextBlockForForging()
 
-	for _, blkComplete := range insertedBlocks {
-		for _, tx := range blkComplete.Txs {
-			newChain.mempool.Delete(tx.ComputeHash())
-		}
+	for _, txData := range removedTx {
+		tx := transaction.Transaction{}
+		tx.Deserialize(helpers.NewBufferReader(txData))
+		newChain.mempool.AddTxToMemPoolSilent(&tx, newChain.Height, false)
+	}
+
+	for _, txHash := range insertedTxHashes {
+		newChain.mempool.Delete(txHash)
 	}
 
 	newChain.mempool.UpdateChanges(newChain.Hash, newChain.Height)

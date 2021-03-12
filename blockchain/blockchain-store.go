@@ -57,7 +57,7 @@ func (chain *Blockchain) deleteUnusedBlocksComplete(bucket *bolt.Bucket, blockHe
 	bucket.Delete([]byte("blockTxs" + blockHeightStr))
 }
 
-func (chain *Blockchain) removeBlockComplete(bucket *bolt.Bucket, blockHeight uint64, removedTxHashes map[string]bool, accs *accounts.Accounts, toks *tokens.Tokens) {
+func (chain *Blockchain) removeBlockComplete(bucket *bolt.Bucket, blockHeight uint64, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) {
 
 	blockHeightStr := strconv.FormatUint(blockHeight, 10)
 	accs.ReadTransitionalChangesFromStore(blockHeightStr)
@@ -73,12 +73,12 @@ func (chain *Blockchain) removeBlockComplete(bucket *bolt.Bucket, blockHeight ui
 		panic(err)
 	}
 	for _, txHash := range txHashes {
-		removedTxHashes[string(txHash)] = true
+		removedTxHashes[string(txHash)] = txHash
 	}
 
 }
 
-func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash []byte, removedTxHashes map[string]bool, accs *accounts.Accounts, toks *tokens.Tokens) {
+func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash []byte, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) [][]byte {
 
 	blockHeightStr := strconv.FormatUint(blkComplete.Block.Height, 10)
 	accs.WriteTransitionalChangesToStore(blockHeightStr)
@@ -87,6 +87,8 @@ func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *blo
 	bucket.Put(append([]byte("blockHash"), hash...), blkComplete.Block.Serialize())
 	bucket.Put([]byte("blockHeight"+blockHeightStr), hash)
 
+	newTxHashes := make([][]byte, 0)
+
 	txHashes := make([][]byte, 0)
 	for _, tx := range blkComplete.Txs {
 		hash := tx.ComputeHash()
@@ -94,8 +96,9 @@ func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *blo
 
 		//let's check to see if the tx block is already stored, if yes, we will skip it
 		hashStr := string(hash)
-		if !removedTxHashes[hashStr] {
+		if removedTxHashes[hashStr] == nil {
 			bucket.Put(append([]byte("tx"), hash...), tx.Serialize())
+			newTxHashes = append(newTxHashes, hash)
 		} else {
 			delete(removedTxHashes, hashStr)
 		}
@@ -107,7 +110,7 @@ func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *blo
 	}
 	bucket.Put([]byte("blockTxs"+blockHeightStr), marshal)
 
-	return
+	return newTxHashes
 }
 
 func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) []byte {
