@@ -19,7 +19,6 @@ func TestBlock_Serialize(t *testing.T) {
 
 	privateKey := addresses.GenerateNewPrivateKey()
 	publicKey := privateKey.GeneratePublicKey()
-	assert.Nil(t, err)
 
 	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
 
@@ -32,6 +31,7 @@ func TestBlock_Serialize(t *testing.T) {
 		Forger:             publicKeyHash,
 		DelegatedPublicKey: publicKey,
 		Timestamp:          uint64(time.Now().Unix()),
+		Signature:          make([]byte, 65),
 	}
 
 	buf := blk.Serialize()
@@ -62,10 +62,11 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 		Forger:             publicKeyHash,
 		DelegatedPublicKey: publicKey,
 		Timestamp:          uint64(time.Now().Unix()),
+		Signature:          make([]byte, 65),
 	}
 
 	hash := blk.SerializeForSigning()
-	var signature [65]byte
+	var signature []byte
 
 	assert.NotPanics(t, func() { signature = privateKey.Sign(hash) }, "Signing raised an error")
 

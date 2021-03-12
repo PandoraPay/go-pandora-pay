@@ -4,7 +4,7 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-type CommitedMapElement struct {
+type CommittedMapElement struct {
 	Data   []byte
 	Status string
 	Commit string
@@ -18,7 +18,7 @@ type ChangesMapElement struct {
 type HashMap struct {
 	Bucket    *bbolt.Bucket
 	Changes   map[string]*ChangesMapElement
-	Committed map[string]*CommitedMapElement
+	Committed map[string]*CommittedMapElement
 	KeyLength int
 }
 
@@ -29,7 +29,7 @@ func CreateNewHashMap(tx *bbolt.Tx, name string, keyLength int) (hashMap *HashMa
 	}
 
 	hashMap = &HashMap{
-		Committed: make(map[string]*CommitedMapElement),
+		Committed: make(map[string]*CommittedMapElement),
 		Changes:   make(map[string]*ChangesMapElement),
 		Bucket:    tx.Bucket([]byte(name)),
 		KeyLength: keyLength,
@@ -59,7 +59,7 @@ func (hashMap *HashMap) get(key []byte, includeChanges bool) (out []byte) {
 	}
 
 	out = hashMap.Bucket.Get(key)
-	hashMap.Committed[keyStr] = &CommitedMapElement{
+	hashMap.Committed[keyStr] = &CommittedMapElement{
 		out,
 		"view",
 		"",
@@ -81,7 +81,7 @@ func (hashMap *HashMap) Exists(key []byte) bool {
 	}
 
 	out := hashMap.Bucket.Get(key)
-	hashMap.Committed[keyStr] = &CommitedMapElement{
+	hashMap.Committed[keyStr] = &CommittedMapElement{
 		out,
 		"view",
 		"",
@@ -121,7 +121,7 @@ func (hashMap *HashMap) Commit() {
 
 			committed := hashMap.Committed[k]
 			if committed == nil {
-				committed = new(CommitedMapElement)
+				committed = new(CommittedMapElement)
 				hashMap.Committed[k] = committed
 			}
 

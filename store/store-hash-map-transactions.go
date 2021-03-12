@@ -49,13 +49,13 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) {
 
 	for _, change := range values {
 		if change.transition == nil {
-			hashMap.Committed[string(change.key)] = &CommitedMapElement{
+			hashMap.Committed[string(change.key)] = &CommittedMapElement{
 				Data:   nil,
 				Status: "del",
 				Commit: "",
 			}
 		} else {
-			hashMap.Committed[string(change.key)] = &CommitedMapElement{
+			hashMap.Committed[string(change.key)] = &CommittedMapElement{
 				Data:   change.transition,
 				Status: "update",
 				Commit: "",

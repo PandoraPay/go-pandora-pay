@@ -18,7 +18,7 @@ func TestCreateSimpleTx(t *testing.T) {
 	dstAddressEncoded := dstAddress.EncodeAddr()
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx := CreateSimpleTx(0, [][32]byte{privateKey.Key}, []uint64{1252}, [][]byte{{}}, []string{dstAddressEncoded}, []uint64{1250}, [][]byte{{}}, 0, []byte{})
+	tx := CreateSimpleTx(0, [][]byte{privateKey.Key}, []uint64{1252}, [][]byte{{}}, []string{dstAddressEncoded}, []uint64{1250}, [][]byte{{}}, 0, []byte{})
 	assert.NotNil(t, tx, "error creating simple tx")
 	assert.NotPanics(t, tx.Validate, "error validating tx")
 	assert.Equal(t, tx.VerifySignature(), true, "Verify signature failed")
@@ -27,7 +27,8 @@ func TestCreateSimpleTx(t *testing.T) {
 	assert.NotNil(t, serialized, "serialized is nil")
 
 	tx2 := new(transaction.Transaction)
-	assert.NotPanics(t, func() { tx2.Deserialize(serialized) }, "deserialize failed")
+
+	assert.NotPanics(t, func() { tx2.Deserialize(helpers.NewBufferReader(serialized)) }, "deserialize failed")
 	assert.NotPanics(t, tx2.Validate, "error validating tx")
 	assert.Equal(t, tx2.VerifySignature(), true, "Verify signature failed2")
 
@@ -50,7 +51,7 @@ func TestCreateUnstakeTx(t *testing.T) {
 	assert.NotNil(t, serialized, "serialized is nil")
 
 	tx2 := new(transaction.Transaction)
-	assert.NotPanics(t, func() { tx2.Deserialize(serialized) }, "deserialize failed")
+	assert.NotPanics(t, func() { tx2.Deserialize(helpers.NewBufferReader(serialized)) }, "deserialize failed")
 	assert.NotPanics(t, tx2.Validate, "error validating tx")
 	assert.Equal(t, tx2.VerifySignature(), true, "Verify signature failed2")
 
@@ -80,7 +81,7 @@ func TestCreateUnstakeTxPayExtra(t *testing.T) {
 	assert.NotNil(t, serialized, "serialized is nil")
 
 	tx2 := new(transaction.Transaction)
-	assert.NotPanics(t, func() { tx2.Deserialize(serialized) }, "deserialize failed")
+	assert.NotPanics(t, func() { tx2.Deserialize(helpers.NewBufferReader(serialized)) }, "deserialize failed")
 	assert.NotPanics(t, tx2.Validate, "error validating tx")
 	assert.Equal(t, tx2.VerifySignature(), true, "Verify signature failed2")
 
