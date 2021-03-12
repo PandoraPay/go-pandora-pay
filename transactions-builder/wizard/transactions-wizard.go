@@ -75,6 +75,8 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 		tx.TxBase.(*transaction_simple.TransactionSimple).Vin[i].Signature = privateKey.Sign(hash)
 	}
 
+	tx.Validate()
+	tx.Verify()
 	return
 }
 
@@ -102,6 +104,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte 
 	setFee(tx, feePerByte, feeToken, payFeeInExtra)
 	tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature = privateKey.Sign(tx.SerializeForSigning())
 	tx.Validate()
+	tx.Verify()
 	return
 }
 
@@ -137,5 +140,8 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 
 	setFee(tx, feePerByte, feeToken, false)
 	tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature = privateKey.Sign(tx.SerializeForSigning())
+
+	tx.Validate()
+	tx.Verify()
 	return
 }

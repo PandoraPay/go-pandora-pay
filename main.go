@@ -12,6 +12,7 @@ import (
 	"pandora-pay/forging"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
+	node_http "pandora-pay/node/node-http"
 	"pandora-pay/settings"
 	"pandora-pay/store"
 	"pandora-pay/testnet"
@@ -86,6 +87,9 @@ func main() {
 		globals.Data["testnet"] = myTestnet
 
 	}
+
+	myHttpServer := node_http.CreateHttpServer()
+	globals.Data["http-server"] = myHttpServer
 
 	gui.Log("Main Loop")
 
