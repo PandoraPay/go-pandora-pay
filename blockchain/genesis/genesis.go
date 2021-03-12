@@ -13,12 +13,12 @@ import (
 )
 
 type GenesisDataType struct {
-	Hash          cryptography.Hash
+	Hash          []byte //32 byte
 	HashHex       string
-	KernelHash    cryptography.Hash
+	KernelHash    []byte //32 byte
 	KernelHashHex string
 	Timestamp     uint64
-	Target        cryptography.Hash
+	Target        []byte //32 byte
 	TargetHex     string
 }
 
@@ -90,15 +90,11 @@ func GenesisInit() {
 		GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 	}
 
-	var buf []byte
-	buf, _ = hex.DecodeString(GenesisData.HashHex)
-	GenesisData.Hash = cryptography.ConvertHash(buf)
+	GenesisData.Hash, _ = hex.DecodeString(GenesisData.HashHex)
 
-	buf, _ = hex.DecodeString(GenesisData.KernelHashHex)
-	GenesisData.KernelHash = cryptography.ConvertHash(buf)
+	GenesisData.KernelHash, _ = hex.DecodeString(GenesisData.KernelHashHex)
 
-	buf, _ = hex.DecodeString(GenesisData.TargetHex)
-	GenesisData.Target = cryptography.ConvertHash(buf)
+	GenesisData.Target, _ = hex.DecodeString(GenesisData.TargetHex)
 
 	if Genesis, err = CreateNewGenesisBlock(); err != nil {
 		gui.Fatal("Error generating init Genesis")

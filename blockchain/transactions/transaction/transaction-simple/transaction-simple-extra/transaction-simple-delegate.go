@@ -8,7 +8,7 @@ import (
 type TransactionSimpleDelegate struct {
 	DelegateAmount          uint64
 	DelegateHasNewPublicKey bool
-	DelegateNewPublicKey    [33]byte
+	DelegateNewPublicKey    []byte //33 byte
 }
 
 func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) {
@@ -28,7 +28,7 @@ func (tx *TransactionSimpleDelegate) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(tx.DelegateAmount)
 	writer.WriteBool(tx.DelegateHasNewPublicKey)
 	if tx.DelegateHasNewPublicKey {
-		writer.Write(tx.DelegateNewPublicKey[:])
+		writer.Write(tx.DelegateNewPublicKey)
 	}
 }
 
@@ -36,6 +36,6 @@ func (tx *TransactionSimpleDelegate) Deserialize(reader *helpers.BufferReader) {
 	tx.DelegateAmount = reader.ReadUvarint()
 	tx.DelegateHasNewPublicKey = reader.ReadBool()
 	if tx.DelegateHasNewPublicKey {
-		tx.DelegateNewPublicKey = reader.Read33()
+		tx.DelegateNewPublicKey = reader.ReadBytes(33)
 	}
 }

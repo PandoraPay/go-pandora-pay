@@ -10,8 +10,6 @@ Fast Merkle Tree Construction
 It can't generate efficient proofs
 */
 
-type Hash = cryptography.Hash
-
 func roundNextPowerOfTwo(number int) int {
 
 	if number&(number-1) == 0 {
@@ -22,30 +20,24 @@ func roundNextPowerOfTwo(number int) int {
 	return 1 << exp
 }
 
-func hashMerkleNode(left *Hash, right *Hash) *Hash {
+func hashMerkleNode(left []byte, right []byte) []byte {
 	// Concatenate the left and right nodes.
-	var hash [len(left) * 2]byte
-	copy(hash[:len(left)], left[:])
-	copy(hash[len(left):], right[:])
-
-	hash2 := cryptography.SHA3Hash(hash[:])
-	return &hash2
+	hash := append(left, right...)
+	return cryptography.SHA3Hash(hash)
 }
 
-func buildMerkleTree(hashes []Hash) []*Hash {
+func buildMerkleTree(hashes [][]byte) [][]byte {
 
 	if len(hashes) == 0 {
-		merkles := make([]*Hash, 1)
-		merkles[0] = &Hash{}
-		return merkles
+		return [][]byte{}
 	}
 
 	roundedNextPowerOfTwo := roundNextPowerOfTwo(len(hashes))
 	arraySize := roundedNextPowerOfTwo*2 - 1
-	nodes := make([]*Hash, arraySize)
+	nodes := make([][]byte, arraySize)
 
 	for i := range hashes {
-		nodes[i] = &hashes[i]
+		nodes[i] = hashes[i]
 	}
 
 	offset := roundedNextPowerOfTwo
@@ -69,7 +61,7 @@ func buildMerkleTree(hashes []Hash) []*Hash {
 	return nodes
 }
 
-func MerkleRoot(hashes []Hash) Hash {
+func MerkleRoot(hashes [][]byte) []byte {
 	merkles := buildMerkleTree(hashes)
-	return *merkles[len(merkles)-1] //return last element
+	return merkles[len(merkles)-1] //return last element
 }

@@ -15,7 +15,6 @@ import (
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
-	"pandora-pay/cryptography"
 	"pandora-pay/forging"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -27,10 +26,10 @@ import (
 )
 
 type Blockchain struct {
-	Hash           cryptography.Hash
-	PrevHash       cryptography.Hash
-	KernelHash     cryptography.Hash
-	PrevKernelHash cryptography.Hash
+	Hash           []byte //32
+	PrevHash       []byte //32
+	KernelHash     []byte //32
+	PrevKernelHash []byte //32
 	Height         uint64
 	Timestamp      uint64
 
@@ -148,7 +147,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			if blkComplete.Block.Height < newChain.Height {
 				hash := newChain.loadBlockHash(writer, blkComplete.Block.Height)
 				hash2 := blkComplete.Block.ComputeHash()
-				if bytes.Equal(hash[:], hash2[:]) {
+				if bytes.Equal(hash, hash2) {
 					blocksComplete = blocksComplete[i+1:]
 					break
 				}
@@ -172,11 +171,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			panic("First Block has is not matching")
 		}
 
-		if !bytes.Equal(firstBlockComplete.Block.PrevHash[:], newChain.Hash[:]) {
+		if !bytes.Equal(firstBlockComplete.Block.PrevHash, newChain.Hash) {
 			panic("First block hash is not matching chain hash")
 		}
 
-		if !bytes.Equal(firstBlockComplete.Block.PrevKernelHash[:], newChain.KernelHash[:]) {
+		if !bytes.Equal(firstBlockComplete.Block.PrevKernelHash, newChain.KernelHash) {
 			panic("First block kernel hash is not matching chain prev kerneh lash")
 		}
 
@@ -191,13 +190,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			var stakingAmount uint64
 			if blkComplete.Block.Height > 0 {
 
-				acc := accs.GetAccount(&blkComplete.Block.Forger)
+				acc := accs.GetAccount(blkComplete.Block.Forger)
 				if acc == nil || !acc.HasDelegatedStake() {
 					panic("Forger Account deson't exist or hasn't delegated stake")
 				}
 				stakingAmount = acc.GetDelegatedStakeAvailable(blkComplete.Block.Height)
 
-				if !bytes.Equal(blkComplete.Block.DelegatedPublicKey[:], acc.DelegatedStake.DelegatedPublicKey[:]) {
+				if !bytes.Equal(blkComplete.Block.DelegatedPublicKey, acc.DelegatedStake.DelegatedPublicKey) {
 					panic("Block Staking Delegated Public Key is not matching")
 				}
 
@@ -220,10 +219,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 			//already verified for i == 0
 			if i > 0 {
-				if !bytes.Equal(blkComplete.Block.PrevHash[:], newChain.Hash[:]) {
+				if !bytes.Equal(blkComplete.Block.PrevHash, newChain.Hash) {
 					panic("PrevHash doesn't match Genesis prevHash")
 				}
-				if !bytes.Equal(blkComplete.Block.PrevKernelHash[:], newChain.KernelHash[:]) {
+				if !bytes.Equal(blkComplete.Block.PrevKernelHash, newChain.KernelHash) {
 					panic("PrevHash doesn't match Genesis prevKernelHash")
 				}
 			}
@@ -265,10 +264,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			newChain.Transactions += uint64(len(blkComplete.Txs))
 			insertedBlocks = append(insertedBlocks, blkComplete)
 
-			writer.Put([]byte("chainHash"), newChain.Hash[:])
-			writer.Put([]byte("chainPrevHash"), newChain.PrevHash[:])
-			writer.Put([]byte("chainKernelHash"), newChain.KernelHash[:])
-			writer.Put([]byte("chainPrevKernelHash"), newChain.PrevKernelHash[:])
+			writer.Put([]byte("chainHash"), newChain.Hash)
+			writer.Put([]byte("chainPrevHash"), newChain.PrevHash)
+			writer.Put([]byte("chainKernelHash"), newChain.KernelHash)
+			writer.Put([]byte("chainPrevKernelHash"), newChain.PrevKernelHash)
 
 			buf := make([]byte, binary.MaxVarintLen64)
 			n := binary.PutUvarint(buf, newChain.Height)
@@ -289,7 +288,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	}
 
 	gui.Warning("-------------------------------------------")
-	gui.Warning(fmt.Sprintf("Including blocks SUCCESS %s", hex.EncodeToString(chain.Hash[:])))
+	gui.Warning(fmt.Sprintf("Including blocks SUCCESS %s", hex.EncodeToString(chain.Hash)))
 	gui.Warning("-------------------------------------------")
 	newChain.updateChainInfo()
 

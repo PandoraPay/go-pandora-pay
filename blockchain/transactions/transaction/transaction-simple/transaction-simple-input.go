@@ -6,37 +6,37 @@ import (
 )
 
 type TransactionSimpleInput struct {
-	PublicKey [33]byte
+	PublicKey []byte //33
 	Amount    uint64
-	Signature [65]byte
-	Token     [20]byte
+	Signature []byte //65
+	Token     []byte //20
 
-	_publicKeyHash         [20]byte
+	_publicKeyHash         []byte //20
 	_publicKeyHashComputed bool
 }
 
 func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter, inclSignature bool) {
-	writer.Write(vin.PublicKey[:])
+	writer.Write(vin.PublicKey)
 	writer.WriteUvarint(vin.Amount)
 	if inclSignature {
-		writer.Write(vin.Signature[:])
+		writer.Write(vin.Signature)
 	}
-	writer.WriteToken(&vin.Token)
+	writer.WriteToken(vin.Token)
 }
 
 func (vin *TransactionSimpleInput) Deserialize(reader *helpers.BufferReader) {
 
-	vin.PublicKey = reader.Read33()
+	vin.PublicKey = reader.ReadBytes(33)
 	vin.Amount = reader.ReadUvarint()
-	vin.Signature = reader.Read65()
+	vin.Signature = reader.ReadBytes(65)
 	vin.Token = reader.ReadToken()
 
 }
 
-func (vin *TransactionSimpleInput) GetPublicKeyHash() *[20]byte {
+func (vin *TransactionSimpleInput) GetPublicKeyHash() []byte {
 	if !vin._publicKeyHashComputed {
-		vin._publicKeyHash = *cryptography.ComputePublicKeyHash(&vin.PublicKey)
+		vin._publicKeyHash = cryptography.ComputePublicKeyHash(vin.PublicKey)
 		vin._publicKeyHashComputed = true
 	}
-	return &vin._publicKeyHash
+	return vin._publicKeyHash
 }

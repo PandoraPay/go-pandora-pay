@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
+	merkle_tree "pandora-pay/cryptography/merkle-tree"
 	"pandora-pay/helpers"
 )
 
@@ -32,26 +33,27 @@ func (blkComplete *BlockComplete) Verify() {
 	}
 }
 
-func (blkComplete *BlockComplete) MerkleHash() cryptography.Hash {
-	var buffer = []byte{}
+func (blkComplete *BlockComplete) MerkleHash() []byte {
 	if len(blkComplete.Txs) > 0 {
 
-		//todo
-		return cryptography.SHA3Hash(buffer)
-
+		var hashes = make([][]byte, 0)
+		for _, tx := range blkComplete.Txs {
+			hashes = append(hashes, tx.ComputeHash())
+		}
+		return merkle_tree.MerkleRoot(hashes)
 	} else {
-		return cryptography.SHA3Hash(buffer)
+		return cryptography.SHA3Hash([]byte{})
 	}
 }
 
 func (blkComplete *BlockComplete) VerifyMerkleHash() bool {
 	merkleHash := blkComplete.MerkleHash()
-	return bytes.Equal(merkleHash[:], blkComplete.Block.MerkleHash[:])
+	return bytes.Equal(merkleHash, blkComplete.Block.MerkleHash)
 }
 
 func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, toks *tokens.Tokens) {
 
-	allFees := make(map[[20]byte]uint64)
+	allFees := make(map[string]uint64)
 	for _, tx := range blkComplete.Txs {
 		tx.AddFees(allFees)
 	}

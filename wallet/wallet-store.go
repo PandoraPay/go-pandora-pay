@@ -82,7 +82,7 @@ func (wallet *Wallet) loadWallet() {
 			}
 
 			checksum := wallet.computeChecksum()
-			if !bytes.Equal(checksum[:], wallet.Checksum[:]) {
+			if !bytes.Equal(checksum, wallet.Checksum) {
 				panic("Wallet checksum mismatch !")
 			}
 

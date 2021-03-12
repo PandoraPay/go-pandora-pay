@@ -17,8 +17,8 @@ type ChangesMapElement struct {
 
 type HashMap struct {
 	Bucket    *bbolt.Bucket
-	Changes   map[[20]byte]*ChangesMapElement
-	Committed map[[20]byte]*CommitedMapElement
+	Changes   map[string]*ChangesMapElement
+	Committed map[string]*CommitedMapElement
 	KeyLength int
 }
 
@@ -29,36 +29,37 @@ func CreateNewHashMap(tx *bbolt.Tx, name string, keyLength int) (hashMap *HashMa
 	}
 
 	hashMap = &HashMap{
-		Committed: make(map[[20]byte]*CommitedMapElement),
-		Changes:   make(map[[20]byte]*ChangesMapElement),
+		Committed: make(map[string]*CommitedMapElement),
+		Changes:   make(map[string]*ChangesMapElement),
 		Bucket:    tx.Bucket([]byte(name)),
 		KeyLength: keyLength,
 	}
 	return
 }
 
-func (hashMap *HashMap) Get(key *[20]byte) (out []byte) {
+func (hashMap *HashMap) Get(key []byte) (out []byte) {
 	return hashMap.get(key, true)
 }
 
-func (hashMap *HashMap) get(key *[20]byte, includeChanges bool) (out []byte) {
+func (hashMap *HashMap) get(key []byte, includeChanges bool) (out []byte) {
+	keyStr := string(key)
 
 	if includeChanges {
-		exists := hashMap.Changes[*key]
+		exists := hashMap.Changes[keyStr]
 		if exists != nil {
 			out = exists.Data
 			return
 		}
 	}
 
-	exists2 := hashMap.Committed[*key]
+	exists2 := hashMap.Committed[keyStr]
 	if exists2 != nil {
 		out = exists2.Data
 		return
 	}
 
-	out = hashMap.Bucket.Get(key[:])
-	hashMap.Committed[*key] = &CommitedMapElement{
+	out = hashMap.Bucket.Get(key)
+	hashMap.Committed[keyStr] = &CommitedMapElement{
 		out,
 		"view",
 		"",
@@ -66,20 +67,21 @@ func (hashMap *HashMap) get(key *[20]byte, includeChanges bool) (out []byte) {
 	return
 }
 
-func (hashMap *HashMap) Exists(key *[20]byte) bool {
+func (hashMap *HashMap) Exists(key []byte) bool {
+	keyStr := string(key)
 
-	exists := hashMap.Changes[*key]
+	exists := hashMap.Changes[keyStr]
 	if exists != nil {
 		return exists.Data != nil
 	}
 
-	exists2 := hashMap.Committed[*key]
+	exists2 := hashMap.Committed[keyStr]
 	if exists2 != nil {
 		return exists2.Data != nil
 	}
 
-	out := hashMap.Bucket.Get(key[:])
-	hashMap.Committed[*key] = &CommitedMapElement{
+	out := hashMap.Bucket.Get(key)
+	hashMap.Committed[keyStr] = &CommitedMapElement{
 		out,
 		"view",
 		"",
@@ -87,12 +89,12 @@ func (hashMap *HashMap) Exists(key *[20]byte) bool {
 	return out != nil
 }
 
-func (hashMap *HashMap) Update(key *[20]byte, data []byte) {
-
-	exists := hashMap.Changes[*key]
+func (hashMap *HashMap) Update(key []byte, data []byte) {
+	keyStr := string(key)
+	exists := hashMap.Changes[keyStr]
 	if exists == nil {
 		exists = new(ChangesMapElement)
-		hashMap.Changes[*key] = exists
+		hashMap.Changes[keyStr] = exists
 	}
 	exists.Data = data
 	exists.Status = "update"
@@ -100,12 +102,12 @@ func (hashMap *HashMap) Update(key *[20]byte, data []byte) {
 	return
 }
 
-func (hashMap *HashMap) Delete(key *[20]byte) {
-
-	exists := hashMap.Changes[*key]
+func (hashMap *HashMap) Delete(key []byte) {
+	keyStr := string(key)
+	exists := hashMap.Changes[keyStr]
 	if exists == nil {
 		exists = new(ChangesMapElement)
-		hashMap.Changes[*key] = exists
+		hashMap.Changes[keyStr] = exists
 	}
 	exists.Status = "del"
 	exists.Data = nil
@@ -136,25 +138,29 @@ func (hashMap *HashMap) Commit() {
 		}
 
 	}
-	hashMap.Changes = make(map[[20]byte]*ChangesMapElement)
+	hashMap.Changes = make(map[string]*ChangesMapElement)
 }
 
 func (hashMap *HashMap) Rollback() {
-	hashMap.Changes = make(map[[20]byte]*ChangesMapElement)
+	hashMap.Changes = make(map[string]*ChangesMapElement)
 }
 
 func (hashMap *HashMap) WriteToStore() {
 
 	for k, v := range hashMap.Committed {
 
+		if len(k) != 20 {
+			panic("key length is invalid")
+		}
+
 		if v.Status == "del" {
-			if err := hashMap.Bucket.Delete(k[:]); err != nil {
+			if err := hashMap.Bucket.Delete([]byte(k)); err != nil {
 				panic(err)
 			}
 			v.Status = "view"
 			v.Commit = "del"
 		} else if v.Status == "update" {
-			if err := hashMap.Bucket.Put(k[:], v.Data); err != nil {
+			if err := hashMap.Bucket.Put([]byte(k), v.Data); err != nil {
 				panic(err)
 			}
 			v.Commit = "update"

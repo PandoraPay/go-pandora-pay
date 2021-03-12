@@ -30,8 +30,8 @@ type Token struct {
 	MaxSupply        uint64
 	Supply           uint64
 
-	Key       [20]byte
-	SupplyKey [20]byte
+	Key       []byte //20
+	SupplyKey []byte //20
 
 	Name        string
 	Ticker      string
@@ -106,8 +106,8 @@ func (token *Token) Serialize() []byte {
 	writer.WriteUvarint(token.MaxSupply)
 	writer.WriteUvarint(token.Supply)
 
-	writer.Write(token.Key[:])
-	writer.Write(token.SupplyKey[:])
+	writer.Write(token.Key)
+	writer.Write(token.SupplyKey)
 
 	writer.WriteString(token.Name)
 	writer.WriteString(token.Ticker)
@@ -131,8 +131,8 @@ func (token *Token) Deserialize(buf []byte) {
 	token.DecimalSeparator = reader.ReadByte()
 	token.MaxSupply = reader.ReadUvarint()
 	token.Supply = reader.ReadUvarint()
-	token.Key = reader.Read20()
-	token.SupplyKey = reader.Read20()
+	token.Key = reader.ReadBytes(20)
+	token.SupplyKey = reader.ReadBytes(20)
 	token.Name = reader.ReadString()
 	token.Ticker = reader.ReadString()
 	token.Description = reader.ReadString()

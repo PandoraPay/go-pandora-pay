@@ -4,7 +4,7 @@ import (
 	"math"
 )
 
-var BURN_PUBLIC_KEY_HASH = [20]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+var BURN_PUBLIC_KEY_HASH = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 var (
 	DECIMAL_SEPARATOR = byte(7)
@@ -18,7 +18,7 @@ var (
 
 	NATIVE_TOKEN        = []byte{}
 	NATIVE_TOKEN_STRING = string(NATIVE_TOKEN)
-	NATIVE_TOKEN_FULL   = [20]byte{}
+	NATIVE_TOKEN_FULL   = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 )
 
 func ConvertToUnits(number uint64) uint64 {

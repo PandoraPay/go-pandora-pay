@@ -7,14 +7,13 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
 )
 
-func CreateSimpleTxOneInOneOut(nonce uint64, key [32]byte, amount uint64, token [20]byte, dst string, dstAmount uint64, feePerByte int, feeToken [20]byte) (tx *transaction.Transaction) {
-	return CreateSimpleTx(nonce, [][32]byte{key}, []uint64{amount}, [][20]byte{token}, []string{dst}, []uint64{dstAmount}, [][20]byte{token}, feePerByte, feeToken)
+func CreateSimpleTxOneInOneOut(nonce uint64, key []byte, amount uint64, token []byte, dst string, dstAmount uint64, feePerByte int, feeToken []byte) (tx *transaction.Transaction) {
+	return CreateSimpleTx(nonce, [][]byte{key}, []uint64{amount}, [][]byte{token}, []string{dst}, []uint64{dstAmount}, [][]byte{token}, feePerByte, feeToken)
 }
 
-func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][20]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][20]byte, feePerByte int, feeToken [20]byte) (tx *transaction.Transaction) {
+func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction) {
 
 	if len(keys) != len(amounts) || len(amounts) != len(tokens) || len(amounts) == 0 {
 		panic("Input lengths are a mismatch")
@@ -30,7 +29,7 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][2
 
 		privateKeys = append(privateKeys, addresses.PrivateKey{Key: keys[i]})
 
-		publicKey := *privateKeys[i].GeneratePublicKey()
+		publicKey := privateKeys[i].GeneratePublicKey()
 
 		vin = append(vin, &transaction_simple.TransactionSimpleInput{
 			Amount:    amounts[i],
@@ -44,12 +43,12 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][2
 
 		outAddress := addresses.DecodeAddr(dsts[i])
 
-		var publicKeyHash [20]byte
+		var publicKeyHash []byte
 		switch outAddress.Version {
 		case addresses.SimplePublicKeyHash:
-			publicKeyHash = *helpers.Byte20(outAddress.PublicKey)
+			publicKeyHash = outAddress.PublicKey
 		case addresses.SimplePublicKey:
-			publicKeyHash = *cryptography.ComputePublicKeyHash(helpers.Byte33(outAddress.PublicKey))
+			publicKeyHash = cryptography.ComputePublicKeyHash(outAddress.PublicKey)
 		}
 
 		vout = append(vout, &transaction_simple.TransactionSimpleOutput{
@@ -69,17 +68,17 @@ func CreateSimpleTx(nonce uint64, keys [][32]byte, amounts []uint64, tokens [][2
 		},
 	}
 
-	setFee(tx, feePerByte, &feeToken, false)
+	setFee(tx, feePerByte, feeToken, false)
 
 	hash := tx.SerializeForSigning()
 	for i, privateKey := range privateKeys {
-		tx.TxBase.(*transaction_simple.TransactionSimple).Vin[i].Signature = *privateKey.Sign(hash)
+		tx.TxBase.(*transaction_simple.TransactionSimple).Vin[i].Signature = privateKey.Sign(hash)
 	}
 
 	return
 }
 
-func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount uint64, feePerByte int, feeToken [20]byte, payFeeInExtra bool) (tx *transaction.Transaction) {
+func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction) {
 
 	privateKey := addresses.PrivateKey{Key: key}
 	tx = &transaction.Transaction{
@@ -94,24 +93,24 @@ func CreateUnstakeTx(nonce uint64, key [32]byte, unstakeAmount uint64, feePerByt
 			Vin: []*transaction_simple.TransactionSimpleInput{
 				{
 					Amount:    0,
-					PublicKey: *privateKey.GeneratePublicKey(),
+					PublicKey: privateKey.GeneratePublicKey(),
 				},
 			},
 		},
 	}
 
-	setFee(tx, feePerByte, &feeToken, payFeeInExtra)
-	tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature = *privateKey.Sign(tx.SerializeForSigning())
+	setFee(tx, feePerByte, feeToken, payFeeInExtra)
+	tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature = privateKey.Sign(tx.SerializeForSigning())
 	return
 }
 
-func CreateDelegateTx(nonce uint64, key [32]byte, delegateAmount uint64, delegateNewPubKey []byte, feePerByte int, feeToken [20]byte) (tx *transaction.Transaction) {
+func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateNewPubKey []byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction) {
 
 	delegateHasNewPublicKey := false
-	var delegateNewPublicKey [33]byte
+	var delegateNewPublicKey []byte //33 byte
 	if delegateNewPubKey != nil {
 		delegateHasNewPublicKey = true
-		delegateNewPublicKey = *helpers.Byte33(delegateNewPubKey)
+		delegateNewPublicKey = delegateNewPubKey
 	}
 
 	privateKey := addresses.PrivateKey{Key: key}
@@ -129,13 +128,13 @@ func CreateDelegateTx(nonce uint64, key [32]byte, delegateAmount uint64, delegat
 			Vin: []*transaction_simple.TransactionSimpleInput{
 				{
 					Amount:    0,
-					PublicKey: *privateKey.GeneratePublicKey(),
+					PublicKey: privateKey.GeneratePublicKey(),
 				},
 			},
 		},
 	}
 
-	setFee(tx, feePerByte, &feeToken, false)
-	tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature = *privateKey.Sign(tx.SerializeForSigning())
+	setFee(tx, feePerByte, feeToken, false)
+	tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature = privateKey.Sign(tx.SerializeForSigning())
 	return
 }

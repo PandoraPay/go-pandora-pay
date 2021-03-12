@@ -45,7 +45,8 @@ func TestECDSASignVerify(t *testing.T) {
 	assert.Equal(t, VerifySignature(publicKey, message, signature), true, "Signature was not validated")
 	assert.Equal(t, VerifySignature(publicKey, message, emptySignature), false, "Empty Signature was validated")
 
-	signature2 := signature[:]
+	var signature2 = make([]byte, len(signature))
+	copy(signature2, signature)
 	if signature2[2] == 5 {
 		signature2[2] = 2
 	} else {

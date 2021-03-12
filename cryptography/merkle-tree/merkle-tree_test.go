@@ -8,13 +8,13 @@ import (
 
 func TestMerkleRoot(t *testing.T) {
 
-	var hashes [2]Hash
-	hashes[0] = cryptography.RandomHash()
-	hashes[1] = cryptography.RandomHash()
+	var hashes [][]byte
+	hashes = append(hashes, cryptography.RandomHash())
+	hashes = append(hashes, cryptography.RandomHash())
 
-	root := MerkleRoot(hashes[:])
+	root := MerkleRoot(hashes)
 
-	hash := *hashMerkleNode(&hashes[0], &hashes[1])
+	hash := hashMerkleNode(hashes[0], hashes[1])
 	assert.Equal(t, root, hash, "Merkle Tree Hashes are invalid")
 
 }

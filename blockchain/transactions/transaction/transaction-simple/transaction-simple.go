@@ -5,7 +5,6 @@ import (
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/config"
-	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/ecdsa"
 	"pandora-pay/helpers"
 )
@@ -38,16 +37,16 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 			}
 		}
 
-		acc.AddBalance(false, vin.Amount, &vin.Token)
+		acc.AddBalance(false, vin.Amount, vin.Token)
 		accs.UpdateAccount(vin.GetPublicKeyHash(), acc)
 	}
 
 	for _, vout := range tx.Vout {
-		acc := accs.GetAccountEvenEmpty(&vout.PublicKeyHash)
+		acc := accs.GetAccountEvenEmpty(vout.PublicKeyHash)
 		acc.RefreshDelegatedStake(blockHeight)
 
-		acc.AddBalance(true, vout.Amount, &vout.Token)
-		accs.UpdateAccount(&vout.PublicKeyHash, acc)
+		acc.AddBalance(true, vout.Amount, vout.Token)
+		accs.UpdateAccount(vout.PublicKeyHash, acc)
 	}
 
 	switch tx.TxScript {
@@ -55,39 +54,40 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 
 }
 
-func (tx *TransactionSimple) ComputeFees(out map[[20]byte]uint64) {
+func (tx *TransactionSimple) ComputeFees(out map[string]uint64) {
 
 	tx.ComputeVin(out)
 	tx.ComputeVout(out)
 
 	switch tx.TxScript {
 	case TxSimpleScriptUnstake:
-		helpers.SafeMapUint64Add(out, &config.NATIVE_TOKEN_FULL, tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).UnstakeFeeExtra)
+		helpers.SafeMapUint64Add(out, config.NATIVE_TOKEN_STRING, tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).UnstakeFeeExtra)
 	}
 	return
 }
 
-func (tx *TransactionSimple) ComputeVin(out map[[20]byte]uint64) {
+func (tx *TransactionSimple) ComputeVin(out map[string]uint64) {
 	for _, vin := range tx.Vin {
-		helpers.SafeMapUint64Add(out, &vin.Token, vin.Amount)
+		helpers.SafeMapUint64Add(out, string(vin.Token), vin.Amount)
 	}
 }
-func (tx *TransactionSimple) ComputeVout(out map[[20]byte]uint64) {
+func (tx *TransactionSimple) ComputeVout(out map[string]uint64) {
 	for _, vout := range tx.Vout {
-		helpers.SafeMapUint64Sub(out, &vout.Token, vout.Amount)
-		if out[vout.Token] == 0 {
-			delete(out, vout.Token)
+		tokenStr := string(vout.Token)
+		helpers.SafeMapUint64Sub(out, tokenStr, vout.Amount)
+		if out[tokenStr] == 0 {
+			delete(out, tokenStr)
 		}
 	}
 }
 
-func (tx *TransactionSimple) VerifySignature(hash cryptography.Hash) bool {
+func (tx *TransactionSimple) VerifySignature(hash []byte) bool {
 	if len(tx.Vin) == 0 {
 		return false
 	}
 
 	for _, vin := range tx.Vin {
-		if ecdsa.VerifySignature(vin.PublicKey[:], hash[:], vin.Signature[0:64]) == false {
+		if ecdsa.VerifySignature(vin.PublicKey, hash, vin.Signature[0:64]) == false {
 			return false
 		}
 	}
@@ -122,7 +122,7 @@ func (tx *TransactionSimple) Validate() {
 		tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).Validate()
 	}
 
-	final := make(map[[20]byte]uint64)
+	final := make(map[string]uint64)
 	tx.ComputeVin(final)
 	tx.ComputeVout(final)
 }

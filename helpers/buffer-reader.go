@@ -51,48 +51,23 @@ func (reader *BufferReader) ReadString() string {
 	return string(bytes)
 }
 
-func (reader *BufferReader) ReadHash() cryptography.Hash {
+func (reader *BufferReader) ReadHash() []byte {
 	if len(reader.buf) >= cryptography.HashSize {
-		out := cryptography.ConvertHash(reader.buf[:cryptography.HashSize])
+		out := reader.buf[:cryptography.HashSize]
 		reader.buf = reader.buf[cryptography.HashSize:]
 		return out
 	}
 	panic("Error reading hash")
 }
 
-func (reader *BufferReader) Read33() [33]byte {
-	if len(reader.buf) >= 33 {
-		out := *Byte33(reader.buf[:33])
-		reader.buf = reader.buf[33:]
-		return out
-	}
-	panic("Error reading 33byte")
-}
-func (reader *BufferReader) Read20() [20]byte {
-	if len(reader.buf) >= 20 {
-		out := *Byte20(reader.buf[:20])
-		reader.buf = reader.buf[20:]
-		return out
-	}
-	panic("Error reading 20byte")
-}
-func (reader *BufferReader) Read65() [65]byte {
-	if len(reader.buf) >= 65 {
-		out := *Byte65(reader.buf[:65])
-		reader.buf = reader.buf[65:]
-		return out
-	}
-	panic("Error reading 65byte ")
-}
-
-func (reader *BufferReader) ReadToken() [20]byte {
+func (reader *BufferReader) ReadToken() []byte {
 
 	tokenType := reader.ReadByte()
 
 	if tokenType == 0 {
-		return [20]byte{}
+		return []byte{}
 	} else if tokenType == 1 {
-		return *Byte20(reader.ReadBytes(20))
+		return reader.ReadBytes(20)
 	}
 	panic("invalid token type")
 }

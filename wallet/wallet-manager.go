@@ -16,7 +16,7 @@ func (wallet *Wallet) GetWalletAddressByAddress(addressEncoded string) (out *Wal
 	address := addresses.DecodeAddr(addressEncoded)
 
 	for _, addr := range wallet.Addresses {
-		if bytes.Equal(addr.PublicKey[:], address.PublicKey) || bytes.Equal(addr.PublicKeyHash[:], address.PublicKey) {
+		if bytes.Equal(addr.PublicKey, address.PublicKey) || bytes.Equal(addr.PublicKeyHash, address.PublicKey) {
 			out = addr
 			return
 		}
@@ -31,18 +31,18 @@ func (wallet *Wallet) AddNewAddress() *WalletAddress {
 	wallet.Lock()
 	defer wallet.Unlock()
 
-	masterKey, _ := bip32.NewMasterKey(wallet.Seed[:])
+	masterKey, _ := bip32.NewMasterKey(wallet.Seed)
 
 	key, err := masterKey.NewChildKey(wallet.SeedIndex)
 	if err != nil {
 		panic("Couldn't derivate the marker key")
 	}
 
-	privateKey := addresses.PrivateKey{Key: *helpers.Byte32(key.Key)}
-	publicKey := *privateKey.GeneratePublicKey()
+	privateKey := addresses.PrivateKey{Key: key.Key}
+	publicKey := privateKey.GeneratePublicKey()
 	address := privateKey.GenerateAddress(true, 0, []byte{})
 	addressEncoded := address.EncodeAddr()
-	publicKeyHash := *cryptography.ComputePublicKeyHash(&publicKey)
+	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
 
 	walletAddress := WalletAddress{
 		"Addr " + strconv.Itoa(wallet.Count),
@@ -87,7 +87,7 @@ func (wallet *Wallet) RemoveAddress(index int) bool {
 	return true
 }
 
-func (wallet *Wallet) ShowPrivateKey(index int) [32]byte {
+func (wallet *Wallet) ShowPrivateKey(index int) []byte { //32 byte
 
 	wallet.RLock()
 	defer wallet.RUnlock()
@@ -117,7 +117,7 @@ func (wallet *Wallet) createSeed() {
 
 	// Generate a Bip32 HD wallet for the mnemonic and a user supplied password
 	seed := bip39.NewSeed(mnemonic, "SEED Secret Passphrase")
-	wallet.Seed = *helpers.Byte32(seed)
+	wallet.Seed = seed
 
 }
 
@@ -131,15 +131,12 @@ func (wallet *Wallet) updateWallet() {
 	gui.InfoUpdate("Wallet Addrs", strconv.Itoa(wallet.Count))
 }
 
-func (wallet *Wallet) computeChecksum() (checksum cryptography.Checksum) {
+func (wallet *Wallet) computeChecksum() []byte {
 
 	data, err := helpers.GetJSON(wallet, "Checksum")
 	if err != nil {
 		panic(err)
 	}
 
-	out := cryptography.GetChecksum(data)
-	copy(checksum[:], out[:])
-
-	return
+	return cryptography.GetChecksum(data)
 }

@@ -23,7 +23,7 @@ func (chain *Blockchain) init() {
 	chain.PrevHash = genesis.GenesisData.Hash
 	chain.KernelHash = genesis.GenesisData.KernelHash
 	chain.PrevKernelHash = genesis.GenesisData.KernelHash
-	chain.Target = new(big.Int).SetBytes(genesis.GenesisData.Target[:])
+	chain.Target = new(big.Int).SetBytes(genesis.GenesisData.Target)
 	chain.BigTotalDifficulty = new(big.Int).SetUint64(0)
 
 	var tok = token.Token{
@@ -43,7 +43,7 @@ func (chain *Blockchain) init() {
 	if err := store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
 
 		toks := tokens.NewTokens(tx)
-		toks.CreateToken(&config.NATIVE_TOKEN_FULL, &tok)
+		toks.CreateToken(config.NATIVE_TOKEN, &tok)
 
 		toks.Commit()
 		toks.WriteToStore()
@@ -112,6 +112,9 @@ func (chain *Blockchain) createNextBlockForForging() {
 		}
 
 	}
+	blk.DelegatedPublicKey = make([]byte, 33)
+	blk.Forger = make([]byte, 20)
+	blk.Signature = make([]byte, 65)
 
 	blkComplete := &block.BlockComplete{
 		Block: blk,
@@ -124,8 +127,8 @@ func (chain *Blockchain) createNextBlockForForging() {
 
 func (chain *Blockchain) updateChainInfo() {
 	gui.InfoUpdate("Blocks", strconv.FormatUint(chain.Height, 10))
-	gui.InfoUpdate("Chain  Hash", hex.EncodeToString(chain.Hash[:]))
-	gui.InfoUpdate("Chain KHash", hex.EncodeToString(chain.KernelHash[:]))
+	gui.InfoUpdate("Chain  Hash", hex.EncodeToString(chain.Hash))
+	gui.InfoUpdate("Chain KHash", hex.EncodeToString(chain.KernelHash))
 	gui.InfoUpdate("Chain  Diff", chain.Target.String())
 	gui.InfoUpdate("TXs", strconv.FormatUint(chain.Transactions, 10))
 }

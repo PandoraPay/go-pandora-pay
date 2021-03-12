@@ -53,7 +53,7 @@ func (settings *Settings) loadSettings() {
 
 			checksum := settings.computeChecksum()
 
-			if !bytes.Equal(checksum[:], settings.Checksum[:]) {
+			if !bytes.Equal(checksum, settings.Checksum) {
 				panic("Settings checksum mismatch !")
 			}
 

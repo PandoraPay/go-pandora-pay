@@ -3,6 +3,7 @@ package tokens
 import (
 	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/tokens/token"
+	"pandora-pay/config"
 	"pandora-pay/store"
 )
 
@@ -23,11 +24,11 @@ func NewTokens(tx *bbolt.Tx) (tokens *Tokens) {
 	return
 }
 
-func (tokens *Tokens) GetAnyToken(key *[20]byte) *token.Token {
-	return tokens.GetToken(key)
-}
+func (tokens *Tokens) GetToken(key []byte) *token.Token {
 
-func (tokens *Tokens) GetToken(key *[20]byte) *token.Token {
+	if len(key) == 0 {
+		key = config.NATIVE_TOKEN_FULL
+	}
 
 	data := tokens.HashMap.Get(key)
 	if data == nil {
@@ -39,7 +40,11 @@ func (tokens *Tokens) GetToken(key *[20]byte) *token.Token {
 	return tok
 }
 
-func (tokens *Tokens) CreateToken(key *[20]byte, tok *token.Token) {
+func (tokens *Tokens) CreateToken(key []byte, tok *token.Token) {
+	if len(key) == 0 {
+		key = config.NATIVE_TOKEN_FULL
+	}
+
 	tok.Validate()
 	if tokens.ExistsToken(key) {
 		panic("token already exists")
@@ -47,15 +52,23 @@ func (tokens *Tokens) CreateToken(key *[20]byte, tok *token.Token) {
 	tokens.UpdateToken(key, tok)
 }
 
-func (tokens *Tokens) UpdateToken(key *[20]byte, tok *token.Token) {
+func (tokens *Tokens) UpdateToken(key []byte, tok *token.Token) {
+	if len(key) == 0 {
+		key = config.NATIVE_TOKEN_FULL
+	}
+
 	tokens.HashMap.Update(key, tok.Serialize())
 }
 
-func (tokens *Tokens) ExistsToken(key *[20]byte) bool {
+func (tokens *Tokens) ExistsToken(key []byte) bool {
+	if len(key) == 0 {
+		key = config.NATIVE_TOKEN_FULL
+	}
+
 	return tokens.HashMap.Exists(key)
 }
 
-func (tokens *Tokens) DeleteAccount(key *[20]byte) {
+func (tokens *Tokens) DeleteToken(key []byte) {
 	tokens.HashMap.Delete(key)
 }
 

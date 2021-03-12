@@ -46,7 +46,7 @@ func ForgingInit(mempool *mempool.MemPool) (forging *Forging) {
 		mempool:         mempool,
 		SolutionChannel: make(chan *block.BlockComplete),
 		Wallet: &ForgingWallet{
-			addressesMap: make(map[[20]byte]*ForgingWalletAddress),
+			addressesMap: make(map[string]*ForgingWalletAddress),
 		},
 	}
 
@@ -185,7 +185,7 @@ func (forging *Forging) publishSolution() (err error) {
 
 	serializationForSigning := work.blkComplete.Block.SerializeForSigning()
 
-	work.blkComplete.Block.Signature = *solution.address.delegatedPrivateKey.Sign(serializationForSigning)
+	work.blkComplete.Block.Signature = solution.address.delegatedPrivateKey.Sign(serializationForSigning)
 
 	//send message to blockchain
 	forging.SolutionChannel <- work.blkComplete

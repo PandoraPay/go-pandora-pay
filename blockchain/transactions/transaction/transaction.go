@@ -22,7 +22,7 @@ func (tx *Transaction) IncludeTransaction(blockHeight uint64, accs *accounts.Acc
 	}
 }
 
-func (tx *Transaction) AddFees(fees map[[20]byte]uint64) {
+func (tx *Transaction) AddFees(fees map[string]uint64) {
 	switch tx.TxType {
 	case transaction_type.TxSimple:
 		tx.TxBase.(*transaction_simple.TransactionSimple).ComputeFees(fees)
@@ -30,13 +30,13 @@ func (tx *Transaction) AddFees(fees map[[20]byte]uint64) {
 	return
 }
 
-func (tx *Transaction) ComputeFees() (fees map[[20]byte]uint64) {
-	fees = make(map[[20]byte]uint64)
+func (tx *Transaction) ComputeFees() (fees map[string]uint64) {
+	fees = make(map[string]uint64)
 	tx.AddFees(fees)
 	return
 }
 
-func (tx *Transaction) SerializeForSigning() cryptography.Hash {
+func (tx *Transaction) SerializeForSigning() []byte {
 	return cryptography.SHA3Hash(tx.serializeTx(false))
 }
 
@@ -52,7 +52,7 @@ func (tx *Transaction) VerifySignature() bool {
 
 }
 
-func (tx *Transaction) ComputeHash() cryptography.Hash {
+func (tx *Transaction) ComputeHash() []byte {
 	return cryptography.SHA3Hash(tx.Serialize())
 }
 

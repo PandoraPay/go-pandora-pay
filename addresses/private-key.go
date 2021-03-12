@@ -8,22 +8,22 @@ import (
 )
 
 type PrivateKey struct {
-	Key [32]byte
+	Key []byte //32 byte
 }
 
-func (pk *PrivateKey) GeneratePublicKey() *[33]byte {
+func (pk *PrivateKey) GeneratePublicKey() []byte {
 
-	pub, err := ecdsa.ComputePublicKey(pk.Key[:])
+	pub, err := ecdsa.ComputePublicKey(pk.Key)
 	if err != nil {
 		panic(err)
 	}
 
-	return helpers.Byte33(pub)
+	return pub
 }
 
 func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) *Address {
 
-	publicKey, err := ecdsa.ComputePublicKey(pk.Key[:])
+	publicKey, err := ecdsa.ComputePublicKey(pk.Key)
 	if err != nil {
 		panic("Strange error. Your private key was invalid")
 	}
@@ -36,8 +36,7 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 	var version AddressVersion
 
 	if usePublicKeyHash {
-		publicKeyHash := cryptography.ComputePublicKeyHash(helpers.Byte33(publicKey))
-		finalPublicKey = publicKeyHash[:]
+		finalPublicKey = cryptography.ComputePublicKeyHash(publicKey)
 		version = SimplePublicKeyHash
 	} else {
 		finalPublicKey = publicKey
@@ -47,25 +46,25 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 	return &Address{
 		config.NETWORK_SELECTED,
 		version,
-		finalPublicKey[:],
+		finalPublicKey,
 		amount,
 		paymentID,
 	}
 }
 
-func (pk *PrivateKey) Sign(message cryptography.Hash) *[65]byte {
-	privateKey, err := ecdsa.ToECDSA(pk.Key[:])
+func (pk *PrivateKey) Sign(message []byte) []byte {
+	privateKey, err := ecdsa.ToECDSA(pk.Key)
 	if err != nil {
 		panic(err)
 	}
 
 	var signature []byte
-	if signature, err = ecdsa.Sign(message[:], privateKey); err != nil {
+	if signature, err = ecdsa.Sign(message, privateKey); err != nil {
 		panic(err)
 	}
-	return helpers.Byte65(signature)
+	return signature
 }
 
 func GenerateNewPrivateKey() *PrivateKey {
-	return &PrivateKey{Key: *helpers.Byte32(helpers.RandomBytes(32))}
+	return &PrivateKey{Key: helpers.RandomBytes(32)}
 }

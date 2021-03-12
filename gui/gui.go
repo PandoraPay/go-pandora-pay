@@ -108,8 +108,6 @@ func processArgument(any ...interface{}) string {
 			s += strconv.Itoa(v)
 		case []byte:
 			s += hex.EncodeToString(v)
-		case [32]byte:
-			s += hex.EncodeToString(v[:])
 		case error:
 			s += v.Error()
 		default:

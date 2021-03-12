@@ -36,7 +36,7 @@ func forge(forging *Forging, workPointer unsafe.Pointer, work *ForgingWork, wall
 
 			n = binary.PutUvarint(buf, timestamp)
 			serialized = append(serialized, buf[:n]...)
-			serialized = append(serialized, address.publicKeyHash[:]...)
+			serialized = append(serialized, address.publicKeyHash...)
 			kernelHash := cryptography.SHA3Hash(serialized)
 
 			if height > 0 {
@@ -50,7 +50,7 @@ func forge(forging *Forging, workPointer unsafe.Pointer, work *ForgingWork, wall
 
 			} else {
 				// for debugging only
-				// gui.Log(hex.EncodeToString(kernelHash[:]))
+				// gui.Log(hex.EncodeToString(kernelHash))
 			}
 
 			serialized = serialized[:len(serialized)-n-20]

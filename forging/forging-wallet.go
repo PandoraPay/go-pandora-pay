@@ -12,27 +12,27 @@ import (
 
 type ForgingWallet struct {
 	addresses    []*ForgingWalletAddress
-	addressesMap map[[20]byte]*ForgingWalletAddress
+	addressesMap map[string]*ForgingWalletAddress
 
 	sync.RWMutex
 }
 
 type ForgingWalletAddress struct {
 	delegatedPrivateKey *addresses.PrivateKey
-	delegatedPublicKey  [33]byte
+	delegatedPublicKey  []byte //33 byte
 
-	publicKeyHash [20]byte
+	publicKeyHash []byte //20byte
 
 	account *account.Account
 }
 
 type ForgingWalletAddressRequired struct {
-	publicKeyHash [20]byte
+	publicKeyHash []byte //20 byte
 	wallet        *ForgingWalletAddress
 	stakingAmount uint64
 }
 
-func (w *ForgingWallet) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte, pubKeyHash [20]byte) {
+func (w *ForgingWallet) AddWallet(delegatedPub []byte, delegatedPriv []byte, pubKeyHash []byte) {
 
 	w.Lock()
 	defer w.Unlock()
@@ -43,7 +43,7 @@ func (w *ForgingWallet) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte,
 
 		accs := accounts.NewAccounts(tx)
 
-		acc := accs.GetAccount(&pubKeyHash)
+		acc := accs.GetAccount(pubKeyHash)
 
 		address := ForgingWalletAddress{
 			&private,
@@ -52,7 +52,7 @@ func (w *ForgingWallet) AddWallet(delegatedPub [33]byte, delegatedPriv [32]byte,
 			acc,
 		}
 		w.addresses = append(w.addresses, &address)
-		w.addressesMap[pubKeyHash] = &address
+		w.addressesMap[string(pubKeyHash)] = &address
 
 		return
 	})
@@ -81,13 +81,13 @@ func (w *ForgingWallet) UpdateBalanceChanges(accs *accounts.Accounts) {
 
 }
 
-func (w *ForgingWallet) RemoveWallet(delegatedPublicKey [33]byte) {
+func (w *ForgingWallet) RemoveWallet(delegatedPublicKey []byte) { //33 byte
 
 	w.Lock()
 	defer w.Unlock()
 
 	for i, address := range w.addresses {
-		if bytes.Equal(address.delegatedPublicKey[:], delegatedPublicKey[:]) {
+		if bytes.Equal(address.delegatedPublicKey, delegatedPublicKey) {
 			w.addresses = append(w.addresses[:i], w.addresses[:i+1]...)
 			return
 		}
@@ -106,7 +106,7 @@ func (w *ForgingWallet) loadBalances() error {
 
 		for _, address := range w.addresses {
 
-			account := accs.GetAccount(&address.publicKeyHash)
+			account := accs.GetAccount(address.publicKeyHash)
 			address.account = account
 
 		}

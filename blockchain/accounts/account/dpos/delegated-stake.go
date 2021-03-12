@@ -8,7 +8,7 @@ import (
 type DelegatedStake struct {
 
 	//public key for delegation
-	DelegatedPublicKey [33]byte
+	DelegatedPublicKey []byte //33 bytes
 
 	//confirmed stake
 	StakeAvailable uint64
@@ -64,7 +64,7 @@ func (dstake *DelegatedStake) AddStakePendingUnstake(amount, blockHeight uint64)
 
 func (dstake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
 
-	writer.Write(dstake.DelegatedPublicKey[:])
+	writer.Write(dstake.DelegatedPublicKey)
 	writer.WriteUvarint(dstake.StakeAvailable)
 
 	writer.WriteUvarint(uint64(len(dstake.StakesPending)))
@@ -76,7 +76,7 @@ func (dstake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
 
 func (dstake *DelegatedStake) Deserialize(reader *helpers.BufferReader) {
 
-	dstake.DelegatedPublicKey = reader.Read33()
+	dstake.DelegatedPublicKey = reader.ReadBytes(33)
 	dstake.StakeAvailable = reader.ReadUvarint()
 
 	n := reader.ReadUvarint()

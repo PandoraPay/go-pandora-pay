@@ -2,7 +2,6 @@ package store
 
 import (
 	"encoding/json"
-	"pandora-pay/helpers"
 )
 
 type transactionChange struct {
@@ -13,11 +12,12 @@ type transactionChange struct {
 func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) {
 
 	values := make([]transactionChange, 0)
-	for key, v := range hashMap.Changes {
+	for k, v := range hashMap.Changes {
 		if v.Status == "del" || v.Status == "update" {
-			original := hashMap.get(&key, false)
+			key := []byte(k)
+			original := hashMap.get(key, false)
 			values = append(values, transactionChange{
-				key:        key[:],
+				key:        key,
 				transition: original,
 			})
 
@@ -49,13 +49,13 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) {
 
 	for _, change := range values {
 		if change.transition == nil {
-			hashMap.Committed[*helpers.Byte20(change.key)] = &CommitedMapElement{
+			hashMap.Committed[string(change.key)] = &CommitedMapElement{
 				Data:   nil,
 				Status: "del",
 				Commit: "",
 			}
 		} else {
-			hashMap.Committed[*helpers.Byte20(change.key)] = &CommitedMapElement{
+			hashMap.Committed[string(change.key)] = &CommitedMapElement{
 				Data:   change.transition,
 				Status: "update",
 				Commit: "",
