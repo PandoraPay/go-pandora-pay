@@ -95,12 +95,9 @@ func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *blo
 		txHashes = append(txHashes, hash)
 
 		//let's check to see if the tx block is already stored, if yes, we will skip it
-		hashStr := string(hash)
-		if removedTxHashes[hashStr] == nil {
+		if removedTxHashes[string(hash)] == nil {
 			bucket.Put(append([]byte("tx"), hash...), tx.Serialize())
 			newTxHashes = append(newTxHashes, hash)
-		} else {
-			delete(removedTxHashes, hashStr)
 		}
 	}
 

@@ -114,7 +114,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 				for txHash := range removedTxHashes {
 					data := writer.Get([]byte("tx" + txHash))
 					removedTx = append(removedTx, data)
-
 					writer.Delete([]byte("tx" + txHash))
 				}
 
@@ -263,7 +262,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			//to detect if the savedBlock was done correctly
 			savedBlock = false
 
-			newChain.saveBlockComplete(writer, blkComplete, hash, removedTxHashes, accs, toks)
+			newTransactionsSaved := newChain.saveBlockComplete(writer, blkComplete, hash, removedTxHashes, accs, toks)
 
 			if len(removedBlocksHeights) > 0 {
 				removedBlocksHeights = removedBlocksHeights[1:]
@@ -287,6 +286,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			newChain.Height += 1
 			newChain.Transactions += uint64(len(blkComplete.Txs))
 			insertedBlocks = append(insertedBlocks, blkComplete)
+
+			for _, txHashId := range newTransactionsSaved {
+				insertedTxHashes = append(insertedTxHashes, txHashId)
+			}
 
 			writer.Put([]byte("chainHash"), newChain.Hash)
 			writer.Put([]byte("chainPrevHash"), newChain.PrevHash)
