@@ -27,28 +27,22 @@ import (
 )
 
 type Blockchain struct {
-	Hash           []byte //32
-	PrevHash       []byte //32
-	KernelHash     []byte //32
-	PrevKernelHash []byte //32
-	Height         uint64
-	Timestamp      uint64
-
-	Target             *big.Int
-	BigTotalDifficulty *big.Int
-
-	Transactions uint64 //count of the number of txs
-
-	Sync bool `json:"-"`
-
+	Hash                  []byte //32
+	PrevHash              []byte //32
+	KernelHash            []byte //32
+	PrevKernelHash        []byte //32
+	Height                uint64
+	Timestamp             uint64
+	Target                *big.Int
+	BigTotalDifficulty    *big.Int
+	Transactions          uint64           //count of the number of txs
+	Sync                  bool             `json:"-"`
 	UpdateChannel         chan uint64      `json:"-"`
 	UpdateNewChainChannel chan *Blockchain `json:"-"`
-
-	forging *forging.Forging `json:"-"`
-	mempool *mempool.MemPool `json:"-"`
-
-	mutex        sync.Mutex `json:"-"`
-	sync.RWMutex `json:"-"`
+	forging               *forging.Forging `json:"-"`
+	mempool               *mempool.MemPool `json:"-"`
+	mutex                 sync.Mutex       `json:"-"`
+	sync.RWMutex          `json:"-"`
 }
 
 func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, calledByForging bool) (result bool, err error) {

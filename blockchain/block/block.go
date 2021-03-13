@@ -13,15 +13,11 @@ import (
 
 type Block struct {
 	BlockHeader
-	MerkleHash helpers.ByteString //32 byte
-
-	PrevHash       helpers.ByteString //32 byte
-	PrevKernelHash helpers.ByteString //32 byte
-
-	Timestamp uint64
-
-	StakingAmount uint64
-
+	MerkleHash         helpers.ByteString //32 byte
+	PrevHash           helpers.ByteString //32 byte
+	PrevKernelHash     helpers.ByteString //32 byte
+	Timestamp          uint64
+	StakingAmount      uint64
 	DelegatedPublicKey helpers.ByteString //33 byte public key. It IS NOT included in the kernel hash
 	Forger             helpers.ByteString // 20 byte public key hash
 	Signature          helpers.ByteString // 65 byte signature
