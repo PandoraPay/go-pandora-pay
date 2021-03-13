@@ -163,7 +163,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			blkComplete := blocksComplete[i]
 
 			if blkComplete.Block.Height < newChain.Height {
-				hash := newChain.loadBlockHash(writer, blkComplete.Block.Height)
+				hash := newChain.LoadBlockHash(writer, blkComplete.Block.Height)
 				hash2 := blkComplete.Block.ComputeHash()
 				if bytes.Equal(hash, hash2) {
 					blocksComplete = blocksComplete[i+1:]

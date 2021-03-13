@@ -7,72 +7,18 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"strconv"
 )
 
-func (chain *Blockchain) LoadBlockCompleteFromHash(hash []byte) (blkComplete *block.BlockComplete) {
-	if err := store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
-		reader := tx.Bucket([]byte("Chain"))
-		blkComplete = chain.loadBlockComplete(reader, hash)
-		return
-	}); err != nil {
-		panic(err)
-	}
-	return
-}
-
-func (chain *Blockchain) LoadBlockCompleteFromHeight(blockHeight uint64) (blkComplete *block.BlockComplete) {
-	if err := store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
-		reader := tx.Bucket([]byte("Chain"))
-		hash := chain.loadBlockHash(reader, blockHeight)
-		blkComplete = chain.loadBlockComplete(reader, hash)
-		return
-	}); err != nil {
-		panic(err)
-	}
-	return
-}
-
-func (chain *Blockchain) loadBlock(bucket *bolt.Bucket, hash []byte) (blk *block.Block) {
+func (chain *Blockchain) LoadBlock(bucket *bolt.Bucket, hash []byte) (blk *block.Block) {
 	blockData := bucket.Get(append([]byte("blockHash"), hash...))
 	if blockData == nil {
 		return
 	}
 	blk = &block.Block{}
 	blk.Deserialize(helpers.NewBufferReader(blockData))
-	return
-}
-
-func (chain *Blockchain) loadBlockComplete(bucket *bolt.Bucket, hash []byte) (blkComplete *block.BlockComplete) {
-
-	blk := chain.loadBlock(bucket, hash)
-	if blk == nil {
-		return nil
-	}
-
-	txHashes := make([][]byte, 0)
-	data := bucket.Get([]byte("blockTxs" + strconv.FormatUint(blk.Height, 10)))
-	err := json.Unmarshal(data, &txHashes)
-	if err != nil {
-		panic(err)
-	}
-
-	txs := make([]*transaction.Transaction, 0)
-	for _, txHash := range txHashes {
-		data = bucket.Get(append([]byte("tx"), txHash...))
-		tx := &transaction.Transaction{}
-		tx.Deserialize(helpers.NewBufferReader(data))
-		txs = append(txs, tx)
-	}
-
-	blkComplete = &block.BlockComplete{
-		Block: blk,
-		Txs:   txs,
-	}
-
 	return
 }
 
@@ -139,7 +85,7 @@ func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *blo
 	return newTxHashes
 }
 
-func (chain *Blockchain) loadBlockHash(bucket *bolt.Bucket, height uint64) []byte {
+func (chain *Blockchain) LoadBlockHash(bucket *bolt.Bucket, height uint64) []byte {
 	if height < 0 {
 		panic("Height is invalid")
 	}

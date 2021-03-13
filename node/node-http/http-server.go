@@ -36,7 +36,7 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
 	callback := server.api.GetMap[req.URL.Path]
 	if callback != nil {
-		output = callback(req)
+		output = callback(req.URL.Query())
 	} else {
 		panic("Unknown GET request")
 	}

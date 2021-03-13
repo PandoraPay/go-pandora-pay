@@ -1,6 +1,34 @@
 package helpers
 
-import "encoding/json"
+import (
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+)
+
+// ByteString is a byte array that serializes to hex
+type ByteString []byte
+
+// MarshalJSON serializes ByteArray to hex
+func (s ByteString) MarshalJSON() ([]byte, error) {
+	bytes, err := json.Marshal(fmt.Sprintf("%x", string(s)))
+	return bytes, err
+}
+
+// UnmarshalJSON deserializes ByteArray to hex
+func (s *ByteString) UnmarshalJSON(data []byte) error {
+
+	var x string
+	if err := json.Unmarshal(data, &x); err == nil {
+		return err
+	}
+	str, err := hex.DecodeString(x)
+	if err != nil {
+		return err
+	}
+	*s = ByteString([]byte(str))
+	return nil
+}
 
 func GetJSON(obj interface{}, ignoreFields ...string) (out []byte, err error) {
 

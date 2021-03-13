@@ -6,10 +6,10 @@ import (
 )
 
 type TransactionSimpleInput struct {
-	PublicKey []byte //33
+	PublicKey helpers.ByteString //33
 	Amount    uint64
-	Signature []byte //65
-	Token     []byte //20
+	Signature helpers.ByteString //65
+	Token     helpers.ByteString //20
 
 	_publicKeyHash         []byte //20
 	_publicKeyHashComputed bool

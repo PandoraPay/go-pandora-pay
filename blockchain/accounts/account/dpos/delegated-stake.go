@@ -8,7 +8,7 @@ import (
 type DelegatedStake struct {
 
 	//public key for delegation
-	DelegatedPublicKey []byte //33 bytes
+	DelegatedPublicKey helpers.ByteString //33 bytes
 
 	//confirmed stake
 	StakeAvailable uint64

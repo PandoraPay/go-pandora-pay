@@ -2,7 +2,7 @@ package api
 
 import (
 	"encoding/hex"
-	"net/http"
+	"net/url"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"strconv"
@@ -11,18 +11,18 @@ import (
 )
 
 type API struct {
-	GetMap map[string]func(req *http.Request) interface{}
+	GetMap map[string]func(values url.Values) interface{}
 
 	chain      *blockchain.Blockchain
 	localChain unsafe.Pointer
 }
 
-func (api *API) getBlockchain(req *http.Request) interface{} {
+func (api *API) getBlockchain(values url.Values) interface{} {
 	pointer := atomic.LoadPointer(&api.localChain)
 	return (*APIBlockchain)(pointer)
 }
 
-func (api *API) getInfo(req *http.Request) interface{} {
+func (api *API) getInfo(values url.Values) interface{} {
 	return &struct {
 		Name        string
 		Version     string
@@ -36,26 +36,50 @@ func (api *API) getInfo(req *http.Request) interface{} {
 	}
 }
 
-func (api *API) getPing(req *http.Request) interface{} {
+func (api *API) getPing(values url.Values) interface{} {
 	return &struct {
 		Ping string
 	}{Ping: "Pong"}
 }
 
-func (api *API) getBlock(req *http.Request) interface{} {
-	height, err := strconv.Atoi(req.URL.Query().Get("height"))
-	if err != nil {
-		panic("Parameter Height was not specified or is not a number")
+func (api *API) getBlockComplete(values url.Values) interface{} {
+	heightStr := values.Get("height")
+	if heightStr != "" {
+		height, err := strconv.Atoi(heightStr)
+		if err != nil {
+			panic("parameter 'height' is not a number")
+		}
+		return api.loadBlockCompleteFromHeight(uint64(height))
 	}
-	return api.chain.LoadBlockCompleteFromHeight(uint64(height))
+	hashStr := values.Get("hash")
+	if hashStr != "" {
+		hash, err := hex.DecodeString(values.Get("hash"))
+		if err != nil {
+			panic("parameter 'hash' was is not a valid hex number")
+		}
+		return api.loadBlockCompleteFromHash(hash)
+	}
+	panic("parameter 'hash' or 'height' are missing")
 }
 
-func (api *API) getBlockByHash(req *http.Request) interface{} {
-	hash, err := hex.DecodeString(req.URL.Query().Get("hash"))
-	if err != nil {
-		panic("Parameter Height was not specified or is not a valid hex number")
+func (api *API) getBlock(values url.Values) interface{} {
+	heightStr := values.Get("height")
+	if heightStr != "" {
+		height, err := strconv.Atoi(heightStr)
+		if err != nil {
+			panic("parameter 'height' is not a number")
+		}
+		return api.loadBlockWithTXsFromHeight(uint64(height))
 	}
-	return api.chain.LoadBlockCompleteFromHash(hash)
+	hashStr := values.Get("hash")
+	if hashStr != "" {
+		hash, err := hex.DecodeString(values.Get("hash"))
+		if err != nil {
+			panic("parameter 'hash' was is not a valid hex number")
+		}
+		return api.loadBlockWithTXsFromHash(hash)
+	}
+	panic("parameter 'hash' or 'height' are missing")
 }
 
 //make sure it is safe to read
@@ -80,12 +104,12 @@ func CreateAPI(chain *blockchain.Blockchain) *API {
 		chain: chain,
 	}
 
-	api.GetMap = map[string]func(req *http.Request) interface{}{
-		"/":              api.getInfo,
-		"/chain":         api.getBlockchain,
-		"/ping":          api.getPing,
-		"/block":         api.getBlock,
-		"/block-by-hash": api.getBlockByHash,
+	api.GetMap = map[string]func(values url.Values) interface{}{
+		"/":               api.getInfo,
+		"/chain":          api.getBlockchain,
+		"/ping":           api.getPing,
+		"/block-complete": api.getBlockComplete,
+		"/block":          api.getBlock,
 	}
 
 	go func() {

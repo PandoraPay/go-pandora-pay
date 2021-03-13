@@ -8,7 +8,7 @@ import (
 type TransactionSimpleDelegate struct {
 	DelegateAmount          uint64
 	DelegateHasNewPublicKey bool
-	DelegateNewPublicKey    []byte //33 byte
+	DelegateNewPublicKey    helpers.ByteString //33 byte
 }
 
 func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) {

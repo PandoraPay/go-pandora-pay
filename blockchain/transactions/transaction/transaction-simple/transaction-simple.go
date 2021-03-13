@@ -1,6 +1,7 @@
 package transaction_simple
 
 import (
+	"bytes"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
@@ -95,6 +96,12 @@ func (tx *TransactionSimple) VerifySignature(hash []byte) bool {
 }
 
 func (tx *TransactionSimple) Validate() {
+
+	for _, vin := range tx.Vin {
+		if bytes.Equal(vin.GetPublicKeyHash(), config.BURN_PUBLIC_KEY_HASH) {
+			panic("Input includes BURN PUBLIC KEY HASH")
+		}
+	}
 
 	switch tx.TxScript {
 	case TxSimpleScriptNormal:

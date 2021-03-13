@@ -3,9 +3,9 @@ package transaction_simple
 import "pandora-pay/helpers"
 
 type TransactionSimpleOutput struct {
-	PublicKeyHash []byte //20
+	PublicKeyHash helpers.ByteString //20
 	Amount        uint64
-	Token         []byte //20
+	Token         helpers.ByteString //20
 }
 
 func (vout *TransactionSimpleOutput) Serialize(writer *helpers.BufferWriter) {

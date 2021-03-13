@@ -13,18 +13,18 @@ import (
 
 type Block struct {
 	BlockHeader
-	MerkleHash []byte //32 byte
+	MerkleHash helpers.ByteString //32 byte
 
-	PrevHash       []byte //32 byte
-	PrevKernelHash []byte //32 byte
+	PrevHash       helpers.ByteString //32 byte
+	PrevKernelHash helpers.ByteString //32 byte
 
 	Timestamp uint64
 
 	StakingAmount uint64
 
-	DelegatedPublicKey []byte //33 byte public key. It IS NOT included in the kernel hash
-	Forger             []byte // 20 byte public key hash
-	Signature          []byte // 65 byte signature
+	DelegatedPublicKey helpers.ByteString //33 byte public key. It IS NOT included in the kernel hash
+	Forger             helpers.ByteString // 20 byte public key hash
+	Signature          helpers.ByteString // 65 byte signature
 }
 
 func (blk *Block) Validate() {
