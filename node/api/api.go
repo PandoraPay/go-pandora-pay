@@ -44,16 +44,14 @@ func (api *API) getPing(values url.Values) interface{} {
 }
 
 func (api *API) getBlockComplete(values url.Values) interface{} {
-	heightStr := values.Get("height")
-	if heightStr != "" {
-		height, err := strconv.Atoi(heightStr)
+	if values.Get("height") != "" {
+		height, err := strconv.Atoi(values.Get("height"))
 		if err != nil {
 			panic("parameter 'height' is not a number")
 		}
 		return api.loadBlockCompleteFromHeight(uint64(height))
 	}
-	hashStr := values.Get("hash")
-	if hashStr != "" {
+	if values.Get("hash") != "" {
 		hash, err := hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			panic("parameter 'hash' was is not a valid hex number")
@@ -64,16 +62,14 @@ func (api *API) getBlockComplete(values url.Values) interface{} {
 }
 
 func (api *API) getBlock(values url.Values) interface{} {
-	heightStr := values.Get("height")
-	if heightStr != "" {
-		height, err := strconv.Atoi(heightStr)
+	if values.Get("height") != "" {
+		height, err := strconv.Atoi(values.Get("height"))
 		if err != nil {
 			panic("parameter 'height' is not a number")
 		}
 		return api.loadBlockWithTXsFromHeight(uint64(height))
 	}
-	hashStr := values.Get("hash")
-	if hashStr != "" {
+	if values.Get("hash") != "" {
 		hash, err := hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			panic("parameter 'hash' was is not a valid hex number")
@@ -84,24 +80,37 @@ func (api *API) getBlock(values url.Values) interface{} {
 }
 
 func (api *API) getTx(values url.Values) interface{} {
-	hashStr := values.Get("hash")
-	if hashStr != "" {
+	if values.Get("hash") != "" {
 		hash, err := hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			panic("parameter 'hash' was is not a valid hex number")
 		}
 		return api.loadTxFromHash(hash)
 	}
-	panic("parameter 'hash' or ")
+	panic("parameter 'hash' was not specified ")
 }
 
 func (api *API) getBalance(values url.Values) interface{} {
-	addressStr := values.Get("address")
-	if addressStr != "" {
-		address := addresses.DecodeAddr(addressStr)
+	if values.Get("address") != "" {
+		address := addresses.DecodeAddr(values.Get("address"))
 		return api.loadAccountFromPublicKeyHash(address.PublicKeyHash)
 	}
-	panic("parameter 'hash' or ")
+	if values.Get("hash") != "" {
+		hash, err := hex.DecodeString(values.Get("hash"))
+		if err != nil {
+			panic(err)
+		}
+		return api.loadAccountFromPublicKeyHash(hash)
+	}
+	panic("parameter 'address' or 'hash' was not specified")
+}
+
+func (api *API) getToken(values url.Values) interface{} {
+	hash, err := hex.DecodeString(values.Get("hash"))
+	if err != nil {
+		panic(err)
+	}
+	return api.loadTokenFromPublicKeyHash(hash)
 }
 
 //make sure it is safe to read
@@ -134,6 +143,7 @@ func CreateAPI(chain *blockchain.Blockchain) *API {
 		"/block":          api.getBlock,
 		"/tx":             api.getTx,
 		"/balance":        api.getBalance,
+		"/token":          api.getToken,
 	}
 
 	go func() {

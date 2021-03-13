@@ -6,6 +6,8 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/block"
+	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -78,6 +80,17 @@ func (api *API) loadAccountFromPublicKeyHash(publicKeyHash []byte) (acc *account
 	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
 		accs := accounts.NewAccounts(boltTx)
 		acc = accs.GetAccount(publicKeyHash)
+		return nil
+	}); err != nil {
+		panic(err)
+	}
+	return
+}
+
+func (api *API) loadTokenFromPublicKeyHash(publicKeyHash []byte) (tok *token.Token) {
+	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+		toks := tokens.NewTokens(boltTx)
+		tok = toks.GetToken(publicKeyHash)
 		return nil
 	}); err != nil {
 		panic(err)

@@ -10,32 +10,22 @@ var regexTokenTicker = regexp.MustCompile("^[A-Z0-9]+$") // only lowercase ascii
 var regexTokenDescription = regexp.MustCompile("[\\w|\\W]+")
 
 type Token struct {
-	Version uint64
-	//upgrade different settings
-	CanUpgrade bool
-	//increase supply
-	CanMint bool
-	//decrease supply
-	CanBurn bool
-	//can change key
-	CanChangeKey bool
-	//can change supply key
-	CanChangeSupplyKey bool
-	//can pause (suspend transactions)
-	CanPause bool
-	//freeze supply changes
-	CanFreeze bool
-
-	DecimalSeparator byte
-	MaxSupply        uint64
-	Supply           uint64
-
-	Key       []byte //20
-	SupplyKey []byte //20
-
-	Name        string
-	Ticker      string
-	Description string
+	Version            uint64
+	CanUpgrade         bool //upgrade different settings
+	CanMint            bool //increase supply
+	CanBurn            bool //decrease supply
+	CanChangeKey       bool //can change key
+	CanChangeSupplyKey bool //can change supply key
+	CanPause           bool //can pause (suspend transactions)
+	CanFreeze          bool //freeze supply changes
+	DecimalSeparator   byte
+	MaxSupply          uint64
+	Supply             uint64
+	Key                helpers.ByteString //20 byte
+	SupplyKey          helpers.ByteString //20 byte
+	Name               string
+	Ticker             string
+	Description        string
 }
 
 func (token *Token) Validate() {
