@@ -7,7 +7,21 @@ The main design pattern that has been taken in consideration is to be **dead-sim
 
 ### Running your own devnet
 
-`go build main.go --devnet --new-devnet` 
+`go build main.go --devnet --new-devnet`
+
+### Running the node as Tor Hidden Server
+1. Install Tor
+2. Configure Tor 
+    - Ubuntu: 
+        - open `sudo nano /etc/tor/torrc` 
+        - add & save
+            ``` 
+            HiddenServiceDir /var/lib/tor/pandora_pay_hidden_service/
+            HiddenServicePort 80 127.0.0.1:8080
+            ```      
+        - restart tor `sudo service tor restart`
+        - copy your onion address `sudo nano /var/lib/tor/pandora_pay_hidden_service/` 
+        - use the parameter `--tor-onion="YOUR_ONION_ADDRESS_FROM_ABOVE"`
 
 ## Status of Blockchain implementation:
 
@@ -70,9 +84,10 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [x] Sorting by fee per byte
     - [ ] Network propagation
 - [ ] Network
-    - [X] HTTP server
-    - [ ] HTTP websocket
-    - [ ] TOR Integration
+    - [X] HTTP server    
+    - [ ] HTTP websocket server
+    - [ ] HTTP websocket client
+    - [X] TOR Integration
 - [ ] API
     - [ ] API blockchain explorers
     - [ ] API wallets    
@@ -82,4 +97,4 @@ The main reasons why DPOS has been chosen over POS:
 1. Delegating your stake increases security 
 2. Delegating your stake to someone to stake increases anonymity as you don't need to be online for staking.
 3. DPOS avoids using the griding technique to solve the POS short range vulnerability
-4. Future proposals of using macro blocks and state trie proofs to prove to light clients the state. 
+4. Future proposals of using macro blocks and state trie proofs to prove to light clients the state.

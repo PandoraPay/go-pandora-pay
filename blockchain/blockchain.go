@@ -41,7 +41,8 @@ type Blockchain struct {
 
 	Sync bool `json:"-"`
 
-	UpdateChannel chan uint64 `json:"-"`
+	UpdateChannel         chan uint64      `json:"-"`
+	UpdateNewChainChannel chan *Blockchain `json:"-"`
 
 	forging *forging.Forging `json:"-"`
 	mempool *mempool.MemPool `json:"-"`
@@ -63,6 +64,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 	gui.Info(fmt.Sprintf("Including blocks %d ... %d", chain.Height, chain.Height+uint64(len(blocksComplete))))
 
+	//chain.RLock() is not required because it is guaranteed that no other thread is writing now in the chain
 	var newChain = Blockchain{
 		Hash:               chain.Hash,
 		PrevHash:           chain.PrevHash,
@@ -320,6 +322,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	newChain.updateChainInfo()
 
 	chain.UpdateChannel <- newChain.Height //sending 1
+	chain.UpdateNewChainChannel <- &newChain
 
 	//accs will only be read only
 	newChain.forging.Wallet.UpdateBalanceChanges(accs)
@@ -351,10 +354,11 @@ func BlockchainInit(forging *forging.Forging, mempool *mempool.MemPool) (chain *
 	genesis.GenesisInit()
 
 	chain = &Blockchain{
-		forging:       forging,
-		mempool:       mempool,
-		Sync:          false,
-		UpdateChannel: make(chan uint64),
+		forging:               forging,
+		mempool:               mempool,
+		Sync:                  false,
+		UpdateChannel:         make(chan uint64),
+		UpdateNewChainChannel: make(chan *Blockchain),
 	}
 
 	success, err := chain.loadBlockchain()

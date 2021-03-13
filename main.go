@@ -12,7 +12,7 @@ import (
 	"pandora-pay/forging"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
-	node_http "pandora-pay/node/node-http"
+	node_tcp "pandora-pay/node/node-tcp"
 	"pandora-pay/settings"
 	"pandora-pay/store"
 	"pandora-pay/testnet"
@@ -26,19 +26,21 @@ import (
 var commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--http-server=<port>]
+  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--tcp-server-port=<port>] [--tcp-server-address=<address>] [--tor-onion=<onion>] 
   pandorapay -h | --help
 
 Options:
-  -h --help     				Show this screen.
-  --version     				Show version.
-  --testnet     				Run in TESTNET mode.
-  --devnet     					Run in DEVNET mode.
-  --new-devnet     				Create a new devnet genesis.
-  --debug     					Debug mode enabled (print log message).
-  --staking     				Start staking
-  --node-name=<name>   			Change node name
-  --http-server=<port>			Change node http server port
+  -h --help     						Show this screen.
+  --version     						Show version.
+  --testnet     						Run in TESTNET mode.
+  --devnet     							Run in DEVNET mode.
+  --new-devnet     						Create a new devnet genesis.
+  --debug     							Debug mode enabled (print log message).
+  --staking     						Start staking
+  --node-name=<name>   					Change node name
+  --tcp-server-port=<port>				Change node tcp server port
+  --tcp-server-address=<address>		Change node tcp address
+  --tor-onion=<onion>					Define your tor onion address to be used. 		
 
 `
 
@@ -89,8 +91,8 @@ func main() {
 
 	}
 
-	myHttpServer := node_http.CreateHttpServer()
-	globals.Data["http-server"] = myHttpServer
+	myTorServer := node_tcp.CreateTcpServer(mySettings, myChain)
+	globals.Data["tcp-server"] = myTorServer
 
 	gui.Log("Main Loop")
 

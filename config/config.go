@@ -15,7 +15,7 @@ var (
 
 var (
 	NAME    = "PANDORA PAY"
-	VERSION = "0.0"
+	VERSION = "0.01"
 
 	MAIN_NET_NETWORK_BYTE        uint64 = 0
 	MAIN_NET_NETWORK_BYTE_PREFIX        = "PANDORA" // must have 7 characters

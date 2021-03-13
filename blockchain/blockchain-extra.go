@@ -126,9 +126,9 @@ func (chain *Blockchain) createNextBlockForForging() {
 }
 
 func (chain *Blockchain) updateChainInfo() {
-	gui.InfoUpdate("Blocks", strconv.FormatUint(chain.Height, 10))
-	gui.InfoUpdate("Chain  Hash", hex.EncodeToString(chain.Hash))
-	gui.InfoUpdate("Chain KHash", hex.EncodeToString(chain.KernelHash))
-	gui.InfoUpdate("Chain  Diff", chain.Target.String())
-	gui.InfoUpdate("TXs", strconv.FormatUint(chain.Transactions, 10))
+	gui.Info2Update("Blocks", strconv.FormatUint(chain.Height, 10))
+	gui.Info2Update("Chain  Hash", hex.EncodeToString(chain.Hash))
+	gui.Info2Update("Chain KHash", hex.EncodeToString(chain.KernelHash))
+	gui.Info2Update("Chain  Diff", chain.Target.String())
+	gui.Info2Update("TXs", strconv.FormatUint(chain.Transactions, 10))
 }

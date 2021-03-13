@@ -10,7 +10,6 @@ import (
 
 type Settings struct {
 	Name string
-	Port uint16
 
 	Checksum []byte //4
 
@@ -37,6 +36,7 @@ func SettingsInit() (settings *Settings) {
 		settings.Name = globals.Arguments["--node-name"].(string)
 		changed = true
 	}
+
 	if changed {
 		settings.updateSettings()
 		settings.saveSettings()
@@ -46,18 +46,21 @@ func SettingsInit() (settings *Settings) {
 	return
 }
 
-func (settings *Settings) createEmptySettings() {
+func (settings *Settings) SetTorOnionSettings(torOnionPrivateKey, torOnionPrivateKeyType string) {
+	settings.Lock()
+	defer settings.Unlock()
+	settings.updateSettings()
+	settings.saveSettings()
+}
 
+func (settings *Settings) createEmptySettings() {
 	settings.Lock()
 	defer settings.Unlock()
 
 	settings.Name = helpers.RandString(10)
-	settings.Port = 5231
+
 	settings.updateSettings()
-
 	settings.saveSettings()
-
-	return
 }
 
 func (settings *Settings) updateSettings() {

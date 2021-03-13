@@ -2,15 +2,18 @@ package node_http
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
-	"pandora-pay/config"
-	"pandora-pay/config/globals"
+	"pandora-pay/blockchain"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/node/api"
 )
 
 type HttpServer struct {
-	getMaps map[string]func(w http.ResponseWriter, req *http.Request) interface{}
+	tcpListener net.Listener
+	chain       *blockchain.Blockchain
+	api         *api.API
 }
 
 func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
@@ -31,61 +34,36 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 		}
 	}()
 
-	callback := server.getMaps[req.URL.Path]
+	callback := server.api.GetMap[req.URL.Path]
 	if callback != nil {
-		output = callback(w, req)
+		output = callback(req)
 	} else {
 		panic("Unknown GET request")
 	}
 
 }
 
-func (server *HttpServer) info(w http.ResponseWriter, req *http.Request) interface{} {
-	return struct {
-		Name        string
-		Version     string
-		Network     uint64
-		CPU_THREADS int
-	}{
-		Name:        config.NAME,
-		Version:     config.VERSION,
-		Network:     config.NETWORK_SELECTED,
-		CPU_THREADS: config.CPU_THREADS,
-	}
-}
-
-func (server *HttpServer) ping(w http.ResponseWriter, req *http.Request) interface{} {
-	return struct {
-		Ping string
-	}{Ping: "Pong"}
-}
-
 func (server *HttpServer) initialize() {
 
-	server.getMaps = make(map[string]func(w http.ResponseWriter, req *http.Request) interface{})
-	server.getMaps["/"] = server.info
-	server.getMaps["/ping"] = server.ping
-
-	for key, _ := range server.getMaps {
+	for key, _ := range server.api.GetMap {
 		http.HandleFunc(key, server.get)
 	}
 
-	port := "8090"
-	if globals.Arguments["--http-server-port"] != nil {
-		port = globals.Arguments["--http-server-port"].(string)
-	}
-
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := http.Serve(server.tcpListener, nil); err != nil {
 		panic(err)
 	}
 
-	gui.Info("HTTP server opened on port ", port)
+	gui.Info("HTTP server")
 
 }
 
-func CreateHttpServer() *HttpServer {
+func CreateHttpServer(tcpListener net.Listener, chain *blockchain.Blockchain, api *api.API) *HttpServer {
 
-	server := &HttpServer{}
+	server := &HttpServer{
+		tcpListener: tcpListener,
+		chain:       chain,
+		api:         api,
+	}
 	server.initialize()
 
 	return server
