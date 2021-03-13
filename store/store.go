@@ -70,34 +70,34 @@ func DBInit() {
 	StoreSettings.init()
 	StoreMempool.init()
 
-	if err := StoreSettings.DB.Update(func(tx *bolt.Tx) (err error) {
-		_, err = tx.CreateBucketIfNotExists([]byte("Settings"))
+	if err := StoreSettings.DB.Update(func(boltTx *bolt.Tx) (err error) {
+		_, err = boltTx.CreateBucketIfNotExists([]byte("Settings"))
 		return
 	}); err != nil {
 		panic(err)
 	}
 
-	if err := StoreWallet.DB.Update(func(tx *bolt.Tx) (err error) {
-		_, err = tx.CreateBucketIfNotExists([]byte("Wallet"))
+	if err := StoreWallet.DB.Update(func(boltTx *bolt.Tx) (err error) {
+		_, err = boltTx.CreateBucketIfNotExists([]byte("Wallet"))
 		return
 	}); err != nil {
 		panic(err)
 	}
 
-	if err := StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
-		if _, err = tx.CreateBucketIfNotExists([]byte("Chain")); err != nil {
+	if err := StoreBlockchain.DB.Update(func(boltTx *bolt.Tx) (err error) {
+		if _, err = boltTx.CreateBucketIfNotExists([]byte("Chain")); err != nil {
 			return
 		}
-		if _, err = tx.CreateBucketIfNotExists([]byte("Accounts")); err != nil {
+		if _, err = boltTx.CreateBucketIfNotExists([]byte("Accounts")); err != nil {
 			return
 		}
-		_, err = tx.CreateBucketIfNotExists([]byte("Tokens"))
+		_, err = boltTx.CreateBucketIfNotExists([]byte("Tokens"))
 		return
 	}); err != nil {
 		panic(err)
 	}
 
-	if err := StoreMempool.DB.Update(func(tx *bolt.Tx) (err error) {
+	if err := StoreMempool.DB.Update(func(boltTx *bolt.Tx) (err error) {
 		return
 	}); err != nil {
 		panic(err)

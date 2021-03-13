@@ -40,9 +40,9 @@ func (chain *Blockchain) init() {
 		SupplyKey:        config.BURN_PUBLIC_KEY_HASH,
 	}
 
-	if err := store.StoreBlockchain.DB.Update(func(tx *bolt.Tx) (err error) {
+	if err := store.StoreBlockchain.DB.Update(func(boltTx *bolt.Tx) (err error) {
 
-		toks := tokens.NewTokens(tx)
+		toks := tokens.NewTokens(boltTx)
 		toks.CreateToken(config.NATIVE_TOKEN, &tok)
 
 		toks.Commit()

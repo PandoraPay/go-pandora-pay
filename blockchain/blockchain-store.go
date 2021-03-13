@@ -138,12 +138,12 @@ func (chain *Blockchain) saveBlockchain(bucket *bolt.Bucket) {
 
 func (chain *Blockchain) loadBlockchain() (success bool, err error) {
 
-	err = store.StoreBlockchain.DB.View(func(tx *bolt.Tx) error {
+	err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
 
 		chain.Lock()
 		defer chain.Unlock()
 
-		reader := tx.Bucket([]byte("Chain"))
+		reader := boltTx.Bucket([]byte("Chain"))
 		chainData := reader.Get([]byte("blockchainInfo"))
 		if chainData == nil {
 			return nil

@@ -10,9 +10,9 @@ import (
 
 func (settings *Settings) saveSettings() {
 
-	if err := store.StoreSettings.DB.Update(func(tx *bolt.Tx) error {
+	if err := store.StoreSettings.DB.Update(func(boltTx *bolt.Tx) error {
 
-		writer := tx.Bucket([]byte("Settings"))
+		writer := boltTx.Bucket([]byte("Settings"))
 
 		settings.Checksum = settings.computeChecksum()
 
@@ -35,9 +35,8 @@ func (settings *Settings) saveSettings() {
 
 func (settings *Settings) loadSettings() {
 
-	if err := store.StoreSettings.DB.View(func(tx *bolt.Tx) (err error) {
-
-		reader := tx.Bucket([]byte("Settings"))
+	if err := store.StoreSettings.DB.View(func(boltTx *bolt.Tx) (err error) {
+		reader := boltTx.Bucket([]byte("Settings"))
 
 		saved := reader.Get([]byte("saved"))
 		if saved == nil {

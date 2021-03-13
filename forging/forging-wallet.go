@@ -39,9 +39,9 @@ func (w *ForgingWallet) AddWallet(delegatedPub []byte, delegatedPriv []byte, pub
 
 	private := addresses.PrivateKey{Key: delegatedPriv}
 
-	store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
+	store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
-		accs := accounts.NewAccounts(tx)
+		accs := accounts.NewAccounts(boltTx)
 
 		acc := accs.GetAccount(pubKeyHash)
 
@@ -100,9 +100,9 @@ func (w *ForgingWallet) loadBalances() error {
 	w.Lock()
 	defer w.Unlock()
 
-	return store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
+	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
-		accs := accounts.NewAccounts(tx)
+		accs := accounts.NewAccounts(boltTx)
 
 		for _, address := range w.addresses {
 

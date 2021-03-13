@@ -12,9 +12,9 @@ import (
 
 func (wallet *Wallet) saveWallet(start, end, deleteIndex int) {
 
-	if err := store.StoreWallet.DB.Update(func(tx *bolt.Tx) error {
+	if err := store.StoreWallet.DB.Update(func(boltTx *bolt.Tx) error {
 
-		writer := tx.Bucket([]byte("Wallet"))
+		writer := boltTx.Bucket([]byte("Wallet"))
 		var marshal []byte
 
 		wallet.Checksum = wallet.computeChecksum()
@@ -49,9 +49,9 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int) {
 
 func (wallet *Wallet) loadWallet() {
 
-	if err := store.StoreWallet.DB.View(func(tx *bolt.Tx) error {
+	if err := store.StoreWallet.DB.View(func(boltTx *bolt.Tx) error {
 
-		reader := tx.Bucket([]byte("Wallet"))
+		reader := boltTx.Bucket([]byte("Wallet"))
 
 		saved := reader.Get([]byte("saved"))
 		if saved == nil {

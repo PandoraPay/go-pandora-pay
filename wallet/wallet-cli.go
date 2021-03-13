@@ -25,10 +25,10 @@ func initWalletCLI(wallet *Wallet) {
 
 		gui.OutputWrite("")
 
-		if err := store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
+		if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
-			accs := accounts.NewAccounts(tx)
-			toks := tokens.NewTokens(tx)
+			accs := accounts.NewAccounts(boltTx)
+			toks := tokens.NewTokens(boltTx)
 
 			for _, walletAddress := range wallet.Addresses {
 				addressStr := walletAddress.Address.EncodeAddr()

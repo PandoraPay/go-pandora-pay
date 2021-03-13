@@ -16,8 +16,8 @@ type BlockWithTxs struct {
 }
 
 func (api *API) loadBlockCompleteFromHash(hash []byte) (blkComplete *block.BlockComplete) {
-	if err := store.StoreBlockchain.DB.View(func(tx *bolt.Tx) error {
-		reader := tx.Bucket([]byte("Chain"))
+	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+		reader := boltTx.Bucket([]byte("Chain"))
 		blkComplete = api.loadBlockComplete(reader, hash)
 		return nil
 	}); err != nil {
@@ -27,8 +27,8 @@ func (api *API) loadBlockCompleteFromHash(hash []byte) (blkComplete *block.Block
 }
 
 func (api *API) loadBlockCompleteFromHeight(blockHeight uint64) (blkComplete *block.BlockComplete) {
-	if err := store.StoreBlockchain.DB.View(func(tx *bolt.Tx) error {
-		reader := tx.Bucket([]byte("Chain"))
+	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+		reader := boltTx.Bucket([]byte("Chain"))
 		hash := api.chain.LoadBlockHash(reader, blockHeight)
 		blkComplete = api.loadBlockComplete(reader, hash)
 		return nil
@@ -39,8 +39,8 @@ func (api *API) loadBlockCompleteFromHeight(blockHeight uint64) (blkComplete *bl
 }
 
 func (api *API) loadBlockWithTXsFromHash(hash []byte) (blkWithTXs *BlockWithTxs) {
-	if err := store.StoreBlockchain.DB.View(func(tx *bolt.Tx) error {
-		reader := tx.Bucket([]byte("Chain"))
+	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+		reader := boltTx.Bucket([]byte("Chain"))
 		blkWithTXs = api.loadBlockWithTxHashes(reader, hash)
 		return nil
 	}); err != nil {
@@ -49,9 +49,20 @@ func (api *API) loadBlockWithTXsFromHash(hash []byte) (blkWithTXs *BlockWithTxs)
 	return
 }
 
+func (api *API) loadTxFromHash(hash []byte) (tx *transaction.Transaction) {
+	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+		reader := boltTx.Bucket([]byte("Chain"))
+		tx = api.loadTx(reader, hash)
+		return nil
+	}); err != nil {
+		panic(err)
+	}
+	return
+}
+
 func (api *API) loadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *BlockWithTxs) {
-	if err := store.StoreBlockchain.DB.View(func(tx *bolt.Tx) error {
-		reader := tx.Bucket([]byte("Chain"))
+	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+		reader := boltTx.Bucket([]byte("Chain"))
 		hash := api.chain.LoadBlockHash(reader, blockHeight)
 		blkWithTXs = api.loadBlockWithTxHashes(reader, hash)
 		return nil
@@ -111,4 +122,11 @@ func (api *API) loadBlockWithTxHashes(bucket *bolt.Bucket, hash []byte) *BlockWi
 		Blk: blk,
 		Txs: txs,
 	}
+}
+
+func (api *API) loadTx(bucket *bolt.Bucket, hash []byte) *transaction.Transaction {
+	data := bucket.Get(append([]byte("tx"), hash...))
+	tx := new(transaction.Transaction)
+	tx.Deserialize(helpers.NewBufferReader(data))
+	return tx
 }

@@ -82,6 +82,18 @@ func (api *API) getBlock(values url.Values) interface{} {
 	panic("parameter 'hash' or 'height' are missing")
 }
 
+func (api *API) getTx(values url.Values) interface{} {
+	hashStr := values.Get("hash")
+	if hashStr != "" {
+		hash, err := hex.DecodeString(values.Get("hash"))
+		if err != nil {
+			panic("parameter 'hash' was is not a valid hex number")
+		}
+		return api.loadTxFromHash(hash)
+	}
+	panic("parameter 'hash' or ")
+}
+
 //make sure it is safe to read
 func (api *API) readLocalBlockchain(newChain *blockchain.Blockchain) {
 	newLocalChain := APIBlockchain{
@@ -110,6 +122,7 @@ func CreateAPI(chain *blockchain.Blockchain) *API {
 		"/ping":           api.getPing,
 		"/block-complete": api.getBlockComplete,
 		"/block":          api.getBlock,
+		"/tx":             api.getTx,
 	}
 
 	go func() {
