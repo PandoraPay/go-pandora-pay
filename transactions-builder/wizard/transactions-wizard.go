@@ -6,7 +6,6 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
-	"pandora-pay/cryptography"
 )
 
 func CreateSimpleTxOneInOneOut(nonce uint64, key []byte, amount uint64, token []byte, dst string, dstAmount uint64, feePerByte int, feeToken []byte) (tx *transaction.Transaction) {
@@ -43,16 +42,8 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 
 		outAddress := addresses.DecodeAddr(dsts[i])
 
-		var publicKeyHash []byte
-		switch outAddress.Version {
-		case addresses.SimplePublicKeyHash:
-			publicKeyHash = outAddress.PublicKey
-		case addresses.SimplePublicKey:
-			publicKeyHash = cryptography.ComputePublicKeyHash(outAddress.PublicKey)
-		}
-
 		vout = append(vout, &transaction_simple.TransactionSimpleOutput{
-			PublicKeyHash: publicKeyHash,
+			PublicKeyHash: outAddress.PublicKeyHash,
 			Amount:        dstsAmounts[i],
 			Token:         dstsTokens[i],
 		})

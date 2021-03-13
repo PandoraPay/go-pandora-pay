@@ -16,7 +16,7 @@ func (wallet *Wallet) GetWalletAddressByAddress(addressEncoded string) (out *Wal
 	address := addresses.DecodeAddr(addressEncoded)
 
 	for _, addr := range wallet.Addresses {
-		if bytes.Equal(addr.PublicKey, address.PublicKey) || bytes.Equal(addr.PublicKeyHash, address.PublicKey) {
+		if bytes.Equal(addr.PublicKeyHash, address.PublicKeyHash) {
 			out = addr
 			return
 		}

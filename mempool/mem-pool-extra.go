@@ -59,8 +59,7 @@ func (mempool *MemPool) GetNonce(publicKeyHash []byte) (result bool, nonce uint6
 	for _, tx := range txs {
 		if tx.TxType == transaction_type.TxSimple {
 			base := tx.TxBase.(*transaction_simple.TransactionSimple)
-			txPublicKeyHash := base.Vin[0].GetPublicKeyHash()
-			if bytes.Equal(txPublicKeyHash, publicKeyHash) {
+			if bytes.Equal(base.Vin[0].GetPublicKeyHash(), publicKeyHash) {
 				result = true
 				if nonce <= base.Nonce {
 					nonce = base.Nonce + 1

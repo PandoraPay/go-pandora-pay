@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	bolt "go.etcd.io/bbolt"
+	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
@@ -65,6 +67,17 @@ func (api *API) loadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *Bloc
 		reader := boltTx.Bucket([]byte("Chain"))
 		hash := api.chain.LoadBlockHash(reader, blockHeight)
 		blkWithTXs = api.loadBlockWithTxHashes(reader, hash)
+		return nil
+	}); err != nil {
+		panic(err)
+	}
+	return
+}
+
+func (api *API) loadAccountFromPublicKeyHash(publicKeyHash []byte) (acc *account.Account) {
+	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+		accs := accounts.NewAccounts(boltTx)
+		acc = accs.GetAccount(publicKeyHash)
 		return nil
 	}); err != nil {
 		panic(err)

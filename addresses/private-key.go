@@ -31,22 +31,22 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 		panic("Your payment ID is invalid")
 	}
 
-	var finalPublicKey []byte
+	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
 
 	var version AddressVersion
 
 	if usePublicKeyHash {
-		finalPublicKey = cryptography.ComputePublicKeyHash(publicKey)
+		publicKey = []byte{}
 		version = SimplePublicKeyHash
 	} else {
-		finalPublicKey = publicKey
 		version = SimplePublicKey
 	}
 
 	return &Address{
 		config.NETWORK_SELECTED,
 		version,
-		finalPublicKey,
+		publicKey,
+		publicKeyHash,
 		amount,
 		paymentID,
 	}

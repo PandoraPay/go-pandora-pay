@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/hex"
 	"net/url"
+	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"strconv"
@@ -94,6 +95,15 @@ func (api *API) getTx(values url.Values) interface{} {
 	panic("parameter 'hash' or ")
 }
 
+func (api *API) getBalance(values url.Values) interface{} {
+	addressStr := values.Get("address")
+	if addressStr != "" {
+		address := addresses.DecodeAddr(addressStr)
+		return api.loadAccountFromPublicKeyHash(address.PublicKeyHash)
+	}
+	panic("parameter 'hash' or ")
+}
+
 //make sure it is safe to read
 func (api *API) readLocalBlockchain(newChain *blockchain.Blockchain) {
 	newLocalChain := APIBlockchain{
@@ -123,6 +133,7 @@ func CreateAPI(chain *blockchain.Blockchain) *API {
 		"/block-complete": api.getBlockComplete,
 		"/block":          api.getBlock,
 		"/tx":             api.getTx,
+		"/balance":        api.getBalance,
 	}
 
 	go func() {

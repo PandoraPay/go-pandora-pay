@@ -16,11 +16,12 @@ const (
 )
 
 type Address struct {
-	Network   uint64
-	Version   AddressVersion
-	PublicKey []byte // publicKey or PublicKeyHash
-	Amount    uint64 // amount to be paid
-	PaymentID []byte // payment id
+	Network       uint64
+	Version       AddressVersion
+	PublicKey     []byte
+	PublicKeyHash []byte
+	Amount        uint64 // amount to be paid
+	PaymentID     []byte // payment id
 }
 
 func (e AddressVersion) String() string {
@@ -52,7 +53,12 @@ func (a *Address) EncodeAddr() string {
 
 	writer.WriteUvarint(uint64(a.Version))
 
-	writer.Write(a.PublicKey)
+	switch a.Version {
+	case SimplePublicKey:
+		writer.Write(a.PublicKey)
+	case SimplePublicKeyHash:
+		writer.Write(a.PublicKeyHash)
+	}
 
 	writer.WriteByte(a.IntegrationByte())
 
@@ -118,17 +124,16 @@ func DecodeAddr(input string) (adr *Address) {
 
 	adr.Version = AddressVersion(reader.ReadUvarint())
 
-	var readBytes int
 	switch adr.Version {
 	case SimplePublicKeyHash:
-		readBytes = 20
+		adr.PublicKeyHash = reader.ReadBytes(20)
 	case SimplePublicKey:
-		readBytes = 33
+		adr.PublicKey = reader.ReadBytes(33)
+		adr.PublicKeyHash = cryptography.ComputePublicKeyHash(adr.PublicKey)
 	default:
 		panic("Invalid Address Version")
 	}
 
-	adr.PublicKey = reader.ReadBytes(readBytes)
 	integrationByte := reader.ReadByte()
 
 	if integrationByte&1 != 0 {

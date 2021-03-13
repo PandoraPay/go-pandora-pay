@@ -11,8 +11,7 @@ type TransactionSimpleInput struct {
 	Signature helpers.ByteString //65
 	Token     helpers.ByteString //20
 
-	_publicKeyHash         []byte //20
-	_publicKeyHashComputed bool
+	_publicKeyHash []byte //20
 }
 
 func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter, inclSignature bool) {
@@ -34,9 +33,8 @@ func (vin *TransactionSimpleInput) Deserialize(reader *helpers.BufferReader) {
 }
 
 func (vin *TransactionSimpleInput) GetPublicKeyHash() []byte {
-	if !vin._publicKeyHashComputed {
+	if vin._publicKeyHash == nil {
 		vin._publicKeyHash = cryptography.ComputePublicKeyHash(vin.PublicKey)
-		vin._publicKeyHashComputed = true
 	}
 	return vin._publicKeyHash
 }
