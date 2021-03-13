@@ -7,42 +7,71 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"strconv"
 )
 
-func (chain *Blockchain) LoadBlockFromHashSilent(hash []byte) (blk *block.Block, err error) {
-
-	err = store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
-
-		defer func() {
-			err = helpers.ConvertRecoverError(recover())
-		}()
-
+func (chain *Blockchain) LoadBlockCompleteFromHash(hash []byte) (blkComplete *block.BlockComplete) {
+	if err := store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
 		reader := tx.Bucket([]byte("Chain"))
-		blk = chain.loadBlock(reader, hash)
-
+		blkComplete = chain.loadBlockComplete(reader, hash)
 		return
-	})
+	}); err != nil {
+		panic(err)
+	}
+	return
+}
 
+func (chain *Blockchain) LoadBlockCompleteFromHeight(blockHeight uint64) (blkComplete *block.BlockComplete) {
+	if err := store.StoreBlockchain.DB.View(func(tx *bolt.Tx) (err error) {
+		reader := tx.Bucket([]byte("Chain"))
+		hash := chain.loadBlockHash(reader, blockHeight)
+		blkComplete = chain.loadBlockComplete(reader, hash)
+		return
+	}); err != nil {
+		panic(err)
+	}
 	return
 }
 
 func (chain *Blockchain) loadBlock(bucket *bolt.Bucket, hash []byte) (blk *block.Block) {
-
-	key := []byte("blockHash")
-	key = append(key, hash...)
-
-	blockData := bucket.Get(key)
+	blockData := bucket.Get(append([]byte("blockHash"), hash...))
 	if blockData == nil {
 		return
 	}
-
 	blk = &block.Block{}
+	blk.Deserialize(helpers.NewBufferReader(blockData))
+	return
+}
 
-	reader := helpers.NewBufferReader(blockData)
-	blk.Deserialize(reader)
+func (chain *Blockchain) loadBlockComplete(bucket *bolt.Bucket, hash []byte) (blkComplete *block.BlockComplete) {
+
+	blk := chain.loadBlock(bucket, hash)
+	if blk == nil {
+		return nil
+	}
+
+	txHashes := make([][]byte, 0)
+	data := bucket.Get([]byte("blockTxs" + strconv.FormatUint(blk.Height, 10)))
+	err := json.Unmarshal(data, &txHashes)
+	if err != nil {
+		panic(err)
+	}
+
+	txs := make([]*transaction.Transaction, 0)
+	for _, txHash := range txHashes {
+		data = bucket.Get(append([]byte("tx"), txHash...))
+		tx := &transaction.Transaction{}
+		tx.Deserialize(helpers.NewBufferReader(data))
+		txs = append(txs, tx)
+	}
+
+	blkComplete = &block.BlockComplete{
+		Block: blk,
+		Txs:   txs,
+	}
 
 	return
 }
@@ -91,13 +120,13 @@ func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *blo
 
 	txHashes := make([][]byte, 0)
 	for _, tx := range blkComplete.Txs {
-		hash := tx.ComputeHash()
-		txHashes = append(txHashes, hash)
+		txHash := tx.ComputeHash()
+		txHashes = append(txHashes, txHash)
 
 		//let's check to see if the tx block is already stored, if yes, we will skip it
-		if removedTxHashes[string(hash)] == nil {
-			bucket.Put(append([]byte("tx"), hash...), tx.Serialize())
-			newTxHashes = append(newTxHashes, hash)
+		if removedTxHashes[string(txHash)] == nil {
+			bucket.Put(append([]byte("tx"), txHash...), tx.Serialize())
+			newTxHashes = append(newTxHashes, txHash)
 		}
 	}
 

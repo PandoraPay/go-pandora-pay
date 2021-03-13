@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
+	"strconv"
 	"sync/atomic"
 	"unsafe"
 )
@@ -16,14 +17,12 @@ type API struct {
 	localChain unsafe.Pointer
 }
 
-func (api *API) blockchain(req *http.Request) interface{} {
+func (api *API) getBlockchain(req *http.Request) interface{} {
 	pointer := atomic.LoadPointer(&api.localChain)
-	localchain := (*APIBlockchain)(pointer)
-
-	return &localchain
+	return (*APIBlockchain)(pointer)
 }
 
-func (api *API) info(req *http.Request) interface{} {
+func (api *API) getInfo(req *http.Request) interface{} {
 	return &struct {
 		Name        string
 		Version     string
@@ -37,14 +36,30 @@ func (api *API) info(req *http.Request) interface{} {
 	}
 }
 
-func (api *API) ping(req *http.Request) interface{} {
+func (api *API) getPing(req *http.Request) interface{} {
 	return &struct {
 		Ping string
 	}{Ping: "Pong"}
 }
 
+func (api *API) getBlock(req *http.Request) interface{} {
+	height, err := strconv.Atoi(req.URL.Query().Get("height"))
+	if err != nil {
+		panic("Parameter Height was not specified or is not a number")
+	}
+	return api.chain.LoadBlockCompleteFromHeight(uint64(height))
+}
+
+func (api *API) getBlockByHash(req *http.Request) interface{} {
+	hash, err := hex.DecodeString(req.URL.Query().Get("hash"))
+	if err != nil {
+		panic("Parameter Height was not specified or is not a valid hex number")
+	}
+	return api.chain.LoadBlockCompleteFromHash(hash)
+}
+
 //make sure it is safe to read
-func (api *API) loadLocalBlockchain(newChain *blockchain.Blockchain) {
+func (api *API) readLocalBlockchain(newChain *blockchain.Blockchain) {
 	newLocalChain := APIBlockchain{
 		Height:          newChain.Height,
 		Hash:            hex.EncodeToString(newChain.Hash),
@@ -66,21 +81,23 @@ func CreateAPI(chain *blockchain.Blockchain) *API {
 	}
 
 	api.GetMap = map[string]func(req *http.Request) interface{}{
-		"/":           api.info,
-		"/blockchain": api.blockchain,
-		"/ping":       api.ping,
+		"/":              api.getInfo,
+		"/chain":         api.getBlockchain,
+		"/ping":          api.getPing,
+		"/block":         api.getBlock,
+		"/block-by-hash": api.getBlockByHash,
 	}
 
 	go func() {
 		for {
 			newChain := <-api.chain.UpdateNewChainChannel
 			//it is safe to read
-			api.loadLocalBlockchain(newChain)
+			api.readLocalBlockchain(newChain)
 		}
 	}()
 
 	chain.RLock()
-	api.loadLocalBlockchain(chain)
+	api.readLocalBlockchain(chain)
 	chain.RUnlock()
 
 	return &api
