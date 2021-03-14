@@ -18,7 +18,7 @@ func TestCreateSimpleTx(t *testing.T) {
 	dstAddressEncoded := dstAddress.EncodeAddr()
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx := CreateSimpleTx(0, [][]byte{privateKey.Key}, []uint64{1252}, [][]byte{{}}, []string{dstAddressEncoded}, []uint64{1250}, [][]byte{{}}, 0, []byte{})
+	tx := CreateSimpleTx(0, [][]byte{privateKey.Key}, []uint64{1252}, [][]byte{}, []string{dstAddressEncoded}, []uint64{1250}, [][]byte{}, 0, []byte{})
 	assert.NotNil(t, tx, "error creating simple tx")
 	assert.NotPanics(t, tx.Validate, "error validating tx")
 	assert.Equal(t, tx.VerifySignature(), true, "Verify signature failed")

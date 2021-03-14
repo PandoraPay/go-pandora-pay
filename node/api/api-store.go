@@ -105,19 +105,19 @@ func (api *API) loadBlockComplete(bucket *bolt.Bucket, hash []byte) *block.Block
 		return nil
 	}
 
-	txHashes := make([][]byte, 0)
+	txHashes := [][]byte{}
 	data := bucket.Get([]byte("blockTxs" + strconv.FormatUint(blk.Height, 10)))
 	err := json.Unmarshal(data, &txHashes)
 	if err != nil {
 		panic(err)
 	}
 
-	txs := make([]*transaction.Transaction, 0)
-	for _, txHash := range txHashes {
+	txs := make([]*transaction.Transaction, len(txHashes))
+	for i, txHash := range txHashes {
 		data = bucket.Get(append([]byte("tx"), txHash...))
 		tx := &transaction.Transaction{}
 		tx.Deserialize(helpers.NewBufferReader(data))
-		txs = append(txs, tx)
+		txs[i] = tx
 	}
 
 	return &block.BlockComplete{
@@ -132,16 +132,16 @@ func (api *API) loadBlockWithTxHashes(bucket *bolt.Bucket, hash []byte) *BlockWi
 		return nil
 	}
 
-	txHashes := make([][]byte, 0)
+	txHashes := [][]byte{}
 	data := bucket.Get([]byte("blockTxs" + strconv.FormatUint(blk.Height, 10)))
 	err := json.Unmarshal(data, &txHashes)
 	if err != nil {
 		panic(err)
 	}
 
-	txs := make([]helpers.ByteString, 0)
-	for _, txHash := range txHashes {
-		txs = append(txs, txHash)
+	txs := make([]helpers.ByteString, len(txHashes))
+	for i, txHash := range txHashes {
+		txs[i] = txHash
 	}
 
 	return &BlockWithTxs{

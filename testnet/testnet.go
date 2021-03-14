@@ -36,9 +36,9 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight, amount uint64) {
 }
 
 func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) {
-	dsts := make([]string, 0)
-	dstsAmounts := make([]uint64, 0)
-	dstsTokens := make([][]byte, 0)
+	dsts := []string{}
+	dstsAmounts := []uint64{}
+	dstsTokens := [][]byte{}
 	for i := uint64(0); i < testnet.nodes; i++ {
 		if uint64(len(testnet.wallet.Addresses)) <= i+1 {
 			testnet.wallet.AddNewAddress()
@@ -59,9 +59,9 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) {
 }
 
 func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) {
-	dsts := make([]string, 0)
-	dstsAmounts := make([]uint64, 0)
-	dstsTokens := make([][]byte, 0)
+	dsts := []string{}
+	dstsAmounts := []uint64{}
+	dstsTokens := [][]byte{}
 
 	count := rand.Intn(19) + 1
 	sum := uint64(0)

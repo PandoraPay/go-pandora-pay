@@ -11,7 +11,7 @@ type transactionChange struct {
 
 func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) {
 
-	values := make([]transactionChange, 0)
+	values := []transactionChange{}
 	for k, v := range hashMap.Changes {
 		if v.Status == "del" || v.Status == "update" {
 			key := []byte(k)
@@ -42,7 +42,7 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) {
 		panic("transitions didn't exist")
 	}
 
-	values := make([]transactionChange, 0)
+	values := []transactionChange{}
 	if err := json.Unmarshal(data, &values); err != nil {
 		panic(err)
 	}

@@ -36,9 +36,9 @@ func (blkComplete *BlockComplete) Verify() {
 func (blkComplete *BlockComplete) MerkleHash() []byte {
 	if len(blkComplete.Txs) > 0 {
 
-		var hashes = make([][]byte, 0)
-		for _, tx := range blkComplete.Txs {
-			hashes = append(hashes, tx.ComputeHash())
+		var hashes = make([][]byte, len(blkComplete.Txs))
+		for i, tx := range blkComplete.Txs {
+			hashes[i] = tx.ComputeHash()
 		}
 		return merkle_tree.MerkleRoot(hashes)
 	} else {
@@ -91,12 +91,12 @@ func (blkComplete *BlockComplete) Deserialize(buf []byte) {
 	blkComplete.Block.Deserialize(reader)
 
 	txsCount := reader.ReadUvarint()
+	blkComplete.Txs = make([]*transaction.Transaction, txsCount)
 	for i := uint64(0); i < txsCount; i++ {
 		txLength := reader.ReadUvarint()
 		reader.ReadBytes(int(txLength))
-		tx := new(transaction.Transaction)
-		tx.Deserialize(reader)
-		blkComplete.Txs = append(blkComplete.Txs, tx)
+		blkComplete.Txs[i] = &transaction.Transaction{}
+		blkComplete.Txs[i].Deserialize(reader)
 	}
 
 }

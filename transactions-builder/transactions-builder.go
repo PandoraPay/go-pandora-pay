@@ -30,7 +30,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint
 		chainHeight, _ := binary.Uvarint(buffer)
 
 		var nonce uint64
-		var keys [][]byte
+		keys := make([][]byte, len(from))
 		for i, fromAddress := range from {
 			fromWalletAddress := builder.wallet.GetWalletAddressByAddress(fromAddress)
 			account := accs.GetAccount(fromWalletAddress.PublicKeyHash)
@@ -49,7 +49,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint
 					nonce = account.Nonce
 				}
 			}
-			keys = append(keys, fromWalletAddress.PrivateKey.Key)
+			keys[i] = fromWalletAddress.PrivateKey.Key
 		}
 
 		tx = wizard.CreateSimpleTx(nonce, keys, amounts, tokens, dsts, dstsAmounts, dstsTokens, feePerByte, feeToken)

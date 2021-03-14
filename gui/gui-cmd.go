@@ -190,9 +190,9 @@ func OutputDone() {
 func cmdInit() {
 	cmd = widgets.NewList()
 	cmd.Title = "Commands"
-	cmdRows = make([]string, 0)
+	cmdRows = make([]string, len(commands))
 	for i, command := range commands {
-		cmdRows = append(cmdRows, strconv.Itoa(i)+" "+command.Text)
+		cmdRows[i] = strconv.Itoa(i) + " " + command.Text
 	}
 	cmd.Rows = cmdRows
 	cmd.TextStyle = ui.NewStyle(ui.ColorYellow)

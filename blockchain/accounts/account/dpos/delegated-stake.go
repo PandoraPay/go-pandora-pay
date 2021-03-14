@@ -80,10 +80,11 @@ func (dstake *DelegatedStake) Deserialize(reader *helpers.BufferReader) {
 	dstake.StakeAvailable = reader.ReadUvarint()
 
 	n := reader.ReadUvarint()
+	dstake.StakesPending = make([]*DelegatedStakePending, n)
 	for i := uint64(0); i < n; i++ {
 		delegatedStakePending := new(DelegatedStakePending)
 		delegatedStakePending.Deserialize(reader)
-		dstake.StakesPending = append(dstake.StakesPending, delegatedStakePending)
+		dstake.StakesPending[i] = delegatedStakePending
 	}
 
 	return

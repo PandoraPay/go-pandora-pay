@@ -2,7 +2,6 @@ package mempool
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
@@ -11,35 +10,19 @@ import (
 	"time"
 )
 
-func (mempool *MemPool) GetTxsList() []*transaction.Transaction {
+func (mempool *MemPool) GetTxsList() []*memPoolTx {
 
-	list := make([]*transaction.Transaction, 0)
+	mempool.lockWritingTxs.RLock()
+	transactions := make([]*memPoolTx, len(mempool.txsList))
+	copy(transactions, mempool.txsList)
+	mempool.lockWritingTxs.RUnlock()
 
-	mempool.txs.Range(func(key, value interface{}) bool {
-		tx := value.(*memPoolTx)
-		list = append(list, tx.tx)
-		return true
-	})
-
-	return list
-}
-
-func (mempool *MemPool) GetTxsListKeyValue() []*memPoolTx {
-
-	list := make([]*memPoolTx, 0)
-
-	mempool.txs.Range(func(key, value interface{}) bool {
-		tx := value.(*memPoolTx)
-		list = append(list, tx)
-		return true
-	})
-
-	return list
+	return transactions
 }
 
 func (mempool *MemPool) GetTxsListKeyValueFilter(filter map[string]bool) []*memPoolTx {
 
-	list := make([]*memPoolTx, 0)
+	list := []*memPoolTx{}
 
 	mempool.txs.Range(func(key, value interface{}) bool {
 		hash := key.(string)
@@ -57,8 +40,8 @@ func (mempool *MemPool) GetNonce(publicKeyHash []byte) (result bool, nonce uint6
 
 	txs := mempool.GetTxsList()
 	for _, tx := range txs {
-		if tx.TxType == transaction_type.TxSimple {
-			base := tx.TxBase.(*transaction_simple.TransactionSimple)
+		if tx.Tx.TxType == transaction_type.TxSimple {
+			base := tx.Tx.TxBase.(*transaction_simple.TransactionSimple)
 			if bytes.Equal(base.Vin[0].GetPublicKeyHash(), publicKeyHash) {
 				result = true
 				if nonce <= base.Nonce {
@@ -71,38 +54,32 @@ func (mempool *MemPool) GetNonce(publicKeyHash []byte) (result bool, nonce uint6
 	return
 }
 
-func (mempool *MemPool) GetTransactions(blockHeight uint64, chainHash []byte) []*transaction.Transaction {
-
-	out := make([]*transaction.Transaction, 0)
+func (mempool *MemPool) GetNextTransactionsToInclude(blockHeight uint64, chainHash []byte) (out []*transaction.Transaction) {
 
 	mempool.result.RLock()
 	if bytes.Equal(mempool.result.chainHash, chainHash) {
-		for _, mempoolTx := range mempool.result.txs {
-			out = append(out, mempoolTx.tx)
+		out = make([]*transaction.Transaction, len(mempool.result.txs))
+		for i, mempoolTx := range mempool.result.txs {
+			out[i] = mempoolTx.Tx
 		}
+	} else {
+		out = []*transaction.Transaction{}
 	}
 	mempool.result.RUnlock()
-
-	return out
+	return
 }
 
 func (mempool *MemPool) print() {
 
-	mempool.lockWritingTxs.RLock()
-	txsCount := mempool.txsCount
-	mempool.lockWritingTxs.RUnlock()
+	transactions := mempool.GetTxsList()
 
-	if txsCount == 0 {
+	if len(transactions) == 0 {
 		return
 	}
 
-	list := mempool.GetTxsListKeyValue()
-
 	gui.Log("")
-	for _, out := range list {
-		out.RLock()
-		gui.Log(fmt.Sprintf("%20s %7d B %5d %32s", time.Unix(out.added, 0).UTC().Format(time.RFC3339), len(out.tx.Serialize()), out.chainHeight, hex.EncodeToString(out.hash)))
-		out.RUnlock()
+	for _, out := range transactions {
+		gui.Log(fmt.Sprintf("%20s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC3339), out.Size, out.ChainHeight, out.HashStr[0:15]))
 	}
 	gui.Log("")
 

@@ -91,7 +91,7 @@ func main() {
 
 	}
 
-	myTorServer := node_tcp.CreateTcpServer(mySettings, myChain)
+	myTorServer := node_tcp.CreateTcpServer(mySettings, myChain, myMempool)
 	globals.Data["tcp-server"] = myTorServer
 
 	gui.Log("Main Loop")

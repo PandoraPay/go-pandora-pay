@@ -21,32 +21,27 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 		panic("Output lengths are a mismatch")
 	}
 
-	var privateKeys []addresses.PrivateKey
-
-	var vin []*transaction_simple.TransactionSimpleInput
+	privateKeys := make([]addresses.PrivateKey, len(keys))
+	vin := make([]*transaction_simple.TransactionSimpleInput, len(keys))
 	for i := 0; i < len(keys); i++ {
 
-		privateKeys = append(privateKeys, addresses.PrivateKey{Key: keys[i]})
+		privateKeys[i] = addresses.PrivateKey{Key: keys[i]}
 
-		publicKey := privateKeys[i].GeneratePublicKey()
-
-		vin = append(vin, &transaction_simple.TransactionSimpleInput{
+		vin[i] = &transaction_simple.TransactionSimpleInput{
 			Amount:    amounts[i],
-			PublicKey: publicKey,
+			PublicKey: privateKeys[i].GeneratePublicKey(),
 			Token:     tokens[i],
-		})
+		}
 	}
 
-	var vout []*transaction_simple.TransactionSimpleOutput
+	vout := make([]*transaction_simple.TransactionSimpleOutput, len(dsts))
 	for i := 0; i < len(dsts); i++ {
-
 		outAddress := addresses.DecodeAddr(dsts[i])
-
-		vout = append(vout, &transaction_simple.TransactionSimpleOutput{
+		vout[i] = &transaction_simple.TransactionSimpleOutput{
 			PublicKeyHash: outAddress.PublicKeyHash,
 			Amount:        dstsAmounts[i],
 			Token:         dstsTokens[i],
-		})
+		}
 	}
 
 	tx = &transaction.Transaction{

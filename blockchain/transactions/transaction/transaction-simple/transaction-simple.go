@@ -166,18 +166,18 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) {
 	tx.Nonce = reader.ReadUvarint()
 
 	n = reader.ReadUvarint()
+	tx.Vin = make([]*TransactionSimpleInput, n)
 	for i := 0; i < int(n); i++ {
-		vin := &TransactionSimpleInput{}
-		vin.Deserialize(reader)
-		tx.Vin = append(tx.Vin, vin)
+		tx.Vin[i] = &TransactionSimpleInput{}
+		tx.Vin[i].Deserialize(reader)
 	}
 
 	//vout only TransactionTypeSimple
 	n = reader.ReadUvarint()
+	tx.Vout = make([]*TransactionSimpleOutput, n)
 	for i := 0; i < int(n); i++ {
-		vout := &TransactionSimpleOutput{}
-		vout.Deserialize(reader)
-		tx.Vout = append(tx.Vout, vout)
+		tx.Vout[i] = &TransactionSimpleOutput{}
+		tx.Vout[i].Deserialize(reader)
 	}
 
 	switch tx.TxScript {

@@ -152,10 +152,11 @@ func (account *Account) Deserialize(buf []byte) {
 	account.Nonce = reader.ReadUvarint()
 
 	n := reader.ReadUvarint()
+	account.Balances = make([]*Balance, n)
 	for i := uint64(0); i < n; i++ {
 		var balance = new(Balance)
 		balance.Deserialize(reader)
-		account.Balances = append(account.Balances, balance)
+		account.Balances[i] = balance
 	}
 
 	account.DelegatedStakeVersion = reader.ReadUvarint()

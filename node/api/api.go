@@ -6,15 +6,17 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
+	"pandora-pay/helpers"
+	"pandora-pay/mempool"
 	"strconv"
 	"sync/atomic"
 	"unsafe"
 )
 
 type API struct {
-	GetMap map[string]func(values url.Values) interface{}
-
+	GetMap     map[string]func(values url.Values) interface{}
 	chain      *blockchain.Blockchain
+	mempool    *mempool.MemPool
 	localChain unsafe.Pointer
 }
 
@@ -113,6 +115,15 @@ func (api *API) getToken(values url.Values) interface{} {
 	return api.loadTokenFromPublicKeyHash(hash)
 }
 
+func (api *API) getMempool(values url.Values) interface{} {
+	transactions := api.mempool.GetTxsList()
+	hashes := make([]helpers.ByteString, len(transactions))
+	for i, tx := range transactions {
+		hashes[i] = tx.Hash
+	}
+	return hashes
+}
+
 //make sure it is safe to read
 func (api *API) readLocalBlockchain(newChain *blockchain.Blockchain) {
 	newLocalChain := APIBlockchain{
@@ -129,10 +140,11 @@ func (api *API) readLocalBlockchain(newChain *blockchain.Blockchain) {
 	atomic.StorePointer(&api.localChain, unsafe.Pointer(&newLocalChain))
 }
 
-func CreateAPI(chain *blockchain.Blockchain) *API {
+func CreateAPI(chain *blockchain.Blockchain, mempool *mempool.MemPool) *API {
 
 	api := API{
-		chain: chain,
+		chain:   chain,
+		mempool: mempool,
 	}
 
 	api.GetMap = map[string]func(values url.Values) interface{}{
@@ -144,6 +156,7 @@ func CreateAPI(chain *blockchain.Blockchain) *API {
 		"/tx":             api.getTx,
 		"/balance":        api.getBalance,
 		"/token":          api.getToken,
+		"/mempool":        api.getMempool,
 	}
 
 	go func() {

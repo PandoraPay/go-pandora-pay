@@ -82,15 +82,15 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 		return
 	}
 
-	insertedBlocks := make([]*block.BlockComplete, 0)
-	insertedTxHashes := make([][]byte, 0)
+	insertedBlocks := []*block.BlockComplete{}
+	insertedTxHashes := [][]byte{}
 
 	var writer *bolt.Bucket
 	savedBlock := false
 	//remove blocks which are different
 	removedTxHashes := make(map[string][]byte)
-	removedTx := make([][]byte, 0)
-	removedBlocksHeights := make([]uint64, 0)
+	removedTx := [][]byte{}
+	removedBlocksHeights := []uint64{}
 
 	func() {
 
@@ -378,8 +378,7 @@ func (chain *Blockchain) initForging() {
 
 			blkComplete := <-chain.forging.SolutionChannel
 
-			var array []*block.BlockComplete
-			array = append(array, blkComplete)
+			array := []*block.BlockComplete{blkComplete}
 
 			result, err := chain.AddBlocks(array, true)
 			if err == nil && result {

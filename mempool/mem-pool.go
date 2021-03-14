@@ -18,16 +18,15 @@ import (
 )
 
 type memPoolTx struct {
-	tx          *transaction.Transaction
-	added       int64
-	mine        bool
-	size        uint64
-	feePerByte  uint64
-	feeToken    []byte //20 byte
-	chainHeight uint64
-	hash        []byte //32 byte
-	hashStr     string
-
+	Tx           *transaction.Transaction
+	Added        int64
+	Mine         bool
+	Size         uint64
+	FeePerByte   uint64
+	FeeToken     []byte //20 byte
+	ChainHeight  uint64
+	Hash         []byte //32 byte
+	HashStr      string
 	sync.RWMutex `json:"-"`
 }
 
@@ -40,13 +39,12 @@ type memPoolResult struct {
 }
 
 type MemPool struct {
-	txs      sync.Map
-	txsCount uint64
-
-	updateTask memPoolUpdateTask
-	result     memPoolResult
-
+	txs            sync.Map
+	txsCount       uint64
+	txsList        []*memPoolTx
 	lockWritingTxs sync.RWMutex `json:"-"`
+	updateTask     *memPoolUpdateTask
+	result         *memPoolResult
 }
 
 func (mempool *MemPool) AddTxToMemPoolSilent(tx *transaction.Transaction, height uint64, mine bool) (result bool, err error) {
@@ -59,18 +57,17 @@ func (mempool *MemPool) AddTxToMemPoolSilent(tx *transaction.Transaction, height
 
 func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) bool {
 
+	hash := tx.ComputeHash()
+	hashStr := string(hash)
+
 	//making sure that the transaction is not inserted twice
 	mempool.lockWritingTxs.Lock()
 	defer mempool.lockWritingTxs.Unlock()
-
-	hash := tx.ComputeHash()
-	hashStr := string(hash)
 
 	if _, found := mempool.txs.Load(hashStr); found {
 		return false
 	}
 
-	mempool.txsCount += 1
 	gui.Info2Update("mempool", strconv.FormatUint(mempool.txsCount, 10))
 
 	minerFees := tx.ComputeFees()
@@ -101,18 +98,20 @@ func (mempool *MemPool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 	}
 
 	object := memPoolTx{
-		tx:          tx,
-		added:       time.Now().Unix(),
-		size:        size,
-		feePerByte:  selectedFee / size,
-		feeToken:    []byte(*selectedFeeToken),
-		mine:        mine,
-		chainHeight: height,
-		hash:        hash,
-		hashStr:     hashStr,
+		Tx:          tx,
+		Added:       time.Now().Unix(),
+		Size:        size,
+		FeePerByte:  selectedFee / size,
+		FeeToken:    []byte(*selectedFeeToken),
+		Mine:        mine,
+		ChainHeight: height,
+		Hash:        hash,
+		HashStr:     hashStr,
 	}
 
+	mempool.txsCount += 1
 	mempool.txs.Store(hashStr, &object)
+	mempool.txsList = append(mempool.txsList, &object)
 
 	return true
 }
@@ -135,10 +134,16 @@ func (mempool *MemPool) Delete(txId []byte) (tx *transaction.Transaction) {
 	defer mempool.lockWritingTxs.Unlock()
 
 	mempool.txs.Delete(hashStr)
-
 	mempool.txsCount -= 1
-	gui.Info2Update("mempool", strconv.FormatUint(mempool.txsCount, 10))
+	for i, txOut := range mempool.txsList {
+		if txOut.HashStr == hashStr {
+			mempool.txsList[len(mempool.txsList)-1], mempool.txsList[i] = mempool.txsList[i], mempool.txsList[len(mempool.txsList)-1]
+			mempool.txsList = mempool.txsList[:len(mempool.txsList)-1]
+			break
+		}
+	}
 
+	gui.Info2Update("mempool", strconv.FormatUint(mempool.txsCount, 10))
 	return
 }
 
@@ -179,7 +184,7 @@ func (mempool *MemPool) Refresh() {
 			mempool.result.Lock()
 			mempool.result.chainHash = mempool.updateTask.chainHash
 			mempool.result.chainHeight = mempool.updateTask.chainHeight
-			mempool.result.txs = make([]*memPoolTx, 0)
+			mempool.result.txs = []*memPoolTx{}
 			mempool.result.totalSize = 0
 			mempool.result.Unlock()
 		}
@@ -193,11 +198,11 @@ func (mempool *MemPool) Refresh() {
 				if len(txList) > 0 {
 					sort.Slice(txList, func(i, j int) bool {
 
-						if txList[i].feePerByte == txList[j].feePerByte && txList[i].tx.TxType == transaction_type.TxSimple && txList[j].tx.TxType == transaction_type.TxSimple {
-							return txList[i].tx.TxBase.(*transaction_simple.TransactionSimple).Nonce < txList[j].tx.TxBase.(*transaction_simple.TransactionSimple).Nonce
+						if txList[i].FeePerByte == txList[j].FeePerByte && txList[i].Tx.TxType == transaction_type.TxSimple && txList[j].Tx.TxType == transaction_type.TxSimple {
+							return txList[i].Tx.TxBase.(*transaction_simple.TransactionSimple).Nonce < txList[j].Tx.TxBase.(*transaction_simple.TransactionSimple).Nonce
 						}
 
-						return txList[i].feePerByte < txList[j].feePerByte
+						return txList[i].FeePerByte < txList[j].FeePerByte
 					})
 
 					var err error
@@ -228,20 +233,17 @@ func (mempool *MemPool) Refresh() {
 								updateTask.toks.Rollback()
 							} else {
 								mempool.result.Lock()
-								if mempool.result.totalSize+txList[listIndex].size < config.BLOCK_MAX_SIZE {
+								if mempool.result.totalSize+txList[listIndex].Size < config.BLOCK_MAX_SIZE {
 									mempool.result.txs = append(mempool.result.txs, txList[listIndex])
-									mempool.result.totalSize += txList[listIndex].size
+									mempool.result.totalSize += txList[listIndex].Size
 								}
 								mempool.result.Unlock()
-								txList[listIndex].Lock()
-								txList[listIndex].chainHeight = updateTask.chainHeight
-								txList[listIndex].Unlock()
 							}
 							listIndex += 1
 						}()
 
-						txMap[txList[listIndex].hashStr] = true
-						txList[listIndex].tx.IncludeTransaction(updateTask.chainHeight, updateTask.accs, updateTask.toks)
+						txMap[txList[listIndex].HashStr] = true
+						txList[listIndex].Tx.IncludeTransaction(updateTask.chainHeight, updateTask.accs, updateTask.toks)
 					}()
 
 					continue
@@ -260,7 +262,11 @@ func InitMemPool() (mempool *MemPool) {
 
 	gui.Log("MemPool init...")
 
-	mempool = &MemPool{}
+	mempool = &MemPool{
+		updateTask: &memPoolUpdateTask{},
+		result:     &memPoolResult{},
+		txsList:    []*memPoolTx{},
+	}
 
 	go func() {
 		for {

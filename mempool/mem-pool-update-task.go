@@ -8,13 +8,12 @@ import (
 )
 
 type memPoolUpdateTask struct {
-	boltTx      *bbolt.Tx
-	chainHash   []byte //32 byte
-	chainHeight uint64
-	accs        *accounts.Accounts
-	toks        *tokens.Tokens
-	status      int
-
+	boltTx       *bbolt.Tx
+	chainHash    []byte //32 byte
+	chainHeight  uint64
+	accs         *accounts.Accounts
+	toks         *tokens.Tokens
+	status       int
 	sync.RWMutex `json:"-"`
 }
 

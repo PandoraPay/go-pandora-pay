@@ -42,7 +42,7 @@ func (chain *Blockchain) removeBlockComplete(bucket *bolt.Bucket, blockHeight ui
 	bucket.Delete(append([]byte("blockHash"), hash...))
 
 	data := bucket.Get([]byte("blockTxs" + blockHeightStr))
-	txHashes := make([][]byte, 0) //32 byte
+	txHashes := [][]byte{} //32 byte
 
 	if err := json.Unmarshal(data, &txHashes); err != nil {
 		panic(err)
@@ -62,12 +62,12 @@ func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *blo
 	bucket.Put(append([]byte("blockHash"), hash...), blkComplete.Block.Serialize())
 	bucket.Put([]byte("blockHeight"+blockHeightStr), hash)
 
-	newTxHashes := make([][]byte, 0)
+	newTxHashes := [][]byte{}
 
-	txHashes := make([][]byte, 0)
-	for _, tx := range blkComplete.Txs {
+	txHashes := make([][]byte, len(blkComplete.Txs))
+	for i, tx := range blkComplete.Txs {
 		txHash := tx.ComputeHash()
-		txHashes = append(txHashes, txHash)
+		txHashes[i] = txHash
 
 		//let's check to see if the tx block is already stored, if yes, we will skip it
 		if removedTxHashes[string(txHash)] == nil {

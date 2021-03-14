@@ -5,6 +5,7 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
+	"pandora-pay/mempool"
 	"pandora-pay/node/api"
 	node_http "pandora-pay/node/node-http"
 	"pandora-pay/settings"
@@ -67,12 +68,12 @@ func (server *TcpServer) initialize() {
 	server.HttpServer = node_http.CreateHttpServer(server.tcpListener, server.chain, server.api)
 }
 
-func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain) *TcpServer {
+func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.MemPool) *TcpServer {
 
 	server := &TcpServer{
 		settings: settings,
 		chain:    chain,
-		api:      api.CreateAPI(chain),
+		api:      api.CreateAPI(chain, mempool),
 	}
 	server.initialize()
 
