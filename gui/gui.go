@@ -37,25 +37,10 @@ func GUIInit() {
 		ui.NewRow(2.0/4, logs),
 	)
 
-	//go func() {
-	//	for {
-	//		termWidth2, termHeight2 := ui.TerminalDimensions()
-	//		if termWidth != termWidth2 || termHeight2 != termHeight {
-	//			termWidth = termWidth2
-	//			termHeight = termHeight2
-	//			grid.SetRect(0, 0, termWidth, termHeight)
-	//			ui.Render(grid)
-	//		}
-	//		time.Sleep(2 * time.Second)
-	//
-	//	}
-	//}()
-
 	ui.Render(grid)
 
+	ticker := time.NewTicker(100 * time.Millisecond).C
 	go func() {
-
-		ticker := time.NewTicker(100 * time.Millisecond).C
 
 		uiEvents := ui.PollEvents()
 		for {

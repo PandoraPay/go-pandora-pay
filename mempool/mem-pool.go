@@ -18,16 +18,15 @@ import (
 )
 
 type memPoolTx struct {
-	Tx           *transaction.Transaction
-	Added        int64
-	Mine         bool
-	Size         uint64
-	FeePerByte   uint64
-	FeeToken     []byte //20 byte
-	ChainHeight  uint64
-	Hash         []byte //32 byte
-	HashStr      string
-	sync.RWMutex `json:"-"`
+	Tx          *transaction.Transaction
+	Added       int64
+	Mine        bool
+	Size        uint64
+	FeePerByte  uint64
+	FeeToken    []byte //20 byte
+	ChainHeight uint64
+	Hash        []byte //32 byte
+	HashStr     string
 }
 
 type memPoolResult struct {

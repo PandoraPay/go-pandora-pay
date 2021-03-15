@@ -11,12 +11,12 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block/difficulty"
+	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
-	"pandora-pay/forging"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
@@ -96,12 +96,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 		defer func() {
 
-			_ = helpers.ConvertRecoverError(recover())
+			err = helpers.ConvertRecoverError(recover())
 
 			//recover, but in case the chain was correctly saved and the mewChainDifficulty is higher than
 			//we should store it
 			if savedBlock && mainChainBigTotalDifficulty.Cmp(newChain.BigTotalDifficulty) < 0 {
 
+				err = nil
 				newChain.saveBlockchain(writer)
 
 				for _, removedBlock := range removedBlocksHeights {
@@ -137,9 +138,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 			} else {
 
-				err = boltTx.Rollback()
-				if err == nil {
-					err = errors.New("Blocks were not saved")
+				if err2 := boltTx.Rollback(); err2 != nil {
+					err = errors.New("Error rollback chain")
 				}
 
 			}

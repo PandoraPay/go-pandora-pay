@@ -51,9 +51,7 @@ func ForgingInit(mempool *mempool.MemPool) (forging *Forging) {
 	}
 
 	gui.Log("Forging Init")
-	if err := forging.Wallet.loadBalances(); err != nil {
-		panic(err)
-	}
+	forging.Wallet.loadBalances()
 
 	go forging.startForging(config.CPU_THREADS)
 

@@ -2,6 +2,7 @@ package mempool
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
@@ -79,7 +80,7 @@ func (mempool *MemPool) print() {
 
 	gui.Log("")
 	for _, out := range transactions {
-		gui.Log(fmt.Sprintf("%20s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC3339), out.Size, out.ChainHeight, out.HashStr[0:15]))
+		gui.Log(fmt.Sprintf("%20s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC3339), out.Size, out.ChainHeight, hex.EncodeToString(out.Hash[0:15])))
 	}
 	gui.Log("")
 

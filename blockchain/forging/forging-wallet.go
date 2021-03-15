@@ -13,17 +13,14 @@ import (
 type ForgingWallet struct {
 	addresses    []*ForgingWalletAddress
 	addressesMap map[string]*ForgingWalletAddress
-
 	sync.RWMutex
 }
 
 type ForgingWalletAddress struct {
 	delegatedPrivateKey *addresses.PrivateKey
 	delegatedPublicKey  []byte //33 byte
-
-	publicKeyHash []byte //20byte
-
-	account *account.Account
+	publicKeyHash       []byte //20byte
+	account             *account.Account
 }
 
 type ForgingWalletAddressRequired struct {
@@ -39,6 +36,7 @@ func (w *ForgingWallet) AddWallet(delegatedPub []byte, delegatedPriv []byte, pub
 
 	private := addresses.PrivateKey{Key: delegatedPriv}
 
+	//let's read the balance
 	store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
 		accs := accounts.NewAccounts(boltTx)
@@ -65,7 +63,6 @@ func (w *ForgingWallet) UpdateBalanceChanges(accs *accounts.Accounts) {
 	defer w.Unlock()
 
 	for k, v := range accs.HashMap.Committed {
-
 		if w.addressesMap[k] != nil {
 
 			if v.Commit == "update" {
@@ -76,7 +73,6 @@ func (w *ForgingWallet) UpdateBalanceChanges(accs *accounts.Accounts) {
 			}
 
 		}
-
 	}
 
 }
@@ -95,12 +91,12 @@ func (w *ForgingWallet) RemoveWallet(delegatedPublicKey []byte) { //33 byte
 
 }
 
-func (w *ForgingWallet) loadBalances() error {
+func (w *ForgingWallet) loadBalances() {
 
 	w.Lock()
 	defer w.Unlock()
 
-	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
 
 		accs := accounts.NewAccounts(boltTx)
 
@@ -111,7 +107,9 @@ func (w *ForgingWallet) loadBalances() error {
 
 		}
 
-		return
-	})
+		return nil
+	}); err != nil {
+		panic(err)
+	}
 
 }

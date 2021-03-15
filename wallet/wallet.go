@@ -1,7 +1,7 @@
 package wallet
 
 import (
-	"pandora-pay/forging"
+	"pandora-pay/blockchain/forging"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"sync"

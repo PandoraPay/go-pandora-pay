@@ -46,13 +46,6 @@ func SettingsInit() (settings *Settings) {
 	return
 }
 
-func (settings *Settings) SetTorOnionSettings(torOnionPrivateKey, torOnionPrivateKeyType string) {
-	settings.Lock()
-	defer settings.Unlock()
-	settings.updateSettings()
-	settings.saveSettings()
-}
-
 func (settings *Settings) createEmptySettings() {
 	settings.Lock()
 	defer settings.Unlock()
