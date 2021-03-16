@@ -16,7 +16,7 @@ import (
 
 type TransactionsBuilder struct {
 	wallet  *wallet.Wallet
-	memPool *mempool.MemPool
+	memPool *mempool.Mempool
 	chain   *blockchain.Blockchain
 }
 
@@ -104,7 +104,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount u
 	return
 }
 
-func TransactionsBuilderInit(wallet *wallet.Wallet, memPool *mempool.MemPool, chain *blockchain.Blockchain) *TransactionsBuilder {
+func TransactionsBuilderInit(wallet *wallet.Wallet, memPool *mempool.Mempool, chain *blockchain.Blockchain) *TransactionsBuilder {
 	return &TransactionsBuilder{
 		wallet:  wallet,
 		chain:   chain,

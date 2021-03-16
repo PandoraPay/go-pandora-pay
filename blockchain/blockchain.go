@@ -40,7 +40,7 @@ type Blockchain struct {
 	UpdateChannel         chan uint64      `json:"-"`
 	UpdateNewChainChannel chan *Blockchain `json:"-"`
 	forging               *forging.Forging `json:"-"`
-	mempool               *mempool.MemPool `json:"-"`
+	mempool               *mempool.Mempool `json:"-"`
 	mutex                 sync.Mutex       `json:"-"`
 	sync.RWMutex          `json:"-"`
 }
@@ -334,14 +334,14 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 		newChain.mempool.Delete(txHash)
 	}
 
-	newChain.mempool.UpdateChanges(newChain.Hash, newChain.Height)
+	newChain.mempool.UpdateWork(newChain.Hash, newChain.Height)
 
 	result = true
 	return
 
 }
 
-func BlockchainInit(forging *forging.Forging, mempool *mempool.MemPool) (chain *Blockchain) {
+func BlockchainInit(forging *forging.Forging, mempool *mempool.Mempool) (chain *Blockchain) {
 
 	gui.Log("Blockchain init...")
 

@@ -11,33 +11,17 @@ import (
 	"time"
 )
 
-func (mempool *MemPool) GetTxsList() []*memPoolTx {
+func (mempool *Mempool) GetTxsList() []*mempoolTx {
 
-	mempool.lockWritingTxs.RLock()
-	transactions := make([]*memPoolTx, len(mempool.txsList))
-	copy(transactions, mempool.txsList)
-	mempool.lockWritingTxs.RUnlock()
+	mempool.txs.RLock()
+	transactions := make([]*mempoolTx, len(mempool.txs.txsList))
+	copy(transactions, mempool.txs.txsList)
+	mempool.txs.RUnlock()
 
 	return transactions
 }
 
-func (mempool *MemPool) GetTxsListKeyValueFilter(filter map[string]bool) []*memPoolTx {
-
-	list := []*memPoolTx{}
-
-	mempool.txs.Range(func(key, value interface{}) bool {
-		hash := key.(string)
-		if !filter[hash] {
-			tx := value.(*memPoolTx)
-			list = append(list, tx)
-		}
-		return true
-	})
-
-	return list
-}
-
-func (mempool *MemPool) GetNonce(publicKeyHash []byte) (result bool, nonce uint64) {
+func (mempool *Mempool) GetNonce(publicKeyHash []byte) (result bool, nonce uint64) {
 
 	txs := mempool.GetTxsList()
 	for _, tx := range txs {
@@ -55,14 +39,12 @@ func (mempool *MemPool) GetNonce(publicKeyHash []byte) (result bool, nonce uint6
 	return
 }
 
-func (mempool *MemPool) GetNextTransactionsToInclude(blockHeight uint64, chainHash []byte) (out []*transaction.Transaction) {
+func (mempool *Mempool) GetNextTransactionsToInclude(blockHeight uint64, chainHash []byte) (out []*transaction.Transaction) {
 
 	mempool.result.RLock()
 	if bytes.Equal(mempool.result.chainHash, chainHash) {
 		out = make([]*transaction.Transaction, len(mempool.result.txs))
-		for i, mempoolTx := range mempool.result.txs {
-			out[i] = mempoolTx.Tx
-		}
+		copy(out, mempool.result.txs)
 	} else {
 		out = []*transaction.Transaction{}
 	}
@@ -70,7 +52,7 @@ func (mempool *MemPool) GetNextTransactionsToInclude(blockHeight uint64, chainHa
 	return
 }
 
-func (mempool *MemPool) print() {
+func (mempool *Mempool) print() {
 
 	transactions := mempool.GetTxsList()
 

@@ -16,7 +16,7 @@ import (
 type API struct {
 	GetMap     map[string]func(values url.Values) interface{}
 	chain      *blockchain.Blockchain
-	mempool    *mempool.MemPool
+	mempool    *mempool.Mempool
 	localChain unsafe.Pointer
 }
 
@@ -140,7 +140,7 @@ func (api *API) readLocalBlockchain(newChain *blockchain.Blockchain) {
 	atomic.StorePointer(&api.localChain, unsafe.Pointer(&newLocalChain))
 }
 
-func CreateAPI(chain *blockchain.Blockchain, mempool *mempool.MemPool) *API {
+func CreateAPI(chain *blockchain.Blockchain, mempool *mempool.Mempool) *API {
 
 	api := API{
 		chain:   chain,

@@ -4,7 +4,7 @@ import (
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"github.com/mackerelio/go-osstat/cpu"
-	"github.com/mackerelio/go-osstat/memory"
+	"runtime"
 	"sort"
 	"strconv"
 	"sync"
@@ -39,10 +39,9 @@ func info2Init() {
 
 		for {
 
-			memory, err := memory.Get()
-			if err == nil {
-				Info2Update("memory", bToMb(memory.Used)+"M "+bToMb(memory.Total)+"M "+bToMb(memory.Cached)+"M "+bToMb(memory.Free)+"M")
-			}
+			var m runtime.MemStats
+			runtime.ReadMemStats(&m)
+			Info2Update("memory", bToMb(m.Alloc)+"M "+bToMb(m.TotalAlloc)+"M "+bToMb(m.Alloc)+"M "+strconv.FormatUint(uint64(m.NumGC), 10))
 
 			before, err1 := cpu.Get()
 			time.Sleep(time.Duration(1) * time.Second)

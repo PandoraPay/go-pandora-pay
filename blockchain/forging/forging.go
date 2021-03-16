@@ -34,12 +34,12 @@ type Forging struct {
 
 	wg sync.WaitGroup
 
-	mempool         *mempool.MemPool
+	mempool         *mempool.Mempool
 	Wallet          *ForgingWallet
 	SolutionChannel chan *block.BlockComplete
 }
 
-func ForgingInit(mempool *mempool.MemPool) (forging *Forging) {
+func ForgingInit(mempool *mempool.Mempool) (forging *Forging) {
 
 	forging = &Forging{
 

@@ -68,7 +68,7 @@ func (server *TcpServer) initialize() {
 	server.HttpServer = node_http.CreateHttpServer(server.tcpListener, server.chain, server.api)
 }
 
-func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.MemPool) *TcpServer {
+func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) *TcpServer {
 
 	server := &TcpServer{
 		settings: settings,

@@ -16,7 +16,7 @@ import (
 
 type Testnet struct {
 	wallet              *wallet.Wallet
-	mempool             *mempool.MemPool
+	mempool             *mempool.Mempool
 	chain               *blockchain.Blockchain
 	transactionsBuilder *transactions_builder.TransactionsBuilder
 
@@ -121,7 +121,7 @@ func (testnet *Testnet) run() {
 	}
 }
 
-func TestnetInit(wallet *wallet.Wallet, mempool *mempool.MemPool, chain *blockchain.Blockchain, transactionsBuilder *transactions_builder.TransactionsBuilder) (testnet *Testnet) {
+func TestnetInit(wallet *wallet.Wallet, mempool *mempool.Mempool, chain *blockchain.Blockchain, transactionsBuilder *transactions_builder.TransactionsBuilder) (testnet *Testnet) {
 
 	testnet = &Testnet{
 		wallet:              wallet,
