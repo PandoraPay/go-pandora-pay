@@ -16,7 +16,7 @@ func (blk *Block) BloomNow() {
 	bloom.Hash = blk.ComputeHash()
 	bloom.KernelHash = blk.ComputeKernelHash()
 	bloom.hashForSignature = blk.SerializeForSigning()
-	publicKey, err := ecdsa.EcrecoverCompressed(blk.Bloom.hashForSignature, blk.Signature)
+	publicKey, err := ecdsa.EcrecoverCompressed(bloom.hashForSignature, blk.Signature)
 	if err != nil {
 		panic(err)
 	}

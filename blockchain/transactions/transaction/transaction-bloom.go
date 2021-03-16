@@ -17,9 +17,9 @@ type TransactionBloom struct {
 func (tx *Transaction) BloomNow() {
 	bloom := new(TransactionBloom)
 	bloom.Serialized = tx.Serialize()
-	bloom.Size = uint64(len(tx.Bloom.Serialized))
-	bloom.Hash = cryptography.SHA3Hash(tx.Bloom.Serialized)
-	bloom.HashStr = string(tx.Bloom.Hash)
+	bloom.Size = uint64(len(bloom.Serialized))
+	bloom.Hash = cryptography.SHA3Hash(bloom.Serialized)
+	bloom.HashStr = string(bloom.Hash)
 	bloom.bloomed = true
 	tx.Bloom = bloom
 }
