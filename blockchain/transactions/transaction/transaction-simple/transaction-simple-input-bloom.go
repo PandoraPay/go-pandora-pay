@@ -22,7 +22,7 @@ func (bloom *TransactionSimpleInputBloom) bloomPublicKey(hash []byte, signature 
 		panic(err)
 	}
 	bloom.PublicKey = out
-	bloom.PublicKey = cryptography.ComputePublicKeyHash(bloom.PublicKey)
+	bloom.PublicKeyHash = cryptography.ComputePublicKeyHash(bloom.PublicKey)
 	bloom.bloomed = true
 }
 

@@ -116,7 +116,7 @@ func (api *API) loadBlockComplete(bucket *bolt.Bucket, hash []byte) *block.Block
 	for i, txHash := range txHashes {
 		data = bucket.Get(append([]byte("tx"), txHash...))
 		tx := &transaction.Transaction{}
-		tx.Deserialize(helpers.NewBufferReader(data))
+		tx.Deserialize(helpers.NewBufferReader(data), false)
 		txs[i] = tx
 	}
 
@@ -153,6 +153,6 @@ func (api *API) loadBlockWithTxHashes(bucket *bolt.Bucket, hash []byte) *BlockWi
 func (api *API) loadTx(bucket *bolt.Bucket, hash []byte) *transaction.Transaction {
 	data := bucket.Get(append([]byte("tx"), hash...))
 	tx := new(transaction.Transaction)
-	tx.Deserialize(helpers.NewBufferReader(data))
+	tx.Deserialize(helpers.NewBufferReader(data), false)
 	return tx
 }

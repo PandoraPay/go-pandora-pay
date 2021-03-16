@@ -96,7 +96,7 @@ func (blkComplete *BlockComplete) Deserialize(buf []byte) {
 		txLength := reader.ReadUvarint()
 		reader.ReadBytes(int(txLength))
 		blkComplete.Txs[i] = &transaction.Transaction{}
-		blkComplete.Txs[i].Deserialize(reader)
+		blkComplete.Txs[i].Deserialize(reader, true)
 	}
 
 }

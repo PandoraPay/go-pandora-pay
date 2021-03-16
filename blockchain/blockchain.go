@@ -327,7 +327,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 
 	for _, txData := range removedTx {
 		tx := transaction.Transaction{}
-		tx.Deserialize(helpers.NewBufferReader(txData))
+		tx.Deserialize(helpers.NewBufferReader(txData), true)
 		newChain.mempool.AddTxToMemPoolSilent(&tx, newChain.Height, false)
 	}
 

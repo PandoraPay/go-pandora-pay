@@ -99,7 +99,10 @@ func (tx *Transaction) Verify() {
 	}
 }
 
-func (tx *Transaction) Deserialize(reader *helpers.BufferReader) {
+func (tx *Transaction) Deserialize(reader *helpers.BufferReader, bloom bool) {
+
+	buffer := reader.Buf[:]
+	first := reader.Position
 
 	tx.Version = reader.ReadUvarint()
 	n := reader.ReadUvarint()
@@ -112,11 +115,32 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader) {
 		tx.TxBase = base
 	}
 
+	end := reader.Position
+
+	if bloom {
+		//we can bloom
+		tx.BloomSecurity = &TransactionSecurityBloom{SignatureVerified: true, bloomed: true}
+		serialized := buffer[first:end]
+		hash := cryptography.SHA3(serialized)
+		tx.Bloom = &TransactionBloom{
+			Serialized: serialized,
+			Size:       uint64(end - first),
+			Hash:       hash,
+			HashStr:    string(hash),
+			bloomed:    true,
+		}
+		tx.BloomExtraNow()
+	}
+
 }
 
 func (tx *Transaction) BloomAll() {
 	tx.BloomNow()
+	tx.BloomExtraNow()
 	tx.BloomSecurityNow()
+}
+
+func (tx *Transaction) BloomExtraNow() {
 	switch tx.TxType {
 	case transaction_type.TxSimple:
 		base := tx.TxBase.(*transaction_simple.TransactionSimple)
