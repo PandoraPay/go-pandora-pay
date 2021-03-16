@@ -21,32 +21,36 @@ func logsRender() {
 	ui.Render(logs)
 }
 
-func message(color string, any ...interface{}) {
+func message(prefix string, color string, any ...interface{}) {
+	text := processArgument(any...)
+
 	logs.Lock()
-	logs.Text = logs.Text + "[" + processArgument(any...) + "]" + color + "\n"
+	logger.generalLog.WriteString(prefix + " " + text + "\n")
+	logs.Text = logs.Text + "[" + text + "]" + color + "\n"
 	logs.Unlock()
+
 }
 
 func Log(any ...interface{}) {
-	message("()", any...)
+	message("LOG", "()", any...)
 }
 
 func Info(any ...interface{}) {
-	message("(fg:blue)", any...)
+	message("INF", "(fg:blue)", any...)
 }
 
 func Warning(any ...interface{}) {
-	message("(fg:yellow)", any...)
+	message("WARN", "(fg:yellow)", any...)
 }
 
 func Fatal(any ...interface{}) error {
-	message("(fg:red,fg:bold)", any...)
+	message("FATAL", "(fg:red,fg:bold)", any...)
 	os.Exit(1)
 	return nil
 }
 
 func Error(any ...interface{}) error {
-	message("(fg:red)", any...)
+	message("ERR", "(fg:red)", any...)
 	for _, it := range any {
 
 		switch v := it.(type) {

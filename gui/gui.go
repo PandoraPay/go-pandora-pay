@@ -3,7 +3,6 @@ package gui
 import (
 	"encoding/hex"
 	ui "github.com/gizak/termui/v3"
-	"log"
 	"os"
 	"strconv"
 	"time"
@@ -12,8 +11,10 @@ import (
 //test
 func GUIInit() {
 
+	InitLogger()
+
 	if err := ui.Init(); err != nil {
-		log.Fatalf("failed to initialize termui: %v", err)
+		panic("failed to initialize termui: " + err.Error())
 	}
 	//defer ui.Close()
 
