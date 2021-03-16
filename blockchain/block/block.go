@@ -13,14 +13,15 @@ import (
 
 type Block struct {
 	BlockHeader
-	MerkleHash         helpers.ByteString //32 byte
-	PrevHash           helpers.ByteString //32 byte
-	PrevKernelHash     helpers.ByteString //32 byte
-	Timestamp          uint64
-	StakingAmount      uint64
-	DelegatedPublicKey helpers.ByteString //33 byte public key. It IS NOT included in the kernel hash
-	Forger             helpers.ByteString // 20 byte public key hash
-	Signature          helpers.ByteString // 65 byte signature
+	MerkleHash             helpers.ByteString //32 byte
+	PrevHash               helpers.ByteString //32 byte
+	PrevKernelHash         helpers.ByteString //32 byte
+	Timestamp              uint64
+	StakingAmount          uint64
+	DelegatedPublicKeyHash helpers.ByteString // 20 byte public key. It IS NOT included in the kernel hash
+	Forger                 helpers.ByteString // 20 byte public key hash
+	Signature              helpers.ByteString // 65 byte signature
+	Bloom                  *BlockBloom
 }
 
 func (blk *Block) Validate() {
@@ -28,9 +29,7 @@ func (blk *Block) Validate() {
 }
 
 func (blk *Block) Verify() {
-	if blk.VerifySignature() != true {
-		panic("Forger Signature is invalid!")
-	}
+	blk.VerifyBloomAll() //it will panic
 }
 
 func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allFees map[string]uint64) {
@@ -43,7 +42,7 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 	if blk.Height == 0 && !acc.HasDelegatedStake() {
 		acc.DelegatedStakeVersion = 1
 		acc.DelegatedStake = new(dpos.DelegatedStake)
-		acc.DelegatedStake.DelegatedPublicKey = blk.DelegatedPublicKey
+		acc.DelegatedStake.DelegatedPublicKeyHash = blk.DelegatedPublicKeyHash
 	}
 
 	acc.DelegatedStake.AddStakePendingStake(reward, blk.Height)
@@ -82,9 +81,9 @@ func (blk *Block) SerializeForSigning() []byte {
 	return cryptography.SHA3Hash(blk.serializeBlock(false, false))
 }
 
-func (blk *Block) VerifySignature() bool {
+func (blk *Block) VerifySignatureManually() bool {
 	hash := blk.SerializeForSigning()
-	return ecdsa.VerifySignature(blk.DelegatedPublicKey, hash, blk.Signature[0:64])
+	return ecdsa.VerifySignature(blk.DelegatedPublicKeyHash, hash, blk.Signature[0:64])
 }
 
 func (blk *Block) serializeBlock(kernelHash bool, inclSignature bool) []byte {
@@ -103,7 +102,7 @@ func (blk *Block) serializeBlock(kernelHash bool, inclSignature bool) []byte {
 	if !kernelHash {
 
 		writer.WriteUvarint(blk.StakingAmount)
-		writer.Write(blk.DelegatedPublicKey)
+		writer.Write(blk.DelegatedPublicKeyHash)
 	}
 
 	writer.WriteUvarint(blk.Timestamp)
@@ -131,7 +130,7 @@ func (blk *Block) Deserialize(reader *helpers.BufferReader) {
 	blk.PrevHash = reader.ReadHash()
 	blk.PrevKernelHash = reader.ReadHash()
 	blk.StakingAmount = reader.ReadUvarint()
-	blk.DelegatedPublicKey = reader.ReadBytes(33)
+	blk.DelegatedPublicKeyHash = reader.ReadBytes(20)
 	blk.Timestamp = reader.ReadUvarint()
 	blk.Forger = reader.ReadBytes(20)
 	blk.Signature = reader.ReadBytes(65)

@@ -73,7 +73,7 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 	assert.NotEqual(t, signature, helpers.EmptyBytes(65), "Invalid signature")
 	blk.Signature = signature
 
-	assert.Equal(t, blk.VerifySignature(), true, "Signature Validation failed")
+	assert.Equal(t, blk.VerifySignatureManually(), true, "Signature Validation failed")
 
 	if blk.Signature[7] == 0 {
 		blk.Signature[7] = 5
@@ -81,6 +81,6 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 		blk.Signature[7] = 0
 	}
 
-	assert.Equal(t, blk.VerifySignature(), false, "Changed Signature Validation failed")
+	assert.Equal(t, blk.VerifySignatureManually(), false, "Changed Signature Validation failed")
 
 }

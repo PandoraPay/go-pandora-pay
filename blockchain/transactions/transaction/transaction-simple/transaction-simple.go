@@ -61,7 +61,7 @@ func (tx *TransactionSimple) ComputeFees(out map[string]uint64) {
 
 	switch tx.TxScript {
 	case TxSimpleScriptUnstake:
-		helpers.SafeMapUint64Add(out, config.NATIVE_TOKEN_STRING, tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).UnstakeFeeExtra)
+		helpers.SafeMapUint64Add(out, config.NATIVE_TOKEN_STRING, tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
 	}
 	return
 }
@@ -82,7 +82,8 @@ func (tx *TransactionSimple) ComputeVout(out map[string]uint64) {
 	}
 }
 
-func (tx *TransactionSimple) VerifySignature(hashForSignature []byte) bool {
+func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bool {
+
 	if len(tx.Vin) == 0 {
 		return false
 	}
@@ -198,5 +199,5 @@ func (tx *TransactionSimple) VerifyBloomAll() {
 	for _, vin := range tx.Vin {
 		vin.Bloom.VerifyIfBloomed()
 	}
-	tx.Bloom.VerifyIfBloomed()
+	tx.Bloom.verifyIfBloomed()
 }

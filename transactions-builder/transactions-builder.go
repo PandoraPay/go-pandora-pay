@@ -91,7 +91,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount u
 		}
 
 		tx = wizard.CreateUnstakeTx(nonce, fromWalletAddress.PrivateKey.Key, unstakeAmount, feePerByte, feeToken, payFeeInExtra)
-		if account.GetDelegatedStakeAvailable(chainHeight) < tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Amount+tx.TxBase.(*transaction_simple.TransactionSimple).Extra.(*transaction_simple_extra.TransactionSimpleUnstake).UnstakeFeeExtra {
+		if account.GetDelegatedStakeAvailable(chainHeight) < tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Amount+tx.TxBase.(*transaction_simple.TransactionSimple).Extra.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra {
 			panic("You don't have enough staked coins to pay for the fee")
 		}
 

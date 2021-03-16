@@ -8,23 +8,25 @@ type TransactionSimpleBloom struct {
 
 func (tx *TransactionSimple) BloomNow(hashForSignature []byte, signatureWasVerifiedBefore bool) {
 
+	bloom := new(TransactionSimpleBloom)
+	bloom.hashForSignature = hashForSignature
+
 	for _, vin := range tx.Vin {
 		vin.BloomNow(hashForSignature)
 	}
 
-	tx.Bloom = new(TransactionSimpleBloom)
-	tx.Bloom.hashForSignature = hashForSignature
-	tx.Bloom.signatureVerified = signatureWasVerifiedBefore
+	bloom.signatureVerified = signatureWasVerifiedBefore
 	if !signatureWasVerifiedBefore {
-		tx.Bloom.signatureVerified = tx.VerifySignature(hashForSignature)
-		if !tx.Bloom.signatureVerified {
+		bloom.signatureVerified = tx.VerifySignatureManually(hashForSignature)
+		if !bloom.signatureVerified {
 			panic("Signature Failed for Transaction Simple")
 		}
 	}
-	tx.Bloom.bloomed = true
+	bloom.bloomed = true
+	tx.Bloom = bloom
 }
 
-func (tx *TransactionSimpleBloom) VerifyIfBloomed() {
+func (tx *TransactionSimpleBloom) verifyIfBloomed() {
 	if !tx.bloomed {
 		panic("TransactionSimpleBloom was not bloomed")
 	}

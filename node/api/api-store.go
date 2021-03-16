@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/block"
+	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -19,7 +20,7 @@ type BlockWithTxs struct {
 	Txs []helpers.ByteString
 }
 
-func (api *API) loadBlockCompleteFromHash(hash []byte) (blkComplete *block.BlockComplete) {
+func (api *API) loadBlockCompleteFromHash(hash []byte) (blkComplete *block_complete.BlockComplete) {
 	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
 		reader := boltTx.Bucket([]byte("Chain"))
 		blkComplete = api.loadBlockComplete(reader, hash)
@@ -30,7 +31,7 @@ func (api *API) loadBlockCompleteFromHash(hash []byte) (blkComplete *block.Block
 	return
 }
 
-func (api *API) loadBlockCompleteFromHeight(blockHeight uint64) (blkComplete *block.BlockComplete) {
+func (api *API) loadBlockCompleteFromHeight(blockHeight uint64) (blkComplete *block_complete.BlockComplete) {
 	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
 		reader := boltTx.Bucket([]byte("Chain"))
 		hash := api.chain.LoadBlockHash(reader, blockHeight)
@@ -98,7 +99,7 @@ func (api *API) loadTokenFromPublicKeyHash(publicKeyHash []byte) (tok *token.Tok
 	return
 }
 
-func (api *API) loadBlockComplete(bucket *bolt.Bucket, hash []byte) *block.BlockComplete {
+func (api *API) loadBlockComplete(bucket *bolt.Bucket, hash []byte) *block_complete.BlockComplete {
 
 	blk := api.chain.LoadBlock(bucket, hash)
 	if blk == nil {
@@ -120,7 +121,7 @@ func (api *API) loadBlockComplete(bucket *bolt.Bucket, hash []byte) *block.Block
 		txs[i] = tx
 	}
 
-	return &block.BlockComplete{
+	return &block_complete.BlockComplete{
 		Block: blk,
 		Txs:   txs,
 	}

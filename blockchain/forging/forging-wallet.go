@@ -17,10 +17,10 @@ type ForgingWallet struct {
 }
 
 type ForgingWalletAddress struct {
-	delegatedPrivateKey *addresses.PrivateKey
-	delegatedPublicKey  []byte //33 byte
-	publicKeyHash       []byte //20byte
-	account             *account.Account
+	delegatedPrivateKey    *addresses.PrivateKey
+	delegatedPublicKeyHash []byte //33 byte
+	publicKeyHash          []byte //20byte
+	account                *account.Account
 }
 
 type ForgingWalletAddressRequired struct {
@@ -77,13 +77,13 @@ func (w *ForgingWallet) UpdateBalanceChanges(accs *accounts.Accounts) {
 
 }
 
-func (w *ForgingWallet) RemoveWallet(delegatedPublicKey []byte) { //33 byte
+func (w *ForgingWallet) RemoveWallet(delegatedPublicKeyHash []byte) { //20 byte
 
 	w.Lock()
 	defer w.Unlock()
 
 	for i, address := range w.addresses {
-		if bytes.Equal(address.delegatedPublicKey, delegatedPublicKey) {
+		if bytes.Equal(address.delegatedPublicKeyHash, delegatedPublicKeyHash) {
 			w.addresses = append(w.addresses[:i], w.addresses[:i+1]...)
 			return
 		}
@@ -101,10 +101,8 @@ func (w *ForgingWallet) loadBalances() {
 		accs := accounts.NewAccounts(boltTx)
 
 		for _, address := range w.addresses {
-
 			account := accs.GetAccount(address.publicKeyHash)
 			address.account = account
-
 		}
 
 		return nil

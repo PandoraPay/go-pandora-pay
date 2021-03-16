@@ -41,14 +41,11 @@ func (tx *Transaction) SerializeForSigning() []byte {
 	return cryptography.SHA3Hash(tx.serializeTx(false))
 }
 
-func (tx *Transaction) VerifySignature() bool {
-	return tx.verifySignatureHashProvided(tx.SerializeForSigning())
-}
-
-func (tx *Transaction) verifySignatureHashProvided(hash []byte) bool {
+func (tx *Transaction) VerifySignatureManually() bool {
+	hash := tx.SerializeForSigning()
 	switch tx.TxType {
 	case transaction_type.TxSimple:
-		return tx.TxBase.(*transaction_simple.TransactionSimple).VerifySignature(hash)
+		return tx.TxBase.(*transaction_simple.TransactionSimple).VerifySignatureManually(hash)
 	}
 	return false
 }

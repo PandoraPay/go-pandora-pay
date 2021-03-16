@@ -75,7 +75,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte 
 			TxScript: transaction_simple.TxSimpleScriptUnstake,
 			Nonce:    nonce,
 			Extra: &transaction_simple_extra.TransactionSimpleUnstake{
-				UnstakeAmount: unstakeAmount,
+				Amount: unstakeAmount,
 			},
 			Vin: []*transaction_simple.TransactionSimpleInput{
 				{
@@ -93,13 +93,13 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte 
 	return
 }
 
-func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateNewPubKey []byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction) {
+func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction) {
 
-	delegateHasNewPublicKey := false
-	var delegateNewPublicKey []byte //33 byte
-	if delegateNewPubKey != nil {
-		delegateHasNewPublicKey = true
-		delegateNewPublicKey = delegateNewPubKey
+	delegateHasNewPublicKeyHash := false
+	var delegateNewPublicKeyHash []byte //33 byte
+	if delegateNewPubKeyHash != nil {
+		delegateHasNewPublicKeyHash = true
+		delegateNewPublicKeyHash = delegateNewPubKeyHash
 	}
 
 	privateKey := addresses.PrivateKey{Key: key}
@@ -110,9 +110,9 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 			TxScript: transaction_simple.TxSimpleScriptDelegate,
 			Nonce:    nonce,
 			Extra: &transaction_simple_extra.TransactionSimpleDelegate{
-				DelegateAmount:          delegateAmount,
-				DelegateHasNewPublicKey: delegateHasNewPublicKey,
-				DelegateNewPublicKey:    delegateNewPublicKey,
+				Amount:              delegateAmount,
+				HasNewPublicKeyHash: delegateHasNewPublicKeyHash,
+				NewPublicKeyHash:    delegateNewPublicKeyHash,
 			},
 			Vin: []*transaction_simple.TransactionSimpleInput{
 				{

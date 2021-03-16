@@ -80,7 +80,7 @@ func (wallet *Wallet) RemoveAddress(index int) bool {
 	wallet.Addresses = append(wallet.Addresses[:index], wallet.Addresses[index+1:]...)
 	wallet.Count -= 1
 
-	go wallet.forging.Wallet.RemoveWallet(removing.PublicKey)
+	go wallet.forging.Wallet.RemoveWallet(removing.PublicKeyHash)
 
 	wallet.updateWallet()
 	wallet.saveWallet(index, wallet.Count, wallet.Count)

@@ -43,7 +43,7 @@ func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFee
 
 				switch base.TxScript {
 				case transaction_simple.TxSimpleScriptUnstake:
-					setFeeTxNow(tx, uint64(feePerByte), 0, &base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).UnstakeFeeExtra)
+					setFeeTxNow(tx, uint64(feePerByte), 0, &base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
 					return
 				}
 

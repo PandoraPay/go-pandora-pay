@@ -5,6 +5,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/block"
+	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/tokens"
@@ -103,11 +104,11 @@ func (chain *Blockchain) createNextBlockForForging() {
 		}
 
 	}
-	blk.DelegatedPublicKey = make([]byte, 33)
+	blk.DelegatedPublicKeyHash = make([]byte, 20)
 	blk.Forger = make([]byte, 20)
 	blk.Signature = make([]byte, 65)
 
-	blkComplete := &block.BlockComplete{
+	blkComplete := &block_complete.BlockComplete{
 		Block: blk,
 	}
 

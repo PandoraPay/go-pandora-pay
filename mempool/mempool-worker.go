@@ -25,6 +25,9 @@ func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
 }
 func (mempool *Mempool) RestartWork() {
 	pointer := atomic.LoadPointer(&mempool.updateTask)
+	if pointer == nil {
+		return
+	}
 	updateTaskOriginal := (*mempoolWorkTask)(pointer)
 	mempool.UpdateWork(updateTaskOriginal.chainHash, updateTaskOriginal.chainHeight)
 }

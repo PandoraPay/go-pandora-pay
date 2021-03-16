@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
+	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -53,7 +54,7 @@ func (chain *Blockchain) removeBlockComplete(bucket *bolt.Bucket, blockHeight ui
 
 }
 
-func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *block.BlockComplete, hash []byte, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) [][]byte {
+func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *block_complete.BlockComplete, hash []byte, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) [][]byte {
 
 	blockHeightStr := strconv.FormatUint(blkComplete.Block.Height, 10)
 	accs.WriteTransitionalChangesToStore(blockHeightStr)

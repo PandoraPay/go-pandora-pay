@@ -15,8 +15,13 @@ type TransactionBloom struct {
 }
 
 func (tx *Transaction) BloomNow() {
-	tx.Bloom = new(TransactionBloom)
-	tx.Bloom.BloomTransactionHash(tx)
+	bloom := new(TransactionBloom)
+	bloom.Serialized = tx.Serialize()
+	bloom.Size = uint64(len(tx.Bloom.Serialized))
+	bloom.Hash = cryptography.SHA3Hash(tx.Bloom.Serialized)
+	bloom.HashStr = string(tx.Bloom.Hash)
+	bloom.bloomed = true
+	tx.Bloom = bloom
 }
 
 func (tx *Transaction) BloomAll() {
@@ -24,16 +29,16 @@ func (tx *Transaction) BloomAll() {
 	tx.BloomExtraNow(false)
 }
 
-func (tx *Transaction) BloomExtraNow(signaturedWasVerifiedBefore bool) {
+func (tx *Transaction) BloomExtraNow(signatureWasVerifiedBefore bool) {
 	switch tx.TxType {
 	case transaction_type.TxSimple:
 		base := tx.TxBase.(*transaction_simple.TransactionSimple)
-		base.BloomNow(tx.SerializeForSigning(), signaturedWasVerifiedBefore)
+		base.BloomNow(tx.SerializeForSigning(), signatureWasVerifiedBefore)
 	}
 }
 
 func (tx *Transaction) VerifyBloomAll() {
-	tx.Bloom.VerifyIfBloomed()
+	tx.Bloom.verifyIfBloomed()
 	switch tx.TxType {
 	case transaction_type.TxSimple:
 		base := tx.TxBase.(*transaction_simple.TransactionSimple)
@@ -43,15 +48,7 @@ func (tx *Transaction) VerifyBloomAll() {
 	}
 }
 
-func (bloom *TransactionBloom) BloomTransactionHash(tx *Transaction) {
-	bloom.Serialized = tx.Serialize()
-	bloom.Size = uint64(len(bloom.Serialized))
-	bloom.Hash = cryptography.SHA3Hash(bloom.Serialized)
-	bloom.HashStr = string(bloom.Hash)
-	bloom.bloomed = true
-}
-
-func (bloom *TransactionBloom) VerifyIfBloomed() {
+func (bloom *TransactionBloom) verifyIfBloomed() {
 	if !bloom.bloomed {
 		panic("Tx is not bloomed")
 	}

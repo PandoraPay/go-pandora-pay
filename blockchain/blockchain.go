@@ -9,7 +9,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/block"
+	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
@@ -45,12 +45,17 @@ type Blockchain struct {
 	sync.RWMutex          `json:"-"`
 }
 
-func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, calledByForging bool) (result bool, err error) {
+func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplete, calledByForging bool) (result bool, err error) {
 
 	result = false
 	if len(blocksComplete) == 0 {
 		err = errors.New("Blocks length is ZERO")
 		return
+	}
+
+	for _, blkComplete := range blocksComplete {
+		blkComplete.Validate()
+		blkComplete.Verify()
 	}
 
 	//avoid processing the same function twice
@@ -82,7 +87,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 		return
 	}
 
-	insertedBlocks := []*block.BlockComplete{}
+	insertedBlocks := []*block_complete.BlockComplete{}
 	insertedTxHashes := [][]byte{}
 
 	var writer *bolt.Bucket
@@ -212,7 +217,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 				}
 				stakingAmount = acc.GetDelegatedStakeAvailable(blkComplete.Block.Height)
 
-				if !bytes.Equal(blkComplete.Block.DelegatedPublicKey, acc.DelegatedStake.DelegatedPublicKey) {
+				if !bytes.Equal(blkComplete.Block.DelegatedPublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash) {
 					panic("Block Staking Delegated Public Key is not matching")
 				}
 
@@ -242,9 +247,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 					panic("PrevHash doesn't match Genesis prevKernelHash")
 				}
 			}
-
-			blkComplete.Validate()
-			blkComplete.Verify()
 
 			if blkComplete.Block.Timestamp < newChain.Timestamp {
 				panic("Timestamp has to be greather than the last timestmap")
@@ -378,8 +380,10 @@ func (chain *Blockchain) initForging() {
 		for {
 
 			blkComplete := <-chain.forging.SolutionChannel
+			blkComplete.BloomNow()
+			blkComplete.Block.BloomNow()
 
-			array := []*block.BlockComplete{blkComplete}
+			array := []*block_complete.BlockComplete{blkComplete}
 
 			result, err := chain.AddBlocks(array, true)
 			if err == nil && result {

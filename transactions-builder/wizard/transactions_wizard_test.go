@@ -21,7 +21,7 @@ func TestCreateSimpleTx(t *testing.T) {
 	tx := CreateSimpleTx(0, [][]byte{privateKey.Key}, []uint64{1252}, [][]byte{}, []string{dstAddressEncoded}, []uint64{1250}, [][]byte{}, 0, []byte{})
 	assert.NotNil(t, tx, "error creating simple tx")
 	assert.NotPanics(t, tx.Validate, "error validating tx")
-	assert.Equal(t, tx.VerifySignature(), true, "Verify signature failed")
+	assert.Equal(t, tx.VerifySignatureManually(), true, "Verify signature failed")
 
 	serialized := tx.Serialize()
 	assert.NotNil(t, serialized, "serialized is nil")
@@ -30,7 +30,7 @@ func TestCreateSimpleTx(t *testing.T) {
 
 	assert.NotPanics(t, func() { tx2.Deserialize(helpers.NewBufferReader(serialized)) }, "deserialize failed")
 	assert.NotPanics(t, tx2.Validate, "error validating tx")
-	assert.Equal(t, tx2.VerifySignature(), true, "Verify signature failed2")
+	assert.Equal(t, tx2.VerifySignatureManually(), true, "Verify signature failed2")
 
 	fees := tx.ComputeFees()
 	assert.Equal(t, fees[string([]byte{})], uint64(2), "Fees were calculated invalid")
@@ -45,7 +45,7 @@ func TestCreateUnstakeTx(t *testing.T) {
 
 	assert.NotPanics(t, tx.Validate, "error validating tx")
 
-	assert.Equal(t, tx.VerifySignature(), true, "Verify signature failed")
+	assert.Equal(t, tx.VerifySignatureManually(), true, "Verify signature failed")
 
 	serialized := tx.Serialize()
 	assert.NotNil(t, serialized, "serialized is nil")
@@ -53,7 +53,7 @@ func TestCreateUnstakeTx(t *testing.T) {
 	tx2 := new(transaction.Transaction)
 	assert.NotPanics(t, func() { tx2.Deserialize(helpers.NewBufferReader(serialized)) }, "deserialize failed")
 	assert.NotPanics(t, tx2.Validate, "error validating tx")
-	assert.Equal(t, tx2.VerifySignature(), true, "Verify signature failed2")
+	assert.Equal(t, tx2.VerifySignatureManually(), true, "Verify signature failed2")
 
 	fees := tx.ComputeFees()
 	assert.Equal(t, fees[config.NATIVE_TOKEN_STRING] > uint64(100), true, "Fees were calculated invalid")
@@ -62,8 +62,8 @@ func TestCreateUnstakeTx(t *testing.T) {
 	assert.Equal(t, fees[config.NATIVE_TOKEN_STRING], base.Vin[0].Amount, "Fees are not paid by vin")
 
 	unstake := base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake)
-	assert.Equal(t, unstake.UnstakeAmount, uint64(534), "Fees are not paid by vin")
-	assert.Equal(t, unstake.UnstakeFeeExtra, uint64(0), "Fees must be paid by vin")
+	assert.Equal(t, unstake.Amount, uint64(534), "Fees are not paid by vin")
+	assert.Equal(t, unstake.FeeExtra, uint64(0), "Fees must be paid by vin")
 
 }
 
@@ -75,7 +75,7 @@ func TestCreateUnstakeTxPayExtra(t *testing.T) {
 
 	assert.NotPanics(t, tx.Validate, "error validating tx")
 
-	assert.Equal(t, tx.VerifySignature(), true, "Verify signature failed")
+	assert.Equal(t, tx.VerifySignatureManually(), true, "Verify signature failed")
 
 	serialized := tx.Serialize()
 	assert.NotNil(t, serialized, "serialized is nil")
@@ -83,7 +83,7 @@ func TestCreateUnstakeTxPayExtra(t *testing.T) {
 	tx2 := new(transaction.Transaction)
 	assert.NotPanics(t, func() { tx2.Deserialize(helpers.NewBufferReader(serialized)) }, "deserialize failed")
 	assert.NotPanics(t, tx2.Validate, "error validating tx")
-	assert.Equal(t, tx2.VerifySignature(), true, "Verify signature failed2")
+	assert.Equal(t, tx2.VerifySignatureManually(), true, "Verify signature failed2")
 
 	fees := tx.ComputeFees()
 	assert.Equal(t, fees[config.NATIVE_TOKEN_STRING] > uint64(100), true, "Fees were calculated invalid")
@@ -92,6 +92,6 @@ func TestCreateUnstakeTxPayExtra(t *testing.T) {
 	assert.Equal(t, uint64(0), base.Vin[0].Amount, "Fees are not paid by vin")
 
 	unstake := base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake)
-	assert.Equal(t, unstake.UnstakeAmount, uint64(534), "Fees are not paid by vin")
-	assert.Equal(t, unstake.UnstakeFeeExtra, fees[config.NATIVE_TOKEN_STRING], "Fees are not paid by vin")
+	assert.Equal(t, unstake.Amount, uint64(534), "Fees are not paid by vin")
+	assert.Equal(t, unstake.FeeExtra, fees[config.NATIVE_TOKEN_STRING], "Fees are not paid by vin")
 }

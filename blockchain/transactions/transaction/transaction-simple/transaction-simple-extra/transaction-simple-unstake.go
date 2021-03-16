@@ -6,28 +6,28 @@ import (
 )
 
 type TransactionSimpleUnstake struct {
-	UnstakeAmount   uint64
-	UnstakeFeeExtra uint64 //this will be subtracted StakeAvailable
+	Amount   uint64
+	FeeExtra uint64 //this will be subtracted StakeAvailable
 }
 
 func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) {
-	acc.DelegatedStake.AddStakeAvailable(false, tx.UnstakeAmount)
-	acc.DelegatedStake.AddStakeAvailable(false, tx.UnstakeFeeExtra)
-	acc.DelegatedStake.AddStakePendingUnstake(tx.UnstakeAmount, blockHeight)
+	acc.DelegatedStake.AddStakeAvailable(false, tx.Amount)
+	acc.DelegatedStake.AddStakeAvailable(false, tx.FeeExtra)
+	acc.DelegatedStake.AddStakePendingUnstake(tx.Amount, blockHeight)
 }
 
 func (tx *TransactionSimpleUnstake) Validate() {
-	if tx.UnstakeAmount == 0 {
+	if tx.Amount == 0 {
 		panic("Unstake must be greather than zero")
 	}
 }
 
 func (tx *TransactionSimpleUnstake) Serialize(writer *helpers.BufferWriter) {
-	writer.WriteUvarint(tx.UnstakeAmount)
-	writer.WriteUvarint(tx.UnstakeFeeExtra)
+	writer.WriteUvarint(tx.Amount)
+	writer.WriteUvarint(tx.FeeExtra)
 }
 
 func (tx *TransactionSimpleUnstake) Deserialize(reader *helpers.BufferReader) {
-	tx.UnstakeAmount = reader.ReadUvarint()
-	tx.UnstakeFeeExtra = reader.ReadUvarint()
+	tx.Amount = reader.ReadUvarint()
+	tx.FeeExtra = reader.ReadUvarint()
 }

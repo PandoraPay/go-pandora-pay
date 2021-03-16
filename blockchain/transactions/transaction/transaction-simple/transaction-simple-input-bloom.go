@@ -12,18 +12,18 @@ type TransactionSimpleInputBloom struct {
 }
 
 func (vin *TransactionSimpleInput) BloomNow(hashForSignature []byte) {
-	vin.Bloom = new(TransactionSimpleInputBloom)
-	vin.Bloom.bloomPublicKey(hashForSignature, vin.Signature)
-}
+	bloom := new(TransactionSimpleInputBloom)
 
-func (bloom *TransactionSimpleInputBloom) bloomPublicKey(hashSerializedForSignature []byte, signature []byte) {
-	publicKey, err := ecdsa.EcrecoverCompressed(hashSerializedForSignature, signature)
+	publicKey, err := ecdsa.EcrecoverCompressed(hashForSignature, vin.Signature)
 	if err != nil {
 		panic(err)
 	}
+
 	bloom.PublicKey = publicKey
 	bloom.PublicKeyHash = cryptography.ComputePublicKeyHash(bloom.PublicKey)
 	bloom.bloomed = true
+
+	vin.Bloom = bloom
 }
 
 func (bloom *TransactionSimpleInputBloom) VerifyIfBloomed() {

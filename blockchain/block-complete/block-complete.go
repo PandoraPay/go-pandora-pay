@@ -1,8 +1,9 @@
-package block
+package block_complete
 
 import (
 	"bytes"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
@@ -12,8 +13,9 @@ import (
 )
 
 type BlockComplete struct {
-	Block *Block
+	Block *block.Block
 	Txs   []*transaction.Transaction
+	Bloom *BlockCompleteBloom
 }
 
 func (blkComplete *BlockComplete) Validate() {
@@ -24,10 +26,8 @@ func (blkComplete *BlockComplete) Validate() {
 }
 
 func (blkComplete *BlockComplete) Verify() {
+	blkComplete.VerifyBloomAll()
 	blkComplete.Block.Verify()
-	if blkComplete.VerifyMerkleHash() != true {
-		panic("Verify Merkle Hash failed")
-	}
 	for _, tx := range blkComplete.Txs {
 		tx.Verify()
 	}

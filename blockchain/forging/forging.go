@@ -2,7 +2,7 @@ package forging
 
 import (
 	"math/big"
-	"pandora-pay/blockchain/block"
+	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/config/stake"
@@ -16,7 +16,7 @@ import (
 )
 
 type ForgingWork struct {
-	blkComplete *block.BlockComplete
+	blkComplete *block_complete.BlockComplete
 	target      *big.Int
 }
 
@@ -36,7 +36,7 @@ type Forging struct {
 
 	mempool         *mempool.Mempool
 	Wallet          *ForgingWallet
-	SolutionChannel chan *block.BlockComplete
+	SolutionChannel chan *block_complete.BlockComplete
 }
 
 func ForgingInit(mempool *mempool.Mempool) (forging *Forging) {
@@ -44,7 +44,7 @@ func ForgingInit(mempool *mempool.Mempool) (forging *Forging) {
 	forging = &Forging{
 
 		mempool:         mempool,
-		SolutionChannel: make(chan *block.BlockComplete),
+		SolutionChannel: make(chan *block_complete.BlockComplete),
 		Wallet: &ForgingWallet{
 			addressesMap: make(map[string]*ForgingWalletAddress),
 		},
@@ -129,7 +129,7 @@ func (forging *Forging) StopForging() {
 }
 
 //thread safe
-func (forging *Forging) RestartForgingWorkers(blkComplete *block.BlockComplete, target *big.Int) {
+func (forging *Forging) RestartForgingWorkers(blkComplete *block_complete.BlockComplete, target *big.Int) {
 
 	work := ForgingWork{
 		blkComplete: blkComplete,
@@ -171,7 +171,7 @@ func (forging *Forging) publishSolution() (err error) {
 	work := solution.work
 
 	work.blkComplete.Block.Forger = solution.address.publicKeyHash
-	work.blkComplete.Block.DelegatedPublicKey = solution.address.delegatedPublicKey
+	work.blkComplete.Block.DelegatedPublicKeyHash = solution.address.delegatedPublicKeyHash
 	work.blkComplete.Block.Timestamp = solution.timestamp
 
 	if work.blkComplete.Block.Height > 0 {
