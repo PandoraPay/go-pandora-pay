@@ -16,12 +16,9 @@ type mempoolTx struct {
 	Tx          *transaction.Transaction
 	Added       int64
 	Mine        bool
-	Size        uint64
 	FeePerByte  uint64
 	FeeToken    []byte //20 byte
 	ChainHeight uint64
-	Hash        []byte //32 byte
-	HashStr     string
 }
 
 type mempoolTxs struct {
@@ -48,8 +45,7 @@ func (mempool *Mempool) AddTxToMemPoolSilent(tx *transaction.Transaction, height
 
 func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) bool {
 
-	hash := tx.ComputeHash()
-	hashStr := string(hash)
+	tx.VerifyBloomAll()
 
 	minerFees := tx.ComputeFees()
 
@@ -78,7 +74,7 @@ func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 		panic("Transaction fee was not accepted")
 	}
 
-	if _, found := mempool.txs.txsMap.Load(hashStr); found {
+	if _, found := mempool.txs.txsMap.Load(tx.Bloom.HashStr); found {
 		return false
 	}
 
@@ -89,18 +85,15 @@ func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 	object := mempoolTx{
 		Tx:          tx,
 		Added:       time.Now().Unix(),
-		Size:        size,
 		FeePerByte:  selectedFee / size,
 		FeeToken:    []byte(*selectedFeeToken),
 		Mine:        mine,
 		ChainHeight: height,
-		Hash:        hash,
-		HashStr:     hashStr,
 	}
 
 	mempool.txs.txsCount += 1
 	mempool.txs.txsInserted += 1
-	mempool.txs.txsMap.Store(hashStr, &object)
+	mempool.txs.txsMap.Store(tx.Bloom.HashStr, &object)
 	mempool.txs.txsList = append(mempool.txs.txsList, &object)
 
 	gui.Info2Update("mempool", strconv.FormatUint(mempool.txs.txsCount, 10))
@@ -127,7 +120,7 @@ func (mempool *Mempool) Delete(txId []byte) (tx *transaction.Transaction) {
 	defer mempool.txs.Unlock()
 
 	for i, txOut := range mempool.txs.txsList {
-		if txOut.HashStr == hashStr {
+		if txOut.Tx.Bloom.HashStr == hashStr {
 			mempool.txs.txsList[len(mempool.txs.txsList)-1], mempool.txs.txsList[i] = mempool.txs.txsList[i], mempool.txs.txsList[len(mempool.txs.txsList)-1]
 			mempool.txs.txsList = mempool.txs.txsList[:len(mempool.txs.txsList)-1]
 			mempool.txs.txsCount -= 1

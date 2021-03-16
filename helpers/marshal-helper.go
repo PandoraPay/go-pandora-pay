@@ -26,7 +26,7 @@ func (s *ByteString) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	*s = ByteString([]byte(str))
+	*s = str
 	return nil
 }
 

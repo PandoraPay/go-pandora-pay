@@ -22,7 +22,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 
 	for i, vin := range tx.Vin {
 
-		acc := accs.GetAccountEvenEmpty(vin.GetPublicKeyHash())
+		acc := accs.GetAccountEvenEmpty(vin.Bloom.PublicKey)
 		acc.RefreshDelegatedStake(blockHeight)
 
 		if i == 0 {
@@ -39,7 +39,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 		}
 
 		acc.AddBalance(false, vin.Amount, vin.Token)
-		accs.UpdateAccount(vin.GetPublicKeyHash(), acc)
+		accs.UpdateAccount(vin.Bloom.PublicKeyHash, acc)
 	}
 
 	for _, vout := range tx.Vout {
@@ -88,7 +88,7 @@ func (tx *TransactionSimple) VerifySignature(hash []byte) bool {
 	}
 
 	for _, vin := range tx.Vin {
-		if ecdsa.VerifySignature(vin.PublicKey, hash, vin.Signature[0:64]) == false {
+		if ecdsa.VerifySignature(vin.Bloom.PublicKey, hash, vin.Signature[0:64]) == false {
 			return false
 		}
 	}
@@ -98,7 +98,7 @@ func (tx *TransactionSimple) VerifySignature(hash []byte) bool {
 func (tx *TransactionSimple) Validate() {
 
 	for _, vin := range tx.Vin {
-		if bytes.Equal(vin.GetPublicKeyHash(), config.BURN_PUBLIC_KEY_HASH) {
+		if bytes.Equal(vin.Bloom.PublicKeyHash, config.BURN_PUBLIC_KEY_HASH) {
 			panic("Input includes BURN PUBLIC KEY HASH")
 		}
 	}

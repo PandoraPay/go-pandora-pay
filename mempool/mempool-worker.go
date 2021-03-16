@@ -76,7 +76,7 @@ func (mempool *Mempool) processing() {
 					} else {
 						txList = make([]*mempoolTx, 0)
 						for _, mempoolTx := range mempool.txs.txsList {
-							if !txMap[mempoolTx.HashStr] {
+							if !txMap[mempoolTx.Tx.Bloom.HashStr] {
 								txList = append(txList, mempoolTx)
 							}
 						}
@@ -119,7 +119,7 @@ func (mempool *Mempool) processing() {
 					continue
 				} else {
 
-					if txMap[txList[listIndex].HashStr] {
+					if txMap[txList[listIndex].Tx.Bloom.HashStr] {
 						listIndex += 1
 						continue
 					}
@@ -131,16 +131,16 @@ func (mempool *Mempool) processing() {
 								updateTask.toks.Rollback()
 							} else {
 								mempool.result.Lock()
-								if mempool.result.totalSize+txList[listIndex].Size < config.BLOCK_MAX_SIZE {
+								if mempool.result.totalSize+txList[listIndex].Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
 									mempool.result.txs = append(mempool.result.txs, txList[listIndex].Tx)
-									mempool.result.totalSize += txList[listIndex].Size
+									mempool.result.totalSize += txList[listIndex].Tx.Bloom.Size
 								}
 								mempool.result.Unlock()
 							}
 							listIndex += 1
 						}()
 
-						txMap[txList[listIndex].HashStr] = true
+						txMap[txList[listIndex].Tx.Bloom.HashStr] = true
 						txList[listIndex].Tx.IncludeTransaction(updateTask.chainHeight, updateTask.accs, updateTask.toks)
 					}()
 

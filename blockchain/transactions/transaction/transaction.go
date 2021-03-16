@@ -10,9 +10,11 @@ import (
 )
 
 type Transaction struct {
-	Version uint64
-	TxType  transaction_type.TransactionType
-	TxBase  interface{}
+	Version       uint64
+	TxType        transaction_type.TransactionType
+	TxBase        interface{}
+	Bloom         *TransactionBloom
+	BloomSecurity *TransactionSecurityBloom
 }
 
 func (tx *Transaction) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
@@ -42,10 +44,9 @@ func (tx *Transaction) SerializeForSigning() []byte {
 
 func (tx *Transaction) VerifySignature() bool {
 
-	hash := tx.SerializeForSigning()
 	switch tx.TxType {
 	case transaction_type.TxSimple:
-		return tx.TxBase.(*transaction_simple.TransactionSimple).VerifySignature(hash)
+		return tx.TxBase.(*transaction_simple.TransactionSimple).VerifySignature(tx.Bloom.Hash)
 	default:
 		return false
 	}
@@ -92,7 +93,8 @@ func (tx *Transaction) Validate() {
 }
 
 func (tx *Transaction) Verify() {
-	if !tx.VerifySignature() {
+	tx.VerifyBloomAll() //it will panic
+	if tx.BloomSecurity.SignatureVerified != true {
 		panic("Signature is invalid")
 	}
 }
@@ -110,4 +112,28 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader) {
 		tx.TxBase = base
 	}
 
+}
+
+func (tx *Transaction) BloomAll() {
+	tx.BloomNow()
+	tx.BloomSecurityNow()
+	switch tx.TxType {
+	case transaction_type.TxSimple:
+		base := tx.TxBase.(*transaction_simple.TransactionSimple)
+		for _, vin := range base.Vin {
+			vin.BloomNow(tx.Bloom.Hash)
+		}
+	}
+}
+
+func (tx *Transaction) VerifyBloomAll() {
+	tx.Bloom.VerifyIfBloomed()
+	tx.BloomSecurity.VerifyIfBloomed()
+	switch tx.TxType {
+	case transaction_type.TxSimple:
+		base := tx.TxBase.(*transaction_simple.TransactionSimple)
+		for _, vin := range base.Vin {
+			vin.Bloom.VerifyIfBloomed()
+		}
+	}
 }

@@ -27,7 +27,7 @@ func (mempool *Mempool) GetNonce(publicKeyHash []byte) (result bool, nonce uint6
 	for _, tx := range txs {
 		if tx.Tx.TxType == transaction_type.TxSimple {
 			base := tx.Tx.TxBase.(*transaction_simple.TransactionSimple)
-			if bytes.Equal(base.Vin[0].GetPublicKeyHash(), publicKeyHash) {
+			if bytes.Equal(base.Vin[0].Bloom.PublicKeyHash, publicKeyHash) {
 				result = true
 				if nonce <= base.Nonce {
 					nonce = base.Nonce + 1
@@ -62,7 +62,7 @@ func (mempool *Mempool) print() {
 
 	gui.Log("")
 	for _, out := range transactions {
-		gui.Log(fmt.Sprintf("%20s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC3339), out.Size, out.ChainHeight, hex.EncodeToString(out.Hash[0:15])))
+		gui.Log(fmt.Sprintf("%20s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC3339), out.Tx.Bloom.Size, out.ChainHeight, hex.EncodeToString(out.Tx.Bloom.Hash[0:15])))
 	}
 	gui.Log("")
 

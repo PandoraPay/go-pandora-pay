@@ -119,7 +119,7 @@ func (api *API) getMempool(values url.Values) interface{} {
 	transactions := api.mempool.GetTxsList()
 	hashes := make([]helpers.ByteString, len(transactions))
 	for i, tx := range transactions {
-		hashes[i] = tx.Hash
+		hashes[i] = tx.Tx.Bloom.Hash
 	}
 	return hashes
 }
