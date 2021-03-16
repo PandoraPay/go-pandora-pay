@@ -19,6 +19,15 @@ func Ecrecover(hash, sig []byte) ([]byte, error) {
 	return bytes, err
 }
 
+func EcrecoverCompressed(hash, sig []byte) ([]byte, error) {
+	pub, err := SigToPub(hash, sig)
+	if err != nil {
+		return nil, err
+	}
+	bytes := (*btcec.PublicKey)(pub).SerializeCompressed()
+	return bytes, err
+}
+
 // SigToPub returns the public key that created the given signature.
 func SigToPub(hash, sig []byte) (*ecdsa.PublicKey, error) {
 	// Convert to btcec input format with 'recovery id' v at the beginning.

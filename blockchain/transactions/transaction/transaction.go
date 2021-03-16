@@ -10,11 +10,10 @@ import (
 )
 
 type Transaction struct {
-	Version       uint64
-	TxType        transaction_type.TransactionType
-	TxBase        interface{}
-	Bloom         *TransactionBloom
-	BloomSecurity *TransactionSecurityBloom
+	Version uint64
+	TxType  transaction_type.TransactionType
+	TxBase  interface{}
+	Bloom   *TransactionBloom
 }
 
 func (tx *Transaction) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
@@ -43,14 +42,15 @@ func (tx *Transaction) SerializeForSigning() []byte {
 }
 
 func (tx *Transaction) VerifySignature() bool {
+	return tx.verifySignatureHashProvided(tx.SerializeForSigning())
+}
 
+func (tx *Transaction) verifySignatureHashProvided(hash []byte) bool {
 	switch tx.TxType {
 	case transaction_type.TxSimple:
-		return tx.TxBase.(*transaction_simple.TransactionSimple).VerifySignature(tx.Bloom.Hash)
-	default:
-		return false
+		return tx.TxBase.(*transaction_simple.TransactionSimple).VerifySignature(hash)
 	}
-
+	return false
 }
 
 func (tx *Transaction) ComputeHash() []byte {
@@ -94,9 +94,6 @@ func (tx *Transaction) Validate() {
 
 func (tx *Transaction) Verify() {
 	tx.VerifyBloomAll() //it will panic
-	if tx.BloomSecurity.SignatureVerified != true {
-		panic("Signature is invalid")
-	}
 }
 
 func (tx *Transaction) Deserialize(reader *helpers.BufferReader, bloom bool) {
@@ -118,8 +115,7 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader, bloom bool) {
 	end := reader.Position
 
 	if bloom {
-		//we can bloom
-		tx.BloomSecurity = &TransactionSecurityBloom{SignatureVerified: true, bloomed: true}
+		//we can bloom more efficiently if asked
 		serialized := buffer[first:end]
 		hash := cryptography.SHA3(serialized)
 		tx.Bloom = &TransactionBloom{
@@ -129,35 +125,7 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader, bloom bool) {
 			HashStr:    string(hash),
 			bloomed:    true,
 		}
-		tx.BloomExtraNow()
+		tx.BloomExtraNow(true)
 	}
 
-}
-
-func (tx *Transaction) BloomAll() {
-	tx.BloomNow()
-	tx.BloomExtraNow()
-	tx.BloomSecurityNow()
-}
-
-func (tx *Transaction) BloomExtraNow() {
-	switch tx.TxType {
-	case transaction_type.TxSimple:
-		base := tx.TxBase.(*transaction_simple.TransactionSimple)
-		for _, vin := range base.Vin {
-			vin.BloomNow(tx.Bloom.Hash)
-		}
-	}
-}
-
-func (tx *Transaction) VerifyBloomAll() {
-	tx.Bloom.VerifyIfBloomed()
-	tx.BloomSecurity.VerifyIfBloomed()
-	switch tx.TxType {
-	case transaction_type.TxSimple:
-		base := tx.TxBase.(*transaction_simple.TransactionSimple)
-		for _, vin := range base.Vin {
-			vin.Bloom.VerifyIfBloomed()
-		}
-	}
 }

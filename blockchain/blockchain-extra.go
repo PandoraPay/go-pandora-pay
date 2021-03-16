@@ -74,15 +74,6 @@ func (chain *Blockchain) computeNextTargetBig(bucket *bolt.Bucket) *big.Int {
 	return difficulty.NextTargetBig(deltaTotalDifficulty, deltaTime)
 }
 
-//make sure that chain is RLocked
-func (chain *Blockchain) createNextBlockComplete() (blkComplete *block.BlockComplete, err error) {
-
-	chain.RLock()
-	defer chain.RUnlock()
-
-	return
-}
-
 func (chain *Blockchain) createNextBlockForForging() {
 
 	chain.RLock()

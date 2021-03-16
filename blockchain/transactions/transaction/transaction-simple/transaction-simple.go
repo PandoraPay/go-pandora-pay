@@ -16,13 +16,15 @@ type TransactionSimple struct {
 	Vin      []*TransactionSimpleInput
 	Vout     []*TransactionSimpleOutput
 	Extra    interface{}
+
+	Bloom *TransactionSimpleBloom
 }
 
 func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
 
 	for i, vin := range tx.Vin {
 
-		acc := accs.GetAccountEvenEmpty(vin.Bloom.PublicKey)
+		acc := accs.GetAccountEvenEmpty(vin.Bloom.PublicKeyHash)
 		acc.RefreshDelegatedStake(blockHeight)
 
 		if i == 0 {
@@ -50,9 +52,6 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 		accs.UpdateAccount(vout.PublicKeyHash, acc)
 	}
 
-	switch tx.TxScript {
-	}
-
 }
 
 func (tx *TransactionSimple) ComputeFees(out map[string]uint64) {
@@ -72,6 +71,7 @@ func (tx *TransactionSimple) ComputeVin(out map[string]uint64) {
 		helpers.SafeMapUint64Add(out, string(vin.Token), vin.Amount)
 	}
 }
+
 func (tx *TransactionSimple) ComputeVout(out map[string]uint64) {
 	for _, vout := range tx.Vout {
 		tokenStr := string(vout.Token)
@@ -82,13 +82,13 @@ func (tx *TransactionSimple) ComputeVout(out map[string]uint64) {
 	}
 }
 
-func (tx *TransactionSimple) VerifySignature(hash []byte) bool {
+func (tx *TransactionSimple) VerifySignature(hashForSignature []byte) bool {
 	if len(tx.Vin) == 0 {
 		return false
 	}
 
 	for _, vin := range tx.Vin {
-		if ecdsa.VerifySignature(vin.Bloom.PublicKey, hash, vin.Signature[0:64]) == false {
+		if ecdsa.VerifySignature(vin.Bloom.PublicKey, hashForSignature, vin.Signature[0:64]) == false {
 			return false
 		}
 	}
@@ -192,4 +192,11 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) {
 	}
 
 	return
+}
+
+func (tx *TransactionSimple) VerifyBloomAll() {
+	for _, vin := range tx.Vin {
+		vin.Bloom.VerifyIfBloomed()
+	}
+	tx.Bloom.VerifyIfBloomed()
 }

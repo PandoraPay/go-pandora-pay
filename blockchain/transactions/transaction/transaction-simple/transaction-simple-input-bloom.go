@@ -11,17 +11,17 @@ type TransactionSimpleInputBloom struct {
 	bloomed       bool
 }
 
-func (vin *TransactionSimpleInput) BloomNow(hash []byte) {
+func (vin *TransactionSimpleInput) BloomNow(hashForSignature []byte) {
 	vin.Bloom = new(TransactionSimpleInputBloom)
-	vin.Bloom.bloomPublicKey(hash, vin.Signature)
+	vin.Bloom.bloomPublicKey(hashForSignature, vin.Signature)
 }
 
-func (bloom *TransactionSimpleInputBloom) bloomPublicKey(hash []byte, signature []byte) {
-	out, err := ecdsa.Ecrecover(hash, signature)
+func (bloom *TransactionSimpleInputBloom) bloomPublicKey(hashSerializedForSignature []byte, signature []byte) {
+	publicKey, err := ecdsa.EcrecoverCompressed(hashSerializedForSignature, signature)
 	if err != nil {
 		panic(err)
 	}
-	bloom.PublicKey = out
+	bloom.PublicKey = publicKey
 	bloom.PublicKeyHash = cryptography.ComputePublicKeyHash(bloom.PublicKey)
 	bloom.bloomed = true
 }
