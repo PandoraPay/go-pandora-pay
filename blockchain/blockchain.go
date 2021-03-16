@@ -312,7 +312,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 	}
 
 	gui.Warning("-------------------------------------------")
-	gui.Warning(fmt.Sprintf("Including blocks SUCCESS %s", hex.EncodeToString(chain.Hash)))
+	gui.Warning(fmt.Sprintf("Including blocks %d | TXs: %d | Hash %s", len(insertedBlocks), len(insertedTxHashes), hex.EncodeToString(chain.Hash)))
 	gui.Warning("-------------------------------------------")
 	newChain.updateChainInfo()
 

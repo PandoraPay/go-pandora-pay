@@ -81,6 +81,9 @@ func (mempool *Mempool) processing() {
 							}
 						}
 					}
+					mempool.txs.txsInserted = 0
+				} else {
+					txList = make([]*mempoolTx, 0)
 				}
 				mempool.txs.Unlock()
 				updateTaskChanged = false
@@ -115,6 +118,11 @@ func (mempool *Mempool) processing() {
 					time.Sleep(1000 * time.Millisecond)
 					continue
 				} else {
+
+					if txMap[txList[listIndex].HashStr] {
+						listIndex += 1
+						continue
+					}
 
 					func() {
 						defer func() {

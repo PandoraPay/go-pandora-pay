@@ -117,7 +117,7 @@ func (mempool *Mempool) Delete(txId []byte) (tx *transaction.Transaction) {
 
 	hashStr := string(txId)
 
-	if _, found := mempool.txs.txsMap.Load(hashStr); found {
+	if _, found := mempool.txs.txsMap.Load(hashStr); found == false {
 		return nil
 	}
 
