@@ -23,6 +23,11 @@ func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
 	}
 	atomic.StorePointer(&mempool.updateTask, unsafe.Pointer(updateTask))
 }
+func (mempool *Mempool) RestartWork() {
+	pointer := atomic.LoadPointer(&mempool.updateTask)
+	updateTaskOriginal := (*mempoolWorkTask)(pointer)
+	mempool.UpdateWork(updateTaskOriginal.chainHash, updateTaskOriginal.chainHeight)
+}
 
 //process the worker for transactions to prepare the transactions to the forger
 func (mempool *Mempool) processing() {

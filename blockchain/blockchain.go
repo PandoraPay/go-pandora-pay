@@ -139,6 +139,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block.BlockComplete, called
 			} else {
 
 				if err2 := boltTx.Rollback(); err2 != nil {
+					gui.Error("Error rollback chain")
 					err = errors.New("Error rollback chain")
 				}
 
@@ -383,8 +384,11 @@ func (chain *Blockchain) initForging() {
 			result, err := chain.AddBlocks(array, true)
 			if err == nil && result {
 				gui.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
-			} else {
+			} else if err != nil {
 				gui.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
+				chain.mempool.RestartWork()
+			} else {
+				gui.Warning("Forging block  return false "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
 			}
 
 		}
