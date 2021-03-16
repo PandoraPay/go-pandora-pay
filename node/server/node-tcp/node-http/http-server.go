@@ -26,9 +26,8 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 	var output interface{}
 
 	defer func() {
-		if err := recover(); err != nil {
-			error := helpers.ConvertRecoverError(err)
-			http.Error(w, "Error"+error.Error(), http.StatusBadRequest)
+		if err := helpers.ConvertRecoverError(recover()); err != nil {
+			http.Error(w, "Error"+err.Error(), http.StatusBadRequest)
 		} else {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(output)

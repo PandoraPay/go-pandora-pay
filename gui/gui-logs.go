@@ -49,19 +49,8 @@ func Fatal(any ...interface{}) error {
 	return nil
 }
 
-func Error(any ...interface{}) error {
+func Error(any ...interface{}) {
 	message("ERR", "(fg:red)", any...)
-	for _, it := range any {
-
-		switch v := it.(type) {
-		case error:
-			return v
-		default:
-
-		}
-
-	}
-	return nil
 }
 
 func logsInit() {

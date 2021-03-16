@@ -28,7 +28,7 @@ func (ws *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r *htt
 		log.Printf("recv: %s", message)
 		err = c.WriteMessage(mt, message)
 		if err != nil {
-			log.Println("write:", err)
+			gui.Info("write:", err)
 			break
 		}
 	}

@@ -45,8 +45,7 @@ func (server *TcpServer) initialize() {
 	if address == "" {
 		conn, err := net.Dial("udp", "8.8.8.8:80")
 		if err != nil {
-			gui.Error("Error dialing dns to discover my own ip")
-			panic(err)
+			gui.Fatal("Error dialing dns to discover my own ip")
 		}
 		address = conn.LocalAddr().(*net.UDPAddr).IP.String()
 		if err = conn.Close(); err != nil {
@@ -59,8 +58,7 @@ func (server *TcpServer) initialize() {
 	var err error
 	server.tcpListener, err = net.Listen("tcp", "127.0.0.1:"+port)
 	if err != nil {
-		gui.Error("Error creating TcpServer")
-		panic(err)
+		gui.Fatal("Error creating TcpServer")
 	}
 
 	gui.InfoUpdate("TCP", address+":"+port)

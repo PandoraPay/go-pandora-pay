@@ -230,10 +230,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				panic("Delegated stake ready amount is not enought")
 			}
 
-			hash := blkComplete.Block.ComputeHash()
-			kernelHash := blkComplete.Block.ComputeKernelHash()
-
-			if difficulty.CheckKernelHashBig(kernelHash, newChain.Target) != true {
+			if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHash, newChain.Target) != true {
 				panic("KernelHash Difficulty is not met")
 			}
 
@@ -260,7 +257,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			//to detect if the savedBlock was done correctly
 			savedBlock = false
 
-			newTransactionsSaved := newChain.saveBlockComplete(writer, blkComplete, hash, removedTxHashes, accs, toks)
+			newTransactionsSaved := newChain.saveBlockComplete(writer, blkComplete, blkComplete.Block.Bloom.Hash, removedTxHashes, accs, toks)
 
 			if len(removedBlocksHeights) > 0 {
 				removedBlocksHeights = removedBlocksHeights[1:]
@@ -270,9 +267,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			toks.Commit() //it will commit the changes but not save them
 
 			newChain.PrevHash = newChain.Hash
-			newChain.Hash = hash
+			newChain.Hash = blkComplete.Block.Bloom.Hash
 			newChain.PrevKernelHash = newChain.KernelHash
-			newChain.KernelHash = kernelHash
+			newChain.KernelHash = blkComplete.Block.Bloom.KernelHash
 			newChain.Timestamp = blkComplete.Block.Timestamp
 
 			difficultyBigInt := difficulty.ConvertTargetToDifficulty(newChain.Target)

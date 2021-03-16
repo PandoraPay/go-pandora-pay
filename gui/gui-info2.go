@@ -15,7 +15,6 @@ var info2 *widgets.List
 var info2Map sync.Map
 
 func info2Render() {
-	Info2Update("time", time.Now().Format("2006.01.02 15:04:05"))
 
 	rows := []string{}
 	info2Map.Range(func(key, value interface{}) bool {

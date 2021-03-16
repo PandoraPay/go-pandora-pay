@@ -140,3 +140,7 @@ func (wallet *Wallet) computeChecksum() []byte {
 
 	return cryptography.GetChecksum(data)
 }
+
+func (wallet *Wallet) Close() {
+
+}

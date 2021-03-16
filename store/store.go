@@ -48,14 +48,15 @@ func DBInit() {
 		prefix = "dev"
 	}
 
-	if _, err := os.Stat("./_build"); os.IsNotExist(err) {
-		if err := os.Mkdir("./_build", 0755); err != nil {
+	var err error
+	if _, err = os.Stat("./_build"); os.IsNotExist(err) {
+		if err = os.Mkdir("./_build", 0755); err != nil {
 			panic(err)
 		}
 	}
 
-	if _, err := os.Stat("./_build/" + prefix); os.IsNotExist(err) {
-		if err := os.Mkdir("./_build/"+prefix, 0755); err != nil {
+	if _, err = os.Stat("./_build/" + prefix); os.IsNotExist(err) {
+		if err = os.Mkdir("./_build/"+prefix, 0755); err != nil {
 			panic(err)
 		}
 	}
@@ -70,21 +71,21 @@ func DBInit() {
 	StoreSettings.init()
 	StoreMempool.init()
 
-	if err := StoreSettings.DB.Update(func(boltTx *bolt.Tx) (err error) {
+	if err = StoreSettings.DB.Update(func(boltTx *bolt.Tx) (err error) {
 		_, err = boltTx.CreateBucketIfNotExists([]byte("Settings"))
 		return
 	}); err != nil {
 		panic(err)
 	}
 
-	if err := StoreWallet.DB.Update(func(boltTx *bolt.Tx) (err error) {
+	if err = StoreWallet.DB.Update(func(boltTx *bolt.Tx) (err error) {
 		_, err = boltTx.CreateBucketIfNotExists([]byte("Wallet"))
 		return
 	}); err != nil {
 		panic(err)
 	}
 
-	if err := StoreBlockchain.DB.Update(func(boltTx *bolt.Tx) (err error) {
+	if err = StoreBlockchain.DB.Update(func(boltTx *bolt.Tx) (err error) {
 		if _, err = boltTx.CreateBucketIfNotExists([]byte("Chain")); err != nil {
 			return
 		}
@@ -97,7 +98,7 @@ func DBInit() {
 		panic(err)
 	}
 
-	if err := StoreMempool.DB.Update(func(boltTx *bolt.Tx) (err error) {
+	if err = StoreMempool.DB.Update(func(boltTx *bolt.Tx) (err error) {
 		return
 	}); err != nil {
 		panic(err)

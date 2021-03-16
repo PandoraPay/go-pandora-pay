@@ -102,6 +102,7 @@ func main() {
 
 	myChain.Close()
 	myForging.Close()
+	myWallet.Close()
 	store.DBClose()
 
 	fmt.Println("Shutting down")
