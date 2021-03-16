@@ -1,6 +1,7 @@
 package gui
 
 import (
+	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"os"
 	"strings"
@@ -8,14 +9,21 @@ import (
 
 var logs *widgets.Paragraph
 
-func message(color string, any ...interface{}) {
+func logsRender() {
 	logs.Lock()
 	ss := strings.Split(logs.Text, "\n")
-	pos := len(ss) - 16
+	pos := len(ss) - logs.Size().Y
 	if pos < 0 {
 		pos = 0
 	}
-	logs.Text = strings.Join(ss[pos:], "\n") + "[" + processArgument(any...) + "]" + color + "\n"
+	logs.Text = strings.Join(ss[pos:], "\n")
+	logs.Unlock()
+	ui.Render(logs)
+}
+
+func message(color string, any ...interface{}) {
+	logs.Lock()
+	logs.Text = logs.Text + "[" + processArgument(any...) + "]" + color + "\n"
 	logs.Unlock()
 }
 

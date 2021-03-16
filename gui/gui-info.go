@@ -9,7 +9,7 @@ import (
 var info *widgets.List
 var infoMap sync.Map
 
-func infoProcess() {
+func infoRender() {
 	rows := []string{}
 	infoMap.Range(func(key, value interface{}) bool {
 		rows = append(rows, key.(string)+": "+value.(string))

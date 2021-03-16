@@ -57,9 +57,9 @@ func GUIInit() {
 					cmdProcess(e)
 				}
 			case <-ticker:
-				infoProcess()
-				info2Process()
-				ui.Render(logs)
+				infoRender()
+				info2Render()
+				logsRender()
 			}
 
 		}
