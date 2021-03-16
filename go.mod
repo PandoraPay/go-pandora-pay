@@ -6,6 +6,7 @@ require (
 	github.com/btcsuite/btcd v0.21.0-beta // indirect
 	github.com/docopt/docopt.go v0.0.0-20180111231733-ee0de3bc6815 // indirect
 	github.com/gizak/termui/v3 v3.1.0 // indirect
+	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jinzhu/copier v0.2.5 // indirect
 	github.com/mackerelio/go-osstat v0.1.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect

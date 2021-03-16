@@ -12,7 +12,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
-	node_tcp "pandora-pay/node/node-tcp"
+	node_tcp "pandora-pay/node/server/node-tcp"
 	"pandora-pay/settings"
 	"pandora-pay/store"
 	"pandora-pay/testnet"

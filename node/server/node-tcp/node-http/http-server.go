@@ -8,6 +8,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/node/api"
+	node_websocket "pandora-pay/node/server/node-tcp/node-http/node-websocket"
 )
 
 type HttpServer struct {
@@ -44,6 +45,8 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 }
 
 func (server *HttpServer) initialize() {
+
+	node_websocket.CreateWebsocketServer()
 
 	for key, _ := range server.api.GetMap {
 		http.HandleFunc(key, server.get)

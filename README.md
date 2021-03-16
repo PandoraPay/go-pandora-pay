@@ -85,7 +85,7 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [ ] Network propagation
 - [ ] Network
     - [X] HTTP server    
-    - [ ] HTTP websocket server
+    - [X] HTTP websocket server
     - [ ] HTTP websocket client
     - [X] TOR Integration
 - [ ] API

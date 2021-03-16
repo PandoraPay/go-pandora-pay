@@ -7,7 +7,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
 	"pandora-pay/node/api"
-	node_http "pandora-pay/node/node-http"
+	node_http "pandora-pay/node/server/node-tcp/node-http"
 	"pandora-pay/settings"
 )
 
