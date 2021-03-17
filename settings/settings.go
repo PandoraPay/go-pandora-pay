@@ -9,10 +9,8 @@ import (
 )
 
 type Settings struct {
-	Name string
-
-	Checksum []byte //4
-
+	Name         string
+	Checksum     []byte //4
 	sync.RWMutex `json:"-"`
 }
 

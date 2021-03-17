@@ -43,7 +43,7 @@ func info2Init() {
 			Info2Update("memory", bToMb(m.Alloc)+"M "+bToMb(m.TotalAlloc)+"M "+bToMb(m.Alloc)+"M "+strconv.FormatUint(uint64(m.NumGC), 10))
 
 			before, err1 := cpu.Get()
-			time.Sleep(time.Duration(1) * time.Second)
+			time.Sleep(1 * time.Second)
 			after, err2 := cpu.Get()
 			if err1 == nil && err2 == nil {
 				total := float64(after.Total - before.Total)

@@ -13,7 +13,7 @@ import (
 type ForgingWallet struct {
 	addresses    []*ForgingWalletAddress
 	addressesMap map[string]*ForgingWalletAddress
-	sync.RWMutex
+	sync.RWMutex `json:"-"`
 }
 
 type ForgingWalletAddress struct {

@@ -46,6 +46,9 @@ func (mempool *Mempool) AddTxToMemPoolSilent(tx *transaction.Transaction, height
 func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) bool {
 
 	tx.VerifyBloomAll()
+	if _, found := mempool.txs.txsMap.Load(tx.Bloom.HashStr); found {
+		return false
+	}
 
 	minerFees := tx.ComputeFees()
 
@@ -74,15 +77,7 @@ func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 		panic("Transaction fee was not accepted")
 	}
 
-	if _, found := mempool.txs.txsMap.Load(tx.Bloom.HashStr); found {
-		return false
-	}
-
-	//making sure that the transaction is not inserted twice
-	mempool.txs.Lock()
-	defer mempool.txs.Unlock()
-
-	object := mempoolTx{
+	mempoolTx := &mempoolTx{
 		Tx:          tx,
 		Added:       time.Now().Unix(),
 		FeePerByte:  selectedFee / size,
@@ -91,10 +86,19 @@ func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 		ChainHeight: height,
 	}
 
+	//meanwhile it was inserted, if not, let's store it
+	if _, exists := mempool.txs.txsMap.LoadOrStore(tx.Bloom.HashStr, mempoolTx); exists {
+		return false
+	}
+
+	//making sure that the transaction is not inserted twice
+	mempool.txs.Lock()
+	defer mempool.txs.Unlock()
+
 	mempool.txs.txsCount += 1
 	mempool.txs.txsInserted += 1
-	mempool.txs.txsMap.Store(tx.Bloom.HashStr, &object)
-	mempool.txs.txsList = append(mempool.txs.txsList, &object)
+	mempool.txs.txsMap.Store(tx.Bloom.HashStr, mempoolTx)
+	mempool.txs.txsList = append(mempool.txs.txsList, mempoolTx)
 
 	gui.Info2Update("mempool", strconv.FormatUint(mempool.txs.txsCount, 10))
 

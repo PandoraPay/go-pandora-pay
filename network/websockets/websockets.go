@@ -10,11 +10,11 @@ import (
 )
 
 type Websockets struct {
-	clients           []*websocket.Conn
-	serverClients     []*websocket.Conn
-	all               []*websocket.Conn
-	allAddresses      sync.Map
-	chanNewConnection chan *websocket.Conn
+	allAddresses  sync.Map
+	clients       []*websocket.Conn
+	serverClients []*websocket.Conn
+	all           []*websocket.Conn
+	sync.RWMutex  `json:"-"`
 }
 
 func (socks *Websockets) NewConnection(conn *websocket.Conn, connType bool) error {
@@ -26,6 +26,9 @@ func (socks *Websockets) NewConnection(conn *websocket.Conn, connType bool) erro
 		conn.Close()
 		return errors.New("Already connected ")
 	}
+
+	socks.Lock()
+	defer socks.Unlock()
 
 	socks.all = append(socks.all, conn)
 	if connType {
@@ -40,10 +43,9 @@ func (socks *Websockets) NewConnection(conn *websocket.Conn, connType bool) erro
 func CreateWebsockets(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) *Websockets {
 
 	socks := &Websockets{
-		clients:           []*websocket.Conn{},
-		serverClients:     []*websocket.Conn{},
-		all:               []*websocket.Conn{},
-		chanNewConnection: make(chan *websocket.Conn),
+		clients:       []*websocket.Conn{},
+		serverClients: []*websocket.Conn{},
+		all:           []*websocket.Conn{},
 	}
 
 	return socks
