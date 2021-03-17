@@ -8,25 +8,24 @@ import (
 )
 
 type WebsocketServer struct {
+	upgrader websocket.Upgrader
 }
 
-var upgrader = websocket.Upgrader{}
-
 func (ws *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r *http.Request) {
-	c, err := upgrader.Upgrade(w, r, nil)
+	conn, err := ws.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		gui.Error("ws error upgrade:", err)
 		return
 	}
-	defer c.Close()
+	defer conn.Close()
 	for {
-		mt, message, err := c.ReadMessage()
+		mt, message, err := conn.ReadMessage()
 		if err != nil {
 			gui.Info("ws error reading", err)
 			break
 		}
 		log.Printf("recv: %s", message)
-		err = c.WriteMessage(mt, message)
+		err = conn.WriteMessage(mt, message)
 		if err != nil {
 			gui.Info("write:", err)
 			break
@@ -39,5 +38,7 @@ func (ws *WebsocketServer) InitializeWebsocketServer() {
 }
 
 func CreateWebsocketServer() *WebsocketServer {
-	return &WebsocketServer{}
+	return &WebsocketServer{
+		upgrader: websocket.Upgrader{},
+	}
 }

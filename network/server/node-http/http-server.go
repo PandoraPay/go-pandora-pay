@@ -7,8 +7,8 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
-	"pandora-pay/node/api"
-	node_websocket "pandora-pay/node/server/node-tcp/node-http/node-websocket"
+	"pandora-pay/network/api"
+	node_websocket "pandora-pay/network/server/node-websocket"
 )
 
 type HttpServer struct {

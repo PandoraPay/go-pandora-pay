@@ -86,7 +86,7 @@ The main design pattern that has been taken in consideration is to be **dead-sim
 - [ ] Network
     - [X] HTTP server    
     - [X] HTTP websocket server
-    - [ ] HTTP websocket client
+    - [x] HTTP websocket client
     - [X] TOR Integration
 - [ ] API
     - [X] API blockchain explorers

@@ -12,7 +12,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
-	node_tcp "pandora-pay/node/server/node-tcp"
+	"pandora-pay/network"
 	"pandora-pay/settings"
 	"pandora-pay/store"
 	"pandora-pay/testnet"
@@ -91,8 +91,8 @@ func main() {
 
 	}
 
-	myTorServer := node_tcp.CreateTcpServer(mySettings, myChain, myMempool)
-	globals.Data["tcp-server"] = myTorServer
+	myNetwork := network.CreateNetwork(mySettings, myChain, myMempool)
+	globals.Data["network"] = myNetwork
 
 	gui.Log("Main Loop")
 

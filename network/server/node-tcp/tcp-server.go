@@ -6,8 +6,8 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
-	"pandora-pay/node/api"
-	node_http "pandora-pay/node/server/node-tcp/node-http"
+	"pandora-pay/network/api"
+	node_http "pandora-pay/network/server/node-http"
 	"pandora-pay/settings"
 )
 
