@@ -1,4 +1,4 @@
-package node_websocket
+package websockets
 
 import (
 	"github.com/gorilla/websocket"
@@ -9,6 +9,7 @@ import (
 
 type WebsocketServer struct {
 	upgrader websocket.Upgrader
+	sockets  *Websockets
 }
 
 func (ws *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r *http.Request) {
@@ -17,6 +18,11 @@ func (ws *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r *htt
 		gui.Error("ws error upgrade:", err)
 		return
 	}
+
+	if err = ws.sockets.NewConnection(conn, false); err != nil {
+		return
+	}
+
 	defer conn.Close()
 	for {
 		mt, message, err := conn.ReadMessage()
@@ -37,8 +43,9 @@ func (ws *WebsocketServer) InitializeWebsocketServer() {
 	http.HandleFunc("/ws", ws.handleUpgradeConnection)
 }
 
-func CreateWebsocketServer() *WebsocketServer {
+func CreateWebsocketServer(sockets *Websockets) *WebsocketServer {
 	return &WebsocketServer{
 		upgrader: websocket.Upgrader{},
+		sockets:  sockets,
 	}
 }

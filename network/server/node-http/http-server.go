@@ -8,13 +8,14 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api"
-	node_websocket "pandora-pay/network/server/node-websocket"
+	"pandora-pay/network/websockets"
 )
 
 type HttpServer struct {
-	tcpListener net.Listener
 	chain       *blockchain.Blockchain
 	api         *api.API
+	tcpListener net.Listener
+	sockets     *websockets.Websockets
 }
 
 func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
@@ -45,7 +46,7 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
 func (server *HttpServer) initialize() {
 
-	node_websocket.CreateWebsocketServer()
+	websockets.CreateWebsocketServer(server.sockets)
 
 	for key, _ := range server.api.GetMap {
 		http.HandleFunc(key, server.get)
@@ -59,12 +60,13 @@ func (server *HttpServer) initialize() {
 
 }
 
-func CreateHttpServer(tcpListener net.Listener, chain *blockchain.Blockchain, api *api.API) *HttpServer {
+func CreateHttpServer(tcpListener net.Listener, sockets *websockets.Websockets, chain *blockchain.Blockchain, api *api.API) *HttpServer {
 
 	server := &HttpServer{
-		tcpListener: tcpListener,
 		chain:       chain,
 		api:         api,
+		tcpListener: tcpListener,
+		sockets:     sockets,
 	}
 	server.initialize()
 

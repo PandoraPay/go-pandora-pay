@@ -8,21 +8,21 @@ import (
 	"pandora-pay/mempool"
 	"pandora-pay/network/api"
 	node_http "pandora-pay/network/server/node-http"
+	"pandora-pay/network/websockets"
 	"pandora-pay/settings"
 )
 
 // ControllerAddr is the Tor controller interface address
 // Note:
 type TcpServer struct {
-	Address string
-	Port    string
-
-	settings *settings.Settings
-	chain    *blockchain.Blockchain
-
+	Address     string
+	Port        string
+	settings    *settings.Settings
+	chain       *blockchain.Blockchain
 	tcpListener net.Listener
 	api         *api.API
 	HttpServer  *node_http.HttpServer
+	sockets     *websockets.Websockets
 }
 
 func (server *TcpServer) initialize() {
@@ -63,15 +63,16 @@ func (server *TcpServer) initialize() {
 
 	gui.InfoUpdate("TCP", address+":"+port)
 
-	server.HttpServer = node_http.CreateHttpServer(server.tcpListener, server.chain, server.api)
+	server.HttpServer = node_http.CreateHttpServer(server.tcpListener, server.sockets, server.chain, server.api)
 }
 
-func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) *TcpServer {
+func CreateTcpServer(sockets *websockets.Websockets, settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) *TcpServer {
 
 	server := &TcpServer{
 		settings: settings,
 		chain:    chain,
 		api:      api.CreateAPI(chain, mempool),
+		sockets:  sockets,
 	}
 	server.initialize()
 

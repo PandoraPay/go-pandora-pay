@@ -1,4 +1,4 @@
-package client
+package websockets
 
 import (
 	"github.com/gorilla/websocket"
@@ -7,8 +7,9 @@ import (
 )
 
 type WebsocketClient struct {
-	URL  url.URL
-	conn *websocket.Conn
+	URL   url.URL
+	conn  *websocket.Conn
+	socks *Websockets
 }
 
 func (ws *WebsocketClient) Close() error {
@@ -28,16 +29,23 @@ func (ws *WebsocketClient) Execute() {
 
 }
 
-func CreateWebsocketClient(url url.URL) (ws *WebsocketClient, err error) {
+func CreateWebsocketClient(socks *Websockets, url url.URL) (ws *WebsocketClient, err error) {
 
 	ws = &WebsocketClient{
-		URL: url,
+		URL:   url,
+		socks: socks,
 	}
 
 	ws.conn, _, err = websocket.DefaultDialer.Dial(ws.URL.String(), nil)
 	if err != nil {
 		return
 	}
+
+	if err = socks.NewConnection(ws.conn, true); err != nil {
+		return
+	}
+
+	ws.Execute()
 
 	return
 }
