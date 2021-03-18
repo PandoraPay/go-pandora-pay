@@ -3,6 +3,7 @@ package config
 import (
 	"math/big"
 	"pandora-pay/config/globals"
+	"time"
 )
 
 var ()
@@ -35,10 +36,12 @@ const (
 )
 
 var (
-	NETWORK_SELECTED    uint64 = MAIN_NET_NETWORK_BYTE
-	NETWORK_SEEDS              = MAIN_NET_SEED_NODES
-	NETWORK_CLIENTS_MAX        = 20
-	NETWORK_SERVER_MAX         = 500
+	NETWORK_SELECTED               uint64 = MAIN_NET_NETWORK_BYTE
+	NETWORK_SEEDS                         = MAIN_NET_SEED_NODES
+	WEBSOCKETS_NETWORK_CLIENTS_MAX        = 20
+	WEBSOCKETS_NETWORK_SERVER_MAX         = 500
+	WEBSOCKETS_TIMEOUT                    = 10 * time.Second //seconds
+	WEBSOCKETS_MAX_READ                   = BLOCK_MAX_SIZE + 1024
 )
 
 var (

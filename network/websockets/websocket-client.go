@@ -7,9 +7,10 @@ import (
 )
 
 type WebsocketClient struct {
-	knownNode *known_nodes.KnownNode
-	conn      *websocket.Conn
-	socks     *Websockets
+	knownNode           *known_nodes.KnownNode
+	conn                *websocket.Conn
+	socks               *Websockets
+	handshakeValidation bool
 }
 
 func (wsClient *WebsocketClient) Close() error {

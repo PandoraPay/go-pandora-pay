@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/gorilla/websocket"
 	"pandora-pay/blockchain"
+	"pandora-pay/config"
 	"pandora-pay/mempool"
 	"pandora-pay/settings"
 	"sync"
@@ -26,6 +27,8 @@ func (socks *Websockets) NewConnection(conn *websocket.Conn, connType bool) erro
 		conn.Close()
 		return errors.New("Already connected ")
 	}
+
+	conn.SetReadLimit(int64(config.WEBSOCKETS_MAX_READ))
 
 	socks.Lock()
 	defer socks.Unlock()
