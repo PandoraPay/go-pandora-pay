@@ -12,14 +12,14 @@ type WebsocketServer struct {
 	sockets  *Websockets
 }
 
-func (ws *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r *http.Request) {
-	conn, err := ws.upgrader.Upgrade(w, r, nil)
+func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r *http.Request) {
+	conn, err := wserver.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		gui.Error("ws error upgrade:", err)
 		return
 	}
 
-	if err = ws.sockets.NewConnection(conn, false); err != nil {
+	if err = wserver.sockets.NewConnection(conn, false); err != nil {
 		return
 	}
 
@@ -39,13 +39,14 @@ func (ws *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r *htt
 	}
 }
 
-func (ws *WebsocketServer) InitializeWebsocketServer() {
-	http.HandleFunc("/ws", ws.handleUpgradeConnection)
-}
-
 func CreateWebsocketServer(sockets *Websockets) *WebsocketServer {
-	return &WebsocketServer{
+
+	wserver := &WebsocketServer{
 		upgrader: websocket.Upgrader{},
 		sockets:  sockets,
 	}
+
+	http.HandleFunc("/ws", wserver.handleUpgradeConnection)
+
+	return wserver
 }

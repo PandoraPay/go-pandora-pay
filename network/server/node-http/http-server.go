@@ -52,11 +52,12 @@ func (server *HttpServer) initialize() {
 		http.HandleFunc(key, server.get)
 	}
 
-	if err := http.Serve(server.tcpListener, nil); err != nil {
-		panic(err)
-	}
-
-	gui.Info("HTTP server")
+	go func() {
+		if err := http.Serve(server.tcpListener, nil); err != nil {
+			panic(err)
+		}
+		gui.Info("HTTP server")
+	}()
 
 }
 

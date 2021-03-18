@@ -3,23 +3,23 @@ package websockets
 import (
 	"github.com/gorilla/websocket"
 	"log"
-	"net/url"
+	"pandora-pay/network/known-nodes"
 )
 
 type WebsocketClient struct {
-	URL   url.URL
-	conn  *websocket.Conn
-	socks *Websockets
+	knownNode *known_nodes.KnownNode
+	conn      *websocket.Conn
+	socks     *Websockets
 }
 
-func (ws *WebsocketClient) Close() error {
-	return ws.conn.Close()
+func (wsClient *WebsocketClient) Close() error {
+	return wsClient.conn.Close()
 }
 
-func (ws *WebsocketClient) Execute() {
+func (wsClient *WebsocketClient) Execute() {
 
 	for {
-		_, message, err := ws.conn.ReadMessage()
+		_, message, err := wsClient.conn.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
 			return
@@ -29,23 +29,23 @@ func (ws *WebsocketClient) Execute() {
 
 }
 
-func CreateWebsocketClient(socks *Websockets, url url.URL) (ws *WebsocketClient, err error) {
+func CreateWebsocketClient(socks *Websockets, knownNode *known_nodes.KnownNode) (wsClient *WebsocketClient, err error) {
 
-	ws = &WebsocketClient{
-		URL:   url,
-		socks: socks,
+	wsClient = &WebsocketClient{
+		knownNode: knownNode,
+		socks:     socks,
 	}
 
-	ws.conn, _, err = websocket.DefaultDialer.Dial(ws.URL.String(), nil)
+	wsClient.conn, _, err = websocket.DefaultDialer.Dial(knownNode.Url.String(), nil)
 	if err != nil {
 		return
 	}
 
-	if err = socks.NewConnection(ws.conn, true); err != nil {
+	if err = socks.NewConnection(wsClient.conn, true); err != nil {
 		return
 	}
 
-	ws.Execute()
+	wsClient.Execute()
 
 	return
 }

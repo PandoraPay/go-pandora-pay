@@ -1,4 +1,4 @@
-package network
+package known_nodes
 
 import (
 	"net/url"
@@ -13,8 +13,8 @@ type KnownNode struct {
 }
 
 type KnownNodes struct {
-	knownMap     sync.Map
-	knownList    []*KnownNode
+	KnownMap     sync.Map
+	KnownList    []*KnownNode
 	sync.RWMutex `json:"-"`
 }
 
@@ -23,7 +23,7 @@ func (knownNodes *KnownNodes) AddKnownNode(url *url.URL, isSeed bool) (result bo
 	urlString := url.String()
 	var exists bool
 	var found interface{}
-	if found, exists = knownNodes.knownMap.Load(urlString); exists {
+	if found, exists = knownNodes.KnownMap.Load(urlString); exists {
 		knownNode = found.(*KnownNode)
 		return false, knownNode
 	}
@@ -38,11 +38,11 @@ func (knownNodes *KnownNodes) AddKnownNode(url *url.URL, isSeed bool) (result bo
 		isSeed,
 	}
 
-	if found, exists := knownNodes.knownMap.LoadOrStore(urlString, knownNode); exists {
+	if found, exists := knownNodes.KnownMap.LoadOrStore(urlString, knownNode); exists {
 		knownNode = found.(*KnownNode)
 		return false, knownNode
 	}
-	knownNodes.knownList = append(knownNodes.knownList, knownNode)
+	knownNodes.KnownList = append(knownNodes.KnownList, knownNode)
 
 	result = true
 	return
@@ -51,8 +51,8 @@ func (knownNodes *KnownNodes) AddKnownNode(url *url.URL, isSeed bool) (result bo
 func CreateKnownNodes() *KnownNodes {
 
 	return &KnownNodes{
-		knownMap:  sync.Map{},
-		knownList: []*KnownNode{},
+		KnownMap:  sync.Map{},
+		KnownList: []*KnownNode{},
 	}
 
 }

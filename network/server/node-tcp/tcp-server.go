@@ -22,7 +22,7 @@ type TcpServer struct {
 	tcpListener net.Listener
 	api         *api.API
 	HttpServer  *node_http.HttpServer
-	sockets     *websockets.Websockets
+	socks       *websockets.Websockets
 }
 
 func (server *TcpServer) initialize() {
@@ -63,17 +63,18 @@ func (server *TcpServer) initialize() {
 
 	gui.InfoUpdate("TCP", address+":"+port)
 
-	server.HttpServer = node_http.CreateHttpServer(server.tcpListener, server.sockets, server.chain, server.api)
+	server.HttpServer = node_http.CreateHttpServer(server.tcpListener, server.socks, server.chain, server.api)
 }
 
-func CreateTcpServer(sockets *websockets.Websockets, settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) *TcpServer {
+func CreateTcpServer(socks *websockets.Websockets, settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) *TcpServer {
 
 	server := &TcpServer{
 		settings: settings,
 		chain:    chain,
 		api:      api.CreateAPI(chain, mempool),
-		sockets:  sockets,
+		socks:    socks,
 	}
+
 	server.initialize()
 
 	return server

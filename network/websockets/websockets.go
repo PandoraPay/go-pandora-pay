@@ -10,10 +10,10 @@ import (
 )
 
 type Websockets struct {
-	allAddresses  sync.Map
-	clients       []*websocket.Conn
-	serverClients []*websocket.Conn
-	all           []*websocket.Conn
+	AllAddresses  sync.Map
+	Clients       []*websocket.Conn
+	ServerClients []*websocket.Conn
+	All           []*websocket.Conn
 	sync.RWMutex  `json:"-"`
 }
 
@@ -21,7 +21,7 @@ func (socks *Websockets) NewConnection(conn *websocket.Conn, connType bool) erro
 
 	addr := conn.RemoteAddr().String()
 
-	_, exists := socks.allAddresses.LoadOrStore(addr, conn)
+	_, exists := socks.AllAddresses.LoadOrStore(addr, conn)
 	if exists {
 		conn.Close()
 		return errors.New("Already connected ")
@@ -30,11 +30,11 @@ func (socks *Websockets) NewConnection(conn *websocket.Conn, connType bool) erro
 	socks.Lock()
 	defer socks.Unlock()
 
-	socks.all = append(socks.all, conn)
+	socks.All = append(socks.All, conn)
 	if connType {
-		socks.clients = append(socks.clients, conn)
+		socks.Clients = append(socks.Clients, conn)
 	} else {
-		socks.serverClients = append(socks.serverClients, conn)
+		socks.ServerClients = append(socks.ServerClients, conn)
 	}
 
 	return nil
@@ -43,9 +43,10 @@ func (socks *Websockets) NewConnection(conn *websocket.Conn, connType bool) erro
 func CreateWebsockets(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) *Websockets {
 
 	socks := &Websockets{
-		clients:       []*websocket.Conn{},
-		serverClients: []*websocket.Conn{},
-		all:           []*websocket.Conn{},
+		AllAddresses:  sync.Map{},
+		Clients:       []*websocket.Conn{},
+		ServerClients: []*websocket.Conn{},
+		All:           []*websocket.Conn{},
 	}
 
 	return socks
