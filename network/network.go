@@ -8,15 +8,15 @@ import (
 	"pandora-pay/mempool"
 	"pandora-pay/network/known-nodes"
 	node_tcp "pandora-pay/network/server/node-tcp"
-	"pandora-pay/network/websockets"
+	"pandora-pay/network/websocks"
 	"pandora-pay/settings"
 	"time"
 )
 
 type Network struct {
-	socks      *websockets.Websockets
 	tcpServer  *node_tcp.TcpServer
 	KnownNodes *known_nodes.KnownNodes
+	websockets *websocks.Websockets
 }
 
 func (network *Network) execute() {
@@ -31,12 +31,11 @@ func (network *Network) execute() {
 		}
 		network.KnownNodes.RUnlock()
 
-		_, exists := network.socks.AllAddresses.Load(knownNode.Url.String())
+		_, exists := network.websockets.AllAddresses.Load(knownNode.Url.String())
 
 		if knownNode != nil && !exists {
-			_, err := websockets.CreateWebsocketClient(network.socks, knownNode)
+			_, err := websocks.CreateWebsocketClient(network.websockets, knownNode)
 			if err != nil {
-
 			}
 		}
 
@@ -47,8 +46,7 @@ func (network *Network) execute() {
 
 func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) *Network {
 
-	socks := websockets.CreateWebsockets(settings, chain, mempool)
-	tcpServer := node_tcp.CreateTcpServer(socks, settings, chain, mempool)
+	tcpServer := node_tcp.CreateTcpServer(settings, chain, mempool)
 	knownNodes := known_nodes.CreateKnownNodes()
 
 	for _, seed := range config.NETWORK_SEEDS {
@@ -56,9 +54,9 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 	}
 
 	network := &Network{
-		socks:      socks,
 		tcpServer:  tcpServer,
 		KnownNodes: knownNodes,
+		websockets: tcpServer.HttpServer.Websockets,
 	}
 
 	network.execute()

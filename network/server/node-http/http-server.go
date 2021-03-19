@@ -4,18 +4,24 @@ import (
 	"encoding/json"
 	"net"
 	"net/http"
+	"net/url"
 	"pandora-pay/blockchain"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/mempool"
 	"pandora-pay/network/api"
-	"pandora-pay/network/websockets"
+	"pandora-pay/network/websocks"
+	"pandora-pay/settings"
 )
 
 type HttpServer struct {
-	chain       *blockchain.Blockchain
-	api         *api.API
-	tcpListener net.Listener
-	sockets     *websockets.Websockets
+	chain           *blockchain.Blockchain
+	tcpListener     net.Listener
+	Websockets      *websocks.Websockets
+	websocketServer *websocks.WebsocketServer
+	Api             *api.API
+	ApiWebsockets   *websocks.APIWebsockets
+	getMap          map[string]func(values url.Values) interface{}
 }
 
 func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
@@ -35,7 +41,7 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 		}
 	}()
 
-	callback := server.api.GetMap[req.URL.Path]
+	callback := server.getMap[req.URL.Path]
 	if callback != nil {
 		output = callback(req.URL.Query())
 	} else {
@@ -46,10 +52,9 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
 func (server *HttpServer) initialize() {
 
-	websockets.CreateWebsocketServer(server.sockets)
-
-	for key, _ := range server.api.GetMap {
-		http.HandleFunc(key, server.get)
+	for key, callback := range server.Api.GetMap {
+		http.HandleFunc("/"+key, server.get)
+		server.getMap["/"+key] = callback
 	}
 
 	go func() {
@@ -61,13 +66,19 @@ func (server *HttpServer) initialize() {
 
 }
 
-func CreateHttpServer(tcpListener net.Listener, sockets *websockets.Websockets, chain *blockchain.Blockchain, api *api.API) *HttpServer {
+func CreateHttpServer(tcpListener net.Listener, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *HttpServer {
+
+	api := api.CreateAPI(chain, mempool)
+	apiWebsockets := websocks.CreateWebsocketsAPI(chain, mempool)
+
+	websockets := websocks.CreateWebsockets(api, apiWebsockets)
 
 	server := &HttpServer{
-		chain:       chain,
-		api:         api,
-		tcpListener: tcpListener,
-		sockets:     sockets,
+		chain:           chain,
+		tcpListener:     tcpListener,
+		websocketServer: websocks.CreateWebsocketServer(websockets),
+		Websockets:      websockets,
+		getMap:          make(map[string]func(values url.Values) interface{}),
 	}
 	server.initialize()
 

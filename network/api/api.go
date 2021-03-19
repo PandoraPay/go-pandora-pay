@@ -148,15 +148,15 @@ func CreateAPI(chain *blockchain.Blockchain, mempool *mempool.Mempool) *API {
 	}
 
 	api.GetMap = map[string]func(values url.Values) interface{}{
-		"/":               api.getInfo,
-		"/chain":          api.getBlockchain,
-		"/ping":           api.getPing,
-		"/block-complete": api.getBlockComplete,
-		"/block":          api.getBlock,
-		"/tx":             api.getTx,
-		"/balance":        api.getBalance,
-		"/token":          api.getToken,
-		"/mempool":        api.getMempool,
+		"":               api.getInfo,
+		"chain":          api.getBlockchain,
+		"ping":           api.getPing,
+		"block-complete": api.getBlockComplete,
+		"block":          api.getBlock,
+		"tx":             api.getTx,
+		"balance":        api.getBalance,
+		"token":          api.getToken,
+		"mempool":        api.getMempool,
 	}
 
 	go func() {

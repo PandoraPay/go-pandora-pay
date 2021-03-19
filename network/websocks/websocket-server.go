@@ -1,8 +1,7 @@
-package websockets
+package websocks
 
 import (
 	"github.com/gorilla/websocket"
-	"log"
 	"net/http"
 	"pandora-pay/gui"
 )
@@ -13,30 +12,18 @@ type WebsocketServer struct {
 }
 
 func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r *http.Request) {
-	conn, err := wserver.upgrader.Upgrade(w, r, nil)
+
+	c, err := wserver.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		gui.Error("ws error upgrade:", err)
 		return
 	}
 
+	conn := CreateAdvancedConnection(c, wserver.sockets.api, wserver.sockets.apiWebsockets)
 	if err = wserver.sockets.NewConnection(conn, false); err != nil {
 		return
 	}
 
-	defer conn.Close()
-	for {
-		mt, message, err := conn.ReadMessage()
-		if err != nil {
-			gui.Info("ws error reading", err)
-			break
-		}
-		log.Printf("recv: %s", message)
-		err = conn.WriteMessage(mt, message)
-		if err != nil {
-			gui.Info("write:", err)
-			break
-		}
-	}
 }
 
 func CreateWebsocketServer(sockets *Websockets) *WebsocketServer {

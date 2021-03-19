@@ -6,9 +6,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
-	"pandora-pay/network/api"
 	node_http "pandora-pay/network/server/node-http"
-	"pandora-pay/network/websockets"
 	"pandora-pay/settings"
 )
 
@@ -17,15 +15,13 @@ import (
 type TcpServer struct {
 	Address     string
 	Port        string
-	settings    *settings.Settings
-	chain       *blockchain.Blockchain
 	tcpListener net.Listener
-	api         *api.API
 	HttpServer  *node_http.HttpServer
-	socks       *websockets.Websockets
 }
 
-func (server *TcpServer) initialize() {
+func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) *TcpServer {
+
+	server := &TcpServer{}
 
 	// Create local listener on next available port
 
@@ -63,19 +59,7 @@ func (server *TcpServer) initialize() {
 
 	gui.InfoUpdate("TCP", address+":"+port)
 
-	server.HttpServer = node_http.CreateHttpServer(server.tcpListener, server.socks, server.chain, server.api)
-}
-
-func CreateTcpServer(socks *websockets.Websockets, settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) *TcpServer {
-
-	server := &TcpServer{
-		settings: settings,
-		chain:    chain,
-		api:      api.CreateAPI(chain, mempool),
-		socks:    socks,
-	}
-
-	server.initialize()
+	server.HttpServer = node_http.CreateHttpServer(server.tcpListener, chain, settings, mempool)
 
 	return server
 }
