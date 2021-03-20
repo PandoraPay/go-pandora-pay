@@ -34,9 +34,7 @@ func (network *Network) execute() {
 		_, exists := network.websockets.AllAddresses.Load(knownNode.Url.String())
 
 		if knownNode != nil && !exists {
-			_, err := websocks.CreateWebsocketClient(network.websockets, knownNode)
-			if err != nil {
-			}
+			websocks.CreateWebsocketClient(network.websockets, knownNode)
 		}
 
 		time.Sleep(100 * time.Millisecond)

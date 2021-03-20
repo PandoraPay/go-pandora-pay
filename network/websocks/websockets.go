@@ -8,12 +8,37 @@ import (
 
 type Websockets struct {
 	AllAddresses  sync.Map
-	Clients       []*AdvancedConnection
-	ServerClients []*AdvancedConnection
 	All           []*AdvancedConnection
+	Clients       uint64
+	ServerClients uint64
 	apiWebsockets *api.APIWebsockets
 	api           *api.API
 	sync.RWMutex  `json:"-"`
+}
+
+func (websockets *Websockets) closedConnection(conn *AdvancedConnection, connType bool) {
+	<-conn.closed
+	addr := conn.Conn.RemoteAddr().String()
+	conn2, exists := websockets.AllAddresses.LoadAndDelete(addr)
+	if !exists || conn2 != conn {
+		return
+	}
+
+	websockets.Lock()
+	defer websockets.Unlock()
+	for i, conn2 := range websockets.All {
+		if conn2 == conn {
+			websockets.All[i] = websockets.All[len(websockets.All)-1]
+			websockets.All = websockets.All[:len(websockets.All)-1]
+			break
+		}
+	}
+
+	if connType {
+		websockets.Clients += 1
+	} else {
+		websockets.ServerClients += 1
+	}
 }
 
 func (websockets *Websockets) NewConnection(conn *AdvancedConnection, connType bool) error {
@@ -31,13 +56,14 @@ func (websockets *Websockets) NewConnection(conn *AdvancedConnection, connType b
 
 	websockets.All = append(websockets.All, conn)
 	if connType {
-		websockets.Clients = append(websockets.Clients, conn)
+		websockets.Clients += 1
 	} else {
-		websockets.ServerClients = append(websockets.ServerClients, conn)
+		websockets.ServerClients += 1
 	}
 
 	go conn.readPump()
 	go conn.writePump()
+	go websockets.closedConnection(conn, connType)
 
 	return nil
 }
@@ -46,8 +72,8 @@ func CreateWebsockets(api *api.API, apiWebsockets *api.APIWebsockets) *Websocket
 
 	websockets := &Websockets{
 		AllAddresses:  sync.Map{},
-		Clients:       []*AdvancedConnection{},
-		ServerClients: []*AdvancedConnection{},
+		Clients:       0,
+		ServerClients: 0,
 		All:           []*AdvancedConnection{},
 		api:           api,
 		apiWebsockets: apiWebsockets,

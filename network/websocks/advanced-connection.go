@@ -1,6 +1,7 @@
 package websocks
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/websocket"
@@ -18,18 +19,23 @@ type AdvancedConnectionMessage struct {
 	Data   []byte
 }
 
+type AdvancedConnectionAnswer struct {
+	out []byte
+	err error
+}
+
 type AdvancedConnection struct {
 	Conn          *websocket.Conn
-	send          chan interface{}
-	received      chan interface{}
+	send          chan *AdvancedConnectionMessage
 	answerCounter uint32
-	answerMap     map[uint32]chan interface{}
+	answerMap     map[uint32]chan *AdvancedConnectionAnswer
 	api           *api.API
 	apiWebsockets *api.APIWebsockets
+	closed        chan struct{}
 	sync.RWMutex  `json:"-"`
 }
 
-func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data interface{}, await, reply bool) interface{} {
+func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data interface{}, await, reply bool) *AdvancedConnectionAnswer {
 
 	if await && replyBackId == 0 {
 
@@ -45,7 +51,7 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data inter
 			}
 		}
 		replyBackId = c.answerCounter
-		c.answerMap[replyBackId] = make(chan interface{})
+		c.answerMap[replyBackId] = make(chan *AdvancedConnectionAnswer)
 		c.Unlock()
 	}
 
@@ -59,7 +65,15 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data inter
 	}
 	c.send <- message
 	if await {
-		return <-c.answerMap[replyBackId]
+		select {
+		case out, ok := <-c.answerMap[replyBackId]:
+			if ok == false {
+				return &AdvancedConnectionAnswer{err: errors.New("Timeout - Closed channel")}
+			}
+			return out
+		case <-time.NewTicker(config.WEBSOCKETS_TIMEOUT).C:
+			return &AdvancedConnectionAnswer{err: errors.New("Timeout")}
+		}
 	}
 	return nil
 }
@@ -68,7 +82,7 @@ func (c *AdvancedConnection) Send(name []byte, data interface{}) {
 	c.sendNow(0, name, data, false, false)
 }
 
-func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data interface{}) interface{} {
+func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data interface{}) *AdvancedConnectionAnswer {
 	return c.sendNow(0, name, data, true, false)
 }
 
@@ -117,9 +131,18 @@ func (c *AdvancedConnection) readPump() {
 		} else {
 			c.RLock()
 			cn := c.answerMap[message.Answer]
+			if cn != nil {
+				delete(c.answerMap, message.Answer)
+			}
 			c.RUnlock()
 			if cn != nil {
-				cn <- message
+				output := &AdvancedConnectionAnswer{}
+				if bytes.Equal(message.Name, []byte{1}) {
+					output.out = message.Data
+				} else {
+					json.Unmarshal(message.Data, &output.err)
+				}
+				cn <- output
 			}
 		}
 	}
@@ -130,13 +153,13 @@ func (c *AdvancedConnection) writePump() {
 	defer func() {
 		c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
 		c.Conn.Close()
+		close(c.closed)
 	}()
 
 	var err error
 	for {
 		select {
 		case message, ok := <-c.send:
-
 			if !ok { // Closed the channel.
 				return
 			}
@@ -146,7 +169,6 @@ func (c *AdvancedConnection) writePump() {
 			if err = c.Conn.WriteJSON(message); err != nil {
 				return
 			}
-
 		}
 	}
 
@@ -155,10 +177,10 @@ func (c *AdvancedConnection) writePump() {
 func CreateAdvancedConnection(conn *websocket.Conn, api *api.API, apiWebsockets *api.APIWebsockets) *AdvancedConnection {
 	return &AdvancedConnection{
 		Conn:          conn,
-		send:          make(chan interface{}),
-		received:      make(chan interface{}),
+		send:          make(chan *AdvancedConnectionMessage),
+		closed:        make(chan struct{}),
 		answerCounter: 0,
-		answerMap:     make(map[uint32]chan interface{}),
+		answerMap:     make(map[uint32]chan *AdvancedConnectionAnswer),
 		api:           api,
 		apiWebsockets: apiWebsockets,
 	}

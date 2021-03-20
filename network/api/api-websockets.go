@@ -14,22 +14,23 @@ type APIWebsockets struct {
 	mempool *mempool.Mempool
 }
 
-func (api *APIWebsockets) handshake(values []byte) interface{} {
+func (api *APIWebsockets) ValidateHandshake(handshake *APIHandshake) error {
+	handshake2 := *handshake
+	if handshake2[2] != string(config.NETWORK_SELECTED) {
+		return errors.New("Network is different")
+	}
+	return nil
+}
 
-	handshake := &APIHandshake{}
-	if err := json.Unmarshal(values, handshake); err != nil {
+func (api *APIWebsockets) handshake(values []byte) interface{} {
+	handshake := APIHandshake{}
+	if err := json.Unmarshal(values, &handshake); err != nil {
 		panic(err)
 	}
-
-	if handshake.Network != config.NETWORK_SELECTED {
-		panic(errors.New("Network is different"))
+	if err := api.ValidateHandshake(&handshake); err != nil {
+		panic(err)
 	}
-
-	return &APIHandshake{
-		Name:    config.NAME,
-		Version: config.VERSION,
-		Network: config.NETWORK_SELECTED,
-	}
+	return &APIHandshake{config.NAME, config.VERSION, string(config.NETWORK_SELECTED)}
 }
 
 func CreateWebsocketsAPI(chain *blockchain.Blockchain, mempool *mempool.Mempool) *APIWebsockets {
