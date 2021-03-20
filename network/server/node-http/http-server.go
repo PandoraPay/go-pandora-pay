@@ -19,9 +19,9 @@ type HttpServer struct {
 	tcpListener     net.Listener
 	Websockets      *websocks.Websockets
 	websocketServer *websocks.WebsocketServer
-	Api             *api.API
-	ApiWebsockets   *websocks.APIWebsockets
-	getMap          map[string]func(values url.Values) interface{}
+	api             *api.API
+	apiWebsockets   *api.APIWebsockets
+	getMap          map[string]func(values *url.Values) interface{}
 }
 
 func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
@@ -43,7 +43,8 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
 	callback := server.getMap[req.URL.Path]
 	if callback != nil {
-		output = callback(req.URL.Query())
+		arguments := req.URL.Query()
+		output = callback(&arguments)
 	} else {
 		panic("Unknown GET request")
 	}
@@ -52,7 +53,7 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
 func (server *HttpServer) initialize() {
 
-	for key, callback := range server.Api.GetMap {
+	for key, callback := range server.api.GetMap {
 		http.HandleFunc("/"+key, server.get)
 		server.getMap["/"+key] = callback
 	}
@@ -68,8 +69,8 @@ func (server *HttpServer) initialize() {
 
 func CreateHttpServer(tcpListener net.Listener, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *HttpServer {
 
+	apiWebsockets := api.CreateWebsocketsAPI(chain, mempool)
 	api := api.CreateAPI(chain, mempool)
-	apiWebsockets := websocks.CreateWebsocketsAPI(chain, mempool)
 
 	websockets := websocks.CreateWebsockets(api, apiWebsockets)
 
@@ -78,7 +79,9 @@ func CreateHttpServer(tcpListener net.Listener, chain *blockchain.Blockchain, se
 		tcpListener:     tcpListener,
 		websocketServer: websocks.CreateWebsocketServer(websockets),
 		Websockets:      websockets,
-		getMap:          make(map[string]func(values url.Values) interface{}),
+		getMap:          make(map[string]func(values *url.Values) interface{}),
+		api:             api,
+		apiWebsockets:   apiWebsockets,
 	}
 	server.initialize()
 

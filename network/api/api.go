@@ -14,18 +14,18 @@ import (
 )
 
 type API struct {
-	GetMap     map[string]func(values url.Values) interface{}
+	GetMap     map[string]func(values *url.Values) interface{}
 	chain      *blockchain.Blockchain
 	mempool    *mempool.Mempool
 	localChain unsafe.Pointer
 }
 
-func (api *API) getBlockchain(values url.Values) interface{} {
+func (api *API) getBlockchain(values *url.Values) interface{} {
 	pointer := atomic.LoadPointer(&api.localChain)
 	return (*APIBlockchain)(pointer)
 }
 
-func (api *API) getInfo(values url.Values) interface{} {
+func (api *API) getInfo(values *url.Values) interface{} {
 	return &struct {
 		Name        string
 		Version     string
@@ -39,13 +39,13 @@ func (api *API) getInfo(values url.Values) interface{} {
 	}
 }
 
-func (api *API) getPing(values url.Values) interface{} {
+func (api *API) getPing(values *url.Values) interface{} {
 	return &struct {
 		Ping string
 	}{Ping: "Pong"}
 }
 
-func (api *API) getBlockComplete(values url.Values) interface{} {
+func (api *API) getBlockComplete(values *url.Values) interface{} {
 	if values.Get("height") != "" {
 		height, err := strconv.Atoi(values.Get("height"))
 		if err != nil {
@@ -63,7 +63,7 @@ func (api *API) getBlockComplete(values url.Values) interface{} {
 	panic("parameter 'hash' or 'height' are missing")
 }
 
-func (api *API) getBlock(values url.Values) interface{} {
+func (api *API) getBlock(values *url.Values) interface{} {
 	if values.Get("height") != "" {
 		height, err := strconv.Atoi(values.Get("height"))
 		if err != nil {
@@ -81,7 +81,7 @@ func (api *API) getBlock(values url.Values) interface{} {
 	panic("parameter 'hash' or 'height' are missing")
 }
 
-func (api *API) getTx(values url.Values) interface{} {
+func (api *API) getTx(values *url.Values) interface{} {
 	if values.Get("hash") != "" {
 		hash, err := hex.DecodeString(values.Get("hash"))
 		if err != nil {
@@ -92,7 +92,7 @@ func (api *API) getTx(values url.Values) interface{} {
 	panic("parameter 'hash' was not specified ")
 }
 
-func (api *API) getBalance(values url.Values) interface{} {
+func (api *API) getBalance(values *url.Values) interface{} {
 	if values.Get("address") != "" {
 		address := addresses.DecodeAddr(values.Get("address"))
 		return api.loadAccountFromPublicKeyHash(address.PublicKeyHash)
@@ -107,7 +107,7 @@ func (api *API) getBalance(values url.Values) interface{} {
 	panic("parameter 'address' or 'hash' was not specified")
 }
 
-func (api *API) getToken(values url.Values) interface{} {
+func (api *API) getToken(values *url.Values) interface{} {
 	hash, err := hex.DecodeString(values.Get("hash"))
 	if err != nil {
 		panic(err)
@@ -115,7 +115,7 @@ func (api *API) getToken(values url.Values) interface{} {
 	return api.loadTokenFromPublicKeyHash(hash)
 }
 
-func (api *API) getMempool(values url.Values) interface{} {
+func (api *API) getMempool(values *url.Values) interface{} {
 	transactions := api.mempool.GetTxsList()
 	hashes := make([]helpers.ByteString, len(transactions))
 	for i, tx := range transactions {
@@ -147,7 +147,7 @@ func CreateAPI(chain *blockchain.Blockchain, mempool *mempool.Mempool) *API {
 		mempool: mempool,
 	}
 
-	api.GetMap = map[string]func(values url.Values) interface{}{
+	api.GetMap = map[string]func(values *url.Values) interface{}{
 		"":               api.getInfo,
 		"chain":          api.getBlockchain,
 		"ping":           api.getPing,

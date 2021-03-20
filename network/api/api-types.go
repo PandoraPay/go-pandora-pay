@@ -11,3 +11,9 @@ type APIBlockchain struct {
 	Target          string
 	TotalDifficulty string
 }
+
+type APIHandshake struct {
+	Name    string
+	Version string
+	Network uint64
+}

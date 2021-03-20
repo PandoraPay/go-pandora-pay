@@ -1,29 +1,31 @@
-package websocks
+package api
 
 import (
-	"net/url"
+	"encoding/json"
+	"errors"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/mempool"
 )
 
 type APIWebsockets struct {
-	GetMap  map[string]func(values url.Values) interface{}
+	GetMap  map[string]func(values []byte) interface{}
 	chain   *blockchain.Blockchain
 	mempool *mempool.Mempool
 }
 
-func (api *APIWebsockets) handshake(values url.Values) interface{} {
+func (api *APIWebsockets) handshake(values []byte) interface{} {
 
-	//if values.Get("Network") != config.NETWORK_SELECTED {
-	//	return errors.New("Network is different")
-	//}
+	handshake := &APIHandshake{}
+	if err := json.Unmarshal(values, handshake); err != nil {
+		panic(err)
+	}
 
-	return &struct {
-		Name    string
-		Version string
-		Network uint64
-	}{
+	if handshake.Network != config.NETWORK_SELECTED {
+		panic(errors.New("Network is different"))
+	}
+
+	return &APIHandshake{
 		Name:    config.NAME,
 		Version: config.VERSION,
 		Network: config.NETWORK_SELECTED,
@@ -37,7 +39,7 @@ func CreateWebsocketsAPI(chain *blockchain.Blockchain, mempool *mempool.Mempool)
 		mempool: mempool,
 	}
 
-	api.GetMap = map[string]func(values url.Values) interface{}{
+	api.GetMap = map[string]func(values []byte) interface{}{
 		"handshake": api.handshake,
 	}
 

@@ -11,7 +11,7 @@ type Websockets struct {
 	Clients       []*AdvancedConnection
 	ServerClients []*AdvancedConnection
 	All           []*AdvancedConnection
-	apiWebsockets *APIWebsockets
+	apiWebsockets *api.APIWebsockets
 	api           *api.API
 	sync.RWMutex  `json:"-"`
 }
@@ -42,7 +42,7 @@ func (websockets *Websockets) NewConnection(conn *AdvancedConnection, connType b
 	return nil
 }
 
-func CreateWebsockets(api *api.API, apiWebsockets *APIWebsockets) *Websockets {
+func CreateWebsockets(api *api.API, apiWebsockets *api.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
 		AllAddresses:  sync.Map{},

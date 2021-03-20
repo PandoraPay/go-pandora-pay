@@ -3,6 +3,7 @@ package websocks
 import (
 	"github.com/gorilla/websocket"
 	"pandora-pay/config"
+	"pandora-pay/network/api"
 	"pandora-pay/network/known-nodes"
 )
 
@@ -34,12 +35,11 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 		return
 	}
 
-	handshake := &struct {
-		Name    string
-		Version string
-		Network uint64
-	}{config.NAME, config.VERSION, config.NETWORK_SELECTED}
-
+	handshake := api.APIHandshake{
+		Name:    config.NAME,
+		Version: config.VERSION,
+		Network: config.NETWORK_SELECTED,
+	}
 	wsClient.conn.SendAwaitAnswer([]byte("handshake"), handshake)
 
 	return
