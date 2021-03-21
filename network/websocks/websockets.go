@@ -2,15 +2,18 @@ package websocks
 
 import (
 	"errors"
+	"pandora-pay/gui"
 	"pandora-pay/network/api"
+	"strconv"
 	"sync"
+	"time"
 )
 
 type Websockets struct {
 	AllAddresses  sync.Map
 	All           []*AdvancedConnection
-	Clients       uint64
-	ServerClients uint64
+	Clients       int
+	ServerClients int
 	apiWebsockets *api.APIWebsockets
 	api           *api.API
 	sync.RWMutex  `json:"-"`
@@ -35,9 +38,9 @@ func (websockets *Websockets) closedConnection(conn *AdvancedConnection, connTyp
 	}
 
 	if connType {
-		websockets.Clients += 1
+		websockets.Clients -= 1
 	} else {
-		websockets.ServerClients += 1
+		websockets.ServerClients -= 1
 	}
 }
 
@@ -48,7 +51,7 @@ func (websockets *Websockets) NewConnection(conn *AdvancedConnection, connType b
 	_, exists := websockets.AllAddresses.LoadOrStore(addr, conn)
 	if exists {
 		conn.Conn.Close()
-		return errors.New("Already connected ")
+		return errors.New("Already connected")
 	}
 
 	websockets.Lock()
@@ -78,6 +81,15 @@ func CreateWebsockets(api *api.API, apiWebsockets *api.APIWebsockets) *Websocket
 		api:           api,
 		apiWebsockets: apiWebsockets,
 	}
+
+	go func() {
+		for {
+			websockets.RLock()
+			gui.InfoUpdate("sockets", strconv.Itoa(websockets.Clients)+" "+strconv.Itoa(websockets.ServerClients))
+			websockets.RUnlock()
+			time.Sleep(1 * time.Second)
+		}
+	}()
 
 	return websockets
 }

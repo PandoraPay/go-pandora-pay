@@ -8,7 +8,6 @@ import (
 type KnownNode struct {
 	Url    *url.URL
 	UrlStr string
-	Score  int32
 	IsSeed bool
 }
 
@@ -32,10 +31,9 @@ func (knownNodes *KnownNodes) AddKnownNode(url *url.URL, isSeed bool) (result bo
 	defer knownNodes.Unlock()
 
 	knownNode = &KnownNode{
-		url,
-		urlString,
-		0,
-		isSeed,
+		Url:    url,
+		UrlStr: urlString,
+		IsSeed: isSeed,
 	}
 
 	if found, exists := knownNodes.KnownMap.LoadOrStore(urlString, knownNode); exists {

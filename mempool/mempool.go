@@ -150,8 +150,8 @@ func InitMemPool() (mempool *Mempool) {
 
 	go func() {
 		for {
-			time.Sleep(60 * time.Second)
 			mempool.print()
+			time.Sleep(60 * time.Second)
 		}
 	}()
 

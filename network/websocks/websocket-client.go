@@ -27,7 +27,7 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 		websockets: websockets,
 	}
 
-	c, _, err := websocket.DefaultDialer.Dial(knownNode.Url.String(), nil)
+	c, _, err := websocket.DefaultDialer.Dial(knownNode.UrlStr, nil)
 	if err != nil {
 		return
 	}

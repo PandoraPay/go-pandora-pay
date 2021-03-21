@@ -106,15 +106,20 @@ func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) (out interf
 func (c *AdvancedConnection) readPump() {
 
 	defer func() {
-		c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+		close(c.closed)
 		c.Conn.Close()
 	}()
 
-	var err error
 	for {
 		c.Conn.SetReadLimit(int64(config.WEBSOCKETS_MAX_READ))
+
+		_, read, err := c.Conn.ReadMessage()
+		if err != nil {
+			break
+		}
+
 		message := new(AdvancedConnectionMessage)
-		if err = c.Conn.ReadJSON(&message); err != nil {
+		if err = json.Unmarshal(read, &message); err != nil {
 			continue
 		}
 
@@ -151,9 +156,7 @@ func (c *AdvancedConnection) readPump() {
 
 func (c *AdvancedConnection) writePump() {
 	defer func() {
-		c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
 		c.Conn.Close()
-		close(c.closed)
 	}()
 
 	var err error

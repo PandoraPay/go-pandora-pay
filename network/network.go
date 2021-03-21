@@ -20,9 +20,8 @@ type Network struct {
 }
 
 func (network *Network) execute() {
-	go func() {
 
-		gui.Log("connecting to: ")
+	for {
 
 		var knownNode *known_nodes.KnownNode
 		network.KnownNodes.RLock()
@@ -31,15 +30,18 @@ func (network *Network) execute() {
 		}
 		network.KnownNodes.RUnlock()
 
-		_, exists := network.websockets.AllAddresses.Load(knownNode.Url.String())
+		gui.Log("connecting to: " + knownNode.Url.String())
 
+		_, exists := network.websockets.AllAddresses.Load(knownNode.Url.String())
 		if knownNode != nil && !exists {
-			websocks.CreateWebsocketClient(network.websockets, knownNode)
+			_, err := websocks.CreateWebsocketClient(network.websockets, knownNode)
+			if err != nil && err.Error() != "Already connected" {
+
+			}
 		}
 
-		time.Sleep(100 * time.Millisecond)
-
-	}()
+		time.Sleep(250 * time.Millisecond)
+	}
 }
 
 func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) *Network {
@@ -57,7 +59,7 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 		websockets: tcpServer.HttpServer.Websockets,
 	}
 
-	network.execute()
+	go network.execute()
 
 	return network
 }
