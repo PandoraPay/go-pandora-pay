@@ -5,6 +5,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/network/api"
 	"pandora-pay/network/api-websockets"
+	"pandora-pay/network/websocks/connection"
 	"strconv"
 	"sync"
 	"time"
@@ -12,7 +13,7 @@ import (
 
 type Websockets struct {
 	AllAddresses  sync.Map
-	All           []*AdvancedConnection
+	All           []*connection.AdvancedConnection
 	Clients       int
 	ServerClients int
 	apiWebsockets *api_websockets.APIWebsockets
@@ -22,7 +23,7 @@ type Websockets struct {
 
 func (websockets *Websockets) Broadcast(name []byte, data interface{}) {
 	websockets.RLock()
-	all := make([]*AdvancedConnection, len(websockets.All))
+	all := make([]*connection.AdvancedConnection, len(websockets.All))
 	copy(all, websockets.All)
 	defer websockets.RUnlock()
 
@@ -31,8 +32,10 @@ func (websockets *Websockets) Broadcast(name []byte, data interface{}) {
 	}
 }
 
-func (websockets *Websockets) closedConnection(conn *AdvancedConnection, connType bool) {
-	<-conn.closed
+func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnection, connType bool) {
+
+	<-conn.Closed
+
 	addr := conn.Conn.RemoteAddr().String()
 	conn2, exists := websockets.AllAddresses.LoadAndDelete(addr)
 	if !exists || conn2 != conn {
@@ -56,7 +59,7 @@ func (websockets *Websockets) closedConnection(conn *AdvancedConnection, connTyp
 	}
 }
 
-func (websockets *Websockets) NewConnection(conn *AdvancedConnection, connType bool) error {
+func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection, connType bool) error {
 
 	addr := conn.Conn.RemoteAddr().String()
 
@@ -76,8 +79,8 @@ func (websockets *Websockets) NewConnection(conn *AdvancedConnection, connType b
 		websockets.ServerClients += 1
 	}
 
-	go conn.readPump()
-	go conn.writePump()
+	go conn.ReadPump()
+	go conn.WritePump()
 	go websockets.closedConnection(conn, connType)
 
 	return nil
@@ -89,7 +92,7 @@ func CreateWebsockets(api *api.API, apiWebsockets *api_websockets.APIWebsockets)
 		AllAddresses:  sync.Map{},
 		Clients:       0,
 		ServerClients: 0,
-		All:           []*AdvancedConnection{},
+		All:           []*connection.AdvancedConnection{},
 		api:           api,
 		apiWebsockets: apiWebsockets,
 	}

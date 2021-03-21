@@ -6,11 +6,12 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/mempool"
+	"pandora-pay/network/websocks/connection"
 	"pandora-pay/settings"
 )
 
 type APIWebsockets struct {
-	GetMap  map[string]func(values []byte) interface{}
+	GetMap  map[string]func(conn *connection.AdvancedConnection, values []byte) interface{}
 	chain   *blockchain.Blockchain
 	mempool *mempool.Mempool
 }
@@ -23,7 +24,7 @@ func (api *APIWebsockets) ValidateHandshake(handshake *APIHandshake) error {
 	return nil
 }
 
-func (api *APIWebsockets) handshake(values []byte) interface{} {
+func (api *APIWebsockets) handshake(conn *connection.AdvancedConnection, values []byte) interface{} {
 	handshake := APIHandshake{}
 	if err := json.Unmarshal(values, &handshake); err != nil {
 		panic(err)
@@ -41,7 +42,7 @@ func CreateWebsocketsAPI(chain *blockchain.Blockchain, settings *settings.Settin
 		mempool: mempool,
 	}
 
-	api.GetMap = map[string]func(values []byte) interface{}{
+	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) interface{}{
 		"handshake": api.handshake,
 	}
 

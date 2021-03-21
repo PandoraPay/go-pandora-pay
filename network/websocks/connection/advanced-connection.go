@@ -1,4 +1,4 @@
-package websocks
+package connection
 
 import (
 	"bytes"
@@ -19,8 +19,8 @@ type AdvancedConnectionMessage struct {
 }
 
 type AdvancedConnectionAnswer struct {
-	out []byte
-	err error
+	Out []byte
+	Err error
 }
 
 type AdvancedConnection struct {
@@ -28,8 +28,8 @@ type AdvancedConnection struct {
 	send          chan *AdvancedConnectionMessage
 	answerCounter uint32
 	answerMap     map[uint32]chan *AdvancedConnectionAnswer
-	websockets    *Websockets
-	closed        chan struct{}
+	Closed        chan struct{}
+	getMap        map[string]func(conn *AdvancedConnection, values []byte) interface{}
 	sync.RWMutex  `json:"-"`
 }
 
@@ -66,11 +66,11 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data inter
 		select {
 		case out, ok := <-c.answerMap[replyBackId]:
 			if ok == false {
-				return &AdvancedConnectionAnswer{err: errors.New("Timeout - Closed channel")}
+				return &AdvancedConnectionAnswer{Err: errors.New("Timeout - Closed channel")}
 			}
 			return out
 		case <-time.NewTicker(config.WEBSOCKETS_TIMEOUT).C:
-			return &AdvancedConnectionAnswer{err: errors.New("Timeout")}
+			return &AdvancedConnectionAnswer{Err: errors.New("Timeout")}
 		}
 	}
 	return nil
@@ -91,9 +91,9 @@ func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) (out interf
 	}()
 
 	route := string(message.Name)
-	var callback func(values []byte) interface{}
-	if callback = c.websockets.apiWebsockets.GetMap[route]; callback != nil {
-		out = callback(message.Data)
+	var callback func(conn *AdvancedConnection, values []byte) interface{}
+	if callback = c.getMap[route]; callback != nil {
+		out = callback(c, message.Data)
 		return
 	}
 
@@ -101,10 +101,10 @@ func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) (out interf
 	return
 }
 
-func (c *AdvancedConnection) readPump() {
+func (c *AdvancedConnection) ReadPump() {
 
 	defer func() {
-		close(c.closed)
+		close(c.Closed)
 		c.Conn.Close()
 	}()
 
@@ -138,10 +138,10 @@ func (c *AdvancedConnection) readPump() {
 
 			output := &AdvancedConnectionAnswer{}
 			if bytes.Equal(message.Name, []byte{1}) {
-				output.out = message.Data
+				output.Out = message.Data
 			} else {
-				if err = json.Unmarshal(message.Data, &output.err); err != nil {
-					output.err = errors.New("Error decoding received error")
+				if err = json.Unmarshal(message.Data, &output.Err); err != nil {
+					output.Err = errors.New("Error decoding received error")
 				}
 			}
 
@@ -160,7 +160,7 @@ func (c *AdvancedConnection) readPump() {
 
 }
 
-func (c *AdvancedConnection) writePump() {
+func (c *AdvancedConnection) WritePump() {
 	defer func() {
 		c.Conn.Close()
 	}()
@@ -183,13 +183,13 @@ func (c *AdvancedConnection) writePump() {
 
 }
 
-func CreateAdvancedConnection(conn *websocket.Conn, websockets *Websockets) *AdvancedConnection {
+func CreateAdvancedConnection(conn *websocket.Conn, getMap map[string]func(conn *AdvancedConnection, values []byte) interface{}) *AdvancedConnection {
 	return &AdvancedConnection{
 		Conn:          conn,
 		send:          make(chan *AdvancedConnectionMessage),
-		closed:        make(chan struct{}),
+		Closed:        make(chan struct{}),
 		answerCounter: 0,
 		answerMap:     make(map[uint32]chan *AdvancedConnectionAnswer),
-		websockets:    websockets,
+		getMap:        getMap,
 	}
 }

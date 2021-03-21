@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/websocket"
 	"net/http"
 	"pandora-pay/gui"
+	"pandora-pay/network/websocks/connection"
 )
 
 type WebsocketServer struct {
@@ -19,7 +20,7 @@ func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r
 		return
 	}
 
-	conn := CreateAdvancedConnection(c, wserver.websockets)
+	conn := connection.CreateAdvancedConnection(c, wserver.websockets.apiWebsockets.GetMap)
 	if err = wserver.websockets.NewConnection(conn, false); err != nil {
 		return
 	}

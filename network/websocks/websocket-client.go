@@ -7,11 +7,12 @@ import (
 	"pandora-pay/config"
 	api_websockets "pandora-pay/network/api-websockets"
 	"pandora-pay/network/known-nodes"
+	"pandora-pay/network/websocks/connection"
 )
 
 type WebsocketClient struct {
 	knownNode           *known_nodes.KnownNode
-	conn                *AdvancedConnection
+	conn                *connection.AdvancedConnection
 	websockets          *Websockets
 	handshakeValidation bool
 }
@@ -32,7 +33,7 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 		return
 	}
 
-	wsClient.conn = CreateAdvancedConnection(c, websockets)
+	wsClient.conn = connection.CreateAdvancedConnection(c, websockets.apiWebsockets.GetMap)
 	if err = websockets.NewConnection(wsClient.conn, true); err != nil {
 		return
 	}
@@ -45,13 +46,13 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 		return nil, errors.New("Handshake was not received")
 	}
 
-	if out.err != nil {
+	if out.Err != nil {
 		wsClient.Close()
-		return nil, out.err
+		return nil, out.Err
 	}
 	handshakeServer := new(api_websockets.APIHandshake)
 
-	if err = json.Unmarshal(out.out, &handshakeServer); err != nil {
+	if err = json.Unmarshal(out.Out, &handshakeServer); err != nil {
 		wsClient.Close()
 		return nil, errors.New("Handshake received was invalid")
 	}
