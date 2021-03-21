@@ -8,6 +8,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
+	"pandora-pay/settings"
 	"strconv"
 	"sync/atomic"
 	"unsafe"
@@ -140,7 +141,7 @@ func (api *API) readLocalBlockchain(newChain *blockchain.Blockchain) {
 	atomic.StorePointer(&api.localChain, unsafe.Pointer(&newLocalChain))
 }
 
-func CreateAPI(chain *blockchain.Blockchain, mempool *mempool.Mempool) *API {
+func CreateAPI(chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *API {
 
 	api := API{
 		chain:   chain,
@@ -161,9 +162,11 @@ func CreateAPI(chain *blockchain.Blockchain, mempool *mempool.Mempool) *API {
 
 	go func() {
 		for {
-			newChain := <-api.chain.UpdateNewChainChannel
-			//it is safe to read
-			api.readLocalBlockchain(newChain)
+			newChain, ok := <-api.chain.UpdateNewChainChannel
+			if ok {
+				//it is safe to read
+				api.readLocalBlockchain(newChain)
+			}
 		}
 	}()
 

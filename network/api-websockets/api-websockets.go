@@ -1,4 +1,4 @@
-package api
+package api_websockets
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/mempool"
+	"pandora-pay/settings"
 )
 
 type APIWebsockets struct {
@@ -33,7 +34,7 @@ func (api *APIWebsockets) handshake(values []byte) interface{} {
 	return &APIHandshake{config.NAME, config.VERSION, string(config.NETWORK_SELECTED)}
 }
 
-func CreateWebsocketsAPI(chain *blockchain.Blockchain, mempool *mempool.Mempool) *APIWebsockets {
+func CreateWebsocketsAPI(chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
 
 	api := APIWebsockets{
 		chain:   chain,

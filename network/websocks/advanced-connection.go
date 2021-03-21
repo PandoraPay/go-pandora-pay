@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/websocket"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
-	"pandora-pay/network/api"
 	"sync"
 	"time"
 )
@@ -29,8 +28,7 @@ type AdvancedConnection struct {
 	send          chan *AdvancedConnectionMessage
 	answerCounter uint32
 	answerMap     map[uint32]chan *AdvancedConnectionAnswer
-	api           *api.API
-	apiWebsockets *api.APIWebsockets
+	websockets    *Websockets
 	closed        chan struct{}
 	sync.RWMutex  `json:"-"`
 }
@@ -94,7 +92,7 @@ func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) (out interf
 
 	route := string(message.Name)
 	var callback func(values []byte) interface{}
-	if callback = c.apiWebsockets.GetMap[route]; callback != nil {
+	if callback = c.websockets.apiWebsockets.GetMap[route]; callback != nil {
 		out = callback(message.Data)
 		return
 	}
@@ -127,26 +125,34 @@ func (c *AdvancedConnection) readPump() {
 
 			var out interface{}
 			out, err = c.get(message)
-			if err != nil {
-				c.sendNow(message.Answer, []byte{0}, out, false, true)
-			} else {
-				c.sendNow(message.Answer, []byte{1}, out, false, true)
+
+			if message.Answer != 0 {
+				if err != nil {
+					c.sendNow(message.Answer, []byte{0}, out, false, true)
+				} else {
+					c.sendNow(message.Answer, []byte{1}, out, false, true)
+				}
 			}
 
 		} else {
+
+			output := &AdvancedConnectionAnswer{}
+			if bytes.Equal(message.Name, []byte{1}) {
+				output.out = message.Data
+			} else {
+				if err = json.Unmarshal(message.Data, &output.err); err != nil {
+					output.err = errors.New("Error decoding received error")
+				}
+			}
+
 			c.RLock()
 			cn := c.answerMap[message.Answer]
 			if cn != nil {
 				delete(c.answerMap, message.Answer)
 			}
 			c.RUnlock()
+
 			if cn != nil {
-				output := &AdvancedConnectionAnswer{}
-				if bytes.Equal(message.Name, []byte{1}) {
-					output.out = message.Data
-				} else {
-					json.Unmarshal(message.Data, &output.err)
-				}
 				cn <- output
 			}
 		}
@@ -177,14 +183,13 @@ func (c *AdvancedConnection) writePump() {
 
 }
 
-func CreateAdvancedConnection(conn *websocket.Conn, api *api.API, apiWebsockets *api.APIWebsockets) *AdvancedConnection {
+func CreateAdvancedConnection(conn *websocket.Conn, websockets *Websockets) *AdvancedConnection {
 	return &AdvancedConnection{
 		Conn:          conn,
 		send:          make(chan *AdvancedConnectionMessage),
 		closed:        make(chan struct{}),
 		answerCounter: 0,
 		answerMap:     make(map[uint32]chan *AdvancedConnectionAnswer),
-		api:           api,
-		apiWebsockets: apiWebsockets,
+		websockets:    websockets,
 	}
 }

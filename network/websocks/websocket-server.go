@@ -7,8 +7,8 @@ import (
 )
 
 type WebsocketServer struct {
-	upgrader websocket.Upgrader
-	sockets  *Websockets
+	upgrader   websocket.Upgrader
+	websockets *Websockets
 }
 
 func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r *http.Request) {
@@ -19,18 +19,18 @@ func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r
 		return
 	}
 
-	conn := CreateAdvancedConnection(c, wserver.sockets.api, wserver.sockets.apiWebsockets)
-	if err = wserver.sockets.NewConnection(conn, false); err != nil {
+	conn := CreateAdvancedConnection(c, wserver.websockets)
+	if err = wserver.websockets.NewConnection(conn, false); err != nil {
 		return
 	}
 
 }
 
-func CreateWebsocketServer(sockets *Websockets) *WebsocketServer {
+func CreateWebsocketServer(websockets *Websockets) *WebsocketServer {
 
 	wserver := &WebsocketServer{
-		upgrader: websocket.Upgrader{},
-		sockets:  sockets,
+		upgrader:   websocket.Upgrader{},
+		websockets: websockets,
 	}
 
 	http.HandleFunc("/ws", wserver.handleUpgradeConnection)

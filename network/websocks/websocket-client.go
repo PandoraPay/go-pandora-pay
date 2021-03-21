@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/gorilla/websocket"
 	"pandora-pay/config"
-	"pandora-pay/network/api"
+	api_websockets "pandora-pay/network/api-websockets"
 	"pandora-pay/network/known-nodes"
 )
 
@@ -32,12 +32,12 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 		return
 	}
 
-	wsClient.conn = CreateAdvancedConnection(c, websockets.api, websockets.apiWebsockets)
+	wsClient.conn = CreateAdvancedConnection(c, websockets)
 	if err = websockets.NewConnection(wsClient.conn, true); err != nil {
 		return
 	}
 
-	handshake := &api.APIHandshake{config.NAME, config.VERSION, string(config.NETWORK_SELECTED)}
+	handshake := &api_websockets.APIHandshake{config.NAME, config.VERSION, string(config.NETWORK_SELECTED)}
 	out := wsClient.conn.SendAwaitAnswer([]byte("handshake"), handshake)
 
 	if out == nil {
@@ -49,7 +49,7 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 		wsClient.Close()
 		return nil, out.err
 	}
-	handshakeServer := new(api.APIHandshake)
+	handshakeServer := new(api_websockets.APIHandshake)
 
 	if err = json.Unmarshal(out.out, &handshakeServer); err != nil {
 		wsClient.Close()

@@ -10,17 +10,17 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api"
+	"pandora-pay/network/api-websockets"
 	"pandora-pay/network/websocks"
 	"pandora-pay/settings"
 )
 
 type HttpServer struct {
-	chain           *blockchain.Blockchain
 	tcpListener     net.Listener
 	Websockets      *websocks.Websockets
 	websocketServer *websocks.WebsocketServer
-	api             *api.API
-	apiWebsockets   *api.APIWebsockets
+	Api             *api.API
+	ApiWebsockets   *api_websockets.APIWebsockets
 	getMap          map[string]func(values *url.Values) interface{}
 }
 
@@ -53,7 +53,7 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
 func (server *HttpServer) initialize() {
 
-	for key, callback := range server.api.GetMap {
+	for key, callback := range server.Api.GetMap {
 		http.HandleFunc("/"+key, server.get)
 		server.getMap["/"+key] = callback
 	}
@@ -69,19 +69,18 @@ func (server *HttpServer) initialize() {
 
 func CreateHttpServer(tcpListener net.Listener, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *HttpServer {
 
-	apiWebsockets := api.CreateWebsocketsAPI(chain, mempool)
-	api := api.CreateAPI(chain, mempool)
+	apiWebsockets := api_websockets.CreateWebsocketsAPI(chain, settings, mempool)
+	api := api.CreateAPI(chain, settings, mempool)
 
 	websockets := websocks.CreateWebsockets(api, apiWebsockets)
 
 	server := &HttpServer{
-		chain:           chain,
 		tcpListener:     tcpListener,
 		websocketServer: websocks.CreateWebsocketServer(websockets),
 		Websockets:      websockets,
 		getMap:          make(map[string]func(values *url.Values) interface{}),
-		api:             api,
-		apiWebsockets:   apiWebsockets,
+		Api:             api,
+		ApiWebsockets:   apiWebsockets,
 	}
 	server.initialize()
 

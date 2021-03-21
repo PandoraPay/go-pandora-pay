@@ -6,9 +6,10 @@ import (
 )
 
 type KnownNode struct {
-	Url    *url.URL
-	UrlStr string
-	IsSeed bool
+	Url         *url.URL
+	UrlStr      string
+	UrlHostOnly string
+	IsSeed      bool
 }
 
 type KnownNodes struct {
@@ -31,9 +32,10 @@ func (knownNodes *KnownNodes) AddKnownNode(url *url.URL, isSeed bool) (result bo
 	defer knownNodes.Unlock()
 
 	knownNode = &KnownNode{
-		Url:    url,
-		UrlStr: urlString,
-		IsSeed: isSeed,
+		Url:         url,
+		UrlStr:      urlString,
+		UrlHostOnly: url.Host,
+		IsSeed:      isSeed,
 	}
 
 	if found, exists := knownNodes.KnownMap.LoadOrStore(urlString, knownNode); exists {

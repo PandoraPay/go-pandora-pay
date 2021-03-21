@@ -11,5 +11,3 @@ type APIBlockchain struct {
 	Target          string
 	TotalDifficulty string
 }
-
-type APIHandshake = []string

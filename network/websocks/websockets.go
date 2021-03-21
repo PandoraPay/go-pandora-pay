@@ -4,6 +4,7 @@ import (
 	"errors"
 	"pandora-pay/gui"
 	"pandora-pay/network/api"
+	"pandora-pay/network/api-websockets"
 	"strconv"
 	"sync"
 	"time"
@@ -14,9 +15,20 @@ type Websockets struct {
 	All           []*AdvancedConnection
 	Clients       int
 	ServerClients int
-	apiWebsockets *api.APIWebsockets
+	apiWebsockets *api_websockets.APIWebsockets
 	api           *api.API
 	sync.RWMutex  `json:"-"`
+}
+
+func (websockets *Websockets) Broadcast(name []byte, data interface{}) {
+	websockets.RLock()
+	all := make([]*AdvancedConnection, len(websockets.All))
+	copy(all, websockets.All)
+	defer websockets.RUnlock()
+
+	for _, conn := range all {
+		conn.Send(name, data)
+	}
 }
 
 func (websockets *Websockets) closedConnection(conn *AdvancedConnection, connType bool) {
@@ -71,7 +83,7 @@ func (websockets *Websockets) NewConnection(conn *AdvancedConnection, connType b
 	return nil
 }
 
-func CreateWebsockets(api *api.API, apiWebsockets *api.APIWebsockets) *Websockets {
+func CreateWebsockets(api *api.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
 		AllAddresses:  sync.Map{},
