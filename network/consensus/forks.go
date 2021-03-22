@@ -1,7 +1,7 @@
 package consensus
 
 import (
-	"math/rand"
+	"pandora-pay/config"
 	"sync"
 )
 
@@ -11,13 +11,21 @@ type Forks struct {
 	sync.RWMutex `json:"-"`
 }
 
-func (forks *Forks) getRandomFork() *Fork {
+func (forks *Forks) getBestFork() (selectedFork *Fork) {
 	forks.RLock()
 	defer forks.RUnlock()
 	if len(forks.list) > 0 {
-		return forks.list[rand.Intn(len(forks.list))]
+		bigTotalDifficulty := config.BIG_INT_ZERO
+		for _, fork := range forks.list {
+			fork.RLock()
+			if !fork.ready && fork.bigTotalDifficulty.Cmp(bigTotalDifficulty) > 0 {
+				bigTotalDifficulty = fork.bigTotalDifficulty
+				selectedFork = fork
+			}
+			fork.RUnlock()
+		}
 	}
-	return nil
+	return
 }
 
 func (forks *Forks) removeFork(fork *Fork) {

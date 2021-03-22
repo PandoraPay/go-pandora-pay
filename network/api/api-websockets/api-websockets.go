@@ -26,7 +26,7 @@ func (api *APIWebsockets) ValidateHandshake(handshake *APIHandshake) error {
 	return nil
 }
 
-func (api *APIWebsockets) handshake(conn *connection.AdvancedConnection, values []byte) interface{} {
+func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) interface{} {
 	handshake := APIHandshake{}
 	if err := json.Unmarshal(values, &handshake); err != nil {
 		panic(err)
@@ -37,14 +37,28 @@ func (api *APIWebsockets) handshake(conn *connection.AdvancedConnection, values 
 	return &APIHandshake{config.NAME, config.VERSION, string(config.NETWORK_SELECTED)}
 }
 
-func (api *APIWebsockets) hash(conn *connection.AdvancedConnection, values []byte) interface{} {
-
+func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []byte) interface{} {
 	blockHeight := APIBlockHeight(0)
 	if err := json.Unmarshal(values, &blockHeight); err != nil {
 		panic(err)
 	}
-
 	return api.ApiStore.LoadBlockHash(blockHeight)
+}
+
+func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values []byte) interface{} {
+	blockHeight := APIBlockHeight(0)
+	if err := json.Unmarshal(values, &blockHeight); err != nil {
+		panic(err)
+	}
+	return api.ApiStore.LoadBlockWithTXsFromHeight(blockHeight)
+}
+
+func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) interface{} {
+	blockHeight := APIBlockHeight(0)
+	if err := json.Unmarshal(values, &blockHeight); err != nil {
+		panic(err)
+	}
+	return api.ApiStore.LoadBlockCompleteFromHeight(blockHeight)
 }
 
 func CreateWebsocketsAPI(apiStore *api_store.APIStore, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
@@ -56,8 +70,10 @@ func CreateWebsocketsAPI(apiStore *api_store.APIStore, chain *blockchain.Blockch
 	}
 
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) interface{}{
-		"handshake": api.handshake,
-		"hash":      api.hash,
+		"handshake":      api.getHandshake,
+		"hash":           api.getHash,
+		"block":          api.getBlock,
+		"block-complete": api.getBlockComplete,
 	}
 
 	return &api

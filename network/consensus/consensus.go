@@ -52,8 +52,8 @@ func (consensus *Consensus) processFork(fork *Fork) {
 			}
 		}
 
-		conn := fork.getRandomConn()
-		answer := conn.SendAwaitAnswer([]byte("hash"), api_websockets.APIBlockHeight(i-1))
+		conn := fork.conns[0]
+		answer := conn.SendAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockHeight(i-1))
 		if answer.Err != nil {
 			fork.errors += 1
 			if fork.errors > 2 {
@@ -103,7 +103,7 @@ func (consensus *Consensus) execute() {
 	go func() {
 		for {
 
-			fork := consensus.forks.getRandomFork()
+			fork := consensus.forks.getBestFork()
 			if fork != nil {
 				consensus.processFork(fork)
 			}

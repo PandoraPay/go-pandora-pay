@@ -8,14 +8,16 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 type AdvancedConnectionMessage struct {
-	Answer uint32
-	Reply  bool
-	Name   []byte
-	Data   []byte
+	ReplyId     uint32
+	ReplyStatus bool
+	ReplyAwait  bool
+	Name        []byte
+	Data        []byte
 }
 
 type AdvancedConnectionAnswer struct {
@@ -27,27 +29,17 @@ type AdvancedConnection struct {
 	Conn          *websocket.Conn
 	send          chan *AdvancedConnectionMessage
 	answerCounter uint32
-	answerMap     map[uint32]chan *AdvancedConnectionAnswer
 	Closed        chan struct{}
 	getMap        map[string]func(conn *AdvancedConnection, values []byte) interface{}
+	answerMap     map[uint32]chan *AdvancedConnectionAnswer
 	sync.RWMutex  `json:"-"`
 }
 
 func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data interface{}, await, reply bool) *AdvancedConnectionAnswer {
 
 	if await && replyBackId == 0 {
+		replyBackId = atomic.AddUint32(&c.answerCounter, 1)
 		c.Lock()
-		c.answerCounter += 1
-		if c.answerCounter == 0 {
-			c.answerCounter = 1
-		}
-		for c.answerMap[c.answerCounter] != nil {
-			c.answerCounter += 1
-			if c.answerCounter == 0 {
-				c.answerCounter = 1
-			}
-		}
-		replyBackId = c.answerCounter
 		c.answerMap[replyBackId] = make(chan *AdvancedConnectionAnswer)
 		c.Unlock()
 	}
@@ -57,6 +49,7 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data inter
 	message := &AdvancedConnectionMessage{
 		replyBackId,
 		reply,
+		await,
 		name,
 		marshal,
 	}
@@ -120,16 +113,16 @@ func (c *AdvancedConnection) ReadPump() {
 			continue
 		}
 
-		if message.Answer == 0 || !message.Reply {
+		if message.ReplyAwait || !message.ReplyStatus {
 
 			var out interface{}
 			out, err = c.get(message)
 
-			if message.Answer != 0 {
+			if !message.ReplyAwait {
 				if err != nil {
-					c.sendNow(message.Answer, []byte{0}, out, false, true)
+					c.sendNow(message.ReplyId, []byte{0}, err, false, true)
 				} else {
-					c.sendNow(message.Answer, []byte{1}, out, false, true)
+					c.sendNow(message.ReplyId, []byte{1}, out, false, true)
 				}
 			}
 
@@ -144,12 +137,12 @@ func (c *AdvancedConnection) ReadPump() {
 				}
 			}
 
-			c.RLock()
-			cn := c.answerMap[message.Answer]
+			c.Lock()
+			cn := c.answerMap[message.ReplyId]
 			if cn != nil {
-				delete(c.answerMap, message.Answer)
+				delete(c.answerMap, message.ReplyId)
 			}
-			c.RUnlock()
+			c.Unlock()
 
 			if cn != nil {
 				cn <- output

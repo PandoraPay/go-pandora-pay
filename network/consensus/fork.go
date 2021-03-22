@@ -31,6 +31,7 @@ func (fork *Fork) getRandomConn() *connection.AdvancedConnection {
 	return nil
 }
 
+//fork2 must be locked before
 func (fork *Fork) mergeFork(fork2 *Fork) bool {
 
 	if fork2.processing {
