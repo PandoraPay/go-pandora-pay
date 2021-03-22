@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/gorilla/websocket"
 	"pandora-pay/config"
-	api_websockets "pandora-pay/network/api-websockets"
+	api_websockets "pandora-pay/network/api/api-websockets"
 	"pandora-pay/network/known-nodes"
 	"pandora-pay/network/websocks/connection"
 )

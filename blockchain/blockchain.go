@@ -21,27 +21,20 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"pandora-pay/store"
-	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
+	"unsafe"
 )
 
 type Blockchain struct {
-	Hash                  []byte //32
-	PrevHash              []byte //32
-	KernelHash            []byte //32
-	PrevKernelHash        []byte //32
-	Height                uint64
-	Timestamp             uint64
-	Target                *big.Int
-	BigTotalDifficulty    *big.Int
-	Transactions          uint64           //count of the number of txs
-	Sync                  bool             `json:"-"`
-	UpdateChannel         chan uint64      `json:"-"`
-	UpdateNewChainChannel chan *Blockchain `json:"-"`
-	forging               *forging.Forging `json:"-"`
-	mempool               *mempool.Mempool `json:"-"`
-	mutex                 sync.Mutex       `json:"-"`
+	ChainData             unsafe.Pointer       //using atomic storePointer
+	Sync                  bool                 `json:"-"`
+	UpdateChannel         chan uint64          `json:"-"`
+	UpdateNewChainChannel chan *BlockchainData `json:"-"`
+	forging               *forging.Forging     `json:"-"`
+	mempool               *mempool.Mempool     `json:"-"`
+	mutex                 sync.Mutex           `json:"-"` //writing mutex
 	sync.RWMutex          `json:"-"`
 }
 
@@ -61,23 +54,22 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	//avoid processing the same function twice
 	chain.mutex.Lock()
 
-	gui.Info(fmt.Sprintf("Including blocks %d ... %d", chain.Height, chain.Height+uint64(len(blocksComplete))))
+	chainData := (*BlockchainData)(atomic.LoadPointer(&chain.ChainData))
+	gui.Info(fmt.Sprintf("Including blocks %d ... %d", chainData.Height, chainData.Height+uint64(len(blocksComplete))))
 
 	//chain.RLock() is not required because it is guaranteed that no other thread is writing now in the chain
-	var newChain = Blockchain{
-		Hash:               chain.Hash,
-		PrevHash:           chain.PrevHash,
-		KernelHash:         chain.KernelHash,
-		PrevKernelHash:     chain.PrevKernelHash,
-		Height:             chain.Height,
-		Timestamp:          chain.Timestamp,
-		Target:             chain.Target,
-		BigTotalDifficulty: chain.BigTotalDifficulty,
-		Transactions:       chain.Transactions,
-		forging:            chain.forging,
-		mempool:            chain.mempool,
+	var newChainData = &BlockchainData{
+		Hash:               chainData.Hash,
+		PrevHash:           chainData.PrevHash,
+		KernelHash:         chainData.KernelHash,
+		PrevKernelHash:     chainData.PrevKernelHash,
+		Height:             chainData.Height,
+		Timestamp:          chainData.Timestamp,
+		Target:             chainData.Target,
+		BigTotalDifficulty: chainData.BigTotalDifficulty,
+		Transactions:       chainData.Transactions,
 	}
-	mainChainBigTotalDifficulty := chain.BigTotalDifficulty
+	mainChainBigTotalDifficulty := chainData.BigTotalDifficulty
 
 	var accs *accounts.Accounts
 	var toks *tokens.Tokens
@@ -105,13 +97,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 			//recover, but in case the chain was correctly saved and the mewChainDifficulty is higher than
 			//we should store it
-			if savedBlock && mainChainBigTotalDifficulty.Cmp(newChain.BigTotalDifficulty) < 0 {
+			if savedBlock && mainChainBigTotalDifficulty.Cmp(newChainData.BigTotalDifficulty) < 0 {
 
 				err = nil
-				newChain.saveBlockchain(writer)
+				newChainData.saveBlockchain(writer)
 
 				for _, removedBlock := range removedBlocksHeights {
-					newChain.deleteUnusedBlocksComplete(writer, removedBlock, accs, toks)
+					chain.deleteUnusedBlocksComplete(writer, removedBlock, accs, toks)
 				}
 				for txHash := range removedTxHashes {
 					data := writer.Get([]byte("tx" + txHash))
@@ -125,20 +117,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				toks.WriteToStore()
 
 				chain.Lock()
-
 				err = boltTx.Commit()
 				if err == nil {
-					chain.Height = newChain.Height
-					chain.Hash = newChain.Hash
-					chain.PrevHash = newChain.PrevHash
-					chain.KernelHash = newChain.KernelHash
-					chain.PrevKernelHash = newChain.PrevKernelHash
-					chain.Timestamp = newChain.Timestamp
-					chain.Target = newChain.Target
-					chain.Transactions = newChain.Transactions
-					chain.BigTotalDifficulty = newChain.BigTotalDifficulty
+					atomic.StorePointer(&chain.ChainData, unsafe.Pointer(newChainData))
 				}
-
 				chain.Unlock()
 
 			} else {
@@ -162,8 +144,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 			blkComplete := blocksComplete[i]
 
-			if blkComplete.Block.Height < newChain.Height {
-				hash := newChain.LoadBlockHash(writer, blkComplete.Block.Height)
+			if blkComplete.Block.Height < newChainData.Height {
+				hash := chain.LoadBlockHash(writer, blkComplete.Block.Height)
 				if bytes.Equal(hash, blkComplete.Block.Bloom.Hash) {
 					blocksComplete = blocksComplete[i+1:]
 					break
@@ -177,32 +159,32 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		}
 
 		firstBlockComplete := blocksComplete[0]
-		if firstBlockComplete.Block.Height < newChain.Height {
-			for i := newChain.Height - 1; i >= newChain.Height; i-- {
+		if firstBlockComplete.Block.Height < newChainData.Height {
+			for i := newChainData.Height - 1; i >= newChainData.Height; i-- {
 				removedBlocksHeights = append(removedBlocksHeights, 0)
 				copy(removedBlocksHeights[1:], removedBlocksHeights)
 				removedBlocksHeights[0] = i
 
-				newChain.removeBlockComplete(writer, i, removedTxHashes, accs, toks)
+				chain.removeBlockComplete(writer, i, removedTxHashes, accs, toks)
 			}
 		}
 
-		if blocksComplete[0].Block.Height != newChain.Height {
+		if blocksComplete[0].Block.Height != newChainData.Height {
 			panic("First Block has is not matching")
 		}
 
-		if !bytes.Equal(firstBlockComplete.Block.PrevHash, newChain.Hash) {
+		if !bytes.Equal(firstBlockComplete.Block.PrevHash, newChainData.Hash) {
 			panic("First block hash is not matching chain hash")
 		}
 
-		if !bytes.Equal(firstBlockComplete.Block.PrevKernelHash, newChain.KernelHash) {
+		if !bytes.Equal(firstBlockComplete.Block.PrevKernelHash, newChainData.KernelHash) {
 			panic("First block kernel hash is not matching chain prev kerneh lash")
 		}
 
 		for i, blkComplete := range blocksComplete {
 
 			//check block height
-			if blkComplete.Block.Height != newChain.Height {
+			if blkComplete.Block.Height != newChainData.Height {
 				panic("Block Height is not right!")
 			}
 
@@ -230,21 +212,21 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				panic("Delegated stake ready amount is not enought")
 			}
 
-			if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHash, newChain.Target) != true {
+			if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHash, newChainData.Target) != true {
 				panic("KernelHash Difficulty is not met")
 			}
 
 			//already verified for i == 0
 			if i > 0 {
-				if !bytes.Equal(blkComplete.Block.PrevHash, newChain.Hash) {
+				if !bytes.Equal(blkComplete.Block.PrevHash, newChainData.Hash) {
 					panic("PrevHash doesn't match Genesis prevHash")
 				}
-				if !bytes.Equal(blkComplete.Block.PrevKernelHash, newChain.KernelHash) {
+				if !bytes.Equal(blkComplete.Block.PrevKernelHash, newChainData.KernelHash) {
 					panic("PrevHash doesn't match Genesis prevKernelHash")
 				}
 			}
 
-			if blkComplete.Block.Timestamp < newChain.Timestamp {
+			if blkComplete.Block.Timestamp < newChainData.Timestamp {
 				panic("Timestamp has to be greather than the last timestmap")
 			}
 
@@ -257,7 +239,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			//to detect if the savedBlock was done correctly
 			savedBlock = false
 
-			newTransactionsSaved := newChain.saveBlockComplete(writer, blkComplete, blkComplete.Block.Bloom.Hash, removedTxHashes, accs, toks)
+			newTransactionsSaved := chain.saveBlockComplete(writer, blkComplete, blkComplete.Block.Bloom.Hash, removedTxHashes, accs, toks)
 
 			if len(removedBlocksHeights) > 0 {
 				removedBlocksHeights = removedBlocksHeights[1:]
@@ -266,33 +248,33 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			accs.Commit() //it will commit the changes but not save them
 			toks.Commit() //it will commit the changes but not save them
 
-			newChain.PrevHash = newChain.Hash
-			newChain.Hash = blkComplete.Block.Bloom.Hash
-			newChain.PrevKernelHash = newChain.KernelHash
-			newChain.KernelHash = blkComplete.Block.Bloom.KernelHash
-			newChain.Timestamp = blkComplete.Block.Timestamp
+			newChainData.PrevHash = newChainData.Hash
+			newChainData.Hash = blkComplete.Block.Bloom.Hash
+			newChainData.PrevKernelHash = newChainData.KernelHash
+			newChainData.KernelHash = blkComplete.Block.Bloom.KernelHash
+			newChainData.Timestamp = blkComplete.Block.Timestamp
 
-			difficultyBigInt := difficulty.ConvertTargetToDifficulty(newChain.Target)
-			newChain.BigTotalDifficulty = new(big.Int).Add(newChain.BigTotalDifficulty, difficultyBigInt)
-			newChain.saveTotalDifficultyExtra(writer)
+			difficultyBigInt := difficulty.ConvertTargetToDifficulty(newChainData.Target)
+			newChainData.BigTotalDifficulty = new(big.Int).Add(newChainData.BigTotalDifficulty, difficultyBigInt)
+			newChainData.saveTotalDifficultyExtra(writer)
 
-			newChain.Target = newChain.computeNextTargetBig(writer)
+			newChainData.Target = newChainData.computeNextTargetBig(writer)
 
-			newChain.Height += 1
-			newChain.Transactions += uint64(len(blkComplete.Txs))
+			newChainData.Height += 1
+			newChainData.Transactions += uint64(len(blkComplete.Txs))
 			insertedBlocks = append(insertedBlocks, blkComplete)
 
 			for _, txHashId := range newTransactionsSaved {
 				insertedTxHashes = append(insertedTxHashes, txHashId)
 			}
 
-			writer.Put([]byte("chainHash"), newChain.Hash)
-			writer.Put([]byte("chainPrevHash"), newChain.PrevHash)
-			writer.Put([]byte("chainKernelHash"), newChain.KernelHash)
-			writer.Put([]byte("chainPrevKernelHash"), newChain.PrevKernelHash)
+			writer.Put([]byte("chainHash"), newChainData.Hash)
+			writer.Put([]byte("chainPrevHash"), newChainData.PrevHash)
+			writer.Put([]byte("chainKernelHash"), newChainData.KernelHash)
+			writer.Put([]byte("chainPrevKernelHash"), newChainData.PrevKernelHash)
 
 			buf := make([]byte, binary.MaxVarintLen64)
-			n := binary.PutUvarint(buf, newChain.Height)
+			n := binary.PutUvarint(buf, newChainData.Height)
 			writer.Put([]byte("chainHeight"), buf[:n])
 
 			savedBlock = true
@@ -310,30 +292,30 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	}
 
 	gui.Warning("-------------------------------------------")
-	gui.Warning(fmt.Sprintf("Including blocks %d | TXs: %d | Hash %s", len(insertedBlocks), len(insertedTxHashes), hex.EncodeToString(chain.Hash)))
+	gui.Warning(fmt.Sprintf("Including blocks %d | TXs: %d | Hash %s", len(insertedBlocks), len(insertedTxHashes), hex.EncodeToString(chainData.Hash)))
 	gui.Warning("-------------------------------------------")
-	newChain.updateChainInfo()
+	newChainData.updateChainInfo()
 
-	chain.UpdateChannel <- newChain.Height //sending 1
-	chain.UpdateNewChainChannel <- &newChain
+	chain.UpdateChannel <- newChainData.Height //sending 1
+	chain.UpdateNewChainChannel <- newChainData
 
 	//accs will only be read only
-	newChain.forging.Wallet.UpdateBalanceChanges(accs)
+	chain.forging.Wallet.UpdateBalanceChanges(accs)
 
 	//create next block and the workers will be automatically reset
-	newChain.createNextBlockForForging()
+	chain.createNextBlockForForging()
 
 	for _, txData := range removedTx {
 		tx := transaction.Transaction{}
 		tx.Deserialize(helpers.NewBufferReader(txData), true)
-		newChain.mempool.AddTxToMemPoolSilent(&tx, newChain.Height, false)
+		chain.mempool.AddTxToMemPoolSilent(&tx, newChainData.Height, false)
 	}
 
 	for _, txHash := range insertedTxHashes {
-		newChain.mempool.Delete(txHash)
+		chain.mempool.Delete(txHash)
 	}
 
-	newChain.mempool.UpdateWork(newChain.Hash, newChain.Height)
+	chain.mempool.UpdateWork(newChainData.Hash, newChainData.Height)
 
 	result = true
 	return
@@ -351,7 +333,7 @@ func BlockchainInit(forging *forging.Forging, mempool *mempool.Mempool) (chain *
 		mempool:               mempool,
 		Sync:                  false,
 		UpdateChannel:         make(chan uint64),
-		UpdateNewChainChannel: make(chan *Blockchain),
+		UpdateNewChainChannel: make(chan *BlockchainData),
 	}
 
 	success, err := chain.loadBlockchain()
@@ -363,40 +345,12 @@ func BlockchainInit(forging *forging.Forging, mempool *mempool.Mempool) (chain *
 		chain.init()
 	}
 
-	chain.updateChainInfo()
+	chainData := (*BlockchainData)(atomic.LoadPointer(&chain.ChainData))
+	chainData.updateChainInfo()
+
 	chain.initForging()
 
 	return
-}
-
-func (chain *Blockchain) initForging() {
-
-	go func() {
-
-		for {
-
-			blkComplete := <-chain.forging.SolutionChannel
-			blkComplete.BloomNow()
-			blkComplete.Block.BloomNow()
-
-			array := []*block_complete.BlockComplete{blkComplete}
-
-			result, err := chain.AddBlocks(array, true)
-			if err == nil && result {
-				gui.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
-			} else if err != nil {
-				gui.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
-				chain.mempool.RestartWork()
-			} else {
-				gui.Warning("Forging block  return false "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
-			}
-
-		}
-
-	}()
-
-	go chain.createNextBlockForForging()
-
 }
 
 func (chain *Blockchain) Close() {

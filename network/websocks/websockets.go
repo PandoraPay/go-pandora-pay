@@ -3,8 +3,8 @@ package websocks
 import (
 	"errors"
 	"pandora-pay/gui"
-	"pandora-pay/network/api"
-	"pandora-pay/network/api-websockets"
+	api_http "pandora-pay/network/api/api-http"
+	"pandora-pay/network/api/api-websockets"
 	"pandora-pay/network/websocks/connection"
 	"strconv"
 	"sync"
@@ -17,7 +17,7 @@ type Websockets struct {
 	Clients       int
 	ServerClients int
 	apiWebsockets *api_websockets.APIWebsockets
-	api           *api.API
+	api           *api_http.API
 	sync.RWMutex  `json:"-"`
 }
 
@@ -86,7 +86,7 @@ func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection,
 	return nil
 }
 
-func CreateWebsockets(api *api.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
+func CreateWebsockets(api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
 		AllAddresses:  sync.Map{},

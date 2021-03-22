@@ -1,4 +1,4 @@
-package api
+package api_http
 
 import (
 	"encoding/hex"
@@ -8,6 +8,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
+	api_store "pandora-pay/network/api/api-store"
 	"pandora-pay/settings"
 	"strconv"
 	"sync/atomic"
@@ -19,6 +20,7 @@ type API struct {
 	chain      *blockchain.Blockchain
 	mempool    *mempool.Mempool
 	localChain unsafe.Pointer
+	apiStore   *api_store.APIStore
 }
 
 func (api *API) getBlockchain(values *url.Values) interface{} {
@@ -52,14 +54,14 @@ func (api *API) getBlockComplete(values *url.Values) interface{} {
 		if err != nil {
 			panic("parameter 'height' is not a number")
 		}
-		return api.loadBlockCompleteFromHeight(uint64(height))
+		return api.apiStore.LoadBlockCompleteFromHeight(uint64(height))
 	}
 	if values.Get("hash") != "" {
 		hash, err := hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			panic("parameter 'hash' was is not a valid hex number")
 		}
-		return api.loadBlockCompleteFromHash(hash)
+		return api.apiStore.LoadBlockCompleteFromHash(hash)
 	}
 	panic("parameter 'hash' or 'height' are missing")
 }
@@ -70,14 +72,14 @@ func (api *API) getBlock(values *url.Values) interface{} {
 		if err != nil {
 			panic("parameter 'height' is not a number")
 		}
-		return api.loadBlockWithTXsFromHeight(uint64(height))
+		return api.apiStore.LoadBlockWithTXsFromHeight(uint64(height))
 	}
 	if values.Get("hash") != "" {
 		hash, err := hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			panic("parameter 'hash' was is not a valid hex number")
 		}
-		return api.loadBlockWithTXsFromHash(hash)
+		return api.apiStore.LoadBlockWithTXsFromHash(hash)
 	}
 	panic("parameter 'hash' or 'height' are missing")
 }
@@ -88,7 +90,7 @@ func (api *API) getTx(values *url.Values) interface{} {
 		if err != nil {
 			panic("parameter 'hash' was is not a valid hex number")
 		}
-		return api.loadTxFromHash(hash)
+		return api.apiStore.LoadTxFromHash(hash)
 	}
 	panic("parameter 'hash' was not specified ")
 }
@@ -96,14 +98,14 @@ func (api *API) getTx(values *url.Values) interface{} {
 func (api *API) getBalance(values *url.Values) interface{} {
 	if values.Get("address") != "" {
 		address := addresses.DecodeAddr(values.Get("address"))
-		return api.loadAccountFromPublicKeyHash(address.PublicKeyHash)
+		return api.apiStore.LoadAccountFromPublicKeyHash(address.PublicKeyHash)
 	}
 	if values.Get("hash") != "" {
 		hash, err := hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			panic(err)
 		}
-		return api.loadAccountFromPublicKeyHash(hash)
+		return api.apiStore.LoadAccountFromPublicKeyHash(hash)
 	}
 	panic("parameter 'address' or 'hash' was not specified")
 }
@@ -113,7 +115,7 @@ func (api *API) getToken(values *url.Values) interface{} {
 	if err != nil {
 		panic(err)
 	}
-	return api.loadTokenFromPublicKeyHash(hash)
+	return api.apiStore.LoadTokenFromPublicKeyHash(hash)
 }
 
 func (api *API) getMempool(values *url.Values) interface{} {
@@ -126,26 +128,27 @@ func (api *API) getMempool(values *url.Values) interface{} {
 }
 
 //make sure it is safe to read
-func (api *API) readLocalBlockchain(newChain *blockchain.Blockchain) {
+func (api *API) readLocalBlockchain(newChainData *blockchain.BlockchainData) {
 	newLocalChain := APIBlockchain{
-		Height:          newChain.Height,
-		Hash:            hex.EncodeToString(newChain.Hash),
-		PrevHash:        hex.EncodeToString(newChain.PrevHash),
-		KernelHash:      hex.EncodeToString(newChain.KernelHash),
-		PrevKernelHash:  hex.EncodeToString(newChain.PrevKernelHash),
-		Timestamp:       newChain.Timestamp,
-		Transactions:    newChain.Transactions,
-		Target:          newChain.Target.String(),
-		TotalDifficulty: newChain.BigTotalDifficulty.String(),
+		Height:          newChainData.Height,
+		Hash:            hex.EncodeToString(newChainData.Hash),
+		PrevHash:        hex.EncodeToString(newChainData.PrevHash),
+		KernelHash:      hex.EncodeToString(newChainData.KernelHash),
+		PrevKernelHash:  hex.EncodeToString(newChainData.PrevKernelHash),
+		Timestamp:       newChainData.Timestamp,
+		Transactions:    newChainData.Transactions,
+		Target:          newChainData.Target.String(),
+		TotalDifficulty: newChainData.BigTotalDifficulty.String(),
 	}
 	atomic.StorePointer(&api.localChain, unsafe.Pointer(&newLocalChain))
 }
 
-func CreateAPI(chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *API {
+func CreateAPI(apiStore *api_store.APIStore, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *API {
 
 	api := API{
-		chain:   chain,
-		mempool: mempool,
+		chain:    chain,
+		mempool:  mempool,
+		apiStore: apiStore,
 	}
 
 	api.GetMap = map[string]func(values *url.Values) interface{}{
@@ -162,17 +165,15 @@ func CreateAPI(chain *blockchain.Blockchain, settings *settings.Settings, mempoo
 
 	go func() {
 		for {
-			newChain, ok := <-api.chain.UpdateNewChainChannel
+			newChainData, ok := <-api.chain.UpdateNewChainChannel
 			if ok {
 				//it is safe to read
-				api.readLocalBlockchain(newChain)
+				api.readLocalBlockchain(newChainData)
 			}
 		}
 	}()
 
-	chain.RLock()
-	api.readLocalBlockchain(chain)
-	chain.RUnlock()
+	api.readLocalBlockchain(chain.GetChainData())
 
 	return &api
 }

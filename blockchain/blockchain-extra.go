@@ -1,12 +1,10 @@
 package blockchain
 
 import (
-	"encoding/hex"
 	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block-complete"
-	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
@@ -15,17 +13,27 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/store"
 	"strconv"
+	"sync/atomic"
+	"unsafe"
 )
+
+func (chain *Blockchain) GetChainData() *BlockchainData {
+	pointer := atomic.LoadPointer(&chain.ChainData)
+	return (*BlockchainData)(pointer)
+}
 
 func (chain *Blockchain) init() {
 
-	chain.Height = 0
-	chain.Hash = genesis.GenesisData.Hash
-	chain.PrevHash = genesis.GenesisData.Hash
-	chain.KernelHash = genesis.GenesisData.KernelHash
-	chain.PrevKernelHash = genesis.GenesisData.KernelHash
-	chain.Target = new(big.Int).SetBytes(genesis.GenesisData.Target)
-	chain.BigTotalDifficulty = new(big.Int).SetUint64(0)
+	chainData := &BlockchainData{
+		Height:             0,
+		Hash:               genesis.GenesisData.Hash,
+		PrevHash:           genesis.GenesisData.Hash,
+		KernelHash:         genesis.GenesisData.KernelHash,
+		PrevKernelHash:     genesis.GenesisData.KernelHash,
+		Target:             new(big.Int).SetBytes(genesis.GenesisData.Target),
+		BigTotalDifficulty: new(big.Int).SetUint64(0),
+	}
+	atomic.StorePointer(&chain.ChainData, unsafe.Pointer(chainData))
 
 	var tok = token.Token{
 		Version:          0,
@@ -56,33 +64,15 @@ func (chain *Blockchain) init() {
 	}
 }
 
-func (chain *Blockchain) computeNextTargetBig(bucket *bolt.Bucket) *big.Int {
-
-	if config.DIFFICULTY_BLOCK_WINDOW > chain.Height {
-		return chain.Target
-	}
-
-	first := chain.Height - config.DIFFICULTY_BLOCK_WINDOW
-
-	firstDifficulty, firstTimestamp := chain.loadTotalDifficultyExtra(bucket, first)
-
-	lastDifficulty := chain.BigTotalDifficulty
-	lastTimestamp := chain.Timestamp
-
-	deltaTotalDifficulty := new(big.Int).Sub(lastDifficulty, firstDifficulty)
-	deltaTime := lastTimestamp - firstTimestamp
-
-	return difficulty.NextTargetBig(deltaTotalDifficulty, deltaTime)
-}
-
 func (chain *Blockchain) createNextBlockForForging() {
 
 	chain.RLock()
-	target := chain.Target
+	chainData := (*BlockchainData)(atomic.LoadPointer(&chain.ChainData))
+	target := chainData.Target
 
 	var blk *block.Block
 	var err error
-	if chain.Height == 0 {
+	if chainData.Height == 0 {
 		if blk, err = genesis.CreateNewGenesisBlock(); err != nil {
 			chain.RUnlock()
 			gui.Error("Error creating next block", err)
@@ -92,15 +82,15 @@ func (chain *Blockchain) createNextBlockForForging() {
 
 		var blockHeader = block.BlockHeader{
 			Version: 0,
-			Height:  chain.Height,
+			Height:  chainData.Height,
 		}
 
 		blk = &block.Block{
 			BlockHeader:    blockHeader,
 			MerkleHash:     cryptography.SHA3Hash([]byte{}),
-			PrevHash:       chain.Hash,
-			PrevKernelHash: chain.KernelHash,
-			Timestamp:      chain.Timestamp,
+			PrevHash:       chainData.Hash,
+			PrevKernelHash: chainData.KernelHash,
+			Timestamp:      chainData.Timestamp,
 		}
 
 	}
@@ -117,10 +107,32 @@ func (chain *Blockchain) createNextBlockForForging() {
 	chain.forging.RestartForgingWorkers(blkComplete, target)
 }
 
-func (chain *Blockchain) updateChainInfo() {
-	gui.Info2Update("Blocks", strconv.FormatUint(chain.Height, 10))
-	gui.Info2Update("Chain  Hash", hex.EncodeToString(chain.Hash))
-	gui.Info2Update("Chain KHash", hex.EncodeToString(chain.KernelHash))
-	gui.Info2Update("Chain  Diff", chain.Target.String())
-	gui.Info2Update("TXs", strconv.FormatUint(chain.Transactions, 10))
+func (chain *Blockchain) initForging() {
+
+	go func() {
+
+		for {
+
+			blkComplete := <-chain.forging.SolutionChannel
+			blkComplete.BloomNow()
+			blkComplete.Block.BloomNow()
+
+			array := []*block_complete.BlockComplete{blkComplete}
+
+			result, err := chain.AddBlocks(array, true)
+			if err == nil && result {
+				gui.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
+			} else if err != nil {
+				gui.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
+				chain.mempool.RestartWork()
+			} else {
+				gui.Warning("Forging block  return false "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
+			}
+
+		}
+
+	}()
+
+	go chain.createNextBlockForForging()
+
 }

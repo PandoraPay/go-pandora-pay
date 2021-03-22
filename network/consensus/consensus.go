@@ -23,9 +23,9 @@ type Consensus struct {
 }
 
 //must be safe to read
-func (consensus *Consensus) updateChain(newChain *blockchain.Blockchain) {
+func (consensus *Consensus) updateChain(newChainData *blockchain.BlockchainData) {
 	chainLastUpdate := ChainLastUpdate{
-		BigTotalDifficulty: newChain.BigTotalDifficulty,
+		BigTotalDifficulty: newChainData.BigTotalDifficulty,
 	}
 	atomic.StorePointer(&consensus.chainLastUpdate, unsafe.Pointer(&chainLastUpdate))
 }
@@ -34,15 +34,15 @@ func (consensus *Consensus) execute() {
 
 	go func() {
 		for {
-			newchain, ok := <-consensus.chain.UpdateNewChainChannel
+			newChainData, ok := <-consensus.chain.UpdateNewChainChannel
 			if ok {
 				//it is safe to read
-				consensus.updateChain(newchain)
+				consensus.updateChain(newChainData)
 				consensus.httpServer.Websockets.Broadcast([]byte("chain"), &ChainUpdateNotification{
-					End:                newchain.Height,
-					Hash:               newchain.Hash,
-					PrevHash:           newchain.PrevHash,
-					BigTotalDifficulty: newchain.BigTotalDifficulty,
+					End:                newChainData.Height,
+					Hash:               newChainData.Hash,
+					PrevHash:           newChainData.PrevHash,
+					BigTotalDifficulty: newChainData.BigTotalDifficulty,
 				})
 			}
 
@@ -72,7 +72,7 @@ func (consensus *Consensus) execute() {
 						fork2.RUnlock()
 						break
 					}
-					exists = fork.prevHash
+					//exists = fork.prevHash
 				}
 			}
 
@@ -81,9 +81,7 @@ func (consensus *Consensus) execute() {
 	}()
 
 	//initialize first time
-	consensus.chain.RLock()
-	consensus.updateChain(consensus.chain)
-	consensus.chain.RUnlock()
+	consensus.updateChain(consensus.chain.GetChainData())
 }
 
 func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, values []byte) interface{} {

@@ -3,7 +3,6 @@ package blockchain
 import (
 	"encoding/json"
 	bolt "go.etcd.io/bbolt"
-	"math/big"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block-complete"
@@ -11,6 +10,8 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"strconv"
+	"sync/atomic"
+	"unsafe"
 )
 
 func (chain *Blockchain) LoadBlock(bucket *bolt.Bucket, hash []byte) (blk *block.Block) {
@@ -95,48 +96,6 @@ func (chain *Blockchain) LoadBlockHash(bucket *bolt.Bucket, height uint64) []byt
 	return bucket.Get(key)
 }
 
-//chain must be locked before
-func (chain *Blockchain) saveTotalDifficultyExtra(bucket *bolt.Bucket) {
-	key := []byte("totalDifficulty" + strconv.FormatUint(chain.Height, 10))
-
-	writer := helpers.NewBufferWriter()
-	writer.WriteUvarint(chain.Timestamp)
-
-	bytes := chain.BigTotalDifficulty.Bytes()
-	writer.WriteUvarint(uint64(len(bytes)))
-	writer.Write(bytes)
-
-	bucket.Put(key, writer.Bytes())
-}
-
-func (chain *Blockchain) loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64) {
-	if height < 0 {
-		panic("height is invalid")
-	}
-	key := []byte("totalDifficulty" + strconv.FormatUint(height, 10))
-
-	buf := bucket.Get(key)
-	if buf == nil {
-		panic("Couldn't ready difficulty from DB")
-	}
-
-	reader := helpers.NewBufferReader(buf)
-	timestamp = reader.ReadUvarint()
-	length := reader.ReadUvarint()
-	bytes := reader.ReadBytes(int(length))
-	difficulty = new(big.Int).SetBytes(bytes)
-	return
-}
-
-func (chain *Blockchain) saveBlockchain(bucket *bolt.Bucket) {
-	marshal, err := json.Marshal(chain)
-	if err != nil {
-		panic(err)
-	}
-
-	bucket.Put([]byte("blockchainInfo"), marshal)
-}
-
 func (chain *Blockchain) loadBlockchain() (success bool, err error) {
 
 	err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
@@ -145,15 +104,19 @@ func (chain *Blockchain) loadBlockchain() (success bool, err error) {
 		defer chain.Unlock()
 
 		reader := boltTx.Bucket([]byte("Chain"))
-		chainData := reader.Get([]byte("blockchainInfo"))
-		if chainData == nil {
+		chainInfoData := reader.Get([]byte("blockchainInfo"))
+		if chainInfoData == nil {
 			return nil
 		}
 
-		if err = json.Unmarshal(chainData, &chain); err != nil {
+		chainData := BlockchainData{}
+
+		if err = json.Unmarshal(chainInfoData, &chainData); err != nil {
 			return err
 		}
 		success = true
+
+		atomic.StorePointer(&chain.ChainData, unsafe.Pointer(&chainData))
 
 		return nil
 	})
