@@ -36,7 +36,6 @@ type AdvancedConnection struct {
 func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data interface{}, await, reply bool) *AdvancedConnectionAnswer {
 
 	if await && replyBackId == 0 {
-
 		c.Lock()
 		c.answerCounter += 1
 		if c.answerCounter == 0 {

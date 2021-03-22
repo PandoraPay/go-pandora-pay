@@ -38,8 +38,13 @@ func (network *Network) execute() {
 
 			if knownNode != nil && !exists {
 				_, err := websocks.CreateWebsocketClient(network.Websockets, knownNode)
-				if err != nil && err.Error() != "Already connected" {
-
+				if err != nil {
+					if err.Error() != "Already connected" {
+						continue
+					}
+					gui.Log("error connecting to: " + knownNode.UrlStr)
+				} else {
+					gui.Log("connected to: " + knownNode.UrlStr)
 				}
 			}
 		}

@@ -104,6 +104,17 @@ func (apiStore *APIStore) LoadTokenFromPublicKeyHash(publicKeyHash []byte) (tok 
 	return
 }
 
+func (apiStore *APIStore) LoadBlockHash(blockHeight uint64) (hash []byte) {
+	if err := store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+		reader := boltTx.Bucket([]byte("Chain"))
+		hash = apiStore.chain.LoadBlockHash(reader, blockHeight)
+		return nil
+	}); err != nil {
+		panic(err)
+	}
+	return
+}
+
 func (apiStore *APIStore) LoadBlockComplete(bucket *bolt.Bucket, hash []byte) *block_complete.BlockComplete {
 
 	blk := apiStore.chain.LoadBlock(bucket, hash)

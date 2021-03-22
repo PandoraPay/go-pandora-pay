@@ -1,11 +1,12 @@
 package consensus
 
 import (
+	"bytes"
 	"encoding/json"
-	"math/rand"
 	"pandora-pay/blockchain"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/mempool"
+	api_websockets "pandora-pay/network/api/api-websockets"
 	node_http "pandora-pay/network/server/node-http"
 	"pandora-pay/network/websocks/connection"
 	"sync"
@@ -30,6 +31,55 @@ func (consensus *Consensus) updateChain(newChainData *blockchain.BlockchainData)
 	atomic.StorePointer(&consensus.chainLastUpdate, unsafe.Pointer(&chainLastUpdate))
 }
 
+func (consensus *Consensus) processFork(fork *Fork) {
+
+	fork.Lock()
+	defer fork.Lock()
+
+	if !fork.ready {
+		return
+	}
+	prevHash := fork.prevHash
+
+	for i := fork.start; i >= 0; i-- {
+
+		fork2Data, exists := consensus.forks.hashes.LoadOrStore(string(prevHash), fork)
+		if exists { //let's merge
+			fork2 := fork2Data.(*Fork)
+			if fork2.mergeFork(fork) {
+				consensus.forks.removeFork(fork)
+				return
+			}
+		}
+
+		conn := fork.getRandomConn()
+		answer := conn.SendAwaitAnswer([]byte("hash"), api_websockets.APIBlockHeight(i-1))
+		if answer.Err != nil {
+			fork.errors += 1
+			if fork.errors > 2 {
+				consensus.forks.removeFork(fork)
+				return
+			}
+		} else {
+			prevHash := answer.Out
+
+			chainHash := consensus.httpServer.ApiWebsockets.ApiStore.LoadBlockHash(i - 1)
+			if len(chainHash) > 0 {
+				if bytes.Equal(prevHash, chainHash) {
+					fork.ready = true
+					return
+				}
+			}
+
+			fork.start -= 1
+			if fork.errors >= -10 {
+				fork.errors -= 1
+			}
+		}
+	}
+
+}
+
 func (consensus *Consensus) execute() {
 
 	go func() {
@@ -52,31 +102,13 @@ func (consensus *Consensus) execute() {
 	//discover forks
 	go func() {
 		for {
-			var fork *Fork
-			consensus.forks.RLock()
-			if len(consensus.forks.list) > 0 {
-				fork = consensus.forks.list[rand.Intn(len(consensus.forks.list))]
-			}
-			consensus.forks.RUnlock()
 
+			fork := consensus.forks.getRandomFork()
 			if fork != nil {
-				for i := fork.start; i >= 0; i-- {
-					prevHash := fork.prevHashes[0]
-					fork2Data, exists := consensus.forks.hashes.LoadOrStore(string(prevHash), fork)
-					if exists { //let's merge
-						fork2 := fork2Data.(*Fork)
-						fork2.RLock()
-						if !fork2.processing {
-							fork2.mergeFork(fork)
-						}
-						fork2.RUnlock()
-						break
-					}
-					//exists = fork.prevHash
-				}
+				consensus.processFork(fork)
 			}
 
-			time.Sleep(100 * time.Second)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
@@ -106,7 +138,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 			start:              chainUpdateNotification.End,
 			end:                chainUpdateNotification.End,
 			hashes:             [][]byte{chainUpdateNotification.Hash},
-			prevHashes:         [][]byte{chainUpdateNotification.PrevHash},
+			prevHash:           chainUpdateNotification.PrevHash,
 			bigTotalDifficulty: chainUpdateNotification.BigTotalDifficulty,
 			blocks:             make([]*block_complete.BlockComplete, 0),
 			conns:              []*connection.AdvancedConnection{conn},

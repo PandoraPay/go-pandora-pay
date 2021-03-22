@@ -125,7 +125,8 @@ func (mempool *Mempool) Delete(txId []byte) (tx *transaction.Transaction) {
 
 	for i, txOut := range mempool.txs.txsList {
 		if txOut.Tx.Bloom.HashStr == hashStr {
-			mempool.txs.txsList[len(mempool.txs.txsList)-1], mempool.txs.txsList[i] = mempool.txs.txsList[i], mempool.txs.txsList[len(mempool.txs.txsList)-1]
+			//order is not important
+			mempool.txs.txsList[i] = mempool.txs.txsList[len(mempool.txs.txsList)-1]
 			mempool.txs.txsList = mempool.txs.txsList[:len(mempool.txs.txsList)-1]
 			mempool.txs.txsCount -= 1
 			break

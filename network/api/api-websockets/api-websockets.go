@@ -15,7 +15,7 @@ type APIWebsockets struct {
 	GetMap   map[string]func(conn *connection.AdvancedConnection, values []byte) interface{}
 	chain    *blockchain.Blockchain
 	mempool  *mempool.Mempool
-	apiStore *api_store.APIStore
+	ApiStore *api_store.APIStore
 }
 
 func (api *APIWebsockets) ValidateHandshake(handshake *APIHandshake) error {
@@ -44,7 +44,7 @@ func (api *APIWebsockets) hash(conn *connection.AdvancedConnection, values []byt
 		panic(err)
 	}
 
-	return nil
+	return api.ApiStore.LoadBlockHash(blockHeight)
 }
 
 func CreateWebsocketsAPI(apiStore *api_store.APIStore, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
@@ -52,7 +52,7 @@ func CreateWebsocketsAPI(apiStore *api_store.APIStore, chain *blockchain.Blockch
 	api := APIWebsockets{
 		chain:    chain,
 		mempool:  mempool,
-		apiStore: apiStore,
+		ApiStore: apiStore,
 	}
 
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) interface{}{

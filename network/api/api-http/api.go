@@ -20,7 +20,7 @@ type API struct {
 	chain      *blockchain.Blockchain
 	mempool    *mempool.Mempool
 	localChain unsafe.Pointer
-	apiStore   *api_store.APIStore
+	ApiStore   *api_store.APIStore
 }
 
 func (api *API) getBlockchain(values *url.Values) interface{} {
@@ -54,14 +54,14 @@ func (api *API) getBlockComplete(values *url.Values) interface{} {
 		if err != nil {
 			panic("parameter 'height' is not a number")
 		}
-		return api.apiStore.LoadBlockCompleteFromHeight(uint64(height))
+		return api.ApiStore.LoadBlockCompleteFromHeight(uint64(height))
 	}
 	if values.Get("hash") != "" {
 		hash, err := hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			panic("parameter 'hash' was is not a valid hex number")
 		}
-		return api.apiStore.LoadBlockCompleteFromHash(hash)
+		return api.ApiStore.LoadBlockCompleteFromHash(hash)
 	}
 	panic("parameter 'hash' or 'height' are missing")
 }
@@ -72,14 +72,14 @@ func (api *API) getBlock(values *url.Values) interface{} {
 		if err != nil {
 			panic("parameter 'height' is not a number")
 		}
-		return api.apiStore.LoadBlockWithTXsFromHeight(uint64(height))
+		return api.ApiStore.LoadBlockWithTXsFromHeight(uint64(height))
 	}
 	if values.Get("hash") != "" {
 		hash, err := hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			panic("parameter 'hash' was is not a valid hex number")
 		}
-		return api.apiStore.LoadBlockWithTXsFromHash(hash)
+		return api.ApiStore.LoadBlockWithTXsFromHash(hash)
 	}
 	panic("parameter 'hash' or 'height' are missing")
 }
@@ -90,7 +90,7 @@ func (api *API) getTx(values *url.Values) interface{} {
 		if err != nil {
 			panic("parameter 'hash' was is not a valid hex number")
 		}
-		return api.apiStore.LoadTxFromHash(hash)
+		return api.ApiStore.LoadTxFromHash(hash)
 	}
 	panic("parameter 'hash' was not specified ")
 }
@@ -98,14 +98,14 @@ func (api *API) getTx(values *url.Values) interface{} {
 func (api *API) getBalance(values *url.Values) interface{} {
 	if values.Get("address") != "" {
 		address := addresses.DecodeAddr(values.Get("address"))
-		return api.apiStore.LoadAccountFromPublicKeyHash(address.PublicKeyHash)
+		return api.ApiStore.LoadAccountFromPublicKeyHash(address.PublicKeyHash)
 	}
 	if values.Get("hash") != "" {
 		hash, err := hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			panic(err)
 		}
-		return api.apiStore.LoadAccountFromPublicKeyHash(hash)
+		return api.ApiStore.LoadAccountFromPublicKeyHash(hash)
 	}
 	panic("parameter 'address' or 'hash' was not specified")
 }
@@ -115,7 +115,7 @@ func (api *API) getToken(values *url.Values) interface{} {
 	if err != nil {
 		panic(err)
 	}
-	return api.apiStore.LoadTokenFromPublicKeyHash(hash)
+	return api.ApiStore.LoadTokenFromPublicKeyHash(hash)
 }
 
 func (api *API) getMempool(values *url.Values) interface{} {
@@ -148,7 +148,7 @@ func CreateAPI(apiStore *api_store.APIStore, chain *blockchain.Blockchain, setti
 	api := API{
 		chain:    chain,
 		mempool:  mempool,
-		apiStore: apiStore,
+		ApiStore: apiStore,
 	}
 
 	api.GetMap = map[string]func(values *url.Values) interface{}{

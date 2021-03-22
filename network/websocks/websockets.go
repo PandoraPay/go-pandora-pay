@@ -46,6 +46,7 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 	defer websockets.Unlock()
 	for i, conn2 := range websockets.All {
 		if conn2 == conn {
+			//order is not important
 			websockets.All[i] = websockets.All[len(websockets.All)-1]
 			websockets.All = websockets.All[:len(websockets.All)-1]
 			break
