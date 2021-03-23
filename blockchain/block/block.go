@@ -13,15 +13,14 @@ import (
 
 type Block struct {
 	BlockHeader
-	MerkleHash             helpers.ByteString //32 byte
-	PrevHash               helpers.ByteString //32 byte
-	PrevKernelHash         helpers.ByteString //32 byte
-	Timestamp              uint64
-	StakingAmount          uint64
-	DelegatedPublicKeyHash helpers.ByteString // 20 byte public key. It IS NOT included in the kernel hash
-	Forger                 helpers.ByteString // 20 byte public key hash
-	Signature              helpers.ByteString // 65 byte signature
-	Bloom                  *BlockBloom
+	MerkleHash     helpers.ByteString //32 byte
+	PrevHash       helpers.ByteString //32 byte
+	PrevKernelHash helpers.ByteString //32 byte
+	Timestamp      uint64
+	StakingAmount  uint64
+	Forger         helpers.ByteString // 20 byte public key hash
+	Signature      helpers.ByteString // 65 byte signature
+	Bloom          *BlockBloom
 }
 
 func (blk *Block) Validate() error {
@@ -42,7 +41,7 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 	if blk.Height == 0 && !acc.HasDelegatedStake() {
 		acc.DelegatedStakeVersion = 1
 		acc.DelegatedStake = new(dpos.DelegatedStake)
-		acc.DelegatedStake.DelegatedPublicKeyHash = blk.DelegatedPublicKeyHash
+		acc.DelegatedStake.DelegatedPublicKeyHash = blk.Bloom.DelegatedPublicKeyHash
 	}
 
 	acc.DelegatedStake.AddStakePendingStake(reward, blk.Height)
@@ -87,7 +86,11 @@ func (blk *Block) SerializeForSigning() []byte {
 
 func (blk *Block) VerifySignatureManually() bool {
 	hash := blk.SerializeForSigning()
-	return ecdsa.VerifySignature(blk.DelegatedPublicKeyHash, hash, blk.Signature[0:64])
+	publicKey, err := ecdsa.EcrecoverCompressed(hash, blk.Signature)
+	if err != nil {
+		return false
+	}
+	return ecdsa.VerifySignature(publicKey, hash, blk.Signature[0:64])
 }
 
 func (blk *Block) serializeBlock(kernelHash bool, inclSignature bool) []byte {
@@ -104,9 +107,7 @@ func (blk *Block) serializeBlock(kernelHash bool, inclSignature bool) []byte {
 	writer.Write(blk.PrevKernelHash)
 
 	if !kernelHash {
-
 		writer.WriteUvarint(blk.StakingAmount)
-		writer.Write(blk.DelegatedPublicKeyHash)
 	}
 
 	writer.WriteUvarint(blk.Timestamp)
@@ -142,9 +143,6 @@ func (blk *Block) Deserialize(reader *helpers.BufferReader) (err error) {
 		return
 	}
 	if blk.StakingAmount, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-	if blk.DelegatedPublicKeyHash, err = reader.ReadBytes(20); err != nil {
 		return
 	}
 	if blk.Timestamp, err = reader.ReadUvarint(); err != nil {

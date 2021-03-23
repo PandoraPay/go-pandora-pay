@@ -2,15 +2,16 @@ package block
 
 import (
 	"errors"
+	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/ecdsa"
 )
 
 type BlockBloom struct {
-	Hash             []byte
-	KernelHash       []byte
-	hashForSignature []byte
-	PublicKey        []byte
-	bloomed          bool
+	Hash                       []byte
+	KernelHash                 []byte
+	DelegatedPublicKeyHash     []byte
+	DelegatedSignatureVerified bool
+	bloomed                    bool
 }
 
 func (blk *Block) BloomNow() (err error) {
@@ -18,10 +19,20 @@ func (blk *Block) BloomNow() (err error) {
 
 	bloom.Hash = blk.ComputeHash()
 	bloom.KernelHash = blk.ComputeKernelHash()
-	bloom.hashForSignature = blk.SerializeForSigning()
-	if bloom.PublicKey, err = ecdsa.EcrecoverCompressed(bloom.hashForSignature, blk.Signature); err != nil {
+	hashForSignature := blk.SerializeForSigning()
+
+	delegatedPublicKey, err := ecdsa.EcrecoverCompressed(hashForSignature, blk.Signature)
+	if err != nil {
 		return
 	}
+
+	bloom.DelegatedPublicKeyHash = cryptography.ComputePublicKeyHash(delegatedPublicKey)
+
+	bloom.DelegatedSignatureVerified = ecdsa.VerifySignature(delegatedPublicKey, hashForSignature, blk.Signature)
+	if !bloom.DelegatedSignatureVerified {
+		return errors.New("BLock signature is invalid")
+	}
+
 	bloom.bloomed = true
 	blk.Bloom = bloom
 	return
