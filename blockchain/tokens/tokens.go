@@ -1,6 +1,7 @@
 package tokens
 
 import (
+	"errors"
 	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
@@ -12,10 +13,6 @@ type Tokens struct {
 }
 
 func NewTokens(tx *bbolt.Tx) (tokens *Tokens) {
-
-	if tx == nil {
-		panic("DB Transaction is not set")
-	}
 
 	hashMap := store.CreateNewHashMap(tx, "Tokens", 20)
 
@@ -40,16 +37,21 @@ func (tokens *Tokens) GetToken(key []byte) *token.Token {
 	return tok
 }
 
-func (tokens *Tokens) CreateToken(key []byte, tok *token.Token) {
+func (tokens *Tokens) CreateToken(key []byte, tok *token.Token) error {
+
 	if len(key) == 0 {
 		key = config.NATIVE_TOKEN_FULL
 	}
 
-	tok.Validate()
-	if tokens.ExistsToken(key) {
-		panic("token already exists")
+	if err := tok.Validate(); err != nil {
+		return err
 	}
+	if tokens.ExistsToken(key) {
+		return errors.New("token already exists")
+	}
+
 	tokens.UpdateToken(key, tok)
+	return nil
 }
 
 func (tokens *Tokens) UpdateToken(key []byte, tok *token.Token) {
@@ -80,16 +82,16 @@ func (tokens *Tokens) Commit() {
 	tokens.HashMap.Commit()
 }
 
-func (tokens *Tokens) WriteToStore() {
-	tokens.HashMap.WriteToStore()
+func (tokens *Tokens) WriteToStore() error {
+	return tokens.HashMap.WriteToStore()
 }
 
-func (tokens *Tokens) WriteTransitionalChangesToStore(prefix string) {
-	tokens.HashMap.WriteTransitionalChangesToStore(prefix)
+func (tokens *Tokens) WriteTransitionalChangesToStore(prefix string) error {
+	return tokens.HashMap.WriteTransitionalChangesToStore(prefix)
 }
-func (tokens *Tokens) ReadTransitionalChangesFromStore(prefix string) {
-	tokens.HashMap.ReadTransitionalChangesFromStore(prefix)
+func (tokens *Tokens) ReadTransitionalChangesFromStore(prefix string) error {
+	return tokens.HashMap.ReadTransitionalChangesFromStore(prefix)
 }
-func (tokens *Tokens) DeleteTransitionalChangesFromStore(prefix string) {
-	tokens.HashMap.DeleteTransitionalChangesFromStore(prefix)
+func (tokens *Tokens) DeleteTransitionalChangesFromStore(prefix string) error {
+	return tokens.HashMap.DeleteTransitionalChangesFromStore(prefix)
 }

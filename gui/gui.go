@@ -9,12 +9,14 @@ import (
 )
 
 //test
-func GUIInit() {
+func GUIInit() (err error) {
 
-	InitLogger()
+	if err = InitLogger(); err != nil {
+		return
+	}
 
-	if err := ui.Init(); err != nil {
-		panic("failed to initialize termui: " + err.Error())
+	if err = ui.Init(); err != nil {
+		return
 	}
 	//defer ui.Close()
 
@@ -66,13 +68,13 @@ func GUIInit() {
 		}
 	}()
 
-	CommandDefineCallback("Exit", func(string) {
+	CommandDefineCallback("Exit", func(string) error {
 		os.Exit(1)
-		return
+		return nil
 	})
 
 	Log("GUI Initialized")
-
+	return
 }
 
 func processArgument(any ...interface{}) string {

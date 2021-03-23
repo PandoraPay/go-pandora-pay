@@ -2,6 +2,7 @@ package block_complete
 
 import (
 	"bytes"
+	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/tokens"
@@ -18,19 +19,31 @@ type BlockComplete struct {
 	Bloom *BlockCompleteBloom
 }
 
-func (blkComplete *BlockComplete) Validate() {
-	blkComplete.Block.Validate()
-	for _, tx := range blkComplete.Txs {
-		tx.Validate()
+func (blkComplete *BlockComplete) Validate() (err error) {
+	if err = blkComplete.Block.Validate(); err != nil {
+		return
 	}
+	for _, tx := range blkComplete.Txs {
+		if err = tx.Validate(); err != nil {
+			return
+		}
+	}
+	return
 }
 
-func (blkComplete *BlockComplete) Verify() {
-	blkComplete.VerifyBloomAll()
-	blkComplete.Block.Verify()
-	for _, tx := range blkComplete.Txs {
-		tx.Verify()
+func (blkComplete *BlockComplete) Verify() (err error) {
+	if err = blkComplete.VerifyBloomAll(); err != nil {
+		return
 	}
+	if err = blkComplete.Block.Verify(); err != nil {
+		return
+	}
+	for _, tx := range blkComplete.Txs {
+		if err = tx.Verify(); err != nil {
+			return
+		}
+	}
+	return
 }
 
 func (blkComplete *BlockComplete) MerkleHash() []byte {
@@ -79,23 +92,27 @@ func (blkComplete *BlockComplete) Serialize() []byte {
 	return writer.Bytes()
 }
 
-func (blkComplete *BlockComplete) Deserialize(buf []byte) {
+func (blkComplete *BlockComplete) Deserialize(buf []byte) (err error) {
 
 	reader := helpers.NewBufferReader(buf)
 
 	if uint64(len(buf)) > config.BLOCK_MAX_SIZE {
-		panic("COMPLETE BLOCK EXCEEDS MAX SIZE")
+		return errors.New("COMPLETE BLOCK EXCEEDS MAX SIZE")
 	}
 
 	blkComplete.Block.Deserialize(reader)
 
-	txsCount := reader.ReadUvarint()
+	txsCount, err := reader.ReadUvarint()
+	if err != nil {
+		return
+	}
 	blkComplete.Txs = make([]*transaction.Transaction, txsCount)
 	for i := uint64(0); i < txsCount; i++ {
-		txLength := reader.ReadUvarint()
-		reader.ReadBytes(int(txLength))
 		blkComplete.Txs[i] = &transaction.Transaction{}
-		blkComplete.Txs[i].Deserialize(reader, true)
+		if err = blkComplete.Txs[i].Deserialize(reader, true); err != nil {
+			return
+		}
 	}
 
+	return
 }

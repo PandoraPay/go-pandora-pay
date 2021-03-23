@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"encoding/json"
+	"errors"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
@@ -14,57 +15,82 @@ import (
 	"unsafe"
 )
 
-func (chain *Blockchain) LoadBlock(bucket *bolt.Bucket, hash []byte) (blk *block.Block) {
+func (chain *Blockchain) LoadBlock(bucket *bolt.Bucket, hash []byte) (blk *block.Block, err error) {
 	blockData := bucket.Get(append([]byte("blockHash"), hash...))
 	if blockData == nil {
 		return
 	}
 	blk = &block.Block{}
-	blk.Deserialize(helpers.NewBufferReader(blockData))
+	err = blk.Deserialize(helpers.NewBufferReader(blockData))
 	return
 }
 
-func (chain *Blockchain) deleteUnusedBlocksComplete(bucket *bolt.Bucket, blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
+func (chain *Blockchain) deleteUnusedBlocksComplete(bucket *bolt.Bucket, blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
 
 	blockHeightStr := strconv.FormatUint(blockHeight, 10)
-	accs.DeleteTransitionalChangesFromStore(blockHeightStr)
-	toks.DeleteTransitionalChangesFromStore(blockHeightStr)
+	if err = accs.DeleteTransitionalChangesFromStore(blockHeightStr); err != nil {
+		return
+	}
+	if err = toks.DeleteTransitionalChangesFromStore(blockHeightStr); err != nil {
+		return
+	}
 
-	bucket.Delete([]byte("blockHeight" + blockHeightStr))
-	bucket.Delete([]byte("blockTxs" + blockHeightStr))
+	if err = bucket.Delete([]byte("blockHeight" + blockHeightStr)); err != nil {
+		return
+	}
+	if err = bucket.Delete([]byte("blockTxs" + blockHeightStr)); err != nil {
+		return
+	}
+
+	return
 }
 
-func (chain *Blockchain) removeBlockComplete(bucket *bolt.Bucket, blockHeight uint64, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) {
+func (chain *Blockchain) removeBlockComplete(bucket *bolt.Bucket, blockHeight uint64, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
 
 	blockHeightStr := strconv.FormatUint(blockHeight, 10)
-	accs.ReadTransitionalChangesFromStore(blockHeightStr)
-	toks.ReadTransitionalChangesFromStore(blockHeightStr)
+	if err = accs.ReadTransitionalChangesFromStore(blockHeightStr); err != nil {
+		return
+	}
+	if err = toks.ReadTransitionalChangesFromStore(blockHeightStr); err != nil {
+		return
+	}
 
 	hash := bucket.Get([]byte("blockHeight" + blockHeightStr))
-	bucket.Delete(append([]byte("blockHash"), hash...))
+	if err = bucket.Delete(append([]byte("blockHash"), hash...)); err != nil {
+		return
+	}
 
 	data := bucket.Get([]byte("blockTxs" + blockHeightStr))
 	txHashes := [][]byte{} //32 byte
 
-	if err := json.Unmarshal(data, &txHashes); err != nil {
-		panic(err)
+	if err = json.Unmarshal(data, &txHashes); err != nil {
+		return
 	}
+
 	for _, txHash := range txHashes {
 		removedTxHashes[string(txHash)] = txHash
 	}
-
+	return
 }
 
-func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *block_complete.BlockComplete, hash []byte, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) [][]byte {
+func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *block_complete.BlockComplete, hash []byte, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) (newTxHashes [][]byte, err error) {
 
 	blockHeightStr := strconv.FormatUint(blkComplete.Block.Height, 10)
-	accs.WriteTransitionalChangesToStore(blockHeightStr)
-	toks.WriteTransitionalChangesToStore(blockHeightStr)
+	if err = accs.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
+		return
+	}
+	if err = toks.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
+		return
+	}
 
-	bucket.Put(append([]byte("blockHash"), hash...), blkComplete.Block.Serialize())
-	bucket.Put([]byte("blockHeight"+blockHeightStr), hash)
+	if err = bucket.Put(append([]byte("blockHash"), hash...), blkComplete.Block.Serialize()); err != nil {
+		return
+	}
+	if err = bucket.Put([]byte("blockHeight"+blockHeightStr), hash); err != nil {
+		return
+	}
 
-	newTxHashes := [][]byte{}
+	newTxHashes = [][]byte{}
 
 	txHashes := make([][]byte, len(blkComplete.Txs))
 	for i, tx := range blkComplete.Txs {
@@ -73,32 +99,37 @@ func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *blo
 
 		//let's check to see if the tx block is already stored, if yes, we will skip it
 		if removedTxHashes[string(txHash)] == nil {
-			bucket.Put(append([]byte("tx"), txHash...), tx.Serialize())
+			if err = bucket.Put(append([]byte("tx"), txHash...), tx.Serialize()); err != nil {
+				return
+			}
 			newTxHashes = append(newTxHashes, txHash)
 		}
 	}
 
 	marshal, err := json.Marshal(txHashes)
 	if err != nil {
-		panic(err)
+		return
 	}
-	bucket.Put([]byte("blockTxs"+blockHeightStr), marshal)
 
-	return newTxHashes
+	if err = bucket.Put([]byte("blockTxs"+blockHeightStr), marshal); err != nil {
+		return
+	}
+
+	return
 }
 
-func (chain *Blockchain) LoadBlockHash(bucket *bolt.Bucket, height uint64) []byte {
+func (chain *Blockchain) LoadBlockHash(bucket *bolt.Bucket, height uint64) ([]byte, error) {
 	if height < 0 {
-		panic("Height is invalid")
+		return nil, errors.New("Height is invalid")
 	}
 
 	key := []byte("blockHeight" + strconv.FormatUint(height, 10))
-	return bucket.Get(key)
+	return bucket.Get(key), nil
 }
 
-func (chain *Blockchain) loadBlockchain() (success bool, err error) {
+func (chain *Blockchain) loadBlockchain() error {
 
-	err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
 		chain.Lock()
 		defer chain.Unlock()
@@ -106,7 +137,7 @@ func (chain *Blockchain) loadBlockchain() (success bool, err error) {
 		reader := boltTx.Bucket([]byte("Chain"))
 		chainInfoData := reader.Get([]byte("blockchainInfo"))
 		if chainInfoData == nil {
-			return nil
+			return errors.New("Chain not found")
 		}
 
 		chainData := BlockchainData{}
@@ -114,13 +145,10 @@ func (chain *Blockchain) loadBlockchain() (success bool, err error) {
 		if err = json.Unmarshal(chainInfoData, &chainData); err != nil {
 			return err
 		}
-		success = true
 
 		atomic.StorePointer(&chain.ChainData, unsafe.Pointer(&chainData))
 
-		return nil
+		return
 	})
-
-	return
 
 }

@@ -12,10 +12,6 @@ type Accounts struct {
 
 func NewAccounts(tx *bbolt.Tx) (accounts *Accounts) {
 
-	if tx == nil {
-		panic("DB Transaction is not set")
-	}
-
 	hashMap := store.CreateNewHashMap(tx, "Accounts", 20)
 
 	accounts = new(Accounts)
@@ -73,16 +69,16 @@ func (accounts *Accounts) Commit() {
 	accounts.HashMap.Commit()
 }
 
-func (accounts *Accounts) WriteToStore() {
-	accounts.HashMap.WriteToStore()
+func (accounts *Accounts) WriteToStore() error {
+	return accounts.HashMap.WriteToStore()
 }
 
-func (accounts *Accounts) WriteTransitionalChangesToStore(prefix string) {
-	accounts.HashMap.WriteTransitionalChangesToStore(prefix)
+func (accounts *Accounts) WriteTransitionalChangesToStore(prefix string) error {
+	return accounts.HashMap.WriteTransitionalChangesToStore(prefix)
 }
-func (accounts *Accounts) ReadTransitionalChangesFromStore(prefix string) {
-	accounts.HashMap.ReadTransitionalChangesFromStore(prefix)
+func (accounts *Accounts) ReadTransitionalChangesFromStore(prefix string) error {
+	return accounts.HashMap.ReadTransitionalChangesFromStore(prefix)
 }
-func (accounts *Accounts) DeleteTransitionalChangesFromStore(prefix string) {
-	accounts.HashMap.DeleteTransitionalChangesFromStore(prefix)
+func (accounts *Accounts) DeleteTransitionalChangesFromStore(prefix string) error {
+	return accounts.HashMap.DeleteTransitionalChangesFromStore(prefix)
 }

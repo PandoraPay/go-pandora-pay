@@ -19,10 +19,16 @@ func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter, inclS
 	}
 }
 
-func (vin *TransactionSimpleInput) Deserialize(reader *helpers.BufferReader) {
+func (vin *TransactionSimpleInput) Deserialize(reader *helpers.BufferReader) (err error) {
 
-	vin.Amount = reader.ReadUvarint()
-	vin.Signature = reader.ReadBytes(65)
-	vin.Token = reader.ReadToken()
-
+	if vin.Amount, err = reader.ReadUvarint(); err != nil {
+		return err
+	}
+	if vin.Signature, err = reader.ReadBytes(65); err != nil {
+		return err
+	}
+	if vin.Token, err = reader.ReadToken(); err != nil {
+		return err
+	}
+	return
 }

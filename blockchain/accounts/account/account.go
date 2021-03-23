@@ -2,6 +2,7 @@ package account
 
 import (
 	"bytes"
+	"errors"
 	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
@@ -15,13 +16,14 @@ type Account struct {
 	DelegatedStake        *dpos.DelegatedStake
 }
 
-func (account *Account) Validate() {
+func (account *Account) Validate() error {
 	if account.Version != 0 {
-		panic("Version is invalid")
+		return errors.New("Version is invalid")
 	}
 	if account.DelegatedStakeVersion > 1 {
-		panic("Invalid DelegatedStakeVersion version")
+		return errors.New("Invalid DelegatedStakeVersion version")
 	}
+	return nil
 }
 
 func (account *Account) HasDelegatedStake() bool {
@@ -33,11 +35,11 @@ func (account *Account) IsAccountEmpty() bool {
 		(account.HasDelegatedStake() && account.DelegatedStake.IsDelegatedStakeEmpty())
 }
 
-func (account *Account) IncrementNonce(sign bool) {
-	helpers.SafeUint64Update(sign, &account.Nonce, 1)
+func (account *Account) IncrementNonce(sign bool) error {
+	return helpers.SafeUint64Update(sign, &account.Nonce, 1)
 }
 
-func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) {
+func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) (err error) {
 
 	if amount == 0 {
 		return
@@ -61,13 +63,17 @@ func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) {
 			}
 			account.Balances = append(account.Balances, foundBalance)
 		}
-		helpers.SafeUint64Add(&foundBalance.Amount, amount)
+		if err = helpers.SafeUint64Add(&foundBalance.Amount, amount); err != nil {
+			return
+		}
 	} else {
 
 		if foundBalance == nil {
-			panic("Balance doesn't exist or would become negative")
+			return errors.New("Balance doesn't exist or would become negative")
 		}
-		helpers.SafeUint64Sub(&foundBalance.Amount, amount)
+		if err = helpers.SafeUint64Sub(&foundBalance.Amount, amount); err != nil {
+			return
+		}
 
 		if foundBalance.Amount == 0 {
 			//fast removal
@@ -77,9 +83,10 @@ func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) {
 
 	}
 
+	return
 }
 
-func (account *Account) RefreshDelegatedStake(blockHeight uint64) {
+func (account *Account) RefreshDelegatedStake(blockHeight uint64) (err error) {
 	if account.DelegatedStakeVersion == 0 {
 		return
 	}
@@ -89,9 +96,13 @@ func (account *Account) RefreshDelegatedStake(blockHeight uint64) {
 		if stakePending.ActivationHeight <= blockHeight {
 
 			if stakePending.PendingType == true {
-				helpers.SafeUint64Add(&account.DelegatedStake.StakeAvailable, stakePending.PendingAmount)
+				if err = helpers.SafeUint64Add(&account.DelegatedStake.StakeAvailable, stakePending.PendingAmount); err != nil {
+					return
+				}
 			} else {
-				account.AddBalance(true, stakePending.PendingAmount, config.NATIVE_TOKEN)
+				if err = account.AddBalance(true, stakePending.PendingAmount, config.NATIVE_TOKEN); err != nil {
+					return
+				}
 			}
 			account.DelegatedStake.StakesPending = append(account.DelegatedStake.StakesPending[:i], account.DelegatedStake.StakesPending[i+1:]...)
 		}
@@ -101,22 +112,28 @@ func (account *Account) RefreshDelegatedStake(blockHeight uint64) {
 		account.DelegatedStakeVersion = 0
 		account.DelegatedStake = nil
 	}
-
+	return
 }
 
-func (account *Account) GetDelegatedStakeAvailable(blockHeight uint64) uint64 {
+func (account *Account) GetDelegatedStakeAvailable(blockHeight uint64) (uint64, error) {
 	if account.DelegatedStakeVersion == 0 {
-		return 0
+		return 0, nil
 	}
 	return account.DelegatedStake.GetDelegatedStakeAvailable(blockHeight)
 }
 
-func (account *Account) GetAvailableBalance(blockHeight uint64, token []byte) (result uint64) {
+func (account *Account) GetAvailableBalance(blockHeight uint64, token []byte) (result uint64, err error) {
 	for _, balance := range account.Balances {
 		if bytes.Equal(balance.Token, token) {
 			result = balance.Amount
 			if bytes.Equal(token, config.NATIVE_TOKEN) && account.DelegatedStakeVersion == 1 {
-				helpers.SafeUint64Add(&result, account.DelegatedStake.GetDelegatedUnstakeAvailable(blockHeight))
+				unstake := uint64(0)
+				if unstake, err = account.DelegatedStake.GetDelegatedUnstakeAvailable(blockHeight); err != nil {
+					return
+				}
+				if err = helpers.SafeUint64Add(&result, unstake); err != nil {
+					return
+				}
 			}
 			return
 		}
@@ -144,25 +161,39 @@ func (account *Account) Serialize() []byte {
 	return writer.Bytes()
 }
 
-func (account *Account) Deserialize(buf []byte) {
+func (account *Account) Deserialize(buf []byte) (err error) {
 
 	reader := helpers.NewBufferReader(buf)
 
-	account.Version = reader.ReadUvarint()
-	account.Nonce = reader.ReadUvarint()
+	if account.Version, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	if account.Nonce, err = reader.ReadUvarint(); err != nil {
+		return
+	}
 
-	n := reader.ReadUvarint()
+	var n uint64
+	if n, err = reader.ReadUvarint(); err != nil {
+		return
+	}
 	account.Balances = make([]*Balance, n)
 	for i := uint64(0); i < n; i++ {
 		var balance = new(Balance)
-		balance.Deserialize(reader)
+		if err = balance.Deserialize(reader); err != nil {
+			return
+		}
 		account.Balances[i] = balance
 	}
 
-	account.DelegatedStakeVersion = reader.ReadUvarint()
+	if account.DelegatedStakeVersion, err = reader.ReadUvarint(); err != nil {
+		return
+	}
 	if account.DelegatedStakeVersion == 1 {
 		account.DelegatedStake = new(dpos.DelegatedStake)
-		account.DelegatedStake.Deserialize(reader)
+		if err = account.DelegatedStake.Deserialize(reader); err != nil {
+			return
+		}
 	}
 
+	return
 }

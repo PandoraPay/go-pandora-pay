@@ -21,11 +21,11 @@ func (chainData *BlockchainData) saveTotalDifficultyExtra(bucket *bolt.Bucket) {
 	bucket.Put(key, writer.Bytes())
 }
 
-func (chainData *BlockchainData) saveBlockchain(bucket *bolt.Bucket) {
+func (chainData *BlockchainData) saveBlockchain(bucket *bolt.Bucket) error {
 	marshal, err := json.Marshal(chainData)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	bucket.Put([]byte("blockchainInfo"), marshal)
+	return bucket.Put([]byte("blockchainInfo"), marshal)
 }

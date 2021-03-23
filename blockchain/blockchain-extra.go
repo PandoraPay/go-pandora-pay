@@ -22,7 +22,7 @@ func (chain *Blockchain) GetChainData() *BlockchainData {
 	return (*BlockchainData)(pointer)
 }
 
-func (chain *Blockchain) init() {
+func (chain *Blockchain) init() (err error) {
 
 	chainData := &BlockchainData{
 		Height:             0,
@@ -49,19 +49,20 @@ func (chain *Blockchain) init() {
 		SupplyKey:        config.BURN_PUBLIC_KEY_HASH,
 	}
 
-	if err := store.StoreBlockchain.DB.Update(func(boltTx *bolt.Tx) (err error) {
+	return store.StoreBlockchain.DB.Update(func(boltTx *bolt.Tx) (err error) {
 
 		toks := tokens.NewTokens(boltTx)
-		toks.CreateToken(config.NATIVE_TOKEN, &tok)
+		if err = toks.CreateToken(config.NATIVE_TOKEN, &tok); err != nil {
+		}
 
 		toks.Commit()
-		toks.WriteToStore()
+		if err = toks.WriteToStore(); err != nil {
+			return
+		}
 
 		return
 
-	}); err != nil {
-		panic(err)
-	}
+	})
 }
 
 func (chain *Blockchain) createNextBlockForForging() {
@@ -111,22 +112,25 @@ func (chain *Blockchain) initForging() {
 
 	go func() {
 
+		var err error
 		for {
 
 			blkComplete := <-chain.forging.SolutionChannel
-			blkComplete.BloomNow()
-			blkComplete.Block.BloomNow()
+			if err = blkComplete.BloomNow(); err != nil {
+				gui.Error("Error blooming forged blkComplete", err)
+			}
+			if err = blkComplete.Block.BloomNow(); err != nil {
+				gui.Error("Error blooming forged blkComplete", err)
+			}
 
 			array := []*block_complete.BlockComplete{blkComplete}
 
-			result, err := chain.AddBlocks(array, true)
-			if err == nil && result {
+			err := chain.AddBlocks(array, true)
+			if err == nil {
 				gui.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
 			} else if err != nil {
 				gui.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
 				chain.mempool.RestartWork()
-			} else {
-				gui.Warning("Forging block  return false "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
 			}
 
 		}

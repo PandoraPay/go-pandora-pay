@@ -1,28 +1,33 @@
 package block_complete
 
-import "bytes"
+import (
+	"bytes"
+	"errors"
+)
 
 type BlockCompleteBloom struct {
 	merkleTreeVerified bool
 	bloomed            bool
 }
 
-func (blkComplete *BlockComplete) BloomNow() {
+func (blkComplete *BlockComplete) BloomNow() error {
 	bloom := new(BlockCompleteBloom)
 	bloom.merkleTreeVerified = bytes.Equal(blkComplete.MerkleHash(), blkComplete.Block.MerkleHash)
 	if !bloom.merkleTreeVerified {
-		panic("Verify Merkle Hash failed")
+		return errors.New("Verify Merkle Hash failed")
 	}
 	bloom.bloomed = true
 	blkComplete.Bloom = bloom
+	return nil
 }
 
-func (blkComplete *BlockComplete) VerifyBloomAll() {
-	blkComplete.Bloom.verifyIfBloomed()
+func (blkComplete *BlockComplete) VerifyBloomAll() error {
+	return blkComplete.Bloom.verifyIfBloomed()
 }
 
-func (bloom *BlockCompleteBloom) verifyIfBloomed() {
+func (bloom *BlockCompleteBloom) verifyIfBloomed() error {
 	if !bloom.bloomed {
-		panic("block complete was not bloomed")
+		return errors.New("block complete was not bloomed")
 	}
+	return nil
 }

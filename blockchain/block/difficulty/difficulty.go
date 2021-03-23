@@ -2,6 +2,7 @@ package difficulty
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 	"pandora-pay/config"
@@ -37,7 +38,7 @@ func CheckKernelHashBig(kernelHash []byte, difficulty *big.Int) bool {
 	return new(big.Int).SetBytes(kernelHash).Cmp(difficulty) <= 0
 }
 
-func NextTargetBig(deltaTotalDifficulty *big.Int, deltaTime uint64) *big.Int {
+func NextTargetBig(deltaTotalDifficulty *big.Int, deltaTime uint64) (*big.Int, error) {
 
 	expectedTime := config.BLOCK_TIME * config.DIFFICULTY_BLOCK_WINDOW
 
@@ -63,7 +64,7 @@ func NextTargetBig(deltaTotalDifficulty *big.Int, deltaTime uint64) *big.Int {
 	str := fmt.Sprintf("%.0f", newTarget)
 	final, success := new(big.Int).SetString(str, 10)
 	if success == false {
-		panic("Error rounding new target")
+		return nil, errors.New("Error rounding new target")
 	}
 
 	if final.Cmp(config.BIG_INT_ZERO) < 0 {
@@ -77,5 +78,5 @@ func NextTargetBig(deltaTotalDifficulty *big.Int, deltaTime uint64) *big.Int {
 	hexstr := hex.EncodeToString(final.Bytes())
 	gui.Log("final " + hex.EncodeToString(helpers.EmptyBytes(32-len(hexstr)/2)) + hexstr)
 
-	return final
+	return final, nil
 }

@@ -7,7 +7,6 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/config/stake"
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"sync"
 	"sync/atomic"
@@ -39,7 +38,7 @@ type Forging struct {
 	SolutionChannel chan *block_complete.BlockComplete
 }
 
-func ForgingInit(mempool *mempool.Mempool) (forging *Forging) {
+func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
 
 	forging = &Forging{
 
@@ -51,7 +50,9 @@ func ForgingInit(mempool *mempool.Mempool) (forging *Forging) {
 	}
 
 	gui.Log("Forging Init")
-	forging.Wallet.loadBalances()
+	if err = forging.Wallet.loadBalances(); err != nil {
+		return
+	}
 
 	go forging.startForging(config.CPU_THREADS)
 
@@ -64,6 +65,7 @@ func (forging *Forging) startForging(threads int) {
 		return
 	}
 
+	var err error
 	for atomic.LoadInt32(&forging.started) == 1 {
 
 		workPointer := atomic.LoadPointer(&forging.work)
@@ -90,7 +92,10 @@ func (forging *Forging) startForging(threads int) {
 
 				var stakingAmount uint64
 				if walletAdr.account != nil {
-					stakingAmount = walletAdr.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height)
+					stakingAmount, err = walletAdr.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height)
+					if err != nil {
+						continue
+					}
 				}
 				if stakingAmount >= stake.GetRequiredStake(work.blkComplete.Block.Height) {
 					wallets[c%threads] = append(wallets[i%threads], &ForgingWalletAddressRequired{
@@ -161,10 +166,6 @@ func (forging *Forging) foundSolution(address *ForgingWalletAddress, timestamp u
 // thread not safe
 func (forging *Forging) publishSolution() (err error) {
 
-	defer func() {
-		err = helpers.ConvertRecoverError(recover())
-	}()
-
 	solutionPointer := atomic.LoadPointer(&forging.solution)
 	solution := (*ForgingSolution)(solutionPointer)
 
@@ -175,7 +176,9 @@ func (forging *Forging) publishSolution() (err error) {
 	work.blkComplete.Block.Timestamp = solution.timestamp
 
 	if work.blkComplete.Block.Height > 0 {
-		work.blkComplete.Block.StakingAmount = solution.address.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height)
+		if work.blkComplete.Block.StakingAmount, err = solution.address.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height); err != nil {
+			return
+		}
 	}
 
 	work.blkComplete.Txs = forging.mempool.GetNextTransactionsToInclude(work.blkComplete.Block.Height, work.blkComplete.Block.PrevHash)
@@ -183,7 +186,9 @@ func (forging *Forging) publishSolution() (err error) {
 
 	serializationForSigning := work.blkComplete.Block.SerializeForSigning()
 
-	work.blkComplete.Block.Signature = solution.address.delegatedPrivateKey.Sign(serializationForSigning)
+	if work.blkComplete.Block.Signature, err = solution.address.delegatedPrivateKey.Sign(serializationForSigning); err != nil {
+		return
+	}
 
 	//send message to blockchain
 	forging.SolutionChannel <- work.blkComplete

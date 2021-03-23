@@ -16,8 +16,15 @@ func (delegatedStakePending *DelegatedStakePending) Serialize(writer *helpers.Bu
 	writer.WriteBool(delegatedStakePending.PendingType)
 }
 
-func (delegatedStakePending *DelegatedStakePending) Deserialize(reader *helpers.BufferReader) {
-	delegatedStakePending.PendingAmount = reader.ReadUvarint()
-	delegatedStakePending.ActivationHeight = reader.ReadUvarint()
-	delegatedStakePending.PendingType = reader.ReadBool()
+func (delegatedStakePending *DelegatedStakePending) Deserialize(reader *helpers.BufferReader) (err error) {
+	if delegatedStakePending.PendingAmount, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	if delegatedStakePending.ActivationHeight, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	if delegatedStakePending.PendingType, err = reader.ReadBool(); err != nil {
+		return
+	}
+	return
 }

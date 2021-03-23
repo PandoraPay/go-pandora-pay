@@ -7,7 +7,6 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
-	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"sort"
 	"sync/atomic"
@@ -127,25 +126,19 @@ func (mempool *Mempool) processing() {
 						continue
 					}
 
-					func() {
-						defer func() {
-							if err := helpers.ConvertRecoverError(recover()); err != nil {
-								updateTask.accs.Rollback()
-								updateTask.toks.Rollback()
-							} else {
-								mempool.result.Lock()
-								if mempool.result.totalSize+txList[listIndex].Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
-									mempool.result.txs = append(mempool.result.txs, txList[listIndex].Tx)
-									mempool.result.totalSize += txList[listIndex].Tx.Bloom.Size
-								}
-								mempool.result.Unlock()
-							}
-							listIndex += 1
-						}()
-
-						txMap[txList[listIndex].Tx.Bloom.HashStr] = true
-						txList[listIndex].Tx.IncludeTransaction(updateTask.chainHeight, updateTask.accs, updateTask.toks)
-					}()
+					txMap[txList[listIndex].Tx.Bloom.HashStr] = true
+					if err := txList[listIndex].Tx.IncludeTransaction(updateTask.chainHeight, updateTask.accs, updateTask.toks); err != nil {
+						updateTask.accs.Rollback()
+						updateTask.toks.Rollback()
+					} else {
+						mempool.result.Lock()
+						if mempool.result.totalSize+txList[listIndex].Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
+							mempool.result.txs = append(mempool.result.txs, txList[listIndex].Tx)
+							mempool.result.totalSize += txList[listIndex].Tx.Bloom.Size
+						}
+						mempool.result.Unlock()
+					}
+					listIndex += 1
 
 					continue
 				}

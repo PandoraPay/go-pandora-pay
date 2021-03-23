@@ -1,6 +1,7 @@
 package token
 
 import (
+	"errors"
 	"pandora-pay/helpers"
 	"regexp"
 )
@@ -28,54 +29,53 @@ type Token struct {
 	Description        string
 }
 
-func (token *Token) Validate() {
+func (token *Token) Validate() error {
 
 	if token.DecimalSeparator > 10 {
-		panic("token decimal separator is invalid")
+		return errors.New("token decimal separator is invalid")
 	}
 	if len(token.Name) > 15 || len(token.Name) < 3 {
-		panic("token name length is invalid")
+		return errors.New("token name length is invalid")
 	}
 	if len(token.Ticker) > 7 || len(token.Ticker) < 2 {
-		panic("token ticker length is invalid")
+		return errors.New("token ticker length is invalid")
 	}
 	if len(token.Description) > 512 {
-		panic("token  description length is invalid")
+		return errors.New("token  description length is invalid")
 	}
 
 	if !regexTokenName.MatchString(token.Name) {
-		panic("Token name is invalid")
+		return errors.New("Token name is invalid")
 	}
 	if !regexTokenTicker.MatchString(token.Ticker) {
-		panic("Token ticker is invalid")
+		return errors.New("Token ticker is invalid")
 	}
 	if !regexTokenDescription.MatchString(token.Description) {
-		panic("Token description is invalid")
+		return errors.New("Token description is invalid")
 	}
 
+	return nil
 }
 
-func (token *Token) AddSupply(sign bool, amount uint64) {
+func (token *Token) AddSupply(sign bool, amount uint64) error {
 
 	if sign {
 		if !token.CanMint {
-			panic("Can't mint")
+			return errors.New("Can't mint")
 		}
 		if token.MaxSupply-token.Supply < amount {
-			panic("Supply exceeded max supply")
+			return errors.New("Supply exceeded max supply")
 		}
-		helpers.SafeUint64Add(&token.Supply, amount)
-	} else {
-		if !token.CanBurn {
-			panic("Can't burn")
-		}
-		if token.Supply < amount {
-			panic("Supply would become negative")
-		}
-
-		helpers.SafeUint64Sub(&token.Supply, amount)
+		return helpers.SafeUint64Add(&token.Supply, amount)
 	}
 
+	if !token.CanBurn {
+		errors.New("Can't burn")
+	}
+	if token.Supply < amount {
+		errors.New("Supply would become negative")
+	}
+	return helpers.SafeUint64Sub(&token.Supply, amount)
 }
 
 func (token *Token) Serialize() []byte {
@@ -106,26 +106,58 @@ func (token *Token) Serialize() []byte {
 	return writer.Bytes()
 }
 
-func (token *Token) Deserialize(buf []byte) {
+func (token *Token) Deserialize(buf []byte) (err error) {
 
 	reader := helpers.NewBufferReader(buf)
 
-	token.Version = reader.ReadUvarint()
-	token.CanUpgrade = reader.ReadBool()
-	token.CanMint = reader.ReadBool()
-	token.CanBurn = reader.ReadBool()
-	token.CanChangeKey = reader.ReadBool()
-	token.CanChangeSupplyKey = reader.ReadBool()
-	token.CanPause = reader.ReadBool()
-	token.CanFreeze = reader.ReadBool()
-	token.DecimalSeparator = reader.ReadByte()
-	token.MaxSupply = reader.ReadUvarint()
-	token.Supply = reader.ReadUvarint()
-	token.Key = reader.ReadBytes(20)
-	token.SupplyKey = reader.ReadBytes(20)
-	token.Name = reader.ReadString()
-	token.Ticker = reader.ReadString()
-	token.Description = reader.ReadString()
+	if token.Version, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	if token.CanUpgrade, err = reader.ReadBool(); err != nil {
+		return
+	}
+	if token.CanMint, err = reader.ReadBool(); err != nil {
+		return
+	}
+	if token.CanBurn, err = reader.ReadBool(); err != nil {
+		return
+	}
+	if token.CanChangeKey, err = reader.ReadBool(); err != nil {
+		return
+	}
+	if token.CanChangeSupplyKey, err = reader.ReadBool(); err != nil {
+		return
+	}
+	if token.CanPause, err = reader.ReadBool(); err != nil {
+		return
+	}
+	if token.CanFreeze, err = reader.ReadBool(); err != nil {
+		return
+	}
+	if token.DecimalSeparator, err = reader.ReadByte(); err != nil {
+		return
+	}
+	if token.MaxSupply, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	if token.Supply, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	if token.Key, err = reader.ReadBytes(20); err != nil {
+		return
+	}
+	if token.SupplyKey, err = reader.ReadBytes(20); err != nil {
+		return
+	}
+	if token.Name, err = reader.ReadString(); err != nil {
+		return
+	}
+	if token.Ticker, err = reader.ReadString(); err != nil {
+		return
+	}
+	if token.Description, err = reader.ReadString(); err != nil {
+		return
+	}
 
 	return
 }

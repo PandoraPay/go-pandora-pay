@@ -2,12 +2,12 @@ package node_http
 
 import (
 	"encoding/json"
+	"errors"
 	"net"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain"
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	api_http "pandora-pay/network/api/api-http"
 	api_store "pandora-pay/network/api/api-store"
@@ -22,7 +22,7 @@ type HttpServer struct {
 	websocketServer *websocks.WebsocketServer
 	Api             *api_http.API
 	ApiWebsockets   *api_websockets.APIWebsockets
-	getMap          map[string]func(values *url.Values) interface{}
+	getMap          map[string]func(values *url.Values) (interface{}, error)
 }
 
 func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
@@ -31,23 +31,21 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	var err error
 	var output interface{}
-
-	defer func() {
-		if err := helpers.ConvertRecoverError(recover()); err != nil {
-			http.Error(w, "Error"+err.Error(), http.StatusBadRequest)
-		} else {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(output)
-		}
-	}()
 
 	callback := server.getMap[req.URL.Path]
 	if callback != nil {
 		arguments := req.URL.Query()
-		output = callback(&arguments)
+		output, err = callback(&arguments)
 	} else {
-		panic("Unknown GET request")
+		err = errors.New("Unknown GET request")
+	}
+	if err != nil {
+		http.Error(w, "Error"+err.Error(), http.StatusBadRequest)
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(output)
 	}
 
 }
@@ -61,7 +59,7 @@ func (server *HttpServer) initialize() {
 
 	go func() {
 		if err := http.Serve(server.tcpListener, nil); err != nil {
-			panic(err)
+			gui.Error("Error opening HTTP server", err)
 		}
 		gui.Info("HTTP server")
 	}()
@@ -80,7 +78,7 @@ func CreateHttpServer(tcpListener net.Listener, chain *blockchain.Blockchain, se
 		tcpListener:     tcpListener,
 		websocketServer: websocks.CreateWebsocketServer(websockets),
 		Websockets:      websockets,
-		getMap:          make(map[string]func(values *url.Values) interface{}),
+		getMap:          make(map[string]func(values *url.Values) (interface{}, error)),
 		Api:             api,
 		ApiWebsockets:   apiWebsockets,
 	}

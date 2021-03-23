@@ -1,6 +1,7 @@
 package transaction_simple
 
 import (
+	"errors"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/ecdsa"
 )
@@ -11,23 +12,23 @@ type TransactionSimpleInputBloom struct {
 	bloomed       bool
 }
 
-func (vin *TransactionSimpleInput) BloomNow(hashForSignature []byte) {
+func (vin *TransactionSimpleInput) BloomNow(hashForSignature []byte) (err error) {
 	bloom := new(TransactionSimpleInputBloom)
 
-	publicKey, err := ecdsa.EcrecoverCompressed(hashForSignature, vin.Signature)
-	if err != nil {
-		panic(err)
+	if bloom.PublicKey, err = ecdsa.EcrecoverCompressed(hashForSignature, vin.Signature); err != nil {
+		return
 	}
 
-	bloom.PublicKey = publicKey
 	bloom.PublicKeyHash = cryptography.ComputePublicKeyHash(bloom.PublicKey)
 	bloom.bloomed = true
 
 	vin.Bloom = bloom
+	return
 }
 
-func (bloom *TransactionSimpleInputBloom) VerifyIfBloomed() {
+func (bloom *TransactionSimpleInputBloom) VerifyIfBloomed() error {
 	if !bloom.bloomed {
-		panic("vin is not bloomed")
+		return errors.New("vin is not bloomed")
 	}
+	return nil
 }

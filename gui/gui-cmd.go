@@ -5,7 +5,6 @@ import (
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"os"
-	"pandora-pay/helpers"
 	"strconv"
 	"unicode"
 )
@@ -21,7 +20,7 @@ func isLetter(s string) bool {
 
 type Command struct {
 	Text     string
-	Callback func(string)
+	Callback func(string) error
 }
 
 var commands = []Command{
@@ -42,7 +41,7 @@ var cmdInput = ""
 var cmdInputChannel = make(chan string)
 var cmdRows []string
 
-func CommandDefineCallback(Text string, callback func(string)) {
+func CommandDefineCallback(Text string, callback func(string) error) {
 
 	for i := range commands {
 		if commands[i].Text == Text {
@@ -84,15 +83,11 @@ func cmdProcess(e ui.Event) {
 				OutputClear()
 				go func() {
 
-					defer func() {
-						if err := recover(); err != nil {
-							Error(helpers.ConvertRecoverError(err))
-						} else {
-							OutputDone()
-						}
-					}()
-
-					command.Callback(command.Text)
+					if err := command.Callback(command.Text); err != nil {
+						Error(err)
+					} else {
+						OutputDone()
+					}
 
 				}()
 			}

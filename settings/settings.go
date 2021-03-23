@@ -14,20 +14,17 @@ type Settings struct {
 	sync.RWMutex `json:"-"`
 }
 
-func SettingsInit() (settings *Settings) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			if helpers.ConvertRecoverError(err).Error() == "Settings doesn't exist" {
-				settings.createEmptySettings()
-			} else {
-				panic(err)
-			}
-		}
-	}()
+func SettingsInit() (settings *Settings, err error) {
 
 	settings = &Settings{}
-	settings.loadSettings()
+	if err = settings.loadSettings(); err != nil {
+		if err.Error() != "Settings doesn't exist" {
+			return
+		}
+		if err = settings.createEmptySettings(); err != nil {
+			return
+		}
+	}
 
 	var changed bool
 	if globals.Arguments["--node-name"] != nil {
@@ -37,21 +34,26 @@ func SettingsInit() (settings *Settings) {
 
 	if changed {
 		settings.updateSettings()
-		settings.saveSettings()
+		if err = settings.saveSettings(); err != nil {
+			return
+		}
 	}
 
 	gui.Log("Settings Initialized")
 	return
 }
 
-func (settings *Settings) createEmptySettings() {
+func (settings *Settings) createEmptySettings() (err error) {
 	settings.Lock()
 	defer settings.Unlock()
 
 	settings.Name = helpers.RandString(10)
 
 	settings.updateSettings()
-	settings.saveSettings()
+	if err = settings.saveSettings(); err != nil {
+		return
+	}
+	return
 }
 
 func (settings *Settings) updateSettings() {

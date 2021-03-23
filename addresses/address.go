@@ -2,6 +2,7 @@ package addresses
 
 import (
 	"bytes"
+	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -77,16 +78,7 @@ func (a *Address) EncodeAddr() string {
 
 	return prefix + ret
 }
-
-func DecodeAddrSilent(input string) (adr *Address, err error) {
-	defer func() {
-		err = helpers.ConvertRecoverError(recover())
-	}()
-	adr = DecodeAddr(input)
-	return
-}
-
-func DecodeAddr(input string) (adr *Address) {
+func DecodeAddr(input string) (adr *Address, err error) {
 
 	adr = &Address{PublicKey: []byte{}, PaymentID: []byte{}}
 
@@ -100,47 +92,62 @@ func DecodeAddr(input string) (adr *Address) {
 	case config.DEV_NET_NETWORK_BYTE_PREFIX:
 		adr.Network = config.DEV_NET_NETWORK_BYTE
 	default:
-		panic("Invalid Address Network PREFIX!")
+		return nil, errors.New("Invalid Address Network PREFIX!")
 	}
 
 	if adr.Network != config.NETWORK_SELECTED {
-		panic("Address network is invalid")
+		return nil, errors.New("Address network is invalid")
 	}
 
 	var buf []byte
-	var err error
 	if buf, err = base58.Decode(input[config.NETWORK_BYTE_PREFIX_LENGTH:]); err != nil {
-		panic("Error decoding base58")
+		return
 	}
 
 	checksum := cryptography.GetChecksum(buf[:len(buf)-cryptography.ChecksumSize])
 
 	if !bytes.Equal(checksum, buf[len(buf)-cryptography.ChecksumSize:]) {
-		panic("Invalid Checksum")
+		return nil, errors.New("Invalid Checksum")
 	}
+
 	buf = buf[0 : len(buf)-cryptography.ChecksumSize] // remove the checksum
 
 	reader := helpers.NewBufferReader(buf)
 
-	adr.Version = AddressVersion(reader.ReadUvarint())
+	var version uint64
+	if version, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	adr.Version = AddressVersion(version)
 
 	switch adr.Version {
 	case SimplePublicKeyHash:
-		adr.PublicKeyHash = reader.ReadBytes(20)
+		if adr.PublicKeyHash, err = reader.ReadBytes(20); err != nil {
+			return
+		}
 	case SimplePublicKey:
-		adr.PublicKey = reader.ReadBytes(33)
+		if adr.PublicKey, err = reader.ReadBytes(33); err != nil {
+			return
+		}
 		adr.PublicKeyHash = cryptography.ComputePublicKeyHash(adr.PublicKey)
 	default:
-		panic("Invalid Address Version")
+		return nil, errors.New("Invalid Address Version")
 	}
 
-	integrationByte := reader.ReadByte()
+	var integrationByte byte
+	if integrationByte, err = reader.ReadByte(); err != nil {
+		return
+	}
 
 	if integrationByte&1 != 0 {
-		adr.PaymentID = reader.ReadBytes(8)
+		if adr.PaymentID, err = reader.ReadBytes(8); err != nil {
+			return
+		}
 	}
 	if integrationByte&(1<<1) != 0 {
-		adr.Amount = reader.ReadUvarint()
+		if adr.Amount, err = reader.ReadUvarint(); err != nil {
+			return
+		}
 	}
 
 	return

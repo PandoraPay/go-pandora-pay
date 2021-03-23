@@ -7,7 +7,6 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"time"
 )
@@ -78,11 +77,10 @@ func CreateNewGenesisBlock() (*block.Block, error) {
 	return &blk, nil
 }
 
-func GenesisInit() {
+func GenesisInit() (err error) {
 
-	var err error
 	if GenesisData, err = getGenesis(); err != nil {
-		gui.Fatal("Invalid Network for Genesis")
+		return
 	}
 
 	if globals.Arguments["--new-devnet"] == true {
@@ -90,13 +88,20 @@ func GenesisInit() {
 		GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 	}
 
-	GenesisData.Hash, _ = hex.DecodeString(GenesisData.HashHex)
+	if GenesisData.Hash, err = hex.DecodeString(GenesisData.HashHex); err != nil {
+		return
+	}
 
-	GenesisData.KernelHash, _ = hex.DecodeString(GenesisData.KernelHashHex)
+	if GenesisData.KernelHash, err = hex.DecodeString(GenesisData.KernelHashHex); err != nil {
+		return
+	}
 
-	GenesisData.Target, _ = hex.DecodeString(GenesisData.TargetHex)
+	if GenesisData.Target, err = hex.DecodeString(GenesisData.TargetHex); err != nil {
+		return
+	}
 
 	if Genesis, err = CreateNewGenesisBlock(); err != nil {
-		gui.Fatal("Error generating init Genesis")
+		return
 	}
+	return
 }

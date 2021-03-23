@@ -47,10 +47,17 @@ Options:
 func main() {
 
 	var err error
+	var mySettings *settings.Settings
+	var myWallet *wallet.Wallet
+	var myForging *forging.Forging
+	var myMempool *mempool.Mempool
+	var myChain *blockchain.Blockchain
 
 	rand.Seed(time.Now().UnixNano())
 
-	gui.GUIInit()
+	if err = gui.GUIInit(); err != nil {
+		panic(err)
+	}
 	gui.Info("GO PANDORA PAY")
 
 	config.CPU_THREADS = runtime.GOMAXPROCS(0)
@@ -64,21 +71,33 @@ func main() {
 	}
 
 	config.InitConfig()
-	store.DBInit()
+	if err = store.DBInit(); err != nil {
+		panic(err)
+	}
 
-	myMempool := mempool.InitMemPool()
+	if myMempool, err = mempool.InitMemPool(); err != nil {
+		panic(err)
+	}
 	globals.Data["mempool"] = myMempool
 
-	myForging := forging.ForgingInit(myMempool)
+	if myForging, err = forging.ForgingInit(myMempool); err != nil {
+		panic(err)
+	}
 	globals.Data["forging"] = myForging
 
-	myWallet := wallet.WalletInit(myForging)
+	if myWallet, err = wallet.WalletInit(myForging); err != nil {
+		panic(err)
+	}
 	globals.Data["wallet"] = myWallet
 
-	mySettings := settings.SettingsInit()
+	if mySettings, err = settings.SettingsInit(); err != nil {
+		panic(err)
+	}
 	globals.Data["settings"] = mySettings
 
-	myChain := blockchain.BlockchainInit(myForging, myMempool)
+	if myChain, err = blockchain.BlockchainInit(myForging, myMempool); err != nil {
+		panic(err)
+	}
 	globals.Data["chain"] = myChain
 
 	myTransactionsBuilder := transactions_builder.TransactionsBuilderInit(myWallet, myMempool, myChain)

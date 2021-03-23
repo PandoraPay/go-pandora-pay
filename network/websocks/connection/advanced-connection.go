@@ -6,7 +6,6 @@ import (
 	"errors"
 	"github.com/gorilla/websocket"
 	"pandora-pay/config"
-	"pandora-pay/helpers"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,7 +29,7 @@ type AdvancedConnection struct {
 	send          chan *AdvancedConnectionMessage
 	answerCounter uint32
 	Closed        chan struct{}
-	getMap        map[string]func(conn *AdvancedConnection, values []byte) interface{}
+	getMap        map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)
 	answerMap     map[uint32]chan *AdvancedConnectionAnswer
 	sync.RWMutex  `json:"-"`
 }
@@ -78,19 +77,14 @@ func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data interface{}) *Adv
 
 func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) (out interface{}, err error) {
 
-	defer func() {
-		err = helpers.ConvertRecoverError(recover())
-	}()
-
 	route := string(message.Name)
-	var callback func(conn *AdvancedConnection, values []byte) interface{}
+	var callback func(conn *AdvancedConnection, values []byte) (interface{}, error)
 	if callback = c.getMap[route]; callback != nil {
-		out = callback(c, message.Data)
+		out, err = callback(c, message.Data)
 		return
 	}
 
-	err = errors.New("Unknown GET request")
-	return
+	return nil, errors.New("Unknown GET request")
 }
 
 func (c *AdvancedConnection) ReadPump() {
@@ -175,7 +169,7 @@ func (c *AdvancedConnection) WritePump() {
 
 }
 
-func CreateAdvancedConnection(conn *websocket.Conn, getMap map[string]func(conn *AdvancedConnection, values []byte) interface{}) *AdvancedConnection {
+func CreateAdvancedConnection(conn *websocket.Conn, getMap map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)) *AdvancedConnection {
 	return &AdvancedConnection{
 		Conn:          conn,
 		send:          make(chan *AdvancedConnectionMessage),

@@ -1,6 +1,7 @@
 package transaction_simple_extra
 
 import (
+	"errors"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/helpers"
 )
@@ -18,10 +19,11 @@ func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, 
 	}
 }
 
-func (tx *TransactionSimpleDelegate) Validate() {
+func (tx *TransactionSimpleDelegate) Validate() error {
 	if tx.Amount == 0 {
-		panic("Amount must be greather than zero")
+		return errors.New("Amount must be greather than zero")
 	}
+	return nil
 }
 
 func (tx *TransactionSimpleDelegate) Serialize(writer *helpers.BufferWriter) {
@@ -32,10 +34,17 @@ func (tx *TransactionSimpleDelegate) Serialize(writer *helpers.BufferWriter) {
 	}
 }
 
-func (tx *TransactionSimpleDelegate) Deserialize(reader *helpers.BufferReader) {
-	tx.Amount = reader.ReadUvarint()
-	tx.HasNewPublicKeyHash = reader.ReadBool()
-	if tx.HasNewPublicKeyHash {
-		tx.NewPublicKeyHash = reader.ReadBytes(20)
+func (tx *TransactionSimpleDelegate) Deserialize(reader *helpers.BufferReader) (err error) {
+	if tx.Amount, err = reader.ReadUvarint(); err != nil {
+		return
 	}
+	if tx.HasNewPublicKeyHash, err = reader.ReadBool(); err != nil {
+		return
+	}
+	if tx.HasNewPublicKeyHash {
+		if tx.NewPublicKeyHash, err = reader.ReadBytes(20); err != nil {
+			return
+		}
+	}
+	return
 }

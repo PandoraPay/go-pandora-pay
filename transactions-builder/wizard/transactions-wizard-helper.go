@@ -2,6 +2,7 @@ package wizard
 
 import (
 	"bytes"
+	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
@@ -20,16 +21,16 @@ func setFeeTxNow(tx *transaction.Transaction, feePerByte, initAmount uint64, val
 	return
 }
 
-func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFeeInExtra bool) {
+func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFeeInExtra bool) error {
 
 	if feePerByte == 0 {
-		return
+		return nil
 	}
 
 	if feePerByte == -1 {
 		feePerByte = int(fees.FEES_PER_BYTE[string(feeToken)])
 		if feePerByte == 0 {
-			panic("The token will most like not be accepted by other miners")
+			return errors.New("The token will most like not be accepted by other miners")
 		}
 	}
 
@@ -44,7 +45,7 @@ func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFee
 				switch base.TxScript {
 				case transaction_simple.TxSimpleScriptUnstake:
 					setFeeTxNow(tx, uint64(feePerByte), 0, &base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
-					return
+					return nil
 				}
 
 			} else {
@@ -52,17 +53,16 @@ func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFee
 				for _, vin := range tx.TxBase.(*transaction_simple.TransactionSimple).Vin {
 					if bytes.Equal(vin.Token, feeToken) {
 						setFeeTxNow(tx, uint64(feePerByte), vin.Amount, &vin.Amount)
-						return
+						return nil
 					}
 				}
 
-				panic("There is no input to set the fee!")
-
+				return errors.New("There is no input to set the fee!")
 			}
 
 		}
 
 	}
 
-	panic("Couldn't set fee")
+	return errors.New("Couldn't set fee")
 }

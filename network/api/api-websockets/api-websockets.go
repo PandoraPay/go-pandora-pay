@@ -12,7 +12,7 @@ import (
 )
 
 type APIWebsockets struct {
-	GetMap   map[string]func(conn *connection.AdvancedConnection, values []byte) interface{}
+	GetMap   map[string]func(conn *connection.AdvancedConnection, values []byte) (interface{}, error)
 	chain    *blockchain.Blockchain
 	mempool  *mempool.Mempool
 	ApiStore *api_store.APIStore
@@ -26,37 +26,37 @@ func (api *APIWebsockets) ValidateHandshake(handshake *APIHandshake) error {
 	return nil
 }
 
-func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) interface{} {
+func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	handshake := APIHandshake{}
 	if err := json.Unmarshal(values, &handshake); err != nil {
-		panic(err)
+		return nil, err
 	}
 	if err := api.ValidateHandshake(&handshake); err != nil {
-		panic(err)
+		return nil, err
 	}
-	return &APIHandshake{config.NAME, config.VERSION, string(config.NETWORK_SELECTED)}
+	return &APIHandshake{config.NAME, config.VERSION, string(config.NETWORK_SELECTED)}, nil
 }
 
-func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []byte) interface{} {
+func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	blockHeight := APIBlockHeight(0)
 	if err := json.Unmarshal(values, &blockHeight); err != nil {
-		panic(err)
+		return nil, err
 	}
 	return api.ApiStore.LoadBlockHash(blockHeight)
 }
 
-func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values []byte) interface{} {
+func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	blockHeight := APIBlockHeight(0)
 	if err := json.Unmarshal(values, &blockHeight); err != nil {
-		panic(err)
+		return nil, err
 	}
 	return api.ApiStore.LoadBlockWithTXsFromHeight(blockHeight)
 }
 
-func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) interface{} {
+func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	blockHeight := APIBlockHeight(0)
 	if err := json.Unmarshal(values, &blockHeight); err != nil {
-		panic(err)
+		return nil, err
 	}
 	return api.ApiStore.LoadBlockCompleteFromHeight(blockHeight)
 }
@@ -69,7 +69,7 @@ func CreateWebsocketsAPI(apiStore *api_store.APIStore, chain *blockchain.Blockch
 		ApiStore: apiStore,
 	}
 
-	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) interface{}{
+	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) (interface{}, error){
 		"handshake":      api.getHandshake,
 		"hash":           api.getHash,
 		"block":          api.getBlock,

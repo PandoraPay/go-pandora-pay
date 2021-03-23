@@ -1,6 +1,7 @@
 package transaction_simple_extra
 
 import (
+	"errors"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/helpers"
 )
@@ -16,10 +17,11 @@ func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(blockHeight uint64, a
 	acc.DelegatedStake.AddStakePendingUnstake(tx.Amount, blockHeight)
 }
 
-func (tx *TransactionSimpleUnstake) Validate() {
+func (tx *TransactionSimpleUnstake) Validate() error {
 	if tx.Amount == 0 {
-		panic("Unstake must be greather than zero")
+		return errors.New("Unstake must be greather than zero")
 	}
+	return nil
 }
 
 func (tx *TransactionSimpleUnstake) Serialize(writer *helpers.BufferWriter) {
@@ -27,7 +29,12 @@ func (tx *TransactionSimpleUnstake) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(tx.FeeExtra)
 }
 
-func (tx *TransactionSimpleUnstake) Deserialize(reader *helpers.BufferReader) {
-	tx.Amount = reader.ReadUvarint()
-	tx.FeeExtra = reader.ReadUvarint()
+func (tx *TransactionSimpleUnstake) Deserialize(reader *helpers.BufferReader) (err error) {
+	if tx.Amount, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	if tx.FeeExtra, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	return
 }

@@ -1,6 +1,7 @@
 package block
 
 import (
+	"errors"
 	"pandora-pay/helpers"
 )
 
@@ -9,10 +10,11 @@ type BlockHeader struct {
 	Height  uint64
 }
 
-func (blockHeader *BlockHeader) Validate() {
+func (blockHeader *BlockHeader) Validate() error {
 	if blockHeader.Version != 0 {
-		panic("Invalid Block")
+		return errors.New("Invalid Block")
 	}
+	return nil
 }
 
 func (blockHeader *BlockHeader) Serialize(writer *helpers.BufferWriter) {
@@ -20,8 +22,12 @@ func (blockHeader *BlockHeader) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(blockHeader.Height)
 }
 
-func (blockHeader *BlockHeader) Deserialize(reader *helpers.BufferReader) {
-	blockHeader.Version = reader.ReadUvarint()
-	blockHeader.Height = reader.ReadUvarint()
+func (blockHeader *BlockHeader) Deserialize(reader *helpers.BufferReader) (err error) {
+	if blockHeader.Version, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	if blockHeader.Height, err = reader.ReadUvarint(); err != nil {
+		return
+	}
 	return
 }

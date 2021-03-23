@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
@@ -16,24 +17,27 @@ type Transaction struct {
 	Bloom   *TransactionBloom
 }
 
-func (tx *Transaction) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
+func (tx *Transaction) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) error {
 	switch tx.TxType {
 	case transaction_type.TxSimple:
-		tx.TxBase.(*transaction_simple.TransactionSimple).IncludeTransaction(blockHeight, accs, toks)
+		return tx.TxBase.(*transaction_simple.TransactionSimple).IncludeTransaction(blockHeight, accs, toks)
+	default:
+		return errors.New("Invalid TxType")
 	}
 }
 
-func (tx *Transaction) AddFees(fees map[string]uint64) {
+func (tx *Transaction) AddFees(fees map[string]uint64) error {
 	switch tx.TxType {
 	case transaction_type.TxSimple:
-		tx.TxBase.(*transaction_simple.TransactionSimple).ComputeFees(fees)
+		return tx.TxBase.(*transaction_simple.TransactionSimple).ComputeFees(fees)
+	default:
+		return errors.New("Invalid Txtype")
 	}
-	return
 }
 
-func (tx *Transaction) ComputeFees() (fees map[string]uint64) {
+func (tx *Transaction) ComputeFees() (fees map[string]uint64, err error) {
 	fees = make(map[string]uint64)
-	tx.AddFees(fees)
+	err = tx.AddFees(fees)
 	return
 }
 
@@ -73,39 +77,47 @@ func (tx *Transaction) Serialize() []byte {
 	return tx.serializeTx(true)
 }
 
-func (tx *Transaction) Validate() {
+func (tx *Transaction) Validate() error {
 	if tx.Version != 0 {
-		panic("Version is invalid")
+		return errors.New("Version is invalid")
 	}
 	if transaction_type.TxEND < tx.TxType {
-		panic("VersionType is invalid")
+		return errors.New("VersionType is invalid")
 	}
 
 	switch tx.TxType {
 	case transaction_type.TxSimple:
-		tx.TxBase.(*transaction_simple.TransactionSimple).Validate()
+		return tx.TxBase.(*transaction_simple.TransactionSimple).Validate()
 	}
 
-	return
+	return nil
 }
 
-func (tx *Transaction) Verify() {
-	tx.VerifyBloomAll() //it will panic
+func (tx *Transaction) Verify() error {
+	return tx.VerifyBloomAll()
 }
 
-func (tx *Transaction) Deserialize(reader *helpers.BufferReader, bloom bool) {
+func (tx *Transaction) Deserialize(reader *helpers.BufferReader, bloom bool) (err error) {
 
 	buffer := reader.Buf[:]
 	first := reader.Position
 
-	tx.Version = reader.ReadUvarint()
-	n := reader.ReadUvarint()
+	if tx.Version, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+
+	var n uint64
+	if n, err = reader.ReadUvarint(); err != nil {
+		return
+	}
 	tx.TxType = transaction_type.TransactionType(n)
 
 	switch tx.TxType {
 	case transaction_type.TxSimple:
 		base := &transaction_simple.TransactionSimple{}
-		base.Deserialize(reader)
+		if err = base.Deserialize(reader); err != nil {
+			return
+		}
 		tx.TxBase = base
 	}
 
@@ -122,7 +134,9 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader, bloom bool) {
 			HashStr:    string(hash),
 			bloomed:    true,
 		}
-		tx.BloomExtraNow(true)
+		if err = tx.BloomExtraNow(true); err != nil {
+			return
+		}
 	}
-
+	return
 }

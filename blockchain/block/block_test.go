@@ -18,7 +18,7 @@ var (
 func TestBlock_Serialize(t *testing.T) {
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	publicKey := privateKey.GeneratePublicKey()
+	publicKey, _ := privateKey.GeneratePublicKey()
 
 	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
 
@@ -49,7 +49,7 @@ func TestBlock_Serialize(t *testing.T) {
 func TestBlock_SerializeForSigning(t *testing.T) {
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	publicKey := privateKey.GeneratePublicKey()
+	publicKey, _ := privateKey.GeneratePublicKey()
 
 	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
 

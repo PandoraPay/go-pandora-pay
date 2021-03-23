@@ -1,6 +1,7 @@
 package addresses
 
 import (
+	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/ecdsa"
@@ -11,58 +12,44 @@ type PrivateKey struct {
 	Key []byte //32 byte
 }
 
-func (pk *PrivateKey) GeneratePublicKey() []byte {
-
-	pub, err := ecdsa.ComputePublicKey(pk.Key)
-	if err != nil {
-		panic(err)
-	}
-
-	return pub
+func (pk *PrivateKey) GeneratePublicKey() ([]byte, error) {
+	return ecdsa.ComputePublicKey(pk.Key)
 }
 
-func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) *Address {
+func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) (address *Address, err error) {
 
-	publicKey, err := ecdsa.ComputePublicKey(pk.Key)
-	if err != nil {
-		panic("Strange error. Your private key was invalid")
+	address = &Address{
+		Network:   config.NETWORK_SELECTED,
+		Amount:    amount,
+		PaymentID: paymentID,
+	}
+
+	if address.PublicKey, err = ecdsa.ComputePublicKey(pk.Key); err != nil {
+		return
 	}
 	if len(paymentID) != 0 && len(paymentID) != 8 {
-		panic("Your payment ID is invalid")
+		return nil, errors.New("Your payment ID is invalid")
 	}
 
-	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
-
-	var version AddressVersion
+	address.PublicKeyHash = cryptography.ComputePublicKeyHash(address.PublicKey)
 
 	if usePublicKeyHash {
-		publicKey = []byte{}
-		version = SimplePublicKeyHash
+		address.PublicKey = []byte{}
+		address.Version = SimplePublicKeyHash
 	} else {
-		version = SimplePublicKey
+		address.Version = SimplePublicKey
 	}
 
-	return &Address{
-		config.NETWORK_SELECTED,
-		version,
-		publicKey,
-		publicKeyHash,
-		amount,
-		paymentID,
-	}
+	return
 }
 
-func (pk *PrivateKey) Sign(message []byte) []byte {
+func (pk *PrivateKey) Sign(message []byte) ([]byte, error) {
 	privateKey, err := ecdsa.ToECDSA(pk.Key)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	var signature []byte
-	if signature, err = ecdsa.Sign(message, privateKey); err != nil {
-		panic(err)
-	}
-	return signature
+	return ecdsa.Sign(message, privateKey)
 }
 
 func GenerateNewPrivateKey() *PrivateKey {

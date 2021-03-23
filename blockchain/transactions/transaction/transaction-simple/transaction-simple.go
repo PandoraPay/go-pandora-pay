@@ -2,6 +2,7 @@ package transaction_simple
 
 import (
 	"bytes"
+	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
@@ -20,18 +21,23 @@ type TransactionSimple struct {
 	Bloom *TransactionSimpleBloom
 }
 
-func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) {
+func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
 
 	for i, vin := range tx.Vin {
 
 		acc := accs.GetAccountEvenEmpty(vin.Bloom.PublicKeyHash)
-		acc.RefreshDelegatedStake(blockHeight)
+		if err = acc.RefreshDelegatedStake(blockHeight); err != nil {
+			return
+		}
 
 		if i == 0 {
 			if acc.Nonce != tx.Nonce {
-				panic("Account nonce doesn't match")
+				return errors.New("Account nonce doesn't match")
 			}
-			acc.IncrementNonce(true)
+			if err = acc.IncrementNonce(true); err != nil {
+				return
+			}
+
 			switch tx.TxScript {
 			case TxSimpleScriptDelegate:
 				tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).IncludeTransactionVin0(blockHeight, acc)
@@ -40,46 +46,62 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 			}
 		}
 
-		acc.AddBalance(false, vin.Amount, vin.Token)
+		if err = acc.AddBalance(false, vin.Amount, vin.Token); err != nil {
+			return
+		}
 		accs.UpdateAccount(vin.Bloom.PublicKeyHash, acc)
 	}
 
 	for _, vout := range tx.Vout {
 		acc := accs.GetAccountEvenEmpty(vout.PublicKeyHash)
-		acc.RefreshDelegatedStake(blockHeight)
+		if err = acc.RefreshDelegatedStake(blockHeight); err != nil {
+		}
 
-		acc.AddBalance(true, vout.Amount, vout.Token)
+		if err = acc.AddBalance(true, vout.Amount, vout.Token); err != nil {
+			return
+		}
 		accs.UpdateAccount(vout.PublicKeyHash, acc)
 	}
 
+	return nil
 }
 
-func (tx *TransactionSimple) ComputeFees(out map[string]uint64) {
+func (tx *TransactionSimple) ComputeFees(out map[string]uint64) (err error) {
 
-	tx.ComputeVin(out)
-	tx.ComputeVout(out)
+	if err = tx.ComputeVin(out); err != nil {
+		return
+	}
+	if err = tx.ComputeVout(out); err != nil {
+		return
+	}
 
 	switch tx.TxScript {
 	case TxSimpleScriptUnstake:
-		helpers.SafeMapUint64Add(out, config.NATIVE_TOKEN_STRING, tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
+		return helpers.SafeMapUint64Add(out, config.NATIVE_TOKEN_STRING, tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
 	}
 	return
 }
 
-func (tx *TransactionSimple) ComputeVin(out map[string]uint64) {
+func (tx *TransactionSimple) ComputeVin(out map[string]uint64) (err error) {
 	for _, vin := range tx.Vin {
-		helpers.SafeMapUint64Add(out, string(vin.Token), vin.Amount)
+		if err = helpers.SafeMapUint64Add(out, string(vin.Token), vin.Amount); err != nil {
+			return
+		}
 	}
+	return
 }
 
-func (tx *TransactionSimple) ComputeVout(out map[string]uint64) {
+func (tx *TransactionSimple) ComputeVout(out map[string]uint64) (err error) {
 	for _, vout := range tx.Vout {
 		tokenStr := string(vout.Token)
-		helpers.SafeMapUint64Sub(out, tokenStr, vout.Amount)
+		if err = helpers.SafeMapUint64Sub(out, tokenStr, vout.Amount); err != nil {
+			return
+		}
 		if out[tokenStr] == 0 {
 			delete(out, tokenStr)
 		}
 	}
+	return
 }
 
 func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bool {
@@ -96,43 +118,52 @@ func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bo
 	return true
 }
 
-func (tx *TransactionSimple) Validate() {
+func (tx *TransactionSimple) Validate() (err error) {
 
 	for _, vin := range tx.Vin {
 		if bytes.Equal(vin.Bloom.PublicKeyHash, config.BURN_PUBLIC_KEY_HASH) {
-			panic("Input includes BURN PUBLIC KEY HASH")
+			return errors.New("Input includes BURN ADDR")
 		}
 	}
 
 	switch tx.TxScript {
 	case TxSimpleScriptNormal:
 		if len(tx.Vin) == 0 || len(tx.Vin) > 255 {
-			panic("Invalid vin")
+			return errors.New("Invalid vin")
 		}
 		if len(tx.Vout) == 0 || len(tx.Vout) > 255 {
-			panic("Invalid vout")
+			return errors.New("Invalid vout")
 		}
 	case TxSimpleScriptDelegate, TxSimpleScriptUnstake, TxSimpleScriptWithdraw:
 		if len(tx.Vin) != 1 {
-			panic("Invalid vin")
+			return errors.New("Invalid vin")
 		}
 		if len(tx.Vout) != 0 {
-			panic("Invalid vout")
+			return errors.New("Invalid vout")
 		}
 	default:
-		panic("Invalid TxScript")
+		return errors.New("Invalid TxScript")
 	}
 
 	switch tx.TxScript {
 	case TxSimpleScriptDelegate:
-		tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).Validate()
+		if err = tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).Validate(); err != nil {
+			return
+		}
 	case TxSimpleScriptUnstake:
-		tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).Validate()
+		if err = tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).Validate(); err != nil {
+			return
+		}
 	}
 
 	final := make(map[string]uint64)
-	tx.ComputeVin(final)
-	tx.ComputeVout(final)
+	if err = tx.ComputeVin(final); err != nil {
+		return
+	}
+	if err = tx.ComputeVout(final); err != nil {
+		return
+	}
+	return
 }
 
 func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignature bool) {
@@ -160,44 +191,64 @@ func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignatu
 	}
 }
 
-func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) {
+func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err error) {
 
-	n := reader.ReadUvarint()
+	var n uint64
+
+	if n, err = reader.ReadUvarint(); err != nil {
+		return
+	}
 	tx.TxScript = TransactionSimpleScriptType(n)
-	tx.Nonce = reader.ReadUvarint()
+	if tx.Nonce, err = reader.ReadUvarint(); err != nil {
+		return
+	}
 
-	n = reader.ReadUvarint()
+	if n, err = reader.ReadUvarint(); err != nil {
+		return
+	}
 	tx.Vin = make([]*TransactionSimpleInput, n)
 	for i := 0; i < int(n); i++ {
 		tx.Vin[i] = &TransactionSimpleInput{}
-		tx.Vin[i].Deserialize(reader)
+		if err = tx.Vin[i].Deserialize(reader); err != nil {
+			return
+		}
 	}
 
 	//vout only TransactionTypeSimple
-	n = reader.ReadUvarint()
+	if n, err = reader.ReadUvarint(); err != nil {
+		return
+	}
 	tx.Vout = make([]*TransactionSimpleOutput, n)
 	for i := 0; i < int(n); i++ {
 		tx.Vout[i] = &TransactionSimpleOutput{}
-		tx.Vout[i].Deserialize(reader)
+		if err = tx.Vout[i].Deserialize(reader); err != nil {
+			return
+		}
 	}
 
 	switch tx.TxScript {
 	case TxSimpleScriptDelegate:
 		extra := &transaction_simple_extra.TransactionSimpleDelegate{}
-		extra.Deserialize(reader)
+		if err = extra.Deserialize(reader); err != nil {
+			return
+		}
 		tx.Extra = extra
 	case TxSimpleScriptUnstake:
 		extra := &transaction_simple_extra.TransactionSimpleUnstake{}
-		extra.Deserialize(reader)
+		if err = extra.Deserialize(reader); err != nil {
+			return
+		}
 		tx.Extra = extra
 	}
 
 	return
 }
 
-func (tx *TransactionSimple) VerifyBloomAll() {
+func (tx *TransactionSimple) VerifyBloomAll() (err error) {
 	for _, vin := range tx.Vin {
-		vin.Bloom.VerifyIfBloomed()
+		if err = vin.Bloom.VerifyIfBloomed(); err != nil {
+			return
+		}
 	}
-	tx.Bloom.verifyIfBloomed()
+	return tx.Bloom.verifyIfBloomed()
 }

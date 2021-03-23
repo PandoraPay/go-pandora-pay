@@ -24,15 +24,15 @@ type Block struct {
 	Bloom                  *BlockBloom
 }
 
-func (blk *Block) Validate() {
-	blk.BlockHeader.Validate()
+func (blk *Block) Validate() error {
+	return blk.BlockHeader.Validate()
 }
 
-func (blk *Block) Verify() {
-	blk.VerifyBloomAll() //it will panic
+func (blk *Block) Verify() error {
+	return blk.VerifyBloomAll()
 }
 
-func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allFees map[string]uint64) {
+func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allFees map[string]uint64) (err error) {
 
 	reward := reward.GetRewardAt(blk.Height)
 	acc := acs.GetAccountEvenEmpty(blk.Forger)
@@ -49,15 +49,19 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 	acc.DelegatedStake.AddStakePendingStake(allFees[config.NATIVE_TOKEN_STRING], blk.Height)
 	for key, value := range allFees {
 		if key != config.NATIVE_TOKEN_STRING {
-			acc.AddBalance(true, value, []byte(key))
+			if err = acc.AddBalance(true, value, []byte(key)); err != nil {
+				return
+			}
 		}
 	}
 	acs.UpdateAccount(blk.Forger, acc)
 
 	tok := toks.GetToken(config.NATIVE_TOKEN)
-	tok.AddSupply(true, reward)
+	if err = tok.AddSupply(true, reward); err != nil {
+		return
+	}
 	toks.UpdateToken(config.NATIVE_TOKEN, tok)
-
+	return
 }
 
 func (blk *Block) ComputeHash() []byte {
@@ -124,16 +128,35 @@ func (blk *Block) Serialize() []byte {
 	return blk.serializeBlock(false, true)
 }
 
-func (blk *Block) Deserialize(reader *helpers.BufferReader) {
-	blk.BlockHeader.Deserialize(reader)
-	blk.MerkleHash = reader.ReadHash()
-	blk.PrevHash = reader.ReadHash()
-	blk.PrevKernelHash = reader.ReadHash()
-	blk.StakingAmount = reader.ReadUvarint()
-	blk.DelegatedPublicKeyHash = reader.ReadBytes(20)
-	blk.Timestamp = reader.ReadUvarint()
-	blk.Forger = reader.ReadBytes(20)
-	blk.Signature = reader.ReadBytes(65)
+func (blk *Block) Deserialize(reader *helpers.BufferReader) (err error) {
+	if err = blk.BlockHeader.Deserialize(reader); err != nil {
+		return
+	}
+	if blk.MerkleHash, err = reader.ReadHash(); err != nil {
+		return
+	}
+	if blk.PrevHash, err = reader.ReadHash(); err != nil {
+		return
+	}
+	if blk.PrevKernelHash, err = reader.ReadHash(); err != nil {
+		return
+	}
+	if blk.StakingAmount, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	if blk.DelegatedPublicKeyHash, err = reader.ReadBytes(20); err != nil {
+		return
+	}
+	if blk.Timestamp, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	if blk.Forger, err = reader.ReadBytes(20); err != nil {
+		return
+	}
+	if blk.Signature, err = reader.ReadBytes(65); err != nil {
+		return
+	}
+	return
 }
 
 func (blk *Block) Size() uint64 {

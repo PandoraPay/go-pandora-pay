@@ -3,14 +3,15 @@ package settings
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/gui"
 	"pandora-pay/store"
 )
 
-func (settings *Settings) saveSettings() {
+func (settings *Settings) saveSettings() error {
 
-	if err := store.StoreSettings.DB.Update(func(boltTx *bolt.Tx) error {
+	return store.StoreSettings.DB.Update(func(boltTx *bolt.Tx) (err error) {
 
 		writer := boltTx.Bucket([]byte("Settings"))
 
@@ -20,52 +21,46 @@ func (settings *Settings) saveSettings() {
 
 		marshal, err := json.Marshal(settings)
 		if err != nil {
-			panic(err)
+			return
 		}
 
 		writer.Put([]byte("settings"), marshal)
 		writer.Put([]byte("saved"), []byte{1})
 
-		return nil
-	}); err != nil {
-		panic(err)
-	}
+		return
+	})
 
 }
 
-func (settings *Settings) loadSettings() {
-
-	if err := store.StoreSettings.DB.View(func(boltTx *bolt.Tx) (err error) {
+func (settings *Settings) loadSettings() error {
+	return store.StoreSettings.DB.View(func(boltTx *bolt.Tx) (err error) {
 		reader := boltTx.Bucket([]byte("Settings"))
 
 		saved := reader.Get([]byte("saved"))
 		if saved == nil {
-			panic("Settings doesn't exist")
+			return errors.New("Settings doesn't exist")
 		}
 		if bytes.Equal(saved, []byte{1}) {
 			gui.Log("Settings Loading... ")
 
 			unmarshal := reader.Get([]byte("settings"))
 			if err = json.Unmarshal(unmarshal, &settings); err != nil {
-				panic("Error unmarshaling settings saved")
+				return err
 			}
 
 			checksum := settings.computeChecksum()
 
 			if !bytes.Equal(checksum, settings.Checksum) {
-				panic("Settings checksum mismatch !")
+				return errors.New("Settings checksum mismatch !")
 			}
 
 			settings.updateSettings()
 			gui.Log("Settings Loaded! " + settings.Name)
 
 		} else {
-			panic("Error loading wallet ?")
+			err = errors.New("Error loading wallet ?")
 		}
 
-		return nil
-	}); err != nil {
-		panic(err)
-	}
-
+		return
+	})
 }

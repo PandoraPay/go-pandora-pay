@@ -17,20 +17,19 @@ type DelegatedStake struct {
 	StakesPending []*DelegatedStakePending
 }
 
-func (dstake *DelegatedStake) AddStakeAvailable(sign bool, amount uint64) {
-	helpers.SafeUint64Update(sign, &dstake.StakeAvailable, amount)
+func (dstake *DelegatedStake) AddStakeAvailable(sign bool, amount uint64) error {
+	return helpers.SafeUint64Update(sign, &dstake.StakeAvailable, amount)
 }
 
-func (dstake *DelegatedStake) AddStakePendingStake(amount, blockHeight uint64) {
+func (dstake *DelegatedStake) AddStakePendingStake(amount, blockHeight uint64) error {
 	if amount == 0 {
-		return
+		return nil
 	}
 	finalBlockHeight := blockHeight + stake.GetPendingStakeWindow(blockHeight)
 
 	for _, stakePending := range dstake.StakesPending {
 		if stakePending.ActivationHeight == finalBlockHeight && stakePending.PendingType == true {
-			helpers.SafeUint64Add(&stakePending.PendingAmount, amount)
-			return
+			return helpers.SafeUint64Add(&stakePending.PendingAmount, amount)
 		}
 	}
 	dstake.StakesPending = append(dstake.StakesPending, &DelegatedStakePending{
@@ -38,20 +37,19 @@ func (dstake *DelegatedStake) AddStakePendingStake(amount, blockHeight uint64) {
 		PendingAmount:    amount,
 		PendingType:      true,
 	})
-
+	return nil
 }
 
-func (dstake *DelegatedStake) AddStakePendingUnstake(amount, blockHeight uint64) {
+func (dstake *DelegatedStake) AddStakePendingUnstake(amount, blockHeight uint64) error {
 	if amount == 0 {
-		return
+		return nil
 	}
 	finalBlockHeight := blockHeight + stake.GetUnstakeWindow(blockHeight)
 
 	for _, stakePending := range dstake.StakesPending {
 		if stakePending.ActivationHeight == finalBlockHeight && stakePending.PendingType == false {
-			helpers.SafeUint64Add(&stakePending.PendingAmount, amount)
 			stakePending.ActivationHeight = finalBlockHeight
-			return
+			return helpers.SafeUint64Add(&stakePending.PendingAmount, amount)
 		}
 	}
 	dstake.StakesPending = append(dstake.StakesPending, &DelegatedStakePending{
@@ -59,7 +57,7 @@ func (dstake *DelegatedStake) AddStakePendingUnstake(amount, blockHeight uint64)
 		PendingAmount:    amount,
 		PendingType:      false,
 	})
-
+	return nil
 }
 
 func (dstake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
@@ -74,16 +72,25 @@ func (dstake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
 
 }
 
-func (dstake *DelegatedStake) Deserialize(reader *helpers.BufferReader) {
+func (dstake *DelegatedStake) Deserialize(reader *helpers.BufferReader) (err error) {
 
-	dstake.DelegatedPublicKeyHash = reader.ReadBytes(33)
-	dstake.StakeAvailable = reader.ReadUvarint()
+	if dstake.DelegatedPublicKeyHash, err = reader.ReadBytes(33); err != nil {
+		return
+	}
+	if dstake.StakeAvailable, err = reader.ReadUvarint(); err != nil {
+		return
+	}
 
-	n := reader.ReadUvarint()
+	var n uint64
+	if n, err = reader.ReadUvarint(); err != nil {
+		return
+	}
 	dstake.StakesPending = make([]*DelegatedStakePending, n)
 	for i := uint64(0); i < n; i++ {
 		delegatedStakePending := new(DelegatedStakePending)
-		delegatedStakePending.Deserialize(reader)
+		if err = delegatedStakePending.Deserialize(reader); err != nil {
+			return
+		}
 		dstake.StakesPending[i] = delegatedStakePending
 	}
 
@@ -94,23 +101,27 @@ func (dstake *DelegatedStake) IsDelegatedStakeEmpty() bool {
 	return dstake.StakeAvailable == 0 && len(dstake.StakesPending) == 0
 }
 
-func (dstake *DelegatedStake) GetDelegatedStakeAvailable(blockHeight uint64) (result uint64) {
+func (dstake *DelegatedStake) GetDelegatedStakeAvailable(blockHeight uint64) (result uint64, err error) {
 
 	result = dstake.StakeAvailable
 	for i := range dstake.StakesPending {
 		if dstake.StakesPending[i].ActivationHeight <= blockHeight && dstake.StakesPending[i].PendingType {
-			helpers.SafeUint64Add(&result, dstake.StakesPending[i].PendingAmount)
+			if err = helpers.SafeUint64Add(&result, dstake.StakesPending[i].PendingAmount); err != nil {
+				return
+			}
 		}
 	}
 
 	return
 }
 
-func (dstake *DelegatedStake) GetDelegatedUnstakeAvailable(blockHeight uint64) (result uint64) {
+func (dstake *DelegatedStake) GetDelegatedUnstakeAvailable(blockHeight uint64) (result uint64, err error) {
 
 	for i := range dstake.StakesPending {
 		if dstake.StakesPending[i].ActivationHeight <= blockHeight && !dstake.StakesPending[i].PendingType {
-			helpers.SafeUint64Add(&result, dstake.StakesPending[i].PendingAmount)
+			if err = helpers.SafeUint64Add(&result, dstake.StakesPending[i].PendingAmount); err != nil {
+				return
+			}
 		}
 	}
 

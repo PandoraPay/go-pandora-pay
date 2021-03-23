@@ -63,8 +63,8 @@ func (consensus *Consensus) processFork(fork *Fork) {
 		} else {
 			prevHash := answer.Out
 
-			chainHash := consensus.httpServer.ApiWebsockets.ApiStore.LoadBlockHash(i - 1)
-			if len(chainHash) > 0 {
+			chainHash, err := consensus.httpServer.ApiWebsockets.ApiStore.LoadBlockHash(i - 1)
+			if err == nil {
 				if bytes.Equal(prevHash, chainHash) {
 					fork.ready = true
 					return
@@ -116,18 +116,18 @@ func (consensus *Consensus) execute() {
 	consensus.updateChain(consensus.chain.GetChainData())
 }
 
-func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, values []byte) interface{} {
+func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 
 	chainUpdateNotification := new(ChainUpdateNotification)
 	if err := json.Unmarshal(values, &chainUpdateNotification); err != nil {
-		return nil
+		return nil, err
 	}
 
 	forkFound, exists := consensus.forks.hashes.Load(string(chainUpdateNotification.Hash))
 	if exists {
 		fork := forkFound.(*Fork)
 		fork.AddConn(conn)
-		return nil
+		return nil, nil
 	}
 
 	chainLastUpdatePointer := atomic.LoadPointer(&consensus.chainLastUpdate)
@@ -151,7 +151,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 func CreateConsensus(httpServer *node_http.HttpServer, chain *blockchain.Blockchain, mempool *mempool.Mempool) *Consensus {

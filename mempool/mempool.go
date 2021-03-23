@@ -1,11 +1,11 @@
 package mempool
 
 import (
+	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/config/fees"
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
 	"strconv"
 	"sync"
 	"time"
@@ -35,22 +35,19 @@ type Mempool struct {
 	result     *mempoolResult
 }
 
-func (mempool *Mempool) AddTxToMemPoolSilent(tx *transaction.Transaction, height uint64, mine bool) (result bool, err error) {
-	defer func() {
-		err = helpers.ConvertRecoverError(recover())
-	}()
-	result = mempool.AddTxToMemPool(tx, height, mine)
-	return
-}
+func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) (out bool, err error) {
 
-func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) bool {
-
-	tx.VerifyBloomAll()
+	if err = tx.VerifyBloomAll(); err != nil {
+		return
+	}
 	if _, found := mempool.txs.txsMap.Load(tx.Bloom.HashStr); found {
-		return false
+		return
 	}
 
-	minerFees := tx.ComputeFees()
+	minerFees, err := tx.ComputeFees()
+	if err != nil {
+		return
+	}
 
 	size := uint64(len(tx.Serialize()))
 	var selectedFeeToken *string
@@ -74,7 +71,7 @@ func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 	}
 
 	if selectedFeeToken == nil {
-		panic("Transaction fee was not accepted")
+		return false, errors.New("Transaction fee was not accepted")
 	}
 
 	mempoolTx := &mempoolTx{
@@ -88,7 +85,7 @@ func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 
 	//meanwhile it was inserted, if not, let's store it
 	if _, exists := mempool.txs.txsMap.LoadOrStore(tx.Bloom.HashStr, mempoolTx); exists {
-		return false
+		return
 	}
 
 	//making sure that the transaction is not inserted twice
@@ -102,7 +99,7 @@ func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 
 	gui.Info2Update("mempool", strconv.FormatUint(mempool.txs.txsCount, 10))
 
-	return true
+	return true, nil
 }
 
 func (mempool *Mempool) Exists(txId []byte) bool {
@@ -137,7 +134,7 @@ func (mempool *Mempool) Delete(txId []byte) (tx *transaction.Transaction) {
 	return
 }
 
-func InitMemPool() (mempool *Mempool) {
+func InitMemPool() (mempool *Mempool, err error) {
 
 	gui.Log("MemPool init...")
 

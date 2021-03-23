@@ -36,7 +36,7 @@ func (store *Store) close() {
 	gui.Log("Store Closed " + store.Name)
 }
 
-func DBInit() {
+func DBInit() (err error) {
 
 	var prefix = "network"
 	switch config.NETWORK_SELECTED {
@@ -48,16 +48,15 @@ func DBInit() {
 		prefix = "dev"
 	}
 
-	var err error
 	if _, err = os.Stat("./_build"); os.IsNotExist(err) {
 		if err = os.Mkdir("./_build", 0755); err != nil {
-			panic(err)
+			return
 		}
 	}
 
 	if _, err = os.Stat("./_build/" + prefix); os.IsNotExist(err) {
 		if err = os.Mkdir("./_build/"+prefix, 0755); err != nil {
-			panic(err)
+			return
 		}
 	}
 
@@ -72,17 +71,21 @@ func DBInit() {
 	StoreMempool.init()
 
 	if err = StoreSettings.DB.Update(func(boltTx *bolt.Tx) (err error) {
-		_, err = boltTx.CreateBucketIfNotExists([]byte("Settings"))
+		if _, err = boltTx.CreateBucketIfNotExists([]byte("Settings")); err != nil {
+			return
+		}
 		return
 	}); err != nil {
-		panic(err)
+		return
 	}
 
 	if err = StoreWallet.DB.Update(func(boltTx *bolt.Tx) (err error) {
-		_, err = boltTx.CreateBucketIfNotExists([]byte("Wallet"))
+		if _, err = boltTx.CreateBucketIfNotExists([]byte("Wallet")); err != nil {
+			return
+		}
 		return
 	}); err != nil {
-		panic(err)
+		return
 	}
 
 	if err = StoreBlockchain.DB.Update(func(boltTx *bolt.Tx) (err error) {
@@ -92,17 +95,24 @@ func DBInit() {
 		if _, err = boltTx.CreateBucketIfNotExists([]byte("Accounts")); err != nil {
 			return
 		}
-		_, err = boltTx.CreateBucketIfNotExists([]byte("Tokens"))
+		if _, err = boltTx.CreateBucketIfNotExists([]byte("Tokens")); err != nil {
+			return
+		}
 		return
 	}); err != nil {
-		panic(err)
+		return
 	}
 
 	if err = StoreMempool.DB.Update(func(boltTx *bolt.Tx) (err error) {
+		if _, err = boltTx.CreateBucketIfNotExists([]byte("Mempool")); err != nil {
+			return
+		}
 		return
 	}); err != nil {
-		panic(err)
+		return
 	}
+
+	return
 }
 
 func DBClose() {
