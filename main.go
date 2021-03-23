@@ -52,6 +52,7 @@ func main() {
 	var myForging *forging.Forging
 	var myMempool *mempool.Mempool
 	var myChain *blockchain.Blockchain
+	var myNetwork *network.Network
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -59,6 +60,14 @@ func main() {
 		panic(err)
 	}
 	gui.Info("GO PANDORA PAY")
+
+	defer func() {
+		err := recover()
+		if err != nil {
+			gui.Fatal(err)
+			os.Exit(1)
+		}
+	}()
 
 	config.CPU_THREADS = runtime.GOMAXPROCS(0)
 	config.ARHITECTURE = runtime.GOARCH
@@ -110,7 +119,9 @@ func main() {
 
 	}
 
-	myNetwork := network.CreateNetwork(mySettings, myChain, myMempool)
+	if myNetwork, err = network.CreateNetwork(mySettings, myChain, myMempool); err != nil {
+		panic(err)
+	}
 	globals.Data["network"] = myNetwork
 
 	gui.Log("Main Loop")

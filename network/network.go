@@ -53,16 +53,20 @@ func (network *Network) execute() {
 	}
 }
 
-func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) *Network {
+func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (network *Network, err error) {
 
-	tcpServer := node_tcp.CreateTcpServer(settings, chain, mempool)
+	tcpServer, err := node_tcp.CreateTcpServer(settings, chain, mempool)
+	if err != nil {
+		return
+	}
+
 	knownNodes := known_nodes.CreateKnownNodes()
 
 	for _, seed := range config.NETWORK_SEEDS {
 		knownNodes.AddKnownNode(&seed, true)
 	}
 
-	network := &Network{
+	network = &Network{
 		tcpServer:  tcpServer,
 		KnownNodes: knownNodes,
 		Websockets: tcpServer.HttpServer.Websockets,
@@ -71,5 +75,5 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 
 	go network.execute()
 
-	return network
+	return
 }

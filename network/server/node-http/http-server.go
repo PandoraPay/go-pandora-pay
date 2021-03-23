@@ -66,7 +66,7 @@ func (server *HttpServer) initialize() {
 
 }
 
-func CreateHttpServer(tcpListener net.Listener, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *HttpServer {
+func CreateHttpServer(tcpListener net.Listener, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) (server *HttpServer, err error) {
 
 	apiStore := api_store.CreateAPIStore(chain)
 	apiWebsockets := api_websockets.CreateWebsocketsAPI(apiStore, chain, settings, mempool)
@@ -74,7 +74,7 @@ func CreateHttpServer(tcpListener net.Listener, chain *blockchain.Blockchain, se
 
 	websockets := websocks.CreateWebsockets(api, apiWebsockets)
 
-	server := &HttpServer{
+	server = &HttpServer{
 		tcpListener:     tcpListener,
 		websocketServer: websocks.CreateWebsocketServer(websockets),
 		Websockets:      websockets,
@@ -84,5 +84,5 @@ func CreateHttpServer(tcpListener net.Listener, chain *blockchain.Blockchain, se
 	}
 	server.initialize()
 
-	return server
+	return
 }

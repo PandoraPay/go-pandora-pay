@@ -1,6 +1,7 @@
 package node_tcp
 
 import (
+	"errors"
 	"net"
 	"pandora-pay/blockchain"
 	"pandora-pay/config/globals"
@@ -19,9 +20,9 @@ type TcpServer struct {
 	HttpServer  *node_http.HttpServer
 }
 
-func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) *TcpServer {
+func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (server *TcpServer, err error) {
 
-	server := &TcpServer{}
+	server = &TcpServer{}
 
 	// Create local listener on next available port
 
@@ -41,25 +42,24 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 	if address == "" {
 		conn, err := net.Dial("udp", "8.8.8.8:80")
 		if err != nil {
-			gui.Fatal("Error dialing dns to discover my own ip")
+			return nil, errors.New("Error dialing dns to discover my own ip" + err.Error())
 		}
 		address = conn.LocalAddr().(*net.UDPAddr).IP.String()
 		if err = conn.Close(); err != nil {
-			gui.Error("Error closing the connection")
+			return nil, errors.New("Error closing the connection" + err.Error())
 		}
 	}
 	server.Address = address
 	server.Port = port
 
-	var err error
 	server.tcpListener, err = net.Listen("tcp", "127.0.0.1:"+port)
 	if err != nil {
-		gui.Fatal("Error creating TcpServer")
+		return nil, errors.New("Error creating TcpServer" + err.Error())
 	}
 
 	gui.InfoUpdate("TCP", address+":"+port)
 
-	server.HttpServer = node_http.CreateHttpServer(server.tcpListener, chain, settings, mempool)
+	server.HttpServer, err = node_http.CreateHttpServer(server.tcpListener, chain, settings, mempool)
 
-	return server
+	return
 }
