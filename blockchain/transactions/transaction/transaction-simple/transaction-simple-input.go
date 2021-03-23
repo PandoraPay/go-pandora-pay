@@ -24,10 +24,10 @@ func (vin *TransactionSimpleInput) Deserialize(reader *helpers.BufferReader) (er
 	if vin.Amount, err = reader.ReadUvarint(); err != nil {
 		return err
 	}
-	if vin.Signature, err = reader.ReadBytes(65); err != nil {
+	if vin.Token, err = reader.ReadToken(); err != nil {
 		return err
 	}
-	if vin.Token, err = reader.ReadToken(); err != nil {
+	if vin.Signature, err = reader.ReadBytes(65); err != nil {
 		return err
 	}
 	return

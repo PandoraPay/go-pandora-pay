@@ -129,7 +129,7 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader, bloom bool) (er
 		hash := cryptography.SHA3(serialized)
 		tx.Bloom = &TransactionBloom{
 			Serialized: serialized,
-			Size:       uint64(end - first),
+			Size:       uint64(len(serialized)),
 			Hash:       hash,
 			HashStr:    string(hash),
 			bloomed:    true,

@@ -77,7 +77,6 @@ func (reader *BufferReader) ReadToken() ([]byte, error) {
 		return nil, err
 	}
 
-	reader.Position += 1
 	if tokenType == 0 {
 		return []byte{}, nil
 	} else if tokenType == 1 {
