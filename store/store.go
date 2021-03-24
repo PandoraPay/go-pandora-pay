@@ -5,6 +5,7 @@ import (
 	"os"
 	"pandora-pay/config"
 	"pandora-pay/gui"
+	transactional_db "pandora-pay/store/transactional-db"
 )
 
 type Store struct {
@@ -13,6 +14,7 @@ type Store struct {
 	DB     *bolt.DB
 }
 
+var StoreBlockchain2 *transactional_db.TransactionalDB
 var StoreBlockchain, StoreWallet, StoreSettings, StoreMempool *Store
 
 func (store *Store) init() {
