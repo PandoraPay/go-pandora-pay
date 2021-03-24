@@ -18,6 +18,8 @@ func startForging(
 ) {
 
 	wg := sync.WaitGroup{}
+
+	//wallets must be read only after its assignment
 	wallets := make([][]*ForgingWalletAddressRequired, threads)
 
 	var err error

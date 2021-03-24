@@ -2,13 +2,11 @@ package forging
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"math/big"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
-	"pandora-pay/gui"
 	"sync"
 	"time"
 )
@@ -37,7 +35,7 @@ func forge(
 	work *ForgingWork, // SAFE READ ONLY
 	workChannel <-chan *ForgingWork, // SAFE
 	solutionChannel chan *ForgingSolution, // SAFE
-	wallets []*ForgingWalletAddressRequired, // READ ONLY
+	wallets []*ForgingWalletAddressRequired, // SAFE READ ONLY
 ) {
 
 	buf := make([]byte, binary.MaxVarintLen64)
@@ -95,7 +93,7 @@ func forge(
 
 				} else {
 					//for debugging only
-					gui.Log(hex.EncodeToString(kernelHash))
+					//gui.Log(hex.EncodeToString(kernelHash))
 				}
 
 				serialized = serialized[:len(serialized)-n-20]

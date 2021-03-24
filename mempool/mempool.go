@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	"unsafe"
 )
 
 type mempoolTx struct {
@@ -21,6 +20,14 @@ type mempoolTx struct {
 	ChainHeight uint64
 }
 
+type mempoolResult struct {
+	txs          []*transaction.Transaction
+	totalSize    uint64
+	chainHash    []byte //32
+	chainHeight  uint64
+	sync.RWMutex `json:"-"`
+}
+
 type mempoolTxs struct {
 	txsCount     uint64
 	txsMap       sync.Map
@@ -30,9 +37,9 @@ type mempoolTxs struct {
 }
 
 type Mempool struct {
-	txs        mempoolTxs
-	updateTask unsafe.Pointer // *memPoolUpdateTask used to know when the work has been changed
-	result     *mempoolResult
+	txs     *mempoolTxs
+	result  *mempoolResult
+	newWork chan *mempoolWork
 }
 
 func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) (out bool, err error) {
@@ -134,14 +141,25 @@ func (mempool *Mempool) Delete(txId []byte) (tx *transaction.Transaction) {
 	return
 }
 
+//reset the forger
+func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
+	mempool.newWork <- &mempoolWork{
+		chainHash:   hash,
+		chainHeight: height,
+	}
+}
+func (mempool *Mempool) RestartWork() {
+	mempool.newWork <- nil
+}
+
 func InitMemPool() (mempool *Mempool, err error) {
 
 	gui.Log("MemPool init...")
 
 	mempool = &Mempool{
-		updateTask: nil,
-		result:     &mempoolResult{},
-		txs: mempoolTxs{
+		newWork: make(chan *mempoolWork),
+		result:  &mempoolResult{},
+		txs: &mempoolTxs{
 			txsList: []*mempoolTx{},
 		},
 	}
@@ -153,7 +171,8 @@ func InitMemPool() (mempool *Mempool, err error) {
 		}
 	}()
 
-	initWorker(mempool)
+	worker := new(mempoolWorker)
+	go worker.processing(mempool.newWork, mempool.txs, mempool.result)
 
 	return
 }
