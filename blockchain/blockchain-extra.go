@@ -121,10 +121,12 @@ func (chain *Blockchain) initForging() {
 
 			if err = blkComplete.BloomNow(); err != nil {
 				gui.Error("Error blooming forged blkComplete", err)
+				chain.mempool.RestartWork()
 				continue
 			}
 			if err = blkComplete.Block.BloomNow(); err != nil {
-				gui.Error("Error blooming forged blkComplete", err)
+				gui.Error("Error blooming forged block", err)
+				chain.mempool.RestartWork()
 				continue
 			}
 

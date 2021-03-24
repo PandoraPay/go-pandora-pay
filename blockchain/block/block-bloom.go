@@ -28,7 +28,7 @@ func (blk *Block) BloomNow() (err error) {
 
 	bloom.DelegatedPublicKeyHash = cryptography.ComputePublicKeyHash(delegatedPublicKey)
 
-	bloom.DelegatedSignatureVerified = ecdsa.VerifySignature(delegatedPublicKey, hashForSignature, blk.Signature)
+	bloom.DelegatedSignatureVerified = ecdsa.VerifySignature(delegatedPublicKey, hashForSignature, blk.Signature[0:64])
 	if !bloom.DelegatedSignatureVerified {
 		return errors.New("BLock signature is invalid")
 	}

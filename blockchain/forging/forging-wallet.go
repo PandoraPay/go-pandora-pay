@@ -6,6 +6,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/cryptography"
 	"pandora-pay/store"
 	"sync"
 )
@@ -23,12 +24,17 @@ type ForgingWalletAddress struct {
 	account                *account.Account
 }
 
-func (w *ForgingWallet) AddWallet(delegatedPubHash []byte, delegatedPriv []byte, pubKeyHash []byte) error {
+func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKeyHash []byte) error {
 
 	w.Lock()
 	defer w.Unlock()
 
-	private := addresses.PrivateKey{Key: delegatedPriv}
+	delegatedPrivateKey := addresses.PrivateKey{Key: delegatedPriv}
+	delegatedPublicKey, err := delegatedPrivateKey.GeneratePublicKey()
+	if err != nil {
+		return err
+	}
+	delegatedPubHash := cryptography.ComputePublicKeyHash(delegatedPublicKey)
 
 	//let's read the balance
 	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
@@ -37,7 +43,7 @@ func (w *ForgingWallet) AddWallet(delegatedPubHash []byte, delegatedPriv []byte,
 		acc := accs.GetAccount(pubKeyHash)
 
 		address := ForgingWalletAddress{
-			&private,
+			&delegatedPrivateKey,
 			delegatedPubHash,
 			pubKeyHash,
 			acc,

@@ -59,7 +59,7 @@ func (wallet *Wallet) AddNewAddress() (walletAddress *WalletAddress, err error) 
 	wallet.Count += 1
 	wallet.SeedIndex += 1
 
-	go wallet.forging.Wallet.AddWallet(walletAddress.PublicKeyHash, walletAddress.PrivateKey.Key, walletAddress.PublicKeyHash)
+	go wallet.forging.Wallet.AddWallet(walletAddress.PrivateKey.Key, walletAddress.PublicKeyHash)
 
 	wallet.updateWallet()
 	wallet.saveWallet(wallet.Count-1, wallet.Count, -1)
