@@ -18,18 +18,12 @@ type ForgingWallet struct {
 
 type ForgingWalletAddress struct {
 	delegatedPrivateKey    *addresses.PrivateKey
-	delegatedPublicKeyHash []byte //33 byte
+	delegatedPublicKeyHash []byte //20 byte
 	publicKeyHash          []byte //20byte
 	account                *account.Account
 }
 
-type ForgingWalletAddressRequired struct {
-	publicKeyHash []byte //20 byte
-	wallet        *ForgingWalletAddress
-	stakingAmount uint64
-}
-
-func (w *ForgingWallet) AddWallet(delegatedPub []byte, delegatedPriv []byte, pubKeyHash []byte) error {
+func (w *ForgingWallet) AddWallet(delegatedPubHash []byte, delegatedPriv []byte, pubKeyHash []byte) error {
 
 	w.Lock()
 	defer w.Unlock()
@@ -44,7 +38,7 @@ func (w *ForgingWallet) AddWallet(delegatedPub []byte, delegatedPriv []byte, pub
 
 		address := ForgingWalletAddress{
 			&private,
-			delegatedPub,
+			delegatedPubHash,
 			pubKeyHash,
 			acc,
 		}

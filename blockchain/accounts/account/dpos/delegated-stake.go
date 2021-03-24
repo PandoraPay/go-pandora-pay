@@ -74,7 +74,7 @@ func (dstake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
 
 func (dstake *DelegatedStake) Deserialize(reader *helpers.BufferReader) (err error) {
 
-	if dstake.DelegatedPublicKeyHash, err = reader.ReadBytes(33); err != nil {
+	if dstake.DelegatedPublicKeyHash, err = reader.ReadBytes(20); err != nil {
 		return
 	}
 	if dstake.StakeAvailable, err = reader.ReadUvarint(); err != nil {

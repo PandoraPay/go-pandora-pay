@@ -84,7 +84,7 @@ func (wallet *Wallet) loadWallet() error {
 					return
 				}
 				wallet.Addresses = append(wallet.Addresses, &newWalletAddress)
-				go wallet.forging.Wallet.AddWallet(newWalletAddress.PublicKey, newWalletAddress.PrivateKey.Key, newWalletAddress.PublicKeyHash)
+				go wallet.forging.Wallet.AddWallet(newWalletAddress.PublicKeyHash, newWalletAddress.PrivateKey.Key, newWalletAddress.PublicKeyHash)
 			}
 
 			checksum := wallet.computeChecksum()

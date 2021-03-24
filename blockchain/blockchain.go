@@ -163,7 +163,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					return
 				}
 
-				if !bytes.Equal(blkComplete.Block.DelegatedPublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash) {
+				if !bytes.Equal(blkComplete.Block.Bloom.DelegatedPublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash) {
 					return errors.New("Block Staking Delegated Public Key is not matching")
 				}
 

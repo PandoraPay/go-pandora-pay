@@ -12,11 +12,14 @@ type TransactionSimpleDelegate struct {
 	NewPublicKeyHash    helpers.ByteString //20 byte
 }
 
-func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) {
-	acc.DelegatedStake.AddStakePendingStake(tx.Amount, blockHeight)
+func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) (err error) {
+	if err = acc.DelegatedStake.AddStakePendingStake(tx.Amount, blockHeight); err != nil {
+		return
+	}
 	if tx.HasNewPublicKeyHash {
 		acc.DelegatedStake.DelegatedPublicKeyHash = tx.NewPublicKeyHash
 	}
+	return
 }
 
 func (tx *TransactionSimpleDelegate) Validate() error {

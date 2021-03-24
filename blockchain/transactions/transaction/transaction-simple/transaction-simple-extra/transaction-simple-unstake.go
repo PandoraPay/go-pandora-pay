@@ -11,10 +11,17 @@ type TransactionSimpleUnstake struct {
 	FeeExtra uint64 //this will be subtracted StakeAvailable
 }
 
-func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) {
-	acc.DelegatedStake.AddStakeAvailable(false, tx.Amount)
-	acc.DelegatedStake.AddStakeAvailable(false, tx.FeeExtra)
-	acc.DelegatedStake.AddStakePendingUnstake(tx.Amount, blockHeight)
+func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) (err error) {
+	if err = acc.DelegatedStake.AddStakeAvailable(false, tx.Amount); err != nil {
+		return
+	}
+	if err = acc.DelegatedStake.AddStakeAvailable(false, tx.FeeExtra); err != nil {
+		return
+	}
+	if err = acc.DelegatedStake.AddStakePendingUnstake(tx.Amount, blockHeight); err != nil {
+		return
+	}
+	return
 }
 
 func (tx *TransactionSimpleUnstake) Validate() error {

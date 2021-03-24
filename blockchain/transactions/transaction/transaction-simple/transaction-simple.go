@@ -40,9 +40,13 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 
 			switch tx.TxScript {
 			case TxSimpleScriptDelegate:
-				tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).IncludeTransactionVin0(blockHeight, acc)
+				if err = tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).IncludeTransactionVin0(blockHeight, acc); err != nil {
+					return
+				}
 			case TxSimpleScriptUnstake:
-				tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).IncludeTransactionVin0(blockHeight, acc)
+				if err = tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).IncludeTransactionVin0(blockHeight, acc); err != nil {
+					return
+				}
 			}
 		}
 

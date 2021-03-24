@@ -95,7 +95,6 @@ func (chain *Blockchain) createNextBlockForForging() {
 		}
 
 	}
-	blk.DelegatedPublicKeyHash = make([]byte, 20)
 	blk.Forger = make([]byte, 20)
 	blk.Signature = make([]byte, 65)
 
@@ -105,7 +104,7 @@ func (chain *Blockchain) createNextBlockForForging() {
 
 	chain.RUnlock()
 
-	chain.forging.RestartForgingWorkers(blkComplete, target)
+	chain.forging.ForgingNewWork(blkComplete, target)
 }
 
 func (chain *Blockchain) initForging() {
@@ -115,12 +114,18 @@ func (chain *Blockchain) initForging() {
 		var err error
 		for {
 
-			blkComplete := <-chain.forging.SolutionChannel
+			blkComplete, ok := <-chain.forging.SolutionChannel
+			if !ok {
+				return
+			}
+
 			if err = blkComplete.BloomNow(); err != nil {
 				gui.Error("Error blooming forged blkComplete", err)
+				continue
 			}
 			if err = blkComplete.Block.BloomNow(); err != nil {
 				gui.Error("Error blooming forged blkComplete", err)
+				continue
 			}
 
 			array := []*block_complete.BlockComplete{blkComplete}

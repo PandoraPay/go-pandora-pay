@@ -26,7 +26,7 @@ import (
 var commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--tcp-server-port=<port>] [--tcp-server-address=<address>] [--tor-onion=<onion>] 
+  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--tcp-server-port=<port>] [--tcp-server-address=<address>] [--tor-onion=<onion>] [--db-prefix=<prefix>] 
   pandorapay -h | --help
 
 Options:
@@ -40,8 +40,8 @@ Options:
   --node-name=<name>   					Change node name
   --tcp-server-port=<port>				Change node tcp server port
   --tcp-server-address=<address>		Change node tcp address
-  --tor-onion=<onion>					Define your tor onion address to be used. 		
-
+  --tor-onion=<onion>					Define your tor onion address to be used.
+  --db-prefix=<prefix>					Prefix for the database folder (when you open multiple instances)
 `
 
 func main() {

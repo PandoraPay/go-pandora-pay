@@ -53,13 +53,13 @@ func (wallet *Wallet) AddNewAddress() (walletAddress *WalletAddress, err error) 
 		return
 	}
 	walletAddress.AddressEncoded = walletAddress.Address.EncodeAddr()
-	publicKeyHash := cryptography.ComputePublicKeyHash(walletAddress.PublicKey)
+	walletAddress.PublicKeyHash = cryptography.ComputePublicKeyHash(walletAddress.PublicKey)
 
 	wallet.Addresses = append(wallet.Addresses, walletAddress)
 	wallet.Count += 1
 	wallet.SeedIndex += 1
 
-	go wallet.forging.Wallet.AddWallet(walletAddress.PublicKey, walletAddress.PrivateKey.Key, publicKeyHash)
+	go wallet.forging.Wallet.AddWallet(walletAddress.PublicKeyHash, walletAddress.PrivateKey.Key, walletAddress.PublicKeyHash)
 
 	wallet.updateWallet()
 	wallet.saveWallet(wallet.Count-1, wallet.Count, -1)

@@ -35,7 +35,9 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 
 	reward := reward.GetRewardAt(blk.Height)
 	acc := acs.GetAccountEvenEmpty(blk.Forger)
-	acc.RefreshDelegatedStake(blk.Height)
+	if err = acc.RefreshDelegatedStake(blk.Height); err != nil {
+		return
+	}
 
 	//for genesis block
 	if blk.Height == 0 && !acc.HasDelegatedStake() {
@@ -44,8 +46,12 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 		acc.DelegatedStake.DelegatedPublicKeyHash = blk.Bloom.DelegatedPublicKeyHash
 	}
 
-	acc.DelegatedStake.AddStakePendingStake(reward, blk.Height)
-	acc.DelegatedStake.AddStakePendingStake(allFees[config.NATIVE_TOKEN_STRING], blk.Height)
+	if err = acc.DelegatedStake.AddStakePendingStake(reward, blk.Height); err != nil {
+		return
+	}
+	if err = acc.DelegatedStake.AddStakePendingStake(allFees[config.NATIVE_TOKEN_STRING], blk.Height); err != nil {
+		return
+	}
 	for key, value := range allFees {
 		if key != config.NATIVE_TOKEN_STRING {
 			if err = acc.AddBalance(true, value, []byte(key)); err != nil {
