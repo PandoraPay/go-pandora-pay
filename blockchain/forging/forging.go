@@ -31,7 +31,8 @@ func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
 		return
 	}
 
-	go startForging(mempool, forging.SolutionChannel, forging.workChannel, forging.Wallet, config.CPU_THREADS)
+	forgingThread := createForgingThread(config.CPU_THREADS, mempool, forging.SolutionChannel, forging.workChannel, forging.Wallet)
+	go forgingThread.startForging()
 
 	return
 }

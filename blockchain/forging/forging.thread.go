@@ -6,16 +6,27 @@ import (
 	"pandora-pay/config/stake"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
+	"strconv"
+	"sync/atomic"
+	"time"
 )
 
-func getWallets(wallet *ForgingWallet, threads int, work *ForgingWork) [][]*ForgingWalletAddressRequired {
+type ForgingThread struct {
+	mempool         *mempool.Mempool
+	threads         int                                  //number of threads
+	wallet          *ForgingWallet                       //shared wallet, not thread safe
+	solutionChannel chan<- *block_complete.BlockComplete //broadcasting that a solution thread was received
+	workChannel     <-chan *ForgingWork                  //detect if a new work was published
+}
+
+func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork) [][]*ForgingWalletAddressRequired {
 
 	var err error
-	wallets := make([][]*ForgingWalletAddressRequired, threads)
+	wallets := make([][]*ForgingWalletAddressRequired, thread.threads)
 
 	//distributing the wallets to each thread uniformly
 	wallet.RLock()
-	for i := 0; i < threads; i++ {
+	for i := 0; i < thread.threads; i++ {
 		wallets[i] = []*ForgingWalletAddressRequired{}
 	}
 	c := 0
@@ -34,7 +45,7 @@ func getWallets(wallet *ForgingWallet, threads int, work *ForgingWork) [][]*Forg
 				}
 			}
 			if stakingAmount >= stake.GetRequiredStake(work.blkComplete.Block.Height) {
-				wallets[c%threads] = append(wallets[c%threads], &ForgingWalletAddressRequired{
+				wallets[c%thread.threads] = append(wallets[c%thread.threads], &ForgingWalletAddressRequired{
 					publicKeyHash: walletAdr.delegatedPublicKeyHash,
 					wallet:        walletAdr,
 					stakingAmount: stakingAmount,
@@ -47,15 +58,9 @@ func getWallets(wallet *ForgingWallet, threads int, work *ForgingWork) [][]*Forg
 	return wallets
 }
 
-func startForging(
-	mempool *mempool.Mempool,
-	solutionChannel chan *block_complete.BlockComplete,
-	workChannel <-chan *ForgingWork, //detect if a new work was published
-	wallet *ForgingWallet, //shared wallet, not thread safe
-	threads int, //number of threads
-) {
+func (thread *ForgingThread) startForging() {
 
-	workers := make([]*ForgingWorkerThread, threads)
+	workers := make([]*ForgingWorkerThread, thread.threads)
 	forgingWorkerSolutionChannel := make(chan *ForgingSolution, 0)
 	for i := 0; i < len(workers); i++ {
 		workers[i] = createForgingWorkerThread(i, forgingWorkerSolutionChannel)
@@ -63,31 +68,53 @@ func startForging(
 	}
 
 	//wallets must be read only after its assignment
+	ticker := time.NewTicker(1 * time.Second)
+
+	defer func() {
+		for i := 0; i < len(workers); i++ {
+			close(workers[i].workChannel)
+		}
+		ticker.Stop()
+	}()
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				s := ""
+				for i := 0; i < thread.threads; i++ {
+					hashesPerSecond := atomic.SwapUint32(&workers[i].hashes, 0)
+					s += strconv.FormatUint(uint64(hashesPerSecond), 10) + " "
+				}
+				gui.InfoUpdate("Hashes/s", s)
+			}
+		}
+	}()
 
 	var err error
 	for {
 
-		work, ok := <-workChannel
+		work, ok := <-thread.workChannel
 		if !ok {
 			return
 		}
 
-		wallets := getWallets(wallet, threads, work)
+		wallets := thread.getWallets(thread.wallet, work)
 
-		for i := 0; i < threads; i++ {
+		for i := 0; i < thread.threads; i++ {
 			workers[i].walletsChannel <- wallets[i]
 		}
-		for i := 0; i < threads; i++ {
+		for i := 0; i < thread.threads; i++ {
 			workers[i].workChannel <- work
 		}
 
 		select {
 		case solution := <-forgingWorkerSolutionChannel:
-			if err = publishSolution(mempool, solutionChannel, solution); err != nil {
+			if err = thread.publishSolution(solution); err != nil {
 				gui.Error("Error publishing solution", err)
 			}
 			break
-		case work, ok = <-workChannel:
+		case work, ok = <-thread.workChannel:
 			if !ok {
 				return
 			}
@@ -98,7 +125,7 @@ func startForging(
 
 }
 
-func publishSolution(mempool *mempool.Mempool, solutionChannel chan *block_complete.BlockComplete, solution *ForgingSolution) (err error) {
+func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err error) {
 
 	work := solution.work
 
@@ -111,7 +138,7 @@ func publishSolution(mempool *mempool.Mempool, solutionChannel chan *block_compl
 		}
 	}
 
-	work.blkComplete.Txs = mempool.GetNextTransactionsToInclude(work.blkComplete.Block.Height, work.blkComplete.Block.PrevHash)
+	work.blkComplete.Txs = thread.mempool.GetNextTransactionsToInclude(work.blkComplete.Block.Height, work.blkComplete.Block.PrevHash)
 	work.blkComplete.Block.MerkleHash = work.blkComplete.MerkleHash()
 
 	hashForSignature := work.blkComplete.Block.SerializeForSigning()
@@ -121,6 +148,16 @@ func publishSolution(mempool *mempool.Mempool, solutionChannel chan *block_compl
 	}
 
 	//send message to blockchain
-	solutionChannel <- work.blkComplete
+	thread.solutionChannel <- work.blkComplete
 	return
+}
+
+func createForgingThread(threads int, mempool *mempool.Mempool, solutionChannel chan<- *block_complete.BlockComplete, workChannel <-chan *ForgingWork, wallet *ForgingWallet) *ForgingThread {
+	return &ForgingThread{
+		threads:         threads,
+		mempool:         mempool,
+		solutionChannel: solutionChannel,
+		workChannel:     workChannel,
+		wallet:          wallet,
+	}
 }

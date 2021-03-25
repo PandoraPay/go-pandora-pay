@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
+	"sync/atomic"
 	"time"
 )
 
@@ -27,8 +28,8 @@ type ForgingWalletAddressRequired struct {
 }
 
 type ForgingWorkerThread struct {
+	hashes          uint32
 	index           int
-	ticker          <-chan time.Time
 	workChannel     chan *ForgingWork                    // SAFE
 	solutionChannel chan *ForgingSolution                // SAFE
 	walletsChannel  chan []*ForgingWalletAddressRequired // SAFE
@@ -47,13 +48,16 @@ func (worker *ForgingWorkerThread) forge() {
 
 	var height, timestamp uint64
 	var serialized []byte
-	//hashes := 0
+
 	for {
 
 		timeNow := uint64(time.Now().Unix()) + config.NETWORK_TIMESTAMP_DRIFT_MAX
 
 		select {
-		case newWork := <-worker.workChannel: //or the work was changed meanwhile
+		case newWork, ok := <-worker.workChannel: //or the work was changed meanwhile
+			if !ok {
+				return
+			}
 			work = newWork
 			height = work.blkComplete.Block.Height
 			serialized = work.blkComplete.Block.SerializeForForging()
@@ -61,10 +65,9 @@ func (worker *ForgingWorkerThread) forge() {
 
 			serialized = serialized[:len(serialized)-n-20]
 			timestamp = work.blkComplete.Block.Timestamp + 1
+			atomic.StoreUint32(&worker.hashes, 0)
 		case newWallets := <-worker.walletsChannel:
 			wallets = newWallets
-		case <-worker.ticker:
-			//hashes := 0
 		default:
 			if timestamp > timeNow {
 				time.Sleep(10 * time.Millisecond)
@@ -115,7 +118,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 			timestamp += 1
 		}
-		//hashes += diff * len(wallets)
+		atomic.AddUint32(&worker.hashes, uint32((diff+1)*len(wallets)))
 
 	}
 
@@ -123,7 +126,6 @@ func (worker *ForgingWorkerThread) forge() {
 
 func createForgingWorkerThread(index int, solutionChannel chan *ForgingSolution) *ForgingWorkerThread {
 	return &ForgingWorkerThread{
-		ticker:          time.NewTicker(time.Second).C,
 		index:           index,
 		walletsChannel:  make(chan []*ForgingWalletAddressRequired),
 		workChannel:     make(chan *ForgingWork),
