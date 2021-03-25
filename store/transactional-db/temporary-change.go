@@ -14,16 +14,22 @@ type TemporaryChanges struct {
 	sync.RWMutex `json:"-"`
 }
 
-func (changes *TemporaryChanges) Insert(before, after []byte, index uint64) {
-	changes.Lock()
-	defer changes.Unlock()
+func (changes *TemporaryChanges) Insert(before, after []byte, index uint64, lock bool) {
+
+	if lock {
+		changes.Lock()
+		defer changes.Unlock()
+	}
 
 	changes.list = append(changes.list, &TemporaryChange{index, before, after})
 }
 
-func (changes *TemporaryChanges) Get(index uint64) ([]byte, bool) {
-	changes.RLock()
-	defer changes.RUnlock()
+func (changes *TemporaryChanges) Get(index uint64, lock bool) ([]byte, bool) {
+
+	if lock {
+		changes.RLock()
+		defer changes.RUnlock()
+	}
 
 	var found *TemporaryChange
 	for _, change := range changes.list {

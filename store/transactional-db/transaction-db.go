@@ -3,7 +3,6 @@ package transactional_db
 import (
 	"errors"
 	"sync"
-	"sync/atomic"
 )
 
 type TransactionDB struct {
@@ -43,10 +42,10 @@ func (tx *TransactionDB) Get(key []byte) []byte {
 		return value.([]byte)
 	}
 
-	data, exists := tx.database.temporary.Load(keyStr)
+	temporaryFound, exists := tx.database.temporary.Load(keyStr)
 	if exists {
-		temporary := data.(*TemporaryChanges)
-		out, found := temporary.Get(tx.index)
+		temporary := temporaryFound.(*TemporaryChanges)
+		out, found := temporary.Get(tx.index, true)
 		if found {
 			return out
 		}
@@ -56,14 +55,15 @@ func (tx *TransactionDB) Get(key []byte) []byte {
 }
 
 func (tx *TransactionDB) Delete(key []byte) error {
-	tx.mutex.Lock()
-	defer tx.mutex.Unlock()
-
 	if !tx.writeable {
 		return errors.New("DB is not writable")
 	}
+
+	tx.mutex.Lock()
+	defer tx.mutex.Unlock()
+
 	keyStr := string(key)
-	tx.changes.Delete(keyStr)
+	tx.changes.Store(keyStr, nil)
 
 	return nil
 }
@@ -92,6 +92,7 @@ func (tx *TransactionDB) Store() error {
 	tx.mutex.Lock()
 	defer tx.mutex.Unlock()
 
+	writeIndex := tx.database.getNewIndex()
 	tx.committed.Range(func(key, value interface{}) bool {
 
 		newTemporary := &TemporaryChanges{
@@ -101,21 +102,26 @@ func (tx *TransactionDB) Store() error {
 		temporaryFound, _ := tx.database.temporary.LoadOrStore(key, newTemporary)
 		temporary := temporaryFound.(*TemporaryChanges)
 
-		before, found := temporary.Get(tx.index)
+		temporary.Lock()
+
+		before, found := temporary.Get(tx.index, false)
 		if !found {
 			before = tx.database.db.Get([]byte(key.(string)))
 		}
+		temporary.Insert(before, value.([]byte), writeIndex, false)
 
-		temporary.Insert(before, value.([]byte), tx.index)
+		temporary.Unlock()
 
 		return true
 	})
+
+	tx.database.indexes.Delete(writeIndex)
 
 	tx.Close()
 	return nil
 }
 
 func (tx TransactionDB) Close() {
-	atomic.CompareAndSwapUint64(&tx.database.indexSmallestOpen, tx.index, tx.index+1)
+	tx.database.indexes.Delete(tx.index)
 	tx.writeable = false
 }
