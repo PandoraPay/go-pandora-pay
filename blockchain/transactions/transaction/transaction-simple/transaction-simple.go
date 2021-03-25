@@ -5,6 +5,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
+	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/ecdsa"
@@ -12,11 +13,12 @@ import (
 )
 
 type TransactionSimple struct {
+	transaction_base_interface.TransactionBaseInterface
 	TxScript TransactionSimpleScriptType
 	Nonce    uint64
 	Vin      []*TransactionSimpleInput
 	Vout     []*TransactionSimpleOutput
-	Extra    interface{}
+	Extra    transaction_simple_extra.TransactionSimpleExtraInterface
 
 	Bloom *TransactionSimpleBloom
 }
@@ -40,11 +42,8 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 
 			switch tx.TxScript {
 			case TxSimpleScriptDelegate:
-				if err = tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).IncludeTransactionVin0(blockHeight, acc); err != nil {
-					return
-				}
 			case TxSimpleScriptUnstake:
-				if err = tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).IncludeTransactionVin0(blockHeight, acc); err != nil {
+				if err = tx.Extra.IncludeTransactionVin0(blockHeight, acc); err != nil {
 					return
 				}
 			}
@@ -149,13 +148,8 @@ func (tx *TransactionSimple) Validate() (err error) {
 		return errors.New("Invalid TxScript")
 	}
 
-	switch tx.TxScript {
-	case TxSimpleScriptDelegate:
-		if err = tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).Validate(); err != nil {
-			return
-		}
-	case TxSimpleScriptUnstake:
-		if err = tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).Validate(); err != nil {
+	if tx.Extra != nil {
+		if err = tx.Extra.Validate(); err != nil {
 			return
 		}
 	}
@@ -185,13 +179,8 @@ func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignatu
 		vout.Serialize(writer)
 	}
 
-	switch tx.TxScript {
-	case TxSimpleScriptDelegate:
-		tx.Extra.(*transaction_simple_extra.TransactionSimpleDelegate).Serialize(writer)
-	case TxSimpleScriptUnstake:
-		tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).Serialize(writer)
-	case TxSimpleScriptWithdraw:
-		tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).Serialize(writer)
+	if tx.Extra != nil {
+		tx.Extra.Serialize(writer)
 	}
 }
 
@@ -230,21 +219,9 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 		}
 	}
 
-	switch tx.TxScript {
-	case TxSimpleScriptDelegate:
-		extra := &transaction_simple_extra.TransactionSimpleDelegate{}
-		if err = extra.Deserialize(reader); err != nil {
-			return
-		}
-		tx.Extra = extra
-	case TxSimpleScriptUnstake:
-		extra := &transaction_simple_extra.TransactionSimpleUnstake{}
-		if err = extra.Deserialize(reader); err != nil {
-			return
-		}
-		tx.Extra = extra
+	if tx.Extra != nil {
+		return tx.Extra.Deserialize(reader)
 	}
-
 	return
 }
 

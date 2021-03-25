@@ -7,6 +7,7 @@ import (
 )
 
 type TransactionSimpleUnstake struct {
+	TransactionSimpleExtraInterface
 	Amount   uint64
 	FeeExtra uint64 //this will be subtracted StakeAvailable
 }

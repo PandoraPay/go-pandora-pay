@@ -48,13 +48,7 @@ func (tx *Transaction) VerifyBloomAll() (err error) {
 	if err = tx.Bloom.verifyIfBloomed(); err != nil {
 		return
 	}
-	switch tx.TxType {
-	case transaction_type.TxSimple:
-		base := tx.TxBase.(*transaction_simple.TransactionSimple)
-		return base.VerifyBloomAll()
-	default:
-		return errors.New("Invalid tx.TxType")
-	}
+	return tx.TxBase.VerifyBloomAll()
 }
 
 func (bloom *TransactionBloom) verifyIfBloomed() error {

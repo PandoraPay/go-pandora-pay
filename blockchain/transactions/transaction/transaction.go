@@ -4,6 +4,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
+	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/cryptography"
@@ -13,26 +14,16 @@ import (
 type Transaction struct {
 	Version uint64
 	TxType  transaction_type.TransactionType
-	TxBase  interface{}
+	TxBase  transaction_base_interface.TransactionBaseInterface
 	Bloom   *TransactionBloom
 }
 
 func (tx *Transaction) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) error {
-	switch tx.TxType {
-	case transaction_type.TxSimple:
-		return tx.TxBase.(*transaction_simple.TransactionSimple).IncludeTransaction(blockHeight, accs, toks)
-	default:
-		return errors.New("Invalid TxType")
-	}
+	return tx.TxBase.IncludeTransaction(blockHeight, accs, toks)
 }
 
 func (tx *Transaction) AddFees(fees map[string]uint64) error {
-	switch tx.TxType {
-	case transaction_type.TxSimple:
-		return tx.TxBase.(*transaction_simple.TransactionSimple).ComputeFees(fees)
-	default:
-		return errors.New("Invalid Txtype")
-	}
+	return tx.TxBase.ComputeFees(fees)
 }
 
 func (tx *Transaction) ComputeFees() (fees map[string]uint64, err error) {
@@ -47,11 +38,7 @@ func (tx *Transaction) SerializeForSigning() []byte {
 
 func (tx *Transaction) VerifySignatureManually() bool {
 	hash := tx.SerializeForSigning()
-	switch tx.TxType {
-	case transaction_type.TxSimple:
-		return tx.TxBase.(*transaction_simple.TransactionSimple).VerifySignatureManually(hash)
-	}
-	return false
+	return tx.TxBase.VerifySignatureManually(hash)
 }
 
 func (tx *Transaction) ComputeHash() []byte {
@@ -65,10 +52,7 @@ func (tx *Transaction) serializeTx(inclSignature bool) []byte {
 	writer.WriteUvarint(tx.Version)
 	writer.WriteUvarint(uint64(tx.TxType))
 
-	switch tx.TxType {
-	case transaction_type.TxSimple:
-		tx.TxBase.(*transaction_simple.TransactionSimple).Serialize(writer, inclSignature)
-	}
+	tx.TxBase.Serialize(writer, inclSignature)
 
 	return writer.Bytes()
 }
@@ -78,19 +62,15 @@ func (tx *Transaction) Serialize() []byte {
 }
 
 func (tx *Transaction) Validate() error {
+
 	if tx.Version != 0 {
 		return errors.New("Version is invalid")
 	}
-	if transaction_type.TxEND < tx.TxType {
+	if transaction_type.TxEND <= tx.TxType {
 		return errors.New("VersionType is invalid")
 	}
 
-	switch tx.TxType {
-	case transaction_type.TxSimple:
-		return tx.TxBase.(*transaction_simple.TransactionSimple).Validate()
-	}
-
-	return nil
+	return tx.TxBase.Validate()
 }
 
 func (tx *Transaction) Verify() error {
@@ -114,11 +94,13 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader, bloom bool) (er
 
 	switch tx.TxType {
 	case transaction_type.TxSimple:
-		base := &transaction_simple.TransactionSimple{}
-		if err = base.Deserialize(reader); err != nil {
-			return
-		}
-		tx.TxBase = base
+		tx.TxBase = &transaction_simple.TransactionSimple{}
+	default:
+		return errors.New("Invalid TxType")
+	}
+
+	if err = tx.TxBase.Deserialize(reader); err != nil {
+		return
 	}
 
 	end := reader.Position

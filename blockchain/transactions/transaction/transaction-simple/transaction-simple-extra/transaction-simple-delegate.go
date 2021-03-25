@@ -7,6 +7,7 @@ import (
 )
 
 type TransactionSimpleDelegate struct {
+	TransactionSimpleExtraInterface
 	Amount              uint64
 	HasNewPublicKeyHash bool
 	NewPublicKeyHash    helpers.ByteString //20 byte
