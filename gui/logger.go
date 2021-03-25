@@ -2,7 +2,6 @@ package gui
 
 import (
 	"os"
-	"path/filepath"
 )
 
 type Logger struct {
@@ -13,12 +12,13 @@ var logger = Logger{}
 
 func InitLogger() (err error) {
 
-	absPath, err := filepath.Abs("./_build/logs")
-	if err != nil {
-		return
+	if _, err = os.Stat("./logs"); os.IsNotExist(err) {
+		if err = os.Mkdir("./logs", 0755); err != nil {
+			return
+		}
 	}
 
-	logger.generalLog, err = os.OpenFile(absPath+"/log.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	logger.generalLog, err = os.OpenFile("./logs/log.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return
 	}

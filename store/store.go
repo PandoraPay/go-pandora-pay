@@ -19,7 +19,7 @@ func (store *Store) init() {
 
 	// Open the my.store data file in your current directory.
 	// It will be created if it doesn't exist.
-	db, err := bolt.Open("./_build/"+store.Name+".store", 0600, nil)
+	db, err := bolt.Open("./"+store.Name+".store", 0600, nil)
 
 	if err != nil {
 		gui.Fatal(err)
@@ -38,35 +38,21 @@ func (store *Store) close() {
 
 func DBInit() (err error) {
 
-	var prefix = "network"
+	var prefix = ""
+
 	switch config.NETWORK_SELECTED {
 	case config.MAIN_NET_NETWORK_BYTE:
-		prefix = "main"
+		prefix += "main"
 	case config.TEST_NET_NETWORK_BYTE:
-		prefix = "test"
+		prefix += "test"
 	case config.DEV_NET_NETWORK_BYTE:
-		prefix = "dev"
+		prefix += "dev"
+	default:
+		panic("Network is unknown")
 	}
 
-	if _, err = os.Stat("./_build"); os.IsNotExist(err) {
-		if err = os.Mkdir("./_build", 0755); err != nil {
-			return
-		}
-	}
-
-	dbPrefix := ""
-	if config.INSTANCE != "" {
-		dbPrefix = config.INSTANCE
-		if _, err = os.Stat("./_build/" + dbPrefix); os.IsNotExist(err) {
-			if err = os.Mkdir("./_build/"+dbPrefix, 0755); err != nil {
-				return
-			}
-		}
-		dbPrefix = dbPrefix + "/"
-	}
-
-	if _, err = os.Stat("./_build/" + dbPrefix + prefix); os.IsNotExist(err) {
-		if err = os.Mkdir("./_build/"+dbPrefix+prefix, 0755); err != nil {
+	if _, err = os.Stat("./" + prefix); os.IsNotExist(err) {
+		if err = os.Mkdir("./"+prefix, 0755); err != nil {
 			return
 		}
 	}

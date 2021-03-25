@@ -2,6 +2,7 @@ package config
 
 import (
 	"math/big"
+	"os"
 	"pandora-pay/config/globals"
 	"strconv"
 	"time"
@@ -73,12 +74,31 @@ func InitConfig() (err error) {
 		DEBUG = true
 	}
 
+	if _, err = os.Stat("./_build"); os.IsNotExist(err) {
+		if err = os.Mkdir("./_build", 0755); err != nil {
+			return
+		}
+	}
+	if err = os.Chdir("./_build"); err != nil {
+		return
+	}
+
 	if globals.Arguments["--instance"] != nil {
 		INSTANCE = globals.Arguments["--instance"].(string)
 		INSTANCE_NUMBER, err = strconv.Atoi(INSTANCE)
 		if err != nil {
 			return
 		}
+
+		if _, err = os.Stat("./" + INSTANCE); os.IsNotExist(err) {
+			if err = os.Mkdir("./"+INSTANCE, 0755); err != nil {
+				return
+			}
+		}
+		if err = os.Chdir("./" + INSTANCE); err != nil {
+			return
+		}
+
 	}
 
 	return

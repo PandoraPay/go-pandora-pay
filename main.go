@@ -56,10 +56,23 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 
+	config.CPU_THREADS = runtime.GOMAXPROCS(0)
+	config.ARHITECTURE = runtime.GOARCH
+	config.OS = runtime.GOOS
+
+	if globals.Arguments, err = docopt.Parse(commands, nil, false, config.VERSION, false, false); err != nil {
+		panic("Error processing arguments" + err.Error())
+	}
+
+	if err = config.InitConfig(); err != nil {
+		panic(err)
+	}
+
 	if err = gui.GUIInit(); err != nil {
 		panic(err)
 	}
 	gui.Info("GO PANDORA PAY")
+	gui.Info(fmt.Sprintf("OS:%s ARCH:%s CPU:%d", config.OS, config.ARHITECTURE, config.CPU_THREADS))
 
 	defer func() {
 		err := recover()
@@ -69,19 +82,6 @@ func main() {
 		}
 	}()
 
-	config.CPU_THREADS = runtime.GOMAXPROCS(0)
-	config.ARHITECTURE = runtime.GOARCH
-	config.OS = runtime.GOOS
-
-	gui.Info(fmt.Sprintf("OS:%s ARCH:%s CPU:%d", config.OS, config.ARHITECTURE, config.CPU_THREADS))
-
-	if globals.Arguments, err = docopt.Parse(commands, nil, false, config.VERSION, false, false); err != nil {
-		gui.Fatal("Error processing arguments", err)
-	}
-
-	if err = config.InitConfig(); err != nil {
-		panic(err)
-	}
 	if err = store.DBInit(); err != nil {
 		panic(err)
 	}
