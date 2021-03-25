@@ -54,8 +54,19 @@ func DBInit() (err error) {
 		}
 	}
 
-	if _, err = os.Stat("./_build/" + prefix); os.IsNotExist(err) {
-		if err = os.Mkdir("./_build/"+prefix, 0755); err != nil {
+	dbPrefix := ""
+	if config.INSTANCE != "" {
+		dbPrefix = config.INSTANCE
+		if _, err = os.Stat("./_build/" + dbPrefix); os.IsNotExist(err) {
+			if err = os.Mkdir("./_build/"+dbPrefix, 0755); err != nil {
+				return
+			}
+		}
+		dbPrefix = dbPrefix + "/"
+	}
+
+	if _, err = os.Stat("./_build/" + dbPrefix + prefix); os.IsNotExist(err) {
+		if err = os.Mkdir("./_build/"+dbPrefix+prefix, 0755); err != nil {
 			return
 		}
 	}

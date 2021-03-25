@@ -3,6 +3,7 @@ package config
 import (
 	"math/big"
 	"pandora-pay/config/globals"
+	"strconv"
 	"time"
 )
 
@@ -51,7 +52,12 @@ var (
 	BIG_FLOAT_MAX_256 = new(big.Float).SetInt(BIG_INT_MAX_256) // 0xFFFFFFFF....
 )
 
-func InitConfig() {
+var (
+	INSTANCE        = ""
+	INSTANCE_NUMBER = 0
+)
+
+func InitConfig() (err error) {
 
 	if globals.Arguments["--testnet"] == true {
 		NETWORK_SELECTED = TEST_NET_NETWORK_BYTE
@@ -65,6 +71,14 @@ func InitConfig() {
 
 	if globals.Arguments["--debug"] == true {
 		DEBUG = true
+	}
+
+	if globals.Arguments["--instance"] != nil {
+		INSTANCE = globals.Arguments["--instance"].(string)
+		INSTANCE_NUMBER, err = strconv.Atoi(INSTANCE)
+		if err != nil {
+			return
+		}
 	}
 
 	return

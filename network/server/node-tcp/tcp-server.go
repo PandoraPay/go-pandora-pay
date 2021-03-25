@@ -4,11 +4,13 @@ import (
 	"errors"
 	"net"
 	"pandora-pay/blockchain"
+	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
 	node_http "pandora-pay/network/server/node-http"
 	"pandora-pay/settings"
+	"strconv"
 )
 
 // ControllerAddr is the Tor controller interface address
@@ -29,6 +31,16 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 	port := "8080"
 	if globals.Arguments["--tcp-server-port"] != nil {
 		port = globals.Arguments["--tcp-server-port"].(string)
+	}
+
+	portNumber, err := strconv.Atoi(port)
+	if err != nil {
+		return nil, errors.New("Port is not a valid port number")
+	}
+
+	if config.INSTANCE != "" {
+		portNumber += config.INSTANCE_NUMBER
+		port = strconv.Itoa(portNumber)
 	}
 
 	var address string

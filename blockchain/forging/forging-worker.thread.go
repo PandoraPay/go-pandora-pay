@@ -7,7 +7,6 @@ import (
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
-	"sync"
 	"time"
 )
 
@@ -27,36 +26,45 @@ type ForgingWalletAddressRequired struct {
 	stakingAmount uint64
 }
 
+type ForgingWorkerThread struct {
+	index           int
+	ticker          <-chan time.Time
+	workChannel     chan *ForgingWork                    // SAFE
+	solutionChannel chan *ForgingSolution                // SAFE
+	walletsChannel  chan []*ForgingWalletAddressRequired // SAFE
+}
+
 /**
 "Staking multiple wallets simulateneoly"
 */
-func forge(
-	wg *sync.WaitGroup,
-	work *ForgingWork, // SAFE READ ONLY
-	workChannel <-chan *ForgingWork, // SAFE
-	solutionChannel chan *ForgingSolution, // SAFE
-	wallets []*ForgingWalletAddressRequired, // SAFE READ ONLY
-) {
+func (worker *ForgingWorkerThread) forge() {
+
+	var work *ForgingWork
+	var wallets []*ForgingWalletAddressRequired
 
 	buf := make([]byte, binary.MaxVarintLen64)
+	n := 0
 
-	defer wg.Done()
-
-	height := work.blkComplete.Block.Height
-	serialized := work.blkComplete.Block.SerializeForForging()
-	n := binary.PutUvarint(buf, work.blkComplete.Block.Timestamp)
-
-	serialized = serialized[:len(serialized)-n-20]
-	timestamp := work.blkComplete.Block.Timestamp + 1
-
+	var height, timestamp uint64
+	var serialized []byte
+	//hashes := 0
 	for {
 
 		timeNow := uint64(time.Now().Unix()) + config.NETWORK_TIMESTAMP_DRIFT_MAX
 
 		select {
-		case <-workChannel: //or the work was changed meanwhile
-		case <-solutionChannel: //someone published a solution
-			return
+		case newWork := <-worker.workChannel: //or the work was changed meanwhile
+			work = newWork
+			height = work.blkComplete.Block.Height
+			serialized = work.blkComplete.Block.SerializeForForging()
+			n := binary.PutUvarint(buf, work.blkComplete.Block.Timestamp)
+
+			serialized = serialized[:len(serialized)-n-20]
+			timestamp = work.blkComplete.Block.Timestamp + 1
+		case newWallets := <-worker.walletsChannel:
+			wallets = newWallets
+		case <-worker.ticker:
+			//hashes := 0
 		default:
 			if timestamp > timeNow {
 				time.Sleep(10 * time.Millisecond)
@@ -64,12 +72,17 @@ func forge(
 			}
 		}
 
+		if work == nil {
+			time.Sleep(10 * time.Millisecond)
+			continue
+		}
+
 		//forge with my wallets
-		diff := timeNow - timestamp
+		diff := int(timeNow - timestamp)
 		if diff > 20 {
 			diff = 20
 		}
-		for i := uint64(0); i <= diff; i++ {
+		for i := 0; i <= diff; i++ {
 			for _, address := range wallets {
 
 				n = binary.PutUvarint(buf, timestamp)
@@ -83,13 +96,14 @@ func forge(
 
 				if difficulty.CheckKernelHashBig(kernelHash, work.target) {
 
-					solutionChannel <- &ForgingSolution{
+					worker.solutionChannel <- &ForgingSolution{
 						timestamp: timestamp,
 						address:   address.wallet,
 						work:      work,
 					}
-					close(solutionChannel)
-					return
+					work = nil
+					diff = 0
+					break
 
 				} else {
 					//for debugging only
@@ -101,6 +115,18 @@ func forge(
 
 			timestamp += 1
 		}
+		//hashes += diff * len(wallets)
+
 	}
 
+}
+
+func createForgingWorkerThread(index int, solutionChannel chan *ForgingSolution) *ForgingWorkerThread {
+	return &ForgingWorkerThread{
+		ticker:          time.NewTicker(time.Second).C,
+		index:           index,
+		walletsChannel:  make(chan []*ForgingWalletAddressRequired),
+		workChannel:     make(chan *ForgingWork),
+		solutionChannel: solutionChannel,
+	}
 }

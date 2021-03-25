@@ -26,7 +26,7 @@ import (
 var commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--tcp-server-port=<port>] [--tcp-server-address=<address>] [--tor-onion=<onion>] [--db-prefix=<prefix>] 
+  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--tcp-server-port=<port>] [--tcp-server-address=<address>] [--tor-onion=<onion>] [--instance=<number>] 
   pandorapay -h | --help
 
 Options:
@@ -41,7 +41,7 @@ Options:
   --tcp-server-port=<port>				Change node tcp server port
   --tcp-server-address=<address>		Change node tcp address
   --tor-onion=<onion>					Define your tor onion address to be used.
-  --db-prefix=<prefix>					Prefix for the database folder (when you open multiple instances)
+  --instance=<number>					Number of forked instance (when you open multiple instances). It should me string number like "1","2","3","4" etc 
 `
 
 func main() {
@@ -79,7 +79,9 @@ func main() {
 		gui.Fatal("Error processing arguments", err)
 	}
 
-	config.InitConfig()
+	if err = config.InitConfig(); err != nil {
+		panic(err)
+	}
 	if err = store.DBInit(); err != nil {
 		panic(err)
 	}

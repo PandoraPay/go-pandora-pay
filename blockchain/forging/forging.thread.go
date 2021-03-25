@@ -6,8 +6,46 @@ import (
 	"pandora-pay/config/stake"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
-	"sync"
 )
+
+func getWallets(wallet *ForgingWallet, threads int, work *ForgingWork) [][]*ForgingWalletAddressRequired {
+
+	var err error
+	wallets := make([][]*ForgingWalletAddressRequired, threads)
+
+	//distributing the wallets to each thread uniformly
+	wallet.RLock()
+	for i := 0; i < threads; i++ {
+		wallets[i] = []*ForgingWalletAddressRequired{}
+	}
+	c := 0
+	for i, walletAdr := range wallet.addresses {
+		if walletAdr.account != nil || work.blkComplete.Block.Height == 0 {
+
+			if work.blkComplete.Block.Height == 0 && i > 0 && globals.Arguments["--new-devnet"] == true {
+				break
+			}
+
+			var stakingAmount uint64
+			if walletAdr.account != nil {
+				stakingAmount, err = walletAdr.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height)
+				if err != nil {
+					continue
+				}
+			}
+			if stakingAmount >= stake.GetRequiredStake(work.blkComplete.Block.Height) {
+				wallets[c%threads] = append(wallets[c%threads], &ForgingWalletAddressRequired{
+					publicKeyHash: walletAdr.delegatedPublicKeyHash,
+					wallet:        walletAdr,
+					stakingAmount: stakingAmount,
+				})
+				c++
+			}
+		}
+	}
+	wallet.RUnlock()
+	return wallets
+}
 
 func startForging(
 	mempool *mempool.Mempool,
@@ -17,10 +55,14 @@ func startForging(
 	threads int, //number of threads
 ) {
 
-	wg := sync.WaitGroup{}
+	workers := make([]*ForgingWorkerThread, threads)
+	forgingWorkerSolutionChannel := make(chan *ForgingSolution, 0)
+	for i := 0; i < len(workers); i++ {
+		workers[i] = createForgingWorkerThread(i, forgingWorkerSolutionChannel)
+		go workers[i].forge()
+	}
 
 	//wallets must be read only after its assignment
-	wallets := make([][]*ForgingWalletAddressRequired, threads)
 
 	var err error
 	for {
@@ -30,56 +72,26 @@ func startForging(
 			return
 		}
 
-		//distributing the wallets to each thread uniformly
-		wallet.RLock()
+		wallets := getWallets(wallet, threads, work)
+
 		for i := 0; i < threads; i++ {
-			wallets[i] = []*ForgingWalletAddressRequired{}
+			workers[i].walletsChannel <- wallets[i]
 		}
-		c := 0
-		for i, walletAdr := range wallet.addresses {
-			if walletAdr.account != nil || work.blkComplete.Block.Height == 0 {
-
-				if work.blkComplete.Block.Height == 0 && i > 0 && globals.Arguments["--new-devnet"] == true {
-					break
-				}
-
-				var stakingAmount uint64
-				if walletAdr.account != nil {
-					stakingAmount, err = walletAdr.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height)
-					if err != nil {
-						continue
-					}
-				}
-				if stakingAmount >= stake.GetRequiredStake(work.blkComplete.Block.Height) {
-					wallets[c%threads] = append(wallets[c%threads], &ForgingWalletAddressRequired{
-						publicKeyHash: walletAdr.delegatedPublicKeyHash,
-						wallet:        walletAdr,
-						stakingAmount: stakingAmount,
-					})
-					c++
-				}
-			}
-		}
-		wallet.RUnlock()
-
-		stakingSolutionChannel := make(chan *ForgingSolution, 0)
 		for i := 0; i < threads; i++ {
-			wg.Add(1)
-			go forge(&wg, work, workChannel, stakingSolutionChannel, wallets[i])
+			workers[i].workChannel <- work
 		}
-
-		solution := <-stakingSolutionChannel
 
 		select {
+		case solution := <-forgingWorkerSolutionChannel:
+			if err = publishSolution(mempool, solutionChannel, solution); err != nil {
+				gui.Error("Error publishing solution", err)
+			}
+			break
 		case work, ok = <-workChannel:
 			if !ok {
 				return
 			}
 			break //it was changed
-		default:
-			if err = publishSolution(mempool, solutionChannel, solution); err != nil {
-				gui.Error("Error publishing solution", err)
-			}
 		}
 
 	}
