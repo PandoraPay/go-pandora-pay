@@ -21,22 +21,29 @@ func (mempool *Mempool) GetTxsList() []*mempoolTx {
 	return transactions
 }
 
-func (mempool *Mempool) GetNonce(publicKeyHash []byte) (result bool, nonce uint64) {
+func (mempool *Mempool) GetNonce(publicKeyHash []byte, nonce uint64) uint64 {
 
 	txs := mempool.GetTxsList()
+
+	nonces := make(map[uint64]bool)
 	for _, tx := range txs {
 		if tx.Tx.TxType == transaction_type.TxSimple {
 			base := tx.Tx.TxBase.(*transaction_simple.TransactionSimple)
 			if bytes.Equal(base.Vin[0].Bloom.PublicKeyHash, publicKeyHash) {
-				result = true
-				if nonce <= base.Nonce {
-					nonce = base.Nonce + 1
-				}
+				nonces[base.Nonce] = true
 			}
 		}
 	}
 
-	return
+	for {
+		if nonces[nonce] {
+			nonce += 1
+		} else {
+			break
+		}
+	}
+
+	return nonce
 }
 
 func (mempool *Mempool) GetNextTransactionsToInclude(blockHeight uint64, chainHash []byte) (out []*transaction.Transaction) {

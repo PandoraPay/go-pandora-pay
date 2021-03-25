@@ -52,11 +52,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint
 				return errors.New("Not enough funds")
 			}
 			if i == 0 {
-				var result bool
-				result, nonce = builder.memPool.GetNonce(fromWalletAddress.PublicKeyHash)
-				if !result {
-					nonce = account.Nonce
-				}
+				nonce = builder.memPool.GetNonce(fromWalletAddress.PublicKeyHash, account.Nonce)
 			}
 			keys[i] = fromWalletAddress.PrivateKey.Key
 		}
@@ -111,18 +107,15 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount u
 			return errors.New("You don't have enough staked coins")
 		}
 
-		result, nonce := builder.memPool.GetNonce(fromWalletAddress.PublicKeyHash)
-		if !result {
-			nonce = account.Nonce
-		}
+		nonce := builder.memPool.GetNonce(fromWalletAddress.PublicKeyHash, account.Nonce)
 
 		if tx, err = wizard.CreateUnstakeTx(nonce, fromWalletAddress.PrivateKey.Key, unstakeAmount, feePerByte, feeToken, payFeeInExtra); err != nil {
 			return
 		}
 
-		availableDelegatedStake, err := account.GetDelegatedStakeAvailable(chainHeight)
-		if err != nil {
-			return
+		var availableDelegatedStake uint64
+		if availableDelegatedStake, err = account.GetDelegatedStakeAvailable(chainHeight); err != nil {
+			return err
 		}
 		if availableDelegatedStake < tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Amount+tx.TxBase.(*transaction_simple.TransactionSimple).Extra.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra {
 			return errors.New("You don't have enough staked coins to pay for the fee")
