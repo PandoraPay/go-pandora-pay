@@ -154,7 +154,7 @@ func CreateConsensus(httpServer *node_http.HttpServer, chain *blockchain.Blockch
 	}
 
 	consensus.httpServer.ApiWebsockets.GetMap["chain"] = consensus.chainUpdate
-	consensus.httpServer.ApiWebsockets.GetMap["chain-ask"] = consensus.chainAsk
+	consensus.httpServer.ApiWebsockets.GetMap["chain-get"] = consensus.chainGet
 
 	consensus.execute()
 

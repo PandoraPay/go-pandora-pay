@@ -50,8 +50,8 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 		wsClient.Close()
 		return nil, out.Err
 	}
-	handshakeServer := new(api_websockets.APIHandshake)
 
+	handshakeServer := new(api_websockets.APIHandshake)
 	if err = json.Unmarshal(out.Out, &handshakeServer); err != nil {
 		wsClient.Close()
 		return nil, errors.New("Handshake received was invalid")
@@ -61,6 +61,8 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 		wsClient.Close()
 		return nil, errors.New("Handshake is invalid")
 	}
+
+	wsClient.conn.Send([]byte("chain-get"), nil)
 
 	return
 }

@@ -11,14 +11,17 @@ func (consensus *Consensus) GetChainData() *blockchain.BlockchainData {
 	return (*blockchain.BlockchainData)(newChainDataPtr)
 }
 
-func (consensus *Consensus) chainAsk(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+func (consensus *Consensus) chainGet(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	newChainData := consensus.GetChainData()
-	return &ChainUpdateNotification{
+
+	conn.Send([]byte("chain"), &ChainUpdateNotification{
 		End:                newChainData.Height,
 		Hash:               newChainData.Hash,
 		PrevHash:           newChainData.PrevHash,
 		BigTotalDifficulty: newChainData.BigTotalDifficulty,
-	}, nil
+	})
+
+	return nil, nil
 }
 
 func (consensus *Consensus) broadcast(newChainData *blockchain.BlockchainData) {
