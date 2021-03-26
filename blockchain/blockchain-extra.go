@@ -24,7 +24,7 @@ func (chain *Blockchain) GetChainData() *BlockchainData {
 
 func (chain *Blockchain) init() (err error) {
 
-	chainData := &BlockchainData{
+	chainData := BlockchainData{
 		Height:             0,
 		Hash:               genesis.GenesisData.Hash,
 		PrevHash:           genesis.GenesisData.Hash,
@@ -33,7 +33,7 @@ func (chain *Blockchain) init() (err error) {
 		Target:             new(big.Int).SetBytes(genesis.GenesisData.Target),
 		BigTotalDifficulty: new(big.Int).SetUint64(0),
 	}
-	atomic.StorePointer(&chain.ChainData, unsafe.Pointer(chainData))
+	atomic.StorePointer(&chain.ChainData, unsafe.Pointer(&chainData))
 
 	var tok = token.Token{
 		Version:          0,
@@ -68,7 +68,7 @@ func (chain *Blockchain) init() (err error) {
 func (chain *Blockchain) createNextBlockForForging() {
 
 	chain.RLock()
-	chainData := (*BlockchainData)(atomic.LoadPointer(&chain.ChainData))
+	chainData := chain.GetChainData()
 	target := chainData.Target
 
 	var blk *block.Block

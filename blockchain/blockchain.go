@@ -56,7 +56,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	//avoid processing the same function twice
 	chain.mutex.Lock()
 
-	chainData := (*BlockchainData)(atomic.LoadPointer(&chain.ChainData))
+	chainData := chain.GetChainData()
 	gui.Info(fmt.Sprintf("Including blocks %d ... %d", chainData.Height, chainData.Height+uint64(len(blocksComplete))))
 
 	//chain.RLock() is not required because it is guaranteed that no other thread is writing now in the chain
@@ -266,36 +266,39 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	//we should store it
 	if savedBlock && chainData.BigTotalDifficulty.Cmp(newChainData.BigTotalDifficulty) < 0 {
 
-		err = nil
 		if err = newChainData.saveBlockchain(writer); err != nil {
-			return
+			panic("Error saving Blockchain " + err.Error())
 		}
 
 		for _, removedBlock := range removedBlocksHeights {
-			chain.deleteUnusedBlocksComplete(writer, removedBlock, accs, toks)
+			if err = chain.deleteUnusedBlocksComplete(writer, removedBlock, accs, toks); err != nil {
+				panic("Error deleting unused blocks Blockchain " + err.Error())
+			}
 		}
 		for txHash := range removedTxHashes {
 			data := writer.Get([]byte("tx" + txHash))
 			removedTx = append(removedTx, data)
 			if err = writer.Delete([]byte("tx" + txHash)); err != nil {
-				return
+				panic("Error deleting transactions " + err.Error())
 			}
 		}
 
 		accs.Rollback()
 		toks.Rollback()
 		if err = accs.WriteToStore(); err != nil {
-			return
+			panic("Error writing accs" + err.Error())
 		}
 		if err = toks.WriteToStore(); err != nil {
-			return
+			panic("Error writing accs" + err.Error())
 		}
 
 		chain.Lock()
-		err = boltTx.Commit()
-		if err == nil {
-			atomic.StorePointer(&chain.ChainData, unsafe.Pointer(newChainData))
+
+		if err = boltTx.Commit(); err != nil {
+			panic("Error storing writing changes to disk" + err.Error())
 		}
+		atomic.StorePointer(&chain.ChainData, unsafe.Pointer(newChainData))
+
 		chain.Unlock()
 
 	} else {
@@ -370,7 +373,7 @@ func BlockchainInit(forging *forging.Forging, mempool *mempool.Mempool) (chain *
 		}
 	}
 
-	chainData := (*BlockchainData)(atomic.LoadPointer(&chain.ChainData))
+	chainData := chain.GetChainData()
 	chainData.updateChainInfo()
 
 	chain.initForging()

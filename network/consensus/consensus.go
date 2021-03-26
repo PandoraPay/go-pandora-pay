@@ -16,19 +16,11 @@ import (
 )
 
 type Consensus struct {
-	httpServer      *node_http.HttpServer
-	chain           *blockchain.Blockchain
-	chainLastUpdate unsafe.Pointer
-	mempool         *mempool.Mempool
-	forks           *Forks
-}
-
-//must be safe to read
-func (consensus *Consensus) updateChain(newChainData *blockchain.BlockchainData) {
-	chainLastUpdate := ChainLastUpdate{
-		BigTotalDifficulty: newChainData.BigTotalDifficulty,
-	}
-	atomic.StorePointer(&consensus.chainLastUpdate, unsafe.Pointer(&chainLastUpdate))
+	httpServer   *node_http.HttpServer
+	chain        *blockchain.Blockchain
+	newChainData unsafe.Pointer
+	mempool      *mempool.Mempool
+	forks        *Forks
 }
 
 func (consensus *Consensus) processFork(fork *Fork) {
@@ -87,13 +79,8 @@ func (consensus *Consensus) execute() {
 			newChainData, ok := <-consensus.chain.UpdateNewChainChannel
 			if ok {
 				//it is safe to read
-				consensus.updateChain(newChainData)
-				consensus.httpServer.Websockets.Broadcast([]byte("chain"), &ChainUpdateNotification{
-					End:                newChainData.Height,
-					Hash:               newChainData.Hash,
-					PrevHash:           newChainData.PrevHash,
-					BigTotalDifficulty: newChainData.BigTotalDifficulty,
-				})
+				atomic.StorePointer(&consensus.newChainData, unsafe.Pointer(newChainData)) //newChainData already a pointer
+				consensus.broadcast(newChainData)
 			}
 
 		}
@@ -113,7 +100,8 @@ func (consensus *Consensus) execute() {
 	}()
 
 	//initialize first time
-	consensus.updateChain(consensus.chain.GetChainData())
+	newChainData := consensus.chain.GetChainData()
+	atomic.StorePointer(&consensus.newChainData, unsafe.Pointer(newChainData)) //newChainData already a pointer
 }
 
 func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
@@ -130,8 +118,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		return nil, nil
 	}
 
-	chainLastUpdatePointer := atomic.LoadPointer(&consensus.chainLastUpdate)
-	chainLastUpdate := (*ChainLastUpdate)(chainLastUpdatePointer)
+	chainLastUpdate := consensus.GetChainData()
 
 	if chainLastUpdate.BigTotalDifficulty.Cmp(chainUpdateNotification.BigTotalDifficulty) < 0 {
 		fork := &Fork{
@@ -157,10 +144,9 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 func CreateConsensus(httpServer *node_http.HttpServer, chain *blockchain.Blockchain, mempool *mempool.Mempool) *Consensus {
 
 	consensus := &Consensus{
-		chain:           chain,
-		chainLastUpdate: nil,
-		mempool:         mempool,
-		httpServer:      httpServer,
+		chain:      chain,
+		mempool:    mempool,
+		httpServer: httpServer,
 		forks: &Forks{
 			hashes: sync.Map{},
 			list:   make([]*Fork, 0),
@@ -168,6 +154,7 @@ func CreateConsensus(httpServer *node_http.HttpServer, chain *blockchain.Blockch
 	}
 
 	consensus.httpServer.ApiWebsockets.GetMap["chain"] = consensus.chainUpdate
+	consensus.httpServer.ApiWebsockets.GetMap["chain-ask"] = consensus.chainAsk
 
 	consensus.execute()
 
