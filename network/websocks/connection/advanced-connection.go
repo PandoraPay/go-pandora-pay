@@ -95,8 +95,14 @@ func (c *AdvancedConnection) ReadPump() {
 		c.Conn.Close()
 	}()
 
+	c.Conn.SetReadLimit(int64(config.WEBSOCKETS_MAX_READ))
+	c.Conn.SetReadDeadline(time.Now().Add(config.WEBSOCKETS_PONG_TIMEOUT))
+	c.Conn.SetPongHandler(func(string) error {
+		c.Conn.SetReadDeadline(time.Now().Add(config.WEBSOCKETS_PONG_TIMEOUT))
+		return nil
+	})
+
 	for {
-		c.Conn.SetReadLimit(int64(config.WEBSOCKETS_MAX_READ))
 
 		_, read, err := c.Conn.ReadMessage()
 		if err != nil {
@@ -149,8 +155,11 @@ func (c *AdvancedConnection) ReadPump() {
 
 func (c *AdvancedConnection) WritePump() {
 
+	pingTicker := time.NewTicker(config.WEBSOCKETS_PING_TIMEOUT)
+
 	defer func() {
-		c.Conn.Close()
+		pingTicker.Stop()
+		close(c.Closed)
 	}()
 
 	var err error
@@ -164,6 +173,13 @@ func (c *AdvancedConnection) WritePump() {
 				return
 			}
 			if err = c.Conn.WriteJSON(message); err != nil {
+				return
+			}
+		case <-pingTicker.C:
+			if err = c.Conn.SetWriteDeadline(time.Now().Add(config.WEBSOCKETS_TIMEOUT)); err != nil {
+				return
+			}
+			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
 		}
