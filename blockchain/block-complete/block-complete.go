@@ -116,3 +116,35 @@ func (blkComplete *BlockComplete) Deserialize(buf []byte) (err error) {
 
 	return
 }
+
+func (blkComplete *BlockComplete) BloomAll(bloomTransactions, bloomBlock, bloomBlockComplete bool) (err error) {
+
+	if bloomTransactions {
+		for _, tx := range blkComplete.Txs {
+			if err = tx.BloomAll(); err != nil {
+				return
+			}
+		}
+	}
+
+	if bloomBlock {
+		if err = blkComplete.Block.BloomNow(); err != nil {
+			return
+		}
+	}
+
+	if bloomBlockComplete {
+		if err = blkComplete.BloomNow(); err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+func CreateEmptyBlockComplete() *BlockComplete {
+	return &BlockComplete{
+		Block: &block.Block{},
+		Txs:   []*transaction.Transaction{},
+	}
+}

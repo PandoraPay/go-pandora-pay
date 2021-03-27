@@ -29,18 +29,20 @@ type AdvancedConnection struct {
 	send          chan *AdvancedConnectionMessage
 	answerCounter uint32
 	Closed        chan struct{}
+	IsClosed      uint32
 	getMap        map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)
+
 	answerMap     map[uint32]chan *AdvancedConnectionAnswer
-	sync.RWMutex  `json:"-"`
+	answerMapLock sync.RWMutex `json:"-"`
 }
 
 func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data interface{}, await, reply bool) *AdvancedConnectionAnswer {
 
 	if await && replyBackId == 0 {
 		replyBackId = atomic.AddUint32(&c.answerCounter, 1)
-		c.Lock()
+		c.answerMapLock.Lock()
 		c.answerMap[replyBackId] = make(chan *AdvancedConnectionAnswer)
-		c.Unlock()
+		c.answerMapLock.Unlock()
 	}
 
 	marshal, _ := json.Marshal(data)
@@ -91,7 +93,10 @@ func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) (out interf
 func (c *AdvancedConnection) ReadPump() {
 
 	defer func() {
-		close(c.Closed)
+		if atomic.CompareAndSwapUint32(&c.IsClosed, 0, 1) {
+			close(c.Closed)
+			close(c.send)
+		}
 		c.Conn.Close()
 	}()
 
@@ -138,12 +143,12 @@ func (c *AdvancedConnection) ReadPump() {
 				}
 			}
 
-			c.Lock()
+			c.answerMapLock.Lock()
 			cn := c.answerMap[message.ReplyId]
 			if cn != nil {
 				delete(c.answerMap, message.ReplyId)
 			}
-			c.Unlock()
+			c.answerMapLock.Unlock()
 
 			if cn != nil {
 				cn <- output
@@ -159,7 +164,10 @@ func (c *AdvancedConnection) WritePump() {
 
 	defer func() {
 		pingTicker.Stop()
-		close(c.Closed)
+		c.Conn.Close()
+		if atomic.CompareAndSwapUint32(&c.IsClosed, 0, 1) {
+			close(c.Closed)
+		}
 	}()
 
 	var err error
@@ -192,8 +200,10 @@ func CreateAdvancedConnection(conn *websocket.Conn, getMap map[string]func(conn 
 		Conn:          conn,
 		send:          make(chan *AdvancedConnectionMessage),
 		Closed:        make(chan struct{}),
+		IsClosed:      0,
 		answerCounter: 0,
-		answerMap:     make(map[uint32]chan *AdvancedConnectionAnswer),
 		getMap:        getMap,
+		answerMap:     make(map[uint32]chan *AdvancedConnectionAnswer),
+		answerMapLock: sync.RWMutex{},
 	}
 }
