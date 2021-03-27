@@ -113,7 +113,7 @@ func (c *AdvancedConnection) ReadPump() {
 			var out interface{}
 			out, err = c.get(message)
 
-			if !message.ReplyAwait {
+			if message.ReplyAwait {
 				if err != nil {
 					c.sendNow(message.ReplyId, []byte{0}, err, false, true)
 				} else {
@@ -148,6 +148,7 @@ func (c *AdvancedConnection) ReadPump() {
 }
 
 func (c *AdvancedConnection) WritePump() {
+
 	defer func() {
 		c.Conn.Close()
 	}()
