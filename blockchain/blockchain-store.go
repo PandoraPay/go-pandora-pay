@@ -135,18 +135,18 @@ func (chain *Blockchain) loadBlockchain() error {
 		defer chain.Unlock()
 
 		reader := boltTx.Bucket([]byte("Chain"))
+
 		chainInfoData := reader.Get([]byte("blockchainInfo"))
 		if chainInfoData == nil {
 			return errors.New("Chain not found")
 		}
 
-		chainData := BlockchainData{}
+		chainData := &BlockchainData{}
 
-		if err = json.Unmarshal(chainInfoData, &chainData); err != nil {
+		if err = json.Unmarshal(chainInfoData, chainData); err != nil {
 			return err
 		}
-
-		atomic.StorePointer(&chain.ChainData, unsafe.Pointer(&chainData))
+		atomic.StorePointer(&chain.ChainData, unsafe.Pointer(chainData))
 
 		return
 	})

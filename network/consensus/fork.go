@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/tevino/abool"
 	"math/big"
 	"math/rand"
 	block_complete "pandora-pay/blockchain/block-complete"
@@ -9,24 +10,32 @@ import (
 )
 
 type Fork struct {
+	index               uint32
 	hashes              [][]byte
 	prevHash            []byte
 	start               uint64
 	end                 uint64
+	current             uint64
 	bigTotalDifficulty  *big.Int
 	errors              int
-	readyForInclusion   bool //ready for including into blockchain
-	readyForDownloading bool //ready to downloading
+	readyForDownloading *abool.AtomicBool //ready to downloading
 	conns               []*connection.AdvancedConnection
 	blocks              []*block_complete.BlockComplete
 	sync.RWMutex        `json:"-"`
 }
 
-func (fork *Fork) getRandomConn() *connection.AdvancedConnection {
-	fork.RLock()
-	defer fork.RUnlock()
-	if len(fork.conns) > 0 {
-		return fork.conns[rand.Intn(len(fork.conns))]
+//is locked before
+func (fork *Fork) getRandomConn() (conn *connection.AdvancedConnection) {
+
+	for len(fork.conns) > 0 {
+		index := rand.Intn(len(fork.conns))
+		conn = fork.conns[index]
+		if conn.IsClosed.IsSet() {
+			fork.conns[index] = fork.conns[len(fork.conns)-1]
+			fork.conns = fork.conns[:len(fork.conns)-1]
+		} else {
+			return
+		}
 	}
 	return nil
 }
@@ -34,7 +43,7 @@ func (fork *Fork) getRandomConn() *connection.AdvancedConnection {
 //fork2 must be locked before
 func (fork *Fork) mergeFork(fork2 *Fork) bool {
 
-	if fork2.readyForDownloading {
+	if fork2.readyForDownloading.IsSet() {
 		return false
 	}
 

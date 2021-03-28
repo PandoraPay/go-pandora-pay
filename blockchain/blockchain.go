@@ -121,7 +121,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 		firstBlockComplete := blocksComplete[0]
 		if firstBlockComplete.Block.Height < newChainData.Height {
-			for i := newChainData.Height - 1; i >= newChainData.Height; i-- {
+
+			for i := newChainData.Height - 1; i >= firstBlockComplete.Block.Height; i-- {
+
 				removedBlocksHeights = append(removedBlocksHeights, 0)
 				copy(removedBlocksHeights[1:], removedBlocksHeights)
 				removedBlocksHeights[0] = i
@@ -129,6 +131,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				if err = chain.removeBlockComplete(writer, i, removedTxHashes, accs, toks); err != nil {
 					return
 				}
+			}
+
+			if err = newChainData.loadBlockchainInfo(writer, firstBlockComplete.Block.Height); err != nil {
+				return
 			}
 		}
 
@@ -227,7 +233,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 			difficultyBigInt := difficulty.ConvertTargetToDifficulty(newChainData.Target)
 			newChainData.BigTotalDifficulty = new(big.Int).Add(newChainData.BigTotalDifficulty, difficultyBigInt)
-			newChainData.saveTotalDifficultyExtra(writer)
+			if err = newChainData.saveTotalDifficultyExtra(writer); err != nil {
+				return err
+			}
 
 			if newChainData.Target, err = newChainData.computeNextTargetBig(writer); err != nil {
 				return err
@@ -257,6 +265,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			buf := make([]byte, binary.MaxVarintLen64)
 			n := binary.PutUvarint(buf, newChainData.Height)
 			if err = writer.Put([]byte("chainHeight"), buf[:n]); err != nil {
+				return err
+			}
+
+			if err = newChainData.saveBlockchainInfo(writer); err != nil {
 				return err
 			}
 

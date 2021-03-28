@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/websocket"
+	"github.com/tevino/abool"
 	"pandora-pay/config"
 	"sync"
 	"sync/atomic"
@@ -29,7 +30,7 @@ type AdvancedConnection struct {
 	send          chan *AdvancedConnectionMessage
 	answerCounter uint32
 	Closed        chan struct{}
-	IsClosed      uint32
+	IsClosed      *abool.AtomicBool
 	getMap        map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
 	answerMap     map[uint32]chan *AdvancedConnectionAnswer
 	answerMapLock sync.RWMutex `json:"-"`
@@ -50,6 +51,9 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 		await,
 		name,
 		data,
+	}
+	if c.IsClosed.IsSet() {
+		return nil
 	}
 	c.send <- message
 	if await {
@@ -99,7 +103,7 @@ func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) ([]byte, er
 func (c *AdvancedConnection) ReadPump() {
 
 	defer func() {
-		if atomic.CompareAndSwapUint32(&c.IsClosed, 0, 1) {
+		if c.IsClosed.SetToIf(false, true) {
 			close(c.Closed)
 			close(c.send)
 		}
@@ -172,7 +176,7 @@ func (c *AdvancedConnection) WritePump() {
 	defer func() {
 		pingTicker.Stop()
 		c.Conn.Close()
-		if atomic.CompareAndSwapUint32(&c.IsClosed, 0, 1) {
+		if c.IsClosed.SetToIf(false, true) {
 			close(c.Closed)
 		}
 	}()
@@ -207,7 +211,7 @@ func CreateAdvancedConnection(conn *websocket.Conn, getMap map[string]func(conn 
 		Conn:          conn,
 		send:          make(chan *AdvancedConnectionMessage),
 		Closed:        make(chan struct{}),
-		IsClosed:      0,
+		IsClosed:      abool.New(),
 		answerCounter: 0,
 		getMap:        getMap,
 		answerMap:     make(map[uint32]chan *AdvancedConnectionAnswer),

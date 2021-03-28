@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"encoding/json"
+	"github.com/tevino/abool"
 	"pandora-pay/blockchain"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/network/websocks/connection"
@@ -39,19 +40,16 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		found, exists := consensus.forks.hashes.Load(string(chainUpdateNotification.PrevHash))
 		if exists {
 			prevFork := (found).(*Fork)
-			prevFork.RLock()
-			if prevFork.readyForDownloading {
-				prevFork.RUnlock()
+			if prevFork.readyForDownloading.IsSet() {
 				return
 			}
-			prevFork.RUnlock()
-
 			prevFork.Lock()
 			defer prevFork.Unlock()
-			if !prevFork.readyForDownloading {
+			if !prevFork.readyForDownloading.IsSet() {
 				prevFork.Lock()
 				defer prevFork.Unlock()
 				prevFork.end += 1
+				prevFork.current += 1
 				prevFork.start += 1
 				prevFork.hashes = append(prevFork.hashes, chainUpdateNotification.Hash)
 				prevFork.prevHash = chainUpdateNotification.PrevHash
@@ -62,21 +60,20 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		}
 
 		fork := &Fork{
+			index:               atomic.AddUint32(&consensus.forks.id, 1),
 			start:               chainUpdateNotification.End,
 			end:                 chainUpdateNotification.End,
+			current:             chainUpdateNotification.End,
 			hashes:              [][]byte{chainUpdateNotification.Hash},
 			prevHash:            chainUpdateNotification.PrevHash,
 			bigTotalDifficulty:  chainUpdateNotification.BigTotalDifficulty,
-			readyForDownloading: false,
-			readyForInclusion:   false,
+			readyForDownloading: abool.New(),
 			blocks:              make([]*block_complete.BlockComplete, 0),
 			conns:               []*connection.AdvancedConnection{conn},
 		}
 		_, exists = consensus.forks.hashes.LoadOrStore(string(chainUpdateNotification.Hash), fork)
 		if !exists {
-			consensus.forks.Lock()
-			consensus.forks.list = append(consensus.forks.list, fork)
-			consensus.forks.Unlock()
+			consensus.forks.forksDownloadMap.Store(fork.index, fork)
 		}
 
 	} else {

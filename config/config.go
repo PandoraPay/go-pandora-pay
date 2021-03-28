@@ -34,7 +34,8 @@ const (
 	BLOCK_MAX_SIZE          uint64 = 1024 * 1024
 	BLOCK_TIME              uint64 = 60 //seconds
 	DIFFICULTY_BLOCK_WINDOW uint64 = 10
-	HARD_FORK_MAX_ALLOWED   uint64 = 500
+	FORK_MAX_UNCLE_ALLOWED  uint64 = 60
+	FORK_MAX_DOWNLOAD       uint64 = 20
 )
 
 var (

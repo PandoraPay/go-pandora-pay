@@ -1,19 +1,19 @@
 package forging
 
 import (
+	"github.com/tevino/abool"
 	"math/big"
 	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
-	"sync/atomic"
 )
 
 type Forging struct {
 	mempool         *mempool.Mempool
 	Wallet          *ForgingWallet
 	workChannel     chan *ForgingWork
-	started         uint32
+	started         *abool.AtomicBool
 	SolutionChannel chan *block_complete.BlockComplete
 }
 
@@ -22,7 +22,7 @@ func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
 	forging = &Forging{
 		mempool:         mempool,
 		workChannel:     nil,
-		started:         0,
+		started:         abool.New(),
 		SolutionChannel: make(chan *block_complete.BlockComplete),
 		Wallet: &ForgingWallet{
 			addressesMap: make(map[string]*ForgingWalletAddress),
@@ -36,7 +36,7 @@ func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
 
 func (forging *Forging) StartForging() bool {
 
-	if !atomic.CompareAndSwapUint32(&forging.started, 0, 1) {
+	if !forging.started.SetToIf(false, true) {
 		return false
 	}
 
@@ -48,7 +48,7 @@ func (forging *Forging) StartForging() bool {
 }
 
 func (forging *Forging) StopForging() bool {
-	if atomic.CompareAndSwapUint32(&forging.started, 1, 0) {
+	if forging.started.SetToIf(true, false) {
 		close(forging.workChannel) //this will close the thread
 		return true
 	}
@@ -63,7 +63,7 @@ func (forging *Forging) ForgingNewWork(blkComplete *block_complete.BlockComplete
 		target:      target,
 	}
 
-	if atomic.LoadUint32(&forging.started) == 1 {
+	if forging.started.IsSet() {
 		forging.workChannel <- work
 	}
 }

@@ -6,39 +6,29 @@ import (
 )
 
 type Forks struct {
-	hashes       sync.Map
-	list         []*Fork
-	sync.RWMutex `json:"-"`
+	hashes           *sync.Map
+	forksDownloadMap *sync.Map //*Fork
+	id               uint32
 }
 
-func (forks *Forks) getBestFork() (selectedFork *Fork) {
-	forks.RLock()
-	defer forks.RUnlock()
+func (forks *Forks) getBestFork(forksMap *sync.Map) (selectedFork *Fork) {
 
-	if len(forks.list) > 0 {
-		bigTotalDifficulty := config.BIG_INT_ZERO
-		for _, fork := range forks.list {
-			fork.RLock()
-			if !fork.readyForInclusion && fork.bigTotalDifficulty.Cmp(bigTotalDifficulty) > 0 {
-				bigTotalDifficulty = fork.bigTotalDifficulty
-				selectedFork = fork
-			}
-			fork.RUnlock()
+	bigTotalDifficulty := config.BIG_INT_ZERO
+	forksMap.Range(func(key, value interface{}) bool {
+		fork := value.(*Fork)
+		if !fork.readyForDownloading.IsSet() && fork.bigTotalDifficulty.Cmp(bigTotalDifficulty) > 0 {
+			bigTotalDifficulty = fork.bigTotalDifficulty
+			selectedFork = fork
 		}
-	}
+		return true
+	})
 	return
 }
 
 func (forks *Forks) removeFork(fork *Fork) {
-	forks.RLock()
-	defer forks.RUnlock()
-	for i, fork2 := range forks.list {
-		if fork == fork2 {
-			//order is not important
-			forks.list[i] = forks.list[len(forks.list)-1]
-			forks.list = forks.list[:len(forks.list)-1]
-			return
-		}
+
+	for _, hash := range fork.hashes {
+		forks.hashes.Delete(string(hash))
 	}
 
 }

@@ -2,13 +2,11 @@ package blockchain
 
 import (
 	"encoding/hex"
-	"errors"
 	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/config"
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
 	"strconv"
 )
 
@@ -25,38 +23,6 @@ type BlockchainData struct {
 	ConsecutiveSelfForged uint64
 }
 
-func (chainData *BlockchainData) loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64, err error) {
-	if height < 0 {
-		err = errors.New("height is invalid")
-		return
-	}
-	key := []byte("totalDifficulty" + strconv.FormatUint(height, 10))
-
-	buf := bucket.Get(key)
-	if buf == nil {
-		err = errors.New("Couldn't ready difficulty from DB")
-		return
-	}
-
-	reader := helpers.NewBufferReader(buf)
-	if timestamp, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-
-	length, err := reader.ReadUvarint()
-	if err != nil {
-		return
-	}
-
-	bytes, err := reader.ReadBytes(int(length))
-	if err != nil {
-		return
-	}
-
-	difficulty = new(big.Int).SetBytes(bytes)
-	return
-}
-
 func (chainData *BlockchainData) computeNextTargetBig(bucket *bolt.Bucket) (*big.Int, error) {
 
 	if config.DIFFICULTY_BLOCK_WINDOW > chainData.Height {
@@ -65,7 +31,7 @@ func (chainData *BlockchainData) computeNextTargetBig(bucket *bolt.Bucket) (*big
 
 	first := chainData.Height - config.DIFFICULTY_BLOCK_WINDOW
 
-	firstDifficulty, firstTimestamp, err := chainData.loadTotalDifficultyExtra(bucket, first)
+	firstDifficulty, firstTimestamp, err := chainData.LoadTotalDifficultyExtra(bucket, first)
 	if err != nil {
 		return nil, err
 	}

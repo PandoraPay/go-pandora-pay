@@ -32,7 +32,7 @@ func (consensus *Consensus) execute() {
 	}()
 
 	//discover forks
-	processForksThread := createConsensusProcessForksThread(consensus.forks, consensus.httpServer.ApiWebsockets.ApiStore)
+	processForksThread := createConsensusProcessForksThread(consensus.forks, consensus.chain, consensus.httpServer.ApiWebsockets.ApiStore)
 	go processForksThread.execute()
 
 	//initialize first time
@@ -47,8 +47,9 @@ func CreateConsensus(httpServer *node_http.HttpServer, chain *blockchain.Blockch
 		mempool:    mempool,
 		httpServer: httpServer,
 		forks: &Forks{
-			hashes: sync.Map{},
-			list:   make([]*Fork, 0),
+			hashes:           &sync.Map{},
+			forksDownloadMap: &sync.Map{},
+			id:               0,
 		},
 	}
 
