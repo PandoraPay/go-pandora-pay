@@ -175,10 +175,10 @@ func (c *AdvancedConnection) WritePump() {
 
 	defer func() {
 		pingTicker.Stop()
-		c.Conn.Close()
 		if c.IsClosed.SetToIf(false, true) {
 			close(c.Closed)
 		}
+		c.Conn.Close()
 	}()
 
 	var err error

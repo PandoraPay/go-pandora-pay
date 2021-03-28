@@ -73,9 +73,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		Transactions:          chainData.Transactions,
 	}
 
-	var accs *accounts.Accounts
-	var toks *tokens.Tokens
-
 	boltTx, err := store.StoreBlockchain.DB.Begin(true)
 	if err != nil {
 		return
@@ -93,8 +90,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	writer = boltTx.Bucket([]byte("Chain"))
 
-	accs = accounts.NewAccounts(boltTx)
-	toks = tokens.NewTokens(boltTx)
+	accs := accounts.NewAccounts(boltTx)
+	toks := tokens.NewTokens(boltTx)
 
 	err = func() (err error) {
 		//let's filter existing blocks
@@ -122,19 +119,30 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		firstBlockComplete := blocksComplete[0]
 		if firstBlockComplete.Block.Height < newChainData.Height {
 
-			for i := newChainData.Height - 1; i >= firstBlockComplete.Block.Height; i-- {
+			index := newChainData.Height - 1
+			for {
 
 				removedBlocksHeights = append(removedBlocksHeights, 0)
 				copy(removedBlocksHeights[1:], removedBlocksHeights)
-				removedBlocksHeights[0] = i
+				removedBlocksHeights[0] = index
 
-				if err = chain.removeBlockComplete(writer, i, removedTxHashes, accs, toks); err != nil {
+				if err = chain.removeBlockComplete(writer, index, removedTxHashes, accs, toks); err != nil {
 					return
+				}
+
+				if index > firstBlockComplete.Block.Height {
+					index -= 1
+				} else {
+					break
 				}
 			}
 
-			if err = newChainData.loadBlockchainInfo(writer, firstBlockComplete.Block.Height); err != nil {
-				return
+			if firstBlockComplete.Block.Height == 0 {
+				newChainData = chain.createGenesisBlockchainData()
+			} else {
+				if err = newChainData.loadBlockchainInfo(writer, firstBlockComplete.Block.Height); err != nil {
+					return
+				}
 			}
 		}
 

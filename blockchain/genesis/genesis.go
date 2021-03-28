@@ -8,6 +8,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"strconv"
 	"time"
 )
 
@@ -86,6 +87,14 @@ func GenesisInit() (err error) {
 	if globals.Arguments["--new-devnet"] == true {
 		GenesisData.HashHex = hex.EncodeToString(helpers.RandomBytes(cryptography.HashSize))
 		GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
+	}
+
+	if globals.Arguments["--cfg-devnet"] != nil {
+		str := globals.Arguments["--manual-devnet"].([]string)
+		GenesisData.HashHex = str[0]
+		if GenesisData.Timestamp, err = strconv.ParseUint(str[1], 10, 64); err != nil {
+			return
+		}
 	}
 
 	if GenesisData.Hash, err = hex.DecodeString(GenesisData.HashHex); err != nil {

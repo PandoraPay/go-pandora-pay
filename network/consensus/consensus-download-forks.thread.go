@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"bytes"
-	"math/big"
 	"pandora-pay/blockchain"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/config"
@@ -45,7 +44,7 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 		if fork.errors > 2 {
 			return false
 		}
-		if fork.errors >= -10 {
+		if fork.errors > -10 {
 			fork.errors = -10
 		}
 
@@ -85,7 +84,11 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 			}
 		}
 
-		fork.blocks = append([]*block_complete.BlockComplete{blkComplete}, fork.blocks...)
+		//prepend
+		fork.blocks = append(fork.blocks, nil)
+		copy(fork.blocks[1:], fork.blocks)
+		fork.blocks[0] = blkComplete
+
 		fork.start -= 1
 	}
 
@@ -98,7 +101,6 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 	fork.Lock()
 	defer fork.Unlock()
 
-	chainData := thread.chain.GetChainData()
 	var err error
 
 	for i := uint64(0); i < config.FORK_MAX_DOWNLOAD; i++ {
@@ -110,7 +112,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 		if fork.errors > 2 {
 			return false
 		}
-		if fork.errors >= -10 {
+		if fork.errors > -10 {
 			fork.errors = -10
 		}
 
@@ -136,7 +138,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 		}
 
 		fork.blocks = append(fork.blocks, blkComplete)
-
+		fork.current += 1
 	}
 
 	return true
@@ -155,9 +157,11 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 			if downloaded {
 
-				thread.downloadRemainingBlocks(fork)
+				if thread.downloadRemainingBlocks(fork) {
 
-				if err := thread.chain.AddBlocks(fork.blocks, false); err != nil {
+					if err := thread.chain.AddBlocks(fork.blocks, false); err != nil {
+
+					}
 
 				}
 

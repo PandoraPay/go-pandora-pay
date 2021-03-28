@@ -53,6 +53,7 @@ func (worker *mempoolWorker) processing(
 			if !ok {
 				return
 			}
+
 			if work != nil {
 				worker.closeDB()
 				worker.work = work
@@ -62,11 +63,14 @@ func (worker *mempoolWorker) processing(
 			listIndex = -1
 
 			mempoolResult.Lock()
-			mempoolResult.chainHash = work.chainHash
-			mempoolResult.chainHeight = work.chainHeight
+			if work != nil {
+				mempoolResult.chainHash = work.chainHash
+				mempoolResult.chainHeight = work.chainHeight
+			}
 			mempoolResult.txs = []*transaction.Transaction{}
 			mempoolResult.totalSize = 0
 			mempoolResult.Unlock()
+
 			break
 
 		default:
