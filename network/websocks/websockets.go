@@ -1,6 +1,7 @@
 package websocks
 
 import (
+	"encoding/json"
 	"errors"
 	"pandora-pay/gui"
 	api_http "pandora-pay/network/api/api-http"
@@ -21,7 +22,8 @@ type Websockets struct {
 	sync.RWMutex  `json:"-"`
 }
 
-func (websockets *Websockets) Broadcast(name []byte, data interface{}) {
+func (websockets *Websockets) Broadcast(name []byte, data []byte) {
+
 	websockets.RLock()
 	all := make([]*connection.AdvancedConnection, len(websockets.All))
 	copy(all, websockets.All)
@@ -30,6 +32,11 @@ func (websockets *Websockets) Broadcast(name []byte, data interface{}) {
 	for _, conn := range all {
 		conn.Send(name, data)
 	}
+}
+
+func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}) {
+	out, _ := json.Marshal(data)
+	websockets.Broadcast(name, out)
 }
 
 func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnection, connType bool) {

@@ -13,12 +13,12 @@ func (consensus *Consensus) GetChainData() *blockchain.BlockchainData {
 	return (*blockchain.BlockchainData)(newChainDataPtr)
 }
 
-func (consensus *Consensus) chainGet(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	conn.Send([]byte("chain"), consensus.getUpdateNotification(nil))
+func (consensus *Consensus) chainGet(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	conn.SendJSON([]byte("chain"), consensus.getUpdateNotification(nil))
 	return nil, nil
 }
 
-func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, values []byte) (out interface{}, err error) {
+func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
 
 	chainUpdateNotification := new(ChainUpdateNotification)
 	if err := json.Unmarshal(values, &chainUpdateNotification); err != nil {
@@ -81,14 +81,14 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 
 	} else {
 		//let's notify him tha we have a better chain
-		conn.Send([]byte("chain"), consensus.getUpdateNotification(nil))
+		conn.SendJSON([]byte("chain"), consensus.getUpdateNotification(nil))
 	}
 
 	return nil, nil
 }
 
 func (consensus *Consensus) broadcast(newChainData *blockchain.BlockchainData) {
-	consensus.httpServer.Websockets.Broadcast([]byte("chain"), consensus.getUpdateNotification(newChainData))
+	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain"), consensus.getUpdateNotification(newChainData))
 }
 
 func (consensus *Consensus) getUpdateNotification(newChainData *blockchain.BlockchainData) *ChainUpdateNotification {

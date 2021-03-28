@@ -30,13 +30,12 @@ type AdvancedConnection struct {
 	answerCounter uint32
 	Closed        chan struct{}
 	IsClosed      uint32
-	getMap        map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)
-
+	getMap        map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
 	answerMap     map[uint32]chan *AdvancedConnectionAnswer
 	answerMapLock sync.RWMutex `json:"-"`
 }
 
-func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data interface{}, await, reply bool) *AdvancedConnectionAnswer {
+func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byte, await, reply bool) *AdvancedConnectionAnswer {
 
 	if await && replyBackId == 0 {
 		replyBackId = atomic.AddUint32(&c.answerCounter, 1)
@@ -45,14 +44,12 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data inter
 		c.answerMapLock.Unlock()
 	}
 
-	marshal, _ := json.Marshal(data)
-
 	message := &AdvancedConnectionMessage{
 		replyBackId,
 		reply,
 		await,
 		name,
-		marshal,
+		data,
 	}
 	c.send <- message
 	if await {
@@ -70,18 +67,28 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data inter
 	return nil
 }
 
-func (c *AdvancedConnection) Send(name []byte, data interface{}) {
+func (c *AdvancedConnection) Send(name []byte, data []byte) {
 	c.sendNow(0, name, data, false, false)
 }
 
-func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data interface{}) *AdvancedConnectionAnswer {
+func (c *AdvancedConnection) SendJSON(name []byte, data interface{}) {
+	out, _ := json.Marshal(data)
+	c.sendNow(0, name, out, false, false)
+}
+
+func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte) *AdvancedConnectionAnswer {
 	return c.sendNow(0, name, data, true, false)
 }
 
-func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) (interface{}, error) {
+func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}) *AdvancedConnectionAnswer {
+	out, _ := json.Marshal(data)
+	return c.sendNow(0, name, out, true, false)
+}
+
+func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) ([]byte, error) {
 
 	route := string(message.Name)
-	var callback func(conn *AdvancedConnection, values []byte) (interface{}, error)
+	var callback func(conn *AdvancedConnection, values []byte) ([]byte, error)
 	if callback = c.getMap[route]; callback != nil {
 		return callback(c, message.Data)
 	}
@@ -120,12 +127,13 @@ func (c *AdvancedConnection) ReadPump() {
 
 		if message.ReplyAwait || !message.ReplyStatus {
 
-			var out interface{}
+			var out []byte
 			out, err = c.get(message)
 
 			if message.ReplyAwait {
 				if err != nil {
-					c.sendNow(message.ReplyId, []byte{0}, err, false, true)
+					marshalErr, _ := json.Marshal(err)
+					c.sendNow(message.ReplyId, []byte{0}, marshalErr, false, true)
 				} else {
 					c.sendNow(message.ReplyId, []byte{1}, out, false, true)
 				}
@@ -194,7 +202,7 @@ func (c *AdvancedConnection) WritePump() {
 
 }
 
-func CreateAdvancedConnection(conn *websocket.Conn, getMap map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)) *AdvancedConnection {
+func CreateAdvancedConnection(conn *websocket.Conn, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)) *AdvancedConnection {
 	return &AdvancedConnection{
 		Conn:          conn,
 		send:          make(chan *AdvancedConnectionMessage),

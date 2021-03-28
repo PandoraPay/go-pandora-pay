@@ -39,7 +39,9 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 	}
 
 	handshake := &api_websockets.APIHandshake{config.NAME, config.VERSION, string(config.NETWORK_SELECTED)}
-	out := wsClient.conn.SendAwaitAnswer([]byte("handshake"), handshake)
+	handshakeBinary, _ := json.Marshal(handshake)
+
+	out := wsClient.conn.SendAwaitAnswer([]byte("handshake"), handshakeBinary)
 
 	if out == nil {
 		wsClient.Close()

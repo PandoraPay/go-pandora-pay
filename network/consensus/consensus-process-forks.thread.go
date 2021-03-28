@@ -45,7 +45,7 @@ func (thread *ConsensusProcessForksThread) processFork(fork *Fork) {
 		}
 
 		conn := fork.conns[0]
-		answer := conn.SendAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockHeight(fork.start-1))
+		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockHeight(fork.start-1))
 		if answer.Err != nil {
 			fork.errors += 1
 			continue
