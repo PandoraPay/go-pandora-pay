@@ -77,7 +77,7 @@ func (tx *Transaction) Verify() error {
 	return tx.VerifyBloomAll()
 }
 
-func (tx *Transaction) Deserialize(reader *helpers.BufferReader, bloom bool) (err error) {
+func (tx *Transaction) Deserialize(reader *helpers.BufferReader) (err error) {
 
 	buffer := reader.Buf[:]
 	first := reader.Position
@@ -105,20 +105,16 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader, bloom bool) (er
 
 	end := reader.Position
 
-	if bloom {
-		//we can bloom more efficiently if asked
-		serialized := buffer[first:end]
-		hash := cryptography.SHA3(serialized)
-		tx.Bloom = &TransactionBloom{
-			Serialized: serialized,
-			Size:       uint64(len(serialized)),
-			Hash:       hash,
-			HashStr:    string(hash),
-			bloomed:    true,
-		}
-		if err = tx.BloomExtraNow(true); err != nil {
-			return
-		}
+	//we can bloom more efficiently if asked
+	serialized := buffer[first:end]
+	hash := cryptography.SHA3(serialized)
+	tx.Bloom = &TransactionBloom{
+		Serialized: serialized,
+		Size:       uint64(len(serialized)),
+		Hash:       hash,
+		HashStr:    string(hash),
+		bloomed:    true,
 	}
+
 	return
 }

@@ -199,7 +199,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				return errors.New("Timestamp is too much into the future")
 			}
 
-			blkComplete.IncludeBlockComplete(accs, toks)
+			if err = blkComplete.IncludeBlockComplete(accs, toks); err != nil {
+				return errors.New("Error including block into Blockchain: " + err.Error())
+			}
 
 			//to detect if the savedBlock was done correctly
 			savedBlock = false
@@ -334,8 +336,15 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	for _, txData := range removedTx {
 		tx := transaction.Transaction{}
-		tx.Deserialize(helpers.NewBufferReader(txData), true)
-		chain.mempool.AddTxToMemPool(&tx, newChainData.Height, false)
+		if err = tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
+			return
+		}
+		if err = tx.BloomExtraNow(true); err != nil {
+			return
+		}
+		if _, err = chain.mempool.AddTxToMemPool(&tx, newChainData.Height, false); err != nil {
+			return
+		}
 	}
 
 	for _, txHash := range insertedTxHashes {

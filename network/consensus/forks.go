@@ -37,6 +37,7 @@ func (forks *Forks) removeFork(fork *Fork) {
 			//order is not important
 			forks.list[i] = forks.list[len(forks.list)-1]
 			forks.list = forks.list[:len(forks.list)-1]
+			return
 		}
 	}
 

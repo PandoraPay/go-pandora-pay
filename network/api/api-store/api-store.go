@@ -129,11 +129,10 @@ func (apiStore *APIStore) LoadBlockComplete(bucket *bolt.Bucket, hash []byte) (o
 	txs := make([]*transaction.Transaction, len(txHashes))
 	for i, txHash := range txHashes {
 		data = bucket.Get(append([]byte("tx"), txHash...))
-		tx := &transaction.Transaction{}
-		if err = tx.Deserialize(helpers.NewBufferReader(data), false); err != nil {
+		txs[i] = &transaction.Transaction{}
+		if err = txs[i].Deserialize(helpers.NewBufferReader(data)); err != nil {
 			return
 		}
-		txs[i] = tx
 	}
 
 	return &block_complete.BlockComplete{
@@ -168,7 +167,7 @@ func (apiStore *APIStore) LoadBlockWithTxHashes(bucket *bolt.Bucket, hash []byte
 func (apiStore *APIStore) LoadTx(bucket *bolt.Bucket, hash []byte) (tx *transaction.Transaction, err error) {
 	data := bucket.Get(append([]byte("tx"), hash...))
 	tx = new(transaction.Transaction)
-	if err = tx.Deserialize(helpers.NewBufferReader(data), false); err != nil {
+	if err = tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
 		return
 	}
 	return

@@ -78,13 +78,12 @@ func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data interface{}) *Adv
 	return c.sendNow(0, name, data, true, false)
 }
 
-func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) (out interface{}, err error) {
+func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) (interface{}, error) {
 
 	route := string(message.Name)
 	var callback func(conn *AdvancedConnection, values []byte) (interface{}, error)
 	if callback = c.getMap[route]; callback != nil {
-		out, err = callback(c, message.Data)
-		return
+		return callback(c, message.Data)
 	}
 
 	return nil, errors.New("Unknown GET request")

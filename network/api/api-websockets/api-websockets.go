@@ -55,6 +55,7 @@ func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values [
 }
 
 func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+
 	blockHeight := APIBlockHeight(0)
 	var blkComplete *block_complete.BlockComplete
 	var err error

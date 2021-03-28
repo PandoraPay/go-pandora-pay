@@ -63,19 +63,26 @@ func (blkComplete *BlockComplete) VerifyMerkleHashManually() bool {
 	return bytes.Equal(merkleHash, blkComplete.Block.MerkleHash)
 }
 
-func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, toks *tokens.Tokens) {
+func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
 
 	allFees := make(map[string]uint64)
 	for _, tx := range blkComplete.Txs {
-		tx.AddFees(allFees)
+		if err = tx.AddFees(allFees); err != nil {
+			return
+		}
 	}
 
-	blkComplete.Block.IncludeBlock(accs, toks, allFees)
+	if err = blkComplete.Block.IncludeBlock(accs, toks, allFees); err != nil {
+		return
+	}
 
 	for _, tx := range blkComplete.Txs {
-		tx.IncludeTransaction(blkComplete.Block.Height, accs, toks)
+		if err = tx.IncludeTransaction(blkComplete.Block.Height, accs, toks); err != nil {
+			return
+		}
 	}
 
+	return
 }
 
 func (blkComplete *BlockComplete) Serialize() []byte {
@@ -85,8 +92,7 @@ func (blkComplete *BlockComplete) Serialize() []byte {
 	writer.WriteUvarint(uint64(len(blkComplete.Txs)))
 
 	for _, tx := range blkComplete.Txs {
-		serialized := tx.Serialize()
-		writer.Write(serialized)
+		writer.Write(tx.Serialize())
 	}
 
 	return writer.Bytes()
@@ -112,7 +118,7 @@ func (blkComplete *BlockComplete) Deserialize(buf []byte) (err error) {
 	blkComplete.Txs = make([]*transaction.Transaction, txsCount)
 	for i := uint64(0); i < txsCount; i++ {
 		blkComplete.Txs[i] = &transaction.Transaction{}
-		if err = blkComplete.Txs[i].Deserialize(reader, true); err != nil {
+		if err = blkComplete.Txs[i].Deserialize(reader); err != nil {
 			return
 		}
 	}
