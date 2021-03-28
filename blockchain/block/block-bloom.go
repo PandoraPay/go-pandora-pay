@@ -15,6 +15,11 @@ type BlockBloom struct {
 }
 
 func (blk *Block) BloomNow() (err error) {
+
+	if blk.Bloom != nil {
+		return
+	}
+
 	bloom := new(BlockBloom)
 
 	bloom.Hash = blk.ComputeHash()

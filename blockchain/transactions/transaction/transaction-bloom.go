@@ -16,6 +16,11 @@ type TransactionBloom struct {
 }
 
 func (tx *Transaction) BloomNow() {
+
+	if tx.Bloom != nil {
+		return
+	}
+
 	bloom := new(TransactionBloom)
 	bloom.Serialized = tx.Serialize()
 	bloom.Size = uint64(len(bloom.Serialized))
@@ -27,10 +32,7 @@ func (tx *Transaction) BloomNow() {
 
 func (tx *Transaction) BloomAll() (err error) {
 	tx.BloomNow()
-	if err = tx.BloomExtraNow(false); err != nil {
-		return
-	}
-	return
+	return tx.BloomExtraNow(false)
 }
 
 func (tx *Transaction) BloomExtraNow(signatureWasVerifiedBefore bool) (err error) {

@@ -10,6 +10,10 @@ type TransactionSimpleBloom struct {
 
 func (tx *TransactionSimple) BloomNow(hashForSignature []byte, signatureWasVerifiedBefore bool) (err error) {
 
+	if tx.Bloom != nil {
+		return
+	}
+
 	bloom := new(TransactionSimpleBloom)
 	bloom.hashForSignature = hashForSignature
 

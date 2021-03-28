@@ -61,15 +61,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	//chain.RLock() is not required because it is guaranteed that no other thread is writing now in the chain
 	var newChainData = &BlockchainData{
-		Hash:               chainData.Hash,
-		PrevHash:           chainData.PrevHash,
-		KernelHash:         chainData.KernelHash,
-		PrevKernelHash:     chainData.PrevKernelHash,
-		Height:             chainData.Height,
-		Timestamp:          chainData.Timestamp,
-		Target:             chainData.Target,
-		BigTotalDifficulty: chainData.BigTotalDifficulty,
-		Transactions:       chainData.Transactions,
+		Hash:                  chainData.Hash,
+		PrevHash:              chainData.PrevHash,
+		KernelHash:            chainData.KernelHash,
+		PrevKernelHash:        chainData.PrevKernelHash,
+		Height:                chainData.Height,
+		Timestamp:             chainData.Timestamp,
+		Target:                chainData.Target,
+		BigTotalDifficulty:    chainData.BigTotalDifficulty,
+		ConsecutiveSelfForged: chainData.ConsecutiveSelfForged,
+		Transactions:          chainData.Transactions,
 	}
 
 	var accs *accounts.Accounts
@@ -267,6 +268,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	//recover, but in case the chain was correctly saved and the mewChainDifficulty is higher than
 	//we should store it
 	if savedBlock && chainData.BigTotalDifficulty.Cmp(newChainData.BigTotalDifficulty) < 0 {
+
+		if calledByForging {
+			newChainData.ConsecutiveSelfForged += 1
+		} else {
+			newChainData.ConsecutiveSelfForged = 0
+		}
 
 		if err = newChainData.saveBlockchain(writer); err != nil {
 			panic("Error saving Blockchain " + err.Error())

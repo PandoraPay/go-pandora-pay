@@ -13,15 +13,16 @@ import (
 )
 
 type BlockchainData struct {
-	Hash               []byte //32
-	PrevHash           []byte //32
-	KernelHash         []byte //32
-	PrevKernelHash     []byte //32
-	Height             uint64
-	Timestamp          uint64
-	Target             *big.Int
-	BigTotalDifficulty *big.Int
-	Transactions       uint64 //count of the number of txs
+	Hash                  []byte //32
+	PrevHash              []byte //32
+	KernelHash            []byte //32
+	PrevKernelHash        []byte //32
+	Height                uint64
+	Timestamp             uint64
+	Target                *big.Int
+	BigTotalDifficulty    *big.Int
+	Transactions          uint64 //count of the number of txs
+	ConsecutiveSelfForged uint64
 }
 
 func (chainData *BlockchainData) loadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64, err error) {

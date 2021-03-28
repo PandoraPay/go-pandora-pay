@@ -11,6 +11,11 @@ type BlockCompleteBloom struct {
 }
 
 func (blkComplete *BlockComplete) BloomNow() error {
+
+	if blkComplete.Bloom != nil {
+		return nil
+	}
+
 	bloom := new(BlockCompleteBloom)
 	bloom.merkleTreeVerified = bytes.Equal(blkComplete.MerkleHash(), blkComplete.Block.MerkleHash)
 	if !bloom.merkleTreeVerified {

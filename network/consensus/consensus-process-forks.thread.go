@@ -56,7 +56,7 @@ func (thread *ConsensusProcessForksThread) processFork(fork *Fork) {
 			fork.errors += 1
 			continue
 		}
-		if err = blkComplete.BloomAll(true, true, true); err != nil {
+		if err = blkComplete.BloomAll(); err != nil {
 			fork.errors += 1
 			continue
 		}

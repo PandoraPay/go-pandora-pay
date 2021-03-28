@@ -79,7 +79,6 @@ func (tx *Transaction) Verify() error {
 
 func (tx *Transaction) Deserialize(reader *helpers.BufferReader) (err error) {
 
-	buffer := reader.Buf[:]
 	first := reader.Position
 
 	if tx.Version, err = reader.ReadUvarint(); err != nil {
@@ -106,7 +105,7 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader) (err error) {
 	end := reader.Position
 
 	//we can bloom more efficiently if asked
-	serialized := buffer[first:end]
+	serialized := reader.Buf[first:end]
 	hash := cryptography.SHA3(serialized)
 	tx.Bloom = &TransactionBloom{
 		Serialized: serialized,

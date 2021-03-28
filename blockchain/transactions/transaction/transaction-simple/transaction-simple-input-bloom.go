@@ -13,6 +13,11 @@ type TransactionSimpleInputBloom struct {
 }
 
 func (vin *TransactionSimpleInput) BloomNow(hashForSignature []byte) (err error) {
+
+	if vin.Bloom != nil {
+		return
+	}
+
 	bloom := new(TransactionSimpleInputBloom)
 
 	if bloom.PublicKey, err = ecdsa.EcrecoverCompressed(hashForSignature, vin.Signature); err != nil {
