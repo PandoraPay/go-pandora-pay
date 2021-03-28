@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain"
+	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/config"
 	"pandora-pay/mempool"
 	api_store "pandora-pay/network/api/api-store"
@@ -55,10 +56,17 @@ func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values [
 
 func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	blockHeight := APIBlockHeight(0)
-	if err := json.Unmarshal(values, &blockHeight); err != nil {
+	var blkComplete *block_complete.BlockComplete
+	var err error
+
+	if err = json.Unmarshal(values, &blockHeight); err != nil {
 		return nil, err
 	}
-	return api.ApiStore.LoadBlockCompleteFromHeight(blockHeight)
+	if blkComplete, err = api.ApiStore.LoadBlockCompleteFromHeight(blockHeight); err != nil {
+		return nil, err
+	}
+
+	return blkComplete.Serialize(), nil
 }
 
 func CreateWebsocketsAPI(apiStore *api_store.APIStore, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {

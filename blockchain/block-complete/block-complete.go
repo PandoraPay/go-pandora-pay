@@ -100,12 +100,15 @@ func (blkComplete *BlockComplete) Deserialize(buf []byte) (err error) {
 		return errors.New("COMPLETE BLOCK EXCEEDS MAX SIZE")
 	}
 
-	blkComplete.Block.Deserialize(reader)
-
-	txsCount, err := reader.ReadUvarint()
-	if err != nil {
+	if err = blkComplete.Block.Deserialize(reader); err != nil {
 		return
 	}
+
+	var txsCount uint64
+	if txsCount, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+
 	blkComplete.Txs = make([]*transaction.Transaction, txsCount)
 	for i := uint64(0); i < txsCount; i++ {
 		blkComplete.Txs[i] = &transaction.Transaction{}
@@ -144,7 +147,12 @@ func (blkComplete *BlockComplete) BloomAll(bloomTransactions, bloomBlock, bloomB
 
 func CreateEmptyBlockComplete() *BlockComplete {
 	return &BlockComplete{
-		Block: &block.Block{},
-		Txs:   []*transaction.Transaction{},
+		Block: &block.Block{
+			BlockHeader: block.BlockHeader{
+				Version: 0,
+				Height:  0,
+			},
+		},
+		Txs: []*transaction.Transaction{},
 	}
 }

@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
+	block_complete "pandora-pay/blockchain/block-complete"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
@@ -50,24 +52,39 @@ func (api *API) getPing(values *url.Values) (interface{}, error) {
 }
 
 func (api *API) getBlockComplete(values *url.Values) (interface{}, error) {
+	var blockComplete *block_complete.BlockComplete
+	var err error
+
 	if values.Get("height") != "" {
-		height, err := strconv.Atoi(values.Get("height"))
+		var height uint64
+		height, err = strconv.ParseUint(values.Get("height"), 10, 64)
 		if err != nil {
 			return nil, errors.New("parameter 'height' is not a number")
 		}
-		return api.ApiStore.LoadBlockCompleteFromHeight(uint64(height))
-	}
-	if values.Get("hash") != "" {
-		hash, err := hex.DecodeString(values.Get("hash"))
+		blockComplete, err = api.ApiStore.LoadBlockCompleteFromHeight(uint64(height))
+	} else if values.Get("hash") != "" {
+		var hash []byte
+		hash, err = hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			return nil, errors.New("parameter 'hash' was is not a valid hex number")
 		}
-		return api.ApiStore.LoadBlockCompleteFromHash(hash)
+		blockComplete, err = api.ApiStore.LoadBlockCompleteFromHash(hash)
+	} else {
+		err = errors.New("parameter 'hash' or 'height' are missing")
 	}
-	return nil, errors.New("parameter 'hash' or 'height' are missing")
+
+	if err != nil {
+		return nil, err
+	}
+
+	if values.Get("bytes") == "1" {
+		return blockComplete.Serialize(), nil
+	}
+	return blockComplete, nil
 }
 
 func (api *API) getBlock(values *url.Values) (interface{}, error) {
+
 	if values.Get("height") != "" {
 		height, err := strconv.Atoi(values.Get("height"))
 		if err != nil {
@@ -86,14 +103,26 @@ func (api *API) getBlock(values *url.Values) (interface{}, error) {
 }
 
 func (api *API) getTx(values *url.Values) (interface{}, error) {
+	var err error
+	var tx *transaction.Transaction
+
 	if values.Get("hash") != "" {
-		hash, err := hex.DecodeString(values.Get("hash"))
+		var hash []byte
+		hash, err = hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			return nil, errors.New("parameter 'hash' was is not a valid hex number")
 		}
-		return api.ApiStore.LoadTxFromHash(hash)
+		tx, err = api.ApiStore.LoadTxFromHash(hash)
+	} else {
+		err = errors.New("parameter 'hash' was not specified ")
 	}
-	return nil, errors.New("parameter 'hash' was not specified ")
+	if err != nil {
+		return nil, err
+	}
+	if values.Get("bytes") == "1" {
+		return tx.Serialize(), nil
+	}
+	return tx, nil
 }
 
 func (api *API) getBalance(values *url.Values) (interface{}, error) {
