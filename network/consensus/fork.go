@@ -9,17 +9,17 @@ import (
 )
 
 type Fork struct {
-	hashes             [][]byte
-	prevHash           []byte
-	start              uint64
-	end                uint64
-	bigTotalDifficulty *big.Int
-	errors             int
-	ready              bool
-	processing         bool
-	conns              []*connection.AdvancedConnection
-	blocks             []*block_complete.BlockComplete
-	sync.RWMutex       `json:"-"`
+	hashes              [][]byte
+	prevHash            []byte
+	start               uint64
+	end                 uint64
+	bigTotalDifficulty  *big.Int
+	errors              int
+	readyForInclusion   bool //ready for including into blockchain
+	readyForDownloading bool //ready to downloading
+	conns               []*connection.AdvancedConnection
+	blocks              []*block_complete.BlockComplete
+	sync.RWMutex        `json:"-"`
 }
 
 func (fork *Fork) getRandomConn() *connection.AdvancedConnection {
@@ -34,7 +34,7 @@ func (fork *Fork) getRandomConn() *connection.AdvancedConnection {
 //fork2 must be locked before
 func (fork *Fork) mergeFork(fork2 *Fork) bool {
 
-	if fork2.processing {
+	if fork2.readyForDownloading {
 		return false
 	}
 
@@ -62,9 +62,12 @@ func (fork *Fork) mergeFork(fork2 *Fork) bool {
 	return true
 }
 
-func (fork *Fork) AddConn(conn *connection.AdvancedConnection) {
-	fork.Lock()
-	defer fork.Unlock()
+func (fork *Fork) AddConn(conn *connection.AdvancedConnection, isLocked bool) {
+
+	if !isLocked {
+		fork.Lock()
+		defer fork.Unlock()
+	}
 
 	for _, conn2 := range fork.conns {
 		if conn2 == conn {

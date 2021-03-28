@@ -18,7 +18,7 @@ func (thread *ConsensusProcessForksThread) processFork(fork *Fork) {
 	fork.Lock()
 	defer fork.Unlock()
 
-	if fork.ready {
+	if fork.readyForDownloading {
 		return
 	}
 
@@ -64,7 +64,7 @@ func (thread *ConsensusProcessForksThread) processFork(fork *Fork) {
 		chainHash, err := thread.apiStore.LoadBlockHash(fork.start - 1)
 		if err == nil {
 			if bytes.Equal(prevHash, chainHash) {
-				fork.ready = true
+				fork.readyForInclusion = true
 				return
 			}
 		}
