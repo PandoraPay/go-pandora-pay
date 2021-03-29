@@ -6,9 +6,9 @@ import (
 
 type TransactionSimpleInput struct {
 	Amount    uint64
-	Token     helpers.ByteString //20
-	Signature helpers.ByteString //65
-	Bloom     *TransactionSimpleInputBloom
+	Token     helpers.ByteString           //20
+	Signature helpers.ByteString           //65
+	Bloom     *TransactionSimpleInputBloom `json:"-"`
 }
 
 func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter, inclSignature bool) {

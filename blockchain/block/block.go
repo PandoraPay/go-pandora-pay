@@ -20,7 +20,7 @@ type Block struct {
 	StakingAmount  uint64
 	Forger         helpers.ByteString // 20 byte public key hash
 	Signature      helpers.ByteString // 65 byte signature
-	Bloom          *BlockBloom
+	Bloom          *BlockBloom        `json:"-"`
 }
 
 func (blk *Block) Validate() error {

@@ -358,6 +358,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	//accs will only be read only
 	chain.forging.Wallet.UpdateBalanceChanges(accs)
 
+	//update work for mem pool
+	chain.mempool.UpdateWork(newChainData.Hash, newChainData.Height)
+
 	//create next block and the workers will be automatically reset
 	chain.createNextBlockForForging()
 
@@ -377,8 +380,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	for _, txHash := range insertedTxHashes {
 		chain.mempool.Delete(txHash)
 	}
-
-	chain.mempool.UpdateWork(newChainData.Hash, newChainData.Height)
 
 	return
 

@@ -15,7 +15,7 @@ import (
 type BlockComplete struct {
 	Block *block.Block
 	Txs   []*transaction.Transaction
-	Bloom *BlockCompleteBloom
+	Bloom *BlockCompleteBloom `json:"-"`
 }
 
 func (blkComplete *BlockComplete) Validate() (err error) {

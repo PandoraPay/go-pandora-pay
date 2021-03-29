@@ -20,7 +20,7 @@ type TransactionSimple struct {
 	Vout     []*TransactionSimpleOutput
 	Extra    transaction_simple_extra.TransactionSimpleExtraInterface
 
-	Bloom *TransactionSimpleBloom
+	Bloom *TransactionSimpleBloom `json:"-"`
 }
 
 func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {

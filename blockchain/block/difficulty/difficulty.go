@@ -1,14 +1,10 @@
 package difficulty
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
 	"pandora-pay/config"
-	"pandora-pay/gui"
-	"pandora-pay/helpers"
-	"strconv"
 )
 
 var (
@@ -51,8 +47,8 @@ func NextTargetBig(deltaTotalDifficulty *big.Int, deltaTime uint64) (*big.Int, e
 		change = DIFFICULTY_MAX_CHANGE_FACTOR
 	}
 
-	gui.Log(strconv.FormatUint(deltaTime, 10) + "  expected " + strconv.FormatUint(expectedTime, 10))
-	gui.Log("change " + change.String())
+	// gui.Log(strconv.FormatUint(deltaTime, 10) + "  expected " + strconv.FormatUint(expectedTime, 10))
+	// gui.Log("change " + change.String())
 
 	averageDifficulty := new(big.Float).Quo(new(big.Float).SetInt(deltaTotalDifficulty), new(big.Float).SetUint64(config.DIFFICULTY_BLOCK_WINDOW))
 	averageTarget := new(big.Float).Quo(config.BIG_FLOAT_MAX_256, averageDifficulty)
@@ -75,8 +71,8 @@ func NextTargetBig(deltaTotalDifficulty *big.Int, deltaTime uint64) (*big.Int, e
 		final = config.BIG_INT_MAX_256
 	}
 
-	hexstr := hex.EncodeToString(final.Bytes())
-	gui.Log("final " + hex.EncodeToString(helpers.EmptyBytes(32-len(hexstr)/2)) + hexstr)
+	//hexstr := hex.EncodeToString(final.Bytes())
+	//gui.Log("final " + hex.EncodeToString(helpers.EmptyBytes(32-len(hexstr)/2)) + hexstr)
 
 	return final, nil
 }

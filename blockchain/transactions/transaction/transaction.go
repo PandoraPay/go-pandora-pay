@@ -15,7 +15,7 @@ type Transaction struct {
 	Version uint64
 	TxType  transaction_type.TransactionType
 	TxBase  transaction_base_interface.TransactionBaseInterface
-	Bloom   *TransactionBloom
+	Bloom   *TransactionBloom `json:"-"`
 }
 
 func (tx *Transaction) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) error {
