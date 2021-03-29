@@ -192,6 +192,16 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 		return
 	}
 	tx.TxScript = TransactionSimpleScriptType(n)
+	switch tx.TxScript {
+	case TxSimpleScriptNormal:
+	case TxSimpleScriptUnstake, TxSimpleScriptWithdraw:
+		tx.Extra = &transaction_simple_extra.TransactionSimpleUnstake{}
+	case TxSimpleScriptDelegate:
+		tx.Extra = &transaction_simple_extra.TransactionSimpleDelegate{}
+	default:
+		return errors.New("Invalid TxType")
+	}
+
 	if tx.Nonce, err = reader.ReadUvarint(); err != nil {
 		return
 	}
