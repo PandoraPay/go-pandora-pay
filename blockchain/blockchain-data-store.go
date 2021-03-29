@@ -55,21 +55,21 @@ func (chainData *BlockchainData) LoadTotalDifficultyExtra(bucket *bolt.Bucket, h
 	return
 }
 
-func (chainData *BlockchainData) saveBlockchainInfo(bucket *bolt.Bucket) error {
-	chainInfoData := bucket.Get([]byte("blockchainInfo_" + strconv.FormatUint(chainData.Height, 10)))
+func (chainData *BlockchainData) loadBlockchainInfo(bucket *bolt.Bucket, height uint64) error {
+	chainInfoData := bucket.Get([]byte("blockchainInfo_" + strconv.FormatUint(height, 10)))
 	if chainInfoData == nil {
 		return errors.New("Chain not found")
 	}
 	return json.Unmarshal(chainInfoData, chainData)
 }
 
-func (chainData *BlockchainData) loadBlockchainInfo(bucket *bolt.Bucket, height uint64) (err error) {
+func (chainData *BlockchainData) saveBlockchainInfo(bucket *bolt.Bucket) (err error) {
 	var data []byte
 	if data, err = json.Marshal(chainData); err != nil {
 		return
 	}
 
-	return bucket.Put([]byte("blockchainInfo_"+strconv.FormatUint(height, 10)), data)
+	return bucket.Put([]byte("blockchainInfo_"+strconv.FormatUint(chainData.Height, 10)), data)
 }
 
 func (chainData *BlockchainData) saveBlockchain(bucket *bolt.Bucket) error {
