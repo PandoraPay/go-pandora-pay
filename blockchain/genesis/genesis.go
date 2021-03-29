@@ -1,8 +1,10 @@
 package genesis
 
 import (
+	"bufio"
 	"encoding/hex"
 	"errors"
+	"os"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
@@ -85,16 +87,48 @@ func GenesisInit() (err error) {
 	}
 
 	if globals.Arguments["--new-devnet"] == true {
-		GenesisData.HashHex = hex.EncodeToString(helpers.RandomBytes(cryptography.HashSize))
-		GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
-	}
 
-	if globals.Arguments["--cfg-devnet"] != nil {
-		str := globals.Arguments["--manual-devnet"].([]string)
-		GenesisData.HashHex = str[0]
-		if GenesisData.Timestamp, err = strconv.ParseUint(str[1], 10, 64); err != nil {
+		var file *os.File
+		if _, err = os.Stat("./genesis.data"); os.IsNotExist(err) {
+			HashHex := hex.EncodeToString(helpers.RandomBytes(cryptography.HashSize))
+			Timestamp := uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
+
+			if file, err = os.OpenFile("./genesis.data", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
+				return
+			}
+
+			if _, err = file.WriteString("1\n"); err != nil {
+				return
+			}
+			if _, err = file.WriteString(HashHex + "\n"); err != nil {
+				return
+			}
+			if _, err = file.WriteString(strconv.FormatUint(Timestamp, 10) + "\n"); err != nil {
+				return
+			}
+			if err = file.Close(); err != nil {
+				return
+			}
+		}
+
+		if file, err = os.OpenFile("./genesis.data", os.O_RDONLY, 0666); err != nil {
 			return
 		}
+
+		scanner := bufio.NewScanner(file)
+		scanner.Scan()
+		version := scanner.Text()
+		if version != "1" {
+			return errors.New("Genesis config data version is invalid")
+		}
+		scanner.Scan()
+		GenesisData.HashHex = scanner.Text()
+		scanner.Scan()
+		GenesisData.Timestamp, err = strconv.ParseUint(scanner.Text(), 10, 64)
+		if err != nil {
+			return
+		}
+
 	}
 
 	if GenesisData.Hash, err = hex.DecodeString(GenesisData.HashHex); err != nil {

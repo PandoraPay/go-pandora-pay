@@ -26,7 +26,7 @@ import (
 var commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--tcp-server-port=<port>] [--tcp-server-address=<address>] [--tor-onion=<onion>] [--instance=<number>]  [--cfg-devnet=<config>]
+  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--tcp-server-port=<port>] [--tcp-server-address=<address>] [--tor-onion=<onion>] [--instance=<number>]
   pandorapay -h | --help
 
 Options:
@@ -35,7 +35,6 @@ Options:
   --testnet     						Run in TESTNET mode.
   --devnet     							Run in DEVNET mode.
   --new-devnet     						Create a new devnet genesis.
-  --cfg-devnet=<config>					Configure a devnet genesis
   --debug     							Debug mode enabled (print log message).
   --staking     						Start staking
   --node-name=<name>   					Change node name
