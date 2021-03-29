@@ -28,11 +28,11 @@ type ForgingWalletAddressRequired struct {
 }
 
 type ForgingWorkerThread struct {
-	hashes          uint32
-	index           int
-	workChannel     chan *ForgingWork                    // SAFE
-	solutionChannel chan *ForgingSolution                // SAFE
-	walletsChannel  chan []*ForgingWalletAddressRequired // SAFE
+	hashes     uint32
+	index      int
+	workCn     chan *ForgingWork                    // SAFE
+	solutionCn chan *ForgingSolution                // SAFE
+	walletsCn  chan []*ForgingWalletAddressRequired // SAFE
 }
 
 /**
@@ -54,7 +54,7 @@ func (worker *ForgingWorkerThread) forge() {
 		timeNow := uint64(time.Now().Unix()) + config.NETWORK_TIMESTAMP_DRIFT_MAX
 
 		select {
-		case newWork, ok := <-worker.workChannel: //or the work was changed meanwhile
+		case newWork, ok := <-worker.workCn: //or the work was changed meanwhile
 			if !ok {
 				return
 			}
@@ -66,7 +66,7 @@ func (worker *ForgingWorkerThread) forge() {
 			serialized = serialized[:len(serialized)-n-20]
 			timestamp = work.blkComplete.Block.Timestamp + 1
 			atomic.StoreUint32(&worker.hashes, 0)
-		case newWallets := <-worker.walletsChannel:
+		case newWallets := <-worker.walletsCn:
 			wallets = newWallets
 		default:
 			if timestamp > timeNow {
@@ -99,7 +99,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 				if difficulty.CheckKernelHashBig(kernelHash, work.target) {
 
-					worker.solutionChannel <- &ForgingSolution{
+					worker.solutionCn <- &ForgingSolution{
 						timestamp: timestamp,
 						address:   address.wallet,
 						work:      work,
@@ -124,11 +124,11 @@ func (worker *ForgingWorkerThread) forge() {
 
 }
 
-func createForgingWorkerThread(index int, solutionChannel chan *ForgingSolution) *ForgingWorkerThread {
+func createForgingWorkerThread(index int, solutionCn chan *ForgingSolution) *ForgingWorkerThread {
 	return &ForgingWorkerThread{
-		index:           index,
-		walletsChannel:  make(chan []*ForgingWalletAddressRequired),
-		workChannel:     make(chan *ForgingWork),
-		solutionChannel: solutionChannel,
+		index:      index,
+		walletsCn:  make(chan []*ForgingWalletAddressRequired),
+		workCn:     make(chan *ForgingWork),
+		solutionCn: solutionCn,
 	}
 }

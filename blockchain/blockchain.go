@@ -28,14 +28,14 @@ import (
 )
 
 type Blockchain struct {
-	ChainData             unsafe.Pointer       //using atomic storePointer
-	Sync                  bool                 `json:"-"`
-	UpdateChannel         chan uint64          `json:"-"`
-	UpdateNewChainChannel chan *BlockchainData `json:"-"`
-	forging               *forging.Forging     `json:"-"`
-	mempool               *mempool.Mempool     `json:"-"`
-	mutex                 sync.Mutex           `json:"-"` //writing mutex
-	sync.RWMutex          `json:"-"`
+	ChainData        unsafe.Pointer       //using atomic storePointer
+	Sync             bool                 `json:"-"`
+	UpdateCn         chan uint64          `json:"-"`
+	UpdateNewChainCn chan *BlockchainData `json:"-"`
+	forging          *forging.Forging     `json:"-"`
+	mempool          *mempool.Mempool     `json:"-"`
+	mutex            sync.Mutex           `json:"-"` //writing mutex
+	sync.RWMutex     `json:"-"`
 }
 
 func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplete, calledByForging bool) (err error) {
@@ -352,8 +352,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	gui.Warning("-------------------------------------------")
 	newChainData.updateChainInfo()
 
-	chain.UpdateChannel <- newChainData.Height //sending 1
-	chain.UpdateNewChainChannel <- newChainData
+	chain.UpdateCn <- newChainData.Height //sending 1
+	chain.UpdateNewChainCn <- newChainData
 
 	//accs will only be read only
 	chain.forging.Wallet.UpdateBalanceChanges(accs)
@@ -393,11 +393,11 @@ func BlockchainInit(forging *forging.Forging, mempool *mempool.Mempool) (chain *
 	}
 
 	chain = &Blockchain{
-		forging:               forging,
-		mempool:               mempool,
-		Sync:                  false,
-		UpdateChannel:         make(chan uint64),
-		UpdateNewChainChannel: make(chan *BlockchainData),
+		forging:          forging,
+		mempool:          mempool,
+		Sync:             false,
+		UpdateCn:         make(chan uint64),
+		UpdateNewChainCn: make(chan *BlockchainData),
 	}
 
 	if err = chain.loadBlockchain(); err != nil {

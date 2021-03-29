@@ -118,7 +118,7 @@ func (chain *Blockchain) initForging() {
 		var err error
 		for {
 
-			blkComplete, ok := <-chain.forging.SolutionChannel
+			blkComplete, ok := <-chain.forging.SolutionCn
 			if !ok {
 				return
 			}

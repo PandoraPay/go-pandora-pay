@@ -38,7 +38,7 @@ var commands = []Command{
 var cmd *widgets.List
 var cmdStatus = "cmd"
 var cmdInput = ""
-var cmdInputChannel = make(chan string)
+var cmdInputCn = make(chan string)
 var cmdRows []string
 
 func CommandDefineCallback(Text string, callback func(string) error) {
@@ -99,7 +99,7 @@ func cmdProcess(e ui.Event) {
 			cmd.Unlock()
 			cmdStatus = "cmd"
 		} else if cmdStatus == "read" {
-			cmdInputChannel <- cmdInput
+			cmdInputCn <- cmdInput
 		}
 
 	}
@@ -142,7 +142,7 @@ func outputRead(any interface{}) <-chan string {
 	cmd.Unlock()
 	ui.Render(cmd)
 
-	return cmdInputChannel
+	return cmdInputCn
 }
 
 func OutputReadString(any interface{}) <-chan string {

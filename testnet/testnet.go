@@ -115,7 +115,7 @@ func (testnet *Testnet) run() {
 	var err error
 	for {
 
-		blockHeight := <-testnet.chain.UpdateChannel
+		blockHeight := <-testnet.chain.UpdateCn
 
 		func() {
 

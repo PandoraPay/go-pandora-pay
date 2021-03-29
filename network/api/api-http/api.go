@@ -198,7 +198,7 @@ func CreateAPI(apiStore *api_store.APIStore, chain *blockchain.Blockchain, setti
 
 	go func() {
 		for {
-			newChainData, ok := <-api.chain.UpdateNewChainChannel
+			newChainData, ok := <-api.chain.UpdateNewChainCn
 			if ok {
 				//it is safe to read
 				api.readLocalBlockchain(newChainData)

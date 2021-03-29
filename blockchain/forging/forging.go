@@ -10,20 +10,20 @@ import (
 )
 
 type Forging struct {
-	mempool         *mempool.Mempool
-	Wallet          *ForgingWallet
-	workChannel     chan *ForgingWork
-	started         *abool.AtomicBool
-	SolutionChannel chan *block_complete.BlockComplete
+	mempool    *mempool.Mempool
+	Wallet     *ForgingWallet
+	workCn     chan *ForgingWork
+	started    *abool.AtomicBool
+	SolutionCn chan *block_complete.BlockComplete
 }
 
 func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
 
 	forging = &Forging{
-		mempool:         mempool,
-		workChannel:     nil,
-		started:         abool.New(),
-		SolutionChannel: make(chan *block_complete.BlockComplete),
+		mempool:    mempool,
+		workCn:     nil,
+		started:    abool.New(),
+		SolutionCn: make(chan *block_complete.BlockComplete),
 		Wallet: &ForgingWallet{
 			addressesMap: make(map[string]*ForgingWalletAddress),
 		},
@@ -40,8 +40,8 @@ func (forging *Forging) StartForging() bool {
 		return false
 	}
 
-	forging.workChannel = make(chan *ForgingWork)
-	forgingThread := createForgingThread(config.CPU_THREADS, forging.mempool, forging.SolutionChannel, forging.workChannel, forging.Wallet)
+	forging.workCn = make(chan *ForgingWork)
+	forgingThread := createForgingThread(config.CPU_THREADS, forging.mempool, forging.SolutionCn, forging.workCn, forging.Wallet)
 	go forgingThread.startForging()
 
 	return true
@@ -49,7 +49,7 @@ func (forging *Forging) StartForging() bool {
 
 func (forging *Forging) StopForging() bool {
 	if forging.started.SetToIf(true, false) {
-		close(forging.workChannel) //this will close the thread
+		close(forging.workCn) //this will close the thread
 		return true
 	}
 	return false
@@ -64,11 +64,11 @@ func (forging *Forging) ForgingNewWork(blkComplete *block_complete.BlockComplete
 	}
 
 	if forging.started.IsSet() {
-		forging.workChannel <- work
+		forging.workCn <- work
 	}
 }
 
 func (forging *Forging) Close() {
 	forging.StopForging()
-	close(forging.SolutionChannel) //this will close the thread
+	close(forging.SolutionCn) //this will close the thread
 }

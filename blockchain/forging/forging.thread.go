@@ -12,11 +12,11 @@ import (
 )
 
 type ForgingThread struct {
-	mempool         *mempool.Mempool
-	threads         int                                  //number of threads
-	wallet          *ForgingWallet                       //shared wallet, not thread safe
-	solutionChannel chan<- *block_complete.BlockComplete //broadcasting that a solution thread was received
-	workChannel     <-chan *ForgingWork                  //detect if a new work was published
+	mempool    *mempool.Mempool
+	threads    int                                  //number of threads
+	wallet     *ForgingWallet                       //shared wallet, not thread safe
+	solutionCn chan<- *block_complete.BlockComplete //broadcasting that a solution thread was received
+	workCn     <-chan *ForgingWork                  //detect if a new work was published
 }
 
 func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork) [][]*ForgingWalletAddressRequired {
@@ -61,9 +61,9 @@ func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork
 func (thread *ForgingThread) startForging() {
 
 	workers := make([]*ForgingWorkerThread, thread.threads)
-	forgingWorkerSolutionChannel := make(chan *ForgingSolution, 0)
+	forgingWorkerSolutionCn := make(chan *ForgingSolution, 0)
 	for i := 0; i < len(workers); i++ {
-		workers[i] = createForgingWorkerThread(i, forgingWorkerSolutionChannel)
+		workers[i] = createForgingWorkerThread(i, forgingWorkerSolutionCn)
 		go workers[i].forge()
 	}
 
@@ -72,7 +72,7 @@ func (thread *ForgingThread) startForging() {
 
 	defer func() {
 		for i := 0; i < len(workers); i++ {
-			close(workers[i].workChannel)
+			close(workers[i].workCn)
 		}
 		ticker.Stop()
 	}()
@@ -92,32 +92,39 @@ func (thread *ForgingThread) startForging() {
 	}()
 
 	var err error
+	var ok bool
+	var work *ForgingWork
+	readNextWork := true
 	for {
 
-		work, ok := <-thread.workChannel
-		if !ok {
-			return
+		if readNextWork {
+			work, ok = <-thread.workCn
+			if !ok {
+				return
+			}
 		}
+		readNextWork = true
 
 		wallets := thread.getWallets(thread.wallet, work)
 
 		for i := 0; i < thread.threads; i++ {
-			workers[i].walletsChannel <- wallets[i]
+			workers[i].walletsCn <- wallets[i]
 		}
 		for i := 0; i < thread.threads; i++ {
-			workers[i].workChannel <- work
+			workers[i].workCn <- work
 		}
 
 		select {
-		case solution := <-forgingWorkerSolutionChannel:
+		case solution := <-forgingWorkerSolutionCn:
 			if err = thread.publishSolution(solution); err != nil {
 				gui.Error("Error publishing solution", err)
 			}
 			break
-		case work, ok = <-thread.workChannel:
+		case work, ok = <-thread.workCn:
 			if !ok {
 				return
 			}
+			readNextWork = false
 			break //it was changed
 		}
 
@@ -148,16 +155,16 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 	}
 
 	//send message to blockchain
-	thread.solutionChannel <- work.blkComplete
+	thread.solutionCn <- work.blkComplete
 	return
 }
 
-func createForgingThread(threads int, mempool *mempool.Mempool, solutionChannel chan<- *block_complete.BlockComplete, workChannel <-chan *ForgingWork, wallet *ForgingWallet) *ForgingThread {
+func createForgingThread(threads int, mempool *mempool.Mempool, solutionCn chan<- *block_complete.BlockComplete, workCn <-chan *ForgingWork, wallet *ForgingWallet) *ForgingThread {
 	return &ForgingThread{
-		threads:         threads,
-		mempool:         mempool,
-		solutionChannel: solutionChannel,
-		workChannel:     workChannel,
-		wallet:          wallet,
+		threads:    threads,
+		mempool:    mempool,
+		solutionCn: solutionCn,
+		workCn:     workCn,
+		wallet:     wallet,
 	}
 }

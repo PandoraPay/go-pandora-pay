@@ -21,7 +21,7 @@ func (consensus *Consensus) execute() {
 
 	go func() {
 		for {
-			newChainData, ok := <-consensus.chain.UpdateNewChainChannel
+			newChainData, ok := <-consensus.chain.UpdateNewChainCn
 			if ok {
 				//it is safe to read
 				atomic.StorePointer(&consensus.newChainData, unsafe.Pointer(newChainData)) //newChainData already a pointer
