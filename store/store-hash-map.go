@@ -112,6 +112,7 @@ func (hashMap *HashMap) Delete(key []byte) {
 }
 
 func (hashMap *HashMap) Commit() {
+
 	for k, v := range hashMap.Changes {
 
 		if v.Status == "del" || v.Status == "update" {
@@ -126,7 +127,7 @@ func (hashMap *HashMap) Commit() {
 				committed.Status = "del"
 				committed.Commit = ""
 				committed.Data = nil
-			} else if v.Status == "update" && committed.Status != "update" {
+			} else if v.Status == "update" {
 				committed.Status = "update"
 				committed.Commit = ""
 				committed.Data = v.Data
