@@ -41,7 +41,7 @@ func (tx *Transaction) VerifySignatureManually() bool {
 	return tx.TxBase.VerifySignatureManually(hash)
 }
 
-func (tx *Transaction) ComputeHash() []byte {
+func (tx *Transaction) computeHash() []byte {
 	return cryptography.SHA3Hash(tx.Serialize())
 }
 

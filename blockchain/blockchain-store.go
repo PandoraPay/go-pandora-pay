@@ -94,15 +94,14 @@ func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *blo
 
 	txHashes := make([][]byte, len(blkComplete.Txs))
 	for i, tx := range blkComplete.Txs {
-		txHash := tx.ComputeHash()
-		txHashes[i] = txHash
+		txHashes[i] = tx.Bloom.Hash
 
 		//let's check to see if the tx block is already stored, if yes, we will skip it
-		if removedTxHashes[string(txHash)] == nil {
-			if err = bucket.Put(append([]byte("tx"), txHash...), tx.Serialize()); err != nil {
+		if removedTxHashes[tx.Bloom.HashStr] == nil {
+			if err = bucket.Put(append([]byte("tx"), tx.Bloom.Hash...), tx.Serialize()); err != nil {
 				return
 			}
-			newTxHashes = append(newTxHashes, txHash)
+			newTxHashes = append(newTxHashes, tx.Bloom.Hash)
 		}
 	}
 

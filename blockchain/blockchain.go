@@ -305,9 +305,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			}
 		}
 		for txHash := range removedTxHashes {
-			data := writer.Get([]byte("tx" + txHash))
+			data := writer.Get(append([]byte("tx"), txHash...))
 			removedTx = append(removedTx, data)
-			if err = writer.Delete([]byte("tx" + txHash)); err != nil {
+			if err = writer.Delete(append([]byte("tx"), txHash...)); err != nil {
 				panic("Error deleting transactions " + err.Error())
 			}
 		}

@@ -22,7 +22,7 @@ func (blk *Block) BloomNow() (err error) {
 
 	bloom := new(BlockBloom)
 
-	bloom.Hash = blk.ComputeHash()
+	bloom.Hash = blk.computeHash()
 	bloom.KernelHash = blk.ComputeKernelHash()
 	hashForSignature := blk.SerializeForSigning()
 

@@ -69,7 +69,7 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 	return
 }
 
-func (blk *Block) ComputeHash() []byte {
+func (blk *Block) computeHash() []byte {
 	return cryptography.SHA3Hash(blk.Serialize())
 }
 

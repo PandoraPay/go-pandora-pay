@@ -5,6 +5,7 @@ import (
 	"pandora-pay/blockchain"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/config"
+	"pandora-pay/gui"
 	api_store "pandora-pay/network/api/api-store"
 	api_websockets "pandora-pay/network/api/api-websockets"
 	"time"
@@ -96,7 +97,7 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 
 }
 
-func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) bool {
+func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) (result bool, moreToDownload bool) {
 
 	fork.Lock()
 	defer fork.Unlock()
@@ -110,7 +111,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 		}
 
 		if fork.errors > 2 {
-			return false
+			return
 		}
 		if fork.errors > -10 {
 			fork.errors = -10
@@ -118,7 +119,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 
 		conn := fork.getRandomConn()
 		if conn == nil {
-			return false
+			return
 		}
 
 		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockHeight(fork.current))
@@ -141,7 +142,9 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 		fork.current += 1
 	}
 
-	return true
+	result = true
+	moreToDownload = fork.current < fork.end
+	return
 
 }
 
@@ -153,20 +156,33 @@ func (thread *ConsensusProcessForksThread) execute() {
 		if fork != nil {
 
 			downloaded := thread.downloadFork(fork)
-			thread.forks.forksDownloadMap.Delete(fork.index)
+			willRemove := true
 
 			if downloaded {
 
-				if thread.downloadRemainingBlocks(fork) {
+				success, more := thread.downloadRemainingBlocks(fork)
+				if success {
 
 					if err := thread.chain.AddBlocks(fork.blocks, false); err != nil {
-
+						gui.Error("Invalid Fork", err)
+					} else {
+						if more {
+							fork.Lock()
+							fork.blocks = []*block_complete.BlockComplete{}
+							fork.readyForDownloading.UnSet()
+							fork.errors = 0
+							fork.Unlock()
+							willRemove = false
+						}
 					}
 
 				}
 
-				thread.forks.removeFork(fork)
+			}
 
+			if willRemove {
+				thread.forks.forksDownloadMap.Delete(fork.index)
+				thread.forks.removeFork(fork)
 			}
 
 		}

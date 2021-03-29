@@ -1,7 +1,6 @@
 package block_complete
 
 import (
-	"bytes"
 	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
@@ -50,17 +49,12 @@ func (blkComplete *BlockComplete) MerkleHash() []byte {
 	if len(blkComplete.Txs) > 0 {
 		var hashes = make([][]byte, len(blkComplete.Txs))
 		for i, tx := range blkComplete.Txs {
-			hashes[i] = tx.ComputeHash()
+			hashes[i] = tx.Bloom.Hash
 		}
 		return merkle_tree.MerkleRoot(hashes)
 	} else {
 		return cryptography.SHA3Hash([]byte{})
 	}
-}
-
-func (blkComplete *BlockComplete) VerifyMerkleHashManually() bool {
-	merkleHash := blkComplete.MerkleHash()
-	return bytes.Equal(merkleHash, blkComplete.Block.MerkleHash)
 }
 
 func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
