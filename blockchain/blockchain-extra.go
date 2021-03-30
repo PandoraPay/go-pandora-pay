@@ -13,6 +13,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/store"
 	"strconv"
+	"time"
 )
 
 func (chain *Blockchain) GetChainData() *BlockchainData {
@@ -68,7 +69,6 @@ func (chain *Blockchain) init() (err error) {
 
 func (chain *Blockchain) createNextBlockForForging() {
 
-	chain.RLock()
 	chainData := chain.GetChainData()
 	target := chainData.Target
 
@@ -76,7 +76,6 @@ func (chain *Blockchain) createNextBlockForForging() {
 	var err error
 	if chainData.Height == 0 {
 		if blk, err = genesis.CreateNewGenesisBlock(); err != nil {
-			chain.RUnlock()
 			gui.Error("Error creating next block", err)
 			return
 		}
@@ -102,8 +101,6 @@ func (chain *Blockchain) createNextBlockForForging() {
 	blkComplete := &block_complete.BlockComplete{
 		Block: blk,
 	}
-
-	chain.RUnlock()
 
 	chain.forging.ForgingNewWork(blkComplete, target)
 }
@@ -143,6 +140,9 @@ func (chain *Blockchain) initForging() {
 
 	}()
 
-	go chain.createNextBlockForForging()
+	go func() {
+		time.Sleep(1 * time.Second) //it must be 1 second later to be sure that the forger is listening
+		chain.createNextBlockForForging()
+	}()
 
 }

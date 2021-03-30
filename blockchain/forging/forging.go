@@ -31,6 +31,8 @@ func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
 
 	gui.Log("Forging Init")
 
+	forging.StartForging()
+
 	return
 }
 
@@ -42,6 +44,7 @@ func (forging *Forging) StartForging() bool {
 
 	forging.workCn = make(chan *ForgingWork)
 	forgingThread := createForgingThread(config.CPU_THREADS, forging.mempool, forging.SolutionCn, forging.workCn, forging.Wallet)
+
 	go forgingThread.startForging()
 
 	return true

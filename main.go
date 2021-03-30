@@ -101,8 +101,6 @@ func main() {
 	}
 	globals.Data["wallet"] = myWallet
 
-	myForging.StartForging()
-
 	if mySettings, err = settings.SettingsInit(); err != nil {
 		panic(err)
 	}
