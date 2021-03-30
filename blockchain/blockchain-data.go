@@ -7,14 +7,15 @@ import (
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/config"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"strconv"
 )
 
 type BlockchainData struct {
-	Hash                  []byte //32
-	PrevHash              []byte //32
-	KernelHash            []byte //32
-	PrevKernelHash        []byte //32
+	Hash                  helpers.ByteString //32
+	PrevHash              helpers.ByteString //32
+	KernelHash            helpers.ByteString //32
+	PrevKernelHash        helpers.ByteString //32
 	Height                uint64
 	Timestamp             uint64
 	Target                *big.Int

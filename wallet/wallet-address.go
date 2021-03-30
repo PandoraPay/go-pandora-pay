@@ -1,12 +1,15 @@
 package wallet
 
-import "pandora-pay/addresses"
+import (
+	"pandora-pay/addresses"
+	"pandora-pay/helpers"
+)
 
 type WalletAddress struct {
 	Name           string
 	PrivateKey     *addresses.PrivateKey
-	PublicKey      []byte //33 byte
-	PublicKeyHash  []byte //20 byte
+	PublicKey      helpers.ByteString //33 byte
+	PublicKeyHash  helpers.ByteString //20 byte
 	AddressEncoded string
 	Address        *addresses.Address
 	SeedIndex      uint32

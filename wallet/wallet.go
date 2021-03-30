@@ -3,6 +3,7 @@ package wallet
 import (
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"sync"
 )
 
@@ -44,13 +45,13 @@ type Wallet struct {
 
 	Version   Version
 	Mnemonic  string
-	Seed      []byte //32 byte
+	Seed      helpers.ByteString //32 byte
 	SeedIndex uint32
 	Count     int
 
 	Addresses []*WalletAddress
 
-	Checksum []byte //4 byte
+	Checksum helpers.ByteString //4 byte
 
 	forging *forging.Forging `json:"-"`
 

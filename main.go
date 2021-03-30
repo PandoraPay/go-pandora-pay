@@ -78,7 +78,6 @@ func main() {
 		err := recover()
 		if err != nil {
 			gui.Fatal(err)
-			os.Exit(1)
 		}
 	}()
 

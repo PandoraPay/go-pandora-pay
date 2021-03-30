@@ -11,8 +11,8 @@ import (
 var NotAcceptedCharacters = map[string]bool{
 	"<Ctrl>":                true,
 	"<Enter>":               true,
-	"<MoseWheelUp>":         true,
-	"<MoseWheelDown>":       true,
+	"<MouseWheelUp>":        true,
+	"<MouseWheelDown>":      true,
 	"<MouseLeft>":           true,
 	"<MouseRelease>":        true,
 	"<Shift>":               true,
@@ -30,14 +30,17 @@ type Command struct {
 }
 
 var commands = []Command{
-	{Text: "Decrypt Addresses"},
-	{Text: "Show Mnemnonic"},
-	{Text: "List Addresses"},
-	{Text: "Show Private Key"},
-	{Text: "Remove Address"},
-	{Text: "Create New Address"},
-	{Text: "Export (JSON) Wallet"},
-	{Text: "Import (JSON) Wallet"},
+	{Text: "Wallet : Decrypt"},
+	{Text: "Wallet : Show Mnemnonic"},
+	{Text: "Wallet : List Addresses"},
+	{Text: "Wallet : Show Private Key"},
+	{Text: "Wallet : Remove Address"},
+	{Text: "Wallet : Create New Address"},
+	{Text: "Wallet : TX: Transfer"},
+	{Text: "Wallet : TX: Delegate"},
+	{Text: "Wallet : TX: Withdraw"},
+	{Text: "Wallet : Export JSON"},
+	{Text: "Wallet : Import JSON"},
 	{Text: "Exit"},
 }
 
@@ -131,6 +134,7 @@ func cmdProcess(e ui.Event) {
 func OutputWrite(any interface{}) {
 	cmd.Lock()
 	cmd.Rows = append(cmd.Rows, processArgument(any))
+	cmd.SelectedRow = len(cmd.Rows) - 1
 	cmd.Unlock()
 	ui.Render(cmd)
 }

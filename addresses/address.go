@@ -19,10 +19,10 @@ const (
 type Address struct {
 	Network       uint64
 	Version       AddressVersion
-	PublicKey     []byte
-	PublicKeyHash []byte
-	Amount        uint64 // amount to be paid
-	PaymentID     []byte // payment id
+	PublicKey     helpers.ByteString
+	PublicKeyHash helpers.ByteString
+	Amount        uint64             // amount to be paid
+	PaymentID     helpers.ByteString // payment id
 }
 
 func (e AddressVersion) String() string {

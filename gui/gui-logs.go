@@ -43,10 +43,9 @@ func Warning(any ...interface{}) {
 	message("WARN", "(fg:yellow)", any...)
 }
 
-func Fatal(any ...interface{}) error {
+func Fatal(any ...interface{}) {
 	message("FATAL", "(fg:red,fg:bold)", any...)
 	os.Exit(1)
-	return nil
 }
 
 func Error(any ...interface{}) {

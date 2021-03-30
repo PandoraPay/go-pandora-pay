@@ -85,7 +85,9 @@ func initWalletCLI(wallet *Wallet) {
 
 		defer f.Close()
 
-		cliListAddresses("")
+		if err = cliListAddresses(""); err != nil {
+			return
+		}
 		index := <-gui.OutputReadInt("Select Address to be Exported")
 		wallet.RLock()
 		defer wallet.RUnlock()
@@ -170,11 +172,11 @@ func initWalletCLI(wallet *Wallet) {
 		return
 	}
 
-	gui.CommandDefineCallback("List Addresses", cliListAddresses)
-	gui.CommandDefineCallback("Create New Address", cliCreateNewAddress)
-	gui.CommandDefineCallback("Show Mnemnonic", cliShowMnemonic)
-	gui.CommandDefineCallback("Show Private Key", cliShowPrivateKey)
-	gui.CommandDefineCallback("Remove Address", cliRemoveAddress)
-	gui.CommandDefineCallback("Export (JSON) Wallet", cliExportJSONWallet)
+	gui.CommandDefineCallback("Wallet : List Addresses", cliListAddresses)
+	gui.CommandDefineCallback("Wallet : Create New Address", cliCreateNewAddress)
+	gui.CommandDefineCallback("Wallet : Show Mnemnonic", cliShowMnemonic)
+	gui.CommandDefineCallback("Wallet : Show Private Key", cliShowPrivateKey)
+	gui.CommandDefineCallback("Wallet : Remove Address", cliRemoveAddress)
+	gui.CommandDefineCallback("Wallet : Export JSON", cliExportJSONWallet)
 
 }
