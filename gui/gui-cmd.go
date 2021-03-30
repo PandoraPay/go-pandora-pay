@@ -6,16 +6,21 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 	"os"
 	"strconv"
-	"unicode"
 )
 
-func isLetter(s string) bool {
-	for _, r := range s {
-		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && !unicode.IsSpace(r) {
-			return false
-		}
-	}
-	return true
+var NotAcceptedCharacters = map[string]bool{
+	"<Ctrl>":                true,
+	"<MoseWheelUp>":         true,
+	"<MoseWheelDown>":       true,
+	"<MouseLeft>":           true,
+	"<MouseRelease>":        true,
+	"<Shift>":               true,
+	"<Down>":                true,
+	"<Up>":                  true,
+	"<Left>":                true,
+	"<Right>":               true,
+	"<Tab>":                 true,
+	"NotAcceptedCharacters": true,
 }
 
 type Command struct {
@@ -104,7 +109,7 @@ func cmdProcess(e ui.Event) {
 
 	}
 
-	if cmdStatus == "read" && (isLetter(e.ID) || e.ID == "<Backspace>" || e.ID == "<Space>") {
+	if cmdStatus == "read" && !NotAcceptedCharacters[e.ID] {
 		char := e.ID
 		if char == "<Space>" {
 			char = " "
@@ -138,6 +143,7 @@ func outputRead(any interface{}) <-chan string {
 	cmd.Rows = append(cmd.Rows, "")
 	cmd.Rows = append(cmd.Rows, processArgument(any)+" : ")
 	cmd.Rows = append(cmd.Rows, "-> ")
+	cmd.SelectedRow = len(cmd.Rows) - 1
 	cmdStatus = "read"
 	cmd.Unlock()
 	ui.Render(cmd)
