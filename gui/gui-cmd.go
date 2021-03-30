@@ -10,6 +10,7 @@ import (
 
 var NotAcceptedCharacters = map[string]bool{
 	"<Ctrl>":                true,
+	"<Enter>":               true,
 	"<MoseWheelUp>":         true,
 	"<MoseWheelDown>":       true,
 	"<MouseLeft>":           true,
@@ -61,8 +62,11 @@ func CommandDefineCallback(Text string, callback func(string) error) {
 func cmdProcess(e ui.Event) {
 	switch e.ID {
 	case "<C-c>":
+		if cmdStatus == "read" {
+			OutputRestore()
+			return
+		}
 		os.Exit(1)
-		return
 	case "<Down>":
 		cmd.ScrollDown()
 	case "<Up>":
@@ -97,12 +101,7 @@ func cmdProcess(e ui.Event) {
 				}()
 			}
 		} else if cmdStatus == "output done" {
-			OutputClear()
-			cmd.Lock()
-			cmd.SelectedRow = 0
-			cmd.Rows = cmdRows
-			cmd.Unlock()
-			cmdStatus = "cmd"
+			OutputRestore()
 		} else if cmdStatus == "read" {
 			cmdInputCn <- cmdInput
 		}
@@ -186,6 +185,16 @@ func OutputDone() {
 	OutputWrite("")
 	OutputWrite("Press space to return...")
 	cmdStatus = "output done"
+}
+
+func OutputRestore() {
+	OutputClear()
+	cmd.Lock()
+	cmd.SelectedRow = 0
+	cmd.Rows = cmdRows
+	cmd.Unlock()
+	ui.Render(cmd)
+	cmdStatus = "cmd"
 }
 
 func cmdInit() {

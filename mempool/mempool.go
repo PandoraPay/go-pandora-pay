@@ -106,7 +106,6 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 
 	list := mempool.txs.txsList.Load().([]*mempoolTx)
 
-	var txsCount int64
 	for _, newTx := range finalTxs {
 
 		found := false
@@ -120,7 +119,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 		if !found {
 
 			//making sure that the transaction is not inserted twice
-			txsCount = atomic.AddInt64(&mempool.txs.txsCount, 1)
+			atomic.AddInt64(&mempool.txs.txsCount, 1)
 			atomic.AddInt64(&mempool.txs.txsInserted, 1)
 
 			//appending
@@ -130,8 +129,6 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 		}
 
 	}
-
-	gui.Info2Update("mempool", strconv.FormatInt(txsCount, 10))
 
 	return true, nil
 }
@@ -146,28 +143,44 @@ func (mempool *Mempool) Exists(txId []byte) bool {
 	return false
 }
 
-func (mempool *Mempool) Delete(txId []byte) *transaction.Transaction {
-
-	if !mempool.Exists(txId) {
-		return nil
+func (mempool *Mempool) DeleteTx(txId []byte) *transaction.Transaction {
+	out := mempool.DeleteTxs([][]byte{txId})
+	if len(out) > 0 {
+		return out[0]
 	}
+	return nil
+}
+
+func (mempool *Mempool) DeleteTxs(txIds [][]byte) (out []*transaction.Transaction) {
 
 	mempool.txs.txsListMutex.Lock()
 	defer mempool.txs.txsListMutex.Unlock()
 
 	list := mempool.txs.txsList.Load().([]*mempoolTx)
-	for i, tx := range list {
-		if bytes.Equal(tx.Tx.Bloom.Hash, txId) {
-			list = append(list[:i], list[i+1:]...)
+	finalList := make([]*mempoolTx, len(list))
+	copy(finalList[:], list[:])
 
-			txsCount := atomic.AddInt64(&mempool.txs.txsCount, -1)
-			gui.Info2Update("mempool", strconv.FormatInt(txsCount, 10))
+	out = []*transaction.Transaction{}
 
-			return tx.Tx
+	for _, txId := range txIds {
+		for i, tx := range finalList {
+			if bytes.Equal(tx.Tx.Bloom.Hash, txId) {
+
+				finalList[i] = finalList[len(finalList)-1]
+				finalList = finalList[:len(finalList)-1]
+
+				out = append(out, tx.Tx)
+				break
+			}
 		}
 	}
 
-	return nil
+	if len(out) > 0 {
+		mempool.txs.txsList.Store(finalList)
+		atomic.AddInt64(&mempool.txs.txsCount, -int64(len(out)))
+	}
+
+	return
 }
 
 //reset the forger
@@ -200,6 +213,13 @@ func InitMemPool() (mempool *Mempool, err error) {
 		for {
 			mempool.print()
 			time.Sleep(60 * time.Second)
+		}
+	}()
+
+	go func() {
+		for {
+			gui.Info2Update("mempool", strconv.FormatInt(atomic.LoadInt64(&mempool.txs.txsCount), 10))
+			time.Sleep(1 * time.Second)
 		}
 	}()
 

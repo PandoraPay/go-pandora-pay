@@ -376,9 +376,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		}
 	}
 
-	for _, txHash := range insertedTxHashes {
-		chain.mempool.Delete(txHash)
-	}
+	chain.mempool.DeleteTxs(insertedTxHashes)
 
 	return
 
