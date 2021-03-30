@@ -12,13 +12,7 @@ import (
 )
 
 func (mempool *Mempool) GetTxsList() []*mempoolTx {
-
-	mempool.txs.RLock()
-	transactions := make([]*mempoolTx, len(mempool.txs.txsList))
-	copy(transactions, mempool.txs.txsList)
-	mempool.txs.RUnlock()
-
-	return transactions
+	return mempool.txs.txsList.Load().([]*mempoolTx)
 }
 
 func (mempool *Mempool) GetNonce(publicKeyHash []byte, nonce uint64) uint64 {

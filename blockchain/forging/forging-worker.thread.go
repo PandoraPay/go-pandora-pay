@@ -28,11 +28,11 @@ type ForgingWalletAddressRequired struct {
 }
 
 type ForgingWorkerThread struct {
-	hashes     uint32
-	index      int
-	workCn     chan *ForgingWork                    // SAFE
-	solutionCn chan *ForgingSolution                // SAFE
-	walletsCn  chan []*ForgingWalletAddressRequired // SAFE
+	hashes           uint32
+	index            int
+	workCn           chan *ForgingWork                    // SAFE
+	workerSolutionCn chan *ForgingSolution                // SAFE
+	walletsCn        chan []*ForgingWalletAddressRequired // SAFE
 }
 
 /**
@@ -69,14 +69,10 @@ func (worker *ForgingWorkerThread) forge() {
 		case newWallets := <-worker.walletsCn:
 			wallets = newWallets
 		default:
-			if timestamp > timeNow {
-				time.Sleep(10 * time.Millisecond)
-				continue
-			}
 		}
 
-		if work == nil {
-			time.Sleep(10 * time.Millisecond)
+		if work == nil || timestamp > timeNow {
+			time.Sleep(25 * time.Millisecond)
 			continue
 		}
 
@@ -99,7 +95,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 				if difficulty.CheckKernelHashBig(kernelHash, work.target) {
 
-					worker.solutionCn <- &ForgingSolution{
+					worker.workerSolutionCn <- &ForgingSolution{
 						timestamp: timestamp,
 						address:   address.wallet,
 						work:      work,
@@ -124,11 +120,11 @@ func (worker *ForgingWorkerThread) forge() {
 
 }
 
-func createForgingWorkerThread(index int, solutionCn chan *ForgingSolution) *ForgingWorkerThread {
+func createForgingWorkerThread(index int, workerSolutionCn chan *ForgingSolution) *ForgingWorkerThread {
 	return &ForgingWorkerThread{
-		index:      index,
-		walletsCn:  make(chan []*ForgingWalletAddressRequired),
-		workCn:     make(chan *ForgingWork),
-		solutionCn: solutionCn,
+		index:            index,
+		walletsCn:        make(chan []*ForgingWalletAddressRequired),
+		workCn:           make(chan *ForgingWork),
+		workerSolutionCn: workerSolutionCn,
 	}
 }

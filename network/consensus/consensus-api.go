@@ -37,26 +37,30 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 
 	if chainLastUpdate.BigTotalDifficulty.Cmp(chainUpdateNotification.BigTotalDifficulty) < 0 {
 
+		_, exists := consensus.forks.hashes.Load(string(chainUpdateNotification.Hash))
+		if exists {
+			return
+		} //already found
+
 		found, exists := consensus.forks.hashes.Load(string(chainUpdateNotification.PrevHash))
 		if exists {
 			prevFork := (found).(*Fork)
-			if prevFork.readyForDownloading.IsSet() {
-				return
-			}
-			prevFork.Lock()
-			defer prevFork.Unlock()
-			if !prevFork.readyForDownloading.IsSet() {
+
+			if prevFork.readyForDownloading.IsNotSet() {
 				prevFork.Lock()
-				defer prevFork.Unlock()
-				prevFork.end += 1
-				prevFork.current += 1
-				prevFork.start += 1
-				prevFork.hashes = append(prevFork.hashes, chainUpdateNotification.Hash)
-				prevFork.prevHash = chainUpdateNotification.PrevHash
-				prevFork.bigTotalDifficulty = chainUpdateNotification.BigTotalDifficulty
-				prevFork.AddConn(conn, true)
+				if prevFork.readyForDownloading.IsNotSet() {
+					prevFork.end += 1
+					prevFork.current += 1
+					prevFork.start += 1
+					prevFork.hashes = append(prevFork.hashes, chainUpdateNotification.Hash)
+					prevFork.prevHash = chainUpdateNotification.PrevHash
+					prevFork.bigTotalDifficulty = chainUpdateNotification.BigTotalDifficulty
+					prevFork.AddConn(conn, true)
+					prevFork.Unlock()
+					return
+				}
+				prevFork.Unlock()
 			}
-			return
 		}
 
 		fork := &Fork{

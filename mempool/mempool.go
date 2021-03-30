@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"bytes"
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
@@ -8,6 +9,7 @@ import (
 	"pandora-pay/gui"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -29,11 +31,10 @@ type mempoolResult struct {
 }
 
 type mempoolTxs struct {
-	txsCount     uint64
-	txsMap       sync.Map
-	txsList      []*mempoolTx //we use the list because there are less operations of inserting into the mempool. Txs are coming less frequent
-	txsInserted  uint16
-	sync.RWMutex `json:"-"`
+	txsCount     int64        //use atomic
+	txsInserted  int64        //use atomic
+	txsList      atomic.Value // []*mempoolTx
+	txsListMutex sync.Mutex   // for writing
 }
 
 type Mempool struct {
@@ -43,102 +44,130 @@ type Mempool struct {
 }
 
 func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) (out bool, err error) {
+	return mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, mine)
+}
 
-	if err = tx.VerifyBloomAll(); err != nil {
-		return
+func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, mine bool) (out bool, err error) {
+
+	finalTxs := []*mempoolTx{}
+
+	for _, tx := range txs {
+		if err = tx.VerifyBloomAll(); err != nil {
+			return
+		}
+
+		var minerFees map[string]uint64
+		minerFees, err = tx.ComputeFees()
+		if err != nil {
+			return
+		}
+
+		var selectedFeeToken *string
+		var selectedFee uint64
+
+		for token := range fees.FEES_PER_BYTE {
+			if minerFees[token] != 0 {
+				feePerByte := minerFees[token] / tx.Bloom.Size
+				if feePerByte >= fees.FEES_PER_BYTE[token] {
+					selectedFeeToken = &token
+					selectedFee = minerFees[*selectedFeeToken]
+					break
+				}
+			}
+		}
+
+		//if it is mine and no fee was paid, let's fake a fee
+		if mine && selectedFeeToken == nil {
+			selectedFeeToken = &config.NATIVE_TOKEN_STRING
+			selectedFee = fees.FEES_PER_BYTE[config.NATIVE_TOKEN_STRING]
+		}
+
+		if selectedFeeToken == nil {
+			gui.Error("Transaction fee was not accepted")
+		} else {
+			finalTxs = append(finalTxs, &mempoolTx{
+				Tx:          tx,
+				Added:       time.Now().Unix(),
+				FeePerByte:  selectedFee / tx.Bloom.Size,
+				FeeToken:    []byte(*selectedFeeToken),
+				Mine:        mine,
+				ChainHeight: height,
+			})
+		}
+
 	}
-	if _, found := mempool.txs.txsMap.Load(tx.Bloom.HashStr); found {
-		return
+
+	if len(finalTxs) == 0 {
+		return false, errors.New("Transactions don't meet the criteria")
 	}
 
-	minerFees, err := tx.ComputeFees()
-	if err != nil {
-		return
-	}
+	mempool.txs.txsListMutex.Lock()
+	defer mempool.txs.txsListMutex.Unlock()
 
-	size := uint64(len(tx.Serialize()))
-	var selectedFeeToken *string
-	var selectedFee uint64
+	list := mempool.txs.txsList.Load().([]*mempoolTx)
 
-	for token := range fees.FEES_PER_BYTE {
-		if minerFees[token] != 0 {
-			feePerByte := minerFees[token] / size
-			if feePerByte >= fees.FEES_PER_BYTE[token] {
-				selectedFeeToken = &token
-				selectedFee = minerFees[*selectedFeeToken]
+	var txsCount int64
+	for _, newTx := range finalTxs {
+
+		found := false
+		for _, tx2 := range list {
+			if bytes.Equal(tx2.Tx.Bloom.Hash, newTx.Tx.Bloom.Hash) {
+				found = true
 				break
 			}
 		}
+
+		if !found {
+
+			//making sure that the transaction is not inserted twice
+			txsCount = atomic.AddInt64(&mempool.txs.txsCount, 1)
+			atomic.AddInt64(&mempool.txs.txsInserted, 1)
+
+			//appending
+			list = append(list, newTx)
+			mempool.txs.txsList.Store(list)
+
+		}
+
 	}
 
-	//if it is mine and no fee was paid, let's fake a fee
-	if mine && selectedFeeToken == nil {
-		selectedFeeToken = &config.NATIVE_TOKEN_STRING
-		selectedFee = fees.FEES_PER_BYTE[config.NATIVE_TOKEN_STRING]
-	}
-
-	if selectedFeeToken == nil {
-		return false, errors.New("Transaction fee was not accepted")
-	}
-
-	mempoolTx := &mempoolTx{
-		Tx:          tx,
-		Added:       time.Now().Unix(),
-		FeePerByte:  selectedFee / size,
-		FeeToken:    []byte(*selectedFeeToken),
-		Mine:        mine,
-		ChainHeight: height,
-	}
-
-	//meanwhile it was inserted, if not, let's store it
-	if _, exists := mempool.txs.txsMap.LoadOrStore(tx.Bloom.HashStr, mempoolTx); exists {
-		return
-	}
-
-	//making sure that the transaction is not inserted twice
-	mempool.txs.Lock()
-	defer mempool.txs.Unlock()
-
-	mempool.txs.txsCount += 1
-	mempool.txs.txsInserted += 1
-	mempool.txs.txsMap.Store(tx.Bloom.HashStr, mempoolTx)
-	mempool.txs.txsList = append(mempool.txs.txsList, mempoolTx)
-
-	gui.Info2Update("mempool", strconv.FormatUint(mempool.txs.txsCount, 10))
+	gui.Info2Update("mempool", strconv.FormatInt(txsCount, 10))
 
 	return true, nil
 }
 
 func (mempool *Mempool) Exists(txId []byte) bool {
-	_, found := mempool.txs.txsMap.Load(string(txId))
-	return found
+	list := mempool.txs.txsList.Load().([]*mempoolTx)
+	for _, tx := range list {
+		if bytes.Equal(tx.Tx.Bloom.Hash, txId) {
+			return true
+		}
+	}
+	return false
 }
 
-func (mempool *Mempool) Delete(txId []byte) (tx *transaction.Transaction) {
+func (mempool *Mempool) Delete(txId []byte) *transaction.Transaction {
 
-	hashStr := string(txId)
-
-	if _, found := mempool.txs.txsMap.Load(hashStr); found == false {
+	if !mempool.Exists(txId) {
 		return nil
 	}
 
-	mempool.txs.txsMap.Delete(hashStr)
+	mempool.txs.txsListMutex.Lock()
+	defer mempool.txs.txsListMutex.Unlock()
 
-	mempool.txs.Lock()
-	defer mempool.txs.Unlock()
+	list := mempool.txs.txsList.Load().([]*mempoolTx)
+	for i, tx := range list {
+		if bytes.Equal(tx.Tx.Bloom.Hash, txId) {
+			list = append(list[:i], list[i+1:]...)
 
-	for i, txOut := range mempool.txs.txsList {
-		if txOut.Tx.Bloom.HashStr == hashStr {
-			//order is not important
-			mempool.txs.txsList[i] = mempool.txs.txsList[len(mempool.txs.txsList)-1]
-			mempool.txs.txsList = mempool.txs.txsList[:len(mempool.txs.txsList)-1]
-			mempool.txs.txsCount -= 1
-			break
+			txsCount := atomic.AddInt64(&mempool.txs.txsCount, -1)
+			gui.Info2Update("mempool", strconv.FormatInt(txsCount, 10))
+
+			return tx.Tx
 		}
 	}
 
-	gui.Info2Update("mempool", strconv.FormatUint(mempool.txs.txsCount, 10))
-	return
+	return nil
 }
 
 //reset the forger
@@ -156,11 +185,14 @@ func InitMemPool() (mempool *Mempool, err error) {
 
 	gui.Log("MemPool init...")
 
+	txsList := atomic.Value{}
+	txsList.Store([]*mempoolTx{})
+
 	mempool = &Mempool{
 		newWork: make(chan *mempoolWork),
 		result:  &mempoolResult{},
 		txs: &mempoolTxs{
-			txsList: []*mempoolTx{},
+			txsList: txsList,
 		},
 	}
 

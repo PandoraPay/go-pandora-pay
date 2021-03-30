@@ -34,6 +34,17 @@ func (worker *mempoolWorker) closeDB() {
 	}
 }
 
+func sortTxs(txList []*mempoolTx) {
+	sort.Slice(txList, func(i, j int) bool {
+
+		if txList[i].FeePerByte == txList[j].FeePerByte && txList[i].Tx.TxType == transaction_type.TxSimple && txList[j].Tx.TxType == transaction_type.TxSimple {
+			return txList[i].Tx.TxBase.(*transaction_simple.TransactionSimple).Nonce < txList[j].Tx.TxBase.(*transaction_simple.TransactionSimple).Nonce
+		}
+
+		return txList[i].FeePerByte < txList[j].FeePerByte
+	})
+}
+
 //process the worker for transactions to prepare the transactions to the forger
 func (worker *mempoolWorker) processing(
 	newWork <-chan *mempoolWork, //SAFE
@@ -71,8 +82,6 @@ func (worker *mempoolWorker) processing(
 			mempoolResult.totalSize = 0
 			mempoolResult.Unlock()
 
-			break
-
 		default:
 
 			if worker.work == nil {
@@ -82,16 +91,14 @@ func (worker *mempoolWorker) processing(
 
 			if listIndex == -1 {
 
+				txListAll := mempoolTxs.txsList.Load().([]*mempoolTx)
+
 				if worker.workChanged { //it is faster to copy first
-					mempoolTxs.RLock()
-					txList = make([]*mempoolTx, len(mempoolTxs.txsList))
-					copy(txList, mempoolTxs.txsList)
-					mempoolTxs.RUnlock()
+					txList = txListAll
 				} else {
-					txList = make([]*mempoolTx, 0)
-					for _, mempoolTx := range mempoolTxs.txsList {
-						if !txMap[mempoolTx.Tx.Bloom.HashStr] {
-							txList = append(txList, mempoolTx)
+					for _, tx := range txListAll {
+						if !txMap[txList[listIndex].Tx.Bloom.HashStr] {
+							txList = append(txList, tx)
 						}
 					}
 				}
@@ -99,14 +106,8 @@ func (worker *mempoolWorker) processing(
 				worker.workChanged = false
 
 				if len(txList) > 0 {
-					sort.Slice(txList, func(i, j int) bool {
 
-						if txList[i].FeePerByte == txList[j].FeePerByte && txList[i].Tx.TxType == transaction_type.TxSimple && txList[j].Tx.TxType == transaction_type.TxSimple {
-							return txList[i].Tx.TxBase.(*transaction_simple.TransactionSimple).Nonce < txList[j].Tx.TxBase.(*transaction_simple.TransactionSimple).Nonce
-						}
-
-						return txList[i].FeePerByte < txList[j].FeePerByte
-					})
+					sortTxs(txList)
 
 					var err error
 					worker.boltTx, err = store.StoreBlockchain.DB.Begin(false)
