@@ -11,8 +11,6 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"strconv"
-	"sync/atomic"
-	"unsafe"
 )
 
 func (chain *Blockchain) LoadBlock(bucket *bolt.Bucket, hash []byte) (blk *block.Block, err error) {
@@ -145,7 +143,7 @@ func (chain *Blockchain) loadBlockchain() error {
 		if err = json.Unmarshal(chainInfoData, chainData); err != nil {
 			return err
 		}
-		atomic.StorePointer(&chain.ChainData, unsafe.Pointer(chainData))
+		chain.ChainData.Store(chainData)
 
 		return
 	})

@@ -9,11 +9,6 @@ import (
 	"sync/atomic"
 )
 
-func (consensus *Consensus) GetChainData() *blockchain.BlockchainData {
-	newChainDataPtr := atomic.LoadPointer(&consensus.newChainData)
-	return (*blockchain.BlockchainData)(newChainDataPtr)
-}
-
 func (consensus *Consensus) chainGet(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	conn.SendJSON([]byte("chain"), consensus.getUpdateNotification(nil))
 	return nil, nil
@@ -33,7 +28,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		return
 	}
 
-	chainLastUpdate := consensus.GetChainData()
+	chainLastUpdate := consensus.chain.GetChainData()
 
 	if chainLastUpdate.BigTotalDifficulty.Cmp(chainUpdateNotification.BigTotalDifficulty) < 0 {
 
@@ -94,7 +89,7 @@ func (consensus *Consensus) broadcast(newChainData *blockchain.BlockchainData) {
 
 func (consensus *Consensus) getUpdateNotification(newChainData *blockchain.BlockchainData) *ChainUpdateNotification {
 	if newChainData == nil {
-		newChainData = consensus.GetChainData()
+		newChainData = consensus.chain.GetChainData()
 	}
 	return &ChainUpdateNotification{
 		End:                newChainData.Height,

@@ -15,20 +15,18 @@ import (
 	"pandora-pay/settings"
 	"strconv"
 	"sync/atomic"
-	"unsafe"
 )
 
 type API struct {
 	GetMap     map[string]func(values *url.Values) (interface{}, error)
 	chain      *blockchain.Blockchain
 	mempool    *mempool.Mempool
-	localChain unsafe.Pointer
+	localChain atomic.Value //*APIBlockchain
 	ApiStore   *api_store.APIStore
 }
 
 func (api *API) getBlockchain(values *url.Values) (interface{}, error) {
-	pointer := atomic.LoadPointer(&api.localChain)
-	return (*APIBlockchain)(pointer), nil
+	return api.localChain.Load().(*APIBlockchain), nil
 }
 
 func (api *API) getInfo(values *url.Values) (interface{}, error) {
@@ -162,7 +160,7 @@ func (api *API) getMempool(values *url.Values) (interface{}, error) {
 
 //make sure it is safe to read
 func (api *API) readLocalBlockchain(newChainData *blockchain.BlockchainData) {
-	newLocalChain := APIBlockchain{
+	newLocalChain := &APIBlockchain{
 		Height:          newChainData.Height,
 		Hash:            hex.EncodeToString(newChainData.Hash),
 		PrevHash:        hex.EncodeToString(newChainData.PrevHash),
@@ -173,7 +171,7 @@ func (api *API) readLocalBlockchain(newChainData *blockchain.BlockchainData) {
 		Target:          newChainData.Target.String(),
 		TotalDifficulty: newChainData.BigTotalDifficulty.String(),
 	}
-	atomic.StorePointer(&api.localChain, unsafe.Pointer(&newLocalChain))
+	api.localChain.Store(newLocalChain)
 }
 
 func CreateAPI(apiStore *api_store.APIStore, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *API {

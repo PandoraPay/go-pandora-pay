@@ -24,11 +24,10 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	"unsafe"
 )
 
 type Blockchain struct {
-	ChainData        unsafe.Pointer       //using atomic storePointer
+	ChainData        atomic.Value         //*BlockchainData
 	Sync             bool                 `json:"-"`
 	UpdateCn         chan uint64          `json:"-"`
 	UpdateNewChainCn chan *BlockchainData `json:"-"`
@@ -326,7 +325,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		if err = boltTx.Commit(); err != nil {
 			panic("Error storing writing changes to disk" + err.Error())
 		}
-		atomic.StorePointer(&chain.ChainData, unsafe.Pointer(newChainData))
+		chain.ChainData.Store(newChainData)
 
 		chain.Unlock()
 

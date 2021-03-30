@@ -13,13 +13,10 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/store"
 	"strconv"
-	"sync/atomic"
-	"unsafe"
 )
 
 func (chain *Blockchain) GetChainData() *BlockchainData {
-	pointer := atomic.LoadPointer(&chain.ChainData)
-	return (*BlockchainData)(pointer)
+	return chain.ChainData.Load().(*BlockchainData)
 }
 
 func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
@@ -37,7 +34,7 @@ func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 func (chain *Blockchain) init() (err error) {
 
 	chainData := chain.createGenesisBlockchainData()
-	atomic.StorePointer(&chain.ChainData, unsafe.Pointer(chainData))
+	chain.ChainData.Store(chainData)
 
 	var tok = token.Token{
 		Version:          0,

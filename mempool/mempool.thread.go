@@ -97,7 +97,7 @@ func (worker *mempoolWorker) processing(
 					txList = txListAll
 				} else {
 					for _, tx := range txListAll {
-						if !txMap[txList[listIndex].Tx.Bloom.HashStr] {
+						if !txMap[tx.Tx.Bloom.HashStr] {
 							txList = append(txList, tx)
 						}
 					}
