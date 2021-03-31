@@ -16,7 +16,7 @@ import (
 func (chain *Blockchain) LoadBlock(bucket *bolt.Bucket, hash []byte) (blk *block.Block, err error) {
 	blockData := bucket.Get(append([]byte("blockHash"), hash...))
 	if blockData == nil {
-		return
+		return nil, errors.New("Block was not found")
 	}
 	blk = &block.Block{}
 	err = blk.Deserialize(helpers.NewBufferReader(blockData))
@@ -121,7 +121,11 @@ func (chain *Blockchain) LoadBlockHash(bucket *bolt.Bucket, height uint64) ([]by
 	}
 
 	key := []byte("blockHeight" + strconv.FormatUint(height, 10))
-	return bucket.Get(key), nil
+	hash := bucket.Get(key)
+	if hash == nil {
+		return nil, errors.New("Block Hash not found")
+	}
+	return hash, nil
 }
 
 func (chain *Blockchain) loadBlockchain() error {

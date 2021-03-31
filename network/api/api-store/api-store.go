@@ -25,8 +25,8 @@ type APIStore struct {
 	chain *blockchain.Blockchain
 }
 
-func (apiStore *APIStore) LoadBlockCompleteFromHash(hash []byte) (blkComplete *block_complete.BlockComplete, err error) {
-	err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+func (apiStore *APIStore) LoadBlockCompleteFromHash(hash []byte) (blkComplete *block_complete.BlockComplete, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 		reader := boltTx.Bucket([]byte("Chain"))
 		if blkComplete, err = apiStore.LoadBlockComplete(reader, hash); err != nil {
 			return
@@ -36,23 +36,23 @@ func (apiStore *APIStore) LoadBlockCompleteFromHash(hash []byte) (blkComplete *b
 	return
 }
 
-func (apiStore *APIStore) LoadBlockCompleteFromHeight(blockHeight uint64) (blkComplete *block_complete.BlockComplete, err error) {
-	err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+func (apiStore *APIStore) LoadBlockCompleteFromHeight(blockHeight uint64) (blkComplete *block_complete.BlockComplete, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 		reader := boltTx.Bucket([]byte("Chain"))
 		hash, err := apiStore.chain.LoadBlockHash(reader, blockHeight)
 		if err != nil {
-			return
+			return err
 		}
 		if blkComplete, err = apiStore.LoadBlockComplete(reader, hash); err != nil {
-			return
+			return err
 		}
-		return
+		return err
 	})
 	return
 }
 
-func (apiStore *APIStore) LoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *BlockWithTxs, err error) {
-	err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+func (apiStore *APIStore) LoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *BlockWithTxs, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 		reader := boltTx.Bucket([]byte("Chain"))
 		if blkWithTXs, err = apiStore.LoadBlockWithTxHashes(reader, hash); err != nil {
 			return
@@ -62,8 +62,8 @@ func (apiStore *APIStore) LoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *Blo
 	return
 }
 
-func (apiStore *APIStore) LoadTxFromHash(hash []byte) (tx *transaction.Transaction, err error) {
-	err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+func (apiStore *APIStore) LoadTxFromHash(hash []byte) (tx *transaction.Transaction, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 		reader := boltTx.Bucket([]byte("Chain"))
 		tx, err = apiStore.LoadTx(reader, hash)
 		return
@@ -71,8 +71,8 @@ func (apiStore *APIStore) LoadTxFromHash(hash []byte) (tx *transaction.Transacti
 	return
 }
 
-func (apiStore *APIStore) LoadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *BlockWithTxs, err error) {
-	err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+func (apiStore *APIStore) LoadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *BlockWithTxs, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 		reader := boltTx.Bucket([]byte("Chain"))
 		hash, err := apiStore.chain.LoadBlockHash(reader, blockHeight)
 		if err != nil {
@@ -86,8 +86,8 @@ func (apiStore *APIStore) LoadBlockWithTXsFromHeight(blockHeight uint64) (blkWit
 	return
 }
 
-func (apiStore *APIStore) LoadAccountFromPublicKeyHash(publicKeyHash []byte) (acc *account.Account, err error) {
-	err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+func (apiStore *APIStore) LoadAccountFromPublicKeyHash(publicKeyHash []byte) (acc *account.Account, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
 		accs := accounts.NewAccounts(boltTx)
 		acc = accs.GetAccount(publicKeyHash)
 		return nil
@@ -95,8 +95,8 @@ func (apiStore *APIStore) LoadAccountFromPublicKeyHash(publicKeyHash []byte) (ac
 	return
 }
 
-func (apiStore *APIStore) LoadTokenFromPublicKeyHash(publicKeyHash []byte) (tok *token.Token, err error) {
-	err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+func (apiStore *APIStore) LoadTokenFromPublicKeyHash(publicKeyHash []byte) (tok *token.Token, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
 		toks := tokens.NewTokens(boltTx)
 		tok = toks.GetToken(publicKeyHash)
 		return nil
@@ -104,8 +104,8 @@ func (apiStore *APIStore) LoadTokenFromPublicKeyHash(publicKeyHash []byte) (tok 
 	return
 }
 
-func (apiStore *APIStore) LoadBlockHash(blockHeight uint64) (hash []byte, err error) {
-	err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+func (apiStore *APIStore) LoadBlockHash(blockHeight uint64) (hash []byte, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 		reader := boltTx.Bucket([]byte("Chain"))
 		hash, err = apiStore.chain.LoadBlockHash(reader, blockHeight)
 		return
@@ -120,8 +120,9 @@ func (apiStore *APIStore) LoadBlockComplete(bucket *bolt.Bucket, hash []byte) (o
 		return
 	}
 
-	txHashes := [][]byte{}
 	data := bucket.Get([]byte("blockTxs" + strconv.FormatUint(blk.Height, 10)))
+
+	txHashes := [][]byte{}
 	if err = json.Unmarshal(data, &txHashes); err != nil {
 		return
 	}
