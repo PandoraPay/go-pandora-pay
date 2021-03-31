@@ -18,10 +18,12 @@ func (forks *Forks) getBestFork() (selectedFork *Fork) {
 	list := forks.list.Load().([]*Fork)
 
 	for _, fork := range list {
-		if !fork.readyForDownloading.IsSet() && fork.bigTotalDifficulty.Cmp(bigTotalDifficulty) > 0 {
+		fork.RLock()
+		if !fork.readyForDownloading && fork.bigTotalDifficulty.Cmp(bigTotalDifficulty) > 0 {
 			bigTotalDifficulty = fork.bigTotalDifficulty
 			selectedFork = fork
 		}
+		fork.RUnlock()
 	}
 
 	return

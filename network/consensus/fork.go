@@ -1,27 +1,28 @@
 package consensus
 
 import (
-	"github.com/tevino/abool"
 	"math/big"
 	"math/rand"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/network/websocks/connection"
 	"sync"
-	"sync/atomic"
 )
 
 type Fork struct {
-	hashes              [][]byte
-	prevHash            []byte
-	start               uint64
-	end                 uint64 //use atomic!
-	current             uint64
-	bigTotalDifficulty  *big.Int
-	errors              int
-	readyForDownloading *abool.AtomicBool //ready to downloading
-	conns               []*connection.AdvancedConnection
-	blocks              []*block_complete.BlockComplete
-	sync.RWMutex        `json:"-"`
+	readyForDownloading bool //ready to downloading
+	downloaded          bool
+
+	end     uint64
+	current uint64
+	blocks  []*block_complete.BlockComplete
+
+	conns []*connection.AdvancedConnection
+
+	hashes             [][]byte
+	prevHash           []byte
+	bigTotalDifficulty *big.Int
+	errors             int
+	sync.RWMutex       `json:"-"`
 }
 
 //is locked before
@@ -43,7 +44,7 @@ func (fork *Fork) getRandomConn() (conn *connection.AdvancedConnection) {
 //fork2 must be locked before
 func (fork *Fork) mergeFork(fork2 *Fork) bool {
 
-	if fork2.readyForDownloading.IsSet() {
+	if fork2.readyForDownloading {
 		return false
 	}
 
@@ -53,7 +54,8 @@ func (fork *Fork) mergeFork(fork2 *Fork) bool {
 	for _, hash := range fork2.hashes {
 		fork.hashes = append(fork.hashes, hash)
 	}
-	atomic.StoreUint64(&fork.end, fork2.end)
+
+	fork.end = fork2.end
 	fork.bigTotalDifficulty = fork2.bigTotalDifficulty
 	for _, conn := range fork2.conns {
 

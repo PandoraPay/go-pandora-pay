@@ -2,11 +2,9 @@ package consensus
 
 import (
 	"encoding/json"
-	"github.com/tevino/abool"
 	"pandora-pay/blockchain"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/network/websocks/connection"
-	"sync/atomic"
 )
 
 func (consensus *Consensus) chainGet(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -41,41 +39,27 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		if exists {
 			prevFork := (found).(*Fork)
 
-			_, exists = consensus.forks.hashes.LoadOrStore(string(chainUpdateNotification.Hash), prevFork)
-			if exists {
-				return
-			} //meanwhile it was found
-
-			if prevFork.readyForDownloading.IsNotSet() {
-
-				prevFork.Lock()
-				defer prevFork.Unlock()
-
-				atomic.StoreUint64(&prevFork.end, chainUpdateNotification.End)
-
-				if prevFork.readyForDownloading.IsNotSet() {
-					prevFork.current = chainUpdateNotification.End
-					prevFork.start = chainUpdateNotification.End
-					prevFork.hashes = append(prevFork.hashes, chainUpdateNotification.Hash)
-					prevFork.prevHash = chainUpdateNotification.PrevHash
-					prevFork.bigTotalDifficulty = chainUpdateNotification.BigTotalDifficulty
-					prevFork.AddConn(conn, true)
-				}
-
+			prevFork.Lock()
+			if !prevFork.readyForDownloading {
+				prevFork.end += 1
+				prevFork.hashes = append(prevFork.hashes, chainUpdateNotification.Hash)
+				prevFork.prevHash = chainUpdateNotification.PrevHash
+				prevFork.bigTotalDifficulty = chainUpdateNotification.BigTotalDifficulty
+				prevFork.AddConn(conn, true)
 				prevFork.Unlock()
+				return
 			}
+			prevFork.Unlock()
 
-			return
 		}
 
 		fork := &Fork{
-			start:               chainUpdateNotification.End,
 			end:                 chainUpdateNotification.End,
-			current:             chainUpdateNotification.End,
 			hashes:              [][]byte{chainUpdateNotification.Hash},
 			prevHash:            chainUpdateNotification.PrevHash,
 			bigTotalDifficulty:  chainUpdateNotification.BigTotalDifficulty,
-			readyForDownloading: abool.New(),
+			readyForDownloading: false,
+			downloaded:          false,
 			blocks:              make([]*block_complete.BlockComplete, 0),
 			conns:               []*connection.AdvancedConnection{conn},
 		}

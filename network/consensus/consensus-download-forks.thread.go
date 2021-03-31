@@ -8,7 +8,6 @@ import (
 	"pandora-pay/gui"
 	api_store "pandora-pay/network/api/api-store"
 	api_websockets "pandora-pay/network/api/api-websockets"
-	"sync/atomic"
 	"time"
 )
 
@@ -20,25 +19,30 @@ type ConsensusProcessForksThread struct {
 
 func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 
-	if !fork.readyForDownloading.SetToIf(false, true) {
-		return false
-	}
-
 	fork.Lock()
 	defer fork.Unlock()
+
+	if !fork.readyForDownloading {
+		return false
+	}
+	fork.readyForDownloading = true
+
+	if fork.downloaded {
+		return true
+	}
 
 	chainData := thread.chain.GetChainData()
 
 	var err error
 
-	if fork.start > chainData.Height {
-		fork.start = chainData.Height
-		fork.current = chainData.Height
+	start := fork.end
+	if start > chainData.Height {
+		start = chainData.Height
 	}
 
 	for {
 
-		if fork.start == 0 || ((chainData.Height-fork.start > config.FORK_MAX_UNCLE_ALLOWED) && (chainData.Height-fork.start > chainData.ConsecutiveSelfForged)) {
+		if start == 0 || ((chainData.Height-start > config.FORK_MAX_UNCLE_ALLOWED) && (chainData.Height-start > chainData.ConsecutiveSelfForged)) {
 			break
 		}
 
@@ -54,7 +58,7 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 			return false
 		}
 
-		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockHeight(fork.start-1))
+		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockHeight(start-1))
 		if answer.Err != nil {
 			fork.errors += 1
 			continue
@@ -74,15 +78,15 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 		fork2Data, exists := thread.forks.hashes.LoadOrStore(string(hash), fork)
 		if exists { //let's merge
 			fork2 := fork2Data.(*Fork)
-			if fork2.mergeFork(fork) {
+			if fork2.mergeFork(fork) { //fork is the bigger on
 				return false
 			}
 		}
 
-		chainHash, err := thread.apiStore.LoadBlockHash(fork.start - 1)
+		chainHash, err := thread.apiStore.LoadBlockHash(start - 1)
 		if err == nil {
 			if bytes.Equal(hash, chainHash) {
-				return true
+				break
 			}
 		}
 
@@ -91,14 +95,18 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 		copy(fork.blocks[1:], fork.blocks)
 		fork.blocks[0] = blkComplete
 
-		fork.start -= 1
+		start -= 1
 	}
 
-	return true
+	if fork.current == 0 {
+		fork.current = start
+	}
+	fork.downloaded = true
 
+	return true
 }
 
-func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) (result bool, moreToDownload bool) {
+func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) bool {
 
 	fork.Lock()
 	defer fork.Unlock()
@@ -107,12 +115,12 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) (
 
 	for i := uint64(0); i < config.FORK_MAX_DOWNLOAD; i++ {
 
-		if fork.current == atomic.LoadUint64(&fork.end) {
+		if fork.current == fork.end {
 			break
 		}
 
 		if fork.errors > 2 {
-			return
+			return false
 		}
 		if fork.errors > -10 {
 			fork.errors = -10
@@ -120,7 +128,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) (
 
 		conn := fork.getRandomConn()
 		if conn == nil {
-			return
+			return false
 		}
 
 		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockHeight(fork.current))
@@ -140,12 +148,11 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) (
 		}
 
 		fork.blocks = append(fork.blocks, blkComplete)
+
 		fork.current += 1
 	}
 
-	result = true
-	moreToDownload = fork.current < atomic.LoadUint64(&fork.end)
-	return
+	return true
 
 }
 
@@ -156,25 +163,25 @@ func (thread *ConsensusProcessForksThread) execute() {
 		fork := thread.forks.getBestFork()
 		if fork != nil {
 
-			downloaded := thread.downloadFork(fork)
 			willRemove := true
+
+			downloaded := thread.downloadFork(fork)
 
 			if downloaded {
 
-				success, more := thread.downloadRemainingBlocks(fork)
-				if success {
+				if thread.downloadRemainingBlocks(fork) {
 
 					if err := thread.chain.AddBlocks(fork.blocks, false); err != nil {
 						gui.Error("Invalid Fork", err)
 					} else {
-						if more {
-							fork.Lock()
+						fork.Lock()
+						if fork.current < fork.end {
 							fork.blocks = []*block_complete.BlockComplete{}
-							fork.readyForDownloading.UnSet()
+							fork.readyForDownloading = false
 							fork.errors = 0
-							fork.Unlock()
 							willRemove = false
 						}
+						fork.Unlock()
 					}
 
 				}
