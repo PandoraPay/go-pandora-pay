@@ -55,8 +55,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		if !exists {
 			consensus.forks.listMutex.Lock()
 			list := consensus.forks.list.Load().([]*Fork)
-			list = append(list, fork)
-			consensus.forks.list.Store(list)
+			consensus.forks.list.Store(append(list, fork))
 			consensus.forks.listMutex.Unlock()
 		}
 
@@ -65,7 +64,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		conn.SendJSON([]byte("chain"), consensus.getUpdateNotification(nil))
 	}
 
-	return nil, nil
+	return
 }
 
 func (consensus *Consensus) broadcast(newChainData *blockchain.BlockchainData) {

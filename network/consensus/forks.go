@@ -29,10 +29,12 @@ func (forks *Forks) getBestFork() (selectedFork *Fork) {
 	return
 }
 
-func (forks *Forks) removeFork(fork *Fork) {
+func (forks *Forks) removeFork(fork *Fork, removeHashes bool) {
 
-	for _, hash := range fork.hashes {
-		forks.hashes.Delete(string(hash))
+	if removeHashes {
+		for _, hash := range fork.hashes {
+			forks.hashes.Delete(hash)
+		}
 	}
 
 	forks.listMutex.Lock()
@@ -60,7 +62,7 @@ func (forks *Forks) mergeForks(fork1, fork2 *Fork, removeFromList bool) bool {
 	}
 
 	if removeFromList {
-		forks.removeFork(fork2)
+		forks.removeFork(fork2, false)
 	}
 	return true
 }
