@@ -9,8 +9,7 @@ import (
 )
 
 type Fork struct {
-	readyForDownloading bool //ready to downloading
-	downloaded          bool
+	downloaded bool
 
 	end     uint64
 	current uint64
@@ -43,10 +42,6 @@ func (fork *Fork) getRandomConn() (conn *connection.AdvancedConnection) {
 
 //fork2 must be locked before
 func (fork *Fork) mergeFork(fork2 *Fork) bool {
-
-	if fork2.readyForDownloading {
-		return false
-	}
 
 	fork.Lock()
 	defer fork.Unlock()

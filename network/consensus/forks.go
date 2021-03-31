@@ -19,7 +19,7 @@ func (forks *Forks) getBestFork() (selectedFork *Fork) {
 
 	for _, fork := range list {
 		fork.RLock()
-		if !fork.readyForDownloading && fork.bigTotalDifficulty.Cmp(bigTotalDifficulty) > 0 {
+		if fork.bigTotalDifficulty.Cmp(bigTotalDifficulty) > 0 {
 			bigTotalDifficulty = fork.bigTotalDifficulty
 			selectedFork = fork
 		}
@@ -47,4 +47,20 @@ func (forks *Forks) removeFork(fork *Fork) {
 	}
 	forks.list.Store(list)
 
+}
+
+func (forks *Forks) mergeForks(fork1, fork2 *Fork, removeFromList bool) bool {
+
+	if !fork1.mergeFork(fork2) {
+		return false
+	}
+
+	for _, hash := range fork2.hashes {
+		forks.hashes.Store(string(hash), fork1)
+	}
+
+	if removeFromList {
+		forks.removeFork(fork2)
+	}
+	return true
 }

@@ -22,11 +22,6 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 	fork.Lock()
 	defer fork.Unlock()
 
-	if !fork.readyForDownloading {
-		return false
-	}
-	fork.readyForDownloading = true
-
 	if fork.downloaded {
 		return true
 	}
@@ -78,10 +73,12 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 		fork2Data, exists := thread.forks.hashes.LoadOrStore(string(hash), fork)
 		if exists { //let's merge
 			fork2 := fork2Data.(*Fork)
-			if fork2.mergeFork(fork) { //fork is the bigger on
+			if thread.forks.mergeForks(fork2, fork, true) { //fork is the bigger on
 				return false
 			}
 		}
+
+		fork.hashes = append(fork.hashes, hash)
 
 		chainHash, err := thread.apiStore.LoadBlockHash(start - 1)
 		if err == nil {
@@ -177,7 +174,6 @@ func (thread *ConsensusProcessForksThread) execute() {
 						fork.Lock()
 						if fork.current < fork.end {
 							fork.blocks = []*block_complete.BlockComplete{}
-							fork.readyForDownloading = false
 							fork.errors = 0
 							willRemove = false
 						}

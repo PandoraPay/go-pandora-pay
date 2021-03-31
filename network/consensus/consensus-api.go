@@ -30,40 +30,28 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 
 	if chainLastUpdate.BigTotalDifficulty.Cmp(chainUpdateNotification.BigTotalDifficulty) < 0 {
 
-		_, exists := consensus.forks.hashes.Load(string(chainUpdateNotification.Hash))
-		if exists {
+		fork := &Fork{
+			end:                chainUpdateNotification.End,
+			hashes:             [][]byte{chainUpdateNotification.Hash},
+			prevHash:           chainUpdateNotification.PrevHash,
+			bigTotalDifficulty: chainUpdateNotification.BigTotalDifficulty,
+			downloaded:         false,
+			blocks:             make([]*block_complete.BlockComplete, 0),
+			conns:              []*connection.AdvancedConnection{conn},
+		}
+
+		_, exists := consensus.forks.hashes.LoadOrStore(string(chainUpdateNotification.Hash), fork)
+		if exists { //already found
 			return
-		} //already found
+		}
 
 		found, exists := consensus.forks.hashes.Load(string(chainUpdateNotification.PrevHash))
 		if exists {
 			prevFork := (found).(*Fork)
-
-			prevFork.Lock()
-			if !prevFork.readyForDownloading {
-				prevFork.end += 1
-				prevFork.hashes = append(prevFork.hashes, chainUpdateNotification.Hash)
-				prevFork.prevHash = chainUpdateNotification.PrevHash
-				prevFork.bigTotalDifficulty = chainUpdateNotification.BigTotalDifficulty
-				prevFork.AddConn(conn, true)
-				prevFork.Unlock()
-				return
-			}
-			prevFork.Unlock()
-
+			consensus.forks.mergeForks(prevFork, fork, false)
+			return
 		}
 
-		fork := &Fork{
-			end:                 chainUpdateNotification.End,
-			hashes:              [][]byte{chainUpdateNotification.Hash},
-			prevHash:            chainUpdateNotification.PrevHash,
-			bigTotalDifficulty:  chainUpdateNotification.BigTotalDifficulty,
-			readyForDownloading: false,
-			downloaded:          false,
-			blocks:              make([]*block_complete.BlockComplete, 0),
-			conns:               []*connection.AdvancedConnection{conn},
-		}
-		_, exists = consensus.forks.hashes.LoadOrStore(string(chainUpdateNotification.Hash), fork)
 		if !exists {
 			consensus.forks.listMutex.Lock()
 			list := consensus.forks.list.Load().([]*Fork)
