@@ -47,6 +47,7 @@ func infoInit() {
 				InfoUpdate("cpu", strconv.FormatFloat(float64(after.User-before.User)/total*100, 'f', 2, 64)+"% "+strconv.FormatFloat(float64(after.System-before.System)/total*100, 'f', 2, 64)+"% "+strconv.FormatFloat(float64(after.Idle-before.Idle)/total*100, 'f', 2, 64)+"% ")
 			}
 
+			time.Sleep(1 * time.Second)
 		}
 
 	}()

@@ -56,14 +56,17 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 		return nil
 	}
 	c.send <- message
+
+	timer := time.NewTimer(config.WEBSOCKETS_TIMEOUT)
 	if await {
 		select {
 		case out, ok := <-c.answerMap[replyBackId]:
+			timer.Stop()
 			if ok == false {
 				return &AdvancedConnectionAnswer{Err: errors.New("Timeout - Closed channel")}
 			}
 			return out
-		case <-time.After(config.WEBSOCKETS_TIMEOUT):
+		case <-timer.C:
 			delete(c.answerMap, replyBackId)
 			return &AdvancedConnectionAnswer{Err: errors.New("Timeout")}
 		}

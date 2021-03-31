@@ -33,7 +33,7 @@ func (forks *Forks) removeFork(fork *Fork, removeHashes bool) {
 
 	if removeHashes {
 		for _, hash := range fork.hashes {
-			forks.hashes.Delete(hash)
+			forks.hashes.Delete(string(hash))
 		}
 	}
 
@@ -49,20 +49,4 @@ func (forks *Forks) removeFork(fork *Fork, removeHashes bool) {
 	}
 	forks.list.Store(list)
 
-}
-
-func (forks *Forks) mergeForks(fork1, fork2 *Fork, removeFromList bool) bool {
-
-	if !fork1.mergeFork(fork2) {
-		return false
-	}
-
-	for _, hash := range fork2.hashes {
-		forks.hashes.Store(string(hash), fork1)
-	}
-
-	if removeFromList {
-		forks.removeFork(fork2, false)
-	}
-	return true
 }

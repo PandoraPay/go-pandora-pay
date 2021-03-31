@@ -22,11 +22,14 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 	fork.Lock()
 	defer fork.Unlock()
 
+	chainData := thread.chain.GetChainData()
+	if fork.bigTotalDifficulty.Cmp(chainData.BigTotalDifficulty) <= 0 {
+		return false
+	}
+
 	if fork.downloaded {
 		return true
 	}
-
-	chainData := thread.chain.GetChainData()
 
 	var err error
 
@@ -69,20 +72,11 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 			continue
 		}
 
-		hash := blkComplete.Block.Bloom.Hash
-		fork2Data, exists := thread.forks.hashes.LoadOrStore(string(hash), fork)
-		if exists { //let's merge
-			fork2 := fork2Data.(*Fork)
-			if thread.forks.mergeForks(fork2, fork, true) { //fork is the bigger on
-				return false
-			}
-		}
-
-		fork.hashes = append(fork.hashes, hash)
+		fork.hashes = append(fork.hashes, blkComplete.Block.Bloom.Hash)
 
 		chainHash, err := thread.apiStore.LoadBlockHash(start - 1)
 		if err == nil {
-			if bytes.Equal(hash, chainHash) {
+			if bytes.Equal(blkComplete.Block.Bloom.Hash, chainHash) {
 				break
 			}
 		}
@@ -162,9 +156,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 			willRemove := true
 
-			downloaded := thread.downloadFork(fork)
-
-			if downloaded {
+			if thread.downloadFork(fork) {
 
 				if thread.downloadRemainingBlocks(fork) {
 

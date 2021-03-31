@@ -45,13 +45,6 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 			return
 		}
 
-		found, exists := consensus.forks.hashes.Load(string(chainUpdateNotification.PrevHash))
-		if exists {
-			prevFork := (found).(*Fork)
-			consensus.forks.mergeForks(prevFork, fork, false)
-			return
-		}
-
 		if !exists {
 			consensus.forks.listMutex.Lock()
 			list := consensus.forks.list.Load().([]*Fork)
