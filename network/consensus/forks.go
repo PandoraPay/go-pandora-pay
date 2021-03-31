@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"math/big"
 	"pandora-pay/config"
 	"sync"
 	"sync/atomic"
@@ -18,12 +19,12 @@ func (forks *Forks) getBestFork() (selectedFork *Fork) {
 	list := forks.list.Load().([]*Fork)
 
 	for _, fork := range list {
-		fork.RLock()
-		if fork.bigTotalDifficulty.Cmp(bigTotalDifficulty) > 0 {
-			bigTotalDifficulty = fork.bigTotalDifficulty
+
+		forkBigTotalDifficulty := fork.bigTotalDifficulty.Load().(*big.Int)
+		if forkBigTotalDifficulty.Cmp(bigTotalDifficulty) > 0 {
+			bigTotalDifficulty = forkBigTotalDifficulty
 			selectedFork = fork
 		}
-		fork.RUnlock()
 	}
 
 	return

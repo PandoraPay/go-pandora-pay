@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"bytes"
+	"math/big"
 	"pandora-pay/blockchain"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/config"
@@ -23,7 +24,7 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 	defer fork.Unlock()
 
 	chainData := thread.chain.GetChainData()
-	if fork.bigTotalDifficulty.Cmp(chainData.BigTotalDifficulty) <= 0 {
+	if fork.bigTotalDifficulty.Load().(*big.Int).Cmp(chainData.BigTotalDifficulty) <= 0 {
 		return false
 	}
 

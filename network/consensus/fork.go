@@ -1,14 +1,16 @@
 package consensus
 
 import (
-	"math/big"
 	"math/rand"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/network/websocks/connection"
 	"sync"
+	"sync/atomic"
 )
 
 type Fork struct {
+	bigTotalDifficulty atomic.Value // *big.Int
+
 	downloaded bool
 
 	end     uint64
@@ -17,11 +19,10 @@ type Fork struct {
 
 	conns []*connection.AdvancedConnection
 
-	hashes             [][]byte
-	prevHash           []byte
-	bigTotalDifficulty *big.Int
-	errors             int
-	sync.RWMutex       `json:"-"`
+	hashes       [][]byte
+	prevHash     []byte
+	errors       int
+	sync.RWMutex `json:"-"`
 }
 
 //is locked before
@@ -38,34 +39,6 @@ func (fork *Fork) getRandomConn() (conn *connection.AdvancedConnection) {
 		}
 	}
 	return nil
-}
-
-//fork2 must be locked before
-func (fork *Fork) mergeFork(fork2 *Fork) bool {
-
-	fork.Lock()
-	defer fork.Unlock()
-
-	for _, hash := range fork2.hashes {
-		fork.hashes = append(fork.hashes, hash)
-	}
-
-	fork.end = fork2.end
-	fork.bigTotalDifficulty = fork2.bigTotalDifficulty
-	for _, conn := range fork2.conns {
-
-		found := false
-		for _, conn2 := range fork.conns {
-			if conn2 == conn {
-				found = true
-				break
-			}
-		}
-		if !found {
-			fork.conns = append(fork.conns, conn)
-		}
-	}
-	return true
 }
 
 func (fork *Fork) AddConn(conn *connection.AdvancedConnection, isLocked bool) {
