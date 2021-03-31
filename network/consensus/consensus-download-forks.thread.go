@@ -8,6 +8,7 @@ import (
 	"pandora-pay/gui"
 	api_store "pandora-pay/network/api/api-store"
 	api_websockets "pandora-pay/network/api/api-websockets"
+	"sync/atomic"
 	"time"
 )
 
@@ -106,7 +107,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) (
 
 	for i := uint64(0); i < config.FORK_MAX_DOWNLOAD; i++ {
 
-		if fork.current == fork.end {
+		if fork.current == atomic.LoadUint64(&fork.end) {
 			break
 		}
 
@@ -143,7 +144,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) (
 	}
 
 	result = true
-	moreToDownload = fork.current < fork.end
+	moreToDownload = fork.current < atomic.LoadUint64(&fork.end)
 	return
 
 }
@@ -152,7 +153,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 	for {
 
-		fork := thread.forks.getBestFork(thread.forks.forksDownloadMap)
+		fork := thread.forks.getBestFork()
 		if fork != nil {
 
 			downloaded := thread.downloadFork(fork)
@@ -181,7 +182,6 @@ func (thread *ConsensusProcessForksThread) execute() {
 			}
 
 			if willRemove {
-				thread.forks.forksDownloadMap.Delete(fork.index)
 				thread.forks.removeFork(fork)
 			}
 

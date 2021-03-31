@@ -12,8 +12,8 @@ import (
 type Forging struct {
 	mempool    *mempool.Mempool
 	Wallet     *ForgingWallet
-	workCn     chan *ForgingWork
 	started    *abool.AtomicBool
+	workCn     chan *ForgingWork
 	SolutionCn chan *block_complete.BlockComplete
 }
 
@@ -61,12 +61,11 @@ func (forging *Forging) StopForging() bool {
 //thread safe
 func (forging *Forging) ForgingNewWork(blkComplete *block_complete.BlockComplete, target *big.Int) {
 
-	work := &ForgingWork{
-		blkComplete: blkComplete,
-		target:      target,
-	}
-
 	if forging.started.IsSet() {
+		work := &ForgingWork{
+			blkComplete: blkComplete,
+			target:      target,
+		}
 		forging.workCn <- work
 	}
 }

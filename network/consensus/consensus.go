@@ -5,6 +5,7 @@ import (
 	"pandora-pay/mempool"
 	node_http "pandora-pay/network/server/node-http"
 	"sync"
+	"sync/atomic"
 )
 
 type Consensus struct {
@@ -41,11 +42,12 @@ func CreateConsensus(httpServer *node_http.HttpServer, chain *blockchain.Blockch
 		mempool:    mempool,
 		httpServer: httpServer,
 		forks: &Forks{
-			hashes:           &sync.Map{},
-			forksDownloadMap: &sync.Map{},
-			id:               0,
+			hashes:    &sync.Map{},
+			listMutex: sync.Mutex{},
+			list:      atomic.Value{},
 		},
 	}
+	consensus.forks.list.Store(make([]*Fork, 0))
 
 	consensus.httpServer.ApiWebsockets.GetMap["chain"] = consensus.chainUpdate
 	consensus.httpServer.ApiWebsockets.GetMap["chain-get"] = consensus.chainGet

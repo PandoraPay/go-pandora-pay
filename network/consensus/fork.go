@@ -7,14 +7,14 @@ import (
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/network/websocks/connection"
 	"sync"
+	"sync/atomic"
 )
 
 type Fork struct {
-	index               uint32
 	hashes              [][]byte
 	prevHash            []byte
 	start               uint64
-	end                 uint64
+	end                 uint64 //use atomic!
 	current             uint64
 	bigTotalDifficulty  *big.Int
 	errors              int
@@ -53,7 +53,7 @@ func (fork *Fork) mergeFork(fork2 *Fork) bool {
 	for _, hash := range fork2.hashes {
 		fork.hashes = append(fork.hashes, hash)
 	}
-	fork.end = fork2.end
+	atomic.StoreUint64(&fork.end, fork2.end)
 	fork.bigTotalDifficulty = fork2.bigTotalDifficulty
 	for _, conn := range fork2.conns {
 

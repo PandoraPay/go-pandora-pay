@@ -41,25 +41,34 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		if exists {
 			prevFork := (found).(*Fork)
 
+			_, exists = consensus.forks.hashes.LoadOrStore(string(chainUpdateNotification.Hash), prevFork)
+			if exists {
+				return
+			} //meanwhile it was found
+
 			if prevFork.readyForDownloading.IsNotSet() {
+
 				prevFork.Lock()
+				defer prevFork.Unlock()
+
+				atomic.StoreUint64(&prevFork.end, chainUpdateNotification.End)
+
 				if prevFork.readyForDownloading.IsNotSet() {
-					prevFork.end += 1
-					prevFork.current += 1
-					prevFork.start += 1
+					prevFork.current = chainUpdateNotification.End
+					prevFork.start = chainUpdateNotification.End
 					prevFork.hashes = append(prevFork.hashes, chainUpdateNotification.Hash)
 					prevFork.prevHash = chainUpdateNotification.PrevHash
 					prevFork.bigTotalDifficulty = chainUpdateNotification.BigTotalDifficulty
 					prevFork.AddConn(conn, true)
-					prevFork.Unlock()
-					return
 				}
+
 				prevFork.Unlock()
 			}
+
+			return
 		}
 
 		fork := &Fork{
-			index:               atomic.AddUint32(&consensus.forks.id, 1),
 			start:               chainUpdateNotification.End,
 			end:                 chainUpdateNotification.End,
 			current:             chainUpdateNotification.End,
@@ -72,7 +81,11 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		}
 		_, exists = consensus.forks.hashes.LoadOrStore(string(chainUpdateNotification.Hash), fork)
 		if !exists {
-			consensus.forks.forksDownloadMap.Store(fork.index, fork)
+			consensus.forks.listMutex.Lock()
+			list := consensus.forks.list.Load().([]*Fork)
+			list = append(list, fork)
+			consensus.forks.list.Store(list)
+			consensus.forks.listMutex.Unlock()
 		}
 
 	} else {

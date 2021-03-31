@@ -78,6 +78,7 @@ func main() {
 		err := recover()
 		if err != nil {
 			gui.Close()
+			fmt.Print("\nERROR\n")
 			fmt.Println(err)
 		}
 	}()
@@ -132,8 +133,8 @@ func main() {
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 	<-exitSignal
 
-	myChain.Close()
 	myForging.Close()
+	myChain.Close()
 	myWallet.Close()
 	store.DBClose()
 

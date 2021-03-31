@@ -198,16 +198,15 @@ func InitMemPool() (mempool *Mempool, err error) {
 
 	gui.Log("MemPool init...")
 
-	txsList := atomic.Value{}
-	txsList.Store([]*mempoolTx{})
-
 	mempool = &Mempool{
 		newWork: make(chan *mempoolWork),
 		result:  &mempoolResult{},
 		txs: &mempoolTxs{
-			txsList: txsList,
+			txsList: atomic.Value{},
 		},
 	}
+
+	mempool.txs.txsList.Store([]*mempoolTx{})
 
 	go func() {
 		for {
