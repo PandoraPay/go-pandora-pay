@@ -351,9 +351,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	gui.Warning("-------------------------------------------")
 	newChainData.updateChainInfo()
 
-	chain.UpdateCn <- newChainData.Height //sending 1
-	chain.UpdateNewChainCn <- newChainData
-
 	//accs will only be read only
 	chain.forging.Wallet.UpdateBalanceChanges(accs)
 
@@ -377,6 +374,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	}
 
 	chain.mempool.DeleteTxs(insertedTxHashes)
+
+	chain.UpdateCn <- newChainData.Height //sending 1
+	chain.UpdateNewChainCn <- newChainData
 
 	return
 

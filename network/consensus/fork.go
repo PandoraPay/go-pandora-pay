@@ -19,7 +19,7 @@ type Fork struct {
 
 	conns []*connection.AdvancedConnection
 
-	hashes       [][]byte
+	hash         []byte
 	prevHash     []byte
 	errors       int
 	sync.RWMutex `json:"-"`

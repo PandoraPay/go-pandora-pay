@@ -48,7 +48,7 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 		if fork.errors > 2 {
 			return false
 		}
-		if fork.errors > -10 {
+		if fork.errors < -10 {
 			fork.errors = -10
 		}
 
@@ -72,8 +72,6 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 			fork.errors += 1
 			continue
 		}
-
-		fork.hashes = append(fork.hashes, blkComplete.Block.Bloom.Hash)
 
 		chainHash, err := thread.apiStore.LoadBlockHash(start - 1)
 		if err == nil {
@@ -114,7 +112,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 		if fork.errors > 2 {
 			return false
 		}
-		if fork.errors > -10 {
+		if fork.errors < -10 {
 			fork.errors = -10
 		}
 

@@ -33,9 +33,7 @@ func (forks *Forks) getBestFork() (selectedFork *Fork) {
 func (forks *Forks) removeFork(fork *Fork, removeHashes bool) {
 
 	if removeHashes {
-		for _, hash := range fork.hashes {
-			forks.hashes.Delete(string(hash))
-		}
+		forks.hashes.Delete(string(fork.hash))
 	}
 
 	forks.listMutex.Lock()

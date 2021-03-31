@@ -29,11 +29,15 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 
 	chainLastUpdate := consensus.chain.GetChainData()
 
-	if chainLastUpdate.BigTotalDifficulty.Cmp(chainUpdateNotification.BigTotalDifficulty) < 0 {
+	compare := chainLastUpdate.BigTotalDifficulty.Cmp(chainUpdateNotification.BigTotalDifficulty)
+
+	if compare == 0 {
+		return
+	} else if compare < 0 {
 
 		fork := &Fork{
 			end:                chainUpdateNotification.End,
-			hashes:             [][]byte{chainUpdateNotification.Hash},
+			hash:               chainUpdateNotification.Hash,
 			prevHash:           chainUpdateNotification.PrevHash,
 			bigTotalDifficulty: atomic.Value{},
 			downloaded:         false,

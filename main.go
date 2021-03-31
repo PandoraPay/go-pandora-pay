@@ -10,6 +10,7 @@ import (
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
+	"pandora-pay/debugging"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
 	"pandora-pay/network"
@@ -26,7 +27,7 @@ import (
 var commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--tcp-server-port=<port>] [--tcp-server-address=<address>] [--tor-onion=<onion>] [--instance=<number>]
+  pandorapay [--debugging] [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--tcp-server-port=<port>] [--tcp-server-address=<address>] [--tor-onion=<onion>] [--instance=<number>]
   pandorapay -h | --help
 
 Options:
@@ -62,6 +63,10 @@ func main() {
 
 	if globals.Arguments, err = docopt.Parse(commands, nil, false, config.VERSION, false, false); err != nil {
 		panic("Error processing arguments" + err.Error())
+	}
+
+	if globals.Arguments["--debugging"] == true {
+		go debugging.Start()
 	}
 
 	if err = config.InitConfig(); err != nil {

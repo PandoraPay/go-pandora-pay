@@ -57,8 +57,8 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 	}
 	c.send <- message
 
-	timer := time.NewTimer(config.WEBSOCKETS_TIMEOUT)
 	if await {
+		timer := time.NewTimer(config.WEBSOCKETS_TIMEOUT)
 		select {
 		case out, ok := <-c.answerMap[replyBackId]:
 			timer.Stop()
@@ -79,7 +79,10 @@ func (c *AdvancedConnection) Send(name []byte, data []byte) {
 }
 
 func (c *AdvancedConnection) SendJSON(name []byte, data interface{}) {
-	out, _ := json.Marshal(data)
+	out, err := json.Marshal(data)
+	if err != nil {
+		panic("Error marshaling data")
+	}
 	c.sendNow(0, name, out, false, false)
 }
 
@@ -88,7 +91,10 @@ func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte) *Advanced
 }
 
 func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}) *AdvancedConnectionAnswer {
-	out, _ := json.Marshal(data)
+	out, err := json.Marshal(data)
+	if err != nil {
+		panic("Error marshaling data")
+	}
 	return c.sendNow(0, name, out, true, false)
 }
 

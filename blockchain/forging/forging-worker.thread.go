@@ -72,7 +72,7 @@ func (worker *ForgingWorkerThread) forge() {
 		}
 
 		if work == nil || timestamp > timeNow {
-			time.Sleep(25 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 			continue
 		}
 
@@ -85,9 +85,10 @@ func (worker *ForgingWorkerThread) forge() {
 			for _, address := range wallets {
 
 				n = binary.PutUvarint(buf, timestamp)
-				serialized = append(serialized, buf[:n]...)
-				serialized = append(serialized, address.publicKeyHash...)
-				kernelHash := cryptography.SHA3Hash(serialized)
+
+				final := append(serialized, buf[:n]...)
+				final = append(final, address.publicKeyHash...)
+				kernelHash := cryptography.SHA3Hash(final)
 
 				if height > 0 {
 					kernelHash = cryptography.ComputeKernelHash(kernelHash, address.stakingAmount)
@@ -109,7 +110,6 @@ func (worker *ForgingWorkerThread) forge() {
 					//gui.Log(hex.EncodeToString(kernelHash))
 				}
 
-				serialized = serialized[:len(serialized)-n-20]
 			}
 
 			timestamp += 1
