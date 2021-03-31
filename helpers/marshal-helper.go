@@ -18,7 +18,7 @@ func (s ByteString) MarshalJSON() ([]byte, error) {
 func (s *ByteString) UnmarshalJSON(data []byte) error {
 
 	var x string
-	if err := json.Unmarshal(data, &x); err == nil {
+	if err := json.Unmarshal(data, &x); err != nil {
 		return err
 	}
 	str, err := hex.DecodeString(x)

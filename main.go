@@ -77,7 +77,8 @@ func main() {
 	defer func() {
 		err := recover()
 		if err != nil {
-			gui.Fatal(err)
+			gui.Close()
+			fmt.Println(err)
 		}
 	}()
 

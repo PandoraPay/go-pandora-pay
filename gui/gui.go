@@ -8,6 +8,11 @@ import (
 	"time"
 )
 
+func Close() {
+	ui.Clear()
+	ui.Close()
+}
+
 //test
 func GUIInit() (err error) {
 
