@@ -74,7 +74,7 @@ func WalletInit(forging *forging.Forging) (wallet *Wallet, err error) {
 		}
 	}
 
-	initWalletCLI(wallet)
+	wallet.initWalletCLI()
 
 	gui.Log("Initialized Wallet")
 	return

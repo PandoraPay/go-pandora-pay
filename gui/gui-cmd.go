@@ -1,11 +1,13 @@
 package gui
 
 import (
+	"encoding/hex"
 	"errors"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"os"
 	"pandora-pay/addresses"
+	"pandora-pay/config"
 	"strconv"
 )
 
@@ -195,6 +197,7 @@ func OutputReadUint64(any interface{}) (out uint64, ok bool) {
 func OutputReadAddress(any interface{}) (address *addresses.Address, ok bool) {
 	var str string
 	var err error
+
 	for {
 		if str, ok = <-outputRead(any); !ok {
 			return
@@ -208,6 +211,23 @@ func OutputReadAddress(any interface{}) (address *addresses.Address, ok bool) {
 	}
 }
 
+func OutputReadBool(any interface{}) (out bool, ok bool) {
+	var str string
+	for {
+		if str, ok = <-outputRead(any); !ok {
+			return
+		}
+		if str == "y" {
+			return true, false
+		} else if str == "n" {
+			return false, false
+		} else {
+			OutputWrite("Invalid boolean answer")
+			continue
+		}
+	}
+}
+
 func OutputReadToken(any interface{}) (token []byte, ok bool) {
 	var str string
 	var err error
@@ -215,9 +235,12 @@ func OutputReadToken(any interface{}) (token []byte, ok bool) {
 		if str, ok = <-outputRead(any); !ok {
 			return
 		}
-		address, err = addresses.DecodeAddr(str)
-		if err != nil {
-			OutputWrite("Invalid Address")
+		if token, err = hex.DecodeString(str); err != nil {
+			OutputWrite("Invalid Token. The token has to be a hex")
+			continue
+		}
+		if len(token) != 0 && len(token) != config.TOKEN_LENGTH {
+			OutputWrite("Invalid Token. The token must be zero length or 20 length")
 			continue
 		}
 		return

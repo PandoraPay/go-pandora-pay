@@ -17,11 +17,11 @@ import (
 
 type TransactionsBuilder struct {
 	wallet  *wallet.Wallet
-	memPool *mempool.Mempool
+	mempool *mempool.Mempool
 	chain   *blockchain.Blockchain
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err2 error) {
+func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err2 error) {
 
 	err2 = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 		reader := boltTx.Bucket([]byte("Chain"))
@@ -30,7 +30,6 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint
 		buffer := reader.Get([]byte("chainHeight"))
 		chainHeight, _ := binary.Uvarint(buffer)
 
-		var nonce uint64
 		keys := make([][]byte, len(from))
 		for i, fromAddress := range from {
 			var fromWalletAddress *wallet.WalletAddress
@@ -51,8 +50,8 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint
 			if available < amounts[i] {
 				return errors.New("Not enough funds")
 			}
-			if i == 0 {
-				nonce = builder.memPool.GetNonce(fromWalletAddress.PublicKeyHash, account.Nonce)
+			if i == 0 && nonce == 0 {
+				nonce = builder.mempool.GetNonce(fromWalletAddress.PublicKeyHash, account.Nonce)
 			}
 			keys[i] = fromWalletAddress.PrivateKey.Key
 		}
@@ -80,9 +79,10 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, amounts []uint
 
 	})
 	return
+
 }
 
-func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction, err2 error) {
+func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction, err2 error) {
 
 	fromWalletAddress, err2 := builder.wallet.GetWalletAddressByAddress(from)
 	if err2 != nil {
@@ -107,7 +107,9 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount u
 			return errors.New("You don't have enough staked coins")
 		}
 
-		nonce := builder.memPool.GetNonce(fromWalletAddress.PublicKeyHash, account.Nonce)
+		if nonce == 0 {
+			nonce = builder.mempool.GetNonce(fromWalletAddress.PublicKeyHash, account.Nonce)
+		}
 
 		if tx, err = wizard.CreateUnstakeTx(nonce, fromWalletAddress.PrivateKey.Key, unstakeAmount, feePerByte, feeToken, payFeeInExtra); err != nil {
 			return
@@ -128,10 +130,15 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, unstakeAmount u
 	return
 }
 
-func TransactionsBuilderInit(wallet *wallet.Wallet, memPool *mempool.Mempool, chain *blockchain.Blockchain) *TransactionsBuilder {
-	return &TransactionsBuilder{
+func TransactionsBuilderInit(wallet *wallet.Wallet, mempool *mempool.Mempool, chain *blockchain.Blockchain) (builder *TransactionsBuilder) {
+
+	builder = &TransactionsBuilder{
 		wallet:  wallet,
 		chain:   chain,
-		memPool: memPool,
+		mempool: mempool,
 	}
+
+	builder.initTransactionsBuilderCLI()
+
+	return
 }

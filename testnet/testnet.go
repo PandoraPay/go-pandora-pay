@@ -26,7 +26,7 @@ type Testnet struct {
 
 func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight, amount uint64) (err error) {
 
-	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].AddressEncoded, amount, -1, []byte{}, true)
+	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].AddressEncoded, 0, amount, -1, []byte{}, true)
 	if err != nil {
 		return
 	}
@@ -56,7 +56,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, 0, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
 	if err != nil {
 		return
 	}
@@ -93,7 +93,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) error {
 		sum += amount
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
 	if err != nil {
 		return nil
 	}
@@ -107,6 +107,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) error {
 	if !result {
 		return errors.New("transaction was not inserted in mempool")
 	}
+
 	return nil
 }
 

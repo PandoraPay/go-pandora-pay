@@ -82,6 +82,10 @@ func DecodeAddr(input string) (adr *Address, err error) {
 
 	adr = &Address{PublicKey: []byte{}, PaymentID: []byte{}}
 
+	if len(input) < config.NETWORK_BYTE_PREFIX_LENGTH {
+		return nil, errors.New("Invalid Address length")
+	}
+
 	prefix := input[0:config.NETWORK_BYTE_PREFIX_LENGTH]
 
 	switch prefix {

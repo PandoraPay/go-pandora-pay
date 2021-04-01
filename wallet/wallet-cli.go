@@ -15,80 +15,80 @@ import (
 	"strconv"
 )
 
-func initWalletCLI(wallet *Wallet) {
+func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 
-	cliListAddresses := func(cmd string) (err error) {
+	gui.OutputWrite("Wallet")
+	gui.OutputWrite("Version: " + wallet.Version.String())
+	gui.OutputWrite("Encrypted: " + wallet.Encrypted.String())
+	gui.OutputWrite("Count: " + strconv.Itoa(wallet.Count))
 
-		gui.OutputWrite("Wallet")
-		gui.OutputWrite("Version: " + wallet.Version.String())
-		gui.OutputWrite("Encrypted: " + wallet.Encrypted.String())
-		gui.OutputWrite("Count: " + strconv.Itoa(wallet.Count))
+	gui.OutputWrite("")
 
-		gui.OutputWrite("")
+	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
-		return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+		accs := accounts.NewAccounts(boltTx)
+		toks := tokens.NewTokens(boltTx)
 
-			accs := accounts.NewAccounts(boltTx)
-			toks := tokens.NewTokens(boltTx)
+		for _, walletAddress := range wallet.Addresses {
+			addressStr := walletAddress.Address.EncodeAddr()
+			gui.OutputWrite(walletAddress.Name + " : " + walletAddress.Address.Version.String() + " : " + addressStr)
 
-			for _, walletAddress := range wallet.Addresses {
-				addressStr := walletAddress.Address.EncodeAddr()
-				gui.OutputWrite(walletAddress.Name + " : " + walletAddress.Address.Version.String() + " : " + addressStr)
+			if walletAddress.Address.Version == addresses.SimplePublicKeyHash ||
+				walletAddress.Address.Version == addresses.SimplePublicKey {
 
-				if walletAddress.Address.Version == addresses.SimplePublicKeyHash ||
-					walletAddress.Address.Version == addresses.SimplePublicKey {
+				acc := accs.GetAccount(walletAddress.PublicKeyHash)
 
-					acc := accs.GetAccount(walletAddress.PublicKeyHash)
+				if acc == nil {
+					gui.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))
+				} else {
+					if len(acc.Balances) > 0 {
+						gui.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", ""))
+						for _, balance := range acc.Balances {
 
-					if acc == nil {
-						gui.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))
+							token := toks.GetToken(balance.Token)
+							gui.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatUint(config.ConvertToBase(balance.Amount), 10), token.Name))
+						}
 					} else {
-						if len(acc.Balances) > 0 {
-							gui.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", ""))
-							for _, balance := range acc.Balances {
+						gui.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", "EMPTY"))
+					}
+					if acc.HasDelegatedStake() {
+						gui.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.StakeAvailable), 10)))
 
-								token := toks.GetToken(balance.Token)
-								gui.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatUint(config.ConvertToBase(balance.Amount), 10), token.Name))
+						if len(acc.DelegatedStake.StakesPending) > 0 {
+							gui.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES", ""))
+							for _, stakePending := range acc.DelegatedStake.StakesPending {
+								gui.OutputWrite(fmt.Sprintf("%18s: %10s %t", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatUint(config.ConvertToBase(stakePending.PendingAmount), 10), stakePending.PendingType))
 							}
 						} else {
-							gui.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", "EMPTY"))
-						}
-						if acc.HasDelegatedStake() {
-							gui.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.StakeAvailable), 10)))
-
-							if len(acc.DelegatedStake.StakesPending) > 0 {
-								gui.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES", ""))
-								for _, stakePending := range acc.DelegatedStake.StakesPending {
-									gui.OutputWrite(fmt.Sprintf("%18s: %10s %t", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatUint(config.ConvertToBase(stakePending.PendingAmount), 10), stakePending.PendingType))
-								}
-							} else {
-								gui.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES:", "EMPTY"))
-							}
+							gui.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES:", "EMPTY"))
 						}
 					}
-
 				}
 
 			}
 
-			return
-		})
-	}
-
-	selectAddress := func(text string) (walletAddress *WalletAddress, index int, err error) {
-
-		if err = cliListAddresses(""); err != nil {
-			return
 		}
 
-		index, ok := gui.OutputReadInt(text)
-		if !ok {
-			return
-		}
+		return
+	})
+}
 
-		walletAddress, err = wallet.GetWalletAddress(index)
+func (wallet *Wallet) CliSelectAddress(text string) (walletAddress *WalletAddress, index int, err error) {
+
+	if err = wallet.CliListAddresses(""); err != nil {
 		return
 	}
+
+	index, ok := gui.OutputReadInt(text)
+	if !ok {
+		return
+	}
+
+	walletAddress, err = wallet.GetWalletAddress(index)
+	return
+}
+
+func (wallet *Wallet) initWalletCLI() {
 
 	cliExportJSONWallet := func(cmd string) (err error) {
 
@@ -103,7 +103,7 @@ func initWalletCLI(wallet *Wallet) {
 
 		defer f.Close()
 
-		if err = cliListAddresses(""); err != nil {
+		if err = wallet.CliListAddresses(""); err != nil {
 			return
 		}
 		index, ok := gui.OutputReadInt("Select Address to be Exported")
@@ -143,12 +143,12 @@ func initWalletCLI(wallet *Wallet) {
 		if _, err = wallet.AddNewAddress(); err != nil {
 			return
 		}
-		return cliListAddresses(cmd)
+		return wallet.CliListAddresses(cmd)
 	}
 
 	cliRemoveAddress := func(cmd string) (err error) {
 
-		_, index, err := selectAddress("Select Address to be Removed")
+		_, index, err := wallet.CliSelectAddress("Select Address to be Removed")
 		if err != nil {
 			return
 		}
@@ -157,7 +157,7 @@ func initWalletCLI(wallet *Wallet) {
 		if success, err = wallet.RemoveAddress(index); err != nil {
 			return
 		}
-		if err = cliListAddresses(""); err != nil {
+		if err = wallet.CliListAddresses(""); err != nil {
 			return
 		}
 
@@ -181,7 +181,7 @@ func initWalletCLI(wallet *Wallet) {
 
 	cliShowPrivateKey := func(cmd string) (err error) {
 
-		_, index, err := selectAddress("Select Address to be Removed")
+		_, index, err := wallet.CliSelectAddress("Select Address to be Removed")
 		if err != nil {
 			return
 		}
@@ -195,47 +195,11 @@ func initWalletCLI(wallet *Wallet) {
 		return
 	}
 
-	cliTransfer := func(cmd string) (err error) {
-
-		walletAddress, _, err := selectAddress("Select Address to Transfer")
-		if err != nil {
-			return
-		}
-
-		amount, ok := gui.OutputReadUint64("Amount")
-		if !ok {
-			return
-		}
-
-		token, ok := gui.OutputReadString("Token. Leave empty for the Native Token")
-		if !ok {
-			return
-		}
-		if len(token) != 0 && len(token) != 40 {
-			return errors.New("Invalid TokenId")
-		}
-
-		nonce, ok := gui.OutputReadUint64("Nonce. Leave 0 for automatically detection")
-		if !ok {
-			return
-		}
-
-		destinationAddress, ok := gui.OutputReadAddress()
-		if !ok {
-			return
-		}
-
-		walletAddress.Transfer(destinationAddress, amount, nonce, token)
-
-		return
-	}
-
-	gui.CommandDefineCallback("Wallet : List Addresses", cliListAddresses)
+	gui.CommandDefineCallback("Wallet : List Addresses", wallet.CliListAddresses)
 	gui.CommandDefineCallback("Wallet : Create New Address", cliCreateNewAddress)
 	gui.CommandDefineCallback("Wallet : Show Mnemnonic", cliShowMnemonic)
 	gui.CommandDefineCallback("Wallet : Show Private Key", cliShowPrivateKey)
 	gui.CommandDefineCallback("Wallet : Remove Address", cliRemoveAddress)
 	gui.CommandDefineCallback("Wallet : Export JSON", cliExportJSONWallet)
-	gui.CommandDefineCallback("Wallet : TX: Transfer", cliTransfer)
 
 }
