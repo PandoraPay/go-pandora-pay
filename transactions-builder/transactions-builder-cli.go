@@ -50,7 +50,7 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 
 		gui.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
 
-		propagate, ok := gui.OutputReadBool("Destination Address")
+		propagate, ok := gui.OutputReadBool("Propagate. Type y/n")
 		if !ok {
 			return
 		}
@@ -63,6 +63,7 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 			if !result {
 				return errors.New("transaction was not inserted in mempool")
 			}
+			gui.OutputWrite("Tx was inserted in mempool")
 		}
 
 		return

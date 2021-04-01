@@ -124,7 +124,9 @@ func cmdProcess(e ui.Event) {
 		}
 		if char == "<Backspace>" {
 			char = ""
-			cmdInput = cmdInput[:len(cmdInput)-1]
+			if len(cmdInput) > 0 {
+				cmdInput = cmdInput[:len(cmdInput)-1]
+			}
 		}
 		cmdInput = cmdInput + char
 		cmd.Rows[len(cmd.Rows)-1] = "-> " + cmdInput
@@ -218,9 +220,9 @@ func OutputReadBool(any interface{}) (out bool, ok bool) {
 			return
 		}
 		if str == "y" {
-			return true, false
+			return true, true
 		} else if str == "n" {
-			return false, false
+			return false, true
 		} else {
 			OutputWrite("Invalid boolean answer")
 			continue
