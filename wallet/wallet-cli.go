@@ -75,9 +75,27 @@ func initWalletCLI(wallet *Wallet) {
 		})
 	}
 
+	selectAddress := func(text string) (walletAddress *WalletAddress, index int, err error) {
+
+		if err = cliListAddresses(""); err != nil {
+			return
+		}
+
+		index, ok := gui.OutputReadInt(text)
+		if !ok {
+			return
+		}
+
+		walletAddress, err = wallet.GetWalletAddress(index)
+		return
+	}
+
 	cliExportJSONWallet := func(cmd string) (err error) {
 
-		str := <-gui.OutputReadString("Path to export")
+		str, ok := gui.OutputReadString("Path to export")
+		if !ok {
+			return
+		}
 		f, err := os.Create(str)
 		if err != nil {
 			return
@@ -88,7 +106,11 @@ func initWalletCLI(wallet *Wallet) {
 		if err = cliListAddresses(""); err != nil {
 			return
 		}
-		index := <-gui.OutputReadInt("Select Address to be Exported")
+		index, ok := gui.OutputReadInt("Select Address to be Exported")
+		if !ok {
+			return
+		}
+
 		wallet.RLock()
 		defer wallet.RUnlock()
 
@@ -126,10 +148,10 @@ func initWalletCLI(wallet *Wallet) {
 
 	cliRemoveAddress := func(cmd string) (err error) {
 
-		if err = cliListAddresses(""); err != nil {
+		_, index, err := selectAddress("Select Address to be Removed")
+		if err != nil {
 			return
 		}
-		index := <-gui.OutputReadInt("Select Address to be Removed")
 
 		var success bool
 		if success, err = wallet.RemoveAddress(index); err != nil {
@@ -159,15 +181,51 @@ func initWalletCLI(wallet *Wallet) {
 
 	cliShowPrivateKey := func(cmd string) (err error) {
 
-		if err = cliListAddresses(""); err != nil {
+		_, index, err := selectAddress("Select Address to be Removed")
+		if err != nil {
 			return
 		}
-		index := <-gui.OutputReadInt("Select Address")
+
 		privateKey, err := wallet.ShowPrivateKey(index)
 		if err != nil {
 			return
 		}
 		gui.OutputWrite(privateKey)
+
+		return
+	}
+
+	cliTransfer := func(cmd string) (err error) {
+
+		walletAddress, _, err := selectAddress("Select Address to Transfer")
+		if err != nil {
+			return
+		}
+
+		amount, ok := gui.OutputReadUint64("Amount")
+		if !ok {
+			return
+		}
+
+		token, ok := gui.OutputReadString("Token. Leave empty for the Native Token")
+		if !ok {
+			return
+		}
+		if len(token) != 0 && len(token) != 40 {
+			return errors.New("Invalid TokenId")
+		}
+
+		nonce, ok := gui.OutputReadUint64("Nonce. Leave 0 for automatically detection")
+		if !ok {
+			return
+		}
+
+		destinationAddress, ok := gui.OutputReadAddress()
+		if !ok {
+			return
+		}
+
+		walletAddress.Transfer(destinationAddress, amount, nonce, token)
 
 		return
 	}
@@ -178,5 +236,6 @@ func initWalletCLI(wallet *Wallet) {
 	gui.CommandDefineCallback("Wallet : Show Private Key", cliShowPrivateKey)
 	gui.CommandDefineCallback("Wallet : Remove Address", cliRemoveAddress)
 	gui.CommandDefineCallback("Wallet : Export JSON", cliExportJSONWallet)
+	gui.CommandDefineCallback("Wallet : TX: Transfer", cliTransfer)
 
 }

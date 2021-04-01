@@ -88,6 +88,16 @@ func (wallet *Wallet) RemoveAddress(index int) (bool, error) {
 	return true, nil
 }
 
+func (wallet *Wallet) GetWalletAddress(index int) (*WalletAddress, error) {
+	wallet.RLock()
+	defer wallet.RUnlock()
+
+	if index < 0 || index > len(wallet.Addresses) {
+		return nil, errors.New("Invalid Address Index")
+	}
+	return wallet.Addresses[index], nil
+}
+
 func (wallet *Wallet) ShowPrivateKey(index int) ([]byte, error) { //32 byte
 
 	wallet.RLock()

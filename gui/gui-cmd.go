@@ -5,6 +5,7 @@ import (
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"os"
+	"pandora-pay/addresses"
 	"strconv"
 )
 
@@ -66,7 +67,8 @@ func cmdProcess(e ui.Event) {
 	switch e.ID {
 	case "<C-c>":
 		if cmdStatus == "read" {
-			OutputRestore()
+			close(cmdInputCn)
+			cmdInputCn = make(chan string)
 			return
 		}
 		os.Exit(1)
@@ -97,6 +99,7 @@ func cmdProcess(e ui.Event) {
 
 					if err := command.Callback(command.Text); err != nil {
 						Error(err)
+						cmdStatus = "output done"
 					} else {
 						OutputDone()
 					}
@@ -112,6 +115,7 @@ func cmdProcess(e ui.Event) {
 	}
 
 	if cmdStatus == "read" && !NotAcceptedCharacters[e.ID] {
+		cmd.Lock()
 		char := e.ID
 		if char == "<Space>" {
 			char = " "
@@ -121,7 +125,6 @@ func cmdProcess(e ui.Event) {
 			cmdInput = cmdInput[:len(cmdInput)-1]
 		}
 		cmdInput = cmdInput + char
-		cmd.Lock()
 		cmd.Rows[len(cmd.Rows)-1] = "-> " + cmdInput
 		cmd.Unlock()
 	}
@@ -144,7 +147,7 @@ func outputRead(any interface{}) <-chan string {
 	cmd.Lock()
 	cmdInput = ""
 	cmd.Rows = append(cmd.Rows, "")
-	cmd.Rows = append(cmd.Rows, processArgument(any)+" : ")
+	cmd.Rows = append(cmd.Rows, processArgument(any))
 	cmd.Rows = append(cmd.Rows, "-> ")
 	cmd.SelectedRow = len(cmd.Rows) - 1
 	cmdStatus = "read"
@@ -154,28 +157,71 @@ func outputRead(any interface{}) <-chan string {
 	return cmdInputCn
 }
 
-func OutputReadString(any interface{}) <-chan string {
-	return outputRead(any)
+func OutputReadString(any interface{}) (out string, ok bool) {
+	out, ok = <-outputRead(any)
+	return
 }
 
-func OutputReadInt(any interface{}) <-chan int {
-	r := make(chan int)
-
-	go func() {
-
-		for {
-			str := <-outputRead(any)
-			no, err := strconv.Atoi(str)
-			if err != nil {
-				OutputWrite("Invalid Number")
-				continue
-			}
-			r <- no
+func OutputReadInt(any interface{}) (out int, ok bool) {
+	var str string
+	var err error
+	for {
+		if str, ok = <-outputRead(any); !ok {
 			return
 		}
-	}()
+		if out, err = strconv.Atoi(str); err != nil {
+			OutputWrite("Invalid Number")
+			continue
+		}
+		return
+	}
+}
 
-	return r
+func OutputReadUint64(any interface{}) (out uint64, ok bool) {
+	var str string
+	var err error
+	for {
+		if str, ok = <-outputRead(any); !ok {
+			return
+		}
+		if out, err = strconv.ParseUint(str, 10, 64); err != nil {
+			OutputWrite("Invalid Number")
+			continue
+		}
+		return
+	}
+}
+
+func OutputReadAddress(any interface{}) (address *addresses.Address, ok bool) {
+	var str string
+	var err error
+	for {
+		if str, ok = <-outputRead(any); !ok {
+			return
+		}
+		address, err = addresses.DecodeAddr(str)
+		if err != nil {
+			OutputWrite("Invalid Address")
+			continue
+		}
+		return
+	}
+}
+
+func OutputReadToken(any interface{}) (token []byte, ok bool) {
+	var str string
+	var err error
+	for {
+		if str, ok = <-outputRead(any); !ok {
+			return
+		}
+		address, err = addresses.DecodeAddr(str)
+		if err != nil {
+			OutputWrite("Invalid Address")
+			continue
+		}
+		return
+	}
 }
 
 func OutputClear() {
