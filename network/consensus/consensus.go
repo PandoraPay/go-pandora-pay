@@ -18,12 +18,14 @@ type Consensus struct {
 func (consensus *Consensus) execute() {
 
 	go func() {
-		for {
-			newChainData, ok := <-consensus.chain.UpdateNewChainCn
 
+		updateNewChainCn := consensus.chain.UpdateNewChainMulticast.AddListener()
+		for {
+			newChainDataReceived, ok := <-updateNewChainCn
 			if !ok {
 				return
 			}
+			newChainData := newChainDataReceived.(*blockchain.BlockchainData)
 
 			//it is safe to read
 			consensus.broadcast(newChainData)

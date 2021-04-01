@@ -27,14 +27,13 @@ import (
 )
 
 type Blockchain struct {
-	ChainData        atomic.Value         //*BlockchainData
-	Sync             bool                 `json:"-"`
-	UpdateCn         chan uint64          `json:"-"`
-	UpdateNewChainCn chan *BlockchainData `json:"-"`
-	forging          *forging.Forging     `json:"-"`
-	mempool          *mempool.Mempool     `json:"-"`
-	mutex            sync.Mutex           `json:"-"` //writing mutex
-	sync.RWMutex     `json:"-"`
+	ChainData               atomic.Value              //*BlockchainData
+	Sync                    bool                      `json:"-"`
+	forging                 *forging.Forging          `json:"-"`
+	mempool                 *mempool.Mempool          `json:"-"`
+	mutex                   sync.Mutex                `json:"-"` //writing mutex
+	UpdateMulticast         *helpers.MulticastChannel `json:"-"` //chan uint64
+	UpdateNewChainMulticast *helpers.MulticastChannel `json:"-"` //chan *BlockchainData
 }
 
 func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplete, calledByForging bool) (err error) {
@@ -320,14 +319,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			panic("Error writing accs" + err.Error())
 		}
 
-		chain.Lock()
-
 		if err = boltTx.Commit(); err != nil {
 			panic("Error storing writing changes to disk" + err.Error())
 		}
 		chain.ChainData.Store(newChainData)
-
-		chain.Unlock()
 
 	} else {
 
@@ -361,25 +356,24 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	chain.createNextBlockForForging()
 
 	for _, txData := range removedTx {
-		tx := transaction.Transaction{}
+		tx := &transaction.Transaction{}
 		if err = tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
 			return
 		}
 		if err = tx.BloomExtraNow(true); err != nil {
 			return
 		}
-		if _, err = chain.mempool.AddTxToMemPool(&tx, newChainData.Height, false); err != nil {
+		if _, err = chain.mempool.AddTxToMemPool(tx, newChainData.Height, false); err != nil {
 			return
 		}
 	}
 
 	chain.mempool.DeleteTxs(insertedTxHashes)
 
-	chain.UpdateCn <- newChainData.Height //sending 1
-	chain.UpdateNewChainCn <- newChainData
+	chain.UpdateMulticast.Broadcast(newChainData.Height)
+	chain.UpdateNewChainMulticast.Broadcast(newChainData)
 
 	return
-
 }
 
 func BlockchainInit(forging *forging.Forging, mempool *mempool.Mempool) (chain *Blockchain, err error) {
@@ -391,11 +385,11 @@ func BlockchainInit(forging *forging.Forging, mempool *mempool.Mempool) (chain *
 	}
 
 	chain = &Blockchain{
-		forging:          forging,
-		mempool:          mempool,
-		Sync:             false,
-		UpdateCn:         make(chan uint64),
-		UpdateNewChainCn: make(chan *BlockchainData),
+		forging:                 forging,
+		mempool:                 mempool,
+		Sync:                    false,
+		UpdateMulticast:         helpers.NewMulticastChannel(),
+		UpdateNewChainMulticast: helpers.NewMulticastChannel(),
 	}
 
 	if err = chain.loadBlockchain(); err != nil {
@@ -416,4 +410,6 @@ func BlockchainInit(forging *forging.Forging, mempool *mempool.Mempool) (chain *
 }
 
 func (chain *Blockchain) Close() {
+	chain.UpdateNewChainMulticast.CloseAll()
+	chain.UpdateMulticast.CloseAll()
 }

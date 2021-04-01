@@ -195,12 +195,17 @@ func CreateAPI(apiStore *api_store.APIStore, chain *blockchain.Blockchain, setti
 	}
 
 	go func() {
+		updateNewChain := api.chain.UpdateNewChainMulticast.AddListener()
 		for {
-			newChainData, ok := <-api.chain.UpdateNewChainCn
-			if ok {
-				//it is safe to read
-				api.readLocalBlockchain(newChainData)
+			newChainDataReceived, ok := <-updateNewChain
+			if !ok {
+				break
 			}
+
+			newChainData := newChainDataReceived.(*blockchain.BlockchainData)
+			//it is safe to read
+			api.readLocalBlockchain(newChainData)
+
 		}
 	}()
 

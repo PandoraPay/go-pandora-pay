@@ -132,9 +132,6 @@ func (chain *Blockchain) loadBlockchain() error {
 
 	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
-		chain.Lock()
-		defer chain.Unlock()
-
 		reader := boltTx.Bucket([]byte("Chain"))
 
 		chainInfoData := reader.Get([]byte("blockchainInfo"))

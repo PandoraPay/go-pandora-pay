@@ -113,9 +113,14 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) error {
 func (testnet *Testnet) run() {
 
 	var err error
+	updateChannel := testnet.chain.UpdateMulticast.AddListener()
 	for {
 
-		blockHeight := <-testnet.chain.UpdateCn
+		blockHeightReceived, ok := <-updateChannel
+		if !ok {
+			return
+		}
+		blockHeight := blockHeightReceived.(uint64)
 
 		func() {
 
