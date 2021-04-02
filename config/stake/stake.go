@@ -5,12 +5,21 @@ import (
 	"pandora-pay/config/globals"
 )
 
-func GetRequiredStake(blockHeight uint64) uint64 {
+func GetRequiredStake(blockHeight uint64) (requiredStake uint64) {
+
+	var err error
+
 	if blockHeight == 0 {
-		return config.ConvertToUnits(0)
+		if requiredStake, err = config.ConvertToUnitsUint64(0); err != nil {
+			panic(err)
+		}
 	} else {
-		return config.ConvertToUnits(100)
+		if requiredStake, err = config.ConvertToUnitsUint64(100); err != nil {
+			panic(err)
+		}
 	}
+
+	return
 }
 
 func GetPendingStakeWindow(blockHeight uint64) uint64 {

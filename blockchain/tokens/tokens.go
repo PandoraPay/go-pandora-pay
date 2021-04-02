@@ -33,7 +33,10 @@ func (tokens *Tokens) GetToken(key []byte) *token.Token {
 	}
 
 	tok := new(token.Token)
-	tok.Deserialize(data)
+	if err := tok.Deserialize(data); err != nil {
+		panic(err)
+	}
+
 	return tok
 }
 
@@ -55,6 +58,7 @@ func (tokens *Tokens) CreateToken(key []byte, tok *token.Token) error {
 }
 
 func (tokens *Tokens) UpdateToken(key []byte, tok *token.Token) {
+
 	if len(key) == 0 {
 		key = config.NATIVE_TOKEN_FULL
 	}

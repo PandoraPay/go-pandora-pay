@@ -196,6 +196,21 @@ func OutputReadUint64(any interface{}) (out uint64, ok bool) {
 	}
 }
 
+func OutputReadFloat64(any interface{}) (out float64, ok bool) {
+	var str string
+	var err error
+	for {
+		if str, ok = <-outputRead(any); !ok {
+			return
+		}
+		if out, err = strconv.ParseFloat(str, 64); err != nil {
+			OutputWrite("Invalid Number")
+			continue
+		}
+		return
+	}
+}
+
 func OutputReadAddress(any interface{}) (address *addresses.Address, ok bool) {
 	var str string
 	var err error

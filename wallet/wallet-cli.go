@@ -46,18 +46,18 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 						for _, balance := range acc.Balances {
 
 							token := toks.GetToken(balance.Token)
-							gui.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatUint(config.ConvertToBase(balance.Amount), 10), token.Name))
+							gui.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(balance.Amount), 'f', config.DECIMAL_SEPARATOR, 64), token.Name))
 						}
 					} else {
 						gui.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", "EMPTY"))
 					}
 					if acc.HasDelegatedStake() {
-						gui.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatUint(config.ConvertToBase(acc.DelegatedStake.StakeAvailable), 10)))
+						gui.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config.ConvertToBase(acc.DelegatedStake.StakeAvailable), 'f', config.DECIMAL_SEPARATOR, 64)))
 
 						if len(acc.DelegatedStake.StakesPending) > 0 {
 							gui.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES", ""))
 							for _, stakePending := range acc.DelegatedStake.StakesPending {
-								gui.OutputWrite(fmt.Sprintf("%18s: %10s %t", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatUint(config.ConvertToBase(stakePending.PendingAmount), 10), stakePending.PendingType))
+								gui.OutputWrite(fmt.Sprintf("%18s: %10s %t", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatFloat(config.ConvertToBase(stakePending.PendingAmount), 'f', config.DECIMAL_SEPARATOR, 64), stakePending.PendingType))
 							}
 						} else {
 							gui.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES:", "EMPTY"))

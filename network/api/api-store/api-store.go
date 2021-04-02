@@ -95,8 +95,8 @@ func (apiStore *APIStore) LoadAccountFromPublicKeyHash(publicKeyHash []byte) (ac
 	return
 }
 
-func (apiStore *APIStore) LoadTokenFromPublicKeyHash(publicKeyHash []byte) (tok *token.Token, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+func (apiStore *APIStore) LoadTokenFromPublicKeyHash(publicKeyHash []byte) (tok *token.Token, err2 error) {
+	err2 = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
 		toks := tokens.NewTokens(boltTx)
 		tok = toks.GetToken(publicKeyHash)
 		return nil

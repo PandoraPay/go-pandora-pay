@@ -62,12 +62,14 @@ func (wallet *Wallet) AddNewAddress() (walletAddress *WalletAddress, err error) 
 	go wallet.forging.Wallet.AddWallet(walletAddress.PrivateKey.Key, walletAddress.PublicKeyHash)
 
 	wallet.updateWallet()
-	wallet.saveWallet(wallet.Count-1, wallet.Count, -1)
+	if err = wallet.saveWallet(wallet.Count-1, wallet.Count, -1); err != nil {
+		return
+	}
 
 	return
 }
 
-func (wallet *Wallet) RemoveAddress(index int) (bool, error) {
+func (wallet *Wallet) RemoveAddress(index int) (out bool, err error) {
 
 	wallet.Lock()
 	defer wallet.Unlock()
@@ -84,7 +86,10 @@ func (wallet *Wallet) RemoveAddress(index int) (bool, error) {
 	go wallet.forging.Wallet.RemoveWallet(removing.PublicKeyHash)
 
 	wallet.updateWallet()
-	wallet.saveWallet(index, wallet.Count, wallet.Count)
+	if err = wallet.saveWallet(index, wallet.Count, wallet.Count); err != nil {
+		return
+	}
+
 	return true, nil
 }
 
@@ -133,7 +138,9 @@ func (wallet *Wallet) createSeed() error {
 }
 
 func (wallet *Wallet) createEmptyWallet() (err error) {
-	wallet.createSeed()
+	if err = wallet.createSeed(); err != nil {
+		return
+	}
 	_, err = wallet.AddNewAddress()
 	return
 }

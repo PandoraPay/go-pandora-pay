@@ -24,7 +24,7 @@ type Testnet struct {
 	nodes uint64
 }
 
-func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight, amount uint64) (err error) {
+func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64) (err error) {
 
 	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].AddressEncoded, 0, amount, -1, []byte{}, true)
 	if err != nil {
@@ -44,6 +44,7 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight, amount uint64) (err 
 }
 
 func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (err error) {
+
 	dsts := []string{}
 	dstsAmounts := []uint64{}
 	dstsTokens := [][]byte{}

@@ -2,6 +2,7 @@ package token
 
 import (
 	"errors"
+	"math"
 	"pandora-pay/helpers"
 	"regexp"
 )
@@ -55,6 +56,19 @@ func (token *Token) Validate() error {
 	}
 
 	return nil
+}
+
+func (token *Token) ConvertToUnits(amount float64) (uint64, error) {
+	COIN_DENOMINATION := math.Pow10(int(token.DecimalSeparator))
+	if amount < float64(math.MaxUint64)/COIN_DENOMINATION {
+		return uint64(amount * COIN_DENOMINATION), nil
+	}
+	return 0, errors.New("Error converting to units")
+}
+
+func (token *Token) ConvertToBase(amount uint64) float64 {
+	COIN_DENOMINATION := math.Pow10(int(token.DecimalSeparator))
+	return float64(amount) / COIN_DENOMINATION
 }
 
 func (token *Token) AddSupply(sign bool, amount uint64) error {

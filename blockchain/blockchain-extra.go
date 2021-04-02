@@ -37,16 +37,21 @@ func (chain *Blockchain) init() (err error) {
 	chainData := chain.createGenesisBlockchainData()
 	chain.ChainData.Store(chainData)
 
-	var tok = token.Token{
+	maxSupply, err := config.ConvertToUnitsUint64(config.MAX_SUPPLY_COINS)
+	if err != nil {
+		panic(err)
+	}
+
+	tok := token.Token{
 		Version:          0,
 		Name:             config.NATIVE_TOKEN_NAME,
 		Ticker:           config.NATIVE_TOKEN_TICKER,
 		Description:      config.NATIVE_TOKEN_DESCRIPTION,
-		DecimalSeparator: config.DECIMAL_SEPARATOR,
+		DecimalSeparator: byte(config.DECIMAL_SEPARATOR),
 		CanBurn:          true,
 		CanMint:          true,
 		Supply:           0,
-		MaxSupply:        config.ConvertToUnits(config.MAX_SUPPLY_COINS),
+		MaxSupply:        maxSupply,
 		Key:              config.BURN_PUBLIC_KEY_HASH,
 		SupplyKey:        config.BURN_PUBLIC_KEY_HASH,
 	}

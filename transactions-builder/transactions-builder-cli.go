@@ -15,7 +15,15 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 			return
 		}
 
-		amount, ok := gui.OutputReadUint64("Amount")
+		token, ok := gui.OutputReadToken("Token. Leave empty for the Native Token")
+		if !ok {
+			return
+		}
+		if len(token) != 0 && len(token) != 40 {
+			return errors.New("Invalid TokenId")
+		}
+
+		amount, ok := gui.OutputReadFloat64("Amount")
 		if !ok {
 			return
 		}
@@ -23,14 +31,6 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 		feePerByte, ok := gui.OutputReadInt("Fee per byte. -1 automatically, 0 none")
 		if !ok {
 			return
-		}
-
-		token, ok := gui.OutputReadToken("Token. Leave empty for the Native Token")
-		if !ok {
-			return
-		}
-		if len(token) != 0 && len(token) != 40 {
-			return errors.New("Invalid TokenId")
 		}
 
 		nonce, ok := gui.OutputReadUint64("Nonce. Leave 0 for automatically detection")
@@ -43,7 +43,7 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 			return
 		}
 
-		tx, err := builder.CreateSimpleTx([]string{walletAddress.AddressEncoded}, nonce, []uint64{amount}, [][]byte{token}, []string{destinationAddress.EncodeAddr()}, []uint64{amount}, [][]byte{token}, feePerByte, token)
+		tx, err := builder.CreateSimpleTx_Float([]string{walletAddress.AddressEncoded}, nonce, []float64{amount}, [][]byte{token}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, [][]byte{token}, feePerByte, token)
 		if err != nil {
 			return
 		}

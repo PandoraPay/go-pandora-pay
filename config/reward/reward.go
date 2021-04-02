@@ -15,7 +15,12 @@ func GetRewardAt(blockHeight uint64) (reward uint64) {
 		reward = 0
 	}
 
-	return config.ConvertToUnits(reward)
+	var err error
+	if reward, err = config.ConvertToUnitsUint64(reward); err != nil {
+		panic(err)
+	}
+
+	return
 }
 
 // halving every year

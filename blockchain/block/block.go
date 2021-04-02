@@ -62,6 +62,7 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 	acs.UpdateAccount(blk.Forger, acc)
 
 	tok := toks.GetToken(config.NATIVE_TOKEN)
+
 	if err = tok.AddSupply(true, reward); err != nil {
 		return
 	}

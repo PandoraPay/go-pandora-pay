@@ -1,14 +1,16 @@
 package config
 
 import (
+	"errors"
 	"math"
 )
 
 var BURN_PUBLIC_KEY_HASH = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xd, 0xe, 0xa, 0xd}
 
 var (
-	DECIMAL_SEPARATOR = byte(7)
-	COIN_DENOMINATION = uint64(math.Pow(10, float64(DECIMAL_SEPARATOR)))
+	DECIMAL_SEPARATOR       = int(7)
+	COIN_DENOMINATION       = uint64(math.Pow10(DECIMAL_SEPARATOR))
+	COIN_DENOMINATION_FLOAT = float64(math.Pow10(DECIMAL_SEPARATOR))
 
 	MAX_SUPPLY_COINS = uint64(42000000000)
 
@@ -23,10 +25,20 @@ var (
 	NATIVE_TOKEN_FULL   = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 )
 
-func ConvertToUnits(number uint64) uint64 {
-	return number * COIN_DENOMINATION
+func ConvertToUnitsUint64(number uint64) (uint64, error) {
+	if number < math.MaxUint64/COIN_DENOMINATION {
+		return number * COIN_DENOMINATION, nil
+	}
+	return 0, errors.New("Error converting to units")
 }
 
-func ConvertToBase(number uint64) uint64 {
-	return number / COIN_DENOMINATION
+func ConvertToUnits(number float64) (uint64, error) {
+	if number < float64(math.MaxUint64)/COIN_DENOMINATION_FLOAT {
+		return uint64(number * COIN_DENOMINATION_FLOAT), nil
+	}
+	return 0, errors.New("Error converting to units")
+}
+
+func ConvertToBase(number uint64) float64 {
+	return float64(number) / COIN_DENOMINATION_FLOAT
 }
