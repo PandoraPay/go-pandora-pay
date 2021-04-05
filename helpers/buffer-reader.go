@@ -3,6 +3,7 @@ package helpers
 import (
 	"encoding/binary"
 	"errors"
+	"pandora-pay/config"
 	"pandora-pay/cryptography"
 )
 
@@ -75,7 +76,7 @@ func (reader *BufferReader) ReadToken() ([]byte, error) {
 	if tokenType == 0 {
 		return []byte{}, nil
 	} else if tokenType == 1 {
-		return reader.ReadBytes(20)
+		return reader.ReadBytes(config.TOKEN_LENGTH)
 	}
 	return nil, errors.New("invalid token type")
 }

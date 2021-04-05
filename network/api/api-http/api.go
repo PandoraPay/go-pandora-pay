@@ -151,7 +151,7 @@ func (api *API) getToken(values *url.Values) (interface{}, error) {
 
 func (api *API) getMempool(values *url.Values) (interface{}, error) {
 	transactions := api.mempool.GetTxsList()
-	hashes := make([]helpers.ByteString, len(transactions))
+	hashes := make([]helpers.HexBytes, len(transactions))
 	for i, tx := range transactions {
 		hashes[i] = tx.Tx.Bloom.Hash
 	}

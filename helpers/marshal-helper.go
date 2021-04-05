@@ -6,27 +6,28 @@ import (
 	"fmt"
 )
 
-// ByteString is a byte array that serializes to hex
-type ByteString []byte
+// HexBytes is a byte array that serializes to hex
+type HexBytes []byte
 
 // MarshalJSON serializes ByteArray to hex
-func (s ByteString) MarshalJSON() ([]byte, error) {
+func (s HexBytes) MarshalJSON() ([]byte, error) {
 	return json.Marshal(fmt.Sprintf("%x", string(s)))
 }
 
 // UnmarshalJSON deserializes ByteArray to hex
-func (s *ByteString) UnmarshalJSON(data []byte) error {
+func (s *HexBytes) UnmarshalJSON(data []byte) (err error) {
 
 	var x string
-	if err := json.Unmarshal(data, &x); err != nil {
-		return err
+	var str []byte
+
+	if err = json.Unmarshal(data, &x); err != nil {
+		return
 	}
-	str, err := hex.DecodeString(x)
-	if err != nil {
-		return err
+	if str, err = hex.DecodeString(x); err != nil {
+		return
 	}
 	*s = str
-	return nil
+	return
 }
 
 func GetJSON(obj interface{}, ignoreFields ...string) (out []byte, err error) {

@@ -23,8 +23,8 @@ type Token struct {
 	DecimalSeparator   byte
 	MaxSupply          uint64
 	Supply             uint64
-	Key                helpers.ByteString //20 byte
-	SupplyKey          helpers.ByteString //20 byte
+	Key                helpers.HexBytes //20 byte
+	SupplyKey          helpers.HexBytes //20 byte
 	Name               string
 	Ticker             string
 	Description        string

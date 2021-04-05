@@ -6,8 +6,8 @@ import (
 
 type TransactionSimpleInput struct {
 	Amount    uint64
-	Token     helpers.ByteString           //20
-	Signature helpers.ByteString           //65
+	Token     helpers.HexBytes             //20
+	Signature helpers.HexBytes             //65
 	Bloom     *TransactionSimpleInputBloom `json:"-"`
 }
 

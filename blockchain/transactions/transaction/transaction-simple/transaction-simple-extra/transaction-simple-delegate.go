@@ -10,7 +10,7 @@ type TransactionSimpleDelegate struct {
 	TransactionSimpleExtraInterface
 	Amount              uint64
 	HasNewPublicKeyHash bool
-	NewPublicKeyHash    helpers.ByteString //20 byte
+	NewPublicKeyHash    helpers.HexBytes //20 byte
 }
 
 func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) (err error) {

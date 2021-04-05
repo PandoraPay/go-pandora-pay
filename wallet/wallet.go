@@ -46,13 +46,13 @@ type Wallet struct {
 
 	Version   Version
 	Mnemonic  string
-	Seed      helpers.ByteString //32 byte
+	Seed      helpers.HexBytes //32 byte
 	SeedIndex uint32
 	Count     int
 
 	Addresses []*WalletAddress
 
-	Checksum helpers.ByteString //4 byte
+	Checksum helpers.HexBytes //4 byte
 
 	forging *forging.Forging `json:"-"`
 	mempool *mempool.Mempool `json:"-"`

@@ -8,8 +8,8 @@ import (
 type WalletAddress struct {
 	Name           string
 	PrivateKey     *addresses.PrivateKey
-	PublicKey      helpers.ByteString //33 byte
-	PublicKeyHash  helpers.ByteString //20 byte
+	PublicKey      helpers.HexBytes //33 byte
+	PublicKeyHash  helpers.HexBytes //20 byte
 	AddressEncoded string
 	Address        *addresses.Address
 	SeedIndex      uint32

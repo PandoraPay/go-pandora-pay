@@ -18,7 +18,7 @@ import (
 
 type BlockWithTxs struct {
 	Blk *block.Block
-	Txs []helpers.ByteString
+	Txs []helpers.HexBytes
 }
 
 type APIStore struct {
@@ -154,7 +154,7 @@ func (apiStore *APIStore) LoadBlockWithTxHashes(bucket *bolt.Bucket, hash []byte
 		return
 	}
 
-	txs := make([]helpers.ByteString, len(txHashes))
+	txs := make([]helpers.HexBytes, len(txHashes))
 	for i, txHash := range txHashes {
 		txs[i] = txHash
 	}

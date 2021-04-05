@@ -9,7 +9,7 @@ import (
 )
 
 type PrivateKey struct {
-	Key helpers.ByteString //32 byte
+	Key helpers.HexBytes //32 byte
 }
 
 func (pk *PrivateKey) GeneratePublicKey() ([]byte, error) {

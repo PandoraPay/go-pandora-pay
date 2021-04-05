@@ -13,14 +13,14 @@ import (
 
 type Block struct {
 	BlockHeader
-	MerkleHash     helpers.ByteString //32 byte
-	PrevHash       helpers.ByteString //32 byte
-	PrevKernelHash helpers.ByteString //32 byte
+	MerkleHash     helpers.HexBytes //32 byte
+	PrevHash       helpers.HexBytes //32 byte
+	PrevKernelHash helpers.HexBytes //32 byte
 	Timestamp      uint64
 	StakingAmount  uint64
-	Forger         helpers.ByteString // 20 byte public key hash
-	Signature      helpers.ByteString // 65 byte signature
-	Bloom          *BlockBloom        `json:"-"`
+	Forger         helpers.HexBytes // 20 byte public key hash
+	Signature      helpers.HexBytes // 65 byte signature
+	Bloom          *BlockBloom      `json:"-"`
 }
 
 func (blk *Block) Validate() error {

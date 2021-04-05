@@ -12,10 +12,10 @@ import (
 )
 
 type BlockchainData struct {
-	Hash                  helpers.ByteString //32
-	PrevHash              helpers.ByteString //32
-	KernelHash            helpers.ByteString //32
-	PrevKernelHash        helpers.ByteString //32
+	Hash                  helpers.HexBytes //32
+	PrevHash              helpers.HexBytes //32
+	KernelHash            helpers.HexBytes //32
+	PrevKernelHash        helpers.HexBytes //32
 	Height                uint64
 	Timestamp             uint64
 	Target                *big.Int
