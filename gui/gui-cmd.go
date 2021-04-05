@@ -7,7 +7,6 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 	"os"
 	"pandora-pay/addresses"
-	"pandora-pay/config"
 	"strconv"
 )
 
@@ -146,12 +145,12 @@ func OutputWrite(any interface{}) {
 	ui.Render(cmd)
 }
 
-func outputRead(any interface{}) <-chan string {
+func outputRead(text string) <-chan string {
 
 	cmd.Lock()
 	cmdInput = ""
 	cmd.Rows = append(cmd.Rows, "")
-	cmd.Rows = append(cmd.Rows, processArgument(any))
+	cmd.Rows = append(cmd.Rows, text)
 	cmd.Rows = append(cmd.Rows, "-> ")
 	cmd.SelectedRow = len(cmd.Rows) - 1
 	cmdStatus = "read"
@@ -161,16 +160,16 @@ func outputRead(any interface{}) <-chan string {
 	return cmdInputCn
 }
 
-func OutputReadString(any interface{}) (out string, ok bool) {
-	out, ok = <-outputRead(any)
+func OutputReadString(text string) (out string, ok bool) {
+	out, ok = <-outputRead(text)
 	return
 }
 
-func OutputReadInt(any interface{}) (out int, ok bool) {
+func OutputReadInt(text string) (out int, ok bool) {
 	var str string
 	var err error
 	for {
-		if str, ok = <-outputRead(any); !ok {
+		if str, ok = <-outputRead(text); !ok {
 			return
 		}
 		if out, err = strconv.Atoi(str); err != nil {
@@ -181,11 +180,11 @@ func OutputReadInt(any interface{}) (out int, ok bool) {
 	}
 }
 
-func OutputReadUint64(any interface{}) (out uint64, ok bool) {
+func OutputReadUint64(text string) (out uint64, ok bool) {
 	var str string
 	var err error
 	for {
-		if str, ok = <-outputRead(any); !ok {
+		if str, ok = <-outputRead(text); !ok {
 			return
 		}
 		if out, err = strconv.ParseUint(str, 10, 64); err != nil {
@@ -196,11 +195,11 @@ func OutputReadUint64(any interface{}) (out uint64, ok bool) {
 	}
 }
 
-func OutputReadFloat64(any interface{}) (out float64, ok bool) {
+func OutputReadFloat64(text string) (out float64, ok bool) {
 	var str string
 	var err error
 	for {
-		if str, ok = <-outputRead(any); !ok {
+		if str, ok = <-outputRead(text); !ok {
 			return
 		}
 		if out, err = strconv.ParseFloat(str, 64); err != nil {
@@ -211,12 +210,12 @@ func OutputReadFloat64(any interface{}) (out float64, ok bool) {
 	}
 }
 
-func OutputReadAddress(any interface{}) (address *addresses.Address, ok bool) {
+func OutputReadAddress(text string) (address *addresses.Address, ok bool) {
 	var str string
 	var err error
 
 	for {
-		if str, ok = <-outputRead(any); !ok {
+		if str, ok = <-outputRead(text); !ok {
 			return
 		}
 		address, err = addresses.DecodeAddr(str)
@@ -228,10 +227,10 @@ func OutputReadAddress(any interface{}) (address *addresses.Address, ok bool) {
 	}
 }
 
-func OutputReadBool(any interface{}) (out bool, ok bool) {
+func OutputReadBool(text string) (out bool, ok bool) {
 	var str string
 	for {
-		if str, ok = <-outputRead(any); !ok {
+		if str, ok = <-outputRead(text); !ok {
 			return
 		}
 		if str == "y" {
@@ -245,22 +244,26 @@ func OutputReadBool(any interface{}) (out bool, ok bool) {
 	}
 }
 
-func OutputReadToken(any interface{}) (token []byte, ok bool) {
+func OutputReadBytes(text string, acceptedLengths []int) (token []byte, ok bool) {
 	var str string
 	var err error
 	for {
-		if str, ok = <-outputRead(any); !ok {
+		if str, ok = <-outputRead(text); !ok {
 			return
 		}
 		if token, err = hex.DecodeString(str); err != nil {
 			OutputWrite("Invalid Token. The token has to be a hex")
 			continue
 		}
-		if len(token) != 0 && len(token) != config.TOKEN_LENGTH {
-			OutputWrite("Invalid Token. The token must be zero length or 20 length")
-			continue
+
+		acceptedLengthsStr := ""
+		for _, acceptedLength := range acceptedLengths {
+			acceptedLengthsStr = acceptedLengthsStr + strconv.Itoa(acceptedLength) + " , "
+			if len(token) == acceptedLength {
+				return
+			}
 		}
-		return
+		OutputWrite("Invalid value. Lengths accepted: " + acceptedLengthsStr)
 	}
 }
 

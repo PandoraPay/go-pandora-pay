@@ -3,7 +3,6 @@ package mempool
 import (
 	"bytes"
 	"errors"
-	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
@@ -53,7 +52,9 @@ func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 
 func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64) (out bool, err error) {
 
-	myAddressesMap := mempool.Wallet.myAddressesMap.Load().(map[string]*addresses.Address)
+	mempool.Wallet.Lock()
+	defer mempool.Wallet.Unlock()
+
 	finalTxs := []*mempoolTx{}
 
 	for _, tx := range txs {
@@ -68,7 +69,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 		case transaction_type.TxSimple:
 			txBase := tx.TxBase.(*transaction_simple.TransactionSimple)
 			for _, vin := range txBase.Vin {
-				if myAddressesMap[string(vin.Bloom.PublicKeyHash)] != nil {
+				if mempool.Wallet.myAddressesMap[string(vin.Bloom.PublicKeyHash)] != nil {
 					mine = true
 					break
 				}

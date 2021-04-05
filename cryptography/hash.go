@@ -5,6 +5,7 @@ import (
 )
 
 const HashSize = 32
+const KeyHashSize = 20
 const ChecksumSize = 4
 
 func RandomHash() (hash []byte) {

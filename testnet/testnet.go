@@ -20,8 +20,7 @@ type Testnet struct {
 	mempool             *mempool.Mempool
 	chain               *blockchain.Blockchain
 	transactionsBuilder *transactions_builder.TransactionsBuilder
-
-	nodes uint64
+	nodes               uint64
 }
 
 func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64) (err error) {
