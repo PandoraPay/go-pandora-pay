@@ -4,6 +4,7 @@ import (
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/mempool"
 	"sync"
 )
 
@@ -54,15 +55,17 @@ type Wallet struct {
 	Checksum helpers.ByteString //4 byte
 
 	forging *forging.Forging `json:"-"`
+	mempool *mempool.Mempool `json:"-"`
 
 	// forging creates multiple threads and it will read the wallet.Addresses
 	sync.RWMutex `json:"-"`
 }
 
-func WalletInit(forging *forging.Forging) (wallet *Wallet, err error) {
+func WalletInit(forging *forging.Forging, mempool *mempool.Mempool) (wallet *Wallet, err error) {
 
 	wallet = &Wallet{
 		forging: forging,
+		mempool: mempool,
 	}
 
 	if err = wallet.loadWallet(); err != nil {

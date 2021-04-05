@@ -102,7 +102,7 @@ func main() {
 	}
 	globals.Data["forging"] = myForging
 
-	if myWallet, err = wallet.WalletInit(myForging); err != nil {
+	if myWallet, err = wallet.WalletInit(myForging, myMempool); err != nil {
 		panic(err)
 	}
 	globals.Data["wallet"] = myWallet

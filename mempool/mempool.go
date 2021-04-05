@@ -3,7 +3,10 @@ package mempool
 import (
 	"bytes"
 	"errors"
+	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
+	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
+	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
 	"pandora-pay/config/fees"
 	"pandora-pay/gui"
@@ -41,24 +44,39 @@ type Mempool struct {
 	txs     *mempoolTxs
 	result  *mempoolResult
 	newWork chan *mempoolWork
+	Wallet  *mempoolWallet
 }
 
-func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, mine bool) (out bool, err error) {
-	return mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, mine)
+func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64) (out bool, err error) {
+	return mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height)
 }
 
-func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, mine bool) (out bool, err error) {
+func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64) (out bool, err error) {
 
+	myAddressesMap := mempool.Wallet.myAddressesMap.Load().(map[string]*addresses.Address)
 	finalTxs := []*mempoolTx{}
 
 	for _, tx := range txs {
+
 		if err = tx.VerifyBloomAll(); err != nil {
 			return
 		}
 
+		mine := false
+
+		switch tx.TxType {
+		case transaction_type.TxSimple:
+			txBase := tx.TxBase.(*transaction_simple.TransactionSimple)
+			for _, vin := range txBase.Vin {
+				if myAddressesMap[string(vin.Bloom.PublicKeyHash)] != nil {
+					mine = true
+					break
+				}
+			}
+		}
+
 		var minerFees map[string]uint64
-		minerFees, err = tx.ComputeFees()
-		if err != nil {
+		if minerFees, err = tx.ComputeFees(); err != nil {
 			return
 		}
 
@@ -204,8 +222,8 @@ func InitMemPool() (mempool *Mempool, err error) {
 		txs: &mempoolTxs{
 			txsList: atomic.Value{},
 		},
+		Wallet: createMempoolWallet(),
 	}
-
 	mempool.txs.txsList.Store([]*mempoolTx{})
 
 	go func() {

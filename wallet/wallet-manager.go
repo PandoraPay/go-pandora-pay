@@ -60,6 +60,7 @@ func (wallet *Wallet) AddNewAddress() (walletAddress *WalletAddress, err error) 
 	wallet.SeedIndex += 1
 
 	go wallet.forging.Wallet.AddWallet(walletAddress.PrivateKey.Key, walletAddress.PublicKeyHash)
+	go wallet.mempool.Wallet.AddWallet(walletAddress.PublicKeyHash)
 
 	wallet.updateWallet()
 	if err = wallet.saveWallet(wallet.Count-1, wallet.Count, -1); err != nil {
@@ -83,7 +84,8 @@ func (wallet *Wallet) RemoveAddress(index int) (out bool, err error) {
 	wallet.Addresses = append(wallet.Addresses[:index], wallet.Addresses[index+1:]...)
 	wallet.Count -= 1
 
-	go wallet.forging.Wallet.RemoveWallet(removing.PublicKeyHash)
+	wallet.forging.Wallet.RemoveWallet(removing.PublicKeyHash)
+	wallet.mempool.Wallet.RemoveWallet(removing.PublicKeyHash)
 
 	wallet.updateWallet()
 	if err = wallet.saveWallet(index, wallet.Count, wallet.Count); err != nil {

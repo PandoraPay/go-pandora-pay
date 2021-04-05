@@ -363,7 +363,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		if err = tx.BloomExtraNow(true); err != nil {
 			return
 		}
-		if _, err = chain.mempool.AddTxToMemPool(tx, newChainData.Height, false); err != nil {
+		if _, err = chain.mempool.AddTxToMemPool(tx, newChainData.Height); err != nil {
 			return
 		}
 	}

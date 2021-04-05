@@ -56,7 +56,7 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 		}
 
 		if propagate {
-			result, err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true)
+			result, err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height)
 			if err != nil {
 				return err
 			}
