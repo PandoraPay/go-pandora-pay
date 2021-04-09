@@ -15,6 +15,7 @@ import (
 	"pandora-pay/store"
 	"pandora-pay/transactions-builder/wizard"
 	"pandora-pay/wallet"
+	wallet_address "pandora-pay/wallet/address"
 )
 
 type TransactionsBuilder struct {
@@ -91,12 +92,12 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 
 		for i, fromAddress := range from {
 
-			var fromWalletAddress *wallet.WalletAddress
+			var fromWalletAddress *wallet_address.WalletAddress
 			if fromWalletAddress, err = builder.wallet.GetWalletAddressByAddress(fromAddress); err != nil {
 				return
 			}
 
-			account := accs.GetAccount(fromWalletAddress.PublicKeyHash)
+			account := accs.GetAccount(fromWalletAddress.GetPublicKeyHash())
 			if account == nil {
 				return errors.New("Account doesn't exist")
 			}
@@ -109,7 +110,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 			}
 
 			if i == 0 && nonce == 0 {
-				nonce = builder.mempool.GetNonce(fromWalletAddress.PublicKeyHash, account.Nonce)
+				nonce = builder.mempool.GetNonce(fromWalletAddress.GetPublicKeyHash(), account.Nonce)
 			}
 			keys[i] = fromWalletAddress.PrivateKey.Key
 		}
@@ -150,7 +151,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, u
 		buffer := reader.Get([]byte("chainHeight"))
 		chainHeight, _ := binary.Uvarint(buffer)
 
-		account := accounts.NewAccounts(boltTx).GetAccount(fromWalletAddress.PublicKeyHash)
+		account := accounts.NewAccounts(boltTx).GetAccount(fromWalletAddress.GetPublicKeyHash())
 		if account == nil {
 			return errors.New("Account doesn't exist")
 		}
@@ -164,7 +165,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, u
 		}
 
 		if nonce == 0 {
-			nonce = builder.mempool.GetNonce(fromWalletAddress.PublicKeyHash, account.Nonce)
+			nonce = builder.mempool.GetNonce(fromWalletAddress.GetPublicKeyHash(), account.Nonce)
 		}
 
 		if tx, err = wizard.CreateUnstakeTx(nonce, fromWalletAddress.PrivateKey.Key, unstakeAmount, feePerByte, feeToken, payFeeInExtra); err != nil {
@@ -208,7 +209,7 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 		chainHeight, _ := binary.Uvarint(buffer)
 
 		accs := accounts.NewAccounts(boltTx)
-		account := accs.GetAccount(fromWalletAddress.PublicKeyHash)
+		account := accs.GetAccount(fromWalletAddress.GetPublicKeyHash())
 		if account == nil {
 			return errors.New("Account doesn't exist")
 		}
@@ -222,7 +223,7 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 		}
 
 		if nonce == 0 {
-			nonce = builder.mempool.GetNonce(fromWalletAddress.PublicKeyHash, account.Nonce)
+			nonce = builder.mempool.GetNonce(fromWalletAddress.GetPublicKeyHash(), account.Nonce)
 		}
 
 		if tx, err = wizard.CreateDelegateTx(nonce, fromWalletAddress.PrivateKey.Key, delegateAmount, delegateNewPubKeyHash, feePerByte, feeToken); err != nil {

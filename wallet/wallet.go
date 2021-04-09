@@ -5,6 +5,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
+	wallet_address "pandora-pay/wallet/address"
 	"sync"
 )
 
@@ -50,7 +51,7 @@ type Wallet struct {
 	SeedIndex uint32
 	Count     int
 
-	Addresses []*WalletAddress
+	Addresses []*wallet_address.WalletAddress
 
 	Checksum helpers.HexBytes //4 byte
 

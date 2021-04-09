@@ -29,12 +29,13 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKeyHash []byte) error
 	w.Lock()
 	defer w.Unlock()
 
-	delegatedPrivateKey := addresses.PrivateKey{Key: delegatedPriv}
+	delegatedPrivateKey := &addresses.PrivateKey{Key: delegatedPriv}
 	delegatedPublicKey, err := delegatedPrivateKey.GeneratePublicKey()
+
 	if err != nil {
 		return err
 	}
-	delegatedPubHash := cryptography.ComputePublicKeyHash(delegatedPublicKey)
+	delegatedPubHash = cryptography.ComputePublicKeyHash(delegatedPublicKey)
 
 	//let's read the balance
 	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
@@ -43,7 +44,7 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKeyHash []byte) error
 		acc := accs.GetAccount(pubKeyHash)
 
 		address := ForgingWalletAddress{
-			&delegatedPrivateKey,
+			delegatedPrivateKey,
 			delegatedPubHash,
 			pubKeyHash,
 			acc,

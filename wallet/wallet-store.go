@@ -8,6 +8,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
+	wallet_address "pandora-pay/wallet/address"
 	"strconv"
 )
 
@@ -79,14 +80,14 @@ func (wallet *Wallet) loadWallet() error {
 			for i := 0; i < wallet.Count; i++ {
 				unmarshal := reader.Get([]byte("wallet-address-" + strconv.Itoa(i)))
 
-				newWalletAddress := WalletAddress{}
+				newWalletAddress := wallet_address.WalletAddress{}
 				if err = json.Unmarshal(unmarshal, &newWalletAddress); err != nil {
 					return
 				}
 				wallet.Addresses = append(wallet.Addresses, &newWalletAddress)
 
-				go wallet.forging.Wallet.AddWallet(newWalletAddress.PrivateKey.Key, newWalletAddress.PublicKeyHash)
-				go wallet.mempool.Wallet.AddWallet(newWalletAddress.PublicKeyHash)
+				go wallet.forging.Wallet.AddWallet(newWalletAddress.GetDelegatedStakePrivateKey(), newWalletAddress.GetPublicKeyHash())
+				go wallet.mempool.Wallet.AddWallet(newWalletAddress.GetPublicKeyHash())
 			}
 
 			checksum := wallet.computeChecksum()

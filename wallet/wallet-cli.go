@@ -12,6 +12,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/store"
+	wallet_address "pandora-pay/wallet/address"
 	"strconv"
 )
 
@@ -30,13 +31,13 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 		toks := tokens.NewTokens(boltTx)
 
 		for _, walletAddress := range wallet.Addresses {
-			addressStr := walletAddress.Address.EncodeAddr()
+			addressStr := walletAddress.GetAddressEncoded()
 			gui.OutputWrite(walletAddress.Name + " : " + walletAddress.Address.Version.String() + " : " + addressStr)
 
 			if walletAddress.Address.Version == addresses.SimplePublicKeyHash ||
 				walletAddress.Address.Version == addresses.SimplePublicKey {
 
-				acc := accs.GetAccount(walletAddress.PublicKeyHash)
+				acc := accs.GetAccount(walletAddress.GetPublicKeyHash())
 
 				if acc == nil {
 					gui.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))
@@ -73,7 +74,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 	})
 }
 
-func (wallet *Wallet) CliSelectAddress(text string) (walletAddress *WalletAddress, index int, err error) {
+func (wallet *Wallet) CliSelectAddress(text string) (walletAddress *wallet_address.WalletAddress, index int, err error) {
 
 	if err = wallet.CliListAddresses(""); err != nil {
 		return

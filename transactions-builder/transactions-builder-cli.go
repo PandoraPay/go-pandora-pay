@@ -52,7 +52,7 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 			return
 		}
 
-		tx, err := builder.CreateSimpleTx_Float([]string{walletAddress.AddressEncoded}, nonce, []float64{amount}, [][]byte{token}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, [][]byte{token}, feePerByte, feeToken)
+		tx, err := builder.CreateSimpleTx_Float([]string{walletAddress.GetAddressEncoded()}, nonce, []float64{amount}, [][]byte{token}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, [][]byte{token}, feePerByte, feeToken)
 		if err != nil {
 			return
 		}
@@ -95,9 +95,13 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 			return
 		}
 
-		delegateNewPublicKeyHash, ok := gui.OutputReadBytes("Delegate New Public Key Hash. Leave it empty for not changing.", []int{0, cryptography.KeyHashSize})
+		delegateNewPublicKeyHash, ok := gui.OutputReadBytes("Delegate New Public Key Hash. Leave it empty for not changing. Use '01' for generating a new one. ", []int{0, 1, cryptography.KeyHashSize})
 		if !ok {
 			return
+		}
+
+		if len(delegateNewPublicKeyHash) != 0 {
+
 		}
 
 		feePerByte, ok := gui.OutputReadInt("Fee per byte. -1 automatically, 0 none")
@@ -112,7 +116,7 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 			}
 		}
 
-		tx, err := builder.CreateDelegateTx_Float(walletAddress.AddressEncoded, nonce, amount, delegateNewPublicKeyHash, feePerByte, feeToken)
+		tx, err := builder.CreateDelegateTx_Float(walletAddress.GetAddressEncoded(), nonce, amount, delegateNewPublicKeyHash, feePerByte, feeToken)
 		if err != nil {
 			return
 		}
