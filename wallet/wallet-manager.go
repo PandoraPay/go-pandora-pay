@@ -13,12 +13,29 @@ import (
 	"strconv"
 )
 
+func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (*wallet_address.WalletAddress, []byte, error) {
+	wallet.Lock()
+	defer wallet.Unlock()
+
+	adr := wallet.Addresses[0]
+	if adr.GetDelegatedStakePrivateKey() == nil {
+		if _, err := adr.DeriveAndStoreDelegatedStake(0); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return adr, adr.GetDelegatedStakePublicKeyHash(), nil
+}
+
 func (wallet *Wallet) GetWalletAddressByAddress(addressEncoded string) (*wallet_address.WalletAddress, error) {
 
 	address, err := addresses.DecodeAddr(addressEncoded)
 	if err != nil {
 		return nil, err
 	}
+
+	wallet.RLock()
+	defer wallet.RUnlock()
 
 	for _, addr := range wallet.Addresses {
 		if bytes.Equal(addr.GetPublicKeyHash(), address.PublicKeyHash) {

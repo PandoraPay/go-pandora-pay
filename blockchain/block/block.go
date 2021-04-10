@@ -2,7 +2,6 @@ package block
 
 import (
 	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/config"
 	"pandora-pay/config/reward"
@@ -37,13 +36,6 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 	acc := acs.GetAccountEvenEmpty(blk.Forger)
 	if err = acc.RefreshDelegatedStake(blk.Height); err != nil {
 		return
-	}
-
-	//for genesis block
-	if blk.Height == 0 && !acc.HasDelegatedStake() {
-		acc.DelegatedStakeVersion = 1
-		acc.DelegatedStake = new(dpos.DelegatedStake)
-		acc.DelegatedStake.DelegatedPublicKeyHash = blk.Bloom.DelegatedPublicKeyHash
 	}
 
 	if err = acc.DelegatedStake.AddStakePendingStake(reward, blk.Height); err != nil {

@@ -3,6 +3,7 @@ package genesis
 import (
 	"bufio"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"os"
 	"pandora-pay/blockchain/block"
@@ -10,9 +11,16 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/wallet"
 	"strconv"
 	"time"
 )
+
+type GenesisDataAirDropType struct {
+	PublicKeyHash               []byte //20 byte
+	Amount                      uint64
+	DelegatedStakePublicKeyHash []byte
+}
 
 type GenesisDataType struct {
 	Hash          []byte //32 byte
@@ -22,6 +30,7 @@ type GenesisDataType struct {
 	Timestamp     uint64
 	Target        []byte //32 byte
 	TargetHex     string
+	AidDrops      []*GenesisDataAirDropType
 }
 
 var genesisMainet = GenesisDataType{
@@ -29,6 +38,7 @@ var genesisMainet = GenesisDataType{
 	KernelHashHex: "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
 	Timestamp:     uint64(time.Date(2021, time.February, 28, 0, 0, 0, 0, time.UTC).Unix()),
 	TargetHex:     "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+	AidDrops:      []*GenesisDataAirDropType{},
 }
 
 var genesisTestnet = GenesisDataType{
@@ -36,6 +46,7 @@ var genesisTestnet = GenesisDataType{
 	KernelHashHex: "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
 	Timestamp:     uint64(time.Date(2021, time.February, 28, 0, 0, 0, 0, time.UTC).Unix()),
 	TargetHex:     "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+	AidDrops:      []*GenesisDataAirDropType{},
 }
 
 var genesisDevnet = GenesisDataType{
@@ -43,6 +54,7 @@ var genesisDevnet = GenesisDataType{
 	KernelHashHex: "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
 	Timestamp:     uint64(time.Date(2021, time.February, 28, 0, 0, 0, 0, time.UTC).Unix()),
 	TargetHex:     "0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+	AidDrops:      []*GenesisDataAirDropType{},
 }
 
 var GenesisData *GenesisDataType
@@ -80,7 +92,7 @@ func CreateNewGenesisBlock() (*block.Block, error) {
 	return &blk, nil
 }
 
-func GenesisInit() (err error) {
+func GenesisInit(wallet *wallet.Wallet) (err error) {
 
 	if GenesisData, err = getGenesis(); err != nil {
 		return
@@ -90,8 +102,21 @@ func GenesisInit() (err error) {
 
 		var file *os.File
 		if _, err = os.Stat("./genesis.data"); os.IsNotExist(err) {
+
 			HashHex := hex.EncodeToString(helpers.RandomBytes(cryptography.HashSize))
 			Timestamp := uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
+
+			walletAddress, delegatedStakePublicKeyHash, err2 := wallet.GetFirstWalletForDevnetGenesisAirdrop()
+			if err2 != nil {
+				return err2
+			}
+
+			AidDrops := make([]*GenesisDataAirDropType, 0)
+			AidDrops = append(AidDrops, &GenesisDataAirDropType{
+				PublicKeyHash:               walletAddress.Address.PublicKeyHash,
+				Amount:                      1,
+				DelegatedStakePublicKeyHash: delegatedStakePublicKeyHash,
+			})
 
 			if file, err = os.OpenFile("./genesis.data", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
 				return
@@ -104,6 +129,15 @@ func GenesisInit() (err error) {
 				return
 			}
 			if _, err = file.WriteString(strconv.FormatUint(Timestamp, 10) + "\n"); err != nil {
+				return
+			}
+
+			jsonOut, err2 := json.Marshal(AidDrops)
+			if err2 != nil {
+				return
+			}
+
+			if _, err = file.WriteString(hex.EncodeToString(jsonOut) + "\n"); err != nil {
 				return
 			}
 			if err = file.Close(); err != nil {

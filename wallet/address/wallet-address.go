@@ -12,7 +12,7 @@ type WalletAddress struct {
 	Mine           bool
 	PrivateKey     *addresses.PrivateKey
 	Address        *addresses.Address
-	DelegatedStake *WalletAddressDelegatedStaking
+	DelegatedStake *WalletAddressDelegatedStake
 }
 
 func (adr *WalletAddress) GetPublicKeyHash() []byte {
@@ -24,15 +24,20 @@ func (adr *WalletAddress) GetAddressEncoded() string {
 }
 
 func (adr *WalletAddress) GetDelegatedStakePrivateKey() []byte {
-
 	if adr.DelegatedStake != nil {
 		return adr.DelegatedStake.PrivateKey.Key
 	}
-
 	return nil
 }
 
-func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (delegatedStaking *WalletAddressDelegatedStaking, err error) {
+func (adr *WalletAddress) GetDelegatedStakePublicKeyHash() []byte {
+	if adr.DelegatedStake != nil {
+		return adr.DelegatedStake.PublicKeyHash
+	}
+	return nil
+}
+
+func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (delegatedStake *WalletAddressDelegatedStake, err error) {
 
 	masterKey, err := bip32.NewMasterKey(adr.PrivateKey.Key)
 	if err != nil {
@@ -45,12 +50,25 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (delegatedStaking *
 	}
 
 	finalKey := cryptography.SHA3(key.Key)
+	privateKey := &addresses.PrivateKey{Key: finalKey}
 
-	delegatedStaking = &WalletAddressDelegatedStaking{
-		PrivateKey: &addresses.PrivateKey{
-			Key: finalKey,
-		},
+	address, err := privateKey.GenerateAddress(true, 0, []byte{})
+	if err != nil {
+		return
 	}
 
+	return &WalletAddressDelegatedStake{
+		PrivateKey:    privateKey,
+		PublicKeyHash: address.PublicKeyHash,
+	}, nil
+}
+
+func (adr *WalletAddress) DeriveAndStoreDelegatedStake(nonce uint32) (delegatedStake *WalletAddressDelegatedStake, err error) {
+	delegatedStake, err = adr.DeriveDelegatedStake(nonce)
+	if err != nil {
+		return
+	}
+
+	adr.DelegatedStake = delegatedStake
 	return
 }

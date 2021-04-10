@@ -112,7 +112,7 @@ func main() {
 	}
 	globals.Data["settings"] = mySettings
 
-	if myChain, err = blockchain.BlockchainInit(myForging, myMempool); err != nil {
+	if myChain, err = blockchain.BlockchainInit(myForging, myWallet, myMempool); err != nil {
 		panic(err)
 	}
 	globals.Data["chain"] = myChain

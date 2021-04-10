@@ -2,6 +2,7 @@ package forging
 
 import (
 	"bytes"
+	"errors"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
@@ -29,13 +30,19 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKeyHash []byte) error
 	w.Lock()
 	defer w.Unlock()
 
-	delegatedPrivateKey := &addresses.PrivateKey{Key: delegatedPriv}
-	delegatedPublicKey, err := delegatedPrivateKey.GeneratePublicKey()
+	var delegatedPrivateKey *addresses.PrivateKey
+	var delegatedPublicKeyHash []byte
 
-	if err != nil {
-		return err
+	if delegatedPriv != nil {
+		delegatedPrivateKey = &addresses.PrivateKey{Key: delegatedPriv}
+
+		delegatedPublicKey, err := delegatedPrivateKey.GeneratePublicKey()
+		if err != nil {
+			return err
+		}
+
+		delegatedPublicKeyHash = cryptography.ComputePublicKeyHash(delegatedPublicKey)
 	}
-	delegatedPubHash = cryptography.ComputePublicKeyHash(delegatedPublicKey)
 
 	//let's read the balance
 	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
@@ -43,14 +50,24 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKeyHash []byte) error
 		accs := accounts.NewAccounts(boltTx)
 		acc := accs.GetAccount(pubKeyHash)
 
-		address := ForgingWalletAddress{
-			delegatedPrivateKey,
-			delegatedPubHash,
-			pubKeyHash,
-			acc,
+		if bytes.Equal(acc.DelegatedStake.DelegatedPublicKeyHash, delegatedPublicKeyHash) {
+			return errors.New("DelegatedPublicKeyHash doesn't match")
 		}
-		w.addresses = append(w.addresses, &address)
-		w.addressesMap[string(pubKeyHash)] = &address
+
+		address := w.addressesMap[string(pubKeyHash)]
+		if address == nil {
+			address = &ForgingWalletAddress{
+				delegatedPrivateKey,
+				delegatedPublicKeyHash,
+				pubKeyHash,
+				acc,
+			}
+			w.addresses = append(w.addresses, address)
+			w.addressesMap[string(pubKeyHash)] = address
+		} else {
+			address.delegatedPrivateKey = delegatedPrivateKey
+			address.delegatedPublicKeyHash = delegatedPublicKeyHash
+		}
 
 		return
 	})

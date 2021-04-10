@@ -56,6 +56,7 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int) error {
 }
 
 func (wallet *Wallet) loadWallet() error {
+
 	return store.StoreWallet.DB.View(func(boltTx *bolt.Tx) (err error) {
 
 		reader := boltTx.Bucket([]byte("Wallet"))
@@ -88,6 +89,7 @@ func (wallet *Wallet) loadWallet() error {
 
 				go wallet.forging.Wallet.AddWallet(newWalletAddress.GetDelegatedStakePrivateKey(), newWalletAddress.GetPublicKeyHash())
 				go wallet.mempool.Wallet.AddWallet(newWalletAddress.GetPublicKeyHash())
+
 			}
 
 			checksum := wallet.computeChecksum()

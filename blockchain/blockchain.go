@@ -21,6 +21,7 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"pandora-pay/store"
+	"pandora-pay/wallet"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -376,11 +377,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	return
 }
 
-func BlockchainInit(forging *forging.Forging, mempool *mempool.Mempool) (chain *Blockchain, err error) {
+func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *mempool.Mempool) (chain *Blockchain, err error) {
 
 	gui.Log("Blockchain init...")
 
-	if err = genesis.GenesisInit(); err != nil {
+	if err = genesis.GenesisInit(wallet); err != nil {
 		return
 	}
 
