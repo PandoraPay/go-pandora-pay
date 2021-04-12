@@ -62,6 +62,7 @@ func (chain *Blockchain) init() (err error) {
 				acc.DelegatedStake.DelegatedPublicKeyHash = airdrop.DelegatedStakePublicKeyHash
 			}
 
+			accs.UpdateAccount(airdrop.PublicKeyHash, acc)
 		}
 
 		maxSupply, err := config.ConvertToUnitsUint64(config.MAX_SUPPLY_COINS)
@@ -88,7 +89,12 @@ func (chain *Blockchain) init() (err error) {
 		}
 
 		toks.Commit()
+		accs.Commit()
+
 		if err = toks.WriteToStore(); err != nil {
+			return
+		}
+		if err = accs.WriteToStore(); err != nil {
 			return
 		}
 

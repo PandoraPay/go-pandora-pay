@@ -31,8 +31,7 @@ func (account *Account) HasDelegatedStake() bool {
 }
 
 func (account *Account) IsAccountEmpty() bool {
-	return (!account.HasDelegatedStake() && len(account.Balances) == 0) ||
-		(account.HasDelegatedStake() && account.DelegatedStake.IsDelegatedStakeEmpty())
+	return len(account.Balances) == 0 && (!account.HasDelegatedStake() || (account.HasDelegatedStake() && account.DelegatedStake.IsDelegatedStakeEmpty()))
 }
 
 func (account *Account) IncrementNonce(sign bool) error {

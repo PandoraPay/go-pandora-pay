@@ -32,6 +32,7 @@ type Blockchain struct {
 	Sync                    bool                      `json:"-"`
 	forging                 *forging.Forging          `json:"-"`
 	mempool                 *mempool.Mempool          `json:"-"`
+	wallet                  *wallet.Wallet            `json:"-"`
 	mutex                   sync.Mutex                `json:"-"` //writing mutex
 	UpdateMulticast         *helpers.MulticastChannel `json:"-"` //chan uint64
 	UpdateNewChainMulticast *helpers.MulticastChannel `json:"-"` //chan *BlockchainData
@@ -388,6 +389,7 @@ func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *me
 	chain = &Blockchain{
 		forging:                 forging,
 		mempool:                 mempool,
+		wallet:                  wallet,
 		Sync:                    false,
 		UpdateMulticast:         helpers.NewMulticastChannel(),
 		UpdateNewChainMulticast: helpers.NewMulticastChannel(),
@@ -405,6 +407,7 @@ func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *me
 	chainData := chain.GetChainData()
 	chainData.updateChainInfo()
 
+	wallet.ReadWallet()
 	chain.initForging()
 
 	return

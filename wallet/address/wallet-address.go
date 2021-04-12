@@ -1,6 +1,7 @@
 package wallet_address
 
 import (
+	"bytes"
 	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography"
@@ -9,7 +10,7 @@ import (
 type WalletAddress struct {
 	Name           string
 	SeedIndex      uint32
-	Mine           bool
+	IsMine         bool
 	PrivateKey     *addresses.PrivateKey
 	Address        *addresses.Address
 	DelegatedStake *WalletAddressDelegatedStake
@@ -37,6 +38,25 @@ func (adr *WalletAddress) GetDelegatedStakePublicKeyHash() []byte {
 	return nil
 }
 
+func (adr *WalletAddress) FindDelegatedStake(currentNonce uint32) (delegatedStake *WalletAddressDelegatedStake, err error) {
+
+	nonce := currentNonce
+	for {
+		if delegatedStake, err = adr.DeriveDelegatedStake(nonce); err != nil {
+			return
+		}
+		if bytes.Equal(delegatedStake.PublicKeyHash, adr.DelegatedStake.PublicKeyHash) {
+			return
+		}
+
+		if nonce == 0 {
+			return nil, nil
+		}
+
+		nonce -= 1
+	}
+}
+
 func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (delegatedStake *WalletAddressDelegatedStake, err error) {
 
 	masterKey, err := bip32.NewMasterKey(adr.PrivateKey.Key)
@@ -61,14 +81,4 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (delegatedStake *Wa
 		PrivateKey:    privateKey,
 		PublicKeyHash: address.PublicKeyHash,
 	}, nil
-}
-
-func (adr *WalletAddress) DeriveAndStoreDelegatedStake(nonce uint32) (delegatedStake *WalletAddressDelegatedStake, err error) {
-	delegatedStake, err = adr.DeriveDelegatedStake(nonce)
-	if err != nil {
-		return
-	}
-
-	adr.DelegatedStake = delegatedStake
-	return
 }

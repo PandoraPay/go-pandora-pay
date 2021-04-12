@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	bolt "go.etcd.io/bbolt"
+	"pandora-pay/blockchain/accounts"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -103,6 +104,54 @@ func (wallet *Wallet) loadWallet() error {
 		} else {
 			return errors.New("Error loading wallet ?")
 		}
+		return
+	})
+}
+
+func (wallet *Wallet) ReadWallet() error {
+
+	wallet.Lock()
+	defer wallet.Unlock()
+
+	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+
+		accs := accounts.NewAccounts(boltTx)
+		for _, addr := range wallet.Addresses {
+
+			acc := accs.GetAccount(addr.Address.PublicKeyHash)
+			if acc == nil {
+				continue
+			}
+
+			if addr.DelegatedStake != nil && acc.DelegatedStake == nil {
+				addr.DelegatedStake = nil
+				continue
+			}
+
+			if (addr.DelegatedStake != nil && acc.DelegatedStake != nil && !bytes.Equal(addr.DelegatedStake.PublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash)) ||
+				(addr.DelegatedStake == nil && acc.DelegatedStake != nil) {
+
+				if addr.IsMine {
+
+					if acc.DelegatedStake != nil {
+						var delegatedStake *wallet_address.WalletAddressDelegatedStake
+						if delegatedStake, err = addr.FindDelegatedStake(uint32(acc.Nonce)); err != nil {
+							return
+						}
+						if delegatedStake != nil {
+							addr.DelegatedStake = delegatedStake
+							continue
+						}
+					}
+
+				}
+
+				addr.DelegatedStake = nil
+				continue
+			}
+
+		}
+
 		return
 	})
 }

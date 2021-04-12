@@ -18,13 +18,12 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (adr *wallet_addre
 	defer wallet.Unlock()
 
 	adr = wallet.Addresses[0]
-	if adr.GetDelegatedStakePrivateKey() == nil {
-		if _, err = adr.DeriveAndStoreDelegatedStake(0); err != nil {
-			return
-		}
+	delegatedStake, err := adr.DeriveDelegatedStake(0)
+	if err != nil {
+		return
 	}
 
-	return adr, adr.GetDelegatedStakePublicKeyHash(), nil
+	return adr, delegatedStake.PublicKeyHash, nil
 }
 
 func (wallet *Wallet) GetWalletAddressByAddress(addressEncoded string) (*wallet_address.WalletAddress, error) {
@@ -67,6 +66,7 @@ func (wallet *Wallet) AddNewAddress() (walletAddress *wallet_address.WalletAddre
 		PrivateKey:     &addresses.PrivateKey{Key: key.Key},
 		SeedIndex:      wallet.SeedIndex,
 		DelegatedStake: nil,
+		IsMine:         true,
 	}
 
 	if walletAddress.Address, err = walletAddress.PrivateKey.GenerateAddress(true, 0, []byte{}); err != nil {
