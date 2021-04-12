@@ -3,6 +3,8 @@ package blockchain
 import (
 	bolt "go.etcd.io/bbolt"
 	"math/big"
+	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/genesis"
@@ -11,6 +13,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"strconv"
 	"time"
@@ -37,29 +40,51 @@ func (chain *Blockchain) init() (err error) {
 	chainData := chain.createGenesisBlockchainData()
 	chain.ChainData.Store(chainData)
 
-	maxSupply, err := config.ConvertToUnitsUint64(config.MAX_SUPPLY_COINS)
-	if err != nil {
-		panic(err)
-	}
-
-	tok := token.Token{
-		Version:          0,
-		Name:             config.NATIVE_TOKEN_NAME,
-		Ticker:           config.NATIVE_TOKEN_TICKER,
-		Description:      config.NATIVE_TOKEN_DESCRIPTION,
-		DecimalSeparator: byte(config.DECIMAL_SEPARATOR),
-		CanBurn:          true,
-		CanMint:          true,
-		Supply:           0,
-		MaxSupply:        maxSupply,
-		Key:              config.BURN_PUBLIC_KEY_HASH,
-		SupplyKey:        config.BURN_PUBLIC_KEY_HASH,
-	}
-
 	return store.StoreBlockchain.DB.Update(func(boltTx *bolt.Tx) (err error) {
 
 		toks := tokens.NewTokens(boltTx)
+		accs := accounts.NewAccounts(boltTx)
+
+		supply := uint64(0)
+		for _, airdrop := range genesis.GenesisData.AidDrops {
+
+			if err = helpers.SafeUint64Add(&supply, airdrop.Amount); err != nil {
+				return
+			}
+			acc := accs.GetAccountEvenEmpty(airdrop.PublicKeyHash)
+			if err = acc.AddBalance(true, airdrop.Amount, config.NATIVE_TOKEN); err != nil {
+				return
+			}
+
+			if airdrop.DelegatedStakePublicKeyHash != nil {
+				acc.DelegatedStakeVersion = 1
+				acc.DelegatedStake = new(dpos.DelegatedStake)
+				acc.DelegatedStake.DelegatedPublicKeyHash = airdrop.DelegatedStakePublicKeyHash
+			}
+
+		}
+
+		maxSupply, err := config.ConvertToUnitsUint64(config.MAX_SUPPLY_COINS)
+		if err != nil {
+			panic(err)
+		}
+
+		tok := token.Token{
+			Version:          0,
+			Name:             config.NATIVE_TOKEN_NAME,
+			Ticker:           config.NATIVE_TOKEN_TICKER,
+			Description:      config.NATIVE_TOKEN_DESCRIPTION,
+			DecimalSeparator: byte(config.DECIMAL_SEPARATOR),
+			CanBurn:          true,
+			CanMint:          true,
+			Supply:           supply,
+			MaxSupply:        maxSupply,
+			Key:              config.BURN_PUBLIC_KEY_HASH,
+			SupplyKey:        config.BURN_PUBLIC_KEY_HASH,
+		}
+
 		if err = toks.CreateToken(config.NATIVE_TOKEN, &tok); err != nil {
+			return
 		}
 
 		toks.Commit()

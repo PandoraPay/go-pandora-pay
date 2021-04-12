@@ -13,14 +13,14 @@ import (
 	"strconv"
 )
 
-func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (*wallet_address.WalletAddress, []byte, error) {
+func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (adr *wallet_address.WalletAddress, delegatedPublicKeyhash []byte, err error) {
 	wallet.Lock()
 	defer wallet.Unlock()
 
-	adr := wallet.Addresses[0]
+	adr = wallet.Addresses[0]
 	if adr.GetDelegatedStakePrivateKey() == nil {
-		if _, err := adr.DeriveAndStoreDelegatedStake(0); err != nil {
-			return nil, nil, err
+		if _, err = adr.DeriveAndStoreDelegatedStake(0); err != nil {
+			return
 		}
 	}
 
