@@ -2,7 +2,6 @@ package forging
 
 import (
 	"bytes"
-	"errors"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
@@ -49,10 +48,6 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKeyHash []byte) error
 
 		accs := accounts.NewAccounts(boltTx)
 		acc := accs.GetAccount(pubKeyHash)
-
-		if bytes.Equal(acc.DelegatedStake.DelegatedPublicKeyHash, delegatedPublicKeyHash) {
-			return errors.New("DelegatedPublicKeyHash doesn't match")
-		}
 
 		address := w.addressesMap[string(pubKeyHash)]
 		if address == nil {

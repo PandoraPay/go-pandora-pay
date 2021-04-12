@@ -2,6 +2,7 @@ package gui
 
 import (
 	"os"
+	"time"
 )
 
 type Logger struct {
@@ -18,7 +19,10 @@ func InitLogger() (err error) {
 		}
 	}
 
-	logger.generalLog, err = os.OpenFile("./logs/log.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	t := time.Now()
+	filename := "log_" + t.Format("2006_01_02") + ".log"
+
+	logger.generalLog, err = os.OpenFile("./logs/"+filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return
 	}

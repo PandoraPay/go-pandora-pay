@@ -31,7 +31,7 @@ func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork
 	}
 	c := 0
 	for i, walletAdr := range wallet.addresses {
-		if walletAdr.account != nil || work.blkComplete.Block.Height == 0 {
+		if walletAdr.account != nil && walletAdr.delegatedPrivateKey != nil {
 
 			if work.blkComplete.Block.Height == 0 && i > 0 && globals.Arguments["--new-devnet"] == true {
 				break

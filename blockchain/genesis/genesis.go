@@ -94,6 +94,8 @@ func CreateNewGenesisBlock() (*block.Block, error) {
 
 func GenesisInit(wallet *wallet.Wallet) (err error) {
 
+	var data []byte
+
 	if GenesisData, err = getGenesis(); err != nil {
 		return
 	}
@@ -132,12 +134,11 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 				return
 			}
 
-			jsonOut, err2 := json.Marshal(AidDrops)
-			if err2 != nil {
+			if data, err = json.Marshal(AidDrops); err != nil {
 				return
 			}
 
-			if _, err = file.WriteString(hex.EncodeToString(jsonOut) + "\n"); err != nil {
+			if _, err = file.WriteString(hex.EncodeToString(data) + "\n"); err != nil {
 				return
 			}
 			if err = file.Close(); err != nil {
@@ -151,18 +152,25 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 
 		scanner := bufio.NewScanner(file)
 		scanner.Scan()
+
 		version := scanner.Text()
 		if version != "1" {
 			return errors.New("Genesis config data version is invalid")
 		}
 		scanner.Scan()
+
 		GenesisData.HashHex = scanner.Text()
 		scanner.Scan()
-		GenesisData.Timestamp, err = strconv.ParseUint(scanner.Text(), 10, 64)
-		if err != nil {
+
+		if GenesisData.Timestamp, err = strconv.ParseUint(scanner.Text(), 10, 64); err != nil {
 			return
 		}
+		scanner.Scan()
 
+		data, err = hex.DecodeString(scanner.Text())
+		if err = json.Unmarshal(data, &GenesisData.AidDrops); err != nil {
+			return
+		}
 	}
 
 	if GenesisData.Hash, err = hex.DecodeString(GenesisData.HashHex); err != nil {
@@ -180,5 +188,6 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 	if Genesis, err = CreateNewGenesisBlock(); err != nil {
 		return
 	}
+
 	return
 }
