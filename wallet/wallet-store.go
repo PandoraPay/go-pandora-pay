@@ -135,7 +135,7 @@ func (wallet *Wallet) ReadWallet() error {
 
 					if acc.DelegatedStake != nil {
 						var delegatedStake *wallet_address.WalletAddressDelegatedStake
-						if delegatedStake, err = addr.FindDelegatedStake(uint32(acc.Nonce)); err != nil {
+						if delegatedStake, err = addr.FindDelegatedStake(uint32(acc.Nonce), acc.DelegatedStake.DelegatedPublicKeyHash); err != nil {
 							return
 						}
 						if delegatedStake != nil {

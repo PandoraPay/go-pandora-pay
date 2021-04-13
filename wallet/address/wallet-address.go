@@ -38,14 +38,15 @@ func (adr *WalletAddress) GetDelegatedStakePublicKeyHash() []byte {
 	return nil
 }
 
-func (adr *WalletAddress) FindDelegatedStake(currentNonce uint32) (delegatedStake *WalletAddressDelegatedStake, err error) {
+func (adr *WalletAddress) FindDelegatedStake(currentNonce uint32, delegatedPublicKeyHash []byte) (delegatedStake *WalletAddressDelegatedStake, err error) {
 
 	nonce := currentNonce
 	for {
+
 		if delegatedStake, err = adr.DeriveDelegatedStake(nonce); err != nil {
 			return
 		}
-		if bytes.Equal(delegatedStake.PublicKeyHash, adr.DelegatedStake.PublicKeyHash) {
+		if bytes.Equal(delegatedStake.PublicKeyHash, delegatedPublicKeyHash) {
 			return
 		}
 
