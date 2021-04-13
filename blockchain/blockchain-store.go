@@ -128,6 +128,14 @@ func (chain *Blockchain) LoadBlockHash(bucket *bolt.Bucket, height uint64) ([]by
 	return hash, nil
 }
 
+func (chain *Blockchain) saveBlockchain() error {
+	return store.StoreBlockchain.DB.Update(func(boltTx *bolt.Tx) error {
+		writer := boltTx.Bucket([]byte("Chain"))
+		chainData := chain.GetChainData()
+		return chainData.saveBlockchain(writer)
+	})
+}
+
 func (chain *Blockchain) loadBlockchain() error {
 
 	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {

@@ -35,12 +35,12 @@ func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 	}
 }
 
-func (chain *Blockchain) init() (err error) {
+func (chain *Blockchain) init() (chainData *BlockchainData, err error) {
 
-	chainData := chain.createGenesisBlockchainData()
+	chainData = chain.createGenesisBlockchainData()
 	chain.ChainData.Store(chainData)
 
-	return store.StoreBlockchain.DB.Update(func(boltTx *bolt.Tx) (err error) {
+	err = store.StoreBlockchain.DB.Update(func(boltTx *bolt.Tx) (err error) {
 
 		toks := tokens.NewTokens(boltTx)
 		accs := accounts.NewAccounts(boltTx)
@@ -101,6 +101,8 @@ func (chain *Blockchain) init() (err error) {
 		return
 
 	})
+
+	return
 }
 
 func (chain *Blockchain) createNextBlockForForging() {

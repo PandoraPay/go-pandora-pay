@@ -399,7 +399,10 @@ func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *me
 		if err.Error() != "Chain not found" {
 			return
 		}
-		if err = chain.init(); err != nil {
+		if _, err = chain.init(); err != nil {
+			return
+		}
+		if err = chain.saveBlockchain(); err != nil {
 			return
 		}
 	}
