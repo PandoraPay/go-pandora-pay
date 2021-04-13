@@ -19,17 +19,18 @@ type ForgingThread struct {
 	workCn     <-chan *ForgingWork                  //detect if a new work was published
 }
 
-func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork) [][]*ForgingWalletAddressRequired {
+func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork) (wallets [][]*ForgingWalletAddressRequired, walletsCount int) {
 
 	var err error
-	wallets := make([][]*ForgingWalletAddressRequired, thread.threads)
+	wallets = make([][]*ForgingWalletAddressRequired, thread.threads)
 
 	//distributing the wallets to each thread uniformly
 	wallet.RLock()
 	for i := 0; i < thread.threads; i++ {
 		wallets[i] = []*ForgingWalletAddressRequired{}
 	}
-	c := 0
+
+	walletsCount = 0
 	for i, walletAdr := range wallet.addresses {
 		if walletAdr.account != nil && walletAdr.delegatedPrivateKey != nil {
 
@@ -45,17 +46,17 @@ func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork
 				}
 			}
 			if stakingAmount >= stake.GetRequiredStake(work.blkComplete.Block.Height) {
-				wallets[c%thread.threads] = append(wallets[c%thread.threads], &ForgingWalletAddressRequired{
+				wallets[walletsCount%thread.threads] = append(wallets[walletsCount%thread.threads], &ForgingWalletAddressRequired{
 					publicKeyHash: walletAdr.delegatedPublicKeyHash,
 					wallet:        walletAdr,
 					stakingAmount: stakingAmount,
 				})
-				c++
+				walletsCount++
 			}
 		}
 	}
 	wallet.RUnlock()
-	return wallets
+	return
 }
 
 func (thread *ForgingThread) startForging() {
@@ -105,7 +106,7 @@ func (thread *ForgingThread) startForging() {
 		}
 		readNextWork = true
 
-		wallets := thread.getWallets(thread.wallet, work)
+		wallets, _ := thread.getWallets(thread.wallet, work)
 
 		for i := 0; i < thread.threads; i++ {
 			workers[i].walletsCn <- wallets[i]

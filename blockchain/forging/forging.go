@@ -7,6 +7,8 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
+	"sync"
+	"sync/atomic"
 )
 
 type Forging struct {
@@ -26,12 +28,14 @@ func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
 		SolutionCn: make(chan *block_complete.BlockComplete),
 		Wallet: &ForgingWallet{
 			addressesMap: make(map[string]*ForgingWalletAddress),
+			updates:      atomic.Value{},
+			updatesMutex: sync.Mutex{},
 		},
 	}
 
-	gui.Log("Forging Init")
+	forging.Wallet.updates.Store([]*ForgingWalletAddressUpdate{})
 
-	forging.StartForging()
+	gui.Log("Forging Init")
 
 	return
 }
@@ -39,6 +43,11 @@ func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
 func (forging *Forging) StartForging() bool {
 
 	if !forging.started.SetToIf(false, true) {
+		return false
+	}
+
+	if err := forging.Wallet.processUpdates(); err != nil {
+		forging.started.UnSet()
 		return false
 	}
 

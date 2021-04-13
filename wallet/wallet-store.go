@@ -88,8 +88,8 @@ func (wallet *Wallet) loadWallet() error {
 				}
 				wallet.Addresses = append(wallet.Addresses, &newWalletAddress)
 
-				go wallet.forging.Wallet.AddWallet(newWalletAddress.GetDelegatedStakePrivateKey(), newWalletAddress.GetPublicKeyHash())
-				go wallet.mempool.Wallet.AddWallet(newWalletAddress.GetPublicKeyHash())
+				wallet.forging.Wallet.AddWallet(newWalletAddress.GetDelegatedStakePrivateKey(), newWalletAddress.GetPublicKeyHash())
+				wallet.mempool.Wallet.AddWallet(newWalletAddress.GetPublicKeyHash())
 
 			}
 
@@ -134,12 +134,15 @@ func (wallet *Wallet) ReadWallet() error {
 				if addr.IsMine {
 
 					if acc.DelegatedStake != nil {
+
 						var delegatedStake *wallet_address.WalletAddressDelegatedStake
 						if delegatedStake, err = addr.FindDelegatedStake(uint32(acc.Nonce), acc.DelegatedStake.DelegatedPublicKeyHash); err != nil {
 							return
 						}
+
 						if delegatedStake != nil {
 							addr.DelegatedStake = delegatedStake
+							wallet.forging.Wallet.AddWallet(addr.DelegatedStake.PrivateKey.Key, addr.Address.PublicKeyHash)
 							continue
 						}
 					}
@@ -147,6 +150,7 @@ func (wallet *Wallet) ReadWallet() error {
 				}
 
 				addr.DelegatedStake = nil
+				wallet.forging.Wallet.AddWallet(nil, addr.Address.PublicKeyHash)
 				continue
 			}
 

@@ -145,6 +145,8 @@ func (chain *Blockchain) createNextBlockForForging() {
 
 func (chain *Blockchain) initForging() {
 
+	chain.forging.StartForging()
+
 	go func() {
 
 		var err error

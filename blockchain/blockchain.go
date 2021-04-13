@@ -410,7 +410,9 @@ func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *me
 	chainData := chain.GetChainData()
 	chainData.updateChainInfo()
 
-	wallet.ReadWallet()
+	if err = wallet.ReadWallet(); err != nil {
+		return
+	}
 	chain.initForging()
 
 	return

@@ -77,8 +77,8 @@ func (wallet *Wallet) AddNewAddress() (walletAddress *wallet_address.WalletAddre
 	wallet.Count += 1
 	wallet.SeedIndex += 1
 
-	go wallet.forging.Wallet.AddWallet(walletAddress.GetDelegatedStakePrivateKey(), walletAddress.GetPublicKeyHash())
-	go wallet.mempool.Wallet.AddWallet(walletAddress.GetPublicKeyHash())
+	wallet.forging.Wallet.AddWallet(walletAddress.GetDelegatedStakePrivateKey(), walletAddress.GetPublicKeyHash())
+	wallet.mempool.Wallet.AddWallet(walletAddress.GetPublicKeyHash())
 
 	wallet.updateWallet()
 	if err = wallet.saveWallet(wallet.Count-1, wallet.Count, -1); err != nil {
