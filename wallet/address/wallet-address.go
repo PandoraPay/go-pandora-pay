@@ -13,6 +13,7 @@ type WalletAddress struct {
 	IsMine         bool
 	PrivateKey     *addresses.PrivateKey
 	Address        *addresses.Address
+	AddressEncoded string
 	DelegatedStake *WalletAddressDelegatedStake
 }
 

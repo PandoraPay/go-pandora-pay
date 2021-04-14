@@ -142,7 +142,68 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 		return
 	}
 
+	cliUnstake := func(cmd string) (err error) {
+
+		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Delegate")
+		if err != nil {
+			return
+		}
+
+		amount, ok := gui.OutputReadFloat64("Amount")
+		if !ok {
+			return
+		}
+
+		nonce, ok := gui.OutputReadUint64("Nonce. Leave 0 for automatically detection")
+		if !ok {
+			return
+		}
+
+		feePerByte, ok := gui.OutputReadInt("Fee per byte. -1 automatically, 0 none")
+		if !ok {
+			return
+		}
+
+		var feeToken []byte
+		if feePerByte != 0 {
+			if feeToken, ok = gui.OutputReadBytes("Fee Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH}); !ok {
+				return
+			}
+		}
+
+		payFeeInExtra, ok := gui.OutputReadBool("Pay in Extra. Type y/n")
+		if !ok {
+			return
+		}
+
+		tx, err := builder.CreateUnstakeTx_Float(walletAddress.GetAddressEncoded(), nonce, amount, feePerByte, feeToken, payFeeInExtra)
+		if err != nil {
+			return
+		}
+
+		gui.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
+
+		propagate, ok := gui.OutputReadBool("Propagate. Type y/n")
+		if !ok {
+			return
+		}
+
+		if propagate {
+			result, err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height)
+			if err != nil {
+				return err
+			}
+			if !result {
+				return errors.New("transaction was not inserted in mempool")
+			}
+			gui.OutputWrite("Tx was inserted in mempool")
+		}
+
+		return
+	}
+
 	gui.CommandDefineCallback("Wallet : TX: Transfer", cliTransfer)
 	gui.CommandDefineCallback("Wallet : TX: Delegate", cliDelegate)
+	gui.CommandDefineCallback("Wallet : TX: Unstake", cliUnstake)
 
 }

@@ -40,7 +40,7 @@ var commands = []Command{
 	{Text: "Wallet : Create New Address"},
 	{Text: "Wallet : TX: Transfer"},
 	{Text: "Wallet : TX: Delegate"},
-	{Text: "Wallet : TX: Withdraw"},
+	{Text: "Wallet : TX: Unstake"},
 	{Text: "Wallet : Export JSON"},
 	{Text: "Wallet : Import JSON"},
 	{Text: "Exit"},

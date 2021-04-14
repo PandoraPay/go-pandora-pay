@@ -43,8 +43,8 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 
 	<-conn.Closed
 
-	addr := conn.Conn.RemoteAddr().String()
-	conn2, exists := websockets.AllAddresses.LoadAndDelete(addr)
+	adr := conn.Conn.RemoteAddr().String()
+	conn2, exists := websockets.AllAddresses.LoadAndDelete(adr)
 	if !exists || conn2 != conn {
 		return
 	}
@@ -69,9 +69,9 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 
 func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection, connType bool) error {
 
-	addr := conn.Conn.RemoteAddr().String()
+	adr := conn.Conn.RemoteAddr().String()
 
-	_, exists := websockets.AllAddresses.LoadOrStore(addr, conn)
+	_, exists := websockets.AllAddresses.LoadOrStore(adr, conn)
 	if exists {
 		conn.Conn.Close()
 		return errors.New("Already connected")

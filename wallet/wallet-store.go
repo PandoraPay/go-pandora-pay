@@ -117,11 +117,11 @@ func (wallet *Wallet) ReadWallet() error {
 	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
 		accs := accounts.NewAccounts(boltTx)
-		for _, addr := range wallet.Addresses {
+		for _, adr := range wallet.Addresses {
 
-			acc := accs.GetAccount(addr.Address.PublicKeyHash)
+			acc := accs.GetAccount(adr.Address.PublicKeyHash)
 
-			if err = wallet.refreshWallet(acc, addr); err != nil {
+			if err = wallet.refreshWallet(acc, adr); err != nil {
 				return
 			}
 

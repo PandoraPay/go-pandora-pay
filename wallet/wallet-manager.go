@@ -46,7 +46,7 @@ func (wallet *Wallet) GetWalletAddressByAddress(addressEncoded string) (out *wal
 	return
 }
 
-func (wallet *Wallet) AddNewAddress() (walletAddress *wallet_address.WalletAddress, err error) {
+func (wallet *Wallet) AddNewAddress() (adr *wallet_address.WalletAddress, err error) {
 
 	//avoid generating the same address twice
 	wallet.Lock()
@@ -62,7 +62,7 @@ func (wallet *Wallet) AddNewAddress() (walletAddress *wallet_address.WalletAddre
 		return
 	}
 
-	walletAddress = &wallet_address.WalletAddress{
+	adr = &wallet_address.WalletAddress{
 		Name:           "Addr " + strconv.Itoa(wallet.Count),
 		PrivateKey:     &addresses.PrivateKey{Key: key.Key},
 		SeedIndex:      wallet.SeedIndex,
@@ -70,18 +70,20 @@ func (wallet *Wallet) AddNewAddress() (walletAddress *wallet_address.WalletAddre
 		IsMine:         true,
 	}
 
-	if walletAddress.Address, err = walletAddress.PrivateKey.GenerateAddress(true, 0, []byte{}); err != nil {
+	if adr.Address, err = adr.PrivateKey.GenerateAddress(true, 0, []byte{}); err != nil {
 		return
 	}
 
-	wallet.Addresses = append(wallet.Addresses, walletAddress)
-	wallet.AddressesMap[string(walletAddress.Address.PublicKeyHash)] = walletAddress
+	adr.AddressEncoded = adr.Address.EncodeAddr()
+
+	wallet.Addresses = append(wallet.Addresses, adr)
+	wallet.AddressesMap[string(adr.Address.PublicKeyHash)] = adr
 
 	wallet.Count += 1
 	wallet.SeedIndex += 1
 
-	wallet.forging.Wallet.AddWallet(walletAddress.GetDelegatedStakePrivateKey(), walletAddress.GetPublicKeyHash())
-	wallet.mempool.Wallet.AddWallet(walletAddress.GetPublicKeyHash())
+	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.GetPublicKeyHash())
+	wallet.mempool.Wallet.AddWallet(adr.GetPublicKeyHash())
 
 	wallet.updateWallet()
 	if err = wallet.saveWallet(wallet.Count-1, wallet.Count, -1); err != nil {
@@ -100,11 +102,11 @@ func (wallet *Wallet) RemoveAddress(index int) (out bool, err error) {
 		return false, errors.New("Invalid Address Index")
 	}
 
-	addr := wallet.Addresses[index]
+	adr := wallet.Addresses[index]
 
 	removing := wallet.Addresses[index]
 	wallet.Addresses = append(wallet.Addresses[:index], wallet.Addresses[index+1:]...)
-	delete(wallet.AddressesMap, string(addr.Address.PublicKeyHash))
+	delete(wallet.AddressesMap, string(adr.Address.PublicKeyHash))
 
 	wallet.Count -= 1
 
@@ -177,40 +179,40 @@ func (wallet *Wallet) updateWallet() {
 }
 
 //wallet must be locked before
-func (wallet *Wallet) refreshWallet(acc *account.Account, addr *wallet_address.WalletAddress) (err error) {
+func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.WalletAddress) (err error) {
 
 	if acc == nil {
 		return
 	}
 
-	if addr.DelegatedStake != nil && acc.DelegatedStake == nil {
-		addr.DelegatedStake = nil
+	if adr.DelegatedStake != nil && acc.DelegatedStake == nil {
+		adr.DelegatedStake = nil
 		return
 	}
 
-	if (addr.DelegatedStake != nil && acc.DelegatedStake != nil && !bytes.Equal(addr.DelegatedStake.PublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash)) ||
-		(addr.DelegatedStake == nil && acc.DelegatedStake != nil) {
+	if (adr.DelegatedStake != nil && acc.DelegatedStake != nil && !bytes.Equal(adr.DelegatedStake.PublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash)) ||
+		(adr.DelegatedStake == nil && acc.DelegatedStake != nil) {
 
-		if addr.IsMine {
+		if adr.IsMine {
 
 			if acc.DelegatedStake != nil {
 
 				var delegatedStake *wallet_address.WalletAddressDelegatedStake
-				if delegatedStake, err = addr.FindDelegatedStake(uint32(acc.Nonce), acc.DelegatedStake.DelegatedPublicKeyHash); err != nil {
+				if delegatedStake, err = adr.FindDelegatedStake(uint32(acc.Nonce), acc.DelegatedStake.DelegatedPublicKeyHash); err != nil {
 					return
 				}
 
 				if delegatedStake != nil {
-					addr.DelegatedStake = delegatedStake
-					wallet.forging.Wallet.AddWallet(addr.DelegatedStake.PrivateKey.Key, addr.Address.PublicKeyHash)
+					adr.DelegatedStake = delegatedStake
+					wallet.forging.Wallet.AddWallet(adr.DelegatedStake.PrivateKey.Key, adr.Address.PublicKeyHash)
 					return
 				}
 			}
 
 		}
 
-		addr.DelegatedStake = nil
-		wallet.forging.Wallet.AddWallet(nil, addr.Address.PublicKeyHash)
+		adr.DelegatedStake = nil
+		wallet.forging.Wallet.AddWallet(nil, adr.Address.PublicKeyHash)
 	}
 
 	return
