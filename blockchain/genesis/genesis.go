@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/block"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
+	"pandora-pay/config/stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/wallet"
@@ -115,10 +116,7 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 
 			AidDrops := make([]*GenesisDataAirDropType, 0)
 
-			amount, err2 := config.ConvertToUnitsUint64(1)
-			if err2 != nil {
-				return err2
-			}
+			amount := stake.GetRequiredStake(0)
 
 			AidDrops = append(AidDrops, &GenesisDataAirDropType{
 				PublicKeyHash:               walletAddress.Address.PublicKeyHash,

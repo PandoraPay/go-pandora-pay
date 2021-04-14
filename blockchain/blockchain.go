@@ -166,25 +166,22 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			}
 
 			//check blkComplete balance
-			var stakingAmount uint64
-			if blkComplete.Block.Height > 0 {
 
-				acc := accs.GetAccount(blkComplete.Block.Forger)
-				if acc == nil || !acc.HasDelegatedStake() {
-					return errors.New("Forger Account deson't exist or hasn't delegated stake")
-				}
-
-				if stakingAmount, err = acc.GetDelegatedStakeAvailable(blkComplete.Block.Height); err != nil {
-					return
-				}
-
-				if !bytes.Equal(blkComplete.Block.Bloom.DelegatedPublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash) {
-					return errors.New("Block Staking Delegated Public Key is not matching")
-				}
-
+			acc := accs.GetAccount(blkComplete.Block.Forger)
+			if acc == nil || !acc.HasDelegatedStake() {
+				return errors.New("Forger Account deson't exist or hasn't delegated stake")
 			}
 
-			if blkComplete.Block.StakingAmount > stakingAmount {
+			var stakingAmount uint64
+			if stakingAmount, err = acc.GetDelegatedStakeAvailable(blkComplete.Block.Height); err != nil {
+				return
+			}
+
+			if !bytes.Equal(blkComplete.Block.Bloom.DelegatedPublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash) {
+				return errors.New("Block Staking Delegated Public Key is not matching")
+			}
+
+			if blkComplete.Block.StakingAmount != stakingAmount {
 				return errors.New("Block Staking Amount doesn't match")
 			}
 

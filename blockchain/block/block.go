@@ -73,9 +73,6 @@ func (blk *Block) ComputeKernelHashOnly() []byte {
 
 func (blk *Block) ComputeKernelHash() []byte {
 	hash := blk.ComputeKernelHashOnly()
-	if blk.Height == 0 {
-		return hash
-	}
 	return cryptography.ComputeKernelHash(hash, blk.StakingAmount)
 }
 

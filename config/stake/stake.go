@@ -9,14 +9,8 @@ func GetRequiredStake(blockHeight uint64) (requiredStake uint64) {
 
 	var err error
 
-	if blockHeight == 0 {
-		if requiredStake, err = config.ConvertToUnitsUint64(0); err != nil {
-			panic(err)
-		}
-	} else {
-		if requiredStake, err = config.ConvertToUnitsUint64(100); err != nil {
-			panic(err)
-		}
+	if requiredStake, err = config.ConvertToUnitsUint64(100); err != nil {
+		panic(err)
 	}
 
 	return

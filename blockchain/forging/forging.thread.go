@@ -43,7 +43,7 @@ func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork
 
 			if stakingAmount >= stake.GetRequiredStake(work.blkComplete.Block.Height) {
 				wallets[walletsCount%thread.threads] = append(wallets[walletsCount%thread.threads], &ForgingWalletAddressRequired{
-					publicKeyHash: walletAdr.delegatedPublicKeyHash,
+					publicKeyHash: walletAdr.publicKeyHash,
 					wallet:        walletAdr,
 					stakingAmount: stakingAmount,
 				})
@@ -137,10 +137,8 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 	work.blkComplete.Block.Forger = solution.address.publicKeyHash
 	work.blkComplete.Block.Timestamp = solution.timestamp
 
-	if work.blkComplete.Block.Height > 0 {
-		if work.blkComplete.Block.StakingAmount, err = solution.address.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height); err != nil {
-			return
-		}
+	if work.blkComplete.Block.StakingAmount, err = solution.address.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height); err != nil {
+		return
 	}
 
 	work.blkComplete.Txs = thread.mempool.GetNextTransactionsToInclude(work.blkComplete.Block.Height, work.blkComplete.Block.PrevHash)
