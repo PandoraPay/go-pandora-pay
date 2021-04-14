@@ -46,7 +46,7 @@ func (worker *ForgingWorkerThread) forge() {
 	buf := make([]byte, binary.MaxVarintLen64)
 	n := 0
 
-	var height, timestamp uint64
+	var timestamp uint64
 	var serialized []byte
 
 	for {
@@ -59,7 +59,6 @@ func (worker *ForgingWorkerThread) forge() {
 				return
 			}
 			work = newWork
-			height = work.blkComplete.Block.Height
 			serialized = work.blkComplete.Block.SerializeForForging()
 			n := binary.PutUvarint(buf, work.blkComplete.Block.Timestamp)
 
@@ -90,9 +89,7 @@ func (worker *ForgingWorkerThread) forge() {
 				final = append(final, address.publicKeyHash...)
 				kernelHash := cryptography.SHA3Hash(final)
 
-				if height > 0 {
-					kernelHash = cryptography.ComputeKernelHash(kernelHash, address.stakingAmount)
-				}
+				kernelHash = cryptography.ComputeKernelHash(kernelHash, address.stakingAmount)
 
 				if difficulty.CheckKernelHashBig(kernelHash, work.target) {
 

@@ -2,7 +2,6 @@ package forging
 
 import (
 	block_complete "pandora-pay/blockchain/block-complete"
-	"pandora-pay/config/globals"
 	"pandora-pay/config/stake"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
@@ -31,12 +30,8 @@ func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork
 	}
 
 	walletsCount = 0
-	for i, walletAdr := range wallet.addresses {
+	for _, walletAdr := range wallet.addresses {
 		if walletAdr.account != nil && walletAdr.delegatedPrivateKey != nil {
-
-			if work.blkComplete.Block.Height == 0 && i > 0 && globals.Arguments["--new-devnet"] == true {
-				break
-			}
 
 			var stakingAmount uint64
 			if walletAdr.account != nil {
@@ -45,6 +40,7 @@ func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork
 					continue
 				}
 			}
+
 			if stakingAmount >= stake.GetRequiredStake(work.blkComplete.Block.Height) {
 				wallets[walletsCount%thread.threads] = append(wallets[walletsCount%thread.threads], &ForgingWalletAddressRequired{
 					publicKeyHash: walletAdr.delegatedPublicKeyHash,
@@ -53,6 +49,7 @@ func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork
 				})
 				walletsCount++
 			}
+
 		}
 	}
 	wallet.RUnlock()

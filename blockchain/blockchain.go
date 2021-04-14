@@ -349,7 +349,17 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	newChainData.updateChainInfo()
 
 	//accs will only be read only
-	chain.forging.Wallet.UpdateBalanceChanges(accs)
+	if err = chain.forging.Wallet.UpdateAccountsChanges(accs); err != nil {
+		gui.Error("Error updating balance changes", err)
+	}
+
+	if err = chain.wallet.UpdateAccountsChanges(accs); err != nil {
+		gui.Error("Error updating balance changes", err)
+	}
+
+	if err = chain.forging.Wallet.ProcessUpdates(); err != nil {
+		gui.Error("Error Processing Updates", err)
+	}
 
 	//update work for mem pool
 	chain.mempool.UpdateWork(newChainData.Hash, newChainData.Height)

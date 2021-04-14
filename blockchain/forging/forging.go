@@ -46,7 +46,7 @@ func (forging *Forging) StartForging() bool {
 		return false
 	}
 
-	if err := forging.Wallet.processUpdates(); err != nil {
+	if err := forging.Wallet.ProcessUpdates(); err != nil {
 		forging.started.UnSet()
 		return false
 	}

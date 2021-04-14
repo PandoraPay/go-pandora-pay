@@ -6,6 +6,8 @@ import (
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
 	"pandora-pay/addresses"
+	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -26,7 +28,7 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (adr *wallet_addre
 	return adr, delegatedStake.PublicKeyHash, nil
 }
 
-func (wallet *Wallet) GetWalletAddressByAddress(addressEncoded string) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) GetWalletAddressByAddress(addressEncoded string) (out *wallet_address.WalletAddress, err error) {
 
 	address, err := addresses.DecodeAddr(addressEncoded)
 	if err != nil {
@@ -36,13 +38,12 @@ func (wallet *Wallet) GetWalletAddressByAddress(addressEncoded string) (*wallet_
 	wallet.RLock()
 	defer wallet.RUnlock()
 
-	for _, addr := range wallet.Addresses {
-		if bytes.Equal(addr.GetPublicKeyHash(), address.PublicKeyHash) {
-			return addr, nil
-		}
+	out = wallet.AddressesMap[string(address.PublicKeyHash)]
+	if out == nil {
+		err = errors.New("address was not found")
 	}
 
-	return nil, errors.New("address was not found")
+	return
 }
 
 func (wallet *Wallet) AddNewAddress() (walletAddress *wallet_address.WalletAddress, err error) {
@@ -74,6 +75,8 @@ func (wallet *Wallet) AddNewAddress() (walletAddress *wallet_address.WalletAddre
 	}
 
 	wallet.Addresses = append(wallet.Addresses, walletAddress)
+	wallet.AddressesMap[string(walletAddress.Address.PublicKeyHash)] = walletAddress
+
 	wallet.Count += 1
 	wallet.SeedIndex += 1
 
@@ -97,9 +100,12 @@ func (wallet *Wallet) RemoveAddress(index int) (out bool, err error) {
 		return false, errors.New("Invalid Address Index")
 	}
 
-	removing := wallet.Addresses[index]
+	addr := wallet.Addresses[index]
 
+	removing := wallet.Addresses[index]
 	wallet.Addresses = append(wallet.Addresses[:index], wallet.Addresses[index+1:]...)
+	delete(wallet.AddressesMap, string(addr.Address.PublicKeyHash))
+
 	wallet.Count -= 1
 
 	wallet.forging.Wallet.RemoveWallet(removing.GetPublicKeyHash())
@@ -168,6 +174,74 @@ func (wallet *Wallet) createEmptyWallet() (err error) {
 func (wallet *Wallet) updateWallet() {
 	gui.InfoUpdate("Wallet", wallet.Encrypted.String())
 	gui.InfoUpdate("Wallet Addrs", strconv.Itoa(wallet.Count))
+}
+
+//wallet must be locked before
+func (wallet *Wallet) refreshWallet(acc *account.Account, addr *wallet_address.WalletAddress) (err error) {
+
+	if acc == nil {
+		return
+	}
+
+	if addr.DelegatedStake != nil && acc.DelegatedStake == nil {
+		addr.DelegatedStake = nil
+		return
+	}
+
+	if (addr.DelegatedStake != nil && acc.DelegatedStake != nil && !bytes.Equal(addr.DelegatedStake.PublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash)) ||
+		(addr.DelegatedStake == nil && acc.DelegatedStake != nil) {
+
+		if addr.IsMine {
+
+			if acc.DelegatedStake != nil {
+
+				var delegatedStake *wallet_address.WalletAddressDelegatedStake
+				if delegatedStake, err = addr.FindDelegatedStake(uint32(acc.Nonce), acc.DelegatedStake.DelegatedPublicKeyHash); err != nil {
+					return
+				}
+
+				if delegatedStake != nil {
+					addr.DelegatedStake = delegatedStake
+					wallet.forging.Wallet.AddWallet(addr.DelegatedStake.PrivateKey.Key, addr.Address.PublicKeyHash)
+					return
+				}
+			}
+
+		}
+
+		addr.DelegatedStake = nil
+		wallet.forging.Wallet.AddWallet(nil, addr.Address.PublicKeyHash)
+	}
+
+	return
+}
+
+func (wallet *Wallet) UpdateAccountsChanges(accs *accounts.Accounts) (err error) {
+
+	wallet.Lock()
+	defer wallet.Unlock()
+
+	for k, v := range accs.HashMap.Committed {
+		if wallet.AddressesMap[k] != nil {
+
+			if v.Commit == "update" {
+				acc := new(account.Account)
+				if err = acc.Deserialize(v.Data); err != nil {
+					return
+				}
+				if err = wallet.refreshWallet(acc, wallet.AddressesMap[k]); err != nil {
+					return
+				}
+			} else if v.Commit == "delete" {
+				if err = wallet.refreshWallet(nil, wallet.AddressesMap[k]); err != nil {
+					return
+				}
+			}
+
+		}
+	}
+
+	return
 }
 
 func (wallet *Wallet) computeChecksum() []byte {

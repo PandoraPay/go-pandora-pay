@@ -54,7 +54,7 @@ func (w *ForgingWallet) RemoveWallet(delegatedPublicKeyHash []byte) { //20 byte
 	w.AddWallet(nil, delegatedPublicKeyHash)
 }
 
-func (w *ForgingWallet) processUpdates() (err error) {
+func (w *ForgingWallet) ProcessUpdates() (err error) {
 
 	w.updatesMutex.Lock()
 	updates := w.updates.Load().([]*ForgingWalletAddressUpdate)
@@ -129,9 +129,7 @@ func (w *ForgingWallet) processUpdates() (err error) {
 	return
 }
 
-func (w *ForgingWallet) UpdateBalanceChanges(accs *accounts.Accounts) {
-
-	w.processUpdates()
+func (w *ForgingWallet) UpdateAccountsChanges(accs *accounts.Accounts) (err error) {
 
 	w.Lock()
 	defer w.Unlock()
@@ -140,8 +138,11 @@ func (w *ForgingWallet) UpdateBalanceChanges(accs *accounts.Accounts) {
 		if w.addressesMap[k] != nil {
 
 			if v.Commit == "update" {
-				w.addressesMap[k].account = new(account.Account)
-				w.addressesMap[k].account.Deserialize(v.Data)
+				acc := new(account.Account)
+				if err = acc.Deserialize(v.Data); err != nil {
+					return
+				}
+				w.addressesMap[k].account = acc
 			} else if v.Commit == "delete" {
 				w.addressesMap[k].account = nil
 			}
@@ -149,6 +150,7 @@ func (w *ForgingWallet) UpdateBalanceChanges(accs *accounts.Accounts) {
 		}
 	}
 
+	return
 }
 
 func (w *ForgingWallet) loadBalances() error {

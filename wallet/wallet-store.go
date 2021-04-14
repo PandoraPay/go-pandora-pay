@@ -82,11 +82,12 @@ func (wallet *Wallet) loadWallet() error {
 			for i := 0; i < wallet.Count; i++ {
 				unmarshal := reader.Get([]byte("wallet-address-" + strconv.Itoa(i)))
 
-				newWalletAddress := wallet_address.WalletAddress{}
-				if err = json.Unmarshal(unmarshal, &newWalletAddress); err != nil {
+				newWalletAddress := &wallet_address.WalletAddress{}
+				if err = json.Unmarshal(unmarshal, newWalletAddress); err != nil {
 					return
 				}
-				wallet.Addresses = append(wallet.Addresses, &newWalletAddress)
+				wallet.Addresses = append(wallet.Addresses, newWalletAddress)
+				wallet.AddressesMap[string(newWalletAddress.Address.PublicKeyHash)] = newWalletAddress
 
 				wallet.forging.Wallet.AddWallet(newWalletAddress.GetDelegatedStakePrivateKey(), newWalletAddress.GetPublicKeyHash())
 				wallet.mempool.Wallet.AddWallet(newWalletAddress.GetPublicKeyHash())
@@ -119,39 +120,9 @@ func (wallet *Wallet) ReadWallet() error {
 		for _, addr := range wallet.Addresses {
 
 			acc := accs.GetAccount(addr.Address.PublicKeyHash)
-			if acc == nil {
-				continue
-			}
 
-			if addr.DelegatedStake != nil && acc.DelegatedStake == nil {
-				addr.DelegatedStake = nil
-				continue
-			}
-
-			if (addr.DelegatedStake != nil && acc.DelegatedStake != nil && !bytes.Equal(addr.DelegatedStake.PublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash)) ||
-				(addr.DelegatedStake == nil && acc.DelegatedStake != nil) {
-
-				if addr.IsMine {
-
-					if acc.DelegatedStake != nil {
-
-						var delegatedStake *wallet_address.WalletAddressDelegatedStake
-						if delegatedStake, err = addr.FindDelegatedStake(uint32(acc.Nonce), acc.DelegatedStake.DelegatedPublicKeyHash); err != nil {
-							return
-						}
-
-						if delegatedStake != nil {
-							addr.DelegatedStake = delegatedStake
-							wallet.forging.Wallet.AddWallet(addr.DelegatedStake.PrivateKey.Key, addr.Address.PublicKeyHash)
-							continue
-						}
-					}
-
-				}
-
-				addr.DelegatedStake = nil
-				wallet.forging.Wallet.AddWallet(nil, addr.Address.PublicKeyHash)
-				continue
+			if err = wallet.refreshWallet(acc, addr); err != nil {
+				return
 			}
 
 		}

@@ -51,7 +51,8 @@ type Wallet struct {
 	SeedIndex uint32
 	Count     int
 
-	Addresses []*wallet_address.WalletAddress
+	Addresses    []*wallet_address.WalletAddress
+	AddressesMap map[string]*wallet_address.WalletAddress
 
 	Checksum helpers.HexBytes //4 byte
 
