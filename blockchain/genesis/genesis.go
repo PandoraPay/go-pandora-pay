@@ -114,9 +114,15 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 			}
 
 			AidDrops := make([]*GenesisDataAirDropType, 0)
+
+			amount, err2 := config.ConvertToUnitsUint64(1)
+			if err2 != nil {
+				return err2
+			}
+
 			AidDrops = append(AidDrops, &GenesisDataAirDropType{
 				PublicKeyHash:               walletAddress.Address.PublicKeyHash,
-				Amount:                      1,
+				Amount:                      amount,
 				DelegatedStakePublicKeyHash: delegatedStakePublicKeyHash,
 			})
 

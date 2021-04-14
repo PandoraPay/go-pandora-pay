@@ -52,14 +52,16 @@ func (chain *Blockchain) init() (chainData *BlockchainData, err error) {
 				return
 			}
 			acc := accs.GetAccountEvenEmpty(airdrop.PublicKeyHash)
-			if err = acc.AddBalance(true, airdrop.Amount, config.NATIVE_TOKEN); err != nil {
-				return
-			}
 
 			if airdrop.DelegatedStakePublicKeyHash != nil {
 				acc.DelegatedStakeVersion = 1
 				acc.DelegatedStake = new(dpos.DelegatedStake)
+				acc.DelegatedStake.StakeAvailable = airdrop.Amount
 				acc.DelegatedStake.DelegatedPublicKeyHash = airdrop.DelegatedStakePublicKeyHash
+			} else {
+				if err = acc.AddBalance(true, airdrop.Amount, config.NATIVE_TOKEN); err != nil {
+					return
+				}
 			}
 
 			accs.UpdateAccount(airdrop.PublicKeyHash, acc)

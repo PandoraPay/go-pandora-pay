@@ -68,6 +68,9 @@ func WalletInit(forging *forging.Forging, mempool *mempool.Mempool) (wallet *Wal
 	wallet = &Wallet{
 		forging: forging,
 		mempool: mempool,
+
+		Addresses:    make([]*wallet_address.WalletAddress, 0),
+		AddressesMap: make(map[string]*wallet_address.WalletAddress),
 	}
 
 	if err = wallet.loadWallet(); err != nil {
