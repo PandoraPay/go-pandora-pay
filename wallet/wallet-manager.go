@@ -210,14 +210,16 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 				if delegatedStake != nil {
 					adr.DelegatedStake = delegatedStake
 					wallet.forging.Wallet.AddWallet(adr.DelegatedStake.PrivateKey.Key, adr.Address.PublicKeyHash)
-					return
+					return wallet.saveWalletAddress(adr)
 				}
+
 			}
 
 		}
 
 		adr.DelegatedStake = nil
 		wallet.forging.Wallet.AddWallet(nil, adr.Address.PublicKeyHash)
+		return wallet.saveWalletAddress(adr)
 	}
 
 	return
