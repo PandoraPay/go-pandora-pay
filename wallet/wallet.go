@@ -54,8 +54,6 @@ type Wallet struct {
 	Addresses    []*wallet_address.WalletAddress
 	AddressesMap map[string]*wallet_address.WalletAddress
 
-	Checksum helpers.HexBytes //4 byte
-
 	forging *forging.Forging `json:"-"`
 	mempool *mempool.Mempool `json:"-"`
 

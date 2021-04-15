@@ -39,10 +39,9 @@ func (adr *WalletAddress) GetDelegatedStakePublicKeyHash() []byte {
 	return nil
 }
 
-func (adr *WalletAddress) FindDelegatedStake(currentNonce uint32, delegatedPublicKeyHash []byte) (delegatedStake *WalletAddressDelegatedStake, err error) {
+func (adr *WalletAddress) FindDelegatedStake(currentNonce, lastKnownNonce uint32, delegatedPublicKeyHash []byte) (delegatedStake *WalletAddressDelegatedStake, err error) {
 
-	nonce := currentNonce
-	for {
+	for nonce := lastKnownNonce; nonce <= currentNonce; nonce++ {
 
 		if delegatedStake, err = adr.DeriveDelegatedStake(nonce); err != nil {
 			return
@@ -51,12 +50,9 @@ func (adr *WalletAddress) FindDelegatedStake(currentNonce uint32, delegatedPubli
 			return
 		}
 
-		if nonce == 0 {
-			return nil, nil
-		}
-
-		nonce -= 1
 	}
+
+	return
 }
 
 func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (delegatedStake *WalletAddressDelegatedStake, err error) {
@@ -80,7 +76,8 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (delegatedStake *Wa
 	}
 
 	return &WalletAddressDelegatedStake{
-		PrivateKey:    privateKey,
-		PublicKeyHash: address.PublicKeyHash,
+		PrivateKey:     privateKey,
+		PublicKeyHash:  address.PublicKeyHash,
+		LastKnownNonce: nonce,
 	}, nil
 }

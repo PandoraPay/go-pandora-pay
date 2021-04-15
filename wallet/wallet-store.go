@@ -18,8 +18,6 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int) error {
 
 		writer := boltTx.Bucket([]byte("Wallet"))
 
-		wallet.Checksum = wallet.computeChecksum()
-
 		if err = writer.Put([]byte("saved"), []byte{2}); err != nil {
 			return
 		}
@@ -92,11 +90,6 @@ func (wallet *Wallet) loadWallet() error {
 				wallet.forging.Wallet.AddWallet(newWalletAddress.GetDelegatedStakePrivateKey(), newWalletAddress.GetPublicKeyHash())
 				wallet.mempool.Wallet.AddWallet(newWalletAddress.GetPublicKeyHash())
 
-			}
-
-			checksum := wallet.computeChecksum()
-			if !bytes.Equal(checksum, wallet.Checksum) {
-				return errors.New("Wallet checksum mismatch !")
 			}
 
 			wallet.updateWallet()

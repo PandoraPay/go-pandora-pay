@@ -197,8 +197,13 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 
 			if acc.DelegatedStake != nil {
 
+				lastKnownNonce := uint32(0)
+				if adr.DelegatedStake != nil {
+					lastKnownNonce = adr.DelegatedStake.LastKnownNonce
+				}
+
 				var delegatedStake *wallet_address.WalletAddressDelegatedStake
-				if delegatedStake, err = adr.FindDelegatedStake(uint32(acc.Nonce), acc.DelegatedStake.DelegatedPublicKeyHash); err != nil {
+				if delegatedStake, err = adr.FindDelegatedStake(uint32(acc.Nonce), lastKnownNonce, acc.DelegatedStake.DelegatedPublicKeyHash); err != nil {
 					return
 				}
 

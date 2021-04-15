@@ -15,8 +15,6 @@ func (settings *Settings) saveSettings() error {
 
 		writer := boltTx.Bucket([]byte("Settings"))
 
-		settings.Checksum = settings.computeChecksum()
-
 		writer.Put([]byte("saved"), []byte{2})
 
 		marshal, err := json.Marshal(settings)
@@ -46,12 +44,6 @@ func (settings *Settings) loadSettings() error {
 			unmarshal := reader.Get([]byte("settings"))
 			if err = json.Unmarshal(unmarshal, &settings); err != nil {
 				return err
-			}
-
-			checksum := settings.computeChecksum()
-
-			if !bytes.Equal(checksum, settings.Checksum) {
-				return errors.New("Settings checksum mismatch !")
 			}
 
 			settings.updateSettings()
