@@ -5,7 +5,9 @@ import (
 	"errors"
 	"pandora-pay/blockchain"
 	block_complete "pandora-pay/blockchain/block-complete"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
+	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	api_store "pandora-pay/network/api/api-store"
 	"pandora-pay/network/websocks/connection"
@@ -76,6 +78,36 @@ func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, 
 	return blkComplete.Serialize(), nil
 }
 
+func (api *APIWebsockets) getMempool(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	transactions := api.mempool.GetTxsList()
+	hashes := make([]helpers.HexBytes, len(transactions))
+	for i, tx := range transactions {
+		hashes[i] = tx.Tx.Bloom.Hash
+	}
+	return json.Marshal(hashes)
+}
+
+func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
+
+	tx := &transaction.Transaction{}
+	if err = tx.Deserialize(helpers.NewBufferReader(values)); err != nil {
+		return
+	}
+
+	var inserted bool
+	if inserted, err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height); err != nil {
+		return
+	}
+
+	if inserted {
+		out = []byte{1}
+	} else {
+		out = []byte{0}
+	}
+
+	return
+}
+
 func CreateWebsocketsAPI(apiStore *api_store.APIStore, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
 
 	api := APIWebsockets{
@@ -85,10 +117,12 @@ func CreateWebsocketsAPI(apiStore *api_store.APIStore, chain *blockchain.Blockch
 	}
 
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error){
-		"handshake":      api.getHandshake,
-		"hash":           api.getHash,
-		"block":          api.getBlock,
-		"block-complete": api.getBlockComplete,
+		"handshake":       api.getHandshake,
+		"hash":            api.getHash,
+		"block":           api.getBlock,
+		"block-complete":  api.getBlockComplete,
+		"mem-pool":        api.getMempool,
+		"mem-pool/new-tx": api.getMempoolInsert,
 	}
 
 	return &api

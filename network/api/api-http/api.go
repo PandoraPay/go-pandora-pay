@@ -2,6 +2,7 @@ package api_http
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"net/url"
 	"pandora-pay/addresses"
@@ -158,6 +159,30 @@ func (api *API) getMempool(values *url.Values) (interface{}, error) {
 	return hashes, nil
 }
 
+func (api *API) getMempoolInsert(values *url.Values) (interface{}, error) {
+
+	tx := &transaction.Transaction{}
+	var err error
+
+	if values.Get("type") == "json" {
+		data := values.Get("tx")
+		err = json.Unmarshal([]byte(data), tx)
+		if err != nil {
+			return nil, err
+		}
+	} else if values.Get("type") == "binary" {
+		data, err := hex.DecodeString(values.Get("tx"))
+		if err != nil {
+			return nil, err
+		}
+		if err = tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, errors.New("parameter 'type' was not specified or is invalid")
+}
+
 //make sure it is safe to read
 func (api *API) readLocalBlockchain(newChainData *blockchain.BlockchainData) {
 	newLocalChain := &APIBlockchain{
@@ -183,15 +208,16 @@ func CreateAPI(apiStore *api_store.APIStore, chain *blockchain.Blockchain, setti
 	}
 
 	api.GetMap = map[string]func(values *url.Values) (interface{}, error){
-		"":               api.getInfo,
-		"chain":          api.getBlockchain,
-		"ping":           api.getPing,
-		"block-complete": api.getBlockComplete,
-		"block":          api.getBlock,
-		"tx":             api.getTx,
-		"balance":        api.getBalance,
-		"token":          api.getToken,
-		"mempool":        api.getMempool,
+		"":                api.getInfo,
+		"chain":           api.getBlockchain,
+		"ping":            api.getPing,
+		"block-complete":  api.getBlockComplete,
+		"block":           api.getBlock,
+		"tx":              api.getTx,
+		"balance":         api.getBalance,
+		"token":           api.getToken,
+		"mempool":         api.getMempool,
+		"mem-pool/new-tx": api.getMempoolInsert,
 	}
 
 	go func() {
