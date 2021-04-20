@@ -9,29 +9,34 @@ import (
 	"pandora-pay/network/websocks/connection"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 type Websockets struct {
-	AllAddresses  sync.Map
-	All           []*connection.AdvancedConnection
-	Clients       int
-	ServerClients int
+	AllAddresses sync.Map
+
+	AllList      atomic.Value //[]*connection.AdvancedConnection
+	AllListMutex sync.Mutex
+
+	Clients       int64
+	ServerClients int64
+
 	apiWebsockets *api_websockets.APIWebsockets
 	api           *api_http.API
-	sync.RWMutex  `json:"-"`
+}
+
+func (websockets *Websockets) GetAllSockets() []*connection.AdvancedConnection {
+	return websockets.AllList.Load().([]*connection.AdvancedConnection)
 }
 
 func (websockets *Websockets) Broadcast(name []byte, data []byte) {
 
-	websockets.RLock()
-	all := make([]*connection.AdvancedConnection, len(websockets.All))
-	copy(all, websockets.All)
-	defer websockets.RUnlock()
-
+	all := websockets.GetAllSockets()
 	for _, conn := range all {
 		conn.Send(name, data)
 	}
+
 }
 
 func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}) {
@@ -49,21 +54,23 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 		return
 	}
 
-	websockets.Lock()
-	defer websockets.Unlock()
-	for i, conn2 := range websockets.All {
+	websockets.AllListMutex.Lock()
+	all := websockets.AllList.Load().([]*connection.AdvancedConnection)
+	for i, conn2 := range all {
 		if conn2 == conn {
 			//order is not important
-			websockets.All[i] = websockets.All[len(websockets.All)-1]
-			websockets.All = websockets.All[:len(websockets.All)-1]
+			all[i] = all[len(all)-1]
+			all = all[:len(all)-1]
+			websockets.AllList.Store(all)
 			break
 		}
 	}
+	websockets.AllListMutex.Unlock()
 
 	if connType {
-		websockets.Clients -= 1
+		atomic.AddInt64(&websockets.Clients, -1)
 	} else {
-		websockets.ServerClients -= 1
+		atomic.AddInt64(&websockets.ServerClients, -1)
 	}
 }
 
@@ -77,14 +84,14 @@ func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection,
 		return errors.New("Already connected")
 	}
 
-	websockets.Lock()
-	defer websockets.Unlock()
+	websockets.AllListMutex.Lock()
+	websockets.AllList.Store(append(websockets.AllList.Load().([]*connection.AdvancedConnection), conn))
+	websockets.AllListMutex.Unlock()
 
-	websockets.All = append(websockets.All, conn)
 	if connType {
-		websockets.Clients += 1
+		atomic.AddInt64(&websockets.Clients, +1)
 	} else {
-		websockets.ServerClients += 1
+		atomic.AddInt64(&websockets.ServerClients, +1)
 	}
 
 	go conn.ReadPump()
@@ -100,16 +107,16 @@ func CreateWebsockets(api *api_http.API, apiWebsockets *api_websockets.APIWebsoc
 		AllAddresses:  sync.Map{},
 		Clients:       0,
 		ServerClients: 0,
-		All:           []*connection.AdvancedConnection{},
+		AllList:       atomic.Value{},
+		AllListMutex:  sync.Mutex{},
 		api:           api,
 		apiWebsockets: apiWebsockets,
 	}
+	websockets.AllList.Store([]*connection.AdvancedConnection{})
 
 	go func() {
 		for {
-			websockets.RLock()
-			gui.InfoUpdate("sockets", strconv.Itoa(websockets.Clients)+" "+strconv.Itoa(websockets.ServerClients))
-			websockets.RUnlock()
+			gui.InfoUpdate("sockets", strconv.FormatInt(atomic.LoadInt64(&websockets.Clients), 32)+" "+strconv.FormatInt(atomic.LoadInt64(&websockets.ServerClients), 32))
 			time.Sleep(1 * time.Second)
 		}
 	}()

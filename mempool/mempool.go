@@ -9,6 +9,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/fees"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -40,17 +41,30 @@ type mempoolTxs struct {
 }
 
 type Mempool struct {
-	txs     *mempoolTxs
-	result  *mempoolResult
-	newWork chan *mempoolWork
-	Wallet  *mempoolWallet
+	txs                     *mempoolTxs
+	result                  *mempoolResult
+	newWork                 chan *mempoolWork
+	Wallet                  *mempoolWallet
+	NewTransactionMulticast *helpers.MulticastChannel `json:"-"`
 }
 
-func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64) (out bool, err error) {
-	return mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height)
+func (mempool *Mempool) ExistsTxInMemPool(txId []byte) bool {
+
+	txsList := mempool.GetTxsList()
+	for _, tx := range txsList {
+		if bytes.Equal(tx.Tx.Bloom.Hash, txId) {
+			return true
+		}
+	}
+
+	return false
 }
 
-func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64) (out bool, err error) {
+func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, propagateToSockets bool) (out bool, err error) {
+	return mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, propagateToSockets)
+}
+
+func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, propagateToSockets bool) (out bool, err error) {
 
 	mempool.Wallet.Lock()
 	defer mempool.Wallet.Unlock()
@@ -102,7 +116,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 		}
 
 		if selectedFeeToken == nil {
-			gui.Error("Transaction fee was not accepted")
+			return false, errors.New("Transaction fee was not accepted")
 		} else {
 			finalTxs = append(finalTxs, &mempoolTx{
 				Tx:          tx,
@@ -144,6 +158,10 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 			//appending
 			list = append(list, newTx)
 			mempool.txs.txsList.Store(list)
+
+			if propagateToSockets {
+				mempool.NewTransactionMulticast.Broadcast(newTx.Tx)
+			}
 
 		}
 
@@ -223,7 +241,8 @@ func InitMemPool() (mempool *Mempool, err error) {
 		txs: &mempoolTxs{
 			txsList: atomic.Value{},
 		},
-		Wallet: createMempoolWallet(),
+		Wallet:                  createMempoolWallet(),
+		NewTransactionMulticast: helpers.NewMulticastChannel(),
 	}
 	mempool.txs.txsList.Store([]*mempoolTx{})
 

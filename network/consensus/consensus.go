@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"pandora-pay/blockchain"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/mempool"
 	node_http "pandora-pay/network/server/node-http"
 	"sync"
@@ -30,6 +31,24 @@ func (consensus *Consensus) execute() {
 			//it is safe to read
 			consensus.broadcast(newChainData)
 		}
+
+	}()
+
+	go func() {
+
+		newTxCn := consensus.mempool.NewTransactionMulticast.AddListener()
+		for {
+			newTxReceived, ok := <-newTxCn
+			if !ok {
+				return
+			}
+
+			newTx := newTxReceived.(*transaction.Transaction)
+
+			//it is safe to read
+			consensus.broadcastTx(newTx)
+		}
+
 	}()
 
 	//discover forks

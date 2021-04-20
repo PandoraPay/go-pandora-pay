@@ -32,7 +32,7 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 
 	gui.Info("Unstake transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
 
-	result, err := testnet.mempool.AddTxToMemPool(tx, blockHeight)
+	result, err := testnet.mempool.AddTxToMemPool(tx, blockHeight, true)
 	if err != nil {
 		return
 	}
@@ -63,7 +63,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 
 	gui.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
 
-	result, err := testnet.mempool.AddTxToMemPool(tx, blockHeight)
+	result, err := testnet.mempool.AddTxToMemPool(tx, blockHeight, true)
 	if err != nil {
 		return
 	}
@@ -100,7 +100,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) error {
 
 	gui.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
 
-	result, err := testnet.mempool.AddTxToMemPool(tx, blockHeight)
+	result, err := testnet.mempool.AddTxToMemPool(tx, blockHeight, true)
 	if err != nil {
 		return err
 	}

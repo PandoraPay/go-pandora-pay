@@ -12,6 +12,7 @@ import (
 	api_store "pandora-pay/network/api/api-store"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/settings"
+	"sync"
 )
 
 type APIWebsockets struct {
@@ -19,6 +20,8 @@ type APIWebsockets struct {
 	chain    *blockchain.Blockchain
 	mempool  *mempool.Mempool
 	ApiStore *api_store.APIStore
+
+	mempoolDownloadPending sync.Map //string
 }
 
 func (api *APIWebsockets) ValidateHandshake(handshake *APIHandshake) error {
@@ -94,8 +97,12 @@ func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, 
 		return
 	}
 
+	if err = tx.BloomAll(); err != nil {
+		return
+	}
+
 	var inserted bool
-	if inserted, err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height); err != nil {
+	if inserted, err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true); err != nil {
 		return
 	}
 
@@ -108,21 +115,77 @@ func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, 
 	return
 }
 
+func (api *APIWebsockets) getTx(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	tx, err := api.ApiStore.LoadTxFromHash(values)
+	if err != nil {
+		return nil, err
+	}
+
+	return tx.Serialize(), err
+}
+
+func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
+
+	if len(values) != 32 {
+		return nil, errors.New("Invalid hash")
+	}
+	hashStr := string(values)
+
+	if api.mempool.ExistsTxInMemPool(values) {
+		out = []byte{1}
+	} else {
+
+		if _, loaded := api.mempoolDownloadPending.LoadOrStore(hashStr, true); loaded != true {
+			out = []byte{1}
+			return
+		}
+
+		result := conn.SendAwaitAnswer([]byte("tx"), values)
+
+		if result == nil && result.Err == nil {
+
+			tx := &transaction.Transaction{}
+			if err = tx.Deserialize(helpers.NewBufferReader(result.Out)); err != nil {
+				return
+			}
+
+			var inserted bool
+			if inserted, err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true); err != nil {
+				return
+			}
+
+			if inserted {
+				out = []byte{1}
+			} else {
+				out = []byte{0}
+			}
+
+		}
+
+		api.mempoolDownloadPending.Delete(hashStr)
+	}
+
+	return
+}
+
 func CreateWebsocketsAPI(apiStore *api_store.APIStore, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
 
 	api := APIWebsockets{
-		chain:    chain,
-		mempool:  mempool,
-		ApiStore: apiStore,
+		chain:                  chain,
+		mempool:                mempool,
+		ApiStore:               apiStore,
+		mempoolDownloadPending: sync.Map{},
 	}
 
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error){
-		"handshake":       api.getHandshake,
-		"hash":            api.getHash,
-		"block":           api.getBlock,
-		"block-complete":  api.getBlockComplete,
-		"mem-pool":        api.getMempool,
-		"mem-pool/new-tx": api.getMempoolInsert,
+		"handshake":          api.getHandshake,
+		"hash":               api.getHash,
+		"block":              api.getBlock,
+		"block-complete":     api.getBlockComplete,
+		"tx":                 api.getTx,
+		"mem-pool":           api.getMempool,
+		"mem-pool/new-tx":    api.getMempoolInsert,
+		"mem-pool/new-tx-id": api.getMempoolTxInsert,
 	}
 
 	return &api
