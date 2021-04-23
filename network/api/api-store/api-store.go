@@ -2,6 +2,7 @@ package api_store
 
 import (
 	"encoding/json"
+	"errors"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/accounts"
@@ -121,6 +122,9 @@ func (apiStore *APIStore) LoadBlockComplete(bucket *bolt.Bucket, hash []byte) (o
 	}
 
 	data := bucket.Get([]byte("blockTxs" + strconv.FormatUint(blk.Height, 10)))
+	if data == nil {
+		return
+	}
 
 	txHashes := [][]byte{}
 	if err = json.Unmarshal(data, &txHashes); err != nil {
@@ -167,6 +171,10 @@ func (apiStore *APIStore) LoadBlockWithTxHashes(bucket *bolt.Bucket, hash []byte
 
 func (apiStore *APIStore) LoadTx(bucket *bolt.Bucket, hash []byte) (tx *transaction.Transaction, err error) {
 	data := bucket.Get(append([]byte("tx"), hash...))
+	if data == nil {
+		return nil, errors.New("Tx not found")
+	}
+
 	tx = new(transaction.Transaction)
 	if err = tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
 		return

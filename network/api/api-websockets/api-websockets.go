@@ -9,18 +9,18 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
+	"pandora-pay/network/api/api-common"
 	api_store "pandora-pay/network/api/api-store"
 	"pandora-pay/network/websocks/connection"
-	"pandora-pay/settings"
 	"sync"
 )
 
 type APIWebsockets struct {
-	GetMap   map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error)
-	chain    *blockchain.Blockchain
-	mempool  *mempool.Mempool
-	ApiStore *api_store.APIStore
-
+	GetMap                 map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error)
+	chain                  *blockchain.Blockchain
+	mempool                *mempool.Mempool
+	apiCommon              *api_common.APICommon
+	apiStore               *api_store.APIStore
 	mempoolDownloadPending sync.Map //string
 }
 
@@ -43,12 +43,40 @@ func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, valu
 	return json.Marshal(&APIHandshake{config.NAME, config.VERSION, string(config.NETWORK_SELECTED)})
 }
 
+func (api *APIWebsockets) getBlockchain(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	data, err := api.apiCommon.GetBlockchain()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(data)
+}
+
+func (api *APIWebsockets) getInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	data, err := api.apiCommon.GetInfo()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(data)
+}
+
+func (api *APIWebsockets) getPing(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	data, err := api.apiCommon.GetPing()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(data)
+}
+
 func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	blockHeight := APIBlockHeight(0)
 	if err := json.Unmarshal(values, &blockHeight); err != nil {
 		return nil, err
 	}
-	return api.ApiStore.LoadBlockHash(blockHeight)
+	out, err := api.apiCommon.GetBlockHash(blockHeight)
+	if err != nil {
+		return nil, err
+	}
+	return out.([]byte), nil
 }
 
 func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -59,7 +87,7 @@ func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values [
 	if err := json.Unmarshal(values, &blockHeight); err != nil {
 		return nil, err
 	}
-	if blk, err = api.ApiStore.LoadBlockWithTXsFromHeight(blockHeight); err != nil {
+	if blk, err = api.apiStore.LoadBlockWithTXsFromHeight(blockHeight); err != nil {
 		return nil, err
 	}
 	return json.Marshal(blk)
@@ -74,7 +102,7 @@ func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, 
 	if err = json.Unmarshal(values, &blockHeight); err != nil {
 		return nil, err
 	}
-	if blkComplete, err = api.ApiStore.LoadBlockCompleteFromHeight(blockHeight); err != nil {
+	if blkComplete, err = api.apiStore.LoadBlockCompleteFromHeight(blockHeight); err != nil {
 		return nil, err
 	}
 
@@ -115,13 +143,16 @@ func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, 
 	return
 }
 
-func (api *APIWebsockets) getTx(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	tx, err := api.ApiStore.LoadTxFromHash(values)
+func (api *APIWebsockets) getTx(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
+
+	var data interface{}
+	data, err = api.apiCommon.GetTx(values, 1)
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	return tx.Serialize(), err
+	out = data.([]byte)
+	return
 }
 
 func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
@@ -131,28 +162,30 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 	}
 	hashStr := string(values)
 
-	if api.mempool.ExistsTxInMemPool(values) {
+	if api.mempool.Exists(values) != nil {
 		out = []byte{1}
 	} else {
 
-		if _, loaded := api.mempoolDownloadPending.LoadOrStore(hashStr, true); loaded != true {
+		if _, loaded := api.mempoolDownloadPending.LoadOrStore(hashStr, true); loaded == true {
 			out = []byte{1}
 			return
 		}
 
 		result := conn.SendAwaitAnswer([]byte("tx"), values)
 
-		if result == nil && result.Err == nil {
+		if result != nil && result.Err == nil {
 
 			tx := &transaction.Transaction{}
 			if err = tx.Deserialize(helpers.NewBufferReader(result.Out)); err != nil {
 				return
 			}
 
-			var inserted bool
-			if inserted, err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true); err != nil {
+			var data interface{}
+			if data, err = api.apiCommon.PostMempoolInsert(tx); err != nil {
 				return
 			}
+
+			inserted := data.(bool)
 
 			if inserted {
 				out = []byte{1}
@@ -168,19 +201,23 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 	return
 }
 
-func CreateWebsocketsAPI(apiStore *api_store.APIStore, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
+func CreateWebsocketsAPI(apiStore *api_store.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, mempool *mempool.Mempool) *APIWebsockets {
 
 	api := APIWebsockets{
 		chain:                  chain,
+		apiStore:               apiStore,
+		apiCommon:              apiCommon,
 		mempool:                mempool,
-		ApiStore:               apiStore,
 		mempoolDownloadPending: sync.Map{},
 	}
 
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error){
+		"":                   api.getInfo,
+		"chain":              api.getBlockchain,
 		"handshake":          api.getHandshake,
-		"hash":               api.getHash,
+		"ping":               api.getPing,
 		"block":              api.getBlock,
+		"block-hash":         api.getHash,
 		"block-complete":     api.getBlockComplete,
 		"tx":                 api.getTx,
 		"mem-pool":           api.getMempool,

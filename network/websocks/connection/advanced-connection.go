@@ -67,7 +67,9 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 			}
 			return out
 		case <-timer.C:
+			c.answerMapLock.Lock()
 			delete(c.answerMap, replyBackId)
+			c.answerMapLock.Unlock()
 			return &AdvancedConnectionAnswer{Err: errors.New("Timeout")}
 		}
 	}

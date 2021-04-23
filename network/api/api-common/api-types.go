@@ -1,4 +1,4 @@
-package api_http
+package api_common
 
 type APIBlockchain struct {
 	Height          uint64

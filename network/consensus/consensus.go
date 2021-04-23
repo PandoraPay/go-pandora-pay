@@ -52,7 +52,7 @@ func (consensus *Consensus) execute() {
 	}()
 
 	//discover forks
-	processForksThread := createConsensusProcessForksThread(consensus.forks, consensus.chain, consensus.httpServer.ApiWebsockets.ApiStore)
+	processForksThread := createConsensusProcessForksThread(consensus.forks, consensus.chain, consensus.httpServer.ApiStore)
 	go processForksThread.execute()
 
 }

@@ -48,18 +48,6 @@ type Mempool struct {
 	NewTransactionMulticast *helpers.MulticastChannel `json:"-"`
 }
 
-func (mempool *Mempool) ExistsTxInMemPool(txId []byte) bool {
-
-	txsList := mempool.GetTxsList()
-	for _, tx := range txsList {
-		if bytes.Equal(tx.Tx.Bloom.Hash, txId) {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, propagateToSockets bool) (out bool, err error) {
 	return mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, propagateToSockets)
 }
@@ -170,14 +158,14 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 	return true, nil
 }
 
-func (mempool *Mempool) Exists(txId []byte) bool {
+func (mempool *Mempool) Exists(txId []byte) *transaction.Transaction {
 	list := mempool.txs.txsList.Load().([]*mempoolTx)
 	for _, tx := range list {
 		if bytes.Equal(tx.Tx.Bloom.Hash, txId) {
-			return true
+			return tx.Tx
 		}
 	}
-	return false
+	return nil
 }
 
 func (mempool *Mempool) DeleteTx(txId []byte) *transaction.Transaction {
