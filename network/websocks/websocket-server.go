@@ -20,8 +20,8 @@ func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r
 		return
 	}
 
-	conn := connection.CreateAdvancedConnection(c, wserver.websockets.apiWebsockets.GetMap)
-	if err = wserver.websockets.NewConnection(conn, false); err != nil {
+	conn := connection.CreateAdvancedConnection(c, wserver.websockets.apiWebsockets.GetMap, true)
+	if err = wserver.websockets.NewConnection(conn); err != nil {
 		return
 	}
 

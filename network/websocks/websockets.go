@@ -44,7 +44,7 @@ func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}) {
 	websockets.Broadcast(name, out)
 }
 
-func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnection, connType bool) {
+func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnection) {
 
 	<-conn.Closed
 
@@ -67,14 +67,14 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 	}
 	websockets.AllListMutex.Unlock()
 
-	if connType {
-		atomic.AddInt64(&websockets.Clients, -1)
-	} else {
+	if conn.ConnectionType {
 		atomic.AddInt64(&websockets.ServerClients, -1)
+	} else {
+		atomic.AddInt64(&websockets.Clients, -1)
 	}
 }
 
-func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection, connType bool) error {
+func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection) error {
 
 	adr := conn.Conn.RemoteAddr().String()
 
@@ -88,15 +88,16 @@ func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection,
 	websockets.AllList.Store(append(websockets.AllList.Load().([]*connection.AdvancedConnection), conn))
 	websockets.AllListMutex.Unlock()
 
-	if connType {
-		atomic.AddInt64(&websockets.Clients, +1)
-	} else {
+	if conn.ConnectionType {
 		atomic.AddInt64(&websockets.ServerClients, +1)
+	} else {
+		atomic.AddInt64(&websockets.Clients, +1)
 	}
 
 	go conn.ReadPump()
+	go conn.KeepAlive()
 	go conn.WritePump()
-	go websockets.closedConnection(conn, connType)
+	go websockets.closedConnection(conn)
 
 	return nil
 }

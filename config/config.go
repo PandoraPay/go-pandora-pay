@@ -44,8 +44,8 @@ var (
 	WEBSOCKETS_NETWORK_CLIENTS_MAX        = 20
 	WEBSOCKETS_NETWORK_SERVER_MAX         = 500
 	WEBSOCKETS_TIMEOUT                    = 10 * time.Second //seconds
-	WEBSOCKETS_PONG_TIMEOUT               = 10 * time.Second // Time allowed to read the next pong message from the peer.
-	WEBSOCKETS_PING_TIMEOUT               = (WEBSOCKETS_PONG_TIMEOUT * 9) / 10
+	WEBSOCKETS_PONG_WAIT                  = 10 * time.Second // Time allowed to read the next pong message from the peer.
+	WEBSOCKETS_PING_INTERVAL              = (WEBSOCKETS_PONG_WAIT * 9) / 10
 	WEBSOCKETS_MAX_READ                   = BLOCK_MAX_SIZE + 1024
 )
 

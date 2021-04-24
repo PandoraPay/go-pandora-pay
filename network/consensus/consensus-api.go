@@ -10,7 +10,7 @@ import (
 )
 
 func (consensus *Consensus) chainGet(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	conn.SendJSON([]byte("chain"), consensus.getUpdateNotification(nil))
+	conn.SendJSON([]byte("chain-update"), consensus.getUpdateNotification(nil))
 	return nil, nil
 }
 
@@ -58,14 +58,14 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 
 	} else {
 		//let's notify him tha we have a better chain
-		conn.SendJSON([]byte("chain"), consensus.getUpdateNotification(nil))
+		conn.SendJSON([]byte("chain-update"), consensus.getUpdateNotification(nil))
 	}
 
 	return
 }
 
 func (consensus *Consensus) broadcast(newChainData *blockchain.BlockchainData) {
-	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain"), consensus.getUpdateNotification(newChainData))
+	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain-update"), consensus.getUpdateNotification(newChainData))
 }
 
 func (consensus *Consensus) broadcastTx(tx *transaction.Transaction) {

@@ -26,23 +26,32 @@ type AdvancedConnectionAnswer struct {
 }
 
 type AdvancedConnection struct {
-	Conn          *websocket.Conn
-	send          chan *AdvancedConnectionMessage
-	answerCounter uint32
-	Closed        chan struct{}
-	IsClosed      *abool.AtomicBool
-	getMap        map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
-	answerMap     map[uint32]chan *AdvancedConnectionAnswer
-	answerMapLock sync.RWMutex `json:"-"`
+	Conn           *websocket.Conn
+	send           chan *AdvancedConnectionMessage
+	answerCounter  uint32
+	Closed         chan struct{}
+	IsClosed       *abool.AtomicBool
+	getMap         map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
+	answerMap      map[uint32]chan *AdvancedConnectionAnswer
+	answerMapLock  sync.RWMutex `json:"-"`
+	ConnectionType bool
 }
 
 func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byte, await, reply bool) *AdvancedConnectionAnswer {
 
-	if await && replyBackId == 0 {
-		replyBackId = atomic.AddUint32(&c.answerCounter, 1)
-		c.answerMapLock.Lock()
-		c.answerMap[replyBackId] = make(chan *AdvancedConnectionAnswer)
-		c.answerMapLock.Unlock()
+	var eventCn chan *AdvancedConnectionAnswer
+	if await {
+		if replyBackId == 0 {
+			replyBackId = atomic.AddUint32(&c.answerCounter, 1)
+			eventCn = make(chan *AdvancedConnectionAnswer)
+			c.answerMapLock.Lock()
+			c.answerMap[replyBackId] = eventCn
+			c.answerMapLock.Unlock()
+		} else {
+			c.answerMapLock.RLock()
+			eventCn = c.answerMap[replyBackId]
+			c.answerMapLock.RUnlock()
+		}
 	}
 
 	message := &AdvancedConnectionMessage{
@@ -60,9 +69,9 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 	if await {
 		timer := time.NewTimer(config.WEBSOCKETS_TIMEOUT)
 		select {
-		case out, ok := <-c.answerMap[replyBackId]:
+		case out, ok := <-eventCn:
 			timer.Stop()
-			if ok == false {
+			if !ok {
 				return &AdvancedConnectionAnswer{Err: errors.New("Timeout - Closed channel")}
 			}
 			return out
@@ -111,6 +120,21 @@ func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) ([]byte, er
 	return nil, errors.New("Unknown GET request")
 }
 
+func (c *AdvancedConnection) KeepAlive() {
+
+	//defer func() {
+	//	pingTicker.Stop()
+	//	if c.IsClosed.SetToIf(false, true) {
+	//		close(c.Closed)
+	//		close(c.send)
+	//	}
+	//}()
+	//
+	//for {
+	//
+	//}
+}
+
 func (c *AdvancedConnection) ReadPump() {
 
 	defer func() {
@@ -122,9 +146,9 @@ func (c *AdvancedConnection) ReadPump() {
 	}()
 
 	c.Conn.SetReadLimit(int64(config.WEBSOCKETS_MAX_READ))
-	c.Conn.SetReadDeadline(time.Now().Add(config.WEBSOCKETS_PONG_TIMEOUT))
+	c.Conn.SetReadDeadline(time.Now().Add(config.WEBSOCKETS_PONG_WAIT))
 	c.Conn.SetPongHandler(func(string) error {
-		c.Conn.SetReadDeadline(time.Now().Add(config.WEBSOCKETS_PONG_TIMEOUT))
+		c.Conn.SetReadDeadline(time.Now().Add(config.WEBSOCKETS_PONG_WAIT))
 		return nil
 	})
 
@@ -182,50 +206,65 @@ func (c *AdvancedConnection) ReadPump() {
 
 func (c *AdvancedConnection) WritePump() {
 
-	pingTicker := time.NewTicker(config.WEBSOCKETS_PING_TIMEOUT)
+	pingTicker := time.NewTicker(config.WEBSOCKETS_PING_INTERVAL)
 
 	defer func() {
 		pingTicker.Stop()
 		if c.IsClosed.SetToIf(false, true) {
 			close(c.Closed)
+			close(c.send)
 		}
 		c.Conn.Close()
 	}()
 
 	var err error
 	for {
+
 		select {
 		case message, ok := <-c.send:
 			if !ok { // Closed the channel.
+				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 			if err = c.Conn.SetWriteDeadline(time.Now().Add(config.WEBSOCKETS_TIMEOUT)); err != nil {
 				return
 			}
-			if err = c.Conn.WriteJSON(message); err != nil {
+
+			w, err := c.Conn.NextWriter(websocket.TextMessage)
+			if err != nil {
+				return
+			}
+			data, err := json.Marshal(message)
+			if err != nil {
+				return
+			}
+
+			if _, err = w.Write(data); err != nil {
+				return
+			}
+			if err = w.Close(); err != nil {
 				return
 			}
 		case <-pingTicker.C:
-			if err = c.Conn.SetWriteDeadline(time.Now().Add(config.WEBSOCKETS_TIMEOUT)); err != nil {
-				return
-			}
-			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			if err := c.Conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(config.WEBSOCKETS_TIMEOUT)); err != nil {
 				return
 			}
 		}
+
 	}
 
 }
 
-func CreateAdvancedConnection(conn *websocket.Conn, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)) *AdvancedConnection {
+func CreateAdvancedConnection(conn *websocket.Conn, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error), connectionType bool) *AdvancedConnection {
 	return &AdvancedConnection{
-		Conn:          conn,
-		send:          make(chan *AdvancedConnectionMessage),
-		Closed:        make(chan struct{}),
-		IsClosed:      abool.New(),
-		answerCounter: 0,
-		getMap:        getMap,
-		answerMap:     make(map[uint32]chan *AdvancedConnectionAnswer),
-		answerMapLock: sync.RWMutex{},
+		Conn:           conn,
+		send:           make(chan *AdvancedConnectionMessage),
+		Closed:         make(chan struct{}),
+		IsClosed:       abool.New(),
+		answerCounter:  0,
+		getMap:         getMap,
+		answerMap:      make(map[uint32]chan *AdvancedConnectionAnswer),
+		answerMapLock:  sync.RWMutex{},
+		ConnectionType: connectionType,
 	}
 }
