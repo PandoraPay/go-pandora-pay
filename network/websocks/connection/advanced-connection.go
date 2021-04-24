@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/tevino/abool"
 	"pandora-pay/config"
+	"pandora-pay/gui"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -120,21 +121,6 @@ func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) ([]byte, er
 	return nil, errors.New("Unknown GET request")
 }
 
-func (c *AdvancedConnection) KeepAlive() {
-
-	//defer func() {
-	//	pingTicker.Stop()
-	//	if c.IsClosed.SetToIf(false, true) {
-	//		close(c.Closed)
-	//		close(c.send)
-	//	}
-	//}()
-	//
-	//for {
-	//
-	//}
-}
-
 func (c *AdvancedConnection) ReadPump() {
 
 	defer func() {
@@ -229,26 +215,15 @@ func (c *AdvancedConnection) WritePump() {
 			if err = c.Conn.SetWriteDeadline(time.Now().Add(config.WEBSOCKETS_TIMEOUT)); err != nil {
 				return
 			}
-
-			w, err := c.Conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				return
-			}
-			data, err := json.Marshal(message)
-			if err != nil {
-				return
-			}
-
-			if _, err = w.Write(data); err != nil {
-				return
-			}
-			if err = w.Close(); err != nil {
+			if err = c.Conn.WriteJSON(message); err != nil {
 				return
 			}
 		case <-pingTicker.C:
+			gui.Log("Ping")
 			if err := c.Conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(config.WEBSOCKETS_TIMEOUT)); err != nil {
 				return
 			}
+			gui.Log("Ping DONE")
 		}
 
 	}

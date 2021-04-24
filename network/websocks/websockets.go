@@ -95,7 +95,6 @@ func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection)
 	}
 
 	go conn.ReadPump()
-	go conn.KeepAlive()
 	go conn.WritePump()
 	go websockets.closedConnection(conn)
 
