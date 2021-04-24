@@ -11,7 +11,6 @@ import (
 	"pandora-pay/mempool"
 	api_common "pandora-pay/network/api/api-common"
 	api_http "pandora-pay/network/api/api-http"
-	api_store "pandora-pay/network/api/api-store"
 	"pandora-pay/network/api/api-websockets"
 	"pandora-pay/network/websocks"
 	"pandora-pay/settings"
@@ -23,7 +22,7 @@ type HttpServer struct {
 	websocketServer *websocks.WebsocketServer
 	Api             *api_http.API
 	ApiWebsockets   *api_websockets.APIWebsockets
-	ApiStore        *api_store.APIStore
+	ApiStore        *api_common.APIStore
 	getMap          map[string]func(values *url.Values) (interface{}, error)
 }
 
@@ -70,7 +69,7 @@ func (server *HttpServer) initialize() {
 
 func CreateHttpServer(tcpListener net.Listener, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) (server *HttpServer, err error) {
 
-	apiStore := api_store.CreateAPIStore(chain)
+	apiStore := api_common.CreateAPIStore(chain)
 	apiCommon := api_common.CreateAPICommon(mempool, chain, apiStore)
 
 	apiWebsockets := api_websockets.CreateWebsocketsAPI(apiStore, apiCommon, chain, mempool)

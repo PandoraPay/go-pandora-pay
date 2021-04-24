@@ -10,7 +10,6 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
-	api_store "pandora-pay/network/api/api-store"
 	"sync/atomic"
 )
 
@@ -18,7 +17,7 @@ type APICommon struct {
 	mempool    *mempool.Mempool
 	chain      *blockchain.Blockchain
 	localChain atomic.Value //*APIBlockchain
-	ApiStore   *api_store.APIStore
+	ApiStore   *APIStore
 }
 
 func (api *APICommon) GetBlockchain() (interface{}, error) {
@@ -160,7 +159,7 @@ func (api *APICommon) readLocalBlockchain(newChainData *blockchain.BlockchainDat
 	api.localChain.Store(newLocalChain)
 }
 
-func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, apiStore *api_store.APIStore) (api *APICommon) {
+func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, apiStore *APIStore) (api *APICommon) {
 
 	api = &APICommon{
 		mempool,

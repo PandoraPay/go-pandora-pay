@@ -1,4 +1,4 @@
-package api_store
+package api_common
 
 import (
 	"encoding/json"

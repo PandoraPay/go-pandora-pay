@@ -7,7 +7,7 @@ import (
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/config"
 	"pandora-pay/gui"
-	api_store "pandora-pay/network/api/api-store"
+	"pandora-pay/network/api/api-common"
 	api_websockets "pandora-pay/network/api/api-websockets"
 	"time"
 )
@@ -15,7 +15,7 @@ import (
 type ConsensusProcessForksThread struct {
 	chain    *blockchain.Blockchain
 	forks    *Forks
-	apiStore *api_store.APIStore
+	apiStore *api_common.APIStore
 }
 
 func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
@@ -185,7 +185,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 	}
 }
 
-func createConsensusProcessForksThread(forks *Forks, chain *blockchain.Blockchain, apiStore *api_store.APIStore) *ConsensusProcessForksThread {
+func createConsensusProcessForksThread(forks *Forks, chain *blockchain.Blockchain, apiStore *api_common.APIStore) *ConsensusProcessForksThread {
 	return &ConsensusProcessForksThread{
 		forks:    forks,
 		chain:    chain,

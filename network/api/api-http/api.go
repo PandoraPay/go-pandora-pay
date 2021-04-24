@@ -10,7 +10,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common"
-	api_store "pandora-pay/network/api/api-store"
 	"strconv"
 )
 
@@ -18,7 +17,7 @@ type API struct {
 	GetMap    map[string]func(values *url.Values) (interface{}, error)
 	chain     *blockchain.Blockchain
 	apiCommon *api_common.APICommon
-	apiStore  *api_store.APIStore
+	apiStore  *api_common.APIStore
 }
 
 func (api *API) getBlockchain(values *url.Values) (interface{}, error) {
@@ -173,7 +172,7 @@ func (api *API) postMempoolInsert(values *url.Values) (interface{}, error) {
 	return api.apiCommon.PostMempoolInsert(tx)
 }
 
-func CreateAPI(apiStore *api_store.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain) *API {
+func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain) *API {
 
 	api := API{
 		chain:     chain,

@@ -10,7 +10,6 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api-common"
-	api_store "pandora-pay/network/api/api-store"
 	"pandora-pay/network/websocks/connection"
 	"sync"
 )
@@ -20,7 +19,7 @@ type APIWebsockets struct {
 	chain                  *blockchain.Blockchain
 	mempool                *mempool.Mempool
 	apiCommon              *api_common.APICommon
-	apiStore               *api_store.APIStore
+	apiStore               *api_common.APIStore
 	mempoolDownloadPending sync.Map //string
 }
 
@@ -81,7 +80,7 @@ func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []
 
 func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	blockHeight := APIBlockHeight(0)
-	var blk *api_store.BlockWithTxs
+	var blk *api_common.BlockWithTxs
 	var err error
 
 	if err := json.Unmarshal(values, &blockHeight); err != nil {
@@ -201,7 +200,7 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 	return
 }
 
-func CreateWebsocketsAPI(apiStore *api_store.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, mempool *mempool.Mempool) *APIWebsockets {
+func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, mempool *mempool.Mempool) *APIWebsockets {
 
 	api := APIWebsockets{
 		chain:                  chain,
