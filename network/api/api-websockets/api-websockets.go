@@ -3,8 +3,10 @@ package api_websockets
 import (
 	"encoding/json"
 	"errors"
+	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
-	block_complete "pandora-pay/blockchain/block-complete"
+	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
@@ -79,52 +81,71 @@ func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []
 }
 
 func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	blockHeight := APIBlockHeight(0)
-	var blk *api_common.BlockWithTxs
-	var err error
 
+	blockHeight := APIBlockHeight(0)
 	if err := json.Unmarshal(values, &blockHeight); err != nil {
 		return nil, err
 	}
-	if blk, err = api.apiStore.LoadBlockWithTXsFromHeight(blockHeight); err != nil {
+
+	data, err := api.apiCommon.GetBlock(blockHeight, nil)
+	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(blk)
+	return json.Marshal(data)
 }
 
 func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
 	blockHeight := APIBlockHeight(0)
-	var blkComplete *block_complete.BlockComplete
-	var err error
-
-	if err = json.Unmarshal(values, &blockHeight); err != nil {
-		return nil, err
-	}
-	if blkComplete, err = api.apiStore.LoadBlockCompleteFromHeight(blockHeight); err != nil {
+	if err := json.Unmarshal(values, &blockHeight); err != nil {
 		return nil, err
 	}
 
-	return blkComplete.Serialize(), nil
+	out, err := api.apiCommon.GetBlockComplete(blockHeight, nil, 1)
+	if err != nil {
+		return nil, err
+	}
+	return out.([]byte), nil
+}
+
+func (api *APIWebsockets) getAccount(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	address, err := addresses.DecodeAddr(string(values))
+	if err != nil {
+		return nil, err
+	}
+	data, err := api.apiCommon.GetAccount(address, nil)
+	if err != nil {
+		return nil, err
+	}
+	if data == nil {
+		return nil, nil
+	}
+	return data.(*account.Account).Serialize(), nil
+}
+
+func (api *APIWebsockets) getToken(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	data, err := api.apiCommon.GetToken(values)
+	if err != nil {
+		return nil, err
+	}
+	if data == nil {
+		return nil, nil
+	}
+	return data.(*token.Token).Serialize(), nil
 }
 
 func (api *APIWebsockets) getMempool(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	transactions := api.mempool.GetTxsList()
-	hashes := make([]helpers.HexBytes, len(transactions))
-	for i, tx := range transactions {
-		hashes[i] = tx.Tx.Bloom.Hash
+	data, err := api.apiCommon.GetMempool()
+	if err != nil {
+		return nil, err
 	}
-	return json.Marshal(hashes)
+	return json.Marshal(data)
 }
 
 func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
 
 	tx := &transaction.Transaction{}
 	if err = tx.Deserialize(helpers.NewBufferReader(values)); err != nil {
-		return
-	}
-
-	if err = tx.BloomAll(); err != nil {
 		return
 	}
 
@@ -142,16 +163,25 @@ func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, 
 	return
 }
 
-func (api *APIWebsockets) getTx(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
+func (api *APIWebsockets) getTx(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	var data interface{}
-	data, err = api.apiCommon.GetTx(values, 1)
+	data, err := api.apiCommon.GetTx(values, 1)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	out = data.([]byte)
-	return
+	return json.Marshal(data)
+}
+
+func (api *APIWebsockets) getMempoolExists(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	if len(values) != 32 {
+		return nil, errors.New("Invalid hash")
+	}
+	if api.mempool.Exists(values) != nil {
+		return []byte{1}, nil
+	} else {
+		return []byte{0}, nil
+	}
 }
 
 func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
@@ -219,7 +249,10 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"block-hash":         api.getHash,
 		"block-complete":     api.getBlockComplete,
 		"tx":                 api.getTx,
+		"account":            api.getAccount,
+		"token":              api.getToken,
 		"mem-pool":           api.getMempool,
+		"mem-pool/tx-exists": api.getMempoolExists,
 		"mem-pool/new-tx":    api.getMempoolInsert,
 		"mem-pool/new-tx-id": api.getMempoolTxInsert,
 	}

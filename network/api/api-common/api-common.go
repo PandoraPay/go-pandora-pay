@@ -110,7 +110,7 @@ func (api *APICommon) GetTx(hash []byte, typeValue uint8) (interface{}, error) {
 	return output, nil
 }
 
-func (api *APICommon) GetBalance(address *addresses.Address, hash []byte) (interface{}, error) {
+func (api *APICommon) GetAccount(address *addresses.Address, hash []byte) (interface{}, error) {
 	if address != nil {
 		return api.ApiStore.LoadAccountFromPublicKeyHash(address.PublicKeyHash)
 	} else if hash != nil {
@@ -140,6 +140,9 @@ func (api *APICommon) GetMempoolExists(txId []byte) (interface{}, error) {
 }
 
 func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction) (interface{}, error) {
+	if err := tx.BloomAll(); err != nil {
+		return nil, err
+	}
 	return api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true)
 }
 

@@ -108,20 +108,20 @@ func (api *API) getTx(values *url.Values) (interface{}, error) {
 	return nil, errors.New("parameter 'hash' was not specified ")
 }
 
-func (api *API) getBalance(values *url.Values) (interface{}, error) {
+func (api *API) getAccount(values *url.Values) (interface{}, error) {
 	if values.Get("address") != "" {
 		address, err := addresses.DecodeAddr(values.Get("address"))
 		if err != nil {
 			return nil, err
 		}
-		return api.apiCommon.GetBalance(address, nil)
+		return api.apiCommon.GetAccount(address, nil)
 	}
 	if values.Get("hash") != "" {
 		hash, err := hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			return nil, err
 		}
-		return api.apiCommon.GetBalance(nil, hash)
+		return api.apiCommon.GetAccount(nil, hash)
 	}
 	return nil, errors.New("parameter 'address' or 'hash' was not specified")
 }
@@ -184,11 +184,11 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		"":                   api.getInfo,
 		"chain":              api.getBlockchain,
 		"ping":               api.getPing,
+		"block":              api.getBlock,
 		"block-hash":         api.getBlockHash,
 		"block-complete":     api.getBlockComplete,
-		"block":              api.getBlock,
 		"tx":                 api.getTx,
-		"balance":            api.getBalance,
+		"account":            api.getAccount,
 		"token":              api.getToken,
 		"mempool":            api.getMempool,
 		"mem-pool/tx-exists": api.getMempoolExists,
