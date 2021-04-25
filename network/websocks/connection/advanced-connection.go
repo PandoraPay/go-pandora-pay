@@ -8,7 +8,6 @@ import (
 	"github.com/tevino/abool"
 	"pandora-pay/config"
 	"pandora-pay/gui"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -92,7 +91,7 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 		return &AdvancedConnectionAnswer{nil, errors.New("Closed")}
 	}
 
-	gui.Log(string(message.Name) + " " + strconv.FormatUint(uint64(message.ReplyId), 10) + " " + string(message.Data))
+	// gui.Log(string(message.Name) + " " + strconv.FormatUint(uint64(message.ReplyId), 10) + " " + string(message.Data))
 
 	if err := c.connSendJSON(message); err != nil {
 		return &AdvancedConnectionAnswer{nil, err}
@@ -152,6 +151,46 @@ func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) ([]byte, er
 	return nil, errors.New("Unknown GET request")
 }
 
+func (c *AdvancedConnection) processRead(message *AdvancedConnectionMessage) {
+
+	if !message.ReplyStatus {
+
+		out, err := c.get(message)
+
+		if message.ReplyAwait {
+			if err != nil {
+				marshalErr, _ := json.Marshal(err)
+				c.sendNow(message.ReplyId, []byte{0}, marshalErr, false, true)
+			} else {
+				c.sendNow(message.ReplyId, []byte{1}, out, false, true)
+			}
+		}
+
+	} else {
+
+		output := &AdvancedConnectionAnswer{}
+		if bytes.Equal(message.Name, []byte{1}) {
+			output.Out = message.Data
+		} else {
+			if err := json.Unmarshal(message.Data, &output.Err); err != nil {
+				output.Err = errors.New("Error decoding received error")
+			}
+		}
+
+		c.answerMapLock.Lock()
+		cn := c.answerMap[message.ReplyId]
+		if cn != nil {
+			delete(c.answerMap, message.ReplyId)
+		}
+		c.answerMapLock.Unlock()
+
+		if cn != nil {
+			cn <- output
+		}
+	}
+
+}
+
 func (c *AdvancedConnection) ReadPump() {
 
 	defer func() {
@@ -177,44 +216,49 @@ func (c *AdvancedConnection) ReadPump() {
 			continue
 		}
 
-		gui.Log(string(message.Name) + " " + strconv.FormatUint(uint64(message.ReplyId), 10) + " " + string(message.Data))
+		//gui.Log(string(message.Name) + " " + strconv.FormatUint(uint64(message.ReplyId), 10) + " " + string(message.Data))
 
-		if !message.ReplyStatus {
+		go func() {
 
-			var out []byte
-			out, err = c.get(message)
+			if !message.ReplyStatus {
 
-			if message.ReplyAwait {
-				if err != nil {
-					marshalErr, _ := json.Marshal(err)
-					c.sendNow(message.ReplyId, []byte{0}, marshalErr, false, true)
-				} else {
-					c.sendNow(message.ReplyId, []byte{1}, out, false, true)
+				var out []byte
+				out, err = c.get(message)
+
+				if message.ReplyAwait {
+					if err != nil {
+						marshalErr, _ := json.Marshal(err)
+						c.sendNow(message.ReplyId, []byte{0}, marshalErr, false, true)
+					} else {
+						c.sendNow(message.ReplyId, []byte{1}, out, false, true)
+					}
 				}
-			}
 
-		} else {
-
-			output := &AdvancedConnectionAnswer{}
-			if bytes.Equal(message.Name, []byte{1}) {
-				output.Out = message.Data
 			} else {
-				if err = json.Unmarshal(message.Data, &output.Err); err != nil {
-					output.Err = errors.New("Error decoding received error")
+
+				output := &AdvancedConnectionAnswer{}
+				if bytes.Equal(message.Name, []byte{1}) {
+					output.Out = message.Data
+				} else {
+					if err = json.Unmarshal(message.Data, &output.Err); err != nil {
+						output.Err = errors.New("Error decoding received error")
+					}
+				}
+
+				c.answerMapLock.Lock()
+				cn := c.answerMap[message.ReplyId]
+				if cn != nil {
+					delete(c.answerMap, message.ReplyId)
+				}
+				c.answerMapLock.Unlock()
+
+				if cn != nil {
+					cn <- output
 				}
 			}
 
-			c.answerMapLock.Lock()
-			cn := c.answerMap[message.ReplyId]
-			if cn != nil {
-				delete(c.answerMap, message.ReplyId)
-			}
-			c.answerMapLock.Unlock()
+		}()
 
-			if cn != nil {
-				cn <- output
-			}
-		}
 	}
 
 }

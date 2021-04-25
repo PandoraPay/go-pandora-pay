@@ -79,26 +79,28 @@ func (api *APICommon) GetBlock(height uint64, hash []byte) (interface{}, error) 
 
 func (api *APICommon) GetTx(hash []byte, typeValue uint8) (interface{}, error) {
 
+	var tx *transaction.Transaction
 	var err error
 
-	var tx *transaction.Transaction
-	output := &APITransaction{}
-
 	tx = api.mempool.Exists(hash)
-	if tx != nil {
-		output.Mempool = true
-	} else {
+	if tx == nil {
 		tx, err = api.ApiStore.LoadTxFromHash(hash)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
+	var output interface{}
 	if typeValue == 1 {
-		output.Tx = tx.Bloom.Serialized
+		output = &APITransactionSerialized{
+			Tx:      tx.Bloom.Serialized,
+			Mempool: tx != nil,
+		}
 	} else {
-		output.Tx = tx
+		output = &APITransaction{
+			Tx:      tx,
+			Mempool: tx != nil,
+		}
 	}
 
 	return output, nil

@@ -14,6 +14,10 @@ type WebsocketServer struct {
 
 func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r *http.Request) {
 
+	wserver.upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
+
 	c, err := wserver.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		gui.Error("ws error upgrade:", err)
@@ -30,7 +34,10 @@ func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r
 func CreateWebsocketServer(websockets *Websockets) *WebsocketServer {
 
 	wserver := &WebsocketServer{
-		upgrader:   websocket.Upgrader{},
+		upgrader: websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+		},
 		websockets: websockets,
 	}
 

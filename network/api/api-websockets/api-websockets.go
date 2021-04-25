@@ -186,6 +186,8 @@ func (api *APIWebsockets) getMempoolExists(conn *connection.AdvancedConnection, 
 
 func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
 
+	out = []byte{0}
+
 	if len(values) != 32 {
 		return nil, errors.New("Invalid hash")
 	}
@@ -204,15 +206,13 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 
 		if result.Out != nil && result.Err == nil {
 
-			data := &api_common.APITransaction{}
+			data := &api_common.APITransactionSerialized{}
 			if err = json.Unmarshal(result.Out, data); err != nil {
 				return
 			}
 
-			dataBytes := data.Tx.([]byte)
-
 			tx := &transaction.Transaction{}
-			if err = tx.Deserialize(helpers.NewBufferReader(dataBytes)); err != nil {
+			if err = tx.Deserialize(helpers.NewBufferReader(data.Tx)); err != nil {
 				return
 			}
 
@@ -224,8 +224,6 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 
 			if inserted {
 				out = []byte{1}
-			} else {
-				out = []byte{0}
 			}
 
 		}
