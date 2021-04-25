@@ -122,6 +122,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 		}
 
 		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockHeight(fork.current))
+
 		if answer.Err != nil {
 			fork.errors += 1
 			continue

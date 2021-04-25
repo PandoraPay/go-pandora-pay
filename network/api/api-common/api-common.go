@@ -82,17 +82,11 @@ func (api *APICommon) GetTx(hash []byte, typeValue uint8) (interface{}, error) {
 	var err error
 
 	var tx *transaction.Transaction
-	output := struct {
-		tx      interface{}
-		mempool bool
-	}{
-		tx:      nil,
-		mempool: false,
-	}
+	output := &APITransaction{}
 
 	tx = api.mempool.Exists(hash)
 	if tx != nil {
-		output.mempool = true
+		output.Mempool = true
 	} else {
 		tx, err = api.ApiStore.LoadTxFromHash(hash)
 	}
@@ -102,9 +96,9 @@ func (api *APICommon) GetTx(hash []byte, typeValue uint8) (interface{}, error) {
 	}
 
 	if typeValue == 1 {
-		output.tx = tx.Serialize()
+		output.Tx = tx.Bloom.Serialized
 	} else {
-		output.tx = tx
+		output.Tx = tx
 	}
 
 	return output, nil

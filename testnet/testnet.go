@@ -13,6 +13,7 @@ import (
 	"pandora-pay/mempool"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
+	"time"
 )
 
 type Testnet struct {
@@ -138,6 +139,7 @@ func (testnet *Testnet) run() {
 				} else {
 					for i := 0; i < 20; i++ {
 						err = testnet.testnetCreateTransfers(blockHeight)
+						time.Sleep(10 * time.Millisecond)
 					}
 				}
 			}

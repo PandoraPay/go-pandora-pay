@@ -56,5 +56,5 @@ func logsInit() {
 	logs = widgets.NewParagraph()
 	logs.Title = "Logs"
 	logs.Text = ""
-	logs.WrapText = true
+	logs.WrapText = false
 }

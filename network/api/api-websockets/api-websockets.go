@@ -202,19 +202,25 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 
 		result := conn.SendAwaitAnswer([]byte("tx"), values)
 
-		if result != nil && result.Err == nil {
+		if result.Out != nil && result.Err == nil {
+
+			data := &api_common.APITransaction{}
+			if err = json.Unmarshal(result.Out, data); err != nil {
+				return
+			}
+
+			dataBytes := data.Tx.([]byte)
 
 			tx := &transaction.Transaction{}
-			if err = tx.Deserialize(helpers.NewBufferReader(result.Out)); err != nil {
+			if err = tx.Deserialize(helpers.NewBufferReader(dataBytes)); err != nil {
 				return
 			}
 
-			var data interface{}
-			if data, err = api.apiCommon.PostMempoolInsert(tx); err != nil {
+			var output interface{}
+			if output, err = api.apiCommon.PostMempoolInsert(tx); err != nil {
 				return
 			}
-
-			inserted := data.(bool)
+			inserted := output.(bool)
 
 			if inserted {
 				out = []byte{1}

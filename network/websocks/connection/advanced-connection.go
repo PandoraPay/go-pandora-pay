@@ -8,6 +8,7 @@ import (
 	"github.com/tevino/abool"
 	"pandora-pay/config"
 	"pandora-pay/gui"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -28,14 +29,39 @@ type AdvancedConnectionAnswer struct {
 
 type AdvancedConnection struct {
 	Conn           *websocket.Conn
-	send           chan *AdvancedConnectionMessage
 	answerCounter  uint32
 	Closed         chan struct{}
 	IsClosed       *abool.AtomicBool
 	getMap         map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
 	answerMap      map[uint32]chan *AdvancedConnectionAnswer
 	answerMapLock  sync.RWMutex `json:"-"`
+	sendingLock    sync.Mutex   `json:"-"`
 	ConnectionType bool
+}
+
+func (c *AdvancedConnection) Close() error {
+	if c.IsClosed.SetToIf(false, true) {
+		close(c.Closed)
+	}
+	return c.Conn.Close()
+}
+
+func (c *AdvancedConnection) connSendJSON(message interface{}) (err error) {
+	c.sendingLock.Lock()
+	defer c.sendingLock.Unlock()
+	if err = c.Conn.SetWriteDeadline(time.Now().Add(config.WEBSOCKETS_TIMEOUT)); err != nil {
+		return
+	}
+	if err = c.Conn.WriteJSON(message); err != nil {
+		return
+	}
+	return
+}
+
+func (c *AdvancedConnection) connSendPing() (err error) {
+	c.sendingLock.Lock()
+	defer c.sendingLock.Unlock()
+	return c.Conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(config.WEBSOCKETS_TIMEOUT))
 }
 
 func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byte, await, reply bool) *AdvancedConnectionAnswer {
@@ -63,9 +89,14 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 		data,
 	}
 	if c.IsClosed.IsSet() {
-		return nil
+		return &AdvancedConnectionAnswer{nil, errors.New("Closed")}
 	}
-	c.send <- message
+
+	gui.Log(string(message.Name) + " " + strconv.FormatUint(uint64(message.ReplyId), 10) + " " + string(message.Data))
+
+	if err := c.connSendJSON(message); err != nil {
+		return &AdvancedConnectionAnswer{nil, err}
+	}
 
 	if await {
 		timer := time.NewTimer(config.WEBSOCKETS_TIMEOUT)
@@ -73,17 +104,17 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 		case out, ok := <-eventCn:
 			timer.Stop()
 			if !ok {
-				return &AdvancedConnectionAnswer{Err: errors.New("Timeout - Closed channel")}
+				return &AdvancedConnectionAnswer{nil, errors.New("Timeout - Closed channel")}
 			}
 			return out
 		case <-timer.C:
 			c.answerMapLock.Lock()
 			delete(c.answerMap, replyBackId)
 			c.answerMapLock.Unlock()
-			return &AdvancedConnectionAnswer{Err: errors.New("Timeout")}
+			return &AdvancedConnectionAnswer{nil, errors.New("Timeout")}
 		}
 	}
-	return nil
+	return &AdvancedConnectionAnswer{nil, nil}
 }
 
 func (c *AdvancedConnection) Send(name []byte, data []byte) {
@@ -124,11 +155,7 @@ func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) ([]byte, er
 func (c *AdvancedConnection) ReadPump() {
 
 	defer func() {
-		if c.IsClosed.SetToIf(false, true) {
-			close(c.Closed)
-			close(c.send)
-		}
-		c.Conn.Close()
+		c.Close()
 	}()
 
 	c.Conn.SetReadLimit(int64(config.WEBSOCKETS_MAX_READ))
@@ -150,7 +177,9 @@ func (c *AdvancedConnection) ReadPump() {
 			continue
 		}
 
-		if message.ReplyAwait || !message.ReplyStatus {
+		gui.Log(string(message.Name) + " " + strconv.FormatUint(uint64(message.ReplyId), 10) + " " + string(message.Data))
+
+		if !message.ReplyStatus {
 
 			var out []byte
 			out, err = c.get(message)
@@ -196,36 +225,16 @@ func (c *AdvancedConnection) WritePump() {
 
 	defer func() {
 		pingTicker.Stop()
-		if c.IsClosed.SetToIf(false, true) {
-			close(c.Closed)
-			close(c.send)
-		}
-		c.Conn.Close()
+		c.Close()
 	}()
 
-	var err error
 	for {
-
-		select {
-		case message, ok := <-c.send:
-			if !ok { // Closed the channel.
-				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
-			if err = c.Conn.SetWriteDeadline(time.Now().Add(config.WEBSOCKETS_TIMEOUT)); err != nil {
-				return
-			}
-			if err = c.Conn.WriteJSON(message); err != nil {
-				return
-			}
-		case <-pingTicker.C:
-			gui.Log("Ping")
-			if err := c.Conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(config.WEBSOCKETS_TIMEOUT)); err != nil {
-				return
-			}
-			gui.Log("Ping DONE")
+		<-pingTicker.C
+		gui.Log("Ping" + time.Now().Format("2006-01-02 15:04:05"))
+		if err := c.connSendPing(); err != nil {
+			return
 		}
-
+		gui.Log("Pong" + time.Now().Format("2006-01-02 15:04:05"))
 	}
 
 }
@@ -233,13 +242,13 @@ func (c *AdvancedConnection) WritePump() {
 func CreateAdvancedConnection(conn *websocket.Conn, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error), connectionType bool) *AdvancedConnection {
 	return &AdvancedConnection{
 		Conn:           conn,
-		send:           make(chan *AdvancedConnectionMessage),
 		Closed:         make(chan struct{}),
 		IsClosed:       abool.New(),
 		answerCounter:  0,
 		getMap:         getMap,
 		answerMap:      make(map[uint32]chan *AdvancedConnectionAnswer),
 		answerMapLock:  sync.RWMutex{},
+		sendingLock:    sync.Mutex{},
 		ConnectionType: connectionType,
 	}
 }

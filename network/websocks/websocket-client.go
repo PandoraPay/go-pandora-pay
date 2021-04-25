@@ -18,7 +18,7 @@ type WebsocketClient struct {
 }
 
 func (wsClient *WebsocketClient) Close() error {
-	return wsClient.conn.Conn.Close()
+	return wsClient.conn.Close()
 }
 
 func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownNode) (wsClient *WebsocketClient, err error) {
@@ -43,14 +43,14 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 
 	out := wsClient.conn.SendAwaitAnswer([]byte("handshake"), handshakeBinary)
 
-	if out == nil {
-		wsClient.Close()
-		return nil, errors.New("Handshake was not received")
-	}
-
 	if out.Err != nil {
 		wsClient.Close()
-		return nil, out.Err
+		return nil, err
+	}
+
+	if out.Out == nil {
+		wsClient.Close()
+		return nil, errors.New("Handshake was not received")
 	}
 
 	handshakeServer := new(api_websockets.APIHandshake)

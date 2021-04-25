@@ -11,3 +11,8 @@ type APIBlockchain struct {
 	Target          string
 	TotalDifficulty string
 }
+
+type APITransaction struct {
+	Tx      interface{}
+	Mempool bool
+}

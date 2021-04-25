@@ -86,7 +86,7 @@ func (blkComplete *BlockComplete) Serialize() []byte {
 	writer.WriteUvarint(uint64(len(blkComplete.Txs)))
 
 	for _, tx := range blkComplete.Txs {
-		writer.Write(tx.Serialize())
+		writer.Write(tx.Bloom.Serialized)
 	}
 
 	return writer.Bytes()
