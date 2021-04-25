@@ -82,7 +82,7 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [ ] Saving/Loading
     - [X] Inserting Txs
     - [x] Sorting by fee per byte
-    - [ ] Network propagation
+    - [x] Network propagation
 - [ ] Network
     - [X] HTTP server    
     - [X] HTTP websocket server
