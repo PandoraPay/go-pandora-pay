@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/tevino/abool"
 	"pandora-pay/config"
-	"pandora-pay/gui"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -274,11 +273,9 @@ func (c *AdvancedConnection) WritePump() {
 
 	for {
 		<-pingTicker.C
-		gui.Log("Ping" + time.Now().Format("2006-01-02 15:04:05"))
 		if err := c.connSendPing(); err != nil {
 			return
 		}
-		gui.Log("Pong" + time.Now().Format("2006-01-02 15:04:05"))
 	}
 
 }

@@ -3,6 +3,7 @@ package known_nodes
 import (
 	"net/url"
 	"sync"
+	"sync/atomic"
 )
 
 type KnownNode struct {
@@ -13,9 +14,9 @@ type KnownNode struct {
 }
 
 type KnownNodes struct {
-	KnownMap     sync.Map
-	KnownList    []*KnownNode
-	sync.RWMutex `json:"-"`
+	KnownMap       sync.Map
+	KnownList      atomic.Value //[]*KnownNode
+	KnownListMutex sync.Mutex
 }
 
 func (knownNodes *KnownNodes) AddKnownNode(url *url.URL, isSeed bool) (result bool, knownNode *KnownNode) {
@@ -28,9 +29,6 @@ func (knownNodes *KnownNodes) AddKnownNode(url *url.URL, isSeed bool) (result bo
 		return false, knownNode
 	}
 
-	knownNodes.Lock()
-	defer knownNodes.Unlock()
-
 	knownNode = &KnownNode{
 		Url:         url,
 		UrlStr:      urlString,
@@ -42,17 +40,25 @@ func (knownNodes *KnownNodes) AddKnownNode(url *url.URL, isSeed bool) (result bo
 		knownNode = found.(*KnownNode)
 		return false, knownNode
 	}
-	knownNodes.KnownList = append(knownNodes.KnownList, knownNode)
+
+	knownNodes.KnownListMutex.Lock()
+	knownList := knownNodes.KnownList.Load().([]*KnownNode)
+	knownNodes.KnownList.Store(append(knownList, knownNode))
+	knownNodes.KnownListMutex.Unlock()
 
 	result = true
 	return
 }
 
-func CreateKnownNodes() *KnownNodes {
+func CreateKnownNodes() (knownNodes *KnownNodes) {
 
-	return &KnownNodes{
-		KnownMap:  sync.Map{},
-		KnownList: []*KnownNode{},
+	knownNodes = &KnownNodes{
+		KnownMap:       sync.Map{},
+		KnownList:      atomic.Value{},
+		KnownListMutex: sync.Mutex{},
 	}
 
+	knownNodes.KnownList.Store([]*KnownNode{})
+
+	return
 }

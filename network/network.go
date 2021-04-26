@@ -26,11 +26,10 @@ func (network *Network) execute() {
 	for {
 
 		var knownNode *known_nodes.KnownNode
-		network.KnownNodes.RLock()
-		if len(network.KnownNodes.KnownList) > 0 {
-			knownNode = network.KnownNodes.KnownList[rand.Intn(len(network.KnownNodes.KnownList))]
+		knownList := network.KnownNodes.KnownList.Load().([]*known_nodes.KnownNode)
+		if len(knownList) > 0 {
+			knownNode = knownList[rand.Intn(len(knownList))]
 		}
-		network.KnownNodes.RUnlock()
 
 		_, exists := network.Websockets.AllAddresses.Load(knownNode.UrlHostOnly)
 		if !exists {
