@@ -25,22 +25,7 @@ type APIWebsockets struct {
 	mempoolDownloadPending sync.Map //string
 }
 
-func (api *APIWebsockets) ValidateHandshake(handshake *APIHandshake) error {
-	handshake2 := *handshake
-	if handshake2[2] != string(config.NETWORK_SELECTED) {
-		return errors.New("Network is different")
-	}
-	return nil
-}
-
 func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	handshake := APIHandshake{}
-	if err := json.Unmarshal(values, &handshake); err != nil {
-		return nil, err
-	}
-	if err := api.ValidateHandshake(&handshake); err != nil {
-		return nil, err
-	}
 	return json.Marshal(&APIHandshake{config.NAME, config.VERSION, string(config.NETWORK_SELECTED)})
 }
 

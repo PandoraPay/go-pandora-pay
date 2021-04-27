@@ -8,6 +8,7 @@ import (
 	"pandora-pay/mempool"
 	"pandora-pay/network/consensus"
 	"pandora-pay/network/known-nodes"
+	mempool_sync "pandora-pay/network/mempool-sync"
 	node_tcp "pandora-pay/network/server/node-tcp"
 	"pandora-pay/network/websocks"
 	"pandora-pay/settings"
@@ -15,10 +16,11 @@ import (
 )
 
 type Network struct {
-	tcpServer  *node_tcp.TcpServer
-	KnownNodes *known_nodes.KnownNodes
-	Websockets *websocks.Websockets
-	Consensus  *consensus.Consensus
+	tcpServer   *node_tcp.TcpServer
+	KnownNodes  *known_nodes.KnownNodes
+	MempoolSync *mempool_sync.MempoolSync
+	Websockets  *websocks.Websockets
+	Consensus   *consensus.Consensus
 }
 
 func (network *Network) execute() {
@@ -60,16 +62,18 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 	}
 
 	knownNodes := known_nodes.CreateKnownNodes()
-
 	for _, seed := range config.NETWORK_SEEDS {
 		knownNodes.AddKnownNode(&seed, true)
 	}
 
+	mempoolSync := mempool_sync.CreateMempoolSync()
+
 	network = &Network{
-		tcpServer:  tcpServer,
-		KnownNodes: knownNodes,
-		Websockets: tcpServer.HttpServer.Websockets,
-		Consensus:  consensus.CreateConsensus(tcpServer.HttpServer, chain, mempool),
+		tcpServer:   tcpServer,
+		KnownNodes:  knownNodes,
+		MempoolSync: mempoolSync,
+		Websockets:  tcpServer.HttpServer.Websockets,
+		Consensus:   consensus.CreateConsensus(tcpServer.HttpServer, chain, mempool),
 	}
 
 	go network.execute()

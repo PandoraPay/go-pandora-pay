@@ -29,6 +29,10 @@ func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r
 		return
 	}
 
+	if err = wserver.websockets.InitializeConnection(conn); err != nil {
+		return
+	}
+
 }
 
 func CreateWebsocketServer(websockets *Websockets) *WebsocketServer {

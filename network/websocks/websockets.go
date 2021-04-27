@@ -3,7 +3,9 @@ package websocks
 import (
 	"encoding/json"
 	"errors"
+	"pandora-pay/config"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	api_http "pandora-pay/network/api/api-http"
 	"pandora-pay/network/api/api-websockets"
 	"pandora-pay/network/websocks/connection"
@@ -21,6 +23,8 @@ type Websockets struct {
 
 	Clients       int64
 	ServerClients int64
+
+	UpdateNewConnectionMulticast *helpers.MulticastChannel
 
 	apiWebsockets *api_websockets.APIWebsockets
 	api           *api_http.API
@@ -72,6 +76,43 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 	} else {
 		atomic.AddInt64(&websockets.Clients, -1)
 	}
+}
+
+func (api *Websockets) validateHandshake(handshake *api_websockets.APIHandshake) error {
+	handshake2 := *handshake
+	if handshake2[2] != string(config.NETWORK_SELECTED) {
+		return errors.New("Network is different")
+	}
+	return nil
+}
+
+func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConnection) error {
+
+	out := conn.SendAwaitAnswer([]byte("handshake"), nil)
+
+	if out.Err != nil {
+		conn.Close()
+		return nil
+	}
+	if out.Out == nil {
+		conn.Close()
+		return errors.New("Handshake was not received")
+	}
+
+	handshakeServer := new(api_websockets.APIHandshake)
+	if err := json.Unmarshal(out.Out, &handshakeServer); err != nil {
+		conn.Close()
+		return errors.New("Handshake received was invalid")
+	}
+
+	if err := websockets.validateHandshake(handshakeServer); err != nil {
+		conn.Close()
+		return errors.New("Handshake is invalid")
+	}
+
+	conn.Send([]byte("chain-get"), nil)
+
+	return nil
 }
 
 func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection) error {
