@@ -3,13 +3,15 @@ package mempool_sync
 import (
 	"encoding/json"
 	"pandora-pay/helpers"
+	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection"
 )
 
 type MempoolSync struct {
+	websockets *websocks.Websockets
 }
 
-func DownloadMempool(conn *connection.AdvancedConnection) (err error) {
+func (mempoolSync *MempoolSync) DownloadMempool(conn *connection.AdvancedConnection) (err error) {
 
 	out := conn.SendAwaitAnswer([]byte("mem-pool"), nil)
 	if out.Err != nil {
@@ -21,9 +23,18 @@ func DownloadMempool(conn *connection.AdvancedConnection) (err error) {
 		return
 	}
 
+	for _, tx := range txs {
+
+		cb := mempoolSync.websockets.ApiWebsockets.GetMap["mem-pool/new-tx-id"]
+		cb(conn, tx)
+
+	}
+
 	return
 }
 
-func CreateMempoolSync() *MempoolSync {
-	return &MempoolSync{}
+func CreateMempoolSync(websockets *websocks.Websockets) *MempoolSync {
+	return &MempoolSync{
+		websockets: websockets,
+	}
 }

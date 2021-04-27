@@ -11,6 +11,7 @@ import (
 	mempool_sync "pandora-pay/network/mempool-sync"
 	node_tcp "pandora-pay/network/server/node-tcp"
 	"pandora-pay/network/websocks"
+	"pandora-pay/network/websocks/connection"
 	"pandora-pay/settings"
 	"time"
 )
@@ -54,6 +55,22 @@ func (network *Network) execute() {
 	}
 }
 
+func (network *Network) syncNewConnections() {
+	go func() {
+		for {
+			data, ok := <-network.Websockets.UpdateNewConnectionMulticast.AddListener()
+			if !ok {
+				return
+			}
+			conn := data.(*connection.AdvancedConnection)
+
+			conn.Send([]byte("chain-get"), nil)
+
+			network.MempoolSync.DownloadMempool(conn)
+		}
+	}()
+}
+
 func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (network *Network, err error) {
 
 	tcpServer, err := node_tcp.CreateTcpServer(settings, chain, mempool)
@@ -66,7 +83,7 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 		knownNodes.AddKnownNode(&seed, true)
 	}
 
-	mempoolSync := mempool_sync.CreateMempoolSync()
+	mempoolSync := mempool_sync.CreateMempoolSync(tcpServer.HttpServer.Websockets)
 
 	network = &Network{
 		tcpServer:   tcpServer,
@@ -77,6 +94,7 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 	}
 
 	go network.execute()
+	go network.syncNewConnections()
 
 	return
 }

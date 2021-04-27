@@ -26,7 +26,7 @@ type Websockets struct {
 
 	UpdateNewConnectionMulticast *helpers.MulticastChannel
 
-	apiWebsockets *api_websockets.APIWebsockets
+	ApiWebsockets *api_websockets.APIWebsockets
 	api           *api_http.API
 }
 
@@ -110,7 +110,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 		return errors.New("Handshake is invalid")
 	}
 
-	conn.Send([]byte("chain-get"), nil)
+	websockets.UpdateNewConnectionMulticast.Broadcast(conn)
 
 	return nil
 }
@@ -145,13 +145,14 @@ func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection)
 func CreateWebsockets(api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
-		AllAddresses:  sync.Map{},
-		Clients:       0,
-		ServerClients: 0,
-		AllList:       atomic.Value{},
-		AllListMutex:  sync.Mutex{},
-		api:           api,
-		apiWebsockets: apiWebsockets,
+		AllAddresses:                 sync.Map{},
+		Clients:                      0,
+		ServerClients:                0,
+		AllList:                      atomic.Value{},
+		AllListMutex:                 sync.Mutex{},
+		UpdateNewConnectionMulticast: helpers.NewMulticastChannel(),
+		api:                          api,
+		ApiWebsockets:                apiWebsockets,
 	}
 	websockets.AllList.Store([]*connection.AdvancedConnection{})
 

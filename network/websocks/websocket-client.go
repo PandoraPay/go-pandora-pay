@@ -29,7 +29,7 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 		return
 	}
 
-	wsClient.conn = connection.CreateAdvancedConnection(c, websockets.apiWebsockets.GetMap, false)
+	wsClient.conn = connection.CreateAdvancedConnection(c, websockets.ApiWebsockets.GetMap, false)
 	if err = websockets.NewConnection(wsClient.conn); err != nil {
 		return
 	}
