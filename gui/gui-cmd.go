@@ -173,7 +173,7 @@ func OutputReadString(text string) (out string, ok bool) {
 	return
 }
 
-func OutputReadInt(text string) (out int, ok bool) {
+func OutputReadInt(text string, acceptedValues []int) (out int, ok bool) {
 	var str string
 	var err error
 	for {
@@ -184,26 +184,50 @@ func OutputReadInt(text string) (out int, ok bool) {
 			OutputWrite("Invalid Number")
 			continue
 		}
+		if acceptedValues != nil {
+			acceptedValuesStr := ""
+			for _, acceptedValue := range acceptedValues {
+				if out == acceptedValue {
+					return
+				}
+				acceptedValuesStr += strconv.Itoa(acceptedValue) + " "
+			}
+			OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
+		}
 		return
 	}
 }
 
-func OutputReadUint64(text string) (out uint64, ok bool) {
+func OutputReadUint64(text string, acceptedValues []uint64, acceptEmpty bool) (out uint64, ok bool) {
 	var str string
 	var err error
 	for {
 		if str, ok = <-outputRead(text); !ok {
 			return
 		}
+		if acceptEmpty && str == "" {
+			return
+		}
+
 		if out, err = strconv.ParseUint(str, 10, 64); err != nil {
 			OutputWrite("Invalid Number")
 			continue
+		}
+		if acceptedValues != nil {
+			acceptedValuesStr := ""
+			for _, acceptedValue := range acceptedValues {
+				if out == acceptedValue {
+					return
+				}
+				acceptedValuesStr += strconv.FormatUint(acceptedValue, 64) + " "
+			}
+			OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
 		}
 		return
 	}
 }
 
-func OutputReadFloat64(text string) (out float64, ok bool) {
+func OutputReadFloat64(text string, acceptedValues []float64) (out float64, ok bool) {
 	var str string
 	var err error
 	for {
@@ -213,6 +237,16 @@ func OutputReadFloat64(text string) (out float64, ok bool) {
 		if out, err = strconv.ParseFloat(str, 64); err != nil {
 			OutputWrite("Invalid Number")
 			continue
+		}
+		if acceptedValues != nil {
+			acceptedValuesStr := ""
+			for _, acceptedValue := range acceptedValues {
+				if out == acceptedValue {
+					return
+				}
+				acceptedValuesStr += strconv.FormatFloat(acceptedValue, 'f', 10, 64) + " "
+			}
+			OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
 		}
 		return
 	}
@@ -264,14 +298,16 @@ func OutputReadBytes(text string, acceptedLengths []int) (token []byte, ok bool)
 			continue
 		}
 
-		acceptedLengthsStr := ""
-		for _, acceptedLength := range acceptedLengths {
-			acceptedLengthsStr = acceptedLengthsStr + strconv.Itoa(acceptedLength) + " , "
-			if len(token) == acceptedLength {
-				return
+		if acceptedLengths != nil {
+			acceptedLengthsStr := ""
+			for _, acceptedLength := range acceptedLengths {
+				acceptedLengthsStr = acceptedLengthsStr + strconv.Itoa(acceptedLength) + " , "
+				if len(token) == acceptedLength {
+					return
+				}
 			}
+			OutputWrite("Invalid value. Lengths accepted: " + acceptedLengthsStr)
 		}
-		OutputWrite("Invalid value. Lengths accepted: " + acceptedLengthsStr)
 	}
 }
 
@@ -310,5 +346,5 @@ func cmdInit() {
 	}
 	cmd.Rows = cmdRows
 	cmd.TextStyle = ui.NewStyle(ui.ColorYellow)
-	cmd.WrapText = true
+	//cmd.WrapText = true
 }

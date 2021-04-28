@@ -80,7 +80,7 @@ func (wallet *Wallet) CliSelectAddress(text string) (walletAddress *wallet_addre
 		return
 	}
 
-	index, ok := gui.OutputReadInt(text)
+	index, ok := gui.OutputReadInt(text, nil)
 	if !ok {
 		return
 	}
@@ -107,7 +107,7 @@ func (wallet *Wallet) initWalletCLI() {
 		if err = wallet.CliListAddresses(""); err != nil {
 			return
 		}
-		index, ok := gui.OutputReadInt("Select Address to be Exported")
+		index, ok := gui.OutputReadInt("Select Address to be Exported", nil)
 		if !ok {
 			return
 		}

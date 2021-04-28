@@ -57,16 +57,22 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 		},
 	}
 
-	if err = setFee(tx, feePerByte, feeToken, false); err != nil {
-		return
-	}
-
 	hash := tx.SerializeForSigning()
+
 	for i, privateKey := range privateKeys {
 		if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(hash); err != nil {
 			return
 		}
 	}
+	if err = setFee(tx, feePerByte, feeToken, false); err != nil {
+		return
+	}
+	for i, privateKey := range privateKeys {
+		if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(hash); err != nil {
+			return
+		}
+	}
+
 	if err = tx.BloomAll(); err != nil {
 		return
 	}
@@ -99,12 +105,16 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte 
 		},
 	}
 
+	if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
+		return
+	}
 	if err = setFee(tx, feePerByte, feeToken, payFeeInExtra); err != nil {
 		return
 	}
 	if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 		return
 	}
+
 	if err = tx.BloomAll(); err != nil {
 		return
 	}
@@ -146,12 +156,16 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 		},
 	}
 
+	if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
+		return
+	}
 	if err = setFee(tx, feePerByte, feeToken, false); err != nil {
 		return
 	}
 	if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 		return
 	}
+
 	if err = tx.BloomAll(); err != nil {
 		return
 	}

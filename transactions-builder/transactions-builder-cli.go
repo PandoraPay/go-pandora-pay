@@ -1,6 +1,7 @@
 package transactions_builder
 
 import (
+	"bytes"
 	"encoding/hex"
 	"errors"
 	"pandora-pay/config"
@@ -25,12 +26,12 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 			return errors.New("Invalid TokenId")
 		}
 
-		amount, ok := gui.OutputReadFloat64("Amount")
+		amount, ok := gui.OutputReadFloat64("Amount", nil)
 		if !ok {
 			return
 		}
 
-		feePerByte, ok := gui.OutputReadInt("Fee per byte. -1 automatically, 0 none")
+		feePerByte, ok := gui.OutputReadInt("Fee per byte. -1 automatically, 0 none", nil)
 		if !ok {
 			return
 		}
@@ -42,7 +43,7 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 			}
 		}
 
-		nonce, ok := gui.OutputReadUint64("Nonce. Leave 0 for automatically detection")
+		nonce, ok := gui.OutputReadUint64("Nonce. Leave empty for automatically detection", nil, true)
 		if !ok {
 			return
 		}
@@ -85,26 +86,33 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 			return
 		}
 
-		amount, ok := gui.OutputReadFloat64("Amount")
+		amount, ok := gui.OutputReadFloat64("Amount", nil)
 		if !ok {
 			return
 		}
 
-		nonce, ok := gui.OutputReadUint64("Nonce. Leave 0 for automatically detection")
+		nonce, ok := gui.OutputReadUint64("Nonce. Leave empty for automatically detection", nil, true)
 		if !ok {
 			return
 		}
 
-		delegateNewPublicKeyHash, ok := gui.OutputReadBytes("Delegate New Public Key Hash. Leave it empty for not changing. Use '01' for generating a new one. ", []int{0, 1, cryptography.KeyHashSize})
+		delegateNewPublicKeyHashGenerate := false
+
+		delegateNewPublicKeyHash, ok := gui.OutputReadBytes("Delegate New Public Key Hash. Use empty for not changing. Use '01' for generating a new one. ", []int{0, 1, cryptography.KeyHashSize})
 		if !ok {
 			return
 		}
 
-		if len(delegateNewPublicKeyHash) != 0 {
-
+		if len(delegateNewPublicKeyHash) == 1 {
+			if bytes.Equal(delegateNewPublicKeyHash, []byte{1}) {
+				delegateNewPublicKeyHash = []byte{}
+				delegateNewPublicKeyHashGenerate = true
+			} else {
+				return errors.New("Invalid value for New Public key Hash")
+			}
 		}
 
-		feePerByte, ok := gui.OutputReadInt("Fee per byte. -1 automatically, 0 none")
+		feePerByte, ok := gui.OutputReadInt("Fee per byte. -1 automatically, 0 none", nil)
 		if !ok {
 			return
 		}
@@ -116,7 +124,7 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 			}
 		}
 
-		tx, err := builder.CreateDelegateTx_Float(walletAddress.GetAddressEncoded(), nonce, amount, delegateNewPublicKeyHash, feePerByte, feeToken)
+		tx, err := builder.CreateDelegateTx_Float(walletAddress.GetAddressEncoded(), nonce, amount, delegateNewPublicKeyHashGenerate, delegateNewPublicKeyHash, feePerByte, feeToken)
 		if err != nil {
 			return
 		}
@@ -149,17 +157,17 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 			return
 		}
 
-		amount, ok := gui.OutputReadFloat64("Amount")
+		amount, ok := gui.OutputReadFloat64("Amount", nil)
 		if !ok {
 			return
 		}
 
-		nonce, ok := gui.OutputReadUint64("Nonce. Leave 0 for automatically detection")
+		nonce, ok := gui.OutputReadUint64("Nonce. Leave for automatically detection", nil, true)
 		if !ok {
 			return
 		}
 
-		feePerByte, ok := gui.OutputReadInt("Fee per byte. -1 automatically, 0 none")
+		feePerByte, ok := gui.OutputReadInt("Fee per byte. -1 automatically, 0 none", nil)
 		if !ok {
 			return
 		}

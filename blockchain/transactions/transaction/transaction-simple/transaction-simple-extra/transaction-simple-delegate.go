@@ -3,6 +3,7 @@ package transaction_simple_extra
 import (
 	"errors"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
@@ -24,8 +25,11 @@ func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, 
 }
 
 func (tx *TransactionSimpleDelegate) Validate() error {
-	if tx.Amount == 0 {
-		return errors.New("Amount must be greather than zero")
+	if tx.HasNewPublicKeyHash && len(tx.NewPublicKeyHash) != cryptography.KeyHashSize {
+		return errors.New("New Public Key Hash length is invalid")
+	}
+	if !tx.HasNewPublicKeyHash && len(tx.NewPublicKeyHash) != 0 {
+		return errors.New("New Public Key Hash length is invalid")
 	}
 	return nil
 }

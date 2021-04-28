@@ -186,17 +186,17 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, u
 	return
 }
 
-func (builder *TransactionsBuilder) CreateDelegateTx_Float(from string, nonce uint64, delegateAmount float64, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err error) {
+func (builder *TransactionsBuilder) CreateDelegateTx_Float(from string, nonce uint64, delegateAmount float64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err error) {
 
 	delegateAmountFinal, err := config.ConvertToUnits(delegateAmount)
 	if err != nil {
 		return
 	}
 
-	return builder.CreateDelegateTx(from, nonce, delegateAmountFinal, delegateNewPubKeyHash, feePerByte, feeToken)
+	return builder.CreateDelegateTx(from, nonce, delegateAmountFinal, delegateNewPubKeyHashGenerate, delegateNewPubKeyHash, feePerByte, feeToken)
 }
 
-func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, delegateAmount uint64, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err2 error) {
+func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, delegateAmount uint64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err2 error) {
 
 	fromWalletAddress, err2 := builder.wallet.GetWalletAddressByAddress(from)
 	if err2 != nil {
@@ -224,6 +224,17 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 
 		if nonce == 0 {
 			nonce = builder.mempool.GetNonce(fromWalletAddress.GetPublicKeyHash(), account.Nonce)
+		}
+
+		if delegateNewPubKeyHashGenerate {
+
+			var delegatedStake *wallet_address.WalletAddressDelegatedStake
+
+			if delegatedStake, err = fromWalletAddress.DeriveDelegatedStake(uint32(nonce)); err != nil {
+				return
+			}
+			delegateNewPubKeyHash = delegatedStake.PublicKeyHash
+
 		}
 
 		if tx, err = wizard.CreateDelegateTx(nonce, fromWalletAddress.PrivateKey.Key, delegateAmount, delegateNewPubKeyHash, feePerByte, feeToken); err != nil {
