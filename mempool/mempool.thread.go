@@ -139,7 +139,7 @@ func (worker *mempoolWorker) processing(
 					txMap[txList[listIndex].Tx.Bloom.HashStr] = true
 					if err := txList[listIndex].Tx.IncludeTransaction(worker.work.chainHeight, worker.accs, worker.toks); err != nil {
 						worker.accs.Rollback()
-						worker.accs.Rollback()
+						worker.toks.Rollback()
 					} else {
 						mempoolResult.Lock()
 						if mempoolResult.totalSize+txList[listIndex].Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
