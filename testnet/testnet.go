@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
 	"pandora-pay/gui"
@@ -26,7 +27,7 @@ type Testnet struct {
 
 func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64) (err error) {
 
-	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].GetAddressEncoded(), 0, amount, -1, []byte{}, true)
+	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].GetAddressEncoded(), 0, amount, 0, []byte{}, true)
 	if err != nil {
 		return
 	}
@@ -59,7 +60,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].GetAddressEncoded()}, 0, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].GetAddressEncoded()}, 0, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
 	if err != nil {
 		return
 	}
@@ -76,7 +77,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 	return
 }
 
-func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) error {
+func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 	dsts := []string{}
 	dstsAmounts := []uint64{}
 	dstsTokens := [][]byte{}
@@ -96,22 +97,22 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) error {
 		sum += amount
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].GetAddressEncoded()}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{})
-	if err != nil {
-		return nil
+	var tx *transaction.Transaction
+	if tx, err = testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].GetAddressEncoded()}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{}); err != nil {
+		return
 	}
 
 	gui.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
 
-	result, err := testnet.mempool.AddTxToMemPool(tx, blockHeight, true)
-	if err != nil {
-		return err
+	var result bool
+	if result, err = testnet.mempool.AddTxToMemPool(tx, blockHeight, true); err != nil {
+		return
 	}
 	if !result {
 		return errors.New("transaction was not inserted in mempool")
 	}
 
-	return nil
+	return
 }
 
 func (testnet *Testnet) run() {
@@ -136,12 +137,15 @@ func (testnet *Testnet) run() {
 			}
 
 			if blockHeight >= 60 {
+
 				if blockHeight%20 == 0 {
 					err = testnet.testnetCreateUnstakeTx(blockHeight, 20*20*20*5)
 				} else {
-					for i := 0; i < 20; i++ {
-						err = testnet.testnetCreateTransfers(blockHeight)
-						time.Sleep(10 * time.Millisecond)
+					if testnet.mempool.CountInputTxs(testnet.wallet.Addresses[0].GetPublicKeyHash()) < 100 {
+						for i := 0; i < 20; i++ {
+							err = testnet.testnetCreateTransfers(blockHeight)
+							time.Sleep(10 * time.Millisecond)
+						}
 					}
 				}
 			}

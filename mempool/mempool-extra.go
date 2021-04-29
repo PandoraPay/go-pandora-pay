@@ -46,6 +46,22 @@ func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token [
 	return
 }
 
+func (mempool *Mempool) CountInputTxs(publicKeyHash []byte) uint64 {
+	txs := mempool.GetTxsList()
+
+	count := uint64(0)
+	for _, tx := range txs {
+		if tx.Tx.TxType == transaction_type.TxSimple {
+			base := tx.Tx.TxBase.(*transaction_simple.TransactionSimple)
+			if bytes.Equal(base.Vin[0].Bloom.PublicKeyHash, publicKeyHash) {
+				count++
+			}
+		}
+	}
+
+	return count
+}
+
 func (mempool *Mempool) GetNonce(publicKeyHash []byte, nonce uint64) uint64 {
 
 	txs := mempool.GetTxsList()
