@@ -28,7 +28,11 @@ func (builder *TransactionsBuilder) checkTx(accs *accounts.Accounts, chainHeight
 
 	var available uint64
 	for _, vin := range tx.TxBase.(*transaction_simple.TransactionSimple).Vin {
-		account := accs.GetAccountEvenEmpty(vin.Bloom.PublicKeyHash)
+		account := accs.GetAccount(vin.Bloom.PublicKeyHash)
+		if account == nil {
+			return errors.New("Account doesn't even exist")
+		}
+
 		available, err = account.GetAvailableBalance(chainHeight, vin.Token)
 		if err != nil {
 			return err
@@ -104,6 +108,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 
 			var available uint64
 			if available, err = account.GetAvailableBalance(chainHeight, amountsTokens[i]); err != nil {
+				return err
 			}
 			if available < amounts[i] {
 				return errors.New("Not enough funds")

@@ -57,10 +57,8 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 		},
 	}
 
-	hash := tx.SerializeForSigning()
-
 	for i, privateKey := range privateKeys {
-		if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(hash); err != nil {
+		if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 			return
 		}
 	}
@@ -68,7 +66,7 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 		return
 	}
 	for i, privateKey := range privateKeys {
-		if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(hash); err != nil {
+		if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 			return
 		}
 	}

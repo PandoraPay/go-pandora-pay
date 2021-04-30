@@ -3,15 +3,19 @@ package testnet
 import (
 	"encoding/hex"
 	"errors"
+	bolt "go.etcd.io/bbolt"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
+	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/transactions/transaction"
+	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
+	"pandora-pay/store"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
 	"time"
@@ -27,7 +31,7 @@ type Testnet struct {
 
 func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64) (err error) {
 
-	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].GetAddressEncoded(), 0, amount, 0, []byte{}, true)
+	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].GetAddressEncoded(), 0, amount, -1, []byte{}, true)
 	if err != nil {
 		return
 	}
@@ -60,7 +64,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].GetAddressEncoded()}, 0, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].GetAddressEncoded()}, 0, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{})
 	if err != nil {
 		return
 	}
@@ -98,7 +102,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].GetAddressEncoded()}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].GetAddressEncoded()}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{}); err != nil {
 		return
 	}
 
@@ -117,7 +121,6 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 
 func (testnet *Testnet) run() {
 
-	var err error
 	updateChannel := testnet.chain.UpdateMulticast.AddListener()
 	for {
 
@@ -127,35 +130,67 @@ func (testnet *Testnet) run() {
 		}
 		blockHeight := blockHeightReceived.(uint64)
 
-		func() {
+		err := func() (err error) {
 
 			if blockHeight == 30 {
-				err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*stake.GetRequiredStake(blockHeight))
+				if err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*stake.GetRequiredStake(blockHeight)); err != nil {
+					return
+				}
 			}
 			if blockHeight == 50 {
-				err = testnet.testnetCreateTransfersNewWallets(blockHeight)
+				if err = testnet.testnetCreateTransfersNewWallets(blockHeight); err != nil {
+					return
+				}
 			}
 
 			if blockHeight >= 60 {
 
-				if blockHeight%20 == 0 {
-					err = testnet.testnetCreateUnstakeTx(blockHeight, 20*20*20*5)
-				} else {
-					if testnet.mempool.CountInputTxs(testnet.wallet.Addresses[0].GetPublicKeyHash()) < 100 {
-						for i := 0; i < 20; i++ {
-							err = testnet.testnetCreateTransfers(blockHeight)
-							time.Sleep(10 * time.Millisecond)
+				if err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+
+					accs := accounts.NewAccounts(boltTx)
+
+					account := accs.GetAccountEvenEmpty(testnet.wallet.Addresses[0].GetPublicKeyHash())
+					if account != nil {
+
+						var balance, delegatedStakeAvailable uint64
+						if balance, err = account.GetAvailableBalance(blockHeight, config.NATIVE_TOKEN); err != nil {
+							return
 						}
+						if delegatedStakeAvailable, err = account.GetDelegatedStakeAvailable(blockHeight); err != nil {
+							return
+						}
+
+						if balance/2 < delegatedStakeAvailable {
+							if !testnet.mempool.ExistsTxSimpleVersion(testnet.wallet.Addresses[0].GetPublicKeyHash(), transaction_simple.TxSimpleScriptUnstake) {
+								if err = testnet.testnetCreateUnstakeTx(blockHeight, (delegatedStakeAvailable-balance)/2); err != nil {
+									return
+								}
+							}
+						} else {
+							if testnet.mempool.CountInputTxs(testnet.wallet.Addresses[0].GetPublicKeyHash()) < 100 {
+								for i := 0; i < 20; i++ {
+									err = testnet.testnetCreateTransfers(blockHeight)
+									time.Sleep(10 * time.Millisecond)
+								}
+							}
+						}
+
 					}
+
+					return
+				}); err != nil {
+					return
 				}
+
 			}
 
-			if err != nil {
-				gui.Error("Error creating testnet Tx", err)
-				err = nil
-			}
-
+			return
 		}()
+
+		if err != nil {
+			gui.Error("Error creating testnet Tx", err)
+			err = nil
+		}
 
 	}
 }
