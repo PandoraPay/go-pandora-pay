@@ -24,6 +24,10 @@ func (api *API) getBlockchain(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetBlockchain()
 }
 
+func (api *API) getBlockchainSync(values *url.Values) (interface{}, error) {
+	return api.apiCommon.GetBlockchainSync()
+}
+
 func (api *API) getInfo(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetInfo()
 }
@@ -183,6 +187,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 	api.GetMap = map[string]func(values *url.Values) (interface{}, error){
 		"":                   api.getInfo,
 		"chain":              api.getBlockchain,
+		"sync":               api.getBlockchainSync,
 		"ping":               api.getPing,
 		"block":              api.getBlock,
 		"block-hash":         api.getBlockHash,

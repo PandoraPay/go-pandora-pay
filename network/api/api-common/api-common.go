@@ -14,14 +14,19 @@ import (
 )
 
 type APICommon struct {
-	mempool    *mempool.Mempool
-	chain      *blockchain.Blockchain
-	localChain atomic.Value //*APIBlockchain
-	ApiStore   *APIStore
+	mempool        *mempool.Mempool
+	chain          *blockchain.Blockchain
+	localChain     atomic.Value //*APIBlockchain
+	localChainSync atomic.Value //*APIBlockchain
+	ApiStore       *APIStore
 }
 
 func (api *APICommon) GetBlockchain() (interface{}, error) {
 	return api.localChain.Load().(*APIBlockchain), nil
+}
+
+func (api *APICommon) GetBlockchainSync() (interface{}, error) {
+	return api.localChainSync.Load().(*APIBlockchainSync), nil
 }
 
 func (api *APICommon) GetInfo() (interface{}, error) {
@@ -158,12 +163,21 @@ func (api *APICommon) readLocalBlockchain(newChainData *blockchain.BlockchainDat
 	api.localChain.Store(newLocalChain)
 }
 
+//make sure it is safe to read
+func (api *APICommon) readLocalBlockchainSync(SyncTime uint64) {
+	newLocalSync := &APIBlockchainSync{
+		SyncTime: SyncTime,
+	}
+	api.localChainSync.Store(newLocalSync)
+}
+
 func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, apiStore *APIStore) (api *APICommon) {
 
 	api = &APICommon{
 		mempool,
 		chain,
 		atomic.Value{}, //*APIBlockchain
+		atomic.Value{}, //*APIBlockchainSync
 		apiStore,
 	}
 
@@ -179,6 +193,19 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, api
 			//it is safe to read
 			api.readLocalBlockchain(newChainData)
 
+		}
+	}()
+
+	go func() {
+		updateNewSync := api.chain.Sync.UpdateSyncMulticast.AddListener()
+		for {
+			newSyncDataReceived, ok := <-updateNewSync
+			if !ok {
+				break
+			}
+
+			newSyncData := newSyncDataReceived.(uint64)
+			api.readLocalBlockchainSync(newSyncData)
 		}
 	}()
 

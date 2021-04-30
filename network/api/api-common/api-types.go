@@ -14,6 +14,10 @@ type APIBlockchain struct {
 	TotalDifficulty string
 }
 
+type APIBlockchainSync struct {
+	SyncTime uint64
+}
+
 type APITransaction struct {
 	Tx      *transaction.Transaction
 	Mempool bool

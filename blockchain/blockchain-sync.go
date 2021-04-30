@@ -2,14 +2,16 @@ package blockchain
 
 import (
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"strconv"
 	"sync/atomic"
 	"time"
 )
 
 type BlockchainSync struct {
-	SyncTime                uint64 `json:"-"` // use atomic
-	BlocksChangedLastMinute uint32 `json:"-"` //use atomic
+	SyncTime                uint64                    `json:"-"` // use atomic
+	blocksChangedLastMinute uint32                    `json:"-"` //use atomic
+	UpdateSyncMulticast     *helpers.MulticastChannel `json:"-"` //chan uint64
 }
 
 func (chainSync *BlockchainSync) updateBlockchainSyncInfo() {
@@ -19,19 +21,30 @@ func (chainSync *BlockchainSync) updateBlockchainSyncInfo() {
 	} else {
 		gui.Info2Update("Sync", "FALSE")
 	}
-	gui.Info2Update("Sync Blocks", strconv.FormatUint(uint64(atomic.LoadUint32(&chainSync.BlocksChangedLastMinute)), 10))
+	gui.Info2Update("Sync Blocks", strconv.FormatUint(uint64(atomic.LoadUint32(&chainSync.blocksChangedLastMinute)), 10))
 }
 
 func (chainSync *BlockchainSync) SetSyncValue(sync bool) {
+
 	if sync {
-		atomic.CompareAndSwapUint64(&chainSync.SyncTime, 0, uint64(time.Now().Unix()))
+		newValue := uint64(time.Now().Unix())
+		if atomic.CompareAndSwapUint64(&chainSync.SyncTime, 0, newValue) {
+			chainSync.UpdateSyncMulticast.Broadcast(newValue)
+		}
 	} else {
-		atomic.SwapUint64(&chainSync.SyncTime, 0)
+		if atomic.LoadUint64(&chainSync.SyncTime) == 0 {
+			atomic.SwapUint64(&chainSync.SyncTime, 0)
+			chainSync.UpdateSyncMulticast.Broadcast(0)
+		}
 	}
+
 }
 
 func (chainSync *BlockchainSync) addBlocksChanged(blocks uint32) {
-	atomic.AddUint32(&chainSync.BlocksChangedLastMinute, blocks)
+	blocksChangedLastMinute := atomic.AddUint32(&chainSync.blocksChangedLastMinute, blocks)
+	if blocksChangedLastMinute > 2 {
+		chainSync.SetSyncValue(false)
+	}
 }
 
 func (chainSync *BlockchainSync) start() {
@@ -39,11 +52,11 @@ func (chainSync *BlockchainSync) start() {
 		for {
 			time.Sleep(time.Minute)
 
-			blocksLastMinute := atomic.SwapUint32(&chainSync.BlocksChangedLastMinute, 0)
-			if blocksLastMinute > 2 {
-				chainSync.SetSyncValue(true)
-			} else {
+			blocksChangedLastMinute := atomic.SwapUint32(&chainSync.blocksChangedLastMinute, 0)
+			if blocksChangedLastMinute > 2 {
 				chainSync.SetSyncValue(false)
+			} else {
+				chainSync.SetSyncValue(true)
 			}
 
 		}
@@ -61,7 +74,8 @@ func createBlockchainSync() (out *BlockchainSync) {
 
 	out = &BlockchainSync{
 		SyncTime:                0,
-		BlocksChangedLastMinute: 0,
+		blocksChangedLastMinute: 0,
+		UpdateSyncMulticast:     helpers.NewMulticastChannel(),
 	}
 
 	out.start()

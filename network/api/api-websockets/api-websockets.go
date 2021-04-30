@@ -37,6 +37,14 @@ func (api *APIWebsockets) getBlockchain(conn *connection.AdvancedConnection, val
 	return json.Marshal(data)
 }
 
+func (api *APIWebsockets) getBlockchainSync(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	data, err := api.apiCommon.GetBlockchainSync()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(data)
+}
+
 func (api *APIWebsockets) getInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	data, err := api.apiCommon.GetInfo()
 	if err != nil {
@@ -232,6 +240,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error){
 		"":                   api.getInfo,
 		"chain":              api.getBlockchain,
+		"sync":               api.getBlockchainSync,
 		"handshake":          api.getHandshake,
 		"ping":               api.getPing,
 		"block":              api.getBlock,
