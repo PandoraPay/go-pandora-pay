@@ -15,7 +15,7 @@ func (builder *TransactionsBuilder) showWarningIfNotSyncCLI() {
 	}
 }
 
-func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
+func (builder *TransactionsBuilder) initCLI() {
 
 	cliTransfer := func(cmd string) (err error) {
 
@@ -222,8 +222,8 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 		return
 	}
 
-	gui.CommandDefineCallback("Wallet : TX: Transfer", cliTransfer)
-	gui.CommandDefineCallback("Wallet : TX: Delegate", cliDelegate)
-	gui.CommandDefineCallback("Wallet : TX: Unstake", cliUnstake)
+	gui.CommandDefineCallback("Wallet  : TX: Transfer", cliTransfer)
+	gui.CommandDefineCallback("Wallet  : TX: Delegate", cliDelegate)
+	gui.CommandDefineCallback("Wallet  : TX: Unstake", cliUnstake)
 
 }

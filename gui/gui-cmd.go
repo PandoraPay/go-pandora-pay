@@ -33,17 +33,18 @@ type Command struct {
 }
 
 var commands = []Command{
-	{Text: "Wallet : Decrypt"},
-	{Text: "Wallet : Show Mnemnonic"},
-	{Text: "Wallet : List Addresses"},
-	{Text: "Wallet : Show Private Key"},
-	{Text: "Wallet : Remove Address"},
-	{Text: "Wallet : Create New Address"},
-	{Text: "Wallet : TX: Transfer"},
-	{Text: "Wallet : TX: Delegate"},
-	{Text: "Wallet : TX: Unstake"},
-	{Text: "Wallet : Export JSON"},
-	{Text: "Wallet : Import JSON"},
+	{Text: "Wallet  : Decrypt"},
+	{Text: "Wallet  : Show Mnemnonic"},
+	{Text: "Wallet  : List Addresses"},
+	{Text: "Wallet  : Show Private Key"},
+	{Text: "Wallet  : Remove Address"},
+	{Text: "Wallet  : Create New Address"},
+	{Text: "Wallet  : TX: Transfer"},
+	{Text: "Wallet  : TX: Delegate"},
+	{Text: "Wallet  : TX: Unstake"},
+	{Text: "Wallet  : Export JSON"},
+	{Text: "Wallet  : Import JSON"},
+	{Text: "Mempool : Show Txs"},
 	{Text: "Exit"},
 }
 

@@ -264,7 +264,7 @@ func TransactionsBuilderInit(wallet *wallet.Wallet, mempool *mempool.Mempool, ch
 		mempool: mempool,
 	}
 
-	builder.initTransactionsBuilderCLI()
+	builder.initCLI()
 
 	return
 }

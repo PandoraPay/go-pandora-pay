@@ -251,5 +251,7 @@ func InitMemPool() (mempool *Mempool, err error) {
 	worker := new(mempoolWorker)
 	go worker.processing(mempool.newWork, mempool.txs, mempool.result)
 
+	mempool.initCLI()
+
 	return
 }

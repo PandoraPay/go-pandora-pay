@@ -197,11 +197,11 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	gui.CommandDefineCallback("Wallet : List Addresses", wallet.CliListAddresses)
-	gui.CommandDefineCallback("Wallet : Create New Address", cliCreateNewAddress)
-	gui.CommandDefineCallback("Wallet : Show Mnemnonic", cliShowMnemonic)
-	gui.CommandDefineCallback("Wallet : Show Private Key", cliShowPrivateKey)
-	gui.CommandDefineCallback("Wallet : Remove Address", cliRemoveAddress)
-	gui.CommandDefineCallback("Wallet : Export JSON", cliExportJSONWallet)
+	gui.CommandDefineCallback("Wallet  : List Addresses", wallet.CliListAddresses)
+	gui.CommandDefineCallback("Wallet  : Create New Address", cliCreateNewAddress)
+	gui.CommandDefineCallback("Wallet  : Show Mnemnonic", cliShowMnemonic)
+	gui.CommandDefineCallback("Wallet  : Show Private Key", cliShowPrivateKey)
+	gui.CommandDefineCallback("Wallet  : Remove Address", cliRemoveAddress)
+	gui.CommandDefineCallback("Wallet  : Export JSON", cliExportJSONWallet)
 
 }
