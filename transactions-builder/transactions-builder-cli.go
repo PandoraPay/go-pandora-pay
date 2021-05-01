@@ -9,9 +9,17 @@ import (
 	"pandora-pay/gui"
 )
 
+func (builder *TransactionsBuilder) showWarningIfNotSyncCLI() {
+	if builder.chain.Sync.GetSyncTime() == 0 {
+		gui.OutputWrite("Your node is not Sync yet. Wait for it to get sync.")
+	}
+}
+
 func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 
 	cliTransfer := func(cmd string) (err error) {
+
+		builder.showWarningIfNotSyncCLI()
 
 		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Transfer")
 		if err != nil {
@@ -80,6 +88,8 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 	}
 
 	cliDelegate := func(cmd string) (err error) {
+
+		builder.showWarningIfNotSyncCLI()
 
 		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Delegate")
 		if err != nil {
@@ -151,6 +161,8 @@ func (builder *TransactionsBuilder) initTransactionsBuilderCLI() {
 	}
 
 	cliUnstake := func(cmd string) (err error) {
+
+		builder.showWarningIfNotSyncCLI()
 
 		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Delegate")
 		if err != nil {

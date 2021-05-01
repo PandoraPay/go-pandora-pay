@@ -162,9 +162,9 @@ func (testnet *Testnet) run() {
 							return
 						}
 
-						if balance/2 < delegatedStakeAvailable {
+						if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 {
 							if !testnet.mempool.ExistsTxSimpleVersion(testnet.wallet.Addresses[0].GetPublicKeyHash(), transaction_simple.TxSimpleScriptUnstake) {
-								if err = testnet.testnetCreateUnstakeTx(blockHeight, (delegatedStakeAvailable-balance)/2); err != nil {
+								if err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
 									return
 								}
 							}
