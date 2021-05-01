@@ -128,7 +128,9 @@ func (testnet *Testnet) run() {
 		if !ok {
 			return
 		}
+
 		blockHeight := blockHeightReceived.(uint64)
+		syncTime := testnet.chain.Sync.GetSyncTime()
 
 		err := func() (err error) {
 
@@ -143,7 +145,7 @@ func (testnet *Testnet) run() {
 				}
 			}
 
-			if blockHeight >= 60 {
+			if blockHeight >= 60 && syncTime != 0 {
 
 				if err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 

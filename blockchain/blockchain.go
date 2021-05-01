@@ -379,10 +379,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	chain.mempool.DeleteTxs(insertedTxHashes)
 
+	newSyncTime, result := chain.Sync.addBlocksChanged(uint32(len(insertedBlocks)), false)
+
 	chain.UpdateMulticast.Broadcast(newChainData.Height)
 	chain.UpdateNewChainMulticast.Broadcast(newChainData)
-
-	chain.Sync.addBlocksChanged(uint32(len(insertedBlocks)))
+	if result {
+		chain.Sync.UpdateSyncMulticast.Broadcast(newSyncTime)
+	}
 
 	return
 }
