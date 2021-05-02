@@ -41,8 +41,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 			}
 
 			switch tx.TxScript {
-			case TxSimpleScriptDelegate:
-			case TxSimpleScriptUnstake:
+			case TxSimpleScriptDelegate, TxSimpleScriptUnstake:
 				if err = tx.Extra.IncludeTransactionVin0(blockHeight, acc); err != nil {
 					return
 				}
@@ -194,6 +193,7 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 	tx.TxScript = TransactionSimpleScriptType(n)
 	switch tx.TxScript {
 	case TxSimpleScriptNormal:
+		//nothing
 	case TxSimpleScriptUnstake, TxSimpleScriptWithdraw:
 		tx.Extra = &transaction_simple_extra.TransactionSimpleUnstake{}
 	case TxSimpleScriptDelegate:

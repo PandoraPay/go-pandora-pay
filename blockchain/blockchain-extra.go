@@ -4,7 +4,6 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/genesis"
@@ -54,10 +53,9 @@ func (chain *Blockchain) init() (chainData *BlockchainData, err error) {
 			acc := accs.GetAccountEvenEmpty(airdrop.PublicKeyHash)
 
 			if airdrop.DelegatedStakePublicKeyHash != nil {
-				acc.DelegatedStakeVersion = 1
-				acc.DelegatedStake = new(dpos.DelegatedStake)
-				acc.DelegatedStake.StakeAvailable = airdrop.Amount
-				acc.DelegatedStake.DelegatedPublicKeyHash = airdrop.DelegatedStakePublicKeyHash
+				if err = acc.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKeyHash); err != nil {
+					return
+				}
 			} else {
 				if err = acc.AddBalance(true, airdrop.Amount, config.NATIVE_TOKEN); err != nil {
 					return

@@ -15,6 +15,12 @@ type TransactionSimpleDelegate struct {
 }
 
 func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) (err error) {
+	if !acc.HasDelegatedStake() {
+		if err = acc.CreateDelegatedStake(0, tx.NewPublicKeyHash); err != nil {
+			return
+		}
+	}
+
 	if err = acc.DelegatedStake.AddStakePendingStake(tx.Amount, blockHeight); err != nil {
 		return
 	}

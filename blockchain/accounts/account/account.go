@@ -5,6 +5,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/config"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
@@ -158,6 +159,21 @@ func (account *Account) Serialize() []byte {
 	}
 
 	return writer.Bytes()
+}
+
+func (account *Account) CreateDelegatedStake(amount uint64, delegatedStakePublicKeyHash []byte) error {
+	if account.HasDelegatedStake() {
+		return errors.New("It is already delegated")
+	}
+	if delegatedStakePublicKeyHash == nil || len(delegatedStakePublicKeyHash) != cryptography.KeyHashSize {
+		return errors.New("DelegatedStakePublicKeyHash is Invalid")
+	}
+	account.DelegatedStakeVersion = 1
+	account.DelegatedStake = new(dpos.DelegatedStake)
+	account.DelegatedStake.StakeAvailable = amount
+	account.DelegatedStake.DelegatedPublicKeyHash = delegatedStakePublicKeyHash
+
+	return nil
 }
 
 func (account *Account) Deserialize(buf []byte) (err error) {
