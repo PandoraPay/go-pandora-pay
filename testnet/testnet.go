@@ -65,7 +65,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].GetAddressEncoded()}, 0, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].GetAddressEncoded()}, 0, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
 	if err != nil {
 		return
 	}

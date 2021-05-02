@@ -24,12 +24,14 @@ func (delegatedStakePending *DelegatedStakePending) Serialize(writer *helpers.Bu
 }
 
 func (delegatedStakePending *DelegatedStakePending) Deserialize(reader *helpers.BufferReader) (err error) {
+
 	if delegatedStakePending.PendingAmount, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 	if delegatedStakePending.ActivationHeight, err = reader.ReadUvarint(); err != nil {
 		return
 	}
+
 	var read bool
 	if read, err = reader.ReadBool(); err != nil {
 		return

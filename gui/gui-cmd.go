@@ -37,6 +37,7 @@ var commands = []Command{
 	{Text: "Wallet  : Show Mnemnonic"},
 	{Text: "Wallet  : List Addresses"},
 	{Text: "Wallet  : Show Private Key"},
+	{Text: "Wallet  : Import Private Key"},
 	{Text: "Wallet  : Remove Address"},
 	{Text: "Wallet  : Create New Address"},
 	{Text: "Wallet  : TX: Transfer"},

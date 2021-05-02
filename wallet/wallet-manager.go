@@ -46,6 +46,59 @@ func (wallet *Wallet) GetWalletAddressByAddress(addressEncoded string) (out *wal
 	return
 }
 
+func (wallet *Wallet) ImportPrivateKey(name string, privateKey []byte) (adr *wallet_address.WalletAddress, err error) {
+
+	if len(privateKey) != 32 {
+		errors.New("Invalid PrivateKey length")
+	}
+
+	wallet.RLock()
+	defer wallet.RUnlock()
+
+	adr = &wallet_address.WalletAddress{
+		Name:           name,
+		PrivateKey:     &addresses.PrivateKey{Key: privateKey},
+		SeedIndex:      0,
+		DelegatedStake: nil,
+		IsMine:         true,
+	}
+
+	err = wallet.AddAddress(adr, false)
+
+	return
+}
+
+func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool) (err error) {
+
+	if lock {
+		wallet.Lock()
+		defer wallet.Unlock()
+	}
+
+	if adr.Address, err = adr.PrivateKey.GenerateAddress(true, 0, []byte{}); err != nil {
+		return
+	}
+
+	adr.AddressEncoded = adr.Address.EncodeAddr()
+
+	wallet.Addresses = append(wallet.Addresses, adr)
+	wallet.AddressesMap[string(adr.Address.PublicKeyHash)] = adr
+
+	wallet.Count += 1
+	wallet.SeedIndex += 1
+
+	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.GetPublicKeyHash())
+	wallet.mempool.Wallet.AddWallet(adr.GetPublicKeyHash())
+
+	wallet.updateWallet()
+	if err = wallet.saveWallet(wallet.Count-1, wallet.Count, -1); err != nil {
+		return
+	}
+
+	return
+
+}
+
 func (wallet *Wallet) AddNewAddress() (adr *wallet_address.WalletAddress, err error) {
 
 	//avoid generating the same address twice
@@ -70,23 +123,12 @@ func (wallet *Wallet) AddNewAddress() (adr *wallet_address.WalletAddress, err er
 		IsMine:         true,
 	}
 
-	if adr.Address, err = adr.PrivateKey.GenerateAddress(true, 0, []byte{}); err != nil {
-		return
-	}
-
-	adr.AddressEncoded = adr.Address.EncodeAddr()
-
-	wallet.Addresses = append(wallet.Addresses, adr)
-	wallet.AddressesMap[string(adr.Address.PublicKeyHash)] = adr
-
 	wallet.Count += 1
 	wallet.SeedIndex += 1
 
-	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.GetPublicKeyHash())
-	wallet.mempool.Wallet.AddWallet(adr.GetPublicKeyHash())
-
-	wallet.updateWallet()
-	if err = wallet.saveWallet(wallet.Count-1, wallet.Count, -1); err != nil {
+	if err = wallet.AddAddress(adr, false); err != nil {
+		wallet.Count -= 1
+		wallet.SeedIndex -= 1
 		return
 	}
 

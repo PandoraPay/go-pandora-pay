@@ -197,10 +197,33 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
+	cliImportPrivateKey := func(cmd string) (err error) {
+
+		privateKey, ok := gui.OutputReadBytes("Write Private key", []int{32})
+		if !ok {
+			return
+		}
+
+		name, ok := gui.OutputReadString("Write Name of the newly imported address")
+		if !ok {
+			return
+		}
+
+		var adr *wallet_address.WalletAddress
+		if adr, err = wallet.ImportPrivateKey(name, privateKey); err != nil {
+			return
+		}
+
+		gui.OutputWrite("Address was imported: " + adr.AddressEncoded)
+
+		return
+	}
+
 	gui.CommandDefineCallback("Wallet  : List Addresses", wallet.CliListAddresses)
 	gui.CommandDefineCallback("Wallet  : Create New Address", cliCreateNewAddress)
 	gui.CommandDefineCallback("Wallet  : Show Mnemnonic", cliShowMnemonic)
 	gui.CommandDefineCallback("Wallet  : Show Private Key", cliShowPrivateKey)
+	gui.CommandDefineCallback("Wallet  : Import Private Key", cliImportPrivateKey)
 	gui.CommandDefineCallback("Wallet  : Remove Address", cliRemoveAddress)
 	gui.CommandDefineCallback("Wallet  : Export JSON", cliExportJSONWallet)
 
