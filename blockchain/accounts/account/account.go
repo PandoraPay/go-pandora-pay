@@ -95,7 +95,7 @@ func (account *Account) RefreshDelegatedStake(blockHeight uint64) (err error) {
 		stakePending := account.DelegatedStake.StakesPending[i]
 		if stakePending.ActivationHeight <= blockHeight {
 
-			if stakePending.PendingType == true {
+			if stakePending.PendingType == dpos.DelegatedStakePendingStake {
 				if err = helpers.SafeUint64Add(&account.DelegatedStake.StakeAvailable, stakePending.PendingAmount); err != nil {
 					return
 				}
@@ -126,18 +126,20 @@ func (account *Account) GetAvailableBalance(blockHeight uint64, token []byte) (r
 	for _, balance := range account.Balances {
 		if bytes.Equal(balance.Token, token) {
 			result = balance.Amount
-			if bytes.Equal(token, config.NATIVE_TOKEN) && account.DelegatedStakeVersion == 1 {
-				unstake := uint64(0)
-				if unstake, err = account.DelegatedStake.GetDelegatedUnstakeAvailable(blockHeight); err != nil {
-					return
-				}
-				if err = helpers.SafeUint64Add(&result, unstake); err != nil {
-					return
-				}
-			}
+			break
+		}
+	}
+
+	if bytes.Equal(token, config.NATIVE_TOKEN) && account.DelegatedStakeVersion == 1 {
+		unstake := uint64(0)
+		if unstake, err = account.DelegatedStake.GetDelegatedUnstakeAvailable(blockHeight); err != nil {
+			return
+		}
+		if err = helpers.SafeUint64Add(&result, unstake); err != nil {
 			return
 		}
 	}
+
 	return
 }
 

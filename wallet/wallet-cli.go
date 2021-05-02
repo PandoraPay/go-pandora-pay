@@ -39,10 +39,10 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 
 				acc := accs.GetAccount(walletAddress.GetPublicKeyHash())
 
-				gui.OutputWrite(fmt.Sprintf("%18s: %s", "Nonce", strconv.FormatUint(acc.Nonce, 10)))
 				if acc == nil {
 					gui.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))
 				} else {
+					gui.OutputWrite(fmt.Sprintf("%18s: %s", "Nonce", strconv.FormatUint(acc.Nonce, 10)))
 					if len(acc.Balances) > 0 {
 						gui.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", ""))
 						for _, balance := range acc.Balances {
