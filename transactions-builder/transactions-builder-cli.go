@@ -222,8 +222,8 @@ func (builder *TransactionsBuilder) initCLI() {
 		return
 	}
 
-	gui.CommandDefineCallback("Wallet  : TX: Transfer", cliTransfer)
-	gui.CommandDefineCallback("Wallet  : TX: Delegate", cliDelegate)
-	gui.CommandDefineCallback("Wallet  : TX: Unstake", cliUnstake)
+	gui.CommandDefineCallback("Transfer", cliTransfer)
+	gui.CommandDefineCallback("Delegate", cliDelegate)
+	gui.CommandDefineCallback("Unstake", cliUnstake)
 
 }

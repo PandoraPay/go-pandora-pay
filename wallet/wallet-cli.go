@@ -83,6 +83,7 @@ func (wallet *Wallet) CliSelectAddress(text string) (walletAddress *wallet_addre
 
 	index, ok := gui.OutputReadInt(text, nil)
 	if !ok {
+		err = errors.New("Canceled")
 		return
 	}
 
@@ -219,12 +220,12 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	gui.CommandDefineCallback("Wallet  : List Addresses", wallet.CliListAddresses)
-	gui.CommandDefineCallback("Wallet  : Create New Address", cliCreateNewAddress)
-	gui.CommandDefineCallback("Wallet  : Show Mnemnonic", cliShowMnemonic)
-	gui.CommandDefineCallback("Wallet  : Show Private Key", cliShowPrivateKey)
-	gui.CommandDefineCallback("Wallet  : Import Private Key", cliImportPrivateKey)
-	gui.CommandDefineCallback("Wallet  : Remove Address", cliRemoveAddress)
-	gui.CommandDefineCallback("Wallet  : Export JSON", cliExportJSONWallet)
+	gui.CommandDefineCallback("List Addresses", wallet.CliListAddresses)
+	gui.CommandDefineCallback("Create New Address", cliCreateNewAddress)
+	gui.CommandDefineCallback("Show Mnemnonic", cliShowMnemonic)
+	gui.CommandDefineCallback("Show Private Key", cliShowPrivateKey)
+	gui.CommandDefineCallback("Import Private Key", cliImportPrivateKey)
+	gui.CommandDefineCallback("Remove Address", cliRemoveAddress)
+	gui.CommandDefineCallback("Export JSON", cliExportJSONWallet)
 
 }

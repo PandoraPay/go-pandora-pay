@@ -3,6 +3,7 @@ package gui
 import (
 	"encoding/hex"
 	"errors"
+	"fmt"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"os"
@@ -28,25 +29,26 @@ var NotAcceptedCharacters = map[string]bool{
 }
 
 type Command struct {
+	Name     string
 	Text     string
 	Callback func(string) error
 }
 
 var commands = []Command{
-	{Text: "Wallet  : Decrypt"},
-	{Text: "Wallet  : Show Mnemnonic"},
-	{Text: "Wallet  : List Addresses"},
-	{Text: "Wallet  : Show Private Key"},
-	{Text: "Wallet  : Import Private Key"},
-	{Text: "Wallet  : Remove Address"},
-	{Text: "Wallet  : Create New Address"},
-	{Text: "Wallet  : TX: Transfer"},
-	{Text: "Wallet  : TX: Delegate"},
-	{Text: "Wallet  : TX: Unstake"},
-	{Text: "Wallet  : Export JSON"},
-	{Text: "Wallet  : Import JSON"},
-	{Text: "Mempool : Show Txs"},
-	{Text: "Exit"},
+	{Name: "Wallet", Text: "Decrypt"},
+	{Name: "Wallet", Text: "Show Mnemnonic"},
+	{Name: "Wallet", Text: "List Addresses"},
+	{Name: "Wallet", Text: "Show Private Key"},
+	{Name: "Wallet", Text: "Import Private Key"},
+	{Name: "Wallet", Text: "Remove Address"},
+	{Name: "Wallet", Text: "Create New Address"},
+	{Name: "Wallet:TX", Text: "Transfer"},
+	{Name: "Wallet:TX", Text: "Delegate"},
+	{Name: "Wallet:TX", Text: "Unstake"},
+	{Name: "Wallet", Text: "Export JSON"},
+	{Name: "Wallet", Text: "Import JSON"},
+	{Name: "Mempool", Text: "Show Txs"},
+	{Name: "App", Text: "Exit"},
 }
 
 var cmd *widgets.List
@@ -96,8 +98,8 @@ func cmdProcess(e ui.Event) {
 
 		if cmdStatus.Load().(string) == "cmd" {
 
-			command := commands[cmd.SelectedRow]
 			cmd.Lock()
+			command := commands[cmd.SelectedRow]
 			cmd.SelectedRow = 0
 			cmd.Unlock()
 
@@ -344,7 +346,7 @@ func cmdInit() {
 	cmd.Title = "Commands"
 	cmdRows = make([]string, len(commands))
 	for i, command := range commands {
-		cmdRows[i] = strconv.Itoa(i) + " " + command.Text
+		cmdRows[i] = fmt.Sprintf("%2d %10s %s", i, command.Name, command.Text)
 	}
 	cmd.Rows = cmdRows
 	cmd.TextStyle = ui.NewStyle(ui.ColorYellow)
