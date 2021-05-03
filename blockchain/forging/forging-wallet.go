@@ -98,6 +98,10 @@ func (w *ForgingWallet) ProcessUpdates() (err error) {
 				accs := accounts.NewAccounts(boltTx)
 				acc := accs.GetAccount(update.pubKeyHash)
 
+				if acc == nil {
+					return errors.New("Account was not found")
+				}
+
 				if acc.DelegatedStake == nil || !bytes.Equal(acc.DelegatedStake.DelegatedPublicKeyHash, delegatedPublicKeyHash) {
 					return errors.New("Delegated stake is not matching")
 				}

@@ -17,7 +17,7 @@ func (wallet *Wallet) saveWalletAddress(adr *wallet_address.WalletAddress) error
 
 	for i, adr2 := range wallet.Addresses {
 		if adr2 == adr {
-			return wallet.saveWallet(i, i, -1)
+			return wallet.saveWallet(i, i+1, -1)
 		}
 	}
 
@@ -33,7 +33,7 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int) error {
 			return
 		}
 
-		marshal, err := helpers.GetJSON(wallet, "Addresses")
+		marshal, err := helpers.GetJSON(wallet, "Addresses", "AddressesMap")
 		if err != nil {
 			return
 		}
