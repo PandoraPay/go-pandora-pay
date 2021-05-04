@@ -6,7 +6,7 @@ import (
 )
 
 type MulticastChannel struct {
-	listeners atomic.Value
+	listeners *atomic.Value
 	sync.Mutex
 }
 
@@ -61,7 +61,7 @@ func (self *MulticastChannel) CloseAll() {
 func NewMulticastChannel() *MulticastChannel {
 
 	multicast := &MulticastChannel{
-		listeners: atomic.Value{},
+		listeners: &atomic.Value{},
 	}
 
 	multicast.listeners.Store(make([]chan interface{}, 0))

@@ -24,7 +24,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 	forkFound, exists := consensus.forks.hashes.Load(string(chainUpdateNotification.Hash))
 	if exists {
 		fork := forkFound.(*Fork)
-		fork.AddConn(conn, false)
+		fork.AddConn(conn, true)
 		return
 	}
 
@@ -40,7 +40,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 			end:                chainUpdateNotification.End,
 			hash:               chainUpdateNotification.Hash,
 			prevHash:           chainUpdateNotification.PrevHash,
-			bigTotalDifficulty: atomic.Value{},
+			bigTotalDifficulty: &atomic.Value{},
 			downloaded:         false,
 			blocks:             make([]*block_complete.BlockComplete, 0),
 			conns:              []*connection.AdvancedConnection{conn},

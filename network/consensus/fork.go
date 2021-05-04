@@ -9,7 +9,7 @@ import (
 )
 
 type Fork struct {
-	bigTotalDifficulty atomic.Value // *big.Int
+	bigTotalDifficulty *atomic.Value // *big.Int
 
 	downloaded bool
 
@@ -41,9 +41,9 @@ func (fork *Fork) getRandomConn() (conn *connection.AdvancedConnection) {
 	return nil
 }
 
-func (fork *Fork) AddConn(conn *connection.AdvancedConnection, isLocked bool) {
+func (fork *Fork) AddConn(conn *connection.AdvancedConnection, lock bool) {
 
-	if !isLocked {
+	if lock {
 		fork.Lock()
 		defer fork.Unlock()
 	}

@@ -34,10 +34,10 @@ type mempoolResult struct {
 }
 
 type mempoolTxs struct {
-	txsCount     int64        //use atomic
-	txsInserted  int64        //use atomic
-	txsList      atomic.Value // []*mempoolTx
-	txsListMutex sync.Mutex   // for writing
+	txsCount     int64         //use atomic
+	txsInserted  int64         //use atomic
+	txsList      *atomic.Value // []*mempoolTx
+	txsListMutex *sync.Mutex   // for writing
 }
 
 type Mempool struct {
@@ -227,7 +227,8 @@ func InitMemPool() (mempool *Mempool, err error) {
 		newWork: make(chan *mempoolWork),
 		result:  &mempoolResult{},
 		txs: &mempoolTxs{
-			txsList: atomic.Value{},
+			txsList:      &atomic.Value{},
+			txsListMutex: &sync.Mutex{},
 		},
 		Wallet:                  createMempoolWallet(),
 		NewTransactionMulticast: helpers.NewMulticastChannel(),

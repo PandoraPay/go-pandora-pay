@@ -32,8 +32,8 @@ type AdvancedConnection struct {
 	IsClosed       *abool.AtomicBool
 	getMap         map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
 	answerMap      map[uint32]chan *AdvancedConnectionAnswer
-	answerMapLock  sync.RWMutex `json:"-"`
-	sendingLock    sync.Mutex   `json:"-"`
+	answerMapLock  *sync.RWMutex `json:"-"`
+	sendingLock    *sync.Mutex   `json:"-"`
 	ConnectionType bool
 }
 
@@ -288,8 +288,8 @@ func CreateAdvancedConnection(conn *websocket.Conn, getMap map[string]func(conn 
 		answerCounter:  0,
 		getMap:         getMap,
 		answerMap:      make(map[uint32]chan *AdvancedConnectionAnswer),
-		answerMapLock:  sync.RWMutex{},
-		sendingLock:    sync.Mutex{},
+		answerMapLock:  &sync.RWMutex{},
+		sendingLock:    &sync.Mutex{},
 		ConnectionType: connectionType,
 	}
 }

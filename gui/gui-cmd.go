@@ -52,8 +52,8 @@ var commands = []Command{
 }
 
 var cmd *widgets.List
-var cmdStatus = atomic.Value{}
-var cmdInput = atomic.Value{}
+var cmdStatus = &atomic.Value{}
+var cmdInput = &atomic.Value{}
 var cmdInputCn = make(chan string)
 var cmdRows []string
 

@@ -18,8 +18,8 @@ type ForgingWallet struct {
 	addressesMap map[string]*ForgingWalletAddress
 	sync.RWMutex `json:"-"`
 
-	updates      atomic.Value //[]*ForgingWalletAddressUpdate
-	updatesMutex sync.Mutex
+	updates      *atomic.Value //[]*ForgingWalletAddressUpdate
+	updatesMutex *sync.Mutex
 }
 
 type ForgingWalletAddressUpdate struct {

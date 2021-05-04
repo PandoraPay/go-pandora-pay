@@ -9,8 +9,8 @@ import (
 
 type Forks struct {
 	hashes    *sync.Map
-	list      atomic.Value //[]*Fork
-	listMutex sync.Mutex
+	list      *atomic.Value //[]*Fork
+	listMutex *sync.Mutex
 }
 
 func (forks *Forks) getBestFork() (selectedFork *Fork) {
@@ -32,20 +32,25 @@ func (forks *Forks) getBestFork() (selectedFork *Fork) {
 
 func (forks *Forks) removeFork(fork *Fork, removeHashes bool) {
 
-	if removeHashes {
-		forks.hashes.Delete(string(fork.hash))
-	}
+	fork.RLock()
+	defer fork.RUnlock()
 
 	forks.listMutex.Lock()
 	defer forks.listMutex.Unlock()
+
 	list := forks.list.Load().([]*Fork)
 	for i, fork2 := range list {
 		if fork2 == fork {
 			list[i] = list[len(list)-1]
 			list = list[:len(list)-1]
+
+			forks.list.Store(list)
+			if removeHashes {
+				forks.hashes.Delete(string(fork.hash))
+			}
+
 			break
 		}
 	}
-	forks.list.Store(list)
 
 }

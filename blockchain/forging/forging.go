@@ -28,8 +28,8 @@ func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
 		SolutionCn: make(chan *block_complete.BlockComplete),
 		Wallet: &ForgingWallet{
 			addressesMap: make(map[string]*ForgingWalletAddress),
-			updates:      atomic.Value{},
-			updatesMutex: sync.Mutex{},
+			updates:      &atomic.Value{},
+			updatesMutex: &sync.Mutex{},
 		},
 	}
 

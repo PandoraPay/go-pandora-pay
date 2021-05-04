@@ -48,6 +48,7 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 		if fork.errors > 2 {
 			return false
 		}
+
 		if fork.errors < -10 {
 			fork.errors = -10
 		}
@@ -156,10 +157,13 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 			willRemove := true
 
+			gui.Log("Status. Downloading fork")
 			if thread.downloadFork(fork) {
 
+				gui.Log("Status. DownloadingRemainingBlocks fork")
 				if thread.downloadRemainingBlocks(fork) {
 
+					gui.Log("Status. AddBlocks fork")
 					if err := thread.chain.AddBlocks(fork.blocks, false); err != nil {
 						gui.Error("Invalid Fork", err)
 					} else {
@@ -171,6 +175,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 						}
 						fork.Unlock()
 					}
+					gui.Log("Status. AddBlocks DONE fork")
 
 				}
 

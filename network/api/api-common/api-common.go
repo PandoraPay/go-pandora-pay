@@ -16,8 +16,8 @@ import (
 type APICommon struct {
 	mempool        *mempool.Mempool
 	chain          *blockchain.Blockchain
-	localChain     atomic.Value //*APIBlockchain
-	localChainSync atomic.Value //*APIBlockchain
+	localChain     *atomic.Value //*APIBlockchain
+	localChainSync *atomic.Value //*APIBlockchain
 	ApiStore       *APIStore
 }
 
@@ -176,8 +176,8 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, api
 	api = &APICommon{
 		mempool,
 		chain,
-		atomic.Value{}, //*APIBlockchain
-		atomic.Value{}, //*APIBlockchainSync
+		&atomic.Value{}, //*APIBlockchain
+		&atomic.Value{}, //*APIBlockchainSync
 		apiStore,
 	}
 

@@ -18,8 +18,8 @@ import (
 type Websockets struct {
 	AllAddresses sync.Map
 
-	AllList      atomic.Value //[]*connection.AdvancedConnection
-	AllListMutex sync.Mutex
+	AllList      *atomic.Value //[]*connection.AdvancedConnection
+	AllListMutex *sync.Mutex
 
 	Clients       int64
 	ServerClients int64
@@ -148,8 +148,8 @@ func CreateWebsockets(api *api_http.API, apiWebsockets *api_websockets.APIWebsoc
 		AllAddresses:                 sync.Map{},
 		Clients:                      0,
 		ServerClients:                0,
-		AllList:                      atomic.Value{},
-		AllListMutex:                 sync.Mutex{},
+		AllList:                      &atomic.Value{},
+		AllListMutex:                 &sync.Mutex{},
 		UpdateNewConnectionMulticast: helpers.NewMulticastChannel(),
 		api:                          api,
 		ApiWebsockets:                apiWebsockets,

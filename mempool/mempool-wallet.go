@@ -10,7 +10,7 @@ type mempoolWalletAddress struct {
 
 type mempoolWallet struct {
 	myAddressesMap map[string]*mempoolWalletAddress
-	sync.RWMutex
+	sync.RWMutex   `json:"-"`
 }
 
 func (w *mempoolWallet) AddWallet(publicKeyHash []byte) {
