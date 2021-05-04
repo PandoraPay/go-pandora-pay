@@ -75,7 +75,7 @@ func (api *APICommon) GetBlockComplete(height uint64, hash []byte, typeValue uin
 }
 
 func (api *APICommon) GetBlock(height uint64, hash []byte) (interface{}, error) {
-	if hash == nil {
+	if hash != nil {
 		return api.ApiStore.LoadBlockWithTXsFromHash(hash)
 	} else {
 		return api.ApiStore.LoadBlockWithTXsFromHeight(height)
