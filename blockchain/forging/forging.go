@@ -75,7 +75,11 @@ func (forging *Forging) ForgingNewWork(blkComplete *block_complete.BlockComplete
 			blkComplete: blkComplete,
 			target:      target,
 		}
-		forging.workCn <- work
+
+		select {
+		case forging.workCn <- work:
+		default:
+		}
 	}
 }
 

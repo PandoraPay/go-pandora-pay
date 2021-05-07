@@ -34,6 +34,10 @@ func (network *Network) execute() {
 			knownNode = knownList[rand.Intn(len(knownList))]
 		}
 
+		if knownNode.Url.Hostname() == "127.0.0.1" && knownNode.Url.Port() == network.tcpServer.Port {
+			continue //skip connecting to myself
+		}
+
 		_, exists := network.Websockets.AllAddresses.Load(knownNode.UrlHostOnly)
 		if !exists {
 			gui.Log("connecting to: " + knownNode.UrlStr)

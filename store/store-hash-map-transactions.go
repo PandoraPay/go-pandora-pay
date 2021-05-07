@@ -6,20 +6,20 @@ import (
 )
 
 type transactionChange struct {
-	key        []byte
-	transition []byte
+	Key        []byte
+	Transition []byte
 }
 
 func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) error {
 
-	values := []transactionChange{}
+	values := make([]*transactionChange, 0)
 	for k, v := range hashMap.Changes {
 		if v.Status == "del" || v.Status == "update" {
 			key := []byte(k)
 			original := hashMap.get(key, false)
-			values = append(values, transactionChange{
-				key:        key,
-				transition: original,
+			values = append(values, &transactionChange{
+				Key:        key,
+				Transition: original,
 			})
 
 		}
@@ -43,21 +43,21 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) error {
 		return errors.New("transitions didn't exist")
 	}
 
-	values := []transactionChange{}
+	values := make([]*transactionChange, 0)
 	if err := json.Unmarshal(data, &values); err != nil {
 		return err
 	}
 
 	for _, change := range values {
-		if change.transition == nil {
-			hashMap.Committed[string(change.key)] = &CommittedMapElement{
+		if change.Transition == nil {
+			hashMap.Committed[string(change.Key)] = &CommittedMapElement{
 				Data:   nil,
 				Status: "del",
 				Commit: "",
 			}
 		} else {
-			hashMap.Committed[string(change.key)] = &CommittedMapElement{
-				Data:   change.transition,
+			hashMap.Committed[string(change.Key)] = &CommittedMapElement{
+				Data:   change.Transition,
 				Status: "update",
 				Commit: "",
 			}

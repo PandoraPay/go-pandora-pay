@@ -67,7 +67,13 @@ func (api *API) getBlockHash(values *url.Values) (interface{}, error) {
 			return nil, errors.New("parameter 'height' is not a number")
 		}
 
-		return api.apiCommon.GetBlockHash(height)
+		out, err := api.apiCommon.GetBlockHash(height)
+		if err != nil {
+			return nil, err
+		}
+
+		hash := helpers.HexBytes(out.([]byte))
+		return hash, nil
 	}
 	return nil, errors.New("Hash parameter is missing")
 }

@@ -87,11 +87,14 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	err = func() (err error) {
 
 		var boltTx *bolt.Tx
+		boltTxClosed := false
 		if boltTx, err = store.StoreBlockchain.DB.Begin(true); err != nil {
 			return
 		}
 		defer func() {
-			err = boltTx.Rollback()
+			if !boltTxClosed {
+				err = boltTx.Rollback()
+			}
 		}()
 
 		var writer *bolt.Bucket
@@ -332,10 +335,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			}
 			chain.ChainData.Store(newChainData)
 
+			boltTxClosed = true
+
 		} else {
 			//only rollback
 		}
 
+		return
 	}()
 
 	chain.mutex.Unlock()
@@ -345,6 +351,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			chain.createNextBlockForForging()
 		}
 		return
+	}
+
+	if len(insertedBlocks) == 0 {
+		return errors.New("No blocks were inserted")
 	}
 
 	gui.Warning("-------------------------------------------")
