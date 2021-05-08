@@ -89,16 +89,18 @@ func processArgument(any ...interface{}) string {
 	for i, it := range any {
 
 		if i > 0 {
-			s += "\n"
+			s += " "
 		}
 
 		switch v := it.(type) {
 		case nil:
-			s += " "
+			s += "nil"
 		case string:
 			s += v
 		case int:
 			s += strconv.Itoa(v)
+		case uint64:
+			s += strconv.FormatUint(v, 10)
 		case []byte:
 			s += hex.EncodeToString(v)
 		case error:

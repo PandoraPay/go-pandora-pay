@@ -17,9 +17,10 @@ type ForgingWork struct {
 }
 
 type ForgingSolution struct {
-	timestamp uint64
-	address   *ForgingWalletAddress
-	work      *ForgingWork
+	timestamp     uint64
+	address       *ForgingWalletAddress
+	work          *ForgingWork
+	stakingAmount uint64
 }
 type ForgingWalletAddressRequired struct {
 	publicKeyHash []byte //20 byte
@@ -94,9 +95,10 @@ func (worker *ForgingWorkerThread) forge() {
 				if difficulty.CheckKernelHashBig(kernelHash, work.target) {
 
 					worker.workerSolutionCn <- &ForgingSolution{
-						timestamp: timestamp,
-						address:   address.wallet,
-						work:      work,
+						timestamp:     timestamp,
+						address:       address.wallet,
+						work:          work,
+						stakingAmount: address.stakingAmount,
 					}
 					work = nil
 					diff = 0

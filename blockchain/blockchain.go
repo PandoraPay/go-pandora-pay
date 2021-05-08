@@ -38,8 +38,7 @@ type Blockchain struct {
 	UpdateNewChainMulticast *helpers.MulticastChannel `json:"-"` //chan *BlockchainData
 }
 
-func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplete, calledByForging bool) (err error) {
-
+func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockComplete) (err error) {
 	if len(blocksComplete) == 0 {
 		return errors.New("Blocks length is ZERO")
 	}
@@ -51,6 +50,15 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		if err = blkComplete.Verify(); err != nil {
 			return
 		}
+	}
+
+	return
+}
+
+func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplete, calledByForging bool) (err error) {
+
+	if err = chain.validateBlocks(blocksComplete); err != nil {
+		return
 	}
 
 	//avoid processing the same function twice
@@ -201,6 +209,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					return errors.New("Delegated stake ready amount is not enought")
 				}
 
+				gui.Log("Staking amount ", newChainData.Height, "value", blkComplete.Block.StakingAmount)
+				gui.Log("Target check ", newChainData.Height, "value", newChainData.Target.Text(10))
+
 				if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHash, newChainData.Target) != true {
 					return errors.New("KernelHash Difficulty is not met")
 				}
@@ -257,6 +268,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				if newChainData.Target, err = newChainData.computeNextTargetBig(writer); err != nil {
 					return err
 				}
+
+				gui.Log("Target new   ", newChainData.Height, "value", newChainData.Target.Text(10))
 
 				newChainData.Height += 1
 				newChainData.Transactions += uint64(len(blkComplete.Txs))

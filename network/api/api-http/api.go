@@ -36,7 +36,7 @@ func (api *API) getPing(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetPing()
 }
 
-func (api *API) getBlockComplete(values *url.Values) (interface{}, error) {
+func (api *API) getBlockComplete(values *url.Values) (out interface{}, err error) {
 
 	var typeValue = uint8(0)
 	if values.Get("type") == "1" {
@@ -44,20 +44,29 @@ func (api *API) getBlockComplete(values *url.Values) (interface{}, error) {
 	}
 
 	if values.Get("height") != "" {
-		height, err := strconv.ParseUint(values.Get("height"), 10, 64)
-		if err != nil {
+		height, err2 := strconv.ParseUint(values.Get("height"), 10, 64)
+		if err2 != nil {
 			return nil, errors.New("parameter 'height' is not a number")
 		}
-		return api.apiCommon.GetBlockComplete(height, nil, typeValue)
+		out, err = api.apiCommon.GetBlockComplete(height, nil, typeValue)
 	} else if values.Get("hash") != "" {
-		hash, err := hex.DecodeString(values.Get("hash"))
-		if err != nil {
+		hash, err2 := hex.DecodeString(values.Get("hash"))
+		if err2 != nil {
 			return nil, errors.New("parameter 'hash' is not a hex")
 		}
-		return api.apiCommon.GetBlockComplete(0, hash, typeValue)
+		out, err = api.apiCommon.GetBlockComplete(0, hash, typeValue)
+	} else {
+		err = errors.New("parameter 'hash' or 'height' are missing")
 	}
 
-	return nil, errors.New("parameter 'hash' or 'height' are missing")
+	if err != nil {
+		return
+	}
+	if typeValue == 1 {
+		return helpers.HexBytes(out.([]byte)), nil
+	}
+
+	return
 }
 
 func (api *API) getBlockHash(values *url.Values) (interface{}, error) {
@@ -71,9 +80,7 @@ func (api *API) getBlockHash(values *url.Values) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		hash := helpers.HexBytes(out.([]byte))
-		return hash, nil
+		return helpers.HexBytes(out.([]byte)), nil
 	}
 	return nil, errors.New("Hash parameter is missing")
 }

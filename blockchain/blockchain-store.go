@@ -46,10 +46,12 @@ func (chain *Blockchain) deleteUnusedBlocksComplete(bucket *bolt.Bucket, blockHe
 func (chain *Blockchain) removeBlockComplete(bucket *bolt.Bucket, blockHeight uint64, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
 
 	blockHeightStr := strconv.FormatUint(blockHeight, 10)
-	if err = accs.ReadTransitionalChangesFromStore(blockHeightStr); err != nil {
+	blockHeightNextStr := strconv.FormatUint(blockHeight-1, 10)
+
+	if err = accs.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
 		return
 	}
-	if err = toks.ReadTransitionalChangesFromStore(blockHeightStr); err != nil {
+	if err = toks.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
 		return
 	}
 
