@@ -4,19 +4,20 @@ import (
 	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/store"
 	"sort"
+	"sync/atomic"
 	"time"
 )
 
 type mempoolWork struct {
 	chainHash   []byte //32 byte
 	chainHeight uint64
+	result      *mempoolResult
 }
 
 type mempoolWorker struct {
@@ -49,11 +50,12 @@ func sortTxs(txList []*mempoolTx) {
 func (worker *mempoolWorker) processing(
 	newWork <-chan *mempoolWork, //SAFE
 	mempoolTxs *mempoolTxs, //NOT SAFE, need RLOCK!
-	mempoolResult *mempoolResult,
 ) {
 
 	var txList []*mempoolTx
 	var txMap map[string]bool
+
+	var currentResult *mempoolResult
 
 	listIndex := -1
 	for {
@@ -73,14 +75,7 @@ func (worker *mempoolWorker) processing(
 			txMap = make(map[string]bool)
 			listIndex = -1
 
-			mempoolResult.Lock()
-			if work != nil {
-				mempoolResult.chainHash = work.chainHash
-				mempoolResult.chainHeight = work.chainHeight
-			}
-			mempoolResult.txs = []*transaction.Transaction{}
-			mempoolResult.totalSize = 0
-			mempoolResult.Unlock()
+			currentResult = work.result
 
 		default:
 
@@ -131,22 +126,37 @@ func (worker *mempoolWorker) processing(
 					continue
 				} else {
 
-					if txMap[txList[listIndex].Tx.Bloom.HashStr] {
+					tx := txList[listIndex]
+
+					if txMap[tx.Tx.Bloom.HashStr] {
 						listIndex += 1
 						continue
 					}
 
-					txMap[txList[listIndex].Tx.Bloom.HashStr] = true
+					txMap[tx.Tx.Bloom.HashStr] = true
 					if err := txList[listIndex].Tx.IncludeTransaction(worker.work.chainHeight, worker.accs, worker.toks); err != nil {
 						worker.accs.Rollback()
 						worker.toks.Rollback()
+
+						currentResult.txsErrorsMutex.Lock()
+						txsErrors := currentResult.txsErrors.Load().([]*mempoolTx)
+						currentResult.txsErrors.Store(append(txsErrors, tx))
+						currentResult.txsErrorsMutex.Unlock()
+
 					} else {
-						mempoolResult.Lock()
-						if mempoolResult.totalSize+txList[listIndex].Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
-							mempoolResult.txs = append(mempoolResult.txs, txList[listIndex].Tx)
-							mempoolResult.totalSize += txList[listIndex].Tx.Bloom.Size
+						totalSize := atomic.LoadUint64(&currentResult.totalSize)
+						if totalSize+txList[listIndex].Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
+							currentResult.txsMutex.Lock()
+
+							totalSize = atomic.LoadUint64(&currentResult.totalSize) + txList[listIndex].Tx.Bloom.Size
+							if totalSize < config.BLOCK_MAX_SIZE {
+								atomic.StoreUint64(&currentResult.totalSize, totalSize)
+								txs := currentResult.txs.Load().([]*mempoolTx)
+								currentResult.txs.Store(append(txs, txList[listIndex]))
+							}
+
+							currentResult.txsMutex.Unlock()
 						}
-						mempoolResult.Unlock()
 					}
 					listIndex += 1
 

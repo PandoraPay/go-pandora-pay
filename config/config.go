@@ -39,14 +39,21 @@ const (
 )
 
 var (
-	NETWORK_SELECTED               uint64 = MAIN_NET_NETWORK_BYTE
-	NETWORK_SEEDS                         = MAIN_NET_SEED_NODES
-	WEBSOCKETS_NETWORK_CLIENTS_MAX        = 20
-	WEBSOCKETS_NETWORK_SERVER_MAX         = 500
-	WEBSOCKETS_TIMEOUT                    = 5 * time.Second  //seconds
-	WEBSOCKETS_PONG_WAIT                  = 60 * time.Second // Time allowed to read the next pong message from the peer.
-	WEBSOCKETS_PING_INTERVAL              = (WEBSOCKETS_PONG_WAIT * 8) / 10
-	WEBSOCKETS_MAX_READ                   = BLOCK_MAX_SIZE + 1024
+	NETWORK_SELECTED uint64 = MAIN_NET_NETWORK_BYTE
+	NETWORK_SEEDS           = MAIN_NET_SEED_NODES
+)
+
+const (
+	WEBSOCKETS_NETWORK_CLIENTS_MAX = 20
+	WEBSOCKETS_NETWORK_SERVER_MAX  = 500
+	WEBSOCKETS_TIMEOUT             = 5 * time.Second  //seconds
+	WEBSOCKETS_PONG_WAIT           = 60 * time.Second // Time allowed to read the next pong message from the peer.
+	WEBSOCKETS_PING_INTERVAL       = (WEBSOCKETS_PONG_WAIT * 8) / 10
+	WEBSOCKETS_MAX_READ            = BLOCK_MAX_SIZE + 1024
+)
+
+const (
+	MEMPOOL_ERROR_BLOCKS = 20
 )
 
 var (

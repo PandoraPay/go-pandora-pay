@@ -103,15 +103,16 @@ func (mempool *Mempool) GetNonce(publicKeyHash []byte, nonce uint64) uint64 {
 
 func (mempool *Mempool) GetNextTransactionsToInclude(blockHeight uint64, chainHash []byte) (out []*transaction.Transaction) {
 
-	mempool.result.RLock()
-	if bytes.Equal(mempool.result.chainHash, chainHash) {
-		out = make([]*transaction.Transaction, len(mempool.result.txs))
-		copy(out, mempool.result.txs)
-	} else {
-		out = []*transaction.Transaction{}
+	result := mempool.result.Load()
+	if result != nil {
+		res := result.(*mempoolResult)
+
+		if bytes.Equal(res.chainHash, chainHash) {
+			return res.txs.Load().([]*transaction.Transaction)
+		}
 	}
-	mempool.result.RUnlock()
-	return
+
+	return []*transaction.Transaction{}
 }
 
 func (mempool *Mempool) print() {

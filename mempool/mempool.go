@@ -26,11 +26,16 @@ type mempoolTx struct {
 }
 
 type mempoolResult struct {
-	txs          []*transaction.Transaction
-	totalSize    uint64
-	chainHash    []byte //32
-	chainHeight  uint64
-	sync.RWMutex `json:"-"`
+	txs      *atomic.Value //[]*transaction.Transaction
+	txsMutex *sync.Mutex
+
+	txsErrors      *atomic.Value //[]*transaction.Transaction
+	txsErrorsMutex *sync.Mutex
+
+	totalSize uint64 //use atomic
+
+	chainHash   []byte //safe 32
+	chainHeight uint64 //safe
 }
 
 type mempoolTxs struct {
@@ -42,7 +47,7 @@ type mempoolTxs struct {
 
 type Mempool struct {
 	txs                     *mempoolTxs
-	result                  *mempoolResult
+	result                  *atomic.Value //*mempoolResult
 	newWork                 chan *mempoolWork
 	Wallet                  *mempoolWallet
 	NewTransactionMulticast *helpers.MulticastChannel `json:"-"`
@@ -210,9 +215,26 @@ func (mempool *Mempool) DeleteTxs(txIds [][]byte) (out []*transaction.Transactio
 
 //reset the forger
 func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
+
+	result := &mempoolResult{
+		txs:            &atomic.Value{},
+		txsMutex:       &sync.Mutex{},
+		txsErrors:      &atomic.Value{},
+		txsErrorsMutex: &sync.Mutex{},
+		totalSize:      0,
+		chainHash:      hash,
+		chainHeight:    height,
+	}
+
+	result.txsErrors.Store([]*transaction.Transaction{})
+	result.txs.Store([]*transaction.Transaction{})
+
+	mempool.result.Store(result)
+
 	mempool.newWork <- &mempoolWork{
 		chainHash:   hash,
 		chainHeight: height,
+		result:      result,
 	}
 }
 func (mempool *Mempool) RestartWork() {
@@ -225,7 +247,7 @@ func InitMemPool() (mempool *Mempool, err error) {
 
 	mempool = &Mempool{
 		newWork: make(chan *mempoolWork),
-		result:  &mempoolResult{},
+		result:  &atomic.Value{},
 		txs: &mempoolTxs{
 			txsList:      &atomic.Value{},
 			txsListMutex: &sync.Mutex{},
@@ -250,7 +272,7 @@ func InitMemPool() (mempool *Mempool, err error) {
 	}()
 
 	worker := new(mempoolWorker)
-	go worker.processing(mempool.newWork, mempool.txs, mempool.result)
+	go worker.processing(mempool.newWork, mempool.txs)
 
 	mempool.initCLI()
 

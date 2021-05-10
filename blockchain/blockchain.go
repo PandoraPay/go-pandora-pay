@@ -209,8 +209,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					return errors.New("Delegated stake ready amount is not enought")
 				}
 
-				gui.Log("Staking amount ", newChainData.Height, "value", blkComplete.Block.StakingAmount)
-				gui.Log("Target check ", newChainData.Height, "value", newChainData.Target.Text(10))
+				//gui.Log("Staking amount ", newChainData.Height, "value", blkComplete.Block.StakingAmount)
+				//gui.Log("Target check ", newChainData.Height, "value", newChainData.Target.Text(10))
 
 				if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHash, newChainData.Target) != true {
 					return errors.New("KernelHash Difficulty is not met")
@@ -269,7 +269,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					return err
 				}
 
-				gui.Log("Target new   ", newChainData.Height, "value", newChainData.Target.Text(10))
+				//gui.Log("Target new   ", newChainData.Height, "value", newChainData.Target.Text(10))
 
 				newChainData.Height += 1
 				newChainData.Transactions += uint64(len(blkComplete.Txs))
@@ -375,14 +375,14 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	gui.Warning("-------------------------------------------")
 	newChainData.updateChainInfo()
 
-	gui.Log("Status Chain 1")
+	//gui.Log("Status Chain 1")
 
 	//accs will only be read only
 	if err = chain.forging.Wallet.UpdateAccountsChanges(accs); err != nil {
 		gui.Error("Error updating balance changes", err)
 	}
 
-	gui.Log("Status Chain 2")
+	//gui.Log("Status Chain 2")
 
 	if err = chain.wallet.UpdateAccountsChanges(accs); err != nil {
 		gui.Error("Error updating balance changes", err)
