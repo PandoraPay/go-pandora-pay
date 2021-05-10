@@ -26,10 +26,10 @@ type mempoolTx struct {
 }
 
 type mempoolResult struct {
-	txs      *atomic.Value //[]*transaction.Transaction
+	txs      *atomic.Value //[]*mempoolTx
 	txsMutex *sync.Mutex
 
-	txsErrors      *atomic.Value //[]*transaction.Transaction
+	txsErrors      *atomic.Value //[]*mempoolTx
 	txsErrorsMutex *sync.Mutex
 
 	totalSize uint64 //use atomic
@@ -226,8 +226,8 @@ func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
 		chainHeight:    height,
 	}
 
-	result.txsErrors.Store([]*transaction.Transaction{})
-	result.txs.Store([]*transaction.Transaction{})
+	result.txsErrors.Store([]*mempoolTx{})
+	result.txs.Store([]*mempoolTx{})
 
 	mempool.result.Store(result)
 
