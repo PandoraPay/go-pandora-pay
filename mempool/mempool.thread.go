@@ -55,8 +55,6 @@ func (worker *mempoolWorker) processing(
 	var txList []*mempoolTx
 	var txMap map[string]bool
 
-	var currentResult *mempoolResult
-
 	listIndex := -1
 	for {
 
@@ -74,8 +72,6 @@ func (worker *mempoolWorker) processing(
 			worker.workChanged = true
 			txMap = make(map[string]bool)
 			listIndex = -1
-
-			currentResult = work.result
 
 		default:
 
@@ -138,24 +134,24 @@ func (worker *mempoolWorker) processing(
 						worker.accs.Rollback()
 						worker.toks.Rollback()
 
-						currentResult.txsErrorsMutex.Lock()
-						txsErrors := currentResult.txsErrors.Load().([]*mempoolTx)
-						currentResult.txsErrors.Store(append(txsErrors, tx))
-						currentResult.txsErrorsMutex.Unlock()
+						worker.work.result.txsErrorsMutex.Lock()
+						txsErrors := worker.work.result.txsErrors.Load().([]*mempoolTx)
+						worker.work.result.txsErrors.Store(append(txsErrors, tx))
+						worker.work.result.txsErrorsMutex.Unlock()
 
 					} else {
-						totalSize := atomic.LoadUint64(&currentResult.totalSize)
+						totalSize := atomic.LoadUint64(&worker.work.result.totalSize)
 						if totalSize+txList[listIndex].Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
-							currentResult.txsMutex.Lock()
+							worker.work.result.txsMutex.Lock()
 
-							totalSize = atomic.LoadUint64(&currentResult.totalSize) + txList[listIndex].Tx.Bloom.Size
+							totalSize = atomic.LoadUint64(&worker.work.result.totalSize) + txList[listIndex].Tx.Bloom.Size
 							if totalSize < config.BLOCK_MAX_SIZE {
-								atomic.StoreUint64(&currentResult.totalSize, totalSize)
-								txs := currentResult.txs.Load().([]*mempoolTx)
-								currentResult.txs.Store(append(txs, txList[listIndex]))
+								atomic.StoreUint64(&worker.work.result.totalSize, totalSize)
+								txs := worker.work.result.txs.Load().([]*mempoolTx)
+								worker.work.result.txs.Store(append(txs, txList[listIndex]))
 							}
 
-							currentResult.txsMutex.Unlock()
+							worker.work.result.txsMutex.Unlock()
 						}
 					}
 					listIndex += 1

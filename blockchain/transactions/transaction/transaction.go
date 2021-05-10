@@ -12,6 +12,7 @@ import (
 )
 
 type Transaction struct {
+	helpers.SerializableInterface
 	Version uint64
 	TxType  transaction_type.TransactionType
 	TxBase  transaction_base_interface.TransactionBaseInterface
@@ -33,7 +34,9 @@ func (tx *Transaction) ComputeFees() (fees map[string]uint64, err error) {
 }
 
 func (tx *Transaction) SerializeForSigning() []byte {
-	return cryptography.SHA3Hash(tx.serializeTx(false))
+	writer := helpers.NewBufferWriter()
+	tx.SerializeAdvanced(writer, false)
+	return cryptography.SHA3Hash(writer.Bytes())
 }
 
 func (tx *Transaction) VerifySignatureManually() bool {
@@ -42,23 +45,25 @@ func (tx *Transaction) VerifySignatureManually() bool {
 }
 
 func (tx *Transaction) computeHash() []byte {
-	return cryptography.SHA3Hash(tx.Serialize())
+	return cryptography.SHA3Hash(tx.SerializeToBytes())
 }
 
-func (tx *Transaction) serializeTx(inclSignature bool) []byte {
-
-	writer := helpers.NewBufferWriter()
+func (tx *Transaction) SerializeAdvanced(writer *helpers.BufferWriter, inclSignature bool) {
 
 	writer.WriteUvarint(tx.Version)
 	writer.WriteUvarint(uint64(tx.TxType))
 
-	tx.TxBase.Serialize(writer, inclSignature)
-
-	return writer.Bytes()
+	tx.TxBase.SerializeAdvanced(writer, inclSignature)
 }
 
-func (tx *Transaction) Serialize() []byte {
-	return tx.serializeTx(true)
+func (tx *Transaction) Serialize(writer *helpers.BufferWriter) {
+	tx.SerializeAdvanced(writer, true)
+}
+
+func (tx *Transaction) SerializeToBytes() []byte {
+	writer := helpers.NewBufferWriter()
+	tx.Serialize(writer)
+	return writer.Bytes()
 }
 
 func (tx *Transaction) Validate() error {

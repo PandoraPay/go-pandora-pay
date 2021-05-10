@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
+	"pandora-pay/helpers"
 	"sync/atomic"
 	"time"
 )
@@ -60,7 +61,11 @@ func (worker *ForgingWorkerThread) forge() {
 				return
 			}
 			work = newWork
-			serialized = work.blkComplete.Block.SerializeForForging()
+
+			writer := helpers.NewBufferWriter()
+			work.blkComplete.Block.SerializeForForging(writer)
+			serialized = writer.Bytes()
+
 			n := binary.PutUvarint(buf, work.blkComplete.Block.Timestamp)
 
 			serialized = serialized[:len(serialized)-n-20]

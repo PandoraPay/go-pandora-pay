@@ -69,3 +69,7 @@ func (writer *BufferWriter) Bytes() (out []byte) {
 	}
 	return
 }
+
+func (writer *BufferWriter) Length() int {
+	return writer.len
+}

@@ -101,7 +101,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		}
 		defer func() {
 			if !boltTxClosed {
-				err = boltTx.Rollback()
+				err2 := boltTx.Rollback()
+				if err == nil {
+					err = err2
+				}
 			}
 		}()
 
@@ -241,9 +244,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				//to detect if the savedBlock was done correctly
 				savedBlock = false
 
-				newTransactionsSaved, err := chain.saveBlockComplete(writer, blkComplete, blkComplete.Block.Bloom.Hash, removedTxHashes, accs, toks)
-				if err != nil {
-					return err
+				var newTransactionsSaved [][]byte
+				if newTransactionsSaved, err = chain.saveBlockComplete(writer, blkComplete, blkComplete.Block.Bloom.Hash, removedTxHashes, accs, toks); err != nil {
+					return
 				}
 
 				if len(removedBlocksHeights) > 0 {
@@ -262,11 +265,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				difficultyBigInt := difficulty.ConvertTargetToDifficulty(newChainData.Target)
 				newChainData.BigTotalDifficulty = new(big.Int).Add(newChainData.BigTotalDifficulty, difficultyBigInt)
 				if err = newChainData.saveTotalDifficultyExtra(writer); err != nil {
-					return err
+					return
 				}
 
 				if newChainData.Target, err = newChainData.computeNextTargetBig(writer); err != nil {
-					return err
+					return
 				}
 
 				//gui.Log("Target new   ", newChainData.Height, "value", newChainData.Target.Text(10))
@@ -280,30 +283,31 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				}
 
 				if err = writer.Put([]byte("chainHash"), newChainData.Hash); err != nil {
-					return err
+					return
 				}
 				if err = writer.Put([]byte("chainPrevHash"), newChainData.PrevHash); err != nil {
-					return err
+					return
 				}
 				if err = writer.Put([]byte("chainKernelHash"), newChainData.KernelHash); err != nil {
-					return err
+					return
 				}
 				if err = writer.Put([]byte("chainPrevKernelHash"), newChainData.PrevKernelHash); err != nil {
-					return err
+					return
 				}
 
 				buf := make([]byte, binary.MaxVarintLen64)
 				n := binary.PutUvarint(buf, newChainData.Height)
 				if err = writer.Put([]byte("chainHeight"), buf[:n]); err != nil {
-					return err
+					return
 				}
 
 				if err = newChainData.saveBlockchainInfo(writer); err != nil {
-					return err
+					return
 				}
 
 				savedBlock = true
 			}
+
 			return
 		}()
 
@@ -359,15 +363,15 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	chain.mutex.Unlock()
 
+	if err == nil && len(insertedBlocks) == 0 {
+		err = errors.New("No blocks were inserted")
+	}
+
 	if err != nil {
 		if calledByForging {
 			chain.createNextBlockForForging()
 		}
 		return
-	}
-
-	if len(insertedBlocks) == 0 {
-		return errors.New("No blocks were inserted")
 	}
 
 	gui.Warning("-------------------------------------------")
@@ -382,7 +386,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		gui.Error("Error updating balance changes", err)
 	}
 
-	//gui.Log("Status Chain 2")
+	gui.Log("Status Chain 2")
 
 	if err = chain.wallet.UpdateAccountsChanges(accs); err != nil {
 		gui.Error("Error updating balance changes", err)
@@ -404,7 +408,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	//create next block and the workers will be automatically reset
 	chain.createNextBlockForForging()
 
-	gui.Log("Status Chain 6")
+	//gui.Log("Status Chain 6")
 
 	for _, txData := range removedTx {
 		tx := &transaction.Transaction{}

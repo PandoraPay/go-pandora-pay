@@ -83,7 +83,7 @@ func (chain *Blockchain) saveBlockComplete(bucket *bolt.Bucket, blkComplete *blo
 		return
 	}
 
-	if err = bucket.Put(append([]byte("blockHash"), hash...), blkComplete.Block.Serialize()); err != nil {
+	if err = bucket.Put(append([]byte("blockHash"), hash...), blkComplete.Block.SerializeToBytes()); err != nil {
 		return
 	}
 	if err = bucket.Put([]byte("blockHeight"+blockHeightStr), hash); err != nil {

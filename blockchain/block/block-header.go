@@ -6,6 +6,7 @@ import (
 )
 
 type BlockHeader struct {
+	helpers.SerializableInterface
 	Version uint64
 	Height  uint64
 }

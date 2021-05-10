@@ -13,6 +13,7 @@ import (
 )
 
 type BlockComplete struct {
+	helpers.SerializableInterface
 	Block *block.Block
 	Txs   []*transaction.Transaction
 	Bloom *BlockCompleteBloom `json:"-"`
@@ -79,24 +80,20 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, 
 	return
 }
 
-func (blkComplete *BlockComplete) Serialize() []byte {
-	writer := helpers.NewBufferWriter()
+func (blkComplete *BlockComplete) Serialize(writer *helpers.BufferWriter) {
 
-	writer.Write(blkComplete.Block.Serialize())
+	writer.Write(blkComplete.Block.SerializeToBytes())
 	writer.WriteUvarint(uint64(len(blkComplete.Txs)))
 
 	for _, tx := range blkComplete.Txs {
 		writer.Write(tx.Bloom.Serialized)
 	}
 
-	return writer.Bytes()
 }
 
-func (blkComplete *BlockComplete) Deserialize(buf []byte) (err error) {
+func (blkComplete *BlockComplete) Deserialize(reader *helpers.BufferReader) (err error) {
 
-	reader := helpers.NewBufferReader(buf)
-
-	if uint64(len(buf)) > config.BLOCK_MAX_SIZE {
+	if uint64(len(reader.Buf)) > config.BLOCK_MAX_SIZE {
 		return errors.New("COMPLETE BLOCK EXCEEDS MAX SIZE")
 	}
 

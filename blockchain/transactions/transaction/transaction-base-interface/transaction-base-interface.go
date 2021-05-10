@@ -7,11 +7,11 @@ import (
 )
 
 type TransactionBaseInterface interface {
+	helpers.SerializableInterface
+	SerializeAdvanced(writer *helpers.BufferWriter, inclSignature bool)
 	IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) error
 	ComputeFees(out map[string]uint64) (err error)
 	VerifySignatureManually(hashForSignature []byte) bool
-	Serialize(writer *helpers.BufferWriter, inclSignature bool)
 	Validate() error
-	Deserialize(reader *helpers.BufferReader) error
 	VerifyBloomAll() error
 }

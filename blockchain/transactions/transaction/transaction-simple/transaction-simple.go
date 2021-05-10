@@ -163,7 +163,7 @@ func (tx *TransactionSimple) Validate() (err error) {
 	return
 }
 
-func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignature bool) {
+func (tx *TransactionSimple) SerializeAdvanced(writer *helpers.BufferWriter, inclSignature bool) {
 
 	writer.WriteUvarint(uint64(tx.TxScript))
 	writer.WriteUvarint(tx.Nonce)
@@ -181,6 +181,16 @@ func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter, inclSignatu
 	if tx.Extra != nil {
 		tx.Extra.Serialize(writer)
 	}
+}
+
+func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter) {
+	tx.SerializeAdvanced(writer, true)
+}
+
+func (tx *TransactionSimple) SerializeToBytes() []byte {
+	writer := helpers.NewBufferWriter()
+	tx.Serialize(writer)
+	return writer.Bytes()
 }
 
 func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err error) {

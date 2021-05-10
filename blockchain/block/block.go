@@ -63,12 +63,13 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 }
 
 func (blk *Block) computeHash() []byte {
-	return cryptography.SHA3Hash(blk.Serialize())
+	return cryptography.SHA3Hash(blk.SerializeToBytes())
 }
 
 func (blk *Block) ComputeKernelHashOnly() []byte {
-	out := blk.serializeBlock(true, false)
-	return cryptography.SHA3Hash(out)
+	writer := helpers.NewBufferWriter()
+	blk.AdvancedSerialization(writer, true, false)
+	return cryptography.SHA3Hash(writer.Bytes())
 }
 
 func (blk *Block) ComputeKernelHash() []byte {
@@ -77,7 +78,9 @@ func (blk *Block) ComputeKernelHash() []byte {
 }
 
 func (blk *Block) SerializeForSigning() []byte {
-	return cryptography.SHA3Hash(blk.serializeBlock(false, false))
+	writer := helpers.NewBufferWriter()
+	blk.AdvancedSerialization(writer, false, false)
+	return cryptography.SHA3Hash(writer.Bytes())
 }
 
 func (blk *Block) VerifySignatureManually() bool {
@@ -89,9 +92,7 @@ func (blk *Block) VerifySignatureManually() bool {
 	return ecdsa.VerifySignature(publicKey, hash, blk.Signature[0:64])
 }
 
-func (blk *Block) serializeBlock(kernelHash bool, inclSignature bool) []byte {
-
-	writer := helpers.NewBufferWriter()
+func (blk *Block) AdvancedSerialization(writer *helpers.BufferWriter, kernelHash bool, inclSignature bool) {
 
 	blk.BlockHeader.Serialize(writer)
 
@@ -113,16 +114,20 @@ func (blk *Block) serializeBlock(kernelHash bool, inclSignature bool) []byte {
 	if inclSignature {
 		writer.Write(blk.Signature)
 	}
+}
 
+func (blk *Block) SerializeForForging(writer *helpers.BufferWriter) {
+	blk.AdvancedSerialization(writer, true, false)
+}
+
+func (blk *Block) Serialize(writer *helpers.BufferWriter) {
+	blk.AdvancedSerialization(writer, false, true)
+}
+
+func (blk *Block) SerializeToBytes() []byte {
+	writer := helpers.NewBufferWriter()
+	blk.Serialize(writer)
 	return writer.Bytes()
-}
-
-func (blk *Block) SerializeForForging() []byte {
-	return blk.serializeBlock(true, false)
-}
-
-func (blk *Block) Serialize() []byte {
-	return blk.serializeBlock(false, true)
 }
 
 func (blk *Block) Deserialize(reader *helpers.BufferReader) (err error) {
@@ -154,5 +159,7 @@ func (blk *Block) Deserialize(reader *helpers.BufferReader) (err error) {
 }
 
 func (blk *Block) Size() uint64 {
-	return uint64(len(blk.Serialize()))
+	writer := helpers.NewBufferWriter()
+	blk.Serialize(writer)
+	return uint64(writer.Length())
 }
