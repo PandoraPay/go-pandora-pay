@@ -7,6 +7,7 @@ import (
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/config"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common"
 	api_websockets "pandora-pay/network/api/api-websockets"
 	"time"
@@ -65,7 +66,7 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 		}
 
 		blkComplete := block_complete.CreateEmptyBlockComplete()
-		if err = blkComplete.Deserialize(answer.Out); err != nil {
+		if err = blkComplete.Deserialize(helpers.NewBufferReader(answer.Out)); err != nil {
 			fork.errors += 1
 			continue
 		}
@@ -130,7 +131,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 		}
 
 		blkComplete := block_complete.CreateEmptyBlockComplete()
-		if err = blkComplete.Deserialize(answer.Out); err != nil {
+		if err = blkComplete.Deserialize(helpers.NewBufferReader(answer.Out)); err != nil {
 			fork.errors += 1
 			continue
 		}
