@@ -61,7 +61,7 @@ func (tokens *Tokens) UpdateToken(key []byte, tok *token.Token) {
 		key = config.NATIVE_TOKEN_FULL
 	}
 
-	tokens.HashMap.Update(key, tok.SerializeToBytes())
+	tokens.Update(key, tok.SerializeToBytes())
 }
 
 func (tokens *Tokens) ExistsToken(key []byte) bool {
@@ -69,9 +69,9 @@ func (tokens *Tokens) ExistsToken(key []byte) bool {
 		key = config.NATIVE_TOKEN_FULL
 	}
 
-	return tokens.HashMap.Exists(key)
+	return tokens.Exists(key)
 }
 
 func (tokens *Tokens) DeleteToken(key []byte) {
-	tokens.HashMap.Delete(key)
+	tokens.Delete(key)
 }

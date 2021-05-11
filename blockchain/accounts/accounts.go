@@ -21,7 +21,7 @@ func (accounts *Accounts) GetAccountEvenEmpty(key []byte) (acc *account.Account)
 
 	acc = new(account.Account)
 
-	data := accounts.HashMap.Get(key)
+	data := accounts.Get(key)
 	if data == nil {
 		return
 	}
@@ -32,7 +32,7 @@ func (accounts *Accounts) GetAccountEvenEmpty(key []byte) (acc *account.Account)
 
 func (accounts *Accounts) GetAccount(key []byte) *account.Account {
 
-	data := accounts.HashMap.Get(key)
+	data := accounts.Get(key)
 	if data == nil {
 		return nil
 	}
@@ -45,8 +45,8 @@ func (accounts *Accounts) GetAccount(key []byte) *account.Account {
 
 func (accounts *Accounts) UpdateAccount(key []byte, acc *account.Account) {
 	if acc.IsAccountEmpty() {
-		accounts.HashMap.Delete(key)
+		accounts.Delete(key)
 		return
 	}
-	accounts.HashMap.Update(key, acc.SerializeToBytes())
+	accounts.Update(key, acc.SerializeToBytes())
 }
