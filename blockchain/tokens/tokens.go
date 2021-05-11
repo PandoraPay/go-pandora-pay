@@ -5,6 +5,7 @@ import (
 	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
+	"pandora-pay/helpers"
 	"pandora-pay/store"
 )
 
@@ -33,7 +34,7 @@ func (tokens *Tokens) GetToken(key []byte) *token.Token {
 	}
 
 	tok := new(token.Token)
-	if err := tok.Deserialize(data); err != nil {
+	if err := tok.Deserialize(helpers.NewBufferReader(data)); err != nil {
 		panic(err)
 	}
 
@@ -63,7 +64,7 @@ func (tokens *Tokens) UpdateToken(key []byte, tok *token.Token) {
 		key = config.NATIVE_TOKEN_FULL
 	}
 
-	tokens.HashMap.Update(key, tok.Serialize())
+	tokens.HashMap.Update(key, tok.SerializeToBytes())
 }
 
 func (tokens *Tokens) ExistsToken(key []byte) bool {

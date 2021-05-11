@@ -12,6 +12,7 @@ var regexTokenTicker = regexp.MustCompile("^[A-Z0-9]+$") // only lowercase ascii
 var regexTokenDescription = regexp.MustCompile("[\\w|\\W]+")
 
 type Token struct {
+	helpers.SerializableInterface
 	Version            uint64
 	CanUpgrade         bool //upgrade different settings
 	CanMint            bool //increase supply
@@ -92,9 +93,7 @@ func (token *Token) AddSupply(sign bool, amount uint64) error {
 	return helpers.SafeUint64Sub(&token.Supply, amount)
 }
 
-func (token *Token) Serialize() []byte {
-
-	writer := helpers.NewBufferWriter()
+func (token *Token) Serialize(writer *helpers.BufferWriter) {
 
 	writer.WriteUvarint(token.Version)
 
@@ -117,12 +116,15 @@ func (token *Token) Serialize() []byte {
 	writer.WriteString(token.Ticker)
 	writer.WriteString(token.Description)
 
+}
+
+func (token *Token) SerializeToBytes() []byte {
+	writer := helpers.NewBufferWriter()
+	token.Serialize(writer)
 	return writer.Bytes()
 }
 
-func (token *Token) Deserialize(buf []byte) (err error) {
-
-	reader := helpers.NewBufferReader(buf)
+func (token *Token) Deserialize(reader *helpers.BufferReader) (err error) {
 
 	if token.Version, err = reader.ReadUvarint(); err != nil {
 		return

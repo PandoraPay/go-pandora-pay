@@ -3,6 +3,7 @@ package accounts
 import (
 	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/helpers"
 	"pandora-pay/store"
 )
 
@@ -28,7 +29,7 @@ func (accounts *Accounts) GetAccountEvenEmpty(key []byte) (acc *account.Account)
 		return
 	}
 
-	acc.Deserialize(data)
+	acc.Deserialize(helpers.NewBufferReader(data))
 	return
 }
 
@@ -40,7 +41,7 @@ func (accounts *Accounts) GetAccount(key []byte) *account.Account {
 	}
 
 	acc := new(account.Account)
-	acc.Deserialize(data)
+	acc.Deserialize(helpers.NewBufferReader(data))
 
 	return acc
 }
@@ -50,7 +51,7 @@ func (accounts *Accounts) UpdateAccount(key []byte, acc *account.Account) {
 		accounts.HashMap.Delete(key)
 		return
 	}
-	accounts.HashMap.Update(key, acc.Serialize())
+	accounts.HashMap.Update(key, acc.SerializeToBytes())
 }
 
 func (accounts *Accounts) ExistsAccount(key []byte) bool {

@@ -277,7 +277,7 @@ func (wallet *Wallet) UpdateAccountsChanges(accs *accounts.Accounts) (err error)
 
 			if v.Commit == "update" {
 				acc := new(account.Account)
-				if err = acc.Deserialize(v.Data); err != nil {
+				if err = acc.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
 					return
 				}
 				if err = wallet.refreshWallet(acc, wallet.AddressesMap[k]); err != nil {

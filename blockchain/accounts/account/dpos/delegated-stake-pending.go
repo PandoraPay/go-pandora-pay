@@ -12,6 +12,8 @@ const (
 )
 
 type DelegatedStakePending struct {
+	helpers.SerializableInterface
+
 	PendingAmount    uint64                      //pending stake
 	ActivationHeight uint64                      //height when the stake pending was last updated
 	PendingType      TransactionSimpleScriptType //true stake pending || false unstake pending

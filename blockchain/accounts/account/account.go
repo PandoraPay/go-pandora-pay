@@ -10,6 +10,7 @@ import (
 )
 
 type Account struct {
+	helpers.SerializableInterface
 	Version               uint64
 	Nonce                 uint64
 	Balances              []*Balance
@@ -143,9 +144,8 @@ func (account *Account) GetAvailableBalance(blockHeight uint64, token []byte) (r
 	return
 }
 
-func (account *Account) Serialize() []byte {
+func (account *Account) Serialize(writer *helpers.BufferWriter) {
 
-	writer := helpers.NewBufferWriter()
 	writer.WriteUvarint(account.Version)
 	writer.WriteUvarint(account.Nonce)
 	writer.WriteUvarint(uint64(len(account.Balances)))
@@ -160,6 +160,11 @@ func (account *Account) Serialize() []byte {
 		account.DelegatedStake.Serialize(writer)
 	}
 
+}
+
+func (account *Account) SerializeToBytes() []byte {
+	writer := helpers.NewBufferWriter()
+	account.Serialize(writer)
 	return writer.Bytes()
 }
 
@@ -178,9 +183,7 @@ func (account *Account) CreateDelegatedStake(amount uint64, delegatedStakePublic
 	return nil
 }
 
-func (account *Account) Deserialize(buf []byte) (err error) {
-
-	reader := helpers.NewBufferReader(buf)
+func (account *Account) Deserialize(reader *helpers.BufferReader) (err error) {
 
 	if account.Version, err = reader.ReadUvarint(); err != nil {
 		return

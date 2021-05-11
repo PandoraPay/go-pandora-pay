@@ -113,7 +113,7 @@ func (api *APIWebsockets) getAccount(conn *connection.AdvancedConnection, values
 	if data == nil {
 		return nil, nil
 	}
-	return data.(*account.Account).Serialize(), nil
+	return data.(*account.Account).SerializeToBytes(), nil
 }
 
 func (api *APIWebsockets) getToken(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -124,7 +124,7 @@ func (api *APIWebsockets) getToken(conn *connection.AdvancedConnection, values [
 	if data == nil {
 		return nil, nil
 	}
-	return data.(*token.Token).Serialize(), nil
+	return data.(*token.Token).SerializeToBytes(), nil
 }
 
 func (api *APIWebsockets) getMempool(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {

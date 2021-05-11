@@ -6,6 +6,7 @@ import (
 )
 
 type DelegatedStake struct {
+	helpers.SerializableInterface
 
 	//public key for delegation
 	DelegatedPublicKeyHash helpers.HexBytes //20 bytes

@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/cryptography"
+	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"sync"
 	"sync/atomic"
@@ -143,7 +144,7 @@ func (w *ForgingWallet) UpdateAccountsChanges(accs *accounts.Accounts) (err erro
 
 			if v.Commit == "update" {
 				acc := new(account.Account)
-				if err = acc.Deserialize(v.Data); err != nil {
+				if err = acc.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
 					return
 				}
 				w.addressesMap[k].account = acc
