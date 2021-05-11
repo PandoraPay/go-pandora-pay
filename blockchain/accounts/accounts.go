@@ -8,16 +8,13 @@ import (
 )
 
 type Accounts struct {
-	HashMap *store.HashMap
+	store.HashMap
 }
 
-func NewAccounts(tx *bbolt.Tx) (accounts *Accounts) {
-
-	hashMap := store.CreateNewHashMap(tx, "Accounts", 20)
-
-	accounts = new(Accounts)
-	accounts.HashMap = hashMap
-	return
+func NewAccounts(tx *bbolt.Tx) *Accounts {
+	return &Accounts{
+		HashMap: *store.CreateNewHashMap(tx, "Accounts", 20),
+	}
 }
 
 func (accounts *Accounts) GetAccountEvenEmpty(key []byte) (acc *account.Account) {
@@ -52,34 +49,4 @@ func (accounts *Accounts) UpdateAccount(key []byte, acc *account.Account) {
 		return
 	}
 	accounts.HashMap.Update(key, acc.SerializeToBytes())
-}
-
-func (accounts *Accounts) ExistsAccount(key []byte) bool {
-	return accounts.HashMap.Exists(key)
-}
-
-func (accounts *Accounts) DeleteAccount(key []byte) {
-	accounts.HashMap.Delete(key)
-}
-
-func (accounts *Accounts) Rollback() {
-	accounts.HashMap.Rollback()
-}
-
-func (accounts *Accounts) Commit() {
-	accounts.HashMap.Commit()
-}
-
-func (accounts *Accounts) WriteToStore() error {
-	return accounts.HashMap.WriteToStore()
-}
-
-func (accounts *Accounts) WriteTransitionalChangesToStore(prefix string) error {
-	return accounts.HashMap.WriteTransitionalChangesToStore(prefix)
-}
-func (accounts *Accounts) ReadTransitionalChangesFromStore(prefix string) error {
-	return accounts.HashMap.ReadTransitionalChangesFromStore(prefix)
-}
-func (accounts *Accounts) DeleteTransitionalChangesFromStore(prefix string) error {
-	return accounts.HashMap.DeleteTransitionalChangesFromStore(prefix)
 }

@@ -24,7 +24,6 @@ type HashMap struct {
 }
 
 func CreateNewHashMap(tx *bbolt.Tx, name string, keyLength int) (hashMap *HashMap) {
-
 	hashMap = &HashMap{
 		Committed: make(map[string]*CommittedMapElement),
 		Changes:   make(map[string]*ChangesMapElement),

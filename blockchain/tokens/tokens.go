@@ -10,16 +10,13 @@ import (
 )
 
 type Tokens struct {
-	HashMap *store.HashMap
+	store.HashMap
 }
 
-func NewTokens(tx *bbolt.Tx) (tokens *Tokens) {
-
-	hashMap := store.CreateNewHashMap(tx, "Tokens", 20)
-
-	tokens = new(Tokens)
-	tokens.HashMap = hashMap
-	return
+func NewTokens(tx *bbolt.Tx) *Tokens {
+	return &Tokens{
+		HashMap: *store.CreateNewHashMap(tx, "Tokens", 20),
+	}
 }
 
 func (tokens *Tokens) GetToken(key []byte) *token.Token {
@@ -77,26 +74,4 @@ func (tokens *Tokens) ExistsToken(key []byte) bool {
 
 func (tokens *Tokens) DeleteToken(key []byte) {
 	tokens.HashMap.Delete(key)
-}
-
-func (tokens *Tokens) Rollback() {
-	tokens.HashMap.Rollback()
-}
-
-func (tokens *Tokens) Commit() {
-	tokens.HashMap.Commit()
-}
-
-func (tokens *Tokens) WriteToStore() error {
-	return tokens.HashMap.WriteToStore()
-}
-
-func (tokens *Tokens) WriteTransitionalChangesToStore(prefix string) error {
-	return tokens.HashMap.WriteTransitionalChangesToStore(prefix)
-}
-func (tokens *Tokens) ReadTransitionalChangesFromStore(prefix string) error {
-	return tokens.HashMap.ReadTransitionalChangesFromStore(prefix)
-}
-func (tokens *Tokens) DeleteTransitionalChangesFromStore(prefix string) error {
-	return tokens.HashMap.DeleteTransitionalChangesFromStore(prefix)
 }
