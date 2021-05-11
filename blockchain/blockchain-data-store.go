@@ -52,6 +52,7 @@ func (chainData *BlockchainData) LoadTotalDifficultyExtra(bucket *bolt.Bucket, h
 	}
 
 	difficulty = new(big.Int).SetBytes(bytes)
+
 	return
 }
 

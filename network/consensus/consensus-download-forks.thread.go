@@ -76,10 +76,8 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 		}
 
 		chainHash, err := thread.apiStore.LoadBlockHash(start - 1)
-		if err == nil {
-			if bytes.Equal(blkComplete.Block.Bloom.Hash, chainHash) {
-				break
-			}
+		if err == nil && bytes.Equal(blkComplete.Block.Bloom.Hash, chainHash) {
+			break
 		}
 
 		//prepend
@@ -90,9 +88,8 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 		start -= 1
 	}
 
-	if fork.current == 0 {
-		fork.current = start
-	}
+	fork.current = start + uint64(len(fork.blocks))
+
 	fork.downloaded = true
 
 	return true

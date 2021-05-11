@@ -65,6 +65,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	chain.mutex.Lock()
 
 	chainData := chain.GetChainData()
+
 	gui.Info(fmt.Sprintf("Including blocks %d ... %d", chainData.Height, chainData.Height+uint64(len(blocksComplete))))
 
 	//chain.RLock() is not required because it is guaranteed that no other thread is writing now in the chain
