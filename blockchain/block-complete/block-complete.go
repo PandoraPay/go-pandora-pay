@@ -91,6 +91,12 @@ func (blkComplete *BlockComplete) Serialize(writer *helpers.BufferWriter) {
 
 }
 
+func (blkComplete *BlockComplete) SerializeToBytes() []byte {
+	writer := helpers.NewBufferWriter()
+	blkComplete.Serialize(writer)
+	return writer.Bytes()
+}
+
 func (blkComplete *BlockComplete) Deserialize(reader *helpers.BufferReader) (err error) {
 
 	if uint64(len(reader.Buf)) > config.BLOCK_MAX_SIZE {

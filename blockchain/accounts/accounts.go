@@ -26,7 +26,9 @@ func (accounts *Accounts) GetAccountEvenEmpty(key []byte) (acc *account.Account)
 		return
 	}
 
-	acc.Deserialize(helpers.NewBufferReader(data))
+	if err := acc.Deserialize(helpers.NewBufferReader(data)); err != nil {
+		panic(err)
+	}
 	return
 }
 
@@ -38,7 +40,9 @@ func (accounts *Accounts) GetAccount(key []byte) *account.Account {
 	}
 
 	acc := new(account.Account)
-	acc.Deserialize(helpers.NewBufferReader(data))
+	if err := acc.Deserialize(helpers.NewBufferReader(data)); err != nil {
+		panic(err)
+	}
 
 	return acc
 }

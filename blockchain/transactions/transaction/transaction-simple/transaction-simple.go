@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/ecdsa"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 )
 
@@ -36,6 +37,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 			if acc.Nonce != tx.Nonce {
 				return errors.New("Account nonce doesn't match")
 			}
+			gui.Log("acc.Nonce", acc.Nonce, tx.Nonce)
 			if err = acc.IncrementNonce(true); err != nil {
 				return
 			}
@@ -57,6 +59,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 	for _, vout := range tx.Vout {
 		acc := accs.GetAccountEvenEmpty(vout.PublicKeyHash)
 		if err = acc.RefreshDelegatedStake(blockHeight); err != nil {
+			return
 		}
 
 		if err = acc.AddBalance(true, vout.Amount, vout.Token); err != nil {

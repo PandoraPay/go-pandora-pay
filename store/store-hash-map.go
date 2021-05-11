@@ -92,9 +92,8 @@ func (hashMap *HashMap) Update(key []byte, data []byte) {
 		exists = new(ChangesMapElement)
 		hashMap.Changes[keyStr] = exists
 	}
-	exists.Data = data
 	exists.Status = "update"
-
+	exists.Data = data
 	return
 }
 
