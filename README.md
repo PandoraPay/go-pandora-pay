@@ -77,13 +77,13 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [ ] Zether Deposit Transactions
     - [ ] Zether Withdraw Transactions
     - [ ] Zether Transfer Transactions
-    - [ ] Multi Threading signature verification
+    - [ ] Multi Threading signature verification.
 - [ ] Mem Pool
     - [ ] Saving/Loading
     - [X] Inserting Txs
     - [x] Sorting by fee per byte
     - [x] Network propagation
-- [ ] Network
+- [X] Network
     - [X] HTTP server    
     - [X] HTTP websocket server
     - [x] HTTP websocket client
@@ -91,8 +91,18 @@ The main design pattern that has been taken in consideration is to be **dead-sim
 - [ ] API
     - [X] API blockchain explorers
     - [ ] API wallets    
-    
-    
+- [X] Consensus
+  - [X] API websockets for Forks
+  - [X] Fork manager and downloader   
+- [ ] Wallet
+  - [ ] Webassembly build
+  - [ ] Node.js and Javascript wallet
+  - [ ] Signing transactions
+  - [ ] Documentation
+  - [ ] Explorer
+
+* later on optimizations and improvements
+
 The main reasons why DPOS has been chosen over POS:
 1. Delegating your stake increases security 
 2. Delegating your stake to someone to stake increases anonymity as you don't need to be online for staking.
@@ -101,8 +111,7 @@ The main reasons why DPOS has been chosen over POS:
     1. state trie proofs to prove to light clients the state.     
     2. sharding. Creating multiple distinct shards and splitting the state trie into `n` shards
     3. creating macro blocks by selecting validators for a meta chain
-
-
+  
 ### Debugging
 
 Using profiling to debug memory leaks/CPU
