@@ -9,7 +9,6 @@ import (
 	"os"
 	"pandora-pay/addresses"
 	"strconv"
-	"sync/atomic"
 )
 
 var NotAcceptedCharacters = map[string]bool{
@@ -52,10 +51,11 @@ var commands = []Command{
 }
 
 var cmd *widgets.List
-var cmdStatus = &atomic.Value{}
-var cmdInput = &atomic.Value{}
-var cmdInputCn = make(chan string)
 var cmdRows []string
+
+var cmdStatus string //string
+var cmdInput string  //string
+var cmdInputCn = make(chan string)
 
 func CommandDefineCallback(Text string, callback func(string) error) {
 
@@ -70,13 +70,29 @@ func CommandDefineCallback(Text string, callback func(string) error) {
 }
 
 func cmdProcess(e ui.Event) {
+
+	var command *Command
+	cmd.Lock()
+	status := cmdStatus
+	input := cmdInput
+	cn := cmdInputCn
+	if status == "cmd" {
+		command = &commands[cmd.SelectedRow]
+	}
+	cmd.Unlock()
+
 	switch e.ID {
 	case "<C-c>":
-		if cmdStatus.Load().(string) == "read" {
-			close(cmdInputCn)
+		cmd.Lock()
+		if cmdStatus == "read" {
+			if cmdInputCn != nil {
+				close(cmdInputCn)
+			}
 			cmdInputCn = make(chan string)
+			cmd.Unlock()
 			return
 		}
+		cmd.Unlock()
 		os.Exit(1)
 	case "<Down>":
 		cmd.ScrollDown()
@@ -96,10 +112,9 @@ func cmdProcess(e ui.Event) {
 		cmd.ScrollBottom()
 	case "<Enter>":
 
-		if cmdStatus.Load().(string) == "cmd" {
+		if status == "cmd" {
 
 			cmd.Lock()
-			command := commands[cmd.SelectedRow]
 			cmd.SelectedRow = 0
 			cmd.Unlock()
 
@@ -108,25 +123,27 @@ func cmdProcess(e ui.Event) {
 				go func() {
 
 					if err := command.Callback(command.Text); err != nil {
-						Error(err)
-						cmdStatus.Store("output done")
+						OutputWrite(err)
+						cmd.Lock()
+						cmdStatus = "output done"
+						cmd.Unlock()
 					} else {
 						OutputDone()
 					}
 
 				}()
 			}
-		} else if cmdStatus.Load().(string) == "output done" {
+		} else if status == "output done" {
 			OutputRestore()
-		} else if cmdStatus.Load().(string) == "read" {
-			cmdInputCn <- cmdInput.Load().(string)
+		} else if status == "read" {
+			cn <- input
 		}
 
 	}
 
-	if cmdStatus.Load().(string) == "read" && !NotAcceptedCharacters[e.ID] {
+	if cmdStatus == "read" && !NotAcceptedCharacters[e.ID] {
 		cmd.Lock()
-		str := cmdInput.Load().(string)
+		str := cmdInput
 
 		char := e.ID
 		if char == "<Space>" {
@@ -139,7 +156,7 @@ func cmdProcess(e ui.Event) {
 			}
 		}
 		str += char
-		cmdInput.Store(str)
+		cmdInput = str
 		cmd.Rows[len(cmd.Rows)-1] = "-> " + str
 		cmd.Unlock()
 	}
@@ -150,8 +167,9 @@ func cmdProcess(e ui.Event) {
 }
 
 func OutputWrite(any interface{}) {
+	str := processArgument(any)
 	cmd.Lock()
-	cmd.Rows = append(cmd.Rows, processArgument(any))
+	cmd.Rows = append(cmd.Rows, str)
 	cmd.SelectedRow = len(cmd.Rows) - 1
 	cmd.Unlock()
 	ui.Render(cmd)
@@ -160,16 +178,17 @@ func OutputWrite(any interface{}) {
 func outputRead(text string) <-chan string {
 
 	cmd.Lock()
-	cmdInput.Store("")
+	cmdInput = ""
 	cmd.Rows = append(cmd.Rows, "")
 	cmd.Rows = append(cmd.Rows, text)
 	cmd.Rows = append(cmd.Rows, "-> ")
 	cmd.SelectedRow = len(cmd.Rows) - 1
-	cmdStatus.Store("read")
+	cmdStatus = "read"
+	cn := cmdInputCn
 	cmd.Unlock()
 	ui.Render(cmd)
 
-	return cmdInputCn
+	return cn
 }
 
 func OutputReadString(text string) (out string, ok bool) {
@@ -325,7 +344,9 @@ func OutputClear() {
 func OutputDone() {
 	OutputWrite("")
 	OutputWrite("Press space to return...")
-	cmdStatus.Store("output done")
+	cmd.Lock()
+	cmdStatus = "output done"
+	cmd.Unlock()
 }
 
 func OutputRestore() {
@@ -333,14 +354,15 @@ func OutputRestore() {
 	cmd.Lock()
 	cmd.SelectedRow = 0
 	cmd.Rows = cmdRows
+	cmdStatus = "cmd"
 	cmd.Unlock()
 	ui.Render(cmd)
-	cmdStatus.Store("cmd")
 }
 
 func cmdInit() {
-	cmdStatus.Store("cmd")
-	cmdInput.Store("")
+	cmdStatus = "cmd"
+	cmdInput = ""
+	cmdInputCn = make(chan string)
 
 	cmd = widgets.NewList()
 	cmd.Title = "Commands"

@@ -46,7 +46,6 @@ func (chainData *BlockchainData) computeNextTargetBig(bucket *bolt.Bucket) (*big
 
 	//gui.Log("lastDifficulty", lastDifficulty.String(), "chainData.Height", chainData.Height, "chainData.Timestamp", chainData.Timestamp, "chainData.BigTotalDifficulty", chainData.BigTotalDifficulty.String())
 	if deltaTotalDifficulty.Cmp(config.BIG_INT_ZERO) == 0 {
-		//gui.Error("ERRROR!!!", lastDifficulty.String())
 		return nil, errors.New("Delta Difficulty is zero")
 	}
 

@@ -271,7 +271,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					return
 				}
 
-				//gui.Log("Target new   ", newChainData.Height, "value", newChainData.Target.Text(10))
+				gui.Log("Target new   ", newChainData.Height, "value", newChainData.Target.Text(10))
+				gui.Log("BigTotalDifficulty new   ", newChainData.Height, "value", newChainData.BigTotalDifficulty.Text(10))
 
 				newChainData.Height += 1
 				newChainData.Transactions += uint64(len(blkComplete.Txs))
