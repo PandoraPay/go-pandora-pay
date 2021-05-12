@@ -41,7 +41,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 			hash:               chainUpdateNotification.Hash,
 			prevHash:           chainUpdateNotification.PrevHash,
 			bigTotalDifficulty: &atomic.Value{},
-			downloaded:         false,
+			initialized:        false,
 			blocks:             make([]*block_complete.BlockComplete, 0),
 			conns:              []*connection.AdvancedConnection{conn},
 		}

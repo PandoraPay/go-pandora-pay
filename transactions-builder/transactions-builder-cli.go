@@ -39,6 +39,11 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
+		destinationAddress, ok := gui.OutputReadAddress("Destination Address")
+		if !ok {
+			return
+		}
+
 		feePerByte, ok := gui.OutputReadInt("Fee per byte. -1 automatically, 0 none", nil)
 		if !ok {
 			return
@@ -52,11 +57,6 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		nonce, ok := gui.OutputReadUint64("Nonce. Leave empty for automatically detection", nil, true)
-		if !ok {
-			return
-		}
-
-		destinationAddress, ok := gui.OutputReadAddress("Destination Address")
 		if !ok {
 			return
 		}

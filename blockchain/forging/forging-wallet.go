@@ -95,7 +95,7 @@ func (w *ForgingWallet) ProcessUpdates() (err error) {
 			delegatedPublicKeyHash := cryptography.ComputePublicKeyHash(delegatedPublicKey)
 
 			//let's read the balance
-			if err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+			store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
 				chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
 
@@ -130,9 +130,7 @@ func (w *ForgingWallet) ProcessUpdates() (err error) {
 				}
 
 				return
-			}); err != nil {
-				return
-			}
+			})
 
 		}
 

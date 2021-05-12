@@ -2,7 +2,6 @@ package blockchain
 
 import (
 	"bytes"
-	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -267,9 +266,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 				difficultyBigInt := difficulty.ConvertTargetToDifficulty(newChainData.Target)
 				newChainData.BigTotalDifficulty = new(big.Int).Add(newChainData.BigTotalDifficulty, difficultyBigInt)
-				if err = newChainData.saveTotalDifficultyExtra(writer); err != nil {
-					return
-				}
 
 				if newChainData.Target, err = newChainData.computeNextTargetBig(writer); err != nil {
 					return
@@ -285,6 +281,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					insertedTxHashes = append(insertedTxHashes, txHashId)
 				}
 
+				if err = newChainData.saveTotalDifficultyExtra(writer); err != nil {
+					return
+				}
+
 				if err = writer.Put([]byte("chainHash"), newChainData.Hash); err != nil {
 					return
 				}
@@ -298,9 +298,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					return
 				}
 
-				buf := make([]byte, binary.MaxVarintLen64)
-				n := binary.PutUvarint(buf, newChainData.Height)
-				if err = writer.Put([]byte("chainHeight"), buf[:n]); err != nil {
+				if err = newChainData.saveBlockchainHeight(writer); err != nil {
 					return
 				}
 

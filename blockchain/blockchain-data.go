@@ -33,7 +33,7 @@ func (chainData *BlockchainData) computeNextTargetBig(bucket *bolt.Bucket) (*big
 
 	first := chainData.Height - config.DIFFICULTY_BLOCK_WINDOW
 
-	firstDifficulty, firstTimestamp, err := chainData.LoadTotalDifficultyExtra(bucket, first)
+	firstDifficulty, firstTimestamp, err := chainData.LoadTotalDifficultyExtra(bucket, first+1)
 	if err != nil {
 		return nil, err
 	}
@@ -44,9 +44,9 @@ func (chainData *BlockchainData) computeNextTargetBig(bucket *bolt.Bucket) (*big
 	deltaTotalDifficulty := new(big.Int).Sub(lastDifficulty, firstDifficulty)
 	deltaTime := lastTimestamp - firstTimestamp
 
-	gui.Log("lastDifficulty", lastDifficulty.String(), "chainData.Height", chainData.Height, "chainData.Timestamp", chainData.Timestamp, "chainData.BigTotalDifficulty", chainData.BigTotalDifficulty.String())
+	//gui.Log("lastDifficulty", lastDifficulty.String(), "chainData.Height", chainData.Height, "chainData.Timestamp", chainData.Timestamp, "chainData.BigTotalDifficulty", chainData.BigTotalDifficulty.String())
 	if deltaTotalDifficulty.Cmp(config.BIG_INT_ZERO) == 0 {
-		gui.Error("ERRROR!!!", lastDifficulty.String())
+		//gui.Error("ERRROR!!!", lastDifficulty.String())
 		return nil, errors.New("Delta Difficulty is zero")
 	}
 

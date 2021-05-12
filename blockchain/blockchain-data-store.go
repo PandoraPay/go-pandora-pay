@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	bolt "go.etcd.io/bbolt"
@@ -32,7 +33,7 @@ func (chainData *BlockchainData) LoadTotalDifficultyExtra(bucket *bolt.Bucket, h
 
 	buf := bucket.Get(key)
 	if buf == nil {
-		err = errors.New("Couldn't ready difficulty from DB")
+		err = errors.New("Couldn't read difficulty from DB")
 		return
 	}
 
@@ -62,6 +63,12 @@ func (chainData *BlockchainData) loadBlockchainInfo(bucket *bolt.Bucket, height 
 		return errors.New("Chain not found")
 	}
 	return json.Unmarshal(chainInfoData, chainData)
+}
+
+func (chainData *BlockchainData) saveBlockchainHeight(bucket *bolt.Bucket) (err error) {
+	buf := make([]byte, binary.MaxVarintLen64)
+	n := binary.PutUvarint(buf, chainData.Height)
+	return bucket.Put([]byte("chainHeight"), buf[:n])
 }
 
 func (chainData *BlockchainData) saveBlockchainInfo(bucket *bolt.Bucket) (err error) {

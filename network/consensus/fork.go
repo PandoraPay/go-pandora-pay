@@ -11,7 +11,7 @@ import (
 type Fork struct {
 	bigTotalDifficulty *atomic.Value // *big.Int
 
-	downloaded bool
+	initialized bool
 
 	end     uint64
 	current uint64
