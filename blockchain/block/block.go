@@ -34,9 +34,6 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 
 	reward := reward.GetRewardAt(blk.Height)
 	acc := acs.GetAccountEvenEmpty(blk.Forger)
-	if err = acc.RefreshDelegatedStake(blk.Height); err != nil {
-		return
-	}
 
 	if err = acc.DelegatedStake.AddStakePendingStake(reward, blk.Height); err != nil {
 		return

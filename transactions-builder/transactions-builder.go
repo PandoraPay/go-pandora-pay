@@ -6,6 +6,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
@@ -28,12 +29,19 @@ func (builder *TransactionsBuilder) checkTx(accs *accounts.Accounts, chainHeight
 
 	var available uint64
 	for _, vin := range tx.TxBase.(*transaction_simple.TransactionSimple).Vin {
-		account := accs.GetAccount(vin.Bloom.PublicKeyHash)
-		if account == nil {
+
+		var acc *account.Account
+
+		acc, err = accs.GetAccount(vin.Bloom.PublicKeyHash, chainHeight)
+		if err != nil {
+			return
+		}
+
+		if acc == nil {
 			return errors.New("Account doesn't even exist")
 		}
 
-		available, err = account.GetAvailableBalance(chainHeight, vin.Token)
+		available, err = acc.GetAvailableBalance(vin.Token)
 		if err != nil {
 			return err
 		}
@@ -86,11 +94,9 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 
 	err2 = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
-		reader := boltTx.Bucket([]byte("Chain"))
 		accs := accounts.NewAccounts(boltTx)
 
-		buffer := reader.Get([]byte("chainHeight"))
-		chainHeight, _ := binary.Uvarint(buffer)
+		chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
 
 		keys := make([][]byte, len(from))
 
@@ -101,13 +107,17 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 				return
 			}
 
-			account := accs.GetAccount(fromWalletAddress.GetPublicKeyHash())
-			if account == nil {
+			var acc *account.Account
+			if acc, err = accs.GetAccount(fromWalletAddress.GetPublicKeyHash(), chainHeight); err != nil {
+				return
+			}
+
+			if acc == nil {
 				return errors.New("Account doesn't exist")
 			}
 
 			var available uint64
-			if available, err = account.GetAvailableBalance(chainHeight, amountsTokens[i]); err != nil {
+			if available, err = acc.GetAvailableBalance(amountsTokens[i]); err != nil {
 				return err
 			}
 			if available < amounts[i] {
@@ -115,7 +125,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 			}
 
 			if i == 0 && nonce == 0 {
-				nonce = builder.mempool.GetNonce(fromWalletAddress.GetPublicKeyHash(), account.Nonce)
+				nonce = builder.mempool.GetNonce(fromWalletAddress.GetPublicKeyHash(), acc.Nonce)
 			}
 			keys[i] = fromWalletAddress.PrivateKey.Key
 		}
@@ -152,19 +162,21 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, u
 	}
 
 	err2 = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
-		reader := boltTx.Bucket([]byte("Chain"))
-		buffer := reader.Get([]byte("chainHeight"))
-		chainHeight, _ := binary.Uvarint(buffer)
 
-		account := accounts.NewAccounts(boltTx).GetAccount(fromWalletAddress.GetPublicKeyHash())
+		chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
+
+		accs := accounts.NewAccounts(boltTx)
+		var account *account.Account
+		if account, err = accs.GetAccount(fromWalletAddress.GetPublicKeyHash(), chainHeight); err != nil {
+			return
+		}
+
 		if account == nil {
 			return errors.New("Account doesn't exist")
 		}
 
-		availableUnstake, err := account.GetDelegatedStakeAvailable(chainHeight)
-		if err != nil {
-			return
-		}
+		availableUnstake := account.GetDelegatedStakeAvailable()
+
 		if availableUnstake < unstakeAmount {
 			return errors.New("You don't have enough staked coins")
 		}
@@ -177,10 +189,8 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, u
 			return
 		}
 
-		var availableDelegatedStake uint64
-		if availableDelegatedStake, err = account.GetDelegatedStakeAvailable(chainHeight); err != nil {
-			return err
-		}
+		availableDelegatedStake := account.GetDelegatedStakeAvailable()
+
 		if availableDelegatedStake < tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Amount+tx.TxBase.(*transaction_simple.TransactionSimple).Extra.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra {
 			return errors.New("You don't have enough staked coins to pay for the fee")
 		}
@@ -209,26 +219,30 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 	}
 
 	err2 = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
-		reader := boltTx.Bucket([]byte("Chain"))
-		buffer := reader.Get([]byte("chainHeight"))
-		chainHeight, _ := binary.Uvarint(buffer)
+
+		chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
 
 		accs := accounts.NewAccounts(boltTx)
-		account := accs.GetAccount(fromWalletAddress.GetPublicKeyHash())
-		if account == nil {
+		var acc *account.Account
+		if acc, err = accs.GetAccount(fromWalletAddress.GetPublicKeyHash(), chainHeight); err != nil {
+			return
+		}
+
+		if acc == nil {
 			return errors.New("Account doesn't exist")
 		}
 
-		available, err := account.GetAvailableBalance(chainHeight, config.NATIVE_TOKEN)
-		if err != nil {
+		var available uint64
+		if available, err = acc.GetAvailableBalance(config.NATIVE_TOKEN); err != nil {
 			return
 		}
+
 		if available < delegateAmount {
 			return errors.New("You don't have enough coins to delegate")
 		}
 
 		if nonce == 0 {
-			nonce = builder.mempool.GetNonce(fromWalletAddress.GetPublicKeyHash(), account.Nonce)
+			nonce = builder.mempool.GetNonce(fromWalletAddress.GetPublicKeyHash(), acc.Nonce)
 		}
 
 		if delegateNewPubKeyHashGenerate {

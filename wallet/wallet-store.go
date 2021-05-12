@@ -2,10 +2,12 @@ package wallet
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -120,10 +122,15 @@ func (wallet *Wallet) ReadWallet() error {
 
 	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
+		chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
+
 		accs := accounts.NewAccounts(boltTx)
 		for _, adr := range wallet.Addresses {
 
-			acc := accs.GetAccount(adr.Address.PublicKeyHash)
+			var acc *account.Account
+			if acc, err = accs.GetAccount(adr.Address.PublicKeyHash, chainHeight); err != nil {
+				return
+			}
 
 			if err = wallet.refreshWallet(acc, adr); err != nil {
 				return

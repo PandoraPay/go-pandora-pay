@@ -2,6 +2,7 @@ package forging
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/addresses"
@@ -96,8 +97,14 @@ func (w *ForgingWallet) ProcessUpdates() (err error) {
 			//let's read the balance
 			if err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
+				chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
+
 				accs := accounts.NewAccounts(boltTx)
-				acc := accs.GetAccount(update.pubKeyHash)
+				var acc *account.Account
+
+				if acc, err = accs.GetAccount(update.pubKeyHash, chainHeight); err != nil {
+					return
+				}
 
 				if acc == nil {
 					return errors.New("Account was not found")
@@ -163,12 +170,19 @@ func (w *ForgingWallet) loadBalances() error {
 	w.Lock()
 	defer w.Unlock()
 
-	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
 		accs := accounts.NewAccounts(boltTx)
 
 		for _, address := range w.addresses {
-			account := accs.GetAccount(address.publicKeyHash)
+
+			chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
+
+			var account *account.Account
+			if account, err = accs.GetAccount(address.publicKeyHash, chainHeight); err != nil {
+				return
+			}
+
 			address.account = account
 		}
 

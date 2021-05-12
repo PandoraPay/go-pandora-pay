@@ -116,31 +116,27 @@ func (account *Account) RefreshDelegatedStake(blockHeight uint64) (err error) {
 	return
 }
 
-func (account *Account) GetDelegatedStakeAvailable(blockHeight uint64) (uint64, error) {
+func (account *Account) GetDelegatedStakeAvailable() uint64 {
+	if account.DelegatedStakeVersion == 0 {
+		return 0
+	}
+	return account.DelegatedStake.GetDelegatedStakeAvailable()
+}
+
+func (account *Account) ComputeDelegatedStakeAvailable(chainHeight uint64) (uint64, error) {
 	if account.DelegatedStakeVersion == 0 {
 		return 0, nil
 	}
-	return account.DelegatedStake.GetDelegatedStakeAvailable(blockHeight)
+	return account.DelegatedStake.ComputeDelegatedStakeAvailable(chainHeight)
 }
 
-func (account *Account) GetAvailableBalance(blockHeight uint64, token []byte) (result uint64, err error) {
+func (account *Account) GetAvailableBalance(token []byte) (result uint64, err error) {
 	for _, balance := range account.Balances {
 		if bytes.Equal(balance.Token, token) {
 			result = balance.Amount
 			break
 		}
 	}
-
-	if bytes.Equal(token, config.NATIVE_TOKEN) && account.DelegatedStakeVersion == 1 {
-		unstake := uint64(0)
-		if unstake, err = account.DelegatedStake.GetDelegatedUnstakeAvailable(blockHeight); err != nil {
-			return
-		}
-		if err = helpers.SafeUint64Add(&result, unstake); err != nil {
-			return
-		}
-	}
-
 	return
 }
 

@@ -77,7 +77,7 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [ ] Zether Deposit Transactions
     - [ ] Zether Withdraw Transactions
     - [ ] Zether Transfer Transactions
-    - [ ] Multi Threading signature verification.
+    - [ ] Multi Threading signature verification **
 - [ ] Mem Pool
     - [ ] Saving/Loading
     - [X] Inserting Txs
@@ -98,10 +98,10 @@ The main design pattern that has been taken in consideration is to be **dead-sim
   - [ ] Webassembly build
   - [ ] Node.js and Javascript wallet
   - [ ] Signing transactions
-  - [ ] Documentation
+  - [ ] Documentation **
   - [ ] Explorer
 
-* later on optimizations and improvements
+** later on optimizations and improvements
 
 The main reasons why DPOS has been chosen over POS:
 1. Delegating your stake increases security 

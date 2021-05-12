@@ -29,9 +29,6 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 	for i, vin := range tx.Vin {
 
 		acc := accs.GetAccountEvenEmpty(vin.Bloom.PublicKeyHash)
-		if err = acc.RefreshDelegatedStake(blockHeight); err != nil {
-			return
-		}
 
 		if i == 0 {
 			if acc.Nonce != tx.Nonce {
@@ -58,9 +55,6 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 
 	for _, vout := range tx.Vout {
 		acc := accs.GetAccountEvenEmpty(vout.PublicKeyHash)
-		if err = acc.RefreshDelegatedStake(blockHeight); err != nil {
-			return
-		}
 
 		if err = acc.AddBalance(true, vout.Amount, vout.Token); err != nil {
 			return

@@ -1,6 +1,7 @@
 package api_common
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	bolt "go.etcd.io/bbolt"
@@ -88,10 +89,13 @@ func (apiStore *APIStore) LoadBlockWithTXsFromHeight(blockHeight uint64) (blkWit
 }
 
 func (apiStore *APIStore) LoadAccountFromPublicKeyHash(publicKeyHash []byte) (acc *account.Account, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+
+		chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
+
 		accs := accounts.NewAccounts(boltTx)
-		acc = accs.GetAccount(publicKeyHash)
-		return nil
+		acc, err = accs.GetAccount(publicKeyHash, chainHeight)
+		return
 	})
 	return
 }

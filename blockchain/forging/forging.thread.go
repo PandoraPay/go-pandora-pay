@@ -20,7 +20,6 @@ type ForgingThread struct {
 
 func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork) (wallets [][]*ForgingWalletAddressRequired, walletsCount int) {
 
-	var err error
 	wallets = make([][]*ForgingWalletAddressRequired, thread.threads)
 
 	//distributing the wallets to each thread uniformly
@@ -33,10 +32,10 @@ func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork
 	for _, walletAdr := range wallet.addresses {
 		if walletAdr.account != nil && walletAdr.delegatedPrivateKey != nil {
 
-			var stakingAmount uint64
+			stakingAmount := uint64(0)
 			if walletAdr.account != nil {
-				stakingAmount, err = walletAdr.account.GetDelegatedStakeAvailable(work.blkComplete.Block.Height)
-				if err != nil {
+				var err error
+				if stakingAmount, err = walletAdr.account.ComputeDelegatedStakeAvailable(work.blkComplete.Block.Height); err != nil {
 					continue
 				}
 			}

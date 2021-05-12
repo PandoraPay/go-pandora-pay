@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"errors"
 	bolt "go.etcd.io/bbolt"
-	"math"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
@@ -156,12 +155,10 @@ func (testnet *Testnet) run() {
 					if account != nil {
 
 						var balance, delegatedStakeAvailable uint64
-						if balance, err = account.GetAvailableBalance(math.MaxUint64, config.NATIVE_TOKEN); err != nil {
+						if balance, err = account.GetAvailableBalance(config.NATIVE_TOKEN); err != nil {
 							return
 						}
-						if delegatedStakeAvailable, err = account.GetDelegatedStakeAvailable(blockHeight); err != nil {
-							return
-						}
+						delegatedStakeAvailable = account.GetDelegatedStakeAvailable()
 
 						if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 {
 							if !testnet.mempool.ExistsTxSimpleVersion(testnet.wallet.Addresses[0].GetPublicKeyHash(), transaction_simple.TxSimpleScriptUnstake) {

@@ -32,19 +32,23 @@ func (accounts *Accounts) GetAccountEvenEmpty(key []byte) (acc *account.Account)
 	return
 }
 
-func (accounts *Accounts) GetAccount(key []byte) *account.Account {
+func (accounts *Accounts) GetAccount(key []byte, height uint64) (acc *account.Account, err error) {
 
 	data := accounts.Get(key)
 	if data == nil {
-		return nil
+		return
 	}
 
-	acc := new(account.Account)
-	if err := acc.Deserialize(helpers.NewBufferReader(data)); err != nil {
-		panic(err)
+	acc = new(account.Account)
+	if err = acc.Deserialize(helpers.NewBufferReader(data)); err != nil {
+		return
 	}
 
-	return acc
+	if err = acc.RefreshDelegatedStake(height); err != nil {
+		return
+	}
+
+	return
 }
 
 func (accounts *Accounts) UpdateAccount(key []byte, acc *account.Account) {

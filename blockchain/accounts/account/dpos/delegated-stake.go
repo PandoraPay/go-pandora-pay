@@ -102,8 +102,11 @@ func (dstake *DelegatedStake) IsDelegatedStakeEmpty() bool {
 	return dstake.StakeAvailable == 0 && len(dstake.StakesPending) == 0
 }
 
-func (dstake *DelegatedStake) GetDelegatedStakeAvailable(blockHeight uint64) (result uint64, err error) {
+func (dstake *DelegatedStake) GetDelegatedStakeAvailable() uint64 {
+	return dstake.StakeAvailable
+}
 
+func (dstake *DelegatedStake) ComputeDelegatedStakeAvailable(blockHeight uint64) (result uint64, err error) {
 	result = dstake.StakeAvailable
 	for i := range dstake.StakesPending {
 		if dstake.StakesPending[i].ActivationHeight <= blockHeight && dstake.StakesPending[i].PendingType == DelegatedStakePendingStake {
@@ -112,19 +115,5 @@ func (dstake *DelegatedStake) GetDelegatedStakeAvailable(blockHeight uint64) (re
 			}
 		}
 	}
-
-	return
-}
-
-func (dstake *DelegatedStake) GetDelegatedUnstakeAvailable(blockHeight uint64) (result uint64, err error) {
-
-	for i := range dstake.StakesPending {
-		if dstake.StakesPending[i].ActivationHeight <= blockHeight && dstake.StakesPending[i].PendingType == DelegatedStakePendingUnstake {
-			if err = helpers.SafeUint64Add(&result, dstake.StakesPending[i].PendingAmount); err != nil {
-				return
-			}
-		}
-	}
-
 	return
 }

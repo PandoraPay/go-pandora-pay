@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"os"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/config"
 	"pandora-pay/gui"
@@ -27,6 +29,8 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 
 	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
+		chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
+
 		accs := accounts.NewAccounts(boltTx)
 		toks := tokens.NewTokens(boltTx)
 
@@ -37,7 +41,10 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 			if walletAddress.Address.Version == addresses.SimplePublicKeyHash ||
 				walletAddress.Address.Version == addresses.SimplePublicKey {
 
-				acc := accs.GetAccount(walletAddress.GetPublicKeyHash())
+				var acc *account.Account
+				if acc, err = accs.GetAccount(walletAddress.GetPublicKeyHash(), chainHeight); err != nil {
+					return
+				}
 
 				if acc == nil {
 					gui.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))

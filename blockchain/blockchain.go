@@ -9,6 +9,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/blockchain/forging"
@@ -63,6 +64,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	//avoid processing the same function twice
 	chain.mutex.Lock()
+	defer chain.mutex.Unlock()
 
 	chainData := chain.GetChainData()
 
@@ -191,15 +193,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 				//check blkComplete balance
 
-				acc := accs.GetAccount(blkComplete.Block.Forger)
+				var acc *account.Account
+				if acc, err = accs.GetAccount(blkComplete.Block.Forger, blkComplete.Block.Height); err != nil {
+					return
+				}
+
 				if acc == nil || !acc.HasDelegatedStake() {
 					return errors.New("Forger Account deson't exist or hasn't delegated stake")
 				}
 
-				var stakingAmount uint64
-				if stakingAmount, err = acc.GetDelegatedStakeAvailable(blkComplete.Block.Height); err != nil {
-					return
-				}
+				stakingAmount := acc.GetDelegatedStakeAvailable()
 
 				if !bytes.Equal(blkComplete.Block.Bloom.DelegatedPublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash) {
 					return errors.New("Block Staking Delegated Public Key is not matching")
@@ -361,8 +364,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 		return
 	}()
-
-	chain.mutex.Unlock()
 
 	if err == nil && len(insertedBlocks) == 0 {
 		err = errors.New("No blocks were inserted")
