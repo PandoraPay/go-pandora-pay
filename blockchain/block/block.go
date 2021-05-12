@@ -2,7 +2,9 @@ package block
 
 import (
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/config/reward"
 	"pandora-pay/cryptography"
@@ -33,7 +35,11 @@ func (blk *Block) Verify() error {
 func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allFees map[string]uint64) (err error) {
 
 	reward := reward.GetRewardAt(blk.Height)
-	acc := acs.GetAccountEvenEmpty(blk.Forger)
+
+	var acc *account.Account
+	if acc, err = acs.GetAccountEvenEmpty(blk.Forger, blk.Height); err != nil {
+		return
+	}
 
 	if err = acc.DelegatedStake.AddStakePendingStake(reward, blk.Height); err != nil {
 		return
@@ -50,7 +56,10 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 	}
 	acs.UpdateAccount(blk.Forger, acc)
 
-	tok := toks.GetToken(config.NATIVE_TOKEN)
+	var tok *token.Token
+	if tok, err = toks.GetToken(config.NATIVE_TOKEN); err != nil {
+		return
+	}
 
 	if err = tok.AddSupply(true, reward); err != nil {
 		return

@@ -19,7 +19,7 @@ func NewTokens(tx *bbolt.Tx) *Tokens {
 	}
 }
 
-func (tokens *Tokens) GetToken(key []byte) *token.Token {
+func (tokens *Tokens) GetToken(key []byte) (tok *token.Token, err error) {
 
 	if len(key) == 0 {
 		key = config.NATIVE_TOKEN_FULL
@@ -27,32 +27,32 @@ func (tokens *Tokens) GetToken(key []byte) *token.Token {
 
 	data := tokens.HashMap.Get(key)
 	if data == nil {
-		return nil
+		return
 	}
 
-	tok := new(token.Token)
-	if err := tok.Deserialize(helpers.NewBufferReader(data)); err != nil {
-		panic(err)
+	tok = new(token.Token)
+	if err = tok.Deserialize(helpers.NewBufferReader(data)); err != nil {
+		return
 	}
 
-	return tok
+	return
 }
 
-func (tokens *Tokens) CreateToken(key []byte, tok *token.Token) error {
+func (tokens *Tokens) CreateToken(key []byte, tok *token.Token) (err error) {
 
 	if len(key) == 0 {
 		key = config.NATIVE_TOKEN_FULL
 	}
 
-	if err := tok.Validate(); err != nil {
-		return err
+	if err = tok.Validate(); err != nil {
+		return
 	}
 	if tokens.ExistsToken(key) {
 		return errors.New("token already exists")
 	}
 
 	tokens.UpdateToken(key, tok)
-	return nil
+	return
 }
 
 func (tokens *Tokens) UpdateToken(key []byte, tok *token.Token) {

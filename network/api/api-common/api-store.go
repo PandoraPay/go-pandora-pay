@@ -100,11 +100,11 @@ func (apiStore *APIStore) LoadAccountFromPublicKeyHash(publicKeyHash []byte) (ac
 	return
 }
 
-func (apiStore *APIStore) LoadTokenFromPublicKeyHash(publicKeyHash []byte) (tok *token.Token, err2 error) {
-	err2 = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) error {
+func (apiStore *APIStore) LoadTokenFromPublicKeyHash(publicKeyHash []byte) (tok *token.Token, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 		toks := tokens.NewTokens(boltTx)
-		tok = toks.GetToken(publicKeyHash)
-		return nil
+		tok, err = toks.GetToken(publicKeyHash)
+		return
 	})
 	return
 }

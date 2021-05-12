@@ -4,6 +4,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/genesis"
@@ -50,7 +51,11 @@ func (chain *Blockchain) init() (chainData *BlockchainData, err error) {
 			if err = helpers.SafeUint64Add(&supply, airdrop.Amount); err != nil {
 				return
 			}
-			acc := accs.GetAccountEvenEmpty(airdrop.PublicKeyHash)
+
+			var acc *account.Account
+			if acc, err = accs.GetAccountEvenEmpty(airdrop.PublicKeyHash, 0); err != nil {
+				return
+			}
 
 			if airdrop.DelegatedStakePublicKeyHash != nil {
 				if err = acc.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKeyHash); err != nil {

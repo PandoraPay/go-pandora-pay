@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens"
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
@@ -28,7 +29,10 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 
 	for i, vin := range tx.Vin {
 
-		acc := accs.GetAccountEvenEmpty(vin.Bloom.PublicKeyHash)
+		var acc *account.Account
+		if acc, err = accs.GetAccountEvenEmpty(vin.Bloom.PublicKeyHash, blockHeight); err != nil {
+			return
+		}
 
 		if i == 0 {
 			if acc.Nonce != tx.Nonce {
@@ -54,7 +58,11 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 	}
 
 	for _, vout := range tx.Vout {
-		acc := accs.GetAccountEvenEmpty(vout.PublicKeyHash)
+
+		var acc *account.Account
+		if acc, err = accs.GetAccountEvenEmpty(vout.PublicKeyHash, blockHeight); err != nil {
+			return
+		}
 
 		if err = acc.AddBalance(true, vout.Amount, vout.Token); err != nil {
 			return

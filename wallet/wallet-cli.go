@@ -11,6 +11,7 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/store"
@@ -54,8 +55,11 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 						gui.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", ""))
 						for _, balance := range acc.Balances {
 
-							token := toks.GetToken(balance.Token)
-							gui.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(balance.Amount), 'f', config.DECIMAL_SEPARATOR, 64), token.Name))
+							var tok *token.Token
+							if tok, err = toks.GetToken(balance.Token); err != nil {
+								return
+							}
+							gui.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(balance.Amount), 'f', config.DECIMAL_SEPARATOR, 64), tok.Name))
 						}
 					} else {
 						gui.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", "EMPTY"))

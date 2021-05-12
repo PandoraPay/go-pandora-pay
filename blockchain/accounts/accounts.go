@@ -17,7 +17,7 @@ func NewAccounts(tx *bbolt.Tx) *Accounts {
 	}
 }
 
-func (accounts *Accounts) GetAccountEvenEmpty(key []byte) (acc *account.Account) {
+func (accounts *Accounts) GetAccountEvenEmpty(key []byte, chainHeight uint64) (acc *account.Account, err error) {
 
 	acc = new(account.Account)
 
@@ -26,13 +26,18 @@ func (accounts *Accounts) GetAccountEvenEmpty(key []byte) (acc *account.Account)
 		return
 	}
 
-	if err := acc.Deserialize(helpers.NewBufferReader(data)); err != nil {
-		panic(err)
+	if err = acc.Deserialize(helpers.NewBufferReader(data)); err != nil {
+		return
 	}
+
+	if err = acc.RefreshDelegatedStake(chainHeight); err != nil {
+		return
+	}
+
 	return
 }
 
-func (accounts *Accounts) GetAccount(key []byte, height uint64) (acc *account.Account, err error) {
+func (accounts *Accounts) GetAccount(key []byte, chainHeight uint64) (acc *account.Account, err error) {
 
 	data := accounts.Get(key)
 	if data == nil {
@@ -44,7 +49,7 @@ func (accounts *Accounts) GetAccount(key []byte, height uint64) (acc *account.Ac
 		return
 	}
 
-	if err = acc.RefreshDelegatedStake(height); err != nil {
+	if err = acc.RefreshDelegatedStake(chainHeight); err != nil {
 		return
 	}
 

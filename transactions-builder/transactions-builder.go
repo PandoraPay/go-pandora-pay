@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
@@ -64,20 +65,29 @@ func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce ui
 	if err2 = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 		toks := tokens.NewTokens(boltTx)
 		for i := range from {
-			token := toks.GetToken(amountsTokens[i])
-			if token == nil {
+
+			var tok *token.Token
+			if tok, err = toks.GetToken(amountsTokens[i]); err != nil {
+				return
+			}
+
+			if tok == nil {
 				return errors.New("Token was not found")
 			}
-			if amountsFinal[i], err = token.ConvertToUnits(amounts[i]); err != nil {
+			if amountsFinal[i], err = tok.ConvertToUnits(amounts[i]); err != nil {
 				return
 			}
 		}
 		for i := range dstsTokens {
-			token := toks.GetToken(dstsTokens[i])
-			if token == nil {
+			var tok *token.Token
+			if tok, err = toks.GetToken(dstsTokens[i]); err != nil {
+				return
+			}
+
+			if tok == nil {
 				return errors.New("Token was not found")
 			}
-			if dstsAmountsFinal[i], err = token.ConvertToUnits(dstsAmounts[i]); err != nil {
+			if dstsAmountsFinal[i], err = tok.ConvertToUnits(dstsAmounts[i]); err != nil {
 				return
 			}
 		}

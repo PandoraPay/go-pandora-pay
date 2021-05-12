@@ -8,6 +8,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/config"
@@ -150,8 +151,11 @@ func (testnet *Testnet) run() {
 				if err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 
 					accs := accounts.NewAccounts(boltTx)
+					var account *account.Account
+					if account, err = accs.GetAccountEvenEmpty(testnet.wallet.Addresses[0].GetPublicKeyHash(), blockHeight); err != nil {
+						return
+					}
 
-					account := accs.GetAccountEvenEmpty(testnet.wallet.Addresses[0].GetPublicKeyHash())
 					if account != nil {
 
 						var balance, delegatedStakeAvailable uint64
