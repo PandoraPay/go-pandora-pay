@@ -64,7 +64,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	//avoid processing the same function twice
 	chain.mutex.Lock()
-	defer chain.mutex.Unlock()
 
 	chainData := chain.GetChainData()
 
@@ -373,6 +372,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		if calledByForging {
 			chain.createNextBlockForForging()
 		}
+		chain.mutex.Unlock()
 		return
 	}
 
@@ -381,36 +381,26 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	gui.Warning("-------------------------------------------")
 	newChainData.updateChainInfo()
 
-	//gui.Log("Status Chain 1")
-
 	//accs will only be read only
 	if err = chain.forging.Wallet.UpdateAccountsChanges(accs); err != nil {
 		gui.Error("Error updating balance changes", err)
 	}
 
-	gui.Log("Status Chain 2")
-
 	if err = chain.wallet.UpdateAccountsChanges(accs); err != nil {
 		gui.Error("Error updating balance changes", err)
 	}
-
-	gui.Log("Status Chain 3")
 
 	if err = chain.forging.Wallet.ProcessUpdates(); err != nil {
 		gui.Error("Error Processing Updates", err)
 	}
 
-	gui.Log("Status Chain 4")
+	chain.mutex.Unlock()
 
 	//update work for mem pool
 	chain.mempool.UpdateWork(newChainData.Hash, newChainData.Height)
 
-	gui.Log("Status Chain 5")
-
 	//create next block and the workers will be automatically reset
 	chain.createNextBlockForForging()
-
-	//gui.Log("Status Chain 6")
 
 	for _, txData := range removedTx {
 		tx := &transaction.Transaction{}
@@ -425,27 +415,17 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		}
 	}
 
-	gui.Log("Status Chain 7")
-
 	chain.mempool.DeleteTxs(insertedTxHashes)
-
-	gui.Log("Status Chain 8")
 
 	newSyncTime, result := chain.Sync.addBlocksChanged(uint32(len(insertedBlocks)), false)
 
-	gui.Log("Status Chain 9")
-
 	chain.UpdateMulticast.Broadcast(newChainData.Height)
-	gui.Log("Status Chain 10")
 
 	chain.UpdateNewChainMulticast.Broadcast(newChainData)
-	gui.Log("Status Chain 11")
 
 	if result {
 		chain.Sync.UpdateSyncMulticast.Broadcast(newSyncTime)
 	}
-
-	gui.Log("Status Chain 12")
 
 	return
 }

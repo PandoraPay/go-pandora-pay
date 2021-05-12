@@ -23,6 +23,7 @@ func (dstake *DelegatedStake) AddStakeAvailable(sign bool, amount uint64) error 
 }
 
 func (dstake *DelegatedStake) AddStakePendingStake(amount, blockHeight uint64) error {
+
 	if amount == 0 {
 		return nil
 	}

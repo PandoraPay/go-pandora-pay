@@ -3,6 +3,7 @@ package transaction_simple_extra
 import (
 	"errors"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
@@ -15,12 +16,14 @@ type TransactionSimpleDelegate struct {
 }
 
 func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) (err error) {
+	if err = acc.AddBalance(false, tx.Amount, config.NATIVE_TOKEN); err != nil {
+		return
+	}
 	if !acc.HasDelegatedStake() {
 		if err = acc.CreateDelegatedStake(0, tx.NewPublicKeyHash); err != nil {
 			return
 		}
 	}
-
 	if err = acc.DelegatedStake.AddStakePendingStake(tx.Amount, blockHeight); err != nil {
 		return
 	}
