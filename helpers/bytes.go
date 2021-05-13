@@ -13,3 +13,9 @@ func RandomBytes(size int) []byte {
 func EmptyBytes(size int) []byte {
 	return make([]byte, size)
 }
+
+func CloneBytes(a []byte) []byte {
+	out := make([]byte, len(a))
+	copy(out, a)
+	return out
+}

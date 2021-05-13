@@ -70,16 +70,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	//chain.RLock() is not required because it is guaranteed that no other thread is writing now in the chain
 	var newChainData = &BlockchainData{
-		Hash:                  chainData.Hash,
-		PrevHash:              chainData.PrevHash,
-		KernelHash:            chainData.KernelHash,
-		PrevKernelHash:        chainData.PrevKernelHash,
-		Height:                chainData.Height,
-		Timestamp:             chainData.Timestamp,
-		Target:                chainData.Target,
-		BigTotalDifficulty:    chainData.BigTotalDifficulty,
-		ConsecutiveSelfForged: chainData.ConsecutiveSelfForged,
-		Transactions:          chainData.Transactions,
+		Hash:                  helpers.CloneBytes(chainData.Hash),           //atomic copy
+		PrevHash:              helpers.CloneBytes(chainData.PrevHash),       //atomic copy
+		KernelHash:            helpers.CloneBytes(chainData.KernelHash),     //atomic copy
+		PrevKernelHash:        helpers.CloneBytes(chainData.PrevKernelHash), //atomic copy
+		Height:                chainData.Height,                             //atomic copy
+		Timestamp:             chainData.Timestamp,                          //atomic copy
+		Target:                new(big.Int).Set(chainData.Target),
+		BigTotalDifficulty:    new(big.Int).Set(chainData.BigTotalDifficulty),
+		ConsecutiveSelfForged: chainData.ConsecutiveSelfForged, //atomic copy
+		Transactions:          chainData.Transactions,          //atomic copy
 	}
 
 	insertedBlocks := []*block_complete.BlockComplete{}
@@ -264,6 +264,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				newChainData.KernelHash = blkComplete.Block.Bloom.KernelHash
 				newChainData.Timestamp = blkComplete.Block.Timestamp
 
+				gui.Log("Target old   ", newChainData.Height, "value", newChainData.Target.Text(10))
+				gui.Log("BigTotalDifficulty old   ", newChainData.Height, "value", newChainData.BigTotalDifficulty.Text(10))
+
 				difficultyBigInt := difficulty.ConvertTargetToDifficulty(newChainData.Target)
 				newChainData.BigTotalDifficulty = new(big.Int).Add(newChainData.BigTotalDifficulty, difficultyBigInt)
 
@@ -334,7 +337,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			}
 			for txHash := range removedTxHashes {
 				data := writer.Get(append([]byte("tx"), txHash...))
-				removedTx = append(removedTx, data)
+
+				removedTx = append(removedTx, helpers.CloneBytes(data)) //required because the garbage collector sometimes it deletes the underlying buffers
+
 				if err = writer.Delete(append([]byte("tx"), txHash...)); err != nil {
 					panic("Error deleting transactions " + err.Error())
 				}
@@ -376,7 +381,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	}
 
 	gui.Warning("-------------------------------------------")
-	gui.Warning(fmt.Sprintf("Including blocks %d | TXs: %d | Hash %s", len(insertedBlocks), len(insertedTxHashes), hex.EncodeToString(chainData.Hash)))
+	gui.Warning(fmt.Sprintf("Included blocks %d | TXs: %d | Hash %s", len(insertedBlocks), len(insertedTxHashes), hex.EncodeToString(chainData.Hash)))
+	gui.Warning(newChainData.Height, hex.EncodeToString(newChainData.Hash), newChainData.Target.Text(10), newChainData.BigTotalDifficulty.Text(10))
 	gui.Warning("-------------------------------------------")
 	newChainData.updateChainInfo()
 
