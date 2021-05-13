@@ -1,11 +1,12 @@
 package mempool
 
 import (
+	"pandora-pay/helpers"
 	"sync"
 )
 
 type mempoolWalletAddress struct {
-	publicKeyHash []byte
+	publicKeyHash helpers.HexBytes
 }
 
 type mempoolWallet struct {

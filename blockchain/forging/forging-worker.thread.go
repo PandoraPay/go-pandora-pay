@@ -24,7 +24,7 @@ type ForgingSolution struct {
 	stakingAmount uint64
 }
 type ForgingWalletAddressRequired struct {
-	publicKeyHash []byte //20 byte
+	publicKeyHash helpers.HexBytes //20 byte
 	wallet        *ForgingWalletAddress
 	stakingAmount uint64
 }

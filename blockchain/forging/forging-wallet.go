@@ -25,14 +25,14 @@ type ForgingWallet struct {
 }
 
 type ForgingWalletAddressUpdate struct {
-	delegatedPriv []byte
-	pubKeyHash    []byte
+	delegatedPriv helpers.HexBytes
+	pubKeyHash    helpers.HexBytes
 }
 
 type ForgingWalletAddress struct {
 	delegatedPrivateKey    *addresses.PrivateKey
-	delegatedPublicKeyHash []byte //20 byte
-	publicKeyHash          []byte //20byte
+	delegatedPublicKeyHash helpers.HexBytes //20 byte
+	publicKeyHash          helpers.HexBytes //20byte
 	account                *account.Account
 }
 

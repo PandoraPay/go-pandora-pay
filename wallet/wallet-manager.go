@@ -91,7 +91,7 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool) (
 	wallet.mempool.Wallet.AddWallet(adr.GetPublicKeyHash())
 
 	wallet.updateWallet()
-	if err = wallet.saveWallet(wallet.Count-1, wallet.Count, -1); err != nil {
+	if err = wallet.saveWallet(len(wallet.Addresses)-1, len(wallet.Addresses), -1); err != nil {
 		return
 	}
 
