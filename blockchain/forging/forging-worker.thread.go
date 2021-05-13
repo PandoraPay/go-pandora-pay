@@ -38,22 +38,23 @@ type ForgingWorkerThread struct {
 }
 
 /**
-"Staking multiple wallets simulateneoly"
+"Staking multiple wallets simultaneously"
 */
 func (worker *ForgingWorkerThread) forge() {
 
 	var work *ForgingWork
 	var wallets []*ForgingWalletAddressRequired
 
-	buf := make([]byte, binary.MaxVarintLen64)
-	n := 0
-
+	var timestampMs int64
 	var timestamp uint64
 	var serialized []byte
+	var n int
+	buf := make([]byte, binary.MaxVarintLen64)
 
 	for {
 
-		timeNow := uint64(time.Now().Unix()) + config.NETWORK_TIMESTAMP_DRIFT_MAX
+		timeLimitMs := time.Now().UnixNano()/1000000 + config.NETWORK_TIMESTAMP_DRIFT_MAX_INT*1000
+		timeLimit := uint64(timeLimitMs / 1000)
 
 		select {
 		case newWork, ok := <-worker.workCn: //or the work was changed meanwhile
@@ -66,34 +67,46 @@ func (worker *ForgingWorkerThread) forge() {
 			work.blkComplete.Block.SerializeForForging(writer)
 			serialized = writer.Bytes()
 
-			n := binary.PutUvarint(buf, work.blkComplete.Block.Timestamp)
+			n = binary.PutUvarint(buf, work.blkComplete.Block.Timestamp)
 
-			serialized = serialized[:len(serialized)-n-20]
 			timestamp = work.blkComplete.Block.Timestamp + 1
-			atomic.StoreUint32(&worker.hashes, 0)
+			timestampMs = int64(timestamp) * 1000
+
 		case newWallets := <-worker.walletsCn:
 			wallets = newWallets
 		default:
 		}
 
-		if work == nil || timestamp > timeNow {
-			time.Sleep(50 * time.Millisecond)
+		if work == nil || len(wallets) == 0 {
+			time.Sleep(25 * time.Millisecond)
+			continue
+		} else if timestampMs > timeLimitMs {
+			time.Sleep(time.Millisecond * time.Duration(timestampMs-timeLimitMs))
 			continue
 		}
 
 		//forge with my wallets
-		diff := int(timeNow - timestamp)
+		diff := int(timeLimit - timestamp)
 		if diff > 20 {
 			diff = 20
 		}
 		for i := 0; i <= diff; i++ {
 			for _, address := range wallets {
 
-				n = binary.PutUvarint(buf, timestamp)
+				n2 := binary.PutUvarint(buf, timestamp)
 
-				final := append(serialized, buf[:n]...)
-				final = append(final, address.publicKeyHash...)
-				kernelHash := cryptography.SHA3Hash(final)
+				if n2 != n {
+					serialized = serialized[:-n-20]
+					newSerialized := make([]byte, len(serialized)+n2+20)
+					copy(newSerialized, serialized)
+					n = n2
+				}
+
+				//optimized POS
+				copy(serialized[len(serialized)-20-n2:len(serialized)-20], buf)
+				copy(serialized[len(serialized)-20:], address.publicKeyHash)
+
+				kernelHash := cryptography.SHA3Hash(serialized)
 
 				kernelHash = cryptography.ComputeKernelHash(kernelHash, address.stakingAmount)
 
@@ -110,13 +123,14 @@ func (worker *ForgingWorkerThread) forge() {
 					break
 
 				} else {
-					//for debugging only
-					//gui.Log(hex.EncodeToString(kernelHash))
+					// for debugging only
+					//gui.Log(hex.EncodeToString(kernelHash), strconv.FormatUint(timestamp, 10 ))
 				}
 
 			}
 
 			timestamp += 1
+			timestampMs += 1000
 		}
 		atomic.AddUint32(&worker.hashes, uint32((diff+1)*len(wallets)))
 

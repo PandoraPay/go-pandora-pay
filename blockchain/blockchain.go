@@ -70,16 +70,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	//chain.RLock() is not required because it is guaranteed that no other thread is writing now in the chain
 	var newChainData = &BlockchainData{
-		Hash:                  helpers.CloneBytes(chainData.Hash),           //atomic copy
-		PrevHash:              helpers.CloneBytes(chainData.PrevHash),       //atomic copy
-		KernelHash:            helpers.CloneBytes(chainData.KernelHash),     //atomic copy
-		PrevKernelHash:        helpers.CloneBytes(chainData.PrevKernelHash), //atomic copy
-		Height:                chainData.Height,                             //atomic copy
-		Timestamp:             chainData.Timestamp,                          //atomic copy
-		Target:                new(big.Int).Set(chainData.Target),
-		BigTotalDifficulty:    new(big.Int).Set(chainData.BigTotalDifficulty),
-		ConsecutiveSelfForged: chainData.ConsecutiveSelfForged, //atomic copy
-		Transactions:          chainData.Transactions,          //atomic copy
+		Hash:                  helpers.CloneBytes(chainData.Hash),             //atomic copy
+		PrevHash:              helpers.CloneBytes(chainData.PrevHash),         //atomic copy
+		KernelHash:            helpers.CloneBytes(chainData.KernelHash),       //atomic copy
+		PrevKernelHash:        helpers.CloneBytes(chainData.PrevKernelHash),   //atomic copy
+		Height:                chainData.Height,                               //atomic copy
+		Timestamp:             chainData.Timestamp,                            //atomic copy
+		Target:                new(big.Int).Set(chainData.Target),             //atomic copy
+		BigTotalDifficulty:    new(big.Int).Set(chainData.BigTotalDifficulty), //atomic copy
+		ConsecutiveSelfForged: chainData.ConsecutiveSelfForged,                //atomic copy
+		Transactions:          chainData.Transactions,                         //atomic copy
 	}
 
 	insertedBlocks := []*block_complete.BlockComplete{}
@@ -164,6 +164,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				if firstBlockComplete.Block.Height == 0 {
 					newChainData = chain.createGenesisBlockchainData()
 				} else {
+					newChainData = &BlockchainData{}
 					if err = newChainData.loadBlockchainInfo(writer, firstBlockComplete.Block.Height); err != nil {
 						return
 					}
@@ -264,18 +265,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				newChainData.KernelHash = blkComplete.Block.Bloom.KernelHash
 				newChainData.Timestamp = blkComplete.Block.Timestamp
 
-				gui.Log("Target old   ", newChainData.Height, "value", newChainData.Target.Text(10))
-				gui.Log("BigTotalDifficulty old   ", newChainData.Height, "value", newChainData.BigTotalDifficulty.Text(10))
-
 				difficultyBigInt := difficulty.ConvertTargetToDifficulty(newChainData.Target)
 				newChainData.BigTotalDifficulty = new(big.Int).Add(newChainData.BigTotalDifficulty, difficultyBigInt)
 
 				if newChainData.Target, err = newChainData.computeNextTargetBig(writer); err != nil {
 					return
 				}
-
-				gui.Log("Target new   ", newChainData.Height, "value", newChainData.Target.Text(10))
-				gui.Log("BigTotalDifficulty new   ", newChainData.Height, "value", newChainData.BigTotalDifficulty.Text(10))
 
 				newChainData.Height += 1
 				newChainData.Transactions += uint64(len(blkComplete.Txs))
@@ -386,6 +381,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	gui.Warning("-------------------------------------------")
 	newChainData.updateChainInfo()
 
+	chain.mutex.Unlock()
+
 	//accs will only be read only
 	if err = chain.forging.Wallet.UpdateAccountsChanges(accs); err != nil {
 		gui.Error("Error updating balance changes", err)
@@ -398,8 +395,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	if err = chain.forging.Wallet.ProcessUpdates(); err != nil {
 		gui.Error("Error Processing Updates", err)
 	}
-
-	chain.mutex.Unlock()
 
 	//update work for mem pool
 	chain.mempool.UpdateWork(newChainData.Hash, newChainData.Height)

@@ -272,7 +272,11 @@ func (c *AdvancedConnection) WritePump() {
 	}()
 
 	for {
-		<-pingTicker.C
+		_, ok := <-pingTicker.C
+		if !ok {
+			return
+		}
+
 		if err := c.connSendPing(); err != nil {
 			return
 		}

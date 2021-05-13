@@ -77,7 +77,11 @@ func (thread *ForgingThread) startForging() {
 	go func() {
 		for {
 			select {
-			case <-ticker.C:
+			case _, ok := <-ticker.C:
+				if !ok {
+					return
+				}
+
 				s := ""
 				for i := 0; i < thread.threads; i++ {
 					hashesPerSecond := atomic.SwapUint32(&workers[i].hashes, 0)
