@@ -63,12 +63,12 @@ func (wallet *Wallet) ImportPrivateKey(name string, privateKey []byte) (adr *wal
 		IsMine:         true,
 	}
 
-	err = wallet.AddAddress(adr, false)
+	err = wallet.AddAddress(adr, false, true, false)
 
 	return
 }
 
-func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool) (err error) {
+func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, incrementCount bool, incrementSeedIndex bool) (err error) {
 
 	if lock {
 		wallet.Lock()
@@ -84,8 +84,13 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool) (
 	wallet.Addresses = append(wallet.Addresses, adr)
 	wallet.AddressesMap[string(adr.Address.PublicKeyHash)] = adr
 
-	wallet.Count += 1
-	wallet.SeedIndex += 1
+	if incrementCount {
+		wallet.Count += 1
+
+	}
+	if incrementSeedIndex {
+		wallet.SeedIndex += 1
+	}
 
 	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.GetPublicKeyHash())
 	wallet.mempool.Wallet.AddWallet(adr.GetPublicKeyHash())
@@ -123,12 +128,7 @@ func (wallet *Wallet) AddNewAddress() (adr *wallet_address.WalletAddress, err er
 		IsMine:         true,
 	}
 
-	wallet.Count += 1
-	wallet.SeedIndex += 1
-
-	if err = wallet.AddAddress(adr, false); err != nil {
-		wallet.Count -= 1
-		wallet.SeedIndex -= 1
+	if err = wallet.AddAddress(adr, false, true, true); err != nil {
 		return
 	}
 

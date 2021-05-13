@@ -1,9 +1,12 @@
 package wallet_address
 
-import "pandora-pay/addresses"
+import (
+	"pandora-pay/addresses"
+	"pandora-pay/helpers"
+)
 
 type WalletAddressDelegatedStake struct {
 	PrivateKey     *addresses.PrivateKey
-	PublicKeyHash  []byte
+	PublicKeyHash  helpers.HexBytes
 	LastKnownNonce uint32
 }
