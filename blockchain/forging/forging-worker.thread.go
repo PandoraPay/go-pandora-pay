@@ -78,7 +78,7 @@ func (worker *ForgingWorkerThread) forge() {
 		}
 
 		if work == nil || len(wallets) == 0 {
-			time.Sleep(25 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 			continue
 		} else if timestampMs > timeLimitMs {
 			time.Sleep(time.Millisecond * time.Duration(timestampMs-timeLimitMs))
@@ -96,9 +96,9 @@ func (worker *ForgingWorkerThread) forge() {
 				n2 := binary.PutUvarint(buf, timestamp)
 
 				if n2 != n {
-					serialized = serialized[:-n-20]
-					newSerialized := make([]byte, len(serialized)+n2+20)
-					copy(newSerialized, serialized)
+					newSerialized := make([]byte, len(serialized)-n+n2)
+					copy(newSerialized, serialized[:-n-20])
+					serialized = newSerialized
 					n = n2
 				}
 
