@@ -130,6 +130,13 @@ func (account *Account) ComputeDelegatedStakeAvailable(chainHeight uint64) (uint
 	return account.DelegatedStake.ComputeDelegatedStakeAvailable(chainHeight)
 }
 
+func (account *Account) ComputeDelegatedUnstakePending() (uint64, error) {
+	if account.DelegatedStakeVersion == 0 {
+		return 0, nil
+	}
+	return account.DelegatedStake.ComputeDelegatedUnstakePending()
+}
+
 func (account *Account) GetAvailableBalance(token []byte) (result uint64, err error) {
 	for _, balance := range account.Balances {
 		if bytes.Equal(balance.Token, token) {

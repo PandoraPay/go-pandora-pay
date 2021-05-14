@@ -118,3 +118,15 @@ func (dstake *DelegatedStake) ComputeDelegatedStakeAvailable(blockHeight uint64)
 	}
 	return
 }
+
+func (dstake *DelegatedStake) ComputeDelegatedUnstakePending() (result uint64, err error) {
+	result = 0
+	for i := range dstake.StakesPending {
+		if dstake.StakesPending[i].PendingType == DelegatedStakePendingUnstake {
+			if err = helpers.SafeUint64Add(&result, dstake.StakesPending[i].PendingAmount); err != nil {
+				return
+			}
+		}
+	}
+	return
+}

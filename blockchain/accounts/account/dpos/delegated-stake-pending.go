@@ -4,19 +4,19 @@ import (
 	"pandora-pay/helpers"
 )
 
-type TransactionSimpleScriptType bool
+type DelegatedStakePendingType bool
 
 const (
-	DelegatedStakePendingStake   TransactionSimpleScriptType = true
-	DelegatedStakePendingUnstake TransactionSimpleScriptType = false
+	DelegatedStakePendingStake   DelegatedStakePendingType = true
+	DelegatedStakePendingUnstake DelegatedStakePendingType = false
 )
 
 type DelegatedStakePending struct {
 	helpers.SerializableInterface
 
-	PendingAmount    uint64                      //pending stake
-	ActivationHeight uint64                      //height when the stake pending was last updated
-	PendingType      TransactionSimpleScriptType //true stake pending || false unstake pending
+	PendingAmount    uint64                    //pending stake
+	ActivationHeight uint64                    //height when the stake pending was last updated
+	PendingType      DelegatedStakePendingType //true stake pending || false unstake pending
 }
 
 func (delegatedStakePending *DelegatedStakePending) Serialize(writer *helpers.BufferWriter) {
@@ -38,7 +38,7 @@ func (delegatedStakePending *DelegatedStakePending) Deserialize(reader *helpers.
 	if read, err = reader.ReadBool(); err != nil {
 		return
 	}
-	delegatedStakePending.PendingType = TransactionSimpleScriptType(read)
+	delegatedStakePending.PendingType = DelegatedStakePendingType(read)
 
 	return
 }
