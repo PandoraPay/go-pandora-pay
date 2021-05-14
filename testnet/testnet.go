@@ -167,7 +167,7 @@ func (testnet *Testnet) run() {
 						delegatedStakeAvailable := account.GetDelegatedStakeAvailable()
 						delegatedStakeAvailableAll, _ := account.ComputeDelegatedStakeAvailable(math.MaxUint64)
 
-						if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedStakeAvailableAll == delegatedStakeAvailableAll {
+						if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedStakeAvailable == delegatedStakeAvailableAll {
 							if !testnet.mempool.ExistsTxSimpleVersion(testnet.wallet.Addresses[0].GetPublicKeyHash(), transaction_simple.TxSimpleScriptUnstake) {
 								if err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
 									return
