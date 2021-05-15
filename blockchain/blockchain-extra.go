@@ -46,7 +46,7 @@ func (chain *Blockchain) init() (chainData *BlockchainData, err error) {
 		accs := accounts.NewAccounts(boltTx)
 
 		supply := uint64(0)
-		for _, airdrop := range genesis.GenesisData.AidDrops {
+		for _, airdrop := range genesis.GenesisData.AirDrops {
 
 			if err = helpers.SafeUint64Add(&supply, airdrop.Amount); err != nil {
 				return

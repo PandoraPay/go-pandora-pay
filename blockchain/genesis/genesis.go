@@ -2,7 +2,6 @@ package genesis
 
 import (
 	"bufio"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"os"
@@ -13,49 +12,45 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/wallet"
-	"strconv"
 	"time"
 )
 
 type GenesisDataAirDropType struct {
-	PublicKeyHash               []byte //20 byte
-	Amount                      uint64
-	DelegatedStakePublicKeyHash []byte
+	PublicKeyHash               helpers.HexBytes `json:"publicKeyHash"` //20 byte
+	Amount                      uint64           `json:"amount"`
+	DelegatedStakePublicKeyHash helpers.HexBytes `json:"delegatedStakePublicKeyHash"`
 }
 
 type GenesisDataType struct {
-	Hash          []byte //32 byte
-	HashHex       string
-	KernelHash    []byte //32 byte
-	KernelHashHex string
-	Timestamp     uint64
-	Target        []byte //32 byte
-	TargetHex     string
-	AidDrops      []*GenesisDataAirDropType
+	Hash       []byte                    `json:"hash"`       //32 byte
+	KernelHash []byte                    `json:"kernelHash"` //32 byte
+	Timestamp  uint64                    `json:"timestamp"`
+	Target     []byte                    `json:"target"` //32 byte
+	AirDrops   []*GenesisDataAirDropType `json:"airDrops"`
 }
 
 var genesisMainet = GenesisDataType{
-	HashHex:       "e6849c309a8e48dd1518ce1f756b9feb0ce1be585510a32b40bcd6bec066d808",
-	KernelHashHex: "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-	Timestamp:     uint64(time.Date(2021, time.February, 28, 0, 0, 0, 0, time.UTC).Unix()),
-	TargetHex:     "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-	AidDrops:      []*GenesisDataAirDropType{},
+	Hash:       helpers.DecodeHex("e6849c309a8e48dd1518ce1f756b9feb0ce1be585510a32b40bcd6bec066d808"),
+	KernelHash: helpers.DecodeHex("000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
+	Timestamp:  uint64(time.Date(2021, time.February, 28, 0, 0, 0, 0, time.UTC).Unix()),
+	Target:     helpers.DecodeHex("000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
+	AirDrops:   []*GenesisDataAirDropType{},
 }
 
 var genesisTestnet = GenesisDataType{
-	HashHex:       "f4a2f9d1a71d1dfc448be029e381df81acc2e80ebf3607e51c60f085b16ca34b",
-	KernelHashHex: "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-	Timestamp:     uint64(time.Date(2021, time.February, 28, 0, 0, 0, 0, time.UTC).Unix()),
-	TargetHex:     "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-	AidDrops:      []*GenesisDataAirDropType{},
+	Hash:       helpers.DecodeHex("f4a2f9d1a71d1dfc448be029e381df81acc2e80ebf3607e51c60f085b16ca34b"),
+	KernelHash: helpers.DecodeHex("000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
+	Timestamp:  uint64(time.Date(2021, time.February, 28, 0, 0, 0, 0, time.UTC).Unix()),
+	Target:     helpers.DecodeHex("000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
+	AirDrops:   []*GenesisDataAirDropType{},
 }
 
 var genesisDevnet = GenesisDataType{
-	HashHex:       "cc423820a65ec26892c0a0c7f1a6e7731fb3ac76b9ad98ec775dd33c7271b443",
-	KernelHashHex: "000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-	Timestamp:     uint64(time.Date(2021, time.February, 28, 0, 0, 0, 0, time.UTC).Unix()),
-	TargetHex:     "0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-	AidDrops:      []*GenesisDataAirDropType{},
+	Hash:       helpers.DecodeHex("cc423820a65ec26892c0a0c7f1a6e7731fb3ac76b9ad98ec775dd33c7271b443"),
+	KernelHash: helpers.DecodeHex("000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
+	Timestamp:  uint64(time.Date(2021, time.February, 28, 0, 0, 0, 0, time.UTC).Unix()),
+	Target:     helpers.DecodeHex("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
+	AirDrops:   []*GenesisDataAirDropType{},
 }
 
 var GenesisData *GenesisDataType
@@ -106,19 +101,17 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 		var file *os.File
 		if _, err = os.Stat("./genesis.data"); os.IsNotExist(err) {
 
-			HashHex := hex.EncodeToString(helpers.RandomBytes(cryptography.HashSize))
-			Timestamp := uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
+			GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
+			GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 
 			walletAddress, delegatedStakePublicKeyHash, err2 := wallet.GetFirstWalletForDevnetGenesisAirdrop()
 			if err2 != nil {
 				return err2
 			}
 
-			AidDrops := make([]*GenesisDataAirDropType, 0)
+			amount := 100 * stake.GetRequiredStake(0)
 
-			amount := stake.GetRequiredStake(0)
-
-			AidDrops = append(AidDrops, &GenesisDataAirDropType{
+			GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
 				PublicKeyHash:               walletAddress.Address.PublicKeyHash,
 				Amount:                      amount,
 				DelegatedStakePublicKeyHash: delegatedStakePublicKeyHash,
@@ -128,21 +121,11 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 				return
 			}
 
-			if _, err = file.WriteString("1\n"); err != nil {
-				return
-			}
-			if _, err = file.WriteString(HashHex + "\n"); err != nil {
-				return
-			}
-			if _, err = file.WriteString(strconv.FormatUint(Timestamp, 10) + "\n"); err != nil {
+			if data, err = json.Marshal(GenesisData); err != nil {
 				return
 			}
 
-			if data, err = json.Marshal(AidDrops); err != nil {
-				return
-			}
-
-			if _, err = file.WriteString(hex.EncodeToString(data) + "\n"); err != nil {
+			if _, err = file.Write(data); err != nil {
 				return
 			}
 			if err = file.Close(); err != nil {
@@ -157,36 +140,11 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 		scanner := bufio.NewScanner(file)
 		scanner.Scan()
 
-		version := scanner.Text()
-		if version != "1" {
-			return errors.New("Genesis config data version is invalid")
-		}
-		scanner.Scan()
-
-		GenesisData.HashHex = scanner.Text()
-		scanner.Scan()
-
-		if GenesisData.Timestamp, err = strconv.ParseUint(scanner.Text(), 10, 64); err != nil {
+		data := scanner.Bytes()
+		if err = json.Unmarshal(data, &GenesisData); err != nil {
 			return
 		}
-		scanner.Scan()
 
-		data, err = hex.DecodeString(scanner.Text())
-		if err = json.Unmarshal(data, &GenesisData.AidDrops); err != nil {
-			return
-		}
-	}
-
-	if GenesisData.Hash, err = hex.DecodeString(GenesisData.HashHex); err != nil {
-		return
-	}
-
-	if GenesisData.KernelHash, err = hex.DecodeString(GenesisData.KernelHashHex); err != nil {
-		return
-	}
-
-	if GenesisData.Target, err = hex.DecodeString(GenesisData.TargetHex); err != nil {
-		return
 	}
 
 	if Genesis, err = CreateNewGenesisBlock(); err != nil {

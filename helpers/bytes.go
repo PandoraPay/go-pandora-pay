@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"encoding/hex"
 	"math/rand"
 )
 
@@ -17,5 +18,13 @@ func EmptyBytes(size int) []byte {
 func CloneBytes(a []byte) []byte {
 	out := make([]byte, len(a))
 	copy(out, a)
+	return out
+}
+
+func DecodeHex(a string) []byte {
+	out, err := hex.DecodeString(a)
+	if err != nil {
+		panic(err)
+	}
 	return out
 }
