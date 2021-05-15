@@ -5,14 +5,15 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/cryptography"
+	"pandora-pay/helpers"
 )
 
 type TransactionBloom struct {
-	Serialized []byte
-	Size       uint64
-	Hash       []byte
-	HashStr    string
-	bloomed    bool
+	Serialized helpers.HexBytes `json:"serialized"`
+	Size       uint64           `json:"size"`
+	Hash       helpers.HexBytes `json:"hash"`
+	HashStr    string           `json:"-"`
+	bloomed    bool             `json:"bloomed"`
 }
 
 func (tx *Transaction) BloomNow() {

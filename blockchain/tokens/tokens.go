@@ -10,7 +10,7 @@ import (
 )
 
 type Tokens struct {
-	store.HashMap
+	store.HashMap `json:"-"`
 }
 
 func NewTokens(tx *bbolt.Tx) *Tokens {

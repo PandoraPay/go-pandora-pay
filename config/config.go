@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-var ()
-
 var (
 	DEBUG       = false
 	CPU_THREADS = 1

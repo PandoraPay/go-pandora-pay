@@ -6,16 +6,16 @@ import (
 )
 
 type DelegatedStake struct {
-	helpers.SerializableInterface
+	helpers.SerializableInterface `json:"-"`
 
 	//public key for delegation
-	DelegatedPublicKeyHash helpers.HexBytes //20 bytes
+	DelegatedPublicKeyHash helpers.HexBytes `json:"delegatedPublicKeyHash"` //20 bytes
 
 	//confirmed stake
-	StakeAvailable uint64
+	StakeAvailable uint64 `json:"stakeAvailable"`
 
 	//Pending stakes
-	StakesPending []*DelegatedStakePending
+	StakesPending []*DelegatedStakePending `json:"stakesPending"`
 }
 
 func (dstake *DelegatedStake) AddStakeAvailable(sign bool, amount uint64) error {

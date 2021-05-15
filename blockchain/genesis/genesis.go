@@ -22,10 +22,10 @@ type GenesisDataAirDropType struct {
 }
 
 type GenesisDataType struct {
-	Hash       []byte                    `json:"hash"`       //32 byte
-	KernelHash []byte                    `json:"kernelHash"` //32 byte
+	Hash       helpers.HexBytes          `json:"hash"`       //32 byte
+	KernelHash helpers.HexBytes          `json:"kernelHash"` //32 byte
 	Timestamp  uint64                    `json:"timestamp"`
-	Target     []byte                    `json:"target"` //32 byte
+	Target     helpers.HexBytes          `json:"target"` //32 byte
 	AirDrops   []*GenesisDataAirDropType `json:"airDrops"`
 }
 

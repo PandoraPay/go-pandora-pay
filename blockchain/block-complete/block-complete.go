@@ -13,10 +13,10 @@ import (
 )
 
 type BlockComplete struct {
-	helpers.SerializableInterface
-	Block *block.Block
-	Txs   []*transaction.Transaction
-	Bloom *BlockCompleteBloom `json:"-"`
+	helpers.SerializableInterface `json:"-"`
+	Block                         *block.Block               `json:"block"`
+	Txs                           []*transaction.Transaction `json:"txs"`
+	Bloom                         *BlockCompleteBloom        `json:"-"`
 }
 
 func (blkComplete *BlockComplete) Validate() (err error) {

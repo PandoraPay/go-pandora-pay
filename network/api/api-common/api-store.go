@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
@@ -17,11 +16,6 @@ import (
 	"pandora-pay/store"
 	"strconv"
 )
-
-type BlockWithTxs struct {
-	Blk *block.Block
-	Txs []helpers.HexBytes
-}
 
 type APIStore struct {
 	chain *blockchain.Blockchain
@@ -53,7 +47,7 @@ func (apiStore *APIStore) LoadBlockCompleteFromHeight(blockHeight uint64) (blkCo
 	return
 }
 
-func (apiStore *APIStore) LoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *BlockWithTxs, errfinal error) {
+func (apiStore *APIStore) LoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *APIBlockWithTxs, errfinal error) {
 	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 		reader := boltTx.Bucket([]byte("Chain"))
 		if blkWithTXs, err = apiStore.LoadBlockWithTxHashes(reader, hash); err != nil {
@@ -73,7 +67,7 @@ func (apiStore *APIStore) LoadTxFromHash(hash []byte) (tx *transaction.Transacti
 	return
 }
 
-func (apiStore *APIStore) LoadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *BlockWithTxs, errfinal error) {
+func (apiStore *APIStore) LoadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *APIBlockWithTxs, errfinal error) {
 	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
 		reader := boltTx.Bucket([]byte("Chain"))
 		hash, err := apiStore.chain.LoadBlockHash(reader, blockHeight)
@@ -150,7 +144,7 @@ func (apiStore *APIStore) LoadBlockComplete(bucket *bolt.Bucket, hash []byte) (o
 	}, nil
 }
 
-func (apiStore *APIStore) LoadBlockWithTxHashes(bucket *bolt.Bucket, hash []byte) (out *BlockWithTxs, err error) {
+func (apiStore *APIStore) LoadBlockWithTxHashes(bucket *bolt.Bucket, hash []byte) (out *APIBlockWithTxs, err error) {
 	blk, err := apiStore.chain.LoadBlock(bucket, hash)
 	if blk == nil || err != nil {
 		return
@@ -167,9 +161,9 @@ func (apiStore *APIStore) LoadBlockWithTxHashes(bucket *bolt.Bucket, hash []byte
 		txs[i] = txHash
 	}
 
-	return &BlockWithTxs{
-		Blk: blk,
-		Txs: txs,
+	return &APIBlockWithTxs{
+		Block: blk,
+		Txs:   txs,
 	}, nil
 }
 

@@ -14,14 +14,14 @@ import (
 
 type Block struct {
 	BlockHeader
-	MerkleHash     helpers.HexBytes //32 byte
-	PrevHash       helpers.HexBytes //32 byte
-	PrevKernelHash helpers.HexBytes //32 byte
-	Timestamp      uint64
-	StakingAmount  uint64
-	Forger         helpers.HexBytes // 20 byte public key hash
-	Signature      helpers.HexBytes // 65 byte signature
-	Bloom          *BlockBloom      `json:"-"`
+	MerkleHash     helpers.HexBytes `json:"merkleHash"`     //32 byte
+	PrevHash       helpers.HexBytes `json:"prevHash"`       //32 byte
+	PrevKernelHash helpers.HexBytes `json:"prevKernelhash"` //32 byte
+	Timestamp      uint64           `json:"timestamp"`
+	StakingAmount  uint64           `json:"stakingAmount"`
+	Forger         helpers.HexBytes `json:"forger"`    // 20 byte public key hash
+	Signature      helpers.HexBytes `json:"signature"` // 65 byte signature
+	Bloom          *BlockBloom      `json:"bloom"`
 }
 
 func (blk *Block) Validate() error {

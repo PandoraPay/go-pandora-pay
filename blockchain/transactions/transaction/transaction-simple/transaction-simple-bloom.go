@@ -3,9 +3,9 @@ package transaction_simple
 import "errors"
 
 type TransactionSimpleBloom struct {
-	hashForSignature  []byte
-	signatureVerified bool
-	bloomed           bool
+	hashForSignature  []byte `json:"-"`
+	signatureVerified bool   `json:"-"`
+	bloomed           bool   `json:"-"`
 }
 
 func (tx *TransactionSimple) BloomNow(hashForSignature []byte, signatureWasVerifiedBefore bool) (err error) {

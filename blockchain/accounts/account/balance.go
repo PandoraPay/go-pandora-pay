@@ -5,8 +5,8 @@ import (
 )
 
 type Balance struct {
-	Amount uint64
-	Token  helpers.HexBytes //20
+	Amount uint64           `json:"amount"`
+	Token  helpers.HexBytes `json:"token"` //20
 }
 
 func (balance *Balance) Serialize(writer *helpers.BufferWriter) {

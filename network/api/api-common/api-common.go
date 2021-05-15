@@ -14,11 +14,11 @@ import (
 )
 
 type APICommon struct {
-	mempool        *mempool.Mempool
-	chain          *blockchain.Blockchain
-	localChain     *atomic.Value //*APIBlockchain
-	localChainSync *atomic.Value //*APIBlockchain
-	ApiStore       *APIStore
+	mempool        *mempool.Mempool       `json:"-"`
+	chain          *blockchain.Blockchain `json:"-"`
+	localChain     *atomic.Value          `json:"-"` //*APIBlockchain
+	localChainSync *atomic.Value          `json:"-"` //*APIBlockchain
+	ApiStore       *APIStore              `json:"-"`
 }
 
 func (api *APICommon) GetBlockchain() (interface{}, error) {
@@ -31,22 +31,22 @@ func (api *APICommon) GetBlockchainSync() (interface{}, error) {
 
 func (api *APICommon) GetInfo() (interface{}, error) {
 	return &struct {
-		Name        string
-		Version     string
-		Network     uint64
-		CPU_THREADS int
+		Name       string `json:"name"`
+		Version    string `json:"version"`
+		Network    uint64 `json:"network"`
+		CPUThreads int    `json:"CPUThreads"`
 	}{
-		Name:        config.NAME,
-		Version:     config.VERSION,
-		Network:     config.NETWORK_SELECTED,
-		CPU_THREADS: config.CPU_THREADS,
+		Name:       config.NAME,
+		Version:    config.VERSION,
+		Network:    config.NETWORK_SELECTED,
+		CPUThreads: config.CPU_THREADS,
 	}, nil
 }
 
 func (api *APICommon) GetPing() (interface{}, error) {
 	return &struct {
-		Ping string
-	}{Ping: "Pong"}, nil
+		Ping string `json:"ping"`
+	}{Ping: "pong"}, nil
 }
 
 func (api *APICommon) GetBlockHash(blockHeight uint64) (interface{}, error) {

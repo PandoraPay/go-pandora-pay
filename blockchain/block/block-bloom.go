@@ -4,14 +4,15 @@ import (
 	"errors"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/ecdsa"
+	"pandora-pay/helpers"
 )
 
 type BlockBloom struct {
-	Hash                       []byte
-	KernelHash                 []byte
-	DelegatedPublicKeyHash     []byte
-	DelegatedSignatureVerified bool
-	bloomed                    bool
+	Hash                       helpers.HexBytes `json:"hash"`
+	KernelHash                 helpers.HexBytes `json:"kernelHash"`
+	DelegatedPublicKeyHash     helpers.HexBytes `json:"delegatedPublicKeyHash"`
+	DelegatedSignatureVerified bool             `json:"delegatedSignatureVerified"`
+	bloomed                    bool             `json:"-"`
 }
 
 func (blk *Block) BloomNow() (err error) {

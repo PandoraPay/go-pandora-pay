@@ -8,7 +8,7 @@ import (
 )
 
 type Accounts struct {
-	store.HashMap
+	store.HashMap `json:"-"`
 }
 
 func NewAccounts(tx *bbolt.Tx) *Accounts {

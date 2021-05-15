@@ -4,12 +4,13 @@ import (
 	"errors"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/ecdsa"
+	"pandora-pay/helpers"
 )
 
 type TransactionSimpleInputBloom struct {
-	PublicKey     []byte //30
-	PublicKeyHash []byte //20
-	bloomed       bool
+	PublicKey     helpers.HexBytes `json:"publicKey"`     //30
+	PublicKeyHash helpers.HexBytes `json:"publicKeyHash"` //20
+	bloomed       bool             `json:"bloomed"`
 }
 
 func (vin *TransactionSimpleInput) BloomNow(hashForSignature []byte) (err error) {

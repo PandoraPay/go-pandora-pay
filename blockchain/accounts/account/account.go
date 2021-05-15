@@ -10,12 +10,12 @@ import (
 )
 
 type Account struct {
-	helpers.SerializableInterface
-	Version               uint64
-	Nonce                 uint64
-	Balances              []*Balance
-	DelegatedStakeVersion uint64
-	DelegatedStake        *dpos.DelegatedStake
+	helpers.SerializableInterface `json:"-"`
+	Version                       uint64               `json:"version"`
+	Nonce                         uint64               `json:"nonce"`
+	Balances                      []*Balance           `json:"balances"`
+	DelegatedStakeVersion         uint64               `json:"delegatedStakeVersion"`
+	DelegatedStake                *dpos.DelegatedStake `json:"delegatedStake"`
 }
 
 func (account *Account) Validate() error {

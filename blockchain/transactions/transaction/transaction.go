@@ -12,11 +12,11 @@ import (
 )
 
 type Transaction struct {
-	helpers.SerializableInterface
-	Version uint64
-	TxType  transaction_type.TransactionType
-	TxBase  transaction_base_interface.TransactionBaseInterface
-	Bloom   *TransactionBloom `json:"-"`
+	helpers.SerializableInterface `json:"-"`
+	Version                       uint64                                              `json:"version"`
+	TxType                        transaction_type.TransactionType                    `json:"txType"`
+	TxBase                        transaction_base_interface.TransactionBaseInterface `json:"txBase"`
+	Bloom                         *TransactionBloom                                   `json:"bloom"`
 }
 
 func (tx *Transaction) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) error {

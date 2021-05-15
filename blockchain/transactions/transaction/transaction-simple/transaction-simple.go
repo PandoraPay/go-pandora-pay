@@ -14,12 +14,12 @@ import (
 )
 
 type TransactionSimple struct {
-	transaction_base_interface.TransactionBaseInterface
-	TxScript TransactionSimpleScriptType
-	Nonce    uint64
-	Vin      []*TransactionSimpleInput
-	Vout     []*TransactionSimpleOutput
-	Extra    transaction_simple_extra.TransactionSimpleExtraInterface
+	transaction_base_interface.TransactionBaseInterface `json:"-"`
+	TxScript                                            TransactionSimpleScriptType                              `json:"txScript"`
+	Nonce                                               uint64                                                   `json:"nonce"`
+	Vin                                                 []*TransactionSimpleInput                                `json:"vin"`
+	Vout                                                []*TransactionSimpleOutput                               `json:"vout"`
+	Extra                                               transaction_simple_extra.TransactionSimpleExtraInterface `json:"extra"`
 
 	Bloom *TransactionSimpleBloom `json:"-"`
 }

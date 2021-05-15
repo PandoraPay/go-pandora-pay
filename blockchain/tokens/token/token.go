@@ -13,22 +13,29 @@ var regexTokenDescription = regexp.MustCompile("[\\w|\\W]+")
 
 type Token struct {
 	helpers.SerializableInterface
-	Version            uint64
-	CanUpgrade         bool //upgrade different settings
-	CanMint            bool //increase supply
-	CanBurn            bool //decrease supply
-	CanChangeKey       bool //can change key
-	CanChangeSupplyKey bool //can change supply key
-	CanPause           bool //can pause (suspend transactions)
-	CanFreeze          bool //freeze supply changes
-	DecimalSeparator   byte
-	MaxSupply          uint64
-	Supply             uint64
-	Key                helpers.HexBytes //20 byte
-	SupplyKey          helpers.HexBytes //20 byte
-	Name               string
-	Ticker             string
-	Description        string
+	Version uint64 `json:"version"`
+	//upgrade different settings
+	CanUpgrade bool `json:"canUpgrade"`
+	//increase supply
+	CanMint bool `json:"canMint"`
+	//decrease supply
+	CanBurn bool `json:"canBurn"`
+	//can change key
+	CanChangeKey bool `json:"canChangeKey"`
+	//can change supply key
+	CanChangeSupplyKey bool `json:"canChangeSupplyKey"`
+	//can pause (suspend transactions)
+	CanPause bool `json:"canPause"`
+	//freeze supply changes
+	CanFreeze        bool             `json:"canFreeze"`
+	DecimalSeparator byte             `json:"decimalSeparator"`
+	MaxSupply        uint64           `json:"maxSupply"`
+	Supply           uint64           `json:"supply"`
+	Key              helpers.HexBytes `json:"key"`       //20 byte
+	SupplyKey        helpers.HexBytes `json:"supplyKey"` //20 byte
+	Name             string           `json:"name"`
+	Ticker           string           `json:"ticker"`
+	Description      string           `json:"description"`
 }
 
 func (token *Token) Validate() error {

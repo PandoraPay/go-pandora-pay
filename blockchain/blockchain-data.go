@@ -13,16 +13,16 @@ import (
 )
 
 type BlockchainData struct {
-	Hash                  helpers.HexBytes //32
-	PrevHash              helpers.HexBytes //32
-	KernelHash            helpers.HexBytes //32
-	PrevKernelHash        helpers.HexBytes //32
-	Height                uint64
-	Timestamp             uint64
-	Target                *big.Int
-	BigTotalDifficulty    *big.Int
-	Transactions          uint64 //count of the number of txs
-	ConsecutiveSelfForged uint64
+	Hash                  helpers.HexBytes `json:"hash"`           //32
+	PrevHash              helpers.HexBytes `json:"prevHash"`       //32
+	KernelHash            helpers.HexBytes `json:"kernelHash"`     //32
+	PrevKernelHash        helpers.HexBytes `json:"prevKernelhash"` //32
+	Height                uint64           `json:"height"`
+	Timestamp             uint64           `json:"timestamp"`
+	Target                *big.Int         `json:"target"`
+	BigTotalDifficulty    *big.Int         `json:"bigTotalDifficulty"`
+	Transactions          uint64           `json:"transactions"` //count of the number of txs
+	ConsecutiveSelfForged uint64           `json:"consecutiveSelfForged"`
 }
 
 func (chainData *BlockchainData) computeNextTargetBig(bucket *bolt.Bucket) (*big.Int, error) {
