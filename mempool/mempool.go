@@ -17,12 +17,12 @@ import (
 )
 
 type mempoolTx struct {
-	Tx          *transaction.Transaction
-	Added       int64
-	Mine        bool
-	FeePerByte  uint64
-	FeeToken    []byte //20 byte
-	ChainHeight uint64
+	Tx          *transaction.Transaction `json:"tx"`
+	Added       int64                    `json:"added"`
+	Mine        bool                     `json:"mine"`
+	FeePerByte  uint64                   `json:"feePerByte"`
+	FeeToken    []byte                   `json:"feeToken"` //20 byte
+	ChainHeight uint64                   `json:"chainHeight"`
 }
 
 type mempoolResult struct {
@@ -34,8 +34,8 @@ type mempoolResult struct {
 
 	totalSize uint64 //use atomic
 
-	chainHash   []byte //safe 32
-	chainHeight uint64 //safe
+	chainHash   []byte //safe, readOnly 32bytes
+	chainHeight uint64 //safe, readOnly
 }
 
 type mempoolTxs struct {
@@ -46,10 +46,10 @@ type mempoolTxs struct {
 }
 
 type Mempool struct {
-	txs                     *mempoolTxs
-	result                  *atomic.Value //*mempoolResult
-	newWork                 chan *mempoolWork
-	Wallet                  *mempoolWallet
+	txs                     *mempoolTxs               `json:"-"`
+	result                  *atomic.Value             `json:"-"` //*mempoolResult
+	newWork                 chan *mempoolWork         `json:"-"`
+	Wallet                  *mempoolWallet            `json:"-"`
 	NewTransactionMulticast *helpers.MulticastChannel `json:"-"`
 }
 

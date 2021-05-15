@@ -6,11 +6,11 @@ import (
 )
 
 type mempoolWalletAddress struct {
-	publicKeyHash helpers.HexBytes
+	publicKeyHash helpers.HexBytes `json:"-"`
 }
 
 type mempoolWallet struct {
-	myAddressesMap map[string]*mempoolWalletAddress
+	myAddressesMap map[string]*mempoolWalletAddress `json:"-"`
 	sync.RWMutex   `json:"-"`
 }
 

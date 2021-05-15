@@ -8,13 +8,13 @@ import (
 )
 
 type WalletAddress struct {
-	Name           string
-	SeedIndex      uint32
-	IsMine         bool
-	PrivateKey     *addresses.PrivateKey
-	Address        *addresses.Address
-	AddressEncoded string
-	DelegatedStake *WalletAddressDelegatedStake
+	Name           string                       `json:"name"`
+	SeedIndex      uint32                       `json:"seedIndex"`
+	IsMine         bool                         `json:"isMine"`
+	PrivateKey     *addresses.PrivateKey        `json:"privateKey"`
+	Address        *addresses.Address           `json:"address"`
+	AddressEncoded string                       `json:"addressEncoded"`
+	DelegatedStake *WalletAddressDelegatedStake `json:"delegatedStake"`
 }
 
 func (adr *WalletAddress) GetPublicKeyHash() []byte {

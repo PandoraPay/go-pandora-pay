@@ -9,7 +9,7 @@ import (
 )
 
 type Settings struct {
-	Name         string
+	Name         string `json:"name"`
 	sync.RWMutex `json:"-"`
 }
 

@@ -17,12 +17,12 @@ const (
 )
 
 type Address struct {
-	Network       uint64
-	Version       AddressVersion
-	PublicKey     helpers.HexBytes
-	PublicKeyHash helpers.HexBytes
-	Amount        uint64           // amount to be paid
-	PaymentID     helpers.HexBytes // payment id
+	Network       uint64           `json:"network"`
+	Version       AddressVersion   `json:"version"`
+	PublicKey     helpers.HexBytes `json:"publicKey"`
+	PublicKeyHash helpers.HexBytes `json:"publicKeyHash"`
+	Amount        uint64           `json:"amount"`    // amount to be paid
+	PaymentID     helpers.HexBytes `json:"paymentId"` // payment id
 }
 
 func (e AddressVersion) String() string {

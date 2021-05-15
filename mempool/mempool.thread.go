@@ -15,17 +15,17 @@ import (
 )
 
 type mempoolWork struct {
-	chainHash   []byte //32 byte
-	chainHeight uint64
-	result      *mempoolResult
+	chainHash   []byte         `json:"-"` //32 byte
+	chainHeight uint64         `json:"-"`
+	result      *mempoolResult `json:"-"`
 }
 
 type mempoolWorker struct {
-	work        *mempoolWork
-	workChanged bool
-	boltTx      *bbolt.Tx
-	accs        *accounts.Accounts
-	toks        *tokens.Tokens
+	work        *mempoolWork       `json:"-"`
+	workChanged bool               `json:"-"`
+	boltTx      *bbolt.Tx          `json:"-"`
+	accs        *accounts.Accounts `json:"-"`
+	toks        *tokens.Tokens     `json:"-"`
 }
 
 func (worker *mempoolWorker) closeDB() {

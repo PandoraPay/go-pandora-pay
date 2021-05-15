@@ -43,21 +43,20 @@ func (e EncryptedVersion) String() string {
 }
 
 type Wallet struct {
-	Encrypted EncryptedVersion
+	Encrypted EncryptedVersion `json:"encrypted"`
 
-	Version   Version
-	Mnemonic  string
-	Seed      helpers.HexBytes //32 byte
-	SeedIndex uint32
-	Count     int
+	Version   Version          `json:"version"`
+	Mnemonic  string           `json:"mnemonic"`
+	Seed      helpers.HexBytes `json:"seed"` //32 byte
+	SeedIndex uint32           `json:"seedIndex"`
+	Count     int              `json:"count"`
 
-	Addresses    []*wallet_address.WalletAddress
-	AddressesMap map[string]*wallet_address.WalletAddress
+	Addresses    []*wallet_address.WalletAddress          `json:"addresses"`
+	AddressesMap map[string]*wallet_address.WalletAddress `json:"-"`
 
 	forging *forging.Forging `json:"-"`
 	mempool *mempool.Mempool `json:"-"`
 
-	// forging creates multiple threads and it will read the wallet.Addresses
 	sync.RWMutex `json:"-"`
 }
 
