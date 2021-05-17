@@ -36,8 +36,8 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [x] Save and Load
     - [x] Print Wallet Simple Balances
     - [ ] Print Wallet Homomorphic Balances
-    - [X] Export JSON        
-    - [ ] Import JSON        
+    - [X] Export Address JSON        
+    - [X] Import Address JSON        
     - [ ] Wallet Encryption
 - [x] Merkle Tree
 - [x] Block

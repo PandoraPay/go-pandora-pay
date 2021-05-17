@@ -104,12 +104,13 @@ func (wallet *Wallet) CliSelectAddress(text string) (walletAddress *wallet_addre
 
 func (wallet *Wallet) initWalletCLI() {
 
-	cliExportJSONWallet := func(cmd string) (err error) {
+	cliExportAddressJSONWallet := func(cmd string) (err error) {
 
 		str, ok := gui.OutputReadString("Path to export")
 		if !ok {
 			return
 		}
+
 		f, err := os.Create(str)
 		if err != nil {
 			return
@@ -131,16 +132,13 @@ func (wallet *Wallet) initWalletCLI() {
 		if index < 0 {
 			return errors.New("Invalid index")
 		}
-
-		var marshal []byte
-		var obj interface{}
-
 		if index > len(wallet.Addresses) {
-			obj = wallet
-		} else {
-			obj = wallet.Addresses[index]
+			return errors.New("Address index is invalid")
 		}
 
+		obj := wallet.Addresses[index]
+
+		var marshal []byte
 		if marshal, err = json.Marshal(obj); err != nil {
 			return errors.New("Error marshaling wallet")
 		}
@@ -150,6 +148,31 @@ func (wallet *Wallet) initWalletCLI() {
 		}
 
 		gui.Info("Exported successfully")
+		return
+	}
+
+	cliImportAddressJSONWallet := func(cmd string) (err error) {
+
+		str, ok := gui.OutputReadString("Path to import")
+		if !ok {
+			return
+		}
+
+		data, err := os.ReadFile(str)
+		if err != nil {
+			return
+		}
+
+		wallet.RLock()
+		defer wallet.RUnlock()
+
+		obj := &wallet_address.WalletAddress{}
+
+		if err = json.Unmarshal(data, obj); err != nil {
+			return errors.New("Error unmarshaling wallet")
+		}
+
+		gui.Info("Imported successfully")
 		return
 	}
 
@@ -237,6 +260,7 @@ func (wallet *Wallet) initWalletCLI() {
 	gui.CommandDefineCallback("Show Private Key", cliShowPrivateKey)
 	gui.CommandDefineCallback("Import Private Key", cliImportPrivateKey)
 	gui.CommandDefineCallback("Remove Address", cliRemoveAddress)
-	gui.CommandDefineCallback("Export JSON", cliExportJSONWallet)
+	gui.CommandDefineCallback("Export Address JSON", cliExportAddressJSONWallet)
+	gui.CommandDefineCallback("Import Address JSON", cliImportAddressJSONWallet)
 
 }
