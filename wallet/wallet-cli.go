@@ -166,10 +166,14 @@ func (wallet *Wallet) initWalletCLI() {
 		wallet.RLock()
 		defer wallet.RUnlock()
 
-		obj := &wallet_address.WalletAddress{}
+		adr := &wallet_address.WalletAddress{}
 
-		if err = json.Unmarshal(data, obj); err != nil {
+		if err = json.Unmarshal(data, adr); err != nil {
 			return errors.New("Error unmarshaling wallet")
+		}
+
+		if err = wallet.AddAddress(adr, false, false, false); err != nil {
+			return
 		}
 
 		gui.Info("Imported successfully")
