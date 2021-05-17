@@ -132,7 +132,7 @@ func (wallet *Wallet) initWalletCLI() {
 		if index < 0 {
 			return errors.New("Invalid index")
 		}
-		if index > len(wallet.Addresses) {
+		if index >= len(wallet.Addresses) {
 			return errors.New("Address index is invalid")
 		}
 
@@ -172,7 +172,20 @@ func (wallet *Wallet) initWalletCLI() {
 			return errors.New("Error unmarshaling wallet")
 		}
 
-		if err = wallet.AddAddress(adr, false, false, false); err != nil {
+		isMine := false
+		if wallet.SeedIndex != 0 {
+			key, err := wallet.GeneratePrivateKey(adr.SeedIndex, false)
+			if err == nil && key != nil {
+				isMine = true
+			}
+		}
+
+		if !isMine {
+			adr.IsMine = false
+			adr.SeedIndex = 0
+		}
+
+		if err = wallet.AddAddress(adr, false, false, isMine); err != nil {
 			return
 		}
 

@@ -58,17 +58,17 @@ func (wallet *Wallet) ImportPrivateKey(name string, privateKey []byte) (adr *wal
 	adr = &wallet_address.WalletAddress{
 		Name:           name,
 		PrivateKey:     &addresses.PrivateKey{Key: privateKey},
-		SeedIndex:      0,
+		SeedIndex:      1,
 		DelegatedStake: nil,
 		IsMine:         true,
 	}
 
-	err = wallet.AddAddress(adr, false, true, false)
+	err = wallet.AddAddress(adr, false, false, false)
 
 	return
 }
 
-func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, incrementCount bool, incrementSeedIndex bool) (err error) {
+func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, incrementSeedIndex bool, incrementCountIndex bool) (err error) {
 
 	if lock {
 		wallet.Lock()
@@ -81,15 +81,21 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 
 	adr.AddressEncoded = adr.Address.EncodeAddr()
 
+	if wallet.AddressesMap[string(adr.Address.PublicKeyHash)] != nil {
+		return errors.New("Address exists")
+	}
+
 	wallet.Addresses = append(wallet.Addresses, adr)
 	wallet.AddressesMap[string(adr.Address.PublicKeyHash)] = adr
 
-	if incrementCount {
-		wallet.Count += 1
+	wallet.Count += 1
 
-	}
 	if incrementSeedIndex {
 		wallet.SeedIndex += 1
+	}
+	if incrementCountIndex {
+		adr.Name = "Imported Address " + strconv.Itoa(wallet.CountIndex)
+		wallet.CountIndex += 1
 	}
 
 	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.GetPublicKeyHash())
@@ -104,31 +110,45 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 
 }
 
-func (wallet *Wallet) AddNewAddress() (adr *wallet_address.WalletAddress, err error) {
-
-	//avoid generating the same address twice
-	wallet.Lock()
-	defer wallet.Unlock()
+func (wallet *Wallet) GeneratePrivateKey(seedIndex uint32, lock bool) (out []byte, err error) {
+	if lock {
+		wallet.Lock()
+		defer wallet.Unlock()
+	}
 
 	masterKey, err := bip32.NewMasterKey(wallet.Seed)
 	if err != nil {
 		return
 	}
 
-	key, err := masterKey.NewChildKey(wallet.SeedIndex)
+	key, err := masterKey.NewChildKey(seedIndex)
+	if err != nil {
+		return
+	}
+
+	return key.Key, nil
+}
+
+func (wallet *Wallet) AddNewAddress() (adr *wallet_address.WalletAddress, err error) {
+
+	//avoid generating the same address twice
+	wallet.Lock()
+	defer wallet.Unlock()
+
+	key, err := wallet.GeneratePrivateKey(wallet.SeedIndex, false)
 	if err != nil {
 		return
 	}
 
 	adr = &wallet_address.WalletAddress{
 		Name:           "Addr " + strconv.Itoa(wallet.Count),
-		PrivateKey:     &addresses.PrivateKey{Key: key.Key},
+		PrivateKey:     &addresses.PrivateKey{Key: key},
 		SeedIndex:      wallet.SeedIndex,
 		DelegatedStake: nil,
 		IsMine:         true,
 	}
 
-	if err = wallet.AddAddress(adr, false, true, true); err != nil {
+	if err = wallet.AddAddress(adr, false, true, false); err != nil {
 		return
 	}
 

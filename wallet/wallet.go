@@ -45,11 +45,12 @@ func (e EncryptedVersion) String() string {
 type Wallet struct {
 	Encrypted EncryptedVersion `json:"encrypted"`
 
-	Version   Version          `json:"version"`
-	Mnemonic  string           `json:"mnemonic"`
-	Seed      helpers.HexBytes `json:"seed"` //32 byte
-	SeedIndex uint32           `json:"seedIndex"`
-	Count     int              `json:"count"`
+	Version    Version          `json:"version"`
+	Mnemonic   string           `json:"mnemonic"`
+	Seed       helpers.HexBytes `json:"seed"` //32 byte
+	SeedIndex  uint32           `json:"seedIndex"`
+	Count      int              `json:"count"`
+	CountIndex int              `json:"countIndex"`
 
 	Addresses    []*wallet_address.WalletAddress          `json:"addresses"`
 	AddressesMap map[string]*wallet_address.WalletAddress `json:"-"`
@@ -65,6 +66,9 @@ func WalletInit(forging *forging.Forging, mempool *mempool.Mempool) (wallet *Wal
 	wallet = &Wallet{
 		forging: forging,
 		mempool: mempool,
+
+		Count:     0,
+		SeedIndex: 1,
 
 		Addresses:    make([]*wallet_address.WalletAddress, 0),
 		AddressesMap: make(map[string]*wallet_address.WalletAddress),
