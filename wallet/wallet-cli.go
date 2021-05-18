@@ -104,7 +104,7 @@ func (wallet *Wallet) CliSelectAddress(text string) (walletAddress *wallet_addre
 
 func (wallet *Wallet) initWalletCLI() {
 
-	cliExportAddressJSONWallet := func(cmd string) (err error) {
+	cliExportAddressJSON := func(cmd string) (err error) {
 
 		str, ok := gui.OutputReadString("Path to export")
 		if !ok {
@@ -151,7 +151,7 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliImportAddressJSONWallet := func(cmd string) (err error) {
+	cliImportAddressJSON := func(cmd string) (err error) {
 
 		str, ok := gui.OutputReadString("Path to import")
 		if !ok {
@@ -190,6 +190,78 @@ func (wallet *Wallet) initWalletCLI() {
 		}
 
 		gui.Info("Imported successfully")
+		return
+	}
+
+	cliExportWalletJSON := func(cmd string) (err error) {
+
+		str, ok := gui.OutputReadString("Path to export")
+		if !ok {
+			return
+		}
+
+		f, err := os.Create(str)
+		if err != nil {
+			return
+		}
+
+		defer f.Close()
+
+		wallet.RLock()
+		defer wallet.RUnlock()
+
+		var marshal []byte
+		if marshal, err = json.Marshal(wallet); err != nil {
+			return errors.New("Error marshaling wallet")
+		}
+
+		if _, err = fmt.Fprint(f, string(marshal)); err != nil {
+			return errors.New("Error writing into file")
+		}
+
+		gui.Info("Wallet Exported successfully")
+		return
+	}
+
+	cliImportWalletJSON := func(cmd string) (err error) {
+
+		str, ok := gui.OutputReadString("Path to import Wallet")
+		if !ok {
+			return
+		}
+
+		done, ok := gui.OutputReadBool("Your wallet will be REPLACED with this one. Are you sure ?")
+		if !ok {
+			return
+		}
+
+		if !done {
+			return errors.New("You didn't accept REPLACING your existing wallet")
+		}
+
+		data, err := os.ReadFile(str)
+		if err != nil {
+			return
+		}
+
+		wallet2 := createWallet(wallet.forging, wallet.mempool)
+		if err = json.Unmarshal(data, wallet2); err != nil {
+			return errors.New("Error unmarshaling wallet")
+		}
+
+		wallet.RLock()
+		defer wallet.RUnlock()
+
+		if err = json.Unmarshal(data, wallet); err != nil {
+			return errors.New("Error unmarshaling wallet 2")
+		}
+
+		wallet.addressesMap = make(map[string]*wallet_address.WalletAddress)
+		for _, adr := range wallet.Addresses {
+			wallet.addressesMap[string(adr.Address.PublicKeyHash)] = adr
+		}
+
+		gui.Info("Wallet Imported Successfully")
 		return
 	}
 
@@ -277,7 +349,9 @@ func (wallet *Wallet) initWalletCLI() {
 	gui.CommandDefineCallback("Show Private Key", cliShowPrivateKey)
 	gui.CommandDefineCallback("Import Private Key", cliImportPrivateKey)
 	gui.CommandDefineCallback("Remove Address", cliRemoveAddress)
-	gui.CommandDefineCallback("Export Address JSON", cliExportAddressJSONWallet)
-	gui.CommandDefineCallback("Import Address JSON", cliImportAddressJSONWallet)
+	gui.CommandDefineCallback("Export Address JSON", cliExportAddressJSON)
+	gui.CommandDefineCallback("Import Address JSON", cliImportAddressJSON)
+	gui.CommandDefineCallback("Export Wallet JSON", cliExportWalletJSON)
+	gui.CommandDefineCallback("Import Wallet JSON", cliImportWalletJSON)
 
 }

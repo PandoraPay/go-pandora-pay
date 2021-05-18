@@ -38,7 +38,7 @@ func (wallet *Wallet) GetWalletAddressByAddress(addressEncoded string) (out *wal
 	wallet.RLock()
 	defer wallet.RUnlock()
 
-	out = wallet.AddressesMap[string(address.PublicKeyHash)]
+	out = wallet.addressesMap[string(address.PublicKeyHash)]
 	if out == nil {
 		err = errors.New("address was not found")
 	}
@@ -81,12 +81,12 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 
 	adr.AddressEncoded = adr.Address.EncodeAddr()
 
-	if wallet.AddressesMap[string(adr.Address.PublicKeyHash)] != nil {
+	if wallet.addressesMap[string(adr.Address.PublicKeyHash)] != nil {
 		return errors.New("Address exists")
 	}
 
 	wallet.Addresses = append(wallet.Addresses, adr)
-	wallet.AddressesMap[string(adr.Address.PublicKeyHash)] = adr
+	wallet.addressesMap[string(adr.Address.PublicKeyHash)] = adr
 
 	wallet.Count += 1
 
@@ -168,7 +168,7 @@ func (wallet *Wallet) RemoveAddress(index int) (out bool, err error) {
 
 	removing := wallet.Addresses[index]
 	wallet.Addresses = append(wallet.Addresses[:index], wallet.Addresses[index+1:]...)
-	delete(wallet.AddressesMap, string(adr.Address.PublicKeyHash))
+	delete(wallet.addressesMap, string(adr.Address.PublicKeyHash))
 
 	wallet.Count -= 1
 
@@ -293,18 +293,18 @@ func (wallet *Wallet) UpdateAccountsChanges(accs *accounts.Accounts) (err error)
 	defer wallet.Unlock()
 
 	for k, v := range accs.HashMap.Committed {
-		if wallet.AddressesMap[k] != nil {
+		if wallet.addressesMap[k] != nil {
 
 			if v.Commit == "update" {
 				acc := new(account.Account)
 				if err = acc.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
 					return
 				}
-				if err = wallet.refreshWallet(acc, wallet.AddressesMap[k]); err != nil {
+				if err = wallet.refreshWallet(acc, wallet.addressesMap[k]); err != nil {
 					return
 				}
 			} else if v.Commit == "delete" {
-				if err = wallet.refreshWallet(nil, wallet.AddressesMap[k]); err != nil {
+				if err = wallet.refreshWallet(nil, wallet.addressesMap[k]); err != nil {
 					return
 				}
 			}

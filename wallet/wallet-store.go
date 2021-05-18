@@ -98,7 +98,7 @@ func (wallet *Wallet) loadWallet() error {
 					return
 				}
 				wallet.Addresses = append(wallet.Addresses, newWalletAddress)
-				wallet.AddressesMap[string(newWalletAddress.Address.PublicKeyHash)] = newWalletAddress
+				wallet.addressesMap[string(newWalletAddress.Address.PublicKeyHash)] = newWalletAddress
 
 				wallet.forging.Wallet.AddWallet(newWalletAddress.GetDelegatedStakePrivateKey(), newWalletAddress.GetPublicKeyHash())
 				wallet.mempool.Wallet.AddWallet(newWalletAddress.GetPublicKeyHash())
