@@ -10,9 +10,7 @@ var GUI gui_interface.GUIInterface
 
 //test
 func GUIInit() {
-
-	GUI.Info("GO PANDORA PAY")
+	GUI.Info("GO " + config.NAME)
 	GUI.Info(fmt.Sprintf("OS:%s ARCH:%s CPU:%d", config.OS, config.ARCHITECTURE, config.CPU_THREADS))
-
-	return
+	GUI.Info("VERSION " + config.VERSION)
 }
