@@ -35,7 +35,7 @@ func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
 
 	forging.Wallet.updates.Store([]*ForgingWalletAddressUpdate{})
 
-	gui.Log("Forging Init")
+	gui.GUI.Log("Forging Init")
 
 	return
 }

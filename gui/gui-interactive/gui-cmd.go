@@ -1,4 +1,4 @@
-package gui
+package gui_interactive
 
 import (
 	"encoding/hex"
@@ -8,6 +8,7 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 	"os"
 	"pandora-pay/addresses"
+	gui_interface "pandora-pay/gui/gui-interface"
 	"strconv"
 )
 
@@ -52,14 +53,7 @@ var commands = []Command{
 	{Name: "App", Text: "Exit"},
 }
 
-var cmd *widgets.List
-var cmdRows []string
-
-var cmdStatus string //string
-var cmdInput string  //string
-var cmdInputCn = make(chan string)
-
-func CommandDefineCallback(Text string, callback func(string) error) {
+func (g *GUIInteractive) CommandDefineCallback(Text string, callback func(string) error) {
 
 	for i := range commands {
 		if commands[i].Text == Text {
@@ -68,80 +62,80 @@ func CommandDefineCallback(Text string, callback func(string) error) {
 		}
 	}
 
-	Error(errors.New("Command " + Text + " was not found"))
+	g.Error(errors.New("Command " + Text + " was not found"))
 }
 
-func cmdProcess(e ui.Event) {
+func (g *GUIInteractive) cmdProcess(e ui.Event) {
 
 	var command *Command
-	cmd.Lock()
-	status := cmdStatus
-	input := cmdInput
-	cn := cmdInputCn
+	g.cmd.Lock()
+	status := g.cmdStatus
+	input := g.cmdInput
+	cn := g.cmdInputCn
 	if status == "cmd" {
-		command = &commands[cmd.SelectedRow]
+		command = &commands[g.cmd.SelectedRow]
 	}
-	cmd.Unlock()
+	g.cmd.Unlock()
 
 	switch e.ID {
 	case "<C-c>":
-		cmd.Lock()
-		if cmdStatus == "read" {
-			if cmdInputCn != nil {
-				close(cmdInputCn)
+		g.cmd.Lock()
+		if g.cmdStatus == "read" {
+			if g.cmdInputCn != nil {
+				close(g.cmdInputCn)
 			}
-			cmdInputCn = make(chan string)
-			cmd.Unlock()
+			g.cmdInputCn = make(chan string)
+			g.cmd.Unlock()
 			return
 		}
-		cmd.Unlock()
+		g.cmd.Unlock()
 		os.Exit(1)
 	case "<Down>":
-		cmd.ScrollDown()
+		g.cmd.ScrollDown()
 	case "<Up>":
-		cmd.ScrollUp()
+		g.cmd.ScrollUp()
 	case "<C-d>":
-		cmd.ScrollHalfPageDown()
+		g.cmd.ScrollHalfPageDown()
 	case "<C-u>":
-		cmd.ScrollHalfPageUp()
+		g.cmd.ScrollHalfPageUp()
 	case "<C-f>":
-		cmd.ScrollPageDown()
+		g.cmd.ScrollPageDown()
 	case "<C-b>":
-		cmd.ScrollPageUp()
+		g.cmd.ScrollPageUp()
 	case "<Home>":
-		cmd.ScrollTop()
+		g.cmd.ScrollTop()
 	case "<End>":
-		cmd.ScrollBottom()
+		g.cmd.ScrollBottom()
 	case "<Enter>":
 
 		if status == "cmd" {
 
 			if command.Callback != nil {
-				OutputClear("", nil)
+				g.outputClear("", nil)
 				go func() {
 
 					if err := command.Callback(command.Text); err != nil {
-						OutputWrite(err)
-						cmd.Lock()
-						cmdStatus = "output done"
-						cmd.Unlock()
+						g.OutputWrite(err)
+						g.cmd.Lock()
+						g.cmdStatus = "output done"
+						g.cmd.Unlock()
 					} else {
-						OutputDone()
+						g.outputDone()
 					}
 
 				}()
 			}
 		} else if status == "output done" {
-			OutputRestore()
+			g.outputRestore()
 		} else if status == "read" {
 			cn <- input
 		}
 
 	}
 
-	if cmdStatus == "read" && !NotAcceptedCharacters[e.ID] {
-		cmd.Lock()
-		str := cmdInput
+	if g.cmdStatus == "read" && !NotAcceptedCharacters[e.ID] {
+		g.cmd.Lock()
+		str := g.cmdInput
 
 		char := e.ID
 		if char == "<Space>" {
@@ -154,55 +148,55 @@ func cmdProcess(e ui.Event) {
 			}
 		}
 		str += char
-		cmdInput = str
-		cmd.Rows[len(cmd.Rows)-1] = "-> " + str
-		cmd.Unlock()
+		g.cmdInput = str
+		g.cmd.Rows[len(g.cmd.Rows)-1] = "-> " + str
+		g.cmd.Unlock()
 	}
 
 	// previousKey = e.ID
 
-	ui.Render(cmd)
+	ui.Render(g.cmd)
 }
 
-func OutputWrite(any interface{}) {
-	str := processArgument(any)
-	cmd.Lock()
-	cmd.Rows = append(cmd.Rows, str)
-	cmd.SelectedRow = len(cmd.Rows) - 1
-	cmd.Unlock()
-	ui.Render(cmd)
+func (g *GUIInteractive) OutputWrite(any interface{}) {
+	str := gui_interface.ProcessArgument(any)
+	g.cmd.Lock()
+	g.cmd.Rows = append(g.cmd.Rows, str)
+	g.cmd.SelectedRow = len(g.cmd.Rows) - 1
+	g.cmd.Unlock()
+	ui.Render(g.cmd)
 }
 
-func outputRead(text string) <-chan string {
+func (g *GUIInteractive) outputRead(text string) <-chan string {
 
-	cmd.Lock()
-	cmdInput = ""
-	cmd.Rows = append(cmd.Rows, "")
-	cmd.Rows = append(cmd.Rows, text)
-	cmd.Rows = append(cmd.Rows, "-> ")
-	cmd.SelectedRow = len(cmd.Rows) - 1
-	cmdStatus = "read"
-	cn := cmdInputCn
-	cmd.Unlock()
-	ui.Render(cmd)
+	g.cmd.Lock()
+	g.cmdInput = ""
+	g.cmd.Rows = append(g.cmd.Rows, "")
+	g.cmd.Rows = append(g.cmd.Rows, text)
+	g.cmd.Rows = append(g.cmd.Rows, "-> ")
+	g.cmd.SelectedRow = len(g.cmd.Rows) - 1
+	g.cmdStatus = "read"
+	cn := g.cmdInputCn
+	g.cmd.Unlock()
+	ui.Render(g.cmd)
 
 	return cn
 }
 
-func OutputReadString(text string) (out string, ok bool) {
-	out, ok = <-outputRead(text)
+func (g *GUIInteractive) OutputReadString(text string) (out string, ok bool) {
+	out, ok = <-g.outputRead(text)
 	return
 }
 
-func OutputReadInt(text string, acceptedValues []int) (out int, ok bool) {
+func (g *GUIInteractive) OutputReadInt(text string, acceptedValues []int) (out int, ok bool) {
 	var str string
 	var err error
 	for {
-		if str, ok = <-outputRead(text); !ok {
+		if str, ok = <-g.outputRead(text); !ok {
 			return
 		}
 		if out, err = strconv.Atoi(str); err != nil {
-			OutputWrite("Invalid Number")
+			g.OutputWrite("Invalid Number")
 			continue
 		}
 		if acceptedValues != nil {
@@ -213,17 +207,17 @@ func OutputReadInt(text string, acceptedValues []int) (out int, ok bool) {
 				}
 				acceptedValuesStr += strconv.Itoa(acceptedValue) + " "
 			}
-			OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
+			g.OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
 		}
 		return
 	}
 }
 
-func OutputReadUint64(text string, acceptedValues []uint64, acceptEmpty bool) (out uint64, ok bool) {
+func (g *GUIInteractive) OutputReadUint64(text string, acceptedValues []uint64, acceptEmpty bool) (out uint64, ok bool) {
 	var str string
 	var err error
 	for {
-		if str, ok = <-outputRead(text); !ok {
+		if str, ok = <-g.outputRead(text); !ok {
 			return
 		}
 		if acceptEmpty && str == "" {
@@ -231,7 +225,7 @@ func OutputReadUint64(text string, acceptedValues []uint64, acceptEmpty bool) (o
 		}
 
 		if out, err = strconv.ParseUint(str, 10, 64); err != nil {
-			OutputWrite("Invalid Number")
+			g.OutputWrite("Invalid Number")
 			continue
 		}
 		if acceptedValues != nil {
@@ -242,21 +236,21 @@ func OutputReadUint64(text string, acceptedValues []uint64, acceptEmpty bool) (o
 				}
 				acceptedValuesStr += strconv.FormatUint(acceptedValue, 64) + " "
 			}
-			OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
+			g.OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
 		}
 		return
 	}
 }
 
-func OutputReadFloat64(text string, acceptedValues []float64) (out float64, ok bool) {
+func (g *GUIInteractive) OutputReadFloat64(text string, acceptedValues []float64) (out float64, ok bool) {
 	var str string
 	var err error
 	for {
-		if str, ok = <-outputRead(text); !ok {
+		if str, ok = <-g.outputRead(text); !ok {
 			return
 		}
 		if out, err = strconv.ParseFloat(str, 64); err != nil {
-			OutputWrite("Invalid Number")
+			g.OutputWrite("Invalid Number")
 			continue
 		}
 		if acceptedValues != nil {
@@ -267,33 +261,33 @@ func OutputReadFloat64(text string, acceptedValues []float64) (out float64, ok b
 				}
 				acceptedValuesStr += strconv.FormatFloat(acceptedValue, 'f', 10, 64) + " "
 			}
-			OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
+			g.OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
 		}
 		return
 	}
 }
 
-func OutputReadAddress(text string) (address *addresses.Address, ok bool) {
+func (g *GUIInteractive) OutputReadAddress(text string) (address *addresses.Address, ok bool) {
 	var str string
 	var err error
 
 	for {
-		if str, ok = <-outputRead(text); !ok {
+		if str, ok = <-g.outputRead(text); !ok {
 			return
 		}
 		address, err = addresses.DecodeAddr(str)
 		if err != nil {
-			OutputWrite("Invalid Address")
+			g.OutputWrite("Invalid Address")
 			continue
 		}
 		return
 	}
 }
 
-func OutputReadBool(text string) (out bool, ok bool) {
+func (g *GUIInteractive) OutputReadBool(text string) (out bool, ok bool) {
 	var str string
 	for {
-		if str, ok = <-outputRead(text); !ok {
+		if str, ok = <-g.outputRead(text); !ok {
 			return
 		}
 		if str == "y" {
@@ -301,21 +295,21 @@ func OutputReadBool(text string) (out bool, ok bool) {
 		} else if str == "n" {
 			return false, true
 		} else {
-			OutputWrite("Invalid boolean answer")
+			g.OutputWrite("Invalid boolean answer")
 			continue
 		}
 	}
 }
 
-func OutputReadBytes(text string, acceptedLengths []int) (token []byte, ok bool) {
+func (g *GUIInteractive) OutputReadBytes(text string, acceptedLengths []int) (token []byte, ok bool) {
 	var str string
 	var err error
 	for {
-		if str, ok = <-outputRead(text); !ok {
+		if str, ok = <-g.outputRead(text); !ok {
 			return
 		}
 		if token, err = hex.DecodeString(str); err != nil {
-			OutputWrite("Invalid Token. The token has to be a hex")
+			g.OutputWrite("Invalid Token. The token has to be a hex")
 			continue
 		}
 
@@ -327,49 +321,49 @@ func OutputReadBytes(text string, acceptedLengths []int) (token []byte, ok bool)
 					return
 				}
 			}
-			OutputWrite("Invalid value. Lengths accepted: " + acceptedLengthsStr)
+			g.OutputWrite("Invalid value. Lengths accepted: " + acceptedLengthsStr)
 		}
 	}
 }
 
-func OutputClear(newCmdStatus string, rows []string) {
-	cmd.Lock()
+func (g *GUIInteractive) outputClear(newCmdStatus string, rows []string) {
+	g.cmd.Lock()
 	if rows == nil {
 		rows = []string{}
 	}
-	cmd.Rows = rows
+	g.cmd.Rows = rows
 	if newCmdStatus != "" {
-		cmdStatus = newCmdStatus
+		g.cmdStatus = newCmdStatus
 	}
-	cmd.SelectedRow = 0
-	cmd.Unlock()
-	ui.Render(cmd)
+	g.cmd.SelectedRow = 0
+	g.cmd.Unlock()
+	ui.Render(g.cmd)
 }
 
-func OutputDone() {
-	OutputWrite("------------------------")
-	OutputWrite("Press space to return...")
-	cmd.Lock()
-	cmdStatus = "output done"
-	cmd.Unlock()
+func (g *GUIInteractive) outputDone() {
+	g.OutputWrite("------------------------")
+	g.OutputWrite("Press space to return...")
+	g.cmd.Lock()
+	g.cmdStatus = "output done"
+	g.cmd.Unlock()
 }
 
-func OutputRestore() {
-	OutputClear("cmd", cmdRows)
+func (g *GUIInteractive) outputRestore() {
+	g.outputClear("cmd", g.cmdRows)
 }
 
-func cmdInit() {
-	cmdStatus = "cmd"
-	cmdInput = ""
-	cmdInputCn = make(chan string)
+func (g *GUIInteractive) cmdInit() {
+	g.cmdStatus = "cmd"
+	g.cmdInput = ""
+	g.cmdInputCn = make(chan string)
 
-	cmd = widgets.NewList()
-	cmd.Title = "Commands"
-	cmdRows = make([]string, len(commands))
+	g.cmd = widgets.NewList()
+	g.cmd.Title = "Commands"
+	g.cmdRows = make([]string, len(commands))
 	for i, command := range commands {
-		cmdRows[i] = fmt.Sprintf("%2d %10s %s", i, command.Name, command.Text)
+		g.cmdRows[i] = fmt.Sprintf("%2d %10s %s", i, command.Name, command.Text)
 	}
-	cmd.Rows = cmdRows
-	cmd.TextStyle = ui.NewStyle(ui.ColorYellow)
+	g.cmd.Rows = g.cmdRows
+	g.cmd.TextStyle = ui.NewStyle(ui.ColorYellow)
 	//cmd.WrapText = true
 }

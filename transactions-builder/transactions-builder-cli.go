@@ -11,7 +11,7 @@ import (
 
 func (builder *TransactionsBuilder) showWarningIfNotSyncCLI() {
 	if builder.chain.Sync.GetSyncTime() == 0 {
-		gui.OutputWrite("Your node is not Sync yet. Wait for it to get sync.")
+		gui.GUI.OutputWrite("Your node is not Sync yet. Wait for it to get sync.")
 	}
 }
 
@@ -26,7 +26,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		token, ok := gui.OutputReadBytes("Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH})
+		token, ok := gui.GUI.OutputReadBytes("Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH})
 		if !ok {
 			return
 		}
@@ -34,29 +34,29 @@ func (builder *TransactionsBuilder) initCLI() {
 			return errors.New("Invalid TokenId")
 		}
 
-		amount, ok := gui.OutputReadFloat64("Amount", nil)
+		amount, ok := gui.GUI.OutputReadFloat64("Amount", nil)
 		if !ok {
 			return
 		}
 
-		destinationAddress, ok := gui.OutputReadAddress("Destination Address")
+		destinationAddress, ok := gui.GUI.OutputReadAddress("Destination Address")
 		if !ok {
 			return
 		}
 
-		feePerByte, ok := gui.OutputReadInt("Fee per byte. -1 automatically, 0 none", nil)
+		feePerByte, ok := gui.GUI.OutputReadInt("Fee per byte. -1 automatically, 0 none", nil)
 		if !ok {
 			return
 		}
 
 		var feeToken []byte
 		if feePerByte != 0 {
-			if feeToken, ok = gui.OutputReadBytes("Fee Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH}); !ok {
+			if feeToken, ok = gui.GUI.OutputReadBytes("Fee Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH}); !ok {
 				return
 			}
 		}
 
-		nonce, ok := gui.OutputReadUint64("Nonce. Leave empty for automatically detection", nil, true)
+		nonce, ok := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", nil, true)
 		if !ok {
 			return
 		}
@@ -66,9 +66,9 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		gui.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
+		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
 
-		propagate, ok := gui.OutputReadBool("Propagate. Type y/n")
+		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
 		if !ok {
 			return
 		}
@@ -81,7 +81,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			if !result {
 				return errors.New("transaction was not inserted in mempool")
 			}
-			gui.OutputWrite("Tx was inserted in mempool")
+			gui.GUI.OutputWrite("Tx was inserted in mempool")
 		}
 
 		return
@@ -96,19 +96,19 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		amount, ok := gui.OutputReadFloat64("Amount", nil)
+		amount, ok := gui.GUI.OutputReadFloat64("Amount", nil)
 		if !ok {
 			return
 		}
 
-		nonce, ok := gui.OutputReadUint64("Nonce. Leave empty for automatically detection", nil, true)
+		nonce, ok := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", nil, true)
 		if !ok {
 			return
 		}
 
 		delegateNewPublicKeyHashGenerate := false
 
-		delegateNewPublicKeyHash, ok := gui.OutputReadBytes("Delegate New Public Key Hash. Use empty for not changing. Use '01' for generating a new one. ", []int{0, 1, cryptography.KeyHashSize})
+		delegateNewPublicKeyHash, ok := gui.GUI.OutputReadBytes("Delegate New Public Key Hash. Use empty for not changing. Use '01' for generating a new one. ", []int{0, 1, cryptography.KeyHashSize})
 		if !ok {
 			return
 		}
@@ -122,14 +122,14 @@ func (builder *TransactionsBuilder) initCLI() {
 			}
 		}
 
-		feePerByte, ok := gui.OutputReadInt("Fee per byte. -1 automatically, 0 none", nil)
+		feePerByte, ok := gui.GUI.OutputReadInt("Fee per byte. -1 automatically, 0 none", nil)
 		if !ok {
 			return
 		}
 
 		var feeToken []byte
 		if feePerByte != 0 {
-			if feeToken, ok = gui.OutputReadBytes("Fee Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH}); !ok {
+			if feeToken, ok = gui.GUI.OutputReadBytes("Fee Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH}); !ok {
 				return
 			}
 		}
@@ -139,9 +139,9 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		gui.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
+		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
 
-		propagate, ok := gui.OutputReadBool("Propagate. Type y/n")
+		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
 		if !ok {
 			return
 		}
@@ -154,7 +154,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			if !result {
 				return errors.New("transaction was not inserted in mempool")
 			}
-			gui.OutputWrite("Tx was inserted in mempool")
+			gui.GUI.OutputWrite("Tx was inserted in mempool")
 		}
 
 		return
@@ -169,29 +169,29 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		amount, ok := gui.OutputReadFloat64("Amount", nil)
+		amount, ok := gui.GUI.OutputReadFloat64("Amount", nil)
 		if !ok {
 			return
 		}
 
-		nonce, ok := gui.OutputReadUint64("Nonce. Leave for automatically detection", nil, true)
+		nonce, ok := gui.GUI.OutputReadUint64("Nonce. Leave for automatically detection", nil, true)
 		if !ok {
 			return
 		}
 
-		feePerByte, ok := gui.OutputReadInt("Fee per byte. -1 automatically, 0 none", nil)
+		feePerByte, ok := gui.GUI.OutputReadInt("Fee per byte. -1 automatically, 0 none", nil)
 		if !ok {
 			return
 		}
 
 		var feeToken []byte
 		if feePerByte != 0 {
-			if feeToken, ok = gui.OutputReadBytes("Fee Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH}); !ok {
+			if feeToken, ok = gui.GUI.OutputReadBytes("Fee Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH}); !ok {
 				return
 			}
 		}
 
-		payFeeInExtra, ok := gui.OutputReadBool("Pay in Extra. Type y/n")
+		payFeeInExtra, ok := gui.GUI.OutputReadBool("Pay in Extra. Type y/n")
 		if !ok {
 			return
 		}
@@ -201,9 +201,9 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		gui.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
+		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
 
-		propagate, ok := gui.OutputReadBool("Propagate. Type y/n")
+		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
 		if !ok {
 			return
 		}
@@ -216,14 +216,14 @@ func (builder *TransactionsBuilder) initCLI() {
 			if !result {
 				return errors.New("transaction was not inserted in mempool")
 			}
-			gui.OutputWrite("Tx was inserted in mempool")
+			gui.GUI.OutputWrite("Tx was inserted in mempool")
 		}
 
 		return
 	}
 
-	gui.CommandDefineCallback("Transfer", cliTransfer)
-	gui.CommandDefineCallback("Delegate", cliDelegate)
-	gui.CommandDefineCallback("Unstake", cliUnstake)
+	gui.GUI.CommandDefineCallback("Transfer", cliTransfer)
+	gui.GUI.CommandDefineCallback("Delegate", cliDelegate)
+	gui.GUI.CommandDefineCallback("Unstake", cliUnstake)
 
 }

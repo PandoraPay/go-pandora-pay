@@ -60,9 +60,9 @@ func (server *HttpServer) initialize() {
 
 	go func() {
 		if err := http.Serve(server.tcpListener, nil); err != nil {
-			gui.Error("Error opening HTTP server", err)
+			gui.GUI.Error("Error opening HTTP server", err)
 		}
-		gui.Info("HTTP server")
+		gui.GUI.Info("HTTP server")
 	}()
 
 }

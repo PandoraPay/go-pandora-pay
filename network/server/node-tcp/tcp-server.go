@@ -69,7 +69,7 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 		return nil, errors.New("Error creating TcpServer" + err.Error())
 	}
 
-	gui.InfoUpdate("TCP", address+":"+port)
+	gui.GUI.InfoUpdate("TCP", address+":"+port)
 
 	server.HttpServer, err = node_http.CreateHttpServer(server.tcpListener, chain, settings, mempool)
 

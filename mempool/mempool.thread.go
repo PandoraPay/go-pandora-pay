@@ -103,7 +103,7 @@ func (worker *mempoolWorker) processing(
 					var err error
 					if worker.boltTx, err = store.StoreBlockchain.DB.Begin(false); err != nil {
 						worker.closeDB()
-						gui.Error("Error opening database for mempool")
+						gui.GUI.Error("Error opening database for mempool")
 						time.Sleep(1000 * time.Millisecond)
 						continue
 					}

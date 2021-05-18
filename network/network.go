@@ -40,7 +40,7 @@ func (network *Network) execute() {
 
 		_, exists := network.Websockets.AllAddresses.Load(knownNode.UrlHostOnly)
 		if !exists {
-			gui.Log("connecting to: " + knownNode.UrlStr)
+			gui.GUI.Log("connecting to: " + knownNode.UrlStr)
 
 			if knownNode != nil && !exists {
 				_, err := websocks.CreateWebsocketClient(network.Websockets, knownNode)
@@ -48,9 +48,9 @@ func (network *Network) execute() {
 					if err.Error() != "Already connected" {
 						continue
 					}
-					gui.Log("error connecting to: " + knownNode.UrlStr)
+					gui.GUI.Log("error connecting to: " + knownNode.UrlStr)
 				} else {
-					gui.Log("connected to: " + knownNode.UrlStr)
+					gui.GUI.Log("connected to: " + knownNode.UrlStr)
 				}
 			}
 		}

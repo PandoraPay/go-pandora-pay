@@ -85,6 +85,6 @@ func WalletInit(forging *forging.Forging, mempool *mempool.Mempool) (wallet *Wal
 
 	wallet.initWalletCLI()
 
-	gui.Log("Initialized Wallet")
+	gui.GUI.Log("Initialized Wallet")
 	return
 }

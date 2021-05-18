@@ -128,10 +128,10 @@ func (mempool *Mempool) print() {
 		return
 	}
 
-	gui.Log("")
+	gui.GUI.Log("")
 	for _, out := range transactions {
-		gui.Log(fmt.Sprintf("%12s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC822), out.Tx.Bloom.Size, out.ChainHeight, hex.EncodeToString(out.Tx.Bloom.Hash[0:15])))
+		gui.GUI.Log(fmt.Sprintf("%12s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC822), out.Tx.Bloom.Size, out.ChainHeight, hex.EncodeToString(out.Tx.Bloom.Hash[0:15])))
 	}
-	gui.Log("")
+	gui.GUI.Log("")
 
 }

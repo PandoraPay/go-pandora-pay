@@ -20,7 +20,7 @@ func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r
 
 	c, err := wserver.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		gui.Error("ws error upgrade:", err)
+		gui.GUI.Error("ws error upgrade:", err)
 		return
 	}
 

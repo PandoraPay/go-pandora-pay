@@ -87,7 +87,7 @@ func (thread *ForgingThread) startForging() {
 					hashesPerSecond := atomic.SwapUint32(&workers[i].hashes, 0)
 					s += strconv.FormatUint(uint64(hashesPerSecond), 10) + " "
 				}
-				gui.InfoUpdate("Hashes/s", s)
+				gui.GUI.InfoUpdate("Hashes/s", s)
 			}
 		}
 	}()
@@ -118,7 +118,7 @@ func (thread *ForgingThread) startForging() {
 		select {
 		case solution := <-forgingWorkerSolutionCn:
 			if err = thread.publishSolution(solution); err != nil {
-				gui.Error("Error publishing solution", err)
+				gui.GUI.Error("Error publishing solution", err)
 			}
 			break
 		case work, ok = <-thread.workCn:

@@ -39,7 +39,7 @@ func (settings *Settings) loadSettings() error {
 			return errors.New("Settings doesn't exist")
 		}
 		if bytes.Equal(saved, []byte{1}) {
-			gui.Log("Settings Loading... ")
+			gui.GUI.Log("Settings Loading... ")
 
 			unmarshal := reader.Get([]byte("settings"))
 			if err = json.Unmarshal(unmarshal, &settings); err != nil {
@@ -47,7 +47,7 @@ func (settings *Settings) loadSettings() error {
 			}
 
 			settings.updateSettings()
-			gui.Log("Settings Loaded! " + settings.Name)
+			gui.GUI.Log("Settings Loaded! " + settings.Name)
 
 		} else {
 			err = errors.New("Error loading wallet ?")

@@ -22,18 +22,18 @@ func (store *Store) init() {
 	db, err := bolt.Open("./"+store.Name+".store", 0600, nil)
 
 	if err != nil {
-		gui.Fatal(err)
+		gui.GUI.Fatal(err)
 	}
 
 	store.DB = db
 
-	gui.Log("Store Opened " + store.Name)
+	gui.GUI.Log("Store Opened " + store.Name)
 
 }
 
 func (store *Store) close() {
 	store.DB.Close()
-	gui.Log("Store Closed " + store.Name)
+	gui.GUI.Log("Store Closed " + store.Name)
 }
 
 func DBInit() (err error) {

@@ -66,7 +66,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	chainData := chain.GetChainData()
 
-	gui.Info(fmt.Sprintf("Including blocks %d ... %d", chainData.Height, chainData.Height+uint64(len(blocksComplete))))
+	gui.GUI.Info(fmt.Sprintf("Including blocks %d ... %d", chainData.Height, chainData.Height+uint64(len(blocksComplete))))
 
 	//chain.RLock() is not required because it is guaranteed that no other thread is writing now in the chain
 	var newChainData = &BlockchainData{
@@ -375,25 +375,25 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		return
 	}
 
-	gui.Warning("-------------------------------------------")
-	gui.Warning(fmt.Sprintf("Included blocks %d | TXs: %d | Hash %s", len(insertedBlocks), len(insertedTxHashes), hex.EncodeToString(chainData.Hash)))
-	gui.Warning(newChainData.Height, hex.EncodeToString(newChainData.Hash), newChainData.Target.Text(10), newChainData.BigTotalDifficulty.Text(10))
-	gui.Warning("-------------------------------------------")
+	gui.GUI.Warning("-------------------------------------------")
+	gui.GUI.Warning(fmt.Sprintf("Included blocks %d | TXs: %d | Hash %s", len(insertedBlocks), len(insertedTxHashes), hex.EncodeToString(chainData.Hash)))
+	gui.GUI.Warning(newChainData.Height, hex.EncodeToString(newChainData.Hash), newChainData.Target.Text(10), newChainData.BigTotalDifficulty.Text(10))
+	gui.GUI.Warning("-------------------------------------------")
 	newChainData.updateChainInfo()
 
 	chain.mutex.Unlock()
 
 	//accs will only be read only
 	if err = chain.forging.Wallet.UpdateAccountsChanges(accs); err != nil {
-		gui.Error("Error updating balance changes", err)
+		gui.GUI.Error("Error updating balance changes", err)
 	}
 
 	if err = chain.wallet.UpdateAccountsChanges(accs); err != nil {
-		gui.Error("Error updating balance changes", err)
+		gui.GUI.Error("Error updating balance changes", err)
 	}
 
 	if err = chain.forging.Wallet.ProcessUpdates(); err != nil {
-		gui.Error("Error Processing Updates", err)
+		gui.GUI.Error("Error Processing Updates", err)
 	}
 
 	//update work for mem pool
@@ -432,7 +432,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *mempool.Mempool) (chain *Blockchain, err error) {
 
-	gui.Log("Blockchain init...")
+	gui.GUI.Log("Blockchain init...")
 
 	if err = genesis.GenesisInit(wallet); err != nil {
 		return

@@ -236,8 +236,8 @@ func (wallet *Wallet) createEmptyWallet() (err error) {
 }
 
 func (wallet *Wallet) updateWallet() {
-	gui.InfoUpdate("Wallet", wallet.Encrypted.String())
-	gui.InfoUpdate("Wallet Addrs", strconv.Itoa(wallet.Count))
+	gui.GUI.InfoUpdate("Wallet", wallet.Encrypted.String())
+	gui.GUI.InfoUpdate("Wallet Addrs", strconv.Itoa(wallet.Count))
 }
 
 //wallet must be locked before

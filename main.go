@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/docopt/docopt.go"
-	"math/rand"
 	"os"
 	"os/signal"
 	"pandora-pay/blockchain"
@@ -12,6 +11,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/debugging"
 	"pandora-pay/gui"
+	gui_interactive "pandora-pay/gui/gui-interactive"
 	"pandora-pay/mempool"
 	"pandora-pay/network"
 	"pandora-pay/settings"
@@ -19,9 +19,7 @@ import (
 	"pandora-pay/testnet"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
-	"runtime"
 	"syscall"
-	"time"
 )
 
 var commands = `PANDORA PAY.
@@ -48,6 +46,7 @@ Options:
 func main() {
 
 	var err error
+
 	var mySettings *settings.Settings
 	var myWallet *wallet.Wallet
 	var myForging *forging.Forging
@@ -65,20 +64,19 @@ func main() {
 		go debugging.Start()
 	}
 
-	if err = config.InitConfig("GOLANG"); err != nil {
+	if gui.GUI, err = gui_interactive.CreateGUIInteractive(); err != nil {
 		panic(err)
 	}
+	gui.GUIInit()
 
-	if err = gui.GUIInit(); err != nil {
+	if err = config.InitConfig(); err != nil {
 		panic(err)
 	}
-	gui.Info("GO PANDORA PAY")
-	gui.Info(fmt.Sprintf("OS:%s ARCH:%s CPU:%d", config.OS, config.ARHITECTURE, config.CPU_THREADS))
 
 	defer func() {
 		err := recover()
 		if err != nil {
-			gui.Close()
+			gui.GUI.Close()
 			fmt.Print("\nERROR\n")
 			fmt.Println(err)
 		}
@@ -128,7 +126,7 @@ func main() {
 	}
 	globals.Data["network"] = myNetwork
 
-	gui.Log("Main Loop")
+	gui.GUI.Log("Main Loop")
 
 	exitSignal := make(chan os.Signal)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)

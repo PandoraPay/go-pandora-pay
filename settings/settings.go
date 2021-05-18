@@ -38,7 +38,7 @@ func SettingsInit() (settings *Settings, err error) {
 		}
 	}
 
-	gui.Log("Settings Initialized")
+	gui.GUI.Log("Settings Initialized")
 	return
 }
 
@@ -56,7 +56,7 @@ func (settings *Settings) createEmptySettings() (err error) {
 }
 
 func (settings *Settings) updateSettings() {
-	gui.InfoUpdate("Node", settings.Name)
+	gui.GUI.InfoUpdate("Node", settings.Name)
 }
 
 func (settings *Settings) computeChecksum() []byte {

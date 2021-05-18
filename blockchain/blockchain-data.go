@@ -53,9 +53,9 @@ func (chainData *BlockchainData) computeNextTargetBig(bucket *bolt.Bucket) (*big
 }
 
 func (chainData *BlockchainData) updateChainInfo() {
-	gui.Info2Update("Blocks", strconv.FormatUint(chainData.Height, 10))
-	gui.Info2Update("Chain  Hash", hex.EncodeToString(chainData.Hash))
-	gui.Info2Update("Chain KHash", hex.EncodeToString(chainData.KernelHash))
-	gui.Info2Update("Chain  Diff", chainData.Target.String())
-	gui.Info2Update("TXs", strconv.FormatUint(chainData.Transactions, 10))
+	gui.GUI.Info2Update("Blocks", strconv.FormatUint(chainData.Height, 10))
+	gui.GUI.Info2Update("Chain  Hash", hex.EncodeToString(chainData.Hash))
+	gui.GUI.Info2Update("Chain KHash", hex.EncodeToString(chainData.KernelHash))
+	gui.GUI.Info2Update("Chain  Diff", chainData.Target.String())
+	gui.GUI.Info2Update("TXs", strconv.FormatUint(chainData.Transactions, 10))
 }

@@ -158,7 +158,7 @@ func CreateWebsockets(api *api_http.API, apiWebsockets *api_websockets.APIWebsoc
 
 	go func() {
 		for {
-			gui.InfoUpdate("sockets", strconv.FormatInt(atomic.LoadInt64(&websockets.Clients), 32)+" "+strconv.FormatInt(atomic.LoadInt64(&websockets.ServerClients), 32))
+			gui.GUI.InfoUpdate("sockets", strconv.FormatInt(atomic.LoadInt64(&websockets.Clients), 32)+" "+strconv.FormatInt(atomic.LoadInt64(&websockets.ServerClients), 32))
 			time.Sleep(1 * time.Second)
 		}
 	}()

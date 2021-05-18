@@ -80,7 +80,7 @@ func (wallet *Wallet) loadWallet() error {
 
 		if bytes.Equal(saved, []byte{1}) {
 
-			gui.Log("Wallet Loading... ")
+			gui.GUI.Log("Wallet Loading... ")
 
 			var unmarshal []byte
 
@@ -106,7 +106,7 @@ func (wallet *Wallet) loadWallet() error {
 			}
 
 			wallet.updateWallet()
-			gui.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
+			gui.GUI.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
 
 		} else {
 			return errors.New("Error loading wallet ?")

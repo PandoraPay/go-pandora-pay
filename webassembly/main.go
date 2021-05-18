@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"pandora-pay/config"
+	"pandora-pay/gui"
+	gui_non_interactive "pandora-pay/gui/gui-non-interactive"
 )
 
 func main() {
@@ -10,12 +12,21 @@ func main() {
 
 	config.StartConfig()
 
-	fmt.Println("PANDORA PAY WASM")
+	if gui.GUI, err = gui_non_interactive.CreateGUINonInteractive(); err != nil {
+		panic(err)
+	}
+	gui.GUIInit()
 
 	if err = config.InitConfig(); err != nil {
+		panic(err)
 	}
 
-	fmt.Println(config.NAME)
-	fmt.Println("VERSION: " + config.VERSION)
-	fmt.Println("ARHITECTURE: " + config.ARCHITECTURE)
+	defer func() {
+		err := recover()
+		if err != nil {
+			gui.GUI.Close()
+			fmt.Print("\nERROR\n")
+			fmt.Println(err)
+		}
+	}()
 }
