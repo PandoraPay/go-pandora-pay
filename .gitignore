@@ -16,3 +16,5 @@
 
 # Remove local storage
 /_build
+
+/webassembly/dist/PandoraPay.wasm

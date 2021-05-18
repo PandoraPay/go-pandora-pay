@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	DEBUG       = false
-	CPU_THREADS = 1
-	ARHITECTURE = ""
-	OS          = ""
-	NAME        = "PANDORA PAY"
-	VERSION     = "0.01"
+	DEBUG        = false
+	CPU_THREADS  = 1
+	ARCHITECTURE = ""
+	OS           = ""
+	NAME         = "PANDORA PAY"
+	VERSION      = "0.01"
 )
 
 const (
@@ -67,7 +67,9 @@ var (
 	INSTANCE_NUMBER = 0
 )
 
-func InitConfig() (err error) {
+func InitConfig(architecture string) (err error) {
+
+	ARCHITECTURE = architecture
 
 	if globals.Arguments["--testnet"] == true {
 		NETWORK_SELECTED = TEST_NET_NETWORK_BYTE

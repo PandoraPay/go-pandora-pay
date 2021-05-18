@@ -120,3 +120,7 @@ Using profiling to debug memory leaks/CPU
 2. The following command will request for a 5s CPU
    profile and will launch a browser with an SVG file. `go tool pprof -web http://:6060/debug/pprof/profile?seconds=5`
 3. `go tool pprof -http :8080 http://:6060/debug/pprof/goroutine`
+
+
+### DOCS
+[WebAssembly DOCS](/webassembly/webassembly.md)

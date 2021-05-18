@@ -69,7 +69,7 @@ func main() {
 		go debugging.Start()
 	}
 
-	if err = config.InitConfig(); err != nil {
+	if err = config.InitConfig("GOLANG"); err != nil {
 		panic(err)
 	}
 

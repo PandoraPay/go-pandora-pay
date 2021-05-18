@@ -100,6 +100,8 @@ func processArgument(any ...interface{}) string {
 			s += v
 		case int:
 			s += strconv.Itoa(v)
+		case float64:
+			s += strconv.FormatFloat(v, 'f', 10, 64)
 		case uint64:
 			s += strconv.FormatUint(v, 10)
 		case []byte:
