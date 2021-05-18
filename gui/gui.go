@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	ui "github.com/gizak/termui/v3"
 	"os"
+	"pandora-pay/helpers"
 	"strconv"
 	"time"
 )
@@ -102,6 +103,7 @@ func processArgument(any ...interface{}) string {
 		case uint64:
 			s += strconv.FormatUint(v, 10)
 		case []byte:
+		case helpers.HexBytes:
 			s += hex.EncodeToString(v)
 		case error:
 			s += v.Error()

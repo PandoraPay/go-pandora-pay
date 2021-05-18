@@ -116,12 +116,8 @@ func cmdProcess(e ui.Event) {
 
 		if status == "cmd" {
 
-			cmd.Lock()
-			cmd.SelectedRow = 0
-			cmd.Unlock()
-
 			if command.Callback != nil {
-				OutputClear()
+				OutputClear("", nil)
 				go func() {
 
 					if err := command.Callback(command.Text); err != nil {
@@ -336,15 +332,22 @@ func OutputReadBytes(text string, acceptedLengths []int) (token []byte, ok bool)
 	}
 }
 
-func OutputClear() {
+func OutputClear(newCmdStatus string, rows []string) {
 	cmd.Lock()
-	cmd.Rows = []string{}
+	if rows == nil {
+		rows = []string{}
+	}
+	cmd.Rows = rows
+	if newCmdStatus != "" {
+		cmdStatus = newCmdStatus
+	}
+	cmd.SelectedRow = 0
 	cmd.Unlock()
 	ui.Render(cmd)
 }
 
 func OutputDone() {
-	OutputWrite("")
+	OutputWrite("------------------------")
 	OutputWrite("Press space to return...")
 	cmd.Lock()
 	cmdStatus = "output done"
@@ -352,13 +355,7 @@ func OutputDone() {
 }
 
 func OutputRestore() {
-	OutputClear()
-	cmd.Lock()
-	cmd.SelectedRow = 0
-	cmd.Rows = cmdRows
-	cmdStatus = "cmd"
-	cmd.Unlock()
-	ui.Render(cmd)
+	OutputClear("cmd", cmdRows)
 }
 
 func cmdInit() {
