@@ -2,8 +2,10 @@ package config
 
 import (
 	"math/big"
+	"math/rand"
 	"os"
 	"pandora-pay/config/globals"
+	"runtime"
 	"strconv"
 	"time"
 )
@@ -67,9 +69,14 @@ var (
 	INSTANCE_NUMBER = 0
 )
 
-func InitConfig(architecture string) (err error) {
+func StartConfig() {
+	rand.Seed(time.Now().UnixNano())
+	CPU_THREADS = runtime.GOMAXPROCS(0)
+	ARCHITECTURE = runtime.GOARCH
+	OS = runtime.GOOS
+}
 
-	ARCHITECTURE = architecture
+func InitConfig() (err error) {
 
 	if globals.Arguments["--testnet"] == true {
 		NETWORK_SELECTED = TEST_NET_NETWORK_BYTE

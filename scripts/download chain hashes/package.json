@@ -1,0 +1,6 @@
+{
+	"name": "download_chain_hashes",
+	"scripts": {
+		"start": "node main.js"
+	}
+}

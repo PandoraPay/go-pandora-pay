@@ -55,11 +55,7 @@ func main() {
 	var myChain *blockchain.Blockchain
 	var myNetwork *network.Network
 
-	rand.Seed(time.Now().UnixNano())
-
-	config.CPU_THREADS = runtime.GOMAXPROCS(0)
-	config.ARHITECTURE = runtime.GOARCH
-	config.OS = runtime.GOOS
+	config.StartConfig()
 
 	if globals.Arguments, err = docopt.Parse(commands, nil, false, config.VERSION, false, false); err != nil {
 		panic("Error processing arguments" + err.Error())
