@@ -4,16 +4,16 @@ import (
 	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/helpers"
-	"pandora-pay/store"
+	"pandora-pay/store/hash-map"
 )
 
 type Accounts struct {
-	store.HashMap `json:"-"`
+	hash_map.HashMap `json:"-"`
 }
 
 func NewAccounts(tx *bbolt.Tx) *Accounts {
 	return &Accounts{
-		HashMap: *store.CreateNewHashMap(tx, "Accounts", 20),
+		HashMap: *hash_map.CreateNewHashMap(tx, "Accounts", 20),
 	}
 }
 

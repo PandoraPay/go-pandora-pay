@@ -1,39 +1,36 @@
 package store
 
 import (
-	bolt "go.etcd.io/bbolt"
 	"os"
 	"pandora-pay/config"
-	"pandora-pay/gui"
+	"pandora-pay/context"
+	store_db_bolt "pandora-pay/store/store-db/store-db-bolt"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
 type Store struct {
 	Name   string
 	Opened bool
-	DB     *bolt.DB
+	DB     store_db_interface.StoreDBInterface
 }
 
 var StoreBlockchain, StoreWallet, StoreSettings, StoreMempool *Store
 
 func (store *Store) init() {
-
-	// Open the my.store data file in your current directory.
-	// It will be created if it doesn't exist.
-	db, err := bolt.Open("./"+store.Name+".store", 0600, nil)
-
+	var err error
+	store.DB, err = store_db_bolt.CreateStoreDBBolt(store.Name)
 	if err != nil {
-		gui.GUI.Fatal(err)
+		context.GUI.Fatal(err)
 	}
-
-	store.DB = db
-
-	gui.GUI.Log("Store Opened " + store.Name)
-
+	context.GUI.Log("Store Opened " + store.Name)
 }
 
-func (store *Store) close() {
-	store.DB.Close()
-	gui.GUI.Log("Store Closed " + store.Name)
+func (store *Store) close() (err error) {
+	if err = store.DB.Close(); err != nil {
+		return
+	}
+	context.GUI.Log("Store Closed " + store.Name)
+	return
 }
 
 func DBInit() (err error) {
@@ -67,54 +64,21 @@ func DBInit() (err error) {
 	StoreSettings.init()
 	StoreMempool.init()
 
-	if err = StoreSettings.DB.Update(func(boltTx *bolt.Tx) (err error) {
-		if _, err = boltTx.CreateBucketIfNotExists([]byte("Settings")); err != nil {
-			return
-		}
-		return
-	}); err != nil {
-		return
-	}
-
-	if err = StoreWallet.DB.Update(func(boltTx *bolt.Tx) (err error) {
-		if _, err = boltTx.CreateBucketIfNotExists([]byte("Wallet")); err != nil {
-			return
-		}
-		return
-	}); err != nil {
-		return
-	}
-
-	if err = StoreBlockchain.DB.Update(func(boltTx *bolt.Tx) (err error) {
-		if _, err = boltTx.CreateBucketIfNotExists([]byte("Chain")); err != nil {
-			return
-		}
-		if _, err = boltTx.CreateBucketIfNotExists([]byte("Accounts")); err != nil {
-			return
-		}
-		if _, err = boltTx.CreateBucketIfNotExists([]byte("Tokens")); err != nil {
-			return
-		}
-		return
-	}); err != nil {
-		return
-	}
-
-	if err = StoreMempool.DB.Update(func(boltTx *bolt.Tx) (err error) {
-		if _, err = boltTx.CreateBucketIfNotExists([]byte("Mempool")); err != nil {
-			return
-		}
-		return
-	}); err != nil {
-		return
-	}
-
 	return
 }
 
-func DBClose() {
-	StoreBlockchain.close()
-	StoreWallet.close()
-	StoreSettings.close()
-	StoreMempool.close()
+func DBClose() (err error) {
+	if err = StoreBlockchain.close(); err != nil {
+		return
+	}
+	if err = StoreWallet.close(); err != nil {
+		return
+	}
+	if err = StoreSettings.close(); err != nil {
+		return
+	}
+	if err = StoreMempool.close(); err != nil {
+		return
+	}
+	return
 }

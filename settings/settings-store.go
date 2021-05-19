@@ -7,13 +7,12 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/gui"
 	"pandora-pay/store"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
 func (settings *Settings) saveSettings() error {
 
-	return store.StoreSettings.DB.Update(func(boltTx *bolt.Tx) (err error) {
-
-		writer := boltTx.Bucket([]byte("Settings"))
+	return store.StoreSettings.DB.Update(func(writer *store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		writer.Put([]byte("saved"), []byte{2})
 

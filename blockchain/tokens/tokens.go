@@ -6,16 +6,16 @@ import (
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
-	"pandora-pay/store"
+	"pandora-pay/store/hash-map"
 )
 
 type Tokens struct {
-	store.HashMap `json:"-"`
+	hash_map.HashMap `json:"-"`
 }
 
 func NewTokens(tx *bbolt.Tx) *Tokens {
 	return &Tokens{
-		HashMap: *store.CreateNewHashMap(tx, "Tokens", 20),
+		HashMap: *hash_map.CreateNewHashMap(tx, "Tokens", 20),
 	}
 }
 

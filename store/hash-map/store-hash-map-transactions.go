@@ -1,4 +1,4 @@
-package store
+package hash_map
 
 import (
 	"encoding/json"

@@ -7,9 +7,9 @@ import (
 )
 
 type TransactionSimpleUnstake struct {
-	TransactionSimpleExtraInterface
-	Amount   uint64 `json:"amount"`
-	FeeExtra uint64 `json:"feeExtra"` //this will be subtracted StakeAvailable
+	TransactionSimpleExtraInterface `json:"-"`
+	Amount                          uint64 `json:"amount"`
+	FeeExtra                        uint64 `json:"feeExtra"` //this will be subtracted StakeAvailable
 }
 
 func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) (err error) {

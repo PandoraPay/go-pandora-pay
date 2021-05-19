@@ -9,9 +9,9 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/arguments"
 	"pandora-pay/config/globals"
-	"pandora-pay/debugging"
 	"pandora-pay/gui"
 	gui_interactive "pandora-pay/gui/gui-interactive"
+	debugging2 "pandora-pay/helpers/debugging"
 	"pandora-pay/mempool"
 	"pandora-pay/network"
 	"pandora-pay/settings"
@@ -40,7 +40,7 @@ func main() {
 	}
 
 	if globals.Arguments["--debugging"] == true {
-		go debugging.Start()
+		go debugging2.Start()
 	}
 
 	if gui.GUI, err = gui_interactive.CreateGUIInteractive(); err != nil {

@@ -3,14 +3,12 @@ package gui
 import (
 	"fmt"
 	"pandora-pay/config"
-	gui_interface "pandora-pay/gui/gui-interface"
+	"pandora-pay/context"
 )
-
-var GUI gui_interface.GUIInterface
 
 //test
 func GUIInit() {
-	GUI.Info("GO " + config.NAME)
-	GUI.Info(fmt.Sprintf("OS:%s ARCH:%s CPU:%d", config.OS, config.ARCHITECTURE, config.CPU_THREADS))
-	GUI.Info("VERSION " + config.VERSION)
+	context.GUI.Info("GO " + config.NAME)
+	context.GUI.Info(fmt.Sprintf("OS:%s ARCH:%s CPU:%d", config.OS, config.ARCHITECTURE, config.CPU_THREADS))
+	context.GUI.Info("VERSION " + config.VERSION)
 }
