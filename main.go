@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/docopt/docopt.go"
 	"os"
 	"os/signal"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/config"
+	"pandora-pay/config/arguments"
 	"pandora-pay/config/globals"
 	"pandora-pay/debugging"
 	"pandora-pay/gui"
@@ -22,27 +22,6 @@ import (
 	"syscall"
 )
 
-var commands = `PANDORA PAY.
-
-Usage:
-  pandorapay [--debugging] [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--tcp-server-port=<port>] [--tcp-server-address=<address>] [--tor-onion=<onion>] [--instance=<number>]
-  pandorapay -h | --help
-
-Options:
-  -h --help     						Show this screen.
-  --version     						Show version.
-  --testnet     						Run in TESTNET mode.
-  --devnet     							Run in DEVNET mode.
-  --new-devnet     						Create a new devnet genesis.
-  --debug     							Debug mode enabled (print log message).
-  --staking     						Start staking
-  --node-name=<name>   					Change node name
-  --tcp-server-port=<port>				Change node tcp server port
-  --tcp-server-address=<address>		Change node tcp address
-  --tor-onion=<onion>					Define your tor onion address to be used.
-  --instance=<number>					Number of forked instance (when you open multiple instances). It should me string number like "1","2","3","4" etc 
-`
-
 func main() {
 
 	var err error
@@ -56,8 +35,8 @@ func main() {
 
 	config.StartConfig()
 
-	if globals.Arguments, err = docopt.Parse(commands, nil, false, config.VERSION, false, false); err != nil {
-		panic("Error processing arguments" + err.Error())
+	if err = arguments.InitArguments(); err != nil {
+		panic(err)
 	}
 
 	if globals.Arguments["--debugging"] == true {
@@ -69,18 +48,17 @@ func main() {
 	}
 	gui.GUIInit()
 
-	if err = config.InitConfig(); err != nil {
-		panic(err)
-	}
-
 	defer func() {
 		err := recover()
 		if err != nil {
+			gui.GUI.Error(err)
 			gui.GUI.Close()
-			fmt.Print("\nERROR\n")
-			fmt.Println(err)
 		}
 	}()
+
+	if err = config.InitConfig(); err != nil {
+		panic(err)
+	}
 
 	if err = store.DBInit(); err != nil {
 		panic(err)
