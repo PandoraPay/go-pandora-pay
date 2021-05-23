@@ -6,7 +6,7 @@ import (
 	"pandora-pay/blockchain"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/config"
-	"pandora-pay/gui"
+	"pandora-pay/context"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common"
 	api_websockets "pandora-pay/network/api/api-websockets"
@@ -155,16 +155,16 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 			willRemove := true
 
-			gui.GUI.Log("Status. Downloading fork")
+			context.GUI.Log("Status. Downloading fork")
 			if thread.downloadFork(fork) {
 
-				gui.GUI.Log("Status. DownloadingRemainingBlocks fork")
+				context.GUI.Log("Status. DownloadingRemainingBlocks fork")
 				if thread.downloadRemainingBlocks(fork) {
 
-					gui.GUI.Log("Status. AddBlocks fork")
+					context.GUI.Log("Status. AddBlocks fork")
 
 					if err := thread.chain.AddBlocks(fork.blocks, false); err != nil {
-						gui.GUI.Error("Invalid Fork", err)
+						context.GUI.Error("Invalid Fork", err)
 					} else {
 						fork.Lock()
 						if fork.current < fork.end {
@@ -174,7 +174,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 						}
 						fork.Unlock()
 					}
-					gui.GUI.Log("Status. AddBlocks DONE fork")
+					context.GUI.Log("Status. AddBlocks DONE fork")
 
 				}
 

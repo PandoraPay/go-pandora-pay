@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	bolt "go.etcd.io/bbolt"
-	"pandora-pay/gui"
+	"pandora-pay/context"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
 func (settings *Settings) saveSettings() error {
 
-	return store.StoreSettings.DB.Update(func(writer *store_db_interface.StoreDBTransactionInterface) (err error) {
+	return store.StoreSettings.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		writer.Put([]byte("saved"), []byte{2})
 
@@ -30,15 +29,14 @@ func (settings *Settings) saveSettings() error {
 }
 
 func (settings *Settings) loadSettings() error {
-	return store.StoreSettings.DB.View(func(boltTx *bolt.Tx) (err error) {
-		reader := boltTx.Bucket([]byte("Settings"))
+	return store.StoreSettings.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		saved := reader.Get([]byte("saved"))
 		if saved == nil {
 			return errors.New("Settings doesn't exist")
 		}
 		if bytes.Equal(saved, []byte{1}) {
-			gui.GUI.Log("Settings Loading... ")
+			context.GUI.Log("Settings Loading... ")
 
 			unmarshal := reader.Get([]byte("settings"))
 			if err = json.Unmarshal(unmarshal, &settings); err != nil {
@@ -46,7 +44,7 @@ func (settings *Settings) loadSettings() error {
 			}
 
 			settings.updateSettings()
-			gui.GUI.Log("Settings Loaded! " + settings.Name)
+			context.GUI.Log("Settings Loaded! " + settings.Name)
 
 		} else {
 			err = errors.New("Error loading wallet ?")

@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/config"
-	"pandora-pay/gui"
+	"pandora-pay/context"
 	"pandora-pay/mempool"
 	"sync"
 	"sync/atomic"
@@ -35,7 +35,7 @@ func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
 
 	forging.Wallet.updates.Store([]*ForgingWalletAddressUpdate{})
 
-	gui.GUI.Log("Forging Init")
+	context.GUI.Log("Forging Init")
 
 	return
 }

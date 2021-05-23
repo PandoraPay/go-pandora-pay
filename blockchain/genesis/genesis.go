@@ -117,6 +117,12 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 				DelegatedStakePublicKeyHash: delegatedStakePublicKeyHash,
 			})
 
+			GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
+				PublicKeyHash:               helpers.DecodeHex("33ab983c1fa5777333947ed22f45f3ad847b3d82"),
+				Amount:                      amount,
+				DelegatedStakePublicKeyHash: helpers.DecodeHex("fa617d72c568da13487a2a2d9c89439297312e35"),
+			})
+
 			if file, err = os.OpenFile("./genesis.data", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
 				return
 			}

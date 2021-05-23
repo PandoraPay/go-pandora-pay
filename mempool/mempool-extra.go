@@ -7,7 +7,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
-	"pandora-pay/gui"
+	"pandora-pay/context"
 	"pandora-pay/helpers"
 	"time"
 )
@@ -128,10 +128,10 @@ func (mempool *Mempool) print() {
 		return
 	}
 
-	gui.GUI.Log("")
+	context.GUI.Log("")
 	for _, out := range transactions {
-		gui.GUI.Log(fmt.Sprintf("%12s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC822), out.Tx.Bloom.Size, out.ChainHeight, hex.EncodeToString(out.Tx.Bloom.Hash[0:15])))
+		context.GUI.Log(fmt.Sprintf("%12s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC822), out.Tx.Bloom.Size, out.ChainHeight, hex.EncodeToString(out.Tx.Bloom.Hash[0:15])))
 	}
-	gui.GUI.Log("")
+	context.GUI.Log("")
 
 }

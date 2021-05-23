@@ -5,12 +5,12 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	bolt "go.etcd.io/bbolt"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/gui"
+	"pandora-pay/context"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	wallet_address "pandora-pay/wallet/address"
 	"strconv"
 )
@@ -27,9 +27,7 @@ func (wallet *Wallet) saveWalletAddress(adr *wallet_address.WalletAddress) error
 }
 
 func (wallet *Wallet) saveWallet(start, end, deleteIndex int) error {
-	return store.StoreWallet.DB.Update(func(boltTx *bolt.Tx) (err error) {
-
-		writer := boltTx.Bucket([]byte("Wallet"))
+	return store.StoreWallet.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if err = writer.Put([]byte("saved"), []byte{2}); err != nil {
 			return
@@ -69,9 +67,7 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int) error {
 
 func (wallet *Wallet) loadWallet() error {
 
-	return store.StoreWallet.DB.View(func(boltTx *bolt.Tx) (err error) {
-
-		reader := boltTx.Bucket([]byte("Wallet"))
+	return store.StoreWallet.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		saved := reader.Get([]byte("saved"))
 		if saved == nil {
@@ -80,7 +76,7 @@ func (wallet *Wallet) loadWallet() error {
 
 		if bytes.Equal(saved, []byte{1}) {
 
-			gui.GUI.Log("Wallet Loading... ")
+			context.GUI.Log("Wallet Loading... ")
 
 			var unmarshal []byte
 
@@ -106,7 +102,7 @@ func (wallet *Wallet) loadWallet() error {
 			}
 
 			wallet.updateWallet()
-			gui.GUI.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
+			context.GUI.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
 
 		} else {
 			return errors.New("Error loading wallet ?")
@@ -120,11 +116,11 @@ func (wallet *Wallet) ReadWallet() error {
 	wallet.Lock()
 	defer wallet.Unlock()
 
-	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
+		chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
 
-		accs := accounts.NewAccounts(boltTx)
+		accs := accounts.NewAccounts(reader)
 		for _, adr := range wallet.Addresses {
 
 			var acc *account.Account

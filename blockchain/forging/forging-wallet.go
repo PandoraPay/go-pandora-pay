@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	bolt "go.etcd.io/bbolt"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"sync"
 	"sync/atomic"
 )
@@ -95,11 +95,11 @@ func (w *ForgingWallet) ProcessUpdates() (err error) {
 			delegatedPublicKeyHash := cryptography.ComputePublicKeyHash(delegatedPublicKey)
 
 			//let's read the balance
-			store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+			store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-				chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
+				chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
 
-				accs := accounts.NewAccounts(boltTx)
+				accs := accounts.NewAccounts(reader)
 				var acc *account.Account
 
 				if acc, err = accs.GetAccount(update.pubKeyHash, chainHeight); err != nil {
@@ -168,13 +168,13 @@ func (w *ForgingWallet) loadBalances() error {
 	w.Lock()
 	defer w.Unlock()
 
-	return store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		accs := accounts.NewAccounts(boltTx)
+		accs := accounts.NewAccounts(reader)
 
 		for _, address := range w.addresses {
 
-			chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
+			chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
 
 			var account *account.Account
 			if account, err = accs.GetAccount(address.publicKeyHash, chainHeight); err != nil {

@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
-	"pandora-pay/gui"
+	"pandora-pay/context"
 	"pandora-pay/mempool"
 	"pandora-pay/network/consensus"
 	"pandora-pay/network/known-nodes"
@@ -40,7 +40,7 @@ func (network *Network) execute() {
 
 		_, exists := network.Websockets.AllAddresses.Load(knownNode.UrlHostOnly)
 		if !exists {
-			gui.GUI.Log("connecting to: " + knownNode.UrlStr)
+			context.GUI.Log("connecting to: " + knownNode.UrlStr)
 
 			if knownNode != nil && !exists {
 				_, err := websocks.CreateWebsocketClient(network.Websockets, knownNode)
@@ -48,9 +48,9 @@ func (network *Network) execute() {
 					if err.Error() != "Already connected" {
 						continue
 					}
-					gui.GUI.Log("error connecting to: " + knownNode.UrlStr)
+					context.GUI.Log("error connecting to: " + knownNode.UrlStr)
 				} else {
-					gui.GUI.Log("connected to: " + knownNode.UrlStr)
+					context.GUI.Log("connected to: " + knownNode.UrlStr)
 				}
 			}
 		}

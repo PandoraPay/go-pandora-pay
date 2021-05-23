@@ -4,50 +4,50 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/helpers"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"strconv"
 )
 
 //chain must be locked before
-func (chainData *BlockchainData) saveTotalDifficultyExtra(bucket *bolt.Bucket) error {
+func (chainData *BlockchainData) saveTotalDifficultyExtra(writer store_db_interface.StoreDBTransactionInterface) error {
 	key := []byte("totalDifficulty" + strconv.FormatUint(chainData.Height, 10))
 
-	writer := helpers.NewBufferWriter()
-	writer.WriteUvarint(chainData.Timestamp)
+	bufferWriter := helpers.NewBufferWriter()
+	bufferWriter.WriteUvarint(chainData.Timestamp)
 
 	bytes := chainData.BigTotalDifficulty.Bytes()
-	writer.WriteUvarint(uint64(len(bytes)))
-	writer.Write(bytes)
+	bufferWriter.WriteUvarint(uint64(len(bytes)))
+	bufferWriter.Write(bytes)
 
-	return bucket.Put(key, writer.Bytes())
+	return writer.Put(key, bufferWriter.Bytes())
 }
 
-func (chainData *BlockchainData) LoadTotalDifficultyExtra(bucket *bolt.Bucket, height uint64) (difficulty *big.Int, timestamp uint64, err error) {
+func (chainData *BlockchainData) LoadTotalDifficultyExtra(reader store_db_interface.StoreDBTransactionInterface, height uint64) (difficulty *big.Int, timestamp uint64, err error) {
 	if height < 0 {
 		err = errors.New("height is invalid")
 		return
 	}
 	key := []byte("totalDifficulty" + strconv.FormatUint(height, 10))
 
-	buf := bucket.Get(key)
+	buf := reader.Get(key)
 	if buf == nil {
 		err = errors.New("Couldn't read difficulty from DB")
 		return
 	}
 
-	reader := helpers.NewBufferReader(buf)
-	if timestamp, err = reader.ReadUvarint(); err != nil {
+	bufferReader := helpers.NewBufferReader(buf)
+	if timestamp, err = bufferReader.ReadUvarint(); err != nil {
 		return
 	}
 
-	length, err := reader.ReadUvarint()
+	length, err := bufferReader.ReadUvarint()
 	if err != nil {
 		return
 	}
 
-	bytes, err := reader.ReadBytes(int(length))
+	bytes, err := bufferReader.ReadBytes(int(length))
 	if err != nil {
 		return
 	}
@@ -57,34 +57,34 @@ func (chainData *BlockchainData) LoadTotalDifficultyExtra(bucket *bolt.Bucket, h
 	return
 }
 
-func (chainData *BlockchainData) loadBlockchainInfo(bucket *bolt.Bucket, height uint64) error {
-	chainInfoData := bucket.Get([]byte("blockchainInfo_" + strconv.FormatUint(height, 10)))
+func (chainData *BlockchainData) loadBlockchainInfo(reader store_db_interface.StoreDBTransactionInterface, height uint64) error {
+	chainInfoData := reader.Get([]byte("blockchainInfo_" + strconv.FormatUint(height, 10)))
 	if chainInfoData == nil {
 		return errors.New("Chain not found")
 	}
 	return json.Unmarshal(chainInfoData, chainData)
 }
 
-func (chainData *BlockchainData) saveBlockchainHeight(bucket *bolt.Bucket) (err error) {
+func (chainData *BlockchainData) saveBlockchainHeight(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 	buf := make([]byte, binary.MaxVarintLen64)
 	n := binary.PutUvarint(buf, chainData.Height)
-	return bucket.Put([]byte("chainHeight"), buf[:n])
+	return writer.Put([]byte("chainHeight"), buf[:n])
 }
 
-func (chainData *BlockchainData) saveBlockchainInfo(bucket *bolt.Bucket) (err error) {
+func (chainData *BlockchainData) saveBlockchainInfo(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 	var data []byte
 	if data, err = json.Marshal(chainData); err != nil {
 		return
 	}
 
-	return bucket.Put([]byte("blockchainInfo_"+strconv.FormatUint(chainData.Height, 10)), data)
+	return writer.Put([]byte("blockchainInfo_"+strconv.FormatUint(chainData.Height, 10)), data)
 }
 
-func (chainData *BlockchainData) saveBlockchain(bucket *bolt.Bucket) error {
+func (chainData *BlockchainData) saveBlockchain(writer store_db_interface.StoreDBTransactionInterface) error {
 	marshal, err := json.Marshal(chainData)
 	if err != nil {
 		return err
 	}
 
-	return bucket.Put([]byte("blockchainInfo"), marshal)
+	return writer.Put([]byte("blockchainInfo"), marshal)
 }

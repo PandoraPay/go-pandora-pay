@@ -8,7 +8,7 @@ import (
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
 	"pandora-pay/config/fees"
-	"pandora-pay/gui"
+	"pandora-pay/context"
 	"pandora-pay/helpers"
 	"strconv"
 	"sync"
@@ -243,7 +243,7 @@ func (mempool *Mempool) RestartWork() {
 
 func InitMemPool() (mempool *Mempool, err error) {
 
-	gui.GUI.Log("MemPool init...")
+	context.GUI.Log("MemPool init...")
 
 	mempool = &Mempool{
 		newWork: make(chan *mempoolWork),
@@ -266,7 +266,7 @@ func InitMemPool() (mempool *Mempool, err error) {
 
 	go func() {
 		for {
-			gui.GUI.Info2Update("mempool", strconv.FormatInt(atomic.LoadInt64(&mempool.txs.txsCount), 10))
+			context.GUI.Info2Update("mempool", strconv.FormatInt(atomic.LoadInt64(&mempool.txs.txsCount), 10))
 			time.Sleep(1 * time.Second)
 		}
 	}()

@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	bolt "go.etcd.io/bbolt"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
@@ -14,6 +13,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"strconv"
 )
 
@@ -22,8 +22,7 @@ type APIStore struct {
 }
 
 func (apiStore *APIStore) LoadBlockCompleteFromHash(hash []byte) (blkComplete *block_complete.BlockComplete, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
-		reader := boltTx.Bucket([]byte("Chain"))
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		if blkComplete, err = apiStore.LoadBlockComplete(reader, hash); err != nil {
 			return
 		}
@@ -33,8 +32,7 @@ func (apiStore *APIStore) LoadBlockCompleteFromHash(hash []byte) (blkComplete *b
 }
 
 func (apiStore *APIStore) LoadBlockCompleteFromHeight(blockHeight uint64) (blkComplete *block_complete.BlockComplete, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
-		reader := boltTx.Bucket([]byte("Chain"))
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err := apiStore.chain.LoadBlockHash(reader, blockHeight)
 		if err != nil {
 			return err
@@ -48,8 +46,7 @@ func (apiStore *APIStore) LoadBlockCompleteFromHeight(blockHeight uint64) (blkCo
 }
 
 func (apiStore *APIStore) LoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *APIBlockWithTxs, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
-		reader := boltTx.Bucket([]byte("Chain"))
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		if blkWithTXs, err = apiStore.LoadBlockWithTxHashes(reader, hash); err != nil {
 			return
 		}
@@ -59,8 +56,7 @@ func (apiStore *APIStore) LoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *API
 }
 
 func (apiStore *APIStore) LoadTxFromHash(hash []byte) (tx *transaction.Transaction, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
-		reader := boltTx.Bucket([]byte("Chain"))
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		tx, err = apiStore.LoadTx(reader, hash)
 		return
 	})
@@ -68,8 +64,7 @@ func (apiStore *APIStore) LoadTxFromHash(hash []byte) (tx *transaction.Transacti
 }
 
 func (apiStore *APIStore) LoadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *APIBlockWithTxs, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
-		reader := boltTx.Bucket([]byte("Chain"))
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err := apiStore.chain.LoadBlockHash(reader, blockHeight)
 		if err != nil {
 			return
@@ -83,11 +78,11 @@ func (apiStore *APIStore) LoadBlockWithTXsFromHeight(blockHeight uint64) (blkWit
 }
 
 func (apiStore *APIStore) LoadAccountFromPublicKeyHash(publicKeyHash []byte) (acc *account.Account, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
+		chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
 
-		accs := accounts.NewAccounts(boltTx)
+		accs := accounts.NewAccounts(reader)
 		acc, err = accs.GetAccount(publicKeyHash, chainHeight)
 		return
 	})
@@ -95,8 +90,8 @@ func (apiStore *APIStore) LoadAccountFromPublicKeyHash(publicKeyHash []byte) (ac
 }
 
 func (apiStore *APIStore) LoadTokenFromPublicKeyHash(publicKeyHash []byte) (tok *token.Token, errFinal error) {
-	errFinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
-		toks := tokens.NewTokens(boltTx)
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		toks := tokens.NewTokens(reader)
 		tok, err = toks.GetToken(publicKeyHash)
 		return
 	})
@@ -104,22 +99,21 @@ func (apiStore *APIStore) LoadTokenFromPublicKeyHash(publicKeyHash []byte) (tok 
 }
 
 func (apiStore *APIStore) LoadBlockHash(blockHeight uint64) (hash []byte, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
-		reader := boltTx.Bucket([]byte("Chain"))
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err = apiStore.chain.LoadBlockHash(reader, blockHeight)
 		return
 	})
 	return
 }
 
-func (apiStore *APIStore) LoadBlockComplete(bucket *bolt.Bucket, hash []byte) (out *block_complete.BlockComplete, err error) {
+func (apiStore *APIStore) LoadBlockComplete(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (out *block_complete.BlockComplete, err error) {
 
-	blk, err := apiStore.chain.LoadBlock(bucket, hash)
+	blk, err := apiStore.chain.LoadBlock(reader, hash)
 	if blk == nil || err != nil {
 		return
 	}
 
-	data := bucket.Get([]byte("blockTxs" + strconv.FormatUint(blk.Height, 10)))
+	data := reader.Get([]byte("blockTxs" + strconv.FormatUint(blk.Height, 10)))
 	if data == nil {
 		return
 	}
@@ -131,7 +125,7 @@ func (apiStore *APIStore) LoadBlockComplete(bucket *bolt.Bucket, hash []byte) (o
 
 	txs := make([]*transaction.Transaction, len(txHashes))
 	for i, txHash := range txHashes {
-		data = bucket.Get(append([]byte("tx"), txHash...))
+		data = reader.Get(append([]byte("tx"), txHash...))
 		txs[i] = &transaction.Transaction{}
 		if err = txs[i].Deserialize(helpers.NewBufferReader(data)); err != nil {
 			return
@@ -144,14 +138,14 @@ func (apiStore *APIStore) LoadBlockComplete(bucket *bolt.Bucket, hash []byte) (o
 	}, nil
 }
 
-func (apiStore *APIStore) LoadBlockWithTxHashes(bucket *bolt.Bucket, hash []byte) (out *APIBlockWithTxs, err error) {
-	blk, err := apiStore.chain.LoadBlock(bucket, hash)
+func (apiStore *APIStore) LoadBlockWithTxHashes(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (out *APIBlockWithTxs, err error) {
+	blk, err := apiStore.chain.LoadBlock(reader, hash)
 	if blk == nil || err != nil {
 		return
 	}
 
 	txHashes := [][]byte{}
-	data := bucket.Get([]byte("blockTxs" + strconv.FormatUint(blk.Height, 10)))
+	data := reader.Get([]byte("blockTxs" + strconv.FormatUint(blk.Height, 10)))
 	if err = json.Unmarshal(data, &txHashes); err != nil {
 		return
 	}
@@ -167,8 +161,8 @@ func (apiStore *APIStore) LoadBlockWithTxHashes(bucket *bolt.Bucket, hash []byte
 	}, nil
 }
 
-func (apiStore *APIStore) LoadTx(bucket *bolt.Bucket, hash []byte) (tx *transaction.Transaction, err error) {
-	data := bucket.Get(append([]byte("tx"), hash...))
+func (apiStore *APIStore) LoadTx(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (tx *transaction.Transaction, err error) {
+	data := reader.Get(append([]byte("tx"), hash...))
 	if data == nil {
 		return nil, errors.New("Tx not found")
 	}

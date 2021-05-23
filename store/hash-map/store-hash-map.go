@@ -2,7 +2,7 @@ package hash_map
 
 import (
 	"errors"
-	"go.etcd.io/bbolt"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
 type CommittedMapElement struct {
@@ -17,17 +17,17 @@ type ChangesMapElement struct {
 }
 
 type HashMap struct {
-	Bucket    *bbolt.Bucket
+	Bucket    store_db_interface.StoreDBTransactionInterface
 	Changes   map[string]*ChangesMapElement
 	Committed map[string]*CommittedMapElement
 	KeyLength int
 }
 
-func CreateNewHashMap(tx *bbolt.Tx, name string, keyLength int) (hashMap *HashMap) {
+func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int) (hashMap *HashMap) {
 	hashMap = &HashMap{
 		Committed: make(map[string]*CommittedMapElement),
 		Changes:   make(map[string]*ChangesMapElement),
-		Bucket:    tx.Bucket([]byte(name)),
+		Bucket:    tx,
 		KeyLength: keyLength,
 	}
 	return

@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
@@ -17,10 +16,11 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
-	"pandora-pay/gui"
+	"pandora-pay/context"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"pandora-pay/store"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"pandora-pay/wallet"
 	"sync"
 	"sync/atomic"
@@ -66,7 +66,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	chainData := chain.GetChainData()
 
-	gui.GUI.Info(fmt.Sprintf("Including blocks %d ... %d", chainData.Height, chainData.Height+uint64(len(blocksComplete))))
+	context.GUI.Info(fmt.Sprintf("Including blocks %d ... %d", chainData.Height, chainData.Height+uint64(len(blocksComplete))))
 
 	//chain.RLock() is not required because it is guaranteed that no other thread is writing now in the chain
 	var newChainData = &BlockchainData{
@@ -95,29 +95,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	err = func() (err error) {
 
-		var boltTx *bolt.Tx
-		boltTxClosed := false
-		if boltTx, err = store.StoreBlockchain.DB.Begin(true); err != nil {
-			return
-		}
-		defer func() {
-			if !boltTxClosed {
-				err2 := boltTx.Rollback()
-				if err == nil {
-					err = err2
-				}
-			}
-		}()
+		store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		var writer *bolt.Bucket
-		savedBlock := false
+			savedBlock := false
 
-		writer = boltTx.Bucket([]byte("Chain"))
+			accs = accounts.NewAccounts(writer)
+			toks = tokens.NewTokens(writer)
 
-		accs = accounts.NewAccounts(boltTx)
-		toks = tokens.NewTokens(boltTx)
-
-		err = func() (err error) {
 			//let's filter existing blocks
 			for i := len(blocksComplete) - 1; i >= 0; i-- {
 
@@ -308,57 +292,53 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				savedBlock = true
 			}
 
-			return
-		}()
+			//recover, but in case the chain was correctly saved and the mewChainDifficulty is higher than
+			//we should store it
+			if savedBlock && chainData.BigTotalDifficulty.Cmp(newChainData.BigTotalDifficulty) < 0 {
 
-		//recover, but in case the chain was correctly saved and the mewChainDifficulty is higher than
-		//we should store it
-		if savedBlock && chainData.BigTotalDifficulty.Cmp(newChainData.BigTotalDifficulty) < 0 {
+				if calledByForging {
+					newChainData.ConsecutiveSelfForged += 1
+				} else {
+					newChainData.ConsecutiveSelfForged = 0
+				}
 
-			if calledByForging {
-				newChainData.ConsecutiveSelfForged += 1
+				if err = newChainData.saveBlockchain(writer); err != nil {
+					panic("Error saving Blockchain " + err.Error())
+				}
+
+				for _, removedBlock := range removedBlocksHeights {
+					if err = chain.deleteUnusedBlocksComplete(writer, removedBlock, accs, toks); err != nil {
+						panic("Error deleting unused blocks Blockchain " + err.Error())
+					}
+				}
+				for txHash := range removedTxHashes {
+					data := writer.Get(append([]byte("tx"), txHash...))
+
+					removedTx = append(removedTx, helpers.CloneBytes(data)) //required because the garbage collector sometimes it deletes the underlying buffers
+
+					if err = writer.Delete(append([]byte("tx"), txHash...)); err != nil {
+						panic("Error deleting transactions " + err.Error())
+					}
+				}
+
+				accs.Rollback()
+				toks.Rollback()
+				if err = accs.WriteToStore(); err != nil {
+					panic("Error writing accs" + err.Error())
+				}
+				if err = toks.WriteToStore(); err != nil {
+					panic("Error writing accs" + err.Error())
+				}
+
+				chain.ChainData.Store(newChainData)
+
 			} else {
-				newChainData.ConsecutiveSelfForged = 0
+				//only rollback
+				err = errors.New("Rollback")
 			}
 
-			if err = newChainData.saveBlockchain(writer); err != nil {
-				panic("Error saving Blockchain " + err.Error())
-			}
-
-			for _, removedBlock := range removedBlocksHeights {
-				if err = chain.deleteUnusedBlocksComplete(writer, removedBlock, accs, toks); err != nil {
-					panic("Error deleting unused blocks Blockchain " + err.Error())
-				}
-			}
-			for txHash := range removedTxHashes {
-				data := writer.Get(append([]byte("tx"), txHash...))
-
-				removedTx = append(removedTx, helpers.CloneBytes(data)) //required because the garbage collector sometimes it deletes the underlying buffers
-
-				if err = writer.Delete(append([]byte("tx"), txHash...)); err != nil {
-					panic("Error deleting transactions " + err.Error())
-				}
-			}
-
-			accs.Rollback()
-			toks.Rollback()
-			if err = accs.WriteToStore(); err != nil {
-				panic("Error writing accs" + err.Error())
-			}
-			if err = toks.WriteToStore(); err != nil {
-				panic("Error writing accs" + err.Error())
-			}
-
-			if err = boltTx.Commit(); err != nil {
-				panic("Error storing writing changes to disk" + err.Error())
-			}
-			chain.ChainData.Store(newChainData)
-
-			boltTxClosed = true
-
-		} else {
-			//only rollback
-		}
+			return
+		})
 
 		return
 	}()
@@ -375,25 +355,25 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		return
 	}
 
-	gui.GUI.Warning("-------------------------------------------")
-	gui.GUI.Warning(fmt.Sprintf("Included blocks %d | TXs: %d | Hash %s", len(insertedBlocks), len(insertedTxHashes), hex.EncodeToString(chainData.Hash)))
-	gui.GUI.Warning(newChainData.Height, hex.EncodeToString(newChainData.Hash), newChainData.Target.Text(10), newChainData.BigTotalDifficulty.Text(10))
-	gui.GUI.Warning("-------------------------------------------")
+	context.GUI.Warning("-------------------------------------------")
+	context.GUI.Warning(fmt.Sprintf("Included blocks %d | TXs: %d | Hash %s", len(insertedBlocks), len(insertedTxHashes), hex.EncodeToString(chainData.Hash)))
+	context.GUI.Warning(newChainData.Height, hex.EncodeToString(newChainData.Hash), newChainData.Target.Text(10), newChainData.BigTotalDifficulty.Text(10))
+	context.GUI.Warning("-------------------------------------------")
 	newChainData.updateChainInfo()
 
 	chain.mutex.Unlock()
 
 	//accs will only be read only
 	if err = chain.forging.Wallet.UpdateAccountsChanges(accs); err != nil {
-		gui.GUI.Error("Error updating balance changes", err)
+		context.GUI.Error("Error updating balance changes", err)
 	}
 
 	if err = chain.wallet.UpdateAccountsChanges(accs); err != nil {
-		gui.GUI.Error("Error updating balance changes", err)
+		context.GUI.Error("Error updating balance changes", err)
 	}
 
 	if err = chain.forging.Wallet.ProcessUpdates(); err != nil {
-		gui.GUI.Error("Error Processing Updates", err)
+		context.GUI.Error("Error Processing Updates", err)
 	}
 
 	//update work for mem pool
@@ -432,7 +412,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *mempool.Mempool) (chain *Blockchain, err error) {
 
-	gui.GUI.Log("Blockchain init...")
+	context.GUI.Log("Blockchain init...")
 
 	if err = genesis.GenesisInit(wallet); err != nil {
 		return

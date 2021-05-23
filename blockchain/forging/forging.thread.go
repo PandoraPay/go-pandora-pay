@@ -3,7 +3,7 @@ package forging
 import (
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/config/stake"
-	"pandora-pay/gui"
+	"pandora-pay/context"
 	"pandora-pay/mempool"
 	"strconv"
 	"sync/atomic"
@@ -87,7 +87,7 @@ func (thread *ForgingThread) startForging() {
 					hashesPerSecond := atomic.SwapUint32(&workers[i].hashes, 0)
 					s += strconv.FormatUint(uint64(hashesPerSecond), 10) + " "
 				}
-				gui.GUI.InfoUpdate("Hashes/s", s)
+				context.GUI.InfoUpdate("Hashes/s", s)
 			}
 		}
 	}()
@@ -118,7 +118,7 @@ func (thread *ForgingThread) startForging() {
 		select {
 		case solution := <-forgingWorkerSolutionCn:
 			if err = thread.publishSolution(solution); err != nil {
-				gui.GUI.Error("Error publishing solution", err)
+				context.GUI.Error("Error publishing solution", err)
 			}
 			break
 		case work, ok = <-thread.workCn:

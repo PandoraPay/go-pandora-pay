@@ -9,6 +9,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/arguments"
 	"pandora-pay/config/globals"
+	"pandora-pay/context"
 	"pandora-pay/gui"
 	gui_interactive "pandora-pay/gui/gui-interactive"
 	debugging2 "pandora-pay/helpers/debugging"
@@ -35,7 +36,7 @@ func main() {
 
 	config.StartConfig()
 
-	if err = arguments.InitArguments(); err != nil {
+	if err = arguments.InitArguments(nil); err != nil {
 		panic(err)
 	}
 
@@ -43,7 +44,7 @@ func main() {
 		go debugging2.Start()
 	}
 
-	if gui.GUI, err = gui_interactive.CreateGUIInteractive(); err != nil {
+	if context.GUI, err = gui_interactive.CreateGUIInteractive(); err != nil {
 		panic(err)
 	}
 	gui.GUIInit()
@@ -51,8 +52,8 @@ func main() {
 	defer func() {
 		err := recover()
 		if err != nil {
-			gui.GUI.Error(err)
-			gui.GUI.Close()
+			context.GUI.Error(err)
+			context.GUI.Close()
 		}
 	}()
 
@@ -104,7 +105,7 @@ func main() {
 	}
 	globals.Data["network"] = myNetwork
 
-	gui.GUI.Log("Main Loop")
+	context.GUI.Log("Main Loop")
 
 	exitSignal := make(chan os.Signal)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)

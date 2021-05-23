@@ -3,7 +3,6 @@ package transactions_builder
 import (
 	"encoding/binary"
 	"errors"
-	bolt "go.etcd.io/bbolt"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
@@ -15,6 +14,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/mempool"
 	"pandora-pay/store"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"pandora-pay/transactions-builder/wizard"
 	"pandora-pay/wallet"
 	wallet_address "pandora-pay/wallet/address"
@@ -62,8 +62,8 @@ func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce ui
 	amountsFinal := make([]uint64, len(from))
 	dstsAmountsFinal := make([]uint64, len(dsts))
 
-	if err2 = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
-		toks := tokens.NewTokens(boltTx)
+	if err2 = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		toks := tokens.NewTokens(reader)
 		for i := range from {
 
 			var tok *token.Token
@@ -102,11 +102,11 @@ func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce ui
 
 func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, amounts []uint64, amountsTokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err2 error) {
 
-	err2 = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+	err2 = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		accs := accounts.NewAccounts(boltTx)
+		accs := accounts.NewAccounts(reader)
 
-		chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
+		chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
 
 		keys := make([][]byte, len(from))
 
@@ -171,11 +171,11 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, u
 		return
 	}
 
-	err2 = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+	err2 = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
+		chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
 
-		accs := accounts.NewAccounts(boltTx)
+		accs := accounts.NewAccounts(reader)
 		var account *account.Account
 		if account, err = accs.GetAccount(fromWalletAddress.GetPublicKeyHash(), chainHeight); err != nil {
 			return
@@ -228,11 +228,11 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 		return
 	}
 
-	err2 = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+	err2 = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainHeight, _ := binary.Uvarint(boltTx.Bucket([]byte("Chain")).Get([]byte("chainHeight")))
+		chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
 
-		accs := accounts.NewAccounts(boltTx)
+		accs := accounts.NewAccounts(reader)
 		var acc *account.Account
 		if acc, err = accs.GetAccount(fromWalletAddress.GetPublicKeyHash(), chainHeight); err != nil {
 			return

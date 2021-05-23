@@ -2,18 +2,18 @@ package tokens
 
 import (
 	"errors"
-	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash-map"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
 type Tokens struct {
 	hash_map.HashMap `json:"-"`
 }
 
-func NewTokens(tx *bbolt.Tx) *Tokens {
+func NewTokens(tx store_db_interface.StoreDBTransactionInterface) *Tokens {
 	return &Tokens{
 		HashMap: *hash_map.CreateNewHashMap(tx, "Tokens", 20),
 	}

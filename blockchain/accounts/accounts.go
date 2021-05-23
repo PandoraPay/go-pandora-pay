@@ -1,17 +1,17 @@
 package accounts
 
 import (
-	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash-map"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
 type Accounts struct {
 	hash_map.HashMap `json:"-"`
 }
 
-func NewAccounts(tx *bbolt.Tx) *Accounts {
+func NewAccounts(tx store_db_interface.StoreDBTransactionInterface) *Accounts {
 	return &Accounts{
 		HashMap: *hash_map.CreateNewHashMap(tx, "Accounts", 20),
 	}

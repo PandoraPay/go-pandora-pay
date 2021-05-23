@@ -8,8 +8,8 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/context"
 	"pandora-pay/cryptography"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/wallet/address"
 	"strconv"
@@ -236,8 +236,8 @@ func (wallet *Wallet) createEmptyWallet() (err error) {
 }
 
 func (wallet *Wallet) updateWallet() {
-	gui.GUI.InfoUpdate("Wallet", wallet.Encrypted.String())
-	gui.GUI.InfoUpdate("Wallet Addrs", strconv.Itoa(wallet.Count))
+	context.GUI.InfoUpdate("Wallet", wallet.Encrypted.String())
+	context.GUI.InfoUpdate("Wallet Addrs", strconv.Itoa(wallet.Count))
 }
 
 //wallet must be locked before

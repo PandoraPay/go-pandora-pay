@@ -2,7 +2,7 @@ package wallet
 
 import (
 	"pandora-pay/blockchain/forging"
-	"pandora-pay/gui"
+	"pandora-pay/context"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	wallet_address "pandora-pay/wallet/address"
@@ -85,6 +85,6 @@ func WalletInit(forging *forging.Forging, mempool *mempool.Mempool) (wallet *Wal
 
 	wallet.initWalletCLI()
 
-	gui.GUI.Log("Initialized Wallet")
+	context.GUI.Log("Initialized Wallet")
 	return
 }

@@ -3,12 +3,12 @@ package blockchain
 import (
 	"encoding/hex"
 	"errors"
-	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/config"
-	"pandora-pay/gui"
+	"pandora-pay/context"
 	"pandora-pay/helpers"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"strconv"
 )
 
@@ -25,7 +25,7 @@ type BlockchainData struct {
 	ConsecutiveSelfForged uint64           `json:"consecutiveSelfForged"`
 }
 
-func (chainData *BlockchainData) computeNextTargetBig(bucket *bolt.Bucket) (*big.Int, error) {
+func (chainData *BlockchainData) computeNextTargetBig(reader store_db_interface.StoreDBTransactionInterface) (*big.Int, error) {
 
 	if config.DIFFICULTY_BLOCK_WINDOW > chainData.Height {
 		return chainData.Target, nil
@@ -33,7 +33,7 @@ func (chainData *BlockchainData) computeNextTargetBig(bucket *bolt.Bucket) (*big
 
 	first := chainData.Height - config.DIFFICULTY_BLOCK_WINDOW
 
-	firstDifficulty, firstTimestamp, err := chainData.LoadTotalDifficultyExtra(bucket, first+1)
+	firstDifficulty, firstTimestamp, err := chainData.LoadTotalDifficultyExtra(reader, first+1)
 	if err != nil {
 		return nil, err
 	}
@@ -53,9 +53,9 @@ func (chainData *BlockchainData) computeNextTargetBig(bucket *bolt.Bucket) (*big
 }
 
 func (chainData *BlockchainData) updateChainInfo() {
-	gui.GUI.Info2Update("Blocks", strconv.FormatUint(chainData.Height, 10))
-	gui.GUI.Info2Update("Chain  Hash", hex.EncodeToString(chainData.Hash))
-	gui.GUI.Info2Update("Chain KHash", hex.EncodeToString(chainData.KernelHash))
-	gui.GUI.Info2Update("Chain  Diff", chainData.Target.String())
-	gui.GUI.Info2Update("TXs", strconv.FormatUint(chainData.Transactions, 10))
+	context.GUI.Info2Update("Blocks", strconv.FormatUint(chainData.Height, 10))
+	context.GUI.Info2Update("Chain  Hash", hex.EncodeToString(chainData.Hash))
+	context.GUI.Info2Update("Chain KHash", hex.EncodeToString(chainData.KernelHash))
+	context.GUI.Info2Update("Chain  Diff", chainData.Target.String())
+	context.GUI.Info2Update("TXs", strconv.FormatUint(chainData.Transactions, 10))
 }

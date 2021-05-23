@@ -3,7 +3,6 @@ package testnet
 import (
 	"encoding/hex"
 	"errors"
-	bolt "go.etcd.io/bbolt"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
@@ -13,10 +12,11 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
-	"pandora-pay/gui"
+	"pandora-pay/context"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"pandora-pay/store"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
 	"time"
@@ -37,7 +37,7 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 		return
 	}
 
-	gui.GUI.Info("Unstake transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
+	context.GUI.Info("Unstake transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
 
 	result, err := testnet.mempool.AddTxToMemPool(tx, blockHeight, true)
 	if err != nil {
@@ -70,7 +70,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 		return
 	}
 
-	gui.GUI.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
+	context.GUI.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
 
 	result, err := testnet.mempool.AddTxToMemPool(tx, blockHeight, true)
 	if err != nil {
@@ -107,7 +107,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 		return
 	}
 
-	gui.GUI.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
+	context.GUI.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
 
 	var result bool
 	if result, err = testnet.mempool.AddTxToMemPool(tx, blockHeight, true); err != nil {
@@ -148,9 +148,9 @@ func (testnet *Testnet) run() {
 
 			if blockHeight >= 60 && syncTime != 0 {
 
-				if err = store.StoreBlockchain.DB.View(func(boltTx *bolt.Tx) (err error) {
+				if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-					accs := accounts.NewAccounts(boltTx)
+					accs := accounts.NewAccounts(reader)
 					var account *account.Account
 					if account, err = accs.GetAccountEvenEmpty(testnet.wallet.Addresses[0].GetPublicKeyHash(), blockHeight); err != nil {
 						return
@@ -194,7 +194,7 @@ func (testnet *Testnet) run() {
 		}()
 
 		if err != nil {
-			gui.GUI.Error("Error creating testnet Tx", err)
+			context.GUI.Error("Error creating testnet Tx", err)
 			err = nil
 		}
 

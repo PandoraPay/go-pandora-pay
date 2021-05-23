@@ -1,14 +1,13 @@
 package mempool
 
 import (
-	"go.etcd.io/bbolt"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
-	"pandora-pay/gui"
 	"pandora-pay/store"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"sort"
 	"sync/atomic"
 	"time"
@@ -21,18 +20,9 @@ type mempoolWork struct {
 }
 
 type mempoolWorker struct {
-	work        *mempoolWork       `json:"-"`
-	workChanged bool               `json:"-"`
-	boltTx      *bbolt.Tx          `json:"-"`
-	accs        *accounts.Accounts `json:"-"`
-	toks        *tokens.Tokens     `json:"-"`
-}
-
-func (worker *mempoolWorker) closeDB() {
-	if worker.boltTx != nil {
-		worker.boltTx.Rollback()
-		worker.boltTx = nil
-	}
+	work        *mempoolWork                                   `json:"-"`
+	workChanged bool                                           `json:"-"`
+	dbTx        store_db_interface.StoreDBTransactionInterface `json:"-"`
 }
 
 func sortTxs(txList []*mempoolTx) {
@@ -54,8 +44,8 @@ func (worker *mempoolWorker) processing(
 
 	var txList []*mempoolTx
 	var txMap map[string]bool
-
 	listIndex := -1
+
 	for {
 
 		//let's check hf the work has been changed
@@ -65,73 +55,56 @@ func (worker *mempoolWorker) processing(
 				return
 			}
 
-			if work != nil {
-				worker.closeDB()
-				worker.work = work
-			}
+			listIndex = -1
+			worker.work = work
 			worker.workChanged = true
 			txMap = make(map[string]bool)
-			listIndex = -1
 
 		default:
+		}
 
-			if worker.work == nil {
-				time.Sleep(100 * time.Millisecond)
-				continue
+		if worker.work == nil {
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+
+		txListAll := mempoolTxs.txsList.Load().([]*mempoolTx)
+		if worker.workChanged { //it is faster to copy first
+			txList = txListAll
+			worker.workChanged = false
+		} else {
+			for _, tx := range txListAll {
+				if !txMap[tx.Tx.Bloom.HashStr] {
+					txList = append(txList, tx)
+				}
 			}
+		}
 
-			if listIndex == -1 {
+		if len(txList) > 0 {
+			sortTxs(txList)
+		}
 
-				txListAll := mempoolTxs.txsList.Load().([]*mempoolTx)
+		if listIndex == len(txList)-1 {
+			time.Sleep(1000 * time.Millisecond)
+			continue
+		} else {
 
-				if worker.workChanged { //it is faster to copy first
-					txList = txListAll
-				} else {
-					for _, tx := range txListAll {
-						if !txMap[tx.Tx.Bloom.HashStr] {
-							txList = append(txList, tx)
-						}
-					}
-				}
+			store.StoreBlockchain.DB.View(func(dbTx store_db_interface.StoreDBTransactionInterface) (err error) {
 
-				worker.workChanged = false
+				accs := accounts.NewAccounts(dbTx)
+				toks := tokens.NewTokens(dbTx)
 
-				if len(txList) > 0 {
-
-					sortTxs(txList)
-
-					var err error
-					if worker.boltTx, err = store.StoreBlockchain.DB.Begin(false); err != nil {
-						worker.closeDB()
-						gui.GUI.Error("Error opening database for mempool")
-						time.Sleep(1000 * time.Millisecond)
-						continue
-					}
-					worker.accs = accounts.NewAccounts(worker.boltTx)
-					worker.toks = tokens.NewTokens(worker.boltTx)
-				}
-				listIndex = 0
-
-			} else {
-
-				if listIndex == len(txList) {
-					worker.closeDB()
-					listIndex = -1
-					time.Sleep(1000 * time.Millisecond)
-					continue
-				} else {
-
-					tx := txList[listIndex]
+				for _, tx := range txList {
 
 					if txMap[tx.Tx.Bloom.HashStr] {
-						listIndex += 1
 						continue
 					}
 
 					txMap[tx.Tx.Bloom.HashStr] = true
-					if err := txList[listIndex].Tx.IncludeTransaction(worker.work.chainHeight, worker.accs, worker.toks); err != nil {
-						worker.accs.Rollback()
-						worker.toks.Rollback()
+					if err := tx.Tx.IncludeTransaction(worker.work.chainHeight, accs, toks); err != nil {
+
+						accs.Rollback()
+						toks.Rollback()
 
 						worker.work.result.txsErrorsMutex.Lock()
 						txsErrors := worker.work.result.txsErrors.Load().([]*mempoolTx)
@@ -151,14 +124,17 @@ func (worker *mempoolWorker) processing(
 							}
 
 							worker.work.result.txsMutex.Unlock()
+							accs.Commit()
+							toks.Commit()
 						}
-					}
-					listIndex += 1
 
-					continue
+					}
+
 				}
 
-			}
+				return nil
+
+			})
 
 		}
 

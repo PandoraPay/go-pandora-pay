@@ -1,7 +1,7 @@
 package blockchain
 
 import (
-	"pandora-pay/gui"
+	"pandora-pay/context"
 	"pandora-pay/helpers"
 	"strconv"
 	"sync/atomic"
@@ -21,11 +21,11 @@ func (chainSync *BlockchainSync) GetSyncTime() uint64 {
 func (chainSync *BlockchainSync) updateBlockchainSyncInfo() {
 	syncTime := atomic.LoadUint64(&chainSync.SyncTime)
 	if syncTime != 0 {
-		gui.GUI.Info2Update("Sync", time.Unix(int64(syncTime), 0).Format("2006-01-02 15:04:05"))
+		context.GUI.Info2Update("Sync", time.Unix(int64(syncTime), 0).Format("2006-01-02 15:04:05"))
 	} else {
-		gui.GUI.Info2Update("Sync", "FALSE")
+		context.GUI.Info2Update("Sync", "FALSE")
 	}
-	gui.GUI.Info2Update("Sync Blocks", strconv.FormatUint(uint64(atomic.LoadUint32(&chainSync.blocksChangedLastMinute)), 10))
+	context.GUI.Info2Update("Sync Blocks", strconv.FormatUint(uint64(atomic.LoadUint32(&chainSync.blocksChangedLastMinute)), 10))
 }
 
 func (chainSync *BlockchainSync) SetSyncValue(sync bool, propagateNotification bool) (syncTime uint64, result bool) {

@@ -1,7 +1,6 @@
 package blockchain
 
 import (
-	bolt "go.etcd.io/bbolt"
 	"math/big"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
@@ -11,10 +10,11 @@ import (
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
+	"pandora-pay/context"
 	"pandora-pay/cryptography"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"strconv"
 	"time"
 )
@@ -40,10 +40,10 @@ func (chain *Blockchain) init() (chainData *BlockchainData, err error) {
 	chainData = chain.createGenesisBlockchainData()
 	chain.ChainData.Store(chainData)
 
-	err = store.StoreBlockchain.DB.Update(func(boltTx *bolt.Tx) (err error) {
+	err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		toks := tokens.NewTokens(boltTx)
-		accs := accounts.NewAccounts(boltTx)
+		toks := tokens.NewTokens(writer)
+		accs := accounts.NewAccounts(writer)
 
 		supply := uint64(0)
 		for _, airdrop := range genesis.GenesisData.AirDrops {
@@ -119,7 +119,7 @@ func (chain *Blockchain) createNextBlockForForging() {
 	var err error
 	if chainData.Height == 0 {
 		if blk, err = genesis.CreateNewGenesisBlock(); err != nil {
-			gui.GUI.Error("Error creating next block", err)
+			context.GUI.Error("Error creating next block", err)
 			return
 		}
 	} else {
@@ -166,7 +166,7 @@ func (chain *Blockchain) initForging() {
 			blkComplete.Bloom = nil
 
 			if err = blkComplete.BloomAll(); err != nil {
-				gui.GUI.Error("Error blooming forged blkComplete", err)
+				context.GUI.Error("Error blooming forged blkComplete", err)
 				chain.mempool.RestartWork()
 				continue
 			}
@@ -175,9 +175,9 @@ func (chain *Blockchain) initForging() {
 
 			err := chain.AddBlocks(array, true)
 			if err == nil {
-				gui.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
+				context.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
 			} else if err != nil {
-				gui.GUI.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
+				context.GUI.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
 				chain.mempool.RestartWork()
 			}
 
