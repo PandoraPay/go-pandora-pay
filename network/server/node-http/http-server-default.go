@@ -10,6 +10,8 @@ import (
 
 func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	if req.Method != "GET" {
 		http.Error(w, "Method is not supported.", http.StatusNotFound)
 		return

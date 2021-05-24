@@ -9,7 +9,7 @@ import (
 
 func createStoreNow(name string) (store *Store, err error) {
 	var db store_db_interface.StoreDBInterface
-	if db, err = store_db_wasm.CreateStoreDBWASM(name); err != nil {
+	if db, err = store_db_wasm.CreateStoreDBJSIndexDB(name); err != nil {
 		return
 	}
 

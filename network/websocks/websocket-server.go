@@ -15,7 +15,7 @@ func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r
 	var err error
 
 	var c *websocket.Conn
-	if c, err = websocket.Accept(w, r, nil); err != nil {
+	if c, err = websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true}); err != nil {
 		return
 	}
 
