@@ -3,14 +3,18 @@ package main
 import (
 	"pandora-pay/config"
 	"pandora-pay/config/arguments"
+	"pandora-pay/config/globals"
 	"pandora-pay/gui"
+	"pandora-pay/mempool"
 	"pandora-pay/store"
 	"strings"
 	"syscall/js"
 )
 
 func main() {
+
 	var err error
+	var myMempool *mempool.Mempool
 
 	config.StartConfig()
 
@@ -39,6 +43,10 @@ func main() {
 		panic(err)
 	}
 
+	for i, arg := range args {
+		gui.GUI.Log("Argument", i, arg)
+	}
+
 	if err = config.InitConfig(); err != nil {
 		panic(err)
 	}
@@ -47,8 +55,9 @@ func main() {
 		panic(err)
 	}
 
-	for i, arg := range args {
-		gui.GUI.Log("Argument", i, arg)
+	if myMempool, err = mempool.InitMemPool(); err != nil {
+		panic(err)
 	}
+	globals.Data["mempool"] = myMempool
 
 }

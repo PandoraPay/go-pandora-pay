@@ -1,7 +1,9 @@
 package websocks
 
 import (
-	"github.com/gorilla/websocket"
+	"context"
+	"nhooyr.io/websocket"
+	"pandora-pay/config"
 	"pandora-pay/network/known-nodes"
 	"pandora-pay/network/websocks/connection"
 )
@@ -13,8 +15,8 @@ type WebsocketClient struct {
 	handshakeValidation bool
 }
 
-func (wsClient *WebsocketClient) Close() error {
-	return wsClient.conn.Close()
+func (wsClient *WebsocketClient) Close(reason string) error {
+	return wsClient.conn.Close(reason)
 }
 
 func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownNode) (wsClient *WebsocketClient, err error) {
@@ -24,12 +26,15 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 		websockets: websockets,
 	}
 
-	c, _, err := websocket.DefaultDialer.Dial(knownNode.UrlStr, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
+	defer cancel()
+
+	c, _, err := websocket.Dial(ctx, knownNode.UrlStr, nil)
 	if err != nil {
 		return
 	}
 
-	wsClient.conn = connection.CreateAdvancedConnection(c, websockets.ApiWebsockets.GetMap, false)
+	wsClient.conn = connection.CreateAdvancedConnection(c, knownNode.UrlStr, websockets.ApiWebsockets.GetMap, false)
 	if err = websockets.NewConnection(wsClient.conn); err != nil {
 		return
 	}

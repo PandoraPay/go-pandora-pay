@@ -3,6 +3,7 @@ package websocks
 import (
 	"encoding/json"
 	"errors"
+	"nhooyr.io/websocket"
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -52,8 +53,7 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 
 	<-conn.Closed
 
-	adr := conn.Conn.RemoteAddr().String()
-	conn2, exists := websockets.AllAddresses.LoadAndDelete(adr)
+	conn2, exists := websockets.AllAddresses.LoadAndDelete(conn.RemoteAddr)
 	if !exists || conn2 != conn {
 		return
 	}
@@ -91,22 +91,22 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	out := conn.SendAwaitAnswer([]byte("handshake"), nil)
 
 	if out.Err != nil {
-		conn.Close()
+		conn.Close("Error sending handshake")
 		return nil
 	}
 	if out.Out == nil {
-		conn.Close()
+		conn.Close("Handshake was not received")
 		return errors.New("Handshake was not received")
 	}
 
 	handshakeServer := new(api_websockets.APIHandshake)
 	if err := json.Unmarshal(out.Out, &handshakeServer); err != nil {
-		conn.Close()
+		conn.Close("Handshake received was invalid")
 		return errors.New("Handshake received was invalid")
 	}
 
 	if err := websockets.validateHandshake(handshakeServer); err != nil {
-		conn.Close()
+		conn.Close("Handshake is invalid")
 		return errors.New("Handshake is invalid")
 	}
 
@@ -117,11 +117,9 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 
 func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection) error {
 
-	adr := conn.Conn.RemoteAddr().String()
-
-	_, exists := websockets.AllAddresses.LoadOrStore(adr, conn)
-	if exists {
-		conn.Conn.Close()
+	foundConn, exists := websockets.AllAddresses.LoadOrStore(conn.RemoteAddr, conn)
+	if (conn.ConnectionType && exists) || (!conn.ConnectionType && foundConn != nil) {
+		conn.Conn.Close(websocket.StatusNormalClosure, "Already connected")
 		return errors.New("Already connected")
 	}
 

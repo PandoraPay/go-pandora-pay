@@ -2,10 +2,11 @@ package connection
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
-	"github.com/gorilla/websocket"
 	"github.com/tevino/abool"
+	"nhooyr.io/websocket"
 	"pandora-pay/config"
 	"sync"
 	"sync/atomic"
@@ -27,6 +28,7 @@ type AdvancedConnectionAnswer struct {
 
 type AdvancedConnection struct {
 	Conn           *websocket.Conn
+	RemoteAddr     string
 	answerCounter  uint32
 	Closed         chan struct{}
 	IsClosed       *abool.AtomicBool
@@ -37,29 +39,39 @@ type AdvancedConnection struct {
 	ConnectionType bool
 }
 
-func (c *AdvancedConnection) Close() error {
+func (c *AdvancedConnection) Close(reason string) error {
 	if c.IsClosed.SetToIf(false, true) {
 		close(c.Closed)
 	}
-	return c.Conn.Close()
+	return c.Conn.Close(websocket.StatusNormalClosure, reason)
 }
 
 func (c *AdvancedConnection) connSendJSON(message interface{}) (err error) {
+
+	var data []byte
+	if data, err = json.Marshal(message); err != nil {
+		return
+	}
+
 	c.sendingLock.Lock()
 	defer c.sendingLock.Unlock()
-	if err = c.Conn.SetWriteDeadline(time.Now().Add(config.WEBSOCKETS_TIMEOUT)); err != nil {
-		return
-	}
-	if err = c.Conn.WriteJSON(message); err != nil {
-		return
-	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
+	defer cancel()
+
+	err = c.Conn.Write(ctx, websocket.MessageBinary, data)
 	return
 }
 
 func (c *AdvancedConnection) connSendPing() (err error) {
 	c.sendingLock.Lock()
 	defer c.sendingLock.Unlock()
-	return c.Conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(config.WEBSOCKETS_TIMEOUT))
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_PONG_WAIT)
+	defer cancel()
+
+	err = c.Conn.Ping(ctx)
+	return
 }
 
 func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byte, await, reply bool) *AdvancedConnectionAnswer {
@@ -192,20 +204,23 @@ func (c *AdvancedConnection) processRead(message *AdvancedConnectionMessage) {
 
 func (c *AdvancedConnection) ReadPump() {
 
+	var cancel context.CancelFunc
+	var ctx context.Context
+
 	defer func() {
-		c.Close()
+		if cancel != nil {
+			cancel()
+		}
+		c.Close("Timeout read")
 	}()
 
 	c.Conn.SetReadLimit(int64(config.WEBSOCKETS_MAX_READ))
-	c.Conn.SetReadDeadline(time.Now().Add(config.WEBSOCKETS_PONG_WAIT))
-	c.Conn.SetPongHandler(func(string) error {
-		c.Conn.SetReadDeadline(time.Now().Add(config.WEBSOCKETS_PONG_WAIT))
-		return nil
-	})
 
 	for {
 
-		_, read, err := c.Conn.ReadMessage()
+		ctx, cancel = context.WithCancel(context.Background())
+
+		_, read, err := c.Conn.Read(ctx)
 		if err != nil {
 			break
 		}
@@ -268,7 +283,7 @@ func (c *AdvancedConnection) WritePump() {
 
 	defer func() {
 		pingTicker.Stop()
-		c.Close()
+		c.Close("Ping send")
 	}()
 
 	for {
@@ -284,9 +299,10 @@ func (c *AdvancedConnection) WritePump() {
 
 }
 
-func CreateAdvancedConnection(conn *websocket.Conn, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error), connectionType bool) *AdvancedConnection {
+func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error), connectionType bool) *AdvancedConnection {
 	return &AdvancedConnection{
 		Conn:           conn,
+		RemoteAddr:     remoteAddr,
 		Closed:         make(chan struct{}),
 		IsClosed:       abool.New(),
 		answerCounter:  0,
