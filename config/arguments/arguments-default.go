@@ -2,6 +2,6 @@
 
 package arguments
 
-func init_arguments(argv []string) []string {
-	return argv
+func GetArguments() []string {
+	return nil
 }

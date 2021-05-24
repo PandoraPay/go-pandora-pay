@@ -97,63 +97,72 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 		return
 	}
 
-	if runtime.GOARCH != "wasm" {
-		if globals.Arguments["--new-devnet"] == true {
-
-			var file *os.File
-			if _, err = os.Stat("./genesis.data"); os.IsNotExist(err) {
-
-				GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
-				GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
-
-				walletAddress, delegatedStakePublicKeyHash, err2 := wallet.GetFirstWalletForDevnetGenesisAirdrop()
-				if err2 != nil {
-					return err2
-				}
-
-				amount := 100 * stake.GetRequiredStake(0)
-
-				GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-					PublicKeyHash:               walletAddress.Address.PublicKeyHash,
-					Amount:                      amount,
-					DelegatedStakePublicKeyHash: delegatedStakePublicKeyHash,
-				})
-
-				GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-					PublicKeyHash:               helpers.DecodeHex("33ab983c1fa5777333947ed22f45f3ad847b3d82"),
-					Amount:                      amount,
-					DelegatedStakePublicKeyHash: helpers.DecodeHex("fa617d72c568da13487a2a2d9c89439297312e35"),
-				})
-
-				if file, err = os.OpenFile("./genesis.data", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
-					return
-				}
-
-				if data, err = json.Marshal(GenesisData); err != nil {
-					return
-				}
-
-				if _, err = file.Write(data); err != nil {
-					return
-				}
-				if err = file.Close(); err != nil {
-					return
-				}
-			}
-
-			if file, err = os.OpenFile("./genesis.data", os.O_RDONLY, 0666); err != nil {
-				return
-			}
-
-			scanner := bufio.NewScanner(file)
-			scanner.Scan()
-
-			data := scanner.Bytes()
-			if err = json.Unmarshal(data, &GenesisData); err != nil {
-				return
-			}
-
+	if globals.Arguments["set-genesis"] != nil {
+		data := []byte(globals.Arguments["set-genesis"].(string))
+		if err = json.Unmarshal(data, &GenesisData); err != nil {
+			return
 		}
+	} else {
+
+		if runtime.GOARCH != "wasm" {
+			if globals.Arguments["--new-devnet"] == true {
+
+				var file *os.File
+				if _, err = os.Stat("./genesis.data"); os.IsNotExist(err) {
+
+					GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
+					GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
+
+					walletAddress, delegatedStakePublicKeyHash, err2 := wallet.GetFirstWalletForDevnetGenesisAirdrop()
+					if err2 != nil {
+						return err2
+					}
+
+					amount := 100 * stake.GetRequiredStake(0)
+
+					GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
+						PublicKeyHash:               walletAddress.Address.PublicKeyHash,
+						Amount:                      amount,
+						DelegatedStakePublicKeyHash: delegatedStakePublicKeyHash,
+					})
+
+					GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
+						PublicKeyHash:               helpers.DecodeHex("33ab983c1fa5777333947ed22f45f3ad847b3d82"),
+						Amount:                      amount,
+						DelegatedStakePublicKeyHash: helpers.DecodeHex("fa617d72c568da13487a2a2d9c89439297312e35"),
+					})
+
+					if file, err = os.OpenFile("./genesis.data", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
+						return
+					}
+
+					if data, err = json.Marshal(GenesisData); err != nil {
+						return
+					}
+
+					if _, err = file.Write(data); err != nil {
+						return
+					}
+					if err = file.Close(); err != nil {
+						return
+					}
+				}
+
+				if file, err = os.OpenFile("./genesis.data", os.O_RDONLY, 0666); err != nil {
+					return
+				}
+
+				scanner := bufio.NewScanner(file)
+				scanner.Scan()
+
+				data := scanner.Bytes()
+				if err = json.Unmarshal(data, &GenesisData); err != nil {
+					return
+				}
+
+			}
+		}
+
 	}
 
 	if Genesis, err = CreateNewGenesisBlock(); err != nil {

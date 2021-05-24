@@ -3,7 +3,7 @@
         <meta charset="utf-8"/>
         <script src="./wasm_exec.js"> </script>
         <script>
-            global.PandoraPayConfig = "--devnet --new-devnet"
+            global.PandoraPayConfig = `--devnet --new-devnet --set-genesis='{"hash":"7e13cad4fd50777876342f445742c172b96fd24ddeb468c54af3351cea6c9a19","kernelHash":"000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","timestamp":1621896277,"target":"0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","airDrops":[{"publicKeyHash":"10ff4b2713951baecbda4d1ee1cd23ccd0c03430","amount":100000000000,"delegatedStakePublicKeyHash":"9dd1cdc5a103be644f9875bc3338d03a9203ff43"},{"publicKeyHash":"33ab983c1fa5777333947ed22f45f3ad847b3d82","amount":100000000000,"delegatedStakePublicKeyHash":"fa617d72c568da13487a2a2d9c89439297312e35"}]}'`
         </script>
         <script>
             const go = new Go();

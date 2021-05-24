@@ -34,7 +34,9 @@ func main() {
 
 	config.StartConfig()
 
-	if err = arguments.InitArguments(nil); err != nil {
+	argv := arguments.GetArguments()
+
+	if err = arguments.InitArguments(argv); err != nil {
 		panic(err)
 	}
 
@@ -56,6 +58,10 @@ func main() {
 
 	if err = gui.InitGUI(); err != nil {
 		panic(err)
+	}
+
+	for i, arg := range argv {
+		gui.GUI.Log("Argument", i, arg)
 	}
 
 	if err = store.InitDB(); err != nil {
