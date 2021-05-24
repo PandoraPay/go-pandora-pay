@@ -30,6 +30,8 @@ Options:
 
 func InitArguments(argv []string) (err error) {
 
+	argv = init_arguments(argv)
+
 	if globals.Arguments, err = docopt.Parse(commands, argv, false, config.VERSION, false, false); err != nil {
 		return errors.New("Error processing arguments" + err.Error())
 	}

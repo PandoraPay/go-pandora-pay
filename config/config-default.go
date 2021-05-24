@@ -11,9 +11,7 @@ import (
 
 func config_init() (err error) {
 
-	switch runtime.GOARCH {
-	case "wasm":
-	default:
+	if runtime.GOARCH != "wasm" {
 		if _, err = os.Stat("./_build"); os.IsNotExist(err) {
 			if err = os.Mkdir("./_build", 0755); err != nil {
 				return
