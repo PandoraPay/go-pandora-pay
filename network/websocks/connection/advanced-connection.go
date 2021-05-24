@@ -35,7 +35,6 @@ type AdvancedConnection struct {
 	getMap         map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
 	answerMap      map[uint32]chan *AdvancedConnectionAnswer
 	answerMapLock  *sync.RWMutex `json:"-"`
-	sendingLock    *sync.Mutex   `json:"-"`
 	ConnectionType bool
 }
 
@@ -53,9 +52,6 @@ func (c *AdvancedConnection) connSendJSON(message interface{}) (err error) {
 		return
 	}
 
-	c.sendingLock.Lock()
-	defer c.sendingLock.Unlock()
-
 	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
 	defer cancel()
 
@@ -64,8 +60,6 @@ func (c *AdvancedConnection) connSendJSON(message interface{}) (err error) {
 }
 
 func (c *AdvancedConnection) connSendPing() (err error) {
-	c.sendingLock.Lock()
-	defer c.sendingLock.Unlock()
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_PONG_WAIT)
 	defer cancel()
@@ -309,7 +303,6 @@ func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, getMap ma
 		getMap:         getMap,
 		answerMap:      make(map[uint32]chan *AdvancedConnectionAnswer),
 		answerMapLock:  &sync.RWMutex{},
-		sendingLock:    &sync.Mutex{},
 		ConnectionType: connectionType,
 	}
 }

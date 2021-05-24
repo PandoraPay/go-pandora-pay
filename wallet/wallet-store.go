@@ -33,7 +33,7 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int) error {
 			return
 		}
 
-		marshal, err := helpers.GetJSON(wallet, "Addresses", "AddressesMap")
+		marshal, err := helpers.GetJSON(wallet, "addresses", "addressesMap")
 		if err != nil {
 			return
 		}
@@ -43,6 +43,7 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int) error {
 		}
 
 		for i := start; i < end; i++ {
+			gui.GUI.Log("Saving WALLET", i)
 			if marshal, err = json.Marshal(wallet.Addresses[i]); err != nil {
 				return
 			}
@@ -85,6 +86,9 @@ func (wallet *Wallet) loadWallet() error {
 			if err = json.Unmarshal(unmarshal, &wallet); err != nil {
 				return
 			}
+
+			wallet.Addresses = make([]*wallet_address.WalletAddress, 0)
+			wallet.addressesMap = make(map[string]*wallet_address.WalletAddress)
 
 			for i := 0; i < wallet.Count; i++ {
 				unmarshal := reader.Get([]byte("wallet-address-" + strconv.Itoa(i)))
