@@ -1,8 +1,11 @@
+// +build !wasm
+
 package node_tcp
 
 import (
 	"errors"
 	"net"
+	"net/http"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
@@ -71,7 +74,16 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 
 	gui.GUI.InfoUpdate("TCP", address+":"+port)
 
-	server.HttpServer, err = node_http.CreateHttpServer(server.tcpListener, chain, settings, mempool)
+	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, mempool); err != nil {
+		return
+	}
+
+	go func() {
+		if err := http.Serve(server.tcpListener, nil); err != nil {
+			gui.GUI.Error("Error opening HTTP server", err)
+		}
+		gui.GUI.Info("HTTP server")
+	}()
 
 	return
 }

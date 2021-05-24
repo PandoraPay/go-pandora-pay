@@ -98,7 +98,7 @@ The main design pattern that has been taken in consideration is to be **dead-sim
   - [X] GUI
   - [ ] Store (partially done)
   - [X] Websockets
-  - [ ] Network
+  - [X] Network
 - [ ] Wallet
   - [ ] Node.js and Javascript wallet
   - [ ] Signing transactions
