@@ -7,7 +7,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/context"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -76,7 +76,7 @@ func (wallet *Wallet) loadWallet() error {
 
 		if bytes.Equal(saved, []byte{1}) {
 
-			context.GUI.Log("Wallet Loading... ")
+			gui.GUI.Log("Wallet Loading... ")
 
 			var unmarshal []byte
 
@@ -102,7 +102,7 @@ func (wallet *Wallet) loadWallet() error {
 			}
 
 			wallet.updateWallet()
-			context.GUI.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
+			gui.GUI.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
 
 		} else {
 			return errors.New("Error loading wallet ?")

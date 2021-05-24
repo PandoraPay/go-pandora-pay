@@ -6,7 +6,7 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
-	"pandora-pay/context"
+	"pandora-pay/gui"
 	"pandora-pay/mempool"
 	node_http "pandora-pay/network/server/node-http"
 	"pandora-pay/settings"
@@ -69,7 +69,7 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 		return nil, errors.New("Error creating TcpServer" + err.Error())
 	}
 
-	context.GUI.InfoUpdate("TCP", address+":"+port)
+	gui.GUI.InfoUpdate("TCP", address+":"+port)
 
 	server.HttpServer, err = node_http.CreateHttpServer(server.tcpListener, chain, settings, mempool)
 

@@ -76,6 +76,19 @@ func StartConfig() {
 	OS = runtime.GOOS
 }
 
+func GetNetworkName() string {
+	switch NETWORK_SELECTED {
+	case MAIN_NET_NETWORK_BYTE:
+		return "main"
+	case TEST_NET_NETWORK_BYTE:
+		return "test"
+	case DEV_NET_NETWORK_BYTE:
+		return "dev"
+	default:
+		panic("Network is unknown")
+	}
+}
+
 func InitConfig() (err error) {
 
 	if globals.Arguments["--testnet"] == true {

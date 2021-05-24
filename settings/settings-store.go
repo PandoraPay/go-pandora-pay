@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"pandora-pay/context"
+	"pandora-pay/gui"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
@@ -36,7 +36,7 @@ func (settings *Settings) loadSettings() error {
 			return errors.New("Settings doesn't exist")
 		}
 		if bytes.Equal(saved, []byte{1}) {
-			context.GUI.Log("Settings Loading... ")
+			gui.GUI.Log("Settings Loading... ")
 
 			unmarshal := reader.Get([]byte("settings"))
 			if err = json.Unmarshal(unmarshal, &settings); err != nil {
@@ -44,7 +44,7 @@ func (settings *Settings) loadSettings() error {
 			}
 
 			settings.updateSettings()
-			context.GUI.Log("Settings Loaded! " + settings.Name)
+			gui.GUI.Log("Settings Loaded! " + settings.Name)
 
 		} else {
 			err = errors.New("Error loading wallet ?")

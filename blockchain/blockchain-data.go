@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"pandora-pay/blockchain/block/difficulty"
 	"pandora-pay/config"
-	"pandora-pay/context"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"strconv"
@@ -53,9 +53,9 @@ func (chainData *BlockchainData) computeNextTargetBig(reader store_db_interface.
 }
 
 func (chainData *BlockchainData) updateChainInfo() {
-	context.GUI.Info2Update("Blocks", strconv.FormatUint(chainData.Height, 10))
-	context.GUI.Info2Update("Chain  Hash", hex.EncodeToString(chainData.Hash))
-	context.GUI.Info2Update("Chain KHash", hex.EncodeToString(chainData.KernelHash))
-	context.GUI.Info2Update("Chain  Diff", chainData.Target.String())
-	context.GUI.Info2Update("TXs", strconv.FormatUint(chainData.Transactions, 10))
+	gui.GUI.Info2Update("Blocks", strconv.FormatUint(chainData.Height, 10))
+	gui.GUI.Info2Update("Chain  Hash", hex.EncodeToString(chainData.Hash))
+	gui.GUI.Info2Update("Chain KHash", hex.EncodeToString(chainData.KernelHash))
+	gui.GUI.Info2Update("Chain  Diff", chainData.Target.String())
+	gui.GUI.Info2Update("TXs", strconv.FormatUint(chainData.Transactions, 10))
 }

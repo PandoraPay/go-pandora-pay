@@ -10,8 +10,8 @@ import (
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
-	"pandora-pay/context"
 	"pandora-pay/cryptography"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -119,7 +119,7 @@ func (chain *Blockchain) createNextBlockForForging() {
 	var err error
 	if chainData.Height == 0 {
 		if blk, err = genesis.CreateNewGenesisBlock(); err != nil {
-			context.GUI.Error("Error creating next block", err)
+			gui.GUI.Error("Error creating next block", err)
 			return
 		}
 	} else {
@@ -166,7 +166,7 @@ func (chain *Blockchain) initForging() {
 			blkComplete.Bloom = nil
 
 			if err = blkComplete.BloomAll(); err != nil {
-				context.GUI.Error("Error blooming forged blkComplete", err)
+				gui.GUI.Error("Error blooming forged blkComplete", err)
 				chain.mempool.RestartWork()
 				continue
 			}
@@ -175,9 +175,9 @@ func (chain *Blockchain) initForging() {
 
 			err := chain.AddBlocks(array, true)
 			if err == nil {
-				context.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
+				gui.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
 			} else if err != nil {
-				context.GUI.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
+				gui.GUI.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
 				chain.mempool.RestartWork()
 			}
 

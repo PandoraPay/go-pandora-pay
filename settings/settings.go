@@ -2,8 +2,8 @@ package settings
 
 import (
 	"pandora-pay/config/globals"
-	"pandora-pay/context"
 	"pandora-pay/cryptography"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"sync"
 )
@@ -38,7 +38,7 @@ func SettingsInit() (settings *Settings, err error) {
 		}
 	}
 
-	context.GUI.Log("Settings Initialized")
+	gui.GUI.Log("Settings Initialized")
 	return
 }
 
@@ -56,7 +56,7 @@ func (settings *Settings) createEmptySettings() (err error) {
 }
 
 func (settings *Settings) updateSettings() {
-	context.GUI.InfoUpdate("Node", settings.Name)
+	gui.GUI.InfoUpdate("Node", settings.Name)
 }
 
 func (settings *Settings) computeChecksum() []byte {

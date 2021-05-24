@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain"
-	"pandora-pay/context"
+	"pandora-pay/gui"
 	"pandora-pay/mempool"
 	api_common "pandora-pay/network/api/api-common"
 	api_http "pandora-pay/network/api/api-http"
@@ -60,9 +60,9 @@ func (server *HttpServer) initialize() {
 
 	go func() {
 		if err := http.Serve(server.tcpListener, nil); err != nil {
-			context.GUI.Error("Error opening HTTP server", err)
+			gui.GUI.Error("Error opening HTTP server", err)
 		}
-		context.GUI.Info("HTTP server")
+		gui.GUI.Info("HTTP server")
 	}()
 
 }

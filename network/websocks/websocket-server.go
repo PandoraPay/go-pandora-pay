@@ -3,7 +3,7 @@ package websocks
 import (
 	"github.com/gorilla/websocket"
 	"net/http"
-	"pandora-pay/context"
+	"pandora-pay/gui"
 	"pandora-pay/network/websocks/connection"
 )
 
@@ -20,7 +20,7 @@ func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r
 
 	c, err := wserver.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		context.GUI.Error("ws error upgrade:", err)
+		gui.GUI.Error("ws error upgrade:", err)
 		return
 	}
 

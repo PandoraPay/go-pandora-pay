@@ -28,7 +28,7 @@ func main() {
 		panic(err)
 	}
 
-	if context.GUI, err = gui_non_interactive.CreateGUINonInteractive(); err != nil {
+	if gui.GUI, err = gui_non_interactive.CreateGUINonInteractive(); err != nil {
 		panic(err)
 	}
 	gui.GUIInit()
@@ -36,8 +36,8 @@ func main() {
 	defer func() {
 		err := recover()
 		if err != nil {
-			context.GUI.Error(err)
-			context.GUI.Close()
+			gui.GUI.Error(err)
+			gui.GUI.Close()
 		}
 	}()
 
@@ -46,7 +46,7 @@ func main() {
 	}
 
 	for i, arg := range args {
-		context.GUI.Log("Argument", i, arg)
+		gui.GUI.Log("Argument", i, arg)
 	}
 
 }

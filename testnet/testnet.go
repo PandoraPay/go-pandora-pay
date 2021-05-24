@@ -12,7 +12,7 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
-	"pandora-pay/context"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"pandora-pay/store"
@@ -37,7 +37,7 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 		return
 	}
 
-	context.GUI.Info("Unstake transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
+	gui.GUI.Info("Unstake transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
 
 	result, err := testnet.mempool.AddTxToMemPool(tx, blockHeight, true)
 	if err != nil {
@@ -70,7 +70,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 		return
 	}
 
-	context.GUI.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
+	gui.GUI.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
 
 	result, err := testnet.mempool.AddTxToMemPool(tx, blockHeight, true)
 	if err != nil {
@@ -107,7 +107,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 		return
 	}
 
-	context.GUI.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
+	gui.GUI.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
 
 	var result bool
 	if result, err = testnet.mempool.AddTxToMemPool(tx, blockHeight, true); err != nil {
@@ -194,7 +194,7 @@ func (testnet *Testnet) run() {
 		}()
 
 		if err != nil {
-			context.GUI.Error("Error creating testnet Tx", err)
+			gui.GUI.Error("Error creating testnet Tx", err)
 			err = nil
 		}
 
