@@ -22,10 +22,18 @@ func create_db() (err error) {
 
 	var prefix = config.GetNetworkName()
 
-	StoreBlockchain = &Store{Name: prefix + "/blockchain"}
-	StoreWallet = &Store{Name: prefix + "/wallet"}
-	StoreSettings = &Store{Name: prefix + "/settings"}
-	StoreMempool = &Store{Name: prefix + "/mempool"}
+	if StoreBlockchain, err = createStoreNow(prefix + "/blockchain"); err != nil {
+		return
+	}
+	if StoreWallet, err = createStoreNow(prefix + "/wallet"); err != nil {
+		return
+	}
+	if StoreSettings, err = createStoreNow(prefix + "/settings"); err != nil {
+		return
+	}
+	if StoreMempool, err = createStoreNow(prefix + "/mempool"); err != nil {
+		return
+	}
 
 	return
 }

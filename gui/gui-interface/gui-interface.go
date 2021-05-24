@@ -16,7 +16,6 @@ type GUIInterface interface {
 	Error(any ...interface{})
 	InfoUpdate(key string, text string)
 	Info2Update(key string, text string)
-
 	OutputWrite(any interface{})
 	CommandDefineCallback(Text string, callback func(string) error)
 	OutputReadString(text string) (out string, ok bool)
@@ -41,6 +40,8 @@ func ProcessArgument(any ...interface{}) string {
 		switch v := it.(type) {
 		case nil:
 			s += "nil"
+		case bool:
+			s += strconv.FormatBool(v)
 		case string:
 			s += v
 		case int:
