@@ -29,7 +29,7 @@ func createStore(name string, db store_db_interface.StoreDBInterface) (store *St
 	return
 }
 
-func DBInit() (err error) {
+func InitDB() (err error) {
 	if err = create_db(); err != nil {
 		return
 	}

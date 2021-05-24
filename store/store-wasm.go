@@ -3,40 +3,29 @@
 package store
 
 import (
-	"os"
 	"pandora-pay/config"
+	store_db_interface "pandora-pay/store/store-db/store-db-interface"
+	store_db_wasm "pandora-pay/store/store-db/store-db-wasm"
 )
+
+func createStoreNow(name string) (store *Store, err error) {
+	var db store_db_interface.StoreDBInterface
+	if db, err = store_db_wasm.CreateStoreDBWASM(name); err != nil {
+		return
+	}
+
+	store, err = createStore(name, db)
+	return
+}
 
 func create_db() (err error) {
 
-	var prefix = ""
-
-	switch config.NETWORK_SELECTED {
-	case config.MAIN_NET_NETWORK_BYTE:
-		prefix += "main"
-	case config.TEST_NET_NETWORK_BYTE:
-		prefix += "test"
-	case config.DEV_NET_NETWORK_BYTE:
-		prefix += "dev"
-	default:
-		panic("Network is unknown")
-	}
-
-	if _, err = os.Stat("./" + prefix); os.IsNotExist(err) {
-		if err = os.Mkdir("./"+prefix, 0755); err != nil {
-			return
-		}
-	}
+	var prefix = config.GetNetworkName()
 
 	StoreBlockchain = &Store{Name: prefix + "/blockchain"}
 	StoreWallet = &Store{Name: prefix + "/wallet"}
 	StoreSettings = &Store{Name: prefix + "/settings"}
 	StoreMempool = &Store{Name: prefix + "/mempool"}
-
-	StoreBlockchain.init()
-	StoreWallet.init()
-	StoreSettings.init()
-	StoreMempool.init()
 
 	return
 }

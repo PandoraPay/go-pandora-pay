@@ -50,15 +50,15 @@ func main() {
 		}
 	}()
 
-	if err = gui.GUIInit(); err != nil {
-		return
+	if err = gui.InitGUI(); err != nil {
+		panic(err)
 	}
 
 	if err = config.InitConfig(); err != nil {
 		panic(err)
 	}
 
-	if err = store.DBInit(); err != nil {
+	if err = store.InitDB(); err != nil {
 		panic(err)
 	}
 

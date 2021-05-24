@@ -3,9 +3,8 @@ package main
 import (
 	"pandora-pay/config"
 	"pandora-pay/config/arguments"
-	"pandora-pay/context"
 	"pandora-pay/gui"
-	gui_non_interactive "pandora-pay/gui/gui-non-interactive"
+	"pandora-pay/store"
 	"strings"
 	"syscall/js"
 )
@@ -28,20 +27,23 @@ func main() {
 		panic(err)
 	}
 
-	if gui.GUI, err = gui_non_interactive.CreateGUINonInteractive(); err != nil {
-		panic(err)
-	}
-	gui.GUIInit()
-
 	defer func() {
 		err := recover()
-		if err != nil {
+		if err != nil && gui.GUI != nil {
 			gui.GUI.Error(err)
 			gui.GUI.Close()
 		}
 	}()
 
+	if err = gui.InitGUI(); err != nil {
+		panic(err)
+	}
+
 	if err = config.InitConfig(); err != nil {
+		panic(err)
+	}
+
+	if err = store.InitDB(); err != nil {
 		panic(err)
 	}
 

@@ -9,7 +9,7 @@ import (
 var GUI gui_interface.GUIInterface
 
 //test
-func GUIInit() (err error) {
+func InitGUI() (err error) {
 
 	if err = create_gui(); err != nil {
 		return
