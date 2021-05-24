@@ -17,8 +17,9 @@ func (store *StoreDBBolt) Close() error {
 
 func (store *StoreDBBolt) View(callback func(dbTx store_db_interface.StoreDBTransactionInterface) error) error {
 	return store.DB.View(func(boltTx *bolt.Tx) error {
-		tx := StoreDBBoltTransaction{
+		tx := &StoreDBBoltTransaction{
 			boltTx: boltTx,
+			bucket: boltTx.Bucket(store.Name),
 		}
 		return callback(tx)
 	})
@@ -26,10 +27,9 @@ func (store *StoreDBBolt) View(callback func(dbTx store_db_interface.StoreDBTran
 
 func (store *StoreDBBolt) Update(callback func(dbTx store_db_interface.StoreDBTransactionInterface) error) error {
 	return store.DB.Update(func(boltTx *bolt.Tx) error {
-		bucket := boltTx.Bucket(store.Name)
-		tx := StoreDBBoltTransaction{
+		tx := &StoreDBBoltTransaction{
 			boltTx: boltTx,
-			bucket: bucket,
+			bucket: boltTx.Bucket(store.Name),
 		}
 		return callback(tx)
 	})

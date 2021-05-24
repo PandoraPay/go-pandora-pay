@@ -10,3 +10,15 @@ type StoreDBBoltTransaction struct {
 	boltTx *bolt.Tx
 	bucket *bolt.Bucket
 }
+
+func (tx *StoreDBBoltTransaction) Put(key []byte, value []byte) error {
+	return tx.bucket.Put(key, value)
+}
+
+func (tx *StoreDBBoltTransaction) Get(key []byte) []byte {
+	return tx.bucket.Get(key)
+}
+
+func (tx *StoreDBBoltTransaction) Delete(key []byte) error {
+	return tx.bucket.Delete(key)
+}

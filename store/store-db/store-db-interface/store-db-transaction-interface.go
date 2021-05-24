@@ -1,7 +1,7 @@
 package store_db_interface
 
 type StoreDBTransactionInterface interface {
-	Put([]byte, []byte) error
-	Get([]byte) []byte
-	Delete([]byte) error
+	Put(key []byte, value []byte) error
+	Get(key []byte) []byte
+	Delete(key []byte) error
 }
