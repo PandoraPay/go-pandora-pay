@@ -93,9 +93,13 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [ ] API wallets    
 - [X] Consensus
   - [X] API websockets for Forks
-  - [X] Fork manager and downloader   
+  - [X] Fork manager and downloader
+- [ ] Webassembly build
+  - [X] GUI
+  - [ ] Store (partially done)
+  - [X] Websockets
+  - [ ] Network
 - [ ] Wallet
-  - [ ] Webassembly build
   - [ ] Node.js and Javascript wallet
   - [ ] Signing transactions
   - [ ] Documentation **
@@ -105,9 +109,10 @@ The main design pattern that has been taken in consideration is to be **dead-sim
 
 The main reasons why DPOS has been chosen over POS:
 1. Delegating your stake increases security 
-2. Delegating your stake to someone to stake increases anonymity as you don't need to be online for staking.
-3. DPOS avoids using the griding technique to solve the POS short range vulnerability
-4. Future proposals:
+2. Delegating your stake to someone to stake increases anonymity as you don't need to be online for staking. 
+3. Completely offline can be done to increase the security. 
+4. DPOS avoids using the griding technique to solve the POS short range vulnerability
+5. Future proposals:
     1. state trie proofs to prove to light clients the state.     
     2. sharding. Creating multiple distinct shards and splitting the state trie into `n` shards
     3. creating macro blocks by selecting validators for a meta chain
