@@ -117,8 +117,8 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 
 func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection) error {
 
-	foundConn, exists := websockets.AllAddresses.LoadOrStore(conn.RemoteAddr, conn)
-	if (conn.ConnectionType && exists) || (!conn.ConnectionType && foundConn != nil) {
+	_, exists := websockets.AllAddresses.LoadOrStore(conn.RemoteAddr, conn)
+	if exists {
 		conn.Conn.Close(websocket.StatusNormalClosure, "Already connected")
 		return errors.New("Already connected")
 	}
