@@ -2,6 +2,7 @@ package store_db_bolt
 
 import (
 	bolt "go.etcd.io/bbolt"
+	"os"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
@@ -41,9 +42,16 @@ func CreateStoreDBBolt(name string) (store *StoreDBBolt, err error) {
 		Name: []byte(name),
 	}
 
+	prefix := "./store"
+	if _, err = os.Stat(prefix); os.IsNotExist(err) {
+		if err = os.Mkdir(prefix, 0755); err != nil {
+			return
+		}
+	}
+
 	// Open the my.store data file in your current directory.
 	// It will be created if it doesn't exist.
-	if store.DB, err = bolt.Open("./"+name+".store", 0600, nil); err != nil {
+	if store.DB, err = bolt.Open(prefix+name+".store", 0600, nil); err != nil {
 		return
 	}
 

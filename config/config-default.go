@@ -38,6 +38,14 @@ func config_init() (err error) {
 				return
 			}
 		}
+
+		prefix += "/" + GetNetworkName()
+		if _, err = os.Stat("./" + prefix); os.IsNotExist(err) {
+			if err = os.Mkdir("./"+prefix, 0755); err != nil {
+				return
+			}
+		}
+
 		if err = os.Chdir("./" + prefix); err != nil {
 			return
 		}

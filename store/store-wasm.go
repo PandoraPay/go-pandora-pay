@@ -3,7 +3,6 @@
 package store
 
 import (
-	"pandora-pay/config"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	store_db_wasm "pandora-pay/store/store-db/store-db-wasm"
 )
@@ -20,7 +19,7 @@ func createStoreNow(name string) (store *Store, err error) {
 
 func create_db() (err error) {
 
-	var prefix = config.GetNetworkName()
+	var prefix = ""
 
 	if StoreBlockchain, err = createStoreNow(prefix + "/blockchain"); err != nil {
 		return

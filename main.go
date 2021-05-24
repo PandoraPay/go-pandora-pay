@@ -50,11 +50,11 @@ func main() {
 		}
 	}()
 
-	if err = gui.InitGUI(); err != nil {
+	if err = config.InitConfig(); err != nil {
 		panic(err)
 	}
 
-	if err = config.InitConfig(); err != nil {
+	if err = gui.InitGUI(); err != nil {
 		panic(err)
 	}
 
