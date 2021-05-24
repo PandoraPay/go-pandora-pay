@@ -59,11 +59,9 @@ func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 
 func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, propagateToSockets bool) (out bool, err error) {
 
-	mempool.Wallet.Lock()
-	defer mempool.Wallet.Unlock()
-
 	finalTxs := []*mempoolTx{}
 
+	mempool.Wallet.Lock()
 	for _, tx := range txs {
 
 		if err = tx.VerifyBloomAll(); err != nil {
@@ -122,6 +120,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 		}
 
 	}
+	mempool.Wallet.Unlock()
 
 	if len(finalTxs) == 0 {
 		return false, errors.New("Transactions don't meet the criteria")
@@ -167,8 +166,6 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 			}
 		}
 	}
-
-	defer mempool.txs.txsListMutex.Unlock()
 
 	return true, nil
 }
