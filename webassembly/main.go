@@ -3,6 +3,7 @@ package main
 import (
 	"pandora-pay/config"
 	"pandora-pay/config/arguments"
+	"pandora-pay/context"
 	"pandora-pay/gui"
 	gui_non_interactive "pandora-pay/gui/gui-non-interactive"
 	"strings"

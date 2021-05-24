@@ -127,38 +127,48 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 		return false, errors.New("Transactions don't meet the criteria")
 	}
 
+	toInsert := make([]*mempoolTx, 0)
+
 	mempool.txs.txsListMutex.Lock()
-	defer mempool.txs.txsListMutex.Unlock()
 
 	list := mempool.txs.txsList.Load().([]*mempoolTx)
 
 	for _, newTx := range finalTxs {
 
 		found := false
-		for _, tx2 := range list {
-			if bytes.Equal(tx2.Tx.Bloom.Hash, newTx.Tx.Bloom.Hash) {
+		for _, existingTx := range list {
+			if bytes.Equal(existingTx.Tx.Bloom.Hash, newTx.Tx.Bloom.Hash) {
 				found = true
 				break
 			}
 		}
 
 		if !found {
-
-			//making sure that the transaction is not inserted twice
-			atomic.AddInt64(&mempool.txs.txsCount, 1)
-			atomic.AddInt64(&mempool.txs.txsInserted, 1)
-
-			//appending
-			list = append(list, newTx)
-			mempool.txs.txsList.Store(list)
-
-			if propagateToSockets {
-				mempool.NewTransactionMulticast.Broadcast(newTx.Tx)
-			}
-
+			toInsert = append(toInsert, newTx)
 		}
 
 	}
+
+	if len(toInsert) > 0 {
+		list = append(list, toInsert...)
+		sortTxs(list)
+		mempool.txs.txsList.Store(list)
+	}
+	mempool.txs.txsListMutex.Unlock()
+
+	if len(toInsert) > 0 {
+		//making sure that the transaction is not inserted twice
+		atomic.AddInt64(&mempool.txs.txsCount, int64(len(toInsert)))
+		atomic.AddInt64(&mempool.txs.txsInserted, int64(len(toInsert)))
+
+		if propagateToSockets {
+			for _, tx := range toInsert {
+				mempool.NewTransactionMulticast.Broadcast(tx.Tx)
+			}
+		}
+	}
+
+	defer mempool.txs.txsListMutex.Unlock()
 
 	return true, nil
 }

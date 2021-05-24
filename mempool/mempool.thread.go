@@ -80,10 +80,6 @@ func (worker *mempoolWorker) processing(
 			}
 		}
 
-		if len(txList) > 0 {
-			sortTxs(txList)
-		}
-
 		if listIndex == len(txList)-1 {
 			time.Sleep(1000 * time.Millisecond)
 			continue
@@ -101,6 +97,7 @@ func (worker *mempoolWorker) processing(
 					}
 
 					txMap[tx.Tx.Bloom.HashStr] = true
+					listIndex += 1
 					if err := tx.Tx.IncludeTransaction(worker.work.chainHeight, accs, toks); err != nil {
 
 						accs.Rollback()
@@ -113,14 +110,14 @@ func (worker *mempoolWorker) processing(
 
 					} else {
 						totalSize := atomic.LoadUint64(&worker.work.result.totalSize)
-						if totalSize+txList[listIndex].Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
+						if totalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
 							worker.work.result.txsMutex.Lock()
 
-							totalSize = atomic.LoadUint64(&worker.work.result.totalSize) + txList[listIndex].Tx.Bloom.Size
+							totalSize = atomic.LoadUint64(&worker.work.result.totalSize) + tx.Tx.Bloom.Size
 							if totalSize < config.BLOCK_MAX_SIZE {
 								atomic.StoreUint64(&worker.work.result.totalSize, totalSize)
 								txs := worker.work.result.txs.Load().([]*mempoolTx)
-								worker.work.result.txs.Store(append(txs, txList[listIndex]))
+								worker.work.result.txs.Store(append(txs, tx))
 							}
 
 							worker.work.result.txsMutex.Unlock()
