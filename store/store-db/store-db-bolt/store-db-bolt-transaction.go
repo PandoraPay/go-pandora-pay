@@ -22,3 +22,7 @@ func (tx *StoreDBBoltTransaction) Get(key []byte) []byte {
 func (tx *StoreDBBoltTransaction) Delete(key []byte) error {
 	return tx.bucket.Delete(key)
 }
+
+func (tx *StoreDBBoltTransaction) DeleteForcefully(key []byte) error {
+	return tx.bucket.Delete(key)
+}

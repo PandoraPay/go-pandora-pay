@@ -327,7 +327,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					panic("Error writing accs" + err.Error())
 				}
 				if err = toks.WriteToStore(); err != nil {
-					panic("Error writing accs" + err.Error())
+					panic("Error writing accs: " + err.Error())
 				}
 
 				chain.ChainData.Store(newChainData)

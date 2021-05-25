@@ -146,11 +146,11 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 	for k, v := range hashMap.Committed {
 
 		if len(k) != 20 {
-			errors.New("key length is invalid")
+			return errors.New("key length is invalid")
 		}
 
-		if v.Status == "del" && v.Commit != "del" {
-			if err = hashMap.Bucket.Delete([]byte(k)); err != nil {
+		if v.Status == "del" {
+			if err = hashMap.Bucket.DeleteForcefully([]byte(k)); err != nil {
 				return
 			}
 			v.Status = "view"
@@ -159,8 +159,8 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 			if err = hashMap.Bucket.Put([]byte(k), v.Data); err != nil {
 				return
 			}
-			v.Commit = "update"
 			v.Status = "view"
+			v.Commit = "update"
 		}
 
 	}

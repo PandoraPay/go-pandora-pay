@@ -27,3 +27,11 @@ func (tx *StoreDBBuntTransaction) Delete(key []byte) (err error) {
 	_, err = tx.buntTx.Delete(string(key))
 	return err
 }
+
+func (tx *StoreDBBuntTransaction) DeleteForcefully(key []byte) (err error) {
+	_, err = tx.buntTx.Delete(string(key))
+	if err == buntdb.ErrNotFound {
+		return nil
+	}
+	return err
+}
