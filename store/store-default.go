@@ -10,13 +10,9 @@ import (
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
-func createStoreNow(name string) (store *Store, err error) {
-	var db store_db_interface.StoreDBInterface
+func createStoreNow(name, storeType string) (store *Store, err error) {
 
-	if globals.Arguments["--store-type"] == nil {
-		globals.Arguments["--store-type"] = "bolt"
-	}
-	storeType := globals.Arguments["--store-type"].(string)
+	var db store_db_interface.StoreDBInterface
 
 	switch storeType {
 	case "bolt":
@@ -41,16 +37,16 @@ func create_db() (err error) {
 
 	var prefix = ""
 
-	if StoreBlockchain, err = createStoreNow(prefix + "/blockchain"); err != nil {
+	if StoreBlockchain, err = createStoreNow(prefix+"/blockchain", getStoreType(globals.Arguments["--store-chain-type"], true, true, true, false, "bolt")); err != nil {
 		return
 	}
-	if StoreWallet, err = createStoreNow(prefix + "/wallet"); err != nil {
+	if StoreWallet, err = createStoreNow(prefix+"/wallet", getStoreType(globals.Arguments["--store-wallet-type"], true, true, true, false, "bolt")); err != nil {
 		return
 	}
-	if StoreSettings, err = createStoreNow(prefix + "/settings"); err != nil {
+	if StoreSettings, err = createStoreNow(prefix+"/settings", getStoreType(globals.Arguments["--store-wallet-type"], true, true, true, false, "bolt")); err != nil {
 		return
 	}
-	if StoreMempool, err = createStoreNow(prefix + "/mempool"); err != nil {
+	if StoreMempool, err = createStoreNow(prefix+"/mempool", getStoreType(globals.Arguments["--store-wallet-type"], true, true, true, false, "bolt")); err != nil {
 		return
 	}
 

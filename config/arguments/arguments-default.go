@@ -5,7 +5,7 @@ package arguments
 const commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--debugging] [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--tcp-server-port=<port>] [--tcp-server-address=<address>] [--tor-onion=<onion>] [--instance=<number>] [--set-genesis=<genesis>] [--store-type=<type>]
+  pandorapay [--debugging] [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--tcp-server-port=<port>] [--tcp-server-address=<address>] [--tor-onion=<onion>] [--instance=<number>] [--set-genesis=<genesis>] [--store-wallet-type=<type>] [--store-chain-type=<type>]
   pandorapay -h | --help
 
 Options:
@@ -15,7 +15,8 @@ Options:
   --devnet     							Run in DEVNET mode.
   --new-devnet     						Create a new devnet genesis.
   --set-genesis=<genesis>				Manually set the Genesis via a JSON. By using argument "file" it will read it via a file.
-  --store-type=<type>					Set the Store Type. Accepted values: "bolt|bunt|memory"
+  --store-wallet-type=<type>			Set Wallet Store Type. Accepted values: "bolt|bunt|memory". By default "bolt".
+  --store-chain-type=<type>				Set Chain Store Type. Accepted values: "bolt|bunt|memory". By default "bolt".
   --debug     							Debug mode enabled (print log message).
   --staking     						Start staking
   --node-name=<name>   					Change node name

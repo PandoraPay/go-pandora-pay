@@ -10,7 +10,7 @@ import (
 const commands = `PANDORA PAY WASM.
 
 Usage:
-  pandorapay [--debugging] [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--instance=<number>] [--set-genesis=<genesis>]
+  pandorapay [--debugging] [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=<name>] [--set-genesis=<genesis>] [--store-wallet-type=<type>] [--store-chain-type=<type>]
   pandorapay -h | --help
 
 Options:
@@ -19,7 +19,9 @@ Options:
   --testnet     						Run in TESTNET mode.
   --devnet     							Run in DEVNET mode.
   --new-devnet     						Create a new devnet genesis.
-  --set-genesis=<genesis>				Manually set the Genesis via a JSON. By using "file" argument it will read it via a file. Used for devnet genesis in Browser.
+  --set-genesis=<genesis>				Manually set the Genesis via a JSON. Used for devnet genesis in Browser.
+  --store-wallet-type=<type>			Set Wallet Store Type. Accepted values: "memory|indexdb". By default "indexdb"".
+  --store-chain-type=<type>				Set Chain Store Type. Accepted values: "memory|indexdb". By default "memory".
   --debug     							Debug mode enabled (print log message).
   --staking     						Start staking
   --node-name=<name>   					Change node name
