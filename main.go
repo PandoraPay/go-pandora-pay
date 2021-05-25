@@ -61,6 +61,7 @@ func main() {
 		panic(err)
 	}
 
+	gui.GUI.Log("Arguments count", len(argv))
 	for i, arg := range argv {
 		gui.GUI.Log("Argument", i, arg)
 	}

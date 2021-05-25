@@ -149,7 +149,7 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 			errors.New("key length is invalid")
 		}
 
-		if v.Status == "del" {
+		if v.Status == "del" && v.Commit != "del" {
 			if err = hashMap.Bucket.Delete([]byte(k)); err != nil {
 				return
 			}

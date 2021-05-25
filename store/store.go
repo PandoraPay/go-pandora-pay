@@ -55,6 +55,7 @@ func DBClose() (err error) {
 func getStoreType(argument interface{}, bolt, bunt, memory, indexdb bool, defaultType string) (value string) {
 
 	a := argument
+
 	if a == nil {
 		value = defaultType
 	} else {

@@ -3,7 +3,7 @@
 package arguments
 
 import (
-	"strings"
+	"encoding/json"
 	"syscall/js"
 )
 
@@ -32,9 +32,17 @@ func GetArguments() []string {
 	jsConfig := js.Global().Get("PandoraPayConfig")
 	if jsConfig.Truthy() {
 		if jsConfig.Type() != js.TypeString {
-			panic("PandoraPayConfig must be a string")
+			panic("PandoraPayConfig must be an array")
 		}
-		return strings.Split(jsConfig.String(), " ")
+		out := make([]string, 0)
+		str := jsConfig.String()
+
+		err := json.Unmarshal([]byte(str), &out)
+		if err != nil {
+			panic(err)
+		}
+
+		return out
 	}
 
 	return nil

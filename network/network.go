@@ -46,7 +46,7 @@ func (network *Network) execute() {
 				_, err := websocks.CreateWebsocketClient(network.Websockets, knownNode)
 				if err != nil {
 					if err.Error() != "Already connected" {
-						gui.GUI.Log("error connecting to: " + knownNode.UrlStr)
+						gui.GUI.Error("error connecting to: "+knownNode.UrlStr, err)
 					}
 				} else {
 					gui.GUI.Log("connected to: " + knownNode.UrlStr)
