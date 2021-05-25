@@ -26,7 +26,7 @@ func CreateGUINonInteractive() (g *GUINonInteractive, err error) {
 	switch runtime.GOARCH {
 	default:
 		g.colorError = "\x1b[31m"
-		g.colorWarning = "\x1b[33m"
+		g.colorWarning = "\x1b[32m"
 		g.colorInfo = "\x1b[34m"
 		g.colorLog = "\x1b[37m"
 		g.colorFatal = "\x1b[31m\x1b[43m"
