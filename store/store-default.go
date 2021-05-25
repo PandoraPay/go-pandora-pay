@@ -3,13 +3,33 @@
 package store
 
 import (
+	"errors"
+	"pandora-pay/config/globals"
 	store_db_bolt "pandora-pay/store/store-db/store-db-bolt"
+	store_db_bunt "pandora-pay/store/store-db/store-db-bunt"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
 func createStoreNow(name string) (store *Store, err error) {
 	var db store_db_interface.StoreDBInterface
-	if db, err = store_db_bolt.CreateStoreDBBolt(name); err != nil {
+
+	if globals.Arguments["--store-type"] == nil {
+		globals.Arguments["--store-type"] = "bolt"
+	}
+	storeType := globals.Arguments["--store-type"].(string)
+
+	switch storeType {
+	case "bolt":
+		db, err = store_db_bolt.CreateStoreDBBolt(name)
+	case "bunt":
+		db, err = store_db_bunt.CreateStoreDBBunt(name, false)
+	case "memory":
+		db, err = store_db_bunt.CreateStoreDBBunt(name, true)
+	default:
+		err = errors.New("Invalid --store-type argument")
+	}
+
+	if err != nil {
 		return
 	}
 

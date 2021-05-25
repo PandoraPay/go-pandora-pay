@@ -49,6 +49,7 @@ func main() {
 		if err != nil && gui.GUI != nil {
 			gui.GUI.Error(err)
 			gui.GUI.Close()
+			fmt.Println("Error: \n\n", err)
 		}
 	}()
 

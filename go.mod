@@ -10,6 +10,7 @@ require (
 	github.com/mackerelio/go-osstat v0.1.0
 	github.com/stretchr/testify v1.7.0
 	github.com/tevino/abool v1.2.0
+	github.com/tidwall/buntdb v1.2.3 // indirect
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	go.coder.com/go-tools v0.0.0-20190317003359-0c6a35b74a16 // indirect
