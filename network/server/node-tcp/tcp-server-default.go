@@ -31,10 +31,7 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 
 	// Create local listener on next available port
 
-	port := "8080"
-	if globals.Arguments["--tcp-server-port"] != nil {
-		port = globals.Arguments["--tcp-server-port"].(string)
-	}
+	port := globals.Arguments["--tcp-server-port"].(string)
 
 	portNumber, err := strconv.Atoi(port)
 	if err != nil {
