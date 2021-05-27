@@ -43,7 +43,7 @@ func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
 
 func (forging *Forging) StartForging() bool {
 
-	if globals.Arguments["--staking"] == nil {
+	if globals.Arguments["--staking"] == false {
 		gui.GUI.Warning(`Staking was not started as "--staking" is missing`)
 		return false
 	}

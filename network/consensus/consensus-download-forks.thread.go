@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/config"
+	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common"
@@ -159,23 +160,26 @@ func (thread *ConsensusProcessForksThread) execute() {
 			if thread.downloadFork(fork) {
 
 				gui.GUI.Log("Status. DownloadingRemainingBlocks fork")
-				if thread.downloadRemainingBlocks(fork) {
 
-					gui.GUI.Log("Status. AddBlocks fork")
+				if globals.Arguments["--consensus"] == "full" {
+					if thread.downloadRemainingBlocks(fork) {
 
-					if err := thread.chain.AddBlocks(fork.blocks, false); err != nil {
-						gui.GUI.Error("Invalid Fork", err)
-					} else {
-						fork.Lock()
-						if fork.current < fork.end {
-							fork.blocks = []*block_complete.BlockComplete{}
-							fork.errors = 0
-							willRemove = false
+						gui.GUI.Log("Status. AddBlocks fork")
+
+						if err := thread.chain.AddBlocks(fork.blocks, false); err != nil {
+							gui.GUI.Error("Invalid Fork", err)
+						} else {
+							fork.Lock()
+							if fork.current < fork.end {
+								fork.blocks = []*block_complete.BlockComplete{}
+								fork.errors = 0
+								willRemove = false
+							}
+							fork.Unlock()
 						}
-						fork.Unlock()
-					}
-					gui.GUI.Log("Status. AddBlocks DONE fork")
+						gui.GUI.Log("Status. AddBlocks DONE fork")
 
+					}
 				}
 
 			}

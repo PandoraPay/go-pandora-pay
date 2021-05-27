@@ -105,7 +105,7 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 			var file *os.File
 			if _, err = os.Stat("./genesis.data"); os.IsNotExist(err) {
 
-				if globals.Arguments["--new-devnet"] == nil {
+				if globals.Arguments["--new-devnet"] == false {
 					return errors.New("Genesis Data was not found and --new-devnet is missing")
 				}
 
