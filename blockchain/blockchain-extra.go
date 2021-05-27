@@ -10,6 +10,7 @@ import (
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
+	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -111,6 +112,10 @@ func (chain *Blockchain) init() (chainData *BlockchainData, err error) {
 }
 
 func (chain *Blockchain) createNextBlockForForging() {
+
+	if globals.Arguments["--consensus"] != "full" || globals.Arguments["--staking"] == nil {
+		return
+	}
 
 	chainData := chain.GetChainData()
 	target := chainData.Target

@@ -22,11 +22,11 @@ Options:
   --new-devnet                          Create a new devnet genesis.
   --set-genesis=genesis                 Manually set the Genesis via a JSON. Used for devnet genesis in Browser.
   --store-wallet-type=type              Set Wallet Store Type. Accepted values: "memory|indexdb". [default: indexdb]
-  --store-chain-type=type               Set Chain Store Type. Accepted values: "memory|indexdb". [default: memory].
+  --store-chain-type=type               Set Chain Store Type. Accepted values: "memory|indexdb". [default: indexdb].
   --debug                               Debug mode enabled (print log message).
   --staking                             Start staking.
   --node-name=name                      Change node name.
-  --consensus=type                      Consensus type. Accepted values: "full|none". [default: none]
+  --consensus=type                      Consensus type. Accepted values: "full|none". [default: full]
 `
 
 func GetArguments() []string {

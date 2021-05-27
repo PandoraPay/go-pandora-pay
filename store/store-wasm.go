@@ -36,16 +36,16 @@ func create_db() (err error) {
 
 	var prefix = ""
 
-	if StoreBlockchain, err = createStoreNow(prefix+"/blockchain", getStoreType(globals.Arguments["--store-chain-type"], false, false, true, true, "memory")); err != nil {
+	if StoreBlockchain, err = createStoreNow(prefix+"/blockchain", getStoreType(globals.Arguments["--store-chain-type"], false, false, true, true)); err != nil {
 		return
 	}
-	if StoreWallet, err = createStoreNow(prefix+"/wallet", getStoreType(globals.Arguments["--store-wallet-type"], false, false, true, true, "indexdb")); err != nil {
+	if StoreWallet, err = createStoreNow(prefix+"/wallet", getStoreType(globals.Arguments["--store-wallet-type"], false, false, true, true)); err != nil {
 		return
 	}
-	if StoreSettings, err = createStoreNow(prefix+"/settings", getStoreType(globals.Arguments["--store-wallet-type"], false, false, true, true, "indexdb")); err != nil {
+	if StoreSettings, err = createStoreNow(prefix+"/settings", getStoreType(globals.Arguments["--store-wallet-type"], false, false, true, true)); err != nil {
 		return
 	}
-	if StoreMempool, err = createStoreNow(prefix+"/mempool", getStoreType(globals.Arguments["--store-wallet-type"], false, false, true, true, "indexdb")); err != nil {
+	if StoreMempool, err = createStoreNow(prefix+"/mempool", getStoreType(globals.Arguments["--store-wallet-type"], false, false, true, true)); err != nil {
 		return
 	}
 

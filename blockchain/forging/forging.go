@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/config"
+	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
 	"sync"
@@ -41,6 +42,15 @@ func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
 }
 
 func (forging *Forging) StartForging() bool {
+
+	if globals.Arguments["--staking"] == nil {
+		gui.GUI.Warning(`Staking was not started as "--staking" is missing`)
+		return false
+	}
+	if globals.Arguments["--consensus"] != "full" {
+		gui.GUI.Warning(`Staking was not started as "--consensus=full" is missing`)
+		return false
+	}
 
 	if !forging.started.SetToIf(false, true) {
 		return false
