@@ -17,7 +17,7 @@ type ChangesMapElement struct {
 }
 
 type HashMap struct {
-	Bucket    store_db_interface.StoreDBTransactionInterface
+	Tx        store_db_interface.StoreDBTransactionInterface
 	Changes   map[string]*ChangesMapElement
 	Committed map[string]*CommittedMapElement
 	KeyLength int
@@ -27,10 +27,14 @@ func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name st
 	hashMap = &HashMap{
 		Committed: make(map[string]*CommittedMapElement),
 		Changes:   make(map[string]*ChangesMapElement),
-		Bucket:    tx,
+		Tx:        tx,
 		KeyLength: keyLength,
 	}
 	return
+}
+
+func (hashMap *HashMap) UnsetTx() {
+	hashMap.Tx = nil
 }
 
 func (hashMap *HashMap) Get(key []byte) (out []byte) {
@@ -54,7 +58,7 @@ func (hashMap *HashMap) get(key []byte, includeChanges bool) (out []byte) {
 		return
 	}
 
-	out = hashMap.Bucket.Get(key)
+	out = hashMap.Tx.Get(key)
 	hashMap.Committed[keyStr] = &CommittedMapElement{
 		out,
 		"view",
@@ -76,7 +80,7 @@ func (hashMap *HashMap) Exists(key []byte) bool {
 		return exists2.Data != nil
 	}
 
-	out := hashMap.Bucket.Get(key)
+	out := hashMap.Tx.Get(key)
 	hashMap.Committed[keyStr] = &CommittedMapElement{
 		out,
 		"view",
@@ -150,13 +154,13 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 		}
 
 		if v.Status == "del" {
-			if err = hashMap.Bucket.DeleteForcefully([]byte(k)); err != nil {
+			if err = hashMap.Tx.DeleteForcefully([]byte(k)); err != nil {
 				return
 			}
 			v.Status = "view"
 			v.Commit = "del"
 		} else if v.Status == "update" {
-			if err = hashMap.Bucket.Put([]byte(k), v.Data); err != nil {
+			if err = hashMap.Tx.Put([]byte(k), v.Data); err != nil {
 				return
 			}
 			v.Status = "view"

@@ -2,7 +2,6 @@ package blockchain
 
 import (
 	"bytes"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -13,7 +12,6 @@ import (
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
 	"pandora-pay/gui"
@@ -34,6 +32,7 @@ type Blockchain struct {
 	mempool                 *mempool.Mempool          `json:"-"`
 	wallet                  *wallet.Wallet            `json:"-"`
 	mutex                   *sync.Mutex               `json:"-"` //writing mutex
+	updatesQueue            *BlockchainUpdatesQueue   `json:"-"`
 	UpdateMulticast         *helpers.MulticastChannel `json:"-"` //chan uint64
 	UpdateNewChainMulticast *helpers.MulticastChannel `json:"-"` //chan *BlockchainData
 }
@@ -87,7 +86,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	//remove blocks which are different
 	removedTxHashes := make(map[string][]byte)
-	removedTx := [][]byte{}
+	removedTxs := [][]byte{}
 	removedBlocksHeights := []uint64{}
 
 	var accs *accounts.Accounts
@@ -314,7 +313,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				for txHash := range removedTxHashes {
 					data := writer.Get(append([]byte("tx"), txHash...))
 
-					removedTx = append(removedTx, helpers.CloneBytes(data)) //required because the garbage collector sometimes it deletes the underlying buffers
+					removedTxs = append(removedTxs, helpers.CloneBytes(data)) //required because the garbage collector sometimes it deletes the underlying buffers
 
 					if err = writer.Delete(append([]byte("tx"), txHash...)); err != nil {
 						panic("Error deleting transactions " + err.Error())
@@ -343,69 +342,31 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		return
 	}()
 
+	accs.UnsetTx()
+	toks.UnsetTx()
+
 	if err == nil && len(insertedBlocks) == 0 {
 		err = errors.New("No blocks were inserted")
 	}
 
-	if err != nil {
-		if calledByForging {
-			chain.createNextBlockForForging()
-		}
-		chain.mutex.Unlock()
-		return
+	update := &BlockchainUpdate{
+		err: err,
 	}
 
-	gui.GUI.Warning("-------------------------------------------")
-	gui.GUI.Warning(fmt.Sprintf("Included blocks %d | TXs: %d | Hash %s", len(insertedBlocks), len(insertedTxHashes), hex.EncodeToString(chainData.Hash)))
-	gui.GUI.Warning(newChainData.Height, hex.EncodeToString(newChainData.Hash), newChainData.Target.Text(10), newChainData.BigTotalDifficulty.Text(10))
-	gui.GUI.Warning("-------------------------------------------")
-	newChainData.updateChainInfo()
+	if err == nil {
+		update.newChainData = newChainData
+		update.accs = accs
+		update.toks = toks
+		update.removedTxs = removedTxs
+		update.insertedBlocks = insertedBlocks
+		update.insertedTxHashes = insertedTxHashes
+	}
+
+	chain.updatesQueue.updatesWriting.Lock()
+	chain.updatesQueue.updates.Store(append(chain.updatesQueue.updates.Load().([]*BlockchainUpdate), update))
+	chain.updatesQueue.updatesWriting.Unlock()
 
 	chain.mutex.Unlock()
-
-	//accs will only be read only
-	if err = chain.forging.Wallet.UpdateAccountsChanges(accs); err != nil {
-		gui.GUI.Error("Error updating balance changes", err)
-	}
-
-	if err = chain.wallet.UpdateAccountsChanges(accs); err != nil {
-		gui.GUI.Error("Error updating balance changes", err)
-	}
-
-	if err = chain.forging.Wallet.ProcessUpdates(); err != nil {
-		gui.GUI.Error("Error Processing Updates", err)
-	}
-
-	//update work for mem pool
-	chain.mempool.UpdateWork(newChainData.Hash, newChainData.Height)
-
-	//create next block and the workers will be automatically reset
-	chain.createNextBlockForForging()
-
-	for _, txData := range removedTx {
-		tx := &transaction.Transaction{}
-		if err = tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
-			return
-		}
-		if err = tx.BloomExtraNow(true); err != nil {
-			return
-		}
-		if _, err = chain.mempool.AddTxToMemPool(tx, newChainData.Height, false); err != nil {
-			return
-		}
-	}
-
-	chain.mempool.DeleteTxs(insertedTxHashes)
-
-	newSyncTime, result := chain.Sync.addBlocksChanged(uint32(len(insertedBlocks)), false)
-
-	chain.UpdateMulticast.Broadcast(newChainData.Height)
-
-	chain.UpdateNewChainMulticast.Broadcast(newChainData)
-
-	if result {
-		chain.Sync.UpdateSyncMulticast.Broadcast(newSyncTime)
-	}
 
 	return
 }
@@ -418,16 +379,26 @@ func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *me
 		return
 	}
 
+	updatesQueue := &BlockchainUpdatesQueue{
+		updates:        atomic.Value{},
+		updatesWriting: &sync.Mutex{},
+	}
+	updatesQueue.updates.Store([]*BlockchainUpdate{})
+
 	chain = &Blockchain{
 		ChainData:               &atomic.Value{},
 		mutex:                   &sync.Mutex{},
 		forging:                 forging,
 		mempool:                 mempool,
 		wallet:                  wallet,
+		updatesQueue:            updatesQueue,
 		Sync:                    createBlockchainSync(),
 		UpdateMulticast:         helpers.NewMulticastChannel(),
 		UpdateNewChainMulticast: helpers.NewMulticastChannel(),
 	}
+
+	updatesQueue.chain = chain
+	updatesQueue.processQueue()
 
 	if err = chain.loadBlockchain(); err != nil {
 		if err.Error() != "Chain not found" {

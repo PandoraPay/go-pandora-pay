@@ -30,15 +30,15 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) error {
 		return err
 	}
 
-	return hashMap.Bucket.Put([]byte("transitions_"+prefix), marshal)
+	return hashMap.Tx.Put([]byte("transitions_"+prefix), marshal)
 }
 
 func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) error {
-	return hashMap.Bucket.Delete([]byte("transitions_" + prefix))
+	return hashMap.Tx.Delete([]byte("transitions_" + prefix))
 }
 
 func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) error {
-	data := hashMap.Bucket.Get([]byte("transitions_" + prefix))
+	data := hashMap.Tx.Get([]byte("transitions_" + prefix))
 	if data == nil {
 		return errors.New("transitions didn't exist")
 	}
