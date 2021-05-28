@@ -1,3 +1,5 @@
+//based on https://pkg.go.dev/github.com/StellarCN/stellar-identicon-go
+
 package identicon
 
 import (

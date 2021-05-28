@@ -112,6 +112,8 @@ func main() {
 
 	gui.GUI.Log("Main Loop")
 
+	additionalMain()
+
 	exitSignal := make(chan os.Signal)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 	<-exitSignal
