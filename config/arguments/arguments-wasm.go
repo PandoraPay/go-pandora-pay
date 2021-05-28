@@ -2,11 +2,6 @@
 
 package arguments
 
-import (
-	"encoding/json"
-	"syscall/js"
-)
-
 const commands = `PANDORA PAY WASM.
 
 Usage:
@@ -28,24 +23,3 @@ Options:
   --node-name=name                      Change node name.
   --consensus=type                      Consensus type. Accepted values: "full|none". [default: full]
 `
-
-func GetArguments() []string {
-
-	jsConfig := js.Global().Get("PandoraPayConfig")
-	if jsConfig.Truthy() {
-		if jsConfig.Type() != js.TypeString {
-			panic("PandoraPayConfig must be an array")
-		}
-		out := make([]string, 0)
-		str := jsConfig.String()
-
-		err := json.Unmarshal([]byte(str), &out)
-		if err != nil {
-			panic(err)
-		}
-
-		return out
-	}
-
-	return nil
-}

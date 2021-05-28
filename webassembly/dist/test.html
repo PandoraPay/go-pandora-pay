@@ -3,13 +3,13 @@
         <meta charset="utf-8"/>
         <script src="./wasm_exec.js"> </script>
         <script>
-            global.PandoraPayConfig = JSON.stringify([
+            const go = new Go();
+            go.argv = [
                 '--devnet',
                 '--new-devnet',
-            ])
-        </script>
-        <script>
-            const go = new Go();
+                '--store-wallet-type=memory',
+                '--consensus=none',
+            ]
             WebAssembly.instantiateStreaming(fetch("./PandoraPay.wasm"), go.importObject).then((result)=>{
                 go.run(result.instance)
             })

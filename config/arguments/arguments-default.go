@@ -29,11 +29,3 @@ Options:
   --instance=number                     Number of forked instance (when you open multiple instances). It should me string number like "1","2","3","4" etc
   --consensus=type                      Consensus type. Accepted values: "full|none" [default: full].
 `
-
-func GetArguments() []string {
-	return nil
-}
-
-func DefaultArguments() {
-
-}

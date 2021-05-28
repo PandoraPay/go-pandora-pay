@@ -13,5 +13,5 @@ func HelloPandora(js.Value, []js.Value) interface{} {
 }
 
 func additionalMain() {
-	js.Global().Set("HelloPandora", js.FuncOf(HelloPandoraWASM))
+	js.Global().Set("HelloPandora", js.FuncOf(HelloPandora))
 }

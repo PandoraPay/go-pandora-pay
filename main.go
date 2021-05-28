@@ -34,8 +34,7 @@ func main() {
 
 	config.StartConfig()
 
-	argv := arguments.GetArguments()
-
+	argv := os.Args
 	if err = arguments.InitArguments(argv); err != nil {
 		panic(err)
 	}
