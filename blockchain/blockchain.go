@@ -16,6 +16,7 @@ import (
 	"pandora-pay/config/stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -28,13 +29,13 @@ import (
 type Blockchain struct {
 	ChainData               *atomic.Value //*BlockchainData
 	Sync                    *BlockchainSync
-	forging                 *forging.Forging          `json:"-"`
-	mempool                 *mempool.Mempool          `json:"-"`
-	wallet                  *wallet.Wallet            `json:"-"`
-	mutex                   *sync.Mutex               `json:"-"` //writing mutex
-	updatesQueue            *BlockchainUpdatesQueue   `json:"-"`
-	UpdateMulticast         *helpers.MulticastChannel `json:"-"` //chan uint64
-	UpdateNewChainMulticast *helpers.MulticastChannel `json:"-"` //chan *BlockchainData
+	forging                 *forging.Forging            `json:"-"`
+	mempool                 *mempool.Mempool            `json:"-"`
+	wallet                  *wallet.Wallet              `json:"-"`
+	mutex                   *sync.Mutex                 `json:"-"` //writing mutex
+	updatesQueue            *BlockchainUpdatesQueue     `json:"-"`
+	UpdateMulticast         *multicast.MulticastChannel `json:"-"` //chan uint64
+	UpdateNewChainMulticast *multicast.MulticastChannel `json:"-"` //chan *BlockchainData
 }
 
 func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockComplete) (err error) {
@@ -393,8 +394,8 @@ func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *me
 		wallet:                  wallet,
 		updatesQueue:            updatesQueue,
 		Sync:                    createBlockchainSync(),
-		UpdateMulticast:         helpers.NewMulticastChannel(),
-		UpdateNewChainMulticast: helpers.NewMulticastChannel(),
+		UpdateMulticast:         multicast.NewMulticastChannel(),
+		UpdateNewChainMulticast: multicast.NewMulticastChannel(),
 	}
 
 	updatesQueue.chain = chain

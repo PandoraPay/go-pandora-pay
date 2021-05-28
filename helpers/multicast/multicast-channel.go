@@ -1,4 +1,4 @@
-package helpers
+package multicast
 
 import (
 	"sync"
@@ -63,7 +63,6 @@ func NewMulticastChannel() *MulticastChannel {
 	multicast := &MulticastChannel{
 		listeners: &atomic.Value{},
 	}
-
 	multicast.listeners.Store(make([]chan interface{}, 0))
 
 	return multicast

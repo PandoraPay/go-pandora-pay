@@ -2,16 +2,16 @@ package blockchain
 
 import (
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/multicast"
 	"strconv"
 	"sync/atomic"
 	"time"
 )
 
 type BlockchainSync struct {
-	SyncTime                uint64                    `json:"-"` //use atomic
-	blocksChangedLastMinute uint32                    `json:"-"` //use atomic
-	UpdateSyncMulticast     *helpers.MulticastChannel `json:"-"` //chan uint64
+	SyncTime                uint64                      `json:"-"` //use atomic
+	blocksChangedLastMinute uint32                      `json:"-"` //use atomic
+	UpdateSyncMulticast     *multicast.MulticastChannel `json:"-"` //chan uint64
 }
 
 func (chainSync *BlockchainSync) GetSyncTime() uint64 {
@@ -87,7 +87,7 @@ func createBlockchainSync() (out *BlockchainSync) {
 	out = &BlockchainSync{
 		SyncTime:                0,
 		blocksChangedLastMinute: 0,
-		UpdateSyncMulticast:     helpers.NewMulticastChannel(),
+		UpdateSyncMulticast:     multicast.NewMulticastChannel(),
 	}
 
 	out.start()

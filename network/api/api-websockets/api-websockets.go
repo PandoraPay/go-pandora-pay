@@ -22,7 +22,7 @@ type APIWebsockets struct {
 	mempool                *mempool.Mempool
 	apiCommon              *api_common.APICommon
 	apiStore               *api_common.APIStore
-	mempoolDownloadPending sync.Map //string
+	mempoolDownloadPending *sync.Map //string
 }
 
 func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -234,7 +234,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		apiStore:               apiStore,
 		apiCommon:              apiCommon,
 		mempool:                mempool,
-		mempoolDownloadPending: sync.Map{},
+		mempoolDownloadPending: &sync.Map{},
 	}
 
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error){

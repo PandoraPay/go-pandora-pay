@@ -6,7 +6,7 @@ import (
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/multicast"
 	api_http "pandora-pay/network/api/api-http"
 	"pandora-pay/network/api/api-websockets"
 	"pandora-pay/network/websocks/connection"
@@ -17,18 +17,14 @@ import (
 )
 
 type Websockets struct {
-	AllAddresses sync.Map
-
-	AllList      *atomic.Value //[]*connection.AdvancedConnection
-	AllListMutex *sync.Mutex
-
-	Clients       int64
-	ServerClients int64
-
-	UpdateNewConnectionMulticast *helpers.MulticastChannel
-
-	ApiWebsockets *api_websockets.APIWebsockets
-	api           *api_http.API
+	AllAddresses                 *sync.Map
+	AllList                      *atomic.Value //[]*connection.AdvancedConnection
+	AllListMutex                 *sync.Mutex
+	Clients                      int64
+	ServerClients                int64
+	UpdateNewConnectionMulticast *multicast.MulticastChannel
+	ApiWebsockets                *api_websockets.APIWebsockets
+	api                          *api_http.API
 }
 
 func (websockets *Websockets) GetAllSockets() []*connection.AdvancedConnection {
@@ -143,12 +139,12 @@ func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection)
 func CreateWebsockets(api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
-		AllAddresses:                 sync.Map{},
+		AllAddresses:                 &sync.Map{},
 		Clients:                      0,
 		ServerClients:                0,
 		AllList:                      &atomic.Value{},
 		AllListMutex:                 &sync.Mutex{},
-		UpdateNewConnectionMulticast: helpers.NewMulticastChannel(),
+		UpdateNewConnectionMulticast: multicast.NewMulticastChannel(),
 		api:                          api,
 		ApiWebsockets:                apiWebsockets,
 	}

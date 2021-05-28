@@ -11,6 +11,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	debugging2 "pandora-pay/helpers/debugging"
+	"pandora-pay/helpers/events"
 	"pandora-pay/mempool"
 	"pandora-pay/network"
 	"pandora-pay/settings"
@@ -21,16 +22,20 @@ import (
 	"syscall"
 )
 
+var (
+	mySettings *settings.Settings
+	myWallet   *wallet.Wallet
+	myForging  *forging.Forging
+	myMempool  *mempool.Mempool
+	myChain    *blockchain.Blockchain
+	myNetwork  *network.Network
+)
+
 func main() {
 
 	var err error
 
-	var mySettings *settings.Settings
-	var myWallet *wallet.Wallet
-	var myForging *forging.Forging
-	var myMempool *mempool.Mempool
-	var myChain *blockchain.Blockchain
-	var myNetwork *network.Network
+	globals.MainEvents = events.NewEvents()
 
 	config.StartConfig()
 
@@ -112,6 +117,8 @@ func main() {
 	gui.GUI.Log("Main Loop")
 
 	additionalMain()
+
+	globals.MainEvents.BroadcastEvent("main", "initialized")
 
 	exitSignal := make(chan os.Signal)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)

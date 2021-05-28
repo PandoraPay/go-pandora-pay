@@ -14,7 +14,7 @@ type KnownNode struct {
 }
 
 type KnownNodes struct {
-	KnownMap       sync.Map
+	KnownMap       *sync.Map
 	KnownList      *atomic.Value //[]*KnownNode
 	KnownListMutex *sync.Mutex
 }
@@ -53,7 +53,7 @@ func (knownNodes *KnownNodes) AddKnownNode(url *url.URL, isSeed bool) (result bo
 func CreateKnownNodes() (knownNodes *KnownNodes) {
 
 	knownNodes = &KnownNodes{
-		KnownMap:       sync.Map{},
+		KnownMap:       &sync.Map{},
 		KnownList:      &atomic.Value{},
 		KnownListMutex: &sync.Mutex{},
 	}

@@ -23,10 +23,10 @@ type GUIInteractive struct {
 	logs *widgets.Paragraph
 
 	info2    *widgets.List
-	info2Map sync.Map
+	info2Map *sync.Map
 
 	info    *widgets.List
-	infoMap sync.Map
+	infoMap *sync.Map
 }
 
 func (g *GUIInteractive) Close() {

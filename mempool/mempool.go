@@ -9,7 +9,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/fees"
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/multicast"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -46,11 +46,11 @@ type mempoolTxs struct {
 }
 
 type Mempool struct {
-	txs                     *mempoolTxs               `json:"-"`
-	result                  *atomic.Value             `json:"-"` //*mempoolResult
-	newWork                 chan *mempoolWork         `json:"-"`
-	Wallet                  *mempoolWallet            `json:"-"`
-	NewTransactionMulticast *helpers.MulticastChannel `json:"-"`
+	txs                     *mempoolTxs                 `json:"-"`
+	result                  *atomic.Value               `json:"-"` //*mempoolResult
+	newWork                 chan *mempoolWork           `json:"-"`
+	Wallet                  *mempoolWallet              `json:"-"`
+	NewTransactionMulticast *multicast.MulticastChannel `json:"-"`
 }
 
 func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, propagateToSockets bool) (out bool, err error) {
@@ -260,7 +260,7 @@ func InitMemPool() (mempool *Mempool, err error) {
 			txsListMutex: &sync.Mutex{},
 		},
 		Wallet:                  createMempoolWallet(),
-		NewTransactionMulticast: helpers.NewMulticastChannel(),
+		NewTransactionMulticast: multicast.NewMulticastChannel(),
 	}
 	mempool.txs.txsList.Store([]*mempoolTx{})
 

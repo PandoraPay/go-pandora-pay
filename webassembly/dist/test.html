@@ -10,8 +10,11 @@
                 '--store-wallet-type=memory',
                 '--consensus=none',
             ]
-            WebAssembly.instantiateStreaming(fetch("./PandoraPay.wasm"), go.importObject).then((result)=>{
+            WebAssembly.instantiateStreaming(fetch("./PandoraPay.wasm"), go.importObject).then( result =>{
                 go.run(result.instance)
+                PandoraPay.Events.Subscribe((name, data)=>{
+                    console.log("JS NAME:", name, "data", data)
+                })
             })
         </script>
     </head>
