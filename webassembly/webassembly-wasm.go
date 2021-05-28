@@ -9,10 +9,10 @@ import (
 	"pandora-pay/helpers/events"
 	"sync/atomic"
 	"syscall/js"
-	"time"
 )
 
 var subscriptionsIndex uint64
+var startMainCallback func()
 
 func SubscribeEvents(none js.Value, args []js.Value) interface{} {
 
@@ -37,10 +37,17 @@ func SubscribeEvents(none js.Value, args []js.Value) interface{} {
 
 func HelloPandora(js.Value, []js.Value) interface{} {
 	gui.GUI.Info("HelloPandora works!")
-	return nil
+	return true
 }
 
-func Initialize() {
+func Start(js.Value, []js.Value) interface{} {
+	startMainCallback()
+	return true
+}
+
+func Initialize(startMainCb func()) {
+
+	startMainCallback = startMainCb
 
 	Events := map[string]interface{}{
 		"Subscribe": js.FuncOf(SubscribeEvents),
@@ -48,6 +55,7 @@ func Initialize() {
 
 	Helpers := map[string]interface{}{
 		"HelloPandora": js.FuncOf(HelloPandora),
+		"Start":        js.FuncOf(Start),
 	}
 
 	PandoraPayExport := map[string]interface{}{
@@ -56,12 +64,5 @@ func Initialize() {
 	}
 
 	js.Global().Set("PandoraPay", js.ValueOf(PandoraPayExport))
-
-	go func() {
-		for {
-			globals.MainEvents.BroadcastEvent("main", "working...")
-			time.Sleep(1 * time.Second)
-		}
-	}()
 
 }

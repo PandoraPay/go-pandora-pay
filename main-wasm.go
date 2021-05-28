@@ -7,5 +7,5 @@ import (
 )
 
 func additionalMain() {
-	webassembly.Initialize()
+	webassembly.Initialize(startMain)
 }

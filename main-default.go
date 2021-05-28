@@ -3,4 +3,5 @@
 package main
 
 func additionalMain() {
+	startMain()
 }

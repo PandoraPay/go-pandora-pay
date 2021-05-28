@@ -10,7 +10,7 @@ import (
 	"pandora-pay/config/arguments"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
-	debugging2 "pandora-pay/helpers/debugging"
+	"pandora-pay/helpers/debugging"
 	"pandora-pay/helpers/events"
 	"pandora-pay/mempool"
 	"pandora-pay/network"
@@ -31,11 +31,8 @@ var (
 	myNetwork  *network.Network
 )
 
-func main() {
-
+func startMain() {
 	var err error
-
-	globals.MainEvents = events.NewEvents()
 
 	config.StartConfig()
 
@@ -45,7 +42,7 @@ func main() {
 	}
 
 	if globals.Arguments["--debugging"] == true {
-		go debugging2.Start()
+		go debugging.Start()
 	}
 
 	defer func() {
@@ -60,10 +57,12 @@ func main() {
 	if err = config.InitConfig(); err != nil {
 		panic(err)
 	}
+	globals.MainEvents.BroadcastEvent("main", "config initialized")
 
 	if err = gui.InitGUI(); err != nil {
 		panic(err)
 	}
+	globals.MainEvents.BroadcastEvent("main", "GUI initialized")
 
 	gui.GUI.Log("Arguments count", len(argv))
 	for i, arg := range argv {
@@ -73,34 +72,41 @@ func main() {
 	if err = store.InitDB(); err != nil {
 		panic(err)
 	}
+	globals.MainEvents.BroadcastEvent("main", "database initialized")
 
 	if myMempool, err = mempool.InitMemPool(); err != nil {
 		panic(err)
 	}
 	globals.Data["mempool"] = myMempool
+	globals.MainEvents.BroadcastEvent("main", "mempool initialized")
 
 	if myForging, err = forging.ForgingInit(myMempool); err != nil {
 		panic(err)
 	}
 	globals.Data["forging"] = myForging
+	globals.MainEvents.BroadcastEvent("main", "forging initialized")
 
 	if myWallet, err = wallet.WalletInit(myForging, myMempool); err != nil {
 		panic(err)
 	}
 	globals.Data["wallet"] = myWallet
+	globals.MainEvents.BroadcastEvent("main", "wallet initialized")
 
 	if mySettings, err = settings.SettingsInit(); err != nil {
 		panic(err)
 	}
 	globals.Data["settings"] = mySettings
+	globals.MainEvents.BroadcastEvent("main", "settings initialized")
 
 	if myChain, err = blockchain.BlockchainInit(myForging, myWallet, myMempool); err != nil {
 		panic(err)
 	}
 	globals.Data["chain"] = myChain
+	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
 
 	myTransactionsBuilder := transactions_builder.TransactionsBuilderInit(myWallet, myMempool, myChain)
 	globals.Data["transactionsBuilder"] = myTransactionsBuilder
+	globals.MainEvents.BroadcastEvent("main", "transactions builder initialized")
 
 	if globals.Arguments["--new-devnet"] == true {
 
@@ -113,12 +119,18 @@ func main() {
 		panic(err)
 	}
 	globals.Data["network"] = myNetwork
+	globals.MainEvents.BroadcastEvent("main", "network initialized")
 
 	gui.GUI.Log("Main Loop")
+	globals.MainEvents.BroadcastEvent("main", "initialized")
+
+}
+
+func main() {
+
+	globals.MainEvents = events.NewEvents()
 
 	additionalMain()
-
-	globals.MainEvents.BroadcastEvent("main", "initialized")
 
 	exitSignal := make(chan os.Signal)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
