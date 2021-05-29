@@ -76,19 +76,18 @@ func (thread *ForgingThread) startForging() {
 
 	go func() {
 		for {
-			select {
-			case _, ok := <-ticker.C:
-				if !ok {
-					return
-				}
 
-				s := ""
-				for i := 0; i < thread.threads; i++ {
-					hashesPerSecond := atomic.SwapUint32(&workers[i].hashes, 0)
-					s += strconv.FormatUint(uint64(hashesPerSecond), 10) + " "
-				}
-				gui.GUI.InfoUpdate("Hashes/s", s)
+			_, ok := <-ticker.C
+			if !ok {
+				return
 			}
+
+			s := ""
+			for i := 0; i < thread.threads; i++ {
+				hashesPerSecond := atomic.SwapUint32(&workers[i].hashes, 0)
+				s += strconv.FormatUint(uint64(hashesPerSecond), 10) + " "
+			}
+			gui.GUI.InfoUpdate("Hashes/s", s)
 		}
 	}()
 

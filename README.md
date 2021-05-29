@@ -129,3 +129,7 @@ Using profiling to debug memory leaks/CPU
 
 ### DOCS
 [WebAssembly DOCS](/webassembly/webassembly.md)
+
+### Scripts
+`scripts/compile-wasm.sh` compiles to WASM
+`scripts/compile-wasm-wallet.sh` compiles to WASM and move it to wallet repository

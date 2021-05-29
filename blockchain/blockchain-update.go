@@ -119,13 +119,9 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 			for !finished {
 				select {
 				case newUpdate := <-queue.updates:
-					{
-						updates = append(updates, newUpdate)
-					}
+					updates = append(updates, newUpdate)
 				default:
-					{
-						finished = true
-					}
+					finished = true
 				}
 			}
 
