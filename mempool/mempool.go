@@ -71,7 +71,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 		mine := false
 
 		switch tx.TxType {
-		case transaction_type.TxSimple:
+		case transaction_type.TX_SIMPLE:
 			txBase := tx.TxBase.(*transaction_simple.TransactionSimple)
 			for _, vin := range txBase.Vin {
 				if mempool.Wallet.myAddressesMap[string(vin.Bloom.PublicKeyHash)] != nil {

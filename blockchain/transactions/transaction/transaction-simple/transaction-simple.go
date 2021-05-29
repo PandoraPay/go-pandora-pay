@@ -42,7 +42,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 			}
 
 			switch tx.TxScript {
-			case ScriptDelegate, ScriptUnstake:
+			case SCRIPT_DELEGATE, SCRIPT_UNSTAKE:
 				if err = tx.Extra.IncludeTransactionVin0(blockHeight, acc); err != nil {
 					return
 				}
@@ -81,7 +81,7 @@ func (tx *TransactionSimple) ComputeFees(out map[string]uint64) (err error) {
 	}
 
 	switch tx.TxScript {
-	case ScriptUnstake:
+	case SCRIPT_UNSTAKE:
 		return helpers.SafeMapUint64Add(out, config.NATIVE_TOKEN_STRING, tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
 	}
 	return
@@ -132,14 +132,14 @@ func (tx *TransactionSimple) Validate() (err error) {
 	}
 
 	switch tx.TxScript {
-	case ScriptNormal:
+	case SCRIPT_NORMAL:
 		if len(tx.Vin) == 0 || len(tx.Vin) > 255 {
 			return errors.New("Invalid vin")
 		}
 		if len(tx.Vout) == 0 || len(tx.Vout) > 255 {
 			return errors.New("Invalid vout")
 		}
-	case ScriptDelegate, ScriptUnstake, ScriptWithdraw:
+	case SCRIPT_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_WITHDRAW:
 		if len(tx.Vin) != 1 {
 			return errors.New("Invalid vin")
 		}
@@ -205,11 +205,11 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 	}
 	tx.TxScript = ScriptType(n)
 	switch tx.TxScript {
-	case ScriptNormal:
+	case SCRIPT_NORMAL:
 		//nothing
-	case ScriptUnstake, ScriptWithdraw:
+	case SCRIPT_UNSTAKE, SCRIPT_WITHDRAW:
 		tx.Extra = &transaction_simple_extra.TransactionSimpleUnstake{}
-	case ScriptDelegate:
+	case SCRIPT_DELEGATE:
 		tx.Extra = &transaction_simple_extra.TransactionSimpleDelegate{}
 	default:
 		return errors.New("Invalid TxType")

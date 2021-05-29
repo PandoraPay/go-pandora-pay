@@ -2,11 +2,8 @@ package start
 
 import (
 	"fmt"
-	"os"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
-	"pandora-pay/config"
-	"pandora-pay/config/arguments"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/debugging"
@@ -37,13 +34,6 @@ func startMain() {
 
 	var err error
 
-	config.StartConfig()
-
-	argv := os.Args[1:]
-	if err = arguments.InitArguments(argv); err != nil {
-		panic(err)
-	}
-
 	if globals.Arguments["--debugging"] == true {
 		go debugging.Start()
 	}
@@ -57,20 +47,10 @@ func startMain() {
 		}
 	}()
 
-	if err = config.InitConfig(); err != nil {
-		panic(err)
-	}
-	globals.MainEvents.BroadcastEvent("main", "config initialized")
-
 	if err = gui.InitGUI(); err != nil {
 		panic(err)
 	}
 	globals.MainEvents.BroadcastEvent("main", "GUI initialized")
-
-	gui.GUI.Log("Arguments count", len(argv))
-	for i, arg := range argv {
-		gui.GUI.Log("Argument", i, arg)
-	}
 
 	if err = store.InitDB(); err != nil {
 		panic(err)

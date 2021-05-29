@@ -26,8 +26,8 @@ type Wallet struct {
 
 func createWallet(forging *forging.Forging, mempool *mempool.Mempool) *Wallet {
 	return &Wallet{
-		Version:   VersionSimple,
-		Encrypted: EncryptedVersionPlainText,
+		Version:   VERSION_SIMPLE,
+		Encrypted: ENCRYPTED_VERSION_PLAIN_TEXT,
 		forging:   forging,
 		mempool:   mempool,
 

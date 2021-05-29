@@ -71,7 +71,7 @@ func (tx *Transaction) Validate() error {
 	if tx.Version != 0 {
 		return errors.New("Version is invalid")
 	}
-	if transaction_type.TxEND <= tx.TxType {
+	if transaction_type.TX_END <= tx.TxType {
 		return errors.New("VersionType is invalid")
 	}
 
@@ -97,7 +97,7 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader) (err error) {
 	tx.TxType = transaction_type.TransactionType(n)
 
 	switch tx.TxType {
-	case transaction_type.TxSimple:
+	case transaction_type.TX_SIMPLE:
 		tx.TxBase = &transaction_simple.TransactionSimple{}
 	default:
 		return errors.New("Invalid TxType")

@@ -87,6 +87,19 @@ func GetNetworkName() string {
 	}
 }
 
+func GetNetworkPrefix() string {
+	switch NETWORK_SELECTED {
+	case MAIN_NET_NETWORK_BYTE:
+		return MAIN_NET_NETWORK_BYTE_PREFIX
+	case TEST_NET_NETWORK_BYTE:
+		return TEST_NET_NETWORK_BYTE_PREFIX
+	case DEV_NET_NETWORK_BYTE:
+		return DEV_NET_NETWORK_BYTE_PREFIX
+	default:
+		panic("Network is unknown")
+	}
+}
+
 func InitConfig() (err error) {
 
 	if globals.Arguments["--testnet"] == true {

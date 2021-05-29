@@ -38,7 +38,7 @@ func (tx *Transaction) BloomAll() (err error) {
 
 func (tx *Transaction) BloomExtraNow(signatureWasVerifiedBefore bool) (err error) {
 	switch tx.TxType {
-	case transaction_type.TxSimple:
+	case transaction_type.TX_SIMPLE:
 		base := tx.TxBase.(*transaction_simple.TransactionSimple)
 		if err = base.BloomNow(tx.SerializeForSigning(), signatureWasVerifiedBefore); err != nil {
 			return

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-type"
+	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/events"
@@ -37,6 +38,8 @@ func SubscribeEvents(none js.Value, args []js.Value) interface{} {
 			var final interface{}
 
 			switch v := data.Data.(type) {
+			case string:
+				final = data.Data
 			case interface{}:
 				str, err := json.Marshal(v)
 				if err == nil {
@@ -80,31 +83,37 @@ func Initialize(startMainCb func()) {
 		"enums": js.ValueOf(map[string]interface{}{
 			"transactions": js.ValueOf(map[string]interface{}{
 				"transactionType": js.ValueOf(map[string]interface{}{
-					"txSimple": js.ValueOf(uint64(transaction_type.TxSimple)),
+					"TX_SIMPLE": js.ValueOf(uint64(transaction_type.TX_SIMPLE)),
 				}),
 				"transactionSimple": js.ValueOf(map[string]interface{}{
 					"scriptType": js.ValueOf(map[string]interface{}{
-						"scriptNormal":   js.ValueOf(uint64(transaction_simple.ScriptNormal)),
-						"scriptUnstake":  js.ValueOf(uint64(transaction_simple.ScriptUnstake)),
-						"scriptWithdraw": js.ValueOf(uint64(transaction_simple.ScriptWithdraw)),
-						"scriptDelegate": js.ValueOf(uint64(transaction_simple.ScriptDelegate)),
+						"SCRIPT_NORMAL":   js.ValueOf(uint64(transaction_simple.SCRIPT_NORMAL)),
+						"SCRIPT_UNSTAKE":  js.ValueOf(uint64(transaction_simple.SCRIPT_UNSTAKE)),
+						"SCRIPT_WITHDRAW": js.ValueOf(uint64(transaction_simple.SCRIPT_WITHDRAW)),
+						"SCRIPT_DELEGATE": js.ValueOf(uint64(transaction_simple.SCRIPT_DELEGATE)),
 					}),
 				}),
 			}),
 			"wallet": js.ValueOf(map[string]interface{}{
 				"version": js.ValueOf(map[string]interface{}{
-					"versionSimple": js.ValueOf(int(wallet.VersionSimple)),
+					"VERSION_SIMPLE": js.ValueOf(int(wallet.VERSION_SIMPLE)),
 				}),
 				"encryptedVersion": js.ValueOf(map[string]interface{}{
-					"encryptedVersionPlainText": js.ValueOf(int(wallet.EncryptedVersionPlainText)),
-					"encryptedVersionEncrypted": js.ValueOf(int(wallet.EncryptedVersionEncryption)),
+					"ENCRYPTED_VERSION_PLAIN_TEXT": js.ValueOf(int(wallet.ENCRYPTED_VERSION_PLAIN_TEXT)),
+					"ENCRYPTED_VERSION_ENCRYPTION": js.ValueOf(int(wallet.ENCRYPTED_VERSION_ENCRYPTION)),
 				}),
 				"address": js.ValueOf(map[string]interface{}{
 					"version": js.ValueOf(map[string]interface{}{
-						"versionTransparent": js.ValueOf(int(wallet_address.VersionTransparent)),
+						"versionTransparent": js.ValueOf(int(wallet_address.VERSION_TRANSPARENT)),
 					}),
 				}),
 			}),
+		}),
+		"config": js.ValueOf(map[string]interface{}{
+			"NAME":                    js.ValueOf(config.NAME),
+			"NETWORK_SELECTED":        js.ValueOf(config.NETWORK_SELECTED),
+			"NETWORK_SELECTED_NAME":   js.ValueOf(config.GetNetworkName()),
+			"NETWORK_SELECTED_PREFIX": js.ValueOf(config.GetNetworkPrefix()),
 		}),
 	}
 
