@@ -6,7 +6,6 @@ import (
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/network/websocks/connection"
-	"sync/atomic"
 )
 
 func (consensus *Consensus) chainGet(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -37,15 +36,14 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 	} else if compare < 0 {
 
 		fork := &Fork{
-			end:                chainUpdateNotification.End,
-			hash:               chainUpdateNotification.Hash,
-			prevHash:           chainUpdateNotification.PrevHash,
-			bigTotalDifficulty: &atomic.Value{},
-			initialized:        false,
-			blocks:             make([]*block_complete.BlockComplete, 0),
+			End:                chainUpdateNotification.End,
+			Hash:               chainUpdateNotification.Hash,
+			PrevHash:           chainUpdateNotification.PrevHash,
+			BigTotalDifficulty: chainUpdateNotification.BigTotalDifficulty,
+			Initialized:        false,
+			Blocks:             make([]*block_complete.BlockComplete, 0),
 			conns:              []*connection.AdvancedConnection{conn},
 		}
-		fork.bigTotalDifficulty.Store(chainUpdateNotification.BigTotalDifficulty)
 
 		if _, exists := consensus.forks.hashes.LoadOrStore(string(chainUpdateNotification.Hash), fork); exists {
 			return

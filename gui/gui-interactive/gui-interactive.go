@@ -42,7 +42,9 @@ func CreateGUIInteractive() (g *GUIInteractive, err error) {
 	}
 
 	g = &GUIInteractive{
-		logger: logger,
+		logger:   logger,
+		infoMap:  &sync.Map{},
+		info2Map: &sync.Map{},
 	}
 
 	if err = ui.Init(); err != nil {

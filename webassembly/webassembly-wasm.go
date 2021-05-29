@@ -3,6 +3,7 @@
 package webassembly
 
 import (
+	"encoding/json"
 	"errors"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
@@ -28,7 +29,22 @@ func SubscribeEvents(none js.Value, args []js.Value) interface{} {
 		for {
 			dataValue := <-channel
 			data := dataValue.(*events.EventData)
-			callback.Invoke(data.Name, data.Data)
+
+			var final interface{}
+
+			switch v := data.Data.(type) {
+			case interface{}:
+				str, err := json.Marshal(v)
+				if err == nil {
+					final = string(str)
+				} else {
+					final = "error marshaling object"
+				}
+			default:
+				final = data.Data
+			}
+
+			callback.Invoke(data.Name, final)
 		}
 	}()
 

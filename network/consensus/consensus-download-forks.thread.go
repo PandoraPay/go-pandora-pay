@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"bytes"
-	"math/big"
 	"pandora-pay/blockchain"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/config"
@@ -26,17 +25,17 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 	defer fork.Unlock()
 
 	chainData := thread.chain.GetChainData()
-	if fork.bigTotalDifficulty.Load().(*big.Int).Cmp(chainData.BigTotalDifficulty) <= 0 {
+	if fork.BigTotalDifficulty.Cmp(chainData.BigTotalDifficulty) <= 0 {
 		return false
 	}
 
-	if fork.initialized {
+	if fork.Initialized {
 		return true
 	}
 
 	var err error
 
-	start := fork.end
+	start := fork.End
 	if start > chainData.Height {
 		start = chainData.Height
 	}
@@ -82,16 +81,16 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 		}
 
 		//prepend
-		fork.blocks = append(fork.blocks, nil)
-		copy(fork.blocks[1:], fork.blocks)
-		fork.blocks[0] = blkComplete
+		fork.Blocks = append(fork.Blocks, nil)
+		copy(fork.Blocks[1:], fork.Blocks)
+		fork.Blocks[0] = blkComplete
 
 		start -= 1
 	}
 
-	fork.current = start + uint64(len(fork.blocks))
+	fork.Current = start + uint64(len(fork.Blocks))
 
-	fork.initialized = true
+	fork.Initialized = true
 
 	return true
 }
@@ -105,7 +104,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 
 	for i := uint64(0); i < config.FORK_MAX_DOWNLOAD; i++ {
 
-		if fork.current == fork.end {
+		if fork.Current == fork.End {
 			break
 		}
 
@@ -121,7 +120,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 			return false
 		}
 
-		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockHeight(fork.current))
+		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockHeight(fork.Current))
 
 		if answer.Err != nil {
 			fork.errors += 1
@@ -138,12 +137,12 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 			continue
 		}
 
-		fork.blocks = append(fork.blocks, blkComplete)
+		fork.Blocks = append(fork.Blocks, blkComplete)
 
-		fork.current += 1
+		fork.Current += 1
 	}
 
-	return len(fork.blocks) > 0
+	return len(fork.Blocks) > 0
 
 }
 
@@ -161,17 +160,19 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 				gui.GUI.Log("Status. DownloadingRemainingBlocks fork")
 
+				globals.MainEvents.BroadcastEvent("consensus/update", fork)
+
 				if globals.Arguments["--consensus"] == "full" {
 					if thread.downloadRemainingBlocks(fork) {
 
 						gui.GUI.Log("Status. AddBlocks fork")
 
-						if err := thread.chain.AddBlocks(fork.blocks, false); err != nil {
+						if err := thread.chain.AddBlocks(fork.Blocks, false); err != nil {
 							gui.GUI.Error("Invalid Fork", err)
 						} else {
 							fork.Lock()
-							if fork.current < fork.end {
-								fork.blocks = []*block_complete.BlockComplete{}
+							if fork.Current < fork.End {
+								fork.Blocks = []*block_complete.BlockComplete{}
 								fork.errors = 0
 								willRemove = false
 							}

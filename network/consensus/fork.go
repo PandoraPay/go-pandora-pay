@@ -1,28 +1,25 @@
 package consensus
 
 import (
+	"math/big"
 	"math/rand"
 	block_complete "pandora-pay/blockchain/block-complete"
+	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
 	"sync"
-	"sync/atomic"
 )
 
 type Fork struct {
-	bigTotalDifficulty *atomic.Value // *big.Int
-
-	initialized bool
-
-	end     uint64
-	current uint64
-	blocks  []*block_complete.BlockComplete
-
-	conns []*connection.AdvancedConnection
-
-	hash         []byte
-	prevHash     []byte
-	errors       int
-	sync.RWMutex `json:"-"`
+	BigTotalDifficulty *big.Int                         `json:"bigTotalDifficulty"`
+	Initialized        bool                             `json:"initialized"`
+	End                uint64                           `json:"end"`
+	Current            uint64                           `json:"current"`
+	Blocks             []*block_complete.BlockComplete  `json:"blocks"`
+	Hash               helpers.HexBytes                 `json:"hash"`     //32
+	PrevHash           helpers.HexBytes                 `json:"prevHash"` //32
+	conns              []*connection.AdvancedConnection `json:"-"`
+	errors             int                              `json:"errors"`
+	sync.RWMutex       `json:"-"`
 }
 
 //is locked before

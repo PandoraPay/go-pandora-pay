@@ -1,11 +1,11 @@
 // +build wasm
 
-package main
+package start
 
 import (
 	"pandora-pay/webassembly"
 )
 
-func additionalMain() {
+func RunMain() {
 	webassembly.Initialize(startMain)
 }

@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"math/big"
 	"pandora-pay/config"
 	"sync"
 	"sync/atomic"
@@ -20,11 +19,12 @@ func (forks *Forks) getBestFork() (selectedFork *Fork) {
 
 	for _, fork := range list {
 
-		forkBigTotalDifficulty := fork.bigTotalDifficulty.Load().(*big.Int)
-		if forkBigTotalDifficulty.Cmp(bigTotalDifficulty) > 0 {
-			bigTotalDifficulty = forkBigTotalDifficulty
+		fork.RLock()
+		if fork.BigTotalDifficulty.Cmp(bigTotalDifficulty) > 0 {
+			bigTotalDifficulty = fork.BigTotalDifficulty
 			selectedFork = fork
 		}
+		fork.RUnlock()
 	}
 
 	return
@@ -46,7 +46,7 @@ func (forks *Forks) removeFork(fork *Fork, removeHashes bool) {
 
 			forks.list.Store(list)
 			if removeHashes {
-				forks.hashes.Delete(string(fork.hash))
+				forks.hashes.Delete(string(fork.Hash))
 			}
 
 			break

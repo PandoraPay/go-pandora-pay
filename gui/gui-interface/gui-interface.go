@@ -2,6 +2,7 @@ package gui_interface
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"pandora-pay/addresses"
 	"pandora-pay/helpers"
 	"strconv"
@@ -55,6 +56,13 @@ func ProcessArgument(any ...interface{}) string {
 			s += hex.EncodeToString(v)
 		case error:
 			s += v.Error()
+		case interface{}:
+			str, err := json.Marshal(v)
+			if err == nil {
+				s += string(str)
+			} else {
+				s += "error marshaling object"
+			}
 		default:
 			s += "invalid log type"
 		}
