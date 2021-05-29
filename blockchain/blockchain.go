@@ -363,9 +363,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		update.insertedTxHashes = insertedTxHashes
 	}
 
-	chain.updatesQueue.updatesWriting.Lock()
-	chain.updatesQueue.updates.Store(append(chain.updatesQueue.updates.Load().([]*BlockchainUpdate), update))
-	chain.updatesQueue.updatesWriting.Unlock()
+	chain.updatesQueue.updates <- update
 
 	chain.mutex.Unlock()
 
@@ -380,26 +378,20 @@ func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *me
 		return
 	}
 
-	updatesQueue := &BlockchainUpdatesQueue{
-		updates:        atomic.Value{},
-		updatesWriting: &sync.Mutex{},
-	}
-	updatesQueue.updates.Store([]*BlockchainUpdate{})
-
 	chain = &Blockchain{
 		ChainData:               &atomic.Value{},
 		mutex:                   &sync.Mutex{},
 		forging:                 forging,
 		mempool:                 mempool,
 		wallet:                  wallet,
-		updatesQueue:            updatesQueue,
+		updatesQueue:            createBlockchainUpdatesQueue(),
 		Sync:                    createBlockchainSync(),
 		UpdateMulticast:         multicast.NewMulticastChannel(),
 		UpdateNewChainMulticast: multicast.NewMulticastChannel(),
 	}
 
-	updatesQueue.chain = chain
-	updatesQueue.processQueue()
+	chain.updatesQueue.chain = chain
+	chain.updatesQueue.processQueue()
 
 	if err = chain.loadBlockchain(); err != nil {
 		if err.Error() != "Chain not found" {

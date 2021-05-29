@@ -9,9 +9,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 type BlockchainUpdate struct {
@@ -25,25 +22,30 @@ type BlockchainUpdate struct {
 }
 
 type BlockchainUpdatesQueue struct {
-	updates        atomic.Value //[]*BlockchainUpdate
-	updatesWriting *sync.Mutex
-	chain          *Blockchain
+	updates chan *BlockchainUpdate //buffered
+	chain   *Blockchain
 }
 
-func (queue *BlockchainUpdatesQueue) isLastSuccess(updates []*BlockchainUpdate) bool {
+func createBlockchainUpdatesQueue() *BlockchainUpdatesQueue {
+	return &BlockchainUpdatesQueue{
+		updates: make(chan *BlockchainUpdate, 100),
+	}
+}
+
+func (queue *BlockchainUpdatesQueue) hasAnySuccess(updates []*BlockchainUpdate) bool {
 	for _, update := range updates {
 		if update.err == nil {
-			return false
+			return true
 		}
 	}
 
-	return true
+	return false
 }
 
 func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, updates []*BlockchainUpdate) {
 
 	if update.err != nil {
-		if len(updates) == 0 && queue.isLastSuccess(updates) {
+		if len(updates) == 0 && !queue.hasAnySuccess(updates) {
 			queue.chain.createNextBlockForForging()
 		}
 		return
@@ -66,7 +68,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		gui.GUI.Error("Error updating balance changes", err)
 	}
 
-	if queue.isLastSuccess(updates) {
+	if !queue.hasAnySuccess(updates) {
 		if err = queue.chain.forging.Wallet.ProcessUpdates(); err != nil {
 			gui.GUI.Error("Error Processing Updates", err)
 		}
@@ -94,7 +96,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	newSyncTime, result := queue.chain.Sync.addBlocksChanged(uint32(len(update.insertedBlocks)), false)
 
-	if queue.isLastSuccess(updates) {
+	if !queue.hasAnySuccess(updates) {
 
 		queue.chain.UpdateMulticast.Broadcast(update.newChainData.Height)
 
@@ -110,21 +112,28 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 func (queue *BlockchainUpdatesQueue) processQueue() {
 	go func() {
 		for {
-			updates := queue.updates.Load().([]*BlockchainUpdate)
-			if len(updates) > 0 {
-				queue.updatesWriting.Lock()
-				updates = queue.updates.Load().([]*BlockchainUpdate)
-				update := updates[0]
-				updates = append(updates[1:])
-				queue.updates.Store(updates)
-				queue.updatesWriting.Unlock()
 
-				queue.processUpdate(update, updates)
-				if len(updates) > 0 {
-					continue
+			updates := make([]*BlockchainUpdate, 0)
+
+			finished := false
+			for !finished {
+				select {
+				case newUpdate := <-queue.updates:
+					{
+						updates = append(updates, newUpdate)
+					}
+				default:
+					{
+						finished = true
+					}
 				}
 			}
-			time.Sleep(10 * time.Millisecond)
+
+			for _, update := range updates {
+				updates = updates[1:]
+				queue.processUpdate(update, updates)
+			}
+
 		}
 	}()
 }
