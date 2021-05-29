@@ -10,6 +10,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/events"
+	"pandora-pay/wallet"
 	"sync/atomic"
 	"syscall/js"
 )
@@ -85,6 +86,15 @@ func Initialize(startMainCb func()) {
 					"TxSimpleScriptUnstake":  js.ValueOf(uint64(transaction_simple.TxSimpleScriptUnstake)),
 					"TxSimpleScriptWithdraw": js.ValueOf(uint64(transaction_simple.TxSimpleScriptWithdraw)),
 					"TxSimpleScriptDelegate": js.ValueOf(uint64(transaction_simple.TxSimpleScriptDelegate)),
+				}),
+			}),
+			"Wallet": js.ValueOf(map[string]interface{}{
+				"WalletVersion": js.ValueOf(map[string]interface{}{
+					"WalletVersionSimple": js.ValueOf(int(wallet.WalletVersionSimple)),
+				}),
+				"WalletEncryptedVersion": js.ValueOf(map[string]interface{}{
+					"WalletEncryptedVersionPlainText": js.ValueOf(int(wallet.WalletEncryptedVersionPlainText)),
+					"WalletEncryptedVersionEncrypted": js.ValueOf(int(wallet.WalletEncryptedVersionEncryption)),
 				}),
 			}),
 		}),

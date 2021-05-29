@@ -9,42 +9,9 @@ import (
 	"sync"
 )
 
-type Version int
-
-const (
-	VersionSimple Version = 0
-)
-
-func (e Version) String() string {
-	switch e {
-	case VersionSimple:
-		return "VersionSimple"
-	default:
-		return "Unknown Version"
-	}
-}
-
-type EncryptedVersion int
-
-const (
-	PlainText EncryptedVersion = iota
-	Encrypted
-)
-
-func (e EncryptedVersion) String() string {
-	switch e {
-	case PlainText:
-		return "PlainText"
-	case Encrypted:
-		return "Encrypted"
-	default:
-		return "Unknown EncryptedVersion"
-	}
-}
-
 type Wallet struct {
-	Encrypted    EncryptedVersion                         `json:"encrypted"`
-	Version      Version                                  `json:"version"`
+	Encrypted    WalletEncryptedVersion                   `json:"encrypted"`
+	Version      WalletVersion                            `json:"version"`
 	Mnemonic     string                                   `json:"mnemonic"`
 	Seed         helpers.HexBytes                         `json:"seed"` //32 byte
 	SeedIndex    uint32                                   `json:"seedIndex"`
@@ -59,8 +26,10 @@ type Wallet struct {
 
 func createWallet(forging *forging.Forging, mempool *mempool.Mempool) *Wallet {
 	return &Wallet{
-		forging: forging,
-		mempool: mempool,
+		Version:   WalletVersionSimple,
+		Encrypted: WalletEncryptedVersionPlainText,
+		forging:   forging,
+		mempool:   mempool,
 
 		Count:     0,
 		SeedIndex: 1,
