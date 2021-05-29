@@ -1,27 +1,27 @@
 package transaction_simple
 
-type TransactionSimpleScriptType uint64
+type ScriptType uint64
 
 const (
-	TxSimpleScriptNormal TransactionSimpleScriptType = iota
-	TxSimpleScriptUnstake
-	TxSimpleScriptWithdraw
-	TxSimpleScriptDelegate
+	ScriptNormal ScriptType = iota
+	ScriptUnstake
+	ScriptWithdraw
+	ScriptDelegate
 
-	TransactionSimpleScriptEND
+	ScriptEND
 )
 
-func (t TransactionSimpleScriptType) String() string {
+func (t ScriptType) String() string {
 	switch t {
-	case TxSimpleScriptNormal:
-		return "TxSimpleScriptNormal"
-	case TxSimpleScriptUnstake:
-		return "TxSimpleScriptUnstake"
-	case TxSimpleScriptWithdraw:
-		return "TxSimpleScriptWithdraw"
-	case TxSimpleScriptDelegate:
-		return "TxSimpleScriptDelegate"
+	case ScriptNormal:
+		return "ScriptNormal"
+	case ScriptUnstake:
+		return "ScriptUnstake"
+	case ScriptWithdraw:
+		return "ScriptWithdraw"
+	case ScriptDelegate:
+		return "ScriptDelegate"
 	default:
-		return "Unknown TransactionSimpleScriptType"
+		return "Unknown ScriptType"
 	}
 }

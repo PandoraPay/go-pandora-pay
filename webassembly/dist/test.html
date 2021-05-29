@@ -13,10 +13,10 @@
             ]
             WebAssembly.instantiateStreaming(fetch("./PandoraPay.wasm"), go.importObject).then( result =>{
                 go.run(result.instance)
-                PandoraPay.Events.Subscribe((name, data)=>{
+                PandoraPay.events.subscribe((name, data)=>{
                     console.log("JS NAME:", name, "data", data)
                 })
-                PandoraPay.Helpers.Start()
+                PandoraPay.helpers.start()
             })
         </script>
     </head>

@@ -10,8 +10,8 @@ import (
 )
 
 type Wallet struct {
-	Encrypted    WalletEncryptedVersion                   `json:"encrypted"`
-	Version      WalletVersion                            `json:"version"`
+	Encrypted    EncryptedVersion                         `json:"encrypted"`
+	Version      Version                                  `json:"version"`
 	Mnemonic     string                                   `json:"mnemonic"`
 	Seed         helpers.HexBytes                         `json:"seed"` //32 byte
 	SeedIndex    uint32                                   `json:"seedIndex"`
@@ -26,8 +26,8 @@ type Wallet struct {
 
 func createWallet(forging *forging.Forging, mempool *mempool.Mempool) *Wallet {
 	return &Wallet{
-		Version:   WalletVersionSimple,
-		Encrypted: WalletEncryptedVersionPlainText,
+		Version:   VersionSimple,
+		Encrypted: EncryptedVersionPlainText,
 		forging:   forging,
 		mempool:   mempool,
 

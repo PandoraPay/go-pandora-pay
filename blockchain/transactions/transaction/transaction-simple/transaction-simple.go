@@ -15,7 +15,7 @@ import (
 
 type TransactionSimple struct {
 	transaction_base_interface.TransactionBaseInterface `json:"-"`
-	TxScript                                            TransactionSimpleScriptType                              `json:"txScript"`
+	TxScript                                            ScriptType                                               `json:"txScript"`
 	Nonce                                               uint64                                                   `json:"nonce"`
 	Vin                                                 []*TransactionSimpleInput                                `json:"vin"`
 	Vout                                                []*TransactionSimpleOutput                               `json:"vout"`
@@ -42,7 +42,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 			}
 
 			switch tx.TxScript {
-			case TxSimpleScriptDelegate, TxSimpleScriptUnstake:
+			case ScriptDelegate, ScriptUnstake:
 				if err = tx.Extra.IncludeTransactionVin0(blockHeight, acc); err != nil {
 					return
 				}
@@ -81,7 +81,7 @@ func (tx *TransactionSimple) ComputeFees(out map[string]uint64) (err error) {
 	}
 
 	switch tx.TxScript {
-	case TxSimpleScriptUnstake:
+	case ScriptUnstake:
 		return helpers.SafeMapUint64Add(out, config.NATIVE_TOKEN_STRING, tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
 	}
 	return
@@ -132,14 +132,14 @@ func (tx *TransactionSimple) Validate() (err error) {
 	}
 
 	switch tx.TxScript {
-	case TxSimpleScriptNormal:
+	case ScriptNormal:
 		if len(tx.Vin) == 0 || len(tx.Vin) > 255 {
 			return errors.New("Invalid vin")
 		}
 		if len(tx.Vout) == 0 || len(tx.Vout) > 255 {
 			return errors.New("Invalid vout")
 		}
-	case TxSimpleScriptDelegate, TxSimpleScriptUnstake, TxSimpleScriptWithdraw:
+	case ScriptDelegate, ScriptUnstake, ScriptWithdraw:
 		if len(tx.Vin) != 1 {
 			return errors.New("Invalid vin")
 		}
@@ -203,13 +203,13 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 	if n, err = reader.ReadUvarint(); err != nil {
 		return
 	}
-	tx.TxScript = TransactionSimpleScriptType(n)
+	tx.TxScript = ScriptType(n)
 	switch tx.TxScript {
-	case TxSimpleScriptNormal:
+	case ScriptNormal:
 		//nothing
-	case TxSimpleScriptUnstake, TxSimpleScriptWithdraw:
+	case ScriptUnstake, ScriptWithdraw:
 		tx.Extra = &transaction_simple_extra.TransactionSimpleUnstake{}
-	case TxSimpleScriptDelegate:
+	case ScriptDelegate:
 		tx.Extra = &transaction_simple_extra.TransactionSimpleDelegate{}
 	default:
 		return errors.New("Invalid TxType")

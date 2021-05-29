@@ -167,7 +167,7 @@ func (testnet *Testnet) run() {
 						delegatedUnstakePending, _ := account.ComputeDelegatedUnstakePending()
 
 						if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
-							if !testnet.mempool.ExistsTxSimpleVersion(testnet.wallet.Addresses[0].GetPublicKeyHash(), transaction_simple.TxSimpleScriptUnstake) {
+							if !testnet.mempool.ExistsTxSimpleVersion(testnet.wallet.Addresses[0].GetPublicKeyHash(), transaction_simple.ScriptUnstake) {
 								if err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
 									return
 								}

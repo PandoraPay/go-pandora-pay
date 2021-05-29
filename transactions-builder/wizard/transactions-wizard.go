@@ -90,7 +90,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte 
 		Version: 0,
 		TxType:  transaction_type.TxSimple,
 		TxBase: &transaction_simple.TransactionSimple{
-			TxScript: transaction_simple.TxSimpleScriptUnstake,
+			TxScript: transaction_simple.ScriptUnstake,
 			Nonce:    nonce,
 			Extra: &transaction_simple_extra.TransactionSimpleUnstake{
 				Amount: unstakeAmount,
@@ -139,7 +139,7 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 		Version: 0,
 		TxType:  transaction_type.TxSimple,
 		TxBase: &transaction_simple.TransactionSimple{
-			TxScript: transaction_simple.TxSimpleScriptDelegate,
+			TxScript: transaction_simple.ScriptDelegate,
 			Nonce:    nonce,
 			Extra: &transaction_simple_extra.TransactionSimpleDelegate{
 				Amount:              delegateAmount,

@@ -8,6 +8,7 @@ import (
 )
 
 type WalletAddress struct {
+	Version        Version                      `json:"version"`
 	Name           string                       `json:"name"`
 	SeedIndex      uint32                       `json:"seedIndex"`
 	IsMine         bool                         `json:"isMine"`

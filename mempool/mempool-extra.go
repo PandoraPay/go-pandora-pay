@@ -46,7 +46,7 @@ func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token [
 	return
 }
 
-func (mempool *Mempool) ExistsTxSimpleVersion(publicKeyHash []byte, version transaction_simple.TransactionSimpleScriptType) bool {
+func (mempool *Mempool) ExistsTxSimpleVersion(publicKeyHash []byte, version transaction_simple.ScriptType) bool {
 	txs := mempool.GetTxsList()
 	for _, tx := range txs {
 		if tx.Tx.TxType == transaction_type.TxSimple {

@@ -1,33 +1,33 @@
 package wallet
 
-type WalletVersion int
+type Version int
 
 const (
-	WalletVersionSimple WalletVersion = 0
+	VersionSimple Version = 0
 )
 
-func (e WalletVersion) String() string {
+func (e Version) String() string {
 	switch e {
-	case WalletVersionSimple:
-		return "WalletVersionSimple"
+	case VersionSimple:
+		return "VersionSimple"
 	default:
 		return "Unknown Version"
 	}
 }
 
-type WalletEncryptedVersion int
+type EncryptedVersion int
 
 const (
-	WalletEncryptedVersionPlainText WalletEncryptedVersion = iota
-	WalletEncryptedVersionEncryption
+	EncryptedVersionPlainText EncryptedVersion = iota
+	EncryptedVersionEncryption
 )
 
-func (e WalletEncryptedVersion) String() string {
+func (e EncryptedVersion) String() string {
 	switch e {
-	case WalletEncryptedVersionPlainText:
-		return "WalletEncryptedVersionPlainText"
-	case WalletEncryptedVersionEncryption:
-		return "WalletEncryptedVersionEncryption"
+	case EncryptedVersionPlainText:
+		return "EncryptedVersionPlainText"
+	case EncryptedVersionEncryption:
+		return "EncryptedVersionEncryption"
 	default:
 		return "Unknown EncryptedVersion"
 	}
