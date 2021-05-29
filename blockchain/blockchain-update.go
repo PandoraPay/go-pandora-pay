@@ -113,7 +113,9 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 	go func() {
 		for {
 
+			update := <-queue.updates
 			updates := make([]*BlockchainUpdate, 0)
+			updates = append(updates, update)
 
 			finished := false
 			for !finished {

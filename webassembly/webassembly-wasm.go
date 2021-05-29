@@ -5,6 +5,8 @@ package webassembly
 import (
 	"encoding/json"
 	"errors"
+	"pandora-pay/blockchain/transactions/transaction/transaction-simple"
+	"pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/events"
@@ -65,18 +67,27 @@ func Initialize(startMainCb func()) {
 
 	startMainCallback = startMainCb
 
-	Events := map[string]interface{}{
-		"Subscribe": js.FuncOf(SubscribeEvents),
-	}
-
-	Helpers := map[string]interface{}{
-		"HelloPandora": js.FuncOf(HelloPandora),
-		"Start":        js.FuncOf(Start),
-	}
-
 	PandoraPayExport := map[string]interface{}{
-		"Helpers": js.ValueOf(Helpers),
-		"Events":  js.ValueOf(Events),
+		"Helpers": js.ValueOf(map[string]interface{}{
+			"HelloPandora": js.FuncOf(HelloPandora),
+			"Start":        js.FuncOf(Start),
+		}),
+		"Events": js.ValueOf(map[string]interface{}{
+			"Subscribe": js.FuncOf(SubscribeEvents),
+		}),
+		"Enums": js.ValueOf(map[string]interface{}{
+			"Transactions": js.ValueOf(map[string]interface{}{
+				"TransactionType": js.ValueOf(map[string]interface{}{
+					"TxSimple": js.ValueOf(uint64(transaction_type.TxSimple)),
+				}),
+				"TransactionSimpleScriptType": js.ValueOf(map[string]interface{}{
+					"TxSimpleScriptNormal":   js.ValueOf(uint64(transaction_simple.TxSimpleScriptNormal)),
+					"TxSimpleScriptUnstake":  js.ValueOf(uint64(transaction_simple.TxSimpleScriptUnstake)),
+					"TxSimpleScriptWithdraw": js.ValueOf(uint64(transaction_simple.TxSimpleScriptWithdraw)),
+					"TxSimpleScriptDelegate": js.ValueOf(uint64(transaction_simple.TxSimpleScriptDelegate)),
+				}),
+			}),
+		}),
 	}
 
 	js.Global().Set("PandoraPay", js.ValueOf(PandoraPayExport))

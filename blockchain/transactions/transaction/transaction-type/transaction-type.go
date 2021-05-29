@@ -11,7 +11,7 @@ const (
 func (t TransactionType) String() string {
 	switch t {
 	case TxSimple:
-		return "TransactionSimple"
+		return "TxSimple"
 	default:
 		return "Unknown transaction type"
 	}
