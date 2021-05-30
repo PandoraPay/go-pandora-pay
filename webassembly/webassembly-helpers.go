@@ -8,35 +8,25 @@ import (
 )
 
 func helloPandora(this js.Value, args []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
-		go func() {
-			gui.GUI.Info("HelloPandora works!")
-			args2[0].Invoke(true)
-		}()
-		return nil
-	}))
+	return promiseFunction(this, args, func(js.Value, []js.Value) (out interface{}, err error) {
+		gui.GUI.Info("HelloPandora works!")
+		return true, nil
+	})
 }
 
 func start(this js.Value, args []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
-		go func() {
-			startMainCallback()
-			args2[0].Invoke(true)
-		}()
-		return nil
-	}))
+	return promiseFunction(this, args, func(js.Value, []js.Value) (out interface{}, err error) {
+		startMainCallback()
+		return true, nil
+	})
 }
 
 func getIdenticon(this js.Value, args []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
-		go func() {
-			out, err := identicon.GenerateToBytes([]byte(args[0].String()), args[1].Int(), args[2].Int())
-			if err != nil {
-				args2[1].Invoke(errorConstructor.New(err.Error()))
-				return
-			}
-			args2[0].Invoke("data:image/png;base64," + base64.StdEncoding.EncodeToString(out))
-		}()
-		return nil
-	}))
+	return promiseFunction(this, args, func(js.Value, []js.Value) (out interface{}, err error) {
+		identicon, err := identicon.GenerateToBytes([]byte(args[0].String()), args[1].Int(), args[2].Int())
+		if err != nil {
+			return
+		}
+		return "data:image/png;base64," + base64.StdEncoding.EncodeToString(identicon), nil
+	})
 }

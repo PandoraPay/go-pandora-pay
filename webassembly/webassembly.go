@@ -42,7 +42,7 @@ func promiseFunction(this js.Value, args []js.Value, callback func(js.Value, []j
 	}))
 }
 
-func subscribeEvents(none js.Value, args []js.Value) interface{} {
+func subscribeEvents(this js.Value, args []js.Value) interface{} {
 
 	if len(args) == 0 || args[0].Type() != js.TypeFunction {
 		return errors.New("Argument must be a callback")
