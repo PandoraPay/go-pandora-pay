@@ -47,7 +47,7 @@ func (forging *Forging) StartForging() bool {
 		gui.GUI.Warning(`Staking was not started as "--staking" is missing`)
 		return false
 	}
-	if globals.Arguments["--consensus"] != "full" {
+	if config.CONSENSUS != config.CONSENSUS_TYPE_FULL {
 		gui.GUI.Warning(`Staking was not started as "--consensus=full" is missing`)
 		return false
 	}

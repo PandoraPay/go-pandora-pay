@@ -21,5 +21,5 @@ Options:
   --debug                               Debug mode enabled (print log message).
   --staking                             Start staking.
   --node-name=name                      Change node name.
-  --consensus=type                      Consensus type. Accepted values: "full|none". [default: full]
+  --consensus=type                      Consensus type. Accepted values: "full|wallet|none". [default: full]
 `

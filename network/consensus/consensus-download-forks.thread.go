@@ -162,7 +162,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 				globals.MainEvents.BroadcastEvent("consensus/update", fork)
 
-				if globals.Arguments["--consensus"] == "full" {
+				if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
 					if thread.downloadRemainingBlocks(fork) {
 
 						gui.GUI.Log("Status. AddBlocks fork")

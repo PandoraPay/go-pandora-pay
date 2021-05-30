@@ -67,6 +67,10 @@ var (
 	INSTANCE_NUMBER = 0
 )
 
+var (
+	CONSENSUS ConsensusType = CONSENSUS_TYPE_FULL
+)
+
 func StartConfig() {
 	rand.Seed(time.Now().UnixNano())
 	CPU_THREADS = runtime.GOMAXPROCS(0)
@@ -77,11 +81,11 @@ func StartConfig() {
 func GetNetworkName() string {
 	switch NETWORK_SELECTED {
 	case MAIN_NET_NETWORK_BYTE:
-		return "main"
+		return "MAIN"
 	case TEST_NET_NETWORK_BYTE:
-		return "test"
+		return "TEST"
 	case DEV_NET_NETWORK_BYTE:
-		return "dev"
+		return "DEV"
 	default:
 		panic("Network is unknown")
 	}
@@ -114,6 +118,17 @@ func InitConfig() (err error) {
 
 	if globals.Arguments["--debug"] == true {
 		DEBUG = true
+	}
+
+	switch globals.Arguments["--consensus"] {
+	case "full":
+		CONSENSUS = CONSENSUS_TYPE_FULL
+	case "wallet":
+		CONSENSUS = CONSENSUS_TYPE_WALLET
+	case "none":
+		CONSENSUS = CONSENSUS_TYPE_NONE
+	default:
+		panic("invalid consensus argument")
 	}
 
 	if err = config_init(); err != nil {

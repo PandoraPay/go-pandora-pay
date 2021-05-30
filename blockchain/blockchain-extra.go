@@ -113,7 +113,7 @@ func (chain *Blockchain) init() (chainData *BlockchainData, err error) {
 
 func (chain *Blockchain) createNextBlockForForging() {
 
-	if globals.Arguments["--consensus"] != "full" || globals.Arguments["--staking"] == false {
+	if config.CONSENSUS != config.CONSENSUS_TYPE_FULL || globals.Arguments["--staking"] == false {
 		return
 	}
 

@@ -27,5 +27,5 @@ Options:
   --tcp-server-address=address          Change node tcp address.
   --tor-onion=onion                     Define your tor onion address to be used.
   --instance=number                     Number of forked instance (when you open multiple instances). It should me string number like "1","2","3","4" etc
-  --consensus=type                      Consensus type. Accepted values: "full|none" [default: full].
+  --consensus=type                      Consensus type. Accepted values: "full|wallet|none" [default: full].
 `

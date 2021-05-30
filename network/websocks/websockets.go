@@ -76,7 +76,7 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 
 func (api *Websockets) validateHandshake(handshake *api_websockets.APIHandshake) error {
 	handshake2 := *handshake
-	if handshake2[2] != string(config.NETWORK_SELECTED) {
+	if handshake2.Network != config.NETWORK_SELECTED {
 		return errors.New("Network is different")
 	}
 	return nil
