@@ -11,6 +11,11 @@ import (
 	"pandora-pay/helpers"
 )
 
+type BlockchainDataUpdate struct {
+	Update   *BlockchainData
+	SyncTime uint64
+}
+
 type BlockchainUpdate struct {
 	err              error
 	newChainData     *BlockchainData
@@ -98,13 +103,18 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	if !queue.hasAnySuccess(updates) {
 
-		queue.chain.UpdateMulticast.BroadcastAwait(update.newChainData.Height)
-
-		queue.chain.UpdateNewChainMulticast.BroadcastAwait(update.newChainData)
-
 		if result {
 			queue.chain.Sync.UpdateSyncMulticast.BroadcastAwait(newSyncTime)
 		}
+
+		queue.chain.UpdateNewChainMulticast.BroadcastAwait(update.newChainData.Height)
+
+		blockchainDataUpdate := &BlockchainDataUpdate{
+			update.newChainData,
+			newSyncTime,
+		}
+		queue.chain.UpdateNewChainDataUpdateMulticast.BroadcastAwait(blockchainDataUpdate)
+
 	}
 
 }

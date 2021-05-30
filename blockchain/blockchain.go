@@ -27,15 +27,15 @@ import (
 )
 
 type Blockchain struct {
-	ChainData               *atomic.Value //*BlockchainData
-	Sync                    *BlockchainSync
-	forging                 *forging.Forging            `json:"-"`
-	mempool                 *mempool.Mempool            `json:"-"`
-	wallet                  *wallet.Wallet              `json:"-"`
-	mutex                   *sync.Mutex                 `json:"-"` //writing mutex
-	updatesQueue            *BlockchainUpdatesQueue     `json:"-"`
-	UpdateMulticast         *multicast.MulticastChannel `json:"-"` //chan uint64
-	UpdateNewChainMulticast *multicast.MulticastChannel `json:"-"` //chan *BlockchainData
+	ChainData                         *atomic.Value //*BlockchainData
+	Sync                              *BlockchainSync
+	forging                           *forging.Forging            `json:"-"`
+	mempool                           *mempool.Mempool            `json:"-"`
+	wallet                            *wallet.Wallet              `json:"-"`
+	mutex                             *sync.Mutex                 `json:"-"` //writing mutex
+	updatesQueue                      *BlockchainUpdatesQueue     `json:"-"`
+	UpdateNewChainMulticast           *multicast.MulticastChannel `json:"-"` //chan uint64
+	UpdateNewChainDataUpdateMulticast *multicast.MulticastChannel `json:"-"` //chan *BlockchainDataUpdate
 }
 
 func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockComplete) (err error) {
@@ -379,15 +379,15 @@ func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *me
 	}
 
 	chain = &Blockchain{
-		ChainData:               &atomic.Value{},
-		mutex:                   &sync.Mutex{},
-		forging:                 forging,
-		mempool:                 mempool,
-		wallet:                  wallet,
-		updatesQueue:            createBlockchainUpdatesQueue(),
-		Sync:                    createBlockchainSync(),
-		UpdateMulticast:         multicast.NewMulticastChannel(),
-		UpdateNewChainMulticast: multicast.NewMulticastChannel(),
+		ChainData:                         &atomic.Value{},
+		mutex:                             &sync.Mutex{},
+		forging:                           forging,
+		mempool:                           mempool,
+		wallet:                            wallet,
+		updatesQueue:                      createBlockchainUpdatesQueue(),
+		Sync:                              createBlockchainSync(),
+		UpdateNewChainMulticast:           multicast.NewMulticastChannel(),
+		UpdateNewChainDataUpdateMulticast: multicast.NewMulticastChannel(),
 	}
 
 	chain.updatesQueue.chain = chain
@@ -417,6 +417,6 @@ func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *me
 }
 
 func (chain *Blockchain) Close() {
+	chain.UpdateNewChainDataUpdateMulticast.CloseAll()
 	chain.UpdateNewChainMulticast.CloseAll()
-	chain.UpdateMulticast.CloseAll()
 }

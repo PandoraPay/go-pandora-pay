@@ -148,17 +148,17 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction) (interface{
 }
 
 //make sure it is safe to read
-func (api *APICommon) readLocalBlockchain(newChainData *blockchain.BlockchainData) {
+func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.BlockchainDataUpdate) {
 	newLocalChain := &APIBlockchain{
-		Height:          newChainData.Height,
-		Hash:            hex.EncodeToString(newChainData.Hash),
-		PrevHash:        hex.EncodeToString(newChainData.PrevHash),
-		KernelHash:      hex.EncodeToString(newChainData.KernelHash),
-		PrevKernelHash:  hex.EncodeToString(newChainData.PrevKernelHash),
-		Timestamp:       newChainData.Timestamp,
-		Transactions:    newChainData.Transactions,
-		Target:          newChainData.Target.String(),
-		TotalDifficulty: newChainData.BigTotalDifficulty.String(),
+		Height:          newChainDataUpdate.Update.Height,
+		Hash:            hex.EncodeToString(newChainDataUpdate.Update.Hash),
+		PrevHash:        hex.EncodeToString(newChainDataUpdate.Update.PrevHash),
+		KernelHash:      hex.EncodeToString(newChainDataUpdate.Update.KernelHash),
+		PrevKernelHash:  hex.EncodeToString(newChainDataUpdate.Update.PrevKernelHash),
+		Timestamp:       newChainDataUpdate.Update.Timestamp,
+		Transactions:    newChainDataUpdate.Update.Transactions,
+		Target:          newChainDataUpdate.Update.Target.String(),
+		TotalDifficulty: newChainDataUpdate.Update.BigTotalDifficulty.String(),
 	}
 	api.localChain.Store(newLocalChain)
 }
@@ -182,16 +182,17 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, api
 	}
 
 	go func() {
-		updateNewChain := api.chain.UpdateNewChainMulticast.AddListener()
+
+		updateNewChainDataUpdateListener := api.chain.UpdateNewChainDataUpdateMulticast.AddListener()
 		for {
-			newChainDataReceived, ok := <-updateNewChain
+			newChainDataUpdateReceived, ok := <-updateNewChainDataUpdateListener
 			if !ok {
 				break
 			}
 
-			newChainData := newChainDataReceived.(*blockchain.BlockchainData)
+			newChainDataUpdate := newChainDataUpdateReceived.(*blockchain.BlockchainDataUpdate)
 			//it is safe to read
-			api.readLocalBlockchain(newChainData)
+			api.readLocalBlockchain(newChainDataUpdate)
 
 		}
 	}()
@@ -209,7 +210,7 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, api
 		}
 	}()
 
-	api.readLocalBlockchain(chain.GetChainData())
+	api.readLocalBlockchain(chain.GetChainDataUpdate())
 
 	return
 }

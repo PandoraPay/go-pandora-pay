@@ -63,8 +63,8 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 	return
 }
 
-func (consensus *Consensus) broadcast(newChainData *blockchain.BlockchainData) {
-	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain-update"), consensus.getUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true})
+func (consensus *Consensus) broadcastChain(newChainData *blockchain.BlockchainData) {
+	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain-update"), consensus.getUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true})
 }
 
 func (consensus *Consensus) broadcastTx(tx *transaction.Transaction) {
@@ -72,9 +72,11 @@ func (consensus *Consensus) broadcastTx(tx *transaction.Transaction) {
 }
 
 func (consensus *Consensus) getUpdateNotification(newChainData *blockchain.BlockchainData) *ChainUpdateNotification {
+
 	if newChainData == nil {
 		newChainData = consensus.chain.GetChainData()
 	}
+
 	return &ChainUpdateNotification{
 		End:                newChainData.Height,
 		Hash:               newChainData.Hash,

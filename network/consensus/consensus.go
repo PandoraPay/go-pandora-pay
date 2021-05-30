@@ -20,16 +20,17 @@ func (consensus *Consensus) execute() {
 
 	go func() {
 
-		updateNewChainCn := consensus.chain.UpdateNewChainMulticast.AddListener()
+		updateNewChainUpdateListener := consensus.chain.UpdateNewChainDataUpdateMulticast.AddListener()
 		for {
-			newChainDataReceived, ok := <-updateNewChainCn
+			newChainDataUpdateReceived, ok := <-updateNewChainUpdateListener
 			if !ok {
 				return
 			}
-			newChainData := newChainDataReceived.(*blockchain.BlockchainData)
+
+			newChainDataUpdate := newChainDataUpdateReceived.(*blockchain.BlockchainDataUpdate)
 
 			//it is safe to read
-			consensus.broadcast(newChainData)
+			consensus.broadcastChain(newChainDataUpdate.Update)
 		}
 
 	}()

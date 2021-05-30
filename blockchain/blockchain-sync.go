@@ -56,7 +56,7 @@ func (chainSync *BlockchainSync) addBlocksChanged(blocks uint32, propagateNotifi
 	if blocksChangedLastMinute > 2 {
 		return chainSync.SetSyncValue(false, propagateNotification)
 	}
-	return
+	return 0, true
 }
 
 func (chainSync *BlockchainSync) start() {

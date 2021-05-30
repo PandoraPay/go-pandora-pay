@@ -24,6 +24,12 @@ func (chain *Blockchain) GetChainData() *BlockchainData {
 	return chain.ChainData.Load().(*BlockchainData)
 }
 
+func (chain *Blockchain) GetChainDataUpdate() *BlockchainDataUpdate {
+	chainData := chain.ChainData.Load().(*BlockchainData)
+	syncTime := chain.Sync.GetSyncTime()
+	return &BlockchainDataUpdate{chainData, syncTime}
+}
+
 func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 	return &BlockchainData{
 		Height:             0,

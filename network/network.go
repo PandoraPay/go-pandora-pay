@@ -69,7 +69,9 @@ func (network *Network) syncNewConnections() {
 
 			conn.Send([]byte("chain-get"), nil)
 
-			network.MempoolSync.DownloadMempool(conn)
+			if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
+				network.MempoolSync.DownloadMempool(conn)
+			}
 		}
 	}()
 }
