@@ -77,9 +77,15 @@ func (api *APICommon) GetBlockComplete(height uint64, hash []byte, typeValue uin
 func (api *APICommon) GetBlock(height uint64, hash []byte) (interface{}, error) {
 	if hash != nil {
 		return api.ApiStore.LoadBlockWithTXsFromHash(hash)
-	} else {
-		return api.ApiStore.LoadBlockWithTXsFromHeight(height)
 	}
+	return api.ApiStore.LoadBlockWithTXsFromHeight(height)
+}
+
+func (api *APICommon) GetBlockInfo(height uint64, hash []byte) (interface{}, error) {
+	if hash != nil {
+		return api.ApiStore.LoadBlockInfoFromHash(hash)
+	}
+	return api.ApiStore.LoadBlockInfoFromHeight(height)
 }
 
 func (api *APICommon) GetTx(hash []byte, typeValue uint8) (interface{}, error) {

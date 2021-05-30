@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/block-complete"
+	block_info "pandora-pay/blockchain/block-info"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -21,11 +22,29 @@ type APIStore struct {
 	chain *blockchain.Blockchain
 }
 
-func (apiStore *APIStore) LoadBlockCompleteFromHash(hash []byte) (blkComplete *block_complete.BlockComplete, errfinal error) {
+func (apiStore *APIStore) LoadBlockInfoFromHash(hash []byte) (blkInfo *block_info.BlockInfo, errfinal error) {
 	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-		if blkComplete, err = apiStore.LoadBlockComplete(reader, hash); err != nil {
+		blkInfo, err = apiStore.chain.LoadBlockInfo(reader, hash)
+		return
+	})
+	return
+}
+
+func (apiStore *APIStore) LoadBlockInfoFromHeight(blockHeight uint64) (blkInfo *block_info.BlockInfo, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		hash, err := apiStore.chain.LoadBlockHash(reader, blockHeight)
+		if err != nil {
 			return
 		}
+		blkInfo, err = apiStore.chain.LoadBlockInfo(reader, hash)
+		return
+	})
+	return
+}
+
+func (apiStore *APIStore) LoadBlockCompleteFromHash(hash []byte) (blkComplete *block_complete.BlockComplete, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		blkComplete, err = apiStore.LoadBlockComplete(reader, hash)
 		return
 	})
 	return
@@ -35,21 +54,17 @@ func (apiStore *APIStore) LoadBlockCompleteFromHeight(blockHeight uint64) (blkCo
 	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err := apiStore.chain.LoadBlockHash(reader, blockHeight)
 		if err != nil {
-			return err
+			return
 		}
-		if blkComplete, err = apiStore.LoadBlockComplete(reader, hash); err != nil {
-			return err
-		}
-		return err
+		blkComplete, err = apiStore.LoadBlockComplete(reader, hash)
+		return
 	})
 	return
 }
 
 func (apiStore *APIStore) LoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *APIBlockWithTxs, errfinal error) {
 	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-		if blkWithTXs, err = apiStore.LoadBlockWithTxHashes(reader, hash); err != nil {
-			return
-		}
+		blkWithTXs, err = apiStore.LoadBlockWithTxHashes(reader, hash)
 		return
 	})
 	return
@@ -69,9 +84,7 @@ func (apiStore *APIStore) LoadBlockWithTXsFromHeight(blockHeight uint64) (blkWit
 		if err != nil {
 			return
 		}
-		if blkWithTXs, err = apiStore.LoadBlockWithTxHashes(reader, hash); err != nil {
-			return
-		}
+		blkWithTXs, err = apiStore.LoadBlockWithTxHashes(reader, hash)
 		return
 	})
 	return
@@ -168,9 +181,7 @@ func (apiStore *APIStore) LoadTx(reader store_db_interface.StoreDBTransactionInt
 	}
 
 	tx = new(transaction.Transaction)
-	if err = tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
-		return
-	}
+	err = tx.Deserialize(helpers.NewBufferReader(data))
 	return
 }
 

@@ -104,6 +104,25 @@ func (api *API) getBlock(values *url.Values) (interface{}, error) {
 	return nil, errors.New("parameter 'hash' or 'height' are missing")
 }
 
+func (api *API) getBlockInfo(values *url.Values) (interface{}, error) {
+
+	if values.Get("height") != "" {
+		height, err := strconv.ParseUint(values.Get("height"), 10, 64)
+		if err != nil {
+			return nil, errors.New("parameter 'height' is not a number")
+		}
+		return api.apiCommon.GetBlockInfo(height, nil)
+	}
+	if values.Get("hash") != "" {
+		hash, err := hex.DecodeString(values.Get("hash"))
+		if err != nil {
+			return nil, errors.New("parameter 'hash' was is not a valid hex number")
+		}
+		return api.apiCommon.GetBlockInfo(0, hash)
+	}
+	return nil, errors.New("parameter 'hash' or 'height' are missing")
+}
+
 func (api *API) getTx(values *url.Values) (interface{}, error) {
 
 	var err error
@@ -203,6 +222,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		"sync":               api.getBlockchainSync,
 		"ping":               api.getPing,
 		"block":              api.getBlock,
+		"block-info":         api.getBlockInfo,
 		"block-hash":         api.getBlockHash,
 		"block-complete":     api.getBlockComplete,
 		"tx":                 api.getTx,

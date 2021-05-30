@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block-complete"
+	block_info "pandora-pay/blockchain/block-info"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -13,8 +14,18 @@ import (
 	"strconv"
 )
 
+func (chain *Blockchain) LoadBlockInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (blk *block_info.BlockInfo, err error) {
+	blockData := reader.Get(append([]byte("blockInfo_ByHash"), hash...))
+	if blockData == nil {
+		return nil, errors.New("Block was not found")
+	}
+	blk = &block_info.BlockInfo{}
+	err = json.Unmarshal(blockData, blk)
+	return
+}
+
 func (chain *Blockchain) LoadBlock(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (blk *block.Block, err error) {
-	blockData := reader.Get(append([]byte("blockHash"), hash...))
+	blockData := reader.Get(append([]byte("block_ByHash"), hash...))
 	if blockData == nil {
 		return nil, errors.New("Block was not found")
 	}
@@ -56,7 +67,10 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 	}
 
 	hash := writer.Get([]byte("blockHeight" + blockHeightStr))
-	if err = writer.Delete(append([]byte("blockHash"), hash...)); err != nil {
+	if err = writer.Delete(append([]byte("block_ByHash"), hash...)); err != nil {
+		return
+	}
+	if err = writer.Delete(append([]byte("blockInfo_ByHash"), hash...)); err != nil {
 		return
 	}
 
@@ -83,9 +97,27 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		return
 	}
 
-	if err = writer.Put(append([]byte("blockHash"), hash...), blkComplete.Block.SerializeToBytes()); err != nil {
+	if err = writer.Put(append([]byte("block_ByHash"), hash...), blkComplete.Block.SerializeToBytes()); err != nil {
 		return
 	}
+
+	blkInfo := &block_info.BlockInfo{
+		Hash:       hash,
+		KernelHash: blkComplete.Block.Bloom.KernelHash,
+		Timestamp:  blkComplete.Block.Timestamp,
+		Size:       blkComplete.Bloom.Size,
+		TXs:        uint64(len(blkComplete.Txs)),
+		Forger:     blkComplete.Block.Forger,
+	}
+
+	var blockInfoMarshal []byte
+	if blockInfoMarshal, err = json.Marshal(blkInfo); err != nil {
+		return
+	}
+	if err = writer.Put(append([]byte("blockInfo_ByHash"), hash...), blockInfoMarshal); err != nil {
+		return
+	}
+
 	if err = writer.Put([]byte("blockHeight"+blockHeightStr), hash); err != nil {
 		return
 	}

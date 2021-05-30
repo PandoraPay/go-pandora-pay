@@ -87,6 +87,21 @@ func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values [
 	return json.Marshal(data)
 }
 
+func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+
+	blockHeight := APIBlockHeight(0)
+	if err := json.Unmarshal(values, &blockHeight); err != nil {
+		return nil, err
+	}
+
+	data, err := api.apiCommon.GetBlockInfo(blockHeight, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(data)
+}
+
 func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
 	blockHeight := APIBlockHeight(0)
@@ -244,6 +259,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"handshake":          api.getHandshake,
 		"ping":               api.getPing,
 		"block":              api.getBlock,
+		"block-info":         api.getBlockInfo,
 		"block-hash":         api.getHash,
 		"block-complete":     api.getBlockComplete,
 		"tx":                 api.getTx,

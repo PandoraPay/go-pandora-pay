@@ -141,6 +141,12 @@ func (blkComplete *BlockComplete) BloomAll() (err error) {
 	return
 }
 
+func (blkComplete *BlockComplete) Size() uint64 {
+	writer := helpers.NewBufferWriter()
+	blkComplete.Serialize(writer)
+	return uint64(writer.Length())
+}
+
 func CreateEmptyBlockComplete() *BlockComplete {
 	return &BlockComplete{
 		Block: &block.Block{
