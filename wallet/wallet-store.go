@@ -7,6 +7,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -15,18 +16,24 @@ import (
 	"strconv"
 )
 
-func (wallet *Wallet) saveWalletAddress(adr *wallet_address.WalletAddress) error {
+func (wallet *Wallet) saveWalletAddress(adr *wallet_address.WalletAddress, lock bool) error {
 
 	for i, adr2 := range wallet.Addresses {
 		if adr2 == adr {
-			return wallet.saveWallet(i, i+1, -1)
+			return wallet.saveWallet(i, i+1, -1, lock)
 		}
 	}
 
 	return nil
 }
 
-func (wallet *Wallet) saveWallet(start, end, deleteIndex int) error {
+func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
+
+	if lock {
+		wallet.RLock()
+		defer wallet.RUnlock()
+	}
+
 	return store.StoreWallet.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if err = writer.Put([]byte("saved"), []byte{2}); err != nil {
@@ -106,6 +113,7 @@ func (wallet *Wallet) loadWallet() error {
 			}
 
 			wallet.updateWallet()
+			globals.MainEvents.BroadcastEvent("wallet/loaded", wallet.Count)
 			gui.GUI.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
 
 		} else {
@@ -132,7 +140,7 @@ func (wallet *Wallet) ReadWallet() error {
 				return
 			}
 
-			if err = wallet.refreshWallet(acc, adr); err != nil {
+			if err = wallet.refreshWallet(acc, adr, false); err != nil {
 				return
 			}
 

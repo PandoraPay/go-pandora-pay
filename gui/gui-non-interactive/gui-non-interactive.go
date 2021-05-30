@@ -4,6 +4,7 @@ import (
 	gui_interface "pandora-pay/gui/gui-interface"
 	gui_logger "pandora-pay/gui/gui-logger"
 	"runtime"
+	"sync"
 )
 
 type GUINonInteractive struct {
@@ -14,6 +15,7 @@ type GUINonInteractive struct {
 	colorInfo    string
 	colorLog     string
 	colorFatal   string
+	writingMutex sync.Mutex
 }
 
 func (g *GUINonInteractive) Close() {

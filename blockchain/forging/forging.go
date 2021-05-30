@@ -61,7 +61,7 @@ func (forging *Forging) StartForging() bool {
 		return false
 	}
 
-	forging.workCn = make(chan *ForgingWork)
+	forging.workCn = make(chan *ForgingWork, 10)
 	forgingThread := createForgingThread(config.CPU_THREADS, forging.mempool, forging.SolutionCn, forging.workCn, forging.Wallet)
 
 	go forgingThread.startForging()
@@ -86,10 +86,7 @@ func (forging *Forging) ForgingNewWork(blkComplete *block_complete.BlockComplete
 			target:      target,
 		}
 
-		select {
-		case forging.workCn <- work:
-		default:
-		}
+		forging.workCn <- work
 	}
 }
 

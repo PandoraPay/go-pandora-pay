@@ -8,7 +8,11 @@ import (
 
 func (g *GUINonInteractive) message(prefix string, color string, any ...interface{}) {
 	text := gui_interface.ProcessArgument(any...)
-	fmt.Println(prefix + " " + color + " " + text)
+	final := prefix + " " + color + " " + text
+
+	g.writingMutex.Lock()
+	fmt.Println(final)
+	g.writingMutex.Unlock()
 }
 
 func (g *GUINonInteractive) Log(any ...interface{}) {

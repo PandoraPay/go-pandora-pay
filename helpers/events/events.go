@@ -13,6 +13,16 @@ type Events struct {
 	multicast.MulticastChannel
 }
 
+func (self *Events) BroadcastEventAwait(name string, data interface{}) {
+
+	finalData := &EventData{
+		Name: name,
+		Data: data,
+	}
+
+	self.BroadcastAwait(finalData)
+}
+
 func (self *Events) BroadcastEvent(name string, data interface{}) {
 
 	finalData := &EventData{

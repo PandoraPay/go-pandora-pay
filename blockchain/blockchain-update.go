@@ -98,12 +98,12 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	if !queue.hasAnySuccess(updates) {
 
-		queue.chain.UpdateMulticast.Broadcast(update.newChainData.Height)
+		queue.chain.UpdateMulticast.BroadcastAwait(update.newChainData.Height)
 
-		queue.chain.UpdateNewChainMulticast.Broadcast(update.newChainData)
+		queue.chain.UpdateNewChainMulticast.BroadcastAwait(update.newChainData)
 
 		if result {
-			queue.chain.Sync.UpdateSyncMulticast.Broadcast(newSyncTime)
+			queue.chain.Sync.UpdateSyncMulticast.BroadcastAwait(newSyncTime)
 		}
 	}
 

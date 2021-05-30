@@ -24,6 +24,7 @@ func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork
 
 	//distributing the wallets to each thread uniformly
 	wallet.RLock()
+	defer wallet.RUnlock()
 	for i := 0; i < thread.threads; i++ {
 		wallets[i] = []*ForgingWalletAddressRequired{}
 	}
@@ -51,7 +52,6 @@ func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *ForgingWork
 
 		}
 	}
-	wallet.RUnlock()
 	return
 }
 

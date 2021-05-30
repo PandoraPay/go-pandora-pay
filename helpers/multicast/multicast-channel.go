@@ -1,6 +1,7 @@
 package multicast
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 )
@@ -15,18 +16,33 @@ func (self *MulticastChannel) AddListener() <-chan interface{} {
 	defer self.Unlock()
 
 	listeners := self.listeners.Load().([]chan interface{})
-	newChan := make(chan interface{}, 1)
+	newChan := make(chan interface{})
 
 	self.listeners.Store(append(listeners, newChan))
 
 	return newChan
 }
 
+func (self *MulticastChannel) BroadcastAwait(data interface{}) {
+
+	listeners := self.listeners.Load().([]chan interface{})
+
+	for _, channel := range listeners {
+		channel <- data
+	}
+
+}
+
 func (self *MulticastChannel) Broadcast(data interface{}) {
 
 	listeners := self.listeners.Load().([]chan interface{})
+
 	for _, channel := range listeners {
-		channel <- data
+		select {
+		case channel <- data:
+			fmt.Println("sent message")
+		default:
+		}
 	}
 
 }

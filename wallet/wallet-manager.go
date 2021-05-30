@@ -8,6 +8,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -108,9 +109,10 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 	wallet.mempool.Wallet.AddWallet(adr.PublicKeyHash)
 
 	wallet.updateWallet()
-	if err = wallet.saveWallet(len(wallet.Addresses)-1, len(wallet.Addresses), -1); err != nil {
+	if err = wallet.saveWallet(len(wallet.Addresses)-1, len(wallet.Addresses), -1, false); err != nil {
 		return
 	}
+	globals.MainEvents.BroadcastEvent("wallet/added", adr)
 
 	return
 
@@ -182,9 +184,10 @@ func (wallet *Wallet) RemoveAddress(index int) (out bool, err error) {
 	wallet.mempool.Wallet.RemoveWallet(removing.PublicKeyHash)
 
 	wallet.updateWallet()
-	if err = wallet.saveWallet(index, wallet.Count, wallet.Count); err != nil {
+	if err = wallet.saveWallet(index, wallet.Count, wallet.Count, false); err != nil {
 		return
 	}
+	globals.MainEvents.BroadcastEvent("wallet/removed", adr)
 
 	return true, nil
 }
@@ -247,7 +250,7 @@ func (wallet *Wallet) updateWallet() {
 }
 
 //wallet must be locked before
-func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.WalletAddress) (err error) {
+func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.WalletAddress, lock bool) (err error) {
 
 	if acc == nil {
 		return
@@ -278,7 +281,7 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 				if delegatedStake != nil {
 					adr.DelegatedStake = delegatedStake
 					wallet.forging.Wallet.AddWallet(adr.DelegatedStake.PrivateKey.Key, adr.PublicKeyHash)
-					return wallet.saveWalletAddress(adr)
+					return wallet.saveWalletAddress(adr, lock)
 				}
 
 			}
@@ -287,7 +290,7 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 
 		adr.DelegatedStake = nil
 		wallet.forging.Wallet.AddWallet(nil, adr.PublicKeyHash)
-		return wallet.saveWalletAddress(adr)
+		return wallet.saveWalletAddress(adr, lock)
 	}
 
 	return
@@ -306,11 +309,11 @@ func (wallet *Wallet) UpdateAccountsChanges(accs *accounts.Accounts) (err error)
 				if err = acc.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
 					return
 				}
-				if err = wallet.refreshWallet(acc, wallet.addressesMap[k]); err != nil {
+				if err = wallet.refreshWallet(acc, wallet.addressesMap[k], false); err != nil {
 					return
 				}
 			} else if v.Commit == "delete" {
-				if err = wallet.refreshWallet(nil, wallet.addressesMap[k]); err != nil {
+				if err = wallet.refreshWallet(nil, wallet.addressesMap[k], false); err != nil {
 					return
 				}
 			}

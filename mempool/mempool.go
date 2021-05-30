@@ -57,11 +57,13 @@ func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 	return mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, propagateToSockets)
 }
 
-func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, propagateToSockets bool) (out bool, err error) {
+func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, height uint64) (out bool, err error, finalTxs []*mempoolTx) {
 
-	finalTxs := []*mempoolTx{}
+	finalTxs = []*mempoolTx{}
 
 	mempool.Wallet.Lock()
+	defer mempool.Wallet.Unlock()
+
 	for _, tx := range txs {
 
 		if err = tx.VerifyBloomAll(); err != nil {
@@ -107,7 +109,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 		}
 
 		if selectedFeeToken == nil {
-			return false, errors.New("Transaction fee was not accepted")
+			return false, errors.New("Transaction fee was not accepted"), nil
 		} else {
 			finalTxs = append(finalTxs, &mempoolTx{
 				Tx:          tx,
@@ -120,7 +122,17 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 		}
 
 	}
-	mempool.Wallet.Unlock()
+
+	out = true
+	return
+}
+
+func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, propagateToSockets bool) (out bool, err error) {
+
+	var finalTxs []*mempoolTx
+	if out, err, finalTxs = mempool.processTxsToMemPool(txs, height); err != nil {
+		return
+	}
 
 	if len(finalTxs) == 0 {
 		return false, errors.New("Transactions don't meet the criteria")
