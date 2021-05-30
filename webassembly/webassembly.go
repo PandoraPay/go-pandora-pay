@@ -105,6 +105,9 @@ func Initialize(startMainCb func()) {
 				"importWalletAddressJSON": js.FuncOf(importWalletAddressJSON),
 			}),
 		}),
+		"network": js.ValueOf(map[string]interface{}{
+			"getNetworkBlockInfo": js.FuncOf(getNetworkBlockInfo),
+		}),
 		"enums": js.ValueOf(map[string]interface{}{
 			"transactions": js.ValueOf(map[string]interface{}{
 				"transactionType": js.ValueOf(map[string]interface{}{
@@ -139,7 +142,7 @@ func Initialize(startMainCb func()) {
 			"NETWORK_SELECTED":        js.ValueOf(config.NETWORK_SELECTED),
 			"NETWORK_SELECTED_NAME":   js.ValueOf(config.NETWORK_SELECTED_NAME),
 			"NETWORK_SELECTED_PREFIX": js.ValueOf(config.NETWORK_SELECTED_BYTE_PREFIX),
-			"CONSENSUS":               js.ValueOf(config.CONSENSUS),
+			"CONSENSUS":               js.ValueOf(uint8(config.CONSENSUS)),
 		}),
 	}
 

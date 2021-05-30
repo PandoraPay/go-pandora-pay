@@ -27,6 +27,14 @@ type Websockets struct {
 	api                          *api_http.API
 }
 
+func (websockets *Websockets) GetFirstSocket() *connection.AdvancedConnection {
+	list := websockets.AllList.Load().([]*connection.AdvancedConnection)
+	if len(list) > 0 {
+		return list[0]
+	}
+	return nil
+}
+
 func (websockets *Websockets) GetAllSockets() []*connection.AdvancedConnection {
 	return websockets.AllList.Load().([]*connection.AdvancedConnection)
 }
