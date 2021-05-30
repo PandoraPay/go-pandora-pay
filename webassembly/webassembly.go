@@ -1,18 +1,13 @@
-// +build wasm
-
 package webassembly
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
-	"pandora-pay/gui"
 	"pandora-pay/helpers/events"
-	"pandora-pay/helpers/identicon"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/address"
 	"sync/atomic"
@@ -22,7 +17,7 @@ import (
 var subscriptionsIndex uint64
 var startMainCallback func()
 
-var promiseConstructor js.Value
+var promiseConstructor, errorConstructor js.Value
 
 func convertJSON(obj interface{}) interface{} {
 	str, err := json.Marshal(obj)
@@ -66,96 +61,12 @@ func subscribeEvents(none js.Value, args []js.Value) interface{} {
 	return index
 }
 
-func helloPandora(this js.Value, args []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
-		go func() {
-			gui.GUI.Info("HelloPandora works!")
-			args2[0].Invoke(true)
-		}()
-		return nil
-	}))
-}
-
-func start(this js.Value, args []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
-		go func() {
-			startMainCallback()
-			args2[0].Invoke(true)
-		}()
-		return nil
-	}))
-}
-
-func getWallet(this js.Value, args []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
-		go func() {
-			wallet := globals.Data["wallet"].(*wallet.Wallet)
-			wallet.RLock()
-			out := convertJSON(wallet)
-			wallet.RUnlock()
-			args2[0].Invoke(out)
-		}()
-		return nil
-	}))
-}
-
-func getWalletAddress(this js.Value, args []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
-		go func() {
-			adr, err := globals.Data["wallet"].(*wallet.Wallet).GetWalletAddressByEncodedAddress(args[1].String())
-			if err != nil {
-				panic(err)
-			}
-			args2[0].Invoke(convertJSON(adr))
-		}()
-		return nil
-	}))
-}
-
-func addNewWalletAddress(this js.Value, args []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
-		go func() {
-			adr, err := globals.Data["wallet"].(*wallet.Wallet).AddNewAddress()
-			if err != nil {
-				panic(err)
-			}
-			args2[0].Invoke(convertJSON(adr))
-		}()
-		return nil
-	}))
-}
-
-func removeWalletAddress(this js.Value, args []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
-		go func() {
-			adr, err := globals.Data["wallet"].(*wallet.Wallet).RemoveAddress(0, args[0].String())
-			if err != nil {
-				panic(err)
-			}
-			args2[0].Invoke(convertJSON(adr))
-		}()
-		return nil
-	}))
-}
-
-func getIdenticon(this js.Value, args []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
-		go func() {
-			out, err := identicon.GenerateToBytes([]byte(args[0].String()), args[1].Int(), args[2].Int())
-			if err != nil {
-				panic(err)
-			}
-			args2[0].Invoke("data:image/png;base64," + base64.StdEncoding.EncodeToString(out))
-		}()
-		return nil
-	}))
-}
-
 func Initialize(startMainCb func()) {
 
 	startMainCallback = startMainCb
 
 	promiseConstructor = js.Global().Get("Promise")
+	errorConstructor = js.Global().Get("Error")
 
 	PandoraPayExport := map[string]interface{}{
 		"helpers": js.ValueOf(map[string]interface{}{
@@ -169,9 +80,10 @@ func Initialize(startMainCb func()) {
 		"wallet": js.ValueOf(map[string]interface{}{
 			"getWallet": js.FuncOf(getWallet),
 			"manager": js.ValueOf(map[string]interface{}{
-				"getWalletAddress":    js.FuncOf(getWalletAddress),
-				"addNewWalletAddress": js.FuncOf(addNewWalletAddress),
-				"removeWalletAddress": js.FuncOf(removeWalletAddress),
+				"getWalletAddress":       js.FuncOf(getWalletAddress),
+				"addNewWalletAddress":    js.FuncOf(addNewWalletAddress),
+				"removeWalletAddress":    js.FuncOf(removeWalletAddress),
+				"importWalletPrivateKey": js.FuncOf(importWalletPrivateKey),
 			}),
 		}),
 		"enums": js.ValueOf(map[string]interface{}{
