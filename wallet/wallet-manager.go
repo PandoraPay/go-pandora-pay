@@ -75,18 +75,24 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 		defer wallet.Unlock()
 	}
 
-	if adr.Address, err = adr.PrivateKey.GenerateAddress(true, 0, []byte{}); err != nil {
+	var addr1 *addresses.Address
+	if addr1, err = adr.PrivateKey.GenerateAddress(true, 0, []byte{}); err != nil {
 		return
 	}
 
-	adr.AddressEncoded = adr.Address.EncodeAddr()
+	var publicKey, publicKeyHash []byte
+	publicKey, publicKeyHash, err = adr.PrivateKey.GeneratePairs()
 
-	if wallet.addressesMap[string(adr.Address.PublicKeyHash)] != nil {
+	adr.AddressEncoded = addr1.EncodeAddr()
+	adr.PublicKey = publicKey
+	adr.PublicKeyHash = publicKeyHash
+
+	if wallet.addressesMap[string(adr.PublicKeyHash)] != nil {
 		return errors.New("Address exists")
 	}
 
 	wallet.Addresses = append(wallet.Addresses, adr)
-	wallet.addressesMap[string(adr.Address.PublicKeyHash)] = adr
+	wallet.addressesMap[string(adr.PublicKeyHash)] = adr
 
 	wallet.Count += 1
 
@@ -98,8 +104,8 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 		wallet.CountIndex += 1
 	}
 
-	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.GetPublicKeyHash())
-	wallet.mempool.Wallet.AddWallet(adr.GetPublicKeyHash())
+	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKeyHash)
+	wallet.mempool.Wallet.AddWallet(adr.PublicKeyHash)
 
 	wallet.updateWallet()
 	if err = wallet.saveWallet(len(wallet.Addresses)-1, len(wallet.Addresses), -1); err != nil {
@@ -168,12 +174,12 @@ func (wallet *Wallet) RemoveAddress(index int) (out bool, err error) {
 
 	removing := wallet.Addresses[index]
 	wallet.Addresses = append(wallet.Addresses[:index], wallet.Addresses[index+1:]...)
-	delete(wallet.addressesMap, string(adr.Address.PublicKeyHash))
+	delete(wallet.addressesMap, string(adr.PublicKeyHash))
 
 	wallet.Count -= 1
 
-	wallet.forging.Wallet.RemoveWallet(removing.GetPublicKeyHash())
-	wallet.mempool.Wallet.RemoveWallet(removing.GetPublicKeyHash())
+	wallet.forging.Wallet.RemoveWallet(removing.PublicKeyHash)
+	wallet.mempool.Wallet.RemoveWallet(removing.PublicKeyHash)
 
 	wallet.updateWallet()
 	if err = wallet.saveWallet(index, wallet.Count, wallet.Count); err != nil {
@@ -271,7 +277,7 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 
 				if delegatedStake != nil {
 					adr.DelegatedStake = delegatedStake
-					wallet.forging.Wallet.AddWallet(adr.DelegatedStake.PrivateKey.Key, adr.Address.PublicKeyHash)
+					wallet.forging.Wallet.AddWallet(adr.DelegatedStake.PrivateKey.Key, adr.PublicKeyHash)
 					return wallet.saveWalletAddress(adr)
 				}
 
@@ -280,7 +286,7 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 		}
 
 		adr.DelegatedStake = nil
-		wallet.forging.Wallet.AddWallet(nil, adr.Address.PublicKeyHash)
+		wallet.forging.Wallet.AddWallet(nil, adr.PublicKeyHash)
 		return wallet.saveWalletAddress(adr)
 	}
 

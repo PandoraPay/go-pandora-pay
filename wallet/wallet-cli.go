@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens"
@@ -36,14 +35,13 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 		toks := tokens.NewTokens(reader)
 
 		for _, walletAddress := range wallet.Addresses {
-			addressStr := walletAddress.GetAddressEncoded()
-			gui.GUI.OutputWrite(walletAddress.Name + " : " + walletAddress.Address.Version.String() + " : " + addressStr)
+			addressStr := walletAddress.AddressEncoded
+			gui.GUI.OutputWrite(walletAddress.Name + " : " + walletAddress.Version.String() + " : " + addressStr)
 
-			if walletAddress.Address.Version == addresses.SimplePublicKeyHash ||
-				walletAddress.Address.Version == addresses.SimplePublicKey {
+			if walletAddress.Version == wallet_address.VERSION_TRANSPARENT {
 
 				var acc *account.Account
-				if acc, err = accs.GetAccount(walletAddress.GetPublicKeyHash(), chainHeight); err != nil {
+				if acc, err = accs.GetAccount(walletAddress.PublicKeyHash, chainHeight); err != nil {
 					return
 				}
 
@@ -258,7 +256,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 		wallet.addressesMap = make(map[string]*wallet_address.WalletAddress)
 		for _, adr := range wallet.Addresses {
-			wallet.addressesMap[string(adr.Address.PublicKeyHash)] = adr
+			wallet.addressesMap[string(adr.PublicKeyHash)] = adr
 		}
 
 		gui.GUI.Info("Wallet Imported Successfully")

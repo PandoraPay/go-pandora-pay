@@ -98,10 +98,10 @@ func (wallet *Wallet) loadWallet() error {
 					return
 				}
 				wallet.Addresses = append(wallet.Addresses, newWalletAddress)
-				wallet.addressesMap[string(newWalletAddress.Address.PublicKeyHash)] = newWalletAddress
+				wallet.addressesMap[string(newWalletAddress.PublicKeyHash)] = newWalletAddress
 
-				wallet.forging.Wallet.AddWallet(newWalletAddress.GetDelegatedStakePrivateKey(), newWalletAddress.GetPublicKeyHash())
-				wallet.mempool.Wallet.AddWallet(newWalletAddress.GetPublicKeyHash())
+				wallet.forging.Wallet.AddWallet(newWalletAddress.GetDelegatedStakePrivateKey(), newWalletAddress.PublicKeyHash)
+				wallet.mempool.Wallet.AddWallet(newWalletAddress.PublicKeyHash)
 
 			}
 
@@ -128,7 +128,7 @@ func (wallet *Wallet) ReadWallet() error {
 		for _, adr := range wallet.Addresses {
 
 			var acc *account.Account
-			if acc, err = accs.GetAccount(adr.Address.PublicKeyHash, chainHeight); err != nil {
+			if acc, err = accs.GetAccount(adr.PublicKeyHash, chainHeight); err != nil {
 				return
 			}
 

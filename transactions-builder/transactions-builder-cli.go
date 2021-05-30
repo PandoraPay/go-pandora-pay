@@ -61,7 +61,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateSimpleTx_Float([]string{walletAddress.GetAddressEncoded()}, nonce, []float64{amount}, [][]byte{token}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, [][]byte{token}, feePerByte, feeToken)
+		tx, err := builder.CreateSimpleTx_Float([]string{walletAddress.AddressEncoded}, nonce, []float64{amount}, [][]byte{token}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, [][]byte{token}, feePerByte, feeToken)
 		if err != nil {
 			return
 		}
@@ -134,7 +134,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			}
 		}
 
-		tx, err := builder.CreateDelegateTx_Float(walletAddress.GetAddressEncoded(), nonce, amount, delegateNewPublicKeyHashGenerate, delegateNewPublicKeyHash, feePerByte, feeToken)
+		tx, err := builder.CreateDelegateTx_Float(walletAddress.AddressEncoded, nonce, amount, delegateNewPublicKeyHashGenerate, delegateNewPublicKeyHash, feePerByte, feeToken)
 		if err != nil {
 			return
 		}
@@ -196,7 +196,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateUnstakeTx_Float(walletAddress.GetAddressEncoded(), nonce, amount, feePerByte, feeToken, payFeeInExtra)
+		tx, err := builder.CreateUnstakeTx_Float(walletAddress.AddressEncoded, nonce, amount, feePerByte, feeToken, payFeeInExtra)
 		if err != nil {
 			return
 		}

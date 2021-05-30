@@ -5,6 +5,7 @@ import (
 	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography"
+	"pandora-pay/helpers"
 )
 
 type WalletAddress struct {
@@ -13,17 +14,10 @@ type WalletAddress struct {
 	SeedIndex      uint32                       `json:"seedIndex"`
 	IsMine         bool                         `json:"isMine"`
 	PrivateKey     *addresses.PrivateKey        `json:"privateKey"`
-	Address        *addresses.Address           `json:"address"`
+	PublicKey      helpers.HexBytes             `json:"publicKey"`
+	PublicKeyHash  helpers.HexBytes             `json:"publicKeyHash"`
 	AddressEncoded string                       `json:"addressEncoded"`
 	DelegatedStake *WalletAddressDelegatedStake `json:"delegatedStake"`
-}
-
-func (adr *WalletAddress) GetPublicKeyHash() []byte {
-	return adr.Address.PublicKeyHash
-}
-
-func (adr *WalletAddress) GetAddressEncoded() string {
-	return adr.Address.EncodeAddr()
 }
 
 func (adr *WalletAddress) GetDelegatedStakePrivateKey() []byte {

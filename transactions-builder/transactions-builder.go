@@ -118,7 +118,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 			}
 
 			var acc *account.Account
-			if acc, err = accs.GetAccount(fromWalletAddress.GetPublicKeyHash(), chainHeight); err != nil {
+			if acc, err = accs.GetAccount(fromWalletAddress.PublicKeyHash, chainHeight); err != nil {
 				return
 			}
 
@@ -135,7 +135,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 			}
 
 			if i == 0 && nonce == 0 {
-				nonce = builder.mempool.GetNonce(fromWalletAddress.GetPublicKeyHash(), acc.Nonce)
+				nonce = builder.mempool.GetNonce(fromWalletAddress.PublicKeyHash, acc.Nonce)
 			}
 			keys[i] = fromWalletAddress.PrivateKey.Key
 		}
@@ -177,7 +177,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, u
 
 		accs := accounts.NewAccounts(reader)
 		var account *account.Account
-		if account, err = accs.GetAccount(fromWalletAddress.GetPublicKeyHash(), chainHeight); err != nil {
+		if account, err = accs.GetAccount(fromWalletAddress.PublicKeyHash, chainHeight); err != nil {
 			return
 		}
 
@@ -192,7 +192,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, u
 		}
 
 		if nonce == 0 {
-			nonce = builder.mempool.GetNonce(fromWalletAddress.GetPublicKeyHash(), account.Nonce)
+			nonce = builder.mempool.GetNonce(fromWalletAddress.PublicKeyHash, account.Nonce)
 		}
 
 		if tx, err = wizard.CreateUnstakeTx(nonce, fromWalletAddress.PrivateKey.Key, unstakeAmount, feePerByte, feeToken, payFeeInExtra); err != nil {
@@ -234,7 +234,7 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 
 		accs := accounts.NewAccounts(reader)
 		var acc *account.Account
-		if acc, err = accs.GetAccount(fromWalletAddress.GetPublicKeyHash(), chainHeight); err != nil {
+		if acc, err = accs.GetAccount(fromWalletAddress.PublicKeyHash, chainHeight); err != nil {
 			return
 		}
 
@@ -252,7 +252,7 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 		}
 
 		if nonce == 0 {
-			nonce = builder.mempool.GetNonce(fromWalletAddress.GetPublicKeyHash(), acc.Nonce)
+			nonce = builder.mempool.GetNonce(fromWalletAddress.PublicKeyHash, acc.Nonce)
 		}
 
 		if delegateNewPubKeyHashGenerate {

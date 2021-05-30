@@ -3,6 +3,7 @@
 package webassembly
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple"
@@ -11,6 +12,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/events"
+	"pandora-pay/helpers/identicon"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/address"
 	"sync/atomic"
@@ -20,7 +22,16 @@ import (
 var subscriptionsIndex uint64
 var startMainCallback func()
 
-func SubscribeEvents(none js.Value, args []js.Value) interface{} {
+func convertJSON(obj interface{}) interface{} {
+	str, err := json.Marshal(obj)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(str)
+}
+
+func subscribeEvents(none js.Value, args []js.Value) interface{} {
 
 	if len(args) == 0 || args[0].Type() != js.TypeFunction {
 		return errors.New("Argument must be a callback")
@@ -41,12 +52,7 @@ func SubscribeEvents(none js.Value, args []js.Value) interface{} {
 			case string:
 				final = data.Data
 			case interface{}:
-				str, err := json.Marshal(v)
-				if err == nil {
-					final = string(str)
-				} else {
-					final = "error marshaling object"
-				}
+				final = convertJSON(v)
 			default:
 				final = data.Data
 			}
@@ -58,14 +64,26 @@ func SubscribeEvents(none js.Value, args []js.Value) interface{} {
 	return index
 }
 
-func HelloPandora(js.Value, []js.Value) interface{} {
+func helloPandora(js.Value, []js.Value) interface{} {
 	gui.GUI.Info("HelloPandora works!")
 	return true
 }
 
-func Start(js.Value, []js.Value) interface{} {
+func start(js.Value, []js.Value) interface{} {
 	startMainCallback()
 	return true
+}
+
+func getWallet(js.Value, []js.Value) interface{} {
+	return convertJSON(globals.Data["wallet"].(*wallet.Wallet))
+}
+
+func getIdenticon(a js.Value, b []js.Value) interface{} {
+	out, err := identicon.GenerateToBytes([]byte(b[0].String()), b[1].Int(), b[2].Int())
+	if err != nil {
+		panic(err)
+	}
+	return "data:image/png;base64," + base64.StdEncoding.EncodeToString(out)
 }
 
 func Initialize(startMainCb func()) {
@@ -74,11 +92,15 @@ func Initialize(startMainCb func()) {
 
 	PandoraPayExport := map[string]interface{}{
 		"helpers": js.ValueOf(map[string]interface{}{
-			"helloPandora": js.FuncOf(HelloPandora),
-			"start":        js.FuncOf(Start),
+			"helloPandora": js.FuncOf(helloPandora),
+			"start":        js.FuncOf(start),
+			"getIdenticon": js.FuncOf(getIdenticon),
 		}),
 		"events": js.ValueOf(map[string]interface{}{
-			"subscribe": js.FuncOf(SubscribeEvents),
+			"subscribe": js.FuncOf(subscribeEvents),
+		}),
+		"wallet": js.ValueOf(map[string]interface{}{
+			"getWallet": js.FuncOf(getWallet),
 		}),
 		"enums": js.ValueOf(map[string]interface{}{
 			"transactions": js.ValueOf(map[string]interface{}{

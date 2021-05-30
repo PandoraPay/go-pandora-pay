@@ -12,8 +12,8 @@ import (
 type AddressVersion uint64
 
 const (
-	SimplePublicKeyHash AddressVersion = 0
-	SimplePublicKey     AddressVersion = 1
+	SIMPLE_PUBLIC_KEY_HASH AddressVersion = 0
+	SIMPLE_PUBLIC_KEY      AddressVersion = 1
 )
 
 type Address struct {
@@ -27,10 +27,10 @@ type Address struct {
 
 func (e AddressVersion) String() string {
 	switch e {
-	case SimplePublicKeyHash:
-		return "Simple PubKeyHash"
-	case SimplePublicKey:
-		return "Simple PubKey"
+	case SIMPLE_PUBLIC_KEY_HASH:
+		return "SIMPLE_PUBLIC_KEY_HASH"
+	case SIMPLE_PUBLIC_KEY:
+		return "SIMPLE_PUBLIC_KEY"
 	default:
 		return "Unknown Address Version"
 	}
@@ -55,9 +55,9 @@ func (a *Address) EncodeAddr() string {
 	writer.WriteUvarint(uint64(a.Version))
 
 	switch a.Version {
-	case SimplePublicKey:
+	case SIMPLE_PUBLIC_KEY:
 		writer.Write(a.PublicKey)
-	case SimplePublicKeyHash:
+	case SIMPLE_PUBLIC_KEY_HASH:
 		writer.Write(a.PublicKeyHash)
 	}
 
@@ -125,11 +125,11 @@ func DecodeAddr(input string) (adr *Address, err error) {
 	adr.Version = AddressVersion(version)
 
 	switch adr.Version {
-	case SimplePublicKeyHash:
+	case SIMPLE_PUBLIC_KEY_HASH:
 		if adr.PublicKeyHash, err = reader.ReadBytes(20); err != nil {
 			return
 		}
-	case SimplePublicKey:
+	case SIMPLE_PUBLIC_KEY:
 		if adr.PublicKey, err = reader.ReadBytes(33); err != nil {
 			return
 		}

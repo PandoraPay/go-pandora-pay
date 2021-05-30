@@ -120,7 +120,7 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 				amount := 100 * stake.GetRequiredStake(0)
 
 				GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-					PublicKeyHash:               walletAddress.Address.PublicKeyHash,
+					PublicKeyHash:               walletAddress.PublicKeyHash,
 					Amount:                      amount,
 					DelegatedStakePublicKeyHash: delegatedStakePublicKeyHash,
 				})

@@ -32,7 +32,7 @@ type Testnet struct {
 
 func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64) (err error) {
 
-	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].GetAddressEncoded(), 0, amount, -1, []byte{}, true)
+	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].AddressEncoded, 0, amount, -1, []byte{}, true)
 	if err != nil {
 		return
 	}
@@ -60,12 +60,12 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 				return
 			}
 		}
-		dsts = append(dsts, testnet.wallet.Addresses[i+1].GetAddressEncoded())
+		dsts = append(dsts, testnet.wallet.Addresses[i+1].AddressEncoded)
 		dstsAmounts = append(dstsAmounts, stake.GetRequiredStake(blockHeight))
 		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].GetAddressEncoded()}, 0, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, 0, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
 	if err != nil {
 		return
 	}
@@ -103,7 +103,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].GetAddressEncoded()}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{}); err != nil {
 		return
 	}
 
@@ -152,7 +152,7 @@ func (testnet *Testnet) run() {
 
 					accs := accounts.NewAccounts(reader)
 					var account *account.Account
-					if account, err = accs.GetAccountEvenEmpty(testnet.wallet.Addresses[0].GetPublicKeyHash(), blockHeight); err != nil {
+					if account, err = accs.GetAccountEvenEmpty(testnet.wallet.Addresses[0].PublicKeyHash, blockHeight); err != nil {
 						return
 					}
 
@@ -167,13 +167,13 @@ func (testnet *Testnet) run() {
 						delegatedUnstakePending, _ := account.ComputeDelegatedUnstakePending()
 
 						if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
-							if !testnet.mempool.ExistsTxSimpleVersion(testnet.wallet.Addresses[0].GetPublicKeyHash(), transaction_simple.SCRIPT_UNSTAKE) {
+							if !testnet.mempool.ExistsTxSimpleVersion(testnet.wallet.Addresses[0].PublicKeyHash, transaction_simple.SCRIPT_UNSTAKE) {
 								if err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
 									return
 								}
 							}
 						} else {
-							if testnet.mempool.CountInputTxs(testnet.wallet.Addresses[0].GetPublicKeyHash()) < 100 {
+							if testnet.mempool.CountInputTxs(testnet.wallet.Addresses[0].PublicKeyHash) < 100 {
 								for i := 0; i < 20; i++ {
 									err = testnet.testnetCreateTransfers(blockHeight)
 									time.Sleep(10 * time.Millisecond)

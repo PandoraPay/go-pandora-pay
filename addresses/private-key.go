@@ -16,6 +16,22 @@ func (pk *PrivateKey) GeneratePublicKey() ([]byte, error) {
 	return ecdsa.ComputePublicKey(pk.Key)
 }
 
+func (pk *PrivateKey) GeneratePublicKeyHash() ([]byte, error) {
+	publicKey, err := ecdsa.ComputePublicKey(pk.Key)
+	if err != nil {
+		return nil, err
+	}
+	return cryptography.ComputePublicKeyHash(publicKey), nil
+}
+
+func (pk *PrivateKey) GeneratePairs() (publicKey []byte, publicKeyHash []byte, err error) {
+	if publicKey, err = ecdsa.ComputePublicKey(pk.Key); err != nil {
+		return
+	}
+	publicKeyHash = cryptography.ComputePublicKeyHash(publicKey)
+	return
+}
+
 func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) (address *Address, err error) {
 
 	address = &Address{
@@ -35,9 +51,9 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 
 	if usePublicKeyHash {
 		address.PublicKey = []byte{}
-		address.Version = SimplePublicKeyHash
+		address.Version = SIMPLE_PUBLIC_KEY_HASH
 	} else {
-		address.Version = SimplePublicKey
+		address.Version = SIMPLE_PUBLIC_KEY
 	}
 
 	return
