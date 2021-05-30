@@ -203,7 +203,13 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 	if n, err = reader.ReadUvarint(); err != nil {
 		return
 	}
-	tx.TxScript = ScriptType(n)
+
+	scriptType := ScriptType(n)
+	if scriptType >= SCRIPT_END {
+		return errors.New("INVALID SCRIPT TYPE")
+	}
+
+	tx.TxScript = scriptType
 	switch tx.TxScript {
 	case SCRIPT_NORMAL:
 		//nothing

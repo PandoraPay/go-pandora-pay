@@ -5,6 +5,7 @@ import (
 	"pandora-pay/blockchain"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/config"
 	"pandora-pay/network/websocks/connection"
 )
 
@@ -63,11 +64,11 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 }
 
 func (consensus *Consensus) broadcast(newChainData *blockchain.BlockchainData) {
-	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain-update"), consensus.getUpdateNotification(newChainData))
+	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain-update"), consensus.getUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true})
 }
 
 func (consensus *Consensus) broadcastTx(tx *transaction.Transaction) {
-	consensus.httpServer.Websockets.Broadcast([]byte("mem-pool/new-tx-id"), tx.Bloom.Hash)
+	consensus.httpServer.Websockets.Broadcast([]byte("mem-pool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true})
 }
 
 func (consensus *Consensus) getUpdateNotification(newChainData *blockchain.BlockchainData) *ChainUpdateNotification {

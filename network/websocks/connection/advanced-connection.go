@@ -28,6 +28,8 @@ type AdvancedConnectionAnswer struct {
 
 type AdvancedConnection struct {
 	Conn           *websocket.Conn
+	Handshake      *ConnectionHandshake
+	Initialized    bool
 	RemoteAddr     string
 	answerCounter  uint32
 	Closed         chan struct{}
@@ -296,6 +298,7 @@ func (c *AdvancedConnection) WritePump() {
 func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error), connectionType bool) *AdvancedConnection {
 	return &AdvancedConnection{
 		Conn:           conn,
+		Handshake:      nil,
 		RemoteAddr:     remoteAddr,
 		Closed:         make(chan struct{}),
 		IsClosed:       abool.New(),

@@ -31,18 +31,20 @@ func (websockets *Websockets) GetAllSockets() []*connection.AdvancedConnection {
 	return websockets.AllList.Load().([]*connection.AdvancedConnection)
 }
 
-func (websockets *Websockets) Broadcast(name []byte, data []byte) {
+func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeAccepted map[config.ConsensusType]bool) {
 
 	all := websockets.GetAllSockets()
 	for _, conn := range all {
-		conn.Send(name, data)
+		if consensusTypeAccepted[conn.Handshake.Consensus] {
+			conn.Send(name, data)
+		}
 	}
 
 }
 
-func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}) {
+func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool) {
 	out, _ := json.Marshal(data)
-	websockets.Broadcast(name, out)
+	websockets.Broadcast(name, out, consensusTypeAccepted)
 }
 
 func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnection) {
@@ -51,6 +53,10 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 
 	conn2, exists := websockets.AllAddresses.LoadAndDelete(conn.RemoteAddr)
 	if !exists || conn2 != conn {
+		return
+	}
+
+	if !conn.Initialized {
 		return
 	}
 
@@ -74,14 +80,6 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 	}
 }
 
-func (api *Websockets) validateHandshake(handshake *api_websockets.APIHandshake) error {
-	handshake2 := *handshake
-	if handshake2.Network != config.NETWORK_SELECTED {
-		return errors.New("Network is different")
-	}
-	return nil
-}
-
 func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConnection) error {
 
 	out := conn.SendAwaitAnswer([]byte("handshake"), nil)
@@ -95,16 +93,30 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 		return errors.New("Handshake was not received")
 	}
 
-	handshakeServer := new(api_websockets.APIHandshake)
-	if err := json.Unmarshal(out.Out, &handshakeServer); err != nil {
+	handshakeReceived := new(connection.ConnectionHandshake)
+	if err := json.Unmarshal(out.Out, &handshakeReceived); err != nil {
 		conn.Close("Handshake received was invalid")
 		return errors.New("Handshake received was invalid")
 	}
 
-	if err := websockets.validateHandshake(handshakeServer); err != nil {
+	if err := handshakeReceived.ValidateHandshake(); err != nil {
 		conn.Close("Handshake is invalid")
 		return errors.New("Handshake is invalid")
 	}
+
+	conn.Handshake = handshakeReceived
+
+	websockets.AllListMutex.Lock()
+	websockets.AllList.Store(append(websockets.AllList.Load().([]*connection.AdvancedConnection), conn))
+	websockets.AllListMutex.Unlock()
+
+	if conn.ConnectionType {
+		atomic.AddInt64(&websockets.ServerClients, +1)
+	} else {
+		atomic.AddInt64(&websockets.Clients, +1)
+	}
+
+	conn.Initialized = true
 
 	websockets.UpdateNewConnectionMulticast.Broadcast(conn)
 
@@ -117,16 +129,6 @@ func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection)
 	if exists {
 		conn.Conn.Close(websocket.StatusNormalClosure, "Already connected")
 		return errors.New("Already connected")
-	}
-
-	websockets.AllListMutex.Lock()
-	websockets.AllList.Store(append(websockets.AllList.Load().([]*connection.AdvancedConnection), conn))
-	websockets.AllListMutex.Unlock()
-
-	if conn.ConnectionType {
-		atomic.AddInt64(&websockets.ServerClients, +1)
-	} else {
-		atomic.AddInt64(&websockets.Clients, +1)
 	}
 
 	go conn.ReadPump()

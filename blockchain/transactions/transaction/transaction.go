@@ -71,7 +71,7 @@ func (tx *Transaction) Validate() error {
 	if tx.Version != 0 {
 		return errors.New("Version is invalid")
 	}
-	if transaction_type.TX_END <= tx.TxType {
+	if tx.TxType >= transaction_type.TX_END {
 		return errors.New("VersionType is invalid")
 	}
 

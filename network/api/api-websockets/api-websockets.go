@@ -26,7 +26,7 @@ type APIWebsockets struct {
 }
 
 func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return json.Marshal(&APIHandshake{config.NAME, config.VERSION, config.NETWORK_SELECTED, config.CONSENSUS})
+	return json.Marshal(&connection.ConnectionHandshake{config.NAME, config.VERSION, config.NETWORK_SELECTED, config.CONSENSUS})
 }
 
 func (api *APIWebsockets) getBlockchain(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
