@@ -278,7 +278,7 @@ func (wallet *Wallet) initWalletCLI() {
 		}
 
 		var success bool
-		if success, err = wallet.RemoveAddress(index); err != nil {
+		if success, err = wallet.RemoveAddress(index, ""); err != nil {
 			return
 		}
 		if err = wallet.CliListAddresses(""); err != nil {

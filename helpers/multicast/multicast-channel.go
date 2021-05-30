@@ -1,7 +1,6 @@
 package multicast
 
 import (
-	"fmt"
 	"sync"
 	"sync/atomic"
 )
@@ -40,7 +39,6 @@ func (self *MulticastChannel) Broadcast(data interface{}) {
 	for _, channel := range listeners {
 		select {
 		case channel <- data:
-			fmt.Println("sent message")
 		default:
 		}
 	}

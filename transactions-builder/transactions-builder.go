@@ -113,7 +113,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 		for i, fromAddress := range from {
 
 			var fromWalletAddress *wallet_address.WalletAddress
-			if fromWalletAddress, err = builder.wallet.GetWalletAddressByAddress(fromAddress); err != nil {
+			if fromWalletAddress, err = builder.wallet.GetWalletAddressByEncodedAddress(fromAddress); err != nil {
 				return
 			}
 
@@ -166,7 +166,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uin
 
 func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction, err2 error) {
 
-	fromWalletAddress, err2 := builder.wallet.GetWalletAddressByAddress(from)
+	fromWalletAddress, err2 := builder.wallet.GetWalletAddressByEncodedAddress(from)
 	if err2 != nil {
 		return
 	}
@@ -223,7 +223,7 @@ func (builder *TransactionsBuilder) CreateDelegateTx_Float(from string, nonce ui
 
 func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, delegateAmount uint64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err2 error) {
 
-	fromWalletAddress, err2 := builder.wallet.GetWalletAddressByAddress(from)
+	fromWalletAddress, err2 := builder.wallet.GetWalletAddressByEncodedAddress(from)
 	if err2 != nil {
 		return
 	}

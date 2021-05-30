@@ -29,7 +29,7 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (adr *wallet_addre
 	return adr, delegatedStake.PublicKeyHash, nil
 }
 
-func (wallet *Wallet) GetWalletAddressByAddress(addressEncoded string) (out *wallet_address.WalletAddress, err error) {
+func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string) (out *wallet_address.WalletAddress, err error) {
 
 	address, err := addresses.DecodeAddr(addressEncoded)
 	if err != nil {
@@ -163,10 +163,22 @@ func (wallet *Wallet) AddNewAddress() (adr *wallet_address.WalletAddress, err er
 	return
 }
 
-func (wallet *Wallet) RemoveAddress(index int) (out bool, err error) {
+/**
+In case encodedAddress is provided, it will search for it
+*/
+func (wallet *Wallet) RemoveAddress(index int, encodedAddress string) (out bool, err error) {
 
 	wallet.Lock()
 	defer wallet.Unlock()
+
+	if encodedAddress != "" {
+		for i, addr := range wallet.Addresses {
+			if addr.AddressEncoded == encodedAddress {
+				index = i
+				break
+			}
+		}
+	}
 
 	if index < 0 || index > len(wallet.Addresses) {
 		return false, errors.New("Invalid Address Index")

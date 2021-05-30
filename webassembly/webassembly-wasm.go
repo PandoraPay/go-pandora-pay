@@ -66,72 +66,86 @@ func subscribeEvents(none js.Value, args []js.Value) interface{} {
 	return index
 }
 
-func helloPandora(js.Value, []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+func helloPandora(this js.Value, args []js.Value) interface{} {
+	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
 		go func() {
 			gui.GUI.Info("HelloPandora works!")
-			args[0].Invoke(true)
+			args2[0].Invoke(true)
 		}()
 		return nil
 	}))
 }
 
-func start(js.Value, []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+func start(this js.Value, args []js.Value) interface{} {
+	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
 		go func() {
 			startMainCallback()
+			args2[0].Invoke(true)
 		}()
 		return nil
 	}))
 }
 
 func getWallet(this js.Value, args []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
 		go func() {
 			wallet := globals.Data["wallet"].(*wallet.Wallet)
 			wallet.RLock()
 			out := convertJSON(wallet)
 			wallet.RUnlock()
-			args[0].Invoke(out)
+			args2[0].Invoke(out)
 		}()
 		return nil
 	}))
 }
 
-func getWalletAddress(a js.Value, b []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+func getWalletAddress(this js.Value, args []js.Value) interface{} {
+	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
 		go func() {
-			adr, err := globals.Data["wallet"].(*wallet.Wallet).GetWalletAddressByAddress(b[0].String())
+			adr, err := globals.Data["wallet"].(*wallet.Wallet).GetWalletAddressByEncodedAddress(args[1].String())
 			if err != nil {
 				panic(err)
 			}
-			args[0].Invoke(convertJSON(adr))
+			args2[0].Invoke(convertJSON(adr))
 		}()
 		return nil
 	}))
 }
 
-func addNewWalletAddress(a js.Value, b []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+func addNewWalletAddress(this js.Value, args []js.Value) interface{} {
+	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
 		go func() {
 			adr, err := globals.Data["wallet"].(*wallet.Wallet).AddNewAddress()
 			if err != nil {
 				panic(err)
 			}
-			args[0].Invoke(convertJSON(adr))
+			args2[0].Invoke(convertJSON(adr))
 		}()
 		return nil
 	}))
 }
 
-func getIdenticon(a js.Value, b []js.Value) interface{} {
-	return promiseConstructor.New(js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+func removeWalletAddress(this js.Value, args []js.Value) interface{} {
+	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
 		go func() {
-			out, err := identicon.GenerateToBytes([]byte(b[0].String()), b[1].Int(), b[2].Int())
+			adr, err := globals.Data["wallet"].(*wallet.Wallet).RemoveAddress(0, args[0].String())
 			if err != nil {
 				panic(err)
 			}
-			args[0].Invoke("data:image/png;base64," + base64.StdEncoding.EncodeToString(out))
+			args2[0].Invoke(convertJSON(adr))
+		}()
+		return nil
+	}))
+}
+
+func getIdenticon(this js.Value, args []js.Value) interface{} {
+	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
+		go func() {
+			out, err := identicon.GenerateToBytes([]byte(args[0].String()), args[1].Int(), args[2].Int())
+			if err != nil {
+				panic(err)
+			}
+			args2[0].Invoke("data:image/png;base64," + base64.StdEncoding.EncodeToString(out))
 		}()
 		return nil
 	}))
@@ -153,9 +167,12 @@ func Initialize(startMainCb func()) {
 			"subscribe": js.FuncOf(subscribeEvents),
 		}),
 		"wallet": js.ValueOf(map[string]interface{}{
-			"getWallet":           js.FuncOf(getWallet),
-			"getWalletAddress":    js.FuncOf(getWalletAddress),
-			"addNewWalletAddress": js.FuncOf(addNewWalletAddress),
+			"getWallet": js.FuncOf(getWallet),
+			"manager": js.ValueOf(map[string]interface{}{
+				"getWalletAddress":    js.FuncOf(getWalletAddress),
+				"addNewWalletAddress": js.FuncOf(addNewWalletAddress),
+				"removeWalletAddress": js.FuncOf(removeWalletAddress),
+			}),
 		}),
 		"enums": js.ValueOf(map[string]interface{}{
 			"transactions": js.ValueOf(map[string]interface{}{
