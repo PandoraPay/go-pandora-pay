@@ -137,8 +137,9 @@ func Initialize(startMainCb func()) {
 		"config": js.ValueOf(map[string]interface{}{
 			"NAME":                    js.ValueOf(config.NAME),
 			"NETWORK_SELECTED":        js.ValueOf(config.NETWORK_SELECTED),
-			"NETWORK_SELECTED_NAME":   js.ValueOf(config.GetNetworkName()),
-			"NETWORK_SELECTED_PREFIX": js.ValueOf(config.GetNetworkPrefix()),
+			"NETWORK_SELECTED_NAME":   js.ValueOf(config.NETWORK_SELECTED_NAME),
+			"NETWORK_SELECTED_PREFIX": js.ValueOf(config.NETWORK_SELECTED_BYTE_PREFIX),
+			"CONSENSUS":               js.ValueOf(config.CONSENSUS),
 		}),
 	}
 

@@ -20,10 +20,13 @@ var (
 const (
 	MAIN_NET_NETWORK_BYTE           uint64 = 0
 	MAIN_NET_NETWORK_BYTE_PREFIX           = "PANDORA" // must have 7 characters
+	MAIN_NET_NETWORK_NAME                  = "MAIN"    // must have 7 characters
 	TEST_NET_NETWORK_BYTE           uint64 = 1033
 	TEST_NET_NETWORK_BYTE_PREFIX           = "PANTEST" // must have 7 characters
+	TEST_NET_NETWORK_NAME                  = "TEST"    // must have 7 characters
 	DEV_NET_NETWORK_BYTE            uint64 = 4255
 	DEV_NET_NETWORK_BYTE_PREFIX            = "PANDDEV" // must have 7 characters
+	DEV_NET_NETWORK_NAME                   = "DEV"     // must have 7 characters
 	NETWORK_BYTE_PREFIX_LENGTH             = 7
 	NETWORK_TIMESTAMP_DRIFT_MAX     uint64 = 10
 	NETWORK_TIMESTAMP_DRIFT_MAX_INT int64  = 10
@@ -38,8 +41,10 @@ const (
 )
 
 var (
-	NETWORK_SELECTED uint64 = MAIN_NET_NETWORK_BYTE
-	NETWORK_SEEDS           = MAIN_NET_SEED_NODES
+	NETWORK_SELECTED             = MAIN_NET_NETWORK_BYTE
+	NETWORK_SELECTED_BYTE_PREFIX = MAIN_NET_NETWORK_BYTE_PREFIX
+	NETWORK_SELECTED_NAME        = MAIN_NET_NETWORK_NAME
+	NETWORK_SELECTED_SEEDS       = MAIN_NET_SEED_NODES
 )
 
 const (
@@ -78,42 +83,20 @@ func StartConfig() {
 	OS = runtime.GOOS
 }
 
-func GetNetworkName() string {
-	switch NETWORK_SELECTED {
-	case MAIN_NET_NETWORK_BYTE:
-		return "MAIN"
-	case TEST_NET_NETWORK_BYTE:
-		return "TEST"
-	case DEV_NET_NETWORK_BYTE:
-		return "DEV"
-	default:
-		panic("Network is unknown")
-	}
-}
-
-func GetNetworkPrefix() string {
-	switch NETWORK_SELECTED {
-	case MAIN_NET_NETWORK_BYTE:
-		return MAIN_NET_NETWORK_BYTE_PREFIX
-	case TEST_NET_NETWORK_BYTE:
-		return TEST_NET_NETWORK_BYTE_PREFIX
-	case DEV_NET_NETWORK_BYTE:
-		return DEV_NET_NETWORK_BYTE_PREFIX
-	default:
-		panic("Network is unknown")
-	}
-}
-
 func InitConfig() (err error) {
 
 	if globals.Arguments["--testnet"] == true {
 		NETWORK_SELECTED = TEST_NET_NETWORK_BYTE
-		NETWORK_SEEDS = TEST_NET_SEED_NODES
+		NETWORK_SELECTED_SEEDS = TEST_NET_SEED_NODES
+		NETWORK_SELECTED_NAME = TEST_NET_NETWORK_NAME
+		NETWORK_SELECTED_BYTE_PREFIX = TEST_NET_NETWORK_BYTE_PREFIX
 	}
 
 	if globals.Arguments["--devnet"] == true {
 		NETWORK_SELECTED = DEV_NET_NETWORK_BYTE
-		NETWORK_SEEDS = DEV_NET_SEED_NODES
+		NETWORK_SELECTED_SEEDS = DEV_NET_SEED_NODES
+		NETWORK_SELECTED_NAME = DEV_NET_NETWORK_NAME
+		NETWORK_SELECTED_BYTE_PREFIX = DEV_NET_NETWORK_BYTE_PREFIX
 	}
 
 	if globals.Arguments["--debug"] == true {

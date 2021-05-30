@@ -9,7 +9,7 @@
                 '--devnet',
                 '--new-devnet',
                 '--store-wallet-type=memory',
-                '--consensus=none',
+                '--consensus=wallet',
             ]
             WebAssembly.instantiateStreaming(fetch("./PandoraPay.wasm"), go.importObject).then( result =>{
                 go.run(result.instance)
