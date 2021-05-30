@@ -107,10 +107,8 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader) (err error) {
 		return
 	}
 
-	end := reader.Position
-
 	//we can bloom more efficiently if asked
-	serialized := reader.Buf[first:end]
+	serialized := reader.Buf[first:reader.Position]
 	hash := cryptography.SHA3(serialized)
 	tx.Bloom = &TransactionBloom{
 		Serialized: serialized,

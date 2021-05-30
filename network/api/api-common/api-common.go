@@ -69,7 +69,7 @@ func (api *APICommon) GetBlockComplete(height uint64, hash []byte, typeValue uin
 	}
 
 	if typeValue == 1 {
-		return blockComplete.SerializeToBytes(), nil
+		return blockComplete.Bloom.Serialized, nil
 	}
 	return blockComplete, nil
 }

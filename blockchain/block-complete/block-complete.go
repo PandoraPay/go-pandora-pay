@@ -1,6 +1,7 @@
 package block_complete
 
 import (
+	"bytes"
 	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
@@ -103,6 +104,8 @@ func (blkComplete *BlockComplete) Deserialize(reader *helpers.BufferReader) (err
 		return errors.New("COMPLETE BLOCK EXCEEDS MAX SIZE")
 	}
 
+	first := reader.Position
+
 	if err = blkComplete.Block.Deserialize(reader); err != nil {
 		return
 	}
@@ -118,6 +121,20 @@ func (blkComplete *BlockComplete) Deserialize(reader *helpers.BufferReader) (err
 		if err = blkComplete.Txs[i].Deserialize(reader); err != nil {
 			return
 		}
+	}
+
+	//we can bloom more efficiently if asked
+	merkleTreeVerified := bytes.Equal(blkComplete.MerkleHash(), blkComplete.Block.MerkleHash)
+	if !merkleTreeVerified {
+		return errors.New("Verify Merkle Hash failed")
+	}
+
+	serialized := reader.Buf[first:reader.Position]
+	blkComplete.Bloom = &BlockCompleteBloom{
+		Serialized:         serialized,
+		Size:               uint64(len(serialized)),
+		merkleTreeVerified: merkleTreeVerified,
+		bloomed:            true,
 	}
 
 	return
@@ -139,12 +156,6 @@ func (blkComplete *BlockComplete) BloomAll() (err error) {
 	}
 
 	return
-}
-
-func (blkComplete *BlockComplete) Size() uint64 {
-	writer := helpers.NewBufferWriter()
-	blkComplete.Serialize(writer)
-	return uint64(writer.Length())
 }
 
 func CreateEmptyBlockComplete() *BlockComplete {

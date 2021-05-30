@@ -3,9 +3,11 @@ package block_complete
 import (
 	"bytes"
 	"errors"
+	"pandora-pay/helpers"
 )
 
 type BlockCompleteBloom struct {
+	Serialized         helpers.HexBytes `json:"serialized"`
 	merkleTreeVerified bool
 	Size               uint64
 	bloomed            bool
@@ -18,11 +20,14 @@ func (blkComplete *BlockComplete) BloomNow() error {
 	}
 
 	bloom := new(BlockCompleteBloom)
+
 	bloom.merkleTreeVerified = bytes.Equal(blkComplete.MerkleHash(), blkComplete.Block.MerkleHash)
 	if !bloom.merkleTreeVerified {
 		return errors.New("Verify Merkle Hash failed")
 	}
-	bloom.Size = blkComplete.Size()
+
+	bloom.Serialized = blkComplete.SerializeToBytes()
+	bloom.Size = uint64(len(bloom.Serialized))
 	bloom.bloomed = true
 	blkComplete.Bloom = bloom
 	return nil
