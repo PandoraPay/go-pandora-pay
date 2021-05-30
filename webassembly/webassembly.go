@@ -19,13 +19,27 @@ var startMainCallback func()
 
 var promiseConstructor, errorConstructor js.Value
 
-func convertJSON(obj interface{}) interface{} {
+func convertJSON(obj interface{}) (string, error) {
 	str, err := json.Marshal(obj)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
-	return string(str)
+	return string(str), nil
+}
+
+func promiseFunction(this js.Value, args []js.Value, callback func(js.Value, []js.Value) (interface{}, error)) interface{} {
+	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
+		go func() {
+			result, err := callback(this, args)
+			if err != nil {
+				args2[1].Invoke(errorConstructor.New(err.Error()))
+				return
+			}
+			args2[0].Invoke(result)
+		}()
+		return nil
+	}))
 }
 
 func subscribeEvents(none js.Value, args []js.Value) interface{} {
@@ -37,6 +51,7 @@ func subscribeEvents(none js.Value, args []js.Value) interface{} {
 	index := atomic.AddUint64(&subscriptionsIndex, 1)
 	channel := globals.MainEvents.AddListener()
 	callback := args[0]
+	var err error
 
 	go func() {
 		for {
@@ -49,7 +64,9 @@ func subscribeEvents(none js.Value, args []js.Value) interface{} {
 			case string:
 				final = data.Data
 			case interface{}:
-				final = convertJSON(v)
+				if final, err = convertJSON(v); err != nil {
+					panic(err)
+				}
 			default:
 				final = data.Data
 			}
@@ -80,10 +97,12 @@ func Initialize(startMainCb func()) {
 		"wallet": js.ValueOf(map[string]interface{}{
 			"getWallet": js.FuncOf(getWallet),
 			"manager": js.ValueOf(map[string]interface{}{
-				"getWalletAddress":       js.FuncOf(getWalletAddress),
-				"addNewWalletAddress":    js.FuncOf(addNewWalletAddress),
-				"removeWalletAddress":    js.FuncOf(removeWalletAddress),
-				"importWalletPrivateKey": js.FuncOf(importWalletPrivateKey),
+				"getWalletAddress":        js.FuncOf(getWalletAddress),
+				"addNewWalletAddress":     js.FuncOf(addNewWalletAddress),
+				"removeWalletAddress":     js.FuncOf(removeWalletAddress),
+				"importWalletPrivateKey":  js.FuncOf(importWalletPrivateKey),
+				"importWalletJSON":        js.FuncOf(importWalletJSON),
+				"importWalletAddressJSON": js.FuncOf(importWalletAddressJSON),
 			}),
 		}),
 		"enums": js.ValueOf(map[string]interface{}{

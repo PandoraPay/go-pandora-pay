@@ -156,34 +156,12 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		data, err := os.ReadFile(str)
+		data, err := os.ReadFile(str + ".pandora")
 		if err != nil {
 			return
 		}
 
-		wallet.RLock()
-		defer wallet.RUnlock()
-
-		adr := &wallet_address.WalletAddress{}
-
-		if err = json.Unmarshal(data, adr); err != nil {
-			return errors.New("Error unmarshaling wallet")
-		}
-
-		isMine := false
-		if wallet.SeedIndex != 0 {
-			key, err := wallet.GeneratePrivateKey(adr.SeedIndex, false)
-			if err == nil && key != nil {
-				isMine = true
-			}
-		}
-
-		if !isMine {
-			adr.IsMine = false
-			adr.SeedIndex = 0
-		}
-
-		if err = wallet.AddAddress(adr, false, false, isMine); err != nil {
+		if _, err = wallet.ImportWalletAddressJSON(data); err != nil {
 			return
 		}
 
@@ -198,7 +176,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		f, err := os.Create(str)
+		f, err := os.Create(str + ".pandora")
 		if err != nil {
 			return
 		}
@@ -242,21 +220,8 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		wallet2 := createWallet(wallet.forging, wallet.mempool)
-		if err = json.Unmarshal(data, wallet2); err != nil {
-			return errors.New("Error unmarshaling wallet")
-		}
-
-		wallet.RLock()
-		defer wallet.RUnlock()
-
-		if err = json.Unmarshal(data, wallet); err != nil {
-			return errors.New("Error unmarshaling wallet 2")
-		}
-
-		wallet.addressesMap = make(map[string]*wallet_address.WalletAddress)
-		for _, adr := range wallet.Addresses {
-			wallet.addressesMap[string(adr.PublicKeyHash)] = adr
+		if err = wallet.ImportWalletJSON(data); err != nil {
+			return
 		}
 
 		gui.GUI.Info("Wallet Imported Successfully")
