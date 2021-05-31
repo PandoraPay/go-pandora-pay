@@ -8,8 +8,7 @@ import (
 
 func convertToUnitsUint64(this js.Value, args []js.Value) interface{} {
 	return normalFunction(func() (out interface{}, err error) {
-		str := args[0].String()
-		value, err := strconv.ParseUint(str, 10, 64)
+		value, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
 			return
 		}
@@ -23,8 +22,7 @@ func convertToUnitsUint64(this js.Value, args []js.Value) interface{} {
 
 func convertToUnits(this js.Value, args []js.Value) interface{} {
 	return normalFunction(func() (out interface{}, err error) {
-		str := args[0].String()
-		value, err := strconv.ParseFloat(str, 10)
+		value, err := strconv.ParseFloat(args[0].String(), 10)
 		if err != nil {
 			return
 		}
@@ -40,8 +38,7 @@ func convertToUnits(this js.Value, args []js.Value) interface{} {
 
 func convertToBase(this js.Value, args []js.Value) interface{} {
 	return normalFunction(func() (out interface{}, err error) {
-		str := args[0].String()
-		value, err := strconv.ParseUint(str, 10, 64)
+		value, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
 			return
 		}
