@@ -111,9 +111,12 @@ func (api *APICommon) GetTx(request *APITransactionRequest) (out []byte, err err
 
 	var tx *transaction.Transaction
 
+	mempool := false
 	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
 		tx = api.mempool.Exists(request.Hash)
-		if tx == nil {
+		if tx != nil {
+			mempool = true
+		} else {
 			tx, err = api.ApiStore.LoadTxFromHash(request.Hash)
 		}
 	} else {
@@ -126,12 +129,12 @@ func (api *APICommon) GetTx(request *APITransactionRequest) (out []byte, err err
 	if request.ReturnType == RETURN_SERIALIZED {
 		return json.Marshal(&APITransactionSerialized{
 			Tx:      tx.SerializeToBytesBloomed(),
-			Mempool: tx != nil,
+			Mempool: mempool,
 		})
 	} else if request.ReturnType == RETURN_JSON {
 		return json.Marshal(&APITransaction{
 			Tx:      tx,
-			Mempool: tx != nil,
+			Mempool: mempool,
 		})
 	} else {
 		return nil, errors.New("Invalid return type")

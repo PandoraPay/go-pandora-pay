@@ -114,6 +114,12 @@ func Initialize(startMainCb func()) {
 				"importWalletAddressJSON": js.FuncOf(importWalletAddressJSON),
 			}),
 		}),
+		"addresses": js.ValueOf(map[string]interface{}{
+			"decodeAddress": js.FuncOf(decodeAddress),
+		}),
+		"cryptography": js.ValueOf(map[string]interface{}{
+			"computePublicKeyHash": js.FuncOf(computePublicKeyHash),
+		}),
 		"network": js.ValueOf(map[string]interface{}{
 			"getNetworkBlockInfo":     js.FuncOf(getNetworkBlockInfo),
 			"getNetworkBlockComplete": js.FuncOf(getNetworkBlockComplete),

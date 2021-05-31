@@ -9,13 +9,6 @@ import (
 	base58 "pandora-pay/helpers/base58"
 )
 
-type AddressVersion uint64
-
-const (
-	SIMPLE_PUBLIC_KEY_HASH AddressVersion = 0
-	SIMPLE_PUBLIC_KEY      AddressVersion = 1
-)
-
 type Address struct {
 	Network       uint64           `json:"network"`
 	Version       AddressVersion   `json:"version"`
@@ -23,17 +16,6 @@ type Address struct {
 	PublicKeyHash helpers.HexBytes `json:"publicKeyHash"`
 	Amount        uint64           `json:"amount"`    // amount to be paid
 	PaymentID     helpers.HexBytes `json:"paymentId"` // payment id
-}
-
-func (e AddressVersion) String() string {
-	switch e {
-	case SIMPLE_PUBLIC_KEY_HASH:
-		return "SIMPLE_PUBLIC_KEY_HASH"
-	case SIMPLE_PUBLIC_KEY:
-		return "SIMPLE_PUBLIC_KEY"
-	default:
-		return "Unknown Address Version"
-	}
 }
 
 func (a *Address) EncodeAddr() string {
