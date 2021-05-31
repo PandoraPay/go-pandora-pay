@@ -114,7 +114,11 @@ func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, 
 	if err != nil {
 		return nil, err
 	}
-	return out.([]byte), nil
+	if request.ReturnType == 1 {
+		return out.([]byte), nil
+	} else {
+		return json.Marshal(out)
+	}
 }
 
 func (api *APIWebsockets) getAccount(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {

@@ -1,7 +1,6 @@
 package block_complete
 
 import (
-	"bytes"
 	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/block"
@@ -15,9 +14,10 @@ import (
 
 type BlockComplete struct {
 	helpers.SerializableInterface `json:"-"`
-	Block                         *block.Block               `json:"block"`
-	Txs                           []*transaction.Transaction `json:"txs"`
-	Bloom                         *BlockCompleteBloom        `json:"-"`
+	Block                         *block.Block                `json:"block"`
+	Txs                           []*transaction.Transaction  `json:"txs"`
+	Bloom                         *BlockCompleteBloom         `json:"bloom"`
+	BloomAdvanced                 *BlockCompleteBloomAdvanced `json:"bloom"`
 }
 
 func (blkComplete *BlockComplete) Validate() (err error) {
@@ -124,17 +124,11 @@ func (blkComplete *BlockComplete) Deserialize(reader *helpers.BufferReader) (err
 	}
 
 	//we can bloom more efficiently if asked
-	merkleTreeVerified := bytes.Equal(blkComplete.MerkleHash(), blkComplete.Block.MerkleHash)
-	if !merkleTreeVerified {
-		return errors.New("Verify Merkle Hash failed")
-	}
-
 	serialized := reader.Buf[first:reader.Position]
 	blkComplete.Bloom = &BlockCompleteBloom{
-		Serialized:         serialized,
-		Size:               uint64(len(serialized)),
-		merkleTreeVerified: merkleTreeVerified,
-		bloomed:            true,
+		Serialized: serialized,
+		Size:       uint64(len(serialized)),
+		bloomed:    true,
 	}
 
 	return
@@ -154,8 +148,18 @@ func (blkComplete *BlockComplete) BloomAll() (err error) {
 	if err = blkComplete.BloomNow(); err != nil {
 		return
 	}
+	if err = blkComplete.BloomAdvancedNow(); err != nil {
+		return
+	}
 
 	return
+}
+
+func (blkComplete *BlockComplete) VerifyBloomAll() error {
+	if err := blkComplete.Bloom.verifyIfBloomed(); err != nil {
+		return err
+	}
+	return blkComplete.BloomAdvanced.verifyIfBloomedAdvanced()
 }
 
 func CreateEmptyBlockComplete() *BlockComplete {
