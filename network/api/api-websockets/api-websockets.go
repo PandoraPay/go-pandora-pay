@@ -62,11 +62,12 @@ func (api *APIWebsockets) getPing(conn *connection.AdvancedConnection, values []
 }
 
 func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	blockHeight := APIBlockHeight(0)
-	if err := json.Unmarshal(values, &blockHeight); err != nil {
+
+	request := APIBlockHeight(0)
+	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
-	out, err := api.apiCommon.GetBlockHash(blockHeight)
+	out, err := api.apiCommon.GetBlockHash(uint64(request))
 	if err != nil {
 		return nil, err
 	}
@@ -75,12 +76,12 @@ func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []
 
 func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	blockHeight := APIBlockHeight(0)
-	if err := json.Unmarshal(values, &blockHeight); err != nil {
+	request := &APIBlockRequest{0, nil}
+	if err := json.Unmarshal(values, request); err != nil {
 		return nil, err
 	}
 
-	data, err := api.apiCommon.GetBlock(blockHeight, nil)
+	data, err := api.apiCommon.GetBlock(request.Height, request.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -89,12 +90,12 @@ func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values [
 
 func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	blockHeight := APIBlockHeight(0)
-	if err := json.Unmarshal(values, &blockHeight); err != nil {
+	request := &APIBlockRequest{0, nil}
+	if err := json.Unmarshal(values, request); err != nil {
 		return nil, err
 	}
 
-	data, err := api.apiCommon.GetBlockInfo(blockHeight, nil)
+	data, err := api.apiCommon.GetBlockInfo(request.Height, request.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -104,12 +105,12 @@ func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, valu
 
 func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	blockHeight := APIBlockHeight(0)
-	if err := json.Unmarshal(values, &blockHeight); err != nil {
+	request := &APIBlockCompleteRequest{0, nil, 1}
+	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
 
-	out, err := api.apiCommon.GetBlockComplete(blockHeight, nil, 1)
+	out, err := api.apiCommon.GetBlockComplete(request.Height, request.Hash, request.ReturnType)
 	if err != nil {
 		return nil, err
 	}

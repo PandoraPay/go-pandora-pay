@@ -3,6 +3,7 @@ package webassembly
 import (
 	"errors"
 	"pandora-pay/config/globals"
+	"pandora-pay/gui"
 	"pandora-pay/network"
 	api_websockets "pandora-pay/network/api/api-websockets"
 	"syscall/js"
@@ -14,7 +15,7 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("block-info"), api_websockets.APIBlockHeight(args[0].Int()))
+		data := socket.SendJSONAwaitAnswer([]byte("block-info"), &api_websockets.APIBlockRequest{uint64(args[0].Int()), []byte(args[1].String())})
 		if data.Err != nil {
 			return nil, data.Err
 		}

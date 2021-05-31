@@ -8,6 +8,7 @@ import (
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"sync/atomic"
@@ -58,7 +59,7 @@ func (api *APICommon) GetBlockComplete(height uint64, hash []byte, typeValue uin
 	var blockComplete *block_complete.BlockComplete
 	var err error
 
-	if hash != nil {
+	if hash != nil && len(hash) == cryptography.HashSize {
 		blockComplete, err = api.ApiStore.LoadBlockCompleteFromHash(hash)
 	} else {
 		blockComplete, err = api.ApiStore.LoadBlockCompleteFromHeight(height)
@@ -75,14 +76,14 @@ func (api *APICommon) GetBlockComplete(height uint64, hash []byte, typeValue uin
 }
 
 func (api *APICommon) GetBlock(height uint64, hash []byte) (interface{}, error) {
-	if hash != nil {
+	if hash != nil && len(hash) == cryptography.HashSize {
 		return api.ApiStore.LoadBlockWithTXsFromHash(hash)
 	}
 	return api.ApiStore.LoadBlockWithTXsFromHeight(height)
 }
 
 func (api *APICommon) GetBlockInfo(height uint64, hash []byte) (interface{}, error) {
-	if hash != nil {
+	if hash != nil && len(hash) == cryptography.HashSize {
 		return api.ApiStore.LoadBlockInfoFromHash(hash)
 	}
 	return api.ApiStore.LoadBlockInfoFromHeight(height)
@@ -120,7 +121,7 @@ func (api *APICommon) GetTx(hash []byte, typeValue uint8) (interface{}, error) {
 func (api *APICommon) GetAccount(address *addresses.Address, hash []byte) (interface{}, error) {
 	if address != nil {
 		return api.ApiStore.LoadAccountFromPublicKeyHash(address.PublicKeyHash)
-	} else if hash != nil {
+	} else if hash != nil && len(hash) == cryptography.HashSize {
 		return api.ApiStore.LoadAccountFromPublicKeyHash(hash)
 	}
 	return nil, errors.New("Invalid address or hash")

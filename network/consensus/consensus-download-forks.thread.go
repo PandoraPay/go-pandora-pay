@@ -59,7 +59,7 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 			return false
 		}
 
-		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockHeight(start-1))
+		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockCompleteRequest{start - 1, nil, 1})
 		if answer.Err != nil {
 			fork.errors += 1
 			continue
@@ -120,7 +120,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 			return false
 		}
 
-		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockHeight(fork.Current))
+		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_websockets.APIBlockCompleteRequest{fork.Current, nil, 1})
 
 		if answer.Err != nil {
 			fork.errors += 1
