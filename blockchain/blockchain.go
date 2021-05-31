@@ -21,6 +21,7 @@ import (
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"pandora-pay/wallet"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -79,7 +80,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		Target:                new(big.Int).Set(chainData.Target),             //atomic copy
 		BigTotalDifficulty:    new(big.Int).Set(chainData.BigTotalDifficulty), //atomic copy
 		ConsecutiveSelfForged: chainData.ConsecutiveSelfForged,                //atomic copy
-		Transactions:          chainData.Transactions,                         //atomic copy
+		TransactionsCount:     chainData.TransactionsCount,                    //atomic copy
 	}
 
 	insertedBlocks := []*block_complete.BlockComplete{}
@@ -89,6 +90,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	removedTxHashes := make(map[string][]byte)
 	removedTxs := [][]byte{}
 	removedBlocksHeights := []uint64{}
+	removedBlocksTransactionsCount := uint64(0)
 
 	var accs *accounts.Accounts
 	var toks *tokens.Tokens
@@ -147,7 +149,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 				if firstBlockComplete.Block.Height == 0 {
 					newChainData = chain.createGenesisBlockchainData()
+					removedBlocksTransactionsCount = 0
 				} else {
+					removedBlocksTransactionsCount = newChainData.TransactionsCount
 					newChainData = &BlockchainData{}
 					if err = newChainData.loadBlockchainInfo(writer, firstBlockComplete.Block.Height); err != nil {
 						return
@@ -232,7 +236,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				savedBlock = false
 
 				var newTransactionsSaved [][]byte
-				if newTransactionsSaved, err = chain.saveBlockComplete(writer, blkComplete, blkComplete.Block.Bloom.Hash, removedTxHashes, accs, toks); err != nil {
+				if newTransactionsSaved, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, accs, toks); err != nil {
 					return
 				}
 
@@ -257,7 +261,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				}
 
 				newChainData.Height += 1
-				newChainData.Transactions += uint64(len(blkComplete.Txs))
+				newChainData.TransactionsCount += uint64(len(blkComplete.Txs))
 				insertedBlocks = append(insertedBlocks, blkComplete)
 
 				for _, txHashId := range newTransactionsSaved {
@@ -306,11 +310,23 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					panic("Error saving Blockchain " + err.Error())
 				}
 
-				for _, removedBlock := range removedBlocksHeights {
-					if err = chain.deleteUnusedBlocksComplete(writer, removedBlock, accs, toks); err != nil {
-						panic("Error deleting unused blocks Blockchain " + err.Error())
+				if len(removedBlocksHeights) > 0 {
+
+					//remove unused blocks
+					for _, removedBlock := range removedBlocksHeights {
+						if err = chain.deleteUnusedBlocksComplete(writer, removedBlock, accs, toks); err != nil {
+							panic("Error deleting unused blocks: " + err.Error())
+						}
+					}
+
+					//removing unused transactions
+					for i := newChainData.TransactionsCount; i < removedBlocksTransactionsCount; i++ {
+						if err = writer.Delete([]byte("txHash_ByHeight" + strconv.FormatUint(i, 10))); err != nil {
+							panic("Error deleting unused transaction: " + err.Error())
+						}
 					}
 				}
+
 				for txHash := range removedTxHashes {
 					data := writer.Get(append([]byte("tx"), txHash...))
 

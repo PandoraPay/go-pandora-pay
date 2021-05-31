@@ -3,9 +3,7 @@ package api_websockets
 import (
 	"encoding/json"
 	"errors"
-	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
-	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
@@ -62,7 +60,6 @@ func (api *APIWebsockets) getPing(conn *connection.AdvancedConnection, values []
 }
 
 func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-
 	request := APIBlockHeight(0)
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
@@ -114,7 +111,7 @@ func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, 
 	if err != nil {
 		return nil, err
 	}
-	if request.ReturnType == 1 {
+	if request.ReturnType == api_common.RETURN_SERIALIZED {
 		return out.([]byte), nil
 	} else {
 		return json.Marshal(out)
@@ -122,18 +119,22 @@ func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, 
 }
 
 func (api *APIWebsockets) getAccount(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	address, err := addresses.DecodeAddr(string(values))
+
+	request := &api_common.APIAccountRequest{"", nil, api_common.RETURN_SERIALIZED}
+	if err := json.Unmarshal(values, &request); err != nil {
+		return nil, err
+	}
+
+	out, err := api.apiCommon.GetAccount(request)
 	if err != nil {
 		return nil, err
 	}
-	data, err := api.apiCommon.GetAccount(address, nil)
-	if err != nil {
-		return nil, err
+
+	if request.ReturnType == api_common.RETURN_SERIALIZED {
+		return out.([]byte), nil
+	} else {
+		return json.Marshal(out)
 	}
-	if data == nil {
-		return nil, nil
-	}
-	return data.(*account.Account).SerializeToBytes(), nil
 }
 
 func (api *APIWebsockets) getToken(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -178,12 +179,31 @@ func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, 
 
 func (api *APIWebsockets) getTx(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	data, err := api.apiCommon.GetTx(values, 1)
+	request := &api_common.APITransactionRequest{}
+	if err := json.Unmarshal(values, &request); err != nil {
+		return nil, err
+	}
+	out, err := api.apiCommon.GetTx(request)
 	if err != nil {
 		return nil, err
 	}
+	if request.ReturnType == api_common.RETURN_SERIALIZED {
+		return out.([]byte), nil
+	} else {
+		return json.Marshal(out)
+	}
+}
 
-	return json.Marshal(data)
+func (api *APIWebsockets) getTxHash(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := APIBlockHeight(0)
+	if err := json.Unmarshal(values, &request); err != nil {
+		return nil, err
+	}
+	out, err := api.apiCommon.GetTxHash(uint64(request))
+	if err != nil {
+		return nil, err
+	}
+	return out.([]byte), nil
 }
 
 func (api *APIWebsockets) getMempoolExists(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -268,6 +288,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"block-hash":         api.getHash,
 		"block-complete":     api.getBlockComplete,
 		"tx":                 api.getTx,
+		"tx-hash":            api.getTxHash,
 		"account":            api.getAccount,
 		"token":              api.getToken,
 		"mem-pool":           api.getMempool,

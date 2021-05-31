@@ -12,15 +12,15 @@ type APIBlockWithTxs struct {
 }
 
 type APIBlockchain struct {
-	Height          uint64 `json:"height"`
-	Hash            string `json:"hash"`
-	PrevHash        string `json:"prevHash"`
-	KernelHash      string `json:"kernelHash"`
-	PrevKernelHash  string `json:"prevKernelHash"`
-	Timestamp       uint64 `json:"timestamp"`
-	Transactions    uint64 `json:"transactions"`
-	Target          string `json:"target"`
-	TotalDifficulty string `json:"totalDifficulty"`
+	Height            uint64 `json:"height"`
+	Hash              string `json:"hash"`
+	PrevHash          string `json:"prevHash"`
+	KernelHash        string `json:"kernelHash"`
+	PrevKernelHash    string `json:"prevKernelHash"`
+	Timestamp         uint64 `json:"timestamp"`
+	TransactionsCount uint64 `json:"transactions"`
+	Target            string `json:"target"`
+	TotalDifficulty   string `json:"totalDifficulty"`
 }
 
 type APIBlockchainSync struct {

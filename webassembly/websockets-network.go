@@ -81,11 +81,12 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 		case js.TypeNumber:
 			height = uint64(args[0].Int())
 		case js.TypeString:
-			if hash, err = hex.DecodeString(args[0].String()); err != nil {
-				return
-			}
+			hash, err = hex.DecodeString(args[0].String())
 		default:
-			return nil, errors.New("Invalid argument")
+			err = errors.New("Invalid argument")
+		}
+		if err != nil {
+			return
 		}
 
 		data := socket.SendJSONAwaitAnswer([]byte("tx"), &api_common.APIBlockCompleteRequest{height, hash, 1})
@@ -93,11 +94,11 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 		blkComplete := block_complete.CreateEmptyBlockComplete()
-		if err := blkComplete.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
-			return nil, err
+		if err = blkComplete.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
+			return
 		}
-		if err := blkComplete.BloomAll(); err != nil {
-			return nil, err
+		if err = blkComplete.BloomAll(); err != nil {
+			return
 		}
 		return convertJSON(blkComplete)
 	})

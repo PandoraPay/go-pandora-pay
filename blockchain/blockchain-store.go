@@ -44,7 +44,7 @@ func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.St
 		return
 	}
 
-	if err = writer.Delete([]byte("blockHeight" + blockHeightStr)); err != nil {
+	if err = writer.Delete([]byte("blockHash_ByHeight" + blockHeightStr)); err != nil {
 		return
 	}
 	if err = writer.Delete([]byte("blockTxs" + blockHeightStr)); err != nil {
@@ -66,7 +66,7 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 		return
 	}
 
-	hash := writer.Get([]byte("blockHeight" + blockHeightStr))
+	hash := writer.Get([]byte("blockHash_ByHeight" + blockHeightStr))
 	if err = writer.Delete(append([]byte("block_ByHash"), hash...)); err != nil {
 		return
 	}
@@ -87,7 +87,7 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 	return
 }
 
-func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, hash []byte, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) (newTxHashes [][]byte, err error) {
+func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) (newTxHashes [][]byte, err error) {
 
 	blockHeightStr := strconv.FormatUint(blkComplete.Block.Height, 10)
 	if err = accs.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
@@ -97,28 +97,27 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		return
 	}
 
-	if err = writer.Put(append([]byte("block_ByHash"), hash...), blkComplete.Block.SerializeToBytes()); err != nil {
+	if err = writer.Put(append([]byte("block_ByHash"), blkComplete.Block.Bloom.Hash...), blkComplete.Block.SerializeToBytes()); err != nil {
 		return
 	}
 
-	blkInfo := &block_info.BlockInfo{
-		Hash:       hash,
+	blockInfoMarshal, err := json.Marshal(&block_info.BlockInfo{
+		Hash:       blkComplete.Block.Bloom.Hash,
 		KernelHash: blkComplete.Block.Bloom.KernelHash,
 		Timestamp:  blkComplete.Block.Timestamp,
 		Size:       blkComplete.Bloom.Size,
 		TXs:        uint64(len(blkComplete.Txs)),
 		Forger:     blkComplete.Block.Forger,
-	}
+	})
 
-	var blockInfoMarshal []byte
-	if blockInfoMarshal, err = json.Marshal(blkInfo); err != nil {
+	if err != nil {
 		return
 	}
-	if err = writer.Put(append([]byte("blockInfo_ByHash"), hash...), blockInfoMarshal); err != nil {
+	if err = writer.Put(append([]byte("blockInfo_ByHash"), blkComplete.Block.Bloom.Hash...), blockInfoMarshal); err != nil {
 		return
 	}
 
-	if err = writer.Put([]byte("blockHeight"+blockHeightStr), hash); err != nil {
+	if err = writer.Put([]byte("blockHash_ByHeight"+blockHeightStr), blkComplete.Block.Bloom.Hash); err != nil {
 		return
 	}
 
@@ -126,6 +125,7 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 
 	txHashes := make([][]byte, len(blkComplete.Txs))
 	for i, tx := range blkComplete.Txs {
+
 		txHashes[i] = tx.Bloom.Hash
 
 		//let's check to see if the tx block is already stored, if yes, we will skip it
@@ -134,6 +134,11 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 				return
 			}
 			newTxHashes = append(newTxHashes, tx.Bloom.Hash)
+		}
+
+		indexStr := strconv.FormatUint(transactionsCount+uint64(i), 10)
+		if err = writer.Put([]byte("txHash_ByHeight"+indexStr), tx.Bloom.Hash); err != nil {
+			return
 		}
 	}
 
@@ -154,10 +159,21 @@ func (chain *Blockchain) LoadBlockHash(reader store_db_interface.StoreDBTransact
 		return nil, errors.New("Height is invalid")
 	}
 
-	key := []byte("blockHeight" + strconv.FormatUint(height, 10))
-	hash := reader.Get(key)
+	hash := reader.Get([]byte("blockHash_ByHeight" + strconv.FormatUint(height, 10)))
 	if hash == nil {
 		return nil, errors.New("Block Hash not found")
+	}
+	return hash, nil
+}
+
+func (chain *Blockchain) LoadTxHash(reader store_db_interface.StoreDBTransactionInterface, height uint64) ([]byte, error) {
+	if height < 0 {
+		return nil, errors.New("Height is invalid")
+	}
+
+	hash := reader.Get([]byte("txHash_ByHeight" + strconv.FormatUint(height, 10)))
+	if hash == nil {
+		return nil, errors.New("Tx Hash not found")
 	}
 	return hash, nil
 }

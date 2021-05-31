@@ -78,6 +78,18 @@ func (apiStore *APIStore) LoadTxFromHash(hash []byte) (tx *transaction.Transacti
 	return
 }
 
+func (apiStore *APIStore) LoadTxFromHeight(txHeight uint64) (tx *transaction.Transaction, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		hash, err := apiStore.chain.LoadTxHash(reader, txHeight)
+		if err != nil {
+			return
+		}
+		tx, err = apiStore.LoadTx(reader, hash)
+		return
+	})
+	return
+}
+
 func (apiStore *APIStore) LoadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *APIBlockWithTxs, errfinal error) {
 	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err := apiStore.chain.LoadBlockHash(reader, blockHeight)
@@ -114,6 +126,14 @@ func (apiStore *APIStore) LoadTokenFromPublicKeyHash(publicKeyHash []byte) (tok 
 func (apiStore *APIStore) LoadBlockHash(blockHeight uint64) (hash []byte, errfinal error) {
 	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err = apiStore.chain.LoadBlockHash(reader, blockHeight)
+		return
+	})
+	return
+}
+
+func (apiStore *APIStore) LoadTxHash(blockHeight uint64) (hash []byte, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		hash, err = apiStore.chain.LoadTxHash(reader, blockHeight)
 		return
 	})
 	return

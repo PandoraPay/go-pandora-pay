@@ -54,6 +54,10 @@ func (api *APICommon) GetBlockHash(blockHeight uint64) (interface{}, error) {
 	return api.ApiStore.LoadBlockHash(blockHeight)
 }
 
+func (api *APICommon) GetTxHash(blockHeight uint64) (interface{}, error) {
+	return api.ApiStore.LoadTxHash(blockHeight)
+}
+
 func (api *APICommon) GetBlockComplete(request *APIBlockCompleteRequest) (interface{}, error) {
 
 	var blockComplete *block_complete.BlockComplete
@@ -89,42 +93,64 @@ func (api *APICommon) GetBlockInfo(request *APIBlockRequest) (interface{}, error
 	return api.ApiStore.LoadBlockInfoFromHeight(request.Height)
 }
 
-func (api *APICommon) GetTx(hash []byte, typeValue uint8) (interface{}, error) {
+func (api *APICommon) GetTx(request *APITransactionRequest) (out interface{}, err error) {
 
 	var tx *transaction.Transaction
-	var err error
 
-	tx = api.mempool.Exists(hash)
-	if tx == nil {
-		tx, err = api.ApiStore.LoadTxFromHash(hash)
-		if err != nil {
-			return nil, err
+	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
+		tx = api.mempool.Exists(request.Hash)
+		if tx == nil {
+			tx, err = api.ApiStore.LoadTxFromHash(request.Hash)
 		}
+	} else {
+		tx, err = api.ApiStore.LoadTxFromHeight(request.Height)
 	}
 
-	var output interface{}
-	if typeValue == 1 {
-		output = &APITransactionSerialized{
+	if err != nil {
+		return
+	}
+
+	if request.ReturnType == RETURN_SERIALIZED {
+		out = &APITransactionSerialized{
 			Tx:      tx.SerializeToBytesBloomed(),
 			Mempool: tx != nil,
 		}
-	} else {
-		output = &APITransaction{
+	} else if request.ReturnType == RETURN_JSON {
+		out = &APITransaction{
 			Tx:      tx,
 			Mempool: tx != nil,
 		}
+	} else {
+		err = errors.New("Invalid return type")
 	}
 
-	return output, nil
+	return
 }
 
-func (api *APICommon) GetAccount(address *addresses.Address, hash []byte) (interface{}, error) {
-	if address != nil {
-		return api.ApiStore.LoadAccountFromPublicKeyHash(address.PublicKeyHash)
-	} else if hash != nil && len(hash) == cryptography.HashSize {
-		return api.ApiStore.LoadAccountFromPublicKeyHash(hash)
+func (api *APICommon) GetAccount(request *APIAccountRequest) (out interface{}, err error) {
+
+	var publicKeyHash []byte
+	if request.Address != "" {
+		address, err := addresses.DecodeAddr(request.Address)
+		if err != nil {
+			return nil, errors.New("Invalid address")
+		}
+		publicKeyHash = address.PublicKeyHash
+	} else if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
+		publicKeyHash = request.Hash
+	} else {
+		return nil, errors.New("Invalid address")
 	}
-	return nil, errors.New("Invalid address or hash")
+
+	acc, err := api.ApiStore.LoadAccountFromPublicKeyHash(publicKeyHash)
+	if err != nil {
+		return
+	}
+
+	if request.ReturnType == RETURN_SERIALIZED {
+		return acc.SerializeToBytes(), nil
+	}
+	return acc, nil
 }
 
 func (api *APICommon) GetToken(hash []byte) (interface{}, error) {
@@ -157,15 +183,15 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction) (interface{
 //make sure it is safe to read
 func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.BlockchainDataUpdate) {
 	newLocalChain := &APIBlockchain{
-		Height:          newChainDataUpdate.Update.Height,
-		Hash:            hex.EncodeToString(newChainDataUpdate.Update.Hash),
-		PrevHash:        hex.EncodeToString(newChainDataUpdate.Update.PrevHash),
-		KernelHash:      hex.EncodeToString(newChainDataUpdate.Update.KernelHash),
-		PrevKernelHash:  hex.EncodeToString(newChainDataUpdate.Update.PrevKernelHash),
-		Timestamp:       newChainDataUpdate.Update.Timestamp,
-		Transactions:    newChainDataUpdate.Update.Transactions,
-		Target:          newChainDataUpdate.Update.Target.String(),
-		TotalDifficulty: newChainDataUpdate.Update.BigTotalDifficulty.String(),
+		Height:            newChainDataUpdate.Update.Height,
+		Hash:              hex.EncodeToString(newChainDataUpdate.Update.Hash),
+		PrevHash:          hex.EncodeToString(newChainDataUpdate.Update.PrevHash),
+		KernelHash:        hex.EncodeToString(newChainDataUpdate.Update.KernelHash),
+		PrevKernelHash:    hex.EncodeToString(newChainDataUpdate.Update.PrevKernelHash),
+		Timestamp:         newChainDataUpdate.Update.Timestamp,
+		TransactionsCount: newChainDataUpdate.Update.TransactionsCount,
+		Target:            newChainDataUpdate.Update.Target.String(),
+		TotalDifficulty:   newChainDataUpdate.Update.BigTotalDifficulty.String(),
 	}
 	api.localChain.Store(newLocalChain)
 }

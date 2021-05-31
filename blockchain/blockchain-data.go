@@ -21,7 +21,7 @@ type BlockchainData struct {
 	Timestamp             uint64           `json:"timestamp"`
 	Target                *big.Int         `json:"target"`
 	BigTotalDifficulty    *big.Int         `json:"bigTotalDifficulty"`
-	Transactions          uint64           `json:"transactions"` //count of the number of txs
+	TransactionsCount     uint64           `json:"transactionsCount"` //count of the number of txs
 	ConsecutiveSelfForged uint64           `json:"consecutiveSelfForged"`
 }
 
@@ -57,5 +57,5 @@ func (chainData *BlockchainData) updateChainInfo() {
 	gui.GUI.Info2Update("Chain  Hash", hex.EncodeToString(chainData.Hash))
 	gui.GUI.Info2Update("Chain KHash", hex.EncodeToString(chainData.KernelHash))
 	gui.GUI.Info2Update("Chain  Diff", chainData.Target.String())
-	gui.GUI.Info2Update("TXs", strconv.FormatUint(chainData.Transactions, 10))
+	gui.GUI.Info2Update("TXs", strconv.FormatUint(chainData.TransactionsCount, 10))
 }
