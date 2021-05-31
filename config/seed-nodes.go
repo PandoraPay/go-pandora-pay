@@ -8,10 +8,10 @@ var (
 	}
 
 	TEST_NET_SEED_NODES = []url.URL{
-		{Scheme: "ws", Host: "helloworldx.ddns.net:6000", Path: "/ws"},
-		{Scheme: "ws", Host: "helloworldx.ddns.net:6001", Path: "/ws"},
-		{Scheme: "ws", Host: "helloworldx.ddns.net:6002", Path: "/ws"},
-		{Scheme: "ws", Host: "helloworldx.ddns.net:6003", Path: "/ws"},
+		{Scheme: "ws", Host: "helloworldx.ddns.net:16000", Path: "/ws"},
+		{Scheme: "ws", Host: "helloworldx.ddns.net:16001", Path: "/ws"},
+		{Scheme: "ws", Host: "helloworldx.ddns.net:16002", Path: "/ws"},
+		{Scheme: "ws", Host: "helloworldx.ddns.net:16003", Path: "/ws"},
 	}
 
 	DEV_NET_SEED_NODES = []url.URL{
