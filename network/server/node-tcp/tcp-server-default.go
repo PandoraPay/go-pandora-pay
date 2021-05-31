@@ -64,7 +64,7 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 	server.Address = address
 	server.Port = port
 
-	server.tcpListener, err = net.Listen("tcp", port)
+	server.tcpListener, err = net.Listen("tcp", ":"+port)
 	if err != nil {
 		return nil, errors.New("Error creating TcpServer" + err.Error())
 	}
