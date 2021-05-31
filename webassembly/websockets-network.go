@@ -2,6 +2,7 @@ package webassembly
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -94,13 +95,23 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 		if data.Err != nil {
 			return nil, data.Err
 		}
-		tx := &transaction.Transaction{}
-		if err = tx.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
+
+		received := &api_common.APITransactionSerialized{}
+		if err = json.Unmarshal(data.Out, received); err != nil {
 			return
 		}
-		if err = tx.BloomAll(); err != nil {
+
+		final := &api_common.APITransaction{
+			Tx:      &transaction.Transaction{},
+			Mempool: received.Mempool,
+		}
+
+		if err = final.Tx.Deserialize(helpers.NewBufferReader(received.Tx)); err != nil {
 			return
 		}
-		return convertJSON(tx)
+		if err = final.Tx.BloomAll(); err != nil {
+			return
+		}
+		return convertJSON(final)
 	})
 }

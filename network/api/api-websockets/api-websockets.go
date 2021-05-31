@@ -35,19 +35,11 @@ func (api *APIWebsockets) getBlockchainSync(conn *connection.AdvancedConnection,
 }
 
 func (api *APIWebsockets) getInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	data, err := api.apiCommon.GetInfo()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(data)
+	return api.apiCommon.GetInfo()
 }
 
 func (api *APIWebsockets) getPing(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	data, err := api.apiCommon.GetPing()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(data)
+	return api.apiCommon.GetPing()
 }
 
 func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -65,11 +57,7 @@ func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values [
 		return nil, err
 	}
 
-	data, err := api.apiCommon.GetBlock(request)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(data)
+	return api.apiCommon.GetBlock(request)
 }
 
 func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -79,12 +67,7 @@ func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, valu
 		return nil, err
 	}
 
-	data, err := api.apiCommon.GetBlockInfo(request)
-	if err != nil {
-		return nil, err
-	}
-
-	return json.Marshal(data)
+	return api.apiCommon.GetBlockInfo(request)
 }
 
 func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -117,11 +100,7 @@ func (api *APIWebsockets) getToken(conn *connection.AdvancedConnection, values [
 }
 
 func (api *APIWebsockets) getMempool(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	data, err := api.apiCommon.GetMempool()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(data)
+	return api.apiCommon.GetMempool()
 }
 
 func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
@@ -131,8 +110,8 @@ func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, 
 		return
 	}
 
-	var inserted bool
-	if inserted, err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true); err != nil {
+	inserted, err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true)
+	if err != nil {
 		return
 	}
 
