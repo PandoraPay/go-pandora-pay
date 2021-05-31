@@ -5,6 +5,7 @@ import (
 	"errors"
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
+	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
 	api_http "pandora-pay/network/api/api-http"
@@ -22,6 +23,7 @@ type Websockets struct {
 	AllListMutex                 *sync.Mutex
 	Clients                      int64
 	ServerClients                int64
+	TotalSockets                 int64
 	UpdateNewConnectionMulticast *multicast.MulticastChannel
 	ApiWebsockets                *api_websockets.APIWebsockets
 	api                          *api_http.API
@@ -86,6 +88,8 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 	} else {
 		atomic.AddInt64(&websockets.Clients, -1)
 	}
+	totalSockets := atomic.AddInt64(&websockets.TotalSockets, -1)
+	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
 }
 
 func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConnection) error {
@@ -123,6 +127,8 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	} else {
 		atomic.AddInt64(&websockets.Clients, +1)
 	}
+	totalSockets := atomic.AddInt64(&websockets.TotalSockets, +1)
+	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
 
 	conn.Initialized = true
 
