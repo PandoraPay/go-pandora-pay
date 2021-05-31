@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	block_complete "pandora-pay/blockchain/block-complete"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers"
 	"pandora-pay/network"
@@ -52,7 +53,7 @@ func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("Invalid argument")
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("block-complete"), &api_common.APIBlockCompleteRequest{height, hash, 1})
+		data := socket.SendJSONAwaitAnswer([]byte("block-complete"), &api_common.APIBlockCompleteRequest{height, hash, api_common.RETURN_SERIALIZED})
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -89,17 +90,17 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 			return
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("tx"), &api_common.APIBlockCompleteRequest{height, hash, 1})
+		data := socket.SendJSONAwaitAnswer([]byte("tx"), &api_common.APIBlockCompleteRequest{height, hash, api_common.RETURN_SERIALIZED})
 		if data.Err != nil {
 			return nil, data.Err
 		}
-		blkComplete := block_complete.CreateEmptyBlockComplete()
-		if err = blkComplete.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
+		tx := &transaction.Transaction{}
+		if err = tx.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
 			return
 		}
-		if err = blkComplete.BloomAll(); err != nil {
+		if err = tx.BloomAll(); err != nil {
 			return
 		}
-		return convertJSON(blkComplete)
+		return convertJSON(tx)
 	})
 }

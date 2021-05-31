@@ -3,9 +3,11 @@
 package node_http
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"pandora-pay/helpers"
 )
 
 func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
@@ -31,7 +33,16 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Error: "+err.Error(), http.StatusBadRequest)
 	} else {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(output)
+		switch v := output.(type) {
+		case string:
+			w.Write([]byte(v))
+		case helpers.HexBytes:
+			w.Write([]byte(hex.EncodeToString(v)))
+		case []byte:
+			w.Write(v)
+		default:
+			json.NewEncoder(w).Encode(output)
+		}
 	}
 
 }

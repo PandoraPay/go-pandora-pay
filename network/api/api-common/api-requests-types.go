@@ -44,3 +44,8 @@ type APIAccountRequest struct {
 	Hash       helpers.HexBytes `json:"hash"`
 	ReturnType APIReturnType    `json:"returnType"`
 }
+
+type APITokenRequest struct {
+	Hash       helpers.HexBytes `json:"hash"`
+	ReturnType APIReturnType    `json:"returnType"`
+}
