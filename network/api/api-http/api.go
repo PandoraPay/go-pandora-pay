@@ -38,9 +38,9 @@ func (api *API) getPing(values *url.Values) (interface{}, error) {
 
 func (api *API) getBlockComplete(values *url.Values) (out interface{}, err error) {
 
-	var typeValue = uint8(0)
+	var typeValue = api_common.RETURN_JSON
 	if values.Get("type") == "1" {
-		typeValue = 1
+		typeValue = api_common.RETURN_SERIALIZED
 	}
 
 	if values.Get("height") != "" {
@@ -48,13 +48,13 @@ func (api *API) getBlockComplete(values *url.Values) (out interface{}, err error
 		if err2 != nil {
 			return nil, errors.New("parameter 'height' is not a number")
 		}
-		out, err = api.apiCommon.GetBlockComplete(height, nil, typeValue)
+		out, err = api.apiCommon.GetBlockComplete(&api_common.APIBlockCompleteRequest{height, nil, typeValue})
 	} else if values.Get("hash") != "" {
 		hash, err2 := hex.DecodeString(values.Get("hash"))
 		if err2 != nil {
 			return nil, errors.New("parameter 'hash' is not a hex")
 		}
-		out, err = api.apiCommon.GetBlockComplete(0, hash, typeValue)
+		out, err = api.apiCommon.GetBlockComplete(&api_common.APIBlockCompleteRequest{0, hash, typeValue})
 	} else {
 		err = errors.New("parameter 'hash' or 'height' are missing")
 	}
@@ -92,14 +92,14 @@ func (api *API) getBlock(values *url.Values) (interface{}, error) {
 		if err != nil {
 			return nil, errors.New("parameter 'height' is not a number")
 		}
-		return api.apiCommon.GetBlock(height, nil)
+		return api.apiCommon.GetBlock(&api_common.APIBlockRequest{height, nil})
 	}
 	if values.Get("hash") != "" {
 		hash, err := hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			return nil, errors.New("parameter 'hash' was is not a valid hex number")
 		}
-		return api.apiCommon.GetBlock(0, hash)
+		return api.apiCommon.GetBlock(&api_common.APIBlockRequest{0, hash})
 	}
 	return nil, errors.New("parameter 'hash' or 'height' are missing")
 }
@@ -111,14 +111,14 @@ func (api *API) getBlockInfo(values *url.Values) (interface{}, error) {
 		if err != nil {
 			return nil, errors.New("parameter 'height' is not a number")
 		}
-		return api.apiCommon.GetBlockInfo(height, nil)
+		return api.apiCommon.GetBlockInfo(&api_common.APIBlockRequest{height, nil})
 	}
 	if values.Get("hash") != "" {
 		hash, err := hex.DecodeString(values.Get("hash"))
 		if err != nil {
 			return nil, errors.New("parameter 'hash' was is not a valid hex number")
 		}
-		return api.apiCommon.GetBlockInfo(0, hash)
+		return api.apiCommon.GetBlockInfo(&api_common.APIBlockRequest{0, hash})
 	}
 	return nil, errors.New("parameter 'hash' or 'height' are missing")
 }

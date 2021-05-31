@@ -76,12 +76,12 @@ func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []
 
 func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &APIBlockRequest{0, nil}
+	request := &api_common.APIBlockRequest{0, nil}
 	if err := json.Unmarshal(values, request); err != nil {
 		return nil, err
 	}
 
-	data, err := api.apiCommon.GetBlock(request.Height, request.Hash)
+	data, err := api.apiCommon.GetBlock(request)
 	if err != nil {
 		return nil, err
 	}
@@ -90,12 +90,12 @@ func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values [
 
 func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &APIBlockRequest{0, nil}
+	request := &api_common.APIBlockRequest{0, nil}
 	if err := json.Unmarshal(values, request); err != nil {
 		return nil, err
 	}
 
-	data, err := api.apiCommon.GetBlockInfo(request.Height, request.Hash)
+	data, err := api.apiCommon.GetBlockInfo(request)
 	if err != nil {
 		return nil, err
 	}
@@ -105,12 +105,12 @@ func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, valu
 
 func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &APIBlockCompleteRequest{0, nil, 1}
+	request := &api_common.APIBlockCompleteRequest{0, nil, api_common.RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
 
-	out, err := api.apiCommon.GetBlockComplete(request.Height, request.Hash, request.ReturnType)
+	out, err := api.apiCommon.GetBlockComplete(request)
 	if err != nil {
 		return nil, err
 	}

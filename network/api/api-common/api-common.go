@@ -54,39 +54,39 @@ func (api *APICommon) GetBlockHash(blockHeight uint64) (interface{}, error) {
 	return api.ApiStore.LoadBlockHash(blockHeight)
 }
 
-func (api *APICommon) GetBlockComplete(height uint64, hash []byte, typeValue uint8) (interface{}, error) {
+func (api *APICommon) GetBlockComplete(request *APIBlockCompleteRequest) (interface{}, error) {
 
 	var blockComplete *block_complete.BlockComplete
 	var err error
 
-	if hash != nil && len(hash) == cryptography.HashSize {
-		blockComplete, err = api.ApiStore.LoadBlockCompleteFromHash(hash)
+	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
+		blockComplete, err = api.ApiStore.LoadBlockCompleteFromHash(request.Hash)
 	} else {
-		blockComplete, err = api.ApiStore.LoadBlockCompleteFromHeight(height)
+		blockComplete, err = api.ApiStore.LoadBlockCompleteFromHeight(request.Height)
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	if typeValue == 1 {
+	if request.ReturnType == RETURN_SERIALIZED {
 		return blockComplete.SerializeToBytesBloomed(), nil
 	}
 	return blockComplete, nil
 }
 
-func (api *APICommon) GetBlock(height uint64, hash []byte) (interface{}, error) {
-	if hash != nil && len(hash) == cryptography.HashSize {
-		return api.ApiStore.LoadBlockWithTXsFromHash(hash)
+func (api *APICommon) GetBlock(request *APIBlockRequest) (interface{}, error) {
+	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
+		return api.ApiStore.LoadBlockWithTXsFromHash(request.Hash)
 	}
-	return api.ApiStore.LoadBlockWithTXsFromHeight(height)
+	return api.ApiStore.LoadBlockWithTXsFromHeight(request.Height)
 }
 
-func (api *APICommon) GetBlockInfo(height uint64, hash []byte) (interface{}, error) {
-	if hash != nil && len(hash) == cryptography.HashSize {
-		return api.ApiStore.LoadBlockInfoFromHash(hash)
+func (api *APICommon) GetBlockInfo(request *APIBlockRequest) (interface{}, error) {
+	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
+		return api.ApiStore.LoadBlockInfoFromHash(request.Hash)
 	}
-	return api.ApiStore.LoadBlockInfoFromHeight(height)
+	return api.ApiStore.LoadBlockInfoFromHeight(request.Height)
 }
 
 func (api *APICommon) GetTx(hash []byte, typeValue uint8) (interface{}, error) {
