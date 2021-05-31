@@ -12,7 +12,7 @@ import (
 )
 
 func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(this, args, func(js.Value, []js.Value) (out interface{}, err error) {
+	return promiseFunction(func() (out interface{}, err error) {
 		socket := globals.Data["network"].(*network.Network).Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -32,7 +32,7 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 }
 
 func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(this, args, func(js.Value, []js.Value) (out interface{}, err error) {
+	return promiseFunction(func() (out interface{}, err error) {
 		socket := globals.Data["network"].(*network.Network).Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")

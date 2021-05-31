@@ -29,10 +29,10 @@ func convertJSON(obj interface{}) (string, error) {
 	return string(str), nil
 }
 
-func promiseFunction(this js.Value, args []js.Value, callback func(js.Value, []js.Value) (interface{}, error)) interface{} {
+func promiseFunction(callback func() (interface{}, error)) interface{} {
 	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
 		go func() {
-			result, err := callback(this, args)
+			result, err := callback()
 			if err != nil {
 				args2[1].Invoke(errorConstructor.New(err.Error()))
 				return
@@ -41,6 +41,14 @@ func promiseFunction(this js.Value, args []js.Value, callback func(js.Value, []j
 		}()
 		return nil
 	}))
+}
+
+func normalFunction(callback func() (interface{}, error)) interface{} {
+	result, err := callback()
+	if err != nil {
+		return errorConstructor.New(err.Error())
+	}
+	return result
 }
 
 func subscribeEvents(this js.Value, args []js.Value) interface{} {
@@ -145,6 +153,20 @@ func Initialize(startMainCb func()) {
 			"NETWORK_SELECTED_NAME":   js.ValueOf(config.NETWORK_SELECTED_NAME),
 			"NETWORK_SELECTED_PREFIX": js.ValueOf(config.NETWORK_SELECTED_BYTE_PREFIX),
 			"CONSENSUS":               js.ValueOf(uint8(config.CONSENSUS)),
+			"coins": js.ValueOf(map[string]interface{}{
+				"DECIMAL_SEPARATOR":        js.ValueOf(config.DECIMAL_SEPARATOR),
+				"COIN_DENOMINATION":        js.ValueOf(config.COIN_DENOMINATION),
+				"COIN_DENOMINATION_FLOAT":  js.ValueOf(config.COIN_DENOMINATION_FLOAT),
+				"MAX_SUPPLY_COINS":         js.ValueOf(config.MAX_SUPPLY_COINS),
+				"TOKEN_LENGTH":             js.ValueOf(config.TOKEN_LENGTH),
+				"NATIVE_TOKEN_NAME":        js.ValueOf(config.NATIVE_TOKEN_NAME),
+				"NATIVE_TOKEN_TICKER":      js.ValueOf(config.NATIVE_TOKEN_TICKER),
+				"NATIVE_TOKEN_DESCRIPTION": js.ValueOf(config.NATIVE_TOKEN_DESCRIPTION),
+				"NATIVE_TOKEN_STRING":      js.ValueOf(config.NATIVE_TOKEN_STRING),
+				"convertToUnitsUint64":     js.FuncOf(convertToUnitsUint64),
+				"convertToUnits":           js.FuncOf(convertToUnits),
+				"convertToBase":            js.FuncOf(convertToBase),
+			}),
 		}),
 	}
 

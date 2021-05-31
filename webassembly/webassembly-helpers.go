@@ -8,21 +8,21 @@ import (
 )
 
 func helloPandora(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(this, args, func(js.Value, []js.Value) (out interface{}, err error) {
+	return promiseFunction(func() (out interface{}, err error) {
 		gui.GUI.Info("HelloPandora works!")
 		return true, nil
 	})
 }
 
 func start(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(this, args, func(js.Value, []js.Value) (out interface{}, err error) {
+	return promiseFunction(func() (out interface{}, err error) {
 		startMainCallback()
 		return true, nil
 	})
 }
 
 func getIdenticon(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(this, args, func(js.Value, []js.Value) (out interface{}, err error) {
+	return promiseFunction(func() (out interface{}, err error) {
 		identicon, err := identicon.GenerateToBytes([]byte(args[0].String()), args[1].Int(), args[2].Int())
 		if err != nil {
 			return

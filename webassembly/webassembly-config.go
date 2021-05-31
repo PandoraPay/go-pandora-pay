@@ -1,0 +1,52 @@
+package webassembly
+
+import (
+	"pandora-pay/config"
+	"strconv"
+	"syscall/js"
+)
+
+func convertToUnitsUint64(this js.Value, args []js.Value) interface{} {
+	return normalFunction(func() (out interface{}, err error) {
+		str := args[0].String()
+		value, err := strconv.ParseUint(str, 10, 64)
+		if err != nil {
+			return
+		}
+
+		if value, err = config.ConvertToUnitsUint64(value); err != nil {
+			return
+		}
+		return strconv.FormatUint(value, 10), nil
+	})
+}
+
+func convertToUnits(this js.Value, args []js.Value) interface{} {
+	return normalFunction(func() (out interface{}, err error) {
+		str := args[0].String()
+		value, err := strconv.ParseFloat(str, 10)
+		if err != nil {
+			return
+		}
+
+		value2, err := config.ConvertToUnits(value)
+		if err != nil {
+			return
+		}
+
+		return strconv.FormatUint(value2, 10), nil
+	})
+}
+
+func convertToBase(this js.Value, args []js.Value) interface{} {
+	return normalFunction(func() (out interface{}, err error) {
+		str := args[0].String()
+		value, err := strconv.ParseUint(str, 10, 64)
+		if err != nil {
+			return
+		}
+
+		value2 := config.ConvertToBase(value)
+		return strconv.FormatFloat(value2, 'f', 10, 64), nil
+	})
+}
