@@ -70,7 +70,7 @@ func (api *APICommon) GetBlockComplete(height uint64, hash []byte, typeValue uin
 	}
 
 	if typeValue == 1 {
-		return blockComplete.Bloom.Serialized, nil
+		return blockComplete.SerializeToBytesBloomed(), nil
 	}
 	return blockComplete, nil
 }
@@ -105,7 +105,7 @@ func (api *APICommon) GetTx(hash []byte, typeValue uint8) (interface{}, error) {
 	var output interface{}
 	if typeValue == 1 {
 		output = &APITransactionSerialized{
-			Tx:      tx.Bloom.Serialized,
+			Tx:      tx.SerializeToBytesBloomed(),
 			Mempool: tx != nil,
 		}
 	} else {

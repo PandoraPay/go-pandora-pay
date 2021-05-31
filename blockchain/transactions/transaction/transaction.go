@@ -66,6 +66,13 @@ func (tx *Transaction) SerializeToBytes() []byte {
 	return writer.Bytes()
 }
 
+func (tx *Transaction) SerializeToBytesBloomed() []byte {
+	if tx.Bloom != nil {
+		return tx.Bloom.Serialized
+	}
+	return tx.SerializeToBytes()
+}
+
 func (tx *Transaction) Validate() error {
 
 	if tx.Version != 0 {

@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
@@ -154,6 +155,7 @@ func (chain *Blockchain) createNextBlockForForging() {
 
 	blkComplete := &block_complete.BlockComplete{
 		Block: blk,
+		Txs:   []*transaction.Transaction{},
 	}
 
 	chain.forging.ForgingNewWork(blkComplete, target)

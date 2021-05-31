@@ -20,6 +20,7 @@ var startMainCallback func()
 var promiseConstructor, errorConstructor js.Value
 
 func convertJSON(obj interface{}) (string, error) {
+
 	str, err := json.Marshal(obj)
 	if err != nil {
 		return "", err
@@ -133,7 +134,7 @@ func Initialize(startMainCb func()) {
 				}),
 				"address": js.ValueOf(map[string]interface{}{
 					"version": js.ValueOf(map[string]interface{}{
-						"versionTransparent": js.ValueOf(int(wallet_address.VERSION_TRANSPARENT)),
+						"VERSION_TRANSPARENT": js.ValueOf(int(wallet_address.VERSION_TRANSPARENT)),
 					}),
 				}),
 			}),

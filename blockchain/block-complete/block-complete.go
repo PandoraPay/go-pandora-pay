@@ -17,7 +17,7 @@ type BlockComplete struct {
 	Block                         *block.Block                `json:"block"`
 	Txs                           []*transaction.Transaction  `json:"txs"`
 	Bloom                         *BlockCompleteBloom         `json:"bloom"`
-	BloomAdvanced                 *BlockCompleteBloomAdvanced `json:"bloom"`
+	BloomAdvanced                 *BlockCompleteBloomAdvanced `json:"bloomAdvanced"`
 }
 
 func (blkComplete *BlockComplete) Validate() (err error) {
@@ -87,7 +87,7 @@ func (blkComplete *BlockComplete) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(uint64(len(blkComplete.Txs)))
 
 	for _, tx := range blkComplete.Txs {
-		writer.Write(tx.Bloom.Serialized)
+		writer.Write(tx.SerializeToBytesBloomed())
 	}
 
 }
@@ -96,6 +96,13 @@ func (blkComplete *BlockComplete) SerializeToBytes() []byte {
 	writer := helpers.NewBufferWriter()
 	blkComplete.Serialize(writer)
 	return writer.Bytes()
+}
+
+func (blkComplete *BlockComplete) SerializeToBytesBloomed() []byte {
+	if blkComplete.Bloom != nil {
+		return blkComplete.Bloom.Serialized
+	}
+	return blkComplete.SerializeToBytes()
 }
 
 func (blkComplete *BlockComplete) Deserialize(reader *helpers.BufferReader) (err error) {
