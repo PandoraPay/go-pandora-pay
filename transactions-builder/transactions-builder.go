@@ -258,7 +258,6 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 		if delegateNewPubKeyHashGenerate {
 
 			var delegatedStake *wallet_address.WalletAddressDelegatedStake
-
 			if delegatedStake, err = fromWalletAddress.DeriveDelegatedStake(uint32(nonce)); err != nil {
 				return
 			}

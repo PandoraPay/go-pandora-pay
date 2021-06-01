@@ -17,7 +17,7 @@ type GUIInterface interface {
 	Error(any ...interface{})
 	InfoUpdate(key string, text string)
 	Info2Update(key string, text string)
-	OutputWrite(any interface{})
+	OutputWrite(any ...interface{})
 	CommandDefineCallback(Text string, callback func(string) error)
 	OutputReadString(text string) (out string, ok bool)
 	OutputReadInt(text string, acceptedValues []int) (out int, ok bool)

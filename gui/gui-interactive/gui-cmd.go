@@ -38,10 +38,11 @@ var commands = []Command{
 	{Name: "Wallet", Text: "Decrypt"},
 	{Name: "Wallet", Text: "Show Mnemnonic"},
 	{Name: "Wallet", Text: "List Addresses"},
+	{Name: "Wallet", Text: "Create New Address"},
 	{Name: "Wallet", Text: "Show Private Key"},
 	{Name: "Wallet", Text: "Import Private Key"},
 	{Name: "Wallet", Text: "Remove Address"},
-	{Name: "Wallet", Text: "Create New Address"},
+	{Name: "Wallet", Text: "Derive Delegated Stake"},
 	{Name: "Wallet:TX", Text: "Transfer"},
 	{Name: "Wallet:TX", Text: "Delegate"},
 	{Name: "Wallet:TX", Text: "Unstake"},
@@ -158,8 +159,8 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 	ui.Render(g.cmd)
 }
 
-func (g *GUIInteractive) OutputWrite(any interface{}) {
-	str := gui_interface.ProcessArgument(any)
+func (g *GUIInteractive) OutputWrite(any ...interface{}) {
+	str := gui_interface.ProcessArgument(any...)
 	g.cmd.Lock()
 	g.cmd.Rows = append(g.cmd.Rows, str)
 	g.cmd.SelectedRow = len(g.cmd.Rows) - 1

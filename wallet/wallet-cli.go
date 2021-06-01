@@ -258,6 +258,71 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
+	cliDeriveDelegatedStake := func(cmd string) (err error) {
+
+		addr, _, err := wallet.CliSelectAddress("Select Address to Derive Delegated Stake")
+		if err != nil {
+			return
+		}
+
+		nonce, ok := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", nil, true)
+		if !ok {
+			return
+		}
+
+		return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+			chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
+
+			accs := accounts.NewAccounts(reader)
+			var acc *account.Account
+			if acc, err = accs.GetAccount(addr.PublicKeyHash, chainHeight); err != nil {
+				return
+			}
+
+			if nonce == 0 && acc != nil {
+				nonce = wallet.mempool.GetNonce(addr.PublicKeyHash, acc.Nonce)
+			}
+
+			var delegatedStake *wallet_address.WalletAddressDelegatedStake
+			if delegatedStake, err = addr.DeriveDelegatedStake(uint32(nonce)); err != nil {
+				return
+			}
+
+			gui.GUI.OutputWrite("Delegated stake:")
+			gui.GUI.OutputWrite("   PublicKeyHash", delegatedStake.PublicKeyHash)
+			gui.GUI.OutputWrite("   PrivateKey", delegatedStake.PrivateKey.Key)
+
+			str, ok := gui.GUI.OutputReadString("Path to export to a file")
+			if !ok {
+				return
+			}
+
+			if str != "" {
+				var f *os.File
+				if f, err = os.Create(str + ".delegatedStake"); err != nil {
+					return
+				}
+
+				defer f.Close()
+
+				var marshal []byte
+				if marshal, err = json.Marshal(delegatedStake); err != nil {
+					return
+				}
+
+				if _, err = fmt.Fprint(f, string(marshal)); err != nil {
+					return errors.New("Error writing into file")
+				}
+
+			}
+
+			return
+		})
+
+		return
+	}
+
 	cliShowMnemonic := func(string) (err error) {
 		gui.GUI.OutputWrite("Mnemonic \n")
 		gui.GUI.OutputWrite(wallet.Mnemonic)
@@ -312,6 +377,7 @@ func (wallet *Wallet) initWalletCLI() {
 	gui.GUI.CommandDefineCallback("Show Private Key", cliShowPrivateKey)
 	gui.GUI.CommandDefineCallback("Import Private Key", cliImportPrivateKey)
 	gui.GUI.CommandDefineCallback("Remove Address", cliRemoveAddress)
+	gui.GUI.CommandDefineCallback("Derive Delegated Stake", cliDeriveDelegatedStake)
 	gui.GUI.CommandDefineCallback("Export Address JSON", cliExportAddressJSON)
 	gui.GUI.CommandDefineCallback("Import Address JSON", cliImportAddressJSON)
 	gui.GUI.CommandDefineCallback("Export Wallet JSON", cliExportWalletJSON)
