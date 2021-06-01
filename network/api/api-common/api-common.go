@@ -206,7 +206,11 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction) (out []byte
 	if err != nil {
 		return
 	}
-	return json.Marshal(result)
+	if result {
+		return []byte{1}, nil
+	} else {
+		return []byte{0}, nil
+	}
 }
 
 //make sure it is safe to read

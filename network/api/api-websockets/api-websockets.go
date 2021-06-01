@@ -168,7 +168,7 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 			return
 		}
 
-		result := conn.SendAwaitAnswer([]byte("tx"), values)
+		result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_common.APIBlockCompleteRequest{0, values, api_common.RETURN_SERIALIZED})
 
 		if result.Out != nil && result.Err == nil {
 
@@ -182,16 +182,9 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 				return
 			}
 
-			var output interface{}
-			if output, err = api.apiCommon.PostMempoolInsert(tx); err != nil {
+			if out, err = api.apiCommon.PostMempoolInsert(tx); err != nil {
 				return
 			}
-			inserted := output.(bool)
-
-			if inserted {
-				out = []byte{1}
-			}
-
 		}
 
 		api.mempoolDownloadPending.Delete(hashStr)
