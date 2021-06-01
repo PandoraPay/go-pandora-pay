@@ -110,6 +110,7 @@ func startMain() {
 }
 
 func CloseMain() {
+	gui.GUI.Close()
 	myForging.Close()
 	myChain.Close()
 	myWallet.Close()
