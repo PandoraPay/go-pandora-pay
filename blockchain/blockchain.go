@@ -28,18 +28,19 @@ import (
 )
 
 type Blockchain struct {
-	ChainData                         *atomic.Value //*BlockchainData
+	ChainData                         *atomic.Value `json:"-"` //*BlockchainData
 	Sync                              *BlockchainSync
-	forging                           *forging.Forging            `json:"-"`
-	mempool                           *mempool.Mempool            `json:"-"`
-	wallet                            *wallet.Wallet              `json:"-"`
-	mutex                             *sync.Mutex                 `json:"-"` //writing mutex
-	updatesQueue                      *BlockchainUpdatesQueue     `json:"-"`
+	forging                           *forging.Forging
+	mempool                           *mempool.Mempool
+	wallet                            *wallet.Wallet
+	mutex                             *sync.Mutex //writing mutex
+	updatesQueue                      *BlockchainUpdatesQueue
 	UpdateNewChainMulticast           *multicast.MulticastChannel `json:"-"` //chan uint64
 	UpdateNewChainDataUpdateMulticast *multicast.MulticastChannel `json:"-"` //chan *BlockchainDataUpdate
 }
 
 func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockComplete) (err error) {
+
 	if len(blocksComplete) == 0 {
 		return errors.New("Blocks length is ZERO")
 	}

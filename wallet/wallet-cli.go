@@ -12,6 +12,7 @@ import (
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	wallet_address "pandora-pay/wallet/address"
@@ -306,8 +307,16 @@ func (wallet *Wallet) initWalletCLI() {
 
 				defer f.Close()
 
+				delegatedStakeOut := struct {
+					DelegatedStakePublicKeyHash helpers.HexBytes
+					AddressPublicKeyHash        helpers.HexBytes
+				}{
+					delegatedStake.PublicKeyHash,
+					addr.PublicKeyHash,
+				}
+
 				var marshal []byte
-				if marshal, err = json.Marshal(delegatedStake); err != nil {
+				if marshal, err = json.Marshal(delegatedStakeOut); err != nil {
 					return
 				}
 

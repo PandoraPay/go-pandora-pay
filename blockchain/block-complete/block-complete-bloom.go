@@ -34,7 +34,7 @@ func (blkComplete *BlockComplete) BloomAll() (err error) {
 
 func (blkComplete *BlockComplete) BloomNow() error {
 
-	if blkComplete.Bloom != nil {
+	if blkComplete.Bloom == nil {
 		blkComplete.Bloom = new(BlockCompleteBloom)
 	}
 
