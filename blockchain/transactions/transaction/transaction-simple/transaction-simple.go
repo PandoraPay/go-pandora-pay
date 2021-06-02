@@ -19,7 +19,7 @@ type TransactionSimple struct {
 	Nonce                                               uint64                                                   `json:"nonce"`
 	Vin                                                 []*TransactionSimpleInput                                `json:"vin"`
 	Vout                                                []*TransactionSimpleOutput                               `json:"vout"`
-	Extra                                               transaction_simple_extra.TransactionSimpleExtraInterface `json:"extra"`
+	Extra                                               transaction_simple_extra.TransactionSimpleExtraInterface `json:"extra,omitempty"`
 
 	Bloom *TransactionSimpleBloom `json:"-"`
 }

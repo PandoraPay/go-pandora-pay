@@ -14,10 +14,9 @@ import (
 
 type BlockComplete struct {
 	helpers.SerializableInterface `json:"-"`
-	Block                         *block.Block                `json:"block"`
-	Txs                           []*transaction.Transaction  `json:"txs"`
-	Bloom                         *BlockCompleteBloom         `json:"bloom"`
-	BloomAdvanced                 *BlockCompleteBloomAdvanced `json:"bloomAdvanced"`
+	Block                         *block.Block               `json:"block"`
+	Txs                           []*transaction.Transaction `json:"txs"`
+	Bloom                         *BlockCompleteBloom        `json:"bloom"`
 }
 
 func (blkComplete *BlockComplete) Validate() (err error) {
@@ -133,40 +132,12 @@ func (blkComplete *BlockComplete) Deserialize(reader *helpers.BufferReader) (err
 	//we can bloom more efficiently if asked
 	serialized := reader.Buf[first:reader.Position]
 	blkComplete.Bloom = &BlockCompleteBloom{
-		Serialized: serialized,
-		Size:       uint64(len(serialized)),
-		bloomed:    true,
+		Serialized:  serialized,
+		Size:        uint64(len(serialized)),
+		bloomedSize: true,
 	}
 
 	return
-}
-
-func (blkComplete *BlockComplete) BloomAll() (err error) {
-
-	for _, tx := range blkComplete.Txs {
-		if err = tx.BloomAll(); err != nil {
-			return
-		}
-	}
-
-	if err = blkComplete.Block.BloomNow(); err != nil {
-		return
-	}
-	if err = blkComplete.BloomNow(); err != nil {
-		return
-	}
-	if err = blkComplete.BloomAdvancedNow(); err != nil {
-		return
-	}
-
-	return
-}
-
-func (blkComplete *BlockComplete) VerifyBloomAll() error {
-	if err := blkComplete.Bloom.verifyIfBloomed(); err != nil {
-		return err
-	}
-	return blkComplete.BloomAdvanced.verifyIfBloomedAdvanced()
 }
 
 func CreateEmptyBlockComplete() *BlockComplete {

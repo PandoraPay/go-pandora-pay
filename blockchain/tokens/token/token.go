@@ -13,29 +13,22 @@ var regexTokenDescription = regexp.MustCompile("[\\w|\\W]+")
 
 type Token struct {
 	helpers.SerializableInterface
-	Version uint64 `json:"version"`
-	//upgrade different settings
-	CanUpgrade bool `json:"canUpgrade"`
-	//increase supply
-	CanMint bool `json:"canMint"`
-	//decrease supply
-	CanBurn bool `json:"canBurn"`
-	//can change key
-	CanChangeKey bool `json:"canChangeKey"`
-	//can change supply key
-	CanChangeSupplyKey bool `json:"canChangeSupplyKey"`
-	//can pause (suspend transactions)
-	CanPause bool `json:"canPause"`
-	//freeze supply changes
-	CanFreeze        bool             `json:"canFreeze"`
-	DecimalSeparator byte             `json:"decimalSeparator"`
-	MaxSupply        uint64           `json:"maxSupply"`
-	Supply           uint64           `json:"supply"`
-	Key              helpers.HexBytes `json:"key"`       //20 byte
-	SupplyKey        helpers.HexBytes `json:"supplyKey"` //20 byte
-	Name             string           `json:"name"`
-	Ticker           string           `json:"ticker"`
-	Description      string           `json:"description"`
+	Version            uint64           `json:"version"`
+	CanUpgrade         bool             `json:"canUpgrade"`         //upgrade different settings
+	CanMint            bool             `json:"canMint"`            //increase supply
+	CanBurn            bool             `json:"canBurn"`            //decrease supply
+	CanChangeKey       bool             `json:"canChangeKey"`       //can change key
+	CanChangeSupplyKey bool             `json:"canChangeSupplyKey"` //can change supply key
+	CanPause           bool             `json:"canPause"`           //can pause (suspend transactions)
+	CanFreeze          bool             `json:"canFreeze"`          //freeze supply changes
+	DecimalSeparator   byte             `json:"decimalSeparator"`
+	MaxSupply          uint64           `json:"maxSupply"`
+	Supply             uint64           `json:"supply"`
+	Key                helpers.HexBytes `json:"key"`       //20 byte
+	SupplyKey          helpers.HexBytes `json:"supplyKey"` //20 byte
+	Name               string           `json:"name"`
+	Ticker             string           `json:"ticker"`
+	Description        string           `json:"description"`
 }
 
 func (token *Token) Validate() error {
