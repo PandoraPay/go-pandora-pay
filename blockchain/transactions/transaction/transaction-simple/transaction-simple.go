@@ -15,13 +15,12 @@ import (
 
 type TransactionSimple struct {
 	transaction_base_interface.TransactionBaseInterface `json:"-"`
-	TxScript                                            ScriptType                                               `json:"txScript"`
-	Nonce                                               uint64                                                   `json:"nonce"`
-	Vin                                                 []*TransactionSimpleInput                                `json:"vin"`
-	Vout                                                []*TransactionSimpleOutput                               `json:"vout"`
-	Extra                                               transaction_simple_extra.TransactionSimpleExtraInterface `json:"extra,omitempty"`
-
-	Bloom *TransactionSimpleBloom `json:"-"`
+	transaction_simple_extra.TransactionSimpleExtraInterface
+	TxScript ScriptType                 `json:"txScript"`
+	Nonce    uint64                     `json:"nonce"`
+	Vin      []*TransactionSimpleInput  `json:"vin"`
+	Vout     []*TransactionSimpleOutput `json:"vout"`
+	Bloom    *TransactionSimpleBloom    `json:"-"`
 }
 
 func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
@@ -43,7 +42,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 
 			switch tx.TxScript {
 			case SCRIPT_DELEGATE, SCRIPT_UNSTAKE:
-				if err = tx.Extra.IncludeTransactionVin0(blockHeight, acc); err != nil {
+				if err = tx.TransactionSimpleExtraInterface.IncludeTransactionVin0(blockHeight, acc); err != nil {
 					return
 				}
 			}
@@ -82,7 +81,7 @@ func (tx *TransactionSimple) ComputeFees(out map[string]uint64) (err error) {
 
 	switch tx.TxScript {
 	case SCRIPT_UNSTAKE:
-		return helpers.SafeMapUint64Add(out, config.NATIVE_TOKEN_STRING, tx.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
+		return helpers.SafeMapUint64Add(out, config.NATIVE_TOKEN_STRING, tx.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
 	}
 	return
 }
@@ -150,8 +149,8 @@ func (tx *TransactionSimple) Validate() (err error) {
 		return errors.New("Invalid TxScript")
 	}
 
-	if tx.Extra != nil {
-		if err = tx.Extra.Validate(); err != nil {
+	if tx.TransactionSimpleExtraInterface != nil {
+		if err = tx.TransactionSimpleExtraInterface.Validate(); err != nil {
 			return
 		}
 	}
@@ -181,8 +180,8 @@ func (tx *TransactionSimple) SerializeAdvanced(writer *helpers.BufferWriter, inc
 		vout.Serialize(writer)
 	}
 
-	if tx.Extra != nil {
-		tx.Extra.Serialize(writer)
+	if tx.TransactionSimpleExtraInterface != nil {
+		tx.TransactionSimpleExtraInterface.Serialize(writer)
 	}
 }
 
@@ -214,9 +213,9 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 	case SCRIPT_NORMAL:
 		//nothing
 	case SCRIPT_UNSTAKE, SCRIPT_WITHDRAW:
-		tx.Extra = &transaction_simple_extra.TransactionSimpleUnstake{}
+		tx.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleUnstake{}
 	case SCRIPT_DELEGATE:
-		tx.Extra = &transaction_simple_extra.TransactionSimpleDelegate{}
+		tx.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleDelegate{}
 	default:
 		return errors.New("Invalid TxType")
 	}
@@ -248,8 +247,8 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 		}
 	}
 
-	if tx.Extra != nil {
-		return tx.Extra.Deserialize(reader)
+	if tx.TransactionSimpleExtraInterface != nil {
+		return tx.TransactionSimpleExtraInterface.Deserialize(reader)
 	}
 	return
 }

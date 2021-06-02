@@ -29,7 +29,7 @@ type TransactionsBuilder struct {
 func (builder *TransactionsBuilder) checkTx(accs *accounts.Accounts, chainHeight uint64, tx *transaction.Transaction) (err error) {
 
 	var available uint64
-	for _, vin := range tx.TxBase.(*transaction_simple.TransactionSimple).Vin {
+	for _, vin := range tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin {
 
 		var acc *account.Account
 
@@ -201,7 +201,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, u
 
 		availableDelegatedStake := account.GetDelegatedStakeAvailable()
 
-		if availableDelegatedStake < tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Amount+tx.TxBase.(*transaction_simple.TransactionSimple).Extra.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra {
+		if availableDelegatedStake < tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[0].Amount+tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra {
 			return errors.New("You don't have enough staked coins to pay for the fee")
 		}
 

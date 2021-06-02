@@ -38,19 +38,19 @@ func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFee
 
 		switch tx.TxType {
 		case transaction_type.TX_SIMPLE:
-			base := tx.TxBase.(*transaction_simple.TransactionSimple)
+			base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
 			if payFeeInExtra {
 
 				switch base.TxScript {
 				case transaction_simple.SCRIPT_UNSTAKE:
-					setFeeTxNow(tx, uint64(feePerByte), 0, &base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
+					setFeeTxNow(tx, uint64(feePerByte), 0, &base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
 					return nil
 				}
 
 			} else {
 
-				for _, vin := range tx.TxBase.(*transaction_simple.TransactionSimple).Vin {
+				for _, vin := range tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin {
 					if bytes.Equal(vin.Token, feeToken) {
 						setFeeTxNow(tx, uint64(feePerByte), vin.Amount, &vin.Amount)
 						return nil

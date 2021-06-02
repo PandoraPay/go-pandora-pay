@@ -2,8 +2,6 @@ package transaction
 
 import (
 	"errors"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/tokens"
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
@@ -12,19 +10,14 @@ import (
 )
 
 type Transaction struct {
-	helpers.SerializableInterface `json:"-"`
-	Version                       uint64                                              `json:"version"`
-	TxType                        transaction_type.TransactionType                    `json:"txType"`
-	TxBase                        transaction_base_interface.TransactionBaseInterface `json:"txBase"`
-	Bloom                         *TransactionBloom                                   `json:"bloom"`
-}
-
-func (tx *Transaction) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) error {
-	return tx.TxBase.IncludeTransaction(blockHeight, accs, toks)
+	transaction_base_interface.TransactionBaseInterface
+	Version uint64                           `json:"version"`
+	TxType  transaction_type.TransactionType `json:"txType"`
+	Bloom   *TransactionBloom                `json:"bloom"`
 }
 
 func (tx *Transaction) AddFees(fees map[string]uint64) error {
-	return tx.TxBase.ComputeFees(fees)
+	return tx.TransactionBaseInterface.ComputeFees(fees)
 }
 
 func (tx *Transaction) ComputeFees() (fees map[string]uint64, err error) {
@@ -41,7 +34,7 @@ func (tx *Transaction) SerializeForSigning() []byte {
 
 func (tx *Transaction) VerifySignatureManually() bool {
 	hash := tx.SerializeForSigning()
-	return tx.TxBase.VerifySignatureManually(hash)
+	return tx.TransactionBaseInterface.VerifySignatureManually(hash)
 }
 
 func (tx *Transaction) computeHash() []byte {
@@ -53,7 +46,7 @@ func (tx *Transaction) SerializeAdvanced(writer *helpers.BufferWriter, inclSigna
 	writer.WriteUvarint(tx.Version)
 	writer.WriteUvarint(uint64(tx.TxType))
 
-	tx.TxBase.SerializeAdvanced(writer, inclSignature)
+	tx.TransactionBaseInterface.SerializeAdvanced(writer, inclSignature)
 }
 
 func (tx *Transaction) Serialize(writer *helpers.BufferWriter) {
@@ -82,7 +75,7 @@ func (tx *Transaction) Validate() error {
 		return errors.New("VersionType is invalid")
 	}
 
-	return tx.TxBase.Validate()
+	return tx.TransactionBaseInterface.Validate()
 }
 
 func (tx *Transaction) Verify() error {
@@ -105,12 +98,12 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader) (err error) {
 
 	switch tx.TxType {
 	case transaction_type.TX_SIMPLE:
-		tx.TxBase = &transaction_simple.TransactionSimple{}
+		tx.TransactionBaseInterface = &transaction_simple.TransactionSimple{}
 	default:
 		return errors.New("Invalid TxType")
 	}
 
-	if err = tx.TxBase.Deserialize(reader); err != nil {
+	if err = tx.TransactionBaseInterface.Deserialize(reader); err != nil {
 		return
 	}
 

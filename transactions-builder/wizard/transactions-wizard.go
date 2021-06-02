@@ -50,7 +50,7 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 	tx = &transaction.Transaction{
 		Version: 0,
 		TxType:  transaction_type.TX_SIMPLE,
-		TxBase: &transaction_simple.TransactionSimple{
+		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			Nonce: nonce,
 			Vin:   vin,
 			Vout:  vout,
@@ -58,7 +58,7 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 	}
 
 	for i, privateKey := range privateKeys {
-		if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
+		if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 			return
 		}
 	}
@@ -66,7 +66,7 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 		return
 	}
 	for i, privateKey := range privateKeys {
-		if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
+		if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 			return
 		}
 	}
@@ -89,10 +89,10 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte 
 	tx = &transaction.Transaction{
 		Version: 0,
 		TxType:  transaction_type.TX_SIMPLE,
-		TxBase: &transaction_simple.TransactionSimple{
+		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript: transaction_simple.SCRIPT_UNSTAKE,
 			Nonce:    nonce,
-			Extra: &transaction_simple_extra.TransactionSimpleUnstake{
+			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleUnstake{
 				Amount: unstakeAmount,
 			},
 			Vin: []*transaction_simple.TransactionSimpleInput{
@@ -103,13 +103,13 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte 
 		},
 	}
 
-	if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
+	if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 		return
 	}
 	if err = setFee(tx, feePerByte, feeToken, payFeeInExtra); err != nil {
 		return
 	}
-	if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
+	if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 		return
 	}
 
@@ -138,10 +138,10 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 	tx = &transaction.Transaction{
 		Version: 0,
 		TxType:  transaction_type.TX_SIMPLE,
-		TxBase: &transaction_simple.TransactionSimple{
+		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript: transaction_simple.SCRIPT_DELEGATE,
 			Nonce:    nonce,
-			Extra: &transaction_simple_extra.TransactionSimpleDelegate{
+			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleDelegate{
 				Amount:              delegateAmount,
 				HasNewPublicKeyHash: delegateHasNewPublicKeyHash,
 				NewPublicKeyHash:    delegateNewPublicKeyHash,
@@ -154,13 +154,13 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 		},
 	}
 
-	if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
+	if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 		return
 	}
 	if err = setFee(tx, feePerByte, feeToken, false); err != nil {
 		return
 	}
-	if tx.TxBase.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
+	if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 		return
 	}
 

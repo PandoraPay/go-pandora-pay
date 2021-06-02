@@ -21,7 +21,7 @@ func (mempool *Mempool) initCLI() {
 		gui.GUI.OutputWrite("Mempool Transactions:")
 		for _, out := range transactions {
 			if out.Tx.TxType == transaction_type.TX_SIMPLE {
-				txBase := out.Tx.TxBase.(*transaction_simple.TransactionSimple)
+				txBase := out.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 				nonce := txBase.Nonce
 				gui.GUI.OutputWrite(fmt.Sprintf("%12s %4d %7d %6d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC822), txBase.TxScript, nonce, out.Tx.Bloom.Size, out.ChainHeight, hex.EncodeToString(out.Tx.Bloom.Hash[0:15])))
 			}

@@ -23,7 +23,7 @@ func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token [
 
 	for _, tx := range txs {
 		if tx.Tx.TxType == transaction_type.TX_SIMPLE {
-			base := tx.Tx.TxBase.(*transaction_simple.TransactionSimple)
+			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 			for _, vin := range base.Vin {
 				if bytes.Equal(vin.Bloom.PublicKeyHash, publicKeyHash) && bytes.Equal(vin.Token, token) {
 					if err = helpers.SafeUint64Sub(&out, vin.Amount); err != nil {
@@ -50,7 +50,7 @@ func (mempool *Mempool) ExistsTxSimpleVersion(publicKeyHash []byte, version tran
 	txs := mempool.GetTxsList()
 	for _, tx := range txs {
 		if tx.Tx.TxType == transaction_type.TX_SIMPLE {
-			base := tx.Tx.TxBase.(*transaction_simple.TransactionSimple)
+			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 			if bytes.Equal(base.Vin[0].Bloom.PublicKeyHash, publicKeyHash) && base.TxScript == version {
 				return true
 			}
@@ -66,7 +66,7 @@ func (mempool *Mempool) CountInputTxs(publicKeyHash []byte) uint64 {
 	count := uint64(0)
 	for _, tx := range txs {
 		if tx.Tx.TxType == transaction_type.TX_SIMPLE {
-			base := tx.Tx.TxBase.(*transaction_simple.TransactionSimple)
+			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 			if bytes.Equal(base.Vin[0].Bloom.PublicKeyHash, publicKeyHash) {
 				count++
 			}
@@ -83,7 +83,7 @@ func (mempool *Mempool) GetNonce(publicKeyHash []byte, nonce uint64) uint64 {
 	nonces := make(map[uint64]bool)
 	for _, tx := range txs {
 		if tx.Tx.TxType == transaction_type.TX_SIMPLE {
-			base := tx.Tx.TxBase.(*transaction_simple.TransactionSimple)
+			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 			if bytes.Equal(base.Vin[0].Bloom.PublicKeyHash, publicKeyHash) {
 				nonces[base.Nonce] = true
 			}

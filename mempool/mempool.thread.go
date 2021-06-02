@@ -29,7 +29,7 @@ func sortTxs(txList []*mempoolTx) {
 	sort.Slice(txList, func(i, j int) bool {
 
 		if txList[i].FeePerByte == txList[j].FeePerByte && txList[i].Tx.TxType == transaction_type.TX_SIMPLE && txList[j].Tx.TxType == transaction_type.TX_SIMPLE {
-			return txList[i].Tx.TxBase.(*transaction_simple.TransactionSimple).Nonce < txList[j].Tx.TxBase.(*transaction_simple.TransactionSimple).Nonce
+			return txList[i].Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce < txList[j].Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce
 		}
 
 		return txList[i].FeePerByte < txList[j].FeePerByte
