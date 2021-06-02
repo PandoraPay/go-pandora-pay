@@ -29,7 +29,7 @@ func (chain *Blockchain) LoadBlock(reader store_db_interface.StoreDBTransactionI
 	if blockData == nil {
 		return nil, errors.New("Block was not found")
 	}
-	blk = &block.Block{}
+	blk = &block.Block{BlockHeader: &block.BlockHeader{}}
 	err = blk.Deserialize(helpers.NewBufferReader(blockData))
 	return
 }

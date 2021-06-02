@@ -73,13 +73,11 @@ func getGenesis() (*GenesisDataType, error) {
 
 func CreateNewGenesisBlock() (*block.Block, error) {
 
-	var blockHeader = block.BlockHeader{
-		Version: 0,
-		Height:  0,
-	}
-
 	var blk = block.Block{
-		BlockHeader:    blockHeader,
+		BlockHeader: &block.BlockHeader{
+			Version: 0,
+			Height:  0,
+		},
 		MerkleHash:     cryptography.SHA3Hash([]byte{}),
 		Timestamp:      GenesisData.Timestamp,
 		PrevHash:       GenesisData.Hash,

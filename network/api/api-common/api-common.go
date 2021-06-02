@@ -17,11 +17,11 @@ import (
 )
 
 type APICommon struct {
-	mempool        *mempool.Mempool       `json:"-"`
-	chain          *blockchain.Blockchain `json:"-"`
-	localChain     *atomic.Value          `json:"-"` //*APIBlockchain
-	localChainSync *atomic.Value          `json:"-"` //*APIBlockchain
-	ApiStore       *APIStore              `json:"-"`
+	mempool        *mempool.Mempool
+	chain          *blockchain.Blockchain
+	localChain     *atomic.Value //*APIBlockchain
+	localChainSync *atomic.Value //*APIBlockchain
+	ApiStore       *APIStore
 }
 
 func (api *APICommon) GetBlockchain() ([]byte, error) {

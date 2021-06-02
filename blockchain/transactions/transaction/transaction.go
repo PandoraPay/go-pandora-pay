@@ -10,10 +10,10 @@ import (
 )
 
 type Transaction struct {
-	transaction_base_interface.TransactionBaseInterface
-	Version uint64                           `json:"version"`
-	TxType  transaction_type.TransactionType `json:"txType"`
-	Bloom   *TransactionBloom                `json:"bloom"`
+	transaction_base_interface.TransactionBaseInterface `json:"base"`
+	Version                                             uint64                           `json:"version"`
+	TxType                                              transaction_type.TransactionType `json:"txType"`
+	Bloom                                               *TransactionBloom                `json:"bloom"`
 }
 
 func (tx *Transaction) AddFees(fees map[string]uint64) error {

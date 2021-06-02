@@ -136,13 +136,11 @@ func (chain *Blockchain) createNextBlockForForging() {
 		}
 	} else {
 
-		var blockHeader = block.BlockHeader{
-			Version: 0,
-			Height:  chainData.Height,
-		}
-
 		blk = &block.Block{
-			BlockHeader:    blockHeader,
+			BlockHeader: &block.BlockHeader{
+				Version: 0,
+				Height:  chainData.Height,
+			},
 			MerkleHash:     cryptography.SHA3Hash([]byte{}),
 			PrevHash:       chainData.Hash,
 			PrevKernelHash: chainData.KernelHash,

@@ -13,7 +13,7 @@ import (
 )
 
 type Block struct {
-	BlockHeader
+	*BlockHeader
 	MerkleHash     helpers.HexBytes `json:"merkleHash"`     //32 byte
 	PrevHash       helpers.HexBytes `json:"prevHash"`       //32 byte
 	PrevKernelHash helpers.HexBytes `json:"prevKernelhash"` //32 byte

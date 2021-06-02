@@ -142,7 +142,7 @@ func (blkComplete *BlockComplete) Deserialize(reader *helpers.BufferReader) (err
 func CreateEmptyBlockComplete() *BlockComplete {
 	return &BlockComplete{
 		Block: &block.Block{
-			BlockHeader: block.BlockHeader{
+			BlockHeader: &block.BlockHeader{
 				Version: 0,
 				Height:  0,
 			},
