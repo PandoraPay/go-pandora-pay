@@ -276,16 +276,23 @@ func InitMemPool() (mempool *Mempool, err error) {
 	}
 	mempool.txs.txsList.Store([]*mempoolTx{})
 
-	go func() {
-		for {
-			mempool.print()
-			time.Sleep(60 * time.Second)
-		}
-	}()
+	if config.DEBUG {
+		go func() {
+			for {
+				mempool.print()
+				time.Sleep(60 * time.Second)
+			}
+		}()
+	}
 
 	go func() {
+		last := int64(0)
 		for {
-			gui.GUI.Info2Update("mempool", strconv.FormatInt(atomic.LoadInt64(&mempool.txs.txsCount), 10))
+			txsCount := atomic.LoadInt64(&mempool.txs.txsCount)
+			if txsCount != last {
+				gui.GUI.Info2Update("mempool", strconv.FormatInt(txsCount, 10))
+				txsCount = last
+			}
 			time.Sleep(1 * time.Second)
 		}
 	}()
