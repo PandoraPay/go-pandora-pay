@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/multicast"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"sync"
@@ -22,6 +23,8 @@ type ForgingWallet struct {
 
 	updates      *atomic.Value //[]*ForgingWalletAddressUpdate
 	updatesMutex *sync.Mutex
+
+	updateAccounts *multicast.MulticastChannel
 }
 
 type ForgingWalletAddressUpdate struct {
@@ -139,28 +142,40 @@ func (w *ForgingWallet) ProcessUpdates() (err error) {
 	return
 }
 
-func (w *ForgingWallet) UpdateAccountsChanges(accs *accounts.Accounts) (err error) {
+func (w *ForgingWallet) updateAccountsChanges() {
 
-	w.Lock()
-	defer w.Unlock()
+	var err error
+	cn := w.updateAccounts.AddListener()
 
-	for k, v := range accs.HashMap.Committed {
-		if w.addressesMap[k] != nil {
+	for {
 
-			if v.Stored == "update" {
-				acc := new(account.Account)
-				if err = acc.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
-					return
-				}
-				w.addressesMap[k].account = acc
-			} else if v.Stored == "delete" {
-				w.addressesMap[k].account = nil
-			}
-
+		accsData, ok := <-cn
+		if !ok {
+			return
 		}
+
+		accs := accsData.(*accounts.Accounts)
+
+		w.Lock()
+		for k, v := range accs.HashMap.Committed {
+			if w.addressesMap[k] != nil {
+
+				if v.Stored == "update" {
+					acc := new(account.Account)
+					if err = acc.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
+						return
+					}
+					w.addressesMap[k].account = acc
+				} else if v.Stored == "delete" {
+					w.addressesMap[k].account = nil
+				}
+
+			}
+		}
+
+		w.Unlock()
 	}
 
-	return
 }
 
 func (w *ForgingWallet) loadBalances() error {

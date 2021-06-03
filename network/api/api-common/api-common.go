@@ -240,7 +240,7 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, api
 
 	go func() {
 
-		updateNewChainDataUpdateListener := api.chain.UpdateNewChainDataUpdateMulticast.AddListener()
+		updateNewChainDataUpdateListener := api.chain.UpdateNewChainDataUpdate.AddListener()
 		for {
 			newChainDataUpdateReceived, ok := <-updateNewChainDataUpdateListener
 			if !ok {

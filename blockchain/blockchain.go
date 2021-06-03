@@ -9,8 +9,6 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/block/difficulty"
-	"pandora-pay/blockchain/forging"
-	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
@@ -28,15 +26,18 @@ import (
 )
 
 type Blockchain struct {
-	ChainData                         *atomic.Value `json:"-"` //*BlockchainData
-	Sync                              *BlockchainSync
-	forging                           *forging.Forging
-	mempool                           *mempool.Mempool
-	wallet                            *wallet.Wallet
-	mutex                             *sync.Mutex //writing mutex
-	updatesQueue                      *BlockchainUpdatesQueue
-	UpdateNewChainMulticast           *multicast.MulticastChannel `json:"-"` //chan uint64
-	UpdateNewChainDataUpdateMulticast *multicast.MulticastChannel `json:"-"` //chan *BlockchainDataUpdate
+	ChainData                *atomic.Value //*BlockchainData
+	Sync                     *BlockchainSync
+	mempool                  *mempool.Mempool
+	wallet                   *wallet.Wallet
+	mutex                    *sync.Mutex //writing mutex
+	updatesQueue             *BlockchainUpdatesQueue
+	SolutionCn               <-chan *block_complete.BlockComplete
+	UpdateNewChain           *multicast.MulticastChannel //chan uint64
+	UpdateNewChainDataUpdate *multicast.MulticastChannel //chan *BlockchainDataUpdate
+	UpdateAccounts           *multicast.MulticastChannel //chan *accounts
+	UpdateTokens             *multicast.MulticastChannel //chan *tokens
+	NextBlockCreated         *multicast.MulticastChannel //chan
 }
 
 func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockComplete) (err error) {
@@ -387,24 +388,22 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	return
 }
 
-func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *mempool.Mempool) (chain *Blockchain, err error) {
+func BlockchainInit(solutionCn <-chan *block_complete.BlockComplete, mempool *mempool.Mempool) (chain *Blockchain, err error) {
 
 	gui.GUI.Log("Blockchain init...")
 
-	if err = genesis.GenesisInit(wallet); err != nil {
-		return
-	}
-
 	chain = &Blockchain{
-		ChainData:                         &atomic.Value{},
-		mutex:                             &sync.Mutex{},
-		forging:                           forging,
-		mempool:                           mempool,
-		wallet:                            wallet,
-		updatesQueue:                      createBlockchainUpdatesQueue(),
-		Sync:                              createBlockchainSync(),
-		UpdateNewChainMulticast:           multicast.NewMulticastChannel(),
-		UpdateNewChainDataUpdateMulticast: multicast.NewMulticastChannel(),
+		ChainData:                &atomic.Value{},
+		mutex:                    &sync.Mutex{},
+		mempool:                  mempool,
+		updatesQueue:             createBlockchainUpdatesQueue(),
+		Sync:                     createBlockchainSync(),
+		SolutionCn:               solutionCn,
+		UpdateNewChain:           multicast.NewMulticastChannel(),
+		UpdateNewChainDataUpdate: multicast.NewMulticastChannel(),
+		UpdateAccounts:           multicast.NewMulticastChannel(),
+		UpdateTokens:             multicast.NewMulticastChannel(),
+		NextBlockCreated:         multicast.NewMulticastChannel(),
 	}
 
 	chain.updatesQueue.chain = chain
@@ -425,15 +424,13 @@ func BlockchainInit(forging *forging.Forging, wallet *wallet.Wallet, mempool *me
 	chainData := chain.GetChainData()
 	chainData.updateChainInfo()
 
-	if err = wallet.ReadWallet(); err != nil {
-		return
-	}
-	chain.initForging()
-
 	return
 }
 
 func (chain *Blockchain) Close() {
-	chain.UpdateNewChainDataUpdateMulticast.CloseAll()
-	chain.UpdateNewChainMulticast.CloseAll()
+	chain.UpdateNewChainDataUpdate.CloseAll()
+	chain.UpdateNewChain.CloseAll()
+	chain.UpdateAccounts.CloseAll()
+	chain.UpdateTokens.CloseAll()
+	chain.NextBlockCreated.CloseAll()
 }

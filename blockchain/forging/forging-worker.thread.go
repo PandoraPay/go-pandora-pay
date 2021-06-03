@@ -2,9 +2,8 @@ package forging
 
 import (
 	"encoding/binary"
-	"math/big"
-	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/block/difficulty"
+	forging_block_work "pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -12,15 +11,10 @@ import (
 	"time"
 )
 
-type ForgingWork struct {
-	blkComplete *block_complete.BlockComplete
-	target      *big.Int
-}
-
 type ForgingSolution struct {
 	timestamp     uint64
 	address       *ForgingWalletAddress
-	work          *ForgingWork
+	work          *forging_block_work.ForgingWork
 	stakingAmount uint64
 }
 type ForgingWalletAddressRequired struct {
@@ -32,7 +26,7 @@ type ForgingWalletAddressRequired struct {
 type ForgingWorkerThread struct {
 	hashes           uint32
 	index            int
-	workCn           chan *ForgingWork                    // SAFE
+	workCn           chan *forging_block_work.ForgingWork // SAFE
 	workerSolutionCn chan *ForgingSolution                // SAFE
 	walletsCn        chan []*ForgingWalletAddressRequired // SAFE
 }
@@ -42,7 +36,7 @@ type ForgingWorkerThread struct {
 */
 func (worker *ForgingWorkerThread) forge() {
 
-	var work *ForgingWork
+	var work *forging_block_work.ForgingWork
 	var wallets []*ForgingWalletAddressRequired
 
 	var timestampMs int64
@@ -64,12 +58,12 @@ func (worker *ForgingWorkerThread) forge() {
 			work = newWork
 
 			writer := helpers.NewBufferWriter()
-			work.blkComplete.Block.SerializeForForging(writer)
+			work.BlkComplete.Block.SerializeForForging(writer)
 			serialized = writer.Bytes()
 
-			n = binary.PutUvarint(buf, work.blkComplete.Block.Timestamp)
+			n = binary.PutUvarint(buf, work.BlkComplete.Block.Timestamp)
 
-			timestamp = work.blkComplete.Block.Timestamp + 1
+			timestamp = work.BlkComplete.Block.Timestamp + 1
 			timestampMs = int64(timestamp) * 1000
 
 		case newWallets := <-worker.walletsCn:
@@ -110,7 +104,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 				kernelHash = cryptography.ComputeKernelHash(kernelHash, address.stakingAmount)
 
-				if difficulty.CheckKernelHashBig(kernelHash, work.target) {
+				if difficulty.CheckKernelHashBig(kernelHash, work.Target) {
 
 					worker.workerSolutionCn <- &ForgingSolution{
 						timestamp:     timestamp,
@@ -142,7 +136,7 @@ func createForgingWorkerThread(index int, workerSolutionCn chan *ForgingSolution
 	return &ForgingWorkerThread{
 		index:            index,
 		walletsCn:        make(chan []*ForgingWalletAddressRequired),
-		workCn:           make(chan *ForgingWork),
+		workCn:           make(chan *forging_block_work.ForgingWork),
 		workerSolutionCn: workerSolutionCn,
 	}
 }

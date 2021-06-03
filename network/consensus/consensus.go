@@ -20,7 +20,7 @@ func (consensus *Consensus) execute() {
 
 	go func() {
 
-		updateNewChainUpdateListener := consensus.chain.UpdateNewChainDataUpdateMulticast.AddListener()
+		updateNewChainUpdateListener := consensus.chain.UpdateNewChainDataUpdate.AddListener()
 		for {
 			newChainDataUpdateReceived, ok := <-updateNewChainUpdateListener
 			if !ok {

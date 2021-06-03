@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
+	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/debugging"
@@ -63,17 +64,31 @@ func startMain() {
 	globals.Data["mempool"] = myMempool
 	globals.MainEvents.BroadcastEvent("main", "mempool initialized")
 
-	if myForging, err = forging.ForgingInit(myMempool); err != nil {
+	if myChain, err = blockchain.BlockchainInit(nil, myMempool); err != nil {
+		panic(err)
+	}
+	globals.Data["chain"] = myChain
+	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
+
+	if myForging, err = forging.ForgingInit(myMempool, myChain.NextBlockCreated, myChain.UpdateAccounts); err != nil {
 		panic(err)
 	}
 	globals.Data["forging"] = myForging
 	globals.MainEvents.BroadcastEvent("main", "forging initialized")
 
-	if myWallet, err = wallet.WalletInit(myForging, myMempool); err != nil {
+	myChain.SolutionCn = myForging.SolutionCn
+
+	if myWallet, err = wallet.WalletInit(myForging, myMempool, myChain.UpdateAccounts); err != nil {
 		panic(err)
 	}
 	globals.Data["wallet"] = myWallet
 	globals.MainEvents.BroadcastEvent("main", "wallet initialized")
+
+	if err = myWallet.InitializeWallet(); err != nil {
+		return
+	}
+	myChain.InitForging()
+	myForging.StartForging()
 
 	if mySettings, err = settings.SettingsInit(); err != nil {
 		panic(err)
@@ -81,11 +96,10 @@ func startMain() {
 	globals.Data["settings"] = mySettings
 	globals.MainEvents.BroadcastEvent("main", "settings initialized")
 
-	if myChain, err = blockchain.BlockchainInit(myForging, myWallet, myMempool); err != nil {
-		panic(err)
+	if err = genesis.GenesisInit(myWallet); err != nil {
+		return
 	}
-	globals.Data["chain"] = myChain
-	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
+	globals.MainEvents.BroadcastEvent("main", "genesis created")
 
 	myTransactionsBuilder := transactions_builder.TransactionsBuilderInit(myWallet, myMempool, myChain)
 	globals.Data["transactionsBuilder"] = myTransactionsBuilder

@@ -309,29 +309,40 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 	return
 }
 
-func (wallet *Wallet) UpdateAccountsChanges(accs *accounts.Accounts) (err error) {
+func (wallet *Wallet) updateAccountsChanges() {
 
-	wallet.Lock()
-	defer wallet.Unlock()
+	var err error
+	cn := wallet.updateAccounts.AddListener()
 
-	for k, v := range accs.HashMap.Committed {
-		if wallet.addressesMap[k] != nil {
-
-			if v.Stored == "update" {
-				acc := new(account.Account)
-				if err = acc.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
-					return
-				}
-				if err = wallet.refreshWallet(acc, wallet.addressesMap[k], false); err != nil {
-					return
-				}
-			} else if v.Stored == "delete" {
-				if err = wallet.refreshWallet(nil, wallet.addressesMap[k], false); err != nil {
-					return
-				}
-			}
-
+	for {
+		accsData, ok := <-cn
+		if !ok {
+			return
 		}
+
+		accs := accsData.(*accounts.Accounts)
+
+		wallet.Lock()
+		for k, v := range accs.HashMap.Committed {
+			if wallet.addressesMap[k] != nil {
+
+				if v.Stored == "update" {
+					acc := new(account.Account)
+					if err = acc.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
+						return
+					}
+					if err = wallet.refreshWallet(acc, wallet.addressesMap[k], false); err != nil {
+						return
+					}
+				} else if v.Stored == "delete" {
+					if err = wallet.refreshWallet(nil, wallet.addressesMap[k], false); err != nil {
+						return
+					}
+				}
+
+			}
+		}
+		wallet.Unlock()
 	}
 
 	return
@@ -369,7 +380,7 @@ func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (adr *wallet_address.
 
 func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {
 
-	wallet2 := createWallet(wallet.forging, wallet.mempool)
+	wallet2 := createWallet(wallet.forging, wallet.mempool, wallet.updateAccounts)
 	if err = json.Unmarshal(data, wallet2); err != nil {
 		return errors.New("Error unmarshaling wallet")
 	}

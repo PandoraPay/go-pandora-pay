@@ -2,39 +2,48 @@ package forging
 
 import (
 	"github.com/tevino/abool"
-	"math/big"
 	"pandora-pay/blockchain/block-complete"
+	forging_block_work "pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"sync"
 	"sync/atomic"
 )
 
 type Forging struct {
-	mempool    *mempool.Mempool
-	Wallet     *ForgingWallet
-	started    *abool.AtomicBool
-	workCn     chan *ForgingWork
-	SolutionCn chan *block_complete.BlockComplete
+	mempool          *mempool.Mempool
+	Wallet           *ForgingWallet
+	started          *abool.AtomicBool
+	workCn           chan *forging_block_work.ForgingWork
+	nextBlockCreated *multicast.MulticastChannel
+	SolutionCn       chan *block_complete.BlockComplete
 }
 
-func ForgingInit(mempool *mempool.Mempool) (forging *Forging, err error) {
+func ForgingInit(mempool *mempool.Mempool, nextBlockCreated *multicast.MulticastChannel, updateAccounts *multicast.MulticastChannel) (forging *Forging, err error) {
 
 	forging = &Forging{
-		mempool:    mempool,
-		workCn:     nil,
-		started:    abool.New(),
-		SolutionCn: make(chan *block_complete.BlockComplete),
+		mempool:          mempool,
+		workCn:           nil,
+		started:          abool.New(),
+		SolutionCn:       make(chan *block_complete.BlockComplete),
+		nextBlockCreated: nextBlockCreated,
 		Wallet: &ForgingWallet{
-			addressesMap: make(map[string]*ForgingWalletAddress),
-			updates:      &atomic.Value{},
-			updatesMutex: &sync.Mutex{},
+			addressesMap:   make(map[string]*ForgingWalletAddress),
+			updates:        &atomic.Value{},
+			updatesMutex:   &sync.Mutex{},
+			updateAccounts: updateAccounts,
 		},
 	}
 
 	forging.Wallet.updates.Store([]*ForgingWalletAddressUpdate{})
+
+	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
+		go forging.Wallet.updateAccountsChanges()
+		go forging.forgingNewWork()
+	}
 
 	gui.GUI.Log("Forging Init")
 
@@ -61,7 +70,7 @@ func (forging *Forging) StartForging() bool {
 		return false
 	}
 
-	forging.workCn = make(chan *ForgingWork, 10)
+	forging.workCn = make(chan *forging_block_work.ForgingWork, 10)
 	forgingThread := createForgingThread(config.CPU_THREADS, forging.mempool, forging.SolutionCn, forging.workCn, forging.Wallet)
 
 	go forgingThread.startForging()
@@ -78,16 +87,25 @@ func (forging *Forging) StopForging() bool {
 }
 
 //thread safe
-func (forging *Forging) ForgingNewWork(blkComplete *block_complete.BlockComplete, target *big.Int) {
+func (forging *Forging) forgingNewWork() {
 
-	if forging.started.IsSet() {
-		work := &ForgingWork{
-			blkComplete: blkComplete,
-			target:      target,
+	cn := forging.nextBlockCreated.AddListener()
+
+	for {
+
+		accsData, ok := <-cn
+		if !ok {
+			return
 		}
 
-		forging.workCn <- work
+		work := accsData.(*forging_block_work.ForgingWork)
+
+		if forging.started.IsSet() {
+			forging.workCn <- work
+		}
+
 	}
+
 }
 
 func (forging *Forging) Close() {

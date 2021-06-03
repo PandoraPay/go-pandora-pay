@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/block"
 	"pandora-pay/blockchain/block-complete"
+	forging_block_work "pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
@@ -156,19 +157,17 @@ func (chain *Blockchain) createNextBlockForForging() {
 		Txs:   []*transaction.Transaction{},
 	}
 
-	chain.forging.ForgingNewWork(blkComplete, target)
+	chain.NextBlockCreated.BroadcastAwait(&forging_block_work.ForgingWork{blkComplete, target})
 }
 
-func (chain *Blockchain) initForging() {
-
-	chain.forging.StartForging()
+func (chain *Blockchain) InitForging() {
 
 	go func() {
 
 		var err error
 		for {
 
-			blkComplete, ok := <-chain.forging.SolutionCn
+			blkComplete, ok := <-chain.SolutionCn
 			if !ok {
 				return
 			}

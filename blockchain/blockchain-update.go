@@ -64,25 +64,8 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 	gui.GUI.Warning("-------------------------------------------")
 	update.newChainData.updateChainInfo()
 
-	//accs will only be read only
-	if err = queue.chain.forging.Wallet.UpdateAccountsChanges(update.accs); err != nil {
-		gui.GUI.Error("Error updating balance changes", err)
-	}
-
-	if err = queue.chain.wallet.UpdateAccountsChanges(update.accs); err != nil {
-		gui.GUI.Error("Error updating balance changes", err)
-	}
-
-	if !queue.hasAnySuccess(updates) {
-		if err = queue.chain.forging.Wallet.ProcessUpdates(); err != nil {
-			gui.GUI.Error("Error Processing Updates", err)
-		}
-		//update work for mem pool
-		queue.chain.mempool.UpdateWork(update.newChainData.Hash, update.newChainData.Height)
-
-		//create next block and the workers will be automatically reset
-		queue.chain.createNextBlockForForging()
-	}
+	queue.chain.UpdateAccounts.BroadcastAwait(update.accs)
+	queue.chain.UpdateTokens.BroadcastAwait(update.toks)
 
 	for _, txData := range update.removedTxs {
 		tx := &transaction.Transaction{}
@@ -99,6 +82,14 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	queue.chain.mempool.DeleteTxs(update.insertedTxHashes)
 
+	if !queue.hasAnySuccess(updates) {
+		//update work for mem pool
+		queue.chain.mempool.UpdateWork(update.newChainData.Hash, update.newChainData.Height)
+
+		//create next block and the workers will be automatically reset
+		queue.chain.createNextBlockForForging()
+	}
+
 	newSyncTime, result := queue.chain.Sync.addBlocksChanged(uint32(len(update.insertedBlocks)), false)
 
 	if !queue.hasAnySuccess(updates) {
@@ -107,13 +98,13 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 			queue.chain.Sync.UpdateSyncMulticast.BroadcastAwait(newSyncTime)
 		}
 
-		queue.chain.UpdateNewChainMulticast.BroadcastAwait(update.newChainData.Height)
+		queue.chain.UpdateNewChain.BroadcastAwait(update.newChainData.Height)
 
 		blockchainDataUpdate := &BlockchainDataUpdate{
 			update.newChainData,
 			newSyncTime,
 		}
-		queue.chain.UpdateNewChainDataUpdateMulticast.BroadcastAwait(blockchainDataUpdate)
+		queue.chain.UpdateNewChainDataUpdate.BroadcastAwait(blockchainDataUpdate)
 
 	}
 
@@ -121,6 +112,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 func (queue *BlockchainUpdatesQueue) processQueue() {
 	go func() {
+
 		for {
 
 			update, ok := <-queue.updates
@@ -151,5 +143,6 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 			}
 
 		}
+
 	}()
 }
