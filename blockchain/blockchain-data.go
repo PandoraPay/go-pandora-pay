@@ -16,7 +16,7 @@ type BlockchainData struct {
 	Hash                  helpers.HexBytes `json:"hash"`           //32
 	PrevHash              helpers.HexBytes `json:"prevHash"`       //32
 	KernelHash            helpers.HexBytes `json:"kernelHash"`     //32
-	PrevKernelHash        helpers.HexBytes `json:"prevKernelhash"` //32
+	PrevKernelHash        helpers.HexBytes `json:"prevKernelHash"` //32
 	Height                uint64           `json:"height"`
 	Timestamp             uint64           `json:"timestamp"`
 	Target                *big.Int         `json:"target"`

@@ -16,7 +16,7 @@ type Block struct {
 	*BlockHeader
 	MerkleHash     helpers.HexBytes `json:"merkleHash"`     //32 byte
 	PrevHash       helpers.HexBytes `json:"prevHash"`       //32 byte
-	PrevKernelHash helpers.HexBytes `json:"prevKernelhash"` //32 byte
+	PrevKernelHash helpers.HexBytes `json:"prevKernelHash"` //32 byte
 	Timestamp      uint64           `json:"timestamp"`
 	StakingAmount  uint64           `json:"stakingAmount"`
 	Forger         helpers.HexBytes `json:"forger"`    // 20 byte public key hash

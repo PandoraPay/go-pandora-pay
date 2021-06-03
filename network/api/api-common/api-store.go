@@ -165,14 +165,10 @@ func (apiStore *APIStore) LoadBlockComplete(reader store_db_interface.StoreDBTra
 		}
 	}
 
-	blkComplete := &block_complete.BlockComplete{
+	return &block_complete.BlockComplete{
 		Block: blk,
 		Txs:   txs,
-	}
-
-	blkComplete.BloomAll()
-
-	return blkComplete, nil
+	}, nil
 }
 
 func (apiStore *APIStore) LoadBlockWithTxHashes(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (out *APIBlockWithTxs, err error) {
