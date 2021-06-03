@@ -1,8 +1,9 @@
-package subscription
+package connection
 
 import "sync"
 
 type Subscriptions struct {
+	conn  *AdvancedConnection
 	list  []*Subscription
 	index uint64
 	sync.Mutex
@@ -33,4 +34,10 @@ func (s *Subscriptions) RemoveSubscription(id uint64) bool {
 	}
 
 	return false
+}
+
+func CreateSubscriptions(conn *AdvancedConnection) (s *Subscriptions) {
+	return &Subscriptions{
+		conn: conn,
+	}
 }

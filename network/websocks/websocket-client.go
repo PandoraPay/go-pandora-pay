@@ -9,10 +9,9 @@ import (
 )
 
 type WebsocketClient struct {
-	knownNode           *known_nodes.KnownNode
-	conn                *connection.AdvancedConnection
-	websockets          *Websockets
-	handshakeValidation bool
+	knownNode  *known_nodes.KnownNode
+	conn       *connection.AdvancedConnection
+	websockets *Websockets
 }
 
 func (wsClient *WebsocketClient) Close(reason string) error {
@@ -34,12 +33,7 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 		return
 	}
 
-	wsClient.conn = connection.CreateAdvancedConnection(c, knownNode.UrlStr, websockets.ApiWebsockets.GetMap, false)
-	if err = websockets.NewConnection(wsClient.conn); err != nil {
-		return
-	}
-
-	if err = websockets.InitializeConnection(wsClient.conn); err != nil {
+	if wsClient.conn, err = websockets.NewConnection(c, knownNode.UrlStr, false); err != nil {
 		return
 	}
 

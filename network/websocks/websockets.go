@@ -26,6 +26,7 @@ type Websockets struct {
 	TotalSockets                 int64
 	UpdateNewConnectionMulticast *multicast.MulticastChannel
 	ApiWebsockets                *api_websockets.APIWebsockets
+	newSubscription              chan *connection.SubscriptionNotification
 	api                          *api_http.API
 }
 
@@ -92,6 +93,26 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
 }
 
+func (websockets *Websockets) NewConnection(sockConn *websocket.Conn, addr string, connectionType bool) (conn *connection.AdvancedConnection, err error) {
+
+	conn = connection.CreateAdvancedConnection(sockConn, addr, websockets.ApiWebsockets.GetMap, connectionType)
+
+	_, exists := websockets.AllAddresses.LoadOrStore(addr, conn)
+	if exists {
+		return nil, errors.New("Already connected")
+	}
+
+	go conn.ReadPump()
+	go conn.WritePump()
+	go websockets.closedConnection(conn)
+
+	if err = websockets.InitializeConnection(conn); err != nil {
+		return
+	}
+
+	return
+}
+
 func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConnection) error {
 
 	out := conn.SendAwaitAnswer([]byte("handshake"), nil)
@@ -137,21 +158,6 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	return nil
 }
 
-func (websockets *Websockets) NewConnection(conn *connection.AdvancedConnection) error {
-
-	_, exists := websockets.AllAddresses.LoadOrStore(conn.RemoteAddr, conn)
-	if exists {
-		conn.Conn.Close(websocket.StatusNormalClosure, "Already connected")
-		return errors.New("Already connected")
-	}
-
-	go conn.ReadPump()
-	go conn.WritePump()
-	go websockets.closedConnection(conn)
-
-	return nil
-}
-
 func CreateWebsockets(api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
@@ -163,8 +169,20 @@ func CreateWebsockets(api *api_http.API, apiWebsockets *api_websockets.APIWebsoc
 		UpdateNewConnectionMulticast: multicast.NewMulticastChannel(),
 		api:                          api,
 		ApiWebsockets:                apiWebsockets,
+		newSubscription:              make(chan *connection.SubscriptionNotification),
 	}
 	websockets.AllList.Store([]*connection.AdvancedConnection{})
+
+	go func() {
+		for {
+
+			_, ok := <-websockets.newSubscription
+			if !ok {
+				return
+			}
+
+		}
+	}()
 
 	go func() {
 		for {
