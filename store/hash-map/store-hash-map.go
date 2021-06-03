@@ -8,7 +8,7 @@ import (
 type CommittedMapElement struct {
 	Data   []byte
 	Status string
-	Commit string
+	Stored string
 }
 
 type ChangesMapElement struct {
@@ -37,11 +37,11 @@ func (hashMap *HashMap) UnsetTx() {
 	hashMap.Tx = nil
 }
 
-func (hashMap *HashMap) Get(key []byte) (out []byte) {
+func (hashMap *HashMap) Get(key string) (out []byte) {
 	return hashMap.get(key, true)
 }
 
-func (hashMap *HashMap) get(key []byte, includeChanges bool) (out []byte) {
+func (hashMap *HashMap) get(key string, includeChanges bool) (out []byte) {
 	keyStr := string(key)
 
 	if includeChanges {
@@ -67,7 +67,7 @@ func (hashMap *HashMap) get(key []byte, includeChanges bool) (out []byte) {
 	return
 }
 
-func (hashMap *HashMap) Exists(key []byte) bool {
+func (hashMap *HashMap) Exists(key string) bool {
 	keyStr := string(key)
 
 	exists := hashMap.Changes[keyStr]
@@ -89,7 +89,7 @@ func (hashMap *HashMap) Exists(key []byte) bool {
 	return out != nil
 }
 
-func (hashMap *HashMap) Update(key []byte, data []byte) {
+func (hashMap *HashMap) Update(key string, data []byte) {
 	keyStr := string(key)
 	exists := hashMap.Changes[keyStr]
 	if exists == nil {
@@ -101,7 +101,7 @@ func (hashMap *HashMap) Update(key []byte, data []byte) {
 	return
 }
 
-func (hashMap *HashMap) Delete(key []byte) {
+func (hashMap *HashMap) Delete(key string) {
 	keyStr := string(key)
 	exists := hashMap.Changes[keyStr]
 	if exists == nil {
@@ -125,13 +125,13 @@ func (hashMap *HashMap) Commit() {
 				hashMap.Committed[k] = committed
 			}
 
-			if v.Status == "del" && committed.Status != "del" {
+			if v.Status == "del" {
 				committed.Status = "del"
-				committed.Commit = ""
+				committed.Stored = ""
 				committed.Data = nil
 			} else if v.Status == "update" {
 				committed.Status = "update"
-				committed.Commit = ""
+				committed.Stored = ""
 				committed.Data = v.Data
 			}
 
@@ -154,17 +154,17 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 		}
 
 		if v.Status == "del" {
-			if err = hashMap.Tx.DeleteForcefully([]byte(k)); err != nil {
+			if err = hashMap.Tx.DeleteForcefully(k); err != nil {
 				return
 			}
 			v.Status = "view"
-			v.Commit = "del"
+			v.Stored = "del"
 		} else if v.Status == "update" {
-			if err = hashMap.Tx.Put([]byte(k), v.Data); err != nil {
+			if err = hashMap.Tx.Put(k, v.Data); err != nil {
 				return
 			}
 			v.Status = "view"
-			v.Commit = "update"
+			v.Stored = "update"
 		}
 
 	}

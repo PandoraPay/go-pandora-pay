@@ -15,7 +15,7 @@ import (
 )
 
 func (chain *Blockchain) LoadBlockInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (blk *block_info.BlockInfo, err error) {
-	blockData := reader.Get(append([]byte("blockInfo_ByHash"), hash...))
+	blockData := reader.Get("blockInfo_ByHash" + string(hash))
 	if blockData == nil {
 		return nil, errors.New("Block was not found")
 	}
@@ -25,7 +25,7 @@ func (chain *Blockchain) LoadBlockInfo(reader store_db_interface.StoreDBTransact
 }
 
 func (chain *Blockchain) LoadBlock(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (blk *block.Block, err error) {
-	blockData := reader.Get(append([]byte("block_ByHash"), hash...))
+	blockData := reader.Get("block_ByHash" + string(hash))
 	if blockData == nil {
 		return nil, errors.New("Block was not found")
 	}
@@ -37,6 +37,7 @@ func (chain *Blockchain) LoadBlock(reader store_db_interface.StoreDBTransactionI
 func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
 
 	blockHeightStr := strconv.FormatUint(blockHeight, 10)
+
 	if err = accs.DeleteTransitionalChangesFromStore(blockHeightStr); err != nil {
 		return
 	}
@@ -44,10 +45,10 @@ func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.St
 		return
 	}
 
-	if err = writer.Delete([]byte("blockHash_ByHeight" + blockHeightStr)); err != nil {
+	if err = writer.Delete("blockHash_ByHeight" + blockHeightStr); err != nil {
 		return
 	}
-	if err = writer.Delete([]byte("blockTxs" + blockHeightStr)); err != nil {
+	if err = writer.Delete("blockTxs" + blockHeightStr); err != nil {
 		return
 	}
 
@@ -66,15 +67,15 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 		return
 	}
 
-	hash := writer.Get([]byte("blockHash_ByHeight" + blockHeightStr))
-	if err = writer.Delete(append([]byte("block_ByHash"), hash...)); err != nil {
+	hash := writer.Get("blockHash_ByHeight" + blockHeightStr)
+	if err = writer.Delete("block_ByHash" + string(hash)); err != nil {
 		return
 	}
-	if err = writer.Delete(append([]byte("blockInfo_ByHash"), hash...)); err != nil {
+	if err = writer.Delete("blockInfo_ByHash" + string(hash)); err != nil {
 		return
 	}
 
-	data := writer.Get([]byte("blockTxs" + blockHeightStr))
+	data := writer.Get("blockTxs" + blockHeightStr)
 	txHashes := [][]byte{} //32 byte
 
 	if err = json.Unmarshal(data, &txHashes); err != nil {
@@ -97,7 +98,7 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		return
 	}
 
-	if err = writer.Put(append([]byte("block_ByHash"), blkComplete.Block.Bloom.Hash...), blkComplete.Block.SerializeToBytes()); err != nil {
+	if err = writer.Put("block_ByHash"+string(blkComplete.Block.Bloom.Hash), blkComplete.Block.SerializeToBytes()); err != nil {
 		return
 	}
 
@@ -113,11 +114,11 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 	if err != nil {
 		return
 	}
-	if err = writer.Put(append([]byte("blockInfo_ByHash"), blkComplete.Block.Bloom.Hash...), blockInfoMarshal); err != nil {
+	if err = writer.Put("blockInfo_ByHash"+string(blkComplete.Block.Bloom.Hash), blockInfoMarshal); err != nil {
 		return
 	}
 
-	if err = writer.Put([]byte("blockHash_ByHeight"+blockHeightStr), blkComplete.Block.Bloom.Hash); err != nil {
+	if err = writer.Put("blockHash_ByHeight"+blockHeightStr, blkComplete.Block.Bloom.Hash); err != nil {
 		return
 	}
 
@@ -130,14 +131,14 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 
 		//let's check to see if the tx block is already stored, if yes, we will skip it
 		if removedTxHashes[tx.Bloom.HashStr] == nil {
-			if err = writer.Put(append([]byte("tx"), tx.Bloom.Hash...), tx.SerializeToBytesBloomed()); err != nil {
+			if err = writer.Put("tx"+string(tx.Bloom.Hash), tx.SerializeToBytesBloomed()); err != nil {
 				return
 			}
 			newTxHashes = append(newTxHashes, tx.Bloom.Hash)
 		}
 
 		indexStr := strconv.FormatUint(transactionsCount+uint64(i), 10)
-		if err = writer.Put([]byte("txHash_ByHeight"+indexStr), tx.Bloom.Hash); err != nil {
+		if err = writer.Put("txHash_ByHeight"+indexStr, tx.Bloom.Hash); err != nil {
 			return
 		}
 	}
@@ -147,7 +148,7 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		return
 	}
 
-	if err = writer.Put([]byte("blockTxs"+blockHeightStr), marshal); err != nil {
+	if err = writer.Put("blockTxs"+blockHeightStr, marshal); err != nil {
 		return
 	}
 
@@ -159,7 +160,7 @@ func (chain *Blockchain) LoadBlockHash(reader store_db_interface.StoreDBTransact
 		return nil, errors.New("Height is invalid")
 	}
 
-	hash := reader.Get([]byte("blockHash_ByHeight" + strconv.FormatUint(height, 10)))
+	hash := reader.Get("blockHash_ByHeight" + strconv.FormatUint(height, 10))
 	if hash == nil {
 		return nil, errors.New("Block Hash not found")
 	}
@@ -171,7 +172,7 @@ func (chain *Blockchain) LoadTxHash(reader store_db_interface.StoreDBTransaction
 		return nil, errors.New("Height is invalid")
 	}
 
-	hash := reader.Get([]byte("txHash_ByHeight" + strconv.FormatUint(height, 10)))
+	hash := reader.Get("txHash_ByHeight" + strconv.FormatUint(height, 10))
 	if hash == nil {
 		return nil, errors.New("Tx Hash not found")
 	}
@@ -189,7 +190,7 @@ func (chain *Blockchain) loadBlockchain() error {
 
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainInfoData := reader.Get([]byte("blockchainInfo"))
+		chainInfoData := reader.Get("blockchainInfo")
 		if chainInfoData == nil {
 			return errors.New("Chain not found")
 		}

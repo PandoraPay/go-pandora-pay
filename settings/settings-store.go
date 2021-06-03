@@ -13,15 +13,15 @@ func (settings *Settings) saveSettings() error {
 
 	return store.StoreSettings.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		writer.Put([]byte("saved"), []byte{2})
+		writer.Put("saved", []byte{2})
 
 		marshal, err := json.Marshal(settings)
 		if err != nil {
 			return
 		}
 
-		writer.Put([]byte("settings"), marshal)
-		writer.Put([]byte("saved"), []byte{1})
+		writer.Put("settings", marshal)
+		writer.Put("saved", []byte{1})
 
 		return
 	})
@@ -31,14 +31,14 @@ func (settings *Settings) saveSettings() error {
 func (settings *Settings) loadSettings() error {
 	return store.StoreSettings.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		saved := reader.Get([]byte("saved"))
+		saved := reader.Get("saved")
 		if saved == nil {
 			return errors.New("Settings doesn't exist")
 		}
 		if bytes.Equal(saved, []byte{1}) {
 			gui.GUI.Log("Settings Loading... ")
 
-			unmarshal := reader.Get([]byte("settings"))
+			unmarshal := reader.Get("settings")
 			if err = json.Unmarshal(unmarshal, &settings); err != nil {
 				return err
 			}

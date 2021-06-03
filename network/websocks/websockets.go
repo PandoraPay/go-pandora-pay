@@ -93,12 +93,11 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
 }
 
-func (websockets *Websockets) NewConnection(sockConn *websocket.Conn, addr string, connectionType bool) (conn *connection.AdvancedConnection, err error) {
+func (websockets *Websockets) NewConnection(c *websocket.Conn, addr string, connectionType bool) (conn *connection.AdvancedConnection, err error) {
 
-	conn = connection.CreateAdvancedConnection(sockConn, addr, websockets.ApiWebsockets.GetMap, connectionType)
+	conn = connection.CreateAdvancedConnection(c, addr, websockets.ApiWebsockets.GetMap, connectionType)
 
-	_, exists := websockets.AllAddresses.LoadOrStore(addr, conn)
-	if exists {
+	if _, exists := websockets.AllAddresses.LoadOrStore(addr, conn); exists {
 		return nil, errors.New("Already connected")
 	}
 

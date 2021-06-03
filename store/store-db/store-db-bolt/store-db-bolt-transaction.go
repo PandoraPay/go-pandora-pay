@@ -11,18 +11,18 @@ type StoreDBBoltTransaction struct {
 	bucket *bolt.Bucket
 }
 
-func (tx *StoreDBBoltTransaction) Put(key []byte, value []byte) error {
-	return tx.bucket.Put(key, value)
+func (tx *StoreDBBoltTransaction) Put(key string, value []byte) error {
+	return tx.bucket.Put([]byte(key), value)
 }
 
-func (tx *StoreDBBoltTransaction) Get(key []byte) []byte {
-	return tx.bucket.Get(key)
+func (tx *StoreDBBoltTransaction) Get(key string) []byte {
+	return tx.bucket.Get([]byte(key))
 }
 
-func (tx *StoreDBBoltTransaction) Delete(key []byte) error {
-	return tx.bucket.Delete(key)
+func (tx *StoreDBBoltTransaction) Delete(key string) error {
+	return tx.bucket.Delete([]byte(key))
 }
 
-func (tx *StoreDBBoltTransaction) DeleteForcefully(key []byte) error {
-	return tx.bucket.Delete(key)
+func (tx *StoreDBBoltTransaction) DeleteForcefully(key string) error {
+	return tx.bucket.Delete([]byte(key))
 }

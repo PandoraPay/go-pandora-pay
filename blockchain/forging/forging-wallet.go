@@ -97,7 +97,7 @@ func (w *ForgingWallet) ProcessUpdates() (err error) {
 			//let's read the balance
 			store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-				chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
+				chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 				accs := accounts.NewAccounts(reader)
 				var acc *account.Account
@@ -147,13 +147,13 @@ func (w *ForgingWallet) UpdateAccountsChanges(accs *accounts.Accounts) (err erro
 	for k, v := range accs.HashMap.Committed {
 		if w.addressesMap[k] != nil {
 
-			if v.Commit == "update" {
+			if v.Stored == "update" {
 				acc := new(account.Account)
 				if err = acc.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
 					return
 				}
 				w.addressesMap[k].account = acc
-			} else if v.Commit == "delete" {
+			} else if v.Stored == "delete" {
 				w.addressesMap[k].account = nil
 			}
 
@@ -174,7 +174,7 @@ func (w *ForgingWallet) loadBalances() error {
 
 		for _, address := range w.addresses {
 
-			chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
+			chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 			var account *account.Account
 			if account, err = accs.GetAccount(address.publicKeyHash, chainHeight); err != nil {

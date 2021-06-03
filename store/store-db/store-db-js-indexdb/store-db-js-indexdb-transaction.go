@@ -8,14 +8,14 @@ type StoreDBJSIndexDBTransaction struct {
 	store_db_interface.StoreDBTransactionInterface
 }
 
-func (tx *StoreDBJSIndexDBTransaction) Put(key []byte, value []byte) error {
+func (tx *StoreDBJSIndexDBTransaction) Put(key string, value []byte) error {
 	return nil
 }
 
-func (tx *StoreDBJSIndexDBTransaction) Get(key []byte) []byte {
+func (tx *StoreDBJSIndexDBTransaction) Get(key string) []byte {
 	return nil
 }
 
-func (tx *StoreDBJSIndexDBTransaction) Delete(key []byte) error {
+func (tx *StoreDBJSIndexDBTransaction) Delete(key string) error {
 	return nil
 }

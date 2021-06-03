@@ -36,7 +36,7 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 
 	return store.StoreWallet.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		if err = writer.Put([]byte("saved"), []byte{2}); err != nil {
+		if err = writer.Put("saved", []byte{2}); err != nil {
 			return
 		}
 
@@ -45,7 +45,7 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 			return
 		}
 
-		if err = writer.Put([]byte("wallet"), marshal); err != nil {
+		if err = writer.Put("wallet", marshal); err != nil {
 			return
 		}
 
@@ -54,18 +54,18 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 			if marshal, err = json.Marshal(wallet.Addresses[i]); err != nil {
 				return
 			}
-			if err = writer.Put([]byte("wallet-address-"+strconv.Itoa(i)), marshal); err != nil {
+			if err = writer.Put("wallet-address-"+strconv.Itoa(i), marshal); err != nil {
 				return
 			}
 		}
 
 		if deleteIndex != -1 {
-			if err = writer.Delete([]byte("wallet-address-" + strconv.Itoa(deleteIndex))); err != nil {
+			if err = writer.Delete("wallet-address-" + strconv.Itoa(deleteIndex)); err != nil {
 				return
 			}
 		}
 
-		if err = writer.Put([]byte("saved"), []byte{1}); err != nil {
+		if err = writer.Put("saved", []byte{1}); err != nil {
 			return
 		}
 
@@ -77,7 +77,7 @@ func (wallet *Wallet) loadWallet() error {
 
 	return store.StoreWallet.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		saved := reader.Get([]byte("saved"))
+		saved := reader.Get("saved")
 		if saved == nil {
 			return errors.New("Wallet doesn't exist")
 		}
@@ -88,7 +88,7 @@ func (wallet *Wallet) loadWallet() error {
 
 			var unmarshal []byte
 
-			unmarshal = reader.Get([]byte("wallet"))
+			unmarshal = reader.Get("wallet")
 
 			if err = json.Unmarshal(unmarshal, &wallet); err != nil {
 				return
@@ -98,7 +98,7 @@ func (wallet *Wallet) loadWallet() error {
 			wallet.addressesMap = make(map[string]*wallet_address.WalletAddress)
 
 			for i := 0; i < wallet.Count; i++ {
-				unmarshal := reader.Get([]byte("wallet-address-" + strconv.Itoa(i)))
+				unmarshal := reader.Get("wallet-address-" + strconv.Itoa(i))
 
 				newWalletAddress := &wallet_address.WalletAddress{}
 				if err = json.Unmarshal(unmarshal, newWalletAddress); err != nil {
@@ -130,7 +130,7 @@ func (wallet *Wallet) ReadWallet() error {
 
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		accs := accounts.NewAccounts(reader)
 		for _, adr := range wallet.Addresses {

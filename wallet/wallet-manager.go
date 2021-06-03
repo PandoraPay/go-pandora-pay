@@ -317,7 +317,7 @@ func (wallet *Wallet) UpdateAccountsChanges(accs *accounts.Accounts) (err error)
 	for k, v := range accs.HashMap.Committed {
 		if wallet.addressesMap[k] != nil {
 
-			if v.Commit == "update" {
+			if v.Stored == "update" {
 				acc := new(account.Account)
 				if err = acc.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
 					return
@@ -325,7 +325,7 @@ func (wallet *Wallet) UpdateAccountsChanges(accs *accounts.Accounts) (err error)
 				if err = wallet.refreshWallet(acc, wallet.addressesMap[k], false); err != nil {
 					return
 				}
-			} else if v.Commit == "delete" {
+			} else if v.Stored == "delete" {
 				if err = wallet.refreshWallet(nil, wallet.addressesMap[k], false); err != nil {
 					return
 				}

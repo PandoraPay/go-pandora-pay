@@ -30,7 +30,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		accs := accounts.NewAccounts(reader)
 		toks := tokens.NewTokens(reader)
@@ -273,7 +273,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 		return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-			chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
+			chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 			accs := accounts.NewAccounts(reader)
 			var acc *account.Account

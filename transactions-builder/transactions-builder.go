@@ -106,7 +106,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 
 		accs := accounts.NewAccounts(reader)
 
-		chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		keys := make([][]byte, len(from))
 
@@ -173,7 +173,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, u
 
 	err2 = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		accs := accounts.NewAccounts(reader)
 		var account *account.Account
@@ -230,7 +230,7 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 
 	err2 = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		accs := accounts.NewAccounts(reader)
 		var acc *account.Account

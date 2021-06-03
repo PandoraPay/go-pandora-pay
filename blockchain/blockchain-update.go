@@ -123,21 +123,29 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 	go func() {
 		for {
 
-			update := <-queue.updates
+			update, ok := <-queue.updates
+			if !ok {
+				return
+			}
+
 			updates := make([]*BlockchainUpdate, 0)
 			updates = append(updates, update)
 
 			finished := false
 			for !finished {
 				select {
-				case newUpdate := <-queue.updates:
+				case newUpdate, ok := <-queue.updates:
+					if !ok {
+						return
+					}
 					updates = append(updates, newUpdate)
 				default:
 					finished = true
 				}
 			}
 
-			for _, update := range updates {
+			for len(updates) > 0 {
+				update = updates[0]
 				updates = updates[1:]
 				queue.processUpdate(update, updates)
 			}

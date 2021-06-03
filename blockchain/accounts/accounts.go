@@ -22,7 +22,7 @@ func (accounts *Accounts) GetAccountEvenEmpty(key []byte, chainHeight uint64) (a
 
 	acc = new(account.Account)
 
-	data := accounts.Get(key)
+	data := accounts.Get(string(key))
 	if data == nil {
 		return
 	}
@@ -40,7 +40,7 @@ func (accounts *Accounts) GetAccountEvenEmpty(key []byte, chainHeight uint64) (a
 
 func (accounts *Accounts) GetAccount(key []byte, chainHeight uint64) (acc *account.Account, err error) {
 
-	data := accounts.Get(key)
+	data := accounts.Get(string(key))
 	if data == nil {
 		return
 	}
@@ -59,8 +59,8 @@ func (accounts *Accounts) GetAccount(key []byte, chainHeight uint64) (acc *accou
 
 func (accounts *Accounts) UpdateAccount(key []byte, acc *account.Account) {
 	if acc.IsAccountEmpty() {
-		accounts.Delete(key)
+		accounts.Delete(string(key))
 		return
 	}
-	accounts.Update(key, acc.SerializeToBytes())
+	accounts.Update(string(key), acc.SerializeToBytes())
 }

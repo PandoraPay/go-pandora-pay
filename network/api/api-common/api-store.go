@@ -105,7 +105,7 @@ func (apiStore *APIStore) LoadBlockWithTXsFromHeight(blockHeight uint64) (blkWit
 func (apiStore *APIStore) LoadAccountFromPublicKeyHash(publicKeyHash []byte) (acc *account.Account, errfinal error) {
 	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainHeight, _ := binary.Uvarint(reader.Get([]byte("chainHeight")))
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		accs := accounts.NewAccounts(reader)
 		acc, err = accs.GetAccount(publicKeyHash, chainHeight)
@@ -146,7 +146,7 @@ func (apiStore *APIStore) LoadBlockComplete(reader store_db_interface.StoreDBTra
 		return
 	}
 
-	data := reader.Get([]byte("blockTxs" + strconv.FormatUint(blk.Height, 10)))
+	data := reader.Get("blockTxs" + strconv.FormatUint(blk.Height, 10))
 	if data == nil {
 		return
 	}
@@ -158,7 +158,7 @@ func (apiStore *APIStore) LoadBlockComplete(reader store_db_interface.StoreDBTra
 
 	txs := make([]*transaction.Transaction, len(txHashes))
 	for i, txHash := range txHashes {
-		data = reader.Get(append([]byte("tx"), txHash...))
+		data = reader.Get("tx" + string(txHash))
 		txs[i] = &transaction.Transaction{}
 		if err = txs[i].Deserialize(helpers.NewBufferReader(data)); err != nil {
 			return
@@ -178,7 +178,7 @@ func (apiStore *APIStore) LoadBlockWithTxHashes(reader store_db_interface.StoreD
 	}
 
 	txHashes := [][]byte{}
-	data := reader.Get([]byte("blockTxs" + strconv.FormatUint(blk.Height, 10)))
+	data := reader.Get("blockTxs" + strconv.FormatUint(blk.Height, 10))
 	if err = json.Unmarshal(data, &txHashes); err != nil {
 		return
 	}
@@ -195,7 +195,7 @@ func (apiStore *APIStore) LoadBlockWithTxHashes(reader store_db_interface.StoreD
 }
 
 func (apiStore *APIStore) LoadTx(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (tx *transaction.Transaction, err error) {
-	data := reader.Get(append([]byte("tx"), hash...))
+	data := reader.Get("tx" + string(hash))
 	if data == nil {
 		return nil, errors.New("Tx not found")
 	}

@@ -6,7 +6,7 @@ import (
 )
 
 type transactionChange struct {
-	Key        []byte
+	Key        string
 	Transition []byte
 }
 
@@ -15,10 +15,9 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) error {
 	values := make([]*transactionChange, 0)
 	for k, v := range hashMap.Changes {
 		if v.Status == "del" || v.Status == "update" {
-			key := []byte(k)
-			original := hashMap.get(key, false)
+			original := hashMap.get(k, false)
 			values = append(values, &transactionChange{
-				Key:        key,
+				Key:        k,
 				Transition: original,
 			})
 
@@ -30,15 +29,15 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) error {
 		return err
 	}
 
-	return hashMap.Tx.Put([]byte("transitions_"+prefix), marshal)
+	return hashMap.Tx.Put("transitions_"+prefix, marshal)
 }
 
 func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) error {
-	return hashMap.Tx.Delete([]byte("transitions_" + prefix))
+	return hashMap.Tx.Delete("transitions_" + prefix)
 }
 
 func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) error {
-	data := hashMap.Tx.Get([]byte("transitions_" + prefix))
+	data := hashMap.Tx.Get("transitions_" + prefix)
 	if data == nil {
 		return errors.New("transitions didn't exist")
 	}
@@ -53,13 +52,13 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) error {
 			hashMap.Committed[string(change.Key)] = &CommittedMapElement{
 				Data:   nil,
 				Status: "del",
-				Commit: "",
+				Stored: "",
 			}
 		} else {
 			hashMap.Committed[string(change.Key)] = &CommittedMapElement{
 				Data:   change.Transition,
 				Status: "update",
-				Commit: "",
+				Stored: "",
 			}
 		}
 	}

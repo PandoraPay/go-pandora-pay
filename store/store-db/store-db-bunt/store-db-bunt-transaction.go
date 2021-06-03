@@ -10,26 +10,26 @@ type StoreDBBuntTransaction struct {
 	buntTx *buntdb.Tx
 }
 
-func (tx *StoreDBBuntTransaction) Put(key []byte, value []byte) (err error) {
-	_, _, err = tx.buntTx.Set(string(key), string(value), nil)
+func (tx *StoreDBBuntTransaction) Put(key string, value []byte) (err error) {
+	_, _, err = tx.buntTx.Set(key, string(value), nil)
 	return
 }
 
-func (tx *StoreDBBuntTransaction) Get(key []byte) (out []byte) {
-	data, err := tx.buntTx.Get(string(key), false)
+func (tx *StoreDBBuntTransaction) Get(key string) (out []byte) {
+	data, err := tx.buntTx.Get(key, false)
 	if err == nil {
 		out = []byte(data)
 	}
 	return
 }
 
-func (tx *StoreDBBuntTransaction) Delete(key []byte) (err error) {
-	_, err = tx.buntTx.Delete(string(key))
+func (tx *StoreDBBuntTransaction) Delete(key string) (err error) {
+	_, err = tx.buntTx.Delete(key)
 	return err
 }
 
-func (tx *StoreDBBuntTransaction) DeleteForcefully(key []byte) (err error) {
-	_, err = tx.buntTx.Delete(string(key))
+func (tx *StoreDBBuntTransaction) DeleteForcefully(key string) (err error) {
+	_, err = tx.buntTx.Delete(key)
 	if err == buntdb.ErrNotFound {
 		return nil
 	}

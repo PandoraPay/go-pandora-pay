@@ -12,7 +12,7 @@ import (
 
 //chain must be locked before
 func (chainData *BlockchainData) saveTotalDifficultyExtra(writer store_db_interface.StoreDBTransactionInterface) error {
-	key := []byte("totalDifficulty" + strconv.FormatUint(chainData.Height, 10))
+	key := "totalDifficulty" + strconv.FormatUint(chainData.Height, 10)
 
 	bufferWriter := helpers.NewBufferWriter()
 	bufferWriter.WriteUvarint(chainData.Timestamp)
@@ -29,9 +29,8 @@ func (chainData *BlockchainData) LoadTotalDifficultyExtra(reader store_db_interf
 		err = errors.New("height is invalid")
 		return
 	}
-	key := []byte("totalDifficulty" + strconv.FormatUint(height, 10))
 
-	buf := reader.Get(key)
+	buf := reader.Get("totalDifficulty" + strconv.FormatUint(height, 10))
 	if buf == nil {
 		err = errors.New("Couldn't read difficulty from DB")
 		return
@@ -58,7 +57,7 @@ func (chainData *BlockchainData) LoadTotalDifficultyExtra(reader store_db_interf
 }
 
 func (chainData *BlockchainData) loadBlockchainInfo(reader store_db_interface.StoreDBTransactionInterface, height uint64) error {
-	chainInfoData := reader.Get([]byte("blockchainInfo_" + strconv.FormatUint(height, 10)))
+	chainInfoData := reader.Get("blockchainInfo_" + strconv.FormatUint(height, 10))
 	if chainInfoData == nil {
 		return errors.New("Chain not found")
 	}
@@ -68,7 +67,7 @@ func (chainData *BlockchainData) loadBlockchainInfo(reader store_db_interface.St
 func (chainData *BlockchainData) saveBlockchainHeight(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 	buf := make([]byte, binary.MaxVarintLen64)
 	n := binary.PutUvarint(buf, chainData.Height)
-	return writer.Put([]byte("chainHeight"), buf[:n])
+	return writer.Put("chainHeight", buf[:n])
 }
 
 func (chainData *BlockchainData) saveBlockchainInfo(writer store_db_interface.StoreDBTransactionInterface) (err error) {
@@ -77,7 +76,7 @@ func (chainData *BlockchainData) saveBlockchainInfo(writer store_db_interface.St
 		return
 	}
 
-	return writer.Put([]byte("blockchainInfo_"+strconv.FormatUint(chainData.Height, 10)), data)
+	return writer.Put("blockchainInfo_"+strconv.FormatUint(chainData.Height, 10), data)
 }
 
 func (chainData *BlockchainData) saveBlockchain(writer store_db_interface.StoreDBTransactionInterface) error {
@@ -86,5 +85,5 @@ func (chainData *BlockchainData) saveBlockchain(writer store_db_interface.StoreD
 		return err
 	}
 
-	return writer.Put([]byte("blockchainInfo"), marshal)
+	return writer.Put("blockchainInfo", marshal)
 }

@@ -273,16 +273,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					return
 				}
 
-				if err = writer.Put([]byte("chainHash"), newChainData.Hash); err != nil {
+				if err = writer.Put("chainHash", newChainData.Hash); err != nil {
 					return
 				}
-				if err = writer.Put([]byte("chainPrevHash"), newChainData.PrevHash); err != nil {
+				if err = writer.Put("chainPrevHash", newChainData.PrevHash); err != nil {
 					return
 				}
-				if err = writer.Put([]byte("chainKernelHash"), newChainData.KernelHash); err != nil {
+				if err = writer.Put("chainKernelHash", newChainData.KernelHash); err != nil {
 					return
 				}
-				if err = writer.Put([]byte("chainPrevKernelHash"), newChainData.PrevKernelHash); err != nil {
+				if err = writer.Put("chainPrevKernelHash", newChainData.PrevKernelHash); err != nil {
 					return
 				}
 
@@ -322,18 +322,18 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 					//removing unused transactions
 					for i := newChainData.TransactionsCount; i < removedBlocksTransactionsCount; i++ {
-						if err = writer.Delete([]byte("txHash_ByHeight" + strconv.FormatUint(i, 10))); err != nil {
+						if err = writer.Delete("txHash_ByHeight" + strconv.FormatUint(i, 10)); err != nil {
 							panic("Error deleting unused transaction: " + err.Error())
 						}
 					}
 				}
 
 				for txHash := range removedTxHashes {
-					data := writer.Get(append([]byte("tx"), txHash...))
+					data := writer.Get("tx" + string(txHash))
 
 					removedTxs = append(removedTxs, helpers.CloneBytes(data)) //required because the garbage collector sometimes it deletes the underlying buffers
 
-					if err = writer.Delete(append([]byte("tx"), txHash...)); err != nil {
+					if err = writer.Delete("tx" + string(txHash)); err != nil {
 						panic("Error deleting transactions " + err.Error())
 					}
 				}
