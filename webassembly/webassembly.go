@@ -174,6 +174,9 @@ func Initialize(startMainCb func()) {
 				"convertToUnits":           js.FuncOf(convertToUnits),
 				"convertToBase":            js.FuncOf(convertToBase),
 			}),
+			"reward": js.ValueOf(map[string]interface{}{
+				"getRewardAt": js.FuncOf(getRewardAt),
+			}),
 		}),
 	}
 

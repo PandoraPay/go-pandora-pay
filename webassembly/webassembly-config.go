@@ -2,6 +2,7 @@ package webassembly
 
 import (
 	"pandora-pay/config"
+	"pandora-pay/config/reward"
 	"strconv"
 	"syscall/js"
 )
@@ -45,5 +46,12 @@ func convertToBase(this js.Value, args []js.Value) interface{} {
 
 		value2 := config.ConvertToBase(value)
 		return strconv.FormatFloat(value2, 'f', 10, 64), nil
+	})
+}
+
+func getRewardAt(this js.Value, args []js.Value) interface{} {
+	return normalFunction(func() (out interface{}, err error) {
+		value := reward.GetRewardAt(uint64(args[0].Int()))
+		return value, nil
 	})
 }

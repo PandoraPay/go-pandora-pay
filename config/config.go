@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"pandora-pay/config/globals"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -41,19 +42,19 @@ const (
 )
 
 var (
-	NETWORK_SELECTED             = MAIN_NET_NETWORK_BYTE
-	NETWORK_SELECTED_BYTE_PREFIX = MAIN_NET_NETWORK_BYTE_PREFIX
-	NETWORK_SELECTED_NAME        = MAIN_NET_NETWORK_NAME
-	NETWORK_SELECTED_SEEDS       = MAIN_NET_SEED_NODES
+	NETWORK_SELECTED               = MAIN_NET_NETWORK_BYTE
+	NETWORK_SELECTED_BYTE_PREFIX   = MAIN_NET_NETWORK_BYTE_PREFIX
+	NETWORK_SELECTED_NAME          = MAIN_NET_NETWORK_NAME
+	NETWORK_SELECTED_SEEDS         = MAIN_NET_SEED_NODES
+	WEBSOCKETS_NETWORK_CLIENTS_MAX = 50
+	WEBSOCKETS_NETWORK_SERVER_MAX  = 500
 )
 
 const (
-	WEBSOCKETS_NETWORK_CLIENTS_MAX = 20
-	WEBSOCKETS_NETWORK_SERVER_MAX  = 500
-	WEBSOCKETS_TIMEOUT             = 5 * time.Second  //seconds
-	WEBSOCKETS_PONG_WAIT           = 60 * time.Second // Time allowed to read the next pong message from the peer.
-	WEBSOCKETS_PING_INTERVAL       = (WEBSOCKETS_PONG_WAIT * 8) / 10
-	WEBSOCKETS_MAX_READ            = BLOCK_MAX_SIZE + 1024
+	WEBSOCKETS_TIMEOUT       = 5 * time.Second  //seconds
+	WEBSOCKETS_PONG_WAIT     = 60 * time.Second // Time allowed to read the next pong message from the peer.
+	WEBSOCKETS_PING_INTERVAL = (WEBSOCKETS_PONG_WAIT * 8) / 10
+	WEBSOCKETS_MAX_READ      = BLOCK_MAX_SIZE + 1024
 )
 
 const (
@@ -101,6 +102,18 @@ func InitConfig() (err error) {
 
 	if globals.Arguments["--debug"] == true {
 		DEBUG = true
+	}
+
+	if globals.Arguments["--tcp-max-client"] != nil {
+		if WEBSOCKETS_NETWORK_CLIENTS_MAX, err = strconv.Atoi(globals.Arguments["--tcp-max-client"].(string)); err != nil {
+			return
+		}
+	}
+
+	if globals.Arguments["--tcp-max-server"] != nil {
+		if WEBSOCKETS_NETWORK_SERVER_MAX, err = strconv.Atoi(globals.Arguments["--tcp-max-server"].(string)); err != nil {
+			return
+		}
 	}
 
 	switch globals.Arguments["--consensus"] {

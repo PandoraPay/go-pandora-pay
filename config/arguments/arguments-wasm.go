@@ -5,7 +5,7 @@ package arguments
 const commands = `PANDORA PAY WASM.
 
 Usage:
-  pandorapay [--debugging] [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type]
+  pandorapay [--debugging] [--version] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-client=limit]
   pandorapay -h | --help
   pandorapay -v | --version
 
@@ -20,6 +20,7 @@ Options:
   --store-chain-type=type               Set Chain Store Type. Accepted values: "memory|indexdb". [default: indexdb].
   --debug                               Debug mode enabled (print log message).
   --staking                             Start staking.
+  --tcp-max-client=limit                Change limit of clients [default: 1].
   --node-name=name                      Change node name.
   --consensus=type                      Consensus type. Accepted values: "full|wallet|none". [default: full]
 `
