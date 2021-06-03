@@ -157,7 +157,7 @@ func (chain *Blockchain) createNextBlockForForging() {
 		Txs:   []*transaction.Transaction{},
 	}
 
-	chain.NextBlockCreated.BroadcastAwait(&forging_block_work.ForgingWork{blkComplete, target})
+	chain.NextBlockCreatedCn <- &forging_block_work.ForgingWork{blkComplete, target}
 }
 
 func (chain *Blockchain) InitForging() {

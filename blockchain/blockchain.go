@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/block/difficulty"
+	forging_block_work "pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
@@ -33,11 +34,11 @@ type Blockchain struct {
 	mutex                    *sync.Mutex //writing mutex
 	updatesQueue             *BlockchainUpdatesQueue
 	SolutionCn               <-chan *block_complete.BlockComplete
-	UpdateNewChain           *multicast.MulticastChannel //chan uint64
-	UpdateNewChainDataUpdate *multicast.MulticastChannel //chan *BlockchainDataUpdate
-	UpdateAccounts           *multicast.MulticastChannel //chan *accounts
-	UpdateTokens             *multicast.MulticastChannel //chan *tokens
-	NextBlockCreated         *multicast.MulticastChannel //chan
+	UpdateNewChain           *multicast.MulticastChannel          //chan uint64
+	UpdateNewChainDataUpdate *multicast.MulticastChannel          //chan *BlockchainDataUpdate
+	UpdateAccounts           *multicast.MulticastChannel          //chan *accounts
+	UpdateTokens             *multicast.MulticastChannel          //chan *tokens
+	NextBlockCreatedCn       chan *forging_block_work.ForgingWork //chan
 }
 
 func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockComplete) (err error) {
@@ -403,7 +404,7 @@ func BlockchainInit(solutionCn <-chan *block_complete.BlockComplete, mempool *me
 		UpdateNewChainDataUpdate: multicast.NewMulticastChannel(),
 		UpdateAccounts:           multicast.NewMulticastChannel(),
 		UpdateTokens:             multicast.NewMulticastChannel(),
-		NextBlockCreated:         multicast.NewMulticastChannel(),
+		NextBlockCreatedCn:       make(chan *forging_block_work.ForgingWork),
 	}
 
 	chain.updatesQueue.chain = chain
@@ -432,5 +433,5 @@ func (chain *Blockchain) Close() {
 	chain.UpdateNewChain.CloseAll()
 	chain.UpdateAccounts.CloseAll()
 	chain.UpdateTokens.CloseAll()
-	chain.NextBlockCreated.CloseAll()
+	close(chain.NextBlockCreatedCn)
 }

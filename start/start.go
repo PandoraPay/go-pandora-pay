@@ -70,7 +70,7 @@ func startMain() {
 	globals.Data["chain"] = myChain
 	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
 
-	if myForging, err = forging.ForgingInit(myMempool, myChain.NextBlockCreated, myChain.UpdateAccounts); err != nil {
+	if myForging, err = forging.ForgingInit(myMempool, myChain.NextBlockCreatedCn, myChain.UpdateAccounts); err != nil {
 		panic(err)
 	}
 	globals.Data["forging"] = myForging

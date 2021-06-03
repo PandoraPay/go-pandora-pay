@@ -14,22 +14,22 @@ import (
 )
 
 type Forging struct {
-	mempool          *mempool.Mempool
-	Wallet           *ForgingWallet
-	started          *abool.AtomicBool
-	workCn           chan *forging_block_work.ForgingWork
-	nextBlockCreated *multicast.MulticastChannel
-	SolutionCn       chan *block_complete.BlockComplete
+	mempool            *mempool.Mempool
+	Wallet             *ForgingWallet
+	started            *abool.AtomicBool
+	workCn             chan *forging_block_work.ForgingWork
+	nextBlockCreatedCn <-chan *forging_block_work.ForgingWork
+	SolutionCn         chan *block_complete.BlockComplete
 }
 
-func ForgingInit(mempool *mempool.Mempool, nextBlockCreated *multicast.MulticastChannel, updateAccounts *multicast.MulticastChannel) (forging *Forging, err error) {
+func ForgingInit(mempool *mempool.Mempool, nextBlockCreated <-chan *forging_block_work.ForgingWork, updateAccounts *multicast.MulticastChannel) (forging *Forging, err error) {
 
 	forging = &Forging{
-		mempool:          mempool,
-		workCn:           nil,
-		started:          abool.New(),
-		SolutionCn:       make(chan *block_complete.BlockComplete),
-		nextBlockCreated: nextBlockCreated,
+		mempool:            mempool,
+		workCn:             nil,
+		started:            abool.New(),
+		SolutionCn:         make(chan *block_complete.BlockComplete),
+		nextBlockCreatedCn: nextBlockCreated,
 		Wallet: &ForgingWallet{
 			addressesMap:   make(map[string]*ForgingWalletAddress),
 			updates:        &atomic.Value{},
@@ -89,16 +89,12 @@ func (forging *Forging) StopForging() bool {
 //thread safe
 func (forging *Forging) forgingNewWork() {
 
-	cn := forging.nextBlockCreated.AddListener()
-
 	for {
 
-		accsData, ok := <-cn
+		work, ok := <-forging.nextBlockCreatedCn
 		if !ok {
 			return
 		}
-
-		work := accsData.(*forging_block_work.ForgingWork)
 
 		if forging.started.IsSet() {
 			forging.workCn <- work
