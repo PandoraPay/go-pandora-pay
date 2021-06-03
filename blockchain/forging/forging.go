@@ -19,16 +19,16 @@ type Forging struct {
 	started            *abool.AtomicBool
 	workCn             chan *forging_block_work.ForgingWork
 	nextBlockCreatedCn <-chan *forging_block_work.ForgingWork
-	SolutionCn         chan *block_complete.BlockComplete
+	solutionCn         chan<- *block_complete.BlockComplete
 }
 
-func ForgingInit(mempool *mempool.Mempool, nextBlockCreated <-chan *forging_block_work.ForgingWork, updateAccounts *multicast.MulticastChannel) (forging *Forging, err error) {
+func ForgingInit(mempool *mempool.Mempool, nextBlockCreated <-chan *forging_block_work.ForgingWork, updateAccounts *multicast.MulticastChannel, solutionCn chan<- *block_complete.BlockComplete) (forging *Forging, err error) {
 
 	forging = &Forging{
 		mempool:            mempool,
 		workCn:             nil,
 		started:            abool.New(),
-		SolutionCn:         make(chan *block_complete.BlockComplete),
+		solutionCn:         solutionCn,
 		nextBlockCreatedCn: nextBlockCreated,
 		Wallet: &ForgingWallet{
 			addressesMap:   make(map[string]*ForgingWalletAddress),
@@ -71,7 +71,7 @@ func (forging *Forging) StartForging() bool {
 	}
 
 	forging.workCn = make(chan *forging_block_work.ForgingWork, 10)
-	forgingThread := createForgingThread(config.CPU_THREADS, forging.mempool, forging.SolutionCn, forging.workCn, forging.Wallet)
+	forgingThread := createForgingThread(config.CPU_THREADS, forging.mempool, forging.solutionCn, forging.workCn, forging.Wallet)
 
 	go forgingThread.startForging()
 
@@ -106,5 +106,4 @@ func (forging *Forging) forgingNewWork() {
 
 func (forging *Forging) Close() {
 	forging.StopForging()
-	close(forging.SolutionCn) //this will close the thread
 }

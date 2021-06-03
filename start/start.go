@@ -64,19 +64,17 @@ func startMain() {
 	globals.Data["mempool"] = myMempool
 	globals.MainEvents.BroadcastEvent("main", "mempool initialized")
 
-	if myChain, err = blockchain.BlockchainInit(nil, myMempool); err != nil {
+	if myChain, err = blockchain.BlockchainInit(myMempool); err != nil {
 		panic(err)
 	}
 	globals.Data["chain"] = myChain
 	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
 
-	if myForging, err = forging.ForgingInit(myMempool, myChain.NextBlockCreatedCn, myChain.UpdateAccounts); err != nil {
+	if myForging, err = forging.ForgingInit(myMempool, myChain.NextBlockCreatedCn, myChain.UpdateAccounts, myChain.ForgingSolutionCn); err != nil {
 		panic(err)
 	}
 	globals.Data["forging"] = myForging
 	globals.MainEvents.BroadcastEvent("main", "forging initialized")
-
-	myChain.SolutionCn = myForging.SolutionCn
 
 	if myWallet, err = wallet.WalletInit(myForging, myMempool, myChain.UpdateAccounts); err != nil {
 		panic(err)

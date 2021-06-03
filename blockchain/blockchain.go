@@ -33,7 +33,7 @@ type Blockchain struct {
 	wallet                   *wallet.Wallet
 	mutex                    *sync.Mutex //writing mutex
 	updatesQueue             *BlockchainUpdatesQueue
-	SolutionCn               <-chan *block_complete.BlockComplete
+	ForgingSolutionCn        chan *block_complete.BlockComplete
 	UpdateNewChain           *multicast.MulticastChannel          //chan uint64
 	UpdateNewChainDataUpdate *multicast.MulticastChannel          //chan *BlockchainDataUpdate
 	UpdateAccounts           *multicast.MulticastChannel          //chan *accounts
@@ -389,7 +389,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	return
 }
 
-func BlockchainInit(solutionCn <-chan *block_complete.BlockComplete, mempool *mempool.Mempool) (chain *Blockchain, err error) {
+func BlockchainInit(mempool *mempool.Mempool) (chain *Blockchain, err error) {
 
 	gui.GUI.Log("Blockchain init...")
 
@@ -399,7 +399,7 @@ func BlockchainInit(solutionCn <-chan *block_complete.BlockComplete, mempool *me
 		mempool:                  mempool,
 		updatesQueue:             createBlockchainUpdatesQueue(),
 		Sync:                     createBlockchainSync(),
-		SolutionCn:               solutionCn,
+		ForgingSolutionCn:        make(chan *block_complete.BlockComplete),
 		UpdateNewChain:           multicast.NewMulticastChannel(),
 		UpdateNewChainDataUpdate: multicast.NewMulticastChannel(),
 		UpdateAccounts:           multicast.NewMulticastChannel(),
@@ -434,4 +434,5 @@ func (chain *Blockchain) Close() {
 	chain.UpdateAccounts.CloseAll()
 	chain.UpdateTokens.CloseAll()
 	close(chain.NextBlockCreatedCn)
+	close(chain.ForgingSolutionCn)
 }
