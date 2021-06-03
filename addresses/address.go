@@ -18,7 +18,14 @@ type Address struct {
 	PaymentID     helpers.HexBytes `json:"paymentId"` // payment id
 }
 
-func CreateAddr(key []byte, amount uint64, paymentId []byte) (a *Address, err error) {
+func NewAddr(network uint64, version AddressVersion, publicKey []byte, publicKeyHash []byte, amount uint64, paymentID []byte) (a *Address, err error) {
+	if len(paymentID) != 8 && len(paymentID) != 0 {
+		return nil, errors.New("Invalid PaymentId. It must be an 8 byte")
+	}
+	return &Address{network, version, publicKey, publicKeyHash, amount, paymentID}, nil
+}
+
+func CreateAddr(key []byte, amount uint64, paymentID []byte) (*Address, error) {
 
 	var publicKey, publicKeyHash []byte
 
@@ -31,13 +38,10 @@ func CreateAddr(key []byte, amount uint64, paymentId []byte) (a *Address, err er
 		publicKey = key
 		version = SIMPLE_PUBLIC_KEY
 	default:
-		err = errors.New("Invalid Key length")
-		return
+		return nil, errors.New("Invalid Key length")
 	}
 
-	a = &Address{config.NETWORK_SELECTED, version, publicKey, publicKeyHash, amount, paymentId}
-
-	return
+	return NewAddr(config.NETWORK_SELECTED, version, publicKey, publicKeyHash, amount, paymentID)
 }
 
 func (a *Address) EncodeAddr() string {

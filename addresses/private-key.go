@@ -1,7 +1,6 @@
 package addresses
 
 import (
-	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/ecdsa"
@@ -32,31 +31,25 @@ func (pk *PrivateKey) GeneratePairs() (publicKey []byte, publicKeyHash []byte, e
 	return
 }
 
-func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) (address *Address, err error) {
+func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) (*Address, error) {
 
-	address = &Address{
-		Network:   config.NETWORK_SELECTED,
-		Amount:    amount,
-		PaymentID: paymentID,
-	}
+	var publicKey, publicKeyHash []byte
+	var version AddressVersion
 
-	if address.PublicKey, err = ecdsa.ComputePublicKey(pk.Key); err != nil {
-		return
+	publicKey, err := ecdsa.ComputePublicKey(pk.Key)
+	if err != nil {
+		return nil, err
 	}
-	if len(paymentID) != 0 && len(paymentID) != 8 {
-		return nil, errors.New("Your payment ID is invalid")
-	}
-
-	address.PublicKeyHash = cryptography.ComputePublicKeyHash(address.PublicKey)
 
 	if usePublicKeyHash {
-		address.PublicKey = []byte{}
-		address.Version = SIMPLE_PUBLIC_KEY_HASH
+		publicKeyHash = cryptography.ComputePublicKeyHash(publicKey)
+		publicKey = []byte{}
+		version = SIMPLE_PUBLIC_KEY_HASH
 	} else {
-		address.Version = SIMPLE_PUBLIC_KEY
+		version = SIMPLE_PUBLIC_KEY
 	}
 
-	return
+	return NewAddr(config.NETWORK_SELECTED, version, publicKey, publicKeyHash, amount, paymentID)
 }
 
 func (pk *PrivateKey) Sign(message []byte) ([]byte, error) {
