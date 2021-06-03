@@ -42,24 +42,23 @@ func (hashMap *HashMap) Get(key string) (out []byte) {
 }
 
 func (hashMap *HashMap) get(key string, includeChanges bool) (out []byte) {
-	keyStr := string(key)
 
 	if includeChanges {
-		exists := hashMap.Changes[keyStr]
+		exists := hashMap.Changes[key]
 		if exists != nil {
 			out = exists.Data
 			return
 		}
 	}
 
-	exists2 := hashMap.Committed[keyStr]
+	exists2 := hashMap.Committed[key]
 	if exists2 != nil {
 		out = exists2.Data
 		return
 	}
 
 	out = hashMap.Tx.Get(key)
-	hashMap.Committed[keyStr] = &CommittedMapElement{
+	hashMap.Committed[key] = &CommittedMapElement{
 		out,
 		"view",
 		"",
@@ -68,20 +67,19 @@ func (hashMap *HashMap) get(key string, includeChanges bool) (out []byte) {
 }
 
 func (hashMap *HashMap) Exists(key string) bool {
-	keyStr := string(key)
 
-	exists := hashMap.Changes[keyStr]
+	exists := hashMap.Changes[key]
 	if exists != nil {
 		return exists.Data != nil
 	}
 
-	exists2 := hashMap.Committed[keyStr]
+	exists2 := hashMap.Committed[key]
 	if exists2 != nil {
 		return exists2.Data != nil
 	}
 
 	out := hashMap.Tx.Get(key)
-	hashMap.Committed[keyStr] = &CommittedMapElement{
+	hashMap.Committed[key] = &CommittedMapElement{
 		out,
 		"view",
 		"",
@@ -90,11 +88,10 @@ func (hashMap *HashMap) Exists(key string) bool {
 }
 
 func (hashMap *HashMap) Update(key string, data []byte) {
-	keyStr := string(key)
-	exists := hashMap.Changes[keyStr]
+	exists := hashMap.Changes[key]
 	if exists == nil {
 		exists = new(ChangesMapElement)
-		hashMap.Changes[keyStr] = exists
+		hashMap.Changes[key] = exists
 	}
 	exists.Status = "update"
 	exists.Data = data
@@ -102,11 +99,10 @@ func (hashMap *HashMap) Update(key string, data []byte) {
 }
 
 func (hashMap *HashMap) Delete(key string) {
-	keyStr := string(key)
-	exists := hashMap.Changes[keyStr]
+	exists := hashMap.Changes[key]
 	if exists == nil {
 		exists = new(ChangesMapElement)
-		hashMap.Changes[keyStr] = exists
+		hashMap.Changes[key] = exists
 	}
 	exists.Status = "del"
 	exists.Data = nil
