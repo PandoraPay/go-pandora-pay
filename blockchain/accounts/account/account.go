@@ -175,7 +175,7 @@ func (account *Account) CreateDelegatedStake(amount uint64, delegatedStakePublic
 	if account.HasDelegatedStake() {
 		return errors.New("It is already delegated")
 	}
-	if delegatedStakePublicKeyHash == nil || len(delegatedStakePublicKeyHash) != cryptography.KeyHashSize {
+	if delegatedStakePublicKeyHash == nil || len(delegatedStakePublicKeyHash) != cryptography.PublicKeyHashHashSize {
 		return errors.New("DelegatedStakePublicKeyHash is Invalid")
 	}
 	account.DelegatedStakeVersion = 1

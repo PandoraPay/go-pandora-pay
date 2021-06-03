@@ -115,7 +115,8 @@ func Initialize(startMainCb func()) {
 			}),
 		}),
 		"addresses": js.ValueOf(map[string]interface{}{
-			"decodeAddress": js.FuncOf(decodeAddress),
+			"decodeAddress":   js.FuncOf(decodeAddress),
+			"generateAddress": js.FuncOf(generateAddress),
 		}),
 		"cryptography": js.ValueOf(map[string]interface{}{
 			"computePublicKeyHash": js.FuncOf(computePublicKeyHash),

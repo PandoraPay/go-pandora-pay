@@ -18,6 +18,28 @@ type Address struct {
 	PaymentID     helpers.HexBytes `json:"paymentId"` // payment id
 }
 
+func CreateAddr(key []byte, amount uint64, paymentId []byte) (a *Address, err error) {
+
+	var publicKey, publicKeyHash []byte
+
+	var version AddressVersion
+	switch len(key) {
+	case cryptography.PublicKeyHashHashSize:
+		publicKeyHash = key
+		version = SIMPLE_PUBLIC_KEY_HASH
+	case cryptography.PublicKeySize:
+		publicKey = key
+		version = SIMPLE_PUBLIC_KEY
+	default:
+		err = errors.New("Invalid Key length")
+		return
+	}
+
+	a = &Address{config.NETWORK_SELECTED, version, publicKey, publicKeyHash, amount, paymentId}
+
+	return
+}
+
 func (a *Address) EncodeAddr() string {
 
 	writer := helpers.NewBufferWriter()
@@ -108,11 +130,11 @@ func DecodeAddr(input string) (adr *Address, err error) {
 
 	switch adr.Version {
 	case SIMPLE_PUBLIC_KEY_HASH:
-		if adr.PublicKeyHash, err = reader.ReadBytes(20); err != nil {
+		if adr.PublicKeyHash, err = reader.ReadBytes(cryptography.PublicKeyHashHashSize); err != nil {
 			return
 		}
 	case SIMPLE_PUBLIC_KEY:
-		if adr.PublicKey, err = reader.ReadBytes(33); err != nil {
+		if adr.PublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
 			return
 		}
 		adr.PublicKeyHash = cryptography.ComputePublicKeyHash(adr.PublicKey)

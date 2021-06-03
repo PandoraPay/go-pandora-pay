@@ -148,8 +148,8 @@ func (chain *Blockchain) createNextBlockForForging() {
 		}
 
 	}
-	blk.Forger = make([]byte, 20)
-	blk.Signature = make([]byte, 65)
+	blk.Forger = make([]byte, cryptography.PublicKeyHashHashSize)
+	blk.Signature = make([]byte, cryptography.SignatureSize)
 
 	blkComplete := &block_complete.BlockComplete{
 		Block: blk,

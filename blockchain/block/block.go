@@ -155,10 +155,10 @@ func (blk *Block) Deserialize(reader *helpers.BufferReader) (err error) {
 	if blk.Timestamp, err = reader.ReadUvarint(); err != nil {
 		return
 	}
-	if blk.Forger, err = reader.ReadBytes(20); err != nil {
+	if blk.Forger, err = reader.ReadBytes(cryptography.PublicKeyHashHashSize); err != nil {
 		return
 	}
-	if blk.Signature, err = reader.ReadBytes(65); err != nil {
+	if blk.Signature, err = reader.ReadBytes(cryptography.SignatureSize); err != nil {
 		return
 	}
 	return

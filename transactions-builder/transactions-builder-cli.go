@@ -108,7 +108,7 @@ func (builder *TransactionsBuilder) initCLI() {
 
 		delegateNewPublicKeyHashGenerate := false
 
-		delegateNewPublicKeyHash, ok := gui.GUI.OutputReadBytes("Delegate New Public Key Hash. Use empty for not changing. Use '01' for generating a new one. ", []int{0, 1, cryptography.KeyHashSize})
+		delegateNewPublicKeyHash, ok := gui.GUI.OutputReadBytes("Delegate New Public Key Hash. Use empty for not changing. Use '01' for generating a new one. ", []int{0, 1, cryptography.PublicKeyHashHashSize})
 		if !ok {
 			return
 		}

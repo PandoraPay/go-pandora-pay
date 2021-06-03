@@ -97,14 +97,14 @@ func (worker *ForgingWorkerThread) forge() {
 
 				if n2 != n {
 					newSerialized := make([]byte, len(serialized)-n+n2)
-					copy(newSerialized, serialized[:-n-20])
+					copy(newSerialized, serialized[:-n-cryptography.PublicKeyHashHashSize])
 					serialized = newSerialized
 					n = n2
 				}
 
 				//optimized POS
-				copy(serialized[len(serialized)-20-n2:len(serialized)-20], buf)
-				copy(serialized[len(serialized)-20:], address.publicKeyHash)
+				copy(serialized[len(serialized)-cryptography.PublicKeyHashHashSize-n2:len(serialized)-cryptography.PublicKeyHashHashSize], buf)
+				copy(serialized[len(serialized)-cryptography.PublicKeyHashHashSize:], address.publicKeyHash)
 
 				kernelHash := cryptography.SHA3Hash(serialized)
 

@@ -2,6 +2,7 @@ package ecdsa
 
 import (
 	"github.com/stretchr/testify/assert"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"testing"
 )
@@ -16,7 +17,7 @@ func TestPrivateKeyPublicKeyCreation(t *testing.T) {
 
 	publicKey, err := ComputePublicKey(key)
 	assert.Nil(t, err, "Error generating key")
-	assert.Equal(t, len(publicKey), 33, "Generatated Public Key Key length is invalid")
+	assert.Equal(t, len(publicKey), cryptography.PublicKeySize, "Generatated Public Key Key length is invalid")
 
 }
 
@@ -32,11 +33,11 @@ func TestECDSASignVerify(t *testing.T) {
 
 	signature, err := Sign(message, privateKey)
 	assert.Nil(t, err, "Error signing")
-	assert.Equal(t, len(signature), 65, "Signing raised an error")
+	assert.Equal(t, len(signature), cryptography.SignatureSize, "Signing raised an error")
 
 	signature = signature[0:64]
 
-	emptySignature := helpers.EmptyBytes(64)
+	emptySignature := helpers.EmptyBytes(cryptography.SignatureSize)
 	assert.NotEqual(t, signature, emptySignature, "Signing is empty...")
 
 	publicKey, err := ComputePublicKey(key)

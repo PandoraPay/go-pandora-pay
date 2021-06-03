@@ -149,7 +149,7 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 
 	for k, v := range hashMap.Committed {
 
-		if len(k) != 20 {
+		if len(k) != hashMap.KeyLength {
 			return errors.New("key length is invalid")
 		}
 

@@ -1,6 +1,9 @@
 package transaction_simple
 
-import "pandora-pay/helpers"
+import (
+	"pandora-pay/cryptography"
+	"pandora-pay/helpers"
+)
 
 type TransactionSimpleOutput struct {
 	PublicKeyHash helpers.HexBytes `json:"publicKeyHash"` //20
@@ -15,7 +18,7 @@ func (vout *TransactionSimpleOutput) Serialize(writer *helpers.BufferWriter) {
 }
 
 func (vout *TransactionSimpleOutput) Deserialize(reader *helpers.BufferReader) (err error) {
-	if vout.PublicKeyHash, err = reader.ReadBytes(20); err != nil {
+	if vout.PublicKeyHash, err = reader.ReadBytes(cryptography.PublicKeyHashHashSize); err != nil {
 		return
 	}
 	if vout.Amount, err = reader.ReadUvarint(); err != nil {

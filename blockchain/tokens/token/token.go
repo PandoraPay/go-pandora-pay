@@ -3,6 +3,7 @@ package token
 import (
 	"errors"
 	"math"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"regexp"
 )
@@ -159,10 +160,10 @@ func (token *Token) Deserialize(reader *helpers.BufferReader) (err error) {
 	if token.Supply, err = reader.ReadUvarint(); err != nil {
 		return
 	}
-	if token.Key, err = reader.ReadBytes(20); err != nil {
+	if token.Key, err = reader.ReadBytes(cryptography.PublicKeyHashHashSize); err != nil {
 		return
 	}
-	if token.SupplyKey, err = reader.ReadBytes(20); err != nil {
+	if token.SupplyKey, err = reader.ReadBytes(cryptography.PublicKeyHashHashSize); err != nil {
 		return
 	}
 	if token.Name, err = reader.ReadString(); err != nil {

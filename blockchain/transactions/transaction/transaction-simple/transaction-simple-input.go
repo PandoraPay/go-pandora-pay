@@ -1,6 +1,7 @@
 package transaction_simple
 
 import (
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
@@ -27,7 +28,7 @@ func (vin *TransactionSimpleInput) Deserialize(reader *helpers.BufferReader) (er
 	if vin.Token, err = reader.ReadToken(); err != nil {
 		return err
 	}
-	if vin.Signature, err = reader.ReadBytes(65); err != nil {
+	if vin.Signature, err = reader.ReadBytes(cryptography.SignatureSize); err != nil {
 		return err
 	}
 	return

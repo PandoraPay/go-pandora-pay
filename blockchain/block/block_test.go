@@ -31,7 +31,7 @@ func TestBlock_Serialize(t *testing.T) {
 		PrevKernelHash: prevKernelHash,
 		Forger:         publicKeyHash,
 		Timestamp:      uint64(time.Now().Unix()),
-		Signature:      make([]byte, 65),
+		Signature:      make([]byte, cryptography.SignatureSize),
 	}
 
 	buf := blk.Serialize()
@@ -63,7 +63,7 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 		PrevKernelHash: prevKernelHash,
 		Forger:         publicKeyHash,
 		Timestamp:      uint64(time.Now().Unix()),
-		Signature:      make([]byte, 65),
+		Signature:      make([]byte, cryptography.SignatureSize),
 	}
 
 	hash := blk.SerializeForSigning()
@@ -72,7 +72,7 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 	signature, err = privateKey.Sign(hash)
 	assert.NoError(t, err, "Signing raised an error")
 
-	assert.NotEqual(t, signature, helpers.EmptyBytes(65), "Invalid signature")
+	assert.NotEqual(t, signature, helpers.EmptyBytes(cryptography.SignatureSize), "Invalid signature")
 	blk.Signature = signature
 
 	assert.Equal(t, blk.VerifySignatureManually(), true, "Signature Validation failed")

@@ -34,7 +34,7 @@ func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, 
 }
 
 func (tx *TransactionSimpleDelegate) Validate() error {
-	if tx.HasNewPublicKeyHash && len(tx.NewPublicKeyHash) != cryptography.KeyHashSize {
+	if tx.HasNewPublicKeyHash && len(tx.NewPublicKeyHash) != cryptography.PublicKeyHashHashSize {
 		return errors.New("New Public Key Hash length is invalid")
 	}
 	if !tx.HasNewPublicKeyHash && len(tx.NewPublicKeyHash) != 0 {
@@ -59,7 +59,7 @@ func (tx *TransactionSimpleDelegate) Deserialize(reader *helpers.BufferReader) (
 		return
 	}
 	if tx.HasNewPublicKeyHash {
-		if tx.NewPublicKeyHash, err = reader.ReadBytes(20); err != nil {
+		if tx.NewPublicKeyHash, err = reader.ReadBytes(cryptography.PublicKeyHashHashSize); err != nil {
 			return
 		}
 	}
