@@ -23,9 +23,8 @@ func TestBlock_Serialize(t *testing.T) {
 
 	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
 
-	blockHeader := BlockHeader{Version: 0, Height: 0}
 	blk := Block{
-		BlockHeader:    blockHeader,
+		BlockHeader:    &BlockHeader{Version: 0, Height: 0},
 		MerkleHash:     merkleHash,
 		PrevHash:       prevHash,
 		PrevKernelHash: prevKernelHash,
@@ -34,16 +33,16 @@ func TestBlock_Serialize(t *testing.T) {
 		Signature:      make([]byte, cryptography.SignatureSize),
 	}
 
-	buf := blk.Serialize()
+	buf := blk.SerializeToBytes()
 	assert.Equal(t, len(buf) < 30, false, "Invalid serialization")
 
-	blk2 := Block{}
+	blk2 := &Block{BlockHeader: &BlockHeader{}}
 
 	reader := helpers.NewBufferReader(buf)
 	err = blk2.Deserialize(reader)
 	assert.NoError(t, err, "Error...?")
 
-	assert.Equal(t, blk2.Serialize(), blk.Serialize(), "Serialization/Deserialization doesn't work")
+	assert.Equal(t, blk2.SerializeToBytes(), blk.SerializeToBytes(), "Serialization/Deserialization doesn't work")
 
 }
 
@@ -55,7 +54,7 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 
 	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
 
-	blockHeader := BlockHeader{Version: 0, Height: 0}
+	blockHeader := &BlockHeader{Version: 0, Height: 0}
 	blk := Block{
 		BlockHeader:    blockHeader,
 		MerkleHash:     merkleHash,
@@ -75,14 +74,5 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 	assert.NotEqual(t, signature, helpers.EmptyBytes(cryptography.SignatureSize), "Invalid signature")
 	blk.Signature = signature
 
-	assert.Equal(t, blk.VerifySignatureManually(), true, "Signature Validation failed")
-
-	if blk.Signature[7] == 0 {
-		blk.Signature[7] = 5
-	} else {
-		blk.Signature[7] = 0
-	}
-
-	assert.Equal(t, blk.VerifySignatureManually(), false, "Changed Signature Validation failed")
-
+	assert.Equal(t, true, blk.VerifySignatureManually(), "Signature Validation failed")
 }

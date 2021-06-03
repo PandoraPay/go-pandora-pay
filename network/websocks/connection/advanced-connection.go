@@ -8,23 +8,11 @@ import (
 	"github.com/tevino/abool"
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
+	"pandora-pay/network/websocks/connection/subscription"
 	"sync"
 	"sync/atomic"
 	"time"
 )
-
-type AdvancedConnectionMessage struct {
-	ReplyId     uint32
-	ReplyStatus bool
-	ReplyAwait  bool
-	Name        []byte
-	Data        []byte
-}
-
-type AdvancedConnectionAnswer struct {
-	Out []byte
-	Err error
-}
 
 type AdvancedConnection struct {
 	Conn           *websocket.Conn
@@ -36,7 +24,8 @@ type AdvancedConnection struct {
 	IsClosed       *abool.AtomicBool
 	getMap         map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
 	answerMap      map[uint32]chan *AdvancedConnectionAnswer
-	answerMapLock  *sync.RWMutex `json:"-"`
+	answerMapLock  *sync.RWMutex
+	Subscriptions  *subscription.Subscriptions
 	ConnectionType bool
 }
 
@@ -306,6 +295,7 @@ func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, getMap ma
 		getMap:         getMap,
 		answerMap:      make(map[uint32]chan *AdvancedConnectionAnswer),
 		answerMapLock:  &sync.RWMutex{},
+		Subscriptions:  &subscription.Subscriptions{},
 		ConnectionType: connectionType,
 	}
 }

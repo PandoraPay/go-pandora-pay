@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
 	block_complete "pandora-pay/blockchain/block-complete"
 	block_info "pandora-pay/blockchain/block-info"
@@ -143,17 +142,9 @@ func (api *APICommon) GetTx(request *APITransactionRequest) (out []byte, err err
 
 func (api *APICommon) GetAccount(request *APIAccountRequest) (out []byte, err error) {
 
-	var publicKeyHash []byte
-	if request.Address != "" {
-		address, err := addresses.DecodeAddr(request.Address)
-		if err != nil {
-			return nil, errors.New("Invalid address")
-		}
-		publicKeyHash = address.PublicKeyHash
-	} else if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
-		publicKeyHash = request.Hash
-	} else {
-		return nil, errors.New("Invalid address")
+	publicKeyHash, err := request.GetPublicKeyHash()
+	if err != nil {
+		return
 	}
 
 	acc, err := api.ApiStore.LoadAccountFromPublicKeyHash(publicKeyHash)

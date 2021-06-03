@@ -1,6 +1,9 @@
 package api_common
 
 import (
+	"errors"
+	"pandora-pay/addresses"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
@@ -43,6 +46,23 @@ type APIAccountRequest struct {
 	Address    string           `json:"height"`
 	Hash       helpers.HexBytes `json:"hash"`
 	ReturnType APIReturnType    `json:"returnType"`
+}
+
+func (request *APIAccountRequest) GetPublicKeyHash() ([]byte, error) {
+	var publicKeyHash []byte
+	if request.Address != "" {
+		address, err := addresses.DecodeAddr(request.Address)
+		if err != nil {
+			return nil, errors.New("Invalid address")
+		}
+		publicKeyHash = address.PublicKeyHash
+	} else if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
+		publicKeyHash = request.Hash
+	} else {
+		return nil, errors.New("Invalid address")
+	}
+
+	return publicKeyHash, nil
 }
 
 type APITokenRequest struct {

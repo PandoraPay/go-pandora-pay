@@ -16,5 +16,8 @@ var (
 
 	DEV_NET_SEED_NODES = []url.URL{
 		{Scheme: "ws", Host: "127.0.0.1:5231", Path: "/ws"},
+		{Scheme: "ws", Host: "127.0.0.1:5232", Path: "/ws"},
+		{Scheme: "ws", Host: "127.0.0.1:5233", Path: "/ws"},
+		{Scheme: "ws", Host: "127.0.0.1:5234", Path: "/ws"},
 	}
 )
