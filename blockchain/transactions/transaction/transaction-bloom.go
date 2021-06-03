@@ -9,11 +9,11 @@ import (
 )
 
 type TransactionBloom struct {
-	Serialized helpers.HexBytes `json:"serialized"`
+	Serialized helpers.HexBytes `json:"-"`
 	Size       uint64           `json:"size"`
-	Hash       helpers.HexBytes `json:"hash"`
-	HashStr    string           `json:"-"`
-	bloomed    bool             `json:"bloomed"`
+	Hash       helpers.HexBytes `json:"-"`
+	HashStr    string           `json:"hash"`
+	bloomed    bool
 }
 
 func (tx *Transaction) BloomNow() {

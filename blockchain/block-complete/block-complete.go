@@ -14,8 +14,8 @@ import (
 
 type BlockComplete struct {
 	*block.Block
-	Txs   []*transaction.Transaction `json:"txs"`
-	Bloom *BlockCompleteBloom        `json:"bloom"`
+	Txs              []*transaction.Transaction `json:"txs"`
+	BloomBlkComplete *BlockCompleteBloom        `json:"bloomBlkComplete"`
 }
 
 func (blkComplete *BlockComplete) Validate() (err error) {
@@ -31,9 +31,11 @@ func (blkComplete *BlockComplete) Validate() (err error) {
 }
 
 func (blkComplete *BlockComplete) Verify() (err error) {
-	if err = blkComplete.VerifyBloomAll(); err != nil {
+
+	if err = blkComplete.BloomBlkComplete.verifyIfBloomed(); err != nil {
 		return
 	}
+
 	if err = blkComplete.Block.Verify(); err != nil {
 		return
 	}
@@ -98,7 +100,7 @@ func (blkComplete *BlockComplete) SerializeToBytes() []byte {
 
 func (blkComplete *BlockComplete) SerializeToBytesBloomed() []byte {
 	if blkComplete.Bloom != nil {
-		return blkComplete.Bloom.Serialized
+		return blkComplete.BloomBlkComplete.Serialized
 	}
 	return blkComplete.SerializeToBytes()
 }
@@ -130,7 +132,7 @@ func (blkComplete *BlockComplete) Deserialize(reader *helpers.BufferReader) (err
 
 	//we can bloom more efficiently if asked
 	serialized := reader.Buf[first:reader.Position]
-	blkComplete.Bloom = &BlockCompleteBloom{
+	blkComplete.BloomBlkComplete = &BlockCompleteBloom{
 		Serialized:  serialized,
 		Size:        uint64(len(serialized)),
 		bloomedSize: true,

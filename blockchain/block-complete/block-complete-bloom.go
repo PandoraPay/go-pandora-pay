@@ -34,41 +34,37 @@ func (blkComplete *BlockComplete) BloomAll() (err error) {
 
 func (blkComplete *BlockComplete) BloomNow() error {
 
-	if blkComplete.Bloom == nil {
-		blkComplete.Bloom = new(BlockCompleteBloom)
+	if blkComplete.BloomBlkComplete == nil {
+		blkComplete.BloomBlkComplete = new(BlockCompleteBloom)
 	}
 
-	if !blkComplete.Bloom.bloomedSize {
-		blkComplete.Bloom.Serialized = blkComplete.SerializeToBytes()
-		blkComplete.Bloom.Size = uint64(len(blkComplete.Bloom.Serialized))
-		blkComplete.Bloom.bloomedSize = true
+	if !blkComplete.BloomBlkComplete.bloomedSize {
+		blkComplete.BloomBlkComplete.Serialized = blkComplete.SerializeToBytes()
+		blkComplete.BloomBlkComplete.Size = uint64(len(blkComplete.BloomBlkComplete.Serialized))
+		blkComplete.BloomBlkComplete.bloomedSize = true
 	}
-	if !blkComplete.Bloom.bloomedMerkleTreeVerified {
-		blkComplete.Bloom.merkleTreeVerified = bytes.Equal(blkComplete.MerkleHash(), blkComplete.Block.MerkleHash)
-		if !blkComplete.Bloom.merkleTreeVerified {
+	if !blkComplete.BloomBlkComplete.bloomedMerkleTreeVerified {
+		blkComplete.BloomBlkComplete.merkleTreeVerified = bytes.Equal(blkComplete.MerkleHash(), blkComplete.Block.MerkleHash)
+		if !blkComplete.BloomBlkComplete.merkleTreeVerified {
 			return errors.New("Verify Merkle Hash failed")
 		}
-		blkComplete.Bloom.bloomedMerkleTreeVerified = true
+		blkComplete.BloomBlkComplete.bloomedMerkleTreeVerified = true
 	}
 
 	return nil
 }
 
-func (blkComplete *BlockComplete) VerifyBloomAll() error {
-	return blkComplete.Bloom.verifyIfBloomed()
-}
-
-func (bloom *BlockCompleteBloom) verifyIfBloomed() error {
-	if !bloom.bloomedSize || !bloom.bloomedMerkleTreeVerified {
+func (blkCompleteBloom *BlockCompleteBloom) verifyIfBloomed() error {
+	if !blkCompleteBloom.bloomedSize || !blkCompleteBloom.bloomedMerkleTreeVerified {
 		return errors.New("block complete was not bloomed")
 	}
-	if bloom.Serialized == nil {
+	if blkCompleteBloom.Serialized == nil {
 		return errors.New("block complete serialized was not read")
 	}
-	if bloom.Size == 0 {
+	if blkCompleteBloom.Size == 0 {
 		return errors.New("block complete size was not bloomed")
 	}
-	if !bloom.merkleTreeVerified {
+	if !blkCompleteBloom.merkleTreeVerified {
 		return errors.New("Verify Merkle Hash failed")
 	}
 	return nil

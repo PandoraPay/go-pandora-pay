@@ -105,7 +105,7 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		Hash:       blkComplete.Block.Bloom.Hash,
 		KernelHash: blkComplete.Block.Bloom.KernelHash,
 		Timestamp:  blkComplete.Block.Timestamp,
-		Size:       blkComplete.Bloom.Size,
+		Size:       blkComplete.BloomBlkComplete.Size,
 		TXs:        uint64(len(blkComplete.Txs)),
 		Forger:     blkComplete.Block.Forger,
 	})

@@ -29,7 +29,7 @@ func (blk *Block) Validate() error {
 }
 
 func (blk *Block) Verify() error {
-	return blk.VerifyBloomAll()
+	return blk.Bloom.verifyIfBloomed()
 }
 
 func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allFees map[string]uint64) (err error) {

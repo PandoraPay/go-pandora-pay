@@ -44,10 +44,6 @@ func (blk *Block) BloomNow() (err error) {
 	return
 }
 
-func (blk *Block) VerifyBloomAll() error {
-	return blk.Bloom.verifyIfBloomed()
-}
-
 func (bloom *BlockBloom) verifyIfBloomed() error {
 	if !bloom.bloomed {
 		return errors.New("Bloom was not validated")
