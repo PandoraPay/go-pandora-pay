@@ -22,7 +22,7 @@ type Websockets struct {
 	AllList                      *atomic.Value //[]*connection.AdvancedConnection
 	AllListMutex                 *sync.Mutex
 	Clients                      int64
-	ServerClients                int64
+	ServerSockets                int64
 	TotalSockets                 int64
 	UpdateNewConnectionMulticast *multicast.MulticastChannel
 	ApiWebsockets                *api_websockets.APIWebsockets
@@ -84,7 +84,7 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 	websockets.AllListMutex.Unlock()
 
 	if conn.ConnectionType {
-		atomic.AddInt64(&websockets.ServerClients, -1)
+		atomic.AddInt64(&websockets.ServerSockets, -1)
 	} else {
 		atomic.AddInt64(&websockets.Clients, -1)
 	}
@@ -123,7 +123,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	websockets.AllListMutex.Unlock()
 
 	if conn.ConnectionType {
-		atomic.AddInt64(&websockets.ServerClients, +1)
+		atomic.AddInt64(&websockets.ServerSockets, +1)
 	} else {
 		atomic.AddInt64(&websockets.Clients, +1)
 	}
@@ -157,7 +157,7 @@ func CreateWebsockets(api *api_http.API, apiWebsockets *api_websockets.APIWebsoc
 	websockets := &Websockets{
 		AllAddresses:                 &sync.Map{},
 		Clients:                      0,
-		ServerClients:                0,
+		ServerSockets:                0,
 		AllList:                      &atomic.Value{},
 		AllListMutex:                 &sync.Mutex{},
 		UpdateNewConnectionMulticast: multicast.NewMulticastChannel(),
@@ -168,7 +168,7 @@ func CreateWebsockets(api *api_http.API, apiWebsockets *api_websockets.APIWebsoc
 
 	go func() {
 		for {
-			gui.GUI.InfoUpdate("sockets", strconv.FormatInt(atomic.LoadInt64(&websockets.Clients), 32)+" "+strconv.FormatInt(atomic.LoadInt64(&websockets.ServerClients), 32))
+			gui.GUI.InfoUpdate("sockets", strconv.FormatInt(atomic.LoadInt64(&websockets.Clients), 32)+" "+strconv.FormatInt(atomic.LoadInt64(&websockets.ServerSockets), 32))
 			time.Sleep(1 * time.Second)
 		}
 	}()

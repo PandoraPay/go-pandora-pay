@@ -13,6 +13,7 @@ import (
 	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/settings"
+	"sync/atomic"
 	"time"
 )
 
@@ -27,6 +28,11 @@ type Network struct {
 func (network *Network) execute() {
 
 	for {
+
+		if atomic.LoadInt64(&network.Websockets.Clients) >= config.WEBSOCKETS_NETWORK_CLIENTS_MAX {
+			time.Sleep(1000 * time.Millisecond)
+			continue
+		}
 
 		var knownNode *known_nodes.KnownNode
 		knownList := network.KnownNodes.KnownList.Load().([]*known_nodes.KnownNode)

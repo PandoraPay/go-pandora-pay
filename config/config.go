@@ -46,8 +46,8 @@ var (
 	NETWORK_SELECTED_BYTE_PREFIX   = MAIN_NET_NETWORK_BYTE_PREFIX
 	NETWORK_SELECTED_NAME          = MAIN_NET_NETWORK_NAME
 	NETWORK_SELECTED_SEEDS         = MAIN_NET_SEED_NODES
-	WEBSOCKETS_NETWORK_CLIENTS_MAX = 50
-	WEBSOCKETS_NETWORK_SERVER_MAX  = 500
+	WEBSOCKETS_NETWORK_CLIENTS_MAX = int64(50)
+	WEBSOCKETS_NETWORK_SERVER_MAX  = int64(500)
 )
 
 const (
@@ -104,14 +104,14 @@ func InitConfig() (err error) {
 		DEBUG = true
 	}
 
-	if globals.Arguments["--tcp-max-client"] != nil {
-		if WEBSOCKETS_NETWORK_CLIENTS_MAX, err = strconv.Atoi(globals.Arguments["--tcp-max-client"].(string)); err != nil {
+	if globals.Arguments["--tcp-max-clients"] != nil {
+		if WEBSOCKETS_NETWORK_CLIENTS_MAX, err = strconv.ParseInt(globals.Arguments["--tcp-max-clients"].(string), 10, 64); err != nil {
 			return
 		}
 	}
 
-	if globals.Arguments["--tcp-max-server"] != nil {
-		if WEBSOCKETS_NETWORK_SERVER_MAX, err = strconv.Atoi(globals.Arguments["--tcp-max-server"].(string)); err != nil {
+	if globals.Arguments["--tcp-max-server-sockets"] != nil {
+		if WEBSOCKETS_NETWORK_SERVER_MAX, err = strconv.ParseInt(globals.Arguments["--tcp-max-server-sockets"].(string), 10, 64); err != nil {
 			return
 		}
 	}
