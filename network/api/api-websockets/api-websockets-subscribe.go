@@ -31,7 +31,7 @@ func (api *APIWebsockets) subscribeAccount(conn *connection.AdvancedConnection, 
 		}
 	}
 
-	conn.Subscriptions.AddSubscription([]byte("account"), publicKeyHash, request.ReturnType)
+	conn.Subscriptions.AddSubscription(connection.SUBSCRIPTION_ACCOUNT, publicKeyHash, request.ReturnType)
 
 	return
 }

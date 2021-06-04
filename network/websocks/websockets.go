@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"nhooyr.io/websocket"
+	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
@@ -25,8 +26,10 @@ type Websockets struct {
 	ServerSockets                int64
 	TotalSockets                 int64
 	UpdateNewConnectionMulticast *multicast.MulticastChannel
+	UpdateAccounts               *multicast.MulticastChannel
+	UpdateTokens                 *multicast.MulticastChannel
 	ApiWebsockets                *api_websockets.APIWebsockets
-	newSubscription              chan *connection.SubscriptionNotification
+	subscriptions                *WebsocketSubscriptions
 	api                          *api_http.API
 }
 
@@ -95,7 +98,7 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 
 func (websockets *Websockets) NewConnection(c *websocket.Conn, addr string, connectionType bool) (conn *connection.AdvancedConnection, err error) {
 
-	conn = connection.CreateAdvancedConnection(c, addr, websockets.ApiWebsockets.GetMap, connectionType)
+	conn = connection.CreateAdvancedConnection(c, addr, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn)
 
 	if _, exists := websockets.AllAddresses.LoadOrStore(addr, conn); exists {
 		return nil, errors.New("Already connected")
@@ -157,7 +160,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	return nil
 }
 
-func CreateWebsockets(api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
+func CreateWebsockets(chain *blockchain.Blockchain, api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
 		AllAddresses:                 &sync.Map{},
@@ -168,20 +171,10 @@ func CreateWebsockets(api *api_http.API, apiWebsockets *api_websockets.APIWebsoc
 		UpdateNewConnectionMulticast: multicast.NewMulticastChannel(),
 		api:                          api,
 		ApiWebsockets:                apiWebsockets,
-		newSubscription:              make(chan *connection.SubscriptionNotification),
 	}
+	websockets.subscriptions = newWebsocketSubscriptions(websockets, chain)
+
 	websockets.AllList.Store([]*connection.AdvancedConnection{})
-
-	go func() {
-		for {
-
-			_, ok := <-websockets.newSubscription
-			if !ok {
-				return
-			}
-
-		}
-	}()
 
 	go func() {
 		for {

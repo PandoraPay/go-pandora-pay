@@ -28,7 +28,7 @@ func CreateHttpServer(chain *blockchain.Blockchain, settings *settings.Settings,
 	apiWebsockets := api_websockets.CreateWebsocketsAPI(apiStore, apiCommon, chain, mempool)
 	api := api_http.CreateAPI(apiStore, apiCommon, chain)
 
-	websockets := websocks.CreateWebsockets(api, apiWebsockets)
+	websockets := websocks.CreateWebsockets(chain, api, apiWebsockets)
 
 	server = &HttpServer{
 		websocketServer: websocks.CreateWebsocketServer(websockets),
