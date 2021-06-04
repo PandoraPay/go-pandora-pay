@@ -7,9 +7,7 @@ import (
 	"pandora-pay/app"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/config/globals"
 	"pandora-pay/helpers"
-	"pandora-pay/network"
 	api_common "pandora-pay/network/api/api-common"
 	"syscall/js"
 )

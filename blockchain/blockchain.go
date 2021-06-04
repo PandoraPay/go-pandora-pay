@@ -389,7 +389,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	return
 }
 
-func BlockchainInit(mempool *mempool.Mempool) (chain *Blockchain, err error) {
+func CreateBlockchain(mempool *mempool.Mempool) (chain *Blockchain, err error) {
 
 	gui.GUI.Log("Blockchain init...")
 
@@ -410,21 +410,28 @@ func BlockchainInit(mempool *mempool.Mempool) (chain *Blockchain, err error) {
 	chain.updatesQueue.chain = chain
 	chain.updatesQueue.processQueue()
 
+	return
+}
+
+func (chain *Blockchain) InitializeChain() (err error) {
+
+	chain.InitForging()
+
 	if err = chain.loadBlockchain(); err != nil {
-		gui.GUI.Log("Blockchain init...3_2")
 		if err.Error() != "Chain not found" {
 			return
 		}
 		if _, err = chain.init(); err != nil {
 			return
 		}
-		gui.GUI.Log("Blockchain init...3_3")
 		if err = chain.saveBlockchain(); err != nil {
 			return
 		}
 	}
+
 	chainData := chain.GetChainData()
 	chainData.updateChainInfo()
+
 	return
 }
 

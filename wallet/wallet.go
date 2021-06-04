@@ -3,7 +3,6 @@ package wallet
 import (
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/config"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
@@ -43,9 +42,9 @@ func createWallet(forging *forging.Forging, mempool *mempool.Mempool, updateAcco
 	}
 }
 
-func WalletInit(forging *forging.Forging, mempool *mempool.Mempool, updateAccounts *multicast.MulticastChannel) (wallet *Wallet, err error) {
+func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool) (wallet *Wallet, err error) {
 
-	wallet = createWallet(forging, mempool, updateAccounts)
+	wallet = createWallet(forging, mempool, nil)
 
 	if err = wallet.loadWallet(); err != nil {
 		if err.Error() != "Wallet doesn't exist" {
@@ -58,10 +57,16 @@ func WalletInit(forging *forging.Forging, mempool *mempool.Mempool, updateAccoun
 
 	wallet.initWalletCLI()
 
+	return
+}
+
+func (wallet *Wallet) InitializeWallet(updateAccounts *multicast.MulticastChannel) {
+	wallet.Lock()
+	defer wallet.Unlock()
+
+	wallet.updateAccounts = updateAccounts
+
 	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
 		go wallet.updateAccountsChanges()
 	}
-
-	gui.GUI.Log("Initialized Wallet")
-	return
 }

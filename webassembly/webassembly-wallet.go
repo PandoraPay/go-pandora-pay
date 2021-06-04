@@ -3,8 +3,6 @@ package webassembly
 import (
 	"encoding/hex"
 	"pandora-pay/app"
-	"pandora-pay/config/globals"
-	"pandora-pay/wallet"
 	"syscall/js"
 )
 

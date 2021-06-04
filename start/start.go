@@ -5,6 +5,7 @@ import (
 	"pandora-pay/app"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
+	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/debugging"
@@ -40,46 +41,51 @@ func startMain() {
 	}()
 
 	if err = gui.InitGUI(); err != nil {
-		panic(err)
+		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "GUI initialized")
 
 	if err = store.InitDB(); err != nil {
-		panic(err)
+		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "database initialized")
 
-	if app.Mempool, err = mempool.InitMemPool(); err != nil {
-		panic(err)
+	if app.Mempool, err = mempool.CreateMemPool(); err != nil {
+		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "mempool initialized")
 
-	if app.Chain, err = blockchain.BlockchainInit(app.Mempool); err != nil {
-		panic(err)
-	}
-
-	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
-
-	if app.Forging, err = forging.ForgingInit(app.Mempool, app.Chain.NextBlockCreatedCn, app.Chain.UpdateAccounts, app.Chain.ForgingSolutionCn); err != nil {
-		panic(err)
-	}
-
-	globals.MainEvents.BroadcastEvent("main", "forging initialized")
-
-	if app.Wallet, err = wallet.WalletInit(app.Forging, app.Mempool, app.Chain.UpdateAccounts); err != nil {
-		panic(err)
-	}
-
-	globals.MainEvents.BroadcastEvent("main", "wallet initialized")
-
-	if err = app.Wallet.InitializeWallet(); err != nil {
+	if app.Forging, err = forging.CreateForging(app.Mempool); err != nil {
 		return
 	}
-	app.Chain.InitForging()
+	globals.MainEvents.BroadcastEvent("main", "forging initialized")
+
+	if app.Wallet, err = wallet.CreateWallet(app.Forging, app.Mempool); err != nil {
+		return
+	}
+	globals.MainEvents.BroadcastEvent("main", "wallet initialized")
+
+	if app.Chain, err = blockchain.CreateBlockchain(app.Mempool); err != nil {
+		return
+	}
+	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
+
+	app.Wallet.InitializeWallet(app.Chain.UpdateAccounts)
+	app.Forging.InitializeForging(app.Chain.NextBlockCreatedCn, app.Chain.UpdateAccounts, app.Chain.ForgingSolutionCn)
+
+	if err = genesis.GenesisInit(app.Wallet); err != nil {
+		return
+	}
+
+	if err = app.Chain.InitializeChain(); err != nil {
+		return
+	}
 	app.Forging.StartForging()
+	if err = app.Wallet.StartWallet(); err != nil {
+	}
 
 	if app.Settings, err = settings.SettingsInit(); err != nil {
-		panic(err)
+		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "settings initialized")
 
@@ -87,14 +93,12 @@ func startMain() {
 	globals.MainEvents.BroadcastEvent("main", "transactions builder initialized")
 
 	if globals.Arguments["--new-devnet"] == true {
-
 		myTestnet := testnet.TestnetInit(app.Wallet, app.Mempool, app.Chain, app.TransactionsBuilder)
 		globals.Data["testnet"] = myTestnet
-
 	}
 
 	if app.Network, err = network.CreateNetwork(app.Settings, app.Chain, app.Mempool); err != nil {
-		panic(err)
+		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "network initialized")
 

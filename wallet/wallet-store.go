@@ -123,7 +123,7 @@ func (wallet *Wallet) loadWallet() error {
 	})
 }
 
-func (wallet *Wallet) InitializeWallet() error {
+func (wallet *Wallet) StartWallet() error {
 
 	wallet.Lock()
 	defer wallet.Unlock()

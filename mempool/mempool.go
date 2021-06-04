@@ -260,7 +260,7 @@ func (mempool *Mempool) RestartWork() {
 	mempool.newWork <- nil
 }
 
-func InitMemPool() (mempool *Mempool, err error) {
+func CreateMemPool() (mempool *Mempool, err error) {
 
 	gui.GUI.Log("MemPool init...")
 

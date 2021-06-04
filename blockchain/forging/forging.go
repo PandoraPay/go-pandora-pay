@@ -22,32 +22,36 @@ type Forging struct {
 	solutionCn         chan<- *block_complete.BlockComplete
 }
 
-func ForgingInit(mempool *mempool.Mempool, nextBlockCreated <-chan *forging_block_work.ForgingWork, updateAccounts *multicast.MulticastChannel, solutionCn chan<- *block_complete.BlockComplete) (forging *Forging, err error) {
+func CreateForging(mempool *mempool.Mempool) (forging *Forging, err error) {
 
 	forging = &Forging{
 		mempool:            mempool,
 		workCn:             nil,
 		started:            abool.New(),
-		solutionCn:         solutionCn,
-		nextBlockCreatedCn: nextBlockCreated,
+		solutionCn:         nil,
+		nextBlockCreatedCn: nil,
 		Wallet: &ForgingWallet{
-			addressesMap:   make(map[string]*ForgingWalletAddress),
-			updates:        &atomic.Value{},
-			updatesMutex:   &sync.Mutex{},
-			updateAccounts: updateAccounts,
+			addressesMap: make(map[string]*ForgingWalletAddress),
+			updates:      &atomic.Value{},
+			updatesMutex: &sync.Mutex{},
 		},
 	}
 
 	forging.Wallet.updates.Store([]*ForgingWalletAddressUpdate{})
+
+	return
+}
+
+func (forging *Forging) InitializeForging(nextBlockCreatedCn <-chan *forging_block_work.ForgingWork, updateAccounts *multicast.MulticastChannel, forgingSolutionCn chan<- *block_complete.BlockComplete) {
+	forging.nextBlockCreatedCn = nextBlockCreatedCn
+	forging.Wallet.updateAccounts = updateAccounts
+	forging.solutionCn = forgingSolutionCn
 
 	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
 		go forging.Wallet.updateAccountsChanges()
 		go forging.forgingNewWork()
 	}
 
-	gui.GUI.Log("Forging Init")
-
-	return
 }
 
 func (forging *Forging) StartForging() bool {
