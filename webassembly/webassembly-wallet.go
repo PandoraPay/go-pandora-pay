@@ -2,6 +2,7 @@ package webassembly
 
 import (
 	"encoding/hex"
+	"pandora-pay/app"
 	"pandora-pay/config/globals"
 	"pandora-pay/wallet"
 	"syscall/js"
@@ -9,16 +10,15 @@ import (
 
 func getWallet(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (out interface{}, err error) {
-		wallet := globals.Data["wallet"].(*wallet.Wallet)
-		wallet.RLock()
-		defer wallet.RUnlock()
-		return convertJSON(wallet)
+		app.Wallet.RLock()
+		defer app.Wallet.RUnlock()
+		return convertJSON(app.Wallet)
 	})
 }
 
 func getWalletAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (out interface{}, err error) {
-		addr, err := globals.Data["wallet"].(*wallet.Wallet).GetWalletAddressByEncodedAddress(args[0].String())
+		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[0].String())
 		if err != nil {
 			return
 		}
@@ -28,7 +28,7 @@ func getWalletAddress(this js.Value, args []js.Value) interface{} {
 
 func addNewWalletAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (out interface{}, err error) {
-		adr, err := globals.Data["wallet"].(*wallet.Wallet).AddNewAddress()
+		adr, err := app.Wallet.AddNewAddress()
 		if err != nil {
 			return
 		}
@@ -38,7 +38,7 @@ func addNewWalletAddress(this js.Value, args []js.Value) interface{} {
 
 func removeWalletAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
-		return globals.Data["wallet"].(*wallet.Wallet).RemoveAddress(0, args[0].String())
+		return app.Wallet.RemoveAddress(0, args[0].String())
 	})
 }
 
@@ -48,7 +48,7 @@ func importWalletPrivateKey(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return
 		}
-		adr, err := globals.Data["wallet"].(*wallet.Wallet).ImportPrivateKey("", key)
+		adr, err := app.Wallet.ImportPrivateKey("", key)
 		if err != nil {
 			return
 		}
@@ -58,13 +58,13 @@ func importWalletPrivateKey(this js.Value, args []js.Value) interface{} {
 
 func importWalletJSON(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (out interface{}, err error) {
-		return true, globals.Data["wallet"].(*wallet.Wallet).ImportWalletJSON([]byte(args[0].String()))
+		return true, app.Wallet.ImportWalletJSON([]byte(args[0].String()))
 	})
 }
 
 func importWalletAddressJSON(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (out interface{}, err error) {
-		adr, err := globals.Data["wallet"].(*wallet.Wallet).ImportWalletAddressJSON([]byte(args[0].String()))
+		adr, err := app.Wallet.ImportWalletAddressJSON([]byte(args[0].String()))
 		if err != nil {
 			return
 		}

@@ -411,20 +411,20 @@ func BlockchainInit(mempool *mempool.Mempool) (chain *Blockchain, err error) {
 	chain.updatesQueue.processQueue()
 
 	if err = chain.loadBlockchain(); err != nil {
+		gui.GUI.Log("Blockchain init...3_2")
 		if err.Error() != "Chain not found" {
 			return
 		}
 		if _, err = chain.init(); err != nil {
 			return
 		}
+		gui.GUI.Log("Blockchain init...3_3")
 		if err = chain.saveBlockchain(); err != nil {
 			return
 		}
 	}
-
 	chainData := chain.GetChainData()
 	chainData.updateChainInfo()
-
 	return
 }
 

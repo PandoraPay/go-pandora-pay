@@ -4,7 +4,8 @@ type SubscriptionType uint8
 
 const (
 	SUBSCRIPTION_ACCOUNT SubscriptionType = iota
-	SUBSCRIPTION_TOKEN   SubscriptionType = iota
+	SUBSCRIPTION_TOKEN
+	SUBSCRIPTION_TRANSACTIONS
 )
 
 type Subscription struct {

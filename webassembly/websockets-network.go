@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"pandora-pay/app"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/globals"
@@ -15,7 +16,7 @@ import (
 
 func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (out interface{}, err error) {
-		socket := globals.Data["network"].(*network.Network).Websockets.GetFirstSocket()
+		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
@@ -35,7 +36,7 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 
 func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (out interface{}, err error) {
-		socket := globals.Data["network"].(*network.Network).Websockets.GetFirstSocket()
+		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
@@ -71,7 +72,7 @@ func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 
 func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (out interface{}, err error) {
-		socket := globals.Data["network"].(*network.Network).Websockets.GetFirstSocket()
+		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
