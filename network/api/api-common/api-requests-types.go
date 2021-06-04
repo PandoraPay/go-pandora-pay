@@ -43,7 +43,7 @@ type APITransactionRequest struct {
 }
 
 type APIAccountRequest struct {
-	Address    string           `json:"height"`
+	Address    string           `json:"address"`
 	Hash       helpers.HexBytes `json:"hash"`
 	ReturnType APIReturnType    `json:"returnType"`
 }
@@ -56,7 +56,7 @@ func (request *APIAccountRequest) GetPublicKeyHash() ([]byte, error) {
 			return nil, errors.New("Invalid address")
 		}
 		publicKeyHash = address.PublicKeyHash
-	} else if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
+	} else if request.Hash != nil && len(request.Hash) == cryptography.PublicKeyHashHashSize {
 		publicKeyHash = request.Hash
 	} else {
 		return nil, errors.New("Invalid address")

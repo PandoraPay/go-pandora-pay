@@ -70,10 +70,9 @@ func (api *APICommon) GetBlockComplete(request *APIBlockCompleteRequest) (out []
 	} else {
 		blockComplete, err = api.ApiStore.LoadBlockCompleteFromHeight(request.Height)
 	}
-	if err != nil {
+	if err != nil || blockComplete == nil {
 		return
 	}
-
 	if request.ReturnType == RETURN_SERIALIZED {
 		return blockComplete.SerializeToBytesBloomed(), nil
 	}
@@ -87,7 +86,7 @@ func (api *APICommon) GetBlock(request *APIBlockRequest) (out []byte, err error)
 	} else {
 		block, err = api.ApiStore.LoadBlockWithTXsFromHeight(request.Height)
 	}
-	if err != nil {
+	if err != nil || block == nil {
 		return
 	}
 	return json.Marshal(block)
@@ -100,7 +99,7 @@ func (api *APICommon) GetBlockInfo(request *APIBlockRequest) (out []byte, err er
 	} else {
 		blockInfo, err = api.ApiStore.LoadBlockInfoFromHeight(request.Height)
 	}
-	if err != nil {
+	if err != nil || blockInfo == nil {
 		return
 	}
 	return json.Marshal(blockInfo)
@@ -121,7 +120,7 @@ func (api *APICommon) GetTx(request *APITransactionRequest) (out []byte, err err
 	} else {
 		tx, err = api.ApiStore.LoadTxFromHeight(request.Height)
 	}
-	if err != nil {
+	if err != nil || tx == nil {
 		return
 	}
 
@@ -148,7 +147,7 @@ func (api *APICommon) GetAccount(request *APIAccountRequest) (out []byte, err er
 	}
 
 	acc, err := api.ApiStore.LoadAccountFromPublicKeyHash(publicKeyHash)
-	if err != nil {
+	if err != nil || acc == nil {
 		return
 	}
 
@@ -160,7 +159,7 @@ func (api *APICommon) GetAccount(request *APIAccountRequest) (out []byte, err er
 
 func (api *APICommon) GetToken(request *APITokenRequest) (out []byte, err error) {
 	token, err := api.ApiStore.LoadTokenFromPublicKeyHash(request.Hash)
-	if err != nil {
+	if err != nil || token == nil {
 		return
 	}
 	if request.ReturnType == RETURN_SERIALIZED {

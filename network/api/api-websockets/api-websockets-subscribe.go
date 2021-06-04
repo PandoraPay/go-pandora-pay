@@ -23,11 +23,13 @@ func (api *APIWebsockets) subscribeAccount(conn *connection.AdvancedConnection, 
 		return
 	}
 
-	if request.ReturnType == api_common.RETURN_SERIALIZED {
-		out = acc.SerializeToBytes()
-	} else {
-		if out, err = json.Marshal(acc); err != nil {
-			return
+	if acc != nil {
+		if request.ReturnType == api_common.RETURN_SERIALIZED {
+			out = acc.SerializeToBytes()
+		} else {
+			if out, err = json.Marshal(acc); err != nil {
+				return
+			}
 		}
 	}
 

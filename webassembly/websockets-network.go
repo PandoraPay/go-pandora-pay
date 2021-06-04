@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/app"
+	"pandora-pay/blockchain/accounts/account"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	api_common "pandora-pay/network/api/api-common"
 	"syscall/js"
@@ -112,5 +114,37 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 			return
 		}
 		return convertJSON(final)
+	})
+}
+
+func subscribeNetworkAccount(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (out interface{}, err error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+
+		var hash []byte
+		if len(args) == 2 && len(args[1].String()) == 2*cryptography.PublicKeyHashHashSize {
+			if hash, err = hex.DecodeString(args[1].String()); err != nil {
+				return
+			}
+		}
+
+		data := socket.SendJSONAwaitAnswer([]byte("sub/account"), &api_common.APIAccountRequest{args[0].String(), hash, api_common.RETURN_SERIALIZED})
+		if data.Err != nil {
+			return nil, data.Err
+		}
+
+		if data.Out == nil {
+			return
+		}
+
+		acc := &account.Account{}
+		if err = acc.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
+			return
+		}
+
+		return convertJSON(acc)
 	})
 }

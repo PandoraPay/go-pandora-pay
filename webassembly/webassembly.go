@@ -125,6 +125,7 @@ func Initialize(startMainCb func()) {
 			"getNetworkBlockInfo":     js.FuncOf(getNetworkBlockInfo),
 			"getNetworkBlockComplete": js.FuncOf(getNetworkBlockComplete),
 			"getNetworkTransaction":   js.FuncOf(getNetworkTransaction),
+			"subscribeNetworkAccount": js.FuncOf(subscribeNetworkAccount),
 		}),
 		"enums": js.ValueOf(map[string]interface{}{
 			"transactions": js.ValueOf(map[string]interface{}{
