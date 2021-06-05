@@ -36,3 +36,8 @@ type APITransactionSerialized struct {
 	Tx      helpers.HexBytes `json:"tx"`
 	Mempool bool             `json:"mempool"`
 }
+
+type APISubscriptionNotification struct {
+	Key  helpers.HexBytes `json:"key"`
+	Data helpers.HexBytes `json:"tx"`
+}

@@ -8,6 +8,7 @@ require (
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mackerelio/go-osstat v0.1.0
+	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tevino/abool v1.2.0
 	github.com/tidwall/buntdb v1.2.3 // indirect

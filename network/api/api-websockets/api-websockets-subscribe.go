@@ -37,3 +37,8 @@ func (api *APIWebsockets) subscribeAccount(conn *connection.AdvancedConnection, 
 
 	return
 }
+
+func (api *APIWebsockets) subscribeAccountNotification(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
+
+	return
+}

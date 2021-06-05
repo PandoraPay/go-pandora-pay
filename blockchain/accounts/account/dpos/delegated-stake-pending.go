@@ -12,11 +12,10 @@ const (
 )
 
 type DelegatedStakePending struct {
-	helpers.SerializableInterface
-
-	PendingAmount    uint64                    //pending stake
-	ActivationHeight uint64                    //height when the stake pending was last updated
-	PendingType      DelegatedStakePendingType //true stake pending || false unstake pending
+	helpers.SerializableInterface `json:"-"`
+	PendingAmount                 uint64                    `json:"pendingAmount"`    //pending stake
+	ActivationHeight              uint64                    `json:"activationHeight"` //height when the stake pending was last updated
+	PendingType                   DelegatedStakePendingType `json:"pendingType"`      //true stake pending || false unstake pending
 }
 
 func (delegatedStakePending *DelegatedStakePending) Serialize(writer *helpers.BufferWriter) {

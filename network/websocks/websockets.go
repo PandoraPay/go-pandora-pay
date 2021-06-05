@@ -87,6 +87,8 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 	}
 	websockets.AllListMutex.Unlock()
 
+	websockets.subscriptions.websocketClosedCn <- conn
+
 	if conn.ConnectionType {
 		atomic.AddInt64(&websockets.ServerSockets, -1)
 	} else {
@@ -98,7 +100,9 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 
 func (websockets *Websockets) NewConnection(c *websocket.Conn, addr string, connectionType bool) (conn *connection.AdvancedConnection, err error) {
 
-	conn = connection.CreateAdvancedConnection(c, addr, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn)
+	if conn, err = connection.CreateAdvancedConnection(c, addr, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn); err != nil {
+		return
+	}
 
 	if _, exists := websockets.AllAddresses.LoadOrStore(addr, conn); exists {
 		return nil, errors.New("Already connected")

@@ -221,7 +221,9 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"mem-pool/tx-exists": api.getMempoolExists,
 		"mem-pool/new-tx":    api.getMempoolInsert,
 		"mem-pool/new-tx-id": api.getMempoolTxInsert,
+
 		"sub/account":        api.subscribeAccount,
+		"sub/account/notify": api.subscribeAccountNotification,
 	}
 
 	return &api

@@ -8,15 +8,9 @@ import (
 
 type DelegatedStake struct {
 	helpers.SerializableInterface `json:"-"`
-
-	//public key for delegation
-	DelegatedPublicKeyHash helpers.HexBytes `json:"delegatedPublicKeyHash"` //20 bytes
-
-	//confirmed stake
-	StakeAvailable uint64 `json:"stakeAvailable"`
-
-	//Pending stakes
-	StakesPending []*DelegatedStakePending `json:"stakesPending"`
+	DelegatedPublicKeyHash        helpers.HexBytes         `json:"delegatedPublicKeyHash"` //public key for delegation  20 bytes
+	StakeAvailable                uint64                   `json:"stakeAvailable"`         //confirmed stake
+	StakesPending                 []*DelegatedStakePending `json:"stakesPending"`          //Pending stakes
 }
 
 func (dstake *DelegatedStake) AddStakeAvailable(sign bool, amount uint64) error {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	uuid "github.com/nu7hatch/gouuid"
 	"github.com/tevino/abool"
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
@@ -14,6 +15,7 @@ import (
 )
 
 type AdvancedConnection struct {
+	UUID           string
 	Conn           *websocket.Conn
 	Handshake      *ConnectionHandshake
 	Initialized    bool
@@ -283,8 +285,15 @@ func (c *AdvancedConnection) WritePump() {
 
 }
 
-func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error), connectionType bool, newSubscriptionCn chan<- *SubscriptionNotification) (advancedConnection *AdvancedConnection) {
+func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error), connectionType bool, newSubscriptionCn chan<- *SubscriptionNotification) (advancedConnection *AdvancedConnection, err error) {
+
+	u, err := uuid.NewV4()
+	if err != nil {
+		return
+	}
+
 	advancedConnection = &AdvancedConnection{
+		UUID:           u.String(),
 		Conn:           conn,
 		Handshake:      nil,
 		RemoteAddr:     remoteAddr,

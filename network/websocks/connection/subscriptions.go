@@ -2,6 +2,7 @@ package connection
 
 import (
 	"errors"
+	api_common "pandora-pay/network/api/api-common"
 	"sync"
 )
 
@@ -13,7 +14,7 @@ type Subscriptions struct {
 	sync.Mutex
 }
 
-func (s *Subscriptions) AddSubscription(subscriptionType SubscriptionType, key []byte, option interface{}) (uint64, error) {
+func (s *Subscriptions) AddSubscription(subscriptionType SubscriptionType, key []byte, returnType api_common.APIReturnType) (uint64, error) {
 
 	s.Lock()
 	defer s.Unlock()
@@ -25,7 +26,7 @@ func (s *Subscriptions) AddSubscription(subscriptionType SubscriptionType, key [
 	s.index += 1
 	id := s.index
 
-	subscription := &Subscription{subscriptionType, id, key, option}
+	subscription := &Subscription{subscriptionType, id, key, returnType}
 	s.list = append(s.list, subscription)
 
 	s.newSubscriptionCn <- &SubscriptionNotification{subscription, s.conn}
