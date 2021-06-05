@@ -177,7 +177,6 @@ func (chain *Blockchain) InitForging() {
 
 			if err = blkComplete.BloomAll(); err != nil {
 				gui.GUI.Error("Error blooming forged blkComplete", err)
-				chain.mempool.RestartWork()
 				continue
 			}
 
@@ -188,7 +187,6 @@ func (chain *Blockchain) InitForging() {
 				gui.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
 			} else if err != nil {
 				gui.GUI.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
-				chain.mempool.RestartWork()
 			}
 
 		}
@@ -198,6 +196,9 @@ func (chain *Blockchain) InitForging() {
 	go func() {
 		time.Sleep(1 * time.Second) //it must be 1 second later to be sure that the forger is listening
 		chain.createNextBlockForForging()
+
+		chainData := chain.GetChainData()
+		chain.mempool.UpdateWork(chainData.Hash, chainData.Height)
 	}()
 
 }

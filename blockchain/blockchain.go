@@ -100,6 +100,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	err = func() (err error) {
 
+		chain.mempool.SuspendProcessingCn <- struct{}{}
+
 		err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 			savedBlock := false
@@ -382,7 +384,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		update.insertedTxHashes = insertedTxHashes
 	}
 
-	chain.updatesQueue.updates <- update
+	chain.updatesQueue.updatesCn <- update
 
 	chain.mutex.Unlock()
 

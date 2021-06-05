@@ -1,7 +1,6 @@
 package mempool
 
 import (
-	"bytes"
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
@@ -10,8 +9,6 @@ import (
 	"pandora-pay/config/fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
-	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -25,46 +22,29 @@ type mempoolTx struct {
 	ChainHeight uint64                   `json:"chainHeight"`
 }
 
-type mempoolResult struct {
-	txs      *atomic.Value //[]*mempoolTx
-	txsMutex *sync.Mutex
-
-	txsErrors      *atomic.Value //[]*mempoolTx
-	txsErrorsMutex *sync.Mutex
-
-	totalSize uint64 //use atomic
-
-	chainHash   []byte //safe, readOnly 32bytes
-	chainHeight uint64 //safe, readOnly
-}
-
-type mempoolTxs struct {
-	txsCount     int64         //use atomic
-	txsInserted  int64         //use atomic
-	txsList      *atomic.Value // []*mempoolTx
-	txsListMutex *sync.Mutex   // for writing
-}
-
 type Mempool struct {
-	txs                     *mempoolTxs                 `json:"-"`
-	result                  *atomic.Value               `json:"-"` //*mempoolResult
-	newWork                 chan *mempoolWork           `json:"-"`
+	result                  *atomic.Value               `json:"-"` //*MempoolResult
+	SuspendProcessingCn     chan struct{}               `json:"-"`
+	ContinueProcessingCn    chan *mempoolWork           `json:"-"`
+	AddTransactionCn        chan *MempoolWorkerAddTx    `json:"-"`
+	Txs                     *MempoolTxs                 `json:"-"`
 	Wallet                  *mempoolWallet              `json:"-"`
 	NewTransactionMulticast *multicast.MulticastChannel `json:"-"`
 }
 
 func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, propagateToSockets bool) (out bool, err error) {
-	return mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, propagateToSockets)
+	result, err := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, propagateToSockets)
+	return result[0], err
 }
 
 func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, height uint64) (out bool, err error, finalTxs []*mempoolTx) {
 
-	finalTxs = []*mempoolTx{}
+	finalTxs = make([]*mempoolTx, len(txs))
 
 	mempool.Wallet.Lock()
 	defer mempool.Wallet.Unlock()
 
-	for _, tx := range txs {
+	for i, tx := range txs {
 
 		if err = tx.VerifyBloomAll(); err != nil {
 			return
@@ -111,14 +91,14 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 		if selectedFeeToken == nil {
 			return false, errors.New("Transaction fee was not accepted"), nil
 		} else {
-			finalTxs = append(finalTxs, &mempoolTx{
+			finalTxs[i] = &mempoolTx{
 				Tx:          tx,
 				Added:       time.Now().Unix(),
 				FeePerByte:  selectedFee / tx.Bloom.Size,
 				FeeToken:    []byte(*selectedFeeToken),
 				Mine:        mine,
 				ChainHeight: height,
-			})
+			}
 		}
 
 	}
@@ -127,106 +107,35 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 	return
 }
 
-func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, propagateToSockets bool) (out bool, err error) {
+func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, propagateToSockets bool) (out []bool, err error) {
 
 	var finalTxs []*mempoolTx
-	if out, err, finalTxs = mempool.processTxsToMemPool(txs, height); err != nil {
+	if _, err, finalTxs = mempool.processTxsToMemPool(txs, height); err != nil {
 		return
 	}
 
-	if len(finalTxs) == 0 {
-		return false, errors.New("Transactions don't meet the criteria")
+	//making sure that the transaction is not inserted twice
+	out = make([]bool, len(finalTxs))
+	for i, tx := range finalTxs {
+		if tx != nil {
+			answerCn := make(chan bool)
+			mempool.AddTransactionCn <- &MempoolWorkerAddTx{
+				Tx:     tx,
+				Result: answerCn,
+			}
+			result := <-answerCn
+			out[i] = result
+		} else {
+			out[i] = false
+		}
 	}
 
-	toInsert := make([]*mempoolTx, 0)
-
-	mempool.txs.txsListMutex.Lock()
-
-	list := mempool.txs.txsList.Load().([]*mempoolTx)
-
-	for _, newTx := range finalTxs {
-
-		found := false
-		for _, existingTx := range list {
-			if bytes.Equal(existingTx.Tx.Bloom.Hash, newTx.Tx.Bloom.Hash) {
-				found = true
-				break
+	if propagateToSockets {
+		for i, result := range out {
+			if result {
+				mempool.NewTransactionMulticast.Broadcast(finalTxs[i].Tx)
 			}
 		}
-
-		if !found {
-			toInsert = append(toInsert, newTx)
-		}
-
-	}
-
-	if len(toInsert) > 0 {
-		list = append(list, toInsert...)
-		sortTxs(list)
-		mempool.txs.txsList.Store(list)
-	}
-	mempool.txs.txsListMutex.Unlock()
-
-	if len(toInsert) > 0 {
-		//making sure that the transaction is not inserted twice
-		atomic.AddInt64(&mempool.txs.txsCount, int64(len(toInsert)))
-		atomic.AddInt64(&mempool.txs.txsInserted, int64(len(toInsert)))
-
-		if propagateToSockets {
-			for _, tx := range toInsert {
-				mempool.NewTransactionMulticast.Broadcast(tx.Tx)
-			}
-		}
-	}
-
-	return true, nil
-}
-
-func (mempool *Mempool) Exists(txId []byte) *transaction.Transaction {
-	list := mempool.txs.txsList.Load().([]*mempoolTx)
-	for _, tx := range list {
-		if bytes.Equal(tx.Tx.Bloom.Hash, txId) {
-			return tx.Tx
-		}
-	}
-	return nil
-}
-
-func (mempool *Mempool) DeleteTx(txId []byte) *transaction.Transaction {
-	out := mempool.DeleteTxs([][]byte{txId})
-	if len(out) > 0 {
-		return out[0]
-	}
-	return nil
-}
-
-func (mempool *Mempool) DeleteTxs(txIds [][]byte) (out []*transaction.Transaction) {
-
-	mempool.txs.txsListMutex.Lock()
-	defer mempool.txs.txsListMutex.Unlock()
-
-	list := mempool.txs.txsList.Load().([]*mempoolTx)
-	finalList := make([]*mempoolTx, len(list))
-	copy(finalList[:], list[:])
-
-	out = []*transaction.Transaction{}
-
-	for _, txId := range txIds {
-		for i, tx := range finalList {
-			if bytes.Equal(tx.Tx.Bloom.Hash, txId) {
-
-				finalList[i] = finalList[len(finalList)-1]
-				finalList = finalList[:len(finalList)-1]
-
-				out = append(out, tx.Tx)
-				break
-			}
-		}
-	}
-
-	if len(out) > 0 {
-		mempool.txs.txsList.Store(finalList)
-		atomic.AddInt64(&mempool.txs.txsCount, -int64(len(out)))
 	}
 
 	return
@@ -235,29 +144,22 @@ func (mempool *Mempool) DeleteTxs(txIds [][]byte) (out []*transaction.Transactio
 //reset the forger
 func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
 
-	result := &mempoolResult{
-		txs:            &atomic.Value{},
-		txsMutex:       &sync.Mutex{},
-		txsErrors:      &atomic.Value{},
-		txsErrorsMutex: &sync.Mutex{},
-		totalSize:      0,
-		chainHash:      hash,
-		chainHeight:    height,
+	result := &MempoolResult{
+		txs:         &atomic.Value{},
+		totalSize:   0,
+		chainHash:   hash,
+		chainHeight: height,
 	}
-
-	result.txsErrors.Store([]*mempoolTx{})
 	result.txs.Store([]*mempoolTx{})
 
 	mempool.result.Store(result)
 
-	mempool.newWork <- &mempoolWork{
+	mempool.ContinueProcessingCn <- &mempoolWork{
 		chainHash:   hash,
 		chainHeight: height,
 		result:      result,
 	}
-}
-func (mempool *Mempool) RestartWork() {
-	mempool.newWork <- nil
+
 }
 
 func CreateMemPool() (mempool *Mempool, err error) {
@@ -265,40 +167,17 @@ func CreateMemPool() (mempool *Mempool, err error) {
 	gui.GUI.Log("MemPool init...")
 
 	mempool = &Mempool{
-		newWork: make(chan *mempoolWork),
-		result:  &atomic.Value{},
-		txs: &mempoolTxs{
-			txsList:      &atomic.Value{},
-			txsListMutex: &sync.Mutex{},
-		},
+		result:                  &atomic.Value{},
+		Txs:                     createMempoolTxs(),
+		SuspendProcessingCn:     make(chan struct{}),
+		ContinueProcessingCn:    make(chan *mempoolWork),
+		AddTransactionCn:        make(chan *MempoolWorkerAddTx),
 		Wallet:                  createMempoolWallet(),
 		NewTransactionMulticast: multicast.NewMulticastChannel(),
 	}
-	mempool.txs.txsList.Store([]*mempoolTx{})
-
-	if config.DEBUG {
-		go func() {
-			for {
-				mempool.print()
-				time.Sleep(60 * time.Second)
-			}
-		}()
-	}
-
-	go func() {
-		last := int64(0)
-		for {
-			txsCount := atomic.LoadInt64(&mempool.txs.txsCount)
-			if txsCount != last {
-				gui.GUI.Info2Update("mempool", strconv.FormatInt(txsCount, 10))
-				txsCount = last
-			}
-			time.Sleep(1 * time.Second)
-		}
-	}()
 
 	worker := new(mempoolWorker)
-	go worker.processing(mempool.newWork, mempool.txs)
+	go worker.processing(mempool.SuspendProcessingCn, mempool.ContinueProcessingCn, mempool.AddTransactionCn, mempool.Txs.addToListCn, mempool.Txs.removeFromListCn)
 
 	mempool.initCLI()
 

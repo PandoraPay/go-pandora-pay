@@ -27,13 +27,13 @@ type BlockchainUpdate struct {
 }
 
 type BlockchainUpdatesQueue struct {
-	updates chan *BlockchainUpdate //buffered
-	chain   *Blockchain
+	updatesCn chan *BlockchainUpdate //buffered
+	chain     *Blockchain
 }
 
 func createBlockchainUpdatesQueue() *BlockchainUpdatesQueue {
 	return &BlockchainUpdatesQueue{
-		updates: make(chan *BlockchainUpdate, 100),
+		updatesCn: make(chan *BlockchainUpdate, 100),
 	}
 }
 
@@ -80,9 +80,8 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		}
 	}
 
-	queue.chain.mempool.DeleteTxs(update.insertedTxHashes)
-
 	if !queue.hasAnySuccess(updates) {
+
 		//update work for mem pool
 		queue.chain.mempool.UpdateWork(update.newChainData.Hash, update.newChainData.Height)
 
@@ -115,7 +114,7 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 
 		for {
 
-			update, ok := <-queue.updates
+			update, ok := <-queue.updatesCn
 			if !ok {
 				return
 			}
@@ -126,7 +125,7 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 			finished := false
 			for !finished {
 				select {
-				case newUpdate, ok := <-queue.updates:
+				case newUpdate, ok := <-queue.updatesCn:
 					if !ok {
 						return
 					}

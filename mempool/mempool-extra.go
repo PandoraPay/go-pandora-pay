@@ -2,24 +2,17 @@ package mempool
 
 import (
 	"bytes"
-	"encoding/hex"
-	"fmt"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
-	"time"
+	"sort"
 )
-
-func (mempool *Mempool) GetTxsList() []*mempoolTx {
-	return mempool.txs.txsList.Load().([]*mempoolTx)
-}
 
 func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token []byte) (out uint64, err error) {
 
 	out = balance
-	txs := mempool.GetTxsList()
+	txs := mempool.Txs.GetTxsList()
 
 	for _, tx := range txs {
 		if tx.Tx.TxType == transaction_type.TX_SIMPLE {
@@ -47,7 +40,8 @@ func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token [
 }
 
 func (mempool *Mempool) ExistsTxSimpleVersion(publicKeyHash []byte, version transaction_simple.ScriptType) bool {
-	txs := mempool.GetTxsList()
+
+	txs := mempool.Txs.GetTxsList()
 	for _, tx := range txs {
 		if tx.Tx.TxType == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
@@ -61,7 +55,7 @@ func (mempool *Mempool) ExistsTxSimpleVersion(publicKeyHash []byte, version tran
 
 func (mempool *Mempool) CountInputTxs(publicKeyHash []byte) uint64 {
 
-	txs := mempool.GetTxsList()
+	txs := mempool.Txs.GetTxsList()
 
 	count := uint64(0)
 	for _, tx := range txs {
@@ -78,7 +72,7 @@ func (mempool *Mempool) CountInputTxs(publicKeyHash []byte) uint64 {
 
 func (mempool *Mempool) GetNonce(publicKeyHash []byte, nonce uint64) uint64 {
 
-	txs := mempool.GetTxsList()
+	txs := mempool.Txs.GetTxsList()
 
 	nonces := make(map[uint64]bool)
 	for _, tx := range txs {
@@ -105,10 +99,10 @@ func (mempool *Mempool) GetNextTransactionsToInclude(blockHeight uint64, chainHa
 
 	result := mempool.result.Load()
 	if result != nil {
-		res := result.(*mempoolResult)
+
+		res := result.(*MempoolResult)
 
 		if bytes.Equal(res.chainHash, chainHash) {
-
 			txs := res.txs.Load().([]*mempoolTx)
 			finaltxs := make([]*transaction.Transaction, len(txs))
 			for i, tx := range txs {
@@ -121,17 +115,13 @@ func (mempool *Mempool) GetNextTransactionsToInclude(blockHeight uint64, chainHa
 	return []*transaction.Transaction{}
 }
 
-func (mempool *Mempool) print() {
+func sortTxs(txList []*mempoolTx) {
+	sort.Slice(txList, func(i, j int) bool {
 
-	transactions := mempool.GetTxsList()
-	if len(transactions) == 0 {
-		return
-	}
+		if txList[i].FeePerByte == txList[j].FeePerByte && txList[i].Tx.TxType == transaction_type.TX_SIMPLE && txList[j].Tx.TxType == transaction_type.TX_SIMPLE {
+			return txList[i].Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce < txList[j].Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce
+		}
 
-	gui.GUI.Log("")
-	for _, out := range transactions {
-		gui.GUI.Log(fmt.Sprintf("%12s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC822), out.Tx.Bloom.Size, out.ChainHeight, hex.EncodeToString(out.Tx.Bloom.Hash[0:15])))
-	}
-	gui.GUI.Log("")
-
+		return txList[i].FeePerByte < txList[j].FeePerByte
+	})
 }

@@ -13,7 +13,7 @@ func (mempool *Mempool) initCLI() {
 
 	cliShowTxs := func(cmd string) (err error) {
 
-		transactions := mempool.GetTxsList()
+		transactions := mempool.Txs.GetTxsList()
 		if len(transactions) == 0 {
 			return
 		}

@@ -3,135 +3,121 @@ package mempool
 import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
-	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
-	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
-	"sort"
-	"sync/atomic"
-	"time"
 )
 
 type mempoolWork struct {
 	chainHash   []byte         `json:"-"` //32 byte
 	chainHeight uint64         `json:"-"`
-	result      *mempoolResult `json:"-"`
+	result      *MempoolResult `json:"-"`
 }
 
 type mempoolWorker struct {
-	work        *mempoolWork                                   `json:"-"`
-	workChanged bool                                           `json:"-"`
-	dbTx        store_db_interface.StoreDBTransactionInterface `json:"-"`
+	dbTx store_db_interface.StoreDBTransactionInterface `json:"-"`
 }
 
-func sortTxs(txList []*mempoolTx) {
-	sort.Slice(txList, func(i, j int) bool {
-
-		if txList[i].FeePerByte == txList[j].FeePerByte && txList[i].Tx.TxType == transaction_type.TX_SIMPLE && txList[j].Tx.TxType == transaction_type.TX_SIMPLE {
-			return txList[i].Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce < txList[j].Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce
-		}
-
-		return txList[i].FeePerByte < txList[j].FeePerByte
-	})
+type MempoolWorkerAddTx struct {
+	Tx     *mempoolTx
+	Result chan<- bool
 }
 
 //process the worker for transactions to prepare the transactions to the forger
 func (worker *mempoolWorker) processing(
-	newWork <-chan *mempoolWork, //SAFE
-	mempoolTxs *mempoolTxs, //NOT SAFE, need RLOCK!
+	suspendProcessingCn <-chan struct{},
+	continueProcessingCn <-chan *mempoolWork, //SAFE
+	addTransactionCn <-chan *MempoolWorkerAddTx,
+	addToListCn chan<- *mempoolTx,
+	removedFromListCn chan<- *mempoolTx,
 ) {
 
+	work := <-continueProcessingCn
+
 	var txList []*mempoolTx
-	var txMap map[string]bool
-	listIndex := -1
+	txMap := make(map[string]bool)
 
 	for {
 
+		if len(txList) > 1 {
+			sortTxs(txList)
+		}
+		listIndex := 0
+
 		//let's check hf the work has been changed
-		select {
-		case work, ok := <-newWork:
-			if !ok {
-				return
-			}
+		store.StoreBlockchain.DB.View(func(dbTx store_db_interface.StoreDBTransactionInterface) (err error) {
 
-			listIndex = -1
-			worker.work = work
-			worker.workChanged = true
-			txMap = make(map[string]bool)
+			accs := accounts.NewAccounts(dbTx)
+			toks := tokens.NewTokens(dbTx)
 
-		default:
-		}
+			var tx *mempoolTx
+			var newAddTx *MempoolWorkerAddTx
 
-		if worker.work == nil {
-			time.Sleep(100 * time.Millisecond)
-			continue
-		}
+			for {
+				select {
+				case <-suspendProcessingCn:
+					return nil
+				default:
 
-		txListAll := mempoolTxs.txsList.Load().([]*mempoolTx)
-		if worker.workChanged { //it is faster to copy first
-			txList = txListAll
-			worker.workChanged = false
-		} else {
-			for _, tx := range txListAll {
-				if !txMap[tx.Tx.Bloom.HashStr] {
-					txList = append(txList, tx)
-				}
-			}
-		}
-
-		if listIndex == len(txList)-1 {
-			time.Sleep(1000 * time.Millisecond)
-			continue
-		} else {
-
-			store.StoreBlockchain.DB.View(func(dbTx store_db_interface.StoreDBTransactionInterface) (err error) {
-
-				accs := accounts.NewAccounts(dbTx)
-				toks := tokens.NewTokens(dbTx)
-
-				for _, tx := range txList {
-
-					if txMap[tx.Tx.Bloom.HashStr] {
-						continue
+					if listIndex == len(txList) {
+						select {
+						case _, _ = <-suspendProcessingCn:
+							return nil
+						case newAddTx, _ = <-addTransactionCn:
+							tx = newAddTx.Tx
+							if txMap[tx.Tx.Bloom.HashStr] {
+								continue
+							}
+						}
+					} else {
+						tx = txList[listIndex]
+						listIndex += 1
+						newAddTx = nil
 					}
 
-					txMap[tx.Tx.Bloom.HashStr] = true
-					listIndex += 1
-					if err := tx.Tx.IncludeTransaction(worker.work.chainHeight, accs, toks); err != nil {
+					if err = tx.Tx.IncludeTransaction(work.chainHeight, accs, toks); err != nil {
 
 						accs.Rollback()
 						toks.Rollback()
 
-						worker.work.result.txsErrorsMutex.Lock()
-						txsErrors := worker.work.result.txsErrors.Load().([]*mempoolTx)
-						worker.work.result.txsErrors.Store(append(txsErrors, tx))
-						worker.work.result.txsErrorsMutex.Unlock()
+						if newAddTx != nil {
+							newAddTx.Result <- false
+						} else {
+							//removing
+							txList = append(txList[:listIndex-1], txList[listIndex:]...)
+							listIndex--
+							removedFromListCn <- tx
+						}
 
 					} else {
-						totalSize := atomic.LoadUint64(&worker.work.result.totalSize)
-						if totalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
-							worker.work.result.txsMutex.Lock()
 
-							totalSize = atomic.LoadUint64(&worker.work.result.totalSize) + tx.Tx.Bloom.Size
-							if totalSize < config.BLOCK_MAX_SIZE {
-								atomic.StoreUint64(&worker.work.result.totalSize, totalSize)
-								txs := worker.work.result.txs.Load().([]*mempoolTx)
-								worker.work.result.txs.Store(append(txs, tx))
-							}
+						if work.result.totalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
 
-							worker.work.result.txsMutex.Unlock()
+							work.result.totalSize += tx.Tx.Bloom.Size
+							work.result.txs.Store(append(work.result.txs.Load().([]*mempoolTx), tx))
+
 							accs.Commit()
 							toks.Commit()
+						}
+
+						if newAddTx != nil {
+
+							txList = append(txList, newAddTx.Tx)
+
+							listIndex += 1
+							newAddTx.Result <- true
+							addToListCn <- newAddTx.Tx
 						}
 
 					}
 
 				}
+			}
 
-				return nil
+		})
 
-			})
+		select {
+		case work = <-continueProcessingCn:
 
 		}
 
