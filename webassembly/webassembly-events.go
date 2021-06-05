@@ -85,7 +85,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					}
 				}
 
-				callback.Invoke(hex.EncodeToString(data.Key), string(output))
+				callback.Invoke(int(api_types.SUBSCRIPTION_ACCOUNT), hex.EncodeToString(data.Key), string(output))
 			}
 		}()
 

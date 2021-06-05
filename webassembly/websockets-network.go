@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/app"
+	"pandora-pay/blockchain/accounts/account"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
@@ -68,6 +69,32 @@ func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 	})
 }
 
+func getNetworkAccount(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (out interface{}, err error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+
+		var hash []byte
+		if hash, err = hex.DecodeString(args[0].String()); err != nil {
+			return
+		}
+
+		data := socket.SendJSONAwaitAnswer([]byte("account"), &api_types.APIAccountRequest{"", hash, api_types.RETURN_SERIALIZED})
+		if data.Out == nil || data.Err != nil {
+			return nil, data.Err
+		}
+
+		acc := &account.Account{}
+		if err = acc.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
+			return
+		}
+
+		return convertJSON(acc)
+	})
+}
+
 func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (out interface{}, err error) {
 		socket := app.Network.Websockets.GetFirstSocket()
@@ -127,8 +154,9 @@ func subscribeNetwork(this js.Value, args []js.Value) interface{} {
 			return
 		}
 
+		_ = &api_types.APISubscriptionRequest{key, api_types.SubscriptionType(args[1].Int()), api_types.RETURN_SERIALIZED}
 		data := socket.SendJSONAwaitAnswer([]byte("sub"), &api_types.APISubscriptionRequest{key, api_types.SubscriptionType(args[1].Int()), api_types.RETURN_SERIALIZED})
-		return data.Out, data.Err
+		return true, data.Err
 	})
 }
 
@@ -145,6 +173,6 @@ func unsubscribeNetwork(this js.Value, args []js.Value) interface{} {
 		}
 
 		data := socket.SendJSONAwaitAnswer([]byte("unsub"), &api_types.APIUnsubscription{key, api_types.SubscriptionType(args[1].Int())})
-		return data.Out, data.Err
+		return true, data.Err
 	})
 }

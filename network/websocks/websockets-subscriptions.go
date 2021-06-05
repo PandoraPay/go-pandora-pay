@@ -131,7 +131,7 @@ func (subs *WebsocketSubscriptions) processSubscriptions() {
 						}
 					}
 
-					subs.send([]byte("sub/account/notify"), []byte(k), list, acc)
+					subs.send([]byte("sub/notify"), []byte(k), list, acc)
 				}
 			}
 		case conn, ok := <-subs.websocketClosedCn:

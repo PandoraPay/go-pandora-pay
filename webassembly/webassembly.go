@@ -5,6 +5,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
+	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/address"
 	"syscall/js"
@@ -86,6 +87,7 @@ func Initialize(startMainCb func()) {
 			"getNetworkBlockInfo":     js.FuncOf(getNetworkBlockInfo),
 			"getNetworkBlockComplete": js.FuncOf(getNetworkBlockComplete),
 			"getNetworkTransaction":   js.FuncOf(getNetworkTransaction),
+			"getNetworkAccount":       js.FuncOf(getNetworkAccount),
 			"subscribeNetwork":        js.FuncOf(subscribeNetwork),
 			"unsubscribeNetwork":      js.FuncOf(unsubscribeNetwork),
 		}),
@@ -114,6 +116,15 @@ func Initialize(startMainCb func()) {
 				"address": js.ValueOf(map[string]interface{}{
 					"version": js.ValueOf(map[string]interface{}{
 						"VERSION_TRANSPARENT": js.ValueOf(int(wallet_address.VERSION_TRANSPARENT)),
+					}),
+				}),
+			}),
+			"api": js.ValueOf(map[string]interface{}{
+				"websockets": js.ValueOf(map[string]interface{}{
+					"subscriptionType": js.ValueOf(map[string]interface{}{
+						"SUBSCRIPTION_ACCOUNT":      js.ValueOf(int(api_types.SUBSCRIPTION_ACCOUNT)),
+						"SUBSCRIPTION_TOKEN":        js.ValueOf(int(api_types.SUBSCRIPTION_ACCOUNT)),
+						"SUBSCRIPTION_TRANSACTIONS": js.ValueOf(int(api_types.SUBSCRIPTION_ACCOUNT)),
 					}),
 				}),
 			}),
