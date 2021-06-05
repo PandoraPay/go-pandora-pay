@@ -28,16 +28,16 @@ type APIBlockchainSync struct {
 }
 
 type APITransaction struct {
-	Tx      *transaction.Transaction `json:"tx"`
-	Mempool bool                     `json:"mempool"`
+	Tx      *transaction.Transaction `json:"tx,omitempty"`
+	Mempool bool                     `json:"mempool,omitempty"`
 }
 
 type APITransactionSerialized struct {
-	Tx      helpers.HexBytes `json:"tx"`
-	Mempool bool             `json:"mempool"`
+	Tx      helpers.HexBytes `json:"tx,omitempty"`
+	Mempool bool             `json:"mempool,omitempty"`
 }
 
 type APISubscriptionNotification struct {
-	Key  helpers.HexBytes `json:"key"`
-	Data helpers.HexBytes `json:"tx"`
+	Key  helpers.HexBytes `json:"key,omitempty"`
+	Data helpers.HexBytes `json:"tx,omitempty"`
 }

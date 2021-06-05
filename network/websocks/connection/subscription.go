@@ -12,7 +12,6 @@ const (
 
 type Subscription struct {
 	Type       SubscriptionType
-	Id         uint64
 	Key        []byte
 	ReturnType api_common.APIReturnType
 }

@@ -26,29 +26,37 @@ func GetReturnType(s string, defaultValue APIReturnType) APIReturnType {
 }
 
 type APIBlockRequest struct {
-	Height uint64           `json:"height"`
-	Hash   helpers.HexBytes `json:"hash"`
+	Height uint64           `json:"height,omitempty"`
+	Hash   helpers.HexBytes `json:"hash,omitempty"`
 }
 
 type APIBlockCompleteRequest struct {
-	Height     uint64           `json:"height"`
-	Hash       helpers.HexBytes `json:"hash"`
-	ReturnType APIReturnType    `json:"returnType"`
+	Height     uint64           `json:"height,omitempty"`
+	Hash       helpers.HexBytes `json:"hash,omitempty"`
+	ReturnType APIReturnType    `json:"returnType,omitempty"`
 }
 
 type APITransactionRequest struct {
-	Height     uint64           `json:"height"`
-	Hash       helpers.HexBytes `json:"hash"`
-	ReturnType APIReturnType    `json:"returnType"`
+	Height     uint64           `json:"height,omitempty"`
+	Hash       helpers.HexBytes `json:"hash,omitempty"`
+	ReturnType APIReturnType    `json:"returnType,omitempty"`
+}
+
+type APIAccountRequestData struct {
+	Address string           `json:"address,omitempty"`
+	Hash    helpers.HexBytes `json:"hash,omitempty"`
 }
 
 type APIAccountRequest struct {
-	Address    string           `json:"address"`
-	Hash       helpers.HexBytes `json:"hash"`
-	ReturnType APIReturnType    `json:"returnType"`
+	APIAccountRequestData
+	ReturnType APIReturnType `json:"returnType,omitempty"`
 }
 
-func (request *APIAccountRequest) GetPublicKeyHash() ([]byte, error) {
+type APIAccountUnsubscribeRequest struct {
+	APIAccountRequestData
+}
+
+func (request *APIAccountRequestData) GetPublicKeyHash() ([]byte, error) {
 	var publicKeyHash []byte
 	if request.Address != "" {
 		address, err := addresses.DecodeAddr(request.Address)

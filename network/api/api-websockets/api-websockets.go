@@ -84,7 +84,7 @@ func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, 
 
 func (api *APIWebsockets) getAccount(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_common.APIAccountRequest{"", nil, api_common.RETURN_SERIALIZED}
+	request := &api_common.APIAccountRequest{api_common.APIAccountRequestData{"", nil}, api_common.RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
@@ -226,7 +226,8 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"mem-pool/new-tx-id": api.getMempoolTxInsert,
 
 		"sub/account":        api.subscribeAccount,
-		"sub/account/notify": api.subscribeAccountNotification,
+		"unsub/account":      api.unsubscribeAccount,
+		"sub/account/notify": api.subscribedAccountNotificationReceived,
 	}
 
 	return api

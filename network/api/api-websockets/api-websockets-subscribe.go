@@ -8,8 +8,8 @@ import (
 
 func (api *APIWebsockets) subscribeAccount(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
 
-	request := &api_common.APIAccountRequest{"", nil, api_common.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, &request); err != nil {
+	request := &api_common.APIAccountRequest{api_common.APIAccountRequestData{"", nil}, api_common.RETURN_SERIALIZED}
+	if err = json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
 
@@ -33,14 +33,11 @@ func (api *APIWebsockets) subscribeAccount(conn *connection.AdvancedConnection, 
 		}
 	}
 
-	if _, err = conn.Subscriptions.AddSubscription(connection.SUBSCRIPTION_ACCOUNT, publicKeyHash, request.ReturnType); err != nil {
-		return
-	}
-
+	err = conn.Subscriptions.AddSubscription(connection.SUBSCRIPTION_ACCOUNT, publicKeyHash, request.ReturnType)
 	return
 }
 
-func (api *APIWebsockets) subscribeAccountNotification(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
+func (api *APIWebsockets) subscribedAccountNotificationReceived(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
 
 	var notification *api_common.APISubscriptionNotification
 	if err = json.Unmarshal(values, &notification); err != nil {
@@ -48,6 +45,24 @@ func (api *APIWebsockets) subscribeAccountNotification(conn *connection.Advanced
 	}
 
 	api.AccountsChangesSubscriptionNotifications.Broadcast(notification)
+	return
 
+}
+
+func (api *APIWebsockets) unsubscribeAccount(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
+	var usubscribeRequest *api_common.APIAccountUnsubscribeRequest
+	if err = json.Unmarshal(values, &usubscribeRequest); err != nil {
+		return
+	}
+
+	publicKeyHash, err := usubscribeRequest.GetPublicKeyHash()
+	if err != nil {
+		return
+	}
+
+	out = []byte{0}
+	if conn.Subscriptions.RemoveSubscription(connection.SUBSCRIPTION_ACCOUNT, publicKeyHash) {
+		out = []byte{1}
+	}
 	return
 }

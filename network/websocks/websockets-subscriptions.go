@@ -15,13 +15,16 @@ type WebsocketSubscriptions struct {
 	chain                 *blockchain.Blockchain
 	websocketClosedCn     chan *connection.AdvancedConnection
 	newSubscriptionCn     chan *connection.SubscriptionNotification
+	removeSubscriptionCn  chan *connection.SubscriptionNotification
 	accountsSubscriptions map[string]map[string]*connection.SubscriptionNotification
 	tokensSubscriptions   map[string]map[string]*connection.SubscriptionNotification
 }
 
 func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockchain) (subs *WebsocketSubscriptions) {
 	subs = &WebsocketSubscriptions{
-		websockets, chain, make(chan *connection.AdvancedConnection), make(chan *connection.SubscriptionNotification),
+		websockets, chain, make(chan *connection.AdvancedConnection),
+		make(chan *connection.SubscriptionNotification),
+		make(chan *connection.SubscriptionNotification),
 		make(map[string]map[string]*connection.SubscriptionNotification),
 		make(map[string]map[string]*connection.SubscriptionNotification),
 	}
@@ -31,7 +34,7 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 	return
 }
 
-func (subs *WebsocketSubscriptions) send(apiRoute []byte, key string, list map[string]*connection.SubscriptionNotification, data helpers.SerializableInterface) {
+func (subs *WebsocketSubscriptions) send(apiRoute []byte, key []byte, list map[string]*connection.SubscriptionNotification, data helpers.SerializableInterface) {
 
 	var err error
 	var bytes []byte
@@ -40,13 +43,13 @@ func (subs *WebsocketSubscriptions) send(apiRoute []byte, key string, list map[s
 	for _, subNot := range list {
 
 		if data == nil {
-			subNot.Conn.Send([]byte("sub/account/up"), nil)
+			subNot.Conn.Send(key, nil)
 			continue
 		}
 
 		if subNot.Subscription.ReturnType == api_common.RETURN_SERIALIZED {
 			if serialized == nil {
-				serialized = &api_common.APISubscriptionNotification{[]byte(key), data.SerializeToBytes()}
+				serialized = &api_common.APISubscriptionNotification{key, data.SerializeToBytes()}
 			}
 			subNot.Conn.SendJSON(apiRoute, serialized)
 		} else if subNot.Subscription.ReturnType == api_common.RETURN_JSON {
@@ -54,7 +57,7 @@ func (subs *WebsocketSubscriptions) send(apiRoute []byte, key string, list map[s
 				if bytes, err = json.Marshal(data); err != nil {
 					panic(err)
 				}
-				marshalled = &api_common.APISubscriptionNotification{[]byte(key), bytes}
+				marshalled = &api_common.APISubscriptionNotification{key, bytes}
 			}
 			subNot.Conn.SendJSON(apiRoute, marshalled)
 		}
@@ -62,12 +65,19 @@ func (subs *WebsocketSubscriptions) send(apiRoute []byte, key string, list map[s
 	}
 }
 
+func (subs *WebsocketSubscriptions) getSubsMap(subscriptionType connection.SubscriptionType) (subsMap map[string]map[string]*connection.SubscriptionNotification) {
+	switch subscriptionType {
+	case connection.SUBSCRIPTION_ACCOUNT:
+		subsMap = subs.accountsSubscriptions
+	}
+	return
+}
+
 func (subs *WebsocketSubscriptions) processSubscriptions() {
 
 	var err error
 
 	updateAccountsCn := subs.chain.UpdateAccounts.AddListener()
-	//updateTokensCn := subs.chain.UpdateTokens.AddListener()
 
 	var subsMap map[string]map[string]*connection.SubscriptionNotification
 
@@ -79,11 +89,8 @@ func (subs *WebsocketSubscriptions) processSubscriptions() {
 				return
 			}
 
-			switch subscription.Subscription.Type {
-			case connection.SUBSCRIPTION_ACCOUNT:
-				subsMap = subs.accountsSubscriptions
-			case connection.SUBSCRIPTION_TOKEN:
-				subsMap = subs.tokensSubscriptions
+			if subsMap = subs.getSubsMap(subscription.Subscription.Type); subsMap == nil {
+				continue
 			}
 
 			keyStr := string(subscription.Subscription.Key)
@@ -91,6 +98,20 @@ func (subs *WebsocketSubscriptions) processSubscriptions() {
 				subsMap[keyStr] = make(map[string]*connection.SubscriptionNotification)
 			}
 			subsMap[keyStr][subscription.Conn.UUID] = subscription
+
+		case subscription, ok := <-subs.removeSubscriptionCn:
+			if !ok {
+				return
+			}
+
+			if subsMap = subs.getSubsMap(subscription.Subscription.Type); subsMap == nil {
+				continue
+			}
+
+			keyStr := string(subscription.Subscription.Key)
+			if subsMap[keyStr] != nil {
+				delete(subsMap[keyStr], subscription.Conn.UUID)
+			}
 
 		case accsData, ok := <-updateAccountsCn:
 			if !ok {
@@ -110,7 +131,7 @@ func (subs *WebsocketSubscriptions) processSubscriptions() {
 						}
 					}
 
-					subs.send([]byte("sub/account/notify"), k, list, acc)
+					subs.send([]byte("sub/account/notify"), []byte(k), list, acc)
 				}
 			}
 		case conn, ok := <-subs.websocketClosedCn:
@@ -123,11 +144,7 @@ func (subs *WebsocketSubscriptions) processSubscriptions() {
 					delete(value, conn.UUID)
 				}
 			}
-			for _, value := range subs.tokensSubscriptions {
-				if value[conn.UUID] != nil {
-					delete(value, conn.UUID)
-				}
-			}
+
 		}
 
 	}

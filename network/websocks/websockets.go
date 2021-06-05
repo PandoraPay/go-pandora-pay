@@ -100,7 +100,7 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 
 func (websockets *Websockets) NewConnection(c *websocket.Conn, addr string, connectionType bool) (conn *connection.AdvancedConnection, err error) {
 
-	if conn, err = connection.CreateAdvancedConnection(c, addr, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn); err != nil {
+	if conn, err = connection.CreateAdvancedConnection(c, addr, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn, websockets.subscriptions.removeSubscriptionCn); err != nil {
 		return
 	}
 
