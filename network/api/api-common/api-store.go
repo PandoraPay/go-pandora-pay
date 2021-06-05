@@ -13,6 +13,7 @@ import (
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
+	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"strconv"
@@ -62,7 +63,7 @@ func (apiStore *APIStore) LoadBlockCompleteFromHeight(blockHeight uint64) (blkCo
 	return
 }
 
-func (apiStore *APIStore) LoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *APIBlockWithTxs, errfinal error) {
+func (apiStore *APIStore) LoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *api_types.APIBlockWithTxs, errfinal error) {
 	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		blkWithTXs, err = apiStore.LoadBlockWithTxHashes(reader, hash)
 		return
@@ -90,7 +91,7 @@ func (apiStore *APIStore) LoadTxFromHeight(txHeight uint64) (tx *transaction.Tra
 	return
 }
 
-func (apiStore *APIStore) LoadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *APIBlockWithTxs, errfinal error) {
+func (apiStore *APIStore) LoadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *api_types.APIBlockWithTxs, errfinal error) {
 	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err := apiStore.chain.LoadBlockHash(reader, blockHeight)
 		if err != nil {
@@ -171,7 +172,7 @@ func (apiStore *APIStore) LoadBlockComplete(reader store_db_interface.StoreDBTra
 	}, nil
 }
 
-func (apiStore *APIStore) LoadBlockWithTxHashes(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (out *APIBlockWithTxs, err error) {
+func (apiStore *APIStore) LoadBlockWithTxHashes(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (out *api_types.APIBlockWithTxs, err error) {
 	blk, err := apiStore.chain.LoadBlock(reader, hash)
 	if blk == nil || err != nil {
 		return
@@ -188,7 +189,7 @@ func (apiStore *APIStore) LoadBlockWithTxHashes(reader store_db_interface.StoreD
 		txs[i] = txHash
 	}
 
-	return &APIBlockWithTxs{
+	return &api_types.APIBlockWithTxs{
 		Block: blk,
 		Txs:   txs,
 	}, nil

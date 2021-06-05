@@ -6,7 +6,7 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/helpers"
-	api_common "pandora-pay/network/api/api-common"
+	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection"
 )
 
@@ -38,7 +38,7 @@ func (subs *WebsocketSubscriptions) send(apiRoute []byte, key []byte, list map[s
 
 	var err error
 	var bytes []byte
-	var serialized, marshalled *api_common.APISubscriptionNotification
+	var serialized, marshalled *api_types.APISubscriptionNotification
 
 	for _, subNot := range list {
 
@@ -47,17 +47,17 @@ func (subs *WebsocketSubscriptions) send(apiRoute []byte, key []byte, list map[s
 			continue
 		}
 
-		if subNot.Subscription.ReturnType == api_common.RETURN_SERIALIZED {
+		if subNot.Subscription.ReturnType == api_types.RETURN_SERIALIZED {
 			if serialized == nil {
-				serialized = &api_common.APISubscriptionNotification{key, data.SerializeToBytes()}
+				serialized = &api_types.APISubscriptionNotification{key, data.SerializeToBytes()}
 			}
 			subNot.Conn.SendJSON(apiRoute, serialized)
-		} else if subNot.Subscription.ReturnType == api_common.RETURN_JSON {
+		} else if subNot.Subscription.ReturnType == api_types.RETURN_JSON {
 			if marshalled == nil {
 				if bytes, err = json.Marshal(data); err != nil {
 					panic(err)
 				}
-				marshalled = &api_common.APISubscriptionNotification{key, bytes}
+				marshalled = &api_types.APISubscriptionNotification{key, bytes}
 			}
 			subNot.Conn.SendJSON(apiRoute, marshalled)
 		}
@@ -65,9 +65,9 @@ func (subs *WebsocketSubscriptions) send(apiRoute []byte, key []byte, list map[s
 	}
 }
 
-func (subs *WebsocketSubscriptions) getSubsMap(subscriptionType connection.SubscriptionType) (subsMap map[string]map[string]*connection.SubscriptionNotification) {
+func (subs *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.SubscriptionType) (subsMap map[string]map[string]*connection.SubscriptionNotification) {
 	switch subscriptionType {
-	case connection.SUBSCRIPTION_ACCOUNT:
+	case api_types.SUBSCRIPTION_ACCOUNT:
 		subsMap = subs.accountsSubscriptions
 	}
 	return

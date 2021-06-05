@@ -9,7 +9,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/events"
-	api_common "pandora-pay/network/api/api-common"
+	"pandora-pay/network/api/api-common/api_types"
 	"sync/atomic"
 	"syscall/js"
 )
@@ -72,7 +72,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					return
 				}
 
-				data := dataValue.(*api_common.APISubscriptionNotification)
+				data := dataValue.(*api_types.APISubscriptionNotification)
 
 				var acc account.Account
 				var output []byte

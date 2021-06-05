@@ -10,6 +10,7 @@ import (
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api-common"
+	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"sync"
 )
@@ -54,7 +55,7 @@ func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []
 
 func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_common.APIBlockRequest{0, nil}
+	request := &api_types.APIBlockRequest{0, nil}
 	if err := json.Unmarshal(values, request); err != nil {
 		return nil, err
 	}
@@ -64,7 +65,7 @@ func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values [
 
 func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_common.APIBlockRequest{0, nil}
+	request := &api_types.APIBlockRequest{0, nil}
 	if err := json.Unmarshal(values, request); err != nil {
 		return nil, err
 	}
@@ -74,7 +75,7 @@ func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, valu
 
 func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_common.APIBlockCompleteRequest{0, nil, api_common.RETURN_SERIALIZED}
+	request := &api_types.APIBlockCompleteRequest{0, nil, api_types.RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
@@ -84,7 +85,7 @@ func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, 
 
 func (api *APIWebsockets) getAccount(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_common.APIAccountRequest{api_common.APIAccountRequestData{"", nil}, api_common.RETURN_SERIALIZED}
+	request := &api_types.APIAccountRequest{"", nil, api_types.RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
@@ -93,7 +94,7 @@ func (api *APIWebsockets) getAccount(conn *connection.AdvancedConnection, values
 }
 
 func (api *APIWebsockets) getToken(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_common.APITokenRequest{nil, api_common.RETURN_SERIALIZED}
+	request := &api_types.APITokenRequest{nil, api_types.RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
@@ -125,7 +126,7 @@ func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, 
 }
 
 func (api *APIWebsockets) getTx(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_common.APITransactionRequest{}
+	request := &api_types.APITransactionRequest{}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
@@ -170,11 +171,11 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 			return
 		}
 
-		result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_common.APIBlockCompleteRequest{0, values, api_common.RETURN_SERIALIZED})
+		result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APIBlockCompleteRequest{0, values, api_types.RETURN_SERIALIZED})
 
 		if result.Out != nil && result.Err == nil {
 
-			data := &api_common.APITransactionSerialized{}
+			data := &api_types.APITransactionSerialized{}
 			if err = json.Unmarshal(result.Out, data); err != nil {
 				return
 			}
@@ -225,9 +226,9 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"mem-pool/new-tx":    api.getMempoolInsert,
 		"mem-pool/new-tx-id": api.getMempoolTxInsert,
 
-		"sub/account":        api.subscribeAccount,
-		"unsub/account":      api.unsubscribeAccount,
-		"sub/account/notify": api.subscribedAccountNotificationReceived,
+		"sub":        api.subscribe,
+		"unsub":      api.unsubscribe,
+		"sub/notify": api.subscribedNotificationReceived,
 	}
 
 	return api

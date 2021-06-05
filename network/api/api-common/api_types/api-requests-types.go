@@ -1,10 +1,18 @@
-package api_common
+package api_types
 
 import (
 	"errors"
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+)
+
+type SubscriptionType uint8
+
+const (
+	SUBSCRIPTION_ACCOUNT SubscriptionType = iota
+	SUBSCRIPTION_TOKEN
+	SUBSCRIPTION_TRANSACTIONS
 )
 
 type APIReturnType uint8
@@ -42,21 +50,13 @@ type APITransactionRequest struct {
 	ReturnType APIReturnType    `json:"returnType,omitempty"`
 }
 
-type APIAccountRequestData struct {
-	Address string           `json:"address,omitempty"`
-	Hash    helpers.HexBytes `json:"hash,omitempty"`
-}
-
 type APIAccountRequest struct {
-	APIAccountRequestData
-	ReturnType APIReturnType `json:"returnType,omitempty"`
+	Address    string           `json:"address,omitempty"`
+	Hash       helpers.HexBytes `json:"hash,omitempty"`
+	ReturnType APIReturnType    `json:"returnType,omitempty"`
 }
 
-type APIAccountUnsubscribeRequest struct {
-	APIAccountRequestData
-}
-
-func (request *APIAccountRequestData) GetPublicKeyHash() ([]byte, error) {
+func (request *APIAccountRequest) GetPublicKeyHash() ([]byte, error) {
 	var publicKeyHash []byte
 	if request.Address != "" {
 		address, err := addresses.DecodeAddr(request.Address)
@@ -76,4 +76,20 @@ func (request *APIAccountRequestData) GetPublicKeyHash() ([]byte, error) {
 type APITokenRequest struct {
 	Hash       helpers.HexBytes `json:"hash"`
 	ReturnType APIReturnType    `json:"returnType"`
+}
+
+type APISubscriptionRequest struct {
+	Key        []byte           `json:"Key,omitempty"`
+	Type       SubscriptionType `json:"type,omitempty"`
+	ReturnType APIReturnType    `json:"returnType,omitempty"`
+}
+
+type APIUnsubscription struct {
+	Key  []byte           `json:"Key,omitempty"`
+	Type SubscriptionType `json:"type,omitempty"`
+}
+
+type APISubscriptionNotification struct {
+	Key  helpers.HexBytes `json:"key,omitempty"`
+	Data helpers.HexBytes `json:"tx,omitempty"`
 }

@@ -12,6 +12,7 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
+	"pandora-pay/network/api/api-common/api_types"
 	"sync/atomic"
 )
 
@@ -24,12 +25,12 @@ type APICommon struct {
 }
 
 func (api *APICommon) GetBlockchain() ([]byte, error) {
-	chain := api.localChain.Load().(*APIBlockchain)
+	chain := api.localChain.Load().(*api_types.APIBlockchain)
 	return json.Marshal(chain)
 }
 
 func (api *APICommon) GetBlockchainSync() ([]byte, error) {
-	sync := api.localChainSync.Load().(*APIBlockchainSync)
+	sync := api.localChainSync.Load().(*api_types.APIBlockchainSync)
 	return json.Marshal(sync)
 }
 
@@ -61,7 +62,7 @@ func (api *APICommon) GetTxHash(blockHeight uint64) (helpers.HexBytes, error) {
 	return api.ApiStore.LoadTxHash(blockHeight)
 }
 
-func (api *APICommon) GetBlockComplete(request *APIBlockCompleteRequest) (out []byte, err error) {
+func (api *APICommon) GetBlockComplete(request *api_types.APIBlockCompleteRequest) (out []byte, err error) {
 
 	var blockComplete *block_complete.BlockComplete
 
@@ -73,13 +74,13 @@ func (api *APICommon) GetBlockComplete(request *APIBlockCompleteRequest) (out []
 	if err != nil || blockComplete == nil {
 		return
 	}
-	if request.ReturnType == RETURN_SERIALIZED {
+	if request.ReturnType == api_types.RETURN_SERIALIZED {
 		return blockComplete.SerializeToBytesBloomed(), nil
 	}
 	return json.Marshal(blockComplete)
 }
 
-func (api *APICommon) GetBlock(request *APIBlockRequest) (out []byte, err error) {
+func (api *APICommon) GetBlock(request *api_types.APIBlockRequest) (out []byte, err error) {
 	var block interface{}
 	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
 		block, err = api.ApiStore.LoadBlockWithTXsFromHash(request.Hash)
@@ -92,7 +93,7 @@ func (api *APICommon) GetBlock(request *APIBlockRequest) (out []byte, err error)
 	return json.Marshal(block)
 }
 
-func (api *APICommon) GetBlockInfo(request *APIBlockRequest) (out []byte, err error) {
+func (api *APICommon) GetBlockInfo(request *api_types.APIBlockRequest) (out []byte, err error) {
 	var blockInfo *block_info.BlockInfo
 	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
 		blockInfo, err = api.ApiStore.LoadBlockInfoFromHash(request.Hash)
@@ -105,7 +106,7 @@ func (api *APICommon) GetBlockInfo(request *APIBlockRequest) (out []byte, err er
 	return json.Marshal(blockInfo)
 }
 
-func (api *APICommon) GetTx(request *APITransactionRequest) (out []byte, err error) {
+func (api *APICommon) GetTx(request *api_types.APITransactionRequest) (out []byte, err error) {
 
 	var tx *transaction.Transaction
 
@@ -124,13 +125,13 @@ func (api *APICommon) GetTx(request *APITransactionRequest) (out []byte, err err
 		return
 	}
 
-	if request.ReturnType == RETURN_SERIALIZED {
-		return json.Marshal(&APITransactionSerialized{
+	if request.ReturnType == api_types.RETURN_SERIALIZED {
+		return json.Marshal(&api_types.APITransactionSerialized{
 			Tx:      tx.SerializeToBytesBloomed(),
 			Mempool: mempool,
 		})
-	} else if request.ReturnType == RETURN_JSON {
-		return json.Marshal(&APITransaction{
+	} else if request.ReturnType == api_types.RETURN_JSON {
+		return json.Marshal(&api_types.APITransaction{
 			Tx:      tx,
 			Mempool: mempool,
 		})
@@ -139,7 +140,7 @@ func (api *APICommon) GetTx(request *APITransactionRequest) (out []byte, err err
 	}
 }
 
-func (api *APICommon) GetAccount(request *APIAccountRequest) (out []byte, err error) {
+func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) (out []byte, err error) {
 
 	publicKeyHash, err := request.GetPublicKeyHash()
 	if err != nil {
@@ -151,18 +152,18 @@ func (api *APICommon) GetAccount(request *APIAccountRequest) (out []byte, err er
 		return
 	}
 
-	if request.ReturnType == RETURN_SERIALIZED {
+	if request.ReturnType == api_types.RETURN_SERIALIZED {
 		return acc.SerializeToBytes(), nil
 	}
 	return json.Marshal(acc)
 }
 
-func (api *APICommon) GetToken(request *APITokenRequest) (out []byte, err error) {
+func (api *APICommon) GetToken(request *api_types.APITokenRequest) (out []byte, err error) {
 	token, err := api.ApiStore.LoadTokenFromPublicKeyHash(request.Hash)
 	if err != nil || token == nil {
 		return
 	}
-	if request.ReturnType == RETURN_SERIALIZED {
+	if request.ReturnType == api_types.RETURN_SERIALIZED {
 		return token.SerializeToBytes(), nil
 	}
 	return json.Marshal(token)
@@ -205,7 +206,7 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction) (out []byte
 
 //make sure it is safe to read
 func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.BlockchainDataUpdate) {
-	newLocalChain := &APIBlockchain{
+	newLocalChain := &api_types.APIBlockchain{
 		Height:            newChainDataUpdate.Update.Height,
 		Hash:              hex.EncodeToString(newChainDataUpdate.Update.Hash),
 		PrevHash:          hex.EncodeToString(newChainDataUpdate.Update.PrevHash),
@@ -221,7 +222,7 @@ func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.Blockch
 
 //make sure it is safe to read
 func (api *APICommon) readLocalBlockchainSync(SyncTime uint64) {
-	newLocalSync := &APIBlockchainSync{
+	newLocalSync := &api_types.APIBlockchainSync{
 		SyncTime: SyncTime,
 	}
 	api.localChainSync.Store(newLocalSync)

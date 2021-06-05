@@ -1,4 +1,4 @@
-package api_common
+package api_types
 
 import (
 	"pandora-pay/blockchain/block"
@@ -35,9 +35,4 @@ type APITransaction struct {
 type APITransactionSerialized struct {
 	Tx      helpers.HexBytes `json:"tx,omitempty"`
 	Mempool bool             `json:"mempool,omitempty"`
-}
-
-type APISubscriptionNotification struct {
-	Key  helpers.HexBytes `json:"key,omitempty"`
-	Data helpers.HexBytes `json:"tx,omitempty"`
 }

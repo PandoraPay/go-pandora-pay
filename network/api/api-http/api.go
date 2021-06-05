@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common"
+	"pandora-pay/network/api/api-common/api_types"
 	"strconv"
 )
 
@@ -37,8 +38,8 @@ func (api *API) getPing(values *url.Values) (interface{}, error) {
 
 func (api *API) getBlockComplete(values *url.Values) (out interface{}, err error) {
 
-	request := &api_common.APIBlockCompleteRequest{}
-	request.ReturnType = api_common.GetReturnType(values.Get("type"), api_common.RETURN_JSON)
+	request := &api_types.APIBlockCompleteRequest{}
+	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
 
 	if values.Get("height") != "" {
 		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
@@ -75,7 +76,7 @@ func (api *API) getBlockHash(values *url.Values) (out interface{}, err error) {
 
 func (api *API) getBlock(values *url.Values) (out interface{}, err error) {
 
-	request := &api_common.APIBlockRequest{}
+	request := &api_types.APIBlockRequest{}
 
 	if values.Get("height") != "" {
 		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
@@ -93,7 +94,7 @@ func (api *API) getBlock(values *url.Values) (out interface{}, err error) {
 
 func (api *API) getBlockInfo(values *url.Values) (out interface{}, err error) {
 
-	request := &api_common.APIBlockRequest{}
+	request := &api_types.APIBlockRequest{}
 
 	if values.Get("height") != "" {
 		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
@@ -111,8 +112,8 @@ func (api *API) getBlockInfo(values *url.Values) (out interface{}, err error) {
 
 func (api *API) getTx(values *url.Values) (out interface{}, err error) {
 
-	request := &api_common.APITransactionRequest{}
-	request.ReturnType = api_common.GetReturnType(values.Get("type"), api_common.RETURN_JSON)
+	request := &api_types.APITransactionRequest{}
+	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
 
 	if values.Get("height") != "" {
 		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
@@ -141,8 +142,8 @@ func (api *API) getTxHash(values *url.Values) (interface{}, error) {
 }
 
 func (api *API) getAccount(values *url.Values) (out interface{}, err error) {
-	request := &api_common.APIAccountRequest{}
-	request.ReturnType = api_common.GetReturnType(values.Get("type"), api_common.RETURN_JSON)
+	request := &api_types.APIAccountRequest{}
+	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
 
 	if values.Get("address") != "" {
 		request.Address = values.Get("address")
@@ -158,8 +159,8 @@ func (api *API) getAccount(values *url.Values) (out interface{}, err error) {
 }
 
 func (api *API) getToken(values *url.Values) (out interface{}, err error) {
-	request := &api_common.APITokenRequest{}
-	request.ReturnType = api_common.GetReturnType(values.Get("type"), api_common.RETURN_JSON)
+	request := &api_types.APITokenRequest{}
+	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
 
 	if values.Get("hash") != "" {
 		request.Hash, err = hex.DecodeString(values.Get("hash"))

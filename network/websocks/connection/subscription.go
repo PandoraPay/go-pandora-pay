@@ -1,19 +1,11 @@
 package connection
 
-import api_common "pandora-pay/network/api/api-common"
-
-type SubscriptionType uint8
-
-const (
-	SUBSCRIPTION_ACCOUNT SubscriptionType = iota
-	SUBSCRIPTION_TOKEN
-	SUBSCRIPTION_TRANSACTIONS
-)
+import "pandora-pay/network/api/api-common/api_types"
 
 type Subscription struct {
-	Type       SubscriptionType
+	Type       api_types.SubscriptionType
 	Key        []byte
-	ReturnType api_common.APIReturnType
+	ReturnType api_types.APIReturnType
 }
 
 type SubscriptionNotification struct {

@@ -9,6 +9,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common"
+	"pandora-pay/network/api/api-common/api_types"
 	"time"
 )
 
@@ -58,7 +59,7 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 			return false
 		}
 
-		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_common.APIBlockCompleteRequest{start - 1, nil, api_common.RETURN_SERIALIZED})
+		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), api_types.APIBlockCompleteRequest{start - 1, nil, api_types.RETURN_SERIALIZED})
 		if answer.Err != nil {
 			fork.errors += 1
 			continue
@@ -119,7 +120,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 			return false
 		}
 
-		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), &api_common.APIBlockCompleteRequest{fork.Current, nil, api_common.RETURN_SERIALIZED})
+		answer := conn.SendJSONAwaitAnswer([]byte("block-complete"), &api_types.APIBlockCompleteRequest{fork.Current, nil, api_types.RETURN_SERIALIZED})
 
 		if answer.Err != nil {
 			fork.errors += 1

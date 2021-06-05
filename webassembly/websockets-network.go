@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/app"
-	"pandora-pay/blockchain/accounts/account"
 	block_complete "pandora-pay/blockchain/block-complete"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
-	api_common "pandora-pay/network/api/api-common"
+	"pandora-pay/network/api/api-common/api_types"
 	"syscall/js"
 )
 
@@ -26,7 +24,7 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 				return
 			}
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("block-info"), &api_common.APIBlockRequest{uint64(args[0].Int()), hash})
+		data := socket.SendJSONAwaitAnswer([]byte("block-info"), &api_types.APIBlockRequest{uint64(args[0].Int()), hash})
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -55,7 +53,7 @@ func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("Invalid argument")
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("block-complete"), &api_common.APIBlockCompleteRequest{height, hash, api_common.RETURN_SERIALIZED})
+		data := socket.SendJSONAwaitAnswer([]byte("block-complete"), &api_types.APIBlockCompleteRequest{height, hash, api_types.RETURN_SERIALIZED})
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -92,17 +90,17 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 			return
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("tx"), &api_common.APIBlockCompleteRequest{height, hash, api_common.RETURN_SERIALIZED})
+		data := socket.SendJSONAwaitAnswer([]byte("tx"), &api_types.APIBlockCompleteRequest{height, hash, api_types.RETURN_SERIALIZED})
 		if data.Err != nil {
 			return nil, data.Err
 		}
 
-		received := &api_common.APITransactionSerialized{}
+		received := &api_types.APITransactionSerialized{}
 		if err = json.Unmarshal(data.Out, received); err != nil {
 			return
 		}
 
-		final := &api_common.APITransaction{
+		final := &api_types.APITransaction{
 			Tx:      &transaction.Transaction{},
 			Mempool: received.Mempool,
 		}
@@ -117,51 +115,36 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func subscribeNetworkAccount(this js.Value, args []js.Value) interface{} {
+func subscribeNetwork(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (out interface{}, err error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		var hash []byte
-		if len(args) == 2 && len(args[1].String()) == 2*cryptography.PublicKeyHashHashSize {
-			if hash, err = hex.DecodeString(args[1].String()); err != nil {
-				return
-			}
+		var key []byte
+		if key, err = hex.DecodeString(args[0].String()); err != nil {
+			return
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("sub/account"), &api_common.APIAccountRequest{api_common.APIAccountRequestData{args[0].String(), hash}, api_common.RETURN_SERIALIZED})
-		if data.Err != nil {
-			return nil, data.Err
-		}
-
-		if data.Out != nil {
-			acc := &account.Account{}
-			if err = acc.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
-				return
-			}
-			return convertJSON(acc)
-		}
-		return
+		data := socket.SendJSONAwaitAnswer([]byte("sub"), &api_types.APISubscriptionRequest{key, api_types.SubscriptionType(args[1].Int()), api_types.RETURN_SERIALIZED})
+		return data.Out, data.Err
 	})
 }
 
-func unsubscribeNetworkAccount(this js.Value, args []js.Value) interface{} {
+func unsubscribeNetwork(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (out interface{}, err error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		var hash []byte
-		if len(args) == 2 && len(args[1].String()) == 2*cryptography.PublicKeyHashHashSize {
-			if hash, err = hex.DecodeString(args[1].String()); err != nil {
-				return
-			}
+		var key []byte
+		if key, err = hex.DecodeString(args[0].String()); err != nil {
+			return
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("unsub/account"), &api_common.APIAccountRequestData{args[0].String(), hash})
+		data := socket.SendJSONAwaitAnswer([]byte("unsub"), &api_types.APIUnsubscription{key, api_types.SubscriptionType(args[1].Int())})
 		return data.Out, data.Err
 	})
 }

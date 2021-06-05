@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"pandora-pay/config"
-	api_common "pandora-pay/network/api/api-common"
+	"pandora-pay/cryptography"
+	"pandora-pay/network/api/api-common/api_types"
 	"sync"
 )
 
@@ -17,7 +18,11 @@ type Subscriptions struct {
 	sync.Mutex
 }
 
-func (s *Subscriptions) AddSubscription(subscriptionType SubscriptionType, key []byte, returnType api_common.APIReturnType) error {
+func (s *Subscriptions) AddSubscription(subscriptionType api_types.SubscriptionType, key []byte, returnType api_types.APIReturnType) error {
+
+	if len(key) != cryptography.PublicKeyHashHashSize {
+		return errors.New("Key is invalid")
+	}
 
 	s.Lock()
 	defer s.Unlock()
@@ -42,7 +47,11 @@ func (s *Subscriptions) AddSubscription(subscriptionType SubscriptionType, key [
 	return nil
 }
 
-func (s *Subscriptions) RemoveSubscription(subscriptionType SubscriptionType, key []byte) bool {
+func (s *Subscriptions) RemoveSubscription(subscriptionType api_types.SubscriptionType, key []byte) error {
+
+	if len(key) != cryptography.PublicKeyHashHashSize {
+		return errors.New("Key is invalid")
+	}
 
 	s.Lock()
 	defer s.Unlock()
@@ -51,11 +60,11 @@ func (s *Subscriptions) RemoveSubscription(subscriptionType SubscriptionType, ke
 		if subscription.Type == subscriptionType && bytes.Equal(subscription.Key, key) {
 			s.list = append(s.list[:i], s.list[i+1:]...)
 			s.removeSubscriptionCn <- &SubscriptionNotification{subscription, s.conn}
-			return true
+			return nil
 		}
 	}
 
-	return false
+	return errors.New("Subscription not found")
 }
 
 func CreateSubscriptions(conn *AdvancedConnection, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification) (s *Subscriptions) {
