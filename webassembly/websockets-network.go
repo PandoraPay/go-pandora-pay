@@ -131,20 +131,37 @@ func subscribeNetworkAccount(this js.Value, args []js.Value) interface{} {
 			}
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("sub/account"), &api_common.APIAccountRequest{args[0].String(), hash, api_common.RETURN_SERIALIZED})
+		data := socket.SendJSONAwaitAnswer([]byte("sub/account"), &api_common.APIAccountRequest{api_common.APIAccountRequestData{args[0].String(), hash}, api_common.RETURN_SERIALIZED})
 		if data.Err != nil {
 			return nil, data.Err
 		}
 
-		if data.Out == nil {
-			return
+		if data.Out != nil {
+			acc := &account.Account{}
+			if err = acc.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
+				return
+			}
+			return convertJSON(acc)
+		}
+		return
+	})
+}
+
+func unsubscribeNetworkAccount(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (out interface{}, err error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
 		}
 
-		acc := &account.Account{}
-		if err = acc.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
-			return
+		var hash []byte
+		if len(args) == 2 && len(args[1].String()) == 2*cryptography.PublicKeyHashHashSize {
+			if hash, err = hex.DecodeString(args[1].String()); err != nil {
+				return
+			}
 		}
 
-		return convertJSON(acc)
+		data := socket.SendJSONAwaitAnswer([]byte("unsub/account"), &api_common.APIAccountRequestData{args[0].String(), hash})
+		return data.Out, data.Err
 	})
 }

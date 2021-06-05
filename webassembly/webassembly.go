@@ -83,10 +83,11 @@ func Initialize(startMainCb func()) {
 			"computePublicKeyHash": js.FuncOf(computePublicKeyHash),
 		}),
 		"network": js.ValueOf(map[string]interface{}{
-			"getNetworkBlockInfo":     js.FuncOf(getNetworkBlockInfo),
-			"getNetworkBlockComplete": js.FuncOf(getNetworkBlockComplete),
-			"getNetworkTransaction":   js.FuncOf(getNetworkTransaction),
-			"subscribeNetworkAccount": js.FuncOf(subscribeNetworkAccount),
+			"getNetworkBlockInfo":       js.FuncOf(getNetworkBlockInfo),
+			"getNetworkBlockComplete":   js.FuncOf(getNetworkBlockComplete),
+			"getNetworkTransaction":     js.FuncOf(getNetworkTransaction),
+			"subscribeNetworkAccount":   js.FuncOf(subscribeNetworkAccount),
+			"unsubscribeNetworkAccount": js.FuncOf(unsubscribeNetworkAccount),
 		}),
 		"enums": js.ValueOf(map[string]interface{}{
 			"transactions": js.ValueOf(map[string]interface{}{

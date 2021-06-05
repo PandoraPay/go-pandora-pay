@@ -46,7 +46,6 @@ func (api *APIWebsockets) subscribedAccountNotificationReceived(conn *connection
 
 	api.AccountsChangesSubscriptionNotifications.Broadcast(notification)
 	return
-
 }
 
 func (api *APIWebsockets) unsubscribeAccount(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
