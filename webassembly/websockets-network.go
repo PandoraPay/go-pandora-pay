@@ -148,14 +148,3 @@ func subscribeNetworkAccount(this js.Value, args []js.Value) interface{} {
 		return convertJSON(acc)
 	})
 }
-
-func subscribeNetworkAccount(this js.Value, args []js.Value) interface{} {
-	return normalFunction(func() (out interface{}, err error) {
-
-		go func() {
-
-		}()
-
-		return
-	})
-}

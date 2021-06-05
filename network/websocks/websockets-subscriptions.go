@@ -31,13 +31,13 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 	return
 }
 
-func (subs *WebsocketSubscriptions) send(apiRoute []byte, list map[string]*connection.SubscriptionNotification, data helpers.SerializableInterface) {
+func (subs *WebsocketSubscriptions) send(apiRoute []byte, key string, list map[string]*connection.SubscriptionNotification, data helpers.SerializableInterface) {
 
 	var err error
 	var bytes []byte
 	var serialized, marshalled *api_common.APISubscriptionNotification
 
-	for key, subNot := range list {
+	for _, subNot := range list {
 
 		if data == nil {
 			subNot.Conn.Send([]byte("sub/account/up"), nil)
@@ -110,7 +110,7 @@ func (subs *WebsocketSubscriptions) processSubscriptions() {
 						}
 					}
 
-					subs.send([]byte("sub/account/up"), list, acc)
+					subs.send([]byte("sub/account/notify"), k, list, acc)
 				}
 			}
 		case conn, ok := <-subs.websocketClosedCn:

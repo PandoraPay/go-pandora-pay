@@ -2,15 +2,11 @@ package webassembly
 
 import (
 	"encoding/json"
-	"errors"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
-	"pandora-pay/config/globals"
-	"pandora-pay/helpers/events"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/address"
-	"sync/atomic"
 	"syscall/js"
 )
 
@@ -51,42 +47,6 @@ func normalFunction(callback func() (interface{}, error)) interface{} {
 	return result
 }
 
-func subscribeEvents(this js.Value, args []js.Value) interface{} {
-
-	if len(args) == 0 || args[0].Type() != js.TypeFunction {
-		return errors.New("Argument must be a callback")
-	}
-
-	index := atomic.AddUint64(&subscriptionsIndex, 1)
-	channel := globals.MainEvents.AddListener()
-	callback := args[0]
-	var err error
-
-	go func() {
-		for {
-			dataValue := <-channel
-			data := dataValue.(*events.EventData)
-
-			var final interface{}
-
-			switch v := data.Data.(type) {
-			case string:
-				final = data.Data
-			case interface{}:
-				if final, err = convertJSON(v); err != nil {
-					panic(err)
-				}
-			default:
-				final = data.Data
-			}
-
-			callback.Invoke(data.Name, final)
-		}
-	}()
-
-	return index
-}
-
 func Initialize(startMainCb func()) {
 
 	startMainCallback = startMainCb
@@ -101,7 +61,8 @@ func Initialize(startMainCb func()) {
 			"getIdenticon": js.FuncOf(getIdenticon),
 		}),
 		"events": js.ValueOf(map[string]interface{}{
-			"subscribe": js.FuncOf(subscribeEvents),
+			"listenEvents":               js.FuncOf(listenEvents),
+			"listenNetworkNotifications": js.FuncOf(listenNetworkNotifications),
 		}),
 		"wallet": js.ValueOf(map[string]interface{}{
 			"getWallet": js.FuncOf(getWallet),

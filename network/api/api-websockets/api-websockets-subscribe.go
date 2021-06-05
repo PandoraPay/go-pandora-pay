@@ -33,12 +33,21 @@ func (api *APIWebsockets) subscribeAccount(conn *connection.AdvancedConnection, 
 		}
 	}
 
-	conn.Subscriptions.AddSubscription(connection.SUBSCRIPTION_ACCOUNT, publicKeyHash, request.ReturnType)
+	if _, err = conn.Subscriptions.AddSubscription(connection.SUBSCRIPTION_ACCOUNT, publicKeyHash, request.ReturnType); err != nil {
+		return
+	}
 
 	return
 }
 
 func (api *APIWebsockets) subscribeAccountNotification(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
+
+	var notification *api_common.APISubscriptionNotification
+	if err = json.Unmarshal(values, &notification); err != nil {
+		return
+	}
+
+	api.AccountsChangesSubscriptionNotifications.Broadcast(notification)
 
 	return
 }
