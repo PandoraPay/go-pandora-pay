@@ -417,8 +417,6 @@ func CreateBlockchain(mempool *mempool.Mempool) (chain *Blockchain, err error) {
 
 func (chain *Blockchain) InitializeChain() (err error) {
 
-	chain.InitForging()
-
 	if err = chain.loadBlockchain(); err != nil {
 		if err.Error() != "Chain not found" {
 			return
@@ -433,6 +431,8 @@ func (chain *Blockchain) InitializeChain() (err error) {
 
 	chainData := chain.GetChainData()
 	chainData.updateChainInfo()
+
+	chain.InitForging()
 
 	return
 }

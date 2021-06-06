@@ -16,10 +16,16 @@ type Tokens struct {
 	hash_map.HashMap `json:"-"`
 }
 
-func NewTokens(tx store_db_interface.StoreDBTransactionInterface) *Tokens {
-	return &Tokens{
+func NewTokens(tx store_db_interface.StoreDBTransactionInterface) (tokens *Tokens) {
+	tokens = &Tokens{
 		HashMap: *hash_map.CreateNewHashMap(tx, "Tokens", cryptography.PublicKeyHashHashSize),
 	}
+	tokens.HashMap.Deserialize = func(data []byte) (helpers.SerializableInterface, error) {
+		var tok = &token.Token{}
+		err := tok.Deserialize(helpers.NewBufferReader(data))
+		return tok, err
+	}
+	return
 }
 
 func (tokens *Tokens) GetToken(key []byte) (tok *token.Token, err error) {
@@ -28,15 +34,12 @@ func (tokens *Tokens) GetToken(key []byte) (tok *token.Token, err error) {
 		key = config.NATIVE_TOKEN_FULL
 	}
 
-	data := tokens.HashMap.Get(string(key))
-	if data == nil {
+	data, err := tokens.HashMap.Get(string(key))
+	if data == nil || err != nil {
 		return
 	}
 
-	tok = new(token.Token)
-	if err = tok.Deserialize(helpers.NewBufferReader(data)); err != nil {
-		return
-	}
+	tok = data.(*token.Token)
 
 	return
 }
@@ -64,7 +67,7 @@ func (tokens *Tokens) UpdateToken(key []byte, tok *token.Token) {
 		key = config.NATIVE_TOKEN_FULL
 	}
 
-	tokens.Update(string(key), tok.SerializeToBytes())
+	tokens.Update(string(key), tok)
 }
 
 func (tokens *Tokens) ExistsToken(key []byte) bool {

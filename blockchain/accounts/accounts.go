@@ -12,43 +12,42 @@ type Accounts struct {
 	hash_map.HashMap `json:"-"`
 }
 
-func NewAccounts(tx store_db_interface.StoreDBTransactionInterface) *Accounts {
-	return &Accounts{
+func NewAccounts(tx store_db_interface.StoreDBTransactionInterface) (accounts *Accounts) {
+	accounts = &Accounts{
 		HashMap: *hash_map.CreateNewHashMap(tx, "Accounts", cryptography.PublicKeyHashHashSize),
 	}
+	accounts.HashMap.Deserialize = func(data []byte) (helpers.SerializableInterface, error) {
+		var acc = &account.Account{}
+		err := acc.Deserialize(helpers.NewBufferReader(data))
+		return acc, err
+	}
+	return
 }
 
 func (accounts *Accounts) GetAccountEvenEmpty(key []byte, chainHeight uint64) (acc *account.Account, err error) {
 
-	acc = new(account.Account)
+	data, err := accounts.Get(string(key))
+	if err != nil {
+		return
+	}
 
-	data := accounts.Get(string(key))
 	if data == nil {
-		return
+		return &account.Account{}, nil
 	}
 
-	if err = acc.Deserialize(helpers.NewBufferReader(data)); err != nil {
-		return
-	}
-
-	if err = acc.RefreshDelegatedStake(chainHeight); err != nil {
-		return
-	}
-
+	acc = data.(*account.Account)
+	err = acc.RefreshDelegatedStake(chainHeight)
 	return
 }
 
 func (accounts *Accounts) GetAccount(key []byte, chainHeight uint64) (acc *account.Account, err error) {
 
-	data := accounts.Get(string(key))
-	if data == nil {
+	data, err := accounts.Get(string(key))
+	if data == nil || err != nil {
 		return
 	}
 
-	acc = new(account.Account)
-	if err = acc.Deserialize(helpers.NewBufferReader(data)); err != nil {
-		return
-	}
+	acc = data.(*account.Account)
 
 	if err = acc.RefreshDelegatedStake(chainHeight); err != nil {
 		return
@@ -62,5 +61,5 @@ func (accounts *Accounts) UpdateAccount(key []byte, acc *account.Account) {
 		accounts.Delete(string(key))
 		return
 	}
-	accounts.Update(string(key), acc.SerializeToBytes())
+	accounts.Update(string(key), acc)
 }

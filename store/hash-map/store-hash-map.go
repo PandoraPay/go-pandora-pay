@@ -2,6 +2,7 @@ package hash_map
 
 import (
 	"errors"
+	"pandora-pay/helpers"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
@@ -12,15 +13,16 @@ type CommittedMapElement struct {
 }
 
 type ChangesMapElement struct {
-	Data   []byte
-	Status string
+	Element helpers.SerializableInterface
+	Status  string
 }
 
 type HashMap struct {
-	Tx        store_db_interface.StoreDBTransactionInterface
-	Changes   map[string]*ChangesMapElement
-	Committed map[string]*CommittedMapElement
-	KeyLength int
+	Tx          store_db_interface.StoreDBTransactionInterface
+	Changes     map[string]*ChangesMapElement
+	Committed   map[string]*CommittedMapElement
+	KeyLength   int
+	Deserialize func([]byte) (helpers.SerializableInterface, error)
 }
 
 func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int) (hashMap *HashMap) {
@@ -37,32 +39,28 @@ func (hashMap *HashMap) UnsetTx() {
 	hashMap.Tx = nil
 }
 
-func (hashMap *HashMap) Get(key string) (out []byte) {
-	return hashMap.get(key, true)
-}
+func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err error) {
 
-func (hashMap *HashMap) get(key string, includeChanges bool) (out []byte) {
-
-	if includeChanges {
-		exists := hashMap.Changes[key]
-		if exists != nil {
-			out = exists.Data
-			return
-		}
-	}
-
-	exists2 := hashMap.Committed[key]
-	if exists2 != nil {
-		out = exists2.Data
+	exists := hashMap.Changes[key]
+	if exists != nil {
+		out = exists.Element
 		return
 	}
 
-	out = hashMap.Tx.Get(key)
-	hashMap.Committed[key] = &CommittedMapElement{
-		out,
-		"view",
-		"",
+	var outData []byte
+
+	exists2 := hashMap.Committed[key]
+	if exists2 != nil {
+		outData = exists2.Data
+	} else {
+		outData = hashMap.Tx.Get(key)
 	}
+	if outData != nil {
+		if out, err = hashMap.Deserialize(outData); err != nil {
+			return
+		}
+	}
+	hashMap.Changes[key] = &ChangesMapElement{out, "view"}
 	return
 }
 
@@ -70,7 +68,7 @@ func (hashMap *HashMap) Exists(key string) bool {
 
 	exists := hashMap.Changes[key]
 	if exists != nil {
-		return exists.Data != nil
+		return exists.Element != nil
 	}
 
 	exists2 := hashMap.Committed[key]
@@ -87,14 +85,14 @@ func (hashMap *HashMap) Exists(key string) bool {
 	return out != nil
 }
 
-func (hashMap *HashMap) Update(key string, data []byte) {
+func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) {
 	exists := hashMap.Changes[key]
 	if exists == nil {
 		exists = new(ChangesMapElement)
 		hashMap.Changes[key] = exists
 	}
 	exists.Status = "update"
-	exists.Data = data
+	exists.Element = data
 	return
 }
 
@@ -105,7 +103,7 @@ func (hashMap *HashMap) Delete(key string) {
 		hashMap.Changes[key] = exists
 	}
 	exists.Status = "del"
-	exists.Data = nil
+	exists.Element = nil
 	return
 }
 
@@ -128,13 +126,13 @@ func (hashMap *HashMap) Commit() {
 			} else if v.Status == "update" {
 				committed.Status = "update"
 				committed.Stored = ""
-				committed.Data = v.Data
+				committed.Data = v.Element.SerializeToBytes()
 			}
 
+			v.Status = "view"
 		}
 
 	}
-	hashMap.Changes = make(map[string]*ChangesMapElement)
 }
 
 func (hashMap *HashMap) Rollback() {

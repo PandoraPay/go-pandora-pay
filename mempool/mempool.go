@@ -34,7 +34,10 @@ type Mempool struct {
 
 func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, propagateToSockets bool) (out bool, err error) {
 	result, err := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, propagateToSockets)
-	return result[0], err
+	if err != nil {
+		return
+	}
+	return result[0], nil
 }
 
 func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, height uint64) (out bool, err error, finalTxs []*mempoolTx) {

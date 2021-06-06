@@ -10,23 +10,32 @@ type transactionChange struct {
 	Transition []byte
 }
 
-func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) error {
+func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err error) {
 
 	values := make([]*transactionChange, 0)
 	for k, v := range hashMap.Changes {
 		if v.Status == "del" || v.Status == "update" {
-			original := hashMap.get(k, false)
-			values = append(values, &transactionChange{
-				Key:        k,
-				Transition: original,
-			})
+
+			existsCommitted := hashMap.Committed[k]
+			if existsCommitted != nil {
+				values = append(values, &transactionChange{
+					Key:        k,
+					Transition: existsCommitted.Data,
+				})
+			} else {
+				outData := hashMap.Tx.Get(k)
+				values = append(values, &transactionChange{
+					Key:        k,
+					Transition: outData,
+				})
+			}
 
 		}
 	}
 
 	marshal, err := json.Marshal(values)
 	if err != nil {
-		return err
+		return
 	}
 
 	return hashMap.Tx.Put("transitions_"+prefix, marshal)
