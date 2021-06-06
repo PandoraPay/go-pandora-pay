@@ -3,6 +3,7 @@ package hash_map
 import (
 	"encoding/json"
 	"errors"
+	"pandora-pay/helpers"
 )
 
 type transactionChange struct {
@@ -20,7 +21,7 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 			if existsCommitted != nil {
 				values = append(values, &transactionChange{
 					Key:        k,
-					Transition: existsCommitted.Data,
+					Transition: existsCommitted.Element.SerializeToBytes(),
 				})
 			} else {
 				outData := hashMap.Tx.Get(k)
@@ -45,29 +46,34 @@ func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) error 
 	return hashMap.Tx.Delete("transitions_" + prefix)
 }
 
-func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) error {
+func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err error) {
 	data := hashMap.Tx.Get("transitions_" + prefix)
 	if data == nil {
 		return errors.New("transitions didn't exist")
 	}
 
 	values := make([]*transactionChange, 0)
-	if err := json.Unmarshal(data, &values); err != nil {
+	if err = json.Unmarshal(data, &values); err != nil {
 		return err
 	}
 
 	for _, change := range values {
 		if change.Transition == nil {
 			hashMap.Committed[string(change.Key)] = &CommittedMapElement{
-				Data:   nil,
-				Status: "del",
-				Stored: "",
+				Element: nil,
+				Status:  "del",
+				Stored:  "",
 			}
 		} else {
+			var element helpers.SerializableInterface
+			if element, err = hashMap.Deserialize(change.Transition); err != nil {
+				return
+			}
+
 			hashMap.Committed[string(change.Key)] = &CommittedMapElement{
-				Data:   change.Transition,
-				Status: "update",
-				Stored: "",
+				Element: element,
+				Status:  "update",
+				Stored:  "",
 			}
 		}
 	}

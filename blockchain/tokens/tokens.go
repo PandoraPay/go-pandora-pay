@@ -53,7 +53,12 @@ func (tokens *Tokens) CreateToken(key []byte, tok *token.Token) (err error) {
 	if err = tok.Validate(); err != nil {
 		return
 	}
-	if tokens.ExistsToken(key) {
+
+	var exists bool
+	if exists, err = tokens.ExistsToken(key); err != nil {
+		return
+	}
+	if exists {
 		return errors.New("token already exists")
 	}
 
@@ -70,7 +75,7 @@ func (tokens *Tokens) UpdateToken(key []byte, tok *token.Token) {
 	tokens.Update(string(key), tok)
 }
 
-func (tokens *Tokens) ExistsToken(key []byte) bool {
+func (tokens *Tokens) ExistsToken(key []byte) (bool, error) {
 	if len(key) == 0 {
 		key = config.NATIVE_TOKEN_FULL
 	}
@@ -95,11 +100,8 @@ func (hashMap *Tokens) WriteToStore() (err error) {
 			if v.Stored == "del" {
 				err = hashMap.Tx.DeleteForcefully("tokenInfo_ByHash" + k)
 			} else if v.Stored == "update" {
-				tok := &token.Token{}
-				if err = tok.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
-					return
-				}
 
+				tok := v.Element.(*token.Token)
 				tokInfo := &token_info.TokenInfo{
 					Hash:             []byte(k),
 					Name:             tok.Name,

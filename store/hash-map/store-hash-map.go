@@ -7,9 +7,9 @@ import (
 )
 
 type CommittedMapElement struct {
-	Data   []byte
-	Status string
-	Stored string
+	Element helpers.SerializableInterface
+	Status  string
+	Stored  string
 }
 
 type ChangesMapElement struct {
@@ -51,7 +51,7 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 
 	exists2 := hashMap.Committed[key]
 	if exists2 != nil {
-		outData = exists2.Data
+		outData = exists2.Element.SerializeToBytes()
 	} else {
 		outData = hashMap.Tx.Get(key)
 	}
@@ -64,25 +64,26 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 	return
 }
 
-func (hashMap *HashMap) Exists(key string) bool {
+func (hashMap *HashMap) Exists(key string) (bool, error) {
 
 	exists := hashMap.Changes[key]
 	if exists != nil {
-		return exists.Element != nil
+		return exists.Element != nil, nil
 	}
 
 	exists2 := hashMap.Committed[key]
 	if exists2 != nil {
-		return exists2.Data != nil
+		return exists2.Element != nil, nil
 	}
 
-	out := hashMap.Tx.Get(key)
-	hashMap.Committed[key] = &CommittedMapElement{
-		out,
-		"view",
-		"",
+	outData := hashMap.Tx.Get(key)
+	out, err := hashMap.Deserialize(outData)
+	if err != nil {
+		return false, err
 	}
-	return out != nil
+
+	hashMap.Changes[key] = &ChangesMapElement{out, "view"}
+	return out != nil, nil
 }
 
 func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) {
@@ -109,6 +110,8 @@ func (hashMap *HashMap) Delete(key string) {
 
 func (hashMap *HashMap) Commit() {
 
+	var removed []string
+
 	for k, v := range hashMap.Changes {
 
 		if v.Status == "del" || v.Status == "update" {
@@ -122,17 +125,24 @@ func (hashMap *HashMap) Commit() {
 			if v.Status == "del" {
 				committed.Status = "del"
 				committed.Stored = ""
-				committed.Data = nil
+				committed.Element = nil
+				v.Status = "view"
 			} else if v.Status == "update" {
 				committed.Status = "update"
 				committed.Stored = ""
-				committed.Data = v.Element.SerializeToBytes()
+				committed.Element = v.Element
+
+				removed = append(removed, k)
 			}
 
-			v.Status = "view"
 		}
 
 	}
+
+	for _, k := range removed {
+		delete(hashMap.Changes, k)
+	}
+
 }
 
 func (hashMap *HashMap) Rollback() {
@@ -154,7 +164,7 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 			v.Status = "view"
 			v.Stored = "del"
 		} else if v.Status == "update" {
-			if err = hashMap.Tx.Put(k, v.Data); err != nil {
+			if err = hashMap.Tx.Put(k, v.Element.SerializeToBytes()); err != nil {
 				return
 			}
 			v.Status = "view"

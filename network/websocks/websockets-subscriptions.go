@@ -78,8 +78,6 @@ func (subs *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.Subscr
 
 func (subs *WebsocketSubscriptions) processSubscriptions() {
 
-	var err error
-
 	updateAccountsCn := subs.chain.UpdateAccounts.AddListener()
 
 	var subsMap map[string]map[string]*connection.SubscriptionNotification
@@ -128,16 +126,7 @@ func (subs *WebsocketSubscriptions) processSubscriptions() {
 			for k, v := range accs.HashMap.Committed {
 				list := subs.accountsSubscriptions[k]
 				if list != nil {
-
-					var acc *account.Account
-					if v.Stored == "update" {
-						acc = &account.Account{}
-						if err = acc.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
-							panic(err)
-						}
-					}
-
-					subs.send([]byte("sub/notify"), []byte(k), list, acc)
+					subs.send([]byte("sub/notify"), []byte(k), list, v.Element.(*account.Account))
 				}
 			}
 		case conn, ok := <-subs.websocketClosedCn:

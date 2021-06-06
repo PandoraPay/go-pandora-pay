@@ -263,6 +263,7 @@ func (wallet *Wallet) updateWallet() {
 }
 
 //wallet must be locked before
+//acc read only
 func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.WalletAddress, lock bool) (err error) {
 
 	if acc == nil {
@@ -327,10 +328,7 @@ func (wallet *Wallet) updateAccountsChanges() {
 			if wallet.addressesMap[k] != nil {
 
 				if v.Stored == "update" {
-					acc := new(account.Account)
-					if err = acc.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
-						return
-					}
+					acc := v.Element.(*account.Account)
 					if err = wallet.refreshWallet(acc, wallet.addressesMap[k], false); err != nil {
 						return
 					}

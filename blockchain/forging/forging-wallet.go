@@ -36,7 +36,7 @@ type ForgingWalletAddress struct {
 	delegatedPrivateKey    *addresses.PrivateKey
 	delegatedPublicKeyHash helpers.HexBytes //20 byte
 	publicKeyHash          helpers.HexBytes //20byte
-	account                *account.Account
+	account                *account.Account //READ ONLY
 }
 
 func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKeyHash []byte) {
@@ -144,7 +144,6 @@ func (w *ForgingWallet) ProcessUpdates() (err error) {
 
 func (w *ForgingWallet) updateAccountsChanges() {
 
-	var err error
 	cn := w.updateAccounts.AddListener()
 
 	for {
@@ -161,11 +160,7 @@ func (w *ForgingWallet) updateAccountsChanges() {
 			if w.addressesMap[k] != nil {
 
 				if v.Stored == "update" {
-					acc := new(account.Account)
-					if err = acc.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
-						return
-					}
-					w.addressesMap[k].account = acc
+					w.addressesMap[k].account = v.Element.(*account.Account)
 				} else if v.Stored == "delete" {
 					w.addressesMap[k].account = nil
 				}
