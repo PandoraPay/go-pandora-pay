@@ -89,13 +89,14 @@ func (hashMap *Tokens) WriteToStore() (err error) {
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
+
 		for k, v := range hashMap.Committed {
 
-			if v.Status == "del" {
-				err = hashMap.Tx.DeleteForcefully("tokenInfo_byHash" + k)
-			} else if v.Status == "update" {
+			if v.Stored == "del" {
+				err = hashMap.Tx.DeleteForcefully("tokenInfo_ByHash" + k)
+			} else if v.Stored == "update" {
 				tok := &token.Token{}
-				if err = json.Unmarshal(v.Data, tok); err != nil {
+				if err = tok.Deserialize(helpers.NewBufferReader(v.Data)); err != nil {
 					return
 				}
 
@@ -109,14 +110,14 @@ func (hashMap *Tokens) WriteToStore() (err error) {
 				var data []byte
 				data, err = json.Marshal(tokInfo)
 
-				err = hashMap.Tx.Put("tokenInfo_byHash"+k, data)
+				err = hashMap.Tx.Put("tokenInfo_ByHash"+k, data)
 			}
 
 			if err != nil {
 				return
 			}
-
 		}
+
 	}
 
 	return

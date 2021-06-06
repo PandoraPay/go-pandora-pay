@@ -13,23 +13,23 @@ var regexTokenTicker = regexp.MustCompile("^[A-Z0-9]+$") // only lowercase ascii
 var regexTokenDescription = regexp.MustCompile("[\\w|\\W]+")
 
 type Token struct {
-	helpers.SerializableInterface
-	Version            uint64           `json:"version"`
-	CanUpgrade         bool             `json:"canUpgrade"`         //upgrade different settings
-	CanMint            bool             `json:"canMint"`            //increase supply
-	CanBurn            bool             `json:"canBurn"`            //decrease supply
-	CanChangeKey       bool             `json:"canChangeKey"`       //can change key
-	CanChangeSupplyKey bool             `json:"canChangeSupplyKey"` //can change supply key
-	CanPause           bool             `json:"canPause"`           //can pause (suspend transactions)
-	CanFreeze          bool             `json:"canFreeze"`          //freeze supply changes
-	DecimalSeparator   byte             `json:"decimalSeparator"`
-	MaxSupply          uint64           `json:"maxSupply"`
-	Supply             uint64           `json:"supply"`
-	Key                helpers.HexBytes `json:"key"`       //20 byte
-	SupplyKey          helpers.HexBytes `json:"supplyKey"` //20 byte
-	Name               string           `json:"name"`
-	Ticker             string           `json:"ticker"`
-	Description        string           `json:"description"`
+	helpers.SerializableInterface `json:"-"`
+	Version                       uint64           `json:"version,omitempty"`
+	CanUpgrade                    bool             `json:"canUpgrade,omitempty"`         //upgrade different settings
+	CanMint                       bool             `json:"canMint,omitempty"`            //increase supply
+	CanBurn                       bool             `json:"canBurn,omitempty"`            //decrease supply
+	CanChangeKey                  bool             `json:"canChangeKey,omitempty"`       //can change key
+	CanChangeSupplyKey            bool             `json:"canChangeSupplyKey,omitempty"` //can change supply key
+	CanPause                      bool             `json:"canPause,omitempty"`           //can pause (suspend transactions)
+	CanFreeze                     bool             `json:"canFreeze,omitempty"`          //freeze supply changes
+	DecimalSeparator              byte             `json:"decimalSeparator,omitempty"`
+	MaxSupply                     uint64           `json:"maxSupply,omitempty"`
+	Supply                        uint64           `json:"supply,omitempty"`
+	Key                           helpers.HexBytes `json:"key"`                 //20 byte
+	SupplyKey                     helpers.HexBytes `json:"supplyKey,omitempty"` //20 byte
+	Name                          string           `json:"name"`
+	Ticker                        string           `json:"ticker"`
+	Description                   string           `json:"description,omitempty"`
 }
 
 func (token *Token) Validate() error {
