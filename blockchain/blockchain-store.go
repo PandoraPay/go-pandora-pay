@@ -63,7 +63,7 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 		return
 	}
 
-	if config.STORE_WALLET_EXTRA_SYNC_DATA {
+	if config.SEED_WALLET_NODES_INFO {
 		if err = writer.Delete("blockInfo_ByHash" + string(hash)); err != nil {
 			return
 		}
@@ -96,7 +96,7 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		return
 	}
 
-	if config.STORE_WALLET_EXTRA_SYNC_DATA {
+	if config.SEED_WALLET_NODES_INFO {
 		var blockInfoMarshal []byte
 		if blockInfoMarshal, err = json.Marshal(&block_info.BlockInfo{
 			Hash:       blkComplete.Block.Bloom.Hash,

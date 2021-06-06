@@ -232,7 +232,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"mem-pool/new-tx-id": api.getMempoolTxInsert,
 	}
 
-	if config.STORE_WALLET_EXTRA_SYNC_DATA {
+	if config.SEED_WALLET_NODES_INFO {
 		api.GetMap["sub"] = api.subscribe
 		api.GetMap["unsub"] = api.unsubscribe
 		api.GetMap["sub/notify"] = api.subscribedNotificationReceived

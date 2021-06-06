@@ -248,7 +248,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		"mem-pool/new-tx":    api.postMempoolInsert,
 	}
 
-	if config.STORE_WALLET_EXTRA_SYNC_DATA {
+	if config.SEED_WALLET_NODES_INFO {
 		api.GetMap["token-info"] = api.getTokenInfo
 		api.GetMap["block-info"] = api.getBlockInfo
 	}

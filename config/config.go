@@ -75,8 +75,8 @@ var (
 )
 
 var (
-	CONSENSUS                    ConsensusType = CONSENSUS_TYPE_FULL
-	STORE_WALLET_EXTRA_SYNC_DATA bool
+	CONSENSUS              ConsensusType = CONSENSUS_TYPE_FULL
+	SEED_WALLET_NODES_INFO bool
 )
 
 func StartConfig() {
@@ -118,12 +118,12 @@ func InitConfig() (err error) {
 		}
 	}
 
-	STORE_WALLET_EXTRA_SYNC_DATA = false
+	SEED_WALLET_NODES_INFO = false
 	switch globals.Arguments["--consensus"] {
 	case "full":
 		CONSENSUS = CONSENSUS_TYPE_FULL
-		if globals.Arguments["--store-wallet-extra-sync-data"] == "true" {
-			STORE_WALLET_EXTRA_SYNC_DATA = true
+		if globals.Arguments["--seed-wallet-nodes-info"] == "true" {
+			SEED_WALLET_NODES_INFO = true
 		}
 	case "wallet":
 		CONSENSUS = CONSENSUS_TYPE_WALLET

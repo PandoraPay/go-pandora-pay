@@ -7,7 +7,7 @@ package arguments
 const commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--debugging] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tor-onion=onion] [--instance=number] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--store-wallet-extra-sync-data=bool]
+  pandorapay [--debugging] [--testnet] [--devnet] [--debug] [--staking] [--new-devnet] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tor-onion=onion] [--instance=number] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--seed-wallet-nodes-info=bool]
   pandorapay -h | --help
   pandorapay -v | --version
 
@@ -30,5 +30,5 @@ Options:
   --tor-onion=onion                     Define your tor onion address to be used.
   --instance=number                     Number of forked instance (when you open multiple instances). It should me string number like "1","2","3","4" etc
   --consensus=type                      Consensus type. Accepted values: "full|wallet|none" [default: full].
-  --store-wallet-extra-sync-data=bool   Storing and serving additional info for wallets. [default: true].
+  --seed-wallet-nodes-info=bool         Storing and serving additional info to wallet nodes. [default: true]. To enable, it requires full node
 `
