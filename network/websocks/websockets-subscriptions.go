@@ -114,6 +114,9 @@ func (subs *WebsocketSubscriptions) processSubscriptions() {
 			keyStr := string(subscription.Subscription.Key)
 			if subsMap[keyStr] != nil {
 				delete(subsMap[keyStr], subscription.Conn.UUID)
+				if len(subsMap[keyStr]) == 0 {
+					delete(subsMap, keyStr)
+				}
 			}
 
 		case accsData, ok := <-updateAccountsCn:
@@ -142,10 +145,17 @@ func (subs *WebsocketSubscriptions) processSubscriptions() {
 				return
 			}
 
-			for _, value := range subs.accountsSubscriptions {
+			var deleted []string
+			for key, value := range subs.accountsSubscriptions {
 				if value[conn.UUID] != nil {
 					delete(value, conn.UUID)
 				}
+				if len(value) == 0 {
+					deleted = append(deleted, key)
+				}
+			}
+			for _, key := range deleted {
+				delete(subs.accountsSubscriptions, key)
 			}
 
 		}
