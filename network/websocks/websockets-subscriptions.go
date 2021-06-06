@@ -5,6 +5,7 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection"
@@ -29,7 +30,9 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 		make(map[string]map[string]*connection.SubscriptionNotification),
 	}
 
-	go subs.processSubscriptions()
+	if config.SEED_WALLET_NODES_INFO {
+		go subs.processSubscriptions()
+	}
 
 	return
 }

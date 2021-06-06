@@ -176,6 +176,7 @@ func CreateWebsockets(chain *blockchain.Blockchain, api *api_http.API, apiWebsoc
 		api:                          api,
 		ApiWebsockets:                apiWebsockets,
 	}
+
 	websockets.subscriptions = newWebsocketSubscriptions(websockets, chain)
 
 	websockets.AllList.Store([]*connection.AdvancedConnection{})
