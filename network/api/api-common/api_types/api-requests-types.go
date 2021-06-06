@@ -73,6 +73,10 @@ func (request *APIAccountRequest) GetPublicKeyHash() ([]byte, error) {
 	return publicKeyHash, nil
 }
 
+type APITokenInfoRequest struct {
+	Hash helpers.HexBytes `json:"hash"`
+}
+
 type APITokenRequest struct {
 	Hash       helpers.HexBytes `json:"hash"`
 	ReturnType APIReturnType    `json:"returnType"`

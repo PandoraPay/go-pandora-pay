@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/blocks/block-info"
+	token_info "pandora-pay/blockchain/tokens/token-info"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
@@ -156,6 +157,17 @@ func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) (out []by
 		return acc.SerializeToBytes(), nil
 	}
 	return json.Marshal(acc)
+}
+
+func (api *APICommon) GetTokenInfo(request *api_types.APITokenInfoRequest) (out []byte, err error) {
+	var tokInfo *token_info.TokenInfo
+	if request.Hash != nil && len(request.Hash) == cryptography.PublicKeyHashHashSize {
+		tokInfo, err = api.ApiStore.LoadTokenInfoFromHash(request.Hash)
+	}
+	if err != nil || tokInfo == nil {
+		return
+	}
+	return json.Marshal(tokInfo)
 }
 
 func (api *APICommon) GetToken(request *api_types.APITokenRequest) (out []byte, err error) {

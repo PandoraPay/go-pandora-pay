@@ -84,13 +84,19 @@ func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, 
 }
 
 func (api *APIWebsockets) getAccount(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-
 	request := &api_types.APIAccountRequest{"", nil, api_types.RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
-
 	return api.apiCommon.GetAccount(request)
+}
+
+func (api *APIWebsockets) getTokenInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := &api_types.APITokenInfoRequest{nil}
+	if err := json.Unmarshal(values, &request); err != nil {
+		return nil, err
+	}
+	return api.apiCommon.GetTokenInfo(request)
 }
 
 func (api *APIWebsockets) getToken(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -214,7 +220,6 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"handshake":          api.getHandshake,
 		"ping":               api.getPing,
 		"block":              api.getBlock,
-		"block-info":         api.getBlockInfo,
 		"block-hash":         api.getHash,
 		"block-complete":     api.getBlockComplete,
 		"tx":                 api.getTx,
@@ -225,10 +230,15 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"mem-pool/tx-exists": api.getMempoolExists,
 		"mem-pool/new-tx":    api.getMempoolInsert,
 		"mem-pool/new-tx-id": api.getMempoolTxInsert,
+	}
 
-		"sub":        api.subscribe,
-		"unsub":      api.unsubscribe,
-		"sub/notify": api.subscribedNotificationReceived,
+	if config.STORE_WALLET_EXTRA_SYNC_DATA {
+		api.GetMap["sub"] = api.subscribe
+		api.GetMap["unsub"] = api.unsubscribe
+		api.GetMap["sub/notify"] = api.subscribedNotificationReceived
+		api.GetMap["token-info"] = api.getTokenInfo
+		api.GetMap["block-info"] = api.getBlockInfo
+
 	}
 
 	return api

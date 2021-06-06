@@ -75,7 +75,8 @@ var (
 )
 
 var (
-	CONSENSUS ConsensusType = CONSENSUS_TYPE_FULL
+	CONSENSUS                    ConsensusType = CONSENSUS_TYPE_FULL
+	STORE_WALLET_EXTRA_SYNC_DATA bool
 )
 
 func StartConfig() {
@@ -117,9 +118,13 @@ func InitConfig() (err error) {
 		}
 	}
 
+	STORE_WALLET_EXTRA_SYNC_DATA = false
 	switch globals.Arguments["--consensus"] {
 	case "full":
 		CONSENSUS = CONSENSUS_TYPE_FULL
+		if globals.Arguments["--store-wallet-extra-sync-data"] == "true" {
+			STORE_WALLET_EXTRA_SYNC_DATA = true
+		}
 	case "wallet":
 		CONSENSUS = CONSENSUS_TYPE_WALLET
 	case "none":

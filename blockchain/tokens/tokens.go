@@ -1,8 +1,10 @@
 package tokens
 
 import (
+	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain/tokens/token"
+	token_info "pandora-pay/blockchain/tokens/token-info"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -75,4 +77,44 @@ func (tokens *Tokens) ExistsToken(key []byte) bool {
 
 func (tokens *Tokens) DeleteToken(key []byte) {
 	tokens.Delete(string(key))
+}
+
+func (hashMap *Tokens) WriteToStore() (err error) {
+
+	if err = hashMap.HashMap.WriteToStore(); err != nil {
+		return
+	}
+
+	if config.STORE_WALLET_EXTRA_SYNC_DATA {
+		for k, v := range hashMap.Committed {
+
+			if v.Status == "del" {
+				err = hashMap.Tx.DeleteForcefully("tokenInfo_byHash" + k)
+			} else if v.Status == "update" {
+				tok := &token.Token{}
+				if err = json.Unmarshal(v.Data, tok); err != nil {
+					return
+				}
+
+				tokInfo := &token_info.TokenInfo{
+					Hash:             []byte(k),
+					Name:             tok.Name,
+					Ticker:           tok.Ticker,
+					DecimalSeparator: tok.DecimalSeparator,
+					Description:      tok.Description,
+				}
+				var data []byte
+				data, err = json.Marshal(tokInfo)
+
+				err = hashMap.Tx.Put("tokenInfo_byHash"+k, data)
+			}
+
+			if err != nil {
+				return
+			}
+
+		}
+	}
+
+	return
 }

@@ -24,6 +24,14 @@ type APIStore struct {
 	chain *blockchain.Blockchain
 }
 
+func (apiStore *APIStore) LoadTokenInfoFromHash(hash []byte) (tokInfo *token_info.TokenInfo, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		tokInfo, err = apiStore.LoadTokenInfo(reader, hash)
+		return
+	})
+	return
+}
+
 func (apiStore *APIStore) LoadBlockInfoFromHash(hash []byte) (blkInfo *block_info.BlockInfo, errfinal error) {
 	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		blkInfo, err = apiStore.LoadBlockInfo(reader, hash)

@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/blocks/block-info"
 	"pandora-pay/blockchain/tokens"
+	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -61,8 +62,11 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 	if err = writer.Delete("block_ByHash" + string(hash)); err != nil {
 		return
 	}
-	if err = writer.Delete("blockInfo_ByHash" + string(hash)); err != nil {
-		return
+
+	if config.STORE_WALLET_EXTRA_SYNC_DATA {
+		if err = writer.Delete("blockInfo_ByHash" + string(hash)); err != nil {
+			return
+		}
 	}
 
 	data := writer.Get("blockTxs" + blockHeightStr)
@@ -92,20 +96,22 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		return
 	}
 
-	blockInfoMarshal, err := json.Marshal(&block_info.BlockInfo{
-		Hash:       blkComplete.Block.Bloom.Hash,
-		KernelHash: blkComplete.Block.Bloom.KernelHash,
-		Timestamp:  blkComplete.Block.Timestamp,
-		Size:       blkComplete.BloomBlkComplete.Size,
-		TXs:        uint64(len(blkComplete.Txs)),
-		Forger:     blkComplete.Block.Forger,
-	})
+	if config.STORE_WALLET_EXTRA_SYNC_DATA {
+		var blockInfoMarshal []byte
+		if blockInfoMarshal, err = json.Marshal(&block_info.BlockInfo{
+			Hash:       blkComplete.Block.Bloom.Hash,
+			KernelHash: blkComplete.Block.Bloom.KernelHash,
+			Timestamp:  blkComplete.Block.Timestamp,
+			Size:       blkComplete.BloomBlkComplete.Size,
+			TXs:        uint64(len(blkComplete.Txs)),
+			Forger:     blkComplete.Block.Forger,
+		}); err != nil {
+			return
+		}
 
-	if err != nil {
-		return
-	}
-	if err = writer.Put("blockInfo_ByHash"+string(blkComplete.Block.Bloom.Hash), blockInfoMarshal); err != nil {
-		return
+		if err = writer.Put("blockInfo_ByHash"+string(blkComplete.Block.Bloom.Hash), blockInfoMarshal); err != nil {
+			return
+		}
 	}
 
 	if err = writer.Put("blockHash_ByHeight"+blockHeightStr, blkComplete.Block.Bloom.Hash); err != nil {

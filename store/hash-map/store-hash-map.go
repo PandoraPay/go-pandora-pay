@@ -165,5 +165,5 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 
 	}
 
-	return nil
+	return
 }
