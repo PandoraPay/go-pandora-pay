@@ -77,9 +77,15 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 	}
 
 	outData := hashMap.Tx.Get(key)
-	out, err := hashMap.Deserialize(outData)
-	if err != nil {
-		return false, err
+
+	var out helpers.SerializableInterface
+	var err error
+
+	if outData != nil {
+		out, err = hashMap.Deserialize(outData)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	hashMap.Changes[key] = &ChangesMapElement{out, "view"}

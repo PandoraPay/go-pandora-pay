@@ -167,7 +167,6 @@ func (w *ForgingWallet) updateAccountsChanges() {
 
 			}
 		}
-
 		w.Unlock()
 	}
 

@@ -71,17 +71,18 @@ func startMain() {
 	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
 
 	app.Wallet.InitializeWallet(app.Chain.UpdateAccounts)
+
 	app.Forging.InitializeForging(app.Chain.NextBlockCreatedCn, app.Chain.UpdateAccounts, app.Chain.ForgingSolutionCn)
 
 	if err = genesis.GenesisInit(app.Wallet); err != nil {
 		return
 	}
-
 	if err = app.Chain.InitializeChain(); err != nil {
 		return
 	}
 	app.Forging.StartForging()
 	if err = app.Wallet.StartWallet(); err != nil {
+		return
 	}
 
 	if app.Settings, err = settings.SettingsInit(); err != nil {

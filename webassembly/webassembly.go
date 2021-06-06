@@ -88,6 +88,7 @@ func Initialize(startMainCb func()) {
 			"getNetworkBlockComplete": js.FuncOf(getNetworkBlockComplete),
 			"getNetworkTransaction":   js.FuncOf(getNetworkTransaction),
 			"getNetworkAccount":       js.FuncOf(getNetworkAccount),
+			"getNetworkTokenInfo":     js.FuncOf(getNetworkTokenInfo),
 			"subscribeNetwork":        js.FuncOf(subscribeNetwork),
 			"unsubscribeNetwork":      js.FuncOf(unsubscribeNetwork),
 		}),
