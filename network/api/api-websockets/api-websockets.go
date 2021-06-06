@@ -235,10 +235,12 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 	if config.SEED_WALLET_NODES_INFO {
 		api.GetMap["sub"] = api.subscribe
 		api.GetMap["unsub"] = api.unsubscribe
-		api.GetMap["sub/notify"] = api.subscribedNotificationReceived
 		api.GetMap["token-info"] = api.getTokenInfo
 		api.GetMap["block-info"] = api.getBlockInfo
+	}
 
+	if config.SEED_WALLET_NODES_INFO || config.CONSENSUS == config.CONSENSUS_TYPE_WALLET {
+		api.GetMap["sub/notify"] = api.subscribedNotificationReceived
 	}
 
 	return api

@@ -47,16 +47,15 @@ func (queue *BlockchainUpdatesQueue) hasAnySuccess(updates []*BlockchainUpdate) 
 	return false
 }
 
-func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, updates []*BlockchainUpdate) {
+func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, updates []*BlockchainUpdate) (result bool, err error) {
 
 	if update.err != nil {
 		if len(updates) == 0 && !queue.hasAnySuccess(updates) {
+			queue.chain.mempool.ContinueWork()
 			queue.chain.createNextBlockForForging()
 		}
 		return
 	}
-
-	var err error
 
 	gui.GUI.Warning("-------------------------------------------")
 	gui.GUI.Warning(fmt.Sprintf("Included blocks %d | TXs: %d | Hash %s", len(update.insertedBlocks), len(update.insertedTxHashes), hex.EncodeToString(update.newChainData.Hash)))
@@ -105,13 +104,16 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		}
 		queue.chain.UpdateNewChainDataUpdate.BroadcastAwait(blockchainDataUpdate)
 
+		result = true
 	}
 
+	return
 }
 
 func (queue *BlockchainUpdatesQueue) processQueue() {
 	go func() {
 
+		var updates []*BlockchainUpdate
 		for {
 
 			update, ok := <-queue.updatesCn
@@ -119,7 +121,7 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 				return
 			}
 
-			updates := make([]*BlockchainUpdate, 0)
+			updates = []*BlockchainUpdate{}
 			updates = append(updates, update)
 
 			finished := false
@@ -138,7 +140,14 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 			for len(updates) > 0 {
 				update = updates[0]
 				updates = updates[1:]
-				queue.processUpdate(update, updates)
+
+				result, err := queue.processUpdate(update, updates)
+				if err != nil {
+					gui.GUI.Error("Error processUpdate", err)
+				}
+				if result {
+					break
+				}
 			}
 
 		}

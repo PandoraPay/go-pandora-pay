@@ -164,6 +164,10 @@ func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
 
 }
 
+func (mempool *Mempool) ContinueWork() {
+	mempool.ContinueProcessingCn <- nil
+}
+
 func CreateMemPool() (mempool *Mempool, err error) {
 
 	gui.GUI.Log("MemPool init...")
