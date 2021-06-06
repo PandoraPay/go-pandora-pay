@@ -123,8 +123,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 				Tx:     tx,
 				Result: answerCn,
 			}
-			result := <-answerCn
-			out[i] = result
+			out[i] = <-answerCn
 		} else {
 			out[i] = false
 		}

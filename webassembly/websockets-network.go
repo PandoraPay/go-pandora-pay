@@ -6,7 +6,7 @@ import (
 	"errors"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/accounts/account"
-	block_complete "pandora-pay/blockchain/block-complete"
+	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common/api_types"

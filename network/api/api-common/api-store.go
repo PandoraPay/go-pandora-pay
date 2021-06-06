@@ -7,10 +7,11 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/blockchain/block-complete"
-	block_info "pandora-pay/blockchain/block-info"
+	"pandora-pay/blockchain/blocks/block-complete"
+	"pandora-pay/blockchain/blocks/block-info"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
+	token_info "pandora-pay/blockchain/tokens/token-info"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common/api_types"
@@ -25,7 +26,7 @@ type APIStore struct {
 
 func (apiStore *APIStore) LoadBlockInfoFromHash(hash []byte) (blkInfo *block_info.BlockInfo, errfinal error) {
 	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-		blkInfo, err = apiStore.chain.LoadBlockInfo(reader, hash)
+		blkInfo, err = apiStore.LoadBlockInfo(reader, hash)
 		return
 	})
 	return
@@ -37,7 +38,7 @@ func (apiStore *APIStore) LoadBlockInfoFromHeight(blockHeight uint64) (blkInfo *
 		if err != nil {
 			return
 		}
-		blkInfo, err = apiStore.chain.LoadBlockInfo(reader, hash)
+		blkInfo, err = apiStore.LoadBlockInfo(reader, hash)
 		return
 	})
 	return
@@ -193,6 +194,26 @@ func (apiStore *APIStore) LoadBlockWithTxHashes(reader store_db_interface.StoreD
 		Block: blk,
 		Txs:   txs,
 	}, nil
+}
+
+func (apiStore *APIStore) LoadBlockInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (blkInfo *block_info.BlockInfo, err error) {
+	data := reader.Get("blockInfo_ByHash" + string(hash))
+	if data == nil {
+		return nil, errors.New("BlockInfo was not found")
+	}
+	blkInfo = &block_info.BlockInfo{}
+	err = json.Unmarshal(data, blkInfo)
+	return
+}
+
+func (apiStore *APIStore) LoadTokenInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (tokInfo *token_info.TokenInfo, err error) {
+	data := reader.Get("tokenInfo_ByHash" + string(hash))
+	if data == nil {
+		return nil, errors.New("TokenInfo was not found")
+	}
+	tokInfo = &token_info.TokenInfo{}
+	err = json.Unmarshal(data, tokInfo)
+	return
 }
 
 func (apiStore *APIStore) LoadTx(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (tx *transaction.Transaction, err error) {

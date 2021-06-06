@@ -1,8 +1,8 @@
 package forging
 
 import (
-	block_complete "pandora-pay/blockchain/block-complete"
-	forging_block_work "pandora-pay/blockchain/forging/forging-block-work"
+	"pandora-pay/blockchain/blocks/block-complete"
+	"pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/config/stake"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"

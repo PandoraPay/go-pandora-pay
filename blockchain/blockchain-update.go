@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"pandora-pay/blockchain/accounts"
-	block_complete "pandora-pay/blockchain/block-complete"
+	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/gui"

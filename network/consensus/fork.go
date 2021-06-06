@@ -3,7 +3,7 @@ package consensus
 import (
 	"math/big"
 	"math/rand"
-	block_complete "pandora-pay/blockchain/block-complete"
+	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
 	"sync"

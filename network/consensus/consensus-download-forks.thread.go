@@ -3,7 +3,7 @@ package consensus
 import (
 	"bytes"
 	"pandora-pay/blockchain"
-	block_complete "pandora-pay/blockchain/block-complete"
+	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"

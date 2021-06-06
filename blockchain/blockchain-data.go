@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"math/big"
-	"pandora-pay/blockchain/block/difficulty"
+	difficulty "pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"

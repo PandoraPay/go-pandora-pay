@@ -1,7 +1,7 @@
 package api_types
 
 import (
-	"pandora-pay/blockchain/block"
+	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 )

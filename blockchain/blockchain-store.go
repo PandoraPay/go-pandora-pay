@@ -4,25 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/block"
-	"pandora-pay/blockchain/block-complete"
-	block_info "pandora-pay/blockchain/block-info"
+	"pandora-pay/blockchain/blocks/block"
+	"pandora-pay/blockchain/blocks/block-complete"
+	"pandora-pay/blockchain/blocks/block-info"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"strconv"
 )
-
-func (chain *Blockchain) LoadBlockInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (blk *block_info.BlockInfo, err error) {
-	blockData := reader.Get("blockInfo_ByHash" + string(hash))
-	if blockData == nil {
-		return nil, errors.New("Block was not found")
-	}
-	blk = &block_info.BlockInfo{}
-	err = json.Unmarshal(blockData, blk)
-	return
-}
 
 func (chain *Blockchain) LoadBlock(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (blk *block.Block, err error) {
 	blockData := reader.Get("block_ByHash" + string(hash))

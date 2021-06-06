@@ -3,7 +3,7 @@ package block_complete
 import (
 	"errors"
 	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/block"
+	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
-	"pandora-pay/blockchain/block"
+	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/config/stake"

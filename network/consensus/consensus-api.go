@@ -3,7 +3,7 @@ package consensus
 import (
 	"encoding/json"
 	"pandora-pay/blockchain"
-	block_complete "pandora-pay/blockchain/block-complete"
+	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/network/websocks/connection"

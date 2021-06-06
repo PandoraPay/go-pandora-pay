@@ -2,7 +2,7 @@ package forging_block_work
 
 import (
 	"math/big"
-	block_complete "pandora-pay/blockchain/block-complete"
+	"pandora-pay/blockchain/blocks/block-complete"
 )
 
 type ForgingWork struct {

@@ -2,8 +2,8 @@ package forging
 
 import (
 	"github.com/tevino/abool"
-	"pandora-pay/blockchain/block-complete"
-	forging_block_work "pandora-pay/blockchain/forging/forging-block-work"
+	"pandora-pay/blockchain/blocks/block-complete"
+	"pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
