@@ -117,8 +117,11 @@ func (worker *mempoolWorker) processing(
 		})
 
 		select {
-		case work = <-continueProcessingCn:
-
+		case newWork, ok := <-continueProcessingCn:
+			if !ok {
+				return
+			}
+			work = newWork
 		}
 
 	}

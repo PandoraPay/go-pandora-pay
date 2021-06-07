@@ -23,6 +23,10 @@ func (tx *StoreDBBuntTransaction) Get(key string) (out []byte) {
 	return
 }
 
+func (tx *StoreDBBuntTransaction) GetClone(key string) (out []byte) {
+	return tx.Get(key)
+}
+
 func (tx *StoreDBBuntTransaction) Delete(key string) (err error) {
 	_, err = tx.buntTx.Delete(key)
 	return err

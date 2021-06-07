@@ -135,9 +135,16 @@ func (wallet *Wallet) StartWallet() error {
 		accs := accounts.NewAccounts(reader)
 		for _, adr := range wallet.Addresses {
 
-			var acc *account.Account
-			if acc, err = accs.GetAccount(adr.PublicKeyHash, chainHeight); err != nil {
+			var acc, acc2 *account.Account
+			if acc2, err = accs.GetAccount(adr.PublicKeyHash, chainHeight); err != nil {
 				return
+			}
+
+			if acc2 != nil { //let's clone it
+				acc = &account.Account{}
+				if err = acc.Deserialize(helpers.NewBufferReader(helpers.CloneBytes(acc2.SerializeToBytes()))); err != nil {
+					return
+				}
 			}
 
 			if err = wallet.refreshWallet(acc, adr, false); err != nil {

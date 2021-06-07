@@ -1,13 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"os/signal"
 	"pandora-pay/config"
 	"pandora-pay/config/arguments"
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers/events"
 	"pandora-pay/recovery"
 	"pandora-pay/start"
+	"syscall"
 )
 
 func main() {
@@ -28,5 +31,11 @@ func main() {
 	globals.MainEvents.BroadcastEvent("main", "config initialized")
 
 	recovery.Safe(start.RunMain)
+
+	exitSignal := make(chan os.Signal, 10)
+	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
+	<-exitSignal
+
+	fmt.Println("Shutting down")
 
 }

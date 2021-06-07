@@ -16,6 +16,10 @@ func (tx *StoreDBJSIndexDBTransaction) Get(key string) []byte {
 	return nil
 }
 
+func (tx *StoreDBJSIndexDBTransaction) GetClone(key string) []byte {
+	return nil
+}
+
 func (tx *StoreDBJSIndexDBTransaction) Delete(key string) error {
 	return nil
 }

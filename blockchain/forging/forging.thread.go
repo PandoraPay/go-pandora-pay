@@ -123,13 +123,11 @@ func (thread *ForgingThread) startForging() {
 			if err = thread.publishSolution(solution); err != nil {
 				gui.GUI.Error("Error publishing solution", err)
 			}
-			break
 		case work, ok = <-thread.workCn:
 			if !ok {
 				return
 			}
 			readNextWork = false
-			break //it was changed
 		}
 
 	}

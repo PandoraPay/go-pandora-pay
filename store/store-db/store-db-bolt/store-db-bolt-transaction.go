@@ -2,6 +2,7 @@ package store_db_bolt
 
 import (
 	bolt "go.etcd.io/bbolt"
+	"pandora-pay/helpers"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
@@ -17,6 +18,11 @@ func (tx *StoreDBBoltTransaction) Put(key string, value []byte) error {
 
 func (tx *StoreDBBoltTransaction) Get(key string) []byte {
 	return tx.bucket.Get([]byte(key))
+}
+
+func (tx *StoreDBBoltTransaction) GetClone(key string) []byte {
+	v := tx.Get(key)
+	return helpers.CloneBytes(v)
 }
 
 func (tx *StoreDBBoltTransaction) Delete(key string) error {

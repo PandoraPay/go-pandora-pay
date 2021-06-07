@@ -6,12 +6,6 @@ import (
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
-type CommittedMapElement struct {
-	Element helpers.SerializableInterface
-	Status  string
-	Stored  string
-}
-
 type ChangesMapElement struct {
 	Element helpers.SerializableInterface
 	Status  string
@@ -37,6 +31,19 @@ func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name st
 
 func (hashMap *HashMap) UnsetTx() {
 	hashMap.Tx = nil
+}
+
+func (hashMap *HashMap) CloneCommitted() (err error) {
+
+	for _, v := range hashMap.Committed {
+		if v.Element != nil {
+			if v.Element, err = hashMap.Deserialize(helpers.CloneBytes(v.Element.SerializeToBytes())); err != nil {
+				return
+			}
+		}
+	}
+
+	return
 }
 
 func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err error) {

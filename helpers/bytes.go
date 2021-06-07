@@ -16,6 +16,9 @@ func EmptyBytes(size int) []byte {
 }
 
 func CloneBytes(a []byte) []byte {
+	if a == nil {
+		return nil
+	}
 	out := make([]byte, len(a))
 	copy(out, a)
 	return out

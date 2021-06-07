@@ -100,8 +100,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	err = func() (err error) {
 
+		gui.GUI.Info(fmt.Sprintf("Suspending..."))
 		chain.mempool.SuspendProcessingCn <- struct{}{}
 
+		gui.GUI.Info(fmt.Sprintf("Opening database..."))
 		err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 			savedBlock := false
@@ -176,130 +178,132 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				return errors.New("First block kernel hash is not matching chain prev kerneh lash")
 			}
 
-			for i, blkComplete := range blocksComplete {
+			err = func() (err error) {
 
-				//check block height
-				if blkComplete.Block.Height != newChainData.Height {
-					return errors.New("Block Height is not right!")
-				}
+				for i, blkComplete := range blocksComplete {
 
-				//check blkComplete balance
-
-				var acc *account.Account
-				if acc, err = accs.GetAccount(blkComplete.Block.Forger, blkComplete.Block.Height); err != nil {
-					return
-				}
-
-				if acc == nil || !acc.HasDelegatedStake() {
-					return errors.New("Forger Account deson't exist or hasn't delegated stake")
-				}
-
-				stakingAmount := acc.GetDelegatedStakeAvailable()
-
-				if !bytes.Equal(blkComplete.Block.Bloom.DelegatedPublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash) {
-					return errors.New("Block Staking Delegated Public Key is not matching")
-				}
-
-				if blkComplete.Block.StakingAmount != stakingAmount {
-					return errors.New("Block Staking Amount doesn't match")
-				}
-
-				if blkComplete.Block.StakingAmount < stake.GetRequiredStake(blkComplete.Block.Height) {
-					return errors.New("Delegated stake ready amount is not enought")
-				}
-
-				//gui.Log("Staking amount ", newChainData.Height, "value", blkComplete.Block.StakingAmount)
-				//gui.Log("Target check ", newChainData.Height, "value", newChainData.Target.Text(10))
-
-				if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHash, newChainData.Target) != true {
-					return errors.New("KernelHash Difficulty is not met")
-				}
-
-				//already verified for i == 0
-				if i > 0 {
-					if !bytes.Equal(blkComplete.Block.PrevHash, newChainData.Hash) {
-						return errors.New("PrevHash doesn't match Genesis prevHash")
+					//check block height
+					if blkComplete.Block.Height != newChainData.Height {
+						return errors.New("Block Height is not right!")
 					}
-					if !bytes.Equal(blkComplete.Block.PrevKernelHash, newChainData.KernelHash) {
-						return errors.New("PrevHash doesn't match Genesis prevKernelHash")
+
+					//check blkComplete balance
+
+					var acc *account.Account
+					if acc, err = accs.GetAccount(blkComplete.Block.Forger, blkComplete.Block.Height); err != nil {
+						return
 					}
+
+					if acc == nil || !acc.HasDelegatedStake() {
+						return errors.New("Forger Account deson't exist or hasn't delegated stake")
+					}
+
+					stakingAmount := acc.GetDelegatedStakeAvailable()
+
+					if !bytes.Equal(blkComplete.Block.Bloom.DelegatedPublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash) {
+						return errors.New("Block Staking Delegated Public Key is not matching")
+					}
+
+					if blkComplete.Block.StakingAmount != stakingAmount {
+						return errors.New("Block Staking Amount doesn't match")
+					}
+
+					if blkComplete.Block.StakingAmount < stake.GetRequiredStake(blkComplete.Block.Height) {
+						return errors.New("Delegated stake ready amount is not enought")
+					}
+
+					if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHash, newChainData.Target) != true {
+						return errors.New("KernelHash Difficulty is not met")
+					}
+
+					//already verified for i == 0
+					if i > 0 {
+						if !bytes.Equal(blkComplete.Block.PrevHash, newChainData.Hash) {
+							return errors.New("PrevHash doesn't match Genesis prevHash")
+						}
+						if !bytes.Equal(blkComplete.Block.PrevKernelHash, newChainData.KernelHash) {
+							return errors.New("PrevHash doesn't match Genesis prevKernelHash")
+						}
+					}
+
+					if blkComplete.Block.Timestamp < newChainData.Timestamp {
+						return errors.New("Timestamp has to be greather than the last timestmap")
+					}
+
+					if blkComplete.Block.Timestamp > uint64(time.Now().UTC().Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
+						return errors.New("Timestamp is too much into the future")
+					}
+
+					if err = blkComplete.IncludeBlockComplete(accs, toks); err != nil {
+						return errors.New("Error including block into Blockchain: " + err.Error())
+					}
+
+					//to detect if the savedBlock was done correctly
+					savedBlock = false
+
+					var newTransactionsSaved [][]byte
+					if newTransactionsSaved, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, accs, toks); err != nil {
+						return errors.New("Error saving block complete: " + err.Error())
+					}
+
+					if len(removedBlocksHeights) > 0 {
+						removedBlocksHeights = removedBlocksHeights[1:]
+					}
+
+					accs.Commit() //it will commit the changes but not save them
+					toks.Commit() //it will commit the changes but not save them
+
+					newChainData.PrevHash = newChainData.Hash
+					newChainData.Hash = blkComplete.Block.Bloom.Hash
+					newChainData.PrevKernelHash = newChainData.KernelHash
+					newChainData.KernelHash = blkComplete.Block.Bloom.KernelHash
+					newChainData.Timestamp = blkComplete.Block.Timestamp
+
+					difficultyBigInt := difficulty.ConvertTargetToDifficulty(newChainData.Target)
+					newChainData.BigTotalDifficulty = new(big.Int).Add(newChainData.BigTotalDifficulty, difficultyBigInt)
+
+					if newChainData.Target, err = newChainData.computeNextTargetBig(writer); err != nil {
+						return
+					}
+
+					newChainData.Height += 1
+					newChainData.TransactionsCount += uint64(len(blkComplete.Txs))
+					insertedBlocks = append(insertedBlocks, blkComplete)
+
+					for _, txHashId := range newTransactionsSaved {
+						insertedTxHashes = append(insertedTxHashes, txHashId)
+					}
+
+					if err = newChainData.saveTotalDifficultyExtra(writer); err != nil {
+						return
+					}
+
+					if err = writer.Put("chainHash", newChainData.Hash); err != nil {
+						return
+					}
+					if err = writer.Put("chainPrevHash", newChainData.PrevHash); err != nil {
+						return
+					}
+					if err = writer.Put("chainKernelHash", newChainData.KernelHash); err != nil {
+						return
+					}
+					if err = writer.Put("chainPrevKernelHash", newChainData.PrevKernelHash); err != nil {
+						return
+					}
+
+					if err = newChainData.saveBlockchainHeight(writer); err != nil {
+						return
+					}
+
+					if err = newChainData.saveBlockchainInfo(writer); err != nil {
+						return
+					}
+
+					savedBlock = true
 				}
 
-				if blkComplete.Block.Timestamp < newChainData.Timestamp {
-					return errors.New("Timestamp has to be greather than the last timestmap")
-				}
-
-				if blkComplete.Block.Timestamp > uint64(time.Now().UTC().Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {
-					return errors.New("Timestamp is too much into the future")
-				}
-
-				if err = blkComplete.IncludeBlockComplete(accs, toks); err != nil {
-					return errors.New("Error including block into Blockchain: " + err.Error())
-				}
-
-				//to detect if the savedBlock was done correctly
-				savedBlock = false
-
-				var newTransactionsSaved [][]byte
-				if newTransactionsSaved, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, accs, toks); err != nil {
-					return
-				}
-
-				if len(removedBlocksHeights) > 0 {
-					removedBlocksHeights = removedBlocksHeights[1:]
-				}
-
-				accs.Commit() //it will commit the changes but not save them
-				toks.Commit() //it will commit the changes but not save them
-
-				newChainData.PrevHash = newChainData.Hash
-				newChainData.Hash = blkComplete.Block.Bloom.Hash
-				newChainData.PrevKernelHash = newChainData.KernelHash
-				newChainData.KernelHash = blkComplete.Block.Bloom.KernelHash
-				newChainData.Timestamp = blkComplete.Block.Timestamp
-
-				difficultyBigInt := difficulty.ConvertTargetToDifficulty(newChainData.Target)
-				newChainData.BigTotalDifficulty = new(big.Int).Add(newChainData.BigTotalDifficulty, difficultyBigInt)
-
-				if newChainData.Target, err = newChainData.computeNextTargetBig(writer); err != nil {
-					return
-				}
-
-				newChainData.Height += 1
-				newChainData.TransactionsCount += uint64(len(blkComplete.Txs))
-				insertedBlocks = append(insertedBlocks, blkComplete)
-
-				for _, txHashId := range newTransactionsSaved {
-					insertedTxHashes = append(insertedTxHashes, txHashId)
-				}
-
-				if err = newChainData.saveTotalDifficultyExtra(writer); err != nil {
-					return
-				}
-
-				if err = writer.Put("chainHash", newChainData.Hash); err != nil {
-					return
-				}
-				if err = writer.Put("chainPrevHash", newChainData.PrevHash); err != nil {
-					return
-				}
-				if err = writer.Put("chainKernelHash", newChainData.KernelHash); err != nil {
-					return
-				}
-				if err = writer.Put("chainPrevKernelHash", newChainData.PrevKernelHash); err != nil {
-					return
-				}
-
-				if err = newChainData.saveBlockchainHeight(writer); err != nil {
-					return
-				}
-
-				if err = newChainData.saveBlockchainInfo(writer); err != nil {
-					return
-				}
-
-				savedBlock = true
-			}
+				return
+			}()
 
 			//recover, but in case the chain was correctly saved and the mewChainDifficulty is higher than
 			//we should store it
@@ -333,10 +337,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				}
 
 				for txHash := range removedTxHashes {
-					data := writer.Get("tx" + string(txHash))
-
-					removedTxs = append(removedTxs, helpers.CloneBytes(data)) //required because the garbage collector sometimes it deletes the underlying buffers
-
+					removedTxs = append(removedTxs, writer.GetClone("tx"+string(txHash))) //required because the garbage collector sometimes it deletes the underlying buffers
 					if err = writer.Delete("tx" + string(txHash)); err != nil {
 						panic("Error deleting transactions " + err.Error())
 					}
@@ -351,6 +352,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					panic("Error writing accs: " + err.Error())
 				}
 
+				accs.CloneCommitted()
+				toks.CloneCommitted()
+
 				chain.ChainData.Store(newChainData)
 
 			} else {
@@ -358,16 +362,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				err = errors.New("Rollback")
 			}
 
+			if accs != nil {
+				accs.UnsetTx()
+				toks.UnsetTx()
+			}
+
 			return
 		})
 
 		return
 	}()
-
-	if accs != nil {
-		accs.UnsetTx()
-		toks.UnsetTx()
-	}
 
 	if err == nil && len(insertedBlocks) == 0 {
 		err = errors.New("No blocks were inserted")
@@ -385,6 +389,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		update.insertedBlocks = insertedBlocks
 		update.insertedTxHashes = insertedTxHashes
 	}
+
+	gui.GUI.Log("writing to chain.updatesQueue.updatesCn")
 
 	chain.updatesQueue.updatesCn <- update
 

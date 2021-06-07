@@ -51,9 +51,9 @@ func (queue *BlockchainUpdatesQueue) hasAnySuccess(updates []*BlockchainUpdate) 
 func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, updates []*BlockchainUpdate) (result bool, err error) {
 
 	if update.err != nil {
-		if len(updates) == 0 && !queue.hasAnySuccess(updates) {
-			queue.chain.mempool.ContinueWork()
-			queue.chain.createNextBlockForForging()
+		if !queue.hasAnySuccess(updates) {
+			queue.chain.createNextBlockForForging(nil, false)
+			return true, nil
 		}
 		return
 	}
@@ -81,29 +81,24 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 	}
 
 	if !queue.hasAnySuccess(updates) {
-
-		//update work for mem pool
-		queue.chain.mempool.UpdateWork(update.newChainData.Hash, update.newChainData.Height)
-
 		//create next block and the workers will be automatically reset
-		queue.chain.createNextBlockForForging()
+		queue.chain.createNextBlockForForging(update.newChainData, true)
 	}
 
-	newSyncTime, result := queue.chain.Sync.addBlocksChanged(uint32(len(update.insertedBlocks)), false)
+	newSyncTime, syncResult := queue.chain.Sync.addBlocksChanged(uint32(len(update.insertedBlocks)), false)
 
 	if !queue.hasAnySuccess(updates) {
 
-		if result {
+		if syncResult {
 			queue.chain.Sync.UpdateSyncMulticast.BroadcastAwait(newSyncTime)
 		}
 
 		queue.chain.UpdateNewChain.BroadcastAwait(update.newChainData.Height)
 
-		blockchainDataUpdate := &BlockchainDataUpdate{
+		queue.chain.UpdateNewChainDataUpdate.BroadcastAwait(&BlockchainDataUpdate{
 			update.newChainData,
 			newSyncTime,
-		}
-		queue.chain.UpdateNewChainDataUpdate.BroadcastAwait(blockchainDataUpdate)
+		})
 
 		result = true
 	}
@@ -143,12 +138,14 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 				updates = updates[1:]
 
 				result, err := queue.processUpdate(update, updates)
+
 				if err != nil {
 					gui.GUI.Error("Error processUpdate", err)
 				}
 				if result {
 					break
 				}
+
 			}
 
 		}

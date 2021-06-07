@@ -120,13 +120,22 @@ func (chain *Blockchain) init() (chainData *BlockchainData, err error) {
 	return
 }
 
-func (chain *Blockchain) createNextBlockForForging() {
+func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, newWork bool) {
 
 	if config.CONSENSUS != config.CONSENSUS_TYPE_FULL || globals.Arguments["--staking"] == false {
 		return
 	}
 
-	chainData := chain.GetChainData()
+	if chainData == nil {
+		chainData = chain.GetChainData()
+	}
+
+	if newWork {
+		chain.mempool.UpdateWork(chainData.Hash, chainData.Height)
+	} else {
+		chain.mempool.ContinueWork()
+	}
+
 	target := chainData.Target
 
 	var blk *block.Block
@@ -158,7 +167,11 @@ func (chain *Blockchain) createNextBlockForForging() {
 		Txs:   []*transaction.Transaction{},
 	}
 
-	chain.NextBlockCreatedCn <- &forging_block_work.ForgingWork{blkComplete, target}
+	select {
+	case chain.NextBlockCreatedCn <- &forging_block_work.ForgingWork{blkComplete, target}:
+	default:
+	}
+
 }
 
 func (chain *Blockchain) InitForging() {
@@ -196,10 +209,8 @@ func (chain *Blockchain) InitForging() {
 
 	recovery.SafeGo(func() {
 		time.Sleep(1 * time.Second) //it must be 1 second later to be sure that the forger is listening
-		chain.createNextBlockForForging()
 
-		chainData := chain.GetChainData()
-		chain.mempool.UpdateWork(chainData.Hash, chainData.Height)
+		chain.createNextBlockForForging(nil, true)
 	})
 
 }

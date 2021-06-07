@@ -1,9 +1,6 @@
 package start
 
 import (
-	"fmt"
-	"os"
-	"os/signal"
 	"pandora-pay/app"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
@@ -19,7 +16,6 @@ import (
 	"pandora-pay/testnet"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
-	"syscall"
 )
 
 func startMain() {
@@ -101,9 +97,4 @@ func startMain() {
 	gui.GUI.Log("Main Loop")
 	globals.MainEvents.BroadcastEvent("main", "initialized")
 
-	exitSignal := make(chan os.Signal, 10)
-	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
-	<-exitSignal
-
-	fmt.Println("Shutting down")
 }
