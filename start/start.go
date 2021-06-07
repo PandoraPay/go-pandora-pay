@@ -38,8 +38,8 @@ func startMain() {
 			gui.GUI.Error(err)
 			gui.GUI.Close()
 			fmt.Println("Error: \n\n", err)
-			os.Exit(0)
 		}
+		os.Exit(0)
 	}()
 
 	if err = gui.InitGUI(); err != nil {
