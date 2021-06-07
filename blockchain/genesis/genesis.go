@@ -110,9 +110,9 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 				GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
 				GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 
-				walletPublicKeyHash, delegatedStakePublicKeyHash, err2 := wallet.GetFirstWalletForDevnetGenesisAirdrop()
-				if err2 != nil {
-					return err2
+				var walletPublicKeyHash, delegatedStakePublicKeyHash []byte
+				if walletPublicKeyHash, delegatedStakePublicKeyHash, err = wallet.GetFirstWalletForDevnetGenesisAirdrop(); err != nil {
+					return
 				}
 
 				amount := 100 * stake.GetRequiredStake(0)
