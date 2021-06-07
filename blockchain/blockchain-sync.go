@@ -3,6 +3,7 @@ package blockchain
 import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
+	"pandora-pay/recovery"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -60,7 +61,7 @@ func (chainSync *BlockchainSync) addBlocksChanged(blocks uint32, propagateNotifi
 }
 
 func (chainSync *BlockchainSync) start() {
-	go func() {
+	recovery.SafeGo(func() {
 		for {
 			time.Sleep(time.Minute)
 
@@ -72,14 +73,14 @@ func (chainSync *BlockchainSync) start() {
 			}
 
 		}
-	}()
+	})
 
-	go func() {
+	recovery.SafeGo(func() {
 		for {
 			chainSync.updateBlockchainSyncInfo()
 			time.Sleep(2 * time.Second)
 		}
-	}()
+	})
 }
 
 func createBlockchainSync() (out *BlockchainSync) {

@@ -13,6 +13,7 @@ import (
 	"pandora-pay/helpers/debugging"
 	"pandora-pay/mempool"
 	"pandora-pay/network"
+	"pandora-pay/recovery"
 	"pandora-pay/settings"
 	"pandora-pay/store"
 	"pandora-pay/testnet"
@@ -31,18 +32,8 @@ func startMain() {
 	var err error
 
 	if globals.Arguments["--debugging"] == true {
-		go debugging.Start()
+		recovery.SafeGo(debugging.Start)
 	}
-
-	defer func() {
-		err := recover()
-		if err != nil && gui.GUI != nil {
-			gui.GUI.Error(err)
-			fmt.Println("Error: \n\n", err)
-		}
-		CloseMain()
-		os.Exit(0)
-	}()
 
 	if err = gui.InitGUI(); err != nil {
 		return
@@ -110,17 +101,9 @@ func startMain() {
 	gui.GUI.Log("Main Loop")
 	globals.MainEvents.BroadcastEvent("main", "initialized")
 
-	exitSignal := make(chan os.Signal)
+	exitSignal := make(chan os.Signal, 10)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 	<-exitSignal
 
 	fmt.Println("Shutting down")
-}
-
-func CloseMain() {
-	store.DBClose()
-	gui.GUI.Close()
-	app.Forging.Close()
-	app.Chain.Close()
-	app.Wallet.Close()
 }

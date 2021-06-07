@@ -16,6 +16,7 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/recovery"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"strconv"
@@ -162,7 +163,7 @@ func (chain *Blockchain) createNextBlockForForging() {
 
 func (chain *Blockchain) InitForging() {
 
-	go func() {
+	recovery.SafeGo(func() {
 
 		var err error
 		for {
@@ -191,14 +192,14 @@ func (chain *Blockchain) InitForging() {
 
 		}
 
-	}()
+	})
 
-	go func() {
+	recovery.SafeGo(func() {
 		time.Sleep(1 * time.Second) //it must be 1 second later to be sure that the forger is listening
 		chain.createNextBlockForForging()
 
 		chainData := chain.GetChainData()
 		chain.mempool.UpdateWork(chainData.Hash, chainData.Height)
-	}()
+	})
 
 }

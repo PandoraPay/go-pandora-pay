@@ -6,6 +6,7 @@ import (
 	"pandora-pay/config/arguments"
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers/events"
+	"pandora-pay/recovery"
 	"pandora-pay/start"
 )
 
@@ -26,6 +27,6 @@ func main() {
 	}
 	globals.MainEvents.BroadcastEvent("main", "config initialized")
 
-	start.RunMain()
+	recovery.Safe(start.RunMain)
 
 }

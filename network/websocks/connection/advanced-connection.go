@@ -9,6 +9,7 @@ import (
 	"github.com/tevino/abool"
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
+	"pandora-pay/recovery"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -218,7 +219,7 @@ func (c *AdvancedConnection) ReadPump() {
 
 		//gui.Log(string(message.Name) + " " + strconv.FormatUint(uint64(message.ReplyId), 10) + " " + string(message.Data))
 
-		go func() {
+		recovery.SafeGo(func() {
 
 			if !message.ReplyStatus {
 
@@ -257,7 +258,7 @@ func (c *AdvancedConnection) ReadPump() {
 				}
 			}
 
-		}()
+		})
 
 	}
 
@@ -273,8 +274,7 @@ func (c *AdvancedConnection) WritePump() {
 	}()
 
 	for {
-		_, ok := <-pingTicker.C
-		if !ok {
+		if _, ok := <-pingTicker.C; !ok {
 			return
 		}
 

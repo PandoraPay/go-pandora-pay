@@ -10,6 +10,7 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/events"
 	"pandora-pay/network/api/api-common/api_types"
+	"pandora-pay/recovery"
 	"sync/atomic"
 	"syscall/js"
 )
@@ -25,7 +26,7 @@ func listenEvents(this js.Value, args []js.Value) interface{} {
 	callback := args[0]
 	var err error
 
-	go func() {
+	recovery.SafeGo(func() {
 		for {
 			dataValue, ok := <-channel
 			if !ok {
@@ -49,7 +50,7 @@ func listenEvents(this js.Value, args []js.Value) interface{} {
 
 			callback.Invoke(data.Name, final)
 		}
-	}()
+	})
 
 	return index
 }
@@ -63,7 +64,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 		callback := args[0]
 
 		accountsChannel := app.Network.Websockets.ApiWebsockets.AccountsChangesSubscriptionNotifications.AddListener()
-		go func() {
+		recovery.SafeGo(func() {
 
 			var err error
 			for {
@@ -87,7 +88,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 
 				callback.Invoke(int(api_types.SUBSCRIPTION_ACCOUNT), hex.EncodeToString(data.Key), string(output))
 			}
-		}()
+		})
 
 		return true, nil
 	})

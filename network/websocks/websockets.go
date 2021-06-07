@@ -12,6 +12,7 @@ import (
 	api_http "pandora-pay/network/api/api-http"
 	"pandora-pay/network/api/api-websockets"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/recovery"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -108,9 +109,9 @@ func (websockets *Websockets) NewConnection(c *websocket.Conn, addr string, conn
 		return nil, errors.New("Already connected")
 	}
 
-	go conn.ReadPump()
-	go conn.WritePump()
-	go websockets.closedConnection(conn)
+	recovery.SafeGo(conn.ReadPump)
+	recovery.SafeGo(conn.WritePump)
+	recovery.SafeGo(func() { websockets.closedConnection(conn) })
 
 	if err = websockets.InitializeConnection(conn); err != nil {
 		return
@@ -181,12 +182,12 @@ func CreateWebsockets(chain *blockchain.Blockchain, api *api_http.API, apiWebsoc
 
 	websockets.AllList.Store([]*connection.AdvancedConnection{})
 
-	go func() {
+	recovery.SafeGo(func() {
 		for {
 			gui.GUI.InfoUpdate("sockets", strconv.FormatInt(atomic.LoadInt64(&websockets.Clients), 32)+" "+strconv.FormatInt(atomic.LoadInt64(&websockets.ServerSockets), 32))
 			time.Sleep(1 * time.Second)
 		}
-	}()
+	})
 
 	return websockets
 }

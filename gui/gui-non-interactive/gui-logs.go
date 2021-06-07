@@ -2,7 +2,6 @@ package gui_non_interactive
 
 import (
 	"fmt"
-	"os"
 	gui_interface "pandora-pay/gui/gui-interface"
 )
 
@@ -29,7 +28,7 @@ func (g *GUINonInteractive) Warning(any ...interface{}) {
 
 func (g *GUINonInteractive) Fatal(any ...interface{}) {
 	g.message("FATAL", g.colorFatal, any...)
-	os.Exit(1)
+	panic(any)
 }
 
 func (g *GUINonInteractive) Error(any ...interface{}) {

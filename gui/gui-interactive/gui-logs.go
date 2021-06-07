@@ -2,7 +2,6 @@ package gui_interactive
 
 import (
 	"github.com/gizak/termui/v3/widgets"
-	"os"
 	gui_interface "pandora-pay/gui/gui-interface"
 	"strings"
 )
@@ -41,7 +40,7 @@ func (g *GUIInteractive) Warning(any ...interface{}) {
 
 func (g *GUIInteractive) Fatal(any ...interface{}) {
 	g.message("FATAL", "(fg:red,fg:bold)", any...)
-	os.Exit(1)
+	panic(any)
 }
 
 func (g *GUIInteractive) Error(any ...interface{}) {

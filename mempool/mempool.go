@@ -9,6 +9,7 @@ import (
 	"pandora-pay/config/fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
+	"pandora-pay/recovery"
 	"sync/atomic"
 	"time"
 )
@@ -183,7 +184,9 @@ func CreateMemPool() (mempool *Mempool, err error) {
 	}
 
 	worker := new(mempoolWorker)
-	go worker.processing(mempool.SuspendProcessingCn, mempool.ContinueProcessingCn, mempool.AddTransactionCn, mempool.Txs.addToListCn, mempool.Txs.removeFromListCn)
+	recovery.SafeGo(func() {
+		worker.processing(mempool.SuspendProcessingCn, mempool.ContinueProcessingCn, mempool.AddTransactionCn, mempool.Txs.addToListCn, mempool.Txs.removeFromListCn)
+	})
 
 	mempool.initCLI()
 

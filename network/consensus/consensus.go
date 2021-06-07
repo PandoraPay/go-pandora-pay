@@ -5,6 +5,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/mempool"
 	node_http "pandora-pay/network/server/node-http"
+	"pandora-pay/recovery"
 	"sync"
 	"sync/atomic"
 )
@@ -18,7 +19,7 @@ type Consensus struct {
 
 func (consensus *Consensus) execute() {
 
-	go func() {
+	recovery.SafeGo(func() {
 
 		updateNewChainUpdateListener := consensus.chain.UpdateNewChainDataUpdate.AddListener()
 		for {
@@ -33,9 +34,9 @@ func (consensus *Consensus) execute() {
 			consensus.broadcastChain(newChainDataUpdate.Update)
 		}
 
-	}()
+	})
 
-	go func() {
+	recovery.SafeGo(func() {
 
 		newTxCn := consensus.mempool.NewTransactionMulticast.AddListener()
 		for {
@@ -50,11 +51,11 @@ func (consensus *Consensus) execute() {
 			consensus.broadcastTx(newTx)
 		}
 
-	}()
+	})
 
 	//discover forks
 	processForksThread := createConsensusProcessForksThread(consensus.forks, consensus.chain, consensus.httpServer.ApiStore)
-	go processForksThread.execute()
+	recovery.SafeGo(processForksThread.execute)
 
 }
 

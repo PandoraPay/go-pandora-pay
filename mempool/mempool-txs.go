@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/gui"
+	"pandora-pay/recovery"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -33,7 +34,7 @@ func (self *MempoolTxs) Exists(txId []byte) *transaction.Transaction {
 	return nil
 }
 
-func (self *MempoolTxs) process() []*mempoolTx {
+func (self *MempoolTxs) process() {
 	for {
 		select {
 		case tx := <-self.addToListCn:
@@ -78,18 +79,18 @@ func createMempoolTxs() (txs *MempoolTxs) {
 	}
 	txs.list.Store([]*mempoolTx{})
 
-	go txs.process()
+	recovery.SafeGo(txs.process)
 
 	if config.DEBUG {
-		go func() {
+		recovery.SafeGo(func() {
 			for {
 				txs.print()
 				time.Sleep(60 * time.Second)
 			}
-		}()
+		})
 	}
 
-	go func() {
+	recovery.SafeGo(func() {
 		last := int64(-1)
 		for {
 			txsCount := atomic.LoadInt64(&txs.txsCount)
@@ -99,7 +100,7 @@ func createMempoolTxs() (txs *MempoolTxs) {
 			}
 			time.Sleep(1 * time.Second)
 		}
-	}()
+	})
 
 	return
 }

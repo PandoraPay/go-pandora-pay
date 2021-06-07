@@ -14,6 +14,7 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api-common/api_types"
+	"pandora-pay/recovery"
 	"sync/atomic"
 )
 
@@ -250,7 +251,7 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, api
 		apiStore,
 	}
 
-	go func() {
+	recovery.SafeGo(func() {
 
 		updateNewChainDataUpdateListener := api.chain.UpdateNewChainDataUpdate.AddListener()
 		for {
@@ -264,9 +265,9 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, api
 			api.readLocalBlockchain(newChainDataUpdate)
 
 		}
-	}()
+	})
 
-	go func() {
+	recovery.SafeGo(func() {
 		updateNewSync := api.chain.Sync.UpdateSyncMulticast.AddListener()
 		for {
 			newSyncDataReceived, ok := <-updateNewSync
@@ -277,7 +278,7 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, api
 			newSyncData := newSyncDataReceived.(uint64)
 			api.readLocalBlockchainSync(newSyncData)
 		}
-	}()
+	})
 
 	api.readLocalBlockchain(chain.GetChainDataUpdate())
 

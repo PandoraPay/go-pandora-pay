@@ -15,6 +15,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
+	"pandora-pay/recovery"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	transactions_builder "pandora-pay/transactions-builder"
@@ -211,7 +212,7 @@ func TestnetInit(wallet *wallet.Wallet, mempool *mempool.Mempool, chain *blockch
 		nodes:               uint64(config.CPU_THREADS),
 	}
 
-	go testnet.run()
+	recovery.SafeGo(testnet.run)
 
 	return
 }

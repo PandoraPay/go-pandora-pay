@@ -12,6 +12,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
 	node_http "pandora-pay/network/server/node-http"
+	"pandora-pay/recovery"
 	"pandora-pay/settings"
 	"strconv"
 )
@@ -75,12 +76,12 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 		return
 	}
 
-	go func() {
+	recovery.SafeGo(func() {
 		if err := http.Serve(server.tcpListener, nil); err != nil {
 			gui.GUI.Error("Error opening HTTP server", err)
 		}
 		gui.GUI.Info("HTTP server")
-	}()
+	})
 
 	return
 }

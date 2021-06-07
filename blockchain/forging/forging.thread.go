@@ -6,6 +6,7 @@ import (
 	"pandora-pay/config/stake"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
+	"pandora-pay/recovery"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -62,7 +63,7 @@ func (thread *ForgingThread) startForging() {
 	forgingWorkerSolutionCn := make(chan *ForgingSolution, 0)
 	for i := 0; i < len(workers); i++ {
 		workers[i] = createForgingWorkerThread(i, forgingWorkerSolutionCn)
-		go workers[i].forge()
+		recovery.SafeGo(workers[i].forge)
 	}
 
 	//wallets must be read only after its assignment
@@ -75,11 +76,10 @@ func (thread *ForgingThread) startForging() {
 		ticker.Stop()
 	}()
 
-	go func() {
+	recovery.SafeGo(func() {
 		for {
 
-			_, ok := <-ticker.C
-			if !ok {
+			if _, ok := <-ticker.C; !ok {
 				return
 			}
 
@@ -90,7 +90,7 @@ func (thread *ForgingThread) startForging() {
 			}
 			gui.GUI.InfoUpdate("Hashes/s", s)
 		}
-	}()
+	})
 
 	var err error
 	var ok bool

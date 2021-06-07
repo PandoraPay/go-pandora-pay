@@ -12,6 +12,7 @@ import (
 	node_tcp "pandora-pay/network/server/node-tcp"
 	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/recovery"
 	"pandora-pay/settings"
 	"sync/atomic"
 	"time"
@@ -68,7 +69,7 @@ func (network *Network) execute() {
 }
 
 func (network *Network) syncNewConnections() {
-	go func() {
+	recovery.SafeGo(func() {
 		for {
 			data, ok := <-network.Websockets.UpdateNewConnectionMulticast.AddListener()
 			if !ok {
@@ -82,7 +83,7 @@ func (network *Network) syncNewConnections() {
 				network.MempoolSync.DownloadMempool(conn)
 			}
 		}
-	}()
+	})
 }
 
 func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (network *Network, err error) {
@@ -107,8 +108,8 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 		Consensus:   consensus.CreateConsensus(tcpServer.HttpServer, chain, mempool),
 	}
 
-	go network.execute()
-	go network.syncNewConnections()
+	recovery.SafeGo(network.execute)
+	recovery.SafeGo(network.syncNewConnections)
 
 	return
 }

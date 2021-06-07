@@ -9,6 +9,7 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/recovery"
 )
 
 type WebsocketSubscriptions struct {
@@ -31,7 +32,7 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
-		go subs.processSubscriptions()
+		recovery.SafeGo(subs.processSubscriptions)
 	}
 
 	return

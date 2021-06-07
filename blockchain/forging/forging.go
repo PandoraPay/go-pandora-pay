@@ -9,6 +9,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
+	"pandora-pay/recovery"
 	"sync"
 	"sync/atomic"
 )
@@ -48,8 +49,8 @@ func (forging *Forging) InitializeForging(nextBlockCreatedCn <-chan *forging_blo
 	forging.solutionCn = forgingSolutionCn
 
 	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
-		go forging.Wallet.updateAccountsChanges()
-		go forging.forgingNewWork()
+		recovery.SafeGo(forging.Wallet.updateAccountsChanges)
+		recovery.SafeGo(forging.forgingNewWork)
 	}
 
 }
@@ -77,7 +78,7 @@ func (forging *Forging) StartForging() bool {
 	forging.workCn = make(chan *forging_block_work.ForgingWork, 10)
 	forgingThread := createForgingThread(config.CPU_THREADS, forging.mempool, forging.solutionCn, forging.workCn, forging.Wallet)
 
-	go forgingThread.startForging()
+	recovery.SafeGo(forgingThread.startForging)
 
 	return true
 }

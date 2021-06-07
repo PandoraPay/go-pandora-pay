@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/recovery"
 )
 
 type BlockchainDataUpdate struct {
@@ -111,7 +112,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 }
 
 func (queue *BlockchainUpdatesQueue) processQueue() {
-	go func() {
+	recovery.SafeGo(func() {
 
 		var updates []*BlockchainUpdate
 		for {
@@ -152,5 +153,5 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 
 		}
 
-	}()
+	})
 }
