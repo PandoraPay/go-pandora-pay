@@ -17,17 +17,17 @@ import (
 	"strconv"
 )
 
-func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (adr *wallet_address.WalletAddress, delegatedPublicKeyhash []byte, err error) {
+func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (publicKeyHash, delegatedPublicKeyHash []byte, err error) {
 	wallet.Lock()
 	defer wallet.Unlock()
 
-	adr = wallet.Addresses[0]
-	delegatedStake, err := adr.DeriveDelegatedStake(0)
+	addr := wallet.Addresses[0]
+	delegatedStake, err := addr.DeriveDelegatedStake(0)
 	if err != nil {
 		return
 	}
 
-	return adr, delegatedStake.PublicKeyHash, nil
+	return addr.PublicKeyHash, delegatedStake.PublicKeyHash, nil
 }
 
 func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string) (out *wallet_address.WalletAddress, err error) {
