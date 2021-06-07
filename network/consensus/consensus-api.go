@@ -18,7 +18,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 
 	chainUpdateNotification := new(ChainUpdateNotification)
 	if err := json.Unmarshal(values, &chainUpdateNotification); err != nil {
-		return nil, err
+		return
 	}
 
 	forkFound, exists := consensus.forks.hashes.Load(string(chainUpdateNotification.Hash))
@@ -50,8 +50,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 			return
 		} else {
 			consensus.forks.listMutex.Lock()
-			list := consensus.forks.list.Load().([]*Fork)
-			consensus.forks.list.Store(append(list, fork))
+			consensus.forks.list.Store(append(consensus.forks.list.Load().([]*Fork), fork))
 			consensus.forks.listMutex.Unlock()
 		}
 

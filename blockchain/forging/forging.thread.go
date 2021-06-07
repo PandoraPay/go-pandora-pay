@@ -13,11 +13,11 @@ import (
 )
 
 type ForgingThread struct {
-	mempool    *mempool.Mempool
-	threads    int                                    //number of threads
-	wallet     *ForgingWallet                         //shared wallet, not thread safe
-	solutionCn chan<- *block_complete.BlockComplete   //broadcasting that a solution thread was received
-	workCn     <-chan *forging_block_work.ForgingWork //detect if a new work was published
+	mempool            *mempool.Mempool
+	threads            int                                    //number of threads
+	wallet             *ForgingWallet                         //shared wallet, not thread safe
+	solutionCn         chan<- *block_complete.BlockComplete   //broadcasting that a solution thread was received
+	nextBlockCreatedCn <-chan *forging_block_work.ForgingWork //detect if a new work was published
 }
 
 func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *forging_block_work.ForgingWork) (wallets [][]*ForgingWalletAddressRequired, walletsCount int) {
@@ -99,7 +99,7 @@ func (thread *ForgingThread) startForging() {
 	for {
 
 		if readNextWork {
-			work, ok = <-thread.workCn
+			work, ok = <-thread.nextBlockCreatedCn
 			if !ok {
 				return
 			}
@@ -123,7 +123,7 @@ func (thread *ForgingThread) startForging() {
 			if err = thread.publishSolution(solution); err != nil {
 				gui.GUI.Error("Error publishing solution", err)
 			}
-		case work, ok = <-thread.workCn:
+		case work, ok = <-thread.nextBlockCreatedCn:
 			if !ok {
 				return
 			}
@@ -157,12 +157,12 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 	return
 }
 
-func createForgingThread(threads int, mempool *mempool.Mempool, solutionCn chan<- *block_complete.BlockComplete, workCn <-chan *forging_block_work.ForgingWork, wallet *ForgingWallet) *ForgingThread {
+func createForgingThread(threads int, mempool *mempool.Mempool, solutionCn chan<- *block_complete.BlockComplete, nextBlockCreatedCn <-chan *forging_block_work.ForgingWork, wallet *ForgingWallet) *ForgingThread {
 	return &ForgingThread{
-		threads:    threads,
-		mempool:    mempool,
-		solutionCn: solutionCn,
-		workCn:     workCn,
-		wallet:     wallet,
+		threads:            threads,
+		mempool:            mempool,
+		solutionCn:         solutionCn,
+		nextBlockCreatedCn: nextBlockCreatedCn,
+		wallet:             wallet,
 	}
 }

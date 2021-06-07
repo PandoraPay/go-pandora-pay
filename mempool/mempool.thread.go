@@ -32,12 +32,25 @@ func (worker *mempoolWorker) processing(
 	removedFromListCn chan<- *mempoolTx,
 ) {
 
-	work := <-continueProcessingCn
+	var work *mempoolWork
 
 	var txList []*mempoolTx
 	txMap := make(map[string]bool)
 
 	for {
+
+		select {
+		case newWork, ok := <-continueProcessingCn:
+			if !ok {
+				return
+			}
+			if newWork != nil {
+				work = newWork
+			}
+		}
+		if work == nil {
+			continue
+		}
 
 		if len(txList) > 1 {
 			sortTxs(txList)
@@ -115,14 +128,6 @@ func (worker *mempoolWorker) processing(
 			}
 
 		})
-
-		select {
-		case newWork, ok := <-continueProcessingCn:
-			if !ok {
-				return
-			}
-			work = newWork
-		}
 
 	}
 }

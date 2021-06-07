@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"pandora-pay/gui"
+	"runtime/debug"
 )
 
 func SafeGo(cb func()) {
@@ -16,12 +17,16 @@ func Safe(cb func()) {
 	defer func() {
 		err := recover()
 		if err != nil {
+
+			stackTrace := string(debug.Stack())
+
 			if gui.GUI != nil {
 				gui.GUI.Error(err)
+				gui.GUI.Error(stackTrace)
 				gui.GUI.Close()
 			}
 
-			fmt.Println("Error: \n\n", err)
+			fmt.Println("Error: \n\n", err, stackTrace)
 			os.Exit(0)
 		}
 	}()

@@ -18,7 +18,6 @@ type Forging struct {
 	mempool            *mempool.Mempool
 	Wallet             *ForgingWallet
 	started            *abool.AtomicBool
-	workCn             chan *forging_block_work.ForgingWork
 	nextBlockCreatedCn <-chan *forging_block_work.ForgingWork
 	solutionCn         chan<- *block_complete.BlockComplete
 }
@@ -27,7 +26,6 @@ func CreateForging(mempool *mempool.Mempool) (forging *Forging, err error) {
 
 	forging = &Forging{
 		mempool:            mempool,
-		workCn:             nil,
 		started:            abool.New(),
 		solutionCn:         nil,
 		nextBlockCreatedCn: nil,
@@ -50,7 +48,6 @@ func (forging *Forging) InitializeForging(nextBlockCreatedCn <-chan *forging_blo
 
 	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
 		recovery.SafeGo(forging.Wallet.updateAccountsChanges)
-		recovery.SafeGo(forging.forgingNewWork)
 	}
 
 }
@@ -75,8 +72,7 @@ func (forging *Forging) StartForging() bool {
 		return false
 	}
 
-	forging.workCn = make(chan *forging_block_work.ForgingWork, 10)
-	forgingThread := createForgingThread(config.CPU_THREADS, forging.mempool, forging.solutionCn, forging.workCn, forging.Wallet)
+	forgingThread := createForgingThread(config.CPU_THREADS, forging.mempool, forging.solutionCn, forging.nextBlockCreatedCn, forging.Wallet)
 
 	recovery.SafeGo(forgingThread.startForging)
 
@@ -85,28 +81,9 @@ func (forging *Forging) StartForging() bool {
 
 func (forging *Forging) StopForging() bool {
 	if forging.started.SetToIf(true, false) {
-		close(forging.workCn) //this will close the thread
 		return true
 	}
 	return false
-}
-
-//thread safe
-func (forging *Forging) forgingNewWork() {
-
-	for {
-
-		work, ok := <-forging.nextBlockCreatedCn
-		if !ok {
-			return
-		}
-
-		if forging.started.IsSet() {
-			forging.workCn <- work
-		}
-
-	}
-
 }
 
 func (forging *Forging) Close() {
