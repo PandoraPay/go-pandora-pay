@@ -27,11 +27,18 @@ type GUIInteractive struct {
 
 	info    *widgets.List
 	infoMap *sync.Map
+
+	closed bool
 }
 
 func (g *GUIInteractive) Close() {
+	if g.closed {
+		return
+	}
+	g.closed = true
 	ui.Clear()
 	ui.Close()
+	g.logger.GeneralLog.Close()
 }
 
 func CreateGUIInteractive() (g *GUIInteractive, err error) {

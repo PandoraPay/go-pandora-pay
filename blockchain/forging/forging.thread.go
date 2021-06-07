@@ -116,7 +116,10 @@ func (thread *ForgingThread) startForging() {
 		}
 
 		select {
-		case solution := <-forgingWorkerSolutionCn:
+		case solution, ok := <-forgingWorkerSolutionCn:
+			if !ok {
+				return
+			}
 			if err = thread.publishSolution(solution); err != nil {
 				gui.GUI.Error("Error publishing solution", err)
 			}

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
-	"os"
 	"pandora-pay/addresses"
 	gui_interface "pandora-pay/gui/gui-interface"
 	"strconv"
@@ -90,7 +89,7 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 			return
 		}
 		g.cmd.Unlock()
-		os.Exit(1)
+		g.Close()
 	case "<Down>":
 		g.cmd.ScrollDown()
 	case "<Up>":

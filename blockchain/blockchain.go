@@ -364,8 +364,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		return
 	}()
 
-	accs.UnsetTx()
-	toks.UnsetTx()
+	if accs != nil {
+		accs.UnsetTx()
+		toks.UnsetTx()
+	}
 
 	if err == nil && len(insertedBlocks) == 0 {
 		err = errors.New("No blocks were inserted")

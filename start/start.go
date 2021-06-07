@@ -3,6 +3,7 @@ package start
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"pandora-pay/app"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
@@ -17,6 +18,7 @@ import (
 	"pandora-pay/testnet"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
+	"syscall"
 )
 
 func startMain() {
@@ -36,9 +38,9 @@ func startMain() {
 		err := recover()
 		if err != nil && gui.GUI != nil {
 			gui.GUI.Error(err)
-			gui.GUI.Close()
 			fmt.Println("Error: \n\n", err)
 		}
+		CloseMain()
 		os.Exit(0)
 	}()
 
@@ -108,12 +110,17 @@ func startMain() {
 	gui.GUI.Log("Main Loop")
 	globals.MainEvents.BroadcastEvent("main", "initialized")
 
+	exitSignal := make(chan os.Signal)
+	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
+	<-exitSignal
+
+	fmt.Println("Shutting down")
 }
 
 func CloseMain() {
+	store.DBClose()
 	gui.GUI.Close()
 	app.Forging.Close()
 	app.Chain.Close()
 	app.Wallet.Close()
-	store.DBClose()
 }

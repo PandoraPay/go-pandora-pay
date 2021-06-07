@@ -66,8 +66,11 @@ func (worker *ForgingWorkerThread) forge() {
 			timestamp = work.BlkComplete.Block.Timestamp + 1
 			timestampMs = int64(timestamp) * 1000
 
-		case newWallets := <-worker.walletsCn:
+		case newWallets, ok := <-worker.walletsCn:
 			wallets = newWallets
+			if !ok {
+				return
+			}
 		default:
 		}
 
