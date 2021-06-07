@@ -13,6 +13,7 @@ import (
 	"pandora-pay/blockchain/tokens/token"
 	token_info "pandora-pay/blockchain/tokens/token-info"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/store"
@@ -215,6 +216,9 @@ func (apiStore *APIStore) LoadBlockInfo(reader store_db_interface.StoreDBTransac
 }
 
 func (apiStore *APIStore) LoadTokenInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (tokInfo *token_info.TokenInfo, err error) {
+	if len(hash) == 0 {
+		hash = config.NATIVE_TOKEN_FULL
+	}
 	data := reader.Get("tokenInfo_ByHash" + string(hash))
 	if data == nil {
 		return nil, errors.New("TokenInfo was not found")

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/hex"
 	"errors"
 	"math"
 )
@@ -20,9 +21,11 @@ var (
 	NATIVE_TOKEN_TICKER      = "PANDORA"
 	NATIVE_TOKEN_DESCRIPTION = "PANDORA NATIVE TOKEN"
 
-	NATIVE_TOKEN        = []byte{}
-	NATIVE_TOKEN_STRING = string(NATIVE_TOKEN)
-	NATIVE_TOKEN_FULL   = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	NATIVE_TOKEN                 = []byte{}
+	NATIVE_TOKEN_STRING          = string(NATIVE_TOKEN)
+	NATIVE_TOKEN_FULL            = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	NATIVE_TOKEN_FULL_STRING     = string(NATIVE_TOKEN_FULL)
+	NATIVE_TOKEN_FULL_STRING_HEX = hex.EncodeToString(NATIVE_TOKEN_FULL)
 )
 
 func ConvertToUnitsUint64(number uint64) (uint64, error) {

@@ -7,6 +7,7 @@ import (
 	"pandora-pay/app"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/blocks/block-complete"
+	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common/api_types"
@@ -157,6 +158,28 @@ func getNetworkTokenInfo(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 		return string(data.Out), nil
+	})
+}
+
+func getNetworkToken(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (out interface{}, err error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+		var hash []byte
+		if hash, err = hex.DecodeString(args[0].String()); err != nil {
+			return
+		}
+		data := socket.SendJSONAwaitAnswer([]byte("token"), &api_types.APITokenRequest{hash, api_types.RETURN_SERIALIZED})
+		if data.Err != nil {
+			return nil, data.Err
+		}
+		tok := &token.Token{}
+		if err = tok.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
+			return
+		}
+		return convertJSON(tok)
 	})
 }
 

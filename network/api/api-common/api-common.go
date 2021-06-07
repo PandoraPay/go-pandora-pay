@@ -161,7 +161,7 @@ func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) (out []by
 
 func (api *APICommon) GetTokenInfo(request *api_types.APITokenInfoRequest) (out []byte, err error) {
 	var tokInfo *token_info.TokenInfo
-	if request.Hash != nil && len(request.Hash) == cryptography.PublicKeyHashHashSize {
+	if request.Hash != nil && (len(request.Hash) == cryptography.PublicKeyHashHashSize || len(request.Hash) == 0) {
 		tokInfo, err = api.ApiStore.LoadTokenInfoFromHash(request.Hash)
 	}
 	if err != nil || tokInfo == nil {

@@ -7,7 +7,6 @@ import (
 	token_info "pandora-pay/blockchain/tokens/token-info"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash-map"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -55,8 +54,6 @@ func (tokens *Tokens) CreateToken(key []byte, tok *token.Token) (err error) {
 		return
 	}
 
-	gui.GUI.Log("WWWWWWWWWWWWWWWWWWwaaaa4_1")
-
 	var exists bool
 	if exists, err = tokens.ExistsToken(key); err != nil {
 		return
@@ -65,7 +62,6 @@ func (tokens *Tokens) CreateToken(key []byte, tok *token.Token) (err error) {
 		return errors.New("token already exists")
 	}
 
-	gui.GUI.Log("WWWWWWWWWWWWWWWWWWwaaaa4_2")
 	tokens.UpdateToken(key, tok)
 	return
 }
@@ -107,7 +103,6 @@ func (hashMap *Tokens) WriteToStore() (err error) {
 
 				tok := v.Element.(*token.Token)
 				tokInfo := &token_info.TokenInfo{
-					Hash:             []byte(k),
 					Name:             tok.Name,
 					Ticker:           tok.Ticker,
 					DecimalSeparator: tok.DecimalSeparator,
