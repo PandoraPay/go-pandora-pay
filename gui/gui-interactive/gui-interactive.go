@@ -51,8 +51,6 @@ func CreateGUIInteractive() (g *GUIInteractive, err error) {
 		return
 	}
 
-	//defer ui.Close()
-
 	g.infoInit()
 	g.info2Init()
 	g.cmdInit()
@@ -82,7 +80,10 @@ func CreateGUIInteractive() (g *GUIInteractive, err error) {
 		for {
 
 			select {
-			case e := <-uiEvents:
+			case e, ok := <-uiEvents:
+				if !ok {
+					return
+				}
 				switch e.ID {
 				case "<Resize>":
 					payload := e.Payload.(ui.Resize)

@@ -2,6 +2,7 @@ package start
 
 import (
 	"fmt"
+	"os"
 	"pandora-pay/app"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
@@ -37,6 +38,7 @@ func startMain() {
 			gui.GUI.Error(err)
 			gui.GUI.Close()
 			fmt.Println("Error: \n\n", err)
+			os.Exit(0)
 		}
 	}()
 
