@@ -180,7 +180,7 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 			return
 		}
 
-		result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APIBlockCompleteRequest{0, values, api_types.RETURN_SERIALIZED})
+		result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APITransactionRequest{0, values, api_types.RETURN_SERIALIZED})
 
 		if result.Out != nil && result.Err == nil {
 

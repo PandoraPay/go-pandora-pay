@@ -183,6 +183,22 @@ func getNetworkToken(this js.Value, args []js.Value) interface{} {
 	})
 }
 
+func getNetworkMempool(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (out interface{}, err error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+
+		data := socket.SendJSONAwaitAnswer([]byte("mem-pool"), &api_types.APIMempoolRequest{args[0].Int()})
+		if data.Err != nil {
+			return nil, data.Err
+		}
+
+		return string(data.Out), nil
+	})
+}
+
 func subscribeNetwork(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (out interface{}, err error) {
 		socket := app.Network.Websockets.GetFirstSocket()
@@ -213,7 +229,7 @@ func unsubscribeNetwork(this js.Value, args []js.Value) interface{} {
 			return
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("unsub"), &api_types.APIUnsubscription{key, api_types.SubscriptionType(args[1].Int())})
+		data := socket.SendJSONAwaitAnswer([]byte("unsub"), &api_types.APIUnsubscriptionRequest{key, api_types.SubscriptionType(args[1].Int())})
 		return true, data.Err
 	})
 }
