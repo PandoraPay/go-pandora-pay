@@ -187,7 +187,17 @@ func (api *API) getToken(values *url.Values) (out interface{}, err error) {
 }
 
 func (api *API) getMempool(values *url.Values) (interface{}, error) {
-	return api.apiCommon.GetMempool()
+	request := &api_types.APIMempoolRequest{}
+
+	var err error
+	if values.Get("start") != "" {
+		request.Start, err = strconv.Atoi(values.Get("start"))
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return api.apiCommon.GetMempool(request)
 }
 
 func (api *API) getMempoolExists(values *url.Values) (out interface{}, err error) {
@@ -243,7 +253,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		"tx-hash":            api.getTxHash,
 		"account":            api.getAccount,
 		"token":              api.getToken,
-		"mempool":            api.getMempool,
+		"mem-pool":           api.getMempool,
 		"mem-pool/tx-exists": api.getMempoolExists,
 		"mem-pool/new-tx":    api.postMempoolInsert,
 	}

@@ -182,13 +182,26 @@ func (api *APICommon) GetToken(request *api_types.APITokenRequest) (out []byte, 
 	return json.Marshal(token)
 }
 
-func (api *APICommon) GetMempool() (out []byte, err error) {
+func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) (out []byte, err error) {
 	transactions := api.mempool.Txs.GetTxsList()
-	hashes := make([]helpers.HexBytes, len(transactions))
-	for i, tx := range transactions {
-		hashes[i] = tx.Tx.Bloom.Hash
+
+	length := len(transactions) - int(request.Start)
+	if length < 0 {
+		length = 0
 	}
-	return json.Marshal(hashes)
+	if length > config.API_MEMPOOL_MAX_TRANSACTIONS {
+		length = config.API_MEMPOOL_MAX_TRANSACTIONS
+	}
+
+	result := &api_types.APIMempoolAnswer{
+		Count:  len(transactions),
+		Hashes: make([]helpers.HexBytes, length),
+	}
+
+	for i := 0; i < len(result.Hashes); i++ {
+		result.Hashes[i] = transactions[request.Start+i].Tx.Bloom.Hash
+	}
+	return json.Marshal(result)
 }
 
 func (api *APICommon) GetMempoolExists(txId []byte) (out []byte, err error) {

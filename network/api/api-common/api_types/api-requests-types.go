@@ -88,7 +88,7 @@ type APISubscriptionRequest struct {
 	ReturnType APIReturnType    `json:"returnType,omitempty"`
 }
 
-type APIUnsubscription struct {
+type APIUnsubscriptionRequest struct {
 	Key  []byte           `json:"Key,omitempty"`
 	Type SubscriptionType `json:"type,omitempty"`
 }
@@ -96,4 +96,8 @@ type APIUnsubscription struct {
 type APISubscriptionNotification struct {
 	Key  helpers.HexBytes `json:"key,omitempty"`
 	Data helpers.HexBytes `json:"tx,omitempty"`
+}
+
+type APIMempoolRequest struct {
+	Start int `json:"start,omitempty"`
 }

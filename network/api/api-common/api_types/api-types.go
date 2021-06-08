@@ -36,3 +36,8 @@ type APITransactionSerialized struct {
 	Tx      helpers.HexBytes `json:"tx,omitempty"`
 	Mempool bool             `json:"mempool,omitempty"`
 }
+
+type APIMempoolAnswer struct {
+	Count  int                `json:"count"`
+	Hashes []helpers.HexBytes `json:"hashes"`
+}

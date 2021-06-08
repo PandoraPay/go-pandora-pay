@@ -100,10 +100,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	err = func() (err error) {
 
-		gui.GUI.Info(fmt.Sprintf("Suspending..."))
 		chain.mempool.SuspendProcessingCn <- struct{}{}
 
-		gui.GUI.Info(fmt.Sprintf("Opening database..."))
 		err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 			savedBlock := false

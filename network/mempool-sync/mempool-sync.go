@@ -2,7 +2,7 @@ package mempool_sync
 
 import (
 	"encoding/json"
-	"pandora-pay/helpers"
+	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection"
 )
@@ -13,20 +13,33 @@ type MempoolSync struct {
 
 func (mempoolSync *MempoolSync) DownloadMempool(conn *connection.AdvancedConnection) (err error) {
 
-	out := conn.SendAwaitAnswer([]byte("mem-pool"), nil)
-	if out.Err != nil {
-		return
-	}
+	cb := mempoolSync.websockets.ApiWebsockets.GetMap["mem-pool/new-tx-id"]
 
-	txs := make([]helpers.HexBytes, 0)
-	if err = json.Unmarshal(out.Out, &txs); err != nil {
-		return
-	}
+	start, times := 0, 0
 
-	for _, tx := range txs {
+	//times is used to avoid infinite loops
+	for {
 
-		cb := mempoolSync.websockets.ApiWebsockets.GetMap["mem-pool/new-tx-id"]
-		cb(conn, tx)
+		out := conn.SendJSONAwaitAnswer([]byte("mem-pool"), &api_types.APIMempoolRequest{start})
+		if out.Err != nil {
+			return
+		}
+
+		data := &api_types.APIMempoolAnswer{}
+		if err = json.Unmarshal(out.Out, data); err != nil {
+			return
+		}
+
+		for _, tx := range data.Hashes {
+			cb(conn, tx)
+		}
+
+		start += len(data.Hashes)
+		times++
+
+		if start >= data.Count || times > 10 {
+			break
+		}
 
 	}
 

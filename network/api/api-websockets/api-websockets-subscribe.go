@@ -29,7 +29,7 @@ func (api *APIWebsockets) subscribedNotificationReceived(conn *connection.Advanc
 
 func (api *APIWebsockets) unsubscribe(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
 
-	var unsubscribeRequest *api_types.APIUnsubscription
+	var unsubscribeRequest *api_types.APIUnsubscriptionRequest
 	if err = json.Unmarshal(values, &unsubscribeRequest); err != nil {
 		return
 	}

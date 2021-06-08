@@ -104,12 +104,15 @@ func (api *APIWebsockets) getToken(conn *connection.AdvancedConnection, values [
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
-
 	return api.apiCommon.GetToken(request)
 }
 
 func (api *APIWebsockets) getMempool(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.apiCommon.GetMempool()
+	request := &api_types.APIMempoolRequest{}
+	if err := json.Unmarshal(values, &request); err != nil {
+		return nil, err
+	}
+	return api.apiCommon.GetMempool(request)
 }
 
 func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
