@@ -17,7 +17,7 @@ func (consensus *Consensus) chainGet(conn *connection.AdvancedConnection, values
 func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
 
 	chainUpdateNotification := new(ChainUpdateNotification)
-	if err := json.Unmarshal(values, &chainUpdateNotification); err != nil {
+	if err = json.Unmarshal(values, &chainUpdateNotification); err != nil {
 		return
 	}
 
