@@ -25,10 +25,8 @@ type Forging struct {
 func CreateForging(mempool *mempool.Mempool) (forging *Forging, err error) {
 
 	forging = &Forging{
-		mempool:            mempool,
-		started:            abool.New(),
-		solutionCn:         nil,
-		nextBlockCreatedCn: nil,
+		mempool: mempool,
+		started: abool.New(),
 		Wallet: &ForgingWallet{
 			addressesMap: make(map[string]*ForgingWalletAddress),
 			updates:      &atomic.Value{},

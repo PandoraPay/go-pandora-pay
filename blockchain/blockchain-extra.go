@@ -6,7 +6,7 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block-complete"
-	"pandora-pay/blockchain/forging/forging-block-work"
+	forging_block_work "pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
@@ -126,50 +126,61 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 		return
 	}
 
-	if chainData == nil {
-		chainData = chain.GetChainData()
-	}
-
-	if newWork {
+	if chainData != nil {
 		chain.mempool.UpdateWork(chainData.Hash, chainData.Height)
 	} else {
 		chain.mempool.ContinueWork()
 	}
 
-	target := chainData.Target
+	if newWork {
 
-	var blk *block.Block
-	var err error
-	if chainData.Height == 0 {
-		if blk, err = genesis.CreateNewGenesisBlock(); err != nil {
-			gui.GUI.Error("Error creating next block", err)
-			return
+		if chainData == nil {
+			chainData = chain.GetChainData()
 		}
+
+		target := chainData.Target
+
+		var blk *block.Block
+		var err error
+		if chainData.Height == 0 {
+			if blk, err = genesis.CreateNewGenesisBlock(); err != nil {
+				gui.GUI.Error("Error creating next block", err)
+				return
+			}
+		} else {
+			blk = &block.Block{
+				BlockHeader: &block.BlockHeader{
+					Version: 0,
+					Height:  chainData.Height,
+				},
+				MerkleHash:     cryptography.SHA3Hash([]byte{}),
+				PrevHash:       chainData.Hash,
+				PrevKernelHash: chainData.KernelHash,
+				Timestamp:      chainData.Timestamp,
+			}
+		}
+		blk.Forger = make([]byte, cryptography.PublicKeyHashHashSize)
+		blk.Signature = make([]byte, cryptography.SignatureSize)
+
+		blkComplete := &block_complete.BlockComplete{
+			Block: blk,
+			Txs:   []*transaction.Transaction{},
+		}
+
+		select {
+		case chain.NextBlockCreatedCn <- &forging_block_work.ForgingWork{blkComplete, target}:
+		default:
+		}
+
 	} else {
 
-		blk = &block.Block{
-			BlockHeader: &block.BlockHeader{
-				Version: 0,
-				Height:  chainData.Height,
-			},
-			MerkleHash:     cryptography.SHA3Hash([]byte{}),
-			PrevHash:       chainData.Hash,
-			PrevKernelHash: chainData.KernelHash,
-			Timestamp:      chainData.Timestamp,
+		if chainData != nil {
+			select {
+			case chain.NextBlockCreatedCn <- nil:
+			default:
+			}
 		}
 
-	}
-	blk.Forger = make([]byte, cryptography.PublicKeyHashHashSize)
-	blk.Signature = make([]byte, cryptography.SignatureSize)
-
-	blkComplete := &block_complete.BlockComplete{
-		Block: blk,
-		Txs:   []*transaction.Transaction{},
-	}
-
-	select {
-	case chain.NextBlockCreatedCn <- &forging_block_work.ForgingWork{blkComplete, target}:
-	default:
 	}
 
 }
@@ -209,8 +220,7 @@ func (chain *Blockchain) InitForging() {
 
 	recovery.SafeGo(func() {
 		time.Sleep(1 * time.Second) //it must be 1 second later to be sure that the forger is listening
-
-		chain.createNextBlockForForging(nil, true)
+		chain.createNextBlockForForging(chain.GetChainData(), true)
 	})
 
 }

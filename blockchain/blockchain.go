@@ -352,8 +352,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					panic("Error writing accs: " + err.Error())
 				}
 
-				accs.CloneCommitted()
-				toks.CloneCommitted()
+				if err = accs.CloneCommitted(); err != nil {
+					panic(err)
+				}
+				if err = toks.CloneCommitted(); err != nil {
+					panic(err)
+				}
 
 				chain.ChainData.Store(newChainData)
 
@@ -378,7 +382,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	}
 
 	update := &BlockchainUpdate{
-		err: err,
+		err:             err,
+		calledByForging: calledByForging,
 	}
 
 	if err == nil {

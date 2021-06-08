@@ -109,12 +109,16 @@ func (worker *ForgingWorkerThread) forge() {
 
 				if difficulty.CheckKernelHashBig(kernelHash, work.Target) {
 
-					worker.workerSolutionCn <- &ForgingSolution{
-						timestamp:     timestamp,
-						address:       address.wallet,
-						work:          work,
-						stakingAmount: address.stakingAmount,
+					select {
+					default:
+						worker.workerSolutionCn <- &ForgingSolution{
+							timestamp:     timestamp,
+							address:       address.wallet,
+							work:          work,
+							stakingAmount: address.stakingAmount,
+						}
 					}
+
 					work = nil
 					diff = 0
 					break

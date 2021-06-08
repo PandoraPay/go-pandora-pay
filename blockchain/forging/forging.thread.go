@@ -94,14 +94,16 @@ func (thread *ForgingThread) startForging() {
 
 	var err error
 	var ok bool
-	var work *forging_block_work.ForgingWork
+	var work, newWork *forging_block_work.ForgingWork
 	readNextWork := true
 	for {
 
 		if readNextWork {
-			work, ok = <-thread.nextBlockCreatedCn
-			if !ok {
+			if newWork, ok = <-thread.nextBlockCreatedCn; !ok {
 				return
+			}
+			if newWork != nil {
+				work = newWork
 			}
 		}
 		readNextWork = true
@@ -123,11 +125,13 @@ func (thread *ForgingThread) startForging() {
 			if err = thread.publishSolution(solution); err != nil {
 				gui.GUI.Error("Error publishing solution", err)
 			}
-		case work, ok = <-thread.nextBlockCreatedCn:
+		case newWork, ok = <-thread.nextBlockCreatedCn:
 			if !ok {
 				return
 			}
-			readNextWork = false
+			if newWork != nil {
+				work = newWork
+			}
 		}
 
 	}

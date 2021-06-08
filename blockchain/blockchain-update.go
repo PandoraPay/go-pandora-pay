@@ -25,6 +25,7 @@ type BlockchainUpdate struct {
 	removedTxs       [][]byte
 	insertedBlocks   []*block_complete.BlockComplete
 	insertedTxHashes [][]byte
+	calledByForging  bool
 }
 
 type BlockchainUpdatesQueue struct {
@@ -36,6 +37,15 @@ func createBlockchainUpdatesQueue() *BlockchainUpdatesQueue {
 	return &BlockchainUpdatesQueue{
 		updatesCn: make(chan *BlockchainUpdate, 100),
 	}
+}
+
+func (queue *BlockchainUpdatesQueue) hasCalledByForging(updates []*BlockchainUpdate) bool {
+	for _, update := range updates {
+		if update.calledByForging {
+			return true
+		}
+	}
+	return false
 }
 
 func (queue *BlockchainUpdatesQueue) hasAnySuccess(updates []*BlockchainUpdate) bool {
@@ -52,7 +62,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	if update.err != nil {
 		if !queue.hasAnySuccess(updates) {
-			queue.chain.createNextBlockForForging(nil, false)
+			queue.chain.createNextBlockForForging(nil, queue.hasCalledByForging(updates))
 			return true, nil
 		}
 		return
@@ -80,14 +90,12 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		}
 	}
 
-	if !queue.hasAnySuccess(updates) {
-		//create next block and the workers will be automatically reset
-		queue.chain.createNextBlockForForging(update.newChainData, true)
-	}
-
 	newSyncTime, syncResult := queue.chain.Sync.addBlocksChanged(uint32(len(update.insertedBlocks)), false)
 
-	if !queue.hasAnySuccess(updates) {
+	if !queue.hasAnySuccess(updates[1:]) {
+
+		//create next block and the workers will be automatically reset
+		queue.chain.createNextBlockForForging(update.newChainData, queue.hasCalledByForging(updates))
 
 		if syncResult {
 			queue.chain.Sync.UpdateSyncMulticast.BroadcastAwait(newSyncTime)
@@ -134,10 +142,8 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 			}
 
 			for len(updates) > 0 {
-				update = updates[0]
-				updates = updates[1:]
 
-				result, err := queue.processUpdate(update, updates)
+				result, err := queue.processUpdate(updates[0], updates)
 
 				if err != nil {
 					gui.GUI.Error("Error processUpdate", err)
@@ -145,6 +151,8 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 				if result {
 					break
 				}
+
+				updates = updates[1:]
 
 			}
 
