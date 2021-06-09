@@ -1,4 +1,4 @@
-package transaction_simple
+package transaction_simple_parts
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 type TransactionSimpleInputBloom struct {
 	PublicKey     helpers.HexBytes `json:"publicKey"`     //30
 	PublicKeyHash helpers.HexBytes `json:"publicKeyHash"` //20
-	bloomed       bool             `json:"bloomed"`
+	bloomed       bool
 }
 
 func (vin *TransactionSimpleInput) BloomNow(hashForSignature []byte) (err error) {

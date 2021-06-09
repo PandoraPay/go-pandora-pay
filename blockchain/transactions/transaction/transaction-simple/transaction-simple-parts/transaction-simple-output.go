@@ -1,4 +1,4 @@
-package transaction_simple
+package transaction_simple_parts
 
 import (
 	"pandora-pay/cryptography"

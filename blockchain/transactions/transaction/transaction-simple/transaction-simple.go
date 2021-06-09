@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/tokens"
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
+	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/ecdsa"
 	"pandora-pay/helpers"
@@ -16,11 +17,11 @@ import (
 type TransactionSimple struct {
 	transaction_base_interface.TransactionBaseInterface      `json:"-"`
 	transaction_simple_extra.TransactionSimpleExtraInterface `json:"extra"`
-	TxScript                                                 ScriptType                 `json:"txScript"`
-	Nonce                                                    uint64                     `json:"nonce"`
-	Vin                                                      []*TransactionSimpleInput  `json:"vin"`
-	Vout                                                     []*TransactionSimpleOutput `json:"vout"`
-	Bloom                                                    *TransactionSimpleBloom    `json:"-"`
+	TxScript                                                 ScriptType                                          `json:"txScript"`
+	Nonce                                                    uint64                                              `json:"nonce"`
+	Vin                                                      []*transaction_simple_parts.TransactionSimpleInput  `json:"vin"`
+	Vout                                                     []*transaction_simple_parts.TransactionSimpleOutput `json:"vout"`
+	Bloom                                                    *TransactionSimpleBloom                             `json:"-"`
 }
 
 func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
@@ -227,9 +228,9 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 	if n, err = reader.ReadUvarint(); err != nil {
 		return
 	}
-	tx.Vin = make([]*TransactionSimpleInput, n)
+	tx.Vin = make([]*transaction_simple_parts.TransactionSimpleInput, n)
 	for i := 0; i < int(n); i++ {
-		tx.Vin[i] = &TransactionSimpleInput{}
+		tx.Vin[i] = &transaction_simple_parts.TransactionSimpleInput{}
 		if err = tx.Vin[i].Deserialize(reader); err != nil {
 			return
 		}
@@ -239,9 +240,9 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 	if n, err = reader.ReadUvarint(); err != nil {
 		return
 	}
-	tx.Vout = make([]*TransactionSimpleOutput, n)
+	tx.Vout = make([]*transaction_simple_parts.TransactionSimpleOutput, n)
 	for i := 0; i < int(n); i++ {
-		tx.Vout[i] = &TransactionSimpleOutput{}
+		tx.Vout[i] = &transaction_simple_parts.TransactionSimpleOutput{}
 		if err = tx.Vout[i].Deserialize(reader); err != nil {
 			return
 		}

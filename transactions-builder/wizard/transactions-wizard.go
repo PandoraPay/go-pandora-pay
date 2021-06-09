@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
+	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 )
 
@@ -23,24 +24,24 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 	}
 
 	privateKeys := make([]addresses.PrivateKey, len(keys))
-	vin := make([]*transaction_simple.TransactionSimpleInput, len(keys))
+	vin := make([]*transaction_simple_parts.TransactionSimpleInput, len(keys))
 	for i := 0; i < len(keys); i++ {
 
 		privateKeys[i] = addresses.PrivateKey{Key: keys[i]}
 
-		vin[i] = &transaction_simple.TransactionSimpleInput{
+		vin[i] = &transaction_simple_parts.TransactionSimpleInput{
 			Amount: amounts[i],
 			Token:  tokens[i],
 		}
 	}
 
-	vout := make([]*transaction_simple.TransactionSimpleOutput, len(dsts))
+	vout := make([]*transaction_simple_parts.TransactionSimpleOutput, len(dsts))
 	for i := 0; i < len(dsts); i++ {
 		var outAddress *addresses.Address
 		if outAddress, err = addresses.DecodeAddr(dsts[i]); err != nil {
 			return
 		}
-		vout[i] = &transaction_simple.TransactionSimpleOutput{
+		vout[i] = &transaction_simple_parts.TransactionSimpleOutput{
 			PublicKeyHash: outAddress.PublicKeyHash,
 			Amount:        dstsAmounts[i],
 			Token:         dstsTokens[i],
@@ -95,7 +96,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte 
 			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleUnstake{
 				Amount: unstakeAmount,
 			},
-			Vin: []*transaction_simple.TransactionSimpleInput{
+			Vin: []*transaction_simple_parts.TransactionSimpleInput{
 				{
 					Amount: 0,
 				},
@@ -146,7 +147,7 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 				HasNewPublicKeyHash: delegateHasNewPublicKeyHash,
 				NewPublicKeyHash:    delegateNewPublicKeyHash,
 			},
-			Vin: []*transaction_simple.TransactionSimpleInput{
+			Vin: []*transaction_simple_parts.TransactionSimpleInput{
 				{
 					Amount: 0,
 				},
