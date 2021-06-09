@@ -335,25 +335,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				}
 
 				for txHash := range removedTxHashes {
-					removedTxs = append(removedTxs, writer.GetClone("tx"+string(txHash))) //required because the garbage collector sometimes it deletes the underlying buffers
-					if err = writer.Delete("tx" + string(txHash)); err != nil {
+					removedTxs = append(removedTxs, writer.GetClone("tx"+txHash)) //required because the garbage collector sometimes it deletes the underlying buffers
+					if err = writer.Delete("tx" + txHash); err != nil {
 						panic("Error deleting transactions " + err.Error())
 					}
 				}
 
-				accs.Rollback()
-				toks.Rollback()
-				if err = accs.WriteToStore(); err != nil {
-					panic("Error writing accs" + err.Error())
-				}
-				if err = toks.WriteToStore(); err != nil {
-					panic("Error writing accs: " + err.Error())
-				}
-
-				if err = accs.CloneCommitted(); err != nil {
-					panic(err)
-				}
-				if err = toks.CloneCommitted(); err != nil {
+				if err = chain.saveBlockchainHashmaps(accs, toks); err != nil {
 					panic(err)
 				}
 

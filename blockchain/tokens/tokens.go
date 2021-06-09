@@ -1,10 +1,8 @@
 package tokens
 
 import (
-	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain/tokens/token"
-	token_info "pandora-pay/blockchain/tokens/token-info"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -91,34 +89,6 @@ func (hashMap *Tokens) WriteToStore() (err error) {
 
 	if err = hashMap.HashMap.WriteToStore(); err != nil {
 		return
-	}
-
-	if config.SEED_WALLET_NODES_INFO {
-
-		for k, v := range hashMap.Committed {
-
-			if v.Stored == "del" {
-				err = hashMap.Tx.DeleteForcefully("tokenInfo_ByHash" + k)
-			} else if v.Stored == "update" {
-
-				tok := v.Element.(*token.Token)
-				tokInfo := &token_info.TokenInfo{
-					Name:             tok.Name,
-					Ticker:           tok.Ticker,
-					DecimalSeparator: tok.DecimalSeparator,
-					Description:      tok.Description,
-				}
-				var data []byte
-				data, err = json.Marshal(tokInfo)
-
-				err = hashMap.Tx.Put("tokenInfo_ByHash"+k, data)
-			}
-
-			if err != nil {
-				return
-			}
-		}
-
 	}
 
 	return

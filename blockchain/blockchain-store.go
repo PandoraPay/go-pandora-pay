@@ -8,6 +8,8 @@ import (
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/blocks/block-info"
 	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/tokens/token"
+	token_info "pandora-pay/blockchain/tokens/token-info"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -173,6 +175,58 @@ func (chain *Blockchain) LoadTxHash(reader store_db_interface.StoreDBTransaction
 		return nil, errors.New("Tx Hash not found")
 	}
 	return hash, nil
+}
+
+func (chain *Blockchain) saveBlockchainHashmaps(accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
+
+	accs.Rollback()
+	toks.Rollback()
+
+	if err = accs.WriteToStore(); err != nil {
+		return
+	}
+	if err = toks.WriteToStore(); err != nil {
+		return
+	}
+
+	if err = accs.CloneCommitted(); err != nil {
+		return
+	}
+	if err = toks.CloneCommitted(); err != nil {
+		return
+	}
+
+	if config.SEED_WALLET_NODES_INFO {
+
+		for k, v := range toks.Committed {
+
+			if v.Stored == "del" {
+				err = toks.Tx.DeleteForcefully("tokenInfo_ByHash" + k)
+			} else if v.Stored == "update" {
+
+				tok := v.Element.(*token.Token)
+				tokInfo := &token_info.TokenInfo{
+					Name:             tok.Name,
+					Ticker:           tok.Ticker,
+					DecimalSeparator: tok.DecimalSeparator,
+					Description:      tok.Description,
+				}
+				var data []byte
+				if data, err = json.Marshal(tokInfo); err != nil {
+					return
+				}
+
+				err = toks.Tx.Put("tokenInfo_ByHash"+k, data)
+			}
+
+			if err != nil {
+				return
+			}
+		}
+
+	}
+
+	return
 }
 
 func (chain *Blockchain) saveBlockchain() error {
