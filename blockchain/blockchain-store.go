@@ -139,6 +139,9 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		if err = writer.Put("txHash_ByHeight"+indexStr, tx.Bloom.Hash); err != nil {
 			return
 		}
+		if err = writer.Put("txHeight_ByHash"+tx.Bloom.HashStr, []byte(indexStr)); err != nil {
+			return
+		}
 	}
 
 	marshal, err := json.Marshal(txHashes)

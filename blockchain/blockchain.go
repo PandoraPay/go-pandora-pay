@@ -332,12 +332,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 							panic("Error deleting unused transaction: " + err.Error())
 						}
 					}
+
 				}
 
 				for txHash := range removedTxHashes {
 					removedTxs = append(removedTxs, writer.GetClone("tx"+txHash)) //required because the garbage collector sometimes it deletes the underlying buffers
 					if err = writer.Delete("tx" + txHash); err != nil {
-						panic("Error deleting transactions " + err.Error())
+						panic("Error deleting transaction: " + err.Error())
+					}
+					if err = writer.Delete("txHeight_ByHash" + txHash); err != nil {
+						panic("Error deleting transaction " + err.Error())
 					}
 				}
 

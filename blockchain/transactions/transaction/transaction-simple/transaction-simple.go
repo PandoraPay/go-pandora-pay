@@ -87,6 +87,16 @@ func (tx *TransactionSimple) ComputeFees(out map[string]uint64) (err error) {
 	return
 }
 
+func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) (err error) {
+	for _, vin := range tx.Vin {
+		out[string(vin.Bloom.PublicKeyHash)] = true
+	}
+	for _, vout := range tx.Vout {
+		out[string(vout.PublicKeyHash)] = true
+	}
+	return
+}
+
 func (tx *TransactionSimple) ComputeVin(out map[string]uint64) (err error) {
 	for _, vin := range tx.Vin {
 		if err = helpers.SafeMapUint64Add(out, string(vin.Token), vin.Amount); err != nil {

@@ -22,6 +22,12 @@ func (tx *Transaction) GetAllFees() (fees map[string]uint64, err error) {
 	return
 }
 
+func (tx *Transaction) GetAllKeys() (out map[string]bool, err error) {
+	out = make(map[string]bool)
+	err = tx.ComputeAllKeys(out)
+	return
+}
+
 func (tx *Transaction) SerializeForSigning() []byte {
 	writer := helpers.NewBufferWriter()
 	tx.SerializeAdvanced(writer, false)
