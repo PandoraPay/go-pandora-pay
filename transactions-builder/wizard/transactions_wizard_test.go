@@ -35,7 +35,7 @@ func TestCreateSimpleTx(t *testing.T) {
 	assert.NoError(t, tx2.Validate(), "error validating tx")
 	assert.Equal(t, tx2.VerifySignatureManually(), true, "Verify signature failed2")
 
-	fees, err := tx.ComputeFees()
+	fees, err := tx.GetAllFees()
 	assert.NoError(t, err)
 	assert.Equal(t, fees[string([]byte{})], uint64(2), "Fees were calculated invalid")
 
@@ -60,7 +60,7 @@ func TestCreateUnstakeTx(t *testing.T) {
 	assert.NoError(t, tx2.Validate(), "error validating tx")
 	assert.Equal(t, tx2.VerifySignatureManually(), true, "Verify signature failed2")
 
-	fees, err := tx.ComputeFees()
+	fees, err := tx.GetAllFees()
 	assert.NoError(t, err)
 	assert.Equal(t, fees[config.NATIVE_TOKEN_STRING] > uint64(100), true, "Fees were calculated invalid")
 
@@ -92,7 +92,7 @@ func TestCreateUnstakeTxPayExtra(t *testing.T) {
 	assert.NoError(t, tx2.Validate(), "error validating tx")
 	assert.Equal(t, tx2.VerifySignatureManually(), true, "Verify signature failed2")
 
-	fees, err := tx.ComputeFees()
+	fees, err := tx.GetAllFees()
 	assert.NoError(t, err)
 	assert.Equal(t, fees[config.NATIVE_TOKEN_STRING] > uint64(100), true, "Fees were calculated invalid")
 

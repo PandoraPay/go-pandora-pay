@@ -16,13 +16,9 @@ type Transaction struct {
 	Bloom                                               *TransactionBloom                `json:"bloom"`
 }
 
-func (tx *Transaction) AddFees(fees map[string]uint64) error {
-	return tx.TransactionBaseInterface.ComputeFees(fees)
-}
-
-func (tx *Transaction) ComputeFees() (fees map[string]uint64, err error) {
+func (tx *Transaction) GetAllFees() (fees map[string]uint64, err error) {
 	fees = make(map[string]uint64)
-	err = tx.AddFees(fees)
+	err = tx.ComputeFees(fees)
 	return
 }
 

@@ -63,7 +63,7 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, 
 
 	allFees := make(map[string]uint64)
 	for _, tx := range blkComplete.Txs {
-		if err = tx.AddFees(allFees); err != nil {
+		if err = tx.ComputeFees(allFees); err != nil {
 			return
 		}
 	}

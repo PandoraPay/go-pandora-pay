@@ -68,7 +68,7 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 		}
 
 		var minerFees map[string]uint64
-		if minerFees, err = tx.ComputeFees(); err != nil {
+		if minerFees, err = tx.GetAllFees(); err != nil {
 			return
 		}
 
