@@ -125,6 +125,23 @@ func (api *API) getTokenInfo(values *url.Values) (out interface{}, err error) {
 	return api.apiCommon.GetTokenInfo(request)
 }
 
+func (api *API) getTxInfo(values *url.Values) (out interface{}, err error) {
+
+	request := &api_types.APITransactionInfoRequest{}
+
+	err = errors.New("parameter 'hash' or 'height' are missing")
+	if values.Get("height") != "" {
+		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
+	} else if values.Get("hash") != "" {
+		request.Hash, err = hex.DecodeString(values.Get("hash"))
+	}
+	if err != nil {
+		return
+	}
+
+	return api.apiCommon.GetTxInfo(request)
+}
+
 func (api *API) getTx(values *url.Values) (out interface{}, err error) {
 
 	request := &api_types.APITransactionRequest{}
@@ -261,6 +278,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 	if config.SEED_WALLET_NODES_INFO {
 		api.GetMap["token-info"] = api.getTokenInfo
 		api.GetMap["block-info"] = api.getBlockInfo
+		api.GetMap["tx-info"] = api.getTxInfo
 	}
 
 	return &api

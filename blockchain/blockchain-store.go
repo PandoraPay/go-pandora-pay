@@ -4,27 +4,32 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block-complete"
-	"pandora-pay/blockchain/blocks/block-info"
 	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/tokens/token"
-	token_info "pandora-pay/blockchain/tokens/token-info"
 	"pandora-pay/config"
-	"pandora-pay/helpers"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"strconv"
 )
 
-func (chain *Blockchain) LoadBlock(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (blk *block.Block, err error) {
-	blockData := reader.Get("block_ByHash" + string(hash))
-	if blockData == nil {
-		return nil, errors.New("Block was not found")
-	}
-	blk = &block.Block{BlockHeader: &block.BlockHeader{}}
-	err = blk.Deserialize(helpers.NewBufferReader(blockData))
+func (chain *Blockchain) OpenLoadBlockHash(blockHeight uint64) (hash []byte, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		hash, err = chain.LoadBlockHash(reader, blockHeight)
+		return
+	})
 	return
+}
+
+func (chain *Blockchain) LoadBlockHash(reader store_db_interface.StoreDBTransactionInterface, height uint64) ([]byte, error) {
+	if height < 0 {
+		return nil, errors.New("Height is invalid")
+	}
+
+	hash := reader.Get("blockHash_ByHeight" + strconv.FormatUint(height, 10))
+	if hash == nil {
+		return nil, errors.New("Block Hash not found")
+	}
+	return hash, nil
 }
 
 func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
@@ -61,12 +66,16 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 	}
 
 	hash := writer.Get("blockHash_ByHeight" + blockHeightStr)
+	if hash == nil {
+		return errors.New("Invalid Hash")
+	}
+
 	if err = writer.Delete("block_ByHash" + string(hash)); err != nil {
 		return
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
-		if err = writer.Delete("blockInfo_ByHash" + string(hash)); err != nil {
+		if err = removeBlockInfo(writer, hash); err != nil {
 			return
 		}
 	}
@@ -98,24 +107,6 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		return
 	}
 
-	if config.SEED_WALLET_NODES_INFO {
-		var blockInfoMarshal []byte
-		if blockInfoMarshal, err = json.Marshal(&block_info.BlockInfo{
-			Hash:       blkComplete.Block.Bloom.Hash,
-			KernelHash: blkComplete.Block.Bloom.KernelHash,
-			Timestamp:  blkComplete.Block.Timestamp,
-			Size:       blkComplete.BloomBlkComplete.Size,
-			TXs:        uint64(len(blkComplete.Txs)),
-			Forger:     blkComplete.Block.Forger,
-		}); err != nil {
-			return
-		}
-
-		if err = writer.Put("blockInfo_ByHash"+string(blkComplete.Block.Bloom.Hash), blockInfoMarshal); err != nil {
-			return
-		}
-	}
-
 	if err = writer.Put("blockHash_ByHeight"+blockHeightStr, blkComplete.Block.Bloom.Hash); err != nil {
 		return
 	}
@@ -135,17 +126,16 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 			newTxHashes = append(newTxHashes, tx.Bloom.Hash)
 		}
 
-		indexStr := strconv.FormatUint(transactionsCount+uint64(i), 10)
-		if err = writer.Put("txHash_ByHeight"+indexStr, tx.Bloom.Hash); err != nil {
-			return
-		}
-		if err = writer.Put("txHeight_ByHash"+tx.Bloom.HashStr, []byte(indexStr)); err != nil {
+	}
+
+	if config.SEED_WALLET_NODES_INFO {
+		if err = saveBlockCompleteInfo(writer, blkComplete, transactionsCount); err != nil {
 			return
 		}
 	}
 
-	marshal, err := json.Marshal(txHashes)
-	if err != nil {
+	var marshal []byte
+	if marshal, err = json.Marshal(txHashes); err != nil {
 		return
 	}
 
@@ -154,30 +144,6 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 	}
 
 	return
-}
-
-func (chain *Blockchain) LoadBlockHash(reader store_db_interface.StoreDBTransactionInterface, height uint64) ([]byte, error) {
-	if height < 0 {
-		return nil, errors.New("Height is invalid")
-	}
-
-	hash := reader.Get("blockHash_ByHeight" + strconv.FormatUint(height, 10))
-	if hash == nil {
-		return nil, errors.New("Block Hash not found")
-	}
-	return hash, nil
-}
-
-func (chain *Blockchain) LoadTxHash(reader store_db_interface.StoreDBTransactionInterface, height uint64) ([]byte, error) {
-	if height < 0 {
-		return nil, errors.New("Height is invalid")
-	}
-
-	hash := reader.Get("txHash_ByHeight" + strconv.FormatUint(height, 10))
-	if hash == nil {
-		return nil, errors.New("Tx Hash not found")
-	}
-	return hash, nil
 }
 
 func (chain *Blockchain) saveBlockchainHashmaps(accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
@@ -200,33 +166,9 @@ func (chain *Blockchain) saveBlockchainHashmaps(accs *accounts.Accounts, toks *t
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
-
-		for k, v := range toks.Committed {
-
-			if v.Stored == "del" {
-				err = toks.Tx.DeleteForcefully("tokenInfo_ByHash" + k)
-			} else if v.Stored == "update" {
-
-				tok := v.Element.(*token.Token)
-				tokInfo := &token_info.TokenInfo{
-					Name:             tok.Name,
-					Ticker:           tok.Ticker,
-					DecimalSeparator: tok.DecimalSeparator,
-					Description:      tok.Description,
-				}
-				var data []byte
-				if data, err = json.Marshal(tokInfo); err != nil {
-					return
-				}
-
-				err = toks.Tx.Put("tokenInfo_ByHash"+k, data)
-			}
-
-			if err != nil {
-				return
-			}
+		if err = saveTokensInfo(toks); err != nil {
+			return
 		}
-
 	}
 
 	return

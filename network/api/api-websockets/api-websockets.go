@@ -134,6 +134,14 @@ func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, 
 	}
 }
 
+func (api *APIWebsockets) getTxInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := &api_types.APITransactionInfoRequest{0, nil}
+	if err := json.Unmarshal(values, &request); err != nil {
+		return nil, err
+	}
+	return api.apiCommon.GetTxInfo(request)
+}
+
 func (api *APIWebsockets) getTx(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	request := &api_types.APITransactionRequest{}
 	if err := json.Unmarshal(values, &request); err != nil {
@@ -184,13 +192,13 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 
 		if result.Out != nil && result.Err == nil {
 
-			data := &api_types.APITransactionSerialized{}
+			data := &api_types.APITransaction{}
 			if err = json.Unmarshal(result.Out, data); err != nil {
 				return
 			}
 
 			tx := &transaction.Transaction{}
-			if err = tx.Deserialize(helpers.NewBufferReader(data.Tx)); err != nil {
+			if err = tx.Deserialize(helpers.NewBufferReader(data.TxSerialized)); err != nil {
 				return
 			}
 
@@ -240,6 +248,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		api.GetMap["unsub"] = api.unsubscribe
 		api.GetMap["token-info"] = api.getTokenInfo
 		api.GetMap["block-info"] = api.getBlockInfo
+		api.GetMap["tx-info"] = api.getTxInfo
 	}
 
 	if config.SEED_WALLET_NODES_INFO || config.CONSENSUS == config.CONSENSUS_TYPE_WALLET {

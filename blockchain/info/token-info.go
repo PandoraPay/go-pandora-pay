@@ -1,4 +1,4 @@
-package token_info
+package info
 
 type TokenInfo struct {
 	Name             string `json:"name"`

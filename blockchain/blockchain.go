@@ -20,7 +20,6 @@ import (
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"pandora-pay/wallet"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -327,12 +326,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 
 					//removing unused transactions
-					for i := newChainData.TransactionsCount; i < removedBlocksTransactionsCount; i++ {
-						if err = writer.Delete("txHash_ByHeight" + strconv.FormatUint(i, 10)); err != nil {
-							panic("Error deleting unused transaction: " + err.Error())
+					if config.SEED_WALLET_NODES_INFO {
+						if err = removeUnusedTransactions(writer, newChainData.TransactionsCount, removedBlocksTransactionsCount); err != nil {
+							panic(err)
 						}
 					}
-
 				}
 
 				for txHash := range removedTxHashes {
@@ -340,8 +338,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					if err = writer.Delete("tx" + txHash); err != nil {
 						panic("Error deleting transaction: " + err.Error())
 					}
-					if err = writer.Delete("txHeight_ByHash" + txHash); err != nil {
-						panic("Error deleting transaction " + err.Error())
+				}
+
+				if config.SEED_WALLET_NODES_INFO {
+					if err = removeTxsInfo(writer, removedTxHashes); err != nil {
+						panic(err)
 					}
 				}
 

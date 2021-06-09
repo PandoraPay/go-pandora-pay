@@ -123,23 +123,20 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		received := &api_types.APITransactionSerialized{}
+		received := &api_types.APITransaction{}
 		if err = json.Unmarshal(data.Out, received); err != nil {
 			return
 		}
 
-		final := &api_types.APITransaction{
-			Tx:      &transaction.Transaction{},
-			Mempool: received.Mempool,
+		received.Tx = &transaction.Transaction{}
+		if err = received.Tx.Deserialize(helpers.NewBufferReader(received.TxSerialized)); err != nil {
+			return
+		}
+		if err = received.Tx.BloomAll(); err != nil {
+			return
 		}
 
-		if err = final.Tx.Deserialize(helpers.NewBufferReader(received.Tx)); err != nil {
-			return
-		}
-		if err = final.Tx.BloomAll(); err != nil {
-			return
-		}
-		return convertJSON(final)
+		return convertJSON(received)
 	})
 }
 

@@ -50,6 +50,11 @@ type APITransactionRequest struct {
 	ReturnType APIReturnType    `json:"returnType,omitempty"`
 }
 
+type APITransactionInfoRequest struct {
+	Height uint64           `json:"height,omitempty"`
+	Hash   helpers.HexBytes `json:"hash,omitempty"`
+}
+
 type APIAccountRequest struct {
 	Address    string           `json:"address,omitempty"`
 	Hash       helpers.HexBytes `json:"hash,omitempty"`

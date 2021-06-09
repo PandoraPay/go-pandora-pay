@@ -1,4 +1,4 @@
-package block_info
+package info
 
 import "pandora-pay/helpers"
 

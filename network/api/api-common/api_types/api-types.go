@@ -2,6 +2,7 @@ package api_types
 
 import (
 	"pandora-pay/blockchain/blocks/block"
+	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 )
@@ -28,13 +29,10 @@ type APIBlockchainSync struct {
 }
 
 type APITransaction struct {
-	Tx      *transaction.Transaction `json:"tx,omitempty"`
-	Mempool bool                     `json:"mempool,omitempty"`
-}
-
-type APITransactionSerialized struct {
-	Tx      helpers.HexBytes `json:"tx,omitempty"`
-	Mempool bool             `json:"mempool,omitempty"`
+	Tx           *transaction.Transaction `json:"tx,omitempty"`
+	TxSerialized helpers.HexBytes         `json:"serialized,omitempty"`
+	Mempool      bool                     `json:"mempool,omitempty"`
+	Info         *info.TxInfo             `json:"info,omitempty"`
 }
 
 type APIMempoolAnswer struct {
