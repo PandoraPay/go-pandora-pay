@@ -154,6 +154,21 @@ func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) (out []by
 	return json.Marshal(acc)
 }
 
+func (api *APICommon) GetAccountTxs(request *api_types.APIAccountTxsRequest) (out []byte, err error) {
+
+	publicKeyHash, err := request.GetPublicKeyHash()
+	if err != nil {
+		return
+	}
+
+	answer, err := api.ApiStore.openLoadAccountTxsFromPublicKeyHash(publicKeyHash, request.Next)
+	if err != nil || answer == nil {
+		return
+	}
+
+	return json.Marshal(answer)
+}
+
 func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) (out []byte, err error) {
 	txInfo, err := api.ApiStore.openLoadTxInfo(request.Hash, request.Height)
 	if err != nil || txInfo == nil {
@@ -187,7 +202,7 @@ func (api *APICommon) GetToken(request *api_types.APITokenRequest) (out []byte, 
 func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) (out []byte, err error) {
 	transactions := api.mempool.Txs.GetTxsList()
 
-	length := len(transactions) - int(request.Start)
+	length := len(transactions) - request.Start
 	if length < 0 {
 		length = 0
 	}

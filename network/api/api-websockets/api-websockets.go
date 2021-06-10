@@ -84,11 +84,19 @@ func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, 
 }
 
 func (api *APIWebsockets) getAccount(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIAccountRequest{"", nil, api_types.RETURN_SERIALIZED}
+	request := &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
 	return api.apiCommon.GetAccount(request)
+}
+
+func (api *APIWebsockets) getAccountTxs(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := &api_types.APIAccountTxsRequest{}
+	if err := json.Unmarshal(values, &request); err != nil {
+		return nil, err
+	}
+	return api.apiCommon.GetAccountTxs(request)
 }
 
 func (api *APIWebsockets) getTokenInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -249,6 +257,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		api.GetMap["token-info"] = api.getTokenInfo
 		api.GetMap["block-info"] = api.getBlockInfo
 		api.GetMap["tx-info"] = api.getTxInfo
+		api.GetMap["account-txs"] = api.getAccountTxs
 	}
 
 	if config.SEED_WALLET_NODES_INFO || config.CONSENSUS == config.CONSENSUS_TYPE_WALLET {

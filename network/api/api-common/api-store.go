@@ -130,6 +130,47 @@ func (apiStore *APIStore) openLoadAccountFromPublicKeyHash(publicKeyHash []byte)
 	return
 }
 
+func (apiStore *APIStore) openLoadAccountTxsFromPublicKeyHash(publicKeyHash []byte, next uint64) (answer *api_types.APIAccountTxs, errfinal error) {
+	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		data := reader.Get("addrTxsCount:" + string(publicKeyHash))
+		if data == nil {
+			return errors.New("Accout was not found")
+		}
+
+		var count uint64
+		if count, err = strconv.ParseUint(string(data), 10, 64); err != nil {
+			return
+		}
+		if next == 0 {
+			next = count
+		} else if next > count {
+			return errors.New("Index exceeding max txs")
+		}
+
+		index := next
+		if next >= config.API_ACCOUNT_MAX_TXS {
+			index -= config.API_ACCOUNT_MAX_TXS
+		}
+
+		answer = &api_types.APIAccountTxs{
+			Next: index,
+			Txs:  make([]helpers.HexBytes, next-index),
+		}
+		for i := index; i < next; i++ {
+			hash := reader.Get("addrTx:" + strconv.FormatUint(i, 10))
+			if hash == nil {
+				return errors.New("Error reading address transaction")
+			}
+			answer.Txs[next-i-1] = hash
+		}
+		answer.Next = index
+
+		return
+	})
+	return
+}
+
 func (apiStore *APIStore) openLoadTokenFromPublicKeyHash(publicKeyHash []byte) (tok *token.Token, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		toks := tokens.NewTokens(reader)

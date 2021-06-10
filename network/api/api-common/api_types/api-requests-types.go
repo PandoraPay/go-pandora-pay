@@ -55,13 +55,22 @@ type APITransactionInfoRequest struct {
 	Hash   helpers.HexBytes `json:"hash,omitempty"`
 }
 
-type APIAccountRequest struct {
-	Address    string           `json:"address,omitempty"`
-	Hash       helpers.HexBytes `json:"hash,omitempty"`
-	ReturnType APIReturnType    `json:"returnType,omitempty"`
+type APIAccountBaseRequest struct {
+	Address string           `json:"address,omitempty"`
+	Hash    helpers.HexBytes `json:"hash,omitempty"`
 }
 
-func (request *APIAccountRequest) GetPublicKeyHash() ([]byte, error) {
+type APIAccountRequest struct {
+	APIAccountBaseRequest
+	ReturnType APIReturnType `json:"returnType,omitempty"`
+}
+
+type APIAccountTxsRequest struct {
+	APIAccountBaseRequest
+	Next uint64 `json:"next,omitempty"`
+}
+
+func (request *APIAccountBaseRequest) GetPublicKeyHash() ([]byte, error) {
 	var publicKeyHash []byte
 	if request.Address != "" {
 		address, err := addresses.DecodeAddr(request.Address)
@@ -96,11 +105,6 @@ type APISubscriptionRequest struct {
 type APIUnsubscriptionRequest struct {
 	Key  []byte           `json:"Key,omitempty"`
 	Type SubscriptionType `json:"type,omitempty"`
-}
-
-type APISubscriptionNotification struct {
-	Key  helpers.HexBytes `json:"key,omitempty"`
-	Data helpers.HexBytes `json:"tx,omitempty"`
 }
 
 type APIMempoolRequest struct {

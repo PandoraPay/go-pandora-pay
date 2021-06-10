@@ -39,3 +39,13 @@ type APIMempoolAnswer struct {
 	Count  int                `json:"count"`
 	Hashes []helpers.HexBytes `json:"hashes"`
 }
+
+type APISubscriptionNotification struct {
+	Key  helpers.HexBytes `json:"key"`
+	Data helpers.HexBytes `json:"tx"`
+}
+
+type APIAccountTxs struct {
+	Next uint64             `json:"next"`
+	Txs  []helpers.HexBytes `json:"txs"`
+}

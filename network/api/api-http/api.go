@@ -39,8 +39,7 @@ func (api *API) getPing(values *url.Values) (interface{}, error) {
 
 func (api *API) getBlockComplete(values *url.Values) (out interface{}, err error) {
 
-	request := &api_types.APIBlockCompleteRequest{}
-	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
+	request := &api_types.APIBlockCompleteRequest{0, nil, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
 
 	err = errors.New("parameter 'hash' or 'height' are missing")
 	if values.Get("height") != "" {
@@ -144,8 +143,7 @@ func (api *API) getTxInfo(values *url.Values) (out interface{}, err error) {
 
 func (api *API) getTx(values *url.Values) (out interface{}, err error) {
 
-	request := &api_types.APITransactionRequest{}
-	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
+	request := &api_types.APITransactionRequest{0, nil, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
 
 	err = errors.New("parameter 'hash' or 'height' are missing")
 	if values.Get("height") != "" {
@@ -173,19 +171,41 @@ func (api *API) getTxHash(values *url.Values) (interface{}, error) {
 }
 
 func (api *API) getAccount(values *url.Values) (out interface{}, err error) {
-	request := &api_types.APIAccountRequest{}
-	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
+	request := &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
 
-	err = errors.New("parameter 'address' or 'hash' was not specified")
 	if values.Get("address") != "" {
 		request.Address = values.Get("address")
 	} else if values.Get("hash") != "" {
 		request.Hash, err = hex.DecodeString(values.Get("hash"))
+	} else {
+		err = errors.New("parameter 'address' or 'hash' was not specified")
 	}
 	if err != nil {
 		return
 	}
 	return api.apiCommon.GetAccount(request)
+}
+
+func (api *API) getAccountTxs(values *url.Values) (out interface{}, err error) {
+	request := &api_types.APIAccountTxsRequest{}
+
+	if values.Get("next") != "" {
+		if request.Next, err = strconv.ParseUint(values.Get("start"), 10, 64); err != nil {
+			return
+		}
+	}
+
+	if values.Get("address") != "" {
+		request.Address = values.Get("address")
+	} else if values.Get("hash") != "" {
+		request.Hash, err = hex.DecodeString(values.Get("hash"))
+	} else {
+		err = errors.New("parameter 'address' or 'hash' was not specified")
+	}
+	if err != nil {
+		return
+	}
+	return api.apiCommon.GetAccountTxs(request)
 }
 
 func (api *API) getToken(values *url.Values) (out interface{}, err error) {
@@ -279,6 +299,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		api.GetMap["token-info"] = api.getTokenInfo
 		api.GetMap["block-info"] = api.getBlockInfo
 		api.GetMap["tx-info"] = api.getTxInfo
+		api.GetMap["account-txs"] = api.getAccountTxs
 	}
 
 	return &api
