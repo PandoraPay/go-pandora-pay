@@ -11,8 +11,46 @@ import (
 	"strconv"
 )
 
-func removeBlockInfo(writer store_db_interface.StoreDBTransactionInterface, hash []byte) (err error) {
-	return writer.Delete("blockInfo_ByHash" + string(hash))
+func removeBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface, hash []byte, txHashes [][]byte) (err error) {
+
+	if err = writer.Delete("blockInfo_ByHash" + string(hash)); err != nil {
+		return
+	}
+
+	for _, txHash := range txHashes {
+		data := writer.Get("txKeys" + string(txHash))
+		if data == nil {
+			return errors.New("TxKeys is missing")
+		}
+		keys := make([][]byte, 0)
+		if err = json.Unmarshal(data, &keys); err != nil {
+			return
+		}
+
+		for key := range keys {
+
+			data := writer.Get("addrTxs_count" + string(key))
+			if data == nil {
+				return errors.New("addrTxs_count was empty")
+			}
+
+			var count uint64
+			if count, err = strconv.ParseUint(string(data), 10, 64); err != nil {
+				return
+			}
+
+			count -= 1
+			if err = writer.Delete("addrTx:" + strconv.FormatUint(count, 10)); err != nil {
+				return
+			}
+			if err = writer.Put("addrTxs_count"+string(key), []byte(strconv.FormatUint(count, 10))); err != nil {
+				return
+			}
+		}
+
+	}
+
+	return
 }
 
 func removeUnusedTransactions(writer store_db_interface.StoreDBTransactionInterface, starting, count uint64) (err error) {
@@ -105,6 +143,42 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 		if err = writer.Put("txInfo_ByHash"+tx.Bloom.HashStr, buffer); err != nil {
 			return
 		}
+
+		var keys map[string]bool
+		if keys, err = tx.GetAllKeys(); err != nil {
+			return
+		}
+
+		keysArray := make([][]byte, 0)
+		for key := range keys {
+			keysArray = append(keysArray, []byte(key))
+		}
+
+		var keysArrayMarshal []byte
+		if keysArrayMarshal, err = json.Marshal(keysArray); err != nil {
+			return
+		}
+
+		if err = writer.Put("txKeys"+tx.Bloom.HashStr, keysArrayMarshal); err != nil {
+			return
+		}
+		for key := range keys {
+
+			count := uint64(0)
+			if data := writer.Get("addrTxs_count" + key); data != nil {
+				if count, err = strconv.ParseUint(string(data), 10, 64); err != nil {
+					return
+				}
+			}
+
+			if err = writer.Put("addrTx:"+strconv.FormatUint(count, 10), tx.Bloom.Hash); err != nil {
+				return
+			}
+			if err = writer.Put("addrTxs_count"+key, []byte(strconv.FormatUint(count+1, 10))); err != nil {
+				return
+			}
+		}
+
 	}
 
 	return

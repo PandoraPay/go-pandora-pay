@@ -74,12 +74,6 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 		return
 	}
 
-	if config.SEED_WALLET_NODES_INFO {
-		if err = removeBlockInfo(writer, hash); err != nil {
-			return
-		}
-	}
-
 	data := writer.Get("blockTxs" + blockHeightStr)
 	txHashes := [][]byte{} //32 byte
 
@@ -90,6 +84,13 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 	for _, txHash := range txHashes {
 		removedTxHashes[string(txHash)] = txHash
 	}
+
+	if config.SEED_WALLET_NODES_INFO {
+		if err = removeBlockCompleteInfo(writer, hash, txHashes); err != nil {
+			return
+		}
+	}
+
 	return
 }
 

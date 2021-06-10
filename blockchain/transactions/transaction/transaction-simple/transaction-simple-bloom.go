@@ -3,7 +3,6 @@ package transaction_simple
 import "errors"
 
 type TransactionSimpleBloom struct {
-	hashForSignature  []byte
 	signatureVerified bool
 	bloomed           bool
 }
@@ -15,7 +14,6 @@ func (tx *TransactionSimple) BloomNow(hashForSignature []byte, signatureWasVerif
 	}
 
 	bloom := new(TransactionSimpleBloom)
-	bloom.hashForSignature = hashForSignature
 
 	for _, vin := range tx.Vin {
 		if err = vin.BloomNow(hashForSignature); err != nil {

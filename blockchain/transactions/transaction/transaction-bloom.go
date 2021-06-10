@@ -40,7 +40,11 @@ func (tx *Transaction) BloomExtraNow(signatureWasVerifiedBefore bool) (err error
 	switch tx.TxType {
 	case transaction_type.TX_SIMPLE:
 		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-		if err = base.BloomNow(tx.SerializeForSigning(), signatureWasVerifiedBefore); err != nil {
+		var serialized []byte
+		if !signatureWasVerifiedBefore {
+			serialized = tx.SerializeForSigning()
+		}
+		if err = base.BloomNow(serialized, signatureWasVerifiedBefore); err != nil {
 			return
 		}
 	}
