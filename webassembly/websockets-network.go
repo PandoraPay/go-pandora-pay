@@ -82,7 +82,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			return
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("account"), &api_types.APIAccountRequest{"", hash, api_types.RETURN_SERIALIZED})
+		data := socket.SendJSONAwaitAnswer([]byte("account"), &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", hash}, api_types.RETURN_SERIALIZED})
 		if data.Out == nil || data.Err != nil {
 			return nil, data.Err
 		}
@@ -93,6 +93,27 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 		}
 
 		return convertJSON(acc)
+	})
+}
+
+func getNetworkAccountTxs(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (out interface{}, err error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+
+		var hash []byte
+		if hash, err = hex.DecodeString(args[0].String()); err != nil {
+			return
+		}
+
+		data := socket.SendJSONAwaitAnswer([]byte("account/txs"), &api_types.APIAccountTxsRequest{api_types.APIAccountBaseRequest{"", hash}, uint64(args[1].Int())})
+		if data.Out == nil || data.Err != nil {
+			return nil, data.Err
+		}
+
+		return string(data.Out), nil
 	})
 }
 

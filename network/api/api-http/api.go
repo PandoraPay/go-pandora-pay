@@ -299,7 +299,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		api.GetMap["token-info"] = api.getTokenInfo
 		api.GetMap["block-info"] = api.getBlockInfo
 		api.GetMap["tx-info"] = api.getTxInfo
-		api.GetMap["account-txs"] = api.getAccountTxs
+		api.GetMap["account/txs"] = api.getAccountTxs
 	}
 
 	return &api

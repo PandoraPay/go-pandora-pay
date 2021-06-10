@@ -170,9 +170,7 @@ func (c *AdvancedConnection) processRead(message *AdvancedConnectionMessage) {
 		if bytes.Equal(message.Name, []byte{1}) {
 			output.Out = message.Data
 		} else {
-			if err := json.Unmarshal(message.Data, &output.Err); err != nil {
-				output.Err = errors.New("Error decoding received error")
-			}
+			output.Err = errors.New(string(message.Data))
 		}
 
 		c.answerMapLock.Lock()
@@ -228,8 +226,7 @@ func (c *AdvancedConnection) ReadPump() {
 
 				if message.ReplyAwait {
 					if err != nil {
-						marshalErr, _ := json.Marshal(err)
-						c.sendNow(message.ReplyId, []byte{0}, marshalErr, false, true)
+						c.sendNow(message.ReplyId, []byte{0}, []byte(err.Error()), false, true)
 					} else {
 						c.sendNow(message.ReplyId, []byte{1}, out, false, true)
 					}
@@ -241,9 +238,7 @@ func (c *AdvancedConnection) ReadPump() {
 				if bytes.Equal(message.Name, []byte{1}) {
 					output.Out = message.Data
 				} else {
-					if err = json.Unmarshal(message.Data, &output.Err); err != nil {
-						output.Err = errors.New("Error decoding received error")
-					}
+					output.Err = errors.New(string(message.Data))
 				}
 
 				c.answerMapLock.Lock()

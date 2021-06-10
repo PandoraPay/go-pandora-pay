@@ -257,7 +257,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		api.GetMap["token-info"] = api.getTokenInfo
 		api.GetMap["block-info"] = api.getBlockInfo
 		api.GetMap["tx-info"] = api.getTxInfo
-		api.GetMap["account-txs"] = api.getAccountTxs
+		api.GetMap["account/txs"] = api.getAccountTxs
 	}
 
 	if config.SEED_WALLET_NODES_INFO || config.CONSENSUS == config.CONSENSUS_TYPE_WALLET {
