@@ -354,7 +354,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 			} else {
 				//only rollback
-				err = errors.New("Rollback")
+				if err == nil {
+					err = errors.New("Rollback")
+				}
 			}
 
 			if accs != nil {

@@ -37,6 +37,7 @@ func (worker *mempoolWorker) processing(
 	var txList []*mempoolTx
 	txMap := make(map[string]bool)
 
+	var listIndex int
 	for {
 
 		select {
@@ -46,6 +47,7 @@ func (worker *mempoolWorker) processing(
 			}
 			if newWork != nil {
 				work = newWork
+				listIndex = 0
 			}
 		}
 		if work == nil {
@@ -55,7 +57,6 @@ func (worker *mempoolWorker) processing(
 		if len(txList) > 1 {
 			sortTxs(txList)
 		}
-		listIndex := 0
 
 		//let's check hf the work has been changed
 		store.StoreBlockchain.DB.View(func(dbTx store_db_interface.StoreDBTransactionInterface) (err error) {
@@ -78,15 +79,21 @@ func (worker *mempoolWorker) processing(
 							return nil
 						case newAddTx, _ = <-addTransactionCn:
 							tx = newAddTx.Tx
-							if txMap[tx.Tx.Bloom.HashStr] {
-								continue
-							}
 						}
 					} else {
 						tx = txList[listIndex]
 						listIndex += 1
 						newAddTx = nil
+
 					}
+
+					if txMap[tx.Tx.Bloom.HashStr] {
+						if newAddTx == nil {
+							listIndex += 1
+						}
+						continue
+					}
+					txMap[tx.Tx.Bloom.HashStr] = true
 
 					if err = tx.Tx.IncludeTransaction(work.chainHeight, accs, toks); err != nil {
 
