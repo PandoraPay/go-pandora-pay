@@ -48,6 +48,7 @@ func (worker *mempoolWorker) processing(
 			if newWork != nil {
 				work = newWork
 				listIndex = 0
+				txMap = make(map[string]bool)
 			}
 		}
 		if work == nil {
@@ -102,7 +103,8 @@ func (worker *mempoolWorker) processing(
 							}
 						} else {
 							//removing
-							txList = append(txList[:listIndex], txList[listIndex+1:]...)
+							//this is done because listIndex was incremented already before
+							txList = append(txList[:listIndex-1], txList[listIndex:]...)
 							listIndex--
 							delete(txMap, tx.Tx.Bloom.HashStr)
 
