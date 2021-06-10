@@ -60,17 +60,19 @@ func (tokens *Tokens) CreateToken(key []byte, tok *token.Token) (err error) {
 		return errors.New("token already exists")
 	}
 
-	tokens.UpdateToken(key, tok)
+	if err = tokens.UpdateToken(key, tok); err != nil {
+		return
+	}
 	return
 }
 
-func (tokens *Tokens) UpdateToken(key []byte, tok *token.Token) {
+func (tokens *Tokens) UpdateToken(key []byte, tok *token.Token) error {
 
 	if len(key) == 0 {
 		key = config.NATIVE_TOKEN_FULL
 	}
 
-	tokens.Update(string(key), tok)
+	return tokens.Update(string(key), tok)
 }
 
 func (tokens *Tokens) ExistsToken(key []byte) (bool, error) {

@@ -77,7 +77,9 @@ func (chain *Blockchain) init() (chainData *BlockchainData, err error) {
 				}
 			}
 
-			accs.UpdateAccount(airdrop.PublicKeyHash, acc)
+			if err = accs.UpdateAccount(airdrop.PublicKeyHash, acc); err != nil {
+				return
+			}
 		}
 
 		maxSupply, err := config.ConvertToUnitsUint64(config.MAX_SUPPLY_COINS)

@@ -105,7 +105,15 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 	return out != nil, nil
 }
 
-func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) {
+func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) error {
+
+	if len(key) != hashMap.KeyLength {
+		return errors.New("key length is invalid")
+	}
+	if data == nil {
+		return errors.New("Data is null and it should not be")
+	}
+
 	exists := hashMap.Changes[key]
 	if exists == nil {
 		exists = new(ChangesMapElement)
@@ -113,7 +121,7 @@ func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) {
 	}
 	exists.Status = "update"
 	exists.Element = data
-	return
+	return nil
 }
 
 func (hashMap *HashMap) Delete(key string) {

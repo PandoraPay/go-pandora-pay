@@ -56,10 +56,10 @@ func (accounts *Accounts) GetAccount(key []byte, chainHeight uint64) (acc *accou
 	return
 }
 
-func (accounts *Accounts) UpdateAccount(key []byte, acc *account.Account) {
+func (accounts *Accounts) UpdateAccount(key []byte, acc *account.Account) error {
 	if acc.IsAccountEmpty() {
 		accounts.Delete(string(key))
-		return
+		return nil
 	}
-	accounts.Update(string(key), acc)
+	return accounts.Update(string(key), acc)
 }

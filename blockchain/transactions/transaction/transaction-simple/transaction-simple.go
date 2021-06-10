@@ -52,7 +52,9 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 		if err = acc.AddBalance(false, vin.Amount, vin.Token); err != nil {
 			return
 		}
-		accs.UpdateAccount(vin.Bloom.PublicKeyHash, acc)
+		if err = accs.UpdateAccount(vin.Bloom.PublicKeyHash, acc); err != nil {
+			return
+		}
 	}
 
 	for _, vout := range tx.Vout {
@@ -65,7 +67,9 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 		if err = acc.AddBalance(true, vout.Amount, vout.Token); err != nil {
 			return
 		}
-		accs.UpdateAccount(vout.PublicKeyHash, acc)
+		if err = accs.UpdateAccount(vout.PublicKeyHash, acc); err != nil {
+			return
+		}
 	}
 
 	return nil

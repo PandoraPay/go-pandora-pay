@@ -54,7 +54,9 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 			}
 		}
 	}
-	acs.UpdateAccount(blk.Forger, acc)
+	if err = acs.UpdateAccount(blk.Forger, acc); err != nil {
+		return
+	}
 
 	var tok *token.Token
 	if tok, err = toks.GetToken(config.NATIVE_TOKEN); err != nil {
@@ -64,7 +66,9 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 	if err = tok.AddSupply(true, reward); err != nil {
 		return
 	}
-	toks.UpdateToken(config.NATIVE_TOKEN, tok)
+	if err = toks.UpdateToken(config.NATIVE_TOKEN, tok); err != nil {
+		return
+	}
 	return
 }
 

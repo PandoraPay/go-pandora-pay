@@ -7,7 +7,7 @@ import (
 )
 
 type transactionChange struct {
-	Key        string
+	Key        []byte
 	Transition []byte
 }
 
@@ -20,13 +20,13 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 			existsCommitted := hashMap.Committed[k]
 			if existsCommitted != nil {
 				values = append(values, &transactionChange{
-					Key:        k,
+					Key:        []byte(k),
 					Transition: existsCommitted.Element.SerializeToBytes(),
 				})
 			} else {
 				outData := hashMap.Tx.Get(hashMap.name + k)
 				values = append(values, &transactionChange{
-					Key:        k,
+					Key:        []byte(k),
 					Transition: outData,
 				})
 			}
@@ -59,7 +59,7 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 
 	for _, change := range values {
 		if change.Transition == nil {
-			hashMap.Committed[change.Key] = &CommittedMapElement{
+			hashMap.Committed[string(change.Key)] = &CommittedMapElement{
 				Element: nil,
 				Status:  "del",
 				Stored:  "",
@@ -70,7 +70,7 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 				return
 			}
 
-			hashMap.Committed[change.Key] = &CommittedMapElement{
+			hashMap.Committed[string(change.Key)] = &CommittedMapElement{
 				Element: element,
 				Status:  "update",
 				Stored:  "",
