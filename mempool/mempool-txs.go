@@ -74,8 +74,8 @@ func createMempoolTxs() (txs *MempoolTxs) {
 
 	txs = &MempoolTxs{
 		list:             &atomic.Value{},
-		addToListCn:      make(chan *mempoolTx),
-		removeFromListCn: make(chan *mempoolTx),
+		addToListCn:      make(chan *mempoolTx, 100),
+		removeFromListCn: make(chan *mempoolTx, 100),
 	}
 	txs.list.Store([]*mempoolTx{})
 

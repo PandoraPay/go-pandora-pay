@@ -34,10 +34,10 @@ func (worker *mempoolWorker) processing(
 
 	var work *mempoolWork
 
-	var txList []*mempoolTx
+	txList := []*mempoolTx{}
+	listIndex := 0
 	txMap := make(map[string]bool)
 
-	var listIndex int
 	for {
 
 		select {
@@ -84,13 +84,9 @@ func (worker *mempoolWorker) processing(
 						tx = txList[listIndex]
 						listIndex += 1
 						newAddTx = nil
-
 					}
 
 					if txMap[tx.Tx.Bloom.HashStr] {
-						if newAddTx == nil {
-							listIndex += 1
-						}
 						continue
 					}
 					txMap[tx.Tx.Bloom.HashStr] = true
@@ -101,11 +97,15 @@ func (worker *mempoolWorker) processing(
 						toks.Rollback()
 
 						if newAddTx != nil {
-							newAddTx.Result <- false
+							if newAddTx.Result != nil {
+								newAddTx.Result <- false
+							}
 						} else {
 							//removing
-							txList = append(txList[:listIndex-1], txList[listIndex:]...)
+							txList = append(txList[:listIndex], txList[listIndex+1:]...)
 							listIndex--
+							delete(txMap, tx.Tx.Bloom.HashStr)
+
 							removedFromListCn <- tx
 						}
 
@@ -123,9 +123,12 @@ func (worker *mempoolWorker) processing(
 						if newAddTx != nil {
 
 							txList = append(txList, newAddTx.Tx)
-
 							listIndex += 1
-							newAddTx.Result <- true
+
+							if newAddTx.Result != nil {
+								newAddTx.Result <- true
+							}
+
 							addToListCn <- newAddTx.Tx
 						}
 

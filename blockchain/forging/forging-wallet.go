@@ -98,7 +98,7 @@ func (w *ForgingWallet) ProcessUpdates() (err error) {
 			delegatedPublicKeyHash := cryptography.ComputePublicKeyHash(delegatedPublicKey)
 
 			//let's read the balance
-			store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+			_ = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 				chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
