@@ -59,7 +59,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 			writer := helpers.NewBufferWriter()
 			work.BlkComplete.Block.SerializeForForging(writer)
-			serialized = writer.Bytes()
+			serialized = helpers.CloneBytes(writer.Bytes())
 
 			n = binary.PutUvarint(buf, work.BlkComplete.Block.Timestamp)
 

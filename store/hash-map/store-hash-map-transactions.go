@@ -24,7 +24,7 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 					Transition: existsCommitted.Element.SerializeToBytes(),
 				})
 			} else {
-				outData := hashMap.Tx.Get(k)
+				outData := hashMap.Tx.Get(hashMap.name + k)
 				values = append(values, &transactionChange{
 					Key:        k,
 					Transition: outData,
@@ -39,15 +39,15 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 		return
 	}
 
-	return hashMap.Tx.Put("transitions_"+prefix, marshal)
+	return hashMap.Tx.Put(hashMap.name+"transitions:"+prefix, marshal)
 }
 
 func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) error {
-	return hashMap.Tx.Delete("transitions_" + prefix)
+	return hashMap.Tx.Delete(hashMap.name + "transitions:" + prefix)
 }
 
 func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err error) {
-	data := hashMap.Tx.Get("transitions_" + prefix)
+	data := hashMap.Tx.Get(hashMap.name + "transitions:" + prefix)
 	if data == nil {
 		return errors.New("transitions didn't exist")
 	}

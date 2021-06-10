@@ -16,7 +16,7 @@ type Tokens struct {
 
 func NewTokens(tx store_db_interface.StoreDBTransactionInterface) (tokens *Tokens) {
 	tokens = &Tokens{
-		HashMap: *hash_map.CreateNewHashMap(tx, "Tokens", cryptography.PublicKeyHashHashSize),
+		HashMap: *hash_map.CreateNewHashMap(tx, "tokens", cryptography.PublicKeyHashHashSize),
 	}
 	tokens.HashMap.Deserialize = func(data []byte) (helpers.SerializableInterface, error) {
 		var tok = &token.Token{}

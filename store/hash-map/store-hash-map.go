@@ -12,6 +12,7 @@ type ChangesMapElement struct {
 }
 
 type HashMap struct {
+	name        string
 	Tx          store_db_interface.StoreDBTransactionInterface
 	Changes     map[string]*ChangesMapElement
 	Committed   map[string]*CommittedMapElement
@@ -20,7 +21,13 @@ type HashMap struct {
 }
 
 func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int) (hashMap *HashMap) {
+
+	if len(name) <= 4 {
+		panic("Invalid name")
+	}
+
 	hashMap = &HashMap{
+		name:      name + ":",
 		Committed: make(map[string]*CommittedMapElement),
 		Changes:   make(map[string]*ChangesMapElement),
 		Tx:        tx,
@@ -60,7 +67,7 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 	if exists2 != nil {
 		outData = helpers.CloneBytes(exists2.Element.SerializeToBytes())
 	} else {
-		outData = hashMap.Tx.Get(key)
+		outData = hashMap.Tx.Get(hashMap.name + key)
 	}
 	if outData != nil {
 		if out, err = hashMap.Deserialize(outData); err != nil {
@@ -83,7 +90,7 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 		return exists2.Element != nil, nil
 	}
 
-	outData := hashMap.Tx.Get(key)
+	outData := hashMap.Tx.Get(hashMap.name + key)
 
 	var out helpers.SerializableInterface
 	var err error
@@ -143,7 +150,6 @@ func (hashMap *HashMap) CommitChanges() {
 				committed.Status = "update"
 				committed.Stored = ""
 				committed.Element = v.Element
-
 				removed = append(removed, k)
 			}
 
@@ -170,13 +176,13 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 		}
 
 		if v.Status == "del" {
-			if err = hashMap.Tx.DeleteForcefully(k); err != nil {
+			if err = hashMap.Tx.DeleteForcefully(hashMap.name + k); err != nil {
 				return
 			}
 			v.Status = "view"
 			v.Stored = "del"
 		} else if v.Status == "update" {
-			if err = hashMap.Tx.Put(k, v.Element.SerializeToBytes()); err != nil {
+			if err = hashMap.Tx.Put(hashMap.name+k, v.Element.SerializeToBytes()); err != nil {
 				return
 			}
 			v.Status = "view"

@@ -388,8 +388,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		update.insertedTxHashes = insertedTxHashes
 	}
 
-	gui.GUI.Log("writing to chain.updatesQueue.updatesCn")
-
 	chain.updatesQueue.updatesCn <- update
 
 	chain.mutex.Unlock()
