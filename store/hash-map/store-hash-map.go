@@ -20,6 +20,19 @@ type HashMap struct {
 	Deserialize func([]byte) (helpers.SerializableInterface, error)
 }
 
+func (hashMap *HashMap) CloneCommitted() (err error) {
+
+	for _, v := range hashMap.Committed {
+		if v.Element != nil {
+			if v.Element, err = hashMap.Deserialize(helpers.CloneBytes(v.Element.SerializeToBytes())); err != nil {
+				return
+			}
+		}
+	}
+
+	return
+}
+
 func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int) (hashMap *HashMap) {
 
 	if len(name) <= 4 {
@@ -40,35 +53,23 @@ func (hashMap *HashMap) UnsetTx() {
 	hashMap.Tx = nil
 }
 
-func (hashMap *HashMap) CloneCommitted() (err error) {
-
-	for _, v := range hashMap.Committed {
-		if v.Element != nil {
-			if v.Element, err = hashMap.Deserialize(helpers.CloneBytes(v.Element.SerializeToBytes())); err != nil {
-				return
-			}
-		}
-	}
-
-	return
-}
-
 func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err error) {
 
-	exists := hashMap.Changes[key]
-	if exists != nil {
+	if exists := hashMap.Changes[key]; exists != nil {
 		out = exists.Element
 		return
 	}
 
 	var outData []byte
 
-	exists2 := hashMap.Committed[key]
-	if exists2 != nil {
-		outData = helpers.CloneBytes(exists2.Element.SerializeToBytes())
+	if exists2 := hashMap.Committed[key]; exists2 != nil {
+		if exists2.Element != nil {
+			outData = helpers.CloneBytes(exists2.Element.SerializeToBytes())
+		}
 	} else {
 		outData = hashMap.Tx.Get(hashMap.name + key)
 	}
+
 	if outData != nil {
 		if out, err = hashMap.Deserialize(outData); err != nil {
 			return
@@ -80,13 +81,11 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 
 func (hashMap *HashMap) Exists(key string) (bool, error) {
 
-	exists := hashMap.Changes[key]
-	if exists != nil {
+	if exists := hashMap.Changes[key]; exists != nil {
 		return exists.Element != nil, nil
 	}
 
-	exists2 := hashMap.Committed[key]
-	if exists2 != nil {
+	if exists2 := hashMap.Committed[key]; exists2 != nil {
 		return exists2.Element != nil, nil
 	}
 
@@ -110,6 +109,7 @@ func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) e
 	if len(key) != hashMap.KeyLength {
 		return errors.New("key length is invalid")
 	}
+
 	if data == nil {
 		return errors.New("Data is null and it should not be")
 	}

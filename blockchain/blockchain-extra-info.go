@@ -18,7 +18,8 @@ func removeBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterfa
 	}
 
 	for _, txHash := range txHashes {
-		data := writer.Get("txKeys" + string(txHash))
+
+		data := writer.Get("txKeys:" + string(txHash))
 		if data == nil {
 			return errors.New("TxKeys is missing")
 		}
@@ -27,11 +28,11 @@ func removeBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterfa
 			return
 		}
 
-		for key := range keys {
+		for _, key := range keys {
 
-			data := writer.Get("addrTxs_count" + string(key))
+			data = writer.Get("addrTxsCount:" + string(key))
 			if data == nil {
-				return errors.New("addrTxs_count was empty")
+				return errors.New("addrTxsCount: was empty")
 			}
 
 			var count uint64
@@ -43,11 +44,20 @@ func removeBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterfa
 			if err = writer.Delete("addrTx:" + strconv.FormatUint(count, 10)); err != nil {
 				return
 			}
-			if err = writer.Put("addrTxs_count"+string(key), []byte(strconv.FormatUint(count, 10))); err != nil {
-				return
+			if count == 0 {
+				if err = writer.Delete("addrTxsCount:" + string(key)); err != nil {
+					return
+				}
+			} else {
+				if err = writer.Put("addrTxsCount:"+string(key), []byte(strconv.FormatUint(count, 10))); err != nil {
+					return
+				}
 			}
 		}
 
+		if err = writer.Delete("txKeys:" + string(txHash)); err != nil {
+			return
+		}
 	}
 
 	return
@@ -159,13 +169,13 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 			return
 		}
 
-		if err = writer.Put("txKeys"+tx.Bloom.HashStr, keysArrayMarshal); err != nil {
+		if err = writer.Put("txKeys:"+tx.Bloom.HashStr, keysArrayMarshal); err != nil {
 			return
 		}
 		for key := range keys {
 
 			count := uint64(0)
-			if data := writer.Get("addrTxs_count" + key); data != nil {
+			if data := writer.Get("addrTxsCount:" + key); data != nil {
 				if count, err = strconv.ParseUint(string(data), 10, 64); err != nil {
 					return
 				}
@@ -174,7 +184,7 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 			if err = writer.Put("addrTx:"+strconv.FormatUint(count, 10), tx.Bloom.Hash); err != nil {
 				return
 			}
-			if err = writer.Put("addrTxs_count"+key, []byte(strconv.FormatUint(count+1, 10))); err != nil {
+			if err = writer.Put("addrTxsCount:"+key, []byte(strconv.FormatUint(count+1, 10))); err != nil {
 				return
 			}
 		}

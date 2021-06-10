@@ -18,19 +18,20 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 		if v.Status == "del" || v.Status == "update" {
 
 			existsCommitted := hashMap.Committed[k]
-			if existsCommitted != nil {
-				values = append(values, &transactionChange{
-					Key:        []byte(k),
-					Transition: existsCommitted.Element.SerializeToBytes(),
-				})
-			} else {
-				outData := hashMap.Tx.Get(hashMap.name + k)
-				values = append(values, &transactionChange{
-					Key:        []byte(k),
-					Transition: outData,
-				})
+			change := &transactionChange{
+				Key:        []byte(k),
+				Transition: nil,
 			}
 
+			if existsCommitted != nil {
+				if existsCommitted.Element != nil {
+					change.Transition = existsCommitted.Element.SerializeToBytes()
+				}
+			} else {
+				change.Transition = hashMap.Tx.Get(hashMap.name + k)
+			}
+
+			values = append(values, change)
 		}
 	}
 
@@ -59,12 +60,15 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 
 	for _, change := range values {
 		if change.Transition == nil {
+
 			hashMap.Committed[string(change.Key)] = &CommittedMapElement{
 				Element: nil,
 				Status:  "del",
 				Stored:  "",
 			}
+
 		} else {
+
 			var element helpers.SerializableInterface
 			if element, err = hashMap.Deserialize(change.Transition); err != nil {
 				return
@@ -75,6 +79,7 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 				Status:  "update",
 				Stored:  "",
 			}
+
 		}
 	}
 

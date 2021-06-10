@@ -15,9 +15,13 @@ if [ "$1" == "wallet-dev" ]; then
 fi
 
 if [ "$1" == "wallet-build" ]; then
+
   echo "Deleting..."
-  rm ./webassembly/dist/PandoraPay-wallet.wasm.gz
-  rm ./webassembly/dist/PandoraPay-wallet.wasm.br
+  if [ "$2" == "brotli" ]; then
+    rm ./webassembly/dist/PandoraPay-wallet.wasm.br
+  else
+    rm ./webassembly/dist/PandoraPay-wallet.wasm.gz
+  fi
 
   echo "Compiling..."
   GOOS=js GOARCH=wasm go build -o ./webassembly/dist/PandoraPay-wallet.wasm
