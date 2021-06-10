@@ -247,8 +247,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						removedBlocksHeights = removedBlocksHeights[1:]
 					}
 
-					accs.Commit() //it will commit the changes but not save them
-					toks.Commit() //it will commit the changes but not save them
+					accs.CommitChanges() //it will commit the changes but not save them
+					toks.CommitChanges() //it will commit the changes but not save them
 
 					newChainData.PrevHash = newChainData.Hash
 					newChainData.Hash = blkComplete.Block.Bloom.Hash

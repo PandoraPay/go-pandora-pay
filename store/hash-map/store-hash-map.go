@@ -58,7 +58,7 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 
 	exists2 := hashMap.Committed[key]
 	if exists2 != nil {
-		outData = exists2.Element.SerializeToBytes()
+		outData = helpers.CloneBytes(exists2.Element.SerializeToBytes())
 	} else {
 		outData = hashMap.Tx.Get(key)
 	}
@@ -89,8 +89,7 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 	var err error
 
 	if outData != nil {
-		out, err = hashMap.Deserialize(outData)
-		if err != nil {
+		if out, err = hashMap.Deserialize(outData); err != nil {
 			return false, err
 		}
 	}
@@ -121,7 +120,7 @@ func (hashMap *HashMap) Delete(key string) {
 	return
 }
 
-func (hashMap *HashMap) Commit() {
+func (hashMap *HashMap) CommitChanges() {
 
 	var removed []string
 

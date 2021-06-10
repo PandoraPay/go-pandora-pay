@@ -103,8 +103,8 @@ func (chain *Blockchain) init() (chainData *BlockchainData, err error) {
 			return
 		}
 
-		toks.Commit()
-		accs.Commit()
+		toks.CommitChanges()
+		accs.CommitChanges()
 
 		if err = toks.WriteToStore(); err != nil {
 			return

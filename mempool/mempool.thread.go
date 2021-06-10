@@ -118,8 +118,8 @@ func (worker *mempoolWorker) processing(
 							work.result.totalSize += tx.Tx.Bloom.Size
 							work.result.txs.Store(append(work.result.txs.Load().([]*mempoolTx), tx))
 
-							accs.Commit()
-							toks.Commit()
+							accs.CommitChanges()
+							toks.CommitChanges()
 						}
 
 						if newAddTx != nil {
