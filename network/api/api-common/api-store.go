@@ -135,7 +135,7 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKeyHash(publicKeyHash []by
 
 		data := reader.Get("addrTxsCount:" + string(publicKeyHash))
 		if data == nil {
-			return errors.New("Accout was not found")
+			return nil
 		}
 
 		var count uint64

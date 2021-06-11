@@ -30,7 +30,7 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 		err = errors.New("Unknown GET request")
 	}
 	if err != nil {
-		http.Error(w, "Error: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	} else {
 		w.Header().Set("Content-Type", "application/json")
 		switch v := output.(type) {
