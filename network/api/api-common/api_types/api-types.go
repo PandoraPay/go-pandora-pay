@@ -46,6 +46,6 @@ type APISubscriptionNotification struct {
 }
 
 type APIAccountTxs struct {
-	Next uint64             `json:"next"`
-	Txs  []helpers.HexBytes `json:"txs"`
+	Count uint64             `json:"count"`
+	Txs   []helpers.HexBytes `json:"txs"`
 }

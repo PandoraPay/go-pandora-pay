@@ -154,8 +154,8 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKeyHash(publicKeyHash []by
 		}
 
 		answer = &api_types.APIAccountTxs{
-			Next: index,
-			Txs:  make([]helpers.HexBytes, next-index),
+			Count: count,
+			Txs:   make([]helpers.HexBytes, next-index),
 		}
 		for i := index; i < next; i++ {
 			hash := reader.Get("addrTx:" + strconv.FormatUint(i, 10))
@@ -164,7 +164,6 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKeyHash(publicKeyHash []by
 			}
 			answer.Txs[next-i-1] = hash
 		}
-		answer.Next = index
 
 		return
 	})
