@@ -67,9 +67,18 @@ func (thread *ForgingThread) startForging() {
 			if !ok {
 				return
 			}
+
+			for i := 0; i < thread.threads; i++ {
+				select {
+				case thread.workers[i].suspendCn <- struct{}{}:
+				default:
+				}
+			}
+
 			if err = thread.publishSolution(solution); err != nil {
 				gui.GUI.Error("Error publishing solution", err)
 			}
+
 		case newWork, ok = <-thread.nextBlockCreatedCn:
 			if !ok {
 				return
@@ -103,6 +112,7 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 
 	//send message to blockchain
 	thread.solutionCn <- work.BlkComplete
+
 	return
 }
 

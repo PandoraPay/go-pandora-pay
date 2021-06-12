@@ -436,8 +436,6 @@ func (chain *Blockchain) InitializeChain() (err error) {
 	chainData := chain.GetChainData()
 	chainData.updateChainInfo()
 
-	chain.InitForging()
-
 	return
 }
 

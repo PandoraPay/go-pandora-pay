@@ -76,6 +76,8 @@ func startMain() {
 
 	app.Forging.StartForging()
 
+	app.Chain.InitForging()
+
 	if app.Settings, err = settings.SettingsInit(); err != nil {
 		return
 	}

@@ -23,6 +23,7 @@ type ForgingWorkerThread struct {
 	hashes                uint32
 	index                 int
 	workCn                chan *forging_block_work.ForgingWork
+	suspendCn             chan struct{}
 	workerSolutionCn      chan *ForgingSolution
 	addWalletAddressCn    chan *ForgingWalletAddress
 	removeWalletAddressCn chan *ForgingWalletAddress
@@ -75,10 +76,19 @@ func (worker *ForgingWorkerThread) forge() {
 		timeLimit := uint64(timeLimitMs / 1000)
 
 		select {
+		case _, ok := <-worker.suspendCn:
+			if !ok {
+				return
+			}
+			work = nil
 		case newWork, ok := <-worker.workCn: //or the work was changed meanwhile
 			if !ok {
 				return
 			}
+			if newWork == nil {
+				continue
+			}
+
 			work = newWork
 
 			serialized = helpers.CloneBytes(newWork.BlkSerialized)
@@ -96,37 +106,37 @@ func (worker *ForgingWorkerThread) forge() {
 				}
 			}
 
-		case newWalletAddress, ok := <-worker.addWalletAddressCn:
+		case newWalletAddr, ok := <-worker.addWalletAddressCn:
 			if !ok {
 				return
 			}
 
-			if wallets[string(newWalletAddress.publicKeyHash)] == nil {
+			if wallets[newWalletAddr.publicKeyHashStr] == nil {
 				walletAddr := &ForgingWorkerThreadAddress{ //making sure i have a copy
 					&ForgingWalletAddress{
-						newWalletAddress.delegatedPrivateKey,
-						newWalletAddress.delegatedPublicKeyHash,
-						newWalletAddress.publicKeyHash,
-						newWalletAddress.publicKeyHashStr,
-						newWalletAddress.account,
+						newWalletAddr.delegatedPrivateKey,
+						newWalletAddr.delegatedPublicKeyHash,
+						newWalletAddr.publicKeyHash,
+						newWalletAddr.publicKeyHashStr,
+						newWalletAddr.account,
 						-1,
 					},
 					0,
 				}
-				wallets[newWalletAddress.publicKeyHashStr] = walletAddr
+				wallets[newWalletAddr.publicKeyHashStr] = walletAddr
 			}
-			walletAddr := wallets[newWalletAddress.publicKeyHashStr]
+			walletAddr := wallets[newWalletAddr.publicKeyHashStr]
 			walletAddr.computeStakingAmount(blkHeight)
 			if walletAddr.stakingAmount > 0 {
 				walletsStakable[walletAddr.walletAdr.publicKeyHashStr] = walletAddr
 			}
-		case newWalletAddress, ok := <-worker.removeWalletAddressCn:
+		case removedWalletAddr, ok := <-worker.removeWalletAddressCn:
 			if !ok {
 				return
 			}
-			if wallets[newWalletAddress.publicKeyHashStr] != nil {
-				delete(wallets, newWalletAddress.publicKeyHashStr)
-				delete(walletsStakable, newWalletAddress.publicKeyHashStr)
+			if wallets[removedWalletAddr.publicKeyHashStr] != nil {
+				delete(wallets, removedWalletAddr.publicKeyHashStr)
+				delete(walletsStakable, removedWalletAddr.publicKeyHashStr)
 			}
 		default:
 		}
@@ -145,7 +155,7 @@ func (worker *ForgingWorkerThread) forge() {
 			diff = 20
 		}
 		for i := 0; i <= diff; i++ {
-			for _, address := range wallets {
+			for _, address := range walletsStakable {
 
 				n2 := binary.PutUvarint(buf, timestamp)
 
@@ -166,14 +176,11 @@ func (worker *ForgingWorkerThread) forge() {
 
 				if difficulty.CheckKernelHashBig(kernelHash, work.Target) {
 
-					select {
-					default:
-						worker.workerSolutionCn <- &ForgingSolution{
-							timestamp:     timestamp,
-							address:       address.walletAdr,
-							work:          work,
-							stakingAmount: address.stakingAmount,
-						}
+					worker.workerSolutionCn <- &ForgingSolution{
+						timestamp:     timestamp,
+						address:       address.walletAdr,
+						work:          work,
+						stakingAmount: address.stakingAmount,
 					}
 
 					work = nil
@@ -190,7 +197,7 @@ func (worker *ForgingWorkerThread) forge() {
 			timestamp += 1
 			timestampMs += 1000
 		}
-		atomic.AddUint32(&worker.hashes, uint32((diff+1)*len(wallets)))
+		atomic.AddUint32(&worker.hashes, uint32((diff+1)*len(walletsStakable)))
 
 	}
 
@@ -199,6 +206,7 @@ func (worker *ForgingWorkerThread) forge() {
 func createForgingWorkerThread(index int, workerSolutionCn chan *ForgingSolution) *ForgingWorkerThread {
 	return &ForgingWorkerThread{
 		index:                 index,
+		suspendCn:             make(chan struct{}),
 		workCn:                make(chan *forging_block_work.ForgingWork),
 		workerSolutionCn:      workerSolutionCn,
 		addWalletAddressCn:    make(chan *ForgingWalletAddress),

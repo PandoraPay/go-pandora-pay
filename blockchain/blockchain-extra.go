@@ -171,24 +171,19 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 
 		writer := helpers.NewBufferWriter()
 		blk.SerializeForForging(writer)
-		select {
-		case chain.NextBlockCreatedCn <- &forging_block_work.ForgingWork{
+
+		chain.NextBlockCreatedCn <- &forging_block_work.ForgingWork{
 			blkComplete,
 			writer.Bytes(),
 			blkComplete.Timestamp,
 			blkComplete.Height,
 			target,
-		}:
-		default:
 		}
 
 	} else {
 
 		if chainData != nil {
-			select {
-			case chain.NextBlockCreatedCn <- nil:
-			default:
-			}
+			chain.NextBlockCreatedCn <- nil
 		}
 
 	}
@@ -217,12 +212,14 @@ func (chain *Blockchain) InitForging() {
 
 			array := []*block_complete.BlockComplete{blkComplete}
 
-			err := chain.AddBlocks(array, true)
-			if err == nil {
-				gui.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
-			} else if err != nil {
-				gui.GUI.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
-			}
+			go func() {
+				err := chain.AddBlocks(array, true)
+				if err == nil {
+					gui.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
+				} else {
+					gui.GUI.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
+				}
+			}()
 
 		}
 
