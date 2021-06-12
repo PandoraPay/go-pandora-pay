@@ -26,7 +26,7 @@ type ForgingWorkerThread struct {
 	suspendCn             chan struct{}
 	workerSolutionCn      chan *ForgingSolution
 	addWalletAddressCn    chan *ForgingWalletAddress
-	removeWalletAddressCn chan *ForgingWalletAddress
+	removeWalletAddressCn chan string //publicKeyHash
 }
 
 type ForgingWorkerThreadAddress struct {
@@ -99,8 +99,9 @@ func (worker *ForgingWorkerThread) forge() {
 
 			n = binary.PutUvarint(buf, timestamp)
 
+			walletsStakable = make(map[string]*ForgingWorkerThreadAddress)
 			for _, walletAddr := range wallets {
-				walletAddr.computeStakingAmount(blkHeight)
+				_ = walletAddr.computeStakingAmount(blkHeight)
 				if walletAddr.stakingAmount > 0 {
 					walletsStakable[walletAddr.walletAdr.publicKeyHashStr] = walletAddr
 				}
@@ -111,32 +112,29 @@ func (worker *ForgingWorkerThread) forge() {
 				return
 			}
 
-			if wallets[newWalletAddr.publicKeyHashStr] == nil {
-				walletAddr := &ForgingWorkerThreadAddress{ //making sure i have a copy
-					&ForgingWalletAddress{
-						newWalletAddr.delegatedPrivateKey,
-						newWalletAddr.delegatedPublicKeyHash,
-						newWalletAddr.publicKeyHash,
-						newWalletAddr.publicKeyHashStr,
-						newWalletAddr.account,
-						-1,
-					},
+			walletAddr := wallets[newWalletAddr.publicKeyHashStr]
+			if walletAddr == nil {
+				walletAddr = &ForgingWorkerThreadAddress{ //making sure i have a copy
+					newWalletAddr.clone(),
 					0,
 				}
 				wallets[newWalletAddr.publicKeyHashStr] = walletAddr
+			} else {
+				walletAddr.walletAdr = newWalletAddr
 			}
-			walletAddr := wallets[newWalletAddr.publicKeyHashStr]
-			walletAddr.computeStakingAmount(blkHeight)
+			_ = walletAddr.computeStakingAmount(blkHeight)
 			if walletAddr.stakingAmount > 0 {
 				walletsStakable[walletAddr.walletAdr.publicKeyHashStr] = walletAddr
+			} else {
+				delete(walletsStakable, walletAddr.walletAdr.publicKeyHashStr)
 			}
-		case removedWalletAddr, ok := <-worker.removeWalletAddressCn:
+		case publicKeyHashStr, ok := <-worker.removeWalletAddressCn:
 			if !ok {
 				return
 			}
-			if wallets[removedWalletAddr.publicKeyHashStr] != nil {
-				delete(wallets, removedWalletAddr.publicKeyHashStr)
-				delete(walletsStakable, removedWalletAddr.publicKeyHashStr)
+			if wallets[publicKeyHashStr] != nil {
+				delete(wallets, publicKeyHashStr)
+				delete(walletsStakable, publicKeyHashStr)
 			}
 		default:
 		}
@@ -210,6 +208,6 @@ func createForgingWorkerThread(index int, workerSolutionCn chan *ForgingSolution
 		workCn:                make(chan *forging_block_work.ForgingWork),
 		workerSolutionCn:      workerSolutionCn,
 		addWalletAddressCn:    make(chan *ForgingWalletAddress),
-		removeWalletAddressCn: make(chan *ForgingWalletAddress),
+		removeWalletAddressCn: make(chan string),
 	}
 }

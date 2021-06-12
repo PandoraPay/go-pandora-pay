@@ -38,8 +38,19 @@ type ForgingWalletAddress struct {
 	delegatedPublicKeyHash helpers.HexBytes //20 byte
 	publicKeyHash          helpers.HexBytes //20byte
 	publicKeyHashStr       string
-	account                *account.Account //READ ONLY
+	account                *account.Account
 	workerIndex            int
+}
+
+func (walletAddr *ForgingWalletAddress) clone() *ForgingWalletAddress {
+	return &ForgingWalletAddress{
+		walletAddr.delegatedPrivateKey,
+		walletAddr.delegatedPublicKeyHash,
+		walletAddr.publicKeyHash,
+		walletAddr.publicKeyHashStr,
+		walletAddr.account,
+		walletAddr.workerIndex,
+	}
 }
 
 func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKeyHash []byte) {
@@ -56,7 +67,7 @@ func (w *ForgingWallet) RemoveWallet(delegatedPublicKeyHash []byte) { //20 byte
 
 func (w *ForgingWallet) accountUpdated(addr *ForgingWalletAddress) {
 	if addr.workerIndex != -1 {
-		w.workers[addr.workerIndex].addWalletAddressCn <- addr
+		w.workers[addr.workerIndex].addWalletAddressCn <- addr.clone()
 	}
 }
 
@@ -73,13 +84,13 @@ func (w *ForgingWallet) accountInserted(addr *ForgingWalletAddress) {
 	addr.workerIndex = index
 	if index != -1 {
 		w.workersAddresses[index]++
-		w.workers[index].addWalletAddressCn <- addr
+		w.workers[index].addWalletAddressCn <- addr.clone()
 	}
 }
 
 func (w *ForgingWallet) accountRemoved(addr *ForgingWalletAddress) {
 	if addr.workerIndex != -1 {
-		w.workers[addr.workerIndex].removeWalletAddressCn <- addr
+		w.workers[addr.workerIndex].removeWalletAddressCn <- addr.publicKeyHashStr
 		w.workersAddresses[addr.workerIndex]--
 		addr.workerIndex = -1
 	}
