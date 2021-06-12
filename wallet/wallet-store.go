@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/config/globals"
+	"pandora-pay/cryptography/encryption"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -42,11 +43,15 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 		defer wallet.RUnlock()
 	}
 
+	if !wallet.loaded {
+		return errors.New("Can't save your wallet because your stored wallet on the drive was not successfully loaded")
+	}
+
 	return store.StoreWallet.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		var marshal []byte
 
-		if err = writer.Put("saved", []byte{2}); err != nil {
+		if err = writer.Put("saved", []byte{0}); err != nil {
 			return
 		}
 
@@ -57,7 +62,7 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 			return
 		}
 
-		if marshal, err = helpers.GetJSON(wallet, "addresses", "addressesMap", "encryption"); err != nil {
+		if marshal, err = helpers.GetJSON(wallet, "addresses", "encryption"); err != nil {
 			return
 		}
 		if wallet.Encryption.Encrypted == ENCRYPTED_VERSION_ENCRYPTION_ARGON2 {
@@ -97,7 +102,11 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 	})
 }
 
-func (wallet *Wallet) loadWallet() error {
+func (wallet *Wallet) loadWallet(password string) error {
+	wallet.Lock()
+	defer wallet.Unlock()
+
+	wallet.clearWallet()
 
 	return store.StoreWallet.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -112,8 +121,26 @@ func (wallet *Wallet) loadWallet() error {
 
 			var unmarshal []byte
 
-			unmarshal = reader.Get("wallet")
+			unmarshal = reader.Get("encryption")
+			if unmarshal == nil {
+				return errors.New("encryption data was not found")
+			}
+			if err = json.Unmarshal(unmarshal, &wallet.Encryption); err != nil {
+				return
+			}
 
+			if wallet.Encryption.Encrypted != ENCRYPTED_VERSION_PLAIN_TEXT {
+				if wallet.Encryption.encryptionCipher, err = encryption.CreateEncryptionCipher(password, wallet.Encryption.Salt); err != nil {
+					return
+				}
+			}
+
+			unmarshal = reader.Get("wallet")
+			if wallet.Encryption.Encrypted != ENCRYPTED_VERSION_PLAIN_TEXT {
+				if unmarshal, err = wallet.Encryption.encryptionCipher.Decrypt(unmarshal); err != nil {
+					return
+				}
+			}
 			if err = json.Unmarshal(unmarshal, &wallet); err != nil {
 				return
 			}
@@ -124,6 +151,11 @@ func (wallet *Wallet) loadWallet() error {
 			for i := 0; i < wallet.Count; i++ {
 
 				unmarshal := reader.Get("wallet-address-" + strconv.Itoa(i))
+				if wallet.Encryption.Encrypted != ENCRYPTED_VERSION_PLAIN_TEXT {
+					if unmarshal, err = wallet.Encryption.encryptionCipher.Decrypt(unmarshal); err != nil {
+						return
+					}
+				}
 
 				newWalletAddress := &wallet_address.WalletAddress{}
 				if err = json.Unmarshal(unmarshal, newWalletAddress); err != nil {
@@ -132,11 +164,14 @@ func (wallet *Wallet) loadWallet() error {
 				wallet.Addresses = append(wallet.Addresses, newWalletAddress)
 				wallet.addressesMap[string(newWalletAddress.PublicKeyHash)] = newWalletAddress
 
-				wallet.forging.Wallet.AddWallet(newWalletAddress.GetDelegatedStakePrivateKey(), newWalletAddress.PublicKeyHash)
-				wallet.mempool.Wallet.AddWallet(newWalletAddress.PublicKeyHash)
-
 			}
 
+			for _, addr := range wallet.Addresses {
+				wallet.forging.Wallet.AddWallet(addr.GetDelegatedStakePrivateKey(), addr.PublicKeyHash)
+				wallet.mempool.Wallet.AddWallet(addr.PublicKeyHash)
+			}
+
+			wallet.loaded = true
 			wallet.updateWallet()
 			globals.MainEvents.BroadcastEvent("wallet/loaded", wallet.Count)
 			gui.GUI.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))

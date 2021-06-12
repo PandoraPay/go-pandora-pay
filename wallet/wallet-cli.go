@@ -381,19 +381,33 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	cliEncryptWallet := func(cmd string) (err error) {
-		password, ok := gui.GUI.OutputReadString("Write the password that will be used for encryption")
+		password, ok := gui.GUI.OutputReadString("Password for encrypting wallet")
 		if !ok {
 			return
 		}
 
-		return wallet.Encryption.Encrypt(password)
+		if err = wallet.Encryption.Encrypt(password); err == nil {
+			gui.GUI.OutputWrite("Wallet encrypted successfully")
+		}
+		return
 	}
 
-	cliDecyprtWallet := func(cmd string) (err error) {
+	cliDecryptWallet := func(cmd string) (err error) {
+		password, ok := gui.GUI.OutputReadString("Password for decrypting wallet")
+		if !ok {
+			return
+		}
+
+		if err = wallet.Encryption.Decrypt(password); err == nil {
+			gui.GUI.OutputWrite("Wallet decrypted successfully")
+		}
 		return
 	}
 
 	cliRemoveEncryption := func(cmd string) (err error) {
+		if err = wallet.Encryption.RemoveEncryption(); err == nil {
+			gui.GUI.OutputWrite("Wallet encryption was removed successfully")
+		}
 		return
 	}
 
@@ -409,7 +423,7 @@ func (wallet *Wallet) initWalletCLI() {
 	gui.GUI.CommandDefineCallback("Export Wallet JSON", cliExportWalletJSON)
 	gui.GUI.CommandDefineCallback("Import Wallet JSON", cliImportWalletJSON)
 	gui.GUI.CommandDefineCallback("Encrypt Wallet", cliEncryptWallet)
-	gui.GUI.CommandDefineCallback("Decrypt Wallet", cliDecyprtWallet)
+	gui.GUI.CommandDefineCallback("Decrypt Wallet", cliDecryptWallet)
 	gui.GUI.CommandDefineCallback("Remove Encryption", cliRemoveEncryption)
 
 }

@@ -253,7 +253,12 @@ func (wallet *Wallet) createEmptyWallet() (err error) {
 	if err = wallet.createSeed(); err != nil {
 		return
 	}
-	_, err = wallet.AddNewAddress()
+	if _, err = wallet.AddNewAddress(); err != nil {
+		return
+	}
+	wallet.Lock()
+	defer wallet.Unlock()
+	wallet.loaded = true
 	return
 }
 

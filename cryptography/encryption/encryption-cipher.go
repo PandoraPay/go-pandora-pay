@@ -7,10 +7,12 @@ import (
 	"errors"
 	"golang.org/x/crypto/argon2"
 	"io"
+	"sync"
 )
 
 type EncryptionCipher struct {
 	gcm cipher.AEAD
+	sync.Mutex
 }
 
 func CreateEncryptionCipher(password string, salt []byte) (out *EncryptionCipher, err error) {
@@ -36,13 +38,14 @@ func CreateEncryptionCipher(password string, salt []byte) (out *EncryptionCipher
 		return
 	}
 
-	return &EncryptionCipher{
-		gcm,
-	}, nil
+	return &EncryptionCipher{gcm, sync.Mutex{}}, nil
 
 }
 
 func (encryption *EncryptionCipher) Encrypt(data []byte) (out []byte, err error) {
+
+	encryption.Lock()
+	defer encryption.Unlock()
 
 	nonce := make([]byte, encryption.gcm.NonceSize())
 	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
@@ -53,6 +56,10 @@ func (encryption *EncryptionCipher) Encrypt(data []byte) (out []byte, err error)
 }
 
 func (encryption *EncryptionCipher) Decrypt(data []byte) (out []byte, err error) {
+
+	encryption.Lock()
+	defer encryption.Unlock()
+
 	nonceSize := encryption.gcm.NonceSize()
 	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
 	if out, err = encryption.gcm.Open(nil, nonce, ciphertext, nil); err != nil {
