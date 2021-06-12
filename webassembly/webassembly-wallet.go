@@ -26,7 +26,7 @@ func getWalletAddress(this js.Value, args []js.Value) interface{} {
 
 func addNewWalletAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (out interface{}, err error) {
-		adr, err := app.Wallet.AddNewAddress()
+		adr, err := app.Wallet.AddNewAddress(false)
 		if err != nil {
 			return
 		}

@@ -46,9 +46,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 			conns:              []*connection.AdvancedConnection{conn},
 		}
 
-		if _, exists := consensus.forks.hashes.LoadOrStore(string(chainUpdateNotification.Hash), fork); exists {
-			return
-		} else {
+		if _, exists := consensus.forks.hashes.LoadOrStore(string(chainUpdateNotification.Hash), fork); !exists {
 			consensus.forks.listMutex.Lock()
 			consensus.forks.list.Store(append(consensus.forks.list.Load().([]*Fork), fork))
 			consensus.forks.listMutex.Unlock()

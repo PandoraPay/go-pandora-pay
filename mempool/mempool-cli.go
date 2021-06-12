@@ -30,5 +30,5 @@ func (mempool *Mempool) initCLI() {
 		return
 	}
 
-	gui.GUI.CommandDefineCallback("Show Txs", cliShowTxs)
+	gui.GUI.CommandDefineCallback("Show Txs", cliShowTxs, true)
 }

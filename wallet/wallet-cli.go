@@ -416,22 +416,19 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	if wallet.loaded {
-		gui.GUI.CommandDefineCallback("List Addresses", wallet.CliListAddresses)
-		gui.GUI.CommandDefineCallback("Create New Address", cliCreateNewAddress)
-		gui.GUI.CommandDefineCallback("Show Mnemnonic", cliShowMnemonic)
-		gui.GUI.CommandDefineCallback("Show Private Key", cliShowPrivateKey)
-		gui.GUI.CommandDefineCallback("Import Private Key", cliImportPrivateKey)
-		gui.GUI.CommandDefineCallback("Remove Address", cliRemoveAddress)
-		gui.GUI.CommandDefineCallback("Derive Delegated Stake", cliDeriveDelegatedStake)
-		gui.GUI.CommandDefineCallback("Export Address JSON", cliExportAddressJSON)
-		gui.GUI.CommandDefineCallback("Import Address JSON", cliImportAddressJSON)
-		gui.GUI.CommandDefineCallback("Export Wallet JSON", cliExportWalletJSON)
-		gui.GUI.CommandDefineCallback("Import Wallet JSON", cliImportWalletJSON)
-		gui.GUI.CommandDefineCallback("Encrypt Wallet", cliEncryptWallet)
-		gui.GUI.CommandDefineCallback("Remove Encryption", cliRemoveEncryption)
-	} else {
-		gui.GUI.CommandDefineCallback("Decrypt Wallet", cliDecryptWallet)
-	}
+	gui.GUI.CommandDefineCallback("List Addresses", wallet.CliListAddresses, wallet.loaded)
+	gui.GUI.CommandDefineCallback("Create New Address", cliCreateNewAddress, wallet.loaded)
+	gui.GUI.CommandDefineCallback("Show Mnemnonic", cliShowMnemonic, wallet.loaded)
+	gui.GUI.CommandDefineCallback("Show Private Key", cliShowPrivateKey, wallet.loaded)
+	gui.GUI.CommandDefineCallback("Import Private Key", cliImportPrivateKey, wallet.loaded)
+	gui.GUI.CommandDefineCallback("Remove Address", cliRemoveAddress, wallet.loaded)
+	gui.GUI.CommandDefineCallback("Derive Delegated Stake", cliDeriveDelegatedStake, wallet.loaded)
+	gui.GUI.CommandDefineCallback("Export Address JSON", cliExportAddressJSON, wallet.loaded)
+	gui.GUI.CommandDefineCallback("Import Address JSON", cliImportAddressJSON, wallet.loaded)
+	gui.GUI.CommandDefineCallback("Export Wallet JSON", cliExportWalletJSON, wallet.loaded)
+	gui.GUI.CommandDefineCallback("Import Wallet JSON", cliImportWalletJSON, wallet.loaded)
+	gui.GUI.CommandDefineCallback("Encrypt Wallet", cliEncryptWallet, wallet.loaded)
+	gui.GUI.CommandDefineCallback("Remove Encryption", cliRemoveEncryption, wallet.loaded)
+	gui.GUI.CommandDefineCallback("Decrypt Wallet", cliDecryptWallet, !wallet.loaded)
 
 }

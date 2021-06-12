@@ -19,6 +19,7 @@ type GUIInteractive struct {
 	cmdStatus  string //string
 	cmdInput   string //string
 	cmdInputCn chan string
+	cmdMutex   sync.RWMutex
 
 	logs *widgets.Paragraph
 
@@ -104,7 +105,7 @@ func CreateGUIInteractive() (g *GUIInteractive, err error) {
 				g.infoRender()
 				g.info2Render()
 				g.logsRender()
-				ui.Render(g.info, g.info2, g.logs)
+				ui.Render(g.info, g.info2, g.logs, g.cmd)
 			}
 
 		}
@@ -113,7 +114,7 @@ func CreateGUIInteractive() (g *GUIInteractive, err error) {
 	g.CommandDefineCallback("Exit", func(string) error {
 		os.Exit(1)
 		return nil
-	})
+	}, true)
 
 	return
 }
