@@ -3,7 +3,6 @@ package forging
 import (
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/forging/forging-block-work"
-	"pandora-pay/config/stake"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
@@ -15,63 +14,29 @@ import (
 type ForgingThread struct {
 	mempool            *mempool.Mempool
 	threads            int                                    //number of threads
-	wallet             *ForgingWallet                         //shared wallet, not thread safe
 	solutionCn         chan<- *block_complete.BlockComplete   //broadcasting that a solution thread was received
 	nextBlockCreatedCn <-chan *forging_block_work.ForgingWork //detect if a new work was published
-}
-
-func (thread *ForgingThread) getWallets(wallet *ForgingWallet, work *forging_block_work.ForgingWork) (wallets [][]*ForgingWalletAddressRequired, walletsCount int) {
-
-	wallets = make([][]*ForgingWalletAddressRequired, thread.threads)
-
-	//distributing the wallets to each thread uniformly
-	wallet.RLock()
-	defer wallet.RUnlock()
-	for i := 0; i < thread.threads; i++ {
-		wallets[i] = []*ForgingWalletAddressRequired{}
-	}
-
-	walletsCount = 0
-	for _, walletAdr := range wallet.addresses {
-		if walletAdr.account != nil && walletAdr.delegatedPrivateKey != nil {
-
-			stakingAmount := uint64(0)
-			if walletAdr.account != nil {
-				var err error
-				if stakingAmount, err = walletAdr.account.ComputeDelegatedStakeAvailable(work.BlkComplete.Block.Height); err != nil {
-					continue
-				}
-			}
-
-			if stakingAmount >= stake.GetRequiredStake(work.BlkComplete.Block.Height) {
-				wallets[walletsCount%thread.threads] = append(wallets[walletsCount%thread.threads], &ForgingWalletAddressRequired{
-					publicKeyHash: walletAdr.publicKeyHash,
-					wallet:        walletAdr,
-					stakingAmount: stakingAmount,
-				})
-				walletsCount++
-			}
-
-		}
-	}
-	return
+	workers            []*ForgingWorkerThread
+	workersCreatedCn   chan []*ForgingWorkerThread
+	workersDestroyedCn chan struct{}
 }
 
 func (thread *ForgingThread) startForging() {
 
-	workers := make([]*ForgingWorkerThread, thread.threads)
-	forgingWorkerSolutionCn := make(chan *ForgingSolution, 0)
-	for i := 0; i < len(workers); i++ {
-		workers[i] = createForgingWorkerThread(i, forgingWorkerSolutionCn)
-		recovery.SafeGo(workers[i].forge)
+	thread.workers = make([]*ForgingWorkerThread, thread.threads)
+
+	forgingWorkerSolutionCn := make(chan *ForgingSolution)
+	for i := 0; i < len(thread.workers); i++ {
+		thread.workers[i] = createForgingWorkerThread(i, forgingWorkerSolutionCn)
+		recovery.SafeGo(thread.workers[i].forge)
 	}
+	thread.workersCreatedCn <- thread.workers
 
-	//wallets must be read only after its assignment
 	ticker := time.NewTicker(1 * time.Second)
-
 	defer func() {
-		for i := 0; i < len(workers); i++ {
-			close(workers[i].workCn)
+		thread.workersDestroyedCn <- struct{}{}
+		for i := 0; i < len(thread.workers); i++ {
+			close(thread.workers[i].workCn)
 		}
 		ticker.Stop()
 	}()
@@ -85,7 +50,7 @@ func (thread *ForgingThread) startForging() {
 
 			s := ""
 			for i := 0; i < thread.threads; i++ {
-				hashesPerSecond := atomic.SwapUint32(&workers[i].hashes, 0)
+				hashesPerSecond := atomic.SwapUint32(&thread.workers[i].hashes, 0)
 				s += strconv.FormatUint(uint64(hashesPerSecond), 10) + " "
 			}
 			gui.GUI.InfoUpdate("Hashes/s", s)
@@ -94,28 +59,8 @@ func (thread *ForgingThread) startForging() {
 
 	var err error
 	var ok bool
-	var work, newWork *forging_block_work.ForgingWork
-	readNextWork := true
+	var newWork *forging_block_work.ForgingWork
 	for {
-
-		if readNextWork {
-			if newWork, ok = <-thread.nextBlockCreatedCn; !ok {
-				return
-			}
-			if newWork != nil {
-				work = newWork
-			}
-		}
-		readNextWork = true
-
-		wallets, _ := thread.getWallets(thread.wallet, work)
-
-		for i := 0; i < thread.threads; i++ {
-			workers[i].walletsCn <- wallets[i]
-		}
-		for i := 0; i < thread.threads; i++ {
-			workers[i].workCn <- work
-		}
 
 		select {
 		case solution, ok := <-forgingWorkerSolutionCn:
@@ -129,8 +74,8 @@ func (thread *ForgingThread) startForging() {
 			if !ok {
 				return
 			}
-			if newWork != nil {
-				work = newWork
+			for i := 0; i < thread.threads; i++ {
+				thread.workers[i].workCn <- newWork
 			}
 		}
 
@@ -161,12 +106,14 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 	return
 }
 
-func createForgingThread(threads int, mempool *mempool.Mempool, solutionCn chan<- *block_complete.BlockComplete, nextBlockCreatedCn <-chan *forging_block_work.ForgingWork, wallet *ForgingWallet) *ForgingThread {
+func createForgingThread(threads int, mempool *mempool.Mempool, solutionCn chan<- *block_complete.BlockComplete, nextBlockCreatedCn <-chan *forging_block_work.ForgingWork) *ForgingThread {
 	return &ForgingThread{
-		threads:            threads,
-		mempool:            mempool,
-		solutionCn:         solutionCn,
-		nextBlockCreatedCn: nextBlockCreatedCn,
-		wallet:             wallet,
+		mempool,
+		threads,
+		solutionCn,
+		nextBlockCreatedCn,
+		[]*ForgingWorkerThread{},
+		make(chan []*ForgingWorkerThread),
+		make(chan struct{}),
 	}
 }

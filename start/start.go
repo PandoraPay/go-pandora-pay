@@ -51,19 +51,18 @@ func startMain() {
 	}
 	globals.MainEvents.BroadcastEvent("main", "forging initialized")
 
-	if app.Wallet, err = wallet.CreateWallet(app.Forging, app.Mempool); err != nil {
-		return
-	}
-	globals.MainEvents.BroadcastEvent("main", "wallet initialized")
-
 	if app.Chain, err = blockchain.CreateBlockchain(app.Mempool); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
 
-	app.Wallet.InitializeWallet(app.Chain.UpdateAccounts)
-
 	app.Forging.InitializeForging(app.Chain.NextBlockCreatedCn, app.Chain.UpdateAccounts, app.Chain.ForgingSolutionCn)
+
+	if app.Wallet, err = wallet.CreateWallet(app.Forging, app.Mempool); err != nil {
+		return
+	}
+	globals.MainEvents.BroadcastEvent("main", "wallet initialized")
+	app.Wallet.InitializeWallet(app.Chain.UpdateAccounts)
 
 	if err = genesis.GenesisInit(app.Wallet); err != nil {
 		return
@@ -74,6 +73,7 @@ func startMain() {
 	if err = app.Wallet.StartWallet(); err != nil {
 		return
 	}
+
 	app.Forging.StartForging()
 
 	if app.Settings, err = settings.SettingsInit(); err != nil {

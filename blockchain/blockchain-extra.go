@@ -176,6 +176,7 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 			blkComplete,
 			writer.Bytes(),
 			blkComplete.Timestamp,
+			blkComplete.Height,
 			target,
 		}:
 		default:

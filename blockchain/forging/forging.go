@@ -10,14 +10,13 @@ import (
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
-	"sync"
-	"sync/atomic"
 )
 
 type Forging struct {
 	mempool            *mempool.Mempool
 	Wallet             *ForgingWallet
 	started            *abool.AtomicBool
+	forgingThread      *ForgingThread
 	nextBlockCreatedCn <-chan *forging_block_work.ForgingWork
 	solutionCn         chan<- *block_complete.BlockComplete
 }
@@ -25,28 +24,38 @@ type Forging struct {
 func CreateForging(mempool *mempool.Mempool) (forging *Forging, err error) {
 
 	forging = &Forging{
-		mempool: mempool,
-		started: abool.New(),
-		Wallet: &ForgingWallet{
-			addressesMap: make(map[string]*ForgingWalletAddress),
-			updates:      &atomic.Value{},
-			updatesMutex: &sync.Mutex{},
+		mempool,
+		&ForgingWallet{
+			[]*ForgingWalletAddress{},
+			map[string]*ForgingWalletAddress{},
+			[]int{},
+			[]*ForgingWorkerThread{},
+			nil,
+			make(chan *ForgingWalletAddressUpdate),
+			make(chan struct{}),
+			nil,
+			nil,
+			nil,
 		},
+		abool.New(),
+		nil, nil, nil,
 	}
-
-	forging.Wallet.updates.Store([]*ForgingWalletAddressUpdate{})
+	forging.Wallet.forging = forging
 
 	return
 }
 
 func (forging *Forging) InitializeForging(nextBlockCreatedCn <-chan *forging_block_work.ForgingWork, updateAccounts *multicast.MulticastChannel, forgingSolutionCn chan<- *block_complete.BlockComplete) {
+
 	forging.nextBlockCreatedCn = nextBlockCreatedCn
 	forging.Wallet.updateAccounts = updateAccounts
 	forging.solutionCn = forgingSolutionCn
 
-	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
-		recovery.SafeGo(forging.Wallet.updateAccountsChanges)
-	}
+	forging.forgingThread = createForgingThread(config.CPU_THREADS, forging.mempool, forging.solutionCn, forging.nextBlockCreatedCn)
+	forging.Wallet.workersCreatedCn = forging.forgingThread.workersCreatedCn
+	forging.Wallet.workersDestroyedCn = forging.forgingThread.workersDestroyedCn
+
+	recovery.SafeGo(forging.Wallet.processUpdates)
 
 }
 
@@ -65,14 +74,7 @@ func (forging *Forging) StartForging() bool {
 		return false
 	}
 
-	if err := forging.Wallet.ProcessUpdates(); err != nil {
-		forging.started.UnSet()
-		return false
-	}
-
-	forgingThread := createForgingThread(config.CPU_THREADS, forging.mempool, forging.solutionCn, forging.nextBlockCreatedCn, forging.Wallet)
-
-	recovery.SafeGo(forgingThread.startForging)
+	recovery.SafeGo(forging.forgingThread.startForging)
 
 	return true
 }

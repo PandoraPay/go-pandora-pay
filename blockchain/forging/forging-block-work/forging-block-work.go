@@ -9,5 +9,6 @@ type ForgingWork struct {
 	BlkComplete   *block_complete.BlockComplete
 	BlkSerialized []byte
 	BlkTimestmap  uint64
+	BlkHeight     uint64
 	Target        *big.Int
 }
