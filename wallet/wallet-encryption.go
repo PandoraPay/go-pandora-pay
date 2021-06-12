@@ -10,6 +10,7 @@ type WalletEncryption struct {
 	wallet           *Wallet
 	Encrypted        EncryptedVersion             `json:"encrypted"`
 	Salt             []byte                       `json:"salt"`
+	Difficulty       int                          `json:"difficulty"`
 	password         string                       `json:"-"`
 	encryptionCipher *encryption.EncryptionCipher `json:"-"`
 }
@@ -21,7 +22,7 @@ func createEncryption(wallet *Wallet) *WalletEncryption {
 	}
 }
 
-func (self *WalletEncryption) Encrypt(newPassword string) (err error) {
+func (self *WalletEncryption) Encrypt(newPassword string, difficulty int) (err error) {
 	self.wallet.Lock()
 	defer self.wallet.Unlock()
 
@@ -29,14 +30,27 @@ func (self *WalletEncryption) Encrypt(newPassword string) (err error) {
 		return errors.New("Wallet is encrypted already! Remove the encryption first")
 	}
 
+	if difficulty <= 0 || difficulty > 10 {
+		return errors.New("Difficulty must be in the interval [1,10]")
+	}
+
 	self.Encrypted = ENCRYPTED_VERSION_ENCRYPTION_ARGON2
 	self.password = newPassword
 	self.Salt = helpers.RandomBytes(32)
-	if self.encryptionCipher, err = encryption.CreateEncryptionCipher(newPassword, self.Salt); err != nil {
+	self.Difficulty = difficulty
+
+	if err = self.createEncryptionCipher(); err != nil {
 		return
 	}
 
 	return self.wallet.saveWalletEntire(false)
+}
+
+func (self *WalletEncryption) createEncryptionCipher() (err error) {
+	if self.encryptionCipher, err = encryption.CreateEncryptionCipher(self.password, self.Salt, uint32(self.Difficulty)*30); err != nil {
+		return
+	}
+	return
 }
 
 func (self *WalletEncryption) Decrypt(password string) (err error) {

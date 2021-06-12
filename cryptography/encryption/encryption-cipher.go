@@ -15,13 +15,13 @@ type EncryptionCipher struct {
 	sync.Mutex
 }
 
-func CreateEncryptionCipher(password string, salt []byte) (out *EncryptionCipher, err error) {
+func CreateEncryptionCipher(password string, salt []byte, time uint32) (out *EncryptionCipher, err error) {
 
 	if len(salt) != 32 {
 		return nil, errors.New("Salt must be 32 byte")
 	}
 
-	key := argon2.IDKey([]byte(password), salt, 100, 32*1024, 4, 32)
+	key := argon2.IDKey([]byte(password), salt, time, 32*1024, 4, 32)
 
 	block, err := aes.NewCipher(key)
 	if err != nil {

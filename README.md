@@ -44,7 +44,7 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [ ] Print Wallet Homomorphic Balances
     - [X] Export Address JSON        
     - [X] Import Address JSON        
-    - [ ] Wallet Encryption
+    - [X] Wallet Encryption
 - [x] Merkle Tree
 - [x] Block
     - [x] Serialization
@@ -114,7 +114,7 @@ The main design pattern that has been taken in consideration is to be **dead-sim
 ** later on optimizations and improvements
 
 The main reasons why DPOS has been chosen over POS:
-1. Delegating your stake increases security 
+1. Delegating your stake increases security. 
 2. Delegating your stake to someone to stake increases anonymity as you don't need to be online for staking. 
 3. Completely offline can be done to increase the security. 
 4. DPOS avoids using the griding technique to solve the POS short range vulnerability
@@ -138,4 +138,3 @@ Using profiling to debug memory leaks/CPU
 
 ### Scripts
 `scripts/compile-wasm.sh` compiles to WASM
-`scripts/compile-wasm-wallet.sh` compiles to WASM and move it to wallet repository

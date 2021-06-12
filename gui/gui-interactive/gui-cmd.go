@@ -57,12 +57,16 @@ var commands = []Command{
 
 func (g *GUIInteractive) CommandDefineCallback(Text string, callback func(string) error) {
 
+	g.cmd.Lock()
+
 	for i := range commands {
 		if commands[i].Text == Text {
 			commands[i].Callback = callback
+			g.cmd.Unlock()
 			return
 		}
 	}
+	g.cmd.Unlock()
 
 	g.Error(errors.New("Command " + Text + " was not found"))
 }
@@ -210,6 +214,7 @@ func (g *GUIInteractive) OutputReadInt(text string, acceptedValues []int) (out i
 				acceptedValuesStr += strconv.Itoa(acceptedValue) + " "
 			}
 			g.OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
+			continue
 		}
 		return
 	}
@@ -239,6 +244,7 @@ func (g *GUIInteractive) OutputReadUint64(text string, acceptedValues []uint64, 
 				acceptedValuesStr += strconv.FormatUint(acceptedValue, 64) + " "
 			}
 			g.OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
+			continue
 		}
 		return
 	}
@@ -264,6 +270,7 @@ func (g *GUIInteractive) OutputReadFloat64(text string, acceptedValues []float64
 				acceptedValuesStr += strconv.FormatFloat(acceptedValue, 'f', 10, 64) + " "
 			}
 			g.OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
+			continue
 		}
 		return
 	}
@@ -324,6 +331,7 @@ func (g *GUIInteractive) OutputReadBytes(text string, acceptedLengths []int) (in
 				}
 			}
 			g.OutputWrite("Invalid value. Lengths accepted: " + acceptedLengthsStr)
+			continue
 		}
 	}
 }

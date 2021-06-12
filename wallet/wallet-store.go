@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/config/globals"
-	"pandora-pay/cryptography/encryption"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -130,7 +129,8 @@ func (wallet *Wallet) loadWallet(password string) error {
 			}
 
 			if wallet.Encryption.Encrypted != ENCRYPTED_VERSION_PLAIN_TEXT {
-				if wallet.Encryption.encryptionCipher, err = encryption.CreateEncryptionCipher(password, wallet.Encryption.Salt); err != nil {
+				wallet.Encryption.password = password
+				if err = wallet.Encryption.createEncryptionCipher(); err != nil {
 					return
 				}
 			}
@@ -171,7 +171,7 @@ func (wallet *Wallet) loadWallet(password string) error {
 				wallet.mempool.Wallet.AddWallet(addr.PublicKeyHash)
 			}
 
-			wallet.loaded = true
+			wallet.setLoaded(true)
 			wallet.updateWallet()
 			globals.MainEvents.BroadcastEvent("wallet/loaded", wallet.Count)
 			gui.GUI.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))

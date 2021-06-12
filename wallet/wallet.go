@@ -30,19 +30,15 @@ type Wallet struct {
 
 func createWallet(forging *forging.Forging, mempool *mempool.Mempool, updateAccounts *multicast.MulticastChannel) (wallet *Wallet) {
 	wallet = &Wallet{
-		Version:        VERSION_SIMPLE,
 		forging:        forging,
 		mempool:        mempool,
-		Count:          0,
-		SeedIndex:      1,
-		Addresses:      make([]*wallet_address.WalletAddress, 0),
-		addressesMap:   make(map[string]*wallet_address.WalletAddress),
 		updateAccounts: updateAccounts,
 	}
-	wallet.Encryption = createEncryption(wallet)
+	wallet.clearWallet()
 	return
 }
 
+//must be locked before
 func (wallet *Wallet) clearWallet() {
 	wallet.Version = VERSION_SIMPLE
 	wallet.Mnemonic = ""
@@ -51,17 +47,21 @@ func (wallet *Wallet) clearWallet() {
 	wallet.Count = 0
 	wallet.CountIndex = 0
 	wallet.SeedIndex = 1
-	wallet.loaded = false
 	wallet.Addresses = make([]*wallet_address.WalletAddress, 0)
 	wallet.addressesMap = make(map[string]*wallet_address.WalletAddress)
 	wallet.Encryption = createEncryption(wallet)
+	wallet.setLoaded(false)
+}
+
+//must be locked before
+func (wallet *Wallet) setLoaded(newValue bool) {
+	wallet.loaded = newValue
+	wallet.initWalletCLI()
 }
 
 func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool) (wallet *Wallet, err error) {
 
 	wallet = createWallet(forging, mempool, nil)
-
-	wallet.initWalletCLI()
 
 	if err = wallet.loadWallet(""); err != nil {
 		if err.Error() == "cipher: message authentication failed" {

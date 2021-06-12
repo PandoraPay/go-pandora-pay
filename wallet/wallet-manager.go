@@ -146,11 +146,13 @@ func (wallet *Wallet) GeneratePrivateKey(seedIndex uint32, lock bool) (out []byt
 	return key.Key, nil
 }
 
-func (wallet *Wallet) AddNewAddress() (adr *wallet_address.WalletAddress, err error) {
+func (wallet *Wallet) AddNewAddress(lock bool) (adr *wallet_address.WalletAddress, err error) {
 
 	//avoid generating the same address twice
-	wallet.Lock()
-	defer wallet.Unlock()
+	if lock {
+		wallet.Lock()
+		defer wallet.Unlock()
+	}
 
 	if !wallet.loaded {
 		return nil, errors.New("Wallet was not loaded!")
@@ -242,12 +244,14 @@ func (wallet *Wallet) ShowPrivateKey(index int) ([]byte, error) { //32 byte
 	return wallet.Addresses[index].PrivateKey.Key, nil
 }
 
-func (wallet *Wallet) createSeed(isEmptyAllowed bool) error {
+func (wallet *Wallet) createSeed(lock bool) error {
 
-	wallet.Lock()
-	defer wallet.Unlock()
+	if lock {
+		wallet.Lock()
+		defer wallet.Unlock()
+	}
 
-	if !wallet.loaded && !isEmptyAllowed {
+	if !wallet.loaded {
 		return errors.New("Wallet was not loaded!")
 	}
 
@@ -270,15 +274,16 @@ func (wallet *Wallet) createSeed(isEmptyAllowed bool) error {
 }
 
 func (wallet *Wallet) createEmptyWallet() (err error) {
-	if err = wallet.createSeed(true); err != nil {
-		return
-	}
-	if _, err = wallet.AddNewAddress(); err != nil {
-		return
-	}
 	wallet.Lock()
 	defer wallet.Unlock()
-	wallet.loaded = true
+
+	wallet.setLoaded(true)
+	if err = wallet.createSeed(false); err != nil {
+		return
+	}
+	if _, err = wallet.AddNewAddress(false); err != nil {
+		return
+	}
 	return
 }
 

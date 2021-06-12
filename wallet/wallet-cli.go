@@ -25,10 +25,6 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 	gui.GUI.OutputWrite("Version: " + wallet.Version.String())
 	gui.GUI.OutputWrite("Encrypted: " + wallet.Encryption.Encrypted.String())
 
-	if !wallet.loaded {
-		return errors.New("Wallet was not loaded!")
-	}
-
 	gui.GUI.OutputWrite("Count: " + strconv.Itoa(wallet.Count))
 	gui.GUI.OutputWrite("")
 
@@ -109,10 +105,6 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliExportAddressJSON := func(cmd string) (err error) {
 
-		if !wallet.loaded {
-			return errors.New("Wallet was not loaded!")
-		}
-
 		str, ok := gui.GUI.OutputReadString("Path to export")
 		if !ok {
 			return
@@ -160,10 +152,6 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliImportAddressJSON := func(cmd string) (err error) {
 
-		if !wallet.loaded {
-			return errors.New("Wallet was not loaded!")
-		}
-
 		str, ok := gui.GUI.OutputReadString("Path to import")
 		if !ok {
 			return
@@ -183,10 +171,6 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	cliExportWalletJSON := func(cmd string) (err error) {
-
-		if !wallet.loaded {
-			return errors.New("Wallet was not loaded!")
-		}
 
 		str, ok := gui.GUI.OutputReadString("Path to export")
 		if !ok {
@@ -218,10 +202,6 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliImportWalletJSON := func(cmd string) (err error) {
 
-		if !wallet.loaded {
-			return errors.New("Wallet was not loaded! You need either to manually delete it or to decrypt it")
-		}
-
 		str, ok := gui.GUI.OutputReadString("Path to import Wallet")
 		if !ok {
 			return
@@ -250,7 +230,7 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	cliCreateNewAddress := func(cmd string) (err error) {
-		if _, err = wallet.AddNewAddress(); err != nil {
+		if _, err = wallet.AddNewAddress(true); err != nil {
 			return
 		}
 		return wallet.CliListAddresses(cmd)
@@ -352,9 +332,6 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	cliShowMnemonic := func(string) (err error) {
-		if !wallet.loaded {
-			return errors.New("Wallet was not loaded!")
-		}
 
 		gui.GUI.OutputWrite("Mnemonic \n")
 		gui.GUI.OutputWrite(wallet.Mnemonic)
@@ -383,10 +360,6 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliImportPrivateKey := func(cmd string) (err error) {
 
-		if !wallet.loaded {
-			return errors.New("Wallet was not loaded!")
-		}
-
 		privateKey, ok := gui.GUI.OutputReadBytes("Write Private key", []int{32})
 		if !ok {
 			return
@@ -413,7 +386,12 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		if err = wallet.Encryption.Encrypt(password); err == nil {
+		difficulty, ok := gui.GUI.OutputReadInt("Difficulty for encryption", []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+		if !ok {
+			return
+		}
+
+		if err = wallet.Encryption.Encrypt(password, difficulty); err == nil {
 			gui.GUI.OutputWrite("Wallet encrypted successfully")
 		}
 		return
@@ -438,19 +416,22 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	gui.GUI.CommandDefineCallback("List Addresses", wallet.CliListAddresses)
-	gui.GUI.CommandDefineCallback("Create New Address", cliCreateNewAddress)
-	gui.GUI.CommandDefineCallback("Show Mnemnonic", cliShowMnemonic)
-	gui.GUI.CommandDefineCallback("Show Private Key", cliShowPrivateKey)
-	gui.GUI.CommandDefineCallback("Import Private Key", cliImportPrivateKey)
-	gui.GUI.CommandDefineCallback("Remove Address", cliRemoveAddress)
-	gui.GUI.CommandDefineCallback("Derive Delegated Stake", cliDeriveDelegatedStake)
-	gui.GUI.CommandDefineCallback("Export Address JSON", cliExportAddressJSON)
-	gui.GUI.CommandDefineCallback("Import Address JSON", cliImportAddressJSON)
-	gui.GUI.CommandDefineCallback("Export Wallet JSON", cliExportWalletJSON)
-	gui.GUI.CommandDefineCallback("Import Wallet JSON", cliImportWalletJSON)
-	gui.GUI.CommandDefineCallback("Encrypt Wallet", cliEncryptWallet)
-	gui.GUI.CommandDefineCallback("Decrypt Wallet", cliDecryptWallet)
-	gui.GUI.CommandDefineCallback("Remove Encryption", cliRemoveEncryption)
+	if wallet.loaded {
+		gui.GUI.CommandDefineCallback("List Addresses", wallet.CliListAddresses)
+		gui.GUI.CommandDefineCallback("Create New Address", cliCreateNewAddress)
+		gui.GUI.CommandDefineCallback("Show Mnemnonic", cliShowMnemonic)
+		gui.GUI.CommandDefineCallback("Show Private Key", cliShowPrivateKey)
+		gui.GUI.CommandDefineCallback("Import Private Key", cliImportPrivateKey)
+		gui.GUI.CommandDefineCallback("Remove Address", cliRemoveAddress)
+		gui.GUI.CommandDefineCallback("Derive Delegated Stake", cliDeriveDelegatedStake)
+		gui.GUI.CommandDefineCallback("Export Address JSON", cliExportAddressJSON)
+		gui.GUI.CommandDefineCallback("Import Address JSON", cliImportAddressJSON)
+		gui.GUI.CommandDefineCallback("Export Wallet JSON", cliExportWalletJSON)
+		gui.GUI.CommandDefineCallback("Import Wallet JSON", cliImportWalletJSON)
+		gui.GUI.CommandDefineCallback("Encrypt Wallet", cliEncryptWallet)
+		gui.GUI.CommandDefineCallback("Remove Encryption", cliRemoveEncryption)
+	} else {
+		gui.GUI.CommandDefineCallback("Decrypt Wallet", cliDecryptWallet)
+	}
 
 }
