@@ -34,7 +34,6 @@ type Command struct {
 }
 
 var commands = []Command{
-	{Name: "Wallet", Text: "Decrypt"},
 	{Name: "Wallet", Text: "Show Mnemnonic"},
 	{Name: "Wallet", Text: "List Addresses"},
 	{Name: "Wallet", Text: "Create New Address"},
@@ -304,15 +303,15 @@ func (g *GUIInteractive) OutputReadBool(text string) (out bool, ok bool) {
 	}
 }
 
-func (g *GUIInteractive) OutputReadBytes(text string, acceptedLengths []int) (token []byte, ok bool) {
+func (g *GUIInteractive) OutputReadBytes(text string, acceptedLengths []int) (input []byte, ok bool) {
 	var str string
 	var err error
 	for {
 		if str, ok = <-g.outputRead(text); !ok {
 			return
 		}
-		if token, err = hex.DecodeString(str); err != nil {
-			g.OutputWrite("Invalid Token. The token has to be a hex")
+		if input, err = hex.DecodeString(str); err != nil {
+			g.OutputWrite("Invalid Data. The input has to be a hex")
 			continue
 		}
 
@@ -320,7 +319,7 @@ func (g *GUIInteractive) OutputReadBytes(text string, acceptedLengths []int) (to
 			acceptedLengthsStr := ""
 			for _, acceptedLength := range acceptedLengths {
 				acceptedLengthsStr = acceptedLengthsStr + strconv.Itoa(acceptedLength) + " , "
-				if len(token) == acceptedLength {
+				if len(input) == acceptedLength {
 					return
 				}
 			}

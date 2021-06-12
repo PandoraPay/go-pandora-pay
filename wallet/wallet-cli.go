@@ -24,8 +24,12 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 	gui.GUI.OutputWrite("Wallet")
 	gui.GUI.OutputWrite("Version: " + wallet.Version.String())
 	gui.GUI.OutputWrite("Encrypted: " + wallet.Encryption.Encrypted.String())
-	gui.GUI.OutputWrite("Count: " + strconv.Itoa(wallet.Count))
 
+	if !wallet.loaded {
+		return errors.New("Wallet was not loaded!")
+	}
+
+	gui.GUI.OutputWrite("Count: " + strconv.Itoa(wallet.Count))
 	gui.GUI.OutputWrite("")
 
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
@@ -105,6 +109,10 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliExportAddressJSON := func(cmd string) (err error) {
 
+		if !wallet.loaded {
+			return errors.New("Wallet was not loaded!")
+		}
+
 		str, ok := gui.GUI.OutputReadString("Path to export")
 		if !ok {
 			return
@@ -152,6 +160,10 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliImportAddressJSON := func(cmd string) (err error) {
 
+		if !wallet.loaded {
+			return errors.New("Wallet was not loaded!")
+		}
+
 		str, ok := gui.GUI.OutputReadString("Path to import")
 		if !ok {
 			return
@@ -171,6 +183,10 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	cliExportWalletJSON := func(cmd string) (err error) {
+
+		if !wallet.loaded {
+			return errors.New("Wallet was not loaded!")
+		}
 
 		str, ok := gui.GUI.OutputReadString("Path to export")
 		if !ok {
@@ -201,6 +217,10 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	cliImportWalletJSON := func(cmd string) (err error) {
+
+		if !wallet.loaded {
+			return errors.New("Wallet was not loaded! You need either to manually delete it or to decrypt it")
+		}
 
 		str, ok := gui.GUI.OutputReadString("Path to import Wallet")
 		if !ok {
@@ -329,10 +349,13 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		})
 
-		return
 	}
 
 	cliShowMnemonic := func(string) (err error) {
+		if !wallet.loaded {
+			return errors.New("Wallet was not loaded!")
+		}
+
 		gui.GUI.OutputWrite("Mnemonic \n")
 		gui.GUI.OutputWrite(wallet.Mnemonic)
 
@@ -359,6 +382,10 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	cliImportPrivateKey := func(cmd string) (err error) {
+
+		if !wallet.loaded {
+			return errors.New("Wallet was not loaded!")
+		}
 
 		privateKey, ok := gui.GUI.OutputReadBytes("Write Private key", []int{32})
 		if !ok {

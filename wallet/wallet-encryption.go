@@ -47,8 +47,12 @@ func (self *WalletEncryption) RemoveEncryption() (err error) {
 	self.wallet.Lock()
 	defer self.wallet.Unlock()
 
+	if !self.wallet.loaded {
+		return errors.New("Wallet was not loaded!")
+	}
+
 	if self.Encrypted == ENCRYPTED_VERSION_PLAIN_TEXT {
-		return errors.New("Wallet is encrypted already! Remove the encryption first")
+		return errors.New("Wallet is not encrypted!")
 	}
 
 	self.Encrypted = ENCRYPTED_VERSION_PLAIN_TEXT
