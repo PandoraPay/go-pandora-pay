@@ -197,7 +197,7 @@ func (wallet *Wallet) RemoveAddress(index int, encodedAddress string) (out bool,
 	wallet.mempool.Wallet.RemoveWallet(removing.PublicKeyHash)
 
 	wallet.updateWallet()
-	if err = wallet.saveWallet(index, wallet.Count, wallet.Count, false); err != nil {
+	if err = wallet.saveWallet(index, len(wallet.Addresses), wallet.Count, false); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("wallet/removed", adr)
@@ -258,7 +258,7 @@ func (wallet *Wallet) createEmptyWallet() (err error) {
 }
 
 func (wallet *Wallet) updateWallet() {
-	gui.GUI.InfoUpdate("Wallet", wallet.Encrypted.String())
+	gui.GUI.InfoUpdate("Wallet", wallet.Encryption.Encrypted.String())
 	gui.GUI.InfoUpdate("Wallet Addrs", strconv.Itoa(wallet.Count))
 }
 

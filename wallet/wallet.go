@@ -12,7 +12,7 @@ import (
 )
 
 type Wallet struct {
-	Encrypted      EncryptedVersion                         `json:"encrypted"`
+	Encryption     *WalletEncryption                        `json:"encryption"`
 	Version        Version                                  `json:"version"`
 	Mnemonic       string                                   `json:"mnemonic"`
 	Seed           helpers.HexBytes                         `json:"seed"` //32 byte
@@ -27,20 +27,19 @@ type Wallet struct {
 	sync.RWMutex   `json:"-"`
 }
 
-func createWallet(forging *forging.Forging, mempool *mempool.Mempool, updateAccounts *multicast.MulticastChannel) *Wallet {
-	return &Wallet{
-		Version:   VERSION_SIMPLE,
-		Encrypted: ENCRYPTED_VERSION_PLAIN_TEXT,
-		forging:   forging,
-		mempool:   mempool,
-
-		Count:     0,
-		SeedIndex: 1,
-
+func createWallet(forging *forging.Forging, mempool *mempool.Mempool, updateAccounts *multicast.MulticastChannel) (wallet *Wallet) {
+	wallet = &Wallet{
+		Version:        VERSION_SIMPLE,
+		forging:        forging,
+		mempool:        mempool,
+		Count:          0,
+		SeedIndex:      1,
 		Addresses:      make([]*wallet_address.WalletAddress, 0),
 		addressesMap:   make(map[string]*wallet_address.WalletAddress),
 		updateAccounts: updateAccounts,
 	}
+	wallet.Encryption = createEncryption(wallet)
+	return
 }
 
 func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool) (wallet *Wallet, err error) {

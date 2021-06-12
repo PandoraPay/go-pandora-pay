@@ -49,6 +49,9 @@ var commands = []Command{
 	{Name: "Wallet", Text: "Import Address JSON"},
 	{Name: "Wallet", Text: "Export Wallet JSON"},
 	{Name: "Wallet", Text: "Import Wallet JSON"},
+	{Name: "Wallet", Text: "Encrypt Wallet"},
+	{Name: "Wallet", Text: "Decrypt Wallet"},
+	{Name: "Wallet", Text: "Remove Encryption"},
 	{Name: "Mempool", Text: "Show Txs"},
 	{Name: "App", Text: "Exit"},
 }

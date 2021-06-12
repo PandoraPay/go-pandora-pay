@@ -23,7 +23,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 
 	gui.GUI.OutputWrite("Wallet")
 	gui.GUI.OutputWrite("Version: " + wallet.Version.String())
-	gui.GUI.OutputWrite("Encrypted: " + wallet.Encrypted.String())
+	gui.GUI.OutputWrite("Encrypted: " + wallet.Encryption.Encrypted.String())
 	gui.GUI.OutputWrite("Count: " + strconv.Itoa(wallet.Count))
 
 	gui.GUI.OutputWrite("")
@@ -380,6 +380,23 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
+	cliEncryptWallet := func(cmd string) (err error) {
+		password, ok := gui.GUI.OutputReadString("Write the password that will be used for encryption")
+		if !ok {
+			return
+		}
+
+		return wallet.Encryption.Encrypt(password)
+	}
+
+	cliDecyprtWallet := func(cmd string) (err error) {
+		return
+	}
+
+	cliRemoveEncryption := func(cmd string) (err error) {
+		return
+	}
+
 	gui.GUI.CommandDefineCallback("List Addresses", wallet.CliListAddresses)
 	gui.GUI.CommandDefineCallback("Create New Address", cliCreateNewAddress)
 	gui.GUI.CommandDefineCallback("Show Mnemnonic", cliShowMnemonic)
@@ -391,5 +408,8 @@ func (wallet *Wallet) initWalletCLI() {
 	gui.GUI.CommandDefineCallback("Import Address JSON", cliImportAddressJSON)
 	gui.GUI.CommandDefineCallback("Export Wallet JSON", cliExportWalletJSON)
 	gui.GUI.CommandDefineCallback("Import Wallet JSON", cliImportWalletJSON)
+	gui.GUI.CommandDefineCallback("Encrypt Wallet", cliEncryptWallet)
+	gui.GUI.CommandDefineCallback("Decrypt Wallet", cliDecyprtWallet)
+	gui.GUI.CommandDefineCallback("Remove Encryption", cliRemoveEncryption)
 
 }

@@ -19,15 +19,15 @@ type EncryptedVersion int
 
 const (
 	ENCRYPTED_VERSION_PLAIN_TEXT EncryptedVersion = iota
-	ENCRYPTED_VERSION_ENCRYPTION
+	ENCRYPTED_VERSION_ENCRYPTION_ARGON2
 )
 
 func (e EncryptedVersion) String() string {
 	switch e {
 	case ENCRYPTED_VERSION_PLAIN_TEXT:
 		return "ENCRYPTED_VERSION_PLAIN_TEXT"
-	case ENCRYPTED_VERSION_ENCRYPTION:
-		return "ENCRYPTED_VERSION_ENCRYPTION"
+	case ENCRYPTED_VERSION_ENCRYPTION_ARGON2:
+		return "ENCRYPTED_VERSION_ENCRYPTION_ARGON2"
 	default:
 		return "Unknown EncryptedVersion"
 	}

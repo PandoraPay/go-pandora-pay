@@ -27,6 +27,14 @@ func (wallet *Wallet) saveWalletAddress(adr *wallet_address.WalletAddress, lock 
 	return nil
 }
 
+func (wallet *Wallet) saveWalletEntire(lock bool) error {
+	if lock {
+		wallet.RLock()
+		defer wallet.RUnlock()
+	}
+	return wallet.saveWallet(0, wallet.Count, -1, false)
+}
+
 func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 
 	if lock {
@@ -36,23 +44,39 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 
 	return store.StoreWallet.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
+		var marshal []byte
+
 		if err = writer.Put("saved", []byte{2}); err != nil {
 			return
 		}
 
-		marshal, err := helpers.GetJSON(wallet, "addresses", "addressesMap")
-		if err != nil {
+		if marshal, err = helpers.GetJSON(wallet.Encryption); err != nil {
+			return
+		}
+		if err = writer.Put("encryption", marshal); err != nil {
 			return
 		}
 
+		if marshal, err = helpers.GetJSON(wallet, "addresses", "addressesMap", "encryption"); err != nil {
+			return
+		}
+		if wallet.Encryption.Encrypted == ENCRYPTED_VERSION_ENCRYPTION_ARGON2 {
+			if marshal, err = wallet.Encryption.encryptionCipher.Encrypt(marshal); err != nil {
+				return
+			}
+		}
 		if err = writer.Put("wallet", marshal); err != nil {
 			return
 		}
 
 		for i := start; i < end; i++ {
-			gui.GUI.Log("Saving WALLET", i)
 			if marshal, err = json.Marshal(wallet.Addresses[i]); err != nil {
 				return
+			}
+			if wallet.Encryption.Encrypted == ENCRYPTED_VERSION_ENCRYPTION_ARGON2 {
+				if marshal, err = wallet.Encryption.encryptionCipher.Encrypt(marshal); err != nil {
+					return
+				}
 			}
 			if err = writer.Put("wallet-address-"+strconv.Itoa(i), marshal); err != nil {
 				return
@@ -98,6 +122,7 @@ func (wallet *Wallet) loadWallet() error {
 			wallet.addressesMap = make(map[string]*wallet_address.WalletAddress)
 
 			for i := 0; i < wallet.Count; i++ {
+
 				unmarshal := reader.Get("wallet-address-" + strconv.Itoa(i))
 
 				newWalletAddress := &wallet_address.WalletAddress{}
