@@ -71,10 +71,10 @@ func startMain() {
 	if err = app.Chain.InitializeChain(); err != nil {
 		return
 	}
-	app.Forging.StartForging()
 	if err = app.Wallet.StartWallet(); err != nil {
 		return
 	}
+	app.Forging.StartForging()
 
 	if app.Settings, err = settings.SettingsInit(); err != nil {
 		return

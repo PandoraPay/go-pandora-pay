@@ -104,11 +104,11 @@ func (mempool *Mempool) GetNextTransactionsToInclude(blockHeight uint64, chainHa
 
 		if bytes.Equal(res.chainHash, chainHash) {
 			txs := res.txs.Load().([]*mempoolTx)
-			finaltxs := make([]*transaction.Transaction, len(txs))
+			finalTxs := make([]*transaction.Transaction, len(txs))
 			for i, tx := range txs {
-				finaltxs[i] = tx.Tx
+				finalTxs[i] = tx.Tx
 			}
-			return finaltxs
+			return finalTxs
 		}
 	}
 

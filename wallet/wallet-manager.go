@@ -21,6 +21,10 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (publicKeyHash, de
 	wallet.Lock()
 	defer wallet.Unlock()
 
+	if len(wallet.Addresses) == 0 || !wallet.loaded {
+		return nil, nil, errors.New("Wallet is empty")
+	}
+
 	addr := wallet.Addresses[0]
 	delegatedStake, err := addr.DeriveDelegatedStake(0)
 	if err != nil {
@@ -51,7 +55,7 @@ func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string) (o
 func (wallet *Wallet) ImportPrivateKey(name string, privateKey []byte) (adr *wallet_address.WalletAddress, err error) {
 
 	if len(privateKey) != 32 {
-		errors.New("Invalid PrivateKey length")
+		return nil, errors.New("Invalid PrivateKey length")
 	}
 
 	wallet.RLock()

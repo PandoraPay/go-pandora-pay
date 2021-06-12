@@ -169,8 +169,15 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 			Txs:   []*transaction.Transaction{},
 		}
 
+		writer := helpers.NewBufferWriter()
+		blk.SerializeForForging(writer)
 		select {
-		case chain.NextBlockCreatedCn <- &forging_block_work.ForgingWork{blkComplete, target}:
+		case chain.NextBlockCreatedCn <- &forging_block_work.ForgingWork{
+			blkComplete,
+			writer.Bytes(),
+			blkComplete.Timestamp,
+			target,
+		}:
 		default:
 		}
 

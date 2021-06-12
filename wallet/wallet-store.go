@@ -64,11 +64,10 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 		if marshal, err = helpers.GetJSON(wallet, "addresses", "encryption"); err != nil {
 			return
 		}
-		if wallet.Encryption.Encrypted == ENCRYPTED_VERSION_ENCRYPTION_ARGON2 {
-			if marshal, err = wallet.Encryption.encryptionCipher.Encrypt(marshal); err != nil {
-				return
-			}
+		if marshal, err = wallet.Encryption.encryptData(marshal); err != nil {
+			return
 		}
+
 		if err = writer.Put("wallet", marshal); err != nil {
 			return
 		}
@@ -77,10 +76,8 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 			if marshal, err = json.Marshal(wallet.Addresses[i]); err != nil {
 				return
 			}
-			if wallet.Encryption.Encrypted == ENCRYPTED_VERSION_ENCRYPTION_ARGON2 {
-				if marshal, err = wallet.Encryption.encryptionCipher.Encrypt(marshal); err != nil {
-					return
-				}
+			if marshal, err = wallet.Encryption.encryptData(marshal); err != nil {
+				return
 			}
 			if err = writer.Put("wallet-address-"+strconv.Itoa(i), marshal); err != nil {
 				return
@@ -135,11 +132,8 @@ func (wallet *Wallet) loadWallet(password string) error {
 				}
 			}
 
-			unmarshal = reader.Get("wallet")
-			if wallet.Encryption.Encrypted != ENCRYPTED_VERSION_PLAIN_TEXT {
-				if unmarshal, err = wallet.Encryption.encryptionCipher.Decrypt(unmarshal); err != nil {
-					return
-				}
+			if unmarshal, err = wallet.Encryption.decryptData(reader.Get("wallet")); err != nil {
+				return
 			}
 			if err = json.Unmarshal(unmarshal, &wallet); err != nil {
 				return
@@ -150,11 +144,8 @@ func (wallet *Wallet) loadWallet(password string) error {
 
 			for i := 0; i < wallet.Count; i++ {
 
-				unmarshal := reader.Get("wallet-address-" + strconv.Itoa(i))
-				if wallet.Encryption.Encrypted != ENCRYPTED_VERSION_PLAIN_TEXT {
-					if unmarshal, err = wallet.Encryption.encryptionCipher.Decrypt(unmarshal); err != nil {
-						return
-					}
+				if unmarshal, err = wallet.Encryption.decryptData(reader.Get("wallet-address-" + strconv.Itoa(i))); err != nil {
+					return
 				}
 
 				newWalletAddress := &wallet_address.WalletAddress{}

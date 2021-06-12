@@ -6,6 +6,8 @@ import (
 )
 
 type ForgingWork struct {
-	BlkComplete *block_complete.BlockComplete
-	Target      *big.Int
+	BlkComplete   *block_complete.BlockComplete
+	BlkSerialized []byte
+	BlkTimestmap  uint64
+	Target        *big.Int
 }

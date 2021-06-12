@@ -57,14 +57,12 @@ func (worker *ForgingWorkerThread) forge() {
 			}
 			work = newWork
 
-			writer := helpers.NewBufferWriter()
-			work.BlkComplete.Block.SerializeForForging(writer)
-			serialized = helpers.CloneBytes(writer.Bytes())
+			serialized = helpers.CloneBytes(newWork.BlkSerialized)
 
-			n = binary.PutUvarint(buf, work.BlkComplete.Block.Timestamp)
-
-			timestamp = work.BlkComplete.Block.Timestamp + 1
+			timestamp = work.BlkTimestmap + 1
 			timestampMs = int64(timestamp) * 1000
+
+			n = binary.PutUvarint(buf, timestamp)
 
 		case newWallets, ok := <-worker.walletsCn:
 			wallets = newWallets

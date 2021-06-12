@@ -141,6 +141,9 @@ func (wallet *Wallet) initWalletCLI() {
 		if marshal, err = json.Marshal(obj); err != nil {
 			return errors.New("Error marshaling wallet")
 		}
+		if marshal, err = wallet.Encryption.encryptData(marshal); err != nil {
+			return
+		}
 
 		if _, err = fmt.Fprint(f, string(marshal)); err != nil {
 			return errors.New("Error writing into file")
@@ -391,6 +394,8 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
+		gui.GUI.OutputWrite("Wallet encrypting...")
+
 		if err = wallet.Encryption.Encrypt(password, difficulty); err == nil {
 			gui.GUI.OutputWrite("Wallet encrypted successfully")
 		}
@@ -403,6 +408,8 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
+		gui.GUI.OutputWrite("Wallet decrypting...")
+
 		if err = wallet.Encryption.Decrypt(password); err == nil {
 			gui.GUI.OutputWrite("Wallet decrypted successfully")
 		}
@@ -410,6 +417,7 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	cliRemoveEncryption := func(cmd string) (err error) {
+		gui.GUI.OutputWrite("Wallet removing encryption...")
 		if err = wallet.Encryption.RemoveEncryption(); err == nil {
 			gui.GUI.OutputWrite("Wallet encryption was removed successfully")
 		}

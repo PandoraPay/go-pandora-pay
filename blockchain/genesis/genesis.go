@@ -2,6 +2,7 @@ package genesis
 
 import (
 	"bufio"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"os"
@@ -116,7 +117,6 @@ func GenesisInit(wallet *wallet.Wallet) (err error) {
 				}
 
 				amount := 100 * stake.GetRequiredStake(0)
-
 				GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
 					PublicKeyHash:               walletPublicKeyHash,
 					Amount:                      amount,
