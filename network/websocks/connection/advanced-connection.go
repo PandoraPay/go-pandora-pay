@@ -1,7 +1,6 @@
 package connection
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -38,96 +37,98 @@ func (c *AdvancedConnection) Close(reason string) error {
 	return c.Conn.Close(websocket.StatusNormalClosure, reason)
 }
 
-func (c *AdvancedConnection) connSendJSON(message interface{}) (err error) {
+func (c *AdvancedConnection) connSendJSON(message interface{}) error {
 
-	var data []byte
-	if data, err = json.Marshal(message); err != nil {
-		return
+	data, err := json.Marshal(message)
+	if err != nil {
+		return nil
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
 	defer cancel()
 
-	err = c.Conn.Write(ctx, websocket.MessageBinary, data)
-	return
+	if c.IsClosed.IsSet() {
+		return errors.New("Closed")
+	}
+	return c.Conn.Write(ctx, websocket.MessageBinary, data)
 }
 
-func (c *AdvancedConnection) connSendPing() (err error) {
+func (c *AdvancedConnection) connSendPing() error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_PONG_WAIT)
 	defer cancel()
 
-	err = c.Conn.Ping(ctx)
-	return
+	if c.IsClosed.IsSet() {
+		return errors.New("Closed")
+	}
+	return c.Conn.Ping(ctx)
 }
 
-func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byte, await, reply bool) *AdvancedConnectionAnswer {
-
-	var eventCn chan *AdvancedConnectionAnswer
-	if await {
-		if replyBackId == 0 {
-			replyBackId = atomic.AddUint32(&c.answerCounter, 1)
-			eventCn = make(chan *AdvancedConnectionAnswer)
-			c.answerMapLock.Lock()
-			c.answerMap[replyBackId] = eventCn
-			c.answerMapLock.Unlock()
-		} else {
-			c.answerMapLock.RLock()
-			eventCn = c.answerMap[replyBackId]
-			c.answerMapLock.RUnlock()
-		}
+func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byte, reply bool) error {
+	message := &AdvancedConnectionMessage{
+		replyBackId,
+		reply,
+		false,
+		name,
+		data,
 	}
+	return c.connSendJSON(message)
+}
+
+func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool) *AdvancedConnectionAnswer {
+
+	replyBackId := atomic.AddUint32(&c.answerCounter, 1)
+
+	eventCn := make(chan *AdvancedConnectionAnswer)
+	c.answerMapLock.Lock()
+	c.answerMap[replyBackId] = eventCn
+	c.answerMapLock.Unlock()
 
 	message := &AdvancedConnectionMessage{
 		replyBackId,
 		reply,
-		await,
+		true,
 		name,
 		data,
 	}
-	if c.IsClosed.IsSet() {
-		return &AdvancedConnectionAnswer{nil, errors.New("Closed")}
-	}
-
-	// gui.Log(string(message.Name) + " " + strconv.FormatUint(uint64(message.ReplyId), 10) + " " + string(message.Data))
 
 	if err := c.connSendJSON(message); err != nil {
 		return &AdvancedConnectionAnswer{nil, err}
 	}
 
-	if await {
-		timer := time.NewTimer(config.WEBSOCKETS_TIMEOUT)
-		select {
-		case out, ok := <-eventCn:
-			timer.Stop()
-			if !ok {
-				return &AdvancedConnectionAnswer{nil, errors.New("Timeout - Closed channel")}
-			}
-			return out
-		case <-timer.C:
-			c.answerMapLock.Lock()
-			delete(c.answerMap, replyBackId)
-			c.answerMapLock.Unlock()
-			return &AdvancedConnectionAnswer{nil, errors.New("Timeout")}
+	timer := time.NewTimer(config.WEBSOCKETS_TIMEOUT)
+	select {
+	case out, ok := <-eventCn:
+		timer.Stop()
+		if !ok {
+			return &AdvancedConnectionAnswer{nil, errors.New("Timeout - Closed channel")}
 		}
+		return out
+	case <-timer.C:
+		c.answerMapLock.Lock()
+		if c.answerMap[replyBackId] != nil {
+			delete(c.answerMap, replyBackId)
+			close(eventCn)
+		}
+		c.answerMapLock.Unlock()
+		return &AdvancedConnectionAnswer{nil, errors.New("Timeout")}
 	}
-	return &AdvancedConnectionAnswer{nil, nil}
 }
 
-func (c *AdvancedConnection) Send(name []byte, data []byte) {
-	c.sendNow(0, name, data, false, false)
+func (c *AdvancedConnection) Send(name []byte, data []byte) error {
+	return c.sendNow(0, name, data, false)
 }
 
-func (c *AdvancedConnection) SendJSON(name []byte, data interface{}) {
+func (c *AdvancedConnection) SendJSON(name []byte, data interface{}) error {
 	out, err := json.Marshal(data)
 	if err != nil {
-		panic("Error marshaling data")
+		return err
 	}
-	c.sendNow(0, name, out, false, false)
+	return c.sendNow(0, name, out, false)
 }
 
 func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte) *AdvancedConnectionAnswer {
-	return c.sendNow(0, name, data, true, false)
+	return c.sendNowAwait(name, data, false)
 }
 
 func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}) *AdvancedConnectionAnswer {
@@ -135,7 +136,7 @@ func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}) 
 	if err != nil {
 		panic("Error marshaling data")
 	}
-	return c.sendNow(0, name, out, true, false)
+	return c.sendNowAwait(name, out, false)
 }
 
 func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) ([]byte, error) {
@@ -157,17 +158,16 @@ func (c *AdvancedConnection) processRead(message *AdvancedConnectionMessage) {
 
 		if message.ReplyAwait {
 			if err != nil {
-				marshalErr, _ := json.Marshal(err)
-				c.sendNow(message.ReplyId, []byte{0}, marshalErr, false, true)
+				_ = c.sendNow(message.ReplyId, []byte{0}, []byte(err.Error()), true)
 			} else {
-				c.sendNow(message.ReplyId, []byte{1}, out, false, true)
+				_ = c.sendNow(message.ReplyId, []byte{1}, out, true)
 			}
 		}
 
 	} else {
 
 		output := &AdvancedConnectionAnswer{}
-		if bytes.Equal(message.Name, []byte{1}) {
+		if len(message.Name) == 1 && message.Name[0] == 1 {
 			output.Out = message.Data
 		} else {
 			output.Err = errors.New(string(message.Data))
@@ -181,7 +181,10 @@ func (c *AdvancedConnection) processRead(message *AdvancedConnectionMessage) {
 		c.answerMapLock.Unlock()
 
 		if cn != nil {
-			cn <- output
+			select {
+			case cn <- output:
+			default:
+			}
 		}
 	}
 
@@ -192,13 +195,6 @@ func (c *AdvancedConnection) ReadPump() {
 	var cancel context.CancelFunc
 	var ctx context.Context
 
-	defer func() {
-		if cancel != nil {
-			cancel()
-		}
-		c.Close("Timeout read")
-	}()
-
 	c.Conn.SetReadLimit(int64(config.WEBSOCKETS_MAX_READ))
 
 	for {
@@ -206,7 +202,10 @@ func (c *AdvancedConnection) ReadPump() {
 		ctx, cancel = context.WithCancel(context.Background())
 
 		_, read, err := c.Conn.Read(ctx)
+		cancel()
+
 		if err != nil {
+			c.Close("Timeout read")
 			break
 		}
 
@@ -217,43 +216,7 @@ func (c *AdvancedConnection) ReadPump() {
 
 		//gui.Log(string(message.Name) + " " + strconv.FormatUint(uint64(message.ReplyId), 10) + " " + string(message.Data))
 
-		recovery.SafeGo(func() {
-
-			if !message.ReplyStatus {
-
-				var out []byte
-				out, err = c.get(message)
-
-				if message.ReplyAwait {
-					if err != nil {
-						c.sendNow(message.ReplyId, []byte{0}, []byte(err.Error()), false, true)
-					} else {
-						c.sendNow(message.ReplyId, []byte{1}, out, false, true)
-					}
-				}
-
-			} else {
-
-				output := &AdvancedConnectionAnswer{}
-				if bytes.Equal(message.Name, []byte{1}) {
-					output.Out = message.Data
-				} else {
-					output.Err = errors.New(string(message.Data))
-				}
-
-				c.answerMapLock.Lock()
-				cn := c.answerMap[message.ReplyId]
-				if cn != nil {
-					delete(c.answerMap, message.ReplyId)
-				}
-				c.answerMapLock.Unlock()
-
-				if cn != nil {
-					cn <- output
-				}
-			}
-
-		})
+		recovery.SafeGo(func() { c.processRead(message) })
 
 	}
 
@@ -263,20 +226,19 @@ func (c *AdvancedConnection) WritePump() {
 
 	pingTicker := time.NewTicker(config.WEBSOCKETS_PING_INTERVAL)
 
-	defer func() {
-		pingTicker.Stop()
-		c.Close("Ping send")
-	}()
-
 	for {
+
 		if _, ok := <-pingTicker.C; !ok {
-			return
+			break
 		}
 
 		if err := c.connSendPing(); err != nil {
-			return
+			break
 		}
 	}
+
+	pingTicker.Stop()
+	c.Close("Ping send")
 
 }
 
