@@ -13,7 +13,7 @@ type WebsocketServer struct {
 
 func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r *http.Request) {
 
-	if atomic.LoadInt64(&wserver.websockets.ServerSockets) >= config.WEBSOCKETS_NETWORK_SERVER_MAX {
+	if atomic.LoadInt64(&wserver.websockets.serverSockets) >= config.WEBSOCKETS_NETWORK_SERVER_MAX {
 		http.Error(w, "Too many websockets", 400)
 		return
 	}

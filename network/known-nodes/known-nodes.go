@@ -54,7 +54,7 @@ func CreateKnownNodes() (knownNodes *KnownNodes) {
 
 	knownNodes = &KnownNodes{
 		KnownMap:       &sync.Map{},
-		KnownList:      &atomic.Value{},
+		KnownList:      &atomic.Value{}, //[]*KnownNode
 		KnownListMutex: &sync.Mutex{},
 	}
 

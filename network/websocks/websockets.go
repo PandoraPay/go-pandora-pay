@@ -21,21 +21,29 @@ import (
 
 type Websockets struct {
 	AllAddresses                 *sync.Map
-	AllList                      *atomic.Value //[]*connection.AdvancedConnection
-	AllListMutex                 *sync.Mutex
-	Clients                      int64
-	ServerSockets                int64
-	TotalSockets                 int64
-	UpdateNewConnectionMulticast *multicast.MulticastChannel
-	UpdateAccounts               *multicast.MulticastChannel
-	UpdateTokens                 *multicast.MulticastChannel
 	ApiWebsockets                *api_websockets.APIWebsockets
+	allList                      *atomic.Value //[]*connection.AdvancedConnection
+	allListMutex                 *sync.Mutex
+	clients                      int64 //use atomic
+	serverSockets                int64 //use atomic
+	totalSockets                 int64 //use atomic
+	UpdateNewConnectionMulticast *multicast.MulticastChannel
+	updateAccounts               *multicast.MulticastChannel
+	updateTokens                 *multicast.MulticastChannel
 	subscriptions                *WebsocketSubscriptions
 	api                          *api_http.API
 }
 
+func (websockets *Websockets) GetClients() int64 {
+	return atomic.LoadInt64(&websockets.clients)
+}
+
+func (websockets *Websockets) GetServerSockets() int64 {
+	return atomic.LoadInt64(&websockets.serverSockets)
+}
+
 func (websockets *Websockets) GetFirstSocket() *connection.AdvancedConnection {
-	list := websockets.AllList.Load().([]*connection.AdvancedConnection)
+	list := websockets.allList.Load().([]*connection.AdvancedConnection)
 	if len(list) > 0 {
 		return list[0]
 	}
@@ -43,7 +51,7 @@ func (websockets *Websockets) GetFirstSocket() *connection.AdvancedConnection {
 }
 
 func (websockets *Websockets) GetAllSockets() []*connection.AdvancedConnection {
-	return websockets.AllList.Load().([]*connection.AdvancedConnection)
+	return websockets.allList.Load().([]*connection.AdvancedConnection)
 }
 
 func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeAccepted map[config.ConsensusType]bool) {
@@ -75,27 +83,30 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 		return
 	}
 
-	websockets.AllListMutex.Lock()
-	all := websockets.AllList.Load().([]*connection.AdvancedConnection)
+	websockets.allListMutex.Lock()
+	all := websockets.allList.Load().([]*connection.AdvancedConnection)
 	for i, conn2 := range all {
 		if conn2 == conn {
-			//order is not important
-			all[i] = all[len(all)-1]
-			all = all[:len(all)-1]
-			websockets.AllList.Store(all)
+			//removing atomic.Value array
+			list2 := make([]*connection.AdvancedConnection, len(all)-1)
+			copy(list2, all)
+			if len(all) > 1 && i != len(all)-1 {
+				list2[i] = all[len(all)-1]
+			}
+			websockets.allList.Store(list2)
 			break
 		}
 	}
-	websockets.AllListMutex.Unlock()
+	websockets.allListMutex.Unlock()
 
 	websockets.subscriptions.websocketClosedCn <- conn
 
 	if conn.ConnectionType {
-		atomic.AddInt64(&websockets.ServerSockets, -1)
+		atomic.AddInt64(&websockets.serverSockets, -1)
 	} else {
-		atomic.AddInt64(&websockets.Clients, -1)
+		atomic.AddInt64(&websockets.clients, -1)
 	}
-	totalSockets := atomic.AddInt64(&websockets.TotalSockets, -1)
+	totalSockets := atomic.AddInt64(&websockets.totalSockets, -1)
 	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
 }
 
@@ -146,16 +157,16 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 
 	conn.Handshake = handshakeReceived
 
-	websockets.AllListMutex.Lock()
-	websockets.AllList.Store(append(websockets.AllList.Load().([]*connection.AdvancedConnection), conn))
-	websockets.AllListMutex.Unlock()
+	websockets.allListMutex.Lock()
+	websockets.allList.Store(append(websockets.allList.Load().([]*connection.AdvancedConnection), conn))
+	websockets.allListMutex.Unlock()
 
 	if conn.ConnectionType {
-		atomic.AddInt64(&websockets.ServerSockets, +1)
+		atomic.AddInt64(&websockets.serverSockets, +1)
 	} else {
-		atomic.AddInt64(&websockets.Clients, +1)
+		atomic.AddInt64(&websockets.clients, +1)
 	}
-	totalSockets := atomic.AddInt64(&websockets.TotalSockets, +1)
+	totalSockets := atomic.AddInt64(&websockets.totalSockets, +1)
 	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
 
 	conn.Initialized = true
@@ -169,22 +180,21 @@ func CreateWebsockets(chain *blockchain.Blockchain, api *api_http.API, apiWebsoc
 
 	websockets := &Websockets{
 		AllAddresses:                 &sync.Map{},
-		Clients:                      0,
-		ServerSockets:                0,
-		AllList:                      &atomic.Value{},
-		AllListMutex:                 &sync.Mutex{},
+		clients:                      0,
+		serverSockets:                0,
+		allList:                      &atomic.Value{}, //[]*connection.AdvancedConnection
+		allListMutex:                 &sync.Mutex{},
 		UpdateNewConnectionMulticast: multicast.NewMulticastChannel(),
 		api:                          api,
 		ApiWebsockets:                apiWebsockets,
 	}
 
 	websockets.subscriptions = newWebsocketSubscriptions(websockets, chain)
-
-	websockets.AllList.Store([]*connection.AdvancedConnection{})
+	websockets.allList.Store([]*connection.AdvancedConnection{})
 
 	recovery.SafeGo(func() {
 		for {
-			gui.GUI.InfoUpdate("sockets", strconv.FormatInt(atomic.LoadInt64(&websockets.Clients), 32)+" "+strconv.FormatInt(atomic.LoadInt64(&websockets.ServerSockets), 32))
+			gui.GUI.InfoUpdate("sockets", strconv.FormatInt(atomic.LoadInt64(&websockets.clients), 32)+" "+strconv.FormatInt(atomic.LoadInt64(&websockets.serverSockets), 32))
 			time.Sleep(1 * time.Second)
 		}
 	})

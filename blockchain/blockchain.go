@@ -400,7 +400,7 @@ func CreateBlockchain(mempool *mempool.Mempool) (chain *Blockchain, err error) {
 	gui.GUI.Log("Blockchain init...")
 
 	chain = &Blockchain{
-		ChainData:                &atomic.Value{},
+		ChainData:                &atomic.Value{}, //*BlockchainData
 		mutex:                    &sync.Mutex{},
 		mempool:                  mempool,
 		updatesQueue:             createBlockchainUpdatesQueue(),

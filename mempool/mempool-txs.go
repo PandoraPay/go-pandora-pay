@@ -15,7 +15,7 @@ import (
 
 type MempoolTxs struct {
 	txsCount         int64
-	txsList          *atomic.Value
+	txsList          *atomic.Value //[]*mempoolTx
 	addToListCn      chan *mempoolTx
 	removeFromListCn chan *mempoolTx
 }
@@ -45,6 +45,7 @@ func (self *MempoolTxs) process() {
 			for i, tx2 := range list {
 				if tx2 == tx {
 
+					//removing atomic.Value array
 					list2 := make([]*mempoolTx, len(list)-1)
 					copy(list2, list)
 					if len(list) > 1 && i != len(list)-1 {
@@ -64,7 +65,7 @@ func createMempoolTxs() (txs *MempoolTxs) {
 
 	txs = &MempoolTxs{
 		0,
-		&atomic.Value{},
+		&atomic.Value{}, //[]*mempoolTx
 		make(chan *mempoolTx, 100),
 		make(chan *mempoolTx, 100),
 	}

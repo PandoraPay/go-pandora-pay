@@ -14,7 +14,6 @@ import (
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/recovery"
 	"pandora-pay/settings"
-	"sync/atomic"
 	"time"
 )
 
@@ -30,7 +29,7 @@ func (network *Network) execute() {
 
 	for {
 
-		if atomic.LoadInt64(&network.Websockets.Clients) >= config.WEBSOCKETS_NETWORK_CLIENTS_MAX {
+		if network.Websockets.GetClients() >= config.WEBSOCKETS_NETWORK_CLIENTS_MAX {
 			time.Sleep(1000 * time.Millisecond)
 			continue
 		}

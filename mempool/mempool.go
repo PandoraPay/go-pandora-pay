@@ -148,7 +148,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
 
 	result := &MempoolResult{
-		txs:         &atomic.Value{},
+		txs:         &atomic.Value{}, //[]*mempoolTx{} , appendOnly
 		totalSize:   0,
 		chainHash:   hash,
 		chainHeight: height,
@@ -174,7 +174,7 @@ func CreateMemPool() (mempool *Mempool, err error) {
 	gui.GUI.Log("MemPool init...")
 
 	mempool = &Mempool{
-		result:                  &atomic.Value{},
+		result:                  &atomic.Value{}, // *MempoolResult
 		Txs:                     createMempoolTxs(),
 		SuspendProcessingCn:     make(chan struct{}),
 		ContinueProcessingCn:    make(chan *mempoolWork),

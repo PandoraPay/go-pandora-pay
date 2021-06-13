@@ -68,7 +68,7 @@ func CreateConsensus(httpServer *node_http.HttpServer, chain *blockchain.Blockch
 		forks: &Forks{
 			hashes:    &sync.Map{},
 			listMutex: &sync.Mutex{},
-			list:      &atomic.Value{},
+			list:      &atomic.Value{}, //[]*Fork
 		},
 	}
 	consensus.forks.list.Store(make([]*Fork, 0))
