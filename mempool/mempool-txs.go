@@ -14,18 +14,18 @@ import (
 )
 
 type MempoolTxs struct {
-	list             *atomic.Value
 	txsCount         int64
+	txsList          *atomic.Value
 	addToListCn      chan *mempoolTx
 	removeFromListCn chan *mempoolTx
 }
 
-func (self *MempoolTxs) GetTxsList() []*mempoolTx {
-	return self.list.Load().([]*mempoolTx)
+func (self *MempoolTxs) GetTxsList() (out []*mempoolTx) {
+	return self.txsList.Load().([]*mempoolTx)
 }
 
 func (self *MempoolTxs) Exists(txId []byte) *transaction.Transaction {
-	list := self.list.Load().([]*mempoolTx)
+	list := self.txsList.Load().([]*mempoolTx)
 	for _, tx := range list {
 		if bytes.Equal(tx.Tx.Bloom.Hash, txId) {
 			return tx.Tx
@@ -38,15 +38,20 @@ func (self *MempoolTxs) process() {
 	for {
 		select {
 		case tx := <-self.addToListCn:
-			self.list.Store(append(self.list.Load().([]*mempoolTx), tx))
+			self.txsList.Store(append(self.txsList.Load().([]*mempoolTx), tx))
 			atomic.AddInt64(&self.txsCount, 1)
 		case tx := <-self.removeFromListCn:
-			list := self.list.Load().([]*mempoolTx)
+			list := self.txsList.Load().([]*mempoolTx)
 			for i, tx2 := range list {
 				if tx2 == tx {
-					list[len(list)-1], list[i] = list[i], list[len(list)-1]
-					list = list[:len(list)-1]
-					self.list.Store(list)
+
+					list2 := make([]*mempoolTx, len(list)-1)
+					copy(list2, list)
+					if len(list) > 1 && i != len(list)-1 {
+						list2[i] = list[len(list)-1]
+					}
+
+					self.txsList.Store(list2)
 					atomic.AddInt64(&self.txsCount, -1)
 					break
 				}
@@ -55,36 +60,31 @@ func (self *MempoolTxs) process() {
 	}
 }
 
-func (self *MempoolTxs) print() {
-
-	transactions := self.GetTxsList()
-	if len(transactions) == 0 {
-		return
-	}
-
-	gui.GUI.Log("")
-	for _, out := range transactions {
-		gui.GUI.Log(fmt.Sprintf("%12s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC822), out.Tx.Bloom.Size, out.ChainHeight, hex.EncodeToString(out.Tx.Bloom.Hash[0:15])))
-	}
-	gui.GUI.Log("")
-
-}
-
 func createMempoolTxs() (txs *MempoolTxs) {
 
 	txs = &MempoolTxs{
-		list:             &atomic.Value{},
-		addToListCn:      make(chan *mempoolTx, 100),
-		removeFromListCn: make(chan *mempoolTx, 100),
+		0,
+		&atomic.Value{},
+		make(chan *mempoolTx, 100),
+		make(chan *mempoolTx, 100),
 	}
-	txs.list.Store([]*mempoolTx{})
+	txs.txsList.Store([]*mempoolTx{})
 
 	recovery.SafeGo(txs.process)
 
 	if config.DEBUG {
 		recovery.SafeGo(func() {
 			for {
-				txs.print()
+				transactions := txs.GetTxsList()
+				if len(transactions) == 0 {
+					return
+				}
+
+				gui.GUI.Log("")
+				for _, out := range transactions {
+					gui.GUI.Log(fmt.Sprintf("%12s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC822), out.Tx.Bloom.Size, out.ChainHeight, hex.EncodeToString(out.Tx.Bloom.Hash[0:15])))
+				}
+				gui.GUI.Log("")
 				time.Sleep(60 * time.Second)
 			}
 		})
