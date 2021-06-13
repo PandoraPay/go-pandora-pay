@@ -132,6 +132,8 @@ Using profiling to debug memory leaks/CPU
    profile and will launch a browser with an SVG file. `go tool pprof -web http://:6060/debug/pprof/profile?seconds=5`
 3. `go tool pprof -http :8080 http://:6060/debug/pprof/goroutine`
 
+#### Debugging races
+ GORACE="log_path=/PandoraPay/pandora-pay-go/report" go run -race main.go 
 
 ### DOCS
 [WebAssembly DOCS](/webassembly/webassembly.md)
