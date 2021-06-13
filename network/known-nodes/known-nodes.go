@@ -1,9 +1,9 @@
 package known_nodes
 
 import (
+	"math/rand"
 	"net/url"
 	"sync"
-	"sync/atomic"
 )
 
 type KnownNode struct {
@@ -14,51 +14,63 @@ type KnownNode struct {
 }
 
 type KnownNodes struct {
-	KnownMap       *sync.Map
-	KnownList      *atomic.Value //[]*KnownNode
-	KnownListMutex *sync.Mutex
+	knownMap  map[string]*KnownNode
+	knownList []*KnownNode
+	sync.RWMutex
 }
 
-func (knownNodes *KnownNodes) AddKnownNode(url *url.URL, isSeed bool) (result bool, knownNode *KnownNode) {
+func (self *KnownNodes) GetRandomKnownNode() *KnownNode {
+	self.RLock()
+	defer self.RUnlock()
+
+	return self.knownList[rand.Intn(len(self.knownList))]
+}
+
+func (self *KnownNodes) AddKnownNode(url *url.URL, isSeed bool) bool {
+	self.Lock()
+	defer self.Unlock()
 
 	urlString := url.String()
-	var exists bool
-	var found interface{}
-	if found, exists = knownNodes.KnownMap.Load(urlString); exists {
-		knownNode = found.(*KnownNode)
-		return false, knownNode
+
+	if self.knownMap[urlString] != nil {
+		return false
 	}
 
-	knownNode = &KnownNode{
+	knownNode := &KnownNode{
 		Url:         url,
 		UrlStr:      urlString,
 		UrlHostOnly: url.Host,
 		IsSeed:      isSeed,
 	}
+	self.knownList = append(self.knownList, knownNode)
+	self.knownMap[urlString] = knownNode
 
-	if found, exists := knownNodes.KnownMap.LoadOrStore(urlString, knownNode); exists {
-		knownNode = found.(*KnownNode)
-		return false, knownNode
+	return true
+}
+
+func (self *KnownNodes) RemoveKnownNode(knownNode *KnownNode) {
+	self.Lock()
+	defer self.Unlock()
+
+	if self.knownMap[knownNode.UrlStr] != nil {
+		delete(self.knownMap, knownNode.UrlStr)
+		for i, knownNode2 := range self.knownList {
+			if knownNode2 == knownNode {
+				self.knownList[i] = self.knownList[len(self.knownList)-1]
+				self.knownList = self.knownList[:len(self.knownList)-1]
+				return
+			}
+		}
 	}
-
-	knownNodes.KnownListMutex.Lock()
-	knownList := knownNodes.KnownList.Load().([]*KnownNode)
-	knownNodes.KnownList.Store(append(knownList, knownNode))
-	knownNodes.KnownListMutex.Unlock()
-
-	result = true
-	return
 }
 
 func CreateKnownNodes() (knownNodes *KnownNodes) {
 
 	knownNodes = &KnownNodes{
-		KnownMap:       &sync.Map{},
-		KnownList:      &atomic.Value{}, //[]*KnownNode
-		KnownListMutex: &sync.Mutex{},
+		make(map[string]*KnownNode),
+		make([]*KnownNode, 0),
+		sync.RWMutex{},
 	}
-
-	knownNodes.KnownList.Store([]*KnownNode{})
 
 	return
 }

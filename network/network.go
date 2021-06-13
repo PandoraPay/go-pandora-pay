@@ -1,7 +1,6 @@
 package network
 
 import (
-	"math/rand"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/gui"
@@ -34,10 +33,9 @@ func (network *Network) execute() {
 			continue
 		}
 
-		var knownNode *known_nodes.KnownNode
-		knownList := network.KnownNodes.KnownList.Load().([]*known_nodes.KnownNode)
-		if len(knownList) > 0 {
-			knownNode = knownList[rand.Intn(len(knownList))]
+		knownNode := network.KnownNodes.GetRandomKnownNode()
+		if knownNode == nil {
+			continue
 		}
 
 		if knownNode.Url.Hostname() == "127.0.0.1" && knownNode.Url.Port() == network.tcpServer.Port {
