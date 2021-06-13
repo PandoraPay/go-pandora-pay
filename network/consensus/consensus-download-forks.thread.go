@@ -186,7 +186,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 			}
 
 			if willRemove {
-				thread.forks.removeFork(fork, true)
+				thread.forks.removeFork(fork)
 			}
 
 		}

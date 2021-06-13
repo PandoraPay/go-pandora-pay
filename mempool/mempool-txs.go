@@ -14,7 +14,7 @@ import (
 )
 
 type MempoolTxs struct {
-	txsCount         int64
+	txsCount         int64         //use atomic
 	txsList          *atomic.Value //[]*mempoolTx
 	addToListCn      chan *mempoolTx
 	removeFromListCn chan *mempoolTx

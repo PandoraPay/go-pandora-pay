@@ -7,7 +7,6 @@ import (
 	node_http "pandora-pay/network/server/node-http"
 	"pandora-pay/recovery"
 	"sync"
-	"sync/atomic"
 )
 
 type Consensus struct {
@@ -66,13 +65,9 @@ func CreateConsensus(httpServer *node_http.HttpServer, chain *blockchain.Blockch
 		mempool:    mempool,
 		httpServer: httpServer,
 		forks: &Forks{
-			hashes:    &sync.Map{},
-			listMutex: &sync.Mutex{},
-			list:      &atomic.Value{}, //[]*Fork
+			hashes: &sync.Map{},
 		},
 	}
-	consensus.forks.list.Store(make([]*Fork, 0))
-
 	consensus.httpServer.ApiWebsockets.GetMap["chain-update"] = consensus.chainUpdate
 	consensus.httpServer.ApiWebsockets.GetMap["chain-get"] = consensus.chainGet
 
