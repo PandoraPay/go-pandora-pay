@@ -20,7 +20,6 @@ import (
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
-	"time"
 )
 
 type Testnet struct {
@@ -176,8 +175,9 @@ func (testnet *Testnet) run() {
 						} else {
 							if testnet.mempool.CountInputTxs(testnet.wallet.Addresses[0].PublicKeyHash) < 100 {
 								for i := 0; i < 20; i++ {
-									err = testnet.testnetCreateTransfers(blockHeight)
-									time.Sleep(10 * time.Millisecond)
+									if err = testnet.testnetCreateTransfers(blockHeight); err != nil {
+										return
+									}
 								}
 							}
 						}
