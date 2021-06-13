@@ -57,7 +57,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 	dstsTokens := [][]byte{}
 	for i := uint64(0); i < testnet.nodes; i++ {
 		if uint64(len(testnet.wallet.Addresses)) <= i+1 {
-			if _, err = testnet.wallet.AddNewAddress(false); err != nil {
+			if _, err = testnet.wallet.AddNewAddress(true); err != nil {
 				return
 			}
 		}

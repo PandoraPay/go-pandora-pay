@@ -81,9 +81,8 @@ func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool) (wallet *W
 
 func (wallet *Wallet) InitializeWallet(updateAccounts *multicast.MulticastChannel) {
 	wallet.Lock()
-	defer wallet.Unlock()
-
 	wallet.updateAccounts = updateAccounts
+	wallet.Unlock()
 
 	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
 		recovery.SafeGo(wallet.updateAccountsChanges)
