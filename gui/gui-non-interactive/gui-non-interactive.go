@@ -46,5 +46,5 @@ func (g *GUINonInteractive) Info2Update(key string, text string) {
 func (g *GUINonInteractive) OutputWrite(any ...interface{}) {
 }
 
-func (g *GUINonInteractive) CommandDefineCallback(Text string, callback func(string) error) {
+func (g *GUINonInteractive) CommandDefineCallback(Text string, callback func(string) error, useIt bool) {
 }
