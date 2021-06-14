@@ -79,10 +79,9 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		var hash []byte
-		var err error
-		if hash, err = hex.DecodeString(args[0].String()); err != nil {
-			return
+		hash, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
 		}
 
 		data := socket.SendJSONAwaitAnswer([]byte("account"), &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", hash}, api_types.RETURN_SERIALIZED})
@@ -92,7 +91,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 
 		acc := &account.Account{}
 		if err = acc.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
-			return
+			return nil, err
 		}
 
 		return convertJSON(acc)

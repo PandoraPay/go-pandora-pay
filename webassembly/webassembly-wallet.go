@@ -18,7 +18,7 @@ func getWalletAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[0].String())
 		if err != nil {
-			return
+			return nil, err
 		}
 		return convertJSON(addr)
 	})
@@ -64,7 +64,7 @@ func importWalletAddressJSON(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 		adr, err := app.Wallet.ImportWalletAddressJSON([]byte(args[0].String()))
 		if err != nil {
-			return
+			return nil, err
 		}
 		return convertJSON(adr)
 	})

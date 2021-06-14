@@ -16,7 +16,8 @@ type TcpServer struct {
 
 func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (*TcpServer, error) {
 
-	server = &TcpServer{}
+	server := &TcpServer{}
+	var err error
 	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, mempool); err != nil {
 		return nil, err
 	}

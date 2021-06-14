@@ -19,9 +19,7 @@ func createStoreNow(name string, storeType string) (*Store, error) {
 	case "memory":
 		db, err = store_db_bunt.CreateStoreDBBunt(name, true)
 	case "indexdb":
-		if db, err = store_db_js_indexdb.CreateStoreDBJSIndexDB(name); err != nil {
-			return
-		}
+		db, err = store_db_js_indexdb.CreateStoreDBJSIndexDB(name)
 	default:
 		err = errors.New("Invalid --store-type argument: " + storeType)
 	}
