@@ -23,11 +23,9 @@ func (store *StoreDBJSIndexDB) Update(callback func(dbTx store_db_interface.Stor
 	return callback(tx)
 }
 
-func CreateStoreDBJSIndexDB(name string) (store *StoreDBJSIndexDB, err error) {
+func CreateStoreDBJSIndexDB(name string) (*StoreDBJSIndexDB, error) {
 
-	store = &StoreDBJSIndexDB{
+	return &StoreDBJSIndexDB{
 		Name: []byte(name),
-	}
-
-	return
+	}, nil
 }

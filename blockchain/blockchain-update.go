@@ -58,14 +58,14 @@ func (queue *BlockchainUpdatesQueue) hasAnySuccess(updates []*BlockchainUpdate) 
 	return false
 }
 
-func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, updates []*BlockchainUpdate) (result bool, err error) {
+func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, updates []*BlockchainUpdate) (bool, error) {
 
 	if update.err != nil {
 		if !queue.hasAnySuccess(updates) {
 			queue.chain.createNextBlockForForging(nil, queue.hasCalledByForging(updates))
 			return true, nil
 		}
-		return
+		return false, nil
 	}
 
 	gui.GUI.Warning("-------------------------------------------")
@@ -79,14 +79,14 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	for _, txData := range update.removedTxs {
 		tx := &transaction.Transaction{}
-		if err = tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
-			return
+		if err := tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
+			return false, err
 		}
-		if err = tx.BloomExtraNow(true); err != nil {
-			return
+		if err := tx.BloomExtraNow(true); err != nil {
+			return false, err
 		}
-		if _, err = queue.chain.mempool.AddTxToMemPool(tx, update.newChainData.Height, false); err != nil {
-			return
+		if _, err := queue.chain.mempool.AddTxToMemPool(tx, update.newChainData.Height, false); err != nil {
+			return false, err
 		}
 	}
 
@@ -108,10 +108,10 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 			newSyncTime,
 		})
 
-		result = true
+		return true, nil
 	}
 
-	return
+	return false, nil
 }
 
 func (queue *BlockchainUpdatesQueue) processQueue() {

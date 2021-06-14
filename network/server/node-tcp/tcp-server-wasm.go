@@ -14,10 +14,12 @@ type TcpServer struct {
 	HttpServer *node_http.HttpServer
 }
 
-func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (server *TcpServer, err error) {
+func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (*TcpServer, error) {
+
 	server = &TcpServer{}
+	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, mempool); err != nil {
+		return nil, err
+	}
 
-	server.HttpServer, err = node_http.CreateHttpServer(chain, settings, mempool)
-
-	return
+	return server, nil
 }

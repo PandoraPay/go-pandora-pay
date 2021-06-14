@@ -395,11 +395,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	return
 }
 
-func CreateBlockchain(mempool *mempool.Mempool) (chain *Blockchain, err error) {
+func CreateBlockchain(mempool *mempool.Mempool) (*Blockchain, error) {
 
 	gui.GUI.Log("Blockchain init...")
 
-	chain = &Blockchain{
+	chain := &Blockchain{
 		ChainData:                &atomic.Value{}, //*BlockchainData
 		mutex:                    &sync.Mutex{},
 		mempool:                  mempool,
@@ -416,7 +416,7 @@ func CreateBlockchain(mempool *mempool.Mempool) (chain *Blockchain, err error) {
 	chain.updatesQueue.chain = chain
 	chain.updatesQueue.processQueue()
 
-	return
+	return chain, nil
 }
 
 func (chain *Blockchain) InitializeChain() (err error) {

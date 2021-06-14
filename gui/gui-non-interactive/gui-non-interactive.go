@@ -21,9 +21,9 @@ type GUINonInteractive struct {
 func (g *GUINonInteractive) Close() {
 }
 
-func CreateGUINonInteractive() (g *GUINonInteractive, err error) {
+func CreateGUINonInteractive() (*GUINonInteractive, error) {
 
-	g = &GUINonInteractive{}
+	g := &GUINonInteractive{}
 
 	switch runtime.GOARCH {
 	default:
@@ -34,7 +34,7 @@ func CreateGUINonInteractive() (g *GUINonInteractive, err error) {
 		g.colorFatal = "\x1b[31m\x1b[43m"
 	}
 
-	return
+	return g, nil
 }
 
 func (g *GUINonInteractive) InfoUpdate(key string, text string) {

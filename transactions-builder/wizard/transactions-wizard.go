@@ -10,11 +10,11 @@ import (
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 )
 
-func CreateSimpleTxOneInOneOut(nonce uint64, key []byte, amount uint64, token []byte, dst string, dstAmount uint64, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err error) {
+func CreateSimpleTxOneInOneOut(nonce uint64, key []byte, amount uint64, token []byte, dst string, dstAmount uint64, feePerByte int, feeToken []byte) (*transaction.Transaction, error) {
 	return CreateSimpleTx(nonce, [][]byte{key}, []uint64{amount}, [][]byte{token}, []string{dst}, []uint64{dstAmount}, [][]byte{token}, feePerByte, feeToken)
 }
 
-func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err error) {
+func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (*transaction.Transaction, error) {
 
 	if len(keys) != len(amounts) || len(amounts) != len(tokens) || len(amounts) == 0 {
 		return nil, errors.New("Input lengths are a mismatch")
@@ -37,9 +37,9 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 
 	vout := make([]*transaction_simple_parts.TransactionSimpleOutput, len(dsts))
 	for i := 0; i < len(dsts); i++ {
-		var outAddress *addresses.Address
-		if outAddress, err = addresses.DecodeAddr(dsts[i]); err != nil {
-			return
+		outAddress, err := addresses.DecodeAddr(dsts[i])
+		if err != nil {
+			return nil, err
 		}
 		vout[i] = &transaction_simple_parts.TransactionSimpleOutput{
 			PublicKeyHash: outAddress.PublicKeyHash,
@@ -48,7 +48,7 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 		}
 	}
 
-	tx = &transaction.Transaction{
+	tx := &transaction.Transaction{
 		Version: 0,
 		TxType:  transaction_type.TX_SIMPLE,
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
@@ -58,36 +58,37 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 		},
 	}
 
+	var err error
 	for i, privateKey := range privateKeys {
 		if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
-			return
+			return nil, err
 		}
 	}
 	if err = setFee(tx, feePerByte, feeToken, false); err != nil {
-		return
+		return nil, err
 	}
 	for i, privateKey := range privateKeys {
 		if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
-			return
+			return nil, err
 		}
 	}
 
 	if err = tx.BloomAll(); err != nil {
-		return
+		return nil, err
 	}
 	if err = tx.Validate(); err != nil {
-		return
+		return nil, err
 	}
 	if err = tx.Verify(); err != nil {
-		return
+		return nil, err
 	}
-	return
+	return nil, err
 }
 
-func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction, err error) {
+func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (*transaction.Transaction, error) {
 
 	privateKey := addresses.PrivateKey{Key: key}
-	tx = &transaction.Transaction{
+	tx := &transaction.Transaction{
 		Version: 0,
 		TxType:  transaction_type.TX_SIMPLE,
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
@@ -104,29 +105,30 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte 
 		},
 	}
 
+	var err error
 	if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
-		return
+		return nil, err
 	}
 	if err = setFee(tx, feePerByte, feeToken, payFeeInExtra); err != nil {
-		return
+		return nil, err
 	}
 	if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
-		return
+		return nil, err
 	}
 
 	if err = tx.BloomAll(); err != nil {
-		return
+		return nil, err
 	}
 	if err = tx.Validate(); err != nil {
-		return
+		return nil, err
 	}
 	if err = tx.Verify(); err != nil {
-		return
+		return nil, err
 	}
-	return
+	return tx, nil
 }
 
-func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err error) {
+func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (*transaction.Transaction, error) {
 
 	delegateHasNewPublicKeyHash := false
 	var delegateNewPublicKeyHash []byte //33 byte
@@ -136,7 +138,7 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 	}
 
 	privateKey := addresses.PrivateKey{Key: key}
-	tx = &transaction.Transaction{
+	tx := &transaction.Transaction{
 		Version: 0,
 		TxType:  transaction_type.TX_SIMPLE,
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
@@ -155,24 +157,27 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 		},
 	}
 
+	var err error
 	if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
-		return
+		return nil, err
 	}
+
 	if err = setFee(tx, feePerByte, feeToken, false); err != nil {
-		return
+		return nil, err
 	}
+
 	if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[0].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
-		return
+		return nil, err
 	}
 
 	if err = tx.BloomAll(); err != nil {
-		return
+		return nil, err
 	}
 	if err = tx.Validate(); err != nil {
-		return
+		return nil, err
 	}
 	if err = tx.Verify(); err != nil {
-		return
+		return nil, err
 	}
-	return
+	return tx, nil
 }

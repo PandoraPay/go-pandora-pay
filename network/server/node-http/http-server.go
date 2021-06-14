@@ -20,7 +20,7 @@ type HttpServer struct {
 	getMap          map[string]func(values *url.Values) (interface{}, error)
 }
 
-func CreateHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) (server *HttpServer, err error) {
+func CreateHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) (*HttpServer, error) {
 
 	apiStore := api_common.CreateAPIStore(chain)
 	apiCommon := api_common.CreateAPICommon(mempool, chain, apiStore)
@@ -30,7 +30,7 @@ func CreateHttpServer(chain *blockchain.Blockchain, settings *settings.Settings,
 
 	websockets := websocks.CreateWebsockets(chain, api, apiWebsockets)
 
-	server = &HttpServer{
+	server := &HttpServer{
 		websocketServer: websocks.CreateWebsocketServer(websockets),
 		Websockets:      websockets,
 		getMap:          make(map[string]func(values *url.Values) (interface{}, error)),
@@ -40,5 +40,5 @@ func CreateHttpServer(chain *blockchain.Blockchain, settings *settings.Settings,
 	}
 	server.initialize()
 
-	return
+	return server, nil
 }

@@ -24,36 +24,34 @@ func (chainData *BlockchainData) saveTotalDifficultyExtra(writer store_db_interf
 	return writer.Put(key, bufferWriter.Bytes())
 }
 
-func (chainData *BlockchainData) LoadTotalDifficultyExtra(reader store_db_interface.StoreDBTransactionInterface, height uint64) (difficulty *big.Int, timestamp uint64, err error) {
+func (chainData *BlockchainData) LoadTotalDifficultyExtra(reader store_db_interface.StoreDBTransactionInterface, height uint64) (*big.Int, uint64, error) {
 	if height < 0 {
-		err = errors.New("height is invalid")
-		return
+		return nil, 0, errors.New("height is invalid")
 	}
 
 	buf := reader.Get("totalDifficulty" + strconv.FormatUint(height, 10))
 	if buf == nil {
-		err = errors.New("Couldn't read difficulty from DB")
-		return
+		return nil, 0, errors.New("Couldn't read difficulty from DB")
 	}
 
 	bufferReader := helpers.NewBufferReader(buf)
-	if timestamp, err = bufferReader.ReadUvarint(); err != nil {
-		return
+	timestamp, err := bufferReader.ReadUvarint()
+
+	if err != nil {
+		return nil, 0, err
 	}
 
 	length, err := bufferReader.ReadUvarint()
 	if err != nil {
-		return
+		return nil, 0, err
 	}
 
 	bytes, err := bufferReader.ReadBytes(int(length))
 	if err != nil {
-		return
+		return nil, 0, err
 	}
 
-	difficulty = new(big.Int).SetBytes(bytes)
-
-	return
+	return new(big.Int).SetBytes(bytes), timestamp, nil
 }
 
 func (chainData *BlockchainData) loadBlockchainInfo(reader store_db_interface.StoreDBTransactionInterface, height uint64) error {

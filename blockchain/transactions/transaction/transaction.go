@@ -16,16 +16,14 @@ type Transaction struct {
 	Bloom                                               *TransactionBloom                `json:"bloom"`
 }
 
-func (tx *Transaction) GetAllFees() (fees map[string]uint64, err error) {
-	fees = make(map[string]uint64)
-	err = tx.ComputeFees(fees)
-	return
+func (tx *Transaction) GetAllFees() (map[string]uint64, error) {
+	fees := make(map[string]uint64)
+	return fees, tx.ComputeFees(fees)
 }
 
-func (tx *Transaction) GetAllKeys() (out map[string]bool, err error) {
-	out = make(map[string]bool)
-	err = tx.ComputeAllKeys(out)
-	return
+func (tx *Transaction) GetAllKeys() (map[string]bool, error) {
+	out := make(map[string]bool)
+	return out, tx.ComputeAllKeys(out)
 }
 
 func (tx *Transaction) SerializeForSigning() []byte {

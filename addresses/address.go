@@ -18,7 +18,7 @@ type Address struct {
 	PaymentID     helpers.HexBytes `json:"paymentId"` // payment id
 }
 
-func NewAddr(network uint64, version AddressVersion, publicKey []byte, publicKeyHash []byte, amount uint64, paymentID []byte) (a *Address, err error) {
+func NewAddr(network uint64, version AddressVersion, publicKey []byte, publicKeyHash []byte, amount uint64, paymentID []byte) (*Address, error) {
 	if len(paymentID) != 8 && len(paymentID) != 0 {
 		return nil, errors.New("Invalid PaymentId. It must be an 8 byte")
 	}
@@ -86,9 +86,9 @@ func (a *Address) EncodeAddr() string {
 
 	return prefix + ret
 }
-func DecodeAddr(input string) (adr *Address, err error) {
+func DecodeAddr(input string) (*Address, error) {
 
-	adr = &Address{PublicKey: []byte{}, PaymentID: []byte{}}
+	adr := &Address{PublicKey: []byte{}, PaymentID: []byte{}}
 
 	if len(input) < config.NETWORK_BYTE_PREFIX_LENGTH {
 		return nil, errors.New("Invalid Address length")
@@ -111,9 +111,9 @@ func DecodeAddr(input string) (adr *Address, err error) {
 		return nil, errors.New("Address network is invalid")
 	}
 
-	var buf []byte
-	if buf, err = base58.Decode(input[config.NETWORK_BYTE_PREFIX_LENGTH:]); err != nil {
-		return
+	buf, err := base58.Decode(input[config.NETWORK_BYTE_PREFIX_LENGTH:])
+	if err != nil {
+		return nil, err
 	}
 
 	checksum := cryptography.GetChecksum(buf[:len(buf)-cryptography.ChecksumSize])
@@ -128,18 +128,18 @@ func DecodeAddr(input string) (adr *Address, err error) {
 
 	var version uint64
 	if version, err = reader.ReadUvarint(); err != nil {
-		return
+		return nil, err
 	}
 	adr.Version = AddressVersion(version)
 
 	switch adr.Version {
 	case SIMPLE_PUBLIC_KEY_HASH:
 		if adr.PublicKeyHash, err = reader.ReadBytes(cryptography.PublicKeyHashHashSize); err != nil {
-			return
+			return nil, err
 		}
 	case SIMPLE_PUBLIC_KEY:
 		if adr.PublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
-			return
+			return nil, err
 		}
 		adr.PublicKeyHash = cryptography.ComputePublicKeyHash(adr.PublicKey)
 	default:
@@ -148,21 +148,21 @@ func DecodeAddr(input string) (adr *Address, err error) {
 
 	var integrationByte byte
 	if integrationByte, err = reader.ReadByte(); err != nil {
-		return
+		return nil, err
 	}
 
 	if integrationByte&1 != 0 {
 		if adr.PaymentID, err = reader.ReadBytes(8); err != nil {
-			return
+			return nil, err
 		}
 	}
 	if integrationByte&(1<<1) != 0 {
 		if adr.Amount, err = reader.ReadUvarint(); err != nil {
-			return
+			return nil, err
 		}
 	}
 
-	return
+	return adr, nil
 }
 
 func (a *Address) IntegrationByte() (out byte) {

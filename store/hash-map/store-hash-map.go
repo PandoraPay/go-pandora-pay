@@ -53,11 +53,10 @@ func (hashMap *HashMap) UnsetTx() {
 	hashMap.Tx = nil
 }
 
-func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err error) {
+func (hashMap *HashMap) Get(key string) (helpers.SerializableInterface, error) {
 
 	if exists := hashMap.Changes[key]; exists != nil {
-		out = exists.Element
-		return
+		return exists.Element, nil
 	}
 
 	var outData []byte
@@ -70,13 +69,15 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 		outData = hashMap.Tx.Get(hashMap.name + key)
 	}
 
+	var out helpers.SerializableInterface
+	var err error
 	if outData != nil {
 		if out, err = hashMap.Deserialize(outData); err != nil {
-			return
+			return nil, err
 		}
 	}
 	hashMap.Changes[key] = &ChangesMapElement{out, "view"}
-	return
+	return out, nil
 }
 
 func (hashMap *HashMap) Exists(key string) (bool, error) {

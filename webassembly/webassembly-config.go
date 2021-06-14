@@ -8,29 +8,29 @@ import (
 )
 
 func convertToUnitsUint64(this js.Value, args []js.Value) interface{} {
-	return normalFunction(func() (out interface{}, err error) {
+	return normalFunction(func() (interface{}, error) {
 		value, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
-			return
+			return nil, err
 		}
 
 		if value, err = config.ConvertToUnitsUint64(value); err != nil {
-			return
+			return nil, err
 		}
 		return strconv.FormatUint(value, 10), nil
 	})
 }
 
 func convertToUnits(this js.Value, args []js.Value) interface{} {
-	return normalFunction(func() (out interface{}, err error) {
+	return normalFunction(func() (interface{}, error) {
 		value, err := strconv.ParseFloat(args[0].String(), 10)
 		if err != nil {
-			return
+			return nil, err
 		}
 
 		value2, err := config.ConvertToUnits(value)
 		if err != nil {
-			return
+			return nil, err
 		}
 
 		return strconv.FormatUint(value2, 10), nil
@@ -38,10 +38,10 @@ func convertToUnits(this js.Value, args []js.Value) interface{} {
 }
 
 func convertToBase(this js.Value, args []js.Value) interface{} {
-	return normalFunction(func() (out interface{}, err error) {
+	return normalFunction(func() (interface{}, error) {
 		value, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
-			return
+			return nil, err
 		}
 
 		value2 := config.ConvertToBase(value)
@@ -50,7 +50,7 @@ func convertToBase(this js.Value, args []js.Value) interface{} {
 }
 
 func getRewardAt(this js.Value, args []js.Value) interface{} {
-	return normalFunction(func() (out interface{}, err error) {
+	return normalFunction(func() (interface{}, error) {
 		value := reward.GetRewardAt(uint64(args[0].Int()))
 		return value, nil
 	})

@@ -26,7 +26,7 @@ func NewTokens(tx store_db_interface.StoreDBTransactionInterface) (tokens *Token
 	return
 }
 
-func (tokens *Tokens) GetToken(key []byte) (tok *token.Token, err error) {
+func (tokens *Tokens) GetToken(key []byte) (*token.Token, error) {
 
 	if len(key) == 0 {
 		key = config.NATIVE_TOKEN_FULL
@@ -34,12 +34,10 @@ func (tokens *Tokens) GetToken(key []byte) (tok *token.Token, err error) {
 
 	data, err := tokens.HashMap.Get(string(key))
 	if data == nil || err != nil {
-		return
+		return nil, err
 	}
 
-	tok = data.(*token.Token)
-
-	return
+	return data.(*token.Token), nil
 }
 
 func (tokens *Tokens) CreateToken(key []byte, tok *token.Token) (err error) {

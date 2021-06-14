@@ -23,12 +23,13 @@ func (pk *PrivateKey) GeneratePublicKeyHash() ([]byte, error) {
 	return cryptography.ComputePublicKeyHash(publicKey), nil
 }
 
-func (pk *PrivateKey) GeneratePairs() (publicKey []byte, publicKeyHash []byte, err error) {
-	if publicKey, err = ecdsa.ComputePublicKey(pk.Key); err != nil {
-		return
+func (pk *PrivateKey) GeneratePairs() ([]byte, []byte, error) {
+	publicKey, err := ecdsa.ComputePublicKey(pk.Key)
+	if err != nil {
+		return nil, nil, err
 	}
-	publicKeyHash = cryptography.ComputePublicKeyHash(publicKey)
-	return
+	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
+	return publicKey, publicKeyHash, nil
 }
 
 func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) (*Address, error) {

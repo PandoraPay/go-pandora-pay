@@ -158,10 +158,7 @@ func (testnet *Testnet) run() {
 
 					if account != nil {
 
-						var balance uint64
-						if balance, err = account.GetAvailableBalance(config.NATIVE_TOKEN); err != nil {
-							return
-						}
+						balance := account.GetAvailableBalance(config.NATIVE_TOKEN)
 
 						delegatedStakeAvailable := account.GetDelegatedStakeAvailable()
 						delegatedUnstakePending, _ := account.ComputeDelegatedUnstakePending()

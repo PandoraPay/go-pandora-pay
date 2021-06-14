@@ -137,7 +137,7 @@ func (account *Account) ComputeDelegatedUnstakePending() (uint64, error) {
 	return account.DelegatedStake.ComputeDelegatedUnstakePending()
 }
 
-func (account *Account) GetAvailableBalance(token []byte) (result uint64, err error) {
+func (account *Account) GetAvailableBalance(token []byte) (result uint64) {
 	for _, balance := range account.Balances {
 		if bytes.Equal(balance.Token, token) {
 			result = balance.Amount

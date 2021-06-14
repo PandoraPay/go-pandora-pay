@@ -102,26 +102,26 @@ func (dstake *DelegatedStake) GetDelegatedStakeAvailable() uint64 {
 	return dstake.StakeAvailable
 }
 
-func (dstake *DelegatedStake) ComputeDelegatedStakeAvailable(blockHeight uint64) (result uint64, err error) {
-	result = dstake.StakeAvailable
+func (dstake *DelegatedStake) ComputeDelegatedStakeAvailable(blockHeight uint64) (uint64, error) {
+	result := dstake.StakeAvailable
 	for i := range dstake.StakesPending {
 		if dstake.StakesPending[i].ActivationHeight <= blockHeight && dstake.StakesPending[i].PendingType == DelegatedStakePendingStake {
-			if err = helpers.SafeUint64Add(&result, dstake.StakesPending[i].PendingAmount); err != nil {
-				return
+			if err := helpers.SafeUint64Add(&result, dstake.StakesPending[i].PendingAmount); err != nil {
+				return 0, err
 			}
 		}
 	}
-	return
+	return result, nil
 }
 
-func (dstake *DelegatedStake) ComputeDelegatedUnstakePending() (result uint64, err error) {
-	result = 0
+func (dstake *DelegatedStake) ComputeDelegatedUnstakePending() (uint64, error) {
+	result := uint64(0)
 	for i := range dstake.StakesPending {
 		if dstake.StakesPending[i].PendingType == DelegatedStakePendingUnstake {
-			if err = helpers.SafeUint64Add(&result, dstake.StakesPending[i].PendingAmount); err != nil {
-				return
+			if err := helpers.SafeUint64Add(&result, dstake.StakesPending[i].PendingAmount); err != nil {
+				return 0, err
 			}
 		}
 	}
-	return
+	return result, nil
 }

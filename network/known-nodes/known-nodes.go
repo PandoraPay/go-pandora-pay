@@ -14,15 +14,14 @@ type KnownNode struct {
 }
 
 type KnownNodes struct {
-	knownMap  *sync.Map //*KnownNode
-	knownList []*KnownNode
-	sync.RWMutex
+	knownMap       *sync.Map //*KnownNode
+	knownList      []*KnownNode
+	knownListMutex sync.RWMutex
 }
 
 func (self *KnownNodes) GetRandomKnownNode() *KnownNode {
-	self.RLock()
-	defer self.RUnlock()
-
+	self.knownListMutex.RLock()
+	defer self.knownListMutex.RUnlock()
 	return self.knownList[rand.Intn(len(self.knownList))]
 }
 
@@ -40,8 +39,8 @@ func (self *KnownNodes) AddKnownNode(url *url.URL, isSeed bool) bool {
 		return false
 	}
 
-	self.Lock()
-	defer self.Unlock()
+	self.knownListMutex.Lock()
+	defer self.knownListMutex.Unlock()
 	self.knownList = append(self.knownList, knownNode)
 
 	return true
@@ -51,8 +50,8 @@ func (self *KnownNodes) RemoveKnownNode(knownNode *KnownNode) {
 
 	if _, exists := self.knownMap.LoadAndDelete(knownNode.UrlStr); exists {
 
-		self.Lock()
-		defer self.Unlock()
+		self.knownListMutex.Lock()
+		defer self.knownListMutex.Unlock()
 		for i, knownNode2 := range self.knownList {
 			if knownNode2 == knownNode {
 				self.knownList[i] = self.knownList[len(self.knownList)-1]

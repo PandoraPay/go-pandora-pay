@@ -38,33 +38,33 @@ func (store *StoreDBBolt) Update(callback func(dbTx store_db_interface.StoreDBTr
 	})
 }
 
-func CreateStoreDBBolt(name string) (store *StoreDBBolt, err error) {
+func CreateStoreDBBolt(name string) (*StoreDBBolt, error) {
 
-	store = &StoreDBBolt{
+	var err error
+
+	store := &StoreDBBolt{
 		Name: []byte(name),
 	}
 
 	prefix := "./store"
 	if _, err = os.Stat(prefix); os.IsNotExist(err) {
 		if err = os.Mkdir(prefix, 0755); err != nil {
-			return
+			return nil, err
 		}
 	}
 
 	// Open the my.store data file in your current directory.
 	// It will be created if it doesn't exist.
 	if store.DB, err = bolt.Open(prefix+name+"_store"+"."+dbName, 0600, nil); err != nil {
-		return
+		return nil, err
 	}
 
 	if err = store.DB.Update(func(tx *bolt.Tx) (err error) {
-		if _, err = tx.CreateBucketIfNotExists(store.Name); err != nil {
-			return
-		}
+		_, err = tx.CreateBucketIfNotExists(store.Name)
 		return
 	}); err != nil {
-		return
+		return nil, err
 	}
 
-	return
+	return store, nil
 }

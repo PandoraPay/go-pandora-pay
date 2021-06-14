@@ -26,9 +26,9 @@ type TcpServer struct {
 	HttpServer  *node_http.HttpServer
 }
 
-func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (server *TcpServer, err error) {
+func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (*TcpServer, error) {
 
-	server = &TcpServer{}
+	server := &TcpServer{}
 
 	// Create local listener on next available port
 
@@ -73,7 +73,7 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 	gui.GUI.InfoUpdate("TCP", address+":"+port)
 
 	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, mempool); err != nil {
-		return
+		return nil, err
 	}
 
 	recovery.SafeGo(func() {
@@ -83,5 +83,5 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 		gui.GUI.Info("HTTP server")
 	})
 
-	return
+	return server, nil
 }

@@ -42,10 +42,7 @@ func (builder *TransactionsBuilder) checkTx(accs *accounts.Accounts, chainHeight
 			return errors.New("Account doesn't even exist")
 		}
 
-		available, err = acc.GetAvailableBalance(vin.Token)
-		if err != nil {
-			return err
-		}
+		available = acc.GetAvailableBalance(vin.Token)
 
 		if available, err = builder.mempool.GetBalance(vin.Bloom.PublicKeyHash, available, vin.Token); err != nil {
 			return
@@ -126,10 +123,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 				return errors.New("Account doesn't exist")
 			}
 
-			var available uint64
-			if available, err = acc.GetAvailableBalance(amountsTokens[i]); err != nil {
-				return err
-			}
+			available := acc.GetAvailableBalance(amountsTokens[i])
 			if available < amounts[i] {
 				return errors.New("Not enough funds")
 			}
@@ -211,11 +205,11 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, u
 	return
 }
 
-func (builder *TransactionsBuilder) CreateDelegateTx_Float(from string, nonce uint64, delegateAmount float64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err error) {
+func (builder *TransactionsBuilder) CreateDelegateTx_Float(from string, nonce uint64, delegateAmount float64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (*transaction.Transaction, error) {
 
 	delegateAmountFinal, err := config.ConvertToUnits(delegateAmount)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	return builder.CreateDelegateTx(from, nonce, delegateAmountFinal, delegateNewPubKeyHashGenerate, delegateNewPubKeyHash, feePerByte, feeToken)
@@ -242,10 +236,7 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 			return errors.New("Account doesn't exist")
 		}
 
-		var available uint64
-		if available, err = acc.GetAvailableBalance(config.NATIVE_TOKEN); err != nil {
-			return
-		}
+		available := acc.GetAvailableBalance(config.NATIVE_TOKEN)
 
 		if available < delegateAmount {
 			return errors.New("You don't have enough coins to delegate")

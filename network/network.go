@@ -83,11 +83,11 @@ func (network *Network) syncNewConnections() {
 	})
 }
 
-func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (network *Network, err error) {
+func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (*Network, error) {
 
 	tcpServer, err := node_tcp.CreateTcpServer(settings, chain, mempool)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	knownNodes := known_nodes.CreateKnownNodes()
@@ -97,7 +97,7 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 
 	mempoolSync := mempool_sync.CreateMempoolSync(tcpServer.HttpServer.Websockets)
 
-	network = &Network{
+	network := &Network{
 		tcpServer:   tcpServer,
 		KnownNodes:  knownNodes,
 		MempoolSync: mempoolSync,
@@ -108,5 +108,5 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 	recovery.SafeGo(network.execute)
 	recovery.SafeGo(network.syncNewConnections)
 
-	return
+	return network, nil
 }

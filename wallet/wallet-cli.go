@@ -85,20 +85,22 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 	})
 }
 
-func (wallet *Wallet) CliSelectAddress(text string) (walletAddress *wallet_address.WalletAddress, index int, err error) {
+func (wallet *Wallet) CliSelectAddress(text string) (*wallet_address.WalletAddress, int, error) {
 
-	if err = wallet.CliListAddresses(""); err != nil {
-		return
+	if err := wallet.CliListAddresses(""); err != nil {
+		return nil, 0, err
 	}
 
 	index, ok := gui.GUI.OutputReadInt(text, nil)
 	if !ok {
-		err = errors.New("Canceled")
-		return
+		return nil, 0, errors.New("Canceled")
 	}
 
-	walletAddress, err = wallet.GetWalletAddress(index)
-	return
+	walletAddress, err := wallet.GetWalletAddress(index)
+	if err != nil {
+		return nil, 0, err
+	}
+	return walletAddress, index, nil
 }
 
 func (wallet *Wallet) initWalletCLI() {

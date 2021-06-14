@@ -59,24 +59,23 @@ func (wallet *Wallet) setLoaded(newValue bool) {
 	wallet.initWalletCLI()
 }
 
-func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool) (wallet *Wallet, err error) {
+func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool) (*Wallet, error) {
 
-	wallet = createWallet(forging, mempool, nil)
+	wallet := createWallet(forging, mempool, nil)
 
-	if err = wallet.loadWallet(""); err != nil {
+	if err := wallet.loadWallet(""); err != nil {
 		if err.Error() == "cipher: message authentication failed" {
-			err = nil
-			return
+			return nil, nil
 		}
 		if err.Error() != "Wallet doesn't exist" {
-			return
+			return nil, err
 		}
 		if err = wallet.createEmptyWallet(); err != nil {
-			return
+			return nil, err
 		}
 	}
 
-	return
+	return wallet, nil
 }
 
 func (wallet *Wallet) InitializeWallet(updateAccounts *multicast.MulticastChannel) {

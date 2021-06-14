@@ -8,11 +8,11 @@ import (
 )
 
 func computePublicKeyHash(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 
 		publicKey, err := hex.DecodeString(args[0].String())
 		if err != nil {
-			return
+			return nil, err
 		}
 
 		publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)

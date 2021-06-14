@@ -16,9 +16,9 @@ func (store *Store) close() error {
 	return store.DB.Close()
 }
 
-func createStore(name string, db store_db_interface.StoreDBInterface) (store *Store, err error) {
+func createStore(name string, db store_db_interface.StoreDBInterface) (*Store, error) {
 
-	store = &Store{
+	store := &Store{
 		Name:   name,
 		Opened: false,
 		DB:     db,
@@ -26,14 +26,11 @@ func createStore(name string, db store_db_interface.StoreDBInterface) (store *St
 
 	store.Opened = true
 
-	return
+	return store, nil
 }
 
 func InitDB() (err error) {
-	if err = create_db(); err != nil {
-		return
-	}
-	return
+	return create_db()
 }
 
 func DBClose() (err error) {

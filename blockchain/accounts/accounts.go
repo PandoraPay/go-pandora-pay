@@ -24,36 +24,35 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface) (accounts *A
 	return
 }
 
-func (accounts *Accounts) GetAccountEvenEmpty(key []byte, chainHeight uint64) (acc *account.Account, err error) {
+func (accounts *Accounts) GetAccountEvenEmpty(key []byte, chainHeight uint64) (*account.Account, error) {
 
 	data, err := accounts.Get(string(key))
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	if data == nil {
 		return &account.Account{}, nil
 	}
 
-	acc = data.(*account.Account)
+	acc := data.(*account.Account)
 	err = acc.RefreshDelegatedStake(chainHeight)
-	return
+	return acc, err
 }
 
-func (accounts *Accounts) GetAccount(key []byte, chainHeight uint64) (acc *account.Account, err error) {
+func (accounts *Accounts) GetAccount(key []byte, chainHeight uint64) (*account.Account, error) {
 
 	data, err := accounts.Get(string(key))
 	if data == nil || err != nil {
-		return
+		return nil, err
 	}
 
-	acc = data.(*account.Account)
-
+	acc := data.(*account.Account)
 	if err = acc.RefreshDelegatedStake(chainHeight); err != nil {
-		return
+		return nil, err
 	}
 
-	return
+	return acc, nil
 }
 
 func (accounts *Accounts) UpdateAccount(key []byte, acc *account.Account) error {

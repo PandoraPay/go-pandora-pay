@@ -36,9 +36,10 @@ func (store *StoreDBBunt) Update(callback func(dbTx store_db_interface.StoreDBTr
 	})
 }
 
-func CreateStoreDBBunt(name string, inMemory bool) (store *StoreDBBunt, err error) {
+func CreateStoreDBBunt(name string, inMemory bool) (*StoreDBBunt, error) {
 
-	store = &StoreDBBunt{
+	var err error
+	store := &StoreDBBunt{
 		Name: []byte(name),
 	}
 
@@ -47,7 +48,7 @@ func CreateStoreDBBunt(name string, inMemory bool) (store *StoreDBBunt, err erro
 		prefix = "./store"
 		if _, err = os.Stat(prefix); os.IsNotExist(err) {
 			if err = os.Mkdir(prefix, 0755); err != nil {
-				return
+				return nil, err
 			}
 		}
 		prefix += name + "_store" + "." + dbName
@@ -58,8 +59,8 @@ func CreateStoreDBBunt(name string, inMemory bool) (store *StoreDBBunt, err erro
 	// Open the my.store data file in your current directory.
 	// It will be created if it doesn't exist.
 	if store.DB, err = buntdb.Open(prefix); err != nil {
-		return
+		return nil, err
 	}
 
-	return
+	return store, nil
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func getWallet(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		app.Wallet.RLock()
 		defer app.Wallet.RUnlock()
 		return convertJSON(app.Wallet)
@@ -15,7 +15,7 @@ func getWallet(this js.Value, args []js.Value) interface{} {
 }
 
 func getWalletAddress(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[0].String())
 		if err != nil {
 			return
@@ -25,10 +25,10 @@ func getWalletAddress(this js.Value, args []js.Value) interface{} {
 }
 
 func addNewWalletAddress(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		adr, err := app.Wallet.AddNewAddress(false)
 		if err != nil {
-			return
+			return nil, err
 		}
 		return convertJSON(adr)
 	})
@@ -41,27 +41,27 @@ func removeWalletAddress(this js.Value, args []js.Value) interface{} {
 }
 
 func importWalletPrivateKey(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		key, err := hex.DecodeString(args[0].String())
 		if err != nil {
-			return
+			return nil, err
 		}
 		adr, err := app.Wallet.ImportPrivateKey("", key)
 		if err != nil {
-			return
+			return nil, err
 		}
 		return convertJSON(adr)
 	})
 }
 
 func importWalletJSON(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		return true, app.Wallet.ImportWalletJSON([]byte(args[0].String()))
 	})
 }
 
 func importWalletAddressJSON(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		adr, err := app.Wallet.ImportWalletAddressJSON([]byte(args[0].String()))
 		if err != nil {
 			return

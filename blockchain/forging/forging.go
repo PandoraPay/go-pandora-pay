@@ -21,9 +21,9 @@ type Forging struct {
 	solutionCn         chan<- *block_complete.BlockComplete
 }
 
-func CreateForging(mempool *mempool.Mempool) (forging *Forging, err error) {
+func CreateForging(mempool *mempool.Mempool) (*Forging, error) {
 
-	forging = &Forging{
+	forging := &Forging{
 		mempool,
 		&ForgingWallet{
 			[]*ForgingWalletAddress{},
@@ -42,7 +42,7 @@ func CreateForging(mempool *mempool.Mempool) (forging *Forging, err error) {
 	}
 	forging.Wallet.forging = forging
 
-	return
+	return forging, nil
 }
 
 func (forging *Forging) InitializeForging(nextBlockCreatedCn <-chan *forging_block_work.ForgingWork, updateAccounts *multicast.MulticastChannel, forgingSolutionCn chan<- *block_complete.BlockComplete) {

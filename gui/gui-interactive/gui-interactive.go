@@ -42,21 +42,21 @@ func (g *GUIInteractive) Close() {
 	g.logger.GeneralLog.Close()
 }
 
-func CreateGUIInteractive() (g *GUIInteractive, err error) {
+func CreateGUIInteractive() (*GUIInteractive, error) {
 
-	var logger *gui_logger.GUILogger
-	if logger, err = gui_logger.CreateLogger(); err != nil {
-		return
+	logger, err := gui_logger.CreateLogger()
+	if err != nil {
+		return nil, err
 	}
 
-	g = &GUIInteractive{
+	g := &GUIInteractive{
 		logger:   logger,
 		infoMap:  &sync.Map{},
 		info2Map: &sync.Map{},
 	}
 
 	if err = ui.Init(); err != nil {
-		return
+		return nil, err
 	}
 
 	g.infoInit()
@@ -116,5 +116,5 @@ func CreateGUIInteractive() (g *GUIInteractive, err error) {
 		return nil
 	}, true)
 
-	return
+	return g, nil
 }

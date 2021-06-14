@@ -110,10 +110,11 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
 }
 
-func (websockets *Websockets) NewConnection(c *websocket.Conn, addr string, connectionType bool) (conn *connection.AdvancedConnection, err error) {
+func (websockets *Websockets) NewConnection(c *websocket.Conn, addr string, connectionType bool) (*connection.AdvancedConnection, error) {
 
-	if conn, err = connection.CreateAdvancedConnection(c, addr, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn, websockets.subscriptions.removeSubscriptionCn); err != nil {
-		return
+	conn, err := connection.CreateAdvancedConnection(c, addr, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn, websockets.subscriptions.removeSubscriptionCn)
+	if err != nil {
+		return nil, err
 	}
 
 	if _, exists := websockets.AllAddresses.LoadOrStore(addr, conn); exists {
@@ -125,10 +126,10 @@ func (websockets *Websockets) NewConnection(c *websocket.Conn, addr string, conn
 	recovery.SafeGo(func() { websockets.closedConnection(conn) })
 
 	if err = websockets.InitializeConnection(conn); err != nil {
-		return
+		return nil, err
 	}
 
-	return
+	return conn, nil
 }
 
 func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConnection) error {

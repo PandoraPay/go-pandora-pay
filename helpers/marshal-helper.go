@@ -30,21 +30,20 @@ func (s *HexBytes) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
-func GetJSON(obj interface{}, ignoreFields ...string) (out []byte, err error) {
+func GetJSON(obj interface{}, ignoreFields ...string) ([]byte, error) {
 
-	var toJson []byte
-	if toJson, err = json.Marshal(obj); err != nil {
-		return
+	toJson, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(ignoreFields) == 0 {
-		out = toJson
-		return
+		return toJson, nil
 	}
 
 	toMap := map[string]interface{}{}
 	if err = json.Unmarshal(toJson, &toMap); err != nil {
-		return
+		return nil, err
 	}
 
 	for key := range ignoreFields {
@@ -52,9 +51,8 @@ func GetJSON(obj interface{}, ignoreFields ...string) (out []byte, err error) {
 	}
 
 	if toJson, err = json.Marshal(toMap); err != nil {
-		return
+		return nil, err
 	}
 
-	out = toJson
-	return
+	return toJson, nil
 }

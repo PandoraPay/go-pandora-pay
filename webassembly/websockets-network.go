@@ -15,15 +15,16 @@ import (
 )
 
 func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
 		var hash []byte
+		var err error
 		if len(args) >= 2 {
 			if hash, err = hex.DecodeString(args[1].String()); err != nil {
-				return
+				return nil, err
 			}
 		}
 		data := socket.SendJSONAwaitAnswer([]byte("block-info"), &api_types.APIBlockRequest{uint64(args[0].Int()), hash})
@@ -35,7 +36,7 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 }
 
 func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -43,13 +44,14 @@ func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 
 		var height uint64
 		var hash []byte
+		var err error
 
 		switch args[0].Type() {
 		case js.TypeNumber:
 			height = uint64(args[0].Int())
 		case js.TypeString:
 			if hash, err = hex.DecodeString(args[0].String()); err != nil {
-				return
+				return nil, err
 			}
 		default:
 			return nil, errors.New("Invalid argument")
@@ -71,13 +73,14 @@ func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 }
 
 func getNetworkAccount(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
 
 		var hash []byte
+		var err error
 		if hash, err = hex.DecodeString(args[0].String()); err != nil {
 			return
 		}
@@ -97,15 +100,15 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 }
 
 func getNetworkAccountTxs(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		var hash []byte
-		if hash, err = hex.DecodeString(args[0].String()); err != nil {
-			return
+		hash, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
 		}
 
 		data := socket.SendJSONAwaitAnswer([]byte("account/txs"), &api_types.APIAccountTxsRequest{api_types.APIAccountBaseRequest{"", hash}, uint64(args[1].Int())})
@@ -118,7 +121,7 @@ func getNetworkAccountTxs(this js.Value, args []js.Value) interface{} {
 }
 
 func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -126,6 +129,7 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 
 		var height uint64
 		var hash []byte
+		var err error
 
 		switch args[0].Type() {
 		case js.TypeNumber:
@@ -136,7 +140,7 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 			err = errors.New("Invalid argument")
 		}
 		if err != nil {
-			return
+			return nil, err
 		}
 
 		data := socket.SendJSONAwaitAnswer([]byte("tx"), &api_types.APIBlockCompleteRequest{height, hash, api_types.RETURN_SERIALIZED})
@@ -146,15 +150,15 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 
 		received := &api_types.APITransaction{}
 		if err = json.Unmarshal(data.Out, received); err != nil {
-			return
+			return nil, err
 		}
 
 		received.Tx = &transaction.Transaction{}
 		if err = received.Tx.Deserialize(helpers.NewBufferReader(received.TxSerialized)); err != nil {
-			return
+			return nil, err
 		}
 		if err = received.Tx.BloomAll(); err != nil {
-			return
+			return nil, err
 		}
 
 		return convertJSON(received)
@@ -162,14 +166,14 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 }
 
 func getNetworkTokenInfo(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
-		var hash []byte
-		if hash, err = hex.DecodeString(args[0].String()); err != nil {
-			return
+		hash, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
 		}
 		data := socket.SendJSONAwaitAnswer([]byte("token-info"), &api_types.APITokenInfoRequest{hash})
 		if data.Err != nil {
@@ -180,14 +184,15 @@ func getNetworkTokenInfo(this js.Value, args []js.Value) interface{} {
 }
 
 func getNetworkToken(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
-		var hash []byte
-		if hash, err = hex.DecodeString(args[0].String()); err != nil {
-			return
+
+		hash, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
 		}
 		data := socket.SendJSONAwaitAnswer([]byte("token"), &api_types.APITokenRequest{hash, api_types.RETURN_SERIALIZED})
 		if data.Err != nil {
@@ -195,14 +200,14 @@ func getNetworkToken(this js.Value, args []js.Value) interface{} {
 		}
 		tok := &token.Token{}
 		if err = tok.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
-			return
+			return nil, err
 		}
 		return convertJSON(tok)
 	})
 }
 
 func getNetworkMempool(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -218,15 +223,15 @@ func getNetworkMempool(this js.Value, args []js.Value) interface{} {
 }
 
 func subscribeNetwork(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		var key []byte
-		if key, err = hex.DecodeString(args[0].String()); err != nil {
-			return
+		key, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
 		}
 
 		_ = &api_types.APISubscriptionRequest{key, api_types.SubscriptionType(args[1].Int()), api_types.RETURN_SERIALIZED}
@@ -236,15 +241,15 @@ func subscribeNetwork(this js.Value, args []js.Value) interface{} {
 }
 
 func unsubscribeNetwork(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (out interface{}, err error) {
+	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		var key []byte
-		if key, err = hex.DecodeString(args[0].String()); err != nil {
-			return
+		key, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
 		}
 
 		data := socket.SendJSONAwaitAnswer([]byte("unsub"), &api_types.APIUnsubscriptionRequest{key, api_types.SubscriptionType(args[1].Int())})

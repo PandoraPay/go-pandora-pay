@@ -18,9 +18,9 @@ func (wsClient *WebsocketClient) Close(reason string) error {
 	return wsClient.conn.Close(reason)
 }
 
-func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownNode) (wsClient *WebsocketClient, err error) {
+func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownNode) (*WebsocketClient, error) {
 
-	wsClient = &WebsocketClient{
+	wsClient := &WebsocketClient{
 		knownNode:  knownNode,
 		websockets: websockets,
 	}
@@ -30,12 +30,12 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 
 	c, _, err := websocket.Dial(ctx, knownNode.UrlStr, nil)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	if wsClient.conn, err = websockets.NewConnection(c, knownNode.UrlStr, false); err != nil {
-		return
+		return nil, err
 	}
 
-	return
+	return wsClient, nil
 }

@@ -9,9 +9,9 @@ import (
 	"sort"
 )
 
-func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token []byte) (out uint64, err error) {
+func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token []byte) (uint64, error) {
 
-	out = balance
+	out := balance
 	txs := mempool.Txs.GetTxsList()
 
 	for _, tx := range txs {
@@ -19,16 +19,16 @@ func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token [
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 			for _, vin := range base.Vin {
 				if bytes.Equal(vin.Bloom.PublicKeyHash, publicKeyHash) && bytes.Equal(vin.Token, token) {
-					if err = helpers.SafeUint64Sub(&out, vin.Amount); err != nil {
-						return
+					if err := helpers.SafeUint64Sub(&out, vin.Amount); err != nil {
+						return 0, err
 					}
 				}
 			}
 
 			for _, vout := range base.Vout {
 				if bytes.Equal(vout.PublicKeyHash, publicKeyHash) && bytes.Equal(vout.Token, token) {
-					if err = helpers.SafeUint64Add(&out, vout.Amount); err != nil {
-						return
+					if err := helpers.SafeUint64Add(&out, vout.Amount); err != nil {
+						return 0, err
 					}
 				}
 			}
@@ -36,7 +36,7 @@ func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token [
 		}
 	}
 
-	return
+	return out, nil
 }
 
 func (mempool *Mempool) ExistsTxSimpleVersion(publicKeyHash []byte, version transaction_simple.ScriptType) bool {

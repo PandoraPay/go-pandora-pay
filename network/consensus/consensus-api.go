@@ -14,18 +14,18 @@ func (consensus *Consensus) chainGet(conn *connection.AdvancedConnection, values
 	return nil, nil
 }
 
-func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
+func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
 	chainUpdateNotification := new(ChainUpdateNotification)
-	if err = json.Unmarshal(values, &chainUpdateNotification); err != nil {
-		return
+	if err := json.Unmarshal(values, &chainUpdateNotification); err != nil {
+		return nil, err
 	}
 
 	forkFound, exists := consensus.forks.hashes.Load(string(chainUpdateNotification.Hash))
 	if exists {
 		fork := forkFound.(*Fork)
 		fork.AddConn(conn, true)
-		return
+		return nil, nil
 	}
 
 	chainLastUpdate := consensus.chain.GetChainData()
@@ -33,7 +33,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 	compare := chainLastUpdate.BigTotalDifficulty.Cmp(chainUpdateNotification.BigTotalDifficulty)
 
 	if compare == 0 {
-		return
+		return nil, nil
 	} else if compare < 0 {
 
 		fork := &Fork{
@@ -53,7 +53,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		conn.SendJSON([]byte("chain-update"), consensus.getUpdateNotification(nil))
 	}
 
-	return
+	return nil, nil
 }
 
 func (consensus *Consensus) broadcastChain(newChainData *blockchain.BlockchainData) {

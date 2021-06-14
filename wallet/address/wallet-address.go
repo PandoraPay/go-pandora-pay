@@ -2,6 +2,7 @@ package wallet_address
 
 import (
 	"bytes"
+	"errors"
 	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography"
@@ -34,32 +35,33 @@ func (adr *WalletAddress) GetDelegatedStakePublicKeyHash() []byte {
 	return nil
 }
 
-func (adr *WalletAddress) FindDelegatedStake(currentNonce, lastKnownNonce uint32, delegatedPublicKeyHash []byte) (delegatedStake *WalletAddressDelegatedStake, err error) {
+func (adr *WalletAddress) FindDelegatedStake(currentNonce, lastKnownNonce uint32, delegatedPublicKeyHash []byte) (*WalletAddressDelegatedStake, error) {
 
 	for nonce := lastKnownNonce; nonce <= currentNonce; nonce++ {
 
-		if delegatedStake, err = adr.DeriveDelegatedStake(nonce); err != nil {
-			return
+		delegatedStake, err := adr.DeriveDelegatedStake(nonce)
+		if err != nil {
+			return nil, err
 		}
 		if bytes.Equal(delegatedStake.PublicKeyHash, delegatedPublicKeyHash) {
-			return
+			return delegatedStake, nil
 		}
 
 	}
 
-	return
+	return nil, errors.New("Nonce not found")
 }
 
-func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (delegatedStake *WalletAddressDelegatedStake, err error) {
+func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDelegatedStake, error) {
 
 	masterKey, err := bip32.NewMasterKey(adr.PrivateKey.Key)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	key, err := masterKey.NewChildKey(nonce)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	finalKey := cryptography.SHA3(key.Key)
@@ -67,7 +69,7 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (delegatedStake *Wa
 
 	address, err := privateKey.GenerateAddress(true, 0, []byte{})
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	return &WalletAddressDelegatedStake{

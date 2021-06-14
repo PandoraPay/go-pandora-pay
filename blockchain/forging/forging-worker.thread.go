@@ -34,24 +34,23 @@ type ForgingWorkerThreadAddress struct {
 	stakingAmount uint64
 }
 
-func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64) (err error) {
+func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64) uint64 {
 
 	threadAddr.stakingAmount = 0
 	if threadAddr.walletAdr.account != nil && threadAddr.walletAdr.delegatedPrivateKey != nil {
 
 		stakingAmount := uint64(0)
 		if threadAddr.walletAdr.account != nil {
-			if stakingAmount, err = threadAddr.walletAdr.account.ComputeDelegatedStakeAvailable(height); err != nil {
-				return
-			}
+			stakingAmount, _ = threadAddr.walletAdr.account.ComputeDelegatedStakeAvailable(height)
 		}
 
 		if stakingAmount >= stake.GetRequiredStake(height) {
 			threadAddr.stakingAmount = stakingAmount
+			return stakingAmount
 		}
 
 	}
-	return
+	return 0
 }
 
 /**
@@ -70,6 +69,23 @@ func (worker *ForgingWorkerThread) forge() {
 	wallets := make(map[string]*ForgingWorkerThreadAddress)
 	walletsStakable := make(map[string]*ForgingWorkerThreadAddress)
 
+	waitCn := make(chan bool)
+	waitCnCreated := true
+
+	validateWork := func() {
+		if work == nil || len(walletsStakable) == 0 {
+			if !waitCnCreated {
+				waitCn = make(chan bool)
+				waitCnCreated = true
+			}
+		} else {
+			if waitCnCreated {
+				close(waitCn)
+				waitCnCreated = false
+			}
+		}
+	}
+
 	for {
 
 		timeLimitMs := time.Now().UnixNano()/1000000 + config.NETWORK_TIMESTAMP_DRIFT_MAX_INT*1000
@@ -81,6 +97,8 @@ func (worker *ForgingWorkerThread) forge() {
 				return
 			}
 			work = nil
+			validateWork()
+
 		case newWork, ok := <-worker.workCn: //or the work was changed meanwhile
 			if !ok {
 				return
@@ -101,11 +119,12 @@ func (worker *ForgingWorkerThread) forge() {
 
 			walletsStakable = make(map[string]*ForgingWorkerThreadAddress)
 			for _, walletAddr := range wallets {
-				_ = walletAddr.computeStakingAmount(blkHeight)
-				if walletAddr.stakingAmount > 0 {
+				if walletAddr.computeStakingAmount(blkHeight) > 0 {
 					walletsStakable[walletAddr.walletAdr.publicKeyHashStr] = walletAddr
 				}
 			}
+
+			validateWork()
 
 		case newWalletAddr, ok := <-worker.addWalletAddressCn:
 			if !ok {
@@ -122,12 +141,12 @@ func (worker *ForgingWorkerThread) forge() {
 			} else {
 				walletAddr.walletAdr = newWalletAddr
 			}
-			_ = walletAddr.computeStakingAmount(blkHeight)
-			if walletAddr.stakingAmount > 0 {
+			if walletAddr.computeStakingAmount(blkHeight) > 0 {
 				walletsStakable[walletAddr.walletAdr.publicKeyHashStr] = walletAddr
 			} else {
 				delete(walletsStakable, walletAddr.walletAdr.publicKeyHashStr)
 			}
+			validateWork()
 		case publicKeyHashStr, ok := <-worker.removeWalletAddressCn:
 			if !ok {
 				return
@@ -136,11 +155,12 @@ func (worker *ForgingWorkerThread) forge() {
 				delete(wallets, publicKeyHashStr)
 				delete(walletsStakable, publicKeyHashStr)
 			}
-		default:
+			validateWork()
+		case <-waitCn:
 		}
 
 		if work == nil || len(walletsStakable) == 0 {
-			time.Sleep(50 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			continue
 		} else if timestampMs > timeLimitMs {
 			time.Sleep(time.Millisecond * time.Duration(timestampMs-timeLimitMs))

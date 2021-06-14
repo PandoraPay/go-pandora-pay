@@ -123,16 +123,16 @@ func (api *APIWebsockets) getMempool(conn *connection.AdvancedConnection, values
 	return api.apiCommon.GetMempool(request)
 }
 
-func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
+func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
 	tx := &transaction.Transaction{}
-	if err = tx.Deserialize(helpers.NewBufferReader(values)); err != nil {
-		return
+	if err := tx.Deserialize(helpers.NewBufferReader(values)); err != nil {
+		return nil, err
 	}
 
 	inserted, err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	if inserted {
@@ -178,9 +178,7 @@ func (api *APIWebsockets) getMempoolExists(conn *connection.AdvancedConnection, 
 	}
 }
 
-func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
-
-	out = []byte{0}
+func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
 	if len(values) != 32 {
 		return nil, errors.New("Invalid hash")
@@ -188,37 +186,34 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 	hashStr := string(values)
 
 	if api.mempool.Txs.Exists(values) != nil {
-		out = []byte{1}
+		return []byte{1}, nil
 	} else {
 
 		if _, loaded := api.mempoolDownloadPending.LoadOrStore(hashStr, true); loaded == true {
-			out = []byte{1}
-			return
+			return []byte{1}, nil
 		}
+		defer api.mempoolDownloadPending.Delete(hashStr)
 
 		result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APITransactionRequest{0, values, api_types.RETURN_SERIALIZED})
 
 		if result.Out != nil && result.Err == nil {
 
 			data := &api_types.APITransaction{}
-			if err = json.Unmarshal(result.Out, data); err != nil {
-				return
+			if err := json.Unmarshal(result.Out, data); err != nil {
+				return nil, err
 			}
 
 			tx := &transaction.Transaction{}
-			if err = tx.Deserialize(helpers.NewBufferReader(data.TxSerialized)); err != nil {
-				return
+			if err := tx.Deserialize(helpers.NewBufferReader(data.TxSerialized)); err != nil {
+				return nil, err
 			}
 
-			if out, err = api.apiCommon.PostMempoolInsert(tx); err != nil {
-				return
-			}
+			return api.apiCommon.PostMempoolInsert(tx)
 		}
 
-		api.mempoolDownloadPending.Delete(hashStr)
 	}
 
-	return
+	return []byte{0}, nil
 }
 
 func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, mempool *mempool.Mempool) *APIWebsockets {

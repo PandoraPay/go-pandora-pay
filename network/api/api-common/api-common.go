@@ -63,9 +63,10 @@ func (api *APICommon) GetTxHash(blockHeight uint64) (helpers.HexBytes, error) {
 	return api.ApiStore.openLoadTxHash(blockHeight)
 }
 
-func (api *APICommon) GetBlockComplete(request *api_types.APIBlockCompleteRequest) (out []byte, err error) {
+func (api *APICommon) GetBlockComplete(request *api_types.APIBlockCompleteRequest) ([]byte, error) {
 
 	var blockComplete *block_complete.BlockComplete
+	var err error
 
 	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
 		blockComplete, err = api.ApiStore.openLoadBlockCompleteFromHash(request.Hash)
@@ -73,7 +74,7 @@ func (api *APICommon) GetBlockComplete(request *api_types.APIBlockCompleteReques
 		blockComplete, err = api.ApiStore.openLoadBlockCompleteFromHeight(request.Height)
 	}
 	if err != nil || blockComplete == nil {
-		return
+		return nil, err
 	}
 	if request.ReturnType == api_types.RETURN_SERIALIZED {
 		return blockComplete.SerializeToBytesBloomed(), nil
@@ -81,31 +82,32 @@ func (api *APICommon) GetBlockComplete(request *api_types.APIBlockCompleteReques
 	return json.Marshal(blockComplete)
 }
 
-func (api *APICommon) GetBlock(request *api_types.APIBlockRequest) (out []byte, err error) {
+func (api *APICommon) GetBlock(request *api_types.APIBlockRequest) ([]byte, error) {
 	var block interface{}
+	var err error
 	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
 		block, err = api.ApiStore.openLoadBlockWithTXsFromHash(request.Hash)
 	} else {
 		block, err = api.ApiStore.openLoadBlockWithTXsFromHeight(request.Height)
 	}
 	if err != nil || block == nil {
-		return
+		return nil, err
 	}
 	return json.Marshal(block)
 }
 
-func (api *APICommon) GetBlockInfo(request *api_types.APIBlockRequest) (out []byte, err error) {
-	var blockInfo *info.BlockInfo
-	blockInfo, err = api.ApiStore.openLoadBlockInfo(request.Height, request.Hash)
+func (api *APICommon) GetBlockInfo(request *api_types.APIBlockRequest) ([]byte, error) {
+	blockInfo, err := api.ApiStore.openLoadBlockInfo(request.Height, request.Hash)
 	if err != nil || blockInfo == nil {
-		return
+		return nil, err
 	}
 	return json.Marshal(blockInfo)
 }
 
-func (api *APICommon) GetTx(request *api_types.APITransactionRequest) (out []byte, err error) {
+func (api *APICommon) GetTx(request *api_types.APITransactionRequest) ([]byte, error) {
 
 	var tx *transaction.Transaction
+	var err error
 
 	mempool := false
 	var txInfo *info.TxInfo
@@ -121,7 +123,7 @@ func (api *APICommon) GetTx(request *api_types.APITransactionRequest) (out []byt
 	}
 
 	if err != nil || tx == nil {
-		return
+		return nil, err
 	}
 
 	result := &api_types.APITransaction{nil, nil, mempool, txInfo}
@@ -136,16 +138,16 @@ func (api *APICommon) GetTx(request *api_types.APITransactionRequest) (out []byt
 	return json.Marshal(result)
 }
 
-func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) (out []byte, err error) {
+func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) ([]byte, error) {
 
 	publicKeyHash, err := request.GetPublicKeyHash()
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	acc, err := api.ApiStore.openLoadAccountFromPublicKeyHash(publicKeyHash)
 	if err != nil || acc == nil {
-		return
+		return nil, err
 	}
 
 	if request.ReturnType == api_types.RETURN_SERIALIZED {
@@ -154,44 +156,45 @@ func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) (out []by
 	return json.Marshal(acc)
 }
 
-func (api *APICommon) GetAccountTxs(request *api_types.APIAccountTxsRequest) (out []byte, err error) {
+func (api *APICommon) GetAccountTxs(request *api_types.APIAccountTxsRequest) ([]byte, error) {
 
 	publicKeyHash, err := request.GetPublicKeyHash()
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	answer, err := api.ApiStore.openLoadAccountTxsFromPublicKeyHash(publicKeyHash, request.Next)
 	if err != nil || answer == nil {
-		return
+		return nil, err
 	}
 
 	return json.Marshal(answer)
 }
 
-func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) (out []byte, err error) {
+func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) ([]byte, error) {
 	txInfo, err := api.ApiStore.openLoadTxInfo(request.Hash, request.Height)
 	if err != nil || txInfo == nil {
-		return
+		return nil, err
 	}
 	return json.Marshal(txInfo)
 }
 
-func (api *APICommon) GetTokenInfo(request *api_types.APITokenInfoRequest) (out []byte, err error) {
+func (api *APICommon) GetTokenInfo(request *api_types.APITokenInfoRequest) ([]byte, error) {
 	var tokInfo *info.TokenInfo
+	var err error
 	if request.Hash != nil && (len(request.Hash) == cryptography.PublicKeyHashHashSize || len(request.Hash) == 0) {
 		tokInfo, err = api.ApiStore.openLoadTokenInfo(request.Hash)
 	}
 	if err != nil || tokInfo == nil {
-		return
+		return nil, err
 	}
 	return json.Marshal(tokInfo)
 }
 
-func (api *APICommon) GetToken(request *api_types.APITokenRequest) (out []byte, err error) {
+func (api *APICommon) GetToken(request *api_types.APITokenRequest) ([]byte, error) {
 	token, err := api.ApiStore.openLoadTokenFromPublicKeyHash(request.Hash)
 	if err != nil || token == nil {
-		return
+		return nil, err
 	}
 	if request.ReturnType == api_types.RETURN_SERIALIZED {
 		return token.SerializeToBytes(), nil
@@ -199,7 +202,7 @@ func (api *APICommon) GetToken(request *api_types.APITokenRequest) (out []byte, 
 	return json.Marshal(token)
 }
 
-func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) (out []byte, err error) {
+func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) ([]byte, error) {
 	transactions := api.mempool.Txs.GetTxsList()
 
 	length := len(transactions) - request.Start
@@ -221,7 +224,7 @@ func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) (out []by
 	return json.Marshal(result)
 }
 
-func (api *APICommon) GetMempoolExists(txId []byte) (out []byte, err error) {
+func (api *APICommon) GetMempoolExists(txId []byte) ([]byte, error) {
 	if len(txId) != 32 {
 		return nil, errors.New("TxId must be 32 byte")
 	}
@@ -232,13 +235,13 @@ func (api *APICommon) GetMempoolExists(txId []byte) (out []byte, err error) {
 	return json.Marshal(tx)
 }
 
-func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction) (out []byte, err error) {
-	if err = tx.BloomAll(); err != nil {
-		return
+func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction) ([]byte, error) {
+	if err := tx.BloomAll(); err != nil {
+		return nil, err
 	}
 	result, err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true)
 	if err != nil {
-		return
+		return nil, err
 	}
 	if result {
 		return []byte{1}, nil

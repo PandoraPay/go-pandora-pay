@@ -94,26 +94,25 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 	return
 }
 
-func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) (newTxHashes [][]byte, err error) {
+func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) ([][]byte, error) {
 
 	blockHeightStr := strconv.FormatUint(blkComplete.Block.Height, 10)
-	if err = accs.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
-		return
+	if err := accs.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
+		return nil, err
 	}
-	if err = toks.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
-		return
-	}
-
-	if err = writer.Put("block_ByHash"+string(blkComplete.Block.Bloom.Hash), blkComplete.Block.SerializeToBytes()); err != nil {
-		return
+	if err := toks.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
+		return nil, err
 	}
 
-	if err = writer.Put("blockHash_ByHeight"+blockHeightStr, blkComplete.Block.Bloom.Hash); err != nil {
-		return
+	if err := writer.Put("block_ByHash"+string(blkComplete.Block.Bloom.Hash), blkComplete.Block.SerializeToBytes()); err != nil {
+		return nil, err
 	}
 
-	newTxHashes = [][]byte{}
+	if err := writer.Put("blockHash_ByHeight"+blockHeightStr, blkComplete.Block.Bloom.Hash); err != nil {
+		return nil, err
+	}
 
+	newTxHashes := [][]byte{}
 	txHashes := make([][]byte, len(blkComplete.Txs))
 	for i, tx := range blkComplete.Txs {
 
@@ -121,8 +120,8 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 
 		//let's check to see if the tx block is already stored, if yes, we will skip it
 		if removedTxHashes[tx.Bloom.HashStr] == nil {
-			if err = writer.Put("tx"+string(tx.Bloom.Hash), tx.SerializeToBytesBloomed()); err != nil {
-				return
+			if err := writer.Put("tx"+string(tx.Bloom.Hash), tx.SerializeToBytesBloomed()); err != nil {
+				return nil, err
 			}
 			newTxHashes = append(newTxHashes, tx.Bloom.Hash)
 		}
@@ -130,21 +129,21 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
-		if err = saveBlockCompleteInfo(writer, blkComplete, transactionsCount); err != nil {
-			return
+		if err := saveBlockCompleteInfo(writer, blkComplete, transactionsCount); err != nil {
+			return nil, err
 		}
 	}
 
-	var marshal []byte
-	if marshal, err = json.Marshal(txHashes); err != nil {
-		return
+	marshal, err := json.Marshal(txHashes)
+	if err != nil {
+		return nil, err
 	}
 
 	if err = writer.Put("blockTxs"+blockHeightStr, marshal); err != nil {
-		return
+		return nil, err
 	}
 
-	return
+	return txHashes, nil
 }
 
 func (chain *Blockchain) saveBlockchainHashmaps(accs *accounts.Accounts, toks *tokens.Tokens) (err error) {

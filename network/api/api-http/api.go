@@ -37,122 +37,114 @@ func (api *API) getPing(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetPing()
 }
 
-func (api *API) getBlockComplete(values *url.Values) (out interface{}, err error) {
+func (api *API) getBlockComplete(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APIBlockCompleteRequest{0, nil, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
 
-	err = errors.New("parameter 'hash' or 'height' are missing")
+	err := errors.New("parameter 'hash' or 'height' are missing")
 	if values.Get("height") != "" {
 		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
 	} else if values.Get("hash") != "" {
 		request.Hash, err = hex.DecodeString(values.Get("hash"))
 	}
-
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	if out, err = api.apiCommon.GetBlockComplete(request); err != nil {
-		return
-	}
-
-	return
+	return api.apiCommon.GetBlockComplete(request)
 }
 
-func (api *API) getBlockHash(values *url.Values) (out interface{}, err error) {
+func (api *API) getBlockHash(values *url.Values) (interface{}, error) {
 
 	if values.Get("height") != "" {
-		var height uint64
-		height, err = strconv.ParseUint(values.Get("height"), 10, 64)
+		height, err := strconv.ParseUint(values.Get("height"), 10, 64)
 		if err != nil {
 			return nil, errors.New("parameter 'height' is not a number")
 		}
-
 		return api.apiCommon.GetBlockHash(height)
 	}
 
 	return nil, errors.New("parameter `height` is missing")
 }
 
-func (api *API) getBlock(values *url.Values) (out interface{}, err error) {
+func (api *API) getBlock(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APIBlockRequest{}
 
-	err = errors.New("parameter 'hash' or 'height' are missing")
-
+	err := errors.New("parameter 'hash' or 'height' are missing")
 	if values.Get("height") != "" {
 		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
 	} else if values.Get("hash") != "" {
 		request.Hash, err = hex.DecodeString(values.Get("hash"))
 	}
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	return api.apiCommon.GetBlock(request)
 }
 
-func (api *API) getBlockInfo(values *url.Values) (out interface{}, err error) {
+func (api *API) getBlockInfo(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APIBlockRequest{}
 
-	err = errors.New("parameter 'hash' or 'height' are missing")
+	err := errors.New("parameter 'hash' or 'height' are missing")
 	if values.Get("height") != "" {
 		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
 	} else if values.Get("hash") != "" {
 		request.Hash, err = hex.DecodeString(values.Get("hash"))
 	}
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	return api.apiCommon.GetBlockInfo(request)
 }
 
-func (api *API) getTokenInfo(values *url.Values) (out interface{}, err error) {
+func (api *API) getTokenInfo(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APITokenInfoRequest{}
 
-	err = errors.New("parameter 'hash' is missing")
+	err := errors.New("parameter 'hash' is missing")
 	if values.Get("hash") != "" {
 		request.Hash, err = hex.DecodeString(values.Get("hash"))
 	}
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	return api.apiCommon.GetTokenInfo(request)
 }
 
-func (api *API) getTxInfo(values *url.Values) (out interface{}, err error) {
+func (api *API) getTxInfo(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APITransactionInfoRequest{}
 
-	err = errors.New("parameter 'hash' or 'height' are missing")
+	err := errors.New("parameter 'hash' or 'height' are missing")
 	if values.Get("height") != "" {
 		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
 	} else if values.Get("hash") != "" {
 		request.Hash, err = hex.DecodeString(values.Get("hash"))
 	}
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	return api.apiCommon.GetTxInfo(request)
 }
 
-func (api *API) getTx(values *url.Values) (out interface{}, err error) {
+func (api *API) getTx(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APITransactionRequest{0, nil, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
 
-	err = errors.New("parameter 'hash' or 'height' are missing")
+	err := errors.New("parameter 'hash' or 'height' are missing")
 	if values.Get("height") != "" {
 		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
 	} else if values.Get("hash") != "" {
 		request.Hash, err = hex.DecodeString(values.Get("hash"))
 	}
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	return api.apiCommon.GetTx(request)
@@ -170,9 +162,10 @@ func (api *API) getTxHash(values *url.Values) (interface{}, error) {
 	return nil, errors.New("parameter `height` is missing")
 }
 
-func (api *API) getAccount(values *url.Values) (out interface{}, err error) {
+func (api *API) getAccount(values *url.Values) (interface{}, error) {
 	request := &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
 
+	var err error
 	if values.Get("address") != "" {
 		request.Address = values.Get("address")
 	} else if values.Get("hash") != "" {
@@ -181,17 +174,19 @@ func (api *API) getAccount(values *url.Values) (out interface{}, err error) {
 		err = errors.New("parameter 'address' or 'hash' was not specified")
 	}
 	if err != nil {
-		return
+		return nil, err
 	}
 	return api.apiCommon.GetAccount(request)
 }
 
-func (api *API) getAccountTxs(values *url.Values) (out interface{}, err error) {
+func (api *API) getAccountTxs(values *url.Values) (interface{}, error) {
+
 	request := &api_types.APIAccountTxsRequest{}
 
+	var err error
 	if values.Get("next") != "" {
 		if request.Next, err = strconv.ParseUint(values.Get("start"), 10, 64); err != nil {
-			return
+			return nil, err
 		}
 	}
 
@@ -203,22 +198,21 @@ func (api *API) getAccountTxs(values *url.Values) (out interface{}, err error) {
 		err = errors.New("parameter 'address' or 'hash' was not specified")
 	}
 	if err != nil {
-		return
+		return nil, err
 	}
 	return api.apiCommon.GetAccountTxs(request)
 }
 
-func (api *API) getToken(values *url.Values) (out interface{}, err error) {
+func (api *API) getToken(values *url.Values) (interface{}, error) {
 	request := &api_types.APITokenRequest{}
 	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
 
-	err = errors.New("parameter 'hash' was not specified")
+	err := errors.New("parameter 'hash' was not specified")
 	if values.Get("hash") != "" {
 		request.Hash, err = hex.DecodeString(values.Get("hash"))
 	}
-
 	if err != nil {
-		return
+		return nil, err
 	}
 	return api.apiCommon.GetToken(request)
 }
@@ -237,19 +231,19 @@ func (api *API) getMempool(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetMempool(request)
 }
 
-func (api *API) getMempoolExists(values *url.Values) (out interface{}, err error) {
-	var hash []byte
-	if hash, err = hex.DecodeString(values.Get("hash")); err != nil {
-		return
+func (api *API) getMempoolExists(values *url.Values) (interface{}, error) {
+	hash, err := hex.DecodeString(values.Get("hash"))
+	if err != nil {
+		return nil, err
 	}
 	return api.apiCommon.GetMempoolExists(hash)
 }
 
-func (api *API) postMempoolInsert(values *url.Values) (out interface{}, err error) {
+func (api *API) postMempoolInsert(values *url.Values) (interface{}, error) {
 
 	tx := &transaction.Transaction{}
 
-	err = errors.New("parameter 'type' was not specified or is invalid")
+	err := errors.New("parameter 'type' was not specified or is invalid")
 	if values.Get("type") == "json" {
 		data := values.Get("tx")
 		err = json.Unmarshal([]byte(data), tx)
@@ -258,13 +252,11 @@ func (api *API) postMempoolInsert(values *url.Values) (out interface{}, err erro
 		if err != nil {
 			return nil, err
 		}
-		if err = tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
-			return nil, err
-		}
+		err = tx.Deserialize(helpers.NewBufferReader(data))
 	}
 
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	return api.apiCommon.PostMempoolInsert(tx)

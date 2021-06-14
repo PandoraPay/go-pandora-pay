@@ -13,15 +13,15 @@ type Settings struct {
 	sync.RWMutex `json:"-"`
 }
 
-func SettingsInit() (settings *Settings, err error) {
+func SettingsInit() (*Settings, error) {
 
-	settings = &Settings{}
-	if err = settings.loadSettings(); err != nil {
+	settings := &Settings{}
+	if err := settings.loadSettings(); err != nil {
 		if err.Error() != "Settings doesn't exist" {
-			return
+			return nil, err
 		}
 		if err = settings.createEmptySettings(); err != nil {
-			return
+			return nil, err
 		}
 	}
 
@@ -33,13 +33,13 @@ func SettingsInit() (settings *Settings, err error) {
 
 	if changed {
 		settings.updateSettings()
-		if err = settings.saveSettings(); err != nil {
-			return
+		if err := settings.saveSettings(); err != nil {
+			return nil, err
 		}
 	}
 
 	gui.GUI.Log("Settings Initialized")
-	return
+	return settings, nil
 }
 
 func (settings *Settings) createEmptySettings() (err error) {

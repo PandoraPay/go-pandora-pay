@@ -10,9 +10,10 @@ import (
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
-func createStoreNow(name, storeType string) (store *Store, err error) {
+func createStoreNow(name, storeType string) (*Store, error) {
 
 	var db store_db_interface.StoreDBInterface
+	var err error
 
 	switch storeType {
 	case "bolt":
@@ -26,11 +27,15 @@ func createStoreNow(name, storeType string) (store *Store, err error) {
 	}
 
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	store, err = createStore(name, db)
-	return
+	store, err := createStore(name, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return store, nil
 }
 
 func create_db() (err error) {

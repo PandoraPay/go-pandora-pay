@@ -46,7 +46,7 @@ func (self *WalletEncryption) Encrypt(newPassword string, difficulty int) (err e
 	return self.wallet.saveWalletEntire(false)
 }
 
-func (self *WalletEncryption) encryptData(input []byte) (out []byte, err error) {
+func (self *WalletEncryption) encryptData(input []byte) ([]byte, error) {
 	if self.Encrypted == ENCRYPTED_VERSION_ENCRYPTION_ARGON2 {
 		return self.encryptionCipher.Encrypt(input)
 	}
@@ -64,7 +64,7 @@ func (self *WalletEncryption) Decrypt(password string) (err error) {
 	return self.wallet.loadWallet(password)
 }
 
-func (self *WalletEncryption) decryptData(input []byte) (out []byte, err error) {
+func (self *WalletEncryption) decryptData(input []byte) ([]byte, error) {
 	if self.Encrypted == ENCRYPTED_VERSION_ENCRYPTION_ARGON2 {
 		return self.encryptionCipher.Decrypt(input)
 	}

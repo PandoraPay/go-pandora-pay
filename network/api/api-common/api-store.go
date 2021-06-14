@@ -187,21 +187,21 @@ func (apiStore *APIStore) openLoadTxHash(blockHeight uint64) (hash []byte, errfi
 	return
 }
 
-func (apiStore *APIStore) loadBlockComplete(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (out *block_complete.BlockComplete, err error) {
+func (apiStore *APIStore) loadBlockComplete(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*block_complete.BlockComplete, error) {
 
 	blk, err := apiStore.loadBlock(reader, hash)
 	if blk == nil || err != nil {
-		return
+		return nil, err
 	}
 
 	data := reader.Get("blockTxs" + strconv.FormatUint(blk.Height, 10))
 	if data == nil {
-		return
+		return nil, nil
 	}
 
 	txHashes := [][]byte{}
 	if err = json.Unmarshal(data, &txHashes); err != nil {
-		return
+		return nil, err
 	}
 
 	txs := make([]*transaction.Transaction, len(txHashes))
@@ -209,7 +209,7 @@ func (apiStore *APIStore) loadBlockComplete(reader store_db_interface.StoreDBTra
 		data = reader.Get("tx" + string(txHash))
 		txs[i] = &transaction.Transaction{}
 		if err = txs[i].Deserialize(helpers.NewBufferReader(data)); err != nil {
-			return
+			return nil, err
 		}
 	}
 
@@ -219,16 +219,16 @@ func (apiStore *APIStore) loadBlockComplete(reader store_db_interface.StoreDBTra
 	}, nil
 }
 
-func (apiStore *APIStore) loadBlockWithTxHashes(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (out *api_types.APIBlockWithTxs, err error) {
+func (apiStore *APIStore) loadBlockWithTxHashes(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*api_types.APIBlockWithTxs, error) {
 	blk, err := apiStore.loadBlock(reader, hash)
 	if blk == nil || err != nil {
-		return
+		return nil, err
 	}
 
 	txHashes := [][]byte{}
 	data := reader.Get("blockTxs" + strconv.FormatUint(blk.Height, 10))
 	if err = json.Unmarshal(data, &txHashes); err != nil {
-		return
+		return nil, err
 	}
 
 	txs := make([]helpers.HexBytes, len(txHashes))
@@ -242,27 +242,25 @@ func (apiStore *APIStore) loadBlockWithTxHashes(reader store_db_interface.StoreD
 	}, nil
 }
 
-func (apiStore *APIStore) loadBlockInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (blkInfo *info.BlockInfo, err error) {
+func (apiStore *APIStore) loadBlockInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*info.BlockInfo, error) {
 	data := reader.Get("blockInfo_ByHash" + string(hash))
 	if data == nil {
 		return nil, errors.New("BlockInfo was not found")
 	}
-	blkInfo = &info.BlockInfo{}
-	err = json.Unmarshal(data, blkInfo)
-	return
+	blkInfo := &info.BlockInfo{}
+	return blkInfo, json.Unmarshal(data, blkInfo)
 }
 
-func (apiStore *APIStore) loadTxInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (txInfo *info.TxInfo, err error) {
+func (apiStore *APIStore) loadTxInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*info.TxInfo, error) {
 	data := reader.Get("txInfo_ByHash" + string(hash))
 	if data == nil {
 		return nil, errors.New("BlockInfo was not found")
 	}
-	txInfo = &info.TxInfo{}
-	err = json.Unmarshal(data, txInfo)
-	return
+	txInfo := &info.TxInfo{}
+	return txInfo, json.Unmarshal(data, txInfo)
 }
 
-func (apiStore *APIStore) loadTokenInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (tokInfo *info.TokenInfo, err error) {
+func (apiStore *APIStore) loadTokenInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*info.TokenInfo, error) {
 	if len(hash) == 0 {
 		hash = config.NATIVE_TOKEN_FULL
 	}
@@ -270,12 +268,11 @@ func (apiStore *APIStore) loadTokenInfo(reader store_db_interface.StoreDBTransac
 	if data == nil {
 		return nil, errors.New("TokenInfo was not found")
 	}
-	tokInfo = &info.TokenInfo{}
-	err = json.Unmarshal(data, tokInfo)
-	return
+	tokInfo := &info.TokenInfo{}
+	return tokInfo, json.Unmarshal(data, tokInfo)
 }
 
-func (apiStore *APIStore) loadTx(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (tx *transaction.Transaction, txInfo *info.TxInfo, err error) {
+func (apiStore *APIStore) loadTx(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*transaction.Transaction, *info.TxInfo, error) {
 
 	hashStr := string(hash)
 	var data []byte
@@ -284,22 +281,23 @@ func (apiStore *APIStore) loadTx(reader store_db_interface.StoreDBTransactionInt
 		return nil, nil, errors.New("Tx not found")
 	}
 
-	tx = new(transaction.Transaction)
-	if err = tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
-		return
+	tx := &transaction.Transaction{}
+	if err := tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
+		return nil, nil, err
 	}
 
+	var txInfo *info.TxInfo
 	if config.SEED_WALLET_NODES_INFO {
 		if data = reader.Get("txInfo_ByHash" + hashStr); data == nil {
 			return nil, nil, errors.New("TxInfo was not found")
 		}
 		txInfo = &info.TxInfo{}
-		if err = json.Unmarshal(data, txInfo); err != nil {
-			return
+		if err := json.Unmarshal(data, txInfo); err != nil {
+			return nil, nil, err
 		}
 	}
 
-	return
+	return tx, txInfo, nil
 }
 
 func (apiStore *APIStore) loadTxHash(reader store_db_interface.StoreDBTransactionInterface, height uint64) ([]byte, error) {
@@ -311,14 +309,13 @@ func (apiStore *APIStore) loadTxHash(reader store_db_interface.StoreDBTransactio
 	return hash, nil
 }
 
-func (chain *APIStore) loadBlock(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (blk *block.Block, err error) {
+func (chain *APIStore) loadBlock(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*block.Block, error) {
 	blockData := reader.Get("block_ByHash" + string(hash))
 	if blockData == nil {
 		return nil, errors.New("Block was not found")
 	}
-	blk = &block.Block{BlockHeader: &block.BlockHeader{}}
-	err = blk.Deserialize(helpers.NewBufferReader(blockData))
-	return
+	blk := &block.Block{BlockHeader: &block.BlockHeader{}}
+	return blk, blk.Deserialize(helpers.NewBufferReader(blockData))
 }
 
 func CreateAPIStore(chain *blockchain.Blockchain) *APIStore {
