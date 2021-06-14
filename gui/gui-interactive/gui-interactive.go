@@ -29,6 +29,8 @@ type GUIInteractive struct {
 	info    *widgets.List
 	infoMap *sync.Map
 
+	tickerRender *time.Ticker
+
 	closed bool
 }
 
@@ -37,6 +39,7 @@ func (g *GUIInteractive) Close() {
 		return
 	}
 	g.closed = true
+	g.tickerRender.Stop()
 	ui.Clear()
 	ui.Close()
 	g.logger.GeneralLog.Close()
@@ -81,7 +84,8 @@ func CreateGUIInteractive() (*GUIInteractive, error) {
 
 	ui.Render(grid)
 
-	ticker := time.NewTicker(100 * time.Millisecond).C
+	g.tickerRender = time.NewTicker(100 * time.Millisecond)
+	ticker := g.tickerRender.C
 	go func() {
 
 		uiEvents := ui.PollEvents()
@@ -101,7 +105,10 @@ func CreateGUIInteractive() (*GUIInteractive, error) {
 				default:
 					g.cmdProcess(e)
 				}
-			case <-ticker:
+			case _, ok := <-ticker:
+				if !ok {
+					return
+				}
 				g.infoRender()
 				g.info2Render()
 				g.logsRender()
