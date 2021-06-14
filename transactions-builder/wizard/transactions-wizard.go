@@ -82,7 +82,8 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 	if err = tx.Verify(); err != nil {
 		return nil, err
 	}
-	return nil, err
+
+	return tx, nil
 }
 
 func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (*transaction.Transaction, error) {
