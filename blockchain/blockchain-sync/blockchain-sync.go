@@ -18,6 +18,7 @@ type BlockchainSyncData struct {
 type BlockchainSync struct {
 	syncData            *atomic.Value               //*BlockchainSyncData
 	UpdateSyncMulticast *multicast.MulticastChannel `json:"-"` //chan *BlockchainSyncData
+	updateCn            chan *BlockchainSyncData
 }
 
 func (self *BlockchainSync) GetSyncData() *BlockchainSyncData {
@@ -47,6 +48,8 @@ func (self *BlockchainSync) AddBlocksChanged(blocks uint32, propagateNotificatio
 
 	self.syncData.Store(newChainSyncData)
 
+	self.updateCn <- newChainSyncData
+
 	return newChainSyncData
 }
 
@@ -67,6 +70,8 @@ func (self *BlockchainSync) resetBlocksChanged(propagateNotification bool) *Bloc
 		self.UpdateSyncMulticast.BroadcastAwait(newChainSyncData)
 	}
 
+	self.updateCn <- newChainSyncData
+
 	return newChainSyncData
 }
 
@@ -83,7 +88,11 @@ func (self *BlockchainSync) start() {
 
 	recovery.SafeGo(func() {
 		for {
-			chainSyncData := self.syncData.Load().(*BlockchainSyncData)
+
+			chainSyncData, ok := <-self.updateCn
+			if !ok {
+				return
+			}
 
 			if chainSyncData.SyncTime != 0 {
 				gui.GUI.Info2Update("Sync", time.Unix(int64(chainSyncData.SyncTime), 0).Format("2006-01-02 15:04:05"))
@@ -91,7 +100,6 @@ func (self *BlockchainSync) start() {
 				gui.GUI.Info2Update("Sync", "FALSE")
 			}
 			gui.GUI.Info2Update("Sync Blocks", strconv.FormatUint(uint64(chainSyncData.BlocksChangedLastInterval), 10))
-			time.Sleep(2 * time.Second)
 		}
 	})
 }
@@ -101,6 +109,7 @@ func CreateBlockchainSync() (out *BlockchainSync) {
 	out = &BlockchainSync{
 		syncData:            &atomic.Value{},
 		UpdateSyncMulticast: multicast.NewMulticastChannel(),
+		updateCn:            make(chan *BlockchainSyncData),
 	}
 	out.syncData.Store(&BlockchainSyncData{})
 
