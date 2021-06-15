@@ -378,7 +378,6 @@ func (wallet *Wallet) updateAccountsChanges() {
 		wallet.Unlock()
 	}
 
-	return
 }
 
 func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.WalletAddress, error) {

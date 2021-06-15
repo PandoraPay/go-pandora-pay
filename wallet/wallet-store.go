@@ -98,7 +98,7 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 	})
 }
 
-func (wallet *Wallet) loadWallet(password string) error {
+func (wallet *Wallet) loadWallet(password string, first bool) error {
 	wallet.Lock()
 	defer wallet.Unlock()
 
@@ -157,15 +157,9 @@ func (wallet *Wallet) loadWallet(password string) error {
 
 			}
 
-			for _, addr := range wallet.Addresses {
-				wallet.forging.Wallet.AddWallet(addr.GetDelegatedStakePrivateKey(), addr.PublicKeyHash)
-				wallet.mempool.Wallet.AddWallet(addr.PublicKeyHash)
+			if !first {
+				wallet.walletLoaded()
 			}
-
-			wallet.setLoaded(true)
-			wallet.updateWallet()
-			globals.MainEvents.BroadcastEvent("wallet/loaded", wallet.Count)
-			gui.GUI.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
 
 		} else {
 			return errors.New("Error loading wallet ?")
@@ -174,10 +168,26 @@ func (wallet *Wallet) loadWallet(password string) error {
 	})
 }
 
+func (wallet *Wallet) walletLoaded() {
+
+	for _, addr := range wallet.Addresses {
+		wallet.forging.Wallet.AddWallet(addr.GetDelegatedStakePrivateKey(), addr.PublicKeyHash)
+		wallet.mempool.Wallet.AddWallet(addr.PublicKeyHash)
+	}
+
+	wallet.setLoaded(true)
+	wallet.updateWallet()
+	globals.MainEvents.BroadcastEvent("wallet/loaded", wallet.Count)
+	gui.GUI.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
+
+}
+
 func (wallet *Wallet) StartWallet() error {
 
 	wallet.Lock()
 	defer wallet.Unlock()
+
+	wallet.walletLoaded()
 
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 

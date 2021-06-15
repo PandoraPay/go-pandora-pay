@@ -61,7 +61,7 @@ func (self *WalletEncryption) createEncryptionCipher() (err error) {
 }
 
 func (self *WalletEncryption) Decrypt(password string) (err error) {
-	return self.wallet.loadWallet(password)
+	return self.wallet.loadWallet(password, false)
 }
 
 func (self *WalletEncryption) decryptData(input []byte) ([]byte, error) {

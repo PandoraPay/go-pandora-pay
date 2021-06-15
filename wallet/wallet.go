@@ -63,7 +63,7 @@ func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool) (*Wallet, 
 
 	wallet := createWallet(forging, mempool, nil)
 
-	if err := wallet.loadWallet(""); err != nil {
+	if err := wallet.loadWallet("", true); err != nil {
 		if err.Error() == "cipher: message authentication failed" {
 			return nil, nil
 		}
