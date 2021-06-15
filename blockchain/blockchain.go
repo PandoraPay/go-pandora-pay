@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/blockchain/blockchain-sync"
 	"pandora-pay/blockchain/blocks/block-complete"
 	difficulty "pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/blockchain/forging/forging-block-work"
@@ -27,7 +28,7 @@ import (
 
 type Blockchain struct {
 	ChainData                *atomic.Value //*BlockchainData
-	Sync                     *BlockchainSync
+	Sync                     *blockchain_sync.BlockchainSync
 	mempool                  *mempool.Mempool
 	wallet                   *wallet.Wallet
 	mutex                    *sync.Mutex //writing mutex
@@ -404,7 +405,7 @@ func CreateBlockchain(mempool *mempool.Mempool) (*Blockchain, error) {
 		mutex:                    &sync.Mutex{},
 		mempool:                  mempool,
 		updatesQueue:             createBlockchainUpdatesQueue(),
-		Sync:                     createBlockchainSync(),
+		Sync:                     blockchain_sync.CreateBlockchainSync(),
 		ForgingSolutionCn:        make(chan *block_complete.BlockComplete),
 		UpdateNewChain:           multicast.NewMulticastChannel(),
 		UpdateNewChainDataUpdate: multicast.NewMulticastChannel(),

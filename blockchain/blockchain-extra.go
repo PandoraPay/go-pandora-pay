@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
-	blockchain_types "pandora-pay/blockchain/blockchain-types"
+	blockchain_sync "pandora-pay/blockchain/blockchain-sync"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block-complete"
 	forging_block_work "pandora-pay/blockchain/forging/forging-block-work"
@@ -29,7 +29,7 @@ func (chain *Blockchain) GetChainData() *BlockchainData {
 
 func (chain *Blockchain) GetChainDataUpdate() *BlockchainDataUpdate {
 	chainData := chain.ChainData.Load().(*BlockchainData)
-	return &BlockchainDataUpdate{chainData, chain.Sync.syncData.Load().(*blockchain_types.BlockchainSyncData)}
+	return &BlockchainDataUpdate{chainData, chain.Sync.GetSyncData()}
 }
 
 func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
@@ -235,7 +235,7 @@ func (chain *Blockchain) InitForging() {
 				break
 			}
 
-			newSyncData := newSyncDataReceived.(*blockchain_types.BlockchainSyncData)
+			newSyncData := newSyncDataReceived.(*blockchain_sync.BlockchainSyncData)
 			if newSyncData.Sync {
 				chain.createNextBlockForForging(chain.GetChainData(), true)
 				break

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain"
-	blockchain_types "pandora-pay/blockchain/blockchain-types"
+	blockchain_sync "pandora-pay/blockchain/blockchain-sync"
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -22,7 +22,7 @@ type APICommon struct {
 	mempool        *mempool.Mempool
 	chain          *blockchain.Blockchain
 	localChain     *atomic.Value //*APIBlockchain
-	localChainSync *atomic.Value //*blockchain_types.BlockchainSyncData
+	localChainSync *atomic.Value //*blockchain_sync.BlockchainSyncData
 	ApiStore       *APIStore
 }
 
@@ -32,7 +32,7 @@ func (api *APICommon) GetBlockchain() ([]byte, error) {
 }
 
 func (api *APICommon) GetBlockchainSync() ([]byte, error) {
-	sync := api.localChainSync.Load().(*blockchain_types.BlockchainSyncData)
+	sync := api.localChainSync.Load().(*blockchain_sync.BlockchainSyncData)
 	return json.Marshal(sync)
 }
 
@@ -268,7 +268,7 @@ func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.Blockch
 }
 
 //make sure it is safe to read
-func (api *APICommon) readLocalBlockchainSync(newLocalSync *blockchain_types.BlockchainSyncData) {
+func (api *APICommon) readLocalBlockchainSync(newLocalSync *blockchain_sync.BlockchainSyncData) {
 	api.localChainSync.Store(newLocalSync)
 }
 
@@ -310,7 +310,7 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, api
 				break
 			}
 
-			newSyncData := newSyncDataReceived.(*blockchain_types.BlockchainSyncData)
+			newSyncData := newSyncDataReceived.(*blockchain_sync.BlockchainSyncData)
 			api.readLocalBlockchainSync(newSyncData)
 		}
 	})

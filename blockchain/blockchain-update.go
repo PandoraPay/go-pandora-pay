@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"pandora-pay/blockchain/accounts"
-	blockchain_types "pandora-pay/blockchain/blockchain-types"
+	blockchain_sync "pandora-pay/blockchain/blockchain-sync"
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -15,7 +15,7 @@ import (
 
 type BlockchainDataUpdate struct {
 	Update        *BlockchainData
-	ChainSyncData *blockchain_types.BlockchainSyncData
+	ChainSyncData *blockchain_sync.BlockchainSyncData
 }
 
 type BlockchainUpdate struct {
@@ -93,7 +93,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	hasAnySuccess := !queue.hasAnySuccess(updates[1:])
 
-	chainSyncData := queue.chain.Sync.addBlocksChanged(uint32(len(update.insertedBlocks)), hasAnySuccess)
+	chainSyncData := queue.chain.Sync.AddBlocksChanged(uint32(len(update.insertedBlocks)), hasAnySuccess)
 
 	if !queue.hasAnySuccess(updates[1:]) {
 
