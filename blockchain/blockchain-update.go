@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"pandora-pay/blockchain/accounts"
+	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -13,8 +14,8 @@ import (
 )
 
 type BlockchainDataUpdate struct {
-	Update   *BlockchainData
-	SyncTime uint64
+	Update        *BlockchainData
+	ChainSyncData *blockchain_types.BlockchainSyncData
 }
 
 type BlockchainUpdate struct {
@@ -90,22 +91,20 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		}
 	}
 
-	newSyncTime, syncResult := queue.chain.Sync.addBlocksChanged(uint32(len(update.insertedBlocks)), false)
+	hasAnySuccess := !queue.hasAnySuccess(updates[1:])
+
+	chainSyncData := queue.chain.Sync.addBlocksChanged(uint32(len(update.insertedBlocks)), hasAnySuccess)
 
 	if !queue.hasAnySuccess(updates[1:]) {
 
 		//create next block and the workers will be automatically reset
 		queue.chain.createNextBlockForForging(update.newChainData, queue.hasCalledByForging(updates))
 
-		if syncResult {
-			queue.chain.Sync.UpdateSyncMulticast.BroadcastAwait(newSyncTime)
-		}
-
 		queue.chain.UpdateNewChain.BroadcastAwait(update.newChainData.Height)
 
 		queue.chain.UpdateNewChainDataUpdate.BroadcastAwait(&BlockchainDataUpdate{
 			update.newChainData,
-			newSyncTime,
+			chainSyncData,
 		})
 
 		return true, nil

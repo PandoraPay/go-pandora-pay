@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block-complete"
 	forging_block_work "pandora-pay/blockchain/forging/forging-block-work"
@@ -20,7 +21,6 @@ import (
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"strconv"
-	"time"
 )
 
 func (chain *Blockchain) GetChainData() *BlockchainData {
@@ -29,8 +29,7 @@ func (chain *Blockchain) GetChainData() *BlockchainData {
 
 func (chain *Blockchain) GetChainDataUpdate() *BlockchainDataUpdate {
 	chainData := chain.ChainData.Load().(*BlockchainData)
-	syncTime := chain.Sync.GetSyncTime()
-	return &BlockchainDataUpdate{chainData, syncTime}
+	return &BlockchainDataUpdate{chainData, chain.Sync.syncData.Load().(*blockchain_types.BlockchainSyncData)}
 }
 
 func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
@@ -225,8 +224,23 @@ func (chain *Blockchain) InitForging() {
 	})
 
 	recovery.SafeGo(func() {
-		time.Sleep(1 * time.Second) //it must be 1 second later to be sure that the forger is listening
-		chain.createNextBlockForForging(chain.GetChainData(), true)
+
+		updateNewSync := chain.Sync.UpdateSyncMulticast.AddListener()
+
+		for {
+
+			newSyncDataReceived, ok := <-updateNewSync
+			if !ok {
+				break
+			}
+
+			newSyncData := newSyncDataReceived.(*blockchain_types.BlockchainSyncData)
+			if newSyncData.Sync {
+				chain.createNextBlockForForging(chain.GetChainData(), true)
+				break
+			}
+
+		}
 	})
 
 }
