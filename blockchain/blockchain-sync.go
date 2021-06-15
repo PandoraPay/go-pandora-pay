@@ -28,13 +28,13 @@ func (chainSync *BlockchainSync) addBlocksChanged(blocks uint32, propagateNotifi
 		BlocksChangedLastInterval: chainSyncData.BlocksChangedLastInterval + blocks,
 	}
 
-	if newChainSyncData.BlocksChangedLastInterval < 2 {
+	if newChainSyncData.BlocksChangedLastInterval < 3 {
 		newChainSyncData.SyncTime = uint64(time.Now().Unix())
 		newChainSyncData.Sync = true
 	}
 
 	if propagateNotification {
-		chainSync.UpdateSyncMulticast.Broadcast(newChainSyncData)
+		chainSync.UpdateSyncMulticast.BroadcastAwait(newChainSyncData)
 	}
 
 	return newChainSyncData
@@ -46,13 +46,13 @@ func (chainSync *BlockchainSync) resetBlocksChanged(propagateNotification bool) 
 
 	newChainSyncData := &blockchain_types.BlockchainSyncData{}
 
-	if chainSyncData.Sync {
+	if chainSyncData.BlocksChangedLastInterval < 3 {
 		newChainSyncData.Sync = chainSyncData.Sync
 		newChainSyncData.SyncTime = chainSyncData.SyncTime
 	}
 
 	if propagateNotification {
-		chainSync.UpdateSyncMulticast.Broadcast(newChainSyncData)
+		chainSync.UpdateSyncMulticast.BroadcastAwait(newChainSyncData)
 	}
 
 	return newChainSyncData
