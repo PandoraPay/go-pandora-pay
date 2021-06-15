@@ -67,8 +67,13 @@ func (network *Network) execute() {
 
 func (network *Network) syncNewConnections() {
 	recovery.SafeGo(func() {
+
+		cn := network.Websockets.UpdateNewConnectionMulticast.AddListener()
+		defer network.Websockets.UpdateNewConnectionMulticast.RemoveChannel(cn)
+
 		for {
-			data, ok := <-network.Websockets.UpdateNewConnectionMulticast.AddListener()
+
+			data, ok := <-cn
 			if !ok {
 				return
 			}

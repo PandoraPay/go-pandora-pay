@@ -7,6 +7,7 @@ import (
 
 type MulticastChannel struct {
 	listeners *atomic.Value //[]chan interface{}
+	count     int
 	sync.Mutex
 }
 
@@ -45,14 +46,16 @@ func (self *MulticastChannel) Broadcast(data interface{}) {
 
 }
 
-func (self *MulticastChannel) RemoveChannel(remove chan interface{}) bool {
+func (self *MulticastChannel) RemoveChannel(channel <-chan interface{}) bool {
+
 	self.Lock()
 	defer self.Unlock()
 
 	listeners := self.listeners.Load().([]chan interface{})
-	for i, channel := range listeners {
-		if channel == remove {
-			listeners = append(listeners[:i], listeners[:i+1]...)
+	for i, cn := range listeners {
+		if cn == channel {
+			close(cn)
+			listeners = append(listeners[:i], listeners[i+1:]...)
 			self.listeners.Store(listeners)
 			return true
 		}
@@ -69,7 +72,7 @@ func (self *MulticastChannel) CloseAll() {
 	for _, channel := range listeners {
 		close(channel)
 	}
-	self.listeners.Store(make([]chan interface{}, 0))
+	self.listeners.Store(make([]chan<- interface{}, 0))
 }
 
 func NewMulticastChannel() *MulticastChannel {

@@ -347,10 +347,11 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 func (wallet *Wallet) updateAccountsChanges() {
 
 	var err error
-	cn := wallet.updateAccounts.AddListener()
+	updateAccountsCn := wallet.updateAccounts.AddListener()
+	defer wallet.updateAccounts.RemoveChannel(updateAccountsCn)
 
 	for {
-		accsData, ok := <-cn
+		accsData, ok := <-updateAccountsCn
 		if !ok {
 			return
 		}

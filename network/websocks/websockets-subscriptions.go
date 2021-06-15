@@ -80,6 +80,7 @@ func (subs *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.Subscr
 func (subs *WebsocketSubscriptions) processSubscriptions() {
 
 	updateAccountsCn := subs.chain.UpdateAccounts.AddListener()
+	defer subs.chain.UpdateAccounts.RemoveChannel(updateAccountsCn)
 
 	var subsMap map[string]map[string]*connection.SubscriptionNotification
 

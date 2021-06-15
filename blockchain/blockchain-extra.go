@@ -225,11 +225,12 @@ func (chain *Blockchain) InitForging() {
 
 	recovery.SafeGo(func() {
 
-		updateNewSync := chain.Sync.UpdateSyncMulticast.AddListener()
+		updateNewSyncCn := chain.Sync.UpdateSyncMulticast.AddListener()
+		defer chain.Sync.UpdateSyncMulticast.RemoveChannel(updateNewSyncCn)
 
 		for {
 
-			newSyncDataReceived, ok := <-updateNewSync
+			newSyncDataReceived, ok := <-updateNewSyncCn
 			if !ok {
 				break
 			}

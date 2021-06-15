@@ -22,7 +22,9 @@ func listenEvents(this js.Value, args []js.Value) interface{} {
 	}
 
 	index := atomic.AddUint64(&subscriptionsIndex, 1)
-	channel := globals.MainEvents.AddListener()
+	channel, id := globals.MainEvents.AddListener()
+	defer globals.MainEvents.RemoveChannel(id)
+
 	callback := args[0]
 	var err error
 
@@ -63,12 +65,14 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 		}
 		callback := args[0]
 
-		accountsChannel := app.Network.Websockets.ApiWebsockets.AccountsChangesSubscriptionNotifications.AddListener()
+		accountsCn, id := app.Network.Websockets.ApiWebsockets.AccountsChangesSubscriptionNotifications.AddListener()
+		defer app.Network.Websockets.ApiWebsockets.AccountsChangesSubscriptionNotifications.RemoveChannel(id)
+
 		recovery.SafeGo(func() {
 
 			var err error
 			for {
-				dataValue, ok := <-accountsChannel
+				dataValue, ok := <-accountsCn
 				if !ok {
 					return
 				}

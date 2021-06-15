@@ -99,7 +99,9 @@ func (w *ForgingWallet) accountRemoved(addr *ForgingWalletAddress) {
 func (w *ForgingWallet) processUpdates() {
 
 	var err error
+
 	updateAccountsCn := w.updateAccounts.AddListener()
+	defer w.updateAccounts.RemoveChannel(updateAccountsCn)
 
 	for {
 		select {

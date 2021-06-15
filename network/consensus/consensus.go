@@ -21,6 +21,8 @@ func (consensus *Consensus) execute() {
 	recovery.SafeGo(func() {
 
 		updateNewChainUpdateListener := consensus.chain.UpdateNewChainDataUpdate.AddListener()
+		defer consensus.chain.UpdateNewChainDataUpdate.RemoveChannel(updateNewChainUpdateListener)
+
 		for {
 			newChainDataUpdateReceived, ok := <-updateNewChainUpdateListener
 			if !ok {
@@ -38,6 +40,8 @@ func (consensus *Consensus) execute() {
 	recovery.SafeGo(func() {
 
 		newTxCn := consensus.mempool.NewTransactionMulticast.AddListener()
+		defer consensus.mempool.NewTransactionMulticast.RemoveChannel(newTxCn)
+
 		for {
 			newTxReceived, ok := <-newTxCn
 			if !ok {

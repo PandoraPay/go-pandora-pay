@@ -123,6 +123,8 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 func (testnet *Testnet) run() {
 
 	updateChannel := testnet.chain.UpdateNewChain.AddListener()
+	defer testnet.chain.UpdateNewChain.RemoveChannel(updateChannel)
+
 	for {
 
 		blockHeightReceived, ok := <-updateChannel

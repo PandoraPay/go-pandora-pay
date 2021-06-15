@@ -285,6 +285,8 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, api
 	recovery.SafeGo(func() {
 
 		updateNewChainDataUpdateListener := api.chain.UpdateNewChainDataUpdate.AddListener()
+		defer api.chain.UpdateNewChainDataUpdate.RemoveChannel(updateNewChainDataUpdateListener)
+
 		for {
 			newChainDataUpdateReceived, ok := <-updateNewChainDataUpdateListener
 			if !ok {
@@ -300,6 +302,8 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, api
 
 	recovery.SafeGo(func() {
 		updateNewSync := api.chain.Sync.UpdateSyncMulticast.AddListener()
+		defer api.chain.Sync.UpdateSyncMulticast.RemoveChannel(updateNewSync)
+
 		for {
 			newSyncDataReceived, ok := <-updateNewSync
 			if !ok {
