@@ -70,18 +70,16 @@ func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, conse
 	websockets.Broadcast(name, out, consensusTypeAccepted)
 }
 
-func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnection) {
+func (websockets *Websockets) closedConnectionNow(conn *connection.AdvancedConnection) bool {
 
-	<-conn.Closed
+	conn.InitializedStatusMutex.Lock()
+	defer conn.InitializedStatusMutex.Unlock()
 
-	conn2, exists := websockets.AllAddresses.LoadAndDelete(conn.RemoteAddr)
-	if !exists || conn2 != conn {
-		return
+	if conn.InitializedStatus != connection.INITIALIZED_STATUS_INITIALIZED {
+		return false
 	}
 
-	if !conn.Initialized {
-		return
-	}
+	websockets.AllAddresses.LoadAndDelete(conn.RemoteAddr)
 
 	websockets.allListMutex.Lock()
 	all := websockets.allList.Load().([]*connection.AdvancedConnection)
@@ -98,6 +96,18 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 		}
 	}
 	websockets.allListMutex.Unlock()
+	conn.InitializedStatus = connection.INITIALIZED_STATUS_CLOSED
+
+	return true
+}
+
+func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnection) {
+
+	<-conn.Closed
+
+	if !websockets.closedConnectionNow(conn) {
+		return
+	}
 
 	websockets.subscriptions.websocketClosedCn <- conn
 
@@ -158,9 +168,12 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 
 	conn.Handshake = handshakeReceived
 
+	conn.InitializedStatusMutex.Lock()
 	websockets.allListMutex.Lock()
 	websockets.allList.Store(append(websockets.allList.Load().([]*connection.AdvancedConnection), conn))
 	websockets.allListMutex.Unlock()
+	conn.InitializedStatus = connection.INITIALIZED_STATUS_INITIALIZED
+	conn.InitializedStatusMutex.Unlock()
 
 	if conn.ConnectionType {
 		atomic.AddInt64(&websockets.serverSockets, +1)
@@ -168,9 +181,8 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 		atomic.AddInt64(&websockets.clients, +1)
 	}
 	totalSockets := atomic.AddInt64(&websockets.totalSockets, +1)
-	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
 
-	conn.Initialized = true
+	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
 
 	websockets.UpdateNewConnectionMulticast.Broadcast(conn)
 

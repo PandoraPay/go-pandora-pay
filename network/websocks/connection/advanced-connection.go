@@ -14,20 +14,29 @@ import (
 	"time"
 )
 
+type InitializedStatusType uint8
+
+const (
+	INITIALIZED_STATUS_CREATED InitializedStatusType = iota
+	INITIALIZED_STATUS_CLOSED
+	INITIALIZED_STATUS_INITIALIZED
+)
+
 type AdvancedConnection struct {
-	UUID           string
-	Conn           *websocket.Conn
-	Handshake      *ConnectionHandshake
-	Initialized    bool
-	RemoteAddr     string
-	answerCounter  uint32
-	Closed         chan struct{}
-	IsClosed       *abool.AtomicBool
-	getMap         map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
-	answerMap      map[uint32]chan *AdvancedConnectionAnswer
-	answerMapLock  *sync.RWMutex
-	Subscriptions  *Subscriptions
-	ConnectionType bool
+	UUID                   string
+	Conn                   *websocket.Conn
+	Handshake              *ConnectionHandshake
+	RemoteAddr             string
+	answerCounter          uint32
+	Closed                 chan struct{}
+	InitializedStatus      InitializedStatusType //use the mutex
+	InitializedStatusMutex *sync.Mutex
+	IsClosed               *abool.AtomicBool
+	getMap                 map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
+	answerMap              map[uint32]chan *AdvancedConnectionAnswer
+	answerMapLock          *sync.RWMutex
+	Subscriptions          *Subscriptions
+	ConnectionType         bool
 }
 
 func (c *AdvancedConnection) Close(reason string) error {
@@ -250,17 +259,19 @@ func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, getMap ma
 	}
 
 	advancedConnection := &AdvancedConnection{
-		UUID:           u.String(),
-		Conn:           conn,
-		Handshake:      nil,
-		RemoteAddr:     remoteAddr,
-		Closed:         make(chan struct{}),
-		IsClosed:       abool.New(),
-		answerCounter:  0,
-		getMap:         getMap,
-		answerMap:      make(map[uint32]chan *AdvancedConnectionAnswer),
-		answerMapLock:  &sync.RWMutex{},
-		ConnectionType: connectionType,
+		UUID:                   u.String(),
+		Conn:                   conn,
+		Handshake:              nil,
+		RemoteAddr:             remoteAddr,
+		Closed:                 make(chan struct{}),
+		InitializedStatus:      INITIALIZED_STATUS_CREATED,
+		InitializedStatusMutex: &sync.Mutex{},
+		IsClosed:               abool.New(),
+		answerCounter:          0,
+		getMap:                 getMap,
+		answerMap:              make(map[uint32]chan *AdvancedConnectionAnswer),
+		answerMapLock:          &sync.RWMutex{},
+		ConnectionType:         connectionType,
 	}
 	advancedConnection.Subscriptions = CreateSubscriptions(advancedConnection, newSubscriptionCn, removeSubscriptionCn)
 	return advancedConnection, nil
