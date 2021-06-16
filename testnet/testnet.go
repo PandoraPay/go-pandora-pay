@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/config"
 	"pandora-pay/config/stake"
@@ -102,15 +101,15 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 		sum += amount
 	}
 
-	var tx *transaction.Transaction
-	if tx, err = testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{}); err != nil {
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{})
+	if err != nil {
 		return
 	}
 
 	gui.GUI.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
 
-	var result bool
-	if result, err = testnet.mempool.AddTxToMemPool(tx, blockHeight, true); err != nil {
+	result, err := testnet.mempool.AddTxToMemPool(tx, blockHeight, true)
+	if err != nil {
 		return
 	}
 	if !result {

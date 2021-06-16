@@ -100,9 +100,9 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		//create next block and the workers will be automatically reset
 		queue.chain.createNextBlockForForging(update.newChainData, queue.hasCalledByForging(updates))
 
-		queue.chain.UpdateNewChain.BroadcastAwait(update.newChainData.Height)
+		queue.chain.UpdateNewChain.Broadcast(update.newChainData.Height)
 
-		queue.chain.UpdateNewChainDataUpdate.BroadcastAwait(&BlockchainDataUpdate{
+		queue.chain.UpdateNewChainDataUpdate.Broadcast(&BlockchainDataUpdate{
 			update.newChainData,
 			chainSyncData,
 		})

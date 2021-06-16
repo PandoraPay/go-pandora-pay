@@ -88,6 +88,9 @@ func (worker *mempoolWorker) processing(
 					}
 
 					if txMap[tx.Tx.Bloom.HashStr] {
+						if newAddTx != nil && newAddTx.Result != nil {
+							newAddTx.Result <- false
+						}
 						continue
 					}
 					txMap[tx.Tx.Bloom.HashStr] = true
