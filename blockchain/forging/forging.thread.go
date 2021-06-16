@@ -69,10 +69,7 @@ func (thread *ForgingThread) startForging() {
 			}
 
 			for i := 0; i < thread.threads; i++ {
-				select {
-				case thread.workers[i].suspendCn <- struct{}{}:
-				default:
-				}
+				thread.workers[i].suspendCn <- struct{}{}
 			}
 
 			if err = thread.publishSolution(solution); err != nil {

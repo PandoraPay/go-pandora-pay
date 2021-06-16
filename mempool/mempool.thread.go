@@ -50,7 +50,10 @@ func (worker *mempoolWorker) processing(
 				listIndex = 0
 				txMap = make(map[string]bool)
 			}
-		case <-suspendProcessingCn:
+		case _, ok := <-suspendProcessingCn:
+			if !ok {
+				return
+			}
 			continue
 		}
 		if work == nil {
@@ -78,9 +81,9 @@ func (worker *mempoolWorker) processing(
 
 					if listIndex == len(txList) {
 						select {
-						case _, _ = <-suspendProcessingCn:
+						case <-suspendProcessingCn:
 							return nil
-						case newAddTx, _ = <-addTransactionCn:
+						case newAddTx = <-addTransactionCn:
 							tx = newAddTx.Tx
 						}
 					} else {
@@ -89,56 +92,53 @@ func (worker *mempoolWorker) processing(
 						newAddTx = nil
 					}
 
-					if txMap[tx.Tx.Bloom.HashStr] {
-						if newAddTx != nil && newAddTx.Result != nil {
-							newAddTx.Result <- false
-						}
-						continue
-					}
-					txMap[tx.Tx.Bloom.HashStr] = true
+					result := false
 
-					if err = tx.Tx.IncludeTransaction(work.chainHeight, accs, toks); err != nil {
+					if !txMap[tx.Tx.Bloom.HashStr] {
 
-						accs.Rollback()
-						toks.Rollback()
+						txMap[tx.Tx.Bloom.HashStr] = true
 
-						if newAddTx != nil {
-							if newAddTx.Result != nil {
-								newAddTx.Result <- false
+						if err = tx.Tx.IncludeTransaction(work.chainHeight, accs, toks); err != nil {
+
+							accs.Rollback()
+							toks.Rollback()
+
+							if newAddTx == nil {
+								//removing
+								//this is done because listIndex was incremented already before
+								txList = append(txList[:listIndex-1], txList[listIndex:]...)
+								listIndex--
+								delete(txMap, tx.Tx.Bloom.HashStr)
+
+								removedFromListCn <- tx
 							}
+
 						} else {
-							//removing
-							//this is done because listIndex was incremented already before
-							txList = append(txList[:listIndex-1], txList[listIndex:]...)
-							listIndex--
-							delete(txMap, tx.Tx.Bloom.HashStr)
 
-							removedFromListCn <- tx
-						}
+							result = true
 
-					} else {
+							if work.result.totalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
 
-						if work.result.totalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
+								work.result.totalSize += tx.Tx.Bloom.Size
+								work.result.txs.Store(append(work.result.txs.Load().([]*mempoolTx), tx))
 
-							work.result.totalSize += tx.Tx.Bloom.Size
-							work.result.txs.Store(append(work.result.txs.Load().([]*mempoolTx), tx))
-
-							accs.CommitChanges()
-							toks.CommitChanges()
-						}
-
-						if newAddTx != nil {
-
-							txList = append(txList, newAddTx.Tx)
-							listIndex += 1
-
-							if newAddTx.Result != nil {
-								newAddTx.Result <- true
+								accs.CommitChanges()
+								toks.CommitChanges()
 							}
 
-							addToListCn <- newAddTx.Tx
+							if newAddTx != nil {
+								txList = append(txList, newAddTx.Tx)
+								listIndex += 1
+
+								addToListCn <- newAddTx.Tx
+							}
+
 						}
 
+					}
+
+					if newAddTx != nil && newAddTx.Result != nil {
+						newAddTx.Result <- result
 					}
 
 				}

@@ -33,8 +33,8 @@ type Mempool struct {
 	NewTransactionMulticast *multicast.MulticastChannel `json:"-"`
 }
 
-func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, propagateToSockets bool) (bool, error) {
-	result, err := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, propagateToSockets)
+func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, propagateToSockets, awaitAnswer bool) (bool, error) {
+	result, err := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, propagateToSockets, awaitAnswer)
 	if err != nil {
 		return false, err
 	}
@@ -110,7 +110,7 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 	return true, finalTxs, nil
 }
 
-func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, propagateToSockets bool) ([]bool, error) {
+func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, propagateToSockets, awaitAnswer bool) ([]bool, error) {
 
 	_, finalTxs, err := mempool.processTxsToMemPool(txs, height)
 	if err != nil {
@@ -121,12 +121,14 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 	out := make([]bool, len(finalTxs))
 	for i, tx := range finalTxs {
 		if tx != nil {
-			answerCn := make(chan bool)
-			mempool.AddTransactionCn <- &MempoolWorkerAddTx{
-				Tx:     tx,
-				Result: answerCn,
+
+			if awaitAnswer {
+				answerCn := make(chan bool)
+				mempool.AddTransactionCn <- &MempoolWorkerAddTx{tx, answerCn}
+				out[i] = <-answerCn
+			} else {
+				mempool.AddTransactionCn <- &MempoolWorkerAddTx{tx, nil}
 			}
-			out[i] = <-answerCn
 		} else {
 			out[i] = false
 		}
@@ -135,7 +137,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 	if propagateToSockets {
 		for i, result := range out {
 			if result {
-				mempool.NewTransactionMulticast.Broadcast(finalTxs[i].Tx)
+				mempool.NewTransactionMulticast.BroadcastAwait(finalTxs[i].Tx)
 			}
 		}
 	}

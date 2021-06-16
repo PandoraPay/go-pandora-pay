@@ -156,7 +156,10 @@ func (worker *ForgingWorkerThread) forge() {
 				delete(walletsStakable, publicKeyHashStr)
 			}
 			validateWork()
-		case <-waitCn:
+		case _, ok := <-waitCn:
+			if !ok {
+				return
+			}
 		}
 
 		if work == nil || len(walletsStakable) == 0 {

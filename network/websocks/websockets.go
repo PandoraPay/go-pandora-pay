@@ -184,7 +184,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 
 	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
 
-	websockets.UpdateNewConnectionMulticast.Broadcast(conn)
+	websockets.UpdateNewConnectionMulticast.BroadcastAwait(conn)
 
 	return nil
 }

@@ -130,7 +130,7 @@ func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, 
 		return nil, err
 	}
 
-	inserted, err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true)
+	inserted, err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, true)
 	if err != nil {
 		return nil, err
 	}

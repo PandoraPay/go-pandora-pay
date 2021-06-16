@@ -86,7 +86,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		if err := tx.BloomExtraNow(true); err != nil {
 			return false, err
 		}
-		if _, err := queue.chain.mempool.AddTxToMemPool(tx, update.newChainData.Height, false); err != nil {
+		if _, err := queue.chain.mempool.AddTxToMemPool(tx, update.newChainData.Height, false, false); err != nil {
 			return false, err
 		}
 	}
@@ -100,9 +100,9 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		//create next block and the workers will be automatically reset
 		queue.chain.createNextBlockForForging(update.newChainData, queue.hasCalledByForging(updates))
 
-		queue.chain.UpdateNewChain.Broadcast(update.newChainData.Height)
+		queue.chain.UpdateNewChain.BroadcastAwait(update.newChainData.Height)
 
-		queue.chain.UpdateNewChainDataUpdate.Broadcast(&BlockchainDataUpdate{
+		queue.chain.UpdateNewChainDataUpdate.BroadcastAwait(&BlockchainDataUpdate{
 			update.newChainData,
 			chainSyncData,
 		})

@@ -74,7 +74,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		if propagate {
-			result, err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true)
+			result, err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true)
 			if err != nil {
 				return err
 			}
@@ -147,7 +147,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		if propagate {
-			result, err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true)
+			result, err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true)
 			if err != nil {
 				return err
 			}
@@ -209,7 +209,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		if propagate {
-			result, err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true)
+			result, err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true)
 			if err != nil {
 				return err
 			}

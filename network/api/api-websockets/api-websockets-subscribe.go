@@ -23,7 +23,7 @@ func (api *APIWebsockets) subscribedNotificationReceived(conn *connection.Advanc
 		return nil, err
 	}
 
-	api.AccountsChangesSubscriptionNotifications.Broadcast(notification)
+	api.AccountsChangesSubscriptionNotifications.BroadcastAwait(notification)
 	return nil, nil
 }
 

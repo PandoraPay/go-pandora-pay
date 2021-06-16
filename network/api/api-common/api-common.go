@@ -240,7 +240,7 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction) ([]byte, er
 	if err := tx.BloomAll(); err != nil {
 		return nil, err
 	}
-	result, err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true)
+	result, err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, true)
 	if err != nil {
 		return nil, err
 	}
