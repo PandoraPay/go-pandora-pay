@@ -50,6 +50,8 @@ func (worker *mempoolWorker) processing(
 				listIndex = 0
 				txMap = make(map[string]bool)
 			}
+		case <-suspendProcessingCn:
+			continue
 		}
 		if work == nil {
 			continue
