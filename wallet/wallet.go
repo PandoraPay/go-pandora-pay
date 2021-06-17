@@ -3,14 +3,11 @@ package wallet
 import (
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/config"
-	"pandora-pay/config/globals"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
 	wallet_address "pandora-pay/wallet/address"
-	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -79,37 +76,6 @@ func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool) (*Wallet, 
 	}
 
 	return wallet, nil
-}
-
-func (wallet *Wallet) ProcessWalletArguments() (err error) {
-
-	if globals.Arguments["--wallet-encrypt"] != nil {
-
-		v := strings.Split(globals.Arguments["--wallet-encrypt"].(string), ",")
-
-		var diff int
-		if diff, err = strconv.Atoi(v[1]); err != nil {
-			return
-		}
-
-		if err = wallet.Encryption.Encrypt(v[0], diff); err != nil {
-			return
-		}
-	}
-
-	if globals.Arguments["--wallet-decrypt"] != nil {
-		if err = wallet.loadWallet(globals.Arguments["--wallet-encrypt"].(string), true); err != nil {
-			return
-		}
-	}
-
-	if globals.Arguments["--wallet-remove-encryption"] == true {
-		if err = wallet.Encryption.RemoveEncryption(); err != nil {
-			return
-		}
-	}
-
-	return
 }
 
 func (wallet *Wallet) InitializeWallet(updateAccounts *multicast.MulticastChannel) {

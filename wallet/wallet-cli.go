@@ -19,6 +19,63 @@ import (
 	"strconv"
 )
 
+func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, nonce uint64, path string) error {
+
+	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+
+		accs := accounts.NewAccounts(reader)
+		var acc *account.Account
+		if acc, err = accs.GetAccount(addr.PublicKeyHash, chainHeight); err != nil {
+			return
+		}
+
+		if nonce == 0 && acc != nil {
+			nonce = wallet.mempool.GetNonce(addr.PublicKeyHash, acc.Nonce)
+		}
+
+		var delegatedStake *wallet_address.WalletAddressDelegatedStake
+		if delegatedStake, err = addr.DeriveDelegatedStake(uint32(nonce)); err != nil {
+			return
+		}
+
+		gui.GUI.OutputWrite("Delegated stake:")
+		gui.GUI.OutputWrite("   PublicKeyHash", delegatedStake.PublicKeyHash)
+		gui.GUI.OutputWrite("   PrivateKey", delegatedStake.PrivateKey.Key)
+
+		if path != "" {
+
+			var f *os.File
+			if f, err = os.Create(path + ".delegatedStake"); err != nil {
+				return
+			}
+
+			defer f.Close()
+
+			delegatedStakeOut := struct {
+				DelegatedStakePublicKeyHash helpers.HexBytes
+				AddressPublicKeyHash        helpers.HexBytes
+			}{
+				delegatedStake.PublicKeyHash,
+				addr.PublicKeyHash,
+			}
+
+			var marshal []byte
+			if marshal, err = json.Marshal(delegatedStakeOut); err != nil {
+				return
+			}
+
+			if _, err = fmt.Fprint(f, string(marshal)); err != nil {
+				return errors.New("Error writing into file")
+			}
+
+		}
+
+		return
+	})
+}
+
 func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 
 	gui.GUI.OutputWrite("Wallet")
@@ -276,63 +333,12 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-			chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
-
-			accs := accounts.NewAccounts(reader)
-			var acc *account.Account
-			if acc, err = accs.GetAccount(addr.PublicKeyHash, chainHeight); err != nil {
-				return
-			}
-
-			if nonce == 0 && acc != nil {
-				nonce = wallet.mempool.GetNonce(addr.PublicKeyHash, acc.Nonce)
-			}
-
-			var delegatedStake *wallet_address.WalletAddressDelegatedStake
-			if delegatedStake, err = addr.DeriveDelegatedStake(uint32(nonce)); err != nil {
-				return
-			}
-
-			gui.GUI.OutputWrite("Delegated stake:")
-			gui.GUI.OutputWrite("   PublicKeyHash", delegatedStake.PublicKeyHash)
-			gui.GUI.OutputWrite("   PrivateKey", delegatedStake.PrivateKey.Key)
-
-			str, ok := gui.GUI.OutputReadString("Path to export to a file")
-			if !ok {
-				return
-			}
-
-			if str != "" {
-				var f *os.File
-				if f, err = os.Create(str + ".delegatedStake"); err != nil {
-					return
-				}
-
-				defer f.Close()
-
-				delegatedStakeOut := struct {
-					DelegatedStakePublicKeyHash helpers.HexBytes
-					AddressPublicKeyHash        helpers.HexBytes
-				}{
-					delegatedStake.PublicKeyHash,
-					addr.PublicKeyHash,
-				}
-
-				var marshal []byte
-				if marshal, err = json.Marshal(delegatedStakeOut); err != nil {
-					return
-				}
-
-				if _, err = fmt.Fprint(f, string(marshal)); err != nil {
-					return errors.New("Error writing into file")
-				}
-
-			}
-
+		path, ok := gui.GUI.OutputReadString("Path to export to a file")
+		if !ok {
 			return
-		})
+		}
+
+		return wallet.deriveDelegatedStake(addr, nonce, path)
 
 	}
 
