@@ -156,10 +156,7 @@ func (worker *ForgingWorkerThread) forge() {
 				delete(walletsStakable, publicKeyHashStr)
 			}
 			validateWork()
-		case _, ok := <-waitCn:
-			if !ok {
-				return
-			}
+		case <-waitCn:
 		}
 
 		if work == nil || len(walletsStakable) == 0 {
@@ -210,7 +207,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 				} else {
 					// for debugging only
-					//gui.Log(hex.EncodeToString(kernelHash), strconv.FormatUint(timestamp, 10 ))
+					// gui.GUI.Log(hex.EncodeToString(kernelHash), strconv.FormatUint(timestamp, 10 ))
 				}
 
 			}

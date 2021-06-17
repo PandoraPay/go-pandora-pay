@@ -128,6 +128,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 				out[i] = <-answerCn
 			} else {
 				mempool.AddTransactionCn <- &MempoolWorkerAddTx{tx, nil}
+				out[i] = true
 			}
 		} else {
 			out[i] = false
