@@ -102,6 +102,10 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 	wallet.Lock()
 	defer wallet.Unlock()
 
+	if wallet.loaded {
+		return errors.New("Wallet was already loaded!")
+	}
+
 	wallet.clearWallet()
 
 	return store.StoreWallet.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {

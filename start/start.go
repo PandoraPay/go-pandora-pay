@@ -61,6 +61,10 @@ func startMain() {
 	if app.Wallet, err = wallet.CreateWallet(app.Forging, app.Mempool); err != nil {
 		return
 	}
+	if err = app.Wallet.ProcessWalletArguments(); err != nil {
+		return
+	}
+
 	globals.MainEvents.BroadcastEvent("main", "wallet initialized")
 	app.Wallet.InitializeWallet(app.Chain.UpdateAccounts)
 
