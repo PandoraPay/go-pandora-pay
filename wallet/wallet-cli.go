@@ -19,7 +19,7 @@ import (
 	"strconv"
 )
 
-func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, nonce uint64, path string) error {
+func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, nonce uint64, path string, print bool) error {
 
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -40,9 +40,11 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 			return
 		}
 
-		gui.GUI.OutputWrite("Delegated stake:")
-		gui.GUI.OutputWrite("   PublicKeyHash", delegatedStake.PublicKeyHash)
-		gui.GUI.OutputWrite("   PrivateKey", delegatedStake.PrivateKey.Key)
+		if print {
+			gui.GUI.OutputWrite("Delegated stake:")
+			gui.GUI.OutputWrite("   PublicKeyHash", delegatedStake.PublicKeyHash)
+			gui.GUI.OutputWrite("   PrivateKey", delegatedStake.PrivateKey.Key)
+		}
 
 		if path != "" {
 
@@ -338,7 +340,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		return wallet.deriveDelegatedStake(addr, nonce, path)
+		return wallet.deriveDelegatedStake(addr, nonce, path, true)
 
 	}
 

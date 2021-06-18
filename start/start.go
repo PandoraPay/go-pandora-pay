@@ -90,6 +90,10 @@ func startMain() {
 	app.TransactionsBuilder = transactions_builder.TransactionsBuilderInit(app.Wallet, app.Mempool, app.Chain)
 	globals.MainEvents.BroadcastEvent("main", "transactions builder initialized")
 
+	if globals.Arguments["--exit"] == true {
+		return
+	}
+
 	if globals.Arguments["--new-devnet"] == true {
 		myTestnet := testnet.TestnetInit(app.Wallet, app.Mempool, app.Chain, app.TransactionsBuilder)
 		globals.Data["testnet"] = myTestnet

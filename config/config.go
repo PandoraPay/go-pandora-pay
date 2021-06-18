@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"math/big"
 	"math/rand"
 	"pandora-pay/config/globals"
@@ -89,18 +90,20 @@ func StartConfig() {
 
 func InitConfig() (err error) {
 
-	if globals.Arguments["--testnet"] == true {
+	if globals.Arguments["--network"] == "mainet" {
+
+	} else if globals.Arguments["--network"] == "testnet" {
 		NETWORK_SELECTED = TEST_NET_NETWORK_BYTE
 		NETWORK_SELECTED_SEEDS = TEST_NET_SEED_NODES
 		NETWORK_SELECTED_NAME = TEST_NET_NETWORK_NAME
 		NETWORK_SELECTED_BYTE_PREFIX = TEST_NET_NETWORK_BYTE_PREFIX
-	}
-
-	if globals.Arguments["--devnet"] == true {
+	} else if globals.Arguments["--network"] == "devnet" {
 		NETWORK_SELECTED = DEV_NET_NETWORK_BYTE
 		NETWORK_SELECTED_SEEDS = DEV_NET_SEED_NODES
 		NETWORK_SELECTED_NAME = DEV_NET_NETWORK_NAME
 		NETWORK_SELECTED_BYTE_PREFIX = DEV_NET_NETWORK_BYTE_PREFIX
+	} else {
+		return errors.New("selected --network is invalid. Accepted only: mainet, testnet, devnet")
 	}
 
 	if globals.Arguments["--debug"] == true {

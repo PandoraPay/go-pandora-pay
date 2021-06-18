@@ -183,7 +183,6 @@ func (g *GUIInteractive) outputRead(text string) <-chan string {
 	g.cmd.Rows = append(g.cmd.Rows, text)
 	g.cmd.Rows = append(g.cmd.Rows, "-> ")
 	g.cmd.SelectedRow = len(g.cmd.Rows) - 1
-	g.cmd.ScrollTop()
 	g.cmd.Unlock()
 
 	cn := make(chan string)

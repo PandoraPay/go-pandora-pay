@@ -13,7 +13,7 @@ The main design pattern that has been taken in consideration is to be **dead-sim
 
 ### Running your own devnet
 
-`--debugging --devnet --new-devnet --tcp-server-port="5231" --set-genesis="file"  --staking`
+`--debugging --network="devnet" --new-devnet --tcp-server-port="5231" --set-genesis="file"  --staking`
 
 ### Running the node as Tor Hidden Server
 1. Install Tor

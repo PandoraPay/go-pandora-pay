@@ -9,8 +9,8 @@ import (
 
 func (wallet *Wallet) ProcessWalletArguments() (err error) {
 
-	if globals.Arguments["--wallet-encrypt"] != nil {
-		v := strings.Split(globals.Arguments["--wallet-encrypt"].(string), ",")
+	if str := globals.Arguments["--wallet-encrypt"]; str != nil {
+		v := strings.Split(str.(string), ",")
 
 		var diff int
 		if diff, err = strconv.Atoi(v[1]); err != nil {
@@ -59,7 +59,7 @@ func (wallet *Wallet) ProcessWalletArguments() (err error) {
 			return
 		}
 
-		if err = wallet.deriveDelegatedStake(addr, nonce, v[2]); err != nil {
+		if err = wallet.deriveDelegatedStake(addr, nonce, v[2], false); err != nil {
 			return
 		}
 
