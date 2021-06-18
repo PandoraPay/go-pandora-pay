@@ -72,8 +72,7 @@ var (
 )
 
 var (
-	INSTANCE        = ""
-	INSTANCE_NUMBER = 0
+	INSTANCE = ""
 )
 
 var (

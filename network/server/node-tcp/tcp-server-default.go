@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"pandora-pay/blockchain"
-	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
@@ -39,10 +38,7 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 		return nil, errors.New("Port is not a valid port number")
 	}
 
-	if config.INSTANCE != "" {
-		portNumber += config.INSTANCE_NUMBER
-		port = strconv.Itoa(portNumber)
-	}
+	port = strconv.Itoa(portNumber)
 
 	var address string
 	if globals.Arguments["--tor-onion"] != nil {

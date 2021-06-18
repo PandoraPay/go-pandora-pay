@@ -13,6 +13,7 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/wallet"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -87,60 +88,132 @@ func CreateNewGenesisBlock() (*block.Block, error) {
 	return &blk, nil
 }
 
-func GenesisInit(wallet *wallet.Wallet) (err error) {
+func createNewGenesis(v []string) (err error) {
+
+	var file *os.File
+	if file, err = os.Create(v[0]); err != nil {
+		return
+	}
+
+	defer file.Close()
+
+	GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
+	GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
+
+	amount := 100 * stake.GetRequiredStake(0)
+	for i := 1; i < len(v); i++ {
+
+		if err = func() (err error) {
+
+			var file2 *os.File
+			if file2, err = os.OpenFile(v[i], os.O_RDONLY, 0666); err != nil {
+				return
+			}
+
+			defer file2.Close()
+
+			scanner := bufio.NewScanner(file2)
+			scanner.Scan()
+
+			delegatedStakeOutput := &wallet.DelegatedStakeOutput{}
+			if err = json.Unmarshal(scanner.Bytes(), delegatedStakeOutput); err != nil {
+				return
+			}
+
+			GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
+				PublicKeyHash:               delegatedStakeOutput.AddressPublicKeyHash,
+				Amount:                      amount,
+				DelegatedStakePublicKeyHash: delegatedStakeOutput.DelegatedStakePublicKeyHash,
+			})
+
+			return
+		}(); err != nil {
+			return
+		}
+
+	}
 
 	var data []byte
+	if data, err = json.Marshal(GenesisData); err != nil {
+		return
+	}
+
+	if _, err = file.Write(data); err != nil {
+		return
+	}
+
+	return
+}
+
+func createSimpleGenesis(wallet *wallet.Wallet) (err error) {
+
+	var file *os.File
+
+	if globals.Arguments["--new-devnet"] == true {
+		return errors.New("Genesis Data was not found and --new-devnet is missing")
+	}
+
+	GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
+	GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
+
+	var walletPublicKeyHash, delegatedStakePublicKeyHash []byte
+	if walletPublicKeyHash, delegatedStakePublicKeyHash, err = wallet.GetFirstWalletForDevnetGenesisAirdrop(); err != nil {
+		return
+	}
+
+	amount := 100 * stake.GetRequiredStake(0)
+	GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
+		PublicKeyHash:               walletPublicKeyHash,
+		Amount:                      amount,
+		DelegatedStakePublicKeyHash: delegatedStakePublicKeyHash,
+	})
+
+	if file, err = os.OpenFile("./genesis.data", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
+		return
+	}
+	defer file.Close()
+
+	var data []byte
+	if data, err = json.Marshal(GenesisData); err != nil {
+		return
+	}
+
+	if _, err = file.Write(data); err != nil {
+		return
+	}
+
+	return
+}
+
+func GenesisInit(w *wallet.Wallet) (err error) {
 
 	if GenesisData, err = getGenesis(); err != nil {
 		return
 	}
 
-	if globals.Arguments["--set-genesis"] != nil {
-		data = []byte(globals.Arguments["--set-genesis"].(string))
+	if dataArguments := globals.Arguments["--create-new-genesis"]; dataArguments != nil {
+		if err = createNewGenesis(strings.Split(dataArguments.(string), ",")); err != nil {
+			return
+		}
+	}
+
+	if dataArgument := globals.Arguments["--set-genesis"]; dataArgument != nil {
+
+		data := []byte(dataArgument.(string))
 
 		if string(data) == "file" && runtime.GOARCH != "wasm" {
 
-			var file *os.File
 			if _, err = os.Stat("./genesis.data"); os.IsNotExist(err) {
-
-				if globals.Arguments["--new-devnet"] == false {
-					return errors.New("Genesis Data was not found and --new-devnet is missing")
-				}
-
-				GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
-				GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
-
-				var walletPublicKeyHash, delegatedStakePublicKeyHash []byte
-				if walletPublicKeyHash, delegatedStakePublicKeyHash, err = wallet.GetFirstWalletForDevnetGenesisAirdrop(); err != nil {
-					return
-				}
-
-				amount := 100 * stake.GetRequiredStake(0)
-				GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-					PublicKeyHash:               walletPublicKeyHash,
-					Amount:                      amount,
-					DelegatedStakePublicKeyHash: delegatedStakePublicKeyHash,
-				})
-
-				if file, err = os.OpenFile("./genesis.data", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
-					return
-				}
-
-				if data, err = json.Marshal(GenesisData); err != nil {
-					return
-				}
-
-				if _, err = file.Write(data); err != nil {
-					return
-				}
-				if err = file.Close(); err != nil {
+				if err = createSimpleGenesis(w); err != nil {
 					return
 				}
 			}
 
+			var file *os.File
 			if file, err = os.OpenFile("./genesis.data", os.O_RDONLY, 0666); err != nil {
 				return
 			}
+			defer file.Close()
 
 			scanner := bufio.NewScanner(file)
 			scanner.Scan()

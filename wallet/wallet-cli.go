@@ -12,7 +12,6 @@ import (
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	wallet_address "pandora-pay/wallet/address"
@@ -55,10 +54,7 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 
 			defer f.Close()
 
-			delegatedStakeOut := struct {
-				DelegatedStakePublicKeyHash helpers.HexBytes
-				AddressPublicKeyHash        helpers.HexBytes
-			}{
+			delegatedStakeOut := &DelegatedStakeOutput{
 				delegatedStake.PublicKeyHash,
 				addr.PublicKeyHash,
 			}

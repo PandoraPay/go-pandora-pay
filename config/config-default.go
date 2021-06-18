@@ -6,7 +6,6 @@ import (
 	"os"
 	"pandora-pay/config/globals"
 	"runtime"
-	"strconv"
 )
 
 func config_init() (err error) {
@@ -24,10 +23,6 @@ func config_init() (err error) {
 		var prefix string
 		if globals.Arguments["--instance"] != nil {
 			INSTANCE = globals.Arguments["--instance"].(string)
-			INSTANCE_NUMBER, err = strconv.Atoi(INSTANCE)
-			if err != nil {
-				return
-			}
 			prefix = INSTANCE
 		} else {
 			prefix = "default"

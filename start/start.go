@@ -1,6 +1,7 @@
 package start
 
 import (
+	"os"
 	"pandora-pay/app"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
@@ -91,6 +92,7 @@ func startMain() {
 	globals.MainEvents.BroadcastEvent("main", "transactions builder initialized")
 
 	if globals.Arguments["--exit"] == true {
+		os.Exit(1)
 		return
 	}
 
