@@ -4,11 +4,12 @@ if [ $# -eq 0 ]; then
 fi
 
 nodes=4
-str="./genesis.data,"
+
+str="genesis.data,"
 
 go build main.go
 
-for (( i=0; i <= $nodes; ++i ))
+for (( i=0; i < $nodes; ++i ))
 do
     echo "running $i"
     rm -r ./_build/devnet_$i
@@ -18,26 +19,32 @@ do
 
     str+="$i.delegatedStake"
 
-    if [ $i != $nodes ]; then
+    if [ $i != $(( nodes-1 )) ]; then
       str+=","
     fi
+
+    sleep 0.1
 
 done
 
 echo "creating genesis $str"
 xterm -e go run main.go --instance="devnet_0" --network="devnet" --create-new-genesis="$str" --exit
 
-for (( i=0; i <= $nodes; ++i ))
+sleep 0.1
+
+for (( i=0; i < $nodes; ++i ))
 do
   echo "copying genesis $i"
   cp ./_build/devnet_0/DEV/genesis.data ./_build/devnet_$i/DEV/genesis.data
 done
 
-for (( i=0; i <= $nodes; ++i ))
+for (( i=1; i <= $nodes; ++i ))
 do
   echo "opening $i"
-  xterm -hold -e go run main.go --instance="devnet_$i" --network="devnet" --tcp-server-port="523$i" --set-genesis="file"  --staking &
+  xterm -e go run main.go --instance="devnet_$i" --new-devnet --network="devnet" --tcp-server-port="523$i" --set-genesis="file"  --staking &
 done
+
+wait
 
 exit 1
 echo "finished"
