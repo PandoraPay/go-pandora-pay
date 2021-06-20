@@ -16,6 +16,7 @@ type Fork struct {
 	Current            uint64                           `json:"current"`
 	Blocks             []*block_complete.BlockComplete  `json:"blocks"`
 	Hash               helpers.HexBytes                 `json:"hash"`     //32
+	HashStr            string                           `json:"hashStr"`  //32
 	PrevHash           helpers.HexBytes                 `json:"prevHash"` //32
 	conns              []*connection.AdvancedConnection `json:"-"`
 	errors             int                              `json:"errors"`

@@ -30,5 +30,5 @@ func (forks *Forks) getBestFork() (selectedFork *Fork) {
 }
 
 func (forks *Forks) removeFork(fork *Fork) {
-	forks.hashes.Delete(string(fork.Hash))
+	forks.hashes.Delete(fork.HashStr)
 }

@@ -24,6 +24,7 @@ type ForgingWorkerThread struct {
 	index                 int
 	workCn                chan *forging_block_work.ForgingWork
 	suspendCn             chan struct{}
+	continueCn            chan struct{}
 	workerSolutionCn      chan *ForgingSolution
 	addWalletAddressCn    chan *ForgingWalletAddress
 	removeWalletAddressCn chan string //publicKeyHash
@@ -59,6 +60,7 @@ func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64
 func (worker *ForgingWorkerThread) forge() {
 
 	var work *forging_block_work.ForgingWork
+	suspended := true
 
 	var timestampMs int64
 	var timestamp, blkHeight uint64
@@ -69,47 +71,36 @@ func (worker *ForgingWorkerThread) forge() {
 	wallets := make(map[string]*ForgingWorkerThreadAddress)
 	walletsStakable := make(map[string]*ForgingWorkerThreadAddress)
 
-	waitCn := make(chan bool)
-	waitCnCreated := true
+	waitCn := make(chan struct{})
+	waitCnClosed := false
 
 	validateWork := func() {
-		if work == nil || len(walletsStakable) == 0 {
-			if !waitCnCreated {
-				waitCn = make(chan bool)
-				waitCnCreated = true
+		if suspended || work == nil || len(walletsStakable) == 0 {
+			if waitCnClosed {
+				waitCn = make(chan struct{})
+				waitCnClosed = false
 			}
 		} else {
-			if waitCnCreated {
+			if !waitCnClosed {
 				close(waitCn)
-				waitCnCreated = false
+				waitCnClosed = true
 			}
 		}
 	}
 
 	for {
 
-		timeLimitMs := time.Now().UnixNano()/1000000 + config.NETWORK_TIMESTAMP_DRIFT_MAX_INT*1000
-		timeLimit := uint64(timeLimitMs / 1000)
-
 		select {
-		case _, ok := <-worker.suspendCn:
-			if !ok {
-				return
-			}
-			work = nil
-			validateWork()
+		case newWork := <-worker.workCn: //or the work was changed meanwhile
 
-		case newWork, ok := <-worker.workCn: //or the work was changed meanwhile
-			if !ok {
-				return
-			}
 			if newWork == nil {
 				continue
 			}
 
 			work = newWork
+			suspended = false
 
-			serialized = helpers.CloneBytes(newWork.BlkSerialized)
+			serialized = helpers.CloneBytes(work.BlkSerialized)
 
 			blkHeight = work.BlkHeight
 			timestamp = work.BlkTimestmap + 1
@@ -125,12 +116,7 @@ func (worker *ForgingWorkerThread) forge() {
 			}
 
 			validateWork()
-
-		case newWalletAddr, ok := <-worker.addWalletAddressCn:
-			if !ok {
-				return
-			}
-
+		case newWalletAddr := <-worker.addWalletAddressCn:
 			walletAddr := wallets[newWalletAddr.publicKeyHashStr]
 			if walletAddr == nil {
 				walletAddr = &ForgingWorkerThreadAddress{ //making sure i have a copy
@@ -143,14 +129,9 @@ func (worker *ForgingWorkerThread) forge() {
 			}
 			if walletAddr.computeStakingAmount(blkHeight) > 0 {
 				walletsStakable[walletAddr.walletAdr.publicKeyHashStr] = walletAddr
-			} else {
-				delete(walletsStakable, walletAddr.walletAdr.publicKeyHashStr)
 			}
 			validateWork()
-		case publicKeyHashStr, ok := <-worker.removeWalletAddressCn:
-			if !ok {
-				return
-			}
+		case publicKeyHashStr := <-worker.removeWalletAddressCn:
 			if wallets[publicKeyHashStr] != nil {
 				delete(wallets, publicKeyHashStr)
 				delete(walletsStakable, publicKeyHashStr)
@@ -159,19 +140,27 @@ func (worker *ForgingWorkerThread) forge() {
 		case <-waitCn:
 		}
 
-		if work == nil || len(walletsStakable) == 0 {
-			time.Sleep(10 * time.Millisecond)
+		if !waitCnClosed {
 			continue
-		} else if timestampMs > timeLimitMs {
+		}
+
+		timeLimitMs := time.Now().UnixNano()/1000000 + config.NETWORK_TIMESTAMP_DRIFT_MAX_INT*1000
+
+		if timestampMs > timeLimitMs {
 			time.Sleep(time.Millisecond * time.Duration(timestampMs-timeLimitMs))
 			continue
 		}
 
+		timeLimit := uint64(timeLimitMs / 1000)
 		//forge with my wallets
 		diff := int(timeLimit - timestamp)
 		if diff > 20 {
 			diff = 20
 		}
+		if diff < 0 {
+			diff = 0
+		}
+
 		for i := 0; i <= diff; i++ {
 			for _, address := range walletsStakable {
 
@@ -195,14 +184,16 @@ func (worker *ForgingWorkerThread) forge() {
 				if difficulty.CheckKernelHashBig(kernelHash, work.Target) {
 
 					worker.workerSolutionCn <- &ForgingSolution{
-						timestamp:     timestamp,
-						address:       address.walletAdr,
-						work:          work,
-						stakingAmount: address.stakingAmount,
+						timestamp,
+						address.walletAdr,
+						work,
+						address.stakingAmount,
 					}
 
-					work = nil
-					diff = 0
+					suspended = true
+					validateWork()
+
+					diff = -1
 					break
 
 				} else {
@@ -224,6 +215,7 @@ func (worker *ForgingWorkerThread) forge() {
 func createForgingWorkerThread(index int, workerSolutionCn chan *ForgingSolution) *ForgingWorkerThread {
 	return &ForgingWorkerThread{
 		index:                 index,
+		continueCn:            make(chan struct{}),
 		suspendCn:             make(chan struct{}),
 		workCn:                make(chan *forging_block_work.ForgingWork),
 		workerSolutionCn:      workerSolutionCn,

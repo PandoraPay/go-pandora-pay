@@ -91,11 +91,11 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		}
 	}
 
-	hasAnySuccess := !queue.hasAnySuccess(updates[1:])
+	hasAnySuccess := queue.hasAnySuccess(updates[1:])
 
 	chainSyncData := queue.chain.Sync.AddBlocksChanged(uint32(len(update.insertedBlocks)), hasAnySuccess)
 
-	if !queue.hasAnySuccess(updates[1:]) {
+	if !hasAnySuccess {
 
 		//create next block and the workers will be automatically reset
 		queue.chain.createNextBlockForForging(update.newChainData, queue.hasCalledByForging(updates))
@@ -119,13 +119,8 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 		var updates []*BlockchainUpdate
 		for {
 
-			update, ok := <-queue.updatesCn
-			if !ok {
-				return
-			}
-
 			updates = []*BlockchainUpdate{}
-			updates = append(updates, update)
+			exitCn := make(chan struct{})
 
 			finished := false
 			for !finished {
@@ -135,7 +130,10 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 						return
 					}
 					updates = append(updates, newUpdate)
-				default:
+					if len(updates) == 1 {
+						close(exitCn)
+					}
+				case <-exitCn:
 					finished = true
 				}
 			}

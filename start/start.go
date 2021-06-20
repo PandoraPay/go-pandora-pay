@@ -19,14 +19,12 @@ import (
 	"pandora-pay/wallet"
 )
 
-func startMain() {
+func _startMain() (err error) {
 
 	if globals.MainStarted {
 		return
 	}
 	globals.MainStarted = true
-
-	var err error
 
 	if globals.Arguments["--debugging"] == true {
 		recovery.SafeGo(debugging.Start)
@@ -108,5 +106,14 @@ func startMain() {
 
 	gui.GUI.Log("Main Loop")
 	globals.MainEvents.BroadcastEvent("main", "initialized")
+
+	return
+}
+
+func startMain() {
+
+	if err := _startMain(); err != nil {
+		gui.GUI.Error(err)
+	}
 
 }

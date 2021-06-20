@@ -149,7 +149,7 @@ func createSimpleGenesis(wallet *wallet.Wallet) (err error) {
 
 	var file *os.File
 
-	if globals.Arguments["--new-devnet"] == true {
+	if globals.Arguments["--new-devnet"] == false {
 		return errors.New("Genesis Data was not found and --new-devnet is missing")
 	}
 

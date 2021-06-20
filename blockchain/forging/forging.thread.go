@@ -4,6 +4,7 @@ import (
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
 	"strconv"
@@ -68,10 +69,6 @@ func (thread *ForgingThread) startForging() {
 				return
 			}
 
-			for i := 0; i < thread.threads; i++ {
-				thread.workers[i].suspendCn <- struct{}{}
-			}
-
 			if err = thread.publishSolution(solution); err != nil {
 				gui.GUI.Error("Error publishing solution", err)
 			}
@@ -80,9 +77,13 @@ func (thread *ForgingThread) startForging() {
 			if !ok {
 				return
 			}
-			for i := 0; i < thread.threads; i++ {
-				thread.workers[i].workCn <- newWork
+
+			if newWork != nil {
+				for i := 0; i < thread.threads; i++ {
+					thread.workers[i].workCn <- newWork
+				}
 			}
+
 		}
 
 	}
@@ -93,22 +94,27 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 
 	work := solution.work
 
-	work.BlkComplete.Block.Forger = solution.address.publicKeyHash
-	work.BlkComplete.Block.Timestamp = solution.timestamp
+	newBlk := block_complete.CreateEmptyBlockComplete()
+	if err = newBlk.Deserialize(helpers.NewBufferReader(work.BlkComplete.SerializeToBytes())); err != nil {
+		return
+	}
 
-	work.BlkComplete.Block.StakingAmount = solution.stakingAmount
+	newBlk.Block.Forger = solution.address.publicKeyHash
+	newBlk.Block.Timestamp = solution.timestamp
 
-	work.BlkComplete.Txs = thread.mempool.GetNextTransactionsToInclude(work.BlkComplete.Block.Height, work.BlkComplete.Block.PrevHash)
-	work.BlkComplete.Block.MerkleHash = work.BlkComplete.MerkleHash()
+	newBlk.Block.StakingAmount = solution.stakingAmount
 
-	hashForSignature := work.BlkComplete.Block.SerializeForSigning()
+	newBlk.Txs = thread.mempool.GetNextTransactionsToInclude(newBlk.Block.Height, newBlk.Block.PrevHash)
+	newBlk.Block.MerkleHash = newBlk.MerkleHash()
 
-	if work.BlkComplete.Block.Signature, err = solution.address.delegatedPrivateKey.Sign(hashForSignature); err != nil {
+	hashForSignature := newBlk.Block.SerializeForSigning()
+
+	if newBlk.Block.Signature, err = solution.address.delegatedPrivateKey.Sign(hashForSignature); err != nil {
 		return
 	}
 
 	//send message to blockchain
-	thread.solutionCn <- work.BlkComplete
+	thread.solutionCn <- newBlk
 
 	return
 }

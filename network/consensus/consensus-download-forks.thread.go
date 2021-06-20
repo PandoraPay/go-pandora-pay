@@ -155,7 +155,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 			willRemove := true
 
-			gui.GUI.Log("Status. Downloading fork")
+			gui.GUI.Log("Status. Downloading fork", fork.Hash)
 			if thread.downloadFork(fork) {
 
 				gui.GUI.Log("Status. DownloadingRemainingBlocks fork")

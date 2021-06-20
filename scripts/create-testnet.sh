@@ -63,7 +63,7 @@ for (( i=0; i < $nodes; ++i ))
 do
   echo "opening $i"
   if $race ; then
-    qterminal GORACE="log_path=/$SCRIPTPATH/../report"  -e go run -race main.go --instance="devnet_$i" --new-devnet --network="devnet" --tcp-server-port="523$i" --set-genesis="file" --staking &
+    qterminal GORACE="log_path=/$SCRIPTPATH/report"  -e go run -race main.go --instance="devnet_$i" --new-devnet --network="devnet" --tcp-server-port="523$i" --set-genesis="file" --staking &
   else
     xterm -e go run main.go --instance="devnet_$i" --new-devnet --network="devnet" --tcp-server-port="523$i" --set-genesis="file" --staking &
   fi

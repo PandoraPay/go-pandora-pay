@@ -25,8 +25,9 @@ type MempoolWorkerAddTx struct {
 
 //process the worker for transactions to prepare the transactions to the forger
 func (worker *mempoolWorker) processing(
+	newWorkCn <-chan *mempoolWork,
 	suspendProcessingCn <-chan struct{},
-	continueProcessingCn <-chan *mempoolWork, //SAFE
+	continueProcessingCn <-chan struct{},
 	addTransactionCn <-chan *MempoolWorkerAddTx,
 	addToListCn chan<- *mempoolTx,
 	removedFromListCn chan<- *mempoolTx,
@@ -37,26 +38,20 @@ func (worker *mempoolWorker) processing(
 	txList := []*mempoolTx{}
 	listIndex := 0
 	txMap := make(map[string]bool)
+	suspended := false
 
 	for {
 
 		select {
-		case newWork, ok := <-continueProcessingCn:
-			if !ok {
-				return
-			}
-			if newWork != nil {
-				work = newWork
-				listIndex = 0
-				txMap = make(map[string]bool)
-			}
-		case _, ok := <-suspendProcessingCn:
-			if !ok {
-				return
-			}
-			continue
+		case newWork := <-newWorkCn:
+			work = newWork
+			listIndex = 0
+			txMap = make(map[string]bool)
+		case <-continueProcessingCn:
+			suspended = false
 		}
-		if work == nil {
+
+		if work == nil || suspended {
 			continue
 		}
 
@@ -70,19 +65,29 @@ func (worker *mempoolWorker) processing(
 			accs := accounts.NewAccounts(dbTx)
 			toks := tokens.NewTokens(dbTx)
 
-			var tx *mempoolTx
-			var newAddTx *MempoolWorkerAddTx
-
 			for {
 				select {
+				case newWork := <-newWorkCn:
+					work = newWork
+					listIndex = 0
+					txMap = make(map[string]bool)
 				case <-suspendProcessingCn:
-					return nil
+					suspended = true
+					return
 				default:
+
+					var tx *mempoolTx
+					var newAddTx *MempoolWorkerAddTx
 
 					if listIndex == len(txList) {
 						select {
+						case newWork := <-newWorkCn:
+							work = newWork
+							listIndex = 0
+							txMap = make(map[string]bool)
 						case <-suspendProcessingCn:
-							return nil
+							suspended = true
+							return
 						case newAddTx = <-addTransactionCn:
 							tx = newAddTx.Tx
 						}
@@ -94,7 +99,7 @@ func (worker *mempoolWorker) processing(
 
 					result := false
 
-					if !txMap[tx.Tx.Bloom.HashStr] {
+					if tx != nil && !txMap[tx.Tx.Bloom.HashStr] {
 
 						txMap[tx.Tx.Bloom.HashStr] = true
 

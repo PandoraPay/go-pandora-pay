@@ -26,7 +26,8 @@ type mempoolTx struct {
 type Mempool struct {
 	result                  *atomic.Value               `json:"-"` //*MempoolResult
 	SuspendProcessingCn     chan struct{}               `json:"-"`
-	ContinueProcessingCn    chan *mempoolWork           `json:"-"`
+	ContinueProcessingCn    chan struct{}               `json:"-"`
+	NewWorkCn               chan *mempoolWork           `json:"-"`
 	AddTransactionCn        chan *MempoolWorkerAddTx    `json:"-"`
 	Txs                     *MempoolTxs                 `json:"-"`
 	Wallet                  *mempoolWallet              `json:"-"`
@@ -159,16 +160,12 @@ func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
 
 	mempool.result.Store(result)
 
-	mempool.ContinueProcessingCn <- &mempoolWork{
+	mempool.NewWorkCn <- &mempoolWork{
 		chainHash:   hash,
 		chainHeight: height,
 		result:      result,
 	}
 
-}
-
-func (mempool *Mempool) ContinueWork() {
-	mempool.ContinueProcessingCn <- nil
 }
 
 func CreateMemPool() (*Mempool, error) {
@@ -179,7 +176,8 @@ func CreateMemPool() (*Mempool, error) {
 		result:                  &atomic.Value{}, // *MempoolResult
 		Txs:                     createMempoolTxs(),
 		SuspendProcessingCn:     make(chan struct{}),
-		ContinueProcessingCn:    make(chan *mempoolWork),
+		ContinueProcessingCn:    make(chan struct{}),
+		NewWorkCn:               make(chan *mempoolWork),
 		AddTransactionCn:        make(chan *MempoolWorkerAddTx),
 		Wallet:                  createMempoolWallet(),
 		NewTransactionMulticast: multicast.NewMulticastChannel(),
@@ -187,7 +185,7 @@ func CreateMemPool() (*Mempool, error) {
 
 	worker := new(mempoolWorker)
 	recovery.SafeGo(func() {
-		worker.processing(mempool.SuspendProcessingCn, mempool.ContinueProcessingCn, mempool.AddTransactionCn, mempool.Txs.addToListCn, mempool.Txs.removeFromListCn)
+		worker.processing(mempool.NewWorkCn, mempool.SuspendProcessingCn, mempool.ContinueProcessingCn, mempool.AddTransactionCn, mempool.Txs.addToListCn, mempool.Txs.removeFromListCn)
 	})
 
 	mempool.initCLI()

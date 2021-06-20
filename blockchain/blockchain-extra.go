@@ -128,8 +128,6 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 
 	if chainData != nil {
 		chain.mempool.UpdateWork(chainData.Hash, chainData.Height)
-	} else {
-		chain.mempool.ContinueWork()
 	}
 
 	if newWork {
@@ -208,10 +206,8 @@ func (chain *Blockchain) InitForging() {
 				continue
 			}
 
-			array := []*block_complete.BlockComplete{blkComplete}
-
 			go func() {
-				err := chain.AddBlocks(array, true)
+				err := chain.AddBlocks([]*block_complete.BlockComplete{blkComplete}, true)
 				if err == nil {
 					gui.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
 				} else {

@@ -39,6 +39,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		fork := &Fork{
 			End:                chainUpdateNotification.End,
 			Hash:               chainUpdateNotification.Hash,
+			HashStr:            string(chainUpdateNotification.Hash),
 			PrevHash:           chainUpdateNotification.PrevHash,
 			BigTotalDifficulty: chainUpdateNotification.BigTotalDifficulty,
 			Initialized:        false,
@@ -46,7 +47,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 			conns:              []*connection.AdvancedConnection{conn},
 		}
 
-		consensus.forks.hashes.LoadOrStore(string(chainUpdateNotification.Hash), fork)
+		consensus.forks.hashes.LoadOrStore(fork.HashStr, fork)
 
 	} else {
 		//let's notify him tha we have a better chain

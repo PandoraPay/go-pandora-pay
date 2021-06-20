@@ -161,6 +161,7 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 
 			}
 
+			wallet.setLoaded(true)
 			if !first {
 				wallet.walletLoaded()
 			}
@@ -179,7 +180,6 @@ func (wallet *Wallet) walletLoaded() {
 		wallet.mempool.Wallet.AddWallet(addr.PublicKeyHash)
 	}
 
-	wallet.setLoaded(true)
 	wallet.updateWallet()
 	globals.MainEvents.BroadcastEvent("wallet/loaded", wallet.Count)
 	gui.GUI.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
