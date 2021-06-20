@@ -84,6 +84,10 @@ func (thread *ForgingThread) startForging() {
 				}
 			}
 
+			for i := 0; i < thread.threads; i++ {
+				thread.workers[i].continueCn <- struct{}{}
+			}
+
 		}
 
 	}

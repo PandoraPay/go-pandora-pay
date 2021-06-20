@@ -23,7 +23,6 @@ type ForgingWorkerThread struct {
 	hashes                uint32
 	index                 int
 	workCn                chan *forging_block_work.ForgingWork
-	suspendCn             chan struct{}
 	continueCn            chan struct{}
 	workerSolutionCn      chan *ForgingSolution
 	addWalletAddressCn    chan *ForgingWalletAddress
@@ -91,14 +90,15 @@ func (worker *ForgingWorkerThread) forge() {
 	for {
 
 		select {
+		case <-worker.continueCn:
+			suspended = false
+			validateWork()
 		case newWork := <-worker.workCn: //or the work was changed meanwhile
 
 			if newWork == nil {
 				continue
 			}
-
 			work = newWork
-			suspended = false
 
 			serialized = helpers.CloneBytes(work.BlkSerialized)
 
@@ -216,7 +216,6 @@ func createForgingWorkerThread(index int, workerSolutionCn chan *ForgingSolution
 	return &ForgingWorkerThread{
 		index:                 index,
 		continueCn:            make(chan struct{}),
-		suspendCn:             make(chan struct{}),
 		workCn:                make(chan *forging_block_work.ForgingWork),
 		workerSolutionCn:      workerSolutionCn,
 		addWalletAddressCn:    make(chan *ForgingWalletAddress),

@@ -67,6 +67,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	//avoid processing the same function twice
 	chain.mutex.Lock()
+	defer chain.mutex.Unlock()
 
 	chainData := chain.GetChainData()
 
@@ -371,6 +372,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		return
 	}()
 
+	chain.mempool.ContinueProcessingCn <- struct{}{}
+
 	if err == nil && len(insertedBlocks) == 0 {
 		err = errors.New("No blocks were inserted")
 	}
@@ -390,8 +393,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	}
 
 	chain.updatesQueue.updatesCn <- update
-
-	chain.mutex.Unlock()
 
 	return
 }
