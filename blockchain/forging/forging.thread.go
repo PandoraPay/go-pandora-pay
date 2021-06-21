@@ -20,6 +20,15 @@ type ForgingThread struct {
 	workers            []*ForgingWorkerThread
 	workersCreatedCn   chan []*ForgingWorkerThread
 	workersDestroyedCn chan struct{}
+	ticker             *time.Ticker
+}
+
+func (thread *ForgingThread) stopForging() {
+	thread.workersDestroyedCn <- struct{}{}
+	for i := 0; i < len(thread.workers); i++ {
+		close(thread.workers[i].workCn)
+	}
+	thread.ticker.Stop()
 }
 
 func (thread *ForgingThread) startForging() {
@@ -33,19 +42,11 @@ func (thread *ForgingThread) startForging() {
 	}
 	thread.workersCreatedCn <- thread.workers
 
-	ticker := time.NewTicker(1 * time.Second)
-	defer func() {
-		thread.workersDestroyedCn <- struct{}{}
-		for i := 0; i < len(thread.workers); i++ {
-			close(thread.workers[i].workCn)
-		}
-		ticker.Stop()
-	}()
+	thread.ticker = time.NewTicker(1 * time.Second)
 
 	recovery.SafeGo(func() {
 		for {
-
-			if _, ok := <-ticker.C; !ok {
+			if _, ok := <-thread.ticker.C; !ok {
 				return
 			}
 
@@ -58,13 +59,10 @@ func (thread *ForgingThread) startForging() {
 		}
 	})
 
-	var err error
-	var ok bool
-	var newWork *forging_block_work.ForgingWork
-	for {
-
-		select {
-		case solution, ok := <-forgingWorkerSolutionCn:
+	recovery.SafeGo(func() {
+		var err error
+		for {
+			solution, ok := <-forgingWorkerSolutionCn
 			if !ok {
 				return
 			}
@@ -72,8 +70,12 @@ func (thread *ForgingThread) startForging() {
 			if err = thread.publishSolution(solution); err != nil {
 				gui.GUI.Error("Error publishing solution", err)
 			}
+		}
+	})
 
-		case newWork, ok = <-thread.nextBlockCreatedCn:
+	recovery.SafeGo(func() {
+		for {
+			newWork, ok := <-thread.nextBlockCreatedCn
 			if !ok {
 				return
 			}
@@ -87,10 +89,8 @@ func (thread *ForgingThread) startForging() {
 			for i := 0; i < thread.threads; i++ {
 				thread.workers[i].continueCn <- struct{}{}
 			}
-
 		}
-
-	}
+	})
 
 }
 
@@ -132,5 +132,6 @@ func createForgingThread(threads int, mempool *mempool.Mempool, solutionCn chan<
 		[]*ForgingWorkerThread{},
 		make(chan []*ForgingWorkerThread),
 		make(chan struct{}),
+		nil,
 	}
 }

@@ -98,6 +98,7 @@ func (worker *ForgingWorkerThread) forge() {
 			if newWork == nil {
 				continue
 			}
+
 			work = newWork
 
 			serialized = helpers.CloneBytes(work.BlkSerialized)

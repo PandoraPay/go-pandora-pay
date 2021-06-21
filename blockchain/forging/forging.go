@@ -74,7 +74,7 @@ func (forging *Forging) StartForging() bool {
 		return false
 	}
 
-	recovery.SafeGo(forging.forgingThread.startForging)
+	forging.forgingThread.startForging()
 
 	return true
 }

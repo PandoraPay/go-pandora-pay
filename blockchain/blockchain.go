@@ -369,10 +369,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			return
 		})
 
+		chain.mempool.ContinueProcessingCn <- struct{}{}
+
 		return
 	}()
-
-	chain.mempool.ContinueProcessingCn <- struct{}{}
 
 	if err == nil && len(insertedBlocks) == 0 {
 		err = errors.New("No blocks were inserted")
