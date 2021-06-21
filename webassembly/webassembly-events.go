@@ -7,6 +7,7 @@ import (
 	"pandora-pay/app"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/config/globals"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/events"
 	"pandora-pay/network/api/api-common/api_types"
@@ -22,8 +23,7 @@ func listenEvents(this js.Value, args []js.Value) interface{} {
 	}
 
 	index := atomic.AddUint64(&subscriptionsIndex, 1)
-	channel, id := globals.MainEvents.AddListener()
-	defer globals.MainEvents.RemoveChannel(id)
+	channel := globals.MainEvents.AddListener()
 
 	callback := args[0]
 	var err error
@@ -38,6 +38,8 @@ func listenEvents(this js.Value, args []js.Value) interface{} {
 			data := dataValue.(*events.EventData)
 
 			var final interface{}
+
+			gui.GUI.Log("received", args[0])
 
 			switch v := data.Data.(type) {
 			case string:
@@ -65,8 +67,8 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 		}
 		callback := args[0]
 
-		accountsCn, id := app.Network.Websockets.ApiWebsockets.AccountsChangesSubscriptionNotifications.AddListener()
-		defer app.Network.Websockets.ApiWebsockets.AccountsChangesSubscriptionNotifications.RemoveChannel(id)
+		accountsCn := app.Network.Websockets.ApiWebsockets.AccountsChangesSubscriptionNotifications.AddListener()
+		defer app.Network.Websockets.ApiWebsockets.AccountsChangesSubscriptionNotifications.RemoveChannel(accountsCn)
 
 		recovery.SafeGo(func() {
 
