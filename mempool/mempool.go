@@ -52,7 +52,11 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 	for i, tx := range txs {
 
 		if err := tx.VerifyBloomAll(); err != nil {
-			return false, nil, err
+			continue
+		}
+
+		if mempool.Txs.Exists(tx.Bloom.HashStr) != nil {
+			continue
 		}
 
 		mine := false

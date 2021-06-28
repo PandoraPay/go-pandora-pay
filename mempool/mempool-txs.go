@@ -1,7 +1,6 @@
 package mempool
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -9,11 +8,13 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/recovery"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 )
 
 type MempoolTxs struct {
+	txsMap           *sync.Map     //*mempoolTx
 	txsCount         int64         //use atomic
 	txsList          *atomic.Value //[]*mempoolTx
 	addToListCn      chan *mempoolTx
@@ -24,14 +25,12 @@ func (self *MempoolTxs) GetTxsList() (out []*mempoolTx) {
 	return self.txsList.Load().([]*mempoolTx)
 }
 
-func (self *MempoolTxs) Exists(txId []byte) *transaction.Transaction {
-	list := self.txsList.Load().([]*mempoolTx)
-	for _, tx := range list {
-		if bytes.Equal(tx.Tx.Bloom.Hash, txId) {
-			return tx.Tx
-		}
+func (self *MempoolTxs) Exists(txId string) *transaction.Transaction {
+	out, _ := self.txsMap.Load(txId)
+	if out == nil {
+		return nil
 	}
-	return nil
+	return out.(*mempoolTx).Tx
 }
 
 func (self *MempoolTxs) process() {
@@ -40,6 +39,7 @@ func (self *MempoolTxs) process() {
 		case tx := <-self.addToListCn:
 			self.txsList.Store(append(self.txsList.Load().([]*mempoolTx), tx))
 			atomic.AddInt64(&self.txsCount, 1)
+			self.txsMap.Store(tx.Tx.Bloom.HashStr, tx)
 		case tx := <-self.removeFromListCn:
 			list := self.txsList.Load().([]*mempoolTx)
 			for i, tx2 := range list {
@@ -54,6 +54,8 @@ func (self *MempoolTxs) process() {
 
 					self.txsList.Store(list2)
 					atomic.AddInt64(&self.txsCount, -1)
+
+					self.txsMap.Delete(tx.Tx.Bloom.HashStr)
 					break
 				}
 			}
@@ -64,6 +66,7 @@ func (self *MempoolTxs) process() {
 func createMempoolTxs() (txs *MempoolTxs) {
 
 	txs = &MempoolTxs{
+		&sync.Map{},
 		0,
 		&atomic.Value{}, //[]*mempoolTx
 		make(chan *mempoolTx, 100),

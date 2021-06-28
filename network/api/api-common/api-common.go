@@ -113,7 +113,7 @@ func (api *APICommon) GetTx(request *api_types.APITransactionRequest) ([]byte, e
 	mempool := false
 	var txInfo *info.TxInfo
 	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
-		tx = api.mempool.Txs.Exists(request.Hash)
+		tx = api.mempool.Txs.Exists(string(request.Hash))
 		if tx != nil {
 			mempool = true
 		} else {
@@ -229,7 +229,7 @@ func (api *APICommon) GetMempoolExists(txId []byte) ([]byte, error) {
 	if len(txId) != 32 {
 		return nil, errors.New("TxId must be 32 byte")
 	}
-	tx := api.mempool.Txs.Exists(txId)
+	tx := api.mempool.Txs.Exists(string(txId))
 	if tx == nil {
 		return nil, errors.New("Tx is not in mempool")
 	}
