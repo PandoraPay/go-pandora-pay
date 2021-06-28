@@ -78,7 +78,7 @@ func (api *APICommon) GetBlockComplete(request *api_types.APIBlockCompleteReques
 		return nil, err
 	}
 	if request.ReturnType == api_types.RETURN_SERIALIZED {
-		return blockComplete.SerializeToBytesBloomed(), nil
+		return blockComplete.BloomBlkComplete.Serialized, nil
 	}
 	return json.Marshal(blockComplete)
 }
@@ -129,7 +129,7 @@ func (api *APICommon) GetTx(request *api_types.APITransactionRequest) ([]byte, e
 
 	result := &api_types.APITransaction{nil, nil, mempool, txInfo}
 	if request.ReturnType == api_types.RETURN_SERIALIZED {
-		result.TxSerialized = tx.SerializeToBytesBloomed()
+		result.TxSerialized = tx.Bloom.Serialized
 	} else if request.ReturnType == api_types.RETURN_JSON {
 		result.Tx = tx
 	} else {

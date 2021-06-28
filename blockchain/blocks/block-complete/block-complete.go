@@ -87,7 +87,7 @@ func (blkComplete *BlockComplete) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(uint64(len(blkComplete.Txs)))
 
 	for _, tx := range blkComplete.Txs {
-		writer.Write(tx.SerializeToBytesBloomed())
+		writer.Write(tx.Bloom.Serialized)
 	}
 
 }
@@ -96,13 +96,6 @@ func (blkComplete *BlockComplete) SerializeToBytes() []byte {
 	writer := helpers.NewBufferWriter()
 	blkComplete.Serialize(writer)
 	return writer.Bytes()
-}
-
-func (blkComplete *BlockComplete) SerializeToBytesBloomed() []byte {
-	if blkComplete.Bloom != nil {
-		return blkComplete.BloomBlkComplete.Serialized
-	}
-	return blkComplete.SerializeToBytes()
 }
 
 func (blkComplete *BlockComplete) Deserialize(reader *helpers.BufferReader) (err error) {

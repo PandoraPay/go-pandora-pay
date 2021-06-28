@@ -120,7 +120,7 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 
 		//let's check to see if the tx block is already stored, if yes, we will skip it
 		if removedTxHashes[tx.Bloom.HashStr] == nil {
-			if err := writer.Put("tx"+string(tx.Bloom.Hash), tx.SerializeToBytesBloomed()); err != nil {
+			if err := writer.Put("tx"+string(tx.Bloom.Hash), tx.Bloom.Serialized); err != nil {
 				return nil, err
 			}
 			newTxHashes = append(newTxHashes, tx.Bloom.Hash)
