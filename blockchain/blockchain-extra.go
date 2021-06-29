@@ -157,8 +157,11 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 				Timestamp:      chainData.Timestamp,
 			}
 		}
+
 		blk.Forger = make([]byte, cryptography.PublicKeyHashHashSize)
 		blk.Signature = make([]byte, cryptography.SignatureSize)
+
+		blk.BloomSerializedNow(blk.SerializeToBytes())
 
 		blkComplete := &block_complete.BlockComplete{
 			Block: blk,

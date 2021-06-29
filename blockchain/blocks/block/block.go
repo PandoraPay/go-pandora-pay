@@ -141,6 +141,9 @@ func (blk *Block) SerializeToBytes() []byte {
 }
 
 func (blk *Block) Deserialize(reader *helpers.BufferReader) (err error) {
+
+	first := reader.Position
+
 	if err = blk.BlockHeader.Deserialize(reader); err != nil {
 		return
 	}
@@ -165,6 +168,10 @@ func (blk *Block) Deserialize(reader *helpers.BufferReader) (err error) {
 	if blk.Signature, err = reader.ReadBytes(cryptography.SignatureSize); err != nil {
 		return
 	}
+
+	serialized := reader.Buf[first:reader.Position]
+	blk.BloomSerializedNow(serialized)
+
 	return
 }
 

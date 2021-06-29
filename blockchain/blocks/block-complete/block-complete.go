@@ -83,7 +83,8 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, 
 
 func (blkComplete *BlockComplete) Serialize(writer *helpers.BufferWriter) {
 
-	writer.Write(blkComplete.Block.SerializeToBytes())
+	writer.Write(blkComplete.Block.Bloom.Serialized)
+
 	writer.WriteUvarint(uint64(len(blkComplete.Txs)))
 
 	for _, tx := range blkComplete.Txs {
