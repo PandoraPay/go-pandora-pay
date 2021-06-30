@@ -355,7 +355,7 @@ func (chain *APIStore) loadBlock(reader store_db_interface.StoreDBTransactionInt
 	if blockData == nil {
 		return nil, errors.New("Block was not found")
 	}
-	blk := &block.Block{BlockHeader: &block.BlockHeader{}}
+	blk := block.CreateEmptyBlock()
 	return blk, blk.Deserialize(helpers.NewBufferReader(blockData))
 }
 

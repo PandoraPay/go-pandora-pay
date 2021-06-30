@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain"
+	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
@@ -134,6 +135,10 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 
 			blkWithTx := &api_types.APIBlockWithTxs{}
 			if err = json.Unmarshal(answer.Out, &blkWithTx); err != nil {
+				return
+			}
+			blkWithTx.Block = block.CreateEmptyBlock()
+			if err = blkWithTx.Block.Deserialize(helpers.NewBufferReader(blkWithTx.BlockSerialized)); err != nil {
 				return
 			}
 

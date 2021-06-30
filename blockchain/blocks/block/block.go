@@ -24,6 +24,12 @@ type Block struct {
 	Bloom          *BlockBloom      `json:"bloom"`
 }
 
+func CreateEmptyBlock() *Block {
+	return &Block{
+		BlockHeader: &BlockHeader{},
+	}
+}
+
 func (blk *Block) Validate() error {
 	return blk.BlockHeader.Validate()
 }
