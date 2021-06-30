@@ -33,20 +33,27 @@ func (tx *Transaction) BloomNow() {
 
 func (tx *Transaction) BloomAll() (err error) {
 	tx.BloomNow()
-	return tx.BloomExtraNow(false)
+	return tx.BloomExtraNow()
 }
 
-func (tx *Transaction) BloomExtraNow(signatureWasVerifiedBefore bool) (err error) {
+func (tx *Transaction) BloomExtraNow() (err error) {
 	switch tx.TxType {
 	case transaction_type.TX_SIMPLE:
-		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-		var serialized []byte
-		if !signatureWasVerifiedBefore {
-			serialized = tx.SerializeForSigning()
-		}
-		if err = base.BloomNow(serialized, signatureWasVerifiedBefore); err != nil {
-			return
-		}
+		serialized := tx.SerializeForSigning()
+		err = tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).BloomNow(serialized)
+	default:
+		err = errors.New("Invalid TxType")
+	}
+	return
+}
+
+func (tx *Transaction) BloomExtraVerified() (err error) {
+	switch tx.TxType {
+	case transaction_type.TX_SIMPLE:
+		serialized := tx.SerializeForSigning()
+		err = tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).BloomNowSignatureVerified(serialized)
+	default:
+		err = errors.New("Invalid TxType")
 	}
 	return
 }

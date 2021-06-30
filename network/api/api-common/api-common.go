@@ -64,6 +64,20 @@ func (api *APICommon) GetTxHash(blockHeight uint64) (helpers.HexBytes, error) {
 	return api.ApiStore.openLoadTxHash(blockHeight)
 }
 
+func (api *APICommon) GetBlockCompleteMissingTxs(request *api_types.APIBlockCompleteMissingTxsRequest) ([]byte, error) {
+
+	var blockCompleteMissingTxs *api_types.APIBlockCompleteMissingTxs
+	var err error
+
+	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
+		blockCompleteMissingTxs, err = api.ApiStore.openLoadBlockCompleteMissingTxsFromHash(request.Hash, request.MissingTxs)
+	}
+	if err != nil || blockCompleteMissingTxs == nil {
+		return nil, err
+	}
+	return json.Marshal(blockCompleteMissingTxs)
+}
+
 func (api *APICommon) GetBlockComplete(request *api_types.APIBlockCompleteRequest) ([]byte, error) {
 
 	var blockComplete *block_complete.BlockComplete
@@ -84,17 +98,25 @@ func (api *APICommon) GetBlockComplete(request *api_types.APIBlockCompleteReques
 }
 
 func (api *APICommon) GetBlock(request *api_types.APIBlockRequest) ([]byte, error) {
-	var block interface{}
+
+	var out *api_types.APIBlockWithTxs
+
 	var err error
 	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
-		block, err = api.ApiStore.openLoadBlockWithTXsFromHash(request.Hash)
+		out, err = api.ApiStore.openLoadBlockWithTXsFromHash(request.Hash)
 	} else {
-		block, err = api.ApiStore.openLoadBlockWithTXsFromHeight(request.Height)
+		out, err = api.ApiStore.openLoadBlockWithTXsFromHeight(request.Height)
 	}
-	if err != nil || block == nil {
+	if err != nil || out.Block == nil {
 		return nil, err
 	}
-	return json.Marshal(block)
+
+	if request.ReturnType == api_types.RETURN_SERIALIZED {
+		out.BlockSerialized = out.Block.SerializeToBytes()
+		out.Block = nil
+	}
+
+	return json.Marshal(out)
 }
 
 func (api *APICommon) GetBlockInfo(request *api_types.APIBlockRequest) ([]byte, error) {

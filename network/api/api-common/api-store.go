@@ -25,16 +25,16 @@ type APIStore struct {
 	chain *blockchain.Blockchain
 }
 
-func (apiStore *APIStore) openLoadTokenInfo(hash []byte) (tokInfo *info.TokenInfo, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (apiStore *APIStore) openLoadTokenInfo(hash []byte) (tokInfo *info.TokenInfo, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		tokInfo, err = apiStore.loadTokenInfo(reader, hash)
 		return
 	})
 	return
 }
 
-func (apiStore *APIStore) openLoadTxInfo(hash []byte, txHeight uint64) (txInfo *info.TxInfo, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (apiStore *APIStore) openLoadTxInfo(hash []byte, txHeight uint64) (txInfo *info.TxInfo, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if hash == nil {
 			if hash, err = apiStore.loadTxHash(reader, txHeight); err != nil {
@@ -48,8 +48,8 @@ func (apiStore *APIStore) openLoadTxInfo(hash []byte, txHeight uint64) (txInfo *
 	return
 }
 
-func (apiStore *APIStore) openLoadBlockInfo(blockHeight uint64, hash []byte) (blkInfo *info.BlockInfo, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (apiStore *APIStore) openLoadBlockInfo(blockHeight uint64, hash []byte) (blkInfo *info.BlockInfo, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if hash == nil {
 			if hash, err = apiStore.chain.LoadBlockHash(reader, blockHeight); err != nil {
@@ -63,16 +63,24 @@ func (apiStore *APIStore) openLoadBlockInfo(blockHeight uint64, hash []byte) (bl
 	return
 }
 
-func (apiStore *APIStore) openLoadBlockCompleteFromHash(hash []byte) (blkComplete *block_complete.BlockComplete, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (apiStore *APIStore) openLoadBlockCompleteMissingTxsFromHash(hash []byte, missingTxs []int) (blockCompleteMissingTxs *api_types.APIBlockCompleteMissingTxs, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		blockCompleteMissingTxs, err = apiStore.loadBlockCompleteMissingTxs(reader, hash, missingTxs)
+		return
+	})
+	return
+}
+
+func (apiStore *APIStore) openLoadBlockCompleteFromHash(hash []byte) (blkComplete *block_complete.BlockComplete, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		blkComplete, err = apiStore.loadBlockComplete(reader, hash)
 		return
 	})
 	return
 }
 
-func (apiStore *APIStore) openLoadBlockCompleteFromHeight(blockHeight uint64) (blkComplete *block_complete.BlockComplete, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (apiStore *APIStore) openLoadBlockCompleteFromHeight(blockHeight uint64) (blkComplete *block_complete.BlockComplete, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err := apiStore.chain.LoadBlockHash(reader, blockHeight)
 		if err != nil {
 			return
@@ -83,16 +91,16 @@ func (apiStore *APIStore) openLoadBlockCompleteFromHeight(blockHeight uint64) (b
 	return
 }
 
-func (apiStore *APIStore) openLoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *api_types.APIBlockWithTxs, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (apiStore *APIStore) openLoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *api_types.APIBlockWithTxs, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		blkWithTXs, err = apiStore.loadBlockWithTxHashes(reader, hash)
 		return
 	})
 	return
 }
 
-func (apiStore *APIStore) openLoadTx(hash []byte, txHeight uint64) (tx *transaction.Transaction, txInfo *info.TxInfo, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (apiStore *APIStore) openLoadTx(hash []byte, txHeight uint64) (tx *transaction.Transaction, txInfo *info.TxInfo, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if hash == nil {
 			if hash, err = apiStore.loadTxHash(reader, txHeight); err != nil {
@@ -106,8 +114,8 @@ func (apiStore *APIStore) openLoadTx(hash []byte, txHeight uint64) (tx *transact
 	return
 }
 
-func (apiStore *APIStore) openLoadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *api_types.APIBlockWithTxs, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (apiStore *APIStore) openLoadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *api_types.APIBlockWithTxs, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err := apiStore.chain.LoadBlockHash(reader, blockHeight)
 		if err != nil {
 			return
@@ -118,8 +126,8 @@ func (apiStore *APIStore) openLoadBlockWithTXsFromHeight(blockHeight uint64) (bl
 	return
 }
 
-func (apiStore *APIStore) openLoadAccountFromPublicKeyHash(publicKeyHash []byte) (acc *account.Account, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (apiStore *APIStore) openLoadAccountFromPublicKeyHash(publicKeyHash []byte) (acc *account.Account, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
@@ -130,8 +138,8 @@ func (apiStore *APIStore) openLoadAccountFromPublicKeyHash(publicKeyHash []byte)
 	return
 }
 
-func (apiStore *APIStore) openLoadAccountTxsFromPublicKeyHash(publicKeyHash []byte, next uint64) (answer *api_types.APIAccountTxs, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (apiStore *APIStore) openLoadAccountTxsFromPublicKeyHash(publicKeyHash []byte, next uint64) (answer *api_types.APIAccountTxs, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		data := reader.Get("addrTxsCount:" + string(publicKeyHash))
 		if data == nil {
@@ -179,11 +187,44 @@ func (apiStore *APIStore) openLoadTokenFromPublicKeyHash(publicKeyHash []byte) (
 	return
 }
 
-func (apiStore *APIStore) openLoadTxHash(blockHeight uint64) (hash []byte, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (apiStore *APIStore) openLoadTxHash(blockHeight uint64) (hash []byte, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err = apiStore.loadTxHash(reader, blockHeight)
 		return
 	})
+	return
+}
+
+func (apiStore *APIStore) loadBlockCompleteMissingTxs(reader store_db_interface.StoreDBTransactionInterface, hash []byte, missingTxs []int) (out *api_types.APIBlockCompleteMissingTxs, err error) {
+
+	heightStr := reader.Get("blockHeight_ByHash" + string(hash))
+	if heightStr == nil {
+		return nil, errors.New("Block was not found by hash")
+	}
+
+	var height uint64
+	if height, err = strconv.ParseUint(string(heightStr), 10, 64); err != nil {
+		return
+	}
+
+	out = &api_types.APIBlockCompleteMissingTxs{}
+	data := reader.Get("blockTxs" + strconv.FormatUint(height, 10))
+	if data == nil {
+		return nil, nil
+	}
+
+	txHashes := [][]byte{}
+	if err = json.Unmarshal(data, &txHashes); err != nil {
+		return nil, err
+	}
+
+	out.Txs = make([]helpers.HexBytes, len(missingTxs))
+	for i, txMissingIndex := range missingTxs {
+		if txMissingIndex >= 0 && txMissingIndex < len(txHashes) {
+			out.Txs[i] = txHashes[txMissingIndex]
+		}
+	}
+
 	return
 }
 

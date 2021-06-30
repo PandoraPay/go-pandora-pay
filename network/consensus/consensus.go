@@ -57,7 +57,7 @@ func (consensus *Consensus) execute() {
 	})
 
 	//discover forks
-	processForksThread := createConsensusProcessForksThread(consensus.forks, consensus.chain, consensus.httpServer.ApiStore)
+	processForksThread := createConsensusProcessForksThread(consensus.forks, consensus.chain, consensus.mempool, consensus.httpServer.ApiStore)
 	recovery.SafeGo(processForksThread.execute)
 
 }

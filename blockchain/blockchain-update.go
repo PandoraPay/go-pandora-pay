@@ -83,7 +83,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		if err := tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
 			return false, err
 		}
-		if err := tx.BloomExtraNow(true); err != nil {
+		if err := tx.BloomExtraVerified(); err != nil {
 			return false, err
 		}
 		if _, err := queue.chain.mempool.AddTxToMemPool(tx, update.newChainData.Height, false, false); err != nil {

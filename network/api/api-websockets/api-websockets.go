@@ -55,7 +55,7 @@ func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []
 
 func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_types.APIBlockRequest{0, nil}
+	request := &api_types.APIBlockRequest{0, nil, api_types.RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, request); err != nil {
 		return nil, err
 	}
@@ -65,12 +65,22 @@ func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values [
 
 func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_types.APIBlockRequest{0, nil}
+	request := &api_types.APIBlockRequest{0, nil, api_types.RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, request); err != nil {
 		return nil, err
 	}
 
 	return api.apiCommon.GetBlockInfo(request)
+}
+
+func (api *APIWebsockets) getBlockCompleteMissingTxs(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+
+	request := &api_types.APIBlockCompleteMissingTxsRequest{nil, []int{}}
+	if err := json.Unmarshal(values, &request); err != nil {
+		return nil, err
+	}
+
+	return api.apiCommon.GetBlockCompleteMissingTxs(request)
 }
 
 func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -234,6 +244,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"handshake":          api.getHandshake,
 		"ping":               api.getPing,
 		"block":              api.getBlock,
+		"block-miss-txs":     api.getBlockCompleteMissingTxs,
 		"block-hash":         api.getHash,
 		"block-complete":     api.getBlockComplete,
 		"tx":                 api.getTx,

@@ -12,8 +12,8 @@ import (
 	"strconv"
 )
 
-func (chain *Blockchain) OpenLoadBlockHash(blockHeight uint64) (hash []byte, errfinal error) {
-	errfinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (chain *Blockchain) OpenLoadBlockHash(blockHeight uint64) (hash []byte, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err = chain.LoadBlockHash(reader, blockHeight)
 		return
 	})
@@ -74,6 +74,10 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 		return
 	}
 
+	if err = writer.Delete("blockHeight_ByHash" + string(hash)); err != nil {
+		return
+	}
+
 	data := writer.Get("blockTxs" + blockHeightStr)
 	txHashes := [][]byte{} //32 byte
 
@@ -109,6 +113,10 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 	}
 
 	if err := writer.Put("blockHash_ByHeight"+blockHeightStr, blkComplete.Block.Bloom.Hash); err != nil {
+		return nil, err
+	}
+
+	if err := writer.Put("blockHeight_ByHash"+string(blkComplete.Block.Bloom.Hash), []byte(blockHeightStr)); err != nil {
 		return nil, err
 	}
 

@@ -34,8 +34,14 @@ func GetReturnType(s string, defaultValue APIReturnType) APIReturnType {
 }
 
 type APIBlockRequest struct {
-	Height uint64           `json:"height,omitempty"`
-	Hash   helpers.HexBytes `json:"hash,omitempty"`
+	Height     uint64           `json:"height,omitempty"`
+	Hash       helpers.HexBytes `json:"hash,omitempty"`
+	ReturnType APIReturnType    `json:"returnType,omitempty"`
+}
+
+type APIBlockCompleteMissingTxsRequest struct {
+	Hash       helpers.HexBytes `json:"hash,omitempty"`
+	MissingTxs []int            `json:"missingTxs,omitempty"`
 }
 
 type APIBlockCompleteRequest struct {

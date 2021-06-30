@@ -7,9 +7,14 @@ import (
 	"pandora-pay/helpers"
 )
 
+type APIBlockCompleteMissingTxs struct {
+	Txs []helpers.HexBytes `json:"txs,omitempty"`
+}
+
 type APIBlockWithTxs struct {
-	Block *block.Block       `json:"block"`
-	Txs   []helpers.HexBytes `json:"txs"`
+	Block           *block.Block       `json:"block,omitempty"`
+	BlockSerialized helpers.HexBytes   `json:"serialized,omitempty"`
+	Txs             []helpers.HexBytes `json:"txs,omitempty"`
 }
 
 type APIBlockchain struct {
