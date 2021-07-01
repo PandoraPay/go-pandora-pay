@@ -14,6 +14,14 @@ type BlockCompleteBloom struct {
 	bloomedMerkleTreeVerified bool
 }
 
+func (blkComplete *BlockComplete) BloomCompleteBySerialized(serialized []byte) {
+	blkComplete.BloomBlkComplete = &BlockCompleteBloom{
+		Serialized:  serialized,
+		Size:        uint64(len(serialized)),
+		bloomedSize: true,
+	}
+}
+
 func (blkComplete *BlockComplete) BloomAll() (err error) {
 
 	for _, tx := range blkComplete.Txs {

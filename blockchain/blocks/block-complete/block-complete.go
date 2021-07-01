@@ -125,12 +125,7 @@ func (blkComplete *BlockComplete) Deserialize(reader *helpers.BufferReader) (err
 	}
 
 	//we can bloom more efficiently if asked
-	serialized := reader.Buf[first:reader.Position]
-	blkComplete.BloomBlkComplete = &BlockCompleteBloom{
-		Serialized:  serialized,
-		Size:        uint64(len(serialized)),
-		bloomedSize: true,
-	}
+	blkComplete.BloomCompleteBySerialized(reader.Buf[first:reader.Position])
 
 	return
 }
