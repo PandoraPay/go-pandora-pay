@@ -1,10 +1,12 @@
 package blockchain
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"pandora-pay/blockchain/accounts"
 	blockchain_sync "pandora-pay/blockchain/blockchain-sync"
+	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -19,14 +21,15 @@ type BlockchainDataUpdate struct {
 }
 
 type BlockchainUpdate struct {
-	err              error
-	newChainData     *BlockchainData
-	accs             *accounts.Accounts
-	toks             *tokens.Tokens
-	removedTxs       [][]byte
-	insertedBlocks   []*block_complete.BlockComplete
-	insertedTxHashes [][]byte
-	calledByForging  bool
+	err                   error
+	newChainData          *BlockchainData
+	accs                  *accounts.Accounts
+	toks                  *tokens.Tokens
+	allTransactionChanges []*blockchain_types.BlockchainTransactionUpdate
+	removedTxs            [][]byte
+	insertedBlocks        []*block_complete.BlockComplete
+	insertedTxHashes      [][]byte
+	calledByForging       bool
 }
 
 type BlockchainUpdatesQueue struct {
@@ -89,7 +92,14 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		if _, err := queue.chain.mempool.AddTxToMemPool(tx, update.newChainData.Height, false, false); err != nil {
 			return false, err
 		}
+		for _, change := range update.allTransactionChanges {
+			if bytes.Equal(change.TxHash, tx.Bloom.Hash) {
+				change.Tx = tx
+			}
+		}
 	}
+
+	queue.chain.UpdateTransactions.BroadcastAwait(update.allTransactionChanges)
 
 	hasAnySuccess := queue.hasAnySuccess(updates[1:])
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain/accounts"
+	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/config"
@@ -53,7 +54,7 @@ func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.St
 	return
 }
 
-func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
+func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, removedTxHashes map[string][]byte, allTransactionChanges []*blockchain_types.BlockchainTransactionUpdate, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
 
 	blockHeightStr := strconv.FormatUint(blockHeight, 10)
 	blockHeightNextStr := strconv.FormatUint(blockHeight, 10)
@@ -87,6 +88,10 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 
 	for _, txHash := range txHashes {
 		removedTxHashes[string(txHash)] = txHash
+		allTransactionChanges = append(allTransactionChanges, &blockchain_types.BlockchainTransactionUpdate{
+			TxHash:   txHash,
+			Inserted: false,
+		})
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
@@ -98,7 +103,7 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 	return
 }
 
-func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, removedTxHashes map[string][]byte, accs *accounts.Accounts, toks *tokens.Tokens) ([][]byte, error) {
+func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, removedTxHashes map[string][]byte, allTransactionChanges []*blockchain_types.BlockchainTransactionUpdate, accs *accounts.Accounts, toks *tokens.Tokens) ([][]byte, error) {
 
 	blockHeightStr := strconv.FormatUint(blkComplete.Block.Height, 10)
 	if err := accs.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
@@ -126,12 +131,20 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 
 		txHashes[i] = tx.Bloom.Hash
 
+		allTransactionChanges = append(allTransactionChanges, &blockchain_types.BlockchainTransactionUpdate{
+			Tx:       tx,
+			Inserted: true,
+			TxHash:   tx.Bloom.Hash,
+		})
+
 		//let's check to see if the tx block is already stored, if yes, we will skip it
 		if removedTxHashes[tx.Bloom.HashStr] == nil {
 			if err := writer.Put("tx"+string(tx.Bloom.Hash), tx.Bloom.Serialized); err != nil {
 				return nil, err
 			}
 			newTxHashes = append(newTxHashes, tx.Bloom.Hash)
+		} else {
+			delete(removedTxHashes, tx.Bloom.HashStr)
 		}
 
 	}

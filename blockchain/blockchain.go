@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/blockchain-sync"
+	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/blocks/block-complete"
 	difficulty "pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/blockchain/forging/forging-block-work"
@@ -38,6 +39,7 @@ type Blockchain struct {
 	UpdateNewChainDataUpdate *multicast.MulticastChannel          //chan *BlockchainDataUpdate
 	UpdateAccounts           *multicast.MulticastChannel          //chan *accounts
 	UpdateTokens             *multicast.MulticastChannel          //chan *tokens
+	UpdateTransactions       *multicast.MulticastChannel          //chan []*blockchain_types.BlockchainTransactionUpdate
 	NextBlockCreatedCn       chan *forging_block_work.ForgingWork //chan
 }
 
@@ -87,12 +89,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		TransactionsCount:     chainData.TransactionsCount,                    //atomic copy
 	}
 
+	allTransactionChanges := []*blockchain_types.BlockchainTransactionUpdate{}
+
 	insertedBlocks := []*block_complete.BlockComplete{}
 	insertedTxHashes := [][]byte{}
 
 	//remove blocks which are different
 	removedTxHashes := make(map[string][]byte)
+
 	removedTxs := [][]byte{}
+
 	removedBlocksHeights := []uint64{}
 	removedBlocksTransactionsCount := uint64(0)
 
@@ -142,7 +148,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					copy(removedBlocksHeights[1:], removedBlocksHeights)
 					removedBlocksHeights[0] = index
 
-					if err = chain.removeBlockComplete(writer, index, removedTxHashes, accs, toks); err != nil {
+					if err = chain.removeBlockComplete(writer, index, removedTxHashes, allTransactionChanges, accs, toks); err != nil {
 						return
 					}
 
@@ -241,7 +247,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					savedBlock = false
 
 					var newTransactionsSaved [][]byte
-					if newTransactionsSaved, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, accs, toks); err != nil {
+					if newTransactionsSaved, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, allTransactionChanges, accs, toks); err != nil {
 						return errors.New("Error saving block complete: " + err.Error())
 					}
 
@@ -412,6 +418,7 @@ func CreateBlockchain(mempool *mempool.Mempool) (*Blockchain, error) {
 		UpdateNewChainDataUpdate: multicast.NewMulticastChannel(),
 		UpdateAccounts:           multicast.NewMulticastChannel(),
 		UpdateTokens:             multicast.NewMulticastChannel(),
+		UpdateTransactions:       multicast.NewMulticastChannel(),
 		NextBlockCreatedCn:       make(chan *forging_block_work.ForgingWork),
 	}
 
