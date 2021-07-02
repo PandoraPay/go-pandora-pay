@@ -5,6 +5,8 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common/api_types"
@@ -38,7 +40,7 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 	return
 }
 
-func (subs *WebsocketSubscriptions) send(apiRoute []byte, key []byte, list map[string]*connection.SubscriptionNotification, data helpers.SerializableInterface) {
+func (this *WebsocketSubscriptions) send(subscriptionType api_types.SubscriptionType, apiRoute []byte, key []byte, list map[string]*connection.SubscriptionNotification, data helpers.SerializableInterface) {
 
 	var err error
 	var bytes []byte
@@ -47,13 +49,13 @@ func (subs *WebsocketSubscriptions) send(apiRoute []byte, key []byte, list map[s
 	for _, subNot := range list {
 
 		if data == nil {
-			subNot.Conn.Send(key, nil)
+			_ = subNot.Conn.Send(key, nil)
 			continue
 		}
 
 		if subNot.Subscription.ReturnType == api_types.RETURN_SERIALIZED {
 			if serialized == nil {
-				serialized = &api_types.APISubscriptionNotification{key, data.SerializeToBytes()}
+				serialized = &api_types.APISubscriptionNotification{subscriptionType, key, data.SerializeToBytes()}
 			}
 			subNot.Conn.SendJSON(apiRoute, serialized)
 		} else if subNot.Subscription.ReturnType == api_types.RETURN_JSON {
@@ -61,7 +63,7 @@ func (subs *WebsocketSubscriptions) send(apiRoute []byte, key []byte, list map[s
 				if bytes, err = json.Marshal(data); err != nil {
 					panic(err)
 				}
-				marshalled = &api_types.APISubscriptionNotification{key, bytes}
+				marshalled = &api_types.APISubscriptionNotification{subscriptionType, key, bytes}
 			}
 			subNot.Conn.SendJSON(apiRoute, marshalled)
 		}
@@ -69,30 +71,53 @@ func (subs *WebsocketSubscriptions) send(apiRoute []byte, key []byte, list map[s
 	}
 }
 
-func (subs *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.SubscriptionType) (subsMap map[string]map[string]*connection.SubscriptionNotification) {
+func (this *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.SubscriptionType) (subsMap map[string]map[string]*connection.SubscriptionNotification) {
 	switch subscriptionType {
 	case api_types.SUBSCRIPTION_ACCOUNT:
-		subsMap = subs.accountsSubscriptions
+		subsMap = this.accountsSubscriptions
+	case api_types.SUBSCRIPTION_TOKEN:
+		subsMap = this.tokensSubscriptions
 	}
 	return
 }
 
-func (subs *WebsocketSubscriptions) processSubscriptions() {
+func (this *WebsocketSubscriptions) removeConnection(conn *connection.AdvancedConnection, subscriptionType api_types.SubscriptionType) {
 
-	updateAccountsCn := subs.chain.UpdateAccounts.AddListener()
-	defer subs.chain.UpdateAccounts.RemoveChannel(updateAccountsCn)
+	subsMap := this.getSubsMap(subscriptionType)
+
+	var deleted []string
+	for key, value := range subsMap {
+		if value[conn.UUID] != nil {
+			delete(value, conn.UUID)
+		}
+		if len(value) == 0 {
+			deleted = append(deleted, key)
+		}
+	}
+	for _, key := range deleted {
+		delete(subsMap, key)
+	}
+}
+
+func (this *WebsocketSubscriptions) processSubscriptions() {
+
+	updateAccountsCn := this.chain.UpdateAccounts.AddListener()
+	defer this.chain.UpdateAccounts.RemoveChannel(updateAccountsCn)
+
+	updateTokensCn := this.chain.UpdateTokens.AddListener()
+	defer this.chain.UpdateTokens.RemoveChannel(updateTokensCn)
 
 	var subsMap map[string]map[string]*connection.SubscriptionNotification
 
 	for {
 
 		select {
-		case subscription, ok := <-subs.newSubscriptionCn:
+		case subscription, ok := <-this.newSubscriptionCn:
 			if !ok {
 				return
 			}
 
-			if subsMap = subs.getSubsMap(subscription.Subscription.Type); subsMap == nil {
+			if subsMap = this.getSubsMap(subscription.Subscription.Type); subsMap == nil {
 				continue
 			}
 
@@ -102,12 +127,12 @@ func (subs *WebsocketSubscriptions) processSubscriptions() {
 			}
 			subsMap[keyStr][subscription.Conn.UUID] = subscription
 
-		case subscription, ok := <-subs.removeSubscriptionCn:
+		case subscription, ok := <-this.removeSubscriptionCn:
 			if !ok {
 				return
 			}
 
-			if subsMap = subs.getSubsMap(subscription.Subscription.Type); subsMap == nil {
+			if subsMap = this.getSubsMap(subscription.Subscription.Type); subsMap == nil {
 				continue
 			}
 
@@ -126,28 +151,31 @@ func (subs *WebsocketSubscriptions) processSubscriptions() {
 
 			accs := accsData.(*accounts.Accounts)
 			for k, v := range accs.HashMap.Committed {
-				list := subs.accountsSubscriptions[k]
+				list := this.accountsSubscriptions[k]
 				if list != nil {
-					subs.send([]byte("sub/notify"), []byte(k), list, v.Element.(*account.Account))
+					this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element.(*account.Account))
 				}
 			}
-		case conn, ok := <-subs.websocketClosedCn:
+		case toksData, ok := <-updateTokensCn:
 			if !ok {
 				return
 			}
 
-			var deleted []string
-			for key, value := range subs.accountsSubscriptions {
-				if value[conn.UUID] != nil {
-					delete(value, conn.UUID)
-				}
-				if len(value) == 0 {
-					deleted = append(deleted, key)
+			toks := toksData.(*tokens.Tokens)
+			for k, v := range toks.HashMap.Committed {
+				list := this.tokensSubscriptions[k]
+				if list != nil {
+					this.send(api_types.SUBSCRIPTION_TOKEN, []byte("sub/notify"), []byte(k), list, v.Element.(*token.Token))
 				}
 			}
-			for _, key := range deleted {
-				delete(subs.accountsSubscriptions, key)
+
+		case conn, ok := <-this.websocketClosedCn:
+			if !ok {
+				return
 			}
+
+			this.removeConnection(conn, api_types.SUBSCRIPTION_ACCOUNT)
+			this.removeConnection(conn, api_types.SUBSCRIPTION_TOKEN)
 
 		}
 

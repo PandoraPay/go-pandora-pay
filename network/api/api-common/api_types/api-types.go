@@ -46,8 +46,9 @@ type APIMempoolAnswer struct {
 }
 
 type APISubscriptionNotification struct {
-	Key  helpers.HexBytes `json:"key"`
-	Data helpers.HexBytes `json:"tx"`
+	SubscriptionType SubscriptionType `json:"type"`
+	Key              helpers.HexBytes `json:"key"`
+	Data             helpers.HexBytes `json:"tx"`
 }
 
 type APIAccountTxs struct {
