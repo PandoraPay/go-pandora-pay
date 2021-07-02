@@ -81,7 +81,7 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, 
 	return
 }
 
-func (blkComplete *BlockComplete) Serialize(writer *helpers.BufferWriter) {
+func (blkComplete *BlockComplete) AdvancedSerialization(writer *helpers.BufferWriter) {
 
 	writer.Write(blkComplete.Block.Bloom.Serialized)
 
@@ -90,12 +90,19 @@ func (blkComplete *BlockComplete) Serialize(writer *helpers.BufferWriter) {
 	for _, tx := range blkComplete.Txs {
 		writer.Write(tx.Bloom.Serialized)
 	}
+}
 
+func (blkComplete *BlockComplete) Serialize(writer *helpers.BufferWriter) {
+	writer.Write(blkComplete.BloomBlkComplete.Serialized)
 }
 
 func (blkComplete *BlockComplete) SerializeToBytes() []byte {
+	return blkComplete.BloomBlkComplete.Serialized
+}
+
+func (blkComplete *BlockComplete) SerializeManualToBytes() []byte {
 	writer := helpers.NewBufferWriter()
-	blkComplete.Serialize(writer)
+	blkComplete.AdvancedSerialization(writer)
 	return writer.Bytes()
 }
 

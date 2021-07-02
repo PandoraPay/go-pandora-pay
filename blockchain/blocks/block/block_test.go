@@ -33,7 +33,7 @@ func TestBlock_Serialize(t *testing.T) {
 		Signature:      make([]byte, cryptography.SignatureSize),
 	}
 
-	buf := blk.SerializeToBytes()
+	buf := blk.SerializeManualToBytes()
 	assert.Equal(t, len(buf) < 30, false, "Invalid serialization")
 
 	blk2 := &Block{BlockHeader: &BlockHeader{}}
@@ -42,7 +42,7 @@ func TestBlock_Serialize(t *testing.T) {
 	err = blk2.Deserialize(reader)
 	assert.NoError(t, err, "Error...?")
 
-	assert.Equal(t, blk2.SerializeToBytes(), blk.SerializeToBytes(), "Serialization/Deserialization doesn't work")
+	assert.Equal(t, blk2.SerializeManualToBytes(), blk.SerializeManualToBytes(), "Serialization/Deserialization doesn't work")
 
 }
 

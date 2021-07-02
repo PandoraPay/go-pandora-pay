@@ -32,7 +32,7 @@ func (blk *Block) BloomNow() (err error) {
 	}
 
 	if !blk.Bloom.bloomedHash {
-		blk.Bloom.Serialized = blk.SerializeToBytes()
+		blk.Bloom.Serialized = blk.SerializeManualToBytes()
 		blk.Bloom.Hash = cryptography.SHA3Hash(blk.Bloom.Serialized)
 		blk.Bloom.bloomedHash = true
 	}

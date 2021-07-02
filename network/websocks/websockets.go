@@ -28,8 +28,6 @@ type Websockets struct {
 	serverSockets                int64 //use atomic
 	totalSockets                 int64 //use atomic
 	UpdateNewConnectionMulticast *multicast.MulticastChannel
-	updateAccounts               *multicast.MulticastChannel
-	updateTokens                 *multicast.MulticastChannel
 	subscriptions                *WebsocketSubscriptions
 	api                          *api_http.API
 }

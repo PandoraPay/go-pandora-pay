@@ -263,7 +263,7 @@ func (apiStore *APIStore) loadBlockComplete(reader store_db_interface.StoreDBTra
 		Txs:   txs,
 	}
 
-	blkComplete.BloomCompleteBySerialized(blkComplete.SerializeToBytes())
+	blkComplete.BloomCompleteBySerialized(blkComplete.SerializeManualToBytes())
 
 	return blkComplete, nil
 }

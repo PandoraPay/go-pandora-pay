@@ -47,7 +47,7 @@ func (blkComplete *BlockComplete) BloomNow() error {
 	}
 
 	if !blkComplete.BloomBlkComplete.bloomedSize {
-		blkComplete.BloomBlkComplete.Serialized = blkComplete.SerializeToBytes()
+		blkComplete.BloomBlkComplete.Serialized = blkComplete.SerializeManualToBytes()
 		blkComplete.BloomBlkComplete.Size = uint64(len(blkComplete.BloomBlkComplete.Serialized))
 		blkComplete.BloomBlkComplete.bloomedSize = true
 	}

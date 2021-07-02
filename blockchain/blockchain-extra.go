@@ -161,12 +161,14 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 		blk.Forger = make([]byte, cryptography.PublicKeyHashHashSize)
 		blk.Signature = make([]byte, cryptography.SignatureSize)
 
-		blk.BloomSerializedNow(blk.SerializeToBytes())
+		blk.BloomSerializedNow(blk.SerializeManualToBytes())
 
 		blkComplete := &block_complete.BlockComplete{
 			Block: blk,
 			Txs:   []*transaction.Transaction{},
 		}
+
+		blkComplete.BloomCompleteBySerialized(blkComplete.SerializeManualToBytes())
 
 		writer := helpers.NewBufferWriter()
 		blk.SerializeForForging(writer)

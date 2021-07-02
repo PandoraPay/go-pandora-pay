@@ -137,12 +137,16 @@ func (blk *Block) SerializeForForging(writer *helpers.BufferWriter) {
 }
 
 func (blk *Block) Serialize(writer *helpers.BufferWriter) {
-	blk.AdvancedSerialization(writer, false, true)
+	writer.Write(blk.Bloom.Serialized)
 }
 
 func (blk *Block) SerializeToBytes() []byte {
+	return blk.Bloom.Serialized
+}
+
+func (blk *Block) SerializeManualToBytes() []byte {
 	writer := helpers.NewBufferWriter()
-	blk.Serialize(writer)
+	blk.AdvancedSerialization(writer, false, true)
 	return writer.Bytes()
 }
 
@@ -179,10 +183,4 @@ func (blk *Block) Deserialize(reader *helpers.BufferReader) (err error) {
 	blk.BloomSerializedNow(serialized)
 
 	return
-}
-
-func (blk *Block) Size() uint64 {
-	writer := helpers.NewBufferWriter()
-	blk.Serialize(writer)
-	return uint64(writer.Length())
 }
