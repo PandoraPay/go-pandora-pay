@@ -23,7 +23,7 @@ func (tx *Transaction) BloomNow() {
 	}
 
 	bloom := new(TransactionBloom)
-	bloom.Serialized = tx.SerializeToBytes()
+	bloom.Serialized = tx.SerializeManualToBytes()
 	bloom.Size = uint64(len(bloom.Serialized))
 	bloom.Hash = cryptography.SHA3Hash(bloom.Serialized)
 	bloom.HashStr = string(bloom.Hash)

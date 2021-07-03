@@ -50,12 +50,16 @@ func (tx *Transaction) SerializeAdvanced(writer *helpers.BufferWriter, inclSigna
 }
 
 func (tx *Transaction) Serialize(writer *helpers.BufferWriter) {
-	tx.SerializeAdvanced(writer, true)
+	writer.Write(tx.Bloom.Serialized)
 }
 
 func (tx *Transaction) SerializeToBytes() []byte {
+	return tx.Bloom.Serialized
+}
+
+func (tx *Transaction) SerializeManualToBytes() []byte {
 	writer := helpers.NewBufferWriter()
-	tx.Serialize(writer)
+	tx.SerializeAdvanced(writer, true)
 	return writer.Bytes()
 }
 

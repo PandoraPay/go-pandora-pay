@@ -26,7 +26,7 @@ func TestCreateSimpleTx(t *testing.T) {
 	assert.NoError(t, tx.Validate(), "error validating tx")
 	assert.Equal(t, tx.VerifySignatureManually(), true, "Verify signature failed")
 
-	serialized := tx.SerializeToBytes()
+	serialized := tx.SerializeManualToBytes()
 	assert.NotNil(t, serialized, "serialized is nil")
 
 	tx2 := new(transaction.Transaction)
@@ -52,7 +52,7 @@ func TestCreateUnstakeTx(t *testing.T) {
 
 	assert.Equal(t, tx.VerifySignatureManually(), true, "Verify signature failed")
 
-	serialized := tx.SerializeToBytes()
+	serialized := tx.SerializeManualToBytes()
 	assert.NotNil(t, serialized, "serialized is nil")
 
 	tx2 := new(transaction.Transaction)
@@ -84,7 +84,7 @@ func TestCreateUnstakeTxPayExtra(t *testing.T) {
 
 	assert.Equal(t, tx.VerifySignatureManually(), true, "Verify signature failed")
 
-	serialized := tx.SerializeToBytes()
+	serialized := tx.SerializeManualToBytes()
 	assert.NotNil(t, serialized, "serialized is nil")
 
 	tx2 := new(transaction.Transaction)
