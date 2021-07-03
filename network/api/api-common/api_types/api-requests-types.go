@@ -39,6 +39,11 @@ type APIBlockRequest struct {
 	ReturnType APIReturnType    `json:"returnType,omitempty"`
 }
 
+type APIBlockInfoRequest struct {
+	Height uint64           `json:"height,omitempty"`
+	Hash   helpers.HexBytes `json:"hash,omitempty"`
+}
+
 type APIBlockCompleteMissingTxsRequest struct {
 	Hash       helpers.HexBytes `json:"hash,omitempty"`
 	MissingTxs []int            `json:"missingTxs,omitempty"`

@@ -86,7 +86,7 @@ func (api *API) getBlock(values *url.Values) (interface{}, error) {
 
 func (api *API) getBlockInfo(values *url.Values) (interface{}, error) {
 
-	request := &api_types.APIBlockRequest{}
+	request := &api_types.APIBlockInfoRequest{}
 
 	err := errors.New("parameter 'hash' or 'height' are missing")
 	if values.Get("height") != "" {

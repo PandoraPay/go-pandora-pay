@@ -119,7 +119,7 @@ func (api *APICommon) GetBlock(request *api_types.APIBlockRequest) ([]byte, erro
 	return json.Marshal(out)
 }
 
-func (api *APICommon) GetBlockInfo(request *api_types.APIBlockRequest) ([]byte, error) {
+func (api *APICommon) GetBlockInfo(request *api_types.APIBlockInfoRequest) ([]byte, error) {
 	blockInfo, err := api.ApiStore.openLoadBlockInfo(request.Height, request.Hash)
 	if err != nil || blockInfo == nil {
 		return nil, err

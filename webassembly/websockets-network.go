@@ -27,7 +27,7 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 				return nil, err
 			}
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("block-info"), &api_types.APIBlockRequest{uint64(args[0].Int()), hash})
+		data := socket.SendJSONAwaitAnswer([]byte("block-info"), &api_types.APIBlockInfoRequest{uint64(args[0].Int()), hash})
 		if data.Err != nil {
 			return nil, data.Err
 		}

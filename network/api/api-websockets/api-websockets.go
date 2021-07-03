@@ -65,7 +65,7 @@ func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values [
 
 func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_types.APIBlockRequest{0, nil, api_types.RETURN_SERIALIZED}
+	request := &api_types.APIBlockInfoRequest{0, nil}
 	if err := json.Unmarshal(values, request); err != nil {
 		return nil, err
 	}
