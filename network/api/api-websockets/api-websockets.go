@@ -16,13 +16,13 @@ import (
 )
 
 type APIWebsockets struct {
-	GetMap                                   map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error)
-	chain                                    *blockchain.Blockchain
-	mempool                                  *mempool.Mempool
-	apiCommon                                *api_common.APICommon
-	apiStore                                 *api_common.APIStore
-	AccountsChangesSubscriptionNotifications *multicast.MulticastChannel //*api_common.APISubscriptionNotification
-	mempoolDownloadPending                   *sync.Map                   //string
+	GetMap                    map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error)
+	chain                     *blockchain.Blockchain
+	mempool                   *mempool.Mempool
+	apiCommon                 *api_common.APICommon
+	apiStore                  *api_common.APIStore
+	SubscriptionNotifications *multicast.MulticastChannel //*api_common.APISubscriptionNotification
+	mempoolDownloadPending    *sync.Map                   //string
 }
 
 func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -229,12 +229,12 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, mempool *mempool.Mempool) *APIWebsockets {
 
 	api := &APIWebsockets{
-		chain:                                    chain,
-		apiStore:                                 apiStore,
-		apiCommon:                                apiCommon,
-		mempool:                                  mempool,
-		AccountsChangesSubscriptionNotifications: multicast.NewMulticastChannel(),
-		mempoolDownloadPending:                   &sync.Map{},
+		chain:                     chain,
+		apiStore:                  apiStore,
+		apiCommon:                 apiCommon,
+		mempool:                   mempool,
+		SubscriptionNotifications: multicast.NewMulticastChannel(),
+		mempoolDownloadPending:    &sync.Map{},
 	}
 
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error){

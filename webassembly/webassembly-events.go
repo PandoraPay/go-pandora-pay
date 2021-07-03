@@ -6,6 +6,8 @@ import (
 	"errors"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/blockchain/tokens/token"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -67,32 +69,62 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 		}
 		callback := args[0]
 
-		accountsCn := app.Network.Websockets.ApiWebsockets.AccountsChangesSubscriptionNotifications.AddListener()
-		defer app.Network.Websockets.ApiWebsockets.AccountsChangesSubscriptionNotifications.RemoveChannel(accountsCn)
+		subscriptionsCn := app.Network.Websockets.ApiWebsockets.SubscriptionNotifications.AddListener()
+
+		gui.GUI.Log("listenNetworkNotifications111")
 
 		recovery.SafeGo(func() {
 
+			defer app.Network.Websockets.ApiWebsockets.SubscriptionNotifications.RemoveChannel(subscriptionsCn)
+
 			var err error
 			for {
-				dataValue, ok := <-accountsCn
+				dataValue, ok := <-subscriptionsCn
 				if !ok {
 					return
 				}
 
 				data := dataValue.(*api_types.APISubscriptionNotification)
 
-				var acc account.Account
-				var output []byte
-				if data.Data != nil {
-					if err = acc.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
-						continue
+				var object interface{}
+
+				gui.GUI.Log("RECEIVED SUBSCRIPTION")
+				gui.GUI.Log(int(data.SubscriptionType))
+
+				switch data.SubscriptionType {
+				case api_types.SUBSCRIPTION_ACCOUNT:
+					var acc account.Account
+					if data.Data != nil {
+						if err = acc.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
+							continue
+						}
 					}
-					if output, err = json.Marshal(acc); err != nil {
-						continue
+					object = acc
+				case api_types.SUBSCRIPTION_TOKEN:
+					var tok token.Token
+					if data.Data != nil {
+						if err = tok.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
+							continue
+						}
 					}
+					object = tok
+				case api_types.SUBSCRIPTION_TRANSACTIONS:
+					var tx transaction.Transaction
+					if data.Data != nil {
+						if err = tx.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
+							return
+						}
+					}
+					object = tx
 				}
 
-				callback.Invoke(int(api_types.SUBSCRIPTION_ACCOUNT), hex.EncodeToString(data.Key), string(output))
+				var output []byte
+				if output, err = json.Marshal(object); err != nil {
+					continue
+				}
+
+				callback.Invoke(int(data.SubscriptionType), hex.EncodeToString(data.Key), string(output))
+
 			}
 		})
 

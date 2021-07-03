@@ -46,32 +46,38 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 	return
 }
 
-func (this *WebsocketSubscriptions) send(subscriptionType api_types.SubscriptionType, apiRoute []byte, key []byte, list map[string]*connection.SubscriptionNotification, data helpers.SerializableInterface) {
+func (this *WebsocketSubscriptions) send(subscriptionType api_types.SubscriptionType, apiRoute []byte, key []byte, list map[string]*connection.SubscriptionNotification, element helpers.SerializableInterface, extra interface{}) {
 
 	var err error
-	var bytes []byte
+	var bytes, extraMarshalled []byte
 	var serialized, marshalled *api_types.APISubscriptionNotification
+
+	if extra != nil {
+		if extraMarshalled, err = json.Marshal(extra); err != nil {
+			panic(err)
+		}
+	}
 
 	for _, subNot := range list {
 
-		if data == nil {
+		if element == nil {
 			_ = subNot.Conn.Send(key, nil)
 			continue
 		}
 
 		if subNot.Subscription.ReturnType == api_types.RETURN_SERIALIZED {
 			if serialized == nil {
-				serialized = &api_types.APISubscriptionNotification{subscriptionType, key, data.SerializeToBytes()}
+				serialized = &api_types.APISubscriptionNotification{subscriptionType, key, element.SerializeToBytes(), extraMarshalled}
 			}
-			subNot.Conn.SendJSON(apiRoute, serialized)
+			_ = subNot.Conn.SendJSON(apiRoute, serialized)
 		} else if subNot.Subscription.ReturnType == api_types.RETURN_JSON {
 			if marshalled == nil {
-				if bytes, err = json.Marshal(data); err != nil {
+				if bytes, err = json.Marshal(element); err != nil {
 					panic(err)
 				}
-				marshalled = &api_types.APISubscriptionNotification{subscriptionType, key, bytes}
+				marshalled = &api_types.APISubscriptionNotification{subscriptionType, key, bytes, extraMarshalled}
 			}
-			subNot.Conn.SendJSON(apiRoute, marshalled)
+			_ = subNot.Conn.SendJSON(apiRoute, marshalled)
 		}
 
 	}
@@ -163,7 +169,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			accs := accsData.(*accounts.Accounts)
 			for k, v := range accs.HashMap.Committed {
 				if list := this.accountsSubscriptions[k]; list != nil {
-					this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element.(*account.Account))
+					this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element.(*account.Account), nil)
 				}
 			}
 		case toksData, ok := <-updateTokensCn:
@@ -174,7 +180,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			toks := toksData.(*tokens.Tokens)
 			for k, v := range toks.HashMap.Committed {
 				if list := this.tokensSubscriptions[k]; list != nil {
-					this.send(api_types.SUBSCRIPTION_TOKEN, []byte("sub/notify"), []byte(k), list, v.Element.(*token.Token))
+					this.send(api_types.SUBSCRIPTION_TOKEN, []byte("sub/notify"), []byte(k), list, v.Element.(*token.Token), nil)
 				}
 			}
 
@@ -186,21 +192,20 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			transactions := transactionsData.([]*blockchain_types.BlockchainTransactionUpdate)
 			for _, v := range transactions {
 
-				tx := v.Tx
-				switch tx.TxType {
+				switch v.Tx.TxType {
 				case transaction_type.TX_SIMPLE:
-					txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
+					txBase := v.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 					for _, vin := range txBase.Vin {
 						k := vin.Bloom.PublicKeyHash
 						if list := this.transactionsSubscriptions[string(k)]; list != nil {
-							this.send(api_types.SUBSCRIPTION_TRANSACTIONS, []byte("sub/notify"), k, list, tx)
+							this.send(api_types.SUBSCRIPTION_TRANSACTIONS, []byte("sub/notify"), k, list, v.Tx, &api_types.APISubscriptionNotificationTxExtra{v.Inserted})
 						}
 					}
 
 					for _, vout := range txBase.Vout {
 						k := vout.PublicKeyHash
 						if list := this.transactionsSubscriptions[string(k)]; list != nil {
-							this.send(api_types.SUBSCRIPTION_TRANSACTIONS, []byte("sub/notify"), k, list, tx)
+							this.send(api_types.SUBSCRIPTION_TRANSACTIONS, []byte("sub/notify"), k, list, v.Tx, &api_types.APISubscriptionNotificationTxExtra{v.Inserted})
 						}
 					}
 

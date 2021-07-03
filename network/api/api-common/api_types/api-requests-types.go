@@ -108,7 +108,7 @@ type APITokenRequest struct {
 }
 
 type APISubscriptionRequest struct {
-	Key        []byte           `json:"Key,omitempty"`
+	Key        []byte           `json:"key,omitempty"`
 	Type       SubscriptionType `json:"type,omitempty"`
 	ReturnType APIReturnType    `json:"returnType,omitempty"`
 }

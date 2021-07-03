@@ -2,6 +2,7 @@ package api_websockets
 
 import (
 	"encoding/json"
+	"pandora-pay/gui"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection"
 )
@@ -23,7 +24,8 @@ func (api *APIWebsockets) subscribedNotificationReceived(conn *connection.Advanc
 		return nil, err
 	}
 
-	api.AccountsChangesSubscriptionNotifications.BroadcastAwait(notification)
+	api.SubscriptionNotifications.BroadcastAwait(notification)
+
 	return nil, nil
 }
 

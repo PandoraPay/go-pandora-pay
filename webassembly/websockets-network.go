@@ -233,8 +233,8 @@ func subscribeNetwork(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		_ = &api_types.APISubscriptionRequest{key, api_types.SubscriptionType(args[1].Int()), api_types.RETURN_SERIALIZED}
-		data := socket.SendJSONAwaitAnswer([]byte("sub"), &api_types.APISubscriptionRequest{key, api_types.SubscriptionType(args[1].Int()), api_types.RETURN_SERIALIZED})
+		req := &api_types.APISubscriptionRequest{key, api_types.SubscriptionType(args[1].Int()), api_types.RETURN_SERIALIZED}
+		data := socket.SendJSONAwaitAnswer([]byte("sub"), req)
 		return true, data.Err
 	})
 }
