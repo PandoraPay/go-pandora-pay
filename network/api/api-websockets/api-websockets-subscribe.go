@@ -2,7 +2,6 @@ package api_websockets
 
 import (
 	"encoding/json"
-	"pandora-pay/gui"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection"
 )

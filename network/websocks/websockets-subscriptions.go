@@ -219,6 +219,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			}
 
 			this.removeConnection(conn, api_types.SUBSCRIPTION_ACCOUNT)
+			this.removeConnection(conn, api_types.SUBSCRIPTION_TRANSACTIONS)
 			this.removeConnection(conn, api_types.SUBSCRIPTION_TOKEN)
 
 		}

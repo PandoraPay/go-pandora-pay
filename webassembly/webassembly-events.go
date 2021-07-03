@@ -88,7 +88,6 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 
 				var object interface{}
 
-				gui.GUI.Log("RECEIVED SUBSCRIPTION")
 				gui.GUI.Log(int(data.SubscriptionType))
 
 				switch data.SubscriptionType {
@@ -123,7 +122,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					continue
 				}
 
-				callback.Invoke(int(data.SubscriptionType), hex.EncodeToString(data.Key), string(output))
+				callback.Invoke(int(data.SubscriptionType), hex.EncodeToString(data.Key), string(output), string(data.Extra))
 
 			}
 		})

@@ -54,75 +54,79 @@ func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.St
 	return
 }
 
-func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, removedTxHashes map[string][]byte, allTransactionChanges []*blockchain_types.BlockchainTransactionUpdate, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
+func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, removedTxHashes map[string][]byte, allTransactionChanges []*blockchain_types.BlockchainTransactionUpdate, accs *accounts.Accounts, toks *tokens.Tokens) ([]*blockchain_types.BlockchainTransactionUpdate, error) {
+
+	allTransactionChanges2 := allTransactionChanges
 
 	blockHeightStr := strconv.FormatUint(blockHeight, 10)
 	blockHeightNextStr := strconv.FormatUint(blockHeight, 10)
 
-	if err = accs.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
-		return
+	if err := accs.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
+		return allTransactionChanges, err
 	}
-	if err = toks.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
-		return
+	if err := toks.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
+		return allTransactionChanges, err
 	}
 
 	hash := writer.Get("blockHash_ByHeight" + blockHeightStr)
 	if hash == nil {
-		return errors.New("Invalid Hash")
+		return allTransactionChanges, errors.New("Invalid Hash")
 	}
 
-	if err = writer.Delete("block_ByHash" + string(hash)); err != nil {
-		return
+	if err := writer.Delete("block_ByHash" + string(hash)); err != nil {
+		return allTransactionChanges, err
 	}
 
-	if err = writer.Delete("blockHeight_ByHash" + string(hash)); err != nil {
-		return
+	if err := writer.Delete("blockHeight_ByHash" + string(hash)); err != nil {
+		return allTransactionChanges, err
 	}
 
 	data := writer.Get("blockTxs" + blockHeightStr)
 	txHashes := [][]byte{} //32 byte
 
-	if err = json.Unmarshal(data, &txHashes); err != nil {
-		return
+	if err := json.Unmarshal(data, &txHashes); err != nil {
+		return allTransactionChanges, err
 	}
 
 	for _, txHash := range txHashes {
 		removedTxHashes[string(txHash)] = txHash
-		allTransactionChanges = append(allTransactionChanges, &blockchain_types.BlockchainTransactionUpdate{
+		allTransactionChanges2 = append(allTransactionChanges2, &blockchain_types.BlockchainTransactionUpdate{
 			TxHash:   txHash,
 			Inserted: false,
 		})
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
-		if err = removeBlockCompleteInfo(writer, hash, txHashes); err != nil {
-			return
+		if err := removeBlockCompleteInfo(writer, hash, txHashes); err != nil {
+			return allTransactionChanges, err
 		}
 	}
 
-	return
+	return allTransactionChanges2, nil
 }
 
-func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, removedTxHashes map[string][]byte, allTransactionChanges []*blockchain_types.BlockchainTransactionUpdate, accs *accounts.Accounts, toks *tokens.Tokens) ([][]byte, error) {
+func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, removedTxHashes map[string][]byte, allTransactionChanges []*blockchain_types.BlockchainTransactionUpdate, accs *accounts.Accounts, toks *tokens.Tokens) ([][]byte, []*blockchain_types.BlockchainTransactionUpdate, error) {
+
+	allTransactionChanges2 := allTransactionChanges
 
 	blockHeightStr := strconv.FormatUint(blkComplete.Block.Height, 10)
 	if err := accs.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
-		return nil, err
+		return nil, allTransactionChanges, err
 	}
 	if err := toks.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
-		return nil, err
+		return nil, allTransactionChanges, err
 	}
 
 	if err := writer.Put("block_ByHash"+string(blkComplete.Block.Bloom.Hash), blkComplete.Block.SerializeToBytes()); err != nil {
-		return nil, err
+		return nil, allTransactionChanges, err
 	}
 
 	if err := writer.Put("blockHash_ByHeight"+blockHeightStr, blkComplete.Block.Bloom.Hash); err != nil {
-		return nil, err
+		return nil, allTransactionChanges, err
 	}
 
 	if err := writer.Put("blockHeight_ByHash"+string(blkComplete.Block.Bloom.Hash), []byte(blockHeightStr)); err != nil {
-		return nil, err
+		return nil, allTransactionChanges, err
 	}
 
 	newTxHashes := [][]byte{}
@@ -131,7 +135,7 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 
 		txHashes[i] = tx.Bloom.Hash
 
-		allTransactionChanges = append(allTransactionChanges, &blockchain_types.BlockchainTransactionUpdate{
+		allTransactionChanges2 = append(allTransactionChanges2, &blockchain_types.BlockchainTransactionUpdate{
 			Tx:       tx,
 			Inserted: true,
 			TxHash:   tx.Bloom.Hash,
@@ -140,7 +144,7 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		//let's check to see if the tx block is already stored, if yes, we will skip it
 		if removedTxHashes[tx.Bloom.HashStr] == nil {
 			if err := writer.Put("tx"+string(tx.Bloom.Hash), tx.Bloom.Serialized); err != nil {
-				return nil, err
+				return nil, allTransactionChanges, err
 			}
 			newTxHashes = append(newTxHashes, tx.Bloom.Hash)
 		} else {
@@ -151,20 +155,20 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 
 	if config.SEED_WALLET_NODES_INFO {
 		if err := saveBlockCompleteInfo(writer, blkComplete, transactionsCount); err != nil {
-			return nil, err
+			return nil, allTransactionChanges, err
 		}
 	}
 
 	marshal, err := json.Marshal(txHashes)
 	if err != nil {
-		return nil, err
+		return nil, allTransactionChanges, err
 	}
 
 	if err = writer.Put("blockTxs"+blockHeightStr, marshal); err != nil {
-		return nil, err
+		return nil, allTransactionChanges, err
 	}
 
-	return txHashes, nil
+	return txHashes, allTransactionChanges2, nil
 }
 
 func (chain *Blockchain) saveBlockchainHashmaps(accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
