@@ -189,7 +189,7 @@ func CreateMemPool() (*Mempool, error) {
 
 	worker := new(mempoolWorker)
 	recovery.SafeGo(func() {
-		worker.processing(mempool.NewWorkCn, mempool.SuspendProcessingCn, mempool.ContinueProcessingCn, mempool.AddTransactionCn, mempool.Txs.addToListCn, mempool.Txs.removeFromListCn)
+		worker.processing(mempool.NewWorkCn, mempool.SuspendProcessingCn, mempool.ContinueProcessingCn, mempool.AddTransactionCn, mempool.Txs.addToListCn, mempool.Txs.removeFromListCn, mempool.Txs.clearListCn)
 	})
 
 	mempool.initCLI()

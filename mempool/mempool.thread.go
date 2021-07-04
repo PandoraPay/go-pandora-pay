@@ -31,6 +31,7 @@ func (worker *mempoolWorker) processing(
 	addTransactionCn <-chan *MempoolWorkerAddTx,
 	addToListCn chan<- *mempoolTx,
 	removedFromListCn chan<- *mempoolTx,
+	clearListCn chan<- interface{},
 ) {
 
 	var work *mempoolWork
@@ -47,6 +48,7 @@ func (worker *mempoolWorker) processing(
 			work = newWork
 			listIndex = 0
 			txMap = make(map[string]bool)
+			clearListCn <- nil
 		case <-continueProcessingCn:
 			suspended = false
 		}
@@ -71,6 +73,7 @@ func (worker *mempoolWorker) processing(
 					work = newWork
 					listIndex = 0
 					txMap = make(map[string]bool)
+					clearListCn <- nil
 				case <-suspendProcessingCn:
 					suspended = true
 					return
@@ -85,6 +88,7 @@ func (worker *mempoolWorker) processing(
 							work = newWork
 							listIndex = 0
 							txMap = make(map[string]bool)
+							clearListCn <- nil
 						case <-suspendProcessingCn:
 							suspended = true
 							return

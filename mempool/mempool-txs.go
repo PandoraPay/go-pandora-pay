@@ -19,6 +19,7 @@ type MempoolTxs struct {
 	txsList          *atomic.Value //[]*mempoolTx
 	addToListCn      chan *mempoolTx
 	removeFromListCn chan *mempoolTx
+	clearListCn      chan interface{}
 }
 
 func (self *MempoolTxs) GetTxsList() (out []*mempoolTx) {
@@ -36,6 +37,14 @@ func (self *MempoolTxs) Exists(txId string) *transaction.Transaction {
 func (self *MempoolTxs) process() {
 	for {
 		select {
+
+		case <-self.clearListCn:
+			list := self.txsList.Load().([]*mempoolTx)
+			self.txsList.Store([]*mempoolTx{})
+			atomic.StoreInt64(&self.txsCount, 0)
+			for _, v := range list {
+				self.txsMap.Delete(v.Tx.Bloom.HashStr)
+			}
 		case tx := <-self.addToListCn:
 			self.txsList.Store(append(self.txsList.Load().([]*mempoolTx), tx))
 			atomic.AddInt64(&self.txsCount, 1)
@@ -69,8 +78,9 @@ func createMempoolTxs() (txs *MempoolTxs) {
 		&sync.Map{},
 		0,
 		&atomic.Value{}, //[]*mempoolTx
-		make(chan *mempoolTx, 100),
-		make(chan *mempoolTx, 100),
+		make(chan *mempoolTx),
+		make(chan *mempoolTx),
+		make(chan interface{}),
 	}
 	txs.txsList.Store([]*mempoolTx{})
 

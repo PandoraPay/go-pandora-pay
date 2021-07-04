@@ -172,6 +172,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 					this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element.(*account.Account), nil)
 				}
 			}
+
 		case toksData, ok := <-updateTokensCn:
 			if !ok {
 				return
@@ -194,6 +195,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 
 				switch v.Tx.TxType {
 				case transaction_type.TX_SIMPLE:
+
 					txBase := v.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 					for _, vin := range txBase.Vin {
 						k := vin.Bloom.PublicKeyHash
@@ -219,8 +221,8 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			}
 
 			this.removeConnection(conn, api_types.SUBSCRIPTION_ACCOUNT)
-			this.removeConnection(conn, api_types.SUBSCRIPTION_TRANSACTIONS)
 			this.removeConnection(conn, api_types.SUBSCRIPTION_TOKEN)
+			this.removeConnection(conn, api_types.SUBSCRIPTION_TRANSACTIONS)
 
 		}
 
