@@ -158,6 +158,10 @@ func Initialize(startMainCb func()) {
 			"reward": js.ValueOf(map[string]interface{}{
 				"getRewardAt": js.FuncOf(getRewardAt),
 			}),
+			"tokens": js.ValueOf(map[string]interface{}{
+				"tokensConvertToUnits": js.FuncOf(tokensConvertToUnits),
+				"tokensConvertToBase":  js.FuncOf(tokensConvertToBase),
+			}),
 		}),
 	}
 
