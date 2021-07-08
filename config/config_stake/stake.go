@@ -1,4 +1,4 @@
-package stake
+package config_stake
 
 import (
 	"pandora-pay/config"

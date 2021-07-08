@@ -1,4 +1,4 @@
-package fees
+package config_fees
 
 import "pandora-pay/config"
 

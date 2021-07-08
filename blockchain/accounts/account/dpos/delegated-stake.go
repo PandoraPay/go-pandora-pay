@@ -1,7 +1,7 @@
 package dpos
 
 import (
-	"pandora-pay/config/stake"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
@@ -22,7 +22,7 @@ func (dstake *DelegatedStake) AddStakePendingStake(amount, blockHeight uint64) e
 	if amount == 0 {
 		return nil
 	}
-	finalBlockHeight := blockHeight + stake.GetPendingStakeWindow(blockHeight)
+	finalBlockHeight := blockHeight + config_stake.GetPendingStakeWindow(blockHeight)
 
 	for _, stakePending := range dstake.StakesPending {
 		if stakePending.ActivationHeight == finalBlockHeight && stakePending.PendingType == DelegatedStakePendingStake {
@@ -41,7 +41,7 @@ func (dstake *DelegatedStake) AddStakePendingUnstake(amount, blockHeight uint64)
 	if amount == 0 {
 		return nil
 	}
-	finalBlockHeight := blockHeight + stake.GetUnstakeWindow(blockHeight)
+	finalBlockHeight := blockHeight + config_stake.GetUnstakeWindow(blockHeight)
 
 	for _, stakePending := range dstake.StakesPending {
 		if stakePending.ActivationHeight == finalBlockHeight && stakePending.PendingType == DelegatedStakePendingUnstake {

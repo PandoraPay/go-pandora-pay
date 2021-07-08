@@ -1,4 +1,4 @@
-package reward
+package config_reward
 
 import (
 	"math"

@@ -10,11 +10,11 @@ import (
 	"pandora-pay/blockchain/blockchain-sync"
 	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/blocks/block-complete"
-	difficulty "pandora-pay/blockchain/blocks/block/difficulty"
+	"pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/config"
-	"pandora-pay/config/stake"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
@@ -213,7 +213,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return errors.New("Block Staking Amount doesn't match")
 					}
 
-					if blkComplete.Block.StakingAmount < stake.GetRequiredStake(blkComplete.Block.Height) {
+					if blkComplete.Block.StakingAmount < config_stake.GetRequiredStake(blkComplete.Block.Height) {
 						return errors.New("Delegated stake ready amount is not enought")
 					}
 

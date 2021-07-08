@@ -6,7 +6,7 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
-	"pandora-pay/config/fees"
+	"pandora-pay/config/config_fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/recovery"
@@ -80,10 +80,10 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 		var selectedFeeToken *string
 		var selectedFee uint64
 
-		for token := range fees.FEES_PER_BYTE {
+		for token := range config_fees.FEES_PER_BYTE {
 			if minerFees[token] != 0 {
 				feePerByte := minerFees[token] / tx.Bloom.Size
-				if feePerByte >= fees.FEES_PER_BYTE[token] {
+				if feePerByte >= config_fees.FEES_PER_BYTE[token] {
 					selectedFeeToken = &token
 					selectedFee = minerFees[*selectedFeeToken]
 					break
@@ -94,7 +94,7 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 		//if it is mine and no fee was paid, let's fake a fee
 		if mine && selectedFeeToken == nil {
 			selectedFeeToken = &config.NATIVE_TOKEN_STRING
-			selectedFee = fees.FEES_PER_BYTE[config.NATIVE_TOKEN_STRING]
+			selectedFee = config_fees.FEES_PER_BYTE[config.NATIVE_TOKEN_STRING]
 		}
 
 		if selectedFeeToken == nil {

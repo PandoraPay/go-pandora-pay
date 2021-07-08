@@ -3,6 +3,7 @@ package token
 import (
 	"errors"
 	"math"
+	"pandora-pay/config/config_tokens"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"regexp"
@@ -34,7 +35,7 @@ type Token struct {
 
 func (token *Token) Validate() error {
 
-	if token.DecimalSeparator > 10 {
+	if token.DecimalSeparator > config_tokens.TOKENS_DECIMAL_SEPARATOR_MAX_BYTE {
 		return errors.New("token decimal separator is invalid")
 	}
 	if len(token.Name) > 15 || len(token.Name) < 3 {

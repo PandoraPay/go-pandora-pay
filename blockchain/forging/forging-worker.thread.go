@@ -5,7 +5,7 @@ import (
 	difficulty "pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/config"
-	"pandora-pay/config/stake"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"sync/atomic"
@@ -44,7 +44,7 @@ func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64
 			stakingAmount, _ = threadAddr.walletAdr.account.ComputeDelegatedStakeAvailable(height)
 		}
 
-		if stakingAmount >= stake.GetRequiredStake(height) {
+		if stakingAmount >= config_stake.GetRequiredStake(height) {
 			threadAddr.stakingAmount = stakingAmount
 			return stakingAmount
 		}

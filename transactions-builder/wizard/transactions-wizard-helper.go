@@ -7,7 +7,7 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
-	"pandora-pay/config/fees"
+	"pandora-pay/config/config_fees"
 )
 
 func setFeeTxNow(tx *transaction.Transaction, feePerByte, initAmount uint64, value *uint64) {
@@ -15,7 +15,7 @@ func setFeeTxNow(tx *transaction.Transaction, feePerByte, initAmount uint64, val
 	oldFee := uint64(1)
 	for oldFee != fee {
 		oldFee = fee
-		fee = fees.ComputeTxFees(uint64(len(tx.SerializeManualToBytes())), feePerByte)
+		fee = config_fees.ComputeTxFees(uint64(len(tx.SerializeManualToBytes())), feePerByte)
 		*value = initAmount + fee
 	}
 	return
@@ -28,7 +28,7 @@ func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFee
 	}
 
 	if feePerByte == -1 {
-		feePerByte = int(fees.FEES_PER_BYTE[string(feeToken)])
+		feePerByte = int(config_fees.FEES_PER_BYTE[string(feeToken)])
 		if feePerByte == 0 {
 			return errors.New("The token will most like not be accepted by other miners")
 		}

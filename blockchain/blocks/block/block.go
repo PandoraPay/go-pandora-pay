@@ -6,7 +6,7 @@ import (
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
-	"pandora-pay/config/reward"
+	"pandora-pay/config/config_reward"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/ecdsa"
 	"pandora-pay/helpers"
@@ -40,7 +40,7 @@ func (blk *Block) Verify() error {
 
 func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allFees map[string]uint64) (err error) {
 
-	reward := reward.GetRewardAt(blk.Height)
+	reward := config_reward.GetRewardAt(blk.Height)
 
 	var acc *account.Account
 	if acc, err = acs.GetAccountEvenEmpty(blk.Forger, blk.Height); err != nil {

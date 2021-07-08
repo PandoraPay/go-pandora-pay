@@ -10,7 +10,7 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/config"
-	"pandora-pay/config/stake"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
@@ -61,11 +61,11 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 			}
 		}
 		dsts = append(dsts, testnet.wallet.Addresses[i+1].AddressEncoded)
-		dstsAmounts = append(dstsAmounts, stake.GetRequiredStake(blockHeight))
+		dstsAmounts = append(dstsAmounts, config_stake.GetRequiredStake(blockHeight))
 		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, 0, []uint64{testnet.nodes * stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, 0, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
 	if err != nil {
 		return
 	}
@@ -138,7 +138,7 @@ func (testnet *Testnet) run() {
 		err := func() (err error) {
 
 			if blockHeight == 30 {
-				if err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*stake.GetRequiredStake(blockHeight)); err != nil {
+				if err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*config_stake.GetRequiredStake(blockHeight)); err != nil {
 					return
 				}
 			}
