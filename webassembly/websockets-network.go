@@ -62,6 +62,7 @@ func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 		blkComplete := block_complete.CreateEmptyBlockComplete()
+
 		if err := blkComplete.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
 			return nil, err
 		}

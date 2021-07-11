@@ -117,6 +117,8 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 		return
 	}
 
+	newBlk.BloomCompleteManual()
+
 	//send message to blockchain
 	thread.solutionCn <- newBlk
 

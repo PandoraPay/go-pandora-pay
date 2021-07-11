@@ -22,6 +22,17 @@ func (blkComplete *BlockComplete) BloomCompleteBySerialized(serialized []byte) {
 	}
 }
 
+func (blkComplete *BlockComplete) BloomCompleteManual() {
+	serialized := blkComplete.SerializeManualToBytes()
+	blkComplete.BloomBlkComplete = &BlockCompleteBloom{
+		Serialized:                serialized,
+		Size:                      uint64(len(serialized)),
+		bloomedSize:               true,
+		merkleTreeVerified:        true,
+		bloomedMerkleTreeVerified: true,
+	}
+}
+
 func (blkComplete *BlockComplete) BloomAll() (err error) {
 
 	for _, tx := range blkComplete.Txs {
