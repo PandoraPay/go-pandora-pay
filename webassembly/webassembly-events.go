@@ -7,7 +7,6 @@ import (
 	"pandora-pay/app"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens/token"
-	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -71,8 +70,6 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 
 		subscriptionsCn := app.Network.Websockets.ApiWebsockets.SubscriptionNotifications.AddListener()
 
-		gui.GUI.Log("listenNetworkNotifications111")
-
 		recovery.SafeGo(func() {
 
 			defer app.Network.Websockets.ApiWebsockets.SubscriptionNotifications.RemoveChannel(subscriptionsCn)
@@ -108,13 +105,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					}
 					object = tok
 				case api_types.SUBSCRIPTION_TRANSACTIONS:
-					var tx transaction.Transaction
-					if data.Data != nil {
-						if err = tx.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
-							return
-						}
-					}
-					object = tx
+					object = data.Data
 				}
 
 				var output []byte

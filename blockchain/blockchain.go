@@ -89,7 +89,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		TransactionsCount:     chainData.TransactionsCount,                    //atomic copy
 	}
 
-	allTransactionChanges := []*blockchain_types.BlockchainTransactionUpdate{}
+	allTransactionsChanges := []*blockchain_types.BlockchainTransactionUpdate{}
 
 	insertedBlocks := []*block_complete.BlockComplete{}
 	insertedTxHashes := [][]byte{}
@@ -148,7 +148,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					copy(removedBlocksHeights[1:], removedBlocksHeights)
 					removedBlocksHeights[0] = index
 
-					if allTransactionChanges, err = chain.removeBlockComplete(writer, index, removedTxHashes, allTransactionChanges, accs, toks); err != nil {
+					if allTransactionsChanges, err = chain.removeBlockComplete(writer, index, removedTxHashes, allTransactionsChanges, accs, toks); err != nil {
 						return
 					}
 
@@ -247,7 +247,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					savedBlock = false
 
 					var newTransactionsSaved [][]byte
-					if newTransactionsSaved, allTransactionChanges, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, allTransactionChanges, accs, toks); err != nil {
+					if newTransactionsSaved, allTransactionsChanges, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, allTransactionsChanges, accs, toks); err != nil {
 						return errors.New("Error saving block complete: " + err.Error())
 					}
 
@@ -396,7 +396,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		update.removedTxs = removedTxs
 		update.insertedBlocks = insertedBlocks
 		update.insertedTxHashes = insertedTxHashes
-		update.allTransactionChanges = allTransactionChanges
+		update.allTransactionsChanges = allTransactionsChanges
 	}
 
 	chain.updatesQueue.updatesCn <- update

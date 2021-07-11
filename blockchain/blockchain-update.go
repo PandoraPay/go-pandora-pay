@@ -21,15 +21,15 @@ type BlockchainDataUpdate struct {
 }
 
 type BlockchainUpdate struct {
-	err                   error
-	newChainData          *BlockchainData
-	accs                  *accounts.Accounts
-	toks                  *tokens.Tokens
-	allTransactionChanges []*blockchain_types.BlockchainTransactionUpdate
-	removedTxs            [][]byte
-	insertedBlocks        []*block_complete.BlockComplete
-	insertedTxHashes      [][]byte
-	calledByForging       bool
+	err                    error
+	newChainData           *BlockchainData
+	accs                   *accounts.Accounts
+	toks                   *tokens.Tokens
+	allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate
+	removedTxs             [][]byte
+	insertedBlocks         []*block_complete.BlockComplete
+	insertedTxHashes       [][]byte
+	calledByForging        bool
 }
 
 type BlockchainUpdatesQueue struct {
@@ -92,14 +92,14 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		if _, err := queue.chain.mempool.AddTxToMemPool(tx, update.newChainData.Height, false, false); err != nil {
 			return false, err
 		}
-		for _, change := range update.allTransactionChanges {
+		for _, change := range update.allTransactionsChanges {
 			if bytes.Equal(change.TxHash, tx.Bloom.Hash) {
 				change.Tx = tx
 			}
 		}
 	}
 
-	queue.chain.UpdateTransactions.BroadcastAwait(update.allTransactionChanges)
+	queue.chain.UpdateTransactions.BroadcastAwait(update.allTransactionsChanges)
 
 	hasAnySuccess := queue.hasAnySuccess(updates[1:])
 

@@ -3,6 +3,7 @@ package blockchain
 import (
 	"encoding/json"
 	"errors"
+	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	block_complete "pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/tokens"
@@ -11,13 +12,13 @@ import (
 	"strconv"
 )
 
-func removeBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface, hash []byte, txHashes [][]byte) (err error) {
+func removeBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface, hash []byte, txHashes [][]byte, localTransactionChanges []*blockchain_types.BlockchainTransactionUpdate) (err error) {
 
 	if err = writer.Delete("blockInfo_ByHash" + string(hash)); err != nil {
 		return
 	}
 
-	for _, txHash := range txHashes {
+	for i, txHash := range txHashes {
 
 		data := writer.Get("txKeys:" + string(txHash))
 		if data == nil {
@@ -28,7 +29,8 @@ func removeBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterfa
 			return
 		}
 
-		for _, key := range keys {
+		localTransactionChanges[i].Keys = make([]*blockchain_types.BlockchainTransactionKeyUpdate, len(keys))
+		for j, key := range keys {
 
 			data = writer.Get("addrTxsCount:" + string(key))
 			if data == nil {
@@ -38,6 +40,10 @@ func removeBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterfa
 			var count uint64
 			if count, err = strconv.ParseUint(string(data), 10, 64); err != nil {
 				return
+			}
+
+			localTransactionChanges[i].Keys[j] = &blockchain_types.BlockchainTransactionKeyUpdate{
+				key, count - 1,
 			}
 
 			count -= 1
@@ -116,7 +122,7 @@ func saveTokensInfo(toks *tokens.Tokens) (err error) {
 	return
 }
 
-func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64) (err error) {
+func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, localTransactionChanges []*blockchain_types.BlockchainTransactionUpdate) (err error) {
 
 	var blockInfoMarshal []byte
 	if blockInfoMarshal, err = json.Marshal(&info.BlockInfo{
@@ -135,6 +141,7 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 	}
 
 	for i, tx := range blkComplete.Txs {
+
 		height := transactionsCount + uint64(i)
 		indexStr := strconv.FormatUint(height, 10)
 		if err = writer.Put("txHash_ByHeight"+indexStr, tx.Bloom.Hash); err != nil {
@@ -172,19 +179,28 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 		if err = writer.Put("txKeys:"+tx.Bloom.HashStr, keysArrayMarshal); err != nil {
 			return
 		}
-		for key := range keys {
+
+		localTransactionChanges[i].Keys = make([]*blockchain_types.BlockchainTransactionKeyUpdate, len(keys))
+
+		for j, key := range keysArray {
+
+			keyStr := string(key)
 
 			count := uint64(0)
-			if data := writer.Get("addrTxsCount:" + key); data != nil {
+			if data := writer.Get("addrTxsCount:" + keyStr); data != nil {
 				if count, err = strconv.ParseUint(string(data), 10, 64); err != nil {
 					return
 				}
 			}
 
+			localTransactionChanges[i].Keys[j] = &blockchain_types.BlockchainTransactionKeyUpdate{
+				key, count,
+			}
+
 			if err = writer.Put("addrTx:"+strconv.FormatUint(count, 10), tx.Bloom.Hash); err != nil {
 				return
 			}
-			if err = writer.Put("addrTxsCount:"+key, []byte(strconv.FormatUint(count+1, 10))); err != nil {
+			if err = writer.Put("addrTxsCount:"+keyStr, []byte(strconv.FormatUint(count+1, 10))); err != nil {
 				return
 			}
 		}

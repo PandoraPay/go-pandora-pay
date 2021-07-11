@@ -8,8 +8,6 @@ import (
 	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
-	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
-	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common/api_types"
@@ -46,10 +44,10 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 	return
 }
 
-func (this *WebsocketSubscriptions) send(subscriptionType api_types.SubscriptionType, apiRoute []byte, key []byte, list map[string]*connection.SubscriptionNotification, element helpers.SerializableInterface, extra interface{}) {
+func (this *WebsocketSubscriptions) send(subscriptionType api_types.SubscriptionType, apiRoute []byte, key []byte, list map[string]*connection.SubscriptionNotification, element helpers.SerializableInterface, elementBytes []byte, extra interface{}) {
 
 	var err error
-	var bytes, extraMarshalled []byte
+	var extraMarshalled []byte
 	var serialized, marshalled *api_types.APISubscriptionNotification
 
 	if extra != nil {
@@ -60,20 +58,32 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 
 	for _, subNot := range list {
 
-		if element == nil {
+		if element == nil && elementBytes == nil {
 			_ = subNot.Conn.Send(key, nil)
 			continue
 		}
 
 		if subNot.Subscription.ReturnType == api_types.RETURN_SERIALIZED {
+			var bytes []byte
+			if element != nil {
+				bytes = element.SerializeToBytes()
+			} else {
+				bytes = elementBytes
+			}
+
 			if serialized == nil {
-				serialized = &api_types.APISubscriptionNotification{subscriptionType, key, element.SerializeToBytes(), extraMarshalled}
+				serialized = &api_types.APISubscriptionNotification{subscriptionType, key, bytes, extraMarshalled}
 			}
 			_ = subNot.Conn.SendJSON(apiRoute, serialized)
 		} else if subNot.Subscription.ReturnType == api_types.RETURN_JSON {
 			if marshalled == nil {
-				if bytes, err = json.Marshal(element); err != nil {
-					panic(err)
+				var bytes []byte
+				if element != nil {
+					if bytes, err = json.Marshal(element); err != nil {
+						panic(err)
+					}
+				} else {
+					bytes = elementBytes
 				}
 				marshalled = &api_types.APISubscriptionNotification{subscriptionType, key, bytes, extraMarshalled}
 			}
@@ -169,7 +179,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			accs := accsData.(*accounts.Accounts)
 			for k, v := range accs.HashMap.Committed {
 				if list := this.accountsSubscriptions[k]; list != nil {
-					this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element.(*account.Account), nil)
+					this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element.(*account.Account), nil, nil)
 				}
 			}
 
@@ -181,7 +191,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			toks := toksData.(*tokens.Tokens)
 			for k, v := range toks.HashMap.Committed {
 				if list := this.tokensSubscriptions[k]; list != nil {
-					this.send(api_types.SUBSCRIPTION_TOKEN, []byte("sub/notify"), []byte(k), list, v.Element.(*token.Token), nil)
+					this.send(api_types.SUBSCRIPTION_TOKEN, []byte("sub/notify"), []byte(k), list, v.Element.(*token.Token), nil, nil)
 				}
 			}
 
@@ -192,27 +202,11 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 
 			transactions := transactionsData.([]*blockchain_types.BlockchainTransactionUpdate)
 			for _, v := range transactions {
-
-				switch v.Tx.TxType {
-				case transaction_type.TX_SIMPLE:
-
-					txBase := v.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-					for _, vin := range txBase.Vin {
-						k := vin.Bloom.PublicKeyHash
-						if list := this.transactionsSubscriptions[string(k)]; list != nil {
-							this.send(api_types.SUBSCRIPTION_TRANSACTIONS, []byte("sub/notify"), k, list, v.Tx, &api_types.APISubscriptionNotificationTxExtra{v.Inserted})
-						}
+				for _, key := range v.Keys {
+					if list := this.transactionsSubscriptions[string(key.PublicKeyHash)]; list != nil {
+						this.send(api_types.SUBSCRIPTION_TRANSACTIONS, []byte("sub/notify"), key.PublicKeyHash, list, nil, v.TxHash, &api_types.APISubscriptionNotificationTxExtra{v.Inserted, key.TxsCount})
 					}
-
-					for _, vout := range txBase.Vout {
-						k := vout.PublicKeyHash
-						if list := this.transactionsSubscriptions[string(k)]; list != nil {
-							this.send(api_types.SUBSCRIPTION_TRANSACTIONS, []byte("sub/notify"), k, list, v.Tx, &api_types.APISubscriptionNotificationTxExtra{v.Inserted})
-						}
-					}
-
 				}
-
 			}
 
 		case conn, ok := <-this.websocketClosedCn:
