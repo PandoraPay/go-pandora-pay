@@ -47,7 +47,7 @@ func removeBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterfa
 			}
 
 			count -= 1
-			if err = writer.Delete("addrTx:" + strconv.FormatUint(count, 10)); err != nil {
+			if err = writer.Delete("addrTx:" + string(key) + ":" + strconv.FormatUint(count, 10)); err != nil {
 				return
 			}
 			if count == 0 {
@@ -166,9 +166,11 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 			return
 		}
 
-		keysArray := make([][]byte, 0)
+		keysArray := make([][]byte, len(keys))
+		c := 0
 		for key := range keys {
-			keysArray = append(keysArray, []byte(key))
+			keysArray[c] = []byte(key)
+			c += 1
 		}
 
 		var keysArrayMarshal []byte
@@ -180,8 +182,7 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 			return
 		}
 
-		localTransactionChanges[i].Keys = make([]*blockchain_types.BlockchainTransactionKeyUpdate, len(keys))
-
+		localTransactionChanges[i].Keys = make([]*blockchain_types.BlockchainTransactionKeyUpdate, len(keysArray))
 		for j, key := range keysArray {
 
 			keyStr := string(key)
@@ -197,7 +198,7 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 				key, count,
 			}
 
-			if err = writer.Put("addrTx:"+strconv.FormatUint(count, 10), tx.Bloom.Hash); err != nil {
+			if err = writer.Put("addrTx:"+keyStr+":"+strconv.FormatUint(count, 10), tx.Bloom.Hash); err != nil {
 				return
 			}
 			if err = writer.Put("addrTxsCount:"+keyStr, []byte(strconv.FormatUint(count+1, 10))); err != nil {

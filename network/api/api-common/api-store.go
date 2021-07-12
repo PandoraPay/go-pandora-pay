@@ -141,7 +141,9 @@ func (apiStore *APIStore) openLoadAccountFromPublicKeyHash(publicKeyHash []byte)
 func (apiStore *APIStore) openLoadAccountTxsFromPublicKeyHash(publicKeyHash []byte, next uint64) (answer *api_types.APIAccountTxs, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		data := reader.Get("addrTxsCount:" + string(publicKeyHash))
+		publicKeyHashStr := string(publicKeyHash)
+
+		data := reader.Get("addrTxsCount:" + publicKeyHashStr)
 		if data == nil {
 			return nil
 		}
@@ -150,14 +152,15 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKeyHash(publicKeyHash []by
 		if count, err = strconv.ParseUint(string(data), 10, 64); err != nil {
 			return
 		}
-		if next == 0 {
+
+		if next > count {
 			next = count
-		} else if next > count {
-			return errors.New("Index exceeding max txs")
 		}
 
 		index := next
-		if next >= config.API_ACCOUNT_MAX_TXS {
+		if index < config.API_ACCOUNT_MAX_TXS {
+			index = 0
+		} else {
 			index -= config.API_ACCOUNT_MAX_TXS
 		}
 
@@ -166,7 +169,7 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKeyHash(publicKeyHash []by
 			Txs:   make([]helpers.HexBytes, next-index),
 		}
 		for i := index; i < next; i++ {
-			hash := reader.Get("addrTx:" + strconv.FormatUint(i, 10))
+			hash := reader.Get("addrTx:" + publicKeyHashStr + ":" + strconv.FormatUint(i, 10))
 			if hash == nil {
 				return errors.New("Error reading address transaction")
 			}
