@@ -47,9 +47,8 @@ func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 func (chain *Blockchain) init() (*BlockchainData, error) {
 
 	chainData := chain.createGenesisBlockchainData()
-	chain.ChainData.Store(chainData)
 
-	return chainData, store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
+	if err := store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		toks := tokens.NewTokens(writer)
 		accs := accounts.NewAccounts(writer)
@@ -104,6 +103,12 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			return
 		}
 
+		chainData.TokensCount = 1
+
+		if err = saveTokensInfo(toks); err != nil {
+			return
+		}
+
 		toks.CommitChanges()
 		accs.CommitChanges()
 
@@ -116,8 +121,12 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 		return
 
-	})
+	}); err != nil {
+		return nil, err
+	}
 
+	chain.ChainData.Store(chainData)
+	return chainData, nil
 }
 
 func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, newWork bool) {

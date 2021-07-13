@@ -22,6 +22,7 @@ type BlockchainData struct {
 	Target                *big.Int         `json:"target"`
 	BigTotalDifficulty    *big.Int         `json:"bigTotalDifficulty"`
 	TransactionsCount     uint64           `json:"transactionsCount"` //count of the number of txs
+	TokensCount           uint64           `json:"tokensCount"`       //count of the number of tokens
 	ConsecutiveSelfForged uint64           `json:"consecutiveSelfForged"`
 }
 

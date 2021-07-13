@@ -6,11 +6,6 @@ import (
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
-type ChangesMapElement struct {
-	Element helpers.SerializableInterface
-	Status  string
-}
-
 type HashMap struct {
 	name        string
 	Tx          store_db_interface.StoreDBTransactionInterface
