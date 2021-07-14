@@ -96,7 +96,7 @@ func saveTokensInfo(toks *tokens.Tokens) (err error) {
 	for k, v := range toks.Committed {
 
 		if v.Stored == "del" {
-			err = toks.Tx.DeleteForcefully("tokenInfo_ByHash" + k)
+			err = toks.Tx.DeleteForcefully("tokenInfo_ByHash:" + k)
 		} else if v.Stored == "update" {
 
 			tok := v.Element.(*token.Token)
@@ -111,7 +111,7 @@ func saveTokensInfo(toks *tokens.Tokens) (err error) {
 				return
 			}
 
-			err = toks.Tx.Put("tokenInfo_ByHash"+k, data)
+			err = toks.Tx.Put("tokenInfo_ByHash:"+k, data)
 		}
 
 		if err != nil {

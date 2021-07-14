@@ -316,7 +316,7 @@ func (apiStore *APIStore) loadTokenInfo(reader store_db_interface.StoreDBTransac
 	if len(hash) == 0 {
 		hash = config.NATIVE_TOKEN_FULL
 	}
-	data := reader.Get("tokenInfo_ByHash" + string(hash))
+	data := reader.Get("tokenInfo_ByHash:" + string(hash))
 	if data == nil {
 		return nil, errors.New("TokenInfo was not found")
 	}

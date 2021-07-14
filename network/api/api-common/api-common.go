@@ -228,7 +228,13 @@ func (api *APICommon) GetToken(request *api_types.APITokenRequest) ([]byte, erro
 func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) ([]byte, error) {
 	transactions := api.mempool.Txs.GetTxsList()
 
-	length := len(transactions) - request.Start
+	if request.Count == 0 {
+		request.Count = config.API_MEMPOOL_MAX_TRANSACTIONS
+	}
+
+	start := request.Page * request.Count
+
+	length := len(transactions) - start
 	if length < 0 {
 		length = 0
 	}
@@ -242,7 +248,7 @@ func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) ([]byte, 
 	}
 
 	for i := 0; i < len(result.Hashes); i++ {
-		result.Hashes[i] = transactions[request.Start+i].Tx.Bloom.Hash
+		result.Hashes[i] = transactions[start+i].Tx.Bloom.Hash
 	}
 	return json.Marshal(result)
 }

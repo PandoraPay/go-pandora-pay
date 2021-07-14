@@ -104,8 +104,11 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 		}
 
 		chainData.TokensCount = 1
-
 		if err = saveTokensInfo(toks); err != nil {
+			return
+		}
+
+		if err = toks.Tx.Put("tokenInfo_ByIndex:"+strconv.FormatUint(0, 10), config.NATIVE_TOKEN_FULL); err != nil {
 			return
 		}
 

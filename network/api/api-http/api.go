@@ -221,11 +221,15 @@ func (api *API) getMempool(values *url.Values) (interface{}, error) {
 	request := &api_types.APIMempoolRequest{}
 
 	var err error
-	if values.Get("start") != "" {
-		request.Start, err = strconv.Atoi(values.Get("start"))
+	if values.Get("page") != "" {
+		if request.Page, err = strconv.Atoi(values.Get("page")); err != nil {
+			return nil, err
+		}
 	}
-	if err != nil {
-		return nil, err
+	if values.Get("count") != "" {
+		if request.Count, err = strconv.Atoi(values.Get("count")); err != nil {
+			return nil, err
+		}
 	}
 
 	return api.apiCommon.GetMempool(request)

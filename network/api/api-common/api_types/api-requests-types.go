@@ -107,6 +107,11 @@ type APITokenRequest struct {
 	ReturnType APIReturnType    `json:"returnType"`
 }
 
+type APITokensRequest struct {
+	Index      helpers.HexBytes `json:"hash"`
+	ReturnType APIReturnType    `json:"returnType"`
+}
+
 type APISubscriptionRequest struct {
 	Key        []byte           `json:"key,omitempty"`
 	Type       SubscriptionType `json:"type,omitempty"`
@@ -119,5 +124,6 @@ type APIUnsubscriptionRequest struct {
 }
 
 type APIMempoolRequest struct {
-	Start int `json:"start,omitempty"`
+	Page  int `json:"page,omitempty"`
+	Count int `json:"count,omitempty"`
 }

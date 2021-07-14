@@ -62,6 +62,7 @@ const (
 var (
 	API_MEMPOOL_MAX_TRANSACTIONS = 50
 	API_ACCOUNT_MAX_TXS          = uint64(5)
+	API_TOKENS_INFO_MAX_RESULTS  = 10
 )
 
 var (

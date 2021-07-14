@@ -213,7 +213,7 @@ func getNetworkMempool(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("mem-pool"), &api_types.APIMempoolRequest{args[0].Int()})
+		data := socket.SendJSONAwaitAnswer([]byte("mem-pool"), &api_types.APIMempoolRequest{args[0].Int(), args[1].Int()})
 		if data.Err != nil {
 			return nil, data.Err
 		}

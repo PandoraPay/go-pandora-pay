@@ -2,6 +2,7 @@ package mempool_sync
 
 import (
 	"encoding/json"
+	"pandora-pay/config"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection"
@@ -15,12 +16,13 @@ func (mempoolSync *MempoolSync) DownloadMempool(conn *connection.AdvancedConnect
 
 	cb := mempoolSync.websockets.ApiWebsockets.GetMap["mem-pool/new-tx-id"]
 
-	start, times := 0, 0
+	index, page := 0, 0
+	count := config.API_MEMPOOL_MAX_TRANSACTIONS
 
 	//times is used to avoid infinite loops
 	for {
 
-		out := conn.SendJSONAwaitAnswer([]byte("mem-pool"), &api_types.APIMempoolRequest{start})
+		out := conn.SendJSONAwaitAnswer([]byte("mem-pool"), &api_types.APIMempoolRequest{page, 0})
 		if out.Err != nil {
 			return
 		}
@@ -34,10 +36,10 @@ func (mempoolSync *MempoolSync) DownloadMempool(conn *connection.AdvancedConnect
 			cb(conn, tx)
 		}
 
-		start += len(data.Hashes)
-		times++
+		index += len(data.Hashes)
+		page++
 
-		if start >= data.Count || times > 10 {
+		if len(data.Hashes) != count || index >= data.Count || page > 20 { //done
 			break
 		}
 
