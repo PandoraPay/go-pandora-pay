@@ -19,11 +19,12 @@ import (
 )
 
 type APICommon struct {
-	mempool        *mempool.Mempool
-	chain          *blockchain.Blockchain
-	localChain     *atomic.Value //*APIBlockchain
-	localChainSync *atomic.Value //*blockchain_sync.BlockchainSyncData
-	ApiStore       *APIStore
+	mempool         *mempool.Mempool
+	chain           *blockchain.Blockchain
+	localChain      *atomic.Value //*APIBlockchain
+	localChainSync  *atomic.Value //*blockchain_sync.BlockchainSyncData
+	ApiCommonFaucet *APICommonFaucet
+	ApiStore        *APIStore
 }
 
 func (api *APICommon) GetBlockchain() ([]byte, error) {
@@ -202,13 +203,6 @@ func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) ([
 	return json.Marshal(txInfo)
 }
 
-func (api *APICommon) GetFaucetInfo() ([]byte, error) {
-	return json.Marshal(&api_types.APIFaucetInfo{
-		config.HCAPTCHA_SITE_KEY,
-		config.FAUCET_TESTNET_ENABLED,
-	})
-}
-
 func (api *APICommon) GetTokenInfo(request *api_types.APITokenInfoRequest) ([]byte, error) {
 	var tokInfo *info.TokenInfo
 	var err error
@@ -307,13 +301,19 @@ func (api *APICommon) readLocalBlockchainSync(newLocalSync *blockchain_sync.Bloc
 	api.localChainSync.Store(newLocalSync)
 }
 
-func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, apiStore *APIStore) (api *APICommon) {
+func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, apiStore *APIStore) (api *APICommon, err error) {
+
+	apiCommonFaucet, err := createAPICommonFaucet()
+	if err != nil {
+		return
+	}
 
 	api = &APICommon{
 		mempool,
 		chain,
 		&atomic.Value{}, //*APIBlockchain
 		&atomic.Value{}, //*APIBlockchainSync
+		apiCommonFaucet,
 		apiStore,
 	}
 

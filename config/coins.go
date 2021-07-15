@@ -9,11 +9,12 @@ import (
 var BURN_PUBLIC_KEY_HASH = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xd, 0xe, 0xa, 0xd}
 
 var (
-	DECIMAL_SEPARATOR       = int(7)
+	DECIMAL_SEPARATOR       = 7
 	COIN_DENOMINATION       = uint64(math.Pow10(DECIMAL_SEPARATOR))
 	COIN_DENOMINATION_FLOAT = float64(math.Pow10(DECIMAL_SEPARATOR))
 
-	MAX_SUPPLY_COINS = uint64(42000000000)
+	MAX_SUPPLY_COINS       = uint64(42000000000)
+	MAX_SUPPLY_COINS_UNITS = ConvertToUnitsUint64Forced(MAX_SUPPLY_COINS)
 
 	TOKEN_LENGTH = 20
 
@@ -27,6 +28,14 @@ var (
 	NATIVE_TOKEN_FULL_STRING     = string(NATIVE_TOKEN_FULL)
 	NATIVE_TOKEN_FULL_STRING_HEX = hex.EncodeToString(NATIVE_TOKEN_FULL)
 )
+
+func ConvertToUnitsUint64Forced(number uint64) uint64 {
+	out, err := ConvertToUnitsUint64(number)
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
 
 func ConvertToUnitsUint64(number uint64) (uint64, error) {
 	if number < math.MaxUint64/COIN_DENOMINATION {

@@ -46,7 +46,15 @@ func (api *APIWebsockets) getPing(conn *connection.AdvancedConnection, values []
 }
 
 func (api *APIWebsockets) getFaucetInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.apiCommon.GetFaucetInfo()
+	return api.apiCommon.ApiCommonFaucet.GetFaucetInfo()
+}
+
+func (api *APIWebsockets) getFaucetCoins(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := &api_types.APIFaucetCoinsRequest{"", ""}
+	if err := json.Unmarshal(values, request); err != nil {
+		return nil, err
+	}
+	return api.apiCommon.ApiCommonFaucet.GetFaucetCoins(request)
 }
 
 func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -276,6 +284,9 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 
 	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
 		api.GetMap["faucet/info"] = api.getFaucetInfo
+		if config.FAUCET_TESTNET_ENABLED {
+			api.GetMap["faucet/coins"] = api.getFaucetCoins
+		}
 	}
 
 	return api

@@ -23,7 +23,10 @@ type HttpServer struct {
 func CreateHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) (*HttpServer, error) {
 
 	apiStore := api_common.CreateAPIStore(chain)
-	apiCommon := api_common.CreateAPICommon(mempool, chain, apiStore)
+	apiCommon, err := api_common.CreateAPICommon(mempool, chain, apiStore)
+	if err != nil {
+		return nil, err
+	}
 
 	apiWebsockets := api_websockets.CreateWebsocketsAPI(apiStore, apiCommon, chain, mempool)
 	api := api_http.CreateAPI(apiStore, apiCommon, chain)

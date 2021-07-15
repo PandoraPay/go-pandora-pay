@@ -85,6 +85,7 @@ func Initialize(startMainCb func()) {
 		}),
 		"network": js.ValueOf(map[string]interface{}{
 			"getNetworkFaucetInfo":    js.FuncOf(getNetworkFaucetInfo),
+			"getNetworkFaucetCoins":   js.FuncOf(getNetworkFaucetCoins),
 			"getNetworkBlockInfo":     js.FuncOf(getNetworkBlockInfo),
 			"getNetworkBlockComplete": js.FuncOf(getNetworkBlockComplete),
 			"getNetworkTransaction":   js.FuncOf(getNetworkTransaction),

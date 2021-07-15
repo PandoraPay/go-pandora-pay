@@ -127,3 +127,8 @@ type APIMempoolRequest struct {
 	Page  int `json:"page,omitempty"`
 	Count int `json:"count,omitempty"`
 }
+
+type APIFaucetCoinsRequest struct {
+	Address     string `json:"address,omitempty"`
+	FaucetToken string `json:"faucetToken,omitempty"`
+}

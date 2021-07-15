@@ -80,11 +80,6 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			}
 		}
 
-		maxSupply, err := config.ConvertToUnitsUint64(config.MAX_SUPPLY_COINS)
-		if err != nil {
-			panic(err)
-		}
-
 		tok := token.Token{
 			Version:          0,
 			Name:             config.NATIVE_TOKEN_NAME,
@@ -94,7 +89,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			CanBurn:          true,
 			CanMint:          true,
 			Supply:           supply,
-			MaxSupply:        maxSupply,
+			MaxSupply:        config.MAX_SUPPLY_COINS_UNITS,
 			Key:              config.BURN_PUBLIC_KEY_HASH,
 			SupplyKey:        config.BURN_PUBLIC_KEY_HASH,
 		}

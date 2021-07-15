@@ -38,7 +38,24 @@ func (api *API) getPing(values *url.Values) (interface{}, error) {
 }
 
 func (api *API) getFaucetInfo(values *url.Values) (interface{}, error) {
-	return api.apiCommon.GetFaucetInfo()
+	return api.apiCommon.ApiCommonFaucet.GetFaucetInfo()
+}
+
+func (api *API) getFaucetCoins(values *url.Values) (interface{}, error) {
+
+	request := &api_types.APIFaucetCoinsRequest{"", ""}
+
+	if values.Get("address") != "" {
+		request.Address = values.Get("address")
+	} else {
+		return nil, errors.New("parameter 'address' was not specified")
+	}
+
+	if values.Get("faucetToken") != "" {
+		request.FaucetToken = values.Get("faucetToken")
+	}
+
+	return api.apiCommon.ApiCommonFaucet.GetFaucetCoins(request)
 }
 
 func (api *API) getBlockComplete(values *url.Values) (interface{}, error) {
@@ -304,6 +321,9 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 
 	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
 		api.GetMap["faucet/info"] = api.getFaucetInfo
+		if config.FAUCET_TESTNET_ENABLED {
+			api.GetMap["faucet/coins"] = api.getFaucetCoins
+		}
 	}
 
 	return &api

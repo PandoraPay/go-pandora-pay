@@ -65,4 +65,5 @@ type APIAccountTxs struct {
 type APIFaucetInfo struct {
 	HCaptchaSiteKey      string `json:"hCaptchaSiteKey,omitempty"`
 	FaucetTestnetEnabled bool   `json:"faucetTestnetEnabled,omitempty"`
+	FaucetTestnetCoins   uint64 `json:"faucetTestnetCoins,omitempty"`
 }

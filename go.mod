@@ -16,6 +16,7 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0
 	go.coder.com/go-tools v0.0.0-20190317003359-0c6a35b74a16 // indirect
 	go.etcd.io/bbolt v1.3.5
+	go.jolheiser.com/hcaptcha v0.0.4 // indirect
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3 // indirect
 	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f // indirect
