@@ -162,6 +162,11 @@ func Initialize(startMainCb func()) {
 				"tokensConvertToUnits": js.FuncOf(tokensConvertToUnits),
 				"tokensConvertToBase":  js.FuncOf(tokensConvertToBase),
 			}),
+			"constants": js.ValueOf(map[string]interface{}{
+				"API_MEMPOOL_MAX_TRANSACTIONS": js.ValueOf(config.API_MEMPOOL_MAX_TRANSACTIONS),
+				"API_ACCOUNT_MAX_TXS":          js.ValueOf(config.API_ACCOUNT_MAX_TXS),
+				"API_TOKENS_INFO_MAX_RESULTS":  js.ValueOf(config.API_TOKENS_INFO_MAX_RESULTS),
+			}),
 		}),
 	}
 

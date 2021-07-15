@@ -37,6 +37,10 @@ func (api *API) getPing(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetPing()
 }
 
+func (api *API) getFaucetInfo(values *url.Values) (interface{}, error) {
+	return api.apiCommon.GetFaucetInfo()
+}
+
 func (api *API) getBlockComplete(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APIBlockCompleteRequest{0, nil, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
@@ -297,6 +301,8 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		api.GetMap["tx-info"] = api.getTxInfo
 		api.GetMap["account/txs"] = api.getAccountTxs
 	}
+
+	api.GetMap["faucet/info"] = api.getFaucetInfo
 
 	return &api
 }

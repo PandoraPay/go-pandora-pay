@@ -202,6 +202,13 @@ func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) ([
 	return json.Marshal(txInfo)
 }
 
+func (api *APICommon) GetFaucetInfo() ([]byte, error) {
+	return json.Marshal(&api_types.APIFaucetInfo{
+		config.HCAPTCHA_SITE_KEY,
+		config.FAUCET_TESTNET_ENABLED,
+	})
+}
+
 func (api *APICommon) GetTokenInfo(request *api_types.APITokenInfoRequest) ([]byte, error) {
 	var tokInfo *info.TokenInfo
 	var err error

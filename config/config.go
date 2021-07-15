@@ -137,6 +137,21 @@ func InitConfig() (err error) {
 		panic("invalid consensus argument")
 	}
 
+	if globals.Arguments["--network"] == "testnet" || globals.Arguments["--network"] == "devnet" {
+
+		if globals.Arguments["--hcaptcha-site-key"] != nil {
+			HCAPTCHA_SITE_KEY = globals.Arguments["--hcaptcha-site-key"].(string)
+		}
+		if globals.Arguments["--hcaptcha-secret"] != nil {
+			HCAPTCHA_SECRET_KEY = globals.Arguments["--hcaptcha-secret"].(string)
+		}
+
+		if HCAPTCHA_SECRET_KEY != "" && HCAPTCHA_SITE_KEY != "" && globals.Arguments["--faucet-testnet-enabled"] == "true" {
+			FAUCET_TESTNET_ENABLED = true
+		}
+
+	}
+
 	if err = config_init(); err != nil {
 		return
 	}

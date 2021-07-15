@@ -58,6 +58,11 @@ type APISubscriptionNotificationTxExtra struct {
 }
 
 type APIAccountTxs struct {
-	Count uint64             `json:"count"`
-	Txs   []helpers.HexBytes `json:"txs"`
+	Count uint64             `json:"count,omitempty"`
+	Txs   []helpers.HexBytes `json:"txs,omitempty"`
+}
+
+type APIFaucetInfo struct {
+	HCaptchaSiteKey      string `json:"hCaptchaSiteKey,omitempty"`
+	FaucetTestnetEnabled bool   `json:"faucetTestnetEnabled,omitempty"`
 }

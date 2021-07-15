@@ -45,6 +45,10 @@ func (api *APIWebsockets) getPing(conn *connection.AdvancedConnection, values []
 	return api.apiCommon.GetPing()
 }
 
+func (api *APIWebsockets) getFaucetInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	return api.apiCommon.GetFaucetInfo()
+}
+
 func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	request := APIBlockHeight(0)
 	if err := json.Unmarshal(values, &request); err != nil {
@@ -269,6 +273,8 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 	if config.SEED_WALLET_NODES_INFO || config.CONSENSUS == config.CONSENSUS_TYPE_WALLET {
 		api.GetMap["sub/notify"] = api.subscribedNotificationReceived
 	}
+
+	api.GetMap["faucet/info"] = api.getFaucetInfo
 
 	return api
 }
