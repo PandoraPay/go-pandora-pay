@@ -302,7 +302,9 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		api.GetMap["account/txs"] = api.getAccountTxs
 	}
 
-	api.GetMap["faucet/info"] = api.getFaucetInfo
+	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
+		api.GetMap["faucet/info"] = api.getFaucetInfo
+	}
 
 	return &api
 }

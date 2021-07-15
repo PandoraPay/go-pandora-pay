@@ -84,6 +84,7 @@ func Initialize(startMainCb func()) {
 			"computePublicKeyHash": js.FuncOf(computePublicKeyHash),
 		}),
 		"network": js.ValueOf(map[string]interface{}{
+			"getNetworkFaucetInfo":    js.FuncOf(getNetworkFaucetInfo),
 			"getNetworkBlockInfo":     js.FuncOf(getNetworkBlockInfo),
 			"getNetworkBlockComplete": js.FuncOf(getNetworkBlockComplete),
 			"getNetworkTransaction":   js.FuncOf(getNetworkTransaction),

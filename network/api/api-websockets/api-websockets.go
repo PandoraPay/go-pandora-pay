@@ -274,7 +274,9 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		api.GetMap["sub/notify"] = api.subscribedNotificationReceived
 	}
 
-	api.GetMap["faucet/info"] = api.getFaucetInfo
+	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
+		api.GetMap["faucet/info"] = api.getFaucetInfo
+	}
 
 	return api
 }

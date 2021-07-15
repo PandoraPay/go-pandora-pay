@@ -14,6 +14,20 @@ import (
 	"syscall/js"
 )
 
+func getNetworkFaucetInfo(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+		data := socket.SendJSONAwaitAnswer([]byte("faucet/info"), nil)
+		if data.Err != nil {
+			return nil, data.Err
+		}
+		return string(data.Out), nil
+	})
+}
+
 func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()

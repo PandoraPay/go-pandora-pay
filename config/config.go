@@ -137,7 +137,7 @@ func InitConfig() (err error) {
 		panic("invalid consensus argument")
 	}
 
-	if globals.Arguments["--network"] == "testnet" || globals.Arguments["--network"] == "devnet" {
+	if NETWORK_SELECTED == TEST_NET_NETWORK_BYTE || NETWORK_SELECTED == DEV_NET_NETWORK_BYTE {
 
 		if globals.Arguments["--hcaptcha-site-key"] != nil {
 			HCAPTCHA_SITE_KEY = globals.Arguments["--hcaptcha-site-key"].(string)
