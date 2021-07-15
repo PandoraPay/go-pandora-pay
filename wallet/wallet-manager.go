@@ -17,6 +17,12 @@ import (
 	"strconv"
 )
 
+func (wallet *Wallet) GetAddressesCount() int {
+	wallet.Lock()
+	defer wallet.Unlock()
+	return len(wallet.Addresses)
+}
+
 func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() ([]byte, []byte, error) {
 
 	wallet.Lock()

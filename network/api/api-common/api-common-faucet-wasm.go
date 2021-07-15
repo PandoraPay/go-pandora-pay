@@ -4,6 +4,7 @@ package api_common
 
 import (
 	"pandora-pay/network/api/api-common/api_types"
+	transactions_builder "pandora-pay/transactions-builder"
 )
 
 type APICommonFaucet struct {
@@ -17,6 +18,6 @@ func (api *APICommonFaucet) GetFaucetCoins(request *api_types.APIFaucetCoinsRequ
 	return nil, nil
 }
 
-func createAPICommonFaucet() (*APICommonFaucet, error) {
+func createAPICommonFaucet(wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*APICommonFaucet, error) {
 	return &APICommonFaucet{}, nil
 }

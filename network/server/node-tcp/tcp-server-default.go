@@ -13,6 +13,8 @@ import (
 	node_http "pandora-pay/network/server/node-http"
 	"pandora-pay/recovery"
 	"pandora-pay/settings"
+	transactions_builder "pandora-pay/transactions-builder"
+	"pandora-pay/wallet"
 	"strconv"
 )
 
@@ -25,7 +27,7 @@ type TcpServer struct {
 	HttpServer  *node_http.HttpServer
 }
 
-func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (*TcpServer, error) {
+func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*TcpServer, error) {
 
 	server := &TcpServer{}
 
@@ -68,7 +70,7 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 
 	gui.GUI.InfoUpdate("TCP", address+":"+port)
 
-	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, mempool); err != nil {
+	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, mempool, wallet, transactionsBuilder); err != nil {
 		return nil, err
 	}
 

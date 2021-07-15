@@ -76,6 +76,9 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 
 func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 
+	wallet.RLock()
+	defer wallet.RUnlock()
+
 	gui.GUI.OutputWrite("Wallet")
 	gui.GUI.OutputWrite("Version: " + wallet.Version.String())
 	gui.GUI.OutputWrite("Encrypted: " + wallet.Encryption.Encrypted.String())

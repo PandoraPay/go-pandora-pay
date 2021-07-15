@@ -99,7 +99,7 @@ func _startMain() (err error) {
 		globals.Data["testnet"] = myTestnet
 	}
 
-	if app.Network, err = network.CreateNetwork(app.Settings, app.Chain, app.Mempool); err != nil {
+	if app.Network, err = network.CreateNetwork(app.Settings, app.Chain, app.Mempool, app.Wallet, app.TransactionsBuilder); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "network initialized")

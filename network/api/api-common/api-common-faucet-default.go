@@ -8,10 +8,14 @@ import (
 	"go.jolheiser.com/hcaptcha"
 	"pandora-pay/config"
 	"pandora-pay/network/api/api-common/api_types"
+	transactions_builder "pandora-pay/transactions-builder"
+	"pandora-pay/wallet"
 )
 
 type APICommonFaucet struct {
-	hcpatchaClient *hcaptcha.Client
+	hcpatchaClient      *hcaptcha.Client
+	wallet              *wallet.Wallet
+	transactionsBuilder *transactions_builder.TransactionsBuilder
 }
 
 func (api *APICommonFaucet) GetFaucetInfo() ([]byte, error) {
@@ -37,22 +41,24 @@ func (api *APICommonFaucet) GetFaucetCoins(request *api_types.APIFaucetCoinsRequ
 		return nil, errors.New("Faucet token is invalid")
 	}
 
-	//publicKeyHash, err := request.GetPublicKeyHash()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//tx, err := api.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, 0, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
-	//if err != nil {
-	//	return
-	//}
+	addr, err := api.wallet.GetWalletAddress(0)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	tx, err := api.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, []string{request.Address}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, 0, []byte{})
+	if err != nil {
+		return nil, err
+	}
+
+	return tx.Bloom.Hash, nil
 }
 
-func createAPICommonFaucet() (*APICommonFaucet, error) {
+func createAPICommonFaucet(wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*APICommonFaucet, error) {
 
-	api := &APICommonFaucet{}
+	api := &APICommonFaucet{
+		nil, wallet, transactionsBuilder,
+	}
 
 	// Dummy secret https://docs.hcaptcha.com/#integrationtest
 	hcpatchaClient, err := hcaptcha.New(config.HCAPTCHA_SECRET_KEY)

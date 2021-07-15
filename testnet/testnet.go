@@ -19,6 +19,7 @@ import (
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
+	wallet_address "pandora-pay/wallet/address"
 )
 
 type Testnet struct {
@@ -31,7 +32,12 @@ type Testnet struct {
 
 func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64) (err error) {
 
-	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(testnet.wallet.Addresses[0].AddressEncoded, 0, amount, -1, []byte{}, true)
+	addr, err := testnet.wallet.GetWalletAddress(0)
+	if err != nil {
+		return
+	}
+
+	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, -1, []byte{}, true)
 	if err != nil {
 		return
 	}
@@ -55,17 +61,29 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 	dstsAmounts := []uint64{}
 	dstsTokens := [][]byte{}
 	for i := uint64(0); i < testnet.nodes; i++ {
-		if uint64(len(testnet.wallet.Addresses)) <= i+1 {
+		if uint64(testnet.wallet.GetAddressesCount()) <= i+1 {
 			if _, err = testnet.wallet.AddNewAddress(true); err != nil {
 				return
 			}
 		}
-		dsts = append(dsts, testnet.wallet.Addresses[i+1].AddressEncoded)
+
+		var addr *wallet_address.WalletAddress
+		addr, err = testnet.wallet.GetWalletAddress(int(i + 1))
+		if err != nil {
+			return
+		}
+
+		dsts = append(dsts, addr.AddressEncoded)
 		dstsAmounts = append(dstsAmounts, config_stake.GetRequiredStake(blockHeight))
 		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, 0, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
+	addr, err := testnet.wallet.GetWalletAddress(0)
+	if err != nil {
+		return
+	}
+
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
 	if err != nil {
 		return
 	}
@@ -102,7 +120,12 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 		sum += amount
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{testnet.wallet.Addresses[0].AddressEncoded}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{})
+	addr, err := testnet.wallet.GetWalletAddress(0)
+	if err != nil {
+		return
+	}
+
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{})
 	if err != nil {
 		return
 	}
@@ -150,11 +173,17 @@ func (testnet *Testnet) run() {
 
 			if blockHeight >= 60 && syncTime != 0 {
 
+				var addr *wallet_address.WalletAddress
+				addr, err = testnet.wallet.GetWalletAddress(0)
+				if err != nil {
+					return
+				}
+
 				if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 					accs := accounts.NewAccounts(reader)
 					var account *account.Account
-					if account, err = accs.GetAccountEvenEmpty(testnet.wallet.Addresses[0].PublicKeyHash, blockHeight); err != nil {
+					if account, err = accs.GetAccountEvenEmpty(addr.PublicKeyHash, blockHeight); err != nil {
 						return
 					}
 
@@ -166,13 +195,13 @@ func (testnet *Testnet) run() {
 						delegatedUnstakePending, _ := account.ComputeDelegatedUnstakePending()
 
 						if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
-							if !testnet.mempool.ExistsTxSimpleVersion(testnet.wallet.Addresses[0].PublicKeyHash, transaction_simple.SCRIPT_UNSTAKE) {
+							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKeyHash, transaction_simple.SCRIPT_UNSTAKE) {
 								if err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
 									return
 								}
 							}
 						} else {
-							if testnet.mempool.CountInputTxs(testnet.wallet.Addresses[0].PublicKeyHash) < 100 {
+							if testnet.mempool.CountInputTxs(addr.PublicKeyHash) < 100 {
 								for i := 0; i < 20; i++ {
 									if err = testnet.testnetCreateTransfers(blockHeight); err != nil {
 										return

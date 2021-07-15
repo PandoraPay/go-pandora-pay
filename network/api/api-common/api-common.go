@@ -15,6 +15,8 @@ import (
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/recovery"
+	transactions_builder "pandora-pay/transactions-builder"
+	"pandora-pay/wallet"
 	"sync/atomic"
 )
 
@@ -301,9 +303,9 @@ func (api *APICommon) readLocalBlockchainSync(newLocalSync *blockchain_sync.Bloc
 	api.localChainSync.Store(newLocalSync)
 }
 
-func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, apiStore *APIStore) (api *APICommon, err error) {
+func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder, apiStore *APIStore) (api *APICommon, err error) {
 
-	apiCommonFaucet, err := createAPICommonFaucet()
+	apiCommonFaucet, err := createAPICommonFaucet(wallet, transactionsBuilder)
 	if err != nil {
 		return
 	}

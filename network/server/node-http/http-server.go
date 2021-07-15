@@ -9,6 +9,8 @@ import (
 	"pandora-pay/network/api/api-websockets"
 	"pandora-pay/network/websocks"
 	"pandora-pay/settings"
+	transactions_builder "pandora-pay/transactions-builder"
+	"pandora-pay/wallet"
 )
 
 type HttpServer struct {
@@ -20,10 +22,10 @@ type HttpServer struct {
 	getMap          map[string]func(values *url.Values) (interface{}, error)
 }
 
-func CreateHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) (*HttpServer, error) {
+func CreateHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*HttpServer, error) {
 
 	apiStore := api_common.CreateAPIStore(chain)
-	apiCommon, err := api_common.CreateAPICommon(mempool, chain, apiStore)
+	apiCommon, err := api_common.CreateAPICommon(mempool, chain, wallet, transactionsBuilder, apiStore)
 	if err != nil {
 		return nil, err
 	}

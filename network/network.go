@@ -13,6 +13,8 @@ import (
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/recovery"
 	"pandora-pay/settings"
+	transactions_builder "pandora-pay/transactions-builder"
+	"pandora-pay/wallet"
 	"time"
 )
 
@@ -88,9 +90,9 @@ func (network *Network) syncNewConnections() {
 	})
 }
 
-func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (*Network, error) {
+func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*Network, error) {
 
-	tcpServer, err := node_tcp.CreateTcpServer(settings, chain, mempool)
+	tcpServer, err := node_tcp.CreateTcpServer(settings, chain, mempool, wallet, transactionsBuilder)
 	if err != nil {
 		return nil, err
 	}
