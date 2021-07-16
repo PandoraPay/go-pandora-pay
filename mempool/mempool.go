@@ -34,6 +34,17 @@ type Mempool struct {
 	NewTransactionMulticast *multicast.MulticastChannel `json:"-"`
 }
 
+func (mempool *Mempool) AddTxToMemPoolReturnError(tx *transaction.Transaction, height uint64, propagateToSockets, awaitAnswer bool) error {
+	result, err := mempool.AddTxToMemPool(tx, height, propagateToSockets, awaitAnswer)
+	if err != nil {
+		return err
+	}
+	if !result {
+		return errors.New("transaction was not inserted in mempool")
+	}
+	return nil
+}
+
 func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, propagateToSockets, awaitAnswer bool) (bool, error) {
 	result, err := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, propagateToSockets, awaitAnswer)
 	if err != nil {

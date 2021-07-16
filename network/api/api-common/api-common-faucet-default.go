@@ -54,12 +54,8 @@ func (api *APICommonFaucet) GetFaucetCoins(request *api_types.APIFaucetCoinsRequ
 	if err != nil {
 		return nil, err
 	}
-	result, err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, true)
-	if err != nil {
+	if err := api.mempool.AddTxToMemPoolReturnError(tx, api.chain.GetChainData().Height, true, true); err != nil {
 		return nil, err
-	}
-	if !result {
-		return nil, errors.New("transaction was not inserted in mempool")
 	}
 
 	return tx.Bloom.Hash, nil
