@@ -24,7 +24,7 @@ func getNetworkFaucetCoins(this js.Value, args []js.Value) interface{} {
 		if data.Err != nil {
 			return nil, data.Err
 		}
-		return string(data.Out), nil
+		return hex.EncodeToString(data.Out), nil
 	})
 }
 

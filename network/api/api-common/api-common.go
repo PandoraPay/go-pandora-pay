@@ -305,7 +305,7 @@ func (api *APICommon) readLocalBlockchainSync(newLocalSync *blockchain_sync.Bloc
 
 func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder, apiStore *APIStore) (api *APICommon, err error) {
 
-	apiCommonFaucet, err := createAPICommonFaucet(wallet, transactionsBuilder)
+	apiCommonFaucet, err := createAPICommonFaucet(mempool, chain, wallet, transactionsBuilder)
 	if err != nil {
 		return
 	}

@@ -7,6 +7,8 @@ import (
 	"pandora-pay/mempool"
 	node_http "pandora-pay/network/server/node-http"
 	"pandora-pay/settings"
+	transactions_builder "pandora-pay/transactions-builder"
+	"pandora-pay/wallet"
 )
 
 type TcpServer struct {
@@ -14,11 +16,11 @@ type TcpServer struct {
 	HttpServer *node_http.HttpServer
 }
 
-func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool) (*TcpServer, error) {
+func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*TcpServer, error) {
 
 	server := &TcpServer{}
 	var err error
-	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, mempool); err != nil {
+	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, mempool, wallet, transactionsBuilder); err != nil {
 		return nil, err
 	}
 

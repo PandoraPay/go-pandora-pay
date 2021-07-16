@@ -6,16 +6,20 @@ import (
 	"encoding/json"
 	"errors"
 	"go.jolheiser.com/hcaptcha"
+	"pandora-pay/blockchain"
 	"pandora-pay/config"
+	"pandora-pay/mempool"
 	"pandora-pay/network/api/api-common/api_types"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
 )
 
 type APICommonFaucet struct {
-	hcpatchaClient      *hcaptcha.Client
+	mempool             *mempool.Mempool
+	chain               *blockchain.Blockchain
 	wallet              *wallet.Wallet
 	transactionsBuilder *transactions_builder.TransactionsBuilder
+	hcpatchaClient      *hcaptcha.Client
 }
 
 func (api *APICommonFaucet) GetFaucetInfo() ([]byte, error) {
@@ -46,18 +50,25 @@ func (api *APICommonFaucet) GetFaucetCoins(request *api_types.APIFaucetCoinsRequ
 		return nil, err
 	}
 
-	tx, err := api.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, []string{request.Address}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, 0, []byte{})
+	tx, err := api.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, []string{request.Address}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, -1, []byte{})
 	if err != nil {
 		return nil, err
+	}
+	result, err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, true)
+	if err != nil {
+		return nil, err
+	}
+	if !result {
+		return nil, errors.New("transaction was not inserted in mempool")
 	}
 
 	return tx.Bloom.Hash, nil
 }
 
-func createAPICommonFaucet(wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*APICommonFaucet, error) {
+func createAPICommonFaucet(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*APICommonFaucet, error) {
 
 	api := &APICommonFaucet{
-		nil, wallet, transactionsBuilder,
+		mempool, chain, wallet, transactionsBuilder, nil,
 	}
 
 	// Dummy secret https://docs.hcaptcha.com/#integrationtest
