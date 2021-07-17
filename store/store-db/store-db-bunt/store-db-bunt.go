@@ -31,6 +31,7 @@ func (store *StoreDBBunt) Update(callback func(dbTx store_db_interface.StoreDBTr
 	return store.DB.Update(func(buntTx *buntdb.Tx) error {
 		tx := &StoreDBBuntTransaction{
 			buntTx: buntTx,
+			write:  true,
 		}
 		return callback(tx)
 	})
@@ -39,9 +40,6 @@ func (store *StoreDBBunt) Update(callback func(dbTx store_db_interface.StoreDBTr
 func CreateStoreDBBunt(name string, inMemory bool) (*StoreDBBunt, error) {
 
 	var err error
-	store := &StoreDBBunt{
-		Name: []byte(name),
-	}
 
 	var prefix string
 	if !inMemory {
@@ -54,6 +52,10 @@ func CreateStoreDBBunt(name string, inMemory bool) (*StoreDBBunt, error) {
 		prefix += name + "_store" + "." + dbName
 	} else {
 		prefix = ":memory:"
+	}
+
+	store := &StoreDBBunt{
+		Name: []byte(name),
 	}
 
 	// Open the my.store data file in your current directory.

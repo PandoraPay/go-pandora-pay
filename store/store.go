@@ -49,11 +49,11 @@ func DBClose() (err error) {
 	return
 }
 
-func getStoreType(argument interface{}, bolt, bunt, memory, indexdb bool) (value string) {
+func getStoreType(argument interface{}, bolt, bunt, memory, js bool) (value string) {
 
 	value = argument.(string)
 
-	if (value == "bolt" && bolt) || (value == "bunt" && bunt) || (value == "memory" && memory) || (value == "indexdb" && indexdb) {
+	if (value == "bolt" && bolt) || (value == "bunt" && bunt) || (value == "memory" && memory) || (value == "js" && js) {
 		return
 	}
 

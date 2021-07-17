@@ -124,6 +124,7 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 	wallet.mempool.Wallet.AddWallet(adr.PublicKeyHash)
 
 	wallet.updateWallet()
+	gui.GUI.Info("wallet.saveWallet", len(wallet.Addresses))
 	if err = wallet.saveWallet(len(wallet.Addresses)-1, len(wallet.Addresses), -1, false); err != nil {
 		return
 	}

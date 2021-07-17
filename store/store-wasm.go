@@ -7,7 +7,7 @@ import (
 	"pandora-pay/config/globals"
 	store_db_bunt "pandora-pay/store/store-db/store-db-bunt"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
-	store_db_js_indexdb "pandora-pay/store/store-db/store-db-js-indexdb"
+	store_db_js "pandora-pay/store/store-db/store-db-js"
 )
 
 func createStoreNow(name string, storeType string) (*Store, error) {
@@ -18,8 +18,8 @@ func createStoreNow(name string, storeType string) (*Store, error) {
 	switch storeType {
 	case "memory":
 		db, err = store_db_bunt.CreateStoreDBBunt(name, true)
-	case "indexdb":
-		db, err = store_db_js_indexdb.CreateStoreDBJSIndexDB(name)
+	case "js":
+		db, err = store_db_js.CreateStoreDBJS(name)
 	default:
 		err = errors.New("Invalid --store-type argument: " + storeType)
 	}

@@ -5,6 +5,8 @@ The main design pattern that has been taken in consideration is to be **dead-sim
 
 ## Installing
 
+Go 1.17 is required.
+
 1. Install golang https://golang.org/doc/install
 2. Installing missing packages `go get -t .`
 3. Run the node
@@ -14,6 +16,10 @@ The main design pattern that has been taken in consideration is to be **dead-sim
 ### Running your own devnet
 
 `--debugging --network="devnet" --new-devnet --tcp-server-port="5231" --set-genesis="file"  --staking`
+
+#### Activating devnet faucet
+`--hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true"`
+you can also create an account on hcaptcha 
 
 ### Running the node as Tor Hidden Server
 1. Install Tor
@@ -140,3 +146,16 @@ Using profiling to debug memory leaks/CPU
 
 ### Scripts
 `scripts/compile-wasm.sh` compiles to WASM
+
+### Checking and Installing a specific go version
+1. `go env GOROOT`
+2. download from https://golang.org/doc/manage-install
+
+# DISCLAIMER:
+This source code is released for research purposes only, with the intent of researching and studying a decentralized p2p network protocol.
+
+PANDORAPAY IS AN OPEN SOURCE COMMUNITY DRIVEN RESEARCH PROJECT. THIS IS RESEARCH CODE PROVIDED TO YOU "AS IS" WITH NO WARRANTIES OF CORRECTNESS. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES. USE AT YOUR OWN RISK.
+
+You may not use this source code for any illegal or unethical purpose; including activities which would give rise to criminal or civil liability.
+
+Under no event shall the Licensor be responsible for the activities, or any misdeeds, conducted by the Licensee.

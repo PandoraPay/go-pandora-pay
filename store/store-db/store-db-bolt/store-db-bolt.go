@@ -33,6 +33,7 @@ func (store *StoreDBBolt) Update(callback func(dbTx store_db_interface.StoreDBTr
 		tx := &StoreDBBoltTransaction{
 			boltTx: boltTx,
 			bucket: boltTx.Bucket(store.Name),
+			write:  true,
 		}
 		return callback(tx)
 	})

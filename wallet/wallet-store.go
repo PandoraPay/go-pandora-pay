@@ -37,6 +37,7 @@ func (wallet *Wallet) saveWalletEntire(lock bool) error {
 
 func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 
+	gui.GUI.Info("11111")
 	if lock {
 		wallet.RLock()
 		defer wallet.RUnlock()
@@ -46,9 +47,13 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 		return errors.New("Can't save your wallet because your stored wallet on the drive was not successfully loaded")
 	}
 
+	gui.GUI.Info("22222")
+
 	return store.StoreWallet.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		var marshal []byte
+
+		gui.GUI.Info("33333")
 
 		if err = writer.Put("saved", []byte{0}); err != nil {
 			return
@@ -72,6 +77,8 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 			return
 		}
 
+		gui.GUI.Info("44444")
+
 		for i := start; i < end; i++ {
 			if marshal, err = json.Marshal(wallet.Addresses[i]); err != nil {
 				return
@@ -84,6 +91,8 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 			}
 		}
 
+		gui.GUI.Info("5555")
+
 		if deleteIndex != -1 {
 			if err = writer.Delete("wallet-address-" + strconv.Itoa(deleteIndex)); err != nil {
 				return
@@ -93,6 +102,8 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 		if err = writer.Put("saved", []byte{1}); err != nil {
 			return
 		}
+
+		gui.GUI.Info("666666")
 
 		return
 	})
