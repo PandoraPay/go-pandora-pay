@@ -71,6 +71,21 @@ func (self *WalletEncryption) decryptData(input []byte) ([]byte, error) {
 	return input, nil
 }
 
+func (self *WalletEncryption) CheckPassword(password string) (bool, error) {
+	if !self.wallet.loaded {
+		return false, errors.New("Wallet was not loaded!")
+	}
+	if self.Encrypted == ENCRYPTED_VERSION_PLAIN_TEXT {
+		return false, errors.New("Wallet is not encrypted!")
+	}
+
+	if self.password == "" {
+		return false, errors.New("Password was not set before")
+	}
+
+	return self.password == password, nil
+}
+
 func (self *WalletEncryption) RemoveEncryption() (err error) {
 	self.wallet.Lock()
 	defer self.wallet.Unlock()
@@ -78,7 +93,6 @@ func (self *WalletEncryption) RemoveEncryption() (err error) {
 	if !self.wallet.loaded {
 		return errors.New("Wallet was not loaded!")
 	}
-
 	if self.Encrypted == ENCRYPTED_VERSION_PLAIN_TEXT {
 		return errors.New("Wallet is not encrypted!")
 	}

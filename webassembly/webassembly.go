@@ -74,6 +74,12 @@ func Initialize(startMainCb func()) {
 				"importWalletPrivateKey":  js.FuncOf(importWalletPrivateKey),
 				"importWalletJSON":        js.FuncOf(importWalletJSON),
 				"importWalletAddressJSON": js.FuncOf(importWalletAddressJSON),
+				"encryption": js.ValueOf(map[string]interface{}{
+					"checkPasswordWallet":    js.FuncOf(checkPasswordWallet),
+					"encryptWallet":          js.FuncOf(encryptWallet),
+					"decryptWallet":          js.FuncOf(decryptWallet),
+					"removeEncryptionWallet": js.FuncOf(removeEncryptionWallet),
+				}),
 			}),
 		}),
 		"addresses": js.ValueOf(map[string]interface{}{
