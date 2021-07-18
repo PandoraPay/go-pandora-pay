@@ -20,11 +20,11 @@ type Wallet struct {
 	Count          int                             `json:"count"`
 	CountIndex     int                             `json:"countIndex"`
 	Addresses      []*wallet_address.WalletAddress `json:"addresses"`
+	Loaded         bool                            `json:"loaded"`
 	addressesMap   map[string]*wallet_address.WalletAddress
 	forging        *forging.Forging
 	mempool        *mempool.Mempool
 	updateAccounts *multicast.MulticastChannel
-	loaded         bool
 	sync.RWMutex   `json:"-"`
 }
 
@@ -55,7 +55,7 @@ func (wallet *Wallet) clearWallet() {
 
 //must be locked before
 func (wallet *Wallet) setLoaded(newValue bool) {
-	wallet.loaded = newValue
+	wallet.Loaded = newValue
 	wallet.initWalletCLI()
 }
 

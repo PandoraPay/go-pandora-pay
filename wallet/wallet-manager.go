@@ -28,7 +28,7 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() ([]byte, []byte, e
 	wallet.Lock()
 	defer wallet.Unlock()
 
-	if len(wallet.Addresses) == 0 || !wallet.loaded {
+	if len(wallet.Addresses) == 0 || !wallet.Loaded {
 		return nil, nil, errors.New("Wallet is empty")
 	}
 
@@ -87,7 +87,7 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 		defer wallet.Unlock()
 	}
 
-	if !wallet.loaded {
+	if !wallet.Loaded {
 		return errors.New("Wallet was not loaded!")
 	}
 
@@ -140,7 +140,7 @@ func (wallet *Wallet) GeneratePrivateKey(seedIndex uint32, lock bool) ([]byte, e
 		defer wallet.Unlock()
 	}
 
-	if !wallet.loaded {
+	if !wallet.Loaded {
 		return nil, errors.New("Wallet was not loaded!")
 	}
 
@@ -165,7 +165,7 @@ func (wallet *Wallet) AddNewAddress(lock bool) (*wallet_address.WalletAddress, e
 		defer wallet.Unlock()
 	}
 
-	if !wallet.loaded {
+	if !wallet.Loaded {
 		return nil, errors.New("Wallet was not loaded!")
 	}
 
@@ -197,7 +197,7 @@ func (wallet *Wallet) RemoveAddress(index int, encodedAddress string) (bool, err
 	wallet.Lock()
 	defer wallet.Unlock()
 
-	if !wallet.loaded {
+	if !wallet.Loaded {
 		return false, errors.New("Wallet was not loaded!")
 	}
 
@@ -262,7 +262,7 @@ func (wallet *Wallet) createSeed(lock bool) error {
 		defer wallet.Unlock()
 	}
 
-	if !wallet.loaded {
+	if !wallet.Loaded {
 		return errors.New("Wallet was not loaded!")
 	}
 
@@ -295,6 +295,7 @@ func (wallet *Wallet) createEmptyWallet() (err error) {
 	if _, err = wallet.AddNewAddress(false); err != nil {
 		return
 	}
+
 	return
 }
 

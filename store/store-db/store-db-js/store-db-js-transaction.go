@@ -3,7 +3,6 @@ package store_db_js
 import (
 	"errors"
 	"fmt"
-	"pandora-pay/gui"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"sync"
 	"syscall/js"
@@ -25,14 +24,11 @@ func (tx *StoreDBJSTransaction) Put(key string, value []byte) error {
 	if !tx.write {
 		return errors.New("Transaction is not writeable")
 	}
-	gui.GUI.Info("put key", value)
 	tx.local.Store(key, &StoreDBJSTransactionData{value, "put"})
 	return nil
 }
 
 func (tx *StoreDBJSTransaction) Get(key string) []byte {
-
-	gui.GUI.Log("get key", key)
 
 	out, ok := tx.local.Load(key)
 	if ok {
@@ -76,8 +72,6 @@ func (tx *StoreDBJSTransaction) GetClone(key string) []byte {
 }
 
 func (tx *StoreDBJSTransaction) Delete(key string) error {
-	gui.GUI.Log("delete key", key)
-
 	if !tx.write {
 		return errors.New("Transaction is not writeable")
 	}
@@ -105,8 +99,6 @@ func (tx *StoreDBJSTransaction) writeTx() error {
 		respCh := make(chan bool)
 		errCh := make(chan error)
 
-		gui.GUI.Info("writing tx", key.(string), data.operation)
-
 		process := true
 		if data.operation == "del" {
 
@@ -126,7 +118,6 @@ func (tx *StoreDBJSTransaction) writeTx() error {
 			if data.value == nil {
 				final = js.Null()
 			} else {
-				gui.GUI.Info("data.value", len(data.value), data.value)
 				final = js.Global().Get("Uint8Array").New(len(data.value))
 				js.CopyBytesToJS(final, data.value)
 			}

@@ -9,6 +9,7 @@ import (
 type WalletEncryption struct {
 	wallet           *Wallet
 	Encrypted        EncryptedVersion             `json:"encrypted"`
+	Opened           bool                         `json:"opened"`
 	Salt             []byte                       `json:"salt"`
 	Difficulty       int                          `json:"difficulty"`
 	password         string                       `json:"-"`
@@ -25,6 +26,10 @@ func createEncryption(wallet *Wallet) *WalletEncryption {
 func (self *WalletEncryption) Encrypt(newPassword string, difficulty int) (err error) {
 	self.wallet.Lock()
 	defer self.wallet.Unlock()
+
+	if !self.wallet.Loaded {
+		return errors.New("Wallet was not loaded!")
+	}
 
 	if self.Encrypted != ENCRYPTED_VERSION_PLAIN_TEXT {
 		return errors.New("Wallet is encrypted already! Remove the encryption first")
@@ -72,7 +77,10 @@ func (self *WalletEncryption) decryptData(input []byte) ([]byte, error) {
 }
 
 func (self *WalletEncryption) CheckPassword(password string) (bool, error) {
-	if !self.wallet.loaded {
+	self.wallet.RLock()
+	defer self.wallet.RUnlock()
+
+	if !self.wallet.Loaded {
 		return false, errors.New("Wallet was not loaded!")
 	}
 	if self.Encrypted == ENCRYPTED_VERSION_PLAIN_TEXT {
@@ -90,7 +98,7 @@ func (self *WalletEncryption) RemoveEncryption() (err error) {
 	self.wallet.Lock()
 	defer self.wallet.Unlock()
 
-	if !self.wallet.loaded {
+	if !self.wallet.Loaded {
 		return errors.New("Wallet was not loaded!")
 	}
 	if self.Encrypted == ENCRYPTED_VERSION_PLAIN_TEXT {
@@ -99,6 +107,7 @@ func (self *WalletEncryption) RemoveEncryption() (err error) {
 
 	self.Encrypted = ENCRYPTED_VERSION_PLAIN_TEXT
 	self.password = ""
+	self.Difficulty = 0
 
 	return self.wallet.saveWalletEntire(false)
 }
