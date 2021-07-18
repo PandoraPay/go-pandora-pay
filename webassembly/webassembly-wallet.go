@@ -3,6 +3,7 @@ package webassembly
 import (
 	"encoding/hex"
 	"pandora-pay/app"
+	"pandora-pay/helpers"
 	"syscall/js"
 )
 
@@ -10,7 +11,23 @@ func getWallet(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 		app.Wallet.RLock()
 		defer app.Wallet.RUnlock()
-		return convertJSON(app.Wallet)
+
+		data, err := helpers.GetJSON(app.Wallet, "mnemonic")
+		if err != nil {
+			return nil, err
+		}
+		return string(data), nil
+	})
+}
+
+func getWalletMnemonic(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+		app.Wallet.RLock()
+		defer app.Wallet.RUnlock()
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+			return nil, err
+		}
+		return app.Wallet.Mnemonic, nil
 	})
 }
 
@@ -72,7 +89,10 @@ func importWalletAddressJSON(this js.Value, args []js.Value) interface{} {
 
 func checkPasswordWallet(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
-		return app.Wallet.Encryption.CheckPassword(args[0].String())
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+			return false, err
+		}
+		return true, nil
 	})
 }
 
@@ -96,6 +116,9 @@ func decryptWallet(this js.Value, args []js.Value) interface{} {
 
 func removeEncryptionWallet(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), true); err != nil {
+			return nil, err
+		}
 		if err := app.Wallet.Encryption.RemoveEncryption(); err != nil {
 			return nil, err
 		}

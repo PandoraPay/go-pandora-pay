@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config/globals"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/events"
 	"pandora-pay/network/api/api-common/api_types"
@@ -39,8 +38,6 @@ func listenEvents(this js.Value, args []js.Value) interface{} {
 			data := dataValue.(*events.EventData)
 
 			var final interface{}
-
-			gui.GUI.Log("received", args[0])
 
 			switch v := data.Data.(type) {
 			case string:

@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"errors"
+	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/encryption"
 	"pandora-pay/helpers"
 )
@@ -48,7 +49,12 @@ func (self *WalletEncryption) Encrypt(newPassword string, difficulty int) (err e
 		return
 	}
 
-	return self.wallet.saveWalletEntire(false)
+	if err = self.wallet.saveWalletEntire(false); err != nil {
+		return
+	}
+
+	globals.MainEvents.BroadcastEvent("wallet/encrypted", true)
+	return
 }
 
 func (self *WalletEncryption) encryptData(input []byte) ([]byte, error) {
@@ -76,22 +82,28 @@ func (self *WalletEncryption) decryptData(input []byte) ([]byte, error) {
 	return input, nil
 }
 
-func (self *WalletEncryption) CheckPassword(password string) (bool, error) {
+func (self *WalletEncryption) CheckPassword(password string, requirePassword bool) error {
 	self.wallet.RLock()
 	defer self.wallet.RUnlock()
 
 	if !self.wallet.Loaded {
-		return false, errors.New("Wallet was not loaded!")
-	}
-	if self.Encrypted == ENCRYPTED_VERSION_PLAIN_TEXT {
-		return false, errors.New("Wallet is not encrypted!")
+		return errors.New("Wallet was not loaded!")
 	}
 
-	if self.password == "" {
-		return false, errors.New("Password was not set before")
+	if requirePassword {
+		if self.Encrypted == ENCRYPTED_VERSION_PLAIN_TEXT {
+			return errors.New("Wallet is not encrypted!")
+		}
+		if self.password == "" {
+			return errors.New("Wallet password was not set!")
+		}
 	}
 
-	return self.password == password, nil
+	if self.password != password {
+		return errors.New("Password is not matching")
+	}
+
+	return nil
 }
 
 func (self *WalletEncryption) RemoveEncryption() (err error) {
@@ -109,5 +121,10 @@ func (self *WalletEncryption) RemoveEncryption() (err error) {
 	self.password = ""
 	self.Difficulty = 0
 
-	return self.wallet.saveWalletEntire(false)
+	if err = self.wallet.saveWalletEntire(false); err != nil {
+		return
+	}
+
+	globals.MainEvents.BroadcastEvent("wallet/removed-encryption", true)
+	return
 }
