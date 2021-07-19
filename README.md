@@ -18,6 +18,7 @@ Go 1.17 is required.
 `--debugging --network="devnet" --new-devnet --tcp-server-port="5231" --set-genesis="file"  --staking`
 
 #### Activating devnet faucet
+
 `--hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true"`
 you can also create an account on hcaptcha 
 
@@ -106,9 +107,9 @@ you can also create an account on hcaptcha
 - [X] Consensus
   - [X] API websockets for Forks
   - [X] Fork manager and downloader
-- [ ] Webassembly build
+- [X] Webassembly build
   - [X] GUI
-  - [ ] Store (partially done)
+  - [X] Store
   - [X] Websockets
   - [X] Network
 - [ ] Wallet
