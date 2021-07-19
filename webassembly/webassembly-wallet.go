@@ -107,13 +107,19 @@ func importWalletPrivateKey(this js.Value, args []js.Value) interface{} {
 
 func importWalletJSON(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
-		return true, app.Wallet.ImportWalletJSON([]byte(args[0].String()))
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+			return nil, err
+		}
+		return true, app.Wallet.ImportWalletJSON([]byte(args[1].String()))
 	})
 }
 
 func importWalletAddressJSON(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
-		adr, err := app.Wallet.ImportWalletAddressJSON([]byte(args[0].String()))
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+			return nil, err
+		}
+		adr, err := app.Wallet.ImportWalletAddressJSON([]byte(args[1].String()))
 		if err != nil {
 			return nil, err
 		}
