@@ -88,11 +88,16 @@ func removeWalletAddress(this js.Value, args []js.Value) interface{} {
 
 func importWalletPrivateKey(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
-		key, err := hex.DecodeString(args[0].String())
+
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+			return nil, err
+		}
+
+		key, err := hex.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
-		adr, err := app.Wallet.ImportPrivateKey("", key)
+		adr, err := app.Wallet.ImportPrivateKey(args[2].String(), key)
 		if err != nil {
 			return nil, err
 		}
