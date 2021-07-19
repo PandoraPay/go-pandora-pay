@@ -81,6 +81,7 @@ func Initialize(startMainCb func()) {
 					"encryptWallet":          js.FuncOf(encryptWallet),
 					"decryptWallet":          js.FuncOf(decryptWallet),
 					"removeEncryptionWallet": js.FuncOf(removeEncryptionWallet),
+					"logoutWallet":           js.FuncOf(logoutWallet),
 				}),
 			}),
 		}),

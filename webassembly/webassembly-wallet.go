@@ -165,3 +165,12 @@ func removeEncryptionWallet(this js.Value, args []js.Value) interface{} {
 		return true, nil
 	})
 }
+
+func logoutWallet(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+		if err := app.Wallet.Encryption.Logout(); err != nil {
+			return nil, err
+		}
+		return true, nil
+	})
+}

@@ -10,7 +10,6 @@ import (
 type WalletEncryption struct {
 	wallet           *Wallet
 	Encrypted        EncryptedVersion             `json:"encrypted"`
-	Opened           bool                         `json:"opened"`
 	Salt             []byte                       `json:"salt"`
 	Difficulty       int                          `json:"difficulty"`
 	password         string                       `json:"-"`
@@ -126,5 +125,26 @@ func (self *WalletEncryption) RemoveEncryption() (err error) {
 	}
 
 	globals.MainEvents.BroadcastEvent("wallet/removed-encryption", true)
+	return
+}
+
+func (self *WalletEncryption) Logout() (err error) {
+	self.wallet.Lock()
+	if !self.wallet.Loaded {
+		self.wallet.Unlock()
+		return
+	}
+	if self.Encrypted == ENCRYPTED_VERSION_PLAIN_TEXT {
+		self.wallet.Unlock()
+		return errors.New("Wallet is not encrypted!")
+	}
+	self.wallet.clearWallet()
+	self.wallet.Unlock()
+
+	if err = self.wallet.loadWallet("", true); err != nil {
+		return nil
+	}
+
+	globals.MainEvents.BroadcastEvent("wallet/logged-out", true)
 	return
 }
