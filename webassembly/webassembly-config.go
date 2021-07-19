@@ -46,7 +46,7 @@ func convertToBase(this js.Value, args []js.Value) interface{} {
 		}
 
 		value2 := config.ConvertToBase(number)
-		return strconv.FormatFloat(value2, 'f', 10, 64), nil
+		return strconv.FormatFloat(value2, 'f', config.DECIMAL_SEPARATOR, 64), nil
 	})
 }
 
@@ -89,7 +89,7 @@ func tokensConvertToBase(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return strconv.FormatFloat(value2, 'f', 10, 64), nil
+		return strconv.FormatFloat(value2, 'f', decimalSeparator, 64), nil
 	})
 }
 
