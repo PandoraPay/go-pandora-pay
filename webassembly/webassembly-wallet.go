@@ -22,18 +22,38 @@ func getWallet(this js.Value, args []js.Value) interface{} {
 
 func getWalletMnemonic(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
-		app.Wallet.RLock()
-		defer app.Wallet.RUnlock()
 		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
 			return nil, err
 		}
+		app.Wallet.RLock()
+		defer app.Wallet.RUnlock()
 		return app.Wallet.Mnemonic, nil
+	})
+}
+
+func getWalletAddressPrivateKey(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+			return nil, err
+		}
+
+		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
+		if err != nil {
+			return nil, err
+		}
+		return hex.EncodeToString(addr.PrivateKey.Key), nil
 	})
 }
 
 func getWalletAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
-		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[0].String())
+
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+			return nil, err
+		}
+
+		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
 		if err != nil {
 			return nil, err
 		}
@@ -43,6 +63,11 @@ func getWalletAddress(this js.Value, args []js.Value) interface{} {
 
 func addNewWalletAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
+
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+			return nil, err
+		}
+
 		adr, err := app.Wallet.AddNewAddress(false)
 		if err != nil {
 			return nil, err
@@ -53,7 +78,11 @@ func addNewWalletAddress(this js.Value, args []js.Value) interface{} {
 
 func removeWalletAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
-		return app.Wallet.RemoveAddress(0, args[0].String())
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+			return nil, err
+		}
+
+		return app.Wallet.RemoveAddress(0, args[1].String())
 	})
 }
 

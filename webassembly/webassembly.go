@@ -66,8 +66,9 @@ func Initialize(startMainCb func()) {
 			"listenNetworkNotifications": js.FuncOf(listenNetworkNotifications),
 		}),
 		"wallet": js.ValueOf(map[string]interface{}{
-			"getWallet":         js.FuncOf(getWallet),
-			"getWalletMnemonic": js.FuncOf(getWalletMnemonic),
+			"getWallet":                  js.FuncOf(getWallet),
+			"getWalletMnemonic":          js.FuncOf(getWalletMnemonic),
+			"getWalletAddressPrivateKey": js.FuncOf(getWalletAddressPrivateKey),
 			"manager": js.ValueOf(map[string]interface{}{
 				"getWalletAddress":        js.FuncOf(getWalletAddress),
 				"addNewWalletAddress":     js.FuncOf(addNewWalletAddress),
