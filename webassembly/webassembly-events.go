@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config/globals"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/events"
 	"pandora-pay/network/api/api-common/api_types"
