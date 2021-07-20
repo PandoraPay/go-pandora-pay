@@ -18,10 +18,24 @@ type Subscriptions struct {
 	sync.Mutex
 }
 
+func checkSubscriptionLength(key []byte, subscriptionType api_types.SubscriptionType) error {
+	var length int
+	switch subscriptionType {
+	case api_types.SUBSCRIPTION_ACCOUNT, api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, api_types.SUBSCRIPTION_TOKEN:
+		length = cryptography.PublicKeyHashHashSize
+	case api_types.SUBSCRIPTION_TRANSACTION:
+		length = cryptography.HashSize
+	}
+	if len(key) != length {
+		return errors.New("Key is invalid")
+	}
+	return nil
+}
+
 func (s *Subscriptions) AddSubscription(subscriptionType api_types.SubscriptionType, key []byte, returnType api_types.APIReturnType) error {
 
-	if len(key) != cryptography.PublicKeyHashHashSize {
-		return errors.New("Key is invalid")
+	if err := checkSubscriptionLength(key, subscriptionType); err != nil {
+		return err
 	}
 
 	s.Lock()
@@ -49,8 +63,8 @@ func (s *Subscriptions) AddSubscription(subscriptionType api_types.SubscriptionT
 
 func (s *Subscriptions) RemoveSubscription(subscriptionType api_types.SubscriptionType, key []byte) error {
 
-	if len(key) != cryptography.PublicKeyHashHashSize {
-		return errors.New("Key is invalid")
+	if err := checkSubscriptionLength(key, subscriptionType); err != nil {
+		return err
 	}
 
 	s.Lock()
