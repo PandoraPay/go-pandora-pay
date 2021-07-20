@@ -58,8 +58,10 @@ type APISubscriptionNotificationAccountTxExtra struct {
 }
 
 type APISubscriptionNotificationTxExtra struct {
-	Inserted  bool   `json:"inserted,omitempty"`
-	BlkHeight uint64 `json:"blkHeight,omitempty"`
+	Inserted     bool   `json:"inserted,omitempty"`
+	BlkHeight    uint64 `json:"blkHeight,omitempty"`
+	BlkTimestamp uint64 `json:"blkTimestamp,omitempty"`
+	Height       uint64 `json:"height,omitempty"`
 }
 
 type APIAccountTxs struct {

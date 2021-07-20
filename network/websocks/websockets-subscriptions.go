@@ -60,7 +60,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 
 	for _, subNot := range list {
 
-		if element == nil && elementBytes == nil {
+		if element == nil && elementBytes == nil && extra == nil {
 			_ = subNot.Conn.Send(key, nil)
 			continue
 		}
@@ -213,7 +213,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 
 				if list := this.transactionsSubscriptions[string(v.TxHash)]; list != nil {
-					this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), v.TxHash, list, nil, v.TxHash, &api_types.APISubscriptionNotificationTxExtra{v.Inserted, v.BlockHeight})
+					this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), v.TxHash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{v.Inserted, v.BlockHeight, v.BlockTimestamp, v.Height})
 				}
 			}
 
