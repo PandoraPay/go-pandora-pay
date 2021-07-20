@@ -8,8 +8,9 @@ type BlockchainTransactionKeyUpdate struct {
 }
 
 type BlockchainTransactionUpdate struct {
-	TxHash   []byte
-	Tx       *transaction.Transaction
-	Inserted bool
-	Keys     []*BlockchainTransactionKeyUpdate
+	TxHash      []byte
+	Tx          *transaction.Transaction
+	Inserted    bool
+	BlockHeight uint64
+	Keys        []*BlockchainTransactionKeyUpdate
 }

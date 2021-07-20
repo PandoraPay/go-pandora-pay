@@ -52,9 +52,14 @@ type APISubscriptionNotification struct {
 	Extra            helpers.HexBytes `json:"extra,omitempty"`
 }
 
-type APISubscriptionNotificationTxExtra struct {
+type APISubscriptionNotificationAccountTxExtra struct {
 	Inserted bool   `json:"inserted,omitempty"`
 	TxsCount uint64 `json:"txsCount,omitempty"`
+}
+
+type APISubscriptionNotificationTxExtra struct {
+	Inserted  bool   `json:"inserted,omitempty"`
+	BlkHeight uint64 `json:"blkHeight,omitempty"`
 }
 
 type APIAccountTxs struct {

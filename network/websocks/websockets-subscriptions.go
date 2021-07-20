@@ -16,14 +16,15 @@ import (
 )
 
 type WebsocketSubscriptions struct {
-	websockets                *Websockets
-	chain                     *blockchain.Blockchain
-	websocketClosedCn         chan *connection.AdvancedConnection
-	newSubscriptionCn         chan *connection.SubscriptionNotification
-	removeSubscriptionCn      chan *connection.SubscriptionNotification
-	accountsSubscriptions     map[string]map[string]*connection.SubscriptionNotification
-	tokensSubscriptions       map[string]map[string]*connection.SubscriptionNotification
-	transactionsSubscriptions map[string]map[string]*connection.SubscriptionNotification
+	websockets                        *Websockets
+	chain                             *blockchain.Blockchain
+	websocketClosedCn                 chan *connection.AdvancedConnection
+	newSubscriptionCn                 chan *connection.SubscriptionNotification
+	removeSubscriptionCn              chan *connection.SubscriptionNotification
+	accountsSubscriptions             map[string]map[string]*connection.SubscriptionNotification
+	accountsTransactionsSubscriptions map[string]map[string]*connection.SubscriptionNotification
+	tokensSubscriptions               map[string]map[string]*connection.SubscriptionNotification
+	transactionsSubscriptions         map[string]map[string]*connection.SubscriptionNotification
 }
 
 func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockchain) (subs *WebsocketSubscriptions) {
@@ -32,6 +33,7 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 		websockets, chain, make(chan *connection.AdvancedConnection),
 		make(chan *connection.SubscriptionNotification),
 		make(chan *connection.SubscriptionNotification),
+		make(map[string]map[string]*connection.SubscriptionNotification),
 		make(map[string]map[string]*connection.SubscriptionNotification),
 		make(map[string]map[string]*connection.SubscriptionNotification),
 		make(map[string]map[string]*connection.SubscriptionNotification),
@@ -97,9 +99,11 @@ func (this *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.Subscr
 	switch subscriptionType {
 	case api_types.SUBSCRIPTION_ACCOUNT:
 		subsMap = this.accountsSubscriptions
+	case api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
+		subsMap = this.accountsTransactionsSubscriptions
 	case api_types.SUBSCRIPTION_TOKEN:
 		subsMap = this.tokensSubscriptions
-	case api_types.SUBSCRIPTION_TRANSACTIONS:
+	case api_types.SUBSCRIPTION_TRANSACTION:
 		subsMap = this.transactionsSubscriptions
 	}
 	return
@@ -203,9 +207,13 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			transactions := transactionsData.([]*blockchain_types.BlockchainTransactionUpdate)
 			for _, v := range transactions {
 				for _, key := range v.Keys {
-					if list := this.transactionsSubscriptions[string(key.PublicKeyHash)]; list != nil {
-						this.send(api_types.SUBSCRIPTION_TRANSACTIONS, []byte("sub/notify"), key.PublicKeyHash, list, nil, v.TxHash, &api_types.APISubscriptionNotificationTxExtra{v.Inserted, key.TxsCount})
+					if list := this.accountsTransactionsSubscriptions[string(key.PublicKeyHash)]; list != nil {
+						this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), key.PublicKeyHash, list, nil, v.TxHash, &api_types.APISubscriptionNotificationAccountTxExtra{v.Inserted, key.TxsCount})
 					}
+				}
+
+				if list := this.transactionsSubscriptions[string(v.TxHash)]; list != nil {
+					this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), v.TxHash, list, nil, v.TxHash, &api_types.APISubscriptionNotificationTxExtra{v.Inserted, v.BlockHeight})
 				}
 			}
 
@@ -215,8 +223,9 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			}
 
 			this.removeConnection(conn, api_types.SUBSCRIPTION_ACCOUNT)
+			this.removeConnection(conn, api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS)
 			this.removeConnection(conn, api_types.SUBSCRIPTION_TOKEN)
-			this.removeConnection(conn, api_types.SUBSCRIPTION_TRANSACTIONS)
+			this.removeConnection(conn, api_types.SUBSCRIPTION_TRANSACTION)
 
 		}
 

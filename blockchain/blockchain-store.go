@@ -143,9 +143,10 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		txHashes[i] = tx.Bloom.Hash
 
 		txChange := &blockchain_types.BlockchainTransactionUpdate{
-			Tx:       tx,
-			Inserted: true,
-			TxHash:   tx.Bloom.Hash,
+			TxHash:      tx.Bloom.Hash,
+			Tx:          tx,
+			Inserted:    true,
+			BlockHeight: blkComplete.Block.Height,
 		}
 
 		allTransactionsChanges2 = append(allTransactionsChanges2, txChange)

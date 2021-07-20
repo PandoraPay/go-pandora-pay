@@ -101,7 +101,9 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 						}
 					}
 					object = tok
-				case api_types.SUBSCRIPTION_TRANSACTIONS:
+				case api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
+					object = data.Data
+				case api_types.SUBSCRIPTION_TRANSACTION:
 					object = data.Data
 				}
 
