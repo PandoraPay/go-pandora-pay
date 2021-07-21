@@ -8,65 +8,86 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/recovery"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 )
 
+type MempoolTxsData struct {
+	txsCount int64
+	txsList  []*mempoolTx
+}
+
 type MempoolTxs struct {
-	txsMap           *sync.Map     //*mempoolTx
-	txsCount         int64         //use atomic
-	txsList          *atomic.Value //[]*mempoolTx
-	addToListCn      chan *mempoolTx
-	removeFromListCn chan *mempoolTx
-	clearListCn      chan interface{}
+	data             *atomic.Value //*MempoolTxsData
+	waitTxsListReady *atomic.Value //chan <- interface{}
+
+	addToListCn chan *mempoolTx
+	readyListCn chan interface{}
+	clearListCn chan interface{}
 }
 
 func (self *MempoolTxs) GetTxsList() (out []*mempoolTx) {
-	return self.txsList.Load().([]*mempoolTx)
+
+	<-self.waitTxsListReady.Load().(chan interface{})
+
+	return self.data.Load().(*MempoolTxsData).txsList
 }
 
 func (self *MempoolTxs) Exists(txId string) *transaction.Transaction {
-	out, _ := self.txsMap.Load(txId)
-	if out == nil {
-		return nil
+
+	<-self.waitTxsListReady.Load().(chan interface{})
+
+	txList := self.data.Load().(*MempoolTxsData).txsList
+	for _, tx := range txList {
+		if tx.Tx.Bloom.HashStr == txId {
+			return tx.Tx
+		}
 	}
-	return out.(*mempoolTx).Tx
+	return nil
 }
 
 func (self *MempoolTxs) process() {
+
+	data := &MempoolTxsData{
+		0,
+		[]*mempoolTx{},
+	}
+	stored := false
+
 	for {
 		select {
 
 		case <-self.clearListCn:
-			list := self.txsList.Load().([]*mempoolTx)
-			self.txsList.Store([]*mempoolTx{})
-			atomic.StoreInt64(&self.txsCount, 0)
-			for _, v := range list {
-				self.txsMap.Delete(v.Tx.Bloom.HashStr)
+
+			if stored {
+				self.waitTxsListReady.Store(make(chan interface{}))
+				stored = false
 			}
+
+			data = &MempoolTxsData{
+				0,
+				[]*mempoolTx{},
+			}
+
+		case <-self.readyListCn:
+
+			cn := self.waitTxsListReady.Load().(chan interface{})
+			close(cn)
+
+			self.data.Store(data)
+			stored = true
+
 		case tx := <-self.addToListCn:
-			self.txsList.Store(append(self.txsList.Load().([]*mempoolTx), tx))
-			atomic.AddInt64(&self.txsCount, 1)
-			self.txsMap.Store(tx.Tx.Bloom.HashStr, tx)
-		case tx := <-self.removeFromListCn:
-			list := self.txsList.Load().([]*mempoolTx)
-			for i, tx2 := range list {
-				if tx2 == tx {
-
-					//removing atomic.Value array
-					list2 := make([]*mempoolTx, len(list)-1)
-					copy(list2, list)
-					if len(list) > 1 && i != len(list)-1 {
-						list2[i] = list[len(list)-1]
-					}
-
-					self.txsList.Store(list2)
-					atomic.AddInt64(&self.txsCount, -1)
-
-					self.txsMap.Delete(tx.Tx.Bloom.HashStr)
-					break
+			if stored {
+				newData := &MempoolTxsData{
+					data.txsCount + 1,
+					append(data.txsList, tx),
 				}
+				data = newData
+				self.data.Store(data)
+			} else {
+				data.txsCount += 1
+				data.txsList = append(data.txsList, tx)
 			}
 		}
 	}
@@ -75,14 +96,17 @@ func (self *MempoolTxs) process() {
 func createMempoolTxs() (txs *MempoolTxs) {
 
 	txs = &MempoolTxs{
-		&sync.Map{},
-		0,
-		&atomic.Value{}, //[]*mempoolTx
-		make(chan *mempoolTx),
+		&atomic.Value{}, //interface{}
+		&atomic.Value{}, //interface{}
 		make(chan *mempoolTx),
 		make(chan interface{}),
+		make(chan interface{}),
 	}
-	txs.txsList.Store([]*mempoolTx{})
+	txs.data.Store(&MempoolTxsData{
+		0,
+		[]*mempoolTx{},
+	})
+	txs.waitTxsListReady.Store(make(chan interface{}))
 
 	recovery.SafeGo(txs.process)
 
@@ -107,7 +131,10 @@ func createMempoolTxs() (txs *MempoolTxs) {
 	recovery.SafeGo(func() {
 		last := int64(-1)
 		for {
-			txsCount := atomic.LoadInt64(&txs.txsCount)
+
+			<-txs.waitTxsListReady.Load().(chan interface{})
+			txsCount := txs.data.Load().(*MempoolTxsData).txsCount
+
 			if txsCount != last {
 				gui.GUI.Info2Update("mempool", strconv.FormatInt(txsCount, 10))
 				txsCount = last
