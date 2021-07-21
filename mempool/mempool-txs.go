@@ -71,10 +71,11 @@ func (self *MempoolTxs) process() {
 
 		case <-self.readyListCn:
 
+			self.data.Store(data)
+
 			cn := self.waitTxsListReady.Load().(chan interface{})
 			close(cn)
 
-			self.data.Store(data)
 			stored = true
 
 		case tx := <-self.addToListCn:

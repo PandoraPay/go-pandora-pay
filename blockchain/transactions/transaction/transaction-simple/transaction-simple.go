@@ -11,6 +11,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/ecdsa"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 )
 
@@ -35,6 +36,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 
 		if i == 0 {
 			if acc.Nonce != tx.Nonce {
+				gui.GUI.Error("acc.Nonce tx.Nonce", acc.Nonce, tx.Nonce)
 				return errors.New("Account nonce doesn't match")
 			}
 			if err = acc.IncrementNonce(true); err != nil {
