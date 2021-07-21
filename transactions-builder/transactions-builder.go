@@ -18,12 +18,14 @@ import (
 	"pandora-pay/transactions-builder/wizard"
 	"pandora-pay/wallet"
 	wallet_address "pandora-pay/wallet/address"
+	"sync"
 )
 
 type TransactionsBuilder struct {
 	wallet  *wallet.Wallet
 	mempool *mempool.Mempool
 	chain   *blockchain.Blockchain
+	lock    *sync.Mutex //TODO replace sync.Mutex with a snyc.Map in order to optimize the transactions creation
 }
 
 func (builder *TransactionsBuilder) checkTx(accs *accounts.Accounts, chainHeight uint64, tx *transaction.Transaction) (err error) {
@@ -99,6 +101,9 @@ func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce ui
 
 func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, amounts []uint64, amountsTokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err2 error) {
 
+	builder.lock.Lock()
+	defer builder.lock.Unlock()
+
 	err2 = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		accs := accounts.NewAccounts(reader)
@@ -160,6 +165,9 @@ func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uin
 
 func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction, err2 error) {
 
+	builder.lock.Lock()
+	defer builder.lock.Unlock()
+
 	fromWalletAddress, err2 := builder.wallet.GetWalletAddressByEncodedAddress(from)
 	if err2 != nil {
 		return
@@ -216,6 +224,9 @@ func (builder *TransactionsBuilder) CreateDelegateTx_Float(from string, nonce ui
 }
 
 func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, delegateAmount uint64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err2 error) {
+
+	builder.lock.Lock()
+	defer builder.lock.Unlock()
 
 	fromWalletAddress, err2 := builder.wallet.GetWalletAddressByEncodedAddress(from)
 	if err2 != nil {
@@ -276,6 +287,7 @@ func TransactionsBuilderInit(wallet *wallet.Wallet, mempool *mempool.Mempool, ch
 		wallet:  wallet,
 		chain:   chain,
 		mempool: mempool,
+		lock:    &sync.Mutex{},
 	}
 
 	builder.initCLI()
