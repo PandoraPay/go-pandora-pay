@@ -152,16 +152,10 @@ func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, 
 		return nil, err
 	}
 
-	inserted, err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, true)
-	if err != nil {
+	if err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, true); err != nil {
 		return nil, err
 	}
-
-	if inserted {
-		return []byte{1}, nil
-	} else {
-		return []byte{0}, nil
-	}
+	return []byte{1}, nil
 }
 
 func (api *APIWebsockets) getTxInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {

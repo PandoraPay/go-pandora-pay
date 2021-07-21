@@ -89,7 +89,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		if err := tx.BloomExtraVerified(); err != nil {
 			return false, err
 		}
-		if _, err := queue.chain.mempool.AddTxToMemPool(tx, update.newChainData.Height, false, false); err != nil {
+		if err := queue.chain.mempool.AddTxToMemPool(tx, update.newChainData.Height, false, false); err != nil {
 			return false, err
 		}
 		for _, change := range update.allTransactionsChanges {

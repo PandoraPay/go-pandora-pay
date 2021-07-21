@@ -74,7 +74,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		if propagate {
-			if err = builder.mempool.AddTxToMemPoolReturnError(tx, builder.chain.GetChainData().Height, true, true); err != nil {
+			if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true); err != nil {
 				return
 			}
 			gui.GUI.OutputWrite("Tx was inserted in mempool")
@@ -143,7 +143,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		if propagate {
-			if err = builder.mempool.AddTxToMemPoolReturnError(tx, builder.chain.GetChainData().Height, true, true); err != nil {
+			if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true); err != nil {
 				return
 			}
 			gui.GUI.OutputWrite("Tx was inserted in mempool")
@@ -201,7 +201,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		if propagate {
-			if err = builder.mempool.AddTxToMemPoolReturnError(tx, builder.chain.GetChainData().Height, true, true); err != nil {
+			if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true); err != nil {
 				return
 			}
 			gui.GUI.OutputWrite("Tx was inserted in mempool")

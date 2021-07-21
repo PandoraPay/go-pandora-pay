@@ -271,15 +271,10 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction) ([]byte, er
 	if err := tx.BloomAll(); err != nil {
 		return nil, err
 	}
-	result, err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, true)
-	if err != nil {
+	if err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, true); err != nil {
 		return nil, err
 	}
-	if result {
-		return []byte{1}, nil
-	} else {
-		return []byte{0}, nil
-	}
+	return []byte{1}, nil
 }
 
 //make sure it is safe to read

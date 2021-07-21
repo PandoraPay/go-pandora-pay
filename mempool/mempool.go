@@ -23,6 +23,11 @@ type mempoolTx struct {
 	ChainHeight uint64                   `json:"chainHeight"`
 }
 
+type mempoolTxProcess struct {
+	tx  *mempoolTx
+	err error
+}
+
 type Mempool struct {
 	result                  *atomic.Value               `json:"-"` //*MempoolResult
 	SuspendProcessingCn     chan struct{}               `json:"-"`
@@ -34,35 +39,24 @@ type Mempool struct {
 	NewTransactionMulticast *multicast.MulticastChannel `json:"-"`
 }
 
-func (mempool *Mempool) AddTxToMemPoolReturnError(tx *transaction.Transaction, height uint64, propagateToSockets, awaitAnswer bool) error {
-	result, err := mempool.AddTxToMemPool(tx, height, propagateToSockets, awaitAnswer)
-	if err != nil {
-		return err
-	}
-	if !result {
-		return errors.New("transaction was not inserted in mempool")
-	}
-	return nil
+func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, propagateToSockets, awaitAnswer bool) error {
+	result := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, propagateToSockets, awaitAnswer)
+	return result[0]
 }
 
-func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, propagateToSockets, awaitAnswer bool) (bool, error) {
-	result, err := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, propagateToSockets, awaitAnswer)
-	if err != nil {
-		return false, err
-	}
-	return result[0], nil
-}
+func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, height uint64) []*mempoolTxProcess {
 
-func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, height uint64) (bool, []*mempoolTx, error) {
-
-	finalTxs := make([]*mempoolTx, len(txs))
+	finalTxs := make([]*mempoolTxProcess, len(txs))
 
 	mempool.Wallet.Lock()
 	defer mempool.Wallet.Unlock()
 
 	for i, tx := range txs {
 
+		finalTxs[i] = &mempoolTxProcess{}
+
 		if err := tx.VerifyBloomAll(); err != nil {
+			finalTxs[i].err = err
 			continue
 		}
 
@@ -85,7 +79,8 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 
 		minerFees, err := tx.GetAllFees()
 		if err != nil {
-			return false, nil, err
+			finalTxs[i].err = err
+			continue
 		}
 
 		var selectedFeeToken *string
@@ -109,9 +104,10 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 		}
 
 		if selectedFeeToken == nil {
-			return false, nil, errors.New("Transaction fee was not accepted")
+			finalTxs[i].err = errors.New("Transaction fee was not accepted")
+			continue
 		} else {
-			finalTxs[i] = &mempoolTx{
+			finalTxs[i].tx = &mempoolTx{
 				Tx:          tx,
 				Added:       time.Now().Unix(),
 				FeePerByte:  selectedFee / tx.Bloom.Size,
@@ -123,43 +119,47 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 
 	}
 
-	return true, finalTxs, nil
+	return finalTxs
 }
 
-func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, propagateToSockets, awaitAnswer bool) ([]bool, error) {
+func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, propagateToSockets, awaitAnswer bool) []error {
 
-	_, finalTxs, err := mempool.processTxsToMemPool(txs, height)
-	if err != nil {
-		return nil, err
-	}
+	finalTxs := mempool.processTxsToMemPool(txs, height)
 
 	//making sure that the transaction is not inserted twice
-	out := make([]bool, len(finalTxs))
-	for i, tx := range finalTxs {
-		if tx != nil {
+	for _, finalTx := range finalTxs {
+		if finalTx.tx != nil {
 
+			var result error
 			if awaitAnswer {
-				answerCn := make(chan bool)
-				mempool.AddTransactionCn <- &MempoolWorkerAddTx{tx, answerCn}
-				out[i] = <-answerCn
+				answerCn := make(chan error)
+				mempool.AddTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, answerCn}
+				result = <-answerCn
 			} else {
-				mempool.AddTransactionCn <- &MempoolWorkerAddTx{tx, nil}
-				out[i] = true
+				mempool.AddTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, nil}
 			}
-		} else {
-			out[i] = false
+
+			if result != nil {
+				finalTx.err = result
+				finalTx.tx = nil
+			}
+
 		}
 	}
 
 	if propagateToSockets {
-		for i, result := range out {
-			if result {
-				mempool.NewTransactionMulticast.BroadcastAwait(finalTxs[i].Tx)
+		for i, finalTx := range finalTxs {
+			if finalTx.tx != nil {
+				mempool.NewTransactionMulticast.BroadcastAwait(finalTxs[i].tx.Tx)
 			}
 		}
 	}
 
-	return out, nil
+	out := make([]error, len(txs))
+	for i, finalTx := range finalTxs {
+		out[i] = finalTx.err
+	}
+	return out
 }
 
 //reset the forger

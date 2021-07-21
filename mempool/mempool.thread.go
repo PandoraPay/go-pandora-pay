@@ -20,7 +20,7 @@ type mempoolWorker struct {
 
 type MempoolWorkerAddTx struct {
 	Tx     *mempoolTx
-	Result chan<- bool
+	Result chan<- error
 }
 
 //process the worker for transactions to prepare the transactions to the forger
@@ -101,13 +101,15 @@ func (worker *mempoolWorker) processing(
 						newAddTx = nil
 					}
 
-					result := false
+					var finalErr error
 
 					if tx != nil && !txMap[tx.Tx.Bloom.HashStr] {
 
 						txMap[tx.Tx.Bloom.HashStr] = true
 
 						if err = tx.Tx.IncludeTransaction(work.chainHeight, accs, toks); err != nil {
+
+							finalErr = err
 
 							accs.Rollback()
 							toks.Rollback()
@@ -123,8 +125,6 @@ func (worker *mempoolWorker) processing(
 							}
 
 						} else {
-
-							result = true
 
 							if work.result.totalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
 
@@ -147,7 +147,7 @@ func (worker *mempoolWorker) processing(
 					}
 
 					if newAddTx != nil && newAddTx.Result != nil {
-						newAddTx.Result <- result
+						newAddTx.Result <- finalErr
 					}
 
 				}
