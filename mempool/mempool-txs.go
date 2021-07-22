@@ -8,6 +8,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/recovery"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -21,9 +22,10 @@ type MempoolTxs struct {
 	data             *atomic.Value //*MempoolTxsData
 	waitTxsListReady *atomic.Value //chan <- interface{}
 
-	addToListCn chan *mempoolTx
-	readyListCn chan interface{}
-	clearListCn chan interface{}
+	lock                        *sync.Mutex
+	temporary                   *MempoolTxsData
+	temporaryWaitTxsListReadyCn chan interface{}
+	stored                      bool
 }
 
 func (self *MempoolTxs) GetTxsList() (out []*mempoolTx) {
@@ -35,9 +37,7 @@ func (self *MempoolTxs) GetTxsList() (out []*mempoolTx) {
 
 func (self *MempoolTxs) Exists(txId string) *transaction.Transaction {
 
-	<-self.waitTxsListReady.Load().(chan interface{})
-
-	txList := self.data.Load().(*MempoolTxsData).txsList
+	txList := self.GetTxsList()
 	for _, tx := range txList {
 		if tx.Tx.Bloom.HashStr == txId {
 			return tx.Tx
@@ -46,52 +46,50 @@ func (self *MempoolTxs) Exists(txId string) *transaction.Transaction {
 	return nil
 }
 
-func (self *MempoolTxs) process() {
+func (self *MempoolTxs) clearList() {
+	self.lock.Lock()
+	defer self.lock.Unlock()
 
-	data := &MempoolTxsData{
+	if self.stored {
+		self.temporaryWaitTxsListReadyCn = make(chan interface{})
+		self.waitTxsListReady.Store(self.temporaryWaitTxsListReadyCn)
+		self.stored = false
+	}
+
+	self.temporary = &MempoolTxsData{
 		0,
 		[]*mempoolTx{},
 	}
-	stored := false
 
-	for {
-		select {
+}
 
-		case <-self.clearListCn:
+func (self *MempoolTxs) readyList() {
+	self.lock.Lock()
+	defer self.lock.Unlock()
 
-			if stored {
-				self.waitTxsListReady.Store(make(chan interface{}))
-				stored = false
-			}
+	self.data.Store(self.temporary)
+	self.stored = true
 
-			data = &MempoolTxsData{
-				0,
-				[]*mempoolTx{},
-			}
+	close(self.temporaryWaitTxsListReadyCn)
+}
 
-		case <-self.readyListCn:
+func (self *MempoolTxs) addToList(tx *mempoolTx) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
 
-			self.data.Store(data)
+	if self.stored {
 
-			cn := self.waitTxsListReady.Load().(chan interface{})
-			close(cn)
-
-			stored = true
-
-		case tx := <-self.addToListCn:
-			if stored {
-				newData := &MempoolTxsData{
-					data.txsCount + 1,
-					append(data.txsList, tx),
-				}
-				data = newData
-				self.data.Store(data)
-			} else {
-				data.txsCount += 1
-				data.txsList = append(data.txsList, tx)
-			}
+		self.temporary = &MempoolTxsData{
+			self.temporary.txsCount + 1,
+			append(self.temporary.txsList, tx),
 		}
+		self.data.Store(self.temporary)
+
+	} else {
+		self.temporary.txsCount += 1
+		self.temporary.txsList = append(self.temporary.txsList, tx)
 	}
+
 }
 
 func createMempoolTxs() (txs *MempoolTxs) {
@@ -99,17 +97,19 @@ func createMempoolTxs() (txs *MempoolTxs) {
 	txs = &MempoolTxs{
 		&atomic.Value{}, //interface{}
 		&atomic.Value{}, //interface{}
-		make(chan *mempoolTx),
+		&sync.Mutex{},
+		&MempoolTxsData{
+			0,
+			[]*mempoolTx{},
+		},
 		make(chan interface{}),
-		make(chan interface{}),
+		false,
 	}
 	txs.data.Store(&MempoolTxsData{
 		0,
 		[]*mempoolTx{},
 	})
-	txs.waitTxsListReady.Store(make(chan interface{}))
-
-	recovery.SafeGo(txs.process)
+	txs.waitTxsListReady.Store(txs.temporaryWaitTxsListReadyCn)
 
 	if config.DEBUG {
 		recovery.SafeGo(func() {

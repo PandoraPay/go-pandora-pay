@@ -29,9 +29,7 @@ func (worker *mempoolWorker) processing(
 	suspendProcessingCn <-chan struct{},
 	continueProcessingCn <-chan struct{},
 	addTransactionCn <-chan *MempoolWorkerAddTx,
-	readyListCn chan<- interface{},
-	addToListCn chan<- *mempoolTx,
-	clearListCn chan<- interface{},
+	txs *MempoolTxs,
 ) {
 
 	var work *mempoolWork
@@ -42,7 +40,7 @@ func (worker *mempoolWorker) processing(
 	suspended := false
 	readyListSent := false
 
-	clearListCn <- nil
+	txs.clearList()
 
 	for {
 
@@ -52,7 +50,7 @@ func (worker *mempoolWorker) processing(
 			listIndex = 0
 			txMap = make(map[string]bool)
 			readyListSent = false
-			clearListCn <- nil
+			txs.clearList()
 		case <-continueProcessingCn:
 			suspended = false
 		}
@@ -78,7 +76,7 @@ func (worker *mempoolWorker) processing(
 					listIndex = 0
 					txMap = make(map[string]bool)
 					readyListSent = false
-					clearListCn <- nil
+					txs.clearList()
 				case <-suspendProcessingCn:
 					suspended = true
 					return
@@ -90,7 +88,7 @@ func (worker *mempoolWorker) processing(
 					if listIndex == len(txList) {
 
 						if !readyListSent {
-							readyListCn <- nil
+							txs.readyList()
 							readyListSent = true
 						}
 
@@ -100,7 +98,7 @@ func (worker *mempoolWorker) processing(
 							listIndex = 0
 							txMap = make(map[string]bool)
 							readyListSent = false
-							clearListCn <- nil
+							txs.clearList()
 						case <-suspendProcessingCn:
 							suspended = true
 							return
@@ -148,9 +146,9 @@ func (worker *mempoolWorker) processing(
 							if newAddTx != nil {
 								txList = append(txList, newAddTx.Tx)
 								listIndex += 1
-
-								addToListCn <- newAddTx.Tx
 							}
+
+							txs.addToList(tx)
 
 						}
 

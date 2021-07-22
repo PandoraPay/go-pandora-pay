@@ -74,12 +74,12 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx(true, []string{addr.AddressEncoded}, 0, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx(true, []string{addr.AddressEncoded}, 0, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{})
 	if err != nil {
 		return
 	}
 
-	gui.GUI.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
+	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce, hex.EncodeToString(tx.Bloom.Hash))
 
 	return
 }
@@ -114,7 +114,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 		return
 	}
 
-	gui.GUI.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
+	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce, hex.EncodeToString(tx.Bloom.Hash))
 
 	return
 }
