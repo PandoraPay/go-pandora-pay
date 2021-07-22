@@ -36,16 +36,13 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, -1, []byte{}, true)
+	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(true, addr.AddressEncoded, 0, amount, -1, []byte{}, true)
 	if err != nil {
 		return
 	}
 
 	gui.GUI.Info("Unstake transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
 
-	if err = testnet.mempool.AddTxToMemPool(tx, blockHeight, true, true); err != nil {
-		return
-	}
 	return
 }
 
@@ -77,16 +74,13 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx(true, []string{addr.AddressEncoded}, 0, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, []byte{})
 	if err != nil {
 		return
 	}
 
 	gui.GUI.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
 
-	if err = testnet.mempool.AddTxToMemPool(tx, blockHeight, true, true); err != nil {
-		return
-	}
 	return
 }
 
@@ -115,16 +109,12 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx(true, []string{addr.AddressEncoded}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, -1, []byte{})
 	if err != nil {
 		return
 	}
 
 	gui.GUI.Info("Create Transfers transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
-
-	if err = testnet.mempool.AddTxToMemPool(tx, blockHeight, true, true); err != nil {
-		return
-	}
 
 	return
 }

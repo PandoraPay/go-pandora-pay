@@ -56,12 +56,12 @@ func (builder *TransactionsBuilder) checkTx(accs *accounts.Accounts, chainHeight
 	return
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce uint64, amounts []float64, amountsTokens [][]byte, dsts []string, dstsAmounts []float64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err2 error) {
+func (builder *TransactionsBuilder) CreateSimpleTx_Float(propagateTx bool, from []string, nonce uint64, amounts []float64, amountsTokens [][]byte, dsts []string, dstsAmounts []float64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (*transaction.Transaction, error) {
 
 	amountsFinal := make([]uint64, len(from))
 	dstsAmountsFinal := make([]uint64, len(dsts))
 
-	if err2 = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		toks := tokens.NewTokens(reader)
 		for i := range from {
 
@@ -92,19 +92,20 @@ func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce ui
 		}
 
 		return
-	}); err2 != nil {
-		return
+	}); err != nil {
+		return nil, err
 	}
 
-	return builder.CreateSimpleTx(from, nonce, amountsFinal, amountsTokens, dsts, dstsAmountsFinal, dstsTokens, feePerByte, feeToken)
+	return builder.CreateSimpleTx(propagateTx, from, nonce, amountsFinal, amountsTokens, dsts, dstsAmountsFinal, dstsTokens, feePerByte, feeToken)
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, amounts []uint64, amountsTokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err2 error) {
+func (builder *TransactionsBuilder) CreateSimpleTx(propagateTx bool, from []string, nonce uint64, amounts []uint64, amountsTokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (*transaction.Transaction, error) {
 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	err2 = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+	var tx *transaction.Transaction
+	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		accs := accounts.NewAccounts(reader)
 
@@ -148,32 +149,42 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 		}
 
 		return
-	})
-	return
-
-}
-
-func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uint64, unstakeAmount float64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction, err2 error) {
-
-	unstakeAmountFinal, err2 := config.ConvertToUnits(unstakeAmount)
-	if err2 != nil {
-		return
+	}); err != nil {
+		return nil, err
 	}
 
-	return builder.CreateUnstakeTx(from, nonce, unstakeAmountFinal, feePerByte, feeToken, payFeeInExtra)
+	if propagateTx {
+		if err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true); err != nil {
+			return nil, err
+		}
+	}
+
+	return tx, nil
+
 }
 
-func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (tx *transaction.Transaction, err2 error) {
+func (builder *TransactionsBuilder) CreateUnstakeTx_Float(propagateTx bool, from string, nonce uint64, unstakeAmount float64, feePerByte int, feeToken []byte, payFeeInExtra bool) (*transaction.Transaction, error) {
+
+	unstakeAmountFinal, err := config.ConvertToUnits(unstakeAmount)
+	if err != nil {
+		return nil, err
+	}
+
+	return builder.CreateUnstakeTx(propagateTx, from, nonce, unstakeAmountFinal, feePerByte, feeToken, payFeeInExtra)
+}
+
+func (builder *TransactionsBuilder) CreateUnstakeTx(propagateTx bool, from string, nonce uint64, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (*transaction.Transaction, error) {
 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	fromWalletAddress, err2 := builder.wallet.GetWalletAddressByEncodedAddress(from)
-	if err2 != nil {
-		return
+	fromWalletAddress, err := builder.wallet.GetWalletAddressByEncodedAddress(from)
+	if err != nil {
+		return nil, err
 	}
 
-	err2 = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+	var tx *transaction.Transaction
+	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
@@ -208,32 +219,41 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, u
 		}
 
 		return
-	})
+	}); err != nil {
+		return nil, err
+	}
 
-	return
+	if propagateTx {
+		if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true); err != nil {
+			return nil, err
+		}
+	}
+
+	return tx, nil
 }
 
-func (builder *TransactionsBuilder) CreateDelegateTx_Float(from string, nonce uint64, delegateAmount float64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateDelegateTx_Float(propagateTx bool, from string, nonce uint64, delegateAmount float64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (*transaction.Transaction, error) {
 
 	delegateAmountFinal, err := config.ConvertToUnits(delegateAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	return builder.CreateDelegateTx(from, nonce, delegateAmountFinal, delegateNewPubKeyHashGenerate, delegateNewPubKeyHash, feePerByte, feeToken)
+	return builder.CreateDelegateTx(propagateTx, from, nonce, delegateAmountFinal, delegateNewPubKeyHashGenerate, delegateNewPubKeyHash, feePerByte, feeToken)
 }
 
-func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, delegateAmount uint64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (tx *transaction.Transaction, err2 error) {
+func (builder *TransactionsBuilder) CreateDelegateTx(propagateTx bool, from string, nonce uint64, delegateAmount uint64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (*transaction.Transaction, error) {
 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	fromWalletAddress, err2 := builder.wallet.GetWalletAddressByEncodedAddress(from)
-	if err2 != nil {
-		return
+	fromWalletAddress, err := builder.wallet.GetWalletAddressByEncodedAddress(from)
+	if err != nil {
+		return nil, err
 	}
 
-	err2 = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+	var tx *transaction.Transaction
+	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
@@ -276,9 +296,17 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 		}
 
 		return
-	})
+	}); err != nil {
+		return nil, err
+	}
 
-	return
+	if propagateTx {
+		if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true); err != nil {
+			return nil, err
+		}
+	}
+
+	return tx, nil
 }
 
 func TransactionsBuilderInit(wallet *wallet.Wallet, mempool *mempool.Mempool, chain *blockchain.Blockchain) (builder *TransactionsBuilder) {

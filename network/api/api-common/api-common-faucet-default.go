@@ -50,11 +50,8 @@ func (api *APICommonFaucet) GetFaucetCoins(request *api_types.APIFaucetCoinsRequ
 		return nil, err
 	}
 
-	tx, err := api.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, []string{request.Address}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, -1, []byte{})
+	tx, err := api.transactionsBuilder.CreateSimpleTx(true, []string{addr.AddressEncoded}, 0, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, []string{request.Address}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, -1, []byte{})
 	if err != nil {
-		return nil, err
-	}
-	if err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, true); err != nil {
 		return nil, err
 	}
 

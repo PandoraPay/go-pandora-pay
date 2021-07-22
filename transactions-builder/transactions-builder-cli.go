@@ -61,22 +61,19 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateSimpleTx_Float([]string{walletAddress.AddressEncoded}, nonce, []float64{amount}, [][]byte{token}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, [][]byte{token}, feePerByte, feeToken)
+		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
+		if !ok {
+			return
+		}
+
+		tx, err := builder.CreateSimpleTx_Float(propagate, []string{walletAddress.AddressEncoded}, nonce, []float64{amount}, [][]byte{token}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, [][]byte{token}, feePerByte, feeToken)
 		if err != nil {
 			return
 		}
 
 		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
 
-		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
-		if !ok {
-			return
-		}
-
 		if propagate {
-			if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true); err != nil {
-				return
-			}
 			gui.GUI.OutputWrite("Tx was inserted in mempool")
 		}
 
@@ -130,22 +127,18 @@ func (builder *TransactionsBuilder) initCLI() {
 			}
 		}
 
-		tx, err := builder.CreateDelegateTx_Float(walletAddress.AddressEncoded, nonce, amount, delegateNewPublicKeyHashGenerate, delegateNewPublicKeyHash, feePerByte, feeToken)
-		if err != nil {
-			return
-		}
-
-		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
-
 		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
 		if !ok {
 			return
 		}
 
+		tx, err := builder.CreateDelegateTx_Float(propagate, walletAddress.AddressEncoded, nonce, amount, delegateNewPublicKeyHashGenerate, delegateNewPublicKeyHash, feePerByte, feeToken)
+		if err != nil {
+			return
+		}
+
+		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
 		if propagate {
-			if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true); err != nil {
-				return
-			}
 			gui.GUI.OutputWrite("Tx was inserted in mempool")
 		}
 
@@ -188,22 +181,19 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateUnstakeTx_Float(walletAddress.AddressEncoded, nonce, amount, feePerByte, feeToken, payFeeInExtra)
+		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
+		if !ok {
+			return
+		}
+
+		tx, err := builder.CreateUnstakeTx_Float(propagate, walletAddress.AddressEncoded, nonce, amount, feePerByte, feeToken, payFeeInExtra)
 		if err != nil {
 			return
 		}
 
 		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
 
-		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
-		if !ok {
-			return
-		}
-
 		if propagate {
-			if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true); err != nil {
-				return
-			}
 			gui.GUI.OutputWrite("Tx was inserted in mempool")
 		}
 
