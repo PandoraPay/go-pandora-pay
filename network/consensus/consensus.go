@@ -39,19 +39,19 @@ func (consensus *Consensus) execute() {
 
 	recovery.SafeGo(func() {
 
-		newTxCn := consensus.mempool.NewTransactionMulticast.AddListener()
-		defer consensus.mempool.NewTransactionMulticast.RemoveChannel(newTxCn)
+		newTxsCn := consensus.mempool.NewTransactionMulticast.AddListener()
+		defer consensus.mempool.NewTransactionMulticast.RemoveChannel(newTxsCn)
 
 		for {
-			newTxReceived, ok := <-newTxCn
+			newTxsReceived, ok := <-newTxsCn
 			if !ok {
 				return
 			}
 
-			newTx := newTxReceived.(*transaction.Transaction)
+			newTxs := newTxsReceived.([]*transaction.Transaction)
 
 			//it is safe to read
-			consensus.broadcastTx(newTx)
+			consensus.broadcastTxs(newTxs)
 		}
 
 	})

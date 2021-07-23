@@ -148,11 +148,24 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 	}
 
 	if propagateToSockets {
-		for i, finalTx := range finalTxs {
+
+		notNull := 0
+		for _, finalTx := range finalTxs {
 			if finalTx.tx != nil {
-				mempool.NewTransactionMulticast.BroadcastAwait(finalTxs[i].tx.Tx)
+				notNull += 1
 			}
 		}
+		broadcastTxs := make([]*transaction.Transaction, notNull)
+
+		notNull = 0
+		for _, finalTx := range finalTxs {
+			if finalTx.tx != nil {
+				broadcastTxs[notNull] = finalTx.tx.Tx
+				notNull += 1
+			}
+		}
+
+		mempool.NewTransactionMulticast.BroadcastAwait(broadcastTxs)
 	}
 
 	out := make([]error, len(txs))
