@@ -3,6 +3,7 @@ package consensus
 import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	node_http "pandora-pay/network/server/node-http"
 	"pandora-pay/recovery"
@@ -43,15 +44,19 @@ func (consensus *Consensus) execute() {
 		defer consensus.mempool.NewTransactionMulticast.RemoveChannel(newTxsCn)
 
 		for {
-			newTxsReceived, ok := <-newTxsCn
+			multicastChannelDataReceived, ok := <-newTxsCn
 			if !ok {
 				return
 			}
 
-			newTxs := newTxsReceived.([]*transaction.Transaction)
+			multicastChannelData := multicastChannelDataReceived.(*multicast.MulticastChannelData)
+
+			newTxs := multicastChannelData.Data.([]*transaction.Transaction)
 
 			//it is safe to read
 			consensus.broadcastTxs(newTxs)
+
+			multicastChannelData.Answer <- struct{}{}
 		}
 
 	})

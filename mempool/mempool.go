@@ -164,7 +164,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 			}
 		}
 
-		mempool.NewTransactionMulticast.Broadcast(broadcastTxs)
+		mempool.NewTransactionMulticast.BroadcastAwait(broadcastTxs)
 	}
 
 	out := make([]error, len(txs))

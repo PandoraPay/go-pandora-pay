@@ -79,14 +79,13 @@ func (self *MempoolTxs) clearList() {
 
 	gui.GUI.Info("clearList")
 
-	if self.stored {
-		if !self.waiting {
-			self.temporaryWaitTxsListReadyCn = make(chan interface{})
-			self.waitTxsListReady.Store(self.temporaryWaitTxsListReadyCn)
-			self.waiting = true
-		}
-		self.stored = false
+	if !self.waiting {
+		self.temporaryWaitTxsListReadyCn = make(chan interface{})
+		self.waitTxsListReady.Store(self.temporaryWaitTxsListReadyCn)
+		self.waiting = true
 	}
+
+	self.stored = false
 
 	self.temporary = &MempoolTxsData{
 		0,
@@ -105,11 +104,11 @@ func (self *MempoolTxs) readyList() {
 	if !self.stored {
 		self.data.Store(self.temporary)
 		self.stored = true
+	}
 
-		if self.waiting {
-			close(self.temporaryWaitTxsListReadyCn)
-			self.waiting = false
-		}
+	if self.waiting {
+		close(self.temporaryWaitTxsListReadyCn)
+		self.waiting = false
 	}
 
 }

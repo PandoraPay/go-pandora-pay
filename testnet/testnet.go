@@ -143,6 +143,7 @@ func (testnet *Testnet) run() {
 			defer lock.Unlock()
 
 			gui.GUI.Log("UpdateNewChain received! 1")
+			defer gui.GUI.Log("UpdateNewChain received! DONE")
 
 			err := func() (err error) {
 
