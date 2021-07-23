@@ -20,7 +20,7 @@ func (self *Events) BroadcastEventAwait(name string, data interface{}) {
 		Data: data,
 	}
 
-	self.BroadcastAwait(finalData)
+	self.Broadcast(finalData)
 }
 
 func (self *Events) BroadcastEvent(name string, data interface{}) {
@@ -30,7 +30,7 @@ func (self *Events) BroadcastEvent(name string, data interface{}) {
 		Data: data,
 	}
 
-	self.BroadcastAwait(finalData)
+	self.Broadcast(finalData)
 }
 
 func NewEvents() *Events {

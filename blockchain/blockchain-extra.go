@@ -133,7 +133,9 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 		return
 	}
 
-	if chainData != nil {
+	if chainData == nil {
+		chain.mempool.ContinueWork()
+	} else {
 		chain.mempool.UpdateWork(chainData.Hash, chainData.Height)
 	}
 

@@ -26,6 +26,7 @@ type MempoolTxs struct {
 	temporary                   *MempoolTxsData
 	temporaryWaitTxsListReadyCn chan interface{}
 	stored                      bool
+	waiting                     bool
 }
 
 func (self *MempoolTxs) GetTxsList() (out []*mempoolTx) {
@@ -46,13 +47,44 @@ func (self *MempoolTxs) Exists(txId string) *transaction.Transaction {
 	return nil
 }
 
-func (self *MempoolTxs) clearList() {
+func (self *MempoolTxs) suspendList() {
+
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	if self.stored {
+	if self.stored && !self.waiting {
 		self.temporaryWaitTxsListReadyCn = make(chan interface{})
 		self.waitTxsListReady.Store(self.temporaryWaitTxsListReadyCn)
+		self.waiting = true
+	}
+
+}
+
+func (self *MempoolTxs) continueList() {
+
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	if self.stored && self.waiting {
+		close(self.temporaryWaitTxsListReadyCn)
+		self.waiting = false
+	}
+
+}
+
+func (self *MempoolTxs) clearList() {
+
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	gui.GUI.Info("clearList")
+
+	if self.stored {
+		if !self.waiting {
+			self.temporaryWaitTxsListReadyCn = make(chan interface{})
+			self.waitTxsListReady.Store(self.temporaryWaitTxsListReadyCn)
+			self.waiting = true
+		}
 		self.stored = false
 	}
 
@@ -64,18 +96,30 @@ func (self *MempoolTxs) clearList() {
 }
 
 func (self *MempoolTxs) readyList() {
+
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	self.data.Store(self.temporary)
-	self.stored = true
+	gui.GUI.Info("readyList")
 
-	close(self.temporaryWaitTxsListReadyCn)
+	if !self.stored {
+		self.data.Store(self.temporary)
+		self.stored = true
+
+		if self.waiting {
+			close(self.temporaryWaitTxsListReadyCn)
+			self.waiting = false
+		}
+	}
+
 }
 
 func (self *MempoolTxs) addToList(tx *mempoolTx) {
+
 	self.lock.Lock()
 	defer self.lock.Unlock()
+
+	gui.GUI.Info("addToList")
 
 	if self.stored {
 
@@ -83,6 +127,7 @@ func (self *MempoolTxs) addToList(tx *mempoolTx) {
 			self.temporary.txsCount + 1,
 			append(self.temporary.txsList, tx),
 		}
+
 		self.data.Store(self.temporary)
 
 	} else {
@@ -104,6 +149,7 @@ func createMempoolTxs() (txs *MempoolTxs) {
 		},
 		make(chan interface{}),
 		false,
+		true,
 	}
 	txs.data.Store(&MempoolTxsData{
 		0,

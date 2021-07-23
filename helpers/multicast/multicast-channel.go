@@ -5,6 +5,11 @@ import (
 	"sync/atomic"
 )
 
+type MulticastChannelData struct {
+	Answer chan interface{}
+	Data   interface{}
+}
+
 type MulticastChannel struct {
 	listeners *atomic.Value //[]chan interface{}
 	count     int
@@ -23,7 +28,7 @@ func (self *MulticastChannel) AddListener() <-chan interface{} {
 	return newChan
 }
 
-func (self *MulticastChannel) BroadcastAwait(data interface{}) {
+func (self *MulticastChannel) Broadcast(data interface{}) {
 
 	listeners := self.listeners.Load().([]chan interface{})
 
@@ -33,15 +38,24 @@ func (self *MulticastChannel) BroadcastAwait(data interface{}) {
 
 }
 
-func (self *MulticastChannel) Broadcast(data interface{}) {
+func (self *MulticastChannel) BroadcastAwait(data interface{}) {
 
 	listeners := self.listeners.Load().([]chan interface{})
+	answerChannels := make([]chan interface{}, len(listeners))
 
-	for _, channel := range listeners {
-		select {
-		case channel <- data:
-		default:
+	for i, channel := range listeners {
+
+		answerChannels[i] = make(chan interface{})
+
+		channel <- &MulticastChannelData{
+			answerChannels[i],
+			data,
 		}
+
+	}
+
+	for _, cn := range answerChannels {
+		<-cn
 	}
 
 }

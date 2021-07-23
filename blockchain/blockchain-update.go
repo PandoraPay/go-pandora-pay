@@ -78,8 +78,8 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 	gui.GUI.Warning("-------------------------------------------")
 	update.newChainData.updateChainInfo()
 
-	queue.chain.UpdateAccounts.BroadcastAwait(update.accs)
-	queue.chain.UpdateTokens.BroadcastAwait(update.toks)
+	queue.chain.UpdateAccounts.Broadcast(update.accs)
+	queue.chain.UpdateTokens.Broadcast(update.toks)
 
 	for _, txData := range update.removedTxs {
 		tx := &transaction.Transaction{}
@@ -99,7 +99,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		}
 	}
 
-	queue.chain.UpdateTransactions.BroadcastAwait(update.allTransactionsChanges)
+	queue.chain.UpdateTransactions.Broadcast(update.allTransactionsChanges)
 
 	hasAnySuccess := queue.hasAnySuccess(updates[1:])
 
@@ -110,9 +110,10 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		//create next block and the workers will be automatically reset
 		queue.chain.createNextBlockForForging(update.newChainData, queue.hasCalledByForging(updates))
 
-		queue.chain.UpdateNewChain.BroadcastAwait(update.newChainData.Height)
+		gui.GUI.Log("queue.chain.UpdateNewChain fired")
+		queue.chain.UpdateNewChain.Broadcast(update.newChainData.Height)
 
-		queue.chain.UpdateNewChainDataUpdate.BroadcastAwait(&BlockchainDataUpdate{
+		queue.chain.UpdateNewChainDataUpdate.Broadcast(&BlockchainDataUpdate{
 			update.newChainData,
 			chainSyncData,
 		})

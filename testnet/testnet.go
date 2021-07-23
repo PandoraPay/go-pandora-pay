@@ -19,6 +19,7 @@ import (
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
 	wallet_address "pandora-pay/wallet/address"
+	"sync"
 )
 
 type Testnet struct {
@@ -124,6 +125,8 @@ func (testnet *Testnet) run() {
 	updateChannel := testnet.chain.UpdateNewChain.AddListener()
 	defer testnet.chain.UpdateNewChain.RemoveChannel(updateChannel)
 
+	lock := sync.Mutex{}
+
 	for {
 
 		blockHeightReceived, ok := <-updateChannel
@@ -134,74 +137,87 @@ func (testnet *Testnet) run() {
 		blockHeight := blockHeightReceived.(uint64)
 		syncTime := testnet.chain.Sync.GetSyncTime()
 
-		err := func() (err error) {
+		recovery.SafeGo(func() {
 
-			if blockHeight == 30 {
-				if err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*config_stake.GetRequiredStake(blockHeight)); err != nil {
-					return
+			lock.Lock()
+			defer lock.Unlock()
+
+			gui.GUI.Log("UpdateNewChain received! 1")
+
+			err := func() (err error) {
+
+				if blockHeight == 30 {
+					if err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*config_stake.GetRequiredStake(blockHeight)); err != nil {
+						return
+					}
 				}
-			}
-			if blockHeight == 50 {
-				if err = testnet.testnetCreateTransfersNewWallets(blockHeight); err != nil {
-					return
-				}
-			}
-
-			if blockHeight >= 60 && syncTime != 0 {
-
-				var addr *wallet_address.WalletAddress
-				addr, err = testnet.wallet.GetWalletAddress(0)
-				if err != nil {
-					return
+				if blockHeight == 50 {
+					if err = testnet.testnetCreateTransfersNewWallets(blockHeight); err != nil {
+						return
+					}
 				}
 
-				if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+				if blockHeight >= 60 && syncTime != 0 {
 
-					accs := accounts.NewAccounts(reader)
-					var account *account.Account
-					if account, err = accs.GetAccountEvenEmpty(addr.PublicKeyHash, blockHeight); err != nil {
+					var addr *wallet_address.WalletAddress
+					addr, err = testnet.wallet.GetWalletAddress(0)
+					if err != nil {
 						return
 					}
 
-					if account != nil {
+					var balance, delegatedStakeAvailable, delegatedUnstakePending uint64
+					var account *account.Account
 
-						balance := account.GetAvailableBalance(config.NATIVE_TOKEN)
+					gui.GUI.Log("UpdateNewChain received! 2")
 
-						delegatedStakeAvailable := account.GetDelegatedStakeAvailable()
-						delegatedUnstakePending, _ := account.ComputeDelegatedUnstakePending()
+					if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-						if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
-							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKeyHash, transaction_simple.SCRIPT_UNSTAKE) {
-								if err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
-									return
-								}
-							}
-						} else {
-							if testnet.mempool.CountInputTxs(addr.PublicKeyHash) < 100 {
-								for i := 0; i < 20; i++ {
-									if err = testnet.testnetCreateTransfers(blockHeight); err != nil {
+						accs := accounts.NewAccounts(reader)
+						if account, err = accs.GetAccountEvenEmpty(addr.PublicKeyHash, blockHeight); err != nil {
+							return
+						}
+
+						if account != nil {
+
+							balance = account.GetAvailableBalance(config.NATIVE_TOKEN)
+
+							delegatedStakeAvailable = account.GetDelegatedStakeAvailable()
+							delegatedUnstakePending, _ = account.ComputeDelegatedUnstakePending()
+
+							if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
+								if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKeyHash, transaction_simple.SCRIPT_UNSTAKE) {
+									if err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
 										return
 									}
 								}
+							} else {
+								if testnet.mempool.CountInputTxs(addr.PublicKeyHash) < 100 {
+									for i := 0; i < 20; i++ {
+										if err = testnet.testnetCreateTransfers(blockHeight); err != nil {
+											return
+										}
+									}
+								}
 							}
+
 						}
 
+						return
+					}); err != nil {
+						return
 					}
 
-					return
-				}); err != nil {
-					return
 				}
 
+				return
+			}()
+
+			if err != nil {
+				gui.GUI.Error("Error creating testnet Tx", err)
+				err = nil
 			}
 
-			return
-		}()
-
-		if err != nil {
-			gui.GUI.Error("Error creating testnet Tx", err)
-			err = nil
-		}
+		})
 
 	}
 }

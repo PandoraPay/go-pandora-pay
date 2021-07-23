@@ -40,7 +40,10 @@ func (tx *StoreDBJSTransaction) Get(key string) []byte {
 	}
 
 	respCh := make(chan []byte)
+	defer close(respCh)
+
 	errCh := make(chan error)
+	defer close(errCh)
 
 	promise := tx.jsStore.Call("getItem", key)
 
@@ -97,7 +100,10 @@ func (tx *StoreDBJSTransaction) writeTx() error {
 
 		data := value.(*StoreDBJSTransactionData)
 		respCh := make(chan bool)
+		defer close(respCh)
+
 		errCh := make(chan error)
+		defer close(errCh)
 
 		process := true
 		if data.operation == "del" {

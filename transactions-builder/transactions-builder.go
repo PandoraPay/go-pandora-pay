@@ -12,6 +12,7 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/config"
+	"pandora-pay/gui"
 	"pandora-pay/mempool"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -141,6 +142,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(propagateTx bool, from []stri
 		}
 
 		if tx, err = wizard.CreateSimpleTx(nonce, keys, amounts, amountsTokens, dsts, dstsAmounts, dstsTokens, feePerByte, feeToken); err != nil {
+			gui.GUI.Error("Error creating Tx: ", tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce, err)
 			return
 		}
 

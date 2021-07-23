@@ -6,12 +6,14 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
+	"sync/atomic"
 )
 
 type mempoolWork struct {
-	chainHash   []byte         `json:"-"` //32 byte
-	chainHeight uint64         `json:"-"`
-	result      *MempoolResult `json:"-"`
+	chainHash    []byte         `json:"-"` //32 byte
+	chainHeight  uint64         `json:"-"`
+	result       *MempoolResult `json:"-"`
+	waitAnswerCn chan interface{}
 }
 
 type mempoolWorker struct {
@@ -27,7 +29,6 @@ type MempoolWorkerAddTx struct {
 func (worker *mempoolWorker) processing(
 	newWorkCn <-chan *mempoolWork,
 	suspendProcessingCn <-chan struct{},
-	continueProcessingCn <-chan struct{},
 	addTransactionCn <-chan *MempoolWorkerAddTx,
 	txs *MempoolTxs,
 ) {
@@ -40,27 +41,51 @@ func (worker *mempoolWorker) processing(
 	suspended := false
 	readyListSent := false
 
+	includedTotalSize := uint64(0)
+	includedTxs := []*mempoolTx{}
+
 	txs.clearList()
+
+	resetNow := func(newWork *mempoolWork) {
+
+		if newWork.chainHash != nil {
+			txs.clearList()
+			readyListSent = false
+		} else {
+			txs.continueList()
+		}
+		close(newWork.waitAnswerCn)
+
+		suspended = false
+
+		if newWork.chainHash != nil {
+			work = newWork
+			includedTotalSize = uint64(0)
+			includedTxs = []*mempoolTx{}
+			listIndex = 0
+			txMap = make(map[string]bool)
+			if len(txList) > 1 {
+				sortTxs(txList)
+			}
+		}
+	}
+
+	suspendNow := func() {
+		suspended = true
+		txs.suspendList()
+	}
 
 	for {
 
 		select {
 		case newWork := <-newWorkCn:
-			work = newWork
-			listIndex = 0
-			txMap = make(map[string]bool)
-			readyListSent = false
-			txs.clearList()
-		case <-continueProcessingCn:
-			suspended = false
+			resetNow(newWork)
+		case <-suspendProcessingCn:
+			suspendNow()
 		}
 
 		if work == nil || suspended {
 			continue
-		}
-
-		if len(txList) > 1 {
-			sortTxs(txList)
 		}
 
 		//let's check hf the work has been changed
@@ -72,13 +97,9 @@ func (worker *mempoolWorker) processing(
 			for {
 				select {
 				case newWork := <-newWorkCn:
-					work = newWork
-					listIndex = 0
-					txMap = make(map[string]bool)
-					readyListSent = false
-					txs.clearList()
+					resetNow(newWork)
 				case <-suspendProcessingCn:
-					suspended = true
+					suspendNow()
 					return
 				default:
 
@@ -87,28 +108,34 @@ func (worker *mempoolWorker) processing(
 
 					if listIndex == len(txList) {
 
+						//sending readyList only in case there is no transaction in the add channel
 						if !readyListSent {
-							txs.readyList()
-							readyListSent = true
+
+							select {
+							case newAddTx = <-addTransactionCn:
+								tx = newAddTx.Tx
+							default:
+								txs.readyList()
+								readyListSent = true
+							}
+
 						}
 
-						select {
-						case newWork := <-newWorkCn:
-							work = newWork
-							listIndex = 0
-							txMap = make(map[string]bool)
-							readyListSent = false
-							txs.clearList()
-						case <-suspendProcessingCn:
-							suspended = true
-							return
-						case newAddTx = <-addTransactionCn:
-							tx = newAddTx.Tx
+						if tx == nil {
+							select {
+							case newWork := <-newWorkCn:
+								resetNow(newWork)
+							case <-suspendProcessingCn:
+								suspendNow()
+								return
+							case newAddTx = <-addTransactionCn:
+								tx = newAddTx.Tx
+							}
 						}
+
 					} else {
 						tx = txList[listIndex]
 						listIndex += 1
-						newAddTx = nil
 					}
 
 					var finalErr error
@@ -134,10 +161,13 @@ func (worker *mempoolWorker) processing(
 
 						} else {
 
-							if work.result.totalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
+							if includedTotalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
 
-								work.result.totalSize += tx.Tx.Bloom.Size
-								work.result.txs.Store(append(work.result.txs.Load().([]*mempoolTx), tx))
+								includedTotalSize += tx.Tx.Bloom.Size
+								includedTxs = append(includedTxs, tx)
+
+								atomic.StoreUint64(&work.result.totalSize, includedTotalSize)
+								work.result.txs.Store(includedTxs)
 
 								accs.CommitChanges()
 								toks.CommitChanges()

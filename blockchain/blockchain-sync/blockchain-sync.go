@@ -43,7 +43,7 @@ func (self *BlockchainSync) AddBlocksChanged(blocks uint32, propagateNotificatio
 	}
 
 	if propagateNotification {
-		self.UpdateSyncMulticast.BroadcastAwait(newChainSyncData)
+		self.UpdateSyncMulticast.Broadcast(newChainSyncData)
 	}
 
 	self.syncData.Store(newChainSyncData)
@@ -67,7 +67,7 @@ func (self *BlockchainSync) resetBlocksChanged(propagateNotification bool) *Bloc
 	self.syncData.Store(newChainSyncData)
 
 	if propagateNotification {
-		self.UpdateSyncMulticast.BroadcastAwait(newChainSyncData)
+		self.UpdateSyncMulticast.Broadcast(newChainSyncData)
 	}
 
 	self.updateCn <- newChainSyncData

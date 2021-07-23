@@ -375,8 +375,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			return
 		})
 
-		chain.mempool.ContinueProcessingCn <- struct{}{}
-
 		return
 	}()
 

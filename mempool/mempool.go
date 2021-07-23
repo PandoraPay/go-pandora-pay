@@ -31,7 +31,6 @@ type mempoolTxProcess struct {
 type Mempool struct {
 	result                  *atomic.Value               `json:"-"` //*MempoolResult
 	SuspendProcessingCn     chan struct{}               `json:"-"`
-	ContinueProcessingCn    chan struct{}               `json:"-"`
 	NewWorkCn               chan *mempoolWork           `json:"-"`
 	AddTransactionCn        chan *MempoolWorkerAddTx    `json:"-"`
 	Txs                     *MempoolTxs                 `json:"-"`
@@ -165,7 +164,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 			}
 		}
 
-		mempool.NewTransactionMulticast.BroadcastAwait(broadcastTxs)
+		mempool.NewTransactionMulticast.Broadcast(broadcastTxs)
 	}
 
 	out := make([]error, len(txs))
@@ -185,15 +184,26 @@ func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
 		chainHeight: height,
 	}
 	result.txs.Store([]*mempoolTx{})
-
 	mempool.result.Store(result)
 
-	mempool.NewWorkCn <- &mempoolWork{
-		chainHash:   hash,
-		chainHeight: height,
-		result:      result,
+	newWork := &mempoolWork{
+		chainHash:    hash,
+		chainHeight:  height,
+		result:       result,
+		waitAnswerCn: make(chan interface{}),
 	}
 
+	mempool.NewWorkCn <- newWork
+	<-newWork.waitAnswerCn
+
+}
+
+func (mempool *Mempool) ContinueWork() {
+	newWork := &mempoolWork{
+		waitAnswerCn: make(chan interface{}),
+	}
+	mempool.NewWorkCn <- newWork
+	<-newWork.waitAnswerCn
 }
 
 func CreateMemPool() (*Mempool, error) {
@@ -204,7 +214,6 @@ func CreateMemPool() (*Mempool, error) {
 		result:                  &atomic.Value{}, // *MempoolResult
 		Txs:                     createMempoolTxs(),
 		SuspendProcessingCn:     make(chan struct{}),
-		ContinueProcessingCn:    make(chan struct{}),
 		NewWorkCn:               make(chan *mempoolWork),
 		AddTransactionCn:        make(chan *MempoolWorkerAddTx),
 		Wallet:                  createMempoolWallet(),
@@ -213,7 +222,7 @@ func CreateMemPool() (*Mempool, error) {
 
 	worker := new(mempoolWorker)
 	recovery.SafeGo(func() {
-		worker.processing(mempool.NewWorkCn, mempool.SuspendProcessingCn, mempool.ContinueProcessingCn, mempool.AddTransactionCn, mempool.Txs)
+		worker.processing(mempool.NewWorkCn, mempool.SuspendProcessingCn, mempool.AddTransactionCn, mempool.Txs)
 	})
 
 	mempool.initCLI()
