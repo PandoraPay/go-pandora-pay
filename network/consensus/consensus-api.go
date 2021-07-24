@@ -63,7 +63,7 @@ func (consensus *Consensus) broadcastChain(newChainData *blockchain.BlockchainDa
 
 func (consensus *Consensus) broadcastTxs(txs []*transaction.Transaction) {
 	for _, tx := range txs {
-		consensus.httpServer.Websockets.Broadcast([]byte("mem-pool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true})
+		consensus.httpServer.Websockets.BroadcastAwaitAnswer([]byte("mem-pool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true})
 	}
 }
 

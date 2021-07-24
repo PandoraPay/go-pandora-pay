@@ -100,10 +100,8 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	if len(removedTxs) > 0 {
 		recovery.SafeGo(func() {
-			for _, tx := range removedTxs {
-				if err := queue.chain.mempool.AddTxToMemPool(tx, update.newChainData.Height, false, false); err != nil {
-					return
-				}
+			if err := queue.chain.mempool.AddTxsToMemPool(removedTxs, update.newChainData.Height, false, false); err != nil {
+				return
 			}
 		})
 	}
