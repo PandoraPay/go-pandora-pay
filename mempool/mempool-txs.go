@@ -24,14 +24,14 @@ type MempoolTxs struct {
 
 	lock                        *sync.Mutex
 	temporary                   *MempoolTxsData
-	temporaryWaitTxsListReadyCn chan interface{}
+	temporaryWaitTxsListReadyCn chan struct{}
 	stored                      bool
 	waiting                     bool
 }
 
 func (self *MempoolTxs) GetTxsList() (out []*mempoolTx) {
 
-	<-self.waitTxsListReady.Load().(chan interface{})
+	<-self.waitTxsListReady.Load().(chan struct{})
 
 	return self.data.Load().(*MempoolTxsData).txsList
 }
@@ -53,7 +53,7 @@ func (self *MempoolTxs) suspendList() {
 	defer self.lock.Unlock()
 
 	if self.stored && !self.waiting {
-		self.temporaryWaitTxsListReadyCn = make(chan interface{})
+		self.temporaryWaitTxsListReadyCn = make(chan struct{})
 		self.waitTxsListReady.Store(self.temporaryWaitTxsListReadyCn)
 		self.waiting = true
 	}
@@ -80,7 +80,7 @@ func (self *MempoolTxs) clearList() {
 	gui.GUI.Info("clearList")
 
 	if !self.waiting {
-		self.temporaryWaitTxsListReadyCn = make(chan interface{})
+		self.temporaryWaitTxsListReadyCn = make(chan struct{})
 		self.waitTxsListReady.Store(self.temporaryWaitTxsListReadyCn)
 		self.waiting = true
 	}
@@ -146,7 +146,7 @@ func createMempoolTxs() (txs *MempoolTxs) {
 			0,
 			[]*mempoolTx{},
 		},
-		make(chan interface{}),
+		make(chan struct{}),
 		false,
 		true,
 	}
@@ -178,7 +178,7 @@ func createMempoolTxs() (txs *MempoolTxs) {
 		last := int64(-1)
 		for {
 
-			<-txs.waitTxsListReady.Load().(chan interface{})
+			<-txs.waitTxsListReady.Load().(chan struct{})
 			txsCount := txs.data.Load().(*MempoolTxsData).txsCount
 
 			if txsCount != last {

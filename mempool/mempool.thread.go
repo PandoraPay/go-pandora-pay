@@ -13,7 +13,7 @@ type mempoolWork struct {
 	chainHash    []byte         `json:"-"` //32 byte
 	chainHeight  uint64         `json:"-"`
 	result       *MempoolResult `json:"-"`
-	waitAnswerCn chan interface{}
+	waitAnswerCn chan struct{}
 }
 
 type mempoolWorker struct {
@@ -29,6 +29,7 @@ type MempoolWorkerAddTx struct {
 func (worker *mempoolWorker) processing(
 	newWorkCn <-chan *mempoolWork,
 	suspendProcessingCn <-chan struct{},
+	continueProcessingCn <-chan struct{},
 	addTransactionCn <-chan *MempoolWorkerAddTx,
 	txs *MempoolTxs,
 ) {
@@ -39,6 +40,7 @@ func (worker *mempoolWorker) processing(
 	listIndex := 0
 	txMap := make(map[string]bool)
 	suspended := false
+	notAllowedToContinue := false
 	readyListSent := false
 
 	includedTotalSize := uint64(0)
@@ -72,6 +74,7 @@ func (worker *mempoolWorker) processing(
 
 	suspendNow := func() {
 		suspended = true
+		notAllowedToContinue = true
 		txs.suspendList()
 	}
 
@@ -82,9 +85,11 @@ func (worker *mempoolWorker) processing(
 			resetNow(newWork)
 		case <-suspendProcessingCn:
 			suspendNow()
+		case <-continueProcessingCn:
+			notAllowedToContinue = false
 		}
 
-		if work == nil || suspended {
+		if work == nil || suspended || notAllowedToContinue {
 			continue
 		}
 
