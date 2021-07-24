@@ -3,6 +3,7 @@ package transaction_simple
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens"
@@ -35,7 +36,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 
 		if i == 0 {
 			if acc.Nonce != tx.Nonce {
-				return errors.New("Account nonce doesn't match")
+				return fmt.Errorf("Account nonce doesn't match %d %d", acc.Nonce, tx.Nonce)
 			}
 			if err = acc.IncrementNonce(true); err != nil {
 				return

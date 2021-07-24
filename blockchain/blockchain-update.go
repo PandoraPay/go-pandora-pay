@@ -81,7 +81,8 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 	queue.chain.UpdateAccounts.Broadcast(update.accs)
 	queue.chain.UpdateTokens.Broadcast(update.toks)
 
-	for _, txData := range update.removedTxs {
+	removedTxs := make([]*transaction.Transaction, len(update.removedTxs))
+	for i, txData := range update.removedTxs {
 		tx := &transaction.Transaction{}
 		if err := tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
 			return false, err
@@ -89,14 +90,22 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		if err := tx.BloomExtraVerified(); err != nil {
 			return false, err
 		}
-		if err := queue.chain.mempool.AddTxToMemPool(tx, update.newChainData.Height, false, false); err != nil {
-			return false, err
-		}
+		removedTxs[i] = tx
 		for _, change := range update.allTransactionsChanges {
 			if bytes.Equal(change.TxHash, tx.Bloom.Hash) {
 				change.Tx = tx
 			}
 		}
+	}
+
+	if len(removedTxs) > 0 {
+		recovery.SafeGo(func() {
+			for _, tx := range removedTxs {
+				if err := queue.chain.mempool.AddTxToMemPool(tx, update.newChainData.Height, false, false); err != nil {
+					return
+				}
+			}
+		})
 	}
 
 	queue.chain.UpdateTransactions.Broadcast(update.allTransactionsChanges)
