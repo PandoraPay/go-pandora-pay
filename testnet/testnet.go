@@ -197,14 +197,14 @@ func (testnet *Testnet) run() {
 						if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
 							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKeyHash, transaction_simple.SCRIPT_UNSTAKE) {
 								if err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
-									return
+									//return
 								}
 							}
 						} else {
 							if testnet.mempool.CountInputTxs(addr.PublicKeyHash) < 100 {
 								for i := 0; i < 20; i++ {
 									if err = testnet.testnetCreateTransfers(blockHeight); err != nil {
-										return
+										//return
 									}
 								}
 							}

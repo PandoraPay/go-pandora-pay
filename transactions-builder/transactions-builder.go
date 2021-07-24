@@ -127,9 +127,9 @@ func (builder *TransactionsBuilder) CreateSimpleTx(propagateTx bool, from []stri
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
-		for i := range from {
+		for i, fromWalletAddress := range fromWalletAddresses {
 
-			if accountsList[i], err = accs.GetAccount(fromWalletAddresses[i].PublicKeyHash, chainHeight); err != nil {
+			if accountsList[i], err = accs.GetAccount(fromWalletAddress.PublicKeyHash, chainHeight); err != nil {
 				return
 			}
 
@@ -141,7 +141,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(propagateTx bool, from []stri
 				return errors.New("Not enough funds")
 			}
 
-			keys[i] = fromWalletAddresses[i].PrivateKey.Key
+			keys[i] = fromWalletAddress.PrivateKey.Key
 		}
 
 		return
