@@ -64,13 +64,15 @@ func createAPICommonFaucet(mempool *mempool.Mempool, chain *blockchain.Blockchai
 		mempool, chain, wallet, transactionsBuilder, nil,
 	}
 
-	// Dummy secret https://docs.hcaptcha.com/#integrationtest
-	hcpatchaClient, err := hcaptcha.New(config.HCAPTCHA_SECRET_KEY)
-	if err != nil {
-		return nil, err
-	}
+	if config.FAUCET_TESTNET_ENABLED {
+		// Dummy secret https://docs.hcaptcha.com/#integrationtest
+		hcpatchaClient, err := hcaptcha.New(config.HCAPTCHA_SECRET_KEY)
+		if err != nil {
+			return nil, err
+		}
 
-	api.hcpatchaClient = hcpatchaClient
+		api.hcpatchaClient = hcpatchaClient
+	}
 
 	return api, nil
 }
