@@ -31,7 +31,7 @@ type mempoolTxProcess struct {
 type Mempool struct {
 	result                  *atomic.Value               `json:"-"` //*MempoolResult
 	SuspendProcessingCn     chan struct{}               `json:"-"`
-	ContinueProcessingCn    chan struct{}               `json:"-"`
+	ContinueProcessingCn    chan bool                   `json:"-"`
 	NewWorkCn               chan *mempoolWork           `json:"-"`
 	AddTransactionCn        chan *MempoolWorkerAddTx    `json:"-"`
 	Txs                     *MempoolTxs                 `json:"-"`
@@ -215,7 +215,7 @@ func CreateMemPool() (*Mempool, error) {
 		result:                  &atomic.Value{}, // *MempoolResult
 		Txs:                     createMempoolTxs(),
 		SuspendProcessingCn:     make(chan struct{}),
-		ContinueProcessingCn:    make(chan struct{}),
+		ContinueProcessingCn:    make(chan bool),
 		NewWorkCn:               make(chan *mempoolWork),
 		AddTransactionCn:        make(chan *MempoolWorkerAddTx),
 		Wallet:                  createMempoolWallet(),

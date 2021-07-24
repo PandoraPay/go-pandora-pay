@@ -29,7 +29,7 @@ type MempoolWorkerAddTx struct {
 func (worker *mempoolWorker) processing(
 	newWorkCn <-chan *mempoolWork,
 	suspendProcessingCn <-chan struct{},
-	continueProcessingCn <-chan struct{},
+	continueProcessingCn <-chan bool,
 	addTransactionCn <-chan *MempoolWorkerAddTx,
 	txs *MempoolTxs,
 ) {
@@ -42,6 +42,9 @@ func (worker *mempoolWorker) processing(
 	suspended := false
 	notAllowedToContinue := false
 	readyListSent := false
+
+	var accs *accounts.Accounts
+	var toks *tokens.Tokens
 
 	includedTotalSize := uint64(0)
 	includedTxs := []*mempoolTx{}
@@ -61,6 +64,9 @@ func (worker *mempoolWorker) processing(
 		suspended = false
 
 		if newWork.chainHash != nil {
+			accs = nil
+			toks = nil
+
 			work = newWork
 			includedTotalSize = uint64(0)
 			includedTxs = []*mempoolTx{}
@@ -85,7 +91,10 @@ func (worker *mempoolWorker) processing(
 			resetNow(newWork)
 		case <-suspendProcessingCn:
 			suspendNow()
-		case <-continueProcessingCn:
+		case suspend := <-continueProcessingCn:
+			if suspend {
+				suspended = true
+			}
 			notAllowedToContinue = false
 		}
 
@@ -96,8 +105,13 @@ func (worker *mempoolWorker) processing(
 		//let's check hf the work has been changed
 		store.StoreBlockchain.DB.View(func(dbTx store_db_interface.StoreDBTransactionInterface) (err error) {
 
-			accs := accounts.NewAccounts(dbTx)
-			toks := tokens.NewTokens(dbTx)
+			if accs == nil {
+				accs = accounts.NewAccounts(dbTx)
+				toks = tokens.NewTokens(dbTx)
+			} else {
+				accs.Tx = dbTx
+				toks.Tx = dbTx
+			}
 
 			for {
 				select {
