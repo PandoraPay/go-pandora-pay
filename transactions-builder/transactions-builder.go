@@ -29,23 +29,16 @@ type TransactionsBuilder struct {
 	lock    *sync.Mutex //TODO replace sync.Mutex with a snyc.Map in order to optimize the transactions creation
 }
 
-func (builder *TransactionsBuilder) checkTx(accs *accounts.Accounts, chainHeight uint64, tx *transaction.Transaction) (err error) {
+func (builder *TransactionsBuilder) checkTx(accountsList []*account.Account, tx *transaction.Transaction) (err error) {
 
 	var available uint64
-	for _, vin := range tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin {
+	for i, vin := range tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin {
 
-		var acc *account.Account
-
-		acc, err = accs.GetAccount(vin.Bloom.PublicKeyHash, chainHeight)
-		if err != nil {
-			return
-		}
-
-		if acc == nil {
+		if accountsList[i] == nil {
 			return errors.New("Account doesn't even exist")
 		}
 
-		available = acc.GetAvailableBalance(vin.Token)
+		available = accountsList[i].GetAvailableBalance(vin.Token)
 
 		if available, err = builder.mempool.GetBalance(vin.Bloom.PublicKeyHash, available, vin.Token); err != nil {
 			return
@@ -100,58 +93,72 @@ func (builder *TransactionsBuilder) CreateSimpleTx_Float(propagateTx bool, from 
 	return builder.CreateSimpleTx(propagateTx, from, nonce, amountsFinal, amountsTokens, dsts, dstsAmountsFinal, dstsTokens, feePerByte, feeToken)
 }
 
+func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet_address.WalletAddress, error) {
+
+	fromWalletAddress := make([]*wallet_address.WalletAddress, len(from))
+	var err error
+
+	for i, fromAddress := range from {
+		if fromWalletAddress[i], err = builder.wallet.GetWalletAddressByEncodedAddress(fromAddress); err != nil {
+			return nil, err
+		}
+	}
+
+	return fromWalletAddress, nil
+}
+
 func (builder *TransactionsBuilder) CreateSimpleTx(propagateTx bool, from []string, nonce uint64, amounts []uint64, amountsTokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feePerByte int, feeToken []byte) (*transaction.Transaction, error) {
+
+	fromWalletAddresses, err := builder.getWalletAddresses(from)
+	if err != nil {
+		return nil, err
+	}
 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
 	var tx *transaction.Transaction
+	keys := make([][]byte, len(from))
+	accountsList := make([]*account.Account, len(from))
+
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		accs := accounts.NewAccounts(reader)
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
-		keys := make([][]byte, len(from))
+		for i := range from {
 
-		for i, fromAddress := range from {
-
-			var fromWalletAddress *wallet_address.WalletAddress
-			if fromWalletAddress, err = builder.wallet.GetWalletAddressByEncodedAddress(fromAddress); err != nil {
+			if accountsList[i], err = accs.GetAccount(fromWalletAddresses[i].PublicKeyHash, chainHeight); err != nil {
 				return
 			}
 
-			var acc *account.Account
-			if acc, err = accs.GetAccount(fromWalletAddress.PublicKeyHash, chainHeight); err != nil {
-				return
-			}
-
-			if acc == nil {
+			if accountsList[i] == nil {
 				return errors.New("Account doesn't exist")
 			}
 
-			available := acc.GetAvailableBalance(amountsTokens[i])
-			if available < amounts[i] {
+			if accountsList[i].GetAvailableBalance(amountsTokens[i]) < amounts[i] {
 				return errors.New("Not enough funds")
 			}
 
-			if i == 0 && nonce == 0 {
-				nonce = builder.mempool.GetNonce(fromWalletAddress.PublicKeyHash, acc.Nonce)
-			}
-			keys[i] = fromWalletAddress.PrivateKey.Key
-		}
-
-		if tx, err = wizard.CreateSimpleTx(nonce, keys, amounts, amountsTokens, dsts, dstsAmounts, dstsTokens, feePerByte, feeToken); err != nil {
-			gui.GUI.Error("Error creating Tx: ", tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce, err)
-			return
-		}
-
-		if err = builder.checkTx(accs, chainHeight, tx); err != nil {
-			return
+			keys[i] = fromWalletAddresses[i].PrivateKey.Key
 		}
 
 		return
 	}); err != nil {
+		return nil, err
+	}
+
+	if nonce == 0 {
+		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKeyHash, accountsList[0].Nonce)
+	}
+
+	if tx, err = wizard.CreateSimpleTx(nonce, keys, amounts, amountsTokens, dsts, dstsAmounts, dstsTokens, feePerByte, feeToken); err != nil {
+		gui.GUI.Error("Error creating Tx: ", tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce, err)
+		return nil, err
+	}
+
+	if err = builder.checkTx(accountsList, tx); err != nil {
 		return nil, err
 	}
 
@@ -177,52 +184,55 @@ func (builder *TransactionsBuilder) CreateUnstakeTx_Float(propagateTx bool, from
 
 func (builder *TransactionsBuilder) CreateUnstakeTx(propagateTx bool, from string, nonce uint64, unstakeAmount uint64, feePerByte int, feeToken []byte, payFeeInExtra bool) (*transaction.Transaction, error) {
 
-	builder.lock.Lock()
-	defer builder.lock.Unlock()
-
-	fromWalletAddress, err := builder.wallet.GetWalletAddressByEncodedAddress(from)
+	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
 		return nil, err
 	}
 
+	builder.lock.Lock()
+	defer builder.lock.Unlock()
+
 	var tx *transaction.Transaction
+	accountsList := make([]*account.Account, 1)
+
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		accs := accounts.NewAccounts(reader)
-		var account *account.Account
-		if account, err = accs.GetAccount(fromWalletAddress.PublicKeyHash, chainHeight); err != nil {
+
+		if accountsList[0], err = accs.GetAccount(fromWalletAddresses[0].PublicKeyHash, chainHeight); err != nil {
 			return
 		}
 
-		if account == nil {
+		if accountsList[0] == nil {
 			return errors.New("Account doesn't exist")
 		}
 
-		availableUnstake := account.GetDelegatedStakeAvailable()
-
-		if availableUnstake < unstakeAmount {
+		if accountsList[0].GetDelegatedStakeAvailable() < unstakeAmount {
 			return errors.New("You don't have enough staked coins")
-		}
-
-		if nonce == 0 {
-			nonce = builder.mempool.GetNonce(fromWalletAddress.PublicKeyHash, account.Nonce)
-		}
-
-		if tx, err = wizard.CreateUnstakeTx(nonce, fromWalletAddress.PrivateKey.Key, unstakeAmount, feePerByte, feeToken, payFeeInExtra); err != nil {
-			return
-		}
-
-		availableDelegatedStake := account.GetDelegatedStakeAvailable()
-
-		if availableDelegatedStake < tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[0].Amount+tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra {
-			return errors.New("You don't have enough staked coins to pay for the fee")
 		}
 
 		return
 	}); err != nil {
 		return nil, err
+	}
+
+	if nonce == 0 {
+		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKeyHash, accountsList[0].Nonce)
+	}
+
+	if tx, err = wizard.CreateUnstakeTx(nonce, fromWalletAddresses[0].PrivateKey.Key, unstakeAmount, feePerByte, feeToken, payFeeInExtra); err != nil {
+		return nil, err
+	}
+
+	if err = builder.checkTx(accountsList, tx); err != nil {
+		return nil, err
+	}
+
+	availableDelegatedStake := accountsList[0].GetDelegatedStakeAvailable()
+	if availableDelegatedStake < tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[0].Amount+tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra {
+		return nil, errors.New("You don't have enough staked coins to pay for the fee")
 	}
 
 	if propagateTx {
@@ -246,59 +256,59 @@ func (builder *TransactionsBuilder) CreateDelegateTx_Float(propagateTx bool, fro
 
 func (builder *TransactionsBuilder) CreateDelegateTx(propagateTx bool, from string, nonce uint64, delegateAmount uint64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, feePerByte int, feeToken []byte) (*transaction.Transaction, error) {
 
-	builder.lock.Lock()
-	defer builder.lock.Unlock()
-
-	fromWalletAddress, err := builder.wallet.GetWalletAddressByEncodedAddress(from)
+	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
 		return nil, err
 	}
 
+	builder.lock.Lock()
+	defer builder.lock.Unlock()
+
 	var tx *transaction.Transaction
+	accountsList := make([]*account.Account, 1)
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		accs := accounts.NewAccounts(reader)
-		var acc *account.Account
-		if acc, err = accs.GetAccount(fromWalletAddress.PublicKeyHash, chainHeight); err != nil {
+
+		if accountsList[0], err = accs.GetAccount(fromWalletAddresses[0].PublicKeyHash, chainHeight); err != nil {
 			return
 		}
 
-		if acc == nil {
+		if accountsList[0] == nil {
 			return errors.New("Account doesn't exist")
 		}
 
-		available := acc.GetAvailableBalance(config.NATIVE_TOKEN)
-
+		available := accountsList[0].GetAvailableBalance(config.NATIVE_TOKEN)
 		if available < delegateAmount {
 			return errors.New("You don't have enough coins to delegate")
 		}
 
-		if nonce == 0 {
-			nonce = builder.mempool.GetNonce(fromWalletAddress.PublicKeyHash, acc.Nonce)
-		}
-
-		if delegateNewPubKeyHashGenerate {
-
-			var delegatedStake *wallet_address.WalletAddressDelegatedStake
-			if delegatedStake, err = fromWalletAddress.DeriveDelegatedStake(uint32(nonce)); err != nil {
-				return
-			}
-			delegateNewPubKeyHash = delegatedStake.PublicKeyHash
-
-		}
-
-		if tx, err = wizard.CreateDelegateTx(nonce, fromWalletAddress.PrivateKey.Key, delegateAmount, delegateNewPubKeyHash, feePerByte, feeToken); err != nil {
-			return
-		}
-
-		if err = builder.checkTx(accs, chainHeight, tx); err != nil {
-			return
-		}
-
 		return
 	}); err != nil {
+		return nil, err
+	}
+
+	if nonce == 0 {
+		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKeyHash, accountsList[0].Nonce)
+	}
+
+	if delegateNewPubKeyHashGenerate {
+
+		var delegatedStake *wallet_address.WalletAddressDelegatedStake
+		if delegatedStake, err = fromWalletAddresses[0].DeriveDelegatedStake(uint32(nonce)); err != nil {
+			return nil, err
+		}
+		delegateNewPubKeyHash = delegatedStake.PublicKeyHash
+
+	}
+
+	if tx, err = wizard.CreateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegateAmount, delegateNewPubKeyHash, feePerByte, feeToken); err != nil {
+		return nil, err
+	}
+
+	if err = builder.checkTx(accountsList, tx); err != nil {
 		return nil, err
 	}
 

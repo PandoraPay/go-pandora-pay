@@ -59,7 +59,7 @@ func (self *BlockchainSync) resetBlocksChanged(propagateNotification bool) *Bloc
 
 	newChainSyncData := &BlockchainSyncData{}
 
-	if chainSyncData.BlocksChangedLastInterval < 3 {
+	if chainSyncData.BlocksChangedLastInterval < 4 {
 		newChainSyncData.SyncTime = uint64(time.Now().Unix())
 		newChainSyncData.Sync = true
 	}
