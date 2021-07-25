@@ -16,6 +16,7 @@ import (
 
 type MempoolTxBroadcastNotification struct {
 	Txs              []*transaction.Transaction
+	AwaitPropagation bool
 	ExceptSocketUUID string
 }
 
@@ -44,8 +45,8 @@ type Mempool struct {
 	NewTransactionMulticast *multicast.MulticastChannel `json:"-"`
 }
 
-func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, awaitAnswer bool, exceptSocketUUID string) error {
-	result := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, awaitAnswer, exceptSocketUUID)
+func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID string) error {
+	result := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, awaitAnswer, awaitBroadcasting, exceptSocketUUID)
 	return result[0]
 }
 
@@ -127,7 +128,7 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 	return finalTxs
 }
 
-func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, awaitAnswer bool, exceptSocketUUID string) []error {
+func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID string) []error {
 
 	finalTxs := mempool.processTxsToMemPool(txs, height)
 
@@ -176,8 +177,10 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 
 		mempool.NewTransactionMulticast.BroadcastAwait(&MempoolTxBroadcastNotification{
 			broadcastTxs,
+			awaitBroadcasting,
 			exceptSocketUUID,
 		})
+
 	}
 
 	out := make([]error, len(txs))

@@ -271,7 +271,7 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocke
 	if err := tx.BloomAll(); err != nil {
 		return nil, err
 	}
-	if err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, exceptSocketUUID); err != nil {
+	if err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, false, exceptSocketUUID); err != nil {
 		return nil, err
 	}
 	return []byte{1}, nil
