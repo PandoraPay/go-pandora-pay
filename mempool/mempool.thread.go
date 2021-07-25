@@ -56,8 +56,6 @@ func (worker *mempoolWorker) processing(
 		if newWork.chainHash != nil {
 			txs.clearList()
 			readyListSent = false
-		} else {
-			txs.continueList()
 		}
 		close(newWork.waitAnswerCn)
 
@@ -81,7 +79,6 @@ func (worker *mempoolWorker) processing(
 	suspendNow := func() {
 		suspended = true
 		notAllowedToContinue = true
-		txs.suspendList()
 	}
 
 	for {
@@ -177,6 +174,8 @@ func (worker *mempoolWorker) processing(
 								listIndex--
 								delete(txMap, tx.Tx.Bloom.HashStr)
 							}
+
+							txs.txs.Delete(tx.Tx.Bloom.HashStr)
 
 						} else {
 

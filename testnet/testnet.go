@@ -20,6 +20,7 @@ import (
 	"pandora-pay/wallet"
 	wallet_address "pandora-pay/wallet/address"
 	"sync"
+	"time"
 )
 
 type Testnet struct {
@@ -86,6 +87,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 }
 
 func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
+
 	dsts := []string{}
 	dstsAmounts := []uint64{}
 	dstsTokens := [][]byte{}
@@ -141,6 +143,8 @@ func (testnet *Testnet) run() {
 
 			lock.Lock()
 			defer lock.Unlock()
+
+			time.Sleep(5 * time.Second)
 
 			gui.GUI.Log("UpdateNewChain received! 1")
 			defer gui.GUI.Log("UpdateNewChain received! DONE")

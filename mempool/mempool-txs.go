@@ -19,6 +19,8 @@ type MempoolTxsData struct {
 }
 
 type MempoolTxs struct {
+	txs *sync.Map // [string]*mempoolTx
+
 	data             *atomic.Value //*MempoolTxsData
 	waitTxsListReady *atomic.Value //chan <- interface{}
 
@@ -26,7 +28,6 @@ type MempoolTxs struct {
 	temporary                   *MempoolTxsData
 	temporaryWaitTxsListReadyCn chan struct{}
 	stored                      bool
-	waiting                     bool
 }
 
 func (self *MempoolTxs) GetTxsList() (out []*mempoolTx) {
@@ -38,37 +39,11 @@ func (self *MempoolTxs) GetTxsList() (out []*mempoolTx) {
 
 func (self *MempoolTxs) Exists(txId string) *transaction.Transaction {
 
-	txList := self.GetTxsList()
-	for _, tx := range txList {
-		if tx.Tx.Bloom.HashStr == txId {
-			return tx.Tx
-		}
+	value, loaded := self.txs.Load(txId)
+	if !loaded {
+		return nil
 	}
-	return nil
-}
-
-func (self *MempoolTxs) suspendList() {
-
-	self.lock.Lock()
-	defer self.lock.Unlock()
-
-	if self.stored && !self.waiting {
-		self.temporaryWaitTxsListReadyCn = make(chan struct{})
-		self.waitTxsListReady.Store(self.temporaryWaitTxsListReadyCn)
-		self.waiting = true
-	}
-
-}
-
-func (self *MempoolTxs) continueList() {
-
-	self.lock.Lock()
-	defer self.lock.Unlock()
-
-	if self.stored && self.waiting {
-		close(self.temporaryWaitTxsListReadyCn)
-		self.waiting = false
-	}
+	return value.(*transaction.Transaction)
 
 }
 
@@ -77,19 +52,16 @@ func (self *MempoolTxs) clearList() {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	gui.GUI.Info("clearList")
-
-	if !self.waiting {
+	if self.stored {
 		self.temporaryWaitTxsListReadyCn = make(chan struct{})
 		self.waitTxsListReady.Store(self.temporaryWaitTxsListReadyCn)
-		self.waiting = true
-	}
 
-	self.stored = false
+		self.stored = false
 
-	self.temporary = &MempoolTxsData{
-		0,
-		[]*mempoolTx{},
+		self.temporary = &MempoolTxsData{
+			0,
+			[]*mempoolTx{},
+		}
 	}
 
 }
@@ -99,26 +71,17 @@ func (self *MempoolTxs) readyList() {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	gui.GUI.Info("readyList")
-
 	if !self.stored {
 		self.data.Store(self.temporary)
 		self.stored = true
-	}
-
-	if self.waiting {
 		close(self.temporaryWaitTxsListReadyCn)
-		self.waiting = false
 	}
-
 }
 
 func (self *MempoolTxs) addToList(tx *mempoolTx) {
 
 	self.lock.Lock()
 	defer self.lock.Unlock()
-
-	gui.GUI.Info("addToList")
 
 	if self.stored {
 
@@ -139,6 +102,7 @@ func (self *MempoolTxs) addToList(tx *mempoolTx) {
 func createMempoolTxs() (txs *MempoolTxs) {
 
 	txs = &MempoolTxs{
+		&sync.Map{},
 		&atomic.Value{}, //interface{}
 		&atomic.Value{}, //interface{}
 		&sync.Mutex{},
@@ -148,7 +112,6 @@ func createMempoolTxs() (txs *MempoolTxs) {
 		},
 		make(chan struct{}),
 		false,
-		true,
 	}
 	txs.data.Store(&MempoolTxsData{
 		0,

@@ -130,17 +130,21 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 	for _, finalTx := range finalTxs {
 		if finalTx.tx != nil {
 
-			var result error
-			if awaitAnswer {
+			var errorResult error
+
+			_, loaded := mempool.Txs.txs.LoadOrStore(finalTx.tx.Tx.Bloom.HashStr, finalTx.tx.Tx)
+			if loaded {
+				errorResult = errors.New("Tx already exists")
+			} else if awaitAnswer {
 				answerCn := make(chan error)
 				mempool.AddTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, answerCn}
-				result = <-answerCn
+				errorResult = <-answerCn
 			} else {
 				mempool.AddTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, nil}
 			}
 
-			if result != nil {
-				finalTx.err = result
+			if errorResult != nil {
+				finalTx.err = errorResult
 				finalTx.tx = nil
 			}
 
