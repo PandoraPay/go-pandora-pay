@@ -192,10 +192,7 @@ func (c *AdvancedConnection) processRead(message *AdvancedConnectionMessage) {
 		c.answerMapLock.Unlock()
 
 		if cn != nil {
-			select {
-			case cn <- output:
-			default:
-			}
+			cn <- output
 		}
 	}
 

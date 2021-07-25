@@ -89,6 +89,9 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 	out := make([]*connection.AdvancedConnectionAnswer, len(all))
 	for i := range all {
 		out[i] = <-chans
+		if out[i] != nil && out[i].Err != nil {
+			gui.GUI.Error("Error propagating", out[i].Err)
+		}
 	}
 
 	return out
