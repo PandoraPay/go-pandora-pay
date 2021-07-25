@@ -87,13 +87,12 @@ func (worker *mempoolWorker) processing(
 			suspended = false
 			if noError {
 				work = nil //it needs a new work
-				continue
 			} else {
 				accs = nil
 				toks = nil
-				if work == nil { //in case it needs a new work
-					continue
-				}
+			}
+			if work == nil { //in case it needs a new work
+				continue
 			}
 		}
 

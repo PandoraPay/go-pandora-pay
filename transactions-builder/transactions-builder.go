@@ -163,7 +163,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(propagateTx bool, from []stri
 	}
 
 	if propagateTx {
-		if err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true); err != nil {
+		if err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, ""); err != nil {
 			return nil, err
 		}
 	}
@@ -236,7 +236,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(propagateTx bool, from strin
 	}
 
 	if propagateTx {
-		if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true); err != nil {
+		if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, ""); err != nil {
 			return nil, err
 		}
 	}
@@ -313,7 +313,7 @@ func (builder *TransactionsBuilder) CreateDelegateTx(propagateTx bool, from stri
 	}
 
 	if propagateTx {
-		if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, true); err != nil {
+		if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, true, ""); err != nil {
 			return nil, err
 		}
 	}

@@ -271,7 +271,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 						gui.GUI.Log("Status. AddBlocks fork")
 
-						if err := thread.chain.AddBlocks(fork.Blocks, false); err != nil {
+						if err := thread.chain.AddBlocks(fork.Blocks, false, ""); err != nil {
 							gui.GUI.Error("Invalid Fork", err)
 						} else {
 							fork.Lock()

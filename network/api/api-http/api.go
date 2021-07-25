@@ -284,7 +284,7 @@ func (api *API) postMempoolInsert(values *url.Values) (interface{}, error) {
 		return nil, err
 	}
 
-	return api.apiCommon.PostMempoolInsert(tx)
+	return api.apiCommon.PostMempoolInsert(tx, "")
 }
 
 func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain) *API {

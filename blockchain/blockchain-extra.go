@@ -221,7 +221,7 @@ func (chain *Blockchain) InitForging() {
 			}
 
 			go func() {
-				err := chain.AddBlocks([]*block_complete.BlockComplete{blkComplete}, true)
+				err := chain.AddBlocks([]*block_complete.BlockComplete{blkComplete}, true, "")
 				if err == nil {
 					gui.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
 				} else {

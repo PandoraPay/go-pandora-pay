@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"pandora-pay/blockchain"
-	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	node_http "pandora-pay/network/server/node-http"
@@ -44,19 +43,19 @@ func (consensus *Consensus) execute() {
 		defer consensus.mempool.NewTransactionMulticast.RemoveChannel(newTxsCn)
 
 		for {
-			multicastChannelDataReceived, ok := <-newTxsCn
+			dataReceived, ok := <-newTxsCn
 			if !ok {
 				return
 			}
 
-			multicastChannelData := multicastChannelDataReceived.(*multicast.MulticastChannelData)
+			data := dataReceived.(*multicast.MulticastChannelData)
 
-			newTxs := multicastChannelData.Data.([]*transaction.Transaction)
+			notification := data.Data.(*mempool.MempoolTxBroadcastNotification)
 
 			//it is safe to read
-			consensus.broadcastTxs(newTxs)
+			consensus.broadcastTxs(notification.Txs, notification.ExceptSocketUUID)
 
-			multicastChannelData.Answer <- struct{}{}
+			data.Answer <- struct{}{}
 		}
 
 	})

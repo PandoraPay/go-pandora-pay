@@ -14,6 +14,11 @@ import (
 	"time"
 )
 
+type MempoolTxBroadcastNotification struct {
+	Txs              []*transaction.Transaction
+	ExceptSocketUUID string
+}
+
 type mempoolTx struct {
 	Tx          *transaction.Transaction `json:"tx"`
 	Added       int64                    `json:"added"`
@@ -39,8 +44,8 @@ type Mempool struct {
 	NewTransactionMulticast *multicast.MulticastChannel `json:"-"`
 }
 
-func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, propagateToSockets, awaitAnswer bool) error {
-	result := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, propagateToSockets, awaitAnswer)
+func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, awaitAnswer bool, exceptSocketUUID string) error {
+	result := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, awaitAnswer, exceptSocketUUID)
 	return result[0]
 }
 
@@ -48,8 +53,8 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 
 	finalTxs := make([]*mempoolTxProcess, len(txs))
 
-	mempool.Wallet.Lock()
-	defer mempool.Wallet.Unlock()
+	mempool.Wallet.RLock()
+	defer mempool.Wallet.RUnlock()
 
 	for i, tx := range txs {
 
@@ -122,7 +127,7 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 	return finalTxs
 }
 
-func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, propagateToSockets, awaitAnswer bool) []error {
+func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, awaitAnswer bool, exceptSocketUUID string) []error {
 
 	finalTxs := mempool.processTxsToMemPool(txs, height)
 
@@ -151,7 +156,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 		}
 	}
 
-	if propagateToSockets {
+	if exceptSocketUUID != "*" {
 
 		notNull := 0
 		for _, finalTx := range finalTxs {
@@ -169,7 +174,10 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 			}
 		}
 
-		mempool.NewTransactionMulticast.BroadcastAwait(broadcastTxs)
+		mempool.NewTransactionMulticast.BroadcastAwait(&MempoolTxBroadcastNotification{
+			broadcastTxs,
+			exceptSocketUUID,
+		})
 	}
 
 	out := make([]error, len(txs))

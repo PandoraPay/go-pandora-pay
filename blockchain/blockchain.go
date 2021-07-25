@@ -61,7 +61,7 @@ func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockCo
 	return
 }
 
-func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplete, calledByForging bool) (err error) {
+func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplete, calledByForging bool, exceptSocketUUID string) (err error) {
 
 	if err = chain.validateBlocks(blocksComplete); err != nil {
 		return
@@ -385,8 +385,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	chain.mempool.ContinueProcessingCn <- err == nil
 
 	update := &BlockchainUpdate{
-		err:             err,
-		calledByForging: calledByForging,
+		err:              err,
+		calledByForging:  calledByForging,
+		exceptSocketUUID: exceptSocketUUID,
 	}
 
 	if err == nil {
