@@ -63,16 +63,26 @@ func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeA
 
 }
 
-func (websockets *Websockets) BroadcastAwaitAnswer(name []byte, data []byte, consensusTypeAccepted map[config.ConsensusType]bool) []*connection.AdvancedConnectionAnswer {
+func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusTypeAccepted map[config.ConsensusType]bool) []*connection.AdvancedConnectionAnswer {
 
 	all := websockets.GetAllSockets()
 
-	out := make([]*connection.AdvancedConnectionAnswer, len(all))
+	chans := make(chan *connection.AdvancedConnectionAnswer, len(all))
 
-	for i, conn := range all {
-		if consensusTypeAccepted[conn.Handshake.Consensus] {
-			out[i] = conn.SendAwaitAnswer(name, data)
+	for i := range all {
+
+		if consensusTypeAccepted[all[i].Handshake.Consensus] {
+			go func(index int) {
+				chans <- all[index].SendAwaitAnswer(name, data)
+			}(i)
+		} else {
+			chans <- nil
 		}
+	}
+
+	out := make([]*connection.AdvancedConnectionAnswer, len(all))
+	for i := range all {
+		out[i] = <-chans
 	}
 
 	return out

@@ -171,6 +171,10 @@ func (hashMap *HashMap) Rollback() {
 	hashMap.Changes = make(map[string]*ChangesMapElement)
 }
 
+func (hashMap *HashMap) Reset() {
+	hashMap.Committed = make(map[string]*CommittedMapElement)
+}
+
 func (hashMap *HashMap) WriteToStore() (err error) {
 
 	for k, v := range hashMap.Committed {

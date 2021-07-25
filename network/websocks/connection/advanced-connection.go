@@ -34,7 +34,8 @@ type AdvancedConnection struct {
 	IsClosed               *abool.AtomicBool
 	getMap                 map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
 	answerMap              map[uint32]chan *AdvancedConnectionAnswer
-	answerMapLock          *sync.RWMutex
+	answerMapLock          *sync.Mutex
+	writingLock            *sync.Mutex
 	Subscriptions          *Subscriptions
 	ConnectionType         bool
 }
@@ -59,6 +60,7 @@ func (c *AdvancedConnection) connSendJSON(message interface{}) error {
 	if c.IsClosed.IsSet() {
 		return errors.New("Closed")
 	}
+
 	return c.Conn.Write(ctx, websocket.MessageBinary, data)
 }
 
@@ -106,9 +108,10 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool) 
 	}
 
 	timer := time.NewTimer(config.WEBSOCKETS_TIMEOUT)
+	defer timer.Stop()
+
 	select {
 	case out, ok := <-eventCn:
-		timer.Stop()
 		if !ok {
 			return &AdvancedConnectionAnswer{nil, errors.New("Timeout - Closed channel")}
 		}
@@ -270,7 +273,8 @@ func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, getMap ma
 		answerCounter:          0,
 		getMap:                 getMap,
 		answerMap:              make(map[uint32]chan *AdvancedConnectionAnswer),
-		answerMapLock:          &sync.RWMutex{},
+		answerMapLock:          &sync.Mutex{},
+		writingLock:            &sync.Mutex{},
 		ConnectionType:         connectionType,
 	}
 	advancedConnection.Subscriptions = CreateSubscriptions(advancedConnection, newSubscriptionCn, removeSubscriptionCn)

@@ -62,9 +62,6 @@ func (worker *mempoolWorker) processing(
 		suspended = false
 
 		if newWork.chainHash != nil {
-			accs = nil
-			toks = nil
-
 			work = newWork
 			includedTotalSize = uint64(0)
 			includedTxs = []*mempoolTx{}
@@ -88,9 +85,12 @@ func (worker *mempoolWorker) processing(
 			resetNow(newWork)
 		case <-suspendProcessingCn:
 			suspendNow()
-		case suspend := <-continueProcessingCn:
-			if suspend {
+		case hasError := <-continueProcessingCn:
+			if hasError {
 				suspended = true
+			} else {
+				accs = nil
+				toks = nil
 			}
 			notAllowedToContinue = false
 		}
@@ -111,9 +111,11 @@ func (worker *mempoolWorker) processing(
 			}
 
 			for {
+
 				select {
 				case newWork := <-newWorkCn:
 					resetNow(newWork)
+					continue
 				case <-suspendProcessingCn:
 					suspendNow()
 					return
@@ -141,6 +143,7 @@ func (worker *mempoolWorker) processing(
 							select {
 							case newWork := <-newWorkCn:
 								resetNow(newWork)
+								continue
 							case <-suspendProcessingCn:
 								suspendNow()
 								return
