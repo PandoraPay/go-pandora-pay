@@ -382,7 +382,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		err = errors.New("No blocks were inserted")
 	}
 
-	chain.mempool.ContinueProcessingCn <- err != nil
+	chain.mempool.ContinueProcessingCn <- err == nil
 
 	update := &BlockchainUpdate{
 		err:             err,

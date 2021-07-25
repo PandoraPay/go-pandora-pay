@@ -39,8 +39,6 @@ func (worker *mempoolWorker) processing(
 	txList := []*mempoolTx{}
 	listIndex := 0
 	txMap := make(map[string]bool)
-	suspended := false
-	notAllowedToContinue := false
 	readyListSent := false
 
 	var accs *accounts.Accounts
@@ -59,9 +57,9 @@ func (worker *mempoolWorker) processing(
 		}
 		close(newWork.waitAnswerCn)
 
-		suspended = false
-
 		if newWork.chainHash != nil {
+			accs = nil
+			toks = nil
 			work = newWork
 			includedTotalSize = uint64(0)
 			includedTxs = []*mempoolTx{}
@@ -73,51 +71,52 @@ func (worker *mempoolWorker) processing(
 		}
 	}
 
-	suspendNow := func() {
-		suspended = true
-		notAllowedToContinue = true
-	}
-
+	suspended := false
 	for {
 
 		select {
 		case newWork := <-newWorkCn:
 			resetNow(newWork)
+			if work == nil || suspended { //if no work was sent, just loop again
+				continue
+			}
 		case <-suspendProcessingCn:
-			suspendNow()
-		case hasError := <-continueProcessingCn:
-			if hasError {
-				suspended = true
+			suspended = true
+			continue
+		case noError := <-continueProcessingCn:
+			suspended = false
+			if noError {
+				work = nil //it needs a new work
+				continue
 			} else {
 				accs = nil
 				toks = nil
+				if work == nil { //in case it needs a new work
+					continue
+				}
 			}
-			notAllowedToContinue = false
-		}
-
-		if work == nil || suspended || notAllowedToContinue {
-			continue
 		}
 
 		//let's check hf the work has been changed
 		store.StoreBlockchain.DB.View(func(dbTx store_db_interface.StoreDBTransactionInterface) (err error) {
 
-			if accs == nil {
-				accs = accounts.NewAccounts(dbTx)
-				toks = tokens.NewTokens(dbTx)
-			} else {
+			if accs != nil {
 				accs.Tx = dbTx
 				toks.Tx = dbTx
 			}
 
 			for {
 
+				if accs == nil {
+					accs = accounts.NewAccounts(dbTx)
+					toks = tokens.NewTokens(dbTx)
+				}
+
 				select {
 				case newWork := <-newWorkCn:
 					resetNow(newWork)
-					continue
 				case <-suspendProcessingCn:
-					suspendNow()
+					suspended = true
 					return
 				default:
 
@@ -143,9 +142,8 @@ func (worker *mempoolWorker) processing(
 							select {
 							case newWork := <-newWorkCn:
 								resetNow(newWork)
-								continue
 							case <-suspendProcessingCn:
-								suspendNow()
+								suspended = true
 								return
 							case newAddTx = <-addTransactionCn:
 								tx = newAddTx.Tx

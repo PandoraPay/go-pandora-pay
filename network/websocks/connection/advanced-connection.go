@@ -35,7 +35,6 @@ type AdvancedConnection struct {
 	getMap                 map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
 	answerMap              map[uint32]chan *AdvancedConnectionAnswer
 	answerMapLock          *sync.Mutex
-	writingLock            *sync.Mutex
 	Subscriptions          *Subscriptions
 	ConnectionType         bool
 }
@@ -274,7 +273,6 @@ func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, getMap ma
 		getMap:                 getMap,
 		answerMap:              make(map[uint32]chan *AdvancedConnectionAnswer),
 		answerMapLock:          &sync.Mutex{},
-		writingLock:            &sync.Mutex{},
 		ConnectionType:         connectionType,
 	}
 	advancedConnection.Subscriptions = CreateSubscriptions(advancedConnection, newSubscriptionCn, removeSubscriptionCn)
