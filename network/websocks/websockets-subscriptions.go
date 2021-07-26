@@ -212,7 +212,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 					}
 				}
 
-				if list := this.transactionsSubscriptions[string(v.TxHash)]; list != nil {
+				if list := this.transactionsSubscriptions[v.TxHashStr]; list != nil {
 					this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), v.TxHash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{v.Inserted, v.BlockHeight, v.BlockTimestamp, v.Height})
 				}
 			}

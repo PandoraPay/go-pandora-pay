@@ -26,9 +26,10 @@ type BlockchainUpdate struct {
 	accs                   *accounts.Accounts
 	toks                   *tokens.Tokens
 	allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate
-	removedTxs             [][]byte
+	removedTxHashes        map[string][]byte
+	removedTxs             [][]byte //ordered kept
+	insertedTxs            map[string]*transaction.Transaction
 	insertedBlocks         []*block_complete.BlockComplete
-	insertedTxHashes       [][]byte
 	calledByForging        bool
 	exceptSocketUUID       string
 }
@@ -74,7 +75,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 	}
 
 	gui.GUI.Warning("-------------------------------------------")
-	gui.GUI.Warning(fmt.Sprintf("Included blocks %d | TXs: %d | Hash %s", len(update.insertedBlocks), len(update.insertedTxHashes), hex.EncodeToString(update.newChainData.Hash)))
+	gui.GUI.Warning(fmt.Sprintf("Included blocks %d | TXs: %d | Hash %s", len(update.insertedBlocks), len(update.insertedTxs), hex.EncodeToString(update.newChainData.Hash)))
 	gui.GUI.Warning(update.newChainData.Height, hex.EncodeToString(update.newChainData.Hash), update.newChainData.Target.Text(10), update.newChainData.BigTotalDifficulty.Text(10))
 	gui.GUI.Warning("-------------------------------------------")
 	update.newChainData.updateChainInfo()
@@ -82,28 +83,35 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 	queue.chain.UpdateAccounts.Broadcast(update.accs)
 	queue.chain.UpdateTokens.Broadcast(update.toks)
 
-	removedTxs := make([]*transaction.Transaction, len(update.removedTxs))
-	for i, txData := range update.removedTxs {
-		tx := &transaction.Transaction{}
-		if err := tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
-			return false, err
-		}
-		if err := tx.BloomExtraVerified(); err != nil {
-			return false, err
-		}
-		removedTxs[i] = tx
-		for _, change := range update.allTransactionsChanges {
-			if bytes.Equal(change.TxHash, tx.Bloom.Hash) {
-				change.Tx = tx
-			}
-		}
+	//let's remove the transactions from the mempool
+	if len(update.insertedTxs) > 0 {
+		//for _, tx := range update.insertedTxs {
+		//	//tx := update.
+		//}
 	}
 
-	if len(removedTxs) > 0 {
-		recovery.SafeGo(func() {
-			if err := queue.chain.mempool.AddTxsToMemPool(removedTxs, update.newChainData.Height, false, false, "*"); err != nil {
-				return
+	//let's add the transactions in the mempool
+	if len(update.removedTxs) > 0 {
+
+		removedTxs := make([]*transaction.Transaction, len(update.removedTxs))
+		for i, txData := range update.removedTxs {
+			tx := &transaction.Transaction{}
+			if err := tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
+				return false, err
 			}
+			if err := tx.BloomExtraVerified(); err != nil {
+				return false, err
+			}
+			removedTxs[i] = tx
+			for _, change := range update.allTransactionsChanges {
+				if bytes.Equal(change.TxHash, tx.Bloom.Hash) {
+					change.Tx = tx
+				}
+			}
+		}
+
+		recovery.SafeGo(func() {
+			_ = queue.chain.mempool.AddTxsToMemPool(removedTxs, update.newChainData.Height, false, false, "*")
 		})
 	}
 

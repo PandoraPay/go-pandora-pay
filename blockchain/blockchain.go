@@ -13,6 +13,7 @@ import (
 	"pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
@@ -92,10 +93,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	allTransactionsChanges := []*blockchain_types.BlockchainTransactionUpdate{}
 
 	insertedBlocks := []*block_complete.BlockComplete{}
-	insertedTxHashes := [][]byte{}
 
 	//remove blocks which are different
 	removedTxHashes := make(map[string][]byte)
+	insertedTxs := make(map[string]*transaction.Transaction)
 
 	removedTxs := [][]byte{}
 
@@ -246,8 +247,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					//to detect if the savedBlock was done correctly
 					savedBlock = false
 
-					var newTransactionsSaved [][]byte
-					if newTransactionsSaved, allTransactionsChanges, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, allTransactionsChanges, accs, toks); err != nil {
+					if allTransactionsChanges, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, allTransactionsChanges, accs, toks); err != nil {
 						return errors.New("Error saving block complete: " + err.Error())
 					}
 
@@ -274,10 +274,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					newChainData.Height += 1
 					newChainData.TransactionsCount += uint64(len(blkComplete.Txs))
 					insertedBlocks = append(insertedBlocks, blkComplete)
-
-					for _, txHashId := range newTransactionsSaved {
-						insertedTxHashes = append(insertedTxHashes, txHashId)
-					}
 
 					if err = newChainData.saveTotalDifficultyExtra(writer); err != nil {
 						return
@@ -314,6 +310,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			//we should store it
 			if savedBlock && chainData.BigTotalDifficulty.Cmp(newChainData.BigTotalDifficulty) < 0 {
 
+				//let's recompute removedTxHashes
+				removedTxHashes = make(map[string][]byte)
+				for _, change := range allTransactionsChanges {
+					if !change.Inserted {
+						removedTxHashes[change.TxHashStr] = change.TxHash
+					} else {
+						insertedTxs[change.Tx.Bloom.HashStr] = change.Tx
+					}
+				}
+
 				if calledByForging {
 					newChainData.ConsecutiveSelfForged += 1
 				} else {
@@ -341,10 +347,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 				}
 
-				for txHash := range removedTxHashes {
-					removedTxs = append(removedTxs, writer.GetClone("tx"+txHash)) //required because the garbage collector sometimes it deletes the underlying buffers
-					if err = writer.Delete("tx" + txHash); err != nil {
-						panic("Error deleting transaction: " + err.Error())
+				//let's keep the order as well
+				for _, change := range allTransactionsChanges {
+					if !change.Inserted && removedTxHashes[change.TxHashStr] != nil && insertedTxs[change.TxHashStr] == nil {
+						removedTxs = append(removedTxs, writer.GetClone("tx"+change.TxHashStr)) //required because the garbage collector sometimes it deletes the underlying buffers
+						if err = writer.Delete("tx" + change.TxHashStr); err != nil {
+							panic("Error deleting transaction: " + err.Error())
+						}
 					}
 				}
 
@@ -395,8 +404,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		update.accs = accs
 		update.toks = toks
 		update.removedTxs = removedTxs
+		update.removedTxHashes = removedTxHashes
+		update.insertedTxs = insertedTxs
 		update.insertedBlocks = insertedBlocks
-		update.insertedTxHashes = insertedTxHashes
 		update.allTransactionsChanges = allTransactionsChanges
 	}
 

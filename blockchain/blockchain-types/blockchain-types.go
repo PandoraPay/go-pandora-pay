@@ -9,6 +9,7 @@ type BlockchainTransactionKeyUpdate struct {
 
 type BlockchainTransactionUpdate struct {
 	TxHash         []byte
+	TxHashStr      string
 	Tx             *transaction.Transaction
 	Inserted       bool
 	BlockHeight    uint64

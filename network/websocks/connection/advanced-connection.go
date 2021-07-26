@@ -116,12 +116,18 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool) 
 		}
 		return out
 	case <-timer.C:
+
+		var closeChannel bool
+
 		c.answerMapLock.Lock()
 		if c.answerMap[replyBackId] != nil {
 			delete(c.answerMap, replyBackId)
-			close(eventCn)
+			closeChannel = true
 		}
 		c.answerMapLock.Unlock()
+		if closeChannel {
+			close(eventCn)
+		}
 		return &AdvancedConnectionAnswer{nil, errors.New("Timeout")}
 	}
 }

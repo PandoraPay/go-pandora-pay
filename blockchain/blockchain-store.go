@@ -90,15 +90,17 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 
 	localTransactionChanges := make([]*blockchain_types.BlockchainTransactionUpdate, len(txHashes))
 	for i, txHash := range txHashes {
-		removedTxHashes[string(txHash)] = txHash
 
 		txChange := &blockchain_types.BlockchainTransactionUpdate{
-			TxHash:   txHash,
-			Inserted: false,
+			TxHash:    txHash,
+			TxHashStr: string(txHash),
+			Inserted:  false,
 		}
 
 		allTransactionsChanges2 = append(allTransactionsChanges2, txChange)
 		localTransactionChanges[i] = txChange
+
+		removedTxHashes[txChange.TxHashStr] = txHash
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
@@ -110,40 +112,48 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 	return allTransactionsChanges2, nil
 }
 
-func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, removedTxHashes map[string][]byte, allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate, accs *accounts.Accounts, toks *tokens.Tokens) ([][]byte, []*blockchain_types.BlockchainTransactionUpdate, error) {
+func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, removedTxHashes map[string][]byte, allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate, accs *accounts.Accounts, toks *tokens.Tokens) ([]*blockchain_types.BlockchainTransactionUpdate, error) {
 
 	allTransactionsChanges2 := allTransactionsChanges
 
 	blockHeightStr := strconv.FormatUint(blkComplete.Block.Height, 10)
 	if err := accs.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
-		return nil, allTransactionsChanges, err
+		return allTransactionsChanges, err
 	}
 	if err := toks.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
-		return nil, allTransactionsChanges, err
+		return allTransactionsChanges, err
 	}
 
 	if err := writer.Put("block_ByHash"+string(blkComplete.Block.Bloom.Hash), blkComplete.Block.SerializeToBytes()); err != nil {
-		return nil, allTransactionsChanges, err
+		return allTransactionsChanges, err
 	}
 
 	if err := writer.Put("blockHash_ByHeight"+blockHeightStr, blkComplete.Block.Bloom.Hash); err != nil {
-		return nil, allTransactionsChanges, err
+		return allTransactionsChanges, err
 	}
 
 	if err := writer.Put("blockHeight_ByHash"+string(blkComplete.Block.Bloom.Hash), []byte(blockHeightStr)); err != nil {
-		return nil, allTransactionsChanges, err
+		return allTransactionsChanges, err
 	}
 
-	newTxHashes := [][]byte{}
 	txHashes := make([][]byte, len(blkComplete.Txs))
-
-	localTransactionChanges := make([]*blockchain_types.BlockchainTransactionUpdate, len(txHashes))
 	for i, tx := range blkComplete.Txs {
-
 		txHashes[i] = tx.Bloom.Hash
+	}
+	marshal, err := json.Marshal(txHashes)
+	if err != nil {
+		return allTransactionsChanges, err
+	}
+	if err = writer.Put("blockTxs"+blockHeightStr, marshal); err != nil {
+		return allTransactionsChanges, err
+	}
+
+	localTransactionChanges := make([]*blockchain_types.BlockchainTransactionUpdate, len(blkComplete.Txs))
+	for i, tx := range blkComplete.Txs {
 
 		txChange := &blockchain_types.BlockchainTransactionUpdate{
 			TxHash:         tx.Bloom.Hash,
+			TxHashStr:      tx.Bloom.HashStr,
 			Tx:             tx,
 			Inserted:       true,
 			BlockHeight:    blkComplete.Block.Height,
@@ -157,9 +167,8 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		//let's check to see if the tx block is already stored, if yes, we will skip it
 		if removedTxHashes[tx.Bloom.HashStr] == nil {
 			if err := writer.Put("tx"+string(tx.Bloom.Hash), tx.Bloom.Serialized); err != nil {
-				return nil, allTransactionsChanges, err
+				return allTransactionsChanges, err
 			}
-			newTxHashes = append(newTxHashes, tx.Bloom.Hash)
 		} else {
 			delete(removedTxHashes, tx.Bloom.HashStr)
 		}
@@ -168,20 +177,11 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 
 	if config.SEED_WALLET_NODES_INFO {
 		if err := saveBlockCompleteInfo(writer, blkComplete, transactionsCount, localTransactionChanges); err != nil {
-			return nil, allTransactionsChanges, err
+			return allTransactionsChanges, err
 		}
 	}
 
-	marshal, err := json.Marshal(txHashes)
-	if err != nil {
-		return nil, allTransactionsChanges, err
-	}
-
-	if err = writer.Put("blockTxs"+blockHeightStr, marshal); err != nil {
-		return nil, allTransactionsChanges, err
-	}
-
-	return txHashes, allTransactionsChanges2, nil
+	return allTransactionsChanges2, nil
 }
 
 func (chain *Blockchain) saveBlockchainHashmaps(accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
