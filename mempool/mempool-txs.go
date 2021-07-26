@@ -89,7 +89,6 @@ func (self *MempoolTxs) addToList(tx *mempoolTx) {
 			self.temporary.txsCount + 1,
 			append(self.temporary.txsList, tx),
 		}
-
 		self.data.Store(self.temporary)
 
 	} else {

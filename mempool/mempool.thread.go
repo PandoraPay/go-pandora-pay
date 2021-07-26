@@ -1,7 +1,6 @@
 package mempool
 
 import (
-	"bytes"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -44,9 +43,9 @@ func (worker *mempoolWorker) processing(
 
 	var work *mempoolWork
 
-	txList := []*mempoolTx{}
+	txsList := []*mempoolTx{}
+	txsMap := make(map[string]bool)
 	listIndex := 0
-	txMap := make(map[string]bool)
 	readyListSent := true
 
 	var accs *accounts.Accounts
@@ -76,9 +75,9 @@ func (worker *mempoolWorker) processing(
 			includedTotalSize = uint64(0)
 			includedTxs = []*mempoolTx{}
 			listIndex = 0
-			txMap = make(map[string]bool)
-			if len(txList) > 1 {
-				sortTxs(txList)
+			txsMap = make(map[string]bool)
+			if len(txsList) > 1 {
+				sortTxs(txsList)
 			}
 		}
 	}
@@ -86,23 +85,29 @@ func (worker *mempoolWorker) processing(
 	removeTxs := func(data *MempoolWorkerRemoveTxs) {
 		result := false
 
+		removedTxsMap := make(map[string]bool)
 		for _, tx := range data.Txs {
-			for i, myTx := range txList {
-				if bytes.Equal(myTx.Tx.Bloom.Hash, tx.Bloom.Hash) {
-
-					txList = append(txList[:i], txList[i+1:]...)
-					delete(txMap, myTx.Tx.Bloom.HashStr)
-					txs.txs.Delete(myTx.Tx.Bloom.HashStr)
-					result = true
-
+			if txsMap[tx.Bloom.HashStr] {
+				removedTxsMap[tx.Bloom.HashStr] = true
+				delete(txsMap, tx.Bloom.HashStr)
+				result = true
+			}
+		}
+		if len(removedTxsMap) > 0 {
+			newList := make([]*mempoolTx, len(txsList)-len(removedTxsMap))
+			c := 0
+			for i, tx := range txsList {
+				if !removedTxsMap[tx.Tx.Bloom.HashStr] {
+					newList[c] = tx
+					c += 1
+				} else {
 					if listIndex > i {
 						listIndex -= 1
 					}
-
-					break
 				}
 			}
 		}
+
 		data.Result <- result
 	}
 
@@ -159,7 +164,7 @@ func (worker *mempoolWorker) processing(
 					var tx *mempoolTx
 					var newAddTx *MempoolWorkerAddTx
 
-					if listIndex == len(txList) {
+					if listIndex == len(txsList) {
 
 						select {
 						case newWork := <-newWorkCn:
@@ -180,15 +185,15 @@ func (worker *mempoolWorker) processing(
 						}
 
 					} else {
-						tx = txList[listIndex]
+						tx = txsList[listIndex]
 						listIndex += 1
 					}
 
 					var finalErr error
 
-					if tx != nil && !txMap[tx.Tx.Bloom.HashStr] {
+					if tx != nil && !txsMap[tx.Tx.Bloom.HashStr] {
 
-						txMap[tx.Tx.Bloom.HashStr] = true
+						txsMap[tx.Tx.Bloom.HashStr] = true
 
 						if err = tx.Tx.IncludeTransaction(work.chainHeight, accs, toks); err != nil {
 
@@ -200,9 +205,9 @@ func (worker *mempoolWorker) processing(
 							if newAddTx == nil {
 								//removing
 								//this is done because listIndex was incremented already before
-								txList = append(txList[:listIndex-1], txList[listIndex:]...)
+								txsList = append(txsList[:listIndex-1], txsList[listIndex:]...)
 								listIndex--
-								delete(txMap, tx.Tx.Bloom.HashStr)
+								delete(txsMap, tx.Tx.Bloom.HashStr)
 							}
 
 							txs.txs.Delete(tx.Tx.Bloom.HashStr)
@@ -222,7 +227,7 @@ func (worker *mempoolWorker) processing(
 							}
 
 							if newAddTx != nil {
-								txList = append(txList, newAddTx.Tx)
+								txsList = append(txsList, newAddTx.Tx)
 								listIndex += 1
 							}
 
