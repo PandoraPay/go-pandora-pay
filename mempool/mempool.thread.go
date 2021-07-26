@@ -27,8 +27,8 @@ type MempoolWorkerAddTx struct {
 	Result chan<- error
 }
 
-type MempoolWorkerRemoveTx struct {
-	Tx     *transaction.Transaction
+type MempoolWorkerRemoveTxs struct {
+	Txs    []*transaction.Transaction
 	Result chan<- bool
 }
 
@@ -38,7 +38,7 @@ func (worker *mempoolWorker) processing(
 	suspendProcessingCn <-chan struct{},
 	continueProcessingCn <-chan bool,
 	addTransactionCn <-chan *MempoolWorkerAddTx,
-	removeTransactionCn <-chan *MempoolWorkerRemoveTx,
+	removeTransactionsCn <-chan *MempoolWorkerRemoveTxs,
 	txs *MempoolTxs,
 ) {
 
@@ -83,21 +83,24 @@ func (worker *mempoolWorker) processing(
 		}
 	}
 
-	removeTx := func(data *MempoolWorkerRemoveTx) {
+	removeTxs := func(data *MempoolWorkerRemoveTxs) {
 		result := false
-		for i, myTx := range txList {
-			if bytes.Equal(myTx.Tx.Bloom.Hash, data.Tx.Bloom.Hash) {
 
-				txList = append(txList[:i], txList[i+1:]...)
-				delete(txMap, myTx.Tx.Bloom.HashStr)
-				txs.txs.Delete(data.Tx.Bloom.HashStr)
-				result = true
+		for _, tx := range data.Txs {
+			for i, myTx := range txList {
+				if bytes.Equal(myTx.Tx.Bloom.Hash, tx.Bloom.Hash) {
 
-				if listIndex > i {
-					listIndex -= 1
+					txList = append(txList[:i], txList[i+1:]...)
+					delete(txMap, myTx.Tx.Bloom.HashStr)
+					txs.txs.Delete(myTx.Tx.Bloom.HashStr)
+					result = true
+
+					if listIndex > i {
+						listIndex -= 1
+					}
+
+					break
 				}
-
-				break
 			}
 		}
 		data.Result <- result
@@ -112,8 +115,8 @@ func (worker *mempoolWorker) processing(
 			continue
 		case newWork := <-newWorkCn:
 			resetNow(newWork)
-		case data := <-removeTransactionCn:
-			removeTx(data)
+		case data := <-removeTransactionsCn:
+			removeTxs(data)
 		case noError := <-continueProcessingCn:
 			suspended = false
 			if noError {
@@ -149,8 +152,8 @@ func (worker *mempoolWorker) processing(
 					return
 				case newWork := <-newWorkCn:
 					resetNow(newWork)
-				case data := <-removeTransactionCn:
-					removeTx(data)
+				case data := <-removeTransactionsCn:
+					removeTxs(data)
 				default:
 
 					var tx *mempoolTx
@@ -165,8 +168,8 @@ func (worker *mempoolWorker) processing(
 						case <-suspendProcessingCn:
 							suspended = true
 							return
-						case data := <-removeTransactionCn:
-							removeTx(data)
+						case data := <-removeTransactionsCn:
+							removeTxs(data)
 						case newAddTx = <-addTransactionCn:
 							tx = newAddTx.Tx
 						case <-sendReadyListCn:

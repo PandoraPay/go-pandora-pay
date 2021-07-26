@@ -35,21 +35,30 @@ type mempoolTxProcess struct {
 }
 
 type Mempool struct {
-	result                  *atomic.Value               `json:"-"` //*MempoolResult
-	SuspendProcessingCn     chan struct{}               `json:"-"`
-	ContinueProcessingCn    chan bool                   `json:"-"`
-	newWorkCn               chan *mempoolWork           `json:"-"`
-	addTransactionCn        chan *MempoolWorkerAddTx    `json:"-"`
-	removeTransactionCn     chan *MempoolWorkerRemoveTx `json:"-"`
-	Txs                     *MempoolTxs                 `json:"-"`
-	Wallet                  *mempoolWallet              `json:"-"`
-	NewTransactionMulticast *multicast.MulticastChannel `json:"-"`
+	result                  *atomic.Value                `json:"-"` //*MempoolResult
+	SuspendProcessingCn     chan struct{}                `json:"-"`
+	ContinueProcessingCn    chan bool                    `json:"-"`
+	newWorkCn               chan *mempoolWork            `json:"-"`
+	addTransactionCn        chan *MempoolWorkerAddTx     `json:"-"`
+	removeTransactionsCn    chan *MempoolWorkerRemoveTxs `json:"-"`
+	Txs                     *MempoolTxs                  `json:"-"`
+	Wallet                  *mempoolWallet               `json:"-"`
+	NewTransactionMulticast *multicast.MulticastChannel  `json:"-"`
 }
 
-func (mempool *Mempool) RemoveTxFromMemPool(tx *transaction.Transaction) bool {
-	if mempool.Txs.Exists(tx.Bloom.HashStr) != nil {
+func (mempool *Mempool) RemoveTxsFromMemPool(txs []*transaction.Transaction) bool {
+
+	c := 0
+	for i, tx := range txs {
+		if mempool.Txs.Exists(tx.Bloom.HashStr) != nil {
+			txs[i] = nil
+		} else {
+			c += 1
+		}
+	}
+	if c > 0 {
 		result := make(chan bool)
-		mempool.removeTransactionCn <- &MempoolWorkerRemoveTx{tx, result}
+		mempool.removeTransactionsCn <- &MempoolWorkerRemoveTxs{txs, result}
 		return <-result
 	}
 	return false
@@ -243,14 +252,14 @@ func CreateMemPool() (*Mempool, error) {
 		ContinueProcessingCn:    make(chan bool),
 		newWorkCn:               make(chan *mempoolWork),
 		addTransactionCn:        make(chan *MempoolWorkerAddTx),
-		removeTransactionCn:     make(chan *MempoolWorkerRemoveTx),
+		removeTransactionsCn:    make(chan *MempoolWorkerRemoveTxs),
 		Wallet:                  createMempoolWallet(),
 		NewTransactionMulticast: multicast.NewMulticastChannel(),
 	}
 
 	worker := new(mempoolWorker)
 	recovery.SafeGo(func() {
-		worker.processing(mempool.newWorkCn, mempool.SuspendProcessingCn, mempool.ContinueProcessingCn, mempool.addTransactionCn, mempool.removeTransactionCn, mempool.Txs)
+		worker.processing(mempool.newWorkCn, mempool.SuspendProcessingCn, mempool.ContinueProcessingCn, mempool.addTransactionCn, mempool.removeTransactionsCn, mempool.Txs)
 	})
 
 	mempool.initCLI()

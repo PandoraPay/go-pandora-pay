@@ -86,9 +86,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	//let's remove the transactions from the mempool
 	if len(update.insertedTxs) > 0 {
-		for _, tx := range update.insertedTxsList {
-			queue.chain.mempool.RemoveTxFromMemPool(tx)
-		}
+		queue.chain.mempool.RemoveTxsFromMemPool(update.insertedTxsList)
 	}
 
 	//let's add the transactions in the mempool
