@@ -1,8 +1,10 @@
 package mempool
 
 import (
+	"bytes"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -25,12 +27,18 @@ type MempoolWorkerAddTx struct {
 	Result chan<- error
 }
 
+type MempoolWorkerRemoveTx struct {
+	Tx     *transaction.Transaction
+	Result chan<- bool
+}
+
 //process the worker for transactions to prepare the transactions to the forger
 func (worker *mempoolWorker) processing(
 	newWorkCn <-chan *mempoolWork,
 	suspendProcessingCn <-chan struct{},
 	continueProcessingCn <-chan bool,
 	addTransactionCn <-chan *MempoolWorkerAddTx,
+	removeTransactionCn <-chan *MempoolWorkerRemoveTx,
 	txs *MempoolTxs,
 ) {
 
@@ -39,13 +47,14 @@ func (worker *mempoolWorker) processing(
 	txList := []*mempoolTx{}
 	listIndex := 0
 	txMap := make(map[string]bool)
-	readyListSent := false
+	readyListSent := true
 
 	var accs *accounts.Accounts
 	var toks *tokens.Tokens
 
 	includedTotalSize := uint64(0)
 	includedTxs := []*mempoolTx{}
+	sendReadyListCn := make(chan struct{})
 
 	txs.clearList()
 
@@ -53,7 +62,10 @@ func (worker *mempoolWorker) processing(
 
 		if newWork.chainHash != nil {
 			txs.clearList()
-			readyListSent = false
+			if readyListSent {
+				close(sendReadyListCn)
+				readyListSent = false
+			}
 		}
 		close(newWork.waitAnswerCn)
 
@@ -71,18 +83,37 @@ func (worker *mempoolWorker) processing(
 		}
 	}
 
+	removeTx := func(data *MempoolWorkerRemoveTx) {
+		result := false
+		for i, myTx := range txList {
+			if bytes.Equal(myTx.Tx.Bloom.Hash, data.Tx.Bloom.Hash) {
+
+				txList = append(txList[:i], txList[i+1:]...)
+				delete(txMap, myTx.Tx.Bloom.HashStr)
+				txs.txs.Delete(data.Tx.Bloom.HashStr)
+				result = true
+
+				if listIndex > i {
+					listIndex -= 1
+				}
+
+				break
+			}
+		}
+		data.Result <- result
+	}
+
 	suspended := false
 	for {
 
 		select {
-		case newWork := <-newWorkCn:
-			resetNow(newWork)
-			if work == nil || suspended { //if no work was sent, just loop again
-				continue
-			}
 		case <-suspendProcessingCn:
 			suspended = true
 			continue
+		case newWork := <-newWorkCn:
+			resetNow(newWork)
+		case data := <-removeTransactionCn:
+			removeTx(data)
 		case noError := <-continueProcessingCn:
 			suspended = false
 			if noError {
@@ -91,9 +122,10 @@ func (worker *mempoolWorker) processing(
 				accs = nil
 				toks = nil
 			}
-			if work == nil { //in case it needs a new work
-				continue
-			}
+		}
+
+		if work == nil || suspended { //if no work was sent, just loop again
+			continue
 		}
 
 		//let's check hf the work has been changed
@@ -112,11 +144,13 @@ func (worker *mempoolWorker) processing(
 				}
 
 				select {
-				case newWork := <-newWorkCn:
-					resetNow(newWork)
 				case <-suspendProcessingCn:
 					suspended = true
 					return
+				case newWork := <-newWorkCn:
+					resetNow(newWork)
+				case data := <-removeTransactionCn:
+					removeTx(data)
 				default:
 
 					var tx *mempoolTx
@@ -124,29 +158,22 @@ func (worker *mempoolWorker) processing(
 
 					if listIndex == len(txList) {
 
-						//sending readyList only in case there is no transaction in the add channel
-						if !readyListSent {
-
-							select {
-							case newAddTx = <-addTransactionCn:
-								tx = newAddTx.Tx
-							default:
-								txs.readyList()
-								readyListSent = true
-							}
-
-						}
-
-						if tx == nil {
-							select {
-							case newWork := <-newWorkCn:
-								resetNow(newWork)
-							case <-suspendProcessingCn:
-								suspended = true
-								return
-							case newAddTx = <-addTransactionCn:
-								tx = newAddTx.Tx
-							}
+						select {
+						case newWork := <-newWorkCn:
+							resetNow(newWork)
+							continue
+						case <-suspendProcessingCn:
+							suspended = true
+							return
+						case data := <-removeTransactionCn:
+							removeTx(data)
+						case newAddTx = <-addTransactionCn:
+							tx = newAddTx.Tx
+						case <-sendReadyListCn:
+							//sending readyList only in case there is no transaction in the add channel
+							sendReadyListCn = make(chan struct{})
+							txs.readyList()
+							readyListSent = true
 						}
 
 					} else {

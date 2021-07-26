@@ -38,11 +38,21 @@ type Mempool struct {
 	result                  *atomic.Value               `json:"-"` //*MempoolResult
 	SuspendProcessingCn     chan struct{}               `json:"-"`
 	ContinueProcessingCn    chan bool                   `json:"-"`
-	NewWorkCn               chan *mempoolWork           `json:"-"`
-	AddTransactionCn        chan *MempoolWorkerAddTx    `json:"-"`
+	newWorkCn               chan *mempoolWork           `json:"-"`
+	addTransactionCn        chan *MempoolWorkerAddTx    `json:"-"`
+	removeTransactionCn     chan *MempoolWorkerRemoveTx `json:"-"`
 	Txs                     *MempoolTxs                 `json:"-"`
 	Wallet                  *mempoolWallet              `json:"-"`
 	NewTransactionMulticast *multicast.MulticastChannel `json:"-"`
+}
+
+func (mempool *Mempool) RemoveTxFromMemPool(tx *transaction.Transaction) bool {
+	if mempool.Txs.Exists(tx.Bloom.HashStr) != nil {
+		result := make(chan bool)
+		mempool.removeTransactionCn <- &MempoolWorkerRemoveTx{tx, result}
+		return <-result
+	}
+	return false
 }
 
 func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID string) error {
@@ -143,10 +153,10 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 				errorResult = errors.New("Tx already exists")
 			} else if awaitAnswer {
 				answerCn := make(chan error)
-				mempool.AddTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, answerCn}
+				mempool.addTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, answerCn}
 				errorResult = <-answerCn
 			} else {
-				mempool.AddTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, nil}
+				mempool.addTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, nil}
 			}
 
 			if errorResult != nil {
@@ -209,7 +219,7 @@ func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
 		waitAnswerCn: make(chan struct{}),
 	}
 
-	mempool.NewWorkCn <- newWork
+	mempool.newWorkCn <- newWork
 	<-newWork.waitAnswerCn
 
 }
@@ -218,7 +228,7 @@ func (mempool *Mempool) ContinueWork() {
 	newWork := &mempoolWork{
 		waitAnswerCn: make(chan struct{}),
 	}
-	mempool.NewWorkCn <- newWork
+	mempool.newWorkCn <- newWork
 	<-newWork.waitAnswerCn
 }
 
@@ -231,15 +241,16 @@ func CreateMemPool() (*Mempool, error) {
 		Txs:                     createMempoolTxs(),
 		SuspendProcessingCn:     make(chan struct{}),
 		ContinueProcessingCn:    make(chan bool),
-		NewWorkCn:               make(chan *mempoolWork),
-		AddTransactionCn:        make(chan *MempoolWorkerAddTx),
+		newWorkCn:               make(chan *mempoolWork),
+		addTransactionCn:        make(chan *MempoolWorkerAddTx),
+		removeTransactionCn:     make(chan *MempoolWorkerRemoveTx),
 		Wallet:                  createMempoolWallet(),
 		NewTransactionMulticast: multicast.NewMulticastChannel(),
 	}
 
 	worker := new(mempoolWorker)
 	recovery.SafeGo(func() {
-		worker.processing(mempool.NewWorkCn, mempool.SuspendProcessingCn, mempool.ContinueProcessingCn, mempool.AddTransactionCn, mempool.Txs)
+		worker.processing(mempool.newWorkCn, mempool.SuspendProcessingCn, mempool.ContinueProcessingCn, mempool.addTransactionCn, mempool.removeTransactionCn, mempool.Txs)
 	})
 
 	mempool.initCLI()
