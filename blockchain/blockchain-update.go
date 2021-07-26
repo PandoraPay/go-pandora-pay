@@ -27,8 +27,9 @@ type BlockchainUpdate struct {
 	toks                   *tokens.Tokens
 	allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate
 	removedTxHashes        map[string][]byte
-	removedTxs             [][]byte //ordered kept
+	removedTxsList         [][]byte //ordered kept
 	insertedTxs            map[string]*transaction.Transaction
+	insertedTxsList        []*transaction.Transaction
 	insertedBlocks         []*block_complete.BlockComplete
 	calledByForging        bool
 	exceptSocketUUID       string
@@ -85,16 +86,16 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	//let's remove the transactions from the mempool
 	if len(update.insertedTxs) > 0 {
-		//for _, tx := range update.insertedTxs {
-		//	//tx := update.
+		//for _, tx := range update.insertedTxsList {
+		//	tx := update.
 		//}
 	}
 
 	//let's add the transactions in the mempool
-	if len(update.removedTxs) > 0 {
+	if len(update.removedTxsList) > 0 {
 
-		removedTxs := make([]*transaction.Transaction, len(update.removedTxs))
-		for i, txData := range update.removedTxs {
+		removedTxs := make([]*transaction.Transaction, len(update.removedTxsList))
+		for i, txData := range update.removedTxsList {
 			tx := &transaction.Transaction{}
 			if err := tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
 				return false, err
@@ -110,9 +111,9 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 			}
 		}
 
-		recovery.SafeGo(func() {
+		go func() {
 			_ = queue.chain.mempool.AddTxsToMemPool(removedTxs, update.newChainData.Height, false, false, "*")
-		})
+		}()
 	}
 
 	queue.chain.UpdateTransactions.Broadcast(update.allTransactionsChanges)

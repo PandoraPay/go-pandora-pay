@@ -98,7 +98,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	removedTxHashes := make(map[string][]byte)
 	insertedTxs := make(map[string]*transaction.Transaction)
 
-	removedTxs := [][]byte{}
+	var removedTxsList [][]byte                    //ordered list
+	var insertedTxsList []*transaction.Transaction //ordered list
 
 	removedBlocksHeights := []uint64{}
 	removedBlocksTransactionsCount := uint64(0)
@@ -348,12 +349,30 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				}
 
 				//let's keep the order as well
+				var removedCount, insertedCount int
 				for _, change := range allTransactionsChanges {
 					if !change.Inserted && removedTxHashes[change.TxHashStr] != nil && insertedTxs[change.TxHashStr] == nil {
-						removedTxs = append(removedTxs, writer.GetClone("tx"+change.TxHashStr)) //required because the garbage collector sometimes it deletes the underlying buffers
+						removedCount += 1
+					}
+					if change.Inserted && insertedTxs[change.TxHashStr] != nil && removedTxHashes[change.TxHashStr] == nil {
+						insertedCount += 1
+					}
+				}
+				removedTxsList = make([][]byte, removedCount)
+				insertedTxsList = make([]*transaction.Transaction, insertedCount)
+				removedCount, insertedCount = 0, 0
+
+				for _, change := range allTransactionsChanges {
+					if !change.Inserted && removedTxHashes[change.TxHashStr] != nil && insertedTxs[change.TxHashStr] == nil {
+						removedTxsList[removedCount] = writer.GetClone("tx" + change.TxHashStr) //required because the garbage collector sometimes it deletes the underlying buffers
 						if err = writer.Delete("tx" + change.TxHashStr); err != nil {
 							panic("Error deleting transaction: " + err.Error())
 						}
+						removedCount += 1
+					}
+					if change.Inserted && insertedTxs[change.TxHashStr] != nil && removedTxHashes[change.TxHashStr] == nil {
+						insertedTxsList[insertedCount] = change.Tx
+						insertedCount += 1
 					}
 				}
 
@@ -403,9 +422,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		update.newChainData = newChainData
 		update.accs = accs
 		update.toks = toks
-		update.removedTxs = removedTxs
+		update.removedTxsList = removedTxsList
 		update.removedTxHashes = removedTxHashes
 		update.insertedTxs = insertedTxs
+		update.insertedTxsList = insertedTxsList
 		update.insertedBlocks = insertedBlocks
 		update.allTransactionsChanges = allTransactionsChanges
 	}
