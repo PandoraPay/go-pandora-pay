@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -75,7 +76,6 @@ func (worker *mempoolWorker) processing(
 			includedTotalSize = uint64(0)
 			includedTxs = []*mempoolTx{}
 			listIndex = 0
-			txsMap = make(map[string]bool)
 			if len(txsList) > 1 {
 				sortTxs(txsList)
 			}
@@ -94,7 +94,15 @@ func (worker *mempoolWorker) processing(
 			}
 		}
 		if len(removedTxsMap) > 0 {
-			newList := make([]*mempoolTx, len(txsList)-len(removedTxsMap))
+
+			newLength := 0
+			for _, tx := range txsList {
+				if !removedTxsMap[tx.Tx.Bloom.HashStr] {
+					newLength += 1
+				}
+			}
+
+			newList := make([]*mempoolTx, newLength)
 			c := 0
 			for i, tx := range txsList {
 				if !removedTxsMap[tx.Tx.Bloom.HashStr] {
@@ -190,9 +198,15 @@ func (worker *mempoolWorker) processing(
 						listIndex += 1
 					}
 
+					if tx == nil {
+						continue
+					}
+
 					var finalErr error
 
-					if tx != nil && !txsMap[tx.Tx.Bloom.HashStr] {
+					if txsMap[tx.Tx.Bloom.HashStr] {
+						finalErr = errors.New("Already found")
+					} else {
 
 						txsMap[tx.Tx.Bloom.HashStr] = true
 
