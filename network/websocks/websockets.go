@@ -90,7 +90,7 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 	for i := range all {
 		out[i] = <-chans
 		if out[i] != nil && out[i].Err != nil {
-			gui.GUI.Error("Error propagating", out[i].Err)
+			gui.GUI.Error("Error propagating", out[i].Err, name, len(data), all[i].RemoteAddr)
 		}
 	}
 

@@ -142,10 +142,10 @@ func (api *APICommon) GetTx(request *api_types.APITransactionRequest) ([]byte, e
 		if tx != nil {
 			mempool = true
 		} else {
-			tx, txInfo, err = api.ApiStore.openLoadTx(request.Hash, request.Height)
+			tx, txInfo, err = api.ApiStore.openLoadTx(request.Hash, 0)
 		}
 	} else {
-		tx, txInfo, err = api.ApiStore.openLoadTx(request.Hash, request.Height)
+		tx, txInfo, err = api.ApiStore.openLoadTx(nil, request.Height)
 	}
 
 	if err != nil || tx == nil {
