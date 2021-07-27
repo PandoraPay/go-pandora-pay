@@ -210,9 +210,7 @@ func (worker *mempoolWorker) processing(
 
 						txsMap[tx.Tx.Bloom.HashStr] = true
 
-						if err = tx.Tx.IncludeTransaction(work.chainHeight, accs, toks); err != nil {
-
-							finalErr = err
+						if finalErr = tx.Tx.IncludeTransaction(work.chainHeight, accs, toks); finalErr != nil {
 
 							accs.Rollback()
 							toks.Rollback()

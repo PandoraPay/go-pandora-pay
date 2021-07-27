@@ -43,19 +43,19 @@ func (consensus *Consensus) execute() {
 		defer consensus.mempool.NewTransactionMulticast.RemoveChannel(newTxsCn)
 
 		for {
-			dataReceived, ok := <-newTxsCn
+			notificationReceived, ok := <-newTxsCn
 			if !ok {
 				return
 			}
 
-			data := dataReceived.(*multicast.MulticastChannelData)
+			notification := notificationReceived.(*multicast.MulticastChannelData)
 
-			notification := data.Data.(*mempool.MempoolTxBroadcastNotification)
+			data := notification.Data.(*mempool.MempoolTxBroadcastNotification)
 
 			//it is safe to read
-			consensus.broadcastTxs(notification.Txs, notification.AwaitPropagation, notification.ExceptSocketUUID)
+			consensus.broadcastTxs(data.Txs, data.AwaitPropagation, data.ExceptSocketUUID)
 
-			data.Answer <- struct{}{}
+			notification.Answer <- struct{}{}
 		}
 
 	})

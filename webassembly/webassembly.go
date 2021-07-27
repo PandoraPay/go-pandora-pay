@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
 	"pandora-pay/network/api/api-common/api_types"
+	"pandora-pay/recovery"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/address"
 	"syscall/js"
@@ -28,14 +29,14 @@ func convertJSON(obj interface{}) (string, error) {
 
 func promiseFunction(callback func() (interface{}, error)) interface{} {
 	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
-		go func() {
+		recovery.SafeGo(func() {
 			result, err := callback()
 			if err != nil {
 				args2[1].Invoke(errorConstructor.New(err.Error()))
 				return
 			}
 			args2[0].Invoke(result)
-		}()
+		})
 		return nil
 	}))
 }

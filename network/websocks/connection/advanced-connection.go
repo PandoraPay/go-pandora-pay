@@ -169,41 +169,38 @@ func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) ([]byte, er
 
 func (c *AdvancedConnection) processRead(message *AdvancedConnectionMessage) {
 
-	recovery.SafeGo(func() {
-		if !message.ReplyStatus {
+	if !message.ReplyStatus {
 
-			out, err := c.get(message)
+		out, err := c.get(message)
 
-			if message.ReplyAwait {
-				if err != nil {
-					_ = c.sendNow(message.ReplyId, []byte{0}, []byte(err.Error()), true)
-				} else {
-					_ = c.sendNow(message.ReplyId, []byte{1}, out, true)
-				}
-			}
-
-		} else {
-
-			output := &AdvancedConnectionAnswer{}
-			if len(message.Name) == 1 && message.Name[0] == 1 {
-				output.Out = message.Data
+		if message.ReplyAwait {
+			if err != nil {
+				_ = c.sendNow(message.ReplyId, []byte{0}, []byte(err.Error()), true)
 			} else {
-				output.Err = errors.New(string(message.Data))
-			}
-
-			c.answerMapLock.Lock()
-			cn := c.answerMap[message.ReplyId]
-			if cn != nil {
-				delete(c.answerMap, message.ReplyId)
-			}
-			c.answerMapLock.Unlock()
-
-			if cn != nil {
-				cn <- output
+				_ = c.sendNow(message.ReplyId, []byte{1}, out, true)
 			}
 		}
-	})
 
+	} else {
+
+		output := &AdvancedConnectionAnswer{}
+		if len(message.Name) == 1 && message.Name[0] == 1 {
+			output.Out = message.Data
+		} else {
+			output.Err = errors.New(string(message.Data))
+		}
+
+		c.answerMapLock.Lock()
+		cn := c.answerMap[message.ReplyId]
+		if cn != nil {
+			delete(c.answerMap, message.ReplyId)
+		}
+		c.answerMapLock.Unlock()
+
+		if cn != nil {
+			cn <- output
+		}
+	}
 }
 
 func (c *AdvancedConnection) ReadPump() {
@@ -215,12 +212,12 @@ func (c *AdvancedConnection) ReadPump() {
 
 	for {
 
-		ctx, cancel = context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
+		ctx, cancel = context.WithCancel(context.Background())
 		_, read, err := c.Conn.Read(ctx)
 		cancel()
 
 		if err != nil {
-			c.Close("Timeout read")
+			c.Close("Error reading")
 			break
 		}
 
@@ -231,7 +228,7 @@ func (c *AdvancedConnection) ReadPump() {
 
 		//gui.Log(string(message.Name) + " " + strconv.FormatUint(uint64(message.ReplyId), 10) + " " + string(message.Data))
 
-		c.processRead(message)
+		recovery.SafeGo(func() { c.processRead(message) })
 	}
 
 }
