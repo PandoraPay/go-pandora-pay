@@ -106,6 +106,7 @@ func (worker *mempoolWorker) processing(
 					}
 				}
 			}
+			txsList = newList
 		}
 
 		data.Result <- result
