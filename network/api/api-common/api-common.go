@@ -257,7 +257,7 @@ func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) ([]byte, 
 }
 
 func (api *APICommon) GetMempoolExists(txId []byte) ([]byte, error) {
-	if len(txId) != 32 {
+	if len(txId) != cryptography.HashSize {
 		return nil, errors.New("TxId must be 32 byte")
 	}
 	tx := api.mempool.Txs.Exists(string(txId))

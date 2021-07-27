@@ -169,38 +169,40 @@ func (c *AdvancedConnection) get(message *AdvancedConnectionMessage) ([]byte, er
 
 func (c *AdvancedConnection) processRead(message *AdvancedConnectionMessage) {
 
-	if !message.ReplyStatus {
+	recovery.SafeGo(func() {
+		if !message.ReplyStatus {
 
-		out, err := c.get(message)
+			out, err := c.get(message)
 
-		if message.ReplyAwait {
-			if err != nil {
-				_ = c.sendNow(message.ReplyId, []byte{0}, []byte(err.Error()), true)
+			if message.ReplyAwait {
+				if err != nil {
+					_ = c.sendNow(message.ReplyId, []byte{0}, []byte(err.Error()), true)
+				} else {
+					_ = c.sendNow(message.ReplyId, []byte{1}, out, true)
+				}
+			}
+
+		} else {
+
+			output := &AdvancedConnectionAnswer{}
+			if len(message.Name) == 1 && message.Name[0] == 1 {
+				output.Out = message.Data
 			} else {
-				_ = c.sendNow(message.ReplyId, []byte{1}, out, true)
+				output.Err = errors.New(string(message.Data))
+			}
+
+			c.answerMapLock.Lock()
+			cn := c.answerMap[message.ReplyId]
+			if cn != nil {
+				delete(c.answerMap, message.ReplyId)
+			}
+			c.answerMapLock.Unlock()
+
+			if cn != nil {
+				cn <- output
 			}
 		}
-
-	} else {
-
-		output := &AdvancedConnectionAnswer{}
-		if len(message.Name) == 1 && message.Name[0] == 1 {
-			output.Out = message.Data
-		} else {
-			output.Err = errors.New(string(message.Data))
-		}
-
-		c.answerMapLock.Lock()
-		cn := c.answerMap[message.ReplyId]
-		if cn != nil {
-			delete(c.answerMap, message.ReplyId)
-		}
-		c.answerMapLock.Unlock()
-
-		if cn != nil {
-			cn <- output
-		}
-	}
+	})
 
 }
 
@@ -230,8 +232,7 @@ func (c *AdvancedConnection) ReadPump() {
 
 		//gui.Log(string(message.Name) + " " + strconv.FormatUint(uint64(message.ReplyId), 10) + " " + string(message.Data))
 
-		recovery.SafeGo(func() { c.processRead(message) })
-
+		c.processRead(message)
 	}
 
 }
