@@ -215,8 +215,7 @@ func (c *AdvancedConnection) ReadPump() {
 
 	for {
 
-		ctx, cancel = context.WithCancel(context.Background())
-
+		ctx, cancel = context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
 		_, read, err := c.Conn.Read(ctx)
 		cancel()
 
