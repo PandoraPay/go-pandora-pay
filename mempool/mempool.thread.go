@@ -87,7 +87,7 @@ func (worker *mempoolWorker) processing(
 
 		removedTxsMap := make(map[string]bool)
 		for _, tx := range data.Txs {
-			if txsMap[tx.Bloom.HashStr] {
+			if tx != nil && txsMap[tx.Bloom.HashStr] {
 				removedTxsMap[tx.Bloom.HashStr] = true
 				delete(txsMap, tx.Bloom.HashStr)
 				result = true
