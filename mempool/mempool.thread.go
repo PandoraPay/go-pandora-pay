@@ -70,6 +70,7 @@ func (worker *mempoolWorker) processing(
 		close(newWork.waitAnswerCn)
 
 		if newWork.chainHash != nil {
+			txsMap = make(map[string]bool)
 			accs = nil
 			toks = nil
 			work = newWork
