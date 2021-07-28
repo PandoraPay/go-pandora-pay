@@ -221,7 +221,6 @@ func (worker *mempoolWorker) processing(
 								//this is done because listIndex was incremented already before
 								txsList = append(txsList[:listIndex-1], txsList[listIndex:]...)
 								listIndex--
-								delete(txsMap, tx.Tx.Bloom.HashStr)
 							}
 
 							txs.txs.Delete(tx.Tx.Bloom.HashStr)
