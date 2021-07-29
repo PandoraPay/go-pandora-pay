@@ -50,7 +50,7 @@ func (mempool *Mempool) RemoveTxsFromMemPool(txs []*transaction.Transaction) boo
 
 	c := 0
 	for i, tx := range txs {
-		if mempool.Txs.Exists(tx.Bloom.HashStr) != nil {
+		if mempool.Txs.Exists(tx.Bloom.HashStr) == nil {
 			txs[i] = nil
 		} else {
 			c += 1

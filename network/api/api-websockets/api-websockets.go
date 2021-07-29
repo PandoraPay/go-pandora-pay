@@ -12,7 +12,6 @@ import (
 	"pandora-pay/network/api/api-common"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection"
-	"sync"
 )
 
 type APIWebsockets struct {
@@ -22,7 +21,6 @@ type APIWebsockets struct {
 	apiCommon                 *api_common.APICommon
 	apiStore                  *api_common.APIStore
 	SubscriptionNotifications *multicast.MulticastChannel //*api_common.APISubscriptionNotification
-	mempoolDownloadPending    *sync.Map                   //string
 }
 
 func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -191,7 +189,7 @@ func (api *APIWebsockets) getMempoolExists(conn *connection.AdvancedConnection, 
 	}
 }
 
-func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
 
 	if len(values) != 32 {
 		return nil, errors.New("Invalid hash")
@@ -200,33 +198,59 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 
 	if api.mempool.Txs.Exists(hashStr) != nil {
 		return []byte{1}, nil
-	} else {
-
-		if _, loaded := api.mempoolDownloadPending.LoadOrStore(hashStr, true); loaded == true {
-			return []byte{1}, nil
-		}
-		defer api.mempoolDownloadPending.Delete(hashStr)
-
-		result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APITransactionRequest{0, values, api_types.RETURN_SERIALIZED})
-
-		if result.Out != nil && result.Err == nil {
-
-			data := &api_types.APITransaction{}
-			if err := json.Unmarshal(result.Out, data); err != nil {
-				return nil, err
-			}
-
-			tx := &transaction.Transaction{}
-			if err := tx.Deserialize(helpers.NewBufferReader(data.TxSerialized)); err != nil {
-				return nil, err
-			}
-
-			return api.apiCommon.PostMempoolInsert(tx, conn.UUID)
-		}
-
 	}
 
-	return []byte{0}, nil
+	multicastFound, loaded := api.apiCommon.MempoolDownloadPending.LoadOrStore(hashStr, multicast.NewMulticastChannel())
+	multicast := multicastFound.(*multicast.MulticastChannel)
+
+	if loaded == true {
+		cn := multicast.AddListener()
+		if errData := <-cn; errData != nil {
+			return nil, errData.(error)
+		}
+		return []byte{1}, nil
+	}
+
+	defer func() {
+		if !loaded && err != nil {
+			api.apiCommon.MempoolDownloadPending.Delete(hashStr)
+			multicast.Broadcast(err)
+		}
+	}()
+
+	result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APITransactionRequest{0, values, api_types.RETURN_SERIALIZED})
+	if result.Err != nil {
+		err = result.Err
+		return
+	}
+
+	if result.Out == nil {
+		err = errors.New("Tx was not downloaded")
+		return
+	}
+
+	data := &api_types.APITransaction{}
+	if err = json.Unmarshal(result.Out, data); err != nil {
+		return
+	}
+
+	tx := &transaction.Transaction{}
+	if err = tx.Deserialize(helpers.NewBufferReader(data.TxSerialized)); err != nil {
+		return
+	}
+
+	if err = tx.BloomAll(); err != nil {
+		return
+	}
+	if err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, false, conn.UUID); err != nil {
+		return
+	}
+
+	api.apiCommon.MempoolDownloadPending.Delete(tx.Bloom.HashStr)
+	multicast.Broadcast(nil)
+
+	out = []byte{1}
+	return
 }
 
 func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, mempool *mempool.Mempool) *APIWebsockets {
@@ -237,7 +261,6 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		apiCommon:                 apiCommon,
 		mempool:                   mempool,
 		SubscriptionNotifications: multicast.NewMulticastChannel(),
-		mempoolDownloadPending:    &sync.Map{},
 	}
 
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error){

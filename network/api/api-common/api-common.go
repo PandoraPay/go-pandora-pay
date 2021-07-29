@@ -12,21 +12,24 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/recovery"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
+	"sync"
 	"sync/atomic"
 )
 
 type APICommon struct {
-	mempool         *mempool.Mempool
-	chain           *blockchain.Blockchain
-	localChain      *atomic.Value //*APIBlockchain
-	localChainSync  *atomic.Value //*blockchain_sync.BlockchainSyncData
-	ApiCommonFaucet *APICommonFaucet
-	ApiStore        *APIStore
+	mempool                *mempool.Mempool
+	chain                  *blockchain.Blockchain
+	localChain             *atomic.Value //*APIBlockchain
+	localChainSync         *atomic.Value //*blockchain_sync.BlockchainSyncData
+	ApiCommonFaucet        *APICommonFaucet
+	ApiStore               *APIStore
+	MempoolDownloadPending *sync.Map //[string]chan error
 }
 
 func (api *APICommon) GetBlockchain() ([]byte, error) {
@@ -267,13 +270,38 @@ func (api *APICommon) GetMempoolExists(txId []byte) ([]byte, error) {
 	return json.Marshal(tx)
 }
 
-func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocketUUID string) ([]byte, error) {
-	if err := tx.BloomAll(); err != nil {
-		return nil, err
+func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocketUUID string) (out []byte, err error) {
+
+	tx.BloomNow()
+
+	multicastFound, loaded := api.MempoolDownloadPending.LoadOrStore(tx.Bloom.HashStr, multicast.NewMulticastChannel())
+	multicast := multicastFound.(*multicast.MulticastChannel)
+
+	if loaded == true {
+		cn := multicast.AddListener()
+		if errData := <-cn; errData != nil {
+			return nil, errData.(error)
+		}
+		return []byte{1}, nil
 	}
-	if err := api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, false, exceptSocketUUID); err != nil {
-		return nil, err
+
+	defer func() {
+		if !loaded && err != nil {
+			api.MempoolDownloadPending.Delete(tx.Bloom.HashStr)
+			multicast.Broadcast(err)
+		}
+	}()
+
+	if err = tx.BloomAll(); err != nil {
+		return
 	}
+	if err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, false, exceptSocketUUID); err != nil {
+		return
+	}
+
+	api.MempoolDownloadPending.Delete(tx.Bloom.HashStr)
+	multicast.Broadcast(nil)
+
 	return []byte{1}, nil
 }
 
@@ -312,6 +340,7 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wal
 		&atomic.Value{}, //*APIBlockchainSync
 		apiCommonFaucet,
 		apiStore,
+		&sync.Map{},
 	}
 
 	recovery.SafeGo(func() {
