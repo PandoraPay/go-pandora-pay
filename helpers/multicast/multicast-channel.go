@@ -41,21 +41,20 @@ func (self *MulticastChannel) Broadcast(data interface{}) {
 func (self *MulticastChannel) BroadcastAwait(data interface{}) {
 
 	listeners := self.listeners.Load().([]chan interface{})
-	answerChannels := make([]chan interface{}, len(listeners))
 
-	for i, channel := range listeners {
+	answers := make(chan interface{}, len(listeners)+1)
 
-		answerChannels[i] = make(chan interface{})
+	for _, channel := range listeners {
 
 		channel <- &MulticastChannelData{
-			answerChannels[i],
+			answers,
 			data,
 		}
 
 	}
 
-	for _, cn := range answerChannels {
-		<-cn
+	for range listeners {
+		<-answers
 	}
 
 }

@@ -73,9 +73,6 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 
 	finalTxs := make([]*mempoolTxProcess, len(txs))
 
-	mempool.Wallet.RLock()
-	defer mempool.Wallet.RUnlock()
-
 	for i, tx := range txs {
 
 		finalTxs[i] = &mempoolTxProcess{}
@@ -95,7 +92,7 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 		case transaction_type.TX_SIMPLE:
 			txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 			for _, vin := range txBase.Vin {
-				if mempool.Wallet.myAddressesMap[string(vin.Bloom.PublicKeyHash)] != nil {
+				if mempool.Wallet.Exists(vin.Bloom.PublicKeyHash) {
 					mine = true
 					break
 				}

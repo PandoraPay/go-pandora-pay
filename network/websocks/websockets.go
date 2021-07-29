@@ -75,11 +75,12 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 
 	all := websockets.GetAllSockets()
 
-	chans := make(chan *connection.AdvancedConnectionAnswer, len(all))
+	chans := make(chan *connection.AdvancedConnectionAnswer, len(all)+1)
 	for _, conn := range all {
 		if conn.UUID != exceptSocketUUID && consensusTypeAccepted[conn.Handshake.Consensus] {
 			go func(conn *connection.AdvancedConnection) {
-				chans <- conn.SendAwaitAnswer(name, data)
+				answer := conn.SendAwaitAnswer(name, data)
+				chans <- answer
 			}(conn)
 		} else {
 			chans <- nil
@@ -90,7 +91,7 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 	for i := range all {
 		out[i] = <-chans
 		if out[i] != nil && out[i].Err != nil {
-			gui.GUI.Error("Error propagating", out[i].Err, len(all), string(name), len(data), all[i].RemoteAddr)
+			gui.GUI.Error("Error propagating", out[i].Err, len(all), string(name), string(data), all[i].RemoteAddr, all[i].UUID)
 		}
 	}
 
@@ -105,22 +106,6 @@ func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, conse
 func (websockets *Websockets) BroadcastJSONAwaitAnswer(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID string) []*connection.AdvancedConnectionAnswer {
 	out, _ := json.Marshal(data)
 	return websockets.BroadcastAwaitAnswer(name, out, consensusTypeAccepted, exceptSocketUUID)
-}
-
-func (websockets *Websockets) BroadcastVariable(name []byte, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID string, awaitPropagation bool) {
-	if awaitPropagation {
-		websockets.BroadcastAwaitAnswer(name, data, consensusTypeAccepted, exceptSocketUUID)
-	} else {
-		websockets.Broadcast(name, data, consensusTypeAccepted, exceptSocketUUID)
-	}
-}
-
-func (websockets *Websockets) BroadcastJSONVariable(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID string, awaitPropagation bool) {
-	if awaitPropagation {
-		websockets.BroadcastJSONAwaitAnswer(name, data, consensusTypeAccepted, exceptSocketUUID)
-	} else {
-		websockets.BroadcastJSON(name, data, consensusTypeAccepted, exceptSocketUUID)
-	}
 }
 
 func (websockets *Websockets) closedConnectionNow(conn *connection.AdvancedConnection) bool {

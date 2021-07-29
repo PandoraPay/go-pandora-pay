@@ -90,7 +90,6 @@ func (worker *mempoolWorker) processing(
 		for _, tx := range data.Txs {
 			if tx != nil && txsMap[tx.Bloom.HashStr] {
 				removedTxsMap[tx.Bloom.HashStr] = true
-				delete(txsMap, tx.Bloom.HashStr)
 				result = true
 			}
 		}
@@ -104,6 +103,7 @@ func (worker *mempoolWorker) processing(
 			}
 
 			newList := make([]*mempoolTx, newLength)
+			newListIndex := listIndex
 			c := 0
 			for i, tx := range txsList {
 				if !removedTxsMap[tx.Tx.Bloom.HashStr] {
@@ -111,11 +111,12 @@ func (worker *mempoolWorker) processing(
 					c += 1
 				} else {
 					if listIndex > i {
-						listIndex -= 1
+						newListIndex -= 1
 					}
 				}
 			}
 			txsList = newList
+			listIndex = newListIndex
 		}
 
 		data.Result <- result
@@ -183,8 +184,6 @@ func (worker *mempoolWorker) processing(
 						case <-suspendProcessingCn:
 							suspended = true
 							return
-						case data := <-removeTransactionsCn:
-							removeTxs(data)
 						case newAddTx = <-addTransactionCn:
 							tx = newAddTx.Tx
 						case <-sendReadyListCn:
@@ -237,6 +236,9 @@ func (worker *mempoolWorker) processing(
 
 								accs.CommitChanges()
 								toks.CommitChanges()
+							} else {
+								accs.Rollback()
+								toks.Rollback()
 							}
 
 							if newAddTx != nil {

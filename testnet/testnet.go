@@ -2,6 +2,7 @@ package testnet
 
 import (
 	"encoding/hex"
+	"github.com/tevino/abool"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
@@ -19,7 +20,6 @@ import (
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
 	wallet_address "pandora-pay/wallet/address"
-	"sync"
 	"time"
 )
 
@@ -92,7 +92,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 	dstsAmounts := []uint64{}
 	dstsTokens := [][]byte{}
 
-	count := rand.Intn(19) + 1
+	count := rand.Intn(10) + 1
 	sum := uint64(0)
 	for i := 0; i < count; i++ {
 		privateKey := addresses.GenerateNewPrivateKey()
@@ -127,7 +127,7 @@ func (testnet *Testnet) run() {
 	updateChannel := testnet.chain.UpdateNewChain.AddListener()
 	defer testnet.chain.UpdateNewChain.RemoveChannel(updateChannel)
 
-	lock := sync.Mutex{}
+	creatingTransactions := abool.New()
 
 	for {
 
@@ -141,28 +141,23 @@ func (testnet *Testnet) run() {
 
 		recovery.SafeGo(func() {
 
-			lock.Lock()
-			defer lock.Unlock()
-
-			time.Sleep(5 * time.Second)
-
 			gui.GUI.Log("UpdateNewChain received! 1")
 			defer gui.GUI.Log("UpdateNewChain received! DONE")
 
 			err := func() (err error) {
 
-				if blockHeight == 30 {
+				if blockHeight == 20 {
 					if err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*config_stake.GetRequiredStake(blockHeight)); err != nil {
 						return
 					}
 				}
-				if blockHeight == 50 {
+				if blockHeight == 30 {
 					if err = testnet.testnetCreateTransfersNewWallets(blockHeight); err != nil {
 						return
 					}
 				}
 
-				if blockHeight >= 60 && syncTime != 0 {
+				if blockHeight >= 40 && syncTime != 0 {
 
 					var addr *wallet_address.WalletAddress
 					addr, err = testnet.wallet.GetWalletAddress(0)
@@ -205,10 +200,15 @@ func (testnet *Testnet) run() {
 								}
 							}
 						} else {
-							if testnet.mempool.CountInputTxs(addr.PublicKeyHash) < 100 {
-								for i := 0; i < 20; i++ {
-									if err = testnet.testnetCreateTransfers(blockHeight); err != nil {
-										//return
+
+							if creatingTransactions.IsNotSet() {
+								creatingTransactions.Set()
+								for {
+									time.Sleep(time.Millisecond*time.Duration(rand.Intn(500)) + time.Millisecond*time.Duration(500))
+									if testnet.mempool.CountInputTxs(addr.PublicKeyHash) < 20 {
+										if err = testnet.testnetCreateTransfers(blockHeight); err != nil {
+											//return
+										}
 									}
 								}
 							}

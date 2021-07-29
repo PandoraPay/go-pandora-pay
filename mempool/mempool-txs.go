@@ -19,7 +19,7 @@ type MempoolTxsData struct {
 }
 
 type MempoolTxs struct {
-	txs *sync.Map // [string]*mempoolTx
+	txs *sync.Map // [string]*transaction.Transaction
 
 	data             *atomic.Value //*MempoolTxsData
 	waitTxsListReady *atomic.Value //chan <- interface{}
@@ -145,7 +145,7 @@ func createMempoolTxs() (txs *MempoolTxs) {
 
 			if txsCount != last {
 				gui.GUI.Info2Update("mempool", strconv.FormatInt(txsCount, 10))
-				txsCount = last
+				last = txsCount
 			}
 			time.Sleep(1 * time.Second)
 		}

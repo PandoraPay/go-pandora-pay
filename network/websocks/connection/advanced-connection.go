@@ -23,20 +23,22 @@ const (
 )
 
 type AdvancedConnection struct {
-	UUID                   string
-	Conn                   *websocket.Conn
-	Handshake              *ConnectionHandshake
-	RemoteAddr             string
-	answerCounter          uint32
-	Closed                 chan struct{}
-	InitializedStatus      InitializedStatusType //use the mutex
-	InitializedStatusMutex *sync.Mutex
-	IsClosed               *abool.AtomicBool
-	getMap                 map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
-	answerMap              map[uint32]chan *AdvancedConnectionAnswer
-	answerMapLock          *sync.Mutex
-	Subscriptions          *Subscriptions
-	ConnectionType         bool
+	UUID                    string
+	Conn                    *websocket.Conn
+	Handshake               *ConnectionHandshake
+	RemoteAddr              string
+	answerCounter           uint32
+	Closed                  chan struct{}
+	InitializedStatus       InitializedStatusType //use the mutex
+	InitializedStatusMutex  *sync.Mutex
+	IsClosed                *abool.AtomicBool
+	getMap                  map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
+	answerMap               map[uint32]chan *AdvancedConnectionAnswer
+	answerMapLock           *sync.Mutex
+	contextConnection       context.Context
+	contextConnectionCancel context.CancelFunc
+	Subscriptions           *Subscriptions
+	ConnectionType          bool
 }
 
 func (c *AdvancedConnection) Close(reason string) error {
@@ -53,24 +55,25 @@ func (c *AdvancedConnection) connSendJSON(message interface{}) error {
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
-	defer cancel()
-
 	if c.IsClosed.IsSet() {
 		return errors.New("Closed")
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	return c.Conn.Write(ctx, websocket.MessageBinary, data)
 }
 
 func (c *AdvancedConnection) connSendPing() error {
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_PONG_WAIT)
-	defer cancel()
-
 	if c.IsClosed.IsSet() {
 		return errors.New("Closed")
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_PONG_WAIT)
+	defer cancel()
+
 	return c.Conn.Ping(ctx)
 }
 
@@ -205,10 +208,10 @@ func (c *AdvancedConnection) processRead(message *AdvancedConnectionMessage) {
 
 func (c *AdvancedConnection) ReadPump() {
 
-	var cancel context.CancelFunc
-	var ctx context.Context
-
 	c.Conn.SetReadLimit(int64(config.WEBSOCKETS_MAX_READ))
+
+	var ctx context.Context
+	var cancel context.CancelFunc
 
 	for {
 
@@ -225,8 +228,6 @@ func (c *AdvancedConnection) ReadPump() {
 		if err = json.Unmarshal(read, &message); err != nil {
 			continue
 		}
-
-		//gui.Log(string(message.Name) + " " + strconv.FormatUint(uint64(message.ReplyId), 10) + " " + string(message.Data))
 
 		recovery.SafeGo(func() { c.processRead(message) })
 	}
@@ -260,20 +261,24 @@ func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, getMap ma
 		return nil, err
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	advancedConnection := &AdvancedConnection{
-		UUID:                   u.String(),
-		Conn:                   conn,
-		Handshake:              nil,
-		RemoteAddr:             remoteAddr,
-		Closed:                 make(chan struct{}),
-		InitializedStatus:      INITIALIZED_STATUS_CREATED,
-		InitializedStatusMutex: &sync.Mutex{},
-		IsClosed:               abool.New(),
-		answerCounter:          0,
-		getMap:                 getMap,
-		answerMap:              make(map[uint32]chan *AdvancedConnectionAnswer),
-		answerMapLock:          &sync.Mutex{},
-		ConnectionType:         connectionType,
+		UUID:                    u.String(),
+		Conn:                    conn,
+		Handshake:               nil,
+		RemoteAddr:              remoteAddr,
+		Closed:                  make(chan struct{}),
+		InitializedStatus:       INITIALIZED_STATUS_CREATED,
+		InitializedStatusMutex:  &sync.Mutex{},
+		IsClosed:                abool.New(),
+		answerCounter:           0,
+		getMap:                  getMap,
+		answerMap:               make(map[uint32]chan *AdvancedConnectionAnswer),
+		answerMapLock:           &sync.Mutex{},
+		ConnectionType:          connectionType,
+		contextConnection:       ctx,
+		contextConnectionCancel: cancel,
 	}
 	advancedConnection.Subscriptions = CreateSubscriptions(advancedConnection, newSubscriptionCn, removeSubscriptionCn)
 	return advancedConnection, nil

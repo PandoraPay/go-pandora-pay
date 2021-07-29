@@ -33,6 +33,14 @@ func (w *mempoolWallet) RemoveWallet(publicKeyHash []byte) {
 	delete(w.myAddressesMap, string(publicKeyHash))
 }
 
+func (w *mempoolWallet) Exists(publicKeyHash []byte) bool {
+
+	w.RLock()
+	defer w.RUnlock()
+
+	return w.myAddressesMap[string(publicKeyHash)] != nil
+}
+
 func createMempoolWallet() (w *mempoolWallet) {
 	w = &mempoolWallet{
 		myAddressesMap: make(map[string]*mempoolWalletAddress),

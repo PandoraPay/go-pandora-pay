@@ -50,12 +50,16 @@ func (consensus *Consensus) execute() {
 
 			notification := notificationReceived.(*multicast.MulticastChannelData)
 
-			data := notification.Data.(*mempool.MempoolTxBroadcastNotification)
+			go func(notification *multicast.MulticastChannelData) {
 
-			//it is safe to read
-			consensus.broadcastTxs(data.Txs, data.AwaitPropagation, data.ExceptSocketUUID)
+				data := notification.Data.(*mempool.MempoolTxBroadcastNotification)
 
-			notification.Answer <- struct{}{}
+				//it is safe to read
+				consensus.broadcastTxs(data.Txs, data.AwaitPropagation, data.ExceptSocketUUID)
+
+				notification.Answer <- struct{}{}
+
+			}(notification)
 		}
 
 	})
