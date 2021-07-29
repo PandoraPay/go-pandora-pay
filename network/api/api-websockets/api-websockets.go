@@ -212,10 +212,8 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 	}
 
 	defer func() {
-		if !loaded && err != nil {
-			api.apiCommon.MempoolDownloadPending.Delete(hashStr)
-			multicast.Broadcast(err)
-		}
+		api.apiCommon.MempoolDownloadPending.Delete(hashStr)
+		multicast.Broadcast(err)
 	}()
 
 	result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APITransactionRequest{0, values, api_types.RETURN_SERIALIZED})
@@ -245,9 +243,6 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 	if err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, false, conn.UUID); err != nil {
 		return
 	}
-
-	api.apiCommon.MempoolDownloadPending.Delete(tx.Bloom.HashStr)
-	multicast.Broadcast(nil)
 
 	out = []byte{1}
 	return

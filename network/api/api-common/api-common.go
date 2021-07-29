@@ -272,7 +272,12 @@ func (api *APICommon) GetMempoolExists(txId []byte) ([]byte, error) {
 
 func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocketUUID string) (out []byte, err error) {
 
+	//it needs to compute  tx.Bloom.HashStr
 	tx.BloomNow()
+
+	if api.mempool.Txs.Exists(tx.Bloom.HashStr) != nil {
+		return []byte{1}, nil
+	}
 
 	multicastFound, loaded := api.MempoolDownloadPending.LoadOrStore(tx.Bloom.HashStr, multicast.NewMulticastChannel())
 	multicast := multicastFound.(*multicast.MulticastChannel)
@@ -286,10 +291,8 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocke
 	}
 
 	defer func() {
-		if !loaded && err != nil {
-			api.MempoolDownloadPending.Delete(tx.Bloom.HashStr)
-			multicast.Broadcast(err)
-		}
+		api.MempoolDownloadPending.Delete(tx.Bloom.HashStr)
+		multicast.Broadcast(err)
 	}()
 
 	if err = tx.BloomAll(); err != nil {
@@ -298,9 +301,6 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocke
 	if err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, false, exceptSocketUUID); err != nil {
 		return
 	}
-
-	api.MempoolDownloadPending.Delete(tx.Bloom.HashStr)
-	multicast.Broadcast(nil)
 
 	return []byte{1}, nil
 }
