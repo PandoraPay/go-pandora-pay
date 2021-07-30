@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/big"
 	"math/rand"
+	"net/url"
 	"pandora-pay/config/globals"
 	"runtime"
 	"strconv"
@@ -79,6 +80,11 @@ var (
 var (
 	CONSENSUS              ConsensusType = CONSENSUS_TYPE_FULL
 	SEED_WALLET_NODES_INFO bool
+)
+
+var (
+	NETWORK_ADDRESS_URL        *url.URL
+	NETWORK_ADDRESS_URL_STRING string
 )
 
 func StartConfig() {

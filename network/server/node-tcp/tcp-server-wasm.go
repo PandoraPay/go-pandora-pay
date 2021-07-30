@@ -1,3 +1,4 @@
+//go:build wasm
 // +build wasm
 
 package node_tcp
@@ -20,7 +21,7 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 
 	server := &TcpServer{}
 	var err error
-	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, mempool, wallet, transactionsBuilder); err != nil {
+	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, nil, mempool, wallet, transactionsBuilder); err != nil {
 		return nil, err
 	}
 

@@ -12,19 +12,21 @@ import (
 	"pandora-pay/network/api/api-common"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/settings"
 )
 
 type APIWebsockets struct {
 	GetMap                    map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error)
 	chain                     *blockchain.Blockchain
 	mempool                   *mempool.Mempool
+	settings                  *settings.Settings
 	apiCommon                 *api_common.APICommon
 	apiStore                  *api_common.APIStore
 	SubscriptionNotifications *multicast.MulticastChannel //*api_common.APISubscriptionNotification
 }
 
 func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return json.Marshal(&connection.ConnectionHandshake{config.NAME, config.VERSION, config.NETWORK_SELECTED, config.CONSENSUS})
+	return json.Marshal(&connection.ConnectionHandshake{config.NAME, config.VERSION, config.NETWORK_SELECTED, config.CONSENSUS, config.NETWORK_ADDRESS_URL_STRING, nil})
 }
 
 func (api *APIWebsockets) getBlockchain(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -203,9 +205,8 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 	multicastFound, loaded := api.apiCommon.MempoolDownloadPending.LoadOrStore(hashStr, multicast.NewMulticastChannel())
 	multicast := multicastFound.(*multicast.MulticastChannel)
 
-	if loaded == true {
-		cn := multicast.AddListener()
-		if errData := <-cn; errData != nil {
+	if loaded {
+		if errData := <-multicast.AddListener(); errData != nil {
 			return nil, errData.(error)
 		}
 		return []byte{1}, nil
@@ -248,12 +249,13 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 	return
 }
 
-func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, mempool *mempool.Mempool) *APIWebsockets {
+func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
 
 	api := &APIWebsockets{
 		chain:                     chain,
 		apiStore:                  apiStore,
 		apiCommon:                 apiCommon,
+		settings:                  settings,
 		mempool:                   mempool,
 		SubscriptionNotifications: multicast.NewMulticastChannel(),
 	}

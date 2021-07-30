@@ -10,9 +10,7 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/config/globals"
-	"pandora-pay/cryptography"
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
 	"pandora-pay/wallet/address"
 	"strconv"
 )
@@ -439,16 +437,6 @@ func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {
 	}
 
 	return
-}
-
-func (wallet *Wallet) computeChecksum() []byte {
-
-	data, err := helpers.GetJSON(wallet, "Checksum")
-	if err != nil {
-		panic(err)
-	}
-
-	return cryptography.GetChecksum(data)
 }
 
 func (wallet *Wallet) Close() {

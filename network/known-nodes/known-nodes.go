@@ -40,8 +40,8 @@ func (self *KnownNodes) AddKnownNode(url *url.URL, isSeed bool) bool {
 	}
 
 	self.knownListMutex.Lock()
-	defer self.knownListMutex.Unlock()
 	self.knownList = append(self.knownList, knownNode)
+	self.knownListMutex.Unlock()
 
 	return true
 }

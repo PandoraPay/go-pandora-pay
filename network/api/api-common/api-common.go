@@ -282,9 +282,8 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocke
 	multicastFound, loaded := api.MempoolDownloadPending.LoadOrStore(tx.Bloom.HashStr, multicast.NewMulticastChannel())
 	multicast := multicastFound.(*multicast.MulticastChannel)
 
-	if loaded == true {
-		cn := multicast.AddListener()
-		if errData := <-cn; errData != nil {
+	if loaded {
+		if errData := <-multicast.AddListener(); errData != nil {
 			return nil, errData.(error)
 		}
 		return []byte{1}, nil

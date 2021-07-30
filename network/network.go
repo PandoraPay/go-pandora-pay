@@ -5,6 +5,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
+	banned_nodes "pandora-pay/network/banned-nodes"
 	"pandora-pay/network/consensus"
 	"pandora-pay/network/known-nodes"
 	mempool_sync "pandora-pay/network/mempool-sync"
@@ -21,6 +22,7 @@ import (
 type Network struct {
 	tcpServer   *node_tcp.TcpServer
 	KnownNodes  *known_nodes.KnownNodes
+	BannedNodes *banned_nodes.BannedNodes
 	MempoolSync *mempool_sync.MempoolSync
 	Websockets  *websocks.Websockets
 	Consensus   *consensus.Consensus
@@ -40,8 +42,8 @@ func (network *Network) execute() {
 			continue
 		}
 
-		if knownNode.Url.Hostname() == "127.0.0.1" && knownNode.Url.Port() == network.tcpServer.Port {
-			continue //skip connecting to myself
+		if network.BannedNodes.IsBanned(knownNode.UrlStr) {
+			continue //banned already
 		}
 
 		_, exists := network.Websockets.AllAddresses.Load(knownNode.UrlStr)
@@ -92,14 +94,16 @@ func (network *Network) syncNewConnections() {
 
 func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*Network, error) {
 
-	tcpServer, err := node_tcp.CreateTcpServer(settings, chain, mempool, wallet, transactionsBuilder)
-	if err != nil {
-		return nil, err
-	}
-
 	knownNodes := known_nodes.CreateKnownNodes()
 	for _, seed := range config.NETWORK_SELECTED_SEEDS {
 		knownNodes.AddKnownNode(&seed, true)
+	}
+
+	bannedNodes := banned_nodes.CreateBannedNodes()
+
+	tcpServer, err := node_tcp.CreateTcpServer(bannedNodes, settings, chain, mempool, wallet, transactionsBuilder)
+	if err != nil {
+		return nil, err
 	}
 
 	mempoolSync := mempool_sync.CreateMempoolSync(tcpServer.HttpServer.Websockets)
@@ -107,6 +111,7 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 	network := &Network{
 		tcpServer:   tcpServer,
 		KnownNodes:  knownNodes,
+		BannedNodes: bannedNodes,
 		MempoolSync: mempoolSync,
 		Websockets:  tcpServer.HttpServer.Websockets,
 		Consensus:   consensus.CreateConsensus(tcpServer.HttpServer, chain, mempool),

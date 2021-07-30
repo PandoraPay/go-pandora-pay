@@ -11,8 +11,10 @@ import (
 	"pandora-pay/helpers/multicast"
 	api_http "pandora-pay/network/api/api-http"
 	"pandora-pay/network/api/api-websockets"
+	banned_nodes "pandora-pay/network/banned-nodes"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/recovery"
+	"pandora-pay/settings"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -28,8 +30,10 @@ type Websockets struct {
 	serverSockets                int64 //use atomic
 	totalSockets                 int64 //use atomic
 	UpdateNewConnectionMulticast *multicast.MulticastChannel
+	bannedNodes                  *banned_nodes.BannedNodes
 	subscriptions                *WebsocketSubscriptions
 	api                          *api_http.API
+	settings                     *settings.Settings
 }
 
 func (websockets *Websockets) GetClients() int64 {
@@ -180,28 +184,34 @@ func (websockets *Websockets) NewConnection(c *websocket.Conn, addr string, conn
 	return conn, nil
 }
 
-func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConnection) error {
+func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConnection) (err error) {
+
+	defer func() {
+		if err != nil {
+			conn.Close(err.Error())
+		}
+	}()
 
 	out := conn.SendAwaitAnswer([]byte("handshake"), nil)
 
 	if out.Err != nil {
-		conn.Close("Error sending handshake")
-		return nil
+		return errors.New("Error sending handshake")
 	}
 	if out.Out == nil {
-		conn.Close("Handshake was not received")
 		return errors.New("Handshake was not received")
 	}
 
 	handshakeReceived := new(connection.ConnectionHandshake)
 	if err := json.Unmarshal(out.Out, &handshakeReceived); err != nil {
-		conn.Close("Handshake received was invalid")
 		return errors.New("Handshake received was invalid")
 	}
 
 	if err := handshakeReceived.ValidateHandshake(); err != nil {
-		conn.Close("Handshake is invalid")
 		return errors.New("Handshake is invalid")
+	}
+
+	if websockets.bannedNodes.IsBanned(handshakeReceived.URLStr) {
+		return errors.New("Socket is banned")
 	}
 
 	conn.Handshake = handshakeReceived
@@ -227,7 +237,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	return nil
 }
 
-func CreateWebsockets(chain *blockchain.Blockchain, api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
+func CreateWebsockets(chain *blockchain.Blockchain, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
 		AllAddresses:                 &sync.Map{},
@@ -238,6 +248,8 @@ func CreateWebsockets(chain *blockchain.Blockchain, api *api_http.API, apiWebsoc
 		UpdateNewConnectionMulticast: multicast.NewMulticastChannel(),
 		api:                          api,
 		ApiWebsockets:                apiWebsockets,
+		settings:                     settings,
+		bannedNodes:                  bannedNodes,
 	}
 
 	websockets.subscriptions = newWebsocketSubscriptions(websockets, chain)

@@ -1,3 +1,4 @@
+//go:build !wasm
 // +build !wasm
 
 package node_tcp
@@ -6,16 +7,20 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"net/url"
 	"pandora-pay/blockchain"
+	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
+	banned_nodes "pandora-pay/network/banned-nodes"
 	node_http "pandora-pay/network/server/node-http"
 	"pandora-pay/recovery"
 	"pandora-pay/settings"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
 	"strconv"
+	"time"
 )
 
 // ControllerAddr is the Tor controller interface address
@@ -23,11 +28,12 @@ import (
 type TcpServer struct {
 	Address     string
 	Port        string
+	URL         *url.URL
 	tcpListener net.Listener
 	HttpServer  *node_http.HttpServer
 }
 
-func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*TcpServer, error) {
+func CreateTcpServer(bannedNodes *banned_nodes.BannedNodes, settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*TcpServer, error) {
 
 	server := &TcpServer{}
 
@@ -62,6 +68,13 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 	}
 	server.Address = address
 	server.Port = port
+	server.URL = &url.URL{Scheme: "ws", Host: address + ":" + port, Path: "/ws"}
+
+	config.NETWORK_ADDRESS_URL = server.URL
+	config.NETWORK_ADDRESS_URL_STRING = server.URL.String()
+
+	bannedNodes.Ban(server.URL, "", "You can't connect to yourself", 10*365*24*time.Hour)
+	bannedNodes.Ban(&url.URL{Scheme: "ws", Host: "127.0.0.1:" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
 
 	server.tcpListener, err = net.Listen("tcp", ":"+port)
 	if err != nil {
@@ -70,7 +83,7 @@ func CreateTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, 
 
 	gui.GUI.InfoUpdate("TCP", address+":"+port)
 
-	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, mempool, wallet, transactionsBuilder); err != nil {
+	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, bannedNodes, mempool, wallet, transactionsBuilder); err != nil {
 		return nil, err
 	}
 
