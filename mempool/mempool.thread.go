@@ -32,12 +32,18 @@ type MempoolWorkerRemoveTxs struct {
 	Result chan<- bool
 }
 
+type MempoolWorkerInsertTxs struct {
+	Txs    []*mempoolTx
+	Result chan<- bool
+}
+
 //process the worker for transactions to prepare the transactions to the forger
 func (worker *mempoolWorker) processing(
 	newWorkCn <-chan *mempoolWork,
 	suspendProcessingCn <-chan struct{},
 	continueProcessingCn <-chan bool,
 	addTransactionCn <-chan *MempoolWorkerAddTx,
+	insertTransactionsCn <-chan *MempoolWorkerInsertTxs,
 	removeTransactionsCn <-chan *MempoolWorkerRemoveTxs,
 	txs *MempoolTxs,
 ) {
@@ -103,22 +109,28 @@ func (worker *mempoolWorker) processing(
 			}
 
 			newList := make([]*mempoolTx, newLength)
-			newListIndex := listIndex
 			c := 0
-			for i, tx := range txsList {
+			for _, tx := range txsList {
 				if !removedTxsMap[tx.Tx.Bloom.HashStr] {
 					newList[c] = tx
 					c += 1
-				} else {
-					if listIndex > i {
-						newListIndex -= 1
-					}
 				}
 			}
 			txsList = newList
-			listIndex = newListIndex
 		}
 
+		data.Result <- result
+	}
+
+	insertTxs := func(data *MempoolWorkerInsertTxs) {
+		result := false
+		for _, it := range data.Txs {
+			if it != nil && !txsMap[it.Tx.Bloom.HashStr] {
+				txsMap[it.Tx.Bloom.HashStr] = true
+				txsList = append(txsList, it)
+				result = true
+			}
+		}
 		data.Result <- result
 	}
 
@@ -133,6 +145,8 @@ func (worker *mempoolWorker) processing(
 			resetNow(newWork)
 		case data := <-removeTransactionsCn:
 			removeTxs(data)
+		case data := <-insertTransactionsCn:
+			insertTxs(data)
 		case noError := <-continueProcessingCn:
 			suspended = false
 			if noError {

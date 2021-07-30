@@ -86,7 +86,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	//let's remove the transactions from the mempool
 	if len(update.insertedTxsList) > 0 {
-		queue.chain.mempool.RemoveTxsFromMemPool(update.insertedTxsList)
+		queue.chain.mempool.RemoveInsertedTxsFromBlockchain(update.insertedTxsList)
 	}
 
 	//let's add the transactions in the mempool
@@ -109,9 +109,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 			}
 		}
 
-		go func() {
-			_ = queue.chain.mempool.AddTxsToMemPool(removedTxs, update.newChainData.Height, false, false, "*")
-		}()
+		queue.chain.mempool.InsertRemovedTxsFromBlockchain(removedTxs, update.newChainData.Height)
 	}
 
 	queue.chain.UpdateTransactions.Broadcast(update.allTransactionsChanges)
