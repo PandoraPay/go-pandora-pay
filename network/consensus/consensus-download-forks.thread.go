@@ -28,11 +28,11 @@ type ConsensusProcessForksThread struct {
 	apiStore *api_common.APIStore
 }
 
-func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connection.AdvancedConnection, fork *Fork) (*block_complete.BlockComplete, error) {
+func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connection.AdvancedConnection, fork *Fork, height uint64) (*block_complete.BlockComplete, error) {
 
 	var err error
 
-	answer := conn.SendJSONAwaitAnswer([]byte("block"), &api_types.APIBlockRequest{fork.Current, nil, api_types.RETURN_SERIALIZED})
+	answer := conn.SendJSONAwaitAnswer([]byte("block"), &api_types.APIBlockRequest{height, nil, api_types.RETURN_SERIALIZED})
 	if answer.Err != nil {
 		return nil, answer.Err
 	}
@@ -176,7 +176,7 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 			return false
 		}
 
-		blkComplete, err := thread.downloadBlockComplete(conn, fork)
+		blkComplete, err := thread.downloadBlockComplete(conn, fork, start-1)
 		if err != nil {
 			fork.errors += 1
 			continue
@@ -225,7 +225,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 			return false
 		}
 
-		blkComplete, err := thread.downloadBlockComplete(conn, fork)
+		blkComplete, err := thread.downloadBlockComplete(conn, fork, fork.Current)
 		if err != nil {
 			fork.errors += 1
 			continue
