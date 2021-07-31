@@ -147,6 +147,14 @@ func createMempoolTxs() (txs *MempoolTxs) {
 				gui.GUI.Info2Update("mempool", strconv.FormatInt(txsCount, 10))
 				last = txsCount
 			}
+
+			count := 0
+			txs.txs.Range(func(key, value interface{}) bool {
+				count += 1
+				return true
+			})
+			gui.GUI.Info2Update("mempool2", strconv.Itoa(count))
+
 			time.Sleep(1 * time.Second)
 		}
 	})

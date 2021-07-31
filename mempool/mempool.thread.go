@@ -184,8 +184,6 @@ func (worker *mempoolWorker) processing(
 					return
 				case newWork := <-newWorkCn:
 					resetNow(newWork)
-				case data := <-removeTransactionsCn:
-					removeTxs(data)
 				default:
 
 					var tx *mempoolTx
