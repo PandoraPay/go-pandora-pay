@@ -22,7 +22,7 @@ func CreateTcpServer(bannedNodes *banned_nodes.BannedNodes, settings *settings.S
 
 	server := &TcpServer{}
 	var err error
-	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, nil, mempool, wallet, transactionsBuilder); err != nil {
+	if server.HttpServer, err = node_http.CreateHttpServer(chain, settings, bannedNodes, mempool, wallet, transactionsBuilder); err != nil {
 		return nil, err
 	}
 
