@@ -96,6 +96,7 @@ func (worker *mempoolWorker) processing(
 		for _, tx := range data.Txs {
 			if tx != nil && txsMap[tx.Bloom.HashStr] {
 				removedTxsMap[tx.Bloom.HashStr] = true
+				txs.txs.Delete(tx.Bloom.HashStr)
 				result = true
 			}
 		}
@@ -127,6 +128,7 @@ func (worker *mempoolWorker) processing(
 		for _, it := range data.Txs {
 			if it != nil && !txsMap[it.Tx.Bloom.HashStr] {
 				txsMap[it.Tx.Bloom.HashStr] = true
+				txs.txs.Store(it.Tx.Bloom.HashStr, it.Tx)
 				txsList = append(txsList, it)
 				result = true
 			}
