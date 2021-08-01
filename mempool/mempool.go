@@ -253,7 +253,7 @@ func CreateMemPool() (*Mempool, error) {
 		SuspendProcessingCn:     make(chan struct{}),
 		ContinueProcessingCn:    make(chan bool),
 		newWorkCn:               make(chan *mempoolWork),
-		addTransactionCn:        make(chan *MempoolWorkerAddTx),
+		addTransactionCn:        make(chan *MempoolWorkerAddTx, 1000),
 		removeTransactionsCn:    make(chan *MempoolWorkerRemoveTxs),
 		insertTransactionsCn:    make(chan *MempoolWorkerInsertTxs),
 		Wallet:                  createMempoolWallet(),
