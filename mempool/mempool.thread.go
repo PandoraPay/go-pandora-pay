@@ -233,19 +233,8 @@ func (worker *mempoolWorker) processing(
 						txsMapVerified[tx.Tx.Bloom.HashStr] = true
 
 						if finalErr = tx.Tx.IncludeTransaction(work.chainHeight, accs, toks); finalErr != nil {
-
 							accs.Rollback()
 							toks.Rollback()
-
-							if newAddTx == nil {
-								//removing
-								//this is done because listIndex was incremented already before
-								txsList = append(txsList[:listIndex-1], txsList[listIndex:]...)
-								listIndex--
-							}
-							delete(txsMap, tx.Tx.Bloom.HashStr)
-							txs.txs.Delete(tx.Tx.Bloom.HashStr)
-
 						} else {
 
 							if includedTotalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
@@ -273,6 +262,17 @@ func (worker *mempoolWorker) processing(
 
 						}
 
+					}
+
+					if finalErr != nil {
+						if newAddTx == nil {
+							//removing
+							//this is done because listIndex was incremented already before
+							txsList = append(txsList[:listIndex-1], txsList[listIndex:]...)
+							listIndex--
+						}
+						delete(txsMap, tx.Tx.Bloom.HashStr)
+						txs.txs.Delete(tx.Tx.Bloom.HashStr)
 					}
 
 					if newAddTx != nil && newAddTx.Result != nil {
