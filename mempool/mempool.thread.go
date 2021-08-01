@@ -97,6 +97,7 @@ func (worker *mempoolWorker) processing(
 		for _, tx := range data.Txs {
 			if tx != nil && txsMap[tx.Bloom.HashStr] {
 				removedTxsMap[tx.Bloom.HashStr] = true
+				delete(txsMap, tx.Bloom.HashStr)
 				txs.txs.Delete(tx.Bloom.HashStr)
 				result = true
 			}
@@ -201,6 +202,12 @@ func (worker *mempoolWorker) processing(
 							return
 						case newAddTx = <-addTransactionCn:
 							tx = newAddTx.Tx
+							if txsMap[tx.Tx.Bloom.HashStr] {
+								if newAddTx.Result != nil {
+									newAddTx.Result <- errors.New("Already found")
+								}
+								continue
+							}
 						case <-sendReadyListCn:
 							//sending readyList only in case there is no transaction in the add channel
 							sendReadyListCn = make(chan struct{})
@@ -219,9 +226,7 @@ func (worker *mempoolWorker) processing(
 
 					var finalErr error
 
-					if txsMap[tx.Tx.Bloom.HashStr] {
-						finalErr = errors.New("Already found")
-					} else if txsMapVerified[tx.Tx.Bloom.HashStr] {
+					if txsMapVerified[tx.Tx.Bloom.HashStr] {
 						finalErr = errors.New("Already processed")
 					} else {
 
