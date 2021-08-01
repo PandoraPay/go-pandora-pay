@@ -52,6 +52,7 @@ func (worker *mempoolWorker) processing(
 
 	txsList := []*mempoolTx{}
 	txsMap := make(map[string]bool)
+	txsMapVerified := make(map[string]bool)
 	listIndex := 0
 	readyListSent := true
 
@@ -76,7 +77,7 @@ func (worker *mempoolWorker) processing(
 		close(newWork.waitAnswerCn)
 
 		if newWork.chainHash != nil {
-			txsMap = make(map[string]bool)
+			txsMapVerified = make(map[string]bool)
 			accs = nil
 			toks = nil
 			work = newWork
@@ -220,9 +221,11 @@ func (worker *mempoolWorker) processing(
 
 					if txsMap[tx.Tx.Bloom.HashStr] {
 						finalErr = errors.New("Already found")
+					} else if txsMapVerified[tx.Tx.Bloom.HashStr] {
+						finalErr = errors.New("Already processed")
 					} else {
 
-						txsMap[tx.Tx.Bloom.HashStr] = true
+						txsMapVerified[tx.Tx.Bloom.HashStr] = true
 
 						if finalErr = tx.Tx.IncludeTransaction(work.chainHeight, accs, toks); finalErr != nil {
 
@@ -235,7 +238,7 @@ func (worker *mempoolWorker) processing(
 								txsList = append(txsList[:listIndex-1], txsList[listIndex:]...)
 								listIndex--
 							}
-
+							delete(txsMap, tx.Tx.Bloom.HashStr)
 							txs.txs.Delete(tx.Tx.Bloom.HashStr)
 
 						} else {
@@ -258,6 +261,7 @@ func (worker *mempoolWorker) processing(
 							if newAddTx != nil {
 								txsList = append(txsList, newAddTx.Tx)
 								listIndex += 1
+								txsMap[tx.Tx.Bloom.HashStr] = true
 							}
 
 							txs.addToList(tx)
