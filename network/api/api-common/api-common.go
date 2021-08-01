@@ -141,9 +141,10 @@ func (api *APICommon) GetTx(request *api_types.APITransactionRequest) ([]byte, e
 	mempool := false
 	var txInfo *info.TxInfo
 	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
-		tx = api.mempool.Txs.Exists(string(request.Hash))
-		if tx != nil {
+		txMemPool := api.mempool.Txs.Exists(string(request.Hash))
+		if txMemPool != nil {
 			mempool = true
+			tx = txMemPool.Tx
 		} else {
 			tx, txInfo, err = api.ApiStore.openLoadTx(request.Hash, 0)
 		}

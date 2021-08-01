@@ -3,7 +3,6 @@ package mempool
 import (
 	"encoding/hex"
 	"fmt"
-	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/recovery"
@@ -19,7 +18,7 @@ type MempoolTxsData struct {
 }
 
 type MempoolTxs struct {
-	txs *sync.Map // [string]*transaction.Transaction
+	txs *sync.Map // [string]*mempoolTx
 
 	data             *atomic.Value //*MempoolTxsData
 	waitTxsListReady *atomic.Value //chan <- interface{}
@@ -30,20 +29,31 @@ type MempoolTxs struct {
 	stored                      bool
 }
 
+func (self *MempoolTxs) GetTxsFromMap() (out map[string]*mempoolTx) {
+
+	out = make(map[string]*mempoolTx)
+	self.txs.Range(func(key, value interface{}) bool {
+		out[key.(string)] = value.(*mempoolTx)
+		return true
+	})
+
+	return
+}
+
 func (self *MempoolTxs) GetTxsList() (out []*mempoolTx) {
 
 	<-self.waitTxsListReady.Load().(chan struct{})
-
 	return self.data.Load().(*MempoolTxsData).txsList
+
 }
 
-func (self *MempoolTxs) Exists(txId string) *transaction.Transaction {
+func (self *MempoolTxs) Exists(txId string) *mempoolTx {
 
 	value, loaded := self.txs.Load(txId)
 	if !loaded {
 		return nil
 	}
-	return value.(*transaction.Transaction)
+	return value.(*mempoolTx)
 
 }
 
@@ -122,15 +132,13 @@ func createMempoolTxs() (txs *MempoolTxs) {
 		recovery.SafeGo(func() {
 			for {
 				transactions := txs.GetTxsList()
-				if len(transactions) == 0 {
-					return
+				if len(transactions) != 0 {
+					gui.GUI.Log("")
+					for _, out := range transactions {
+						gui.GUI.Log(fmt.Sprintf("%12s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC822), out.Tx.Bloom.Size, out.ChainHeight, hex.EncodeToString(out.Tx.Bloom.Hash[0:15])))
+					}
+					gui.GUI.Log("")
 				}
-
-				gui.GUI.Log("")
-				for _, out := range transactions {
-					gui.GUI.Log(fmt.Sprintf("%12s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC822), out.Tx.Bloom.Size, out.ChainHeight, hex.EncodeToString(out.Tx.Bloom.Hash[0:15])))
-				}
-				gui.GUI.Log("")
 				time.Sleep(60 * time.Second)
 			}
 		})

@@ -50,7 +50,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 	txs := make([]*transaction.Transaction, len(blkWithTx.Txs))
 	for i := range txs {
 		if tx := thread.mempool.Txs.Exists(string(blkWithTx.Txs[i])); tx != nil {
-			txs[i] = tx
+			txs[i] = tx.Tx
 			txsFound++
 			continue
 		}

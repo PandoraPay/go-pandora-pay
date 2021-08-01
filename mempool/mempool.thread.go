@@ -127,11 +127,11 @@ func (worker *mempoolWorker) processing(
 
 	insertTxs := func(data *MempoolWorkerInsertTxs) {
 		result := false
-		for _, it := range data.Txs {
-			if it != nil && !txsMap[it.Tx.Bloom.HashStr] {
-				txsMap[it.Tx.Bloom.HashStr] = true
-				txs.txs.Store(it.Tx.Bloom.HashStr, it.Tx)
-				txsList = append(txsList, it)
+		for _, tx := range data.Txs {
+			if tx != nil && !txsMap[tx.Tx.Bloom.HashStr] {
+				txsMap[tx.Tx.Bloom.HashStr] = true
+				txs.txs.Store(tx.Tx.Bloom.HashStr, tx)
+				txsList = append(txsList, tx)
 				result = true
 			}
 		}

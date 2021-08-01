@@ -12,7 +12,7 @@ import (
 func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token []byte) (uint64, error) {
 
 	out := balance
-	txs := mempool.Txs.GetTxsList()
+	txs := mempool.Txs.GetTxsFromMap()
 
 	for _, tx := range txs {
 		if tx.Tx.TxType == transaction_type.TX_SIMPLE {
@@ -41,7 +41,7 @@ func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token [
 
 func (mempool *Mempool) ExistsTxSimpleVersion(publicKeyHash []byte, version transaction_simple.ScriptType) bool {
 
-	txs := mempool.Txs.GetTxsList()
+	txs := mempool.Txs.GetTxsFromMap()
 	for _, tx := range txs {
 		if tx.Tx.TxType == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
@@ -55,7 +55,7 @@ func (mempool *Mempool) ExistsTxSimpleVersion(publicKeyHash []byte, version tran
 
 func (mempool *Mempool) CountInputTxs(publicKeyHash []byte) uint64 {
 
-	txs := mempool.Txs.GetTxsList()
+	txs := mempool.Txs.GetTxsFromMap()
 
 	count := uint64(0)
 	for _, tx := range txs {
@@ -72,7 +72,7 @@ func (mempool *Mempool) CountInputTxs(publicKeyHash []byte) uint64 {
 
 func (mempool *Mempool) GetNonce(publicKeyHash []byte, nonce uint64) uint64 {
 
-	txs := mempool.Txs.GetTxsList()
+	txs := mempool.Txs.GetTxsFromMap()
 
 	nonces := make(map[uint64]bool)
 	for _, tx := range txs {
