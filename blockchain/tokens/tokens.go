@@ -40,6 +40,17 @@ func (tokens *Tokens) GetToken(key []byte) (*token.Token, error) {
 	return data.(*token.Token), nil
 }
 
+func (tokens *Tokens) GetTokenRequired(key []byte) (*token.Token, error) {
+	token, err := tokens.GetToken(key)
+	if err != nil {
+		return nil, err
+	}
+	if token == nil {
+		return nil, errors.New("Token not ofund")
+	}
+	return token, nil
+}
+
 func (tokens *Tokens) CreateToken(key []byte, tok *token.Token) (err error) {
 
 	if len(key) == 0 {

@@ -15,6 +15,39 @@ func (builder *TransactionsBuilder) showWarningIfNotSyncCLI() {
 	}
 }
 
+func (builder *TransactionsBuilder) readFees(allowFeesPayInExtra bool) (feeFixed, feePerByte float64, feePerByteAuto bool, feeToken []byte, feePayInExtra, ok bool) {
+
+	if feePerByteAuto, ok = gui.GUI.OutputReadBool("Compute Automatically Fee Per Byte"); !ok {
+		return
+	}
+	if !feePerByteAuto {
+		if feePerByte, ok = gui.GUI.OutputReadFloat64("Fee per byte", nil); !ok {
+			return
+		}
+
+		if feePerByte == 0 {
+			if feeFixed, ok = gui.GUI.OutputReadFloat64("Fee per byte", nil); !ok {
+				return
+			}
+		}
+	}
+
+	if feeFixed != 0 || feePerByte != 0 || feePerByteAuto {
+		if feeToken, ok = gui.GUI.OutputReadBytes("Fee Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH}); !ok {
+			return
+		}
+	}
+
+	if allowFeesPayInExtra {
+		feePayInExtra, ok = gui.GUI.OutputReadBool("Pay in Extra. Type y/n")
+		if !ok {
+			return
+		}
+	}
+
+	return
+}
+
 func (builder *TransactionsBuilder) initCLI() {
 
 	cliTransfer := func(cmd string) (err error) {
@@ -44,18 +77,6 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		feePerByte, ok := gui.GUI.OutputReadInt("Fee per byte. -1 automatically, 0 none", nil)
-		if !ok {
-			return
-		}
-
-		var feeToken []byte
-		if feePerByte != 0 {
-			if feeToken, ok = gui.GUI.OutputReadBytes("Fee Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH}); !ok {
-				return
-			}
-		}
-
 		nonce, ok := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", nil, true)
 		if !ok {
 			return
@@ -66,7 +87,14 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateSimpleTx_Float([]string{walletAddress.AddressEncoded}, nonce, []float64{amount}, [][]byte{token}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, [][]byte{token}, feePerByte, feeToken, propagate, true, true)
+		feeFixed, feePerByte, feePerByteAuto, feeToken, _, ok := builder.readFees(false)
+		if !ok {
+			return
+		}
+
+		tx, err := builder.CreateSimpleTx_Float([]string{walletAddress.AddressEncoded}, nonce, []float64{amount}, [][]byte{token}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, [][]byte{token}, feeFixed, feePerByte, feePerByteAuto, feeToken, propagate, true, true)
+
+		// []float64{amount}, [][]byte{token}, feePerByte, feeToken, )
 		if err != nil {
 			return
 		}
@@ -115,16 +143,9 @@ func (builder *TransactionsBuilder) initCLI() {
 			}
 		}
 
-		feePerByte, ok := gui.GUI.OutputReadInt("Fee per byte. -1 automatically, 0 none", nil)
+		feeFixed, feePerByte, feePerByteAuto, feeToken, _, ok := builder.readFees(false)
 		if !ok {
 			return
-		}
-
-		var feeToken []byte
-		if feePerByte != 0 {
-			if feeToken, ok = gui.GUI.OutputReadBytes("Fee Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH}); !ok {
-				return
-			}
 		}
 
 		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
@@ -132,7 +153,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateDelegateTx_Float(walletAddress.AddressEncoded, nonce, amount, delegateNewPublicKeyHashGenerate, delegateNewPublicKeyHash, feePerByte, feeToken, propagate, true, true)
+		tx, err := builder.CreateDelegateTx_Float(walletAddress.AddressEncoded, nonce, amount, delegateNewPublicKeyHashGenerate, delegateNewPublicKeyHash, feeFixed, feePerByte, feePerByteAuto, feeToken, propagate, true, true)
 		if err != nil {
 			return
 		}
@@ -164,19 +185,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		feePerByte, ok := gui.GUI.OutputReadInt("Fee per byte. -1 automatically, 0 none", nil)
-		if !ok {
-			return
-		}
-
-		var feeToken []byte
-		if feePerByte != 0 {
-			if feeToken, ok = gui.GUI.OutputReadBytes("Fee Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH}); !ok {
-				return
-			}
-		}
-
-		payFeeInExtra, ok := gui.GUI.OutputReadBool("Pay in Extra. Type y/n")
+		feeFixed, feePerByte, feePerByteAuto, feeToken, feePayInExtra, ok := builder.readFees(true)
 		if !ok {
 			return
 		}
@@ -186,7 +195,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateUnstakeTx_Float(walletAddress.AddressEncoded, nonce, amount, feePerByte, feeToken, payFeeInExtra, propagate, true, true)
+		tx, err := builder.CreateUnstakeTx_Float(walletAddress.AddressEncoded, nonce, amount, feeFixed, feePerByte, feePerByteAuto, feeToken, feePayInExtra, propagate, true, true)
 		if err != nil {
 			return
 		}

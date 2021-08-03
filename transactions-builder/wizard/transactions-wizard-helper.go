@@ -10,7 +10,10 @@ import (
 	"pandora-pay/config/config_fees"
 )
 
-func setFeeTxNow(tx *transaction.Transaction, feePerByte, initAmount uint64, value *uint64) {
+func setFeeTxNow(tx *transaction.Transaction, feePerByte uint64, value *uint64) {
+
+	initAmount := *value
+
 	var fee uint64
 	oldFee := uint64(1)
 	for oldFee != fee {
@@ -21,45 +24,61 @@ func setFeeTxNow(tx *transaction.Transaction, feePerByte, initAmount uint64, val
 	return
 }
 
-func setFee(tx *transaction.Transaction, feePerByte int, feeToken []byte, payFeeInExtra bool) error {
+func setFeeFixedTxNow(fixedFee uint64, value *uint64) {
+	*value = *value + fixedFee
+}
 
-	if feePerByte == 0 {
-		return nil
-	}
+func setFee(tx *transaction.Transaction, fixed, perByte uint64, perByteAuto bool, token []byte, payFeeInExtra bool) error {
 
-	if feePerByte == -1 {
-		feePerByte = int(config_fees.FEES_PER_BYTE[string(feeToken)])
-		if feePerByte == 0 {
-			return errors.New("The token will most like not be accepted by other miners")
+	if fixed == 0 {
+
+		if perByte == 0 && !perByteAuto {
+			return nil
+		}
+
+		if perByte > 0 && perByteAuto {
+			return errors.New("PerBye is set and PerByteAuto")
+		}
+
+		if perByte == 0 {
+			if config_fees.FEES_PER_BYTE[string(token)] == 0 {
+				return errors.New("The token will most like not be accepted by other miners")
+			}
+			perByte = config_fees.FEES_PER_BYTE[string(token)]
 		}
 	}
 
-	if feePerByte != 0 {
+	switch tx.TxType {
+	case transaction_type.TX_SIMPLE:
+		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
-		switch tx.TxType {
-		case transaction_type.TX_SIMPLE:
-			base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
+		if payFeeInExtra {
 
-			if payFeeInExtra {
-
-				switch base.TxScript {
-				case transaction_simple.SCRIPT_UNSTAKE:
-					setFeeTxNow(tx, uint64(feePerByte), 0, &base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
-					return nil
+			switch base.TxScript {
+			case transaction_simple.SCRIPT_UNSTAKE:
+				if fixed > 0 {
+					setFeeFixedTxNow(fixed, &base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
+				} else {
+					setFeeTxNow(tx, perByte, &base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
 				}
-
-			} else {
-
-				for _, vin := range tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin {
-					if bytes.Equal(vin.Token, feeToken) {
-						setFeeTxNow(tx, uint64(feePerByte), vin.Amount, &vin.Amount)
-						return nil
-					}
-				}
-
-				return errors.New("There is no input to set the fee!")
+				return nil
 			}
 
+		} else {
+
+			for _, vin := range tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin {
+				if bytes.Equal(vin.Token, token) {
+
+					if fixed > 0 {
+						setFeeFixedTxNow(fixed, &vin.Amount)
+					} else {
+						setFeeTxNow(tx, perByte, &vin.Amount)
+					}
+					return nil
+				}
+			}
+
+			return errors.New("There is no input to set the fee!")
 		}
 
 	}
