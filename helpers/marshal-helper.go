@@ -30,6 +30,14 @@ func (s *HexBytes) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
+func ConvertHexBytesArrayToBytesArray(array []HexBytes) [][]byte {
+	out := make([][]byte, len(array))
+	for i, it := range array {
+		out[i] = it
+	}
+	return out
+}
+
 func GetJSON(obj interface{}, ignoreFields ...string) ([]byte, error) {
 
 	toJson, err := json.Marshal(obj)

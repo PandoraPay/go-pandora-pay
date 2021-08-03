@@ -107,6 +107,11 @@ func Initialize(startMainCb func()) {
 			"subscribeNetwork":        js.FuncOf(subscribeNetwork),
 			"unsubscribeNetwork":      js.FuncOf(unsubscribeNetwork),
 		}),
+		"transactions": js.ValueOf(map[string]interface{}{
+			"builder": js.ValueOf(map[string]interface{}{
+				"createSimpleTx_Float": js.FuncOf(createSimpleTx_Float),
+			}),
+		}),
 		"enums": js.ValueOf(map[string]interface{}{
 			"transactions": js.ValueOf(map[string]interface{}{
 				"transactionType": js.ValueOf(map[string]interface{}{
