@@ -1,3 +1,4 @@
+//go:build !wasm
 // +build !wasm
 
 package arguments
@@ -18,8 +19,8 @@ Options:
   --new-devnet                                       Create a new devnet genesis.
   --set-genesis=genesis                              Manually set the Genesis via a JSON. By using argument "file" it will read it via a file.
   --create-new-genesis=args                          Create a new Genesis. Useful for creating a new private testnet. Argument must be "0.delegatedStake,1.delegatedStake,2.delegatedStake"
-  --store-wallet-type=type                           Set Wallet Store Type. Accepted values: "bolt|bunt|memory". [default: bolt]
-  --store-chain-type=type                            Set Chain Store Type. Accepted values: "bolt|bunt|memory".  [default: bolt]
+  --store-wallet-type=type                           Set Wallet Store Type. Accepted values: "bolt|bunt|bunt-memory|memory". [default: bolt]
+  --store-chain-type=type                            Set Chain Store Type. Accepted values: "bolt|bunt|bunt-memory|memory".  [default: bolt]
   --debug                                            Debug mode enabled (print log message).
   --staking                                          Start staking.
   --node-name=name                                   Change node name.

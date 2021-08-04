@@ -90,10 +90,12 @@ func (builder *TransactionsBuilder) convertFloatFees(feeFixed, feePerByte float6
 	return
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce uint64, amounts []float64, amountsTokens [][]byte, dsts []string, dstsAmounts []float64, dstsTokens [][]byte, feeFixed, feePerByte float64, feePerByteAuto bool, feeToken []byte, propagateTx, awaitAnswer, awaitBroadcast bool) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce uint64, amounts []float64, amountsTokens [][]byte, dsts []string, dstsAmounts []float64, dstsTokens [][]byte, feeFixed, feePerByte float64, feePerByteAuto bool, feeToken []byte, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	var feeFixedFinal, feePerByteFinal uint64
 	var amountsFinal, dstsAmountsFinal []uint64
+
+	statusCallback("Converting Floats to Numbers")
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -115,7 +117,9 @@ func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce ui
 		return nil, err
 	}
 
-	return builder.CreateSimpleTx(from, nonce, amountsFinal, amountsTokens, dsts, dstsAmountsFinal, dstsTokens, feeFixedFinal, feePerByteFinal, feePerByteAuto, feeToken, propagateTx, awaitAnswer, awaitBroadcast)
+	statusCallback("Converted Floats to Numbers")
+
+	return builder.CreateSimpleTx(from, nonce, amountsFinal, amountsTokens, dsts, dstsAmountsFinal, dstsTokens, feeFixedFinal, feePerByteFinal, feePerByteAuto, feeToken, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
 }
 
 func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet_address.WalletAddress, error) {
@@ -132,12 +136,14 @@ func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet
 	return fromWalletAddress, nil
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, amounts []uint64, amountsTokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feeFixed, feePerByte uint64, feePerByteAuto bool, feeToken []byte, propagateTx, awaitAnswer, awaitBroadcast bool) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, amounts []uint64, amountsTokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feeFixed, feePerByte uint64, feePerByteAuto bool, feeToken []byte, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses(from)
 	if err != nil {
 		return nil, err
 	}
+
+	statusCallback("Wallet Addresses Found")
 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
@@ -174,18 +180,26 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 		return nil, err
 	}
 
+	statusCallback("Balances checked and Private Keys found")
+
 	if nonce == 0 {
 		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKeyHash, accountsList[0].Nonce)
 	}
 
-	if tx, err = wizard.CreateSimpleTx(nonce, keys, amounts, amountsTokens, dsts, dstsAmounts, dstsTokens, feeFixed, feePerByte, feePerByteAuto, feeToken); err != nil {
+	statusCallback("Getting Nonce from Mempool")
+
+	if tx, err = wizard.CreateSimpleTx(nonce, keys, amounts, amountsTokens, dsts, dstsAmounts, dstsTokens, feeFixed, feePerByte, feePerByteAuto, feeToken, statusCallback); err != nil {
 		gui.GUI.Error("Error creating Tx: ", err)
 		return nil, err
 	}
 
+	statusCallback("Getting Nonce from Mempool")
+
 	if err = builder.checkTx(accountsList, tx); err != nil {
 		return nil, err
 	}
+
+	statusCallback("Tx checked")
 
 	if propagateTx {
 		if err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, awaitAnswer, awaitBroadcast, ""); err != nil {

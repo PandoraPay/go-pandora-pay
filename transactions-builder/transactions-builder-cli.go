@@ -92,7 +92,9 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateSimpleTx_Float([]string{walletAddress.AddressEncoded}, nonce, []float64{amount}, [][]byte{token}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, [][]byte{token}, feeFixed, feePerByte, feePerByteAuto, feeToken, propagate, true, true)
+		tx, err := builder.CreateSimpleTx_Float([]string{walletAddress.AddressEncoded}, nonce, []float64{amount}, [][]byte{token}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, [][]byte{token}, feeFixed, feePerByte, feePerByteAuto, feeToken, propagate, true, true, func(status string) {
+			gui.GUI.OutputWrite(status)
+		})
 
 		// []float64{amount}, [][]byte{token}, feePerByte, feeToken, )
 		if err != nil {

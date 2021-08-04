@@ -10,11 +10,11 @@ import (
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 )
 
-func CreateSimpleTxOneInOneOut(nonce uint64, key []byte, amount uint64, token []byte, dst string, dstAmount uint64, feeFixed, feePerByte uint64, feePerByteAuto bool, feeToken []byte) (*transaction.Transaction, error) {
-	return CreateSimpleTx(nonce, [][]byte{key}, []uint64{amount}, [][]byte{token}, []string{dst}, []uint64{dstAmount}, [][]byte{token}, feeFixed, feePerByte, feePerByteAuto, feeToken)
+func CreateSimpleTxOneInOneOut(nonce uint64, key []byte, amount uint64, token []byte, dst string, dstAmount uint64, feeFixed, feePerByte uint64, feePerByteAuto bool, feeToken []byte, statusCallback func(string)) (*transaction.Transaction, error) {
+	return CreateSimpleTx(nonce, [][]byte{key}, []uint64{amount}, [][]byte{token}, []string{dst}, []uint64{dstAmount}, [][]byte{token}, feeFixed, feePerByte, feePerByteAuto, feeToken, statusCallback)
 }
 
-func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feeFixed, feePerByte uint64, feePerByteAuto bool, feeToken []byte) (*transaction.Transaction, error) {
+func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feeFixed, feePerByte uint64, feePerByteAuto bool, feeToken []byte, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	if len(keys) != len(amounts) || len(amounts) != len(tokens) || len(amounts) == 0 {
 		return nil, errors.New("Input lengths are a mismatch")
@@ -58,30 +58,45 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 		},
 	}
 
+	statusCallback("Transaction created")
+
 	var err error
 	for i, privateKey := range privateKeys {
 		if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 			return nil, err
 		}
 	}
+
+	statusCallback("Transaction Signed #1")
+
 	if err = setFee(tx, feeFixed, feePerByte, feePerByteAuto, feeToken, false); err != nil {
 		return nil, err
 	}
+
+	statusCallback("Transaction Fees set")
+
 	for i, privateKey := range privateKeys {
 		if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 			return nil, err
 		}
 	}
 
+	statusCallback("Transaction Signed #2")
+
 	if err = tx.BloomAll(); err != nil {
 		return nil, err
 	}
+	statusCallback("Transaction Bloomed")
+
 	if err = tx.Validate(); err != nil {
 		return nil, err
 	}
+	statusCallback("Transaction Validated")
+
 	if err = tx.Verify(); err != nil {
 		return nil, err
 	}
+	statusCallback("Transaction Verified")
 
 	return tx, nil
 }

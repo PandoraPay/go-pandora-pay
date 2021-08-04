@@ -250,13 +250,14 @@ func (thread *ConsensusProcessForksThread) execute() {
 			willRemove := true
 
 			gui.GUI.Log("Status. Downloading fork", fork.Hash)
-			if thread.downloadFork(fork) {
+			if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
 
-				gui.GUI.Log("Status. DownloadingRemainingBlocks fork")
+				if thread.downloadFork(fork) {
 
-				globals.MainEvents.BroadcastEvent("consensus/update", fork)
+					gui.GUI.Log("Status. DownloadingRemainingBlocks fork")
 
-				if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
+					globals.MainEvents.BroadcastEvent("consensus/update", fork)
+
 					if thread.downloadRemainingBlocks(fork) {
 
 						gui.GUI.Log("Status. AddBlocks fork")
@@ -277,6 +278,10 @@ func (thread *ConsensusProcessForksThread) execute() {
 					}
 				}
 
+			} else {
+				globals.MainEvents.BroadcastEvent("consensus/update", fork)
+				gui.GUI.Log("Status. AddBlocks fork - Simulating block")
+				thread.mempool.UpdateWork(fork.Hash, fork.End)
 			}
 
 			if willRemove {

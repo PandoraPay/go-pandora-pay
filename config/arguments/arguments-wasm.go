@@ -1,3 +1,4 @@
+//go:build wasm
 // +build wasm
 
 package arguments
@@ -15,8 +16,8 @@ Options:
   --network=network                                  Select network. Accepted values: "mainnet|testnet|devnet". [default: mainnet]
   --new-devnet                                       Create a new devnet genesis.
   --set-genesis=genesis                              Manually set the Genesis via a JSON. Used for devnet genesis in Browser.
-  --store-wallet-type=type                           Set Wallet Store Type. Accepted values: "memory|js". [default: js]
-  --store-chain-type=type                            Set Chain Store Type. Accepted values: "memory|js". [default: memory].
+  --store-wallet-type=type                           Set Wallet Store Type. Accepted values: "bunt-memory|memory|js". [default: js]
+  --store-chain-type=type                            Set Chain Store Type. Accepted values: "bunt-memory|memory|js". [default: memory].
   --debug                                            Debug mode enabled (print log message).
   --staking                                          Start staking.
   --tcp-max-clients=limit                            Change limit of clients [default: 1].

@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
+	"pandora-pay/gui"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"sync/atomic"
@@ -168,6 +169,7 @@ func (worker *mempoolWorker) processing(
 		//let's check hf the work has been changed
 		store.StoreBlockchain.DB.View(func(dbTx store_db_interface.StoreDBTransactionInterface) (err error) {
 
+			gui.GUI.Log("MEMPOOL Opened")
 			if accs != nil {
 				accs.Tx = dbTx
 				toks.Tx = dbTx
@@ -183,6 +185,7 @@ func (worker *mempoolWorker) processing(
 				select {
 				case <-suspendProcessingCn:
 					suspended = true
+					gui.GUI.Log("MEMPOOL CLOSED")
 					return
 				case newWork := <-newWorkCn:
 					resetNow(newWork)
@@ -199,6 +202,7 @@ func (worker *mempoolWorker) processing(
 							continue
 						case <-suspendProcessingCn:
 							suspended = true
+							gui.GUI.Log("MEMPOOL CLOSED")
 							return
 						case newAddTx = <-addTransactionCn:
 							tx = newAddTx.Tx

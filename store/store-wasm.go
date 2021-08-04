@@ -1,3 +1,4 @@
+//go:build wasm
 // +build wasm
 
 package store
@@ -8,6 +9,7 @@ import (
 	store_db_bunt "pandora-pay/store/store-db/store-db-bunt"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	store_db_js "pandora-pay/store/store-db/store-db-js"
+	store_db_memory "pandora-pay/store/store-db/store-db-memory"
 )
 
 func createStoreNow(name string, storeType string) (*Store, error) {
@@ -16,10 +18,12 @@ func createStoreNow(name string, storeType string) (*Store, error) {
 	var err error
 
 	switch storeType {
-	case "memory":
+	case "bunt-memory":
 		db, err = store_db_bunt.CreateStoreDBBunt(name, true)
 	case "js":
 		db, err = store_db_js.CreateStoreDBJS(name)
+	case "memory":
+		db, err = store_db_memory.CreateStoreDBMemory(name)
 	default:
 		err = errors.New("Invalid --store-type argument: " + storeType)
 	}
@@ -35,16 +39,18 @@ func create_db() (err error) {
 
 	var prefix = ""
 
-	if StoreBlockchain, err = createStoreNow(prefix+"/blockchain", getStoreType(globals.Arguments["--store-chain-type"], false, false, true, true)); err != nil {
+	allowedStores := map[string]bool{"bunt-memory": true, "memory": true, "js": true}
+
+	if StoreBlockchain, err = createStoreNow(prefix+"/blockchain", getStoreType(globals.Arguments["--store-chain-type"].(string), allowedStores)); err != nil {
 		return
 	}
-	if StoreWallet, err = createStoreNow(prefix+"/wallet", getStoreType(globals.Arguments["--store-wallet-type"], false, false, true, true)); err != nil {
+	if StoreWallet, err = createStoreNow(prefix+"/wallet", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
 		return
 	}
-	if StoreSettings, err = createStoreNow(prefix+"/settings", getStoreType(globals.Arguments["--store-wallet-type"], false, false, true, true)); err != nil {
+	if StoreSettings, err = createStoreNow(prefix+"/settings", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
 		return
 	}
-	if StoreMempool, err = createStoreNow(prefix+"/mempool", getStoreType(globals.Arguments["--store-wallet-type"], false, false, true, true)); err != nil {
+	if StoreMempool, err = createStoreNow(prefix+"/mempool", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
 		return
 	}
 
