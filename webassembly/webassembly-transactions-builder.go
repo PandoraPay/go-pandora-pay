@@ -22,6 +22,7 @@ func createSimpleTx_Float(this js.Value, args []js.Value) interface{} {
 			FeePerByte     float64            `json:"feePerByte"`
 			FeePerByteAuto bool               `json:"feePerByteAuto"`
 			FeeToken       helpers.HexBytes   `json:"feeToken"`
+			PropagateTx    bool               `json:"propagateTx"`
 		}
 
 		txData := &SimpleTxFloatData{}
@@ -29,7 +30,7 @@ func createSimpleTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.CreateSimpleTx_Float(txData.From, txData.Nonce, txData.Amounts, helpers.ConvertHexBytesArrayToBytesArray(txData.AmountsTokens), txData.Dsts, txData.DstsAmounts, helpers.ConvertHexBytesArrayToBytesArray(txData.DstsTokens), txData.FeeFixed, txData.FeePerByte, txData.FeePerByteAuto, txData.FeeToken, false, false, false)
+		tx, err := app.TransactionsBuilder.CreateSimpleTx_Float(txData.From, txData.Nonce, txData.Amounts, helpers.ConvertHexBytesArrayToBytesArray(txData.AmountsTokens), txData.Dsts, txData.DstsAmounts, helpers.ConvertHexBytesArrayToBytesArray(txData.DstsTokens), txData.FeeFixed, txData.FeePerByte, txData.FeePerByteAuto, txData.FeeToken, txData.PropagateTx, false, false)
 		if err != nil {
 			return nil, err
 		}

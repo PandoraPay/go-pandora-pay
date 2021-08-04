@@ -112,6 +112,10 @@ func Initialize(startMainCb func()) {
 				"createSimpleTx_Float": js.FuncOf(createSimpleTx_Float),
 			}),
 		}),
+		"store": js.ValueOf(map[string]interface{}{
+			"storeAccount": js.FuncOf(storeAccount),
+			"storeToken":   js.FuncOf(storeToken),
+		}),
 		"enums": js.ValueOf(map[string]interface{}{
 			"transactions": js.ValueOf(map[string]interface{}{
 				"transactionType": js.ValueOf(map[string]interface{}{

@@ -179,7 +179,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 	}
 
 	if tx, err = wizard.CreateSimpleTx(nonce, keys, amounts, amountsTokens, dsts, dstsAmounts, dstsTokens, feeFixed, feePerByte, feePerByteAuto, feeToken); err != nil {
-		gui.GUI.Error("Error creating Tx: ", tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce, err)
+		gui.GUI.Error("Error creating Tx: ", err)
 		return nil, err
 	}
 
