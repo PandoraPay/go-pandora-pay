@@ -155,7 +155,9 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateDelegateTx_Float(walletAddress.AddressEncoded, nonce, amount, delegateNewPublicKeyHashGenerate, delegateNewPublicKeyHash, feeFixed, feePerByte, feePerByteAuto, feeToken, propagate, true, true)
+		tx, err := builder.CreateDelegateTx_Float(walletAddress.AddressEncoded, nonce, amount, delegateNewPublicKeyHashGenerate, delegateNewPublicKeyHash, feeFixed, feePerByte, feePerByteAuto, feeToken, propagate, true, true, func(status string) {
+			gui.GUI.OutputWrite(status)
+		})
 		if err != nil {
 			return
 		}
@@ -197,7 +199,9 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateUnstakeTx_Float(walletAddress.AddressEncoded, nonce, amount, feeFixed, feePerByte, feePerByteAuto, feeToken, feePayInExtra, propagate, true, true)
+		tx, err := builder.CreateUnstakeTx_Float(walletAddress.AddressEncoded, nonce, amount, feeFixed, feePerByte, feePerByteAuto, feeToken, feePayInExtra, propagate, true, true, func(status string) {
+			gui.GUI.OutputWrite(status)
+		})
 		if err != nil {
 			return
 		}

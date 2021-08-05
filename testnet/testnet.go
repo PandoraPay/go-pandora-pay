@@ -38,7 +38,9 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, 0, 0, true, []byte{}, true, true, true, true)
+	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, 0, 0, true, []byte{}, true, true, true, true, func(status string) {
+
+	})
 	if err != nil {
 		return
 	}

@@ -9,6 +9,7 @@ import (
 	"pandora-pay/recovery"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/address"
+	"sync"
 	"syscall/js"
 )
 
@@ -16,6 +17,8 @@ var subscriptionsIndex uint64
 var startMainCallback func()
 
 var promiseConstructor, errorConstructor js.Value
+
+var mutex sync.Mutex
 
 func convertJSON(obj interface{}) (string, error) {
 
@@ -115,6 +118,9 @@ func Initialize(startMainCb func()) {
 		"store": js.ValueOf(map[string]interface{}{
 			"storeAccount": js.FuncOf(storeAccount),
 			"storeToken":   js.FuncOf(storeToken),
+		}),
+		"mempool": js.ValueOf(map[string]interface{}{
+			"mempoolRemoveTx": js.FuncOf(mempoolRemoveTx),
 		}),
 		"enums": js.ValueOf(map[string]interface{}{
 			"transactions": js.ValueOf(map[string]interface{}{

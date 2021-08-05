@@ -14,13 +14,8 @@ import (
 	"syscall/js"
 )
 
-var mutex sync.Mutex
-
 func storeAccount(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
-
-		mutex.Lock()
-		defer mutex.Unlock()
 
 		var err error
 
@@ -37,10 +32,11 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
+		mutex.Lock()
+		defer mutex.Unlock()
+
 		app.Mempool.SuspendProcessingCn <- struct{}{}
-		defer func() {
-			app.Mempool.ContinueProcessingCn <- false
-		}()
+		defer app.Mempool.ContinueProcessing(false)
 
 		if err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -65,9 +61,6 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 func storeToken(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 
-		mutex.Lock()
-		defer mutex.Unlock()
-
 		var err error
 
 		var tok *token.Token
@@ -83,10 +76,11 @@ func storeToken(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
+		mutex.Lock()
+		defer mutex.Unlock()
+
 		app.Mempool.SuspendProcessingCn <- struct{}{}
-		defer func() {
-			app.Mempool.ContinueProcessingCn <- false
-		}()
+		defer app.Mempool.ContinueProcessing(false)
 		if err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 			toks := tokens.NewTokens(writer)

@@ -47,7 +47,11 @@ type Mempool struct {
 	NewTransactionMulticast *multicast.MulticastChannel  `json:"-"`
 }
 
-func (mempool *Mempool) RemoveInsertedTxsFromBlockchain(txs []*transaction.Transaction) bool {
+func (mempool *Mempool) ContinueProcessing(data bool) {
+	mempool.ContinueProcessingCn <- data
+}
+
+func (mempool *Mempool) RemoveInsertedTxsFromBlockchain(txs []string) bool {
 	answerCn := make(chan bool)
 	mempool.removeTransactionsCn <- &MempoolWorkerRemoveTxs{txs, answerCn}
 	return <-answerCn

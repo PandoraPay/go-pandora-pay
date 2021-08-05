@@ -86,7 +86,13 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	//let's remove the transactions from the mempool
 	if len(update.insertedTxsList) > 0 {
-		queue.chain.mempool.RemoveInsertedTxsFromBlockchain(update.insertedTxsList)
+		hashes := make([]string, len(update.insertedTxsList))
+		for i, tx := range update.insertedTxsList {
+			if tx != nil {
+				hashes[i] = tx.Bloom.HashStr
+			}
+		}
+		queue.chain.mempool.RemoveInsertedTxsFromBlockchain(hashes)
 	}
 
 	//let's add the transactions in the mempool

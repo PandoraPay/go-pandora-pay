@@ -4,9 +4,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
-	"pandora-pay/gui"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"sync/atomic"
@@ -29,7 +27,7 @@ type MempoolWorkerAddTx struct {
 }
 
 type MempoolWorkerRemoveTxs struct {
-	Txs    []*transaction.Transaction
+	Txs    []string
 	Result chan<- bool
 }
 
@@ -95,11 +93,11 @@ func (worker *mempoolWorker) processing(
 		result := false
 
 		removedTxsMap := make(map[string]bool)
-		for _, tx := range data.Txs {
-			if tx != nil && txsMap[tx.Bloom.HashStr] {
-				removedTxsMap[tx.Bloom.HashStr] = true
-				delete(txsMap, tx.Bloom.HashStr)
-				txs.txs.Delete(tx.Bloom.HashStr)
+		for _, hash := range data.Txs {
+			if hash != "" && txsMap[hash] {
+				removedTxsMap[hash] = true
+				delete(txsMap, hash)
+				txs.txs.Delete(hash)
 				result = true
 			}
 		}
@@ -169,7 +167,6 @@ func (worker *mempoolWorker) processing(
 		//let's check hf the work has been changed
 		store.StoreBlockchain.DB.View(func(dbTx store_db_interface.StoreDBTransactionInterface) (err error) {
 
-			gui.GUI.Log("MEMPOOL Opened")
 			if accs != nil {
 				accs.Tx = dbTx
 				toks.Tx = dbTx
@@ -185,7 +182,6 @@ func (worker *mempoolWorker) processing(
 				select {
 				case <-suspendProcessingCn:
 					suspended = true
-					gui.GUI.Log("MEMPOOL CLOSED")
 					return
 				case newWork := <-newWorkCn:
 					resetNow(newWork)
@@ -202,7 +198,6 @@ func (worker *mempoolWorker) processing(
 							continue
 						case <-suspendProcessingCn:
 							suspended = true
-							gui.GUI.Log("MEMPOOL CLOSED")
 							return
 						case newAddTx = <-addTransactionCn:
 							tx = newAddTx.Tx
