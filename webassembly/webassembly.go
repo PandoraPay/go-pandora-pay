@@ -121,6 +121,7 @@ func Initialize(startMainCb func()) {
 		}),
 		"mempool": js.ValueOf(map[string]interface{}{
 			"mempoolRemoveTx": js.FuncOf(mempoolRemoveTx),
+			"mempoolInsertTx": js.FuncOf(mempoolInsertTx),
 		}),
 		"enums": js.ValueOf(map[string]interface{}{
 			"transactions": js.ValueOf(map[string]interface{}{

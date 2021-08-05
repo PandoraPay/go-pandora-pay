@@ -10,7 +10,6 @@ import (
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
-	"sync"
 	"syscall/js"
 )
 
