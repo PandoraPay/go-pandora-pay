@@ -201,7 +201,7 @@ func (api *APICommon) GetAccountTxs(request *api_types.APIAccountTxsRequest) ([]
 	return json.Marshal(answer)
 }
 
-func (api *APICommon) GetAccountMempool(request *api_types.APIAccountRequest) ([]byte, error) {
+func (api *APICommon) GetAccountMempool(request *api_types.APIAccountBaseRequest) ([]byte, error) {
 
 	publicKeyHash, err := request.GetPublicKeyHash()
 	if err != nil {

@@ -148,6 +148,32 @@ func getNetworkAccountTxs(this js.Value, args []js.Value) interface{} {
 	})
 }
 
+func getNetworkAccountMempool(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+
+		hash, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
+		}
+
+		data := socket.SendJSONAwaitAnswer([]byte("account/mem-pool"), &api_types.APIAccountBaseRequest{"", hash})
+		if data.Out == nil || data.Err != nil {
+			return nil, data.Err
+		}
+
+		result := make([]helpers.HexBytes, 0)
+		if err := json.Unmarshal(data.Out, &result); err != nil {
+			return nil, err
+		}
+
+		return convertJSON(result)
+	})
+}
+
 func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()

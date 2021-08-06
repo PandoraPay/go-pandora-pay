@@ -12,26 +12,37 @@ import (
 	"time"
 )
 
+type MempoolAccountTxs struct {
+	txs map[string]*mempoolTx
+	sync.RWMutex
+}
+
 type MempoolTxs struct {
-	count        int32
-	txsMap       *sync.Map //[string]*mempoolTx
-	txsMapByKeys *sync.Map //[string]*( sync.map[string]bool )
+	count          int32
+	txsMap         *sync.Map //[string]*mempoolTx
+	accountsMapTxs *sync.Map //[string]*MempoolAccountTxs
 }
 
 func (self *MempoolTxs) InsertTx(hashStr string, tx *mempoolTx) bool {
-	_, stored := self.txsMap.LoadOrStore(hashStr, tx)
-	if stored {
+	_, loaded := self.txsMap.LoadOrStore(hashStr, tx)
+	if !loaded {
 		atomic.AddInt32(&self.count, 1)
 
 		if config.SEED_WALLET_NODES_INFO {
 			keys, _ := tx.Tx.GetAllKeys()
 			for key := range keys {
-				foundMap, _ := self.txsMapByKeys.LoadOrStore(key, &sync.Map{})
-				foundMap.(*sync.Map).Store(key, tx)
+				foundMapData, _ := self.accountsMapTxs.LoadOrStore(key, &MempoolAccountTxs{})
+				foundMap := foundMapData.(*MempoolAccountTxs)
+				foundMap.Lock()
+				if foundMap.txs == nil {
+					foundMap.txs = make(map[string]*mempoolTx)
+				}
+				foundMap.txs[tx.Tx.Bloom.HashStr] = tx
+				foundMap.Unlock()
 			}
 		}
 	}
-	return stored
+	return !loaded
 }
 
 func (self *MempoolTxs) DeleteTx(hashStr string) bool {
@@ -42,9 +53,20 @@ func (self *MempoolTxs) DeleteTx(hashStr string) bool {
 		if config.SEED_WALLET_NODES_INFO {
 			tx := txData.(*mempoolTx)
 			keys, _ := tx.Tx.GetAllKeys()
+
 			for key := range keys {
-				foundMap, _ := self.txsMapByKeys.LoadOrStore(key, &sync.Map{})
-				foundMap.(*sync.Map).Delete(key)
+
+				foundMapData, loaded := self.accountsMapTxs.Load(key)
+				if loaded {
+					foundMap := foundMapData.(*MempoolAccountTxs)
+					foundMap.Lock()
+					delete(foundMap.txs, tx.Tx.Bloom.HashStr)
+					if len(foundMap.txs) == 0 {
+						self.accountsMapTxs.Delete(key)
+					}
+					foundMap.Unlock()
+				}
+
 			}
 		}
 	}
@@ -88,19 +110,20 @@ func (self *MempoolTxs) Get(txId string) *mempoolTx {
 	return value.(*mempoolTx)
 }
 
-func (self *MempoolTxs) GetAccountTxs(publicKeyHash []byte) map[string]*mempoolTx {
+func (self *MempoolTxs) GetAccountTxs(publicKeyHash []byte) []*mempoolTx {
 	if config.SEED_WALLET_NODES_INFO {
+		if foundMapData, found := self.accountsMapTxs.Load(string(publicKeyHash)); found {
+			foundMap := foundMapData.(*MempoolAccountTxs)
+			out := make([]*mempoolTx, len(foundMap.txs))
 
-		out := make(map[string]*mempoolTx)
+			c := 0
+			for _, tx := range foundMap.txs {
+				out[c] = tx
+				c += 1
+			}
 
-		foundMapData, _ := self.txsMapByKeys.Load(string(publicKeyHash))
-		foundMap := foundMapData.(*sync.Map)
-		foundMap.Range(func(key, value interface{}) bool {
-			out[key.(string)] = value.(*mempoolTx)
-			return true
-		})
-
-		return out
+			return out
+		}
 	}
 	return nil
 }

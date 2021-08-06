@@ -213,7 +213,7 @@ func (api *API) getAccountTxs(values *url.Values) (interface{}, error) {
 
 func (api *API) getAccountMempool(values *url.Values) (interface{}, error) {
 
-	request := &api_types.APIAccountRequest{}
+	request := &api_types.APIAccountBaseRequest{}
 	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
