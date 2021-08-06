@@ -1,7 +1,9 @@
 package api_types
 
 import (
+	"encoding/hex"
 	"errors"
+	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -132,4 +134,17 @@ type APIMempoolRequest struct {
 type APIFaucetCoinsRequest struct {
 	Address     string `json:"address,omitempty"`
 	FaucetToken string `json:"faucetToken,omitempty"`
+}
+
+func (self *APIAccountBaseRequest) ImportFromValues(values *url.Values) (err error) {
+
+	if values.Get("address") != "" {
+		self.Address = values.Get("address")
+	} else if values.Get("hash") != "" {
+		self.Hash, err = hex.DecodeString(values.Get("hash"))
+	} else {
+		err = errors.New("parameter 'address' or 'hash' was not specified")
+	}
+
+	return
 }

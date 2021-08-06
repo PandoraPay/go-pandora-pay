@@ -186,17 +186,10 @@ func (api *API) getTxHash(values *url.Values) (interface{}, error) {
 func (api *API) getAccount(values *url.Values) (interface{}, error) {
 	request := &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
 
-	var err error
-	if values.Get("address") != "" {
-		request.Address = values.Get("address")
-	} else if values.Get("hash") != "" {
-		request.Hash, err = hex.DecodeString(values.Get("hash"))
-	} else {
-		err = errors.New("parameter 'address' or 'hash' was not specified")
-	}
-	if err != nil {
+	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
+
 	return api.apiCommon.GetAccount(request)
 }
 
@@ -211,17 +204,21 @@ func (api *API) getAccountTxs(values *url.Values) (interface{}, error) {
 		}
 	}
 
-	if values.Get("address") != "" {
-		request.Address = values.Get("address")
-	} else if values.Get("hash") != "" {
-		request.Hash, err = hex.DecodeString(values.Get("hash"))
-	} else {
-		err = errors.New("parameter 'address' or 'hash' was not specified")
-	}
-	if err != nil {
+	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
+
 	return api.apiCommon.GetAccountTxs(request)
+}
+
+func (api *API) getAccountMempool(values *url.Values) (interface{}, error) {
+
+	request := &api_types.APIAccountRequest{}
+	if err := request.ImportFromValues(values); err != nil {
+		return nil, err
+	}
+
+	return api.apiCommon.GetAccountMempool(request)
 }
 
 func (api *API) getToken(values *url.Values) (interface{}, error) {
@@ -317,6 +314,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		api.GetMap["block-info"] = api.getBlockInfo
 		api.GetMap["tx-info"] = api.getTxInfo
 		api.GetMap["account/txs"] = api.getAccountTxs
+		api.GetMap["account/mem-pool"] = api.getAccountMempool
 	}
 
 	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {

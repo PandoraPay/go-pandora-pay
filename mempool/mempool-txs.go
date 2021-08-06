@@ -22,10 +22,13 @@ func (self *MempoolTxs) InsertTx(hashStr string, tx *mempoolTx) bool {
 	_, stored := self.txsMap.LoadOrStore(hashStr, tx)
 	if stored {
 		atomic.AddInt32(&self.count, 1)
-		keys, _ := tx.Tx.GetAllKeys()
-		for key := range keys {
-			foundMap, _ := self.txsMapByKeys.LoadOrStore(key, &sync.Map{})
-			foundMap.(*sync.Map).Store(key, tx)
+
+		if config.SEED_WALLET_NODES_INFO {
+			keys, _ := tx.Tx.GetAllKeys()
+			for key := range keys {
+				foundMap, _ := self.txsMapByKeys.LoadOrStore(key, &sync.Map{})
+				foundMap.(*sync.Map).Store(key, tx)
+			}
 		}
 	}
 	return stored
@@ -35,11 +38,14 @@ func (self *MempoolTxs) DeleteTx(hashStr string) bool {
 	txData, deleted := self.txsMap.LoadAndDelete(hashStr)
 	if deleted {
 		atomic.AddInt32(&self.count, -1)
-		tx := txData.(*mempoolTx)
-		keys, _ := tx.Tx.GetAllKeys()
-		for key := range keys {
-			foundMap, _ := self.txsMapByKeys.LoadOrStore(key, &sync.Map{})
-			foundMap.(*sync.Map).Delete(key)
+
+		if config.SEED_WALLET_NODES_INFO {
+			tx := txData.(*mempoolTx)
+			keys, _ := tx.Tx.GetAllKeys()
+			for key := range keys {
+				foundMap, _ := self.txsMapByKeys.LoadOrStore(key, &sync.Map{})
+				foundMap.(*sync.Map).Delete(key)
+			}
 		}
 	}
 	return deleted
@@ -80,6 +86,23 @@ func (self *MempoolTxs) Get(txId string) *mempoolTx {
 		return nil
 	}
 	return value.(*mempoolTx)
+}
+
+func (self *MempoolTxs) GetAccountTxs(publicKeyHash []byte) map[string]*mempoolTx {
+	if config.SEED_WALLET_NODES_INFO {
+
+		out := make(map[string]*mempoolTx)
+
+		foundMapData, _ := self.txsMapByKeys.Load(string(publicKeyHash))
+		foundMap := foundMapData.(*sync.Map)
+		foundMap.Range(func(key, value interface{}) bool {
+			out[key.(string)] = value.(*mempoolTx)
+			return true
+		})
+
+		return out
+	}
+	return nil
 }
 
 func createMempoolTxs() (txs *MempoolTxs) {

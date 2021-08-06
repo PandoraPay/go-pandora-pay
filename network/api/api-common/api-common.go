@@ -201,6 +201,28 @@ func (api *APICommon) GetAccountTxs(request *api_types.APIAccountTxsRequest) ([]
 	return json.Marshal(answer)
 }
 
+func (api *APICommon) GetAccountMempool(request *api_types.APIAccountRequest) ([]byte, error) {
+
+	publicKeyHash, err := request.GetPublicKeyHash()
+	if err != nil {
+		return nil, err
+	}
+
+	txs := api.mempool.Txs.GetAccountTxs(publicKeyHash)
+
+	var answer []helpers.HexBytes
+	if txs != nil {
+		answer = make([]helpers.HexBytes, len(txs))
+		c := 0
+		for _, tx := range txs {
+			answer[c] = tx.Tx.Bloom.Hash
+			c += 1
+		}
+	}
+
+	return json.Marshal(answer)
+}
+
 func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) ([]byte, error) {
 	txInfo, err := api.ApiStore.openLoadTxInfo(request.Hash, request.Height)
 	if err != nil || txInfo == nil {
