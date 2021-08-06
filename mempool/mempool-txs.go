@@ -6,33 +6,27 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/recovery"
-	"strconv"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
-type MempoolTxsData struct {
-	txsCount int64
-	txsList  []*mempoolTx
+type MempoolTxs struct {
+	txsMap *sync.Map //[string]*mempoolTx
 }
 
-type MempoolTxs struct {
-	txs *sync.Map // [string]*mempoolTx
+func (self *MempoolTxs) InsertTx(hashStr string, tx *mempoolTx) bool {
+	_, stored := self.txsMap.LoadOrStore(hashStr, tx)
+	return stored
+}
 
-	data             *atomic.Value //*MempoolTxsData
-	waitTxsListReady *atomic.Value //chan <- interface{}
-
-	lock                        *sync.Mutex
-	temporary                   *MempoolTxsData
-	temporaryWaitTxsListReadyCn chan struct{}
-	stored                      bool
+func (self *MempoolTxs) DeleteTx(hashStr string) {
+	self.txsMap.Delete(hashStr)
 }
 
 func (self *MempoolTxs) GetTxsFromMap() (out map[string]*mempoolTx) {
 
 	out = make(map[string]*mempoolTx)
-	self.txs.Range(func(key, value interface{}) bool {
+	self.txsMap.Range(func(key, value interface{}) bool {
 		out[key.(string)] = value.(*mempoolTx)
 		return true
 	})
@@ -40,98 +34,42 @@ func (self *MempoolTxs) GetTxsFromMap() (out map[string]*mempoolTx) {
 	return
 }
 
-func (self *MempoolTxs) GetTxsList() (out []*mempoolTx) {
+func (self *MempoolTxs) GetTxsList() []*mempoolTx {
+	data := self.GetTxsFromMap()
+	out := make([]*mempoolTx, len(data))
 
-	<-self.waitTxsListReady.Load().(chan struct{})
-	return self.data.Load().(*MempoolTxsData).txsList
+	c := 0
+	for _, tx := range data {
+		out[c] = tx
+		c += 1
+	}
+	return out
+}
+
+func (self *MempoolTxs) Exists(txId string) bool {
+	_, loaded := self.txsMap.Load(txId)
+	return loaded
 
 }
 
-func (self *MempoolTxs) Exists(txId string) *mempoolTx {
-
-	value, loaded := self.txs.Load(txId)
+func (self *MempoolTxs) Get(txId string) *mempoolTx {
+	value, loaded := self.txsMap.Load(txId)
 	if !loaded {
 		return nil
 	}
 	return value.(*mempoolTx)
-
-}
-
-func (self *MempoolTxs) clearList() {
-
-	self.lock.Lock()
-	defer self.lock.Unlock()
-
-	if self.stored {
-		self.temporaryWaitTxsListReadyCn = make(chan struct{})
-		self.waitTxsListReady.Store(self.temporaryWaitTxsListReadyCn)
-
-		self.stored = false
-
-		self.temporary = &MempoolTxsData{
-			0,
-			[]*mempoolTx{},
-		}
-	}
-
-}
-
-func (self *MempoolTxs) readyList() {
-
-	self.lock.Lock()
-	defer self.lock.Unlock()
-
-	if !self.stored {
-		self.data.Store(self.temporary)
-		self.stored = true
-		close(self.temporaryWaitTxsListReadyCn)
-	}
-}
-
-func (self *MempoolTxs) addToList(tx *mempoolTx) {
-
-	self.lock.Lock()
-	defer self.lock.Unlock()
-
-	if self.stored {
-
-		self.temporary = &MempoolTxsData{
-			self.temporary.txsCount + 1,
-			append(self.temporary.txsList, tx),
-		}
-		self.data.Store(self.temporary)
-
-	} else {
-		self.temporary.txsCount += 1
-		self.temporary.txsList = append(self.temporary.txsList, tx)
-	}
-
 }
 
 func createMempoolTxs() (txs *MempoolTxs) {
 
 	txs = &MempoolTxs{
 		&sync.Map{},
-		&atomic.Value{}, //interface{}
-		&atomic.Value{}, //interface{}
-		&sync.Mutex{},
-		&MempoolTxsData{
-			0,
-			[]*mempoolTx{},
-		},
-		make(chan struct{}),
-		false,
 	}
-	txs.data.Store(&MempoolTxsData{
-		0,
-		[]*mempoolTx{},
-	})
-	txs.waitTxsListReady.Store(txs.temporaryWaitTxsListReadyCn)
 
 	if config.DEBUG {
 		recovery.SafeGo(func() {
 			for {
-				transactions := txs.GetTxsList()
+				transactions := txs.GetTxsFromMap()
 				if len(transactions) != 0 {
 					gui.GUI.Log("")
 					for _, out := range transactions {
@@ -145,23 +83,22 @@ func createMempoolTxs() (txs *MempoolTxs) {
 	}
 
 	recovery.SafeGo(func() {
-		last := int64(-1)
+		//last := int64(-1)
 		for {
 
-			<-txs.waitTxsListReady.Load().(chan struct{})
-			txsCount := txs.data.Load().(*MempoolTxsData).txsCount
-
-			if txsCount != last {
-				gui.GUI.Info2Update("mempool", strconv.FormatInt(txsCount, 10))
-				last = txsCount
-			}
-
-			count := 0
-			txs.txs.Range(func(key, value interface{}) bool {
-				count += 1
-				return true
-			})
-			gui.GUI.Info2Update("mempool2", strconv.Itoa(count))
+			//txsCount := txs.GetTxsFromMap()
+			//
+			//if len(txsCount) != last {
+			//	gui.GUI.Info2Update("mempool", strconv.FormatInt(txsCount, 10))
+			//	last = txsCount
+			//}
+			//
+			//count := 0
+			//txs.txs.Range(func(key, value interface{}) bool {
+			//	count += 1
+			//	return true
+			//})
+			//gui.GUI.Info2Update("mempool2", strconv.Itoa(count))
 
 			time.Sleep(1 * time.Second)
 		}

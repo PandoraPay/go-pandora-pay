@@ -141,7 +141,7 @@ func (api *APICommon) GetTx(request *api_types.APITransactionRequest) ([]byte, e
 	mempool := false
 	var txInfo *info.TxInfo
 	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
-		txMemPool := api.mempool.Txs.Exists(string(request.Hash))
+		txMemPool := api.mempool.Txs.Get(string(request.Hash))
 		if txMemPool != nil {
 			mempool = true
 			tx = txMemPool.Tx
@@ -233,7 +233,8 @@ func (api *APICommon) GetToken(request *api_types.APITokenRequest) ([]byte, erro
 }
 
 func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) ([]byte, error) {
-	transactions := api.mempool.Txs.GetTxsList()
+
+	transactions := api.mempool.Txs.GetTxsFromMap()
 
 	if request.Count == 0 {
 		request.Count = config.API_MEMPOOL_MAX_TRANSACTIONS
@@ -254,8 +255,15 @@ func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) ([]byte, 
 		Hashes: make([]helpers.HexBytes, length),
 	}
 
-	for i := 0; i < len(result.Hashes); i++ {
-		result.Hashes[i] = transactions[start+i].Tx.Bloom.Hash
+	c := 0
+	for key := range transactions {
+		if c >= start {
+			result.Hashes[c-start] = transactions[key].Tx.Bloom.Hash
+			if c-start > request.Count {
+				break
+			}
+		}
+		c += 1
 	}
 	return json.Marshal(result)
 }
@@ -264,7 +272,7 @@ func (api *APICommon) GetMempoolExists(txId []byte) ([]byte, error) {
 	if len(txId) != cryptography.HashSize {
 		return nil, errors.New("TxId must be 32 byte")
 	}
-	tx := api.mempool.Txs.Exists(string(txId))
+	tx := api.mempool.Txs.Get(string(txId))
 	if tx == nil {
 		return nil, errors.New("Tx is not in mempool")
 	}
@@ -276,7 +284,7 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocke
 	//it needs to compute  tx.Bloom.HashStr
 	tx.BloomNow()
 
-	if api.mempool.Txs.Exists(tx.Bloom.HashStr) != nil {
+	if api.mempool.Txs.Exists(tx.Bloom.HashStr) {
 		return []byte{1}, nil
 	}
 

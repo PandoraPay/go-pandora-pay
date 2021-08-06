@@ -184,7 +184,7 @@ func (api *APIWebsockets) getMempoolExists(conn *connection.AdvancedConnection, 
 	if len(values) != 32 {
 		return nil, errors.New("Invalid hash")
 	}
-	if api.mempool.Txs.Exists(string(values)) != nil {
+	if api.mempool.Txs.Exists(string(values)) {
 		return []byte{1}, nil
 	} else {
 		return []byte{0}, nil
@@ -198,7 +198,7 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 	}
 	hashStr := string(values)
 
-	if api.mempool.Txs.Exists(hashStr) != nil {
+	if api.mempool.Txs.Exists(hashStr) {
 		return []byte{1}, nil
 	}
 

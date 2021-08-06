@@ -60,16 +60,11 @@ func (worker *mempoolWorker) processing(
 
 	includedTotalSize := uint64(0)
 	includedTxs := []*mempoolTx{}
-	sendReadyListCn := make(chan struct{})
-
-	txs.clearList()
 
 	resetNow := func(newWork *mempoolWork) {
 
 		if newWork.chainHash != nil {
-			txs.clearList()
 			if readyListSent {
-				close(sendReadyListCn)
 				readyListSent = false
 			}
 		}
@@ -97,7 +92,7 @@ func (worker *mempoolWorker) processing(
 			if hash != "" && txsMap[hash] {
 				removedTxsMap[hash] = true
 				delete(txsMap, hash)
-				txs.txs.Delete(hash)
+				txs.DeleteTx(hash)
 				result = true
 			}
 		}
@@ -129,7 +124,7 @@ func (worker *mempoolWorker) processing(
 		for _, tx := range data.Txs {
 			if tx != nil && !txsMap[tx.Tx.Bloom.HashStr] {
 				txsMap[tx.Tx.Bloom.HashStr] = true
-				txs.txs.Store(tx.Tx.Bloom.HashStr, tx)
+				txs.InsertTx(tx.Tx.Bloom.HashStr, tx)
 				txsList = append(txsList, tx)
 				result = true
 			}
@@ -207,11 +202,6 @@ func (worker *mempoolWorker) processing(
 								}
 								continue
 							}
-						case <-sendReadyListCn:
-							//sending readyList only in case there is no transaction in the add channel
-							sendReadyListCn = make(chan struct{})
-							txs.readyList()
-							readyListSent = true
 						}
 
 					} else {
@@ -257,8 +247,6 @@ func (worker *mempoolWorker) processing(
 								txsMap[tx.Tx.Bloom.HashStr] = true
 							}
 
-							txs.addToList(tx)
-
 						}
 
 					}
@@ -271,7 +259,7 @@ func (worker *mempoolWorker) processing(
 							listIndex--
 						}
 						delete(txsMap, tx.Tx.Bloom.HashStr)
-						txs.txs.Delete(tx.Tx.Bloom.HashStr)
+						txs.DeleteTx(tx.Tx.Bloom.HashStr)
 					}
 
 					if newAddTx != nil && newAddTx.Result != nil {

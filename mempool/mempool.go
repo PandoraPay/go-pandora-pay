@@ -91,7 +91,7 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 			continue
 		}
 
-		if mempool.Txs.Exists(tx.Bloom.HashStr) != nil {
+		if mempool.Txs.Exists(tx.Bloom.HashStr) {
 			continue
 		}
 
@@ -163,7 +163,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 
 			var errorResult error
 
-			_, loaded := mempool.Txs.txs.LoadOrStore(finalTx.tx.Tx.Bloom.HashStr, finalTx.tx)
+			loaded := mempool.Txs.InsertTx(finalTx.tx.Tx.Bloom.HashStr, finalTx.tx)
 			if loaded {
 				errorResult = errors.New("Tx already exists")
 			} else if awaitAnswer {
