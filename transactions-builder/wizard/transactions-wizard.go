@@ -60,8 +60,7 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 	}
 
 	tx := &transaction.Transaction{
-		Version: 0,
-		TxType:  transaction_type.TX_SIMPLE,
+		Version: transaction_type.TX_SIMPLE,
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			Nonce: nonce,
 			Vin:   vin,
@@ -109,8 +108,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, feeFixed, f
 	privateKey := &addresses.PrivateKey{Key: key}
 
 	tx := &transaction.Transaction{
-		Version: 0,
-		TxType:  transaction_type.TX_SIMPLE,
+		Version: transaction_type.TX_SIMPLE,
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript: transaction_simple.SCRIPT_UNSTAKE,
 			Nonce:    nonce,
@@ -170,8 +168,7 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 
 	privateKey := &addresses.PrivateKey{Key: key}
 	tx := &transaction.Transaction{
-		Version: 0,
-		TxType:  transaction_type.TX_SIMPLE,
+		Version: transaction_type.TX_SIMPLE,
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript: transaction_simple.SCRIPT_DELEGATE,
 			Nonce:    nonce,

@@ -48,7 +48,7 @@ func setFee(tx *transaction.Transaction, fixed, perByte uint64, perByteAuto bool
 		}
 	}
 
-	switch tx.TxType {
+	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 

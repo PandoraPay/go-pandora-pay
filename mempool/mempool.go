@@ -97,7 +97,7 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 
 		mine := false
 
-		switch tx.TxType {
+		switch tx.Version {
 		case transaction_type.TX_SIMPLE:
 			txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 			for _, vin := range txBase.Vin {
@@ -163,8 +163,8 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 
 			var errorResult error
 
-			loaded := mempool.Txs.InsertTx(finalTx.tx.Tx.Bloom.HashStr, finalTx.tx)
-			if loaded {
+			inserted := mempool.Txs.InsertTx(finalTx.tx.Tx.Bloom.HashStr, finalTx.tx)
+			if !inserted {
 				errorResult = errors.New("Tx already exists")
 			} else if awaitAnswer {
 				answerCn := make(chan error)

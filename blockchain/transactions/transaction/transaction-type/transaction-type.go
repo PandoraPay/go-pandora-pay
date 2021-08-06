@@ -1,14 +1,13 @@
 package transaction_type
 
-type TransactionType uint64
+type TransactionVersion uint64
 
 const (
-	TX_SIMPLE TransactionType = iota
-
+	TX_SIMPLE TransactionVersion = iota
 	TX_END
 )
 
-func (t TransactionType) String() string {
+func (t TransactionVersion) String() string {
 	switch t {
 	case TX_SIMPLE:
 		return "TX_SIMPLE"

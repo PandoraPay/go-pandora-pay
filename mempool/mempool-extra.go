@@ -15,7 +15,7 @@ func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token [
 	txs := mempool.Txs.GetTxsFromMap()
 
 	for _, tx := range txs {
-		if tx.Tx.TxType == transaction_type.TX_SIMPLE {
+		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 			for _, vin := range base.Vin {
 				if bytes.Equal(vin.Bloom.PublicKeyHash, publicKeyHash) && bytes.Equal(vin.Token, token) {
@@ -43,7 +43,7 @@ func (mempool *Mempool) ExistsTxSimpleVersion(publicKeyHash []byte, version tran
 
 	txs := mempool.Txs.GetTxsFromMap()
 	for _, tx := range txs {
-		if tx.Tx.TxType == transaction_type.TX_SIMPLE {
+		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 			if bytes.Equal(base.Vin[0].Bloom.PublicKeyHash, publicKeyHash) && base.TxScript == version {
 				return true
@@ -59,7 +59,7 @@ func (mempool *Mempool) CountInputTxs(publicKeyHash []byte) uint64 {
 
 	count := uint64(0)
 	for _, tx := range txs {
-		if tx.Tx.TxType == transaction_type.TX_SIMPLE {
+		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 			if bytes.Equal(base.Vin[0].Bloom.PublicKeyHash, publicKeyHash) {
 				count++
@@ -76,7 +76,7 @@ func (mempool *Mempool) GetNonce(publicKeyHash []byte, nonce uint64) uint64 {
 
 	nonces := make(map[uint64]bool)
 	for _, tx := range txs {
-		if tx.Tx.TxType == transaction_type.TX_SIMPLE {
+		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 			if bytes.Equal(base.Vin[0].Bloom.PublicKeyHash, publicKeyHash) {
 				nonces[base.Nonce] = true
@@ -118,7 +118,7 @@ func (mempool *Mempool) GetNextTransactionsToInclude(blockHeight uint64, chainHa
 func sortTxs(txList []*mempoolTx) {
 	sort.Slice(txList, func(i, j int) bool {
 
-		if txList[i].FeePerByte == txList[j].FeePerByte && txList[i].Tx.TxType == transaction_type.TX_SIMPLE && txList[j].Tx.TxType == transaction_type.TX_SIMPLE {
+		if txList[i].FeePerByte == txList[j].FeePerByte && txList[i].Tx.Version == transaction_type.TX_SIMPLE && txList[j].Tx.Version == transaction_type.TX_SIMPLE {
 			return txList[i].Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce < txList[j].Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce
 		}
 

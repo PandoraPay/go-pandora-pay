@@ -9,10 +9,10 @@ import (
 )
 
 type TransactionSimpleDelegate struct {
-	TransactionSimpleExtraInterface `json:"-"`
-	Amount                          uint64           `json:"amount"`
-	HasNewPublicKeyHash             bool             `json:"hasNewPublicKeyHash"`
-	NewPublicKeyHash                helpers.HexBytes `json:"newPublicKeyHash"` //20 byte
+	TransactionSimpleExtraInterface
+	Amount              uint64
+	HasNewPublicKeyHash bool
+	NewPublicKeyHash    helpers.HexBytes //20 byte
 }
 
 func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) (err error) {

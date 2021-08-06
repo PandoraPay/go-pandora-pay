@@ -6,10 +6,10 @@ import (
 )
 
 type TransactionSimpleInput struct {
-	Amount    uint64                       `json:"amount"`
-	Token     helpers.HexBytes             `json:"token"`     //20
-	Signature helpers.HexBytes             `json:"signature"` //65
-	Bloom     *TransactionSimpleInputBloom `json:"bloom"`
+	Amount    uint64
+	Token     helpers.HexBytes //20
+	Signature helpers.HexBytes //65
+	Bloom     *TransactionSimpleInputBloom
 }
 
 func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter, inclSignature bool) {

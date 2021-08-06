@@ -337,6 +337,9 @@ func (apiStore *APIStore) loadTx(reader store_db_interface.StoreDBTransactionInt
 	if err := tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
 		return nil, nil, err
 	}
+	if err := tx.BloomExtraVerified(); err != nil {
+		return nil, nil, err
+	}
 
 	var txInfo *info.TxInfo
 	if config.SEED_WALLET_NODES_INFO {

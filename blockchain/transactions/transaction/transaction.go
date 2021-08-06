@@ -10,10 +10,9 @@ import (
 )
 
 type Transaction struct {
-	transaction_base_interface.TransactionBaseInterface `json:"base"`
-	Version                                             uint64                           `json:"version"`
-	TxType                                              transaction_type.TransactionType `json:"txType"`
-	Bloom                                               *TransactionBloom                `json:"bloom"`
+	transaction_base_interface.TransactionBaseInterface
+	Version transaction_type.TransactionVersion
+	Bloom   *TransactionBloom
 }
 
 func (tx *Transaction) GetAllFees() (map[string]uint64, error) {
@@ -43,8 +42,7 @@ func (tx *Transaction) computeHash() []byte {
 
 func (tx *Transaction) SerializeAdvanced(writer *helpers.BufferWriter, inclSignature bool) {
 
-	writer.WriteUvarint(tx.Version)
-	writer.WriteUvarint(uint64(tx.TxType))
+	writer.WriteUvarint(uint64(tx.Version))
 
 	tx.TransactionBaseInterface.SerializeAdvanced(writer, inclSignature)
 }
@@ -68,7 +66,7 @@ func (tx *Transaction) Validate() error {
 	if tx.Version != 0 {
 		return errors.New("Version is invalid")
 	}
-	if tx.TxType >= transaction_type.TX_END {
+	if tx.Version >= transaction_type.TX_END {
 		return errors.New("VersionType is invalid")
 	}
 
@@ -83,17 +81,13 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader) (err error) {
 
 	first := reader.Position
 
-	if tx.Version, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-
 	var n uint64
 	if n, err = reader.ReadUvarint(); err != nil {
 		return
 	}
-	tx.TxType = transaction_type.TransactionType(n)
+	tx.Version = transaction_type.TransactionVersion(n)
 
-	switch tx.TxType {
+	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 		tx.TransactionBaseInterface = &transaction_simple.TransactionSimple{}
 	default:

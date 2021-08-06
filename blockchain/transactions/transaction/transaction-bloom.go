@@ -37,7 +37,7 @@ func (tx *Transaction) BloomAll() (err error) {
 }
 
 func (tx *Transaction) BloomExtraNow() (err error) {
-	switch tx.TxType {
+	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 		serialized := tx.SerializeForSigning()
 		err = tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).BloomNow(serialized)
@@ -48,7 +48,7 @@ func (tx *Transaction) BloomExtraNow() (err error) {
 }
 
 func (tx *Transaction) BloomExtraVerified() (err error) {
-	switch tx.TxType {
+	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 		serialized := tx.SerializeForSigning()
 		err = tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).BloomNowSignatureVerified(serialized)
