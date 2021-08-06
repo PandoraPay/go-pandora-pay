@@ -171,7 +171,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 		}
 
 		vout := make([]*transaction_simple_parts.TransactionSimpleOutput, len(simpleJson.Vout))
-		for i, it := range simpleJson.Vin {
+		for i, it := range simpleJson.Vout {
 			vout[i] = &transaction_simple_parts.TransactionSimpleOutput{
 				PublicKeyHash: it.PublicKeyHash,
 				Amount:        it.Amount,

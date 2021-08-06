@@ -2,10 +2,12 @@ package consensus
 
 import (
 	"encoding/json"
+	"errors"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
+	"pandora-pay/cryptography"
 	"pandora-pay/network/websocks/connection"
 )
 
@@ -19,6 +21,10 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 	chainUpdateNotification := new(ChainUpdateNotification)
 	if err := json.Unmarshal(values, &chainUpdateNotification); err != nil {
 		return nil, err
+	}
+
+	if len(chainUpdateNotification.Hash) != cryptography.HashSize {
+		return nil, errors.New("Chain Update Hash Length is invalid")
 	}
 
 	forkFound, exists := consensus.forks.hashes.Load(string(chainUpdateNotification.Hash))
@@ -47,7 +53,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 			conns:              []*connection.AdvancedConnection{conn},
 		}
 
-		consensus.forks.hashes.LoadOrStore(fork.HashStr, fork)
+		consensus.forks.addFork(fork)
 
 	} else {
 		//let's notify him tha we have a better chain

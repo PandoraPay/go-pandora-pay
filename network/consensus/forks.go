@@ -29,6 +29,10 @@ func (forks *Forks) getBestFork() (selectedFork *Fork) {
 	return
 }
 
+func (forks *Forks) addFork(fork *Fork) {
+	forks.hashes.LoadOrStore(fork.HashStr, fork)
+}
+
 func (forks *Forks) removeFork(fork *Fork) {
 	forks.hashes.Delete(fork.HashStr)
 }

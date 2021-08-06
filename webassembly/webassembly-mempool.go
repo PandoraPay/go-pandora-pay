@@ -36,8 +36,12 @@ func mempoolInsertTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		out := app.Mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, 0, true, false, "*")
+		if err := tx.BloomAll(); err != nil {
+			return nil, err
+		}
 
-		return out, nil
+		err := app.Mempool.AddTxToMemPool(tx, 0, true, false, "*")
+
+		return nil, err
 	})
 }

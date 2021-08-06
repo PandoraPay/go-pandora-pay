@@ -126,7 +126,7 @@ func Initialize(startMainCb func()) {
 		}),
 		"enums": js.ValueOf(map[string]interface{}{
 			"transactions": js.ValueOf(map[string]interface{}{
-				"transactionType": js.ValueOf(map[string]interface{}{
+				"TransactionVersion": js.ValueOf(map[string]interface{}{
 					"TX_SIMPLE": js.ValueOf(uint64(transaction_type.TX_SIMPLE)),
 				}),
 				"transactionSimple": js.ValueOf(map[string]interface{}{
