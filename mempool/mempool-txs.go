@@ -6,21 +6,43 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/recovery"
+	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 type MempoolTxs struct {
-	txsMap *sync.Map //[string]*mempoolTx
+	count        int32
+	txsMap       *sync.Map //[string]*mempoolTx
+	txsMapByKeys *sync.Map //[string]*( sync.map[string]bool )
 }
 
 func (self *MempoolTxs) InsertTx(hashStr string, tx *mempoolTx) bool {
 	_, stored := self.txsMap.LoadOrStore(hashStr, tx)
+	if stored {
+		atomic.AddInt32(&self.count, 1)
+		keys, _ := tx.Tx.GetAllKeys()
+		for key := range keys {
+			foundMap, _ := self.txsMapByKeys.LoadOrStore(key, &sync.Map{})
+			foundMap.(*sync.Map).Store(key, tx)
+		}
+	}
 	return stored
 }
 
-func (self *MempoolTxs) DeleteTx(hashStr string) {
-	self.txsMap.Delete(hashStr)
+func (self *MempoolTxs) DeleteTx(hashStr string) bool {
+	txData, deleted := self.txsMap.LoadAndDelete(hashStr)
+	if deleted {
+		atomic.AddInt32(&self.count, -1)
+		tx := txData.(*mempoolTx)
+		keys, _ := tx.Tx.GetAllKeys()
+		for key := range keys {
+			foundMap, _ := self.txsMapByKeys.LoadOrStore(key, &sync.Map{})
+			foundMap.(*sync.Map).Delete(key)
+		}
+	}
+	return deleted
 }
 
 func (self *MempoolTxs) GetTxsFromMap() (out map[string]*mempoolTx) {
@@ -63,6 +85,8 @@ func (self *MempoolTxs) Get(txId string) *mempoolTx {
 func createMempoolTxs() (txs *MempoolTxs) {
 
 	txs = &MempoolTxs{
+		0,
+		&sync.Map{},
 		&sync.Map{},
 	}
 
@@ -83,22 +107,15 @@ func createMempoolTxs() (txs *MempoolTxs) {
 	}
 
 	recovery.SafeGo(func() {
-		//last := int64(-1)
+		last := int32(-1)
 		for {
 
-			//txsCount := txs.GetTxsFromMap()
-			//
-			//if len(txsCount) != last {
-			//	gui.GUI.Info2Update("mempool", strconv.FormatInt(txsCount, 10))
-			//	last = txsCount
-			//}
-			//
-			//count := 0
-			//txs.txs.Range(func(key, value interface{}) bool {
-			//	count += 1
-			//	return true
-			//})
-			//gui.GUI.Info2Update("mempool2", strconv.Itoa(count))
+			txsCount := atomic.LoadInt32(&txs.count)
+
+			if txsCount != last {
+				gui.GUI.Info2Update("mempool", strconv.FormatInt(int64(txsCount), 10))
+				last = txsCount
+			}
 
 			time.Sleep(1 * time.Second)
 		}
