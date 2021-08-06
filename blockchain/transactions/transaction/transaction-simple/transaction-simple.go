@@ -16,13 +16,13 @@ import (
 )
 
 type TransactionSimple struct {
-	transaction_base_interface.TransactionBaseInterface      `json:"-"`
-	transaction_simple_extra.TransactionSimpleExtraInterface `json:"extra"`
-	TxScript                                                 ScriptType                                          `json:"txScript"`
-	Nonce                                                    uint64                                              `json:"nonce"`
-	Vin                                                      []*transaction_simple_parts.TransactionSimpleInput  `json:"vin"`
-	Vout                                                     []*transaction_simple_parts.TransactionSimpleOutput `json:"vout"`
-	Bloom                                                    *TransactionSimpleBloom                             `json:"-"`
+	transaction_base_interface.TransactionBaseInterface
+	transaction_simple_extra.TransactionSimpleExtraInterface
+	TxScript ScriptType
+	Nonce    uint64
+	Vin      []*transaction_simple_parts.TransactionSimpleInput
+	Vout     []*transaction_simple_parts.TransactionSimpleOutput
+	Bloom    *TransactionSimpleBloom
 }
 
 func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {

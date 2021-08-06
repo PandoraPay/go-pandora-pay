@@ -9,10 +9,10 @@ import (
 )
 
 type TransactionBloom struct {
-	Serialized helpers.HexBytes `json:"-"`
-	Size       uint64           `json:"size"`
-	Hash       helpers.HexBytes `json:"hash"`
-	HashStr    string           `json:"-"`
+	Serialized helpers.HexBytes
+	Size       uint64
+	Hash       helpers.HexBytes
+	HashStr    string
 	bloomed    bool
 }
 

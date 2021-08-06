@@ -8,8 +8,8 @@ import (
 )
 
 type TransactionSimpleInputBloom struct {
-	PublicKey     helpers.HexBytes `json:"publicKey"`     //32
-	PublicKeyHash helpers.HexBytes `json:"publicKeyHash"` //20
+	PublicKey     helpers.HexBytes //32
+	PublicKeyHash helpers.HexBytes //20
 	bloomed       bool
 }
 
