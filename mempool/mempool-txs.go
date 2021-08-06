@@ -114,6 +114,9 @@ func (self *MempoolTxs) GetAccountTxs(publicKeyHash []byte) []*mempoolTx {
 	if config.SEED_WALLET_NODES_INFO {
 		if foundMapData, found := self.accountsMapTxs.Load(string(publicKeyHash)); found {
 			foundMap := foundMapData.(*MempoolAccountTxs)
+
+			foundMap.RLock()
+
 			out := make([]*mempoolTx, len(foundMap.txs))
 
 			c := 0
@@ -121,6 +124,8 @@ func (self *MempoolTxs) GetAccountTxs(publicKeyHash []byte) []*mempoolTx {
 				out[c] = tx
 				c += 1
 			}
+
+			foundMap.RUnlock()
 
 			return out
 		}
