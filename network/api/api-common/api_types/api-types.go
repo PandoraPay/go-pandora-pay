@@ -52,16 +52,35 @@ type APISubscriptionNotification struct {
 	Extra            helpers.HexBytes `json:"extra,omitempty"`
 }
 
-type APISubscriptionNotificationAccountTxExtra struct {
+type APISubscriptionNotificationAccountTxExtraBlockchain struct {
 	Inserted bool   `json:"inserted,omitempty"`
 	TxsCount uint64 `json:"txsCount,omitempty"`
 }
 
-type APISubscriptionNotificationTxExtra struct {
+type APISubscriptionNotificationAccountTxExtraMempool struct {
+	Inserted bool   `json:"inserted,omitempty"`
+}
+
+type APISubscriptionNotificationAccountTxExtra struct {
+	Blockchain *APISubscriptionNotificationAccountTxExtraBlockchain `json:"blockchain,omitempty"`
+	Mempool *APISubscriptionNotificationAccountTxExtraMempool `json:"mempool,omitempty"`
+}
+
+
+type APISubscriptionNotificationTxExtraBlockchain struct {
 	Inserted     bool   `json:"inserted,omitempty"`
 	BlkHeight    uint64 `json:"blkHeight,omitempty"`
 	BlkTimestamp uint64 `json:"blkTimestamp,omitempty"`
 	Height       uint64 `json:"height,omitempty"`
+}
+
+type APISubscriptionNotificationTxExtraMempool struct {
+	Inserted bool   `json:"inserted,omitempty"`
+}
+
+type APISubscriptionNotificationTxExtra struct {
+	Blockchain *APISubscriptionNotificationTxExtraBlockchain `json:"blockchain,omitempty"`
+	Mempool *APISubscriptionNotificationTxExtraMempool `json:"mempool,omitempty"`
 }
 
 type APIAccountTxs struct {

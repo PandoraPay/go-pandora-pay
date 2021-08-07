@@ -92,7 +92,7 @@ func (tx *TransactionSimple) ComputeFees(out map[string]uint64) (err error) {
 	return
 }
 
-func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) (err error) {
+func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
 	for _, vin := range tx.Vin {
 		out[string(vin.Bloom.PublicKeyHash)] = true
 	}

@@ -9,6 +9,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
+	"pandora-pay/mempool"
 	api_http "pandora-pay/network/api/api-http"
 	"pandora-pay/network/api/api-websockets"
 	banned_nodes "pandora-pay/network/banned-nodes"
@@ -237,7 +238,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	return nil
 }
 
-func CreateWebsockets(chain *blockchain.Blockchain, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
+func CreateWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
 		AllAddresses:                 &sync.Map{},
@@ -252,7 +253,7 @@ func CreateWebsockets(chain *blockchain.Blockchain, settings *settings.Settings,
 		bannedNodes:                  bannedNodes,
 	}
 
-	websockets.subscriptions = newWebsocketSubscriptions(websockets, chain)
+	websockets.subscriptions = newWebsocketSubscriptions(websockets, chain, mempool)
 	websockets.allList.Store([]*connection.AdvancedConnection{})
 
 	recovery.SafeGo(func() {

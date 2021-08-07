@@ -17,3 +17,9 @@ type BlockchainTransactionUpdate struct {
 	Height         uint64
 	Keys           []*BlockchainTransactionKeyUpdate
 }
+
+type MempoolTransactionUpdate struct {
+	Inserted bool
+	Tx       *transaction.Transaction
+	Keys     map[string]bool
+}

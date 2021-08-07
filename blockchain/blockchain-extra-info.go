@@ -161,10 +161,7 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 			return
 		}
 
-		var keys map[string]bool
-		if keys, err = tx.GetAllKeys(); err != nil {
-			return
-		}
+		keys := tx.GetAllKeys()
 
 		keysArray := make([][]byte, len(keys))
 		c := 0

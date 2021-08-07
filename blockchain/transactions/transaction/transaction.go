@@ -20,9 +20,10 @@ func (tx *Transaction) GetAllFees() (map[string]uint64, error) {
 	return fees, tx.ComputeFees(fees)
 }
 
-func (tx *Transaction) GetAllKeys() (map[string]bool, error) {
+func (tx *Transaction) GetAllKeys() map[string]bool {
 	out := make(map[string]bool)
-	return out, tx.ComputeAllKeys(out)
+	tx.ComputeAllKeys(out)
+	return out
 }
 
 func (tx *Transaction) SerializeForSigning() []byte {

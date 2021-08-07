@@ -10,6 +10,7 @@ import (
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
+	"pandora-pay/mempool"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/recovery"
@@ -18,6 +19,7 @@ import (
 type WebsocketSubscriptions struct {
 	websockets                        *Websockets
 	chain                             *blockchain.Blockchain
+	mempool                           *mempool.Mempool
 	websocketClosedCn                 chan *connection.AdvancedConnection
 	newSubscriptionCn                 chan *connection.SubscriptionNotification
 	removeSubscriptionCn              chan *connection.SubscriptionNotification
@@ -27,10 +29,10 @@ type WebsocketSubscriptions struct {
 	transactionsSubscriptions         map[string]map[string]*connection.SubscriptionNotification
 }
 
-func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockchain) (subs *WebsocketSubscriptions) {
+func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockchain, mempool *mempool.Mempool) (subs *WebsocketSubscriptions) {
 
 	subs = &WebsocketSubscriptions{
-		websockets, chain, make(chan *connection.AdvancedConnection),
+		websockets, chain, mempool, make(chan *connection.AdvancedConnection),
 		make(chan *connection.SubscriptionNotification),
 		make(chan *connection.SubscriptionNotification),
 		make(map[string]map[string]*connection.SubscriptionNotification),
@@ -138,6 +140,9 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 	updateTransactionsCn := this.chain.UpdateTransactions.AddListener()
 	defer this.chain.UpdateTransactions.RemoveChannel(updateTransactionsCn)
 
+	updateMempoolTransactionsCn := this.mempool.Txs.UpdateMempoolTransactions.AddListener()
+	defer this.mempool.Txs.UpdateMempoolTransactions.RemoveChannel(updateMempoolTransactionsCn)
+
 	var subsMap map[string]map[string]*connection.SubscriptionNotification
 
 	for {
@@ -204,17 +209,41 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				return
 			}
 
-			transactions := transactionsData.([]*blockchain_types.BlockchainTransactionUpdate)
-			for _, v := range transactions {
+			txsUpdates := transactionsData.([]*blockchain_types.BlockchainTransactionUpdate)
+			for _, v := range txsUpdates {
 				for _, key := range v.Keys {
 					if list := this.accountsTransactionsSubscriptions[string(key.PublicKeyHash)]; list != nil {
-						this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), key.PublicKeyHash, list, nil, v.TxHash, &api_types.APISubscriptionNotificationAccountTxExtra{v.Inserted, key.TxsCount})
+						this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), key.PublicKeyHash, list, nil, v.TxHash, &api_types.APISubscriptionNotificationAccountTxExtra{
+							Blockchain: &api_types.APISubscriptionNotificationAccountTxExtraBlockchain{v.Inserted, key.TxsCount},
+						})
 					}
 				}
 
 				if list := this.transactionsSubscriptions[v.TxHashStr]; list != nil {
-					this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), v.TxHash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{v.Inserted, v.BlockHeight, v.BlockTimestamp, v.Height})
+					this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), v.TxHash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
+						Blockchain: &api_types.APISubscriptionNotificationTxExtraBlockchain{v.Inserted, v.BlockHeight, v.BlockTimestamp, v.Height},
+					})
 				}
+			}
+
+		case transactionsData, ok := <-updateMempoolTransactionsCn:
+			if !ok {
+				return
+			}
+
+			txUpdate := transactionsData.(*blockchain_types.MempoolTransactionUpdate)
+			for key := range txUpdate.Keys {
+				if list := this.accountsTransactionsSubscriptions[key]; list != nil {
+					this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), []byte(key), list, nil, txUpdate.Tx.Bloom.Hash, &api_types.APISubscriptionNotificationAccountTxExtra{
+						Mempool: &api_types.APISubscriptionNotificationAccountTxExtraMempool{txUpdate.Inserted},
+					})
+				}
+			}
+
+			if list := this.transactionsSubscriptions[txUpdate.Tx.Bloom.HashStr]; list != nil {
+				this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), txUpdate.Tx.Bloom.Hash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
+					Mempool: &api_types.APISubscriptionNotificationTxExtraMempool{txUpdate.Inserted},
+				})
 			}
 
 		case conn, ok := <-this.websocketClosedCn:

@@ -3,8 +3,10 @@ package mempool
 import (
 	"encoding/hex"
 	"fmt"
+	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/config"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/multicast"
 	"pandora-pay/recovery"
 	"strconv"
 	"sync"
@@ -18,9 +20,10 @@ type MempoolAccountTxs struct {
 }
 
 type MempoolTxs struct {
-	count          int32
-	txsMap         *sync.Map //[string]*mempoolTx
-	accountsMapTxs *sync.Map //[string]*MempoolAccountTxs
+	count                     int32
+	txsMap                    *sync.Map                   //[string]*mempoolTx
+	accountsMapTxs            *sync.Map                   //[string]*MempoolAccountTxs
+	UpdateMempoolTransactions *multicast.MulticastChannel //*MempoolTransactionUpdate
 }
 
 func (self *MempoolTxs) InsertTx(hashStr string, tx *mempoolTx) bool {
@@ -29,7 +32,8 @@ func (self *MempoolTxs) InsertTx(hashStr string, tx *mempoolTx) bool {
 		atomic.AddInt32(&self.count, 1)
 
 		if config.SEED_WALLET_NODES_INFO {
-			keys, _ := tx.Tx.GetAllKeys()
+
+			keys := tx.Tx.GetAllKeys()
 			for key := range keys {
 				foundMapData, _ := self.accountsMapTxs.LoadOrStore(key, &MempoolAccountTxs{})
 				foundMap := foundMapData.(*MempoolAccountTxs)
@@ -40,6 +44,13 @@ func (self *MempoolTxs) InsertTx(hashStr string, tx *mempoolTx) bool {
 				foundMap.txs[tx.Tx.Bloom.HashStr] = tx
 				foundMap.Unlock()
 			}
+
+			self.UpdateMempoolTransactions.Broadcast(&blockchain_types.MempoolTransactionUpdate{
+				true,
+				tx.Tx,
+				keys,
+			})
+
 		}
 	}
 	return !loaded
@@ -52,7 +63,7 @@ func (self *MempoolTxs) DeleteTx(hashStr string) bool {
 
 		if config.SEED_WALLET_NODES_INFO {
 			tx := txData.(*mempoolTx)
-			keys, _ := tx.Tx.GetAllKeys()
+			keys := tx.Tx.GetAllKeys()
 
 			for key := range keys {
 
@@ -68,6 +79,13 @@ func (self *MempoolTxs) DeleteTx(hashStr string) bool {
 				}
 
 			}
+
+			self.UpdateMempoolTransactions.Broadcast(&blockchain_types.MempoolTransactionUpdate{
+				false,
+				tx.Tx,
+				keys,
+			})
+
 		}
 	}
 	return deleted
@@ -139,6 +157,7 @@ func createMempoolTxs() (txs *MempoolTxs) {
 		0,
 		&sync.Map{},
 		&sync.Map{},
+		multicast.NewMulticastChannel(),
 	}
 
 	if config.DEBUG {

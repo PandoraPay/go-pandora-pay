@@ -36,12 +36,12 @@ type Blockchain struct {
 	mutex                    *sync.Mutex //writing mutex
 	updatesQueue             *BlockchainUpdatesQueue
 	ForgingSolutionCn        chan *block_complete.BlockComplete
-	UpdateNewChain           *multicast.MulticastChannel          //chan uint64
-	UpdateNewChainDataUpdate *multicast.MulticastChannel          //chan *BlockchainDataUpdate
-	UpdateAccounts           *multicast.MulticastChannel          //chan *accounts
-	UpdateTokens             *multicast.MulticastChannel          //chan *tokens
-	UpdateTransactions       *multicast.MulticastChannel          //chan []*blockchain_types.BlockchainTransactionUpdate
-	NextBlockCreatedCn       chan *forging_block_work.ForgingWork //chan
+	UpdateNewChain           *multicast.MulticastChannel          //uint64
+	UpdateNewChainDataUpdate *multicast.MulticastChannel          //*BlockchainDataUpdate
+	UpdateAccounts           *multicast.MulticastChannel          //*accounts
+	UpdateTokens             *multicast.MulticastChannel          //*tokens
+	UpdateTransactions       *multicast.MulticastChannel          //[]*blockchain_types.BlockchainTransactionUpdate
+	NextBlockCreatedCn       chan *forging_block_work.ForgingWork //
 }
 
 func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockComplete) (err error) {
