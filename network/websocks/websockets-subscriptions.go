@@ -214,14 +214,18 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				for _, key := range v.Keys {
 					if list := this.accountsTransactionsSubscriptions[string(key.PublicKeyHash)]; list != nil {
 						this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), key.PublicKeyHash, list, nil, v.TxHash, &api_types.APISubscriptionNotificationAccountTxExtra{
-							Blockchain: &api_types.APISubscriptionNotificationAccountTxExtraBlockchain{v.Inserted, key.TxsCount},
+							Blockchain: &api_types.APISubscriptionNotificationAccountTxExtraBlockchain{
+								v.Inserted, key.TxsCount, v.BlockHeight, v.BlockTimestamp, v.Height,
+							},
 						})
 					}
 				}
 
 				if list := this.transactionsSubscriptions[v.TxHashStr]; list != nil {
 					this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), v.TxHash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
-						Blockchain: &api_types.APISubscriptionNotificationTxExtraBlockchain{v.Inserted, v.BlockHeight, v.BlockTimestamp, v.Height},
+						Blockchain: &api_types.APISubscriptionNotificationTxExtraBlockchain{
+							v.Inserted, v.BlockHeight, v.BlockTimestamp, v.Height,
+						},
 					})
 				}
 			}
@@ -232,11 +236,14 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			}
 
 			txUpdate := transactionsData.(*blockchain_types.MempoolTransactionUpdate)
-			for key := range txUpdate.Keys {
-				if list := this.accountsTransactionsSubscriptions[key]; list != nil {
-					this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), []byte(key), list, nil, txUpdate.Tx.Bloom.Hash, &api_types.APISubscriptionNotificationAccountTxExtra{
-						Mempool: &api_types.APISubscriptionNotificationAccountTxExtraMempool{txUpdate.Inserted},
-					})
+
+			if !txUpdate.BlockchainNotification {
+				for key := range txUpdate.Keys {
+					if list := this.accountsTransactionsSubscriptions[key]; list != nil {
+						this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), []byte(key), list, nil, txUpdate.Tx.Bloom.Hash, &api_types.APISubscriptionNotificationAccountTxExtra{
+							Mempool: &api_types.APISubscriptionNotificationAccountTxExtraMempool{txUpdate.Inserted},
+						})
+					}
 				}
 			}
 

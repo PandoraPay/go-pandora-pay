@@ -48,6 +48,7 @@ func (self *MempoolTxs) InsertTx(hashStr string, tx *mempoolTx) bool {
 			self.UpdateMempoolTransactions.Broadcast(&blockchain_types.MempoolTransactionUpdate{
 				true,
 				tx.Tx,
+				false,
 				keys,
 			})
 
@@ -56,7 +57,7 @@ func (self *MempoolTxs) InsertTx(hashStr string, tx *mempoolTx) bool {
 	return !loaded
 }
 
-func (self *MempoolTxs) DeleteTx(hashStr string) bool {
+func (self *MempoolTxs) DeleteTx(hashStr string, blockchainNotification bool) bool {
 	txData, deleted := self.txsMap.LoadAndDelete(hashStr)
 	if deleted {
 		atomic.AddInt32(&self.count, -1)
@@ -83,6 +84,7 @@ func (self *MempoolTxs) DeleteTx(hashStr string) bool {
 			self.UpdateMempoolTransactions.Broadcast(&blockchain_types.MempoolTransactionUpdate{
 				false,
 				tx.Tx,
+				blockchainNotification,
 				keys,
 			})
 

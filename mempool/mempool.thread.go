@@ -83,7 +83,7 @@ func (worker *mempoolWorker) processing(
 			if hash != "" && txsMap[hash] {
 				removedTxsMap[hash] = true
 				delete(txsMap, hash)
-				txs.DeleteTx(hash)
+				txs.DeleteTx(hash, true)
 				result = true
 			}
 		}
@@ -142,8 +142,8 @@ func (worker *mempoolWorker) processing(
 
 			switch continueProcessingType {
 			case CONTINUE_PROCESSING_ERROR:
-				work = nil //it needs a new work
 			case CONTINUE_PROCESSING_NO_ERROR:
+				work = nil //it needs a new work
 			case CONTINUE_PROCESSING_NO_ERROR_RESET:
 				accs = nil
 				toks = nil
@@ -256,7 +256,7 @@ func (worker *mempoolWorker) processing(
 							listIndex--
 						}
 						delete(txsMap, tx.Tx.Bloom.HashStr)
-						txs.DeleteTx(tx.Tx.Bloom.HashStr)
+						txs.DeleteTx(tx.Tx.Bloom.HashStr, false)
 					}
 
 					if newAddTx != nil && newAddTx.Result != nil {
