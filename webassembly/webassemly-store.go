@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
+	"pandora-pay/mempool"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"syscall/js"
@@ -35,7 +36,7 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 		defer mutex.Unlock()
 
 		app.Mempool.SuspendProcessingCn <- struct{}{}
-		defer app.Mempool.ContinueProcessing(false)
+		defer app.Mempool.ContinueProcessing(mempool.CONTINUE_PROCESSING_NO_ERROR_RESET)
 
 		if err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -79,7 +80,7 @@ func storeToken(this js.Value, args []js.Value) interface{} {
 		defer mutex.Unlock()
 
 		app.Mempool.SuspendProcessingCn <- struct{}{}
-		defer app.Mempool.ContinueProcessing(false)
+		defer app.Mempool.ContinueProcessing(mempool.CONTINUE_PROCESSING_NO_ERROR_RESET)
 		if err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 			toks := tokens.NewTokens(writer)

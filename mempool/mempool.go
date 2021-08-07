@@ -37,7 +37,7 @@ type mempoolTxProcess struct {
 type Mempool struct {
 	result                  *atomic.Value                `json:"-"` //*MempoolResult
 	SuspendProcessingCn     chan struct{}                `json:"-"`
-	ContinueProcessingCn    chan bool                    `json:"-"`
+	ContinueProcessingCn    chan ContinueProcessingType  `json:"-"`
 	newWorkCn               chan *mempoolWork            `json:"-"`
 	addTransactionCn        chan *MempoolWorkerAddTx     `json:"-"`
 	removeTransactionsCn    chan *MempoolWorkerRemoveTxs `json:"-"`
@@ -47,8 +47,8 @@ type Mempool struct {
 	NewTransactionMulticast *multicast.MulticastChannel  `json:"-"`
 }
 
-func (mempool *Mempool) ContinueProcessing(data bool) {
-	mempool.ContinueProcessingCn <- data
+func (mempool *Mempool) ContinueProcessing(continueProcessingType ContinueProcessingType) {
+	mempool.ContinueProcessingCn <- continueProcessingType
 }
 
 func (mempool *Mempool) RemoveInsertedTxsFromBlockchain(txs []string) bool {
@@ -228,23 +228,17 @@ func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
 	mempool.result.Store(result)
 
 	newWork := &mempoolWork{
-		chainHash:    hash,
-		chainHeight:  height,
-		result:       result,
-		waitAnswerCn: make(chan struct{}),
+		chainHash:   hash,
+		chainHeight: height,
+		result:      result,
 	}
 
 	mempool.newWorkCn <- newWork
-	<-newWork.waitAnswerCn
-
 }
 
 func (mempool *Mempool) ContinueWork() {
-	newWork := &mempoolWork{
-		waitAnswerCn: make(chan struct{}),
-	}
+	newWork := &mempoolWork{}
 	mempool.newWorkCn <- newWork
-	<-newWork.waitAnswerCn
 }
 
 func CreateMemPool() (*Mempool, error) {
@@ -255,7 +249,7 @@ func CreateMemPool() (*Mempool, error) {
 		result:                  &atomic.Value{}, // *MempoolResult
 		Txs:                     createMempoolTxs(),
 		SuspendProcessingCn:     make(chan struct{}),
-		ContinueProcessingCn:    make(chan bool),
+		ContinueProcessingCn:    make(chan ContinueProcessingType),
 		newWorkCn:               make(chan *mempoolWork),
 		addTransactionCn:        make(chan *MempoolWorkerAddTx, 1000),
 		removeTransactionsCn:    make(chan *MempoolWorkerRemoveTxs),

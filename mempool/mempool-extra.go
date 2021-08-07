@@ -9,6 +9,14 @@ import (
 	"sort"
 )
 
+type ContinueProcessingType byte
+
+const (
+	CONTINUE_PROCESSING_ERROR ContinueProcessingType = iota
+	CONTINUE_PROCESSING_NO_ERROR_RESET
+	CONTINUE_PROCESSING_NO_ERROR
+)
+
 func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token []byte) (uint64, error) {
 
 	out := balance

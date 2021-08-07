@@ -11,10 +11,9 @@ import (
 )
 
 type mempoolWork struct {
-	chainHash    []byte         `json:"-"` //32 byte
-	chainHeight  uint64         `json:"-"`
-	result       *MempoolResult `json:"-"`
-	waitAnswerCn chan struct{}
+	chainHash   []byte         `json:"-"` //32 byte
+	chainHeight uint64         `json:"-"`
+	result      *MempoolResult `json:"-"`
 }
 
 type mempoolWorker struct {
@@ -40,7 +39,7 @@ type MempoolWorkerInsertTxs struct {
 func (worker *mempoolWorker) processing(
 	newWorkCn <-chan *mempoolWork,
 	suspendProcessingCn <-chan struct{},
-	continueProcessingCn <-chan bool,
+	continueProcessingCn <-chan ContinueProcessingType,
 	addTransactionCn <-chan *MempoolWorkerAddTx,
 	insertTransactionsCn <-chan *MempoolWorkerInsertTxs,
 	removeTransactionsCn <-chan *MempoolWorkerRemoveTxs,
@@ -53,7 +52,6 @@ func (worker *mempoolWorker) processing(
 	txsMap := make(map[string]bool)
 	txsMapVerified := make(map[string]bool)
 	listIndex := 0
-	readyListSent := true
 
 	var accs *accounts.Accounts
 	var toks *tokens.Tokens
@@ -62,13 +60,6 @@ func (worker *mempoolWorker) processing(
 	includedTxs := []*mempoolTx{}
 
 	resetNow := func(newWork *mempoolWork) {
-
-		if newWork.chainHash != nil {
-			if readyListSent {
-				readyListSent = false
-			}
-		}
-		close(newWork.waitAnswerCn)
 
 		if newWork.chainHash != nil {
 			txsMapVerified = make(map[string]bool)
@@ -145,14 +136,20 @@ func (worker *mempoolWorker) processing(
 			removeTxs(data)
 		case data := <-insertTransactionsCn:
 			insertTxs(data)
-		case noError := <-continueProcessingCn:
+		case continueProcessingType := <-continueProcessingCn:
+
 			suspended = false
-			if noError {
+
+			switch continueProcessingType {
+			case CONTINUE_PROCESSING_ERROR:
 				work = nil //it needs a new work
-			} else {
+			case CONTINUE_PROCESSING_NO_ERROR:
+			case CONTINUE_PROCESSING_NO_ERROR_RESET:
 				accs = nil
 				toks = nil
+				listIndex = 0
 			}
+
 		}
 
 		if work == nil || suspended { //if no work was sent, just loop again

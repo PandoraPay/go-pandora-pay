@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/mempool"
 	"syscall/js"
 )
 
@@ -20,7 +21,7 @@ func mempoolRemoveTx(this js.Value, args []js.Value) interface{} {
 		defer mutex.Unlock()
 
 		app.Mempool.SuspendProcessingCn <- struct{}{}
-		defer app.Mempool.ContinueProcessing(false)
+		defer app.Mempool.ContinueProcessing(mempool.CONTINUE_PROCESSING_NO_ERROR_RESET)
 
 		app.Mempool.RemoveInsertedTxsFromBlockchain([]string{string(hash)})
 
