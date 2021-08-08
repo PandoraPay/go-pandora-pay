@@ -213,11 +213,11 @@ func (c *AdvancedConnection) ReadPump() {
 	var ctx context.Context
 	var cancel context.CancelFunc
 
+	ctx, cancel = context.WithCancel(context.Background())
+	defer cancel()
 	for {
 
-		ctx, cancel = context.WithCancel(context.Background())
 		_, read, err := c.Conn.Read(ctx)
-		cancel()
 
 		if err != nil {
 			c.Close("Error reading")

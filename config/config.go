@@ -21,6 +21,10 @@ var (
 )
 
 const (
+	TRANSACTIONS_MAX_DATA_LENGTH = 512
+)
+
+const (
 	MAIN_NET_NETWORK_BYTE           uint64 = 0
 	MAIN_NET_NETWORK_BYTE_PREFIX           = "PANDORA" // must have 7 characters
 	MAIN_NET_NETWORK_NAME                  = "MAIN"    // must have 7 characters

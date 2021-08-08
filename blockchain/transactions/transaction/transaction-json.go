@@ -7,15 +7,18 @@ import (
 	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	transaction_simple_parts "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	"pandora-pay/config"
 	"pandora-pay/helpers"
 )
 
-type json_TransactionVersion struct {
-	Version transaction_type.TransactionVersion `json:"version"`
+type json_Only_Transaction struct {
+	Version     transaction_type.TransactionVersion     `json:"version"`
+	DataVersion transaction_type.TransactionDataVersion `json:"dataVersion"`
+	Data        helpers.HexBytes                        `json:"data"`
 }
 
 type json_Transaction struct {
-	*json_TransactionVersion
+	*json_Only_Transaction
 	Size uint64           `json:"size"`
 	Hash helpers.HexBytes `json:"hash"`
 }
@@ -70,8 +73,10 @@ type json_TransactionSimpleUnstake struct {
 func (tx *Transaction) MarshalJSON() ([]byte, error) {
 
 	txJson := &json_Transaction{
-		&json_TransactionVersion{
-			Version: tx.Version,
+		&json_Only_Transaction{
+			tx.Version,
+			tx.DataVersion,
+			tx.Data,
 		},
 		tx.Bloom.Size,
 		tx.Bloom.Hash,
@@ -147,12 +152,36 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 
 func (tx *Transaction) UnmarshalJSON(data []byte) error {
 
-	txVersionJson := &json_TransactionVersion{}
-	if err := json.Unmarshal(data, txVersionJson); err != nil {
+	txOnlyJson := &json_Only_Transaction{}
+	if err := json.Unmarshal(data, txOnlyJson); err != nil {
 		return err
 	}
 
-	tx.Version = txVersionJson.Version
+	switch txOnlyJson.Version {
+	case transaction_type.TX_SIMPLE:
+	default:
+		return errors.New("Invalid Version")
+	}
+
+	tx.Version = txOnlyJson.Version
+
+	switch txOnlyJson.DataVersion {
+	case transaction_type.TX_DATA_NONE:
+		if txOnlyJson.Data != nil {
+			return errors.New("tx.Data must be nil")
+		}
+
+	case transaction_type.TX_DATA_PLAIN_TEXT, transaction_type.TX_DATA_ENCRYPTED:
+		if txOnlyJson.Data == nil || len(txOnlyJson.Data) == 0 || len(txOnlyJson.Data) > config.TRANSACTIONS_MAX_DATA_LENGTH {
+			return errors.New("Invalid tx.Data length")
+		}
+	default:
+		return errors.New("Invalid tx.DataVersion")
+	}
+
+	tx.DataVersion = txOnlyJson.DataVersion
+	tx.Data = txOnlyJson.Data
+
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 
