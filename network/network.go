@@ -84,7 +84,7 @@ func (network *Network) continuouslyDownloadMempool() {
 
 		}
 
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(2000 * time.Millisecond)
 	}
 
 }
