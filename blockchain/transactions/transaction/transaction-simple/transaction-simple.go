@@ -154,7 +154,7 @@ func (tx *TransactionSimple) Validate() (err error) {
 		if len(tx.Vout) == 0 || len(tx.Vout) > 255 {
 			return errors.New("Invalid vout")
 		}
-	case SCRIPT_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_WITHDRAW:
+	case SCRIPT_DELEGATE, SCRIPT_UNSTAKE:
 		if len(tx.Vin) != 1 {
 			return errors.New("Invalid vin")
 		}
@@ -228,7 +228,7 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 	switch tx.TxScript {
 	case SCRIPT_NORMAL:
 		//nothing
-	case SCRIPT_UNSTAKE, SCRIPT_WITHDRAW:
+	case SCRIPT_UNSTAKE:
 		tx.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleUnstake{}
 	case SCRIPT_DELEGATE:
 		tx.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleDelegate{}

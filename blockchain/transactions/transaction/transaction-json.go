@@ -138,8 +138,6 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 					extra.FeeExtra,
 				},
 			})
-		case transaction_simple.SCRIPT_WITHDRAW:
-			return json.Marshal(simpleJson)
 		default:
 			return nil, errors.New("Invalid base.TxScript")
 		}
@@ -241,7 +239,6 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 				Amount:   extraJSON.Amount,
 				FeeExtra: extraJSON.FeeExtra,
 			}
-		case transaction_simple.SCRIPT_WITHDRAW:
 		default:
 			return errors.New("Invalid base.TxScript")
 		}

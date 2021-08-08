@@ -6,6 +6,10 @@ import (
 	"pandora-pay/helpers"
 )
 
+/**
+Substracting Amount and FeeExtra from the StakeAvailable
+Creating a Unstake Pending
+*/
 type TransactionSimpleUnstake struct {
 	TransactionSimpleExtraInterface
 	Amount   uint64
