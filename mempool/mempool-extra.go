@@ -123,6 +123,12 @@ func (mempool *Mempool) GetNextTransactionsToInclude(blockHeight uint64, chainHa
 	return []*transaction.Transaction{}
 }
 
+func (mempool *Mempool) GetMempoolTransactions() (out []*mempoolTx) {
+	result := mempool.result.Load()
+	res := result.(*MempoolResult)
+	return res.txs.Load().([]*mempoolTx)
+}
+
 func sortTxs(txList []*mempoolTx) {
 	sort.Slice(txList, func(i, j int) bool {
 

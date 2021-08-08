@@ -256,7 +256,7 @@ func (api *APICommon) GetToken(request *api_types.APITokenRequest) ([]byte, erro
 
 func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) ([]byte, error) {
 
-	transactions := api.mempool.Txs.GetTxsFromMap()
+	transactions := api.mempool.GetMempoolTransactions()
 
 	if request.Count == 0 {
 		request.Count = config.API_MEMPOOL_MAX_TRANSACTIONS
@@ -277,16 +277,10 @@ func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) ([]byte, 
 		Hashes: make([]helpers.HexBytes, length),
 	}
 
-	c := 0
-	for key := range transactions {
-		if c >= start {
-			result.Hashes[c-start] = transactions[key].Tx.Bloom.Hash
-			if c-start == request.Count {
-				break
-			}
-		}
-		c += 1
+	for i := range result.Hashes {
+		result.Hashes[i] = transactions[start+i].Tx.Bloom.Hash
 	}
+
 	return json.Marshal(result)
 }
 
