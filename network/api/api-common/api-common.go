@@ -281,7 +281,7 @@ func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) ([]byte, 
 	for key := range transactions {
 		if c >= start {
 			result.Hashes[c-start] = transactions[key].Tx.Bloom.Hash
-			if c-start > request.Count {
+			if c-start >= request.Count {
 				break
 			}
 		}
