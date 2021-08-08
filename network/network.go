@@ -69,6 +69,26 @@ func (network *Network) execute() {
 	}
 }
 
+func (network *Network) continuouslyDownloadMempool() {
+
+	for {
+
+		conn := network.Websockets.GetRandomSocket()
+		if conn != nil {
+
+			conn.Send([]byte("chain-get"), nil)
+
+			if config.CONSENSUS == config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.CONSENSUS_TYPE_FULL {
+				network.MempoolSync.DownloadMempool(conn)
+			}
+
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
+
+}
+
 func (network *Network) syncNewConnections() {
 	recovery.SafeGo(func() {
 
@@ -83,11 +103,17 @@ func (network *Network) syncNewConnections() {
 			}
 			conn := data.(*connection.AdvancedConnection)
 
-			conn.Send([]byte("chain-get"), nil)
+			//making it async
+			recovery.SafeGo(func() {
 
-			if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
-				network.MempoolSync.DownloadMempool(conn)
-			}
+				conn.Send([]byte("chain-get"), nil)
+
+				if config.CONSENSUS == config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.CONSENSUS_TYPE_FULL {
+					network.MempoolSync.DownloadMempool(conn)
+				}
+
+			})
+
 		}
 	})
 }
@@ -118,6 +144,7 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 	}
 
 	recovery.SafeGo(network.execute)
+	recovery.SafeGo(network.continuouslyDownloadMempool)
 	recovery.SafeGo(network.syncNewConnections)
 
 	return network, nil

@@ -3,6 +3,7 @@ package websocks
 import (
 	"encoding/json"
 	"errors"
+	"math/rand"
 	"nhooyr.io/websocket"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
@@ -55,6 +56,15 @@ func (websockets *Websockets) GetFirstSocket() *connection.AdvancedConnection {
 
 func (websockets *Websockets) GetAllSockets() []*connection.AdvancedConnection {
 	return websockets.allList.Load().([]*connection.AdvancedConnection)
+}
+
+func (websockets *Websockets) GetRandomSocket() *connection.AdvancedConnection {
+	list := websockets.GetAllSockets()
+	if len(list) > 0 {
+		index := rand.Intn(len(list))
+		return list[index]
+	}
+	return nil
 }
 
 func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID string) {

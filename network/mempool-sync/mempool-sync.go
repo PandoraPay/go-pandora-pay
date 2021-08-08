@@ -39,7 +39,7 @@ func (mempoolSync *MempoolSync) DownloadMempool(conn *connection.AdvancedConnect
 		index += len(data.Hashes)
 		page++
 
-		if len(data.Hashes) != count || index >= data.Count || page > 20 { //done
+		if len(data.Hashes) == 0 || len(data.Hashes) != count || index >= data.Count || page > 20 { //done
 			break
 		}
 
