@@ -101,6 +101,7 @@ you can also create an account on hcaptcha
     - [X] HTTP websocket server
     - [x] HTTP websocket client
     - [X] TOR Integration
+    - [ ] P2P network
 - [ ] API
     - [X] API blockchain explorers
     - [ ] API wallets    
@@ -114,7 +115,7 @@ you can also create an account on hcaptcha
   - [X] Network
 - [ ] Wallet
   - [X] Node.js and Javascript wallet
-  - [ ] Signing transactions
+  - [X] Signing transactions
   - [ ] Documentation **
   - [X] Explorer
 
