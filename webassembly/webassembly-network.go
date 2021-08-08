@@ -267,7 +267,12 @@ func getNetworkMempool(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("mem-pool"), &api_types.APIMempoolRequest{args[0].Int(), args[1].Int()})
+		chainHash, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
+		}
+
+		data := socket.SendJSONAwaitAnswer([]byte("mem-pool"), &api_types.APIMempoolRequest{chainHash, args[1].Int(), args[2].Int()})
 		if data.Err != nil {
 			return nil, data.Err
 		}

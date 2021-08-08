@@ -28,23 +28,23 @@ func setFeeFixedTxNow(fixedFee uint64, value *uint64) {
 	*value = *value + fixedFee
 }
 
-func setFee(tx *transaction.Transaction, fixed, perByte uint64, perByteAuto bool, token []byte, payFeeInExtra bool) error {
+func setFee(tx *transaction.Transaction, fee *TransactionsWizardFeeExtra) error {
 
-	if fixed == 0 {
+	if fee.Fixed == 0 {
 
-		if perByte == 0 && !perByteAuto {
+		if fee.PerByte == 0 && !fee.PerByteAuto {
 			return nil
 		}
 
-		if perByte > 0 && perByteAuto {
+		if fee.PerByte > 0 && fee.PerByteAuto {
 			return errors.New("PerBye is set and PerByteAuto")
 		}
 
-		if perByte == 0 {
-			if config_fees.FEES_PER_BYTE[string(token)] == 0 {
+		if fee.PerByte == 0 {
+			if config_fees.FEES_PER_BYTE[string(fee.Token)] == 0 {
 				return errors.New("The token will most like not be accepted by other miners")
 			}
-			perByte = config_fees.FEES_PER_BYTE[string(token)]
+			fee.PerByte = config_fees.FEES_PER_BYTE[string(fee.Token)]
 		}
 	}
 
@@ -52,14 +52,14 @@ func setFee(tx *transaction.Transaction, fixed, perByte uint64, perByteAuto bool
 	case transaction_type.TX_SIMPLE:
 		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
-		if payFeeInExtra {
+		if fee.PayInExtra {
 
 			switch base.TxScript {
 			case transaction_simple.SCRIPT_UNSTAKE:
-				if fixed > 0 {
-					setFeeFixedTxNow(fixed, &base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
+				if fee.Fixed > 0 {
+					setFeeFixedTxNow(fee.Fixed, &base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
 				} else {
-					setFeeTxNow(tx, perByte, &base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
+					setFeeTxNow(tx, fee.PerByte, &base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra)
 				}
 				return nil
 			}
@@ -67,12 +67,12 @@ func setFee(tx *transaction.Transaction, fixed, perByte uint64, perByteAuto bool
 		} else {
 
 			for _, vin := range tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin {
-				if bytes.Equal(vin.Token, token) {
+				if bytes.Equal(vin.Token, fee.Token) {
 
-					if fixed > 0 {
-						setFeeFixedTxNow(fixed, &vin.Amount)
+					if fee.Fixed > 0 {
+						setFeeFixedTxNow(fee.Fixed, &vin.Amount)
 					} else {
-						setFeeTxNow(tx, perByte, &vin.Amount)
+						setFeeTxNow(tx, fee.PerByte, &vin.Amount)
 					}
 					return nil
 				}

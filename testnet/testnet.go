@@ -18,6 +18,7 @@ import (
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	transactions_builder "pandora-pay/transactions-builder"
+	"pandora-pay/transactions-builder/wizard"
 	"pandora-pay/wallet"
 	wallet_address "pandora-pay/wallet/address"
 	"time"
@@ -38,7 +39,7 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, 0, 0, true, []byte{}, true, true, true, true, func(string) {})
+	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, &wizard.TransactionsWizardFeeExtra{wizard.TransactionsWizardFee{0, 0, true, []byte{}}, true}, true, true, true, func(string) {})
 	if err != nil {
 		return
 	}
@@ -76,7 +77,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, 0, true, []byte{}, true, true, true, func(string) {})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, &wizard.TransactionsWizardFee{0, 0, true, []byte{}}, true, true, true, func(string) {})
 	if err != nil {
 		return
 	}
@@ -112,7 +113,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, 0, 0, true, []byte{}, true, true, true, func(string) {})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, &wizard.TransactionsWizardFee{0, 0, true, []byte{}}, true, true, true, func(string) {})
 	if err != nil {
 		return
 	}

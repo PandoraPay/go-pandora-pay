@@ -12,6 +12,7 @@ import (
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api-common/api_types"
 	transactions_builder "pandora-pay/transactions-builder"
+	"pandora-pay/transactions-builder/wizard"
 	"pandora-pay/wallet"
 )
 
@@ -51,7 +52,7 @@ func (api *APICommonFaucet) GetFaucetCoins(request *api_types.APIFaucetCoinsRequ
 		return nil, err
 	}
 
-	tx, err := api.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, []string{request.Address}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, 0, 0, true, []byte{}, true, false, false, func(status string) {
+	tx, err := api.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, []string{request.Address}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, &wizard.TransactionsWizardFee{0, 0, true, []byte{}}, true, false, false, func(status string) {
 
 	})
 	if err != nil {

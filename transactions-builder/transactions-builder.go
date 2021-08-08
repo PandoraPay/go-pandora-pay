@@ -131,10 +131,10 @@ func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce ui
 		return nil, err
 	}
 
-	return builder.CreateSimpleTx(from, nonce, amountsFinal, amountsTokens, dsts, dstsAmountsFinal, dstsTokens, feeFixedFinal, feePerByteFinal, feePerByteAuto, feeToken, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
+	return builder.CreateSimpleTx(from, nonce, amountsFinal, amountsTokens, dsts, dstsAmountsFinal, dstsTokens, &wizard.TransactionsWizardFee{feeFixedFinal, feePerByteFinal, feePerByteAuto, feeToken}, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, amounts []uint64, amountsTokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, feeFixed, feePerByte uint64, feePerByteAuto bool, feeToken []byte, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, amounts []uint64, amountsTokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses(from)
 	if err != nil {
@@ -186,7 +186,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 
 	statusCallback("Getting Nonce from Mempool")
 
-	if tx, err = wizard.CreateSimpleTx(nonce, keys, amounts, amountsTokens, dsts, dstsAmounts, dstsTokens, feeFixed, feePerByte, feePerByteAuto, feeToken, statusCallback); err != nil {
+	if tx, err = wizard.CreateSimpleTx(nonce, keys, amounts, amountsTokens, dsts, dstsAmounts, dstsTokens, fee, statusCallback); err != nil {
 		gui.GUI.Error("Error creating Tx: ", err)
 		return nil, err
 	}
@@ -232,10 +232,10 @@ func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uin
 		return nil, err
 	}
 
-	return builder.CreateUnstakeTx(from, nonce, unstakeAmountFinal, feeFixedFinal, feePerByteFinal, feePerByteAuto, feeToken, feePayInExtra, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
+	return builder.CreateUnstakeTx(from, nonce, unstakeAmountFinal, &wizard.TransactionsWizardFeeExtra{wizard.TransactionsWizardFee{feeFixedFinal, feePerByteFinal, feePerByteAuto, feeToken}, feePayInExtra}, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, unstakeAmount, feeFixed, feePerByte uint64, feePerByteAuto bool, feeToken []byte, feePayInExtra, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(status string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeAmount uint64, fee *wizard.TransactionsWizardFeeExtra, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(status string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
@@ -280,7 +280,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce uint64, u
 	}
 	statusCallback("Getting Nonce from Mempool")
 
-	if tx, err = wizard.CreateUnstakeTx(nonce, fromWalletAddresses[0].PrivateKey.Key, unstakeAmount, feeFixed, feePerByte, feePerByteAuto, feeToken, feePayInExtra, statusCallback); err != nil {
+	if tx, err = wizard.CreateUnstakeTx(nonce, fromWalletAddresses[0].PrivateKey.Key, unstakeAmount, fee, statusCallback); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Created")
@@ -326,10 +326,10 @@ func (builder *TransactionsBuilder) CreateDelegateTx_Float(from string, nonce ui
 		return nil, err
 	}
 
-	return builder.CreateDelegateTx(from, nonce, delegateAmountFinal, delegateNewPubKeyHashGenerate, delegateNewPubKeyHash, feeFixedFinal, feePerByteFinal, feePerByteAuto, feeToken, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
+	return builder.CreateDelegateTx(from, nonce, delegateAmountFinal, delegateNewPubKeyHashGenerate, delegateNewPubKeyHash, &wizard.TransactionsWizardFee{feeFixedFinal, feePerByteFinal, feePerByteAuto, feeToken}, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, delegateAmount uint64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, feeFixed, feePerByte uint64, feePerByteAuto bool, feeToken []byte, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, delegateAmount uint64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
@@ -379,7 +379,7 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 
 	}
 
-	if tx, err = wizard.CreateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegateAmount, delegateNewPubKeyHash, feeFixed, feePerByte, feePerByteAuto, feeToken, statusCallback); err != nil {
+	if tx, err = wizard.CreateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegateAmount, delegateNewPubKeyHash, fee, statusCallback); err != nil {
 		return nil, err
 	}
 
