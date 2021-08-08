@@ -108,7 +108,7 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 
 	newBlk.Block.StakingAmount = solution.stakingAmount
 
-	newBlk.Txs = thread.mempool.GetNextTransactionsToInclude(newBlk.Block.Height, newBlk.Block.PrevHash)
+	newBlk.Txs, _ = thread.mempool.GetNextTransactionsToInclude(newBlk.Block.PrevHash)
 	newBlk.Block.MerkleHash = newBlk.MerkleHash()
 
 	hashForSignature := newBlk.Block.SerializeForSigning()

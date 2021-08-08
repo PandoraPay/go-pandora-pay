@@ -127,8 +127,9 @@ type APIUnsubscriptionRequest struct {
 }
 
 type APIMempoolRequest struct {
-	Page  int `json:"page,omitempty"`
-	Count int `json:"count,omitempty"`
+	ChainHash helpers.HexBytes `json:"chainHash,omitempty"`
+	Page      int              `json:"page,omitempty"`
+	Count     int              `json:"count,omitempty"`
 }
 
 type APIFaucetCoinsRequest struct {

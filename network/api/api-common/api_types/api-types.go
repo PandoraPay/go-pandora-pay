@@ -41,8 +41,9 @@ type APITransaction struct {
 }
 
 type APIMempoolAnswer struct {
-	Count  int                `json:"count"`
-	Hashes []helpers.HexBytes `json:"hashes"`
+	ChainHash helpers.HexBytes   `json:"chainHash"`
+	Count     int                `json:"count"`
+	Hashes    []helpers.HexBytes `json:"hashes"`
 }
 
 type APISubscriptionNotification struct {

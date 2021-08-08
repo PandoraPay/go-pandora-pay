@@ -103,30 +103,24 @@ func (mempool *Mempool) GetNonce(publicKeyHash []byte, nonce uint64) uint64 {
 	return nonce
 }
 
-func (mempool *Mempool) GetNextTransactionsToInclude(blockHeight uint64, chainHash []byte) (out []*transaction.Transaction) {
+func (mempool *Mempool) GetNextTransactionsToInclude(chainHash []byte) (out []*transaction.Transaction, outChainHash []byte) {
 
 	result := mempool.result.Load()
 	if result != nil {
 
 		res := result.(*MempoolResult)
 
-		if bytes.Equal(res.chainHash, chainHash) {
+		if chainHash == nil || bytes.Equal(res.chainHash, chainHash) {
 			txs := res.txs.Load().([]*mempoolTx)
 			finalTxs := make([]*transaction.Transaction, len(txs))
 			for i, tx := range txs {
 				finalTxs[i] = tx.Tx
 			}
-			return finalTxs
+			return finalTxs, res.chainHash
 		}
 	}
 
-	return []*transaction.Transaction{}
-}
-
-func (mempool *Mempool) GetMempoolTransactions() (out []*mempoolTx) {
-	result := mempool.result.Load()
-	res := result.(*MempoolResult)
-	return res.txs.Load().([]*mempoolTx)
+	return []*transaction.Transaction{}, nil
 }
 
 func sortTxs(txList []*mempoolTx) {

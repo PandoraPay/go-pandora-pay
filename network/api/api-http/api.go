@@ -239,6 +239,11 @@ func (api *API) getMempool(values *url.Values) (interface{}, error) {
 	request := &api_types.APIMempoolRequest{}
 
 	var err error
+	if values.Get("chainHash") != "" {
+		if request.ChainHash, err = hex.DecodeString(values.Get("chainHash")); err != nil {
+			return nil, err
+		}
+	}
 	if values.Get("page") != "" {
 		if request.Page, err = strconv.Atoi(values.Get("page")); err != nil {
 			return nil, err

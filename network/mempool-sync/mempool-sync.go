@@ -19,10 +19,12 @@ func (mempoolSync *MempoolSync) DownloadMempool(conn *connection.AdvancedConnect
 	index, page := 0, 0
 	count := config.API_MEMPOOL_MAX_TRANSACTIONS
 
+	var chainHash []byte
+
 	//times is used to avoid infinite loops
 	for {
 
-		out := conn.SendJSONAwaitAnswer([]byte("mem-pool"), &api_types.APIMempoolRequest{page, 0})
+		out := conn.SendJSONAwaitAnswer([]byte("mem-pool"), &api_types.APIMempoolRequest{chainHash, page, 0})
 		if out.Err != nil {
 			return
 		}
@@ -30,6 +32,10 @@ func (mempoolSync *MempoolSync) DownloadMempool(conn *connection.AdvancedConnect
 		data := &api_types.APIMempoolAnswer{}
 		if err = json.Unmarshal(out.Out, data); err != nil {
 			return
+		}
+
+		if chainHash == nil {
+			chainHash = data.ChainHash
 		}
 
 		for _, tx := range data.Hashes {
