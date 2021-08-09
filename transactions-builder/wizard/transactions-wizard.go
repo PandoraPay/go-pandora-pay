@@ -63,10 +63,15 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 		}
 	}
 
+	dataFinal, err := data.getData()
+	if err != nil {
+		return nil, err
+	}
+
 	tx := &transaction.Transaction{
 		Version:     transaction_type.TX_SIMPLE,
 		DataVersion: data.getDataVersion(),
-		Data:        data.getData(),
+		Data:        dataFinal,
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			Nonce: nonce,
 			Vin:   vin,
@@ -111,10 +116,15 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 
 	privateKey := &addresses.PrivateKey{Key: key}
 
+	dataFinal, err := data.getData()
+	if err != nil {
+		return nil, err
+	}
+
 	tx := &transaction.Transaction{
 		Version:     transaction_type.TX_SIMPLE,
 		DataVersion: data.getDataVersion(),
-		Data:        data.getData(),
+		Data:        dataFinal,
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript: transaction_simple.SCRIPT_UNSTAKE,
 			Nonce:    nonce,
@@ -163,6 +173,11 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 
 func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateNewPubKeyHash []byte, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
 
+	dataFinal, err := data.getData()
+	if err != nil {
+		return nil, err
+	}
+
 	delegateHasNewPublicKeyHash := false
 	var delegateNewPublicKeyHash []byte //33 byte
 	if delegateNewPubKeyHash != nil {
@@ -174,7 +189,7 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 	tx := &transaction.Transaction{
 		Version:     transaction_type.TX_SIMPLE,
 		DataVersion: data.getDataVersion(),
-		Data:        data.getData(),
+		Data:        dataFinal,
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript: transaction_simple.SCRIPT_DELEGATE,
 			Nonce:    nonce,
