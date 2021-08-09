@@ -10,6 +10,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/network/websocks/connection/advanced-connection-types"
 )
 
 func (consensus *Consensus) chainGet(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -68,10 +69,10 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 }
 
 func (consensus *Consensus) broadcastChain(newChainData *blockchain.BlockchainData) {
-	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain-update"), consensus.getUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true}, "")
+	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain-update"), consensus.getUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true}, advanced_connection_types.UUID_ALL)
 }
 
-func (consensus *Consensus) broadcastTxs(txs []*transaction.Transaction, awaitPropagation bool, exceptSocketUUID string) {
+func (consensus *Consensus) broadcastTxs(txs []*transaction.Transaction, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID) {
 
 	if awaitPropagation {
 		for _, tx := range txs {

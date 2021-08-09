@@ -5,11 +5,15 @@ fi
 
 if [ "$1" == "dev" ]; then
   GOOS=js GOARCH=wasm go build -o ../webassembly/dist/PandoraPay.wasm
+  stat --printf="%s" ./webassembly/dist/PandoraPay-wallet.wasm
+
   exit 1
 fi
 
 if [ "$1" == "wallet-dev" ]; then
   GOOS=js GOARCH=wasm go build -o ./webassembly/dist/PandoraPay-wallet.wasm
+  stat --printf="%s" ./webassembly/dist/PandoraPay-wallet.wasm
+
   cp ./webassembly/dist/PandoraPay-wallet.wasm ../PandoraPay-wallet/dist/dev
   exit 1
 fi
@@ -25,6 +29,7 @@ if [ "$1" == "wallet-build" ]; then
 
   echo "Compiling..."
   GOOS=js GOARCH=wasm go build -o ./webassembly/dist/PandoraPay-wallet.wasm
+  stat --printf="%s" ./webassembly/dist/PandoraPay-wallet.wasm
 
   echo "Copy to wallet/build..."
   cp ./webassembly/dist/PandoraPay-wallet.wasm ../PandoraPay-wallet/dist/build
@@ -35,6 +40,7 @@ if [ "$1" == "wallet-build" ]; then
       echo "sudo apt-get install brotli"
       exit 1
     fi
+    stat --printf="%s" ./webassembly/dist/PandoraPay-wallet.wasm.br
     echo "Copy to wallet/build..."
     cp ./webassembly/dist/PandoraPay-wallet.wasm.br ../PandoraPay-wallet/dist/build
   elif [ "$2" == "zopfli" ]; then
@@ -43,11 +49,13 @@ if [ "$1" == "wallet-build" ]; then
       echo "sudo apt-get install zopfli"
       exit 1
     fi
+    stat --printf="%s" ./webassembly/dist/PandoraPay-wallet.wasm.gz
     echo "Copy to wallet/build..."
     cp ./webassembly/dist/PandoraPay-wallet.wasm.gz ../PandoraPay-wallet/dist/build
   else
     echo "Gzipping..."
     gzip --best ./webassembly/dist/PandoraPay-wallet.wasm
+    stat --printf="%s" ./webassembly/dist/PandoraPay-wallet.wasm.gz
     echo "Copy to wallet/build..."
     cp ./webassembly/dist/PandoraPay-wallet.wasm.gz ../PandoraPay-wallet/dist/build
   fi

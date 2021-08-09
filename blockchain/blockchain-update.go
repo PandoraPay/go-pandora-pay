@@ -12,6 +12,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	advanced_connection_types "pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/recovery"
 )
 
@@ -32,7 +33,7 @@ type BlockchainUpdate struct {
 	insertedTxsList        []*transaction.Transaction
 	insertedBlocks         []*block_complete.BlockComplete
 	calledByForging        bool
-	exceptSocketUUID       string
+	exceptSocketUUID       advanced_connection_types.UUID
 }
 
 type BlockchainUpdatesQueue struct {

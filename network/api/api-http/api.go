@@ -11,6 +11,7 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api-common"
 	"pandora-pay/network/api/api-common/api_types"
+	"pandora-pay/network/websocks/connection/advanced-connection-types"
 	"strconv"
 )
 
@@ -286,7 +287,7 @@ func (api *API) postMempoolInsert(values *url.Values) (interface{}, error) {
 		return nil, err
 	}
 
-	return api.apiCommon.PostMempoolInsert(tx, "")
+	return api.apiCommon.PostMempoolInsert(tx, advanced_connection_types.UUID_ALL)
 }
 
 func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain) *API {

@@ -15,6 +15,7 @@ import (
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api-common/api_types"
+	advanced_connection_types "pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/recovery"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/wallet"
@@ -299,7 +300,7 @@ func (api *APICommon) GetMempoolExists(txId []byte) ([]byte, error) {
 	return json.Marshal(tx)
 }
 
-func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocketUUID string) (out []byte, err error) {
+func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocketUUID advanced_connection_types.UUID) (out []byte, err error) {
 
 	//it needs to compute  tx.Bloom.HashStr
 	tx.BloomNow()

@@ -17,6 +17,7 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/recovery"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -221,7 +222,7 @@ func (chain *Blockchain) InitForging() {
 			}
 
 			go func() {
-				err := chain.AddBlocks([]*block_complete.BlockComplete{blkComplete}, true, "")
+				err := chain.AddBlocks([]*block_complete.BlockComplete{blkComplete}, true, advanced_connection_types.UUID_ALL)
 				if err == nil {
 					gui.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
 				} else {

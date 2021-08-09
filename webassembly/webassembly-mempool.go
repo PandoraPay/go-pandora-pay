@@ -6,6 +6,7 @@ import (
 	"pandora-pay/app"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/mempool"
+	"pandora-pay/network/websocks/connection/advanced-connection-types"
 	"syscall/js"
 )
 
@@ -41,7 +42,7 @@ func mempoolInsertTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		err := app.Mempool.AddTxToMemPool(tx, 0, true, false, "*")
+		err := app.Mempool.AddTxToMemPool(tx, 0, true, false, advanced_connection_types.UUID_SKIP_ALL)
 
 		return nil, err
 	})

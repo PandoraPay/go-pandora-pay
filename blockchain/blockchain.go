@@ -20,6 +20,7 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
+	advanced_connection_types "pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"pandora-pay/wallet"
@@ -62,7 +63,7 @@ func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockCo
 	return
 }
 
-func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplete, calledByForging bool, exceptSocketUUID string) (err error) {
+func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplete, calledByForging bool, exceptSocketUUID advanced_connection_types.UUID) (err error) {
 
 	if err = chain.validateBlocks(blocksComplete); err != nil {
 		return

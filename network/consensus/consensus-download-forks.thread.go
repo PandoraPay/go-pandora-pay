@@ -16,6 +16,7 @@ import (
 	"pandora-pay/network/api/api-common"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"time"
@@ -262,7 +263,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 						gui.GUI.Log("Status. AddBlocks fork")
 
-						if err := thread.chain.AddBlocks(fork.Blocks, false, ""); err != nil {
+						if err := thread.chain.AddBlocks(fork.Blocks, false, advanced_connection_types.UUID_ALL); err != nil {
 							gui.GUI.Error("Invalid Fork", err)
 						} else {
 							fork.Lock()

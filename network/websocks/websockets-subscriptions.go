@@ -13,6 +13,7 @@ import (
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection"
+	advanced_connection_types "pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/recovery"
 )
 
@@ -23,10 +24,10 @@ type WebsocketSubscriptions struct {
 	websocketClosedCn                 chan *connection.AdvancedConnection
 	newSubscriptionCn                 chan *connection.SubscriptionNotification
 	removeSubscriptionCn              chan *connection.SubscriptionNotification
-	accountsSubscriptions             map[string]map[string]*connection.SubscriptionNotification
-	accountsTransactionsSubscriptions map[string]map[string]*connection.SubscriptionNotification
-	tokensSubscriptions               map[string]map[string]*connection.SubscriptionNotification
-	transactionsSubscriptions         map[string]map[string]*connection.SubscriptionNotification
+	accountsSubscriptions             map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
+	accountsTransactionsSubscriptions map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
+	tokensSubscriptions               map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
+	transactionsSubscriptions         map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
 }
 
 func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockchain, mempool *mempool.Mempool) (subs *WebsocketSubscriptions) {
@@ -35,10 +36,10 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 		websockets, chain, mempool, make(chan *connection.AdvancedConnection),
 		make(chan *connection.SubscriptionNotification),
 		make(chan *connection.SubscriptionNotification),
-		make(map[string]map[string]*connection.SubscriptionNotification),
-		make(map[string]map[string]*connection.SubscriptionNotification),
-		make(map[string]map[string]*connection.SubscriptionNotification),
-		make(map[string]map[string]*connection.SubscriptionNotification),
+		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
+		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
+		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
+		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
@@ -48,7 +49,7 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 	return
 }
 
-func (this *WebsocketSubscriptions) send(subscriptionType api_types.SubscriptionType, apiRoute []byte, key []byte, list map[string]*connection.SubscriptionNotification, element helpers.SerializableInterface, elementBytes []byte, extra interface{}) {
+func (this *WebsocketSubscriptions) send(subscriptionType api_types.SubscriptionType, apiRoute []byte, key []byte, list map[advanced_connection_types.UUID]*connection.SubscriptionNotification, element helpers.SerializableInterface, elementBytes []byte, extra interface{}) {
 
 	var err error
 	var extraMarshalled []byte
@@ -97,7 +98,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 	}
 }
 
-func (this *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.SubscriptionType) (subsMap map[string]map[string]*connection.SubscriptionNotification) {
+func (this *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.SubscriptionType) (subsMap map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification) {
 	switch subscriptionType {
 	case api_types.SUBSCRIPTION_ACCOUNT:
 		subsMap = this.accountsSubscriptions
@@ -143,7 +144,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 	updateMempoolTransactionsCn := this.mempool.Txs.UpdateMempoolTransactions.AddListener()
 	defer this.mempool.Txs.UpdateMempoolTransactions.RemoveChannel(updateMempoolTransactionsCn)
 
-	var subsMap map[string]map[string]*connection.SubscriptionNotification
+	var subsMap map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
 
 	for {
 
@@ -159,7 +160,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 
 			keyStr := string(subscription.Subscription.Key)
 			if subsMap[keyStr] == nil {
-				subsMap[keyStr] = make(map[string]*connection.SubscriptionNotification)
+				subsMap[keyStr] = make(map[advanced_connection_types.UUID]*connection.SubscriptionNotification)
 			}
 			subsMap[keyStr][subscription.Conn.UUID] = subscription
 

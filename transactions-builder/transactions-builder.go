@@ -13,6 +13,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
+	"pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"pandora-pay/transactions-builder/wizard"
@@ -180,7 +181,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 	statusCallback("Tx checked")
 
 	if propagateTx {
-		if err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, awaitAnswer, awaitBroadcast, ""); err != nil {
+		if err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
 			return nil, err
 		}
 	}
@@ -276,7 +277,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	statusCallback("Tx checked")
 
 	if propagateTx {
-		if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, awaitAnswer, awaitBroadcast, ""); err != nil {
+		if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
 			return nil, err
 		}
 	}
@@ -366,7 +367,7 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 	}
 
 	if propagateTx {
-		if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, awaitAnswer, awaitBroadcast, ""); err != nil {
+		if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
 			return nil, err
 		}
 	}

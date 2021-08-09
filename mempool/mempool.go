@@ -9,6 +9,7 @@ import (
 	"pandora-pay/config/config_fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
+	"pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/recovery"
 	"sync/atomic"
 	"time"
@@ -17,7 +18,7 @@ import (
 type MempoolTxBroadcastNotification struct {
 	Txs              []*transaction.Transaction
 	AwaitPropagation bool
-	ExceptSocketUUID string
+	ExceptSocketUUID advanced_connection_types.UUID
 }
 
 type mempoolTx struct {
@@ -73,7 +74,7 @@ func (mempool *Mempool) InsertRemovedTxsFromBlockchain(txs []*transaction.Transa
 
 }
 
-func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID string) error {
+func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID) error {
 	result := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, awaitAnswer, awaitBroadcasting, exceptSocketUUID)
 	return result[0]
 }
@@ -153,7 +154,7 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 	return finalTxs
 }
 
-func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID string) []error {
+func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID) []error {
 
 	finalTxs := mempool.processTxsToMemPool(txs, height)
 
@@ -182,7 +183,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 		}
 	}
 
-	if exceptSocketUUID != "*" {
+	if exceptSocketUUID != advanced_connection_types.UUID_SKIP_ALL {
 
 		notNull := 0
 		for _, finalTx := range finalTxs {
