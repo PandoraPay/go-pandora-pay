@@ -21,11 +21,11 @@ func signSimpleTransaction(tx *transaction.Transaction, privateKeys []*addresses
 	return
 }
 
-func CreateSimpleTxOneInOneOut(nonce uint64, key []byte, amount uint64, token []byte, dst string, dstAmount uint64, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
-	return CreateSimpleTx(nonce, [][]byte{key}, []uint64{amount}, [][]byte{token}, []string{dst}, []uint64{dstAmount}, [][]byte{token}, fee, statusCallback)
+func CreateSimpleTxOneInOneOut(nonce uint64, key []byte, amount uint64, token []byte, dst string, dstAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
+	return CreateSimpleTx(nonce, [][]byte{key}, []uint64{amount}, [][]byte{token}, []string{dst}, []uint64{dstAmount}, [][]byte{token}, data, fee, statusCallback)
 }
 
-func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
+func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	if len(keys) != len(amounts) || len(amounts) != len(tokens) || len(amounts) == 0 {
 		return nil, errors.New("Input lengths are a mismatch")
@@ -103,7 +103,7 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 	return tx, nil
 }
 
-func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, fee *TransactionsWizardFeeExtra, statusCallback func(string)) (*transaction.Transaction, error) {
+func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFeeExtra, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	privateKey := &addresses.PrivateKey{Key: key}
 
@@ -157,7 +157,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, fee *Transa
 	return tx, nil
 }
 
-func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateNewPubKeyHash []byte, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
+func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateNewPubKeyHash []byte, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	delegateHasNewPublicKeyHash := false
 	var delegateNewPublicKeyHash []byte //33 byte
