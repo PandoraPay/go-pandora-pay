@@ -10,13 +10,17 @@ import (
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 )
 
-func signSimpleTransaction(tx *transaction.Transaction, privateKeys []*addresses.PrivateKey) (err error) {
+func signSimpleTransaction(tx *transaction.Transaction, privateKeys []*addresses.PrivateKey, statusCallback func(string)) (err error) {
+
+	statusCallback("Transaction Signing...")
 
 	for i, privateKey := range privateKeys {
 		if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 			return err
 		}
 	}
+
+	statusCallback("Transaction Signed")
 
 	return
 }
@@ -60,7 +64,9 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 	}
 
 	tx := &transaction.Transaction{
-		Version: transaction_type.TX_SIMPLE,
+		Version:     transaction_type.TX_SIMPLE,
+		DataVersion: data.getDataVersion(),
+		Data:        data.getData(),
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			Nonce: nonce,
 			Vin:   vin,
@@ -70,20 +76,18 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 
 	statusCallback("Transaction created")
 
-	if err := signSimpleTransaction(tx, privateKeys); err != nil {
+	if err := signSimpleTransaction(tx, privateKeys, statusCallback); err != nil {
 		return nil, err
 	}
-	statusCallback("Transaction Signed #1")
 
 	if err := setFee(tx, &TransactionsWizardFeeExtra{*fee, false}); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Fees set")
 
-	if err := signSimpleTransaction(tx, privateKeys); err != nil {
+	if err := signSimpleTransaction(tx, privateKeys, statusCallback); err != nil {
 		return nil, err
 	}
-	statusCallback("Transaction Signed #2")
 
 	if err := tx.BloomAll(); err != nil {
 		return nil, err
@@ -108,7 +112,9 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	privateKey := &addresses.PrivateKey{Key: key}
 
 	tx := &transaction.Transaction{
-		Version: transaction_type.TX_SIMPLE,
+		Version:     transaction_type.TX_SIMPLE,
+		DataVersion: data.getDataVersion(),
+		Data:        data.getData(),
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript: transaction_simple.SCRIPT_UNSTAKE,
 			Nonce:    nonce,
@@ -124,20 +130,18 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	}
 	statusCallback("Transaction Created")
 
-	if err := signSimpleTransaction(tx, []*addresses.PrivateKey{privateKey}); err != nil {
+	if err := signSimpleTransaction(tx, []*addresses.PrivateKey{privateKey}, statusCallback); err != nil {
 		return nil, err
 	}
-	statusCallback("Transaction Signed #1")
 
 	if err := setFee(tx, fee); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Fees set")
 
-	if err := signSimpleTransaction(tx, []*addresses.PrivateKey{privateKey}); err != nil {
+	if err := signSimpleTransaction(tx, []*addresses.PrivateKey{privateKey}, statusCallback); err != nil {
 		return nil, err
 	}
-	statusCallback("Transaction Signed #2")
 
 	if err := tx.BloomAll(); err != nil {
 		return nil, err
@@ -168,7 +172,9 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 
 	privateKey := &addresses.PrivateKey{Key: key}
 	tx := &transaction.Transaction{
-		Version: transaction_type.TX_SIMPLE,
+		Version:     transaction_type.TX_SIMPLE,
+		DataVersion: data.getDataVersion(),
+		Data:        data.getData(),
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript: transaction_simple.SCRIPT_DELEGATE,
 			Nonce:    nonce,
@@ -186,20 +192,18 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 	}
 	statusCallback("Transaction Created")
 
-	if err := signSimpleTransaction(tx, []*addresses.PrivateKey{privateKey}); err != nil {
+	if err := signSimpleTransaction(tx, []*addresses.PrivateKey{privateKey}, statusCallback); err != nil {
 		return nil, err
 	}
-	statusCallback("Transaction Signed #1")
 
 	if err := setFee(tx, &TransactionsWizardFeeExtra{*fee, false}); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Fees set")
 
-	if err := signSimpleTransaction(tx, []*addresses.PrivateKey{privateKey}); err != nil {
+	if err := signSimpleTransaction(tx, []*addresses.PrivateKey{privateKey}, statusCallback); err != nil {
 		return nil, err
 	}
-	statusCallback("Transaction Signed #2")
 
 	if err := tx.BloomAll(); err != nil {
 		return nil, err

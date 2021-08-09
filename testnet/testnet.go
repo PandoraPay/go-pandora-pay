@@ -77,7 +77,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, nil, &wizard.TransactionsWizardFee{0, 0, true, []byte{}}, true, true, true, func(string) {})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true, []byte{}}, true, true, true, func(string) {})
 	if err != nil {
 		return
 	}
@@ -113,7 +113,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, nil, &wizard.TransactionsWizardFee{0, 0, true, []byte{}}, true, true, true, func(string) {})
+	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{sum}, [][]byte{config.NATIVE_TOKEN}, dsts, dstsAmounts, dstsTokens, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true, []byte{}}, true, true, true, func(string) {})
 	if err != nil {
 		return
 	}

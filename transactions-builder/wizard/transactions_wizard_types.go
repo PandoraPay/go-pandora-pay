@@ -1,5 +1,7 @@
 package wizard
 
+import transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+
 type TransactionsWizardFee struct {
 	Fixed, PerByte uint64
 	PerByteAuto    bool
@@ -14,4 +16,21 @@ type TransactionsWizardFeeExtra struct {
 type TransactionsWizardData struct {
 	Data    []byte
 	Encrypt bool
+}
+
+func (data *TransactionsWizardData) getDataVersion() transaction_type.TransactionDataVersion {
+	if len(data.Data) == 0 {
+		return transaction_type.TX_DATA_NONE
+	}
+	if data.Encrypt {
+		return transaction_type.TX_DATA_ENCRYPTED
+	}
+	return transaction_type.TX_DATA_PLAIN_TEXT
+}
+
+func (data *TransactionsWizardData) getData() []byte {
+	if len(data.Data) == 0 {
+		return nil
+	}
+	return data.Data
 }
