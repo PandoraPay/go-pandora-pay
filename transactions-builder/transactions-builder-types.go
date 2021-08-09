@@ -6,14 +6,15 @@ import (
 )
 
 type TransactionsBuilderFeeFloat struct {
-	Fixed, PerByte float64
-	PerByteAuto    bool
-	Token          []byte
+	Fixed       float64 `json:"fixed,omitempty"`
+	PerByte     float64 `json:"perByte,omitempty"`
+	PerByteAuto bool    `json:"perByteAuto,omitempty"`
+	Token       []byte  `json:"token,omitempty"`
 }
 
 type TransactionsBuilderFeeFloatExtra struct {
 	TransactionsBuilderFeeFloat
-	PayInExtra bool
+	PayInExtra bool `json:"payInExtra,omitempty"`
 }
 
 func (fee *TransactionsBuilderFeeFloat) convertToWizardFee(toks *tokens.Tokens) (*wizard.TransactionsWizardFee, error) {

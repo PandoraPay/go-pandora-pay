@@ -1,6 +1,9 @@
 package wizard
 
-import transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+import (
+	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	"pandora-pay/helpers"
+)
 
 type TransactionsWizardFee struct {
 	Fixed, PerByte uint64
@@ -14,8 +17,8 @@ type TransactionsWizardFeeExtra struct {
 }
 
 type TransactionsWizardData struct {
-	Data    []byte
-	Encrypt bool
+	Data    helpers.HexBytes `json:"data,omitempty"`
+	Encrypt bool             `json:"encrypt,omitempty"`
 }
 
 func (data *TransactionsWizardData) getDataVersion() transaction_type.TransactionDataVersion {

@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain"
@@ -27,14 +28,17 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		return nil, errors.New("Chain Update Hash Length is invalid")
 	}
 
+	chainLastUpdate := consensus.chain.GetChainData()
+	if bytes.Equal(chainLastUpdate.Hash, chainUpdateNotification.Hash) {
+		return nil, nil
+	}
+
 	forkFound, exists := consensus.forks.hashes.Load(string(chainUpdateNotification.Hash))
 	if exists {
 		fork := forkFound.(*Fork)
 		fork.AddConn(conn, true)
 		return nil, nil
 	}
-
-	chainLastUpdate := consensus.chain.GetChainData()
 
 	compare := chainLastUpdate.BigTotalDifficulty.Cmp(chainUpdateNotification.BigTotalDifficulty)
 

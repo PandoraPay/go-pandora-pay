@@ -144,7 +144,11 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 	}
 
 	recovery.SafeGo(network.execute)
-	recovery.SafeGo(network.continuouslyDownloadMempool)
+
+	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
+		recovery.SafeGo(network.continuouslyDownloadMempool)
+	}
+
 	recovery.SafeGo(network.syncNewConnections)
 
 	return network, nil

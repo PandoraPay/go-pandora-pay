@@ -281,6 +281,15 @@ func (thread *ConsensusProcessForksThread) execute() {
 			} else {
 				globals.MainEvents.BroadcastEvent("consensus/update", fork)
 				gui.GUI.Log("Status. AddBlocks fork - Simulating block")
+
+				newChainData := &blockchain.BlockchainData{
+					Height:             fork.End,
+					Hash:               fork.Hash,
+					PrevHash:           fork.PrevHash,
+					BigTotalDifficulty: fork.BigTotalDifficulty,
+				}
+
+				thread.chain.ChainData.Store(newChainData)
 				thread.mempool.UpdateWork(fork.Hash, fork.End)
 			}
 

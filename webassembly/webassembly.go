@@ -129,6 +129,11 @@ func Initialize(startMainCb func()) {
 				"TransactionVersion": js.ValueOf(map[string]interface{}{
 					"TX_SIMPLE": js.ValueOf(uint64(transaction_type.TX_SIMPLE)),
 				}),
+				"TransactionDataVersion": js.ValueOf(map[string]interface{}{
+					"TX_DATA_NONE":       js.ValueOf(uint64(transaction_type.TX_DATA_NONE)),
+					"TX_DATA_PLAIN_TEXT": js.ValueOf(uint64(transaction_type.TX_DATA_PLAIN_TEXT)),
+					"TX_DATA_ENCRYPTED":  js.ValueOf(uint64(transaction_type.TX_DATA_ENCRYPTED)),
+				}),
 				"transactionSimple": js.ValueOf(map[string]interface{}{
 					"scriptType": js.ValueOf(map[string]interface{}{
 						"SCRIPT_NORMAL":   js.ValueOf(uint64(transaction_simple.SCRIPT_NORMAL)),
