@@ -115,3 +115,13 @@ func ValidateSignatureValues(v byte, r, s *big.Int, homestead bool) bool {
 	// Frontier: allow s to be in full N range
 	return r.Cmp(secp256k1N) < 0 && s.Cmp(secp256k1N) < 0 && (v == 0 || v == 1)
 }
+
+func ComputePublicKey(key []byte) ([]byte, error) {
+
+	privateKey, err := ToECDSA(key)
+	if err != nil {
+		return nil, err
+	}
+
+	return CompressPubkey(&privateKey.PublicKey), nil
+}

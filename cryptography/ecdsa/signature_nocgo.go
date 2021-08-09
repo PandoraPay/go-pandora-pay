@@ -1,3 +1,6 @@
+//go:build nacl || js || !cgo
+// +build nacl js !cgo
+
 package ecdsa
 
 import (
@@ -24,8 +27,7 @@ func EcrecoverCompressed(hash, sig []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	bytes := (*btcec.PublicKey)(pub).SerializeCompressed()
-	return bytes, err
+	return (*btcec.PublicKey)(pub).SerializeCompressed(), nil
 }
 
 // SigToPub returns the public key that created the given signature.
@@ -48,7 +50,7 @@ func SigToPub(hash, sig []byte) (*ecdsa.PublicKey, error) {
 //
 // The produced signature is in the [R || S || V] format where V is 0 or 1.
 func Sign(hash []byte, prv *ecdsa.PrivateKey) ([]byte, error) {
-	if len(hash) != 32 {
+	if len(hash) != DigestLength {
 		return nil, fmt.Errorf("hash is required to be exactly 32 bytes (%d)", len(hash))
 	}
 	if prv.Curve != btcec.S256() {
@@ -104,14 +106,4 @@ func CompressPubkey(pubkey *ecdsa.PublicKey) []byte {
 // S256 returns an instance of the secp256k1 curve.
 func S256() elliptic.Curve {
 	return btcec.S256()
-}
-
-func ComputePublicKey(key []byte) ([]byte, error) {
-
-	privateKey, err := ToECDSA(key)
-	if err != nil {
-		return nil, err
-	}
-
-	return CompressPubkey(&privateKey.PublicKey), nil
 }
