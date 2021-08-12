@@ -164,7 +164,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 
 			var errorResult error
 
-			inserted := mempool.Txs.InsertTx(finalTx.tx.Tx.Bloom.HashStr, finalTx.tx)
+			inserted := mempool.Txs.insertTx(finalTx.tx)
 			if !inserted {
 				errorResult = errors.New("Tx already exists")
 			} else if awaitAnswer {

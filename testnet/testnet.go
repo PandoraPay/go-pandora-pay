@@ -39,7 +39,7 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, &wizard.TransactionsWizardData{nil, false}, &wizard.TransactionsWizardFeeExtra{wizard.TransactionsWizardFee{0, 0, true, []byte{}}, true}, true, true, true, func(string) {})
+	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, &wizard.TransactionsWizardData{nil, false, nil}, &wizard.TransactionsWizardFeeExtra{wizard.TransactionsWizardFee{0, 0, true, []byte{}}, true}, true, true, true, func(string) {})
 	if err != nil {
 		return
 	}

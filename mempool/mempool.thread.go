@@ -49,7 +49,7 @@ func (worker *mempoolWorker) processing(
 	var work *mempoolWork
 
 	txsList := []*mempoolTx{}
-	txsMap := make(map[string]bool)
+	txsMap := make(map[string]*mempoolTx)
 	txsMapVerified := make(map[string]bool)
 	listIndex := 0
 
@@ -80,10 +80,11 @@ func (worker *mempoolWorker) processing(
 
 		removedTxsMap := make(map[string]bool)
 		for _, hash := range data.Txs {
-			if hash != "" && txsMap[hash] {
+			if hash != "" && txsMap[hash] != nil {
 				removedTxsMap[hash] = true
+				txs.deleted(txsMap[hash])
 				delete(txsMap, hash)
-				txs.DeleteTx(hash, true)
+				txs.deleteTx(hash)
 				result = true
 			}
 		}
@@ -113,9 +114,10 @@ func (worker *mempoolWorker) processing(
 	insertTxs := func(data *MempoolWorkerInsertTxs) {
 		result := false
 		for _, tx := range data.Txs {
-			if tx != nil && !txsMap[tx.Tx.Bloom.HashStr] {
-				txsMap[tx.Tx.Bloom.HashStr] = true
-				txs.InsertTx(tx.Tx.Bloom.HashStr, tx)
+			if tx != nil && txsMap[tx.Tx.Bloom.HashStr] == nil {
+				txsMap[tx.Tx.Bloom.HashStr] = tx
+				txs.insertTx(tx)
+				txs.inserted(tx)
 				txsList = append(txsList, tx)
 				result = true
 			}
@@ -193,7 +195,7 @@ func (worker *mempoolWorker) processing(
 							return
 						case newAddTx = <-addTransactionCn:
 							tx = newAddTx.Tx
-							if txsMap[tx.Tx.Bloom.HashStr] {
+							if txsMap[tx.Tx.Bloom.HashStr] != nil {
 								if newAddTx.Result != nil {
 									newAddTx.Result <- errors.New("Already found")
 								}
@@ -241,7 +243,8 @@ func (worker *mempoolWorker) processing(
 							if newAddTx != nil {
 								txsList = append(txsList, newAddTx.Tx)
 								listIndex += 1
-								txsMap[tx.Tx.Bloom.HashStr] = true
+								txsMap[tx.Tx.Bloom.HashStr] = newAddTx.Tx
+								txs.inserted(tx)
 							}
 
 						}
@@ -254,9 +257,10 @@ func (worker *mempoolWorker) processing(
 							//this is done because listIndex was incremented already before
 							txsList = append(txsList[:listIndex-1], txsList[listIndex:]...)
 							listIndex--
+							txs.deleted(tx)
 						}
 						delete(txsMap, tx.Tx.Bloom.HashStr)
-						txs.DeleteTx(tx.Tx.Bloom.HashStr, false)
+						txs.deleteTx(tx.Tx.Bloom.HashStr)
 					}
 
 					if newAddTx != nil && newAddTx.Result != nil {

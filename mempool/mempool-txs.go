@@ -26,71 +26,70 @@ type MempoolTxs struct {
 	UpdateMempoolTransactions *multicast.MulticastChannel //*MempoolTransactionUpdate
 }
 
-func (self *MempoolTxs) InsertTx(hashStr string, tx *mempoolTx) bool {
-	_, loaded := self.txsMap.LoadOrStore(hashStr, tx)
+func (self *MempoolTxs) insertTx(tx *mempoolTx) bool {
+	_, loaded := self.txsMap.LoadOrStore(tx.Tx.Bloom.HashStr, tx)
 	if !loaded {
 		atomic.AddInt32(&self.count, 1)
-
-		if config.SEED_WALLET_NODES_INFO {
-
-			keys := tx.Tx.GetAllKeys()
-			for key := range keys {
-				foundMapData, _ := self.accountsMapTxs.LoadOrStore(key, &MempoolAccountTxs{})
-				foundMap := foundMapData.(*MempoolAccountTxs)
-				foundMap.Lock()
-				if foundMap.txs == nil {
-					foundMap.txs = make(map[string]*mempoolTx)
-				}
-				foundMap.txs[tx.Tx.Bloom.HashStr] = tx
-				foundMap.Unlock()
-			}
-
-			self.UpdateMempoolTransactions.Broadcast(&blockchain_types.MempoolTransactionUpdate{
-				true,
-				tx.Tx,
-				false,
-				keys,
-			})
-
-		}
 	}
 	return !loaded
 }
 
-func (self *MempoolTxs) DeleteTx(hashStr string, blockchainNotification bool) bool {
-	txData, deleted := self.txsMap.LoadAndDelete(hashStr)
+func (self *MempoolTxs) inserted(tx *mempoolTx) {
+	if config.SEED_WALLET_NODES_INFO {
+
+		keys := tx.Tx.GetAllKeys()
+		for key := range keys {
+			foundMapData, _ := self.accountsMapTxs.LoadOrStore(key, &MempoolAccountTxs{})
+			foundMap := foundMapData.(*MempoolAccountTxs)
+			foundMap.Lock()
+			if foundMap.txs == nil {
+				foundMap.txs = make(map[string]*mempoolTx)
+			}
+			foundMap.txs[tx.Tx.Bloom.HashStr] = tx
+			foundMap.Unlock()
+		}
+
+		self.UpdateMempoolTransactions.Broadcast(&blockchain_types.MempoolTransactionUpdate{
+			true,
+			tx.Tx,
+			false,
+			keys,
+		})
+
+	}
+}
+
+func (self *MempoolTxs) deleteTx(hashStr string) bool {
+	_, deleted := self.txsMap.LoadAndDelete(hashStr)
 	if deleted {
 		atomic.AddInt32(&self.count, -1)
-
-		if config.SEED_WALLET_NODES_INFO {
-			tx := txData.(*mempoolTx)
-			keys := tx.Tx.GetAllKeys()
-
-			for key := range keys {
-
-				foundMapData, loaded := self.accountsMapTxs.Load(key)
-				if loaded {
-					foundMap := foundMapData.(*MempoolAccountTxs)
-					foundMap.Lock()
-					delete(foundMap.txs, tx.Tx.Bloom.HashStr)
-					if len(foundMap.txs) == 0 {
-						self.accountsMapTxs.Delete(key)
-					}
-					foundMap.Unlock()
-				}
-
-			}
-
-			self.UpdateMempoolTransactions.Broadcast(&blockchain_types.MempoolTransactionUpdate{
-				false,
-				tx.Tx,
-				blockchainNotification,
-				keys,
-			})
-
-		}
 	}
 	return deleted
+}
+
+func (self *MempoolTxs) deleted(tx *mempoolTx) {
+	if config.SEED_WALLET_NODES_INFO {
+
+		keys := tx.Tx.GetAllKeys()
+		for key := range keys {
+			foundMapData, _ := self.accountsMapTxs.LoadOrStore(key, &MempoolAccountTxs{})
+			foundMap := foundMapData.(*MempoolAccountTxs)
+			foundMap.Lock()
+			if foundMap.txs == nil {
+				foundMap.txs = make(map[string]*mempoolTx)
+			}
+			foundMap.txs[tx.Tx.Bloom.HashStr] = tx
+			foundMap.Unlock()
+		}
+
+		self.UpdateMempoolTransactions.Broadcast(&blockchain_types.MempoolTransactionUpdate{
+			true,
+			tx.Tx,
+			false,
+			keys,
+		})
+
+	}
 }
 
 func (self *MempoolTxs) GetTxsFromMap() (out map[string]*mempoolTx) {
