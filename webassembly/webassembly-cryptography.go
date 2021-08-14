@@ -3,7 +3,6 @@ package webassembly
 import (
 	"encoding/hex"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
 	"syscall/js"
 )
 
@@ -16,6 +15,6 @@ func computePublicKeyHash(this js.Value, args []js.Value) interface{} {
 		}
 
 		publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
-		return helpers.HexBytes(publicKeyHash), nil
+		return hex.EncodeToString(publicKeyHash), nil
 	})
 }
