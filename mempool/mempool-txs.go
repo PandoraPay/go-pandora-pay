@@ -15,7 +15,8 @@ import (
 )
 
 type MempoolAccountTxs struct {
-	txs map[string]*mempoolTx
+	txs     map[string]*mempoolTx
+	deleted bool
 	sync.RWMutex
 }
 
@@ -39,14 +40,22 @@ func (self *MempoolTxs) inserted(tx *mempoolTx) {
 
 		keys := tx.Tx.GetAllKeys()
 		for key := range keys {
-			foundMapData, _ := self.accountsMapTxs.LoadOrStore(key, &MempoolAccountTxs{})
-			foundMap := foundMapData.(*MempoolAccountTxs)
-			foundMap.Lock()
-			if foundMap.txs == nil {
-				foundMap.txs = make(map[string]*mempoolTx)
+
+			for {
+				foundMapData, _ := self.accountsMapTxs.LoadOrStore(key, &MempoolAccountTxs{})
+				foundMap := foundMapData.(*MempoolAccountTxs)
+				foundMap.Lock()
+				if foundMap.deleted {
+					foundMap.Unlock()
+					continue
+				}
+				if foundMap.txs == nil {
+					foundMap.txs = make(map[string]*mempoolTx)
+				}
+				foundMap.txs[tx.Tx.Bloom.HashStr] = tx
+				foundMap.Unlock()
+				break
 			}
-			foundMap.txs[tx.Tx.Bloom.HashStr] = tx
-			foundMap.Unlock()
 		}
 
 		self.UpdateMempoolTransactions.Broadcast(&blockchain_types.MempoolTransactionUpdate{
@@ -75,10 +84,12 @@ func (self *MempoolTxs) deleted(tx *mempoolTx) {
 			foundMapData, _ := self.accountsMapTxs.LoadOrStore(key, &MempoolAccountTxs{})
 			foundMap := foundMapData.(*MempoolAccountTxs)
 			foundMap.Lock()
-			if foundMap.txs == nil {
-				foundMap.txs = make(map[string]*mempoolTx)
+			delete(foundMap.txs, tx.Tx.Bloom.HashStr)
+			if len(foundMap.txs) == 0 {
+				self.accountsMapTxs.Delete(key)
+				foundMap.txs = nil
+				foundMap.deleted = true
 			}
-			foundMap.txs[tx.Tx.Bloom.HashStr] = tx
 			foundMap.Unlock()
 		}
 

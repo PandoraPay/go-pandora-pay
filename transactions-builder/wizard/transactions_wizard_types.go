@@ -45,7 +45,7 @@ func (data *TransactionsWizardData) getData() ([]byte, error) {
 		return data.Data, nil
 	} else {
 
-		pub, err := ecdsa.UnmarshalPubkey(data.PublicKeyToEncrypt)
+		pub, err := ecdsa.DecompressPubkey(data.PublicKeyToEncrypt)
 		if err != nil {
 			return nil, err
 		}

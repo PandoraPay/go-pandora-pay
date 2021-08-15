@@ -174,3 +174,33 @@ func logoutWallet(this js.Value, args []js.Value) interface{} {
 		return true, nil
 	})
 }
+
+func decryptMessageWalletAddress(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+
+		data, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
+		}
+
+		if err := app.Wallet.Encryption.CheckPassword(args[2].String(), false); err != nil {
+			return false, err
+		}
+
+		app.Wallet.RLock()
+
+		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
+		if err != nil {
+			return nil, err
+		}
+
+		out, err := addr.DecryptMessage(data)
+		app.Wallet.RUnlock()
+
+		if err != nil {
+			return nil, err
+		}
+
+		return hex.EncodeToString(out), nil
+	})
+}

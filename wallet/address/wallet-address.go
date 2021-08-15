@@ -78,3 +78,7 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDele
 		LastKnownNonce: nonce,
 	}, nil
 }
+
+func (adr *WalletAddress) DecryptMessage(message []byte) ([]byte, error) {
+	return adr.PrivateKey.Decrypt(message)
+}

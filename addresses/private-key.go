@@ -4,6 +4,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/ecdsa"
+	"pandora-pay/cryptography/ecies"
 	"pandora-pay/helpers"
 )
 
@@ -60,6 +61,21 @@ func (pk *PrivateKey) Sign(message []byte) ([]byte, error) {
 	}
 
 	return ecdsa.Sign(message, privateKey)
+}
+
+func (pk *PrivateKey) Decrypt(message []byte) ([]byte, error) {
+	privateKey, err := ecdsa.ToECDSA(pk.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	priv := ecies.ImportECDSA(privateKey)
+	out, err := priv.Decrypt(message, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
 }
 
 func GenerateNewPrivateKey() *PrivateKey {
