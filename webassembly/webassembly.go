@@ -197,6 +197,9 @@ func Initialize(startMainCb func()) {
 				"tokensConvertToUnits": js.FuncOf(tokensConvertToUnits),
 				"tokensConvertToBase":  js.FuncOf(tokensConvertToBase),
 			}),
+			"stake": js.ValueOf(map[string]interface{}{
+				"getRequiredStake": js.FuncOf(getRequiredStake),
+			}),
 			"constants": js.ValueOf(map[string]interface{}{
 				"API_MEMPOOL_MAX_TRANSACTIONS": js.ValueOf(config.API_MEMPOOL_MAX_TRANSACTIONS),
 				"API_ACCOUNT_MAX_TXS":          js.ValueOf(config.API_ACCOUNT_MAX_TXS),

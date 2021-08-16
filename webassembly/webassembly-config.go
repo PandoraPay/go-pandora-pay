@@ -3,6 +3,7 @@ package webassembly
 import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_reward"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/config/config_tokens"
 	"strconv"
 	"syscall/js"
@@ -57,10 +58,7 @@ func tokensConvertToUnits(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		decimalSeparator, err := strconv.Atoi(args[1].String())
-		if err != nil {
-			return nil, err
-		}
+		decimalSeparator := args[1].Int()
 
 		value2, err := config_tokens.TokensConvertToUnits(number, decimalSeparator)
 		if err != nil {
@@ -79,10 +77,7 @@ func tokensConvertToBase(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		decimalSeparator, err := strconv.Atoi(args[1].String())
-		if err != nil {
-			return nil, err
-		}
+		decimalSeparator := args[1].Int()
 
 		value2, err := config_tokens.TokensConvertToBase(number, decimalSeparator)
 		if err != nil {
@@ -90,6 +85,19 @@ func tokensConvertToBase(this js.Value, args []js.Value) interface{} {
 		}
 
 		return strconv.FormatFloat(value2, 'f', decimalSeparator, 64), nil
+	})
+}
+
+func getRequiredStake(this js.Value, args []js.Value) interface{} {
+	return normalFunction(func() (interface{}, error) {
+
+		blockHeight, err := strconv.ParseUint(args[0].String(), 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		value := config_stake.GetRequiredStake(blockHeight)
+		return strconv.FormatUint(value, 10), nil
 	})
 }
 
