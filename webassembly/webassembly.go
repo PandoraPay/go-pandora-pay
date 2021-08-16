@@ -88,6 +88,7 @@ func Initialize(startMainCb func()) {
 					"logoutWallet":                js.FuncOf(logoutWallet),
 					"decryptMessageWalletAddress": js.FuncOf(decryptMessageWalletAddress),
 				}),
+				"deriveDelegatedStakeWalletAddress": js.FuncOf(deriveDelegatedStakeWalletAddress),
 			}),
 		}),
 		"addresses": js.ValueOf(map[string]interface{}{
@@ -114,7 +115,8 @@ func Initialize(startMainCb func()) {
 		}),
 		"transactions": js.ValueOf(map[string]interface{}{
 			"builder": js.ValueOf(map[string]interface{}{
-				"createSimpleTx_Float": js.FuncOf(createSimpleTx_Float),
+				"createSimpleTx_Float":   js.FuncOf(createSimpleTx_Float),
+				"createDelegateTx_Float": js.FuncOf(createDelegateTx_Float),
 			}),
 		}),
 		"store": js.ValueOf(map[string]interface{}{

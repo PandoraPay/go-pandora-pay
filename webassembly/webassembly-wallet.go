@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"pandora-pay/app"
 	"pandora-pay/helpers"
+	"strconv"
 	"syscall/js"
 )
 
@@ -177,17 +178,17 @@ func logoutWallet(this js.Value, args []js.Value) interface{} {
 
 func decryptMessageWalletAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
+		if err := app.Wallet.Encryption.CheckPassword(args[2].String(), false); err != nil {
+			return false, err
+		}
 
 		data, err := hex.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
 		}
 
-		if err := app.Wallet.Encryption.CheckPassword(args[2].String(), false); err != nil {
-			return false, err
-		}
-
 		app.Wallet.RLock()
+		defer app.Wallet.RUnlock()
 
 		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
 		if err != nil {
@@ -195,12 +196,41 @@ func decryptMessageWalletAddress(this js.Value, args []js.Value) interface{} {
 		}
 
 		out, err := addr.DecryptMessage(data)
-		app.Wallet.RUnlock()
 
 		if err != nil {
 			return nil, err
 		}
 
 		return hex.EncodeToString(out), nil
+	})
+}
+
+func deriveDelegatedStakeWalletAddress(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+
+		if err := app.Wallet.Encryption.CheckPassword(args[2].String(), false); err != nil {
+			return false, err
+		}
+
+		nonce, err := strconv.ParseUint(args[0].String(), 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		app.Wallet.RLock()
+		defer app.Wallet.RUnlock()
+
+		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
+		if err != nil {
+			return nil, err
+		}
+
+		delegatedStake, err := addr.DeriveDelegatedStake(uint32(nonce))
+		if err != nil {
+			return nil, err
+		}
+
+		return convertJSON(delegatedStake)
+
 	})
 }
