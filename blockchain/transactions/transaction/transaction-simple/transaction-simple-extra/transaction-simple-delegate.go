@@ -40,6 +40,9 @@ func (tx *TransactionSimpleDelegate) Validate() error {
 	if !tx.HasNewPublicKeyHash && len(tx.NewPublicKeyHash) != 0 {
 		return errors.New("New Public Key Hash length is invalid")
 	}
+	if !tx.HasNewPublicKeyHash && tx.Amount == 0 {
+		return errors.New("Transaction Delegate arguments are empty")
+	}
 	return nil
 }
 

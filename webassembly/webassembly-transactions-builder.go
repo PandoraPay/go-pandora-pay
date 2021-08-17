@@ -65,14 +65,15 @@ func createDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 		}
 
 		type DelegateTxFloatData struct {
-			From                  string                                            `json:"from"`
-			Nonce                 uint64                                            `json:"nonce"`
-			DelegateAmount        float64                                           `json:"delegateAmount"`
-			DelegateNewPubKeyHash helpers.HexBytes                                  `json:"delegateNewPubKeyHash"`
-			Data                  *wizard.TransactionsWizardData                    `json:"data"`
-			Fee                   *transactions_builder.TransactionsBuilderFeeFloat `json:"fee"`
-			PropagateTx           bool                                              `json:"propagateTx"`
-			AwaitAnswer           bool                                              `json:"awaitAnswer"`
+			From                             string                                            `json:"from"`
+			Nonce                            uint64                                            `json:"nonce"`
+			DelegateAmount                   float64                                           `json:"delegateAmount"`
+			DelegateNewPublicKeyHashGenerate bool                                              `json:"delegateNewPublicKeyHashGenerate"`
+			DelegateNewPubKeyHash            helpers.HexBytes                                  `json:"delegateNewPubKeyHash"`
+			Data                             *wizard.TransactionsWizardData                    `json:"data"`
+			Fee                              *transactions_builder.TransactionsBuilderFeeFloat `json:"fee"`
+			PropagateTx                      bool                                              `json:"propagateTx"`
+			AwaitAnswer                      bool                                              `json:"awaitAnswer"`
 		}
 
 		txData := &DelegateTxFloatData{}
@@ -80,7 +81,7 @@ func createDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.CreateDelegateTx_Float(txData.From, txData.Nonce, txData.DelegateAmount, false, txData.DelegateNewPubKeyHash, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
+		tx, err := app.TransactionsBuilder.CreateDelegateTx_Float(txData.From, txData.Nonce, txData.DelegateAmount, txData.DelegateNewPublicKeyHashGenerate, txData.DelegateNewPubKeyHash, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
 			args[1].Invoke(status)
 			time.Sleep(10 * time.Millisecond)
 		})
