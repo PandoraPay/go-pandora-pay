@@ -107,3 +107,17 @@ func getRewardAt(this js.Value, args []js.Value) interface{} {
 		return value, nil
 	})
 }
+
+func getNetworkSelectedSeeds(this js.Value, args []js.Value) interface{} {
+	return normalFunction(func() (interface{}, error) {
+		value := config.NETWORK_SELECTED_SEEDS
+		return convertJSON(value)
+	})
+}
+
+func getNetworkSelectedDelegatesNodes(this js.Value, args []js.Value) interface{} {
+	return normalFunction(func() (interface{}, error) {
+		value := config.NETWORK_SELECTED_DELEGATES_NODES
+		return convertJSON(value)
+	})
+}

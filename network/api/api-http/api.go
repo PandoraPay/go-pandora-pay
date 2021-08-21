@@ -323,6 +323,8 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		api.GetMap["account/mem-pool"] = api.getAccountMempool
 	}
 
+	if config.
+
 	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
 		api.GetMap["faucet/info"] = api.getFaucetInfo
 		if config.FAUCET_TESTNET_ENABLED {

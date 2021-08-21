@@ -193,6 +193,10 @@ func Initialize(startMainCb func()) {
 				"convertToUnits":               js.FuncOf(convertToUnits),
 				"convertToBase":                js.FuncOf(convertToBase),
 			}),
+			"helpers": js.ValueOf(map[string]interface{}{
+				"getNetworkSelectedSeeds":          js.FuncOf(getNetworkSelectedSeeds),
+				"getNetworkSelectedDelegatesNodes": js.FuncOf(getNetworkSelectedDelegatesNodes),
+			}),
 			"reward": js.ValueOf(map[string]interface{}{
 				"getRewardAt": js.FuncOf(getRewardAt),
 			}),

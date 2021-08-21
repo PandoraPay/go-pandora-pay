@@ -122,7 +122,7 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 
 	knownNodes := known_nodes.CreateKnownNodes()
 	for _, seed := range config.NETWORK_SELECTED_SEEDS {
-		knownNodes.AddKnownNode(&seed, true)
+		knownNodes.AddKnownNode(seed.Url, true)
 	}
 
 	bannedNodes := banned_nodes.CreateBannedNodes()

@@ -129,7 +129,7 @@ The main reasons why DPOS has been chosen over POS:
 5. Future proposals:
     1. state trie proofs to prove to light clients the state.     
     2. sharding. Creating multiple distinct shards and splitting the state trie into `n` shards
-    3. creating macro blocks by selecting validators for a meta chain
+    3. creating macro blocks by selecting specific nodes for a meta chain
   
 ### Debugging
 
