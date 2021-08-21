@@ -235,7 +235,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 
 					if blkComplete.Block.Timestamp < newChainData.Timestamp {
-						return errors.New("Timestamp has to be greather than the last timestmap")
+						return errors.New("Timestamp has to be greater than the last timestmap")
 					}
 
 					if blkComplete.Block.Timestamp > uint64(time.Now().UTC().Unix())+config.NETWORK_TIMESTAMP_DRIFT_MAX {

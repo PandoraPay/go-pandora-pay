@@ -7,6 +7,7 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	"pandora-pay/config"
 	"pandora-pay/config/config_fees"
 )
 
@@ -53,6 +54,10 @@ func setFee(tx *transaction.Transaction, fee *TransactionsWizardFeeExtra) error 
 		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
 		if fee.PayInExtra {
+
+			if !bytes.Equal(fee.Token, config.NATIVE_TOKEN) {
+				return errors.New("Pay In Extra can not be paid in a different token")
+			}
 
 			switch base.TxScript {
 			case transaction_simple.SCRIPT_UNSTAKE:

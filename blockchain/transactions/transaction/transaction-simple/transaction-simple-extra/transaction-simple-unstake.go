@@ -34,7 +34,7 @@ func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(blockHeight uint64, a
 
 func (tx *TransactionSimpleUnstake) Validate() error {
 	if tx.Amount == 0 {
-		return errors.New("Unstake must be greather than zero")
+		return errors.New("Unstake must be greater than zero")
 	}
 	return nil
 }

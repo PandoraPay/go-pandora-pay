@@ -117,6 +117,7 @@ func Initialize(startMainCb func()) {
 			"builder": js.ValueOf(map[string]interface{}{
 				"createSimpleTx_Float":   js.FuncOf(createSimpleTx_Float),
 				"createDelegateTx_Float": js.FuncOf(createDelegateTx_Float),
+				"createUnstakeTx_Float":  js.FuncOf(createUnstakeTx_Float),
 			}),
 		}),
 		"store": js.ValueOf(map[string]interface{}{

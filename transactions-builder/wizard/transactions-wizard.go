@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	"pandora-pay/cryptography"
 )
 
 func signSimpleTransaction(tx *transaction.Transaction, privateKeys []*addresses.PrivateKey, statusCallback func(string)) (err error) {
@@ -180,7 +181,7 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 
 	delegateHasNewPublicKeyHash := false
 	var delegateNewPublicKeyHash []byte //33 byte
-	if delegateNewPubKeyHash != nil {
+	if delegateNewPubKeyHash != nil && len(delegateNewPubKeyHash) == cryptography.PublicKeyHashHashSize {
 		delegateHasNewPublicKeyHash = true
 		delegateNewPublicKeyHash = delegateNewPubKeyHash
 	}
