@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"pandora-pay/addresses"
+	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/config"
@@ -14,11 +16,26 @@ import (
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"pandora-pay/wallet"
+	"sync"
+	"sync/atomic"
+	"time"
 )
 
+type apiPendingDelegateStakeChange struct {
+	delegatePrivateKey    *addresses.PrivateKey
+	delegatePublicKeyHash []byte
+	publicKeyHash         []byte
+	publicKey             []byte
+	blockHeight           uint64
+}
+
 type APIDelegatesNode struct {
-	wallet    *wallet.Wallet
-	challenge []byte
+	challenge                     []byte
+	chainHeight                   uint64    //use atomic
+	pendingDelegatesStakesChanges *sync.Map //*apiPendingDelegateStakeChange
+	ticker                        *time.Ticker
+	wallet                        *wallet.Wallet
+	chain                         *blockchain.Blockchain
 }
 
 func (api *APIDelegatesNode) getDelegatesInfo(request *ApiDelegatesNodeInfoRequest) ([]byte, error) {
@@ -73,21 +90,47 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 		})
 	}
 
+	delegatePrivateKey := addresses.GenerateNewPrivateKey()
+	delegatePublicKeyHash, err := delegatePrivateKey.GeneratePublicKeyHash()
+	if err != nil {
+		return nil, err
+	}
+
+	data, loaded := api.pendingDelegatesStakesChanges.LoadOrStore(publicKeyHash, &apiPendingDelegateStakeChange{
+		delegatePrivateKey,
+		delegatePublicKeyHash,
+		publicKeyHash,
+		publicKey,
+		atomic.LoadUint64(&api.chainHeight),
+	})
+	if loaded {
+		pendingDelegateStakeChange := data.(*apiPendingDelegateStakeChange)
+		delegatePrivateKey = pendingDelegateStakeChange.delegatePrivateKey
+		delegatePublicKeyHash = pendingDelegateStakeChange.delegatePublicKeyHash
+	}
+
 	answer := &ApiDelegatesNodeAskAnswer{
-		Exists: false,
+		Exists:                false,
+		DelegatePublicKeyHash: delegatePublicKeyHash,
 	}
 
 	return json.Marshal(answer)
 }
 
-func CreateDelegatesNode(wallet *wallet.Wallet) (delegates *APIDelegatesNode) {
+func CreateDelegatesNode(chain *blockchain.Blockchain, wallet *wallet.Wallet) (delegates *APIDelegatesNode) {
 
 	challenge := helpers.RandomBytes(cryptography.HashSize)
 
 	delegates = &APIDelegatesNode{
-		wallet,
 		challenge,
+		0,
+		&sync.Map{},
+		nil,
+		wallet,
+		chain,
 	}
+
+	delegates.execute()
 
 	return
 }

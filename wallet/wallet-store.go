@@ -72,6 +72,10 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 			return
 		}
 
+		if end > len(wallet.Addresses) {
+			end = len(wallet.Addresses)
+		}
+
 		for i := start; i < end; i++ {
 			if marshal, err = json.Marshal(wallet.Addresses[i]); err != nil {
 				return
@@ -179,7 +183,9 @@ func (wallet *Wallet) walletLoaded() {
 
 	for _, addr := range wallet.Addresses {
 		wallet.forging.Wallet.AddWallet(addr.GetDelegatedStakePrivateKey(), addr.PublicKeyHash)
-		wallet.mempool.Wallet.AddWallet(addr.PublicKeyHash)
+		if addr.PrivateKey != nil {
+			wallet.mempool.Wallet.AddWallet(addr.PublicKeyHash)
+		}
 	}
 
 	wallet.updateWallet()

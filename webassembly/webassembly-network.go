@@ -10,6 +10,7 @@ import (
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
+	api_faucet "pandora-pay/network/api/api-common/api-faucet"
 	"pandora-pay/network/api/api-common/api_types"
 	"syscall/js"
 )
@@ -20,7 +21,7 @@ func getNetworkFaucetCoins(this js.Value, args []js.Value) interface{} {
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("faucet/coins"), &api_types.APIFaucetCoinsRequest{args[0].String(), args[1].String()})
+		data := socket.SendJSONAwaitAnswer([]byte("faucet/coins"), &api_faucet.APIFaucetCoinsRequest{args[0].String(), args[1].String()})
 		if data.Err != nil {
 			return nil, data.Err
 		}

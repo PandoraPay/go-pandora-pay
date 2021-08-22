@@ -83,7 +83,7 @@ func removeWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return app.Wallet.RemoveAddress(0, args[1].String())
+		return app.Wallet.RemoveAddress(args[1].String())
 	})
 }
 

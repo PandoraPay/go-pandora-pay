@@ -369,7 +369,7 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wal
 
 	var apiDelegatesNode *api_delegates_node.APIDelegatesNode
 	if config.DELEGATES_ALLOWED_ACTIVATED {
-		apiDelegatesNode = api_delegates_node.CreateDelegatesNode(wallet)
+		apiDelegatesNode = api_delegates_node.CreateDelegatesNode(chain, wallet)
 	}
 
 	api = &APICommon{

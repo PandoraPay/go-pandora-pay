@@ -9,8 +9,10 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
+	"pandora-pay/recovery"
 	"pandora-pay/wallet/address"
 	"strconv"
 )
@@ -84,6 +86,43 @@ func (wallet *Wallet) ImportPrivateKey(name string, privateKey []byte) (*wallet_
 	}
 
 	return addr, nil
+}
+
+func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress, lock bool) (err error) {
+	if lock {
+		wallet.Lock()
+		defer wallet.Unlock()
+	}
+	if !wallet.Loaded {
+		return errors.New("Wallet was not loaded!")
+	}
+
+	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY_HASH, nil, adr.PublicKeyHash, 0, nil)
+	if err != nil {
+		return
+	}
+
+	adr.AddressEncoded = address.EncodeAddr()
+
+	if wallet.addressesMap[string(adr.PublicKeyHash)] != nil {
+		return errors.New("Address exists")
+	}
+
+	wallet.Addresses = append(wallet.Addresses, adr)
+	wallet.addressesMap[string(adr.PublicKeyHash)] = adr
+
+	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKeyHash)
+
+	wallet.Count += 1
+	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKeyHash)
+
+	gui.GUI.Info("wallet.saveWallet", len(wallet.Addresses))
+	if err = wallet.saveWallet(len(wallet.Addresses)-1, len(wallet.Addresses), -1, false); err != nil {
+		return
+	}
+	globals.MainEvents.BroadcastEvent("wallet/added", adr)
+
+	return
 }
 
 func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, incrementSeedIndex bool, incrementCountIndex bool) (err error) {
@@ -195,25 +234,15 @@ func (wallet *Wallet) AddNewAddress(lock bool) (*wallet_address.WalletAddress, e
 	return adr, nil
 }
 
-/**
-In case encodedAddress is provided, it will search for it
-*/
-func (wallet *Wallet) RemoveAddress(index int, encodedAddress string) (bool, error) {
+func (wallet *Wallet) RemoveAddressByIndex(index int, lock bool) (bool, error) {
 
-	wallet.Lock()
-	defer wallet.Unlock()
+	if lock {
+		wallet.Lock()
+		defer wallet.Unlock()
+	}
 
 	if !wallet.Loaded {
 		return false, errors.New("Wallet was not loaded!")
-	}
-
-	if encodedAddress != "" {
-		for i, addr := range wallet.Addresses {
-			if addr.AddressEncoded == encodedAddress {
-				index = i
-				break
-			}
-		}
 	}
 
 	if index < 0 || index > len(wallet.Addresses) {
@@ -223,7 +252,9 @@ func (wallet *Wallet) RemoveAddress(index int, encodedAddress string) (bool, err
 	adr := wallet.Addresses[index]
 
 	removing := wallet.Addresses[index]
-	wallet.Addresses = append(wallet.Addresses[:index], wallet.Addresses[index+1:]...)
+
+	wallet.Addresses[index] = wallet.Addresses[len(wallet.Addresses)-1]
+	wallet.Addresses = wallet.Addresses[:len(wallet.Addresses)-1]
 	delete(wallet.addressesMap, string(adr.PublicKeyHash))
 
 	wallet.Count -= 1
@@ -232,12 +263,48 @@ func (wallet *Wallet) RemoveAddress(index int, encodedAddress string) (bool, err
 	wallet.mempool.Wallet.RemoveWallet(removing.PublicKeyHash)
 
 	wallet.updateWallet()
-	if err := wallet.saveWallet(index, len(wallet.Addresses), wallet.Count, false); err != nil {
+	if err := wallet.saveWallet(index, index+1, wallet.Count, false); err != nil {
 		return false, err
 	}
 	globals.MainEvents.BroadcastEvent("wallet/removed", adr)
 
 	return true, nil
+}
+
+func (wallet *Wallet) RemoveAddress(encodedAddress string) (bool, error) {
+
+	wallet.Lock()
+	defer wallet.Unlock()
+
+	if !wallet.Loaded {
+		return false, errors.New("Wallet was not loaded!")
+	}
+
+	for i, addr := range wallet.Addresses {
+		if addr.AddressEncoded == encodedAddress {
+			return wallet.RemoveAddressByIndex(i, false)
+		}
+	}
+
+	return false, nil
+}
+
+func (wallet *Wallet) RemoveAddressByWalletAddress(addr *wallet_address.WalletAddress) (bool, error) {
+
+	wallet.Lock()
+	defer wallet.Unlock()
+
+	if !wallet.Loaded {
+		return false, errors.New("Wallet was not loaded!")
+	}
+
+	for i, addr := range wallet.Addresses {
+		if addr == addr {
+			return wallet.RemoveAddressByIndex(i, false)
+		}
+	}
+
+	return false, nil
 }
 
 func (wallet *Wallet) GetWalletAddress(index int) (*wallet_address.WalletAddress, error) {
@@ -324,6 +391,7 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 	}
 
 	if adr.PrivateKey == nil {
+		_, err = wallet.RemoveAddressByWalletAddress(adr)
 		return
 	}
 
@@ -352,6 +420,7 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 
 		adr.DelegatedStake = nil
 		wallet.forging.Wallet.AddWallet(nil, adr.PublicKeyHash)
+
 		return wallet.saveWalletAddress(adr, lock)
 	}
 
@@ -360,37 +429,39 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 
 func (wallet *Wallet) updateAccountsChanges() {
 
-	var err error
-	updateAccountsCn := wallet.updateAccounts.AddListener()
-	defer wallet.updateAccounts.RemoveChannel(updateAccountsCn)
+	recovery.SafeGo(func() {
+		var err error
+		updateAccountsCn := wallet.updateAccounts.AddListener()
+		defer wallet.updateAccounts.RemoveChannel(updateAccountsCn)
 
-	for {
-		accsData, ok := <-updateAccountsCn
-		if !ok {
-			return
-		}
-
-		accs := accsData.(*accounts.Accounts)
-
-		wallet.Lock()
-		for k, v := range accs.HashMap.Committed {
-			if wallet.addressesMap[k] != nil {
-
-				if v.Stored == "update" {
-					acc := v.Element.(*account.Account)
-					if err = wallet.refreshWallet(acc, wallet.addressesMap[k], false); err != nil {
-						return
-					}
-				} else if v.Stored == "delete" {
-					if err = wallet.refreshWallet(nil, wallet.addressesMap[k], false); err != nil {
-						return
-					}
-				}
-
+		for {
+			accsData, ok := <-updateAccountsCn
+			if !ok {
+				return
 			}
+
+			accs := accsData.(*accounts.Accounts)
+
+			wallet.Lock()
+			for k, v := range accs.HashMap.Committed {
+				if wallet.addressesMap[k] != nil {
+
+					if v.Stored == "update" {
+						acc := v.Element.(*account.Account)
+						if err = wallet.refreshWallet(acc, wallet.addressesMap[k], false); err != nil {
+							return
+						}
+					} else if v.Stored == "delete" {
+						if err = wallet.refreshWallet(nil, wallet.addressesMap[k], false); err != nil {
+							return
+						}
+					}
+
+				}
+			}
+			wallet.Unlock()
 		}
-		wallet.Unlock()
-	}
+	})
 
 }
 

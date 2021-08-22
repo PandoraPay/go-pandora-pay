@@ -6,7 +6,6 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
-	"pandora-pay/recovery"
 	wallet_address "pandora-pay/wallet/address"
 	"sync"
 )
@@ -85,6 +84,6 @@ func (wallet *Wallet) InitializeWallet(updateAccounts *multicast.MulticastChanne
 	wallet.Unlock()
 
 	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
-		recovery.SafeGo(wallet.updateAccountsChanges)
+		wallet.updateAccountsChanges()
 	}
 }
