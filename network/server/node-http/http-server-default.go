@@ -1,3 +1,4 @@
+//go:build !wasm
 // +build !wasm
 
 package node_http
@@ -22,7 +23,7 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 	var err error
 	var output interface{}
 
-	callback := server.getMap[req.URL.Path]
+	callback := server.GetMap[req.URL.Path]
 	if callback != nil {
 		arguments := req.URL.Query()
 		output, err = callback(&arguments)
@@ -47,11 +48,11 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func (server *HttpServer) initialize() {
+func (server *HttpServer) Initialize() {
 
 	for key, callback := range server.Api.GetMap {
 		http.HandleFunc("/"+key, server.get)
-		server.getMap["/"+key] = callback
+		server.GetMap["/"+key] = callback
 	}
 
 }

@@ -176,7 +176,7 @@ func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) ([]byte, 
 		return nil, err
 	}
 
-	acc, err := api.ApiStore.openLoadAccountFromPublicKeyHash(publicKeyHash)
+	acc, err := api.ApiStore.OpenLoadAccountFromPublicKeyHash(publicKeyHash)
 	if err != nil || acc == nil {
 		return nil, err
 	}

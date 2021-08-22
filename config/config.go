@@ -83,9 +83,8 @@ var (
 )
 
 var (
-	CONSENSUS                   ConsensusType = CONSENSUS_TYPE_FULL
-	SEED_WALLET_NODES_INFO      bool
-	DELEGATES_ALLOWED_ACTIVATED bool
+	CONSENSUS              ConsensusType = CONSENSUS_TYPE_FULL
+	SEED_WALLET_NODES_INFO bool
 )
 
 var (

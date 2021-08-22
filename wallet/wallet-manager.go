@@ -57,6 +57,14 @@ func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string) (*
 	return out, nil
 }
 
+func (wallet *Wallet) GetWalletAddressByPublicKeyHash(publicKeyHash []byte) *wallet_address.WalletAddress {
+
+	wallet.RLock()
+	defer wallet.RUnlock()
+
+	return wallet.addressesMap[string(publicKeyHash)]
+}
+
 func (wallet *Wallet) ImportPrivateKey(name string, privateKey []byte) (*wallet_address.WalletAddress, error) {
 
 	if len(privateKey) != 32 {
@@ -315,29 +323,29 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 		return
 	}
 
+	if adr.PrivateKey == nil {
+		return
+	}
+
 	if (adr.DelegatedStake != nil && acc.DelegatedStake != nil && !bytes.Equal(adr.DelegatedStake.PublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash)) ||
 		(adr.DelegatedStake == nil && acc.DelegatedStake != nil) {
 
-		if adr.IsMine {
+		if acc.DelegatedStake != nil {
 
-			if acc.DelegatedStake != nil {
+			lastKnownNonce := uint32(0)
+			if adr.DelegatedStake != nil {
+				lastKnownNonce = adr.DelegatedStake.LastKnownNonce
+			}
 
-				lastKnownNonce := uint32(0)
-				if adr.DelegatedStake != nil {
-					lastKnownNonce = adr.DelegatedStake.LastKnownNonce
-				}
+			var delegatedStake *wallet_address.WalletAddressDelegatedStake
+			if delegatedStake, err = adr.FindDelegatedStake(uint32(acc.Nonce), lastKnownNonce, acc.DelegatedStake.DelegatedPublicKeyHash); err != nil {
+				return
+			}
 
-				var delegatedStake *wallet_address.WalletAddressDelegatedStake
-				if delegatedStake, err = adr.FindDelegatedStake(uint32(acc.Nonce), lastKnownNonce, acc.DelegatedStake.DelegatedPublicKeyHash); err != nil {
-					return
-				}
-
-				if delegatedStake != nil {
-					adr.DelegatedStake = delegatedStake
-					wallet.forging.Wallet.AddWallet(adr.DelegatedStake.PrivateKey.Key, adr.PublicKeyHash)
-					return wallet.saveWalletAddress(adr, lock)
-				}
-
+			if delegatedStake != nil {
+				adr.DelegatedStake = delegatedStake
+				wallet.forging.Wallet.AddWallet(adr.DelegatedStake.PrivateKey.Key, adr.PublicKeyHash)
+				return wallet.saveWalletAddress(adr, lock)
 			}
 
 		}
@@ -437,6 +445,13 @@ func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {
 	}
 
 	return
+}
+
+func (wallet *Wallet) GetDelegatesCount() int {
+	wallet.RLock()
+	defer wallet.RUnlock()
+
+	return wallet.DelegatesCount
 }
 
 func (wallet *Wallet) Close() {

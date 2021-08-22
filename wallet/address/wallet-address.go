@@ -54,6 +54,10 @@ func (adr *WalletAddress) FindDelegatedStake(currentNonce, lastKnownNonce uint32
 
 func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDelegatedStake, error) {
 
+	if adr.PrivateKey == nil {
+		return nil, errors.New("Private Key is missing")
+	}
+
 	masterKey, err := bip32.NewMasterKey(adr.PrivateKey.Key)
 	if err != nil {
 		return nil, err
@@ -80,5 +84,8 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDele
 }
 
 func (adr *WalletAddress) DecryptMessage(message []byte) ([]byte, error) {
+	if adr.PrivateKey == nil {
+		return nil, errors.New("Private Key is missing")
+	}
 	return adr.PrivateKey.Decrypt(message)
 }

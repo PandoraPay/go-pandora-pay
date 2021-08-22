@@ -21,6 +21,7 @@ type Wallet struct {
 	CountIndex     int                             `json:"countIndex"`
 	Addresses      []*wallet_address.WalletAddress `json:"addresses"`
 	Loaded         bool                            `json:"loaded"`
+	DelegatesCount int                             `json:"delegatesCount"`
 	addressesMap   map[string]*wallet_address.WalletAddress
 	forging        *forging.Forging
 	mempool        *mempool.Mempool

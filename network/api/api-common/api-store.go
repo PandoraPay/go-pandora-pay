@@ -126,7 +126,7 @@ func (apiStore *APIStore) openLoadBlockWithTXsFromHeight(blockHeight uint64) (bl
 	return
 }
 
-func (apiStore *APIStore) openLoadAccountFromPublicKeyHash(publicKeyHash []byte) (acc *account.Account, errFinal error) {
+func (apiStore *APIStore) OpenLoadAccountFromPublicKeyHash(publicKeyHash []byte) (acc *account.Account, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))

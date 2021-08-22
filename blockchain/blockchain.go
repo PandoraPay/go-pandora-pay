@@ -206,7 +206,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return errors.New("Forger Account deson't exist or hasn't delegated stake")
 					}
 
-					stakingAmount := acc.GetDelegatedStakeAvailable()
+					var stakingAmount uint64
+					stakingAmount, err = acc.ComputeDelegatedStakeAvailable(newChainData.Height)
+					if err != nil {
+						return
+					}
 
 					if !bytes.Equal(blkComplete.Block.Bloom.DelegatedPublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash) {
 						return errors.New("Block Staking Delegated Public Key is not matching")

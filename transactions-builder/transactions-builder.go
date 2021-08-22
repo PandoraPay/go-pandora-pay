@@ -230,9 +230,10 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	var tx *transaction.Transaction
 	accountsList := make([]*account.Account, 1)
 
+	var chainHeight uint64
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 
 		accs := accounts.NewAccounts(reader)
 
@@ -244,7 +245,12 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 			return errors.New("Account doesn't exist")
 		}
 
-		if accountsList[0].GetDelegatedStakeAvailable() < unstakeAmount {
+		availableStake, err := accountsList[0].ComputeDelegatedStakeAvailable(chainHeight)
+		if err != nil {
+			return
+		}
+
+		if availableStake < unstakeAmount {
 			return errors.New("You don't have enough staked coins")
 		}
 
@@ -269,7 +275,10 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 		return nil, err
 	}
 
-	availableDelegatedStake := accountsList[0].GetDelegatedStakeAvailable()
+	availableDelegatedStake, err := accountsList[0].ComputeDelegatedStakeAvailable(chainHeight)
+	if err != nil {
+		return nil, err
+	}
 	if availableDelegatedStake < tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[0].Amount+tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).FeeExtra {
 		return nil, errors.New("You don't have enough staked coins to pay for the fee")
 	}

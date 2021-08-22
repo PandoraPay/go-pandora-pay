@@ -52,3 +52,8 @@ var (
 		},
 	}
 )
+
+var (
+	DELEGATES_ALLOWED_ACTIVATED = false
+	DELEGATES_MAXIMUM           = 10000
+)
