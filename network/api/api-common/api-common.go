@@ -14,6 +14,8 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
+	api_delegates_node "pandora-pay/network/api/api-common/api-delegates-node"
+	"pandora-pay/network/api/api-common/api-faucet"
 	"pandora-pay/network/api/api-common/api_types"
 	advanced_connection_types "pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/recovery"
@@ -28,7 +30,8 @@ type APICommon struct {
 	chain                  *blockchain.Blockchain
 	localChain             *atomic.Value //*APIBlockchain
 	localChainSync         *atomic.Value //*blockchain_sync.BlockchainSyncData
-	ApiCommonFaucet        *APICommonFaucet
+	APICommonFaucet        *api_faucet.APICommonFaucet
+	APIDelegatesNode       *api_delegates_node.APIDelegatesNode
 	ApiStore               *APIStore
 	MempoolDownloadPending *sync.Map //[string]chan error
 }
@@ -357,9 +360,16 @@ func (api *APICommon) readLocalBlockchainSync(newLocalSync *blockchain_sync.Bloc
 
 func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder, apiStore *APIStore) (api *APICommon, err error) {
 
-	apiCommonFaucet, err := createAPICommonFaucet(mempool, chain, wallet, transactionsBuilder)
-	if err != nil {
-		return
+	var apiCommonFaucet *api_faucet.APICommonFaucet
+	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
+		if apiCommonFaucet, err = api_faucet.CreateAPICommonFaucet(mempool, chain, wallet, transactionsBuilder); err != nil {
+			return
+		}
+	}
+
+	var apiDelegatesNode *api_delegates_node.APIDelegatesNode
+	if config.DELEGATES_ALLOWED_ACTIVATED {
+		apiDelegatesNode = api_delegates_node.CreateDelegatesNode(wallet)
 	}
 
 	api = &APICommon{
@@ -368,6 +378,7 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wal
 		&atomic.Value{}, //*APIBlockchain
 		&atomic.Value{}, //*APIBlockchainSync
 		apiCommonFaucet,
+		apiDelegatesNode,
 		apiStore,
 		&sync.Map{},
 	}

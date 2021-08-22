@@ -38,27 +38,6 @@ func (api *API) getPing(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetPing()
 }
 
-func (api *API) getFaucetInfo(values *url.Values) (interface{}, error) {
-	return api.apiCommon.ApiCommonFaucet.GetFaucetInfo()
-}
-
-func (api *API) getFaucetCoins(values *url.Values) (interface{}, error) {
-
-	request := &api_types.APIFaucetCoinsRequest{"", ""}
-
-	if values.Get("address") != "" {
-		request.Address = values.Get("address")
-	} else {
-		return nil, errors.New("parameter 'address' was not specified")
-	}
-
-	if values.Get("faucetToken") != "" {
-		request.FaucetToken = values.Get("faucetToken")
-	}
-
-	return api.apiCommon.ApiCommonFaucet.GetFaucetCoins(request)
-}
-
 func (api *API) getBlockComplete(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APIBlockCompleteRequest{0, nil, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
@@ -323,11 +302,15 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		api.GetMap["account/mem-pool"] = api.getAccountMempool
 	}
 
-	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
-		api.GetMap["faucet/info"] = api.getFaucetInfo
+	if api.apiCommon.APICommonFaucet != nil {
+		api.GetMap["faucet/info"] = api.apiCommon.APICommonFaucet.GetFaucetInfoHttp
 		if config.FAUCET_TESTNET_ENABLED {
-			api.GetMap["faucet/coins"] = api.getFaucetCoins
+			api.GetMap["faucet/coins"] = api.apiCommon.APICommonFaucet.GetFaucetCoinsHttp
 		}
+	}
+
+	if api.apiCommon.APIDelegatesNode != nil {
+		api.GetMap["delegates/info"] = api.apiCommon.APIDelegatesNode.GetDelegatesInfoHttp
 	}
 
 	return &api

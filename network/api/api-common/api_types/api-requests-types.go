@@ -132,11 +132,6 @@ type APIMempoolRequest struct {
 	Count     int              `json:"count,omitempty"`
 }
 
-type APIFaucetCoinsRequest struct {
-	Address     string `json:"address,omitempty"`
-	FaucetToken string `json:"faucetToken,omitempty"`
-}
-
 func (self *APIAccountBaseRequest) ImportFromValues(values *url.Values) (err error) {
 
 	if values.Get("address") != "" {

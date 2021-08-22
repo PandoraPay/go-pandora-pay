@@ -45,18 +45,6 @@ func (api *APIWebsockets) getPing(conn *connection.AdvancedConnection, values []
 	return api.apiCommon.GetPing()
 }
 
-func (api *APIWebsockets) getFaucetInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.apiCommon.ApiCommonFaucet.GetFaucetInfo()
-}
-
-func (api *APIWebsockets) getFaucetCoins(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIFaucetCoinsRequest{"", ""}
-	if err := json.Unmarshal(values, request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.ApiCommonFaucet.GetFaucetCoins(request)
-}
-
 func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	request := APIBlockHeight(0)
 	if err := json.Unmarshal(values, &request); err != nil {
@@ -302,11 +290,15 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		api.GetMap["sub/notify"] = api.subscribedNotificationReceived
 	}
 
-	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
-		api.GetMap["faucet/info"] = api.getFaucetInfo
+	if api.apiCommon.APICommonFaucet != nil {
+		api.GetMap["faucet/info"] = api.apiCommon.APICommonFaucet.GetFaucetInfoWebsocket
 		if config.FAUCET_TESTNET_ENABLED {
-			api.GetMap["faucet/coins"] = api.getFaucetCoins
+			api.GetMap["faucet/coins"] = api.apiCommon.APICommonFaucet.GetFaucetCoinsWebsocket
 		}
+	}
+
+	if api.apiCommon.APIDelegatesNode != nil {
+		api.GetMap["delegates/info"] = api.apiCommon.APIDelegatesNode.GetDelegatesInfoWebsocket
 	}
 
 	return api

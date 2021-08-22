@@ -1,7 +1,7 @@
 //go:build !wasm
 // +build !wasm
 
-package api_common
+package api_faucet
 
 import (
 	"encoding/json"
@@ -32,7 +32,7 @@ func (api *APICommonFaucet) GetFaucetInfo() ([]byte, error) {
 	})
 }
 
-func (api *APICommonFaucet) GetFaucetCoins(request *api_types.APIFaucetCoinsRequest) ([]byte, error) {
+func (api *APICommonFaucet) GetFaucetCoins(request *APIFaucetCoinsRequest) ([]byte, error) {
 
 	if !config.FAUCET_TESTNET_ENABLED {
 		return nil, errors.New("Faucet Testnet is not enabled")
@@ -62,7 +62,7 @@ func (api *APICommonFaucet) GetFaucetCoins(request *api_types.APIFaucetCoinsRequ
 	return tx.Bloom.Hash, nil
 }
 
-func createAPICommonFaucet(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*APICommonFaucet, error) {
+func CreateAPICommonFaucet(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*APICommonFaucet, error) {
 
 	api := &APICommonFaucet{
 		mempool, chain, wallet, transactionsBuilder, nil,

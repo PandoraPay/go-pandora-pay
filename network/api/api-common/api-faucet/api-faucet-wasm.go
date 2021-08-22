@@ -1,6 +1,7 @@
+//go:build wasm
 // +build wasm
 
-package api_common
+package api_faucet
 
 import (
 	"pandora-pay/blockchain"

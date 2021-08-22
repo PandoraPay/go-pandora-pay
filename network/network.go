@@ -7,7 +7,6 @@ import (
 	"pandora-pay/mempool"
 	banned_nodes "pandora-pay/network/banned-nodes"
 	"pandora-pay/network/consensus"
-	delegates_node "pandora-pay/network/delegates-node"
 	"pandora-pay/network/known-nodes"
 	mempool_sync "pandora-pay/network/mempool-sync"
 	node_tcp "pandora-pay/network/server/node-tcp"
@@ -21,13 +20,12 @@ import (
 )
 
 type Network struct {
-	tcpServer     *node_tcp.TcpServer
-	KnownNodes    *known_nodes.KnownNodes
-	BannedNodes   *banned_nodes.BannedNodes
-	MempoolSync   *mempool_sync.MempoolSync
-	DelegatesNode *delegates_node.DelegatesNode
-	Websockets    *websocks.Websockets
-	Consensus     *consensus.Consensus
+	tcpServer   *node_tcp.TcpServer
+	KnownNodes  *known_nodes.KnownNodes
+	BannedNodes *banned_nodes.BannedNodes
+	MempoolSync *mempool_sync.MempoolSync
+	Websockets  *websocks.Websockets
+	Consensus   *consensus.Consensus
 }
 
 func (network *Network) execute() {
@@ -136,19 +134,13 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 
 	mempoolSync := mempool_sync.CreateMempoolSync(tcpServer.HttpServer.Websockets)
 
-	var delegatesNode *delegates_node.DelegatesNode
-	if config.DELEGATES_ALLOWED_ACTIVATED {
-		delegatesNode = delegates_node.CreateDelegatesNode(wallet, tcpServer.HttpServer)
-	}
-
 	network := &Network{
-		tcpServer:     tcpServer,
-		KnownNodes:    knownNodes,
-		BannedNodes:   bannedNodes,
-		MempoolSync:   mempoolSync,
-		DelegatesNode: delegatesNode,
-		Websockets:    tcpServer.HttpServer.Websockets,
-		Consensus:     consensus.CreateConsensus(tcpServer.HttpServer, chain, mempool),
+		tcpServer:   tcpServer,
+		KnownNodes:  knownNodes,
+		BannedNodes: bannedNodes,
+		MempoolSync: mempoolSync,
+		Websockets:  tcpServer.HttpServer.Websockets,
+		Consensus:   consensus.CreateConsensus(tcpServer.HttpServer, chain, mempool),
 	}
 	tcpServer.HttpServer.Initialize()
 
