@@ -89,3 +89,10 @@ func (adr *WalletAddress) DecryptMessage(message []byte) ([]byte, error) {
 	}
 	return adr.PrivateKey.Decrypt(message)
 }
+
+func (adr *WalletAddress) SignMessage(message []byte) ([]byte, error) {
+	if adr.PrivateKey == nil {
+		return nil, errors.New("Private Key is missing")
+	}
+	return adr.PrivateKey.Sign(message)
+}

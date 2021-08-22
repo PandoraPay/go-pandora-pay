@@ -2,9 +2,12 @@ package addresses
 
 import (
 	"bytes"
+	"crypto/rand"
 	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
+	"pandora-pay/cryptography/ecdsa"
+	"pandora-pay/cryptography/ecies"
 	"pandora-pay/helpers"
 	base58 "pandora-pay/helpers/base58"
 )
@@ -192,4 +195,26 @@ func (a *Address) IsIntegratedAmount() bool {
 // if address has amount
 func (a Address) IntegratedAmount() uint64 {
 	return a.Amount
+}
+
+func (a Address) EncryptMessage(message []byte) ([]byte, error) {
+	if a.PublicKey == nil {
+		return nil, errors.New("Public Key is missing")
+	}
+	pub, err := ecdsa.DecompressPubkey(a.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return ecies.Encrypt(rand.Reader, ecies.ImportECDSAPublic(pub), message, nil, nil)
+}
+
+func (a Address) VerifySignedMessage(message, signature []byte) bool {
+	publicKey, err := ecdsa.EcrecoverCompressed(message, signature)
+	if err != nil {
+		return false
+	}
+
+	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
+	return bytes.Equal(publicKeyHash, a.PublicKeyHash)
 }

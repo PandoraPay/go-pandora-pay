@@ -299,6 +299,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 
 	if api.apiCommon.APIDelegatesNode != nil {
 		api.GetMap["delegates/info"] = api.apiCommon.APIDelegatesNode.GetDelegatesInfoWebsocket
+		api.GetMap["delegates/ask"] = api.apiCommon.APIDelegatesNode.GetDelegatesAskWebsocket
 	}
 
 	return api

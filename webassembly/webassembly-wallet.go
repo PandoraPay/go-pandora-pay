@@ -176,6 +176,35 @@ func logoutWallet(this js.Value, args []js.Value) interface{} {
 	})
 }
 
+//signing not encrypting
+func signMessageWalletAddress(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+		if err := app.Wallet.Encryption.CheckPassword(args[2].String(), false); err != nil {
+			return false, err
+		}
+
+		message, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
+		}
+
+		app.Wallet.RLock()
+		defer app.Wallet.RUnlock()
+
+		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
+		if err != nil {
+			return nil, err
+		}
+
+		out, err := addr.SignMessage(message)
+		if err != nil {
+			return nil, err
+		}
+
+		return hex.EncodeToString(out), nil
+	})
+}
+
 func decryptMessageWalletAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 		if err := app.Wallet.Encryption.CheckPassword(args[2].String(), false); err != nil {
@@ -196,7 +225,6 @@ func decryptMessageWalletAddress(this js.Value, args []js.Value) interface{} {
 		}
 
 		out, err := addr.DecryptMessage(data)
-
 		if err != nil {
 			return nil, err
 		}
