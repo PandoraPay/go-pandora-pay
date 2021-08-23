@@ -63,9 +63,9 @@ for (( i=0; i < $nodes; ++i ))
 do
   echo "opening $i"
   if $race ; then
-    qterminal GORACE="log_path=/$SCRIPTPATH/report"  -e go run -race main.go --instance="devnet_$i" --new-devnet --network="devnet" --tcp-server-port="523$i" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" &
+    qterminal GORACE="log_path=/$SCRIPTPATH/report"  -e go run -race main.go --instance="devnet_$i" --new-devnet --network="devnet" --tcp-server-port="523$i" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" &
   else
-    xterm -e go run main.go --instance="devnet_$i" --new-devnet --network="devnet" --tcp-server-port="523$i" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" &
+    xterm -e go run main.go --instance="devnet_$i" --new-devnet --network="devnet" --tcp-server-port="523$i" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" &
   fi
 done
 
