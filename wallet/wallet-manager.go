@@ -116,6 +116,7 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 	wallet.Count += 1
 	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKeyHash)
 
+	wallet.updateWallet()
 	gui.GUI.Info("wallet.saveWallet", len(wallet.Addresses))
 	if err = wallet.saveWallet(len(wallet.Addresses)-1, len(wallet.Addresses), -1, false); err != nil {
 		return
@@ -125,7 +126,7 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 	return
 }
 
-func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, incrementSeedIndex bool, incrementCountIndex bool) (err error) {
+func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, incrementSeedIndex bool, incrementImportedCountIndex bool) (err error) {
 
 	if lock {
 		wallet.Lock()
@@ -160,9 +161,9 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 	if incrementSeedIndex {
 		wallet.SeedIndex += 1
 	}
-	if incrementCountIndex {
-		adr.Name = "Imported Address " + strconv.Itoa(wallet.CountIndex)
-		wallet.CountIndex += 1
+	if incrementImportedCountIndex {
+		adr.Name = "Imported Address " + strconv.Itoa(wallet.CountImportedIndex)
+		wallet.CountImportedIndex += 1
 	}
 
 	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKeyHash)
@@ -220,7 +221,7 @@ func (wallet *Wallet) AddNewAddress(lock bool) (*wallet_address.WalletAddress, e
 	}
 
 	adr := &wallet_address.WalletAddress{
-		Name:           "Addr " + strconv.Itoa(wallet.Count),
+		Name:           "Addr " + strconv.FormatUint(uint64(wallet.SeedIndex), 10),
 		PrivateKey:     &addresses.PrivateKey{Key: key},
 		SeedIndex:      wallet.SeedIndex,
 		DelegatedStake: nil,
@@ -271,10 +272,12 @@ func (wallet *Wallet) RemoveAddressByIndex(index int, lock bool) (bool, error) {
 	return true, nil
 }
 
-func (wallet *Wallet) RemoveAddress(encodedAddress string) (bool, error) {
+func (wallet *Wallet) RemoveAddress(encodedAddress string, lock bool) (bool, error) {
 
-	wallet.Lock()
-	defer wallet.Unlock()
+	if lock {
+		wallet.Lock()
+		defer wallet.Unlock()
+	}
 
 	if !wallet.Loaded {
 		return false, errors.New("Wallet was not loaded!")
@@ -289,17 +292,19 @@ func (wallet *Wallet) RemoveAddress(encodedAddress string) (bool, error) {
 	return false, nil
 }
 
-func (wallet *Wallet) RemoveAddressByWalletAddress(addr *wallet_address.WalletAddress) (bool, error) {
+func (wallet *Wallet) RemoveAddressByWalletAddress(address *wallet_address.WalletAddress, lock bool) (bool, error) {
 
-	wallet.Lock()
-	defer wallet.Unlock()
+	if lock {
+		wallet.Lock()
+		defer wallet.Unlock()
+	}
 
 	if !wallet.Loaded {
 		return false, errors.New("Wallet was not loaded!")
 	}
 
 	for i, addr := range wallet.Addresses {
-		if addr == addr {
+		if addr == address {
 			return wallet.RemoveAddressByIndex(i, false)
 		}
 	}
@@ -387,16 +392,22 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 
 	if adr.DelegatedStake != nil && acc.DelegatedStake == nil {
 		adr.DelegatedStake = nil
-		return
-	}
 
-	if adr.PrivateKey == nil {
-		_, err = wallet.RemoveAddressByWalletAddress(adr)
+		if adr.PrivateKey == nil {
+			_, err = wallet.RemoveAddressByWalletAddress(adr, lock)
+			return
+		}
+
 		return
 	}
 
 	if (adr.DelegatedStake != nil && acc.DelegatedStake != nil && !bytes.Equal(adr.DelegatedStake.PublicKeyHash, acc.DelegatedStake.DelegatedPublicKeyHash)) ||
 		(adr.DelegatedStake == nil && acc.DelegatedStake != nil) {
+
+		if adr.PrivateKey == nil {
+			_, err = wallet.RemoveAddressByWalletAddress(adr, lock)
+			return
+		}
 
 		if acc.DelegatedStake != nil {
 

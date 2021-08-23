@@ -96,7 +96,7 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 		return nil, err
 	}
 
-	data, loaded := api.pendingDelegatesStakesChanges.LoadOrStore(publicKeyHash, &apiPendingDelegateStakeChange{
+	data, loaded := api.pendingDelegatesStakesChanges.LoadOrStore(string(publicKeyHash), &apiPendingDelegateStakeChange{
 		delegatePrivateKey,
 		delegatePublicKeyHash,
 		publicKeyHash,

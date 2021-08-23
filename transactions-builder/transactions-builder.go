@@ -79,6 +79,9 @@ func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet
 		if fromWalletAddress[i], err = builder.wallet.GetWalletAddressByEncodedAddress(fromAddress); err != nil {
 			return nil, err
 		}
+		if fromWalletAddress[i].PrivateKey == nil {
+			return nil, errors.New("Can't be used for transactions as the private key is missing")
+		}
 	}
 
 	return fromWalletAddress, nil

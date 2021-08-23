@@ -11,21 +11,21 @@ import (
 )
 
 type Wallet struct {
-	Encryption     *WalletEncryption               `json:"encryption"`
-	Version        Version                         `json:"version"`
-	Mnemonic       string                          `json:"mnemonic"`
-	Seed           helpers.HexBytes                `json:"seed"` //32 byte
-	SeedIndex      uint32                          `json:"seedIndex"`
-	Count          int                             `json:"count"`
-	CountIndex     int                             `json:"countIndex"`
-	Addresses      []*wallet_address.WalletAddress `json:"addresses"`
-	Loaded         bool                            `json:"loaded"`
-	DelegatesCount int                             `json:"delegatesCount"`
-	addressesMap   map[string]*wallet_address.WalletAddress
-	forging        *forging.Forging
-	mempool        *mempool.Mempool
-	updateAccounts *multicast.MulticastChannel
-	sync.RWMutex   `json:"-"`
+	Encryption         *WalletEncryption               `json:"encryption"`
+	Version            Version                         `json:"version"`
+	Mnemonic           string                          `json:"mnemonic"`
+	Seed               helpers.HexBytes                `json:"seed"` //32 byte
+	SeedIndex          uint32                          `json:"seedIndex"`
+	Count              int                             `json:"count"`
+	CountImportedIndex int                             `json:"countIndex"`
+	Addresses          []*wallet_address.WalletAddress `json:"addresses"`
+	Loaded             bool                            `json:"loaded"`
+	DelegatesCount     int                             `json:"delegatesCount"`
+	addressesMap       map[string]*wallet_address.WalletAddress
+	forging            *forging.Forging
+	mempool            *mempool.Mempool
+	updateAccounts     *multicast.MulticastChannel
+	sync.RWMutex       `json:"-"`
 }
 
 func createWallet(forging *forging.Forging, mempool *mempool.Mempool, updateAccounts *multicast.MulticastChannel) (wallet *Wallet) {
@@ -45,7 +45,7 @@ func (wallet *Wallet) clearWallet() {
 	wallet.Seed = nil
 	wallet.SeedIndex = 0
 	wallet.Count = 0
-	wallet.CountIndex = 0
+	wallet.CountImportedIndex = 0
 	wallet.SeedIndex = 1
 	wallet.Addresses = make([]*wallet_address.WalletAddress, 0)
 	wallet.addressesMap = make(map[string]*wallet_address.WalletAddress)
