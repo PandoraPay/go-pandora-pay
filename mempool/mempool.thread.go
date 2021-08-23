@@ -82,7 +82,7 @@ func (worker *mempoolWorker) processing(
 		for _, hash := range data.Txs {
 			if hash != "" && txsMap[hash] != nil {
 				removedTxsMap[hash] = true
-				txs.deleted(txsMap[hash])
+				txs.deleted(txsMap[hash], true)
 				delete(txsMap, hash)
 				txs.deleteTx(hash)
 				result = true
@@ -257,7 +257,7 @@ func (worker *mempoolWorker) processing(
 							//this is done because listIndex was incremented already before
 							txsList = append(txsList[:listIndex-1], txsList[listIndex:]...)
 							listIndex--
-							txs.deleted(tx)
+							txs.deleted(tx, false)
 						}
 						delete(txsMap, tx.Tx.Bloom.HashStr)
 						txs.deleteTx(tx.Tx.Bloom.HashStr)
