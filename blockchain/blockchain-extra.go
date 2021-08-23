@@ -67,7 +67,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			}
 
 			if airdrop.DelegatedStakePublicKeyHash != nil {
-				if err = acc.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKeyHash); err != nil {
+				if err = acc.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKeyHash, airdrop.DelegatedStakeFee); err != nil {
 					return
 				}
 			} else {

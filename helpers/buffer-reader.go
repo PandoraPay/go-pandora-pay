@@ -101,3 +101,24 @@ func (reader *BufferReader) ReadUvarint() (uint64, error) {
 	}
 	return 0, errors.New("Error reading value")
 }
+
+func (reader *BufferReader) ReadUvarint16() (uint16, error) {
+	var x uint16
+	var s uint
+
+	var c byte
+	for i := reader.Position; i < len(reader.Buf); i++ {
+		b := reader.Buf[i]
+		if b < 0x80 {
+			if c >= binary.MaxVarintLen16 || c == binary.MaxVarintLen16-1 && b > 1 {
+				return 0, errors.New("Overflow")
+			}
+			reader.Position = i + 1
+			return x | uint16(b)<<s, nil
+		}
+		x |= uint16(b&0x7f) << s
+		s += 7
+		c += 1
+	}
+	return 0, errors.New("Error reading value")
+}

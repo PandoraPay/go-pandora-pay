@@ -50,9 +50,9 @@ type json_TransactionSimpleOutput struct {
 }
 
 type json_Only_TransactionSimpleDelegate struct {
-	Amount              uint64           `json:"amount"`
-	HasNewPublicKeyHash bool             `json:"hasNewPublicKeyHash"`
-	NewPublicKeyHash    helpers.HexBytes `json:"newPublicKeyHash"` //20 byte
+	Amount           uint64           `json:"amount"`
+	HasNewData       bool             `json:"hasNewData"`
+	NewPublicKeyHash helpers.HexBytes `json:"newPublicKeyHash"` //20 byte
 }
 
 type json_TransactionSimpleDelegate struct {
@@ -125,7 +125,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				simpleJson,
 				&json_Only_TransactionSimpleDelegate{
 					extra.Amount,
-					extra.HasNewPublicKeyHash,
+					extra.HasNewData,
 					extra.NewPublicKeyHash,
 				},
 			})
@@ -224,9 +224,9 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			}
 
 			base.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleDelegate{
-				Amount:              extraJson.Amount,
-				HasNewPublicKeyHash: extraJson.HasNewPublicKeyHash,
-				NewPublicKeyHash:    extraJson.NewPublicKeyHash,
+				Amount:           extraJson.Amount,
+				HasNewData:       extraJson.HasNewData,
+				NewPublicKeyHash: extraJson.NewPublicKeyHash,
 			}
 
 		case transaction_simple.SCRIPT_UNSTAKE:

@@ -179,6 +179,15 @@ func (builder *TransactionsBuilder) initCLI() {
 			}
 		}
 
+		var delegateNewFee uint16
+		if len(delegateNewPublicKeyHash) > 0 {
+			number, ok := gui.GUI.OutputReadUint64("New Fee", nil, true)
+			if !ok {
+				return
+			}
+			delegateNewFee = uint16(number)
+		}
+
 		data, ok := builder.readData()
 		if !ok {
 			return
@@ -194,7 +203,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateDelegateTx_Float(walletAddress.AddressEncoded, nonce, amount, delegateNewPublicKeyHashGenerate, delegateNewPublicKeyHash, data, fee, propagate, true, true, func(status string) {
+		tx, err := builder.CreateDelegateTx_Float(walletAddress.AddressEncoded, nonce, amount, delegateNewPublicKeyHashGenerate, delegateNewPublicKeyHash, delegateNewFee, data, fee, propagate, true, true, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

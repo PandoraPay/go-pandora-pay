@@ -51,6 +51,10 @@ func (writer *BufferWriter) WriteUvarint(value uint64) {
 
 }
 
+func (writer *BufferWriter) WriteUvarint16(value uint16) {
+	writer.WriteUvarint(uint64(value))
+}
+
 func (writer *BufferWriter) WriteToken(token []byte) {
 	if len(token) == 0 {
 		writer.WriteByte(0)

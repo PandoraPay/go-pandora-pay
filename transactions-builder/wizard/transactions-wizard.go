@@ -172,18 +172,24 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	return tx, nil
 }
 
-func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateNewPubKeyHash []byte, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
+func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateNewPubKeyHash []byte, delegateNewFee uint16, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	dataFinal, err := data.getData()
 	if err != nil {
 		return nil, err
 	}
 
-	delegateHasNewPublicKeyHash := false
-	var delegateNewPublicKeyHash []byte //33 byte
-	if delegateNewPubKeyHash != nil && len(delegateNewPubKeyHash) == cryptography.PublicKeyHashHashSize {
-		delegateHasNewPublicKeyHash = true
-		delegateNewPublicKeyHash = delegateNewPubKeyHash
+	delegateHasNewData := false
+	if len(delegateNewPubKeyHash) > 0 {
+		delegateHasNewData = true
+	}
+
+	if delegateHasNewData == true && (len(delegateNewPubKeyHash) != cryptography.RipemdSize) {
+		return nil, errors.New("Delegating arguments are empty")
+	}
+
+	if delegateHasNewData == false && (delegateNewFee > 0 || len(delegateNewPubKeyHash) == 0) {
+		return nil, errors.New("Delegating arguments must be empty")
 	}
 
 	privateKey := &addresses.PrivateKey{Key: key}
@@ -195,9 +201,10 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 			TxScript: transaction_simple.SCRIPT_DELEGATE,
 			Nonce:    nonce,
 			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleDelegate{
-				Amount:              delegateAmount,
-				HasNewPublicKeyHash: delegateHasNewPublicKeyHash,
-				NewPublicKeyHash:    delegateNewPublicKeyHash,
+				Amount:           delegateAmount,
+				HasNewData:       delegateHasNewData,
+				NewPublicKeyHash: delegateNewPubKeyHash,
+				NewFee:           delegateNewFee,
 			},
 			Vin: []*transaction_simple_parts.TransactionSimpleInput{
 				{
