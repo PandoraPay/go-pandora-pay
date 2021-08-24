@@ -82,7 +82,7 @@ func createDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.CreateDelegateTx_Float(txData.From, txData.Nonce, txData.DelegateAmount, txData.DelegateNewPublicKeyGenerate, txData.DelegateNewPubKeyHash, txData.DelegateNewFee, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
+		tx, err := app.TransactionsBuilder.CreateDelegateTx_Float(txData.From, txData.Nonce, txData.DelegateAmount, txData.DelegateNewPublicKeyGenerate, txData.DelegateNewPubKey, txData.DelegateNewFee, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
 			args[1].Invoke(status)
 			time.Sleep(10 * time.Millisecond)
 		})

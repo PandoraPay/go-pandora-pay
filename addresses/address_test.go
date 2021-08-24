@@ -12,10 +12,10 @@ import (
 func TestAddress_EncodeAddr(t *testing.T) {
 
 	//WIF
-	//1+20+1+4
+	//1+33+1+4
 
 	privateKey := GenerateNewPrivateKey()
-	address, err := privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
+	address, err := privateKey.GenerateAddress(0, helpers.EmptyBytes(0))
 	assert.NoError(t, err)
 	assert.Equal(t, len(address.PublicKey), cryptography.PublicKeySize, "Address Generated is invalid")
 	assert.Equal(t, len(address.PaymentID), 0, "Address Generated is invalid")
@@ -26,7 +26,7 @@ func TestAddress_EncodeAddr(t *testing.T) {
 	assert.NoError(t, err, "Address Decoding raised an error")
 	assert.Equal(t, len(decoded), 1+cryptography.PublicKeySize+1+4, "AddressEncoded length is invalid")
 
-	address, err = privateKey.GenerateAddress(true, 20, helpers.EmptyBytes(0))
+	address, err = privateKey.GenerateAddress(20, helpers.EmptyBytes(0))
 	assert.NoError(t, err)
 	assert.Equal(t, len(address.PublicKey), cryptography.PublicKeySize, "Address Generated is invalid")
 	assert.Equal(t, len(address.PaymentID), 0, "Address Generated is invalid")
@@ -36,7 +36,7 @@ func TestAddress_EncodeAddr(t *testing.T) {
 	assert.NotEqual(t, len(encoded), len(encodedAmount), "Encoded Amounts are invalid")
 	assert.NotEqual(t, encoded, encodedAmount, "Encoded Amounts are invalid")
 
-	address, err = privateKey.GenerateAddress(true, 20, helpers.EmptyBytes(8))
+	address, err = privateKey.GenerateAddress(20, helpers.EmptyBytes(8))
 	assert.NoError(t, err)
 	assert.Equal(t, len(address.PublicKey), cryptography.PublicKeySize, "Address Generated is invalid")
 	assert.Equal(t, len(address.PaymentID), 8, "Address Generated is invalid")
@@ -54,7 +54,7 @@ func TestAddress_EncodeAddr(t *testing.T) {
 func TestDecodeAddr(t *testing.T) {
 
 	privateKey := GenerateNewPrivateKey()
-	address, err := privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
+	address, err := privateKey.GenerateAddress(0, helpers.EmptyBytes(0))
 	assert.NoError(t, err)
 
 	encoded := address.EncodeAddr()
@@ -66,7 +66,7 @@ func TestDecodeAddr(t *testing.T) {
 	assert.Equal(t, decodedAddress.Amount, address.Amount, "Decoded Address is not identical")
 	assert.Equal(t, decodedAddress.PaymentID, address.PaymentID, "Decoded Address is not identical")
 
-	address, err = privateKey.GenerateAddress(false, 40, helpers.EmptyBytes(8))
+	address, err = privateKey.GenerateAddress(40, helpers.EmptyBytes(8))
 	assert.NoError(t, err)
 
 	encoded = address.EncodeAddr()

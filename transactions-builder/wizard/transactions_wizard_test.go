@@ -14,7 +14,7 @@ import (
 func TestCreateSimpleTx(t *testing.T) {
 
 	dstPrivateKey := addresses.GenerateNewPrivateKey()
-	dstAddress, err := dstPrivateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
+	dstAddress, err := dstPrivateKey.GenerateAddress(0, helpers.EmptyBytes(0))
 	assert.NoError(t, err)
 
 	dstAddressEncoded := dstAddress.EncodeAddr()

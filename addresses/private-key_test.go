@@ -19,7 +19,7 @@ func TestPrivateKey_GenerateAddress(t *testing.T) {
 
 	privateKey := GenerateNewPrivateKey()
 
-	address, err := privateKey.GenerateAddress(false, 0, helpers.EmptyBytes(0))
+	address, err := privateKey.GenerateAddress(0, helpers.EmptyBytes(0))
 	assert.NoError(t, err)
 
 	assert.Equal(t, len(address.PublicKey), cryptography.PublicKeySize, "Generated Address is invalid")
@@ -27,7 +27,7 @@ func TestPrivateKey_GenerateAddress(t *testing.T) {
 	assert.Equal(t, address.Amount, uint64(0), "Generated Address is invalid")
 	assert.Equal(t, len(address.PaymentID), 0, "Generated Address is invalid")
 
-	address, err = privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
+	address, err = privateKey.GenerateAddress(0, helpers.EmptyBytes(0))
 	assert.NoError(t, err)
 
 	assert.Equal(t, len(address.PublicKey), 0, "Generated Address is invalid")
@@ -36,7 +36,7 @@ func TestPrivateKey_GenerateAddress(t *testing.T) {
 	assert.Equal(t, address.Amount, uint64(0), "Generated Address is invalid")
 	assert.Equal(t, len(address.PaymentID), 0, "Generated Address is invalid")
 
-	address, err = privateKey.GenerateAddress(true, 20, helpers.RandomBytes(8))
+	address, err = privateKey.GenerateAddress(20, helpers.RandomBytes(8))
 	assert.NoError(t, err)
 
 	assert.Equal(t, len(address.PublicKey), 0, "Generated Address is invalid")
