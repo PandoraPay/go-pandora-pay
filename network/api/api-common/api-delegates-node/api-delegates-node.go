@@ -43,6 +43,7 @@ func (api *APIDelegatesNode) getDelegatesInfo(request *ApiDelegatesNodeInfoReque
 	answer := &ApiDelegatesNodeInfoAnswer{
 		config.DELEGATES_MAXIMUM,
 		api.wallet.GetDelegatesCount(),
+		config.DELEGATES_FEES,
 		api.challenge,
 	}
 

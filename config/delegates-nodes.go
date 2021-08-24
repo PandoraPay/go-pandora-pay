@@ -1,6 +1,9 @@
 package config
 
-import "net/url"
+import (
+	"math"
+	"net/url"
+)
 
 type DelegateNode struct {
 	Url  *url.URL `json:"url"`
@@ -56,4 +59,5 @@ var (
 var (
 	DELEGATES_ALLOWED_ACTIVATED = false
 	DELEGATES_MAXIMUM           = 10000
+	DELEGATES_FEES              = uint16(math.Floor(0.00 * 65535)) // max 65535
 )
