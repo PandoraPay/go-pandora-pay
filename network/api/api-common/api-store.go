@@ -126,24 +126,24 @@ func (apiStore *APIStore) openLoadBlockWithTXsFromHeight(blockHeight uint64) (bl
 	return
 }
 
-func (apiStore *APIStore) OpenLoadAccountFromPublicKeyHash(publicKeyHash []byte) (acc *account.Account, errFinal error) {
+func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (acc *account.Account, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		accs := accounts.NewAccounts(reader)
-		acc, err = accs.GetAccount(publicKeyHash, chainHeight)
+		acc, err = accs.GetAccount(publicKey, chainHeight)
 		return
 	})
 	return
 }
 
-func (apiStore *APIStore) openLoadAccountTxsFromPublicKeyHash(publicKeyHash []byte, next uint64) (answer *api_types.APIAccountTxs, errFinal error) {
+func (apiStore *APIStore) openLoadAccountTxsFromPublicKey(publicKey []byte, next uint64) (answer *api_types.APIAccountTxs, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		publicKeyHashStr := string(publicKeyHash)
+		publicKeyStr := string(publicKey)
 
-		data := reader.Get("addrTxsCount:" + publicKeyHashStr)
+		data := reader.Get("addrTxsCount:" + publicKeyStr)
 		if data == nil {
 			return nil
 		}
@@ -169,7 +169,7 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKeyHash(publicKeyHash []by
 			Txs:   make([]helpers.HexBytes, next-index),
 		}
 		for i := index; i < next; i++ {
-			hash := reader.Get("addrTx:" + publicKeyHashStr + ":" + strconv.FormatUint(i, 10))
+			hash := reader.Get("addrTx:" + publicKeyStr + ":" + strconv.FormatUint(i, 10))
 			if hash == nil {
 				return errors.New("Error reading address transaction")
 			}
@@ -181,10 +181,10 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKeyHash(publicKeyHash []by
 	return
 }
 
-func (apiStore *APIStore) openLoadTokenFromPublicKeyHash(publicKeyHash []byte) (tok *token.Token, errFinal error) {
+func (apiStore *APIStore) openLoadTokenFromPublicKey(publicKey []byte) (tok *token.Token, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		toks := tokens.NewTokens(reader)
-		tok, err = toks.GetToken(publicKeyHash)
+		tok, err = toks.GetToken(publicKey)
 		return
 	})
 	return

@@ -163,24 +163,24 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		delegateNewPublicKeyHashGenerate := false
+		delegateNewPublicKeyGenerate := false
 
-		delegateNewPublicKeyHash, ok := gui.GUI.OutputReadBytes("Delegate New Public Key Hash. Use empty for not changing. Use '01' for generating a new one. ", []int{0, 1, cryptography.PublicKeyHashHashSize})
+		delegateNewPublicKey, ok := gui.GUI.OutputReadBytes("Delegate New Public Key. Use empty for not changing. Use '01' for generating a new one. ", []int{0, 1, cryptography.PublicKeySize})
 		if !ok {
 			return
 		}
 
-		if len(delegateNewPublicKeyHash) == 1 {
-			if bytes.Equal(delegateNewPublicKeyHash, []byte{1}) {
-				delegateNewPublicKeyHash = []byte{}
-				delegateNewPublicKeyHashGenerate = true
+		if len(delegateNewPublicKey) == 1 {
+			if bytes.Equal(delegateNewPublicKey, []byte{1}) {
+				delegateNewPublicKey = []byte{}
+				delegateNewPublicKeyGenerate = true
 			} else {
 				return errors.New("Invalid value for New Public key Hash")
 			}
 		}
 
 		var delegateNewFee uint16
-		if len(delegateNewPublicKeyHash) > 0 {
+		if len(delegateNewPublicKey) > 0 {
 			number, ok := gui.GUI.OutputReadUint64("New Fee", nil, true)
 			if !ok {
 				return
@@ -203,7 +203,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateDelegateTx_Float(walletAddress.AddressEncoded, nonce, amount, delegateNewPublicKeyHashGenerate, delegateNewPublicKeyHash, delegateNewFee, data, fee, propagate, true, true, func(status string) {
+		tx, err := builder.CreateDelegateTx_Float(walletAddress.AddressEncoded, nonce, amount, delegateNewPublicKeyGenerate, delegateNewPublicKey, delegateNewFee, data, fee, propagate, true, true, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

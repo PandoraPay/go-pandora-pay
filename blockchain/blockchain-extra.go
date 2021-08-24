@@ -62,12 +62,12 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			}
 
 			var acc *account.Account
-			if acc, err = accs.GetAccountEvenEmpty(airdrop.PublicKeyHash, 0); err != nil {
+			if acc, err = accs.GetAccountEvenEmpty(airdrop.PublicKey, 0); err != nil {
 				return
 			}
 
-			if airdrop.DelegatedStakePublicKeyHash != nil {
-				if err = acc.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKeyHash, airdrop.DelegatedStakeFee); err != nil {
+			if airdrop.DelegatedStakePublicKey != nil {
+				if err = acc.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
 					return
 				}
 			} else {
@@ -76,7 +76,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 				}
 			}
 
-			if err = accs.UpdateAccount(airdrop.PublicKeyHash, acc); err != nil {
+			if err = accs.UpdateAccount(airdrop.PublicKey, acc); err != nil {
 				return
 			}
 		}
@@ -91,8 +91,8 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			CanMint:          true,
 			Supply:           supply,
 			MaxSupply:        config.MAX_SUPPLY_COINS_UNITS,
-			Key:              config.BURN_PUBLIC_KEY_HASH,
-			SupplyKey:        config.BURN_PUBLIC_KEY_HASH,
+			Key:              config.BURN_PUBLIC_KEY,
+			SupplyKey:        config.BURN_PUBLIC_KEY,
 		}
 
 		if err = toks.CreateToken(config.NATIVE_TOKEN, &tok); err != nil {
@@ -168,7 +168,7 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 			}
 		}
 
-		blk.Forger = make([]byte, cryptography.PublicKeyHashHashSize)
+		blk.Forger = make([]byte, cryptography.PublicKeySize)
 		blk.Signature = make([]byte, cryptography.SignatureSize)
 
 		blk.BloomSerializedNow(blk.SerializeManualToBytes())

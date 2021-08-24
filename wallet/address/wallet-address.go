@@ -16,7 +16,6 @@ type WalletAddress struct {
 	IsMine         bool                         `json:"isMine"`
 	PrivateKey     *addresses.PrivateKey        `json:"privateKey"`
 	PublicKey      helpers.HexBytes             `json:"publicKey"`
-	PublicKeyHash  helpers.HexBytes             `json:"publicKeyHash"`
 	AddressEncoded string                       `json:"addressEncoded"`
 	DelegatedStake *WalletAddressDelegatedStake `json:"delegatedStake"`
 }
@@ -28,14 +27,14 @@ func (adr *WalletAddress) GetDelegatedStakePrivateKey() []byte {
 	return nil
 }
 
-func (adr *WalletAddress) GetDelegatedStakePublicKeyHash() []byte {
+func (adr *WalletAddress) GetDelegatedStakePublicKey() []byte {
 	if adr.DelegatedStake != nil {
-		return adr.DelegatedStake.PublicKeyHash
+		return adr.DelegatedStake.PublicKey
 	}
 	return nil
 }
 
-func (adr *WalletAddress) FindDelegatedStake(currentNonce, lastKnownNonce uint32, delegatedPublicKeyHash []byte) (*WalletAddressDelegatedStake, error) {
+func (adr *WalletAddress) FindDelegatedStake(currentNonce, lastKnownNonce uint32, delegatedPublicKey []byte) (*WalletAddressDelegatedStake, error) {
 
 	for nonce := lastKnownNonce; nonce <= currentNonce; nonce++ {
 
@@ -43,7 +42,7 @@ func (adr *WalletAddress) FindDelegatedStake(currentNonce, lastKnownNonce uint32
 		if err != nil {
 			return nil, err
 		}
-		if bytes.Equal(delegatedStake.PublicKeyHash, delegatedPublicKeyHash) {
+		if bytes.Equal(delegatedStake.PublicKey, delegatedPublicKey) {
 			return delegatedStake, nil
 		}
 
@@ -71,14 +70,14 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDele
 	finalKey := cryptography.SHA3(key.Key)
 	privateKey := &addresses.PrivateKey{Key: finalKey}
 
-	address, err := privateKey.GenerateAddress(true, 0, []byte{})
+	address, err := privateKey.GenerateAddress(0, []byte{})
 	if err != nil {
 		return nil, err
 	}
 
 	return &WalletAddressDelegatedStake{
 		PrivateKey:     privateKey,
-		PublicKeyHash:  address.PublicKeyHash,
+		PublicKey:      address.PublicKey,
 		LastKnownNonce: nonce,
 	}, nil
 }

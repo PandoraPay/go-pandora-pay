@@ -84,21 +84,21 @@ type APIAccountTxsRequest struct {
 	Next uint64 `json:"next,omitempty"`
 }
 
-func (request *APIAccountBaseRequest) GetPublicKeyHash() ([]byte, error) {
-	var publicKeyHash []byte
+func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
+	var publicKey []byte
 	if request.Address != "" {
 		address, err := addresses.DecodeAddr(request.Address)
 		if err != nil {
 			return nil, errors.New("Invalid address")
 		}
-		publicKeyHash = address.PublicKeyHash
-	} else if request.Hash != nil && len(request.Hash) == cryptography.PublicKeyHashHashSize {
-		publicKeyHash = request.Hash
+		publicKey = address.PublicKey
+	} else if request.Hash != nil && len(request.Hash) == cryptography.PublicKeySize {
+		publicKey = request.Hash
 	} else {
 		return nil, errors.New("Invalid address")
 	}
 
-	return publicKeyHash, nil
+	return publicKey, nil
 }
 
 type APITokenInfoRequest struct {

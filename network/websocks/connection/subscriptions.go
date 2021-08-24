@@ -22,7 +22,7 @@ func checkSubscriptionLength(key []byte, subscriptionType api_types.Subscription
 	var length int
 	switch subscriptionType {
 	case api_types.SUBSCRIPTION_ACCOUNT, api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, api_types.SUBSCRIPTION_TOKEN:
-		length = cryptography.PublicKeyHashHashSize
+		length = cryptography.PublicKeySize
 	case api_types.SUBSCRIPTION_TRANSACTION:
 		length = cryptography.HashSize
 	}

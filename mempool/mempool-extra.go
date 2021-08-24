@@ -17,7 +17,7 @@ const (
 	CONTINUE_PROCESSING_NO_ERROR
 )
 
-func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token []byte) (uint64, error) {
+func (mempool *Mempool) GetBalance(publicKey []byte, balance uint64, token []byte) (uint64, error) {
 
 	out := balance
 	txs := mempool.Txs.GetTxsFromMap()
@@ -26,7 +26,7 @@ func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token [
 		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 			for _, vin := range base.Vin {
-				if bytes.Equal(vin.Bloom.PublicKeyHash, publicKeyHash) && bytes.Equal(vin.Token, token) {
+				if bytes.Equal(vin.Bloom.PublicKey, publicKey) && bytes.Equal(vin.Token, token) {
 					if err := helpers.SafeUint64Sub(&out, vin.Amount); err != nil {
 						return 0, err
 					}
@@ -34,7 +34,7 @@ func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token [
 			}
 
 			for _, vout := range base.Vout {
-				if bytes.Equal(vout.PublicKeyHash, publicKeyHash) && bytes.Equal(vout.Token, token) {
+				if bytes.Equal(vout.PublicKey, publicKey) && bytes.Equal(vout.Token, token) {
 					if err := helpers.SafeUint64Add(&out, vout.Amount); err != nil {
 						return 0, err
 					}
@@ -47,13 +47,13 @@ func (mempool *Mempool) GetBalance(publicKeyHash []byte, balance uint64, token [
 	return out, nil
 }
 
-func (mempool *Mempool) ExistsTxSimpleVersion(publicKeyHash []byte, version transaction_simple.ScriptType) bool {
+func (mempool *Mempool) ExistsTxSimpleVersion(publicKey []byte, version transaction_simple.ScriptType) bool {
 
 	txs := mempool.Txs.GetTxsFromMap()
 	for _, tx := range txs {
 		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			if bytes.Equal(base.Vin[0].Bloom.PublicKeyHash, publicKeyHash) && base.TxScript == version {
+			if bytes.Equal(base.Vin[0].Bloom.PublicKey, publicKey) && base.TxScript == version {
 				return true
 			}
 		}
@@ -61,7 +61,7 @@ func (mempool *Mempool) ExistsTxSimpleVersion(publicKeyHash []byte, version tran
 	return false
 }
 
-func (mempool *Mempool) CountInputTxs(publicKeyHash []byte) uint64 {
+func (mempool *Mempool) CountInputTxs(publicKey []byte) uint64 {
 
 	txs := mempool.Txs.GetTxsFromMap()
 
@@ -69,7 +69,7 @@ func (mempool *Mempool) CountInputTxs(publicKeyHash []byte) uint64 {
 	for _, tx := range txs {
 		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			if bytes.Equal(base.Vin[0].Bloom.PublicKeyHash, publicKeyHash) {
+			if bytes.Equal(base.Vin[0].Bloom.PublicKey, publicKey) {
 				count++
 			}
 		}
@@ -78,7 +78,7 @@ func (mempool *Mempool) CountInputTxs(publicKeyHash []byte) uint64 {
 	return count
 }
 
-func (mempool *Mempool) GetNonce(publicKeyHash []byte, nonce uint64) uint64 {
+func (mempool *Mempool) GetNonce(publicKey []byte, nonce uint64) uint64 {
 
 	txs := mempool.Txs.GetTxsFromMap()
 
@@ -86,7 +86,7 @@ func (mempool *Mempool) GetNonce(publicKeyHash []byte, nonce uint64) uint64 {
 	for _, tx := range txs {
 		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			if bytes.Equal(base.Vin[0].Bloom.PublicKeyHash, publicKeyHash) {
+			if bytes.Equal(base.Vin[0].Bloom.PublicKey, publicKey) {
 				nonces[base.Nonce] = true
 			}
 		}

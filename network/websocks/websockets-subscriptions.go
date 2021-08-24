@@ -213,8 +213,8 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			txsUpdates := transactionsData.([]*blockchain_types.BlockchainTransactionUpdate)
 			for _, v := range txsUpdates {
 				for _, key := range v.Keys {
-					if list := this.accountsTransactionsSubscriptions[string(key.PublicKeyHash)]; list != nil {
-						this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), key.PublicKeyHash, list, nil, v.TxHash, &api_types.APISubscriptionNotificationAccountTxExtra{
+					if list := this.accountsTransactionsSubscriptions[string(key.PublicKey)]; list != nil {
+						this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), key.PublicKey, list, nil, v.TxHash, &api_types.APISubscriptionNotificationAccountTxExtra{
 							Blockchain: &api_types.APISubscriptionNotificationAccountTxExtraBlockchain{
 								v.Inserted, key.TxsCount, v.BlockHeight, v.BlockTimestamp, v.Height,
 							},

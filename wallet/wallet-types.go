@@ -3,8 +3,8 @@ package wallet
 import "pandora-pay/helpers"
 
 type DelegatedStakeOutput struct {
-	DelegatedStakePublicKeyHash helpers.HexBytes
-	AddressPublicKeyHash        helpers.HexBytes
+	DelegatedStakePublicKey helpers.HexBytes
+	AddressPublicKey        helpers.HexBytes
 }
 
 type Version int

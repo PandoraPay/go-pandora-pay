@@ -7,7 +7,6 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
@@ -34,20 +33,20 @@ type ForgingWalletAddressUpdate struct {
 }
 
 type ForgingWalletAddress struct {
-	delegatedPrivateKey    *addresses.PrivateKey
-	delegatedPublicKeyHash helpers.HexBytes //20 byte
-	publicKeyHash          helpers.HexBytes //20byte
-	publicKeyHashStr       string
-	account                *account.Account
-	workerIndex            int
+	delegatedPrivateKey *addresses.PrivateKey
+	delegatedPublicKey  helpers.HexBytes //20 byte
+	publicKey           helpers.HexBytes //20byte
+	publicKeyStr        string
+	account             *account.Account
+	workerIndex         int
 }
 
 func (walletAddr *ForgingWalletAddress) clone() *ForgingWalletAddress {
 	return &ForgingWalletAddress{
 		walletAddr.delegatedPrivateKey,
-		walletAddr.delegatedPublicKeyHash,
-		walletAddr.publicKeyHash,
-		walletAddr.publicKeyHashStr,
+		walletAddr.delegatedPublicKey,
+		walletAddr.publicKey,
+		walletAddr.publicKeyStr,
 		walletAddr.account,
 		walletAddr.workerIndex,
 	}
@@ -61,8 +60,8 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKeyHash []byte) {
 	return
 }
 
-func (w *ForgingWallet) RemoveWallet(delegatedPublicKeyHash []byte) { //20 byte
-	w.AddWallet(nil, delegatedPublicKeyHash)
+func (w *ForgingWallet) RemoveWallet(DelegatedPublicKey []byte) { //20 byte
+	w.AddWallet(nil, DelegatedPublicKey)
 }
 
 func (w *ForgingWallet) accountUpdated(addr *ForgingWalletAddress) {
@@ -90,7 +89,7 @@ func (w *ForgingWallet) accountInserted(addr *ForgingWalletAddress) {
 
 func (w *ForgingWallet) accountRemoved(addr *ForgingWalletAddress) {
 	if addr.workerIndex != -1 {
-		w.workers[addr.workerIndex].removeWalletAddressCn <- addr.publicKeyHashStr
+		w.workers[addr.workerIndex].removeWalletAddressCn <- addr.publicKeyStr
 		w.workersAddresses[addr.workerIndex]--
 		addr.workerIndex = -1
 	}
@@ -135,7 +134,7 @@ func (w *ForgingWallet) processUpdates() {
 				if w.addressesMap[key] != nil {
 					delete(w.addressesMap, key)
 					for i, address := range w.addresses {
-						if bytes.Equal(address.publicKeyHash, update.pubKeyHash) {
+						if bytes.Equal(address.publicKey, update.pubKeyHash) {
 							w.addresses = append(w.addresses[:i], w.addresses[:i+1]...)
 							w.accountRemoved(address)
 							break
@@ -153,8 +152,6 @@ func (w *ForgingWallet) processUpdates() {
 					continue
 				}
 
-				delegatedPublicKeyHash := cryptography.ComputePublicKeyHash(delegatedPublicKey)
-
 				//let's read the balance
 				if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -170,7 +167,7 @@ func (w *ForgingWallet) processUpdates() {
 						return errors.New("Account was not found")
 					}
 
-					if acc.DelegatedStake == nil || !bytes.Equal(acc.DelegatedStake.DelegatedPublicKeyHash, delegatedPublicKeyHash) {
+					if acc.DelegatedStake == nil || !bytes.Equal(acc.DelegatedStake.DelegatedPublicKey, delegatedPublicKey) {
 						return errors.New("Delegated stake is not matching")
 					}
 
@@ -178,7 +175,7 @@ func (w *ForgingWallet) processUpdates() {
 					if address == nil {
 						address = &ForgingWalletAddress{
 							delegatedPrivateKey,
-							delegatedPublicKeyHash,
+							delegatedPublicKey,
 							update.pubKeyHash,
 							string(update.pubKeyHash),
 							acc,
@@ -189,7 +186,7 @@ func (w *ForgingWallet) processUpdates() {
 						w.accountInserted(address)
 					} else {
 						address.delegatedPrivateKey = delegatedPrivateKey
-						address.delegatedPublicKeyHash = delegatedPublicKeyHash
+						address.delegatedPublicKey = delegatedPublicKey
 						address.account = acc
 						w.accountUpdated(address)
 					}
@@ -232,7 +229,7 @@ func (w *ForgingWallet) processUpdates() {
 					chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 					var acc *account.Account
-					if acc, err = accs.GetAccount(address.publicKeyHash, chainHeight); err != nil {
+					if acc, err = accs.GetAccount(address.publicKey, chainHeight); err != nil {
 						return
 					}
 

@@ -6,7 +6,7 @@ import (
 )
 
 type mempoolWalletAddress struct {
-	publicKeyHash helpers.HexBytes `json:"-"`
+	publicKey helpers.HexBytes `json:"-"`
 }
 
 type mempoolWallet struct {
@@ -14,31 +14,31 @@ type mempoolWallet struct {
 	sync.RWMutex   `json:"-"`
 }
 
-func (w *mempoolWallet) AddWallet(publicKeyHash []byte) {
+func (w *mempoolWallet) AddWallet(publicKey []byte) {
 
 	w.Lock()
 	defer w.Unlock()
 
-	w.myAddressesMap[string(publicKeyHash)] = &mempoolWalletAddress{
-		publicKeyHash: publicKeyHash,
+	w.myAddressesMap[string(publicKey)] = &mempoolWalletAddress{
+		publicKey: publicKey,
 	}
 
 }
 
-func (w *mempoolWallet) RemoveWallet(publicKeyHash []byte) {
+func (w *mempoolWallet) RemoveWallet(publicKey []byte) {
 
 	w.Lock()
 	defer w.Unlock()
 
-	delete(w.myAddressesMap, string(publicKeyHash))
+	delete(w.myAddressesMap, string(publicKey))
 }
 
-func (w *mempoolWallet) Exists(publicKeyHash []byte) bool {
+func (w *mempoolWallet) Exists(publicKey []byte) bool {
 
 	w.RLock()
 	defer w.RUnlock()
 
-	return w.myAddressesMap[string(publicKeyHash)] != nil
+	return w.myAddressesMap[string(publicKey)] != nil
 }
 
 func createMempoolWallet() (w *mempoolWallet) {

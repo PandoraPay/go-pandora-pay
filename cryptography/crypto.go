@@ -28,10 +28,6 @@ func GetChecksum(b []byte) []byte {
 	return RIPEMD(b)[:ChecksumSize]
 }
 
-func ComputePublicKeyHash(publicKey []byte) []byte {
-	return RIPEMD(SHA3(publicKey))
-}
-
 func ComputeKernelHash(hash []byte, stakingAmount uint64) []byte {
 
 	number := new(big.Int).Div(new(big.Int).SetBytes(hash), new(big.Int).SetUint64(stakingAmount))

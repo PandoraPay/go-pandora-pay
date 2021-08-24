@@ -36,23 +36,22 @@ type json_TransactionSimple struct {
 }
 
 type json_TransactionSimpleInput struct {
-	Amount        uint64           `json:"amount"`
-	Token         helpers.HexBytes `json:"token"`                   //20
-	Signature     helpers.HexBytes `json:"signature"`               //65
-	PublicKey     helpers.HexBytes `json:"publicKey,omitempty"`     //32
-	PublicKeyHash helpers.HexBytes `json:"publicKeyHash,omitempty"` //20
+	Amount    uint64           `json:"amount"`
+	Token     helpers.HexBytes `json:"token"`               //20
+	Signature helpers.HexBytes `json:"signature"`           //65
+	PublicKey helpers.HexBytes `json:"publicKey,omitempty"` //32
 }
 
 type json_TransactionSimpleOutput struct {
-	PublicKeyHash helpers.HexBytes `json:"publicKeyHash"` //20
-	Amount        uint64           `json:"amount"`
-	Token         helpers.HexBytes `json:"token"` //20
+	PublicKey helpers.HexBytes `json:"publicKey"` //20
+	Amount    uint64           `json:"amount"`
+	Token     helpers.HexBytes `json:"token"` //20
 }
 
 type json_Only_TransactionSimpleDelegate struct {
-	Amount           uint64           `json:"amount"`
-	HasNewData       bool             `json:"hasNewData"`
-	NewPublicKeyHash helpers.HexBytes `json:"newPublicKeyHash"` //20 byte
+	Amount       uint64           `json:"amount"`
+	HasNewData   bool             `json:"hasNewData"`
+	NewPublicKey helpers.HexBytes `json:"newPublicKey"` //20 byte
 }
 
 type json_TransactionSimpleDelegate struct {
@@ -93,14 +92,13 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				it.Token,
 				it.Signature,
 				it.Bloom.PublicKey,
-				it.Bloom.PublicKeyHash,
 			}
 		}
 
 		voutJson := make([]*json_TransactionSimpleOutput, len(base.Vout))
 		for i, it := range base.Vout {
 			voutJson[i] = &json_TransactionSimpleOutput{
-				it.PublicKeyHash,
+				it.PublicKey,
 				it.Amount,
 				it.Token,
 			}
@@ -126,7 +124,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				&json_Only_TransactionSimpleDelegate{
 					extra.Amount,
 					extra.HasNewData,
-					extra.NewPublicKeyHash,
+					extra.NewPublicKey,
 				},
 			})
 		case transaction_simple.SCRIPT_UNSTAKE:
@@ -200,9 +198,9 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 		vout := make([]*transaction_simple_parts.TransactionSimpleOutput, len(simpleJson.Vout))
 		for i, it := range simpleJson.Vout {
 			vout[i] = &transaction_simple_parts.TransactionSimpleOutput{
-				PublicKeyHash: it.PublicKeyHash,
-				Amount:        it.Amount,
-				Token:         it.Token,
+				PublicKey: it.PublicKey,
+				Amount:    it.Amount,
+				Token:     it.Token,
 			}
 		}
 
@@ -224,9 +222,9 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			}
 
 			base.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleDelegate{
-				Amount:           extraJson.Amount,
-				HasNewData:       extraJson.HasNewData,
-				NewPublicKeyHash: extraJson.NewPublicKeyHash,
+				Amount:       extraJson.Amount,
+				HasNewData:   extraJson.HasNewData,
+				NewPublicKey: extraJson.NewPublicKey,
 			}
 
 		case transaction_simple.SCRIPT_UNSTAKE:

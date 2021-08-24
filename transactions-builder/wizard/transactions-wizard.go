@@ -58,9 +58,9 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 			return nil, err
 		}
 		vout[i] = &transaction_simple_parts.TransactionSimpleOutput{
-			PublicKeyHash: outAddress.PublicKeyHash,
-			Amount:        dstsAmounts[i],
-			Token:         dstsTokens[i],
+			PublicKey: outAddress.PublicKey,
+			Amount:    dstsAmounts[i],
+			Token:     dstsTokens[i],
 		}
 	}
 
@@ -172,7 +172,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	return tx, nil
 }
 
-func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateNewPubKeyHash []byte, delegateNewFee uint16, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
+func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateNewPubKey []byte, delegateNewFee uint16, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	dataFinal, err := data.getData()
 	if err != nil {
@@ -180,15 +180,15 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 	}
 
 	delegateHasNewData := false
-	if len(delegateNewPubKeyHash) > 0 {
+	if len(delegateNewPubKey) > 0 {
 		delegateHasNewData = true
 	}
 
-	if delegateHasNewData == true && (len(delegateNewPubKeyHash) != cryptography.RipemdSize) {
+	if delegateHasNewData == true && (len(delegateNewPubKey) != cryptography.PublicKeySize) {
 		return nil, errors.New("Delegating arguments are empty")
 	}
 
-	if delegateHasNewData == false && (delegateNewFee > 0 || len(delegateNewPubKeyHash) == 0) {
+	if delegateHasNewData == false && (delegateNewFee > 0 || len(delegateNewPubKey) == 0) {
 		return nil, errors.New("Delegating arguments must be empty")
 	}
 
@@ -201,10 +201,10 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 			TxScript: transaction_simple.SCRIPT_DELEGATE,
 			Nonce:    nonce,
 			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleDelegate{
-				Amount:           delegateAmount,
-				HasNewData:       delegateHasNewData,
-				NewPublicKeyHash: delegateNewPubKeyHash,
-				NewFee:           delegateNewFee,
+				Amount:       delegateAmount,
+				HasNewData:   delegateHasNewData,
+				NewPublicKey: delegateNewPubKey,
+				NewFee:       delegateNewFee,
 			},
 			Vin: []*transaction_simple_parts.TransactionSimpleInput{
 				{

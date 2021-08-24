@@ -96,9 +96,7 @@ func Initialize(startMainCb func()) {
 			"decodeAddress":   js.FuncOf(decodeAddress),
 			"generateAddress": js.FuncOf(generateAddress),
 		}),
-		"cryptography": js.ValueOf(map[string]interface{}{
-			"computePublicKeyHash": js.FuncOf(computePublicKeyHash),
-		}),
+		"cryptography": js.ValueOf(map[string]interface{}{}),
 		"network": js.ValueOf(map[string]interface{}{
 			"getNetworkFaucetInfo":     js.FuncOf(getNetworkFaucetInfo),
 			"getNetworkFaucetCoins":    js.FuncOf(getNetworkFaucetCoins),

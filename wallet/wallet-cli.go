@@ -26,12 +26,12 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 
 		accs := accounts.NewAccounts(reader)
 		var acc *account.Account
-		if acc, err = accs.GetAccount(addr.PublicKeyHash, chainHeight); err != nil {
+		if acc, err = accs.GetAccount(addr.PublicKey, chainHeight); err != nil {
 			return
 		}
 
 		if nonce == 0 && acc != nil {
-			nonce = wallet.mempool.GetNonce(addr.PublicKeyHash, acc.Nonce)
+			nonce = wallet.mempool.GetNonce(addr.PublicKey, acc.Nonce)
 		}
 
 		var delegatedStake *wallet_address.WalletAddressDelegatedStake
@@ -41,7 +41,7 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 
 		if print {
 			gui.GUI.OutputWrite("Delegated stake:")
-			gui.GUI.OutputWrite("   PublicKeyHash", delegatedStake.PublicKeyHash)
+			gui.GUI.OutputWrite("   PublicKey", delegatedStake.PublicKey)
 			gui.GUI.OutputWrite("   PrivateKey", delegatedStake.PrivateKey.Key)
 		}
 
@@ -55,8 +55,8 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 			defer f.Close()
 
 			delegatedStakeOut := &DelegatedStakeOutput{
-				delegatedStake.PublicKeyHash,
-				addr.PublicKeyHash,
+				delegatedStake.PublicKey,
+				addr.PublicKey,
 			}
 
 			var marshal []byte
@@ -100,7 +100,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 			if walletAddress.Version == wallet_address.VERSION_TRANSPARENT {
 
 				var acc *account.Account
-				if acc, err = accs.GetAccount(walletAddress.PublicKeyHash, chainHeight); err != nil {
+				if acc, err = accs.GetAccount(walletAddress.PublicKey, chainHeight); err != nil {
 					return
 				}
 

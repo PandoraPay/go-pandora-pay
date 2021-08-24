@@ -21,14 +21,14 @@ func TestBlock_Serialize(t *testing.T) {
 	publicKey, err := privateKey.GeneratePublicKey()
 	assert.NoError(t, err, "Error...?")
 
-	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
+	publicKey := cryptography.ComputePublicKey(publicKey)
 
 	blk := Block{
 		BlockHeader:    &BlockHeader{Version: 0, Height: 0},
 		MerkleHash:     merkleHash,
 		PrevHash:       prevHash,
 		PrevKernelHash: prevKernelHash,
-		Forger:         publicKeyHash,
+		Forger:         publicKey,
 		Timestamp:      uint64(time.Now().Unix()),
 		Signature:      make([]byte, cryptography.SignatureSize),
 	}
@@ -52,15 +52,13 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 	publicKey, err := privateKey.GeneratePublicKey()
 	assert.NoError(t, err, "Error...?")
 
-	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
-
 	blockHeader := &BlockHeader{Version: 0, Height: 0}
 	blk := Block{
 		BlockHeader:    blockHeader,
 		MerkleHash:     merkleHash,
 		PrevHash:       prevHash,
 		PrevKernelHash: prevKernelHash,
-		Forger:         publicKeyHash,
+		Forger:         publicKey,
 		Timestamp:      uint64(time.Now().Unix()),
 		Signature:      make([]byte, cryptography.SignatureSize),
 	}

@@ -10,10 +10,10 @@ import (
 
 type TransactionSimpleDelegate struct {
 	TransactionSimpleExtraInterface
-	Amount           uint64
-	HasNewData       bool
-	NewPublicKeyHash helpers.HexBytes //20 byte
-	NewFee           uint16
+	Amount       uint64
+	HasNewData   bool
+	NewPublicKey helpers.HexBytes //20 byte
+	NewFee       uint16
 }
 
 func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) (err error) {
@@ -21,7 +21,7 @@ func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, 
 		return
 	}
 	if !acc.HasDelegatedStake() {
-		if err = acc.CreateDelegatedStake(0, tx.NewPublicKeyHash, tx.NewFee); err != nil {
+		if err = acc.CreateDelegatedStake(0, tx.NewPublicKey, tx.NewFee); err != nil {
 			return
 		}
 	}
@@ -29,7 +29,7 @@ func (tx *TransactionSimpleDelegate) IncludeTransactionVin0(blockHeight uint64, 
 		return
 	}
 	if tx.HasNewData {
-		acc.DelegatedStake.DelegatedPublicKeyHash = tx.NewPublicKeyHash
+		acc.DelegatedStake.DelegatedPublicKey = tx.NewPublicKey
 	}
 	return
 }
@@ -38,12 +38,12 @@ func (tx *TransactionSimpleDelegate) Validate() error {
 
 	if tx.HasNewData {
 
-		if len(tx.NewPublicKeyHash) != cryptography.PublicKeyHashHashSize {
+		if len(tx.NewPublicKey) != cryptography.PublicKeySize {
 			return errors.New("New Public Key Hash length is invalid")
 		}
 
 	} else {
-		if len(tx.NewPublicKeyHash) != 0 || tx.NewFee != 0 {
+		if len(tx.NewPublicKey) != 0 || tx.NewFee != 0 {
 			return errors.New("New Public Key Hash and Fee must be empty")
 		}
 		if tx.Amount == 0 {
@@ -57,7 +57,7 @@ func (tx *TransactionSimpleDelegate) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(tx.Amount)
 	writer.WriteBool(tx.HasNewData)
 	if tx.HasNewData {
-		writer.Write(tx.NewPublicKeyHash)
+		writer.Write(tx.NewPublicKey)
 		writer.WriteUvarint16(tx.NewFee)
 	}
 }
@@ -70,7 +70,7 @@ func (tx *TransactionSimpleDelegate) Deserialize(reader *helpers.BufferReader) (
 		return
 	}
 	if tx.HasNewData {
-		if tx.NewPublicKeyHash, err = reader.ReadBytes(cryptography.PublicKeyHashHashSize); err != nil {
+		if tx.NewPublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
 			return
 		}
 		if tx.NewFee, err = reader.ReadUvarint16(); err != nil {

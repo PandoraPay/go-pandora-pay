@@ -163,7 +163,7 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 					return
 				}
 				wallet.Addresses = append(wallet.Addresses, newWalletAddress)
-				wallet.addressesMap[string(newWalletAddress.PublicKeyHash)] = newWalletAddress
+				wallet.addressesMap[string(newWalletAddress.PublicKey)] = newWalletAddress
 
 			}
 
@@ -182,9 +182,9 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 func (wallet *Wallet) walletLoaded() {
 
 	for _, addr := range wallet.Addresses {
-		wallet.forging.Wallet.AddWallet(addr.GetDelegatedStakePrivateKey(), addr.PublicKeyHash)
+		wallet.forging.Wallet.AddWallet(addr.GetDelegatedStakePrivateKey(), addr.PublicKey)
 		if addr.PrivateKey != nil {
-			wallet.mempool.Wallet.AddWallet(addr.PublicKeyHash)
+			wallet.mempool.Wallet.AddWallet(addr.PublicKey)
 		}
 	}
 
@@ -209,7 +209,7 @@ func (wallet *Wallet) StartWallet() error {
 		for _, adr := range wallet.Addresses {
 
 			var acc, acc2 *account.Account
-			if acc2, err = accs.GetAccount(adr.PublicKeyHash, chainHeight); err != nil {
+			if acc2, err = accs.GetAccount(adr.PublicKey, chainHeight); err != nil {
 				return
 			}
 

@@ -6,19 +6,19 @@ import (
 )
 
 type TransactionSimpleOutput struct {
-	PublicKeyHash helpers.HexBytes //20
-	Amount        uint64
-	Token         helpers.HexBytes //20
+	PublicKey helpers.HexBytes //33
+	Amount    uint64
+	Token     helpers.HexBytes //20
 }
 
 func (vout *TransactionSimpleOutput) Serialize(writer *helpers.BufferWriter) {
-	writer.Write(vout.PublicKeyHash)
+	writer.Write(vout.PublicKey)
 	writer.WriteUvarint(vout.Amount)
 	writer.WriteToken(vout.Token)
 }
 
 func (vout *TransactionSimpleOutput) Deserialize(reader *helpers.BufferReader) (err error) {
-	if vout.PublicKeyHash, err = reader.ReadBytes(cryptography.PublicKeyHashHashSize); err != nil {
+	if vout.PublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
 	if vout.Amount, err = reader.ReadUvarint(); err != nil {

@@ -174,12 +174,12 @@ func (api *APICommon) GetTx(request *api_types.APITransactionRequest) ([]byte, e
 
 func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) ([]byte, error) {
 
-	publicKeyHash, err := request.GetPublicKeyHash()
+	publicKey, err := request.GetPublicKey()
 	if err != nil {
 		return nil, err
 	}
 
-	acc, err := api.ApiStore.OpenLoadAccountFromPublicKeyHash(publicKeyHash)
+	acc, err := api.ApiStore.OpenLoadAccountFromPublicKey(publicKey)
 	if err != nil || acc == nil {
 		return nil, err
 	}
@@ -192,12 +192,12 @@ func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) ([]byte, 
 
 func (api *APICommon) GetAccountTxs(request *api_types.APIAccountTxsRequest) ([]byte, error) {
 
-	publicKeyHash, err := request.GetPublicKeyHash()
+	publicKey, err := request.GetPublicKey()
 	if err != nil {
 		return nil, err
 	}
 
-	answer, err := api.ApiStore.openLoadAccountTxsFromPublicKeyHash(publicKeyHash, request.Next)
+	answer, err := api.ApiStore.openLoadAccountTxsFromPublicKey(publicKey, request.Next)
 	if err != nil || answer == nil {
 		return nil, err
 	}
@@ -207,12 +207,12 @@ func (api *APICommon) GetAccountTxs(request *api_types.APIAccountTxsRequest) ([]
 
 func (api *APICommon) GetAccountMempool(request *api_types.APIAccountBaseRequest) ([]byte, error) {
 
-	publicKeyHash, err := request.GetPublicKeyHash()
+	publicKey, err := request.GetPublicKey()
 	if err != nil {
 		return nil, err
 	}
 
-	txs := api.mempool.Txs.GetAccountTxs(publicKeyHash)
+	txs := api.mempool.Txs.GetAccountTxs(publicKey)
 
 	var answer []helpers.HexBytes
 	if txs != nil {
@@ -238,7 +238,7 @@ func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) ([
 func (api *APICommon) GetTokenInfo(request *api_types.APITokenInfoRequest) ([]byte, error) {
 	var tokInfo *info.TokenInfo
 	var err error
-	if request.Hash != nil && (len(request.Hash) == cryptography.PublicKeyHashHashSize || len(request.Hash) == 0) {
+	if request.Hash != nil && (len(request.Hash) == cryptography.PublicKeySize || len(request.Hash) == 0) {
 		tokInfo, err = api.ApiStore.openLoadTokenInfo(request.Hash)
 	}
 	if err != nil || tokInfo == nil {
@@ -248,7 +248,7 @@ func (api *APICommon) GetTokenInfo(request *api_types.APITokenInfoRequest) ([]by
 }
 
 func (api *APICommon) GetToken(request *api_types.APITokenRequest) ([]byte, error) {
-	token, err := api.ApiStore.openLoadTokenFromPublicKeyHash(request.Hash)
+	token, err := api.ApiStore.openLoadTokenFromPublicKey(request.Hash)
 	if err != nil || token == nil {
 		return nil, err
 	}

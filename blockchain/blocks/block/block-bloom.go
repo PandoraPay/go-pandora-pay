@@ -11,7 +11,7 @@ type BlockBloom struct {
 	Serialized                 helpers.HexBytes `json:"-"`
 	Hash                       helpers.HexBytes `json:"hash"`
 	KernelHash                 helpers.HexBytes `json:"kernelHash"`
-	DelegatedPublicKeyHash     helpers.HexBytes `json:"delegatedPublicKeyHash"`
+	DelegatedPublicKey         helpers.HexBytes `json:"delegatedPublicKey"`
 	DelegatedSignatureVerified bool             `json:"delegatedSignatureVerified"`
 	bloomedHash                bool             `json:"-"`
 	bloomedKernelHash          bool             `json:"-"`
@@ -46,8 +46,7 @@ func (blk *Block) BloomNow() (err error) {
 			return
 		}
 
-		blk.Bloom.DelegatedPublicKeyHash = cryptography.ComputePublicKeyHash(delegatedPublicKey)
-
+		blk.Bloom.DelegatedPublicKey = delegatedPublicKey
 		blk.Bloom.DelegatedSignatureVerified = ecdsa.VerifySignature(delegatedPublicKey, hashForSignature, blk.Signature[0:64])
 		if !blk.Bloom.DelegatedSignatureVerified {
 			return errors.New("BLock signature is invalid")

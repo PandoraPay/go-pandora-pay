@@ -30,7 +30,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 	for i, vin := range tx.Vin {
 
 		var acc *account.Account
-		if acc, err = accs.GetAccountEvenEmpty(vin.Bloom.PublicKeyHash, blockHeight); err != nil {
+		if acc, err = accs.GetAccountEvenEmpty(vin.Bloom.PublicKey, blockHeight); err != nil {
 			return
 		}
 
@@ -53,7 +53,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 		if err = acc.AddBalance(false, vin.Amount, vin.Token); err != nil {
 			return
 		}
-		if err = accs.UpdateAccount(vin.Bloom.PublicKeyHash, acc); err != nil {
+		if err = accs.UpdateAccount(vin.Bloom.PublicKey, acc); err != nil {
 			return
 		}
 	}
@@ -61,14 +61,14 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 	for _, vout := range tx.Vout {
 
 		var acc *account.Account
-		if acc, err = accs.GetAccountEvenEmpty(vout.PublicKeyHash, blockHeight); err != nil {
+		if acc, err = accs.GetAccountEvenEmpty(vout.PublicKey, blockHeight); err != nil {
 			return
 		}
 
 		if err = acc.AddBalance(true, vout.Amount, vout.Token); err != nil {
 			return
 		}
-		if err = accs.UpdateAccount(vout.PublicKeyHash, acc); err != nil {
+		if err = accs.UpdateAccount(vout.PublicKey, acc); err != nil {
 			return
 		}
 	}
@@ -94,10 +94,10 @@ func (tx *TransactionSimple) ComputeFees(out map[string]uint64) (err error) {
 
 func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
 	for _, vin := range tx.Vin {
-		out[string(vin.Bloom.PublicKeyHash)] = true
+		out[string(vin.Bloom.PublicKey)] = true
 	}
 	for _, vout := range tx.Vout {
-		out[string(vout.PublicKeyHash)] = true
+		out[string(vout.PublicKey)] = true
 	}
 	return
 }
@@ -141,7 +141,7 @@ func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bo
 func (tx *TransactionSimple) Validate() (err error) {
 
 	for _, vin := range tx.Vin {
-		if bytes.Equal(vin.Bloom.PublicKeyHash, config.BURN_PUBLIC_KEY_HASH) {
+		if bytes.Equal(vin.Bloom.PublicKey, config.BURN_PUBLIC_KEY) {
 			return errors.New("Input includes BURN ADDR")
 		}
 	}

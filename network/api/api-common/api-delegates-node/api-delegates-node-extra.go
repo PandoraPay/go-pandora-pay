@@ -80,7 +80,7 @@ func (api *APIDelegatesNode) updateAccountsChanges() {
 
 					if v.Stored == "update" {
 						acc := v.Element.(*account.Account)
-						if acc.HasDelegatedStake() && bytes.Equal(acc.DelegatedStake.DelegatedPublicKeyHash, pendingDelegatingStakeChange.delegatePublicKeyHash) {
+						if acc.HasDelegatedStake() && bytes.Equal(acc.DelegatedStake.DelegatedPublicKey, pendingDelegatingStakeChange.delegatePublicKey) {
 							_ = api.wallet.AddDelegateStakeAddress(&wallet_address.WalletAddress{
 								wallet_address.VERSION_TRANSPARENT,
 								"Delegate Stake",
@@ -88,11 +88,10 @@ func (api *APIDelegatesNode) updateAccountsChanges() {
 								false,
 								nil,
 								pendingDelegatingStakeChange.publicKey,
-								pendingDelegatingStakeChange.publicKeyHash,
 								"",
 								&wallet_address.WalletAddressDelegatedStake{
 									&addresses.PrivateKey{Key: pendingDelegatingStakeChange.delegatePrivateKey.Key},
-									pendingDelegatingStakeChange.delegatePublicKeyHash,
+									pendingDelegatingStakeChange.delegatePublicKey,
 									0,
 								},
 							}, true)

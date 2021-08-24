@@ -14,7 +14,7 @@ type Accounts struct {
 
 func NewAccounts(tx store_db_interface.StoreDBTransactionInterface) (accounts *Accounts) {
 	accounts = &Accounts{
-		HashMap: *hash_map.CreateNewHashMap(tx, "accounts", cryptography.PublicKeyHashHashSize),
+		HashMap: *hash_map.CreateNewHashMap(tx, "accounts", cryptography.PublicKeySize),
 	}
 	accounts.HashMap.Deserialize = func(data []byte) (helpers.SerializableInterface, error) {
 		var acc = &account.Account{}

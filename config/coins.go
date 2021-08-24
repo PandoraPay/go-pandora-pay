@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-var BURN_PUBLIC_KEY_HASH = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xd, 0xe, 0xa, 0xd}
+var BURN_PUBLIC_KEY = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xd, 0xe, 0xa, 0xd}
 
 var (
 	DECIMAL_SEPARATOR       = 7

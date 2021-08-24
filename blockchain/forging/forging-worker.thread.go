@@ -26,7 +26,7 @@ type ForgingWorkerThread struct {
 	continueCn            chan struct{}
 	workerSolutionCn      chan *ForgingSolution
 	addWalletAddressCn    chan *ForgingWalletAddress
-	removeWalletAddressCn chan string //publicKeyHash
+	removeWalletAddressCn chan string //publicKey
 }
 
 type ForgingWorkerThreadAddress struct {
@@ -112,30 +112,30 @@ func (worker *ForgingWorkerThread) forge() {
 			walletsStakable = make(map[string]*ForgingWorkerThreadAddress)
 			for _, walletAddr := range wallets {
 				if walletAddr.computeStakingAmount(blkHeight) > 0 {
-					walletsStakable[walletAddr.walletAdr.publicKeyHashStr] = walletAddr
+					walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
 				}
 			}
 
 			validateWork()
 		case newWalletAddr := <-worker.addWalletAddressCn:
-			walletAddr := wallets[newWalletAddr.publicKeyHashStr]
+			walletAddr := wallets[newWalletAddr.publicKeyStr]
 			if walletAddr == nil {
 				walletAddr = &ForgingWorkerThreadAddress{ //making sure i have a copy
 					newWalletAddr.clone(),
 					0,
 				}
-				wallets[newWalletAddr.publicKeyHashStr] = walletAddr
+				wallets[newWalletAddr.publicKeyStr] = walletAddr
 			} else {
 				walletAddr.walletAdr = newWalletAddr
 			}
 			if walletAddr.computeStakingAmount(blkHeight) > 0 {
-				walletsStakable[walletAddr.walletAdr.publicKeyHashStr] = walletAddr
+				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
 			}
 			validateWork()
-		case publicKeyHashStr := <-worker.removeWalletAddressCn:
-			if wallets[publicKeyHashStr] != nil {
-				delete(wallets, publicKeyHashStr)
-				delete(walletsStakable, publicKeyHashStr)
+		case publicKeyStr := <-worker.removeWalletAddressCn:
+			if wallets[publicKeyStr] != nil {
+				delete(wallets, publicKeyStr)
+				delete(walletsStakable, publicKeyStr)
 			}
 			validateWork()
 		case <-waitCn:
@@ -169,14 +169,14 @@ func (worker *ForgingWorkerThread) forge() {
 
 				if n2 != n {
 					newSerialized := make([]byte, len(serialized)-n+n2)
-					copy(newSerialized, serialized[:-n-cryptography.PublicKeyHashHashSize])
+					copy(newSerialized, serialized[:-n-cryptography.PublicKeySize])
 					serialized = newSerialized
 					n = n2
 				}
 
 				//optimized POS
-				copy(serialized[len(serialized)-cryptography.PublicKeyHashHashSize-n2:len(serialized)-cryptography.PublicKeyHashHashSize], buf)
-				copy(serialized[len(serialized)-cryptography.PublicKeyHashHashSize:], address.walletAdr.publicKeyHash)
+				copy(serialized[len(serialized)-cryptography.PublicKeySize-n2:len(serialized)-cryptography.PublicKeySize], buf)
+				copy(serialized[len(serialized)-cryptography.PublicKeySize:], address.walletAdr.publicKey)
 
 				kernelHash := cryptography.SHA3Hash(serialized)
 

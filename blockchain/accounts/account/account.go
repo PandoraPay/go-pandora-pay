@@ -171,19 +171,19 @@ func (account *Account) SerializeToBytes() []byte {
 	return writer.Bytes()
 }
 
-func (account *Account) CreateDelegatedStake(amount uint64, delegatedStakePublicKeyHash []byte, delegatedStakeFee uint16) error {
+func (account *Account) CreateDelegatedStake(amount uint64, delegatedStakePublicKey []byte, delegatedStakeFee uint16) error {
 	if account.HasDelegatedStake() {
 		return errors.New("It is already delegated")
 	}
-	if delegatedStakePublicKeyHash == nil || len(delegatedStakePublicKeyHash) != cryptography.PublicKeyHashHashSize {
-		return errors.New("DelegatedStakePublicKeyHash is Invalid")
+	if delegatedStakePublicKey == nil || len(delegatedStakePublicKey) != cryptography.PublicKeySize {
+		return errors.New("delegatedStakePublicKey is Invalid")
 	}
 	account.DelegatedStakeVersion = 1
 	account.DelegatedStake = &dpos.DelegatedStake{
-		StakeAvailable:         amount,
-		StakesPending:          []*dpos.DelegatedStakePending{},
-		DelegatedPublicKeyHash: delegatedStakePublicKeyHash,
-		DelegatedStakeFee:      delegatedStakeFee,
+		StakeAvailable:     amount,
+		StakesPending:      []*dpos.DelegatedStakePending{},
+		DelegatedPublicKey: delegatedStakePublicKey,
+		DelegatedStakeFee:  delegatedStakeFee,
 	}
 
 	return nil

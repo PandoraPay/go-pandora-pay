@@ -2,7 +2,6 @@ package addresses
 
 import (
 	"pandora-pay/config"
-	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/ecdsa"
 	"pandora-pay/cryptography/ecies"
 	"pandora-pay/helpers"
@@ -16,26 +15,17 @@ func (pk *PrivateKey) GeneratePublicKey() ([]byte, error) {
 	return ecdsa.ComputePublicKey(pk.Key)
 }
 
-func (pk *PrivateKey) GeneratePublicKeyHash() ([]byte, error) {
+func (pk *PrivateKey) GeneratePairs() ([]byte, error) {
 	publicKey, err := ecdsa.ComputePublicKey(pk.Key)
 	if err != nil {
 		return nil, err
 	}
-	return cryptography.ComputePublicKeyHash(publicKey), nil
+	return publicKey, nil
 }
 
-func (pk *PrivateKey) GeneratePairs() ([]byte, []byte, error) {
-	publicKey, err := ecdsa.ComputePublicKey(pk.Key)
-	if err != nil {
-		return nil, nil, err
-	}
-	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
-	return publicKey, publicKeyHash, nil
-}
+func (pk *PrivateKey) GenerateAddress(amount uint64, paymentID []byte) (*Address, error) {
 
-func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paymentID []byte) (*Address, error) {
-
-	var publicKey, publicKeyHash []byte
+	var publicKey []byte
 	var version AddressVersion
 
 	publicKey, err := ecdsa.ComputePublicKey(pk.Key)
@@ -43,15 +33,9 @@ func (pk *PrivateKey) GenerateAddress(usePublicKeyHash bool, amount uint64, paym
 		return nil, err
 	}
 
-	if usePublicKeyHash {
-		publicKeyHash = cryptography.ComputePublicKeyHash(publicKey)
-		publicKey = []byte{}
-		version = SIMPLE_PUBLIC_KEY_HASH
-	} else {
-		version = SIMPLE_PUBLIC_KEY
-	}
+	version = SIMPLE_PUBLIC_KEY
 
-	return NewAddr(config.NETWORK_SELECTED, version, publicKey, publicKeyHash, amount, paymentID)
+	return NewAddr(config.NETWORK_SELECTED, version, publicKey, amount, paymentID)
 }
 
 func (pk *PrivateKey) Sign(message []byte) ([]byte, error) {

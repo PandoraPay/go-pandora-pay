@@ -140,9 +140,9 @@ func (self *MempoolTxs) Get(txId string) *mempoolTx {
 	return value.(*mempoolTx)
 }
 
-func (self *MempoolTxs) GetAccountTxs(publicKeyHash []byte) []*mempoolTx {
+func (self *MempoolTxs) GetAccountTxs(publicKey []byte) []*mempoolTx {
 	if config.SEED_WALLET_NODES_INFO {
-		if foundMapData, found := self.accountsMapTxs.Load(string(publicKeyHash)); found {
+		if foundMapData, found := self.accountsMapTxs.Load(string(publicKey)); found {
 			foundMap := foundMapData.(*MempoolAccountTxs)
 
 			foundMap.RLock()

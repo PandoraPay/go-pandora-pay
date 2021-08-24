@@ -40,7 +40,7 @@ func (builder *TransactionsBuilder) checkTx(accountsList []*account.Account, tx 
 
 		available = accountsList[i].GetAvailableBalance(vin.Token)
 
-		if available, err = builder.mempool.GetBalance(vin.Bloom.PublicKeyHash, available, vin.Token); err != nil {
+		if available, err = builder.mempool.GetBalance(vin.Bloom.PublicKey, available, vin.Token); err != nil {
 			return
 		}
 		if available < vin.Amount {
@@ -142,7 +142,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 
 		for i, fromWalletAddress := range fromWalletAddresses {
 
-			if accountsList[i], err = accs.GetAccount(fromWalletAddress.PublicKeyHash, chainHeight); err != nil {
+			if accountsList[i], err = accs.GetAccount(fromWalletAddress.PublicKey, chainHeight); err != nil {
 				return
 			}
 
@@ -165,7 +165,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 	statusCallback("Balances checked")
 
 	if nonce == 0 {
-		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKeyHash, accountsList[0].Nonce)
+		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, accountsList[0].Nonce)
 	}
 
 	statusCallback("Getting Nonce from Mempool")
@@ -240,7 +240,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 
 		accs := accounts.NewAccounts(reader)
 
-		if accountsList[0], err = accs.GetAccount(fromWalletAddresses[0].PublicKeyHash, chainHeight); err != nil {
+		if accountsList[0], err = accs.GetAccount(fromWalletAddresses[0].PublicKey, chainHeight); err != nil {
 			return
 		}
 
@@ -265,7 +265,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	statusCallback("Balances checked")
 
 	if nonce == 0 {
-		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKeyHash, accountsList[0].Nonce)
+		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, accountsList[0].Nonce)
 	}
 	statusCallback("Getting Nonce from Mempool")
 
@@ -338,7 +338,7 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 
 		accs := accounts.NewAccounts(reader)
 
-		if accountsList[0], err = accs.GetAccount(fromWalletAddresses[0].PublicKeyHash, chainHeight); err != nil {
+		if accountsList[0], err = accs.GetAccount(fromWalletAddresses[0].PublicKey, chainHeight); err != nil {
 			return
 		}
 
@@ -357,7 +357,7 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 	}
 
 	if nonce == 0 {
-		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKeyHash, accountsList[0].Nonce)
+		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, accountsList[0].Nonce)
 	}
 
 	if delegateNewPubKeyHashGenerate {
@@ -366,7 +366,7 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 		if delegatedStake, err = fromWalletAddresses[0].DeriveDelegatedStake(uint32(nonce)); err != nil {
 			return nil, err
 		}
-		delegateNewPubKeyHash = delegatedStake.PublicKeyHash
+		delegateNewPubKeyHash = delegatedStake.PublicKey
 
 	}
 

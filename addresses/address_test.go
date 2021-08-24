@@ -17,18 +17,18 @@ func TestAddress_EncodeAddr(t *testing.T) {
 	privateKey := GenerateNewPrivateKey()
 	address, err := privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
 	assert.NoError(t, err)
-	assert.Equal(t, len(address.PublicKeyHash), cryptography.PublicKeyHashHashSize, "Address Generated is invalid")
+	assert.Equal(t, len(address.PublicKey), cryptography.PublicKeySize, "Address Generated is invalid")
 	assert.Equal(t, len(address.PaymentID), 0, "Address Generated is invalid")
 
 	encoded := address.EncodeAddr()
 
 	decoded, err := base58.Decode(encoded[config.NETWORK_BYTE_PREFIX_LENGTH:])
 	assert.NoError(t, err, "Address Decoding raised an error")
-	assert.Equal(t, len(decoded), 1+cryptography.PublicKeyHashHashSize+1+4, "AddressEncoded length is invalid")
+	assert.Equal(t, len(decoded), 1+cryptography.PublicKeySize+1+4, "AddressEncoded length is invalid")
 
 	address, err = privateKey.GenerateAddress(true, 20, helpers.EmptyBytes(0))
 	assert.NoError(t, err)
-	assert.Equal(t, len(address.PublicKeyHash), cryptography.PublicKeyHashHashSize, "Address Generated is invalid")
+	assert.Equal(t, len(address.PublicKey), cryptography.PublicKeySize, "Address Generated is invalid")
 	assert.Equal(t, len(address.PaymentID), 0, "Address Generated is invalid")
 	assert.Equal(t, address.Amount, uint64(20), "Address Generated Amount is invalid")
 
@@ -38,7 +38,7 @@ func TestAddress_EncodeAddr(t *testing.T) {
 
 	address, err = privateKey.GenerateAddress(true, 20, helpers.EmptyBytes(8))
 	assert.NoError(t, err)
-	assert.Equal(t, len(address.PublicKeyHash), cryptography.PublicKeyHashHashSize, "Address Generated is invalid")
+	assert.Equal(t, len(address.PublicKey), cryptography.PublicKeySize, "Address Generated is invalid")
 	assert.Equal(t, len(address.PaymentID), 8, "Address Generated is invalid")
 	assert.Equal(t, address.Amount, uint64(20), "Address Generated Amount is invalid")
 

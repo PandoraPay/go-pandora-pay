@@ -103,7 +103,7 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 		return
 	}
 
-	newBlk.Block.Forger = solution.address.publicKeyHash
+	newBlk.Block.Forger = solution.address.publicKey
 	newBlk.Block.Timestamp = solution.timestamp
 
 	newBlk.Block.StakingAmount = solution.stakingAmount

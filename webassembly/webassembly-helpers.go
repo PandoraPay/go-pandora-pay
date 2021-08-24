@@ -25,12 +25,12 @@ func start(this js.Value, args []js.Value) interface{} {
 func getIdenticon(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 
-		publicKeyHash, err := hex.DecodeString(args[0].String())
+		publicKey, err := hex.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
 		}
 
-		identicon, err := identicon.GenerateToBytes(publicKeyHash, args[1].Int(), args[2].Int())
+		identicon, err := identicon.GenerateToBytes(publicKey, args[1].Int(), args[2].Int())
 		if err != nil {
 			return nil, err
 		}

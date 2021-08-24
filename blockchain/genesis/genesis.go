@@ -18,10 +18,10 @@ import (
 )
 
 type GenesisDataAirDropType struct {
-	PublicKeyHash               helpers.HexBytes `json:"publicKeyHash"` //20 byte
-	Amount                      uint64           `json:"amount"`
-	DelegatedStakePublicKeyHash helpers.HexBytes `json:"delegatedStakePublicKeyHash"`
-	DelegatedStakeFee           uint16           `json:"stakingFee"`
+	PublicKey               helpers.HexBytes `json:"publicKey"` //20 byte
+	Amount                  uint64           `json:"amount"`
+	DelegatedStakePublicKey helpers.HexBytes `json:"delegatedStakePublicKey"`
+	DelegatedStakeFee       uint16           `json:"stakingFee"`
 }
 
 type GenesisDataType struct {
@@ -122,9 +122,9 @@ func createNewGenesis(v []string) (err error) {
 			}
 
 			GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-				PublicKeyHash:               delegatedStakeOutput.AddressPublicKeyHash,
-				Amount:                      amount,
-				DelegatedStakePublicKeyHash: delegatedStakeOutput.DelegatedStakePublicKeyHash,
+				PublicKey:               delegatedStakeOutput.AddressPublicKey,
+				Amount:                  amount,
+				DelegatedStakePublicKey: delegatedStakeOutput.DelegatedStakePublicKey,
 			})
 
 			return
@@ -157,16 +157,16 @@ func createSimpleGenesis(wallet *wallet.Wallet) (err error) {
 	GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
 	GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 
-	var walletPublicKeyHash, delegatedStakePublicKeyHash []byte
-	if walletPublicKeyHash, delegatedStakePublicKeyHash, err = wallet.GetFirstWalletForDevnetGenesisAirdrop(); err != nil {
+	var walletPublicKey, delegatedStakePublicKey []byte
+	if walletPublicKey, delegatedStakePublicKey, err = wallet.GetFirstWalletForDevnetGenesisAirdrop(); err != nil {
 		return
 	}
 
 	amount := 100 * config_stake.GetRequiredStake(0)
 	GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-		PublicKeyHash:               walletPublicKeyHash,
-		Amount:                      amount,
-		DelegatedStakePublicKeyHash: delegatedStakePublicKeyHash,
+		PublicKey:               walletPublicKey,
+		Amount:                  amount,
+		DelegatedStakePublicKey: delegatedStakePublicKey,
 	})
 
 	if file, err = os.OpenFile("./genesis.data", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {

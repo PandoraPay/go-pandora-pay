@@ -22,11 +22,10 @@ import (
 )
 
 type apiPendingDelegateStakeChange struct {
-	delegatePrivateKey    *addresses.PrivateKey
-	delegatePublicKeyHash []byte
-	publicKeyHash         []byte
-	publicKey             []byte
-	blockHeight           uint64
+	delegatePrivateKey *addresses.PrivateKey
+	delegatePublicKey  []byte
+	publicKey          []byte
+	blockHeight        uint64
 }
 
 type APIDelegatesNode struct {
@@ -57,13 +56,11 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 		return nil, err
 	}
 
-	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
-
 	var chainHeight uint64
 	var acc *account.Account
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
-		acc, err = accounts.NewAccounts(reader).GetAccount(publicKeyHash, chainHeight)
+		acc, err = accounts.NewAccounts(reader).GetAccount(publicKey, chainHeight)
 		return
 	}); err != nil {
 		return nil, err
@@ -84,7 +81,7 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 		return nil, errors.New("You will not enought to stake")
 	}
 
-	addr := api.wallet.GetWalletAddressByPublicKeyHash(publicKeyHash)
+	addr := api.wallet.GetWalletAddressByPublicKey(publicKey)
 	if addr != nil {
 		return json.Marshal(&ApiDelegatesNodeAskAnswer{
 			Exists: true,
@@ -92,27 +89,26 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 	}
 
 	delegatePrivateKey := addresses.GenerateNewPrivateKey()
-	delegatePublicKeyHash, err := delegatePrivateKey.GeneratePublicKeyHash()
+	delegatePublicKey, err := delegatePrivateKey.GeneratePublicKey()
 	if err != nil {
 		return nil, err
 	}
 
-	data, loaded := api.pendingDelegatesStakesChanges.LoadOrStore(string(publicKeyHash), &apiPendingDelegateStakeChange{
+	data, loaded := api.pendingDelegatesStakesChanges.LoadOrStore(string(publicKey), &apiPendingDelegateStakeChange{
 		delegatePrivateKey,
-		delegatePublicKeyHash,
-		publicKeyHash,
+		delegatePublicKey,
 		publicKey,
 		atomic.LoadUint64(&api.chainHeight),
 	})
 	if loaded {
 		pendingDelegateStakeChange := data.(*apiPendingDelegateStakeChange)
 		delegatePrivateKey = pendingDelegateStakeChange.delegatePrivateKey
-		delegatePublicKeyHash = pendingDelegateStakeChange.delegatePublicKeyHash
+		delegatePublicKey = pendingDelegateStakeChange.delegatePublicKey
 	}
 
 	answer := &ApiDelegatesNodeAskAnswer{
-		Exists:                false,
-		DelegatePublicKeyHash: delegatePublicKeyHash,
+		Exists:            false,
+		DelegatePublicKey: delegatePublicKey,
 	}
 
 	return json.Marshal(answer)

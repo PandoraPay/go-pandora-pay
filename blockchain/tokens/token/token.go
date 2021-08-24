@@ -161,10 +161,10 @@ func (token *Token) Deserialize(reader *helpers.BufferReader) (err error) {
 	if token.Supply, err = reader.ReadUvarint(); err != nil {
 		return
 	}
-	if token.Key, err = reader.ReadBytes(cryptography.PublicKeyHashHashSize); err != nil {
+	if token.Key, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if token.SupplyKey, err = reader.ReadBytes(cryptography.PublicKeyHashHashSize); err != nil {
+	if token.SupplyKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
 	if token.Name, err = reader.ReadString(); err != nil {

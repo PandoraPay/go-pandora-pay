@@ -19,6 +19,6 @@ type ApiDelegatesNodeAskRequest struct {
 }
 
 type ApiDelegatesNodeAskAnswer struct {
-	Exists                bool             `json:"exists"`
-	DelegatePublicKeyHash helpers.HexBytes `json:"delegatePublicKeyHash"`
+	Exists            bool             `json:"exists"`
+	DelegatePublicKey helpers.HexBytes `json:"delegatePublicKey"`
 }

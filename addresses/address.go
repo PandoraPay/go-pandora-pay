@@ -13,30 +13,26 @@ import (
 )
 
 type Address struct {
-	Network       uint64           `json:"network"`
-	Version       AddressVersion   `json:"version"`
-	PublicKey     helpers.HexBytes `json:"publicKey"`
-	PublicKeyHash helpers.HexBytes `json:"publicKeyHash"`
-	Amount        uint64           `json:"amount"`    // amount to be paid
-	PaymentID     helpers.HexBytes `json:"paymentId"` // payment id
+	Network   uint64           `json:"network"`
+	Version   AddressVersion   `json:"version"`
+	PublicKey helpers.HexBytes `json:"publicKey"`
+	Amount    uint64           `json:"amount"`    // amount to be paid
+	PaymentID helpers.HexBytes `json:"paymentId"` // payment id
 }
 
-func NewAddr(network uint64, version AddressVersion, publicKey []byte, publicKeyHash []byte, amount uint64, paymentID []byte) (*Address, error) {
+func NewAddr(network uint64, version AddressVersion, publicKey []byte, amount uint64, paymentID []byte) (*Address, error) {
 	if len(paymentID) != 8 && len(paymentID) != 0 {
 		return nil, errors.New("Invalid PaymentId. It must be an 8 byte")
 	}
-	return &Address{network, version, publicKey, publicKeyHash, amount, paymentID}, nil
+	return &Address{network, version, publicKey, amount, paymentID}, nil
 }
 
 func CreateAddr(key []byte, amount uint64, paymentID []byte) (*Address, error) {
 
-	var publicKey, publicKeyHash []byte
+	var publicKey []byte
 
 	var version AddressVersion
 	switch len(key) {
-	case cryptography.PublicKeyHashHashSize:
-		publicKeyHash = key
-		version = SIMPLE_PUBLIC_KEY_HASH
 	case cryptography.PublicKeySize:
 		publicKey = key
 		version = SIMPLE_PUBLIC_KEY
@@ -44,7 +40,7 @@ func CreateAddr(key []byte, amount uint64, paymentID []byte) (*Address, error) {
 		return nil, errors.New("Invalid Key length")
 	}
 
-	return NewAddr(config.NETWORK_SELECTED, version, publicKey, publicKeyHash, amount, paymentID)
+	return NewAddr(config.NETWORK_SELECTED, version, publicKey, amount, paymentID)
 }
 
 func (a *Address) EncodeAddr() string {
@@ -68,8 +64,6 @@ func (a *Address) EncodeAddr() string {
 	switch a.Version {
 	case SIMPLE_PUBLIC_KEY:
 		writer.Write(a.PublicKey)
-	case SIMPLE_PUBLIC_KEY_HASH:
-		writer.Write(a.PublicKeyHash)
 	}
 
 	writer.WriteByte(a.IntegrationByte())
@@ -136,15 +130,10 @@ func DecodeAddr(input string) (*Address, error) {
 	adr.Version = AddressVersion(version)
 
 	switch adr.Version {
-	case SIMPLE_PUBLIC_KEY_HASH:
-		if adr.PublicKeyHash, err = reader.ReadBytes(cryptography.PublicKeyHashHashSize); err != nil {
-			return nil, err
-		}
 	case SIMPLE_PUBLIC_KEY:
 		if adr.PublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
 			return nil, err
 		}
-		adr.PublicKeyHash = cryptography.ComputePublicKeyHash(adr.PublicKey)
 	default:
 		return nil, errors.New("Invalid Address Version")
 	}
@@ -214,7 +203,5 @@ func (a Address) VerifySignedMessage(message, signature []byte) bool {
 	if err != nil {
 		return false
 	}
-
-	publicKeyHash := cryptography.ComputePublicKeyHash(publicKey)
-	return bytes.Equal(publicKeyHash, a.PublicKeyHash)
+	return bytes.Equal(publicKey, a.PublicKey)
 }

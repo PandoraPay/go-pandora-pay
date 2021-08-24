@@ -97,7 +97,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 	sum := uint64(0)
 	for i := 0; i < count; i++ {
 		privateKey := addresses.GenerateNewPrivateKey()
-		addr, err := privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
+		addr, err := privateKey.GenerateAddress(0, helpers.EmptyBytes(0))
 		if err != nil {
 			return err
 		}
@@ -174,7 +174,7 @@ func (testnet *Testnet) run() {
 					if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 						accs := accounts.NewAccounts(reader)
-						if account, err = accs.GetAccountEvenEmpty(addr.PublicKeyHash, blockHeight); err != nil {
+						if account, err = accs.GetAccountEvenEmpty(addr.PublicKey, blockHeight); err != nil {
 							return
 						}
 
@@ -195,7 +195,7 @@ func (testnet *Testnet) run() {
 					if account != nil {
 
 						if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
-							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKeyHash, transaction_simple.SCRIPT_UNSTAKE) {
+							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
 								if err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
 									//return
 								}
@@ -206,7 +206,7 @@ func (testnet *Testnet) run() {
 								creatingTransactions.Set()
 								for {
 									time.Sleep(time.Millisecond*time.Duration(rand.Intn(500)) + time.Millisecond*time.Duration(500))
-									if testnet.mempool.CountInputTxs(addr.PublicKeyHash) < 20 {
+									if testnet.mempool.CountInputTxs(addr.PublicKey) < 20 {
 										if err = testnet.testnetCreateTransfers(blockHeight); err != nil {
 											//return
 										}
