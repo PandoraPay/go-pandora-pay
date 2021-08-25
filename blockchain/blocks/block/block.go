@@ -8,20 +8,21 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_reward"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/ecdsa"
+	"pandora-pay/cryptography/cryptolib"
 	"pandora-pay/helpers"
 )
 
 type Block struct {
 	*BlockHeader
-	MerkleHash     helpers.HexBytes `json:"merkleHash"`     //32 byte
-	PrevHash       helpers.HexBytes `json:"prevHash"`       //32 byte
-	PrevKernelHash helpers.HexBytes `json:"prevKernelHash"` //32 byte
-	Timestamp      uint64           `json:"timestamp"`
-	StakingAmount  uint64           `json:"stakingAmount"`
-	Forger         helpers.HexBytes `json:"forger"`    // 20 byte public key hash
-	Signature      helpers.HexBytes `json:"signature"` // 65 byte signature
-	Bloom          *BlockBloom      `json:"bloom"`
+	MerkleHash         helpers.HexBytes `json:"merkleHash"`     //32 byte
+	PrevHash           helpers.HexBytes `json:"prevHash"`       //32 byte
+	PrevKernelHash     helpers.HexBytes `json:"prevKernelHash"` //32 byte
+	Timestamp          uint64           `json:"timestamp"`
+	StakingAmount      uint64           `json:"stakingAmount"`
+	Forger             helpers.HexBytes `json:"forger"`             // 33 byte public key
+	DelegatedPublicKey helpers.HexBytes `json:"delegatedPublicKey"` // 33 byte public key can also be found into the accounts tree
+	Signature          helpers.HexBytes `json:"signature"`          // 64 byte signature
+	Bloom              *BlockBloom      `json:"bloom"`
 }
 
 func CreateEmptyBlock() *Block {
@@ -79,13 +80,13 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 }
 
 func (blk *Block) computeHash() []byte {
-	return cryptography.SHA3Hash(blk.SerializeToBytes())
+	return cryptography.SHA3(blk.SerializeToBytes())
 }
 
 func (blk *Block) ComputeKernelHashOnly() []byte {
 	writer := helpers.NewBufferWriter()
 	blk.AdvancedSerialization(writer, true, false)
-	return cryptography.SHA3Hash(writer.Bytes())
+	return cryptography.SHA3(writer.Bytes())
 }
 
 func (blk *Block) ComputeKernelHash() []byte {
@@ -96,16 +97,12 @@ func (blk *Block) ComputeKernelHash() []byte {
 func (blk *Block) SerializeForSigning() []byte {
 	writer := helpers.NewBufferWriter()
 	blk.AdvancedSerialization(writer, false, false)
-	return cryptography.SHA3Hash(writer.Bytes())
+	return cryptography.SHA3(writer.Bytes())
 }
 
 func (blk *Block) VerifySignatureManually() bool {
 	hash := blk.SerializeForSigning()
-	publicKey, err := ecdsa.EcrecoverCompressed(hash, blk.Signature)
-	if err != nil {
-		return false
-	}
-	return ecdsa.VerifySignature(publicKey, hash, blk.Signature[0:64])
+	return cryptolib.VerifySignature(hash, blk.Signature, blk.DelegatedPublicKey)
 }
 
 func (blk *Block) AdvancedSerialization(writer *helpers.BufferWriter, kernelHash bool, inclSignature bool) {
@@ -126,6 +123,9 @@ func (blk *Block) AdvancedSerialization(writer *helpers.BufferWriter, kernelHash
 	writer.WriteUvarint(blk.Timestamp)
 
 	writer.Write(blk.Forger)
+	if !kernelHash {
+		writer.Write(blk.DelegatedPublicKey)
+	}
 
 	if inclSignature {
 		writer.Write(blk.Signature)
@@ -173,6 +173,9 @@ func (blk *Block) Deserialize(reader *helpers.BufferReader) (err error) {
 		return
 	}
 	if blk.Forger, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+		return
+	}
+	if blk.DelegatedPublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
 	if blk.Signature, err = reader.ReadBytes(cryptography.SignatureSize); err != nil {

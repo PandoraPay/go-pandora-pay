@@ -16,7 +16,7 @@ func (tx *TransactionSimple) BloomNow(hashForSignature []byte) (err error) {
 	tx.Bloom = new(TransactionSimpleBloom)
 
 	for _, vin := range tx.Vin {
-		if err = vin.BloomNow(hashForSignature); err != nil {
+		if err = vin.BloomNow(); err != nil {
 			return
 		}
 	}
@@ -30,7 +30,7 @@ func (tx *TransactionSimple) BloomNow(hashForSignature []byte) (err error) {
 	return
 }
 
-func (tx *TransactionSimple) BloomNowSignatureVerified(hashForSignature []byte) (err error) {
+func (tx *TransactionSimple) BloomNowSignatureVerified() (err error) {
 
 	if tx.Bloom != nil {
 		return
@@ -39,7 +39,7 @@ func (tx *TransactionSimple) BloomNowSignatureVerified(hashForSignature []byte) 
 	tx.Bloom = new(TransactionSimpleBloom)
 
 	for _, vin := range tx.Vin {
-		if err = vin.BloomNow(hashForSignature); err != nil {
+		if err = vin.BloomNow(); err != nil {
 			return
 		}
 	}

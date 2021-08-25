@@ -1,10 +1,7 @@
 package wizard
 
 import (
-	"crypto/rand"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
-	"pandora-pay/cryptography/ecdsa"
-	"pandora-pay/cryptography/ecies"
 	"pandora-pay/helpers"
 )
 
@@ -45,12 +42,13 @@ func (data *TransactionsWizardData) getData() ([]byte, error) {
 		return data.Data, nil
 	} else {
 
-		pub, err := ecdsa.DecompressPubkey(data.PublicKeyToEncrypt)
-		if err != nil {
-			return nil, err
-		}
-
-		return ecies.Encrypt(rand.Reader, ecies.ImportECDSAPublic(pub), data.Data, nil, nil)
+		panic("not implemented")
+		//pub, err := ecdsa.DecompressPubkey(data.PublicKeyToEncrypt)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//
+		//return ecies.Encrypt(rand.Reader, ecies.ImportECDSAPublic(pub), data.Data, nil, nil)
 	}
 
 }

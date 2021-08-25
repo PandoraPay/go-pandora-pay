@@ -11,7 +11,6 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/ecdsa"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -51,14 +50,11 @@ func (api *APIDelegatesNode) getDelegatesInfo(request *ApiDelegatesNodeInfoReque
 
 func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest) ([]byte, error) {
 
-	publicKey, err := ecdsa.EcrecoverCompressed(api.challenge, request.ChallengeSignature)
-	if err != nil {
-		return nil, err
-	}
+	publicKey := request.PublicKey
 
 	var chainHeight uint64
 	var acc *account.Account
-	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 		acc, err = accounts.NewAccounts(reader).GetAccount(publicKey, chainHeight)
 		return
@@ -89,10 +85,7 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 	}
 
 	delegatePrivateKey := addresses.GenerateNewPrivateKey()
-	delegatePublicKey, err := delegatePrivateKey.GeneratePublicKey()
-	if err != nil {
-		return nil, err
-	}
+	delegatePublicKey := delegatePrivateKey.GeneratePublicKey()
 
 	data, loaded := api.pendingDelegatesStakesChanges.LoadOrStore(string(publicKey), &apiPendingDelegateStakeChange{
 		delegatePrivateKey,

@@ -46,8 +46,9 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 		privateKeys[i] = &addresses.PrivateKey{Key: keys[i]}
 
 		vin[i] = &transaction_simple_parts.TransactionSimpleInput{
-			Amount: amounts[i],
-			Token:  tokens[i],
+			Amount:    amounts[i],
+			Token:     tokens[i],
+			PublicKey: privateKeys[i].GeneratePublicKey(),
 		}
 	}
 
@@ -134,7 +135,8 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 			},
 			Vin: []*transaction_simple_parts.TransactionSimpleInput{
 				{
-					Amount: 0,
+					Amount:    0,
+					PublicKey: privateKey.GeneratePublicKey(),
 				},
 			},
 		},
@@ -208,7 +210,8 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 			},
 			Vin: []*transaction_simple_parts.TransactionSimpleInput{
 				{
-					Amount: 0,
+					Amount:    0,
+					PublicKey: privateKey.GeneratePublicKey(),
 				},
 			},
 		},

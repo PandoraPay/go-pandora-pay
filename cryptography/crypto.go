@@ -6,12 +6,6 @@ import (
 	"math/big"
 )
 
-func SHA3Hash(b []byte) (result []byte) {
-	h := sha3.New256()
-	h.Write(b)
-	return h.Sum(nil)
-}
-
 func SHA3(b []byte) []byte {
 	h := sha3.New256()
 	h.Write(b)

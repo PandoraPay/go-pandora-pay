@@ -23,7 +23,7 @@ func roundNextPowerOfTwo(number int) int {
 func hashMerkleNode(left []byte, right []byte) []byte {
 	// Concatenate the left and right nodes.
 	hash := append(left, right...)
-	return cryptography.SHA3Hash(hash)
+	return cryptography.SHA3(hash)
 }
 
 func buildMerkleTree(hashes [][]byte) [][]byte {

@@ -11,7 +11,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	"pandora-pay/config"
-	"pandora-pay/cryptography/ecdsa"
+	"pandora-pay/cryptography/cryptolib"
 	"pandora-pay/helpers"
 )
 
@@ -30,7 +30,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 	for i, vin := range tx.Vin {
 
 		var acc *account.Account
-		if acc, err = accs.GetAccountEvenEmpty(vin.Bloom.PublicKey, blockHeight); err != nil {
+		if acc, err = accs.GetAccountEvenEmpty(vin.PublicKey, blockHeight); err != nil {
 			return
 		}
 
@@ -53,7 +53,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 		if err = acc.AddBalance(false, vin.Amount, vin.Token); err != nil {
 			return
 		}
-		if err = accs.UpdateAccount(vin.Bloom.PublicKey, acc); err != nil {
+		if err = accs.UpdateAccount(vin.PublicKey, acc); err != nil {
 			return
 		}
 	}
@@ -94,7 +94,7 @@ func (tx *TransactionSimple) ComputeFees(out map[string]uint64) (err error) {
 
 func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
 	for _, vin := range tx.Vin {
-		out[string(vin.Bloom.PublicKey)] = true
+		out[string(vin.PublicKey)] = true
 	}
 	for _, vout := range tx.Vout {
 		out[string(vout.PublicKey)] = true
@@ -131,7 +131,7 @@ func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bo
 	}
 
 	for _, vin := range tx.Vin {
-		if ecdsa.VerifySignature(vin.Bloom.PublicKey, hashForSignature, vin.Signature[0:64]) == false {
+		if cryptolib.VerifySignature(hashForSignature, vin.Signature, vin.PublicKey) == false {
 			return false
 		}
 	}
@@ -141,7 +141,7 @@ func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bo
 func (tx *TransactionSimple) Validate() (err error) {
 
 	for _, vin := range tx.Vin {
-		if bytes.Equal(vin.Bloom.PublicKey, config.BURN_PUBLIC_KEY) {
+		if bytes.Equal(vin.PublicKey, config.BURN_PUBLIC_KEY) {
 			return errors.New("Input includes BURN ADDR")
 		}
 	}

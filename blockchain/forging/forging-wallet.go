@@ -145,12 +145,7 @@ func (w *ForgingWallet) processUpdates() {
 			} else {
 
 				delegatedPrivateKey := &addresses.PrivateKey{Key: update.delegatedPriv}
-
-				var delegatedPublicKey []byte
-				if delegatedPublicKey, err = delegatedPrivateKey.GeneratePublicKey(); err != nil {
-					gui.GUI.Error("Error Generating PublicKey")
-					continue
-				}
+				delegatedPublicKey := delegatedPrivateKey.GeneratePublicKey()
 
 				//let's read the balance
 				if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {

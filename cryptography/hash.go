@@ -7,7 +7,7 @@ import (
 const HashSize = 32
 const PublicKeySize = 33
 const RipemdSize = 20
-const SignatureSize = 65
+const SignatureSize = 64
 const ChecksumSize = 4
 
 func RandomHash() (hash []byte) {

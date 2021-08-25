@@ -32,7 +32,7 @@ func (tx *Transaction) GetAllKeys() map[string]bool {
 func (tx *Transaction) SerializeForSigning() []byte {
 	writer := helpers.NewBufferWriter()
 	tx.SerializeAdvanced(writer, false)
-	return cryptography.SHA3Hash(writer.Bytes())
+	return cryptography.SHA3(writer.Bytes())
 }
 
 func (tx *Transaction) VerifySignatureManually() bool {
@@ -41,7 +41,7 @@ func (tx *Transaction) VerifySignatureManually() bool {
 }
 
 func (tx *Transaction) computeHash() []byte {
-	return cryptography.SHA3Hash(tx.SerializeToBytes())
+	return cryptography.SHA3(tx.SerializeToBytes())
 }
 
 func (tx *Transaction) SerializeAdvanced(writer *helpers.BufferWriter, inclSignature bool) {

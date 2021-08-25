@@ -80,7 +80,7 @@ func CreateNewGenesisBlock() (*block.Block, error) {
 			Version: 0,
 			Height:  0,
 		},
-		MerkleHash:     cryptography.SHA3Hash([]byte{}),
+		MerkleHash:     cryptography.SHA3([]byte{}),
 		Timestamp:      GenesisData.Timestamp,
 		PrevHash:       GenesisData.Hash,
 		PrevKernelHash: GenesisData.KernelHash,

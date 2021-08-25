@@ -10,27 +10,26 @@ import (
 )
 
 var (
-	merkleHash     = cryptography.SHA3Hash([]byte("MerkleHash"))
-	prevHash       = cryptography.SHA3Hash([]byte("PrevHash"))
-	prevKernelHash = cryptography.SHA3Hash([]byte("PrevKernelHash"))
+	merkleHash     = cryptography.SHA3([]byte("MerkleHash"))
+	prevHash       = cryptography.SHA3([]byte("PrevHash"))
+	prevKernelHash = cryptography.SHA3([]byte("PrevKernelHash"))
 )
 
 func TestBlock_Serialize(t *testing.T) {
+	var err error
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	publicKey, err := privateKey.GeneratePublicKey()
-	assert.NoError(t, err, "Error...?")
-
-	publicKey := cryptography.ComputePublicKey(publicKey)
+	publicKey := privateKey.GeneratePublicKey()
 
 	blk := Block{
-		BlockHeader:    &BlockHeader{Version: 0, Height: 0},
-		MerkleHash:     merkleHash,
-		PrevHash:       prevHash,
-		PrevKernelHash: prevKernelHash,
-		Forger:         publicKey,
-		Timestamp:      uint64(time.Now().Unix()),
-		Signature:      make([]byte, cryptography.SignatureSize),
+		BlockHeader:        &BlockHeader{Version: 0, Height: 0},
+		MerkleHash:         merkleHash,
+		PrevHash:           prevHash,
+		PrevKernelHash:     prevKernelHash,
+		Forger:             publicKey,
+		Timestamp:          uint64(time.Now().Unix()),
+		DelegatedPublicKey: make([]byte, cryptography.PublicKeySize),
+		Signature:          make([]byte, cryptography.SignatureSize),
 	}
 
 	buf := blk.SerializeManualToBytes()
@@ -48,22 +47,26 @@ func TestBlock_Serialize(t *testing.T) {
 
 func TestBlock_SerializeForSigning(t *testing.T) {
 
+	var err error
+
 	privateKey := addresses.GenerateNewPrivateKey()
-	publicKey, err := privateKey.GeneratePublicKey()
-	assert.NoError(t, err, "Error...?")
+	publicKey := privateKey.GeneratePublicKey()
 
 	blockHeader := &BlockHeader{Version: 0, Height: 0}
 	blk := Block{
-		BlockHeader:    blockHeader,
-		MerkleHash:     merkleHash,
-		PrevHash:       prevHash,
-		PrevKernelHash: prevKernelHash,
-		Forger:         publicKey,
-		Timestamp:      uint64(time.Now().Unix()),
-		Signature:      make([]byte, cryptography.SignatureSize),
+		BlockHeader:        blockHeader,
+		MerkleHash:         merkleHash,
+		PrevHash:           prevHash,
+		PrevKernelHash:     prevKernelHash,
+		Forger:             publicKey,
+		Timestamp:          uint64(time.Now().Unix()),
+		DelegatedPublicKey: make([]byte, cryptography.PublicKeySize),
+		Signature:          make([]byte, cryptography.SignatureSize),
 	}
 
+	blk.DelegatedPublicKey = publicKey
 	hash := blk.SerializeForSigning()
+
 	var signature []byte
 
 	signature, err = privateKey.Sign(hash)

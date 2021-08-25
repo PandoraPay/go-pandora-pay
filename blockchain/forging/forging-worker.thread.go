@@ -178,7 +178,7 @@ func (worker *ForgingWorkerThread) forge() {
 				copy(serialized[len(serialized)-cryptography.PublicKeySize-n2:len(serialized)-cryptography.PublicKeySize], buf)
 				copy(serialized[len(serialized)-cryptography.PublicKeySize:], address.walletAdr.publicKey)
 
-				kernelHash := cryptography.SHA3Hash(serialized)
+				kernelHash := cryptography.SHA3(serialized)
 
 				kernelHash = cryptography.ComputeKernelHash(kernelHash, address.stakingAmount)
 

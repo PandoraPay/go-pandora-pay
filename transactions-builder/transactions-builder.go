@@ -40,7 +40,7 @@ func (builder *TransactionsBuilder) checkTx(accountsList []*account.Account, tx 
 
 		available = accountsList[i].GetAvailableBalance(vin.Token)
 
-		if available, err = builder.mempool.GetBalance(vin.Bloom.PublicKey, available, vin.Token); err != nil {
+		if available, err = builder.mempool.GetBalance(vin.PublicKey, available, vin.Token); err != nil {
 			return
 		}
 		if available < vin.Amount {

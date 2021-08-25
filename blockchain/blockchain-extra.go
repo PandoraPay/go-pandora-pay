@@ -161,7 +161,7 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 					Version: 0,
 					Height:  chainData.Height,
 				},
-				MerkleHash:     cryptography.SHA3Hash([]byte{}),
+				MerkleHash:     cryptography.SHA3([]byte{}),
 				PrevHash:       chainData.Hash,
 				PrevKernelHash: chainData.KernelHash,
 				Timestamp:      chainData.Timestamp,
@@ -169,6 +169,7 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 		}
 
 		blk.Forger = make([]byte, cryptography.PublicKeySize)
+		blk.DelegatedPublicKey = make([]byte, cryptography.PublicKeySize)
 		blk.Signature = make([]byte, cryptography.SignatureSize)
 
 		blk.BloomSerializedNow(blk.SerializeManualToBytes())

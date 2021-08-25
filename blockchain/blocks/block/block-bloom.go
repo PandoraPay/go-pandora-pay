@@ -3,7 +3,7 @@ package block
 import (
 	"errors"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/ecdsa"
+	"pandora-pay/cryptography/cryptolib"
 	"pandora-pay/helpers"
 )
 
@@ -11,7 +11,6 @@ type BlockBloom struct {
 	Serialized                 helpers.HexBytes `json:"-"`
 	Hash                       helpers.HexBytes `json:"hash"`
 	KernelHash                 helpers.HexBytes `json:"kernelHash"`
-	DelegatedPublicKey         helpers.HexBytes `json:"delegatedPublicKey"`
 	DelegatedSignatureVerified bool             `json:"delegatedSignatureVerified"`
 	bloomedHash                bool             `json:"-"`
 	bloomedKernelHash          bool             `json:"-"`
@@ -20,7 +19,7 @@ type BlockBloom struct {
 func (blk *Block) BloomSerializedNow(serialized []byte) {
 	blk.Bloom = &BlockBloom{
 		Serialized:  serialized,
-		Hash:        cryptography.SHA3Hash(serialized),
+		Hash:        cryptography.SHA3(serialized),
 		bloomedHash: true,
 	}
 }
@@ -33,7 +32,7 @@ func (blk *Block) BloomNow() (err error) {
 
 	if !blk.Bloom.bloomedHash {
 		blk.Bloom.Serialized = blk.SerializeManualToBytes()
-		blk.Bloom.Hash = cryptography.SHA3Hash(blk.Bloom.Serialized)
+		blk.Bloom.Hash = cryptography.SHA3(blk.Bloom.Serialized)
 		blk.Bloom.bloomedHash = true
 	}
 	if !blk.Bloom.bloomedKernelHash {
@@ -41,15 +40,9 @@ func (blk *Block) BloomNow() (err error) {
 		blk.Bloom.KernelHash = blk.ComputeKernelHash()
 		hashForSignature := blk.SerializeForSigning()
 
-		var delegatedPublicKey []byte
-		if delegatedPublicKey, err = ecdsa.EcrecoverCompressed(hashForSignature, blk.Signature); err != nil {
-			return
-		}
-
-		blk.Bloom.DelegatedPublicKey = delegatedPublicKey
-		blk.Bloom.DelegatedSignatureVerified = ecdsa.VerifySignature(delegatedPublicKey, hashForSignature, blk.Signature[0:64])
+		blk.Bloom.DelegatedSignatureVerified = cryptolib.VerifySignature(hashForSignature, blk.Signature, blk.DelegatedPublicKey)
 		if !blk.Bloom.DelegatedSignatureVerified {
-			return errors.New("BLock signature is invalid")
+			return errors.New("Block signature is invalid")
 		}
 
 		blk.Bloom.bloomedKernelHash = true

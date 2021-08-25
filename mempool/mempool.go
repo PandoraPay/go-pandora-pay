@@ -102,7 +102,7 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 		case transaction_type.TX_SIMPLE:
 			txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 			for _, vin := range txBase.Vin {
-				if mempool.Wallet.Exists(vin.Bloom.PublicKey) {
+				if mempool.Wallet.Exists(vin.PublicKey) {
 					mine = true
 					break
 				}

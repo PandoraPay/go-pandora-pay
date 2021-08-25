@@ -15,6 +15,7 @@ type ApiDelegatesNodeInfoAnswer struct {
 }
 
 type ApiDelegatesNodeAskRequest struct {
+	PublicKey          helpers.HexBytes `json:"publicKey"`
 	ChallengeSignature helpers.HexBytes `json:"challengeSignature"`
 }
 

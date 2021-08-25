@@ -110,6 +110,7 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 
 	newBlk.Txs, _ = thread.mempool.GetNextTransactionsToInclude(newBlk.Block.PrevHash)
 	newBlk.Block.MerkleHash = newBlk.MerkleHash()
+	newBlk.Block.DelegatedPublicKey = solution.address.delegatedPublicKey
 
 	hashForSignature := newBlk.Block.SerializeForSigning()
 

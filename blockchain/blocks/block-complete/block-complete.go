@@ -55,7 +55,7 @@ func (blkComplete *BlockComplete) MerkleHash() []byte {
 		}
 		return merkle_tree.MerkleRoot(hashes)
 	} else {
-		return cryptography.SHA3Hash([]byte{})
+		return cryptography.SHA3([]byte{})
 	}
 }
 

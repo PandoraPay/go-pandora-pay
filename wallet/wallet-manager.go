@@ -142,8 +142,7 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 		return
 	}
 
-	var publicKey []byte
-	publicKey, err = adr.PrivateKey.GeneratePairs()
+	publicKey := adr.PrivateKey.GeneratePublicKey()
 
 	adr.AddressEncoded = addr1.EncodeAddr()
 	adr.PublicKey = publicKey

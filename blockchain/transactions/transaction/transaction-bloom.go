@@ -25,7 +25,7 @@ func (tx *Transaction) BloomNow() {
 	bloom := new(TransactionBloom)
 	bloom.Serialized = tx.SerializeManualToBytes()
 	bloom.Size = uint64(len(bloom.Serialized))
-	bloom.Hash = cryptography.SHA3Hash(bloom.Serialized)
+	bloom.Hash = cryptography.SHA3(bloom.Serialized)
 	bloom.HashStr = string(bloom.Hash)
 	bloom.bloomed = true
 	tx.Bloom = bloom
@@ -50,8 +50,7 @@ func (tx *Transaction) BloomExtraNow() (err error) {
 func (tx *Transaction) BloomExtraVerified() (err error) {
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
-		serialized := tx.SerializeForSigning()
-		err = tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).BloomNowSignatureVerified(serialized)
+		err = tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).BloomNowSignatureVerified()
 	default:
 		err = errors.New("Invalid TxType")
 	}

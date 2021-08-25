@@ -38,8 +38,8 @@ type json_TransactionSimple struct {
 type json_TransactionSimpleInput struct {
 	Amount    uint64           `json:"amount"`
 	Token     helpers.HexBytes `json:"token"`               //20
-	Signature helpers.HexBytes `json:"signature"`           //65
 	PublicKey helpers.HexBytes `json:"publicKey,omitempty"` //32
+	Signature helpers.HexBytes `json:"signature"`           //64
 }
 
 type json_TransactionSimpleOutput struct {
@@ -90,8 +90,8 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			vinJson[i] = &json_TransactionSimpleInput{
 				it.Amount,
 				it.Token,
+				it.PublicKey,
 				it.Signature,
-				it.Bloom.PublicKey,
 			}
 		}
 
@@ -191,6 +191,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			vin[i] = &transaction_simple_parts.TransactionSimpleInput{
 				Amount:    it.Amount,
 				Token:     it.Token,
+				PublicKey: it.PublicKey,
 				Signature: it.Signature,
 			}
 		}
