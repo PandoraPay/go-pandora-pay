@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
@@ -31,16 +32,18 @@ type TransactionsBuilder struct {
 
 func (builder *TransactionsBuilder) checkTx(accountsList []*account.Account, tx *transaction.Transaction) (err error) {
 
+	base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
+
 	var available uint64
-	for i, vin := range tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin {
+	for i, vin := range base.Vin {
 
 		if accountsList[i] == nil {
 			return errors.New("Account doesn't even exist")
 		}
 
-		available = accountsList[i].GetAvailableBalance(vin.Token)
+		available = accountsList[i].GetAvailableBalance(base.Token)
 
-		if available, err = builder.mempool.GetBalance(vin.PublicKey, available, vin.Token); err != nil {
+		if available, err = builder.mempool.GetBalance(vin.PublicKey, available, base.Token); err != nil {
 			return
 		}
 		if available < vin.Amount {
@@ -50,15 +53,12 @@ func (builder *TransactionsBuilder) checkTx(accountsList []*account.Account, tx 
 	return
 }
 
-func (builder *TransactionsBuilder) convertFloatAmounts(amounts []float64, tokens [][]byte, toks *tokens.Tokens) ([]uint64, error) {
+func (builder *TransactionsBuilder) convertFloatAmounts(amounts []float64, tok *token.Token) ([]uint64, error) {
 
-	if len(tokens) != len(amounts) {
-		return nil, errors.New("Amounts len is not matching tokens len")
-	}
+	var err error
 
 	amountsFinal := make([]uint64, len(amounts))
 	for i := range amounts {
-		tok, err := toks.GetTokenRequired(tokens[i])
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +87,7 @@ func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet
 	return fromWalletAddress, nil
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce uint64, amounts []float64, amountsTokens [][]byte, dsts []string, dstsAmounts []float64, dstsTokens [][]byte, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce uint64, token []byte, amounts []float64, dsts []string, dstsAmounts []float64, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	var amountsFinal, dstsAmountsFinal []uint64
 
@@ -98,15 +98,16 @@ func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce ui
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		toks := tokens.NewTokens(reader)
+		tok, err := toks.GetTokenRequired(token)
 
-		if amountsFinal, err = builder.convertFloatAmounts(amounts, amountsTokens, toks); err != nil {
+		if amountsFinal, err = builder.convertFloatAmounts(amounts, tok); err != nil {
 			return
 		}
-		if dstsAmountsFinal, err = builder.convertFloatAmounts(dstsAmounts, dstsTokens, toks); err != nil {
+		if dstsAmountsFinal, err = builder.convertFloatAmounts(dstsAmounts, tok); err != nil {
 			return
 		}
 
-		if finalFee, err = fee.convertToWizardFee(toks); err != nil {
+		if finalFee, err = fee.convertToWizardFee(tok); err != nil {
 			return
 		}
 
@@ -115,10 +116,10 @@ func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce ui
 		return nil, err
 	}
 
-	return builder.CreateSimpleTx(from, nonce, amountsFinal, amountsTokens, dsts, dstsAmountsFinal, dstsTokens, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
+	return builder.CreateSimpleTx(from, nonce, token, amountsFinal, dsts, dstsAmountsFinal, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, amounts []uint64, amountsTokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, token []byte, amounts []uint64, dsts []string, dstsAmounts []uint64, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses(from)
 	if err != nil {
@@ -150,7 +151,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 				return errors.New("Account doesn't exist")
 			}
 
-			if accountsList[i].GetAvailableBalance(amountsTokens[i]) < amounts[i] {
+			if accountsList[i].GetAvailableBalance(token) < amounts[i] {
 				return errors.New("Not enough funds")
 			}
 
@@ -170,7 +171,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 
 	statusCallback("Getting Nonce from Mempool")
 
-	if tx, err = wizard.CreateSimpleTx(nonce, keys, amounts, amountsTokens, dsts, dstsAmounts, dstsTokens, data, fee, statusCallback); err != nil {
+	if tx, err = wizard.CreateSimpleTx(nonce, token, keys, amounts, dsts, dstsAmounts, data, fee, statusCallback); err != nil {
 		gui.GUI.Error("Error creating Tx: ", err)
 		return nil, err
 	}
@@ -206,7 +207,12 @@ func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uin
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		if feeFinal, err = fee.convertToWizardFee(tokens.NewTokens(reader)); err != nil {
+		tok, err := tokens.NewTokens(reader).GetTokenRequired(config.NATIVE_TOKEN)
+		if err != nil {
+			return
+		}
+
+		if feeFinal, err = fee.convertToWizardFee(tok); err != nil {
 			return
 		}
 
@@ -308,7 +314,12 @@ func (builder *TransactionsBuilder) CreateDelegateTx_Float(from string, nonce ui
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		if finalFee, err = fee.convertToWizardFee(tokens.NewTokens(reader)); err != nil {
+		tok, err := tokens.NewTokens(reader).GetTokenRequired(config.NATIVE_TOKEN)
+		if err != nil {
+			return
+		}
+
+		if finalFee, err = fee.convertToWizardFee(tok); err != nil {
 			return err
 		}
 

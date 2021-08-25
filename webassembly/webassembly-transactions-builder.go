@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/app"
+	"pandora-pay/config"
 	"pandora-pay/helpers"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/transactions-builder/wizard"
@@ -23,17 +24,16 @@ func createSimpleTx_Float(this js.Value, args []js.Value) interface{} {
 		}
 
 		type SimpleTxFloatData struct {
-			From          []string                                          `json:"from"`
-			Nonce         uint64                                            `json:"nonce"`
-			Amounts       []float64                                         `json:"amounts"`
-			AmountsTokens []helpers.HexBytes                                `json:"amountsTokens"`
-			Dsts          []string                                          `json:"dsts"`
-			DstsAmounts   []float64                                         `json:"dstsAmounts"`
-			DstsTokens    []helpers.HexBytes                                `json:"dstsTokens"`
-			Data          *wizard.TransactionsWizardData                    `json:"data"`
-			Fee           *transactions_builder.TransactionsBuilderFeeFloat `json:"fee"`
-			PropagateTx   bool                                              `json:"propagateTx"`
-			AwaitAnswer   bool                                              `json:"awaitAnswer"`
+			From        []string                                          `json:"from"`
+			Nonce       uint64                                            `json:"nonce"`
+			Token       helpers.HexBytes                                  `json:"token"`
+			Amounts     []float64                                         `json:"amounts"`
+			Dsts        []string                                          `json:"dsts"`
+			DstsAmounts []float64                                         `json:"dstsAmounts"`
+			Data        *wizard.TransactionsWizardData                    `json:"data"`
+			Fee         *transactions_builder.TransactionsBuilderFeeFloat `json:"fee"`
+			PropagateTx bool                                              `json:"propagateTx"`
+			AwaitAnswer bool                                              `json:"awaitAnswer"`
 		}
 
 		txData := &SimpleTxFloatData{}
@@ -41,7 +41,7 @@ func createSimpleTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.CreateSimpleTx_Float(txData.From, txData.Nonce, txData.Amounts, helpers.ConvertHexBytesArrayToBytesArray(txData.AmountsTokens), txData.Dsts, txData.DstsAmounts, helpers.ConvertHexBytesArrayToBytesArray(txData.DstsTokens), txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
+		tx, err := app.TransactionsBuilder.CreateSimpleTx_Float(txData.From, txData.Nonce, config.NATIVE_TOKEN, txData.Amounts, txData.Dsts, txData.DstsAmounts, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
 			args[1].Invoke(status)
 			time.Sleep(10 * time.Millisecond)
 		})

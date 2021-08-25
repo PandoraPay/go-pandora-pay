@@ -26,6 +26,7 @@ type json_Transaction struct {
 type json_Only_TransactionSimple struct {
 	TxScript transaction_simple.ScriptType   `json:"txScript"`
 	Nonce    uint64                          `json:"nonce"`
+	Token    helpers.HexBytes                `json:"token"`
 	Vin      []*json_TransactionSimpleInput  `json:"vin"`
 	Vout     []*json_TransactionSimpleOutput `json:"vout"`
 }
@@ -37,7 +38,6 @@ type json_TransactionSimple struct {
 
 type json_TransactionSimpleInput struct {
 	Amount    uint64           `json:"amount"`
-	Token     helpers.HexBytes `json:"token"`               //20
 	PublicKey helpers.HexBytes `json:"publicKey,omitempty"` //32
 	Signature helpers.HexBytes `json:"signature"`           //64
 }
@@ -45,7 +45,6 @@ type json_TransactionSimpleInput struct {
 type json_TransactionSimpleOutput struct {
 	PublicKey helpers.HexBytes `json:"publicKey"` //20
 	Amount    uint64           `json:"amount"`
-	Token     helpers.HexBytes `json:"token"` //20
 }
 
 type json_Only_TransactionSimpleDelegate struct {
@@ -89,7 +88,6 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 		for i, it := range base.Vin {
 			vinJson[i] = &json_TransactionSimpleInput{
 				it.Amount,
-				it.Token,
 				it.PublicKey,
 				it.Signature,
 			}
@@ -100,7 +98,6 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			voutJson[i] = &json_TransactionSimpleOutput{
 				it.PublicKey,
 				it.Amount,
-				it.Token,
 			}
 		}
 
@@ -109,6 +106,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			&json_Only_TransactionSimple{
 				base.TxScript,
 				base.Nonce,
+				base.Token,
 				vinJson,
 				voutJson,
 			},
@@ -190,7 +188,6 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 		for i, it := range simpleJson.Vin {
 			vin[i] = &transaction_simple_parts.TransactionSimpleInput{
 				Amount:    it.Amount,
-				Token:     it.Token,
 				PublicKey: it.PublicKey,
 				Signature: it.Signature,
 			}
@@ -201,13 +198,13 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			vout[i] = &transaction_simple_parts.TransactionSimpleOutput{
 				PublicKey: it.PublicKey,
 				Amount:    it.Amount,
-				Token:     it.Token,
 			}
 		}
 
 		base := &transaction_simple.TransactionSimple{
 			TxScript: simpleJson.TxScript,
 			Nonce:    simpleJson.Nonce,
+			Token:    simpleJson.Token,
 			Vin:      vin,
 			Vout:     vout,
 		}

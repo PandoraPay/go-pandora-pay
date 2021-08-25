@@ -20,6 +20,7 @@ type TransactionSimple struct {
 	transaction_simple_extra.TransactionSimpleExtraInterface
 	TxScript ScriptType
 	Nonce    uint64
+	Token    helpers.HexBytes //20
 	Vin      []*transaction_simple_parts.TransactionSimpleInput
 	Vout     []*transaction_simple_parts.TransactionSimpleOutput
 	Bloom    *TransactionSimpleBloom
@@ -50,7 +51,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 			}
 		}
 
-		if err = acc.AddBalance(false, vin.Amount, vin.Token); err != nil {
+		if err = acc.AddBalance(false, vin.Amount, tx.Token); err != nil {
 			return
 		}
 		if err = accs.UpdateAccount(vin.PublicKey, acc); err != nil {
@@ -65,7 +66,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 			return
 		}
 
-		if err = acc.AddBalance(true, vout.Amount, vout.Token); err != nil {
+		if err = acc.AddBalance(true, vout.Amount, tx.Token); err != nil {
 			return
 		}
 		if err = accs.UpdateAccount(vout.PublicKey, acc); err != nil {
@@ -104,7 +105,7 @@ func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
 
 func (tx *TransactionSimple) ComputeVin(out map[string]uint64) (err error) {
 	for _, vin := range tx.Vin {
-		if err = helpers.SafeMapUint64Add(out, string(vin.Token), vin.Amount); err != nil {
+		if err = helpers.SafeMapUint64Add(out, string(tx.Token), vin.Amount); err != nil {
 			return
 		}
 	}
@@ -113,7 +114,7 @@ func (tx *TransactionSimple) ComputeVin(out map[string]uint64) (err error) {
 
 func (tx *TransactionSimple) ComputeVout(out map[string]uint64) (err error) {
 	for _, vout := range tx.Vout {
-		tokenStr := string(vout.Token)
+		tokenStr := string(tx.Token)
 		if err = helpers.SafeMapUint64Sub(out, tokenStr, vout.Amount); err != nil {
 			return
 		}
@@ -185,6 +186,7 @@ func (tx *TransactionSimple) SerializeAdvanced(writer *helpers.BufferWriter, inc
 
 	writer.WriteUvarint(uint64(tx.TxScript))
 	writer.WriteUvarint(tx.Nonce)
+	writer.WriteToken(tx.Token)
 
 	writer.WriteUvarint(uint64(len(tx.Vin)))
 	for _, vin := range tx.Vin {
@@ -237,6 +239,9 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 	}
 
 	if tx.Nonce, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	if tx.Token, err = reader.ReadToken(); err != nil {
 		return
 	}
 

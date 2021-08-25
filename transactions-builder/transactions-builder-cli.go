@@ -35,12 +35,6 @@ func (builder *TransactionsBuilder) readFees() (out *TransactionsBuilderFeeFloat
 		}
 	}
 
-	if fee.Fixed != 0 || fee.PerByte != 0 || fee.PerByteAuto {
-		if fee.Token, ok = gui.GUI.OutputReadBytes("Fee Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH}); !ok {
-			return
-		}
-	}
-
 	return fee, true
 }
 
@@ -126,7 +120,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateSimpleTx_Float([]string{walletAddress.AddressEncoded}, nonce, []float64{amount}, [][]byte{token}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, [][]byte{token}, data, fee, propagate, true, true, func(status string) {
+		tx, err := builder.CreateSimpleTx_Float([]string{walletAddress.AddressEncoded}, nonce, token, []float64{amount}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, data, fee, propagate, true, true, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 

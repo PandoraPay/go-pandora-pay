@@ -31,31 +31,32 @@ func setFeeFixedTxNow(fixedFee uint64, value *uint64) {
 
 func setFee(tx *transaction.Transaction, fee *TransactionsWizardFeeExtra) error {
 
-	if fee.Fixed == 0 {
-
-		if fee.PerByte == 0 && !fee.PerByteAuto {
-			return nil
-		}
-
-		if fee.PerByte > 0 && fee.PerByteAuto {
-			return errors.New("PerBye is set and PerByteAuto")
-		}
-
-		if fee.PerByte == 0 {
-			if config_fees.FEES_PER_BYTE[string(fee.Token)] == 0 {
-				return errors.New("The token will most like not be accepted by other miners")
-			}
-			fee.PerByte = config_fees.FEES_PER_BYTE[string(fee.Token)]
-		}
-	}
-
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
+
 		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
+
+		if fee.Fixed == 0 {
+
+			if fee.PerByte == 0 && !fee.PerByteAuto {
+				return nil
+			}
+
+			if fee.PerByte > 0 && fee.PerByteAuto {
+				return errors.New("PerBye is set and PerByteAuto")
+			}
+
+			if fee.PerByte == 0 {
+				if config_fees.FEES_PER_BYTE[string(base.Token)] == 0 {
+					return errors.New("The token will most like not be accepted by other miners")
+				}
+				fee.PerByte = config_fees.FEES_PER_BYTE[string(base.Token)]
+			}
+		}
 
 		if fee.PayInExtra {
 
-			if !bytes.Equal(fee.Token, config.NATIVE_TOKEN) {
+			if !bytes.Equal(base.Token, config.NATIVE_TOKEN) {
 				return errors.New("Pay In Extra can not be paid in a different token")
 			}
 
@@ -71,16 +72,13 @@ func setFee(tx *transaction.Transaction, fee *TransactionsWizardFeeExtra) error 
 
 		} else {
 
-			for _, vin := range tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin {
-				if bytes.Equal(vin.Token, fee.Token) {
-
-					if fee.Fixed > 0 {
-						setFeeFixedTxNow(fee.Fixed, &vin.Amount)
-					} else {
-						setFeeTxNow(tx, fee.PerByte, &vin.Amount)
-					}
-					return nil
+			for _, vin := range base.Vin {
+				if fee.Fixed > 0 {
+					setFeeFixedTxNow(fee.Fixed, &vin.Amount)
+				} else {
+					setFeeTxNow(tx, fee.PerByte, &vin.Amount)
 				}
+				return nil
 			}
 
 			return errors.New("There is no input to set the fee!")

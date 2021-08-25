@@ -7,7 +7,6 @@ import (
 
 type TransactionSimpleInput struct {
 	Amount    uint64
-	Token     helpers.HexBytes //20
 	PublicKey helpers.HexBytes //33
 	Signature helpers.HexBytes //64
 	Bloom     *TransactionSimpleInputBloom
@@ -15,7 +14,6 @@ type TransactionSimpleInput struct {
 
 func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter, inclSignature bool) {
 	writer.WriteUvarint(vin.Amount)
-	writer.WriteToken(vin.Token)
 	writer.Write(vin.PublicKey)
 	if inclSignature {
 		writer.Write(vin.Signature)
@@ -25,9 +23,6 @@ func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter, inclS
 func (vin *TransactionSimpleInput) Deserialize(reader *helpers.BufferReader) (err error) {
 
 	if vin.Amount, err = reader.ReadUvarint(); err != nil {
-		return
-	}
-	if vin.Token, err = reader.ReadToken(); err != nil {
 		return
 	}
 	if vin.PublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {

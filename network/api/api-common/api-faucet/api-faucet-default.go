@@ -52,7 +52,7 @@ func (api *APICommonFaucet) GetFaucetCoins(request *APIFaucetCoinsRequest) ([]by
 		return nil, err
 	}
 
-	tx, err := api.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, []string{request.Address}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, [][]byte{config.NATIVE_TOKEN}, &wizard.TransactionsWizardData{[]byte("Testnet Faucet Tx"), false, nil}, &wizard.TransactionsWizardFee{0, 0, true, []byte{}}, true, false, false, func(status string) {
+	tx, err := api.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, []string{request.Address}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, &wizard.TransactionsWizardData{[]byte("Testnet Faucet Tx"), false, nil}, &wizard.TransactionsWizardFee{0, 0, true}, true, false, false, func(status string) {
 
 	})
 	if err != nil {

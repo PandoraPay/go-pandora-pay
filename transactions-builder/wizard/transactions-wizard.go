@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	"pandora-pay/config"
 	"pandora-pay/cryptography"
 )
 
@@ -26,13 +27,13 @@ func signSimpleTransaction(tx *transaction.Transaction, privateKeys []*addresses
 	return
 }
 
-func CreateSimpleTxOneInOneOut(nonce uint64, key []byte, amount uint64, token []byte, dst string, dstAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
-	return CreateSimpleTx(nonce, [][]byte{key}, []uint64{amount}, [][]byte{token}, []string{dst}, []uint64{dstAmount}, [][]byte{token}, data, fee, statusCallback)
+func CreateSimpleTxOneInOneOut(nonce uint64, token []byte, key []byte, amount uint64, dst string, dstAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
+	return CreateSimpleTx(nonce, token, [][]byte{key}, []uint64{amount}, []string{dst}, []uint64{dstAmount}, data, fee, statusCallback)
 }
 
-func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]byte, dsts []string, dstsAmounts []uint64, dstsTokens [][]byte, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
+func CreateSimpleTx(nonce uint64, token []byte, keys [][]byte, amounts []uint64, dsts []string, dstsAmounts []uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
 
-	if len(keys) != len(amounts) || len(amounts) != len(tokens) || len(amounts) == 0 {
+	if len(keys) != len(amounts) || len(amounts) == 0 {
 		return nil, errors.New("Input lengths are a mismatch")
 	}
 	if len(dsts) != len(dstsAmounts) {
@@ -47,7 +48,6 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 
 		vin[i] = &transaction_simple_parts.TransactionSimpleInput{
 			Amount:    amounts[i],
-			Token:     tokens[i],
 			PublicKey: privateKeys[i].GeneratePublicKey(),
 		}
 	}
@@ -61,7 +61,6 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 		vout[i] = &transaction_simple_parts.TransactionSimpleOutput{
 			PublicKey: outAddress.PublicKey,
 			Amount:    dstsAmounts[i],
-			Token:     dstsTokens[i],
 		}
 	}
 
@@ -76,6 +75,7 @@ func CreateSimpleTx(nonce uint64, keys [][]byte, amounts []uint64, tokens [][]by
 		Data:        dataFinal,
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			Nonce: nonce,
+			Token: token,
 			Vin:   vin,
 			Vout:  vout,
 		},
@@ -130,6 +130,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript: transaction_simple.SCRIPT_UNSTAKE,
 			Nonce:    nonce,
+			Token:    config.NATIVE_TOKEN,
 			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleUnstake{
 				Amount: unstakeAmount,
 			},
@@ -202,6 +203,7 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript: transaction_simple.SCRIPT_DELEGATE,
 			Nonce:    nonce,
+			Token:    config.NATIVE_TOKEN,
 			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleDelegate{
 				Amount:       delegateAmount,
 				HasNewData:   delegateHasNewData,

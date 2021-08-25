@@ -25,18 +25,21 @@ func (mempool *Mempool) GetBalance(publicKey []byte, balance uint64, token []byt
 	for _, tx := range txs {
 		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			for _, vin := range base.Vin {
-				if bytes.Equal(vin.PublicKey, publicKey) && bytes.Equal(vin.Token, token) {
-					if err := helpers.SafeUint64Sub(&out, vin.Amount); err != nil {
-						return 0, err
+			if bytes.Equal(base.Token, token) {
+
+				for _, vin := range base.Vin {
+					if bytes.Equal(vin.PublicKey, publicKey) {
+						if err := helpers.SafeUint64Sub(&out, vin.Amount); err != nil {
+							return 0, err
+						}
 					}
 				}
-			}
 
-			for _, vout := range base.Vout {
-				if bytes.Equal(vout.PublicKey, publicKey) && bytes.Equal(vout.Token, token) {
-					if err := helpers.SafeUint64Add(&out, vout.Amount); err != nil {
-						return 0, err
+				for _, vout := range base.Vout {
+					if bytes.Equal(vout.PublicKey, publicKey) {
+						if err := helpers.SafeUint64Add(&out, vout.Amount); err != nil {
+							return 0, err
+						}
 					}
 				}
 			}
