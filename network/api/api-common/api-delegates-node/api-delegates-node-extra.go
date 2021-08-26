@@ -87,6 +87,7 @@ func (api *APIDelegatesNode) updateAccountsChanges() {
 								0,
 								false,
 								nil,
+								nil,
 								pendingDelegatingStakeChange.publicKey,
 								"",
 								&wallet_address.WalletAddressDelegatedStake{

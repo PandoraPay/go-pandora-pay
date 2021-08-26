@@ -73,9 +73,15 @@ func (wallet *Wallet) ImportPrivateKey(name string, privateKey []byte) (*wallet_
 		return nil, errors.New("Invalid PrivateKey length")
 	}
 
+	priv := &addresses.PrivateKey{Key: privateKey}
+	reg, err := priv.GetRegistration()
+	if err != nil {
+		return nil, err
+	}
 	addr := &wallet_address.WalletAddress{
 		Name:           name,
-		PrivateKey:     &addresses.PrivateKey{Key: privateKey},
+		PrivateKey:     priv,
+		Registration:   reg,
 		SeedIndex:      1,
 		DelegatedStake: nil,
 		IsMine:         true,
@@ -97,7 +103,7 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 		return errors.New("Wallet was not loaded!")
 	}
 
-	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, adr.PublicKey, 0, nil)
+	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, adr.PublicKey, nil, 0, nil)
 	if err != nil {
 		return
 	}
@@ -138,7 +144,7 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 	}
 
 	var addr1 *addresses.Address
-	if addr1, err = adr.PrivateKey.GenerateAddress(0, []byte{}); err != nil {
+	if addr1, err = adr.PrivateKey.GenerateAddress(false, 0, []byte{}); err != nil {
 		return
 	}
 
@@ -213,14 +219,21 @@ func (wallet *Wallet) AddNewAddress(lock bool) (*wallet_address.WalletAddress, e
 		return nil, errors.New("Wallet was not loaded!")
 	}
 
-	key, err := wallet.GeneratePrivateKey(wallet.SeedIndex, false)
+	privateKey, err := wallet.GeneratePrivateKey(wallet.SeedIndex, false)
+	if err != nil {
+		return nil, err
+	}
+
+	key := &addresses.PrivateKey{Key: privateKey}
+	reg, err := key.GetRegistration()
 	if err != nil {
 		return nil, err
 	}
 
 	adr := &wallet_address.WalletAddress{
 		Name:           "Addr " + strconv.FormatUint(uint64(wallet.SeedIndex), 10),
-		PrivateKey:     &addresses.PrivateKey{Key: key},
+		PrivateKey:     key,
+		Registration:   reg,
 		SeedIndex:      wallet.SeedIndex,
 		DelegatedStake: nil,
 		IsMine:         true,

@@ -2,30 +2,31 @@ package addresses
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/cryptolib"
 	"pandora-pay/helpers"
-	base58 "pandora-pay/helpers/base58"
 )
 
 type Address struct {
-	Network   uint64           `json:"network"`
-	Version   AddressVersion   `json:"version"`
-	PublicKey helpers.HexBytes `json:"publicKey"`
-	Amount    uint64           `json:"amount"`    // amount to be paid
-	PaymentID helpers.HexBytes `json:"paymentId"` // payment id
+	Network      uint64           `json:"network"`
+	Version      AddressVersion   `json:"version"`
+	PublicKey    helpers.HexBytes `json:"publicKey"`
+	Registration helpers.HexBytes `json:"registration"`
+	Amount       uint64           `json:"amount"`    // amount to be paid
+	PaymentID    helpers.HexBytes `json:"paymentId"` // payment id
 }
 
-func NewAddr(network uint64, version AddressVersion, publicKey []byte, amount uint64, paymentID []byte) (*Address, error) {
+func NewAddr(network uint64, version AddressVersion, publicKey []byte, registration []byte, amount uint64, paymentID []byte) (*Address, error) {
 	if len(paymentID) != 8 && len(paymentID) != 0 {
 		return nil, errors.New("Invalid PaymentId. It must be an 8 byte")
 	}
-	return &Address{network, version, publicKey, amount, paymentID}, nil
+	return &Address{network, version, publicKey, registration, amount, paymentID}, nil
 }
 
-func CreateAddr(key []byte, amount uint64, paymentID []byte) (*Address, error) {
+func CreateAddr(key, registration []byte, amount uint64, paymentID []byte) (*Address, error) {
 
 	var publicKey []byte
 
@@ -38,7 +39,7 @@ func CreateAddr(key []byte, amount uint64, paymentID []byte) (*Address, error) {
 		return nil, errors.New("Invalid Key length")
 	}
 
-	return NewAddr(config.NETWORK_SELECTED, version, publicKey, amount, paymentID)
+	return NewAddr(config.NETWORK_SELECTED, version, publicKey, registration, amount, paymentID)
 }
 
 func (a *Address) EncodeAddr() string {
@@ -66,6 +67,9 @@ func (a *Address) EncodeAddr() string {
 
 	writer.WriteByte(a.IntegrationByte())
 
+	if a.IsIntegratedRegistration() {
+		writer.Write(a.Registration)
+	}
 	if a.IsIntegratedAddress() {
 		writer.Write(a.PaymentID)
 	}
@@ -77,7 +81,7 @@ func (a *Address) EncodeAddr() string {
 
 	checksum := cryptography.GetChecksum(buffer)
 	buffer = append(buffer, checksum...)
-	ret := base58.Encode(buffer)
+	ret := base64.StdEncoding.EncodeToString(buffer)
 
 	return prefix + ret
 }
@@ -106,7 +110,7 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, errors.New("Address network is invalid")
 	}
 
-	buf, err := base58.Decode(input[config.NETWORK_BYTE_PREFIX_LENGTH:])
+	buf, err := base64.StdEncoding.DecodeString(input[config.NETWORK_BYTE_PREFIX_LENGTH:])
 	if err != nil {
 		return nil, err
 	}
@@ -142,11 +146,16 @@ func DecodeAddr(input string) (*Address, error) {
 	}
 
 	if integrationByte&1 != 0 {
-		if adr.PaymentID, err = reader.ReadBytes(8); err != nil {
+		if adr.Registration, err = reader.ReadBytes(cryptography.SignatureSize); err != nil {
 			return nil, err
 		}
 	}
 	if integrationByte&(1<<1) != 0 {
+		if adr.PaymentID, err = reader.ReadBytes(8); err != nil {
+			return nil, err
+		}
+	}
+	if integrationByte&(1<<2) != 0 {
 		if adr.Amount, err = reader.ReadUvarint(); err != nil {
 			return nil, err
 		}
@@ -158,15 +167,25 @@ func DecodeAddr(input string) (*Address, error) {
 func (a *Address) IntegrationByte() (out byte) {
 
 	out = 0
-	if len(a.PaymentID) > 0 {
+
+	if len(a.Registration) > 0 {
 		out |= 1
 	}
 
-	if a.Amount > 0 {
+	if len(a.PaymentID) > 0 {
 		out |= 1 << 1
 	}
 
+	if a.Amount > 0 {
+		out |= 1 << 2
+	}
+
 	return
+}
+
+// tells whether address contains a paymentId
+func (a *Address) IsIntegratedRegistration() bool {
+	return len(a.Registration) > 0
 }
 
 // tells whether address contains a paymentId
@@ -174,14 +193,9 @@ func (a *Address) IsIntegratedAddress() bool {
 	return len(a.PaymentID) > 0
 }
 
-// tells whether address contains a paymentId
+// tells whether address contains amount
 func (a *Address) IsIntegratedAmount() bool {
 	return a.Amount > 0
-}
-
-// if address has amount
-func (a Address) IntegratedAmount() uint64 {
-	return a.Amount
 }
 
 func (a Address) EncryptMessage(message []byte) ([]byte, error) {

@@ -11,11 +11,12 @@ import (
 
 type Account struct {
 	helpers.SerializableInterface `json:"-"`
-	Version                       uint64               `json:"version"`
-	Nonce                         uint64               `json:"nonce"`
-	Balances                      []*Balance           `json:"balances"`
-	DelegatedStakeVersion         uint64               `json:"delegatedStakeVersion"`
-	DelegatedStake                *dpos.DelegatedStake `json:"delegatedStake"`
+	Version                       uint64                `json:"version"`
+	Nonce                         uint64                `json:"nonce"`
+	Balances                      []*Balance            `json:"balances"`
+	BalancesHomo                  []*BalanceHomomorphic `json:"balancesHomo"`
+	DelegatedStakeVersion         uint64                `json:"delegatedStakeVersion"`
+	DelegatedStake                *dpos.DelegatedStake  `json:"delegatedStake"`
 }
 
 func (account *Account) Validate() error {
@@ -30,10 +31,6 @@ func (account *Account) Validate() error {
 
 func (account *Account) HasDelegatedStake() bool {
 	return account.DelegatedStakeVersion == 1
-}
-
-func (account *Account) IsAccountEmpty() bool {
-	return len(account.Balances) == 0 && (!account.HasDelegatedStake() || (account.HasDelegatedStake() && account.DelegatedStake.IsDelegatedStakeEmpty()))
 }
 
 func (account *Account) IncrementNonce(sign bool) error {
@@ -151,14 +148,18 @@ func (account *Account) Serialize(writer *helpers.BufferWriter) {
 
 	writer.WriteUvarint(account.Version)
 	writer.WriteUvarint(account.Nonce)
-	writer.WriteUvarint(uint64(len(account.Balances)))
 
-	for i := 0; i < len(account.Balances); i++ {
-		account.Balances[i].Serialize(writer)
+	writer.WriteUvarint16(uint16(len(account.Balances)))
+	for _, balance := range account.Balances {
+		balance.Serialize(writer)
+	}
+
+	writer.WriteUvarint16(uint16(len(account.BalancesHomo)))
+	for _, balanceHomo := range account.BalancesHomo {
+		balanceHomo.Serialize(writer)
 	}
 
 	writer.WriteUvarint(account.DelegatedStakeVersion)
-
 	if account.DelegatedStakeVersion == 1 {
 		account.DelegatedStake.Serialize(writer)
 	}
@@ -198,17 +199,29 @@ func (account *Account) Deserialize(reader *helpers.BufferReader) (err error) {
 		return
 	}
 
-	var n uint64
-	if n, err = reader.ReadUvarint(); err != nil {
+	var n uint16
+	if n, err = reader.ReadUvarint16(); err != nil {
 		return
 	}
 	account.Balances = make([]*Balance, n)
-	for i := uint64(0); i < n; i++ {
+	for i := uint16(0); i < n; i++ {
 		var balance = new(Balance)
 		if err = balance.Deserialize(reader); err != nil {
 			return
 		}
 		account.Balances[i] = balance
+	}
+
+	if n, err = reader.ReadUvarint16(); err != nil {
+		return
+	}
+	account.BalancesHomo = make([]*BalanceHomomorphic, n)
+	for i := uint16(0); i < n; i++ {
+		var balance = new(BalanceHomomorphic)
+		if err = balance.Deserialize(reader); err != nil {
+			return
+		}
+		account.BalancesHomo[i] = balance
 	}
 
 	if account.DelegatedStakeVersion, err = reader.ReadUvarint(); err != nil {

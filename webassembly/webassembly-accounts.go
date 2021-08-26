@@ -20,24 +20,24 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 
 		var err error
-		var key, paymentId []byte
+		var key, registration, paymentId []byte
 		var amount uint64
 
 		if key, err = hex.DecodeString(args[0].String()); err != nil {
 			return nil, err
 		}
 
-		if len(args) >= 2 {
-			amount = uint64(args[1].Int())
+		if registration, err = hex.DecodeString(args[1].String()); err != nil {
+			return nil, err
 		}
 
-		if len(args) >= 3 {
-			if paymentId, err = hex.DecodeString(args[2].String()); err != nil {
-				return nil, err
-			}
+		amount = uint64(args[2].Int())
+
+		if paymentId, err = hex.DecodeString(args[3].String()); err != nil {
+			return nil, err
 		}
 
-		addr, err := addresses.CreateAddr(key, amount, paymentId)
+		addr, err := addresses.CreateAddr(key, registration, amount, paymentId)
 		if err != nil {
 			return nil, err
 		}

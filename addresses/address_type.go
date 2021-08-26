@@ -3,7 +3,8 @@ package addresses
 type AddressVersion uint64
 
 const (
-	SIMPLE_PUBLIC_KEY AddressVersion = 0
+	SIMPLE_PUBLIC_KEY              AddressVersion = 0
+	SIMPLE_PUBLIC_KEY_REGISTRATION AddressVersion = 1
 )
 
 func (e AddressVersion) String() string {

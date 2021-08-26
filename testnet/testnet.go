@@ -97,7 +97,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 	sum := uint64(0)
 	for i := 0; i < count; i++ {
 		privateKey := addresses.GenerateNewPrivateKey()
-		addr, err := privateKey.GenerateAddress(0, helpers.EmptyBytes(0))
+		addr, err := privateKey.GenerateAddress(false, 0, helpers.EmptyBytes(0))
 		if err != nil {
 			return err
 		}

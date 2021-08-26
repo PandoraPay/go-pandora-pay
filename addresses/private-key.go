@@ -16,9 +16,22 @@ func (pk *PrivateKey) GeneratePublicKey() []byte {
 	return publicKey.EncodeCompressed()
 }
 
-func (pk *PrivateKey) GenerateAddress(amount uint64, paymentID []byte) (*Address, error) {
+func (pk *PrivateKey) GenerateAddress(registration bool, amount uint64, paymentID []byte) (*Address, error) {
 	publicKey := pk.GeneratePublicKey()
-	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY, publicKey, amount, paymentID)
+
+	var reg []byte
+	var err error
+	if registration {
+		if reg, err = pk.GetRegistration(); err != nil {
+			return nil, err
+		}
+	}
+
+	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY, publicKey, reg, amount, paymentID)
+}
+
+func (pk *PrivateKey) GetRegistration() ([]byte, error) {
+	return pk.Sign([]byte("registration"))
 }
 
 //make sure message is a hash to avoid leaking any parts of the private key

@@ -15,6 +15,7 @@ type WalletAddress struct {
 	SeedIndex      uint32                       `json:"seedIndex"`
 	IsMine         bool                         `json:"isMine"`
 	PrivateKey     *addresses.PrivateKey        `json:"privateKey"`
+	Registration   helpers.HexBytes             `json:"registration"`
 	PublicKey      helpers.HexBytes             `json:"publicKey"`
 	AddressEncoded string                       `json:"addressEncoded"`
 	DelegatedStake *WalletAddressDelegatedStake `json:"delegatedStake"`
@@ -70,7 +71,7 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDele
 	finalKey := cryptography.SHA3(key.Key)
 	privateKey := &addresses.PrivateKey{Key: finalKey}
 
-	address, err := privateKey.GenerateAddress(0, []byte{})
+	address, err := privateKey.GenerateAddress(false, 0, []byte{})
 	if err != nil {
 		return nil, err
 	}
