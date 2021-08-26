@@ -81,32 +81,27 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			}
 		}
 
-		tok := token.Token{
-			Version:          0,
-			Name:             config.NATIVE_TOKEN_NAME,
-			Ticker:           config.NATIVE_TOKEN_TICKER,
-			Description:      config.NATIVE_TOKEN_DESCRIPTION,
-			DecimalSeparator: byte(config.DECIMAL_SEPARATOR),
-			CanBurn:          true,
-			CanMint:          true,
-			Supply:           supply,
-			MaxSupply:        config.MAX_SUPPLY_COINS_UNITS,
-			Key:              config.BURN_PUBLIC_KEY,
-			SupplyKey:        config.BURN_PUBLIC_KEY,
+		tok := &token.Token{
+			Version:                  0,
+			Name:                     config.NATIVE_TOKEN_NAME,
+			Ticker:                   config.NATIVE_TOKEN_TICKER,
+			Description:              config.NATIVE_TOKEN_DESCRIPTION,
+			DecimalSeparator:         byte(config.DECIMAL_SEPARATOR),
+			CanChangePublicKey:       false,
+			CanChangeSupplyPublicKey: false,
+			CanBurn:                  true,
+			CanMint:                  true,
+			Supply:                   supply,
+			MaxSupply:                config.MAX_SUPPLY_COINS_UNITS,
+			UpdatePublicKey:          config.BURN_PUBLIC_KEY,
+			SupplyPublicKey:          config.BURN_PUBLIC_KEY,
 		}
 
-		if err = toks.CreateToken(config.NATIVE_TOKEN, &tok); err != nil {
+		if err = toks.CreateToken(config.NATIVE_TOKEN, tok); err != nil {
 			return
 		}
 
 		chainData.TokensCount = 1
-		if err = saveTokensInfo(toks); err != nil {
-			return
-		}
-
-		if err = toks.Tx.Put("tokenInfo_ByIndex:"+strconv.FormatUint(0, 10), config.NATIVE_TOKEN_FULL); err != nil {
-			return
-		}
 
 		toks.CommitChanges()
 		accs.CommitChanges()
@@ -115,6 +110,13 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			return
 		}
 		if err = accs.WriteToStore(); err != nil {
+			return
+		}
+
+		if err = saveTokensInfo(toks); err != nil {
+			return
+		}
+		if err = toks.Tx.Put("tokenInfo_ByIndex:"+strconv.FormatUint(0, 10), config.NATIVE_TOKEN_FULL); err != nil {
 			return
 		}
 

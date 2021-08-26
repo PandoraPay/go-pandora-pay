@@ -70,8 +70,8 @@ type APITransactionInfoRequest struct {
 }
 
 type APIAccountBaseRequest struct {
-	Address string           `json:"address,omitempty"`
-	Hash    helpers.HexBytes `json:"hash,omitempty"`
+	Address   string           `json:"address,omitempty"`
+	PublicKey helpers.HexBytes `json:"publicKey,omitempty"`
 }
 
 type APIAccountRequest struct {
@@ -92,8 +92,8 @@ func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
 			return nil, errors.New("Invalid address")
 		}
 		publicKey = address.PublicKey
-	} else if request.Hash != nil && len(request.Hash) == cryptography.PublicKeySize {
-		publicKey = request.Hash
+	} else if request.PublicKey != nil && len(request.PublicKey) == cryptography.PublicKeySize {
+		publicKey = request.PublicKey
 	} else {
 		return nil, errors.New("Invalid address")
 	}
@@ -136,8 +136,8 @@ func (self *APIAccountBaseRequest) ImportFromValues(values *url.Values) (err err
 
 	if values.Get("address") != "" {
 		self.Address = values.Get("address")
-	} else if values.Get("hash") != "" {
-		self.Hash, err = hex.DecodeString(values.Get("hash"))
+	} else if values.Get("publicKey") != "" {
+		self.PublicKey, err = hex.DecodeString(values.Get("publicKey"))
 	} else {
 		err = errors.New("parameter 'address' or 'hash' was not specified")
 	}

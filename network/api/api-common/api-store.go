@@ -181,10 +181,10 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKey(publicKey []byte, next
 	return
 }
 
-func (apiStore *APIStore) openLoadTokenFromPublicKey(publicKey []byte) (tok *token.Token, errFinal error) {
+func (apiStore *APIStore) openLoadTokenFromHash(hash []byte) (tok *token.Token, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		toks := tokens.NewTokens(reader)
-		tok, err = toks.GetToken(publicKey)
+		tok, err = toks.GetToken(hash)
 		return
 	})
 	return

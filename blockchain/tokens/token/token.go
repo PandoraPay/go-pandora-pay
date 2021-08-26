@@ -16,18 +16,18 @@ var regexTokenDescription = regexp.MustCompile("[\\w|\\W]+")
 type Token struct {
 	helpers.SerializableInterface `json:"-"`
 	Version                       uint64           `json:"version,omitempty"`
-	CanUpgrade                    bool             `json:"canUpgrade,omitempty"`         //upgrade different settings
-	CanMint                       bool             `json:"canMint,omitempty"`            //increase supply
-	CanBurn                       bool             `json:"canBurn,omitempty"`            //decrease supply
-	CanChangeKey                  bool             `json:"canChangeKey,omitempty"`       //can change key
-	CanChangeSupplyKey            bool             `json:"canChangeSupplyKey,omitempty"` //can change supply key
-	CanPause                      bool             `json:"canPause,omitempty"`           //can pause (suspend transactions)
-	CanFreeze                     bool             `json:"canFreeze,omitempty"`          //freeze supply changes
+	CanUpgrade                    bool             `json:"canUpgrade,omitempty"`               //upgrade different settings
+	CanMint                       bool             `json:"canMint,omitempty"`                  //increase supply
+	CanBurn                       bool             `json:"canBurn,omitempty"`                  //decrease supply
+	CanChangePublicKey            bool             `json:"canChangePublicKey,omitempty"`       //can change key
+	CanChangeSupplyPublicKey      bool             `json:"canChangeSupplyPublicKey,omitempty"` //can change supply key
+	CanPause                      bool             `json:"canPause,omitempty"`                 //can pause (suspend transactions)
+	CanFreeze                     bool             `json:"canFreeze,omitempty"`                //freeze supply changes
 	DecimalSeparator              byte             `json:"decimalSeparator,omitempty"`
 	MaxSupply                     uint64           `json:"maxSupply,omitempty"`
 	Supply                        uint64           `json:"supply,omitempty"`
-	Key                           helpers.HexBytes `json:"key"`                 //20 byte
-	SupplyKey                     helpers.HexBytes `json:"supplyKey,omitempty"` //20 byte
+	UpdatePublicKey               helpers.HexBytes `json:"updatePublicKey,omitempty"` //33 byte
+	SupplyPublicKey               helpers.HexBytes `json:"supplyPublicKey,omitempty"` //33 byte
 	Name                          string           `json:"name"`
 	Ticker                        string           `json:"ticker"`
 	Description                   string           `json:"description,omitempty"`
@@ -102,8 +102,8 @@ func (token *Token) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteBool(token.CanUpgrade)
 	writer.WriteBool(token.CanMint)
 	writer.WriteBool(token.CanBurn)
-	writer.WriteBool(token.CanChangeKey)
-	writer.WriteBool(token.CanChangeSupplyKey)
+	writer.WriteBool(token.CanChangePublicKey)
+	writer.WriteBool(token.CanChangeSupplyPublicKey)
 	writer.WriteBool(token.CanPause)
 	writer.WriteBool(token.CanFreeze)
 	writer.WriteByte(token.DecimalSeparator)
@@ -111,8 +111,8 @@ func (token *Token) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(token.MaxSupply)
 	writer.WriteUvarint(token.Supply)
 
-	writer.Write(token.Key)
-	writer.Write(token.SupplyKey)
+	writer.Write(token.UpdatePublicKey)
+	writer.Write(token.SupplyPublicKey)
 
 	writer.WriteString(token.Name)
 	writer.WriteString(token.Ticker)
@@ -140,10 +140,10 @@ func (token *Token) Deserialize(reader *helpers.BufferReader) (err error) {
 	if token.CanBurn, err = reader.ReadBool(); err != nil {
 		return
 	}
-	if token.CanChangeKey, err = reader.ReadBool(); err != nil {
+	if token.CanChangePublicKey, err = reader.ReadBool(); err != nil {
 		return
 	}
-	if token.CanChangeSupplyKey, err = reader.ReadBool(); err != nil {
+	if token.CanChangeSupplyPublicKey, err = reader.ReadBool(); err != nil {
 		return
 	}
 	if token.CanPause, err = reader.ReadBool(); err != nil {
@@ -161,10 +161,10 @@ func (token *Token) Deserialize(reader *helpers.BufferReader) (err error) {
 	if token.Supply, err = reader.ReadUvarint(); err != nil {
 		return
 	}
-	if token.Key, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+	if token.UpdatePublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if token.SupplyKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+	if token.SupplyPublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
 	if token.Name, err = reader.ReadString(); err != nil {

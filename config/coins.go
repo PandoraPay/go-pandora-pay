@@ -4,9 +4,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"math"
+	"pandora-pay/cryptography"
 )
 
-var BURN_PUBLIC_KEY = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xd, 0xe, 0xa, 0xd}
+var BURN_PUBLIC_KEY = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xd, 0xe, 0xa, 0xd}
 
 var (
 	DECIMAL_SEPARATOR       = 7
@@ -16,7 +17,7 @@ var (
 	MAX_SUPPLY_COINS       = uint64(42000000000)
 	MAX_SUPPLY_COINS_UNITS = ConvertToUnitsUint64Forced(MAX_SUPPLY_COINS)
 
-	TOKEN_LENGTH = 20
+	TOKEN_LENGTH = cryptography.RipemdSize
 
 	NATIVE_TOKEN_NAME        = "PANDORA"
 	NATIVE_TOKEN_TICKER      = "PANDORA"

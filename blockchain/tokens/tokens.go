@@ -4,7 +4,6 @@ import (
 	"errors"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
-	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash-map"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -16,7 +15,7 @@ type Tokens struct {
 
 func NewTokens(tx store_db_interface.StoreDBTransactionInterface) (tokens *Tokens) {
 	tokens = &Tokens{
-		HashMap: *hash_map.CreateNewHashMap(tx, "tokens", cryptography.RipemdSize),
+		HashMap: *hash_map.CreateNewHashMap(tx, "tokens", config.TOKEN_LENGTH),
 	}
 	tokens.HashMap.Deserialize = func(data []byte) (helpers.SerializableInterface, error) {
 		var tok = &token.Token{}

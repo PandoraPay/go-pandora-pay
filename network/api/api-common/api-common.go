@@ -238,7 +238,7 @@ func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) ([
 func (api *APICommon) GetTokenInfo(request *api_types.APITokenInfoRequest) ([]byte, error) {
 	var tokInfo *info.TokenInfo
 	var err error
-	if request.Hash != nil && (len(request.Hash) == cryptography.PublicKeySize || len(request.Hash) == 0) {
+	if request.Hash != nil && (len(request.Hash) == config.TOKEN_LENGTH || len(request.Hash) == 0) {
 		tokInfo, err = api.ApiStore.openLoadTokenInfo(request.Hash)
 	}
 	if err != nil || tokInfo == nil {
@@ -248,7 +248,7 @@ func (api *APICommon) GetTokenInfo(request *api_types.APITokenInfoRequest) ([]by
 }
 
 func (api *APICommon) GetToken(request *api_types.APITokenRequest) ([]byte, error) {
-	token, err := api.ApiStore.openLoadTokenFromPublicKey(request.Hash)
+	token, err := api.ApiStore.openLoadTokenFromHash(request.Hash)
 	if err != nil || token == nil {
 		return nil, err
 	}
