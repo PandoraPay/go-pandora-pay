@@ -303,7 +303,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	return tx, nil
 }
 
-func (builder *TransactionsBuilder) CreateDelegateTx_Float(from string, nonce uint64, delegateAmount float64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, delegateNewFee uint16, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateDelegateTx_Float(from string, nonce uint64, delegateAmount float64, delegateNewPubKeyGenerate bool, delegateNewPubKey []byte, delegateNewFee uint16, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	delegateAmountFinal, err := config.ConvertToUnits(delegateAmount)
 	if err != nil {
@@ -328,10 +328,10 @@ func (builder *TransactionsBuilder) CreateDelegateTx_Float(from string, nonce ui
 		return nil, err
 	}
 
-	return builder.CreateDelegateTx(from, nonce, delegateAmountFinal, delegateNewPubKeyHashGenerate, delegateNewPubKeyHash, delegateNewFee, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
+	return builder.CreateDelegateTx(from, nonce, delegateAmountFinal, delegateNewPubKeyGenerate, delegateNewPubKey, delegateNewFee, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, delegateAmount uint64, delegateNewPubKeyHashGenerate bool, delegateNewPubKeyHash []byte, delegateNewFee uint16, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, delegateAmount uint64, delegateNewPubKeyGenerate bool, delegateNewPubKey []byte, delegateNewFee uint16, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
@@ -371,17 +371,17 @@ func (builder *TransactionsBuilder) CreateDelegateTx(from string, nonce uint64, 
 		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, accountsList[0].Nonce)
 	}
 
-	if delegateNewPubKeyHashGenerate {
+	if delegateNewPubKeyGenerate {
 
 		var delegatedStake *wallet_address.WalletAddressDelegatedStake
 		if delegatedStake, err = fromWalletAddresses[0].DeriveDelegatedStake(uint32(nonce)); err != nil {
 			return nil, err
 		}
-		delegateNewPubKeyHash = delegatedStake.PublicKey
+		delegateNewPubKey = delegatedStake.PublicKey
 
 	}
 
-	if tx, err = wizard.CreateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegateAmount, delegateNewPubKeyHash, delegateNewFee, data, fee, statusCallback); err != nil {
+	if tx, err = wizard.CreateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegateAmount, delegateNewPubKey, delegateNewFee, data, fee, statusCallback); err != nil {
 		return nil, err
 	}
 

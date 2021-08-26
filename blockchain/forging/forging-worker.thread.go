@@ -130,6 +130,8 @@ func (worker *ForgingWorkerThread) forge() {
 			}
 			if walletAddr.computeStakingAmount(blkHeight) > 0 {
 				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
+			} else {
+				delete(walletsStakable, walletAddr.walletAdr.publicKeyStr)
 			}
 			validateWork()
 		case publicKeyStr := <-worker.removeWalletAddressCn:

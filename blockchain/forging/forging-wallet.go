@@ -29,7 +29,7 @@ type ForgingWallet struct {
 
 type ForgingWalletAddressUpdate struct {
 	delegatedPriv helpers.HexBytes
-	pubKeyHash    helpers.HexBytes
+	pubKey        helpers.HexBytes
 }
 
 type ForgingWalletAddress struct {
@@ -52,10 +52,10 @@ func (walletAddr *ForgingWalletAddress) clone() *ForgingWalletAddress {
 	}
 }
 
-func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKeyHash []byte) {
+func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte) {
 	w.updateWalletAddressCn <- &ForgingWalletAddressUpdate{
 		delegatedPriv,
-		pubKeyHash,
+		pubKey,
 	}
 	return
 }
@@ -126,7 +126,7 @@ func (w *ForgingWallet) processUpdates() {
 			if !ok {
 				return
 			}
-			key := string(update.pubKeyHash)
+			key := string(update.pubKey)
 
 			//let's delete it
 			if update.delegatedPriv == nil {
@@ -134,7 +134,7 @@ func (w *ForgingWallet) processUpdates() {
 				if w.addressesMap[key] != nil {
 					delete(w.addressesMap, key)
 					for i, address := range w.addresses {
-						if bytes.Equal(address.publicKey, update.pubKeyHash) {
+						if bytes.Equal(address.publicKey, update.pubKey) {
 							w.addresses = append(w.addresses[:i], w.addresses[:i+1]...)
 							w.accountRemoved(address)
 							break
@@ -155,7 +155,7 @@ func (w *ForgingWallet) processUpdates() {
 					accs := accounts.NewAccounts(reader)
 					var acc *account.Account
 
-					if acc, err = accs.GetAccount(update.pubKeyHash, chainHeight); err != nil {
+					if acc, err = accs.GetAccount(update.pubKey, chainHeight); err != nil {
 						return
 					}
 					if acc == nil {
@@ -171,8 +171,8 @@ func (w *ForgingWallet) processUpdates() {
 						address = &ForgingWalletAddress{
 							delegatedPrivateKey,
 							delegatedPublicKey,
-							update.pubKeyHash,
-							string(update.pubKeyHash),
+							update.pubKey,
+							string(update.pubKey),
 							acc,
 							-1,
 						}

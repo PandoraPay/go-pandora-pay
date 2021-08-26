@@ -25,6 +25,15 @@ func (api *APIDelegatesNode) GetDelegatesAskHttp(values *url.Values) (interface{
 		return nil, err
 	}
 
+	if publicKey := values.Get("publicKey"); publicKey != "" {
+		request.PublicKey, err = hex.DecodeString(publicKey)
+	} else {
+		err = errors.New("'publicKey' parameter is missing")
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	return api.getDelegatesAsk(request)
 }
 
