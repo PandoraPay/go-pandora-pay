@@ -17,7 +17,7 @@ func NewTokens(tx store_db_interface.StoreDBTransactionInterface) (tokens *Token
 	tokens = &Tokens{
 		HashMap: *hash_map.CreateNewHashMap(tx, "tokens", config.TOKEN_LENGTH),
 	}
-	tokens.HashMap.Deserialize = func(data []byte) (helpers.SerializableInterface, error) {
+	tokens.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {
 		var tok = &token.Token{}
 		err := tok.Deserialize(helpers.NewBufferReader(data))
 		return tok, err

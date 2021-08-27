@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -107,9 +108,11 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 				if acc == nil {
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))
 				} else {
+
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Nonce", strconv.FormatUint(acc.Nonce, 10)))
+
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s %d", "BALANCES", "", len(acc.Balances)))
 					if len(acc.Balances) > 0 {
-						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", ""))
 						for _, balance := range acc.Balances {
 
 							var tok *token.Token
@@ -118,9 +121,19 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 							}
 							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(balance.Amount), 'f', config.DECIMAL_SEPARATOR, 64), tok.Name))
 						}
-					} else {
-						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES", "EMPTY"))
 					}
+
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s %d", "BALANCES ENCRYPTED", "", len(acc.BalancesHomo)))
+					if len(acc.BalancesHomo) > 0 {
+						for _, balance := range acc.BalancesHomo {
+							var tok *token.Token
+							if tok, err = toks.GetToken(balance.Token); err != nil {
+								return
+							}
+							gui.GUI.OutputWrite(fmt.Sprintf("%260s: %s", hex.EncodeToString(balance.Amount.Serialize()), tok.Name))
+						}
+					}
+
 					if acc.HasDelegatedStake() {
 						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config.ConvertToBase(acc.DelegatedStake.StakeAvailable), 'f', config.DECIMAL_SEPARATOR, 64)))
 

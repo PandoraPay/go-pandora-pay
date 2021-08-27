@@ -12,14 +12,14 @@ type HashMap struct {
 	Changes     map[string]*ChangesMapElement
 	Committed   map[string]*CommittedMapElement
 	KeyLength   int
-	Deserialize func([]byte) (helpers.SerializableInterface, error)
+	Deserialize func([]byte, []byte) (helpers.SerializableInterface, error)
 }
 
 func (hashMap *HashMap) CloneCommitted() (err error) {
 
-	for _, v := range hashMap.Committed {
+	for key, v := range hashMap.Committed {
 		if v.Element != nil {
-			if v.Element, err = hashMap.Deserialize(helpers.CloneBytes(v.Element.SerializeToBytes())); err != nil {
+			if v.Element, err = hashMap.Deserialize([]byte(key), helpers.CloneBytes(v.Element.SerializeToBytes())); err != nil {
 				return
 			}
 		}
@@ -67,7 +67,7 @@ func (hashMap *HashMap) Get(key string) (helpers.SerializableInterface, error) {
 	var out helpers.SerializableInterface
 	var err error
 	if outData != nil {
-		if out, err = hashMap.Deserialize(outData); err != nil {
+		if out, err = hashMap.Deserialize([]byte(key), outData); err != nil {
 			return nil, err
 		}
 	}
@@ -91,7 +91,7 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 	var err error
 
 	if outData != nil {
-		if out, err = hashMap.Deserialize(outData); err != nil {
+		if out, err = hashMap.Deserialize([]byte(key), outData); err != nil {
 			return false, err
 		}
 	}

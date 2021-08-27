@@ -19,17 +19,17 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 
 		var err error
 
+		publicKey, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
+		}
+
 		var acc *account.Account
 		if !args[1].IsNull() {
-			acc = &account.Account{}
+			acc = &account.Account{PublicKey: publicKey}
 			if err = json.Unmarshal([]byte(args[1].String()), &acc); err != nil {
 				return nil, err
 			}
-		}
-
-		hash, err := hex.DecodeString(args[0].String())
-		if err != nil {
-			return nil, err
 		}
 
 		mutex.Lock()
@@ -42,9 +42,9 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 
 			accs := accounts.NewAccounts(writer)
 			if acc == nil {
-				accs.Delete(string(hash))
+				accs.Delete(string(publicKey))
 			} else {
-				if err = accs.UpdateAccount(hash, acc); err != nil {
+				if err = accs.UpdateAccount(publicKey, acc); err != nil {
 					return
 				}
 			}

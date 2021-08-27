@@ -73,7 +73,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			}
 
 			var acc *account.Account
-			if acc, err = accs.GetAccountEvenEmpty(addr.PublicKey, 0); err != nil {
+			if acc, err = accs.CreateAccountValid(addr.PublicKey, addr.Registration); err != nil {
 				return
 			}
 
@@ -82,7 +82,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 					return
 				}
 			} else {
-				if err = acc.AddBalance(true, airdrop.Amount, config.NATIVE_TOKEN); err != nil {
+				if err = acc.AddBalanceHomoUint(airdrop.Amount, config.NATIVE_TOKEN); err != nil {
 					return
 				}
 			}

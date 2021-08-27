@@ -70,7 +70,7 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 		} else {
 
 			var element helpers.SerializableInterface
-			if element, err = hashMap.Deserialize(change.Transition); err != nil {
+			if element, err = hashMap.Deserialize(change.Key, change.Transition); err != nil {
 				return
 			}
 

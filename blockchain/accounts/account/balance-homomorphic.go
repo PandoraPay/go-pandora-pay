@@ -18,7 +18,7 @@ func (balance *BalanceHomomorphic) Serialize(writer *helpers.BufferWriter) {
 func (balance *BalanceHomomorphic) Deserialize(reader *helpers.BufferReader) (err error) {
 
 	var amount []byte
-	if amount, err = reader.ReadBytes(66); err != nil {
+	if amount, err = reader.ReadBytes(130); err != nil {
 		return
 	}
 	balance.Amount = new(cryptolib.ElGamal).Deserialize(amount)

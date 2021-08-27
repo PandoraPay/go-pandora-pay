@@ -109,17 +109,17 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		hash, err := hex.DecodeString(args[0].String())
+		publicKey, err := hex.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("account"), &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", hash}, api_types.RETURN_SERIALIZED})
+		data := socket.SendJSONAwaitAnswer([]byte("account"), &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", publicKey}, api_types.RETURN_SERIALIZED})
 		if data.Out == nil || data.Err != nil {
 			return nil, data.Err
 		}
 
-		acc := &account.Account{}
+		acc := &account.Account{PublicKey: publicKey}
 		if err = acc.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
 			return nil, err
 		}

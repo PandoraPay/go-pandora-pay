@@ -3,14 +3,17 @@ package account
 import (
 	"bytes"
 	"errors"
+	"math/big"
 	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
+	"pandora-pay/cryptography/cryptolib"
 	"pandora-pay/helpers"
 )
 
 type Account struct {
 	helpers.SerializableInterface `json:"-"`
+	PublicKey                     []byte                `json:"-"`
 	Version                       uint64                `json:"version"`
 	Nonce                         uint64                `json:"nonce"`
 	Balances                      []*Balance            `json:"balances"`
@@ -37,6 +40,7 @@ func (account *Account) IncrementNonce(sign bool) error {
 	return helpers.SafeUint64Update(sign, &account.Nonce, 1)
 }
 
+//todo remove
 func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) (err error) {
 
 	if amount == 0 {
@@ -84,6 +88,35 @@ func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) (err er
 	return
 }
 
+func (account *Account) AddBalanceHomoUint(amount uint64, tok []byte) (err error) {
+
+	var foundBalance *BalanceHomomorphic
+
+	for _, balance := range account.BalancesHomo {
+		if bytes.Equal(balance.Token, tok) {
+			foundBalance = balance
+			break
+		}
+	}
+
+	if foundBalance == nil {
+		var acckey cryptolib.Point
+		if err := acckey.DecodeCompressed(account.PublicKey); err != nil {
+			panic(err)
+		}
+		foundBalance = &BalanceHomomorphic{cryptolib.ConstructElGamal(acckey.G1(), cryptolib.ElGamal_BASE_G), tok}
+		account.BalancesHomo = append(account.BalancesHomo, foundBalance)
+	}
+
+	foundBalance.Amount = foundBalance.Amount.Plus(new(big.Int).SetUint64(amount))
+
+	return
+}
+
+func (account *Account) AddBalanceHomo(encryptedAmount []byte, tok []byte) (err error) {
+	panic("not implemented")
+}
+
 func (account *Account) RefreshDelegatedStake(blockHeight uint64) (err error) {
 	if account.DelegatedStakeVersion == 0 {
 		return
@@ -98,7 +131,7 @@ func (account *Account) RefreshDelegatedStake(blockHeight uint64) (err error) {
 					return
 				}
 			} else {
-				if err = account.AddBalance(true, stakePending.PendingAmount, config.NATIVE_TOKEN); err != nil {
+				if err = account.AddBalanceHomoUint(stakePending.PendingAmount, config.NATIVE_TOKEN); err != nil {
 					return
 				}
 			}

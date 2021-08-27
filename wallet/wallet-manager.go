@@ -38,7 +38,7 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (string, []byte, e
 		return "", nil, err
 	}
 
-	return addr.AddressEncoded, delegatedStake.PublicKey, nil
+	return addr.AddressRegistrationEncoded, delegatedStake.PublicKey, nil
 }
 
 func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string) (*wallet_address.WalletAddress, error) {

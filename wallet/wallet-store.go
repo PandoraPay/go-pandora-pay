@@ -214,7 +214,7 @@ func (wallet *Wallet) StartWallet() error {
 			}
 
 			if acc2 != nil { //let's clone it
-				acc = &account.Account{}
+				acc = &account.Account{PublicKey: adr.PublicKey}
 				if err = acc.Deserialize(helpers.NewBufferReader(helpers.CloneBytes(acc2.SerializeToBytes()))); err != nil {
 					return
 				}
