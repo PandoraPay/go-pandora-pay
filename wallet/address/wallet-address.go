@@ -10,15 +10,16 @@ import (
 )
 
 type WalletAddress struct {
-	Version        Version                      `json:"version"`
-	Name           string                       `json:"name"`
-	SeedIndex      uint32                       `json:"seedIndex"`
-	IsMine         bool                         `json:"isMine"`
-	PrivateKey     *addresses.PrivateKey        `json:"privateKey"`
-	Registration   helpers.HexBytes             `json:"registration"`
-	PublicKey      helpers.HexBytes             `json:"publicKey"`
-	AddressEncoded string                       `json:"addressEncoded"`
-	DelegatedStake *WalletAddressDelegatedStake `json:"delegatedStake"`
+	Version                    Version                      `json:"version"`
+	Name                       string                       `json:"name"`
+	SeedIndex                  uint32                       `json:"seedIndex"`
+	IsMine                     bool                         `json:"isMine"`
+	PrivateKey                 *addresses.PrivateKey        `json:"privateKey"`
+	Registration               helpers.HexBytes             `json:"registration"`
+	PublicKey                  helpers.HexBytes             `json:"publicKey"`
+	AddressEncoded             string                       `json:"addressEncoded"`
+	AddressRegistrationEncoded string                       `json:"addressRegistrationEncoded"`
+	DelegatedStake             *WalletAddressDelegatedStake `json:"delegatedStake"`
 }
 
 func (adr *WalletAddress) GetDelegatedStakePrivateKey() []byte {

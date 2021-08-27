@@ -143,14 +143,19 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 		return errors.New("Wallet was not loaded!")
 	}
 
-	var addr1 *addresses.Address
+	var addr1, addr2 *addresses.Address
 	if addr1, err = adr.PrivateKey.GenerateAddress(false, 0, []byte{}); err != nil {
+		return
+	}
+
+	if addr2, err = adr.PrivateKey.GenerateAddress(true, 0, []byte{}); err != nil {
 		return
 	}
 
 	publicKey := adr.PrivateKey.GeneratePublicKey()
 
 	adr.AddressEncoded = addr1.EncodeAddr()
+	adr.AddressRegistrationEncoded = addr2.EncodeAddr()
 	adr.PublicKey = publicKey
 
 	if wallet.addressesMap[string(adr.PublicKey)] != nil {

@@ -35,13 +35,18 @@ func getWalletMnemonic(this js.Value, args []js.Value) interface{} {
 func getWalletAddressPrivateKey(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 
-		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {
 			return nil, err
 		}
 
-		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
+		pubKey, err := hex.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
+		}
+
+		addr := app.Wallet.GetWalletAddressByPublicKey(pubKey)
+		if addr == nil {
+			return nil, nil
 		}
 		return hex.EncodeToString(addr.PrivateKey.Key), nil
 	})
@@ -50,15 +55,16 @@ func getWalletAddressPrivateKey(this js.Value, args []js.Value) interface{} {
 func getWalletAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 
-		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {
 			return nil, err
 		}
 
-		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
+		pubKey, err := hex.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
 		}
-		return convertJSON(addr)
+
+		return convertJSON(app.Wallet.GetWalletAddressByPublicKey(pubKey))
 	})
 }
 
