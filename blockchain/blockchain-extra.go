@@ -44,6 +44,9 @@ func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 		PrevKernelHash:     genesis.GenesisData.KernelHash,
 		Target:             new(big.Int).SetBytes(genesis.GenesisData.Target),
 		BigTotalDifficulty: new(big.Int).SetUint64(0),
+		AccountsCount:      0,
+		TransactionsCount:  0,
+		TokensCount:        0,
 	}
 }
 
@@ -76,6 +79,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			if acc, err = accs.CreateAccountValid(addr.PublicKey, addr.Registration); err != nil {
 				return
 			}
+			chainData.AccountsCount += 1
 
 			if airdrop.DelegatedStakePublicKey != nil {
 				if err = acc.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {

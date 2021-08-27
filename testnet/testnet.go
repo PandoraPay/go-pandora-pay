@@ -174,7 +174,7 @@ func (testnet *Testnet) run() {
 					if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 						accs := accounts.NewAccounts(reader)
-						if account, err = accs.GetAccountEvenEmpty(addr.PublicKey, blockHeight); err != nil {
+						if account, err = accs.GetAccount(addr.PublicKey, blockHeight); err != nil {
 							return
 						}
 

@@ -1,6 +1,7 @@
 package block
 
 import (
+	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens"
@@ -44,8 +45,11 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 	reward := config_reward.GetRewardAt(blk.Height)
 
 	var acc *account.Account
-	if acc, err = acs.GetAccountEvenEmpty(blk.Forger, blk.Height); err != nil {
+	if acc, err = acs.GetAccount(blk.Forger, blk.Height); err != nil {
 		return
+	}
+	if acc == nil {
+		return errors.New("Account not found")
 	}
 
 	if err = acc.DelegatedStake.AddStakePendingStake(reward, blk.Height); err != nil {

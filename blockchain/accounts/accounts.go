@@ -58,7 +58,6 @@ func (accounts *Accounts) GetAccountEvenEmpty(key []byte, chainHeight uint64) (*
 	return acc, err
 }
 
-//todo remove
 func (accounts *Accounts) GetAccount(key []byte, chainHeight uint64) (*account.Account, error) {
 
 	data, err := accounts.Get(string(key))
