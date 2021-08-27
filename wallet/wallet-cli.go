@@ -55,8 +55,8 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 			defer f.Close()
 
 			delegatedStakeOut := &DelegatedStakeOutput{
+				addr.AddressEncoded,
 				delegatedStake.PublicKey,
-				addr.PublicKey,
 			}
 
 			var marshal []byte

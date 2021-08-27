@@ -18,7 +18,7 @@ import (
 )
 
 type GenesisDataAirDropType struct {
-	PublicKey               helpers.HexBytes `json:"publicKey"` //20 byte
+	Address                 string           `json:"address"`
 	Amount                  uint64           `json:"amount"`
 	DelegatedStakePublicKey helpers.HexBytes `json:"delegatedStakePublicKey"`
 	DelegatedStakeFee       uint16           `json:"stakingFee"`
@@ -33,10 +33,10 @@ type GenesisDataType struct {
 }
 
 var genesisMainet = GenesisDataType{
-	Hash:       helpers.DecodeHex("e6849c309a8e48dd1518ce1f756b9feb0ce1be585510a32b40bcd6bec066d808"),
-	KernelHash: helpers.DecodeHex("000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
-	Timestamp:  uint64(time.Date(2021, time.February, 28, 0, 0, 0, 0, time.UTC).Unix()),
-	Target:     helpers.DecodeHex("000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
+	Hash:       helpers.DecodeHex(""),
+	KernelHash: helpers.DecodeHex(""),
+	Timestamp:  uint64(0),
+	Target:     helpers.DecodeHex(""),
 	AirDrops:   []*GenesisDataAirDropType{},
 }
 
@@ -122,7 +122,7 @@ func createNewGenesis(v []string) (err error) {
 			}
 
 			GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-				PublicKey:               delegatedStakeOutput.AddressPublicKey,
+				Address:                 delegatedStakeOutput.Address,
 				Amount:                  amount,
 				DelegatedStakePublicKey: delegatedStakeOutput.DelegatedStakePublicKey,
 			})
@@ -157,14 +157,15 @@ func createSimpleGenesis(wallet *wallet.Wallet) (err error) {
 	GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
 	GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 
-	var walletPublicKey, delegatedStakePublicKey []byte
-	if walletPublicKey, delegatedStakePublicKey, err = wallet.GetFirstWalletForDevnetGenesisAirdrop(); err != nil {
+	var address string
+	var delegatedStakePublicKey []byte
+	if address, delegatedStakePublicKey, err = wallet.GetFirstWalletForDevnetGenesisAirdrop(); err != nil {
 		return
 	}
 
 	amount := 100 * config_stake.GetRequiredStake(0)
 	GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-		PublicKey:               walletPublicKey,
+		Address:                 address,
 		Amount:                  amount,
 		DelegatedStakePublicKey: delegatedStakePublicKey,
 	})

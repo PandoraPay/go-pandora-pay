@@ -1,7 +1,9 @@
 package blockchain
 
 import (
+	"errors"
 	"math/big"
+	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	blockchain_sync "pandora-pay/blockchain/blockchain-sync"
@@ -61,8 +63,17 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 				return
 			}
 
+			var addr *addresses.Address
+			addr, err = addresses.DecodeAddr(airdrop.Address)
+			if err != nil {
+				return
+			}
+			if addr.IsIntegratedAmount() || addr.IsIntegratedPaymentID() {
+				return errors.New("Amount or PaymentID are integrated there should not be")
+			}
+
 			var acc *account.Account
-			if acc, err = accs.GetAccountEvenEmpty(airdrop.PublicKey, 0); err != nil {
+			if acc, err = accs.GetAccountEvenEmpty(addr.PublicKey, 0); err != nil {
 				return
 			}
 
@@ -76,7 +87,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 				}
 			}
 
-			if err = accs.UpdateAccount(airdrop.PublicKey, acc); err != nil {
+			if err = accs.UpdateAccount(addr.PublicKey, acc); err != nil {
 				return
 			}
 		}

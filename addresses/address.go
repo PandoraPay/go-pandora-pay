@@ -70,7 +70,7 @@ func (a *Address) EncodeAddr() string {
 	if a.IsIntegratedRegistration() {
 		writer.Write(a.Registration)
 	}
-	if a.IsIntegratedAddress() {
+	if a.IsIntegratedPaymentID() {
 		writer.Write(a.PaymentID)
 	}
 	if a.IsIntegratedAmount() {
@@ -189,7 +189,7 @@ func (a *Address) IsIntegratedRegistration() bool {
 }
 
 // tells whether address contains a paymentId
-func (a *Address) IsIntegratedAddress() bool {
+func (a *Address) IsIntegratedPaymentID() bool {
 	return len(a.PaymentID) > 0
 }
 

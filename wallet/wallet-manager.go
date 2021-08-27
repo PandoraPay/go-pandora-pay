@@ -23,22 +23,22 @@ func (wallet *Wallet) GetAddressesCount() int {
 	return len(wallet.Addresses)
 }
 
-func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() ([]byte, []byte, error) {
+func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (string, []byte, error) {
 
 	wallet.Lock()
 	defer wallet.Unlock()
 
 	if len(wallet.Addresses) == 0 || !wallet.Loaded {
-		return nil, nil, errors.New("Wallet is empty")
+		return "", nil, errors.New("Wallet is empty")
 	}
 
 	addr := wallet.Addresses[0]
 	delegatedStake, err := addr.DeriveDelegatedStake(0)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, err
 	}
 
-	return addr.PublicKey, delegatedStake.PublicKey, nil
+	return addr.AddressEncoded, delegatedStake.PublicKey, nil
 }
 
 func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string) (*wallet_address.WalletAddress, error) {
