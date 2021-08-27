@@ -11,6 +11,7 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
+	"pandora-pay/cryptography/cryptolib"
 	"pandora-pay/gui"
 	"pandora-pay/recovery"
 	"pandora-pay/wallet/address"
@@ -39,6 +40,37 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (string, []byte, e
 	}
 
 	return addr.AddressRegistrationEncoded, delegatedStake.PublicKey, nil
+}
+
+func (wallet *Wallet) DecodeBalanceByEncodedAddress(addressEncoded string, balance *cryptolib.ElGamal, token []byte, store bool) (uint64, error) {
+
+	address, err := addresses.DecodeAddr(addressEncoded)
+	if err != nil {
+		return 0, err
+	}
+
+	if store {
+		wallet.Lock()
+		defer wallet.Unlock()
+	} else {
+		wallet.RLock()
+		defer wallet.RUnlock()
+	}
+
+	addr := wallet.addressesMap[string(address.PublicKey)]
+	if addr == nil {
+		return 0, errors.New("address was not found")
+	}
+
+	decoded := addr.DecodeBalance(balance, token, store)
+
+	if store {
+		if err := wallet.saveWalletAddress(addr, false); err != nil {
+			gui.GUI.Error("error storing balance update", addressEncoded)
+		}
+	}
+
+	return decoded, nil
 }
 
 func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string) (*wallet_address.WalletAddress, error) {

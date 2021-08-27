@@ -39,14 +39,9 @@ func getWalletAddressPrivateKey(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		pubKey, err := hex.DecodeString(args[0].String())
+		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[0].String())
 		if err != nil {
 			return nil, err
-		}
-
-		addr := app.Wallet.GetWalletAddressByPublicKey(pubKey)
-		if addr == nil {
-			return nil, nil
 		}
 		return hex.EncodeToString(addr.PrivateKey.Key), nil
 	})
@@ -59,12 +54,12 @@ func getWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		pubKey, err := hex.DecodeString(args[0].String())
+		adr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[0].String())
 		if err != nil {
 			return nil, err
 		}
 
-		return convertJSON(app.Wallet.GetWalletAddressByPublicKey(pubKey))
+		return convertJSON(adr)
 	})
 }
 

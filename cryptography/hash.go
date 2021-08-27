@@ -4,6 +4,8 @@ import (
 	"math/rand"
 )
 
+type Bytes []byte
+
 const HashSize = 32
 const PublicKeySize = 33
 const RipemdSize = 20

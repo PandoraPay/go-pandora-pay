@@ -3,6 +3,7 @@ package cryptolib
 import (
 	"errors"
 	"pandora-pay/cryptography/bn256"
+	"runtime"
 	"sync/atomic"
 )
 
@@ -23,7 +24,9 @@ type BalanceDecoderType struct {
 func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint64) uint64 {
 	info := self.info.Load().(*BalanceDecoderInfo)
 	if info.tableSize == 0 {
-		_ = self.SetTableSize(0)
+		if err := self.SetTableSize(0); err != nil {
+			panic(err)
+		}
 		info = self.info.Load().(*BalanceDecoderInfo)
 	}
 	select {
@@ -35,7 +38,11 @@ func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint6
 func (self *BalanceDecoderType) SetTableSize(newTableSize int) error {
 
 	if newTableSize == 0 {
-		newTableSize = 1 << 20 //8mb ram
+		if runtime.GOARCH != "wasm" {
+			newTableSize = 1 << 22 //32mb ram
+		} else {
+			newTableSize = 1 << 20 //8mb ram
+		}
 	}
 	if newTableSize > 1<<24 {
 		return errors.New("Table Size is incorrect")

@@ -139,7 +139,12 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 							if tok, err = toks.GetToken(balance.Token); err != nil {
 								return
 							}
-							decoded := walletAddress.DecodeBalance(balance.Amount)
+
+							var decoded uint64
+							decoded, err = wallet.DecodeBalanceByEncodedAddress(addressStr, balance.Amount, balance.Token, false)
+							if err != nil {
+								return
+							}
 							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(decoded), 'f', config.DECIMAL_SEPARATOR, 64), tok.Name))
 						}
 					}

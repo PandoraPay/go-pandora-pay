@@ -5,22 +5,24 @@ import (
 	"errors"
 	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
+	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/cryptolib"
 	"pandora-pay/helpers"
 )
 
 type WalletAddress struct {
-	Version                    Version                      `json:"version"`
-	Name                       string                       `json:"name"`
-	SeedIndex                  uint32                       `json:"seedIndex"`
-	IsMine                     bool                         `json:"isMine"`
-	PrivateKey                 *addresses.PrivateKey        `json:"privateKey"`
-	Registration               helpers.HexBytes             `json:"registration"`
-	PublicKey                  helpers.HexBytes             `json:"publicKey"`
-	AddressEncoded             string                       `json:"addressEncoded"`
-	AddressRegistrationEncoded string                       `json:"addressRegistrationEncoded"`
-	DelegatedStake             *WalletAddressDelegatedStake `json:"delegatedStake"`
+	Version                    Version                                 `json:"version"`
+	Name                       string                                  `json:"name"`
+	SeedIndex                  uint32                                  `json:"seedIndex"`
+	IsMine                     bool                                    `json:"isMine"`
+	PrivateKey                 *addresses.PrivateKey                   `json:"privateKey"`
+	Registration               helpers.HexBytes                        `json:"registration"`
+	PublicKey                  helpers.HexBytes                        `json:"publicKey"`
+	BalancesDecoded            map[string]*WalletAddressBalanceDecoded `json:"balancesDecoded"`
+	AddressEncoded             string                                  `json:"addressEncoded"`
+	AddressRegistrationEncoded string                                  `json:"addressRegistrationEncoded"`
+	DelegatedStake             *WalletAddressDelegatedStake            `json:"delegatedStake"`
 }
 
 func (adr *WalletAddress) GetDelegatedStakePrivateKey() []byte {
@@ -85,8 +87,31 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDele
 	}, nil
 }
 
-func (adr *WalletAddress) DecodeBalance(balance *cryptolib.ElGamal) uint64 {
-	return adr.PrivateKey.DecodeBalance(balance, 0)
+func (adr *WalletAddress) DecodeBalance(balance *cryptolib.ElGamal, token []byte, store bool) uint64 {
+
+	if len(token) == 0 {
+		token = config.NATIVE_TOKEN
+	}
+
+	previousValue := uint64(0)
+	found := adr.BalancesDecoded[string(token)]
+	if found != nil {
+		previousValue = found.AmountDecoded
+	}
+
+	newValue := adr.PrivateKey.DecodeBalance(balance, previousValue)
+
+	if store {
+		if found != nil {
+			found.AmountDecoded = newValue
+		} else {
+			adr.BalancesDecoded[string(token)] = &WalletAddressBalanceDecoded{
+				newValue, token,
+			}
+		}
+	}
+
+	return newValue
 }
 
 func (adr *WalletAddress) DecryptMessage(message []byte) ([]byte, error) {

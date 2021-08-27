@@ -95,6 +95,7 @@ func (api *APIDelegatesNode) updateAccountsChanges() {
 								nil,
 								nil,
 								pendingDelegatingStakeChange.publicKey,
+								make(map[string]*wallet_address.WalletAddressBalanceDecoded),
 								addr.EncodeAddr(),
 								"",
 								&wallet_address.WalletAddressDelegatedStake{
