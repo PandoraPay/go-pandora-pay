@@ -132,6 +132,16 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 							}
 							gui.GUI.OutputWrite(fmt.Sprintf("%260s: %s", hex.EncodeToString(balance.Amount.Serialize()), tok.Name))
 						}
+
+						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES DECRYPTED", "PLEASE WAIT..."))
+						for _, balance := range acc.BalancesHomo {
+							var tok *token.Token
+							if tok, err = toks.GetToken(balance.Token); err != nil {
+								return
+							}
+							decoded := walletAddress.DecodeBalance(balance.Amount)
+							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(decoded), 'f', config.DECIMAL_SEPARATOR, 64), tok.Name))
+						}
 					}
 
 					if acc.HasDelegatedStake() {

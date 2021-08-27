@@ -10,7 +10,7 @@ import (
 var BURN_PUBLIC_KEY = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xd, 0xe, 0xa, 0xd}
 
 var (
-	DECIMAL_SEPARATOR       = 7
+	DECIMAL_SEPARATOR       = 6
 	COIN_DENOMINATION       = uint64(math.Pow10(DECIMAL_SEPARATOR))
 	COIN_DENOMINATION_FLOAT = float64(math.Pow10(DECIMAL_SEPARATOR))
 

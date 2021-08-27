@@ -6,6 +6,7 @@ import (
 	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography"
+	"pandora-pay/cryptography/cryptolib"
 	"pandora-pay/helpers"
 )
 
@@ -82,6 +83,10 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDele
 		PublicKey:      address.PublicKey,
 		LastKnownNonce: nonce,
 	}, nil
+}
+
+func (adr *WalletAddress) DecodeBalance(balance *cryptolib.ElGamal) uint64 {
+	return adr.PrivateKey.DecodeBalance(balance, 0)
 }
 
 func (adr *WalletAddress) DecryptMessage(message []byte) ([]byte, error) {

@@ -2,6 +2,7 @@ package addresses
 
 import (
 	"pandora-pay/config"
+	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/cryptolib"
 	"pandora-pay/helpers"
 )
@@ -41,6 +42,12 @@ func (pk *PrivateKey) Sign(message []byte) ([]byte, error) {
 
 func (pk *PrivateKey) Decrypt(message []byte) ([]byte, error) {
 	panic("not implemented")
+}
+
+func (pk *PrivateKey) DecodeBalance(balance *cryptolib.ElGamal, previousValue uint64) uint64 {
+	priv := new(cryptolib.BNRed).SetBytes(pk.Key)
+	balancePoint := new(bn256.G1).Add(balance.Left, new(bn256.G1).Neg(new(bn256.G1).ScalarMult(balance.Right, priv.BigInt())))
+	return cryptolib.BalanceDecoder.BalanceDecode(balancePoint, previousValue)
 }
 
 func GenerateNewPrivateKey() *PrivateKey {
