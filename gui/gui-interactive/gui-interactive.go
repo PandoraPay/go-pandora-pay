@@ -112,6 +112,7 @@ func CreateGUIInteractive() (*GUIInteractive, error) {
 				g.infoRender()
 				g.info2Render()
 				g.logsRender()
+
 				ui.Render(g.info, g.info2, g.logs, g.cmd)
 			}
 

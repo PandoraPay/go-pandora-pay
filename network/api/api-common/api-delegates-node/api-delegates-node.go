@@ -67,16 +67,6 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 		return nil, err
 	}
 
-	amount2 := acc.GetAvailableBalance(config.NATIVE_TOKEN)
-	if err = helpers.SafeUint64Add(&amount, amount2); err != nil {
-		return nil, err
-	}
-
-	requiredStake := config_stake.GetRequiredStake(chainHeight)
-	if amount < requiredStake {
-		return nil, errors.New("You will not enought to stake")
-	}
-
 	addr := api.wallet.GetWalletAddressByPublicKey(publicKey)
 	if addr != nil {
 		return json.Marshal(&ApiDelegatesNodeAskAnswer{

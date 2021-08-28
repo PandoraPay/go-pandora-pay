@@ -88,6 +88,16 @@ func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) (err er
 	return
 }
 
+//todo remove
+func (account *Account) GetAvailableBalance(token []byte) (result uint64) {
+	for _, balance := range account.Balances {
+		if bytes.Equal(balance.Token, token) {
+			return balance.Amount
+		}
+	}
+	return 0
+}
+
 func (account *Account) AddBalanceHomoUint(amount uint64, tok []byte) (err error) {
 
 	var foundBalance *BalanceHomomorphic
@@ -167,14 +177,13 @@ func (account *Account) ComputeDelegatedUnstakePending() (uint64, error) {
 	return account.DelegatedStake.ComputeDelegatedUnstakePending()
 }
 
-func (account *Account) GetAvailableBalance(token []byte) (result uint64) {
-	for _, balance := range account.Balances {
+func (account *Account) GetBalanceHomo(token []byte) (result *cryptolib.ElGamal) {
+	for _, balance := range account.BalancesHomo {
 		if bytes.Equal(balance.Token, token) {
-			result = balance.Amount
-			break
+			return balance.Amount
 		}
 	}
-	return
+	return nil
 }
 
 func (account *Account) Serialize(writer *helpers.BufferWriter) {

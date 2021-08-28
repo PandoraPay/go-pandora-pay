@@ -11,6 +11,7 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/config"
 	"pandora-pay/config/config_stake"
+	"pandora-pay/cryptography/cryptolib"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
@@ -166,7 +167,11 @@ func (testnet *Testnet) run() {
 						return
 					}
 
-					var balance, delegatedStakeAvailable, delegatedUnstakePending uint64
+					publicKey := addr.PublicKey
+
+					var delegatedStakeAvailable, delegatedUnstakePending uint64
+					var balanceHomo *cryptolib.ElGamal
+
 					var account *account.Account
 
 					gui.GUI.Log("UpdateNewChain received! 2")
@@ -174,14 +179,13 @@ func (testnet *Testnet) run() {
 					if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 						accs := accounts.NewAccounts(reader)
-						if account, err = accs.GetAccount(addr.PublicKey, blockHeight); err != nil {
+						if account, err = accs.GetAccount(publicKey, blockHeight); err != nil {
 							return
 						}
 
 						if account != nil {
 
-							balance = account.GetAvailableBalance(config.NATIVE_TOKEN)
-
+							balanceHomo = account.GetBalanceHomo(config.NATIVE_TOKEN)
 							delegatedStakeAvailable = account.GetDelegatedStakeAvailable()
 							delegatedUnstakePending, _ = account.ComputeDelegatedUnstakePending()
 
@@ -193,6 +197,11 @@ func (testnet *Testnet) run() {
 					}
 
 					if account != nil {
+
+						var balance uint64
+						if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN, false); err != nil {
+							return
+						}
 
 						if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
 							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {

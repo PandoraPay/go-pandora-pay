@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
+	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/cryptolib"
@@ -87,7 +88,28 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDele
 	}, nil
 }
 
+func (adr *WalletAddress) DecodeAccount(acc *account.Account, store bool) {
+
+	if adr.PrivateKey == nil {
+		return
+	}
+
+	if acc == nil {
+		if store {
+			adr.BalancesDecoded = make(map[string]*WalletAddressBalanceDecoded)
+		}
+		return
+	}
+	for _, balance := range acc.BalancesHomo {
+		adr.DecodeBalance(balance.Amount, balance.Token, true)
+	}
+}
+
 func (adr *WalletAddress) DecodeBalance(balance *cryptolib.ElGamal, token []byte, store bool) uint64 {
+
+	if adr.PrivateKey == nil {
+		return 0
+	}
 
 	if len(token) == 0 {
 		token = config.NATIVE_TOKEN
