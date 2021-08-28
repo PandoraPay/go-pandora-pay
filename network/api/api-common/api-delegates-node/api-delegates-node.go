@@ -3,13 +3,11 @@ package api_delegates_node
 import (
 	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/config"
-	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -59,11 +57,6 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 		acc, err = accounts.NewAccounts(reader).GetAccount(publicKey, chainHeight)
 		return
 	}); err != nil {
-		return nil, err
-	}
-
-	amount, err := acc.ComputeDelegatedStakeAvailable(chainHeight)
-	if err != nil {
 		return nil, err
 	}
 
