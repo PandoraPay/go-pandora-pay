@@ -111,18 +111,6 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Nonce", strconv.FormatUint(acc.Nonce, 10)))
 
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s %d", "BALANCES", "", len(acc.Balances)))
-					if len(acc.Balances) > 0 {
-						for _, balance := range acc.Balances {
-
-							var tok *token.Token
-							if tok, err = toks.GetToken(balance.Token); err != nil {
-								return
-							}
-							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(balance.Amount), 'f', config.DECIMAL_SEPARATOR, 64), tok.Name))
-						}
-					}
-
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s %d", "BALANCES ENCRYPTED", "", len(acc.BalancesHomo)))
 					if len(acc.BalancesHomo) > 0 {
 						for _, balance := range acc.BalancesHomo {

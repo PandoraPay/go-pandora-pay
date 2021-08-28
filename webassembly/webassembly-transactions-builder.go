@@ -53,7 +53,7 @@ func createSimpleTx_Float(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func createDelegateTx_Float(this js.Value, args []js.Value) interface{} {
+func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 
 		if len(args) != 3 || args[0].Type() != js.TypeString || args[1].Type() != js.TypeFunction || args[2].Type() != js.TypeString {
@@ -67,7 +67,6 @@ func createDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 		type DelegateTxFloatData struct {
 			From                         string                                            `json:"from"`
 			Nonce                        uint64                                            `json:"nonce"`
-			DelegateAmount               float64                                           `json:"delegateAmount"`
 			DelegateNewPublicKeyGenerate bool                                              `json:"delegateNewPublicKeyGenerate"`
 			DelegateNewPubKey            helpers.HexBytes                                  `json:"delegateNewPubKey"`
 			DelegateNewFee               uint16                                            `json:"delegateNewFee"`
@@ -82,7 +81,7 @@ func createDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.CreateDelegateTx_Float(txData.From, txData.Nonce, txData.DelegateAmount, txData.DelegateNewPublicKeyGenerate, txData.DelegateNewPubKey, txData.DelegateNewFee, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
+		tx, err := app.TransactionsBuilder.CreateUpdateDelegateTx_Float(txData.From, txData.Nonce, txData.DelegateNewPublicKeyGenerate, txData.DelegateNewPubKey, txData.DelegateNewFee, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
 			args[1].Invoke(status)
 			time.Sleep(10 * time.Millisecond)
 		})
@@ -107,13 +106,13 @@ func createUnstakeTx_Float(this js.Value, args []js.Value) interface{} {
 		}
 
 		type DelegateTxFloatData struct {
-			From          string                                                 `json:"from"`
-			Nonce         uint64                                                 `json:"nonce"`
-			UnstakeAmount float64                                                `json:"unstakeAmount"`
-			Data          *wizard.TransactionsWizardData                         `json:"data"`
-			Fee           *transactions_builder.TransactionsBuilderFeeFloatExtra `json:"fee"`
-			PropagateTx   bool                                                   `json:"propagateTx"`
-			AwaitAnswer   bool                                                   `json:"awaitAnswer"`
+			From          string                                            `json:"from"`
+			Nonce         uint64                                            `json:"nonce"`
+			UnstakeAmount float64                                           `json:"unstakeAmount"`
+			Data          *wizard.TransactionsWizardData                    `json:"data"`
+			Fee           *transactions_builder.TransactionsBuilderFeeFloat `json:"fee"`
+			PropagateTx   bool                                              `json:"propagateTx"`
+			AwaitAnswer   bool                                              `json:"awaitAnswer"`
 		}
 
 		txData := &DelegateTxFloatData{}

@@ -40,7 +40,7 @@ func (blk *Block) Verify() error {
 	return blk.Bloom.verifyIfBloomed()
 }
 
-func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allFees map[string]uint64) (err error) {
+func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allFees uint64) (err error) {
 
 	reward := config_reward.GetRewardAt(blk.Height)
 
@@ -55,16 +55,10 @@ func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allF
 	if err = acc.DelegatedStake.AddStakePendingStake(reward, blk.Height); err != nil {
 		return
 	}
-	if err = acc.DelegatedStake.AddStakePendingStake(allFees[config.NATIVE_TOKEN_STRING], blk.Height); err != nil {
+	if err = acc.DelegatedStake.AddStakePendingStake(allFees, blk.Height); err != nil {
 		return
 	}
-	for key, value := range allFees {
-		if key != config.NATIVE_TOKEN_STRING {
-			if err = acc.AddBalance(true, value, []byte(key)); err != nil {
-				return
-			}
-		}
-	}
+
 	if err = acs.UpdateAccount(blk.Forger, acc); err != nil {
 		return
 	}

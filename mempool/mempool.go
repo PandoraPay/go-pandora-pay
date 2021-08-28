@@ -5,7 +5,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
-	"pandora-pay/config"
 	"pandora-pay/config/config_fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
@@ -26,7 +25,6 @@ type mempoolTx struct {
 	Added       int64                    `json:"added"`
 	Mine        bool                     `json:"mine"`
 	FeePerByte  uint64                   `json:"feePerByte"`
-	FeeToken    []byte                   `json:"feeToken"` //20 byte
 	ChainHeight uint64                   `json:"chainHeight"`
 }
 
@@ -100,53 +98,32 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 
 		switch tx.Version {
 		case transaction_type.TX_SIMPLE:
-			txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			for _, vin := range txBase.Vin {
-				if mempool.Wallet.Exists(vin.PublicKey) {
-					mine = true
-					break
-				}
+			base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
+			if mempool.Wallet.Exists(base.Vin.PublicKey) {
+				mine = true
+				break
 			}
 		}
 
-		minerFees, err := tx.GetAllFees()
-		if err != nil {
-			finalTxs[i].err = err
-			continue
+		minerFees := tx.GetAllFees()
+		computedFeePerByte := minerFees / tx.Bloom.Size
+
+		//in case it is mine...
+		if mine {
+			computedFeePerByte = config_fees.FEES_PER_BYTE
 		}
 
-		var selectedFeeToken *string
-		var selectedFee uint64
-
-		for token := range config_fees.FEES_PER_BYTE {
-			if minerFees[token] != 0 {
-				feePerByte := minerFees[token] / tx.Bloom.Size
-				if feePerByte >= config_fees.FEES_PER_BYTE[token] {
-					selectedFeeToken = &token
-					selectedFee = minerFees[*selectedFeeToken]
-					break
-				}
-			}
-		}
-
-		//if it is mine and no fee was paid, let's fake a fee
-		if mine && selectedFeeToken == nil {
-			selectedFeeToken = &config.NATIVE_TOKEN_STRING
-			selectedFee = config_fees.FEES_PER_BYTE[config.NATIVE_TOKEN_STRING]
-		}
-
-		if selectedFeeToken == nil {
+		if computedFeePerByte < config_fees.FEES_PER_BYTE {
 			finalTxs[i].err = errors.New("Transaction fee was not accepted")
 			continue
-		} else {
-			finalTxs[i].tx = &mempoolTx{
-				Tx:          tx,
-				Added:       time.Now().Unix(),
-				FeePerByte:  selectedFee / tx.Bloom.Size,
-				FeeToken:    []byte(*selectedFeeToken),
-				Mine:        mine,
-				ChainHeight: height,
-			}
+		}
+
+		finalTxs[i].tx = &mempoolTx{
+			Tx:          tx,
+			Added:       time.Now().Unix(),
+			FeePerByte:  computedFeePerByte,
+			Mine:        mine,
+			ChainHeight: height,
 		}
 
 	}

@@ -24,11 +24,10 @@ type json_Transaction struct {
 }
 
 type json_Only_TransactionSimple struct {
-	TxScript transaction_simple.ScriptType   `json:"txScript"`
-	Nonce    uint64                          `json:"nonce"`
-	Token    helpers.HexBytes                `json:"token"`
-	Vin      []*json_TransactionSimpleInput  `json:"vin"`
-	Vout     []*json_TransactionSimpleOutput `json:"vout"`
+	TxScript transaction_simple.ScriptType `json:"txScript"`
+	Nonce    uint64                        `json:"nonce"`
+	Fee      uint64                        `json:"fee"`
+	Vin      *json_TransactionSimpleInput  `json:"vin"`
 }
 
 type json_TransactionSimple struct {
@@ -37,30 +36,22 @@ type json_TransactionSimple struct {
 }
 
 type json_TransactionSimpleInput struct {
-	Amount    uint64           `json:"amount"`
 	PublicKey helpers.HexBytes `json:"publicKey,omitempty"` //32
 	Signature helpers.HexBytes `json:"signature"`           //64
 }
 
-type json_TransactionSimpleOutput struct {
-	PublicKey helpers.HexBytes `json:"publicKey"` //20
-	Amount    uint64           `json:"amount"`
-}
-
-type json_Only_TransactionSimpleDelegate struct {
-	Amount       uint64           `json:"amount"`
-	HasNewData   bool             `json:"hasNewData"`
+type json_Only_TransactionSimpleUpdateDelegate struct {
 	NewPublicKey helpers.HexBytes `json:"newPublicKey"` //20 byte
+	NewFee       uint16           `json:"newFee"`       //20 byte
 }
 
-type json_TransactionSimpleDelegate struct {
+type json_TransactionSimpleUpdateDelegate struct {
 	*json_TransactionSimple
-	*json_Only_TransactionSimpleDelegate
+	*json_Only_TransactionSimpleUpdateDelegate
 }
 
 type json_Only_TransactionSimpleUnstake struct {
-	Amount   uint64 `json:"amount"`
-	FeeExtra uint64 `json:"feeExtra"` //this will be subtracted StakeAvailable
+	Amount uint64 `json:"amount"`
 }
 
 type json_TransactionSimpleUnstake struct {
@@ -84,21 +75,9 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 	case transaction_type.TX_SIMPLE:
 		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
-		vinJson := make([]*json_TransactionSimpleInput, len(base.Vin))
-		for i, it := range base.Vin {
-			vinJson[i] = &json_TransactionSimpleInput{
-				it.Amount,
-				it.PublicKey,
-				it.Signature,
-			}
-		}
-
-		voutJson := make([]*json_TransactionSimpleOutput, len(base.Vout))
-		for i, it := range base.Vout {
-			voutJson[i] = &json_TransactionSimpleOutput{
-				it.PublicKey,
-				it.Amount,
-			}
+		vinJson := &json_TransactionSimpleInput{
+			base.Vin.PublicKey,
+			base.Vin.Signature,
 		}
 
 		simpleJson := &json_TransactionSimple{
@@ -106,23 +85,19 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			&json_Only_TransactionSimple{
 				base.TxScript,
 				base.Nonce,
-				base.Token,
+				base.Fee,
 				vinJson,
-				voutJson,
 			},
 		}
 
 		switch base.TxScript {
-		case transaction_simple.SCRIPT_NORMAL:
-			return json.Marshal(simpleJson)
-		case transaction_simple.SCRIPT_DELEGATE:
-			extra := base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleDelegate)
-			return json.Marshal(&json_TransactionSimpleDelegate{
+		case transaction_simple.SCRIPT_UPDATE_DELEGATE:
+			extra := base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUpdateDelegate)
+			return json.Marshal(&json_TransactionSimpleUpdateDelegate{
 				simpleJson,
-				&json_Only_TransactionSimpleDelegate{
-					extra.Amount,
-					extra.HasNewData,
+				&json_Only_TransactionSimpleUpdateDelegate{
 					extra.NewPublicKey,
+					extra.NewFee,
 				},
 			})
 		case transaction_simple.SCRIPT_UNSTAKE:
@@ -131,7 +106,6 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				simpleJson,
 				&json_Only_TransactionSimpleUnstake{
 					extra.Amount,
-					extra.FeeExtra,
 				},
 			})
 		default:
@@ -184,45 +158,30 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			return err
 		}
 
-		vin := make([]*transaction_simple_parts.TransactionSimpleInput, len(simpleJson.Vin))
-		for i, it := range simpleJson.Vin {
-			vin[i] = &transaction_simple_parts.TransactionSimpleInput{
-				Amount:    it.Amount,
-				PublicKey: it.PublicKey,
-				Signature: it.Signature,
-			}
-		}
-
-		vout := make([]*transaction_simple_parts.TransactionSimpleOutput, len(simpleJson.Vout))
-		for i, it := range simpleJson.Vout {
-			vout[i] = &transaction_simple_parts.TransactionSimpleOutput{
-				PublicKey: it.PublicKey,
-				Amount:    it.Amount,
-			}
+		vin := &transaction_simple_parts.TransactionSimpleInput{
+			PublicKey: simpleJson.Vin.PublicKey,
+			Signature: simpleJson.Vin.Signature,
 		}
 
 		base := &transaction_simple.TransactionSimple{
 			TxScript: simpleJson.TxScript,
 			Nonce:    simpleJson.Nonce,
-			Token:    simpleJson.Token,
+			Fee:      simpleJson.Fee,
 			Vin:      vin,
-			Vout:     vout,
 		}
 		tx.TransactionBaseInterface = base
 
 		switch simpleJson.TxScript {
-		case transaction_simple.SCRIPT_NORMAL:
-		case transaction_simple.SCRIPT_DELEGATE:
+		case transaction_simple.SCRIPT_UPDATE_DELEGATE:
 
-			extraJson := &json_Only_TransactionSimpleDelegate{}
+			extraJson := &json_Only_TransactionSimpleUpdateDelegate{}
 			if err := json.Unmarshal(data, extraJson); err != nil {
 				return err
 			}
 
-			base.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleDelegate{
-				Amount:       extraJson.Amount,
-				HasNewData:   extraJson.HasNewData,
+			base.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleUpdateDelegate{
 				NewPublicKey: extraJson.NewPublicKey,
+				NewFee:       extraJson.NewFee,
 			}
 
 		case transaction_simple.SCRIPT_UNSTAKE:
@@ -232,8 +191,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			}
 
 			base.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleUnstake{
-				Amount:   extraJSON.Amount,
-				FeeExtra: extraJSON.FeeExtra,
+				Amount: extraJSON.Amount,
 			}
 		default:
 			return errors.New("Invalid base.TxScript")

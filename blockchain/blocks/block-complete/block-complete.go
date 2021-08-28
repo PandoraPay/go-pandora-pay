@@ -61,9 +61,10 @@ func (blkComplete *BlockComplete) MerkleHash() []byte {
 
 func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
 
-	allFees := make(map[string]uint64)
+	allFees := uint64(0)
 	for _, tx := range blkComplete.Txs {
-		if err = tx.ComputeFees(allFees); err != nil {
+		fees := tx.ComputeFees()
+		if err = helpers.SafeUint64Add(&allFees, fees); err != nil {
 			return
 		}
 	}

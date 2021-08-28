@@ -16,7 +16,6 @@ type Account struct {
 	PublicKey                     []byte                `json:"-"`
 	Version                       uint64                `json:"version"`
 	Nonce                         uint64                `json:"nonce"`
-	Balances                      []*Balance            `json:"balances"`
 	BalancesHomo                  []*BalanceHomomorphic `json:"balancesHomo"`
 	DelegatedStakeVersion         uint64                `json:"delegatedStakeVersion"`
 	DelegatedStake                *dpos.DelegatedStake  `json:"delegatedStake"`
@@ -38,64 +37,6 @@ func (account *Account) HasDelegatedStake() bool {
 
 func (account *Account) IncrementNonce(sign bool) error {
 	return helpers.SafeUint64Update(sign, &account.Nonce, 1)
-}
-
-//todo remove
-func (account *Account) AddBalance(sign bool, amount uint64, tok []byte) (err error) {
-
-	if amount == 0 {
-		return
-	}
-
-	var foundBalance *Balance
-	var foundBalanceIndex int
-
-	for i, balance := range account.Balances {
-		if bytes.Equal(balance.Token, tok) {
-			foundBalance = balance
-			foundBalanceIndex = i
-			break
-		}
-	}
-
-	if sign {
-		if foundBalance == nil {
-			foundBalance = &Balance{
-				Token: tok,
-			}
-			account.Balances = append(account.Balances, foundBalance)
-		}
-		if err = helpers.SafeUint64Add(&foundBalance.Amount, amount); err != nil {
-			return
-		}
-	} else {
-
-		if foundBalance == nil {
-			return errors.New("Balance doesn't exist or would become negative")
-		}
-		if err = helpers.SafeUint64Sub(&foundBalance.Amount, amount); err != nil {
-			return
-		}
-
-		if foundBalance.Amount == 0 {
-			//fast removal
-			account.Balances[foundBalanceIndex] = account.Balances[len(account.Balances)-1]
-			account.Balances = account.Balances[:len(account.Balances)-1]
-		}
-
-	}
-
-	return
-}
-
-//todo remove
-func (account *Account) GetAvailableBalance(token []byte) (result uint64) {
-	for _, balance := range account.Balances {
-		if bytes.Equal(balance.Token, token) {
-			return balance.Amount
-		}
-	}
-	return 0
 }
 
 func (account *Account) AddBalanceHomoUint(amount uint64, tok []byte) (err error) {
@@ -191,11 +132,6 @@ func (account *Account) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(account.Version)
 	writer.WriteUvarint(account.Nonce)
 
-	writer.WriteUvarint16(uint16(len(account.Balances)))
-	for _, balance := range account.Balances {
-		balance.Serialize(writer)
-	}
-
 	writer.WriteUvarint16(uint16(len(account.BalancesHomo)))
 	for _, balanceHomo := range account.BalancesHomo {
 		balanceHomo.Serialize(writer)
@@ -242,18 +178,6 @@ func (account *Account) Deserialize(reader *helpers.BufferReader) (err error) {
 	}
 
 	var n uint16
-	if n, err = reader.ReadUvarint16(); err != nil {
-		return
-	}
-	account.Balances = make([]*Balance, n)
-	for i := uint16(0); i < n; i++ {
-		var balance = new(Balance)
-		if err = balance.Deserialize(reader); err != nil {
-			return
-		}
-		account.Balances[i] = balance
-	}
-
 	if n, err = reader.ReadUvarint16(); err != nil {
 		return
 	}

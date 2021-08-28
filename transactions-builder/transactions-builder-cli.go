@@ -38,21 +38,6 @@ func (builder *TransactionsBuilder) readFees() (out *TransactionsBuilderFeeFloat
 	return fee, true
 }
 
-func (builder *TransactionsBuilder) readFeesExtra() (out *TransactionsBuilderFeeFloatExtra, ok bool) {
-
-	feeFloat, ok := builder.readFees()
-	if !ok {
-		return
-	}
-
-	fee := &TransactionsBuilderFeeFloatExtra{*feeFloat, false}
-	if fee.PayInExtra, ok = gui.GUI.OutputReadBool("Pay in Extra. Type y/n"); !ok {
-		return
-	}
-
-	return fee, true
-}
-
 func (builder *TransactionsBuilder) readData() (out *wizard.TransactionsWizardData, ok bool) {
 
 	data := &wizard.TransactionsWizardData{}
@@ -147,11 +132,6 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		amount, ok := gui.GUI.OutputReadFloat64("Amount", nil)
-		if !ok {
-			return
-		}
-
 		nonce, ok := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", nil, true)
 		if !ok {
 			return
@@ -197,7 +177,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateDelegateTx_Float(walletAddress.AddressEncoded, nonce, amount, delegateNewPublicKeyGenerate, delegateNewPublicKey, delegateNewFee, data, fee, propagate, true, true, func(status string) {
+		tx, err := builder.CreateUpdateDelegateTx_Float(walletAddress.AddressEncoded, nonce, delegateNewPublicKeyGenerate, delegateNewPublicKey, delegateNewFee, data, fee, propagate, true, true, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -236,7 +216,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		fee, ok := builder.readFeesExtra()
+		fee, ok := builder.readFees()
 		if !ok {
 			return
 		}

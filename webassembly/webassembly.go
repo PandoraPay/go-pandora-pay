@@ -114,9 +114,9 @@ func Initialize(startMainCb func()) {
 		}),
 		"transactions": js.ValueOf(map[string]interface{}{
 			"builder": js.ValueOf(map[string]interface{}{
-				"createSimpleTx_Float":   js.FuncOf(createSimpleTx_Float),
-				"createDelegateTx_Float": js.FuncOf(createDelegateTx_Float),
-				"createUnstakeTx_Float":  js.FuncOf(createUnstakeTx_Float),
+				"createSimpleTx_Float":         js.FuncOf(createSimpleTx_Float),
+				"createUpdateDelegateTx_Float": js.FuncOf(createUpdateDelegateTx_Float),
+				"createUnstakeTx_Float":        js.FuncOf(createUnstakeTx_Float),
 			}),
 		}),
 		"store": js.ValueOf(map[string]interface{}{
@@ -139,9 +139,8 @@ func Initialize(startMainCb func()) {
 				}),
 				"transactionSimple": js.ValueOf(map[string]interface{}{
 					"scriptType": js.ValueOf(map[string]interface{}{
-						"SCRIPT_NORMAL":   js.ValueOf(uint64(transaction_simple.SCRIPT_NORMAL)),
-						"SCRIPT_UNSTAKE":  js.ValueOf(uint64(transaction_simple.SCRIPT_UNSTAKE)),
-						"SCRIPT_DELEGATE": js.ValueOf(uint64(transaction_simple.SCRIPT_DELEGATE)),
+						"SCRIPT_UNSTAKE":         js.ValueOf(uint64(transaction_simple.SCRIPT_UNSTAKE)),
+						"SCRIPT_UPDATE_DELEGATE": js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_DELEGATE)),
 					}),
 				}),
 			}),

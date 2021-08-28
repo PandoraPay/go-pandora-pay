@@ -11,11 +11,6 @@ type TransactionsBuilderFeeFloat struct {
 	PerByteAuto bool    `json:"perByteAuto,omitempty"`
 }
 
-type TransactionsBuilderFeeFloatExtra struct {
-	TransactionsBuilderFeeFloat
-	PayInExtra bool `json:"payInExtra,omitempty"`
-}
-
 func (fee *TransactionsBuilderFeeFloat) convertToWizardFee(tok *token.Token) (*wizard.TransactionsWizardFee, error) {
 
 	var err error
@@ -36,15 +31,4 @@ func (fee *TransactionsBuilderFeeFloat) convertToWizardFee(tok *token.Token) (*w
 	}
 
 	return out, nil
-}
-
-func (fee *TransactionsBuilderFeeFloatExtra) convertToWizardFee(tok *token.Token) (*wizard.TransactionsWizardFeeExtra, error) {
-	out, err := fee.TransactionsBuilderFeeFloat.convertToWizardFee(tok)
-	if err != nil {
-		return nil, err
-	}
-	return &wizard.TransactionsWizardFeeExtra{
-		*out,
-		fee.PayInExtra,
-	}, nil
 }

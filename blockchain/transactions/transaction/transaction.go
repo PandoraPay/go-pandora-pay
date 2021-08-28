@@ -18,9 +18,8 @@ type Transaction struct {
 	Bloom       *TransactionBloom
 }
 
-func (tx *Transaction) GetAllFees() (map[string]uint64, error) {
-	fees := make(map[string]uint64)
-	return fees, tx.ComputeFees(fees)
+func (tx *Transaction) GetAllFees() uint64 {
+	return tx.ComputeFees()
 }
 
 func (tx *Transaction) GetAllKeys() map[string]bool {

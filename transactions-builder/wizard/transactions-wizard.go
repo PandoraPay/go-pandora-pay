@@ -8,18 +8,15 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
-	"pandora-pay/config"
 	"pandora-pay/cryptography"
 )
 
-func signSimpleTransaction(tx *transaction.Transaction, privateKeys []*addresses.PrivateKey, statusCallback func(string)) (err error) {
+func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.PrivateKey, statusCallback func(string)) (err error) {
 
 	statusCallback("Transaction Signing...")
 
-	for i, privateKey := range privateKeys {
-		if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin[i].Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
-			return err
-		}
+	if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin.Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
+		return err
 	}
 
 	statusCallback("Transaction Signed")
@@ -32,89 +29,90 @@ func CreateSimpleTxOneInOneOut(nonce uint64, token []byte, key []byte, amount ui
 }
 
 func CreateSimpleTx(nonce uint64, token []byte, keys [][]byte, amounts []uint64, dsts []string, dstsAmounts []uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
+	//
+	//if len(keys) != len(amounts) || len(amounts) == 0 {
+	//	return nil, errors.New("Input lengths are a mismatch")
+	//}
+	//if len(dsts) != len(dstsAmounts) {
+	//	return nil, errors.New("Output lengths are a mismatch")
+	//}
+	//
+	//privateKeys := make([]*addresses.PrivateKey, len(keys))
+	//vin := make([]*transaction_simple_parts.TransactionSimpleInput, len(keys))
+	//for i := 0; i < len(keys); i++ {
+	//
+	//	privateKeys[i] = &addresses.PrivateKey{Key: keys[i]}
+	//
+	//	vin[i] = &transaction_simple_parts.TransactionSimpleInput{
+	//		PublicKey: privateKeys[i].GeneratePublicKey(),
+	//	}
+	//}
+	//
+	//vout := make([]*transaction_simple_parts.TransactionSimpleOutput, len(dsts))
+	//for i := 0; i < len(dsts); i++ {
+	//	outAddress, err := addresses.DecodeAddr(dsts[i])
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	vout[i] = &transaction_simple_parts.TransactionSimpleOutput{
+	//		PublicKey: outAddress.PublicKey,
+	//		Amount:    dstsAmounts[i],
+	//	}
+	//}
+	//
+	//dataFinal, err := data.getData()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//tx := &transaction.Transaction{
+	//	Version:     transaction_type.TX_SIMPLE,
+	//	DataVersion: data.getDataVersion(),
+	//	Data:        dataFinal,
+	//	TransactionBaseInterface: &transaction_simple.TransactionSimple{
+	//		Nonce: nonce,
+	//		Token: token,
+	//		Vin:   vin,
+	//		Vout:  vout,
+	//	},
+	//}
+	//
+	//statusCallback("Transaction created")
+	//
+	//if err := signSimpleTransaction(tx, privateKeys, statusCallback); err != nil {
+	//	return nil, err
+	//}
+	//
+	//if err := setFee(tx, &TransactionsWizardFeeExtra{*fee, false}); err != nil {
+	//	return nil, err
+	//}
+	//statusCallback("Transaction Fees set")
+	//
+	//if err := signSimpleTransaction(tx, privateKeys, statusCallback); err != nil {
+	//	return nil, err
+	//}
+	//
+	//if err := tx.BloomAll(); err != nil {
+	//	return nil, err
+	//}
+	//statusCallback("Transaction Bloomed")
+	//
+	//if err := tx.Validate(); err != nil {
+	//	return nil, err
+	//}
+	//statusCallback("Transaction Validated")
+	//
+	//if err := tx.Verify(); err != nil {
+	//	return nil, err
+	//}
+	//statusCallback("Transaction Verified")
+	//
+	//return tx, nil
 
-	if len(keys) != len(amounts) || len(amounts) == 0 {
-		return nil, errors.New("Input lengths are a mismatch")
-	}
-	if len(dsts) != len(dstsAmounts) {
-		return nil, errors.New("Output lengths are a mismatch")
-	}
-
-	privateKeys := make([]*addresses.PrivateKey, len(keys))
-	vin := make([]*transaction_simple_parts.TransactionSimpleInput, len(keys))
-	for i := 0; i < len(keys); i++ {
-
-		privateKeys[i] = &addresses.PrivateKey{Key: keys[i]}
-
-		vin[i] = &transaction_simple_parts.TransactionSimpleInput{
-			Amount:    amounts[i],
-			PublicKey: privateKeys[i].GeneratePublicKey(),
-		}
-	}
-
-	vout := make([]*transaction_simple_parts.TransactionSimpleOutput, len(dsts))
-	for i := 0; i < len(dsts); i++ {
-		outAddress, err := addresses.DecodeAddr(dsts[i])
-		if err != nil {
-			return nil, err
-		}
-		vout[i] = &transaction_simple_parts.TransactionSimpleOutput{
-			PublicKey: outAddress.PublicKey,
-			Amount:    dstsAmounts[i],
-		}
-	}
-
-	dataFinal, err := data.getData()
-	if err != nil {
-		return nil, err
-	}
-
-	tx := &transaction.Transaction{
-		Version:     transaction_type.TX_SIMPLE,
-		DataVersion: data.getDataVersion(),
-		Data:        dataFinal,
-		TransactionBaseInterface: &transaction_simple.TransactionSimple{
-			Nonce: nonce,
-			Token: token,
-			Vin:   vin,
-			Vout:  vout,
-		},
-	}
-
-	statusCallback("Transaction created")
-
-	if err := signSimpleTransaction(tx, privateKeys, statusCallback); err != nil {
-		return nil, err
-	}
-
-	if err := setFee(tx, &TransactionsWizardFeeExtra{*fee, false}); err != nil {
-		return nil, err
-	}
-	statusCallback("Transaction Fees set")
-
-	if err := signSimpleTransaction(tx, privateKeys, statusCallback); err != nil {
-		return nil, err
-	}
-
-	if err := tx.BloomAll(); err != nil {
-		return nil, err
-	}
-	statusCallback("Transaction Bloomed")
-
-	if err := tx.Validate(); err != nil {
-		return nil, err
-	}
-	statusCallback("Transaction Validated")
-
-	if err := tx.Verify(); err != nil {
-		return nil, err
-	}
-	statusCallback("Transaction Verified")
-
-	return tx, nil
+	panic("not implemented")
 }
 
-func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFeeExtra, statusCallback func(string)) (*transaction.Transaction, error) {
+func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	privateKey := &addresses.PrivateKey{Key: key}
 
@@ -130,21 +128,18 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript: transaction_simple.SCRIPT_UNSTAKE,
 			Nonce:    nonce,
-			Token:    config.NATIVE_TOKEN,
+			Fee:      0,
 			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleUnstake{
 				Amount: unstakeAmount,
 			},
-			Vin: []*transaction_simple_parts.TransactionSimpleInput{
-				{
-					Amount:    0,
-					PublicKey: privateKey.GeneratePublicKey(),
-				},
+			Vin: &transaction_simple_parts.TransactionSimpleInput{
+				PublicKey: privateKey.GeneratePublicKey(),
 			},
 		},
 	}
 	statusCallback("Transaction Created")
 
-	if err := signSimpleTransaction(tx, []*addresses.PrivateKey{privateKey}, statusCallback); err != nil {
+	if err := signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
 		return nil, err
 	}
 
@@ -153,7 +148,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	}
 	statusCallback("Transaction Fees set")
 
-	if err := signSimpleTransaction(tx, []*addresses.PrivateKey{privateKey}, statusCallback); err != nil {
+	if err := signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
 		return nil, err
 	}
 
@@ -175,24 +170,15 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	return tx, nil
 }
 
-func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateNewPubKey []byte, delegateNewFee uint16, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
+func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, delegateNewFee uint16, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	dataFinal, err := data.getData()
 	if err != nil {
 		return nil, err
 	}
 
-	delegateHasNewData := false
-	if len(delegateNewPubKey) > 0 {
-		delegateHasNewData = true
-	}
-
-	if delegateHasNewData == true && (len(delegateNewPubKey) != cryptography.PublicKeySize) {
+	if len(delegateNewPubKey) != cryptography.PublicKeySize {
 		return nil, errors.New("Delegating arguments are empty")
-	}
-
-	if delegateHasNewData == false && (delegateNewFee > 0 || len(delegateNewPubKey) == 0) {
-		return nil, errors.New("Delegating arguments must be empty")
 	}
 
 	privateKey := &addresses.PrivateKey{Key: key}
@@ -201,35 +187,29 @@ func CreateDelegateTx(nonce uint64, key []byte, delegateAmount uint64, delegateN
 		DataVersion: data.getDataVersion(),
 		Data:        dataFinal,
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
-			TxScript: transaction_simple.SCRIPT_DELEGATE,
+			TxScript: transaction_simple.SCRIPT_UPDATE_DELEGATE,
 			Nonce:    nonce,
-			Token:    config.NATIVE_TOKEN,
-			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleDelegate{
-				Amount:       delegateAmount,
-				HasNewData:   delegateHasNewData,
+			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleUpdateDelegate{
 				NewPublicKey: delegateNewPubKey,
 				NewFee:       delegateNewFee,
 			},
-			Vin: []*transaction_simple_parts.TransactionSimpleInput{
-				{
-					Amount:    0,
-					PublicKey: privateKey.GeneratePublicKey(),
-				},
+			Vin: &transaction_simple_parts.TransactionSimpleInput{
+				PublicKey: privateKey.GeneratePublicKey(),
 			},
 		},
 	}
 	statusCallback("Transaction Created")
 
-	if err := signSimpleTransaction(tx, []*addresses.PrivateKey{privateKey}, statusCallback); err != nil {
+	if err := signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
 		return nil, err
 	}
 
-	if err := setFee(tx, &TransactionsWizardFeeExtra{*fee, false}); err != nil {
+	if err := setFee(tx, fee); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Fees set")
 
-	if err := signSimpleTransaction(tx, []*addresses.PrivateKey{privateKey}, statusCallback); err != nil {
+	if err := signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
 		return nil, err
 	}
 

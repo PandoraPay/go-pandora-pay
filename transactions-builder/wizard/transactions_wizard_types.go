@@ -10,11 +10,6 @@ type TransactionsWizardFee struct {
 	PerByteAuto    bool
 }
 
-type TransactionsWizardFeeExtra struct {
-	TransactionsWizardFee
-	PayInExtra bool
-}
-
 type TransactionsWizardData struct {
 	Data               helpers.HexBytes `json:"data,omitempty"`
 	Encrypt            bool             `json:"encrypt,omitempty"`

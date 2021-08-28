@@ -5,7 +5,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
-	"pandora-pay/helpers"
 	"sort"
 )
 
@@ -24,25 +23,25 @@ func (mempool *Mempool) GetBalance(publicKey []byte, balance uint64, token []byt
 
 	for _, tx := range txs {
 		if tx.Tx.Version == transaction_type.TX_SIMPLE {
-			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			if bytes.Equal(base.Token, token) {
-
-				for _, vin := range base.Vin {
-					if bytes.Equal(vin.PublicKey, publicKey) {
-						if err := helpers.SafeUint64Sub(&out, vin.Amount); err != nil {
-							return 0, err
-						}
-					}
-				}
-
-				for _, vout := range base.Vout {
-					if bytes.Equal(vout.PublicKey, publicKey) {
-						if err := helpers.SafeUint64Add(&out, vout.Amount); err != nil {
-							return 0, err
-						}
-					}
-				}
-			}
+			//base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
+			//if bytes.Equal(base.Token, token) {
+			//
+			//	for _, vin := range base.Vin {
+			//		if bytes.Equal(vin.PublicKey, publicKey) {
+			//			if err := helpers.SafeUint64Sub(&out, vin.Amount); err != nil {
+			//				return 0, err
+			//			}
+			//		}
+			//	}
+			//
+			//	for _, vout := range base.Vout {
+			//		if bytes.Equal(vout.PublicKey, publicKey) {
+			//			if err := helpers.SafeUint64Add(&out, vout.Amount); err != nil {
+			//				return 0, err
+			//			}
+			//		}
+			//	}
+			//}
 
 		}
 	}
@@ -56,7 +55,7 @@ func (mempool *Mempool) ExistsTxSimpleVersion(publicKey []byte, version transact
 	for _, tx := range txs {
 		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			if bytes.Equal(base.Vin[0].PublicKey, publicKey) && base.TxScript == version {
+			if bytes.Equal(base.Vin.PublicKey, publicKey) && base.TxScript == version {
 				return true
 			}
 		}
@@ -72,7 +71,7 @@ func (mempool *Mempool) CountInputTxs(publicKey []byte) uint64 {
 	for _, tx := range txs {
 		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			if bytes.Equal(base.Vin[0].PublicKey, publicKey) {
+			if bytes.Equal(base.Vin.PublicKey, publicKey) {
 				count++
 			}
 		}
@@ -89,7 +88,7 @@ func (mempool *Mempool) GetNonce(publicKey []byte, nonce uint64) uint64 {
 	for _, tx := range txs {
 		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			if bytes.Equal(base.Vin[0].PublicKey, publicKey) {
+			if bytes.Equal(base.Vin.PublicKey, publicKey) {
 				nonces[base.Nonce] = true
 			}
 		}

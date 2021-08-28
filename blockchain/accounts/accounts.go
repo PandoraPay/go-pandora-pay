@@ -41,23 +41,6 @@ func (accounts *Accounts) CreateAccountValid(key, registration []byte) (*account
 	return acc, nil
 }
 
-//todo remove
-func (accounts *Accounts) GetAccountEvenEmpty(key []byte, chainHeight uint64) (*account.Account, error) {
-
-	data, err := accounts.Get(string(key))
-	if err != nil {
-		return nil, err
-	}
-
-	if data == nil {
-		return &account.Account{PublicKey: key}, nil
-	}
-
-	acc := data.(*account.Account)
-	err = acc.RefreshDelegatedStake(chainHeight)
-	return acc, err
-}
-
 func (accounts *Accounts) GetAccount(key []byte, chainHeight uint64) (*account.Account, error) {
 
 	data, err := accounts.Get(string(key))
