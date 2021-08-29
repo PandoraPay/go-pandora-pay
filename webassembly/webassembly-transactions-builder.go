@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func createSimpleTx_Float(this js.Value, args []js.Value) interface{} {
+func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 
 		if len(args) != 3 || args[0].Type() != js.TypeString || args[1].Type() != js.TypeFunction || args[2].Type() != js.TypeString {
@@ -41,7 +41,7 @@ func createSimpleTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.CreateSimpleTx_Float(txData.From, txData.Nonce, config.NATIVE_TOKEN, txData.Amounts, txData.Dsts, txData.DstsAmounts, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
+		tx, err := app.TransactionsBuilder.createZetherTx_Float(txData.From, txData.Nonce, config.NATIVE_TOKEN, txData.Amounts, txData.Dsts, txData.DstsAmounts, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
 			args[1].Invoke(status)
 			time.Sleep(10 * time.Millisecond)
 		})

@@ -9,7 +9,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_reward"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/cryptolib"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -100,7 +100,7 @@ func (blk *Block) SerializeForSigning() []byte {
 
 func (blk *Block) VerifySignatureManually() bool {
 	hash := blk.SerializeForSigning()
-	return cryptolib.VerifySignature(hash, blk.Signature, blk.DelegatedPublicKey)
+	return crypto.VerifySignature(hash, blk.Signature, blk.DelegatedPublicKey)
 }
 
 func (blk *Block) AdvancedSerialization(writer *helpers.BufferWriter, kernelHash bool, inclSignature bool) {

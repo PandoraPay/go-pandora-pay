@@ -105,7 +105,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateSimpleTx_Float([]string{walletAddress.AddressEncoded}, nonce, token, []float64{amount}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, data, fee, propagate, true, true, func(status string) {
+		tx, err := builder.CreateZetherTx_Float([]string{walletAddress.AddressEncoded}, nonce, token, []float64{amount}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, data, fee, propagate, true, true, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 

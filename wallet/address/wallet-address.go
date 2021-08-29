@@ -8,7 +8,7 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/cryptolib"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -105,7 +105,7 @@ func (adr *WalletAddress) DecodeAccount(acc *account.Account, store bool) {
 	}
 }
 
-func (adr *WalletAddress) DecodeBalance(balance *cryptolib.ElGamal, token []byte, store bool) uint64 {
+func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, store bool) uint64 {
 
 	if adr.PrivateKey == nil {
 		return 0

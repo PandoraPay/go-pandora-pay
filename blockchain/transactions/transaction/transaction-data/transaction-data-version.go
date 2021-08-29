@@ -1,4 +1,4 @@
-package transaction_type
+package transaction_data
 
 type TransactionDataVersion byte
 

@@ -11,7 +11,7 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/config"
 	"pandora-pay/config/config_stake"
-	"pandora-pay/cryptography/cryptolib"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
@@ -40,7 +40,7 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, &wizard.TransactionsWizardData{nil, false, nil}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {})
+	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, &wizard.TransactionsWizardData{nil, false}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {})
 	if err != nil {
 		return
 	}
@@ -78,7 +78,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {})
+	tx, err := testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {})
 	if err != nil {
 		return
 	}
@@ -114,7 +114,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateSimpleTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN, []uint64{sum}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {})
+	tx, err := testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN, []uint64{sum}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {})
 	if err != nil {
 		return
 	}
@@ -170,7 +170,7 @@ func (testnet *Testnet) run() {
 					publicKey := addr.PublicKey
 
 					var delegatedStakeAvailable, delegatedUnstakePending uint64
-					var balanceHomo *cryptolib.ElGamal
+					var balanceHomo *crypto.ElGamal
 
 					var account *account.Account
 

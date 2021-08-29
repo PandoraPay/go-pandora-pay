@@ -5,17 +5,14 @@ import (
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
-	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
 type Transaction struct {
 	transaction_base_interface.TransactionBaseInterface
-	Version     transaction_type.TransactionVersion
-	DataVersion transaction_type.TransactionDataVersion
-	Data        []byte
-	Bloom       *TransactionBloom
+	Version transaction_type.TransactionVersion
+	Bloom   *TransactionBloom
 }
 
 func (tx *Transaction) GetAllFees() uint64 {
@@ -39,19 +36,13 @@ func (tx *Transaction) VerifySignatureManually() bool {
 	return tx.TransactionBaseInterface.VerifySignatureManually(hash)
 }
 
-func (tx *Transaction) computeHash() []byte {
-	return cryptography.SHA3(tx.SerializeToBytes())
+func (tx *Transaction) GetHashSigning() []byte {
+	return cryptography.SHA3(tx.SerializeForSigning())
 }
 
 func (tx *Transaction) SerializeAdvanced(writer *helpers.BufferWriter, inclSignature bool) {
 
 	writer.WriteUvarint(uint64(tx.Version))
-
-	writer.WriteByte(byte(tx.DataVersion))
-	if tx.DataVersion != transaction_type.TX_DATA_NONE {
-		writer.WriteUvarint(uint64(len(tx.Data)))
-		writer.Write(tx.Data)
-	}
 
 	tx.TransactionBaseInterface.SerializeAdvanced(writer, inclSignature)
 }
@@ -101,28 +92,6 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader) (err error) {
 		tx.TransactionBaseInterface = &transaction_simple.TransactionSimple{}
 	default:
 		return errors.New("Invalid TxType")
-	}
-
-	var dataVersion byte
-	if dataVersion, err = reader.ReadByte(); err != nil {
-		return
-	}
-
-	tx.DataVersion = transaction_type.TransactionDataVersion(dataVersion)
-	switch tx.DataVersion {
-	case transaction_type.TX_DATA_NONE:
-	case transaction_type.TX_DATA_PLAIN_TEXT, transaction_type.TX_DATA_ENCRYPTED:
-		if n, err = reader.ReadUvarint(); err != nil {
-			return
-		}
-		if n == 0 || n > config.TRANSACTIONS_MAX_DATA_LENGTH {
-			return errors.New("Tx.Data length is invalid")
-		}
-		if tx.Data, err = reader.ReadBytes(int(n)); err != nil {
-			return
-		}
-	default:
-		return errors.New("Invalid Tx.DataVersion")
 	}
 
 	if err = tx.TransactionBaseInterface.Deserialize(reader); err != nil {

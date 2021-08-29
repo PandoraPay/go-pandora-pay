@@ -8,21 +8,24 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/tokens"
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
+	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	"pandora-pay/config"
-	"pandora-pay/cryptography/cryptolib"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
 type TransactionSimple struct {
 	transaction_base_interface.TransactionBaseInterface
 	transaction_simple_extra.TransactionSimpleExtraInterface
-	TxScript ScriptType
-	Nonce    uint64
-	Fee      uint64
-	Vin      *transaction_simple_parts.TransactionSimpleInput
-	Bloom    *TransactionSimpleBloom
+	TxScript    ScriptType
+	DataVersion transaction_data.TransactionDataVersion
+	Data        []byte
+	Nonce       uint64
+	Fee         uint64
+	Vin         *transaction_simple_parts.TransactionSimpleInput
+	Bloom       *TransactionSimpleBloom
 }
 
 func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
@@ -71,7 +74,7 @@ func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
 }
 
 func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bool {
-	if cryptolib.VerifySignature(hashForSignature, tx.Vin.Signature, tx.Vin.PublicKey) == false {
+	if crypto.VerifySignature(hashForSignature, tx.Vin.Signature, tx.Vin.PublicKey) == false {
 		return false
 	}
 	return true
@@ -101,6 +104,13 @@ func (tx *TransactionSimple) Validate() (err error) {
 func (tx *TransactionSimple) SerializeAdvanced(writer *helpers.BufferWriter, inclSignature bool) {
 
 	writer.WriteUvarint(uint64(tx.TxScript))
+
+	writer.WriteByte(byte(tx.DataVersion))
+	if tx.DataVersion != transaction_data.TX_DATA_NONE {
+		writer.WriteUvarint(uint64(len(tx.Data)))
+		writer.Write(tx.Data)
+	}
+
 	writer.WriteUvarint(tx.Nonce)
 
 	tx.Vin.Serialize(writer, inclSignature)
@@ -141,6 +151,28 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 		tx.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleUpdateDelegate{}
 	default:
 		return errors.New("Invalid TxType")
+	}
+
+	var dataVersion byte
+	if dataVersion, err = reader.ReadByte(); err != nil {
+		return
+	}
+
+	tx.DataVersion = transaction_data.TransactionDataVersion(dataVersion)
+	switch tx.DataVersion {
+	case transaction_data.TX_DATA_NONE:
+	case transaction_data.TX_DATA_PLAIN_TEXT, transaction_data.TX_DATA_ENCRYPTED:
+		if n, err = reader.ReadUvarint(); err != nil {
+			return
+		}
+		if n == 0 || n > config.TRANSACTIONS_MAX_DATA_LENGTH {
+			return errors.New("Tx.Data length is invalid")
+		}
+		if tx.Data, err = reader.ReadBytes(int(n)); err != nil {
+			return
+		}
+	default:
+		return errors.New("Invalid Tx.DataVersion")
 	}
 
 	if tx.Nonce, err = reader.ReadUvarint(); err != nil {

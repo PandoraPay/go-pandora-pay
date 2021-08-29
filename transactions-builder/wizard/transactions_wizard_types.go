@@ -1,7 +1,7 @@
 package wizard
 
 import (
-	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/helpers"
 )
 
@@ -11,9 +11,8 @@ type TransactionsWizardFee struct {
 }
 
 type TransactionsWizardData struct {
-	Data               helpers.HexBytes `json:"data,omitempty"`
-	Encrypt            bool             `json:"encrypt,omitempty"`
-	PublicKeyToEncrypt helpers.HexBytes `json:"publicKeyToEncrypt,omitempty"`
+	Data    helpers.HexBytes `json:"data,omitempty"`
+	Encrypt bool             `json:"encrypt,omitempty"`
 }
 
 func (data *TransactionsWizardData) getDataVersion() transaction_type.TransactionDataVersion {
@@ -27,11 +26,9 @@ func (data *TransactionsWizardData) getDataVersion() transaction_type.Transactio
 }
 
 func (data *TransactionsWizardData) getData() ([]byte, error) {
-
 	if len(data.Data) == 0 {
 		return nil, nil
 	}
-
 	if !data.Encrypt {
 		return data.Data, nil
 	} else {
@@ -44,5 +41,4 @@ func (data *TransactionsWizardData) getData() ([]byte, error) {
 		//
 		//return ecies.Encrypt(rand.Reader, ecies.ImportECDSAPublic(pub), data.Data, nil, nil)
 	}
-
 }

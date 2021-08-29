@@ -10,7 +10,7 @@ import (
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
-	"pandora-pay/cryptography/cryptolib"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/wallet/address"
 	"strconv"
@@ -40,7 +40,7 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (string, []byte, e
 	return addr.AddressRegistrationEncoded, delegatedStake.PublicKey, nil
 }
 
-func (wallet *Wallet) DecodeBalanceByEncodedAddress(addressEncoded string, balance *cryptolib.ElGamal, token []byte, store bool) (uint64, error) {
+func (wallet *Wallet) DecodeBalanceByEncodedAddress(addressEncoded string, balance *crypto.ElGamal, token []byte, store bool) (uint64, error) {
 
 	address, err := addresses.DecodeAddr(addressEncoded)
 	if err != nil {
@@ -50,7 +50,7 @@ func (wallet *Wallet) DecodeBalanceByEncodedAddress(addressEncoded string, balan
 	return wallet.DecodeBalanceByPublicKey(address.PublicKey, balance, token, store)
 }
 
-func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *cryptolib.ElGamal, token []byte, store bool) (uint64, error) {
+func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, token []byte, store bool) (uint64, error) {
 
 	if store {
 		wallet.Lock()

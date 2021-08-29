@@ -2,6 +2,7 @@ package webassembly
 
 import (
 	"encoding/json"
+	"pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config"
@@ -114,7 +115,7 @@ func Initialize(startMainCb func()) {
 		}),
 		"transactions": js.ValueOf(map[string]interface{}{
 			"builder": js.ValueOf(map[string]interface{}{
-				"createSimpleTx_Float":         js.FuncOf(createSimpleTx_Float),
+				"createZetherTx_Float":         js.FuncOf(createZetherTx_Float),
 				"createUpdateDelegateTx_Float": js.FuncOf(createUpdateDelegateTx_Float),
 				"createUnstakeTx_Float":        js.FuncOf(createUnstakeTx_Float),
 			}),
@@ -133,9 +134,9 @@ func Initialize(startMainCb func()) {
 					"TX_SIMPLE": js.ValueOf(uint64(transaction_type.TX_SIMPLE)),
 				}),
 				"TransactionDataVersion": js.ValueOf(map[string]interface{}{
-					"TX_DATA_NONE":       js.ValueOf(uint64(transaction_type.TX_DATA_NONE)),
-					"TX_DATA_PLAIN_TEXT": js.ValueOf(uint64(transaction_type.TX_DATA_PLAIN_TEXT)),
-					"TX_DATA_ENCRYPTED":  js.ValueOf(uint64(transaction_type.TX_DATA_ENCRYPTED)),
+					"TX_DATA_NONE":       js.ValueOf(uint64(transaction_data.TX_DATA_NONE)),
+					"TX_DATA_PLAIN_TEXT": js.ValueOf(uint64(transaction_data.TX_DATA_PLAIN_TEXT)),
+					"TX_DATA_ENCRYPTED":  js.ValueOf(uint64(transaction_data.TX_DATA_ENCRYPTED)),
 				}),
 				"transactionSimple": js.ValueOf(map[string]interface{}{
 					"scriptType": js.ValueOf(map[string]interface{}{

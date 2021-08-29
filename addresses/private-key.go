@@ -3,7 +3,7 @@ package addresses
 import (
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
-	"pandora-pay/cryptography/cryptolib"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -12,8 +12,8 @@ type PrivateKey struct {
 }
 
 func (pk *PrivateKey) GeneratePublicKey() []byte {
-	priv := new(cryptolib.BNRed).SetBytes(pk.Key)
-	publicKey := cryptolib.GPoint.ScalarMult(priv)
+	priv := new(crypto.BNRed).SetBytes(pk.Key)
+	publicKey := crypto.GPoint.ScalarMult(priv)
 	return publicKey.EncodeCompressed()
 }
 
@@ -37,21 +37,21 @@ func (pk *PrivateKey) GetRegistration() ([]byte, error) {
 
 //make sure message is a hash to avoid leaking any parts of the private key
 func (pk *PrivateKey) Sign(message []byte) ([]byte, error) {
-	return cryptolib.SignMessage(message, pk.Key)
+	return crypto.SignMessage(message, pk.Key)
 }
 
 func (pk *PrivateKey) Decrypt(message []byte) ([]byte, error) {
 	panic("not implemented")
 }
 
-func (pk *PrivateKey) DecodeBalance(balance *cryptolib.ElGamal, previousValue uint64) uint64 {
-	priv := new(cryptolib.BNRed).SetBytes(pk.Key)
+func (pk *PrivateKey) DecodeBalance(balance *crypto.ElGamal, previousValue uint64) uint64 {
+	priv := new(crypto.BNRed).SetBytes(pk.Key)
 	balancePoint := new(bn256.G1).Add(balance.Left, new(bn256.G1).Neg(new(bn256.G1).ScalarMult(balance.Right, priv.BigInt())))
-	return cryptolib.BalanceDecoder.BalanceDecode(balancePoint, previousValue)
+	return crypto.BalanceDecoder.BalanceDecode(balancePoint, previousValue)
 }
 
 func GenerateNewPrivateKey() *PrivateKey {
-	seed := cryptolib.RandomScalarBNRed()
+	seed := crypto.RandomScalarBNRed()
 	privateKey := seed.ToBytes()
 
 	return &PrivateKey{Key: privateKey}

@@ -7,7 +7,7 @@ import (
 	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/cryptolib"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -51,11 +51,11 @@ func (account *Account) AddBalanceHomoUint(amount uint64, tok []byte) (err error
 	}
 
 	if foundBalance == nil {
-		var acckey cryptolib.Point
+		var acckey crypto.Point
 		if err := acckey.DecodeCompressed(account.PublicKey); err != nil {
 			panic(err)
 		}
-		foundBalance = &BalanceHomomorphic{cryptolib.ConstructElGamal(acckey.G1(), cryptolib.ElGamal_BASE_G), tok}
+		foundBalance = &BalanceHomomorphic{crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G), tok}
 		account.BalancesHomo = append(account.BalancesHomo, foundBalance)
 	}
 
@@ -118,7 +118,7 @@ func (account *Account) ComputeDelegatedUnstakePending() (uint64, error) {
 	return account.DelegatedStake.ComputeDelegatedUnstakePending()
 }
 
-func (account *Account) GetBalanceHomo(token []byte) (result *cryptolib.ElGamal) {
+func (account *Account) GetBalanceHomo(token []byte) (result *crypto.ElGamal) {
 	for _, balance := range account.BalancesHomo {
 		if bytes.Equal(balance.Token, token) {
 			return balance.Amount

@@ -95,7 +95,7 @@ func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet
 	return fromWalletAddress, nil
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce uint64, token []byte, amounts []float64, dsts []string, dstsAmounts []float64, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, nonce uint64, token []byte, amounts []float64, dsts []string, dstsAmounts []float64, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	var amountsFinal, dstsAmountsFinal []uint64
 
@@ -124,10 +124,10 @@ func (builder *TransactionsBuilder) CreateSimpleTx_Float(from []string, nonce ui
 		return nil, err
 	}
 
-	return builder.CreateSimpleTx(from, nonce, token, amountsFinal, dsts, dstsAmountsFinal, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
+	return builder.CreateZetherTx(from, nonce, token, amountsFinal, dsts, dstsAmountsFinal, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, token []byte, amounts []uint64, dsts []string, dstsAmounts []uint64, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx(from []string, nonce uint64, token []byte, amounts []uint64, dsts []string, dstsAmounts []uint64, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	//fromWalletAddresses, err := builder.getWalletAddresses(from)
 	//if err != nil {
@@ -179,7 +179,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from []string, nonce uint64, 
 	//
 	//statusCallback("Getting Nonce from Mempool")
 	//
-	//if tx, err = wizard.CreateSimpleTx(nonce, token, keys, amounts, dsts, dstsAmounts, data, fee, statusCallback); err != nil {
+	//if tx, err = wizard.CreateZetherTx(nonce, token, keys, amounts, dsts, dstsAmounts, data, fee, statusCallback); err != nil {
 	//	gui.GUI.Error("Error creating Tx: ", err)
 	//	return nil, err
 	//}

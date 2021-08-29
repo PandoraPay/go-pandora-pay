@@ -6,7 +6,7 @@ import (
 	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/cryptolib"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -198,10 +198,21 @@ func (a *Address) IsIntegratedAmount() bool {
 	return a.Amount > 0
 }
 
-func (a Address) EncryptMessage(message []byte) ([]byte, error) {
+func (a *Address) EncryptMessage(message []byte) ([]byte, error) {
 	panic("not implemented")
 }
 
-func (a Address) VerifySignedMessage(message, signature []byte) bool {
-	return cryptolib.VerifySignature(message, signature, a.PublicKey)
+func (a *Address) VerifySignedMessage(message, signature []byte) bool {
+	return crypto.VerifySignature(message, signature, a.PublicKey)
+}
+
+func (a *Address) GetPoint() (*crypto.Point, error) {
+	var out crypto.Point
+	var err error
+
+	if err = out.DecodeCompressed(a.PublicKey); err != nil {
+		return nil, err
+	}
+
+	return &out, nil
 }

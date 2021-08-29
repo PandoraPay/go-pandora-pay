@@ -4,7 +4,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/cryptolib"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash-map"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -30,7 +30,7 @@ func (accounts *Accounts) CreateAccountValid(key, registration []byte) (*account
 	if len(key) != cryptography.PublicKeySize {
 		return nil, errors.New("Key is not a valid public key")
 	}
-	if cryptolib.VerifySignature([]byte("registration"), registration, key) == false {
+	if crypto.VerifySignature([]byte("registration"), registration, key) == false {
 		return nil, errors.New("Registration is invalid")
 	}
 

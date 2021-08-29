@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"github.com/stretchr/testify/assert"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/cryptolib"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 	"testing"
 )
@@ -52,8 +52,8 @@ func TestPrivateKey_BN256(t *testing.T) {
 	address, err := privateKey.GenerateAddress(0, helpers.EmptyBytes(0))
 	assert.NoError(t, err)
 
-	priv := new(cryptolib.BNRed).SetBytes(privateKey.Key)
-	pub := cryptolib.GPoint.ScalarMult(priv)
+	priv := new(crypto.BNRed).SetBytes(privateKey.Key)
+	pub := crypto.GPoint.ScalarMult(priv)
 	pubKey := pub.EncodeCompressed()
 
 	assert.Equal(t, bytes.Equal(address.PublicKey, pubKey), true)

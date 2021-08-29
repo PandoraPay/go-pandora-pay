@@ -1,4 +1,4 @@
-package cryptolib
+package crypto
 
 import (
 	"errors"

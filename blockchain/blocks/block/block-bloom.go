@@ -3,7 +3,7 @@ package block
 import (
 	"errors"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/cryptolib"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -40,7 +40,7 @@ func (blk *Block) BloomNow() (err error) {
 		blk.Bloom.KernelHash = blk.ComputeKernelHash()
 		hashForSignature := blk.SerializeForSigning()
 
-		blk.Bloom.DelegatedSignatureVerified = cryptolib.VerifySignature(hashForSignature, blk.Signature, blk.DelegatedPublicKey)
+		blk.Bloom.DelegatedSignatureVerified = crypto.VerifySignature(hashForSignature, blk.Signature, blk.DelegatedPublicKey)
 		if !blk.Bloom.DelegatedSignatureVerified {
 			return errors.New("Block signature is invalid")
 		}

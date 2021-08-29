@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestCreateSimpleTx(t *testing.T) {
+func TestCreateZetherTx(t *testing.T) {
 
 	dstPrivateKey := addresses.GenerateNewPrivateKey()
 	dstAddress, err := dstPrivateKey.GenerateAddress(0, helpers.EmptyBytes(0))
@@ -20,7 +20,7 @@ func TestCreateSimpleTx(t *testing.T) {
 	dstAddressEncoded := dstAddress.EncodeAddr()
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateSimpleTx(0, [][]byte{privateKey.Key}, []uint64{1252}, [][]byte{{}}, []string{dstAddressEncoded}, []uint64{1250}, [][]byte{{}}, 0, []byte{})
+	tx, err := CreateZetherTx(0, [][]byte{privateKey.Key}, []uint64{1252}, [][]byte{{}}, []string{dstAddressEncoded}, []uint64{1250}, [][]byte{{}}, 0, []byte{})
 	assert.NoError(t, err)
 	assert.NotNil(t, tx, "error creating simple tx")
 	assert.NoError(t, tx.Validate(), "error validating tx")
