@@ -132,7 +132,7 @@ func (account *Account) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(account.Version)
 	writer.WriteUvarint(account.Nonce)
 
-	writer.WriteUvarint16(uint16(len(account.BalancesHomo)))
+	writer.WriteUvarint(uint64(len(account.BalancesHomo)))
 	for _, balanceHomo := range account.BalancesHomo {
 		balanceHomo.Serialize(writer)
 	}
@@ -150,7 +150,7 @@ func (account *Account) SerializeToBytes() []byte {
 	return writer.Bytes()
 }
 
-func (account *Account) CreateDelegatedStake(amount uint64, delegatedStakePublicKey []byte, delegatedStakeFee uint16) error {
+func (account *Account) CreateDelegatedStake(amount uint64, delegatedStakePublicKey []byte, delegatedStakeFee uint64) error {
 	if account.HasDelegatedStake() {
 		return errors.New("It is already delegated")
 	}
@@ -177,12 +177,12 @@ func (account *Account) Deserialize(reader *helpers.BufferReader) (err error) {
 		return
 	}
 
-	var n uint16
-	if n, err = reader.ReadUvarint16(); err != nil {
+	var n uint64
+	if n, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 	account.BalancesHomo = make([]*BalanceHomomorphic, n)
-	for i := uint16(0); i < n; i++ {
+	for i := uint64(0); i < n; i++ {
 		var balance = new(BalanceHomomorphic)
 		if err = balance.Deserialize(reader); err != nil {
 			return

@@ -112,6 +112,7 @@ func (tx *TransactionSimple) SerializeAdvanced(writer *helpers.BufferWriter, inc
 	}
 
 	writer.WriteUvarint(tx.Nonce)
+	writer.WriteUvarint(tx.Fee)
 
 	tx.Vin.Serialize(writer, inclSignature)
 
@@ -179,9 +180,10 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 		return
 	}
 
-	if n, err = reader.ReadUvarint(); err != nil {
+	if tx.Fee, err = reader.ReadUvarint(); err != nil {
 		return
 	}
+
 	tx.Vin = &transaction_simple_parts.TransactionSimpleInput{}
 	if err = tx.Vin.Deserialize(reader); err != nil {
 		return

@@ -43,7 +43,7 @@ type json_TransactionSimpleInput struct {
 
 type json_Only_TransactionSimpleUpdateDelegate struct {
 	NewPublicKey helpers.HexBytes `json:"newPublicKey"` //20 byte
-	NewFee       uint16           `json:"newFee"`       //20 byte
+	NewFee       uint64           `json:"newFee"`       //20 byte
 }
 
 type json_TransactionSimpleUpdateDelegate struct {

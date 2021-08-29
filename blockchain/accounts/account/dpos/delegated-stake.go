@@ -9,7 +9,7 @@ import (
 type DelegatedStake struct {
 	helpers.SerializableInterface `json:"-"`
 	DelegatedPublicKey            helpers.HexBytes         `json:"DelegatedPublicKey"` //public key for delegation  20 bytes
-	DelegatedStakeFee             uint16                   `json:"delegatedStakeFee"`
+	DelegatedStakeFee             uint64                   `json:"delegatedStakeFee"`
 	StakeAvailable                uint64                   `json:"stakeAvailable"` //confirmed stake
 	StakesPending                 []*DelegatedStakePending `json:"stakesPending"`  //Pending stakes
 }
@@ -62,9 +62,9 @@ func (dstake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
 
 	writer.Write(dstake.DelegatedPublicKey)
 	writer.WriteUvarint(dstake.StakeAvailable)
-	writer.WriteUvarint16(dstake.DelegatedStakeFee)
+	writer.WriteUvarint(dstake.DelegatedStakeFee)
 
-	writer.WriteUvarint16(uint16(len(dstake.StakesPending)))
+	writer.WriteUvarint(uint64(len(dstake.StakesPending)))
 	for _, stakePending := range dstake.StakesPending {
 		stakePending.Serialize(writer)
 	}
@@ -79,17 +79,17 @@ func (dstake *DelegatedStake) Deserialize(reader *helpers.BufferReader) (err err
 	if dstake.StakeAvailable, err = reader.ReadUvarint(); err != nil {
 		return
 	}
-	if dstake.DelegatedStakeFee, err = reader.ReadUvarint16(); err != nil {
+	if dstake.DelegatedStakeFee, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
-	var n uint16
-	if n, err = reader.ReadUvarint16(); err != nil {
+	var n uint64
+	if n, err = reader.ReadUvarint(); err != nil {
 		return
 	}
 
 	dstake.StakesPending = make([]*DelegatedStakePending, n)
-	for i := uint16(0); i < n; i++ {
+	for i := uint64(0); i < n; i++ {
 		delegatedStakePending := new(DelegatedStakePending)
 		if err = delegatedStakePending.Deserialize(reader); err != nil {
 			return

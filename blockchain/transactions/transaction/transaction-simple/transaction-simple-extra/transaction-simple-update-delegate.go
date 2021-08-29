@@ -10,7 +10,7 @@ import (
 type TransactionSimpleUpdateDelegate struct {
 	TransactionSimpleExtraInterface
 	NewPublicKey helpers.HexBytes //20 byte
-	NewFee       uint16
+	NewFee       uint64
 }
 
 func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) (err error) {
@@ -29,20 +29,26 @@ func (tx *TransactionSimpleUpdateDelegate) Validate() error {
 	if len(tx.NewPublicKey) != cryptography.PublicKeySize {
 		return errors.New("New Public Key Hash length is invalid")
 	}
+	if tx.NewFee > 10000 {
+		return errors.New("Invalid NewFee")
+	}
 	return nil
 }
 
 func (tx *TransactionSimpleUpdateDelegate) Serialize(writer *helpers.BufferWriter) {
 	writer.Write(tx.NewPublicKey)
-	writer.WriteUvarint16(tx.NewFee)
+	writer.WriteUvarint(tx.NewFee)
 }
 
 func (tx *TransactionSimpleUpdateDelegate) Deserialize(reader *helpers.BufferReader) (err error) {
 	if tx.NewPublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if tx.NewFee, err = reader.ReadUvarint16(); err != nil {
+	if tx.NewFee, err = reader.ReadUvarint(); err != nil {
 		return
+	}
+	if tx.NewFee > 10000 {
+		return errors.New("Invalid NewFee")
 	}
 	return
 }
