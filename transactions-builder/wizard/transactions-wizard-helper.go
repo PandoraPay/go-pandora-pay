@@ -54,6 +54,7 @@ func setFee(tx *transaction.Transaction, fee *TransactionsWizardFee) error {
 			setFeeTxNow(tx, fee.PerByte, &base.Fee)
 		}
 
+		return nil
 	}
 
 	return errors.New("Couldn't set fee")
