@@ -38,6 +38,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	}
 
 	statusCallback("Transaction created")
+	var witness_list []crypto.Witness
 
 	for t, transfer := range transfers {
 
@@ -48,7 +49,6 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		sender_secret := secretPoint.BigInt()
 
 		crand := mathrand.New(helpers.NewCryptoRandSource())
-		var witness_list []crypto.Witness
 
 		var publickeylist, C, CLn, CRn []*bn256.G1
 		var D bn256.G1
@@ -209,6 +209,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 
 		// time for bullets-sigma
 		statement := GenerateStatement(CLn, CRn, publickeylist, C, &D, fees) // generate statement
+		statement.Roothash = make([]byte, 32)
 		copy(statement.Roothash[:], hash[:])
 
 		witness := GenerateWitness(sender_secret, r, value, balance-value-fees-burn_value, witness_index)

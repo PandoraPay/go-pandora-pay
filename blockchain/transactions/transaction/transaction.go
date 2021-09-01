@@ -5,6 +5,7 @@ import (
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
@@ -43,8 +44,8 @@ func (tx *Transaction) GetHashSigning() []byte {
 func (tx *Transaction) SerializeAdvanced(writer *helpers.BufferWriter, inclSignature bool) {
 
 	writer.WriteUvarint(uint64(tx.Version))
-
 	tx.TransactionBaseInterface.SerializeAdvanced(writer, inclSignature)
+
 }
 
 func (tx *Transaction) Serialize(writer *helpers.BufferWriter) {
@@ -90,6 +91,8 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader) (err error) {
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 		tx.TransactionBaseInterface = &transaction_simple.TransactionSimple{}
+	case transaction_type.TX_ZETHER:
+		tx.TransactionBaseInterface = &transaction_zether.TransactionZether{}
 	default:
 		return errors.New("Invalid TxType")
 	}

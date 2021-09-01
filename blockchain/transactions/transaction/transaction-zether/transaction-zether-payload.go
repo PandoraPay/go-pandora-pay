@@ -1,13 +1,13 @@
 package transaction_zether
 
 import (
+	"errors"
+	"math"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
 type TransactionZetherPayload struct {
-	helpers.SerializableInterface
-
 	Token     []byte
 	BurnValue uint64
 
@@ -20,19 +20,44 @@ type TransactionZetherPayload struct {
 	Proof     *crypto.Proof
 }
 
-func (payload *TransactionZetherPayload) Serialize(writer *helpers.BufferWriter) {
-	writer.WriteToken(payload.Token)
-}
+func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+	w.WriteToken(payload.Token)
+	w.WriteUvarint(payload.BurnValue)
+	w.WriteByte(payload.ExtraType)
+	w.Write(payload.ExtraData)
+	payload.Statement.Serialize(w)
 
-func (payload *TransactionZetherPayload) SerializeToBytes() []byte {
-	writer := helpers.NewBufferWriter()
-	payload.Serialize(writer)
-	return writer.Bytes()
+	if inclSignature {
+		payload.Proof.Serialize(w)
+	}
+
 }
 
 func (payload *TransactionZetherPayload) Deserialize(reader *helpers.BufferReader) (err error) {
 
 	if payload.Token, err = reader.ReadToken(); err != nil {
+		return
+	}
+	if payload.BurnValue, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+	if payload.ExtraType, err = reader.ReadByte(); err != nil {
+		return
+	}
+	if payload.ExtraData, err = reader.ReadBytes(PAYLOAD_LIMIT); err != nil {
+		return
+	}
+	if err = payload.Statement.Deserialize(reader); err != nil {
+		return
+	}
+
+	N := len(payload.Statement.Publickeylist)
+	m := int(math.Log2(float64(N)))
+	if math.Pow(2, float64(m)) != float64(N) {
+		return errors.New("log failed")
+	}
+
+	if err = payload.Proof.Deserialize(reader, m); err != nil {
 		return
 	}
 

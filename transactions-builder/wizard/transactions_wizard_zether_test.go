@@ -6,6 +6,7 @@ import (
 	"math/big"
 	mathrand "math/rand"
 	"pandora-pay/addresses"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -42,6 +43,8 @@ func TestCreateZetherTx(t *testing.T) {
 	point, _ := address.GetPoint()
 	emap[config.NATIVE_TOKEN_STRING][point.G1().String()] = getNewBalance(address, amount).Serialize()
 
+	diff := amount / uint64(count)
+
 	transfers := make([]*ZetherTransfer, 5)
 	for i := range transfers {
 
@@ -53,10 +56,11 @@ func TestCreateZetherTx(t *testing.T) {
 			From:               privateKey.Key,
 			FromBalanceDecoded: amount,
 			Destination:        dstAddress.EncodeAddr(),
-			Amount:             amount / uint64(count),
+			Amount:             diff,
 			Burn:               0,
 			Data:               &TransactionsWizardData{[]byte{}, false},
 		}
+		amount -= diff
 
 		power := mathrand.Int() % 4
 		power += 2
@@ -82,7 +86,13 @@ func TestCreateZetherTx(t *testing.T) {
 	hash := helpers.RandomBytes(32)
 	tx, err := CreateZetherTx(transfers, emap, rings, 0, hash, func(status string) {})
 	assert.NoError(t, err)
-
 	assert.NotNil(t, t, tx)
+
+	serialized := tx.SerializeManualToBytes()
+
+	tx2 := &transaction.Transaction{}
+	err = tx2.Deserialize(helpers.NewBufferReader(serialized))
+	assert.NoError(t, err)
+	assert.NotNil(t, t, tx2)
 
 }

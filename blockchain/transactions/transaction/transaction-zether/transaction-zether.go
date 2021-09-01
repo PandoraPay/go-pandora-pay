@@ -3,6 +3,7 @@ package transaction_zether
 import (
 	"errors"
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -38,6 +39,10 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 func (tx *TransactionZether) SerializeAdvanced(writer *helpers.BufferWriter, inclSignature bool) {
 	writer.WriteUvarint(uint64(tx.TxScript))
 	writer.WriteUvarint(tx.Height)
+	writer.WriteUvarint(uint64(len(tx.Payloads)))
+	for _, payload := range tx.Payloads {
+		payload.Serialize(writer, inclSignature)
+	}
 }
 
 func (tx *TransactionZether) Serialize(writer *helpers.BufferWriter) {
@@ -64,6 +69,21 @@ func (tx *TransactionZether) Deserialize(reader *helpers.BufferReader) (err erro
 
 	if tx.Height, err = reader.ReadUvarint(); err != nil {
 		return
+	}
+
+	if n, err = reader.ReadUvarint(); err != nil {
+		return
+	}
+
+	for i := uint64(0); i < n; i++ {
+		payload := TransactionZetherPayload{
+			Statement: &crypto.Statement{},
+			Proof:     &crypto.Proof{},
+		}
+		if err = payload.Deserialize(reader); err != nil {
+			return
+		}
+		tx.Payloads = append(tx.Payloads, &payload)
 	}
 
 	return
