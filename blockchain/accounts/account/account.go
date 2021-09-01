@@ -16,7 +16,7 @@ type Account struct {
 	PublicKey                     []byte                `json:"-"`
 	Version                       uint64                `json:"version"`
 	Nonce                         uint64                `json:"nonce"`
-	BalancesHomo                  []*BalanceHomomorphic `json:"balancesHomo"`
+	Balances                      []*BalanceHomomorphic `json:"balances"`
 	DelegatedStakeVersion         uint64                `json:"delegatedStakeVersion"`
 	DelegatedStake                *dpos.DelegatedStake  `json:"delegatedStake"`
 }
@@ -43,7 +43,7 @@ func (account *Account) AddBalanceHomoUint(amount uint64, tok []byte) (err error
 
 	var foundBalance *BalanceHomomorphic
 
-	for _, balance := range account.BalancesHomo {
+	for _, balance := range account.Balances {
 		if bytes.Equal(balance.Token, tok) {
 			foundBalance = balance
 			break
@@ -56,7 +56,7 @@ func (account *Account) AddBalanceHomoUint(amount uint64, tok []byte) (err error
 			panic(err)
 		}
 		foundBalance = &BalanceHomomorphic{crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G), tok}
-		account.BalancesHomo = append(account.BalancesHomo, foundBalance)
+		account.Balances = append(account.Balances, foundBalance)
 	}
 
 	foundBalance.Amount = foundBalance.Amount.Plus(new(big.Int).SetUint64(amount))
@@ -119,7 +119,7 @@ func (account *Account) ComputeDelegatedUnstakePending() (uint64, error) {
 }
 
 func (account *Account) GetBalanceHomo(token []byte) (result *crypto.ElGamal) {
-	for _, balance := range account.BalancesHomo {
+	for _, balance := range account.Balances {
 		if bytes.Equal(balance.Token, token) {
 			return balance.Amount
 		}
@@ -132,9 +132,9 @@ func (account *Account) Serialize(writer *helpers.BufferWriter) {
 	writer.WriteUvarint(account.Version)
 	writer.WriteUvarint(account.Nonce)
 
-	writer.WriteUvarint(uint64(len(account.BalancesHomo)))
-	for _, balanceHomo := range account.BalancesHomo {
-		balanceHomo.Serialize(writer)
+	writer.WriteUvarint(uint64(len(account.Balances)))
+	for _, balance := range account.Balances {
+		balance.Serialize(writer)
 	}
 
 	writer.WriteUvarint(account.DelegatedStakeVersion)
@@ -181,13 +181,13 @@ func (account *Account) Deserialize(reader *helpers.BufferReader) (err error) {
 	if n, err = reader.ReadUvarint(); err != nil {
 		return
 	}
-	account.BalancesHomo = make([]*BalanceHomomorphic, n)
+	account.Balances = make([]*BalanceHomomorphic, n)
 	for i := uint64(0); i < n; i++ {
 		var balance = new(BalanceHomomorphic)
 		if err = balance.Deserialize(reader); err != nil {
 			return
 		}
-		account.BalancesHomo[i] = balance
+		account.Balances[i] = balance
 	}
 
 	if account.DelegatedStakeVersion, err = reader.ReadUvarint(); err != nil {

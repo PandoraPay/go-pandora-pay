@@ -153,13 +153,13 @@ func (builder *TransactionsBuilder) initCLI() {
 			}
 		}
 
-		var delegateNewFee uint16
+		var delegateNewFee uint64
 		if len(delegateNewPublicKey) > 0 {
 			number, ok := gui.GUI.OutputReadUint64("New Fee", nil, true)
 			if !ok {
 				return
 			}
-			delegateNewFee = uint16(number)
+			delegateNewFee = number
 		}
 
 		data, ok := builder.readData()

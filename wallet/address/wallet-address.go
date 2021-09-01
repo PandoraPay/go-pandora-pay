@@ -100,7 +100,7 @@ func (adr *WalletAddress) DecodeAccount(acc *account.Account, store bool) {
 		}
 		return
 	}
-	for _, balance := range acc.BalancesHomo {
+	for _, balance := range acc.Balances {
 		adr.DecodeBalance(balance.Amount, balance.Token, true)
 	}
 }

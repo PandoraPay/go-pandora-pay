@@ -21,7 +21,7 @@ type GenesisDataAirDropType struct {
 	Address                 string           `json:"address"`
 	Amount                  uint64           `json:"amount"`
 	DelegatedStakePublicKey helpers.HexBytes `json:"delegatedStakePublicKey"`
-	DelegatedStakeFee       uint16           `json:"stakingFee"`
+	DelegatedStakeFee       uint64           `json:"stakingFee"`
 }
 
 type GenesisDataType struct {
