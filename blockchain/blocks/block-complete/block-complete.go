@@ -82,19 +82,19 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, 
 	return
 }
 
-func (blkComplete *BlockComplete) AdvancedSerialization(writer *helpers.BufferWriter) {
+func (blkComplete *BlockComplete) AdvancedSerialization(w *helpers.BufferWriter) {
 
-	writer.Write(blkComplete.Block.Bloom.Serialized)
+	w.Write(blkComplete.Block.Bloom.Serialized)
 
-	writer.WriteUvarint(uint64(len(blkComplete.Txs)))
+	w.WriteUvarint(uint64(len(blkComplete.Txs)))
 
 	for _, tx := range blkComplete.Txs {
-		writer.Write(tx.Bloom.Serialized)
+		w.Write(tx.Bloom.Serialized)
 	}
 }
 
-func (blkComplete *BlockComplete) Serialize(writer *helpers.BufferWriter) {
-	writer.Write(blkComplete.BloomBlkComplete.Serialized)
+func (blkComplete *BlockComplete) Serialize(w *helpers.BufferWriter) {
+	w.Write(blkComplete.BloomBlkComplete.Serialized)
 }
 
 func (blkComplete *BlockComplete) SerializeToBytes() []byte {
@@ -107,33 +107,33 @@ func (blkComplete *BlockComplete) SerializeManualToBytes() []byte {
 	return writer.Bytes()
 }
 
-func (blkComplete *BlockComplete) Deserialize(reader *helpers.BufferReader) (err error) {
+func (blkComplete *BlockComplete) Deserialize(r *helpers.BufferReader) (err error) {
 
-	if uint64(len(reader.Buf)) > config.BLOCK_MAX_SIZE {
+	if uint64(len(r.Buf)) > config.BLOCK_MAX_SIZE {
 		return errors.New("COMPLETE BLOCK EXCEEDS MAX SIZE")
 	}
 
-	first := reader.Position
+	first := r.Position
 
-	if err = blkComplete.Block.Deserialize(reader); err != nil {
+	if err = blkComplete.Block.Deserialize(r); err != nil {
 		return
 	}
 
 	var txsCount uint64
-	if txsCount, err = reader.ReadUvarint(); err != nil {
+	if txsCount, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
 	blkComplete.Txs = make([]*transaction.Transaction, txsCount)
 	for i := uint64(0); i < txsCount; i++ {
 		blkComplete.Txs[i] = &transaction.Transaction{}
-		if err = blkComplete.Txs[i].Deserialize(reader); err != nil {
+		if err = blkComplete.Txs[i].Deserialize(r); err != nil {
 			return
 		}
 	}
 
 	//we can bloom more efficiently if asked
-	blkComplete.BloomCompleteBySerialized(reader.Buf[first:reader.Position])
+	blkComplete.BloomCompleteBySerialized(r.Buf[first:r.Position])
 
 	return
 }

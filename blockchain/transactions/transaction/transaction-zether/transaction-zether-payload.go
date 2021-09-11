@@ -18,6 +18,8 @@ type TransactionZetherPayload struct {
 	// 144 byte payload  ( to implement specific functionality such as delivery of keys etc), user dependent encryption
 	Statement *crypto.Statement // note statement containts fees
 	Proof     *crypto.Proof
+
+	Registrations []*TransactionZetherRegistration
 }
 
 func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, inclSignature bool) {
@@ -31,23 +33,28 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 		payload.Proof.Serialize(w)
 	}
 
+	w.WriteUvarint(uint64(len(payload.Registrations)))
+	for _, registration := range payload.Registrations {
+		registration.Serialize(w)
+	}
+
 }
 
-func (payload *TransactionZetherPayload) Deserialize(reader *helpers.BufferReader) (err error) {
+func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (err error) {
 
-	if payload.Token, err = reader.ReadToken(); err != nil {
+	if payload.Token, err = r.ReadToken(); err != nil {
 		return
 	}
-	if payload.BurnValue, err = reader.ReadUvarint(); err != nil {
+	if payload.BurnValue, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if payload.ExtraType, err = reader.ReadByte(); err != nil {
+	if payload.ExtraType, err = r.ReadByte(); err != nil {
 		return
 	}
-	if payload.ExtraData, err = reader.ReadBytes(PAYLOAD_LIMIT); err != nil {
+	if payload.ExtraData, err = r.ReadBytes(PAYLOAD_LIMIT); err != nil {
 		return
 	}
-	if err = payload.Statement.Deserialize(reader); err != nil {
+	if err = payload.Statement.Deserialize(r); err != nil {
 		return
 	}
 
@@ -57,8 +64,22 @@ func (payload *TransactionZetherPayload) Deserialize(reader *helpers.BufferReade
 		return errors.New("log failed")
 	}
 
-	if err = payload.Proof.Deserialize(reader, m); err != nil {
+	if err = payload.Proof.Deserialize(r, m); err != nil {
 		return
+	}
+
+	var n uint64
+	if n, err = r.ReadUvarint(); err != nil {
+		return
+	}
+
+	payload.Registrations = make([]*TransactionZetherRegistration, n)
+	for i := uint64(0); i < n; i++ {
+		registration := &TransactionZetherRegistration{}
+		if err = registration.Deserialize(r); err != nil {
+			return
+		}
+		payload.Registrations[i] = registration
 	}
 
 	return

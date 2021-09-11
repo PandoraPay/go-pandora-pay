@@ -101,41 +101,41 @@ func (tx *TransactionSimple) Validate() (err error) {
 	return
 }
 
-func (tx *TransactionSimple) SerializeAdvanced(writer *helpers.BufferWriter, inclSignature bool) {
+func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
 
-	writer.WriteUvarint(uint64(tx.TxScript))
+	w.WriteUvarint(uint64(tx.TxScript))
 
-	writer.WriteByte(byte(tx.DataVersion))
+	w.WriteByte(byte(tx.DataVersion))
 	if tx.DataVersion != transaction_data.TX_DATA_NONE {
-		writer.WriteUvarint(uint64(len(tx.Data)))
-		writer.Write(tx.Data)
+		w.WriteUvarint(uint64(len(tx.Data)))
+		w.Write(tx.Data)
 	}
 
-	writer.WriteUvarint(tx.Nonce)
-	writer.WriteUvarint(tx.Fee)
+	w.WriteUvarint(tx.Nonce)
+	w.WriteUvarint(tx.Fee)
 
-	tx.Vin.Serialize(writer, inclSignature)
+	tx.Vin.Serialize(w, inclSignature)
 
 	if tx.TransactionSimpleExtraInterface != nil {
-		tx.TransactionSimpleExtraInterface.Serialize(writer)
+		tx.TransactionSimpleExtraInterface.Serialize(w)
 	}
 }
 
-func (tx *TransactionSimple) Serialize(writer *helpers.BufferWriter) {
-	tx.SerializeAdvanced(writer, true)
+func (tx *TransactionSimple) Serialize(w *helpers.BufferWriter) {
+	tx.SerializeAdvanced(w, true)
 }
 
 func (tx *TransactionSimple) SerializeToBytes() []byte {
-	writer := helpers.NewBufferWriter()
-	tx.Serialize(writer)
+	w := helpers.NewBufferWriter()
+	tx.Serialize(w)
 	return writer.Bytes()
 }
 
-func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err error) {
+func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 
 	var n uint64
 
-	if n, err = reader.ReadUvarint(); err != nil {
+	if n, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
@@ -155,7 +155,7 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 	}
 
 	var dataVersion byte
-	if dataVersion, err = reader.ReadByte(); err != nil {
+	if dataVersion, err = r.ReadByte(); err != nil {
 		return
 	}
 
@@ -163,34 +163,34 @@ func (tx *TransactionSimple) Deserialize(reader *helpers.BufferReader) (err erro
 	switch tx.DataVersion {
 	case transaction_data.TX_DATA_NONE:
 	case transaction_data.TX_DATA_PLAIN_TEXT, transaction_data.TX_DATA_ENCRYPTED:
-		if n, err = reader.ReadUvarint(); err != nil {
+		if n, err = r.ReadUvarint(); err != nil {
 			return
 		}
 		if n == 0 || n > config.TRANSACTIONS_MAX_DATA_LENGTH {
 			return errors.New("Tx.Data length is invalid")
 		}
-		if tx.Data, err = reader.ReadBytes(int(n)); err != nil {
+		if tx.Data, err = r.ReadBytes(int(n)); err != nil {
 			return
 		}
 	default:
 		return errors.New("Invalid Tx.DataVersion")
 	}
 
-	if tx.Nonce, err = reader.ReadUvarint(); err != nil {
+	if tx.Nonce, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
-	if tx.Fee, err = reader.ReadUvarint(); err != nil {
+	if tx.Fee, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
 	tx.Vin = &transaction_simple_parts.TransactionSimpleInput{}
-	if err = tx.Vin.Deserialize(reader); err != nil {
+	if err = tx.Vin.Deserialize(r); err != nil {
 		return
 	}
 
 	if tx.TransactionSimpleExtraInterface != nil {
-		return tx.TransactionSimpleExtraInterface.Deserialize(reader)
+		return tx.TransactionSimpleExtraInterface.Deserialize(r)
 	}
 
 	return

@@ -10,19 +10,21 @@ type BalanceHomomorphic struct {
 	Token  helpers.HexBytes `json:"token"` //20
 }
 
-func (balance *BalanceHomomorphic) Serialize(writer *helpers.BufferWriter) {
-	writer.Write(balance.Amount.Serialize())
-	writer.WriteToken(balance.Token)
+func (balance *BalanceHomomorphic) Serialize(w *helpers.BufferWriter) {
+	w.Write(balance.Amount.Serialize())
+	w.WriteToken(balance.Token)
 }
 
-func (balance *BalanceHomomorphic) Deserialize(reader *helpers.BufferReader) (err error) {
+func (balance *BalanceHomomorphic) Deserialize(r *helpers.BufferReader) (err error) {
 
 	var amount []byte
-	if amount, err = reader.ReadBytes(66); err != nil {
+	if amount, err = r.ReadBytes(66); err != nil {
 		return
 	}
-	balance.Amount = new(crypto.ElGamal).Deserialize(amount)
-	if balance.Token, err = reader.ReadToken(); err != nil {
+	if balance.Amount, err = new(crypto.ElGamal).Deserialize(amount); err != nil {
+		return
+	}
+	if balance.Token, err = r.ReadToken(); err != nil {
 		return
 	}
 

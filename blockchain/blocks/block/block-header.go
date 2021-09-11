@@ -18,16 +18,16 @@ func (blockHeader *BlockHeader) Validate() error {
 	return nil
 }
 
-func (blockHeader *BlockHeader) Serialize(writer *helpers.BufferWriter) {
-	writer.WriteUvarint(blockHeader.Version)
-	writer.WriteUvarint(blockHeader.Height)
+func (blockHeader *BlockHeader) Serialize(w *helpers.BufferWriter) {
+	w.WriteUvarint(blockHeader.Version)
+	w.WriteUvarint(blockHeader.Height)
 }
 
-func (blockHeader *BlockHeader) Deserialize(reader *helpers.BufferReader) (err error) {
-	if blockHeader.Version, err = reader.ReadUvarint(); err != nil {
+func (blockHeader *BlockHeader) Deserialize(r *helpers.BufferReader) (err error) {
+	if blockHeader.Version, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if blockHeader.Height, err = reader.ReadUvarint(); err != nil {
+	if blockHeader.Height, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	return

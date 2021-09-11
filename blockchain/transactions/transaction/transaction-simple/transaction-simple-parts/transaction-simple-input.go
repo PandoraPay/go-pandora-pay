@@ -10,18 +10,18 @@ type TransactionSimpleInput struct {
 	Signature helpers.HexBytes //64
 }
 
-func (vin *TransactionSimpleInput) Serialize(writer *helpers.BufferWriter, inclSignature bool) {
-	writer.Write(vin.PublicKey)
+func (vin *TransactionSimpleInput) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+	w.Write(vin.PublicKey)
 	if inclSignature {
-		writer.Write(vin.Signature)
+		w.Write(vin.Signature)
 	}
 }
 
-func (vin *TransactionSimpleInput) Deserialize(reader *helpers.BufferReader) (err error) {
-	if vin.PublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+func (vin *TransactionSimpleInput) Deserialize(r *helpers.BufferReader) (err error) {
+	if vin.PublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if vin.Signature, err = reader.ReadBytes(cryptography.SignatureSize); err != nil {
+	if vin.Signature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
 		return
 	}
 	return

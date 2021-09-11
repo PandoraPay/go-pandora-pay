@@ -35,12 +35,12 @@ func (tx *TransactionSimpleUnstake) Validate() error {
 	return nil
 }
 
-func (tx *TransactionSimpleUnstake) Serialize(writer *helpers.BufferWriter) {
-	writer.WriteUvarint(tx.Amount)
+func (tx *TransactionSimpleUnstake) Serialize(w *helpers.BufferWriter) {
+	w.WriteUvarint(tx.Amount)
 }
 
-func (tx *TransactionSimpleUnstake) Deserialize(reader *helpers.BufferReader) (err error) {
-	if tx.Amount, err = reader.ReadUvarint(); err != nil {
+func (tx *TransactionSimpleUnstake) Deserialize(r *helpers.BufferReader) (err error) {
+	if tx.Amount, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	return

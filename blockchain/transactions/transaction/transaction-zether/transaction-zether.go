@@ -36,29 +36,29 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 	return
 }
 
-func (tx *TransactionZether) SerializeAdvanced(writer *helpers.BufferWriter, inclSignature bool) {
-	writer.WriteUvarint(uint64(tx.TxScript))
-	writer.WriteUvarint(tx.Height)
-	writer.WriteUvarint(uint64(len(tx.Payloads)))
+func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
+	w.WriteUvarint(uint64(tx.TxScript))
+	w.WriteUvarint(tx.Height)
+	w.WriteUvarint(uint64(len(tx.Payloads)))
 	for _, payload := range tx.Payloads {
-		payload.Serialize(writer, inclSignature)
+		payload.Serialize(w, inclSignature)
 	}
 }
 
-func (tx *TransactionZether) Serialize(writer *helpers.BufferWriter) {
-	tx.SerializeAdvanced(writer, true)
+func (tx *TransactionZether) Serialize(w *helpers.BufferWriter) {
+	tx.SerializeAdvanced(w, true)
 }
 
 func (tx *TransactionZether) SerializeToBytes() []byte {
-	writer := helpers.NewBufferWriter()
-	tx.Serialize(writer)
-	return writer.Bytes()
+	w := helpers.NewBufferWriter()
+	tx.Serialize(w)
+	return w.Bytes()
 }
 
-func (tx *TransactionZether) Deserialize(reader *helpers.BufferReader) (err error) {
+func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 	var n uint64
 
-	if n, err = reader.ReadUvarint(); err != nil {
+	if n, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
@@ -67,11 +67,11 @@ func (tx *TransactionZether) Deserialize(reader *helpers.BufferReader) (err erro
 		return errors.New("INVALID SCRIPT TYPE")
 	}
 
-	if tx.Height, err = reader.ReadUvarint(); err != nil {
+	if tx.Height, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
-	if n, err = reader.ReadUvarint(); err != nil {
+	if n, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
@@ -80,7 +80,7 @@ func (tx *TransactionZether) Deserialize(reader *helpers.BufferReader) (err erro
 			Statement: &crypto.Statement{},
 			Proof:     &crypto.Proof{},
 		}
-		if err = payload.Deserialize(reader); err != nil {
+		if err = payload.Deserialize(r); err != nil {
 			return
 		}
 		tx.Payloads = append(tx.Payloads, &payload)

@@ -86,18 +86,25 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		anonset_publickeys := rings[t][2:]
 		ebalances_list := make([]*crypto.ElGamal, 0, len(rings[t]))
 		for i := range witness_index {
+
+			var data string
 			switch i {
 			case witness_index[0]:
 				publickeylist = append(publickeylist, sender)
-				ebalances_list = append(ebalances_list, new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][sender.String()]))
+				data = sender.String()
 			case witness_index[1]:
 				publickeylist = append(publickeylist, receiver)
-				ebalances_list = append(ebalances_list, new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][receiver.String()]))
+				data = receiver.String()
 			default:
 				publickeylist = append(publickeylist, anonset_publickeys[0])
-				ebalances_list = append(ebalances_list, new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][anonset_publickeys[0].String()]))
+				data = anonset_publickeys[0].String()
 				anonset_publickeys = anonset_publickeys[1:]
 			}
+			pt, err := new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][data])
+			if err != nil {
+				return nil, err
+			}
+			ebalances_list = append(ebalances_list, pt)
 
 			// fmt.Printf("adding %d %s  (ring count %d) \n", i,publickeylist[i].String(), len(anonset_publickeys))
 
@@ -179,9 +186,13 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 
 			switch {
 			case i == witness_index[0]:
-				ebalance = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][sender.String()])
+				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][sender.String()]); err != nil {
+					return nil, err
+				}
 			case i == witness_index[1]:
-				ebalance = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][receiver.String()])
+				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][receiver.String()]); err != nil {
+					return nil, err
+				}
 				//fmt.Printf("receiver %s \n", x.String())
 			default:
 				//x.ScalarMult(crypto.G, new(big.Int).SetInt64(0))
@@ -203,7 +214,11 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		}
 
 		// decode balance now
-		balance := senderKey.DecodeBalance(new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][sender.String()]), transfer.FromBalanceDecoded)
+		pt, err := new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][sender.String()])
+		if err != nil {
+			return nil, err
+		}
+		balance := senderKey.DecodeBalance(pt, transfer.FromBalanceDecoded)
 
 		//fmt.Printf("t %d scid %s  balance %d\n", t, transfers[t].SCID, balance)
 
@@ -225,7 +240,10 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 
 		// get ready for another round by internal processing of state
 		for i := range publickeylist {
-			balance := new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][publickeylist[i].String()])
+			balance, err := new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][publickeylist[i].String()])
+			if err != nil {
+				return nil, err
+			}
 			echanges := crypto.ConstructElGamal(statement.C[i], statement.D)
 
 			balance = balance.Add(echanges)                                                   // homomorphic addition of changes
@@ -234,7 +252,10 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 
 		u := new(bn256.G1).ScalarMult(crypto.HeightToPoint(height), sender_secret)                          // this should be moved to generate proof
 		u1 := new(bn256.G1).ScalarMult(crypto.HeightToPoint(height+crypto.BLOCK_BATCH_SIZE), sender_secret) // this should be moved to generate proof
-		txBase.Payloads[t].Proof = crypto.GenerateProof(txBase.Payloads[t].Statement, &witness_list[t], u, u1, height, tx.GetHashSigning(), txBase.Payloads[t].BurnValue)
+		txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Statement, &witness_list[t], u, u1, height, tx.GetHashSigning(), txBase.Payloads[t].BurnValue)
+		if err != nil {
+			return nil, err
+		}
 
 		// after the tx is serialized, it loses information which is then fed by blockchain
 

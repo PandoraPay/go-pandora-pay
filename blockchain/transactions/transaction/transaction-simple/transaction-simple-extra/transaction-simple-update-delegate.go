@@ -35,16 +35,16 @@ func (tx *TransactionSimpleUpdateDelegate) Validate() error {
 	return nil
 }
 
-func (tx *TransactionSimpleUpdateDelegate) Serialize(writer *helpers.BufferWriter) {
-	writer.Write(tx.NewPublicKey)
-	writer.WriteUvarint(tx.NewFee)
+func (tx *TransactionSimpleUpdateDelegate) Serialize(w *helpers.BufferWriter) {
+	w.Write(tx.NewPublicKey)
+	w.WriteUvarint(tx.NewFee)
 }
 
-func (tx *TransactionSimpleUpdateDelegate) Deserialize(reader *helpers.BufferReader) (err error) {
-	if tx.NewPublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+func (tx *TransactionSimpleUpdateDelegate) Deserialize(r *helpers.BufferReader) (err error) {
+	if tx.NewPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if tx.NewFee, err = reader.ReadUvarint(); err != nil {
+	if tx.NewFee, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	if tx.NewFee > 10000 {

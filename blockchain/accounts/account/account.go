@@ -127,27 +127,27 @@ func (account *Account) GetBalanceHomo(token []byte) (result *crypto.ElGamal) {
 	return nil
 }
 
-func (account *Account) Serialize(writer *helpers.BufferWriter) {
+func (account *Account) Serialize(w *helpers.BufferWriter) {
 
-	writer.WriteUvarint(account.Version)
-	writer.WriteUvarint(account.Nonce)
+	w.WriteUvarint(account.Version)
+	w.WriteUvarint(account.Nonce)
 
-	writer.WriteUvarint(uint64(len(account.Balances)))
+	w.WriteUvarint(uint64(len(account.Balances)))
 	for _, balance := range account.Balances {
-		balance.Serialize(writer)
+		balance.Serialize(w)
 	}
 
-	writer.WriteUvarint(account.DelegatedStakeVersion)
+	w.WriteUvarint(account.DelegatedStakeVersion)
 	if account.DelegatedStakeVersion == 1 {
-		account.DelegatedStake.Serialize(writer)
+		account.DelegatedStake.Serialize(w)
 	}
 
 }
 
 func (account *Account) SerializeToBytes() []byte {
-	writer := helpers.NewBufferWriter()
-	account.Serialize(writer)
-	return writer.Bytes()
+	w := helpers.NewBufferWriter()
+	account.Serialize(w)
+	return w.Bytes()
 }
 
 func (account *Account) CreateDelegatedStake(amount uint64, delegatedStakePublicKey []byte, delegatedStakeFee uint64) error {
@@ -168,34 +168,34 @@ func (account *Account) CreateDelegatedStake(amount uint64, delegatedStakePublic
 	return nil
 }
 
-func (account *Account) Deserialize(reader *helpers.BufferReader) (err error) {
+func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 
-	if account.Version, err = reader.ReadUvarint(); err != nil {
+	if account.Version, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if account.Nonce, err = reader.ReadUvarint(); err != nil {
+	if account.Nonce, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
 	var n uint64
-	if n, err = reader.ReadUvarint(); err != nil {
+	if n, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	account.Balances = make([]*BalanceHomomorphic, n)
 	for i := uint64(0); i < n; i++ {
 		var balance = new(BalanceHomomorphic)
-		if err = balance.Deserialize(reader); err != nil {
+		if err = balance.Deserialize(r); err != nil {
 			return
 		}
 		account.Balances[i] = balance
 	}
 
-	if account.DelegatedStakeVersion, err = reader.ReadUvarint(); err != nil {
+	if account.DelegatedStakeVersion, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	if account.DelegatedStakeVersion == 1 {
 		account.DelegatedStake = new(dpos.DelegatedStake)
-		if err = account.DelegatedStake.Deserialize(reader); err != nil {
+		if err = account.DelegatedStake.Deserialize(r); err != nil {
 			return
 		}
 	}

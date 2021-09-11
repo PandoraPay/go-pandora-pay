@@ -1,7 +1,6 @@
-package cryptolib
+package crypto
 
 import (
-	"encoding/hex"
 	"math"
 	"math/big"
 	"pandora-pay/cryptography/bn256"
@@ -52,22 +51,6 @@ type InnerProductSupport struct {
 	hPrimes   []*bn256.G1
 	hPrimeSum bn256.G1
 	o         *big.Int
-}
-
-func unmarshalpoint(input string) *bn256.G1 {
-	d, err := hex.DecodeString(input)
-	if err != nil {
-		panic(err)
-	}
-
-	if len(d) != 64 {
-		panic("wrong length")
-	}
-
-	x := new(bn256.G1)
-	x.Unmarshal(d)
-	return x
-
 }
 
 var gparams = NewGeneratorParams(128) // these can be pregenerated similarly as in DERO project
@@ -426,8 +409,6 @@ func (proof *Proof) Verify(s *Statement, txid []byte, height uint64, extra_value
 	}
 
 	// klog.V(2).Infof("proof %s\n", proof.String())
-	// panic("proof  successful")
-
 	//	klog.V(2).Infof("Proof successful verified\n")
 
 	return true

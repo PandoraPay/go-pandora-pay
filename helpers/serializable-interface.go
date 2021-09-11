@@ -1,7 +1,7 @@
 package helpers
 
 type SerializableInterface interface {
-	Serialize(writer *BufferWriter)
+	Serialize(w *BufferWriter)
 	SerializeToBytes() []byte
-	Deserialize(reader *BufferReader) error
+	Deserialize(r *BufferReader) error
 }

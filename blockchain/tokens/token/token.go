@@ -95,85 +95,85 @@ func (token *Token) AddSupply(sign bool, amount uint64) error {
 	return helpers.SafeUint64Sub(&token.Supply, amount)
 }
 
-func (token *Token) Serialize(writer *helpers.BufferWriter) {
+func (token *Token) Serialize(w *helpers.BufferWriter) {
 
-	writer.WriteUvarint(token.Version)
+	w.WriteUvarint(token.Version)
 
-	writer.WriteBool(token.CanUpgrade)
-	writer.WriteBool(token.CanMint)
-	writer.WriteBool(token.CanBurn)
-	writer.WriteBool(token.CanChangePublicKey)
-	writer.WriteBool(token.CanChangeSupplyPublicKey)
-	writer.WriteBool(token.CanPause)
-	writer.WriteBool(token.CanFreeze)
-	writer.WriteByte(token.DecimalSeparator)
+	w.WriteBool(token.CanUpgrade)
+	w.WriteBool(token.CanMint)
+	w.WriteBool(token.CanBurn)
+	w.WriteBool(token.CanChangePublicKey)
+	w.WriteBool(token.CanChangeSupplyPublicKey)
+	w.WriteBool(token.CanPause)
+	w.WriteBool(token.CanFreeze)
+	w.WriteByte(token.DecimalSeparator)
 
-	writer.WriteUvarint(token.MaxSupply)
-	writer.WriteUvarint(token.Supply)
+	w.WriteUvarint(token.MaxSupply)
+	w.WriteUvarint(token.Supply)
 
-	writer.Write(token.UpdatePublicKey)
-	writer.Write(token.SupplyPublicKey)
+	w.Write(token.UpdatePublicKey)
+	w.Write(token.SupplyPublicKey)
 
-	writer.WriteString(token.Name)
-	writer.WriteString(token.Ticker)
-	writer.WriteString(token.Description)
+	w.WriteString(token.Name)
+	w.WriteString(token.Ticker)
+	w.WriteString(token.Description)
 
 }
 
 func (token *Token) SerializeToBytes() []byte {
-	writer := helpers.NewBufferWriter()
-	token.Serialize(writer)
-	return writer.Bytes()
+	w := helpers.NewBufferWriter()
+	token.Serialize(w)
+	return w.Bytes()
 }
 
-func (token *Token) Deserialize(reader *helpers.BufferReader) (err error) {
+func (token *Token) Deserialize(r *helpers.BufferReader) (err error) {
 
-	if token.Version, err = reader.ReadUvarint(); err != nil {
+	if token.Version, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if token.CanUpgrade, err = reader.ReadBool(); err != nil {
+	if token.CanUpgrade, err = r.ReadBool(); err != nil {
 		return
 	}
-	if token.CanMint, err = reader.ReadBool(); err != nil {
+	if token.CanMint, err = r.ReadBool(); err != nil {
 		return
 	}
-	if token.CanBurn, err = reader.ReadBool(); err != nil {
+	if token.CanBurn, err = r.ReadBool(); err != nil {
 		return
 	}
-	if token.CanChangePublicKey, err = reader.ReadBool(); err != nil {
+	if token.CanChangePublicKey, err = r.ReadBool(); err != nil {
 		return
 	}
-	if token.CanChangeSupplyPublicKey, err = reader.ReadBool(); err != nil {
+	if token.CanChangeSupplyPublicKey, err = r.ReadBool(); err != nil {
 		return
 	}
-	if token.CanPause, err = reader.ReadBool(); err != nil {
+	if token.CanPause, err = r.ReadBool(); err != nil {
 		return
 	}
-	if token.CanFreeze, err = reader.ReadBool(); err != nil {
+	if token.CanFreeze, err = r.ReadBool(); err != nil {
 		return
 	}
-	if token.DecimalSeparator, err = reader.ReadByte(); err != nil {
+	if token.DecimalSeparator, err = r.ReadByte(); err != nil {
 		return
 	}
-	if token.MaxSupply, err = reader.ReadUvarint(); err != nil {
+	if token.MaxSupply, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if token.Supply, err = reader.ReadUvarint(); err != nil {
+	if token.Supply, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if token.UpdatePublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+	if token.UpdatePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if token.SupplyPublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+	if token.SupplyPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if token.Name, err = reader.ReadString(); err != nil {
+	if token.Name, err = r.ReadString(); err != nil {
 		return
 	}
-	if token.Ticker, err = reader.ReadString(); err != nil {
+	if token.Ticker, err = r.ReadString(); err != nil {
 		return
 	}
-	if token.Description, err = reader.ReadString(); err != nil {
+	if token.Description, err = r.ReadString(); err != nil {
 		return
 	}
 

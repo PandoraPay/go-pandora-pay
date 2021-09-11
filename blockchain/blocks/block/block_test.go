@@ -37,8 +37,8 @@ func TestBlock_Serialize(t *testing.T) {
 
 	blk2 := &Block{BlockHeader: &BlockHeader{}}
 
-	reader := helpers.NewBufferReader(buf)
-	err = blk2.Deserialize(reader)
+	r := helpers.NewBufferReader(buf)
+	err = blk2.Deserialize(r)
 	assert.NoError(t, err, "Error...?")
 
 	assert.Equal(t, blk2.SerializeManualToBytes(), blk.SerializeManualToBytes(), "Serialization/Deserialization doesn't work")

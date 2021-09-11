@@ -41,15 +41,15 @@ func (tx *Transaction) GetHashSigning() []byte {
 	return cryptography.SHA3(tx.SerializeForSigning())
 }
 
-func (tx *Transaction) SerializeAdvanced(writer *helpers.BufferWriter, inclSignature bool) {
+func (tx *Transaction) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
 
-	writer.WriteUvarint(uint64(tx.Version))
-	tx.TransactionBaseInterface.SerializeAdvanced(writer, inclSignature)
+	w.WriteUvarint(uint64(tx.Version))
+	tx.TransactionBaseInterface.SerializeAdvanced(w, inclSignature)
 
 }
 
-func (tx *Transaction) Serialize(writer *helpers.BufferWriter) {
-	writer.Write(tx.Bloom.Serialized)
+func (tx *Transaction) Serialize(w *helpers.BufferWriter) {
+	w.Write(tx.Bloom.Serialized)
 }
 
 func (tx *Transaction) SerializeToBytes() []byte {
@@ -78,12 +78,12 @@ func (tx *Transaction) Verify() error {
 	return tx.VerifyBloomAll()
 }
 
-func (tx *Transaction) Deserialize(reader *helpers.BufferReader) (err error) {
+func (tx *Transaction) Deserialize(r *helpers.BufferReader) (err error) {
 
-	first := reader.Position
+	first := r.Position
 
 	var n uint64
-	if n, err = reader.ReadUvarint(); err != nil {
+	if n, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	tx.Version = transaction_type.TransactionVersion(n)
@@ -97,12 +97,12 @@ func (tx *Transaction) Deserialize(reader *helpers.BufferReader) (err error) {
 		return errors.New("Invalid TxType")
 	}
 
-	if err = tx.TransactionBaseInterface.Deserialize(reader); err != nil {
+	if err = tx.TransactionBaseInterface.Deserialize(r); err != nil {
 		return
 	}
 
 	//we can bloom more efficiently if asked
-	serialized := reader.Buf[first:reader.Position]
+	serialized := r.Buf[first:r.Position]
 	hash := cryptography.SHA3(serialized)
 	tx.Bloom = &TransactionBloom{
 		Serialized: serialized,

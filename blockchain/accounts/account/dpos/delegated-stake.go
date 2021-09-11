@@ -58,40 +58,40 @@ func (dstake *DelegatedStake) AddStakePendingUnstake(amount, blockHeight uint64)
 	return nil
 }
 
-func (dstake *DelegatedStake) Serialize(writer *helpers.BufferWriter) {
+func (dstake *DelegatedStake) Serialize(w *helpers.BufferWriter) {
 
-	writer.Write(dstake.DelegatedPublicKey)
-	writer.WriteUvarint(dstake.StakeAvailable)
-	writer.WriteUvarint(dstake.DelegatedStakeFee)
+	w.Write(dstake.DelegatedPublicKey)
+	w.WriteUvarint(dstake.StakeAvailable)
+	w.WriteUvarint(dstake.DelegatedStakeFee)
 
-	writer.WriteUvarint(uint64(len(dstake.StakesPending)))
+	w.WriteUvarint(uint64(len(dstake.StakesPending)))
 	for _, stakePending := range dstake.StakesPending {
-		stakePending.Serialize(writer)
+		stakePending.Serialize(w)
 	}
 
 }
 
-func (dstake *DelegatedStake) Deserialize(reader *helpers.BufferReader) (err error) {
+func (dstake *DelegatedStake) Deserialize(r *helpers.BufferReader) (err error) {
 
-	if dstake.DelegatedPublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+	if dstake.DelegatedPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if dstake.StakeAvailable, err = reader.ReadUvarint(); err != nil {
+	if dstake.StakeAvailable, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if dstake.DelegatedStakeFee, err = reader.ReadUvarint(); err != nil {
+	if dstake.DelegatedStakeFee, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
 	var n uint64
-	if n, err = reader.ReadUvarint(); err != nil {
+	if n, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
 	dstake.StakesPending = make([]*DelegatedStakePending, n)
 	for i := uint64(0); i < n; i++ {
 		delegatedStakePending := new(DelegatedStakePending)
-		if err = delegatedStakePending.Deserialize(reader); err != nil {
+		if err = delegatedStakePending.Deserialize(r); err != nil {
 			return
 		}
 		dstake.StakesPending[i] = delegatedStakePending

@@ -103,39 +103,39 @@ func (blk *Block) VerifySignatureManually() bool {
 	return crypto.VerifySignature(hash, blk.Signature, blk.DelegatedPublicKey)
 }
 
-func (blk *Block) AdvancedSerialization(writer *helpers.BufferWriter, kernelHash bool, inclSignature bool) {
+func (blk *Block) AdvancedSerialization(w *helpers.BufferWriter, kernelHash bool, inclSignature bool) {
 
-	blk.BlockHeader.Serialize(writer)
+	blk.BlockHeader.Serialize(w)
 
 	if !kernelHash {
-		writer.Write(blk.MerkleHash)
-		writer.Write(blk.PrevHash)
+		w.Write(blk.MerkleHash)
+		w.Write(blk.PrevHash)
 	}
 
-	writer.Write(blk.PrevKernelHash)
+	w.Write(blk.PrevKernelHash)
 
 	if !kernelHash {
-		writer.WriteUvarint(blk.StakingAmount)
+		w.WriteUvarint(blk.StakingAmount)
 	}
 
-	writer.WriteUvarint(blk.Timestamp)
+	w.WriteUvarint(blk.Timestamp)
 
-	writer.Write(blk.Forger)
+	w.Write(blk.Forger)
 	if !kernelHash {
-		writer.Write(blk.DelegatedPublicKey)
+		w.Write(blk.DelegatedPublicKey)
 	}
 
 	if inclSignature {
-		writer.Write(blk.Signature)
+		w.Write(blk.Signature)
 	}
 }
 
-func (blk *Block) SerializeForForging(writer *helpers.BufferWriter) {
-	blk.AdvancedSerialization(writer, true, false)
+func (blk *Block) SerializeForForging(w *helpers.BufferWriter) {
+	blk.AdvancedSerialization(w, true, false)
 }
 
-func (blk *Block) Serialize(writer *helpers.BufferWriter) {
-	writer.Write(blk.Bloom.Serialized)
+func (blk *Block) Serialize(w *helpers.BufferWriter) {
+	w.Write(blk.Bloom.Serialized)
 }
 
 func (blk *Block) SerializeToBytes() []byte {
@@ -148,39 +148,39 @@ func (blk *Block) SerializeManualToBytes() []byte {
 	return writer.Bytes()
 }
 
-func (blk *Block) Deserialize(reader *helpers.BufferReader) (err error) {
+func (blk *Block) Deserialize(r *helpers.BufferReader) (err error) {
 
-	first := reader.Position
+	first := r.Position
 
-	if err = blk.BlockHeader.Deserialize(reader); err != nil {
+	if err = blk.BlockHeader.Deserialize(r); err != nil {
 		return
 	}
-	if blk.MerkleHash, err = reader.ReadHash(); err != nil {
+	if blk.MerkleHash, err = r.ReadHash(); err != nil {
 		return
 	}
-	if blk.PrevHash, err = reader.ReadHash(); err != nil {
+	if blk.PrevHash, err = r.ReadHash(); err != nil {
 		return
 	}
-	if blk.PrevKernelHash, err = reader.ReadHash(); err != nil {
+	if blk.PrevKernelHash, err = r.ReadHash(); err != nil {
 		return
 	}
-	if blk.StakingAmount, err = reader.ReadUvarint(); err != nil {
+	if blk.StakingAmount, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if blk.Timestamp, err = reader.ReadUvarint(); err != nil {
+	if blk.Timestamp, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if blk.Forger, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+	if blk.Forger, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if blk.DelegatedPublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+	if blk.DelegatedPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if blk.Signature, err = reader.ReadBytes(cryptography.SignatureSize); err != nil {
+	if blk.Signature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
 		return
 	}
 
-	serialized := reader.Buf[first:reader.Position]
+	serialized := r.Buf[first:r.Position]
 	blk.BloomSerializedNow(serialized)
 
 	return
