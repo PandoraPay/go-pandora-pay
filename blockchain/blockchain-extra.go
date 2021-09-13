@@ -11,6 +11,7 @@ import (
 	"pandora-pay/blockchain/blocks/block-complete"
 	forging_block_work "pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/blockchain/genesis"
+	"pandora-pay/blockchain/registrations"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -44,7 +45,6 @@ func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 		PrevKernelHash:     genesis.GenesisData.KernelHash,
 		Target:             new(big.Int).SetBytes(genesis.GenesisData.Target),
 		BigTotalDifficulty: new(big.Int).SetUint64(0),
-		AccountsCount:      0,
 		TransactionsCount:  0,
 		TokensCount:        0,
 	}
@@ -57,6 +57,11 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 	if err := store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		toks, err := tokens.NewTokens(writer)
+		if err != nil {
+			return
+		}
+
+		regs, err := registrations.NewRegistrations(writer)
 		if err != nil {
 			return
 		}
@@ -84,11 +89,14 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 				return
 			}
 
-			var acc *account.Account
-			if acc, err = accs.CreateAccountValid(addr.PublicKey, addr.Registration); err != nil {
+			if _, err = regs.CreateRegistration(addr.PublicKey, addr.Registration); err != nil {
 				return
 			}
-			chainData.AccountsCount += 1
+
+			var acc *account.Account
+			if acc, err = accs.CreateAccount(addr.PublicKey); err != nil {
+				return
+			}
 
 			if airdrop.DelegatedStakePublicKey != nil {
 				if err = acc.NativeExtra.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
@@ -129,6 +137,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 		toks.CommitChanges()
 		accsCollection.CommitChanges()
+		regs.CommitChanges()
 
 		if err = toks.WriteToStore(); err != nil {
 			return

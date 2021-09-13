@@ -11,8 +11,8 @@ import (
 
 type Account struct {
 	helpers.SerializableInterface `json:"-"`
-	PublicKey                     []byte              `json:"-"`
-	Token                         []byte              `json:"-"`
+	PublicKey                     []byte              `json:"-"` //hashmap key
+	Token                         []byte              `json:"-"` //collection token
 	Version                       uint64              `json:"version"`
 	Balance                       *BalanceHomomorphic `json:"balances"`
 	NativeExtra                   *AccountNativeExtra `json:"nativeExtra"`
