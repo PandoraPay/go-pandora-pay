@@ -50,7 +50,7 @@ func (accountNativeExtra *AccountNativeExtra) RefreshDelegatedStake(blockHeight 
 					return
 				}
 			} else {
-				if err = accountNativeExtra.account.AddBalanceHomoUint(stakePending.PendingAmount); err != nil {
+				if err = accountNativeExtra.account.AddBalanceUint(stakePending.PendingAmount); err != nil {
 					return
 				}
 			}

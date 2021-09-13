@@ -24,13 +24,15 @@ type ZetherTransfer struct {
 	Data               *TransactionsWizardData
 }
 
-func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, statusCallback func(string)) (*transaction.Transaction, error) {
+func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, registrations []*transaction_zether.TransactionZetherRegistration, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	txBase := &transaction_zether.TransactionZether{
 		TxScript: transaction_zether.SCRIPT_TRANSFER,
 		Height:   height,
-		Payloads: []*transaction_zether.TransactionZetherPayload{},
 	}
+
+	txBase.Registrations = make([]*transaction_zether.TransactionZetherRegistration, len(registrations))
+	copy(txBase.Registrations, registrations)
 
 	tx := &transaction.Transaction{
 		Version:                  transaction_type.TX_ZETHER,

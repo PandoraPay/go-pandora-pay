@@ -103,7 +103,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 					return
 				}
 			} else {
-				if err = acc.AddBalanceHomoUint(airdrop.Amount); err != nil {
+				if err = acc.AddBalanceUint(airdrop.Amount); err != nil {
 					return
 				}
 			}

@@ -191,7 +191,7 @@ func (testnet *Testnet) run() {
 
 						if account != nil {
 
-							balanceHomo = account.GetBalanceHomo()
+							balanceHomo = account.GetBalance()
 							delegatedStakeAvailable = account.NativeExtra.GetDelegatedStakeAvailable()
 							delegatedUnstakePending, _ = account.NativeExtra.ComputeDelegatedUnstakePending()
 

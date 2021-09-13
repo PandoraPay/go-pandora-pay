@@ -7,6 +7,7 @@ import (
 	mathrand "math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
+	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -26,7 +27,7 @@ func getNewBalance(addr *addresses.Address, amount uint64) *crypto.ElGamal {
 func TestCreateZetherTx(t *testing.T) {
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	address, err := privateKey.GenerateAddress(false, 0, nil)
+	address, err := privateKey.GenerateAddress(true, 0, nil)
 	assert.NoError(t, err)
 
 	var amount uint64
@@ -45,11 +46,16 @@ func TestCreateZetherTx(t *testing.T) {
 
 	diff := amount / uint64(count)
 
+	registrations := make([]*transaction_zether.TransactionZetherRegistration, 0)
+	registrations = append(registrations, &transaction_zether.TransactionZetherRegistration{PublicKey: address.PublicKey, RegistrationSignature: address.Registration})
+
 	transfers := make([]*ZetherTransfer, 5)
 	for i := range transfers {
 
 		dstPrivateKey := addresses.GenerateNewPrivateKey()
-		dstAddress, _ := dstPrivateKey.GenerateAddress(false, 0, nil)
+		dstAddress, _ := dstPrivateKey.GenerateAddress(true, 0, nil)
+
+		registrations = append(registrations, &transaction_zether.TransactionZetherRegistration{PublicKey: dstAddress.PublicKey, RegistrationSignature: dstAddress.Registration})
 
 		transfers[i] = &ZetherTransfer{
 			Token:              config.NATIVE_TOKEN_FULL,
@@ -76,7 +82,9 @@ func TestCreateZetherTx(t *testing.T) {
 
 		for j := 2; j < ringSize; j++ {
 			decoyPrivateKey := addresses.GenerateNewPrivateKey()
-			decoyAddress, _ := decoyPrivateKey.GenerateAddress(false, 0, nil)
+			decoyAddress, _ := decoyPrivateKey.GenerateAddress(true, 0, nil)
+			registrations = append(registrations, &transaction_zether.TransactionZetherRegistration{PublicKey: decoyAddress.PublicKey, RegistrationSignature: decoyAddress.Registration})
+
 			decoyPoint, _ := decoyAddress.GetPoint()
 			rings[i][j] = decoyPoint.G1()
 			emap[config.NATIVE_TOKEN_FULL_STRING][decoyPoint.G1().String()] = getNewBalance(decoyAddress, 0).Serialize()
@@ -84,7 +92,7 @@ func TestCreateZetherTx(t *testing.T) {
 	}
 
 	hash := helpers.RandomBytes(32)
-	tx, err := CreateZetherTx(transfers, emap, rings, 0, hash, func(status string) {})
+	tx, err := CreateZetherTx(transfers, emap, rings, 0, hash, registrations, func(status string) {})
 	assert.NoError(t, err)
 	assert.NotNil(t, t, tx)
 

@@ -9,10 +9,11 @@ import (
 
 type TransactionZether struct {
 	transaction_base_interface.TransactionBaseInterface
-	TxScript ScriptType
-	Height   uint64
-	Payloads []*TransactionZetherPayload
-	Bloom    *TransactionZetherBloom
+	TxScript      ScriptType
+	Height        uint64
+	Registrations []*TransactionZetherRegistration
+	Payloads      []*TransactionZetherPayload
+	Bloom         *TransactionZetherBloom
 }
 
 func (tx *TransactionZether) ComputeFees() uint64 {
@@ -39,6 +40,12 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(uint64(tx.TxScript))
 	w.WriteUvarint(tx.Height)
+
+	w.WriteUvarint(uint64(len(tx.Registrations)))
+	for _, registration := range tx.Registrations {
+		registration.Serialize(w)
+	}
+
 	w.WriteUvarint(uint64(len(tx.Payloads)))
 	for _, payload := range tx.Payloads {
 		payload.Serialize(w, inclSignature)
@@ -74,7 +81,18 @@ func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 	if n, err = r.ReadUvarint(); err != nil {
 		return
 	}
+	tx.Registrations = make([]*TransactionZetherRegistration, n)
+	for i := uint64(0); i < n; i++ {
+		registration := &TransactionZetherRegistration{}
+		if err = registration.Deserialize(r); err != nil {
+			return
+		}
+		tx.Registrations[i] = registration
+	}
 
+	if n, err = r.ReadUvarint(); err != nil {
+		return
+	}
 	for i := uint64(0); i < n; i++ {
 		payload := TransactionZetherPayload{
 			Statement: &crypto.Statement{},

@@ -18,8 +18,6 @@ type TransactionZetherPayload struct {
 	// 144 byte payload  ( to implement specific functionality such as delivery of keys etc), user dependent encryption
 	Statement *crypto.Statement // note statement containts fees
 	Proof     *crypto.Proof
-
-	Registrations []*TransactionZetherRegistration
 }
 
 func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, inclSignature bool) {
@@ -31,11 +29,6 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 
 	if inclSignature {
 		payload.Proof.Serialize(w)
-	}
-
-	w.WriteUvarint(uint64(len(payload.Registrations)))
-	for _, registration := range payload.Registrations {
-		registration.Serialize(w)
 	}
 
 }
@@ -66,20 +59,6 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 
 	if err = payload.Proof.Deserialize(r, m); err != nil {
 		return
-	}
-
-	var n uint64
-	if n, err = r.ReadUvarint(); err != nil {
-		return
-	}
-
-	payload.Registrations = make([]*TransactionZetherRegistration, n)
-	for i := uint64(0); i < n; i++ {
-		registration := &TransactionZetherRegistration{}
-		if err = registration.Deserialize(r); err != nil {
-			return
-		}
-		payload.Registrations[i] = registration
 	}
 
 	return

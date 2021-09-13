@@ -25,16 +25,16 @@ func (account *Account) Validate() error {
 	return nil
 }
 
-func (account *Account) AddBalanceHomoUint(amount uint64) (err error) {
+func (account *Account) AddBalanceUint(amount uint64) (err error) {
 	account.Balance.Amount = account.Balance.Amount.Plus(new(big.Int).SetUint64(amount))
 	return
 }
 
-func (account *Account) AddBalanceHomo(encryptedAmount []byte) (err error) {
+func (account *Account) AddBalance(encryptedAmount []byte) (err error) {
 	panic("not implemented")
 }
 
-func (account *Account) GetBalanceHomo() (result *crypto.ElGamal) {
+func (account *Account) GetBalance() (result *crypto.ElGamal) {
 	return account.Balance.Amount
 }
 
