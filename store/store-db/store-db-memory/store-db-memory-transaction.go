@@ -42,6 +42,14 @@ func (tx *StoreDBMemoryTransaction) Get(key string) []byte {
 	return resp
 }
 
+func (tx *StoreDBMemoryTransaction) Exists(key string) bool {
+	data := tx.Get(key)
+	if data != nil {
+		return true
+	}
+	return false
+}
+
 func (tx *StoreDBMemoryTransaction) GetClone(key string) []byte {
 	return tx.Get(key) //not required
 }

@@ -24,7 +24,7 @@ type BlockchainDataUpdate struct {
 type BlockchainUpdate struct {
 	err                    error
 	newChainData           *BlockchainData
-	accs                   *accounts.Accounts
+	accsCollection         *accounts.AccountsCollection
 	toks                   *tokens.Tokens
 	allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate
 	removedTxHashes        map[string][]byte
@@ -82,7 +82,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 	gui.GUI.Warning("-------------------------------------------")
 	update.newChainData.updateChainInfo()
 
-	queue.chain.UpdateAccounts.Broadcast(update.accs)
+	queue.chain.UpdateAccounts.Broadcast(update.accsCollection)
 	queue.chain.UpdateTokens.Broadcast(update.toks)
 
 	//let's remove the transactions from the mempool

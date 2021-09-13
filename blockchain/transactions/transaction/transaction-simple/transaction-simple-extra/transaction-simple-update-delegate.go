@@ -14,14 +14,16 @@ type TransactionSimpleUpdateDelegate struct {
 }
 
 func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) (err error) {
-	if !acc.HasDelegatedStake() {
-		if err = acc.CreateDelegatedStake(0, tx.NewPublicKey, tx.NewFee); err != nil {
+
+	if acc.NativeExtra == nil || !acc.NativeExtra.HasDelegatedStake() {
+		if err = acc.NativeExtra.CreateDelegatedStake(0, tx.NewPublicKey, tx.NewFee); err != nil {
 			return
 		}
 	} else {
-		acc.DelegatedStake.DelegatedPublicKey = tx.NewPublicKey
-		acc.DelegatedStake.DelegatedStakeFee = tx.NewFee
+		acc.NativeExtra.DelegatedStake.DelegatedPublicKey = tx.NewPublicKey
+		acc.NativeExtra.DelegatedStake.DelegatedStakeFee = tx.NewFee
 	}
+
 	return
 }
 

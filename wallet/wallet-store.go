@@ -7,6 +7,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -205,7 +206,12 @@ func (wallet *Wallet) StartWallet() error {
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
-		accs := accounts.NewAccounts(reader)
+		accsCollection := accounts.NewAccountsCollection(reader)
+		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+		if err != nil {
+			return
+		}
+
 		for _, adr := range wallet.Addresses {
 
 			var acc, acc2 *account.Account
@@ -214,7 +220,7 @@ func (wallet *Wallet) StartWallet() error {
 			}
 
 			if acc2 != nil { //let's clone it
-				acc = &account.Account{PublicKey: adr.PublicKey}
+				acc = account.NewAccount(adr.PublicKey, acc2.Token)
 				if err = acc.Deserialize(helpers.NewBufferReader(helpers.CloneBytes(acc2.SerializeToBytes()))); err != nil {
 					return
 				}

@@ -100,9 +100,8 @@ func (adr *WalletAddress) DecodeAccount(acc *account.Account, store bool) {
 		}
 		return
 	}
-	for _, balance := range acc.Balances {
-		adr.DecodeBalance(balance.Amount, balance.Token, true)
-	}
+
+	adr.DecodeBalance(acc.Balance.Amount, acc.Token, true)
 }
 
 func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, store bool) uint64 {
@@ -112,7 +111,7 @@ func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, s
 	}
 
 	if len(token) == 0 {
-		token = config.NATIVE_TOKEN
+		token = config.NATIVE_TOKEN_FULL
 	}
 
 	previousValue := uint64(0)

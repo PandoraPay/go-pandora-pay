@@ -7,6 +7,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
@@ -152,9 +153,13 @@ func (w *ForgingWallet) processUpdates() {
 
 					chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
-					accs := accounts.NewAccounts(reader)
-					var acc *account.Account
+					accsCollection := accounts.NewAccountsCollection(reader)
+					accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+					if err != nil {
+						return
+					}
 
+					var acc *account.Account
 					if acc, err = accs.GetAccount(update.pubKey, chainHeight); err != nil {
 						return
 					}
@@ -162,7 +167,7 @@ func (w *ForgingWallet) processUpdates() {
 						return errors.New("Account was not found")
 					}
 
-					if acc.DelegatedStake == nil || !bytes.Equal(acc.DelegatedStake.DelegatedPublicKey, delegatedPublicKey) {
+					if acc.NativeExtra.DelegatedStake == nil || !bytes.Equal(acc.NativeExtra.DelegatedStake.DelegatedPublicKey, delegatedPublicKey) {
 						return errors.New("Delegated stake is not matching")
 					}
 
@@ -192,12 +197,16 @@ func (w *ForgingWallet) processUpdates() {
 				}
 
 			}
-		case accsData, ok := <-updateAccountsCn:
+		case accsCollectionData, ok := <-updateAccountsCn:
 			if !ok {
 				return
 			}
 
-			accs := accsData.(*accounts.Accounts)
+			accsCollection := accsCollectionData.(*accounts.AccountsCollection)
+			accs, err := accsCollection.GetExistingMap(config.NATIVE_TOKEN_FULL)
+			if err != nil {
+				return
+			}
 
 			for k, v := range accs.HashMap.Committed {
 				if w.addressesMap[k] != nil {
@@ -218,7 +227,12 @@ func (w *ForgingWallet) processUpdates() {
 
 			if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-				accs := accounts.NewAccounts(reader)
+				accsCollection := accounts.NewAccountsCollection(reader)
+				accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+				if err != nil {
+					return
+				}
+
 				for _, address := range w.addresses {
 
 					chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))

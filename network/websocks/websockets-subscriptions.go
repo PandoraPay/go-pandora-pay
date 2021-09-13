@@ -181,15 +181,18 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
-		case accsData, ok := <-updateAccountsCn:
+		case accsCollectionData, ok := <-updateAccountsCn:
 			if !ok {
 				return
 			}
 
-			accs := accsData.(*accounts.Accounts)
-			for k, v := range accs.HashMap.Committed {
-				if list := this.accountsSubscriptions[k]; list != nil {
-					this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element.(*account.Account), nil, nil)
+			accsCollection := accsCollectionData.(*accounts.AccountsCollection)
+			accsMap := accsCollection.GetAllMap()
+			for _, accs := range accsMap {
+				for k, v := range accs.HashMap.Committed {
+					if list := this.accountsSubscriptions[k]; list != nil {
+						this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element.(*account.Account), nil, nil)
+					}
 				}
 			}
 

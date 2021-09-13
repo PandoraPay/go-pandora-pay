@@ -70,7 +70,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 
 		dsts = append(dsts, addr.AddressEncoded)
 		dstsAmounts = append(dstsAmounts, config_stake.GetRequiredStake(blockHeight))
-		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
+		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN_FULL)
 	}
 
 	addr, err := testnet.wallet.GetWalletAddress(0)
@@ -78,7 +78,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {})
+	tx, err := testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN_FULL, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {})
 	if err != nil {
 		return
 	}
@@ -105,7 +105,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 		dsts = append(dsts, addr.EncodeAddr())
 		amount := uint64(rand.Int63n(6))
 		dstsAmounts = append(dstsAmounts, amount)
-		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
+		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN_FULL)
 		sum += amount
 	}
 
@@ -114,7 +114,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN, []uint64{sum}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {})
+	tx, err := testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN_FULL, []uint64{sum}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {})
 	if err != nil {
 		return
 	}
@@ -178,16 +178,22 @@ func (testnet *Testnet) run() {
 
 					if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-						accs := accounts.NewAccounts(reader)
+						accsCollection := accounts.NewAccountsCollection(reader)
+
+						accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+						if err != nil {
+							return
+						}
+
 						if account, err = accs.GetAccount(publicKey, blockHeight); err != nil {
 							return
 						}
 
 						if account != nil {
 
-							balanceHomo = account.GetBalanceHomo(config.NATIVE_TOKEN)
-							delegatedStakeAvailable = account.GetDelegatedStakeAvailable()
-							delegatedUnstakePending, _ = account.ComputeDelegatedUnstakePending()
+							balanceHomo = account.GetBalanceHomo()
+							delegatedStakeAvailable = account.NativeExtra.GetDelegatedStakeAvailable()
+							delegatedUnstakePending, _ = account.NativeExtra.ComputeDelegatedUnstakePending()
 
 						}
 
@@ -199,7 +205,7 @@ func (testnet *Testnet) run() {
 					if account != nil {
 
 						var balance uint64
-						if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN, false); err != nil {
+						if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN_FULL, false); err != nil {
 							return
 						}
 

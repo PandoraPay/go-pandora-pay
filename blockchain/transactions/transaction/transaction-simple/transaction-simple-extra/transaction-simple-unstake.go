@@ -16,13 +16,13 @@ type TransactionSimpleUnstake struct {
 }
 
 func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) (err error) {
-	if !acc.HasDelegatedStake() {
+	if acc.NativeExtra == nil || !acc.NativeExtra.HasDelegatedStake() {
 		return errors.New("acc.HasDelegatedStake is null")
 	}
-	if err = acc.DelegatedStake.AddStakeAvailable(false, tx.Amount); err != nil {
+	if err = acc.NativeExtra.DelegatedStake.AddStakeAvailable(false, tx.Amount); err != nil {
 		return
 	}
-	if err = acc.DelegatedStake.AddStakePendingUnstake(tx.Amount, blockHeight); err != nil {
+	if err = acc.NativeExtra.DelegatedStake.AddStakePendingUnstake(tx.Amount, blockHeight); err != nil {
 		return
 	}
 	return

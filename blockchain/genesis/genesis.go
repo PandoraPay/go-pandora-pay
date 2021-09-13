@@ -101,7 +101,7 @@ func createNewGenesis(v []string) (err error) {
 	GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
 	GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 
-	amount := 100 * config_stake.GetRequiredStake(0)
+	amount := 10000 * config_stake.GetRequiredStake(0)
 	for i := 1; i < len(v); i++ {
 
 		if err = func() (err error) {
@@ -163,7 +163,7 @@ func createSimpleGenesis(wallet *wallet.Wallet) (err error) {
 		return
 	}
 
-	amount := 100 * config_stake.GetRequiredStake(0)
+	amount := 10000 * config_stake.GetRequiredStake(0)
 	GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
 		Address:                 address,
 		Amount:                  amount,

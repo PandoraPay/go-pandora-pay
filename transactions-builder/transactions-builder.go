@@ -38,7 +38,7 @@ func (builder *TransactionsBuilder) checkTx(acc *account.Account, tx *transactio
 
 	base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
-	availableDelegatedStake, err := acc.ComputeDelegatedStakeAvailable(chainHeight)
+	availableDelegatedStake, err := acc.NativeExtra.ComputeDelegatedStakeAvailable(chainHeight)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (builder *TransactionsBuilder) checkTx(acc *account.Account, tx *transactio
 		}
 	}
 
-	if availableDelegatedStake, err = builder.mempool.GetBalance(base.Vin.PublicKey, availableDelegatedStake, config.NATIVE_TOKEN); err != nil {
+	if availableDelegatedStake, err = builder.mempool.GetBalance(base.Vin.PublicKey, availableDelegatedStake, config.NATIVE_TOKEN_FULL); err != nil {
 		return
 	}
 
@@ -105,8 +105,15 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, nonce ui
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		toks := tokens.NewTokens(reader)
-		tok, err := toks.GetTokenRequired(token)
+		toks, err := tokens.NewTokens(reader)
+		if err != nil {
+			return
+		}
+
+		tok, err := toks.GetToken(token)
+		if tok == nil {
+			return errors.New("Token was not found")
+		}
 
 		if amountsFinal, err = builder.convertFloatAmounts(amounts, tok); err != nil {
 			return
@@ -216,9 +223,17 @@ func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uin
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		tok, err := tokens.NewTokens(reader).GetTokenRequired(config.NATIVE_TOKEN)
+		toks, err := tokens.NewTokens(reader)
 		if err != nil {
 			return
+		}
+
+		tok, err := toks.GetToken(config.NATIVE_TOKEN_FULL)
+		if err != nil {
+			return
+		}
+		if tok == nil {
+			return errors.New("Token was not found")
 		}
 
 		if feeFinal, err = fee.convertToWizardFee(tok); err != nil {
@@ -252,8 +267,12 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
+		accsCollection := accounts.NewAccountsCollection(reader)
 
-		accs := accounts.NewAccounts(reader)
+		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+		if err != nil {
+			return
+		}
 
 		if acc, err = accs.GetAccount(fromWalletAddresses[0].PublicKey, chainHeight); err != nil {
 			return
@@ -262,7 +281,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 			return errors.New("Account doesn't exist")
 		}
 
-		availableStake, err := acc.ComputeDelegatedStakeAvailable(chainHeight)
+		availableStake, err := acc.NativeExtra.ComputeDelegatedStakeAvailable(chainHeight)
 		if err != nil {
 			return
 		}
@@ -279,7 +298,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	statusCallback("Balances checked")
 
 	if nonce == 0 {
-		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, acc.Nonce)
+		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, acc.NativeExtra.Nonce)
 	}
 	statusCallback("Getting Nonce from Mempool")
 
@@ -309,9 +328,17 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx_Float(from string, no
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		tok, err := tokens.NewTokens(reader).GetTokenRequired(config.NATIVE_TOKEN)
+		toks, err := tokens.NewTokens(reader)
 		if err != nil {
 			return
+		}
+
+		tok, err := toks.GetToken(config.NATIVE_TOKEN_FULL)
+		if err != nil {
+			return
+		}
+		if tok == nil {
+			return errors.New("Token was not found")
 		}
 
 		if finalFee, err = fee.convertToWizardFee(tok); err != nil {
@@ -344,7 +371,12 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 
-		accs := accounts.NewAccounts(reader)
+		accsCollection := accounts.NewAccountsCollection(reader)
+
+		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+		if err != nil {
+			return
+		}
 
 		if acc, err = accs.GetAccount(fromWalletAddresses[0].PublicKey, chainHeight); err != nil {
 			return
@@ -359,7 +391,7 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 	}
 
 	if nonce == 0 {
-		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, acc.Nonce)
+		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, acc.NativeExtra.Nonce)
 	}
 
 	if delegateNewPubKeyGenerate {

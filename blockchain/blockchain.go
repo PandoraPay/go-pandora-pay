@@ -105,7 +105,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	removedBlocksHeights := []uint64{}
 	removedBlocksTransactionsCount := uint64(0)
 
-	var accs *accounts.Accounts
+	var accsCollection *accounts.AccountsCollection
 	var toks *tokens.Tokens
 
 	err = func() (err error) {
@@ -116,8 +116,15 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 			savedBlock := false
 
-			accs = accounts.NewAccounts(writer)
-			toks = tokens.NewTokens(writer)
+			accsCollection = accounts.NewAccountsCollection(writer)
+			if toks, err = tokens.NewTokens(writer); err != nil {
+				return
+			}
+
+			var accs *accounts.Accounts
+			if accs, err = accsCollection.GetMap(config.NATIVE_TOKEN_FULL); err != nil {
+				return
+			}
 
 			//let's filter existing blocks
 			for i := len(blocksComplete) - 1; i >= 0; i-- {
@@ -151,7 +158,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					copy(removedBlocksHeights[1:], removedBlocksHeights)
 					removedBlocksHeights[0] = index
 
-					if allTransactionsChanges, err = chain.removeBlockComplete(writer, index, removedTxHashes, allTransactionsChanges, accs, toks); err != nil {
+					if allTransactionsChanges, err = chain.removeBlockComplete(writer, index, removedTxHashes, allTransactionsChanges, accsCollection, toks); err != nil {
 						return
 					}
 
@@ -197,22 +204,26 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 					//check blkComplete balance
 
+					if err != nil {
+						return
+					}
+
 					var acc *account.Account
 					if acc, err = accs.GetAccount(blkComplete.Block.Forger, blkComplete.Block.Height); err != nil {
 						return
 					}
 
-					if acc == nil || !acc.HasDelegatedStake() {
+					if acc == nil || !acc.NativeExtra.HasDelegatedStake() {
 						return errors.New("Forger Account deson't exist or hasn't delegated stake")
 					}
 
 					var stakingAmount uint64
-					stakingAmount, err = acc.ComputeDelegatedStakeAvailable(newChainData.Height)
+					stakingAmount, err = acc.NativeExtra.ComputeDelegatedStakeAvailable(newChainData.Height)
 					if err != nil {
 						return
 					}
 
-					if !bytes.Equal(blkComplete.Block.DelegatedPublicKey, acc.DelegatedStake.DelegatedPublicKey) {
+					if !bytes.Equal(blkComplete.Block.DelegatedPublicKey, acc.NativeExtra.DelegatedStake.DelegatedPublicKey) {
 						return errors.New("Block Staking Delegated Public Key is not matching")
 					}
 
@@ -246,7 +257,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return errors.New("Timestamp is too much into the future")
 					}
 
-					if err = blkComplete.IncludeBlockComplete(accs, toks); err != nil {
+					if err = blkComplete.IncludeBlockComplete(accsCollection, toks); err != nil {
 						return errors.New("Error including block into Blockchain: " + err.Error())
 					}
 
@@ -429,7 +440,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	if err == nil {
 		update.newChainData = newChainData
-		update.accs = accs
+		update.accsCollection = accsCollection
 		update.toks = toks
 		update.removedTxsList = removedTxsList
 		update.removedTxHashes = removedTxHashes

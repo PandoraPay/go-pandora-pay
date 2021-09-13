@@ -54,14 +54,14 @@ func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.St
 	return
 }
 
-func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, removedTxHashes map[string][]byte, allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate, accs *accounts.Accounts, toks *tokens.Tokens) ([]*blockchain_types.BlockchainTransactionUpdate, error) {
+func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, removedTxHashes map[string][]byte, allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) ([]*blockchain_types.BlockchainTransactionUpdate, error) {
 
 	allTransactionsChanges2 := allTransactionsChanges
 
 	blockHeightStr := strconv.FormatUint(blockHeight, 10)
 	blockHeightNextStr := strconv.FormatUint(blockHeight, 10)
 
-	if err := accs.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
+	if err := accsCollection.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
 		return allTransactionsChanges, err
 	}
 	if err := toks.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {

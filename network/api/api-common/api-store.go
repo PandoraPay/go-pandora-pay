@@ -131,7 +131,12 @@ func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (acc *a
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
-		accs := accounts.NewAccounts(reader)
+		accsCollection := accounts.NewAccountsCollection(reader)
+
+		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+		if err != nil {
+			return
+		}
 		acc, err = accs.GetAccount(publicKey, chainHeight)
 		return
 	})
@@ -183,7 +188,10 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKey(publicKey []byte, next
 
 func (apiStore *APIStore) openLoadTokenFromHash(hash []byte) (tok *token.Token, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-		toks := tokens.NewTokens(reader)
+		toks, err := tokens.NewTokens(reader)
+		if err != nil {
+			return
+		}
 		tok, err = toks.GetToken(hash)
 		return
 	})

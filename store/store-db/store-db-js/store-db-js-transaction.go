@@ -70,6 +70,14 @@ func (tx *StoreDBJSTransaction) Get(key string) []byte {
 	}
 }
 
+func (tx *StoreDBJSTransaction) Exists(key string) bool {
+	result := tx.Get(key)
+	if result != nil {
+		return true
+	}
+	return false
+}
+
 func (tx *StoreDBJSTransaction) GetClone(key string) []byte {
 	return tx.Get(key) //not required
 }

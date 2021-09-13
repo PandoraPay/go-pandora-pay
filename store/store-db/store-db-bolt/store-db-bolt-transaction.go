@@ -25,6 +25,10 @@ func (tx *StoreDBBoltTransaction) Get(key string) []byte {
 	return tx.bucket.Get([]byte(key))
 }
 
+func (tx *StoreDBBoltTransaction) Exists(key string) bool {
+	return tx.bucket.Get([]byte(key)) != nil
+}
+
 func (tx *StoreDBBoltTransaction) GetClone(key string) []byte {
 	v := tx.Get(key)
 	return helpers.CloneBytes(v)

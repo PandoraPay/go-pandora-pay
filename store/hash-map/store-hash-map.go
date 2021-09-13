@@ -1,18 +1,22 @@
 package hash_map
 
 import (
+	"encoding/binary"
 	"errors"
 	"pandora-pay/helpers"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
+	"strconv"
 )
 
 type HashMap struct {
 	name        string
 	Tx          store_db_interface.StoreDBTransactionInterface
+	Count       uint64
 	Changes     map[string]*ChangesMapElement
 	Committed   map[string]*CommittedMapElement
 	KeyLength   int
 	Deserialize func([]byte, []byte) (helpers.SerializableInterface, error)
+	Indexable   bool
 }
 
 func (hashMap *HashMap) CloneCommitted() (err error) {
@@ -28,7 +32,7 @@ func (hashMap *HashMap) CloneCommitted() (err error) {
 	return
 }
 
-func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int) (hashMap *HashMap) {
+func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int, indexable bool) (hashMap *HashMap, err error) {
 
 	if len(name) <= 4 {
 		panic("Invalid name")
@@ -39,8 +43,20 @@ func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name st
 		Committed: make(map[string]*CommittedMapElement),
 		Changes:   make(map[string]*ChangesMapElement),
 		Tx:        tx,
+		Count:     0,
 		KeyLength: keyLength,
+		Indexable: indexable,
 	}
+
+	buffer := tx.Get(hashMap.name + ":count")
+	if buffer != nil {
+		count, p := binary.Uvarint(buffer)
+		if p <= 0 {
+			return nil, errors.New("Error reading")
+		}
+		hashMap.Count = count
+	}
+
 	return
 }
 
@@ -61,7 +77,7 @@ func (hashMap *HashMap) Get(key string) (helpers.SerializableInterface, error) {
 			outData = helpers.CloneBytes(exists2.Element.SerializeToBytes())
 		}
 	} else {
-		outData = hashMap.Tx.Get(hashMap.name + key)
+		outData = hashMap.Tx.Get(hashMap.name + ":map:" + key)
 	}
 
 	var out helpers.SerializableInterface
@@ -85,7 +101,7 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 		return exists2.Element != nil, nil
 	}
 
-	outData := hashMap.Tx.Get(hashMap.name + key)
+	outData := hashMap.Tx.Get(hashMap.name + ":map:" + key)
 
 	var out helpers.SerializableInterface
 	var err error
@@ -177,26 +193,60 @@ func (hashMap *HashMap) Reset() {
 
 func (hashMap *HashMap) WriteToStore() (err error) {
 
-	for k, v := range hashMap.Committed {
+	if len(hashMap.Committed) == 0 {
+		return
+	}
 
+	for k, v := range hashMap.Committed {
 		if len(k) != hashMap.KeyLength {
 			return errors.New("key length is invalid")
 		}
-
 		if v.Status == "del" {
-			if err = hashMap.Tx.DeleteForcefully(hashMap.name + k); err != nil {
-				return
-			}
+
 			v.Status = "view"
-			v.Stored = "del"
-		} else if v.Status == "update" {
-			if err = hashMap.Tx.Put(hashMap.name+k, v.Element.SerializeToBytes()); err != nil {
+			if hashMap.Tx.Exists(hashMap.name + k) {
+				if err = hashMap.Tx.Delete(hashMap.name + ":map:" + k); err != nil {
+					return
+				}
+				hashMap.Count -= 1
+				if hashMap.Indexable {
+					if err = hashMap.Tx.Delete(hashMap.name + ":list:" + strconv.FormatUint(hashMap.Count, 10)); err != nil {
+						return
+					}
+				}
+				v.Stored = "del"
+			} else {
+				v.Stored = "view"
+			}
+
+		}
+	}
+
+	for k, v := range hashMap.Committed {
+		if v.Status == "update" {
+
+			if !hashMap.Tx.Exists(hashMap.name + ":map:" + k) {
+				if hashMap.Indexable {
+					if err = hashMap.Tx.Put(hashMap.name+":list:"+strconv.FormatUint(hashMap.Count, 10), []byte(k)); err != nil {
+						return
+					}
+				}
+				hashMap.Count += 1
+			}
+
+			if err = hashMap.Tx.Put(hashMap.name+":map:"+k, v.Element.SerializeToBytes()); err != nil {
 				return
 			}
 			v.Status = "view"
 			v.Stored = "update"
 		}
 
+	}
+
+	buf := make([]byte, binary.MaxVarintLen64)
+	n := binary.PutUvarint(buf, hashMap.Count)
+	if err = hashMap.Tx.Put(hashMap.name+":count", buf[:n]); err != nil {
+		return
 	}
 
 	return

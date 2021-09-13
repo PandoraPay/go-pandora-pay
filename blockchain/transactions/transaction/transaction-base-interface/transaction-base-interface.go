@@ -9,7 +9,7 @@ import (
 type TransactionBaseInterface interface {
 	helpers.SerializableInterface
 	SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool)
-	IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) error
+	IncludeTransaction(blockHeight uint64, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) error
 	ComputeFees() uint64
 	ComputeAllKeys(out map[string]bool)
 	VerifySignatureManually(hashForSignature []byte) bool

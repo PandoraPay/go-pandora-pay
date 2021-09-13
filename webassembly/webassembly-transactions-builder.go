@@ -41,7 +41,7 @@ func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.createZetherTx_Float(txData.From, txData.Nonce, config.NATIVE_TOKEN, txData.Amounts, txData.Dsts, txData.DstsAmounts, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
+		tx, err := app.TransactionsBuilder.createZetherTx_Float(txData.From, txData.Nonce, config.NATIVE_TOKEN_FULL, txData.Amounts, txData.Dsts, txData.DstsAmounts, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
 			args[1].Invoke(status)
 			time.Sleep(10 * time.Millisecond)
 		})

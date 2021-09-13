@@ -26,7 +26,7 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 
 		var acc *account.Account
 		if !args[1].IsNull() {
-			acc = &account.Account{PublicKey: publicKey}
+			acc = account.NewAccount(publicKey)
 			if err = json.Unmarshal([]byte(args[1].String()), &acc); err != nil {
 				return nil, err
 			}

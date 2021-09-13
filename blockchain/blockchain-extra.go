@@ -56,8 +56,12 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 	if err := store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		toks := tokens.NewTokens(writer)
-		accs := accounts.NewAccounts(writer)
+		toks, err := tokens.NewTokens(writer)
+		if err != nil {
+			return
+		}
+
+		accsCollection := accounts.NewAccountsCollection(writer)
 
 		supply := uint64(0)
 		for _, airdrop := range genesis.GenesisData.AirDrops {
@@ -75,6 +79,11 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 				return errors.New("Amount or PaymentID are integrated there should not be")
 			}
 
+			var accs *accounts.Accounts
+			if accs, err = accsCollection.GetMap(config.NATIVE_TOKEN_FULL); err != nil {
+				return
+			}
+
 			var acc *account.Account
 			if acc, err = accs.CreateAccountValid(addr.PublicKey, addr.Registration); err != nil {
 				return
@@ -82,11 +91,11 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			chainData.AccountsCount += 1
 
 			if airdrop.DelegatedStakePublicKey != nil {
-				if err = acc.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
+				if err = acc.NativeExtra.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
 					return
 				}
 			} else {
-				if err = acc.AddBalanceHomoUint(airdrop.Amount, config.NATIVE_TOKEN); err != nil {
+				if err = acc.AddBalanceHomoUint(airdrop.Amount); err != nil {
 					return
 				}
 			}
@@ -112,19 +121,19 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			SupplyPublicKey:          config.BURN_PUBLIC_KEY,
 		}
 
-		if err = toks.CreateToken(config.NATIVE_TOKEN, tok); err != nil {
+		if err = toks.CreateToken(config.NATIVE_TOKEN_FULL, tok); err != nil {
 			return
 		}
 
 		chainData.TokensCount = 1
 
 		toks.CommitChanges()
-		accs.CommitChanges()
+		accsCollection.CommitChanges()
 
 		if err = toks.WriteToStore(); err != nil {
 			return
 		}
-		if err = accs.WriteToStore(); err != nil {
+		if err = accsCollection.WriteToStore(); err != nil {
 			return
 		}
 

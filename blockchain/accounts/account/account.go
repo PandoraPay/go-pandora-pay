@@ -4,144 +4,47 @@ import (
 	"bytes"
 	"errors"
 	"math/big"
-	"pandora-pay/blockchain/accounts/account/dpos"
 	"pandora-pay/config"
-	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
 type Account struct {
 	helpers.SerializableInterface `json:"-"`
-	PublicKey                     []byte                `json:"-"`
-	Version                       uint64                `json:"version"`
-	Nonce                         uint64                `json:"nonce"`
-	Balances                      []*BalanceHomomorphic `json:"balances"`
-	DelegatedStakeVersion         uint64                `json:"delegatedStakeVersion"`
-	DelegatedStake                *dpos.DelegatedStake  `json:"delegatedStake"`
+	PublicKey                     []byte              `json:"-"`
+	Token                         []byte              `json:"-"`
+	Version                       uint64              `json:"version"`
+	Balance                       *BalanceHomomorphic `json:"balances"`
+	NativeExtra                   *AccountNativeExtra `json:"nativeExtra"`
 }
 
 func (account *Account) Validate() error {
 	if account.Version != 0 {
 		return errors.New("Version is invalid")
 	}
-	if account.DelegatedStakeVersion > 1 {
-		return errors.New("Invalid DelegatedStakeVersion version")
-	}
 	return nil
 }
 
-func (account *Account) HasDelegatedStake() bool {
-	return account.DelegatedStakeVersion == 1
-}
-
-func (account *Account) IncrementNonce(sign bool) error {
-	return helpers.SafeUint64Update(sign, &account.Nonce, 1)
-}
-
-func (account *Account) AddBalanceHomoUint(amount uint64, tok []byte) (err error) {
-
-	var foundBalance *BalanceHomomorphic
-
-	for _, balance := range account.Balances {
-		if bytes.Equal(balance.Token, tok) {
-			foundBalance = balance
-			break
-		}
-	}
-
-	if foundBalance == nil {
-		var acckey crypto.Point
-		if err := acckey.DecodeCompressed(account.PublicKey); err != nil {
-			panic(err)
-		}
-		foundBalance = &BalanceHomomorphic{crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G), tok}
-		account.Balances = append(account.Balances, foundBalance)
-	}
-
-	foundBalance.Amount = foundBalance.Amount.Plus(new(big.Int).SetUint64(amount))
-
+func (account *Account) AddBalanceHomoUint(amount uint64) (err error) {
+	account.Balance.Amount = account.Balance.Amount.Plus(new(big.Int).SetUint64(amount))
 	return
 }
 
-func (account *Account) AddBalanceHomo(encryptedAmount []byte, tok []byte) (err error) {
+func (account *Account) AddBalanceHomo(encryptedAmount []byte) (err error) {
 	panic("not implemented")
 }
 
-func (account *Account) RefreshDelegatedStake(blockHeight uint64) (err error) {
-	if account.DelegatedStakeVersion == 0 {
-		return
-	}
-
-	for i := len(account.DelegatedStake.StakesPending) - 1; i >= 0; i-- {
-		stakePending := account.DelegatedStake.StakesPending[i]
-		if stakePending.ActivationHeight <= blockHeight {
-
-			if stakePending.PendingType == dpos.DelegatedStakePendingStake {
-				if err = helpers.SafeUint64Add(&account.DelegatedStake.StakeAvailable, stakePending.PendingAmount); err != nil {
-					return
-				}
-			} else {
-				if err = account.AddBalanceHomoUint(stakePending.PendingAmount, config.NATIVE_TOKEN); err != nil {
-					return
-				}
-			}
-			account.DelegatedStake.StakesPending = append(account.DelegatedStake.StakesPending[:i], account.DelegatedStake.StakesPending[i+1:]...)
-		}
-	}
-
-	if account.DelegatedStake.IsDelegatedStakeEmpty() {
-		account.DelegatedStakeVersion = 0
-		account.DelegatedStake = nil
-	}
-	return
-}
-
-func (account *Account) GetDelegatedStakeAvailable() uint64 {
-	if account.DelegatedStakeVersion == 0 {
-		return 0
-	}
-	return account.DelegatedStake.GetDelegatedStakeAvailable()
-}
-
-func (account *Account) ComputeDelegatedStakeAvailable(chainHeight uint64) (uint64, error) {
-	if account.DelegatedStakeVersion == 0 {
-		return 0, nil
-	}
-	return account.DelegatedStake.ComputeDelegatedStakeAvailable(chainHeight)
-}
-
-func (account *Account) ComputeDelegatedUnstakePending() (uint64, error) {
-	if account.DelegatedStakeVersion == 0 {
-		return 0, nil
-	}
-	return account.DelegatedStake.ComputeDelegatedUnstakePending()
-}
-
-func (account *Account) GetBalanceHomo(token []byte) (result *crypto.ElGamal) {
-	for _, balance := range account.Balances {
-		if bytes.Equal(balance.Token, token) {
-			return balance.Amount
-		}
-	}
-	return nil
+func (account *Account) GetBalanceHomo() (result *crypto.ElGamal) {
+	return account.Balance.Amount
 }
 
 func (account *Account) Serialize(w *helpers.BufferWriter) {
-
 	w.WriteUvarint(account.Version)
-	w.WriteUvarint(account.Nonce)
+	account.Balance.Serialize(w)
 
-	w.WriteUvarint(uint64(len(account.Balances)))
-	for _, balance := range account.Balances {
-		balance.Serialize(w)
+	if account.NativeExtra != nil {
+		account.NativeExtra.Serialize(w)
 	}
-
-	w.WriteUvarint(account.DelegatedStakeVersion)
-	if account.DelegatedStakeVersion == 1 {
-		account.DelegatedStake.Serialize(w)
-	}
-
 }
 
 func (account *Account) SerializeToBytes() []byte {
@@ -150,55 +53,42 @@ func (account *Account) SerializeToBytes() []byte {
 	return w.Bytes()
 }
 
-func (account *Account) CreateDelegatedStake(amount uint64, delegatedStakePublicKey []byte, delegatedStakeFee uint64) error {
-	if account.HasDelegatedStake() {
-		return errors.New("It is already delegated")
-	}
-	if delegatedStakePublicKey == nil || len(delegatedStakePublicKey) != cryptography.PublicKeySize {
-		return errors.New("delegatedStakePublicKey is Invalid")
-	}
-	account.DelegatedStakeVersion = 1
-	account.DelegatedStake = &dpos.DelegatedStake{
-		StakeAvailable:     amount,
-		StakesPending:      []*dpos.DelegatedStakePending{},
-		DelegatedPublicKey: delegatedStakePublicKey,
-		DelegatedStakeFee:  delegatedStakeFee,
-	}
-
-	return nil
-}
-
 func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 
 	if account.Version, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if account.Nonce, err = r.ReadUvarint(); err != nil {
+
+	if err = account.Balance.Deserialize(r); err != nil {
 		return
 	}
 
-	var n uint64
-	if n, err = r.ReadUvarint(); err != nil {
-		return
-	}
-	account.Balances = make([]*BalanceHomomorphic, n)
-	for i := uint64(0); i < n; i++ {
-		var balance = new(BalanceHomomorphic)
-		if err = balance.Deserialize(r); err != nil {
-			return
-		}
-		account.Balances[i] = balance
-	}
-
-	if account.DelegatedStakeVersion, err = r.ReadUvarint(); err != nil {
-		return
-	}
-	if account.DelegatedStakeVersion == 1 {
-		account.DelegatedStake = new(dpos.DelegatedStake)
-		if err = account.DelegatedStake.Deserialize(r); err != nil {
+	if bytes.Equal(account.Token, config.NATIVE_TOKEN_FULL) {
+		if err = account.NativeExtra.Deserialize(r); err != nil {
 			return
 		}
 	}
 
 	return
+}
+
+func NewAccount(publicKey []byte, token []byte) *Account {
+
+	var acckey crypto.Point
+	if err := acckey.DecodeCompressed(publicKey); err != nil {
+		panic(err)
+	}
+	acc := &Account{
+		PublicKey: publicKey,
+		Token:     token,
+		Balance:   &BalanceHomomorphic{crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)},
+	}
+
+	if bytes.Equal(config.NATIVE_TOKEN_FULL, token) {
+		acc.NativeExtra = &AccountNativeExtra{
+			account: acc,
+		}
+	}
+
+	return acc
 }

@@ -28,7 +28,12 @@ type TransactionSimple struct {
 	Bloom       *TransactionSimpleBloom
 }
 
-func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
+func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+
+	accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+	if err != nil {
+		return
+	}
 
 	var acc *account.Account
 	if acc, err = accs.GetAccount(tx.Vin.PublicKey, blockHeight); err != nil {
@@ -39,14 +44,14 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accs *accoun
 		return errors.New("Account was not found")
 	}
 
-	if acc.Nonce != tx.Nonce {
-		return fmt.Errorf("Account nonce doesn't match %d %d", acc.Nonce, tx.Nonce)
+	if acc.NativeExtra.Nonce != tx.Nonce {
+		return fmt.Errorf("Account nonce doesn't match %d %d", acc.NativeExtra.Nonce, tx.Nonce)
 	}
-	if err = acc.IncrementNonce(true); err != nil {
+	if err = acc.NativeExtra.IncrementNonce(true); err != nil {
 		return
 	}
 
-	if err = acc.DelegatedStake.AddStakeAvailable(false, tx.Fee); err != nil {
+	if err = acc.NativeExtra.DelegatedStake.AddStakeAvailable(false, tx.Fee); err != nil {
 		return
 	}
 
@@ -128,7 +133,7 @@ func (tx *TransactionSimple) Serialize(w *helpers.BufferWriter) {
 func (tx *TransactionSimple) SerializeToBytes() []byte {
 	w := helpers.NewBufferWriter()
 	tx.Serialize(w)
-	return writer.Bytes()
+	return w.Bytes()
 }
 
 func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {

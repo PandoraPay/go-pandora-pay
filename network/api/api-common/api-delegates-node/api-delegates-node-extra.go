@@ -5,6 +5,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/config"
 	"pandora-pay/recovery"
 	wallet_address "pandora-pay/wallet/address"
 	"sync/atomic"
@@ -65,12 +66,17 @@ func (api *APIDelegatesNode) updateAccountsChanges() {
 		defer api.chain.UpdateAccounts.RemoveChannel(updateAccountsCn)
 
 		for {
-			accsData, ok := <-updateAccountsCn
+
+			accsCollectionData, ok := <-updateAccountsCn
 			if !ok {
 				return
 			}
 
-			accs := accsData.(*accounts.Accounts)
+			accsCollection := accsCollectionData.(*accounts.AccountsCollection)
+			accs, err := accsCollection.GetExistingMap(config.NATIVE_TOKEN_FULL)
+			if err != nil {
+				return
+			}
 
 			for k, v := range accs.HashMap.Committed {
 				data, loaded := api.pendingDelegatesStakesChanges.Load(k)
@@ -80,7 +86,7 @@ func (api *APIDelegatesNode) updateAccountsChanges() {
 
 					if v.Stored == "update" {
 						acc := v.Element.(*account.Account)
-						if acc.HasDelegatedStake() && bytes.Equal(acc.DelegatedStake.DelegatedPublicKey, pendingDelegatingStakeChange.delegatePublicKey) {
+						if acc.NativeExtra.HasDelegatedStake() && bytes.Equal(acc.NativeExtra.DelegatedStake.DelegatedPublicKey, pendingDelegatingStakeChange.delegatePublicKey) {
 
 							addr, err := addresses.CreateAddr(pendingDelegatingStakeChange.publicKey, nil, 0, nil)
 							if err != nil {

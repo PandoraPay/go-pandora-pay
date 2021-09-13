@@ -40,40 +40,46 @@ func (blk *Block) Verify() error {
 	return blk.Bloom.verifyIfBloomed()
 }
 
-func (blk *Block) IncludeBlock(acs *accounts.Accounts, toks *tokens.Tokens, allFees uint64) (err error) {
+func (blk *Block) IncludeBlock(accsCollection *accounts.AccountsCollection, toks *tokens.Tokens, allFees uint64) (err error) {
+
+	accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+	if err != nil {
+		return
+	}
 
 	reward := config_reward.GetRewardAt(blk.Height)
 
 	var acc *account.Account
-	if acc, err = acs.GetAccount(blk.Forger, blk.Height); err != nil {
+	if acc, err = accs.GetAccount(blk.Forger, blk.Height); err != nil {
 		return
 	}
 	if acc == nil {
 		return errors.New("Account not found")
 	}
 
-	if err = acc.DelegatedStake.AddStakePendingStake(reward, blk.Height); err != nil {
+	if err = acc.NativeExtra.DelegatedStake.AddStakePendingStake(reward, blk.Height); err != nil {
 		return
 	}
-	if err = acc.DelegatedStake.AddStakePendingStake(allFees, blk.Height); err != nil {
+	if err = acc.NativeExtra.DelegatedStake.AddStakePendingStake(allFees, blk.Height); err != nil {
 		return
 	}
 
-	if err = acs.UpdateAccount(blk.Forger, acc); err != nil {
+	if err = accs.UpdateAccount(blk.Forger, acc); err != nil {
 		return
 	}
 
 	var tok *token.Token
-	if tok, err = toks.GetToken(config.NATIVE_TOKEN); err != nil {
+	if tok, err = toks.GetToken(config.NATIVE_TOKEN_FULL); err != nil {
 		return
 	}
 
 	if err = tok.AddSupply(true, reward); err != nil {
 		return
 	}
-	if err = toks.UpdateToken(config.NATIVE_TOKEN, tok); err != nil {
+	if err = toks.UpdateToken(config.NATIVE_TOKEN_FULL, tok); err != nil {
 		return
 	}
+
 	return
 }
 

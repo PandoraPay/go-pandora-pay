@@ -54,8 +54,15 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 	var acc *account.Account
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
-		acc, err = accounts.NewAccounts(reader).GetAccount(publicKey, chainHeight)
+		accsCollection := accounts.NewAccountsCollection(reader)
+
+		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+		if err != nil {
+			return
+		}
+		acc, err = accs.GetAccount(publicKey, chainHeight)
 		return
+
 	}); err != nil {
 		return nil, err
 	}

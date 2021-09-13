@@ -53,7 +53,7 @@ func (worker *mempoolWorker) processing(
 	txsMapVerified := make(map[string]bool)
 	listIndex := 0
 
-	var accs *accounts.Accounts
+	var accsCollection *accounts.AccountsCollection
 	var toks *tokens.Tokens
 
 	includedTotalSize := uint64(0)
@@ -63,7 +63,7 @@ func (worker *mempoolWorker) processing(
 
 		if newWork.chainHash != nil {
 			txsMapVerified = make(map[string]bool)
-			accs = nil
+			accsCollection = nil
 			toks = nil
 			work = newWork
 			includedTotalSize = uint64(0)
@@ -147,7 +147,7 @@ func (worker *mempoolWorker) processing(
 			case CONTINUE_PROCESSING_NO_ERROR:
 				work = nil //it needs a new work
 			case CONTINUE_PROCESSING_NO_ERROR_RESET:
-				accs = nil
+				accsCollection = nil
 				toks = nil
 				listIndex = 0
 			}
@@ -161,16 +161,18 @@ func (worker *mempoolWorker) processing(
 		//let's check hf the work has been changed
 		store.StoreBlockchain.DB.View(func(dbTx store_db_interface.StoreDBTransactionInterface) (err error) {
 
-			if accs != nil {
-				accs.Tx = dbTx
+			if accsCollection != nil {
+				accsCollection.SetTx(dbTx)
 				toks.Tx = dbTx
 			}
 
 			for {
 
-				if accs == nil {
-					accs = accounts.NewAccounts(dbTx)
-					toks = tokens.NewTokens(dbTx)
+				if accsCollection == nil {
+					accsCollection = accounts.NewAccountsCollection(dbTx)
+					if toks, err = tokens.NewTokens(dbTx); err != nil {
+						return
+					}
 				}
 
 				select {
@@ -220,8 +222,8 @@ func (worker *mempoolWorker) processing(
 
 						txsMapVerified[tx.Tx.Bloom.HashStr] = true
 
-						if finalErr = tx.Tx.IncludeTransaction(work.chainHeight, accs, toks); finalErr != nil {
-							accs.Rollback()
+						if finalErr = tx.Tx.IncludeTransaction(work.chainHeight, accsCollection, toks); finalErr != nil {
+							accsCollection.Rollback()
 							toks.Rollback()
 						} else {
 
@@ -233,10 +235,10 @@ func (worker *mempoolWorker) processing(
 								atomic.StoreUint64(&work.result.totalSize, includedTotalSize)
 								work.result.txs.Store(includedTxs)
 
-								accs.CommitChanges()
+								accsCollection.CommitChanges()
 								toks.CommitChanges()
 							} else {
-								accs.Rollback()
+								accsCollection.Rollback()
 								toks.Rollback()
 							}
 

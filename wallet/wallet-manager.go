@@ -444,7 +444,7 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 		return
 	}
 
-	if adr.DelegatedStake != nil && acc.DelegatedStake == nil {
+	if acc.NativeExtra != nil && adr.DelegatedStake != nil && acc.NativeExtra.DelegatedStake == nil {
 		adr.DelegatedStake = nil
 
 		if adr.PrivateKey == nil {
@@ -457,15 +457,15 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 
 	adr.DecodeAccount(acc, true)
 
-	if (adr.DelegatedStake != nil && acc.DelegatedStake != nil && !bytes.Equal(adr.DelegatedStake.PublicKey, acc.DelegatedStake.DelegatedPublicKey)) ||
-		(adr.DelegatedStake == nil && acc.DelegatedStake != nil) {
+	if acc.NativeExtra != nil && ((adr.DelegatedStake != nil && acc.NativeExtra.DelegatedStake != nil && !bytes.Equal(adr.DelegatedStake.PublicKey, acc.NativeExtra.DelegatedStake.DelegatedPublicKey)) ||
+		(adr.DelegatedStake == nil && acc.NativeExtra.DelegatedStake != nil)) {
 
 		if adr.PrivateKey == nil {
 			_, err = wallet.RemoveAddressByWalletAddress(adr, lock)
 			return
 		}
 
-		if acc.DelegatedStake != nil {
+		if acc.NativeExtra.DelegatedStake != nil {
 
 			lastKnownNonce := uint32(0)
 			if adr.DelegatedStake != nil {
@@ -473,7 +473,7 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 			}
 
 			var delegatedStake *wallet_address.WalletAddressDelegatedStake
-			if delegatedStake, err = adr.FindDelegatedStake(uint32(acc.Nonce), lastKnownNonce, acc.DelegatedStake.DelegatedPublicKey); err != nil {
+			if delegatedStake, err = adr.FindDelegatedStake(uint32(acc.NativeExtra.Nonce), lastKnownNonce, acc.NativeExtra.DelegatedStake.DelegatedPublicKey); err != nil {
 				return
 			}
 

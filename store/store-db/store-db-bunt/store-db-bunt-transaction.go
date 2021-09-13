@@ -28,6 +28,14 @@ func (tx *StoreDBBuntTransaction) Get(key string) (out []byte) {
 	return
 }
 
+func (tx *StoreDBBuntTransaction) Exists(key string) bool {
+	_, err := tx.buntTx.Get(key, false)
+	if err == nil {
+		return true
+	}
+	return false
+}
+
 func (tx *StoreDBBuntTransaction) GetClone(key string) (out []byte) {
 	return tx.Get(key) //not required
 }

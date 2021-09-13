@@ -38,10 +38,10 @@ func TestCreateZetherTx(t *testing.T) {
 	emap := make(map[string]map[string][]byte)
 	rings := make([][]*bn256.G1, count)
 
-	emap[config.NATIVE_TOKEN_STRING] = make(map[string][]byte)
+	emap[config.NATIVE_TOKEN_FULL_STRING] = make(map[string][]byte)
 
 	point, _ := address.GetPoint()
-	emap[config.NATIVE_TOKEN_STRING][point.G1().String()] = getNewBalance(address, amount).Serialize()
+	emap[config.NATIVE_TOKEN_FULL_STRING][point.G1().String()] = getNewBalance(address, amount).Serialize()
 
 	diff := amount / uint64(count)
 
@@ -52,7 +52,7 @@ func TestCreateZetherTx(t *testing.T) {
 		dstAddress, _ := dstPrivateKey.GenerateAddress(false, 0, nil)
 
 		transfers[i] = &ZetherTransfer{
-			Token:              config.NATIVE_TOKEN,
+			Token:              config.NATIVE_TOKEN_FULL,
 			From:               privateKey.Key,
 			FromBalanceDecoded: amount,
 			Destination:        dstAddress.EncodeAddr(),
@@ -72,14 +72,14 @@ func TestCreateZetherTx(t *testing.T) {
 
 		dstPoint, _ := dstAddress.GetPoint()
 		rings[i][1] = dstPoint.G1()
-		emap[config.NATIVE_TOKEN_STRING][dstPoint.G1().String()] = getNewBalance(dstAddress, 0).Serialize()
+		emap[config.NATIVE_TOKEN_FULL_STRING][dstPoint.G1().String()] = getNewBalance(dstAddress, 0).Serialize()
 
 		for j := 2; j < ringSize; j++ {
 			decoyPrivateKey := addresses.GenerateNewPrivateKey()
 			decoyAddress, _ := decoyPrivateKey.GenerateAddress(false, 0, nil)
 			decoyPoint, _ := decoyAddress.GetPoint()
 			rings[i][j] = decoyPoint.G1()
-			emap[config.NATIVE_TOKEN_STRING][decoyPoint.G1().String()] = getNewBalance(decoyAddress, 0).Serialize()
+			emap[config.NATIVE_TOKEN_FULL_STRING][decoyPoint.G1().String()] = getNewBalance(decoyAddress, 0).Serialize()
 		}
 	}
 

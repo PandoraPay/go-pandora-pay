@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/config"
 	"pandora-pay/helpers"
 	api_faucet "pandora-pay/network/api/api-common/api-faucet"
 	"pandora-pay/network/api/api-common/api_types"
@@ -119,7 +120,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		acc := &account.Account{PublicKey: publicKey}
+		acc := account.NewAccount(publicKey, config.NATIVE_TOKEN_FULL)
 		if err = acc.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
 			return nil, err
 		}

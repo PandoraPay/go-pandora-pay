@@ -59,7 +59,7 @@ func (blkComplete *BlockComplete) MerkleHash() []byte {
 	}
 }
 
-func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
+func (blkComplete *BlockComplete) IncludeBlockComplete(accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
 
 	allFees := uint64(0)
 	for _, tx := range blkComplete.Txs {
@@ -69,12 +69,12 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(accs *accounts.Accounts, 
 		}
 	}
 
-	if err = blkComplete.Block.IncludeBlock(accs, toks, allFees); err != nil {
+	if err = blkComplete.Block.IncludeBlock(accsCollection, toks, allFees); err != nil {
 		return
 	}
 
 	for _, tx := range blkComplete.Txs {
-		if err = tx.IncludeTransaction(blkComplete.Block.Height, accs, toks); err != nil {
+		if err = tx.IncludeTransaction(blkComplete.Block.Height, accsCollection, toks); err != nil {
 			return
 		}
 	}

@@ -13,9 +13,15 @@ type Tokens struct {
 	hash_map.HashMap `json:"-"`
 }
 
-func NewTokens(tx store_db_interface.StoreDBTransactionInterface) (tokens *Tokens) {
+func NewTokens(tx store_db_interface.StoreDBTransactionInterface) (tokens *Tokens, err error) {
+
+	hashMap, err := hash_map.CreateNewHashMap(tx, "tokens", config.TOKEN_LENGTH, true)
+	if err != nil {
+		return nil, err
+	}
+
 	tokens = &Tokens{
-		HashMap: *hash_map.CreateNewHashMap(tx, "tokens", config.TOKEN_LENGTH),
+		HashMap: *hashMap,
 	}
 	tokens.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {
 		var tok = &token.Token{}
@@ -37,17 +43,6 @@ func (tokens *Tokens) GetToken(key []byte) (*token.Token, error) {
 	}
 
 	return data.(*token.Token), nil
-}
-
-func (tokens *Tokens) GetTokenRequired(key []byte) (*token.Token, error) {
-	token, err := tokens.GetToken(key)
-	if err != nil {
-		return nil, err
-	}
-	if token == nil {
-		return nil, errors.New("Token not ofund")
-	}
-	return token, nil
 }
 
 func (tokens *Tokens) CreateToken(key []byte, tok *token.Token) (err error) {
