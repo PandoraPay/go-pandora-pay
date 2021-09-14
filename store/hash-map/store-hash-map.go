@@ -20,6 +20,34 @@ type HashMap struct {
 	Indexable   bool
 }
 
+func (hashMap *HashMap) GetKeyByIndex(index uint64) (key []byte, err error) {
+
+	if !hashMap.Indexable {
+		return nil, errors.New("HashMap is not Indexable")
+	}
+
+	if index > hashMap.Count {
+		return nil, errors.New("Index exceeds count")
+	}
+
+	key = hashMap.Tx.Get(hashMap.name + ":list:" + strconv.FormatUint(index, 10))
+	if key == nil {
+		return nil, errors.New("Not found")
+	}
+
+	return
+}
+
+func (hashMap *HashMap) GetByIndex(index uint64) (data helpers.SerializableInterface, err error) {
+
+	key, err := hashMap.GetKeyByIndex(index)
+	if err != nil {
+		return nil, err
+	}
+
+	return hashMap.Get(string(key))
+}
+
 func (hashMap *HashMap) CloneCommitted() (err error) {
 
 	for key, v := range hashMap.Committed {
@@ -211,7 +239,11 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 				}
 				hashMap.Count -= 1
 				if hashMap.Indexable {
-					if err = hashMap.Tx.Delete(hashMap.name + ":list:" + strconv.FormatUint(hashMap.Count, 10)); err != nil {
+					countStr := strconv.FormatUint(hashMap.Count, 10)
+					if err = hashMap.Tx.Delete(hashMap.name + ":list:" + countStr); err != nil {
+						return
+					}
+					if err = hashMap.Tx.Delete(hashMap.name + ":listExtra:" + countStr); err != nil {
 						return
 					}
 				}

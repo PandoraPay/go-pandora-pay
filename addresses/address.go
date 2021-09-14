@@ -207,12 +207,12 @@ func (a *Address) VerifySignedMessage(message, signature []byte) bool {
 }
 
 func (a *Address) GetPoint() (*crypto.Point, error) {
-	var out crypto.Point
+	var point crypto.Point
 	var err error
 
-	if err = out.DecodeCompressed(a.PublicKey); err != nil {
+	if err = point.DecodeCompressed(a.PublicKey); err != nil {
 		return nil, err
 	}
 
-	return &out, nil
+	return &point, nil
 }

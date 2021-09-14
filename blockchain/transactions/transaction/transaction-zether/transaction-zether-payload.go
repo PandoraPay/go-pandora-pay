@@ -51,7 +51,7 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		return
 	}
 
-	N := len(payload.Statement.PublicKeys)
+	N := len(payload.Statement.PublicKeysIndexes)
 	m := int(math.Log2(float64(N)))
 	if math.Pow(2, float64(m)) != float64(N) {
 		return errors.New("log failed")
