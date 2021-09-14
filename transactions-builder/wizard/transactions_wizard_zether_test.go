@@ -7,7 +7,6 @@ import (
 	mathrand "math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
-	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -46,8 +45,8 @@ func TestCreateZetherTx(t *testing.T) {
 
 	diff := amount / uint64(count)
 
-	registrations := make([]*transaction_zether.TransactionZetherRegistration, 0)
-	registrations = append(registrations, &transaction_zether.TransactionZetherRegistration{PublicKey: address.PublicKey, RegistrationSignature: address.Registration})
+	publicKeyIndexes := make(map[string]*ZetherPublicKeyIndex)
+	publicKeyIndexes[string(address.PublicKey)] = &ZetherPublicKeyIndex{false, 0, address.Registration}
 
 	transfers := make([]*ZetherTransfer, 5)
 	for i := range transfers {
@@ -55,7 +54,7 @@ func TestCreateZetherTx(t *testing.T) {
 		dstPrivateKey := addresses.GenerateNewPrivateKey()
 		dstAddress, _ := dstPrivateKey.GenerateAddress(true, 0, nil)
 
-		registrations = append(registrations, &transaction_zether.TransactionZetherRegistration{PublicKey: dstAddress.PublicKey, RegistrationSignature: dstAddress.Registration})
+		publicKeyIndexes[string(dstAddress.PublicKey)] = &ZetherPublicKeyIndex{false, 0, dstAddress.Registration}
 
 		transfers[i] = &ZetherTransfer{
 			Token:              config.NATIVE_TOKEN_FULL,
@@ -83,7 +82,8 @@ func TestCreateZetherTx(t *testing.T) {
 		for j := 2; j < ringSize; j++ {
 			decoyPrivateKey := addresses.GenerateNewPrivateKey()
 			decoyAddress, _ := decoyPrivateKey.GenerateAddress(true, 0, nil)
-			registrations = append(registrations, &transaction_zether.TransactionZetherRegistration{PublicKey: decoyAddress.PublicKey, RegistrationSignature: decoyAddress.Registration})
+
+			publicKeyIndexes[string(decoyAddress.PublicKey)] = &ZetherPublicKeyIndex{false, 0, decoyAddress.Registration}
 
 			decoyPoint, _ := decoyAddress.GetPoint()
 			rings[i][j] = decoyPoint.G1()
@@ -92,7 +92,7 @@ func TestCreateZetherTx(t *testing.T) {
 	}
 
 	hash := helpers.RandomBytes(32)
-	tx, err := CreateZetherTx(transfers, emap, rings, 0, hash, registrations, func(status string) {})
+	tx, err := CreateZetherTx(transfers, emap, rings, 0, hash, publicKeyIndexes, func(status string) {})
 	assert.NoError(t, err)
 	assert.NotNil(t, t, tx)
 
@@ -102,5 +102,8 @@ func TestCreateZetherTx(t *testing.T) {
 	err = tx2.Deserialize(helpers.NewBufferReader(serialized))
 	assert.NoError(t, err)
 	assert.NotNil(t, t, tx2)
+
+	//let's verify
+	assert.Equal(t, true, tx2.VerifySignatureManually())
 
 }

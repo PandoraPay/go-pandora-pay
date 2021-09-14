@@ -37,6 +37,17 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 	return
 }
 
+func (tx *TransactionZether) VerifySignatureManually(hash []byte) bool {
+
+	for t := range tx.Payloads {
+		if tx.Payloads[t].Proof.Verify(tx.Payloads[t].Statement, hash, tx.Height, tx.Payloads[t].BurnValue) == false {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(uint64(tx.TxScript))
 	w.WriteUvarint(tx.Height)

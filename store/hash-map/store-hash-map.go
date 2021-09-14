@@ -16,6 +16,7 @@ type HashMap struct {
 	Committed   map[string]*CommittedMapElement
 	KeyLength   int
 	Deserialize func([]byte, []byte) (helpers.SerializableInterface, error)
+	StoredEvent func([]byte, *CommittedMapElement)
 	Indexable   bool
 }
 
@@ -230,6 +231,9 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 					if err = hashMap.Tx.Put(hashMap.name+":list:"+strconv.FormatUint(hashMap.Count, 10), []byte(k)); err != nil {
 						return
 					}
+				}
+				if hashMap.StoredEvent != nil {
+					hashMap.StoredEvent([]byte(k), v)
 				}
 				hashMap.Count += 1
 			}

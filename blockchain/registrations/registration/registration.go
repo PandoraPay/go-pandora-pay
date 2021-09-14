@@ -7,11 +7,11 @@ import (
 type Registration struct {
 	helpers.SerializableInterface `json:"-"`
 	PublicKey                     []byte `json:"-"` //hashmap key
-	Registered                    bool
+	Index                         uint64
 }
 
 func (registration *Registration) Serialize(w *helpers.BufferWriter) {
-	w.WriteBool(registration.Registered)
+	w.WriteUvarint(registration.Index)
 }
 
 func (registration *Registration) SerializeToBytes() []byte {
@@ -21,7 +21,7 @@ func (registration *Registration) SerializeToBytes() []byte {
 }
 
 func (registration *Registration) Deserialize(r *helpers.BufferReader) (err error) {
-	if registration.Registered, err = r.ReadBool(); err != nil {
+	if registration.Index, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	return
