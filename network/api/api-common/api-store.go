@@ -137,7 +137,7 @@ func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (acc *a
 		if err != nil {
 			return
 		}
-		acc, err = accs.GetAccount(publicKey, chainHeight)
+		acc, err = accs.GetAccount(publicKey)
 		return
 	})
 	return

@@ -60,7 +60,7 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 		if err != nil {
 			return
 		}
-		acc, err = accs.GetAccount(publicKey, chainHeight)
+		acc, err = accs.GetAccount(publicKey)
 		return
 
 	}); err != nil {

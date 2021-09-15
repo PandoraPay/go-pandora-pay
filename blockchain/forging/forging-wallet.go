@@ -160,11 +160,18 @@ func (w *ForgingWallet) processUpdates() {
 					}
 
 					var acc *account.Account
-					if acc, err = accs.GetAccount(update.pubKey, chainHeight); err != nil {
+					if acc, err = accs.GetAccount(update.pubKey); err != nil {
 						return
 					}
 					if acc == nil {
 						return errors.New("Account was not found")
+					}
+					if acc.NativeExtra == nil {
+						return errors.New("NativeExtra was not found")
+					}
+
+					if err = acc.NativeExtra.RefreshDelegatedStake(chainHeight); err != nil {
+						return
 					}
 
 					if acc.NativeExtra.DelegatedStake == nil || !bytes.Equal(acc.NativeExtra.DelegatedStake.DelegatedPublicKey, delegatedPublicKey) {
@@ -235,10 +242,8 @@ func (w *ForgingWallet) processUpdates() {
 
 				for _, address := range w.addresses {
 
-					chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
-
 					var acc *account.Account
-					if acc, err = accs.GetAccount(address.publicKey, chainHeight); err != nil {
+					if acc, err = accs.GetAccount(address.publicKey); err != nil {
 						return
 					}
 

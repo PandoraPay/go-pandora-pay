@@ -36,12 +36,15 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accsCollecti
 	}
 
 	var acc *account.Account
-	if acc, err = accs.GetAccount(tx.Vin.PublicKey, blockHeight); err != nil {
+	if acc, err = accs.GetAccount(tx.Vin.PublicKey); err != nil {
 		return
 	}
-
 	if acc == nil {
 		return errors.New("Account was not found")
+	}
+
+	if err = acc.NativeExtra.RefreshDelegatedStake(blockHeight); err != nil {
+		return
 	}
 
 	if acc.NativeExtra.Nonce != tx.Nonce {

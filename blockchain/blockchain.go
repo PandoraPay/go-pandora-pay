@@ -209,12 +209,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 
 					var acc *account.Account
-					if acc, err = accs.GetAccount(blkComplete.Block.Forger, blkComplete.Block.Height); err != nil {
+					if acc, err = accs.GetAccount(blkComplete.Block.Forger); err != nil {
 						return
 					}
 
 					if acc == nil || !acc.NativeExtra.HasDelegatedStake() {
 						return errors.New("Forger Account deson't exist or hasn't delegated stake")
+					}
+
+					if err = acc.NativeExtra.RefreshDelegatedStake(blkComplete.Block.Height); err != nil {
+						return
 					}
 
 					var stakingAmount uint64

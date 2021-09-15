@@ -274,11 +274,15 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 			return
 		}
 
-		if acc, err = accs.GetAccount(fromWalletAddresses[0].PublicKey, chainHeight); err != nil {
+		if acc, err = accs.GetAccount(fromWalletAddresses[0].PublicKey); err != nil {
 			return
 		}
 		if acc == nil {
 			return errors.New("Account doesn't exist")
+		}
+
+		if err = acc.NativeExtra.RefreshDelegatedStake(chainHeight); err != nil {
+			return
 		}
 
 		availableStake, err := acc.NativeExtra.ComputeDelegatedStakeAvailable(chainHeight)
@@ -378,11 +382,15 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 			return
 		}
 
-		if acc, err = accs.GetAccount(fromWalletAddresses[0].PublicKey, chainHeight); err != nil {
+		if acc, err = accs.GetAccount(fromWalletAddresses[0].PublicKey); err != nil {
 			return
 		}
 		if acc == nil {
 			return errors.New("Account doesn't exist")
+		}
+
+		if err = acc.NativeExtra.RefreshDelegatedStake(chainHeight); err != nil {
+			return
 		}
 
 		return

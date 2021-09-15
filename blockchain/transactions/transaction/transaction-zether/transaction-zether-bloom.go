@@ -47,7 +47,7 @@ func (tx *TransactionZether) VerifyBloomNow(registrations *registrations.Registr
 			}
 
 			var acc *account.Account
-			if acc, err = accs.GetAccount(publicKey, tx.Height); err != nil {
+			if acc, err = accs.GetAccount(publicKey); err != nil {
 				return
 			}
 
@@ -123,7 +123,7 @@ func (tx *TransactionZether) BloomNow(registrations *registrations.Registrations
 			payload.Statement.Publickeylist[i] = point.G1()
 
 			var acc *account.Account
-			if acc, err = accs.GetAccount(publicKey, tx.Height); err != nil {
+			if acc, err = accs.GetAccount(publicKey); err != nil {
 				return
 			}
 

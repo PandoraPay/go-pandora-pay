@@ -50,11 +50,15 @@ func (blk *Block) IncludeBlock(accsCollection *accounts.AccountsCollection, toks
 	reward := config_reward.GetRewardAt(blk.Height)
 
 	var acc *account.Account
-	if acc, err = accs.GetAccount(blk.Forger, blk.Height); err != nil {
+	if acc, err = accs.GetAccount(blk.Forger); err != nil {
 		return
 	}
 	if acc == nil {
 		return errors.New("Account not found")
+	}
+
+	if err = acc.NativeExtra.RefreshDelegatedStake(blk.Height); err != nil {
+		return
 	}
 
 	if err = acc.NativeExtra.DelegatedStake.AddStakePendingStake(reward, blk.Height); err != nil {

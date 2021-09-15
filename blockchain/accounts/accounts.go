@@ -27,7 +27,7 @@ func (accounts *Accounts) CreateAccount(publicKey []byte) (*account.Account, err
 	return acc, nil
 }
 
-func (accounts *Accounts) GetAccount(key []byte, chainHeight uint64) (*account.Account, error) {
+func (accounts *Accounts) GetAccount(key []byte) (*account.Account, error) {
 
 	data, err := accounts.Get(string(key))
 	if data == nil || err != nil {
@@ -35,13 +35,6 @@ func (accounts *Accounts) GetAccount(key []byte, chainHeight uint64) (*account.A
 	}
 
 	acc := data.(*account.Account)
-
-	if acc.NativeExtra != nil {
-		if err = acc.NativeExtra.RefreshDelegatedStake(chainHeight); err != nil {
-			return nil, err
-		}
-	}
-
 	return acc, nil
 }
 

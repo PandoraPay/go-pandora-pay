@@ -185,7 +185,7 @@ func (testnet *Testnet) run() {
 							return
 						}
 
-						if account, err = accs.GetAccount(publicKey, blockHeight); err != nil {
+						if account, err = accs.GetAccount(publicKey); err != nil {
 							return
 						}
 

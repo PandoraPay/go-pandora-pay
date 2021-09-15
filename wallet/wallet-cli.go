@@ -23,8 +23,6 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
-
 		accsCollection := accounts.NewAccountsCollection(reader)
 
 		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
@@ -33,7 +31,7 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 		}
 
 		var acc *account.Account
-		if acc, err = accs.GetAccount(addr.PublicKey, chainHeight); err != nil {
+		if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
 			return
 		}
 
@@ -115,7 +113,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 			if walletAddress.Version == wallet_address.VERSION_TRANSPARENT {
 
 				var acc *account.Account
-				if acc, err = accs.GetAccount(walletAddress.PublicKey, chainHeight); err != nil {
+				if acc, err = accs.GetAccount(walletAddress.PublicKey); err != nil {
 					return
 				}
 
