@@ -21,7 +21,6 @@ func (ip *InnerProduct) Size() int {
 func (ip *InnerProduct) Serialize(w *helpers.BufferWriter) {
 	w.Write(ConvertBigIntToByte(ip.a))
 	w.Write(ConvertBigIntToByte(ip.b))
-	// w.WriteByte(byte(len(ip.ls)))  // we can skip this byte also, why not skip it
 
 	//  fmt.Printf("inner proof length byte %d\n",len(ip.ls))
 	for i := range ip.ls {
@@ -32,46 +31,31 @@ func (ip *InnerProduct) Serialize(w *helpers.BufferWriter) {
 
 func (ip *InnerProduct) Deserialize(r *helpers.BufferReader) (err error) {
 
-	var bufp []byte
-	var p bn256.G1
-
-	if bufp, err = r.ReadBytes(32); err != nil {
+	if ip.a, err = r.ReadBigInt(); err != nil {
 		return
 	}
-	ip.a = new(big.Int).SetBytes(bufp[:])
 
-	if bufp, err = r.ReadBytes(32); err != nil {
+	if ip.b, err = r.ReadBigInt(); err != nil {
 		return
 	}
-	ip.a = new(big.Int).SetBytes(bufp[:])
 
 	length := 7
 
-	ip.ls = ip.ls[:0]
-	ip.rs = ip.rs[:0]
+	ip.ls = make([]*bn256.G1, length)
+	ip.rs = make([]*bn256.G1, length)
 	for i := 0; i < length; i++ {
 
-		if bufp, err = r.ReadBytes(33); err != nil {
+		if ip.ls[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		p = bn256.G1{}
-		if err = p.DecodeCompressed(bufp[:]); err != nil {
-			return
-		}
-		ip.ls = append(ip.ls, &p)
 
-		if bufp, err = r.ReadBytes(33); err != nil {
+		if ip.rs[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		p = bn256.G1{}
-		if err = p.DecodeCompressed(bufp[:]); err != nil {
-			return
-		}
-		ip.rs = append(ip.rs, &p)
 
 	}
 
-	return err
+	return
 }
 
 func NewInnerProductProof(ips *IPStatement, witness *IPWitness, salt *big.Int) *InnerProduct {

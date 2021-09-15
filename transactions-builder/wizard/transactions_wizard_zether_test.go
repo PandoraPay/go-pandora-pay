@@ -1,6 +1,8 @@
 package wizard
 
 import (
+	"encoding/hex"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"math"
 	"math/big"
@@ -118,7 +120,13 @@ func TestCreateZetherTx(t *testing.T) {
 		}
 	}
 
+	fmt.Println("test")
+	fmt.Println(hex.EncodeToString(tx.SerializeManualToBytes()))
+	fmt.Println(hex.EncodeToString(tx2.SerializeManualToBytes()))
+	assert.Equal(t, serialized, tx2.SerializeManualToBytes())
+
 	//let's verify
+	assert.Equal(t, true, tx.VerifySignatureManually())
 	assert.Equal(t, true, tx2.VerifySignatureManually())
 
 }

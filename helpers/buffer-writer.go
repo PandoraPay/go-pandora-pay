@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 )
 
 type BufferWriter struct {
@@ -68,6 +69,11 @@ func (writer *BufferWriter) Bytes() (out []byte) {
 		c += len(writer.array[i])
 	}
 	return
+}
+
+func (writer *BufferWriter) Hex() string {
+	data := writer.Bytes()
+	return hex.EncodeToString(data)
 }
 
 func (writer *BufferWriter) Length() int {

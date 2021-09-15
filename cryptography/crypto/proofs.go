@@ -55,9 +55,6 @@ func (s *Statement) Serialize(w *helpers.BufferWriter) {
 
 func (s *Statement) Deserialize(r *helpers.BufferReader) (err error) {
 
-	var p bn256.G1
-	var bufp []byte
-
 	length, err := r.ReadByte()
 	if err != nil {
 		return
@@ -68,14 +65,9 @@ func (s *Statement) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 
-	if bufp, err = r.ReadBytes(33); err != nil {
+	if s.D, err = r.ReadBN256G1(); err != nil {
 		return
 	}
-	p = bn256.G1{}
-	if err = p.DecodeCompressed(bufp[:]); err != nil {
-		return err
-	}
-	s.D = &p
 
 	s.PublicKeysIndexes = make([]*StatementPublicKeyIndex, int(s.RingSize))
 	s.C = make([]*bn256.G1, int(s.RingSize))
@@ -89,14 +81,9 @@ func (s *Statement) Deserialize(r *helpers.BufferReader) (err error) {
 			return
 		}
 
-		if bufp, err = r.ReadBytes(33); err != nil {
+		if s.C[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		p = bn256.G1{}
-		if err = p.DecodeCompressed(bufp[:]); err != nil {
-			return err
-		}
-		s.C[i] = &p
 	}
 
 	if s.Roothash, err = r.ReadBytes(32); err != nil {

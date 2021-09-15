@@ -116,215 +116,114 @@ func (p *Proof) Serialize(w *helpers.BufferWriter) {
 
 func (proof *Proof) Deserialize(r *helpers.BufferReader, length int) (err error) {
 
-	var bufp []byte
-	var p bn256.G1
+	if proof.BA, err = r.ReadBN256G1(); err != nil {
+		return
+	}
+	if proof.BS, err = r.ReadBN256G1(); err != nil {
+		return
+	}
 
-	if bufp, err = r.ReadBytes(33); err != nil {
+	if proof.A, err = r.ReadBN256G1(); err != nil {
 		return
 	}
-	p = bn256.G1{}
-	if err = p.DecodeCompressed(bufp[:]); err != nil {
+	if proof.B, err = r.ReadBN256G1(); err != nil {
 		return
 	}
-	proof.BA = &p
 
-	if bufp, err = r.ReadBytes(33); err != nil {
-		return
-	}
-	p = bn256.G1{}
-	if err = p.DecodeCompressed(bufp[:]); err != nil {
-		return
-	}
-	proof.BS = &p
-
-	if bufp, err = r.ReadBytes(33); err != nil {
-		return
-	}
-	p = bn256.G1{}
-	if err = p.DecodeCompressed(bufp[:]); err != nil {
-		return
-	}
-	proof.A = &p
-
-	if bufp, err = r.ReadBytes(33); err != nil {
-		return
-	}
-	p = bn256.G1{}
-	if err = p.DecodeCompressed(bufp[:]); err != nil {
-		return
-	}
-	proof.B = &p
-
-	proof.CLnG = proof.CLnG[:0]
-	proof.CRnG = proof.CRnG[:0]
-	proof.C_0G = proof.C_0G[:0]
-	proof.DG = proof.DG[:0]
-	proof.y_0G = proof.y_0G[:0]
-	proof.gG = proof.gG[:0]
-	proof.C_XG = proof.C_XG[:0]
-	proof.y_XG = proof.y_XG[:0]
+	//optimization using make
+	proof.CLnG = make([]*bn256.G1, length)
+	proof.CRnG = make([]*bn256.G1, length)
+	proof.C_0G = make([]*bn256.G1, length)
+	proof.DG = make([]*bn256.G1, length)
+	proof.y_0G = make([]*bn256.G1, length)
+	proof.gG = make([]*bn256.G1, length)
+	proof.C_XG = make([]*bn256.G1, length)
+	proof.y_XG = make([]*bn256.G1, length)
 
 	for i := 0; i < length; i++ {
-
-		if bufp, err = r.ReadBytes(33); err != nil {
+		if proof.CLnG[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		p = bn256.G1{}
-		if err = p.DecodeCompressed(bufp[:]); err != nil {
+		if proof.CRnG[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		proof.CLnG = append(proof.CLnG, &p)
-
-		if bufp, err = r.ReadBytes(33); err != nil {
+		if proof.C_0G[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		p = bn256.G1{}
-		if err = p.DecodeCompressed(bufp[:]); err != nil {
+		if proof.DG[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		proof.CRnG = append(proof.CRnG, &p)
-
-		if bufp, err = r.ReadBytes(33); err != nil {
+		if proof.y_0G[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		p = bn256.G1{}
-		if err = p.DecodeCompressed(bufp[:]); err != nil {
+		if proof.gG[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		proof.C_0G = append(proof.C_0G, &p)
-
-		if bufp, err = r.ReadBytes(33); err != nil {
+		if proof.C_XG[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		p = bn256.G1{}
-		if err = p.DecodeCompressed(bufp[:]); err != nil {
+		if proof.y_XG[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		proof.DG = append(proof.DG, &p)
-
-		if bufp, err = r.ReadBytes(33); err != nil {
-			return
-		}
-		p = bn256.G1{}
-		if err = p.DecodeCompressed(bufp[:]); err != nil {
-			return
-		}
-		proof.y_0G = append(proof.y_0G, &p)
-
-		if bufp, err = r.ReadBytes(33); err != nil {
-			return
-		}
-		p = bn256.G1{}
-		if err = p.DecodeCompressed(bufp[:]); err != nil {
-			return
-		}
-		proof.gG = append(proof.gG, &p)
-
-		if bufp, err = r.ReadBytes(33); err != nil {
-			return
-		}
-		p = bn256.G1{}
-		if err = p.DecodeCompressed(bufp[:]); err != nil {
-			return
-		}
-		proof.C_XG = append(proof.C_XG, &p)
-
-		if bufp, err = r.ReadBytes(33); err != nil {
-			return
-		}
-		p = bn256.G1{}
-		if err = p.DecodeCompressed(bufp[:]); err != nil {
-			return
-		}
-		proof.y_XG = append(proof.y_XG, &p)
-
 	}
 
-	if bufp, err = r.ReadBytes(33); err != nil {
+	if proof.u, err = r.ReadBN256G1(); err != nil {
 		return
 	}
-	p = bn256.G1{}
-	if err = p.DecodeCompressed(bufp[:]); err != nil {
+	if proof.u1, err = r.ReadBN256G1(); err != nil {
 		return
 	}
-	proof.u = &p
 
-	if bufp, err = r.ReadBytes(33); err != nil {
-		return
+	proof.f = &FieldVector{
+		vector: make([]*big.Int, length*2),
 	}
-	p = bn256.G1{}
-	if err = p.DecodeCompressed(bufp[:]); err != nil {
-		return
-	}
-	proof.u1 = &p
-
-	proof.f = &FieldVector{}
 
 	//fmt.Printf("flen  %d\n", flen )
 	for j := 0; j < length*2; j++ {
-		if bufp, err = r.ReadBytes(32); err != nil {
+		if proof.f.vector[j], err = r.ReadBigInt(); err != nil {
 			return
 		}
-		proof.f.vector = append(proof.f.vector, new(big.Int).SetBytes(bufp[:]))
 	}
 
-	if bufp, err = r.ReadBytes(32); err != nil {
+	if proof.z_A, err = r.ReadBigInt(); err != nil {
 		return
 	}
-	proof.z_A = new(big.Int).SetBytes(bufp[:])
 
-	if bufp, err = r.ReadBytes(33); err != nil {
+	if proof.T_1, err = r.ReadBN256G1(); err != nil {
 		return
 	}
-	p = bn256.G1{}
-	if err = p.DecodeCompressed(bufp[:]); err != nil {
-		return
-	}
-	proof.T_1 = &p
 
-	if bufp, err = r.ReadBytes(33); err != nil {
+	if proof.T_2, err = r.ReadBN256G1(); err != nil {
 		return
 	}
-	p = bn256.G1{}
-	if err = p.DecodeCompressed(bufp[:]); err != nil {
-		return
-	}
-	proof.T_2 = &p
 
-	if bufp, err = r.ReadBytes(32); err != nil {
+	if proof.that, err = r.ReadBigInt(); err != nil {
 		return
 	}
-	proof.that = new(big.Int).SetBytes(bufp[:])
 
-	if bufp, err = r.ReadBytes(32); err != nil {
+	if proof.mu, err = r.ReadBigInt(); err != nil {
 		return
 	}
-	proof.mu = new(big.Int).SetBytes(bufp[:])
 
-	if bufp, err = r.ReadBytes(32); err != nil {
+	if proof.c, err = r.ReadBigInt(); err != nil {
 		return
 	}
-	proof.c = new(big.Int).SetBytes(bufp[:])
 
-	if bufp, err = r.ReadBytes(32); err != nil {
+	if proof.s_sk, err = r.ReadBigInt(); err != nil {
 		return
 	}
-	proof.s_sk = new(big.Int).SetBytes(bufp[:])
 
-	if bufp, err = r.ReadBytes(32); err != nil {
+	if proof.s_r, err = r.ReadBigInt(); err != nil {
 		return
 	}
-	proof.s_r = new(big.Int).SetBytes(bufp[:])
 
-	if bufp, err = r.ReadBytes(32); err != nil {
+	if proof.s_b, err = r.ReadBigInt(); err != nil {
 		return
 	}
-	proof.s_b = new(big.Int).SetBytes(bufp[:])
 
-	if bufp, err = r.ReadBytes(32); err != nil {
+	if proof.s_tau, err = r.ReadBigInt(); err != nil {
 		return
 	}
-	proof.s_tau = new(big.Int).SetBytes(bufp[:])
 
 	proof.ip = &InnerProduct{}
 	return proof.ip.Deserialize(r)
