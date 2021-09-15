@@ -2,6 +2,8 @@ package transaction
 
 import (
 	"errors"
+	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/registrations"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
@@ -32,19 +34,19 @@ func (tx *Transaction) BloomNow() {
 	tx.Bloom = bloom
 }
 
-func (tx *Transaction) BloomAll() (err error) {
+func (tx *Transaction) BloomAll(registrations *registrations.Registrations, accsCollection *accounts.AccountsCollection) (err error) {
 	tx.BloomNow()
-	return tx.BloomExtraNow()
+	return tx.BloomExtraNow(registrations, accsCollection)
 }
 
-func (tx *Transaction) BloomExtraNow() (err error) {
+func (tx *Transaction) BloomExtraNow(registrations *registrations.Registrations, accsCollection *accounts.AccountsCollection) (err error) {
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 		serialized := tx.SerializeForSigning()
 		err = tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).BloomNow(serialized)
 	case transaction_type.TX_ZETHER:
 		serialized := tx.SerializeForSigning()
-		err = tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).BloomNow(serialized)
+		err = tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).BloomNow(registrations, accsCollection, serialized)
 	default:
 		err = errors.New("Invalid TxType")
 	}

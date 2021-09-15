@@ -7,6 +7,7 @@ import (
 	mathrand "math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
+	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -25,8 +26,8 @@ func getNewBalance(addr *addresses.Address, amount uint64) *crypto.ElGamal {
 
 func TestCreateZetherTx(t *testing.T) {
 
-	privateKey := addresses.GenerateNewPrivateKey()
-	address, err := privateKey.GenerateAddress(true, 0, nil)
+	senderPrivateKey := addresses.GenerateNewPrivateKey()
+	senderAdress, err := senderPrivateKey.GenerateAddress(true, 0, nil)
 	assert.NoError(t, err)
 
 	var amount uint64
@@ -40,13 +41,13 @@ func TestCreateZetherTx(t *testing.T) {
 
 	emap[config.NATIVE_TOKEN_FULL_STRING] = make(map[string][]byte)
 
-	point, _ := address.GetPoint()
-	emap[config.NATIVE_TOKEN_FULL_STRING][point.G1().String()] = getNewBalance(address, amount).Serialize()
+	senderPoint, _ := senderAdress.GetPoint()
+	emap[config.NATIVE_TOKEN_FULL_STRING][senderPoint.G1().String()] = getNewBalance(senderAdress, amount).Serialize()
 
 	diff := amount / uint64(count)
 
 	publicKeyIndexes := make(map[string]*ZetherPublicKeyIndex)
-	publicKeyIndexes[string(address.PublicKey)] = &ZetherPublicKeyIndex{false, 0, address.Registration}
+	publicKeyIndexes[string(senderAdress.PublicKey)] = &ZetherPublicKeyIndex{false, 0, senderAdress.Registration}
 
 	transfers := make([]*ZetherTransfer, 5)
 	for i := range transfers {
@@ -58,7 +59,7 @@ func TestCreateZetherTx(t *testing.T) {
 
 		transfers[i] = &ZetherTransfer{
 			Token:              config.NATIVE_TOKEN_FULL,
-			From:               privateKey.Key,
+			From:               senderPrivateKey.Key,
 			FromBalanceDecoded: amount,
 			Destination:        dstAddress.EncodeAddr(),
 			Amount:             diff,
@@ -73,7 +74,7 @@ func TestCreateZetherTx(t *testing.T) {
 
 		rings[i] = make([]*bn256.G1, ringSize)
 
-		rings[i][0] = point.G1()
+		rings[i][0] = senderPoint.G1()
 
 		dstPoint, _ := dstAddress.GetPoint()
 		rings[i][1] = dstPoint.G1()
@@ -102,6 +103,20 @@ func TestCreateZetherTx(t *testing.T) {
 	err = tx2.Deserialize(helpers.NewBufferReader(serialized))
 	assert.NoError(t, err)
 	assert.NotNil(t, t, tx2)
+
+	//let's fill manually the bloomed data
+	for t, payload := range tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).Payloads {
+		payload2 := tx2.TransactionBaseInterface.(*transaction_zether.TransactionZether).Payloads[t]
+
+		payload2.Statement.CLn = make([]*bn256.G1, payload.Statement.RingSize)
+		payload2.Statement.CRn = make([]*bn256.G1, payload.Statement.RingSize)
+		payload2.Statement.Publickeylist = make([]*bn256.G1, payload.Statement.RingSize)
+		for i := range payload.Statement.PublicKeysIndexes {
+			payload2.Statement.CLn[i] = payload.Statement.CLn[i]
+			payload2.Statement.CRn[i] = payload.Statement.CRn[i]
+			payload2.Statement.Publickeylist[i] = payload.Statement.Publickeylist[i]
+		}
+	}
 
 	//let's verify
 	assert.Equal(t, true, tx2.VerifySignatureManually())

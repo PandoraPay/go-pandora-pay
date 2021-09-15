@@ -257,6 +257,8 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		statement.Roothash = make([]byte, 32)
 		copy(statement.Roothash[:], hash[:])
 
+		statement.RingSize = uint64(len(publickeylist))
+
 		witness := GenerateWitness(sender_secret, r, value, balance-value-fees-burn_value, witness_index)
 
 		witness_list = append(witness_list, witness)
@@ -280,14 +282,14 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 			emap[string(transfers[t].Token)][publickeylist[i].String()] = balance.Serialize() // reserialize and store
 		}
 
-		payload.Statement.PublicKeys = make([]*crypto.StatementPublicKey, len(publickeylist))
+		payload.Statement.PublicKeysIndexes = make([]*crypto.StatementPublicKeyIndex, len(publickeylist))
 		for i := 0; i < len(publickeylist); i++ {
 			publicKey := publickeylist[i].EncodeCompressed()
 
 			if registrationsAlready[string(publicKey)] {
 				for j, registration := range registrations {
 					if bytes.Equal(registration.PublicKey, publicKey) {
-						payload.Statement.PublicKeys[i] = &crypto.StatementPublicKey{false, uint64(j)}
+						payload.Statement.PublicKeysIndexes[i] = &crypto.StatementPublicKeyIndex{false, uint64(j)}
 						break
 					}
 				}
@@ -300,7 +302,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 					return nil, errors.New("PublicKey found is not registered")
 				}
 
-				payload.Statement.PublicKeys[i] = &crypto.StatementPublicKey{true, publicKeyIndex.RegisteredIndex}
+				payload.Statement.PublicKeysIndexes[i] = &crypto.StatementPublicKeyIndex{true, publicKeyIndex.RegisteredIndex}
 			}
 		}
 

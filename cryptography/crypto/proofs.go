@@ -21,7 +21,6 @@ type Statement struct {
 	D                 *bn256.G1
 	Fees              uint64
 	Roothash          []byte // note roothash contains the merkle root hash of chain, when it was build
-
 }
 
 type Witness struct {
