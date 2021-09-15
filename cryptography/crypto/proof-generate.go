@@ -83,9 +83,9 @@ func (p *Proof) Serialize(w *helpers.BufferWriter) {
 	w.Write(p.u.EncodeCompressed())
 	w.Write(p.u1.EncodeCompressed())
 
-	if len(p.CLnG) != len(p.f.vector) {
-		/// panic(fmt.Sprintf("different size %d %d", len(p.CLnG), len(p.f.vector)))
-	}
+	//if len(p.CLnG) != len(p.f.vector) {
+	//	panic(fmt.Sprintf("different size %d %d", len(p.CLnG), len(p.f.vector)))
+	//}
 
 	/*if len(p.f.vector) != 2 {
 	          panic(fmt.Sprintf("f could not be serialized length %d", len(p.CLnG), len(p.f.vector)))

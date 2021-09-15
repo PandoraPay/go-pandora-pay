@@ -26,8 +26,9 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 	w.WriteByte(payload.ExtraType)
 	w.Write(payload.ExtraData)
 
+	payload.Statement.Serialize(w)
+
 	if inclSignature {
-		payload.Statement.Serialize(w)
 		payload.Proof.Serialize(w)
 	}
 

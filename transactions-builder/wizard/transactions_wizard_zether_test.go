@@ -1,8 +1,6 @@
 package wizard
 
 import (
-	"encoding/hex"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"math"
 	"math/big"
@@ -113,16 +111,18 @@ func TestCreateZetherTx(t *testing.T) {
 		payload2.Statement.CLn = make([]*bn256.G1, payload.Statement.RingSize)
 		payload2.Statement.CRn = make([]*bn256.G1, payload.Statement.RingSize)
 		payload2.Statement.Publickeylist = make([]*bn256.G1, payload.Statement.RingSize)
+
 		for i := range payload.Statement.PublicKeysIndexes {
 			payload2.Statement.CLn[i] = payload.Statement.CLn[i]
 			payload2.Statement.CRn[i] = payload.Statement.CRn[i]
 			payload2.Statement.Publickeylist[i] = payload.Statement.Publickeylist[i]
 		}
+
 	}
 
-	fmt.Println("test")
-	fmt.Println(hex.EncodeToString(tx.SerializeManualToBytes()))
-	fmt.Println(hex.EncodeToString(tx2.SerializeManualToBytes()))
+	//fmt.Println("test")
+	//fmt.Println(hex.EncodeToString(tx.SerializeManualToBytes()))
+	//fmt.Println(hex.EncodeToString(tx2.SerializeManualToBytes()))
 	assert.Equal(t, serialized, tx2.SerializeManualToBytes())
 
 	//let's verify

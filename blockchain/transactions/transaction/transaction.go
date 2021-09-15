@@ -38,7 +38,7 @@ func (tx *Transaction) VerifySignatureManually() bool {
 }
 
 func (tx *Transaction) GetHashSigning() []byte {
-	return cryptography.SHA3(tx.SerializeForSigning())
+	return tx.SerializeForSigning()
 }
 
 func (tx *Transaction) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {

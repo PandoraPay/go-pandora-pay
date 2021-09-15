@@ -33,6 +33,8 @@ type ZetherPublicKeyIndex struct {
 
 func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, statusCallback func(string)) (*transaction.Transaction, error) {
 
+	var err error
+
 	txBase := &transaction_zether.TransactionZether{
 		TxScript: transaction_zether.SCRIPT_TRANSFER,
 		Height:   height,
@@ -74,7 +76,6 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 
 		senderKey := &addresses.PrivateKey{Key: transfer.From}
 		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
-
 		sender := crypto.GPoint.ScalarMult(secretPoint).G1()
 		sender_secret := secretPoint.BigInt()
 
@@ -306,22 +307,29 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 			}
 		}
 
-		u := new(bn256.G1).ScalarMult(crypto.HeightToPoint(height), sender_secret)                          // this should be moved to generate proof
-		u1 := new(bn256.G1).ScalarMult(crypto.HeightToPoint(height+crypto.BLOCK_BATCH_SIZE), sender_secret) // this should be moved to generate proof
-		txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Statement, &witness_list[t], u, u1, height, tx.GetHashSigning(), txBase.Payloads[t].BurnValue)
-		if err != nil {
+	}
+
+	senderKey := &addresses.PrivateKey{Key: transfers[0].From}
+	sender_secret := new(crypto.BNRed).SetBytes(senderKey.Key).BigInt()
+
+	u := new(bn256.G1).ScalarMult(crypto.HeightToPoint(height), sender_secret)                          // this should be moved to generate proof
+	u1 := new(bn256.G1).ScalarMult(crypto.HeightToPoint(height+crypto.BLOCK_BATCH_SIZE), sender_secret) // this should be moved to generate proof
+
+	for t := range transfers {
+		if txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Statement, &witness_list[t], u, u1, height, tx.GetHashSigning(), txBase.Payloads[t].BurnValue); err != nil {
 			return nil, err
 		}
+	}
 
-		// after the tx is serialized, it loses information which is then fed by blockchain
+	// after the tx is serialized, it loses information which is then fed by blockchain
 
-		//fmt.Printf("txhash before %s\n", tx.GetHash())
+	//fmt.Printf("txhash before %s\n", tx.GetHash())
+	for t := range transfers {
 		if txBase.Payloads[t].Proof.Verify(txBase.Payloads[t].Statement, tx.GetHashSigning(), height, txBase.Payloads[t].BurnValue) {
 			fmt.Printf("TX verified with proof successfuly %s  burn_value %d\n", tx.GetHashSigning(), txBase.Payloads[t].BurnValue)
 		} else {
 			fmt.Printf("TX verification failed, did u try sending more than you have !!!!!!!!!!\n")
 		}
-
 	}
 
 	return tx, nil

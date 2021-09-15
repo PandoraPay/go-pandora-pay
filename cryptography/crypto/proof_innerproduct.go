@@ -19,6 +19,7 @@ func (ip *InnerProduct) Size() int {
 
 // since our bulletproofs are 128 bits, we can get away hard coded 7 entries
 func (ip *InnerProduct) Serialize(w *helpers.BufferWriter) {
+
 	w.Write(ConvertBigIntToByte(ip.a))
 	w.Write(ConvertBigIntToByte(ip.b))
 
@@ -34,7 +35,6 @@ func (ip *InnerProduct) Deserialize(r *helpers.BufferReader) (err error) {
 	if ip.a, err = r.ReadBigInt(); err != nil {
 		return
 	}
-
 	if ip.b, err = r.ReadBigInt(); err != nil {
 		return
 	}
@@ -44,15 +44,12 @@ func (ip *InnerProduct) Deserialize(r *helpers.BufferReader) (err error) {
 	ip.ls = make([]*bn256.G1, length)
 	ip.rs = make([]*bn256.G1, length)
 	for i := 0; i < length; i++ {
-
 		if ip.ls[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-
 		if ip.rs[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-
 	}
 
 	return
