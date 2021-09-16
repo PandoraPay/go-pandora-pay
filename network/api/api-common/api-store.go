@@ -1,7 +1,6 @@
 package api_common
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain"
@@ -128,8 +127,6 @@ func (apiStore *APIStore) openLoadBlockWithTXsFromHeight(blockHeight uint64) (bl
 
 func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (acc *account.Account, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		accsCollection := accounts.NewAccountsCollection(reader)
 

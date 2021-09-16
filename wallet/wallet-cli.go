@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -92,8 +91,6 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 	gui.GUI.OutputWrite("")
 
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		accsCollection := accounts.NewAccountsCollection(reader)
 		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)

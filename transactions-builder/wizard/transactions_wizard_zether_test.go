@@ -7,7 +7,6 @@ import (
 	mathrand "math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
-	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -103,22 +102,6 @@ func TestCreateZetherTx(t *testing.T) {
 	err = tx2.Deserialize(helpers.NewBufferReader(serialized))
 	assert.NoError(t, err)
 	assert.NotNil(t, t, tx2)
-
-	//let's fill manually the bloomed data
-	for t, payload := range tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).Payloads {
-		payload2 := tx2.TransactionBaseInterface.(*transaction_zether.TransactionZether).Payloads[t]
-
-		payload2.Statement.CLn = make([]*bn256.G1, payload.Statement.RingSize)
-		payload2.Statement.CRn = make([]*bn256.G1, payload.Statement.RingSize)
-		payload2.Statement.Publickeylist = make([]*bn256.G1, payload.Statement.RingSize)
-
-		for i := range payload.Statement.PublicKeysIndexes {
-			payload2.Statement.CLn[i] = payload.Statement.CLn[i]
-			payload2.Statement.CRn[i] = payload.Statement.CRn[i]
-			payload2.Statement.Publickeylist[i] = payload.Statement.Publickeylist[i]
-		}
-
-	}
 
 	//fmt.Println("test")
 	//fmt.Println(hex.EncodeToString(tx.SerializeManualToBytes()))

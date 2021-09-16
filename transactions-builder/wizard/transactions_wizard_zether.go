@@ -1,7 +1,6 @@
 package wizard
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"math/big"
@@ -40,18 +39,27 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		Height:   height,
 	}
 
+	tx := &transaction.Transaction{
+		Version:                  transaction_type.TX_ZETHER,
+		TransactionBaseInterface: txBase,
+	}
+
 	registrations := make([]*transaction_zether.TransactionZetherRegistration, 0)
 	registrationsAlready := make(map[string]bool)
 
-	for ringIndex, ring := range rings {
-		for _, ringMember := range ring {
-			publicKey := ringMember.EncodeCompressed()
+	index := uint64(0)
+	for _, ring := range rings {
+		for ringIndex, publicKeyPoint := range ring {
+
+			publicKey := publicKeyPoint.EncodeCompressed()
+			index += 1
+
 			if publicKeyIndex := publicKeyIndexes[string(publicKey)]; publicKeyIndex != nil {
 
 				if !publicKeyIndex.Registered && !registrationsAlready[string(publicKey)] {
 					registrationsAlready[string(publicKey)] = true
 					registrations = append(registrations, &transaction_zether.TransactionZetherRegistration{
-						publicKey,
+						index,
 						publicKeyIndex.RegistrationSignature,
 					})
 				}
@@ -59,15 +67,10 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 			} else {
 				return nil, fmt.Errorf("Public Key Index was not specified for ring member %d", ringIndex)
 			}
+
 		}
 	}
-
 	txBase.Registrations = registrations
-
-	tx := &transaction.Transaction{
-		Version:                  transaction_type.TX_ZETHER,
-		TransactionBaseInterface: txBase,
-	}
 
 	statusCallback("Transaction created")
 	var witness_list []crypto.Witness
@@ -283,30 +286,6 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 			emap[string(transfers[t].Token)][publickeylist[i].String()] = balance.Serialize() // reserialize and store
 		}
 
-		payload.Statement.PublicKeysIndexes = make([]*crypto.StatementPublicKeyIndex, len(publickeylist))
-		for i := 0; i < len(publickeylist); i++ {
-			publicKey := publickeylist[i].EncodeCompressed()
-
-			if registrationsAlready[string(publicKey)] {
-				for j, registration := range registrations {
-					if bytes.Equal(registration.PublicKey, publicKey) {
-						payload.Statement.PublicKeysIndexes[i] = &crypto.StatementPublicKeyIndex{false, uint64(j)}
-						break
-					}
-				}
-			} else {
-				publicKeyIndex := publicKeyIndexes[string(publicKey)]
-				if publicKeyIndex == nil {
-					return nil, fmt.Errorf("PublicKey is not present in publicKeyIndexes %s ", string(publicKey))
-				}
-				if publicKeyIndex.Registered == true {
-					return nil, errors.New("PublicKey found is not registered")
-				}
-
-				payload.Statement.PublicKeysIndexes[i] = &crypto.StatementPublicKeyIndex{true, publicKeyIndex.RegisteredIndex}
-			}
-		}
-
 	}
 
 	senderKey := &addresses.PrivateKey{Key: transfers[0].From}
@@ -328,7 +307,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		if txBase.Payloads[t].Proof.Verify(txBase.Payloads[t].Statement, tx.GetHashSigning(), height, txBase.Payloads[t].BurnValue) {
 			fmt.Printf("TX verified with proof successfuly %s  burn_value %d\n", tx.GetHashSigning(), txBase.Payloads[t].BurnValue)
 		} else {
-			fmt.Printf("TX verification failed, did u try sending more than you have !!!!!!!!!!\n")
+			return nil, fmt.Errorf("TX verification failed \n")
 		}
 	}
 

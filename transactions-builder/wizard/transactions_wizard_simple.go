@@ -64,7 +64,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 		return nil, err
 	}
 
-	if err := tx.BloomAll(nil, nil); err != nil {
+	if err := tx.BloomAll(); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Bloomed")
@@ -125,7 +125,7 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, 
 		return nil, err
 	}
 
-	if err := tx.BloomAll(nil, nil); err != nil {
+	if err := tx.BloomAll(); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Bloomed")

@@ -52,9 +52,11 @@ func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 	w.WriteUvarint(uint64(tx.TxScript))
 	w.WriteUvarint(tx.Height)
 
-	w.WriteUvarint(uint64(len(tx.Registrations)))
-	for _, registration := range tx.Registrations {
-		registration.Serialize(w)
+	if inclSignature {
+		w.WriteUvarint(uint64(len(tx.Registrations)))
+		for _, registration := range tx.Registrations {
+			registration.Serialize(w)
+		}
 	}
 
 	w.WriteUvarint(uint64(len(tx.Payloads)))

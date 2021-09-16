@@ -6,17 +6,17 @@ import (
 )
 
 type TransactionZetherRegistration struct {
-	PublicKey             []byte
+	PublicKeyIndex        uint64
 	RegistrationSignature []byte
 }
 
 func (registration *TransactionZetherRegistration) Serialize(w *helpers.BufferWriter) {
-	w.Write(registration.PublicKey)
+	w.WriteUvarint(registration.PublicKeyIndex)
 	w.Write(registration.RegistrationSignature)
 }
 
 func (registration *TransactionZetherRegistration) Deserialize(r *helpers.BufferReader) (err error) {
-	if registration.PublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+	if registration.PublicKeyIndex, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	if registration.RegistrationSignature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {

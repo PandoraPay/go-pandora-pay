@@ -12,15 +12,14 @@ type StatementPublicKeyIndex struct {
 }
 
 type Statement struct {
-	RingSize          uint64
-	CLn               []*bn256.G1 //bloomed
-	CRn               []*bn256.G1 //bloomed
-	Publickeylist     []*bn256.G1 //bloomed
-	PublicKeysIndexes []*StatementPublicKeyIndex
-	C                 []*bn256.G1 // commitments
-	D                 *bn256.G1
-	Fees              uint64
-	Roothash          []byte // note roothash contains the merkle root hash of chain, when it was build
+	RingSize      uint64
+	CLn           []*bn256.G1 //bloomed
+	CRn           []*bn256.G1 //bloomed
+	Publickeylist []*bn256.G1 //bloomed
+	C             []*bn256.G1 // commitments
+	D             *bn256.G1
+	Fees          uint64
+	Roothash      []byte // note roothash contains the merkle root hash of chain, when it was build
 }
 
 type Witness struct {
@@ -33,7 +32,7 @@ type Witness struct {
 
 func (s *Statement) Serialize(w *helpers.BufferWriter) {
 
-	pow, err := GetPowerof2(len(s.PublicKeysIndexes))
+	pow, err := GetPowerof2(len(s.C))
 	if err != nil {
 		panic(err)
 	}
@@ -41,12 +40,10 @@ func (s *Statement) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(s.Fees)
 	w.Write(s.D.EncodeCompressed())
 
-	for i := 0; i < len(s.PublicKeysIndexes); i++ {
-		//     w.Write( s.CLn[i].EncodeCompressed()) /// this is expanded from graviton store
-		//     w.Write( s.CRn[i].EncodeCompressed())  /// this is expanded from graviton store
-		//	  w.Write(s.Publickeylist[i].EncodeCompressed()) /// this is expanded from graviton store
-		w.WriteBool(s.PublicKeysIndexes[i].Registered)
-		w.WriteUvarint(s.PublicKeysIndexes[i].Index)
+	for i := 0; i < len(s.C); i++ {
+		w.Write(s.CLn[i].EncodeCompressed())           //can be bloomed
+		w.Write(s.CRn[i].EncodeCompressed())           //can be bloomed
+		w.Write(s.Publickeylist[i].EncodeCompressed()) //can be bloomed
 		w.Write(s.C[i].EncodeCompressed())
 	}
 
@@ -69,15 +66,19 @@ func (s *Statement) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 
-	s.PublicKeysIndexes = make([]*StatementPublicKeyIndex, int(s.RingSize))
+	s.CLn = make([]*bn256.G1, int(s.RingSize))
+	s.CRn = make([]*bn256.G1, int(s.RingSize))
+	s.Publickeylist = make([]*bn256.G1, int(s.RingSize))
 	s.C = make([]*bn256.G1, int(s.RingSize))
 	for i := 0; i < int(s.RingSize); i++ {
 
-		s.PublicKeysIndexes[i] = new(StatementPublicKeyIndex)
-		if s.PublicKeysIndexes[i].Registered, err = r.ReadBool(); err != nil {
+		if s.CLn[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		if s.PublicKeysIndexes[i].Index, err = r.ReadUvarint(); err != nil {
+		if s.CRn[i], err = r.ReadBN256G1(); err != nil {
+			return
+		}
+		if s.Publickeylist[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
 
