@@ -4,10 +4,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"pandora-pay/app"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/tokens/token"
+	"pandora-pay/blockchain/data/accounts"
+	"pandora-pay/blockchain/data/accounts/account"
+	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/mempool"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -44,7 +44,7 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 			if acc == nil {
 				accs.Delete(string(publicKey))
 			} else {
-				if err = accs.UpdateAccount(publicKey, acc); err != nil {
+				if err = accs.Update(string(publicKey), acc); err != nil {
 					return
 				}
 			}

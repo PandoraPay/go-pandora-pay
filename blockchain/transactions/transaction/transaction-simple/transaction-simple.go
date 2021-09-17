@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/blockchain/registrations"
-	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/data/accounts"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data/registrations"
+	"pandora-pay/blockchain/data/tokens"
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
 	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
@@ -29,48 +30,39 @@ type TransactionSimple struct {
 	Bloom       *TransactionSimpleBloom
 }
 
-func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, regs *registrations.Registrations, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
 
-	accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
-	if err != nil {
+	var plainAcc *plain_account.PlainAccount
+	if plainAcc, err = plainAccs.GetPlainAccount(tx.Vin.PublicKey, blockHeight); err != nil {
 		return
 	}
-
-	var acc *account.Account
-	if acc, err = accs.GetAccount(tx.Vin.PublicKey); err != nil {
-		return
-	}
-	if acc == nil {
+	if plainAcc == nil {
 		return errors.New("Account was not found")
 	}
 
-	if err = acc.NativeExtra.RefreshDelegatedStake(blockHeight); err != nil {
+	if plainAcc.Nonce != tx.Nonce {
+		return fmt.Errorf("Account nonce doesn't match %d %d", plainAcc.Nonce, tx.Nonce)
+	}
+	if err = plainAcc.IncrementNonce(true); err != nil {
 		return
 	}
 
-	if acc.NativeExtra.Nonce != tx.Nonce {
-		return fmt.Errorf("Account nonce doesn't match %d %d", acc.NativeExtra.Nonce, tx.Nonce)
-	}
-	if err = acc.NativeExtra.IncrementNonce(true); err != nil {
-		return
-	}
-
-	if err = acc.NativeExtra.DelegatedStake.AddStakeAvailable(false, tx.Fee); err != nil {
+	if err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fee); err != nil {
 		return
 	}
 
 	switch tx.TxScript {
 	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE:
-		if err = tx.TransactionSimpleExtraInterface.IncludeTransactionVin0(blockHeight, acc); err != nil {
+		if err = tx.TransactionSimpleExtraInterface.IncludeTransactionVin0(blockHeight, plainAcc); err != nil {
 			return
 		}
 	}
 
-	if err = accs.UpdateAccount(tx.Vin.PublicKey, acc); err != nil {
+	if err = plainAccs.Update(string(tx.Vin.PublicKey), plainAcc); err != nil {
 		return
 	}
 
-	return nil
+	return
 }
 
 func (tx *TransactionSimple) ComputeFees() uint64 {

@@ -2,11 +2,12 @@ package block
 
 import (
 	"errors"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/blockchain/registrations"
-	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/tokens/token"
+	"pandora-pay/blockchain/data/accounts"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data/registrations"
+	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/config/config_reward"
 	"pandora-pay/cryptography"
@@ -41,35 +42,26 @@ func (blk *Block) Verify() error {
 	return blk.Bloom.verifyIfBloomed()
 }
 
-func (blk *Block) IncludeBlock(regs *registrations.Registrations, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens, allFees uint64) (err error) {
-
-	accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
-	if err != nil {
-		return
-	}
+func (blk *Block) IncludeBlock(regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens, allFees uint64) (err error) {
 
 	reward := config_reward.GetRewardAt(blk.Height)
 
-	var acc *account.Account
-	if acc, err = accs.GetAccount(blk.Forger); err != nil {
+	var plainAcc *plain_account.PlainAccount
+	if plainAcc, err = plainAccs.GetPlainAccount(blk.Forger, blk.Height); err != nil {
 		return
 	}
-	if acc == nil {
+	if plainAcc == nil || !plainAcc.HasDelegatedStake() {
 		return errors.New("Account not found")
 	}
 
-	if err = acc.NativeExtra.RefreshDelegatedStake(blk.Height); err != nil {
+	if err = plainAcc.DelegatedStake.AddStakePendingStake(reward, blk.Height); err != nil {
+		return
+	}
+	if err = plainAcc.DelegatedStake.AddStakePendingStake(allFees, blk.Height); err != nil {
 		return
 	}
 
-	if err = acc.NativeExtra.DelegatedStake.AddStakePendingStake(reward, blk.Height); err != nil {
-		return
-	}
-	if err = acc.NativeExtra.DelegatedStake.AddStakePendingStake(allFees, blk.Height); err != nil {
-		return
-	}
-
-	if err = accs.UpdateAccount(blk.Forger, acc); err != nil {
+	if err = plainAccs.Update(string(blk.Forger), plainAcc); err != nil {
 		return
 	}
 

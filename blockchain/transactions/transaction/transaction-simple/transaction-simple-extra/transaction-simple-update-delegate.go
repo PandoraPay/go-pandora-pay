@@ -2,7 +2,7 @@ package transaction_simple_extra
 
 import (
 	"errors"
-	"pandora-pay/blockchain/accounts/account"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
@@ -13,15 +13,15 @@ type TransactionSimpleUpdateDelegate struct {
 	NewFee       uint64
 }
 
-func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) (err error) {
+func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount) (err error) {
 
-	if acc.NativeExtra == nil || !acc.NativeExtra.HasDelegatedStake() {
-		if err = acc.NativeExtra.CreateDelegatedStake(0, tx.NewPublicKey, tx.NewFee); err != nil {
+	if plainAcc == nil || !plainAcc.HasDelegatedStake() {
+		if err = plainAcc.CreateDelegatedStake(0, tx.NewPublicKey, tx.NewFee); err != nil {
 			return
 		}
 	} else {
-		acc.NativeExtra.DelegatedStake.DelegatedPublicKey = tx.NewPublicKey
-		acc.NativeExtra.DelegatedStake.DelegatedStakeFee = tx.NewFee
+		plainAcc.DelegatedStake.DelegatedPublicKey = tx.NewPublicKey
+		plainAcc.DelegatedStake.DelegatedStakeFee = tx.NewFee
 	}
 
 	return

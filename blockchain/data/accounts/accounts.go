@@ -2,7 +2,7 @@ package accounts
 
 import (
 	"errors"
-	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/blockchain/data/accounts/account"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash-map"
@@ -34,20 +34,12 @@ func (accounts *Accounts) GetAccount(key []byte) (*account.Account, error) {
 		return nil, err
 	}
 
-	acc := data.(*account.Account)
-	return acc, nil
+	return data.(*account.Account), nil
 }
 
-func (accounts *Accounts) UpdateAccount(key []byte, acc *account.Account) error {
-	return accounts.Update(string(key), acc)
-}
+func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, Token []byte) (accounts *Accounts) {
 
-func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, Token []byte) (accounts *Accounts, err error) {
-
-	hashmap, err := hash_map.CreateNewHashMap(tx, "accounts", cryptography.PublicKeySize, true)
-	if err != nil {
-		return nil, err
-	}
+	hashmap := hash_map.CreateNewHashMap(tx, "accounts", cryptography.PublicKeySize, true)
 
 	accounts = &Accounts{
 		HashMap: *hashmap,
@@ -56,8 +48,10 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, Token []byte
 
 	accounts.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {
 		var acc = account.NewAccount(key, accounts.Token)
-		err := acc.Deserialize(helpers.NewBufferReader(data))
-		return acc, err
+		if err := acc.Deserialize(helpers.NewBufferReader(data)); err != nil {
+			return nil, err
+		}
+		return acc, nil
 	}
 	return
 }

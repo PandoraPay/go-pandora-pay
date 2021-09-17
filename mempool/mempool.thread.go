@@ -2,9 +2,10 @@ package mempool
 
 import (
 	"errors"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/registrations"
-	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/data/accounts"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	"pandora-pay/blockchain/data/registrations"
+	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/config"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -57,6 +58,7 @@ func (worker *mempoolWorker) processing(
 	var accsCollection *accounts.AccountsCollection
 	var toks *tokens.Tokens
 	var regs *registrations.Registrations
+	var plainAccs *plain_accounts.PlainAccounts
 
 	includedTotalSize := uint64(0)
 	includedTxs := []*mempoolTx{}
@@ -67,6 +69,7 @@ func (worker *mempoolWorker) processing(
 			txsMapVerified = make(map[string]bool)
 			accsCollection = nil
 			toks = nil
+			plainAccs = nil
 			regs = nil
 			work = newWork
 			includedTotalSize = uint64(0)
@@ -152,6 +155,7 @@ func (worker *mempoolWorker) processing(
 			case CONTINUE_PROCESSING_NO_ERROR_RESET:
 				accsCollection = nil
 				toks = nil
+				plainAccs = nil
 				regs = nil
 				listIndex = 0
 			}
@@ -168,6 +172,7 @@ func (worker *mempoolWorker) processing(
 			if accsCollection != nil {
 				accsCollection.SetTx(dbTx)
 				toks.Tx = dbTx
+				plainAccs.Tx = dbTx
 				regs.Tx = dbTx
 			}
 
@@ -175,12 +180,9 @@ func (worker *mempoolWorker) processing(
 
 				if accsCollection == nil {
 					accsCollection = accounts.NewAccountsCollection(dbTx)
-					if toks, err = tokens.NewTokens(dbTx); err != nil {
-						return
-					}
-					if regs, err = registrations.NewRegistrations(dbTx); err != nil {
-						return
-					}
+					toks = tokens.NewTokens(dbTx)
+					plainAccs = plain_accounts.NewPlainAccounts(dbTx)
+					regs = registrations.NewRegistrations(dbTx)
 				}
 
 				select {
@@ -230,9 +232,10 @@ func (worker *mempoolWorker) processing(
 
 						txsMapVerified[tx.Tx.Bloom.HashStr] = true
 
-						if finalErr = tx.Tx.IncludeTransaction(work.chainHeight, regs, accsCollection, toks); finalErr != nil {
+						if finalErr = tx.Tx.IncludeTransaction(work.chainHeight, regs, plainAccs, accsCollection, toks); finalErr != nil {
 							accsCollection.Rollback()
 							toks.Rollback()
+							plainAccs.Rollback()
 							regs.Rollback()
 						} else {
 
@@ -246,10 +249,12 @@ func (worker *mempoolWorker) processing(
 
 								accsCollection.CommitChanges()
 								toks.CommitChanges()
+								plainAccs.CommitChanges()
 								regs.CommitChanges()
 							} else {
 								accsCollection.Rollback()
 								toks.Rollback()
+								plainAccs.Rollback()
 								regs.Rollback()
 							}
 

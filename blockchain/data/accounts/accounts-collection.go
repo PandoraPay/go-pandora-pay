@@ -38,11 +38,7 @@ func (collection *AccountsCollection) GetMap(token []byte) (*Accounts, error) {
 
 	accs := collection.accsMap[string(token)]
 	if accs == nil {
-
-		var err error
-		if accs, err = NewAccounts(collection.tx, token); err != nil {
-			return nil, err
-		}
+		accs = NewAccounts(collection.tx, token)
 		collection.accsMap[string(token)] = accs
 	}
 	return accs, nil

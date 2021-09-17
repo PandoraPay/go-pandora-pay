@@ -1,10 +1,8 @@
 package account
 
 import (
-	"bytes"
 	"errors"
 	"math/big"
-	"pandora-pay/config"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
@@ -15,7 +13,6 @@ type Account struct {
 	Token                         []byte              `json:"-"` //collection token
 	Version                       uint64              `json:"version"`
 	Balance                       *BalanceHomomorphic `json:"balances"`
-	NativeExtra                   *AccountNativeExtra `json:"nativeExtra"`
 }
 
 func (account *Account) Validate() error {
@@ -41,10 +38,6 @@ func (account *Account) GetBalance() (result *crypto.ElGamal) {
 func (account *Account) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(account.Version)
 	account.Balance.Serialize(w)
-
-	if account.NativeExtra != nil {
-		account.NativeExtra.Serialize(w)
-	}
 }
 
 func (account *Account) SerializeToBytes() []byte {
@@ -58,15 +51,8 @@ func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 	if account.Version, err = r.ReadUvarint(); err != nil {
 		return
 	}
-
 	if err = account.Balance.Deserialize(r); err != nil {
 		return
-	}
-
-	if bytes.Equal(account.Token, config.NATIVE_TOKEN_FULL) {
-		if err = account.NativeExtra.Deserialize(r); err != nil {
-			return
-		}
 	}
 
 	return
@@ -82,12 +68,6 @@ func NewAccount(publicKey []byte, token []byte) *Account {
 		PublicKey: publicKey,
 		Token:     token,
 		Balance:   &BalanceHomomorphic{crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)},
-	}
-
-	if bytes.Equal(config.NATIVE_TOKEN_FULL, token) {
-		acc.NativeExtra = &AccountNativeExtra{
-			account: acc,
-		}
 	}
 
 	return acc

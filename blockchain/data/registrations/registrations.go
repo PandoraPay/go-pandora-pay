@@ -2,7 +2,7 @@ package registrations
 
 import (
 	"errors"
-	"pandora-pay/blockchain/registrations/registration"
+	"pandora-pay/blockchain/data/registrations/registration"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -42,12 +42,9 @@ func (registrations *Registrations) GetRegistration(key []byte) (*registration.R
 	return reg, nil
 }
 
-func NewRegistrations(tx store_db_interface.StoreDBTransactionInterface) (registrations *Registrations, err error) {
+func NewRegistrations(tx store_db_interface.StoreDBTransactionInterface) (registrations *Registrations) {
 
-	hashmap, err := hash_map.CreateNewHashMap(tx, "registrations", cryptography.PublicKeySize, true)
-	if err != nil {
-		return nil, err
-	}
+	hashmap := hash_map.CreateNewHashMap(tx, "registrations", cryptography.PublicKeySize, true)
 
 	registrations = &Registrations{
 		HashMap: *hashmap,

@@ -2,9 +2,10 @@ package transaction_zether
 
 import (
 	"errors"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/registrations"
-	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/data/accounts"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	"pandora-pay/blockchain/data/registrations"
+	"pandora-pay/blockchain/data/tokens"
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -19,7 +20,7 @@ type TransactionZether struct {
 	Bloom         *TransactionZetherBloom
 }
 
-func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, regs *registrations.Registrations, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) error {
+func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) error {
 
 	return nil
 }

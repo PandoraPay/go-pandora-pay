@@ -2,7 +2,7 @@ package tokens
 
 import (
 	"errors"
-	"pandora-pay/blockchain/tokens/token"
+	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash-map"
@@ -11,24 +11,6 @@ import (
 
 type Tokens struct {
 	hash_map.HashMap `json:"-"`
-}
-
-func NewTokens(tx store_db_interface.StoreDBTransactionInterface) (tokens *Tokens, err error) {
-
-	hashMap, err := hash_map.CreateNewHashMap(tx, "tokens", config.TOKEN_LENGTH, true)
-	if err != nil {
-		return nil, err
-	}
-
-	tokens = &Tokens{
-		HashMap: *hashMap,
-	}
-	tokens.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {
-		var tok = &token.Token{}
-		err := tok.Deserialize(helpers.NewBufferReader(data))
-		return tok, err
-	}
-	return
 }
 
 func (tokens *Tokens) GetToken(key []byte) (*token.Token, error) {
@@ -96,5 +78,22 @@ func (hashMap *Tokens) WriteToStore() (err error) {
 		return
 	}
 
+	return
+}
+
+func NewTokens(tx store_db_interface.StoreDBTransactionInterface) (tokens *Tokens) {
+
+	hashMap := hash_map.CreateNewHashMap(tx, "tokens", config.TOKEN_LENGTH, true)
+
+	tokens = &Tokens{
+		HashMap: *hashMap,
+	}
+	tokens.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {
+		var tok = &token.Token{}
+		if err := tok.Deserialize(helpers.NewBufferReader(data)); err != nil {
+			return nil, err
+		}
+		return tok, nil
+	}
 	return
 }

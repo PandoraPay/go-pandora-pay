@@ -7,7 +7,8 @@ import (
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/blockchain/data/accounts/account"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/crypto"
@@ -438,13 +439,25 @@ func (wallet *Wallet) updateWallet() {
 
 //wallet must be locked before
 //acc read only
-func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.WalletAddress, lock bool) (err error) {
+
+func (wallet *Wallet) refreshWalletAccount(acc *account.Account, adr *wallet_address.WalletAddress, lock bool) (err error) {
 
 	if acc == nil {
 		return
 	}
 
-	if acc.NativeExtra != nil && adr.DelegatedStake != nil && acc.NativeExtra.DelegatedStake == nil {
+	adr.DecodeAccount(acc, true)
+
+	return
+}
+
+func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAccount, adr *wallet_address.WalletAddress, lock bool) (err error) {
+
+	if plainAcc == nil {
+		return
+	}
+
+	if adr.DelegatedStake != nil && plainAcc.DelegatedStake == nil {
 		adr.DelegatedStake = nil
 
 		if adr.PrivateKey == nil {
@@ -455,17 +468,15 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 		return
 	}
 
-	adr.DecodeAccount(acc, true)
-
-	if acc.NativeExtra != nil && ((adr.DelegatedStake != nil && acc.NativeExtra.DelegatedStake != nil && !bytes.Equal(adr.DelegatedStake.PublicKey, acc.NativeExtra.DelegatedStake.DelegatedPublicKey)) ||
-		(adr.DelegatedStake == nil && acc.NativeExtra.DelegatedStake != nil)) {
+	if (adr.DelegatedStake != nil && plainAcc.DelegatedStake != nil && !bytes.Equal(adr.DelegatedStake.PublicKey, plainAcc.DelegatedStake.DelegatedPublicKey)) ||
+		(adr.DelegatedStake == nil && plainAcc.DelegatedStake != nil) {
 
 		if adr.PrivateKey == nil {
 			_, err = wallet.RemoveAddressByWalletAddress(adr, lock)
 			return
 		}
 
-		if acc.NativeExtra.DelegatedStake != nil {
+		if plainAcc.DelegatedStake != nil {
 
 			lastKnownNonce := uint32(0)
 			if adr.DelegatedStake != nil {
@@ -473,7 +484,7 @@ func (wallet *Wallet) refreshWallet(acc *account.Account, adr *wallet_address.Wa
 			}
 
 			var delegatedStake *wallet_address.WalletAddressDelegatedStake
-			if delegatedStake, err = adr.FindDelegatedStake(uint32(acc.NativeExtra.Nonce), lastKnownNonce, acc.NativeExtra.DelegatedStake.DelegatedPublicKey); err != nil {
+			if delegatedStake, err = adr.FindDelegatedStake(uint32(plainAcc.Nonce), lastKnownNonce, plainAcc.DelegatedStake.DelegatedPublicKey); err != nil {
 				return
 			}
 
@@ -526,7 +537,7 @@ func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.Wall
 
 func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {
 
-	wallet2 := createWallet(wallet.forging, wallet.mempool, wallet.updateAccounts)
+	wallet2 := createWallet(wallet.forging, wallet.mempool, wallet.updateAccounts, wallet.updatePlainAccounts)
 	if err = json.Unmarshal(data, wallet2); err != nil {
 		return errors.New("Error unmarshaling wallet")
 	}

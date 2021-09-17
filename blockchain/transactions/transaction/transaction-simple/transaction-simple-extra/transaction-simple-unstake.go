@@ -2,7 +2,7 @@ package transaction_simple_extra
 
 import (
 	"errors"
-	"pandora-pay/blockchain/accounts/account"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
 	"pandora-pay/helpers"
 )
 
@@ -15,14 +15,14 @@ type TransactionSimpleUnstake struct {
 	Amount uint64
 }
 
-func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(blockHeight uint64, acc *account.Account) (err error) {
-	if acc.NativeExtra == nil || !acc.NativeExtra.HasDelegatedStake() {
+func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount) (err error) {
+	if plainAcc == nil || !plainAcc.HasDelegatedStake() {
 		return errors.New("acc.HasDelegatedStake is null")
 	}
-	if err = acc.NativeExtra.DelegatedStake.AddStakeAvailable(false, tx.Amount); err != nil {
+	if err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Amount); err != nil {
 		return
 	}
-	if err = acc.NativeExtra.DelegatedStake.AddStakePendingUnstake(tx.Amount, blockHeight); err != nil {
+	if err = plainAcc.DelegatedStake.AddStakePendingUnstake(tx.Amount, blockHeight); err != nil {
 		return
 	}
 	return

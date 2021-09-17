@@ -5,15 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/blockchain-sync"
 	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/blocks/block/difficulty"
+	"pandora-pay/blockchain/data/accounts"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data/registrations"
+	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/blockchain/forging/forging-block-work"
-	"pandora-pay/blockchain/registrations"
-	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/config/config_stake"
@@ -41,7 +42,9 @@ type Blockchain struct {
 	UpdateNewChain           *multicast.MulticastChannel          //uint64
 	UpdateNewChainDataUpdate *multicast.MulticastChannel          //*BlockchainDataUpdate
 	UpdateAccounts           *multicast.MulticastChannel          //*accounts
+	UpdatePlainAccounts      *multicast.MulticastChannel          //*plainAccounts
 	UpdateTokens             *multicast.MulticastChannel          //*tokens
+	UpdateRegistrations      *multicast.MulticastChannel          //*registrations
 	UpdateTransactions       *multicast.MulticastChannel          //[]*blockchain_types.BlockchainTransactionUpdate
 	NextBlockCreatedCn       chan *forging_block_work.ForgingWork //
 }
@@ -109,6 +112,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	var accsCollection *accounts.AccountsCollection
 	var toks *tokens.Tokens
 	var regs *registrations.Registrations
+	var plainAccs *plain_accounts.PlainAccounts
 
 	err = func() (err error) {
 
@@ -119,12 +123,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			savedBlock := false
 
 			accsCollection = accounts.NewAccountsCollection(writer)
-			if toks, err = tokens.NewTokens(writer); err != nil {
-				return
-			}
-			if regs, err = registrations.NewRegistrations(writer); err != nil {
-				return
-			}
+			toks = tokens.NewTokens(writer)
+			regs = registrations.NewRegistrations(writer)
+			plainAccs = plain_accounts.NewPlainAccounts(writer)
 
 			var accs *accounts.Accounts
 			if accs, err = accsCollection.GetMap(config.NATIVE_TOKEN_FULL); err != nil {
@@ -163,7 +164,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					copy(removedBlocksHeights[1:], removedBlocksHeights)
 					removedBlocksHeights[0] = index
 
-					if allTransactionsChanges, err = chain.removeBlockComplete(writer, index, removedTxHashes, allTransactionsChanges, regs, accsCollection, toks); err != nil {
+					if allTransactionsChanges, err = chain.removeBlockComplete(writer, index, removedTxHashes, allTransactionsChanges, regs, plainAccs, accsCollection, toks); err != nil {
 						return
 					}
 
@@ -213,26 +214,22 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return
 					}
 
-					var acc *account.Account
-					if acc, err = accs.GetAccount(blkComplete.Block.Forger); err != nil {
+					var plainAcc *plain_account.PlainAccount
+					if plainAcc, err = plainAccs.GetPlainAccount(blkComplete.Block.Forger, blkComplete.Block.Height); err != nil {
 						return
 					}
 
-					if acc == nil || !acc.NativeExtra.HasDelegatedStake() {
+					if plainAcc == nil || !plainAcc.HasDelegatedStake() {
 						return errors.New("Forger Account deson't exist or hasn't delegated stake")
 					}
 
-					if err = acc.NativeExtra.RefreshDelegatedStake(blkComplete.Block.Height); err != nil {
-						return
-					}
-
 					var stakingAmount uint64
-					stakingAmount, err = acc.NativeExtra.ComputeDelegatedStakeAvailable(newChainData.Height)
+					stakingAmount, err = plainAcc.ComputeDelegatedStakeAvailable(newChainData.Height)
 					if err != nil {
 						return
 					}
 
-					if !bytes.Equal(blkComplete.Block.DelegatedPublicKey, acc.NativeExtra.DelegatedStake.DelegatedPublicKey) {
+					if !bytes.Equal(blkComplete.Block.DelegatedPublicKey, plainAcc.DelegatedStake.DelegatedPublicKey) {
 						return errors.New("Block Staking Delegated Public Key is not matching")
 					}
 
@@ -266,7 +263,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return errors.New("Timestamp is too much into the future")
 					}
 
-					if err = blkComplete.IncludeBlockComplete(regs, accsCollection, toks); err != nil {
+					if err = blkComplete.IncludeBlockComplete(regs, plainAccs, accsCollection, toks); err != nil {
 						return errors.New("Error including block into Blockchain: " + err.Error())
 					}
 
@@ -281,9 +278,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						removedBlocksHeights = removedBlocksHeights[1:]
 					}
 
-					accs.CommitChanges() //it will commit the changes but not save them
-					toks.CommitChanges() //it will commit the changes but not save them
-					regs.CommitChanges() //it will commit the changes but not save them
+					//it will commit the changes but not save them
+					accs.CommitChanges()
+					toks.CommitChanges()
+					regs.CommitChanges()
+					plainAccs.CommitChanges()
 
 					newChainData.PrevHash = newChainData.Hash
 					newChainData.Hash = blkComplete.Block.Bloom.Hash
@@ -408,7 +407,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 				}
 
-				if err = chain.saveBlockchainHashmaps(regs, accsCollection, toks); err != nil {
+				if err = chain.saveBlockchainHashmaps(regs, plainAccs, accsCollection, toks); err != nil {
 					panic(err)
 				}
 
@@ -425,6 +424,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				accsCollection.UnsetTx()
 				toks.UnsetTx()
 				regs.UnsetTx()
+				plainAccs.UnsetTx()
 			}
 
 			return
@@ -453,6 +453,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		update.newChainData = newChainData
 		update.accsCollection = accsCollection
 		update.toks = toks
+		update.regs = regs
+		update.plainAccs = plainAccs
 		update.removedTxsList = removedTxsList
 		update.removedTxHashes = removedTxHashes
 		update.insertedTxs = insertedTxs
@@ -480,6 +482,7 @@ func CreateBlockchain(mempool *mempool.Mempool) (*Blockchain, error) {
 		UpdateNewChain:           multicast.NewMulticastChannel(),
 		UpdateNewChainDataUpdate: multicast.NewMulticastChannel(),
 		UpdateAccounts:           multicast.NewMulticastChannel(),
+		UpdatePlainAccounts:      multicast.NewMulticastChannel(),
 		UpdateTokens:             multicast.NewMulticastChannel(),
 		UpdateTransactions:       multicast.NewMulticastChannel(),
 		NextBlockCreatedCn:       make(chan *forging_block_work.ForgingWork),
@@ -515,6 +518,7 @@ func (chain *Blockchain) Close() {
 	chain.UpdateNewChainDataUpdate.CloseAll()
 	chain.UpdateNewChain.CloseAll()
 	chain.UpdateAccounts.CloseAll()
+	chain.UpdatePlainAccounts.CloseAll()
 	chain.UpdateTokens.CloseAll()
 	close(chain.NextBlockCreatedCn)
 	close(chain.ForgingSolutionCn)

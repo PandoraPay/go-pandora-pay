@@ -4,10 +4,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"pandora-pay/blockchain"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/tokens/token"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
@@ -30,15 +30,15 @@ type TransactionsBuilder struct {
 	lock    *sync.Mutex //TODO replace sync.Mutex with a snyc.Map in order to optimize the transactions creation
 }
 
-func (builder *TransactionsBuilder) checkTx(acc *account.Account, tx *transaction.Transaction, chainHeight uint64) (err error) {
+func (builder *TransactionsBuilder) checkTx(plainAcc *plain_account.PlainAccount, tx *transaction.Transaction, chainHeight uint64) (err error) {
 
-	if acc == nil {
+	if plainAcc == nil {
 		return errors.New("Account doesn't even exist")
 	}
 
 	base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
-	availableDelegatedStake, err := acc.NativeExtra.ComputeDelegatedStakeAvailable(chainHeight)
+	availableDelegatedStake, err := plainAcc.ComputeDelegatedStakeAvailable(chainHeight)
 	if err != nil {
 		return err
 	}
@@ -105,10 +105,7 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, nonce ui
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		toks, err := tokens.NewTokens(reader)
-		if err != nil {
-			return
-		}
+		toks := tokens.NewTokens(reader)
 
 		tok, err := toks.GetToken(token)
 		if tok == nil {
@@ -223,10 +220,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uin
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		toks, err := tokens.NewTokens(reader)
-		if err != nil {
-			return
-		}
+		toks := tokens.NewTokens(reader)
 
 		tok, err := toks.GetToken(config.NATIVE_TOKEN_FULL)
 		if err != nil {
@@ -261,31 +255,22 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	defer builder.lock.Unlock()
 
 	var tx *transaction.Transaction
-	var acc *account.Account
-
+	var plainAcc *plain_account.PlainAccount
 	var chainHeight uint64
+
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
-		accsCollection := accounts.NewAccountsCollection(reader)
+		plainAccs := plain_accounts.NewPlainAccounts(reader)
 
-		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
-		if err != nil {
+		if plainAcc, err = plainAccs.GetPlainAccount(fromWalletAddresses[0].PublicKey, chainHeight); err != nil {
 			return
 		}
-
-		if acc, err = accs.GetAccount(fromWalletAddresses[0].PublicKey); err != nil {
-			return
-		}
-		if acc == nil {
+		if plainAcc == nil {
 			return errors.New("Account doesn't exist")
 		}
 
-		if err = acc.NativeExtra.RefreshDelegatedStake(chainHeight); err != nil {
-			return
-		}
-
-		availableStake, err := acc.NativeExtra.ComputeDelegatedStakeAvailable(chainHeight)
+		availableStake, err := plainAcc.ComputeDelegatedStakeAvailable(chainHeight)
 		if err != nil {
 			return
 		}
@@ -302,7 +287,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	statusCallback("Balances checked")
 
 	if nonce == 0 {
-		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, acc.NativeExtra.Nonce)
+		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
 	}
 	statusCallback("Getting Nonce from Mempool")
 
@@ -311,7 +296,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	}
 	statusCallback("Transaction Created")
 
-	if err = builder.checkTx(acc, tx, chainHeight); err != nil {
+	if err = builder.checkTx(plainAcc, tx, chainHeight); err != nil {
 		return nil, err
 	}
 
@@ -332,10 +317,7 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx_Float(from string, no
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		toks, err := tokens.NewTokens(reader)
-		if err != nil {
-			return
-		}
+		toks := tokens.NewTokens(reader)
 
 		tok, err := toks.GetToken(config.NATIVE_TOKEN_FULL)
 		if err != nil {
@@ -368,29 +350,20 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 	defer builder.lock.Unlock()
 
 	var tx *transaction.Transaction
-	var acc *account.Account
+	var plainAcc *plain_account.PlainAccount
 	var chainHeight uint64
 
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 
-		accsCollection := accounts.NewAccountsCollection(reader)
+		plainAccs := plain_accounts.NewPlainAccounts(reader)
 
-		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
-		if err != nil {
+		if plainAcc, err = plainAccs.CreatePlainAccount(fromWalletAddresses[0].PublicKey); err != nil {
 			return
 		}
-
-		if acc, err = accs.GetAccount(fromWalletAddresses[0].PublicKey); err != nil {
-			return
-		}
-		if acc == nil {
+		if plainAcc == nil {
 			return errors.New("Account doesn't exist")
-		}
-
-		if err = acc.NativeExtra.RefreshDelegatedStake(chainHeight); err != nil {
-			return
 		}
 
 		return
@@ -399,7 +372,7 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 	}
 
 	if nonce == 0 {
-		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, acc.NativeExtra.Nonce)
+		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
 	}
 
 	if delegateNewPubKeyGenerate {
@@ -416,7 +389,7 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 		return nil, err
 	}
 
-	if err = builder.checkTx(acc, tx, chainHeight); err != nil {
+	if err = builder.checkTx(plainAcc, tx, chainHeight); err != nil {
 		return nil, err
 	}
 

@@ -5,9 +5,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/config"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
@@ -20,7 +19,7 @@ type ForgingWallet struct {
 	addressesMap          map[string]*ForgingWalletAddress
 	workersAddresses      []int
 	workers               []*ForgingWorkerThread
-	updateAccounts        *multicast.MulticastChannel
+	updatePlainAccounts   *multicast.MulticastChannel
 	updateWalletAddressCn chan *ForgingWalletAddressUpdate
 	loadBalancesCn        chan struct{}
 	workersCreatedCn      <-chan []*ForgingWorkerThread
@@ -38,7 +37,7 @@ type ForgingWalletAddress struct {
 	delegatedPublicKey  helpers.HexBytes //20 byte
 	publicKey           helpers.HexBytes //20byte
 	publicKeyStr        string
-	account             *account.Account
+	plainAcc            *plain_account.PlainAccount
 	workerIndex         int
 }
 
@@ -48,7 +47,7 @@ func (walletAddr *ForgingWalletAddress) clone() *ForgingWalletAddress {
 		walletAddr.delegatedPublicKey,
 		walletAddr.publicKey,
 		walletAddr.publicKeyStr,
-		walletAddr.account,
+		walletAddr.plainAcc,
 		walletAddr.workerIndex,
 	}
 }
@@ -100,8 +99,8 @@ func (w *ForgingWallet) processUpdates() {
 
 	var err error
 
-	updateAccountsCn := w.updateAccounts.AddListener()
-	defer w.updateAccounts.RemoveChannel(updateAccountsCn)
+	updatePlainAccountsCn := w.updatePlainAccounts.AddListener()
+	defer w.updatePlainAccounts.RemoveChannel(updatePlainAccountsCn)
 
 	for {
 		select {
@@ -153,28 +152,17 @@ func (w *ForgingWallet) processUpdates() {
 
 					chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
-					accsCollection := accounts.NewAccountsCollection(reader)
-					accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
-					if err != nil {
-						return
-					}
+					plainAccs := plain_accounts.NewPlainAccounts(reader)
 
-					var acc *account.Account
-					if acc, err = accs.GetAccount(update.pubKey); err != nil {
+					var plainAcc *plain_account.PlainAccount
+					if plainAcc, err = plainAccs.GetPlainAccount(update.pubKey, chainHeight); err != nil {
 						return
 					}
-					if acc == nil {
+					if plainAcc == nil {
 						return errors.New("Account was not found")
 					}
-					if acc.NativeExtra == nil {
-						return errors.New("NativeExtra was not found")
-					}
 
-					if err = acc.NativeExtra.RefreshDelegatedStake(chainHeight); err != nil {
-						return
-					}
-
-					if acc.NativeExtra.DelegatedStake == nil || !bytes.Equal(acc.NativeExtra.DelegatedStake.DelegatedPublicKey, delegatedPublicKey) {
+					if plainAcc.DelegatedStake == nil || !bytes.Equal(plainAcc.DelegatedStake.DelegatedPublicKey, delegatedPublicKey) {
 						return errors.New("Delegated stake is not matching")
 					}
 
@@ -185,7 +173,7 @@ func (w *ForgingWallet) processUpdates() {
 							delegatedPublicKey,
 							update.pubKey,
 							string(update.pubKey),
-							acc,
+							plainAcc,
 							-1,
 						}
 						w.addresses = append(w.addresses, address)
@@ -194,7 +182,7 @@ func (w *ForgingWallet) processUpdates() {
 					} else {
 						address.delegatedPrivateKey = delegatedPrivateKey
 						address.delegatedPublicKey = delegatedPublicKey
-						address.account = acc
+						address.plainAcc = plainAcc
 						w.accountUpdated(address)
 					}
 
@@ -204,24 +192,24 @@ func (w *ForgingWallet) processUpdates() {
 				}
 
 			}
-		case accsCollectionData, ok := <-updateAccountsCn:
+		case plainAccountData, ok := <-updatePlainAccountsCn:
 			if !ok {
 				return
 			}
 
-			accsCollection := accsCollectionData.(*accounts.AccountsCollection)
-			accs, err := accsCollection.GetExistingMap(config.NATIVE_TOKEN_FULL)
+			plainAccounts := plainAccountData.(*plain_accounts.PlainAccounts)
+
 			if err != nil {
 				return
 			}
 
-			for k, v := range accs.HashMap.Committed {
+			for k, v := range plainAccounts.HashMap.Committed {
 				if w.addressesMap[k] != nil {
 					if v.Stored == "update" {
-						w.addressesMap[k].account = v.Element.(*account.Account)
+						w.addressesMap[k].plainAcc = v.Element.(*plain_account.PlainAccount)
 						w.accountUpdated(w.addressesMap[k])
 					} else if v.Stored == "delete" {
-						w.addressesMap[k].account = nil
+						w.addressesMap[k].plainAcc = nil
 						w.accountUpdated(w.addressesMap[k])
 					}
 				}
@@ -234,20 +222,17 @@ func (w *ForgingWallet) processUpdates() {
 
 			if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-				accsCollection := accounts.NewAccountsCollection(reader)
-				accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
-				if err != nil {
-					return
-				}
+				chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+				plainAccs := plain_accounts.NewPlainAccounts(reader)
 
 				for _, address := range w.addresses {
 
-					var acc *account.Account
-					if acc, err = accs.GetAccount(address.publicKey); err != nil {
+					var plainAcc *plain_account.PlainAccount
+					if plainAcc, err = plainAccs.GetPlainAccount(address.publicKey, chainHeight); err != nil {
 						return
 					}
 
-					address.account = acc
+					address.plainAcc = plainAcc
 					w.accountUpdated(address)
 				}
 

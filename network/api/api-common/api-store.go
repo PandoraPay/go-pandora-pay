@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block-complete"
+	"pandora-pay/blockchain/data/accounts"
+	"pandora-pay/blockchain/data/accounts/account"
+	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/blockchain/info"
-	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
@@ -185,10 +185,7 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKey(publicKey []byte, next
 
 func (apiStore *APIStore) openLoadTokenFromHash(hash []byte) (tok *token.Token, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-		toks, err := tokens.NewTokens(reader)
-		if err != nil {
-			return
-		}
+		toks := tokens.NewTokens(reader)
 		tok, err = toks.GetToken(hash)
 		return
 	})

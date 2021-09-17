@@ -37,11 +37,11 @@ type ForgingWorkerThreadAddress struct {
 func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64) uint64 {
 
 	threadAddr.stakingAmount = 0
-	if threadAddr.walletAdr.account != nil && threadAddr.walletAdr.delegatedPrivateKey != nil {
+	if threadAddr.walletAdr.plainAcc != nil && threadAddr.walletAdr.delegatedPrivateKey != nil {
 
 		stakingAmount := uint64(0)
-		if threadAddr.walletAdr.account != nil {
-			stakingAmount, _ = threadAddr.walletAdr.account.NativeExtra.ComputeDelegatedStakeAvailable(height)
+		if threadAddr.walletAdr.plainAcc != nil {
+			stakingAmount, _ = threadAddr.walletAdr.plainAcc.ComputeDelegatedStakeAvailable(height)
 		}
 
 		if stakingAmount >= config_stake.GetRequiredStake(height) {

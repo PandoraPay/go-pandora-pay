@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"pandora-pay/blockchain/accounts"
 	blockchain_sync "pandora-pay/blockchain/blockchain-sync"
 	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/blocks/block-complete"
-	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/data/accounts"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	"pandora-pay/blockchain/data/registrations"
+	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -25,7 +27,9 @@ type BlockchainUpdate struct {
 	err                    error
 	newChainData           *BlockchainData
 	accsCollection         *accounts.AccountsCollection
+	plainAccs              *plain_accounts.PlainAccounts
 	toks                   *tokens.Tokens
+	regs                   *registrations.Registrations
 	allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate
 	removedTxHashes        map[string][]byte
 	removedTxsList         [][]byte //ordered kept
@@ -83,7 +87,9 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 	update.newChainData.updateChainInfo()
 
 	queue.chain.UpdateAccounts.Broadcast(update.accsCollection)
+	queue.chain.UpdatePlainAccounts.Broadcast(update.plainAccs)
 	queue.chain.UpdateTokens.Broadcast(update.toks)
+	queue.chain.UpdateRegistrations.Broadcast(update.regs)
 
 	//let's remove the transactions from the mempool
 	if len(update.insertedTxsList) > 0 {

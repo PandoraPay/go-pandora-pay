@@ -1,15 +1,18 @@
 package wallet
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/tokens/token"
+	"pandora-pay/blockchain/data/accounts"
+	"pandora-pay/blockchain/data/accounts/account"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/store"
@@ -22,20 +25,17 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		accsCollection := accounts.NewAccountsCollection(reader)
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
-		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
-		if err != nil {
+		plainAccs := plain_accounts.NewPlainAccounts(reader)
+
+		var plainAcc *plain_account.PlainAccount
+		if plainAcc, err = plainAccs.GetPlainAccount(addr.PublicKey, chainHeight); err != nil {
 			return
 		}
 
-		var acc *account.Account
-		if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
-			return
-		}
-
-		if nonce == 0 && acc != nil {
-			nonce = wallet.mempool.GetNonce(addr.PublicKey, acc.NativeExtra.Nonce)
+		if nonce == 0 && plainAcc != nil {
+			nonce = wallet.mempool.GetNonce(addr.PublicKey, plainAcc.Nonce)
 		}
 
 		var delegatedStake *wallet_address.WalletAddressDelegatedStake
@@ -92,16 +92,16 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+
 		accsCollection := accounts.NewAccountsCollection(reader)
 		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
 		if err != nil {
 			return
 		}
 
-		toks, err := tokens.NewTokens(reader)
-		if err != nil {
-			return
-		}
+		toks := tokens.NewTokens(reader)
+		plainAccs := plain_accounts.NewPlainAccounts(reader)
 
 		for _, walletAddress := range wallet.Addresses {
 			addressStr := walletAddress.AddressEncoded
@@ -114,11 +114,18 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 					return
 				}
 
+				var plainAcc *plain_account.PlainAccount
+				if plainAcc, err = plainAccs.GetPlainAccount(walletAddress.PublicKey, chainHeight); err != nil {
+					return
+				}
+
 				if acc == nil {
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))
 				} else {
 
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Nonce", strconv.FormatUint(acc.NativeExtra.Nonce, 10)))
+					if plainAcc != nil {
+						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Nonce", strconv.FormatUint(plainAcc.Nonce, 10)))
+					}
 
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s:", "BALANCES ENCRYPTED"))
 					var tok *token.Token
@@ -162,12 +169,12 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 					//	}
 					//}
 
-					if acc.NativeExtra.HasDelegatedStake() {
-						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config.ConvertToBase(acc.NativeExtra.DelegatedStake.StakeAvailable), 'f', config.DECIMAL_SEPARATOR, 64)))
+					if plainAcc.HasDelegatedStake() {
+						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config.ConvertToBase(plainAcc.DelegatedStake.StakeAvailable), 'f', config.DECIMAL_SEPARATOR, 64)))
 
-						if len(acc.NativeExtra.DelegatedStake.StakesPending) > 0 {
+						if len(plainAcc.DelegatedStake.StakesPending) > 0 {
 							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES", ""))
-							for _, stakePending := range acc.NativeExtra.DelegatedStake.StakesPending {
+							for _, stakePending := range plainAcc.DelegatedStake.StakesPending {
 								gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %t", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatFloat(config.ConvertToBase(stakePending.PendingAmount), 'f', config.DECIMAL_SEPARATOR, 64), stakePending.PendingType))
 							}
 						} else {

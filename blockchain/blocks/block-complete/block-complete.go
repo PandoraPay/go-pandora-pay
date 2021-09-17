@@ -2,10 +2,11 @@ package block_complete
 
 import (
 	"errors"
-	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/blocks/block"
-	"pandora-pay/blockchain/registrations"
-	"pandora-pay/blockchain/tokens"
+	"pandora-pay/blockchain/data/accounts"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	"pandora-pay/blockchain/data/registrations"
+	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
@@ -60,7 +61,7 @@ func (blkComplete *BlockComplete) MerkleHash() []byte {
 	}
 }
 
-func (blkComplete *BlockComplete) IncludeBlockComplete(regs *registrations.Registrations, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+func (blkComplete *BlockComplete) IncludeBlockComplete(regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
 
 	allFees := uint64(0)
 	for _, tx := range blkComplete.Txs {
@@ -70,12 +71,12 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(regs *registrations.Regis
 		}
 	}
 
-	if err = blkComplete.Block.IncludeBlock(regs, accsCollection, toks, allFees); err != nil {
+	if err = blkComplete.Block.IncludeBlock(regs, plainAccs, accsCollection, toks, allFees); err != nil {
 		return
 	}
 
 	for _, tx := range blkComplete.Txs {
-		if err = tx.IncludeTransaction(blkComplete.Block.Height, regs, accsCollection, toks); err != nil {
+		if err = tx.IncludeTransaction(blkComplete.Block.Height, regs, plainAccs, accsCollection, toks); err != nil {
 			return
 		}
 	}

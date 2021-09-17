@@ -6,8 +6,10 @@ import (
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/blockchain/data/accounts"
+	"pandora-pay/blockchain/data/accounts/account"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/config"
 	"pandora-pay/config/config_stake"
@@ -172,7 +174,8 @@ func (testnet *Testnet) run() {
 					var delegatedStakeAvailable, delegatedUnstakePending uint64
 					var balanceHomo *crypto.ElGamal
 
-					var account *account.Account
+					var acc *account.Account
+					var plainAcc *plain_account.PlainAccount
 
 					gui.GUI.Log("UpdateNewChain received! 2")
 
@@ -184,17 +187,22 @@ func (testnet *Testnet) run() {
 						if err != nil {
 							return
 						}
-
-						if account, err = accs.GetAccount(publicKey); err != nil {
+						if acc, err = accs.GetAccount(publicKey); err != nil {
 							return
 						}
 
-						if account != nil {
+						plainAccs := plain_accounts.NewPlainAccounts(reader)
+						if plainAcc, err = plainAccs.GetPlainAccount(publicKey, blockHeight); err != nil {
+							return
+						}
 
-							balanceHomo = account.GetBalance()
-							delegatedStakeAvailable = account.NativeExtra.GetDelegatedStakeAvailable()
-							delegatedUnstakePending, _ = account.NativeExtra.ComputeDelegatedUnstakePending()
+						if acc != nil {
+							balanceHomo = acc.GetBalance()
+						}
 
+						if plainAcc != nil {
+							delegatedStakeAvailable = plainAcc.GetDelegatedStakeAvailable()
+							delegatedUnstakePending, _ = plainAcc.ComputeDelegatedUnstakePending()
 						}
 
 						return
@@ -202,11 +210,13 @@ func (testnet *Testnet) run() {
 						return
 					}
 
-					if account != nil {
+					if acc != nil || plainAcc != nil {
 
 						var balance uint64
-						if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN_FULL, false); err != nil {
-							return
+						if acc != nil {
+							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN_FULL, false); err != nil {
+								return
+							}
 						}
 
 						if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {

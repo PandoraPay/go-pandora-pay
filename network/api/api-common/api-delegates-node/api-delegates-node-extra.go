@@ -3,9 +3,8 @@ package api_delegates_node
 import (
 	"bytes"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/config"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
 	"pandora-pay/recovery"
 	wallet_address "pandora-pay/wallet/address"
 	"sync/atomic"
@@ -62,31 +61,27 @@ func (api *APIDelegatesNode) updateAccountsChanges() {
 
 	recovery.SafeGo(func() {
 
-		updateAccountsCn := api.chain.UpdateAccounts.AddListener()
-		defer api.chain.UpdateAccounts.RemoveChannel(updateAccountsCn)
+		updatePlainAccountsCn := api.chain.UpdatePlainAccounts.AddListener()
+		defer api.chain.UpdatePlainAccounts.RemoveChannel(updatePlainAccountsCn)
 
 		for {
 
-			accsCollectionData, ok := <-updateAccountsCn
+			plainAccsData, ok := <-updatePlainAccountsCn
 			if !ok {
 				return
 			}
 
-			accsCollection := accsCollectionData.(*accounts.AccountsCollection)
-			accs, err := accsCollection.GetExistingMap(config.NATIVE_TOKEN_FULL)
-			if err != nil {
-				return
-			}
+			plainAccs := plainAccsData.(*plain_accounts.PlainAccounts)
 
-			for k, v := range accs.HashMap.Committed {
+			for k, v := range plainAccs.HashMap.Committed {
 				data, loaded := api.pendingDelegatesStakesChanges.Load(k)
 				if loaded {
 
 					pendingDelegatingStakeChange := data.(*apiPendingDelegateStakeChange)
 
 					if v.Stored == "update" {
-						acc := v.Element.(*account.Account)
-						if acc.NativeExtra.HasDelegatedStake() && bytes.Equal(acc.NativeExtra.DelegatedStake.DelegatedPublicKey, pendingDelegatingStakeChange.delegatePublicKey) {
+						plainAcc := v.Element.(*plain_account.PlainAccount)
+						if plainAcc.HasDelegatedStake() && bytes.Equal(plainAcc.DelegatedStake.DelegatedPublicKey, pendingDelegatingStakeChange.delegatePublicKey) {
 
 							addr, err := addresses.CreateAddr(pendingDelegatingStakeChange.publicKey, nil, 0, nil)
 							if err != nil {

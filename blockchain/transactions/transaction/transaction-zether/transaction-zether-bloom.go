@@ -2,9 +2,9 @@ package transaction_zether
 
 import (
 	"errors"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
-	"pandora-pay/blockchain/registrations"
+	"pandora-pay/blockchain/data/accounts"
+	"pandora-pay/blockchain/data/accounts/account"
+	"pandora-pay/blockchain/data/registrations"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 )

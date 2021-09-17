@@ -11,28 +11,30 @@ import (
 )
 
 type Wallet struct {
-	Encryption         *WalletEncryption               `json:"encryption"`
-	Version            Version                         `json:"version"`
-	Mnemonic           string                          `json:"mnemonic"`
-	Seed               helpers.HexBytes                `json:"seed"` //32 byte
-	SeedIndex          uint32                          `json:"seedIndex"`
-	Count              int                             `json:"count"`
-	CountImportedIndex int                             `json:"countIndex"`
-	Addresses          []*wallet_address.WalletAddress `json:"addresses"`
-	Loaded             bool                            `json:"loaded"`
-	DelegatesCount     int                             `json:"delegatesCount"`
-	addressesMap       map[string]*wallet_address.WalletAddress
-	forging            *forging.Forging
-	mempool            *mempool.Mempool
-	updateAccounts     *multicast.MulticastChannel
-	sync.RWMutex       `json:"-"`
+	Encryption          *WalletEncryption               `json:"encryption"`
+	Version             Version                         `json:"version"`
+	Mnemonic            string                          `json:"mnemonic"`
+	Seed                helpers.HexBytes                `json:"seed"` //32 byte
+	SeedIndex           uint32                          `json:"seedIndex"`
+	Count               int                             `json:"count"`
+	CountImportedIndex  int                             `json:"countIndex"`
+	Addresses           []*wallet_address.WalletAddress `json:"addresses"`
+	Loaded              bool                            `json:"loaded"`
+	DelegatesCount      int                             `json:"delegatesCount"`
+	addressesMap        map[string]*wallet_address.WalletAddress
+	forging             *forging.Forging
+	mempool             *mempool.Mempool
+	updateAccounts      *multicast.MulticastChannel
+	updatePlainAccounts *multicast.MulticastChannel
+	sync.RWMutex        `json:"-"`
 }
 
-func createWallet(forging *forging.Forging, mempool *mempool.Mempool, updateAccounts *multicast.MulticastChannel) (wallet *Wallet) {
+func createWallet(forging *forging.Forging, mempool *mempool.Mempool, updateAccounts *multicast.MulticastChannel, updatePlainAccounts *multicast.MulticastChannel) (wallet *Wallet) {
 	wallet = &Wallet{
-		forging:        forging,
-		mempool:        mempool,
-		updateAccounts: updateAccounts,
+		forging:             forging,
+		mempool:             mempool,
+		updateAccounts:      updateAccounts,
+		updatePlainAccounts: updatePlainAccounts,
 	}
 	wallet.clearWallet()
 	return
@@ -61,7 +63,7 @@ func (wallet *Wallet) setLoaded(newValue bool) {
 
 func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool) (*Wallet, error) {
 
-	wallet := createWallet(forging, mempool, nil)
+	wallet := createWallet(forging, mempool, nil, nil)
 
 	if err := wallet.loadWallet("", true); err != nil {
 		if err.Error() == "cipher: message authentication failed" {
@@ -78,9 +80,10 @@ func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool) (*Wallet, 
 	return wallet, nil
 }
 
-func (wallet *Wallet) InitializeWallet(updateAccounts *multicast.MulticastChannel) {
+func (wallet *Wallet) InitializeWallet(updateAccounts *multicast.MulticastChannel, updatePlainAccounts *multicast.MulticastChannel) {
 	wallet.Lock()
 	wallet.updateAccounts = updateAccounts
+	wallet.updatePlainAccounts = updatePlainAccounts
 	wallet.Unlock()
 
 	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {

@@ -1,7 +1,7 @@
 package transactions_builder
 
 import (
-	"pandora-pay/blockchain/tokens/token"
+	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/transactions-builder/wizard"
 )
 

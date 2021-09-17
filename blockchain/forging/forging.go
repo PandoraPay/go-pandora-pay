@@ -45,10 +45,10 @@ func CreateForging(mempool *mempool.Mempool) (*Forging, error) {
 	return forging, nil
 }
 
-func (forging *Forging) InitializeForging(nextBlockCreatedCn <-chan *forging_block_work.ForgingWork, updateAccounts *multicast.MulticastChannel, forgingSolutionCn chan<- *block_complete.BlockComplete) {
+func (forging *Forging) InitializeForging(nextBlockCreatedCn <-chan *forging_block_work.ForgingWork, updatePlainAccs *multicast.MulticastChannel, forgingSolutionCn chan<- *block_complete.BlockComplete) {
 
 	forging.nextBlockCreatedCn = nextBlockCreatedCn
-	forging.Wallet.updateAccounts = updateAccounts
+	forging.Wallet.updatePlainAccounts = updatePlainAccs
 	forging.solutionCn = forgingSolutionCn
 
 	forging.forgingThread = createForgingThread(config.CPU_THREADS, forging.mempool, forging.solutionCn, forging.nextBlockCreatedCn)

@@ -4,16 +4,18 @@ import (
 	"errors"
 	"math/big"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
 	blockchain_sync "pandora-pay/blockchain/blockchain-sync"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block-complete"
+	"pandora-pay/blockchain/data/accounts"
+	"pandora-pay/blockchain/data/accounts/account"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data/registrations"
+	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data/tokens/token"
 	forging_block_work "pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/blockchain/genesis"
-	"pandora-pay/blockchain/registrations"
-	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
@@ -56,19 +58,19 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 	if err := store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		toks, err := tokens.NewTokens(writer)
-		if err != nil {
-			return
-		}
-
-		regs, err := registrations.NewRegistrations(writer)
-		if err != nil {
-			return
-		}
+		toks := tokens.NewTokens(writer)
+		plainAccs := plain_accounts.NewPlainAccounts(writer)
+		regs := registrations.NewRegistrations(writer)
 
 		accsCollection := accounts.NewAccountsCollection(writer)
 
 		supply := uint64(0)
+
+		var accs *accounts.Accounts
+		if accs, err = accsCollection.GetMap(config.NATIVE_TOKEN_FULL); err != nil {
+			return
+		}
+
 		for _, airdrop := range genesis.GenesisData.AirDrops {
 
 			if err = helpers.SafeUint64Add(&supply, airdrop.Amount); err != nil {
@@ -84,33 +86,33 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 				return errors.New("Amount or PaymentID are integrated there should not be")
 			}
 
-			var accs *accounts.Accounts
-			if accs, err = accsCollection.GetMap(config.NATIVE_TOKEN_FULL); err != nil {
-				return
-			}
-
-			if _, err = regs.CreateRegistration(addr.PublicKey, addr.Registration); err != nil {
-				return
-			}
-
-			var acc *account.Account
-			if acc, err = accs.CreateAccount(addr.PublicKey); err != nil {
-				return
-			}
-
 			if airdrop.DelegatedStakePublicKey != nil {
-				if err = acc.NativeExtra.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
+				var plainAcc *plain_account.PlainAccount
+				if plainAcc, err = plainAccs.CreatePlainAccount(addr.PublicKey); err != nil {
+					return
+				}
+				if err = plainAcc.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
+					return
+				}
+				if err = plainAccs.Update(string(addr.PublicKey), plainAcc); err != nil {
 					return
 				}
 			} else {
+				if _, err = regs.CreateRegistration(addr.PublicKey, addr.Registration); err != nil {
+					return
+				}
+				var acc *account.Account
+				if acc, err = accs.CreateAccount(addr.PublicKey); err != nil {
+					return
+				}
 				if err = acc.AddBalanceUint(airdrop.Amount); err != nil {
+					return
+				}
+				if err = accs.Update(string(addr.PublicKey), acc); err != nil {
 					return
 				}
 			}
 
-			if err = accs.UpdateAccount(addr.PublicKey, acc); err != nil {
-				return
-			}
 		}
 
 		tok := &token.Token{

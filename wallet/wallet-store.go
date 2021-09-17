@@ -5,8 +5,10 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"pandora-pay/blockchain/accounts"
-	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/blockchain/data/accounts"
+	"pandora-pay/blockchain/data/accounts/account"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
@@ -213,27 +215,26 @@ func (wallet *Wallet) StartWallet() error {
 		}
 
 		for _, adr := range wallet.Addresses {
-
-			var acc, acc2 *account.Account
-			if acc2, err = accs.GetAccount(adr.PublicKey); err != nil {
+			var acc *account.Account
+			if acc, err = accs.GetAccount(adr.PublicKey); err != nil {
 				return
 			}
 
-			if err = acc2.NativeExtra.RefreshDelegatedStake(chainHeight); err != nil {
+			if err = wallet.refreshWalletAccount(acc, adr, false); err != nil {
+				return
+			}
+		}
+
+		plainAccs := plain_accounts.NewPlainAccounts(reader)
+		for _, adr := range wallet.Addresses {
+			var plainAcc *plain_account.PlainAccount
+			if plainAcc, err = plainAccs.GetPlainAccount(adr.PublicKey, chainHeight); err != nil {
 				return
 			}
 
-			if acc2 != nil { //let's clone it
-				acc = account.NewAccount(adr.PublicKey, acc2.Token)
-				if err = acc.Deserialize(helpers.NewBufferReader(helpers.CloneBytes(acc2.SerializeToBytes()))); err != nil {
-					return
-				}
-			}
-
-			if err = wallet.refreshWallet(acc, adr, false); err != nil {
+			if err = wallet.refreshWalletPlainAccount(plainAcc, adr, false); err != nil {
 				return
 			}
-
 		}
 
 		return

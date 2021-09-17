@@ -61,7 +61,7 @@ func (hashMap *HashMap) CloneCommitted() (err error) {
 	return
 }
 
-func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int, indexable bool) (hashMap *HashMap, err error) {
+func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int, indexable bool) (hashMap *HashMap) {
 
 	if len(name) <= 4 {
 		panic("Invalid name")
@@ -81,7 +81,7 @@ func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name st
 	if buffer != nil {
 		count, p := binary.Uvarint(buffer)
 		if p <= 0 {
-			return nil, errors.New("Error reading")
+			panic("Error reading")
 		}
 		hashMap.Count = count
 	}

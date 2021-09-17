@@ -5,9 +5,9 @@ import (
 	"errors"
 	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	block_complete "pandora-pay/blockchain/blocks/block-complete"
+	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/blockchain/info"
-	"pandora-pay/blockchain/tokens"
-	"pandora-pay/blockchain/tokens/token"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"strconv"
 )
