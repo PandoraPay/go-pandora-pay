@@ -4,6 +4,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/blockchain/registrations"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/tokens/token"
 	"pandora-pay/config"
@@ -40,7 +41,7 @@ func (blk *Block) Verify() error {
 	return blk.Bloom.verifyIfBloomed()
 }
 
-func (blk *Block) IncludeBlock(accsCollection *accounts.AccountsCollection, toks *tokens.Tokens, allFees uint64) (err error) {
+func (blk *Block) IncludeBlock(regs *registrations.Registrations, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens, allFees uint64) (err error) {
 
 	accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
 	if err != nil {

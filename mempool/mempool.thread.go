@@ -3,6 +3,7 @@ package mempool
 import (
 	"errors"
 	"pandora-pay/blockchain/accounts"
+	"pandora-pay/blockchain/registrations"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/config"
 	"pandora-pay/store"
@@ -55,6 +56,7 @@ func (worker *mempoolWorker) processing(
 
 	var accsCollection *accounts.AccountsCollection
 	var toks *tokens.Tokens
+	var regs *registrations.Registrations
 
 	includedTotalSize := uint64(0)
 	includedTxs := []*mempoolTx{}
@@ -65,6 +67,7 @@ func (worker *mempoolWorker) processing(
 			txsMapVerified = make(map[string]bool)
 			accsCollection = nil
 			toks = nil
+			regs = nil
 			work = newWork
 			includedTotalSize = uint64(0)
 			includedTxs = []*mempoolTx{}
@@ -149,6 +152,7 @@ func (worker *mempoolWorker) processing(
 			case CONTINUE_PROCESSING_NO_ERROR_RESET:
 				accsCollection = nil
 				toks = nil
+				regs = nil
 				listIndex = 0
 			}
 
@@ -164,6 +168,7 @@ func (worker *mempoolWorker) processing(
 			if accsCollection != nil {
 				accsCollection.SetTx(dbTx)
 				toks.Tx = dbTx
+				regs.Tx = dbTx
 			}
 
 			for {
@@ -171,6 +176,9 @@ func (worker *mempoolWorker) processing(
 				if accsCollection == nil {
 					accsCollection = accounts.NewAccountsCollection(dbTx)
 					if toks, err = tokens.NewTokens(dbTx); err != nil {
+						return
+					}
+					if regs, err = registrations.NewRegistrations(dbTx); err != nil {
 						return
 					}
 				}
@@ -222,9 +230,10 @@ func (worker *mempoolWorker) processing(
 
 						txsMapVerified[tx.Tx.Bloom.HashStr] = true
 
-						if finalErr = tx.Tx.IncludeTransaction(work.chainHeight, accsCollection, toks); finalErr != nil {
+						if finalErr = tx.Tx.IncludeTransaction(work.chainHeight, regs, accsCollection, toks); finalErr != nil {
 							accsCollection.Rollback()
 							toks.Rollback()
+							regs.Rollback()
 						} else {
 
 							if includedTotalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
@@ -237,9 +246,11 @@ func (worker *mempoolWorker) processing(
 
 								accsCollection.CommitChanges()
 								toks.CommitChanges()
+								regs.CommitChanges()
 							} else {
 								accsCollection.Rollback()
 								toks.Rollback()
+								regs.Rollback()
 							}
 
 							if newAddTx != nil {

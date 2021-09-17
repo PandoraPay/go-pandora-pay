@@ -12,6 +12,7 @@ import (
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/blockchain/forging/forging-block-work"
+	"pandora-pay/blockchain/registrations"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
@@ -107,6 +108,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	var accsCollection *accounts.AccountsCollection
 	var toks *tokens.Tokens
+	var regs *registrations.Registrations
 
 	err = func() (err error) {
 
@@ -118,6 +120,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 			accsCollection = accounts.NewAccountsCollection(writer)
 			if toks, err = tokens.NewTokens(writer); err != nil {
+				return
+			}
+			if regs, err = registrations.NewRegistrations(writer); err != nil {
 				return
 			}
 
@@ -158,7 +163,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					copy(removedBlocksHeights[1:], removedBlocksHeights)
 					removedBlocksHeights[0] = index
 
-					if allTransactionsChanges, err = chain.removeBlockComplete(writer, index, removedTxHashes, allTransactionsChanges, accsCollection, toks); err != nil {
+					if allTransactionsChanges, err = chain.removeBlockComplete(writer, index, removedTxHashes, allTransactionsChanges, regs, accsCollection, toks); err != nil {
 						return
 					}
 
@@ -261,14 +266,14 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return errors.New("Timestamp is too much into the future")
 					}
 
-					if err = blkComplete.IncludeBlockComplete(accsCollection, toks); err != nil {
+					if err = blkComplete.IncludeBlockComplete(regs, accsCollection, toks); err != nil {
 						return errors.New("Error including block into Blockchain: " + err.Error())
 					}
 
 					//to detect if the savedBlock was done correctly
 					savedBlock = false
 
-					if allTransactionsChanges, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, allTransactionsChanges, accs, toks); err != nil {
+					if allTransactionsChanges, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, allTransactionsChanges, regs, accsCollection, toks); err != nil {
 						return errors.New("Error saving block complete: " + err.Error())
 					}
 
@@ -278,6 +283,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 					accs.CommitChanges() //it will commit the changes but not save them
 					toks.CommitChanges() //it will commit the changes but not save them
+					regs.CommitChanges() //it will commit the changes but not save them
 
 					newChainData.PrevHash = newChainData.Hash
 					newChainData.Hash = blkComplete.Block.Bloom.Hash
@@ -402,7 +408,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 				}
 
-				if err = chain.saveBlockchainHashmaps(accs, toks); err != nil {
+				if err = chain.saveBlockchainHashmaps(regs, accsCollection, toks); err != nil {
 					panic(err)
 				}
 
@@ -415,9 +421,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				}
 			}
 
-			if accs != nil {
-				accs.UnsetTx()
+			if accsCollection != nil {
+				accsCollection.UnsetTx()
 				toks.UnsetTx()
+				regs.UnsetTx()
 			}
 
 			return

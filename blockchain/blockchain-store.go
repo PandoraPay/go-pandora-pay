@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/accounts"
 	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/blocks/block-complete"
+	"pandora-pay/blockchain/registrations"
 	"pandora-pay/blockchain/tokens"
 	"pandora-pay/config"
 	"pandora-pay/store"
@@ -54,7 +55,7 @@ func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.St
 	return
 }
 
-func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, removedTxHashes map[string][]byte, allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) ([]*blockchain_types.BlockchainTransactionUpdate, error) {
+func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, removedTxHashes map[string][]byte, allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate, regs *registrations.Registrations, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) ([]*blockchain_types.BlockchainTransactionUpdate, error) {
 
 	allTransactionsChanges2 := allTransactionsChanges
 
@@ -65,6 +66,9 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 		return allTransactionsChanges, err
 	}
 	if err := toks.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
+		return allTransactionsChanges, err
+	}
+	if err := regs.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
 		return allTransactionsChanges, err
 	}
 
@@ -112,15 +116,18 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 	return allTransactionsChanges2, nil
 }
 
-func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, removedTxHashes map[string][]byte, allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate, accs *accounts.Accounts, toks *tokens.Tokens) ([]*blockchain_types.BlockchainTransactionUpdate, error) {
+func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, removedTxHashes map[string][]byte, allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate, regs *registrations.Registrations, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) ([]*blockchain_types.BlockchainTransactionUpdate, error) {
 
 	allTransactionsChanges2 := allTransactionsChanges
 
 	blockHeightStr := strconv.FormatUint(blkComplete.Block.Height, 10)
-	if err := accs.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
+	if err := accsCollection.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
 		return allTransactionsChanges, err
 	}
 	if err := toks.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
+		return allTransactionsChanges, err
+	}
+	if err := regs.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
 		return allTransactionsChanges, err
 	}
 
@@ -184,19 +191,26 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 	return allTransactionsChanges2, nil
 }
 
-func (chain *Blockchain) saveBlockchainHashmaps(accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
+func (chain *Blockchain) saveBlockchainHashmaps(regs *registrations.Registrations, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
 
-	accs.Rollback()
+	regs.Rollback()
+	accsCollection.Rollback()
 	toks.Rollback()
 
-	if err = accs.WriteToStore(); err != nil {
+	if err = regs.WriteToStore(); err != nil {
+		return
+	}
+	if err = accsCollection.WriteToStore(); err != nil {
 		return
 	}
 	if err = toks.WriteToStore(); err != nil {
 		return
 	}
 
-	if err = accs.CloneCommitted(); err != nil {
+	if err = accsCollection.CloneCommitted(); err != nil {
+		return
+	}
+	if err = regs.CloneCommitted(); err != nil {
 		return
 	}
 	if err = toks.CloneCommitted(); err != nil {

@@ -55,10 +55,25 @@ func (collection *AccountsCollection) SetTx(tx store_db_interface.StoreDBTransac
 	}
 }
 
+func (collection *AccountsCollection) UnsetTx() {
+	for _, accs := range collection.accsMap {
+		accs.UnsetTx()
+	}
+}
+
 func (collection *AccountsCollection) Rollback() {
 	for _, accs := range collection.accsMap {
 		accs.Rollback()
 	}
+}
+
+func (collection *AccountsCollection) CloneCommitted() (err error) {
+	for _, accs := range collection.accsMap {
+		if err = accs.CloneCommitted(); err != nil {
+			return
+		}
+	}
+	return
 }
 
 func (collection *AccountsCollection) CommitChanges() {
@@ -70,6 +85,15 @@ func (collection *AccountsCollection) CommitChanges() {
 func (collection *AccountsCollection) WriteToStore() (err error) {
 	for _, accs := range collection.accsMap {
 		if err = accs.WriteToStore(); err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (collection *AccountsCollection) WriteTransitionalChangesToStore(prefix string) (err error) {
+	for _, accs := range collection.accsMap {
+		if err = accs.WriteTransitionalChangesToStore(prefix); err != nil {
 			return
 		}
 	}

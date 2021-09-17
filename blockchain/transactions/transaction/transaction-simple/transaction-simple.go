@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"pandora-pay/blockchain/accounts"
 	"pandora-pay/blockchain/accounts/account"
+	"pandora-pay/blockchain/registrations"
 	"pandora-pay/blockchain/tokens"
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
 	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
@@ -28,7 +29,7 @@ type TransactionSimple struct {
 	Bloom       *TransactionSimpleBloom
 }
 
-func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, regs *registrations.Registrations, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
 
 	accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
 	if err != nil {
