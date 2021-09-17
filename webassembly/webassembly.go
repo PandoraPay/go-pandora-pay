@@ -163,8 +163,10 @@ func Initialize(startMainCb func()) {
 				"websockets": js.ValueOf(map[string]interface{}{
 					"subscriptionType": js.ValueOf(map[string]interface{}{
 						"SUBSCRIPTION_ACCOUNT":              js.ValueOf(int(api_types.SUBSCRIPTION_ACCOUNT)),
+						"SUBSCRIPTION_PLAIN_ACCOUNT":        js.ValueOf(int(api_types.SUBSCRIPTION_PLAIN_ACCOUNT)),
 						"SUBSCRIPTION_ACCOUNT_TRANSACTIONS": js.ValueOf(int(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS)),
 						"SUBSCRIPTION_TOKEN":                js.ValueOf(int(api_types.SUBSCRIPTION_TOKEN)),
+						"SUBSCRIPTION_REGISTRATION":         js.ValueOf(int(api_types.SUBSCRIPTION_REGISTRATION)),
 						"SUBSCRIPTION_TRANSACTION":          js.ValueOf(int(api_types.SUBSCRIPTION_TRANSACTION)),
 					}),
 				}),

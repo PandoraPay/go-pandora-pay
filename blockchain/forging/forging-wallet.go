@@ -159,7 +159,7 @@ func (w *ForgingWallet) processUpdates() {
 						return
 					}
 					if plainAcc == nil {
-						return errors.New("Account was not found")
+						return errors.New("Plain Account was not found")
 					}
 
 					if plainAcc.DelegatedStake == nil || !bytes.Equal(plainAcc.DelegatedStake.DelegatedPublicKey, delegatedPublicKey) {

@@ -6,6 +6,8 @@ import (
 	"errors"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/data/accounts/account"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data/registrations/registration"
 	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers"
@@ -86,21 +88,37 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 
 				switch data.SubscriptionType {
 				case api_types.SUBSCRIPTION_ACCOUNT:
-					var acc account.Account
+					acc := new(account.Account)
 					if data.Data != nil {
 						if err = acc.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
 							continue
 						}
 					}
 					object = acc
+				case api_types.SUBSCRIPTION_PLAIN_ACCOUNT:
+					plainAcc := new(plain_account.PlainAccount)
+					if data.Data != nil {
+						if err = plainAcc.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
+							continue
+						}
+					}
+					object = plainAcc
 				case api_types.SUBSCRIPTION_TOKEN:
-					var tok token.Token
+					tok := new(token.Token)
 					if data.Data != nil {
 						if err = tok.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
 							continue
 						}
 					}
 					object = tok
+				case api_types.SUBSCRIPTION_REGISTRATION:
+					reg := new(registration.Registration)
+					if data.Data != nil {
+						if err = reg.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
+							continue
+						}
+					}
+					object = reg
 				case api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
 					object = data.Data
 				case api_types.SUBSCRIPTION_TRANSACTION:

@@ -119,14 +119,28 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 					return
 				}
 
-				if acc == nil {
+				if acc == nil && plainAcc == nil {
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))
-				} else {
+					continue
+				}
 
-					if plainAcc != nil {
-						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Nonce", strconv.FormatUint(plainAcc.Nonce, 10)))
+				if plainAcc != nil {
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Nonce", strconv.FormatUint(plainAcc.Nonce, 10)))
+					if plainAcc.HasDelegatedStake() {
+						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config.ConvertToBase(plainAcc.DelegatedStake.StakeAvailable), 'f', config.DECIMAL_SEPARATOR, 64)))
+
+						if len(plainAcc.DelegatedStake.StakesPending) > 0 {
+							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES", ""))
+							for _, stakePending := range plainAcc.DelegatedStake.StakesPending {
+								gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %t", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatFloat(config.ConvertToBase(stakePending.PendingAmount), 'f', config.DECIMAL_SEPARATOR, 64), stakePending.PendingType))
+							}
+						} else {
+							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES:", "EMPTY"))
+						}
 					}
+				}
 
+				if acc != nil {
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s:", "BALANCES ENCRYPTED"))
 					var tok *token.Token
 					if tok, err = toks.GetToken(config.NATIVE_TOKEN_FULL); err != nil {
@@ -168,19 +182,6 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 					//		gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(decoded), 'f', config.DECIMAL_SEPARATOR, 64), tok.Name))
 					//	}
 					//}
-
-					if plainAcc.HasDelegatedStake() {
-						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config.ConvertToBase(plainAcc.DelegatedStake.StakeAvailable), 'f', config.DECIMAL_SEPARATOR, 64)))
-
-						if len(plainAcc.DelegatedStake.StakesPending) > 0 {
-							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES", ""))
-							for _, stakePending := range plainAcc.DelegatedStake.StakesPending {
-								gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %t", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatFloat(config.ConvertToBase(stakePending.PendingAmount), 'f', config.DECIMAL_SEPARATOR, 64), stakePending.PendingType))
-							}
-						} else {
-							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES:", "EMPTY"))
-						}
-					}
 				}
 
 			}

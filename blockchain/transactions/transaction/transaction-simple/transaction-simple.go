@@ -37,7 +37,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, regs *regist
 		return
 	}
 	if plainAcc == nil {
-		return errors.New("Account was not found")
+		return errors.New("Plain Account was not found")
 	}
 
 	if plainAcc.Nonce != tx.Nonce {

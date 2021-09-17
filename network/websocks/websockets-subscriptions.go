@@ -6,6 +6,10 @@ import (
 	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/data/accounts"
 	"pandora-pay/blockchain/data/accounts/account"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data/registrations"
+	"pandora-pay/blockchain/data/registrations/registration"
 	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/config"
@@ -25,6 +29,8 @@ type WebsocketSubscriptions struct {
 	newSubscriptionCn                 chan *connection.SubscriptionNotification
 	removeSubscriptionCn              chan *connection.SubscriptionNotification
 	accountsSubscriptions             map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
+	plainAccountsSubscriptions        map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
+	registrationsSubscriptions        map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
 	accountsTransactionsSubscriptions map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
 	tokensSubscriptions               map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
 	transactionsSubscriptions         map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
@@ -36,6 +42,8 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 		websockets, chain, mempool, make(chan *connection.AdvancedConnection),
 		make(chan *connection.SubscriptionNotification),
 		make(chan *connection.SubscriptionNotification),
+		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
+		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
 		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
 		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
 		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
@@ -102,10 +110,14 @@ func (this *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.Subscr
 	switch subscriptionType {
 	case api_types.SUBSCRIPTION_ACCOUNT:
 		subsMap = this.accountsSubscriptions
+	case api_types.SUBSCRIPTION_PLAIN_ACCOUNT:
+		subsMap = this.plainAccountsSubscriptions
 	case api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
 		subsMap = this.accountsTransactionsSubscriptions
 	case api_types.SUBSCRIPTION_TOKEN:
 		subsMap = this.tokensSubscriptions
+	case api_types.SUBSCRIPTION_REGISTRATION:
+		subsMap = this.registrationsSubscriptions
 	case api_types.SUBSCRIPTION_TRANSACTION:
 		subsMap = this.transactionsSubscriptions
 	}
@@ -135,8 +147,14 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 	updateAccountsCn := this.chain.UpdateAccounts.AddListener()
 	defer this.chain.UpdateAccounts.RemoveChannel(updateAccountsCn)
 
+	updatePlainAccountsCn := this.chain.UpdatePlainAccounts.AddListener()
+	defer this.chain.UpdatePlainAccounts.RemoveChannel(updatePlainAccountsCn)
+
 	updateTokensCn := this.chain.UpdateTokens.AddListener()
 	defer this.chain.UpdateTokens.RemoveChannel(updateTokensCn)
+
+	updateRegistrationsCn := this.chain.UpdateRegistrations.AddListener()
+	defer this.chain.UpdateRegistrations.RemoveChannel(updateRegistrationsCn)
 
 	updateTransactionsCn := this.chain.UpdateTransactions.AddListener()
 	defer this.chain.UpdateTransactions.RemoveChannel(updateTransactionsCn)
@@ -196,6 +214,18 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
+		case plainAccsData, ok := <-updatePlainAccountsCn:
+			if !ok {
+				return
+			}
+
+			plainAccs := plainAccsData.(*plain_accounts.PlainAccounts)
+			for k, v := range plainAccs.HashMap.Committed {
+				if list := this.accountsSubscriptions[k]; list != nil {
+					this.send(api_types.SUBSCRIPTION_PLAIN_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element.(*plain_account.PlainAccount), nil, nil)
+				}
+			}
+
 		case toksData, ok := <-updateTokensCn:
 			if !ok {
 				return
@@ -205,6 +235,18 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			for k, v := range toks.HashMap.Committed {
 				if list := this.tokensSubscriptions[k]; list != nil {
 					this.send(api_types.SUBSCRIPTION_TOKEN, []byte("sub/notify"), []byte(k), list, v.Element.(*token.Token), nil, nil)
+				}
+			}
+
+		case regsData, ok := <-updateRegistrationsCn:
+			if !ok {
+				return
+			}
+
+			registrations := regsData.(*registrations.Registrations)
+			for k, v := range registrations.HashMap.Committed {
+				if list := this.tokensSubscriptions[k]; list != nil {
+					this.send(api_types.SUBSCRIPTION_REGISTRATION, []byte("sub/notify"), []byte(k), list, v.Element.(*registration.Registration), nil, nil)
 				}
 			}
 
@@ -263,8 +305,10 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			}
 
 			this.removeConnection(conn, api_types.SUBSCRIPTION_ACCOUNT)
+			this.removeConnection(conn, api_types.SUBSCRIPTION_PLAIN_ACCOUNT)
 			this.removeConnection(conn, api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS)
 			this.removeConnection(conn, api_types.SUBSCRIPTION_TOKEN)
+			this.removeConnection(conn, api_types.SUBSCRIPTION_REGISTRATION)
 			this.removeConnection(conn, api_types.SUBSCRIPTION_TRANSACTION)
 
 		}

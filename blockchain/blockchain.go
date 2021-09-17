@@ -484,6 +484,7 @@ func CreateBlockchain(mempool *mempool.Mempool) (*Blockchain, error) {
 		UpdateAccounts:           multicast.NewMulticastChannel(),
 		UpdatePlainAccounts:      multicast.NewMulticastChannel(),
 		UpdateTokens:             multicast.NewMulticastChannel(),
+		UpdateRegistrations:      multicast.NewMulticastChannel(),
 		UpdateTransactions:       multicast.NewMulticastChannel(),
 		NextBlockCreatedCn:       make(chan *forging_block_work.ForgingWork),
 	}
@@ -520,6 +521,7 @@ func (chain *Blockchain) Close() {
 	chain.UpdateAccounts.CloseAll()
 	chain.UpdatePlainAccounts.CloseAll()
 	chain.UpdateTokens.CloseAll()
+	chain.UpdateRegistrations.CloseAll()
 	close(chain.NextBlockCreatedCn)
 	close(chain.ForgingSolutionCn)
 }

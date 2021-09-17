@@ -140,6 +140,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 		toks.CommitChanges()
 		accsCollection.CommitChanges()
 		regs.CommitChanges()
+		plainAccs.CommitChanges()
 
 		if err = toks.WriteToStore(); err != nil {
 			return
@@ -147,11 +148,14 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 		if err = accsCollection.WriteToStore(); err != nil {
 			return
 		}
-
-		if err = saveTokensInfo(toks); err != nil {
+		if err = regs.WriteToStore(); err != nil {
 			return
 		}
-		if err = toks.Tx.Put("tokenInfo_ByIndex:"+strconv.FormatUint(0, 10), config.NATIVE_TOKEN_FULL); err != nil {
+		if err = plainAccs.WriteToStore(); err != nil {
+			return
+		}
+
+		if err = saveTokensInfo(toks); err != nil {
 			return
 		}
 
