@@ -52,6 +52,10 @@ func (mempool *Mempool) GetBalance(publicKey []byte, balance uint64, token []byt
 func (mempool *Mempool) ExistsTxSimpleVersion(publicKey []byte, version transaction_simple.ScriptType) bool {
 
 	txs := mempool.Txs.GetTxsFromMap()
+	if txs == nil {
+		return false
+	}
+
 	for _, tx := range txs {
 		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)

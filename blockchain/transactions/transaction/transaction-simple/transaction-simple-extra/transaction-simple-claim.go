@@ -32,9 +32,6 @@ func (tx *TransactionSimpleClaim) IncludeTransactionVin0(blockHeight uint64, pla
 	}
 
 	for _, out := range tx.Output {
-		if err = plainAcc.AddClaimable(false, out.Amount); err != nil {
-			return
-		}
 
 		var reg bool
 		if reg, err = regs.Exists(string(out.PublicKey)); err != nil {
@@ -46,7 +43,7 @@ func (tx *TransactionSimpleClaim) IncludeTransactionVin0(blockHeight uint64, pla
 				return errors.New("Already registered")
 			}
 		} else if !out.HasRegistration {
-			return errors.New("Already registered")
+			return errors.New("Not registered and registration is missing")
 		} else if out.HasRegistration {
 			if _, err = regs.CreateRegistration(out.PublicKey, out.RegistrationSignature); err != nil {
 				return

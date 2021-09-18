@@ -10,7 +10,10 @@ import (
 	"pandora-pay/blockchain/data/accounts/account"
 	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
 	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data/registrations"
+	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
+	transaction_simple_parts "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	"pandora-pay/config"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography/crypto"
@@ -35,24 +38,49 @@ type Testnet struct {
 	nodes               uint64
 }
 
-func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64) (err error) {
+func (testnet *Testnet) testnetCreateClaimTx(reg bool, amount uint64) (tx *transaction.Transaction, err error) {
 
 	addr, err := testnet.wallet.GetWalletAddress(0)
 	if err != nil {
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, &wizard.TransactionsWizardData{nil, false}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {})
+	var registrationSignature []byte
+	if !reg {
+		registrationSignature = addr.Registration
+	}
+
+	if tx, err = testnet.transactionsBuilder.CreateClaimTx(addr.AddressEncoded, 0, []*transaction_simple_parts.TransactionSimpleOutput{
+		{
+			Amount:                amount,
+			PublicKey:             addr.PublicKey,
+			HasRegistration:       !reg,
+			RegistrationSignature: registrationSignature,
+		},
+	}, &wizard.TransactionsWizardData{nil, false}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {}); err != nil {
+		return nil, err
+	}
+
+	gui.GUI.Info("Claim tx was created: " + hex.EncodeToString(tx.Bloom.Hash))
+	return
+}
+
+func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64) (tx *transaction.Transaction, err error) {
+
+	addr, err := testnet.wallet.GetWalletAddress(0)
 	if err != nil {
 		return
 	}
 
-	gui.GUI.Info("Unstake transaction was created: " + hex.EncodeToString(tx.Bloom.Hash))
+	if tx, err = testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, &wizard.TransactionsWizardData{nil, false}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {}); tx != nil {
+		return nil, err
+	}
 
+	gui.GUI.Info("Unstake tx was created: " + hex.EncodeToString(tx.Bloom.Hash))
 	return
 }
 
-func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (err error) {
+func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx *transaction.Transaction, err error) {
 
 	dsts := []string{}
 	dstsAmounts := []uint64{}
@@ -80,17 +108,15 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (er
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN_FULL, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {})
-	if err != nil {
-		return
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN_FULL, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {}); err != nil {
+		return nil, err
 	}
 
 	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce, hex.EncodeToString(tx.Bloom.Hash))
-
 	return
 }
 
-func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
+func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (tx *transaction.Transaction, err error) {
 
 	dsts := []string{}
 	dstsAmounts := []uint64{}
@@ -100,10 +126,12 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 	sum := uint64(0)
 	for i := 0; i < count; i++ {
 		privateKey := addresses.GenerateNewPrivateKey()
-		addr, err := privateKey.GenerateAddress(false, 0, helpers.EmptyBytes(0))
-		if err != nil {
-			return err
+
+		var addr *addresses.Address
+		if addr, err = privateKey.GenerateAddress(false, 0, helpers.EmptyBytes(0)); err != nil {
+			return
 		}
+
 		dsts = append(dsts, addr.EncodeAddr())
 		amount := uint64(rand.Int63n(6))
 		dstsAmounts = append(dstsAmounts, amount)
@@ -116,13 +144,11 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (err error) {
 		return
 	}
 
-	tx, err := testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN_FULL, []uint64{sum}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {})
-	if err != nil {
-		return
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN_FULL, []uint64{sum}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {}); err != nil {
+		return nil, err
 	}
 
 	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce, hex.EncodeToString(tx.Bloom.Hash))
-
 	return
 }
 
@@ -151,12 +177,12 @@ func (testnet *Testnet) run() {
 			err := func() (err error) {
 
 				if blockHeight == 20 {
-					if err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*config_stake.GetRequiredStake(blockHeight)); err != nil {
+					if _, err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*config_stake.GetRequiredStake(blockHeight)); err != nil {
 						return
 					}
 				}
 				if blockHeight == 30 {
-					if err = testnet.testnetCreateTransfersNewWallets(blockHeight); err != nil {
+					if _, err = testnet.testnetCreateTransfersNewWallets(blockHeight); err != nil {
 						return
 					}
 				}
@@ -171,23 +197,29 @@ func (testnet *Testnet) run() {
 
 					publicKey := addr.PublicKey
 
-					var delegatedStakeAvailable, delegatedUnstakePending uint64
+					var delegatedStakeAvailable, delegatedUnstakePending, claimable uint64
 					var balanceHomo *crypto.ElGamal
 
 					var acc *account.Account
 					var plainAcc *plain_account.PlainAccount
+					var reg bool
 
 					gui.GUI.Log("UpdateNewChain received! 2")
 
 					if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 						accsCollection := accounts.NewAccountsCollection(reader)
+						regs := registrations.NewRegistrations(reader)
 
 						accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
 						if err != nil {
 							return
 						}
 						if acc, err = accs.GetAccount(publicKey); err != nil {
+							return
+						}
+
+						if reg, err = regs.Exists(string(publicKey)); err != nil {
 							return
 						}
 
@@ -203,6 +235,7 @@ func (testnet *Testnet) run() {
 						if plainAcc != nil {
 							delegatedStakeAvailable = plainAcc.GetDelegatedStakeAvailable()
 							delegatedUnstakePending, _ = plainAcc.ComputeDelegatedUnstakePending()
+							claimable = plainAcc.Claimable
 						}
 
 						return
@@ -219,10 +252,16 @@ func (testnet *Testnet) run() {
 							}
 						}
 
-						if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
+						if claimable > 0 {
+							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_CLAIM) {
+								if _, err = testnet.testnetCreateClaimTx(reg, claimable); err != nil {
+									return
+								}
+							}
+						} else if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
 							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
-								if err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
-									//return
+								if _, err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
+									return
 								}
 							}
 						} else {
@@ -232,8 +271,8 @@ func (testnet *Testnet) run() {
 								for {
 									time.Sleep(time.Millisecond*time.Duration(rand.Intn(500)) + time.Millisecond*time.Duration(500))
 									if testnet.mempool.CountInputTxs(addr.PublicKey) < 20 {
-										if err = testnet.testnetCreateTransfers(blockHeight); err != nil {
-											//return
+										if _, err = testnet.testnetCreateTransfers(blockHeight); err != nil {
+											return
 										}
 									}
 								}
