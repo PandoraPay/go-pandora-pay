@@ -11,6 +11,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
+	transaction_simple_parts "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
@@ -28,6 +29,13 @@ type TransactionsBuilder struct {
 	mempool *mempool.Mempool
 	chain   *blockchain.Blockchain
 	lock    *sync.Mutex //TODO replace sync.Mutex with a snyc.Map in order to optimize the transactions creation
+}
+
+func (builder *TransactionsBuilder) getNonce(nonce uint64, publicKey []byte, accNonce uint64) uint64 {
+	if nonce != 0 {
+		return nonce
+	}
+	return builder.mempool.GetNonce(publicKey, accNonce)
 }
 
 func (builder *TransactionsBuilder) checkTx(plainAcc *plain_account.PlainAccount, tx *transaction.Transaction, chainHeight uint64) (err error) {
@@ -177,9 +185,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, nonce uint64, 
 	//
 	//statusCallback("Balances checked")
 	//
-	//if nonce == 0 {
-	//	nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, accountsList[0].Nonce)
-	//}
+	//nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, accountsList[0].Nonce)
 	//
 	//statusCallback("Getting Nonce from Mempool")
 	//
@@ -197,7 +203,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, nonce uint64, 
 	//statusCallback("Tx checked")
 	//
 	//if propagateTx {
-	//	if err := builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
+	//	if err := builder.mempool.AddTxToMemPool(tx, chainHeight, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
 	//		return nil, err
 	//	}
 	//}
@@ -286,9 +292,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 
 	statusCallback("Balances checked")
 
-	if nonce == 0 {
-		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
-	}
+	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
 	statusCallback("Getting Nonce from Mempool")
 
 	if tx, err = wizard.CreateUnstakeTx(nonce, fromWalletAddresses[0].PrivateKey.Key, unstakeAmount, data, fee, statusCallback); err != nil {
@@ -303,7 +307,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	statusCallback("Tx checked")
 
 	if propagateTx {
-		if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
+		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
 			return nil, err
 		}
 	}
@@ -359,7 +363,7 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 
 		plainAccs := plain_accounts.NewPlainAccounts(reader)
 
-		if plainAcc, err = plainAccs.CreatePlainAccount(fromWalletAddresses[0].PublicKey); err != nil {
+		if plainAcc, err = plainAccs.GetPlainAccount(fromWalletAddresses[0].PublicKey, chainHeight); err != nil {
 			return
 		}
 		if plainAcc == nil {
@@ -371,18 +375,14 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 		return nil, err
 	}
 
-	if nonce == 0 {
-		nonce = builder.mempool.GetNonce(fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
-	}
+	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
 
 	if delegateNewPubKeyGenerate {
-
 		var delegatedStake *wallet_address.WalletAddressDelegatedStake
 		if delegatedStake, err = fromWalletAddresses[0].DeriveDelegatedStake(uint32(nonce)); err != nil {
 			return nil, err
 		}
 		delegateNewPubKey = delegatedStake.PublicKey
-
 	}
 
 	if tx, err = wizard.CreateUpdateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegateNewPubKey, delegateNewFee, data, fee, statusCallback); err != nil {
@@ -394,7 +394,100 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 	}
 
 	if propagateTx {
-		if err = builder.mempool.AddTxToMemPool(tx, builder.chain.GetChainData().Height, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
+		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
+			return nil, err
+		}
+	}
+
+	return tx, nil
+}
+
+func (builder *TransactionsBuilder) CreateClaimTx_Float(from string, nonce uint64, output []*TransactionSimpleOutputFloat, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+
+	var finalFee *wizard.TransactionsWizardFee
+	finalOutput := make([]*transaction_simple_parts.TransactionSimpleOutput, len(output))
+
+	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		toks := tokens.NewTokens(reader)
+
+		tok, err := toks.GetToken(config.NATIVE_TOKEN_FULL)
+		if err != nil {
+			return
+		}
+		if tok == nil {
+			return errors.New("Token was not found")
+		}
+
+		if finalFee, err = fee.convertToWizardFee(tok); err != nil {
+			return err
+		}
+		for i, out := range output {
+
+			var finalAmount uint64
+			if finalAmount, err = tok.ConvertToUnits(out.Amount); err != nil {
+				return
+			}
+			finalOutput[i] = &transaction_simple_parts.TransactionSimpleOutput{
+				Amount:                finalAmount,
+				PublicKey:             out.PublicKey,
+				HasRegistration:       out.HasRegistration,
+				RegistrationSignature: out.RegistrationSignature,
+			}
+		}
+
+		return
+	}); err != nil {
+		return nil, err
+	}
+
+	return builder.CreateClaimTx(from, nonce, finalOutput, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
+}
+
+func (builder *TransactionsBuilder) CreateClaimTx(from string, nonce uint64, output []*transaction_simple_parts.TransactionSimpleOutput, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+
+	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
+	if err != nil {
+		return nil, err
+	}
+
+	builder.lock.Lock()
+	defer builder.lock.Unlock()
+
+	var tx *transaction.Transaction
+	var plainAcc *plain_account.PlainAccount
+	var chainHeight uint64
+
+	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
+
+		plainAccs := plain_accounts.NewPlainAccounts(reader)
+
+		if plainAcc, err = plainAccs.GetPlainAccount(fromWalletAddresses[0].PublicKey, chainHeight); err != nil {
+			return
+		}
+		if plainAcc == nil {
+			return errors.New("Account doesn't exist")
+		}
+
+		return
+	}); err != nil {
+		return nil, err
+	}
+
+	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
+
+	if tx, err = wizard.CreateClaimTx(nonce, fromWalletAddresses[0].PrivateKey.Key, output, data, fee, statusCallback); err != nil {
+		return nil, err
+	}
+
+	if err = builder.checkTx(plainAcc, tx, chainHeight); err != nil {
+		return nil, err
+	}
+
+	if propagateTx {
+		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
 			return nil, err
 		}
 	}

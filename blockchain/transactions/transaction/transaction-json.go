@@ -60,6 +60,22 @@ type json_TransactionSimpleUnstake struct {
 	*json_Only_TransactionSimpleUnstake
 }
 
+type json_Only_TransactionSimpleOutput struct {
+	Amount                uint64           `json:"amount"`
+	PublicKey             helpers.HexBytes `json:"publicKey"`
+	HasRegistration       bool             `json:"hasRegistration"`
+	RegistrationSignature helpers.HexBytes `json:"registrationSignature"`
+}
+
+type json_Only_TransactionSimpleClaim struct {
+	Output []*json_Only_TransactionSimpleOutput `json:"output"`
+}
+
+type json_TransactionSimpleClaim struct {
+	*json_TransactionSimple
+	*json_Only_TransactionSimpleClaim
+}
+
 func (tx *Transaction) MarshalJSON() ([]byte, error) {
 
 	txJson := &json_Transaction{
@@ -107,6 +123,25 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				simpleJson,
 				&json_Only_TransactionSimpleUnstake{
 					extra.Amount,
+				},
+			})
+		case transaction_simple.SCRIPT_CLAIM:
+			extra := base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleClaim)
+
+			output := make([]*json_Only_TransactionSimpleOutput, len(extra.Output))
+			for i, out := range extra.Output {
+				output[i] = &json_Only_TransactionSimpleOutput{
+					out.Amount,
+					out.PublicKey,
+					out.HasRegistration,
+					out.RegistrationSignature,
+				}
+			}
+
+			return json.Marshal(&json_TransactionSimpleClaim{
+				simpleJson,
+				&json_Only_TransactionSimpleClaim{
+					output,
 				},
 			})
 		default:
@@ -193,6 +228,26 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			base.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleUnstake{
 				Amount: extraJSON.Amount,
 			}
+		case transaction_simple.SCRIPT_CLAIM:
+			extraJSON := &json_Only_TransactionSimpleClaim{}
+			if err := json.Unmarshal(data, extraJSON); err != nil {
+				return err
+			}
+
+			output := make([]*transaction_simple_parts.TransactionSimpleOutput, len(extraJSON.Output))
+			for i, out := range extraJSON.Output {
+				output[i] = &transaction_simple_parts.TransactionSimpleOutput{
+					out.Amount,
+					out.PublicKey,
+					out.HasRegistration,
+					out.RegistrationSignature,
+				}
+			}
+
+			base.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleClaim{
+				Output: output,
+			}
+
 		default:
 			return errors.New("Invalid base.TxScript")
 		}

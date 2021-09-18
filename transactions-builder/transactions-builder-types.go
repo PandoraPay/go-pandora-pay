@@ -11,6 +11,13 @@ type TransactionsBuilderFeeFloat struct {
 	PerByteAuto bool    `json:"perByteAuto,omitempty"`
 }
 
+type TransactionSimpleOutputFloat struct {
+	Amount                float64 `json:"amount,omitempty"`
+	PublicKey             []byte  `json:"publicKey,omitempty"`
+	HasRegistration       bool    `json:"hasRegistration,omitempty"`
+	RegistrationSignature []byte  `json:"registrationSignature,omitempty"`
+}
+
 func (fee *TransactionsBuilderFeeFloat) convertToWizardFee(tok *token.Token) (*wizard.TransactionsWizardFee, error) {
 
 	var err error

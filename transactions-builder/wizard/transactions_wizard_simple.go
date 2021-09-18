@@ -142,3 +142,59 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, 
 
 	return tx, nil
 }
+
+func CreateClaimTx(nonce uint64, key []byte, output []*transaction_simple_parts.TransactionSimpleOutput, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (*transaction.Transaction, error) {
+
+	dataFinal, err := data.getData()
+	if err != nil {
+		return nil, err
+	}
+
+	privateKey := &addresses.PrivateKey{Key: key}
+	tx := &transaction.Transaction{
+		Version: transaction_type.TX_SIMPLE,
+		TransactionBaseInterface: &transaction_simple.TransactionSimple{
+			TxScript:    transaction_simple.SCRIPT_UPDATE_DELEGATE,
+			DataVersion: data.getDataVersion(),
+			Data:        dataFinal,
+			Nonce:       nonce,
+			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleClaim{
+				Output: output,
+			},
+			Vin: &transaction_simple_parts.TransactionSimpleInput{
+				PublicKey: privateKey.GeneratePublicKey(),
+			},
+		},
+	}
+	statusCallback("Transaction Created")
+
+	if err := signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
+		return nil, err
+	}
+
+	if err := setFee(tx, fee); err != nil {
+		return nil, err
+	}
+	statusCallback("Transaction Fees set")
+
+	if err := signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
+		return nil, err
+	}
+
+	if err := tx.BloomAll(); err != nil {
+		return nil, err
+	}
+	statusCallback("Transaction Bloomed")
+
+	if err := tx.Validate(); err != nil {
+		return nil, err
+	}
+	statusCallback("Transaction Validated")
+
+	if err := tx.Verify(); err != nil {
+		return nil, err
+	}
+	statusCallback("Transaction Verified")
+
+	return tx, nil
+}

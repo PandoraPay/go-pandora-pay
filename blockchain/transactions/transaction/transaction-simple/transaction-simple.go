@@ -159,6 +159,8 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 		tx.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleUnstake{}
 	case SCRIPT_UPDATE_DELEGATE:
 		tx.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleUpdateDelegate{}
+	case SCRIPT_CLAIM:
+		tx.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleClaim{}
 	default:
 		return errors.New("Invalid TxType")
 	}
