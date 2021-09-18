@@ -1,7 +1,6 @@
 package transaction_simple
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data/accounts"
@@ -47,13 +46,22 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, regs *regist
 		return
 	}
 
-	if err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fee); err != nil {
+	switch tx.TxScript {
+	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE:
+		err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fee)
+	case SCRIPT_CLAIM:
+		err = plainAcc.AddClaimable(false, tx.Fee)
+	default:
+		err = errors.New("Invalid TxScript")
+	}
+
+	if err != nil {
 		return
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE:
-		if err = tx.TransactionSimpleExtraInterface.IncludeTransactionVin0(blockHeight, plainAcc); err != nil {
+	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_CLAIM:
+		if err = tx.TransactionSimpleExtraInterface.IncludeTransactionVin0(blockHeight, plainAcc, regs, plainAccs, accsCollection, toks); err != nil {
 			return
 		}
 	}
@@ -83,8 +91,8 @@ func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bo
 
 func (tx *TransactionSimple) Validate() (err error) {
 
-	if bytes.Equal(tx.Vin.PublicKey, config.BURN_PUBLIC_KEY) {
-		return errors.New("Input includes BURN ADDR")
+	if err = tx.Vin.Validate(); err != nil {
+		return
 	}
 
 	switch tx.TxScript {

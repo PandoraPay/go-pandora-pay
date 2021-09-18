@@ -1,6 +1,9 @@
 package transaction_simple_parts
 
 import (
+	"bytes"
+	"errors"
+	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
@@ -8,6 +11,20 @@ import (
 type TransactionSimpleInput struct {
 	PublicKey helpers.HexBytes //33
 	Signature helpers.HexBytes //64
+}
+
+func (vin *TransactionSimpleInput) Validate() error {
+	if bytes.Equal(vin.PublicKey, config.BURN_PUBLIC_KEY) {
+		return errors.New("Input includes BURN ADDR")
+	}
+
+	if len(vin.PublicKey) != cryptography.PublicKeySize {
+		return errors.New("Vin.PublicKey length is invalid")
+	}
+	if len(vin.Signature) != cryptography.SignatureSize {
+		return errors.New("Vin.Signature length is invalid")
+	}
+	return nil
 }
 
 func (vin *TransactionSimpleInput) Serialize(w *helpers.BufferWriter, inclSignature bool) {
