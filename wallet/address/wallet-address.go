@@ -96,12 +96,15 @@ func (adr *WalletAddress) DecodeAccount(acc *account.Account, store bool) {
 
 	if acc == nil {
 		if store {
-			adr.BalancesDecoded = make(map[string]*WalletAddressBalanceDecoded)
+			adr.BalancesDecoded[string(acc.Token)] = &WalletAddressBalanceDecoded{
+				AmountDecoded: 0,
+				Token:         acc.Token,
+			}
 		}
 		return
 	}
 
-	adr.DecodeBalance(acc.Balance.Amount, acc.Token, true)
+	adr.DecodeBalance(acc.Balance.Amount, acc.Token, store)
 }
 
 func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, store bool) uint64 {
