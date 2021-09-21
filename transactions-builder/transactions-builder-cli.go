@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
-	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/transactions-builder/wizard"
@@ -62,63 +61,63 @@ func (builder *TransactionsBuilder) initCLI() {
 
 		builder.showWarningIfNotSyncCLI()
 
-		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Transfer")
-		if err != nil {
-			return
-		}
-
-		token, ok := gui.GUI.OutputReadBytes("Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH})
-		if !ok {
-			return
-		}
-		if len(token) != 0 && len(token) != 40 {
-			return errors.New("Invalid TokenId")
-		}
-
-		amount, ok := gui.GUI.OutputReadFloat64("Amount", nil)
-		if !ok {
-			return
-		}
-
-		destinationAddress, ok := gui.GUI.OutputReadAddress("Destination Address")
-		if !ok {
-			return
-		}
-
-		nonce, ok := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", nil, true)
-		if !ok {
-			return
-		}
-
-		data, ok := builder.readData()
-		if !ok {
-			return
-		}
-
-		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
-		if !ok {
-			return
-		}
-
-		fee, ok := builder.readFees()
-		if !ok {
-			return
-		}
-
-		tx, err := builder.CreateZetherTx_Float([]string{walletAddress.AddressEncoded}, nonce, token, []float64{amount}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, data, fee, propagate, true, true, func(status string) {
-			gui.GUI.OutputWrite(status)
-		})
-
-		// []float64{amount}, [][]byte{token}, feePerByte, feeToken, )
-		if err != nil {
-			return
-		}
-
-		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
-
-		if propagate {
-			gui.GUI.OutputWrite("Tx was inserted in mempool")
-		}
+		//walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Transfer")
+		//if err != nil {
+		//	return
+		//}
+		//
+		//token, ok := gui.GUI.OutputReadBytes("Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH})
+		//if !ok {
+		//	return
+		//}
+		//if len(token) != 0 && len(token) != 40 {
+		//	return errors.New("Invalid TokenId")
+		//}
+		//
+		//amount, ok := gui.GUI.OutputReadFloat64("Amount", nil)
+		//if !ok {
+		//	return
+		//}
+		//
+		//destinationAddress, ok := gui.GUI.OutputReadAddress("Destination Address")
+		//if !ok {
+		//	return
+		//}
+		//
+		//nonce, ok := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", nil, true)
+		//if !ok {
+		//	return
+		//}
+		//
+		//data, ok := builder.readData()
+		//if !ok {
+		//	return
+		//}
+		//
+		//propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
+		//if !ok {
+		//	return
+		//}
+		//
+		//fee, ok := builder.readFees()
+		//if !ok {
+		//	return
+		//}
+		//
+		//tx, err := builder.CreateZetherTx_Float([]string{walletAddress.AddressEncoded}, nonce, token, []float64{amount}, []string{destinationAddress.EncodeAddr()}, []float64{amount}, data, fee, propagate, true, true, func(status string) {
+		//	gui.GUI.OutputWrite(status)
+		//})
+		//if err != nil {
+		//	return
+		//}
+		//
+		//// []float64{amount}, [][]byte{token}, feePerByte, feeToken, )
+		//
+		//gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
+		//
+		//if propagate {
+		//	gui.GUI.OutputWrite("Tx was inserted in mempool")
+		//}
 
 		return
 	}

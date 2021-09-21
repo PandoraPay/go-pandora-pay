@@ -3,6 +3,7 @@ package hash_map
 import (
 	"encoding/binary"
 	"errors"
+	mathrand "math/rand"
 	"pandora-pay/helpers"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"strconv"
@@ -18,6 +19,19 @@ type HashMap struct {
 	Deserialize func([]byte, []byte) (helpers.SerializableInterface, error)
 	StoredEvent func([]byte, *CommittedMapElement)
 	Indexable   bool
+}
+
+func (hashMap *HashMap) GetIndexByKey(key string) (uint64, error) {
+	if !hashMap.Indexable {
+		return 0, errors.New("HashMap is not Indexable")
+	}
+
+	data := hashMap.Tx.Get(hashMap.name + ":listKey:" + key)
+	if data == nil {
+		return 0, errors.New("Key not found")
+	}
+
+	return strconv.ParseUint(string(data), 10, 64)
 }
 
 func (hashMap *HashMap) GetKeyByIndex(index uint64) (key []byte, err error) {
@@ -46,6 +60,17 @@ func (hashMap *HashMap) GetByIndex(index uint64) (data helpers.SerializableInter
 	}
 
 	return hashMap.Get(string(key))
+}
+
+func (hashMap *HashMap) GetRandom() (data helpers.SerializableInterface, err error) {
+
+	if !hashMap.Indexable {
+		return nil, errors.New("HashMap is not Indexable")
+	}
+
+	index := mathrand.Uint64() % hashMap.Count
+
+	return hashMap.GetByIndex(index)
 }
 
 func (hashMap *HashMap) CloneCommitted() (err error) {
@@ -233,7 +258,7 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 					if err = hashMap.Tx.Delete(hashMap.name + ":list:" + countStr); err != nil {
 						return
 					}
-					if err = hashMap.Tx.Delete(hashMap.name + ":listExtra:" + countStr); err != nil {
+					if err = hashMap.Tx.Delete(hashMap.name + ":listKey:" + k); err != nil {
 						return
 					}
 				}
@@ -251,6 +276,9 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 			if !hashMap.Tx.Exists(hashMap.name + ":map:" + k) {
 				if hashMap.Indexable {
 					if err = hashMap.Tx.Put(hashMap.name+":list:"+strconv.FormatUint(hashMap.Count, 10), []byte(k)); err != nil {
+						return
+					}
+					if err = hashMap.Tx.Put(hashMap.name+":listKey:"+k, []byte(strconv.FormatUint(hashMap.Count, 10))); err != nil {
 						return
 					}
 				}

@@ -65,7 +65,11 @@ func (chainData *BlockchainData) loadBlockchainInfo(reader store_db_interface.St
 func (chainData *BlockchainData) saveBlockchainHeight(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 	buf := make([]byte, binary.MaxVarintLen64)
 	n := binary.PutUvarint(buf, chainData.Height)
-	return writer.Put("chainHeight", buf[:n])
+	if err = writer.Put("chainHeight", buf[:n]); err != nil {
+		return
+	}
+
+	return writer.Put("chainHash", chainData.Hash)
 }
 
 func (chainData *BlockchainData) saveBlockchainInfo(writer store_db_interface.StoreDBTransactionInterface) (err error) {

@@ -3,6 +3,7 @@ package testnet
 import (
 	"encoding/hex"
 	"github.com/tevino/abool"
+	"math"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
@@ -83,9 +84,13 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx *transaction.Transaction, err error) {
 
 	dsts := []string{}
-	dstsAmounts := []uint64{}
+	dstsAmounts, burn := []uint64{}, []uint64{}
 	dstsTokens := [][]byte{}
+	data := []*wizard.TransactionsWizardData{}
+	ringMembers := [][]string{}
+
 	for i := uint64(0); i < testnet.nodes; i++ {
+
 		if uint64(testnet.wallet.GetAddressesCount()) <= i+1 {
 			if _, err = testnet.wallet.AddNewAddress(true); err != nil {
 				return
@@ -98,9 +103,13 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 			return
 		}
 
-		dsts = append(dsts, addr.AddressEncoded)
+		dsts = append(dsts, addr.AddressRegistrationEncoded)
 		dstsAmounts = append(dstsAmounts, config_stake.GetRequiredStake(blockHeight))
 		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN_FULL)
+		burn = append(burn, 0)
+
+		ringMembers = append(ringMembers, []string{})
+		data = append(data, &wizard.TransactionsWizardData{})
 	}
 
 	addr, err := testnet.wallet.GetWalletAddress(0)
@@ -108,7 +117,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 		return
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN_FULL, []uint64{testnet.nodes * config_stake.GetRequiredStake(blockHeight)}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, dstsTokens, dstsAmounts, dsts, burn, ringMembers, data, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -118,25 +127,27 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 
 func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (tx *transaction.Transaction, err error) {
 
-	dsts := []string{}
-	dstsAmounts := []uint64{}
-	dstsTokens := [][]byte{}
+	var dst string
+	ringMembers := []string{}
 
-	count := rand.Intn(10) + 1
-	sum := uint64(0)
+	amount := uint64(rand.Int63n(6))
+	burn := uint64(0)
+
+	pow := rand.Intn(8) + 2
+	count := int(math.Pow(2, float64(pow)))
 	for i := 0; i < count; i++ {
 		privateKey := addresses.GenerateNewPrivateKey()
 
 		var addr *addresses.Address
-		if addr, err = privateKey.GenerateAddress(false, 0, helpers.EmptyBytes(0)); err != nil {
+		if addr, err = privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0)); err != nil {
 			return
 		}
 
-		dsts = append(dsts, addr.EncodeAddr())
-		amount := uint64(rand.Int63n(6))
-		dstsAmounts = append(dstsAmounts, amount)
-		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN_FULL)
-		sum += amount
+		if i == 0 {
+			dst = addr.EncodeAddr()
+		} else {
+			ringMembers = append(ringMembers, addr.EncodeAddr())
+		}
 	}
 
 	addr, err := testnet.wallet.GetWalletAddress(0)
@@ -144,7 +155,9 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (tx *transact
 		return
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, 0, config.NATIVE_TOKEN_FULL, []uint64{sum}, dsts, dstsAmounts, &wizard.TransactionsWizardData{}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {}); err != nil {
+	data := &wizard.TransactionsWizardData{}
+
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN_FULL}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -181,7 +194,7 @@ func (testnet *Testnet) run() {
 						return
 					}
 				}
-				if blockHeight == 30 {
+				if blockHeight == 100 {
 					if _, err = testnet.testnetCreateTransfersNewWallets(blockHeight); err != nil {
 						return
 					}

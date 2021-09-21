@@ -4,8 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"pandora-pay/blockchain"
-	"pandora-pay/blockchain/data/accounts"
-	"pandora-pay/blockchain/data/accounts/account"
 	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
 	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
 	"pandora-pay/blockchain/data/tokens"
@@ -15,7 +13,6 @@ import (
 	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	transaction_simple_parts "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	"pandora-pay/config"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"pandora-pay/network/websocks/connection/advanced-connection-types"
@@ -104,149 +101,6 @@ func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet
 	}
 
 	return fromWalletAddress, nil
-}
-
-func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, nonce uint64, token []byte, amounts []float64, dsts []string, dstsAmounts []float64, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
-
-	var amountsFinal, dstsAmountsFinal []uint64
-
-	statusCallback("Converting Floats to Numbers")
-
-	finalFee := &wizard.TransactionsWizardFee{}
-
-	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-		toks := tokens.NewTokens(reader)
-
-		tok, err := toks.GetToken(token)
-		if tok == nil {
-			return errors.New("Token was not found")
-		}
-
-		if amountsFinal, err = builder.convertFloatAmounts(amounts, tok); err != nil {
-			return
-		}
-		if dstsAmountsFinal, err = builder.convertFloatAmounts(dstsAmounts, tok); err != nil {
-			return
-		}
-
-		if finalFee, err = fee.convertToWizardFee(tok); err != nil {
-			return
-		}
-
-		return
-	}); err != nil {
-		return nil, err
-	}
-
-	return builder.CreateZetherTx(from, nonce, token, amountsFinal, dsts, dstsAmountsFinal, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
-}
-
-func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokens [][]byte, amounts []uint64, dsts []string, burn []uint64, data []*wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
-
-	if len(from) != len(tokens) || len(tokens) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burn) || len(burn) != len(data) {
-		return nil, errors.New("Length of from and transfers are not matching")
-	}
-
-	fromWalletAddresses, err := builder.getWalletAddresses(from)
-	if err != nil {
-		return nil, err
-	}
-
-	builder.lock.Lock()
-	defer builder.lock.Unlock()
-
-	var tx *transaction.Transaction
-	keys := make([][]byte, len(from))
-	accountsList := make([]*account.Account, len(from))
-
-	transfers := make([]*wizard.ZetherTransfer, len(from))
-
-	emap := map[string]map[string][]byte{} //initialize all maps
-	var rings [][]*bn256.G1
-
-	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-		accsCollection := accounts.NewAccountsCollection(reader)
-
-		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
-
-		for i, fromWalletAddress := range fromWalletAddresses {
-
-			var accs *accounts.Accounts
-			if accs, err = accsCollection.GetMap(tokens[i]); err != nil {
-				return
-			}
-
-			var acc *account.Account
-			if acc, err = accs.GetAccount(fromWalletAddress.PublicKey); err != nil {
-				return
-			}
-
-			var fromBalanceDecoded uint64
-			if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddress.PublicKey, acc.GetBalance(), acc.Token, false); err != nil {
-				return
-			}
-
-			transfers[i] = &wizard.ZetherTransfer{
-				Token:              tokens[i],
-				From:               fromWalletAddress.PrivateKey.Key[:],
-				FromBalanceDecoded: fromBalanceDecoded,
-				Destination:        dsts[i],
-				Amount:             amounts[i],
-				Burn:               burn[i],
-				Data:               data[i],
-			}
-
-			if fromBalanceDecoded < amounts[i] {
-				return errors.New("Not enough funds")
-			}
-
-		}
-		statusCallback("Wallet Addresses Found")
-
-		for i := range transfers {
-			if _, ok := emap[string(transfers[i].Token)]; !ok {
-				emap[string(transfers[i].Token)] = map[string][]byte{}
-			}
-		}
-
-		for t := range transfers {
-			var ring []*bn256.G1
-
-		}
-
-		return
-	}); err != nil {
-		return nil, err
-	}
-
-	statusCallback("Balances checked")
-
-	statusCallback("Getting Nonce from Mempool")
-
-	if tx, err = wizard.CreateZetherTx(transfers, emap, rings, height, hash, publicKeyIndexes, statusCallback); err != nil {
-		gui.GUI.Error("Error creating Tx: ", err)
-		return nil, err
-	}
-
-	statusCallback("Transaction Created")
-
-	if err = builder.checkTx(accountsList, tx); err != nil {
-		return nil, err
-	}
-
-	statusCallback("Tx checked")
-
-	if propagateTx {
-		if err := builder.mempool.AddTxToMemPool(tx, chainHeight, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
-			return nil, err
-		}
-	}
-
-	return tx, nil
-
-	return nil, errors.New("Skip")
 }
 
 func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uint64, unstakeAmount float64, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(status string)) (*transaction.Transaction, error) {
