@@ -16,39 +16,6 @@ const (
 	CONTINUE_PROCESSING_NO_ERROR
 )
 
-func (mempool *Mempool) GetBalance(publicKey []byte, balance uint64, token []byte) (uint64, error) {
-
-	out := balance
-	txs := mempool.Txs.GetTxsFromMap()
-
-	for _, tx := range txs {
-		if tx.Tx.Version == transaction_type.TX_SIMPLE {
-			//base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			//if bytes.Equal(base.Token, token) {
-			//
-			//	for _, vin := range base.Vin {
-			//		if bytes.Equal(vin.PublicKey, publicKey) {
-			//			if err := helpers.SafeUint64Sub(&out, vin.Amount); err != nil {
-			//				return 0, err
-			//			}
-			//		}
-			//	}
-			//
-			//	for _, vout := range base.Vout {
-			//		if bytes.Equal(vout.PublicKey, publicKey) {
-			//			if err := helpers.SafeUint64Add(&out, vout.Amount); err != nil {
-			//				return 0, err
-			//			}
-			//		}
-			//	}
-			//}
-
-		}
-	}
-
-	return out, nil
-}
-
 func (mempool *Mempool) ExistsTxSimpleVersion(publicKey []byte, version transaction_simple.ScriptType) bool {
 
 	txs := mempool.Txs.GetTxsFromMap()

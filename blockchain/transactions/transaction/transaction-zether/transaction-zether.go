@@ -46,6 +46,38 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 	return
 }
 
+func (tx *TransactionZether) Validate() (err error) {
+
+	c := uint64(0)
+	publicKeyIndexes := make(map[uint64][]byte)
+	for _, payload := range tx.Payloads {
+		for _, publicKeyPoint := range payload.Statement.Publickeylist {
+			c += 1
+			publicKeyIndexes[c] = publicKeyPoint.EncodeCompressed()
+		}
+	}
+
+	uniqueMap := make(map[string]bool)
+	for _, registration := range tx.Registrations {
+		publicKey := publicKeyIndexes[registration.PublicKeyIndex]
+		if publicKey == nil {
+			return errors.New("Public Key is not set")
+		}
+		if uniqueMap[string(publicKey)] != false {
+			return errors.New("registration.PublicKey exists multiple times")
+		}
+		uniqueMap[string(publicKey)] = true
+	}
+
+	switch tx.TxScript {
+	case SCRIPT_TRANSFER, SCRIPT_DELEGATE:
+	default:
+		return errors.New("Invalid TxScript")
+	}
+
+	return
+}
+
 func (tx *TransactionZether) VerifySignatureManually(hash []byte) bool {
 
 	for t := range tx.Payloads {
@@ -61,11 +93,9 @@ func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 	w.WriteUvarint(uint64(tx.TxScript))
 	w.WriteUvarint(tx.Height)
 
-	if inclSignature {
-		w.WriteUvarint(uint64(len(tx.Registrations)))
-		for _, registration := range tx.Registrations {
-			registration.Serialize(w)
-		}
+	w.WriteUvarint(uint64(len(tx.Registrations)))
+	for _, registration := range tx.Registrations {
+		registration.Serialize(w)
 	}
 
 	w.WriteUvarint(uint64(len(tx.Payloads)))

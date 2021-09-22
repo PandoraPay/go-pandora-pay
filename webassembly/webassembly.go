@@ -155,7 +155,7 @@ func Initialize(startMainCb func()) {
 				}),
 				"address": js.ValueOf(map[string]interface{}{
 					"version": js.ValueOf(map[string]interface{}{
-						"VERSION_TRANSPARENT": js.ValueOf(int(wallet_address.VERSION_TRANSPARENT)),
+						"VERSION_NORMAL": js.ValueOf(int(wallet_address.VERSION_NORMAL)),
 					}),
 				}),
 			}),

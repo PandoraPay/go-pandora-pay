@@ -306,13 +306,14 @@ func (api *APICommon) GetMempoolExists(txId []byte) ([]byte, error) {
 func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocketUUID advanced_connection_types.UUID) (out []byte, err error) {
 
 	//it needs to compute  tx.Bloom.HashStr
-	tx.BloomNow()
+	hash := tx.HashManual()
+	HashStr := string(hash)
 
 	if api.mempool.Txs.Exists(tx.Bloom.HashStr) {
 		return []byte{1}, nil
 	}
 
-	multicastFound, loaded := api.MempoolDownloadPending.LoadOrStore(tx.Bloom.HashStr, multicast.NewMulticastChannel())
+	multicastFound, loaded := api.MempoolDownloadPending.LoadOrStore(HashStr, multicast.NewMulticastChannel())
 	multicast := multicastFound.(*multicast.MulticastChannel)
 
 	if loaded {
@@ -323,7 +324,7 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocke
 	}
 
 	defer func() {
-		api.MempoolDownloadPending.Delete(tx.Bloom.HashStr)
+		api.MempoolDownloadPending.Delete(HashStr)
 		multicast.Broadcast(err)
 	}()
 

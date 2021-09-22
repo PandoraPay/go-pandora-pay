@@ -56,9 +56,6 @@ func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockCo
 	}
 
 	for _, blkComplete := range blocksComplete {
-		if err = blkComplete.Validate(); err != nil {
-			return
-		}
 		if err = blkComplete.Verify(); err != nil {
 			return
 		}

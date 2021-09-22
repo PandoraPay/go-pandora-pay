@@ -11,7 +11,7 @@ type BlockHeader struct {
 	Height                        uint64 `json:"height"`
 }
 
-func (blockHeader *BlockHeader) Validate() error {
+func (blockHeader *BlockHeader) validate() error {
 	if blockHeader.Version != 0 {
 		return errors.New("Invalid Block")
 	}

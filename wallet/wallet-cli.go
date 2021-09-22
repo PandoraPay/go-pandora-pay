@@ -11,6 +11,7 @@ import (
 	"pandora-pay/blockchain/data/accounts/account"
 	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
 	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data/registrations"
 	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/config"
@@ -103,11 +104,20 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 		toks := tokens.NewTokens(reader)
 		plainAccs := plain_accounts.NewPlainAccounts(reader)
 
+		regs := registrations.NewRegistrations(reader)
+
 		for _, walletAddress := range wallet.Addresses {
-			addressStr := walletAddress.AddressEncoded
+
+			var isReg bool
+			if isReg, err = regs.Exists(string(walletAddress.PublicKey)); err != nil {
+				return
+			}
+
+			addressStr := walletAddress.GetAddress(isReg)
+
 			gui.GUI.OutputWrite(walletAddress.Name + " : " + walletAddress.Version.String() + " : " + addressStr)
 
-			if walletAddress.Version == wallet_address.VERSION_TRANSPARENT {
+			if walletAddress.Version == wallet_address.VERSION_NORMAL {
 
 				var acc *account.Account
 				if acc, err = accs.GetAccount(walletAddress.PublicKey); err != nil {
@@ -152,7 +162,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES DECRYPTED", "PLEASE WAIT..."))
 
 					var decoded uint64
-					decoded, err = wallet.DecodeBalanceByEncodedAddress(addressStr, acc.Balance.Amount, acc.Token, false)
+					decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, acc.Balance.Amount, acc.Token, false)
 					if err != nil {
 						return
 					}
@@ -176,7 +186,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 					//		}
 					//
 					//		var decoded uint64
-					//		decoded, err = wallet.DecodeBalanceByEncodedAddress(addressStr, balance.Amount, balance.Token, false)
+					//		decoded, err = wallet.DecodeBalanceByPublicKey( walletAddress.PublicKey, balance.Amount, balance.Token, false)
 					//		if err != nil {
 					//			return
 					//		}

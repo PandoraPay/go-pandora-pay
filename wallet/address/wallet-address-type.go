@@ -3,13 +3,13 @@ package wallet_address
 type Version int
 
 const (
-	VERSION_TRANSPARENT Version = 0
+	VERSION_NORMAL Version = 0
 )
 
 func (e Version) String() string {
 	switch e {
-	case VERSION_TRANSPARENT:
-		return "VERSION_TRANSPARENT"
+	case VERSION_NORMAL:
+		return "VERSION_NORMAL"
 	default:
 		return "Unknown Wallet Address Version"
 	}

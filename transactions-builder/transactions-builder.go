@@ -9,11 +9,8 @@ import (
 	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
-	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
-	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	transaction_simple_parts "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	"pandora-pay/config"
-	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/store"
@@ -36,37 +33,6 @@ func (builder *TransactionsBuilder) getNonce(nonce uint64, publicKey []byte, acc
 		return nonce
 	}
 	return builder.mempool.GetNonce(publicKey, accNonce)
-}
-
-func (builder *TransactionsBuilder) checkTx(plainAcc *plain_account.PlainAccount, tx *transaction.Transaction, chainHeight uint64) (err error) {
-
-	if plainAcc == nil {
-		return errors.New("Account doesn't even exist")
-	}
-
-	base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-
-	availableDelegatedStake, err := plainAcc.ComputeDelegatedStakeAvailable(chainHeight)
-	if err != nil {
-		return err
-	}
-
-	switch base.TxScript {
-	case transaction_simple.SCRIPT_UNSTAKE:
-		if err = helpers.SafeUint64Sub(&availableDelegatedStake, tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake).Amount); err != nil {
-			return errors.New("You don't have enough staked coins to pay for the withdraw")
-		}
-	}
-
-	if availableDelegatedStake, err = builder.mempool.GetBalance(base.Vin.PublicKey, availableDelegatedStake, config.NATIVE_TOKEN_FULL); err != nil {
-		return
-	}
-
-	if availableDelegatedStake < base.Fee {
-		return errors.New("You don't have enough staked coins to pay for the fee")
-	}
-
-	return nil
 }
 
 func (builder *TransactionsBuilder) convertFloatAmounts(amounts []float64, tok *token.Token) ([]uint64, error) {
@@ -190,12 +156,6 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	}
 	statusCallback("Transaction Created")
 
-	if err = builder.checkTx(plainAcc, tx, chainHeight); err != nil {
-		return nil, err
-	}
-
-	statusCallback("Tx checked")
-
 	if propagateTx {
 		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
 			return nil, err
@@ -276,10 +236,6 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 	}
 
 	if tx, err = wizard.CreateUpdateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegateNewPubKey, delegateNewFee, data, fee, statusCallback); err != nil {
-		return nil, err
-	}
-
-	if err = builder.checkTx(plainAcc, tx, chainHeight); err != nil {
 		return nil, err
 	}
 
@@ -369,10 +325,6 @@ func (builder *TransactionsBuilder) CreateClaimTx(from string, nonce uint64, out
 	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
 
 	if tx, err = wizard.CreateClaimTx(nonce, fromWalletAddresses[0].PrivateKey.Key, output, data, fee, statusCallback); err != nil {
-		return nil, err
-	}
-
-	if err = builder.checkTx(plainAcc, tx, chainHeight); err != nil {
 		return nil, err
 	}
 

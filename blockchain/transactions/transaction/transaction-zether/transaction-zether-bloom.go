@@ -71,24 +71,6 @@ func (tx *TransactionZether) BloomNow(hashForSignature []byte) (err error) {
 
 	tx.Bloom = new(TransactionZetherBloom)
 
-	c := uint64(0)
-	publicKeyIndexes := make(map[uint64][]byte)
-	for _, payload := range tx.Payloads {
-		for _, publicKeyPoint := range payload.Statement.Publickeylist {
-			c += 1
-			publicKeyIndexes[c] = publicKeyPoint.EncodeCompressed()
-		}
-	}
-
-	uniqueMap := make(map[string]bool)
-	for _, registration := range tx.Registrations {
-		publicKey := publicKeyIndexes[registration.PublicKeyIndex]
-		if uniqueMap[string(publicKey)] != false {
-			return errors.New("registration.PublicKey exists multiple times")
-		}
-		uniqueMap[string(publicKey)] = true
-	}
-
 	for _, payload := range tx.Payloads {
 		if payload.Proof.Verify(payload.Statement, hashForSignature, tx.Height, payload.BurnValue) == false {
 			return errors.New("Zether Failed for Transaction")

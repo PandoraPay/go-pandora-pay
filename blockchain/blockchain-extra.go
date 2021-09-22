@@ -220,7 +220,9 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 			Txs:   []*transaction.Transaction{},
 		}
 
-		blkComplete.BloomCompleteBySerialized(blkComplete.SerializeManualToBytes())
+		if err = blkComplete.BloomCompleteBySerialized(blkComplete.SerializeManualToBytes()); err != nil {
+			return
+		}
 
 		writer := helpers.NewBufferWriter()
 		blk.SerializeForForging(writer)

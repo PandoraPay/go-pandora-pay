@@ -14,12 +14,18 @@ type BlockCompleteBloom struct {
 	bloomedMerkleTreeVerified bool
 }
 
-func (blkComplete *BlockComplete) BloomCompleteBySerialized(serialized []byte) {
+func (blkComplete *BlockComplete) BloomCompleteBySerialized(serialized []byte) error {
+	if err := blkComplete.validate(); err != nil {
+		return err
+	}
+
 	blkComplete.BloomBlkComplete = &BlockCompleteBloom{
 		Serialized:  serialized,
 		Size:        uint64(len(serialized)),
 		bloomedSize: true,
 	}
+
+	return nil
 }
 
 func (blkComplete *BlockComplete) BloomCompleteManual() {
@@ -54,6 +60,9 @@ func (blkComplete *BlockComplete) BloomAll() (err error) {
 func (blkComplete *BlockComplete) BloomNow() error {
 
 	if blkComplete.BloomBlkComplete == nil {
+		if err := blkComplete.validate(); err != nil {
+			return err
+		}
 		blkComplete.BloomBlkComplete = new(BlockCompleteBloom)
 	}
 

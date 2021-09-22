@@ -37,15 +37,13 @@ func (tx *Transaction) VerifySignatureManually() bool {
 	return tx.TransactionBaseInterface.VerifySignatureManually(hash)
 }
 
-func (tx *Transaction) GetHashSigning() []byte {
+func (tx *Transaction) GetHashSigningManually() []byte {
 	return tx.SerializeForSigning()
 }
 
 func (tx *Transaction) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
-
 	w.WriteUvarint(uint64(tx.Version))
 	tx.TransactionBaseInterface.SerializeAdvanced(w, inclSignature)
-
 }
 
 func (tx *Transaction) Serialize(w *helpers.BufferWriter) {
@@ -62,15 +60,15 @@ func (tx *Transaction) SerializeManualToBytes() []byte {
 	return writer.Bytes()
 }
 
-func (tx *Transaction) Validate() error {
+func (tx *Transaction) HashManual() []byte {
+	serialized := tx.SerializeManualToBytes()
+	return cryptography.SHA3(serialized)
+}
 
-	if tx.Version != 0 {
-		return errors.New("Version is invalid")
-	}
+func (tx *Transaction) validate() error {
 	if tx.Version >= transaction_type.TX_END {
 		return errors.New("VersionType is invalid")
 	}
-
 	return tx.TransactionBaseInterface.Validate()
 }
 

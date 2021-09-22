@@ -17,9 +17,13 @@ type TransactionBloom struct {
 	bloomed    bool
 }
 
-func (tx *Transaction) BloomNow() {
+func (tx *Transaction) BloomAll() (err error) {
 
 	if tx.Bloom != nil {
+		return
+	}
+
+	if err = tx.validate(); err != nil {
 		return
 	}
 
@@ -30,10 +34,7 @@ func (tx *Transaction) BloomNow() {
 	bloom.HashStr = string(bloom.Hash)
 	bloom.bloomed = true
 	tx.Bloom = bloom
-}
 
-func (tx *Transaction) BloomAll() (err error) {
-	tx.BloomNow()
 	return tx.BloomExtraNow()
 }
 
@@ -62,6 +63,9 @@ func (tx *Transaction) BloomExtraVerified() (err error) {
 }
 
 func (tx *Transaction) VerifyBloomAll() (err error) {
+	if tx.Bloom == nil {
+		return errors.New("Tx was not bloomed")
+	}
 	if err = tx.Bloom.verifyIfBloomed(); err != nil {
 		return
 	}

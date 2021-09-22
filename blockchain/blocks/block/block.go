@@ -34,8 +34,8 @@ func CreateEmptyBlock() *Block {
 	}
 }
 
-func (blk *Block) Validate() error {
-	return blk.BlockHeader.Validate()
+func (blk *Block) validate() error {
+	return blk.BlockHeader.validate()
 }
 
 func (blk *Block) Verify() error {

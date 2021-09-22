@@ -30,9 +30,7 @@ type ZetherPublicKeyIndex struct {
 	RegistrationSignature []byte
 }
 
-func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, statusCallback func(string)) (*transaction.Transaction, error) {
-
-	var err error
+func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	txBase := &transaction_zether.TransactionZether{
 		TxScript: transaction_zether.SCRIPT_TRANSFER,
@@ -87,14 +85,14 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		var publickeylist, C, CLn, CRn []*bn256.G1
 		var D bn256.G1
 
-		receiver_addr, err := addresses.DecodeAddr(transfer.Destination)
-		if err != nil {
-			return nil, err
+		var receiver_addr *addresses.Address
+		if receiver_addr, err = addresses.DecodeAddr(transfer.Destination); err != nil {
+			return
 		}
 
-		receiverPoint, err := receiver_addr.GetPoint()
-		if err != nil {
-			return nil, err
+		var receiverPoint *crypto.Point
+		if receiverPoint, err = receiver_addr.GetPoint(); err != nil {
+			return
 		}
 		receiver := receiverPoint.G1()
 
@@ -134,9 +132,10 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 				data = anonset_publickeys[0].String()
 				anonset_publickeys = anonset_publickeys[1:]
 			}
-			pt, err := new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][data])
-			if err != nil {
-				return nil, err
+
+			var pt *crypto.ElGamal
+			if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][data]); err != nil {
+				return
 			}
 			ebalances_list = append(ebalances_list, pt)
 
@@ -188,9 +187,9 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 
 				payload.ExtraType = transaction_zether.ENCRYPTED_DEFAULT_PAYLOAD_CBOR
 
-				dataFinal, err := transfer.Data.getData()
-				if err != nil {
-					return nil, err
+				var dataFinal []byte
+				if dataFinal, err = transfer.Data.getData(); err != nil {
+					return
 				}
 				if len(dataFinal) > transaction_zether.PAYLOAD0_LIMIT {
 					return nil, errors.New("Data final exceeds")
@@ -202,7 +201,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 				//fmt.Printf("%d packed rpc payload %d %x\n ", t, len(data), data)
 				// make sure used data encryption is optional, just in case we would like to play together with ring members
 				if err = crypto.EncryptDecryptUserData(blinder, payload.ExtraData); err != nil {
-					return nil, err
+					return
 				}
 
 			default:
@@ -221,11 +220,11 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 			switch {
 			case i == witness_index[0]:
 				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][sender.String()]); err != nil {
-					return nil, err
+					return
 				}
 			case i == witness_index[1]:
 				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][receiver.String()]); err != nil {
-					return nil, err
+					return
 				}
 				//fmt.Printf("receiver %s \n", x.String())
 			default:
@@ -248,9 +247,9 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		}
 
 		// decode balance now
-		pt, err := new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][sender.String()])
-		if err != nil {
-			return nil, err
+		var pt *crypto.ElGamal
+		if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][sender.String()]); err != nil {
+			return
 		}
 		balance := senderKey.DecodeBalance(pt, transfer.FromBalanceDecoded)
 
@@ -276,9 +275,10 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 
 		// get ready for another round by internal processing of state
 		for i := range publickeylist {
-			balance, err := new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][publickeylist[i].String()])
-			if err != nil {
-				return nil, err
+
+			var balance *crypto.ElGamal
+			if balance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][publickeylist[i].String()]); err != nil {
+				return
 			}
 			echanges := crypto.ConstructElGamal(statement.C[i], statement.D)
 
@@ -295,21 +295,20 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	u1 := new(bn256.G1).ScalarMult(crypto.HeightToPoint(height+crypto.BLOCK_BATCH_SIZE), sender_secret) // this should be moved to generate proof
 
 	for t := range transfers {
-		if txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Statement, &witness_list[t], u, u1, height, tx.GetHashSigning(), txBase.Payloads[t].BurnValue); err != nil {
-			return nil, err
+		if txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Statement, &witness_list[t], u, u1, height, tx.GetHashSigningManually(), txBase.Payloads[t].BurnValue); err != nil {
+			return
 		}
 	}
 
-	// after the tx is serialized, it loses information which is then fed by blockchain
-
-	//fmt.Printf("txhash before %s\n", tx.GetHash())
-	for t := range transfers {
-		if txBase.Payloads[t].Proof.Verify(txBase.Payloads[t].Statement, tx.GetHashSigning(), height, txBase.Payloads[t].BurnValue) {
-			fmt.Printf("TX verified with proof successfuly %s  burn_value %d\n", tx.GetHashSigning(), txBase.Payloads[t].BurnValue)
-		} else {
-			return nil, fmt.Errorf("TX verification failed \n")
-		}
+	if err = tx.BloomAll(); err != nil {
+		return
 	}
+	statusCallback("Transaction Bloomed")
+
+	if err = tx.Verify(); err != nil {
+		return
+	}
+	statusCallback("Transaction Verified")
 
 	return tx, nil
 }

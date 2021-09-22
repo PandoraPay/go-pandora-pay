@@ -89,7 +89,7 @@ func (api *APIDelegatesNode) updateAccountsChanges() {
 							}
 
 							_ = api.wallet.AddDelegateStakeAddress(&wallet_address.WalletAddress{
-								wallet_address.VERSION_TRANSPARENT,
+								wallet_address.VERSION_NORMAL,
 								"Delegate Stake",
 								0,
 								false,

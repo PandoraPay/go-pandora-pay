@@ -82,8 +82,8 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 
 	transfers := make([]*wizard.ZetherTransfer, len(from))
 
-	emap := map[string]map[string][]byte{} //initialize all maps
-	var rings [][]*bn256.G1
+	emap := make(map[string]map[string][]byte) //initialize all maps
+	rings := make([][]*bn256.G1, len(from))
 
 	publicKeyIndexes := make(map[string]*wizard.ZetherPublicKeyIndex)
 
@@ -95,9 +95,9 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 		chainHash = reader.Get("chainHash")
 
-		for i := range transfers {
-			if _, ok := emap[string(transfers[i].Token)]; !ok {
-				emap[string(transfers[i].Token)] = map[string][]byte{}
+		for _, token := range tokensUsed {
+			if emap[string(token)] == nil {
+				emap[string(token)] = map[string][]byte{}
 			}
 		}
 
@@ -137,22 +137,30 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 			addPoint := func(address string) (err error) {
 				var addr *addresses.Address
 				var p *crypto.Point
-				var reg *registration.Registration
-
-				if acc, err = accs.GetAccount(fromWalletAddress.PublicKey); err != nil {
-					return
-				}
-
 				if addr, err = addresses.DecodeAddr(address); err != nil {
 					return
 				}
 				if p, err = addr.GetPoint(); err != nil {
 					return
 				}
-				emap[string(tokensUsed[i])][p.G1().String()] = acc.GetBalance().Serialize()
+
+				var reg *registration.Registration
+
+				if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
+					return
+				}
+
+				var ebalance *crypto.ElGamal
+				if acc != nil {
+					ebalance = acc.GetBalance()
+				} else {
+					ebalance = crypto.ConstructElGamal(p.G1(), crypto.ElGamal_BASE_G)
+				}
+				emap[string(tokensUsed[i])][p.G1().String()] = ebalance.Serialize()
+
 				ring = append(ring, p.G1())
 
-				if reg, err = regs.GetRegistration(fromWalletAddress.PublicKey); err != nil {
+				if reg, err = regs.GetRegistration(addr.PublicKey); err != nil {
 					return
 				}
 
@@ -201,12 +209,6 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 	}
 
 	statusCallback("Transaction Created")
-
-	//if err = builder.checkTx(accountsList, tx); err != nil {
-	//	return nil, err
-	//}
-
-	statusCallback("Tx checked")
 
 	if propagateTx {
 		if err := builder.mempool.AddTxToMemPool(tx, chainHeight, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {

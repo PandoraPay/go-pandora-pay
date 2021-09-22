@@ -133,9 +133,9 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (tx *transact
 	amount := uint64(rand.Int63n(6))
 	burn := uint64(0)
 
-	pow := rand.Intn(8) + 2
+	pow := rand.Intn(4) + 3
 	count := int(math.Pow(2, float64(pow)))
-	for i := 0; i < count; i++ {
+	for i := 0; i < count-1; i++ {
 		privateKey := addresses.GenerateNewPrivateKey()
 
 		var addr *addresses.Address

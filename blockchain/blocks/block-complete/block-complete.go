@@ -20,15 +20,7 @@ type BlockComplete struct {
 	BloomBlkComplete *BlockCompleteBloom        `json:"bloomBlkComplete"`
 }
 
-func (blkComplete *BlockComplete) Validate() (err error) {
-	if err = blkComplete.Block.Validate(); err != nil {
-		return
-	}
-	for _, tx := range blkComplete.Txs {
-		if err = tx.Validate(); err != nil {
-			return
-		}
-	}
+func (blkComplete *BlockComplete) validate() (err error) {
 	return
 }
 
@@ -135,7 +127,9 @@ func (blkComplete *BlockComplete) Deserialize(r *helpers.BufferReader) (err erro
 	}
 
 	//we can bloom more efficiently if asked
-	blkComplete.BloomCompleteBySerialized(r.Buf[first:r.Position])
+	if err = blkComplete.BloomCompleteBySerialized(r.Buf[first:r.Position]); err != nil {
+		return
+	}
 
 	return
 }

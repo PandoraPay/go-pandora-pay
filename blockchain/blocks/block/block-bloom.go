@@ -26,6 +26,10 @@ func (blk *Block) BloomSerializedNow(serialized []byte) {
 
 func (blk *Block) BloomNow() (err error) {
 
+	if err = blk.validate(); err != nil {
+		return
+	}
+
 	if blk.Bloom == nil {
 		blk.Bloom = new(BlockBloom)
 	}

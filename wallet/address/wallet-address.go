@@ -138,6 +138,13 @@ func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, s
 	return newValue
 }
 
+func (adr *WalletAddress) GetAddress(registered bool) string {
+	if registered {
+		return adr.AddressEncoded
+	}
+	return adr.AddressRegistrationEncoded
+}
+
 func (adr *WalletAddress) DecryptMessage(message []byte) ([]byte, error) {
 	if adr.PrivateKey == nil {
 		return nil, errors.New("Private Key is missing")
