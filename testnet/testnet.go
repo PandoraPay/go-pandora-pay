@@ -14,7 +14,6 @@ import (
 	"pandora-pay/blockchain/data/registrations"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
-	transaction_simple_parts "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	"pandora-pay/config"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography/crypto"
@@ -46,19 +45,8 @@ func (testnet *Testnet) testnetCreateClaimTx(reg bool, amount uint64) (tx *trans
 		return
 	}
 
-	var registrationSignature []byte
-	if !reg {
-		registrationSignature = addr.Registration
-	}
-
-	if tx, err = testnet.transactionsBuilder.CreateClaimTx(addr.AddressEncoded, 0, []*transaction_simple_parts.TransactionSimpleOutput{
-		{
-			Amount:                amount,
-			PublicKey:             addr.PublicKey,
-			HasRegistration:       !reg,
-			RegistrationSignature: registrationSignature,
-		},
-	}, &wizard.TransactionsWizardData{nil, false}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateClaimTx(addr.AddressEncoded, 0, []uint64{amount}, []string{addr.AddressRegistrationEncoded}, &wizard.TransactionsWizardData{nil, false},
+		&wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -83,11 +71,13 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 
 func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx *transaction.Transaction, err error) {
 
+	from := []string{}
 	dsts := []string{}
 	dstsAmounts, burn := []uint64{}, []uint64{}
 	dstsTokens := [][]byte{}
 	data := []*wizard.TransactionsWizardData{}
 	ringMembers := [][]string{}
+	fees := []*wizard.TransactionsWizardFee{}
 
 	for i := uint64(0); i < testnet.nodes; i++ {
 
@@ -110,14 +100,15 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 
 		ringMembers = append(ringMembers, []string{})
 		data = append(data, &wizard.TransactionsWizardData{})
+		fees = append(fees, &wizard.TransactionsWizardFee{0, 0, true})
+
+		if addr, err = testnet.wallet.GetWalletAddress(0); err != nil {
+			return
+		}
+		from = append(from, addr.AddressEncoded)
 	}
 
-	addr, err := testnet.wallet.GetWalletAddress(0)
-	if err != nil {
-		return
-	}
-
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, dstsTokens, dstsAmounts, dsts, burn, ringMembers, data, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx(from, dstsTokens, dstsAmounts, dsts, burn, ringMembers, data, fees, true, true, true, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -156,8 +147,9 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (tx *transact
 	}
 
 	data := &wizard.TransactionsWizardData{}
+	fee := &wizard.TransactionsWizardFee{0, 0, true}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN_FULL}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, &wizard.TransactionsWizardFee{0, 0, true}, true, true, true, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN_FULL}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, func(string) {}); err != nil {
 		return nil, err
 	}
 

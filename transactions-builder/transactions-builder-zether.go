@@ -20,14 +20,13 @@ import (
 	"pandora-pay/transactions-builder/wizard"
 )
 
-func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUsed [][]byte, amounts []float64, dsts []string, burn []float64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUsed [][]byte, amounts []float64, dsts []string, burn []float64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fee []*TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	amountsFinal := make([]uint64, len(amounts))
 	burnFinal := make([]uint64, len(burn))
+	finalFee := make([]*wizard.TransactionsWizardFee, len(fee))
 
 	statusCallback("Converting Floats to Numbers")
-
-	finalFee := &wizard.TransactionsWizardFee{}
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -62,9 +61,9 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUs
 	return builder.CreateZetherTx(from, tokensUsed, amountsFinal, dsts, burnFinal, ringMembers, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][]byte, amounts []uint64, dsts []string, burn []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][]byte, amounts []uint64, dsts []string, burn []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
-	if len(from) != len(tokensUsed) || len(tokensUsed) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burn) || len(burn) != len(data) {
+	if len(from) != len(tokensUsed) || len(tokensUsed) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burn) || len(burn) != len(data) || len(data) != len(fees) {
 		return nil, errors.New("Length of from and transfers are not matching")
 	}
 

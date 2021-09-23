@@ -7,6 +7,7 @@ import (
 	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
 	"pandora-pay/blockchain/data/registrations"
 	"pandora-pay/blockchain/data/tokens"
+	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/helpers"
 )
 
@@ -19,7 +20,12 @@ type TransactionSimpleUnstake struct {
 	Amount uint64
 }
 
-func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+func (tx *TransactionSimpleUnstake) IncludeTransactionVin0(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, plainAcc *plain_account.PlainAccount, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+
+	if len(txRegistrations.Registrations) > 0 {
+		return errors.New("txRegistrations.Registrations length should be zero")
+	}
+
 	if plainAcc == nil || !plainAcc.HasDelegatedStake() {
 		return errors.New("acc.HasDelegatedStake is null")
 	}

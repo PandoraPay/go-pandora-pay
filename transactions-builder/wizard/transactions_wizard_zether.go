@@ -7,6 +7,7 @@ import (
 	mathrand "math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/blockchain/transactions/transaction/transaction-data"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/cryptography/bn256"
@@ -39,10 +40,11 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 
 	tx := &transaction.Transaction{
 		Version:                  transaction_type.TX_ZETHER,
+		Registrations:            &transaction_data.TransactionDataTransactions{},
 		TransactionBaseInterface: txBase,
 	}
 
-	registrations := make([]*transaction_zether.TransactionZetherRegistration, 0)
+	registrations := make([]*transaction_data.TransactionDataRegistration, 0)
 	registrationsAlready := make(map[string]bool)
 
 	index := uint64(0)
@@ -55,7 +57,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 
 				if !publicKeyIndex.Registered && !registrationsAlready[string(publicKey)] {
 					registrationsAlready[string(publicKey)] = true
-					registrations = append(registrations, &transaction_zether.TransactionZetherRegistration{
+					registrations = append(registrations, &transaction_data.TransactionDataRegistration{
 						index,
 						publicKeyIndex.RegistrationSignature,
 					})
@@ -68,7 +70,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 			index += 1
 		}
 	}
-	txBase.Registrations = registrations
+	tx.Registrations.Registrations = registrations
 
 	statusCallback("Transaction created")
 	var witness_list []crypto.Witness

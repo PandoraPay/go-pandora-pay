@@ -61,10 +61,8 @@ type json_TransactionSimpleUnstake struct {
 }
 
 type json_Only_TransactionSimpleOutput struct {
-	Amount                uint64           `json:"amount"`
-	PublicKey             helpers.HexBytes `json:"publicKey"`
-	HasRegistration       bool             `json:"hasRegistration"`
-	RegistrationSignature helpers.HexBytes `json:"registrationSignature"`
+	Amount    uint64           `json:"amount"`
+	PublicKey helpers.HexBytes `json:"publicKey"`
 }
 
 type json_Only_TransactionSimpleClaim struct {
@@ -133,8 +131,6 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				output[i] = &json_Only_TransactionSimpleOutput{
 					out.Amount,
 					out.PublicKey,
-					out.HasRegistration,
-					out.RegistrationSignature,
 				}
 			}
 
@@ -239,8 +235,6 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 				output[i] = &transaction_simple_parts.TransactionSimpleOutput{
 					out.Amount,
 					out.PublicKey,
-					out.HasRegistration,
-					out.RegistrationSignature,
 				}
 			}
 

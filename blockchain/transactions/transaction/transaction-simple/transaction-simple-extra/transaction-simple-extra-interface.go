@@ -6,11 +6,12 @@ import (
 	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
 	"pandora-pay/blockchain/data/registrations"
 	"pandora-pay/blockchain/data/tokens"
+	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/helpers"
 )
 
 type TransactionSimpleExtraInterface interface {
-	IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) error
+	IncludeTransactionVin0(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, plainAcc *plain_account.PlainAccount, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) error
 	Serialize(w *helpers.BufferWriter)
 	Deserialize(r *helpers.BufferReader) error
 	Validate() error

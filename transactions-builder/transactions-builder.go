@@ -3,12 +3,15 @@ package transactions_builder
 import (
 	"encoding/binary"
 	"errors"
+	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
 	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
 	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data/registrations"
 	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
+	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	transaction_simple_parts "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	"pandora-pay/config"
 	"pandora-pay/mempool"
@@ -248,10 +251,10 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 	return tx, nil
 }
 
-func (builder *TransactionsBuilder) CreateClaimTx_Float(from string, nonce uint64, output []*TransactionSimpleOutputFloat, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateClaimTx_Float(from string, nonce uint64, outputAmounts []float64, outputAddresses []string, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	var finalFee *wizard.TransactionsWizardFee
-	finalOutput := make([]*transaction_simple_parts.TransactionSimpleOutput, len(output))
+	outputAmountsFinal := make([]uint64, len(outputAmounts))
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -268,18 +271,16 @@ func (builder *TransactionsBuilder) CreateClaimTx_Float(from string, nonce uint6
 		if finalFee, err = fee.convertToWizardFee(tok); err != nil {
 			return err
 		}
-		for i, out := range output {
+
+		for i, amount := range outputAmounts {
 
 			var finalAmount uint64
-			if finalAmount, err = tok.ConvertToUnits(out.Amount); err != nil {
+			if finalAmount, err = tok.ConvertToUnits(amount); err != nil {
 				return
 			}
-			finalOutput[i] = &transaction_simple_parts.TransactionSimpleOutput{
-				Amount:                finalAmount,
-				PublicKey:             out.PublicKey,
-				HasRegistration:       out.HasRegistration,
-				RegistrationSignature: out.RegistrationSignature,
-			}
+
+			outputAmountsFinal[i] = finalAmount
+
 		}
 
 		return
@@ -287,10 +288,10 @@ func (builder *TransactionsBuilder) CreateClaimTx_Float(from string, nonce uint6
 		return nil, err
 	}
 
-	return builder.CreateClaimTx(from, nonce, finalOutput, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
+	return builder.CreateClaimTx(from, nonce, outputAmountsFinal, outputAddresses, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateClaimTx(from string, nonce uint64, output []*transaction_simple_parts.TransactionSimpleOutput, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateClaimTx(from string, nonce uint64, outputAmounts []uint64, outputAddresses []string, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
@@ -304,17 +305,52 @@ func (builder *TransactionsBuilder) CreateClaimTx(from string, nonce uint64, out
 	var plainAcc *plain_account.PlainAccount
 	var chainHeight uint64
 
+	output := make([]*transaction_simple_parts.TransactionSimpleOutput, len(outputAmounts))
+	txRegistrations := make([]*transaction_data.TransactionDataRegistration, 0)
+
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 
 		plainAccs := plain_accounts.NewPlainAccounts(reader)
+		regs := registrations.NewRegistrations(reader)
 
 		if plainAcc, err = plainAccs.GetPlainAccount(fromWalletAddresses[0].PublicKey, chainHeight); err != nil {
 			return
 		}
 		if plainAcc == nil {
 			return errors.New("Account doesn't exist")
+		}
+
+		for i := range outputAmounts {
+
+			var addr *addresses.Address
+			if addr, err = addresses.DecodeAddr(outputAddresses[i]); err != nil {
+				return
+			}
+
+			var isReg bool
+			if isReg, err = regs.Exists(outputAddresses[i]); err != nil {
+				return
+			}
+
+			output = append(output, &transaction_simple_parts.TransactionSimpleOutput{
+				Amount:    outputAmounts[i],
+				PublicKey: addr.PublicKey,
+			})
+
+			if !isReg {
+				if addr.Registration == nil {
+					return errors.New("Registration is missing one of the specified addresses")
+				}
+
+				txRegistrations = append(txRegistrations, &transaction_data.TransactionDataRegistration{
+					PublicKeyIndex:        uint64(i),
+					RegistrationSignature: addr.Registration,
+				})
+
+			}
+
 		}
 
 		return
@@ -324,7 +360,7 @@ func (builder *TransactionsBuilder) CreateClaimTx(from string, nonce uint64, out
 
 	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
 
-	if tx, err = wizard.CreateClaimTx(nonce, fromWalletAddresses[0].PrivateKey.Key, output, data, fee, statusCallback); err != nil {
+	if tx, err = wizard.CreateClaimTx(nonce, fromWalletAddresses[0].PrivateKey.Key, txRegistrations, output, data, fee, statusCallback); err != nil {
 		return nil, err
 	}
 

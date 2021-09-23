@@ -1,6 +1,7 @@
 package transaction_zether
 
 import (
+	"bytes"
 	"errors"
 	"pandora-pay/blockchain/data/accounts"
 	"pandora-pay/blockchain/data/accounts/account"
@@ -8,6 +9,8 @@ import (
 	"pandora-pay/blockchain/data/registrations"
 	"pandora-pay/blockchain/data/tokens"
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
+	"pandora-pay/blockchain/transactions/transaction/transaction-data"
+	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -15,17 +18,16 @@ import (
 
 type TransactionZether struct {
 	transaction_base_interface.TransactionBaseInterface
-	TxScript      ScriptType
-	Height        uint64
-	Registrations []*TransactionZetherRegistration
-	Payloads      []*TransactionZetherPayload
-	Bloom         *TransactionZetherBloom
+	TxScript ScriptType
+	Height   uint64
+	Payloads []*TransactionZetherPayload
+	Bloom    *TransactionZetherBloom
 }
 
 /**
 Zether requires another verification that the bloomed publicKeys, CL, CR are the same
 */
-func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
 
 	var accs *accounts.Accounts
 	var acc *account.Account
@@ -37,9 +39,9 @@ func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, regs *regist
 	}
 
 	publicKeyList := make([][]byte, c)
-	c = 0
 
 	//verification that the bloomed publicKeys, CL, CR are the same
+	c = 0
 	for _, payload := range tx.Payloads {
 
 		if accs, err = accsCollection.GetMap(payload.Token); err != nil {
@@ -77,22 +79,9 @@ func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, regs *regist
 		}
 
 	}
-	//verify that the other accounts did not register meanwhile
-	for _, reg := range tx.Registrations {
-		var isReg bool
-		if isReg, err = regs.Exists(string(publicKeyList[reg.PublicKeyIndex])); err != nil {
-			return
-		}
-		if isReg {
-			return errors.New("PublicKey is already registered")
-		}
-	}
 
-	//let's register
-	for _, reg := range tx.Registrations {
-		if _, err = regs.CreateRegistration(publicKeyList[reg.PublicKeyIndex], reg.RegistrationSignature); err != nil {
-			return
-		}
+	if err = txRegistrations.RegisterNow(regs, publicKeyList); err != nil {
+		return
 	}
 
 	c = 0
@@ -128,16 +117,18 @@ func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, regs *regist
 	return nil
 }
 
-func (tx *TransactionZether) ComputeFees() uint64 {
+func (tx *TransactionZether) ComputeFees() (uint64, error) {
 
-	//sum := uint64(0)
-	//for _, payload := range tx.Payloads{
-	//	if err = helpers.SafeUint64Add(&sum, payload.Statement.Fees ); err != nil {
-	//		return
-	//	}
-	//}
+	sum := uint64(0)
+	for _, payload := range tx.Payloads {
+		if bytes.Equal(payload.Token, config.NATIVE_TOKEN) {
+			if err := helpers.SafeUint64Add(&sum, payload.Statement.Fees); err != nil {
+				return 0, err
+			}
+		}
+	}
 
-	return 0
+	return sum, nil
 }
 
 func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
@@ -150,33 +141,6 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 }
 
 func (tx *TransactionZether) Validate() (err error) {
-
-	c := 0
-	for _, payload := range tx.Payloads {
-		c += len(payload.Statement.Publickeylist)
-	}
-
-	publicKeyList := make([][]byte, c)
-
-	c = 0
-	for _, payload := range tx.Payloads {
-		for _, publicKeyPoint := range payload.Statement.Publickeylist {
-			publicKeyList[c] = publicKeyPoint.EncodeCompressed()
-			c += 1
-		}
-	}
-
-	uniqueMap := make(map[string]bool)
-	for _, registration := range tx.Registrations {
-		publicKey := publicKeyList[registration.PublicKeyIndex]
-		if publicKey == nil {
-			return errors.New("Public Key is not set")
-		}
-		if uniqueMap[string(publicKey)] != false {
-			return errors.New("registration.PublicKey exists multiple times")
-		}
-		uniqueMap[string(publicKey)] = true
-	}
 
 	switch tx.TxScript {
 	case SCRIPT_TRANSFER, SCRIPT_DELEGATE:
@@ -201,11 +165,6 @@ func (tx *TransactionZether) VerifySignatureManually(hash []byte) bool {
 func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(uint64(tx.TxScript))
 	w.WriteUvarint(tx.Height)
-
-	w.WriteUvarint(uint64(len(tx.Registrations)))
-	for _, registration := range tx.Registrations {
-		registration.Serialize(w)
-	}
 
 	w.WriteUvarint(uint64(len(tx.Payloads)))
 	for _, payload := range tx.Payloads {
@@ -237,18 +196,6 @@ func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 
 	if tx.Height, err = r.ReadUvarint(); err != nil {
 		return
-	}
-
-	if n, err = r.ReadUvarint(); err != nil {
-		return
-	}
-	tx.Registrations = make([]*TransactionZetherRegistration, n)
-	for i := uint64(0); i < n; i++ {
-		registration := &TransactionZetherRegistration{}
-		if err = registration.Deserialize(r); err != nil {
-			return
-		}
-		tx.Registrations[i] = registration
 	}
 
 	if n, err = r.ReadUvarint(); err != nil {

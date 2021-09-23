@@ -186,9 +186,6 @@ func (wallet *Wallet) walletLoaded() {
 
 	for _, addr := range wallet.Addresses {
 		wallet.forging.Wallet.AddWallet(addr.GetDelegatedStakePrivateKey(), addr.PublicKey)
-		if addr.PrivateKey != nil {
-			wallet.mempool.Wallet.AddWallet(addr.PublicKey)
-		}
 	}
 
 	wallet.updateWallet()

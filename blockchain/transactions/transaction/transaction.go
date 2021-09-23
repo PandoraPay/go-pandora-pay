@@ -3,6 +3,7 @@ package transaction
 import (
 	"errors"
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
+	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
@@ -12,11 +13,12 @@ import (
 
 type Transaction struct {
 	transaction_base_interface.TransactionBaseInterface
-	Version transaction_type.TransactionVersion
-	Bloom   *TransactionBloom
+	Version       transaction_type.TransactionVersion
+	Registrations *transaction_data.TransactionDataTransactions
+	Bloom         *TransactionBloom
 }
 
-func (tx *Transaction) GetAllFees() uint64 {
+func (tx *Transaction) GetAllFees() (uint64, error) {
 	return tx.ComputeFees()
 }
 
@@ -43,6 +45,9 @@ func (tx *Transaction) GetHashSigningManually() []byte {
 
 func (tx *Transaction) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(uint64(tx.Version))
+
+	tx.Registrations.Serialize(w)
+
 	tx.TransactionBaseInterface.SerializeAdvanced(w, inclSignature)
 }
 
@@ -85,6 +90,11 @@ func (tx *Transaction) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 	tx.Version = transaction_type.TransactionVersion(n)
+
+	tx.Registrations = new(transaction_data.TransactionDataTransactions)
+	if err = tx.Registrations.Deserialize(r); err != nil {
+		return
+	}
 
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:

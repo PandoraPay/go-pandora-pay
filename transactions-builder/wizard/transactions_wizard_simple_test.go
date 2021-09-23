@@ -33,7 +33,7 @@ func TestCreateUpdateDelegateTx(t *testing.T) {
 	assert.NoError(t, tx2.Validate(), "error validating tx")
 	assert.Equal(t, tx2.VerifySignatureManually(), true, "Verify signature failed2")
 
-	fees := tx.GetAllFees()
+	fees, _ := tx.GetAllFees()
 	assert.Equal(t, fees > uint64(100), true, "Fees were calculated invalid")
 
 	base := tx2.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
@@ -64,7 +64,7 @@ func TestCreateUnstakeTx(t *testing.T) {
 	assert.NoError(t, tx2.Validate(), "error validating tx")
 	assert.Equal(t, tx2.VerifySignatureManually(), true, "Verify signature failed2")
 
-	fees := tx.GetAllFees()
+	fees, _ := tx.GetAllFees()
 	assert.Equal(t, fees > uint64(100), true, "Fees were calculated invalid")
 
 	base := tx2.TransactionBaseInterface.(*transaction_simple.TransactionSimple)

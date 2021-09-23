@@ -3,8 +3,6 @@ package mempool
 import (
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
-	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
-	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config/config_fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
@@ -42,7 +40,6 @@ type Mempool struct {
 	removeTransactionsCn    chan *MempoolWorkerRemoveTxs `json:"-"`
 	insertTransactionsCn    chan *MempoolWorkerInsertTxs `json:"-"`
 	Txs                     *MempoolTxs                  `json:"-"`
-	Wallet                  *mempoolWallet               `json:"-"`
 	NewTransactionMulticast *multicast.MulticastChannel  `json:"-"`
 }
 
@@ -94,25 +91,12 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 			continue
 		}
 
-		mine := false
-
-		switch tx.Version {
-		case transaction_type.TX_SIMPLE:
-			base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			if mempool.Wallet.Exists(base.Vin.PublicKey) {
-				mine = true
-				break
-			}
-		case transaction_type.TX_ZETHER
+		minerFees, err := tx.GetAllFees()
+		if err != nil {
+			finalTxs[i].err = err
+			continue
 		}
-
-		minerFees := tx.GetAllFees()
 		computedFeePerByte := minerFees / tx.Bloom.Size
-
-		//in case it is mine...
-		if mine {
-			computedFeePerByte = config_fees.FEES_PER_BYTE
-		}
 
 		if computedFeePerByte < config_fees.FEES_PER_BYTE {
 			finalTxs[i].err = errors.New("Transaction fee was not accepted")
@@ -123,7 +107,6 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 			Tx:          tx,
 			Added:       time.Now().Unix(),
 			FeePerByte:  computedFeePerByte,
-			Mine:        mine,
 			ChainHeight: height,
 		}
 
@@ -233,7 +216,6 @@ func CreateMemPool() (*Mempool, error) {
 		addTransactionCn:        make(chan *MempoolWorkerAddTx, 1000),
 		removeTransactionsCn:    make(chan *MempoolWorkerRemoveTxs),
 		insertTransactionsCn:    make(chan *MempoolWorkerInsertTxs),
-		Wallet:                  createMempoolWallet(),
 		NewTransactionMulticast: multicast.NewMulticastChannel(),
 	}
 

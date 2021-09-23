@@ -4,6 +4,7 @@ import (
 	"errors"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
+	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
@@ -34,7 +35,8 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	}
 
 	tx := &transaction.Transaction{
-		Version: transaction_type.TX_SIMPLE,
+		Version:       transaction_type.TX_SIMPLE,
+		Registrations: &transaction_data.TransactionDataTransactions{},
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript:    transaction_simple.SCRIPT_UNSTAKE,
 			DataVersion: data.getDataVersion(),
@@ -55,7 +57,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 		return
 	}
 
-	if err = setFee(tx, fee); err != nil {
+	if err = setFeeSimple(tx, fee); err != nil {
 		return
 	}
 	statusCallback("Transaction Fees set")
@@ -90,7 +92,8 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, 
 
 	privateKey := &addresses.PrivateKey{Key: key}
 	tx := &transaction.Transaction{
-		Version: transaction_type.TX_SIMPLE,
+		Version:       transaction_type.TX_SIMPLE,
+		Registrations: &transaction_data.TransactionDataTransactions{},
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript:    transaction_simple.SCRIPT_UPDATE_DELEGATE,
 			DataVersion: data.getDataVersion(),
@@ -111,7 +114,7 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, 
 		return
 	}
 
-	if err = setFee(tx, fee); err != nil {
+	if err = setFeeSimple(tx, fee); err != nil {
 		return
 	}
 	statusCallback("Transaction Fees set")
@@ -133,7 +136,7 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, 
 	return tx, nil
 }
 
-func CreateClaimTx(nonce uint64, key []byte, output []*transaction_simple_parts.TransactionSimpleOutput, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateClaimTx(nonce uint64, key []byte, txRegistrations []*transaction_data.TransactionDataRegistration, output []*transaction_simple_parts.TransactionSimpleOutput, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	dataFinal, err := data.getData()
 	if err != nil {
@@ -143,6 +146,9 @@ func CreateClaimTx(nonce uint64, key []byte, output []*transaction_simple_parts.
 	privateKey := &addresses.PrivateKey{Key: key}
 	tx := &transaction.Transaction{
 		Version: transaction_type.TX_SIMPLE,
+		Registrations: &transaction_data.TransactionDataTransactions{
+			Registrations: txRegistrations,
+		},
 		TransactionBaseInterface: &transaction_simple.TransactionSimple{
 			TxScript:    transaction_simple.SCRIPT_UPDATE_DELEGATE,
 			DataVersion: data.getDataVersion(),
@@ -162,7 +168,7 @@ func CreateClaimTx(nonce uint64, key []byte, output []*transaction_simple_parts.
 		return
 	}
 
-	if err = setFee(tx, fee); err != nil {
+	if err = setFeeSimple(tx, fee); err != nil {
 		return
 	}
 	statusCallback("Transaction Fees set")

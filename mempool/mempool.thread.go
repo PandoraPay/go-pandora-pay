@@ -232,7 +232,7 @@ func (worker *mempoolWorker) processing(
 
 						txsMapVerified[tx.Tx.Bloom.HashStr] = true
 
-						if finalErr = tx.Tx.IncludeTransaction(work.chainHeight, regs, plainAccs, accsCollection, toks); finalErr != nil {
+						if finalErr = tx.Tx.IncludeTransaction(tx.Tx.Registrations, work.chainHeight, regs, plainAccs, accsCollection, toks); finalErr != nil {
 							accsCollection.Rollback()
 							toks.Rollback()
 							plainAccs.Rollback()

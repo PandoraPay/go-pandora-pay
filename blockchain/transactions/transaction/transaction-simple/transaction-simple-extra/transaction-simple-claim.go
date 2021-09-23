@@ -8,6 +8,7 @@ import (
 	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
 	"pandora-pay/blockchain/data/registrations"
 	"pandora-pay/blockchain/data/tokens"
+	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
@@ -21,9 +22,18 @@ type TransactionSimpleClaim struct {
 	Output []*transaction_simple_parts.TransactionSimpleOutput
 }
 
-func (tx *TransactionSimpleClaim) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+func (tx *TransactionSimpleClaim) IncludeTransactionVin0(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, plainAcc *plain_account.PlainAccount, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+
 	if plainAcc == nil {
 		return errors.New("acc.HasDelegatedStake is null")
+	}
+
+	var publicKeyList [][]byte
+	for i, out := range tx.Output {
+		publicKeyList[i] = out.PublicKey
+	}
+	if err = txRegistrations.RegisterNow(regs, publicKeyList); err != nil {
+		return
 	}
 
 	var accs *accounts.Accounts
@@ -33,22 +43,6 @@ func (tx *TransactionSimpleClaim) IncludeTransactionVin0(blockHeight uint64, pla
 
 	for _, out := range tx.Output {
 
-		var reg bool
-		if reg, err = regs.Exists(string(out.PublicKey)); err != nil {
-			return
-		}
-
-		if reg {
-			if out.HasRegistration {
-				return errors.New("Already registered")
-			}
-		} else if !out.HasRegistration {
-			return errors.New("Not registered and registration is missing")
-		} else if out.HasRegistration {
-			if _, err = regs.CreateRegistration(out.PublicKey, out.RegistrationSignature); err != nil {
-				return
-			}
-		}
 		if err = plainAcc.AddClaimable(false, out.Amount); err != nil {
 			return
 		}

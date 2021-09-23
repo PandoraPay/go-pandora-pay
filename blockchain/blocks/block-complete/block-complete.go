@@ -57,7 +57,10 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(regs *registrations.Regis
 
 	allFees := uint64(0)
 	for _, tx := range blkComplete.Txs {
-		fees := tx.ComputeFees()
+		var fees uint64
+		if fees, err = tx.ComputeFees(); err != nil {
+			return
+		}
 		if err = helpers.SafeUint64Add(&allFees, fees); err != nil {
 			return
 		}
@@ -68,7 +71,7 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(regs *registrations.Regis
 	}
 
 	for _, tx := range blkComplete.Txs {
-		if err = tx.IncludeTransaction(blkComplete.Block.Height, regs, plainAccs, accsCollection, toks); err != nil {
+		if err = tx.IncludeTransaction(tx.Registrations, blkComplete.Block.Height, regs, plainAccs, accsCollection, toks); err != nil {
 			return
 		}
 	}

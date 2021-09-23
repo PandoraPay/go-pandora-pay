@@ -215,7 +215,6 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 	}
 
 	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKey)
-	wallet.mempool.Wallet.AddWallet(adr.PublicKey)
 
 	wallet.updateWallet()
 	gui.GUI.Info("wallet.saveWallet", len(wallet.Addresses))
@@ -316,7 +315,6 @@ func (wallet *Wallet) RemoveAddressByIndex(index int, lock bool) (bool, error) {
 	wallet.Count -= 1
 
 	wallet.forging.Wallet.RemoveWallet(removing.PublicKey)
-	wallet.mempool.Wallet.RemoveWallet(removing.PublicKey)
 
 	wallet.updateWallet()
 	if err := wallet.saveWallet(index, index+1, wallet.Count, false); err != nil {

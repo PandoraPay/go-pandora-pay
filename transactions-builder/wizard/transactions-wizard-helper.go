@@ -6,56 +6,56 @@ import (
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config/config_fees"
+	"pandora-pay/helpers"
 )
 
-func setFeeTxNow(tx *transaction.Transaction, feePerByte uint64, value *uint64) {
+func setFeeTxSimpleNow(tx *transaction.Transaction, feePerByte uint64, value *uint64) (err error) {
 
 	initAmount := *value
 
-	var fee uint64
-	oldFee := uint64(1)
-	for oldFee != fee {
+	var fee, oldFee uint64
+	first := true
+	for oldFee != fee || first {
+		first = false
+
 		oldFee = fee
-		fee = config_fees.ComputeTxFees(uint64(len(tx.SerializeManualToBytes())), feePerByte)
-		*value = initAmount + fee
+		fee = config_fees.ComputeTxSimpleFees(uint64(len(tx.SerializeManualToBytes())), feePerByte)
+
+		*value = initAmount
+		if err = helpers.SafeUint64Add(value, fee); err != nil {
+			return
+		}
 	}
 	return
 }
 
-func setFeeFixedTxNow(fixedFee uint64, value *uint64) {
-	*value = *value + fixedFee
-}
+func setFeeSimple(tx *transaction.Transaction, fee *TransactionsWizardFee) error {
 
-func setFee(tx *transaction.Transaction, fee *TransactionsWizardFee) error {
-
-	switch tx.Version {
-	case transaction_type.TX_SIMPLE:
-
-		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-
-		if fee.Fixed == 0 {
-
-			if fee.PerByte == 0 && !fee.PerByteAuto {
-				return nil
-			}
-
-			if fee.PerByte > 0 && fee.PerByteAuto {
-				return errors.New("PerBye is set and PerByteAuto")
-			}
-
-			if fee.PerByte == 0 {
-				fee.PerByte = config_fees.FEES_PER_BYTE
-			}
-		}
-
-		if fee.Fixed > 0 {
-			setFeeFixedTxNow(fee.Fixed, &base.Fee)
-		} else {
-			setFeeTxNow(tx, fee.PerByte, &base.Fee)
-		}
-
-		return nil
+	if tx.Version != transaction_type.TX_SIMPLE {
+		return errors.New("Tx Version is not TX SIMPLE")
 	}
 
-	return errors.New("Couldn't set fee")
+	base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
+
+	if fee.Fixed == 0 {
+
+		if fee.PerByte == 0 && !fee.PerByteAuto {
+			return nil
+		}
+		if fee.PerByte > 0 && fee.PerByteAuto {
+			return errors.New("PerBye is set and PerByteAuto")
+		}
+
+		if fee.PerByte == 0 {
+			fee.PerByte = config_fees.FEES_PER_BYTE
+		}
+
+	}
+
+	if fee.Fixed > 0 {
+		return helpers.SafeUint64Add(&base.Fee, fee.Fixed)
+	} else {
+		return setFeeTxSimpleNow(tx, fee.PerByte, &base.Fee)
+	}
+
 }

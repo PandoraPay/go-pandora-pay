@@ -29,7 +29,7 @@ type TransactionSimple struct {
 	Bloom       *TransactionSimpleBloom
 }
 
-func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+func (tx *TransactionSimple) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
 
 	var plainAcc *plain_account.PlainAccount
 	if plainAcc, err = plainAccs.GetPlainAccount(tx.Vin.PublicKey, blockHeight); err != nil {
@@ -61,7 +61,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, regs *regist
 
 	switch tx.TxScript {
 	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_CLAIM:
-		if err = tx.TransactionSimpleExtraInterface.IncludeTransactionVin0(blockHeight, plainAcc, regs, plainAccs, accsCollection, toks); err != nil {
+		if err = tx.TransactionSimpleExtraInterface.IncludeTransactionVin0(txRegistrations, blockHeight, plainAcc, regs, plainAccs, accsCollection, toks); err != nil {
 			return
 		}
 	}
@@ -73,8 +73,8 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, regs *regist
 	return
 }
 
-func (tx *TransactionSimple) ComputeFees() uint64 {
-	return tx.Fee
+func (tx *TransactionSimple) ComputeFees() (uint64, error) {
+	return tx.Fee, nil
 }
 
 func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {

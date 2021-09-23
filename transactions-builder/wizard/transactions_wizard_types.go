@@ -6,8 +6,9 @@ import (
 )
 
 type TransactionsWizardFee struct {
-	Fixed, PerByte uint64
-	PerByteAuto    bool
+	Fixed       uint64 `json:"fixed,omitempty"`
+	PerByte     uint64 `json:"perByte,omitempty"`
+	PerByteAuto bool   `json:"perByteAuto,omitempty"`
 }
 
 type TransactionsWizardData struct {
