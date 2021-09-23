@@ -103,6 +103,7 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 				mine = true
 				break
 			}
+		case transaction_type.TX_ZETHER
 		}
 
 		minerFees := tx.GetAllFees()

@@ -3,10 +3,12 @@ package transaction_zether
 import (
 	"errors"
 	"pandora-pay/blockchain/data/accounts"
+	"pandora-pay/blockchain/data/accounts/account"
 	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
 	"pandora-pay/blockchain/data/registrations"
 	"pandora-pay/blockchain/data/tokens"
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
+	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
@@ -20,7 +22,108 @@ type TransactionZether struct {
 	Bloom         *TransactionZetherBloom
 }
 
-func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) error {
+/**
+Zether requires another verification that the bloomed publicKeys, CL, CR are the same
+*/
+func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+
+	var accs *accounts.Accounts
+	var acc *account.Account
+	var acckey crypto.Point
+
+	c := 0
+	for _, payload := range tx.Payloads {
+		c += len(payload.Statement.Publickeylist)
+	}
+
+	publicKeyList := make([][]byte, c)
+	c = 0
+
+	//verification that the bloomed publicKeys, CL, CR are the same
+	for _, payload := range tx.Payloads {
+
+		if accs, err = accsCollection.GetMap(payload.Token); err != nil {
+			return
+		}
+
+		for i, statementPublicKeyPoint := range payload.Statement.Publickeylist {
+
+			publicKey := statementPublicKeyPoint.EncodeCompressed()
+
+			publicKeyList[c] = publicKey
+			c += 1
+
+			if acc, err = accs.GetAccount(publicKey); err != nil {
+				return
+			}
+
+			var a, b *bn256.G1
+			if acc == nil { //zero balance
+				if err = acckey.DecodeCompressed(publicKey); err != nil {
+					return
+				}
+				point := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
+				a = point.Left
+				b = point.Right
+			} else {
+				a = acc.Balance.Amount.Left
+				b = acc.Balance.Amount.Right
+			}
+
+			if payload.Statement.CLn[i].String() != a.String() || payload.Statement.CRn[i].String() != b.String() {
+				return errors.New("CLn or CRn is not matching")
+			}
+
+		}
+
+	}
+	//verify that the other accounts did not register meanwhile
+	for _, reg := range tx.Registrations {
+		var isReg bool
+		if isReg, err = regs.Exists(string(publicKeyList[reg.PublicKeyIndex])); err != nil {
+			return
+		}
+		if isReg {
+			return errors.New("PublicKey is already registered")
+		}
+	}
+
+	//let's register
+	for _, reg := range tx.Registrations {
+		if _, err = regs.CreateRegistration(publicKeyList[reg.PublicKeyIndex], reg.RegistrationSignature); err != nil {
+			return
+		}
+	}
+
+	c = 0
+	for _, payload := range tx.Payloads {
+		for i := range payload.Statement.Publickeylist {
+
+			publicKey := publicKeyList[c]
+			c += 1
+
+			if acc, err = accs.GetAccount(publicKey); err != nil {
+				return
+			}
+
+			var balance *crypto.ElGamal
+			if acc == nil { //zero balance
+				if err = acckey.DecodeCompressed(publicKey); err != nil {
+					return
+				}
+				balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
+			} else {
+				balance = acc.GetBalance()
+			}
+			echanges := crypto.ConstructElGamal(payload.Statement.C[i], payload.Statement.D)
+			balance = balance.Add(echanges) // homomorphic addition of changes
+
+			acc.Balance.Amount = balance
+			if err = accs.Update(string(publicKey), acc); err != nil {
+				return
+			}
+		}
+	}
 
 	return nil
 }
@@ -48,18 +151,24 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 
 func (tx *TransactionZether) Validate() (err error) {
 
-	c := uint64(0)
-	publicKeyIndexes := make(map[uint64][]byte)
+	c := 0
+	for _, payload := range tx.Payloads {
+		c += len(payload.Statement.Publickeylist)
+	}
+
+	publicKeyList := make([][]byte, c)
+
+	c = 0
 	for _, payload := range tx.Payloads {
 		for _, publicKeyPoint := range payload.Statement.Publickeylist {
+			publicKeyList[c] = publicKeyPoint.EncodeCompressed()
 			c += 1
-			publicKeyIndexes[c] = publicKeyPoint.EncodeCompressed()
 		}
 	}
 
 	uniqueMap := make(map[string]bool)
 	for _, registration := range tx.Registrations {
-		publicKey := publicKeyIndexes[registration.PublicKeyIndex]
+		publicKey := publicKeyList[registration.PublicKeyIndex]
 		if publicKey == nil {
 			return errors.New("Public Key is not set")
 		}

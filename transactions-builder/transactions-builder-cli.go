@@ -20,7 +20,7 @@ func (builder *TransactionsBuilder) readFees() (out *TransactionsBuilderFeeFloat
 
 	fee := &TransactionsBuilderFeeFloat{}
 
-	if fee.PerByteAuto, ok = gui.GUI.OutputReadBool("Compute Automatically Fee Per Byte. Answer y\n"); !ok {
+	if fee.PerByteAuto, ok = gui.GUI.OutputReadBool("Compute Automatically Fee Per Byte. Type y\n"); !ok {
 		return
 	}
 	if !fee.PerByteAuto {

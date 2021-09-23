@@ -50,7 +50,6 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		for ringIndex, publicKeyPoint := range ring {
 
 			publicKey := publicKeyPoint.EncodeCompressed()
-			index += 1
 
 			if publicKeyIndex := publicKeyIndexes[string(publicKey)]; publicKeyIndex != nil {
 
@@ -66,6 +65,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 				return nil, fmt.Errorf("Public Key Index was not specified for ring member %d", ringIndex)
 			}
 
+			index += 1
 		}
 	}
 	txBase.Registrations = registrations

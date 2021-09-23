@@ -16,6 +16,8 @@ import (
 	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/blockchain/transactions/transaction"
+	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/config"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
@@ -55,9 +57,26 @@ func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockCo
 		return errors.New("Blocks length is ZERO")
 	}
 
+	nonceMap := make(map[string]bool)
+
 	for _, blkComplete := range blocksComplete {
 		if err = blkComplete.Verify(); err != nil {
 			return
+		}
+
+		for _, tx := range blkComplete.Txs {
+			if tx.Version == transaction_type.TX_ZETHER {
+				base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+
+				nonce1 := base.Payloads[0].Proof.Nonce1()
+				nonce2 := base.Payloads[0].Proof.Nonce2()
+
+				if nonceMap[string(nonce1)] || nonceMap[string(nonce2)] {
+					return errors.New("Zether Nonce exists")
+				}
+				nonceMap[string(nonce1)] = true
+				nonceMap[string(nonce2)] = true
+			}
 		}
 	}
 

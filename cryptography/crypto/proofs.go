@@ -6,11 +6,6 @@ import (
 	"pandora-pay/helpers"
 )
 
-type StatementPublicKeyIndex struct {
-	Registered bool
-	Index      uint64
-}
-
 type Statement struct {
 	RingSize      uint64
 	CLn           []*bn256.G1 //bloomed
