@@ -39,6 +39,14 @@ func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_dat
 	}
 
 	publicKeyList := make([][]byte, c)
+	c = 0
+	for _, payload := range tx.Payloads {
+		for _, publicKey := range payload.Statement.Publickeylist {
+			publicKeyList[c] = publicKey.EncodeCompressed()
+			c += 1
+		}
+	}
+
 	if err = txRegistrations.RegisterNow(regs, publicKeyList); err != nil {
 		return
 	}
@@ -73,6 +81,12 @@ func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_dat
 			//verify
 			if payload.Statement.CLn[i].String() != balance.Left.String() || payload.Statement.CRn[i].String() != balance.Right.String() {
 				return errors.New("CLn or CRn is not matching")
+			}
+
+			if acc == nil {
+				if acc, err = accs.CreateAccount(publicKey); err != nil {
+					return
+				}
 			}
 
 			acc.Balance.Amount = balance

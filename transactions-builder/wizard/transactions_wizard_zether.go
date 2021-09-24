@@ -32,7 +32,7 @@ type ZetherPublicKeyIndex struct {
 	RegistrationSignature []byte
 }
 
-func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emapCopy map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, statusCallback func(string)) (err error) {
+func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emapCopy map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, statusCallback func(string)) (err error) {
 
 	//let's copy emap
 	emap := make(map[string]map[string][]byte)
@@ -262,6 +262,34 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	}
 	statusCallback("Transaction Zether Statements created")
 
+	registrations := make([]*transaction_data.TransactionDataRegistration, 0)
+	registrationsAlready := make(map[string]bool)
+
+	c := uint64(0)
+	for _, payload := range txBase.Payloads {
+		for _, publicKeyPoint := range payload.Statement.Publickeylist {
+
+			publicKey := publicKeyPoint.EncodeCompressed()
+
+			if publicKeyIndex := publicKeyIndexes[string(publicKey)]; publicKeyIndex != nil {
+
+				if !publicKeyIndex.Registered && !registrationsAlready[string(publicKey)] {
+					registrationsAlready[string(publicKey)] = true
+					registrations = append(registrations, &transaction_data.TransactionDataRegistration{
+						c,
+						publicKeyIndex.RegistrationSignature,
+					})
+				}
+
+			} else {
+				return fmt.Errorf("Public Key Index was not specified for ring member %d", c)
+			}
+
+			c += 1
+		}
+	}
+	statusCallback("Transaction registrations created")
+
 	senderKey := &addresses.PrivateKey{Key: transfers[0].From}
 	sender_secret := new(crypto.BNRed).SetBytes(senderKey.Key).BigInt()
 
@@ -281,34 +309,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
-	registrations := make([]*transaction_data.TransactionDataRegistration, 0)
-	registrationsAlready := make(map[string]bool)
-
-	index := uint64(0)
-	for _, ring := range rings {
-		for ringIndex, publicKeyPoint := range ring {
-
-			publicKey := publicKeyPoint.EncodeCompressed()
-
-			if publicKeyIndex := publicKeyIndexes[string(publicKey)]; publicKeyIndex != nil {
-
-				if !publicKeyIndex.Registered && !registrationsAlready[string(publicKey)] {
-					registrationsAlready[string(publicKey)] = true
-					registrations = append(registrations, &transaction_data.TransactionDataRegistration{
-						index,
-						publicKeyIndex.RegistrationSignature,
-					})
-				}
-
-			} else {
-				return nil, fmt.Errorf("Public Key Index was not specified for ring member %d", ringIndex)
-			}
-
-			index += 1
-		}
-	}
-	statusCallback("Transaction registrations created")
-
 	txBase := &transaction_zether.TransactionZether{
 		TxScript: transaction_zether.SCRIPT_TRANSFER,
 		Height:   height,
@@ -317,13 +317,13 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	tx := &transaction.Transaction{
 		Version: transaction_type.TX_ZETHER,
 		Registrations: &transaction_data.TransactionDataTransactions{
-			Registrations: registrations,
+			Registrations: nil,
 		},
 		TransactionBaseInterface: txBase,
 	}
 	statusCallback("Transaction created")
 
-	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, statusCallback); err != nil {
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, statusCallback); err != nil {
 		return
 	}
 
@@ -333,7 +333,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 			if err = setFeeZether(tx, transfers[t], fees[t].Clone()); err != nil {
 				return
 			}
-			if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, statusCallback); err != nil {
+			if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, statusCallback); err != nil {
 				return
 			}
 			if feeCopy == transfers[t].Fee {

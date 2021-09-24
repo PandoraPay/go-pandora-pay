@@ -56,6 +56,8 @@ func (tx *Transaction) BloomExtraVerified() (err error) {
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 		err = tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).BloomNowSignatureVerified()
+	case transaction_type.TX_ZETHER:
+		err = tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).BloomNowSignatureVerified()
 	default:
 		err = errors.New("Invalid TxType")
 	}

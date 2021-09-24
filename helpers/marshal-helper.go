@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"pandora-pay/cryptography/bn256"
 )
 
 // HexBytes is a byte array that serializes to hex
@@ -30,10 +31,10 @@ func (s *HexBytes) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
-func ConvertHexBytesArrayToBytesArray(array []HexBytes) [][]byte {
-	out := make([][]byte, len(array))
+func ConvertBN256Array(array []*bn256.G1) []HexBytes {
+	out := make([]HexBytes, len(array))
 	for i, it := range array {
-		out[i] = it
+		out[i] = it.EncodeCompressed()
 	}
 	return out
 }

@@ -61,6 +61,7 @@ func (tokens *Tokens) UpdateToken(key []byte, tok *token.Token) error {
 }
 
 func (tokens *Tokens) ExistsToken(key []byte) (bool, error) {
+
 	if len(key) == 0 {
 		key = config.NATIVE_TOKEN_FULL
 	}

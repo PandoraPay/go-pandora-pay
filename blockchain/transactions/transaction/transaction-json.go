@@ -8,6 +8,7 @@ import (
 	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
 	transaction_simple_parts "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 )
@@ -72,6 +73,73 @@ type json_Only_TransactionSimpleClaim struct {
 type json_TransactionSimpleClaim struct {
 	*json_TransactionSimple
 	*json_Only_TransactionSimpleClaim
+}
+
+type json_Only_TransactionZether struct {
+	TxScript transaction_zether.ScriptType   `json:"txScript"`
+	Height   uint64                          `json:"height"`
+	Payloads []*json_Only_TransactionPayload `json:"payloads"`
+}
+
+type json_Only_TransactionPayloadStatement struct {
+	RingSize      uint64             `json:"ringSize"`
+	CLn           []helpers.HexBytes `json:"CLn"`
+	CRn           []helpers.HexBytes `json:"CRn"`
+	Publickeylist []helpers.HexBytes `json:"publickeylist"`
+	C             []helpers.HexBytes `json:"C"`
+	D             helpers.HexBytes   `json:"D"`
+	Fees          uint64             `json:"fees"`
+	Roothash      helpers.HexBytes   `json:"roothash"`
+}
+
+type InnerProduct struct {
+	A  []helpers.HexBytes `json:"a"`
+	B  []helpers.HexBytes `json:"b"`
+	Ls []helpers.HexBytes `json:"ls"`
+	Rs []helpers.HexBytes `json:"rs"`
+}
+
+type json_Only_TransactionPayloadProof struct {
+	BA    helpers.HexBytes   `json:"BA"`
+	BS    helpers.HexBytes   `json:"BS"`
+	A     helpers.HexBytes   `json:"A"`
+	B     helpers.HexBytes   `json:"B"`
+	CLnG  []helpers.HexBytes `json:"CLnG"`
+	CRnG  []helpers.HexBytes `json:"CRnG"`
+	C_0G  []helpers.HexBytes `json:"C_0G"`
+	DG    []helpers.HexBytes `json:"D_0G"`
+	Y_0G  []helpers.HexBytes `json:"y_0G"`
+	GG    []helpers.HexBytes `json:"gG"`
+	C_XG  []helpers.HexBytes `json:"C_XG"`
+	Y_XG  []helpers.HexBytes `json:"y_XG"`
+	U     helpers.HexBytes   `json:"u"`
+	U1    helpers.HexBytes   `json:"u1"`
+	F     []helpers.HexBytes `json:"f"`
+	Z_A   helpers.HexBytes   `json:"z_A"`
+	T_1   helpers.HexBytes   `json:"T_1"`
+	T_2   helpers.HexBytes   `json:"T_2"`
+	That  helpers.HexBytes   `json:"that"`
+	Mu    helpers.HexBytes   `json:"mu"`
+	C     helpers.HexBytes   `json:"c"`
+	S_sk  helpers.HexBytes   `json:"s_sk"`
+	S_r   helpers.HexBytes   `json:"s_r"`
+	S_b   helpers.HexBytes   `json:"s_b"`
+	S_tau helpers.HexBytes   `json:"s_tau"`
+	Ip    *InnerProduct      `json:"ip"`
+}
+
+type json_Only_TransactionPayload struct {
+	Token     []byte                                 `json:"token"`
+	BurnValue uint64                                 `json:"burnValue"`
+	ExtraType byte                                   `json:"extraType"`
+	ExtraData []byte                                 `json:"extraData"`
+	Statement *json_Only_TransactionPayloadStatement `json:"statement"`
+	Proof     *json_Only_TransactionPayloadProof     `json:"proof"`
+}
+
+type json_TransactionZether struct {
+	*json_Transaction
+	*json_Only_TransactionZether
 }
 
 func (tx *Transaction) MarshalJSON() ([]byte, error) {
@@ -143,7 +211,71 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 		default:
 			return nil, errors.New("Invalid base.TxScript")
 		}
+	case transaction_type.TX_ZETHER:
+		base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
 
+		payloadsJson := make([]*json_Only_TransactionPayload, len(base.Payloads))
+		for i, payload := range base.Payloads {
+
+			statementJson := &json_Only_TransactionPayloadStatement{
+				payload.Statement.RingSize,
+				helpers.ConvertBN256Array(payload.Statement.CLn),
+				helpers.ConvertBN256Array(payload.Statement.CRn),
+				helpers.ConvertBN256Array(payload.Statement.Publickeylist),
+				helpers.ConvertBN256Array(payload.Statement.C),
+				payload.Statement.D.EncodeCompressed(),
+				payload.Statement.Fees,
+				payload.Statement.Roothash,
+			}
+
+			proofJson := &json_Only_TransactionPayloadProof{
+				payload.Proof.BA.EncodeCompressed(),
+				payload.Proof.BS.EncodeCompressed(),
+				payload.Proof.A.EncodeCompressed(),
+				payload.Proof.B.EncodeCompressed(),
+				helpers.ConvertBN256Array(payload.Proof.CLnG),
+				helpers.ConvertBN256Array(payload.Proof.CRnG),
+				helpers.ConvertBN256Array(payload.Proof.C_0G),
+				helpers.ConvertBN256Array(payload.Proof.DG),
+				helpers.ConvertBN256Array(payload.Proof.Y_0G),
+				helpers.ConvertBN256Array(payload.Proof.GG),
+				helpers.ConvertBN256Array(payload.Proof.C_XG),
+				helpers.ConvertBN256Array(payload.Proof.Y_XG),
+				payload.Proof.U,
+				payload.Proof.U1,
+				payload.Proof.F,
+				payload.Proof.Z_A,
+				payload.Proof.T_1.EncodeCompressed(),
+				payload.Proof.T_2.EncodeCompressed(),
+				payload.Proof.That,
+				payload.Proof.Mu,
+				payload.Proof.C,
+				payload.Proof.S_sk,
+				payload.Proof.S_r,
+				payload.Proof.S_b,
+				payload.Proof.S_tau,
+				payload.Proof.Ip,
+			}
+
+			payloadsJson[i] = &json_Only_TransactionPayload{
+				payload.Token,
+				payload.BurnValue,
+				payload.ExtraType,
+				payload.ExtraData,
+				statementJson,
+				proofJson,
+			}
+		}
+
+		zetherJson := &json_TransactionZether{
+			txJson,
+			&json_Only_TransactionZether{
+				base.TxScript,
+				base.Height,
+				payloadsJson,
+			},
+		}
+		return json.Marshal(zetherJson)
 	default:
 		return nil, errors.New("Invalid Tx Version")
 	}

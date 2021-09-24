@@ -250,7 +250,7 @@ func (wallet *Wallet) initWalletCLI() {
 				}
 
 				addressStr := walletAddress.GetAddress(isReg)
-				if _, err = fmt.Fprint(f, addressStr); err != nil {
+				if _, err = fmt.Fprintln(f, addressStr); err != nil {
 					return errors.New("Error writing into file")
 				}
 			}

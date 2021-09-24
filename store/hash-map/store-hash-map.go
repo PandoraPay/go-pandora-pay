@@ -120,6 +120,9 @@ func (hashMap *HashMap) UnsetTx() {
 
 func (hashMap *HashMap) Get(key string) (helpers.SerializableInterface, error) {
 
+	if len(key) != hashMap.KeyLength {
+		return nil, errors.New("key length is invalid")
+	}
 	if exists := hashMap.Changes[key]; exists != nil {
 		return exists.Element, nil
 	}
