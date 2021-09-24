@@ -147,6 +147,9 @@ func (hashMap *HashMap) Get(key string) (helpers.SerializableInterface, error) {
 
 func (hashMap *HashMap) Exists(key string) (bool, error) {
 
+	if len(key) != hashMap.KeyLength {
+		return false, errors.New("key length is invalid")
+	}
 	if exists := hashMap.Changes[key]; exists != nil {
 		return exists.Element != nil, nil
 	}

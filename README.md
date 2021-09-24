@@ -48,7 +48,7 @@ you can also create an account on hcaptcha
 - [x] Wallet
     - [x] Save and Load
     - [x] Print Wallet Simple Balances
-    - [ ] Print Wallet Homomorphic Balances
+    - [x] Print Wallet Homomorphic Balances
     - [X] Export Address JSON        
     - [X] Import Address JSON        
     - [X] Wallet Encryption
@@ -67,15 +67,15 @@ you can also create an account on hcaptcha
 - [x] Forging
     - [x] Forging with wallets Multithreading    
     - [X] Forging with delegated stakes
-        - [ ] Accepting to delegate stakes from network  
+        - [x] Accepting to delegate stakes from network  
 - [x] Balances
     - [x] Balance and Nonce Update
     - [x] Delegating stake
     - [x] Support for Multiple Tokens   
     - [ ] Patricia Trie ?
-- [ ] Homomorphic Balances
-    - [ ] Homomorphic balance and nonce   
-    - [ ] Multiple Tokens
+- [x] Homomorphic Balances
+    - [x] Homomorphic balance and nonce   
+    - [x] Multiple Tokens
     - [ ] Patricia Trie ?
 - [ ] Tokens
     - [X] Token
@@ -87,9 +87,9 @@ you can also create an account on hcaptcha
     - [x] Simple Transactions
     - [x] Unstake Transaction
     - [x] Delegate Stake    
-    - [ ] Zether Deposit Transactions
-    - [ ] Zether Withdraw Transactions
-    - [ ] Zether Transfer Transactions
+    - [x] Zether Deposit Transactions
+    - [x] Zether Withdraw Transactions
+    - [x] Zether Transfer Transactions
     - [ ] Multi Threading signature verification **
 - [ ] Mem Pool
     - [ ] Saving/Loading

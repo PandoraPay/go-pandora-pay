@@ -3,6 +3,7 @@ package transaction_zether
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"pandora-pay/blockchain/data/accounts"
 	"pandora-pay/blockchain/data/accounts/account"
 	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
@@ -11,7 +12,6 @@ import (
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/config"
-	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
@@ -39,53 +39,16 @@ func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_dat
 	}
 
 	publicKeyList := make([][]byte, c)
-
-	//verification that the bloomed publicKeys, CL, CR are the same
-	c = 0
-	for _, payload := range tx.Payloads {
-
-		if accs, err = accsCollection.GetMap(payload.Token); err != nil {
-			return
-		}
-
-		for i, statementPublicKeyPoint := range payload.Statement.Publickeylist {
-
-			publicKey := statementPublicKeyPoint.EncodeCompressed()
-
-			publicKeyList[c] = publicKey
-			c += 1
-
-			if acc, err = accs.GetAccount(publicKey); err != nil {
-				return
-			}
-
-			var a, b *bn256.G1
-			if acc == nil { //zero balance
-				if err = acckey.DecodeCompressed(publicKey); err != nil {
-					return
-				}
-				point := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
-				a = point.Left
-				b = point.Right
-			} else {
-				a = acc.Balance.Amount.Left
-				b = acc.Balance.Amount.Right
-			}
-
-			if payload.Statement.CLn[i].String() != a.String() || payload.Statement.CRn[i].String() != b.String() {
-				return errors.New("CLn or CRn is not matching")
-			}
-
-		}
-
-	}
-
 	if err = txRegistrations.RegisterNow(regs, publicKeyList); err != nil {
 		return
 	}
 
 	c = 0
 	for _, payload := range tx.Payloads {
+		if accs, err = accsCollection.GetMap(payload.Token); err != nil {
+			return
+		}
+
 		for i := range payload.Statement.Publickeylist {
 
 			publicKey := publicKeyList[c]
@@ -106,6 +69,11 @@ func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_dat
 			}
 			echanges := crypto.ConstructElGamal(payload.Statement.C[i], payload.Statement.D)
 			balance = balance.Add(echanges) // homomorphic addition of changes
+
+			//verify
+			if payload.Statement.CLn[i].String() != balance.Left.String() || payload.Statement.CRn[i].String() != balance.Right.String() {
+				return errors.New("CLn or CRn is not matching")
+			}
 
 			acc.Balance.Amount = balance
 			if err = accs.Update(string(publicKey), acc); err != nil {
@@ -146,6 +114,32 @@ func (tx *TransactionZether) Validate() (err error) {
 	case SCRIPT_TRANSFER, SCRIPT_DELEGATE:
 	default:
 		return errors.New("Invalid TxScript")
+	}
+
+	for _, payload := range tx.Payloads {
+
+		// check sanity
+		if payload.Statement.RingSize < 2 { // ring size minimum 4
+			return fmt.Errorf("RingSize cannot be less than 2")
+		}
+
+		if payload.Statement.RingSize > 128 { // ring size current limited to 128
+			return fmt.Errorf("RingSize cannot be more than 128")
+		}
+
+		if !crypto.IsPowerOf2(int(payload.Statement.RingSize)) {
+			return fmt.Errorf("corrupted key pointers")
+		}
+
+		// check duplicate ring members within the tx
+		key_map := map[string]bool{}
+		for i := 0; i < int(payload.Statement.RingSize); i++ {
+			key_map[string(payload.Statement.Publickeylist[i].EncodeCompressed())] = true
+		}
+		if len(key_map) != int(payload.Statement.RingSize) {
+			return fmt.Errorf("Duplicated ring members")
+		}
+
 	}
 
 	return

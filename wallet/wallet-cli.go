@@ -223,6 +223,43 @@ func (wallet *Wallet) CliSelectAddress(text string) (*wallet_address.WalletAddre
 
 func (wallet *Wallet) initWalletCLI() {
 
+	cliExportAddresses := func(cmd string) (err error) {
+		str, ok := gui.GUI.OutputReadString("Path to export")
+		if !ok {
+			return
+		}
+
+		f, err := os.Create(str)
+		if err != nil {
+			return
+		}
+
+		defer f.Close()
+
+		wallet.RLock()
+		defer wallet.RUnlock()
+
+		return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+			regs := registrations.NewRegistrations(reader)
+
+			for _, walletAddress := range wallet.Addresses {
+
+				var isReg bool
+				if isReg, err = regs.Exists(string(walletAddress.PublicKey)); err != nil {
+					return
+				}
+
+				addressStr := walletAddress.GetAddress(isReg)
+				if _, err = fmt.Fprint(f, addressStr); err != nil {
+					return errors.New("Error writing into file")
+				}
+			}
+
+			return
+		})
+
+	}
+
 	cliExportAddressJSON := func(cmd string) (err error) {
 
 		str, ok := gui.GUI.OutputReadString("Path to export")
@@ -500,6 +537,7 @@ func (wallet *Wallet) initWalletCLI() {
 	gui.GUI.CommandDefineCallback("Import Private Key", cliImportPrivateKey, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Remove Address", cliRemoveAddress, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Derive Delegated Stake", cliDeriveDelegatedStake, wallet.Loaded)
+	gui.GUI.CommandDefineCallback("Export Addresses", cliExportAddresses, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Export Address JSON", cliExportAddressJSON, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Import Address JSON", cliImportAddressJSON, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Export Wallet JSON", cliExportWalletJSON, wallet.Loaded)

@@ -7,7 +7,6 @@ import (
 	"pandora-pay/blockchain/data/accounts"
 	"pandora-pay/blockchain/data/accounts/account"
 	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/registrations/registration"
 	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -146,8 +145,6 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 					return
 				}
 
-				var reg *registration.Registration
-
 				if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
 					return
 				}
@@ -162,20 +159,21 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 
 				ring = append(ring, p.G1())
 
-				if reg, err = regs.GetRegistration(addr.PublicKey); err != nil {
+				var isReg bool
+				if isReg, err = regs.Exists(string(addr.PublicKey)); err != nil {
 					return
 				}
 
 				publicKeyIndex := &wizard.ZetherPublicKeyIndex{}
 				publicKeyIndexes[string(addr.PublicKey)] = publicKeyIndex
 
-				publicKeyIndex.Registered = reg != nil
-				if reg == nil {
-					publicKeyIndex.RegistrationSignature = addr.Registration
-				} else {
+				publicKeyIndex.Registered = isReg
+				if isReg {
 					if publicKeyIndex.RegisteredIndex, err = regs.GetIndexByKey(string(addr.PublicKey)); err != nil {
 						return
 					}
+				} else {
+					publicKeyIndex.RegistrationSignature = addr.Registration
 				}
 
 				return

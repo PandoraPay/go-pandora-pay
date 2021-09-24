@@ -32,17 +32,16 @@ type ZetherPublicKeyIndex struct {
 	RegistrationSignature []byte
 }
 
-func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, statusCallback func(string)) (err error) {
+func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emapCopy map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, statusCallback func(string)) (err error) {
 
 	//let's copy emap
-	emapCopy := make(map[string]map[string][]byte)
-	for k, v := range emap {
-		emapCopy[k] = make(map[string][]byte)
+	emap := make(map[string]map[string][]byte)
+	for k, v := range emapCopy {
+		emap[k] = make(map[string][]byte)
 		for k2, v2 := range v {
-			emapCopy[k][k2] = helpers.CloneBytes(v2)
+			emap[k][k2] = helpers.CloneBytes(v2)
 		}
 	}
-	emap = emapCopy
 
 	txBase.Payloads = make([]*transaction_zether.TransactionZetherPayload, len(transfers))
 

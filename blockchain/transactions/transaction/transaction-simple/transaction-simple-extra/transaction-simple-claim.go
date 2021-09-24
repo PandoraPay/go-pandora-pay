@@ -28,7 +28,7 @@ func (tx *TransactionSimpleClaim) IncludeTransactionVin0(txRegistrations *transa
 		return errors.New("acc.HasDelegatedStake is null")
 	}
 
-	var publicKeyList [][]byte
+	publicKeyList := make([][]byte, len(tx.Output))
 	for i, out := range tx.Output {
 		publicKeyList[i] = out.PublicKey
 	}
@@ -70,20 +70,22 @@ func (tx *TransactionSimpleClaim) IncludeTransactionVin0(txRegistrations *transa
 }
 
 func (tx *TransactionSimpleClaim) Validate() error {
+
 	if len(tx.Output) == 0 || len(tx.Output) > 255 {
 		return errors.New("Clain output length is invalid")
 	}
 
 	duplicates := make(map[string]bool)
 	for _, out := range tx.Output {
-		if duplicates[string(out.PublicKey)] {
-			return errors.New("Duplicates exists")
-		}
 		duplicates[string(out.PublicKey)] = true
 		if err := out.Validate(); err != nil {
 			return err
 		}
 	}
+	if len(duplicates) != len(tx.Output) {
+		return errors.New("Output ")
+	}
+
 	return nil
 }
 

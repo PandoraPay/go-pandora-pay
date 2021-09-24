@@ -61,6 +61,10 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	}
 	statusCallback("Transaction Fees set")
 
+	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
+		return
+	}
+
 	if err = tx.BloomAll(); err != nil {
 		return
 	}

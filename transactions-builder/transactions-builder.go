@@ -330,7 +330,7 @@ func (builder *TransactionsBuilder) CreateClaimTx(from string, nonce uint64, out
 			}
 
 			var isReg bool
-			if isReg, err = regs.Exists(outputAddresses[i]); err != nil {
+			if isReg, err = regs.Exists(string(addr.PublicKey)); err != nil {
 				return
 			}
 
