@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"math/big"
@@ -103,7 +104,14 @@ func (reader *BufferReader) ReadToken() ([]byte, error) {
 	if tokenType == 0 {
 		return []byte{}, nil
 	} else if tokenType == 1 {
-		return reader.ReadBytes(config.TOKEN_LENGTH)
+		buff, err := reader.ReadBytes(config.TOKEN_LENGTH)
+		if err != nil {
+			return nil, err
+		}
+		if !bytes.Equal(buff, config.NATIVE_TOKEN_FULL) {
+			return nil, errors.New("NATIVE_TOKEN_FULL should be writen as  NATIVE_TOKEN")
+		}
+		return buff, nil
 	}
 	return nil, errors.New("invalid token type")
 }

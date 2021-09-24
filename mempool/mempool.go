@@ -3,6 +3,7 @@ package mempool
 import (
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
+	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config/config_fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
@@ -98,7 +99,15 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 		}
 		computedFeePerByte := minerFees / tx.Bloom.Size
 
-		if computedFeePerByte < config_fees.FEES_PER_BYTE {
+		requiredFeePerByte := uint64(0)
+		switch tx.Version {
+		case transaction_type.TX_SIMPLE:
+			requiredFeePerByte = config_fees.FEES_PER_BYTE
+		case transaction_type.TX_ZETHER:
+			requiredFeePerByte = config_fees.FEES_PER_BYTE_ZETHER
+		}
+
+		if computedFeePerByte < requiredFeePerByte {
 			finalTxs[i].err = errors.New("Transaction fee was not accepted")
 			continue
 		}

@@ -56,15 +56,10 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
 		return
 	}
-
-	if err = setFeeSimple(tx, fee); err != nil {
+	if err = setFeeSimple(tx, fee.Clone()); err != nil {
 		return
 	}
 	statusCallback("Transaction Fees set")
-
-	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
-		return
-	}
 
 	if err = tx.BloomAll(); err != nil {
 		return
@@ -114,7 +109,7 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, 
 		return
 	}
 
-	if err = setFeeSimple(tx, fee); err != nil {
+	if err = setFeeSimple(tx, fee.Clone()); err != nil {
 		return
 	}
 	statusCallback("Transaction Fees set")
@@ -168,7 +163,7 @@ func CreateClaimTx(nonce uint64, key []byte, txRegistrations []*transaction_data
 		return
 	}
 
-	if err = setFeeSimple(tx, fee); err != nil {
+	if err = setFeeSimple(tx, fee.Clone()); err != nil {
 		return
 	}
 	statusCallback("Transaction Fees set")

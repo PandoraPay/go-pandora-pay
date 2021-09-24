@@ -20,11 +20,11 @@ import (
 	"pandora-pay/transactions-builder/wizard"
 )
 
-func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUsed [][]byte, amounts []float64, dsts []string, burn []float64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fee []*TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUsed [][]byte, amounts []float64, dsts []string, burn []float64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	amountsFinal := make([]uint64, len(amounts))
 	burnFinal := make([]uint64, len(burn))
-	finalFee := make([]*wizard.TransactionsWizardFee, len(fee))
+	finalFees := make([]*wizard.TransactionsWizardFee, len(fees))
 
 	statusCallback("Converting Floats to Numbers")
 
@@ -51,6 +51,9 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUs
 			if burnFinal[i], err = tok.ConvertToUnits(burn[i]); err != nil {
 				return
 			}
+			if finalFees[i], err = fees[i].convertToWizardFee(tok); err != nil {
+				return
+			}
 		}
 
 		return
@@ -58,7 +61,7 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUs
 		return nil, err
 	}
 
-	return builder.CreateZetherTx(from, tokensUsed, amountsFinal, dsts, burnFinal, ringMembers, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
+	return builder.CreateZetherTx(from, tokensUsed, amountsFinal, dsts, burnFinal, ringMembers, data, finalFees, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
 }
 
 func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][]byte, amounts []uint64, dsts []string, burn []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
@@ -202,7 +205,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 
 	statusCallback("Balances checked")
 
-	if tx, err = wizard.CreateZetherTx(transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, statusCallback); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, statusCallback); err != nil {
 		gui.GUI.Error("Error creating Tx: ", err)
 		return nil, err
 	}

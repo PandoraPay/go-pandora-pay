@@ -48,7 +48,9 @@ func TestCreateZetherTx(t *testing.T) {
 	publicKeyIndexes := make(map[string]*ZetherPublicKeyIndex)
 	publicKeyIndexes[string(senderAdress.PublicKey)] = &ZetherPublicKeyIndex{false, 0, senderAdress.Registration}
 
-	transfers := make([]*ZetherTransfer, 5)
+	fees := make([]*TransactionsWizardFee, count)
+
+	transfers := make([]*ZetherTransfer, count)
 	for i := range transfers {
 
 		dstPrivateKey := addresses.GenerateNewPrivateKey()
@@ -89,10 +91,12 @@ func TestCreateZetherTx(t *testing.T) {
 			rings[i][j] = decoyPoint.G1()
 			emap[config.NATIVE_TOKEN_FULL_STRING][decoyPoint.G1().String()] = getNewBalance(decoyAddress, 0).Serialize()
 		}
+
+		fees[i] = &TransactionsWizardFee{0, 0, false}
 	}
 
 	hash := helpers.RandomBytes(32)
-	tx, err := CreateZetherTx(transfers, emap, rings, 0, hash, publicKeyIndexes, func(status string) {})
+	tx, err := CreateZetherTx(transfers, emap, rings, 0, hash, publicKeyIndexes, fees, func(status string) {})
 	assert.NoError(t, err)
 	assert.NotNil(t, t, tx)
 

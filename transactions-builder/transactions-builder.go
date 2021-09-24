@@ -334,10 +334,10 @@ func (builder *TransactionsBuilder) CreateClaimTx(from string, nonce uint64, out
 				return
 			}
 
-			output = append(output, &transaction_simple_parts.TransactionSimpleOutput{
+			output[i] = &transaction_simple_parts.TransactionSimpleOutput{
 				Amount:    outputAmounts[i],
 				PublicKey: addr.PublicKey,
-			})
+			}
 
 			if !isReg {
 				if addr.Registration == nil {

@@ -11,6 +11,14 @@ type TransactionsWizardFee struct {
 	PerByteAuto bool   `json:"perByteAuto,omitempty"`
 }
 
+func (fee *TransactionsWizardFee) Clone() *TransactionsWizardFee {
+	return &TransactionsWizardFee{
+		Fixed:       fee.Fixed,
+		PerByte:     fee.PerByte,
+		PerByteAuto: fee.PerByteAuto,
+	}
+}
+
 type TransactionsWizardData struct {
 	Data    helpers.HexBytes `json:"data,omitempty"`
 	Encrypt bool             `json:"encrypt,omitempty"`
