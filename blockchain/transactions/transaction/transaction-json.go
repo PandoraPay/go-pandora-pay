@@ -13,14 +13,16 @@ import (
 	"pandora-pay/helpers"
 )
 
-type json_Only_Transaction struct {
-	Version transaction_type.TransactionVersion `json:"version"`
+type json_TransactionRegistration struct {
+	PublicKeyIndex        uint64           `json:"publicKeyIndex"`
+	RegistrationSignature helpers.HexBytes `json:"signature"`
 }
 
 type json_Transaction struct {
-	*json_Only_Transaction
-	Size uint64           `json:"size"`
-	Hash helpers.HexBytes `json:"hash"`
+	Version       transaction_type.TransactionVersion `json:"version"`
+	Registrations []*json_TransactionRegistration     `json:"registrations"`
+	Size          uint64                              `json:"size"`
+	Hash          helpers.HexBytes                    `json:"hash"`
 }
 
 type json_Only_TransactionSimple struct {
@@ -81,13 +83,24 @@ type json_Only_TransactionZether struct {
 	Payloads []*json_Only_TransactionPayload `json:"payloads"`
 }
 
+type json_Only_TransactionZetherStatement struct {
+	RingSize      uint64             `json:"ringSize"`
+	CLn           []helpers.HexBytes `json:"cLn"`
+	CRn           []helpers.HexBytes `json:"cRn"`
+	Publickeylist []helpers.HexBytes `json:"publickeylist"`
+	C             []helpers.HexBytes `json:"c"`
+	D             helpers.HexBytes   `json:"d"`
+	Fees          uint64             `json:"fees"`
+	Roothash      helpers.HexBytes   `json:"roothash"`
+}
+
 type json_Only_TransactionPayload struct {
-	Token     helpers.HexBytes `json:"token"`
-	BurnValue uint64           `json:"burnValue"`
-	ExtraType byte             `json:"extraType"`
-	ExtraData helpers.HexBytes `json:"extraData"`
-	Statement helpers.HexBytes `json:"statement"`
-	Proof     helpers.HexBytes `json:"proof"`
+	Token     helpers.HexBytes                      `json:"token"`
+	BurnValue uint64                                `json:"burnValue"`
+	ExtraType byte                                  `json:"extraType"`
+	ExtraData helpers.HexBytes                      `json:"extraData"`
+	Statement *json_Only_TransactionZetherStatement `json:"statement"`
+	Proof     helpers.HexBytes                      `json:"proof"`
 }
 
 type json_TransactionZether struct {
@@ -97,10 +110,17 @@ type json_TransactionZether struct {
 
 func (tx *Transaction) MarshalJSON() ([]byte, error) {
 
+	registrations := make([]*json_TransactionRegistration, len(tx.Registrations.Registrations))
+	for i, reg := range tx.Registrations.Registrations {
+		registrations[i] = &json_TransactionRegistration{
+			reg.PublicKeyIndex,
+			reg.RegistrationSignature,
+		}
+	}
+
 	txJson := &json_Transaction{
-		&json_Only_Transaction{
-			tx.Version,
-		},
+		tx.Version,
+		registrations,
 		tx.Bloom.Size,
 		tx.Bloom.Hash,
 	}
@@ -170,11 +190,18 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 		payloadsJson := make([]*json_Only_TransactionPayload, len(base.Payloads))
 		for i, payload := range base.Payloads {
 
-			w := helpers.NewBufferWriter()
-			payload.Statement.Serialize(w)
-			statementJson := w.Bytes()
+			statementJson := &json_Only_TransactionZetherStatement{
+				RingSize:      payload.Statement.RingSize,
+				CLn:           helpers.ConvertBN256Array(payload.Statement.CLn),
+				CRn:           helpers.ConvertBN256Array(payload.Statement.CRn),
+				Publickeylist: helpers.ConvertBN256Array(payload.Statement.Publickeylist),
+				C:             helpers.ConvertBN256Array(payload.Statement.C),
+				D:             payload.Statement.D.EncodeCompressed(),
+				Fees:          payload.Statement.Fees,
+				Roothash:      payload.Statement.Roothash,
+			}
 
-			w = helpers.NewBufferWriter()
+			w := helpers.NewBufferWriter()
 			payload.Proof.Serialize(w)
 			proofJson := w.Bytes()
 
@@ -205,18 +232,28 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 
 func (tx *Transaction) UnmarshalJSON(data []byte) error {
 
-	txOnlyJson := &json_Only_Transaction{}
+	txOnlyJson := &json_Transaction{}
 	if err := json.Unmarshal(data, txOnlyJson); err != nil {
 		return err
 	}
 
 	switch txOnlyJson.Version {
-	case transaction_type.TX_SIMPLE:
+	case transaction_type.TX_SIMPLE, transaction_type.TX_ZETHER:
 	default:
 		return errors.New("Invalid Version")
 	}
 
 	tx.Version = txOnlyJson.Version
+
+	tx.Registrations = &transaction_data.TransactionDataTransactions{
+		Registrations: make([]*transaction_data.TransactionDataRegistration, len(txOnlyJson.Registrations)),
+	}
+	for i, reg := range txOnlyJson.Registrations {
+		tx.Registrations.Registrations[i] = &transaction_data.TransactionDataRegistration{
+			reg.PublicKeyIndex,
+			reg.RegistrationSignature,
+		}
+	}
 
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:

@@ -3,6 +3,8 @@ package transactions_builder
 import (
 	"encoding/binary"
 	"errors"
+	"math"
+	mathrand "math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data/accounts"
 	"pandora-pay/blockchain/data/accounts/account"
@@ -19,6 +21,80 @@ import (
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"pandora-pay/transactions-builder/wizard"
 )
+
+func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []byte, ringSize int, newAccounts int) ([]string, error) {
+
+	var addr *addresses.Address
+	var err error
+
+	if ringSize == -1 {
+		pow := mathrand.Intn(4) + 3
+		ringSize = int(math.Pow(2, float64(pow)))
+	}
+	if newAccounts == -1 {
+		newAccounts = mathrand.Intn(ringSize / 5)
+	}
+
+	alreadyUsed := make(map[string]bool)
+	if addr, err = addresses.DecodeAddr(from); err != nil {
+		return nil, err
+	}
+	alreadyUsed[string(addr.PublicKey)] = true
+
+	if addr, err = addresses.DecodeAddr(dst); err != nil {
+		return nil, err
+	}
+	alreadyUsed[string(addr.PublicKey)] = true
+
+	rings := make([]string, ringSize-2)
+
+	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		accsCollection := accounts.NewAccountsCollection(reader)
+		regs := registrations.NewRegistrations(reader)
+
+		var accs *accounts.Accounts
+		if accs, err = accsCollection.GetMap(token); err != nil {
+			return
+		}
+
+		for i := 0; i < len(rings); i++ {
+
+			if regs.Count < uint64(ringSize) {
+				priv := addresses.GenerateNewPrivateKey()
+				if addr, err = priv.GenerateAddress(true, 0, nil); err != nil {
+					return
+				}
+			} else {
+
+				var acc *account.Account
+				if acc, err = accs.GetRandomAccount(); err != nil {
+					return
+				}
+				if acc == nil {
+					errors.New("Error getting any random account")
+				}
+
+				if addr, err = addresses.CreateAddr(acc.PublicKey, nil, 0, nil); err != nil {
+					return
+				}
+
+			}
+			if alreadyUsed[string(addr.PublicKey)] {
+				i--
+				continue
+			}
+			alreadyUsed[string(addr.PublicKey)] = true
+			rings[i] = addr.EncodeAddr()
+		}
+
+		return
+	}); err != nil {
+		return nil, err
+	}
+
+	return rings, nil
+}
 
 func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUsed [][]byte, amounts []float64, dsts []string, burn []float64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 

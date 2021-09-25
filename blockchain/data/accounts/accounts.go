@@ -37,6 +37,14 @@ func (accounts *Accounts) GetAccount(key []byte) (*account.Account, error) {
 	return data.(*account.Account), nil
 }
 
+func (accounts *Accounts) GetRandomAccount() (*account.Account, error) {
+	data, err := accounts.GetRandom()
+	if err != nil {
+		return nil, err
+	}
+	return data.(*account.Account), nil
+}
+
 func (accounts *Accounts) saveTokensCount(key []byte, sign bool) (count uint64, err error) {
 
 	data := accounts.Tx.Get("accounts:tokensCount:" + string(key))
@@ -85,6 +93,10 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, Token []byte
 
 	accounts.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) (err error) {
 
+		if !tx.IsWritable() {
+			return
+		}
+
 		var count uint64
 		if count, err = accounts.saveTokensCount(key, true); err != nil {
 			return
@@ -94,6 +106,10 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, Token []byte
 	}
 
 	accounts.HashMap.DeletedEvent = func(key []byte) (err error) {
+
+		if !tx.IsWritable() {
+			return
+		}
 
 		var count uint64
 		if count, err = accounts.saveTokensCount(key, false); err != nil {

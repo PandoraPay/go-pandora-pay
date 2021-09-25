@@ -42,6 +42,14 @@ func (registrations *Registrations) GetRegistration(key []byte) (*registration.R
 	return reg, nil
 }
 
+func (registrations *Registrations) GetRandomRegistration() (*registration.Registration, error) {
+	data, err := registrations.GetRandom()
+	if err != nil {
+		return nil, err
+	}
+	return data.(*registration.Registration), nil
+}
+
 func NewRegistrations(tx store_db_interface.StoreDBTransactionInterface) (registrations *Registrations) {
 
 	hashmap := hash_map.CreateNewHashMap(tx, "registrations", cryptography.PublicKeySize, true)

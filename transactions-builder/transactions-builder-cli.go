@@ -101,7 +101,9 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		ringMembers := make([][]string, 1)
-		ringMembers[0] = []string{}
+		if ringMembers[0], err = builder.CreateZetherRing(walletAddress.AddressEncoded, destinationAddress.EncodeAddr(), token, -1, -1); err != nil {
+			return
+		}
 
 		tx, err := builder.CreateZetherTx_Float([]string{walletAddress.AddressEncoded}, [][]byte{token}, []float64{amount}, []string{destinationAddress.EncodeAddr()}, []float64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*TransactionsBuilderFeeFloat{fee}, propagate, true, true, func(status string) {
 			gui.GUI.OutputWrite(status)
