@@ -4,7 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"math"
 	"math/big"
-	mathrand "math/rand"
+	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
@@ -31,7 +31,7 @@ func TestCreateZetherTx(t *testing.T) {
 
 	var amount uint64
 	for amount < 1000 {
-		amount = mathrand.Uint64()
+		amount = rand.Uint64()
 	}
 
 	count := 5
@@ -69,7 +69,7 @@ func TestCreateZetherTx(t *testing.T) {
 		}
 		amount -= diff
 
-		power := mathrand.Int() % 4
+		power := rand.Intn(4)
 		power += 2
 		ringSize := int(math.Pow(2, float64(power)))
 

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	mathrand "math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction-data"
@@ -53,8 +52,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		sender := crypto.GPoint.ScalarMult(secretPoint).G1()
 		sender_secret := secretPoint.BigInt()
 
-		crand := mathrand.New(helpers.NewCryptoRandSource())
-
 		var publickeylist, C, CLn, CRn []*bn256.G1
 		var D bn256.G1
 
@@ -76,7 +73,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		//witness_index[3], witness_index[1] = witness_index[1], witness_index[3]
 		for {
-			crand.Shuffle(len(witness_index), func(i, j int) {
+			helpers.Global_Random.Shuffle(len(witness_index), func(i, j int) {
 				witness_index[i], witness_index[j] = witness_index[j], witness_index[i]
 			})
 

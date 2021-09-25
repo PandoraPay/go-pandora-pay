@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"math"
-	mathrand "math/rand"
+	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data/accounts"
 	"pandora-pay/blockchain/data/accounts/account"
@@ -28,11 +28,11 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []b
 	var err error
 
 	if ringSize == -1 {
-		pow := mathrand.Intn(4) + 3
+		pow := rand.Intn(4) + 3
 		ringSize = int(math.Pow(2, float64(pow)))
 	}
 	if newAccounts == -1 {
-		newAccounts = mathrand.Intn(ringSize / 5)
+		newAccounts = rand.Intn(ringSize / 5)
 	}
 
 	alreadyUsed := make(map[string]bool)

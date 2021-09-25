@@ -3,7 +3,6 @@ package helpers
 import (
 	"encoding/binary"
 	"math/rand"
-	mathrand "math/rand"
 )
 
 func RandomUint64() uint64 {
@@ -27,4 +26,4 @@ func (_ CryptoRandSource) Int63() int64 {
 
 func (_ CryptoRandSource) Seed(_ int64) {}
 
-var Global_Random = mathrand.New(NewCryptoRandSource())
+var Global_Random = rand.New(NewCryptoRandSource())

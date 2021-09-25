@@ -3,7 +3,7 @@ package hash_map
 import (
 	"encoding/binary"
 	"errors"
-	mathrand "math/rand"
+	"math/rand"
 	"pandora-pay/helpers"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"strconv"
@@ -69,7 +69,7 @@ func (hashMap *HashMap) GetRandom() (data helpers.SerializableInterface, err err
 		return nil, errors.New("HashMap is not Indexable")
 	}
 
-	index := mathrand.Uint64() % hashMap.Count
+	index := rand.Uint64() % hashMap.Count
 
 	return hashMap.GetByIndex(index)
 }
