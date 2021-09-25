@@ -120,7 +120,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		acc := account.NewAccount(publicKey, config.NATIVE_TOKEN_FULL)
+		acc := account.NewAccount(publicKey, config.NATIVE_TOKEN)
 		if err = acc.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
 			return nil, err
 		}

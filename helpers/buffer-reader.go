@@ -108,7 +108,7 @@ func (reader *BufferReader) ReadToken() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		if !bytes.Equal(buff, config.NATIVE_TOKEN_FULL) {
+		if !bytes.Equal(buff, config.NATIVE_TOKEN) {
 			return nil, errors.New("NATIVE_TOKEN_FULL should be writen as  NATIVE_TOKEN")
 		}
 		return buff, nil

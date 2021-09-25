@@ -132,6 +132,10 @@ func (tx *TransactionZether) Validate() (err error) {
 
 	for _, payload := range tx.Payloads {
 
+		if bytes.Equal(payload.Token, config.NATIVE_TOKEN) {
+			return errors.New("NATIVE_TOKEN_FULL should be written as NATIVE_TOKEN")
+		}
+
 		// check sanity
 		if payload.Statement.RingSize < 2 { // ring size minimum 4
 			return fmt.Errorf("RingSize cannot be less than 2")

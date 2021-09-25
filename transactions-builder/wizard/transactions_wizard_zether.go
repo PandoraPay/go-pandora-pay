@@ -288,6 +288,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			c += 1
 		}
 	}
+	tx.Registrations.Registrations = registrations
 	statusCallback("Transaction registrations created")
 
 	senderKey := &addresses.PrivateKey{Key: transfers[0].From}

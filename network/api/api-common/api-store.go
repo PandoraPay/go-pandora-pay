@@ -130,7 +130,7 @@ func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (acc *a
 
 		accsCollection := accounts.NewAccountsCollection(reader)
 
-		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN)
 		if err != nil {
 			return
 		}

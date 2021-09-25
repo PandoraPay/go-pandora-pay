@@ -87,7 +87,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uin
 
 		toks := tokens.NewTokens(reader)
 
-		tok, err := toks.GetToken(config.NATIVE_TOKEN_FULL)
+		tok, err := toks.GetToken(config.NATIVE_TOKEN)
 		if err != nil {
 			return
 		}
@@ -176,7 +176,7 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx_Float(from string, no
 
 		toks := tokens.NewTokens(reader)
 
-		tok, err := toks.GetToken(config.NATIVE_TOKEN_FULL)
+		tok, err := toks.GetToken(config.NATIVE_TOKEN)
 		if err != nil {
 			return
 		}
@@ -260,7 +260,7 @@ func (builder *TransactionsBuilder) CreateClaimTx_Float(from string, nonce uint6
 
 		toks := tokens.NewTokens(reader)
 
-		tok, err := toks.GetToken(config.NATIVE_TOKEN_FULL)
+		tok, err := toks.GetToken(config.NATIVE_TOKEN)
 		if err != nil {
 			return
 		}

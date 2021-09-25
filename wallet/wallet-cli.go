@@ -96,7 +96,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		accsCollection := accounts.NewAccountsCollection(reader)
-		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN)
 		if err != nil {
 			return
 		}
@@ -154,7 +154,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 				if acc != nil {
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s:", "BALANCES ENCRYPTED"))
 					var tok *token.Token
-					if tok, err = toks.GetToken(config.NATIVE_TOKEN_FULL); err != nil {
+					if tok, err = toks.GetToken(config.NATIVE_TOKEN); err != nil {
 						return
 					}
 					gui.GUI.OutputWrite(fmt.Sprintf("%260s: %s", hex.EncodeToString(acc.Balance.Amount.Serialize()), tok.Name))

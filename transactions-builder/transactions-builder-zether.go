@@ -13,6 +13,7 @@ import (
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	advanced_connection_types "pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -94,7 +95,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 		regs := registrations.NewRegistrations(reader)
 
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
-		chainHash = reader.Get("chainHash")
+		chainHash = helpers.CloneBytes(reader.Get("chainHash"))
 
 		for _, token := range tokensUsed {
 			if emap[string(token)] == nil {

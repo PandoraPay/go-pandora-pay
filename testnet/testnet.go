@@ -95,7 +95,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 
 		dsts = append(dsts, addr.AddressRegistrationEncoded)
 		dstsAmounts = append(dstsAmounts, config_stake.GetRequiredStake(blockHeight))
-		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN_FULL)
+		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
 		burn = append(burn, 0)
 
 		ringMembers = append(ringMembers, []string{})
@@ -149,7 +149,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (tx *transact
 	data := &wizard.TransactionsWizardData{}
 	fee := &wizard.TransactionsWizardFee{0, 0, true}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN_FULL}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -216,7 +216,7 @@ func (testnet *Testnet) run() {
 						accsCollection := accounts.NewAccountsCollection(reader)
 						regs := registrations.NewRegistrations(reader)
 
-						accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+						accs, err := accsCollection.GetMap(config.NATIVE_TOKEN)
 						if err != nil {
 							return
 						}
@@ -252,7 +252,7 @@ func (testnet *Testnet) run() {
 
 						var balance uint64
 						if acc != nil {
-							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN_FULL, false); err != nil {
+							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN, false); err != nil {
 								return
 							}
 						}

@@ -56,7 +56,7 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 		accsCollection := accounts.NewAccountsCollection(reader)
 
-		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN_FULL)
+		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN)
 		if err != nil {
 			return
 		}

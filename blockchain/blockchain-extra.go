@@ -67,7 +67,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 		supply := uint64(0)
 
 		var accs *accounts.Accounts
-		if accs, err = accsCollection.GetMap(config.NATIVE_TOKEN_FULL); err != nil {
+		if accs, err = accsCollection.GetMap(config.NATIVE_TOKEN); err != nil {
 			return
 		}
 
@@ -131,7 +131,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			SupplyPublicKey:          config.BURN_PUBLIC_KEY,
 		}
 
-		if err = toks.CreateToken(config.NATIVE_TOKEN_FULL, tok); err != nil {
+		if err = toks.CreateToken(config.NATIVE_TOKEN, tok); err != nil {
 			return
 		}
 

@@ -144,7 +144,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			plainAccs = plain_accounts.NewPlainAccounts(writer)
 
 			var accs *accounts.Accounts
-			if accs, err = accsCollection.GetMap(config.NATIVE_TOKEN_FULL); err != nil {
+			if accs, err = accsCollection.GetMap(config.NATIVE_TOKEN); err != nil {
 				return
 			}
 

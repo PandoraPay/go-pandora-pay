@@ -66,14 +66,14 @@ func (blk *Block) IncludeBlock(regs *registrations.Registrations, plainAccs *pla
 	}
 
 	var tok *token.Token
-	if tok, err = toks.GetToken(config.NATIVE_TOKEN_FULL); err != nil {
+	if tok, err = toks.GetToken(config.NATIVE_TOKEN); err != nil {
 		return
 	}
 
 	if err = tok.AddSupply(true, reward); err != nil {
 		return
 	}
-	if err = toks.UpdateToken(config.NATIVE_TOKEN_FULL, tok); err != nil {
+	if err = toks.UpdateToken(config.NATIVE_TOKEN, tok); err != nil {
 		return
 	}
 
