@@ -202,19 +202,6 @@ func (chain *Blockchain) saveBlockchainHashmaps(regs *registrations.Registration
 	plainAccs.Rollback()
 	toks.Rollback()
 
-	if err = regs.WriteToStore(); err != nil {
-		return
-	}
-	if err = plainAccs.WriteToStore(); err != nil {
-		return
-	}
-	if err = accsCollection.WriteToStore(); err != nil {
-		return
-	}
-	if err = toks.WriteToStore(); err != nil {
-		return
-	}
-
 	if err = accsCollection.CloneCommitted(); err != nil {
 		return
 	}

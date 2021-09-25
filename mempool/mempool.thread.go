@@ -247,10 +247,18 @@ func (worker *mempoolWorker) processing(
 								atomic.StoreUint64(&work.result.totalSize, includedTotalSize)
 								work.result.txs.Store(includedTxs)
 
-								accsCollection.CommitChanges()
-								toks.CommitChanges()
-								plainAccs.CommitChanges()
-								regs.CommitChanges()
+								if err = accsCollection.CommitChanges(); err != nil {
+									return
+								}
+								if err = toks.CommitChanges(); err != nil {
+									return
+								}
+								if err = plainAccs.CommitChanges(); err != nil {
+									return
+								}
+								if err = regs.CommitChanges(); err != nil {
+									return
+								}
 							} else {
 								accsCollection.Rollback()
 								toks.Rollback()

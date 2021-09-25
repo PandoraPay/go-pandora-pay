@@ -48,8 +48,8 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 					return
 				}
 			}
-			accs.CommitChanges()
-			return accs.WriteToStore()
+			return accs.CommitChanges()
+
 		}); err != nil {
 			return nil, err
 		}
@@ -91,8 +91,7 @@ func storeToken(this js.Value, args []js.Value) interface{} {
 					return
 				}
 			}
-			toks.CommitChanges()
-			return toks.WriteToStore()
+			return toks.CommitChanges()
 		}); err != nil {
 			return nil, err
 		}

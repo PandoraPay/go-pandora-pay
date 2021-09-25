@@ -12,6 +12,10 @@ type StoreDBBuntTransaction struct {
 	write  bool
 }
 
+func (tx *StoreDBBuntTransaction) IsWritable() bool {
+	return tx.write
+}
+
 func (tx *StoreDBBuntTransaction) Put(key string, value []byte) (err error) {
 	if !tx.write {
 		return errors.New("Transaction is not writeable")

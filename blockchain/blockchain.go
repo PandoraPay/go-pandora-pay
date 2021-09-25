@@ -295,10 +295,18 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 
 					//it will commit the changes but not save them
-					accs.CommitChanges()
-					toks.CommitChanges()
-					regs.CommitChanges()
-					plainAccs.CommitChanges()
+					if err = accs.CommitChanges(); err != nil {
+						return
+					}
+					if err = toks.CommitChanges(); err != nil {
+						return
+					}
+					if err = regs.CommitChanges(); err != nil {
+						return
+					}
+					if err = plainAccs.CommitChanges(); err != nil {
+						return
+					}
 
 					newChainData.PrevHash = newChainData.Hash
 					newChainData.Hash = blkComplete.Block.Bloom.Hash

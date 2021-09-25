@@ -73,15 +73,6 @@ func (tokens *Tokens) DeleteToken(key []byte) {
 	tokens.Delete(string(key))
 }
 
-func (hashMap *Tokens) WriteToStore() (err error) {
-
-	if err = hashMap.HashMap.WriteToStore(); err != nil {
-		return
-	}
-
-	return
-}
-
 func NewTokens(tx store_db_interface.StoreDBTransactionInterface) (tokens *Tokens) {
 
 	hashMap := hash_map.CreateNewHashMap(tx, "tokens", config.TOKEN_LENGTH, true)

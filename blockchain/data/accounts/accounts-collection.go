@@ -72,15 +72,9 @@ func (collection *AccountsCollection) CloneCommitted() (err error) {
 	return
 }
 
-func (collection *AccountsCollection) CommitChanges() {
+func (collection *AccountsCollection) CommitChanges() (err error) {
 	for _, accs := range collection.accsMap {
-		accs.CommitChanges()
-	}
-}
-
-func (collection *AccountsCollection) WriteToStore() (err error) {
-	for _, accs := range collection.accsMap {
-		if err = accs.WriteToStore(); err != nil {
+		if err = accs.CommitChanges(); err != nil {
 			return
 		}
 	}

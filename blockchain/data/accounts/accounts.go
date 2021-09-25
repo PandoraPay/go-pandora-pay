@@ -93,7 +93,7 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, Token []byte
 		return tx.Put("accounts:tokenByIndex:"+string(key)+":"+strconv.FormatUint(count, 10), element.Element.(*account.Account).Token)
 	}
 
-	accounts.HashMap.DeletedEvent = func(key []byte, element *hash_map.CommittedMapElement) (err error) {
+	accounts.HashMap.DeletedEvent = func(key []byte) (err error) {
 
 		var count uint64
 		if count, err = accounts.saveTokensCount(key, false); err != nil {

@@ -18,6 +18,10 @@ type StoreDBMemoryTransaction struct {
 	local *sync.Map
 }
 
+func (tx *StoreDBMemoryTransaction) IsWritable() bool {
+	return tx.write
+}
+
 func (tx *StoreDBMemoryTransaction) Put(key string, value []byte) error {
 	if !tx.write {
 		return errors.New("Transaction is not writeable")

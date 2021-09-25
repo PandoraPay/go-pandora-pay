@@ -137,21 +137,16 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 		chainData.TokensCount = 1
 
-		toks.CommitChanges()
-		accsCollection.CommitChanges()
-		regs.CommitChanges()
-		plainAccs.CommitChanges()
-
-		if err = toks.WriteToStore(); err != nil {
+		if err = toks.CommitChanges(); err != nil {
 			return
 		}
-		if err = accsCollection.WriteToStore(); err != nil {
+		if err = accsCollection.CommitChanges(); err != nil {
 			return
 		}
-		if err = regs.WriteToStore(); err != nil {
+		if err = regs.CommitChanges(); err != nil {
 			return
 		}
-		if err = plainAccs.WriteToStore(); err != nil {
+		if err = plainAccs.CommitChanges(); err != nil {
 			return
 		}
 

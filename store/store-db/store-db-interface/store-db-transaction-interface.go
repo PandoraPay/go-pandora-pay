@@ -7,4 +7,5 @@ type StoreDBTransactionInterface interface {
 	GetClone(key string) []byte
 	Delete(key string) error
 	DeleteForcefully(key string) error
+	IsWritable() bool
 }

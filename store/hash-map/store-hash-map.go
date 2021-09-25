@@ -17,7 +17,7 @@ type HashMap struct {
 	Committed    map[string]*CommittedMapElement
 	KeyLength    int
 	Deserialize  func([]byte, []byte) (helpers.SerializableInterface, error)
-	DeletedEvent func([]byte, *CommittedMapElement) error
+	DeletedEvent func([]byte) error
 	StoredEvent  func([]byte, *CommittedMapElement) error
 	Indexable    bool
 }
@@ -198,13 +198,24 @@ func (hashMap *HashMap) Delete(key string) {
 	return
 }
 
-func (hashMap *HashMap) CommitChanges() {
+func (hashMap *HashMap) CommitChanges() (err error) {
 
-	var removed []string
+	removed := make([]string, len(hashMap.Changes))
+
+	c := 0
+	for k, v := range hashMap.Changes {
+		if len(k) != hashMap.KeyLength {
+			return errors.New("key length is invalid")
+		}
+		if v.Status == "update" {
+			removed[c] = k
+			c += 1
+		}
+	}
 
 	for k, v := range hashMap.Changes {
 
-		if v.Status == "del" || v.Status == "update" {
+		if v.Status == "del" {
 
 			committed := hashMap.Committed[k]
 			if committed == nil {
@@ -212,26 +223,102 @@ func (hashMap *HashMap) CommitChanges() {
 				hashMap.Committed[k] = committed
 			}
 
-			if v.Status == "del" {
-				committed.Status = "del"
-				committed.Stored = ""
-				committed.Element = nil
-				v.Status = "view"
-			} else if v.Status == "update" {
-				committed.Status = "update"
-				committed.Stored = ""
-				committed.Element = v.Element
-				removed = append(removed, k)
+			v.Status = "view"
+			committed.Status = "view"
+			committed.Element = nil
+
+			if hashMap.Tx.Exists(hashMap.name + k) {
+				hashMap.Count -= 1
+
+				if hashMap.Tx.IsWritable() {
+
+					if err = hashMap.Tx.Delete(hashMap.name + ":map:" + k); err != nil {
+						return
+					}
+
+					if hashMap.Indexable {
+						if err = hashMap.Tx.Delete(hashMap.name + ":list:" + strconv.FormatUint(hashMap.Count, 10)); err != nil {
+							return
+						}
+						if err = hashMap.Tx.Delete(hashMap.name + ":listKey:" + k); err != nil {
+							return
+						}
+					}
+
+				}
+
+				if hashMap.DeletedEvent != nil {
+					if err = hashMap.DeletedEvent([]byte(k)); err != nil {
+						return
+					}
+				}
+
+				committed.Stored = "del"
+			} else {
+				committed.Stored = "view"
 			}
 
 		}
 
 	}
 
-	for _, k := range removed {
-		delete(hashMap.Changes, k)
+	for k, v := range hashMap.Changes {
+
+		if v.Status == "update" {
+
+			committed := hashMap.Committed[k]
+			if committed == nil {
+				committed = new(CommittedMapElement)
+				hashMap.Committed[k] = committed
+			}
+
+			committed.Element = v.Element
+
+			if !hashMap.Tx.Exists(hashMap.name + ":map:" + k) {
+
+				if hashMap.Tx.IsWritable() && hashMap.Indexable {
+					if err = hashMap.Tx.Put(hashMap.name+":list:"+strconv.FormatUint(hashMap.Count, 10), []byte(k)); err != nil {
+						return
+					}
+					if err = hashMap.Tx.Put(hashMap.name+":listKey:"+k, []byte(strconv.FormatUint(hashMap.Count, 10))); err != nil {
+						return
+					}
+				}
+
+				if hashMap.StoredEvent != nil {
+					if err = hashMap.StoredEvent([]byte(k), committed); err != nil {
+						return
+					}
+				}
+				hashMap.Count += 1
+			}
+
+			if hashMap.Tx.IsWritable() {
+				if err = hashMap.Tx.Put(hashMap.name+":map:"+k, v.Element.SerializeToBytes()); err != nil {
+					return
+				}
+			}
+
+			committed.Status = "view"
+			committed.Stored = "update"
+
+		}
+
 	}
 
+	for i := 0; i < c; i++ {
+		delete(hashMap.Changes, removed[i])
+	}
+
+	if hashMap.Tx.IsWritable() {
+		buf := make([]byte, binary.MaxVarintLen64)
+		n := binary.PutUvarint(buf, hashMap.Count)
+		if err = hashMap.Tx.Put(hashMap.name+":count", buf[:n]); err != nil {
+			return
+		}
+	}
+
+	return
 }
 
 func (hashMap *HashMap) Rollback() {
@@ -240,84 +327,4 @@ func (hashMap *HashMap) Rollback() {
 
 func (hashMap *HashMap) Reset() {
 	hashMap.Committed = make(map[string]*CommittedMapElement)
-}
-
-func (hashMap *HashMap) WriteToStore() (err error) {
-
-	if len(hashMap.Committed) == 0 {
-		return
-	}
-
-	for k, v := range hashMap.Committed {
-		if len(k) != hashMap.KeyLength {
-			return errors.New("key length is invalid")
-		}
-		if v.Status == "del" {
-
-			v.Status = "view"
-			if hashMap.Tx.Exists(hashMap.name + k) {
-				if err = hashMap.Tx.Delete(hashMap.name + ":map:" + k); err != nil {
-					return
-				}
-				hashMap.Count -= 1
-
-				if hashMap.Indexable {
-					countStr := strconv.FormatUint(hashMap.Count, 10)
-					if err = hashMap.Tx.Delete(hashMap.name + ":list:" + countStr); err != nil {
-						return
-					}
-					if err = hashMap.Tx.Delete(hashMap.name + ":listKey:" + k); err != nil {
-						return
-					}
-				}
-				if hashMap.DeletedEvent != nil {
-					if err = hashMap.DeletedEvent([]byte(k), v); err != nil {
-						return
-					}
-				}
-
-				v.Stored = "del"
-			} else {
-				v.Stored = "view"
-			}
-
-		}
-	}
-
-	for k, v := range hashMap.Committed {
-		if v.Status == "update" {
-
-			if !hashMap.Tx.Exists(hashMap.name + ":map:" + k) {
-				if hashMap.Indexable {
-					if err = hashMap.Tx.Put(hashMap.name+":list:"+strconv.FormatUint(hashMap.Count, 10), []byte(k)); err != nil {
-						return
-					}
-					if err = hashMap.Tx.Put(hashMap.name+":listKey:"+k, []byte(strconv.FormatUint(hashMap.Count, 10))); err != nil {
-						return
-					}
-				}
-				if hashMap.StoredEvent != nil {
-					if err = hashMap.StoredEvent([]byte(k), v); err != nil {
-						return
-					}
-				}
-				hashMap.Count += 1
-			}
-
-			if err = hashMap.Tx.Put(hashMap.name+":map:"+k, v.Element.SerializeToBytes()); err != nil {
-				return
-			}
-			v.Status = "view"
-			v.Stored = "update"
-		}
-
-	}
-
-	buf := make([]byte, binary.MaxVarintLen64)
-	n := binary.PutUvarint(buf, hashMap.Count)
-	if err = hashMap.Tx.Put(hashMap.name+":count", buf[:n]); err != nil {
-		return
-	}
-
-	return
 }

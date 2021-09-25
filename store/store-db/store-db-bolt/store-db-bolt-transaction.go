@@ -14,6 +14,10 @@ type StoreDBBoltTransaction struct {
 	write  bool
 }
 
+func (tx *StoreDBBoltTransaction) IsWritable() bool {
+	return tx.write
+}
+
 func (tx *StoreDBBoltTransaction) Put(key string, value []byte) error {
 	if !tx.write {
 		return errors.New("Transaction is not writeable")

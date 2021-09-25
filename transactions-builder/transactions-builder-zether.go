@@ -115,6 +115,10 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 				return
 			}
 
+			if acc == nil {
+				return errors.New("From Wallet doesn't exist")
+			}
+
 			var fromBalanceDecoded uint64
 			if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddress.PublicKey, acc.GetBalance(), acc.Token, false); err != nil {
 				return
