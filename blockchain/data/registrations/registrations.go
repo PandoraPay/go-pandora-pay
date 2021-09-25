@@ -56,8 +56,9 @@ func NewRegistrations(tx store_db_interface.StoreDBTransactionInterface) (regist
 		return reg, err
 	}
 
-	registrations.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) {
+	registrations.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) error {
 		element.Element.(*registration.Registration).Index = registrations.HashMap.Count
+		return nil
 	}
 
 	return

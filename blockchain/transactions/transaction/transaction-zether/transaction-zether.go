@@ -132,7 +132,7 @@ func (tx *TransactionZether) Validate() (err error) {
 
 	for _, payload := range tx.Payloads {
 
-		if bytes.Equal(payload.Token, config.NATIVE_TOKEN) {
+		if bytes.Equal(payload.Token, config.NATIVE_TOKEN_FULL) {
 			return errors.New("NATIVE_TOKEN_FULL should be written as NATIVE_TOKEN")
 		}
 

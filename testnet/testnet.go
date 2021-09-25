@@ -14,6 +14,7 @@ import (
 	"pandora-pay/blockchain/data/registrations"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
+	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/config"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography/crypto"
@@ -153,7 +154,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (tx *transact
 		return nil, err
 	}
 
-	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce, hex.EncodeToString(tx.Bloom.Hash))
+	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).Height, hex.EncodeToString(tx.Bloom.Hash))
 	return
 }
 

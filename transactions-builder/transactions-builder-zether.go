@@ -201,7 +201,6 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 	}); err != nil {
 		return nil, err
 	}
-
 	statusCallback("Balances checked")
 
 	if tx, err = wizard.CreateZetherTx(transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, statusCallback); err != nil {
@@ -210,7 +209,6 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 	}
 
 	statusCallback("Transaction Created")
-
 	if propagateTx {
 		if err := builder.mempool.AddTxToMemPool(tx, chainHeight, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
 			return nil, err

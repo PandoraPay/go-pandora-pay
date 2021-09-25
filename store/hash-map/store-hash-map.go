@@ -10,15 +10,16 @@ import (
 )
 
 type HashMap struct {
-	name        string
-	Tx          store_db_interface.StoreDBTransactionInterface
-	Count       uint64
-	Changes     map[string]*ChangesMapElement
-	Committed   map[string]*CommittedMapElement
-	KeyLength   int
-	Deserialize func([]byte, []byte) (helpers.SerializableInterface, error)
-	StoredEvent func([]byte, *CommittedMapElement)
-	Indexable   bool
+	name         string
+	Tx           store_db_interface.StoreDBTransactionInterface
+	Count        uint64
+	Changes      map[string]*ChangesMapElement
+	Committed    map[string]*CommittedMapElement
+	KeyLength    int
+	Deserialize  func([]byte, []byte) (helpers.SerializableInterface, error)
+	DeletedEvent func([]byte, *CommittedMapElement) error
+	StoredEvent  func([]byte, *CommittedMapElement) error
+	Indexable    bool
 }
 
 func (hashMap *HashMap) GetIndexByKey(key string) (uint64, error) {
@@ -259,6 +260,7 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 					return
 				}
 				hashMap.Count -= 1
+
 				if hashMap.Indexable {
 					countStr := strconv.FormatUint(hashMap.Count, 10)
 					if err = hashMap.Tx.Delete(hashMap.name + ":list:" + countStr); err != nil {
@@ -268,6 +270,12 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 						return
 					}
 				}
+				if hashMap.DeletedEvent != nil {
+					if err = hashMap.DeletedEvent([]byte(k), v); err != nil {
+						return
+					}
+				}
+
 				v.Stored = "del"
 			} else {
 				v.Stored = "view"
@@ -289,7 +297,9 @@ func (hashMap *HashMap) WriteToStore() (err error) {
 					}
 				}
 				if hashMap.StoredEvent != nil {
-					hashMap.StoredEvent([]byte(k), v)
+					if err = hashMap.StoredEvent([]byte(k), v); err != nil {
+						return
+					}
 				}
 				hashMap.Count += 1
 			}
