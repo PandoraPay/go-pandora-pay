@@ -6,16 +6,18 @@ import (
 )
 
 type TransactionsWizardFee struct {
-	Fixed       uint64 `json:"fixed,omitempty"`
-	PerByte     uint64 `json:"perByte,omitempty"`
-	PerByteAuto bool   `json:"perByteAuto,omitempty"`
+	Fixed             uint64 `json:"fixed,omitempty"`
+	PerByte           uint64 `json:"perByte,omitempty"`
+	PerByteExtraSpace uint64 `json:"perByteExtraSpace,omitempty"`
+	PerByteAuto       bool   `json:"perByteAuto,omitempty"`
 }
 
 func (fee *TransactionsWizardFee) Clone() *TransactionsWizardFee {
 	return &TransactionsWizardFee{
-		Fixed:       fee.Fixed,
-		PerByte:     fee.PerByte,
-		PerByteAuto: fee.PerByteAuto,
+		Fixed:             fee.Fixed,
+		PerByte:           fee.PerByte,
+		PerByteExtraSpace: fee.PerByteExtraSpace,
+		PerByteAuto:       fee.PerByteAuto,
 	}
 }
 

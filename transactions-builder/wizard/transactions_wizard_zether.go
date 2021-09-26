@@ -326,19 +326,13 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	}
 
 	for t := range transfers {
-		feeCopy := transfers[t].Fee
-		for {
-			if err = setFeeZether(tx, transfers[t], fees[t].Clone()); err != nil {
-				return
-			}
-			if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, statusCallback); err != nil {
-				return
-			}
-			if feeCopy == transfers[t].Fee {
-				break
-			}
-			feeCopy = transfers[t].Fee
+
+		if err = setFeeZether(tx, transfers[t], fees[t].Clone(), func() error {
+			return signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, statusCallback)
+		}); err != nil {
+			return
 		}
+
 	}
 
 	if err = tx.BloomAll(); err != nil {

@@ -6,6 +6,7 @@ import (
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	"pandora-pay/config/config_fees"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/recovery"
@@ -97,7 +98,14 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 			finalTxs[i].err = err
 			continue
 		}
-		computedFeePerByte := minerFees / tx.Bloom.Size
+
+		computedFeePerByte := minerFees
+		if err = helpers.SafeUint64Sub(&computedFeePerByte, uint64(64*len(tx.Registrations.Registrations))*config_fees.FEES_PER_BYTE_EXTRA_SPACE); err != nil {
+			finalTxs[i].err = err
+			continue
+		}
+
+		computedFeePerByte = minerFees / tx.Bloom.Size
 
 		requiredFeePerByte := uint64(0)
 		switch tx.Version {
@@ -105,6 +113,9 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 			requiredFeePerByte = config_fees.FEES_PER_BYTE
 		case transaction_type.TX_ZETHER:
 			requiredFeePerByte = config_fees.FEES_PER_BYTE_ZETHER
+		default:
+			finalTxs[i].err = errors.New("Invalid Tx.Version")
+			continue
 		}
 
 		if computedFeePerByte < requiredFeePerByte {
