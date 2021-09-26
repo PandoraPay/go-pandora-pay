@@ -98,12 +98,12 @@ type json_Only_TransactionZetherStatement struct {
 }
 
 type json_Only_TransactionPayload struct {
-	Token     helpers.HexBytes                      `json:"token"`
-	BurnValue uint64                                `json:"burnValue"`
-	ExtraType byte                                  `json:"extraType"`
-	ExtraData helpers.HexBytes                      `json:"extraData"`
-	Statement *json_Only_TransactionZetherStatement `json:"statement"`
-	Proof     helpers.HexBytes                      `json:"proof"`
+	Token       helpers.HexBytes                        `json:"token"`
+	BurnValue   uint64                                  `json:"burnValue"`
+	DataVersion transaction_data.TransactionDataVersion `json:"dataType"`
+	Data        helpers.HexBytes                        `json:"data"`
+	Statement   *json_Only_TransactionZetherStatement   `json:"statement"`
+	Proof       helpers.HexBytes                        `json:"proof"`
 }
 
 type json_TransactionZether struct {
@@ -211,8 +211,8 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			payloadsJson[i] = &json_Only_TransactionPayload{
 				payload.Token,
 				payload.BurnValue,
-				payload.ExtraType,
-				payload.ExtraData,
+				payload.DataVersion,
+				payload.Data,
 				statementJson,
 				proofJson,
 			}
@@ -381,10 +381,10 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			}
 
 			payloads[i] = &transaction_zether.TransactionZetherPayload{
-				Token:     payload.Token,
-				BurnValue: payload.BurnValue,
-				ExtraType: payload.ExtraType,
-				ExtraData: payload.ExtraData,
+				Token:       payload.Token,
+				BurnValue:   payload.BurnValue,
+				DataVersion: payload.DataVersion,
+				Data:        payload.Data,
 				Statement: &crypto.Statement{
 					RingSize:      payload.Statement.RingSize,
 					CLn:           CLn,

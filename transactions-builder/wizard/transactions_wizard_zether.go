@@ -23,7 +23,7 @@ type ZetherTransfer struct {
 	Amount             uint64
 	Burn               uint64
 	Fee                uint64
-	Data               []byte
+	Data               *TransactionsWizardData
 }
 
 type ZetherPublicKeyIndex struct {
@@ -156,21 +156,27 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					return errors.New("currently we do not support ring size >= 512")
 				}
 
-				payload.ExtraType = transaction_zether.ENCRYPTED_DEFAULT_PAYLOAD_CBOR
+				dataFinal := transfer.Data.Data
+				if dataFinal == nil || len(dataFinal) == 0 {
+					payload.DataVersion = transaction_data.TX_DATA_NONE
+				} else if transfer.Data.Encrypt {
+					payload.DataVersion = transaction_data.TX_DATA_ENCRYPTED
+					if len(dataFinal) > transaction_zether.PAYLOAD0_LIMIT {
+						return errors.New("Data final exceeds")
+					}
+					dataFinal = append(dataFinal, make([]byte, transaction_zether.PAYLOAD0_LIMIT-len(dataFinal))...)
+					payload.Data = append([]byte{byte(uint(witness_index[0]))}, dataFinal...)
 
-				dataFinal := transfer.Data
-
-				if len(dataFinal) > transaction_zether.PAYLOAD0_LIMIT {
-					return errors.New("Data final exceeds")
-				}
-				dataFinal = append(dataFinal, make([]byte, transaction_zether.PAYLOAD0_LIMIT-len(dataFinal))...)
-
-				payload.ExtraData = append([]byte{byte(uint(witness_index[0]))}, dataFinal...)
-
-				//fmt.Printf("%d packed rpc payload %d %x\n ", t, len(data), data)
-				// make sure used data encryption is optional, just in case we would like to play together with ring members
-				if err = crypto.EncryptDecryptUserData(blinder, payload.ExtraData); err != nil {
-					return
+					// make sure used data encryption is optional, just in case we would like to play together with ring members
+					if err = crypto.EncryptDecryptUserData(blinder, payload.Data); err != nil {
+						return
+					}
+				} else {
+					if len(dataFinal) > config.TRANSACTIONS_MAX_DATA_LENGTH {
+						return errors.New("Data final exceeds")
+					}
+					payload.DataVersion = transaction_data.TX_DATA_PLAIN_TEXT
+					payload.Data = dataFinal
 				}
 
 			default:

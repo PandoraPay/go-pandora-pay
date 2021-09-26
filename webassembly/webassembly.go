@@ -141,14 +141,14 @@ func Initialize(startMainCb func()) {
 					"TX_DATA_ENCRYPTED":  js.ValueOf(uint64(transaction_data.TX_DATA_ENCRYPTED)),
 				}),
 				"transactionSimple": js.ValueOf(map[string]interface{}{
-					"scriptType": js.ValueOf(map[string]interface{}{
+					"ScriptType": js.ValueOf(map[string]interface{}{
 						"SCRIPT_UNSTAKE":         js.ValueOf(uint64(transaction_simple.SCRIPT_UNSTAKE)),
 						"SCRIPT_UPDATE_DELEGATE": js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_DELEGATE)),
 						"SCRIPT_CLAIM":           js.ValueOf(uint64(transaction_simple.SCRIPT_CLAIM)),
 					}),
 				}),
 				"transactionZether": js.ValueOf(map[string]interface{}{
-					"scriptType": js.ValueOf(map[string]interface{}{
+					"ScriptType": js.ValueOf(map[string]interface{}{
 						"SCRIPT_TRANSFER": js.ValueOf(uint64(transaction_zether.SCRIPT_TRANSFER)),
 						"SCRIPT_DELEGATE": js.ValueOf(uint64(transaction_zether.SCRIPT_DELEGATE)),
 					}),

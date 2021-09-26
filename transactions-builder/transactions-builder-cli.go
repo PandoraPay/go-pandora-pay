@@ -38,14 +38,6 @@ func (builder *TransactionsBuilder) readFees() (out *TransactionsBuilderFeeFloat
 	return fee, true
 }
 
-func (builder *TransactionsBuilder) readZetherData() (out []byte, ok bool) {
-	str, ok := gui.GUI.OutputReadString("Message (data). Leave empty for none")
-	if !ok {
-		return
-	}
-	return []byte(str), true
-}
-
 func (builder *TransactionsBuilder) readData() (out *wizard.TransactionsWizardData, ok bool) {
 
 	data := &wizard.TransactionsWizardData{}
@@ -93,7 +85,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		data, ok := builder.readZetherData()
+		data, ok := builder.readData()
 		if !ok {
 			return
 		}
@@ -113,7 +105,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateZetherTx_Float([]string{walletAddress.AddressEncoded}, [][]byte{token}, []float64{amount}, []string{destinationAddress.EncodeAddr()}, []float64{0}, ringMembers, [][]byte{data}, []*TransactionsBuilderFeeFloat{fee}, propagate, true, true, func(status string) {
+		tx, err := builder.CreateZetherTx_Float([]string{walletAddress.AddressEncoded}, [][]byte{token}, []float64{amount}, []string{destinationAddress.EncodeAddr()}, []float64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*TransactionsBuilderFeeFloat{fee}, propagate, true, true, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

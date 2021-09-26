@@ -10,7 +10,6 @@ import (
 	"pandora-pay/blockchain/data/accounts/account"
 	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
 	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
-	"pandora-pay/blockchain/data/registrations"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
@@ -38,7 +37,7 @@ type Testnet struct {
 	nodes               uint64
 }
 
-func (testnet *Testnet) testnetCreateClaimTx(reg bool, amount uint64) (tx *transaction.Transaction, err error) {
+func (testnet *Testnet) testnetCreateClaimTx(amount uint64) (tx *transaction.Transaction, err error) {
 
 	addr, err := testnet.wallet.GetWalletAddress(0)
 	if err != nil {
@@ -75,7 +74,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 	dsts := []string{}
 	dstsAmounts, burn := []uint64{}, []uint64{}
 	dstsTokens := [][]byte{}
-	data := [][]byte{}
+	data := []*wizard.TransactionsWizardData{}
 	ringMembers := [][]string{}
 	fees := []*wizard.TransactionsWizardFee{}
 
@@ -111,7 +110,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 		}
 		ringMembers = append(ringMembers, ring)
 
-		data = append(data, []byte{})
+		data = append(data, &wizard.TransactionsWizardData{[]byte{}, false})
 		fees = append(fees, &wizard.TransactionsWizardFee{0, 0, 0, true})
 	}
 
@@ -142,7 +141,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (tx *transact
 		return
 	}
 
-	data := []byte{}
+	data := &wizard.TransactionsWizardData{nil, false}
 	fee := &wizard.TransactionsWizardFee{0, 0, 0, true}
 
 	ringMembers, err := testnet.transactionsBuilder.CreateZetherRing(walletAddr.AddressEncoded, dst, config.NATIVE_TOKEN, -1, -1)
@@ -150,7 +149,7 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (tx *transact
 		return
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{walletAddr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, [][]byte{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{walletAddr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -208,24 +207,18 @@ func (testnet *Testnet) run() {
 
 					var acc *account.Account
 					var plainAcc *plain_account.PlainAccount
-					var reg bool
 
 					gui.GUI.Log("UpdateNewChain received! 2")
 
 					if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 						accsCollection := accounts.NewAccountsCollection(reader)
-						regs := registrations.NewRegistrations(reader)
 
 						accs, err := accsCollection.GetMap(config.NATIVE_TOKEN)
 						if err != nil {
 							return
 						}
 						if acc, err = accs.GetAccount(publicKey); err != nil {
-							return
-						}
-
-						if reg, err = regs.Exists(string(publicKey)); err != nil {
 							return
 						}
 
@@ -258,9 +251,9 @@ func (testnet *Testnet) run() {
 							}
 						}
 
-						if claimable > 0 {
+						if claimable > 0 && balance < claimable/2 {
 							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_CLAIM) {
-								if _, err = testnet.testnetCreateClaimTx(reg, claimable); err != nil {
+								if _, err = testnet.testnetCreateClaimTx(claimable / 2); err != nil {
 									return
 								}
 							}

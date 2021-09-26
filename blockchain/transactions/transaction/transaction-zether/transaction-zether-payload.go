@@ -3,6 +3,8 @@ package transaction_zether
 import (
 	"errors"
 	"math"
+	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
+	"pandora-pay/config"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
@@ -11,8 +13,8 @@ type TransactionZetherPayload struct {
 	Token     []byte
 	BurnValue uint64
 
-	ExtraType byte   // its unencrypted  and is by default 0 for almost all txs
-	ExtraData []byte // rpc payload encryption depends on RPCType
+	DataVersion transaction_data.TransactionDataVersion // its unencrypted  and is by default 0 for almost all txs
+	Data        []byte                                  // rpc payload encryption depends on RPCType
 
 	// sender position in ring representation in a byte, upto 256 ring
 	// 144 byte payload  ( to implement specific functionality such as delivery of keys etc), user dependent encryption
@@ -23,8 +25,11 @@ type TransactionZetherPayload struct {
 func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteToken(payload.Token)
 	w.WriteUvarint(payload.BurnValue)
-	w.WriteByte(payload.ExtraType)
-	w.Write(payload.ExtraData)
+
+	w.WriteByte(byte(payload.DataVersion))
+	if payload.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT || payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
+		w.Write(payload.Data)
+	}
 
 	payload.Statement.Serialize(w)
 
@@ -36,18 +41,42 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 
 func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (err error) {
 
+	var n uint64
+
 	if payload.Token, err = r.ReadToken(); err != nil {
 		return
 	}
 	if payload.BurnValue, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if payload.ExtraType, err = r.ReadByte(); err != nil {
+
+	var dataVersion byte
+	if dataVersion, err = r.ReadByte(); err != nil {
 		return
 	}
-	if payload.ExtraData, err = r.ReadBytes(PAYLOAD_LIMIT); err != nil {
-		return
+
+	payload.DataVersion = transaction_data.TransactionDataVersion(dataVersion)
+
+	switch payload.DataVersion {
+	case transaction_data.TX_DATA_NONE:
+	case transaction_data.TX_DATA_PLAIN_TEXT:
+		if n, err = r.ReadUvarint(); err != nil {
+			return
+		}
+		if n == 0 || n > config.TRANSACTIONS_MAX_DATA_LENGTH {
+			return errors.New("Tx.Data length is invalid")
+		}
+		if payload.Data, err = r.ReadBytes(int(n)); err != nil {
+			return
+		}
+	case transaction_data.TX_DATA_ENCRYPTED:
+		if payload.Data, err = r.ReadBytes(PAYLOAD_LIMIT); err != nil {
+			return
+		}
+	default:
+		return errors.New("Invalid Tx.DataVersion")
 	}
+
 	if err = payload.Statement.Deserialize(r); err != nil {
 		return
 	}

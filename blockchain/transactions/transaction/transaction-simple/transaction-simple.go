@@ -115,7 +115,7 @@ func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 	w.WriteUvarint(uint64(tx.TxScript))
 
 	w.WriteByte(byte(tx.DataVersion))
-	if tx.DataVersion != transaction_data.TX_DATA_NONE {
+	if tx.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT || tx.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
 		w.WriteUvarint(uint64(len(tx.Data)))
 		w.Write(tx.Data)
 	}
