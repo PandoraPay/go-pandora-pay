@@ -31,12 +31,33 @@ func (s *HexBytes) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
+func ConvertHexBytesArraysToBytesArray(data []HexBytes) [][]byte {
+	out := make([][]byte, len(data))
+	for i := range data {
+		out[i] = data[i]
+	}
+	return out
+}
+
 func ConvertBN256Array(array []*bn256.G1) []HexBytes {
 	out := make([]HexBytes, len(array))
 	for i, it := range array {
 		out[i] = it.EncodeCompressed()
 	}
 	return out
+}
+
+func ConvertToBN256Array(array []HexBytes) ([]*bn256.G1, error) {
+	out := make([]*bn256.G1, len(array))
+	for i := range array {
+
+		p := new(bn256.G1)
+		if err := p.DecodeCompressed(array[i]); err != nil {
+			return nil, err
+		}
+		out[i] = p
+	}
+	return out, nil
 }
 
 func GetJSON(obj interface{}, ignoreFields ...string) ([]byte, error) {

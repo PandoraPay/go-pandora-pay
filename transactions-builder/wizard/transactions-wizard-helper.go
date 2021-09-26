@@ -27,7 +27,7 @@ func setFee(tx *transaction.Transaction, fee *TransactionsWizardFee, setFeeCallb
 
 	oldFee := uint64(0)
 	for {
-		feeValue := config_fees.ComputeTxFees(uint64(len(tx.SerializeManualToBytes())), fee.PerByte, uint64(64*len(tx.Registrations.Registrations)), fee.PerByteExtraSpace)
+		feeValue := config_fees.ComputeTxFees(uint64(len(tx.SerializeManualToBytes())), fee.PerByte, tx.ComputeExtraSpace(), fee.PerByteExtraSpace)
 
 		setFeeCallback(feeValue)
 

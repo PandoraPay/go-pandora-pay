@@ -21,7 +21,6 @@ func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.Pr
 	}
 
 	statusCallback("Transaction Signed")
-
 	return
 }
 
@@ -138,7 +137,7 @@ func CreateClaimTx(nonce uint64, key []byte, txRegistrations []*transaction_data
 	privateKey := &addresses.PrivateKey{Key: key}
 
 	txBase := &transaction_simple.TransactionSimple{
-		TxScript:    transaction_simple.SCRIPT_UPDATE_DELEGATE,
+		TxScript:    transaction_simple.SCRIPT_CLAIM,
 		DataVersion: data.getDataVersion(),
 		Data:        dataFinal,
 		Nonce:       nonce,

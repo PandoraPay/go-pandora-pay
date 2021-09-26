@@ -106,10 +106,10 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []b
 	return rings, nil
 }
 
-func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUsed [][]byte, amounts []float64, dsts []string, burn []float64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUsed [][]byte, amounts []float64, dsts []string, burns []float64, ringMembers [][]string, data [][]byte, fees []*TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	amountsFinal := make([]uint64, len(amounts))
-	burnFinal := make([]uint64, len(burn))
+	burnsFinal := make([]uint64, len(burns))
 	finalFees := make([]*wizard.TransactionsWizardFee, len(fees))
 
 	statusCallback("Converting Floats to Numbers")
@@ -134,7 +134,7 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUs
 			if amountsFinal[i], err = tok.ConvertToUnits(amounts[i]); err != nil {
 				return
 			}
-			if burnFinal[i], err = tok.ConvertToUnits(burn[i]); err != nil {
+			if burnsFinal[i], err = tok.ConvertToUnits(burns[i]); err != nil {
 				return
 			}
 			if finalFees[i], err = fees[i].convertToWizardFee(tok); err != nil {
@@ -147,12 +147,12 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUs
 		return nil, err
 	}
 
-	return builder.CreateZetherTx(from, tokensUsed, amountsFinal, dsts, burnFinal, ringMembers, data, finalFees, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
+	return builder.CreateZetherTx(from, tokensUsed, amountsFinal, dsts, burnsFinal, ringMembers, data, finalFees, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][]byte, amounts []uint64, dsts []string, burn []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data [][]byte, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
-	if len(from) != len(tokensUsed) || len(tokensUsed) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burn) || len(burn) != len(data) || len(data) != len(fees) {
+	if len(from) != len(tokensUsed) || len(tokensUsed) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
 		return nil, errors.New("Length of from and transfers are not matching")
 	}
 
@@ -216,7 +216,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 				FromBalanceDecoded: fromBalanceDecoded,
 				Destination:        dsts[i],
 				Amount:             amounts[i],
-				Burn:               burn[i],
+				Burn:               burns[i],
 				Data:               data[i],
 			}
 

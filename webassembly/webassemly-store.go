@@ -24,10 +24,15 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
+		token, err := hex.DecodeString(args[1].String())
+		if err != nil {
+			return nil, err
+		}
+
 		var acc *account.Account
 		if !args[1].IsNull() {
-			acc = account.NewAccount(publicKey)
-			if err = json.Unmarshal([]byte(args[1].String()), &acc); err != nil {
+			acc = account.NewAccount(publicKey, token)
+			if err = json.Unmarshal([]byte(args[2].String()), &acc); err != nil {
 				return nil, err
 			}
 		}
@@ -40,7 +45,12 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 
 		if err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
-			accs := accounts.NewAccounts(writer)
+			accsCollection := accounts.NewAccountsCollection(writer)
+			accs, err := accsCollection.GetMap(token)
+			if err != nil {
+				return
+			}
+
 			if acc == nil {
 				accs.Delete(string(publicKey))
 			} else {
@@ -48,7 +58,7 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 					return
 				}
 			}
-			return accs.CommitChanges()
+			return accsCollection.CommitChanges()
 
 		}); err != nil {
 			return nil, err

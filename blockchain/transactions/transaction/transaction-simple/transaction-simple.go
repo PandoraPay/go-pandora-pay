@@ -52,7 +52,7 @@ func (tx *TransactionSimple) IncludeTransaction(txRegistrations *transaction_dat
 	case SCRIPT_CLAIM:
 		err = plainAcc.AddClaimable(false, tx.Fee)
 	default:
-		err = errors.New("Invalid TxScript")
+		err = errors.New("Invalid Simple TxScript")
 	}
 
 	if err != nil {
@@ -96,7 +96,7 @@ func (tx *TransactionSimple) Validate() (err error) {
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE:
+	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_CLAIM:
 		if tx.TransactionSimpleExtraInterface == nil {
 			return errors.New("extra is not assigned")
 		}
@@ -104,7 +104,7 @@ func (tx *TransactionSimple) Validate() (err error) {
 			return
 		}
 	default:
-		return errors.New("Invalid TxScript")
+		return errors.New("Invalid Simple TxScript")
 	}
 
 	return
@@ -143,15 +143,11 @@ func (tx *TransactionSimple) SerializeToBytes() []byte {
 func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 
 	var n uint64
-
 	if n, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
 	scriptType := ScriptType(n)
-	if scriptType >= SCRIPT_END {
-		return errors.New("INVALID SCRIPT TYPE")
-	}
 
 	tx.TxScript = scriptType
 	switch tx.TxScript {
@@ -162,7 +158,7 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 	case SCRIPT_CLAIM:
 		tx.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleClaim{}
 	default:
-		return errors.New("Invalid TxType")
+		return errors.New("INVALID SCRIPT TYPE")
 	}
 
 	var dataVersion byte

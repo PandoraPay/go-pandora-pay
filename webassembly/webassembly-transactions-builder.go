@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/app"
-	"pandora-pay/config"
 	"pandora-pay/helpers"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/transactions-builder/wizard"
@@ -23,25 +22,25 @@ func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		type SimpleTxFloatData struct {
-			From        []string                                          `json:"from"`
-			Nonce       uint64                                            `json:"nonce"`
-			Token       helpers.HexBytes                                  `json:"token"`
-			Amounts     []float64                                         `json:"amounts"`
-			Dsts        []string                                          `json:"dsts"`
-			DstsAmounts []float64                                         `json:"dstsAmounts"`
-			Data        *wizard.TransactionsWizardData                    `json:"data"`
-			Fee         *transactions_builder.TransactionsBuilderFeeFloat `json:"fee"`
-			PropagateTx bool                                              `json:"propagateTx"`
-			AwaitAnswer bool                                              `json:"awaitAnswer"`
+		type ZetherTxFloatData struct {
+			From        []string                                            `json:"from"`
+			Tokens      []helpers.HexBytes                                  `json:"tokens"`
+			Amounts     []float64                                           `json:"amounts"`
+			Dsts        []string                                            `json:"dsts"`
+			Burns       []float64                                           `json:"burns"`
+			RingMembers [][]string                                          `json:"RingMembers"`
+			Data        []helpers.HexBytes                                  `json:"data"`
+			Fees        []*transactions_builder.TransactionsBuilderFeeFloat `json:"fees"`
+			PropagateTx bool                                                `json:"propagateTx"`
+			AwaitAnswer bool                                                `json:"awaitAnswer"`
 		}
 
-		txData := &SimpleTxFloatData{}
+		txData := &ZetherTxFloatData{}
 		if err := json.Unmarshal([]byte(args[0].String()), txData); err != nil {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.createZetherTx_Float(txData.From, txData.Nonce, config.NATIVE_TOKEN, txData.Amounts, txData.Dsts, txData.DstsAmounts, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
+		tx, err := app.TransactionsBuilder.CreateZetherTx_Float(txData.From, helpers.ConvertHexBytesArraysToBytesArray(txData.Tokens), txData.Amounts, txData.Dsts, txData.Burns, txData.RingMembers, helpers.ConvertHexBytesArraysToBytesArray(txData.Data), txData.Fees, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
 			args[1].Invoke(status)
 			time.Sleep(10 * time.Millisecond)
 		})
@@ -69,7 +68,7 @@ func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 			Nonce                        uint64                                            `json:"nonce"`
 			DelegateNewPublicKeyGenerate bool                                              `json:"delegateNewPublicKeyGenerate"`
 			DelegateNewPubKey            helpers.HexBytes                                  `json:"delegateNewPubKey"`
-			DelegateNewFee               uint16                                            `json:"delegateNewFee"`
+			DelegateNewFee               uint64                                            `json:"delegateNewFee"`
 			Data                         *wizard.TransactionsWizardData                    `json:"data"`
 			Fee                          *transactions_builder.TransactionsBuilderFeeFloat `json:"fee"`
 			PropagateTx                  bool                                              `json:"propagateTx"`

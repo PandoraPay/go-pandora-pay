@@ -45,6 +45,7 @@ func (self *TransactionDataTransactions) Deserialize(r *helpers.BufferReader) (e
 	if n, err = r.ReadUvarint(); err != nil {
 		return
 	}
+
 	self.Registrations = make([]*TransactionDataRegistration, n)
 	for i := uint64(0); i < n; i++ {
 		registration := &TransactionDataRegistration{}

@@ -18,6 +18,10 @@ type Transaction struct {
 	Bloom         *TransactionBloom
 }
 
+func (tx *Transaction) ComputeExtraSpace() uint64 {
+	return uint64(64 * len(tx.Registrations.Registrations))
+}
+
 func (tx *Transaction) GetAllFees() (uint64, error) {
 	return tx.ComputeFees()
 }
@@ -91,11 +95,6 @@ func (tx *Transaction) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 	tx.Version = transaction_type.TransactionVersion(n)
 
-	tx.Registrations = new(transaction_data.TransactionDataTransactions)
-	if err = tx.Registrations.Deserialize(r); err != nil {
-		return
-	}
-
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 		tx.TransactionBaseInterface = &transaction_simple.TransactionSimple{}
@@ -103,6 +102,11 @@ func (tx *Transaction) Deserialize(r *helpers.BufferReader) (err error) {
 		tx.TransactionBaseInterface = &transaction_zether.TransactionZether{}
 	default:
 		return errors.New("Invalid TxType")
+	}
+
+	tx.Registrations = new(transaction_data.TransactionDataTransactions)
+	if err = tx.Registrations.Deserialize(r); err != nil {
+		return
 	}
 
 	if err = tx.TransactionBaseInterface.Deserialize(r); err != nil {

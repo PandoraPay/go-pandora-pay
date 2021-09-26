@@ -5,6 +5,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-type"
+	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/config"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/recovery"
@@ -132,6 +133,7 @@ func Initialize(startMainCb func()) {
 			"transactions": js.ValueOf(map[string]interface{}{
 				"TransactionVersion": js.ValueOf(map[string]interface{}{
 					"TX_SIMPLE": js.ValueOf(uint64(transaction_type.TX_SIMPLE)),
+					"TX_ZETHER": js.ValueOf(uint64(transaction_type.TX_ZETHER)),
 				}),
 				"TransactionDataVersion": js.ValueOf(map[string]interface{}{
 					"TX_DATA_NONE":       js.ValueOf(uint64(transaction_data.TX_DATA_NONE)),
@@ -142,6 +144,13 @@ func Initialize(startMainCb func()) {
 					"scriptType": js.ValueOf(map[string]interface{}{
 						"SCRIPT_UNSTAKE":         js.ValueOf(uint64(transaction_simple.SCRIPT_UNSTAKE)),
 						"SCRIPT_UPDATE_DELEGATE": js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_DELEGATE)),
+						"SCRIPT_CLAIM":           js.ValueOf(uint64(transaction_simple.SCRIPT_CLAIM)),
+					}),
+				}),
+				"transactionZether": js.ValueOf(map[string]interface{}{
+					"scriptType": js.ValueOf(map[string]interface{}{
+						"SCRIPT_TRANSFER": js.ValueOf(uint64(transaction_zether.SCRIPT_TRANSFER)),
+						"SCRIPT_DELEGATE": js.ValueOf(uint64(transaction_zether.SCRIPT_DELEGATE)),
 					}),
 				}),
 			}),

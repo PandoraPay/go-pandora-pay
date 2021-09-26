@@ -127,7 +127,7 @@ func (tx *TransactionZether) Validate() (err error) {
 	switch tx.TxScript {
 	case SCRIPT_TRANSFER, SCRIPT_DELEGATE:
 	default:
-		return errors.New("Invalid TxScript")
+		return errors.New("Invalid Zether TxScript")
 	}
 
 	for _, payload := range tx.Payloads {
@@ -141,8 +141,8 @@ func (tx *TransactionZether) Validate() (err error) {
 			return fmt.Errorf("RingSize cannot be less than 2")
 		}
 
-		if payload.Statement.RingSize > 128 { // ring size current limited to 128
-			return fmt.Errorf("RingSize cannot be more than 128")
+		if payload.Statement.RingSize >= config.TRANSACTIONS_ZETHER_RING_MAX { // ring size current limited to 256
+			return fmt.Errorf("RingSize cannot be that big")
 		}
 
 		if !crypto.IsPowerOf2(int(payload.Statement.RingSize)) {

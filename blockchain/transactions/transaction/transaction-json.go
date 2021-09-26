@@ -3,6 +3,7 @@ package transaction
 import (
 	"encoding/json"
 	"errors"
+	"math"
 	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
@@ -10,6 +11,8 @@ import (
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/config"
+	"pandora-pay/cryptography/bn256"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -268,7 +271,6 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			if simpleJson.Data != nil {
 				return errors.New("tx.Data must be nil")
 			}
-
 		case transaction_data.TX_DATA_PLAIN_TEXT, transaction_data.TX_DATA_ENCRYPTED:
 			if simpleJson.Data == nil || len(simpleJson.Data) == 0 || len(simpleJson.Data) > config.TRANSACTIONS_MAX_DATA_LENGTH {
 				return errors.New("Invalid tx.Data length")
@@ -333,7 +335,82 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			}
 
 		default:
-			return errors.New("Invalid base.TxScript")
+			return errors.New("Invalid json Simple TxScript")
+		}
+
+	case transaction_type.TX_ZETHER:
+
+		simpleZether := &json_Only_TransactionZether{}
+		if err := json.Unmarshal(data, simpleZether); err != nil {
+			return err
+		}
+
+		payloads := make([]*transaction_zether.TransactionZetherPayload, len(simpleZether.Payloads))
+		for i, payload := range simpleZether.Payloads {
+
+			CLn, err := helpers.ConvertToBN256Array(payload.Statement.CLn)
+			if err != nil {
+				return err
+			}
+			CRn, err := helpers.ConvertToBN256Array(payload.Statement.CRn)
+			if err != nil {
+				return err
+			}
+			Publickeylist, err := helpers.ConvertToBN256Array(payload.Statement.Publickeylist)
+			if err != nil {
+				return err
+			}
+			C, err := helpers.ConvertToBN256Array(payload.Statement.C)
+			if err != nil {
+				return err
+			}
+
+			D := new(bn256.G1)
+			if err = D.DecodeCompressed(payload.Statement.D); err != nil {
+				return err
+			}
+
+			m := int(math.Log2(float64(payload.Statement.RingSize)))
+			if math.Pow(2, float64(m)) != float64(payload.Statement.RingSize) {
+				return errors.New("log failed")
+			}
+
+			proof := &crypto.Proof{}
+			if err = proof.Deserialize(helpers.NewBufferReader(payload.Proof), m); err != nil {
+				return err
+			}
+
+			payloads[i] = &transaction_zether.TransactionZetherPayload{
+				Token:     payload.Token,
+				BurnValue: payload.BurnValue,
+				ExtraType: payload.ExtraType,
+				ExtraData: payload.ExtraData,
+				Statement: &crypto.Statement{
+					RingSize:      payload.Statement.RingSize,
+					CLn:           CLn,
+					CRn:           CRn,
+					Publickeylist: Publickeylist,
+					C:             C,
+					D:             D,
+					Fees:          payload.Statement.Fees,
+					Roothash:      payload.Statement.Roothash,
+				},
+				Proof: proof,
+			}
+		}
+
+		base := &transaction_zether.TransactionZether{
+			TxScript: simpleZether.TxScript,
+			Height:   simpleZether.Height,
+			Payloads: payloads,
+		}
+		tx.TransactionBaseInterface = base
+
+		switch simpleZether.TxScript {
+		case transaction_zether.SCRIPT_TRANSFER:
+		case transaction_zether.SCRIPT_DELEGATE:
+		default:
+			return errors.New("Invalid Zether TxScript")
 		}
 
 	default:

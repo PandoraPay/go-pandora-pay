@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction-data"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
+	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -22,7 +23,7 @@ type ZetherTransfer struct {
 	Amount             uint64
 	Burn               uint64
 	Fee                uint64
-	Data               *TransactionsWizardData
+	Data               []byte
 }
 
 type ZetherPublicKeyIndex struct {
@@ -151,16 +152,14 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				blinder := new(bn256.G1).ScalarMult(publickeylist[i], r)
 
 				// we must obfuscate it for non-client call
-				if len(publickeylist) >= 512 {
-					return errors.New("currently we donot support ring size >= 512")
+				if len(publickeylist) >= config.TRANSACTIONS_ZETHER_RING_MAX {
+					return errors.New("currently we do not support ring size >= 512")
 				}
 
 				payload.ExtraType = transaction_zether.ENCRYPTED_DEFAULT_PAYLOAD_CBOR
 
-				var dataFinal []byte
-				if dataFinal, err = transfer.Data.getData(); err != nil {
-					return
-				}
+				dataFinal := transfer.Data
+
 				if len(dataFinal) > transaction_zether.PAYLOAD0_LIMIT {
 					return errors.New("Data final exceeds")
 				}
