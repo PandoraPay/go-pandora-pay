@@ -3,7 +3,6 @@ package testnet
 import (
 	"encoding/hex"
 	"github.com/tevino/abool"
-	"math"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
@@ -89,24 +88,32 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 		}
 
 		var addr *wallet_address.WalletAddress
-		addr, err = testnet.wallet.GetWalletAddress(int(i + 1))
-		if err != nil {
-			return
-		}
-
-		dsts = append(dsts, addr.AddressRegistrationEncoded)
-		dstsAmounts = append(dstsAmounts, config_stake.GetRequiredStake(blockHeight))
-		dstsTokens = append(dstsTokens, config.NATIVE_TOKEN)
-		burn = append(burn, 0)
-
-		ringMembers = append(ringMembers, []string{})
-		data = append(data, &wizard.TransactionsWizardData{})
-		fees = append(fees, &wizard.TransactionsWizardFee{0, 0, true})
 
 		if addr, err = testnet.wallet.GetWalletAddress(0); err != nil {
 			return
 		}
 		from = append(from, addr.AddressEncoded)
+
+		if addr, err = testnet.wallet.GetWalletAddress(int(i + 1)); err != nil {
+			return
+		}
+
+		token := config.NATIVE_TOKEN
+
+		dsts = append(dsts, addr.AddressRegistrationEncoded)
+		dstsAmounts = append(dstsAmounts, config_stake.GetRequiredStake(blockHeight))
+		dstsTokens = append(dstsTokens, token)
+		burn = append(burn, 0)
+
+		var ring []string
+		if ring, err = testnet.transactionsBuilder.CreateZetherRing(from[i], addr.AddressEncoded, token, -1, -1); err != nil {
+			return
+		}
+		ringMembers = append(ringMembers, ring)
+
+		data = append(data, &wizard.TransactionsWizardData{})
+		fees = append(fees, &wizard.TransactionsWizardFee{0, 0, true})
+
 	}
 
 	if tx, err = testnet.transactionsBuilder.CreateZetherTx(from, dstsTokens, dstsAmounts, dsts, burn, ringMembers, data, fees, true, true, true, func(string) {}); err != nil {
@@ -119,30 +126,19 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 
 func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (tx *transaction.Transaction, err error) {
 
-	var dst string
-	ringMembers := []string{}
-
 	amount := uint64(rand.Int63n(6))
 	burn := uint64(0)
 
-	pow := rand.Intn(4) + 3
-	count := int(math.Pow(2, float64(pow)))
-	for i := 0; i < count-1; i++ {
-		privateKey := addresses.GenerateNewPrivateKey()
+	privateKey := addresses.GenerateNewPrivateKey()
 
-		var addr *addresses.Address
-		if addr, err = privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0)); err != nil {
-			return
-		}
-
-		if i == 0 {
-			dst = addr.EncodeAddr()
-		} else {
-			ringMembers = append(ringMembers, addr.EncodeAddr())
-		}
+	addr, err := privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
+	if err != nil {
+		return
 	}
 
-	addr, err := testnet.wallet.GetWalletAddress(0)
+	dst := addr.EncodeAddr()
+
+	walletAddr, err := testnet.wallet.GetWalletAddress(0)
 	if err != nil {
 		return
 	}
@@ -150,7 +146,12 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (tx *transact
 	data := &wizard.TransactionsWizardData{}
 	fee := &wizard.TransactionsWizardFee{0, 0, true}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, func(string) {}); err != nil {
+	ringMembers, err := testnet.transactionsBuilder.CreateZetherRing(walletAddr.AddressEncoded, dst, config.NATIVE_TOKEN, -1, -1)
+	if err != nil {
+		return
+	}
+
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{walletAddr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, func(string) {}); err != nil {
 		return nil, err
 	}
 

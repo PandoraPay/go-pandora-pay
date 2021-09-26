@@ -70,7 +70,7 @@ func (accounts *Accounts) GetAccountTokens(key []byte) ([][]byte, error) {
 	out := make([][]byte, count)
 
 	for i := uint64(0); i < count; i++ {
-		token := accounts.HashMap.Tx.Get("accounts:tokenByIndex:" + string(key) + ":" + strconv.FormatUint(count, 10))
+		token := accounts.HashMap.Tx.Get("accounts:tokenByIndex:" + string(key) + ":" + strconv.FormatUint(i, 10))
 		if token == nil {
 			return nil, errors.New("Error reading token")
 		}

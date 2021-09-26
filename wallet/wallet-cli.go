@@ -103,6 +103,8 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 
 		toks := tokens.NewTokens(reader)
 		plainAccs := plain_accounts.NewPlainAccounts(reader)
+		var tok *token.Token
+		var acc *account.Account
 
 		regs := registrations.NewRegistrations(reader)
 
@@ -119,8 +121,8 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 
 			if walletAddress.Version == wallet_address.VERSION_NORMAL {
 
-				var acc *account.Account
-				if acc, err = accs.GetAccount(walletAddress.PublicKey); err != nil {
+				var tokensList [][]byte
+				if tokensList, err = accs.GetAccountTokens(walletAddress.PublicKey); err != nil {
 					return
 				}
 
@@ -129,12 +131,13 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 					return
 				}
 
-				if acc == nil && plainAcc == nil {
+				if len(tokensList) == 0 && plainAcc == nil {
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))
 					continue
 				}
 
 				if plainAcc != nil {
+
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Nonce", strconv.FormatUint(plainAcc.Nonce, 10)))
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Claimable", strconv.FormatFloat(config.ConvertToBase(plainAcc.Claimable), 'f', config.DECIMAL_SEPARATOR, 64)))
 					if plainAcc.HasDelegatedStake() {
@@ -151,48 +154,47 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 					}
 				}
 
-				if acc != nil {
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s:", "BALANCES ENCRYPTED"))
-					var tok *token.Token
-					if tok, err = toks.GetToken(config.NATIVE_TOKEN); err != nil {
-						return
+				if len(tokensList) > 0 {
+
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s %d", "BALANCES ENCRYPTED", "", len(tokensList)))
+					for _, tokenId := range tokensList {
+
+						if tok, err = toks.GetToken(tokenId); err != nil {
+							return
+						}
+						if accs, err = accsCollection.GetMap(tokenId); err != nil {
+							return
+						}
+
+						if acc, err = accs.GetAccount(walletAddress.PublicKey); err != nil {
+							return
+						}
+						gui.GUI.OutputWrite(fmt.Sprintf("%260s: %s", hex.EncodeToString(acc.Balance.Amount.Serialize()), tok.Name))
+
 					}
-					gui.GUI.OutputWrite(fmt.Sprintf("%260s: %s", hex.EncodeToString(acc.Balance.Amount.Serialize()), tok.Name))
 
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES DECRYPTED", "PLEASE WAIT..."))
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES DECRYPTING", "PLEASE WAIT..."))
 
-					var decoded uint64
-					decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, acc.Balance.Amount, acc.Token, false)
-					if err != nil {
-						return
+					for _, tokenId := range tokensList {
+						if tok, err = toks.GetToken(tokenId); err != nil {
+							return
+						}
+						if accs, err = accsCollection.GetMap(tokenId); err != nil {
+							return
+						}
+
+						if acc, err = accs.GetAccount(walletAddress.PublicKey); err != nil {
+							return
+						}
+
+						var decoded uint64
+						if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, acc.Balance.Amount, tokenId, false); err != nil {
+							return
+						}
+						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(decoded), 'f', config.DECIMAL_SEPARATOR, 64), tok.Name))
+
 					}
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(decoded), 'f', config.DECIMAL_SEPARATOR, 64), tok.Name))
 
-					//gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s %d", "BALANCES ENCRYPTED", "", len(acc.Balances)))
-					//if len(acc.Balances) > 0 {
-					//	for _, balance := range acc.Balances {
-					//		var tok *token.Token
-					//		if tok, err = toks.GetToken(balance.Token); err != nil {
-					//			return
-					//		}
-					//		gui.GUI.OutputWrite(fmt.Sprintf("%260s: %s", hex.EncodeToString(balance.Amount.Serialize()), tok.Name))
-					//	}
-					//
-					//	gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES DECRYPTED", "PLEASE WAIT..."))
-					//	for _, balance := range acc.Balances {
-					//		var tok *token.Token
-					//		if tok, err = toks.GetToken(balance.Token); err != nil {
-					//			return
-					//		}
-					//
-					//		var decoded uint64
-					//		decoded, err = wallet.DecodeBalanceByPublicKey( walletAddress.PublicKey, balance.Amount, balance.Token, false)
-					//		if err != nil {
-					//			return
-					//		}
-					//		gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(decoded), 'f', config.DECIMAL_SEPARATOR, 64), tok.Name))
-					//	}
-					//}
 				}
 
 			}

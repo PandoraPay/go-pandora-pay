@@ -112,8 +112,6 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		// []float64{amount}, [][]byte{token}, feePerByte, feeToken, )
-
 		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
 
 		if propagate {

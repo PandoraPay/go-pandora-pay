@@ -5,7 +5,9 @@ The main design pattern that has been taken in consideration is to be **dead-sim
 
 ## Installing
 
-Go 1.17 is required.
+Go 1.18 will be required once released as go-pandora-pay will use generics.
+
+Tested with 1.17 and 1.16
 
 1. Install golang https://golang.org/doc/install
 2. Installing missing packages `go get -t .`
@@ -71,16 +73,17 @@ you can also create an account on hcaptcha
 - [x] Balances
     - [x] Balance and Nonce Update
     - [x] Delegating stake
-    - [x] Support for Multiple Tokens   
+    - [x] Support for Multiple Assets   
     - [ ] Patricia Trie ?
 - [x] Homomorphic Balances
     - [x] Homomorphic balance and nonce   
-    - [x] Multiple Tokens
+    - [x] Multiple Assets
     - [ ] Patricia Trie ?
-- [ ] Tokens
-    - [X] Token
+- [ ] Assets
+    - [X] Asset
     - [ ] Creation
     - [ ] Update  
+    - [ ] Liquidity Pools for Tx Fees
 - [ ] Transactions
     - [x] Transaction Wizard
     - [x] Transaction Builder

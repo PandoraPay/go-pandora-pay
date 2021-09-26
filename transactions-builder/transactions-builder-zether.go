@@ -28,11 +28,21 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []b
 	var err error
 
 	if ringSize == -1 {
-		pow := rand.Intn(4) + 3
+		pow := rand.Intn(4) + 4
 		ringSize = int(math.Pow(2, float64(pow)))
 	}
 	if newAccounts == -1 {
 		newAccounts = rand.Intn(ringSize / 5)
+	}
+
+	if ringSize < 0 {
+		return nil, errors.New("number is negative")
+	}
+	if !crypto.IsPowerOf2(ringSize) {
+		return nil, errors.New("ring size is not a power of 2")
+	}
+	if newAccounts < 0 || newAccounts > ringSize-2 {
+		return nil, errors.New("New accounts needs to be in the interval [0, ringSize-2] ")
 	}
 
 	alreadyUsed := make(map[string]bool)
