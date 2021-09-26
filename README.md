@@ -73,27 +73,29 @@ you can also create an account on hcaptcha
 - [x] Balances
     - [x] Balance and Nonce Update
     - [x] Delegating stake
-    - [x] Support for Multiple Assets   
-    - [ ] Patricia Trie ?
+    - [x] Support for Multiple Assets
 - [x] Homomorphic Balances
     - [x] Homomorphic balance and nonce   
     - [x] Multiple Assets
-    - [ ] Patricia Trie ?
+- [ ] Patricia Trie ? **
 - [ ] Assets
     - [X] Asset
     - [ ] Creation
     - [ ] Update  
     - [ ] Liquidity Pools for Tx Fees
-- [ ] Transactions
+- [x] Transactions
     - [x] Transaction Wizard
     - [x] Transaction Builder
-    - [x] Simple Transactions
-    - [x] Unstake Transaction
-    - [x] Delegate Stake    
-    - [x] Zether Deposit Transactions
-    - [x] Zether Withdraw Transactions
-    - [x] Zether Transfer Transactions
-    - [ ] Multi Threading signature verification **
+    - [x] Fee calculator
+    - [ ] Multi Threading signature verification **   
+- [x] Simple Transactions 
+  - [x] Simple Transactions
+  - [x] Unstake Transaction
+  - [x] Update Delegate
+- [x] Zether Transactions 
+  - [ ] Reclaim Transaction
+  - [ ] Delegate Stake
+  - [x] Transfer Transactions
 - [ ] Mem Pool
     - [ ] Saving/Loading
     - [X] Inserting Txs
@@ -116,7 +118,7 @@ you can also create an account on hcaptcha
   - [X] Store
   - [X] Websockets
   - [X] Network
-- [ ] Wallet
+- [x] Wallet
   - [X] Node.js and Javascript wallet
   - [X] Signing transactions
   - [ ] Documentation **
@@ -132,7 +134,7 @@ The main reasons why DPOS has been chosen over POS:
 5. Future proposals:
     1. state trie proofs to prove to light clients the state.     
     2. sharding. Creating multiple distinct shards and splitting the state trie into `n` shards
-    3. creating macro blocks by selecting specific nodes for a meta chain
+    3. creating macro blocks by selecting specific nodes for a meta chain. This allows light consensus.
   
 ### Debugging
 
