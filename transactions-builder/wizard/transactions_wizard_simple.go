@@ -34,36 +34,33 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 		return
 	}
 
-	tx := &transaction.Transaction{
-		Version:       transaction_type.TX_SIMPLE,
-		Registrations: &transaction_data.TransactionDataTransactions{},
-		TransactionBaseInterface: &transaction_simple.TransactionSimple{
-			TxScript:    transaction_simple.SCRIPT_UNSTAKE,
-			DataVersion: data.getDataVersion(),
-			Data:        dataFinal,
-			Nonce:       nonce,
-			Fee:         0,
-			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleUnstake{
-				Amount: unstakeAmount,
-			},
-			Vin: &transaction_simple_parts.TransactionSimpleInput{
-				PublicKey: privateKey.GeneratePublicKey(),
-			},
+	txBase := &transaction_simple.TransactionSimple{
+		TxScript:    transaction_simple.SCRIPT_UNSTAKE,
+		DataVersion: data.getDataVersion(),
+		Data:        dataFinal,
+		Nonce:       nonce,
+		Fee:         0,
+		TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleUnstake{
+			Amount: unstakeAmount,
 		},
+		Vin: &transaction_simple_parts.TransactionSimpleInput{
+			PublicKey: privateKey.GeneratePublicKey(),
+		},
+	}
+
+	tx := &transaction.Transaction{
+		Version:                  transaction_type.TX_SIMPLE,
+		Registrations:            &transaction_data.TransactionDataTransactions{},
+		TransactionBaseInterface: txBase,
 	}
 	statusCallback("Transaction Created")
 
-	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
-		return
-	}
-	if err = setFeeSimple(tx, fee.Clone()); err != nil {
+	if err = setFee(tx, fee.Clone(), func(fee uint64) { txBase.Fee = fee }, func() error {
+		return signSimpleTransaction(tx, privateKey, statusCallback)
+	}); err != nil {
 		return
 	}
 	statusCallback("Transaction Fees set")
-
-	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
-		return
-	}
 
 	if err = tx.BloomAll(); err != nil {
 		return
@@ -90,35 +87,31 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, 
 	}
 
 	privateKey := &addresses.PrivateKey{Key: key}
-	tx := &transaction.Transaction{
-		Version:       transaction_type.TX_SIMPLE,
-		Registrations: &transaction_data.TransactionDataTransactions{},
-		TransactionBaseInterface: &transaction_simple.TransactionSimple{
-			TxScript:    transaction_simple.SCRIPT_UPDATE_DELEGATE,
-			DataVersion: data.getDataVersion(),
-			Data:        dataFinal,
-			Nonce:       nonce,
-			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleUpdateDelegate{
-				NewPublicKey: delegateNewPubKey,
-				NewFee:       delegateNewFee,
-			},
-			Vin: &transaction_simple_parts.TransactionSimpleInput{
-				PublicKey: privateKey.GeneratePublicKey(),
-			},
+
+	txBase := &transaction_simple.TransactionSimple{
+		TxScript:    transaction_simple.SCRIPT_UPDATE_DELEGATE,
+		DataVersion: data.getDataVersion(),
+		Data:        dataFinal,
+		Nonce:       nonce,
+		TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleUpdateDelegate{
+			NewPublicKey: delegateNewPubKey,
+			NewFee:       delegateNewFee,
 		},
+		Vin: &transaction_simple_parts.TransactionSimpleInput{
+			PublicKey: privateKey.GeneratePublicKey(),
+		},
+	}
+
+	tx := &transaction.Transaction{
+		Version:                  transaction_type.TX_SIMPLE,
+		Registrations:            &transaction_data.TransactionDataTransactions{},
+		TransactionBaseInterface: txBase,
 	}
 	statusCallback("Transaction Created")
 
-	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
-		return
-	}
-
-	if err = setFeeSimple(tx, fee.Clone()); err != nil {
-		return
-	}
-	statusCallback("Transaction Fees set")
-
-	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
+	if err = setFee(tx, fee.Clone(), func(fee uint64) { txBase.Fee = fee }, func() error {
+		return signSimpleTransaction(tx, privateKey, statusCallback)
+	}); err != nil {
 		return
 	}
 
@@ -143,36 +136,32 @@ func CreateClaimTx(nonce uint64, key []byte, txRegistrations []*transaction_data
 	}
 
 	privateKey := &addresses.PrivateKey{Key: key}
+
+	txBase := &transaction_simple.TransactionSimple{
+		TxScript:    transaction_simple.SCRIPT_UPDATE_DELEGATE,
+		DataVersion: data.getDataVersion(),
+		Data:        dataFinal,
+		Nonce:       nonce,
+		TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleClaim{
+			Output: output,
+		},
+		Vin: &transaction_simple_parts.TransactionSimpleInput{
+			PublicKey: privateKey.GeneratePublicKey(),
+		},
+	}
+
 	tx := &transaction.Transaction{
 		Version: transaction_type.TX_SIMPLE,
 		Registrations: &transaction_data.TransactionDataTransactions{
 			Registrations: txRegistrations,
 		},
-		TransactionBaseInterface: &transaction_simple.TransactionSimple{
-			TxScript:    transaction_simple.SCRIPT_UPDATE_DELEGATE,
-			DataVersion: data.getDataVersion(),
-			Data:        dataFinal,
-			Nonce:       nonce,
-			TransactionSimpleExtraInterface: &transaction_simple_extra.TransactionSimpleClaim{
-				Output: output,
-			},
-			Vin: &transaction_simple_parts.TransactionSimpleInput{
-				PublicKey: privateKey.GeneratePublicKey(),
-			},
-		},
+		TransactionBaseInterface: txBase,
 	}
 	statusCallback("Transaction Created")
 
-	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
-		return
-	}
-
-	if err = setFeeSimple(tx, fee.Clone()); err != nil {
-		return
-	}
-	statusCallback("Transaction Fees set")
-
-	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
+	if err = setFee(tx, fee.Clone(), func(fee uint64) { txBase.Fee = fee }, func() error {
+		return signSimpleTransaction(tx, privateKey, statusCallback)
+	}); err != nil {
 		return
 	}
 

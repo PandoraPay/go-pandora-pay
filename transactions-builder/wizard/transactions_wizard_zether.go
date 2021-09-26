@@ -321,13 +321,11 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	}
 	statusCallback("Transaction created")
 
-	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, statusCallback); err != nil {
-		return
-	}
-
 	for t := range transfers {
 
-		if err = setFeeZether(tx, transfers[t], fees[t].Clone(), func() error {
+		if err = setFee(tx, fees[t].Clone(), func(fee uint64) {
+			transfers[t].Fee = fee
+		}, func() error {
 			return signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, statusCallback)
 		}); err != nil {
 			return
