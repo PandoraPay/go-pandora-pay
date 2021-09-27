@@ -7,14 +7,17 @@ import (
 	"pandora-pay/app"
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/data/accounts/account"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
 	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/config"
 	"pandora-pay/helpers"
 	api_faucet "pandora-pay/network/api/api-common/api-faucet"
 	"pandora-pay/network/api/api-common/api_types"
+	"sync"
 	"syscall/js"
 )
+
+var txMutex sync.Mutex
 
 func getNetworkFaucetCoins(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
@@ -120,12 +123,33 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		acc := account.NewAccount(publicKey, config.NATIVE_TOKEN)
-		if err = acc.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
+		result := &api_types.APIAccount{}
+		if err = json.Unmarshal(data.Out, result); err != nil {
 			return nil, err
 		}
 
-		return convertJSON(acc)
+		if result != nil {
+
+			result.Accs = make([]*account.Account, len(result.AccsSerialized))
+			for i := range result.AccsSerialized {
+				result.Accs[i] = account.NewAccount(publicKey, result.Tokens[i])
+				if err = result.Accs[i].Deserialize(helpers.NewBufferReader(result.AccsSerialized[i])); err != nil {
+					return nil, err
+				}
+			}
+			result.AccsSerialized = nil
+
+			if result.PlainAccSerialized != nil {
+				result.PlainAcc = &plain_account.PlainAccount{}
+				if err = result.PlainAcc.Deserialize(helpers.NewBufferReader(result.PlainAccSerialized)); err != nil {
+					return nil, err
+				}
+				result.PlainAccSerialized = nil
+			}
+
+		}
+
+		return convertJSON(result)
 	})
 }
 
@@ -178,6 +202,10 @@ func getNetworkAccountMempool(this js.Value, args []js.Value) interface{} {
 
 func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
+
+		txMutex.Lock()
+		defer txMutex.Unlock()
+
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -213,7 +241,7 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 		if err = received.Tx.Deserialize(helpers.NewBufferReader(received.TxSerialized)); err != nil {
 			return nil, err
 		}
-		if err = received.Tx.BloomAll(); err != nil {
+		if err = received.Tx.BloomExtraVerified(); err != nil {
 			return nil, err
 		}
 
@@ -316,4 +344,8 @@ func unsubscribeNetwork(this js.Value, args []js.Value) interface{} {
 		data := socket.SendJSONAwaitAnswer([]byte("unsub"), &api_types.APIUnsubscriptionRequest{key, api_types.SubscriptionType(args[1].Int())})
 		return true, data.Err
 	})
+}
+
+func init() {
+	txMutex = sync.Mutex{}
 }

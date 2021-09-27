@@ -2,12 +2,12 @@ package addresses
 
 import (
 	"bytes"
-	"encoding/base64"
 	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/custom_base64"
 )
 
 type Address struct {
@@ -81,7 +81,7 @@ func (a *Address) EncodeAddr() string {
 
 	checksum := cryptography.GetChecksum(buffer)
 	buffer = append(buffer, checksum...)
-	ret := base64.StdEncoding.EncodeToString(buffer)
+	ret := custom_base64.Base64Encoder.EncodeToString(buffer)
 
 	return prefix + ret
 }
@@ -110,7 +110,7 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, errors.New("Address network is invalid")
 	}
 
-	buf, err := base64.StdEncoding.DecodeString(input[config.NETWORK_BYTE_PREFIX_LENGTH:])
+	buf, err := custom_base64.Base64Encoder.DecodeString(input[config.NETWORK_BYTE_PREFIX_LENGTH:])
 	if err != nil {
 		return nil, err
 	}

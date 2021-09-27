@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/url"
 	"pandora-pay/network/websocks/connection"
+	"strings"
 )
 
 func (api *APICommonFaucet) GetFaucetInfoHttp(values *url.Values) (interface{}, error) {
@@ -20,7 +21,7 @@ func (api *APICommonFaucet) GetFaucetCoinsHttp(values *url.Values) (interface{},
 	request := &APIFaucetCoinsRequest{"", ""}
 
 	if values.Get("address") != "" {
-		request.Address = values.Get("address")
+		request.Address = strings.ReplaceAll(values.Get("address"), " ", "+")
 	} else {
 		return nil, errors.New("parameter 'address' was not specified")
 	}
