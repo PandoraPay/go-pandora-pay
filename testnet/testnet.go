@@ -275,6 +275,7 @@ func (testnet *Testnet) run() {
 										}
 									}
 								}
+								creatingTransactions.UnSet()
 							}
 						}
 

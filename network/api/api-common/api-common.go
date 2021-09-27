@@ -179,15 +179,27 @@ func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) ([]byte, 
 		return nil, err
 	}
 
-	acc, err := api.ApiStore.OpenLoadAccountFromPublicKey(publicKey)
-	if err != nil || acc == nil {
+	outAcc, err := api.ApiStore.OpenLoadAccountFromPublicKey(publicKey)
+	if err != nil {
 		return nil, err
 	}
 
 	if request.ReturnType == api_types.RETURN_SERIALIZED {
-		return acc.SerializeToBytes(), nil
+
+		outAcc.AccsSerialized = make([]helpers.HexBytes, len(outAcc.Accs))
+		for i, acc := range outAcc.Accs {
+			outAcc.AccsSerialized[i] = acc.SerializeToBytes()
+		}
+		outAcc.Accs = nil
+
+		if outAcc.PlainAcc != nil {
+			outAcc.PlainAccSerialized = outAcc.PlainAcc.SerializeToBytes()
+			outAcc.PlainAcc = nil
+		}
+
 	}
-	return json.Marshal(acc)
+
+	return json.Marshal(outAcc)
 }
 
 func (api *APICommon) GetAccountTxs(request *api_types.APIAccountTxsRequest) ([]byte, error) {

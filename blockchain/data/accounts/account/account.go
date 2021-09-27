@@ -2,7 +2,6 @@ package account
 
 import (
 	"errors"
-	"math/big"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
@@ -12,7 +11,7 @@ type Account struct {
 	PublicKey                     []byte              `json:"-"` //hashmap key
 	Token                         []byte              `json:"-"` //collection token
 	Version                       uint64              `json:"version"`
-	Balance                       *BalanceHomomorphic `json:"balances"`
+	Balance                       *BalanceHomomorphic `json:"balance"`
 }
 
 func (account *Account) Validate() error {
@@ -20,15 +19,6 @@ func (account *Account) Validate() error {
 		return errors.New("Version is invalid")
 	}
 	return nil
-}
-
-func (account *Account) AddBalanceUint(amount uint64) (err error) {
-	account.Balance.Amount = account.Balance.Amount.Plus(new(big.Int).SetUint64(amount))
-	return
-}
-
-func (account *Account) AddBalance(encryptedAmount []byte) (err error) {
-	panic("not implemented")
 }
 
 func (account *Account) GetBalance() (result *crypto.ElGamal) {
@@ -48,9 +38,15 @@ func (account *Account) SerializeToBytes() []byte {
 
 func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 
-	if account.Version, err = r.ReadUvarint(); err != nil {
+	var n uint64
+	if n, err = r.ReadUvarint(); err != nil {
 		return
 	}
+	if n != 0 {
+		return errors.New("Invalid Account Version")
+	}
+
+	account.Version = n
 	if err = account.Balance.Deserialize(r); err != nil {
 		return
 	}

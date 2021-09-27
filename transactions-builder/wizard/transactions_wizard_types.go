@@ -27,7 +27,7 @@ type TransactionsWizardData struct {
 }
 
 func (data *TransactionsWizardData) getDataVersion() transaction_type.TransactionDataVersion {
-	if len(data.Data) == 0 {
+	if data.Data == nil || len(data.Data) == 0 {
 		return transaction_type.TX_DATA_NONE
 	}
 	if data.Encrypt {

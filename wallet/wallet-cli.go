@@ -96,14 +96,11 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		accsCollection := accounts.NewAccountsCollection(reader)
-		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN)
-		if err != nil {
-			return
-		}
 
 		toks := tokens.NewTokens(reader)
 		plainAccs := plain_accounts.NewPlainAccounts(reader)
 		var tok *token.Token
+		var accs *accounts.Accounts
 		var acc *account.Account
 
 		regs := registrations.NewRegistrations(reader)
@@ -122,7 +119,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 			if walletAddress.Version == wallet_address.VERSION_NORMAL {
 
 				var tokensList [][]byte
-				if tokensList, err = accs.GetAccountTokens(walletAddress.PublicKey); err != nil {
+				if tokensList, err = accsCollection.GetAccountTokens(walletAddress.PublicKey); err != nil {
 					return
 				}
 

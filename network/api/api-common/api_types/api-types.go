@@ -2,6 +2,8 @@ package api_types
 
 import (
 	"pandora-pay/blockchain/blocks/block"
+	"pandora-pay/blockchain/data/accounts/account"
+	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
@@ -31,6 +33,16 @@ type APIBlockchain struct {
 
 type APIBlockchainSync struct {
 	SyncTime uint64 `json:"syncTime"`
+}
+
+type APIAccount struct {
+	Tokens             []helpers.HexBytes          `json:"tokens,omitempty"`
+	Accs               []*account.Account          `json:"accounts,omitempty"`
+	AccsSerialized     []helpers.HexBytes          `json:"accountsSerialized,omitempty"`
+	PlainAcc           *plain_account.PlainAccount `json:"plainAccount,omitempty"`
+	PlainAccSerialized helpers.HexBytes            `json:"plainAccountSerialized,omitempty"`
+	Registered         bool                        `json:"registered,omitempty"`
+	Registration       uint64                      `json:"registration,omitempty"`
 }
 
 type APITransaction struct {

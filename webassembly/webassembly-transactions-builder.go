@@ -29,7 +29,7 @@ func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 			Dsts        []string                                            `json:"dsts"`
 			Burns       []float64                                           `json:"burns"`
 			RingMembers [][]string                                          `json:"RingMembers"`
-			Data        []helpers.HexBytes                                  `json:"data"`
+			Data        []*wizard.TransactionsWizardData                    `json:"data"`
 			Fees        []*transactions_builder.TransactionsBuilderFeeFloat `json:"fees"`
 			PropagateTx bool                                                `json:"propagateTx"`
 			AwaitAnswer bool                                                `json:"awaitAnswer"`
@@ -40,7 +40,7 @@ func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.CreateZetherTx_Float(txData.From, helpers.ConvertHexBytesArraysToBytesArray(txData.Tokens), txData.Amounts, txData.Dsts, txData.Burns, txData.RingMembers, helpers.ConvertHexBytesArraysToBytesArray(txData.Data), txData.Fees, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
+		tx, err := app.TransactionsBuilder.CreateZetherTx_Float(txData.From, helpers.ConvertHexBytesArraysToBytesArray(txData.Tokens), txData.Amounts, txData.Dsts, txData.Burns, txData.RingMembers, txData.Data, txData.Fees, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
 			args[1].Invoke(status)
 			time.Sleep(10 * time.Millisecond)
 		})

@@ -57,7 +57,7 @@ func (tx *TransactionSimpleClaim) IncludeTransactionVin0(txRegistrations *transa
 			}
 		}
 
-		if err = acc.AddBalanceUint(out.Amount); err != nil {
+		if err = acc.Balance.AddBalanceUint(out.Amount); err != nil {
 			return
 		}
 

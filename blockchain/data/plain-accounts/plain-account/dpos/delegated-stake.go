@@ -8,7 +8,7 @@ import (
 
 type DelegatedStake struct {
 	helpers.SerializableInterface `json:"-"`
-	DelegatedPublicKey            helpers.HexBytes         `json:"DelegatedPublicKey"` //public key for delegation  20 bytes
+	DelegatedPublicKey            helpers.HexBytes         `json:"delegatedPublicKey"` //public key for delegation  20 bytes
 	DelegatedStakeFee             uint64                   `json:"delegatedStakeFee"`
 	StakeAvailable                uint64                   `json:"stakeAvailable"` //confirmed stake
 	StakesPending                 []*DelegatedStakePending `json:"stakesPending"`  //Pending stakes

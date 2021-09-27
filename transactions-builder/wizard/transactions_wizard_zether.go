@@ -157,10 +157,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				}
 
 				dataFinal := transfer.Data.Data
-				if dataFinal == nil || len(dataFinal) == 0 {
-					payload.DataVersion = transaction_data.TX_DATA_NONE
-				} else if transfer.Data.Encrypt {
-					payload.DataVersion = transaction_data.TX_DATA_ENCRYPTED
+				payload.DataVersion = transfer.Data.getDataVersion()
+
+				if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
 					if len(dataFinal) > transaction_zether.PAYLOAD0_LIMIT {
 						return errors.New("Data final exceeds")
 					}
@@ -171,11 +170,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					if err = crypto.EncryptDecryptUserData(blinder, payload.Data); err != nil {
 						return
 					}
-				} else {
+				} else if payload.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT {
 					if len(dataFinal) > config.TRANSACTIONS_MAX_DATA_LENGTH {
 						return errors.New("Data final exceeds")
 					}
-					payload.DataVersion = transaction_data.TX_DATA_PLAIN_TEXT
 					payload.Data = dataFinal
 				}
 

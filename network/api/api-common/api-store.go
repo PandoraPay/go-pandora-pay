@@ -1,6 +1,7 @@
 package api_common
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain"
@@ -8,6 +9,9 @@ import (
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/data/accounts"
 	"pandora-pay/blockchain/data/accounts/account"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	"pandora-pay/blockchain/data/registrations"
+	"pandora-pay/blockchain/data/registrations/registration"
 	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/blockchain/info"
@@ -125,19 +129,60 @@ func (apiStore *APIStore) openLoadBlockWithTXsFromHeight(blockHeight uint64) (bl
 	return
 }
 
-func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (acc *account.Account, errFinal error) {
-	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*api_types.APIAccount, error) {
 
+	accFinal := &api_types.APIAccount{}
+
+	if errFinal := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 		accsCollection := accounts.NewAccountsCollection(reader)
+		plainAccs := plain_accounts.NewPlainAccounts(reader)
+		regs := registrations.NewRegistrations(reader)
 
-		accs, err := accsCollection.GetMap(config.NATIVE_TOKEN)
+		tokensList, err := accsCollection.GetAccountTokens(publicKey)
 		if err != nil {
 			return
 		}
-		acc, err = accs.GetAccount(publicKey)
+
+		accFinal.Accs = make([]*account.Account, len(tokensList))
+		accFinal.Tokens = make([]helpers.HexBytes, len(tokensList))
+
+		for i, tokenId := range tokensList {
+
+			accFinal.Tokens[i] = tokenId
+
+			var accs *accounts.Accounts
+			if accs, err = accsCollection.GetMap(tokenId); err != nil {
+				return
+			}
+
+			var acc *account.Account
+			if acc, err = accs.GetAccount(publicKey); err != nil {
+				return
+			}
+
+			accFinal.Accs[i] = acc
+		}
+
+		if accFinal.PlainAcc, err = plainAccs.GetPlainAccount(publicKey, chainHeight); err != nil {
+			return
+		}
+
+		var reg *registration.Registration
+		if reg, err = regs.GetRegistration(publicKey); err != nil {
+			return
+		}
+		if reg != nil {
+			accFinal.Registered = true
+			accFinal.Registration = reg.Index
+		}
+
 		return
-	})
-	return
+	}); errFinal != nil {
+		return nil, errFinal
+	}
+	return accFinal, nil
 }
 
 func (apiStore *APIStore) openLoadAccountTxsFromPublicKey(publicKey []byte, next uint64) (answer *api_types.APIAccountTxs, errFinal error) {

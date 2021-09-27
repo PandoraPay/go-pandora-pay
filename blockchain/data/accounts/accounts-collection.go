@@ -4,7 +4,9 @@ import (
 	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
+	"pandora-pay/helpers"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
+	"strconv"
 )
 
 type AccountsCollection struct {
@@ -42,6 +44,41 @@ func (collection *AccountsCollection) GetMap(token []byte) (*Accounts, error) {
 		collection.accsMap[string(token)] = accs
 	}
 	return accs, nil
+}
+
+func (collection *AccountsCollection) GetAccountTokensCount(key []byte) (uint64, error) {
+
+	var count uint64
+	var err error
+
+	data := collection.tx.Get("accounts:tokensCount:" + string(key))
+	if data != nil {
+		if count, err = helpers.NewBufferReader(data).ReadUvarint(); err != nil {
+			return 0, err
+		}
+	}
+
+	return count, nil
+}
+
+func (collection *AccountsCollection) GetAccountTokens(key []byte) ([][]byte, error) {
+
+	count, err := collection.GetAccountTokensCount(key)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([][]byte, count)
+
+	for i := uint64(0); i < count; i++ {
+		token := collection.tx.Get("accounts:tokenByIndex:" + string(key) + ":" + strconv.FormatUint(i, 10))
+		if token == nil {
+			return nil, errors.New("Error reading token")
+		}
+		out[i] = token
+	}
+
+	return out, nil
 }
 
 func (collection *AccountsCollection) SetTx(tx store_db_interface.StoreDBTransactionInterface) {

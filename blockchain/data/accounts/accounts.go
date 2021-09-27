@@ -45,41 +45,6 @@ func (accounts *Accounts) GetRandomAccount() (*account.Account, error) {
 	return data.(*account.Account), nil
 }
 
-func (accounts *Accounts) GetAccountTokensCount(key []byte) (uint64, error) {
-
-	var count uint64
-	var err error
-
-	data := accounts.Tx.Get("accounts:tokensCount:" + string(key))
-	if data != nil {
-		if count, err = helpers.NewBufferReader(data).ReadUvarint(); err != nil {
-			return 0, err
-		}
-	}
-
-	return count, nil
-}
-
-func (accounts *Accounts) GetAccountTokens(key []byte) ([][]byte, error) {
-
-	count, err := accounts.GetAccountTokensCount(key)
-	if err != nil {
-		return nil, err
-	}
-
-	out := make([][]byte, count)
-
-	for i := uint64(0); i < count; i++ {
-		token := accounts.HashMap.Tx.Get("accounts:tokenByIndex:" + string(key) + ":" + strconv.FormatUint(i, 10))
-		if token == nil {
-			return nil, errors.New("Error reading token")
-		}
-		out[i] = token
-	}
-
-	return out, nil
-}
-
 func (accounts *Accounts) saveTokensCount(key []byte, sign bool) (uint64, error) {
 
 	var count uint64

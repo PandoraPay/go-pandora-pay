@@ -105,7 +105,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 				if acc, err = accs.CreateAccount(addr.PublicKey); err != nil {
 					return
 				}
-				if err = acc.AddBalanceUint(airdrop.Amount); err != nil {
+				if err = acc.Balance.AddBalanceUint(airdrop.Amount); err != nil {
 					return
 				}
 				if err = accs.Update(string(addr.PublicKey), acc); err != nil {
