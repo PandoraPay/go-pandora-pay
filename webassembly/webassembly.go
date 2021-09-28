@@ -46,14 +46,6 @@ func promiseFunction(callback func() (interface{}, error)) interface{} {
 	}))
 }
 
-func normalFunction(callback func() (interface{}, error)) interface{} {
-	result, err := callback()
-	if err != nil {
-		return errorConstructor.New(err.Error())
-	}
-	return result
-}
-
 func Initialize(startMainCb func()) {
 
 	startMainCallback = startMainCb

@@ -60,7 +60,7 @@ func listenEvents(this js.Value, args []js.Value) interface{} {
 }
 
 func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
-	return normalFunction(func() (interface{}, error) {
+	return promiseFunction(func() (interface{}, error) {
 
 		if len(args) != 1 || args[0].Type() != js.TypeFunction {
 			return nil, errors.New("Argument must be a callback function")

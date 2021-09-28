@@ -41,16 +41,6 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (string, []byte, e
 	return addr.AddressRegistrationEncoded, delegatedStake.PublicKey, nil
 }
 
-func (wallet *Wallet) DecodeBalanceByEncodedAddress(addressEncoded string, balance *crypto.ElGamal, token []byte, suspendCn <-chan struct{}, store bool) (uint64, error) {
-
-	address, err := addresses.DecodeAddr(addressEncoded)
-	if err != nil {
-		return 0, err
-	}
-
-	return wallet.DecodeBalanceByPublicKey(address.PublicKey, balance, token, suspendCn, store)
-}
-
 func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, token []byte, suspendCn <-chan struct{}, store bool) (uint64, error) {
 
 	if store {

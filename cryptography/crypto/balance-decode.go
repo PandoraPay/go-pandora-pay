@@ -115,17 +115,12 @@ func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable,
 }
 
 // convert point to balance
-func (t *LookupTable) Lookup(p *bn256.G1, previous_balance uint64, suspendCn <-chan struct{}) (uint64, error) {
+func (t *LookupTable) Lookup(p *bn256.G1, suspendCn <-chan struct{}) (uint64, error) {
 
 	// now this big part must be searched in the precomputation lookup table
 
 	//fmt.Printf("decoding balance now\n",)
 	var acc bn256.G1
-
-	acc.ScalarMult(G, new(big.Int).SetUint64(previous_balance))
-	if acc.String() == p.String() {
-		return previous_balance, nil
-	}
 
 	work_per_loop := new(bn256.G1)
 
@@ -181,12 +176,10 @@ func (t *LookupTable) Lookup(p *bn256.G1, previous_balance uint64, suspendCn <-c
 				acc.ScalarMult(G, new(big.Int).SetUint64(balance+balance_part))
 
 				if acc.String() == p.String() { // since we may have part collisions, make sure full point is checked
-
 					balance += balance_part
 					// fmt.Printf("balance found  %d part(%d) index %d   big part %x\n",balance,balance_part, index, big_part );
 
 					return balance, nil
-
 				}
 
 				// we have failed since it was partial collision, make sure that we can try if possible, another collision

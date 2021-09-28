@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"errors"
+	"math/big"
 	"pandora-pay/cryptography/bn256"
 	"runtime"
 	"sync/atomic"
@@ -22,6 +23,13 @@ type BalanceDecoderType struct {
 }
 
 func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint64, suspendCn <-chan struct{}) (uint64, error) {
+
+	var acc bn256.G1
+	acc.ScalarMult(G, new(big.Int).SetUint64(previousBalance))
+	if acc.String() == p.String() {
+		return previousBalance, nil
+	}
+
 	info := self.info.Load().(*BalanceDecoderInfo)
 	if info.tableSize == 0 {
 		if err := self.SetTableSize(0); err != nil {
@@ -34,7 +42,7 @@ func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint6
 	case <-suspendCn:
 	}
 
-	return info.tableLookup.Lookup(p, previousBalance, suspendCn)
+	return info.tableLookup.Lookup(p, suspendCn)
 }
 
 func (self *BalanceDecoderType) SetTableSize(newTableSize int) error {
@@ -43,7 +51,7 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int) error {
 		if runtime.GOARCH != "wasm" {
 			newTableSize = 1 << 22 //32mb ram
 		} else {
-			newTableSize = 1 << 10 //8mb ram
+			newTableSize = 1 << 19 //4mb ram
 		}
 	}
 	if newTableSize > 1<<24 {
