@@ -291,7 +291,7 @@ func decodeBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		value, err := app.Wallet.DecodeBalanceByPublicKey(publicKey, balance, token, true)
+		value, err := app.Wallet.DecodeBalanceByPublicKey(publicKey, balance, token, nil, true)
 		if err != nil {
 			return nil, err
 		}

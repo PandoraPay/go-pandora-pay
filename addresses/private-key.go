@@ -44,10 +44,10 @@ func (pk *PrivateKey) Decrypt(message []byte) ([]byte, error) {
 	panic("not implemented")
 }
 
-func (pk *PrivateKey) DecodeBalance(balance *crypto.ElGamal, previousValue uint64) uint64 {
+func (pk *PrivateKey) DecodeBalance(balance *crypto.ElGamal, previousValue uint64, suspendCn <-chan struct{}) (uint64, error) {
 	priv := new(crypto.BNRed).SetBytes(pk.Key)
 	balancePoint := new(bn256.G1).Add(balance.Left, new(bn256.G1).Neg(new(bn256.G1).ScalarMult(balance.Right, priv.BigInt())))
-	return crypto.BalanceDecoder.BalanceDecode(balancePoint, previousValue)
+	return crypto.BalanceDecoder.BalanceDecode(balancePoint, previousValue, suspendCn)
 }
 
 func GenerateNewPrivateKey() *PrivateKey {

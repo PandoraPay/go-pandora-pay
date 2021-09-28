@@ -41,17 +41,17 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (string, []byte, e
 	return addr.AddressRegistrationEncoded, delegatedStake.PublicKey, nil
 }
 
-func (wallet *Wallet) DecodeBalanceByEncodedAddress(addressEncoded string, balance *crypto.ElGamal, token []byte, store bool) (uint64, error) {
+func (wallet *Wallet) DecodeBalanceByEncodedAddress(addressEncoded string, balance *crypto.ElGamal, token []byte, suspendCn <-chan struct{}, store bool) (uint64, error) {
 
 	address, err := addresses.DecodeAddr(addressEncoded)
 	if err != nil {
 		return 0, err
 	}
 
-	return wallet.DecodeBalanceByPublicKey(address.PublicKey, balance, token, store)
+	return wallet.DecodeBalanceByPublicKey(address.PublicKey, balance, token, suspendCn, store)
 }
 
-func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, token []byte, store bool) (uint64, error) {
+func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, token []byte, suspendCn <-chan struct{}, store bool) (uint64, error) {
 
 	if store {
 		wallet.Lock()
@@ -66,7 +66,10 @@ func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto
 		return 0, errors.New("address was not found")
 	}
 
-	decoded := addr.DecodeBalance(balance, token, store)
+	decoded, err := addr.DecodeBalance(balance, token, suspendCn, store)
+	if err != nil {
+		return 0, err
+	}
 
 	if store {
 		if err := wallet.saveWalletAddress(addr, false); err != nil {
@@ -443,8 +446,7 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, adr *wallet_add
 	if acc == nil {
 		return
 	}
-
-	adr.DecodeAccount(acc, true)
+	adr.DecodeAccount(acc, nil, true)
 
 	return
 }

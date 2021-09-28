@@ -106,7 +106,7 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []b
 	return rings, nil
 }
 
-func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUsed [][]byte, amounts []float64, dsts []string, burns []float64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUsed [][]byte, amounts []float64, dsts []string, burns []float64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, suspendCn <-chan struct{}, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	amountsFinal := make([]uint64, len(amounts))
 	burnsFinal := make([]uint64, len(burns))
@@ -147,10 +147,10 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUs
 		return nil, err
 	}
 
-	return builder.CreateZetherTx(from, tokensUsed, amountsFinal, dsts, burnsFinal, ringMembers, data, finalFees, propagateTx, awaitAnswer, awaitBroadcast, statusCallback)
+	return builder.CreateZetherTx(from, tokensUsed, amountsFinal, dsts, burnsFinal, ringMembers, data, finalFees, propagateTx, awaitAnswer, awaitBroadcast, suspendCn, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, suspendCn <-chan struct{}, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	if len(from) != len(tokensUsed) || len(tokensUsed) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
 		return nil, errors.New("Length of from and transfers are not matching")
@@ -206,7 +206,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 			}
 
 			var fromBalanceDecoded uint64
-			if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddress.PublicKey, acc.GetBalance(), acc.Token, false); err != nil {
+			if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddress.PublicKey, acc.GetBalance(), acc.Token, suspendCn, false); err != nil {
 				return
 			}
 
@@ -293,7 +293,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 	}
 	statusCallback("Balances checked")
 
-	if tx, err = wizard.CreateZetherTx(transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, statusCallback); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, nil, statusCallback); err != nil {
 		gui.GUI.Error("Error creating Tx: ", err)
 		return nil, err
 	}

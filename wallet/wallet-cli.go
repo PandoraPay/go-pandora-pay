@@ -185,7 +185,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 						}
 
 						var decoded uint64
-						if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, acc.Balance.Amount, tokenId, false); err != nil {
+						if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, acc.Balance.Amount, tokenId, nil, false); err != nil {
 							return
 						}
 						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(decoded), 'f', config.DECIMAL_SEPARATOR, 64), tok.Name))

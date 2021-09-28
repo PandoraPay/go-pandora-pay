@@ -88,7 +88,7 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDele
 	}, nil
 }
 
-func (adr *WalletAddress) DecodeAccount(acc *account.Account, store bool) {
+func (adr *WalletAddress) DecodeAccount(acc *account.Account, suspendCn <-chan struct{}, store bool) {
 
 	if adr.PrivateKey == nil {
 		return
@@ -104,13 +104,13 @@ func (adr *WalletAddress) DecodeAccount(acc *account.Account, store bool) {
 		return
 	}
 
-	adr.DecodeBalance(acc.Balance.Amount, acc.Token, store)
+	adr.DecodeBalance(acc.Balance.Amount, acc.Token, suspendCn, store)
 }
 
-func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, store bool) uint64 {
+func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, suspendCn <-chan struct{}, store bool) (uint64, error) {
 
 	if adr.PrivateKey == nil {
-		return 0
+		return 0, errors.New("PrivateKey is missing")
 	}
 
 	if len(token) == 0 {
@@ -123,7 +123,10 @@ func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, s
 		previousValue = found.AmountDecoded
 	}
 
-	newValue := adr.PrivateKey.DecodeBalance(balance, previousValue)
+	newValue, err := adr.PrivateKey.DecodeBalance(balance, previousValue, suspendCn)
+	if err != nil {
+		return 0, err
+	}
 
 	if store {
 		if found != nil {
@@ -135,7 +138,7 @@ func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, s
 		}
 	}
 
-	return newValue
+	return newValue, nil
 }
 
 func (adr *WalletAddress) GetAddress(registered bool) string {

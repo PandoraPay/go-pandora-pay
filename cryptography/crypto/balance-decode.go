@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math/big"
 	"pandora-pay/cryptography/bn256"
@@ -114,7 +115,7 @@ func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable,
 }
 
 // convert point to balance
-func (t *LookupTable) Lookup(p *bn256.G1, previous_balance uint64) (balance uint64) {
+func (t *LookupTable) Lookup(p *bn256.G1, previous_balance uint64, suspendCn <-chan struct{}) (uint64, error) {
 
 	// now this big part must be searched in the precomputation lookup table
 
@@ -123,7 +124,7 @@ func (t *LookupTable) Lookup(p *bn256.G1, previous_balance uint64) (balance uint
 
 	acc.ScalarMult(G, new(big.Int).SetUint64(previous_balance))
 	if acc.String() == p.String() {
-		return previous_balance
+		return previous_balance, nil
 	}
 
 	work_per_loop := new(bn256.G1)
@@ -141,10 +142,18 @@ func (t *LookupTable) Lookup(p *bn256.G1, previous_balance uint64) (balance uint
 
 	loop_counter := 0
 
+	balance := uint64(0)
+
 	//  fmt.Printf("jumping into loop %d\n", loop_counter)
 	for { // it is an infinite loop
 
 		// fmt.Printf("loop counter %d  balance %d\n", loop_counter, balance)
+
+		select {
+		case <-suspendCn:
+			return 0, errors.New("Scanning Suspended")
+		default:
+		}
 
 		if loop_counter != 0 {
 			pcopy = new(bn256.G1).Add(pcopy, work_per_loop)
@@ -176,7 +185,7 @@ func (t *LookupTable) Lookup(p *bn256.G1, previous_balance uint64) (balance uint
 					balance += balance_part
 					// fmt.Printf("balance found  %d part(%d) index %d   big part %x\n",balance,balance_part, index, big_part );
 
-					return balance
+					return balance, nil
 
 				}
 

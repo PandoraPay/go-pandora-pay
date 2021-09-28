@@ -3,14 +3,14 @@ package webassembly
 import (
 	"encoding/base64"
 	"encoding/hex"
-	"pandora-pay/gui"
+	"fmt"
 	"pandora-pay/helpers/identicon"
 	"syscall/js"
 )
 
 func helloPandora(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
-		gui.GUI.Info("HelloPandora works!")
+		fmt.Println("HelloPandora works!")
 		return true, nil
 	})
 }

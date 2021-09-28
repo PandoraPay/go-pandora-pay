@@ -21,7 +21,7 @@ type BalanceDecoderType struct {
 	info *atomic.Value //*BalanceDecoderInfo
 }
 
-func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint64) uint64 {
+func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint64, suspendCn <-chan struct{}) (uint64, error) {
 	info := self.info.Load().(*BalanceDecoderInfo)
 	if info.tableSize == 0 {
 		if err := self.SetTableSize(0); err != nil {
@@ -31,8 +31,10 @@ func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint6
 	}
 	select {
 	case <-info.readyCn:
+	case <-suspendCn:
 	}
-	return info.tableLookup.Lookup(p, previousBalance)
+
+	return info.tableLookup.Lookup(p, previousBalance, suspendCn)
 }
 
 func (self *BalanceDecoderType) SetTableSize(newTableSize int) error {
@@ -41,7 +43,7 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int) error {
 		if runtime.GOARCH != "wasm" {
 			newTableSize = 1 << 22 //32mb ram
 		} else {
-			newTableSize = 1 << 20 //8mb ram
+			newTableSize = 1 << 10 //8mb ram
 		}
 	}
 	if newTableSize > 1<<24 {
