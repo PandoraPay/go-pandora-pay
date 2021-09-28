@@ -61,6 +61,10 @@ func Initialize(startMainCb func()) {
 	promiseConstructor = js.Global().Get("Promise")
 	errorConstructor = js.Global().Get("Error")
 
+	if promiseConstructor.IsNull() {
+		panic("promiseConstructor is null")
+	}
+
 	PandoraPayExport := map[string]interface{}{
 		"helpers": js.ValueOf(map[string]interface{}{
 			"helloPandora": js.FuncOf(helloPandora),
@@ -93,6 +97,7 @@ func Initialize(startMainCb func()) {
 			"decryptMessageWalletAddress":       js.FuncOf(decryptMessageWalletAddress),
 			"signMessageWalletAddress":          js.FuncOf(signMessageWalletAddress),
 			"deriveDelegatedStakeWalletAddress": js.FuncOf(deriveDelegatedStakeWalletAddress),
+			"decodeBalanceWalletAddress":        js.FuncOf(decodeBalanceWalletAddress),
 		}),
 		"addresses": js.ValueOf(map[string]interface{}{
 			"decodeAddress":   js.FuncOf(decodeAddress),

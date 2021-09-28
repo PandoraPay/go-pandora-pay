@@ -3,6 +3,7 @@ package webassembly
 import (
 	"encoding/hex"
 	"pandora-pay/app"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 	"strconv"
 	"syscall/js"
@@ -261,5 +262,40 @@ func deriveDelegatedStakeWalletAddress(this js.Value, args []js.Value) interface
 
 		return convertJSON(delegatedStake)
 
+	})
+}
+
+func decodeBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+		if err := app.Wallet.Encryption.CheckPassword(args[3].String(), false); err != nil {
+			return false, err
+		}
+
+		publicKey, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
+		}
+
+		balanceEncoded, err := hex.DecodeString(args[1].String())
+		if err != nil {
+			return nil, err
+		}
+
+		token, err := hex.DecodeString(args[2].String())
+		if err != nil {
+			return nil, err
+		}
+
+		balance, err := new(crypto.ElGamal).Deserialize(balanceEncoded)
+		if err != nil {
+			return nil, err
+		}
+
+		value, err := app.Wallet.DecodeBalanceByPublicKey(publicKey, balance, token, true)
+		if err != nil {
+			return nil, err
+		}
+
+		return value, nil
 	})
 }

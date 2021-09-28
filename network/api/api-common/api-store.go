@@ -131,7 +131,7 @@ func (apiStore *APIStore) openLoadBlockWithTXsFromHeight(blockHeight uint64) (bl
 
 func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*api_types.APIAccount, error) {
 
-	accFinal := &api_types.APIAccount{}
+	apiAcc := &api_types.APIAccount{}
 
 	if errFinal := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -145,12 +145,12 @@ func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*api_t
 			return
 		}
 
-		accFinal.Accs = make([]*account.Account, len(tokensList))
-		accFinal.Tokens = make([]helpers.HexBytes, len(tokensList))
+		apiAcc.Accs = make([]*account.Account, len(tokensList))
+		apiAcc.Tokens = make([]helpers.HexBytes, len(tokensList))
 
 		for i, tokenId := range tokensList {
 
-			accFinal.Tokens[i] = tokenId
+			apiAcc.Tokens[i] = tokenId
 
 			var accs *accounts.Accounts
 			if accs, err = accsCollection.GetMap(tokenId); err != nil {
@@ -162,10 +162,10 @@ func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*api_t
 				return
 			}
 
-			accFinal.Accs[i] = acc
+			apiAcc.Accs[i] = acc
 		}
 
-		if accFinal.PlainAcc, err = plainAccs.GetPlainAccount(publicKey, chainHeight); err != nil {
+		if apiAcc.PlainAcc, err = plainAccs.GetPlainAccount(publicKey, chainHeight); err != nil {
 			return
 		}
 
@@ -174,15 +174,15 @@ func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*api_t
 			return
 		}
 		if reg != nil {
-			accFinal.Registered = true
-			accFinal.Registration = reg.Index
+			apiAcc.Registered = true
+			apiAcc.Registration = reg.Index
 		}
 
 		return
 	}); errFinal != nil {
 		return nil, errFinal
 	}
-	return accFinal, nil
+	return apiAcc, nil
 }
 
 func (apiStore *APIStore) openLoadAccountTxsFromPublicKey(publicKey []byte, next uint64) (answer *api_types.APIAccountTxs, errFinal error) {
@@ -378,7 +378,7 @@ func (apiStore *APIStore) loadTx(reader store_db_interface.StoreDBTransactionInt
 	hashStr := string(hash)
 	var data []byte
 
-	if data = reader.Get("tx" + hashStr); data == nil {
+	if data = reader.GetClone("tx" + hashStr); data == nil {
 		return nil, nil, errors.New("Tx not found")
 	}
 

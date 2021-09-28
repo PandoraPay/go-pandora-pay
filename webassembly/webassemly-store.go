@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/data/accounts"
-	"pandora-pay/blockchain/data/accounts/account"
+	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
+	"pandora-pay/blockchain/data/registrations"
+	"pandora-pay/blockchain/data/registrations/registration"
 	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/mempool"
+	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"syscall/js"
@@ -24,15 +27,10 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		token, err := hex.DecodeString(args[1].String())
-		if err != nil {
-			return nil, err
-		}
-
-		var acc *account.Account
-		if !args[1].IsNull() {
-			acc = account.NewAccount(publicKey, token)
-			if err = json.Unmarshal([]byte(args[2].String()), &acc); err != nil {
+		var apiAcc *api_types.APIAccount
+		if args[1].Type() == js.TypeString {
+			apiAcc = &api_types.APIAccount{}
+			if err = json.Unmarshal([]byte(args[1].String()), apiAcc); err != nil {
 				return nil, err
 			}
 		}
@@ -46,20 +44,65 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 		if err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 			accsCollection := accounts.NewAccountsCollection(writer)
-			accs, err := accsCollection.GetMap(token)
-			if err != nil {
+			plainAccs := plain_accounts.NewPlainAccounts(writer)
+			regs := registrations.NewRegistrations(writer)
+
+			var accs *accounts.Accounts
+
+			var tokensList [][]byte
+			if tokensList, err = accsCollection.GetAccountTokens(publicKey); err != nil {
 				return
 			}
 
-			if acc == nil {
-				accs.Delete(string(publicKey))
-			} else {
-				if err = accs.Update(string(publicKey), acc); err != nil {
+			for _, token := range tokensList {
+				if accs, err = accsCollection.GetMap(token); err != nil {
 					return
 				}
+				accs.Delete(string(publicKey))
 			}
-			return accsCollection.CommitChanges()
 
+			plainAccs.Delete(string(publicKey))
+			regs.Delete(string(publicKey))
+
+			if apiAcc != nil {
+
+				for i, token := range apiAcc.Tokens {
+					if accs, err = accsCollection.GetMap(token); err != nil {
+						return
+					}
+					if err = accs.Update(string(publicKey), apiAcc.Accs[i]); err != nil {
+						return
+					}
+				}
+
+				if apiAcc.PlainAcc != nil {
+					if err = plainAccs.Update(string(publicKey), apiAcc.PlainAcc); err != nil {
+						return
+					}
+				}
+
+				if apiAcc.Registered {
+					registr := &registration.Registration{
+						PublicKey: publicKey,
+						Index:     apiAcc.Registration,
+					}
+					if err = regs.Update(string(publicKey), registr); err != nil {
+						return
+					}
+				}
+
+			}
+			if err = accsCollection.CommitChanges(); err != nil {
+				return
+			}
+			if err = regs.CommitChanges(); err != nil {
+				return
+			}
+			if err = plainAccs.CommitChanges(); err != nil {
+				return
+			}
+
+			return nil
 		}); err != nil {
 			return nil, err
 		}

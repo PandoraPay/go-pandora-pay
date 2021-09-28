@@ -27,7 +27,10 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 	w.WriteUvarint(payload.BurnValue)
 
 	w.WriteByte(byte(payload.DataVersion))
-	if payload.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT || payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
+	if payload.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT { //variable
+		w.WriteUvarint(uint64(len(payload.Data)))
+		w.Write(payload.Data)
+	} else if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED { //fixed 145
 		w.Write(payload.Data)
 	}
 
