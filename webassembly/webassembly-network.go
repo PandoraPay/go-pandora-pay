@@ -16,6 +16,7 @@ import (
 	"pandora-pay/network/api/api-common/api_types"
 	"sync"
 	"syscall/js"
+	"time"
 )
 
 var txMutex sync.Mutex
@@ -26,7 +27,7 @@ func getNetworkFaucetCoins(this js.Value, args []js.Value) interface{} {
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("faucet/coins"), &api_faucet.APIFaucetCoinsRequest{args[0].String(), args[1].String()})
+		data := socket.SendJSONAwaitAnswer([]byte("faucet/coins"), &api_faucet.APIFaucetCoinsRequest{args[0].String(), args[1].String()}, time.Minute)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -40,7 +41,7 @@ func getNetworkFaucetInfo(this js.Value, args []js.Value) interface{} {
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("faucet/info"), nil)
+		data := socket.SendJSONAwaitAnswer([]byte("faucet/info"), nil, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -61,7 +62,7 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 				return nil, err
 			}
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("block-info"), &api_types.APIBlockInfoRequest{uint64(args[0].Int()), hash})
+		data := socket.SendJSONAwaitAnswer([]byte("block-info"), &api_types.APIBlockInfoRequest{uint64(args[0].Int()), hash}, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -91,7 +92,7 @@ func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("Invalid argument")
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("block-complete"), &api_types.APIBlockCompleteRequest{height, hash, api_types.RETURN_SERIALIZED})
+		data := socket.SendJSONAwaitAnswer([]byte("block-complete"), &api_types.APIBlockCompleteRequest{height, hash, api_types.RETURN_SERIALIZED}, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -119,7 +120,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("account"), &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", publicKey}, api_types.RETURN_SERIALIZED})
+		data := socket.SendJSONAwaitAnswer([]byte("account"), &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", publicKey}, api_types.RETURN_SERIALIZED}, 0)
 		if data.Out == nil || data.Err != nil {
 			return nil, data.Err
 		}
@@ -174,7 +175,7 @@ func getNetworkAccountTxs(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("account/txs"), &api_types.APIAccountTxsRequest{api_types.APIAccountBaseRequest{"", hash}, uint64(args[1].Int())})
+		data := socket.SendJSONAwaitAnswer([]byte("account/txs"), &api_types.APIAccountTxsRequest{api_types.APIAccountBaseRequest{"", hash}, uint64(args[1].Int())}, 0)
 		if data.Out == nil || data.Err != nil {
 			return nil, data.Err
 		}
@@ -195,7 +196,7 @@ func getNetworkAccountMempool(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("account/mem-pool"), &api_types.APIAccountBaseRequest{"", hash})
+		data := socket.SendJSONAwaitAnswer([]byte("account/mem-pool"), &api_types.APIAccountBaseRequest{"", hash}, 0)
 		if data.Out == nil || data.Err != nil {
 			return nil, data.Err
 		}
@@ -236,7 +237,7 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("tx"), &api_types.APIBlockCompleteRequest{height, hash, api_types.RETURN_SERIALIZED})
+		data := socket.SendJSONAwaitAnswer([]byte("tx"), &api_types.APIBlockCompleteRequest{height, hash, api_types.RETURN_SERIALIZED}, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -265,7 +266,7 @@ func getNetworkTokenInfo(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("token-info"), &api_types.APITokenInfoRequest{hash})
+		data := socket.SendJSONAwaitAnswer([]byte("token-info"), &api_types.APITokenInfoRequest{hash}, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -284,7 +285,7 @@ func getNetworkToken(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("token"), &api_types.APITokenRequest{hash, api_types.RETURN_SERIALIZED})
+		data := socket.SendJSONAwaitAnswer([]byte("token"), &api_types.APITokenRequest{hash, api_types.RETURN_SERIALIZED}, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -308,7 +309,7 @@ func getNetworkMempool(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("mem-pool"), &api_types.APIMempoolRequest{chainHash, args[1].Int(), args[2].Int()})
+		data := socket.SendJSONAwaitAnswer([]byte("mem-pool"), &api_types.APIMempoolRequest{chainHash, args[1].Int(), args[2].Int()}, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -330,7 +331,7 @@ func subscribeNetwork(this js.Value, args []js.Value) interface{} {
 		}
 
 		req := &api_types.APISubscriptionRequest{key, api_types.SubscriptionType(args[1].Int()), api_types.RETURN_SERIALIZED}
-		data := socket.SendJSONAwaitAnswer([]byte("sub"), req)
+		data := socket.SendJSONAwaitAnswer([]byte("sub"), req, 0)
 		return true, data.Err
 	})
 }
@@ -347,7 +348,7 @@ func unsubscribeNetwork(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("unsub"), &api_types.APIUnsubscriptionRequest{key, api_types.SubscriptionType(args[1].Int())})
+		data := socket.SendJSONAwaitAnswer([]byte("unsub"), &api_types.APIUnsubscriptionRequest{key, api_types.SubscriptionType(args[1].Int())}, 0)
 		return true, data.Err
 	})
 }

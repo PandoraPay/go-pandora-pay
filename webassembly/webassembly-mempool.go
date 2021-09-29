@@ -10,6 +10,8 @@ import (
 	"syscall/js"
 )
 
+//NOT USED ANYMORE
+
 func mempoolRemoveTx(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 

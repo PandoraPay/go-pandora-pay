@@ -95,7 +95,7 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 	for _, conn := range all {
 		if conn.UUID != exceptSocketUUID && consensusTypeAccepted[conn.Handshake.Consensus] {
 			go func(conn *connection.AdvancedConnection) {
-				answer := conn.SendAwaitAnswer(name, data)
+				answer := conn.SendAwaitAnswer(name, data, 0)
 				chans <- answer
 			}(conn)
 		} else {
@@ -204,7 +204,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 		}
 	}()
 
-	out := conn.SendAwaitAnswer([]byte("handshake"), nil)
+	out := conn.SendAwaitAnswer([]byte("handshake"), nil, 0)
 
 	if out.Err != nil {
 		return errors.New("Error sending handshake")

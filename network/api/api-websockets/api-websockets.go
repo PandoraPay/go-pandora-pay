@@ -213,7 +213,7 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 		multicast.Broadcast(err)
 	}()
 
-	result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APITransactionRequest{0, values, api_types.RETURN_SERIALIZED})
+	result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APITransactionRequest{0, values, api_types.RETURN_SERIALIZED}, 0)
 	if result.Err != nil {
 		err = result.Err
 		return

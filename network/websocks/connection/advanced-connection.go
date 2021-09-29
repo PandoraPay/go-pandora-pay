@@ -90,7 +90,11 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 	return c.connSendJSON(message)
 }
 
-func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool) *advanced_connection_types.AdvancedConnectionAnswer {
+func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, timeout time.Duration) *advanced_connection_types.AdvancedConnectionAnswer {
+
+	if timeout == 0 {
+		timeout = config.WEBSOCKETS_TIMEOUT
+	}
 
 	replyBackId := atomic.AddUint32(&c.answerCounter, 1)
 
@@ -111,7 +115,7 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool) 
 		return &advanced_connection_types.AdvancedConnectionAnswer{nil, err}
 	}
 
-	timer := time.NewTimer(config.WEBSOCKETS_TIMEOUT)
+	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 
 	select {
@@ -149,16 +153,16 @@ func (c *AdvancedConnection) SendJSON(name []byte, data interface{}) error {
 	return c.sendNow(0, name, out, false)
 }
 
-func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte) *advanced_connection_types.AdvancedConnectionAnswer {
-	return c.sendNowAwait(name, data, false)
+func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte, timeout time.Duration) *advanced_connection_types.AdvancedConnectionAnswer {
+	return c.sendNowAwait(name, data, false, timeout)
 }
 
-func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}) *advanced_connection_types.AdvancedConnectionAnswer {
+func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, timeout time.Duration) *advanced_connection_types.AdvancedConnectionAnswer {
 	out, err := json.Marshal(data)
 	if err != nil {
 		panic("Error marshaling data")
 	}
-	return c.sendNowAwait(name, out, false)
+	return c.sendNowAwait(name, out, false, timeout)
 }
 
 func (c *AdvancedConnection) get(message *advanced_connection_types.AdvancedConnectionMessage) ([]byte, error) {
