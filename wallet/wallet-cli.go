@@ -81,8 +81,8 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 
 func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 
-	wallet.RLock()
-	defer wallet.RUnlock()
+	wallet.Lock()
+	defer wallet.Unlock()
 
 	gui.GUI.OutputWrite("Wallet")
 	gui.GUI.OutputWrite("Version: " + wallet.Version.String())
@@ -185,12 +185,14 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 						}
 
 						var decoded uint64
-						if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, acc.Balance.Amount, tokenId, nil, true); err != nil {
+						if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, acc.Balance.Amount, tokenId, nil, true, false); err != nil {
 							return
 						}
 						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(decoded), 'f', config.DECIMAL_SEPARATOR, 64), tok.Name))
 
 					}
+
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s", "DONE DECRYPTING"))
 
 				}
 

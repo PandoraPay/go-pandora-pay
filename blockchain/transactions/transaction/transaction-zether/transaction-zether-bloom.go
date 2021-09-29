@@ -5,6 +5,8 @@ import (
 )
 
 type TransactionZetherBloom struct {
+	Nonce1            []byte
+	Nonce2            []byte
 	signatureVerified bool
 	bloomed           bool
 }
@@ -27,6 +29,9 @@ func (tx *TransactionZether) BloomNow(hashForSignature []byte) (err error) {
 		}
 	}
 
+	tx.Bloom.Nonce1 = tx.Payloads[0].Proof.Nonce1()
+	tx.Bloom.Nonce2 = tx.Payloads[0].Proof.Nonce2()
+
 	tx.Bloom.signatureVerified = true
 	tx.Bloom.bloomed = true
 
@@ -40,8 +45,13 @@ func (tx *TransactionZether) BloomNowSignatureVerified() (err error) {
 	}
 
 	tx.Bloom = new(TransactionZetherBloom)
+
+	tx.Bloom.Nonce1 = tx.Payloads[0].Proof.Nonce1()
+	tx.Bloom.Nonce2 = tx.Payloads[0].Proof.Nonce2()
+
 	tx.Bloom.signatureVerified = true
 	tx.Bloom.bloomed = true
+
 	return
 }
 

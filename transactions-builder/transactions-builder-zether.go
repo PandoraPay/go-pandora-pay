@@ -239,7 +239,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 					}
 
 					var fromBalanceDecoded uint64
-					if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddress.PublicKey, balancePoint, acc.Token, suspendCn, true); err != nil {
+					if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddress.PublicKey, balancePoint, tokensUsed[i], suspendCn, true, true); err != nil {
 						return
 					}
 

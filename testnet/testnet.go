@@ -26,7 +26,6 @@ import (
 	"pandora-pay/transactions-builder/wizard"
 	"pandora-pay/wallet"
 	wallet_address "pandora-pay/wallet/address"
-	"time"
 )
 
 type Testnet struct {
@@ -37,14 +36,19 @@ type Testnet struct {
 	nodes               uint64
 }
 
-func (testnet *Testnet) testnetCreateClaimTx(amount uint64) (tx *transaction.Transaction, err error) {
+func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount uint64) (tx *transaction.Transaction, err error) {
 
 	addr, err := testnet.wallet.GetWalletAddress(0)
 	if err != nil {
 		return
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateClaimTx(addr.AddressEncoded, 0, []uint64{amount}, []string{addr.AddressRegistrationEncoded}, &wizard.TransactionsWizardData{nil, false},
+	dstAddr, err := testnet.wallet.GetWalletAddress(dstAddressWalletIndex)
+	if err != nil {
+		return
+	}
+
+	if tx, err = testnet.transactionsBuilder.CreateClaimTx(addr.AddressEncoded, 0, []uint64{amount}, []string{dstAddr.AddressRegistrationEncoded}, &wizard.TransactionsWizardData{nil, false},
 		&wizard.TransactionsWizardFee{0, 0, 0, true}, true, true, true, func(string) {}); err != nil {
 		return nil, err
 	}
@@ -79,12 +83,6 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 	fees := []*wizard.TransactionsWizardFee{}
 
 	for i := uint64(0); i < testnet.nodes; i++ {
-
-		if uint64(testnet.wallet.GetAddressesCount()) <= i+1 {
-			if _, err = testnet.wallet.AddNewAddress(true); err != nil {
-				return
-			}
-		}
 
 		var addr *wallet_address.WalletAddress
 
@@ -122,7 +120,12 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 	return
 }
 
-func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (tx *transaction.Transaction, err error) {
+func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int) (tx *transaction.Transaction, err error) {
+
+	srcAddr, err := testnet.wallet.GetWalletAddress(srcAddressWalletIndex)
+	if err != nil {
+		return
+	}
 
 	amount := uint64(rand.Int63n(6))
 	burn := uint64(0)
@@ -136,20 +139,15 @@ func (testnet *Testnet) testnetCreateTransfers(blockHeight uint64) (tx *transact
 
 	dst := addr.EncodeAddr()
 
-	walletAddr, err := testnet.wallet.GetWalletAddress(0)
-	if err != nil {
-		return
-	}
-
 	data := &wizard.TransactionsWizardData{nil, false}
 	fee := &wizard.TransactionsWizardFee{0, 0, 0, true}
 
-	ringMembers, err := testnet.transactionsBuilder.CreateZetherRing(walletAddr.AddressEncoded, dst, config.NATIVE_TOKEN, -1, -1)
+	ringMembers, err := testnet.transactionsBuilder.CreateZetherRing(srcAddr.AddressEncoded, dst, config.NATIVE_TOKEN, -1, -1)
 	if err != nil {
 		return
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{walletAddr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, nil, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{srcAddr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, nil, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -163,6 +161,14 @@ func (testnet *Testnet) run() {
 	defer testnet.chain.UpdateNewChain.RemoveChannel(updateChannel)
 
 	creatingTransactions := abool.New()
+
+	for i := uint64(0); i < testnet.nodes; i++ {
+		if uint64(testnet.wallet.GetAddressesCount()) <= i+1 {
+			if _, err := testnet.wallet.AddNewAddress(true); err != nil {
+				return
+			}
+		}
+	}
 
 	for {
 
@@ -195,10 +201,7 @@ func (testnet *Testnet) run() {
 				if blockHeight >= 40 && syncTime != 0 {
 
 					var addr *wallet_address.WalletAddress
-					addr, err = testnet.wallet.GetWalletAddress(0)
-					if err != nil {
-						return
-					}
+					addr, _ = testnet.wallet.GetWalletAddress(0)
 
 					publicKey := addr.PublicKey
 
@@ -246,17 +249,28 @@ func (testnet *Testnet) run() {
 
 						var balance uint64
 						if acc != nil {
-							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN, nil, true); err != nil {
+							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN, nil, true, true); err != nil {
 								return
 							}
 						}
 
-						if claimable > 0 && balance < claimable/2 {
+						if claimable > config.ConvertToUnitsUint64Forced(10) {
+
 							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_CLAIM) {
-								if _, err = testnet.testnetCreateClaimTx(claimable / 2); err != nil {
+								if _, err = testnet.testnetCreateClaimTx(0, claimable/4); err != nil {
+									return
+								}
+								if _, err = testnet.testnetCreateClaimTx(1, claimable/4); err != nil {
+									return
+								}
+								if _, err = testnet.testnetCreateClaimTx(2, claimable/4); err != nil {
+									return
+								}
+								if _, err = testnet.testnetCreateClaimTx(3, claimable/4-config.ConvertToUnitsUint64Forced(10)); err != nil {
 									return
 								}
 							}
+
 						} else if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
 							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
 								if _, err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
@@ -266,16 +280,16 @@ func (testnet *Testnet) run() {
 						} else {
 
 							if creatingTransactions.IsNotSet() {
+
 								creatingTransactions.Set()
-								for {
-									time.Sleep(time.Millisecond*time.Duration(rand.Intn(500)) + time.Millisecond*time.Duration(500))
-									if testnet.mempool.CountInputTxs(addr.PublicKey) < 20 {
-										if _, err = testnet.testnetCreateTransfers(blockHeight); err != nil {
-											return
-										}
+								defer creatingTransactions.UnSet()
+
+								for i := 1; i < 4; i++ {
+									if _, err = testnet.testnetCreateTransfers(i); err != nil {
+										continue
 									}
 								}
-								creatingTransactions.UnSet()
+
 							}
 						}
 

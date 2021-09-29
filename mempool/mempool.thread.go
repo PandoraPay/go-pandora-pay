@@ -6,6 +6,8 @@ import (
 	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
 	"pandora-pay/blockchain/data/registrations"
 	"pandora-pay/blockchain/data/tokens"
+	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/config"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -62,6 +64,7 @@ func (worker *mempoolWorker) processing(
 
 	includedTotalSize := uint64(0)
 	includedTxs := []*mempoolTx{}
+	includedZetherNonceMap := make(map[string]bool)
 
 	resetNow := func(newWork *mempoolWork) {
 
@@ -74,6 +77,7 @@ func (worker *mempoolWorker) processing(
 			work = newWork
 			includedTotalSize = uint64(0)
 			includedTxs = []*mempoolTx{}
+			includedZetherNonceMap = make(map[string]bool)
 			listIndex = 0
 			if len(txsList) > 1 {
 				sortTxs(txsList)
@@ -232,7 +236,16 @@ func (worker *mempoolWorker) processing(
 
 						txsMapVerified[tx.Tx.Bloom.HashStr] = true
 
-						if finalErr = tx.Tx.IncludeTransaction(tx.Tx.Registrations, work.chainHeight, regs, plainAccs, accsCollection, toks); finalErr != nil {
+						if tx.Tx.Version == transaction_type.TX_ZETHER {
+							base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+							if includedZetherNonceMap[string(base.Bloom.Nonce1)] || includedZetherNonceMap[string(base.Bloom.Nonce2)] {
+								finalErr = errors.New("Zether Nonce exists")
+							}
+						}
+
+						if finalErr != nil { //was rejected by mempool nonce map
+
+						} else if finalErr = tx.Tx.IncludeTransaction(tx.Tx.Registrations, work.chainHeight, regs, plainAccs, accsCollection, toks); finalErr != nil {
 							accsCollection.Rollback()
 							toks.Rollback()
 							plainAccs.Rollback()
@@ -246,6 +259,12 @@ func (worker *mempoolWorker) processing(
 
 								atomic.StoreUint64(&work.result.totalSize, includedTotalSize)
 								work.result.txs.Store(includedTxs)
+
+								if tx.Tx.Version == transaction_type.TX_ZETHER {
+									base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+									includedZetherNonceMap[string(base.Bloom.Nonce1)] = true
+									includedZetherNonceMap[string(base.Bloom.Nonce2)] = true
+								}
 
 								if err = accsCollection.CommitChanges(); err != nil {
 									return

@@ -48,6 +48,19 @@ func (mempool *Mempool) CountInputTxs(publicKey []byte) uint64 {
 				count++
 			}
 		}
+		if tx.Tx.Version == transaction_type.TX_ZETHER {
+			base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+			for _, payload := range base.Payloads {
+
+				for _, payloadPoint := range payload.Statement.Publickeylist {
+					txPublicKey := payloadPoint.EncodeCompressed()
+					if bytes.Equal(publicKey, txPublicKey) {
+						count++
+					}
+				}
+
+			}
+		}
 	}
 
 	return count
@@ -90,7 +103,9 @@ func (mempool *Mempool) GetZetherBalance(publicKey []byte, balanceInit []byte) (
 		}
 		balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
 	} else {
-		balance, err = new(crypto.ElGamal).Deserialize(balanceInit)
+		if balance, err = new(crypto.ElGamal).Deserialize(balanceInit); err != nil {
+			return nil, err
+		}
 	}
 
 	txs := mempool.Txs.GetTxsFromMap()
