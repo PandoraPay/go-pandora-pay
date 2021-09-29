@@ -32,6 +32,18 @@ func convertJSON(obj interface{}) (string, error) {
 	return string(str), nil
 }
 
+func convertJSONBytes(obj interface{}) (js.Value, error) {
+
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return js.Null(), err
+	}
+
+	jsOut := js.Global().Get("Uint8Array").New(len(data))
+	js.CopyBytesToJS(jsOut, data)
+	return jsOut, nil
+}
+
 func promiseFunction(callback func() (interface{}, error)) interface{} {
 	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
 		recovery.SafeGo(func() {

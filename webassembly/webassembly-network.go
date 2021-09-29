@@ -250,11 +250,8 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 		if err = received.Tx.Deserialize(helpers.NewBufferReader(received.TxSerialized)); err != nil {
 			return nil, err
 		}
-		if err = received.Tx.BloomExtraVerified(); err != nil {
-			return nil, err
-		}
 
-		return convertJSON(received)
+		return convertJSONBytes(received)
 	})
 }
 

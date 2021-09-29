@@ -1,7 +1,6 @@
 package webassembly
 
 import (
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"pandora-pay/helpers/identicon"
@@ -35,6 +34,8 @@ func getIdenticon(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return "data:image/png;base64," + base64.StdEncoding.EncodeToString(identicon), nil
+		jsOut := js.Global().Get("Uint8Array").New(len(identicon))
+		js.CopyBytesToJS(jsOut, identicon)
+		return jsOut, nil
 	})
 }
