@@ -133,6 +133,7 @@ func storeToken(this js.Value, args []js.Value) interface{} {
 
 		app.Mempool.SuspendProcessingCn <- struct{}{}
 		defer app.Mempool.ContinueProcessing(mempool.CONTINUE_PROCESSING_NO_ERROR_RESET)
+
 		if err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
 			toks := tokens.NewTokens(writer)

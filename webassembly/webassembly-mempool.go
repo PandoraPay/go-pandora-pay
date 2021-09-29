@@ -37,8 +37,7 @@ func mempoolInsertTx(this js.Value, args []js.Value) interface{} {
 		if err := json.Unmarshal([]byte(args[1].String()), tx); err != nil {
 			return nil, err
 		}
-
-		if err := tx.BloomAll(); err != nil {
+		if err := tx.BloomExtraVerified(); err != nil {
 			return nil, err
 		}
 
