@@ -84,6 +84,9 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 	cn := g.cmdInputCn
 	if status == "cmd" {
 		g.cmd.Lock()
+		if g.cmd.SelectedRow >= len(commands) && len(commands) > 0 {
+			g.cmd.SelectedRow = len(commands) - 1
+		}
 		command = &commands[g.cmd.SelectedRow]
 		g.cmd.Unlock()
 	}

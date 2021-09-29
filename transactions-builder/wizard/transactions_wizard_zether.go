@@ -329,16 +329,22 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	}
 	statusCallback("Transaction created")
 
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, suspendCn, statusCallback); err != nil {
+		return nil, err
+	}
+
 	for t := range transfers {
 
 		if err = setFee(tx, fees[t].Clone(), func(fee uint64) {
 			transfers[t].Fee = fee
-		}, func() error {
-			return signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, suspendCn, statusCallback)
 		}); err != nil {
 			return
 		}
 
+	}
+
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, suspendCn, statusCallback); err != nil {
+		return nil, err
 	}
 
 	if err = tx.BloomAll(); err != nil {

@@ -196,32 +196,13 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 				return
 			}
 
-			var acc *account.Account
-			if acc, err = accs.GetAccount(fromWalletAddress.PublicKey); err != nil {
-				return
-			}
-
-			if acc == nil {
-				return errors.New("From Wallet doesn't exist")
-			}
-
-			var fromBalanceDecoded uint64
-			if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddress.PublicKey, acc.GetBalance(), acc.Token, suspendCn, true); err != nil {
-				return
-			}
-
 			transfers[i] = &wizard.ZetherTransfer{
-				Token:              tokensUsed[i],
-				From:               fromWalletAddress.PrivateKey.Key[:],
-				FromBalanceDecoded: fromBalanceDecoded,
-				Destination:        dsts[i],
-				Amount:             amounts[i],
-				Burn:               burns[i],
-				Data:               data[i],
-			}
-
-			if fromBalanceDecoded < amounts[i] {
-				return errors.New("Not enough funds")
+				Token:       tokensUsed[i],
+				From:        fromWalletAddress.PrivateKey.Key[:],
+				Destination: dsts[i],
+				Amount:      amounts[i],
+				Burn:        burns[i],
+				Data:        data[i],
 			}
 
 			var ring []*bn256.G1
@@ -236,17 +217,44 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 					return
 				}
 
+				var acc *account.Account
 				if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
 					return
 				}
 
-				var ebalance *crypto.ElGamal
+				var balance []byte
 				if acc != nil {
-					ebalance = acc.GetBalance()
-				} else {
-					ebalance = crypto.ConstructElGamal(p.G1(), crypto.ElGamal_BASE_G)
+					balance = acc.Balance.Amount.Serialize()
 				}
-				emap[string(tokensUsed[i])][p.G1().String()] = ebalance.Serialize()
+
+				if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance); err != nil {
+					return
+				}
+
+				if fromWalletAddress.AddressEncoded == address { //sender
+
+					balancePoint := new(crypto.ElGamal)
+					if balancePoint, err = balancePoint.Deserialize(balance); err != nil {
+						return
+					}
+
+					var fromBalanceDecoded uint64
+					if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddress.PublicKey, balancePoint, acc.Token, suspendCn, true); err != nil {
+						return
+					}
+
+					if fromBalanceDecoded == 0 {
+						return errors.New("You have no funds")
+					}
+
+					if fromBalanceDecoded < amounts[i] {
+						return errors.New("Not enough funds")
+					}
+					transfers[i].FromBalanceDecoded = fromBalanceDecoded
+
+				}
+
+				emap[string(tokensUsed[i])][p.G1().String()] = balance
 
 				ring = append(ring, p.G1())
 

@@ -1,16 +1,17 @@
 package wizard
 
 import (
+	"encoding/binary"
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/config_fees"
 )
 
-func setFee(tx *transaction.Transaction, fee *TransactionsWizardFee, setFeeCallback func(fee uint64), signCallback func() error) error {
+func setFee(tx *transaction.Transaction, fee *TransactionsWizardFee, setFeeCallback func(uint642 uint64)) error {
 
 	if fee.Fixed > 0 {
 		setFeeCallback(fee.Fixed)
-		return signCallback()
+		return nil
 	}
 
 	if fee.PerByte == 0 && fee.PerByteExtraSpace == 0 && !fee.PerByteAuto {
@@ -25,15 +26,15 @@ func setFee(tx *transaction.Transaction, fee *TransactionsWizardFee, setFeeCallb
 		fee.PerByteExtraSpace = config_fees.FEES_PER_BYTE_EXTRA_SPACE
 	}
 
-	oldFee := uint64(0)
+	var n int
+	buf := make([]byte, binary.MaxVarintLen64)
+
+	oldFee, feeValue := uint64(0), uint64(0)
 	for {
-		feeValue := config_fees.ComputeTxFees(uint64(len(tx.SerializeManualToBytes())), fee.PerByte, tx.ComputeExtraSpace(), fee.PerByteExtraSpace)
 
-		setFeeCallback(feeValue)
+		n = binary.PutUvarint(buf, feeValue)
 
-		if err := signCallback(); err != nil {
-			return err
-		}
+		feeValue = config_fees.ComputeTxFees(uint64(len(tx.SerializeManualToBytes())+n-1), fee.PerByte, tx.ComputeExtraSpace(), fee.PerByteExtraSpace)
 
 		if oldFee == feeValue {
 			break
@@ -41,5 +42,6 @@ func setFee(tx *transaction.Transaction, fee *TransactionsWizardFee, setFeeCallb
 		oldFee = feeValue
 	}
 
-	return signCallback()
+	setFeeCallback(feeValue)
+	return nil
 }
