@@ -257,18 +257,10 @@ func (testnet *Testnet) run() {
 						if claimable > config.ConvertToUnitsUint64Forced(10) {
 
 							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_CLAIM) {
-								if _, err = testnet.testnetCreateClaimTx(0, claimable/4); err != nil {
-									return
-								}
-								if _, err = testnet.testnetCreateClaimTx(1, claimable/4); err != nil {
-									return
-								}
-								if _, err = testnet.testnetCreateClaimTx(2, claimable/4); err != nil {
-									return
-								}
-								if _, err = testnet.testnetCreateClaimTx(3, claimable/4-config.ConvertToUnitsUint64Forced(10)); err != nil {
-									return
-								}
+								testnet.testnetCreateClaimTx(0, claimable/4)
+								testnet.testnetCreateClaimTx(1, claimable/4)
+								testnet.testnetCreateClaimTx(2, claimable/4)
+								testnet.testnetCreateClaimTx(3, claimable/4-config.ConvertToUnitsUint64Forced(10))
 							}
 
 						} else if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
