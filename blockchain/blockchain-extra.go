@@ -288,7 +288,6 @@ func (chain *Blockchain) InitForging() {
 			newSyncData := newSyncDataReceived.(*blockchain_sync.BlockchainSyncData)
 			if newSyncData.Sync {
 				chain.createNextBlockForForging(chain.GetChainData(), true)
-				break
 			}
 
 		}
