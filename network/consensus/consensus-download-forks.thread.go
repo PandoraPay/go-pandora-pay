@@ -128,6 +128,9 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 		if err = tx.Deserialize(helpers.NewBufferReader(blkCompleteMissingTxs.Txs[i])); err != nil {
 			return nil, err
 		}
+		if err = tx.BloomExtraVerified(); err != nil {
+			return nil, err
+		}
 		txs[missingTx] = tx
 	}
 

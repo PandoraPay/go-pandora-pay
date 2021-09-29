@@ -233,10 +233,10 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 	if err = tx.Deserialize(helpers.NewBufferReader(data.TxSerialized)); err != nil {
 		return
 	}
-
 	if err = tx.BloomAll(); err != nil {
 		return
 	}
+
 	if err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, false, false, conn.UUID); err != nil {
 		return
 	}

@@ -20,7 +20,7 @@ type TransactionBloom struct {
 func (tx *Transaction) BloomAll() (err error) {
 
 	if tx.Bloom != nil {
-		return
+		return tx.bloomExtraNow()
 	}
 
 	if err = tx.validate(); err != nil {
@@ -35,17 +35,23 @@ func (tx *Transaction) BloomAll() (err error) {
 	bloom.bloomed = true
 	tx.Bloom = bloom
 
-	return tx.BloomExtraNow()
+	return tx.bloomExtraNow()
 }
 
-func (tx *Transaction) BloomExtraNow() (err error) {
+func (tx *Transaction) bloomExtraNow() (err error) {
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
-		serialized := tx.SerializeForSigning()
-		err = tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).BloomNow(serialized)
+		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
+		if base.Bloom != nil {
+			return
+		}
+		err = base.BloomNow(tx.SerializeForSigning())
 	case transaction_type.TX_ZETHER:
-		serialized := tx.SerializeForSigning()
-		err = tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).BloomNow(serialized)
+		base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+		if base.Bloom != nil {
+			return
+		}
+		err = base.BloomNow(tx.SerializeForSigning())
 	default:
 		err = errors.New("Invalid TxType")
 	}

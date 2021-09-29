@@ -199,10 +199,6 @@ func (w *ForgingWallet) processUpdates() {
 
 			plainAccounts := plainAccountData.(*plain_accounts.PlainAccounts)
 
-			if err != nil {
-				return
-			}
-
 			for k, v := range plainAccounts.HashMap.Committed {
 				if w.addressesMap[k] != nil {
 					if v.Stored == "update" {
