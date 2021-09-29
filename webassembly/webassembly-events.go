@@ -88,7 +88,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 
 				switch data.SubscriptionType {
 				case api_types.SUBSCRIPTION_ACCOUNT:
-					acc := new(account.Account)
+					acc := account.NewAccount(data.Key, nil)
 					if data.Data != nil {
 						if err = acc.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
 							continue
@@ -102,6 +102,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 							continue
 						}
 					}
+					plainAcc.PublicKey = data.Key
 					object = plainAcc
 				case api_types.SUBSCRIPTION_TOKEN:
 					tok := new(token.Token)
@@ -118,6 +119,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 							continue
 						}
 					}
+					reg.PublicKey = data.Key
 					object = reg
 				case api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
 					object = data.Data

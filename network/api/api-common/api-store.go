@@ -11,7 +11,6 @@ import (
 	"pandora-pay/blockchain/data/accounts/account"
 	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
 	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/registrations/registration"
 	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/blockchain/info"
@@ -169,13 +168,8 @@ func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*api_t
 			return
 		}
 
-		var reg *registration.Registration
-		if reg, err = regs.GetRegistration(publicKey); err != nil {
+		if apiAcc.Reg, err = regs.GetRegistration(publicKey); err != nil {
 			return
-		}
-		if reg != nil {
-			apiAcc.Registered = true
-			apiAcc.Registration = reg.Index
 		}
 
 		return

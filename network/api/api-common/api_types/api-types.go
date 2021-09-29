@@ -4,6 +4,7 @@ import (
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/data/accounts/account"
 	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data/registrations/registration"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
@@ -41,8 +42,8 @@ type APIAccount struct {
 	AccsSerialized     []helpers.HexBytes          `json:"accountsSerialized,omitempty"`
 	PlainAcc           *plain_account.PlainAccount `json:"plainAccount,omitempty"`
 	PlainAccSerialized helpers.HexBytes            `json:"plainAccountSerialized,omitempty"`
-	Registered         bool                        `json:"registered,omitempty"`
-	Registration       uint64                      `json:"registration,omitempty"`
+	Reg                *registration.Registration  `json:"registration,omitempty"`
+	RegSerialized      helpers.HexBytes            `json:"registrationSerialized,omitempty"`
 }
 
 type APITransaction struct {
@@ -82,6 +83,10 @@ type APISubscriptionNotificationAccountTxExtraBlockchain struct {
 
 type APISubscriptionNotificationAccountTxExtraMempool struct {
 	Inserted bool `json:"inserted,omitempty"`
+}
+
+type APISubscriptionNotificationAccountExtra struct {
+	Token helpers.HexBytes `json:"token"`
 }
 
 type APISubscriptionNotificationAccountTxExtra struct {

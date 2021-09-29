@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/data/accounts/account"
 	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data/registrations/registration"
 	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
@@ -145,6 +146,14 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 					return nil, err
 				}
 				result.PlainAccSerialized = nil
+			}
+
+			if result.RegSerialized != nil {
+				result.Reg = &registration.Registration{}
+				if err = result.Reg.Deserialize(helpers.NewBufferReader(result.RegSerialized)); err != nil {
+					return nil, err
+				}
+				result.RegSerialized = nil
 			}
 
 		}

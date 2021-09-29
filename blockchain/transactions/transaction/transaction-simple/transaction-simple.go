@@ -79,6 +79,15 @@ func (tx *TransactionSimple) ComputeFees() (uint64, error) {
 
 func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
 	out[string(tx.Vin.PublicKey)] = true
+
+	switch tx.TxScript {
+	case SCRIPT_CLAIM:
+		extra := tx.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleClaim)
+		for _, it := range extra.Output {
+			out[string(it.PublicKey)] = true
+		}
+	}
+
 	return
 }
 

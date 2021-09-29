@@ -7,7 +7,7 @@ import (
 type Registration struct {
 	helpers.SerializableInterface `json:"-"`
 	PublicKey                     []byte `json:"-"` //hashmap key
-	Index                         uint64
+	Index                         uint64 `json:"index"`
 }
 
 func (registration *Registration) Serialize(w *helpers.BufferWriter) {

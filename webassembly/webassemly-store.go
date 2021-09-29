@@ -7,7 +7,6 @@ import (
 	"pandora-pay/blockchain/data/accounts"
 	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
 	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/registrations/registration"
 	"pandora-pay/blockchain/data/tokens"
 	"pandora-pay/blockchain/data/tokens/token"
 	"pandora-pay/mempool"
@@ -70,23 +69,23 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 					if accs, err = accsCollection.GetMap(token); err != nil {
 						return
 					}
+					apiAcc.Accs[i].PublicKey = publicKey
+					apiAcc.Accs[i].Token = token
 					if err = accs.Update(string(publicKey), apiAcc.Accs[i]); err != nil {
 						return
 					}
 				}
 
 				if apiAcc.PlainAcc != nil {
+					apiAcc.PlainAcc.PublicKey = publicKey
 					if err = plainAccs.Update(string(publicKey), apiAcc.PlainAcc); err != nil {
 						return
 					}
 				}
 
-				if apiAcc.Registered {
-					registr := &registration.Registration{
-						PublicKey: publicKey,
-						Index:     apiAcc.Registration,
-					}
-					if err = regs.Update(string(publicKey), registr); err != nil {
+				if apiAcc.Reg != nil {
+					apiAcc.Reg.PublicKey = publicKey
+					if err = regs.Update(string(publicKey), apiAcc.Reg); err != nil {
 						return
 					}
 				}

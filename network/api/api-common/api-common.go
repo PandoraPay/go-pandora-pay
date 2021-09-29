@@ -196,6 +196,10 @@ func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) ([]byte, 
 			outAcc.PlainAccSerialized = outAcc.PlainAcc.SerializeToBytes()
 			outAcc.PlainAcc = nil
 		}
+		if outAcc.Reg != nil {
+			outAcc.RegSerialized = outAcc.Reg.SerializeToBytes()
+			outAcc.Reg = nil
+		}
 
 	}
 

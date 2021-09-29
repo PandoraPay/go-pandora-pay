@@ -60,7 +60,7 @@ func (api *APICommonFaucet) GetFaucetCoins(request *APIFaucetCoinsRequest) ([]by
 		return nil, err
 	}
 
-	tx, err := api.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, []string{request.Address}, []uint64{0}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, false, false, func(status string) {})
+	tx, err := api.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, []string{request.Address}, []uint64{0}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, false, false, nil, func(status string) {})
 	if err != nil {
 		return nil, err
 	}

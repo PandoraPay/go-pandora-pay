@@ -36,6 +36,10 @@ func checkSubscriptionLength(key []byte, subscriptionType api_types.Subscription
 
 func (s *Subscriptions) AddSubscription(subscriptionType api_types.SubscriptionType, key []byte, returnType api_types.APIReturnType) error {
 
+	if subscriptionType == api_types.SUBSCRIPTION_PLAIN_ACCOUNT || subscriptionType == api_types.SUBSCRIPTION_REGISTRATION {
+		return errors.New("These subscriptions are automatically. They can't be subsribed manually")
+	}
+
 	if err := checkSubscriptionLength(key, subscriptionType); err != nil {
 		return err
 	}

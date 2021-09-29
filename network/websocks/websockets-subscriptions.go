@@ -29,8 +29,6 @@ type WebsocketSubscriptions struct {
 	newSubscriptionCn                 chan *connection.SubscriptionNotification
 	removeSubscriptionCn              chan *connection.SubscriptionNotification
 	accountsSubscriptions             map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
-	plainAccountsSubscriptions        map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
-	registrationsSubscriptions        map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
 	accountsTransactionsSubscriptions map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
 	tokensSubscriptions               map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
 	transactionsSubscriptions         map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
@@ -42,8 +40,6 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 		websockets, chain, mempool, make(chan *connection.AdvancedConnection),
 		make(chan *connection.SubscriptionNotification),
 		make(chan *connection.SubscriptionNotification),
-		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
-		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
 		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
 		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
 		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
@@ -108,16 +104,12 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 
 func (this *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.SubscriptionType) (subsMap map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification) {
 	switch subscriptionType {
-	case api_types.SUBSCRIPTION_ACCOUNT:
+	case api_types.SUBSCRIPTION_ACCOUNT, api_types.SUBSCRIPTION_PLAIN_ACCOUNT, api_types.SUBSCRIPTION_REGISTRATION:
 		subsMap = this.accountsSubscriptions
-	case api_types.SUBSCRIPTION_PLAIN_ACCOUNT:
-		subsMap = this.plainAccountsSubscriptions
 	case api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
 		subsMap = this.accountsTransactionsSubscriptions
 	case api_types.SUBSCRIPTION_TOKEN:
 		subsMap = this.tokensSubscriptions
-	case api_types.SUBSCRIPTION_REGISTRATION:
-		subsMap = this.registrationsSubscriptions
 	case api_types.SUBSCRIPTION_TRANSACTION:
 		subsMap = this.transactionsSubscriptions
 	}
@@ -206,10 +198,13 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 
 			accsCollection := accsCollectionData.(*accounts.AccountsCollection)
 			accsMap := accsCollection.GetAllMap()
+
 			for _, accs := range accsMap {
 				for k, v := range accs.HashMap.Committed {
 					if list := this.accountsSubscriptions[k]; list != nil {
-						this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element.(*account.Account), nil, nil)
+						this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element.(*account.Account), nil, &api_types.APISubscriptionNotificationAccountExtra{
+							accs.Token,
+						})
 					}
 				}
 			}
@@ -305,10 +300,8 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			}
 
 			this.removeConnection(conn, api_types.SUBSCRIPTION_ACCOUNT)
-			this.removeConnection(conn, api_types.SUBSCRIPTION_PLAIN_ACCOUNT)
 			this.removeConnection(conn, api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS)
 			this.removeConnection(conn, api_types.SUBSCRIPTION_TOKEN)
-			this.removeConnection(conn, api_types.SUBSCRIPTION_REGISTRATION)
 			this.removeConnection(conn, api_types.SUBSCRIPTION_TRANSACTION)
 
 		}
