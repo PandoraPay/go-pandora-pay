@@ -11,13 +11,6 @@ import (
 )
 
 const (
-	// Default width of resulting identicon image in pixels
-	Width = 210
-	// Default height of resulting identicon image in pixels
-	Height = 210
-)
-
-const (
 	columns = 7
 	rows    = 7
 )

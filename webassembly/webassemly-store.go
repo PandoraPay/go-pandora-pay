@@ -27,9 +27,11 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 		}
 
 		var apiAcc *api_types.APIAccount
-		if args[1].Type() == js.TypeString {
+		if !args[1].IsNull() {
 			apiAcc = &api_types.APIAccount{}
-			if err = json.Unmarshal([]byte(args[1].String()), apiAcc); err != nil {
+			data := make([]byte, args[1].Get("byteLength").Int())
+			js.CopyBytesToGo(data, args[1])
+			if err = json.Unmarshal(data, apiAcc); err != nil {
 				return nil, err
 			}
 		}
@@ -118,7 +120,9 @@ func storeToken(this js.Value, args []js.Value) interface{} {
 		var tok *token.Token
 		if !args[1].IsNull() {
 			tok = &token.Token{}
-			if err = json.Unmarshal([]byte(args[1].String()), &tok); err != nil {
+			data := make([]byte, args[1].Get("byteLength").Int())
+			js.CopyBytesToGo(data, args[1])
+			if err = json.Unmarshal(data, &tok); err != nil {
 				return nil, err
 			}
 		}

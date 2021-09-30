@@ -60,7 +60,7 @@ func getWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return convertJSON(adr)
+		return convertJSONBytes(adr)
 	})
 }
 
@@ -75,7 +75,7 @@ func addNewWalletAddress(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		return convertJSON(adr)
+		return convertJSONBytes(adr)
 	})
 }
 
@@ -104,7 +104,7 @@ func importWalletPrivateKey(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		return convertJSON(adr)
+		return convertJSONBytes(adr)
 	})
 }
 
@@ -126,7 +126,7 @@ func importWalletAddressJSON(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		return convertJSON(adr)
+		return convertJSONBytes(adr)
 	})
 }
 
@@ -260,7 +260,7 @@ func deriveDelegatedStakeWalletAddress(this js.Value, args []js.Value) interface
 			return nil, err
 		}
 
-		return convertJSON(delegatedStake)
+		return convertJSONBytes(delegatedStake)
 
 	})
 }

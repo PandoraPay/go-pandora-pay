@@ -101,10 +101,13 @@ func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 		if err := blkComplete.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
 			return nil, err
 		}
-		if err := blkComplete.BloomAll(); err != nil {
-			return nil, err
+		for _, tx := range blkComplete.Txs {
+			if err = tx.BloomExtraVerified(); err != nil {
+				return nil, err
+			}
 		}
-		return convertJSON(blkComplete)
+
+		return convertJSONBytes(blkComplete)
 	})
 }
 
@@ -159,7 +162,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 
 		}
 
-		return convertJSON(result)
+		return convertJSONBytes(result)
 	})
 }
 
@@ -206,7 +209,7 @@ func getNetworkAccountMempool(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return convertJSON(result)
+		return convertJSONBytes(result)
 	})
 }
 
@@ -270,7 +273,7 @@ func getNetworkTokenInfo(this js.Value, args []js.Value) interface{} {
 		if data.Err != nil {
 			return nil, data.Err
 		}
-		return string(data.Out), nil
+		return data.Out, nil
 	})
 }
 
@@ -293,7 +296,7 @@ func getNetworkToken(this js.Value, args []js.Value) interface{} {
 		if err = tok.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
 			return nil, err
 		}
-		return convertJSON(tok)
+		return convertJSONBytes(tok)
 	})
 }
 

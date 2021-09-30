@@ -48,7 +48,7 @@ func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return convertJSON(tx)
+		return convertJSONBytes(tx)
 	})
 }
 

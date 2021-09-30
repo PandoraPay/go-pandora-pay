@@ -24,3 +24,8 @@ go mod tidy
 
 ## Video Tutorial
 https://www.youtube.com/watch?v=Jo7BbL7Xdms
+
+
+## How it works.
+
+Because the GOWASM is compatible and can work as a WebWorker, the code works with bytes instead of strings for blobs because they can be transferable from one worker to another one (main) 

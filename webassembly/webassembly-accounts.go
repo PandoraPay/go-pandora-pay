@@ -12,7 +12,7 @@ func decodeAddress(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		return convertJSON(address)
+		return convertJSONBytes(address)
 	})
 }
 
@@ -42,7 +42,7 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		json, err := convertJSON(addr)
+		json, err := convertJSONBytes(addr)
 		if err != nil {
 			return nil, err
 		}

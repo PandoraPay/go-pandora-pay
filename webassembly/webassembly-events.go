@@ -45,7 +45,7 @@ func listenEvents(this js.Value, args []js.Value) interface{} {
 			case string:
 				final = data.Data
 			case interface{}:
-				if final, err = convertJSON(v); err != nil {
+				if final, err = convertJSONBytes(v); err != nil {
 					panic(err)
 				}
 			default:
@@ -132,7 +132,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					continue
 				}
 
-				callback.Invoke(int(data.SubscriptionType), hex.EncodeToString(data.Key), string(output), string(data.Extra))
+				callback.Invoke(int(data.SubscriptionType), hex.EncodeToString(data.Key), output, data.Extra)
 
 			}
 		})
