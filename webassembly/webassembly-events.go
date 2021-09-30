@@ -132,7 +132,13 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					continue
 				}
 
-				callback.Invoke(int(data.SubscriptionType), hex.EncodeToString(data.Key), output, data.Extra)
+				jsOutData := js.Global().Get("Uint8Array").New(len(output))
+				js.CopyBytesToJS(jsOutData, output)
+
+				jsOutExtra := js.Global().Get("Uint8Array").New(len(data.Extra))
+				js.CopyBytesToJS(jsOutExtra, data.Extra)
+
+				callback.Invoke(int(data.SubscriptionType), hex.EncodeToString(data.Key), jsOutData, jsOutExtra)
 
 			}
 		})
