@@ -29,7 +29,7 @@ func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 			Dsts        []string                                            `json:"dsts"`
 			Burns       []float64                                           `json:"burns"`
 			RingMembers [][]string                                          `json:"RingMembers"`
-			Data        []*wizard.TransactionsWizardData                    `json:"data"`
+			Data        []*wizard.TransactionsWizardData                    `json:"data_storage"`
 			Fees        []*transactions_builder.TransactionsBuilderFeeFloat `json:"fees"`
 			PropagateTx bool                                                `json:"propagateTx"`
 			AwaitAnswer bool                                                `json:"awaitAnswer"`
@@ -69,7 +69,7 @@ func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 			DelegateNewPublicKeyGenerate bool                                              `json:"delegateNewPublicKeyGenerate"`
 			DelegateNewPubKey            helpers.HexBytes                                  `json:"delegateNewPubKey"`
 			DelegateNewFee               uint64                                            `json:"delegateNewFee"`
-			Data                         *wizard.TransactionsWizardData                    `json:"data"`
+			Data                         *wizard.TransactionsWizardData                    `json:"data_storage"`
 			Fee                          *transactions_builder.TransactionsBuilderFeeFloat `json:"fee"`
 			PropagateTx                  bool                                              `json:"propagateTx"`
 			AwaitAnswer                  bool                                              `json:"awaitAnswer"`
@@ -108,7 +108,7 @@ func createUnstakeTx_Float(this js.Value, args []js.Value) interface{} {
 			From          string                                            `json:"from"`
 			Nonce         uint64                                            `json:"nonce"`
 			UnstakeAmount float64                                           `json:"unstakeAmount"`
-			Data          *wizard.TransactionsWizardData                    `json:"data"`
+			Data          *wizard.TransactionsWizardData                    `json:"data_storage"`
 			Fee           *transactions_builder.TransactionsBuilderFeeFloat `json:"fee"`
 			PropagateTx   bool                                              `json:"propagateTx"`
 			AwaitAnswer   bool                                              `json:"awaitAnswer"`

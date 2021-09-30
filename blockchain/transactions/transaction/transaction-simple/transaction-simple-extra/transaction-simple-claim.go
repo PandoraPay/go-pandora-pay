@@ -2,12 +2,10 @@ package transaction_simple_extra
 
 import (
 	"errors"
-	"pandora-pay/blockchain/data/accounts"
-	"pandora-pay/blockchain/data/accounts/account"
-	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
-	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
-	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/accounts/account"
+	plain_account "pandora-pay/blockchain/data_storage/plain-accounts/plain-account"
 	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-parts"
 	"pandora-pay/config"
@@ -22,7 +20,7 @@ type TransactionSimpleClaim struct {
 	Output []*transaction_simple_parts.TransactionSimpleOutput
 }
 
-func (tx *TransactionSimpleClaim) IncludeTransactionVin0(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, plainAcc *plain_account.PlainAccount, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+func (tx *TransactionSimpleClaim) IncludeTransactionVin0(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
 
 	if plainAcc == nil {
 		return errors.New("acc.HasDelegatedStake is null")
@@ -32,12 +30,12 @@ func (tx *TransactionSimpleClaim) IncludeTransactionVin0(txRegistrations *transa
 	for i, out := range tx.Output {
 		publicKeyList[i] = out.PublicKey
 	}
-	if err = txRegistrations.RegisterNow(regs, publicKeyList); err != nil {
+	if err = txRegistrations.RegisterNow(dataStorage.Regs, publicKeyList); err != nil {
 		return
 	}
 
 	var accs *accounts.Accounts
-	if accs, err = accsCollection.GetMap(config.NATIVE_TOKEN); err != nil {
+	if accs, err = dataStorage.AccsCollection.GetMap(config.NATIVE_TOKEN); err != nil {
 		return
 	}
 

@@ -49,7 +49,7 @@ sleep 0.1
 for (( i=1; i < $nodes; ++i ))
 do
   echo "copying genesis $i"
-  cp ./_build/devnet_0/DEV/genesis.data ./_build/devnet_$i/DEV/genesis.data
+  cp ./_build/devnet_0/DEV/genesis.data_storage ./_build/devnet_$i/DEV/genesis.data_storage
 done
 
 for (( i=0; i < $nodes; ++i ))

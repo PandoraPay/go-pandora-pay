@@ -9,11 +9,8 @@ import (
 	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/blocks/block/difficulty"
-	"pandora-pay/blockchain/data/accounts"
-	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
-	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
-	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data_storage"
+	plain_account "pandora-pay/blockchain/data_storage/plain-accounts/plain-account"
 	"pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/blockchain/transactions/transaction"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
@@ -122,10 +119,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	removedBlocksHeights := []uint64{}
 	removedBlocksTransactionsCount := uint64(0)
 
-	var accsCollection *accounts.AccountsCollection
-	var toks *tokens.Tokens
-	var regs *registrations.Registrations
-	var plainAccs *plain_accounts.PlainAccounts
+	var dataStorage *data_storage.DataStorage
 
 	err = func() (err error) {
 
@@ -135,15 +129,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 			savedBlock := false
 
-			accsCollection = accounts.NewAccountsCollection(writer)
-			toks = tokens.NewTokens(writer)
-			regs = registrations.NewRegistrations(writer)
-			plainAccs = plain_accounts.NewPlainAccounts(writer)
-
-			var accs *accounts.Accounts
-			if accs, err = accsCollection.GetMap(config.NATIVE_TOKEN); err != nil {
-				return
-			}
+			dataStorage = data_storage.CreateDataStorage(writer)
 
 			//let's filter existing blocks
 			for i := len(blocksComplete) - 1; i >= 0; i-- {
@@ -177,7 +163,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					copy(removedBlocksHeights[1:], removedBlocksHeights)
 					removedBlocksHeights[0] = index
 
-					if allTransactionsChanges, err = chain.removeBlockComplete(writer, index, removedTxHashes, allTransactionsChanges, regs, plainAccs, accsCollection, toks); err != nil {
+					if allTransactionsChanges, err = chain.removeBlockComplete(writer, index, removedTxHashes, allTransactionsChanges, dataStorage); err != nil {
 						return
 					}
 
@@ -189,7 +175,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				}
 
 				if firstBlockComplete.Block.Height == 0 {
+					gui.GUI.Info("chain.createGenesisBlockchainData called")
 					newChainData = chain.createGenesisBlockchainData()
+					if err = chain.initializeNewChain(newChainData, dataStorage); err != nil {
+						return
+					}
 					removedBlocksTransactionsCount = 0
 				} else {
 					removedBlocksTransactionsCount = newChainData.TransactionsCount
@@ -228,7 +218,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 
 					var plainAcc *plain_account.PlainAccount
-					if plainAcc, err = plainAccs.GetPlainAccount(blkComplete.Block.Forger, blkComplete.Block.Height); err != nil {
+					if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(blkComplete.Block.Forger, blkComplete.Block.Height); err != nil {
 						return
 					}
 
@@ -276,14 +266,14 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return errors.New("Timestamp is too much into the future")
 					}
 
-					if err = blkComplete.IncludeBlockComplete(regs, plainAccs, accsCollection, toks); err != nil {
+					if err = blkComplete.IncludeBlockComplete(dataStorage); err != nil {
 						return errors.New("Error including block into Blockchain: " + err.Error())
 					}
 
 					//to detect if the savedBlock was done correctly
 					savedBlock = false
 
-					if allTransactionsChanges, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, allTransactionsChanges, regs, accsCollection, toks); err != nil {
+					if allTransactionsChanges, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, allTransactionsChanges, dataStorage); err != nil {
 						return errors.New("Error saving block complete: " + err.Error())
 					}
 
@@ -292,16 +282,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 
 					//it will commit the changes but not save them
-					if err = accs.CommitChanges(); err != nil {
-						return
-					}
-					if err = toks.CommitChanges(); err != nil {
-						return
-					}
-					if err = regs.CommitChanges(); err != nil {
-						return
-					}
-					if err = plainAccs.CommitChanges(); err != nil {
+					if err = dataStorage.CommitChanges(); err != nil {
 						return
 					}
 
@@ -381,7 +362,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 					//remove unused blocks
 					for _, removedBlock := range removedBlocksHeights {
-						if err = chain.deleteUnusedBlocksComplete(writer, removedBlock, accs, toks); err != nil {
+						if err = chain.deleteUnusedBlocksComplete(writer, removedBlock, dataStorage); err != nil {
 							panic("Error deleting unused blocks: " + err.Error())
 						}
 					}
@@ -428,7 +409,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 				}
 
-				if err = chain.saveBlockchainHashmaps(regs, plainAccs, accsCollection, toks); err != nil {
+				if err = chain.saveBlockchainHashmaps(dataStorage); err != nil {
 					panic(err)
 				}
 
@@ -441,11 +422,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				}
 			}
 
-			if accsCollection != nil {
-				accsCollection.UnsetTx()
-				toks.UnsetTx()
-				regs.UnsetTx()
-				plainAccs.UnsetTx()
+			if dataStorage != nil {
+				dataStorage.SetTx(nil)
 			}
 
 			return
@@ -472,10 +450,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	if err == nil {
 		update.newChainData = newChainData
-		update.accsCollection = accsCollection
-		update.toks = toks
-		update.regs = regs
-		update.plainAccs = plainAccs
+		update.dataStorage = dataStorage
 		update.removedTxsList = removedTxsList
 		update.removedTxHashes = removedTxHashes
 		update.insertedTxs = insertedTxs

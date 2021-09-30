@@ -3,8 +3,8 @@ package api_delegates_node
 import (
 	"bytes"
 	"pandora-pay/addresses"
-	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
-	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	plain_accounts "pandora-pay/blockchain/data_storage/plain-accounts"
+	plain_account "pandora-pay/blockchain/data_storage/plain-accounts/plain-account"
 	"pandora-pay/recovery"
 	wallet_address "pandora-pay/wallet/address"
 	"sync/atomic"

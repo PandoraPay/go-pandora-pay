@@ -2,7 +2,7 @@ package transaction_data
 
 import (
 	"errors"
-	"pandora-pay/blockchain/data/registrations"
+	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/helpers"
 )
 

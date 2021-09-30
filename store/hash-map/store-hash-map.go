@@ -115,10 +115,6 @@ func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name st
 	return
 }
 
-func (hashMap *HashMap) UnsetTx() {
-	hashMap.Tx = nil
-}
-
 func (hashMap *HashMap) Get(key string) (helpers.SerializableInterface, error) {
 
 	if len(key) != hashMap.KeyLength {
@@ -319,6 +315,10 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 	}
 
 	return
+}
+
+func (hashMap *HashMap) SetTx(tx store_db_interface.StoreDBTransactionInterface) {
+	hashMap.Tx = tx
 }
 
 func (hashMap *HashMap) Rollback() {

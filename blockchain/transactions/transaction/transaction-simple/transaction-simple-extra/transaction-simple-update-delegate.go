@@ -2,11 +2,8 @@ package transaction_simple_extra
 
 import (
 	"errors"
-	"pandora-pay/blockchain/data/accounts"
-	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
-	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
-	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data_storage"
+	plain_account "pandora-pay/blockchain/data_storage/plain-accounts/plain-account"
 	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -18,7 +15,7 @@ type TransactionSimpleUpdateDelegate struct {
 	NewFee       uint64
 }
 
-func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, plainAcc *plain_account.PlainAccount, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
 
 	if len(txRegistrations.Registrations) > 0 {
 		return errors.New("txRegistrations.Registrations length should be zero")

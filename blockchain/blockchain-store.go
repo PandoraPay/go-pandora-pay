@@ -5,10 +5,7 @@ import (
 	"errors"
 	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/blocks/block-complete"
-	"pandora-pay/blockchain/data/accounts"
-	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
-	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/config"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
@@ -35,14 +32,11 @@ func (chain *Blockchain) LoadBlockHash(reader store_db_interface.StoreDBTransact
 	return hash, nil
 }
 
-func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, accs *accounts.Accounts, toks *tokens.Tokens) (err error) {
+func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	blockHeightStr := strconv.FormatUint(blockHeight, 10)
 
-	if err = accs.DeleteTransitionalChangesFromStore(blockHeightStr); err != nil {
-		return
-	}
-	if err = toks.DeleteTransitionalChangesFromStore(blockHeightStr); err != nil {
+	if err = dataStorage.DeleteTransitionalChangesFromStore(blockHeightStr); err != nil {
 		return
 	}
 
@@ -56,7 +50,7 @@ func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.St
 	return
 }
 
-func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, removedTxHashes map[string][]byte, allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (allTransactionsChanges2 []*blockchain_types.BlockchainTransactionUpdate, err error) {
+func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, removedTxHashes map[string][]byte, allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate, dataStorage *data_storage.DataStorage) (allTransactionsChanges2 []*blockchain_types.BlockchainTransactionUpdate, err error) {
 
 	allTransactionsChanges2 = allTransactionsChanges
 	allTransactionsChangesFinal := allTransactionsChanges
@@ -64,16 +58,7 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 	blockHeightStr := strconv.FormatUint(blockHeight, 10)
 	blockHeightNextStr := strconv.FormatUint(blockHeight, 10)
 
-	if err = accsCollection.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
-		return
-	}
-	if err = plainAccs.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
-		return
-	}
-	if err = toks.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
-		return
-	}
-	if err = regs.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
+	if err = dataStorage.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
 		return
 	}
 
@@ -120,18 +105,12 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 	return allTransactionsChangesFinal, nil
 }
 
-func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, removedTxHashes map[string][]byte, allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate, regs *registrations.Registrations, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) ([]*blockchain_types.BlockchainTransactionUpdate, error) {
+func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, removedTxHashes map[string][]byte, allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate, dataStorage *data_storage.DataStorage) ([]*blockchain_types.BlockchainTransactionUpdate, error) {
 
 	allTransactionsChanges2 := allTransactionsChanges
 
 	blockHeightStr := strconv.FormatUint(blkComplete.Block.Height, 10)
-	if err := accsCollection.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
-		return allTransactionsChanges, err
-	}
-	if err := toks.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
-		return allTransactionsChanges, err
-	}
-	if err := regs.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
+	if err := dataStorage.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
 		return allTransactionsChanges, err
 	}
 
@@ -195,28 +174,15 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 	return allTransactionsChanges2, nil
 }
 
-func (chain *Blockchain) saveBlockchainHashmaps(regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+func (chain *Blockchain) saveBlockchainHashmaps(dataStorage *data_storage.DataStorage) (err error) {
 
-	regs.Rollback()
-	accsCollection.Rollback()
-	plainAccs.Rollback()
-	toks.Rollback()
-
-	if err = accsCollection.CloneCommitted(); err != nil {
-		return
-	}
-	if err = plainAccs.CloneCommitted(); err != nil {
-		return
-	}
-	if err = regs.CloneCommitted(); err != nil {
-		return
-	}
-	if err = toks.CloneCommitted(); err != nil {
+	dataStorage.Rollback()
+	if err = dataStorage.CloneCommitted(); err != nil {
 		return
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
-		if err = saveTokensInfo(toks); err != nil {
+		if err = saveTokensInfo(dataStorage.Toks); err != nil {
 			return
 		}
 	}

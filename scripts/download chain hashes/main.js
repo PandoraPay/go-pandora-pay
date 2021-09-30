@@ -15,7 +15,7 @@ function downloadHashes(height = 0){
 	http.get('http://'+args[0]+':'+args[1]+'/block-hash?height='+height, (resp) => {
 	  let data = '';
 
-	  // A chunk of data has been received.
+	  // A chunk of data_storage has been received.
 	  resp.on('data', (chunk) => {
 	    data += chunk;
 	  });

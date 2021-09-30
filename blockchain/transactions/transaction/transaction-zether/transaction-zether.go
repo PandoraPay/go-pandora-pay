@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"pandora-pay/blockchain/data/accounts"
-	"pandora-pay/blockchain/data/accounts/account"
-	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
-	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/accounts/account"
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/config"
@@ -27,7 +25,7 @@ type TransactionZether struct {
 /**
 Zether requires another verification that the bloomed publicKeys, CL, CR are the same
 */
-func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
 	var acc *account.Account
@@ -47,13 +45,13 @@ func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_dat
 		}
 	}
 
-	if err = txRegistrations.RegisterNow(regs, publicKeyList); err != nil {
+	if err = txRegistrations.RegisterNow(dataStorage.Regs, publicKeyList); err != nil {
 		return
 	}
 
 	c = 0
 	for _, payload := range tx.Payloads {
-		if accs, err = accsCollection.GetMap(payload.Token); err != nil {
+		if accs, err = dataStorage.AccsCollection.GetMap(payload.Token); err != nil {
 			return
 		}
 

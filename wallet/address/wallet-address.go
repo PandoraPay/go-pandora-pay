@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/data/accounts/account"
+	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"

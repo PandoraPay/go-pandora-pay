@@ -160,7 +160,7 @@ func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte, timeout t
 func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, timeout time.Duration) *advanced_connection_types.AdvancedConnectionAnswer {
 	out, err := json.Marshal(data)
 	if err != nil {
-		panic("Error marshaling data")
+		panic("Error marshaling data_storage")
 	}
 	return c.sendNowAwait(name, out, false, timeout)
 }

@@ -3,11 +3,8 @@ package transaction_simple
 import (
 	"errors"
 	"fmt"
-	"pandora-pay/blockchain/data/accounts"
-	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
-	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
-	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data_storage"
+	plain_account "pandora-pay/blockchain/data_storage/plain-accounts/plain-account"
 	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
 	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple/transaction-simple-extra"
@@ -29,10 +26,10 @@ type TransactionSimple struct {
 	Bloom       *TransactionSimpleBloom
 }
 
-func (tx *TransactionSimple) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) (err error) {
+func (tx *TransactionSimple) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var plainAcc *plain_account.PlainAccount
-	if plainAcc, err = plainAccs.GetPlainAccount(tx.Vin.PublicKey, blockHeight); err != nil {
+	if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(tx.Vin.PublicKey, blockHeight); err != nil {
 		return
 	}
 	if plainAcc == nil {
@@ -61,12 +58,12 @@ func (tx *TransactionSimple) IncludeTransaction(txRegistrations *transaction_dat
 
 	switch tx.TxScript {
 	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_CLAIM:
-		if err = tx.TransactionSimpleExtraInterface.IncludeTransactionVin0(txRegistrations, blockHeight, plainAcc, regs, plainAccs, accsCollection, toks); err != nil {
+		if err = tx.TransactionSimpleExtraInterface.IncludeTransactionVin0(txRegistrations, blockHeight, plainAcc, dataStorage); err != nil {
 			return
 		}
 	}
 
-	if err = plainAccs.Update(string(tx.Vin.PublicKey), plainAcc); err != nil {
+	if err = dataStorage.PlainAccs.Update(string(tx.Vin.PublicKey), plainAcc); err != nil {
 		return
 	}
 

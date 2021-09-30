@@ -22,7 +22,7 @@ func (fee *TransactionsWizardFee) Clone() *TransactionsWizardFee {
 }
 
 type TransactionsWizardData struct {
-	Data    helpers.HexBytes `json:"data,omitempty"`
+	Data    helpers.HexBytes `json:"data_storage,omitempty"`
 	Encrypt bool             `json:"encrypt,omitempty"`
 }
 
@@ -45,11 +45,11 @@ func (data *TransactionsWizardData) getData() ([]byte, error) {
 	} else {
 
 		panic("not implemented")
-		//pub, err := ecdsa.DecompressPubkey(data.PublicKeyToEncrypt)
+		//pub, err := ecdsa.DecompressPubkey(data_storage.PublicKeyToEncrypt)
 		//if err != nil {
 		//	return nil, err
 		//}
 		//
-		//return ecies.Encrypt(rand.Reader, ecies.ImportECDSAPublic(pub), data.Data, nil, nil)
+		//return ecies.Encrypt(rand.Reader, ecies.ImportECDSAPublic(pub), data_storage.Data, nil, nil)
 	}
 }

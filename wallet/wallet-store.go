@@ -5,10 +5,10 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"pandora-pay/blockchain/data/accounts"
-	"pandora-pay/blockchain/data/accounts/account"
-	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
-	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/accounts/account"
+	plain_accounts "pandora-pay/blockchain/data_storage/plain-accounts"
+	plain_account "pandora-pay/blockchain/data_storage/plain-accounts/plain-account"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
@@ -129,7 +129,7 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 
 			unmarshal = reader.Get("encryption")
 			if unmarshal == nil {
-				return errors.New("encryption data was not found")
+				return errors.New("encryption data_storage was not found")
 			}
 			if err = json.Unmarshal(unmarshal, &wallet.Encryption); err != nil {
 				return

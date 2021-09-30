@@ -2,7 +2,7 @@ package tokens
 
 import (
 	"errors"
-	"pandora-pay/blockchain/data/tokens/token"
+	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash-map"

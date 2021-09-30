@@ -1,10 +1,7 @@
 package transaction_base_interface
 
 import (
-	"pandora-pay/blockchain/data/accounts"
-	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
-	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data_storage"
 	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/helpers"
 )
@@ -12,7 +9,7 @@ import (
 type TransactionBaseInterface interface {
 	helpers.SerializableInterface
 	SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool)
-	IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens) error
+	IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, dataStorage *data_storage.DataStorage) error
 	ComputeFees() (uint64, error)
 	ComputeAllKeys(out map[string]bool)
 	VerifySignatureManually(hashForSignature []byte) bool

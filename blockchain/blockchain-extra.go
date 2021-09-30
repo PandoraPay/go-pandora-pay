@@ -7,13 +7,11 @@ import (
 	blockchain_sync "pandora-pay/blockchain/blockchain-sync"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block-complete"
-	"pandora-pay/blockchain/data/accounts"
-	"pandora-pay/blockchain/data/accounts/account"
-	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
-	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
-	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/tokens"
-	"pandora-pay/blockchain/data/tokens/token"
+	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/accounts/account"
+	plain_account "pandora-pay/blockchain/data_storage/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data_storage/tokens/token"
 	forging_block_work "pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -52,106 +50,105 @@ func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 	}
 }
 
+func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStorage *data_storage.DataStorage) (err error) {
+
+	var accs *accounts.Accounts
+
+	if accs, err = dataStorage.AccsCollection.GetMap(config.NATIVE_TOKEN); err != nil {
+		return
+	}
+
+	supply := uint64(0)
+
+	for _, airdrop := range genesis.GenesisData.AirDrops {
+
+		if err = helpers.SafeUint64Add(&supply, airdrop.Amount); err != nil {
+			return
+		}
+
+		var addr *addresses.Address
+		addr, err = addresses.DecodeAddr(airdrop.Address)
+		if err != nil {
+			return
+		}
+		if addr.IsIntegratedAmount() || addr.IsIntegratedPaymentID() {
+			return errors.New("Amount or PaymentID are integrated there should not be")
+		}
+
+		if airdrop.DelegatedStakePublicKey != nil {
+			var plainAcc *plain_account.PlainAccount
+			if plainAcc, err = dataStorage.PlainAccs.CreatePlainAccount(addr.PublicKey); err != nil {
+				return
+			}
+			if err = plainAcc.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
+				return
+			}
+			if err = dataStorage.PlainAccs.Update(string(addr.PublicKey), plainAcc); err != nil {
+				return
+			}
+		} else {
+			if _, err = dataStorage.Regs.CreateRegistration(addr.PublicKey, addr.Registration); err != nil {
+				return
+			}
+			var acc *account.Account
+			if acc, err = accs.CreateAccount(addr.PublicKey); err != nil {
+				return
+			}
+			if err = acc.Balance.AddBalanceUint(airdrop.Amount); err != nil {
+				return
+			}
+			if err = accs.Update(string(addr.PublicKey), acc); err != nil {
+				return
+			}
+		}
+
+	}
+
+	tok := &token.Token{
+		Version:                  0,
+		Name:                     config.NATIVE_TOKEN_NAME,
+		Ticker:                   config.NATIVE_TOKEN_TICKER,
+		Description:              config.NATIVE_TOKEN_DESCRIPTION,
+		DecimalSeparator:         byte(config.DECIMAL_SEPARATOR),
+		CanChangePublicKey:       false,
+		CanChangeSupplyPublicKey: false,
+		CanBurn:                  true,
+		CanMint:                  true,
+		Supply:                   supply,
+		MaxSupply:                config.MAX_SUPPLY_COINS_UNITS,
+		UpdatePublicKey:          config.BURN_PUBLIC_KEY,
+		SupplyPublicKey:          config.BURN_PUBLIC_KEY,
+	}
+
+	if err = dataStorage.Toks.CreateToken(config.NATIVE_TOKEN, tok); err != nil {
+		return
+	}
+
+	chainData.TokensCount = 1
+
+	if err = dataStorage.CommitChanges(); err != nil {
+		return
+	}
+
+	return
+}
+
 func (chain *Blockchain) init() (*BlockchainData, error) {
 
 	chainData := chain.createGenesisBlockchainData()
 
 	if err := store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		toks := tokens.NewTokens(writer)
-		plainAccs := plain_accounts.NewPlainAccounts(writer)
-		regs := registrations.NewRegistrations(writer)
+		dataStorage := data_storage.CreateDataStorage(writer)
 
-		accsCollection := accounts.NewAccountsCollection(writer)
-
-		supply := uint64(0)
-
-		var accs *accounts.Accounts
-		if accs, err = accsCollection.GetMap(config.NATIVE_TOKEN); err != nil {
+		if err = chain.initializeNewChain(chainData, dataStorage); err != nil {
 			return
 		}
 
-		for _, airdrop := range genesis.GenesisData.AirDrops {
-
-			if err = helpers.SafeUint64Add(&supply, airdrop.Amount); err != nil {
+		if config.SEED_WALLET_NODES_INFO {
+			if err = saveTokensInfo(dataStorage.Toks); err != nil {
 				return
 			}
-
-			var addr *addresses.Address
-			addr, err = addresses.DecodeAddr(airdrop.Address)
-			if err != nil {
-				return
-			}
-			if addr.IsIntegratedAmount() || addr.IsIntegratedPaymentID() {
-				return errors.New("Amount or PaymentID are integrated there should not be")
-			}
-
-			if airdrop.DelegatedStakePublicKey != nil {
-				var plainAcc *plain_account.PlainAccount
-				if plainAcc, err = plainAccs.CreatePlainAccount(addr.PublicKey); err != nil {
-					return
-				}
-				if err = plainAcc.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
-					return
-				}
-				if err = plainAccs.Update(string(addr.PublicKey), plainAcc); err != nil {
-					return
-				}
-			} else {
-				if _, err = regs.CreateRegistration(addr.PublicKey, addr.Registration); err != nil {
-					return
-				}
-				var acc *account.Account
-				if acc, err = accs.CreateAccount(addr.PublicKey); err != nil {
-					return
-				}
-				if err = acc.Balance.AddBalanceUint(airdrop.Amount); err != nil {
-					return
-				}
-				if err = accs.Update(string(addr.PublicKey), acc); err != nil {
-					return
-				}
-			}
-
-		}
-
-		tok := &token.Token{
-			Version:                  0,
-			Name:                     config.NATIVE_TOKEN_NAME,
-			Ticker:                   config.NATIVE_TOKEN_TICKER,
-			Description:              config.NATIVE_TOKEN_DESCRIPTION,
-			DecimalSeparator:         byte(config.DECIMAL_SEPARATOR),
-			CanChangePublicKey:       false,
-			CanChangeSupplyPublicKey: false,
-			CanBurn:                  true,
-			CanMint:                  true,
-			Supply:                   supply,
-			MaxSupply:                config.MAX_SUPPLY_COINS_UNITS,
-			UpdatePublicKey:          config.BURN_PUBLIC_KEY,
-			SupplyPublicKey:          config.BURN_PUBLIC_KEY,
-		}
-
-		if err = toks.CreateToken(config.NATIVE_TOKEN, tok); err != nil {
-			return
-		}
-
-		chainData.TokensCount = 1
-
-		if err = toks.CommitChanges(); err != nil {
-			return
-		}
-		if err = accsCollection.CommitChanges(); err != nil {
-			return
-		}
-		if err = regs.CommitChanges(); err != nil {
-			return
-		}
-		if err = plainAccs.CommitChanges(); err != nil {
-			return
-		}
-
-		if err = saveTokensInfo(toks); err != nil {
-			return
 		}
 
 		return

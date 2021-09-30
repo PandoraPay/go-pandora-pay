@@ -2,7 +2,7 @@ package registrations
 
 import (
 	"errors"
-	"pandora-pay/blockchain/data/registrations/registration"
+	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"

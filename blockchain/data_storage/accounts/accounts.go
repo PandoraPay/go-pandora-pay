@@ -2,7 +2,7 @@ package accounts
 
 import (
 	"errors"
-	"pandora-pay/blockchain/data/accounts/account"
+	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash-map"

@@ -2,10 +2,7 @@ package mempool
 
 import (
 	"errors"
-	"pandora-pay/blockchain/data/accounts"
-	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
-	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data_storage"
 	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
 	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/config"
@@ -57,10 +54,7 @@ func (worker *mempoolWorker) processing(
 	txsMapVerified := make(map[string]bool)
 	listIndex := 0
 
-	var accsCollection *accounts.AccountsCollection
-	var toks *tokens.Tokens
-	var regs *registrations.Registrations
-	var plainAccs *plain_accounts.PlainAccounts
+	var dataStorage *data_storage.DataStorage
 
 	includedTotalSize := uint64(0)
 	includedTxs := []*mempoolTx{}
@@ -70,10 +64,7 @@ func (worker *mempoolWorker) processing(
 
 		if newWork.chainHash != nil {
 			txsMapVerified = make(map[string]bool)
-			accsCollection = nil
-			toks = nil
-			plainAccs = nil
-			regs = nil
+			dataStorage = nil
 			work = newWork
 			includedTotalSize = uint64(0)
 			includedTxs = []*mempoolTx{}
@@ -157,10 +148,7 @@ func (worker *mempoolWorker) processing(
 			case CONTINUE_PROCESSING_NO_ERROR:
 				work = nil //it needs a new work
 			case CONTINUE_PROCESSING_NO_ERROR_RESET:
-				accsCollection = nil
-				toks = nil
-				plainAccs = nil
-				regs = nil
+				dataStorage = nil
 				listIndex = 0
 			}
 
@@ -173,20 +161,14 @@ func (worker *mempoolWorker) processing(
 		//let's check hf the work has been changed
 		store.StoreBlockchain.DB.View(func(dbTx store_db_interface.StoreDBTransactionInterface) (err error) {
 
-			if accsCollection != nil {
-				accsCollection.SetTx(dbTx)
-				toks.Tx = dbTx
-				plainAccs.Tx = dbTx
-				regs.Tx = dbTx
+			if dataStorage != nil {
+				dataStorage.SetTx(dbTx)
 			}
 
 			for {
 
-				if accsCollection == nil {
-					accsCollection = accounts.NewAccountsCollection(dbTx)
-					toks = tokens.NewTokens(dbTx)
-					plainAccs = plain_accounts.NewPlainAccounts(dbTx)
-					regs = registrations.NewRegistrations(dbTx)
+				if dataStorage == nil {
+					dataStorage = data_storage.CreateDataStorage(dbTx)
 				}
 
 				select {
@@ -245,11 +227,8 @@ func (worker *mempoolWorker) processing(
 
 						if finalErr != nil { //was rejected by mempool nonce map
 
-						} else if finalErr = tx.Tx.IncludeTransaction(tx.Tx.Registrations, work.chainHeight, regs, plainAccs, accsCollection, toks); finalErr != nil {
-							accsCollection.Rollback()
-							toks.Rollback()
-							plainAccs.Rollback()
-							regs.Rollback()
+						} else if finalErr = tx.Tx.IncludeTransaction(tx.Tx.Registrations, work.chainHeight, dataStorage); finalErr != nil {
+							dataStorage.Rollback()
 						} else {
 
 							if includedTotalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
@@ -266,23 +245,12 @@ func (worker *mempoolWorker) processing(
 									includedZetherNonceMap[string(base.Bloom.Nonce2)] = true
 								}
 
-								if err = accsCollection.CommitChanges(); err != nil {
+								if err = dataStorage.CommitChanges(); err != nil {
 									return
 								}
-								if err = toks.CommitChanges(); err != nil {
-									return
-								}
-								if err = plainAccs.CommitChanges(); err != nil {
-									return
-								}
-								if err = regs.CommitChanges(); err != nil {
-									return
-								}
+
 							} else {
-								accsCollection.Rollback()
-								toks.Rollback()
-								plainAccs.Rollback()
-								regs.Rollback()
+								dataStorage.Rollback()
 							}
 
 							if newAddTx != nil {

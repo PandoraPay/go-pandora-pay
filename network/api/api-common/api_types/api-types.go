@@ -2,9 +2,9 @@ package api_types
 
 import (
 	"pandora-pay/blockchain/blocks/block"
-	"pandora-pay/blockchain/data/accounts/account"
-	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
-	"pandora-pay/blockchain/data/registrations/registration"
+	"pandora-pay/blockchain/data_storage/accounts/account"
+	plain_account "pandora-pay/blockchain/data_storage/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
@@ -62,7 +62,7 @@ type APIMempoolAnswer struct {
 type APISubscriptionNotification struct {
 	SubscriptionType SubscriptionType `json:"type,omitempty"`
 	Key              helpers.HexBytes `json:"key,omitempty"`
-	Data             helpers.HexBytes `json:"data,omitempty"`
+	Data             helpers.HexBytes `json:"data_storage,omitempty"`
 	Extra            helpers.HexBytes `json:"extra,omitempty"`
 }
 

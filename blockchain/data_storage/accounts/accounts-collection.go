@@ -84,13 +84,7 @@ func (collection *AccountsCollection) GetAccountTokens(key []byte) ([][]byte, er
 func (collection *AccountsCollection) SetTx(tx store_db_interface.StoreDBTransactionInterface) {
 	collection.tx = tx
 	for _, accs := range collection.accsMap {
-		accs.Tx = tx
-	}
-}
-
-func (collection *AccountsCollection) UnsetTx() {
-	for _, accs := range collection.accsMap {
-		accs.UnsetTx()
+		accs.SetTx(tx)
 	}
 }
 
@@ -130,6 +124,14 @@ func (collection *AccountsCollection) WriteTransitionalChangesToStore(prefix str
 func (collection *AccountsCollection) ReadTransitionalChangesFromStore(prefix string) (err error) {
 	for _, accs := range collection.accsMap {
 		if err = accs.ReadTransitionalChangesFromStore(prefix); err != nil {
+			return
+		}
+	}
+	return
+}
+func (collection *AccountsCollection) DeleteTransitionalChangesFromStore(prefix string) (err error) {
+	for _, accs := range collection.accsMap {
+		if err = accs.DeleteTransitionalChangesFromStore(prefix); err != nil {
 			return
 		}
 	}

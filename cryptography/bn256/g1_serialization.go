@@ -418,7 +418,7 @@ func (e *G1) DecodeUncompressed(encoding []byte) error {
 		return nil
 	}
 
-	// We remote the flags and unmarshall the data
+	// We remote the flags and unmarshall the data_storage
 	_, err := e.Unmarshal(encoding[1:])
 	return err
 }

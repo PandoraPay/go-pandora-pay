@@ -170,7 +170,7 @@ func createSimpleGenesis(wallet *wallet.Wallet) (err error) {
 		DelegatedStakePublicKey: delegatedStakePublicKey,
 	})
 
-	if file, err = os.OpenFile("./genesis.data", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
+	if file, err = os.OpenFile("./genesis.data_storage", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
 		return
 	}
 	defer file.Close()
@@ -205,14 +205,14 @@ func GenesisInit(w *wallet.Wallet) (err error) {
 
 		if string(data) == "file" && runtime.GOARCH != "wasm" {
 
-			if _, err = os.Stat("./genesis.data"); os.IsNotExist(err) {
+			if _, err = os.Stat("./genesis.data_storage"); os.IsNotExist(err) {
 				if err = createSimpleGenesis(w); err != nil {
 					return
 				}
 			}
 
 			var file *os.File
-			if file, err = os.OpenFile("./genesis.data", os.O_RDONLY, 0666); err != nil {
+			if file, err = os.OpenFile("./genesis.data_storage", os.O_RDONLY, 0666); err != nil {
 				return
 			}
 			defer file.Close()

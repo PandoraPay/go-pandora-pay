@@ -2,12 +2,9 @@ package block
 
 import (
 	"errors"
-	"pandora-pay/blockchain/data/accounts"
-	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
-	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
-	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/tokens"
-	"pandora-pay/blockchain/data/tokens/token"
+	"pandora-pay/blockchain/data_storage"
+	plain_account "pandora-pay/blockchain/data_storage/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/config/config_reward"
 	"pandora-pay/cryptography"
@@ -42,12 +39,12 @@ func (blk *Block) Verify() error {
 	return blk.Bloom.verifyIfBloomed()
 }
 
-func (blk *Block) IncludeBlock(regs *registrations.Registrations, plainAccs *plain_accounts.PlainAccounts, accsCollection *accounts.AccountsCollection, toks *tokens.Tokens, allFees uint64) (err error) {
+func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees uint64) (err error) {
 
 	reward := config_reward.GetRewardAt(blk.Height)
 
 	var plainAcc *plain_account.PlainAccount
-	if plainAcc, err = plainAccs.GetPlainAccount(blk.Forger, blk.Height); err != nil {
+	if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(blk.Forger, blk.Height); err != nil {
 		return
 	}
 	if plainAcc == nil || !plainAcc.HasDelegatedStake() {
@@ -61,19 +58,19 @@ func (blk *Block) IncludeBlock(regs *registrations.Registrations, plainAccs *pla
 		return
 	}
 
-	if err = plainAccs.Update(string(blk.Forger), plainAcc); err != nil {
+	if err = dataStorage.PlainAccs.Update(string(blk.Forger), plainAcc); err != nil {
 		return
 	}
 
 	var tok *token.Token
-	if tok, err = toks.GetToken(config.NATIVE_TOKEN); err != nil {
+	if tok, err = dataStorage.Toks.GetToken(config.NATIVE_TOKEN); err != nil {
 		return
 	}
 
 	if err = tok.AddSupply(true, reward); err != nil {
 		return
 	}
-	if err = toks.UpdateToken(config.NATIVE_TOKEN, tok); err != nil {
+	if err = dataStorage.Toks.UpdateToken(config.NATIVE_TOKEN, tok); err != nil {
 		return
 	}
 

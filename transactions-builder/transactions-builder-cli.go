@@ -41,7 +41,7 @@ func (builder *TransactionsBuilder) readFees() (out *TransactionsBuilderFeeFloat
 func (builder *TransactionsBuilder) readData() (out *wizard.TransactionsWizardData, ok bool) {
 
 	data := &wizard.TransactionsWizardData{}
-	str, ok := gui.GUI.OutputReadString("Message (data). Leave empty for none")
+	str, ok := gui.GUI.OutputReadString("Message (data_storage). Leave empty for none")
 	if !ok {
 		return
 	}
@@ -49,7 +49,7 @@ func (builder *TransactionsBuilder) readData() (out *wizard.TransactionsWizardDa
 	if len(str) > 0 {
 		data.Data = []byte(str)
 
-		data.Encrypt, ok = gui.GUI.OutputReadBool("Encrypt message (data). Type y/n")
+		data.Encrypt, ok = gui.GUI.OutputReadBool("Encrypt message (data_storage). Type y/n")
 
 	}
 

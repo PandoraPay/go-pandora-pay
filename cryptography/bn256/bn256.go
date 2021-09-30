@@ -125,7 +125,7 @@ func (e *G1) Unmarshal(m []byte) ([]byte, error) {
 	// Each value is a 256-bit number.
 	const numBytes = 256 / 8
 	if len(m) < 2*numBytes {
-		return nil, errors.New("bn256: not enough data")
+		return nil, errors.New("bn256: not enough data_storage")
 	}
 	// Unmarshal the points and check their caps
 	if e.p == nil {
@@ -261,7 +261,7 @@ func (e *G2) Unmarshal(m []byte) ([]byte, error) {
 	// Each value is a 256-bit number.
 	const numBytes = 256 / 8
 	if len(m) < 4*numBytes {
-		return nil, errors.New("bn256: not enough data")
+		return nil, errors.New("bn256: not enough data_storage")
 	}
 	// Unmarshal the points and check their caps
 	if e.p == nil {
@@ -429,7 +429,7 @@ func (e *GT) Unmarshal(m []byte) ([]byte, error) {
 	const numBytes = 256 / 8
 
 	if len(m) < 12*numBytes {
-		return nil, errors.New("bn256: not enough data")
+		return nil, errors.New("bn256: not enough data_storage")
 	}
 
 	if e.p == nil {

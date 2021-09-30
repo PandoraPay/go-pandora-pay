@@ -2,7 +2,7 @@ package plain_accounts
 
 import (
 	"errors"
-	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
+	plain_account "pandora-pay/blockchain/data_storage/plain-accounts/plain-account"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	hash_map "pandora-pay/store/hash-map"

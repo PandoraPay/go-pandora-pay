@@ -7,10 +7,7 @@ import (
 	blockchain_sync "pandora-pay/blockchain/blockchain-sync"
 	blockchain_types "pandora-pay/blockchain/blockchain-types"
 	"pandora-pay/blockchain/blocks/block-complete"
-	"pandora-pay/blockchain/data/accounts"
-	plain_accounts "pandora-pay/blockchain/data/plain-accounts"
-	"pandora-pay/blockchain/data/registrations"
-	"pandora-pay/blockchain/data/tokens"
+	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -26,10 +23,7 @@ type BlockchainDataUpdate struct {
 type BlockchainUpdate struct {
 	err                    error
 	newChainData           *BlockchainData
-	accsCollection         *accounts.AccountsCollection
-	plainAccs              *plain_accounts.PlainAccounts
-	toks                   *tokens.Tokens
-	regs                   *registrations.Registrations
+	dataStorage            *data_storage.DataStorage
 	allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate
 	removedTxHashes        map[string][]byte
 	removedTxsList         [][]byte //ordered kept
@@ -86,10 +80,10 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 	gui.GUI.Warning("-------------------------------------------")
 	update.newChainData.updateChainInfo()
 
-	queue.chain.UpdateAccounts.Broadcast(update.accsCollection)
-	queue.chain.UpdatePlainAccounts.Broadcast(update.plainAccs)
-	queue.chain.UpdateTokens.Broadcast(update.toks)
-	queue.chain.UpdateRegistrations.Broadcast(update.regs)
+	queue.chain.UpdateAccounts.Broadcast(update.dataStorage.AccsCollection)
+	queue.chain.UpdatePlainAccounts.Broadcast(update.dataStorage.PlainAccs)
+	queue.chain.UpdateTokens.Broadcast(update.dataStorage.Toks)
+	queue.chain.UpdateRegistrations.Broadcast(update.dataStorage.Regs)
 
 	//let's remove the transactions from the mempool
 	if len(update.insertedTxsList) > 0 {

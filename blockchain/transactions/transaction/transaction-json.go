@@ -31,7 +31,7 @@ type json_Transaction struct {
 type json_Only_TransactionSimple struct {
 	TxScript    transaction_simple.ScriptType           `json:"txScript"`
 	DataVersion transaction_data.TransactionDataVersion `json:"dataVersion"`
-	Data        helpers.HexBytes                        `json:"data"`
+	Data        helpers.HexBytes                        `json:"data_storage"`
 	Nonce       uint64                                  `json:"nonce"`
 	Fee         uint64                                  `json:"fee"`
 	Vin         *json_TransactionSimpleInput            `json:"vin"`
@@ -101,7 +101,7 @@ type json_Only_TransactionPayload struct {
 	Token       helpers.HexBytes                        `json:"token"`
 	BurnValue   uint64                                  `json:"burnValue"`
 	DataVersion transaction_data.TransactionDataVersion `json:"dataType"`
-	Data        helpers.HexBytes                        `json:"data"`
+	Data        helpers.HexBytes                        `json:"data_storage"`
 	Statement   *json_Only_TransactionZetherStatement   `json:"statement"`
 	Proof       helpers.HexBytes                        `json:"proof"`
 }

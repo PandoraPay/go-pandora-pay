@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/app"
-	"pandora-pay/blockchain/data/accounts/account"
-	plain_account "pandora-pay/blockchain/data/plain-accounts/plain-account"
-	"pandora-pay/blockchain/data/registrations/registration"
-	"pandora-pay/blockchain/data/tokens/token"
+	"pandora-pay/blockchain/data_storage/accounts/account"
+	plain_account "pandora-pay/blockchain/data_storage/plain-accounts/plain-account"
+	"pandora-pay/blockchain/data_storage/registrations/registration"
+	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/events"
@@ -84,7 +84,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 
 				var object interface{}
 
-				//gui.GUI.Log(int(data.SubscriptionType))
+				//gui.GUI.Log(int(data_storage.SubscriptionType))
 
 				switch data.SubscriptionType {
 				case api_types.SUBSCRIPTION_ACCOUNT:
