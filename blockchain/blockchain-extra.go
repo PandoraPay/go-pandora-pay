@@ -39,14 +39,14 @@ func (chain *Blockchain) GetChainDataUpdate() *BlockchainDataUpdate {
 func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 	return &BlockchainData{
 		Height:             0,
-		Hash:               genesis.GenesisData.Hash,
-		PrevHash:           genesis.GenesisData.Hash,
-		KernelHash:         genesis.GenesisData.KernelHash,
-		PrevKernelHash:     genesis.GenesisData.KernelHash,
-		Target:             new(big.Int).SetBytes(genesis.GenesisData.Target),
+		Hash:               helpers.CloneBytes(genesis.GenesisData.Hash),
+		PrevHash:           helpers.CloneBytes(genesis.GenesisData.Hash),
+		KernelHash:         helpers.CloneBytes(genesis.GenesisData.KernelHash),
+		PrevKernelHash:     helpers.CloneBytes(genesis.GenesisData.KernelHash),
+		Target:             new(big.Int).SetBytes(helpers.CloneBytes(genesis.GenesisData.Target)),
 		BigTotalDifficulty: new(big.Int).SetUint64(0),
 		TransactionsCount:  0,
-		TokensCount:        0,
+		TokensCount:        1,
 	}
 }
 
@@ -123,8 +123,6 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 	if err = dataStorage.Toks.CreateToken(config.NATIVE_TOKEN, tok); err != nil {
 		return
 	}
-
-	chainData.TokensCount = 1
 
 	if err = dataStorage.CommitChanges(); err != nil {
 		return

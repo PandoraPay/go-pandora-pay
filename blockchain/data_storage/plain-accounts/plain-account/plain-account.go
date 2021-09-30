@@ -2,18 +2,18 @@ package plain_account
 
 import (
 	"errors"
-	dpos2 "pandora-pay/blockchain/data_storage/plain-accounts/plain-account/dpos"
+	dpos "pandora-pay/blockchain/data_storage/plain-accounts/plain-account/dpos"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
 type PlainAccount struct {
 	helpers.SerializableInterface `json:"-"`
-	PublicKey                     []byte                `json:"-"`
-	Nonce                         uint64                `json:"nonce"`
-	Claimable                     uint64                `json:"claimable"`
-	DelegatedStakeVersion         uint64                `json:"delegatedStakeVersion"`
-	DelegatedStake                *dpos2.DelegatedStake `json:"delegatedStake"`
+	PublicKey                     []byte               `json:"-"`
+	Nonce                         uint64               `json:"nonce"`
+	Claimable                     uint64               `json:"claimable"`
+	DelegatedStakeVersion         uint64               `json:"delegatedStakeVersion"`
+	DelegatedStake                *dpos.DelegatedStake `json:"delegatedStake"`
 }
 
 func (plainAccount *PlainAccount) Validate() error {
@@ -45,7 +45,7 @@ func (plainAccount *PlainAccount) RefreshDelegatedStake(blockHeight uint64) (err
 		stakePending := plainAccount.DelegatedStake.StakesPending[i]
 		if stakePending.ActivationHeight <= blockHeight {
 
-			if stakePending.PendingType == dpos2.DelegatedStakePendingStake {
+			if stakePending.PendingType == dpos.DelegatedStakePendingStake {
 				if err = plainAccount.DelegatedStake.AddStakeAvailable(true, stakePending.PendingAmount); err != nil {
 					return
 				}
@@ -95,9 +95,9 @@ func (plainAccount *PlainAccount) CreateDelegatedStake(amount uint64, delegatedS
 		return errors.New("delegatedStakePublicKey is Invalid")
 	}
 	plainAccount.DelegatedStakeVersion = 1
-	plainAccount.DelegatedStake = &dpos2.DelegatedStake{
+	plainAccount.DelegatedStake = &dpos.DelegatedStake{
 		StakeAvailable:     amount,
-		StakesPending:      []*dpos2.DelegatedStakePending{},
+		StakesPending:      []*dpos.DelegatedStakePending{},
 		DelegatedPublicKey: delegatedStakePublicKey,
 		DelegatedStakeFee:  delegatedStakeFee,
 	}
@@ -135,7 +135,7 @@ func (plainAccount *PlainAccount) Deserialize(r *helpers.BufferReader) (err erro
 	}
 
 	if plainAccount.DelegatedStakeVersion == 1 {
-		plainAccount.DelegatedStake = new(dpos2.DelegatedStake)
+		plainAccount.DelegatedStake = new(dpos.DelegatedStake)
 		if err = plainAccount.DelegatedStake.Deserialize(r); err != nil {
 			return
 		}

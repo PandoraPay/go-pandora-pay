@@ -93,7 +93,7 @@ func (e *G2) DecodeUncompressed(encoding []byte) error {
 		return nil
 	}
 
-	// We remove the flags and unmarshal the data_storage
+	// We remove the flags and unmarshal the data
 	_, err := e.Unmarshal(encoding[1:])
 	return err
 }

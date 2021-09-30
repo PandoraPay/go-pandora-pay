@@ -58,7 +58,7 @@ func CreateStoreDBBunt(name string, inMemory bool) (*StoreDBBunt, error) {
 		Name: []byte(name),
 	}
 
-	// Open the my.store data_storage file in your current directory.
+	// Open the my.store data file in your current directory.
 	// It will be created if it doesn't exist.
 	if store.DB, err = buntdb.Open(prefix); err != nil {
 		return nil, err

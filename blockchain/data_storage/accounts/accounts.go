@@ -81,9 +81,13 @@ func (accounts *Accounts) saveTokensCount(key []byte, sign bool) (uint64, error)
 	return countOriginal, nil
 }
 
-func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, Token []byte) (accounts *Accounts) {
+func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, Token []byte) (accounts *Accounts, err error) {
 
-	hashmap := hash_map.CreateNewHashMap(tx, "accounts", cryptography.PublicKeySize, true)
+	if Token == nil || len(Token) != cryptography.RipemdSize {
+		return nil, errors.New("Token length is invalid")
+	}
+
+	hashmap := hash_map.CreateNewHashMap(tx, "accounts_"+string(Token), cryptography.PublicKeySize, true)
 
 	accounts = &Accounts{
 		HashMap: *hashmap,

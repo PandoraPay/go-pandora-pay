@@ -62,7 +62,7 @@ type APIMempoolAnswer struct {
 type APISubscriptionNotification struct {
 	SubscriptionType SubscriptionType `json:"type,omitempty"`
 	Key              helpers.HexBytes `json:"key,omitempty"`
-	Data             helpers.HexBytes `json:"data_storage,omitempty"`
+	Data             helpers.HexBytes `json:"data,omitempty"`
 	Extra            helpers.HexBytes `json:"extra,omitempty"`
 }
 

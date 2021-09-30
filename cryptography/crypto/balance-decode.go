@@ -188,7 +188,7 @@ func (t *LookupTable) Lookup(p *bn256.G1, suspendCn <-chan struct{}) (uint64, er
 				goto check_again
 
 			} else {
-				// x is not present in data_storage,
+				// x is not present in data,
 				// but i is the index where it would be inserted.
 
 				balance += uint64(len((*t)[i]))

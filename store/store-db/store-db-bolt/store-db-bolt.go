@@ -54,7 +54,7 @@ func CreateStoreDBBolt(name string) (*StoreDBBolt, error) {
 		}
 	}
 
-	// Open the my.store data_storage file in your current directory.
+	// Open the my.store data file in your current directory.
 	// It will be created if it doesn't exist.
 	if store.DB, err = bolt.Open(prefix+name+"_store"+"."+dbName, 0600, nil); err != nil {
 		return nil, err

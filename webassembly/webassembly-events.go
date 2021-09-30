@@ -84,7 +84,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 
 				var object interface{}
 
-				//gui.GUI.Log(int(data_storage.SubscriptionType))
+				//gui.GUI.Log(int(data.SubscriptionType))
 
 				switch data.SubscriptionType {
 				case api_types.SUBSCRIPTION_ACCOUNT:

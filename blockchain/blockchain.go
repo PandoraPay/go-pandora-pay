@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -177,9 +178,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				if firstBlockComplete.Block.Height == 0 {
 					gui.GUI.Info("chain.createGenesisBlockchainData called")
 					newChainData = chain.createGenesisBlockchainData()
-					if err = chain.initializeNewChain(newChainData, dataStorage); err != nil {
-						return
-					}
 					removedBlocksTransactionsCount = 0
 				} else {
 					removedBlocksTransactionsCount = newChainData.TransactionsCount
@@ -188,6 +186,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return
 					}
 				}
+
+				if err = dataStorage.CommitChanges(); err != nil {
+					return
+				}
+
 			}
 
 			if blocksComplete[0].Block.Height != newChainData.Height {
@@ -195,7 +198,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			}
 
 			if !bytes.Equal(firstBlockComplete.Block.PrevHash, newChainData.Hash) {
-				return errors.New("First block hash is not matching chain hash")
+				return fmt.Errorf("First block hash is not matching chain hash %d %s %s ", firstBlockComplete.Block.Height, hex.EncodeToString(firstBlockComplete.Bloom.Hash), hex.EncodeToString(newChainData.Hash))
 			}
 
 			if !bytes.Equal(firstBlockComplete.Block.PrevKernelHash, newChainData.KernelHash) {

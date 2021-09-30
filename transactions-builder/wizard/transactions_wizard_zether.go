@@ -166,7 +166,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					dataFinal = append(dataFinal, make([]byte, transaction_zether.PAYLOAD0_LIMIT-len(dataFinal))...)
 					payload.Data = append([]byte{byte(uint(witness_index[0]))}, dataFinal...)
 
-					// make sure used data_storage encryption is optional, just in case we would like to play together with ring members
+					// make sure used data encryption is optional, just in case we would like to play together with ring members
 					if err = crypto.EncryptDecryptUserData(blinder, payload.Data); err != nil {
 						return
 					}
