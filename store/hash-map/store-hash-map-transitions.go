@@ -29,7 +29,7 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 					change.Transition = existsCommitted.Element.SerializeToBytes()
 				}
 			} else {
-				change.Transition = hashMap.Tx.Get(hashMap.name + k)
+				change.Transition = hashMap.Tx.Get(hashMap.name + ":map:" + k)
 			}
 
 			values = append(values, change)
