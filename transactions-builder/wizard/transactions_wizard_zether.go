@@ -1,6 +1,7 @@
 package wizard
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/big"
@@ -32,7 +33,7 @@ type ZetherPublicKeyIndex struct {
 	RegistrationSignature []byte
 }
 
-func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emapCopy map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, suspendCn <-chan struct{}, statusCallback func(string)) (err error) {
+func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emapCopy map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
 
 	//let's copy emap
 	emap := make(map[string]map[string][]byte)
@@ -226,7 +227,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		}
 
 		var balance uint64
-		if balance, err = senderKey.DecodeBalance(pt, transfer.FromBalanceDecoded, suspendCn); err != nil {
+		if balance, err = senderKey.DecodeBalance(pt, transfer.FromBalanceDecoded, ctx); err != nil {
 			return
 		}
 		transfer.FromBalanceDecoded = balance //let's update it for the next
@@ -313,7 +314,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	return
 }
 
-func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, suspendCn <-chan struct{}, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	txBase := &transaction_zether.TransactionZether{
 		TxScript: transaction_zether.SCRIPT_TRANSFER,
@@ -329,7 +330,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	}
 	statusCallback("Transaction created")
 
-	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, suspendCn, statusCallback); err != nil {
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return nil, err
 	}
 
@@ -343,7 +344,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 
 	}
 
-	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, suspendCn, statusCallback); err != nil {
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return nil, err
 	}
 

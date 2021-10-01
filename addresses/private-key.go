@@ -1,6 +1,7 @@
 package addresses
 
 import (
+	"context"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -44,10 +45,10 @@ func (pk *PrivateKey) Decrypt(message []byte) ([]byte, error) {
 	panic("not implemented")
 }
 
-func (pk *PrivateKey) DecodeBalance(balance *crypto.ElGamal, previousValue uint64, suspendCn <-chan struct{}) (uint64, error) {
+func (pk *PrivateKey) DecodeBalance(balance *crypto.ElGamal, previousValue uint64, ctx context.Context) (uint64, error) {
 	priv := new(crypto.BNRed).SetBytes(pk.Key)
 	balancePoint := new(bn256.G1).Add(balance.Left, new(bn256.G1).Neg(new(bn256.G1).ScalarMult(balance.Right, priv.BigInt())))
-	return crypto.BalanceDecoder.BalanceDecode(balancePoint, previousValue, suspendCn)
+	return crypto.BalanceDecoder.BalanceDecode(balancePoint, previousValue, ctx)
 }
 
 func GenerateNewPrivateKey() *PrivateKey {

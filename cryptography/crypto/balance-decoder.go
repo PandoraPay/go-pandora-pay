@@ -1,7 +1,9 @@
 package crypto
 
 import (
+	"context"
 	"errors"
+	"github.com/tevino/abool"
 	"math/big"
 	"pandora-pay/cryptography/bn256"
 	"runtime"
@@ -14,15 +16,16 @@ type BalanceDecoderInfo struct {
 	tableSize       int
 	tableLookup     *LookupTable
 	tableComputedCn chan *LookupTable
-	stopCn          chan bool
+	ctx             context.Context
 	readyCn         chan struct{}
+	hasError        *abool.AtomicBool
 }
 
 type BalanceDecoderType struct {
 	info *atomic.Value //*BalanceDecoderInfo
 }
 
-func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint64, suspendCn <-chan struct{}) (uint64, error) {
+func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint64, ctx context.Context) (uint64, error) {
 
 	var acc bn256.G1
 	acc.ScalarMult(G, new(big.Int).SetUint64(previousBalance))
@@ -31,21 +34,25 @@ func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint6
 	}
 
 	info := self.info.Load().(*BalanceDecoderInfo)
-	if info.tableSize == 0 {
-		if err := self.SetTableSize(0); err != nil {
-			panic(err)
+	if info.tableSize == 0 || info.hasError.IsSet() {
+		if err := self.SetTableSize(0, ctx); err != nil {
+			return 0, err
 		}
 		info = self.info.Load().(*BalanceDecoderInfo)
 	}
 	select {
 	case <-info.readyCn:
-	case <-suspendCn:
+		if info.hasError.IsSet() {
+			return 0, errors.New("Suspended")
+		}
+		return info.tableLookup.Lookup(p, ctx)
+	case <-ctx.Done():
+		return 0, errors.New("Suspended")
 	}
 
-	return info.tableLookup.Lookup(p, suspendCn)
 }
 
-func (self *BalanceDecoderType) SetTableSize(newTableSize int) error {
+func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Context) error {
 
 	if newTableSize == 0 {
 		if runtime.GOARCH != "wasm" {
@@ -59,7 +66,7 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int) error {
 	}
 
 	info := self.info.Load().(*BalanceDecoderInfo)
-	if info.tableSize == 0 || info.tableSize != newTableSize {
+	if info.tableSize == 0 || info.tableSize != newTableSize || info.hasError.IsSet() {
 
 		oldInfo := info
 
@@ -67,26 +74,27 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int) error {
 			newTableSize,
 			nil,
 			make(chan *LookupTable),
-			make(chan bool),
+			ctx,
 			make(chan struct{}),
+			abool.New(),
 		}
 		self.info.Store(info)
 
-		if oldInfo != nil && oldInfo.stopCn != nil {
-			close(oldInfo.stopCn)
+		if oldInfo != nil && oldInfo.hasError.SetToIf(false, true) {
+			close(oldInfo.readyCn)
 		}
 
-		go func() {
-			createLookupTable(1, newTableSize, info.tableComputedCn, info.stopCn, info.readyCn)
-		}()
+		createLookupTable(1, newTableSize, info.tableComputedCn, info.readyCn, ctx)
 
 		select {
 		case tableLookup := <-info.tableComputedCn:
 			info.tableLookup = tableLookup
-		case <-info.readyCn:
-			if info.tableLookup == nil {
-				return errors.New("it was stopped")
+		case <-ctx.Done():
+			if info.hasError.SetToIf(false, true) {
+				close(info.readyCn)
 			}
+			return errors.New("it was stopped")
+		case <-info.readyCn:
 			return nil
 		}
 
@@ -101,6 +109,8 @@ func CreateBalanceDecoder() *BalanceDecoderType {
 	}
 	out.info.Store(&BalanceDecoderInfo{
 		tableSize: 0,
+		readyCn:   make(chan struct{}),
+		hasError:  abool.New(),
 	})
 	return out
 }

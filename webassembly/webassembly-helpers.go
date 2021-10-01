@@ -33,9 +33,6 @@ func getIdenticon(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-
-		jsOut := js.Global().Get("Uint8Array").New(len(identicon))
-		js.CopyBytesToJS(jsOut, identicon)
-		return jsOut, nil
+		return convertBytes(identicon)
 	})
 }

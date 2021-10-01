@@ -55,13 +55,12 @@ func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockCo
 		return errors.New("Blocks length is ZERO")
 	}
 
-	nonceMap := make(map[string]bool)
-
 	for _, blkComplete := range blocksComplete {
 		if err = blkComplete.Verify(); err != nil {
 			return
 		}
 
+		nonceMap := make(map[string]bool)
 		for _, tx := range blkComplete.Txs {
 			if tx.Version == transaction_type.TX_ZETHER {
 				base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
@@ -240,7 +239,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 
 					if blkComplete.Block.StakingAmount != stakingAmount {
-						return errors.New("Block Staking Amount doesn't match")
+						return fmt.Errorf("Block Staking Amount doesn't match %d %d", blkComplete.Block.StakingAmount, stakingAmount)
 					}
 
 					if blkComplete.Block.StakingAmount < config_stake.GetRequiredStake(blkComplete.Block.Height) {
@@ -284,7 +283,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						removedBlocksHeights = removedBlocksHeights[1:]
 					}
 
-					//it will commit the changes but not save them
+					//it will commit the changes
 					if err = dataStorage.CommitChanges(); err != nil {
 						return
 					}

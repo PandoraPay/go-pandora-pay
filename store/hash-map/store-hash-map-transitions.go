@@ -45,17 +45,14 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 		return
 	}
 
-	buf := make([]byte, binary.MaxVarintLen64)
-	n := binary.PutUvarint(buf, hashMap.Count)
-	if err = hashMap.Tx.Put(hashMap.name+":transitionsCount:"+prefix, buf[:n]); err != nil {
-		return
-	}
-
 	return nil
 }
 
-func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) error {
-	return hashMap.Tx.Delete(hashMap.name + ":transitions:" + prefix)
+func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) (err error) {
+	if err = hashMap.Tx.Delete(hashMap.name + ":transitions:" + prefix); err != nil {
+		return
+	}
+	return hashMap.Tx.Delete(hashMap.name + ":transitionsCount:" + prefix)
 }
 
 func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err error) {
@@ -72,10 +69,9 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 	for _, change := range values {
 		if change.Transition == nil {
 
-			hashMap.Committed[string(change.Key)] = &CommittedMapElement{
+			hashMap.Changes[string(change.Key)] = &ChangesMapElement{
 				Element: nil,
 				Status:  "del",
-				Stored:  "",
 			}
 
 		} else {
@@ -85,18 +81,12 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 				return
 			}
 
-			hashMap.Committed[string(change.Key)] = &CommittedMapElement{
+			hashMap.Changes[string(change.Key)] = &ChangesMapElement{
 				Element: element,
 				Status:  "update",
-				Stored:  "",
 			}
 
 		}
-	}
-
-	data = hashMap.Tx.Get(hashMap.name + ":transitionsCount:" + prefix)
-	if data == nil {
-		return errors.New("transitionsCount didn't exist")
 	}
 
 	count, p := binary.Uvarint(data)

@@ -1,6 +1,7 @@
 package testnet
 
 import (
+	"context"
 	"encoding/hex"
 	"github.com/tevino/abool"
 	"math/rand"
@@ -112,7 +113,10 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 		fees = append(fees, &wizard.TransactionsWizardFee{0, 0, 0, true})
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx(from, dstsTokens, dstsAmounts, dsts, burn, ringMembers, data, fees, true, true, true, nil, func(string) {}); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx(from, dstsTokens, dstsAmounts, dsts, burn, ringMembers, data, fees, true, true, true, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -147,7 +151,9 @@ func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int) (tx *t
 		return
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{srcAddr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, nil, func(string) {}); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{srcAddr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -170,12 +176,20 @@ func (testnet *Testnet) run() {
 		}
 	}
 
+	var ctx context.Context
+	var cancel context.CancelFunc
+
 	for {
 
 		blockHeightReceived, ok := <-updateChannel
+		if ctx != nil {
+			cancel()
+		}
 		if !ok {
 			return
 		}
+
+		ctx, cancel = context.WithCancel(context.Background())
 
 		blockHeight := blockHeightReceived.(uint64)
 		syncTime := testnet.chain.Sync.GetSyncTime()
@@ -249,7 +263,7 @@ func (testnet *Testnet) run() {
 
 						var balance uint64
 						if acc != nil {
-							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN, nil, true, true); err != nil {
+							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN, ctx, true, true); err != nil {
 								return
 							}
 						}
@@ -276,11 +290,11 @@ func (testnet *Testnet) run() {
 								creatingTransactions.Set()
 								defer creatingTransactions.UnSet()
 
-								for i := 1; i < 4; i++ {
-									if _, err = testnet.testnetCreateTransfers(i); err != nil {
-										continue
-									}
-								}
+								//for i := 1; i < 4; i++ {
+								//	if _, err = testnet.testnetCreateTransfers(i); err != nil {
+								//		continue
+								//	}
+								//}
 
 							}
 						}

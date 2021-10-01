@@ -1,7 +1,9 @@
 package webassembly
 
 import (
+	"context"
 	"encoding/hex"
+	"fmt"
 	"pandora-pay/app"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -18,7 +20,8 @@ func getWallet(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		return string(data), nil
+
+		return convertBytes(data)
 	})
 }
 
@@ -291,11 +294,39 @@ func decodeBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		value, err := app.Wallet.DecodeBalanceByPublicKey(publicKey, balance, token, nil, true, true)
-		if err != nil {
-			return nil, err
-		}
+		var value uint64
+		var finalErr error
+		done := false
 
-		return value, nil
+		ctx, cancel := context.WithCancel(context.Background())
+
+		go func() {
+			defer cancel()
+			value, finalErr = app.Wallet.DecodeBalanceByPublicKey(publicKey, balance, token, ctx, true, true)
+			done = true
+		}()
+
+		return []interface{}{
+			js.FuncOf(func(a js.Value, b []js.Value) interface{} {
+
+				var out interface{}
+				if finalErr != nil {
+					out = errorConstructor.New(finalErr.Error())
+				} else {
+					out = nil
+				}
+
+				return []interface{}{
+					done,
+					value,
+					out,
+				}
+			}),
+			js.FuncOf(func(a js.Value, b []js.Value) interface{} {
+				cancel()
+				return nil
+			}),
+		}, nil
+
 	})
 }

@@ -45,7 +45,7 @@ func getNetworkFaucetInfo(this js.Value, args []js.Value) interface{} {
 		if data.Err != nil {
 			return nil, data.Err
 		}
-		return string(data.Out), nil
+		return convertBytes(data.Out)
 	})
 }
 
@@ -66,7 +66,8 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 		if data.Err != nil {
 			return nil, data.Err
 		}
-		return string(data.Out), nil
+
+		return convertBytes(data.Out)
 	})
 }
 
@@ -179,11 +180,11 @@ func getNetworkAccountTxs(this js.Value, args []js.Value) interface{} {
 		}
 
 		data := socket.SendJSONAwaitAnswer([]byte("account/txs"), &api_types.APIAccountTxsRequest{api_types.APIAccountBaseRequest{"", hash}, uint64(args[1].Int())}, 0)
-		if data.Out == nil || data.Err != nil {
+		if data.Err != nil {
 			return nil, data.Err
 		}
 
-		return string(data.Out), nil
+		return convertBytes(data.Out)
 	})
 }
 
@@ -317,7 +318,7 @@ func getNetworkMempool(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		return string(data.Out), nil
+		return convertBytes(data.Out)
 	})
 }
 

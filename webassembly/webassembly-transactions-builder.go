@@ -1,6 +1,7 @@
 package webassembly
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"pandora-pay/app"
@@ -40,7 +41,10 @@ func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.CreateZetherTx_Float(txData.From, helpers.ConvertHexBytesArraysToBytesArray(txData.Tokens), txData.Amounts, txData.Dsts, txData.Burns, txData.RingMembers, txData.Data, txData.Fees, txData.PropagateTx, txData.AwaitAnswer, false, nil, func(status string) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		tx, err := app.TransactionsBuilder.CreateZetherTx_Float(txData.From, helpers.ConvertHexBytesArraysToBytesArray(txData.Tokens), txData.Amounts, txData.Dsts, txData.Burns, txData.RingMembers, txData.Data, txData.Fees, txData.PropagateTx, txData.AwaitAnswer, false, ctx, func(status string) {
 			args[1].Invoke(status)
 			time.Sleep(10 * time.Millisecond)
 		})
@@ -88,7 +92,7 @@ func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return convertJSON(tx)
+		return convertJSONBytes(tx)
 
 	})
 }
@@ -127,7 +131,7 @@ func createUnstakeTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return convertJSON(tx)
+		return convertJSONBytes(tx)
 
 	})
 }

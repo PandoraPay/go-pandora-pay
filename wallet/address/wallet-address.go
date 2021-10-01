@@ -2,6 +2,7 @@ package wallet_address
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
@@ -88,7 +89,7 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDele
 	}, nil
 }
 
-func (adr *WalletAddress) DecodeAccount(acc *account.Account, suspendCn <-chan struct{}, store bool) {
+func (adr *WalletAddress) DecodeAccount(acc *account.Account, ctx context.Context, store bool) {
 
 	if adr.PrivateKey == nil {
 		return
@@ -104,10 +105,10 @@ func (adr *WalletAddress) DecodeAccount(acc *account.Account, suspendCn <-chan s
 		return
 	}
 
-	adr.DecodeBalance(acc.Balance.Amount, acc.Token, suspendCn, store)
+	adr.DecodeBalance(acc.Balance.Amount, acc.Token, ctx, store)
 }
 
-func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, suspendCn <-chan struct{}, store bool) (uint64, error) {
+func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, ctx context.Context, store bool) (uint64, error) {
 
 	if adr.PrivateKey == nil {
 		return 0, errors.New("PrivateKey is missing")
@@ -123,7 +124,7 @@ func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, s
 		previousValue = found.AmountDecoded
 	}
 
-	newValue, err := adr.PrivateKey.DecodeBalance(balance, previousValue, suspendCn)
+	newValue, err := adr.PrivateKey.DecodeBalance(balance, previousValue, ctx)
 	if err != nil {
 		return 0, err
 	}

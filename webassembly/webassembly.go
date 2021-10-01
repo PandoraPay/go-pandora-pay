@@ -22,16 +22,6 @@ var promiseConstructor, errorConstructor js.Value
 
 var mutex sync.Mutex
 
-func convertJSON(obj interface{}) (string, error) {
-
-	str, err := json.Marshal(obj)
-	if err != nil {
-		return "", err
-	}
-
-	return string(str), nil
-}
-
 func convertJSONBytes(obj interface{}) (js.Value, error) {
 
 	data, err := json.Marshal(obj)
@@ -39,12 +29,20 @@ func convertJSONBytes(obj interface{}) (js.Value, error) {
 		return js.Null(), err
 	}
 
+	return convertBytes(data)
+}
+
+func convertBytes(data []byte) (js.Value, error) {
+	if data == nil {
+		return js.Null(), nil
+	}
 	jsOut := js.Global().Get("Uint8Array").New(len(data))
 	js.CopyBytesToJS(jsOut, data)
 	return jsOut, nil
 }
 
 func promiseFunction(callback func() (interface{}, error)) interface{} {
+
 	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
 		recovery.SafeGo(func() {
 			result, err := callback()
@@ -56,6 +54,7 @@ func promiseFunction(callback func() (interface{}, error)) interface{} {
 		})
 		return nil
 	}))
+
 }
 
 func Initialize(startMainCb func()) {

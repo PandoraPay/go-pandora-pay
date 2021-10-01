@@ -4,6 +4,7 @@
 package api_faucet
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"go.jolheiser.com/hcaptcha"
@@ -60,7 +61,10 @@ func (api *APICommonFaucet) GetFaucetCoins(request *APIFaucetCoinsRequest) ([]by
 		return nil, err
 	}
 
-	tx, err := api.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, []string{request.Address}, []uint64{0}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, false, false, nil, func(status string) {})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	tx, err := api.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, []string{request.Address}, []uint64{0}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, false, false, ctx, func(status string) {})
 	if err != nil {
 		return nil, err
 	}

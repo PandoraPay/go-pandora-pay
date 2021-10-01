@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/tyler-smith/go-bip32"
@@ -41,7 +42,7 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (string, []byte, e
 	return addr.AddressRegistrationEncoded, delegatedStake.PublicKey, nil
 }
 
-func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, token []byte, suspendCn <-chan struct{}, store, lock bool) (uint64, error) {
+func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, token []byte, ctx context.Context, store, lock bool) (uint64, error) {
 
 	if lock {
 
@@ -60,7 +61,7 @@ func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto
 		return 0, errors.New("address was not found")
 	}
 
-	decoded, err := addr.DecodeBalance(balance, token, suspendCn, store)
+	decoded, err := addr.DecodeBalance(balance, token, ctx, store)
 	if err != nil {
 		return 0, err
 	}
@@ -440,7 +441,11 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, adr *wallet_add
 	if acc == nil {
 		return
 	}
-	adr.DecodeAccount(acc, nil, true)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	adr.DecodeAccount(acc, ctx, true)
 
 	return
 }

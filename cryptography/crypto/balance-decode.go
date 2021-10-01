@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -40,7 +41,9 @@ func (p PreComputeTable) Less(i, j int) bool { return p[i] < p[j] }
 func (p PreComputeTable) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // with some more smartness table can be condensed more to contain 16.3% more entries within the same size
-func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable, stopCn chan bool, readyCn chan struct{}) {
+func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable, readyCn chan struct{}, ctx context.Context) {
+
+	fmt.Println("createLookupTable")
 
 	t := make([]PreComputeTable, count, count)
 
@@ -62,13 +65,6 @@ func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable,
 
 	for i := range t {
 		t[i] = make([]uint64, table_size, table_size)
-
-		select {
-		case <-stopCn:
-			close(readyCn)
-			return
-		default:
-		}
 
 		for j := 0; j < table_size; j += 256 {
 
@@ -97,7 +93,17 @@ func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable,
 
 			if j%1000 == 0 && runtime.GOARCH == "wasm" {
 				fmt.Printf("completed %f (j %d)\n", float32(j)*100/float32(len((t)[i])), j)
+
 				runtime.Gosched() // gives others opportunity to run
+				time.Sleep(time.Millisecond)
+
+				select {
+				case <-ctx.Done():
+					return
+				case <-readyCn:
+					return
+				default:
+				}
 			}
 		}
 
@@ -110,12 +116,11 @@ func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable,
 	t1 := LookupTable(t)
 
 	tableComputedCn <- &t1
-	time.Sleep(time.Millisecond * 100)
 	close(readyCn)
 }
 
 // convert point to balance
-func (t *LookupTable) Lookup(p *bn256.G1, suspendCn <-chan struct{}) (uint64, error) {
+func (t *LookupTable) Lookup(p *bn256.G1, ctx context.Context) (uint64, error) {
 
 	// now this big part must be searched in the precomputation lookup table
 
@@ -145,7 +150,7 @@ func (t *LookupTable) Lookup(p *bn256.G1, suspendCn <-chan struct{}) (uint64, er
 		// fmt.Printf("loop counter %d  balance %d\n", loop_counter, balance)
 
 		select {
-		case <-suspendCn:
+		case <-ctx.Done():
 			return 0, errors.New("Scanning Suspended")
 		default:
 		}
