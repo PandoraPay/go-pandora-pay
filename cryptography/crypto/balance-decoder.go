@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/tevino/abool"
+	"math/big"
 	"pandora-pay/cryptography/bn256"
 	"runtime"
 	"sync/atomic"
@@ -26,11 +27,11 @@ type BalanceDecoderType struct {
 
 func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
-	//var acc bn256.G1
-	//acc.ScalarMult(G, new(big.Int).SetUint64(previousBalance))
-	//if acc.String() == p.String() {
-	//	return previousBalance, nil
-	//}
+	var acc bn256.G1
+	acc.ScalarMult(G, new(big.Int).SetUint64(previousBalance))
+	if acc.String() == p.String() {
+		return previousBalance, nil
+	}
 
 	tableLookup := self.SetTableSize(0, ctx, statusCallback)
 	if tableLookup == nil {
