@@ -265,7 +265,7 @@ func (apiStore *APIStore) loadBlockCompleteMissingTxs(reader store_db_interface.
 	out.Txs = make([]helpers.HexBytes, len(missingTxs))
 	for i, txMissingIndex := range missingTxs {
 		if txMissingIndex >= 0 && txMissingIndex < len(txHashes) {
-			tx := reader.Get("tx" + string(txHashes[txMissingIndex]))
+			tx := reader.Get("tx:" + string(txHashes[txMissingIndex]))
 			if tx == nil {
 				return nil, errors.New("Tx was not found")
 			}
@@ -295,7 +295,7 @@ func (apiStore *APIStore) loadBlockComplete(reader store_db_interface.StoreDBTra
 
 	txs := make([]*transaction.Transaction, len(txHashes))
 	for i, txHash := range txHashes {
-		data = reader.Get("tx" + string(txHash))
+		data = reader.Get("tx:" + string(txHash))
 		txs[i] = &transaction.Transaction{}
 		if err = txs[i].Deserialize(helpers.NewBufferReader(data)); err != nil {
 			return nil, err
@@ -372,7 +372,7 @@ func (apiStore *APIStore) loadTx(reader store_db_interface.StoreDBTransactionInt
 	hashStr := string(hash)
 	var data []byte
 
-	if data = reader.GetClone("tx" + hashStr); data == nil {
+	if data = reader.GetClone("tx:" + hashStr); data == nil {
 		return nil, nil, errors.New("Tx not found")
 	}
 

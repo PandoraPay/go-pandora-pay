@@ -62,7 +62,6 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []b
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		accsCollection := accounts.NewAccountsCollection(reader)
-		regs := registrations.NewRegistrations(reader)
 
 		var accs *accounts.Accounts
 		if accs, err = accsCollection.GetMap(token); err != nil {
@@ -71,7 +70,7 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []b
 
 		for i := 0; i < len(rings); i++ {
 
-			if regs.Count < uint64(ringSize) {
+			if accs.Count < uint64(ringSize) {
 				priv := addresses.GenerateNewPrivateKey()
 				if addr, err = priv.GenerateAddress(true, 0, nil); err != nil {
 					return

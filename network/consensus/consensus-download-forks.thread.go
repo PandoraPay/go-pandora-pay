@@ -64,7 +64,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 		_ = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 			for i := range txs {
 				if txs[i] == nil {
-					serializedTxs[i] = reader.GetClone("tx" + string(blkWithTx.Txs[i]))
+					serializedTxs[i] = reader.GetClone("tx:" + string(blkWithTx.Txs[i]))
 				}
 			}
 			return

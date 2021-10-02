@@ -12,6 +12,14 @@ import (
 	"strconv"
 )
 
+func (chain *Blockchain) OpenExistsTx(hash []byte) (exists bool, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		exists = reader.Exists("txHash:" + string(hash))
+		return nil
+	})
+	return
+}
+
 func (chain *Blockchain) OpenLoadBlockHash(blockHeight uint64) (hash []byte, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err = chain.LoadBlockHash(reader, blockHeight)
@@ -156,7 +164,10 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 
 		//let's check to see if the tx block is already stored, if yes, we will skip it
 		if removedTxHashes[tx.Bloom.HashStr] == nil {
-			if err := writer.Put("tx"+tx.Bloom.HashStr, tx.Bloom.Serialized); err != nil {
+			if err := writer.Put("tx:"+tx.Bloom.HashStr, tx.Bloom.Serialized); err != nil {
+				return allTransactionsChanges, err
+			}
+			if err := writer.Put("txHash:"+tx.Bloom.HashStr, []byte{1}); err != nil {
 				return allTransactionsChanges, err
 			}
 		} else {

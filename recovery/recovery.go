@@ -23,7 +23,6 @@ func Safe(cb func()) {
 			if gui.GUI != nil {
 				gui.GUI.Error(err)
 				gui.GUI.Error(stackTrace)
-				gui.GUI.Close()
 			}
 
 			fmt.Println("Error: \n\n", err, stackTrace)

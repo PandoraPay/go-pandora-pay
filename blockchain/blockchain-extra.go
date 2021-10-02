@@ -255,14 +255,14 @@ func (chain *Blockchain) InitForging() {
 				continue
 			}
 
-			go func() {
+			recovery.SafeGo(func() {
 				err := chain.AddBlocks([]*block_complete.BlockComplete{blkComplete}, true, advanced_connection_types.UUID_ALL)
 				if err == nil {
 					gui.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
 				} else {
 					gui.GUI.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), err)
 				}
-			}()
+			})
 
 		}
 

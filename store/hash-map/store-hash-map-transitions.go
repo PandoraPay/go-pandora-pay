@@ -1,7 +1,6 @@
 package hash_map
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"pandora-pay/helpers"
@@ -88,12 +87,6 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 
 		}
 	}
-
-	count, p := binary.Uvarint(data)
-	if p <= 0 {
-		return errors.New("Error reading")
-	}
-	hashMap.Count = count
 
 	return nil
 }

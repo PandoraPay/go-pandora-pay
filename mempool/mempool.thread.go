@@ -218,14 +218,19 @@ func (worker *mempoolWorker) processing(
 
 						txsMapVerified[tx.Tx.Bloom.HashStr] = true
 
-						if tx.Tx.Version == transaction_type.TX_ZETHER {
+						if exists := dbTx.Exists("txHash:" + string(tx.Tx.Bloom.HashStr)); exists {
+							finalErr = errors.New("Tx is already included in blockchain")
+						}
+
+						if finalErr == nil && tx.Tx.Version == transaction_type.TX_ZETHER {
 							base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
 							if includedZetherNonceMap[string(base.Bloom.Nonce1)] || includedZetherNonceMap[string(base.Bloom.Nonce2)] {
 								finalErr = errors.New("Zether Nonce exists")
 							}
 						}
 
-						if finalErr != nil { //was rejected by mempool nonce map
+						//was rejected by mempool nonce map
+						if finalErr != nil {
 
 						} else if finalErr = tx.Tx.IncludeTransaction(tx.Tx.Registrations, work.chainHeight, dataStorage); finalErr != nil {
 							dataStorage.Rollback()
