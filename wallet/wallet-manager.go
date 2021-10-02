@@ -445,7 +445,7 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, adr *wallet_add
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	adr.DecodeAccount(acc, true, ctx, nil)
+	adr.DecodeAccount(acc, true, ctx, func(string) {})
 
 	return
 }
