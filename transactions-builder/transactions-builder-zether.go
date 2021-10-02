@@ -13,6 +13,7 @@ import (
 	"pandora-pay/blockchain/data_storage/tokens"
 	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
@@ -70,7 +71,7 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []b
 
 		for i := 0; i < len(rings); i++ {
 
-			if accs.Count < uint64(ringSize) {
+			if accs.Count < uint64(ringSize) || (globals.Arguments["--new-devnet"] == true && accs.Count < 5000) {
 				priv := addresses.GenerateNewPrivateKey()
 				if addr, err = priv.GenerateAddress(true, 0, nil); err != nil {
 					return
