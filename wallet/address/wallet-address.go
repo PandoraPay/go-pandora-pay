@@ -89,7 +89,7 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDele
 	}, nil
 }
 
-func (adr *WalletAddress) DecodeAccount(acc *account.Account, ctx context.Context, store bool) {
+func (adr *WalletAddress) DecodeAccount(acc *account.Account, store bool, ctx context.Context, statusCallback func(string)) {
 
 	if adr.PrivateKey == nil {
 		return
@@ -105,10 +105,10 @@ func (adr *WalletAddress) DecodeAccount(acc *account.Account, ctx context.Contex
 		return
 	}
 
-	adr.DecodeBalance(acc.Balance.Amount, acc.Token, ctx, store)
+	adr.DecodeBalance(acc.Balance.Amount, acc.Token, store, ctx, statusCallback)
 }
 
-func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, ctx context.Context, store bool) (uint64, error) {
+func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, store bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	if adr.PrivateKey == nil {
 		return 0, errors.New("PrivateKey is missing")
@@ -124,7 +124,7 @@ func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, c
 		previousValue = found.AmountDecoded
 	}
 
-	newValue, err := adr.PrivateKey.DecodeBalance(balance, previousValue, ctx)
+	newValue, err := adr.PrivateKey.DecodeBalance(balance, previousValue, ctx, statusCallback)
 	if err != nil {
 		return 0, err
 	}

@@ -3,12 +3,12 @@ package webassembly
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"pandora-pay/app"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 	"strconv"
 	"syscall/js"
+	"time"
 )
 
 func getWallet(this js.Value, args []js.Value) interface{} {
@@ -302,7 +302,10 @@ func decodeBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
 
 		go func() {
 			defer cancel()
-			value, finalErr = app.Wallet.DecodeBalanceByPublicKey(publicKey, balance, token, ctx, true, true)
+			value, finalErr = app.Wallet.DecodeBalanceByPublicKey(publicKey, balance, token, true, true, ctx, func(status string) {
+				args[4].Invoke(status)
+				time.Sleep(1 * time.Millisecond)
+			})
 			done = true
 		}()
 

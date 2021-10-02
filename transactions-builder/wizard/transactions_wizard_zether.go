@@ -227,7 +227,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		}
 
 		var balance uint64
-		if balance, err = senderKey.DecodeBalance(pt, transfer.FromBalanceDecoded, ctx); err != nil {
+		if balance, err = senderKey.DecodeBalance(pt, transfer.FromBalanceDecoded, ctx, statusCallback); err != nil {
 			return
 		}
 		transfer.FromBalanceDecoded = balance //let's update it for the next

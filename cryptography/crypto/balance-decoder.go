@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"github.com/tevino/abool"
-	"math/big"
 	"pandora-pay/cryptography/bn256"
 	"runtime"
 	"sync/atomic"
@@ -25,44 +24,33 @@ type BalanceDecoderType struct {
 	info *atomic.Value //*BalanceDecoderInfo
 }
 
-func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint64, ctx context.Context) (uint64, error) {
+func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
-	var acc bn256.G1
-	acc.ScalarMult(G, new(big.Int).SetUint64(previousBalance))
-	if acc.String() == p.String() {
-		return previousBalance, nil
+	//var acc bn256.G1
+	//acc.ScalarMult(G, new(big.Int).SetUint64(previousBalance))
+	//if acc.String() == p.String() {
+	//	return previousBalance, nil
+	//}
+
+	tableLookup := self.SetTableSize(0, ctx, statusCallback)
+	if tableLookup == nil {
+		return 0, errors.New("It was stopped")
 	}
 
-	info := self.info.Load().(*BalanceDecoderInfo)
-	if info.tableSize == 0 || info.hasError.IsSet() {
-		if err := self.SetTableSize(0, ctx); err != nil {
-			return 0, err
-		}
-		info = self.info.Load().(*BalanceDecoderInfo)
-	}
-	select {
-	case <-info.readyCn:
-		if info.hasError.IsSet() {
-			return 0, errors.New("Suspended")
-		}
-		return info.tableLookup.Lookup(p, ctx)
-	case <-ctx.Done():
-		return 0, errors.New("Suspended")
-	}
-
+	return tableLookup.Lookup(p, ctx)
 }
 
-func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Context) error {
+func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Context, statusCallback func(string)) *LookupTable {
 
 	if newTableSize == 0 {
 		if runtime.GOARCH != "wasm" {
 			newTableSize = 1 << 22 //32mb ram
 		} else {
-			newTableSize = 1 << 19 //4mb ram
+			newTableSize = 1 << 18 //4mb ram
 		}
 	}
 	if newTableSize > 1<<24 {
-		return errors.New("Table Size is incorrect")
+		panic("Table Size is incorrect")
 	}
 
 	info := self.info.Load().(*BalanceDecoderInfo)
@@ -84,23 +72,28 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 			close(oldInfo.readyCn)
 		}
 
-		createLookupTable(1, newTableSize, info.tableComputedCn, info.readyCn, ctx)
+		go func() {
+			createLookupTable(1, newTableSize, info.tableComputedCn, info.readyCn, ctx, statusCallback)
+		}()
 
 		select {
 		case tableLookup := <-info.tableComputedCn:
 			info.tableLookup = tableLookup
+			return tableLookup
 		case <-ctx.Done():
 			if info.hasError.SetToIf(false, true) {
 				close(info.readyCn)
 			}
-			return errors.New("it was stopped")
+			return nil
 		case <-info.readyCn:
+			if info.hasError.SetToIf(false, true) {
+				close(info.readyCn)
+			}
 			return nil
 		}
 
 	}
-
-	return nil
+	return info.tableLookup
 }
 
 func CreateBalanceDecoder() *BalanceDecoderType {

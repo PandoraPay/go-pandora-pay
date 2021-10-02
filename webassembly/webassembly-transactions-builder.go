@@ -125,7 +125,7 @@ func createUnstakeTx_Float(this js.Value, args []js.Value) interface{} {
 
 		tx, err := app.TransactionsBuilder.CreateUnstakeTx_Float(txData.From, txData.Nonce, txData.UnstakeAmount, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, func(status string) {
 			args[1].Invoke(status)
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(1 * time.Millisecond)
 		})
 		if err != nil {
 			return nil, err

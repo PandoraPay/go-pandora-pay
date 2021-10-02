@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"context"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
@@ -105,6 +106,9 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 
 		regs := registrations.NewRegistrations(reader)
 
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		for _, walletAddress := range wallet.Addresses {
 
 			var isReg bool
@@ -185,7 +189,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 						}
 
 						var decoded uint64
-						if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, acc.Balance.Amount, tokenId, nil, true, false); err != nil {
+						if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, acc.Balance.Amount, tokenId, true, false, ctx, func(string) {}); err != nil {
 							return
 						}
 						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(decoded), 'f', config.DECIMAL_SEPARATOR, 64), tok.Name))

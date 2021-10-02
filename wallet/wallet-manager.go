@@ -42,7 +42,7 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (string, []byte, e
 	return addr.AddressRegistrationEncoded, delegatedStake.PublicKey, nil
 }
 
-func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, token []byte, ctx context.Context, store, lock bool) (uint64, error) {
+func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, token []byte, store, lock bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	if lock {
 
@@ -61,7 +61,7 @@ func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto
 		return 0, errors.New("address was not found")
 	}
 
-	decoded, err := addr.DecodeBalance(balance, token, ctx, store)
+	decoded, err := addr.DecodeBalance(balance, token, store, ctx, statusCallback)
 	if err != nil {
 		return 0, err
 	}
@@ -445,7 +445,7 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, adr *wallet_add
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	adr.DecodeAccount(acc, ctx, true)
+	adr.DecodeAccount(acc, true, ctx, nil)
 
 	return
 }

@@ -41,9 +41,7 @@ func (p PreComputeTable) Less(i, j int) bool { return p[i] < p[j] }
 func (p PreComputeTable) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // with some more smartness table can be condensed more to contain 16.3% more entries within the same size
-func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable, readyCn chan struct{}, ctx context.Context) {
-
-	fmt.Println("createLookupTable")
+func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable, readyCn chan struct{}, ctx context.Context, statusCallback func(string)) {
 
 	t := make([]PreComputeTable, count, count)
 
@@ -91,8 +89,11 @@ func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable,
 			//      fmt.Printf("%d[%d]th entry %x\n",i,j, (t)[i][j])
 			// }
 
-			if j%1000 == 0 && runtime.GOARCH == "wasm" {
-				fmt.Printf("completed %f (j %d)\n", float32(j)*100/float32(len((t)[i])), j)
+			if j%500 == 0 && runtime.GOARCH == "wasm" {
+
+				if statusCallback != nil {
+					statusCallback(fmt.Sprintf("%.2f%%", float32(j)*100/float32(len((t)[i]))))
+				}
 
 				runtime.Gosched() // gives others opportunity to run
 				time.Sleep(time.Millisecond)
