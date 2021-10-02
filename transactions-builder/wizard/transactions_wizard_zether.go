@@ -49,6 +49,12 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	var witness_list []crypto.Witness
 	for t, transfer := range transfers {
 
+		select {
+		case <-ctx.Done():
+			return errors.New("Suspended")
+		default:
+		}
+
 		senderKey := &addresses.PrivateKey{Key: transfer.From}
 		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
 		sender := crypto.GPoint.ScalarMult(secretPoint).G1()
@@ -304,6 +310,13 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	u1 := new(bn256.G1).ScalarMult(crypto.HeightToPoint(height+crypto.BLOCK_BATCH_SIZE), sender_secret) // this should be moved to generate proof
 
 	for t := range transfers {
+
+		select {
+		case <-ctx.Done():
+			return errors.New("Suspended")
+		default:
+		}
+
 		if txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Statement, &witness_list[t], u, u1, height, tx.GetHashSigningManually(), txBase.Payloads[t].BurnValue); err != nil {
 			return
 		}

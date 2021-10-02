@@ -191,6 +191,12 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 
 		for i, fromWalletAddress := range fromWalletAddresses {
 
+			select {
+			case <-ctx.Done():
+				return errors.New("Suspended")
+			default:
+			}
+
 			var accs *accounts.Accounts
 			if accs, err = accsCollection.GetMap(tokensUsed[i]); err != nil {
 				return

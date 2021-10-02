@@ -323,13 +323,13 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocke
 
 	//it needs to compute  tx.Bloom.HashStr
 	hash := tx.HashManual()
-	HashStr := string(hash)
+	hashStr := string(hash)
 
-	if api.mempool.Txs.Exists(tx.Bloom.HashStr) {
+	if api.mempool.Txs.Exists(hashStr) {
 		return []byte{1}, nil
 	}
 
-	multicastFound, loaded := api.MempoolDownloadPending.LoadOrStore(HashStr, multicast.NewMulticastChannel())
+	multicastFound, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, multicast.NewMulticastChannel())
 	multicast := multicastFound.(*multicast.MulticastChannel)
 
 	if loaded {
@@ -340,7 +340,7 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocke
 	}
 
 	defer func() {
-		api.MempoolDownloadPending.Delete(HashStr)
+		api.MempoolDownloadPending.Delete(hashStr)
 		multicast.Broadcast(err)
 	}()
 

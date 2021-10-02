@@ -27,6 +27,7 @@ import (
 	"pandora-pay/transactions-builder/wizard"
 	"pandora-pay/wallet"
 	wallet_address "pandora-pay/wallet/address"
+	"time"
 )
 
 type Testnet struct {
@@ -290,11 +291,10 @@ func (testnet *Testnet) run() {
 								creatingTransactions.Set()
 								defer creatingTransactions.UnSet()
 
-								//for i := 1; i < 4; i++ {
-								//	if _, err = testnet.testnetCreateTransfers(i); err != nil {
-								//		continue
-								//	}
-								//}
+								for i := 1; i < 4; i++ {
+									testnet.testnetCreateTransfers(i)
+									time.Sleep(time.Millisecond * 25)
+								}
 
 							}
 						}

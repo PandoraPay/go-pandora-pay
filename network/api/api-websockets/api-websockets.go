@@ -213,6 +213,11 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 		multicast.Broadcast(err)
 	}()
 
+	var exists bool
+	if exists, err = api.chain.OpenExistsTx(values); exists || err != nil {
+		return
+	}
+
 	result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APITransactionRequest{0, values, api_types.RETURN_SERIALIZED}, 0)
 	if result.Err != nil {
 		err = result.Err
