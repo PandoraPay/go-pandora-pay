@@ -8,7 +8,7 @@ package arguments
 const commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--debugging] [--network=network] [--debug] [--staking] [--new-devnet] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tor-onion=onion] [--instance=number] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-derive-delegated-stake=args] [--hcaptcha-site-key=args] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegates-allowed-enabled=args] [--exit]
+  pandorapay [--debugging] [--network=network] [--debug] [--staking] [--new-devnet] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tor-onion=onion] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-derive-delegated-stake=args] [--hcaptcha-site-key=args] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegates-allowed-enabled=args] [--exit]
   pandorapay -h | --help
   pandorapay -v | --version
 
@@ -24,12 +24,13 @@ Options:
   --debug                                            Debug mode enabled (print log message).
   --staking                                          Start staking.
   --node-name=name                                   Change node name.
+  --instance=prefix                                  Prefix of the instance [default: 0].
+  --instance-id=id                                   Number of forked instance (when you open multiple instances). It should be a string number like "1","2","3","4" etc
   --tcp-server-port=port                             Change node tcp server port [default: 8080].
   --tcp-max-clients=limit                            Change limit of clients [default: 50].
   --tcp-max-server-sockets=limit                     Change limit of servers [default: 500].
   --tcp-server-address=address                       Change node tcp address.
   --tor-onion=onion                                  Define your tor onion address to be used.
-  --instance=number                                  Number of forked instance (when you open multiple instances). It should me string number like "1","2","3","4" etc
   --consensus=type                                   Consensus type. Accepted values: "full|wallet|none" [default: full].
   --seed-wallet-nodes-info=bool                      Storing and serving additional info to wallet nodes. [default: true]. To enable, it requires full node
   --wallet-encrypt=args                              Encrypt wallet. Argument must be "password,difficulty".

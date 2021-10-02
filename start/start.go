@@ -11,7 +11,6 @@ import (
 	"pandora-pay/helpers/debugging"
 	"pandora-pay/mempool"
 	"pandora-pay/network"
-	"pandora-pay/recovery"
 	"pandora-pay/settings"
 	"pandora-pay/store"
 	"pandora-pay/testnet"
@@ -27,7 +26,9 @@ func _startMain() (err error) {
 	globals.MainStarted = true
 
 	if globals.Arguments["--debugging"] == true {
-		recovery.SafeGo(debugging.Start)
+		if err = debugging.Start(); err != nil {
+			return
+		}
 	}
 
 	if err = gui.InitGUI(); err != nil {

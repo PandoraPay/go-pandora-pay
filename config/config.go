@@ -80,7 +80,8 @@ var (
 )
 
 var (
-	INSTANCE = ""
+	INSTANCE    = ""
+	INSTANCE_ID = 0
 )
 
 var (

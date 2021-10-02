@@ -38,7 +38,7 @@ func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint6
 		return 0, errors.New("It was stopped")
 	}
 
-	return tableLookup.Lookup(p, ctx)
+	return tableLookup.Lookup(p, ctx, statusCallback)
 }
 
 func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Context, statusCallback func(string)) *LookupTable {

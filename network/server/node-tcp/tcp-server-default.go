@@ -46,6 +46,8 @@ func CreateTcpServer(bannedNodes *banned_nodes.BannedNodes, settings *settings.S
 		return nil, errors.New("Port is not a valid port number")
 	}
 
+	portNumber += config.INSTANCE_ID
+
 	port = strconv.Itoa(portNumber)
 
 	var address string

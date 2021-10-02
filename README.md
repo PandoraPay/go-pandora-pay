@@ -22,6 +22,7 @@ Tested with 1.17 and 1.16
 #### Activating devnet faucet
 
 `--hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true"`
+
 you can also create an account on hcaptcha 
 
 ### Running the node as Tor Hidden Server

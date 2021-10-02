@@ -29,7 +29,7 @@ sleep 0.5
 for (( i=0; i < $nodes; ++i ))
 do
     echo "running $i"
-    xterm -e go run main.go --instance="devnet_$i" --network="devnet" --wallet-derive-delegated-stake="0,0,delegated" --exit
+    xterm -e go run main.go --instance="devnet" --instance-id="$i" --network="devnet" --wallet-derive-delegated-stake="0,0,delegated" --exit
     mv ./_build/devnet_$i/DEV/delegated.delegatedStake ./_build/devnet_0/DEV/$i.delegatedStake
     echo "runned"
 
@@ -42,7 +42,7 @@ do
 done
 
 echo "creating genesis $str"
-xterm -e go run main.go --instance="devnet_0" --network="devnet" --create-new-genesis="$str" --exit
+xterm -e go run main.go --instance="devnet" --instance-id="0" --network="devnet" --create-new-genesis="$str" --exit
 
 sleep 0.1
 
@@ -63,9 +63,9 @@ for (( i=0; i < $nodes; ++i ))
 do
   echo "opening $i"
   if $race ; then
-    qterminal GORACE="log_path=/$SCRIPTPATH/report"  -e go run -race main.go --instance="devnet_$i" --new-devnet --network="devnet" --tcp-server-port="523$i" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" &
+    qterminal GORACE="log_path=/$SCRIPTPATH/report"  -e go run -race main.go --instance="devnet" --instance-id="$i" --tcp-server-port="5230" --new-devnet --network="devnet" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" --debugging &
   else
-    xterm -e go run main.go --instance="devnet_$i" --new-devnet --network="devnet" --tcp-server-port="523$i" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" &
+    xterm -e go run main.go --instance="devnet" --instance-id="$i" --tcp-server-port="5230" --new-devnet --network="devnet" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" --debugging &
   fi
 done
 

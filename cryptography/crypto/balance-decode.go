@@ -91,9 +91,7 @@ func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable,
 
 			if j%500 == 0 && runtime.GOARCH == "wasm" {
 
-				if statusCallback != nil {
-					statusCallback(fmt.Sprintf("%.2f%%", float32(j)*100/float32(len((t)[i]))))
-				}
+				statusCallback(fmt.Sprintf("Step 1) %.2f%%", float32(j)*100/float32(len((t)[i]))))
 
 				runtime.Gosched() // gives others opportunity to run
 				time.Sleep(time.Millisecond)
@@ -121,7 +119,7 @@ func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable,
 }
 
 // convert point to balance
-func (t *LookupTable) Lookup(p *bn256.G1, ctx context.Context) (uint64, error) {
+func (t *LookupTable) Lookup(p *bn256.G1, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	// now this big part must be searched in the precomputation lookup table
 
@@ -144,6 +142,8 @@ func (t *LookupTable) Lookup(p *bn256.G1, ctx context.Context) (uint64, error) {
 	loop_counter := 0
 
 	balance := uint64(0)
+
+	statusCallback(fmt.Sprintf("Step 2) Decoding"))
 
 	//  fmt.Printf("jumping into loop %d\n", loop_counter)
 	for { // it is an infinite loop

@@ -1,3 +1,4 @@
+//go:build !wasm
 // +build !wasm
 
 package config
@@ -6,6 +7,7 @@ import (
 	"os"
 	"pandora-pay/config/globals"
 	"runtime"
+	"strconv"
 )
 
 func config_init() (err error) {
@@ -27,6 +29,14 @@ func config_init() (err error) {
 		} else {
 			prefix = "default"
 		}
+
+		if globals.Arguments["--instance-id"] != nil {
+			a := globals.Arguments["--instance-id"].(string)
+			if INSTANCE_ID, err = strconv.Atoi(a); err != nil {
+				return
+			}
+		}
+		prefix += "_" + strconv.Itoa(INSTANCE_ID)
 
 		if _, err = os.Stat("./" + prefix); os.IsNotExist(err) {
 			if err = os.Mkdir("./"+prefix, 0755); err != nil {
