@@ -302,7 +302,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 	}
 	statusCallback("Balances checked")
 
-	if tx, err = wizard.CreateZetherTx(transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, nil, statusCallback); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, ctx, statusCallback); err != nil {
 		gui.GUI.Error("Error creating Tx: ", err)
 		return nil, err
 	}
