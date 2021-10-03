@@ -84,7 +84,7 @@ func (thread *ForgingThread) startForging() {
 				for i := 0; i < thread.threads; i++ {
 					thread.workers[i].workCn <- newWork
 				}
-				gui.GUI.InfoUpdate("Hash Block2", strconv.FormatUint(newWork.BlkHeight, 10))
+				gui.GUI.InfoUpdate("Hash Block", strconv.FormatUint(newWork.BlkHeight, 10))
 			}
 
 			for i := 0; i < thread.threads; i++ {
