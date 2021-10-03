@@ -115,7 +115,7 @@ func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name st
 	return
 }
 
-func (hashMap *HashMap) Get(key string) (helpers.SerializableInterface, error) {
+func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err error) {
 
 	if len(key) != hashMap.KeyLength {
 		return nil, errors.New("key length is invalid")
@@ -131,18 +131,16 @@ func (hashMap *HashMap) Get(key string) (helpers.SerializableInterface, error) {
 			outData = helpers.CloneBytes(exists2.Element.SerializeToBytes())
 		}
 	} else {
-		outData = hashMap.Tx.Get(hashMap.name + ":map:" + key)
+		outData = hashMap.Tx.GetClone(hashMap.name + ":map:" + key)
 	}
 
-	var out helpers.SerializableInterface
-	var err error
 	if outData != nil {
 		if out, err = hashMap.Deserialize([]byte(key), outData); err != nil {
 			return nil, err
 		}
 	}
 	hashMap.Changes[key] = &ChangesMapElement{out, "view"}
-	return out, nil
+	return
 }
 
 func (hashMap *HashMap) Exists(key string) (bool, error) {

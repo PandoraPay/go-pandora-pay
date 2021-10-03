@@ -158,6 +158,8 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 
 	for {
 
+		var element helpers.SerializableInterface
+
 		select {
 		case subscription, ok := <-this.newSubscriptionCn:
 			if !ok {
@@ -202,7 +204,10 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			for _, accs := range accsMap {
 				for k, v := range accs.HashMap.Committed {
 					if list := this.accountsSubscriptions[k]; list != nil {
-						this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element.(*account.Account), nil, &api_types.APISubscriptionNotificationAccountExtra{
+						if v.Element != nil {
+							element = v.Element.(*account.Account)
+						}
+						this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, element, nil, &api_types.APISubscriptionNotificationAccountExtra{
 							accs.Token,
 						})
 					}
@@ -217,7 +222,10 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			plainAccs := plainAccsData.(*plain_accounts.PlainAccounts)
 			for k, v := range plainAccs.HashMap.Committed {
 				if list := this.accountsSubscriptions[k]; list != nil {
-					this.send(api_types.SUBSCRIPTION_PLAIN_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element.(*plain_account.PlainAccount), nil, nil)
+					if v.Element != nil {
+						element = v.Element.(*plain_account.PlainAccount)
+					}
+					this.send(api_types.SUBSCRIPTION_PLAIN_ACCOUNT, []byte("sub/notify"), []byte(k), list, element, nil, nil)
 				}
 			}
 
@@ -229,7 +237,10 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			toks := toksData.(*tokens.Tokens)
 			for k, v := range toks.HashMap.Committed {
 				if list := this.tokensSubscriptions[k]; list != nil {
-					this.send(api_types.SUBSCRIPTION_TOKEN, []byte("sub/notify"), []byte(k), list, v.Element.(*token.Token), nil, nil)
+					if v.Element != nil {
+						element = v.Element.(*token.Token)
+					}
+					this.send(api_types.SUBSCRIPTION_TOKEN, []byte("sub/notify"), []byte(k), list, element, nil, nil)
 				}
 			}
 
@@ -241,7 +252,10 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			registrations := regsData.(*registrations.Registrations)
 			for k, v := range registrations.HashMap.Committed {
 				if list := this.tokensSubscriptions[k]; list != nil {
-					this.send(api_types.SUBSCRIPTION_REGISTRATION, []byte("sub/notify"), []byte(k), list, v.Element.(*registration.Registration), nil, nil)
+					if v.Element != nil {
+						element = v.Element.(*registration.Registration)
+					}
+					this.send(api_types.SUBSCRIPTION_REGISTRATION, []byte("sub/notify"), []byte(k), list, element, nil, nil)
 				}
 			}
 

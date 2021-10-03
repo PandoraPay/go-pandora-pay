@@ -12,7 +12,7 @@ func Test_VerifySignedMessage(t *testing.T) {
 	for i := 0; i < 100; i++ {
 
 		privateKey := GenerateNewPrivateKey()
-		address, err := privateKey.GenerateAddress(0, nil)
+		address, err := privateKey.GenerateAddress(false, 0, nil)
 		assert.Nil(t, err, "Error generating key")
 
 		message := helpers.RandomBytes(32)

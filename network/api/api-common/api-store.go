@@ -145,6 +145,7 @@ func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*api_t
 		}
 
 		apiAcc.Accs = make([]*account.Account, len(tokensList))
+		apiAcc.AccsIndex = make([]uint64, len(tokensList))
 		apiAcc.Tokens = make([]helpers.HexBytes, len(tokensList))
 
 		for i, tokenId := range tokensList {
@@ -162,6 +163,10 @@ func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*api_t
 			}
 
 			apiAcc.Accs[i] = acc
+
+			if apiAcc.AccsIndex[i], err = accs.GetIndexByKey(string(publicKey)); err != nil {
+				return
+			}
 		}
 
 		if apiAcc.PlainAcc, err = plainAccs.GetPlainAccount(publicKey, chainHeight); err != nil {
