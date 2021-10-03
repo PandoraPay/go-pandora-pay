@@ -3,6 +3,7 @@ package store_db_bunt
 import (
 	"errors"
 	buntdb "github.com/tidwall/buntdb"
+	"pandora-pay/helpers"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 )
 
@@ -41,7 +42,11 @@ func (tx *StoreDBBuntTransaction) Exists(key string) bool {
 }
 
 func (tx *StoreDBBuntTransaction) GetClone(key string) (out []byte) {
-	return tx.Get(key) //not required
+	return helpers.CloneBytes(tx.Get(key))
+}
+
+func (tx *StoreDBBuntTransaction) PutClone(key string, value []byte) error {
+	return tx.Put(key, helpers.CloneBytes(value))
 }
 
 func (tx *StoreDBBuntTransaction) Delete(key string) (err error) {

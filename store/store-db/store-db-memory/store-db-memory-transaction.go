@@ -2,6 +2,7 @@ package store_db_memory
 
 import (
 	"errors"
+	"pandora-pay/helpers"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"sync"
 )
@@ -30,6 +31,10 @@ func (tx *StoreDBMemoryTransaction) Put(key string, value []byte) error {
 	return nil
 }
 
+func (tx *StoreDBMemoryTransaction) PutClone(key string, value []byte) error {
+	return tx.Put(key, helpers.CloneBytes(value))
+}
+
 func (tx *StoreDBMemoryTransaction) Get(key string) []byte {
 
 	out, ok := tx.local.Load(key)
@@ -55,7 +60,7 @@ func (tx *StoreDBMemoryTransaction) Exists(key string) bool {
 }
 
 func (tx *StoreDBMemoryTransaction) GetClone(key string) []byte {
-	return tx.Get(key) //not required
+	return helpers.CloneBytes(tx.Get(key))
 }
 
 func (tx *StoreDBMemoryTransaction) Delete(key string) error {

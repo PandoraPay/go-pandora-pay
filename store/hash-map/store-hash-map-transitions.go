@@ -28,6 +28,7 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 					change.Transition = existsCommitted.Element.SerializeToBytes()
 				}
 			} else {
+				//safe to Get because it will be cloned afterwards
 				change.Transition = hashMap.Tx.Get(hashMap.name + ":map:" + k)
 			}
 
@@ -40,7 +41,7 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 		return
 	}
 
-	if err = hashMap.Tx.Put(hashMap.name+":transitions:"+prefix, marshal); err != nil {
+	if err = hashMap.Tx.PutClone(hashMap.name+":transitions:"+prefix, marshal); err != nil {
 		return
 	}
 
@@ -55,7 +56,9 @@ func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) (err e
 }
 
 func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err error) {
-	data := hashMap.Tx.Get(hashMap.name + ":transitions:" + prefix)
+
+	//Clone required to avoid changing the data afterwards
+	data := hashMap.Tx.GetClone(hashMap.name + ":transitions:" + prefix)
 	if data == nil {
 		return errors.New("transitions didn't exist")
 	}

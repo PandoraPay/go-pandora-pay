@@ -3,6 +3,7 @@ package store_db_js
 import (
 	"errors"
 	"fmt"
+	"pandora-pay/helpers"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
 	"sync"
 	"syscall/js"
@@ -83,7 +84,11 @@ func (tx *StoreDBJSTransaction) Exists(key string) bool {
 }
 
 func (tx *StoreDBJSTransaction) GetClone(key string) []byte {
-	return tx.Get(key) //not required
+	return helpers.CloneBytes(tx.Get(key))
+}
+
+func (tx *StoreDBJSTransaction) PutClone(key string, value []byte) error {
+	return tx.Put(key, helpers.CloneBytes(value))
 }
 
 func (tx *StoreDBJSTransaction) Delete(key string) error {

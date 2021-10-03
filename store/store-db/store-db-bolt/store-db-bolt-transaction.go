@@ -34,8 +34,11 @@ func (tx *StoreDBBoltTransaction) Exists(key string) bool {
 }
 
 func (tx *StoreDBBoltTransaction) GetClone(key string) []byte {
-	v := tx.Get(key)
-	return helpers.CloneBytes(v)
+	return helpers.CloneBytes(tx.Get(key))
+}
+
+func (tx *StoreDBBoltTransaction) PutClone(key string, value []byte) error {
+	return tx.Put(key, helpers.CloneBytes(value))
 }
 
 func (tx *StoreDBBoltTransaction) Delete(key string) error {

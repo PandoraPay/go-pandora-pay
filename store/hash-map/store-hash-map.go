@@ -27,6 +27,7 @@ func (hashMap *HashMap) GetIndexByKey(key string) (uint64, error) {
 		return 0, errors.New("HashMap is not Indexable")
 	}
 
+	//safe to Get because it won't change
 	data := hashMap.Tx.Get(hashMap.name + ":listKey:" + key)
 	if data == nil {
 		return 0, errors.New("Key not found")
@@ -45,7 +46,8 @@ func (hashMap *HashMap) GetKeyByIndex(index uint64) (key []byte, err error) {
 		return nil, errors.New("Index exceeds count")
 	}
 
-	key = hashMap.Tx.Get(hashMap.name + ":list:" + strconv.FormatUint(index, 10))
+	//Clone require because key might get altered afterwards
+	key = hashMap.Tx.GetClone(hashMap.name + ":list:" + strconv.FormatUint(index, 10))
 	if key == nil {
 		return nil, errors.New("Not found")
 	}
@@ -103,6 +105,7 @@ func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name st
 		Indexable: indexable,
 	}
 
+	//safe to Get because int doesn't change the data
 	buffer := tx.Get(hashMap.name + ":count")
 	if buffer != nil {
 		count, p := binary.Uvarint(buffer)
@@ -131,6 +134,7 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 			outData = helpers.CloneBytes(exists2.Element.SerializeToBytes())
 		}
 	} else {
+		//Clone required because data could be altered afterwards
 		outData = hashMap.Tx.GetClone(hashMap.name + ":map:" + key)
 	}
 
@@ -156,9 +160,7 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 		return exists2.Element != nil, nil
 	}
 
-	outData := hashMap.Tx.Get(hashMap.name + ":map:" + key)
-
-	return outData != nil, nil
+	return hashMap.Tx.Exists(hashMap.name + ":map:" + key), nil
 }
 
 func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) error {
@@ -271,9 +273,11 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 			if !hashMap.Tx.Exists(hashMap.name + ":map:" + k) {
 
 				if hashMap.Tx.IsWritable() && hashMap.Indexable {
+					//safe
 					if err = hashMap.Tx.Put(hashMap.name+":list:"+strconv.FormatUint(hashMap.Count, 10), []byte(k)); err != nil {
 						return
 					}
+					//safe
 					if err = hashMap.Tx.Put(hashMap.name+":listKey:"+k, []byte(strconv.FormatUint(hashMap.Count, 10))); err != nil {
 						return
 					}
@@ -288,7 +292,8 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 			}
 
 			if hashMap.Tx.IsWritable() {
-				if err = hashMap.Tx.Put(hashMap.name+":map:"+k, v.Element.SerializeToBytes()); err != nil {
+				//clone required because the element could change later on
+				if err = hashMap.Tx.PutClone(hashMap.name+":map:"+k, v.Element.SerializeToBytes()); err != nil {
 					return
 				}
 			}
@@ -307,6 +312,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 	if hashMap.Tx.IsWritable() {
 		buf := make([]byte, binary.MaxVarintLen64)
 		n := binary.PutUvarint(buf, hashMap.Count)
+		//safe
 		if err = hashMap.Tx.Put(hashMap.name+":count", buf[:n]); err != nil {
 			return
 		}
