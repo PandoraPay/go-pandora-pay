@@ -14,7 +14,6 @@ type Statement struct {
 	C             []*bn256.G1 // commitments
 	D             *bn256.G1
 	Fees          uint64
-	Roothash      []byte // note roothash contains the merkle root hash of chain, when it was build
 }
 
 type Witness struct {
@@ -42,7 +41,6 @@ func (s *Statement) Serialize(w *helpers.BufferWriter) {
 		w.Write(s.C[i].EncodeCompressed())
 	}
 
-	w.Write(s.Roothash)
 }
 
 func (s *Statement) Deserialize(r *helpers.BufferReader) (err error) {
@@ -82,10 +80,5 @@ func (s *Statement) Deserialize(r *helpers.BufferReader) (err error) {
 		}
 	}
 
-	if s.Roothash, err = r.ReadBytes(32); err != nil {
-		return
-	}
-
 	return nil
-
 }

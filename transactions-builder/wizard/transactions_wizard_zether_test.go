@@ -1,6 +1,7 @@
 package wizard
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"math"
 	"math/big"
@@ -95,8 +96,11 @@ func TestCreateZetherTx(t *testing.T) {
 		fees[i] = &TransactionsWizardFee{0, 0, false}
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	hash := helpers.RandomBytes(32)
-	tx, err := CreateZetherTx(transfers, emap, rings, 0, hash, publicKeyIndexes, fees, func(status string) {})
+	tx, err := CreateZetherTx(transfers, emap, rings, 0, hash, publicKeyIndexes, fees, ctx, func(status string) {})
 	assert.NoError(t, err)
 	assert.NotNil(t, t, tx)
 

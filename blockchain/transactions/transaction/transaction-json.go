@@ -94,7 +94,6 @@ type json_Only_TransactionZetherStatement struct {
 	C             []helpers.HexBytes `json:"c"`
 	D             helpers.HexBytes   `json:"d"`
 	Fees          uint64             `json:"fees"`
-	Roothash      helpers.HexBytes   `json:"roothash"`
 }
 
 type json_Only_TransactionPayload struct {
@@ -201,7 +200,6 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				C:             helpers.ConvertBN256Array(payload.Statement.C),
 				D:             payload.Statement.D.EncodeCompressed(),
 				Fees:          payload.Statement.Fees,
-				Roothash:      payload.Statement.Roothash,
 			}
 
 			w := helpers.NewBufferWriter()
@@ -393,7 +391,6 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 					C:             C,
 					D:             D,
 					Fees:          payload.Statement.Fees,
-					Roothash:      payload.Statement.Roothash,
 				},
 				Proof: proof,
 			}

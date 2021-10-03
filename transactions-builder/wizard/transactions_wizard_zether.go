@@ -242,8 +242,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		// time for bullets-sigma
 		statement := GenerateStatement(CLn, CRn, publickeylist, C, &D, fees) // generate statement
-		statement.Roothash = make([]byte, 32)
-		copy(statement.Roothash[:], hash[:])
 
 		statement.RingSize = uint64(len(publickeylist))
 
