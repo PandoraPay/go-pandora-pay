@@ -74,7 +74,7 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 	return
 }
 
-func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx *transaction.Transaction, err error) {
+func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
 	from := []string{}
 	dsts := []string{}
@@ -114,9 +114,6 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 		fees = append(fees, &wizard.TransactionsWizardFee{0, 0, 0, true})
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	if tx, err = testnet.transactionsBuilder.CreateZetherTx(from, dstsTokens, dstsAmounts, dsts, burn, ringMembers, data, fees, true, true, true, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
@@ -125,7 +122,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64) (tx
 	return
 }
 
-func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int) (tx *transaction.Transaction, err error) {
+func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int, ctx context.Context) (tx *transaction.Transaction, err error) {
 
 	srcAddr, err := testnet.wallet.GetWalletAddress(srcAddressWalletIndex)
 	if err != nil {
@@ -152,8 +149,6 @@ func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int) (tx *t
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{srcAddr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
@@ -195,6 +190,7 @@ func (testnet *Testnet) run() {
 		blockHeight := blockHeightReceived.(uint64)
 		syncTime := testnet.chain.Sync.GetSyncTime()
 
+		ctx2 := ctx
 		recovery.SafeGo(func() {
 
 			gui.GUI.Log("UpdateNewChain received! 1")
@@ -208,7 +204,7 @@ func (testnet *Testnet) run() {
 					}
 				}
 				if blockHeight == 100 {
-					if _, err = testnet.testnetCreateTransfersNewWallets(blockHeight); err != nil {
+					if _, err = testnet.testnetCreateTransfersNewWallets(blockHeight, ctx2); err != nil {
 						return
 					}
 				}
@@ -264,7 +260,7 @@ func (testnet *Testnet) run() {
 
 						var balance uint64
 						if acc != nil {
-							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN, true, true, ctx, func(string) {}); err != nil {
+							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN, true, true, ctx2, func(string) {}); err != nil {
 								return
 							}
 						}
@@ -292,8 +288,8 @@ func (testnet *Testnet) run() {
 								defer creatingTransactions.UnSet()
 
 								for i := 1; i < 4; i++ {
-									testnet.testnetCreateTransfers(i)
-									time.Sleep(time.Millisecond * 25)
+									testnet.testnetCreateTransfers(i, ctx2)
+									time.Sleep(time.Millisecond * 50)
 								}
 
 							}

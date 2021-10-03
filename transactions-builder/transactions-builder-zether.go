@@ -65,25 +65,30 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []b
 		accsCollection := accounts.NewAccountsCollection(reader)
 
 		var accs *accounts.Accounts
+		var acc *account.Account
+
 		if accs, err = accsCollection.GetMap(token); err != nil {
 			return
 		}
 
-		for i := 0; i < len(rings); i++ {
+		if globals.Arguments["--new-devnet"] == true && accs.Count < 30000 {
+			newAccounts = ringSize - 2
+		}
 
-			if accs.Count < uint64(ringSize) || (globals.Arguments["--new-devnet"] == true && accs.Count < 5000) {
+		for i := 0; i < ringSize-2; i++ {
+
+			if accs.Count <= uint64(i) || i < newAccounts {
 				priv := addresses.GenerateNewPrivateKey()
 				if addr, err = priv.GenerateAddress(true, 0, nil); err != nil {
 					return
 				}
 			} else {
 
-				var acc *account.Account
 				if acc, err = accs.GetRandomAccount(); err != nil {
 					return
 				}
 				if acc == nil {
-					errors.New("Error getting any random account")
+					return errors.New("Error getting any random account")
 				}
 
 				if addr, err = addresses.CreateAddr(acc.PublicKey, nil, 0, nil); err != nil {
@@ -91,6 +96,7 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []b
 				}
 
 			}
+
 			if alreadyUsed[string(addr.PublicKey)] {
 				i--
 				continue

@@ -13,6 +13,7 @@ import (
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/settings"
+	"sync"
 )
 
 type APIWebsockets struct {
@@ -194,7 +195,12 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 	}
 	hashStr := string(values)
 
-	if api.mempool.Txs.Exists(hashStr) {
+	mempoolProcessedThisBlock := api.apiCommon.MempoolProcessedThisBlock.Load().(*sync.Map)
+	processedAlreadyFound, loaded := mempoolProcessedThisBlock.Load(hashStr)
+	if loaded {
+		if processedAlreadyFound != nil {
+			return nil, processedAlreadyFound.(error)
+		}
 		return []byte{1}, nil
 	}
 
@@ -209,9 +215,14 @@ func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection
 	}
 
 	defer func() {
+		mempoolProcessedThisBlock.Store(hashStr, err)
 		api.apiCommon.MempoolDownloadPending.Delete(hashStr)
 		multicast.Broadcast(err)
 	}()
+
+	if api.mempool.Txs.Exists(hashStr) {
+		return []byte{1}, nil
+	}
 
 	var exists bool
 	if exists, err = api.chain.OpenExistsTx(values); exists || err != nil {

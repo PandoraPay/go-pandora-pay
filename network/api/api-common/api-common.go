@@ -26,14 +26,15 @@ import (
 )
 
 type APICommon struct {
-	mempool                *mempool.Mempool
-	chain                  *blockchain.Blockchain
-	localChain             *atomic.Value //*APIBlockchain
-	localChainSync         *atomic.Value //*blockchain_sync.BlockchainSyncData
-	APICommonFaucet        *api_faucet.APICommonFaucet
-	APIDelegatesNode       *api_delegates_node.APIDelegatesNode
-	ApiStore               *APIStore
-	MempoolDownloadPending *sync.Map //[string]chan error
+	mempool                   *mempool.Mempool
+	chain                     *blockchain.Blockchain
+	localChain                *atomic.Value //*APIBlockchain
+	localChainSync            *atomic.Value //*blockchain_sync.BlockchainSyncData
+	APICommonFaucet           *api_faucet.APICommonFaucet
+	APIDelegatesNode          *api_delegates_node.APIDelegatesNode
+	ApiStore                  *APIStore
+	MempoolDownloadPending    *sync.Map     //[string]chan error
+	MempoolProcessedThisBlock *atomic.Value // *sync.Map //[string]error
 }
 
 func (api *APICommon) GetBlockchain() ([]byte, error) {
@@ -325,7 +326,12 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocke
 	hash := tx.HashManual()
 	hashStr := string(hash)
 
-	if api.mempool.Txs.Exists(hashStr) {
+	mempoolProcessedThisBlock := api.MempoolProcessedThisBlock.Load().(*sync.Map)
+	processedAlreadyFound, loaded := mempoolProcessedThisBlock.Load(hashStr)
+	if loaded {
+		if processedAlreadyFound != nil {
+			return nil, processedAlreadyFound.(error)
+		}
 		return []byte{1}, nil
 	}
 
@@ -340,9 +346,14 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocke
 	}
 
 	defer func() {
+		mempoolProcessedThisBlock.Store(hashStr, err)
 		api.MempoolDownloadPending.Delete(hashStr)
 		multicast.Broadcast(err)
 	}()
+
+	if api.mempool.Txs.Exists(hashStr) {
+		return []byte{1}, nil
+	}
 
 	if err = tx.BloomAll(); err != nil {
 		return
@@ -368,6 +379,7 @@ func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.Blockch
 		TotalDifficulty:   newChainDataUpdate.Update.BigTotalDifficulty.String(),
 	}
 	api.localChain.Store(newLocalChain)
+	api.MempoolProcessedThisBlock.Store(&sync.Map{})
 }
 
 //make sure it is safe to read
@@ -398,7 +410,10 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wal
 		apiDelegatesNode,
 		apiStore,
 		&sync.Map{},
+		&atomic.Value{},
 	}
+
+	api.MempoolProcessedThisBlock.Store(&sync.Map{})
 
 	recovery.SafeGo(func() {
 

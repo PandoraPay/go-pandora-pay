@@ -83,7 +83,7 @@ func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeA
 
 }
 
-func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID) []*advanced_connection_types.AdvancedConnectionAnswer {
+func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, timeout time.Duration) []*advanced_connection_types.AdvancedConnectionAnswer {
 
 	if exceptSocketUUID == advanced_connection_types.UUID_SKIP_ALL {
 		return nil
@@ -95,7 +95,7 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 	for _, conn := range all {
 		if conn.UUID != exceptSocketUUID && consensusTypeAccepted[conn.Handshake.Consensus] {
 			go func(conn *connection.AdvancedConnection) {
-				answer := conn.SendAwaitAnswer(name, data, 0)
+				answer := conn.SendAwaitAnswer(name, data, timeout)
 				chans <- answer
 			}(conn)
 		} else {
@@ -119,9 +119,9 @@ func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, conse
 	websockets.Broadcast(name, out, consensusTypeAccepted, exceptSocketUUID)
 }
 
-func (websockets *Websockets) BroadcastJSONAwaitAnswer(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID) []*advanced_connection_types.AdvancedConnectionAnswer {
+func (websockets *Websockets) BroadcastJSONAwaitAnswer(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, timeout time.Duration) []*advanced_connection_types.AdvancedConnectionAnswer {
 	out, _ := json.Marshal(data)
-	return websockets.BroadcastAwaitAnswer(name, out, consensusTypeAccepted, exceptSocketUUID)
+	return websockets.BroadcastAwaitAnswer(name, out, consensusTypeAccepted, exceptSocketUUID, timeout)
 }
 
 func (websockets *Websockets) closedConnectionNow(conn *connection.AdvancedConnection) bool {

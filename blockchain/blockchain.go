@@ -11,6 +11,7 @@ import (
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/accounts"
 	plain_account "pandora-pay/blockchain/data_storage/plain-accounts/plain-account"
 	"pandora-pay/blockchain/forging/forging-block-work"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -131,6 +132,16 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 			dataStorage = data_storage.CreateDataStorage(writer)
 
+			var accs *accounts.Accounts
+			if accs, err = dataStorage.AccsCollection.GetMap(config.NATIVE_TOKEN); err != nil {
+				return
+			}
+			gui.GUI.Log("regs", dataStorage.Regs.Count)
+			gui.GUI.Log("accs", accs.Count)
+			if accs.Count != dataStorage.Regs.Count {
+				gui.GUI.Log("accs != regs")
+			}
+
 			//let's filter existing blocks
 			for i := len(blocksComplete) - 1; i >= 0; i-- {
 
@@ -190,6 +201,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					return
 				}
 
+			}
+			gui.GUI.Log("regs", dataStorage.Regs.Count)
+			gui.GUI.Log("accs", accs.Count)
+			if accs.Count != dataStorage.Regs.Count {
+				gui.GUI.Log("accs != regs")
 			}
 
 			if blocksComplete[0].Block.Height != newChainData.Height {
@@ -393,9 +409,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 				for _, change := range allTransactionsChanges {
 					if !change.Inserted && removedTxHashes[change.TxHashStr] != nil && insertedTxs[change.TxHashStr] == nil {
-						removedTxsList[removedCount] = writer.GetClone("tx" + change.TxHashStr) //required because the garbage collector sometimes it deletes the underlying buffers
-						if err = writer.Delete("tx" + change.TxHashStr); err != nil {
+						removedTxsList[removedCount] = writer.GetClone("tx:" + change.TxHashStr) //required because the garbage collector sometimes it deletes the underlying buffers
+						if err = writer.Delete("tx:" + change.TxHashStr); err != nil {
 							panic("Error deleting transaction: " + err.Error())
+						}
+						if err = writer.Delete("txHash:" + change.TxHashStr); err != nil {
+							panic("Error deleting transaction exists: " + err.Error())
 						}
 						removedCount += 1
 					}
