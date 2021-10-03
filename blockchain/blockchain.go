@@ -299,11 +299,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						removedBlocksHeights = removedBlocksHeights[1:]
 					}
 
-					//it will commit the changes
-					if err = dataStorage.CommitChanges(); err != nil {
-						return
-					}
-
 					newChainData.PrevHash = newChainData.Hash
 					newChainData.Hash = blkComplete.Block.Bloom.Hash
 					newChainData.PrevKernelHash = newChainData.KernelHash

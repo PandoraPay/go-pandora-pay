@@ -275,6 +275,10 @@ func (api *APICommon) GetToken(request *api_types.APITokenRequest) ([]byte, erro
 	return json.Marshal(token)
 }
 
+func (api *APICommon) GetAccountsHolders(hash []byte) (uint64, error) {
+	return api.ApiStore.openLoadAccountsHoldersFromTokenHash(hash)
+}
+
 func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) ([]byte, error) {
 
 	transactions, finalChainHash := api.mempool.GetNextTransactionsToInclude(request.ChainHash)

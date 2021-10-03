@@ -121,6 +121,10 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 	if err := dataStorage.WriteTransitionalChangesToStore(blockHeightStr); err != nil {
 		return allTransactionsChanges, err
 	}
+	//it will commit the changes
+	if err := dataStorage.CommitChanges(); err != nil {
+		return allTransactionsChanges, err
+	}
 
 	if err := writer.Put("block_ByHash"+string(blkComplete.Block.Bloom.Hash), blkComplete.Block.SerializeToBytes()); err != nil {
 		return allTransactionsChanges, err

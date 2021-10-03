@@ -13,6 +13,7 @@ import (
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/settings"
+	"strconv"
 	"sync"
 )
 
@@ -132,6 +133,14 @@ func (api *APIWebsockets) getToken(conn *connection.AdvancedConnection, values [
 		return nil, err
 	}
 	return api.apiCommon.GetToken(request)
+}
+
+func (api *APIWebsockets) getAccountsHolders(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	count, err := api.apiCommon.GetAccountsHolders(values)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(strconv.FormatUint(count, 10)), nil
 }
 
 func (api *APIWebsockets) getMempool(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -285,6 +294,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"tx":                 api.getTx,
 		"tx-hash":            api.getTxHash,
 		"account":            api.getAccount,
+		"accounts/holders":   api.getAccountsHolders,
 		"token":              api.getToken,
 		"mem-pool":           api.getMempool,
 		"mem-pool/tx-exists": api.getMempoolExists,

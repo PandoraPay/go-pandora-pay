@@ -215,6 +215,19 @@ func (api *API) getToken(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetToken(request)
 }
 
+func (api *API) getAccountsHolders(values *url.Values) (interface{}, error) {
+	var hash []byte
+
+	err := errors.New("parameter 'hash' was not specified")
+	if values.Get("hash") != "" {
+		hash, err = hex.DecodeString(values.Get("hash"))
+	}
+	if err != nil {
+		return nil, err
+	}
+	return api.apiCommon.GetAccountsHolders(hash)
+}
+
 func (api *API) getMempool(values *url.Values) (interface{}, error) {
 	request := &api_types.APIMempoolRequest{}
 
@@ -288,6 +301,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		"tx":                 api.getTx,
 		"tx-hash":            api.getTxHash,
 		"account":            api.getAccount,
+		"accounts/holders":   api.getAccountsHolders,
 		"token":              api.getToken,
 		"mem-pool":           api.getMempool,
 		"mem-pool/tx-exists": api.getMempoolExists,
