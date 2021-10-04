@@ -77,7 +77,7 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []b
 
 		for i := 0; i < ringSize-2; i++ {
 
-			if accs.Count <= uint64(i) || i < newAccounts {
+			if i < newAccounts || accs.Count-2+uint64(newAccounts) <= uint64(i) {
 				priv := addresses.GenerateNewPrivateKey()
 				if addr, err = priv.GenerateAddress(true, 0, nil); err != nil {
 					return

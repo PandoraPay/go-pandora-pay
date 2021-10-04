@@ -14,6 +14,8 @@ import (
 	"pandora-pay/helpers"
 	api_faucet "pandora-pay/network/api/api-common/api-faucet"
 	"pandora-pay/network/api/api-common/api_types"
+	"strconv"
+	"strings"
 	"sync"
 	"syscall/js"
 	"time"
@@ -109,6 +111,60 @@ func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 		}
 
 		return convertJSONBytes(blkComplete)
+	})
+}
+
+func getNetworkAccountsHolders(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+
+		token, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
+		}
+
+		data := socket.SendAwaitAnswer([]byte("accounts/holders"), token, 0)
+		if data.Err != nil {
+			return nil, data.Err
+		}
+
+		return strconv.ParseUint(string(data.Out), 10, 64)
+	})
+}
+
+func getNetworkAccountsByIndex(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+
+		request := &api_types.APIAccountsByIndexRequest{nil, nil, false}
+		var err error
+
+		v := strings.Split(args[0].String(), ",")
+		request.Indexes = make([]uint64, len(v))
+		for i := 0; i < len(v); i++ {
+			if request.Indexes[i], err = strconv.ParseUint(v[i], 10, 64); err != nil {
+				return nil, err
+			}
+		}
+
+		if request.Token, err = hex.DecodeString(args[1].String()); err != nil {
+			return nil, err
+		}
+
+		request.EncodeAddresses = args[2].Bool()
+
+		data := socket.SendJSONAwaitAnswer([]byte("accounts/by-index"), request, 0)
+		if data.Err != nil {
+			return nil, data.Err
+		}
+
+		return convertJSONBytes(data.Out)
 	})
 }
 

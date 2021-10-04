@@ -47,10 +47,27 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return []interface{}{
+		return convertJSONBytes([]interface{}{
 			json,
 			addr.EncodeAddr(),
-		}, nil
+		})
 
+	})
+}
+
+func generateNewAddress(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+		priv := addresses.GenerateNewPrivateKey()
+		addr, err := priv.GenerateAddress(true, 0, nil)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return convertJSONBytes([]interface{}{
+			hex.EncodeToString(priv.Key),
+			addr.EncodeAddr(),
+			hex.EncodeToString(addr.PublicKey),
+		})
 	})
 }
