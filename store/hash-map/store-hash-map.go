@@ -223,7 +223,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 			committed.Status = "view"
 			committed.Element = nil
 
-			if hashMap.Tx.Exists(hashMap.name + k) {
+			if hashMap.Tx.Exists(hashMap.name + ":map:" + k) {
 				hashMap.Count -= 1
 
 				if hashMap.Tx.IsWritable() {

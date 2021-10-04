@@ -49,10 +49,7 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 }
 
 func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) (err error) {
-	if err = hashMap.Tx.Delete(hashMap.name + ":transitions:" + prefix); err != nil {
-		return
-	}
-	return hashMap.Tx.Delete(hashMap.name + ":transitionsCount:" + prefix)
+	return hashMap.Tx.Delete(hashMap.name + ":transitions:" + prefix)
 }
 
 func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err error) {
