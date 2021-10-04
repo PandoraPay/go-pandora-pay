@@ -13,6 +13,7 @@ import (
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/network/websocks/connection/advanced-connection-types"
 	"strconv"
+	"strings"
 )
 
 type API struct {
@@ -216,16 +217,47 @@ func (api *API) getToken(values *url.Values) (interface{}, error) {
 }
 
 func (api *API) getAccountsHolders(values *url.Values) (interface{}, error) {
-	var hash []byte
 
-	err := errors.New("parameter 'hash' was not specified")
-	if values.Get("hash") != "" {
-		hash, err = hex.DecodeString(values.Get("hash"))
+	var token []byte
+	var err error
+
+	if values.Get("token") != "" {
+		if token, err = hex.DecodeString(values.Get("token")); err != nil {
+			return nil, err
+		}
 	}
-	if err != nil {
-		return nil, err
+
+	return api.apiCommon.GetAccountsHolders(token)
+}
+
+func (api *API) getAccountsByIndex(values *url.Values) (interface{}, error) {
+
+	request := &api_types.APIAccountsByIndexRequest{}
+	var err error
+
+	if values.Get("encodeAddresses") == "1" {
+		request.EncodeAddresses = true
 	}
-	return api.apiCommon.GetAccountsHolders(hash)
+
+	if values.Get("indexes") != "" {
+		v := strings.Split(values.Get("indexes"), ",")
+		request.Indexes = make([]uint64, len(v))
+		for i := 0; i < len(v); i++ {
+			if request.Indexes[i], err = strconv.ParseUint(v[i], 10, 64); err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		return nil, errors.New("parameter `indexes` is missing")
+	}
+
+	if values.Get("token") != "" {
+		if request.Token, err = hex.DecodeString(values.Get("token")); err != nil {
+			return nil, err
+		}
+	}
+
+	return api.apiCommon.GetAccountsByIndex(request)
 }
 
 func (api *API) getMempool(values *url.Values) (interface{}, error) {
@@ -302,6 +334,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		"tx-hash":            api.getTxHash,
 		"account":            api.getAccount,
 		"accounts/holders":   api.getAccountsHolders,
+		"accounts/by-index":  api.getAccountsByIndex,
 		"token":              api.getToken,
 		"mem-pool":           api.getMempool,
 		"mem-pool/tx-exists": api.getMempoolExists,

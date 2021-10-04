@@ -47,6 +47,11 @@ type APIAccount struct {
 	RegSerialized      helpers.HexBytes            `json:"registrationSerialized,omitempty"`
 }
 
+type APIAccountsByIndex struct {
+	PublicKeys []helpers.HexBytes `json:"publicKeys,omitempty"`
+	Addresses  []string           `json:"addresses,omitempty"`
+}
+
 type APITransaction struct {
 	Tx           *transaction.Transaction `json:"tx,omitempty"`
 	TxSerialized helpers.HexBytes         `json:"serialized,omitempty"`

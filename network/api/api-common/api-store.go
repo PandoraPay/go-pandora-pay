@@ -251,6 +251,27 @@ func (apiStore *APIStore) openLoadAccountsHoldersFromTokenHash(hash []byte) (out
 	return
 }
 
+func (apiStore *APIStore) openLoadAccountsByIndex(indexes []uint64, tokenId []byte) (output []helpers.HexBytes, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		accsCollection := accounts.NewAccountsCollection(reader)
+
+		accs, err := accsCollection.GetMap(tokenId)
+		if err != nil {
+			return
+		}
+
+		output = make([]helpers.HexBytes, len(indexes))
+		for i := 0; i < len(indexes); i++ {
+			if output[i], err = accs.GetKeyByIndex(indexes[i]); err != nil {
+				return
+			}
+		}
+
+		return
+	})
+	return
+}
+
 func (apiStore *APIStore) openLoadTxHash(blockHeight uint64) (hash []byte, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err = apiStore.loadTxHash(reader, blockHeight)

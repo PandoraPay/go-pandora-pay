@@ -143,6 +143,14 @@ func (api *APIWebsockets) getAccountsHolders(conn *connection.AdvancedConnection
 	return []byte(strconv.FormatUint(count, 10)), nil
 }
 
+func (api *APIWebsockets) getAccountsByIndex(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := &api_types.APIAccountsByIndexRequest{nil, nil, false}
+	if err := json.Unmarshal(values, &request); err != nil {
+		return nil, err
+	}
+	return api.apiCommon.GetAccountsByIndex(request)
+}
+
 func (api *APIWebsockets) getMempool(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	request := &api_types.APIMempoolRequest{}
 	if err := json.Unmarshal(values, &request); err != nil {
@@ -295,6 +303,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"tx-hash":            api.getTxHash,
 		"account":            api.getAccount,
 		"accounts/holders":   api.getAccountsHolders,
+		"accounts/by-index":  api.getAccountsByIndex,
 		"token":              api.getToken,
 		"mem-pool":           api.getMempool,
 		"mem-pool/tx-exists": api.getMempoolExists,

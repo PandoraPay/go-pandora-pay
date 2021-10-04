@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
 	blockchain_sync "pandora-pay/blockchain/blockchain-sync"
 	"pandora-pay/blockchain/blocks/block-complete"
@@ -277,6 +278,28 @@ func (api *APICommon) GetToken(request *api_types.APITokenRequest) ([]byte, erro
 
 func (api *APICommon) GetAccountsHolders(hash []byte) (uint64, error) {
 	return api.ApiStore.openLoadAccountsHoldersFromTokenHash(hash)
+}
+
+func (api *APICommon) GetAccountsByIndex(request *api_types.APIAccountsByIndexRequest) ([]byte, error) {
+	out, err := api.ApiStore.openLoadAccountsByIndex(request.Indexes, request.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	answer := &api_types.APIAccountsByIndex{}
+	if !request.EncodeAddresses {
+		answer.PublicKeys = out
+	} else {
+		answer.Addresses = make([]string, len(out))
+		for i, publicKey := range out {
+			addr, err := addresses.CreateAddr(publicKey, nil, 0, nil)
+			if err != nil {
+				return nil, err
+			}
+			answer.Addresses[i] = addr.EncodeAddr()
+		}
+	}
+	return json.Marshal(answer)
 }
 
 func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) ([]byte, error) {

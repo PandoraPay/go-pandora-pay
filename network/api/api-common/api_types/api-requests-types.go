@@ -87,6 +87,12 @@ type APIAccountTxsRequest struct {
 	Next uint64 `json:"next,omitempty"`
 }
 
+type APIAccountsByIndexRequest struct {
+	Indexes         []uint64         `json:"indexes"`
+	Token           helpers.HexBytes `json:"token"`
+	EncodeAddresses bool             `json:"encodeAddresses"`
+}
+
 func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
 	var publicKey []byte
 	if request.Address != "" {
@@ -110,11 +116,6 @@ type APITokenInfoRequest struct {
 
 type APITokenRequest struct {
 	Hash       helpers.HexBytes `json:"hash"`
-	ReturnType APIReturnType    `json:"returnType"`
-}
-
-type APITokensRequest struct {
-	Index      helpers.HexBytes `json:"hash"`
 	ReturnType APIReturnType    `json:"returnType"`
 }
 
