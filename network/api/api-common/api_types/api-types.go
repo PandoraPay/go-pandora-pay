@@ -40,7 +40,6 @@ type APIAccount struct {
 	Tokens             []helpers.HexBytes          `json:"tokens,omitempty"`
 	Accs               []*account.Account          `json:"accounts,omitempty"`
 	AccsSerialized     []helpers.HexBytes          `json:"accountsSerialized,omitempty"`
-	AccsIndex          []uint64                    `json:"accountsIndex,omitempty"`
 	PlainAcc           *plain_account.PlainAccount `json:"plainAccount,omitempty"`
 	PlainAccSerialized helpers.HexBytes            `json:"plainAccountSerialized,omitempty"`
 	Reg                *registration.Registration  `json:"registration,omitempty"`

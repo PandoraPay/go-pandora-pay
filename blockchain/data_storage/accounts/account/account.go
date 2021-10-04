@@ -10,6 +10,7 @@ type Account struct {
 	helpers.SerializableInterface `json:"-"`
 	PublicKey                     []byte              `json:"-"` //hashmap key
 	Token                         []byte              `json:"-"` //collection token
+	Index                         uint64              `json:"index"`
 	Version                       uint64              `json:"version"`
 	Balance                       *BalanceHomomorphic `json:"balance"`
 }
@@ -27,6 +28,7 @@ func (account *Account) GetBalance() (result *crypto.ElGamal) {
 
 func (account *Account) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(account.Version)
+	w.WriteUvarint(account.Index)
 	account.Balance.Serialize(w)
 }
 
@@ -47,6 +49,9 @@ func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 
 	account.Version = n
+	if account.Index, err = r.ReadUvarint(); err != nil {
+		return
+	}
 	if err = account.Balance.Deserialize(r); err != nil {
 		return
 	}

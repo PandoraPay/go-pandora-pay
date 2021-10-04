@@ -113,6 +113,8 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, Token []byte
 			return
 		}
 
+		element.Element.(*account.Account).Index = accounts.HashMap.Count
+
 		return tx.Put("accounts:tokenByIndex:"+string(key)+":"+strconv.FormatUint(count, 10), element.Element.(*account.Account).Token)
 	}
 

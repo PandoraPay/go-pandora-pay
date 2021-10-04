@@ -204,6 +204,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			for _, accs := range accsMap {
 				for k, v := range accs.HashMap.Committed {
 					if list := this.accountsSubscriptions[k]; list != nil {
+
 						if v.Element != nil {
 							element = v.Element.(*account.Account)
 						}
