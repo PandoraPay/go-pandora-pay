@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"pandora-pay/addresses"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/blocks/block-complete"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -162,11 +163,21 @@ func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		request := &api_types.APIAccountsByKeysRequest{nil, nil, nil, false, api_types.RETURN_SERIALIZED}
+		request := &api_types.APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
 		if err := unmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
 
+		for _, key := range request.Keys {
+			if key.Address != "" {
+				addr, err := addresses.DecodeAddr(key.Address)
+				if err != nil {
+					return nil, err
+				}
+				key.PublicKey = addr.PublicKey
+				key.Address = ""
+			}
+		}
 		request.ReturnType = api_types.RETURN_SERIALIZED
 
 		data := socket.SendJSONAwaitAnswer([]byte("accounts/by-keys"), request, 0)

@@ -152,7 +152,8 @@ func (api *APIWebsockets) getAccountsKeysByIndex(conn *connection.AdvancedConnec
 }
 
 func (api *APIWebsockets) getAccountsByKeys(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIAccountsByKeysRequest{nil, nil, nil, false, api_types.RETURN_SERIALIZED}
+
+	request := &api_types.APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}

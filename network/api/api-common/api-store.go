@@ -273,10 +273,10 @@ func (apiStore *APIStore) openLoadAccountsKeysByIndex(indexes []uint64, tokenId 
 	return
 }
 
-func (apiStore *APIStore) openLoadAccountsByKeys(keys []helpers.HexBytes, tokenId []byte) (output *api_types.APIAccountsByKeys, errFinal error) {
+func (apiStore *APIStore) openLoadAccountsByKeys(publicKeys [][]byte, tokenId []byte) (output *api_types.APIAccountsByKeys, errFinal error) {
 
-	if len(keys) > 512*2 {
-		return nil, fmt.Errorf("Too many indexes to process: limit %d, found %d", 512*2, len(keys))
+	if len(publicKeys) > 512*2 {
+		return nil, fmt.Errorf("Too many indexes to process: limit %d, found %d", 512*2, len(publicKeys))
 	}
 
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
@@ -290,15 +290,15 @@ func (apiStore *APIStore) openLoadAccountsByKeys(keys []helpers.HexBytes, tokenI
 		}
 
 		output = &api_types.APIAccountsByKeys{
-			Acc: make([]*account.Account, len(keys)),
-			Reg: false,
+			Acc: make([]*account.Account, len(publicKeys)),
+			Reg: make([]bool, len(publicKeys)),
 		}
 
-		for i := 0; i < len(keys); i++ {
-			if output.Acc[i], err = accs.GetAccount(keys[i]); err != nil {
+		for i := 0; i < len(publicKeys); i++ {
+			if output.Acc[i], err = accs.GetAccount(publicKeys[i]); err != nil {
 				return
 			}
-			if output.Reg, err = regs.Exists(string(keys[i])); err != nil {
+			if output.Reg[i], err = regs.Exists(string(publicKeys[i])); err != nil {
 				return
 			}
 		}

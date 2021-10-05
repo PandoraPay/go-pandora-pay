@@ -298,36 +298,35 @@ func (api *APICommon) GetAccountsKeysByIndex(request *api_types.APIAccountsKeysB
 			}
 			answer.Addresses[i] = addr.EncodeAddr()
 		}
+		answer.PublicKeys = nil
 	}
 	return json.Marshal(answer)
 }
 
 func (api *APICommon) GetAccountsByKeys(request *api_types.APIAccountsByKeysRequest) ([]byte, error) {
 
-	if len(request.Addresses) > 0 {
-		request.PublicKeys = make([]helpers.HexBytes, len(request.Addresses))
-		for i, str := range request.Addresses {
-			addr, err := addresses.DecodeAddr(str)
-			if err != nil {
-				return nil, err
-			}
-			request.PublicKeys[i] = addr.PublicKey
+	publicKeys := make([][]byte, len(request.Keys))
+	var err error
+
+	for i, key := range request.Keys {
+		if publicKeys[i], err = key.GetPublicKey(); err != nil {
+			return nil, err
 		}
 	}
 
-	out, err := api.ApiStore.openLoadAccountsByKeys(request.PublicKeys, request.Token)
+	out, err := api.ApiStore.openLoadAccountsByKeys(publicKeys, request.Token)
 	if err != nil {
 		return nil, err
 	}
 
 	if request.IncludeMempool {
-		balancesInit := make([][]byte, len(request.PublicKeys))
+		balancesInit := make([][]byte, len(publicKeys))
 		for i, acc := range out.Acc {
 			if acc != nil {
 				balancesInit[i] = acc.Balance.SerializeToBytes()
 			}
 		}
-		if balancesInit, err = api.mempool.GetZetherBalanceMultiple(helpers.ConvertHexBytesArraysToBytesArray(request.PublicKeys), balancesInit); err != nil {
+		if balancesInit, err = api.mempool.GetZetherBalanceMultiple(publicKeys, balancesInit); err != nil {
 			return nil, err
 		}
 		for i, acc := range out.Acc {
@@ -340,6 +339,7 @@ func (api *APICommon) GetAccountsByKeys(request *api_types.APIAccountsByKeysRequ
 	}
 
 	if request.ReturnType == api_types.RETURN_SERIALIZED {
+		out.AccSerialized = make([]helpers.HexBytes, len(out.Acc))
 		for i, acc := range out.Acc {
 			if acc != nil {
 				out.AccSerialized[i] = acc.SerializeToBytes()

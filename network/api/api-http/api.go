@@ -253,15 +253,19 @@ func (api *API) getAccountsByKeys(values *url.Values) (interface{}, error) {
 
 	if values.Get("publicKeys") != "" {
 		v := strings.Split(values.Get("publicKeys"), ",")
-		request.PublicKeys = make([]helpers.HexBytes, len(v))
+		request.Keys = make([]*api_types.APIAccountBaseRequest, len(v))
 		for i := range v {
-			if request.PublicKeys[i], err = hex.DecodeString(v[i]); err != nil {
+			request.Keys[i] = &api_types.APIAccountBaseRequest{}
+			if request.Keys[i].PublicKey, err = hex.DecodeString(v[i]); err != nil {
 				return nil, err
 			}
 		}
 	} else if values.Get("addresses") != "" {
 		v := strings.Split(values.Get("addresses"), ",")
-		request.Addresses = make([]string, len(v))
+		request.Keys = make([]*api_types.APIAccountBaseRequest, len(v))
+		for i := range v {
+			request.Keys[i] = &api_types.APIAccountBaseRequest{Address: v[i]}
+		}
 	} else {
 		return nil, errors.New("parameter `publicKeys` or `addresses` are missing")
 	}

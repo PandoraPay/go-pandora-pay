@@ -95,11 +95,10 @@ type APIAccountsKeysByIndexRequest struct {
 }
 
 type APIAccountsByKeysRequest struct {
-	PublicKeys     []helpers.HexBytes `json:"publicKeys,omitempty"`
-	Addresses      []string           `json:"addresses,omitempty"`
-	Token          helpers.HexBytes   `json:"token,omitempty"`
-	IncludeMempool bool               `json:"includeMempool,omitempty"`
-	ReturnType     APIReturnType      `json:"returnType,omitempty"`
+	Keys           []*APIAccountBaseRequest `json:"keys,omitempty"`
+	Token          helpers.HexBytes         `json:"token,omitempty"`
+	IncludeMempool bool                     `json:"includeMempool,omitempty"`
+	ReturnType     APIReturnType            `json:"returnType,omitempty"`
 }
 
 func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
