@@ -167,6 +167,8 @@ func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
+		request.ReturnType = api_types.RETURN_SERIALIZED
+
 		data := socket.SendJSONAwaitAnswer([]byte("accounts/by-keys"), request, 0)
 		if data.Err != nil {
 			return nil, data.Err

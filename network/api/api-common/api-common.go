@@ -303,14 +303,18 @@ func (api *APICommon) GetAccountsKeysByIndex(request *api_types.APIAccountsKeysB
 }
 
 func (api *APICommon) GetAccountsByKeys(request *api_types.APIAccountsByKeysRequest) ([]byte, error) {
-	for i, str := range request.Addresses {
-		request.PublicKeys = make([]helpers.HexBytes, len(request.PublicKeys))
-		addr, err := addresses.DecodeAddr(str)
-		if err != nil {
-			return nil, err
+
+	if len(request.Addresses) > 0 {
+		request.PublicKeys = make([]helpers.HexBytes, len(request.Addresses))
+		for i, str := range request.Addresses {
+			addr, err := addresses.DecodeAddr(str)
+			if err != nil {
+				return nil, err
+			}
+			request.PublicKeys[i] = addr.PublicKey
 		}
-		request.PublicKeys[i] = addr.PublicKey
 	}
+
 	out, err := api.ApiStore.openLoadAccountsByKeys(request.PublicKeys, request.Token)
 	if err != nil {
 		return nil, err
@@ -318,7 +322,7 @@ func (api *APICommon) GetAccountsByKeys(request *api_types.APIAccountsByKeysRequ
 
 	if request.IncludeMempool {
 		balancesInit := make([][]byte, len(request.PublicKeys))
-		for i, acc := range out {
+		for i, acc := range out.Acc {
 			if acc != nil {
 				balancesInit[i] = acc.Balance.SerializeToBytes()
 			}
@@ -326,21 +330,22 @@ func (api *APICommon) GetAccountsByKeys(request *api_types.APIAccountsByKeysRequ
 		if balancesInit, err = api.mempool.GetZetherBalanceMultiple(helpers.ConvertHexBytesArraysToBytesArray(request.PublicKeys), balancesInit); err != nil {
 			return nil, err
 		}
-		for i, acc := range out {
-			if err = acc.Balance.Deserialize(helpers.NewBufferReader(balancesInit[i])); err != nil {
-				return nil, err
+		for i, acc := range out.Acc {
+			if balancesInit[i] != nil {
+				if err = acc.Balance.Deserialize(helpers.NewBufferReader(balancesInit[i])); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
 
 	if request.ReturnType == api_types.RETURN_SERIALIZED {
-		final := make([][]byte, len(out))
-		for i, acc := range out {
+		for i, acc := range out.Acc {
 			if acc != nil {
-				final[i] = acc.SerializeToBytes()
+				out.AccSerialized[i] = acc.SerializeToBytes()
 			}
 		}
-		return json.Marshal(final)
+		out.Acc = nil
 	}
 	return json.Marshal(out)
 }

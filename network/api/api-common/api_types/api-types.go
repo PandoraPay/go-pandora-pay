@@ -51,6 +51,17 @@ type APIAccountsKeysByIndex struct {
 	Addresses  []string           `json:"addresses,omitempty"`
 }
 
+type APIAccountsByKeys struct {
+	Acc           []*account.Account `json:"plainAccount,omitempty"`
+	AccSerialized []helpers.HexBytes `json:"plainAccountSerialized,omitempty"`
+	Reg           bool               `json:"registration,omitempty"`
+}
+
+type APIAccountsCount struct {
+	PublicKeys []helpers.HexBytes `json:"publicKeys,omitempty"`
+	Addresses  []string           `json:"addresses,omitempty"`
+}
+
 type APITransaction struct {
 	Tx           *transaction.Transaction `json:"tx,omitempty"`
 	TxSerialized helpers.HexBytes         `json:"serialized,omitempty"`

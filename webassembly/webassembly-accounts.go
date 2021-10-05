@@ -3,6 +3,7 @@ package webassembly
 import (
 	"encoding/hex"
 	"pandora-pay/addresses"
+	"pandora-pay/helpers"
 	"syscall/js"
 )
 
@@ -19,36 +20,24 @@ func decodeAddress(this js.Value, args []js.Value) interface{} {
 func generateAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 
-		var err error
-		var key, registration, paymentId []byte
-		var amount uint64
+		parameters := struct {
+			PublicKey    helpers.HexBytes `json:"publicKey"`
+			Registration helpers.HexBytes `json:"registration"`
+			PaymentId    helpers.HexBytes `json:"paymentId"`
+			Amount       uint64           `json:"amount"`
+		}{}
 
-		if key, err = hex.DecodeString(args[0].String()); err != nil {
+		if err := unmarshalBytes(args[0], &parameters); err != nil {
 			return nil, err
 		}
 
-		if registration, err = hex.DecodeString(args[1].String()); err != nil {
-			return nil, err
-		}
-
-		amount = uint64(args[2].Int())
-
-		if paymentId, err = hex.DecodeString(args[3].String()); err != nil {
-			return nil, err
-		}
-
-		addr, err := addresses.CreateAddr(key, registration, amount, paymentId)
-		if err != nil {
-			return nil, err
-		}
-
-		json, err := convertJSONBytes(addr)
+		addr, err := addresses.CreateAddr(parameters.PublicKey, parameters.Registration, parameters.Amount, parameters.PaymentId)
 		if err != nil {
 			return nil, err
 		}
 
 		return convertJSONBytes([]interface{}{
-			json,
+			addr,
 			addr.EncodeAddr(),
 		})
 

@@ -270,26 +270,21 @@ func deriveDelegatedStakeWalletAddress(this js.Value, args []js.Value) interface
 
 func decodeBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
-		if err := app.Wallet.Encryption.CheckPassword(args[3].String(), false); err != nil {
+		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {
 			return false, err
 		}
 
-		publicKey, err := hex.DecodeString(args[0].String())
-		if err != nil {
+		parameters := struct {
+			PublicKey      helpers.HexBytes `json:"publicKey"`
+			BalanceEncoded helpers.HexBytes `json:"balanceEncoded"`
+			Token          helpers.HexBytes `json:"token"`
+		}{}
+
+		if err := unmarshalBytes(args[0], parameters); err != nil {
 			return nil, err
 		}
 
-		balanceEncoded, err := hex.DecodeString(args[1].String())
-		if err != nil {
-			return nil, err
-		}
-
-		token, err := hex.DecodeString(args[2].String())
-		if err != nil {
-			return nil, err
-		}
-
-		balance, err := new(crypto.ElGamal).Deserialize(balanceEncoded)
+		balance, err := new(crypto.ElGamal).Deserialize(parameters.BalanceEncoded)
 		if err != nil {
 			return nil, err
 		}
@@ -302,8 +297,8 @@ func decodeBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
 
 		go func() {
 			defer cancel()
-			value, finalErr = app.Wallet.DecodeBalanceByPublicKey(publicKey, balance, token, true, true, ctx, func(status string) {
-				args[4].Invoke(status)
+			value, finalErr = app.Wallet.DecodeBalanceByPublicKey(parameters.PublicKey, balance, parameters.Token, true, true, ctx, func(status string) {
+				args[2].Invoke(status)
 				time.Sleep(1 * time.Millisecond)
 			})
 			done = true
