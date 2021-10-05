@@ -72,17 +72,30 @@ func (consensus *Consensus) broadcastChain(newChainData *blockchain.BlockchainDa
 	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain-update"), consensus.getUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true}, advanced_connection_types.UUID_ALL)
 }
 
-func (consensus *Consensus) broadcastTxs(txs []*transaction.Transaction, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID) {
+func (consensus *Consensus) broadcastTxs(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID) {
 
-	if awaitPropagation {
-		for _, tx := range txs {
-			consensus.httpServer.Websockets.BroadcastAwaitAnswer([]byte("mem-pool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, 2*config.WEBSOCKETS_TIMEOUT)
-		}
+	var key, value []byte
+	if justCreated {
+		key = []byte("mem-pool/new-tx")
 	} else {
-		for _, tx := range txs {
-			consensus.httpServer.Websockets.Broadcast([]byte("mem-pool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID)
+		key = []byte("mem-pool/new-tx-id")
+	}
+
+	for _, tx := range txs {
+
+		if justCreated {
+			value = tx.Bloom.Serialized
+		} else {
+			value = tx.Bloom.Hash
+		}
+
+		if awaitPropagation {
+			consensus.httpServer.Websockets.BroadcastAwaitAnswer(key, value, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, 2*config.WEBSOCKETS_TIMEOUT)
+		} else {
+			consensus.httpServer.Websockets.Broadcast(key, value, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID)
 		}
 	}
+
 }
 
 func (consensus *Consensus) getUpdateNotification(newChainData *blockchain.BlockchainData) *ChainUpdateNotification {

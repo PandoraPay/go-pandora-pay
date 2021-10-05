@@ -216,11 +216,15 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			return
 		}
 
+		statusCallback("Homomorphic balance Decoding...")
+
 		var balance uint64
 		if balance, err = senderKey.DecodeBalance(pt, transfer.FromBalanceDecoded, ctx, statusCallback); err != nil {
 			return
 		}
 		transfer.FromBalanceDecoded = balance //let's update it for the next
+
+		statusCallback("Homomorphic balance Decoded")
 
 		//fmt.Printf("t %d scid %s  balance %d\n", t, transfers[t].SCID, balance)
 
@@ -299,6 +303,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		default:
 		}
 
+		statusCallback(fmt.Sprintf("Generating zero knowledge proofs... %d", t))
 		if txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Statement, &witness_list[t], u, u1, height, tx.GetHashSigningManually(), txBase.Payloads[t].BurnValue); err != nil {
 			return
 		}
@@ -325,20 +330,21 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	}
 	statusCallback("Transaction created")
 
+	statusCallback("Transaction Signing first time... to determine the size")
 	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return nil, err
 	}
 
+	statusCallback("Transaction Set fees")
 	for t := range transfers {
-
 		if err = setFee(tx, fees[t].Clone(), func(fee uint64) {
 			transfers[t].Fee = fee
 		}); err != nil {
 			return
 		}
-
 	}
 
+	statusCallback("Transaction Signing last time")
 	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return nil, err
 	}

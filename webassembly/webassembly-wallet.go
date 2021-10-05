@@ -274,7 +274,7 @@ func decodeBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
 			return false, err
 		}
 
-		parameters := struct {
+		parameters := &struct {
 			PublicKey      helpers.HexBytes `json:"publicKey"`
 			BalanceEncoded helpers.HexBytes `json:"balanceEncoded"`
 			Token          helpers.HexBytes `json:"token"`

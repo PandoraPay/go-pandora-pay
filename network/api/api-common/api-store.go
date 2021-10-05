@@ -12,6 +12,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	plain_accounts "pandora-pay/blockchain/data_storage/plain-accounts"
 	"pandora-pay/blockchain/data_storage/registrations"
+	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/data_storage/tokens"
 	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/blockchain/info"
@@ -291,14 +292,14 @@ func (apiStore *APIStore) openLoadAccountsByKeys(publicKeys [][]byte, tokenId []
 
 		output = &api_types.APIAccountsByKeys{
 			Acc: make([]*account.Account, len(publicKeys)),
-			Reg: make([]bool, len(publicKeys)),
+			Reg: make([]*registration.Registration, len(publicKeys)),
 		}
 
 		for i := 0; i < len(publicKeys); i++ {
 			if output.Acc[i], err = accs.GetAccount(publicKeys[i]); err != nil {
 				return
 			}
-			if output.Reg[i], err = regs.Exists(string(publicKeys[i])); err != nil {
+			if output.Reg[i], err = regs.GetRegistration(publicKeys[i]); err != nil {
 				return
 			}
 		}

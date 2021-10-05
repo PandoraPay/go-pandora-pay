@@ -28,10 +28,7 @@ func (registration *Registration) Deserialize(r *helpers.BufferReader) (err erro
 }
 
 func NewRegistration(publicKey []byte) *Registration {
-
 	return &Registration{
 		PublicKey: publicKey,
 	}
-
-	return nil
 }

@@ -10,12 +10,14 @@ import (
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/recovery"
+	"runtime"
 	"sync/atomic"
 	"time"
 )
 
 type MempoolTxBroadcastNotification struct {
 	Txs              []*transaction.Transaction
+	JustCreated      bool
 	AwaitPropagation bool
 	ExceptSocketUUID advanced_connection_types.UUID
 }
@@ -71,8 +73,8 @@ func (mempool *Mempool) InsertRemovedTxsFromBlockchain(txs []*transaction.Transa
 
 }
 
-func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID) error {
-	result := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, awaitAnswer, awaitBroadcasting, exceptSocketUUID)
+func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, justCreated bool, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID) error {
+	result := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, justCreated, awaitAnswer, awaitBroadcasting, exceptSocketUUID)
 	return result[0]
 }
 
@@ -135,32 +137,34 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 	return finalTxs
 }
 
-func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID) []error {
+func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, justCreated, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID) []error {
 
 	finalTxs := mempool.processTxsToMemPool(txs, height)
 
 	//making sure that the transaction is not inserted twice
-	for _, finalTx := range finalTxs {
-		if finalTx.tx != nil {
+	if runtime.GOARCH != "wasm" {
+		for _, finalTx := range finalTxs {
+			if finalTx.tx != nil {
 
-			var errorResult error
+				var errorResult error
 
-			inserted := mempool.Txs.insertTx(finalTx.tx)
-			if !inserted {
-				errorResult = errors.New("Tx already exists")
-			} else if awaitAnswer {
-				answerCn := make(chan error)
-				mempool.addTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, answerCn}
-				errorResult = <-answerCn
-			} else {
-				mempool.addTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, nil}
+				inserted := mempool.Txs.insertTx(finalTx.tx)
+				if !inserted {
+					errorResult = errors.New("Tx already exists")
+				} else if awaitAnswer {
+					answerCn := make(chan error)
+					mempool.addTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, answerCn}
+					errorResult = <-answerCn
+				} else {
+					mempool.addTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, nil}
+				}
+
+				if errorResult != nil {
+					finalTx.err = errorResult
+					finalTx.tx = nil
+				}
+
 			}
-
-			if errorResult != nil {
-				finalTx.err = errorResult
-				finalTx.tx = nil
-			}
-
 		}
 	}
 
@@ -181,9 +185,9 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 				notNull += 1
 			}
 		}
-
 		mempool.NewTransactionMulticast.BroadcastAwait(&MempoolTxBroadcastNotification{
 			broadcastTxs,
+			justCreated,
 			awaitBroadcasting,
 			exceptSocketUUID,
 		})

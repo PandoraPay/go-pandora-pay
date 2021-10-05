@@ -4,9 +4,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"pandora-pay/app"
+	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
-	plain_accounts "pandora-pay/blockchain/data_storage/plain-accounts"
-	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/tokens"
 	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/mempool"
@@ -44,31 +43,29 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 
 		if err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
-			accsCollection := accounts.NewAccountsCollection(writer)
-			plainAccs := plain_accounts.NewPlainAccounts(writer)
-			regs := registrations.NewRegistrations(writer)
+			dataStorage := data_storage.CreateDataStorage(writer)
 
 			var accs *accounts.Accounts
 
 			var tokensList [][]byte
-			if tokensList, err = accsCollection.GetAccountTokens(publicKey); err != nil {
+			if tokensList, err = dataStorage.AccsCollection.GetAccountTokens(publicKey); err != nil {
 				return
 			}
 
 			for _, token := range tokensList {
-				if accs, err = accsCollection.GetMap(token); err != nil {
+				if accs, err = dataStorage.AccsCollection.GetMap(token); err != nil {
 					return
 				}
 				accs.Delete(string(publicKey))
 			}
 
-			plainAccs.Delete(string(publicKey))
-			regs.Delete(string(publicKey))
+			dataStorage.PlainAccs.Delete(string(publicKey))
+			dataStorage.Regs.Delete(string(publicKey))
 
 			if apiAcc != nil {
 
 				for i, token := range apiAcc.Tokens {
-					if accs, err = accsCollection.GetMap(token); err != nil {
+					if accs, err = dataStorage.AccsCollection.GetMap(token); err != nil {
 						return
 					}
 					apiAcc.Accs[i].PublicKey = publicKey
@@ -80,30 +77,21 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 
 				if apiAcc.PlainAcc != nil {
 					apiAcc.PlainAcc.PublicKey = publicKey
-					if err = plainAccs.Update(string(publicKey), apiAcc.PlainAcc); err != nil {
+					if err = dataStorage.PlainAccs.Update(string(publicKey), apiAcc.PlainAcc); err != nil {
 						return
 					}
 				}
 
 				if apiAcc.Reg != nil {
 					apiAcc.Reg.PublicKey = publicKey
-					if err = regs.Update(string(publicKey), apiAcc.Reg); err != nil {
+					if err = dataStorage.Regs.Update(string(publicKey), apiAcc.Reg); err != nil {
 						return
 					}
 				}
 
 			}
-			if err = accsCollection.CommitChanges(); err != nil {
-				return
-			}
-			if err = regs.CommitChanges(); err != nil {
-				return
-			}
-			if err = plainAccs.CommitChanges(); err != nil {
-				return
-			}
 
-			return nil
+			return dataStorage.CommitChanges()
 		}); err != nil {
 			return nil, err
 		}

@@ -160,7 +160,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	statusCallback("Transaction Created")
 
 	if propagateTx {
-		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
+		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
 			return nil, err
 		}
 	}
@@ -243,7 +243,7 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 	}
 
 	if propagateTx {
-		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
+		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
 			return nil, err
 		}
 	}
@@ -273,14 +273,9 @@ func (builder *TransactionsBuilder) CreateClaimTx_Float(from string, nonce uint6
 		}
 
 		for i, amount := range outputAmounts {
-
-			var finalAmount uint64
-			if finalAmount, err = tok.ConvertToUnits(amount); err != nil {
+			if outputAmountsFinal[i], err = tok.ConvertToUnits(amount); err != nil {
 				return
 			}
-
-			outputAmountsFinal[i] = finalAmount
-
 		}
 
 		return
@@ -365,7 +360,7 @@ func (builder *TransactionsBuilder) CreateClaimTx(from string, nonce uint64, out
 	}
 
 	if propagateTx {
-		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
+		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
 			return nil, err
 		}
 	}

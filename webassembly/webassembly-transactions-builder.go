@@ -4,8 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"pandora-pay/addresses"
 	"pandora-pay/app"
+	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/helpers"
+	"pandora-pay/network/api/api-common/api_types"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/transactions-builder/wizard"
 	"syscall/js"
@@ -23,7 +28,7 @@ func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		type ZetherTxFloatData struct {
+		txData := &struct {
 			From        []string                                            `json:"from"`
 			Tokens      []helpers.HexBytes                                  `json:"tokens"`
 			Amounts     []float64                                           `json:"amounts"`
@@ -34,13 +39,9 @@ func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 			Fees        []*transactions_builder.TransactionsBuilderFeeFloat `json:"fees"`
 			PropagateTx bool                                                `json:"propagateTx"`
 			AwaitAnswer bool                                                `json:"awaitAnswer"`
-		}
+		}{}
 
-		jsonData := make([]byte, args[0].Get("length").Int())
-		js.CopyBytesToGo(jsonData, args[0])
-
-		txData := &ZetherTxFloatData{}
-		if err := json.Unmarshal(jsonData, txData); err != nil {
+		if err := unmarshalBytes(args[0], txData); err != nil {
 			return nil, err
 		}
 
@@ -51,13 +52,89 @@ func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
-		//
-		//data := socket.SendJSONAwaitAnswer([]byte("accounts/multiple"), &api_types.APIAccountsMultipleRequest{}, 0)
-		//if data.Err != nil {
-		//	return nil, data.Err
-		//}
 
-		tx, err := app.TransactionsBuilder.CreateZetherTx_Float(txData.From, helpers.ConvertHexBytesArraysToBytesArray(txData.Tokens), txData.Amounts, txData.Dsts, txData.Burns, txData.RingMembers, txData.Data, txData.Fees, txData.PropagateTx, txData.AwaitAnswer, false, ctx, func(status string) {
+		emap := make(map[string]map[string]*account.Account)
+		regsMap := make(map[string]*registration.Registration)
+
+		for t, ring := range txData.RingMembers {
+
+			if emap[string(txData.Tokens[t])] == nil {
+				emap[string(txData.Tokens[t])] = make(map[string]*account.Account)
+			}
+
+			shuffle := helpers.ShuffleArray_for_Zether(len(ring))
+
+			request := &api_types.APIAccountsByKeysRequest{
+				Keys:       make([]*api_types.APIAccountBaseRequest, len(ring)),
+				ReturnType: api_types.RETURN_SERIALIZED,
+				Token:      txData.Tokens[t],
+			}
+
+			for i := 0; i < len(shuffle); i++ {
+				addr, err := addresses.DecodeAddr(ring[shuffle[i]])
+				if err != nil {
+					return nil, err
+				}
+				request.Keys[i] = &api_types.APIAccountBaseRequest{
+					PublicKey: addr.PublicKey,
+				}
+			}
+
+			data := socket.SendJSONAwaitAnswer([]byte("accounts/by-keys"), request, 0)
+			if data.Err != nil {
+				return nil, data.Err
+			}
+
+			answer := &api_types.APIAccountsByKeys{}
+			if err := json.Unmarshal(data.Out, answer); err != nil {
+				return nil, err
+			}
+
+			for i, key := range request.Keys {
+				var acc *account.Account
+				if len(answer.AccSerialized[i]) > 0 {
+					acc = account.NewAccount(key.PublicKey, txData.Tokens[t])
+					if err := acc.Deserialize(helpers.NewBufferReader(answer.AccSerialized[i])); err != nil {
+						return nil, err
+					}
+				}
+				emap[string(txData.Tokens[t])][string(key.PublicKey)] = acc
+
+				var reg *registration.Registration
+				if len(answer.RegSerialized[i]) > 0 {
+					reg = registration.NewRegistration(key.PublicKey)
+					if err := reg.Deserialize(helpers.NewBufferReader(answer.RegSerialized[i])); err != nil {
+						return nil, err
+					}
+				}
+				regsMap[string(key.PublicKey)] = reg
+			}
+
+		}
+
+		tx, err := app.TransactionsBuilder.CreateZetherTx_Float(txData.From, helpers.ConvertHexBytesArraysToBytesArray(txData.Tokens), txData.Amounts, txData.Dsts, txData.Burns, txData.RingMembers, txData.Data, txData.Fees, txData.PropagateTx, txData.AwaitAnswer, false, func(dataStorage *data_storage.DataStorage) error {
+
+			for token, value := range emap {
+				accs, err := dataStorage.AccsCollection.GetMap([]byte(token))
+				if err != nil {
+					return err
+				}
+
+				for publicKey, acc := range value {
+					if err := accs.UpdateOrDelete(publicKey, acc); err != nil {
+						return err
+					}
+				}
+			}
+
+			for publicKey, reg := range regsMap {
+				if err := dataStorage.Regs.UpdateOrDelete(publicKey, reg); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		}, ctx, func(status string) {
 			args[1].Invoke(status)
 			time.Sleep(10 * time.Millisecond)
 		})

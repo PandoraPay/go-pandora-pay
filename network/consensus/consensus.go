@@ -55,7 +55,7 @@ func (consensus *Consensus) execute() {
 				data := notification.Data.(*mempool.MempoolTxBroadcastNotification)
 
 				//it is safe to read
-				consensus.broadcastTxs(data.Txs, data.AwaitPropagation, data.ExceptSocketUUID)
+				consensus.broadcastTxs(data.Txs, data.JustCreated, data.AwaitPropagation, data.ExceptSocketUUID)
 
 				notification.Answer <- struct{}{}
 

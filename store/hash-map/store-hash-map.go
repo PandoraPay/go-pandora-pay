@@ -194,6 +194,14 @@ func (hashMap *HashMap) Delete(key string) {
 	return
 }
 
+func (hashMap *HashMap) UpdateOrDelete(key string, data helpers.SerializableInterface) error {
+	if data == nil {
+		hashMap.Delete(key)
+		return nil
+	}
+	return hashMap.Update(key, data)
+}
+
 func (hashMap *HashMap) CommitChanges() (err error) {
 
 	removed := make([]string, len(hashMap.Changes))

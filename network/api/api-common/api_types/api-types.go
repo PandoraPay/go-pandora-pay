@@ -52,9 +52,10 @@ type APIAccountsKeysByIndex struct {
 }
 
 type APIAccountsByKeys struct {
-	Acc           []*account.Account `json:"acc,omitempty"`
-	AccSerialized []helpers.HexBytes `json:"accSerialized,omitempty"`
-	Reg           []bool             `json:"registration,omitempty"`
+	Acc           []*account.Account           `json:"acc,omitempty"`
+	AccSerialized []helpers.HexBytes           `json:"accSerialized,omitempty"`
+	Reg           []*registration.Registration `json:"registration,omitempty"`
+	RegSerialized []helpers.HexBytes           `json:"registrationSerialized,omitempty"`
 }
 
 type APIAccountsCount struct {

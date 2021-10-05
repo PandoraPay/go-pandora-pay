@@ -346,6 +346,14 @@ func (api *APICommon) GetAccountsByKeys(request *api_types.APIAccountsByKeysRequ
 			}
 		}
 		out.Acc = nil
+
+		out.RegSerialized = make([]helpers.HexBytes, len(out.Reg))
+		for i, reg := range out.Reg {
+			if reg != nil {
+				out.RegSerialized[i] = reg.SerializeToBytes()
+			}
+		}
+		out.Reg = nil
 	}
 	return json.Marshal(out)
 }
@@ -433,7 +441,7 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocke
 	if err = tx.BloomAll(); err != nil {
 		return
 	}
-	if err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, false, false, exceptSocketUUID); err != nil {
+	if err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, true, false, false, exceptSocketUUID); err != nil {
 		return
 	}
 
