@@ -46,7 +46,7 @@ type APIAccount struct {
 	RegSerialized      helpers.HexBytes            `json:"registrationSerialized,omitempty"`
 }
 
-type APIAccountsByIndex struct {
+type APIAccountsKeysByIndex struct {
 	PublicKeys []helpers.HexBytes `json:"publicKeys,omitempty"`
 	Addresses  []string           `json:"addresses,omitempty"`
 }

@@ -92,39 +92,59 @@ func (mempool *Mempool) GetNonce(publicKey []byte, nonce uint64) uint64 {
 }
 
 func (mempool *Mempool) GetZetherBalance(publicKey []byte, balanceInit []byte) ([]byte, error) {
-
-	var balance *crypto.ElGamal
-	var err error
-
-	var acckey crypto.Point
-	if balanceInit == nil {
-		if err = acckey.DecodeCompressed(publicKey); err != nil {
-			return nil, err
-		}
-		balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
-	} else {
-		if balance, err = new(crypto.ElGamal).Deserialize(balanceInit); err != nil {
-			return nil, err
-		}
+	result, err := mempool.GetZetherBalanceMultiple([][]byte{publicKey}, [][]byte{balanceInit})
+	if err != nil {
+		return nil, err
 	}
+	return result[0], nil
+}
+
+func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit [][]byte) ([][]byte, error) {
 
 	txs := mempool.Txs.GetTxsFromMap()
-	for _, tx := range txs {
-		if tx.Tx.Version == transaction_type.TX_ZETHER {
-			base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-			for _, payload := range base.Payloads {
-				for i, publicKeyPoint := range payload.Statement.Publickeylist {
-					txPublicKey := publicKeyPoint.EncodeCompressed()
-					if bytes.Equal(publicKey, txPublicKey) {
-						echanges := crypto.ConstructElGamal(payload.Statement.C[i], payload.Statement.D)
-						balance = balance.Add(echanges) // homomorphic addition of changes
+	var balance *crypto.ElGamal
+	var err error
+	var acckey crypto.Point
+
+	output := make([][]byte, len(publicKeys))
+	for i, publicKey := range publicKeys {
+
+		balanceInit := balancesInit[i]
+
+		if balanceInit == nil {
+			if err = acckey.DecodeCompressed(publicKey); err != nil {
+				return nil, err
+			}
+			balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
+		} else {
+			if balance, err = new(crypto.ElGamal).Deserialize(balanceInit); err != nil {
+				return nil, err
+			}
+		}
+
+		changed := false
+		for _, tx := range txs {
+			if tx.Tx.Version == transaction_type.TX_ZETHER {
+				base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+				for _, payload := range base.Payloads {
+					for i, publicKeyPoint := range payload.Statement.Publickeylist {
+						txPublicKey := publicKeyPoint.EncodeCompressed()
+						if bytes.Equal(publicKey, txPublicKey) {
+							echanges := crypto.ConstructElGamal(payload.Statement.C[i], payload.Statement.D)
+							balance = balance.Add(echanges) // homomorphic addition of changes
+							changed = true
+						}
 					}
 				}
 			}
 		}
+
+		if changed || balanceInit != nil {
+			output[i] = balance.Serialize()
+		}
 	}
 
-	return balance.Serialize(), nil
+	return output, nil
 }
 
 func (mempool *Mempool) GetNextTransactionsToInclude(chainHash []byte) (out []*transaction.Transaction, outChainHash []byte) {

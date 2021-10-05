@@ -49,6 +49,12 @@ func (balance *BalanceHomomorphic) Serialize(w *helpers.BufferWriter) {
 	w.Write(balance.Amount.Serialize())
 }
 
+func (balance *BalanceHomomorphic) SerializeToBytes() []byte {
+	writer := helpers.NewBufferWriter()
+	balance.Serialize(writer)
+	return writer.Bytes()
+}
+
 func (balance *BalanceHomomorphic) Deserialize(r *helpers.BufferReader) (err error) {
 
 	var amount []byte

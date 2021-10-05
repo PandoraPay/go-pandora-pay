@@ -7,6 +7,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"strconv"
 	"strings"
 )
 
@@ -87,10 +88,18 @@ type APIAccountTxsRequest struct {
 	Next uint64 `json:"next,omitempty"`
 }
 
-type APIAccountsByIndexRequest struct {
+type APIAccountsKeysByIndexRequest struct {
 	Indexes         []uint64         `json:"indexes"`
 	Token           helpers.HexBytes `json:"token"`
 	EncodeAddresses bool             `json:"encodeAddresses"`
+}
+
+type APIAccountsByKeysRequest struct {
+	PublicKeys     []helpers.HexBytes `json:"publicKeys,omitempty"`
+	Addresses      []string           `json:"addresses,omitempty"`
+	Token          helpers.HexBytes   `json:"token,omitempty"`
+	IncludeMempool bool               `json:"includeMempool,omitempty"`
+	ReturnType     APIReturnType      `json:"returnType,omitempty"`
 }
 
 func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
@@ -144,6 +153,29 @@ func (self *APIAccountBaseRequest) ImportFromValues(values *url.Values) (err err
 		self.PublicKey, err = hex.DecodeString(values.Get("publicKey"))
 	} else {
 		err = errors.New("parameter 'address' or 'hash' was not specified")
+	}
+
+	return
+}
+
+func (self *APIAccountsKeysByIndexRequest) ImportFromValues(values *url.Values) (err error) {
+
+	if values.Get("indexes") != "" {
+		v := strings.Split(values.Get("indexes"), ",")
+		self.Indexes = make([]uint64, len(v))
+		for i := 0; i < len(v); i++ {
+			if self.Indexes[i], err = strconv.ParseUint(v[i], 10, 64); err != nil {
+				return err
+			}
+		}
+	} else {
+		return errors.New("parameter `indexes` is missing")
+	}
+
+	if values.Get("token") != "" {
+		if self.Token, err = hex.DecodeString(values.Get("token")); err != nil {
+			return err
+		}
 	}
 
 	return

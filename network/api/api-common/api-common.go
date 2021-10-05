@@ -276,17 +276,17 @@ func (api *APICommon) GetToken(request *api_types.APITokenRequest) ([]byte, erro
 	return json.Marshal(token)
 }
 
-func (api *APICommon) GetAccountsHolders(hash []byte) (uint64, error) {
-	return api.ApiStore.openLoadAccountsHoldersFromTokenHash(hash)
+func (api *APICommon) GetAccountsCount(hash []byte) (uint64, error) {
+	return api.ApiStore.openLoadAccountsCountFromTokenHash(hash)
 }
 
-func (api *APICommon) GetAccountsByIndex(request *api_types.APIAccountsByIndexRequest) ([]byte, error) {
-	out, err := api.ApiStore.openLoadAccountsByIndex(request.Indexes, request.Token)
+func (api *APICommon) GetAccountsKeysByIndex(request *api_types.APIAccountsKeysByIndexRequest) ([]byte, error) {
+	out, err := api.ApiStore.openLoadAccountsKeysByIndex(request.Indexes, request.Token)
 	if err != nil {
 		return nil, err
 	}
 
-	answer := &api_types.APIAccountsByIndex{}
+	answer := &api_types.APIAccountsKeysByIndex{}
 	if !request.EncodeAddresses {
 		answer.PublicKeys = out
 	} else {
@@ -300,6 +300,49 @@ func (api *APICommon) GetAccountsByIndex(request *api_types.APIAccountsByIndexRe
 		}
 	}
 	return json.Marshal(answer)
+}
+
+func (api *APICommon) GetAccountsByKeys(request *api_types.APIAccountsByKeysRequest) ([]byte, error) {
+	for i, str := range request.Addresses {
+		request.PublicKeys = make([]helpers.HexBytes, len(request.PublicKeys))
+		addr, err := addresses.DecodeAddr(str)
+		if err != nil {
+			return nil, err
+		}
+		request.PublicKeys[i] = addr.PublicKey
+	}
+	out, err := api.ApiStore.openLoadAccountsByKeys(request.PublicKeys, request.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	if request.IncludeMempool {
+		balancesInit := make([][]byte, len(request.PublicKeys))
+		for i, acc := range out {
+			if acc != nil {
+				balancesInit[i] = acc.Balance.SerializeToBytes()
+			}
+		}
+		if balancesInit, err = api.mempool.GetZetherBalanceMultiple(helpers.ConvertHexBytesArraysToBytesArray(request.PublicKeys), balancesInit); err != nil {
+			return nil, err
+		}
+		for i, acc := range out {
+			if err = acc.Balance.Deserialize(helpers.NewBufferReader(balancesInit[i])); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if request.ReturnType == api_types.RETURN_SERIALIZED {
+		final := make([][]byte, len(out))
+		for i, acc := range out {
+			if acc != nil {
+				final[i] = acc.SerializeToBytes()
+			}
+		}
+		return json.Marshal(final)
+	}
+	return json.Marshal(out)
 }
 
 func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) ([]byte, error) {

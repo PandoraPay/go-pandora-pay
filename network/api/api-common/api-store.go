@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block-complete"
@@ -231,7 +232,7 @@ func (apiStore *APIStore) openLoadTokenFromHash(hash []byte) (tok *token.Token, 
 	return
 }
 
-func (apiStore *APIStore) openLoadAccountsHoldersFromTokenHash(hash []byte) (output uint64, errFinal error) {
+func (apiStore *APIStore) openLoadAccountsCountFromTokenHash(hash []byte) (output uint64, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		accsCollection := accounts.NewAccountsCollection(reader)
 
@@ -246,7 +247,12 @@ func (apiStore *APIStore) openLoadAccountsHoldersFromTokenHash(hash []byte) (out
 	return
 }
 
-func (apiStore *APIStore) openLoadAccountsByIndex(indexes []uint64, tokenId []byte) (output []helpers.HexBytes, errFinal error) {
+func (apiStore *APIStore) openLoadAccountsKeysByIndex(indexes []uint64, tokenId []byte) (output []helpers.HexBytes, errFinal error) {
+
+	if len(indexes) > 512*2 {
+		return nil, fmt.Errorf("Too many indexes to process: limit %d, found %d", 512*2, len(indexes))
+	}
+
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		accsCollection := accounts.NewAccountsCollection(reader)
 
@@ -258,6 +264,32 @@ func (apiStore *APIStore) openLoadAccountsByIndex(indexes []uint64, tokenId []by
 		output = make([]helpers.HexBytes, len(indexes))
 		for i := 0; i < len(indexes); i++ {
 			if output[i], err = accs.GetKeyByIndex(indexes[i]); err != nil {
+				return
+			}
+		}
+
+		return
+	})
+	return
+}
+
+func (apiStore *APIStore) openLoadAccountsByKeys(keys []helpers.HexBytes, tokenId []byte) (output []*account.Account, errFinal error) {
+
+	if len(keys) > 512*2 {
+		return nil, fmt.Errorf("Too many indexes to process: limit %d, found %d", 512*2, len(keys))
+	}
+
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		accsCollection := accounts.NewAccountsCollection(reader)
+
+		accs, err := accsCollection.GetMap(tokenId)
+		if err != nil {
+			return
+		}
+
+		output = make([]*account.Account, len(keys))
+		for i := 0; i < len(keys); i++ {
+			if output[i], err = accs.GetAccount(keys[i]); err != nil {
 				return
 			}
 		}

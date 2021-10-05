@@ -15,7 +15,6 @@ import (
 	api_faucet "pandora-pay/network/api/api-common/api-faucet"
 	"pandora-pay/network/api/api-common/api_types"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall/js"
 	"time"
@@ -114,7 +113,7 @@ func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func getNetworkAccountsHolders(this js.Value, args []js.Value) interface{} {
+func getNetworkAccountsCount(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
@@ -126,7 +125,7 @@ func getNetworkAccountsHolders(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := socket.SendAwaitAnswer([]byte("accounts/holders"), token, 0)
+		data := socket.SendAwaitAnswer([]byte("accounts/count"), token, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -135,36 +134,45 @@ func getNetworkAccountsHolders(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func getNetworkAccountsByIndex(this js.Value, args []js.Value) interface{} {
+func getNetworkAccountsKeysByIndex(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		request := &api_types.APIAccountsByIndexRequest{nil, nil, false}
-		var err error
-
-		v := strings.Split(args[0].String(), ",")
-		request.Indexes = make([]uint64, len(v))
-		for i := 0; i < len(v); i++ {
-			if request.Indexes[i], err = strconv.ParseUint(v[i], 10, 64); err != nil {
-				return nil, err
-			}
-		}
-
-		if request.Token, err = hex.DecodeString(args[1].String()); err != nil {
+		request := &api_types.APIAccountsKeysByIndexRequest{nil, nil, false}
+		if err := unmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
 
-		request.EncodeAddresses = args[2].Bool()
-
-		data := socket.SendJSONAwaitAnswer([]byte("accounts/by-index"), request, 0)
+		data := socket.SendJSONAwaitAnswer([]byte("accounts/keys-by-index"), request, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
 
-		return convertJSONBytes(data.Out)
+		return convertBytes(data.Out)
+	})
+}
+
+func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+
+		request := &api_types.APIAccountsByKeysRequest{nil, nil, nil, false, api_types.RETURN_SERIALIZED}
+		if err := unmarshalBytes(args[0], request); err != nil {
+			return nil, err
+		}
+
+		data := socket.SendJSONAwaitAnswer([]byte("accounts/by-keys"), request, 0)
+		if data.Err != nil {
+			return nil, data.Err
+		}
+
+		return convertBytes(data.Out)
 	})
 }
 

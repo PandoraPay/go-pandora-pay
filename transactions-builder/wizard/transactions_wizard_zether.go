@@ -74,23 +74,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		}
 		receiver := receiverPoint.G1()
 
-		var witness_index []int
-		for i := 0; i < len(rings[t]); i++ { // todocheck whether this is power of 2 or not
-			witness_index = append(witness_index, i)
-		}
-
-		//witness_index[3], witness_index[1] = witness_index[1], witness_index[3]
-		for {
-			helpers.Global_Random.Shuffle(len(witness_index), func(i, j int) {
-				witness_index[i], witness_index[j] = witness_index[j], witness_index[i]
-			})
-
-			// make sure sender and receiver are not both odd or both even
-			// sender will always be at  witness_index[0] and receiver will always be at witness_index[1]
-			if witness_index[0]%2 != witness_index[1]%2 {
-				break
-			}
-		}
+		witness_index := helpers.ShuffleArray_for_Zether(len(rings[t]))
 
 		// Lots of ToDo for this, enables satisfying lots of  other things
 		anonset_publickeys := rings[t][2:]

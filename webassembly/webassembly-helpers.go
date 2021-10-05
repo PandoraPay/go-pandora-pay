@@ -54,3 +54,27 @@ func randomUint64N(this js.Value, args []js.Value) interface{} {
 		return helpers.RandomUint64() % n, nil
 	})
 }
+
+func shuffleArray(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+		n, err := strconv.ParseUint(args[0].String(), 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		array := helpers.ShuffleArray(int(n))
+		return convertJSONBytes(array)
+	})
+}
+
+func shuffleArray_for_Zether(this js.Value, args []js.Value) interface{} {
+	return promiseFunction(func() (interface{}, error) {
+		n, err := strconv.ParseUint(args[0].String(), 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		array := helpers.ShuffleArray_for_Zether(int(n))
+		return convertJSONBytes(array)
+	})
+}

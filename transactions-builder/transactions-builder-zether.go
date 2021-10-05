@@ -244,6 +244,14 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 					return
 				}
 
+				if balance == nil {
+					var acckey crypto.Point
+					if err = acckey.DecodeCompressed(addr.PublicKey); err != nil {
+						return
+					}
+					balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G).Serialize()
+				}
+
 				if fromWalletAddress.AddressEncoded == address { //sender
 
 					balancePoint := new(crypto.ElGamal)

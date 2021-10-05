@@ -216,7 +216,7 @@ func (api *API) getToken(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetToken(request)
 }
 
-func (api *API) getAccountsHolders(values *url.Values) (interface{}, error) {
+func (api *API) getAccountsCount(values *url.Values) (interface{}, error) {
 
 	var token []byte
 	var err error
@@ -227,28 +227,43 @@ func (api *API) getAccountsHolders(values *url.Values) (interface{}, error) {
 		}
 	}
 
-	return api.apiCommon.GetAccountsHolders(token)
+	return api.apiCommon.GetAccountsCount(token)
 }
 
-func (api *API) getAccountsByIndex(values *url.Values) (interface{}, error) {
+func (api *API) getAccountsKeysByIndex(values *url.Values) (interface{}, error) {
 
-	request := &api_types.APIAccountsByIndexRequest{}
-	var err error
+	request := &api_types.APIAccountsKeysByIndexRequest{}
 
 	if values.Get("encodeAddresses") == "1" {
 		request.EncodeAddresses = true
 	}
 
-	if values.Get("indexes") != "" {
-		v := strings.Split(values.Get("indexes"), ",")
-		request.Indexes = make([]uint64, len(v))
-		for i := 0; i < len(v); i++ {
-			if request.Indexes[i], err = strconv.ParseUint(v[i], 10, 64); err != nil {
+	if err := request.ImportFromValues(values); err != nil {
+		return nil, err
+	}
+
+	return api.apiCommon.GetAccountsKeysByIndex(request)
+}
+
+func (api *API) getAccountsByKeys(values *url.Values) (interface{}, error) {
+
+	var err error
+
+	request := &api_types.APIAccountsByKeysRequest{ReturnType: api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
+
+	if values.Get("publicKeys") != "" {
+		v := strings.Split(values.Get("publicKeys"), ",")
+		request.PublicKeys = make([]helpers.HexBytes, len(v))
+		for i := range v {
+			if request.PublicKeys[i], err = hex.DecodeString(v[i]); err != nil {
 				return nil, err
 			}
 		}
+	} else if values.Get("addresses") != "" {
+		v := strings.Split(values.Get("addresses"), ",")
+		request.Addresses = make([]string, len(v))
 	} else {
-		return nil, errors.New("parameter `indexes` is missing")
+		return nil, errors.New("parameter `publicKeys` or `addresses` are missing")
 	}
 
 	if values.Get("token") != "" {
@@ -256,8 +271,9 @@ func (api *API) getAccountsByIndex(values *url.Values) (interface{}, error) {
 			return nil, err
 		}
 	}
+	request.IncludeMempool = values.Get("includeMempool") == "1"
 
-	return api.apiCommon.GetAccountsByIndex(request)
+	return api.apiCommon.GetAccountsByKeys(request)
 }
 
 func (api *API) getMempool(values *url.Values) (interface{}, error) {
@@ -323,22 +339,23 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 	}
 
 	api.GetMap = map[string]func(values *url.Values) (interface{}, error){
-		"":                   api.getInfo,
-		"chain":              api.getBlockchain,
-		"sync":               api.getBlockchainSync,
-		"ping":               api.getPing,
-		"block":              api.getBlock,
-		"block-hash":         api.getBlockHash,
-		"block-complete":     api.getBlockComplete,
-		"tx":                 api.getTx,
-		"tx-hash":            api.getTxHash,
-		"account":            api.getAccount,
-		"accounts/holders":   api.getAccountsHolders,
-		"accounts/by-index":  api.getAccountsByIndex,
-		"token":              api.getToken,
-		"mem-pool":           api.getMempool,
-		"mem-pool/tx-exists": api.getMempoolExists,
-		"mem-pool/new-tx":    api.postMempoolInsert,
+		"":                       api.getInfo,
+		"chain":                  api.getBlockchain,
+		"sync":                   api.getBlockchainSync,
+		"ping":                   api.getPing,
+		"block":                  api.getBlock,
+		"block-hash":             api.getBlockHash,
+		"block-complete":         api.getBlockComplete,
+		"tx":                     api.getTx,
+		"tx-hash":                api.getTxHash,
+		"account":                api.getAccount,
+		"accounts/count":         api.getAccountsCount,
+		"accounts/keys-by-index": api.getAccountsKeysByIndex,
+		"accounts/by-keys":       api.getAccountsByKeys,
+		"token":                  api.getToken,
+		"mem-pool":               api.getMempool,
+		"mem-pool/tx-exists":     api.getMempoolExists,
+		"mem-pool/new-tx":        api.postMempoolInsert,
 	}
 
 	if config.SEED_WALLET_NODES_INFO {

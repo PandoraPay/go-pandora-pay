@@ -41,6 +41,12 @@ func convertBytes(data []byte) (js.Value, error) {
 	return jsOut, nil
 }
 
+func unmarshalBytes(data js.Value, obj interface{}) error {
+	jsonData := make([]byte, data.Get("length").Int())
+	js.CopyBytesToGo(jsonData, data)
+	return json.Unmarshal(jsonData, obj)
+}
+
 func promiseFunction(callback func() (interface{}, error)) interface{} {
 
 	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
@@ -70,11 +76,13 @@ func Initialize(startMainCb func()) {
 
 	PandoraPayExport := map[string]interface{}{
 		"helpers": js.ValueOf(map[string]interface{}{
-			"helloPandora":  js.FuncOf(helloPandora),
-			"start":         js.FuncOf(start),
-			"getIdenticon":  js.FuncOf(getIdenticon),
-			"randomUint64":  js.FuncOf(randomUint64),
-			"randomUint64N": js.FuncOf(randomUint64N),
+			"helloPandora":            js.FuncOf(helloPandora),
+			"start":                   js.FuncOf(start),
+			"getIdenticon":            js.FuncOf(getIdenticon),
+			"randomUint64":            js.FuncOf(randomUint64),
+			"randomUint64N":           js.FuncOf(randomUint64N),
+			"shuffleArray":            js.FuncOf(shuffleArray),
+			"shuffleArray_for_Zether": js.FuncOf(shuffleArray_for_Zether),
 		}),
 		"events": js.ValueOf(map[string]interface{}{
 			"listenEvents":               js.FuncOf(listenEvents),
@@ -111,21 +119,22 @@ func Initialize(startMainCb func()) {
 		}),
 		"cryptography": js.ValueOf(map[string]interface{}{}),
 		"network": js.ValueOf(map[string]interface{}{
-			"getNetworkFaucetInfo":      js.FuncOf(getNetworkFaucetInfo),
-			"getNetworkFaucetCoins":     js.FuncOf(getNetworkFaucetCoins),
-			"getNetworkAccountsHolders": js.FuncOf(getNetworkAccountsHolders),
-			"getNetworkAccountsByIndex": js.FuncOf(getNetworkAccountsByIndex),
-			"getNetworkBlockInfo":       js.FuncOf(getNetworkBlockInfo),
-			"getNetworkBlockComplete":   js.FuncOf(getNetworkBlockComplete),
-			"getNetworkTransaction":     js.FuncOf(getNetworkTransaction),
-			"getNetworkAccount":         js.FuncOf(getNetworkAccount),
-			"getNetworkAccountTxs":      js.FuncOf(getNetworkAccountTxs),
-			"getNetworkAccountMempool":  js.FuncOf(getNetworkAccountMempool),
-			"getNetworkTokenInfo":       js.FuncOf(getNetworkTokenInfo),
-			"getNetworkToken":           js.FuncOf(getNetworkToken),
-			"getNetworkMempool":         js.FuncOf(getNetworkMempool),
-			"subscribeNetwork":          js.FuncOf(subscribeNetwork),
-			"unsubscribeNetwork":        js.FuncOf(unsubscribeNetwork),
+			"getNetworkFaucetInfo":          js.FuncOf(getNetworkFaucetInfo),
+			"getNetworkFaucetCoins":         js.FuncOf(getNetworkFaucetCoins),
+			"getNetworkAccountsCount":       js.FuncOf(getNetworkAccountsCount),
+			"getNetworkAccountsKeysByIndex": js.FuncOf(getNetworkAccountsKeysByIndex),
+			"getNetworkAccountsByKeys":      js.FuncOf(getNetworkAccountsByKeys),
+			"getNetworkBlockInfo":           js.FuncOf(getNetworkBlockInfo),
+			"getNetworkBlockComplete":       js.FuncOf(getNetworkBlockComplete),
+			"getNetworkTransaction":         js.FuncOf(getNetworkTransaction),
+			"getNetworkAccount":             js.FuncOf(getNetworkAccount),
+			"getNetworkAccountTxs":          js.FuncOf(getNetworkAccountTxs),
+			"getNetworkAccountMempool":      js.FuncOf(getNetworkAccountMempool),
+			"getNetworkTokenInfo":           js.FuncOf(getNetworkTokenInfo),
+			"getNetworkToken":               js.FuncOf(getNetworkToken),
+			"getNetworkMempool":             js.FuncOf(getNetworkMempool),
+			"subscribeNetwork":              js.FuncOf(subscribeNetwork),
+			"unsubscribeNetwork":            js.FuncOf(unsubscribeNetwork),
 		}),
 		"transactions": js.ValueOf(map[string]interface{}{
 			"builder": js.ValueOf(map[string]interface{}{

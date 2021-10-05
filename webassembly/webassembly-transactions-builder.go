@@ -15,7 +15,7 @@ import (
 func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 	return promiseFunction(func() (interface{}, error) {
 
-		if len(args) != 3 || args[0].Type() != js.TypeString || args[1].Type() != js.TypeFunction || args[2].Type() != js.TypeString {
+		if len(args) != 3 || args[0].Type() != js.TypeObject || args[1].Type() != js.TypeFunction || args[2].Type() != js.TypeString {
 			return nil, errors.New("Argument must be a string and a callback")
 		}
 
@@ -29,20 +29,33 @@ func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 			Amounts     []float64                                           `json:"amounts"`
 			Dsts        []string                                            `json:"dsts"`
 			Burns       []float64                                           `json:"burns"`
-			RingMembers [][]string                                          `json:"RingMembers"`
+			RingMembers [][]string                                          `json:"ringMembers"`
 			Data        []*wizard.TransactionsWizardData                    `json:"data"`
 			Fees        []*transactions_builder.TransactionsBuilderFeeFloat `json:"fees"`
 			PropagateTx bool                                                `json:"propagateTx"`
 			AwaitAnswer bool                                                `json:"awaitAnswer"`
 		}
 
+		jsonData := make([]byte, args[0].Get("length").Int())
+		js.CopyBytesToGo(jsonData, args[0])
+
 		txData := &ZetherTxFloatData{}
-		if err := json.Unmarshal([]byte(args[0].String()), txData); err != nil {
+		if err := json.Unmarshal(jsonData, txData); err != nil {
 			return nil, err
 		}
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
+
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+		//
+		//data := socket.SendJSONAwaitAnswer([]byte("accounts/multiple"), &api_types.APIAccountsMultipleRequest{}, 0)
+		//if data.Err != nil {
+		//	return nil, data.Err
+		//}
 
 		tx, err := app.TransactionsBuilder.CreateZetherTx_Float(txData.From, helpers.ConvertHexBytesArraysToBytesArray(txData.Tokens), txData.Amounts, txData.Dsts, txData.Burns, txData.RingMembers, txData.Data, txData.Fees, txData.PropagateTx, txData.AwaitAnswer, false, ctx, func(status string) {
 			args[1].Invoke(status)

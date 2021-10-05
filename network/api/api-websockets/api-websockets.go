@@ -135,20 +135,28 @@ func (api *APIWebsockets) getToken(conn *connection.AdvancedConnection, values [
 	return api.apiCommon.GetToken(request)
 }
 
-func (api *APIWebsockets) getAccountsHolders(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	count, err := api.apiCommon.GetAccountsHolders(values)
+func (api *APIWebsockets) getAccountsCount(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	count, err := api.apiCommon.GetAccountsCount(values)
 	if err != nil {
 		return nil, err
 	}
 	return []byte(strconv.FormatUint(count, 10)), nil
 }
 
-func (api *APIWebsockets) getAccountsByIndex(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIAccountsByIndexRequest{nil, nil, false}
+func (api *APIWebsockets) getAccountsKeysByIndex(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := &api_types.APIAccountsKeysByIndexRequest{nil, nil, false}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
-	return api.apiCommon.GetAccountsByIndex(request)
+	return api.apiCommon.GetAccountsKeysByIndex(request)
+}
+
+func (api *APIWebsockets) getAccountsByKeys(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := &api_types.APIAccountsByKeysRequest{nil, nil, nil, false, api_types.RETURN_SERIALIZED}
+	if err := json.Unmarshal(values, &request); err != nil {
+		return nil, err
+	}
+	return api.apiCommon.GetAccountsByKeys(request)
 }
 
 func (api *APIWebsockets) getMempool(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -290,25 +298,26 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 	}
 
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error){
-		"":                   api.getInfo,
-		"chain":              api.getBlockchain,
-		"sync":               api.getBlockchainSync,
-		"handshake":          api.getHandshake,
-		"ping":               api.getPing,
-		"block":              api.getBlock,
-		"block-miss-txs":     api.getBlockCompleteMissingTxs,
-		"block-hash":         api.getHash,
-		"block-complete":     api.getBlockComplete,
-		"tx":                 api.getTx,
-		"tx-hash":            api.getTxHash,
-		"account":            api.getAccount,
-		"accounts/holders":   api.getAccountsHolders,
-		"accounts/by-index":  api.getAccountsByIndex,
-		"token":              api.getToken,
-		"mem-pool":           api.getMempool,
-		"mem-pool/tx-exists": api.getMempoolExists,
-		"mem-pool/new-tx":    api.getMempoolInsert,
-		"mem-pool/new-tx-id": api.getMempoolTxInsert,
+		"":                       api.getInfo,
+		"chain":                  api.getBlockchain,
+		"sync":                   api.getBlockchainSync,
+		"handshake":              api.getHandshake,
+		"ping":                   api.getPing,
+		"block":                  api.getBlock,
+		"block-miss-txs":         api.getBlockCompleteMissingTxs,
+		"block-hash":             api.getHash,
+		"block-complete":         api.getBlockComplete,
+		"tx":                     api.getTx,
+		"tx-hash":                api.getTxHash,
+		"account":                api.getAccount,
+		"accounts/count":         api.getAccountsCount,
+		"accounts/keys-by-index": api.getAccountsKeysByIndex,
+		"accounts/by-keys":       api.getAccountsByKeys,
+		"token":                  api.getToken,
+		"mem-pool":               api.getMempool,
+		"mem-pool/tx-exists":     api.getMempoolExists,
+		"mem-pool/new-tx":        api.getMempoolInsert,
+		"mem-pool/new-tx-id":     api.getMempoolTxInsert,
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
