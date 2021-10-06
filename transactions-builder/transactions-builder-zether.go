@@ -11,6 +11,7 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/data_storage/tokens"
 	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -295,17 +296,17 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 
 				ring = append(ring, p.G1())
 
-				var isReg bool
-				if isReg, err = dataStorage.Regs.Exists(string(addr.PublicKey)); err != nil {
+				var reg *registration.Registration
+				if reg, err = dataStorage.Regs.GetRegistration(addr.PublicKey); err != nil {
 					return
 				}
 
 				publicKeyIndex := &wizard.ZetherPublicKeyIndex{}
 				publicKeyIndexes[string(addr.PublicKey)] = publicKeyIndex
 
-				publicKeyIndex.Registered = isReg
-				if isReg {
-					publicKeyIndex.RegisteredIndex = acc.Index
+				if reg != nil {
+					publicKeyIndex.Registered = true
+					publicKeyIndex.RegisteredIndex = reg.Index
 				} else {
 					publicKeyIndex.RegistrationSignature = addr.Registration
 				}
