@@ -209,6 +209,8 @@ func Initialize(startMainCb func()) {
 			"NETWORK_SELECTED_NAME":   js.ValueOf(config.NETWORK_SELECTED_NAME),
 			"NETWORK_SELECTED_PREFIX": js.ValueOf(config.NETWORK_SELECTED_BYTE_PREFIX),
 			"CONSENSUS":               js.ValueOf(uint8(config.CONSENSUS)),
+			"VERSION":                 js.ValueOf(config.VERSION),
+			"BUILD_VERSION":           js.ValueOf(config.BUILD_VERSION),
 			"coins": js.ValueOf(map[string]interface{}{
 				"DECIMAL_SEPARATOR":            js.ValueOf(config.DECIMAL_SEPARATOR),
 				"COIN_DENOMINATION":            js.ValueOf(config.COIN_DENOMINATION),

@@ -12,12 +12,13 @@ import (
 )
 
 var (
-	DEBUG        = false
-	CPU_THREADS  = 1
-	ARCHITECTURE = ""
-	OS           = ""
-	NAME         = "PANDORA PAY"
-	VERSION      = "0.01"
+	DEBUG         = false
+	CPU_THREADS   = 1
+	ARCHITECTURE  = ""
+	OS            = ""
+	NAME          = "PANDORA PAY"
+	VERSION       = "0.01"
+	BUILD_VERSION = ""
 )
 
 const (
