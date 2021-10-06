@@ -214,7 +214,16 @@ func (api *APIWebsockets) getMempoolExists(conn *connection.AdvancedConnection, 
 	}
 }
 
-func (api *APIWebsockets) getMempoolTxInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
+func (api *APIWebsockets) postMempoolInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
+	tx := &transaction.Transaction{}
+	if err = tx.Deserialize(helpers.NewBufferReader(values)); err != nil {
+		return
+	}
+
+	return api.apiCommon.PostMempoolInsert(tx, conn.UUID)
+}
+
+func (api *APIWebsockets) postMempoolTxIdInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
 
 	if len(values) != 32 {
 		return nil, errors.New("Invalid hash")
@@ -317,8 +326,8 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"token":                  api.getToken,
 		"mem-pool":               api.getMempool,
 		"mem-pool/tx-exists":     api.getMempoolExists,
-		"mem-pool/new-tx":        api.getMempoolInsert,
-		"mem-pool/new-tx-id":     api.getMempoolTxInsert,
+		"mem-pool/new-tx":        api.postMempoolInsert,
+		"mem-pool/new-tx-id":     api.postMempoolTxIdInsert,
 	}
 
 	if config.SEED_WALLET_NODES_INFO {

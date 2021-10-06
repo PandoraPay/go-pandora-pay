@@ -303,7 +303,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		default:
 		}
 
-		statusCallback(fmt.Sprintf("Generating zero knowledge proofs... %d", t))
+		statusCallback(fmt.Sprintf("Payload %d generating zero knowledge proofs... ", t+1))
 		if txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Statement, &witness_list[t], u, u1, height, tx.GetHashSigningManually(), txBase.Payloads[t].BurnValue); err != nil {
 			return
 		}

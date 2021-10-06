@@ -7,20 +7,12 @@ import (
 	"pandora-pay/config/config_fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/multicast"
 	"pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/recovery"
 	"runtime"
 	"sync/atomic"
 	"time"
 )
-
-type MempoolTxBroadcastNotification struct {
-	Txs              []*transaction.Transaction
-	JustCreated      bool
-	AwaitPropagation bool
-	ExceptSocketUUID advanced_connection_types.UUID
-}
 
 type mempoolTx struct {
 	Tx          *transaction.Transaction `json:"tx"`
@@ -30,21 +22,16 @@ type mempoolTx struct {
 	ChainHeight uint64                   `json:"chainHeight"`
 }
 
-type mempoolTxProcess struct {
-	tx  *mempoolTx
-	err error
-}
-
 type Mempool struct {
-	result                  *atomic.Value                `json:"-"` //*MempoolResult
-	SuspendProcessingCn     chan struct{}                `json:"-"`
-	ContinueProcessingCn    chan ContinueProcessingType  `json:"-"`
-	newWorkCn               chan *mempoolWork            `json:"-"`
-	addTransactionCn        chan *MempoolWorkerAddTx     `json:"-"`
-	removeTransactionsCn    chan *MempoolWorkerRemoveTxs `json:"-"`
-	insertTransactionsCn    chan *MempoolWorkerInsertTxs `json:"-"`
-	Txs                     *MempoolTxs                  `json:"-"`
-	NewTransactionMulticast *multicast.MulticastChannel  `json:"-"`
+	result                    *atomic.Value                `json:"-"` //*MempoolResult
+	SuspendProcessingCn       chan struct{}                `json:"-"`
+	ContinueProcessingCn      chan ContinueProcessingType  `json:"-"`
+	newWorkCn                 chan *mempoolWork            `json:"-"`
+	addTransactionCn          chan *MempoolWorkerAddTx     `json:"-"`
+	removeTransactionsCn      chan *MempoolWorkerRemoveTxs `json:"-"`
+	insertTransactionsCn      chan *MempoolWorkerInsertTxs `json:"-"`
+	Txs                       *MempoolTxs                  `json:"-"`
+	OnBroadcastNewTransaction func([]*transaction.Transaction, bool, bool, advanced_connection_types.UUID) []error
 }
 
 func (mempool *Mempool) ContinueProcessing(continueProcessingType ContinueProcessingType) {
@@ -58,12 +45,13 @@ func (mempool *Mempool) RemoveInsertedTxsFromBlockchain(txs []string) bool {
 }
 
 func (mempool *Mempool) InsertRemovedTxsFromBlockchain(txs []*transaction.Transaction, height uint64) bool {
-	finalTxs := mempool.processTxsToMemPool(txs, height)
+
+	finalTxs, _ := mempool.processTxsToMemPool(txs, height)
 
 	insertTxs := make([]*mempoolTx, len(finalTxs))
 	for i, it := range finalTxs {
 		if it != nil {
-			insertTxs[i] = it.tx
+			insertTxs[i] = it
 		}
 	}
 
@@ -78,16 +66,15 @@ func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint6
 	return result[0]
 }
 
-func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, height uint64) []*mempoolTxProcess {
+func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, height uint64) (finalTxs []*mempoolTx, errs []error) {
 
-	finalTxs := make([]*mempoolTxProcess, len(txs))
+	finalTxs = make([]*mempoolTx, len(txs))
+	errs = make([]error, len(txs))
 
 	for i, tx := range txs {
 
-		finalTxs[i] = &mempoolTxProcess{}
-
 		if err := tx.VerifyBloomAll(); err != nil {
-			finalTxs[i].err = err
+			errs[i] = err
 			continue
 		}
 
@@ -97,13 +84,13 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 
 		minerFees, err := tx.GetAllFees()
 		if err != nil {
-			finalTxs[i].err = err
+			errs[i] = err
 			continue
 		}
 
 		computedFeePerByte := minerFees
 		if err = helpers.SafeUint64Sub(&computedFeePerByte, tx.ComputeExtraSpace()*config_fees.FEES_PER_BYTE_EXTRA_SPACE); err != nil {
-			finalTxs[i].err = err
+			errs[i] = err
 			continue
 		}
 
@@ -116,16 +103,16 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 		case transaction_type.TX_ZETHER:
 			requiredFeePerByte = config_fees.FEES_PER_BYTE_ZETHER
 		default:
-			finalTxs[i].err = errors.New("Invalid Tx.Version")
+			errs[i] = errors.New("Invalid Tx.Version")
 			continue
 		}
 
 		if computedFeePerByte < requiredFeePerByte {
-			finalTxs[i].err = errors.New("Transaction fee was not accepted")
+			errs[i] = errors.New("Transaction fee was not accepted")
 			continue
 		}
 
-		finalTxs[i].tx = &mempoolTx{
+		finalTxs[i] = &mempoolTx{
 			Tx:          tx,
 			Added:       time.Now().Unix(),
 			FeePerByte:  computedFeePerByte,
@@ -134,34 +121,34 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 
 	}
 
-	return finalTxs
+	return
 }
 
 func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, justCreated, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID) []error {
 
-	finalTxs := mempool.processTxsToMemPool(txs, height)
+	finalTxs, errs := mempool.processTxsToMemPool(txs, height)
 
 	//making sure that the transaction is not inserted twice
 	if runtime.GOARCH != "wasm" {
-		for _, finalTx := range finalTxs {
-			if finalTx.tx != nil {
+		for i, finalTx := range finalTxs {
+			if finalTx != nil {
 
 				var errorResult error
 
-				inserted := mempool.Txs.insertTx(finalTx.tx)
+				inserted := mempool.Txs.insertTx(finalTx)
 				if !inserted {
 					errorResult = errors.New("Tx already exists")
 				} else if awaitAnswer {
 					answerCn := make(chan error)
-					mempool.addTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, answerCn}
+					mempool.addTransactionCn <- &MempoolWorkerAddTx{finalTx, answerCn}
 					errorResult = <-answerCn
 				} else {
-					mempool.addTransactionCn <- &MempoolWorkerAddTx{finalTx.tx, nil}
+					mempool.addTransactionCn <- &MempoolWorkerAddTx{finalTx, nil}
 				}
 
 				if errorResult != nil {
-					finalTx.err = errorResult
-					finalTx.tx = nil
+					errs[i] = errorResult
+					finalTxs[i] = nil
 				}
 
 			}
@@ -170,35 +157,24 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 
 	if exceptSocketUUID != advanced_connection_types.UUID_SKIP_ALL {
 
-		notNull := 0
-		for _, finalTx := range finalTxs {
-			if finalTx.tx != nil {
-				notNull += 1
+		broadcastTxs := make([]*transaction.Transaction, len(finalTxs))
+		for i, finalTx := range finalTxs {
+			if errs[i] == nil {
+				broadcastTxs[i] = finalTx.Tx
 			}
 		}
-		broadcastTxs := make([]*transaction.Transaction, notNull)
 
-		notNull = 0
-		for _, finalTx := range finalTxs {
-			if finalTx.tx != nil {
-				broadcastTxs[notNull] = finalTx.tx.Tx
-				notNull += 1
+		errors2 := mempool.OnBroadcastNewTransaction(broadcastTxs, justCreated, awaitBroadcasting, exceptSocketUUID)
+		for i, err := range errors2 {
+			if err != nil {
+				errs[i] = err
+				finalTxs[i] = nil
 			}
 		}
-		mempool.NewTransactionMulticast.BroadcastAwait(&MempoolTxBroadcastNotification{
-			broadcastTxs,
-			justCreated,
-			awaitBroadcasting,
-			exceptSocketUUID,
-		})
 
 	}
 
-	out := make([]error, len(txs))
-	for i, finalTx := range finalTxs {
-		out[i] = finalTx.err
-	}
-	return out
+	return errs
 }
 
 //reset the forger
@@ -232,15 +208,14 @@ func CreateMemPool() (*Mempool, error) {
 	gui.GUI.Log("MemPool init...")
 
 	mempool := &Mempool{
-		result:                  &atomic.Value{}, // *MempoolResult
-		Txs:                     createMempoolTxs(),
-		SuspendProcessingCn:     make(chan struct{}),
-		ContinueProcessingCn:    make(chan ContinueProcessingType),
-		newWorkCn:               make(chan *mempoolWork),
-		addTransactionCn:        make(chan *MempoolWorkerAddTx, 1000),
-		removeTransactionsCn:    make(chan *MempoolWorkerRemoveTxs),
-		insertTransactionsCn:    make(chan *MempoolWorkerInsertTxs),
-		NewTransactionMulticast: multicast.NewMulticastChannel(),
+		result:               &atomic.Value{}, // *MempoolResult
+		Txs:                  createMempoolTxs(),
+		SuspendProcessingCn:  make(chan struct{}),
+		ContinueProcessingCn: make(chan ContinueProcessingType),
+		newWorkCn:            make(chan *mempoolWork),
+		addTransactionCn:     make(chan *MempoolWorkerAddTx, 1000),
+		removeTransactionsCn: make(chan *MempoolWorkerRemoveTxs),
+		insertTransactionsCn: make(chan *MempoolWorkerInsertTxs),
 	}
 
 	worker := new(mempoolWorker)

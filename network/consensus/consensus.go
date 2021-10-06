@@ -2,9 +2,10 @@ package consensus
 
 import (
 	"pandora-pay/blockchain"
-	"pandora-pay/helpers/multicast"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/mempool"
 	node_http "pandora-pay/network/server/node-http"
+	advanced_connection_types "pandora-pay/network/websocks/connection/advanced-connection-types"
 	"pandora-pay/recovery"
 	"sync"
 )
@@ -37,32 +38,9 @@ func (consensus *Consensus) execute() {
 
 	})
 
-	recovery.SafeGo(func() {
-
-		newTxsCn := consensus.mempool.NewTransactionMulticast.AddListener()
-		defer consensus.mempool.NewTransactionMulticast.RemoveChannel(newTxsCn)
-
-		for {
-			notificationReceived, ok := <-newTxsCn
-			if !ok {
-				return
-			}
-
-			notification := notificationReceived.(*multicast.MulticastChannelData)
-
-			go func(notification *multicast.MulticastChannelData) {
-
-				data := notification.Data.(*mempool.MempoolTxBroadcastNotification)
-
-				//it is safe to read
-				consensus.broadcastTxs(data.Txs, data.JustCreated, data.AwaitPropagation, data.ExceptSocketUUID)
-
-				notification.Answer <- struct{}{}
-
-			}(notification)
-		}
-
-	})
+	consensus.mempool.OnBroadcastNewTransaction = func(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID) []error {
+		return consensus.broadcastTxs(txs, justCreated, awaitPropagation, exceptSocketUUID)
+	}
 
 	//discover forks
 	processForksThread := createConsensusProcessForksThread(consensus.forks, consensus.chain, consensus.mempool, consensus.httpServer.ApiStore)

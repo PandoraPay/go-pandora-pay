@@ -72,7 +72,9 @@ func (consensus *Consensus) broadcastChain(newChainData *blockchain.BlockchainDa
 	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain-update"), consensus.getUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true}, advanced_connection_types.UUID_ALL)
 }
 
-func (consensus *Consensus) broadcastTxs(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID) {
+func (consensus *Consensus) broadcastTxs(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID) (errs []error) {
+
+	errs = make([]error, len(txs))
 
 	var key, value []byte
 	if justCreated {
@@ -81,21 +83,31 @@ func (consensus *Consensus) broadcastTxs(txs []*transaction.Transaction, justCre
 		key = []byte("mem-pool/new-tx-id")
 	}
 
-	for _, tx := range txs {
+	for i, tx := range txs {
+		if tx != nil {
+			if justCreated {
+				value = tx.Bloom.Serialized
+			} else {
+				value = tx.Bloom.Hash
+			}
 
-		if justCreated {
-			value = tx.Bloom.Serialized
-		} else {
-			value = tx.Bloom.Hash
-		}
+			if awaitPropagation {
 
-		if awaitPropagation {
-			consensus.httpServer.Websockets.BroadcastAwaitAnswer(key, value, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, 2*config.WEBSOCKETS_TIMEOUT)
-		} else {
-			consensus.httpServer.Websockets.Broadcast(key, value, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID)
+				out := consensus.httpServer.Websockets.BroadcastAwaitAnswer(key, value, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, 2*config.WEBSOCKETS_TIMEOUT)
+				for j := range out {
+					if out[j].Err != nil {
+						errs[i] = out[j].Err
+						break
+					}
+				}
+
+			} else {
+				consensus.httpServer.Websockets.Broadcast(key, value, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID)
+			}
 		}
 	}
 
+	return
 }
 
 func (consensus *Consensus) getUpdateNotification(newChainData *blockchain.BlockchainData) *ChainUpdateNotification {
