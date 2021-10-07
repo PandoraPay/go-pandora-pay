@@ -1,6 +1,7 @@
 package wizard
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -31,6 +32,19 @@ type ZetherPublicKeyIndex struct {
 	Registered            bool
 	RegisteredIndex       uint64
 	RegistrationSignature []byte
+}
+
+func InitializeEmap(tokens [][]byte) map[string]map[string][]byte {
+	emap := make(map[string]map[string][]byte) //initialize all maps
+	for i := range tokens {
+		if bytes.Equal(tokens[i], config.NATIVE_TOKEN_FULL) {
+			tokens[i] = []byte{}
+		}
+		if emap[string(tokens[i])] == nil {
+			emap[string(tokens[i])] = map[string][]byte{}
+		}
+	}
+	return emap
 }
 
 func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emapCopy map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {

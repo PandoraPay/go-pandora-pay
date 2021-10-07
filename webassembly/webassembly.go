@@ -86,7 +86,6 @@ func Initialize(startMainCb func()) {
 		}),
 		"transactions": js.ValueOf(map[string]interface{}{
 			"builder": js.ValueOf(map[string]interface{}{
-				"createZetherTx_Float":         js.FuncOf(createZetherTx_Float),
 				"createUpdateDelegateTx_Float": js.FuncOf(createUpdateDelegateTx_Float),
 				"createUnstakeTx_Float":        js.FuncOf(createUnstakeTx_Float),
 			}),
