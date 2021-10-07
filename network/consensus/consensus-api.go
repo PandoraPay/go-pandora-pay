@@ -72,7 +72,7 @@ func (consensus *Consensus) broadcastChain(newChainData *blockchain.BlockchainDa
 	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain-update"), consensus.getUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true}, advanced_connection_types.UUID_ALL)
 }
 
-func (consensus *Consensus) broadcastTxs(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID) (errs []error) {
+func (consensus *Consensus) BroadcastTxs(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID) (errs []error) {
 
 	errs = make([]error, len(txs))
 

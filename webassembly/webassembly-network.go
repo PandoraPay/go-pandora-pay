@@ -47,7 +47,7 @@ func getNetworkFaucetInfo(this js.Value, args []js.Value) interface{} {
 		if data.Err != nil {
 			return nil, data.Err
 		}
-		return webassembly_utils.ConvertBytes(data.Out)
+		return webassembly_utils.ConvertBytes(data.Out), nil
 	})
 }
 
@@ -69,7 +69,7 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		return webassembly_utils.ConvertBytes(data.Out)
+		return webassembly_utils.ConvertBytes(data.Out), nil
 	})
 }
 
@@ -152,7 +152,7 @@ func getNetworkAccountsKeysByIndex(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		return webassembly_utils.ConvertBytes(data.Out)
+		return webassembly_utils.ConvertBytes(data.Out), nil
 	})
 }
 
@@ -173,7 +173,7 @@ func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		return webassembly_utils.ConvertBytes(data.Out)
+		return webassembly_utils.ConvertBytes(data.Out), nil
 	})
 }
 
@@ -249,7 +249,7 @@ func getNetworkAccountTxs(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		return webassembly_utils.ConvertBytes(data.Out)
+		return webassembly_utils.ConvertBytes(data.Out), nil
 	})
 }
 
@@ -383,7 +383,33 @@ func getNetworkMempool(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		return webassembly_utils.ConvertBytes(data.Out)
+		return webassembly_utils.ConvertBytes(data.Out), nil
+	})
+}
+
+func postNetworkMempoolBroadcastTransaction(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+
+		r := webassembly_utils.GetBytes(args[0])
+
+		tx := &transaction.Transaction{}
+		if err := tx.Deserialize(helpers.NewBufferReader(r)); err != nil {
+			return nil, err
+		}
+		if err := tx.BloomAll(); err != nil {
+			return nil, err
+		}
+
+		errs := app.Network.Consensus.BroadcastTxs([]*transaction.Transaction{tx}, true, true, 0)
+		if errs[0] != nil {
+			return nil, errs[0]
+		}
+
+		return true, nil
 	})
 }
 

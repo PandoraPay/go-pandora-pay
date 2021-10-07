@@ -19,7 +19,7 @@ func getWallet(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return webassembly_utils.ConvertBytes(data)
+		return webassembly_utils.ConvertBytes(data), nil
 	})
 }
 

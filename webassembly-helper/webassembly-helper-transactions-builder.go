@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -140,7 +141,7 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 			rings[t] = ring
 		}
 
-		tx, err := wizard.CreateZetherTx(transfers, emap, rings, txData.Height, txData.Hash, publicKeyIndexes, txData.Fees, ctx, func(status string) {
+		tx, err := wizard.CreateZetherTx(transfers, emap, rings, txData.Height, txData.Hash, publicKeyIndexes, txData.Fees, false, ctx, func(status string) {
 			args[1].Invoke(status)
 			time.Sleep(10 * time.Millisecond)
 		})
@@ -148,6 +149,14 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return webassembly_utils.ConvertJSONBytes(tx)
+		txJson, err := json.Marshal(tx)
+		if err != nil {
+			return nil, err
+		}
+
+		return []interface{}{
+			webassembly_utils.ConvertBytes(txJson),
+			webassembly_utils.ConvertBytes(tx.Bloom.Serialized),
+		}, nil
 	})
 }

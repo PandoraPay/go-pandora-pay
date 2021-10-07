@@ -36,7 +36,7 @@ func getIdenticon(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		return webassembly_utils.ConvertBytes(identicon)
+		return webassembly_utils.ConvertBytes(identicon), nil
 	})
 }
 

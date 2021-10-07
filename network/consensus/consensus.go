@@ -39,7 +39,7 @@ func (consensus *Consensus) execute() {
 	})
 
 	consensus.mempool.OnBroadcastNewTransaction = func(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID) []error {
-		return consensus.broadcastTxs(txs, justCreated, awaitPropagation, exceptSocketUUID)
+		return consensus.BroadcastTxs(txs, justCreated, awaitPropagation, exceptSocketUUID)
 	}
 
 	//discover forks

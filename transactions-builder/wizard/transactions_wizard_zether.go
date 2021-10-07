@@ -328,7 +328,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	return
 }
 
-func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	txBase := &transaction_zether.TransactionZether{
 		TxScript: transaction_zether.SCRIPT_TRANSFER,
@@ -342,7 +342,6 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		},
 		TransactionBaseInterface: txBase,
 	}
-	statusCallback("Transaction created")
 
 	statusCallback("Transaction Signing first time... to determine the size")
 	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
@@ -363,15 +362,24 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		return nil, err
 	}
 
-	if err = tx.BloomAll(); err != nil {
-		return
+	if validateTx {
+		if err = tx.BloomAll(); err != nil {
+			return
+		}
+		statusCallback("Transaction Bloomed")
+		if err = tx.Verify(); err != nil {
+			return
+		}
+		statusCallback("Transaction Verified")
+	} else {
+		if err = tx.BloomExtraVerified(); err != nil {
+			return nil, err
+		}
+		if err = tx.BloomAll(); err != nil {
+			return
+		}
+		statusCallback("Transaction Bloomed as Verified")
 	}
-	statusCallback("Transaction Bloomed")
-
-	if err = tx.Verify(); err != nil {
-		return
-	}
-	statusCallback("Transaction Verified")
 
 	return tx, nil
 }
