@@ -5,12 +5,13 @@ import (
 	"pandora-pay/config/config_reward"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/config/config_tokens"
+	"pandora-pay/webassembly/webassembly_utils"
 	"strconv"
 	"syscall/js"
 )
 
 func convertToUnitsUint64(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		value, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
 			return nil, err
@@ -24,7 +25,7 @@ func convertToUnitsUint64(this js.Value, args []js.Value) interface{} {
 }
 
 func convertToUnits(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		number, err := strconv.ParseFloat(args[0].String(), 10)
 		if err != nil {
 			return nil, err
@@ -40,7 +41,7 @@ func convertToUnits(this js.Value, args []js.Value) interface{} {
 }
 
 func convertToBase(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		number, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
 			return nil, err
@@ -52,7 +53,7 @@ func convertToBase(this js.Value, args []js.Value) interface{} {
 }
 
 func tokensConvertToUnits(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		number, err := strconv.ParseFloat(args[0].String(), 10)
 		if err != nil {
 			return nil, err
@@ -70,7 +71,7 @@ func tokensConvertToUnits(this js.Value, args []js.Value) interface{} {
 }
 
 func tokensConvertToBase(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		number, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
@@ -89,7 +90,7 @@ func tokensConvertToBase(this js.Value, args []js.Value) interface{} {
 }
 
 func getRequiredStake(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		blockHeight, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
@@ -102,22 +103,22 @@ func getRequiredStake(this js.Value, args []js.Value) interface{} {
 }
 
 func getRewardAt(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		value := config_reward.GetRewardAt(uint64(args[0].Int()))
 		return value, nil
 	})
 }
 
 func getNetworkSelectedSeeds(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		value := config.NETWORK_SELECTED_SEEDS
-		return convertJSONBytes(value)
+		return webassembly_utils.ConvertJSONBytes(value)
 	})
 }
 
 func getNetworkSelectedDelegatesNodes(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		value := config.NETWORK_SELECTED_DELEGATES_NODES
-		return convertJSONBytes(value)
+		return webassembly_utils.ConvertJSONBytes(value)
 	})
 }

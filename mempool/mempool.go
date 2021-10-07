@@ -159,7 +159,7 @@ func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height u
 
 		broadcastTxs := make([]*transaction.Transaction, len(finalTxs))
 		for i, finalTx := range finalTxs {
-			if errs[i] == nil {
+			if finalTx != nil {
 				broadcastTxs[i] = finalTx.Tx
 			}
 		}

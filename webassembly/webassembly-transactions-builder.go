@@ -13,12 +13,13 @@ import (
 	"pandora-pay/network/api/api-common/api_types"
 	transactions_builder "pandora-pay/transactions-builder"
 	"pandora-pay/transactions-builder/wizard"
+	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
 	"time"
 )
 
 func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if len(args) != 3 || args[0].Type() != js.TypeObject || args[1].Type() != js.TypeFunction || args[2].Type() != js.TypeString {
 			return nil, errors.New("Argument must be a string and a callback")
@@ -41,7 +42,7 @@ func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 			AwaitAnswer bool                                                `json:"awaitAnswer"`
 		}{}
 
-		if err := unmarshalBytes(args[0], txData); err != nil {
+		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
 			return nil, err
 		}
 
@@ -142,12 +143,12 @@ func createZetherTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return convertJSONBytes(tx)
+		return webassembly_utils.ConvertJSONBytes(tx)
 	})
 }
 
 func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if len(args) != 3 || args[0].Type() != js.TypeString || args[1].Type() != js.TypeFunction || args[2].Type() != js.TypeString {
 			return nil, errors.New("Argument must be a string and a callback")
@@ -182,13 +183,13 @@ func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return convertJSONBytes(tx)
+		return webassembly_utils.ConvertJSONBytes(tx)
 
 	})
 }
 
 func createUnstakeTx_Float(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if len(args) != 3 || args[0].Type() != js.TypeString || args[1].Type() != js.TypeFunction || args[2].Type() != js.TypeString {
 			return nil, errors.New("Argument must be a string and a callback")
@@ -221,7 +222,7 @@ func createUnstakeTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return convertJSONBytes(tx)
+		return webassembly_utils.ConvertJSONBytes(tx)
 
 	})
 }

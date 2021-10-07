@@ -14,6 +14,7 @@ import (
 	"pandora-pay/helpers/events"
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/recovery"
+	"pandora-pay/webassembly/webassembly_utils"
 	"sync/atomic"
 	"syscall/js"
 )
@@ -45,7 +46,7 @@ func listenEvents(this js.Value, args []js.Value) interface{} {
 			case string:
 				final = data.Data
 			case interface{}:
-				if final, err = convertJSONBytes(v); err != nil {
+				if final, err = webassembly_utils.ConvertJSONBytes(v); err != nil {
 					panic(err)
 				}
 			default:
@@ -60,7 +61,7 @@ func listenEvents(this js.Value, args []js.Value) interface{} {
 }
 
 func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if len(args) != 1 || args[0].Type() != js.TypeFunction {
 			return nil, errors.New("Argument must be a callback function")

@@ -1,14 +1,12 @@
 package webassembly
 
 import (
-	"encoding/json"
 	"pandora-pay/blockchain/transactions/transaction/transaction-data"
 	"pandora-pay/blockchain/transactions/transaction/transaction-simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction-type"
 	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
 	"pandora-pay/config"
 	"pandora-pay/network/api/api-common/api_types"
-	"pandora-pay/recovery"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/address"
 	"sync"
@@ -18,63 +16,13 @@ import (
 var subscriptionsIndex uint64
 var startMainCallback func()
 
-var promiseConstructor, errorConstructor js.Value
-
 var mutex sync.Mutex
-
-func convertJSONBytes(obj interface{}) (js.Value, error) {
-
-	data, err := json.Marshal(obj)
-	if err != nil {
-		return js.Null(), err
-	}
-
-	return convertBytes(data)
-}
-
-func convertBytes(data []byte) (js.Value, error) {
-	if data == nil {
-		return js.Null(), nil
-	}
-	jsOut := js.Global().Get("Uint8Array").New(len(data))
-	js.CopyBytesToJS(jsOut, data)
-	return jsOut, nil
-}
-
-func unmarshalBytes(data js.Value, obj interface{}) error {
-	jsonData := make([]byte, data.Get("length").Int())
-	js.CopyBytesToGo(jsonData, data)
-	return json.Unmarshal(jsonData, obj)
-}
-
-func promiseFunction(callback func() (interface{}, error)) interface{} {
-
-	return promiseConstructor.New(js.FuncOf(func(this2 js.Value, args2 []js.Value) interface{} {
-		recovery.SafeGo(func() {
-			result, err := callback()
-			if err != nil {
-				args2[1].Invoke(errorConstructor.New(err.Error()))
-				return
-			}
-			args2[0].Invoke(result)
-		})
-		return nil
-	}))
-
-}
 
 func Initialize(startMainCb func()) {
 
 	startMainCallback = startMainCb
 
-	promiseConstructor = js.Global().Get("Promise")
-	errorConstructor = js.Global().Get("Error")
-
-	if promiseConstructor.IsNull() {
-		panic("promiseConstructor is null")
-	}
-
-	PandoraPayExport := map[string]interface{}{
+	js.Global().Set("PandoraPay", js.ValueOf(map[string]interface{}{
 		"helpers": js.ValueOf(map[string]interface{}{
 			"helloPandora":            js.FuncOf(helloPandora),
 			"start":                   js.FuncOf(start),
@@ -247,8 +195,6 @@ func Initialize(startMainCb func()) {
 				"API_TOKENS_INFO_MAX_RESULTS":  js.ValueOf(config.API_TOKENS_INFO_MAX_RESULTS),
 			}),
 		}),
-	}
-
-	js.Global().Set("PandoraPay", js.ValueOf(PandoraPayExport))
+	}))
 
 }

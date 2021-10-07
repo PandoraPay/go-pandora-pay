@@ -12,11 +12,12 @@ import (
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/store"
 	store_db_interface "pandora-pay/store/store-db/store-db-interface"
+	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
 )
 
 func storeAccount(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		var err error
 
@@ -101,7 +102,7 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 }
 
 func storeToken(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		var err error
 

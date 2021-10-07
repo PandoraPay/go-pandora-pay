@@ -14,6 +14,7 @@ import (
 	"pandora-pay/helpers"
 	api_faucet "pandora-pay/network/api/api-common/api-faucet"
 	"pandora-pay/network/api/api-common/api_types"
+	"pandora-pay/webassembly/webassembly_utils"
 	"strconv"
 	"sync"
 	"syscall/js"
@@ -23,7 +24,7 @@ import (
 var txMutex sync.Mutex
 
 func getNetworkFaucetCoins(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -37,7 +38,7 @@ func getNetworkFaucetCoins(this js.Value, args []js.Value) interface{} {
 }
 
 func getNetworkFaucetInfo(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -46,12 +47,12 @@ func getNetworkFaucetInfo(this js.Value, args []js.Value) interface{} {
 		if data.Err != nil {
 			return nil, data.Err
 		}
-		return convertBytes(data.Out)
+		return webassembly_utils.ConvertBytes(data.Out)
 	})
 }
 
 func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -68,12 +69,12 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		return convertBytes(data.Out)
+		return webassembly_utils.ConvertBytes(data.Out)
 	})
 }
 
 func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -109,12 +110,12 @@ func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 			}
 		}
 
-		return convertJSONBytes(blkComplete)
+		return webassembly_utils.ConvertJSONBytes(blkComplete)
 	})
 }
 
 func getNetworkAccountsCount(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -135,14 +136,14 @@ func getNetworkAccountsCount(this js.Value, args []js.Value) interface{} {
 }
 
 func getNetworkAccountsKeysByIndex(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
 
 		request := &api_types.APIAccountsKeysByIndexRequest{nil, nil, false}
-		if err := unmarshalBytes(args[0], request); err != nil {
+		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
 
@@ -151,19 +152,19 @@ func getNetworkAccountsKeysByIndex(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		return convertBytes(data.Out)
+		return webassembly_utils.ConvertBytes(data.Out)
 	})
 }
 
 func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
 
 		request := &api_types.APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
-		if err := unmarshalBytes(args[0], request); err != nil {
+		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
 
@@ -172,12 +173,12 @@ func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		return convertBytes(data.Out)
+		return webassembly_utils.ConvertBytes(data.Out)
 	})
 }
 
 func getNetworkAccount(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -227,12 +228,12 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 
 		}
 
-		return convertJSONBytes(result)
+		return webassembly_utils.ConvertJSONBytes(result)
 	})
 }
 
 func getNetworkAccountTxs(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -248,12 +249,12 @@ func getNetworkAccountTxs(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		return convertBytes(data.Out)
+		return webassembly_utils.ConvertBytes(data.Out)
 	})
 }
 
 func getNetworkAccountMempool(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -274,12 +275,12 @@ func getNetworkAccountMempool(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return convertJSONBytes(result)
+		return webassembly_utils.ConvertJSONBytes(result)
 	})
 }
 
 func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		txMutex.Lock()
 		defer txMutex.Unlock()
@@ -320,12 +321,12 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return convertJSONBytes(received)
+		return webassembly_utils.ConvertJSONBytes(received)
 	})
 }
 
 func getNetworkTokenInfo(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -343,7 +344,7 @@ func getNetworkTokenInfo(this js.Value, args []js.Value) interface{} {
 }
 
 func getNetworkToken(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -361,12 +362,12 @@ func getNetworkToken(this js.Value, args []js.Value) interface{} {
 		if err = tok.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
 			return nil, err
 		}
-		return convertJSONBytes(tok)
+		return webassembly_utils.ConvertJSONBytes(tok)
 	})
 }
 
 func getNetworkMempool(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -382,12 +383,12 @@ func getNetworkMempool(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		return convertBytes(data.Out)
+		return webassembly_utils.ConvertBytes(data.Out)
 	})
 }
 
 func subscribeNetwork(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
@@ -405,7 +406,7 @@ func subscribeNetwork(this js.Value, args []js.Value) interface{} {
 }
 
 func unsubscribeNetwork(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")

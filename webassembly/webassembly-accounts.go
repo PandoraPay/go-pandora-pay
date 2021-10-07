@@ -4,21 +4,22 @@ import (
 	"encoding/hex"
 	"pandora-pay/addresses"
 	"pandora-pay/helpers"
+	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
 )
 
 func decodeAddress(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		address, err := addresses.DecodeAddr(args[0].String())
 		if err != nil {
 			return nil, err
 		}
-		return convertJSONBytes(address)
+		return webassembly_utils.ConvertJSONBytes(address)
 	})
 }
 
 func generateAddress(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		parameters := struct {
 			PublicKey    helpers.HexBytes `json:"publicKey"`
@@ -27,7 +28,7 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 			Amount       uint64           `json:"amount"`
 		}{}
 
-		if err := unmarshalBytes(args[0], &parameters); err != nil {
+		if err := webassembly_utils.UnmarshalBytes(args[0], &parameters); err != nil {
 			return nil, err
 		}
 
@@ -36,7 +37,7 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return convertJSONBytes([]interface{}{
+		return webassembly_utils.ConvertJSONBytes([]interface{}{
 			addr,
 			addr.EncodeAddr(),
 		})
@@ -45,7 +46,7 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 }
 
 func generateNewAddress(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		priv := addresses.GenerateNewPrivateKey()
 		addr, err := priv.GenerateAddress(true, 0, nil)
 
@@ -53,7 +54,7 @@ func generateNewAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return convertJSONBytes([]interface{}{
+		return webassembly_utils.ConvertJSONBytes([]interface{}{
 			hex.EncodeToString(priv.Key),
 			addr.EncodeAddr(),
 			hex.EncodeToString(addr.PublicKey),

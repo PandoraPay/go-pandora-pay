@@ -95,7 +95,7 @@ func (consensus *Consensus) broadcastTxs(txs []*transaction.Transaction, justCre
 
 				out := consensus.httpServer.Websockets.BroadcastAwaitAnswer(key, value, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, 2*config.WEBSOCKETS_TIMEOUT)
 				for j := range out {
-					if out[j].Err != nil {
+					if out[j] != nil && out[j].Err != nil {
 						errs[i] = out[j].Err
 						break
 					}

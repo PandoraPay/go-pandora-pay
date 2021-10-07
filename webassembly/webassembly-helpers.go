@@ -5,26 +5,27 @@ import (
 	"fmt"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/identicon"
+	"pandora-pay/webassembly/webassembly_utils"
 	"strconv"
 	"syscall/js"
 )
 
 func helloPandora(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		fmt.Println("HelloPandora works!")
 		return true, nil
 	})
 }
 
 func start(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		startMainCallback()
 		return true, nil
 	})
 }
 
 func getIdenticon(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		publicKey, err := hex.DecodeString(args[0].String())
 		if err != nil {
@@ -35,18 +36,18 @@ func getIdenticon(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		return convertBytes(identicon)
+		return webassembly_utils.ConvertBytes(identicon)
 	})
 }
 
 func randomUint64(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		return helpers.RandomUint64(), nil
 	})
 }
 
 func randomUint64N(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		n, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
 			return nil, err
@@ -56,25 +57,25 @@ func randomUint64N(this js.Value, args []js.Value) interface{} {
 }
 
 func shuffleArray(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		n, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
 			return nil, err
 		}
 
 		array := helpers.ShuffleArray(int(n))
-		return convertJSONBytes(array)
+		return webassembly_utils.ConvertJSONBytes(array)
 	})
 }
 
 func shuffleArray_for_Zether(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		n, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
 			return nil, err
 		}
 
 		array := helpers.ShuffleArray_for_Zether(int(n))
-		return convertJSONBytes(array)
+		return webassembly_utils.ConvertJSONBytes(array)
 	})
 }

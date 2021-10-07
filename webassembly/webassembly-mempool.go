@@ -7,13 +7,14 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/mempool"
 	"pandora-pay/network/websocks/connection/advanced-connection-types"
+	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
 )
 
 //NOT USED ANYMORE
 
 func mempoolRemoveTx(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		hash, err := hex.DecodeString(args[0].String())
 		if err != nil {
@@ -33,7 +34,7 @@ func mempoolRemoveTx(this js.Value, args []js.Value) interface{} {
 }
 
 func mempoolInsertTx(this js.Value, args []js.Value) interface{} {
-	return promiseFunction(func() (interface{}, error) {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		tx := &transaction.Transaction{}
 		if err := json.Unmarshal([]byte(args[1].String()), tx); err != nil {
