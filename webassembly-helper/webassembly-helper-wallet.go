@@ -10,19 +10,36 @@ import (
 	"time"
 )
 
+func initializeBalanceDecoder(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		crypto.BalanceDecoder.SetTableSize(0, ctx, func(status string) {
+			args[0].Invoke(status)
+			time.Sleep(1 * time.Millisecond)
+		})
+
+		return true, nil
+	})
+}
+
 func decodeBalance(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		parameters := &struct {
-			PrivateKey     *addresses.PrivateKey `json:"privateKey"`
-			PreviousValue  uint64                `json:"previousValue"`
-			BalanceEncoded helpers.HexBytes      `json:"balanceEncoded"`
-			Token          helpers.HexBytes      `json:"token"`
+			PrivateKey     helpers.HexBytes `json:"privateKey"`
+			PreviousValue  uint64           `json:"previousValue"`
+			BalanceEncoded helpers.HexBytes `json:"balanceEncoded"`
+			Token          helpers.HexBytes `json:"token"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
 			return nil, err
 		}
+
+		privateKey := &addresses.PrivateKey{Key: parameters.PrivateKey}
 
 		balance, err := new(crypto.ElGamal).Deserialize(parameters.BalanceEncoded)
 		if err != nil {
@@ -38,13 +55,14 @@ func decodeBalance(this js.Value, args []js.Value) interface{} {
 		go func() {
 			defer cancel()
 
-			value, finalErr = parameters.PrivateKey.DecodeBalance(balance, parameters.PreviousValue, ctx, func(status string) {
-				args[2].Invoke(status)
+			time.Sleep(time.Millisecond * 10)
+
+			value, finalErr = privateKey.DecodeBalance(balance, parameters.PreviousValue, ctx, func(status string) {
+				args[1].Invoke(status)
 				time.Sleep(1 * time.Millisecond)
 			})
 
 			done = true
-
 		}()
 
 		return []interface{}{

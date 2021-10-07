@@ -101,6 +101,21 @@ func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte) *wallet_addr
 	return wallet.addressesMap[string(publicKey)]
 }
 
+func (wallet *Wallet) GetDataForDecodingBalance(publicKey, token []byte) (privateKey []byte, previousValue uint64) {
+
+	wallet.RLock()
+	defer wallet.RUnlock()
+
+	addr := wallet.addressesMap[string(publicKey)]
+	privateKey = addr.PrivateKey.Key
+
+	if addr.BalancesDecoded[string(token)] != nil {
+		previousValue = addr.BalancesDecoded[string(token)].AmountDecoded
+	}
+
+	return
+}
+
 func (wallet *Wallet) ImportPrivateKey(name string, privateKey []byte) (*wallet_address.WalletAddress, error) {
 
 	if len(privateKey) != 32 {

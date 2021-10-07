@@ -12,7 +12,8 @@ func main() {
 	js.Global().Set("PandoraPay", js.ValueOf(map[string]interface{}{
 		"helloPandoraHelper": js.FuncOf(helloPandoraHelper),
 		"wallet": js.ValueOf(map[string]interface{}{
-			"decodeBalance": js.FuncOf(decodeBalance),
+			"initializeBalanceDecoder": js.FuncOf(initializeBalanceDecoder),
+			"decodeBalance":            js.FuncOf(decodeBalance),
 		}),
 	}))
 

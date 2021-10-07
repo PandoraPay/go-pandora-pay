@@ -266,7 +266,7 @@ func deriveDelegatedStakeWalletAddress(this js.Value, args []js.Value) interface
 	})
 }
 
-func decodeBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
+func getDataForDecodingBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {
@@ -282,17 +282,12 @@ func decodeBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		addr := app.Wallet.GetWalletAddressByPublicKey(parameters.PublicKey)
+		privateKey, previousValue := app.Wallet.GetDataForDecodingBalance(parameters.PublicKey, parameters.Token)
 
-		var amountDecoded uint64
-		if addr.BalancesDecoded[string(parameters.Token)] != nil {
-			amountDecoded = addr.BalancesDecoded[string(parameters.Token)].AmountDecoded
-		}
-
-		return webassembly_utils.ConvertJSONBytes([]interface{}{
-			addr.PrivateKey.Key,
-			amountDecoded,
-		})
+		return webassembly_utils.ConvertJSONBytes(struct {
+			PrivateKey    helpers.HexBytes `json:"privateKey"`
+			PreviousValue uint64           `json:"previousValue"`
+		}{privateKey, previousValue})
 
 	})
 }
