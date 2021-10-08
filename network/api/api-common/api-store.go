@@ -427,10 +427,19 @@ func (apiStore *APIStore) loadBlockInfo(reader store_db_interface.StoreDBTransac
 func (apiStore *APIStore) loadTxInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*info.TxInfo, error) {
 	data := reader.Get("txInfo_ByHash" + string(hash))
 	if data == nil {
-		return nil, errors.New("BlockInfo was not found")
+		return nil, errors.New("TxInfo was not found")
 	}
 	txInfo := &info.TxInfo{}
 	return txInfo, json.Unmarshal(data, txInfo)
+}
+
+func (apiStore *APIStore) loadTxPreview(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*info.TxPreview, error) {
+	data := reader.Get("txPreview_ByHash" + string(hash))
+	if data == nil {
+		return nil, errors.New("TxPreview was not found")
+	}
+	txPreview := &info.TxPreview{}
+	return txPreview, json.Unmarshal(data, txPreview)
 }
 
 func (apiStore *APIStore) loadTokenInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*info.TokenInfo, error) {

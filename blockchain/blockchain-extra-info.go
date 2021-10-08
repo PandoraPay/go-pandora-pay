@@ -86,6 +86,9 @@ func removeTxsInfo(writer store_db_interface.StoreDBTransactionInterface, remove
 		if err = writer.Delete("txInfo_ByHash" + txHash); err != nil {
 			panic("Error deleting transaction info " + err.Error())
 		}
+		if err = writer.Delete("txPreview_ByHash" + txHash); err != nil {
+			panic("Error deleting transaction info " + err.Error())
+		}
 	}
 
 	return
@@ -156,8 +159,18 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 		}); err != nil {
 			return
 		}
-
 		if err = writer.Put("txInfo_ByHash"+tx.Bloom.HashStr, buffer); err != nil {
+			return
+		}
+
+		var txPreview *info.TxPreview
+		if txPreview, err = info.CreateTxPreviewFromTx(tx); err != nil {
+			return
+		}
+		if buffer, err = json.Marshal(txPreview); err != nil {
+			return
+		}
+		if err = writer.Put("txPreview_ByHash"+tx.Bloom.HashStr, buffer); err != nil {
 			return
 		}
 

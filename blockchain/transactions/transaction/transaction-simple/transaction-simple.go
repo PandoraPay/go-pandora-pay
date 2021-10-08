@@ -21,7 +21,7 @@ type TransactionSimple struct {
 	DataVersion transaction_data.TransactionDataVersion
 	Data        []byte
 	Nonce       uint64
-	Fee         uint64
+	Fees        uint64
 	Vin         *transaction_simple_parts.TransactionSimpleInput
 	Bloom       *TransactionSimpleBloom
 }
@@ -45,9 +45,9 @@ func (tx *TransactionSimple) IncludeTransaction(txRegistrations *transaction_dat
 
 	switch tx.TxScript {
 	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE:
-		err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fee)
+		err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fees)
 	case SCRIPT_CLAIM:
-		err = plainAcc.AddClaimable(false, tx.Fee)
+		err = plainAcc.AddClaimable(false, tx.Fees)
 	default:
 		err = errors.New("Invalid Simple TxScript")
 	}
@@ -71,7 +71,7 @@ func (tx *TransactionSimple) IncludeTransaction(txRegistrations *transaction_dat
 }
 
 func (tx *TransactionSimple) ComputeFees() (uint64, error) {
-	return tx.Fee, nil
+	return tx.Fees, nil
 }
 
 func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
@@ -127,7 +127,7 @@ func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 	}
 
 	w.WriteUvarint(tx.Nonce)
-	w.WriteUvarint(tx.Fee)
+	w.WriteUvarint(tx.Fees)
 
 	tx.Vin.Serialize(w, inclSignature)
 
@@ -193,7 +193,7 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 
-	if tx.Fee, err = r.ReadUvarint(); err != nil {
+	if tx.Fees, err = r.ReadUvarint(); err != nil {
 		return
 	}
 

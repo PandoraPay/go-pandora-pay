@@ -13,10 +13,8 @@ type TransactionZetherPayload struct {
 	Token     []byte
 	BurnValue uint64
 
-	DataVersion transaction_data.TransactionDataVersion // its unencrypted  and is by default 0 for almost all txs
-	Data        []byte                                  // rpc payload encryption depends on RPCType
-
-	// sender position in ring representation in a byte, upto 256 ring
+	DataVersion transaction_data.TransactionDataVersion
+	Data        []byte // sender position in ring representation in a byte, upto 256 ring
 	// 144 byte payload  ( to implement specific functionality such as delivery of keys etc), user dependent encryption
 	Statement *crypto.Statement // note statement containts fees
 	Proof     *crypto.Proof

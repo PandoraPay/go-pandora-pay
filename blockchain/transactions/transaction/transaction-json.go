@@ -33,7 +33,7 @@ type json_Only_TransactionSimple struct {
 	DataVersion transaction_data.TransactionDataVersion `json:"dataVersion"`
 	Data        helpers.HexBytes                        `json:"data"`
 	Nonce       uint64                                  `json:"nonce"`
-	Fee         uint64                                  `json:"fee"`
+	Fees        uint64                                  `json:"fee"`
 	Vin         *json_TransactionSimpleInput            `json:"vin"`
 }
 
@@ -143,7 +143,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				base.DataVersion,
 				base.Data,
 				base.Nonce,
-				base.Fee,
+				base.Fees,
 				vinJson,
 			},
 		}
@@ -287,7 +287,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			DataVersion: simpleJson.DataVersion,
 			Data:        simpleJson.Data,
 			Nonce:       simpleJson.Nonce,
-			Fee:         simpleJson.Fee,
+			Fees:        simpleJson.Fees,
 			Vin:         vin,
 		}
 		tx.TransactionBaseInterface = base
