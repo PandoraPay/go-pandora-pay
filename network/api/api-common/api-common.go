@@ -139,41 +139,6 @@ func (api *APICommon) GetBlockInfo(request *api_types.APIBlockInfoRequest) ([]by
 	return json.Marshal(blockInfo)
 }
 
-func (api *APICommon) GetTx(request *api_types.APITransactionRequest) ([]byte, error) {
-
-	var tx *transaction.Transaction
-	var err error
-
-	mempool := false
-	var txInfo *info.TxInfo
-	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
-		txMemPool := api.mempool.Txs.Get(string(request.Hash))
-		if txMemPool != nil {
-			mempool = true
-			tx = txMemPool.Tx
-		} else {
-			tx, txInfo, err = api.ApiStore.openLoadTx(request.Hash, 0)
-		}
-	} else {
-		tx, txInfo, err = api.ApiStore.openLoadTx(nil, request.Height)
-	}
-
-	if err != nil || tx == nil {
-		return nil, err
-	}
-
-	result := &api_types.APITransaction{nil, nil, mempool, txInfo}
-	if request.ReturnType == api_types.RETURN_SERIALIZED {
-		result.TxSerialized = tx.Bloom.Serialized
-	} else if request.ReturnType == api_types.RETURN_JSON {
-		result.Tx = tx
-	} else {
-		return nil, errors.New("Invalid return type")
-	}
-
-	return json.Marshal(result)
-}
-
 func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) ([]byte, error) {
 
 	publicKey, err := request.GetPublicKey()
@@ -243,6 +208,68 @@ func (api *APICommon) GetAccountMempool(request *api_types.APIAccountBaseRequest
 	}
 
 	return json.Marshal(answer)
+}
+
+func (api *APICommon) GetTx(request *api_types.APITransactionRequest) ([]byte, error) {
+	var tx *transaction.Transaction
+	var err error
+
+	mempool := false
+	var txInfo *info.TxInfo
+	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
+		txMemPool := api.mempool.Txs.Get(string(request.Hash))
+		if txMemPool != nil {
+			mempool = true
+			tx = txMemPool.Tx
+		} else {
+			tx, txInfo, err = api.ApiStore.openLoadTx(request.Hash, 0)
+		}
+	} else {
+		tx, txInfo, err = api.ApiStore.openLoadTx(nil, request.Height)
+	}
+
+	if err != nil || tx == nil {
+		return nil, err
+	}
+
+	result := &api_types.APITransaction{nil, nil, mempool, txInfo}
+	if request.ReturnType == api_types.RETURN_SERIALIZED {
+		result.TxSerialized = tx.Bloom.Serialized
+	} else if request.ReturnType == api_types.RETURN_JSON {
+		result.Tx = tx
+	} else {
+		return nil, errors.New("Invalid return type")
+	}
+
+	return json.Marshal(result)
+}
+
+func (api *APICommon) GetTxPreview(request *api_types.APITransactionInfoRequest) ([]byte, error) {
+	var txPreview *info.TxPreview
+	var txInfo *info.TxInfo
+	var err error
+
+	mempool := false
+	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
+		txMemPool := api.mempool.Txs.Get(string(request.Hash))
+		if txMemPool != nil {
+			mempool = true
+			if txPreview, err = info.CreateTxPreviewFromTx(txMemPool.Tx); err != nil {
+				return nil, err
+			}
+		} else {
+			txPreview, txInfo, err = api.ApiStore.openLoadTxPreview(request.Hash, 0)
+		}
+	} else {
+		txPreview, txInfo, err = api.ApiStore.openLoadTxPreview(nil, request.Height)
+	}
+
+	if err != nil || txPreview == nil {
+		return nil, err
+	}
+
+	result := &api_types.APITransactionPreview{txPreview, mempool, txInfo}
+	return json.Marshal(result)
 }
 
 func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) ([]byte, error) {

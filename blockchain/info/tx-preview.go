@@ -11,23 +11,21 @@ import (
 	"pandora-pay/helpers"
 )
 
-type TxPreviewBase interface{}
-type TxPreviewSimpleExtra interface{}
-
 type TxPreviewSimpleExtraUnstake struct {
-	TxPreviewSimpleExtra
 	Amount uint64 `json:"amount"`
 }
 
+type TxPreviewSimpleOutput struct {
+	PublicKey helpers.HexBytes `json:"publicKey"`
+	Amount    uint64           `json:"amount"`
+}
+
 type TxPreviewSimpleExtraClaim struct {
-	TxPreviewSimpleExtra
-	PublicKeys []helpers.HexBytes `json:"publicKeys"`
-	Amounts    []uint64           `json:"amounts"`
+	Output []*TxPreviewSimpleOutput `json:"output"`
 }
 
 type TxPreviewSimple struct {
-	TxPreviewBase
-	Extra      TxPreviewSimpleExtra
+	Extra      interface{}                   `json:"extra"`
 	TxScript   transaction_simple.ScriptType `json:"txScript"`
 	DataPublic helpers.HexBytes              `json:"dataPublic"`
 	Fees       uint64                        `json:"fees"`
@@ -43,32 +41,37 @@ type TxPreviewZetherPayload struct {
 }
 
 type TxPreviewZether struct {
-	TxPreviewBase
 	TxScript transaction_zether.ScriptType `json:"txScript"`
 	Payloads []*TxPreviewZetherPayload     `json:"payloads"`
 }
 
 type TxPreview struct {
-	TxPreviewBase
+	TxBase  interface{}                         `json:"base"`
 	Version transaction_type.TransactionVersion `json:"version"`
+	Hash    helpers.HexBytes                    `json:"hash"`
 }
 
 func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 
-	var base TxPreviewBase
+	var base interface{}
+
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 		txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
-		var baseExtra TxPreviewSimpleExtra
+		var baseExtra interface{}
 		switch txBase.TxScript {
 		case transaction_simple.SCRIPT_UPDATE_DELEGATE: //nothing to be copied
 		case transaction_simple.SCRIPT_CLAIM:
 			txExtra := txBase.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleClaim)
-			baseExtra = &TxPreviewSimpleExtraClaim{
-				PublicKeys: make([]helpers.HexBytes, len(txExtra.Output)),
-				Amounts:    make([]uint64, len(txExtra.Output)),
+			extraClaim := &TxPreviewSimpleExtraClaim{
+				Output: make([]*TxPreviewSimpleOutput, len(txExtra.Output)),
 			}
+			for i, out := range txExtra.Output {
+				extraClaim.Output[i] = &TxPreviewSimpleOutput{out.PublicKey, out.Amount}
+			}
+
+			baseExtra = extraClaim
 		case transaction_simple.SCRIPT_UNSTAKE:
 			txExtra := txBase.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake)
 			baseExtra = &TxPreviewSimpleExtraUnstake{Amount: txExtra.Amount}
@@ -121,5 +124,6 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 	return &TxPreview{
 		base,
 		tx.Version,
+		tx.Bloom.Hash,
 	}, nil
 }

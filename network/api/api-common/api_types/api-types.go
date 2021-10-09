@@ -70,6 +70,12 @@ type APITransaction struct {
 	Info         *info.TxInfo             `json:"info,omitempty"`
 }
 
+type APITransactionPreview struct {
+	TxPreview *info.TxPreview `json:"txPreview,omitempty"`
+	Mempool   bool            `json:"mempool,omitempty"`
+	Info      *info.TxInfo    `json:"info,omitempty"`
+}
+
 type APIMempoolAnswer struct {
 	ChainHash helpers.HexBytes   `json:"chainHash"`
 	Count     int                `json:"count"`

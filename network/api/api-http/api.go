@@ -135,6 +135,23 @@ func (api *API) getTxInfo(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetTxInfo(request)
 }
 
+func (api *API) getTxPreview(values *url.Values) (interface{}, error) {
+
+	request := &api_types.APITransactionInfoRequest{}
+
+	err := errors.New("parameter 'hash' or 'height' are missing")
+	if values.Get("height") != "" {
+		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
+	} else if values.Get("hash") != "" {
+		request.Hash, err = hex.DecodeString(values.Get("hash"))
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return api.apiCommon.GetTxPreview(request)
+}
+
 func (api *API) getTx(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APITransactionRequest{0, nil, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
@@ -366,6 +383,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		api.GetMap["token-info"] = api.getTokenInfo
 		api.GetMap["block-info"] = api.getBlockInfo
 		api.GetMap["tx-info"] = api.getTxInfo
+		api.GetMap["tx-preview"] = api.getTxPreview
 		api.GetMap["account/txs"] = api.getAccountTxs
 		api.GetMap["account/mem-pool"] = api.getAccountMempool
 	}

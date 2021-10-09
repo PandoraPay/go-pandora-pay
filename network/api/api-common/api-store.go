@@ -52,6 +52,24 @@ func (apiStore *APIStore) openLoadTxInfo(hash []byte, txHeight uint64) (txInfo *
 	return
 }
 
+func (apiStore *APIStore) openLoadTxPreview(hash []byte, txHeight uint64) (txPreview *info.TxPreview, txInfo *info.TxInfo, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		if hash == nil {
+			if hash, err = apiStore.loadTxHash(reader, txHeight); err != nil {
+				return
+			}
+		}
+
+		if txPreview, err = apiStore.loadTxPreview(reader, hash); err != nil {
+			return
+		}
+		txInfo, err = apiStore.loadTxInfo(reader, hash)
+		return
+	})
+	return
+}
+
 func (apiStore *APIStore) openLoadBlockInfo(blockHeight uint64, hash []byte) (blkInfo *info.BlockInfo, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 

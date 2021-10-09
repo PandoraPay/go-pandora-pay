@@ -109,6 +109,9 @@ func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
 				return nil, err
 			}
 		}
+		if err = blkComplete.BloomAll(); err != nil {
+			return nil, err
+		}
 
 		return webassembly_utils.ConvertJSONBytes(blkComplete)
 	})
@@ -279,7 +282,7 @@ func getNetworkAccountMempool(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
+func getNetworkTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		txMutex.Lock()
@@ -290,18 +293,14 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		var height uint64
-		var hash []byte
 		var err error
 
-		switch args[0].Type() {
-		case js.TypeNumber:
-			height = uint64(args[0].Int())
-		case js.TypeString:
-			hash, err = hex.DecodeString(args[0].String())
-		default:
-			err = errors.New("Invalid argument")
+		height, err := strconv.ParseUint(args[0].String(), 10, 64)
+		if err != nil {
+			return nil, err
 		}
+
+		hash, err := hex.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
@@ -325,6 +324,32 @@ func getNetworkTransaction(this js.Value, args []js.Value) interface{} {
 	})
 }
 
+func getNetworkTxPreview(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+
+		height, err := strconv.ParseUint(args[0].String(), 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		hash, err := hex.DecodeString(args[1].String())
+		if err != nil {
+			return nil, err
+		}
+
+		data := socket.SendJSONAwaitAnswer([]byte("tx-preview"), &api_types.APITransactionInfoRequest{height, hash}, 0)
+		if data.Err != nil {
+			return nil, data.Err
+		}
+
+		return webassembly_utils.ConvertBytes(data.Out), nil
+	})
+}
+
 func getNetworkTokenInfo(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
@@ -339,7 +364,7 @@ func getNetworkTokenInfo(this js.Value, args []js.Value) interface{} {
 		if data.Err != nil {
 			return nil, data.Err
 		}
-		return data.Out, nil
+		return webassembly_utils.ConvertBytes(data.Out), nil
 	})
 }
 
