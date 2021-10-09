@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/app"
-	"pandora-pay/blockchain/blocks/block-complete"
+	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	plain_account "pandora-pay/blockchain/data_storage/plain-accounts/plain-account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
@@ -16,12 +16,9 @@ import (
 	"pandora-pay/network/api/api-common/api_types"
 	"pandora-pay/webassembly/webassembly_utils"
 	"strconv"
-	"sync"
 	"syscall/js"
 	"time"
 )
-
-var txMutex sync.Mutex
 
 func getNetworkFaucetCoins(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
@@ -73,47 +70,44 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func getNetworkBlockComplete(this js.Value, args []js.Value) interface{} {
+func getNetworkBlockWithTxs(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		var height uint64
-		var hash []byte
-		var err error
-
-		switch args[0].Type() {
-		case js.TypeNumber:
-			height = uint64(args[0].Int())
-		case js.TypeString:
-			if hash, err = hex.DecodeString(args[0].String()); err != nil {
-				return nil, err
-			}
-		default:
-			return nil, errors.New("Invalid argument")
+		height, err := strconv.ParseUint(args[0].String(), 10, 64)
+		if err != nil {
+			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("block-complete"), &api_types.APIBlockCompleteRequest{height, hash, api_types.RETURN_SERIALIZED}, 0)
+		hash, err := hex.DecodeString(args[1].String())
+		if err != nil {
+			return nil, err
+		}
+
+		data := socket.SendJSONAwaitAnswer([]byte("block"), &api_types.APIBlockRequest{height, hash, api_types.RETURN_SERIALIZED}, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
-		blkComplete := block_complete.CreateEmptyBlockComplete()
 
-		if err := blkComplete.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
-			return nil, err
-		}
-		for _, tx := range blkComplete.Txs {
-			if err = tx.BloomExtraVerified(); err != nil {
-				return nil, err
-			}
-		}
-		if err = blkComplete.BloomAll(); err != nil {
+		blkWithTxs := &api_types.APIBlockWithTxs{}
+		if err := json.Unmarshal(data.Out, blkWithTxs); err != nil {
 			return nil, err
 		}
 
-		return webassembly_utils.ConvertJSONBytes(blkComplete)
+		blkWithTxs.Block = block.CreateEmptyBlock()
+		if err := blkWithTxs.Block.Deserialize(helpers.NewBufferReader(blkWithTxs.BlockSerialized)); err != nil {
+			return nil, err
+		}
+		if err = blkWithTxs.Block.BloomNow(); err != nil {
+			return nil, err
+		}
+
+		blkWithTxs.BlockSerialized = nil
+
+		return webassembly_utils.ConvertJSONBytes(blkWithTxs)
 	})
 }
 
@@ -285,15 +279,10 @@ func getNetworkAccountMempool(this js.Value, args []js.Value) interface{} {
 func getNetworkTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		txMutex.Lock()
-		defer txMutex.Unlock()
-
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
-
-		var err error
 
 		height, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
@@ -474,5 +463,5 @@ func unsubscribeNetwork(this js.Value, args []js.Value) interface{} {
 }
 
 func init() {
-	txMutex = sync.Mutex{}
+
 }

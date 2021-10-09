@@ -73,7 +73,7 @@ func Initialize(startMainCb func()) {
 			"getNetworkAccountsKeysByIndex":          js.FuncOf(getNetworkAccountsKeysByIndex),
 			"getNetworkAccountsByKeys":               js.FuncOf(getNetworkAccountsByKeys),
 			"getNetworkBlockInfo":                    js.FuncOf(getNetworkBlockInfo),
-			"getNetworkBlockComplete":                js.FuncOf(getNetworkBlockComplete),
+			"getNetworkBlockWithTxs":                 js.FuncOf(getNetworkBlockWithTxs),
 			"getNetworkTx":                           js.FuncOf(getNetworkTx),
 			"getNetworkTxPreview":                    js.FuncOf(getNetworkTxPreview),
 			"getNetworkAccount":                      js.FuncOf(getNetworkAccount),
