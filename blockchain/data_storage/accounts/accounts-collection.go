@@ -18,16 +18,6 @@ func (collection *AccountsCollection) GetAllMap() map[string]*Accounts {
 	return collection.accsMap
 }
 
-func (collection *AccountsCollection) GetExistingMap(token []byte) (*Accounts, error) {
-	if len(token) == 0 {
-		token = config.NATIVE_TOKEN_FULL
-	}
-	if len(token) != cryptography.RipemdSize {
-		return nil, errors.New("Token was not found")
-	}
-	return collection.accsMap[string(token)], nil
-}
-
 func (collection *AccountsCollection) GetMap(token []byte) (*Accounts, error) {
 
 	if len(token) == 0 {

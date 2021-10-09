@@ -47,7 +47,9 @@ func InitializeEmap(tokens [][]byte) map[string]map[string][]byte {
 	return emap
 }
 
-func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
+func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, validateTx bool, ctx context.Context, statusCallback func(string)) (err error) {
+
+	statusCallback("Transaction Signing...")
 
 	registrations := make([]*transaction_data.TransactionDataRegistration, 0)
 	registrationsAlready := make(map[string]bool)
@@ -335,29 +337,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 	statusCallback("Transaction Zether Proofs generated")
 
-	return
-}
-
-func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
-
-	txBase := &transaction_zether.TransactionZether{
-		TxScript: transaction_zether.SCRIPT_TRANSFER,
-		Height:   height,
-	}
-
-	tx := &transaction.Transaction{
-		Version: transaction_type.TX_ZETHER,
-		Registrations: &transaction_data.TransactionDataTransactions{
-			Registrations: nil,
-		},
-		TransactionBaseInterface: txBase,
-	}
-
-	statusCallback("Transaction Signing...")
-	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
-		return
-	}
-
 	if validateTx {
 		if err = tx.BloomAll(); err != nil {
 			return
@@ -378,6 +357,28 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	}
 
 	return
+}
+
+func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+
+	txBase := &transaction_zether.TransactionZether{
+		TxScript: transaction_zether.SCRIPT_TRANSFER,
+		Height:   height,
+	}
+
+	tx := &transaction.Transaction{
+		Version: transaction_type.TX_ZETHER,
+		Registrations: &transaction_data.TransactionDataTransactions{
+			Registrations: nil,
+		},
+		TransactionBaseInterface: txBase,
+	}
+
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, validateTx, ctx, statusCallback); err != nil {
+		return
+	}
+
+	return tx, nil
 }
 
 // generate statement
