@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -24,7 +25,6 @@ type ZetherTransfer struct {
 	Destination        string
 	Amount             uint64
 	Burn               uint64
-	Fee                uint64
 	Data               *TransactionsWizardData
 }
 
@@ -47,18 +47,38 @@ func InitializeEmap(tokens [][]byte) map[string]map[string][]byte {
 	return emap
 }
 
-func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emapCopy map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
+func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
 
-	//let's copy emap
-	emap := make(map[string]map[string][]byte)
-	for k, v := range emapCopy {
-		emap[k] = make(map[string][]byte)
-		for k2, v2 := range v {
-			emap[k][k2] = helpers.CloneBytes(v2)
+	registrations := make([]*transaction_data.TransactionDataRegistration, 0)
+	registrationsAlready := make(map[string]bool)
+
+	c := uint64(0)
+	for _, payload := range txBase.Payloads {
+		for _, publicKeyPoint := range payload.Statement.Publickeylist {
+
+			publicKey := publicKeyPoint.EncodeCompressed()
+
+			if publicKeyIndex := publicKeyIndexes[string(publicKey)]; publicKeyIndex != nil {
+
+				if !publicKeyIndex.Registered && !registrationsAlready[string(publicKey)] {
+					registrationsAlready[string(publicKey)] = true
+					registrations = append(registrations, &transaction_data.TransactionDataRegistration{
+						c,
+						publicKeyIndex.RegistrationSignature,
+					})
+				}
+
+			} else {
+				return fmt.Errorf("Public Key Index was not specified for ring member %d", c)
+			}
+
+			c += 1
 		}
 	}
+	tx.Registrations.Registrations = registrations
+	statusCallback("Transaction registrations created")
 
-	txBase.Payloads = make([]*transaction_zether.TransactionZetherPayload, len(transfers))
+	payloads := make([]*transaction_zether.TransactionZetherPayload, len(transfers))
 
 	var witness_list []crypto.Witness
 	for t, transfer := range transfers {
@@ -139,9 +159,32 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		payload.Token = transfers[t].Token
 		payload.BurnValue = transfers[t].Burn
 
-		fees := transfers[t].Fee
 		value := transfers[t].Amount
 		burn_value := transfers[t].Burn
+
+		dataFinal := transfer.Data.Data
+		payload.DataVersion = transfer.Data.getDataVersion()
+
+		dataLength := len(dataFinal)
+		if payload.DataVersion == transaction_data.TX_DATA_NONE {
+			dataLength = 0
+		} else if payload.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT {
+			dataLength = helpers.BytesLengthSerialized(uint64(len(dataFinal)))
+		} else if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
+			dataLength = transaction_zether.PAYLOAD0_LIMIT
+		}
+
+		m := int(math.Log2(float64(len(rings[t]))))
+
+		extraBytes := 1 + len(payload.Token) + helpers.BytesLengthSerialized(payload.BurnValue)
+		extraBytes += helpers.BytesLengthSerialized(uint64(len(transfers))) - 1
+		extraBytes += 1 + dataLength              //dataVersion + data
+		extraBytes += len(rings[t])*33*4 + 33 + 1 // statement
+		extraBytes += 33*(22+m*8) + 32*(10)       //proof arrays + proof data
+		extraBytes += 2 * m * 32                  //proof field array
+		fees := setFee(tx, extraBytes, myFees[t].Clone())
+
+		statusCallback("Transaction Set fees")
 
 		for i := range publickeylist { // setup commitments
 			var x bn256.G1
@@ -160,9 +203,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				if len(publickeylist) >= config.TRANSACTIONS_ZETHER_RING_MAX {
 					return errors.New("currently we do not support ring size >= 512")
 				}
-
-				dataFinal := transfer.Data.Data
-				payload.DataVersion = transfer.Data.getDataVersion()
 
 				if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
 					if len(dataFinal) > transaction_zether.PAYLOAD0_LIMIT {
@@ -240,8 +280,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		statusCallback("Homomorphic balance Decoded")
 
-		//fmt.Printf("t %d scid %s  balance %d\n", t, transfers[t].SCID, balance)
-
 		// time for bullets-sigma
 		statement := GenerateStatement(CLn, CRn, publickeylist, C, &D, fees) // generate statement
 
@@ -256,7 +294,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		//Print(statement, witness)
 		payload.Statement = &statement
 
-		txBase.Payloads[t] = &payload
+		payloads[t] = &payload
 
 		// get ready for another round by internal processing of state
 		for i := range publickeylist {
@@ -272,36 +310,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		}
 
 	}
+	txBase.Payloads = payloads
 	statusCallback("Transaction Zether Statements created")
-
-	registrations := make([]*transaction_data.TransactionDataRegistration, 0)
-	registrationsAlready := make(map[string]bool)
-
-	c := uint64(0)
-	for _, payload := range txBase.Payloads {
-		for _, publicKeyPoint := range payload.Statement.Publickeylist {
-
-			publicKey := publicKeyPoint.EncodeCompressed()
-
-			if publicKeyIndex := publicKeyIndexes[string(publicKey)]; publicKeyIndex != nil {
-
-				if !publicKeyIndex.Registered && !registrationsAlready[string(publicKey)] {
-					registrationsAlready[string(publicKey)] = true
-					registrations = append(registrations, &transaction_data.TransactionDataRegistration{
-						c,
-						publicKeyIndex.RegistrationSignature,
-					})
-				}
-
-			} else {
-				return fmt.Errorf("Public Key Index was not specified for ring member %d", c)
-			}
-
-			c += 1
-		}
-	}
-	tx.Registrations.Registrations = registrations
-	statusCallback("Transaction registrations created")
 
 	senderKey := &addresses.PrivateKey{Key: transfers[0].From}
 	sender_secret := new(crypto.BNRed).SetBytes(senderKey.Key).BigInt()
@@ -343,22 +353,8 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		TransactionBaseInterface: txBase,
 	}
 
-	statusCallback("Transaction Signing first time... to determine the size")
-	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
-		return nil, err
-	}
-
-	statusCallback("Transaction Set fees")
-	for t := range transfers {
-		if err = setFee(tx, fees[t].Clone(), func(fee uint64) {
-			transfers[t].Fee = fee
-		}); err != nil {
-			return
-		}
-	}
-
-	statusCallback("Transaction Signing last time")
-	if err = signZetherTx(tx, txBase, transfers, emap, rings, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
+	statusCallback("Transaction Signing...")
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return nil, err
 	}
 

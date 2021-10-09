@@ -57,9 +57,8 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
 		return
 	}
-	if err = setFee(tx, fee.Clone(), func(fee uint64) { txBase.Fees = fee }); err != nil {
-		return
-	}
+	txBase.Fees = setFee(tx, 0, fee.Clone())
+
 	statusCallback("Transaction Fees set")
 
 	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
@@ -116,9 +115,7 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, 
 	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
 		return
 	}
-	if err = setFee(tx, fee.Clone(), func(fee uint64) { txBase.Fees = fee }); err != nil {
-		return
-	}
+	txBase.Fees = setFee(tx, 0, fee.Clone())
 	statusCallback("Transaction Fees set")
 
 	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
@@ -172,9 +169,7 @@ func CreateClaimTx(nonce uint64, key []byte, txRegistrations []*transaction_data
 	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
 		return
 	}
-	if err = setFee(tx, fee.Clone(), func(fee uint64) { txBase.Fees = fee }); err != nil {
-		return
-	}
+	txBase.Fees = setFee(tx, 0, fee.Clone())
 	statusCallback("Transaction Fees set")
 
 	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {

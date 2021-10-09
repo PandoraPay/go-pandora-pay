@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -85,4 +86,9 @@ func GetJSON(obj interface{}, ignoreFields ...string) ([]byte, error) {
 	}
 
 	return toJson, nil
+}
+
+func BytesLengthSerialized(value uint64) int {
+	buf := make([]byte, binary.MaxVarintLen64)
+	return binary.PutUvarint(buf, value)
 }

@@ -414,11 +414,8 @@ func postNetworkMempoolBroadcastTransaction(this js.Value, args []js.Value) inte
 		if err := tx.Deserialize(helpers.NewBufferReader(r)); err != nil {
 			return nil, err
 		}
-		if err := tx.BloomAll(); err != nil {
-			return nil, err
-		}
 
-		errs := app.Network.Consensus.BroadcastTxs([]*transaction.Transaction{tx}, true, true, 0)
+		errs := app.Network.Consensus.BroadcastTxs([]*transaction.Transaction{tx}, true, false, 0)
 		if errs[0] != nil {
 			return nil, errs[0]
 		}
