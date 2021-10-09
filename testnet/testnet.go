@@ -51,7 +51,7 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 	}
 
 	if tx, err = testnet.transactionsBuilder.CreateClaimTx(addr.AddressEncoded, 0, []uint64{amount}, []string{dstAddr.AddressRegistrationEncoded}, &wizard.TransactionsWizardData{nil, false},
-		&wizard.TransactionsWizardFee{0, 0, 0, true}, true, true, true, func(string) {}); err != nil {
+		&wizard.TransactionsWizardFee{0, 0, 0, true}, true, true, true, false, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -66,7 +66,7 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 		return
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, &wizard.TransactionsWizardData{nil, false}, &wizard.TransactionsWizardFee{0, 0, 0, true}, true, true, true, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, &wizard.TransactionsWizardData{nil, false}, &wizard.TransactionsWizardFee{0, 0, 0, true}, true, true, true, false, func(string) {}); err != nil {
 		return nil, err
 	}
 

@@ -12,19 +12,42 @@ import (
 	"pandora-pay/cryptography"
 )
 
-func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.PrivateKey, statusCallback func(string)) (err error) {
+func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.PrivateKey, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (err error) {
+
+	txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
+
+	txBase.Fees = setFee(tx, 64, fee.Clone())
+	statusCallback("Transaction Fees set")
 
 	statusCallback("Transaction Signing...")
-
-	if tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Vin.Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
+	if txBase.Vin.Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 		return err
+	}
+
+	if validateTx {
+		if err = tx.BloomAll(); err != nil {
+			return
+		}
+		statusCallback("Transaction Bloomed")
+		if err = tx.Verify(); err != nil {
+			return
+		}
+		statusCallback("Transaction Verified")
+	} else {
+		if err = tx.BloomExtraVerified(); err != nil {
+			return
+		}
+		if err = tx.BloomAll(); err != nil {
+			return
+		}
+		statusCallback("Transaction Bloomed as Verified")
 	}
 
 	statusCallback("Transaction Signed")
 	return
 }
 
-func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	privateKey := &addresses.PrivateKey{Key: key}
 
@@ -54,31 +77,13 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	}
 	statusCallback("Transaction Created")
 
-	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
+	if err = signSimpleTransaction(tx, privateKey, fee, validateTx, statusCallback); err != nil {
 		return
 	}
-	txBase.Fees = setFee(tx, 0, fee.Clone())
-
-	statusCallback("Transaction Fees set")
-
-	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
-		return
-	}
-
-	if err = tx.BloomAll(); err != nil {
-		return
-	}
-	statusCallback("Transaction Bloomed")
-
-	if err = tx.Verify(); err != nil {
-		return
-	}
-	statusCallback("Transaction Verified")
-
 	return tx, nil
 }
 
-func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, delegateNewFee uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, delegateNewFee uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	dataFinal, err := data.getData()
 	if err != nil {
@@ -112,30 +117,13 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, 
 	}
 	statusCallback("Transaction Created")
 
-	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
+	if err = signSimpleTransaction(tx, privateKey, fee, validateTx, statusCallback); err != nil {
 		return
 	}
-	txBase.Fees = setFee(tx, 0, fee.Clone())
-	statusCallback("Transaction Fees set")
-
-	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
-		return
-	}
-
-	if err = tx.BloomAll(); err != nil {
-		return
-	}
-	statusCallback("Transaction Bloomed")
-
-	if err = tx.Verify(); err != nil {
-		return
-	}
-	statusCallback("Transaction Verified")
-
 	return tx, nil
 }
 
-func CreateClaimTx(nonce uint64, key []byte, txRegistrations []*transaction_data.TransactionDataRegistration, output []*transaction_simple_parts.TransactionSimpleOutput, data *TransactionsWizardData, fee *TransactionsWizardFee, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateClaimTx(nonce uint64, key []byte, txRegistrations []*transaction_data.TransactionDataRegistration, output []*transaction_simple_parts.TransactionSimpleOutput, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	dataFinal, err := data.getData()
 	if err != nil {
@@ -166,25 +154,8 @@ func CreateClaimTx(nonce uint64, key []byte, txRegistrations []*transaction_data
 	}
 	statusCallback("Transaction Created")
 
-	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
+	if err = signSimpleTransaction(tx, privateKey, fee, validateTx, statusCallback); err != nil {
 		return
 	}
-	txBase.Fees = setFee(tx, 0, fee.Clone())
-	statusCallback("Transaction Fees set")
-
-	if err = signSimpleTransaction(tx, privateKey, statusCallback); err != nil {
-		return
-	}
-
-	if err = tx.BloomAll(); err != nil {
-		return
-	}
-	statusCallback("Transaction Bloomed")
-
-	if err = tx.Verify(); err != nil {
-		return
-	}
-	statusCallback("Transaction Verified")
-
 	return tx, nil
 }

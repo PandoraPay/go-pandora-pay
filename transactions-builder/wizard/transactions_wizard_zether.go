@@ -355,7 +355,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 
 	statusCallback("Transaction Signing...")
 	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
-		return nil, err
+		return
 	}
 
 	if validateTx {
@@ -369,7 +369,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		statusCallback("Transaction Verified")
 	} else {
 		if err = tx.BloomExtraVerified(); err != nil {
-			return nil, err
+			return
 		}
 		if err = tx.BloomAll(); err != nil {
 			return
@@ -377,7 +377,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		statusCallback("Transaction Bloomed as Verified")
 	}
 
-	return tx, nil
+	return
 }
 
 // generate statement
