@@ -12,10 +12,10 @@ type TransactionDataTransactions struct {
 
 func (self *TransactionDataTransactions) RegisterNow(regs *registrations.Registrations, publicKeyList [][]byte) (err error) {
 
+	var isReg bool
 	for _, reg := range self.Registrations {
 
 		//verify that the other accounts did not register meanwhile
-		var isReg bool
 		if isReg, err = regs.Exists(string(publicKeyList[reg.PublicKeyIndex])); err != nil {
 			return
 		}
@@ -26,6 +26,15 @@ func (self *TransactionDataTransactions) RegisterNow(regs *registrations.Registr
 		//let's register
 		if _, err = regs.CreateRegistration(publicKeyList[reg.PublicKeyIndex], reg.RegistrationSignature); err != nil {
 			return
+		}
+	}
+
+	for _, publicKey := range publicKeyList {
+		if isReg, err = regs.Exists(string(publicKey)); err != nil {
+			return
+		}
+		if !isReg {
+			return errors.New("PublicKey is already registered")
 		}
 	}
 

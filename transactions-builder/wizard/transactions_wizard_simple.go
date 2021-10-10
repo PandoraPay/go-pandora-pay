@@ -16,7 +16,8 @@ func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.Pr
 
 	txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
-	txBase.Fees = setFee(tx, 64, fee.Clone())
+	extraBytes := cryptography.SignatureSize
+	txBase.Fees = setFee(tx, extraBytes, fee.Clone(), true)
 	statusCallback("Transaction Fees set")
 
 	statusCallback("Transaction Signing...")

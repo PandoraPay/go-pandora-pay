@@ -54,9 +54,49 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	registrations := make([]*transaction_data.TransactionDataRegistration, 0)
 	registrationsAlready := make(map[string]bool)
 
+	senders, receivers := make([]*bn256.G1, len(transfers)), make([]*bn256.G1, len(transfers))
+	publickeylists := make([][]*bn256.G1, len(transfers))
+	witness_indexes := make([][]int, len(transfers))
+
+	for t, transfer := range transfers {
+
+		senderKey := &addresses.PrivateKey{Key: transfer.From}
+		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
+		sender := crypto.GPoint.ScalarMult(secretPoint).G1()
+
+		var receiver_addr *addresses.Address
+		if receiver_addr, err = addresses.DecodeAddr(transfer.Destination); err != nil {
+			return
+		}
+
+		var receiverPoint *crypto.Point
+		if receiverPoint, err = receiver_addr.GetPoint(); err != nil {
+			return
+		}
+		receiver := receiverPoint.G1()
+
+		senders[t] = sender
+		receivers[t] = receiver
+
+		witness_indexes[t] = helpers.ShuffleArray_for_Zether(len(rings[t]))
+		anonset_publickeys := rings[t][2:]
+		publickeylists[t] = make([]*bn256.G1, 0)
+		for i := range witness_indexes[t] {
+			switch i {
+			case witness_indexes[t][0]:
+				publickeylists[t] = append(publickeylists[t], sender)
+			case witness_indexes[t][1]:
+				publickeylists[t] = append(publickeylists[t], receiver)
+			default:
+				publickeylists[t] = append(publickeylists[t], anonset_publickeys[0])
+				anonset_publickeys = anonset_publickeys[1:]
+			}
+		}
+	}
+
 	c := uint64(0)
-	for _, payload := range txBase.Payloads {
-		for _, publicKeyPoint := range payload.Statement.Publickeylist {
+	for _, publickeylist := range publickeylists {
+		for _, publicKeyPoint := range publickeylist {
 
 			publicKey := publicKeyPoint.EncodeCompressed()
 
@@ -91,45 +131,23 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		default:
 		}
 
-		senderKey := &addresses.PrivateKey{Key: transfer.From}
-		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
-		sender := crypto.GPoint.ScalarMult(secretPoint).G1()
-		sender_secret := secretPoint.BigInt()
-
-		var publickeylist, C, CLn, CRn []*bn256.G1
+		var C, CLn, CRn []*bn256.G1
 		var D bn256.G1
 
-		var receiver_addr *addresses.Address
-		if receiver_addr, err = addresses.DecodeAddr(transfer.Destination); err != nil {
-			return
-		}
+		publickeylist := publickeylists[t]
+		witness_index := witness_indexes[t]
 
-		var receiverPoint *crypto.Point
-		if receiverPoint, err = receiver_addr.GetPoint(); err != nil {
-			return
-		}
-		receiver := receiverPoint.G1()
-
-		witness_index := helpers.ShuffleArray_for_Zether(len(rings[t]))
+		senderKey := &addresses.PrivateKey{Key: transfer.From}
+		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
+		sender := senders[t]
+		receiver := receivers[t]
+		sender_secret := secretPoint.BigInt()
 
 		// Lots of ToDo for this, enables satisfying lots of  other things
-		anonset_publickeys := rings[t][2:]
 		ebalances_list := make([]*crypto.ElGamal, 0, len(rings[t]))
 		for i := range witness_index {
 
-			var data string
-			switch i {
-			case witness_index[0]:
-				publickeylist = append(publickeylist, sender)
-				data = sender.String()
-			case witness_index[1]:
-				publickeylist = append(publickeylist, receiver)
-				data = receiver.String()
-			default:
-				publickeylist = append(publickeylist, anonset_publickeys[0])
-				data = anonset_publickeys[0].String()
-				anonset_publickeys = anonset_publickeys[1:]
-			}
+			data := publickeylist[i].String()
 
 			var pt *crypto.ElGamal
 			if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][data]); err != nil {
@@ -184,7 +202,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		extraBytes += len(rings[t])*33*4 + 33 + 1 // statement
 		extraBytes += 33*(22+m*8) + 32*(10)       //proof arrays + proof data
 		extraBytes += 2 * m * 32                  //proof field array
-		fees := setFee(tx, extraBytes, myFees[t].Clone())
+		fees := setFee(tx, extraBytes, myFees[t].Clone(), t == 0)
 
 		statusCallback("Transaction Set fees")
 

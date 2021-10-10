@@ -6,7 +6,7 @@ import (
 	"pandora-pay/helpers"
 )
 
-func setFee(tx *transaction.Transaction, extraBytes int, fee *TransactionsWizardFee) uint64 {
+func setFee(tx *transaction.Transaction, extraBytes int, fee *TransactionsWizardFee, includeSerialize bool) uint64 {
 
 	if fee.Fixed > 0 {
 		return fee.Fixed
@@ -24,7 +24,12 @@ func setFee(tx *transaction.Transaction, extraBytes int, fee *TransactionsWizard
 	oldFee, feeValue := uint64(0), uint64(0)
 	for {
 
-		feeValue = config_fees.ComputeTxFees(uint64(len(tx.SerializeManualToBytes())+helpers.BytesLengthSerialized(feeValue)+extraBytes), fee.PerByte, tx.ComputeExtraSpace(), fee.PerByteExtraSpace)
+		serializeLength := uint64(0)
+		if includeSerialize {
+			serializeLength = uint64(len(tx.SerializeManualToBytes()))
+		}
+
+		feeValue = config_fees.ComputeTxFees(serializeLength+uint64(helpers.BytesLengthSerialized(feeValue)+extraBytes), fee.PerByte, tx.ComputeExtraSpace(), fee.PerByteExtraSpace)
 
 		if oldFee == feeValue {
 			break
