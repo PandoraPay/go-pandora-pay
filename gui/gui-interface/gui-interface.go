@@ -20,6 +20,7 @@ type GUIInterface interface {
 	OutputWrite(any ...interface{})
 	CommandDefineCallback(Text string, callback func(string) error, useIt bool)
 	OutputReadString(text string) (out string, ok bool)
+	OutputReadFilename(text, extension string) (out string, ok bool)
 	OutputReadInt(text string, acceptedValues []int) (out int, ok bool)
 	OutputReadUint64(text string, acceptedValues []uint64, acceptEmpty bool) (out uint64, ok bool)
 	OutputReadFloat64(text string, acceptedValues []float64) (out float64, ok bool)

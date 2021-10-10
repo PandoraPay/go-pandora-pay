@@ -8,6 +8,7 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 	"pandora-pay/addresses"
 	gui_interface "pandora-pay/gui/gui-interface"
+	"path"
 	"strconv"
 )
 
@@ -200,6 +201,16 @@ func (g *GUIInteractive) outputRead(text string) <-chan string {
 
 func (g *GUIInteractive) OutputReadString(text string) (out string, ok bool) {
 	out, ok = <-g.outputRead(text)
+	return
+}
+
+func (g *GUIInteractive) OutputReadFilename(text, extension string) (out string, ok bool) {
+	if out, ok = <-g.outputRead(text); !ok {
+		return "", false
+	}
+	if path.Ext(out) == "" {
+		out += "." + extension
+	}
 	return
 }
 

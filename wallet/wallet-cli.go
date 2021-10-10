@@ -229,7 +229,7 @@ func (wallet *Wallet) CliSelectAddress(text string) (*wallet_address.WalletAddre
 func (wallet *Wallet) initWalletCLI() {
 
 	cliExportAddresses := func(cmd string) (err error) {
-		str, ok := gui.GUI.OutputReadString("Path to export")
+		str, ok := gui.GUI.OutputReadFilename("Path to export", "txt")
 		if !ok {
 			return
 		}
@@ -244,7 +244,7 @@ func (wallet *Wallet) initWalletCLI() {
 		wallet.RLock()
 		defer wallet.RUnlock()
 
-		return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 			regs := registrations.NewRegistrations(reader)
 
 			for _, walletAddress := range wallet.Addresses {
@@ -261,13 +261,25 @@ func (wallet *Wallet) initWalletCLI() {
 			}
 
 			return
-		})
+		}); err != nil {
+			return
+		}
 
+		gui.GUI.Info("Exported successfully to: " + str)
+		return
 	}
 
 	cliExportAddressJSON := func(cmd string) (err error) {
 
-		str, ok := gui.GUI.OutputReadString("Path to export")
+		if err = wallet.CliListAddresses(""); err != nil {
+			return
+		}
+		index, ok := gui.GUI.OutputReadInt("Select Address to be Exported", nil)
+		if !ok {
+			return
+		}
+
+		str, ok := gui.GUI.OutputReadFilename("Path to export", "pandora")
 		if !ok {
 			return
 		}
@@ -278,14 +290,6 @@ func (wallet *Wallet) initWalletCLI() {
 		}
 
 		defer f.Close()
-
-		if err = wallet.CliListAddresses(""); err != nil {
-			return
-		}
-		index, ok := gui.GUI.OutputReadInt("Select Address to be Exported", nil)
-		if !ok {
-			return
-		}
 
 		wallet.RLock()
 		defer wallet.RUnlock()
@@ -311,7 +315,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return errors.New("Error writing into file")
 		}
 
-		gui.GUI.Info("Exported successfully")
+		gui.GUI.Info("Exported successfully to: " + str)
 		return
 	}
 
@@ -331,18 +335,18 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		gui.GUI.Info("Imported successfully")
+		gui.GUI.Info("Imported successfully from: " + str)
 		return
 	}
 
 	cliExportWalletJSON := func(cmd string) (err error) {
 
-		str, ok := gui.GUI.OutputReadString("Path to export")
+		str, ok := gui.GUI.OutputReadFilename("Path to export", "pandora")
 		if !ok {
 			return
 		}
 
-		f, err := os.Create(str + ".pandora")
+		f, err := os.Create(str)
 		if err != nil {
 			return
 		}
@@ -361,7 +365,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return errors.New("Error writing into file")
 		}
 
-		gui.GUI.Info("Wallet Exported successfully")
+		gui.GUI.Info("Wallet Exported successfully to: " + str)
 		return
 	}
 
@@ -390,7 +394,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		gui.GUI.Info("Wallet Imported Successfully")
+		gui.GUI.Info("Wallet Imported Successfully from: " + str)
 		return
 	}
 
