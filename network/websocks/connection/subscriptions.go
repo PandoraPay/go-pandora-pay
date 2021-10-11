@@ -5,7 +5,7 @@ import (
 	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
-	"pandora-pay/network/api/api-common/api_types"
+	"pandora-pay/network/api/api_common/api_types"
 	"sync"
 )
 

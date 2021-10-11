@@ -1,12 +1,12 @@
 package webassembly
 
 import (
-	"pandora-pay/blockchain/transactions/transaction/transaction-data"
-	"pandora-pay/blockchain/transactions/transaction/transaction-simple"
-	"pandora-pay/blockchain/transactions/transaction/transaction-type"
-	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
+	"pandora-pay/blockchain/transactions/transaction/transaction_data"
+	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
+	"pandora-pay/blockchain/transactions/transaction/transaction_type"
+	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/config"
-	"pandora-pay/network/api/api-common/api_types"
+	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/address"
 	"sync"

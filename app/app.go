@@ -8,7 +8,7 @@ import (
 	"pandora-pay/network"
 	"pandora-pay/settings"
 	"pandora-pay/store"
-	transactions_builder "pandora-pay/transactions-builder"
+	transactions_builder "pandora-pay/transactions_builder"
 	"pandora-pay/wallet"
 )
 

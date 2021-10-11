@@ -1,0 +1,128 @@
+package gui_interactive
+
+import (
+	ui "github.com/gizak/termui/v3"
+	"github.com/gizak/termui/v3/widgets"
+	"os"
+	gui_interface "pandora-pay/gui/gui_interface"
+	"pandora-pay/gui/gui_logger"
+	"sync"
+	"time"
+)
+
+type GUIInteractive struct {
+	gui_interface.GUIInterface
+	logger *gui_logger.GUILogger
+
+	cmd        *widgets.List
+	cmdRows    []string
+	cmdStatus  string //string
+	cmdInput   string //string
+	cmdInputCn chan string
+	cmdMutex   sync.RWMutex
+
+	logs *widgets.Paragraph
+
+	info2    *widgets.List
+	info2Map *sync.Map
+
+	info    *widgets.List
+	infoMap *sync.Map
+
+	tickerRender *time.Ticker
+
+	closed bool
+}
+
+func (g *GUIInteractive) Close() {
+	if g.closed {
+		return
+	}
+	g.closed = true
+	g.tickerRender.Stop()
+	ui.Clear()
+	ui.Close()
+	g.logger.GeneralLog.Close()
+}
+
+func CreateGUIInteractive() (*GUIInteractive, error) {
+
+	logger, err := gui_logger.CreateLogger()
+	if err != nil {
+		return nil, err
+	}
+
+	g := &GUIInteractive{
+		logger:   logger,
+		infoMap:  &sync.Map{},
+		info2Map: &sync.Map{},
+	}
+
+	if err = ui.Init(); err != nil {
+		return nil, err
+	}
+
+	g.infoInit()
+	g.info2Init()
+	g.cmdInit()
+	g.logsInit()
+
+	grid := ui.NewGrid()
+	termWidth, termHeight := ui.TerminalDimensions()
+	grid.SetRect(0, 0, termWidth, termHeight)
+
+	grid.Set(
+		ui.NewRow(1.0/4,
+			ui.NewCol(1.0/2, g.info),
+			ui.NewCol(1.0/2, g.info2),
+		),
+		ui.NewRow(1.0/4,
+			ui.NewCol(1.0/1, g.cmd),
+		),
+		ui.NewRow(2.0/4, g.logs),
+	)
+
+	ui.Render(grid)
+
+	g.tickerRender = time.NewTicker(100 * time.Millisecond)
+	ticker := g.tickerRender.C
+	go func() {
+
+		uiEvents := ui.PollEvents()
+		for {
+
+			select {
+			case e, ok := <-uiEvents:
+				if !ok {
+					return
+				}
+				switch e.ID {
+				case "<Resize>":
+					payload := e.Payload.(ui.Resize)
+					grid.SetRect(0, 0, payload.Width, payload.Height)
+					ui.Clear()
+					ui.Render(grid)
+				default:
+					g.cmdProcess(e)
+				}
+			case _, ok := <-ticker:
+				if !ok {
+					return
+				}
+				g.infoRender()
+				g.info2Render()
+				g.logsRender()
+
+				ui.Render(g.info, g.info2, g.logs, g.cmd)
+			}
+
+		}
+	}()
+
+	g.CommandDefineCallback("Exit", func(string) error {
+		os.Exit(1)
+		return nil
+	}, true)
+
+	return g, nil
+}

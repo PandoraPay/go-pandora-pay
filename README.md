@@ -150,7 +150,7 @@ Using profiling to debug memory leaks/CPU
  GORACE="log_path=/PandoraPay/pandora-pay-go/report" go run -race main.go 
 
 ### DOCS
-[WebAssembly DOCS](/webassembly/webassembly.md)
+[WebAssembly DOCS](/docs/webassembly.md)
 
 ### Scripts
 `scripts/compile-wasm.sh` compiles to WASM

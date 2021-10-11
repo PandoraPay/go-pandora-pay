@@ -3,11 +3,11 @@ package mempool
 import (
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
-	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
+	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/config/config_fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
-	"pandora-pay/network/websocks/connection/advanced-connection-types"
+	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 	"runtime"
 	"sync/atomic"

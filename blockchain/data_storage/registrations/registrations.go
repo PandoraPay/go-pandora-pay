@@ -6,8 +6,8 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
-	hash_map "pandora-pay/store/hash-map"
-	store_db_interface "pandora-pay/store/store-db/store-db-interface"
+	hash_map "pandora-pay/store/hash_map"
+	store_db_interface "pandora-pay/store/store_db/store_db_interface"
 )
 
 type Registrations struct {

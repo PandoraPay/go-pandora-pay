@@ -1,7 +1,7 @@
 package store
 
 import (
-	store_db_interface "pandora-pay/store/store-db/store-db-interface"
+	store_db_interface "pandora-pay/store/store_db/store_db_interface"
 )
 
 type Store struct {

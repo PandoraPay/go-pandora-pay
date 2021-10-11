@@ -2,11 +2,11 @@ package transaction
 
 import (
 	"errors"
-	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction-base-interface"
-	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction-data"
-	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction-simple"
-	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction-type"
-	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction-zether"
+	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
+	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction_data"
+	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction_simple"
+	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction_type"
+	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
