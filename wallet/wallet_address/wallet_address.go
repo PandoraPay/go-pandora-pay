@@ -97,29 +97,29 @@ func (adr *WalletAddress) DecodeAccount(acc *account.Account, store bool, ctx co
 
 	if acc == nil {
 		if store {
-			adr.BalancesDecoded[string(acc.Token)] = &WalletAddressBalanceDecoded{
+			adr.BalancesDecoded[string(acc.Asset)] = &WalletAddressBalanceDecoded{
 				AmountDecoded: 0,
-				Token:         acc.Token,
+				Asset:         acc.Asset,
 			}
 		}
 		return 0, nil
 	}
 
-	return adr.DecodeBalance(acc.Balance.Amount, acc.Token, store, ctx, statusCallback)
+	return adr.DecodeBalance(acc.Balance.Amount, acc.Asset, store, ctx, statusCallback)
 }
 
-func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, store bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
+func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, assetId []byte, store bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	if adr.PrivateKey == nil {
 		return 0, errors.New("PrivateKey is missing")
 	}
 
-	if len(token) == 0 {
-		token = config.NATIVE_TOKEN_FULL
+	if len(assetId) == 0 {
+		assetId = config.NATIVE_ASSET_FULL
 	}
 
 	previousValue := uint64(0)
-	found := adr.BalancesDecoded[string(token)]
+	found := adr.BalancesDecoded[string(assetId)]
 	if found != nil {
 		previousValue = found.AmountDecoded
 	}
@@ -133,8 +133,8 @@ func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, token []byte, s
 		if found != nil {
 			found.AmountDecoded = newValue
 		} else {
-			adr.BalancesDecoded[string(token)] = &WalletAddressBalanceDecoded{
-				newValue, token,
+			adr.BalancesDecoded[string(assetId)] = &WalletAddressBalanceDecoded{
+				newValue, assetId,
 			}
 		}
 	}

@@ -6,8 +6,8 @@ import (
 	"pandora-pay/app"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
-	"pandora-pay/blockchain/data_storage/tokens"
-	"pandora-pay/blockchain/data_storage/tokens/token"
+	"pandora-pay/blockchain/data_storage/assets"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/store"
@@ -48,13 +48,13 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 
 			var accs *accounts.Accounts
 
-			var tokensList [][]byte
-			if tokensList, err = dataStorage.AccsCollection.GetAccountTokens(publicKey); err != nil {
+			var assetsList [][]byte
+			if assetsList, err = dataStorage.AccsCollection.GetAccountAssets(publicKey); err != nil {
 				return
 			}
 
-			for _, token := range tokensList {
-				if accs, err = dataStorage.AccsCollection.GetMap(token); err != nil {
+			for _, assetId := range assetsList {
+				if accs, err = dataStorage.AccsCollection.GetMap(assetId); err != nil {
 					return
 				}
 				accs.Delete(string(publicKey))
@@ -65,12 +65,12 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 
 			if apiAcc != nil {
 
-				for i, token := range apiAcc.Tokens {
-					if accs, err = dataStorage.AccsCollection.GetMap(token); err != nil {
+				for i, assetId := range apiAcc.Assets {
+					if accs, err = dataStorage.AccsCollection.GetMap(assetId); err != nil {
 						return
 					}
 					apiAcc.Accs[i].PublicKey = publicKey
-					apiAcc.Accs[i].Token = token
+					apiAcc.Accs[i].Asset = assetId
 					if err = accs.Update(string(publicKey), apiAcc.Accs[i]); err != nil {
 						return
 					}
@@ -101,17 +101,17 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func storeToken(this js.Value, args []js.Value) interface{} {
+func storeAsset(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		var err error
 
-		var tok *token.Token
+		var ast *asset.Asset
 		if !args[1].IsNull() {
-			tok = &token.Token{}
+			ast = &asset.Asset{}
 			data := make([]byte, args[1].Get("byteLength").Int())
 			js.CopyBytesToGo(data, args[1])
-			if err = json.Unmarshal(data, &tok); err != nil {
+			if err = json.Unmarshal(data, &ast); err != nil {
 				return nil, err
 			}
 		}
@@ -129,15 +129,15 @@ func storeToken(this js.Value, args []js.Value) interface{} {
 
 		if err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
-			toks := tokens.NewTokens(writer)
-			if tok == nil {
-				toks.DeleteToken(hash)
+			asts := assets.NewAssets(writer)
+			if ast == nil {
+				asts.DeleteAsset(hash)
 			} else {
-				if err = toks.UpdateToken(hash, tok); err != nil {
+				if err = asts.UpdateAsset(hash, ast); err != nil {
 					return
 				}
 			}
-			return toks.CommitChanges()
+			return asts.CommitChanges()
 		}); err != nil {
 			return nil, err
 		}

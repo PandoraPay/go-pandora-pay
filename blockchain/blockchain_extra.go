@@ -10,8 +10,8 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -46,7 +46,7 @@ func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 		Target:             new(big.Int).SetBytes(helpers.CloneBytes(genesis.GenesisData.Target)),
 		BigTotalDifficulty: new(big.Int).SetUint64(0),
 		TransactionsCount:  0,
-		TokensCount:        1,
+		AssetsCount:        1,
 	}
 }
 
@@ -54,7 +54,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 
 	var accs *accounts.Accounts
 
-	if accs, err = dataStorage.AccsCollection.GetMap(config.NATIVE_TOKEN); err != nil {
+	if accs, err = dataStorage.AccsCollection.GetMap(config.NATIVE_ASSET); err != nil {
 		return
 	}
 
@@ -104,11 +104,11 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 
 	}
 
-	tok := &token.Token{
+	ast := &asset.Asset{
 		Version:                  0,
-		Name:                     config.NATIVE_TOKEN_NAME,
-		Ticker:                   config.NATIVE_TOKEN_TICKER,
-		Description:              config.NATIVE_TOKEN_DESCRIPTION,
+		Name:                     config.NATIVE_ASSET_NAME,
+		Ticker:                   config.NATIVE_ASSET_TICKER,
+		Description:              config.NATIVE_ASSET_DESCRIPTION,
 		DecimalSeparator:         byte(config.DECIMAL_SEPARATOR),
 		CanChangePublicKey:       false,
 		CanChangeSupplyPublicKey: false,
@@ -120,7 +120,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 		SupplyPublicKey:          config.BURN_PUBLIC_KEY,
 	}
 
-	if err = dataStorage.Toks.CreateToken(config.NATIVE_TOKEN, tok); err != nil {
+	if err = dataStorage.Asts.CreateAsset(config.NATIVE_ASSET, ast); err != nil {
 		return
 	}
 
@@ -144,7 +144,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 		}
 
 		if config.SEED_WALLET_NODES_INFO {
-			if err = saveTokensInfo(dataStorage.Toks); err != nil {
+			if err = saveAssetsInfo(dataStorage.Asts); err != nil {
 				return
 			}
 		}

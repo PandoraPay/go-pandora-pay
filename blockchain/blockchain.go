@@ -44,7 +44,7 @@ type Blockchain struct {
 	UpdateNewChainDataUpdate *multicast.MulticastChannel          //*BlockchainDataUpdate
 	UpdateAccounts           *multicast.MulticastChannel          //*accounts
 	UpdatePlainAccounts      *multicast.MulticastChannel          //*plainAccounts
-	UpdateTokens             *multicast.MulticastChannel          //*tokens
+	UpdateAssets             *multicast.MulticastChannel          //*assets
 	UpdateRegistrations      *multicast.MulticastChannel          //*registrations
 	UpdateTransactions       *multicast.MulticastChannel          //[]*blockchain_types.BlockchainTransactionUpdate
 	NextBlockCreatedCn       chan *forging_block_work.ForgingWork //
@@ -133,7 +133,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			dataStorage = data_storage.CreateDataStorage(writer)
 
 			var accs *accounts.Accounts
-			if accs, err = dataStorage.AccsCollection.GetMap(config.NATIVE_TOKEN); err != nil {
+			if accs, err = dataStorage.AccsCollection.GetMap(config.NATIVE_ASSET); err != nil {
 				return
 			}
 			gui.GUI.Log("regs", dataStorage.Regs.Count)
@@ -495,7 +495,7 @@ func CreateBlockchain(mempool *mempool.Mempool) (*Blockchain, error) {
 		UpdateNewChainDataUpdate: multicast.NewMulticastChannel(),
 		UpdateAccounts:           multicast.NewMulticastChannel(),
 		UpdatePlainAccounts:      multicast.NewMulticastChannel(),
-		UpdateTokens:             multicast.NewMulticastChannel(),
+		UpdateAssets:             multicast.NewMulticastChannel(),
 		UpdateRegistrations:      multicast.NewMulticastChannel(),
 		UpdateTransactions:       multicast.NewMulticastChannel(),
 		NextBlockCreatedCn:       make(chan *forging_block_work.ForgingWork),
@@ -532,7 +532,7 @@ func (chain *Blockchain) Close() {
 	chain.UpdateNewChain.CloseAll()
 	chain.UpdateAccounts.CloseAll()
 	chain.UpdatePlainAccounts.CloseAll()
-	chain.UpdateTokens.CloseAll()
+	chain.UpdateAssets.CloseAll()
 	chain.UpdateRegistrations.CloseAll()
 	close(chain.NextBlockCreatedCn)
 	close(chain.ForgingSolutionCn)

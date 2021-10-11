@@ -197,7 +197,7 @@ func (chain *Blockchain) saveBlockchainHashmaps(dataStorage *data_storage.DataSt
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
-		if err = saveTokensInfo(dataStorage.Toks); err != nil {
+		if err = saveAssetsInfo(dataStorage.Asts); err != nil {
 			return
 		}
 	}

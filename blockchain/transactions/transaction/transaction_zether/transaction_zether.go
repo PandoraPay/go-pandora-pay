@@ -51,7 +51,7 @@ func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_dat
 
 	c = 0
 	for _, payload := range tx.Payloads {
-		if accs, err = dataStorage.AccsCollection.GetMap(payload.Token); err != nil {
+		if accs, err = dataStorage.AccsCollection.GetMap(payload.Asset); err != nil {
 			return
 		}
 
@@ -101,7 +101,7 @@ func (tx *TransactionZether) ComputeFees() (uint64, error) {
 
 	sum := uint64(0)
 	for _, payload := range tx.Payloads {
-		if bytes.Equal(payload.Token, config.NATIVE_TOKEN) {
+		if bytes.Equal(payload.Asset, config.NATIVE_ASSET) {
 			if err := helpers.SafeUint64Add(&sum, payload.Statement.Fees); err != nil {
 				return 0, err
 			}
@@ -130,8 +130,8 @@ func (tx *TransactionZether) Validate() (err error) {
 
 	for _, payload := range tx.Payloads {
 
-		if bytes.Equal(payload.Token, config.NATIVE_TOKEN_FULL) {
-			return errors.New("NATIVE_TOKEN_FULL should be written as NATIVE_TOKEN")
+		if bytes.Equal(payload.Asset, config.NATIVE_ASSET_FULL) {
+			return errors.New("NATIVE_ASSET_FULL should be written as NATIVE_ASSET")
 		}
 
 		// check sanity

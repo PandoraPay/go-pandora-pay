@@ -1,4 +1,4 @@
-package config_tokens
+package config_assets
 
 import (
 	"errors"
@@ -6,13 +6,13 @@ import (
 )
 
 var (
-	TOKENS_DECIMAL_SEPARATOR_MAX      = int(10)
-	TOKENS_DECIMAL_SEPARATOR_MAX_BYTE = byte(10)
+	ASSETS_DECIMAL_SEPARATOR_MAX      = int(10)
+	ASSETS_DECIMAL_SEPARATOR_MAX_BYTE = byte(10)
 )
 
-func TokensConvertToUnits(number float64, decimalSeparator int) (uint64, error) {
+func AssetsConvertToUnits(number float64, decimalSeparator int) (uint64, error) {
 
-	if decimalSeparator > TOKENS_DECIMAL_SEPARATOR_MAX {
+	if decimalSeparator > ASSETS_DECIMAL_SEPARATOR_MAX {
 		return 0, errors.New("DecimalSeparator is higher than was supposed")
 	}
 	if decimalSeparator == 0 {
@@ -25,8 +25,8 @@ func TokensConvertToUnits(number float64, decimalSeparator int) (uint64, error) 
 	return 0, errors.New("Error converting to units")
 }
 
-func TokensConvertToBase(number uint64, decimalSeparator int) (float64, error) {
-	if decimalSeparator > TOKENS_DECIMAL_SEPARATOR_MAX {
+func AssetsConvertToBase(number uint64, decimalSeparator int) (float64, error) {
+	if decimalSeparator > ASSETS_DECIMAL_SEPARATOR_MAX {
 		return 0, errors.New("DecimalSeparator is higher than was supposed")
 	}
 	if decimalSeparator == 0 {

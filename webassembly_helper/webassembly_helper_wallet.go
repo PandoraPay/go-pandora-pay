@@ -32,7 +32,7 @@ func decodeBalance(this js.Value, args []js.Value) interface{} {
 			PrivateKey     helpers.HexBytes `json:"privateKey"`
 			PreviousValue  uint64           `json:"previousValue"`
 			BalanceEncoded helpers.HexBytes `json:"balanceEncoded"`
-			Token          helpers.HexBytes `json:"token"`
+			Asset          helpers.HexBytes `json:"asset"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {

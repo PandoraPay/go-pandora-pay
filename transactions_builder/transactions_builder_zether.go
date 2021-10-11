@@ -10,9 +10,9 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/assets"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
-	"pandora-pay/blockchain/data_storage/tokens"
-	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/bn256"
@@ -25,7 +25,7 @@ import (
 	"pandora-pay/transactions_builder/wizard"
 )
 
-func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []byte, ringSize int, newAccounts int) ([]string, error) {
+func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, assetId []byte, ringSize int, newAccounts int) ([]string, error) {
 
 	var addr *addresses.Address
 	var err error
@@ -68,7 +68,7 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []b
 		var accs *accounts.Accounts
 		var acc *account.Account
 
-		if accs, err = accsCollection.GetMap(token); err != nil {
+		if accs, err = accsCollection.GetMap(assetId); err != nil {
 			return
 		}
 
@@ -114,7 +114,7 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, token []b
 	return rings, nil
 }
 
-func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUsed [][]byte, amounts []float64, dsts []string, burns []float64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, assetsList [][]byte, amounts []float64, dsts []string, burns []float64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	amountsFinal := make([]uint64, len(amounts))
 	burnsFinal := make([]uint64, len(burns))
@@ -124,28 +124,28 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUs
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		toks := tokens.NewTokens(reader)
+		asts := assets.NewAssets(reader)
 
 		for i := range amounts {
 			if err != nil {
 				return
 			}
 
-			var tok *token.Token
-			if tok, err = toks.GetToken(tokensUsed[i]); err != nil {
+			var ast *asset.Asset
+			if ast, err = asts.GetAsset(assetsList[i]); err != nil {
 				return
 			}
-			if tok == nil {
-				return errors.New("Token was not found")
+			if ast == nil {
+				return errors.New("Asset was not found")
 			}
 
-			if amountsFinal[i], err = tok.ConvertToUnits(amounts[i]); err != nil {
+			if amountsFinal[i], err = ast.ConvertToUnits(amounts[i]); err != nil {
 				return
 			}
-			if burnsFinal[i], err = tok.ConvertToUnits(burns[i]); err != nil {
+			if burnsFinal[i], err = ast.ConvertToUnits(burns[i]); err != nil {
 				return
 			}
-			if finalFees[i], err = fees[i].convertToWizardFee(tok); err != nil {
+			if finalFees[i], err = fees[i].convertToWizardFee(ast); err != nil {
 				return
 			}
 		}
@@ -155,12 +155,12 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, tokensUs
 		return nil, err
 	}
 
-	return builder.CreateZetherTx(from, tokensUsed, amountsFinal, dsts, burnsFinal, ringMembers, data, finalFees, propagateTx, awaitAnswer, awaitBroadcast, validateTx, ctx, statusCallback)
+	return builder.CreateZetherTx(from, assetsList, amountsFinal, dsts, burnsFinal, ringMembers, data, finalFees, propagateTx, awaitAnswer, awaitBroadcast, validateTx, ctx, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx(from []string, assetsList [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
 
-	if len(from) != len(tokensUsed) || len(tokensUsed) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
+	if len(from) != len(assetsList) || len(assetsList) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
 		return nil, errors.New("Length of from and transfers are not matching")
 	}
 
@@ -177,7 +177,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 	var chainHash []byte
 
 	transfers := make([]*wizard.ZetherTransfer, len(from))
-	emap := wizard.InitializeEmap(tokensUsed)
+	emap := wizard.InitializeEmap(assetsList)
 	rings := make([][]*bn256.G1, len(from))
 	publicKeyIndexes := make(map[string]*wizard.ZetherPublicKeyIndex)
 
@@ -188,15 +188,15 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 		chainHash = helpers.CloneBytes(reader.Get("chainHash"))
 
-		for t, tok := range tokensUsed {
+		for t, ast := range assetsList {
 
 			var accs *accounts.Accounts
-			if accs, err = dataStorage.AccsCollection.GetMap(tok); err != nil {
+			if accs, err = dataStorage.AccsCollection.GetMap(ast); err != nil {
 				return
 			}
 
 			transfers[t] = &wizard.ZetherTransfer{
-				Token:       tok,
+				Asset:       ast,
 				From:        fromWalletAddresses[t].PrivateKey.Key[:],
 				Destination: dsts[t],
 				Amount:      amounts[t],
@@ -249,7 +249,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 					}
 
 					var fromBalanceDecoded uint64
-					if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, tok, true, true, ctx, statusCallback); err != nil {
+					if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, ast, true, true, ctx, statusCallback); err != nil {
 						return
 					}
 
@@ -264,7 +264,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, tokensUsed [][
 
 				}
 
-				emap[string(tok)][p.G1().String()] = balance
+				emap[string(ast)][p.G1().String()] = balance
 				ring = append(ring, p.G1())
 
 				var reg *registration.Registration

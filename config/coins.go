@@ -17,17 +17,17 @@ var (
 	MAX_SUPPLY_COINS       = uint64(42000000000)
 	MAX_SUPPLY_COINS_UNITS = ConvertToUnitsUint64Forced(MAX_SUPPLY_COINS)
 
-	TOKEN_LENGTH = cryptography.RipemdSize
+	ASSET_LENGTH = cryptography.RipemdSize
 
-	NATIVE_TOKEN_NAME        = "PANDORA"
-	NATIVE_TOKEN_TICKER      = "PANDORA"
-	NATIVE_TOKEN_DESCRIPTION = "PANDORA NATIVE TOKEN"
+	NATIVE_ASSET_NAME        = "PANDORA"
+	NATIVE_ASSET_TICKER      = "PANDORA"
+	NATIVE_ASSET_DESCRIPTION = "PANDORA NATIVE ASSET"
 
-	NATIVE_TOKEN                 = []byte{}
-	NATIVE_TOKEN_STRING          = string(NATIVE_TOKEN)
-	NATIVE_TOKEN_FULL            = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	NATIVE_TOKEN_FULL_STRING     = string(NATIVE_TOKEN_FULL)
-	NATIVE_TOKEN_FULL_STRING_HEX = hex.EncodeToString(NATIVE_TOKEN_FULL)
+	NATIVE_ASSET                 = []byte{}
+	NATIVE_ASSET_STRING          = string(NATIVE_ASSET)
+	NATIVE_ASSET_FULL            = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	NATIVE_ASSET_FULL_STRING     = string(NATIVE_ASSET_FULL)
+	NATIVE_ASSET_FULL_STRING_HEX = hex.EncodeToString(NATIVE_ASSET_FULL)
 )
 
 func ConvertToUnitsUint64Forced(number uint64) uint64 {

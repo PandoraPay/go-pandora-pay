@@ -5,11 +5,11 @@ import (
 	"errors"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
+	"pandora-pay/blockchain/data_storage/assets"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
-	"pandora-pay/blockchain/data_storage/tokens"
-	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
@@ -38,7 +38,7 @@ func (builder *TransactionsBuilder) getNonce(nonce uint64, publicKey []byte, acc
 	return builder.mempool.GetNonce(publicKey, accNonce)
 }
 
-func (builder *TransactionsBuilder) convertFloatAmounts(amounts []float64, tok *token.Token) ([]uint64, error) {
+func (builder *TransactionsBuilder) convertFloatAmounts(amounts []float64, ast *asset.Asset) ([]uint64, error) {
 
 	var err error
 
@@ -47,7 +47,7 @@ func (builder *TransactionsBuilder) convertFloatAmounts(amounts []float64, tok *
 		if err != nil {
 			return nil, err
 		}
-		if amountsFinal[i], err = tok.ConvertToUnits(amounts[i]); err != nil {
+		if amountsFinal[i], err = ast.ConvertToUnits(amounts[i]); err != nil {
 			return nil, err
 		}
 	}
@@ -85,17 +85,17 @@ func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uin
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		toks := tokens.NewTokens(reader)
+		asts := assets.NewAssets(reader)
 
-		tok, err := toks.GetToken(config.NATIVE_TOKEN)
+		ast, err := asts.GetAsset(config.NATIVE_ASSET)
 		if err != nil {
 			return
 		}
-		if tok == nil {
-			return errors.New("Token was not found")
+		if ast == nil {
+			return errors.New("Asset was not found")
 		}
 
-		if feeFinal, err = fee.convertToWizardFee(tok); err != nil {
+		if feeFinal, err = fee.convertToWizardFee(ast); err != nil {
 			return
 		}
 
@@ -174,17 +174,17 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx_Float(from string, no
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		toks := tokens.NewTokens(reader)
+		asts := assets.NewAssets(reader)
 
-		tok, err := toks.GetToken(config.NATIVE_TOKEN)
+		ast, err := asts.GetAsset(config.NATIVE_ASSET)
 		if err != nil {
 			return
 		}
-		if tok == nil {
-			return errors.New("Token was not found")
+		if ast == nil {
+			return errors.New("Asset was not found")
 		}
 
-		if finalFee, err = fee.convertToWizardFee(tok); err != nil {
+		if finalFee, err = fee.convertToWizardFee(ast); err != nil {
 			return err
 		}
 
@@ -258,22 +258,22 @@ func (builder *TransactionsBuilder) CreateClaimTx_Float(from string, nonce uint6
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		toks := tokens.NewTokens(reader)
+		asts := assets.NewAssets(reader)
 
-		tok, err := toks.GetToken(config.NATIVE_TOKEN)
+		ast, err := asts.GetAsset(config.NATIVE_ASSET)
 		if err != nil {
 			return
 		}
-		if tok == nil {
-			return errors.New("Token was not found")
+		if ast == nil {
+			return errors.New("Asset was not found")
 		}
 
-		if finalFee, err = fee.convertToWizardFee(tok); err != nil {
+		if finalFee, err = fee.convertToWizardFee(ast); err != nil {
 			return err
 		}
 
 		for i, amount := range outputAmounts {
-			if outputAmountsFinal[i], err = tok.ConvertToUnits(amount); err != nil {
+			if outputAmountsFinal[i], err = ast.ConvertToUnits(amount); err != nil {
 				return
 			}
 		}

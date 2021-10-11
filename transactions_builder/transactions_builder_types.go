@@ -1,7 +1,7 @@
 package transactions_builder
 
 import (
-	"pandora-pay/blockchain/data_storage/tokens/token"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/transactions_builder/wizard"
 )
 
@@ -11,7 +11,7 @@ type TransactionsBuilderFeeFloat struct {
 	PerByteAuto bool    `json:"perByteAuto,omitempty"`
 }
 
-func (fee *TransactionsBuilderFeeFloat) convertToWizardFee(tok *token.Token) (*wizard.TransactionsWizardFee, error) {
+func (fee *TransactionsBuilderFeeFloat) convertToWizardFee(ast *asset.Asset) (*wizard.TransactionsWizardFee, error) {
 
 	var err error
 
@@ -20,12 +20,12 @@ func (fee *TransactionsBuilderFeeFloat) convertToWizardFee(tok *token.Token) (*w
 	}
 
 	if fee.Fixed > 0 {
-		if out.Fixed, err = tok.ConvertToUnits(fee.Fixed); err != nil {
+		if out.Fixed, err = ast.ConvertToUnits(fee.Fixed); err != nil {
 			return nil, err
 		}
 	}
 	if fee.PerByte > 0 {
-		if out.PerByte, err = tok.ConvertToUnits(fee.PerByte); err != nil {
+		if out.PerByte, err = ast.ConvertToUnits(fee.PerByte); err != nil {
 			return nil, err
 		}
 	}

@@ -97,7 +97,7 @@ type json_Only_TransactionZetherStatement struct {
 }
 
 type json_Only_TransactionPayload struct {
-	Token       helpers.HexBytes                        `json:"token"`
+	Asset       helpers.HexBytes                        `json:"asset"`
 	BurnValue   uint64                                  `json:"burnValue"`
 	DataVersion transaction_data.TransactionDataVersion `json:"dataType"`
 	Data        helpers.HexBytes                        `json:"data"`
@@ -207,7 +207,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			proofJson := w.Bytes()
 
 			payloadsJson[i] = &json_Only_TransactionPayload{
-				payload.Token,
+				payload.Asset,
 				payload.BurnValue,
 				payload.DataVersion,
 				payload.Data,
@@ -379,7 +379,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			}
 
 			payloads[i] = &transaction_zether.TransactionZetherPayload{
-				Token:       payload.Token,
+				Asset:       payload.Asset,
 				BurnValue:   payload.BurnValue,
 				DataVersion: payload.DataVersion,
 				Data:        payload.Data,

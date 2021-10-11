@@ -27,7 +27,7 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 		txData := &struct {
 			FromPrivateKeys     []helpers.HexBytes                     `json:"fromPrivateKeys"`
 			FromBalancesDecoded []uint64                               `json:"fromBalancesDecoded"`
-			Tokens              []helpers.HexBytes                     `json:"tokens"`
+			Assets              []helpers.HexBytes                     `json:"assets"`
 			Amounts             []uint64                               `json:"amounts"`
 			Dsts                []string                               `json:"dsts"`
 			Burns               []uint64                               `json:"burns"`
@@ -47,14 +47,14 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		tokensUsed := helpers.ConvertHexBytesArraysToBytesArray(txData.Tokens)
+		assetsList := helpers.ConvertHexBytesArraysToBytesArray(txData.Assets)
 
 		transfers := make([]*wizard.ZetherTransfer, len(txData.FromPrivateKeys))
-		emap := wizard.InitializeEmap(tokensUsed)
+		emap := wizard.InitializeEmap(assetsList)
 		rings := make([][]*bn256.G1, len(txData.FromPrivateKeys))
 		publicKeyIndexes := make(map[string]*wizard.ZetherPublicKeyIndex)
 
-		for t, tok := range tokensUsed {
+		for t, ast := range assetsList {
 
 			key := addresses.PrivateKey{Key: txData.FromPrivateKeys[t]}
 			fromAddr, err := key.GenerateAddress(false, 0, nil)
@@ -63,7 +63,7 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 			}
 
 			transfers[t] = &wizard.ZetherTransfer{
-				Token:              tok,
+				Asset:              ast,
 				From:               txData.FromPrivateKeys[t],
 				FromBalanceDecoded: txData.FromBalancesDecoded[t],
 				Destination:        txData.Dsts[t],
@@ -93,14 +93,14 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 				}
 
 				var acc *account.Account
-				if accData := txData.Accs[hex.EncodeToString(tok)][hex.EncodeToString(addr.PublicKey)]; len(accData) > 0 {
-					acc = account.NewAccount(addr.PublicKey, tok)
+				if accData := txData.Accs[hex.EncodeToString(ast)][hex.EncodeToString(addr.PublicKey)]; len(accData) > 0 {
+					acc = account.NewAccount(addr.PublicKey, ast)
 					if err = acc.Deserialize(helpers.NewBufferReader(accData)); err != nil {
 						return
 					}
-					emap[string(tok)][p.G1().String()] = acc.Balance.Amount.Serialize()
+					emap[string(ast)][p.G1().String()] = acc.Balance.Amount.Serialize()
 				} else {
-					emap[string(tok)][p.G1().String()] = crypto.ConstructElGamal(p.G1(), crypto.ElGamal_BASE_G).Serialize()
+					emap[string(ast)][p.G1().String()] = crypto.ConstructElGamal(p.G1(), crypto.ElGamal_BASE_G).Serialize()
 				}
 
 				ring = append(ring, p.G1())

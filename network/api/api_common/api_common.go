@@ -280,35 +280,35 @@ func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) ([
 	return json.Marshal(txInfo)
 }
 
-func (api *APICommon) GetTokenInfo(request *api_types.APITokenInfoRequest) ([]byte, error) {
-	var tokInfo *info.TokenInfo
+func (api *APICommon) GetAssetInfo(request *api_types.APIAssetInfoRequest) ([]byte, error) {
+	var astInfo *info.AssetInfo
 	var err error
-	if request.Hash != nil && (len(request.Hash) == config.TOKEN_LENGTH || len(request.Hash) == 0) {
-		tokInfo, err = api.ApiStore.openLoadTokenInfo(request.Hash)
+	if request.Hash != nil && (len(request.Hash) == config.ASSET_LENGTH || len(request.Hash) == 0) {
+		astInfo, err = api.ApiStore.openLoadAssetInfo(request.Hash)
 	}
-	if err != nil || tokInfo == nil {
+	if err != nil || astInfo == nil {
 		return nil, err
 	}
-	return json.Marshal(tokInfo)
+	return json.Marshal(astInfo)
 }
 
-func (api *APICommon) GetToken(request *api_types.APITokenRequest) ([]byte, error) {
-	token, err := api.ApiStore.openLoadTokenFromHash(request.Hash)
-	if err != nil || token == nil {
+func (api *APICommon) GetAsset(request *api_types.APIAssetRequest) ([]byte, error) {
+	asset, err := api.ApiStore.openLoadAssetFromHash(request.Hash)
+	if err != nil || asset == nil {
 		return nil, err
 	}
 	if request.ReturnType == api_types.RETURN_SERIALIZED {
-		return token.SerializeToBytes(), nil
+		return asset.SerializeToBytes(), nil
 	}
-	return json.Marshal(token)
+	return json.Marshal(asset)
 }
 
 func (api *APICommon) GetAccountsCount(hash []byte) (uint64, error) {
-	return api.ApiStore.openLoadAccountsCountFromTokenHash(hash)
+	return api.ApiStore.openLoadAccountsCountFromAssetId(hash)
 }
 
 func (api *APICommon) GetAccountsKeysByIndex(request *api_types.APIAccountsKeysByIndexRequest) ([]byte, error) {
-	out, err := api.ApiStore.openLoadAccountsKeysByIndex(request.Indexes, request.Token)
+	out, err := api.ApiStore.openLoadAccountsKeysByIndex(request.Indexes, request.Asset)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +341,7 @@ func (api *APICommon) GetAccountsByKeys(request *api_types.APIAccountsByKeysRequ
 		}
 	}
 
-	out, err := api.ApiStore.openLoadAccountsByKeys(publicKeys, request.Token)
+	out, err := api.ApiStore.openLoadAccountsByKeys(publicKeys, request.Asset)
 	if err != nil {
 		return nil, err
 	}

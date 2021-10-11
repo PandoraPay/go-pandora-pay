@@ -79,7 +79,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 	from := []string{}
 	dsts := []string{}
 	dstsAmounts, burn := []uint64{}, []uint64{}
-	dstsTokens := [][]byte{}
+	dstsAssets := [][]byte{}
 	data := []*wizard.TransactionsWizardData{}
 	ringMembers := [][]string{}
 	fees := []*wizard.TransactionsWizardFee{}
@@ -97,15 +97,15 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 			return
 		}
 
-		token := config.NATIVE_TOKEN
+		asset := config.NATIVE_ASSET
 
 		dsts = append(dsts, addr.AddressRegistrationEncoded)
 		dstsAmounts = append(dstsAmounts, config_stake.GetRequiredStake(blockHeight))
-		dstsTokens = append(dstsTokens, token)
+		dstsAssets = append(dstsAssets, asset)
 		burn = append(burn, 0)
 
 		var ring []string
-		if ring, err = testnet.transactionsBuilder.CreateZetherRing(from[i], addr.AddressEncoded, token, -1, -1); err != nil {
+		if ring, err = testnet.transactionsBuilder.CreateZetherRing(from[i], addr.AddressEncoded, asset, -1, -1); err != nil {
 			return
 		}
 		ringMembers = append(ringMembers, ring)
@@ -114,7 +114,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 		fees = append(fees, &wizard.TransactionsWizardFee{0, 0, 0, true})
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx(from, dstsTokens, dstsAmounts, dsts, burn, ringMembers, data, fees, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx(from, dstsAssets, dstsAmounts, dsts, burn, ringMembers, data, fees, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -144,12 +144,12 @@ func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int, ctx co
 	data := &wizard.TransactionsWizardData{nil, false}
 	fee := &wizard.TransactionsWizardFee{0, 0, 0, true}
 
-	ringMembers, err := testnet.transactionsBuilder.CreateZetherRing(srcAddr.AddressEncoded, dst, config.NATIVE_TOKEN, -1, -1)
+	ringMembers, err := testnet.transactionsBuilder.CreateZetherRing(srcAddr.AddressEncoded, dst, config.NATIVE_ASSET, -1, -1)
 	if err != nil {
 		return
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{srcAddr.AddressEncoded}, [][]byte{config.NATIVE_TOKEN}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{srcAddr.AddressEncoded}, [][]byte{config.NATIVE_ASSET}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -228,7 +228,7 @@ func (testnet *Testnet) run() {
 
 						accsCollection := accounts.NewAccountsCollection(reader)
 
-						accs, err := accsCollection.GetMap(config.NATIVE_TOKEN)
+						accs, err := accsCollection.GetMap(config.NATIVE_ASSET)
 						if err != nil {
 							return
 						}
@@ -260,7 +260,7 @@ func (testnet *Testnet) run() {
 
 						var balance uint64
 						if acc != nil {
-							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_TOKEN, true, true, ctx2, func(string) {}); err != nil {
+							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config.NATIVE_ASSET, true, true, ctx2, func(string) {}); err != nil {
 								return
 							}
 						}

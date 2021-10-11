@@ -1,6 +1,6 @@
 package info
 
-type TokenInfo struct {
+type AssetInfo struct {
 	Name             string `json:"name"`
 	Ticker           string `json:"ticker"`
 	DecimalSeparator byte   `json:"decimalSeparator"`

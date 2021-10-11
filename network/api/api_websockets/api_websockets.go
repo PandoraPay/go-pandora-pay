@@ -119,20 +119,20 @@ func (api *APIWebsockets) getAccountMempool(conn *connection.AdvancedConnection,
 	return api.apiCommon.GetAccountMempool(request)
 }
 
-func (api *APIWebsockets) getTokenInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APITokenInfoRequest{nil}
+func (api *APIWebsockets) getAssetInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := &api_types.APIAssetInfoRequest{nil}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
-	return api.apiCommon.GetTokenInfo(request)
+	return api.apiCommon.GetAssetInfo(request)
 }
 
-func (api *APIWebsockets) getToken(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APITokenRequest{nil, api_types.RETURN_SERIALIZED}
+func (api *APIWebsockets) getAsset(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := &api_types.APIAssetRequest{nil, api_types.RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
-	return api.apiCommon.GetToken(request)
+	return api.apiCommon.GetAsset(request)
 }
 
 func (api *APIWebsockets) getAccountsCount(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -331,7 +331,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"accounts/count":         api.getAccountsCount,
 		"accounts/keys-by-index": api.getAccountsKeysByIndex,
 		"accounts/by-keys":       api.getAccountsByKeys,
-		"token":                  api.getToken,
+		"asset":                  api.getAsset,
 		"mem-pool":               api.getMempool,
 		"mem-pool/tx-exists":     api.getMempoolExists,
 		"mem-pool/new-tx":        api.postMempoolInsert,
@@ -341,7 +341,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 	if config.SEED_WALLET_NODES_INFO {
 		api.GetMap["sub"] = api.subscribe
 		api.GetMap["unsub"] = api.unsubscribe
-		api.GetMap["token-info"] = api.getTokenInfo
+		api.GetMap["asset-info"] = api.getAssetInfo
 		api.GetMap["block-info"] = api.getBlockInfo
 		api.GetMap["tx-info"] = api.getTxInfo
 		api.GetMap["tx-preview"] = api.getTxPreview

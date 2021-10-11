@@ -9,7 +9,7 @@ import (
 type Account struct {
 	helpers.SerializableInterface `json:"-"`
 	PublicKey                     []byte              `json:"-"` //hashmap key
-	Token                         []byte              `json:"-"` //collection token
+	Asset                         []byte              `json:"-"` //collection asset
 	Index                         uint64              `json:"index"`
 	Version                       uint64              `json:"version"`
 	Balance                       *BalanceHomomorphic `json:"balance"`
@@ -59,7 +59,7 @@ func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 	return
 }
 
-func NewAccount(publicKey []byte, token []byte) *Account {
+func NewAccount(publicKey []byte, asset []byte) *Account {
 
 	var acckey crypto.Point
 	if err := acckey.DecodeCompressed(publicKey); err != nil {
@@ -67,7 +67,7 @@ func NewAccount(publicKey []byte, token []byte) *Account {
 	}
 	acc := &Account{
 		PublicKey: publicKey,
-		Token:     token,
+		Asset:     asset,
 		Balance:   &BalanceHomomorphic{crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)},
 	}
 

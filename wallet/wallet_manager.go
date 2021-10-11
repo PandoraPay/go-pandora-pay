@@ -42,7 +42,7 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (string, []byte, e
 	return addr.AddressRegistrationEncoded, delegatedStake.PublicKey, nil
 }
 
-func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, token []byte, store, lock bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
+func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, asset []byte, store, lock bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	if lock {
 
@@ -61,7 +61,7 @@ func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto
 		return 0, errors.New("address was not found")
 	}
 
-	decoded, err := addr.DecodeBalance(balance, token, store, ctx, statusCallback)
+	decoded, err := addr.DecodeBalance(balance, asset, store, ctx, statusCallback)
 	if err != nil {
 		return 0, err
 	}
@@ -101,7 +101,7 @@ func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte) *wallet_addr
 	return wallet.addressesMap[string(publicKey)]
 }
 
-func (wallet *Wallet) GetDataForDecodingBalance(publicKey, token []byte) (privateKey []byte, previousValue uint64) {
+func (wallet *Wallet) GetDataForDecodingBalance(publicKey, asset []byte) (privateKey []byte, previousValue uint64) {
 
 	wallet.RLock()
 	defer wallet.RUnlock()
@@ -109,8 +109,8 @@ func (wallet *Wallet) GetDataForDecodingBalance(publicKey, token []byte) (privat
 	addr := wallet.addressesMap[string(publicKey)]
 	privateKey = addr.PrivateKey.Key
 
-	if addr.BalancesDecoded[string(token)] != nil {
-		previousValue = addr.BalancesDecoded[string(token)].AmountDecoded
+	if addr.BalancesDecoded[string(asset)] != nil {
+		previousValue = addr.BalancesDecoded[string(asset)].AmountDecoded
 	}
 
 	return

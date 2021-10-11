@@ -37,7 +37,7 @@ type APIBlockchainSync struct {
 }
 
 type APIAccount struct {
-	Tokens             []helpers.HexBytes          `json:"tokens,omitempty"`
+	Assets             []helpers.HexBytes          `json:"assets,omitempty"`
 	Accs               []*account.Account          `json:"accounts,omitempty"`
 	AccsSerialized     []helpers.HexBytes          `json:"accountsSerialized,omitempty"`
 	PlainAcc           *plain_account.PlainAccount `json:"plainAccount,omitempty"`
@@ -109,7 +109,7 @@ type APISubscriptionNotificationAccountTxExtraMempool struct {
 }
 
 type APISubscriptionNotificationAccountExtra struct {
-	Token helpers.HexBytes `json:"token"`
+	Asset helpers.HexBytes `json:"asset"`
 }
 
 type APISubscriptionNotificationAccountTxExtra struct {

@@ -3,8 +3,8 @@ package block
 import (
 	"errors"
 	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/config/config_reward"
 	"pandora-pay/cryptography"
@@ -62,15 +62,15 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 		return
 	}
 
-	var tok *token.Token
-	if tok, err = dataStorage.Toks.GetToken(config.NATIVE_TOKEN); err != nil {
+	var ast *asset.Asset
+	if ast, err = dataStorage.Asts.GetAsset(config.NATIVE_ASSET); err != nil {
 		return
 	}
 
-	if err = tok.AddSupply(true, reward); err != nil {
+	if err = ast.AddSupply(true, reward); err != nil {
 		return
 	}
-	if err = dataStorage.Toks.UpdateToken(config.NATIVE_TOKEN, tok); err != nil {
+	if err = dataStorage.Asts.UpdateAsset(config.NATIVE_ASSET, ast); err != nil {
 		return
 	}
 

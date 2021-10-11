@@ -103,9 +103,9 @@ func (api *API) getBlockInfo(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetBlockInfo(request)
 }
 
-func (api *API) getTokenInfo(values *url.Values) (interface{}, error) {
+func (api *API) getAssetInfo(values *url.Values) (interface{}, error) {
 
-	request := &api_types.APITokenInfoRequest{}
+	request := &api_types.APIAssetInfoRequest{}
 
 	err := errors.New("parameter 'hash' is missing")
 	if values.Get("hash") != "" {
@@ -115,7 +115,7 @@ func (api *API) getTokenInfo(values *url.Values) (interface{}, error) {
 		return nil, err
 	}
 
-	return api.apiCommon.GetTokenInfo(request)
+	return api.apiCommon.GetAssetInfo(request)
 }
 
 func (api *API) getTxInfo(values *url.Values) (interface{}, error) {
@@ -219,8 +219,8 @@ func (api *API) getAccountMempool(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetAccountMempool(request)
 }
 
-func (api *API) getToken(values *url.Values) (interface{}, error) {
-	request := &api_types.APITokenRequest{}
+func (api *API) getAsset(values *url.Values) (interface{}, error) {
+	request := &api_types.APIAssetRequest{}
 	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
 
 	err := errors.New("parameter 'hash' was not specified")
@@ -230,21 +230,21 @@ func (api *API) getToken(values *url.Values) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return api.apiCommon.GetToken(request)
+	return api.apiCommon.GetAsset(request)
 }
 
 func (api *API) getAccountsCount(values *url.Values) (interface{}, error) {
 
-	var token []byte
+	var assetId []byte
 	var err error
 
-	if values.Get("token") != "" {
-		if token, err = hex.DecodeString(values.Get("token")); err != nil {
+	if values.Get("asset") != "" {
+		if assetId, err = hex.DecodeString(values.Get("asset")); err != nil {
 			return nil, err
 		}
 	}
 
-	return api.apiCommon.GetAccountsCount(token)
+	return api.apiCommon.GetAccountsCount(assetId)
 }
 
 func (api *API) getAccountsKeysByIndex(values *url.Values) (interface{}, error) {
@@ -287,8 +287,8 @@ func (api *API) getAccountsByKeys(values *url.Values) (interface{}, error) {
 		return nil, errors.New("parameter `publicKeys` or `addresses` are missing")
 	}
 
-	if values.Get("token") != "" {
-		if request.Token, err = hex.DecodeString(values.Get("token")); err != nil {
+	if values.Get("asset") != "" {
+		if request.Asset, err = hex.DecodeString(values.Get("asset")); err != nil {
 			return nil, err
 		}
 	}
@@ -373,14 +373,14 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		"accounts/count":         api.getAccountsCount,
 		"accounts/keys-by-index": api.getAccountsKeysByIndex,
 		"accounts/by-keys":       api.getAccountsByKeys,
-		"token":                  api.getToken,
+		"asset":                  api.getAsset,
 		"mem-pool":               api.getMempool,
 		"mem-pool/tx-exists":     api.getMempoolExists,
 		"mem-pool/new-tx":        api.postMempoolInsert,
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
-		api.GetMap["token-info"] = api.getTokenInfo
+		api.GetMap["asset-info"] = api.getAssetInfo
 		api.GetMap["block-info"] = api.getBlockInfo
 		api.GetMap["tx-info"] = api.getTxInfo
 		api.GetMap["tx-preview"] = api.getTxPreview

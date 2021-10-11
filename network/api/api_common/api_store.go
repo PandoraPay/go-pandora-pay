@@ -10,11 +10,11 @@ import (
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/assets"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
-	"pandora-pay/blockchain/data_storage/tokens"
-	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
@@ -29,9 +29,9 @@ type APIStore struct {
 	chain *blockchain.Blockchain
 }
 
-func (apiStore *APIStore) openLoadTokenInfo(hash []byte) (tokInfo *info.TokenInfo, errFinal error) {
+func (apiStore *APIStore) openLoadAssetInfo(hash []byte) (astInfo *info.AssetInfo, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-		tokInfo, err = apiStore.loadTokenInfo(reader, hash)
+		astInfo, err = apiStore.loadAssetInfo(reader, hash)
 		return
 	})
 	return
@@ -159,20 +159,20 @@ func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*api_t
 		plainAccs := plain_accounts.NewPlainAccounts(reader)
 		regs := registrations.NewRegistrations(reader)
 
-		tokensList, err := accsCollection.GetAccountTokens(publicKey)
+		assetsList, err := accsCollection.GetAccountAssets(publicKey)
 		if err != nil {
 			return
 		}
 
-		apiAcc.Accs = make([]*account.Account, len(tokensList))
-		apiAcc.Tokens = make([]helpers.HexBytes, len(tokensList))
+		apiAcc.Accs = make([]*account.Account, len(assetsList))
+		apiAcc.Assets = make([]helpers.HexBytes, len(assetsList))
 
-		for i, tokenId := range tokensList {
+		for i, assetId := range assetsList {
 
-			apiAcc.Tokens[i] = tokenId
+			apiAcc.Assets[i] = assetId
 
 			var accs *accounts.Accounts
-			if accs, err = accsCollection.GetMap(tokenId); err != nil {
+			if accs, err = accsCollection.GetMap(assetId); err != nil {
 				return
 			}
 
@@ -242,16 +242,16 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKey(publicKey []byte, next
 	return
 }
 
-func (apiStore *APIStore) openLoadTokenFromHash(hash []byte) (tok *token.Token, errFinal error) {
+func (apiStore *APIStore) openLoadAssetFromHash(hash []byte) (ast *asset.Asset, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-		toks := tokens.NewTokens(reader)
-		tok, err = toks.GetToken(hash)
+		asts := assets.NewAssets(reader)
+		ast, err = asts.GetAsset(hash)
 		return
 	})
 	return
 }
 
-func (apiStore *APIStore) openLoadAccountsCountFromTokenHash(hash []byte) (output uint64, errFinal error) {
+func (apiStore *APIStore) openLoadAccountsCountFromAssetId(hash []byte) (output uint64, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		accsCollection := accounts.NewAccountsCollection(reader)
 
@@ -266,7 +266,7 @@ func (apiStore *APIStore) openLoadAccountsCountFromTokenHash(hash []byte) (outpu
 	return
 }
 
-func (apiStore *APIStore) openLoadAccountsKeysByIndex(indexes []uint64, tokenId []byte) (output []helpers.HexBytes, errFinal error) {
+func (apiStore *APIStore) openLoadAccountsKeysByIndex(indexes []uint64, assetId []byte) (output []helpers.HexBytes, errFinal error) {
 
 	if len(indexes) > 512*2 {
 		return nil, fmt.Errorf("Too many indexes to process: limit %d, found %d", 512*2, len(indexes))
@@ -275,7 +275,7 @@ func (apiStore *APIStore) openLoadAccountsKeysByIndex(indexes []uint64, tokenId 
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		accsCollection := accounts.NewAccountsCollection(reader)
 
-		accs, err := accsCollection.GetMap(tokenId)
+		accs, err := accsCollection.GetMap(assetId)
 		if err != nil {
 			return
 		}
@@ -292,7 +292,7 @@ func (apiStore *APIStore) openLoadAccountsKeysByIndex(indexes []uint64, tokenId 
 	return
 }
 
-func (apiStore *APIStore) openLoadAccountsByKeys(publicKeys [][]byte, tokenId []byte) (output *api_types.APIAccountsByKeys, errFinal error) {
+func (apiStore *APIStore) openLoadAccountsByKeys(publicKeys [][]byte, assetId []byte) (output *api_types.APIAccountsByKeys, errFinal error) {
 
 	if len(publicKeys) > 512*2 {
 		return nil, fmt.Errorf("Too many indexes to process: limit %d, found %d", 512*2, len(publicKeys))
@@ -303,7 +303,7 @@ func (apiStore *APIStore) openLoadAccountsByKeys(publicKeys [][]byte, tokenId []
 		accsCollection := accounts.NewAccountsCollection(reader)
 		regs := registrations.NewRegistrations(reader)
 
-		accs, err := accsCollection.GetMap(tokenId)
+		accs, err := accsCollection.GetMap(assetId)
 		if err != nil {
 			return
 		}
@@ -460,16 +460,16 @@ func (apiStore *APIStore) loadTxPreview(reader store_db_interface.StoreDBTransac
 	return txPreview, json.Unmarshal(data, txPreview)
 }
 
-func (apiStore *APIStore) loadTokenInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*info.TokenInfo, error) {
+func (apiStore *APIStore) loadAssetInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*info.AssetInfo, error) {
 	if len(hash) == 0 {
-		hash = config.NATIVE_TOKEN_FULL
+		hash = config.NATIVE_ASSET_FULL
 	}
-	data := reader.Get("tokenInfo_ByHash:" + string(hash))
+	data := reader.Get("assetInfo_ByHash:" + string(hash))
 	if data == nil {
-		return nil, errors.New("TokenInfo was not found")
+		return nil, errors.New("AssetInfo was not found")
 	}
-	tokInfo := &info.TokenInfo{}
-	return tokInfo, json.Unmarshal(data, tokInfo)
+	astInfo := &info.AssetInfo{}
+	return astInfo, json.Unmarshal(data, astInfo)
 }
 
 func (apiStore *APIStore) loadTx(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*transaction.Transaction, *info.TxInfo, error) {

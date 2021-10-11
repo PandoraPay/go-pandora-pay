@@ -12,7 +12,7 @@ import (
 
 type Accounts struct {
 	hash_map.HashMap `json:"-"`
-	Token            []byte
+	Asset            []byte
 }
 
 func (accounts *Accounts) CreateAccount(publicKey []byte) (*account.Account, error) {
@@ -21,7 +21,7 @@ func (accounts *Accounts) CreateAccount(publicKey []byte) (*account.Account, err
 		return nil, errors.New("Key is not a valid public key")
 	}
 
-	acc := account.NewAccount(publicKey, accounts.Token)
+	acc := account.NewAccount(publicKey, accounts.Asset)
 	if err := accounts.Update(string(publicKey), acc); err != nil {
 		return nil, err
 	}
@@ -45,12 +45,12 @@ func (accounts *Accounts) GetRandomAccount() (*account.Account, error) {
 	return data.(*account.Account), nil
 }
 
-func (accounts *Accounts) saveTokensCount(key []byte, sign bool) (uint64, error) {
+func (accounts *Accounts) saveAssetsCount(key []byte, sign bool) (uint64, error) {
 
 	var count uint64
 	var err error
 
-	data := accounts.Tx.Get("accounts:tokensCount:" + string(key))
+	data := accounts.Tx.Get("accounts:assetsCount:" + string(key))
 	if data != nil {
 		if count, err = helpers.NewBufferReader(data).ReadUvarint(); err != nil {
 			return 0, err
@@ -69,9 +69,9 @@ func (accounts *Accounts) saveTokensCount(key []byte, sign bool) (uint64, error)
 	if count > 0 {
 		w := helpers.NewBufferWriter()
 		w.WriteUvarint(count)
-		err = accounts.Tx.Put("accounts:tokensCount:"+string(key), w.Bytes())
+		err = accounts.Tx.Put("accounts:assetsCount:"+string(key), w.Bytes())
 	} else {
-		err = accounts.Tx.Delete("accounts:tokensCount:" + string(key))
+		err = accounts.Tx.Delete("accounts:assetsCount:" + string(key))
 	}
 
 	if err != nil {
@@ -81,21 +81,21 @@ func (accounts *Accounts) saveTokensCount(key []byte, sign bool) (uint64, error)
 	return countOriginal, nil
 }
 
-func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, Token []byte) (accounts *Accounts, err error) {
+func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []byte) (accounts *Accounts, err error) {
 
-	if Token == nil || len(Token) != cryptography.RipemdSize {
-		return nil, errors.New("Token length is invalid")
+	if AssetId == nil || len(AssetId) != cryptography.RipemdSize {
+		return nil, errors.New("Asset length is invalid")
 	}
 
-	hashmap := hash_map.CreateNewHashMap(tx, "accounts_"+string(Token), cryptography.PublicKeySize, true)
+	hashmap := hash_map.CreateNewHashMap(tx, "accounts_"+string(AssetId), cryptography.PublicKeySize, true)
 
 	accounts = &Accounts{
 		HashMap: *hashmap,
-		Token:   Token,
+		Asset:   AssetId,
 	}
 
 	accounts.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {
-		var acc = account.NewAccount(key, accounts.Token)
+		var acc = account.NewAccount(key, accounts.Asset)
 		if err := acc.Deserialize(helpers.NewBufferReader(data)); err != nil {
 			return nil, err
 		}
@@ -109,13 +109,13 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, Token []byte
 		}
 
 		var count uint64
-		if count, err = accounts.saveTokensCount(key, true); err != nil {
+		if count, err = accounts.saveAssetsCount(key, true); err != nil {
 			return
 		}
 
 		element.Element.(*account.Account).Index = accounts.HashMap.Count
 
-		return tx.Put("accounts:tokenByIndex:"+string(key)+":"+strconv.FormatUint(count, 10), element.Element.(*account.Account).Token)
+		return tx.Put("accounts:assetByIndex:"+string(key)+":"+strconv.FormatUint(count, 10), element.Element.(*account.Account).Asset)
 	}
 
 	accounts.HashMap.DeletedEvent = func(key []byte) (err error) {
@@ -125,11 +125,11 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, Token []byte
 		}
 
 		var count uint64
-		if count, err = accounts.saveTokensCount(key, false); err != nil {
+		if count, err = accounts.saveAssetsCount(key, false); err != nil {
 			return
 		}
 
-		return tx.Delete("accounts:tokenByIndex:" + string(key) + ":" + strconv.FormatUint(count, 10))
+		return tx.Delete("accounts:assetByIndex:" + string(key) + ":" + strconv.FormatUint(count, 10))
 	}
 
 	return

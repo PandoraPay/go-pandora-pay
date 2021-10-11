@@ -5,8 +5,8 @@ import (
 	"errors"
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/blocks/block_complete"
-	"pandora-pay/blockchain/data_storage/tokens"
-	"pandora-pay/blockchain/data_storage/tokens/token"
+	"pandora-pay/blockchain/data_storage/assets"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
@@ -94,27 +94,27 @@ func removeTxsInfo(writer store_db_interface.StoreDBTransactionInterface, remove
 	return
 }
 
-func saveTokensInfo(toks *tokens.Tokens) (err error) {
+func saveAssetsInfo(asts *assets.Assets) (err error) {
 
-	for k, v := range toks.Committed {
+	for k, v := range asts.Committed {
 
 		if v.Stored == "del" {
-			err = toks.Tx.DeleteForcefully("tokenInfo_ByHash:" + k)
+			err = asts.Tx.DeleteForcefully("assetInfo_ByHash:" + k)
 		} else if v.Stored == "update" {
 
-			tok := v.Element.(*token.Token)
-			tokInfo := &info.TokenInfo{
-				Name:             tok.Name,
-				Ticker:           tok.Ticker,
-				DecimalSeparator: tok.DecimalSeparator,
-				Description:      tok.Description,
+			ast := v.Element.(*asset.Asset)
+			astInfo := &info.AssetInfo{
+				Name:             ast.Name,
+				Ticker:           ast.Ticker,
+				DecimalSeparator: ast.DecimalSeparator,
+				Description:      ast.Description,
 			}
 			var data []byte
-			if data, err = json.Marshal(tokInfo); err != nil {
+			if data, err = json.Marshal(astInfo); err != nil {
 				return
 			}
 
-			err = toks.Tx.Put("tokenInfo_ByHash:"+k, data)
+			err = asts.Tx.Put("assetInfo_ByHash:"+k, data)
 		}
 
 		if err != nil {

@@ -95,25 +95,25 @@ func (reader *BufferReader) ReadHash() ([]byte, error) {
 	return nil, errors.New("Error reading hash")
 }
 
-func (reader *BufferReader) ReadToken() ([]byte, error) {
-	tokenType, err := reader.ReadByte()
+func (reader *BufferReader) ReadAsset() ([]byte, error) {
+	assetType, err := reader.ReadByte()
 	if err != nil {
 		return nil, err
 	}
 
-	if tokenType == 0 {
+	if assetType == 0 {
 		return []byte{}, nil
-	} else if tokenType == 1 {
-		buff, err := reader.ReadBytes(config.TOKEN_LENGTH)
+	} else if assetType == 1 {
+		buff, err := reader.ReadBytes(config.ASSET_LENGTH)
 		if err != nil {
 			return nil, err
 		}
-		if !bytes.Equal(buff, config.NATIVE_TOKEN) {
-			return nil, errors.New("NATIVE_TOKEN_FULL should be writen as  NATIVE_TOKEN")
+		if !bytes.Equal(buff, config.NATIVE_ASSET) {
+			return nil, errors.New("NATIVE_ASSET_FULL should be writen as  NATIVE_ASSET")
 		}
 		return buff, nil
 	}
-	return nil, errors.New("invalid token type")
+	return nil, errors.New("invalid asset type")
 }
 
 func (reader *BufferReader) ReadUvarint() (uint64, error) {

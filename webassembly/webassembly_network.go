@@ -7,9 +7,9 @@ import (
 	"pandora-pay/app"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
-	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	api_faucet "pandora-pay/network/api/api_common/api_faucet"
@@ -118,12 +118,12 @@ func getNetworkAccountsCount(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		token, err := hex.DecodeString(args[0].String())
+		assetId, err := hex.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
 		}
 
-		data := socket.SendAwaitAnswer([]byte("accounts/count"), token, 0)
+		data := socket.SendAwaitAnswer([]byte("accounts/count"), assetId, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -200,7 +200,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 
 			result.Accs = make([]*account.Account, len(result.AccsSerialized))
 			for i := range result.AccsSerialized {
-				result.Accs[i] = account.NewAccount(publicKey, result.Tokens[i])
+				result.Accs[i] = account.NewAccount(publicKey, result.Assets[i])
 				if err = result.Accs[i].Deserialize(helpers.NewBufferReader(result.AccsSerialized[i])); err != nil {
 					return nil, err
 				}
@@ -339,7 +339,7 @@ func getNetworkTxPreview(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func getNetworkTokenInfo(this js.Value, args []js.Value) interface{} {
+func getNetworkAssetInfo(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
@@ -349,7 +349,7 @@ func getNetworkTokenInfo(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("token-info"), &api_types.APITokenInfoRequest{hash}, 0)
+		data := socket.SendJSONAwaitAnswer([]byte("asset-info"), &api_types.APIAssetInfoRequest{hash}, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -357,7 +357,7 @@ func getNetworkTokenInfo(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func getNetworkToken(this js.Value, args []js.Value) interface{} {
+func getNetworkAsset(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
 		if socket == nil {
@@ -368,15 +368,15 @@ func getNetworkToken(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("token"), &api_types.APITokenRequest{hash, api_types.RETURN_SERIALIZED}, 0)
+		data := socket.SendJSONAwaitAnswer([]byte("asset"), &api_types.APIAssetRequest{hash, api_types.RETURN_SERIALIZED}, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
-		tok := &token.Token{}
-		if err = tok.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
+		ast := &asset.Asset{}
+		if err = ast.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
 			return nil, err
 		}
-		return webassembly_utils.ConvertJSONBytes(tok)
+		return webassembly_utils.ConvertJSONBytes(ast)
 	})
 }
 

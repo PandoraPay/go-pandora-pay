@@ -33,7 +33,7 @@ type TxPreviewSimple struct {
 }
 
 type TxPreviewZetherPayload struct {
-	Token      helpers.HexBytes   `json:"token"`
+	Asset      helpers.HexBytes   `json:"asset"`
 	BurnValue  uint64             `json:"burnValue"`
 	DataPublic helpers.HexBytes   `json:"dataPublic"`
 	Publickeys []helpers.HexBytes `json:"publicKeys"`
@@ -105,7 +105,7 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 			}
 
 			payloads[i] = &TxPreviewZetherPayload{
-				payload.Token,
+				payload.Asset,
 				payload.BurnValue,
 				dataPublic,
 				publicKeys,

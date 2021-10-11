@@ -10,7 +10,7 @@ import (
 )
 
 type TransactionZetherPayload struct {
-	Token     []byte
+	Asset     []byte
 	BurnValue uint64
 
 	DataVersion transaction_data.TransactionDataVersion
@@ -21,7 +21,7 @@ type TransactionZetherPayload struct {
 }
 
 func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, inclSignature bool) {
-	w.WriteToken(payload.Token)
+	w.WriteAsset(payload.Asset)
 	w.WriteUvarint(payload.BurnValue)
 
 	w.WriteByte(byte(payload.DataVersion))
@@ -44,7 +44,7 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 
 	var n uint64
 
-	if payload.Token, err = r.ReadToken(); err != nil {
+	if payload.Asset, err = r.ReadAsset(); err != nil {
 		return
 	}
 	if payload.BurnValue, err = r.ReadUvarint(); err != nil {

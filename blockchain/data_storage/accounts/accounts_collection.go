@@ -18,33 +18,12 @@ func (collection *AccountsCollection) GetAllMap() map[string]*Accounts {
 	return collection.accsMap
 }
 
-func (collection *AccountsCollection) GetMap(token []byte) (*Accounts, error) {
-
-	if len(token) == 0 {
-		token = config.NATIVE_TOKEN_FULL
-	}
-
-	if len(token) != cryptography.RipemdSize {
-		return nil, errors.New("Token was not found")
-	}
-
-	accs := collection.accsMap[string(token)]
-	if accs == nil {
-		var err error
-		if accs, err = NewAccounts(collection.tx, token); err != nil {
-			return nil, err
-		}
-		collection.accsMap[string(token)] = accs
-	}
-	return accs, nil
-}
-
-func (collection *AccountsCollection) GetAccountTokensCount(key []byte) (uint64, error) {
+func (collection *AccountsCollection) GetAccountAssetsCount(key []byte) (uint64, error) {
 
 	var count uint64
 	var err error
 
-	data := collection.tx.Get("accounts:tokensCount:" + string(key))
+	data := collection.tx.Get("accounts:assetsCount:" + string(key))
 	if data != nil {
 		if count, err = helpers.NewBufferReader(data).ReadUvarint(); err != nil {
 			return 0, err
@@ -54,9 +33,30 @@ func (collection *AccountsCollection) GetAccountTokensCount(key []byte) (uint64,
 	return count, nil
 }
 
-func (collection *AccountsCollection) GetAccountTokens(key []byte) ([][]byte, error) {
+func (collection *AccountsCollection) GetMap(assetId []byte) (*Accounts, error) {
 
-	count, err := collection.GetAccountTokensCount(key)
+	if len(assetId) == 0 {
+		assetId = config.NATIVE_ASSET_FULL
+	}
+
+	if len(assetId) != cryptography.RipemdSize {
+		return nil, errors.New("Asset was not found")
+	}
+
+	accs := collection.accsMap[string(assetId)]
+	if accs == nil {
+		var err error
+		if accs, err = NewAccounts(collection.tx, assetId); err != nil {
+			return nil, err
+		}
+		collection.accsMap[string(assetId)] = accs
+	}
+	return accs, nil
+}
+
+func (collection *AccountsCollection) GetAccountAssets(key []byte) ([][]byte, error) {
+
+	count, err := collection.GetAccountAssetsCount(key)
 	if err != nil {
 		return nil, err
 	}
@@ -64,11 +64,11 @@ func (collection *AccountsCollection) GetAccountTokens(key []byte) ([][]byte, er
 	out := make([][]byte, count)
 
 	for i := uint64(0); i < count; i++ {
-		token := collection.tx.Get("accounts:tokenByIndex:" + string(key) + ":" + strconv.FormatUint(i, 10))
-		if token == nil {
-			return nil, errors.New("Error reading token")
+		assetId := collection.tx.Get("accounts:assetByIndex:" + string(key) + ":" + strconv.FormatUint(i, 10))
+		if assetId == nil {
+			return nil, errors.New("Error reading AssetId")
 		}
-		out[i] = token
+		out[i] = assetId
 	}
 
 	return out, nil

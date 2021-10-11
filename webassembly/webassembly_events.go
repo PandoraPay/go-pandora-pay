@@ -6,9 +6,9 @@ import (
 	"errors"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
-	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/events"
@@ -105,14 +105,14 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					}
 					plainAcc.PublicKey = data.Key
 					object = plainAcc
-				case api_types.SUBSCRIPTION_TOKEN:
-					tok := new(token.Token)
+				case api_types.SUBSCRIPTION_ASSET:
+					ast := new(asset.Asset)
 					if data.Data != nil {
-						if err = tok.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
+						if err = ast.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
 							continue
 						}
 					}
-					object = tok
+					object = ast
 				case api_types.SUBSCRIPTION_REGISTRATION:
 					reg := new(registration.Registration)
 					if data.Data != nil {

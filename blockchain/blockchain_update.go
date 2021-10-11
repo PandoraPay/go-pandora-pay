@@ -82,7 +82,7 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	queue.chain.UpdateAccounts.Broadcast(update.dataStorage.AccsCollection)
 	queue.chain.UpdatePlainAccounts.Broadcast(update.dataStorage.PlainAccs)
-	queue.chain.UpdateTokens.Broadcast(update.dataStorage.Toks)
+	queue.chain.UpdateAssets.Broadcast(update.dataStorage.Asts)
 	queue.chain.UpdateRegistrations.Broadcast(update.dataStorage.Regs)
 
 	//let's remove the transactions from the mempool

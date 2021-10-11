@@ -26,7 +26,7 @@ type GUIInterface interface {
 	OutputReadFloat64(text string, acceptedValues []float64) (out float64, ok bool)
 	OutputReadAddress(text string) (address *addresses.Address, ok bool)
 	OutputReadBool(text string) (out bool, ok bool)
-	OutputReadBytes(text string, acceptedLengths []int) (token []byte, ok bool)
+	OutputReadBytes(text string, acceptedLengths []int) (data []byte, ok bool)
 }
 
 func ProcessArgument(any ...interface{}) string {

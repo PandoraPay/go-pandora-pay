@@ -275,14 +275,14 @@ func getDataForDecodingBalanceWalletAddress(this js.Value, args []js.Value) inte
 
 		parameters := &struct {
 			PublicKey helpers.HexBytes `json:"publicKey"`
-			Token     helpers.HexBytes `json:"token"`
+			Asset     helpers.HexBytes `json:"asset"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
 			return nil, err
 		}
 
-		privateKey, previousValue := app.Wallet.GetDataForDecodingBalance(parameters.PublicKey, parameters.Token)
+		privateKey, previousValue := app.Wallet.GetDataForDecodingBalance(parameters.PublicKey, parameters.Asset)
 
 		return webassembly_utils.ConvertJSONBytes(struct {
 			PrivateKey    helpers.HexBytes `json:"privateKey"`

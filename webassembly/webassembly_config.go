@@ -2,9 +2,9 @@ package webassembly
 
 import (
 	"pandora-pay/config"
+	"pandora-pay/config/config_assets"
 	"pandora-pay/config/config_reward"
 	"pandora-pay/config/config_stake"
-	"pandora-pay/config/config_tokens"
 	"pandora-pay/webassembly/webassembly_utils"
 	"strconv"
 	"syscall/js"
@@ -52,7 +52,7 @@ func convertToBase(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func tokensConvertToUnits(this js.Value, args []js.Value) interface{} {
+func assetsConvertToUnits(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		number, err := strconv.ParseFloat(args[0].String(), 10)
 		if err != nil {
@@ -61,7 +61,7 @@ func tokensConvertToUnits(this js.Value, args []js.Value) interface{} {
 
 		decimalSeparator := args[1].Int()
 
-		value2, err := config_tokens.TokensConvertToUnits(number, decimalSeparator)
+		value2, err := config_assets.AssetsConvertToUnits(number, decimalSeparator)
 		if err != nil {
 			return nil, err
 		}
@@ -70,7 +70,7 @@ func tokensConvertToUnits(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func tokensConvertToBase(this js.Value, args []js.Value) interface{} {
+func assetsConvertToBase(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		number, err := strconv.ParseUint(args[0].String(), 10, 64)
@@ -80,7 +80,7 @@ func tokensConvertToBase(this js.Value, args []js.Value) interface{} {
 
 		decimalSeparator := args[1].Int()
 
-		value2, err := config_tokens.TokensConvertToBase(number, decimalSeparator)
+		value2, err := config_assets.AssetsConvertToBase(number, decimalSeparator)
 		if err != nil {
 			return nil, err
 		}

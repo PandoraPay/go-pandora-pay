@@ -79,8 +79,8 @@ func Initialize(startMainCb func()) {
 			"getNetworkAccount":                      js.FuncOf(getNetworkAccount),
 			"getNetworkAccountTxs":                   js.FuncOf(getNetworkAccountTxs),
 			"getNetworkAccountMempool":               js.FuncOf(getNetworkAccountMempool),
-			"getNetworkTokenInfo":                    js.FuncOf(getNetworkTokenInfo),
-			"getNetworkToken":                        js.FuncOf(getNetworkToken),
+			"getNetworkAssetInfo":                    js.FuncOf(getNetworkAssetInfo),
+			"getNetworkAsset":                        js.FuncOf(getNetworkAsset),
 			"getNetworkMempool":                      js.FuncOf(getNetworkMempool),
 			"postNetworkMempoolBroadcastTransaction": js.FuncOf(postNetworkMempoolBroadcastTransaction),
 			"subscribeNetwork":                       js.FuncOf(subscribeNetwork),
@@ -94,7 +94,7 @@ func Initialize(startMainCb func()) {
 		}),
 		"store": js.ValueOf(map[string]interface{}{
 			"storeAccount": js.FuncOf(storeAccount),
-			"storeToken":   js.FuncOf(storeToken),
+			"storeAsset":   js.FuncOf(storeAsset),
 		}),
 		"mempool": js.ValueOf(map[string]interface{}{
 			"mempoolRemoveTx": js.FuncOf(mempoolRemoveTx),
@@ -145,7 +145,7 @@ func Initialize(startMainCb func()) {
 						"SUBSCRIPTION_ACCOUNT":              js.ValueOf(int(api_types.SUBSCRIPTION_ACCOUNT)),
 						"SUBSCRIPTION_PLAIN_ACCOUNT":        js.ValueOf(int(api_types.SUBSCRIPTION_PLAIN_ACCOUNT)),
 						"SUBSCRIPTION_ACCOUNT_TRANSACTIONS": js.ValueOf(int(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS)),
-						"SUBSCRIPTION_TOKEN":                js.ValueOf(int(api_types.SUBSCRIPTION_TOKEN)),
+						"SUBSCRIPTION_ASSET":                js.ValueOf(int(api_types.SUBSCRIPTION_ASSET)),
 						"SUBSCRIPTION_REGISTRATION":         js.ValueOf(int(api_types.SUBSCRIPTION_REGISTRATION)),
 						"SUBSCRIPTION_TRANSACTION":          js.ValueOf(int(api_types.SUBSCRIPTION_TRANSACTION)),
 					}),
@@ -165,13 +165,13 @@ func Initialize(startMainCb func()) {
 				"COIN_DENOMINATION":            js.ValueOf(config.COIN_DENOMINATION),
 				"COIN_DENOMINATION_FLOAT":      js.ValueOf(config.COIN_DENOMINATION_FLOAT),
 				"MAX_SUPPLY_COINS":             js.ValueOf(config.MAX_SUPPLY_COINS),
-				"TOKEN_LENGTH":                 js.ValueOf(config.TOKEN_LENGTH),
-				"NATIVE_TOKEN_NAME":            js.ValueOf(config.NATIVE_TOKEN_NAME),
-				"NATIVE_TOKEN_TICKER":          js.ValueOf(config.NATIVE_TOKEN_TICKER),
-				"NATIVE_TOKEN_DESCRIPTION":     js.ValueOf(config.NATIVE_TOKEN_DESCRIPTION),
-				"NATIVE_TOKEN_STRING":          js.ValueOf(config.NATIVE_TOKEN_STRING),
-				"NATIVE_TOKEN_FULL_STRING":     js.ValueOf(config.NATIVE_TOKEN_FULL_STRING),
-				"NATIVE_TOKEN_FULL_STRING_HEX": js.ValueOf(config.NATIVE_TOKEN_FULL_STRING_HEX),
+				"ASSET_LENGTH":                 js.ValueOf(config.ASSET_LENGTH),
+				"NATIVE_ASSET_NAME":            js.ValueOf(config.NATIVE_ASSET_NAME),
+				"NATIVE_ASSET_TICKER":          js.ValueOf(config.NATIVE_ASSET_TICKER),
+				"NATIVE_ASSET_DESCRIPTION":     js.ValueOf(config.NATIVE_ASSET_DESCRIPTION),
+				"NATIVE_ASSET_STRING":          js.ValueOf(config.NATIVE_ASSET_STRING),
+				"NATIVE_ASSET_FULL_STRING":     js.ValueOf(config.NATIVE_ASSET_FULL_STRING),
+				"NATIVE_ASSET_FULL_STRING_HEX": js.ValueOf(config.NATIVE_ASSET_FULL_STRING_HEX),
 				"convertToUnitsUint64":         js.FuncOf(convertToUnitsUint64),
 				"convertToUnits":               js.FuncOf(convertToUnits),
 				"convertToBase":                js.FuncOf(convertToBase),
@@ -183,9 +183,9 @@ func Initialize(startMainCb func()) {
 			"reward": js.ValueOf(map[string]interface{}{
 				"getRewardAt": js.FuncOf(getRewardAt),
 			}),
-			"tokens": js.ValueOf(map[string]interface{}{
-				"tokensConvertToUnits": js.FuncOf(tokensConvertToUnits),
-				"tokensConvertToBase":  js.FuncOf(tokensConvertToBase),
+			"assets": js.ValueOf(map[string]interface{}{
+				"assetsConvertToUnits": js.FuncOf(assetsConvertToUnits),
+				"assetsConvertToBase":  js.FuncOf(assetsConvertToBase),
 			}),
 			"stake": js.ValueOf(map[string]interface{}{
 				"getRequiredStake": js.FuncOf(getRequiredStake),
@@ -193,7 +193,7 @@ func Initialize(startMainCb func()) {
 			"constants": js.ValueOf(map[string]interface{}{
 				"API_MEMPOOL_MAX_TRANSACTIONS": js.ValueOf(config.API_MEMPOOL_MAX_TRANSACTIONS),
 				"API_ACCOUNT_MAX_TXS":          js.ValueOf(config.API_ACCOUNT_MAX_TXS),
-				"API_TOKENS_INFO_MAX_RESULTS":  js.ValueOf(config.API_TOKENS_INFO_MAX_RESULTS),
+				"API_ASSETS_INFO_MAX_RESULTS":  js.ValueOf(config.API_ASSETS_INFO_MAX_RESULTS),
 			}),
 		}),
 	}))

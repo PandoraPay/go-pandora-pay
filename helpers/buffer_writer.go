@@ -52,12 +52,12 @@ func (writer *BufferWriter) WriteUvarint(value uint64) {
 
 }
 
-func (writer *BufferWriter) WriteToken(token []byte) {
-	if len(token) == 0 {
+func (writer *BufferWriter) WriteAsset(asset []byte) {
+	if len(asset) == 0 {
 		writer.WriteByte(0)
 	} else {
 		writer.WriteByte(1)
-		writer.Write(token)
+		writer.Write(asset)
 	}
 }
 

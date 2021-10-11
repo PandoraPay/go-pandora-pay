@@ -19,7 +19,7 @@ import (
 )
 
 type ZetherTransfer struct {
-	Token              helpers.HexBytes
+	Asset              helpers.HexBytes
 	From               []byte //private key
 	FromBalanceDecoded uint64
 	Destination        string
@@ -34,14 +34,14 @@ type ZetherPublicKeyIndex struct {
 	RegistrationSignature []byte
 }
 
-func InitializeEmap(tokens [][]byte) map[string]map[string][]byte {
+func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
 	emap := make(map[string]map[string][]byte) //initialize all maps
-	for i := range tokens {
-		if bytes.Equal(tokens[i], config.NATIVE_TOKEN_FULL) {
-			tokens[i] = []byte{}
+	for i := range assets {
+		if bytes.Equal(assets[i], config.NATIVE_ASSET_FULL) {
+			assets[i] = []byte{}
 		}
-		if emap[string(tokens[i])] == nil {
-			emap[string(tokens[i])] = map[string][]byte{}
+		if emap[string(assets[i])] == nil {
+			emap[string(assets[i])] = map[string][]byte{}
 		}
 	}
 	return emap
@@ -150,7 +150,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			data := publickeylist[i].String()
 
 			var pt *crypto.ElGamal
-			if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][data]); err != nil {
+			if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Asset)][data]); err != nil {
 				return
 			}
 			ebalances_list = append(ebalances_list, pt)
@@ -176,7 +176,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		var payload transaction_zether.TransactionZetherPayload
 
-		payload.Token = transfers[t].Token
+		payload.Asset = transfers[t].Asset
 		payload.BurnValue = transfers[t].Burn
 
 		value := transfers[t].Amount
@@ -196,7 +196,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		m := int(math.Log2(float64(len(rings[t]))))
 
-		extraBytes := 1 + len(payload.Token) + helpers.BytesLengthSerialized(payload.BurnValue)
+		extraBytes := 1 + len(payload.Asset) + helpers.BytesLengthSerialized(payload.BurnValue)
 		extraBytes += helpers.BytesLengthSerialized(uint64(len(transfers))) - 1
 		extraBytes += 1 + dataLength              //dataVersion + data
 		extraBytes += len(rings[t])*33*4 + 33 + 1 // statement
@@ -257,11 +257,11 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 			switch {
 			case i == witness_index[0]:
-				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][sender.String()]); err != nil {
+				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Asset)][sender.String()]); err != nil {
 					return
 				}
 			case i == witness_index[1]:
-				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][receiver.String()]); err != nil {
+				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Asset)][receiver.String()]); err != nil {
 					return
 				}
 				//fmt.Printf("receiver %s \n", x.String())
@@ -286,7 +286,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		// decode balance now
 		var pt *crypto.ElGamal
-		if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][sender.String()]); err != nil {
+		if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Asset)][sender.String()]); err != nil {
 			return
 		}
 
@@ -320,13 +320,13 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		for i := range publickeylist {
 
 			var balance *crypto.ElGamal
-			if balance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Token)][publickeylist[i].String()]); err != nil {
+			if balance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Asset)][publickeylist[i].String()]); err != nil {
 				return
 			}
 			echanges := crypto.ConstructElGamal(statement.C[i], statement.D)
 
 			balance = balance.Add(echanges)                                                   // homomorphic addition of changes
-			emap[string(transfers[t].Token)][publickeylist[i].String()] = balance.Serialize() // reserialize and store
+			emap[string(transfers[t].Asset)][publickeylist[i].String()] = balance.Serialize() // reserialize and store
 		}
 
 	}

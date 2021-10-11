@@ -68,12 +68,12 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		token, ok := gui.GUI.OutputReadBytes("Token. Leave empty for Native Token", []int{0, config.TOKEN_LENGTH})
+		assetId, ok := gui.GUI.OutputReadBytes("Asset. Leave empty for Native Asset", []int{0, config.ASSET_LENGTH})
 		if !ok {
 			return
 		}
-		if len(token) != 0 && len(token) != 40 {
-			return errors.New("Invalid TokenId")
+		if len(assetId) != 0 && len(assetId) != 40 {
+			return errors.New("Invalid AssetId")
 		}
 
 		amount, ok := gui.GUI.OutputReadFloat64("Amount", nil)
@@ -102,14 +102,14 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		ringMembers := make([][]string, 1)
-		if ringMembers[0], err = builder.CreateZetherRing(walletAddress.AddressEncoded, destinationAddress.EncodeAddr(), token, -1, -1); err != nil {
+		if ringMembers[0], err = builder.CreateZetherRing(walletAddress.AddressEncoded, destinationAddress.EncodeAddr(), assetId, -1, -1); err != nil {
 			return
 		}
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		tx, err := builder.CreateZetherTx_Float([]string{walletAddress.AddressEncoded}, [][]byte{token}, []float64{amount}, []string{destinationAddress.EncodeAddr()}, []float64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*TransactionsBuilderFeeFloat{fee}, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateZetherTx_Float([]string{walletAddress.AddressEncoded}, [][]byte{assetId}, []float64{amount}, []string{destinationAddress.EncodeAddr()}, []float64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*TransactionsBuilderFeeFloat{fee}, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

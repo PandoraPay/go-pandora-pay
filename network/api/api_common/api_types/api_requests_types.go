@@ -17,7 +17,7 @@ const (
 	SUBSCRIPTION_ACCOUNT SubscriptionType = iota
 	SUBSCRIPTION_PLAIN_ACCOUNT
 	SUBSCRIPTION_ACCOUNT_TRANSACTIONS
-	SUBSCRIPTION_TOKEN
+	SUBSCRIPTION_ASSET
 	SUBSCRIPTION_REGISTRATION
 	SUBSCRIPTION_TRANSACTION
 )
@@ -90,13 +90,13 @@ type APIAccountTxsRequest struct {
 
 type APIAccountsKeysByIndexRequest struct {
 	Indexes         []uint64         `json:"indexes"`
-	Token           helpers.HexBytes `json:"token"`
+	Asset           helpers.HexBytes `json:"asset"`
 	EncodeAddresses bool             `json:"encodeAddresses"`
 }
 
 type APIAccountsByKeysRequest struct {
 	Keys           []*APIAccountBaseRequest `json:"keys,omitempty"`
-	Token          helpers.HexBytes         `json:"token,omitempty"`
+	Asset          helpers.HexBytes         `json:"asset,omitempty"`
 	IncludeMempool bool                     `json:"includeMempool,omitempty"`
 	ReturnType     APIReturnType            `json:"returnType,omitempty"`
 }
@@ -118,11 +118,11 @@ func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
 	return publicKey, nil
 }
 
-type APITokenInfoRequest struct {
+type APIAssetInfoRequest struct {
 	Hash helpers.HexBytes `json:"hash"`
 }
 
-type APITokenRequest struct {
+type APIAssetRequest struct {
 	Hash       helpers.HexBytes `json:"hash"`
 	ReturnType APIReturnType    `json:"returnType"`
 }
@@ -171,8 +171,8 @@ func (self *APIAccountsKeysByIndexRequest) ImportFromValues(values *url.Values) 
 		return errors.New("parameter `indexes` is missing")
 	}
 
-	if values.Get("token") != "" {
-		if self.Token, err = hex.DecodeString(values.Get("token")); err != nil {
+	if values.Get("asset") != "" {
+		if self.Asset, err = hex.DecodeString(values.Get("asset")); err != nil {
 			return err
 		}
 	}
