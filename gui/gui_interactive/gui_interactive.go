@@ -4,7 +4,7 @@ import (
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"os"
-	gui_interface "pandora-pay/gui/gui_interface"
+	"pandora-pay/gui/gui_interface"
 	"pandora-pay/gui/gui_logger"
 	"sync"
 	"time"

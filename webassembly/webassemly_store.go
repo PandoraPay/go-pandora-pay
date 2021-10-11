@@ -11,7 +11,7 @@ import (
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/store"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
 )

@@ -3,7 +3,7 @@ package mempool
 import (
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
-	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction_type"
+	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/config/config_fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"

@@ -2,7 +2,7 @@ package gui_non_interactive
 
 import (
 	"fmt"
-	gui_interface "pandora-pay/gui/gui_interface"
+	"pandora-pay/gui/gui_interface"
 )
 
 func (g *GUINonInteractive) message(prefix string, color string, any ...interface{}) {

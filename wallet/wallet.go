@@ -6,7 +6,7 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
-	wallet_address "pandora-pay/wallet/address"
+	"pandora-pay/wallet/wallet_address"
 	"sync"
 )
 

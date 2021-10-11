@@ -7,7 +7,7 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	transaction_base_interface "pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
+	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/crypto"

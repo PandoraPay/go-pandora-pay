@@ -3,7 +3,7 @@ package store_db_memory
 import (
 	"errors"
 	"pandora-pay/helpers"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 	"sync"
 )
 

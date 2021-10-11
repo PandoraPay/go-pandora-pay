@@ -1,7 +1,7 @@
 package wizard
 
 import (
-	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction_data"
+	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/helpers"
 )
 
@@ -26,14 +26,14 @@ type TransactionsWizardData struct {
 	Encrypt bool             `json:"encrypt,omitempty"`
 }
 
-func (data *TransactionsWizardData) getDataVersion() transaction_type.TransactionDataVersion {
+func (data *TransactionsWizardData) getDataVersion() transaction_data.TransactionDataVersion {
 	if data.Data == nil || len(data.Data) == 0 {
-		return transaction_type.TX_DATA_NONE
+		return transaction_data.TX_DATA_NONE
 	}
 	if data.Encrypt {
-		return transaction_type.TX_DATA_ENCRYPTED
+		return transaction_data.TX_DATA_ENCRYPTED
 	}
-	return transaction_type.TX_DATA_PLAIN_TEXT
+	return transaction_data.TX_DATA_PLAIN_TEXT
 }
 
 func (data *TransactionsWizardData) getData() ([]byte, error) {

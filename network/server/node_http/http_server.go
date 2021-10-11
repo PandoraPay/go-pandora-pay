@@ -4,13 +4,13 @@ import (
 	"net/url"
 	"pandora-pay/blockchain"
 	"pandora-pay/mempool"
-	api_common "pandora-pay/network/api/api_common"
-	api_http "pandora-pay/network/api/api_http"
+	"pandora-pay/network/api/api_common"
+	"pandora-pay/network/api/api_http"
 	"pandora-pay/network/api/api_websockets"
-	banned_nodes "pandora-pay/network/banned_nodes"
+	"pandora-pay/network/banned_nodes"
 	"pandora-pay/network/websocks"
 	"pandora-pay/settings"
-	transactions_builder "pandora-pay/transactions_builder"
+	"pandora-pay/transactions_builder"
 	"pandora-pay/wallet"
 )
 

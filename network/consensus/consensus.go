@@ -4,8 +4,8 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/mempool"
-	node_http "pandora-pay/network/server/node_http"
-	advanced_connection_types "pandora-pay/network/websocks/connection/advanced_connection_types"
+	"pandora-pay/network/server/node_http"
+	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 	"sync"
 )

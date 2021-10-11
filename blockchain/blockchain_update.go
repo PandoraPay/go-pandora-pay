@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	blockchain_sync "pandora-pay/blockchain/blockchain_sync"
-	blockchain_types "pandora-pay/blockchain/blockchain_types"
+	"pandora-pay/blockchain/blockchain_sync"
+	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
-	advanced_connection_types "pandora-pay/network/websocks/connection/advanced_connection_types"
+	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 )
 

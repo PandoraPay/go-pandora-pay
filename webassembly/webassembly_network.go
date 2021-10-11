@@ -7,7 +7,7 @@ import (
 	"pandora-pay/app"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	plain_account "pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/blockchain/transactions/transaction"

@@ -1,8 +1,8 @@
 package gui_non_interactive
 
 import (
-	gui_interface "pandora-pay/gui/gui_interface"
-	gui_logger "pandora-pay/gui/gui_logger"
+	"pandora-pay/gui/gui_interface"
+	"pandora-pay/gui/gui_logger"
 	"runtime"
 	"sync"
 )

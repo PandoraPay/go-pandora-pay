@@ -3,12 +3,12 @@ package blockchain
 import (
 	"encoding/json"
 	"errors"
-	blockchain_types "pandora-pay/blockchain/blockchain_types"
-	block_complete "pandora-pay/blockchain/blocks/block_complete"
+	"pandora-pay/blockchain/blockchain_types"
+	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage/tokens"
 	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/blockchain/info"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
 

@@ -3,7 +3,7 @@ package transaction_zether
 import (
 	"errors"
 	"math"
-	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction_data"
+	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"

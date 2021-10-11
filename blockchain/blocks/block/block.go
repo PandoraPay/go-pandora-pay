@@ -3,7 +3,7 @@ package block
 import (
 	"errors"
 	"pandora-pay/blockchain/data_storage"
-	plain_account "pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/tokens/token"
 	"pandora-pay/config"
 	"pandora-pay/config/config_reward"

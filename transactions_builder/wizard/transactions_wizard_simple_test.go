@@ -4,8 +4,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
-	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction_simple"
-	transaction_simple_extra "pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
+	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
+	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/helpers"
 	"testing"
 )

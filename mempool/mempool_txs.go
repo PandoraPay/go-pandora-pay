@@ -3,7 +3,7 @@ package mempool
 import (
 	"encoding/hex"
 	"fmt"
-	blockchain_types "pandora-pay/blockchain/blockchain_types"
+	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"

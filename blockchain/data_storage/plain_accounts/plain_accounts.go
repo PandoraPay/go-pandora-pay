@@ -2,11 +2,11 @@ package plain_accounts
 
 import (
 	"errors"
-	plain_account "pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	hash_map "pandora-pay/store/hash_map"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type PlainAccounts struct {

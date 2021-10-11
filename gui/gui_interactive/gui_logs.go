@@ -2,7 +2,7 @@ package gui_interactive
 
 import (
 	"github.com/gizak/termui/v3/widgets"
-	gui_interface "pandora-pay/gui/gui_interface"
+	"pandora-pay/gui/gui_interface"
 	"strings"
 )
 

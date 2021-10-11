@@ -7,7 +7,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
-	merkle_tree "pandora-pay/cryptography/merkle_tree"
+	"pandora-pay/cryptography/merkle_tree"
 	"pandora-pay/helpers"
 )
 

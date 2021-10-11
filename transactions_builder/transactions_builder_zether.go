@@ -19,9 +19,9 @@ import (
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
-	advanced_connection_types "pandora-pay/network/websocks/connection/advanced_connection_types"
+	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/transactions_builder/wizard"
 )
 

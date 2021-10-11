@@ -2,7 +2,7 @@ package forging
 
 import (
 	"encoding/binary"
-	difficulty "pandora-pay/blockchain/blocks/block/difficulty"
+	"pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/config"
 	"pandora-pay/config/config_stake"

@@ -4,11 +4,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"math/big"
-	difficulty "pandora-pay/blockchain/blocks/block/difficulty"
+	"pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
 

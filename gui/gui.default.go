@@ -4,7 +4,7 @@
 package gui
 
 import (
-	gui_interactive "pandora-pay/gui/gui_interactive"
+	"pandora-pay/gui/gui_interactive"
 )
 
 func create_gui() (err error) {

@@ -3,8 +3,8 @@ package transaction_simple_extra
 import (
 	"errors"
 	"pandora-pay/blockchain/data_storage"
-	plain_account "pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction_data"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/helpers"
 )
 

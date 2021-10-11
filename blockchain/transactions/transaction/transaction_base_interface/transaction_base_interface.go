@@ -2,7 +2,7 @@ package transaction_base_interface
 
 import (
 	"pandora-pay/blockchain/data_storage"
-	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction_data"
+	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/helpers"
 )
 

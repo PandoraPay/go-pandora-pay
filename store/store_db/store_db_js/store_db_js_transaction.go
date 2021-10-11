@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"pandora-pay/helpers"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 	"sync"
 	"syscall/js"
 )

@@ -4,7 +4,7 @@ import (
 	"errors"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/helpers"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type StoreDBBoltTransaction struct {

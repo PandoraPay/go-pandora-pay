@@ -12,7 +12,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_common/api_types"
-	transactions_builder "pandora-pay/transactions_builder"
+	"pandora-pay/transactions_builder"
 	"pandora-pay/transactions_builder/wizard"
 	"pandora-pay/wallet"
 )

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"pandora-pay/gui"
 	"pandora-pay/store"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 func (settings *Settings) saveSettings() error {

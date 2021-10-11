@@ -5,7 +5,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
-	banned_nodes "pandora-pay/network/banned_nodes"
+	"pandora-pay/network/banned_nodes"
 	"pandora-pay/network/consensus"
 	"pandora-pay/network/known_nodes"
 	mempool_sync "pandora-pay/network/mempool_sync"

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"math/big"
 	"pandora-pay/helpers"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
 

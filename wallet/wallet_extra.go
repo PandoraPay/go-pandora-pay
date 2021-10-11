@@ -3,8 +3,8 @@ package wallet
 import (
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	plain_accounts "pandora-pay/blockchain/data_storage/plain_accounts"
-	plain_account "pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage/plain_accounts"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/recovery"
 )
 

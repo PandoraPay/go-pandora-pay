@@ -4,11 +4,11 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
-	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction_zether"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/config"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/wallet"
-	"pandora-pay/wallet/address"
+	"pandora-pay/wallet/wallet_address"
 	"sync"
 	"syscall/js"
 )

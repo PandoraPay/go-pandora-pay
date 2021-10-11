@@ -5,13 +5,13 @@ import (
 	"encoding/binary"
 	"errors"
 	"pandora-pay/addresses"
-	plain_accounts "pandora-pay/blockchain/data_storage/plain_accounts"
-	plain_account "pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage/plain_accounts"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/store"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type ForgingWallet struct {

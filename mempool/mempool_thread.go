@@ -3,11 +3,11 @@ package mempool
 import (
 	"errors"
 	"pandora-pay/blockchain/data_storage"
-	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction_type"
-	transaction_zether "pandora-pay/blockchain/transactions/transaction/transaction_zether"
+	"pandora-pay/blockchain/transactions/transaction/transaction_type"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/config"
 	"pandora-pay/store"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 	"sync/atomic"
 )
 

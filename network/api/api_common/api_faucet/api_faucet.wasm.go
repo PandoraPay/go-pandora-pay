@@ -6,7 +6,7 @@ package api_faucet
 import (
 	"pandora-pay/blockchain"
 	"pandora-pay/mempool"
-	transactions_builder "pandora-pay/transactions_builder"
+	"pandora-pay/transactions_builder"
 	"pandora-pay/wallet"
 )
 

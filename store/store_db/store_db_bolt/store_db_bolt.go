@@ -3,7 +3,7 @@ package store_db_bolt
 import (
 	bolt "go.etcd.io/bbolt"
 	"os"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 const dbName = "bolt"

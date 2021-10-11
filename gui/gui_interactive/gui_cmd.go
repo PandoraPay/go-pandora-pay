@@ -7,7 +7,7 @@ import (
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"pandora-pay/addresses"
-	gui_interface "pandora-pay/gui/gui_interface"
+	"pandora-pay/gui/gui_interface"
 	"path"
 	"strconv"
 )

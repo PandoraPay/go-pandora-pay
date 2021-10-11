@@ -6,10 +6,10 @@ package store
 import (
 	"errors"
 	"pandora-pay/config/globals"
-	store_db_bunt "pandora-pay/store/store_db/store_db_bunt"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
-	store_db_js "pandora-pay/store/store_db/store_db_js"
-	store_db_memory "pandora-pay/store/store_db/store_db_memory"
+	"pandora-pay/store/store_db/store_db_bunt"
+	"pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_js"
+	"pandora-pay/store/store_db/store_db_memory"
 )
 
 func createStoreNow(name string, storeType string) (*Store, error) {

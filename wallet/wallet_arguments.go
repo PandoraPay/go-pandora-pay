@@ -2,7 +2,7 @@ package wallet
 
 import (
 	"pandora-pay/config/globals"
-	wallet_address "pandora-pay/wallet/address"
+	"pandora-pay/wallet/wallet_address"
 	"strconv"
 	"strings"
 )

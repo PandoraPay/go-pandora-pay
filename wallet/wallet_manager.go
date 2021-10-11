@@ -9,12 +9,12 @@ import (
 	"github.com/tyler-smith/go-bip39"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	plain_account "pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
-	"pandora-pay/wallet/address"
+	"pandora-pay/wallet/wallet_address"
 	"strconv"
 )
 

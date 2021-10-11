@@ -10,7 +10,7 @@ import (
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	plain_accounts "pandora-pay/blockchain/data_storage/plain_accounts"
+	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/data_storage/tokens"
@@ -21,7 +21,7 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/store"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
 

@@ -6,10 +6,10 @@ package node_tcp
 import (
 	"pandora-pay/blockchain"
 	"pandora-pay/mempool"
-	banned_nodes "pandora-pay/network/banned_nodes"
-	node_http "pandora-pay/network/server/node_http"
+	"pandora-pay/network/banned_nodes"
+	"pandora-pay/network/server/node_http"
 	"pandora-pay/settings"
-	transactions_builder "pandora-pay/transactions_builder"
+	"pandora-pay/transactions_builder"
 	"pandora-pay/wallet"
 )
 

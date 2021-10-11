@@ -11,7 +11,7 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/wallet"
 	"sync"
 	"sync/atomic"

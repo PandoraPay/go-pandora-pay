@@ -3,11 +3,11 @@ package websocks
 import (
 	"encoding/json"
 	"pandora-pay/blockchain"
-	blockchain_types "pandora-pay/blockchain/blockchain_types"
+	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	plain_accounts "pandora-pay/blockchain/data_storage/plain_accounts"
-	plain_account "pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage/plain_accounts"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/data_storage/tokens"
@@ -17,7 +17,7 @@ import (
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
-	advanced_connection_types "pandora-pay/network/websocks/connection/advanced_connection_types"
+	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 )
 

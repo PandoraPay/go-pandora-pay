@@ -6,7 +6,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash_map"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type Tokens struct {

@@ -3,8 +3,8 @@ package mempool
 import (
 	"encoding/hex"
 	"fmt"
-	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction_simple"
-	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction_type"
+	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
+	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/gui"
 	"time"
 )

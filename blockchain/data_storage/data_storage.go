@@ -2,10 +2,10 @@ package data_storage
 
 import (
 	"pandora-pay/blockchain/data_storage/accounts"
-	plain_accounts "pandora-pay/blockchain/data_storage/plain_accounts"
+	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/tokens"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type DataStorage struct {

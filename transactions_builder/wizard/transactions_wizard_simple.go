@@ -4,11 +4,11 @@ import (
 	"errors"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
-	transaction_data "pandora-pay/blockchain/transactions/transaction/transaction_data"
-	transaction_simple "pandora-pay/blockchain/transactions/transaction/transaction_simple"
+	"pandora-pay/blockchain/transactions/transaction/transaction_data"
+	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
-	transaction_type "pandora-pay/blockchain/transactions/transaction/transaction_type"
+	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/cryptography"
 )
 

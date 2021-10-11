@@ -3,7 +3,7 @@ package store_db_bunt
 import (
 	"github.com/tidwall/buntdb"
 	"os"
-	store_db_interface "pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 const dbName = "bunt"
