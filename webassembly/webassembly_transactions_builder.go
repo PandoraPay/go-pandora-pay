@@ -9,7 +9,6 @@ import (
 	"pandora-pay/transactions_builder/wizard"
 	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
-	"time"
 )
 
 func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
@@ -42,7 +41,6 @@ func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 
 		tx, err := app.TransactionsBuilder.CreateUpdateDelegateTx_Float(txData.From, txData.Nonce, txData.DelegateNewPublicKeyGenerate, txData.DelegateNewPubKey, txData.DelegateNewFee, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
 			args[1].Invoke(status)
-			time.Sleep(1 * time.Millisecond)
 		})
 		if err != nil {
 			return nil, err
@@ -81,7 +79,6 @@ func createUnstakeTx_Float(this js.Value, args []js.Value) interface{} {
 
 		tx, err := app.TransactionsBuilder.CreateUnstakeTx_Float(txData.From, txData.Nonce, txData.UnstakeAmount, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
 			args[1].Invoke(status)
-			time.Sleep(1 * time.Millisecond)
 		})
 		if err != nil {
 			return nil, err

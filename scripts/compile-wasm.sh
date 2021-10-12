@@ -24,7 +24,7 @@ if [ "$1" == "main" ]; then
 fi
 if [ "$1" == "helper" ]; then
   buildOutput=${buildOutput}"-helper"
-  src="webassembly-helper/"
+  src="webassembly_helper/"
 fi
 
 buildOutput=${buildOutput}".wasm"

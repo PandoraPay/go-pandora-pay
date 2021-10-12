@@ -14,7 +14,6 @@ import (
 	"pandora-pay/transactions_builder/wizard"
 	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
-	"time"
 )
 
 func createZetherTx(this js.Value, args []js.Value) interface{} {
@@ -143,7 +142,6 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 
 		tx, err := wizard.CreateZetherTx(transfers, emap, rings, txData.Height, txData.Hash, publicKeyIndexes, txData.Fees, false, ctx, func(status string) {
 			args[1].Invoke(status)
-			time.Sleep(10 * time.Millisecond)
 		})
 		if err != nil {
 			return nil, err

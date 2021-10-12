@@ -16,9 +16,8 @@ func initializeBalanceDecoder(this js.Value, args []js.Value) interface{} {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		crypto.BalanceDecoder.SetTableSize(0, ctx, func(status string) {
-			args[0].Invoke(status)
-			time.Sleep(1 * time.Millisecond)
+		crypto.BalanceDecoder.SetTableSize(args[0].Int(), ctx, func(status string) {
+			args[1].Invoke(status)
 		})
 
 		return true, nil
@@ -59,7 +58,7 @@ func decodeBalance(this js.Value, args []js.Value) interface{} {
 
 			value, finalErr = privateKey.DecodeBalance(balance, parameters.PreviousValue, ctx, func(status string) {
 				args[1].Invoke(status)
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(500 * time.Microsecond)
 			})
 
 			done = true

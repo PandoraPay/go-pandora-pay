@@ -43,19 +43,19 @@ func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint6
 
 func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Context, statusCallback func(string)) *LookupTable {
 
-	if newTableSize == 0 {
-		if runtime.GOARCH != "wasm" {
-			newTableSize = 1 << 22 //32mb ram
-		} else {
-			newTableSize = 1 << 18 //4mb ram
-		}
-	}
-	if newTableSize > 1<<24 {
-		panic("Table Size is incorrect")
-	}
-
 	info := self.info.Load().(*BalanceDecoderInfo)
-	if info.tableSize == 0 || info.tableSize != newTableSize || info.hasError.IsSet() {
+	if info.tableSize == 0 || info.tableSize < newTableSize || info.hasError.IsSet() {
+
+		if newTableSize == 0 {
+			if runtime.GOARCH != "wasm" {
+				newTableSize = 1 << 22 //32mb ram
+			} else {
+				newTableSize = 1 << 16 //4mb ram
+			}
+		}
+		if newTableSize > 1<<24 {
+			panic("Table Size is incorrect")
+		}
 
 		oldInfo := info
 
@@ -79,14 +79,13 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 
 		select {
 		case tableLookup := <-info.tableComputedCn:
+			if tableLookup == nil && info.hasError.SetToIf(false, true) {
+				close(info.readyCn)
+			}
+
 			info.tableLookup = tableLookup
 			return tableLookup
 		case <-ctx.Done():
-			if info.hasError.SetToIf(false, true) {
-				close(info.readyCn)
-			}
-			return nil
-		case <-info.readyCn:
 			if info.hasError.SetToIf(false, true) {
 				close(info.readyCn)
 			}
@@ -101,11 +100,14 @@ func CreateBalanceDecoder() *BalanceDecoderType {
 	out := &BalanceDecoderType{
 		&atomic.Value{},
 	}
-	out.info.Store(&BalanceDecoderInfo{
+	info := &BalanceDecoderInfo{
 		tableSize: 0,
 		readyCn:   make(chan struct{}),
 		hasError:  abool.New(),
-	})
+	}
+	info.hasError.SetTo(true)
+	out.info.Store(info)
+
 	return out
 }
 

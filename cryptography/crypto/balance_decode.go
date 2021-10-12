@@ -9,7 +9,6 @@ import (
 	"pandora-pay/cryptography/bn256"
 	"runtime"
 	"sort"
-	"time"
 )
 
 // this file implements balance decoder whih has to be bruteforced
@@ -85,16 +84,9 @@ func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable,
 				(t)[i][j+k] = binary.BigEndian.Uint64(compressed[25:])
 			}
 
-			//  if j < 300  {
-			//      fmt.Printf("%d[%d]th entry %x\n",i,j, (t)[i][j])
-			// }
-
-			if j%500 == 0 && runtime.GOARCH == "wasm" {
+			if runtime.GOARCH == "wasm" && j&8191 == 0 {
 
 				statusCallback(fmt.Sprintf("%.2f%%", float32(j)*100/float32(len((t)[i]))))
-
-				runtime.Gosched() // gives others opportunity to run
-				time.Sleep(time.Millisecond)
 
 				select {
 				case <-ctx.Done():
@@ -115,7 +107,6 @@ func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable,
 	t1 := LookupTable(t)
 
 	tableComputedCn <- &t1
-	close(readyCn)
 }
 
 // convert point to balance
@@ -146,12 +137,13 @@ func (t *LookupTable) Lookup(p *bn256.G1, ctx context.Context, statusCallback fu
 	//  fmt.Printf("jumping into loop %d\n", loop_counter)
 	for { // it is an infinite loop
 
-		// fmt.Printf("loop counter %d  balance %d\n", loop_counter, balance)
-
-		select {
-		case <-ctx.Done():
-			return 0, errors.New("Scanning Suspended")
-		default:
+		if runtime.GOARCH == "wasm" && loop_counter&2047 == 0 {
+			select {
+			case <-ctx.Done():
+				return 0, errors.New("Scanning Suspended")
+			default:
+			}
+			statusCallback(fmt.Sprintf("%d", balance))
 		}
 
 		if loop_counter != 0 {
@@ -179,6 +171,7 @@ func (t *LookupTable) Lookup(p *bn256.G1, ctx context.Context, statusCallback fu
 				balance_part = ((*t)[i][index]) & 0xffffff
 				acc.ScalarMult(G, new(big.Int).SetUint64(balance+balance_part))
 
+				//if bytes.Equal( acc.EncodeUncompressed(), p.EncodeUncompressed() )  { // since we may have part collisions, make sure full point is checked
 				if acc.String() == p.String() { // since we may have part collisions, make sure full point is checked
 					balance += balance_part
 					// fmt.Printf("balance found  %d part(%d) index %d   big part %x\n",balance,balance_part, index, big_part );
