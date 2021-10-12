@@ -12,6 +12,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
@@ -114,7 +115,7 @@ func (tx *TransactionZether) ComputeFees() (uint64, error) {
 
 	sum := uint64(0)
 	for _, payload := range tx.Payloads {
-		if bytes.Equal(payload.Asset, config.NATIVE_ASSET) {
+		if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET) {
 			if err := helpers.SafeUint64Add(&sum, payload.Statement.Fees); err != nil {
 				return 0, err
 			}
@@ -143,7 +144,7 @@ func (tx *TransactionZether) Validate() (err error) {
 
 	for _, payload := range tx.Payloads {
 
-		if bytes.Equal(payload.Asset, config.NATIVE_ASSET_FULL) {
+		if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
 			return errors.New("NATIVE_ASSET_FULL should be written as NATIVE_ASSET")
 		}
 

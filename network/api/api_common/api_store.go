@@ -18,6 +18,7 @@ import (
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/store"
@@ -462,7 +463,7 @@ func (apiStore *APIStore) loadTxPreview(reader store_db_interface.StoreDBTransac
 
 func (apiStore *APIStore) loadAssetInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*info.AssetInfo, error) {
 	if len(hash) == 0 {
-		hash = config.NATIVE_ASSET_FULL
+		hash = config_coins.NATIVE_ASSET_FULL
 	}
 	data := reader.Get("assetInfo_ByHash:" + string(hash))
 	if data == nil {

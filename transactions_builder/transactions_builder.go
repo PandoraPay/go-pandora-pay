@@ -13,7 +13,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
-	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/mempool"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
@@ -76,7 +76,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uin
 
 	statusCallback("Converting Floats to Numbers")
 
-	unstakeAmountFinal, err := config.ConvertToUnits(unstakeAmount)
+	unstakeAmountFinal, err := config_coins.ConvertToUnits(unstakeAmount)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uin
 
 		asts := assets.NewAssets(reader)
 
-		ast, err := asts.GetAsset(config.NATIVE_ASSET)
+		ast, err := asts.GetAsset(config_coins.NATIVE_ASSET)
 		if err != nil {
 			return
 		}
@@ -168,15 +168,16 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	return tx, nil
 }
 
-func (builder *TransactionsBuilder) CreateUpdateDelegateTx_Float(from string, nonce uint64, delegateNewPubKeyGenerate bool, delegateNewPubKey []byte, delegateNewFee uint64, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateUpdateDelegateTx_Float(from string, nonce uint64, delegateNewPubKeyGenerate bool, delegateNewPubKey []byte, delegateNewFee uint64, updateStakingAmount float64, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	var finalFee *wizard.TransactionsWizardFee
+	var finalUpdateStakingAmount uint64
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		asts := assets.NewAssets(reader)
 
-		ast, err := asts.GetAsset(config.NATIVE_ASSET)
+		ast, err := asts.GetAsset(config_coins.NATIVE_ASSET)
 		if err != nil {
 			return
 		}
@@ -185,7 +186,11 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx_Float(from string, no
 		}
 
 		if finalFee, err = fee.convertToWizardFee(ast); err != nil {
-			return err
+			return
+		}
+
+		if finalUpdateStakingAmount, err = ast.ConvertToUnits(updateStakingAmount); err != nil {
+			return
 		}
 
 		return
@@ -193,10 +198,10 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx_Float(from string, no
 		return nil, err
 	}
 
-	return builder.CreateUpdateDelegateTx(from, nonce, delegateNewPubKeyGenerate, delegateNewPubKey, delegateNewFee, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, false, statusCallback)
+	return builder.CreateUpdateDelegateTx(from, nonce, delegateNewPubKeyGenerate, delegateNewPubKey, delegateNewFee, finalUpdateStakingAmount, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, false, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce uint64, delegateNewPubKeyGenerate bool, delegateNewPubKey []byte, delegateNewFee uint64, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce uint64, delegateNewPubKeyGenerate bool, delegateNewPubKey []byte, delegateNewFee, updateStakingAmount uint64, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
@@ -238,7 +243,7 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 		delegateNewPubKey = delegatedStake.PublicKey
 	}
 
-	if tx, err = wizard.CreateUpdateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegateNewPubKey, delegateNewFee, data, fee, false, statusCallback); err != nil {
+	if tx, err = wizard.CreateUpdateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegateNewPubKey, delegateNewFee, updateStakingAmount, data, fee, false, statusCallback); err != nil {
 		return nil, err
 	}
 
@@ -260,7 +265,7 @@ func (builder *TransactionsBuilder) CreateClaimTx_Float(from string, nonce uint6
 
 		asts := assets.NewAssets(reader)
 
-		ast, err := asts.GetAsset(config.NATIVE_ASSET)
+		ast, err := asts.GetAsset(config_coins.NATIVE_ASSET)
 		if err != nil {
 			return
 		}

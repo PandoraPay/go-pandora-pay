@@ -1,4 +1,4 @@
-package config
+package config_coins
 
 import (
 	"encoding/hex"

@@ -2,7 +2,7 @@ package accounts
 
 import (
 	"errors"
-	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -36,7 +36,7 @@ func (collection *AccountsCollection) GetAccountAssetsCount(key []byte) (uint64,
 func (collection *AccountsCollection) GetMap(assetId []byte) (*Accounts, error) {
 
 	if len(assetId) == 0 {
-		assetId = config.NATIVE_ASSET_FULL
+		assetId = config_coins.NATIVE_ASSET_FULL
 	}
 
 	if len(assetId) != cryptography.RipemdSize {

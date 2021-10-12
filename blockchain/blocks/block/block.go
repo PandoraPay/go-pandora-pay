@@ -5,7 +5,7 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_reward"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
@@ -63,14 +63,14 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 	}
 
 	var ast *asset.Asset
-	if ast, err = dataStorage.Asts.GetAsset(config.NATIVE_ASSET); err != nil {
+	if ast, err = dataStorage.Asts.GetAsset(config_coins.NATIVE_ASSET); err != nil {
 		return
 	}
 
 	if err = ast.AddSupply(true, reward); err != nil {
 		return
 	}
-	if err = dataStorage.Asts.UpdateAsset(config.NATIVE_ASSET, ast); err != nil {
+	if err = dataStorage.Asts.UpdateAsset(config_coins.NATIVE_ASSET, ast); err != nil {
 		return
 	}
 

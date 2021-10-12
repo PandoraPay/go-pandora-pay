@@ -7,7 +7,7 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
-	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -61,7 +61,7 @@ func (tx *TransactionZetherDelegateStake) Validate(payloads []*transaction_zethe
 	if len(payloads) != 1 {
 		return errors.New("Payloads length must be 1")
 	}
-	if bytes.Equal(payloads[0].Asset, config.NATIVE_ASSET) {
+	if bytes.Equal(payloads[0].Asset, config_coins.NATIVE_ASSET) {
 		return errors.New("Payload[0] asset must be a native asset")
 	}
 

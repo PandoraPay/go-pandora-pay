@@ -81,7 +81,7 @@ func (api *APIDelegatesNode) updateAccountsChanges() {
 
 					if v.Stored == "update" {
 						plainAcc := v.Element.(*plain_account.PlainAccount)
-						if plainAcc.HasDelegatedStake() && bytes.Equal(plainAcc.DelegatedStake.DelegatedStakePublicKey, pendingDelegatingStakeChange.delegatePublicKey) {
+						if plainAcc.HasDelegatedStake() && bytes.Equal(plainAcc.DelegatedStake.DelegatedStakePublicKey, pendingDelegatingStakeChange.delegateStakingPublicKey) {
 
 							addr, err := addresses.CreateAddr(pendingDelegatingStakeChange.publicKey, nil, 0, nil)
 							if err != nil {
@@ -100,8 +100,8 @@ func (api *APIDelegatesNode) updateAccountsChanges() {
 								addr.EncodeAddr(),
 								"",
 								&wallet_address.WalletAddressDelegatedStake{
-									&addresses.PrivateKey{Key: pendingDelegatingStakeChange.delegatePrivateKey.Key},
-									pendingDelegatingStakeChange.delegatePublicKey,
+									&addresses.PrivateKey{Key: pendingDelegatingStakeChange.delegateStakingPrivateKey.Key},
+									pendingDelegatingStakeChange.delegateStakingPublicKey,
 									0,
 								},
 							}, true)

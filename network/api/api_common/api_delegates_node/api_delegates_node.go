@@ -7,7 +7,8 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
+	"pandora-pay/config/config_nodes"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -19,10 +20,10 @@ import (
 )
 
 type apiPendingDelegateStakeChange struct {
-	delegatePrivateKey *addresses.PrivateKey
-	delegatePublicKey  []byte
-	publicKey          []byte
-	blockHeight        uint64
+	delegateStakingPrivateKey *addresses.PrivateKey
+	delegateStakingPublicKey  []byte
+	publicKey                 []byte
+	blockHeight               uint64
 }
 
 type APIDelegatesNode struct {
@@ -37,9 +38,9 @@ type APIDelegatesNode struct {
 func (api *APIDelegatesNode) getDelegatesInfo(request *ApiDelegatesNodeInfoRequest) ([]byte, error) {
 
 	answer := &ApiDelegatesNodeInfoAnswer{
-		config.DELEGATES_MAXIMUM,
+		config_nodes.DELEGATES_MAXIMUM,
 		api.wallet.GetDelegatesCount(),
-		config.DELEGATES_FEES,
+		config_nodes.DELEGATES_FEES,
 		api.challenge,
 	}
 
@@ -56,7 +57,7 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 		accsCollection := accounts.NewAccountsCollection(reader)
 
-		accs, err := accsCollection.GetMap(config.NATIVE_ASSET)
+		accs, err := accsCollection.GetMap(config_coins.NATIVE_ASSET)
 		if err != nil {
 			return
 		}
@@ -74,24 +75,24 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 		})
 	}
 
-	delegatePrivateKey := addresses.GenerateNewPrivateKey()
-	delegatePublicKey := delegatePrivateKey.GeneratePublicKey()
+	delegateStakingPrivateKey := addresses.GenerateNewPrivateKey()
+	delegateStakingPublicKey := delegateStakingPrivateKey.GeneratePublicKey()
 
 	data, loaded := api.pendingDelegatesStakesChanges.LoadOrStore(string(publicKey), &apiPendingDelegateStakeChange{
-		delegatePrivateKey,
-		delegatePublicKey,
+		delegateStakingPrivateKey,
+		delegateStakingPublicKey,
 		publicKey,
 		atomic.LoadUint64(&api.chainHeight),
 	})
 	if loaded {
 		pendingDelegateStakeChange := data.(*apiPendingDelegateStakeChange)
-		delegatePrivateKey = pendingDelegateStakeChange.delegatePrivateKey
-		delegatePublicKey = pendingDelegateStakeChange.delegatePublicKey
+		delegateStakingPrivateKey = pendingDelegateStakeChange.delegateStakingPrivateKey
+		delegateStakingPublicKey = pendingDelegateStakeChange.delegateStakingPublicKey
 	}
 
 	answer := &ApiDelegatesNodeAskAnswer{
-		Exists:            false,
-		DelegatePublicKey: delegatePublicKey,
+		Exists:                   false,
+		DelegateStakingPublicKey: delegateStakingPublicKey,
 	}
 
 	return json.Marshal(answer)

@@ -3,7 +3,7 @@ package assets
 import (
 	"errors"
 	"pandora-pay/blockchain/data_storage/assets/asset"
-	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -16,7 +16,7 @@ type Assets struct {
 func (assets *Assets) GetAsset(key []byte) (*asset.Asset, error) {
 
 	if len(key) == 0 {
-		key = config.NATIVE_ASSET_FULL
+		key = config_coins.NATIVE_ASSET_FULL
 	}
 
 	data, err := assets.HashMap.Get(string(key))
@@ -30,7 +30,7 @@ func (assets *Assets) GetAsset(key []byte) (*asset.Asset, error) {
 func (assets *Assets) CreateAsset(key []byte, ast *asset.Asset) (err error) {
 
 	if len(key) == 0 {
-		key = config.NATIVE_ASSET_FULL
+		key = config_coins.NATIVE_ASSET_FULL
 	}
 
 	if err = ast.Validate(); err != nil {
@@ -54,7 +54,7 @@ func (assets *Assets) CreateAsset(key []byte, ast *asset.Asset) (err error) {
 func (assets *Assets) UpdateAsset(key []byte, ast *asset.Asset) error {
 
 	if len(key) == 0 {
-		key = config.NATIVE_ASSET_FULL
+		key = config_coins.NATIVE_ASSET_FULL
 	}
 
 	return assets.Update(string(key), ast)
@@ -63,7 +63,7 @@ func (assets *Assets) UpdateAsset(key []byte, ast *asset.Asset) error {
 func (assets *Assets) ExistsAsset(key []byte) (bool, error) {
 
 	if len(key) == 0 {
-		key = config.NATIVE_ASSET_FULL
+		key = config_coins.NATIVE_ASSET_FULL
 	}
 
 	return assets.Exists(string(key))
@@ -75,7 +75,7 @@ func (assets *Assets) DeleteAsset(key []byte) {
 
 func NewAssets(tx store_db_interface.StoreDBTransactionInterface) (assets *Assets) {
 
-	hashMap := hash_map.CreateNewHashMap(tx, "assets", config.ASSET_LENGTH, true)
+	hashMap := hash_map.CreateNewHashMap(tx, "assets", config_coins.ASSET_LENGTH, true)
 
 	assets = &Assets{
 		HashMap: *hashMap,

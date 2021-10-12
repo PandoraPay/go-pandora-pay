@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
@@ -161,17 +162,17 @@ func Initialize(startMainCb func()) {
 			"VERSION":                 js.ValueOf(config.VERSION),
 			"BUILD_VERSION":           js.ValueOf(config.BUILD_VERSION),
 			"coins": js.ValueOf(map[string]interface{}{
-				"DECIMAL_SEPARATOR":            js.ValueOf(config.DECIMAL_SEPARATOR),
-				"COIN_DENOMINATION":            js.ValueOf(config.COIN_DENOMINATION),
-				"COIN_DENOMINATION_FLOAT":      js.ValueOf(config.COIN_DENOMINATION_FLOAT),
-				"MAX_SUPPLY_COINS":             js.ValueOf(config.MAX_SUPPLY_COINS),
-				"ASSET_LENGTH":                 js.ValueOf(config.ASSET_LENGTH),
-				"NATIVE_ASSET_NAME":            js.ValueOf(config.NATIVE_ASSET_NAME),
-				"NATIVE_ASSET_TICKER":          js.ValueOf(config.NATIVE_ASSET_TICKER),
-				"NATIVE_ASSET_DESCRIPTION":     js.ValueOf(config.NATIVE_ASSET_DESCRIPTION),
-				"NATIVE_ASSET_STRING":          js.ValueOf(config.NATIVE_ASSET_STRING),
-				"NATIVE_ASSET_FULL_STRING":     js.ValueOf(config.NATIVE_ASSET_FULL_STRING),
-				"NATIVE_ASSET_FULL_STRING_HEX": js.ValueOf(config.NATIVE_ASSET_FULL_STRING_HEX),
+				"DECIMAL_SEPARATOR":            js.ValueOf(config_coins.DECIMAL_SEPARATOR),
+				"COIN_DENOMINATION":            js.ValueOf(config_coins.COIN_DENOMINATION),
+				"COIN_DENOMINATION_FLOAT":      js.ValueOf(config_coins.COIN_DENOMINATION_FLOAT),
+				"MAX_SUPPLY_COINS":             js.ValueOf(config_coins.MAX_SUPPLY_COINS),
+				"ASSET_LENGTH":                 js.ValueOf(config_coins.ASSET_LENGTH),
+				"NATIVE_ASSET_NAME":            js.ValueOf(config_coins.NATIVE_ASSET_NAME),
+				"NATIVE_ASSET_TICKER":          js.ValueOf(config_coins.NATIVE_ASSET_TICKER),
+				"NATIVE_ASSET_DESCRIPTION":     js.ValueOf(config_coins.NATIVE_ASSET_DESCRIPTION),
+				"NATIVE_ASSET_STRING":          js.ValueOf(config_coins.NATIVE_ASSET_STRING),
+				"NATIVE_ASSET_FULL_STRING":     js.ValueOf(config_coins.NATIVE_ASSET_FULL_STRING),
+				"NATIVE_ASSET_FULL_STRING_HEX": js.ValueOf(config_coins.NATIVE_ASSET_FULL_STRING_HEX),
 				"convertToUnitsUint64":         js.FuncOf(convertToUnitsUint64),
 				"convertToUnits":               js.FuncOf(convertToUnits),
 				"convertToBase":                js.FuncOf(convertToBase),

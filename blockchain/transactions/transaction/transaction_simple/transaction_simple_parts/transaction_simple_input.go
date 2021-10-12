@@ -3,7 +3,7 @@ package transaction_simple_parts
 import (
 	"bytes"
 	"errors"
-	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
@@ -14,7 +14,7 @@ type TransactionSimpleInput struct {
 }
 
 func (vin *TransactionSimpleInput) Validate() error {
-	if bytes.Equal(vin.PublicKey, config.BURN_PUBLIC_KEY) {
+	if bytes.Equal(vin.PublicKey, config_coins.BURN_PUBLIC_KEY) {
 		return errors.New("Input includes BURN ADDR")
 	}
 

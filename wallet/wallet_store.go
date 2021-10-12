@@ -9,7 +9,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -206,7 +206,7 @@ func (wallet *Wallet) StartWallet() error {
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
 		accsCollection := accounts.NewAccountsCollection(reader)
-		accs, err := accsCollection.GetMap(config.NATIVE_ASSET)
+		accs, err := accsCollection.GetMap(config_coins.NATIVE_ASSET)
 		if err != nil {
 			return
 		}

@@ -1,8 +1,9 @@
-package config
+package config_nodes
 
 import (
 	"math"
 	"net/url"
+	"pandora-pay/config/config_stake"
 )
 
 type DelegateNode struct {
@@ -59,5 +60,5 @@ var (
 var (
 	DELEGATES_ALLOWED_ACTIVATED = false
 	DELEGATES_MAXIMUM           = 10000
-	DELEGATES_FEES              = uint16(math.Floor(0.00 * 65535)) // max 65535
+	DELEGATES_FEES              = uint16(math.Floor(float64(0.00 * config_stake.DELEGATING_STAKING_FEES_MAX_VALUE))) // max DELEGATING_STAKING_FEES_MAX_VALUE
 )

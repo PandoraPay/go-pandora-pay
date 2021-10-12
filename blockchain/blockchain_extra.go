@@ -16,6 +16,7 @@ import (
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
@@ -54,7 +55,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 
 	var accs *accounts.Accounts
 
-	if accs, err = dataStorage.AccsCollection.GetMap(config.NATIVE_ASSET); err != nil {
+	if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET); err != nil {
 		return
 	}
 
@@ -106,21 +107,21 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 
 	ast := &asset.Asset{
 		Version:                  0,
-		Name:                     config.NATIVE_ASSET_NAME,
-		Ticker:                   config.NATIVE_ASSET_TICKER,
-		Description:              config.NATIVE_ASSET_DESCRIPTION,
-		DecimalSeparator:         byte(config.DECIMAL_SEPARATOR),
+		Name:                     config_coins.NATIVE_ASSET_NAME,
+		Ticker:                   config_coins.NATIVE_ASSET_TICKER,
+		Description:              config_coins.NATIVE_ASSET_DESCRIPTION,
+		DecimalSeparator:         byte(config_coins.DECIMAL_SEPARATOR),
 		CanChangePublicKey:       false,
 		CanChangeSupplyPublicKey: false,
 		CanBurn:                  true,
 		CanMint:                  true,
 		Supply:                   supply,
-		MaxSupply:                config.MAX_SUPPLY_COINS_UNITS,
-		UpdatePublicKey:          config.BURN_PUBLIC_KEY,
-		SupplyPublicKey:          config.BURN_PUBLIC_KEY,
+		MaxSupply:                config_coins.MAX_SUPPLY_COINS_UNITS,
+		UpdatePublicKey:          config_coins.BURN_PUBLIC_KEY,
+		SupplyPublicKey:          config_coins.BURN_PUBLIC_KEY,
 	}
 
-	if err = dataStorage.Asts.CreateAsset(config.NATIVE_ASSET, ast); err != nil {
+	if err = dataStorage.Asts.CreateAsset(config_coins.NATIVE_ASSET, ast); err != nil {
 		return
 	}
 

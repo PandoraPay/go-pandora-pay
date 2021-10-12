@@ -3,6 +3,7 @@ package config_reward
 import (
 	"math"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 )
 
 func GetRewardAt(blockHeight uint64) (reward uint64) {
@@ -16,7 +17,7 @@ func GetRewardAt(blockHeight uint64) (reward uint64) {
 	}
 
 	var err error
-	if reward, err = config.ConvertToUnitsUint64(reward); err != nil {
+	if reward, err = config_coins.ConvertToUnitsUint64(reward); err != nil {
 		panic(err)
 	}
 

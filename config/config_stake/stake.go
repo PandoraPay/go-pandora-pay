@@ -1,15 +1,17 @@
 package config_stake
 
 import (
-	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/globals"
 )
+
+var DELEGATING_STAKING_FEES_MAX_VALUE = uint64(65535)
 
 func GetRequiredStake(blockHeight uint64) (requiredStake uint64) {
 
 	var err error
 
-	if requiredStake, err = config.ConvertToUnitsUint64(100); err != nil {
+	if requiredStake, err = config_coins.ConvertToUnitsUint64(100); err != nil {
 		panic(err)
 	}
 

@@ -18,6 +18,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -133,7 +134,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			dataStorage = data_storage.CreateDataStorage(writer)
 
 			var accs *accounts.Accounts
-			if accs, err = dataStorage.AccsCollection.GetMap(config.NATIVE_ASSET); err != nil {
+			if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET); err != nil {
 				return
 			}
 			gui.GUI.Log("regs", dataStorage.Regs.Count)

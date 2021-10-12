@@ -15,9 +15,10 @@ func TestCreateUpdateDelegateTx(t *testing.T) {
 	delegatePrivKey := addresses.GenerateNewPrivateKey()
 	delegatePubKey := delegatePrivKey.GeneratePublicKey()
 	delegateFee := uint64(10000)
+	updateStakingAmount := uint64(0)
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateUpdateDelegateTx(0, privateKey.Key, delegatePubKey, delegateFee, &TransactionsWizardData{[]byte{}, false}, &TransactionsWizardFee{PerByteAuto: true}, true, func(status string) {})
+	tx, err := CreateUpdateDelegateTx(0, privateKey.Key, delegatePubKey, delegateFee, updateStakingAmount, &TransactionsWizardData{[]byte{}, false}, &TransactionsWizardFee{PerByteAuto: true}, true, func(status string) {})
 	assert.NoError(t, err)
 	assert.NotNil(t, tx, "creating update delegate tx is nil")
 

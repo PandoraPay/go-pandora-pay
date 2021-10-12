@@ -8,7 +8,7 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
-	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/helpers"
 )
 
@@ -35,7 +35,7 @@ func (tx *TransactionSimpleClaim) IncludeTransactionVin0(txRegistrations *transa
 	}
 
 	var accs *accounts.Accounts
-	if accs, err = dataStorage.AccsCollection.GetMap(config.NATIVE_ASSET); err != nil {
+	if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET); err != nil {
 		return
 	}
 

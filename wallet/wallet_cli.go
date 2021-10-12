@@ -15,7 +15,7 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
-	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/gui"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -140,14 +140,14 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 				if plainAcc != nil {
 
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Nonce", strconv.FormatUint(plainAcc.Nonce, 10)))
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Claimable", strconv.FormatFloat(config.ConvertToBase(plainAcc.Claimable), 'f', config.DECIMAL_SEPARATOR, 64)))
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Claimable", strconv.FormatFloat(config_coins.ConvertToBase(plainAcc.Claimable), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
 					if plainAcc.HasDelegatedStake() {
-						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config.ConvertToBase(plainAcc.DelegatedStake.StakeAvailable), 'f', config.DECIMAL_SEPARATOR, 64)))
+						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config_coins.ConvertToBase(plainAcc.DelegatedStake.StakeAvailable), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
 
 						if len(plainAcc.DelegatedStake.StakesPending) > 0 {
 							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES", ""))
 							for _, stakePending := range plainAcc.DelegatedStake.StakesPending {
-								gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %t", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatFloat(config.ConvertToBase(stakePending.PendingAmount), 'f', config.DECIMAL_SEPARATOR, 64), stakePending.PendingType))
+								gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %t", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatFloat(config_coins.ConvertToBase(stakePending.PendingAmount), 'f', config_coins.DECIMAL_SEPARATOR, 64), stakePending.PendingType))
 							}
 						} else {
 							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES:", "EMPTY"))
@@ -192,7 +192,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 						if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, acc.Balance.Amount, assetId, true, false, ctx, func(string) {}); err != nil {
 							return
 						}
-						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config.ConvertToBase(decoded), 'f', config.DECIMAL_SEPARATOR, 64), ast.Name))
+						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config_coins.ConvertToBase(decoded), 'f', config_coins.DECIMAL_SEPARATOR, 64), ast.Name))
 
 					}
 

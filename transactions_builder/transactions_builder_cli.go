@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/transactions_builder/wizard"
@@ -68,7 +68,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		assetId, ok := gui.GUI.OutputReadBytes("Asset. Leave empty for Native Asset", []int{0, config.ASSET_LENGTH})
+		assetId, ok := gui.GUI.OutputReadBytes("Asset. Leave empty for Native Asset", []int{0, config_coins.ASSET_LENGTH})
 		if !ok {
 			return
 		}
@@ -164,6 +164,11 @@ func (builder *TransactionsBuilder) initCLI() {
 			delegateNewFee = number
 		}
 
+		updateStakingAmount, ok := gui.GUI.OutputReadFloat64("Update Staking Amount", nil)
+		if !ok {
+			return
+		}
+
 		data, ok := builder.readData()
 		if !ok {
 			return
@@ -179,7 +184,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateUpdateDelegateTx_Float(walletAddress.AddressEncoded, nonce, delegateNewPublicKeyGenerate, delegateNewPublicKey, delegateNewFee, data, fee, propagate, true, true, false, func(status string) {
+		tx, err := builder.CreateUpdateDelegateTx_Float(walletAddress.AddressEncoded, nonce, delegateNewPublicKeyGenerate, delegateNewPublicKey, delegateNewFee, updateStakingAmount, data, fee, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

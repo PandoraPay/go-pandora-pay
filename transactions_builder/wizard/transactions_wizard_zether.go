@@ -14,6 +14,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -38,7 +39,7 @@ type ZetherPublicKeyIndex struct {
 func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
 	emap := make(map[string]map[string][]byte) //initialize all maps
 	for i := range assets {
-		if bytes.Equal(assets[i], config.NATIVE_ASSET_FULL) {
+		if bytes.Equal(assets[i], config_coins.NATIVE_ASSET_FULL) {
 			assets[i] = []byte{}
 		}
 		if emap[string(assets[i])] == nil {

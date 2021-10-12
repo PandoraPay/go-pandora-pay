@@ -7,7 +7,7 @@ import (
 	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -115,7 +115,7 @@ func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, assetId []byte,
 	}
 
 	if len(assetId) == 0 {
-		assetId = config.NATIVE_ASSET_FULL
+		assetId = config_coins.NATIVE_ASSET_FULL
 	}
 
 	previousValue := uint64(0)

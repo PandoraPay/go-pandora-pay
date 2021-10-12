@@ -3,6 +3,7 @@ package webassembly
 import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_assets"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_reward"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/webassembly/webassembly_utils"
@@ -17,7 +18,7 @@ func convertToUnitsUint64(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		if value, err = config.ConvertToUnitsUint64(value); err != nil {
+		if value, err = config_coins.ConvertToUnitsUint64(value); err != nil {
 			return nil, err
 		}
 		return strconv.FormatUint(value, 10), nil
@@ -31,7 +32,7 @@ func convertToUnits(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		value2, err := config.ConvertToUnits(number)
+		value2, err := config_coins.ConvertToUnits(number)
 		if err != nil {
 			return nil, err
 		}
@@ -47,8 +48,8 @@ func convertToBase(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		value2 := config.ConvertToBase(number)
-		return strconv.FormatFloat(value2, 'f', config.DECIMAL_SEPARATOR, 64), nil
+		value2 := config_coins.ConvertToBase(number)
+		return strconv.FormatFloat(value2, 'f', config_coins.DECIMAL_SEPARATOR, 64), nil
 	})
 }
 

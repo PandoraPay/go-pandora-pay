@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/network/api/api_common/api_types"
 	"sync"
@@ -24,7 +25,7 @@ func checkSubscriptionLength(key []byte, subscriptionType api_types.Subscription
 	case api_types.SUBSCRIPTION_PLAIN_ACCOUNT, api_types.SUBSCRIPTION_ACCOUNT, api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, api_types.SUBSCRIPTION_REGISTRATION:
 		length = cryptography.PublicKeySize
 	case api_types.SUBSCRIPTION_ASSET:
-		length = config.ASSET_LENGTH
+		length = config_coins.ASSET_LENGTH
 	case api_types.SUBSCRIPTION_TRANSACTION:
 		length = cryptography.HashSize
 	}

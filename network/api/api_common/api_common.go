@@ -11,6 +11,8 @@ import (
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
+	"pandora-pay/config/config_nodes"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
@@ -283,7 +285,7 @@ func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) ([
 func (api *APICommon) GetAssetInfo(request *api_types.APIAssetInfoRequest) ([]byte, error) {
 	var astInfo *info.AssetInfo
 	var err error
-	if request.Hash != nil && (len(request.Hash) == config.ASSET_LENGTH || len(request.Hash) == 0) {
+	if request.Hash != nil && (len(request.Hash) == config_coins.ASSET_LENGTH || len(request.Hash) == 0) {
 		astInfo, err = api.ApiStore.openLoadAssetInfo(request.Hash)
 	}
 	if err != nil || astInfo == nil {
@@ -507,7 +509,7 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wal
 	}
 
 	var apiDelegatesNode *api_delegates_node.APIDelegatesNode
-	if config.DELEGATES_ALLOWED_ACTIVATED {
+	if config_nodes.DELEGATES_ALLOWED_ACTIVATED {
 		apiDelegatesNode = api_delegates_node.CreateDelegatesNode(chain, wallet)
 	}
 
