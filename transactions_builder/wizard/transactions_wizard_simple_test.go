@@ -17,7 +17,7 @@ func TestCreateUpdateDelegateTx(t *testing.T) {
 	delegateFee := uint64(10000)
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateUpdateDelegateTx(0, privateKey.Key, delegatePubKey, delegateFee, &TransactionsWizardData{[]byte{}, false}, &TransactionsWizardFee{PerByteAuto: true}, func(status string) {})
+	tx, err := CreateUpdateDelegateTx(0, privateKey.Key, delegatePubKey, delegateFee, &TransactionsWizardData{[]byte{}, false}, &TransactionsWizardFee{PerByteAuto: true}, true, func(status string) {})
 	assert.NoError(t, err)
 	assert.NotNil(t, tx, "creating update delegate tx is nil")
 
@@ -37,7 +37,7 @@ func TestCreateUpdateDelegateTx(t *testing.T) {
 	assert.Equal(t, fees > uint64(100), true, "Fees were calculated invalid")
 
 	base := tx2.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-	assert.Equal(t, fees, base.Fee, "Fees are not paid by vin")
+	assert.Equal(t, fees, base.Fees, "Fees are not paid by vin")
 
 	updateDelegate := base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUpdateDelegate)
 	assert.Equal(t, updateDelegate.NewFee, delegateFee, "Update delegate new fee is not set")
@@ -48,7 +48,7 @@ func TestCreateUpdateDelegateTx(t *testing.T) {
 func TestCreateUnstakeTx(t *testing.T) {
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateUnstakeTx(0, privateKey.Key, 534, &TransactionsWizardData{[]byte{}, false}, &TransactionsWizardFee{PerByteAuto: true}, func(status string) {})
+	tx, err := CreateUnstakeTx(0, privateKey.Key, 534, &TransactionsWizardData{[]byte{}, false}, &TransactionsWizardFee{PerByteAuto: true}, true, func(status string) {})
 	assert.NoError(t, err)
 	assert.NotNil(t, tx, "creating unstake tx is nil")
 
@@ -68,7 +68,7 @@ func TestCreateUnstakeTx(t *testing.T) {
 	assert.Equal(t, fees > uint64(100), true, "Fees were calculated invalid")
 
 	base := tx2.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-	assert.Equal(t, fees, base.Fee, "Fees are not paid by vin")
+	assert.Equal(t, fees, base.Fees, "Fees are not paid by vin")
 
 	unstake := base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake)
 	assert.Equal(t, uint64(534), unstake.Amount, "Unstake amount is not set")

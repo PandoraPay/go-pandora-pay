@@ -39,10 +39,10 @@ func TestCreateZetherTx(t *testing.T) {
 	emap := make(map[string]map[string][]byte)
 	rings := make([][]*bn256.G1, count)
 
-	emap[config.NATIVE_ASSET_FULL_STRING] = make(map[string][]byte)
+	emap[config.NATIVE_ASSET_STRING] = make(map[string][]byte)
 
 	senderPoint, _ := senderAdress.GetPoint()
-	emap[config.NATIVE_ASSET_FULL_STRING][senderPoint.G1().String()] = getNewBalance(senderAdress, amount).Serialize()
+	emap[config.NATIVE_ASSET_STRING][senderPoint.G1().String()] = getNewBalance(senderAdress, amount).Serialize()
 
 	diff := amount / uint64(count)
 
@@ -60,7 +60,7 @@ func TestCreateZetherTx(t *testing.T) {
 		publicKeyIndexes[string(dstAddress.PublicKey)] = &ZetherPublicKeyIndex{false, 0, dstAddress.Registration}
 
 		transfers[i] = &ZetherTransfer{
-			Asset:              config.NATIVE_ASSET_FULL,
+			Asset:              config.NATIVE_ASSET,
 			From:               senderPrivateKey.Key,
 			FromBalanceDecoded: amount,
 			Destination:        dstAddress.EncodeAddr(),
@@ -80,27 +80,27 @@ func TestCreateZetherTx(t *testing.T) {
 
 		dstPoint, _ := dstAddress.GetPoint()
 		rings[i][1] = dstPoint.G1()
-		emap[config.NATIVE_ASSET_FULL_STRING][dstPoint.G1().String()] = getNewBalance(dstAddress, 0).Serialize()
+		emap[config.NATIVE_ASSET_STRING][dstPoint.G1().String()] = getNewBalance(dstAddress, 0).Serialize()
 
 		for j := 2; j < ringSize; j++ {
-			decoyPrivateKey := addresses.GenerateNewPrivateKey()
-			decoyAddress, _ := decoyPrivateKey.GenerateAddress(true, 0, nil)
+			ringMemberPrivateKey := addresses.GenerateNewPrivateKey()
+			ringMemberAddress, _ := ringMemberPrivateKey.GenerateAddress(true, 0, nil)
 
-			publicKeyIndexes[string(decoyAddress.PublicKey)] = &ZetherPublicKeyIndex{false, 0, decoyAddress.Registration}
+			publicKeyIndexes[string(ringMemberAddress.PublicKey)] = &ZetherPublicKeyIndex{false, 0, ringMemberAddress.Registration}
 
-			decoyPoint, _ := decoyAddress.GetPoint()
-			rings[i][j] = decoyPoint.G1()
-			emap[config.NATIVE_ASSET_FULL_STRING][decoyPoint.G1().String()] = getNewBalance(decoyAddress, 0).Serialize()
+			ringMemberPoint, _ := ringMemberAddress.GetPoint()
+			rings[i][j] = ringMemberPoint.G1()
+			emap[config.NATIVE_ASSET_STRING][ringMemberPoint.G1().String()] = getNewBalance(ringMemberAddress, 0).Serialize()
 		}
 
-		fees[i] = &TransactionsWizardFee{0, 0, false}
+		fees[i] = &TransactionsWizardFee{0, 0, 0, false}
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	hash := helpers.RandomBytes(32)
-	tx, err := CreateZetherTx(transfers, emap, rings, 0, hash, publicKeyIndexes, fees, ctx, func(status string) {})
+	tx, err := CreateZetherTx(transfers, emap, rings, 0, hash, publicKeyIndexes, fees, true, ctx, func(status string) {})
 	assert.NoError(t, err)
 	assert.NotNil(t, t, tx)
 
