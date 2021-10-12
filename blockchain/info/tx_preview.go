@@ -63,7 +63,7 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 		switch txBase.TxScript {
 		case transaction_simple.SCRIPT_UPDATE_DELEGATE: //nothing to be copied
 		case transaction_simple.SCRIPT_CLAIM:
-			txExtra := txBase.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleClaim)
+			txExtra := txBase.Extra.(*transaction_simple_extra.TransactionSimpleClaim)
 			extraClaim := &TxPreviewSimpleExtraClaim{
 				Output: make([]*TxPreviewSimpleOutput, len(txExtra.Output)),
 			}
@@ -73,7 +73,7 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 
 			baseExtra = extraClaim
 		case transaction_simple.SCRIPT_UNSTAKE:
-			txExtra := txBase.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake)
+			txExtra := txBase.Extra.(*transaction_simple_extra.TransactionSimpleUnstake)
 			baseExtra = &TxPreviewSimpleExtraUnstake{Amount: txExtra.Amount}
 		}
 

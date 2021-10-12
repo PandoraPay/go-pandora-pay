@@ -16,7 +16,7 @@ import (
 
 type TransactionSimple struct {
 	transaction_base_interface.TransactionBaseInterface
-	transaction_simple_extra.TransactionSimpleExtraInterface
+	Extra       transaction_simple_extra.TransactionSimpleExtraInterface
 	TxScript    ScriptType
 	DataVersion transaction_data.TransactionDataVersion
 	Data        []byte
@@ -58,7 +58,7 @@ func (tx *TransactionSimple) IncludeTransaction(txRegistrations *transaction_dat
 
 	switch tx.TxScript {
 	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_CLAIM:
-		if err = tx.TransactionSimpleExtraInterface.IncludeTransactionVin0(txRegistrations, blockHeight, plainAcc, dataStorage); err != nil {
+		if err = tx.Extra.IncludeTransactionVin0(txRegistrations, blockHeight, plainAcc, dataStorage); err != nil {
 			return
 		}
 	}
@@ -79,7 +79,7 @@ func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
 
 	switch tx.TxScript {
 	case SCRIPT_CLAIM:
-		extra := tx.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleClaim)
+		extra := tx.Extra.(*transaction_simple_extra.TransactionSimpleClaim)
 		for _, it := range extra.Output {
 			out[string(it.PublicKey)] = true
 		}
@@ -103,10 +103,10 @@ func (tx *TransactionSimple) Validate() (err error) {
 
 	switch tx.TxScript {
 	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_CLAIM:
-		if tx.TransactionSimpleExtraInterface == nil {
+		if tx.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
-		if err = tx.TransactionSimpleExtraInterface.Validate(); err != nil {
+		if err = tx.Extra.Validate(); err != nil {
 			return
 		}
 	default:
@@ -131,8 +131,8 @@ func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 
 	tx.Vin.Serialize(w, inclSignature)
 
-	if tx.TransactionSimpleExtraInterface != nil {
-		tx.TransactionSimpleExtraInterface.Serialize(w)
+	if tx.Extra != nil {
+		tx.Extra.Serialize(w)
 	}
 }
 
@@ -153,16 +153,14 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 
-	scriptType := ScriptType(n)
-
-	tx.TxScript = scriptType
+	tx.TxScript = ScriptType(n)
 	switch tx.TxScript {
 	case SCRIPT_UNSTAKE:
-		tx.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleUnstake{}
+		tx.Extra = &transaction_simple_extra.TransactionSimpleUnstake{}
 	case SCRIPT_UPDATE_DELEGATE:
-		tx.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleUpdateDelegate{}
+		tx.Extra = &transaction_simple_extra.TransactionSimpleUpdateDelegate{}
 	case SCRIPT_CLAIM:
-		tx.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleClaim{}
+		tx.Extra = &transaction_simple_extra.TransactionSimpleClaim{}
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}
@@ -202,8 +200,8 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 
-	if tx.TransactionSimpleExtraInterface != nil {
-		return tx.TransactionSimpleExtraInterface.Deserialize(r)
+	if tx.Extra != nil {
+		return tx.Extra.Deserialize(r)
 	}
 
 	return

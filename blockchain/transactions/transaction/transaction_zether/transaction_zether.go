@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_extra"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -16,6 +17,7 @@ import (
 
 type TransactionZether struct {
 	transaction_base_interface.TransactionBaseInterface
+	Extra    transaction_zether_extra.TransactionZetherExtraInterface
 	TxScript ScriptType
 	Height   uint64
 	Payloads []*TransactionZetherPayload
@@ -94,6 +96,16 @@ func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_dat
 		}
 	}
 
+	switch tx.TxScript {
+	case SCRIPT_TRANSFER:
+	case SCRIPT_DELEGATE:
+		if err = tx.Extra.IncludeTransaction(txRegistrations, blockHeight, dataStorage); err != nil {
+			return
+		}
+	default:
+		return errors.New("Invalid tx.TxScript")
+	}
+
 	return nil
 }
 
@@ -117,13 +129,26 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 			out[string(publicKey.EncodeCompressed())] = true
 		}
 	}
+	switch tx.TxScript {
+	case SCRIPT_DELEGATE:
+		extra := tx.Extra.(*transaction_zether_extra.TransactionZetherDelegateStake)
+		out[string(extra.DelegatePublicKey)] = true
+	}
+
 	return
 }
 
 func (tx *TransactionZether) Validate() (err error) {
 
 	switch tx.TxScript {
-	case SCRIPT_TRANSFER, SCRIPT_DELEGATE:
+	case SCRIPT_TRANSFER:
+	case SCRIPT_DELEGATE:
+		if tx.Extra == nil {
+			return errors.New("extra is not assigned")
+		}
+		if err = tx.Extra.Validate(); err != nil {
+			return
+		}
 	default:
 		return errors.New("Invalid Zether TxScript")
 	}
@@ -180,6 +205,10 @@ func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 	for _, payload := range tx.Payloads {
 		payload.Serialize(w, inclSignature)
 	}
+
+	if tx.Extra != nil {
+		tx.Extra.Serialize(w)
+	}
 }
 
 func (tx *TransactionZether) Serialize(w *helpers.BufferWriter) {
@@ -193,14 +222,19 @@ func (tx *TransactionZether) SerializeToBytes() []byte {
 }
 
 func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
-	var n uint64
 
+	var n uint64
 	if n, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
-	scriptType := ScriptType(n)
-	if scriptType >= SCRIPT_END {
+	tx.TxScript = ScriptType(n)
+	switch tx.TxScript {
+	case SCRIPT_TRANSFER:
+		tx.Extra = nil
+	case SCRIPT_DELEGATE:
+		tx.Extra = &transaction_zether_extra.TransactionZetherDelegateStake{}
+	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}
 
@@ -220,6 +254,10 @@ func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 			return
 		}
 		tx.Payloads = append(tx.Payloads, &payload)
+	}
+
+	if tx.Extra != nil {
+		return tx.Extra.Deserialize(r)
 	}
 
 	return

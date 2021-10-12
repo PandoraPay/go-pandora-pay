@@ -9,7 +9,7 @@ import (
 )
 
 /**
-Substracting Amount and FeeExtra from the StakeAvailable
+Substracting Amount from the StakeAvailable
 Creating a Unstake Pending
 */
 type TransactionSimpleUnstake struct {

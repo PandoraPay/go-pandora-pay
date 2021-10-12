@@ -150,7 +150,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 
 		switch base.TxScript {
 		case transaction_simple.SCRIPT_UPDATE_DELEGATE:
-			extra := base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUpdateDelegate)
+			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleUpdateDelegate)
 			return json.Marshal(&json_TransactionSimpleUpdateDelegate{
 				simpleJson,
 				&json_Only_TransactionSimpleUpdateDelegate{
@@ -159,7 +159,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				},
 			})
 		case transaction_simple.SCRIPT_UNSTAKE:
-			extra := base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleUnstake)
+			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake)
 			return json.Marshal(&json_TransactionSimpleUnstake{
 				simpleJson,
 				&json_Only_TransactionSimpleUnstake{
@@ -167,7 +167,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				},
 			})
 		case transaction_simple.SCRIPT_CLAIM:
-			extra := base.TransactionSimpleExtraInterface.(*transaction_simple_extra.TransactionSimpleClaim)
+			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleClaim)
 
 			output := make([]*json_Only_TransactionSimpleOutput, len(extra.Output))
 			for i, out := range extra.Output {
@@ -300,7 +300,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 				return err
 			}
 
-			base.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleUpdateDelegate{
+			base.Extra = &transaction_simple_extra.TransactionSimpleUpdateDelegate{
 				NewPublicKey: extraJson.NewPublicKey,
 				NewFee:       extraJson.NewFee,
 			}
@@ -311,7 +311,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 				return err
 			}
 
-			base.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleUnstake{
+			base.Extra = &transaction_simple_extra.TransactionSimpleUnstake{
 				Amount: extraJSON.Amount,
 			}
 		case transaction_simple.SCRIPT_CLAIM:
@@ -328,7 +328,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 				}
 			}
 
-			base.TransactionSimpleExtraInterface = &transaction_simple_extra.TransactionSimpleClaim{
+			base.Extra = &transaction_simple_extra.TransactionSimpleClaim{
 				Output: output,
 			}
 
