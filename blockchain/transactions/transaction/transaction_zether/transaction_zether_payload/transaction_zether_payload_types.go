@@ -1,4 +1,4 @@
-package transaction_zether
+package transaction_zether_payload
 
 const PAYLOAD_LIMIT = 1 + 144 // entire payload header is mandatorily encrypted
 // sender position in ring representation in a byte, uptp 256 ring

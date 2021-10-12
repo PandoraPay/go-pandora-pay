@@ -10,6 +10,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -343,7 +344,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			return err
 		}
 
-		payloads := make([]*transaction_zether.TransactionZetherPayload, len(simpleZether.Payloads))
+		payloads := make([]*transaction_zether_payload.TransactionZetherPayload, len(simpleZether.Payloads))
 		for i, payload := range simpleZether.Payloads {
 
 			CLn, err := helpers.ConvertToBN256Array(payload.Statement.CLn)
@@ -378,7 +379,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 				return err
 			}
 
-			payloads[i] = &transaction_zether.TransactionZetherPayload{
+			payloads[i] = &transaction_zether_payload.TransactionZetherPayload{
 				Asset:       payload.Asset,
 				BurnValue:   payload.BurnValue,
 				DataVersion: payload.DataVersion,

@@ -14,15 +14,15 @@ import (
 
 type Block struct {
 	*BlockHeader
-	MerkleHash         helpers.HexBytes `json:"merkleHash"`     //32 byte
-	PrevHash           helpers.HexBytes `json:"prevHash"`       //32 byte
-	PrevKernelHash     helpers.HexBytes `json:"prevKernelHash"` //32 byte
-	Timestamp          uint64           `json:"timestamp"`
-	StakingAmount      uint64           `json:"stakingAmount"`
-	Forger             helpers.HexBytes `json:"forger"`             // 33 byte public key
-	DelegatedPublicKey helpers.HexBytes `json:"delegatedPublicKey"` // 33 byte public key can also be found into the accounts tree
-	Signature          helpers.HexBytes `json:"signature"`          // 64 byte signature
-	Bloom              *BlockBloom      `json:"bloom"`
+	MerkleHash              helpers.HexBytes `json:"merkleHash"`     //32 byte
+	PrevHash                helpers.HexBytes `json:"prevHash"`       //32 byte
+	PrevKernelHash          helpers.HexBytes `json:"prevKernelHash"` //32 byte
+	Timestamp               uint64           `json:"timestamp"`
+	StakingAmount           uint64           `json:"stakingAmount"`
+	Forger                  helpers.HexBytes `json:"forger"`                  // 33 byte public key
+	DelegatedStakePublicKey helpers.HexBytes `json:"delegatedStakePublicKey"` // 33 byte public key can also be found into the accounts tree
+	Signature               helpers.HexBytes `json:"signature"`               // 64 byte signature
+	Bloom                   *BlockBloom      `json:"bloom"`
 }
 
 func CreateEmptyBlock() *Block {
@@ -100,7 +100,7 @@ func (blk *Block) SerializeForSigning() []byte {
 
 func (blk *Block) VerifySignatureManually() bool {
 	hash := blk.SerializeForSigning()
-	return crypto.VerifySignature(hash, blk.Signature, blk.DelegatedPublicKey)
+	return crypto.VerifySignature(hash, blk.Signature, blk.DelegatedStakePublicKey)
 }
 
 func (blk *Block) AdvancedSerialization(w *helpers.BufferWriter, kernelHash bool, inclSignature bool) {
@@ -122,7 +122,7 @@ func (blk *Block) AdvancedSerialization(w *helpers.BufferWriter, kernelHash bool
 
 	w.Write(blk.Forger)
 	if !kernelHash {
-		w.Write(blk.DelegatedPublicKey)
+		w.Write(blk.DelegatedStakePublicKey)
 	}
 
 	if inclSignature {
@@ -173,7 +173,7 @@ func (blk *Block) Deserialize(r *helpers.BufferReader) (err error) {
 	if blk.Forger, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if blk.DelegatedPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+	if blk.DelegatedStakePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
 	if blk.Signature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {

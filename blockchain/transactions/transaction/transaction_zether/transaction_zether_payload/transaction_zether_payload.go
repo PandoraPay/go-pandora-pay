@@ -1,4 +1,4 @@
-package transaction_zether
+package transaction_zether_payload
 
 import (
 	"errors"

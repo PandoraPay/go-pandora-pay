@@ -8,7 +8,7 @@ import (
 
 type DelegatedStake struct {
 	helpers.SerializableInterface `json:"-"`
-	DelegatedPublicKey            helpers.HexBytes         `json:"delegatedPublicKey"` //public key for delegation  20 bytes
+	DelegatedStakePublicKey       helpers.HexBytes         `json:"delegatedStakePublicKey"` //public key for delegation  20 bytes
 	DelegatedStakeFee             uint64                   `json:"delegatedStakeFee"`
 	StakeAvailable                uint64                   `json:"stakeAvailable"` //confirmed stake
 	StakesPending                 []*DelegatedStakePending `json:"stakesPending"`  //Pending stakes
@@ -60,7 +60,7 @@ func (dstake *DelegatedStake) AddStakePendingUnstake(amount, blockHeight uint64)
 
 func (dstake *DelegatedStake) Serialize(w *helpers.BufferWriter) {
 
-	w.Write(dstake.DelegatedPublicKey)
+	w.Write(dstake.DelegatedStakePublicKey)
 	w.WriteUvarint(dstake.StakeAvailable)
 	w.WriteUvarint(dstake.DelegatedStakeFee)
 
@@ -73,7 +73,7 @@ func (dstake *DelegatedStake) Serialize(w *helpers.BufferWriter) {
 
 func (dstake *DelegatedStake) Deserialize(r *helpers.BufferReader) (err error) {
 
-	if dstake.DelegatedPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+	if dstake.DelegatedStakePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
 	if dstake.StakeAvailable, err = r.ReadUvarint(); err != nil {

@@ -12,6 +12,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -120,7 +121,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	tx.Registrations.Registrations = registrations
 	statusCallback("Transaction registrations created")
 
-	payloads := make([]*transaction_zether.TransactionZetherPayload, len(transfers))
+	payloads := make([]*transaction_zether_payload.TransactionZetherPayload, len(transfers))
 
 	var witness_list []crypto.Witness
 	for t, transfer := range transfers {
@@ -174,7 +175,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		//fmt.Printf("r %s\n", r.Text(16))
 
-		var payload transaction_zether.TransactionZetherPayload
+		var payload transaction_zether_payload.TransactionZetherPayload
 
 		payload.Asset = transfers[t].Asset
 		payload.BurnValue = transfers[t].Burn
@@ -191,7 +192,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		} else if payload.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT {
 			dataLength = helpers.BytesLengthSerialized(uint64(len(dataFinal)))
 		} else if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
-			dataLength = transaction_zether.PAYLOAD0_LIMIT
+			dataLength = transaction_zether_payload.PAYLOAD0_LIMIT
 		}
 
 		m := int(math.Log2(float64(len(rings[t]))))
@@ -225,10 +226,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				}
 
 				if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
-					if len(dataFinal) > transaction_zether.PAYLOAD0_LIMIT {
+					if len(dataFinal) > transaction_zether_payload.PAYLOAD0_LIMIT {
 						return errors.New("Data final exceeds")
 					}
-					dataFinal = append(dataFinal, make([]byte, transaction_zether.PAYLOAD0_LIMIT-len(dataFinal))...)
+					dataFinal = append(dataFinal, make([]byte, transaction_zether_payload.PAYLOAD0_LIMIT-len(dataFinal))...)
 					payload.Data = append([]byte{byte(uint(witness_index[0]))}, dataFinal...)
 
 					// make sure used data encryption is optional, just in case we would like to play together with ring members

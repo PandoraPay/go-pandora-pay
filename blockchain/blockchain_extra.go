@@ -200,7 +200,7 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 		}
 
 		blk.Forger = make([]byte, cryptography.PublicKeySize)
-		blk.DelegatedPublicKey = make([]byte, cryptography.PublicKeySize)
+		blk.DelegatedStakePublicKey = make([]byte, cryptography.PublicKeySize)
 		blk.Signature = make([]byte, cryptography.SignatureSize)
 
 		blk.BloomSerializedNow(blk.SerializeManualToBytes())

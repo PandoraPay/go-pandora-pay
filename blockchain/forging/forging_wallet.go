@@ -33,18 +33,18 @@ type ForgingWalletAddressUpdate struct {
 }
 
 type ForgingWalletAddress struct {
-	delegatedPrivateKey *addresses.PrivateKey
-	delegatedPublicKey  helpers.HexBytes //20 byte
-	publicKey           helpers.HexBytes //20byte
-	publicKeyStr        string
-	plainAcc            *plain_account.PlainAccount
-	workerIndex         int
+	delegatedPrivateKey     *addresses.PrivateKey
+	delegatedStakePublicKey helpers.HexBytes //20 byte
+	publicKey               helpers.HexBytes //20byte
+	publicKeyStr            string
+	plainAcc                *plain_account.PlainAccount
+	workerIndex             int
 }
 
 func (walletAddr *ForgingWalletAddress) clone() *ForgingWalletAddress {
 	return &ForgingWalletAddress{
 		walletAddr.delegatedPrivateKey,
-		walletAddr.delegatedPublicKey,
+		walletAddr.delegatedStakePublicKey,
 		walletAddr.publicKey,
 		walletAddr.publicKeyStr,
 		walletAddr.plainAcc,
@@ -60,8 +60,8 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte) {
 	return
 }
 
-func (w *ForgingWallet) RemoveWallet(DelegatedPublicKey []byte) { //20 byte
-	w.AddWallet(nil, DelegatedPublicKey)
+func (w *ForgingWallet) RemoveWallet(DelegatedStakePublicKey []byte) { //20 byte
+	w.AddWallet(nil, DelegatedStakePublicKey)
 }
 
 func (w *ForgingWallet) accountUpdated(addr *ForgingWalletAddress) {
@@ -145,7 +145,7 @@ func (w *ForgingWallet) processUpdates() {
 			} else {
 
 				delegatedPrivateKey := &addresses.PrivateKey{Key: update.delegatedPriv}
-				delegatedPublicKey := delegatedPrivateKey.GeneratePublicKey()
+				delegatedStakePublicKey := delegatedPrivateKey.GeneratePublicKey()
 
 				//let's read the balance
 				if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
@@ -162,7 +162,7 @@ func (w *ForgingWallet) processUpdates() {
 						return errors.New("Plain Account was not found")
 					}
 
-					if plainAcc.DelegatedStake == nil || !bytes.Equal(plainAcc.DelegatedStake.DelegatedPublicKey, delegatedPublicKey) {
+					if plainAcc.DelegatedStake == nil || !bytes.Equal(plainAcc.DelegatedStake.DelegatedStakePublicKey, delegatedStakePublicKey) {
 						return errors.New("Delegated stake is not matching")
 					}
 
@@ -170,7 +170,7 @@ func (w *ForgingWallet) processUpdates() {
 					if address == nil {
 						address = &ForgingWalletAddress{
 							delegatedPrivateKey,
-							delegatedPublicKey,
+							delegatedStakePublicKey,
 							update.pubKey,
 							string(update.pubKey),
 							plainAcc,
@@ -181,7 +181,7 @@ func (w *ForgingWallet) processUpdates() {
 						w.accountInserted(address)
 					} else {
 						address.delegatedPrivateKey = delegatedPrivateKey
-						address.delegatedPublicKey = delegatedPublicKey
+						address.delegatedStakePublicKey = delegatedStakePublicKey
 						address.plainAcc = plainAcc
 						w.accountUpdated(address)
 					}

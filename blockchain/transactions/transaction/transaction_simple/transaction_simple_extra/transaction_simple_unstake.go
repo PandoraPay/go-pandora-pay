@@ -42,7 +42,7 @@ func (tx *TransactionSimpleUnstake) Validate() error {
 	return nil
 }
 
-func (tx *TransactionSimpleUnstake) Serialize(w *helpers.BufferWriter) {
+func (tx *TransactionSimpleUnstake) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(tx.Amount)
 }
 

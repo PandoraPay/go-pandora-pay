@@ -96,10 +96,10 @@ func (plainAccount *PlainAccount) CreateDelegatedStake(amount uint64, delegatedS
 	}
 	plainAccount.DelegatedStakeVersion = 1
 	plainAccount.DelegatedStake = &dpos.DelegatedStake{
-		StakeAvailable:     amount,
-		StakesPending:      []*dpos.DelegatedStakePending{},
-		DelegatedPublicKey: delegatedStakePublicKey,
-		DelegatedStakeFee:  delegatedStakeFee,
+		StakeAvailable:          amount,
+		StakesPending:           []*dpos.DelegatedStakePending{},
+		DelegatedStakePublicKey: delegatedStakePublicKey,
+		DelegatedStakeFee:       delegatedStakeFee,
 	}
 
 	return nil

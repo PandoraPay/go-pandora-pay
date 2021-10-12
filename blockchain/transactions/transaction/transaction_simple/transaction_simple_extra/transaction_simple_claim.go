@@ -87,7 +87,7 @@ func (tx *TransactionSimpleClaim) Validate() error {
 	return nil
 }
 
-func (tx *TransactionSimpleClaim) Serialize(w *helpers.BufferWriter) {
+func (tx *TransactionSimpleClaim) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(uint64(len(tx.Output)))
 	for _, out := range tx.Output {
 		out.Serialize(w)

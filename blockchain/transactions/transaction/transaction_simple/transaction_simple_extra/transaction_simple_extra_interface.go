@@ -9,7 +9,7 @@ import (
 
 type TransactionSimpleExtraInterface interface {
 	IncludeTransactionVin0(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) error
-	Serialize(w *helpers.BufferWriter)
+	Serialize(w *helpers.BufferWriter, inclSignature bool)
 	Deserialize(r *helpers.BufferReader) error
 	Validate() error
 }

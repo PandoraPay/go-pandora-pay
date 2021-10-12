@@ -10,6 +10,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_extra"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -20,7 +21,7 @@ type TransactionZether struct {
 	Extra    transaction_zether_extra.TransactionZetherExtraInterface
 	TxScript ScriptType
 	Height   uint64
-	Payloads []*TransactionZetherPayload
+	Payloads []*transaction_zether_payload.TransactionZetherPayload
 	Bloom    *TransactionZetherBloom
 }
 
@@ -99,7 +100,7 @@ func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_dat
 	switch tx.TxScript {
 	case SCRIPT_TRANSFER:
 	case SCRIPT_DELEGATE:
-		if err = tx.Extra.IncludeTransaction(txRegistrations, blockHeight, dataStorage); err != nil {
+		if err = tx.Extra.IncludeTransaction(txRegistrations, tx.Payloads, blockHeight, dataStorage); err != nil {
 			return
 		}
 	default:
@@ -140,19 +141,6 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 
 func (tx *TransactionZether) Validate() (err error) {
 
-	switch tx.TxScript {
-	case SCRIPT_TRANSFER:
-	case SCRIPT_DELEGATE:
-		if tx.Extra == nil {
-			return errors.New("extra is not assigned")
-		}
-		if err = tx.Extra.Validate(); err != nil {
-			return
-		}
-	default:
-		return errors.New("Invalid Zether TxScript")
-	}
-
 	for _, payload := range tx.Payloads {
 
 		if bytes.Equal(payload.Asset, config.NATIVE_ASSET_FULL) {
@@ -183,6 +171,19 @@ func (tx *TransactionZether) Validate() (err error) {
 
 	}
 
+	switch tx.TxScript {
+	case SCRIPT_TRANSFER:
+	case SCRIPT_DELEGATE:
+		if tx.Extra == nil {
+			return errors.New("extra is not assigned")
+		}
+		if err = tx.Extra.Validate(tx.Payloads); err != nil {
+			return
+		}
+	default:
+		return errors.New("Invalid Zether TxScript")
+	}
+
 	return
 }
 
@@ -207,7 +208,7 @@ func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 	}
 
 	if tx.Extra != nil {
-		tx.Extra.Serialize(w)
+		tx.Extra.Serialize(w, inclSignature)
 	}
 }
 
@@ -246,7 +247,7 @@ func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 	for i := uint64(0); i < n; i++ {
-		payload := TransactionZetherPayload{
+		payload := transaction_zether_payload.TransactionZetherPayload{
 			Statement: &crypto.Statement{},
 			Proof:     &crypto.Proof{},
 		}

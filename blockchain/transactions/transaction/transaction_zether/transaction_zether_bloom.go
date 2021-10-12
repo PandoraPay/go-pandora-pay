@@ -22,8 +22,8 @@ func (tx *TransactionZether) BloomNow(hashForSignature []byte) (err error) {
 
 	tx.Bloom = new(TransactionZetherBloom)
 
+	//verify signature
 	for _, payload := range tx.Payloads {
-		//verify signature
 		if payload.Proof.Verify(payload.Statement, hashForSignature, tx.Height, payload.BurnValue) == false {
 			return errors.New("Zether Failed for Transaction")
 		}

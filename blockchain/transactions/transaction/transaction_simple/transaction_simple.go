@@ -132,7 +132,7 @@ func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 	tx.Vin.Serialize(w, inclSignature)
 
 	if tx.Extra != nil {
-		tx.Extra.Serialize(w)
+		tx.Extra.Serialize(w, inclSignature)
 	}
 }
 

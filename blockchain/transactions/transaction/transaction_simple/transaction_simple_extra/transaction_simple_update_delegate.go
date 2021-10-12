@@ -21,12 +21,16 @@ func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(txRegistration
 		return errors.New("txRegistrations.Registrations length should be zero")
 	}
 
-	if plainAcc == nil || !plainAcc.HasDelegatedStake() {
+	if plainAcc == nil {
+		return errors.New("PlainAcc is null")
+	}
+
+	if !plainAcc.HasDelegatedStake() {
 		if err = plainAcc.CreateDelegatedStake(0, tx.NewPublicKey, tx.NewFee); err != nil {
 			return
 		}
 	} else {
-		plainAcc.DelegatedStake.DelegatedPublicKey = tx.NewPublicKey
+		plainAcc.DelegatedStake.DelegatedStakePublicKey = tx.NewPublicKey
 		plainAcc.DelegatedStake.DelegatedStakeFee = tx.NewFee
 	}
 
@@ -43,7 +47,7 @@ func (tx *TransactionSimpleUpdateDelegate) Validate() error {
 	return nil
 }
 
-func (tx *TransactionSimpleUpdateDelegate) Serialize(w *helpers.BufferWriter) {
+func (tx *TransactionSimpleUpdateDelegate) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.Write(tx.NewPublicKey)
 	w.WriteUvarint(tx.NewFee)
 }
