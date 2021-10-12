@@ -91,8 +91,13 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, 
 		return
 	}
 
-	if len(delegateNewPubKey) != cryptography.PublicKeySize {
-		return nil, errors.New("Delegating arguments are empty")
+	hasNewDelegatedInfo := false
+	if len(delegateNewPubKey) == cryptography.PublicKeySize {
+		hasNewDelegatedInfo = true
+	}
+
+	if len(delegateNewPubKey) != cryptography.PublicKeySize && delegateNewFee > 0 {
+		return nil, errors.New("delegateNewFee is > 0 while the delegateNewPubKey is not right")
 	}
 
 	privateKey := &addresses.PrivateKey{Key: key}
@@ -103,9 +108,10 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, 
 		Data:        dataFinal,
 		Nonce:       nonce,
 		Extra: &transaction_simple_extra.TransactionSimpleUpdateDelegate{
+			UpdateStakingAmount: updateStakeAmount,
+			HasNewDelegatedInfo: hasNewDelegatedInfo,
 			NewPublicKey:        delegateNewPubKey,
 			NewFee:              delegateNewFee,
-			UpdateStakingAmount: updateStakeAmount,
 		},
 		Vin: &transaction_simple_parts.TransactionSimpleInput{
 			PublicKey: privateKey.GeneratePublicKey(),

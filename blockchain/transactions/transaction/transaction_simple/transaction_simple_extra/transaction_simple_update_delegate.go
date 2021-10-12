@@ -16,9 +16,10 @@ Creating a Stake Pending with UpdateStakingAmount
 */
 type TransactionSimpleUpdateDelegate struct {
 	TransactionSimpleExtraInterface
+	UpdateStakingAmount uint64
+	HasNewDelegatedInfo bool
 	NewPublicKey        helpers.HexBytes //20 byte
 	NewFee              uint64
-	UpdateStakingAmount uint64
 }
 
 func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
@@ -53,33 +54,51 @@ func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(txRegistration
 }
 
 func (tx *TransactionSimpleUpdateDelegate) Validate() error {
-	if len(tx.NewPublicKey) != cryptography.PublicKeySize {
-		return errors.New("New Public Key Hash length is invalid")
-	}
-	if tx.NewFee > 10000 {
-		return errors.New("Invalid NewFee")
+	if tx.HasNewDelegatedInfo {
+		if len(tx.NewPublicKey) != cryptography.PublicKeySize {
+			return errors.New("New Public Key Hash length is invalid")
+		}
+		if tx.NewFee > config_stake.DELEGATING_STAKING_FEES_MAX_VALUE {
+			return errors.New("Invalid NewFee")
+		}
+	} else {
+		if len(tx.NewPublicKey) != 0 {
+			return errors.New("New Public Key Hash length is invalid")
+		}
+		if tx.NewFee != 0 {
+			return errors.New("Invalid NewFee")
+		}
+		if tx.UpdateStakingAmount == 0 {
+			return errors.New("UpdateDelegateTx has no operation")
+		}
 	}
 	return nil
 }
 
 func (tx *TransactionSimpleUpdateDelegate) Serialize(w *helpers.BufferWriter, inclSignature bool) {
-	w.Write(tx.NewPublicKey)
-	w.WriteUvarint(tx.NewFee)
 	w.WriteUvarint(tx.UpdateStakingAmount)
+	w.WriteBool(tx.HasNewDelegatedInfo)
+	if tx.HasNewDelegatedInfo {
+		w.Write(tx.NewPublicKey)
+		w.WriteUvarint(tx.NewFee)
+	}
 }
 
 func (tx *TransactionSimpleUpdateDelegate) Deserialize(r *helpers.BufferReader) (err error) {
-	if tx.NewPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
-		return
-	}
-	if tx.NewFee, err = r.ReadUvarint(); err != nil {
-		return
-	}
-	if tx.NewFee > config_stake.DELEGATING_STAKING_FEES_MAX_VALUE {
-		return errors.New("Invalid NewFee")
-	}
 	if tx.UpdateStakingAmount, err = r.ReadUvarint(); err != nil {
 		return
+	}
+	if tx.HasNewDelegatedInfo, err = r.ReadBool(); err != nil {
+		return
+	}
+
+	if tx.HasNewDelegatedInfo {
+		if tx.NewPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+			return
+		}
+		if tx.NewFee, err = r.ReadUvarint(); err != nil {
+			return
+		}
 	}
 	return
 }

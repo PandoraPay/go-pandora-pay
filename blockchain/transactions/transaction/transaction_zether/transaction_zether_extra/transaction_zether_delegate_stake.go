@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config/config_coins"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -18,9 +19,9 @@ type TransactionZetherDelegateStake struct {
 	DelegatePublicKey []byte
 	DelegateSignature []byte
 
-	HasNewDelegatedStake    bool
-	DelegatedStakePublicKey []byte
-	DelegatedStakeFee       uint64
+	HasNewDelegatedInfo bool
+	NewPublicKey        []byte
+	NewFee              uint64
 }
 
 func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, payloads []*transaction_zether_payload.TransactionZetherPayload, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
@@ -34,19 +35,19 @@ func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *tr
 		plainAcc = plain_account.NewPlainAccount(tx.DelegatePublicKey)
 	}
 	if !plainAcc.HasDelegatedStake() {
-		if !tx.HasNewDelegatedStake {
-			return errors.New("HasNewDelegatedStake is set false")
+		if !tx.HasNewDelegatedInfo {
+			return errors.New("HasNewDelegatedInfo is set false")
 		}
-		if err = plainAcc.CreateDelegatedStake(payloads[0].BurnValue, tx.DelegatedStakePublicKey, tx.DelegatedStakeFee); err != nil {
+		if err = plainAcc.CreateDelegatedStake(payloads[0].BurnValue, tx.NewPublicKey, tx.NewFee); err != nil {
 			return
 		}
 	} else {
 		if err = plainAcc.DelegatedStake.AddStakePendingStake(payloads[0].BurnValue, blockHeight); err != nil {
 			return
 		}
-		if tx.HasNewDelegatedStake {
-			plainAcc.DelegatedStake.DelegatedStakePublicKey = tx.DelegatedStakePublicKey
-			plainAcc.DelegatedStake.DelegatedStakeFee = tx.DelegatedStakeFee
+		if tx.HasNewDelegatedInfo {
+			plainAcc.DelegatedStake.DelegatedStakePublicKey = tx.NewPublicKey
+			plainAcc.DelegatedStake.DelegatedStakeFee = tx.NewFee
 		}
 	}
 
@@ -55,14 +56,27 @@ func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *tr
 
 func (tx *TransactionZetherDelegateStake) Validate(payloads []*transaction_zether_payload.TransactionZetherPayload) error {
 
-	if len(tx.DelegatePublicKey) != cryptography.PublicKeySize {
-		return errors.New("DelegatePublicKey is invalid")
-	}
 	if len(payloads) != 1 {
 		return errors.New("Payloads length must be 1")
 	}
 	if bytes.Equal(payloads[0].Asset, config_coins.NATIVE_ASSET) {
 		return errors.New("Payload[0] asset must be a native asset")
+	}
+
+	if tx.HasNewDelegatedInfo {
+		if len(tx.NewPublicKey) != cryptography.PublicKeySize {
+			return errors.New("New Public Key Hash length is invalid")
+		}
+		if tx.NewFee > config_stake.DELEGATING_STAKING_FEES_MAX_VALUE {
+			return errors.New("Invalid NewFee")
+		}
+	} else {
+		if len(tx.NewPublicKey) != 0 {
+			return errors.New("New Public Key Hash length is invalid")
+		}
+		if tx.NewFee != 0 {
+			return errors.New("Invalid NewFee")
+		}
 	}
 
 	return nil
@@ -74,13 +88,13 @@ func (tx *TransactionZetherDelegateStake) VerifySignatureManually(hashForSignatu
 
 func (tx *TransactionZetherDelegateStake) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.Write(tx.DelegatePublicKey)
-	w.WriteBool(tx.HasNewDelegatedStake)
-	if tx.HasNewDelegatedStake {
+	w.WriteBool(tx.HasNewDelegatedInfo)
+	if tx.HasNewDelegatedInfo {
 		if inclSignature {
 			w.Write(tx.DelegateSignature)
 		}
-		w.Write(tx.DelegatedStakePublicKey)
-		w.WriteUvarint(tx.DelegatedStakeFee)
+		w.Write(tx.NewPublicKey)
+		w.WriteUvarint(tx.NewFee)
 	}
 }
 
@@ -88,20 +102,19 @@ func (tx *TransactionZetherDelegateStake) Deserialize(r *helpers.BufferReader) (
 	if tx.DelegatePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if tx.HasNewDelegatedStake, err = r.ReadBool(); err != nil {
+	if tx.HasNewDelegatedInfo, err = r.ReadBool(); err != nil {
 		return
 	}
-	if tx.HasNewDelegatedStake {
+	if tx.HasNewDelegatedInfo {
 		if tx.DelegateSignature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
 			return
 		}
-		if tx.DelegatedStakePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+		if tx.NewPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 			return
 		}
-		if tx.DelegatedStakeFee, err = r.ReadUvarint(); err != nil {
+		if tx.NewFee, err = r.ReadUvarint(); err != nil {
 			return
 		}
-
 	}
 	return
 }
