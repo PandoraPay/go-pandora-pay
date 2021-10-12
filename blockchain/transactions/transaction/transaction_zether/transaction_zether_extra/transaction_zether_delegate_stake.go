@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -17,7 +18,7 @@ type TransactionZetherDelegateStake struct {
 	DelegatePublicKey []byte
 	DelegateSignature []byte
 
-	DelegatedStakeNew       bool
+	HasNewDelegatedStake    bool
 	DelegatedStakePublicKey []byte
 	DelegatedStakeFee       uint64
 }
@@ -33,8 +34,8 @@ func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *tr
 		plainAcc = plain_account.NewPlainAccount(tx.DelegatePublicKey)
 	}
 	if !plainAcc.HasDelegatedStake() {
-		if !tx.DelegatedStakeNew {
-			return errors.New("DelegatedStakeNew is set false")
+		if !tx.HasNewDelegatedStake {
+			return errors.New("HasNewDelegatedStake is set false")
 		}
 		if err = plainAcc.CreateDelegatedStake(payloads[0].BurnValue, tx.DelegatedStakePublicKey, tx.DelegatedStakeFee); err != nil {
 			return
@@ -43,7 +44,7 @@ func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *tr
 		if err = plainAcc.DelegatedStake.AddStakePendingStake(payloads[0].BurnValue, blockHeight); err != nil {
 			return
 		}
-		if tx.DelegatedStakeNew {
+		if tx.HasNewDelegatedStake {
 			plainAcc.DelegatedStake.DelegatedStakePublicKey = tx.DelegatedStakePublicKey
 			plainAcc.DelegatedStake.DelegatedStakeFee = tx.DelegatedStakeFee
 		}
@@ -67,10 +68,14 @@ func (tx *TransactionZetherDelegateStake) Validate(payloads []*transaction_zethe
 	return nil
 }
 
+func (tx *TransactionZetherDelegateStake) VerifySignatureManually(hashForSignature []byte) bool {
+	return crypto.VerifySignature(hashForSignature, tx.DelegateSignature, tx.DelegatePublicKey)
+}
+
 func (tx *TransactionZetherDelegateStake) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.Write(tx.DelegatePublicKey)
-	w.WriteBool(tx.DelegatedStakeNew)
-	if tx.DelegatedStakeNew {
+	w.WriteBool(tx.HasNewDelegatedStake)
+	if tx.HasNewDelegatedStake {
 		if inclSignature {
 			w.Write(tx.DelegateSignature)
 		}
@@ -83,10 +88,10 @@ func (tx *TransactionZetherDelegateStake) Deserialize(r *helpers.BufferReader) (
 	if tx.DelegatePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if tx.DelegatedStakeNew, err = r.ReadBool(); err != nil {
+	if tx.HasNewDelegatedStake, err = r.ReadBool(); err != nil {
 		return
 	}
-	if tx.DelegatedStakeNew {
+	if tx.HasNewDelegatedStake {
 		if tx.DelegateSignature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
 			return
 		}

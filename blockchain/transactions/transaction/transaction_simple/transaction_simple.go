@@ -89,10 +89,7 @@ func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
 }
 
 func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bool {
-	if crypto.VerifySignature(hashForSignature, tx.Vin.Signature, tx.Vin.PublicKey) == false {
-		return false
-	}
-	return true
+	return crypto.VerifySignature(hashForSignature, tx.Vin.Signature, tx.Vin.PublicKey)
 }
 
 func (tx *TransactionSimple) Validate() (err error) {

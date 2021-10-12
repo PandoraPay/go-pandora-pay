@@ -2,6 +2,7 @@ package transaction_zether
 
 import (
 	"errors"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_extra"
 )
 
 type TransactionZetherBloom struct {
@@ -31,6 +32,14 @@ func (tx *TransactionZether) BloomNow(hashForSignature []byte) (err error) {
 
 	tx.Bloom.Nonce1 = tx.Payloads[0].Proof.Nonce1()
 	tx.Bloom.Nonce2 = tx.Payloads[0].Proof.Nonce2()
+
+	switch tx.TxScript {
+	case SCRIPT_DELEGATE:
+		extra := tx.Extra.(*transaction_zether_extra.TransactionZetherDelegateStake)
+		if extra.HasNewDelegatedStake && extra.VerifySignatureManually(hashForSignature) == false {
+			return errors.New("DelegatedPublicKey signature failed")
+		}
+	}
 
 	tx.Bloom.signatureVerified = true
 	tx.Bloom.bloomed = true
