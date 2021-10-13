@@ -9,6 +9,7 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/transactions_builder/wizard"
+	"pandora-pay/wallet/wallet_address"
 )
 
 func (builder *TransactionsBuilder) showWarningIfNotSyncCLI() {
@@ -139,8 +140,6 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		delegatedStakingNewPublicKeyGenerate := false
-
 		delegatedStakingNewPublicKey, ok := gui.GUI.OutputReadBytes("Delegate New Public Key. Use empty for not changing. Use '01' for generating a new one. ", []int{0, 1, cryptography.PublicKeySize})
 		if !ok {
 			return
@@ -148,8 +147,11 @@ func (builder *TransactionsBuilder) initCLI() {
 
 		if len(delegatedStakingNewPublicKey) == 1 {
 			if bytes.Equal(delegatedStakingNewPublicKey, []byte{1}) {
-				delegatedStakingNewPublicKey = []byte{}
-				delegatedStakingNewPublicKeyGenerate = true
+				var derivedDelegatedStake *wallet_address.WalletAddressDelegatedStake
+				if derivedDelegatedStake, err = builder.DeriveDelegatedStake(nonce, walletAddress.PublicKey); err != nil {
+					return
+				}
+				delegatedStakingNewPublicKey = derivedDelegatedStake.PublicKey
 			} else {
 				return errors.New("Invalid value for New Public key Hash")
 			}
@@ -184,7 +186,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateUpdateDelegateTx_Float(walletAddress.AddressEncoded, nonce, delegatedStakingNewPublicKeyGenerate, delegatedStakingNewPublicKey, delegatedStakingNewFee, delegateStakingUpdateAmount, data, fee, propagate, true, true, false, func(status string) {
+		tx, err := builder.CreateUpdateDelegateTx_Float(walletAddress.AddressEncoded, nonce, delegatedStakingNewPublicKey, delegatedStakingNewFee, delegateStakingUpdateAmount, data, fee, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

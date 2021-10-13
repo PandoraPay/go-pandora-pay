@@ -17,9 +17,9 @@ import (
 type TransactionZetherDelegateStake struct {
 	TransactionZetherExtraInterface
 	DelegatePublicKey []byte
-	DelegateSignature []byte
 
 	DelegatedStakingNewInfo      bool
+	DelegateSignature            []byte //it newInfo then the signature is required to verify that he is owner
 	DelegatedStakingNewPublicKey []byte
 	DelegatedStakingNewFee       uint64
 }

@@ -38,6 +38,40 @@ func (builder *TransactionsBuilder) getNonce(nonce uint64, publicKey []byte, acc
 	return builder.mempool.GetNonce(publicKey, accNonce)
 }
 
+func (builder *TransactionsBuilder) DeriveDelegatedStake(nonce uint64, addressPublicKey []byte) (*wallet_address.WalletAddressDelegatedStake, error) {
+
+	var accNonce uint64
+	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+		plainAccs := plain_accounts.NewPlainAccounts(reader)
+
+		var plainAcc *plain_account.PlainAccount
+		if plainAcc, err = plainAccs.GetPlainAccount(addressPublicKey, chainHeight); err != nil {
+			return
+		}
+		if plainAcc == nil {
+			return errors.New("Account doesn't exist")
+		}
+
+		return
+	}); err != nil {
+		return nil, err
+	}
+
+	nonce = builder.getNonce(nonce, addressPublicKey, accNonce)
+
+	builder.wallet.RLock()
+	defer builder.wallet.RUnlock()
+
+	addr := builder.wallet.GetWalletAddressByPublicKey(addressPublicKey)
+	if addr == nil {
+		return nil, errors.New("Wallet was not found")
+	}
+
+	return addr.DeriveDelegatedStake(uint32(nonce))
+}
+
 func (builder *TransactionsBuilder) convertFloatAmounts(amounts []float64, ast *asset.Asset) ([]uint64, error) {
 
 	var err error
@@ -168,7 +202,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	return tx, nil
 }
 
-func (builder *TransactionsBuilder) CreateUpdateDelegateTx_Float(from string, nonce uint64, delegatedStakingNewPublicKeyGenerate bool, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, delegateStakingUpdateAmount float64, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateUpdateDelegateTx_Float(from string, nonce uint64, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, delegateStakingUpdateAmount float64, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	var finalFee *wizard.TransactionsWizardFee
 	var finalDelegateStakingUpdateAmount uint64
@@ -198,10 +232,10 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx_Float(from string, no
 		return nil, err
 	}
 
-	return builder.CreateUpdateDelegateTx(from, nonce, delegatedStakingNewPublicKeyGenerate, delegatedStakingNewPublicKey, delegatedStakingNewFee, finalDelegateStakingUpdateAmount, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, false, statusCallback)
+	return builder.CreateUpdateDelegateTx(from, nonce, delegatedStakingNewPublicKey, delegatedStakingNewFee, finalDelegateStakingUpdateAmount, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, false, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce uint64, delegatedStakingNewPublicKeyGenerate bool, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee, delegateStakingUpdateAmount uint64, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce uint64, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee, delegateStakingUpdateAmount uint64, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
@@ -234,14 +268,6 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 	}
 
 	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
-
-	if delegatedStakingNewPublicKeyGenerate {
-		var delegatedStake *wallet_address.WalletAddressDelegatedStake
-		if delegatedStake, err = fromWalletAddresses[0].DeriveDelegatedStake(uint32(nonce)); err != nil {
-			return nil, err
-		}
-		delegatedStakingNewPublicKey = delegatedStake.PublicKey
-	}
 
 	if tx, err = wizard.CreateUpdateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegatedStakingNewPublicKey, delegatedStakingNewFee, delegateStakingUpdateAmount, data, fee, false, statusCallback); err != nil {
 		return nil, err

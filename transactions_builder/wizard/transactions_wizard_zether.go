@@ -12,9 +12,11 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
+	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -384,6 +386,46 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	txBase := &transaction_zether.TransactionZether{
 		TxScript: transaction_zether.SCRIPT_TRANSFER,
 		Height:   height,
+	}
+
+	tx := &transaction.Transaction{
+		Version: transaction_type.TX_ZETHER,
+		Registrations: &transaction_data.TransactionDataTransactions{
+			Registrations: nil,
+		},
+		TransactionBaseInterface: txBase,
+	}
+
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, validateTx, ctx, statusCallback); err != nil {
+		return
+	}
+
+	return tx, nil
+}
+
+func CreateZetherDelegateStakeTx(delegatePublicKey, delegateSignature []byte, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+
+	delegatedStakingHasNewInfo := false
+	if len(delegatedStakingNewPublicKey) == cryptography.PublicKeySize {
+		delegatedStakingHasNewInfo = true
+	}
+
+	if len(delegatedStakingNewPublicKey) != cryptography.PublicKeySize && delegatedStakingNewFee > 0 {
+		return nil, errors.New("delegatedStakingNewFee is > 0 while the delegatedStakingNewPublicKey is not right")
+	}
+
+	txBaseExtra := &transaction_zether_extra.TransactionZetherDelegateStake{
+		DelegatePublicKey:            delegatePublicKey,
+		DelegatedStakingNewInfo:      delegatedStakingHasNewInfo,
+		DelegateSignature:            delegateSignature,
+		DelegatedStakingNewPublicKey: delegatedStakingNewPublicKey,
+		DelegatedStakingNewFee:       delegatedStakingNewFee,
+	}
+
+	txBase := &transaction_zether.TransactionZether{
+		TxScript: transaction_zether.SCRIPT_TRANSFER,
+		Height:   height,
+		Extra:    txBaseExtra,
 	}
 
 	tx := &transaction.Transaction{
