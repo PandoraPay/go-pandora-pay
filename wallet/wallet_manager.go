@@ -499,6 +499,7 @@ func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAcc
 
 			var delegatedStake *wallet_address.WalletAddressDelegatedStake
 			if delegatedStake, err = adr.FindDelegatedStake(uint32(plainAcc.Nonce), lastKnownNonce, plainAcc.DelegatedStake.DelegatedStakePublicKey); err != nil {
+				_, err = wallet.RemoveAddressByWalletAddress(adr, lock)
 				return
 			}
 
