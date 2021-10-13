@@ -84,20 +84,20 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	return tx, nil
 }
 
-func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, delegateNewFee, updateStakeAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee, delegateStakingUpdateAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	dataFinal, err := data.getData()
 	if err != nil {
 		return
 	}
 
-	hasNewDelegatedInfo := false
-	if len(delegateNewPubKey) == cryptography.PublicKeySize {
-		hasNewDelegatedInfo = true
+	delegatedStakingHasNewInfo := false
+	if len(delegatedStakingNewPublicKey) == cryptography.PublicKeySize {
+		delegatedStakingHasNewInfo = true
 	}
 
-	if len(delegateNewPubKey) != cryptography.PublicKeySize && delegateNewFee > 0 {
-		return nil, errors.New("delegateNewFee is > 0 while the delegateNewPubKey is not right")
+	if len(delegatedStakingNewPublicKey) != cryptography.PublicKeySize && delegatedStakingNewFee > 0 {
+		return nil, errors.New("delegatedStakingNewFee is > 0 while the delegatedStakingNewPublicKey is not right")
 	}
 
 	privateKey := &addresses.PrivateKey{Key: key}
@@ -108,10 +108,10 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegateNewPubKey []byte, 
 		Data:        dataFinal,
 		Nonce:       nonce,
 		Extra: &transaction_simple_extra.TransactionSimpleUpdateDelegate{
-			UpdateStakingAmount: updateStakeAmount,
-			HasNewDelegatedInfo: hasNewDelegatedInfo,
-			NewPublicKey:        delegateNewPubKey,
-			NewFee:              delegateNewFee,
+			DelegatedStakingUpdateAmount: delegateStakingUpdateAmount,
+			DelegatedStakingHasNewInfo:   delegatedStakingHasNewInfo,
+			DelegatedStakingNewPublicKey: delegatedStakingNewPublicKey,
+			DelegatedStakingNewFee:       delegatedStakingNewFee,
 		},
 		Vin: &transaction_simple_parts.TransactionSimpleInput{
 			PublicKey: privateKey.GeneratePublicKey(),

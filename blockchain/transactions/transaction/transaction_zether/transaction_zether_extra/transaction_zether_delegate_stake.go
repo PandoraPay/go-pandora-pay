@@ -19,9 +19,9 @@ type TransactionZetherDelegateStake struct {
 	DelegatePublicKey []byte
 	DelegateSignature []byte
 
-	HasNewDelegatedInfo bool
-	NewPublicKey        []byte
-	NewFee              uint64
+	DelegatedStakingNewInfo      bool
+	DelegatedStakingNewPublicKey []byte
+	DelegatedStakingNewFee       uint64
 }
 
 func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, payloads []*transaction_zether_payload.TransactionZetherPayload, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
@@ -35,19 +35,19 @@ func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *tr
 		plainAcc = plain_account.NewPlainAccount(tx.DelegatePublicKey)
 	}
 	if !plainAcc.HasDelegatedStake() {
-		if !tx.HasNewDelegatedInfo {
-			return errors.New("HasNewDelegatedInfo is set false")
+		if !tx.DelegatedStakingNewInfo {
+			return errors.New("DelegatedStakingNewInfo is set false")
 		}
-		if err = plainAcc.CreateDelegatedStake(payloads[0].BurnValue, tx.NewPublicKey, tx.NewFee); err != nil {
+		if err = plainAcc.CreateDelegatedStake(payloads[0].BurnValue, tx.DelegatedStakingNewPublicKey, tx.DelegatedStakingNewFee); err != nil {
 			return
 		}
 	} else {
 		if err = plainAcc.DelegatedStake.AddStakePendingStake(payloads[0].BurnValue, blockHeight); err != nil {
 			return
 		}
-		if tx.HasNewDelegatedInfo {
-			plainAcc.DelegatedStake.DelegatedStakePublicKey = tx.NewPublicKey
-			plainAcc.DelegatedStake.DelegatedStakeFee = tx.NewFee
+		if tx.DelegatedStakingNewInfo {
+			plainAcc.DelegatedStake.DelegatedStakePublicKey = tx.DelegatedStakingNewPublicKey
+			plainAcc.DelegatedStake.DelegatedStakeFee = tx.DelegatedStakingNewFee
 		}
 	}
 
@@ -63,18 +63,18 @@ func (tx *TransactionZetherDelegateStake) Validate(payloads []*transaction_zethe
 		return errors.New("Payload[0] asset must be a native asset")
 	}
 
-	if tx.HasNewDelegatedInfo {
-		if len(tx.NewPublicKey) != cryptography.PublicKeySize {
+	if tx.DelegatedStakingNewInfo {
+		if len(tx.DelegatedStakingNewPublicKey) != cryptography.PublicKeySize {
 			return errors.New("New Public Key Hash length is invalid")
 		}
-		if tx.NewFee > config_stake.DELEGATING_STAKING_FEES_MAX_VALUE {
+		if tx.DelegatedStakingNewFee > config_stake.DELEGATING_STAKING_FEES_MAX_VALUE {
 			return errors.New("Invalid NewFee")
 		}
 	} else {
-		if len(tx.NewPublicKey) != 0 {
+		if len(tx.DelegatedStakingNewPublicKey) != 0 {
 			return errors.New("New Public Key Hash length is invalid")
 		}
-		if tx.NewFee != 0 {
+		if tx.DelegatedStakingNewFee != 0 {
 			return errors.New("Invalid NewFee")
 		}
 	}
@@ -88,13 +88,13 @@ func (tx *TransactionZetherDelegateStake) VerifySignatureManually(hashForSignatu
 
 func (tx *TransactionZetherDelegateStake) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.Write(tx.DelegatePublicKey)
-	w.WriteBool(tx.HasNewDelegatedInfo)
-	if tx.HasNewDelegatedInfo {
+	w.WriteBool(tx.DelegatedStakingNewInfo)
+	if tx.DelegatedStakingNewInfo {
 		if inclSignature {
 			w.Write(tx.DelegateSignature)
 		}
-		w.Write(tx.NewPublicKey)
-		w.WriteUvarint(tx.NewFee)
+		w.Write(tx.DelegatedStakingNewPublicKey)
+		w.WriteUvarint(tx.DelegatedStakingNewFee)
 	}
 }
 
@@ -102,17 +102,17 @@ func (tx *TransactionZetherDelegateStake) Deserialize(r *helpers.BufferReader) (
 	if tx.DelegatePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if tx.HasNewDelegatedInfo, err = r.ReadBool(); err != nil {
+	if tx.DelegatedStakingNewInfo, err = r.ReadBool(); err != nil {
 		return
 	}
-	if tx.HasNewDelegatedInfo {
+	if tx.DelegatedStakingNewInfo {
 		if tx.DelegateSignature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
 			return
 		}
-		if tx.NewPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+		if tx.DelegatedStakingNewPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 			return
 		}
-		if tx.NewFee, err = r.ReadUvarint(); err != nil {
+		if tx.DelegatedStakingNewFee, err = r.ReadUvarint(); err != nil {
 			return
 		}
 	}

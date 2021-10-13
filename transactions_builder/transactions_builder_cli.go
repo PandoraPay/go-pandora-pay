@@ -139,32 +139,32 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		delegateNewPublicKeyGenerate := false
+		delegatedStakingNewPublicKeyGenerate := false
 
-		delegateNewPublicKey, ok := gui.GUI.OutputReadBytes("Delegate New Public Key. Use empty for not changing. Use '01' for generating a new one. ", []int{0, 1, cryptography.PublicKeySize})
+		delegatedStakingNewPublicKey, ok := gui.GUI.OutputReadBytes("Delegate New Public Key. Use empty for not changing. Use '01' for generating a new one. ", []int{0, 1, cryptography.PublicKeySize})
 		if !ok {
 			return
 		}
 
-		if len(delegateNewPublicKey) == 1 {
-			if bytes.Equal(delegateNewPublicKey, []byte{1}) {
-				delegateNewPublicKey = []byte{}
-				delegateNewPublicKeyGenerate = true
+		if len(delegatedStakingNewPublicKey) == 1 {
+			if bytes.Equal(delegatedStakingNewPublicKey, []byte{1}) {
+				delegatedStakingNewPublicKey = []byte{}
+				delegatedStakingNewPublicKeyGenerate = true
 			} else {
 				return errors.New("Invalid value for New Public key Hash")
 			}
 		}
 
-		var delegateNewFee uint64
-		if len(delegateNewPublicKey) > 0 {
+		var delegatedStakingNewFee uint64
+		if len(delegatedStakingNewPublicKey) > 0 {
 			number, ok := gui.GUI.OutputReadUint64("New Fee", nil, true)
 			if !ok {
 				return
 			}
-			delegateNewFee = number
+			delegatedStakingNewFee = number
 		}
 
-		updateStakingAmount, ok := gui.GUI.OutputReadFloat64("Update Staking Amount", nil)
+		delegateStakingUpdateAmount, ok := gui.GUI.OutputReadFloat64("Update Delegated Staking Amount", nil)
 		if !ok {
 			return
 		}
@@ -184,7 +184,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateUpdateDelegateTx_Float(walletAddress.AddressEncoded, nonce, delegateNewPublicKeyGenerate, delegateNewPublicKey, delegateNewFee, updateStakingAmount, data, fee, propagate, true, true, false, func(status string) {
+		tx, err := builder.CreateUpdateDelegateTx_Float(walletAddress.AddressEncoded, nonce, delegatedStakingNewPublicKeyGenerate, delegatedStakingNewPublicKey, delegatedStakingNewFee, delegateStakingUpdateAmount, data, fee, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

@@ -11,15 +11,15 @@ import (
 )
 
 /**
-Substracting UpdateStakingAmount from the Claimable
-Creating a Stake Pending with UpdateStakingAmount
+Substracting DelegatedStakingUpdateAmount from the Claimable
+Creating a Stake Pending with DelegatedStakingUpdateAmount
 */
 type TransactionSimpleUpdateDelegate struct {
 	TransactionSimpleExtraInterface
-	UpdateStakingAmount uint64
-	HasNewDelegatedInfo bool
-	NewPublicKey        helpers.HexBytes //20 byte
-	NewFee              uint64
+	DelegatedStakingUpdateAmount uint64
+	DelegatedStakingHasNewInfo   bool
+	DelegatedStakingNewPublicKey helpers.HexBytes //20 byte
+	DelegatedStakingNewFee       uint64
 }
 
 func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
@@ -32,20 +32,22 @@ func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(txRegistration
 		return errors.New("PlainAcc is null")
 	}
 
-	if !plainAcc.HasDelegatedStake() {
-		if err = plainAcc.CreateDelegatedStake(0, tx.NewPublicKey, tx.NewFee); err != nil {
-			return
+	if tx.DelegatedStakingHasNewInfo {
+		if !plainAcc.HasDelegatedStake() {
+			if err = plainAcc.CreateDelegatedStake(0, tx.DelegatedStakingNewPublicKey, tx.DelegatedStakingNewFee); err != nil {
+				return
+			}
+		} else {
+			plainAcc.DelegatedStake.DelegatedStakePublicKey = tx.DelegatedStakingNewPublicKey
+			plainAcc.DelegatedStake.DelegatedStakeFee = tx.DelegatedStakingNewFee
 		}
-	} else {
-		plainAcc.DelegatedStake.DelegatedStakePublicKey = tx.NewPublicKey
-		plainAcc.DelegatedStake.DelegatedStakeFee = tx.NewFee
 	}
 
-	if tx.UpdateStakingAmount > 0 {
-		if err = plainAcc.AddClaimable(false, tx.UpdateStakingAmount); err != nil {
+	if tx.DelegatedStakingUpdateAmount > 0 {
+		if err = plainAcc.AddClaimable(false, tx.DelegatedStakingUpdateAmount); err != nil {
 			return
 		}
-		if err = plainAcc.DelegatedStake.AddStakePendingStake(tx.UpdateStakingAmount, blockHeight); err != nil {
+		if err = plainAcc.DelegatedStake.AddStakePendingStake(tx.DelegatedStakingUpdateAmount, blockHeight); err != nil {
 			return
 		}
 	}
@@ -54,21 +56,21 @@ func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(txRegistration
 }
 
 func (tx *TransactionSimpleUpdateDelegate) Validate() error {
-	if tx.HasNewDelegatedInfo {
-		if len(tx.NewPublicKey) != cryptography.PublicKeySize {
+	if tx.DelegatedStakingHasNewInfo {
+		if len(tx.DelegatedStakingNewPublicKey) != cryptography.PublicKeySize {
 			return errors.New("New Public Key Hash length is invalid")
 		}
-		if tx.NewFee > config_stake.DELEGATING_STAKING_FEES_MAX_VALUE {
-			return errors.New("Invalid NewFee")
+		if tx.DelegatedStakingNewFee > config_stake.DELEGATING_STAKING_FEES_MAX_VALUE {
+			return errors.New("Invalid NewDelegatedStakingNewFee")
 		}
 	} else {
-		if len(tx.NewPublicKey) != 0 {
+		if len(tx.DelegatedStakingNewPublicKey) != 0 {
 			return errors.New("New Public Key Hash length is invalid")
 		}
-		if tx.NewFee != 0 {
-			return errors.New("Invalid NewFee")
+		if tx.DelegatedStakingNewFee != 0 {
+			return errors.New("Invalid NewDelegatedStakingNewFee")
 		}
-		if tx.UpdateStakingAmount == 0 {
+		if tx.DelegatedStakingUpdateAmount == 0 {
 			return errors.New("UpdateDelegateTx has no operation")
 		}
 	}
@@ -76,27 +78,27 @@ func (tx *TransactionSimpleUpdateDelegate) Validate() error {
 }
 
 func (tx *TransactionSimpleUpdateDelegate) Serialize(w *helpers.BufferWriter, inclSignature bool) {
-	w.WriteUvarint(tx.UpdateStakingAmount)
-	w.WriteBool(tx.HasNewDelegatedInfo)
-	if tx.HasNewDelegatedInfo {
-		w.Write(tx.NewPublicKey)
-		w.WriteUvarint(tx.NewFee)
+	w.WriteUvarint(tx.DelegatedStakingUpdateAmount)
+	w.WriteBool(tx.DelegatedStakingHasNewInfo)
+	if tx.DelegatedStakingHasNewInfo {
+		w.Write(tx.DelegatedStakingNewPublicKey)
+		w.WriteUvarint(tx.DelegatedStakingNewFee)
 	}
 }
 
 func (tx *TransactionSimpleUpdateDelegate) Deserialize(r *helpers.BufferReader) (err error) {
-	if tx.UpdateStakingAmount, err = r.ReadUvarint(); err != nil {
+	if tx.DelegatedStakingUpdateAmount, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if tx.HasNewDelegatedInfo, err = r.ReadBool(); err != nil {
+	if tx.DelegatedStakingHasNewInfo, err = r.ReadBool(); err != nil {
 		return
 	}
 
-	if tx.HasNewDelegatedInfo {
-		if tx.NewPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+	if tx.DelegatedStakingHasNewInfo {
+		if tx.DelegatedStakingNewPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 			return
 		}
-		if tx.NewFee, err = r.ReadUvarint(); err != nil {
+		if tx.DelegatedStakingNewFee, err = r.ReadUvarint(); err != nil {
 			return
 		}
 	}

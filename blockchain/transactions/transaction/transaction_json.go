@@ -49,8 +49,10 @@ type json_TransactionSimpleInput struct {
 }
 
 type json_Only_TransactionSimpleUpdateDelegate struct {
-	NewPublicKey helpers.HexBytes `json:"newPublicKey"` //20 byte
-	NewFee       uint64           `json:"newFee"`       //20 byte
+	DelegatedStakingUpdateAmount uint64           `json:"delegatedStakingUpdateAmount"`
+	DelegatedStakingHasNewInfo   bool             `json:"delegatedStakingHasNewInfo"`
+	DelegatedStakingNewPublicKey helpers.HexBytes `json:"delegatedStakingNewPublicKey"` //20 byte
+	DelegatedStakingNewFee       uint64           `json:"delegatedStakingNewFee"`       //20 byte
 }
 
 type json_TransactionSimpleUpdateDelegate struct {
@@ -155,8 +157,10 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			return json.Marshal(&json_TransactionSimpleUpdateDelegate{
 				simpleJson,
 				&json_Only_TransactionSimpleUpdateDelegate{
-					extra.NewPublicKey,
-					extra.NewFee,
+					extra.DelegatedStakingUpdateAmount,
+					extra.DelegatedStakingHasNewInfo,
+					extra.DelegatedStakingNewPublicKey,
+					extra.DelegatedStakingNewFee,
 				},
 			})
 		case transaction_simple.SCRIPT_UNSTAKE:
@@ -302,8 +306,10 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			}
 
 			base.Extra = &transaction_simple_extra.TransactionSimpleUpdateDelegate{
-				NewPublicKey: extraJson.NewPublicKey,
-				NewFee:       extraJson.NewFee,
+				DelegatedStakingUpdateAmount: extraJson.DelegatedStakingUpdateAmount,
+				DelegatedStakingHasNewInfo:   extraJson.DelegatedStakingHasNewInfo,
+				DelegatedStakingNewPublicKey: extraJson.DelegatedStakingNewPublicKey,
+				DelegatedStakingNewFee:       extraJson.DelegatedStakingNewFee,
 			}
 
 		case transaction_simple.SCRIPT_UNSTAKE:
