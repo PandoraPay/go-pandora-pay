@@ -266,7 +266,7 @@ func deriveDelegatedStakeWalletAddress(this js.Value, args []js.Value) interface
 	})
 }
 
-func getDataForDecodingBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
+func getPrivateDataForDecodingBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {

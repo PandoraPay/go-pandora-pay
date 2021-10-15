@@ -403,7 +403,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	return tx, nil
 }
 
-func CreateZetherDelegateStakeTx(delegatePublicKey, delegateSignature []byte, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateZetherDelegateStakeTx(delegatePublicKey, delegatePrivateKey []byte, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	delegatedStakingHasNewInfo := false
 	if len(delegatedStakingNewPublicKey) == cryptography.PublicKeySize {
@@ -414,16 +414,24 @@ func CreateZetherDelegateStakeTx(delegatePublicKey, delegateSignature []byte, de
 		return nil, errors.New("delegatedStakingNewFee is > 0 while the delegatedStakingNewPublicKey is not right")
 	}
 
+	var key *addresses.PrivateKey
+	if delegatedStakingHasNewInfo {
+		key = &addresses.PrivateKey{Key: delegatePrivateKey}
+		if bytes.Equal(key.GeneratePublicKey(), delegatePublicKey) == false {
+			return nil, errors.New("delegatePrivateKey is not matching delegatePublicKey")
+		}
+	}
+
 	txBaseExtra := &transaction_zether_extra.TransactionZetherDelegateStake{
 		DelegatePublicKey:            delegatePublicKey,
 		DelegatedStakingNewInfo:      delegatedStakingHasNewInfo,
-		DelegateSignature:            delegateSignature,
+		DelegateSignature:            nil,
 		DelegatedStakingNewPublicKey: delegatedStakingNewPublicKey,
 		DelegatedStakingNewFee:       delegatedStakingNewFee,
 	}
 
 	txBase := &transaction_zether.TransactionZether{
-		TxScript: transaction_zether.SCRIPT_TRANSFER,
+		TxScript: transaction_zether.SCRIPT_DELEGATE,
 		Height:   height,
 		Extra:    txBaseExtra,
 	}
@@ -438,6 +446,21 @@ func CreateZetherDelegateStakeTx(delegatePublicKey, delegateSignature []byte, de
 
 	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, validateTx, ctx, statusCallback); err != nil {
 		return
+
+	}
+
+	if delegatedStakingHasNewInfo {
+		tx.Bloom = nil
+		if txBaseExtra.DelegateSignature, err = key.Sign(tx.SerializeForSigning()); err != nil {
+			return
+		}
+		if err = tx.BloomExtraVerified(); err != nil {
+			return
+		}
+		if err = tx.BloomAll(); err != nil {
+			return
+		}
+		statusCallback("Transaction Bloomed as Verified #2")
 	}
 
 	return tx, nil

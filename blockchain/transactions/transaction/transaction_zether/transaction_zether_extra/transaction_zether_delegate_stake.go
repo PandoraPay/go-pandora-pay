@@ -19,9 +19,9 @@ type TransactionZetherDelegateStake struct {
 	DelegatePublicKey []byte
 
 	DelegatedStakingNewInfo      bool
-	DelegateSignature            []byte //it newInfo then the signature is required to verify that he is owner
 	DelegatedStakingNewPublicKey []byte
 	DelegatedStakingNewFee       uint64
+	DelegateSignature            []byte //if newInfo then the signature is required to verify that he is owner
 }
 
 func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, payloads []*transaction_zether_payload.TransactionZetherPayload, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
@@ -59,7 +59,7 @@ func (tx *TransactionZetherDelegateStake) Validate(payloads []*transaction_zethe
 	if len(payloads) != 1 {
 		return errors.New("Payloads length must be 1")
 	}
-	if bytes.Equal(payloads[0].Asset, config_coins.NATIVE_ASSET) {
+	if bytes.Equal(payloads[0].Asset, config_coins.NATIVE_ASSET) == false {
 		return errors.New("Payload[0] asset must be a native asset")
 	}
 
@@ -90,11 +90,11 @@ func (tx *TransactionZetherDelegateStake) Serialize(w *helpers.BufferWriter, inc
 	w.Write(tx.DelegatePublicKey)
 	w.WriteBool(tx.DelegatedStakingNewInfo)
 	if tx.DelegatedStakingNewInfo {
+		w.Write(tx.DelegatedStakingNewPublicKey)
+		w.WriteUvarint(tx.DelegatedStakingNewFee)
 		if inclSignature {
 			w.Write(tx.DelegateSignature)
 		}
-		w.Write(tx.DelegatedStakingNewPublicKey)
-		w.WriteUvarint(tx.DelegatedStakingNewFee)
 	}
 }
 
@@ -106,13 +106,13 @@ func (tx *TransactionZetherDelegateStake) Deserialize(r *helpers.BufferReader) (
 		return
 	}
 	if tx.DelegatedStakingNewInfo {
-		if tx.DelegateSignature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
-			return
-		}
 		if tx.DelegatedStakingNewPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 			return
 		}
 		if tx.DelegatedStakingNewFee, err = r.ReadUvarint(); err != nil {
+			return
+		}
+		if tx.DelegateSignature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
 			return
 		}
 	}

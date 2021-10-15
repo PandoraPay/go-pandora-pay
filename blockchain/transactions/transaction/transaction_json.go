@@ -10,6 +10,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
@@ -89,6 +90,14 @@ type json_Only_TransactionZether struct {
 	Payloads []*json_Only_TransactionPayload `json:"payloads"`
 }
 
+type json_Only_TransactionZetherExtraDelegateStake struct {
+	DelegatePublicKey            helpers.HexBytes `json:"delegatePublicKey"`
+	DelegatedStakingNewInfo      bool             `json:"delegatedStakingNewInfo"`
+	DelegatedStakingNewPublicKey helpers.HexBytes `json:"delegatedStakingNewPublicKey"`
+	DelegatedStakingNewFee       uint64           `json:"delegatedStakingNewFee"`
+	DelegateSignature            helpers.HexBytes `json:"delegateSignature"`
+}
+
 type json_Only_TransactionZetherStatement struct {
 	RingSize      uint64             `json:"ringSize"`
 	CLn           []helpers.HexBytes `json:"cLn"`
@@ -111,6 +120,11 @@ type json_Only_TransactionPayload struct {
 type json_TransactionZether struct {
 	*json_Transaction
 	*json_Only_TransactionZether
+}
+
+type json_TransactionZetherDelegateStake struct {
+	*json_TransactionZether
+	*json_Only_TransactionZetherExtraDelegateStake
 }
 
 func (tx *Transaction) MarshalJSON() ([]byte, error) {
@@ -189,7 +203,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				},
 			})
 		default:
-			return nil, errors.New("Invalid base.TxScript")
+			return nil, errors.New("Invalid simple.TxScript")
 		}
 	case transaction_type.TX_ZETHER:
 		base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
@@ -229,7 +243,26 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				payloadsJson,
 			},
 		}
-		return json.Marshal(zetherJson)
+
+		switch base.TxScript {
+		case transaction_zether.SCRIPT_TRANSFER:
+			return json.Marshal(zetherJson)
+		case transaction_zether.SCRIPT_DELEGATE:
+			extra := base.Extra.(*transaction_zether_extra.TransactionZetherDelegateStake)
+			return json.Marshal(&json_TransactionZetherDelegateStake{
+				zetherJson,
+				&json_Only_TransactionZetherExtraDelegateStake{
+					extra.DelegatePublicKey,
+					extra.DelegatedStakingNewInfo,
+					extra.DelegatedStakingNewPublicKey,
+					extra.DelegatedStakingNewFee,
+					extra.DelegateSignature,
+				},
+			})
+		default:
+			return nil, errors.New("Invalid zether.TxScript")
+		}
+
 	default:
 		return nil, errors.New("Invalid Tx Version")
 	}
@@ -413,6 +446,17 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 		switch simpleZether.TxScript {
 		case transaction_zether.SCRIPT_TRANSFER:
 		case transaction_zether.SCRIPT_DELEGATE:
+			extraJSON := &json_Only_TransactionZetherExtraDelegateStake{}
+			if err := json.Unmarshal(data, extraJSON); err != nil {
+				return err
+			}
+
+			base.Extra = &transaction_zether_extra.TransactionZetherDelegateStake{
+				DelegatePublicKey:            extraJSON.DelegatePublicKey,
+				DelegatedStakingNewInfo:      extraJSON.DelegatedStakingNewInfo,
+				DelegatedStakingNewPublicKey: extraJSON.DelegatedStakingNewPublicKey,
+				DelegatedStakingNewFee:       extraJSON.DelegatedStakingNewFee,
+			}
 		default:
 			return errors.New("Invalid Zether TxScript")
 		}
