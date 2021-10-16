@@ -147,7 +147,7 @@ type APIMempoolRequest struct {
 func (self *APIAccountBaseRequest) ImportFromValues(values *url.Values) (err error) {
 
 	if values.Get("address") != "" {
-		self.Address = strings.ReplaceAll(values.Get("address"), " ", "+")
+		self.Address = values.Get("address")
 	} else if values.Get("publicKey") != "" {
 		self.PublicKey, err = hex.DecodeString(values.Get("publicKey"))
 	} else {

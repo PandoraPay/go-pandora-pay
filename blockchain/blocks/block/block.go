@@ -63,14 +63,14 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 	}
 
 	var ast *asset.Asset
-	if ast, err = dataStorage.Asts.GetAsset(config_coins.NATIVE_ASSET); err != nil {
+	if ast, err = dataStorage.Asts.GetAsset(config_coins.NATIVE_ASSET_FULL); err != nil {
 		return
 	}
 
 	if err = ast.AddSupply(true, reward); err != nil {
 		return
 	}
-	if err = dataStorage.Asts.UpdateAsset(config_coins.NATIVE_ASSET, ast); err != nil {
+	if err = dataStorage.Asts.UpdateAsset(config_coins.NATIVE_ASSET_FULL, ast); err != nil {
 		return
 	}
 

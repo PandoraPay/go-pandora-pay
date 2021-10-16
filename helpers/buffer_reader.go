@@ -102,13 +102,13 @@ func (reader *BufferReader) ReadAsset() ([]byte, error) {
 	}
 
 	if assetType == 0 {
-		return []byte{}, nil
+		return config_coins.NATIVE_ASSET_FULL, nil
 	} else if assetType == 1 {
 		buff, err := reader.ReadBytes(config_coins.ASSET_LENGTH)
 		if err != nil {
 			return nil, err
 		}
-		if !bytes.Equal(buff, config_coins.NATIVE_ASSET) {
+		if !bytes.Equal(buff, config_coins.NATIVE_ASSET_FULL) {
 			return nil, errors.New("NATIVE_ASSET_FULL should be writen as  NATIVE_ASSET")
 		}
 		return buff, nil

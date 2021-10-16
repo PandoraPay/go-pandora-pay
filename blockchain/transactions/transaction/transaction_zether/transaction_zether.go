@@ -115,7 +115,7 @@ func (tx *TransactionZether) ComputeFees() (uint64, error) {
 
 	sum := uint64(0)
 	for _, payload := range tx.Payloads {
-		if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET) {
+		if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
 			if err := helpers.SafeUint64Add(&sum, payload.Statement.Fees); err != nil {
 				return 0, err
 			}
@@ -143,10 +143,6 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 func (tx *TransactionZether) Validate() (err error) {
 
 	for _, payload := range tx.Payloads {
-
-		if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
-			return errors.New("NATIVE_ASSET_FULL should be written as NATIVE_ASSET")
-		}
 
 		// check sanity
 		if payload.Statement.RingSize < 2 { // ring size minimum 4

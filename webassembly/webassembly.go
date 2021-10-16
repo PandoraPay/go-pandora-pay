@@ -171,7 +171,6 @@ func Initialize(startMainCb func()) {
 				"NATIVE_ASSET_NAME":            js.ValueOf(config_coins.NATIVE_ASSET_NAME),
 				"NATIVE_ASSET_TICKER":          js.ValueOf(config_coins.NATIVE_ASSET_TICKER),
 				"NATIVE_ASSET_DESCRIPTION":     js.ValueOf(config_coins.NATIVE_ASSET_DESCRIPTION),
-				"NATIVE_ASSET_STRING":          js.ValueOf(config_coins.NATIVE_ASSET_STRING),
 				"NATIVE_ASSET_FULL_STRING":     js.ValueOf(config_coins.NATIVE_ASSET_FULL_STRING),
 				"NATIVE_ASSET_FULL_STRING_HEX": js.ValueOf(config_coins.NATIVE_ASSET_FULL_STRING_HEX),
 				"convertToUnitsUint64":         js.FuncOf(convertToUnitsUint64),

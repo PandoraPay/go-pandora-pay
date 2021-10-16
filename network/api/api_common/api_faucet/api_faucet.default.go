@@ -57,7 +57,7 @@ func (api *APICommonFaucet) GetFaucetCoins(request *APIFaucetCoinsRequest) ([]by
 	data := &wizard.TransactionsWizardData{[]byte("Testnet Faucet Tx"), false}
 	fee := &wizard.TransactionsWizardFee{0, 0, 0, true}
 
-	ringMembers, err := api.transactionsBuilder.CreateZetherRing(addr.AddressEncoded, request.Address, config_coins.NATIVE_ASSET, -1, -1)
+	ringMembers, err := api.transactionsBuilder.CreateZetherRing(addr.AddressEncoded, request.Address, config_coins.NATIVE_ASSET_FULL, -1, -1)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (api *APICommonFaucet) GetFaucetCoins(request *APIFaucetCoinsRequest) ([]by
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tx, err := api.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, []string{request.Address}, []uint64{0}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, false, false, false, ctx, func(status string) {})
+	tx, err := api.transactionsBuilder.CreateZetherTx([]string{addr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, []string{request.Address}, []uint64{0}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, false, false, false, ctx, func(status string) {})
 	if err != nil {
 		return nil, err
 	}

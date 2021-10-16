@@ -55,7 +55,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 
 	var accs *accounts.Accounts
 
-	if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET); err != nil {
+	if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
 		return
 	}
 
@@ -121,7 +121,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 		SupplyPublicKey:          config_coins.BURN_PUBLIC_KEY,
 	}
 
-	if err = dataStorage.Asts.CreateAsset(config_coins.NATIVE_ASSET, ast); err != nil {
+	if err = dataStorage.Asts.CreateAsset(config_coins.NATIVE_ASSET_FULL, ast); err != nil {
 		return
 	}
 

@@ -98,7 +98,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 			return
 		}
 
-		asset := config_coins.NATIVE_ASSET
+		asset := config_coins.NATIVE_ASSET_FULL
 
 		dsts = append(dsts, addr.AddressRegistrationEncoded)
 		dstsAmounts = append(dstsAmounts, config_stake.GetRequiredStake(blockHeight))
@@ -145,12 +145,12 @@ func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int, ctx co
 	data := &wizard.TransactionsWizardData{nil, false}
 	fee := &wizard.TransactionsWizardFee{0, 0, 0, true}
 
-	ringMembers, err := testnet.transactionsBuilder.CreateZetherRing(srcAddr.AddressEncoded, dst, config_coins.NATIVE_ASSET, -1, -1)
+	ringMembers, err := testnet.transactionsBuilder.CreateZetherRing(srcAddr.AddressEncoded, dst, config_coins.NATIVE_ASSET_FULL, -1, -1)
 	if err != nil {
 		return
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{srcAddr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{srcAddr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -229,7 +229,7 @@ func (testnet *Testnet) run() {
 
 						accsCollection := accounts.NewAccountsCollection(reader)
 
-						accs, err := accsCollection.GetMap(config_coins.NATIVE_ASSET)
+						accs, err := accsCollection.GetMap(config_coins.NATIVE_ASSET_FULL)
 						if err != nil {
 							return
 						}
@@ -261,7 +261,7 @@ func (testnet *Testnet) run() {
 
 						var balance uint64
 						if acc != nil {
-							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config_coins.NATIVE_ASSET, true, true, ctx2, func(string) {}); err != nil {
+							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config_coins.NATIVE_ASSET_FULL, true, true, ctx2, func(string) {}); err != nil {
 								return
 							}
 						}

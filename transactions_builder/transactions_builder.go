@@ -121,7 +121,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uin
 
 		asts := assets.NewAssets(reader)
 
-		ast, err := asts.GetAsset(config_coins.NATIVE_ASSET)
+		ast, err := asts.GetAsset(config_coins.NATIVE_ASSET_FULL)
 		if err != nil {
 			return
 		}
@@ -211,7 +211,7 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx_Float(from string, no
 
 		asts := assets.NewAssets(reader)
 
-		ast, err := asts.GetAsset(config_coins.NATIVE_ASSET)
+		ast, err := asts.GetAsset(config_coins.NATIVE_ASSET_FULL)
 		if err != nil {
 			return
 		}
@@ -291,7 +291,7 @@ func (builder *TransactionsBuilder) CreateClaimTx_Float(from string, nonce uint6
 
 		asts := assets.NewAssets(reader)
 
-		ast, err := asts.GetAsset(config_coins.NATIVE_ASSET)
+		ast, err := asts.GetAsset(config_coins.NATIVE_ASSET_FULL)
 		if err != nil {
 			return
 		}

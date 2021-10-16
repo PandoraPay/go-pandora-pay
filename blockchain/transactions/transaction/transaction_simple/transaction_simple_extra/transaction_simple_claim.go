@@ -35,7 +35,7 @@ func (tx *TransactionSimpleClaim) IncludeTransactionVin0(txRegistrations *transa
 	}
 
 	var accs *accounts.Accounts
-	if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET); err != nil {
+	if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
 		return
 	}
 

@@ -15,10 +15,6 @@ type Assets struct {
 
 func (assets *Assets) GetAsset(key []byte) (*asset.Asset, error) {
 
-	if len(key) == 0 {
-		key = config_coins.NATIVE_ASSET_FULL
-	}
-
 	data, err := assets.HashMap.Get(string(key))
 	if data == nil || err != nil {
 		return nil, err
@@ -28,10 +24,6 @@ func (assets *Assets) GetAsset(key []byte) (*asset.Asset, error) {
 }
 
 func (assets *Assets) CreateAsset(key []byte, ast *asset.Asset) (err error) {
-
-	if len(key) == 0 {
-		key = config_coins.NATIVE_ASSET_FULL
-	}
 
 	if err = ast.Validate(); err != nil {
 		return
@@ -52,20 +44,10 @@ func (assets *Assets) CreateAsset(key []byte, ast *asset.Asset) (err error) {
 }
 
 func (assets *Assets) UpdateAsset(key []byte, ast *asset.Asset) error {
-
-	if len(key) == 0 {
-		key = config_coins.NATIVE_ASSET_FULL
-	}
-
 	return assets.Update(string(key), ast)
 }
 
 func (assets *Assets) ExistsAsset(key []byte) (bool, error) {
-
-	if len(key) == 0 {
-		key = config_coins.NATIVE_ASSET_FULL
-	}
-
 	return assets.Exists(string(key))
 }
 

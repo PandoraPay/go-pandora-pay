@@ -285,7 +285,12 @@ func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) ([
 func (api *APICommon) GetAssetInfo(request *api_types.APIAssetInfoRequest) ([]byte, error) {
 	var astInfo *info.AssetInfo
 	var err error
-	if request.Hash != nil && (len(request.Hash) == config_coins.ASSET_LENGTH || len(request.Hash) == 0) {
+
+	if len(request.Hash) == 0 {
+		request.Hash = config_coins.NATIVE_ASSET_FULL
+	}
+
+	if request.Hash != nil && len(request.Hash) == config_coins.ASSET_LENGTH {
 		astInfo, err = api.ApiStore.openLoadAssetInfo(request.Hash)
 	}
 	if err != nil || astInfo == nil {

@@ -38,17 +38,17 @@ func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *tr
 		if !tx.DelegatedStakingNewInfo {
 			return errors.New("DelegatedStakingNewInfo is set false")
 		}
-		if err = plainAcc.CreateDelegatedStake(payloads[0].BurnValue, tx.DelegatedStakingNewPublicKey, tx.DelegatedStakingNewFee); err != nil {
+		if err = plainAcc.CreateDelegatedStake(0, tx.DelegatedStakingNewPublicKey, tx.DelegatedStakingNewFee); err != nil {
 			return
 		}
 	} else {
-		if err = plainAcc.DelegatedStake.AddStakePendingStake(payloads[0].BurnValue, blockHeight); err != nil {
-			return
-		}
 		if tx.DelegatedStakingNewInfo {
 			plainAcc.DelegatedStake.DelegatedStakePublicKey = tx.DelegatedStakingNewPublicKey
 			plainAcc.DelegatedStake.DelegatedStakeFee = tx.DelegatedStakingNewFee
 		}
+	}
+	if err = plainAcc.DelegatedStake.AddStakePendingStake(payloads[0].BurnValue, blockHeight); err != nil {
+		return
 	}
 
 	if err = dataStorage.PlainAccs.Update(string(tx.DelegatePublicKey), plainAcc); err != nil {
@@ -63,7 +63,7 @@ func (tx *TransactionZetherDelegateStake) Validate(payloads []*transaction_zethe
 	if len(payloads) != 1 {
 		return errors.New("Payloads length must be 1")
 	}
-	if bytes.Equal(payloads[0].Asset, config_coins.NATIVE_ASSET) == false {
+	if bytes.Equal(payloads[0].Asset, config_coins.NATIVE_ASSET_FULL) == false {
 		return errors.New("Payload[0] asset must be a native asset")
 	}
 	if payloads[0].BurnValue == 0 {

@@ -9,6 +9,10 @@ import (
 
 var BURN_PUBLIC_KEY = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xd, 0xe, 0xa, 0xd}
 
+const (
+	ASSET_LENGTH = cryptography.RipemdSize
+)
+
 var (
 	DECIMAL_SEPARATOR       = 6
 	COIN_DENOMINATION       = uint64(math.Pow10(DECIMAL_SEPARATOR))
@@ -17,14 +21,10 @@ var (
 	MAX_SUPPLY_COINS       = uint64(42000000000)
 	MAX_SUPPLY_COINS_UNITS = ConvertToUnitsUint64Forced(MAX_SUPPLY_COINS)
 
-	ASSET_LENGTH = cryptography.RipemdSize
-
 	NATIVE_ASSET_NAME        = "PANDORA"
 	NATIVE_ASSET_TICKER      = "PANDORA"
 	NATIVE_ASSET_DESCRIPTION = "PANDORA NATIVE ASSET"
 
-	NATIVE_ASSET                 = []byte{}
-	NATIVE_ASSET_STRING          = string(NATIVE_ASSET)
 	NATIVE_ASSET_FULL            = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	NATIVE_ASSET_FULL_STRING     = string(NATIVE_ASSET_FULL)
 	NATIVE_ASSET_FULL_STRING_HEX = hex.EncodeToString(NATIVE_ASSET_FULL)

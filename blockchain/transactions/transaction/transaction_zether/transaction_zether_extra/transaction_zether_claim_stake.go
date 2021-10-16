@@ -22,7 +22,7 @@ func (tx *TransactionZetherClaimStake) Validate(payloads []*transaction_zether_p
 	if len(payloads) != 1 {
 		return errors.New("Payloads length must be 1")
 	}
-	if bytes.Equal(payloads[0].Asset, config_coins.NATIVE_ASSET) == false {
+	if bytes.Equal(payloads[0].Asset, config_coins.NATIVE_ASSET_FULL) == false {
 		return errors.New("Payload[0] asset must be a native asset")
 	}
 
