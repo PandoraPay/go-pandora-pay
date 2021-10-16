@@ -24,27 +24,8 @@ func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.Pr
 	if txBase.Vin.Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 		return err
 	}
-
-	if validateTx {
-		if err = tx.BloomAll(); err != nil {
-			return
-		}
-		statusCallback("Transaction Bloomed")
-		if err = tx.Verify(); err != nil {
-			return
-		}
-		statusCallback("Transaction Verified")
-	} else {
-		if err = tx.BloomExtraVerified(); err != nil {
-			return
-		}
-		if err = tx.BloomAll(); err != nil {
-			return
-		}
-		statusCallback("Transaction Bloomed as Verified")
-	}
-
 	statusCallback("Transaction Signed")
+
 	return
 }
 
@@ -81,10 +62,13 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	if err = signSimpleTransaction(tx, privateKey, fee, validateTx, statusCallback); err != nil {
 		return
 	}
+	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
+		return
+	}
 	return tx, nil
 }
 
-func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee, delegateStakingUpdateAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee, delegatedStakingClaimAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	dataFinal, err := data.getData()
 	if err != nil {
@@ -108,7 +92,7 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingNewPublicK
 		Data:        dataFinal,
 		Nonce:       nonce,
 		Extra: &transaction_simple_extra.TransactionSimpleUpdateDelegate{
-			DelegatedStakingUpdateAmount: delegateStakingUpdateAmount,
+			DelegatedStakingClaimAmount:  delegatedStakingClaimAmount,
 			DelegatedStakingHasNewInfo:   delegatedStakingHasNewInfo,
 			DelegatedStakingNewPublicKey: delegatedStakingNewPublicKey,
 			DelegatedStakingNewFee:       delegatedStakingNewFee,
@@ -128,6 +112,10 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingNewPublicK
 	if err = signSimpleTransaction(tx, privateKey, fee, validateTx, statusCallback); err != nil {
 		return
 	}
+	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
+		return
+	}
+
 	return tx, nil
 }
 
@@ -165,5 +153,9 @@ func CreateClaimTx(nonce uint64, key []byte, txRegistrations []*transaction_data
 	if err = signSimpleTransaction(tx, privateKey, fee, validateTx, statusCallback); err != nil {
 		return
 	}
+	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
+		return
+	}
+
 	return tx, nil
 }

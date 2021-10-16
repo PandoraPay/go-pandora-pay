@@ -100,7 +100,7 @@ func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_dat
 
 	switch tx.TxScript {
 	case SCRIPT_TRANSFER:
-	case SCRIPT_DELEGATE:
+	case SCRIPT_DELEGATE_STAKE:
 		if err = tx.Extra.IncludeTransaction(txRegistrations, tx.Payloads, blockHeight, dataStorage); err != nil {
 			return
 		}
@@ -132,7 +132,7 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 		}
 	}
 	switch tx.TxScript {
-	case SCRIPT_DELEGATE:
+	case SCRIPT_DELEGATE_STAKE:
 		extra := tx.Extra.(*transaction_zether_extra.TransactionZetherDelegateStake)
 		out[string(extra.DelegatePublicKey)] = true
 	}
@@ -174,7 +174,7 @@ func (tx *TransactionZether) Validate() (err error) {
 
 	switch tx.TxScript {
 	case SCRIPT_TRANSFER:
-	case SCRIPT_DELEGATE:
+	case SCRIPT_DELEGATE_STAKE, SCRIPT_CLAIM_STAKE:
 		if tx.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
@@ -234,8 +234,10 @@ func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 	switch tx.TxScript {
 	case SCRIPT_TRANSFER:
 		tx.Extra = nil
-	case SCRIPT_DELEGATE:
+	case SCRIPT_DELEGATE_STAKE:
 		tx.Extra = &transaction_zether_extra.TransactionZetherDelegateStake{}
+	case SCRIPT_CLAIM_STAKE:
+		tx.Extra = &transaction_zether_extra.TransactionZetherClaimStake{}
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}

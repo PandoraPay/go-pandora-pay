@@ -166,7 +166,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			delegatedStakingNewFee = number
 		}
 
-		delegateStakingUpdateAmount, ok := gui.GUI.OutputReadFloat64("Update Delegated Staking Amount", nil)
+		delegatedStakingClaimAmount, ok := gui.GUI.OutputReadFloat64("Update Delegated Staking Amount", nil)
 		if !ok {
 			return
 		}
@@ -186,7 +186,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateUpdateDelegateTx_Float(walletAddress.AddressEncoded, nonce, delegatedStakingNewPublicKey, delegatedStakingNewFee, delegateStakingUpdateAmount, data, fee, propagate, true, true, false, func(status string) {
+		tx, err := builder.CreateUpdateDelegateTx_Float(walletAddress.AddressEncoded, nonce, delegatedStakingNewPublicKey, delegatedStakingNewFee, delegatedStakingClaimAmount, data, fee, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

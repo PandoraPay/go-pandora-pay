@@ -174,7 +174,7 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func createZetherDelegateStakingTx(this js.Value, args []js.Value) interface{} {
+func createZetherDelegateStakeTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if len(args) != 2 || args[0].Type() != js.TypeObject || args[1].Type() != js.TypeFunction {
@@ -207,6 +207,50 @@ func createZetherDelegateStakingTx(this js.Value, args []js.Value) interface{} {
 		}
 
 		tx, err := wizard.CreateZetherDelegateStakeTx(address.PublicKey, txData.DelegatePrivateKey, txData.DelegatedStakingNewPublicKey, txData.DelegatedStakingNewFee, transfers, emap, rings, txData.Data.Height, txData.Data.Hash, publicKeyIndexes, txData.Data.Fees, false, ctx, func(status string) {
+			args[1].Invoke(status)
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		txJson, err := json.Marshal(tx)
+		if err != nil {
+			return nil, err
+		}
+
+		return []interface{}{
+			webassembly_utils.ConvertBytes(txJson),
+			webassembly_utils.ConvertBytes(tx.Bloom.Serialized),
+		}, nil
+	})
+}
+
+func createZetherClaimStakeTx(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+
+		if len(args) != 2 || args[0].Type() != js.TypeObject || args[1].Type() != js.TypeFunction {
+			return nil, errors.New("Argument must be a string and a callback")
+		}
+
+		txData := &struct {
+			Data                        *zetherTxDataBase
+			DelegatePrivateKey          helpers.HexBytes `json:"delegatePrivateKey"`
+			DelegatedStakingClaimAmount uint64           `json:"delegatedStakingClaimAmount"`
+		}{}
+
+		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
+			return nil, err
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		transfers, emap, rings, publicKeyIndexes, err := prepareData(txData.Data)
+		if err != nil {
+			return nil, err
+		}
+
+		tx, err := wizard.CreateZetherClaimStakeTx(txData.DelegatePrivateKey, txData.DelegatedStakingClaimAmount, transfers, emap, rings, txData.Data.Height, txData.Data.Hash, publicKeyIndexes, txData.Data.Fees, false, ctx, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {

@@ -217,7 +217,7 @@ func (testnet *Testnet) run() {
 
 					publicKey := addr.PublicKey
 
-					var delegatedStakeAvailable, delegatedUnstakePending, claimable uint64
+					var delegatedStakeAvailable, delegatedUnstakePending, unclaimed uint64
 					var balanceHomo *crypto.ElGamal
 
 					var acc *account.Account
@@ -249,7 +249,7 @@ func (testnet *Testnet) run() {
 						if plainAcc != nil {
 							delegatedStakeAvailable = plainAcc.GetDelegatedStakeAvailable()
 							delegatedUnstakePending, _ = plainAcc.ComputeDelegatedUnstakePending()
-							claimable = plainAcc.Claimable
+							unclaimed = plainAcc.Unclaimed
 						}
 
 						return
@@ -266,13 +266,13 @@ func (testnet *Testnet) run() {
 							}
 						}
 
-						if claimable > config_coins.ConvertToUnitsUint64Forced(10) {
+						if unclaimed > config_coins.ConvertToUnitsUint64Forced(10) {
 
 							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_CLAIM) {
-								testnet.testnetCreateClaimTx(0, claimable/4)
-								testnet.testnetCreateClaimTx(1, claimable/4)
-								testnet.testnetCreateClaimTx(2, claimable/4)
-								testnet.testnetCreateClaimTx(3, claimable/4-config_coins.ConvertToUnitsUint64Forced(10))
+								testnet.testnetCreateClaimTx(0, unclaimed/4)
+								testnet.testnetCreateClaimTx(1, unclaimed/4)
+								testnet.testnetCreateClaimTx(2, unclaimed/4)
+								testnet.testnetCreateClaimTx(3, unclaimed/4-config_coins.ConvertToUnitsUint64Forced(10))
 							}
 
 						} else if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {

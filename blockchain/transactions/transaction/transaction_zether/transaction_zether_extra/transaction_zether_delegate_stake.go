@@ -51,6 +51,10 @@ func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *tr
 		}
 	}
 
+	if err = dataStorage.PlainAccs.Update(string(tx.DelegatePublicKey), plainAcc); err != nil {
+		return
+	}
+
 	return nil
 }
 
@@ -62,17 +66,20 @@ func (tx *TransactionZetherDelegateStake) Validate(payloads []*transaction_zethe
 	if bytes.Equal(payloads[0].Asset, config_coins.NATIVE_ASSET) == false {
 		return errors.New("Payload[0] asset must be a native asset")
 	}
+	if payloads[0].BurnValue == 0 {
+		return errors.New("Payload[0] burn value msut be greater than zero")
+	}
 
 	if tx.DelegatedStakingNewInfo {
-		if len(tx.DelegatedStakingNewPublicKey) != cryptography.PublicKeySize {
-			return errors.New("New Public Key Hash length is invalid")
+		if len(tx.DelegatedStakingNewPublicKey) != cryptography.PublicKeySize || len(tx.DelegateSignature) != cryptography.SignatureSize {
+			return errors.New("DelegatedStakingNewPublicKey or tx.DelegateSignature lengths are invalid")
 		}
 		if tx.DelegatedStakingNewFee > config_stake.DELEGATING_STAKING_FEES_MAX_VALUE {
 			return errors.New("Invalid NewFee")
 		}
 	} else {
-		if len(tx.DelegatedStakingNewPublicKey) != 0 {
-			return errors.New("New Public Key Hash length is invalid")
+		if len(tx.DelegatedStakingNewPublicKey) != 0 || len(tx.DelegateSignature) != 0 {
+			return errors.New("DelegatedStakingNewPublicKey or tx.DelegateSignature lengths must be 0")
 		}
 		if tx.DelegatedStakingNewFee != 0 {
 			return errors.New("Invalid NewFee")

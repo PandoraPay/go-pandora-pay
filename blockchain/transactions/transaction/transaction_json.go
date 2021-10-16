@@ -50,7 +50,7 @@ type json_TransactionSimpleInput struct {
 }
 
 type json_Only_TransactionSimpleUpdateDelegate struct {
-	DelegatedStakingUpdateAmount uint64           `json:"delegatedStakingUpdateAmount"`
+	DelegatedStakingClaimAmount  uint64           `json:"delegatedStakingClaimAmount"`
 	DelegatedStakingHasNewInfo   bool             `json:"delegatedStakingHasNewInfo"`
 	DelegatedStakingNewPublicKey helpers.HexBytes `json:"delegatedStakingNewPublicKey"` //20 byte
 	DelegatedStakingNewFee       uint64           `json:"delegatedStakingNewFee"`       //20 byte
@@ -171,7 +171,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			return json.Marshal(&json_TransactionSimpleUpdateDelegate{
 				simpleJson,
 				&json_Only_TransactionSimpleUpdateDelegate{
-					extra.DelegatedStakingUpdateAmount,
+					extra.DelegatedStakingClaimAmount,
 					extra.DelegatedStakingHasNewInfo,
 					extra.DelegatedStakingNewPublicKey,
 					extra.DelegatedStakingNewFee,
@@ -247,7 +247,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 		switch base.TxScript {
 		case transaction_zether.SCRIPT_TRANSFER:
 			return json.Marshal(zetherJson)
-		case transaction_zether.SCRIPT_DELEGATE:
+		case transaction_zether.SCRIPT_DELEGATE_STAKE:
 			extra := base.Extra.(*transaction_zether_extra.TransactionZetherDelegateStake)
 			return json.Marshal(&json_TransactionZetherDelegateStake{
 				zetherJson,
@@ -339,7 +339,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			}
 
 			base.Extra = &transaction_simple_extra.TransactionSimpleUpdateDelegate{
-				DelegatedStakingUpdateAmount: extraJson.DelegatedStakingUpdateAmount,
+				DelegatedStakingClaimAmount:  extraJson.DelegatedStakingClaimAmount,
 				DelegatedStakingHasNewInfo:   extraJson.DelegatedStakingHasNewInfo,
 				DelegatedStakingNewPublicKey: extraJson.DelegatedStakingNewPublicKey,
 				DelegatedStakingNewFee:       extraJson.DelegatedStakingNewFee,
@@ -445,7 +445,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 
 		switch simpleZether.TxScript {
 		case transaction_zether.SCRIPT_TRANSFER:
-		case transaction_zether.SCRIPT_DELEGATE:
+		case transaction_zether.SCRIPT_DELEGATE_STAKE:
 			extraJSON := &json_Only_TransactionZetherExtraDelegateStake{}
 			if err := json.Unmarshal(data, extraJSON); err != nil {
 				return err

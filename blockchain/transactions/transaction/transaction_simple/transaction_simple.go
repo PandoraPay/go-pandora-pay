@@ -47,7 +47,7 @@ func (tx *TransactionSimple) IncludeTransaction(txRegistrations *transaction_dat
 	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE:
 		err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fees)
 	case SCRIPT_CLAIM:
-		err = plainAcc.AddClaimable(false, tx.Fees)
+		err = plainAcc.AddUnclaimed(false, tx.Fees)
 	default:
 		err = errors.New("Invalid Simple TxScript")
 	}

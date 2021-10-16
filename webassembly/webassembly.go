@@ -121,8 +121,9 @@ func Initialize(startMainCb func()) {
 				}),
 				"transactionZether": js.ValueOf(map[string]interface{}{
 					"ScriptType": js.ValueOf(map[string]interface{}{
-						"SCRIPT_TRANSFER": js.ValueOf(uint64(transaction_zether.SCRIPT_TRANSFER)),
-						"SCRIPT_DELEGATE": js.ValueOf(uint64(transaction_zether.SCRIPT_DELEGATE)),
+						"SCRIPT_TRANSFER":       js.ValueOf(uint64(transaction_zether.SCRIPT_TRANSFER)),
+						"SCRIPT_DELEGATE_STAKE": js.ValueOf(uint64(transaction_zether.SCRIPT_DELEGATE_STAKE)),
+						"SCRIPT_CLAIM_STAKE":    js.ValueOf(uint64(transaction_zether.SCRIPT_CLAIM_STAKE)),
 					}),
 				}),
 			}),

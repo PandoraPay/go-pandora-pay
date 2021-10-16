@@ -27,7 +27,7 @@ func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 			Nonce                        uint64                                            `json:"nonce"`
 			DelegatedStakingNewPublicKey helpers.HexBytes                                  `json:"delegatedStakingNewPublicKey"`
 			DelegatedStakingNewFee       uint64                                            `json:"delegatedStakingNewFee"`
-			DelegatedStakingUpdateAmount float64                                           `json:"delegatedStakingUpdateAmount"`
+			DelegatedStakingClaimAmount  float64                                           `json:"delegatedStakingClaimAmount"`
 			Data                         *wizard.TransactionsWizardData                    `json:"data"`
 			Fee                          *transactions_builder.TransactionsBuilderFeeFloat `json:"fee"`
 			PropagateTx                  bool                                              `json:"propagateTx"`
@@ -39,7 +39,7 @@ func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.CreateUpdateDelegateTx_Float(txData.From, txData.Nonce, txData.DelegatedStakingNewPublicKey, txData.DelegatedStakingNewFee, txData.DelegatedStakingUpdateAmount, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
+		tx, err := app.TransactionsBuilder.CreateUpdateDelegateTx_Float(txData.From, txData.Nonce, txData.DelegatedStakingNewPublicKey, txData.DelegatedStakingNewFee, txData.DelegatedStakingClaimAmount, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {

@@ -11,7 +11,7 @@ type PlainAccount struct {
 	helpers.SerializableInterface `json:"-"`
 	PublicKey                     []byte               `json:"-"`
 	Nonce                         uint64               `json:"nonce"`
-	Claimable                     uint64               `json:"claimable"`
+	Unclaimed                     uint64               `json:"unclaimed"`
 	DelegatedStakeVersion         uint64               `json:"delegatedStakeVersion"`
 	DelegatedStake                *dpos.DelegatedStake `json:"delegatedStake"`
 }
@@ -31,8 +31,8 @@ func (plainAccount *PlainAccount) IncrementNonce(sign bool) error {
 	return helpers.SafeUint64Update(sign, &plainAccount.Nonce, 1)
 }
 
-func (plainAccount *PlainAccount) AddClaimable(sign bool, amount uint64) error {
-	return helpers.SafeUint64Update(sign, &plainAccount.Claimable, amount)
+func (plainAccount *PlainAccount) AddUnclaimed(sign bool, amount uint64) error {
+	return helpers.SafeUint64Update(sign, &plainAccount.Unclaimed, amount)
 }
 
 func (plainAccount *PlainAccount) RefreshDelegatedStake(blockHeight uint64) (err error) {
@@ -50,7 +50,7 @@ func (plainAccount *PlainAccount) RefreshDelegatedStake(blockHeight uint64) (err
 					return
 				}
 			} else {
-				if err = plainAccount.AddClaimable(true, stakePending.PendingAmount); err != nil {
+				if err = plainAccount.AddUnclaimed(true, stakePending.PendingAmount); err != nil {
 					return
 				}
 			}
@@ -108,7 +108,7 @@ func (plainAccount *PlainAccount) CreateDelegatedStake(amount uint64, delegatedS
 func (plainAccount *PlainAccount) Serialize(w *helpers.BufferWriter) {
 
 	w.WriteUvarint(plainAccount.Nonce)
-	w.WriteUvarint(plainAccount.Claimable)
+	w.WriteUvarint(plainAccount.Unclaimed)
 	w.WriteUvarint(plainAccount.DelegatedStakeVersion)
 
 	if plainAccount.DelegatedStakeVersion == 1 {
@@ -127,7 +127,7 @@ func (plainAccount *PlainAccount) Deserialize(r *helpers.BufferReader) (err erro
 	if plainAccount.Nonce, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if plainAccount.Claimable, err = r.ReadUvarint(); err != nil {
+	if plainAccount.Unclaimed, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	if plainAccount.DelegatedStakeVersion, err = r.ReadUvarint(); err != nil {

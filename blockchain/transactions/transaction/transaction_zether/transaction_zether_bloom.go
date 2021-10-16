@@ -34,7 +34,7 @@ func (tx *TransactionZether) BloomNow(hashForSignature []byte) (err error) {
 	tx.Bloom.Nonce2 = tx.Payloads[0].Proof.Nonce2()
 
 	switch tx.TxScript {
-	case SCRIPT_DELEGATE:
+	case SCRIPT_DELEGATE_STAKE:
 		extra := tx.Extra.(*transaction_zether_extra.TransactionZetherDelegateStake)
 		if extra.DelegatedStakingNewInfo && extra.VerifySignatureManually(hashForSignature) == false {
 			return errors.New("DelegatedPublicKey signature failed")

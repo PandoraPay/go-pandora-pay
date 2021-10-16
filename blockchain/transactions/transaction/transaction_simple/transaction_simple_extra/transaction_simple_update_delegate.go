@@ -11,12 +11,12 @@ import (
 )
 
 /**
-Substracting DelegatedStakingUpdateAmount from the Claimable
-Creating a Stake Pending with DelegatedStakingUpdateAmount
+Substracting DelegatedStakingClaimAmount from the Unclaimed
+Creating a Stake Pending with DelegatedStakingClaimAmount
 */
 type TransactionSimpleUpdateDelegate struct {
 	TransactionSimpleExtraInterface
-	DelegatedStakingUpdateAmount uint64
+	DelegatedStakingClaimAmount  uint64
 	DelegatedStakingHasNewInfo   bool
 	DelegatedStakingNewPublicKey helpers.HexBytes //20 byte
 	DelegatedStakingNewFee       uint64
@@ -43,11 +43,11 @@ func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(txRegistration
 		}
 	}
 
-	if tx.DelegatedStakingUpdateAmount > 0 {
-		if err = plainAcc.AddClaimable(false, tx.DelegatedStakingUpdateAmount); err != nil {
+	if tx.DelegatedStakingClaimAmount > 0 {
+		if err = plainAcc.AddUnclaimed(false, tx.DelegatedStakingClaimAmount); err != nil {
 			return
 		}
-		if err = plainAcc.DelegatedStake.AddStakePendingStake(tx.DelegatedStakingUpdateAmount, blockHeight); err != nil {
+		if err = plainAcc.DelegatedStake.AddStakePendingStake(tx.DelegatedStakingClaimAmount, blockHeight); err != nil {
 			return
 		}
 	}
@@ -70,7 +70,7 @@ func (tx *TransactionSimpleUpdateDelegate) Validate() error {
 		if tx.DelegatedStakingNewFee != 0 {
 			return errors.New("Invalid NewDelegatedStakingNewFee")
 		}
-		if tx.DelegatedStakingUpdateAmount == 0 {
+		if tx.DelegatedStakingClaimAmount == 0 {
 			return errors.New("UpdateDelegateTx has no operation")
 		}
 	}
@@ -78,7 +78,7 @@ func (tx *TransactionSimpleUpdateDelegate) Validate() error {
 }
 
 func (tx *TransactionSimpleUpdateDelegate) Serialize(w *helpers.BufferWriter, inclSignature bool) {
-	w.WriteUvarint(tx.DelegatedStakingUpdateAmount)
+	w.WriteUvarint(tx.DelegatedStakingClaimAmount)
 	w.WriteBool(tx.DelegatedStakingHasNewInfo)
 	if tx.DelegatedStakingHasNewInfo {
 		w.Write(tx.DelegatedStakingNewPublicKey)
@@ -87,7 +87,7 @@ func (tx *TransactionSimpleUpdateDelegate) Serialize(w *helpers.BufferWriter, in
 }
 
 func (tx *TransactionSimpleUpdateDelegate) Deserialize(r *helpers.BufferReader) (err error) {
-	if tx.DelegatedStakingUpdateAmount, err = r.ReadUvarint(); err != nil {
+	if tx.DelegatedStakingClaimAmount, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	if tx.DelegatedStakingHasNewInfo, err = r.ReadBool(); err != nil {

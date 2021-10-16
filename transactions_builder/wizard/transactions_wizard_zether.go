@@ -358,26 +358,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	}
 
 	statusCallback("Transaction Zether Proofs generated")
-
-	if validateTx {
-		if err = tx.BloomAll(); err != nil {
-			return
-		}
-		statusCallback("Transaction Bloomed")
-		if err = tx.Verify(); err != nil {
-			return
-		}
-		statusCallback("Transaction Verified")
-	} else {
-		if err = tx.BloomExtraVerified(); err != nil {
-			return
-		}
-		if err = tx.BloomAll(); err != nil {
-			return
-		}
-		statusCallback("Transaction Bloomed as Verified")
-	}
-
 	return
 }
 
@@ -399,6 +379,9 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, validateTx, ctx, statusCallback); err != nil {
 		return
 	}
+	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
+		return
+	}
 
 	return tx, nil
 }
@@ -408,10 +391,6 @@ func CreateZetherDelegateStakeTx(delegatePublicKey, delegatePrivateKey []byte, d
 	delegatedStakingHasNewInfo := false
 	if len(delegatedStakingNewPublicKey) == cryptography.PublicKeySize {
 		delegatedStakingHasNewInfo = true
-	}
-
-	if len(delegatedStakingNewPublicKey) != cryptography.PublicKeySize && delegatedStakingNewFee > 0 {
-		return nil, errors.New("delegatedStakingNewFee is > 0 while the delegatedStakingNewPublicKey is not right")
 	}
 
 	var key *addresses.PrivateKey
@@ -425,13 +404,12 @@ func CreateZetherDelegateStakeTx(delegatePublicKey, delegatePrivateKey []byte, d
 	txBaseExtra := &transaction_zether_extra.TransactionZetherDelegateStake{
 		DelegatePublicKey:            delegatePublicKey,
 		DelegatedStakingNewInfo:      delegatedStakingHasNewInfo,
-		DelegateSignature:            nil,
 		DelegatedStakingNewPublicKey: delegatedStakingNewPublicKey,
 		DelegatedStakingNewFee:       delegatedStakingNewFee,
 	}
 
 	txBase := &transaction_zether.TransactionZether{
-		TxScript: transaction_zether.SCRIPT_DELEGATE,
+		TxScript: transaction_zether.SCRIPT_DELEGATE_STAKE,
 		Height:   height,
 		Extra:    txBaseExtra,
 	}
@@ -446,21 +424,55 @@ func CreateZetherDelegateStakeTx(delegatePublicKey, delegatePrivateKey []byte, d
 
 	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, validateTx, ctx, statusCallback); err != nil {
 		return
-
 	}
 
 	if delegatedStakingHasNewInfo {
-		tx.Bloom = nil
 		if txBaseExtra.DelegateSignature, err = key.Sign(tx.SerializeForSigning()); err != nil {
 			return
 		}
-		if err = tx.BloomExtraVerified(); err != nil {
-			return
-		}
-		if err = tx.BloomAll(); err != nil {
-			return
-		}
-		statusCallback("Transaction Bloomed as Verified #2")
+	}
+
+	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
+		return
+	}
+
+	return tx, nil
+}
+
+func CreateZetherClaimStakeTx(delegatePrivateKey []byte, delegatedStakingClaimAmount uint64, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+
+	key := &addresses.PrivateKey{Key: delegatePrivateKey}
+	delegatePublicKey := key.GeneratePublicKey()
+
+	txBaseExtra := &transaction_zether_extra.TransactionZetherClaimStake{
+		DelegatePublicKey:           delegatePublicKey,
+		DelegatedStakingClaimAmount: delegatedStakingClaimAmount,
+	}
+
+	txBase := &transaction_zether.TransactionZether{
+		TxScript: transaction_zether.SCRIPT_CLAIM_STAKE,
+		Height:   height,
+		Extra:    txBaseExtra,
+	}
+
+	tx := &transaction.Transaction{
+		Version: transaction_type.TX_ZETHER,
+		Registrations: &transaction_data.TransactionDataTransactions{
+			Registrations: nil,
+		},
+		TransactionBaseInterface: txBase,
+	}
+
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, validateTx, ctx, statusCallback); err != nil {
+		return
+	}
+
+	if txBaseExtra.DelegateSignature, err = key.Sign(tx.SerializeForSigning()); err != nil {
+		return
+	}
+
+	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
+		return
 	}
 
 	return tx, nil

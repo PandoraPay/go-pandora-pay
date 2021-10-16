@@ -13,7 +13,7 @@ import (
 )
 
 /**
-Substracting Amount and FeeExtra from the Claimable
+Substracting Amount and FeeExtra from the Unclaimed
 */
 type TransactionSimpleClaim struct {
 	TransactionSimpleExtraInterface
@@ -41,7 +41,7 @@ func (tx *TransactionSimpleClaim) IncludeTransactionVin0(txRegistrations *transa
 
 	for _, out := range tx.Output {
 
-		if err = plainAcc.AddClaimable(false, out.Amount); err != nil {
+		if err = plainAcc.AddUnclaimed(false, out.Amount); err != nil {
 			return
 		}
 

@@ -140,7 +140,7 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 				if plainAcc != nil {
 
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Nonce", strconv.FormatUint(plainAcc.Nonce, 10)))
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Claimable", strconv.FormatFloat(config_coins.ConvertToBase(plainAcc.Claimable), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Unclaimed", strconv.FormatFloat(config_coins.ConvertToBase(plainAcc.Unclaimed), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
 					if plainAcc.HasDelegatedStake() {
 						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config_coins.ConvertToBase(plainAcc.DelegatedStake.StakeAvailable), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
 
