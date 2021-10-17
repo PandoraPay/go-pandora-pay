@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
@@ -16,44 +17,48 @@ import (
 	"syscall/js"
 )
 
+type zetherTxDataFrom struct {
+	PrivateKey     helpers.HexBytes `json:"privateKey"`
+	BalanceDecoded uint64           `json:"balanceDecoded"`
+}
+
 type zetherTxDataBase struct {
-	FromPrivateKeys     []helpers.HexBytes                     `json:"fromPrivateKeys"`
-	FromBalancesDecoded []uint64                               `json:"fromBalancesDecoded"`
-	Assets              []helpers.HexBytes                     `json:"assets"`
-	Amounts             []uint64                               `json:"amounts"`
-	Dsts                []string                               `json:"dsts"`
-	Burns               []uint64                               `json:"burns"`
-	RingMembers         [][]string                             `json:"ringMembers"`
-	Data                []*wizard.TransactionsWizardData       `json:"data"`
-	Fees                []*wizard.TransactionsWizardFee        `json:"fees"`
-	Accs                map[string]map[string]helpers.HexBytes `json:"accs"`
-	Regs                map[string]helpers.HexBytes            `json:"regs"`
-	Height              uint64                                 `json:"height"`
-	Hash                helpers.HexBytes                       `json:"hash"`
+	From        []*zetherTxDataFrom                    `json:"from"`
+	Assets      []helpers.HexBytes                     `json:"assets"`
+	Amounts     []uint64                               `json:"amounts"`
+	Dsts        []string                               `json:"dsts"`
+	Burns       []uint64                               `json:"burns"`
+	RingMembers [][]string                             `json:"ringMembers"`
+	Data        []*wizard.TransactionsWizardData       `json:"data"`
+	Fees        []*wizard.TransactionsWizardFee        `json:"fees"`
+	Accs        map[string]map[string]helpers.HexBytes `json:"accs"`
+	Regs        map[string]helpers.HexBytes            `json:"regs"`
+	Height      uint64                                 `json:"height"`
+	Hash        helpers.HexBytes                       `json:"hash"`
 }
 
 func prepareData(txData *zetherTxDataBase) (transfers []*wizard.ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, publicKeyIndexes map[string]*wizard.ZetherPublicKeyIndex, err error) {
 
 	assetsList := helpers.ConvertHexBytesArraysToBytesArray(txData.Assets)
-	transfers = make([]*wizard.ZetherTransfer, len(txData.FromPrivateKeys))
+	transfers = make([]*wizard.ZetherTransfer, len(txData.From))
 	emap = wizard.InitializeEmap(assetsList)
-	rings = make([][]*bn256.G1, len(txData.FromPrivateKeys))
+	rings = make([][]*bn256.G1, len(txData.From))
 	publicKeyIndexes = make(map[string]*wizard.ZetherPublicKeyIndex)
 
 	for t, ast := range assetsList {
 
-		key := addresses.PrivateKey{Key: txData.FromPrivateKeys[t]}
+		key := addresses.PrivateKey{Key: txData.From[t].PrivateKey}
 
 		var fromAddr *addresses.Address
-		fromAddr, err = key.GenerateAddress(false, 0, nil)
+		fromAddr, err = key.GenerateAddress(txData.Regs[string(key.GeneratePublicKey())] == nil, 0, nil)
 		if err != nil {
 			return
 		}
 
 		transfers[t] = &wizard.ZetherTransfer{
 			Asset:              ast,
-			From:               txData.FromPrivateKeys[t],
-			FromBalanceDecoded: txData.FromBalancesDecoded[t],
+			From:               txData.From[t].PrivateKey,
+			FromBalanceDecoded: txData.From[t].BalanceDecoded,
 			Destination:        txData.Dsts[t],
 			Amount:             txData.Amounts[t],
 			Burn:               txData.Burns[t],
@@ -82,7 +87,9 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.ZetherTransfer, 
 
 			var acc *account.Account
 			if accData := txData.Accs[hex.EncodeToString(ast)][hex.EncodeToString(addr.PublicKey)]; len(accData) > 0 {
-				acc = account.NewAccount(addr.PublicKey, ast)
+				if acc, err = account.NewAccount(addr.PublicKey, ast); err != nil {
+					return
+				}
 				if err = acc.Deserialize(helpers.NewBufferReader(accData)); err != nil {
 					return
 				}
@@ -108,6 +115,9 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.ZetherTransfer, 
 				publicKeyIndex.Registered = true
 				publicKeyIndex.RegisteredIndex = reg.Index
 			} else {
+				if len(addr.Registration) == 0 {
+					return fmt.Errorf("Signature is missing for %s", addr.EncodeAddr())
+				}
 				publicKeyIndex.RegistrationSignature = addr.Registration
 			}
 
@@ -233,9 +243,8 @@ func createZetherClaimStakeTx(this js.Value, args []js.Value) interface{} {
 		}
 
 		txData := &struct {
-			Data                        *zetherTxDataBase
-			DelegatePrivateKey          helpers.HexBytes `json:"delegatePrivateKey"`
-			DelegatedStakingClaimAmount uint64           `json:"delegatedStakingClaimAmount"`
+			Data               *zetherTxDataBase
+			DelegatePrivateKey helpers.HexBytes `json:"delegatePrivateKey"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
@@ -250,7 +259,7 @@ func createZetherClaimStakeTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := wizard.CreateZetherClaimStakeTx(txData.DelegatePrivateKey, txData.DelegatedStakingClaimAmount, transfers, emap, rings, txData.Data.Height, txData.Data.Hash, publicKeyIndexes, txData.Data.Fees, false, ctx, func(status string) {
+		tx, err := wizard.CreateZetherClaimStakeTx(txData.DelegatePrivateKey, transfers, emap, rings, txData.Data.Height, txData.Data.Hash, publicKeyIndexes, txData.Data.Fees, false, ctx, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {

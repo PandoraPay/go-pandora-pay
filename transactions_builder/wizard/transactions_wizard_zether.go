@@ -47,7 +47,7 @@ func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
 	return emap
 }
 
-func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, validateTx bool, ctx context.Context, statusCallback func(string)) (err error) {
+func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, createFakeSenderBalance bool, ctx context.Context, statusCallback func(string)) (err error) {
 
 	statusCallback("Transaction Signing...")
 
@@ -93,6 +93,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			}
 		}
 	}
+	statusCallback("Transaction public keys were shuffled")
 
 	c := uint64(0)
 	for _, publickeylist := range publickeylists {
@@ -104,6 +105,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 				if !publicKeyIndex.Registered && !registrationsAlready[string(publicKey)] {
 					registrationsAlready[string(publicKey)] = true
+					if len(publicKeyIndex.RegistrationSignature) != cryptography.SignatureSize {
+						return fmt.Errorf("Registration Signature is invalid for ring member %d", c)
+					}
+
 					registrations = append(registrations, &transaction_data.TransactionDataRegistration{
 						c,
 						publicKeyIndex.RegistrationSignature,
@@ -143,22 +148,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		receiver := receivers[t]
 		sender_secret := secretPoint.BigInt()
 
-		// Lots of ToDo for this, enables satisfying lots of  other things
-		ebalances_list := make([]*crypto.ElGamal, 0, len(rings[t]))
-		for i := range witness_index {
-
-			data := publickeylist[i].String()
-
-			var pt *crypto.ElGamal
-			if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Asset)][data]); err != nil {
-				return
-			}
-			ebalances_list = append(ebalances_list, pt)
-
-			// fmt.Printf("adding %d %s  (ring count %d) \n", i,publickeylist[i].String(), len(anonset_publickeys))
-
-		}
-
 		//  fmt.Printf("len of publickeylist  %d \n", len(publickeylist))
 
 		//  revealing r will disclose the amount and the sender and receiver and separate anonymous ring members
@@ -171,7 +160,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		r := crypto.ReducedHash(rencrypted.EncodeCompressed())
 
 		//r := crypto.RandomScalarFixed()
-
 		//fmt.Printf("r %s\n", r.Text(16))
 
 		var payload transaction_zether_payload.TransactionZetherPayload
@@ -205,6 +193,40 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		fees := setFee(tx, extraBytes, myFees[t].Clone(), t == 0)
 
 		statusCallback("Transaction Set fees")
+
+		if createFakeSenderBalance {
+
+			for i := range publickeylist { // setup commitments
+				if i == witness_index[0] {
+					fakeBalance := value + fees + burn_value
+					var acckey crypto.Point
+					if err = acckey.DecodeCompressed(publickeylist[i].EncodeCompressed()); err != nil {
+						return
+					}
+					balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
+					balance.Plus(new(big.Int).SetUint64(fakeBalance))
+
+					emap[string(transfers[t].Asset)][publickeylist[i].String()] = balance.Serialize()
+				}
+			}
+
+		}
+
+		// Lots of ToDo for this, enables satisfying lots of  other things
+		ebalances_list := make([]*crypto.ElGamal, 0, len(rings[t]))
+		for i := range witness_index {
+
+			data := publickeylist[i].String()
+
+			var pt *crypto.ElGamal
+			if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Asset)][data]); err != nil {
+				return
+			}
+			ebalances_list = append(ebalances_list, pt)
+
+			// fmt.Printf("adding %d %s  (ring count %d) \n", i,publickeylist[i].String(), len(anonset_publickeys))
+
+		}
 
 		for i := range publickeylist { // setup commitments
 			var x bn256.G1
@@ -365,14 +387,12 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	}
 
 	tx := &transaction.Transaction{
-		Version: transaction_type.TX_ZETHER,
-		Registrations: &transaction_data.TransactionDataTransactions{
-			Registrations: nil,
-		},
+		Version:                  transaction_type.TX_ZETHER,
+		Registrations:            &transaction_data.TransactionDataTransactions{},
 		TransactionBaseInterface: txBase,
 	}
 
-	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, validateTx, ctx, statusCallback); err != nil {
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, false, ctx, statusCallback); err != nil {
 		return
 	}
 	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
@@ -411,14 +431,12 @@ func CreateZetherDelegateStakeTx(delegatePublicKey, delegatePrivateKey []byte, d
 	}
 
 	tx := &transaction.Transaction{
-		Version: transaction_type.TX_ZETHER,
-		Registrations: &transaction_data.TransactionDataTransactions{
-			Registrations: nil,
-		},
+		Version:                  transaction_type.TX_ZETHER,
+		Registrations:            &transaction_data.TransactionDataTransactions{},
 		TransactionBaseInterface: txBase,
 	}
 
-	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, validateTx, ctx, statusCallback); err != nil {
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, false, ctx, statusCallback); err != nil {
 		return
 	}
 
@@ -435,14 +453,14 @@ func CreateZetherDelegateStakeTx(delegatePublicKey, delegatePrivateKey []byte, d
 	return tx, nil
 }
 
-func CreateZetherClaimStakeTx(delegatePrivateKey []byte, delegatedStakingClaimAmount uint64, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateZetherClaimStakeTx(delegatePrivateKey []byte, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	key := &addresses.PrivateKey{Key: delegatePrivateKey}
 	delegatePublicKey := key.GeneratePublicKey()
 
 	txBaseExtra := &transaction_zether_extra.TransactionZetherClaimStake{
 		DelegatePublicKey:           delegatePublicKey,
-		DelegatedStakingClaimAmount: delegatedStakingClaimAmount,
+		DelegatedStakingClaimAmount: transfers[0].Amount,
 	}
 
 	txBase := &transaction_zether.TransactionZether{
@@ -452,14 +470,12 @@ func CreateZetherClaimStakeTx(delegatePrivateKey []byte, delegatedStakingClaimAm
 	}
 
 	tx := &transaction.Transaction{
-		Version: transaction_type.TX_ZETHER,
-		Registrations: &transaction_data.TransactionDataTransactions{
-			Registrations: nil,
-		},
+		Version:                  transaction_type.TX_ZETHER,
+		Registrations:            &transaction_data.TransactionDataTransactions{},
 		TransactionBaseInterface: txBase,
 	}
 
-	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, validateTx, ctx, statusCallback); err != nil {
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, true, ctx, statusCallback); err != nil {
 		return
 	}
 

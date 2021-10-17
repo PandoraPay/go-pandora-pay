@@ -21,8 +21,11 @@ func (accounts *Accounts) CreateAccount(publicKey []byte) (*account.Account, err
 		return nil, errors.New("Key is not a valid public key")
 	}
 
-	acc := account.NewAccount(publicKey, accounts.Asset)
-	if err := accounts.Update(string(publicKey), acc); err != nil {
+	acc, err := account.NewAccount(publicKey, accounts.Asset)
+	if err != nil {
+		return nil, err
+	}
+	if err = accounts.Update(string(publicKey), acc); err != nil {
 		return nil, err
 	}
 	return acc, nil
@@ -95,8 +98,11 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 	}
 
 	accounts.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {
-		var acc = account.NewAccount(key, accounts.Asset)
-		if err := acc.Deserialize(helpers.NewBufferReader(data)); err != nil {
+		acc, err := account.NewAccount(key, accounts.Asset)
+		if err != nil {
+			return nil, err
+		}
+		if err = acc.Deserialize(helpers.NewBufferReader(data)); err != nil {
 			return nil, err
 		}
 		return acc, nil
