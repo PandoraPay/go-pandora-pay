@@ -3,7 +3,6 @@ package transaction
 import (
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
-	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
@@ -13,13 +12,12 @@ import (
 
 type Transaction struct {
 	transaction_base_interface.TransactionBaseInterface
-	Version       transaction_type.TransactionVersion
-	Registrations *transaction_data.TransactionDataTransactions
-	Bloom         *TransactionBloom
+	Version transaction_type.TransactionVersion
+	Bloom   *TransactionBloom
 }
 
 func (tx *Transaction) ComputeExtraSpace() uint64 {
-	return uint64(64 * len(tx.Registrations.Registrations))
+	return tx.TransactionBaseInterface.ComputeExtraSpace()
 }
 
 func (tx *Transaction) GetAllFees() (uint64, error) {
@@ -49,8 +47,6 @@ func (tx *Transaction) GetHashSigningManually() []byte {
 
 func (tx *Transaction) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(uint64(tx.Version))
-
-	tx.Registrations.Serialize(w)
 
 	tx.TransactionBaseInterface.SerializeAdvanced(w, inclSignature)
 }
@@ -102,11 +98,6 @@ func (tx *Transaction) Deserialize(r *helpers.BufferReader) (err error) {
 		tx.TransactionBaseInterface = &transaction_zether.TransactionZether{}
 	default:
 		return errors.New("Invalid TxType")
-	}
-
-	tx.Registrations = new(transaction_data.TransactionDataTransactions)
-	if err = tx.Registrations.Deserialize(r); err != nil {
-		return
 	}
 
 	if err = tx.TransactionBaseInterface.Deserialize(r); err != nil {

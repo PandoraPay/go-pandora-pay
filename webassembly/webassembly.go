@@ -116,7 +116,6 @@ func Initialize(startMainCb func()) {
 					"ScriptType": js.ValueOf(map[string]interface{}{
 						"SCRIPT_UNSTAKE":         js.ValueOf(uint64(transaction_simple.SCRIPT_UNSTAKE)),
 						"SCRIPT_UPDATE_DELEGATE": js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_DELEGATE)),
-						"SCRIPT_CLAIM":           js.ValueOf(uint64(transaction_simple.SCRIPT_CLAIM)),
 					}),
 				}),
 				"transactionZether": js.ValueOf(map[string]interface{}{

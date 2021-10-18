@@ -16,15 +16,18 @@ import (
 
 type TransactionZetherDelegateStake struct {
 	TransactionZetherExtraInterface
-	DelegatePublicKey []byte
-
+	DelegatePublicKey            []byte
 	DelegatedStakingNewInfo      bool
 	DelegatedStakingNewPublicKey []byte
 	DelegatedStakingNewFee       uint64
 	DelegateSignature            []byte //if newInfo then the signature is required to verify that he is owner
 }
 
-func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, payloads []*transaction_zether_payload.TransactionZetherPayload, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (tx *TransactionZetherDelegateStake) BeforeIncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, payloads []*transaction_zether_payload.TransactionZetherPayload, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) error {
+	return nil
+}
+
+func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, payloads []*transaction_zether_payload.TransactionZetherPayload, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var plainAcc *plain_account.PlainAccount
 	if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(tx.DelegatePublicKey, blockHeight); err != nil {
@@ -58,7 +61,7 @@ func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *tr
 	return nil
 }
 
-func (tx *TransactionZetherDelegateStake) Validate(payloads []*transaction_zether_payload.TransactionZetherPayload) error {
+func (tx *TransactionZetherDelegateStake) Validate(txRegistrations *transaction_data.TransactionDataTransactions, payloads []*transaction_zether_payload.TransactionZetherPayload) error {
 
 	if len(payloads) != 1 {
 		return errors.New("Payloads length must be 1")

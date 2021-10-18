@@ -4,7 +4,6 @@ import (
 	"errors"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -22,11 +21,7 @@ type TransactionSimpleUpdateDelegate struct {
 	DelegatedStakingNewFee       uint64
 }
 
-func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
-
-	if len(txRegistrations.Registrations) > 0 {
-		return errors.New("txRegistrations.Registrations length should be zero")
-	}
+func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
 
 	if plainAcc == nil {
 		return errors.New("PlainAcc is null")

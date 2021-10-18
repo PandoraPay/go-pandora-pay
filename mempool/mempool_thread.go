@@ -232,7 +232,7 @@ func (worker *mempoolWorker) processing(
 						//was rejected by mempool nonce map
 						if finalErr != nil {
 
-						} else if finalErr = tx.Tx.IncludeTransaction(tx.Tx.Registrations, work.chainHeight, dataStorage); finalErr != nil {
+						} else if finalErr = tx.Tx.IncludeTransaction(work.chainHeight, dataStorage); finalErr != nil {
 							dataStorage.Rollback()
 						} else {
 

@@ -19,41 +19,40 @@ import (
 
 type TransactionZether struct {
 	transaction_base_interface.TransactionBaseInterface
-	Extra    transaction_zether_extra.TransactionZetherExtraInterface
-	TxScript ScriptType
-	Height   uint64
-	Payloads []*transaction_zether_payload.TransactionZetherPayload
-	Bloom    *TransactionZetherBloom
+	Extra          transaction_zether_extra.TransactionZetherExtraInterface
+	TxScript       ScriptType
+	Height         uint64
+	Registrations  *transaction_data.TransactionDataTransactions
+	Payloads       []*transaction_zether_payload.TransactionZetherPayload
+	Bloom          *TransactionZetherBloom
+	publicKeysList [][]byte //it calculated with
+}
+
+func (tx *TransactionZether) ComputeExtraSpace() uint64 {
+	return uint64(64 * len(tx.Registrations.Registrations))
 }
 
 /**
 Zether requires another verification that the bloomed publicKeys, CL, CR are the same
 */
-func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
 	var acc *account.Account
 	var acckey crypto.Point
+	var balance *crypto.ElGamal
 
-	c := 0
-	for _, payload := range tx.Payloads {
-		c += len(payload.Statement.Publickeylist)
-	}
-
-	publicKeyList := make([][]byte, c)
-	c = 0
-	for _, payload := range tx.Payloads {
-		for _, publicKey := range payload.Statement.Publickeylist {
-			publicKeyList[c] = publicKey.EncodeCompressed()
-			c += 1
-		}
-	}
-
-	if err = txRegistrations.RegisterNow(dataStorage.Regs, publicKeyList); err != nil {
+	if err = tx.Registrations.RegisterNow(dataStorage, tx.Bloom.publicKeyListByCounter); err != nil {
 		return
 	}
 
-	c = 0
+	if tx.Extra != nil {
+		if err = tx.Extra.BeforeIncludeTransaction(tx.Registrations, tx.Payloads, tx.Bloom.publicKeyListByCounter, blockHeight, dataStorage); err != nil {
+			return
+		}
+	}
+
+	c := 0
 	for _, payload := range tx.Payloads {
 		if accs, err = dataStorage.AccsCollection.GetMap(payload.Asset); err != nil {
 			return
@@ -61,14 +60,13 @@ func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_dat
 
 		for i := range payload.Statement.Publickeylist {
 
-			publicKey := publicKeyList[c]
+			publicKey := tx.Bloom.publicKeyListByCounter[c]
 			c += 1
 
 			if acc, err = accs.GetAccount(publicKey); err != nil {
 				return
 			}
 
-			var balance *crypto.ElGamal
 			if acc == nil { //zero balance
 				if err = acckey.DecodeCompressed(publicKey); err != nil {
 					return
@@ -98,14 +96,10 @@ func (tx *TransactionZether) IncludeTransaction(txRegistrations *transaction_dat
 		}
 	}
 
-	switch tx.TxScript {
-	case SCRIPT_TRANSFER:
-	case SCRIPT_DELEGATE_STAKE:
-		if err = tx.Extra.IncludeTransaction(txRegistrations, tx.Payloads, blockHeight, dataStorage); err != nil {
+	if tx.Extra != nil {
+		if err = tx.Extra.IncludeTransaction(tx.Registrations, tx.Payloads, tx.Bloom.publicKeyListByCounter, blockHeight, dataStorage); err != nil {
 			return
 		}
-	default:
-		return errors.New("Invalid tx.TxScript")
 	}
 
 	return nil
@@ -174,7 +168,7 @@ func (tx *TransactionZether) Validate() (err error) {
 		if tx.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
-		if err = tx.Extra.Validate(tx.Payloads); err != nil {
+		if err = tx.Extra.Validate(tx.Registrations, tx.Payloads); err != nil {
 			return
 		}
 	default:
@@ -198,6 +192,8 @@ func (tx *TransactionZether) VerifySignatureManually(hash []byte) bool {
 func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(uint64(tx.TxScript))
 	w.WriteUvarint(tx.Height)
+
+	tx.Registrations.Serialize(w)
 
 	w.WriteUvarint(uint64(len(tx.Payloads)))
 	for _, payload := range tx.Payloads {
@@ -239,6 +235,11 @@ func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 
 	if tx.Height, err = r.ReadUvarint(); err != nil {
+		return
+	}
+
+	tx.Registrations = new(transaction_data.TransactionDataTransactions)
+	if err = tx.Registrations.Deserialize(r); err != nil {
 		return
 	}
 

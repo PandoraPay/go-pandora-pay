@@ -24,10 +24,9 @@ type json_TransactionRegistration struct {
 }
 
 type json_Transaction struct {
-	Version       transaction_type.TransactionVersion `json:"version"`
-	Registrations []*json_TransactionRegistration     `json:"registrations"`
-	Size          uint64                              `json:"size"`
-	Hash          helpers.HexBytes                    `json:"hash"`
+	Version transaction_type.TransactionVersion `json:"version"`
+	Size    uint64                              `json:"size"`
+	Hash    helpers.HexBytes                    `json:"hash"`
 }
 
 type json_Only_TransactionSimple struct {
@@ -70,24 +69,11 @@ type json_TransactionSimpleUnstake struct {
 	*json_Only_TransactionSimpleUnstake
 }
 
-type json_Only_TransactionSimpleOutput struct {
-	Amount    uint64           `json:"amount"`
-	PublicKey helpers.HexBytes `json:"publicKey"`
-}
-
-type json_Only_TransactionSimpleClaim struct {
-	Output []*json_Only_TransactionSimpleOutput `json:"output"`
-}
-
-type json_TransactionSimpleClaim struct {
-	*json_TransactionSimple
-	*json_Only_TransactionSimpleClaim
-}
-
 type json_Only_TransactionZether struct {
-	TxScript transaction_zether.ScriptType   `json:"txScript"`
-	Height   uint64                          `json:"height"`
-	Payloads []*json_Only_TransactionPayload `json:"payloads"`
+	TxScript      transaction_zether.ScriptType   `json:"txScript"`
+	Height        uint64                          `json:"height"`
+	Registrations []*json_TransactionRegistration `json:"registrations"`
+	Payloads      []*json_Only_TransactionPayload `json:"payloads"`
 }
 
 type json_Only_TransactionZetherExtraDelegateStake struct {
@@ -101,6 +87,7 @@ type json_Only_TransactionZetherExtraDelegateStake struct {
 type json_Only_TransactionZetherExtraClaimStake struct {
 	DelegatePublicKey           helpers.HexBytes `json:"delegatePublicKey"`
 	DelegatedStakingClaimAmount uint64           `json:"delegatedStakingClaimAmount"`
+	RegistrationIndex           byte             `json:"registrationIndex"`
 	DelegateSignature           helpers.HexBytes `json:"delegateSignature"`
 }
 
@@ -140,17 +127,8 @@ type json_TransactionZetherExtraClaimStake struct {
 
 func (tx *Transaction) MarshalJSON() ([]byte, error) {
 
-	registrations := make([]*json_TransactionRegistration, len(tx.Registrations.Registrations))
-	for i, reg := range tx.Registrations.Registrations {
-		registrations[i] = &json_TransactionRegistration{
-			reg.PublicKeyIndex,
-			reg.RegistrationSignature,
-		}
-	}
-
 	txJson := &json_Transaction{
 		tx.Version,
-		registrations,
 		tx.Bloom.Size,
 		tx.Bloom.Hash,
 	}
@@ -196,28 +174,19 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 					extra.Amount,
 				},
 			})
-		case transaction_simple.SCRIPT_CLAIM:
-			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleClaim)
-
-			output := make([]*json_Only_TransactionSimpleOutput, len(extra.Output))
-			for i, out := range extra.Output {
-				output[i] = &json_Only_TransactionSimpleOutput{
-					out.Amount,
-					out.PublicKey,
-				}
-			}
-
-			return json.Marshal(&json_TransactionSimpleClaim{
-				simpleJson,
-				&json_Only_TransactionSimpleClaim{
-					output,
-				},
-			})
 		default:
 			return nil, errors.New("Invalid simple.TxScript")
 		}
 	case transaction_type.TX_ZETHER:
 		base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+
+		registrations := make([]*json_TransactionRegistration, len(base.Registrations.Registrations))
+		for i, reg := range base.Registrations.Registrations {
+			registrations[i] = &json_TransactionRegistration{
+				reg.PublicKeyIndex,
+				reg.RegistrationSignature,
+			}
+		}
 
 		payloadsJson := make([]*json_Only_TransactionPayload, len(base.Payloads))
 		for i, payload := range base.Payloads {
@@ -251,6 +220,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			&json_Only_TransactionZether{
 				base.TxScript,
 				base.Height,
+				registrations,
 				payloadsJson,
 			},
 		}
@@ -277,6 +247,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				&json_Only_TransactionZetherExtraClaimStake{
 					extra.DelegatePublicKey,
 					extra.DelegatedStakingClaimAmount,
+					extra.RegistrationIndex,
 					extra.DelegateSignature,
 				},
 			})
@@ -304,16 +275,6 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 	}
 
 	tx.Version = txOnlyJson.Version
-
-	tx.Registrations = &transaction_data.TransactionDataTransactions{
-		Registrations: make([]*transaction_data.TransactionDataRegistration, len(txOnlyJson.Registrations)),
-	}
-	for i, reg := range txOnlyJson.Registrations {
-		tx.Registrations.Registrations[i] = &transaction_data.TransactionDataRegistration{
-			reg.PublicKeyIndex,
-			reg.RegistrationSignature,
-		}
-	}
 
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
@@ -374,23 +335,6 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 
 			base.Extra = &transaction_simple_extra.TransactionSimpleUnstake{
 				Amount: extraJSON.Amount,
-			}
-		case transaction_simple.SCRIPT_CLAIM:
-			extraJSON := &json_Only_TransactionSimpleClaim{}
-			if err := json.Unmarshal(data, extraJSON); err != nil {
-				return err
-			}
-
-			output := make([]*transaction_simple_parts.TransactionSimpleOutput, len(extraJSON.Output))
-			for i, out := range extraJSON.Output {
-				output[i] = &transaction_simple_parts.TransactionSimpleOutput{
-					out.Amount,
-					out.PublicKey,
-				}
-			}
-
-			base.Extra = &transaction_simple_extra.TransactionSimpleClaim{
-				Output: output,
 			}
 		default:
 			return errors.New("Invalid json Simple TxScript")
@@ -459,8 +403,19 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 		base := &transaction_zether.TransactionZether{
 			TxScript: simpleZether.TxScript,
 			Height:   simpleZether.Height,
+			Registrations: &transaction_data.TransactionDataTransactions{
+				Registrations: make([]*transaction_data.TransactionDataRegistration, len(simpleZether.Registrations)),
+			},
 			Payloads: payloads,
 		}
+
+		for i, reg := range simpleZether.Registrations {
+			base.Registrations.Registrations[i] = &transaction_data.TransactionDataRegistration{
+				reg.PublicKeyIndex,
+				reg.RegistrationSignature,
+			}
+		}
+
 		tx.TransactionBaseInterface = base
 
 		switch simpleZether.TxScript {
@@ -487,6 +442,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 
 			base.Extra = &transaction_zether_extra.TransactionZetherClaimStake{
 				DelegatePublicKey:           extraJSON.DelegatePublicKey,
+				RegistrationIndex:           extraJSON.RegistrationIndex,
 				DelegateSignature:           extraJSON.DelegateSignature,
 				DelegatedStakingClaimAmount: extraJSON.DelegatedStakingClaimAmount,
 			}

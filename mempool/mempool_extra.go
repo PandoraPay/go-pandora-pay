@@ -28,8 +28,30 @@ func (mempool *Mempool) ExistsTxSimpleVersion(publicKey []byte, version transact
 	for _, tx := range txs {
 		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			if bytes.Equal(base.Vin.PublicKey, publicKey) && base.TxScript == version {
+			if base.TxScript == version && bytes.Equal(base.Vin.PublicKey, publicKey) {
 				return true
+			}
+		}
+	}
+	return false
+}
+
+func (mempool *Mempool) ExistsTxZetherVersion(publicKey []byte, version transaction_zether.ScriptType) bool {
+
+	txs := mempool.Txs.GetTxsFromMap()
+	if txs == nil {
+		return false
+	}
+
+	for _, tx := range txs {
+		if tx.Tx.Version == transaction_type.TX_ZETHER {
+			base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+			for _, payload := range base.Payloads {
+				for _, publicKeyPoint := range payload.Statement.Publickeylist {
+					if base.TxScript == version && bytes.Equal(publicKeyPoint.EncodeCompressed(), publicKey) {
+						return true
+					}
+				}
 			}
 		}
 	}

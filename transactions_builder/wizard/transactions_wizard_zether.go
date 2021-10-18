@@ -122,7 +122,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			c += 1
 		}
 	}
-	tx.Registrations.Registrations = registrations
+	txBase.Registrations.Registrations = registrations
 	statusCallback("Transaction registrations created")
 
 	payloads := make([]*transaction_zether_payload.TransactionZetherPayload, len(transfers))
@@ -382,13 +382,13 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	txBase := &transaction_zether.TransactionZether{
-		TxScript: transaction_zether.SCRIPT_TRANSFER,
-		Height:   height,
+		TxScript:      transaction_zether.SCRIPT_TRANSFER,
+		Registrations: &transaction_data.TransactionDataTransactions{},
+		Height:        height,
 	}
 
 	tx := &transaction.Transaction{
 		Version:                  transaction_type.TX_ZETHER,
-		Registrations:            &transaction_data.TransactionDataTransactions{},
 		TransactionBaseInterface: txBase,
 	}
 
@@ -425,14 +425,14 @@ func CreateZetherDelegateStakeTx(delegatePublicKey, delegatePrivateKey []byte, d
 	}
 
 	txBase := &transaction_zether.TransactionZether{
-		TxScript: transaction_zether.SCRIPT_DELEGATE_STAKE,
-		Height:   height,
-		Extra:    txBaseExtra,
+		TxScript:      transaction_zether.SCRIPT_DELEGATE_STAKE,
+		Height:        height,
+		Registrations: &transaction_data.TransactionDataTransactions{},
+		Extra:         txBaseExtra,
 	}
 
 	tx := &transaction.Transaction{
 		Version:                  transaction_type.TX_ZETHER,
-		Registrations:            &transaction_data.TransactionDataTransactions{},
 		TransactionBaseInterface: txBase,
 	}
 
@@ -464,14 +464,14 @@ func CreateZetherClaimStakeTx(delegatePrivateKey []byte, transfers []*ZetherTran
 	}
 
 	txBase := &transaction_zether.TransactionZether{
-		TxScript: transaction_zether.SCRIPT_CLAIM_STAKE,
-		Height:   height,
-		Extra:    txBaseExtra,
+		TxScript:      transaction_zether.SCRIPT_CLAIM_STAKE,
+		Height:        height,
+		Registrations: &transaction_data.TransactionDataTransactions{},
+		Extra:         txBaseExtra,
 	}
 
 	tx := &transaction.Transaction{
 		Version:                  transaction_type.TX_ZETHER,
-		Registrations:            &transaction_data.TransactionDataTransactions{},
 		TransactionBaseInterface: txBase,
 	}
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/cryptography"
+	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 	hash_map "pandora-pay/store/hash_map"
@@ -14,14 +15,18 @@ type Registrations struct {
 	hash_map.HashMap `json:"-"`
 }
 
+func (registrations *Registrations) VerifyRegistration(publicKey, registrationSignature []byte) bool {
+	return crypto.VerifySignature([]byte("registration"), registrationSignature, publicKey)
+}
+
+func (registrations *Registrations) VerifyRegistrationPoint(publicKey *bn256.G1, registrationSignature []byte) bool {
+	return crypto.VerifySignaturePoint([]byte("registration"), registrationSignature, publicKey)
+}
+
 func (registrations *Registrations) CreateRegistration(publicKey, registrationSignature []byte) (*registration.Registration, error) {
 
 	if len(publicKey) != cryptography.PublicKeySize {
 		return nil, errors.New("Key is not a valid public key")
-	}
-
-	if crypto.VerifySignature([]byte("registration"), registrationSignature, publicKey) == false {
-		return nil, errors.New("Registration is invalid")
 	}
 
 	reg := registration.NewRegistration(publicKey)

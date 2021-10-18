@@ -39,7 +39,7 @@ type Testnet struct {
 	nodes               uint64
 }
 
-func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount uint64) (tx *transaction.Transaction, err error) {
+func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
 	addr, err := testnet.wallet.GetWalletAddress(0)
 	if err != nil {
@@ -51,12 +51,31 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 		return
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateClaimTx(addr.AddressEncoded, 0, []uint64{amount}, []string{dstAddr.AddressRegistrationEncoded}, &wizard.TransactionsWizardData{nil, false},
-		&wizard.TransactionsWizardFee{0, 0, 0, true}, true, true, true, false, func(string) {}); err != nil {
+	walletAddr, err := testnet.wallet.AddNewAddress(true)
+	if err != nil {
+		return
+	}
+
+	defer testnet.wallet.RemoveAddressByWalletAddress(walletAddr, true)
+
+	from := []string{walletAddr.AddressRegistrationEncoded}
+	dsts := []string{dstAddr.AddressRegistrationEncoded}
+	dstsAmounts, burn := []uint64{amount}, []uint64{0}
+	dstsAssets := [][]byte{config_coins.NATIVE_ASSET_FULL}
+	data := []*wizard.TransactionsWizardData{{[]byte{}, false}}
+	fees := []*wizard.TransactionsWizardFee{{0, 0, 0, true}}
+
+	var ring []string
+	if ring, err = testnet.transactionsBuilder.CreateZetherRing(from[0], addr.AddressEncoded, dstsAssets[0], -1, -1); err != nil {
+		return
+	}
+	ringMembers := [][]string{ring}
+
+	if tx, err = testnet.transactionsBuilder.CreateZetherClaimStakeTx(addr.PrivateKey.Key, from, dstsAssets, dstsAmounts, dsts, burn, ringMembers, data, fees, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
-	gui.GUI.Info("Claim tx was created: " + hex.EncodeToString(tx.Bloom.Hash))
+	gui.GUI.Info("Create Unclaim Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).Height, hex.EncodeToString(tx.Bloom.Hash))
 	return
 }
 
@@ -268,11 +287,11 @@ func (testnet *Testnet) run() {
 
 						if unclaimed > config_coins.ConvertToUnitsUint64Forced(10) {
 
-							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_CLAIM) {
-								testnet.testnetCreateClaimTx(0, unclaimed/4)
-								testnet.testnetCreateClaimTx(1, unclaimed/4)
-								testnet.testnetCreateClaimTx(2, unclaimed/4)
-								testnet.testnetCreateClaimTx(3, unclaimed/4-config_coins.ConvertToUnitsUint64Forced(10))
+							if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether.SCRIPT_CLAIM_STAKE) {
+								testnet.testnetCreateClaimTx(0, unclaimed/4, ctx2)
+								testnet.testnetCreateClaimTx(1, unclaimed/4, ctx2)
+								testnet.testnetCreateClaimTx(2, unclaimed/4, ctx2)
+								testnet.testnetCreateClaimTx(3, unclaimed/4-config_coins.ConvertToUnitsUint64Forced(10), ctx2)
 							}
 
 						} else if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {

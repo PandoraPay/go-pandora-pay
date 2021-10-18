@@ -114,7 +114,7 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, assetId [
 	return rings, nil
 }
 
-func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, assetsList [][]byte, amounts []float64, dsts []string, burns []float64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, dstsAsts [][]byte, amounts []float64, dsts []string, burns []float64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	amountsFinal := make([]uint64, len(amounts))
 	burnsFinal := make([]uint64, len(burns))
@@ -132,7 +132,7 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, assetsLi
 			}
 
 			var ast *asset.Asset
-			if ast, err = asts.GetAsset(assetsList[i]); err != nil {
+			if ast, err = asts.GetAsset(dstsAsts[i]); err != nil {
 				return
 			}
 			if ast == nil {
@@ -155,29 +155,25 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, assetsLi
 		return nil, err
 	}
 
-	return builder.CreateZetherTx(from, assetsList, amountsFinal, dsts, burnsFinal, ringMembers, data, finalFees, propagateTx, awaitAnswer, awaitBroadcast, validateTx, ctx, statusCallback)
+	return builder.CreateZetherTx(from, dstsAsts, amountsFinal, dsts, burnsFinal, ringMembers, data, finalFees, propagateTx, awaitAnswer, awaitBroadcast, validateTx, ctx, statusCallback)
 }
 
-func (builder *TransactionsBuilder) CreateZetherTx(from []string, assetsList [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, ctx context.Context, statusCallback func(string)) ([]*wizard.ZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.ZetherPublicKeyIndex, uint64, []byte, error) {
 
-	if len(from) != len(assetsList) || len(assetsList) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
-		return nil, errors.New("Length of from and transfers are not matching")
+	if len(from) != len(dstsAsts) || len(dstsAsts) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
+		return nil, nil, nil, nil, 0, nil, errors.New("Length of from and transfers are not matching")
 	}
 
-	builder.lock.Lock()
-	defer builder.lock.Unlock()
-
-	fromWalletAddresses, err := builder.getWalletAddresses(from)
-	if err != nil {
-		return nil, err
-	}
-
-	var tx *transaction.Transaction
 	var chainHeight uint64
 	var chainHash []byte
 
+	fromWalletAddresses, err := builder.getWalletAddresses(from)
+	if err != nil {
+		return nil, nil, nil, nil, 0, nil, err
+	}
+
 	transfers := make([]*wizard.ZetherTransfer, len(from))
-	emap := wizard.InitializeEmap(assetsList)
+	emap := wizard.InitializeEmap(dstsAsts)
 	rings := make([][]*bn256.G1, len(from))
 	publicKeyIndexes := make(map[string]*wizard.ZetherPublicKeyIndex)
 
@@ -188,7 +184,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, assetsList [][
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 		chainHash = helpers.CloneBytes(reader.Get("chainHash"))
 
-		for t, ast := range assetsList {
+		for t, ast := range dstsAsts {
 
 			var accs *accounts.Accounts
 			if accs, err = dataStorage.AccsCollection.GetMap(ast); err != nil {
@@ -303,11 +299,52 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, assetsList [][
 
 		return
 	}); err != nil {
-		return nil, err
+		return nil, nil, nil, nil, 0, nil, err
 	}
 	statusCallback("Balances checked")
 
+	return transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, nil
+}
+
+func (builder *TransactionsBuilder) CreateZetherTx(from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+
+	builder.lock.Lock()
+	defer builder.lock.Unlock()
+
+	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
+	if err != nil {
+		return nil, err
+	}
+
+	var tx *transaction.Transaction
+
 	if tx, err = wizard.CreateZetherTx(transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, validateTx, ctx, statusCallback); err != nil {
+		gui.GUI.Error("Error creating Tx: ", err)
+		return nil, err
+	}
+
+	statusCallback("Transaction Created")
+	if propagateTx {
+		if err := builder.mempool.AddTxToMemPool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
+			return nil, err
+		}
+	}
+
+	return tx, nil
+}
+
+func (builder *TransactionsBuilder) CreateZetherClaimStakeTx(delegatePrivateKey []byte, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+
+	builder.lock.Lock()
+	defer builder.lock.Unlock()
+
+	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
+	if err != nil {
+		return nil, err
+	}
+
+	var tx *transaction.Transaction
+	if tx, err = wizard.CreateZetherClaimStakeTx(delegatePrivateKey, transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, validateTx, ctx, statusCallback); err != nil {
 		gui.GUI.Error("Error creating Tx: ", err)
 		return nil, err
 	}

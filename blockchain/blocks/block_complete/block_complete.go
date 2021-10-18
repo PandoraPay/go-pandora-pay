@@ -68,7 +68,7 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(dataStorage *data_storage
 	}
 
 	for _, tx := range blkComplete.Txs {
-		if err = tx.IncludeTransaction(tx.Registrations, blkComplete.Block.Height, dataStorage); err != nil {
+		if err = tx.IncludeTransaction(blkComplete.Block.Height, dataStorage); err != nil {
 			return
 		}
 	}

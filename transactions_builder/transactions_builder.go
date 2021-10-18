@@ -3,16 +3,12 @@ package transactions_builder
 import (
 	"encoding/binary"
 	"errors"
-	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/blockchain/transactions/transaction/transaction_data"
-	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/mempool"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
@@ -270,123 +266,6 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
 
 	if tx, err = wizard.CreateUpdateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegatedStakingNewPublicKey, delegatedStakingNewFee, delegatedStakingClaimAmount, data, fee, false, statusCallback); err != nil {
-		return nil, err
-	}
-
-	if propagateTx {
-		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
-			return nil, err
-		}
-	}
-
-	return tx, nil
-}
-
-func (builder *TransactionsBuilder) CreateClaimTx_Float(from string, nonce uint64, outputAmounts []float64, outputAddresses []string, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
-
-	var finalFee *wizard.TransactionsWizardFee
-	outputAmountsFinal := make([]uint64, len(outputAmounts))
-
-	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-		asts := assets.NewAssets(reader)
-
-		ast, err := asts.GetAsset(config_coins.NATIVE_ASSET_FULL)
-		if err != nil {
-			return
-		}
-		if ast == nil {
-			return errors.New("Asset was not found")
-		}
-
-		if finalFee, err = fee.convertToWizardFee(ast); err != nil {
-			return err
-		}
-
-		for i, amount := range outputAmounts {
-			if outputAmountsFinal[i], err = ast.ConvertToUnits(amount); err != nil {
-				return
-			}
-		}
-
-		return
-	}); err != nil {
-		return nil, err
-	}
-
-	return builder.CreateClaimTx(from, nonce, outputAmountsFinal, outputAddresses, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx, statusCallback)
-}
-
-func (builder *TransactionsBuilder) CreateClaimTx(from string, nonce uint64, outputAmounts []uint64, outputAddresses []string, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
-
-	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
-	if err != nil {
-		return nil, err
-	}
-
-	builder.lock.Lock()
-	defer builder.lock.Unlock()
-
-	var tx *transaction.Transaction
-	var plainAcc *plain_account.PlainAccount
-	var chainHeight uint64
-
-	output := make([]*transaction_simple_parts.TransactionSimpleOutput, len(outputAmounts))
-	txRegistrations := make([]*transaction_data.TransactionDataRegistration, 0)
-
-	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
-
-		plainAccs := plain_accounts.NewPlainAccounts(reader)
-		regs := registrations.NewRegistrations(reader)
-
-		if plainAcc, err = plainAccs.GetPlainAccount(fromWalletAddresses[0].PublicKey, chainHeight); err != nil {
-			return
-		}
-		if plainAcc == nil {
-			return errors.New("Account doesn't exist")
-		}
-
-		for i := range outputAmounts {
-
-			var addr *addresses.Address
-			if addr, err = addresses.DecodeAddr(outputAddresses[i]); err != nil {
-				return
-			}
-
-			var isReg bool
-			if isReg, err = regs.Exists(string(addr.PublicKey)); err != nil {
-				return
-			}
-
-			output[i] = &transaction_simple_parts.TransactionSimpleOutput{
-				Amount:    outputAmounts[i],
-				PublicKey: addr.PublicKey,
-			}
-
-			if !isReg {
-				if addr.Registration == nil {
-					return errors.New("Registration is missing one of the specified addresses")
-				}
-
-				txRegistrations = append(txRegistrations, &transaction_data.TransactionDataRegistration{
-					PublicKeyIndex:        uint64(i),
-					RegistrationSignature: addr.Registration,
-				})
-
-			}
-
-		}
-
-		return
-	}); err != nil {
-		return nil, err
-	}
-
-	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
-
-	if tx, err = wizard.CreateClaimTx(nonce, fromWalletAddresses[0].PrivateKey.Key, txRegistrations, output, data, fee, validateTx, statusCallback); err != nil {
 		return nil, err
 	}
 

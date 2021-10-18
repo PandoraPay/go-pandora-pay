@@ -38,19 +38,24 @@ func SignMessage(message, key []byte) ([]byte, error) {
 
 func VerifySignature(message, signature, publicKey []byte) bool {
 
-	if signature == nil {
+	var u *bn256.G1
+	if err := u.DecodeCompressed(publicKey); err != nil {
 		return false
 	}
 
-	var u bn256.G1
-	if err := u.DecodeCompressed(publicKey); err != nil {
+	return VerifySignaturePoint(message, signature, u)
+}
+
+func VerifySignaturePoint(message, signature []byte, u *bn256.G1) bool {
+
+	if signature == nil {
 		return false
 	}
 
 	s := new(big.Int).SetBytes(signature[0:32])
 	c := new(big.Int).SetBytes(signature[32:64])
 
-	tmppoint := new(bn256.G1).Add(new(bn256.G1).ScalarMult(G, s), new(bn256.G1).ScalarMult(&u, new(big.Int).Neg(c)))
+	tmppoint := new(bn256.G1).Add(new(bn256.G1).ScalarMult(G, s), new(bn256.G1).ScalarMult(u, new(big.Int).Neg(c)))
 	serialize := []byte(fmt.Sprintf("%s%s%s", u.String(), tmppoint.String(), string(message)))
 
 	cCalculated := ReducedHash(serialize)

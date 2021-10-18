@@ -26,7 +26,11 @@ type TransactionSimple struct {
 	Bloom       *TransactionSimpleBloom
 }
 
-func (tx *TransactionSimple) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (tx *TransactionSimple) ComputeExtraSpace() uint64 {
+	return 0
+}
+
+func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var plainAcc *plain_account.PlainAccount
 	if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(tx.Vin.PublicKey, blockHeight); err != nil {
@@ -46,8 +50,6 @@ func (tx *TransactionSimple) IncludeTransaction(txRegistrations *transaction_dat
 	switch tx.TxScript {
 	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE:
 		err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fees)
-	case SCRIPT_CLAIM:
-		err = plainAcc.AddUnclaimed(false, tx.Fees)
 	default:
 		err = errors.New("Invalid Simple TxScript")
 	}
@@ -57,8 +59,8 @@ func (tx *TransactionSimple) IncludeTransaction(txRegistrations *transaction_dat
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_CLAIM:
-		if err = tx.Extra.IncludeTransactionVin0(txRegistrations, blockHeight, plainAcc, dataStorage); err != nil {
+	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE:
+		if err = tx.Extra.IncludeTransactionVin0(blockHeight, plainAcc, dataStorage); err != nil {
 			return
 		}
 	}
@@ -76,15 +78,6 @@ func (tx *TransactionSimple) ComputeFees() (uint64, error) {
 
 func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
 	out[string(tx.Vin.PublicKey)] = true
-
-	switch tx.TxScript {
-	case SCRIPT_CLAIM:
-		extra := tx.Extra.(*transaction_simple_extra.TransactionSimpleClaim)
-		for _, it := range extra.Output {
-			out[string(it.PublicKey)] = true
-		}
-	}
-
 	return
 }
 
@@ -99,7 +92,7 @@ func (tx *TransactionSimple) Validate() (err error) {
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_CLAIM:
+	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE:
 		if tx.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
@@ -156,8 +149,6 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 		tx.Extra = &transaction_simple_extra.TransactionSimpleUnstake{}
 	case SCRIPT_UPDATE_DELEGATE:
 		tx.Extra = &transaction_simple_extra.TransactionSimpleUpdateDelegate{}
-	case SCRIPT_CLAIM:
-		tx.Extra = &transaction_simple_extra.TransactionSimpleClaim{}
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}

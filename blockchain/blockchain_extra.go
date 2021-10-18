@@ -88,6 +88,11 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 				return
 			}
 		} else {
+
+			if dataStorage.Regs.VerifyRegistration(addr.PublicKey, addr.Registration) == false {
+				return errors.New("Registration verification is false")
+			}
+
 			if _, err = dataStorage.Regs.CreateRegistration(addr.PublicKey, addr.Registration); err != nil {
 				return
 			}

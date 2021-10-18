@@ -4,7 +4,6 @@ import (
 	"errors"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
@@ -54,7 +53,6 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 
 	tx := &transaction.Transaction{
 		Version:                  transaction_type.TX_SIMPLE,
-		Registrations:            &transaction_data.TransactionDataTransactions{},
 		TransactionBaseInterface: txBase,
 	}
 	statusCallback("Transaction Created")
@@ -104,48 +102,6 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingNewPublicK
 
 	tx := &transaction.Transaction{
 		Version:                  transaction_type.TX_SIMPLE,
-		Registrations:            &transaction_data.TransactionDataTransactions{},
-		TransactionBaseInterface: txBase,
-	}
-	statusCallback("Transaction Created")
-
-	if err = signSimpleTransaction(tx, privateKey, fee, validateTx, statusCallback); err != nil {
-		return
-	}
-	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
-		return
-	}
-
-	return tx, nil
-}
-
-func CreateClaimTx(nonce uint64, key []byte, txRegistrations []*transaction_data.TransactionDataRegistration, output []*transaction_simple_parts.TransactionSimpleOutput, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
-
-	dataFinal, err := data.getData()
-	if err != nil {
-		return
-	}
-
-	privateKey := &addresses.PrivateKey{Key: key}
-
-	txBase := &transaction_simple.TransactionSimple{
-		TxScript:    transaction_simple.SCRIPT_CLAIM,
-		DataVersion: data.getDataVersion(),
-		Data:        dataFinal,
-		Nonce:       nonce,
-		Extra: &transaction_simple_extra.TransactionSimpleClaim{
-			Output: output,
-		},
-		Vin: &transaction_simple_parts.TransactionSimpleInput{
-			PublicKey: privateKey.GeneratePublicKey(),
-		},
-	}
-
-	tx := &transaction.Transaction{
-		Version: transaction_type.TX_SIMPLE,
-		Registrations: &transaction_data.TransactionDataTransactions{
-			Registrations: txRegistrations,
-		},
 		TransactionBaseInterface: txBase,
 	}
 	statusCallback("Transaction Created")
