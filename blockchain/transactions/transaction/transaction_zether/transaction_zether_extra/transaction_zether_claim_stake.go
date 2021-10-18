@@ -45,6 +45,10 @@ func (tx *TransactionZetherClaimStake) BeforeIncludeTransaction(txRegistrations 
 		return
 	}
 
+	if err = dataStorage.PlainAccs.Update(string(plainAcc.PublicKey), acc); err != nil {
+		return
+	}
+
 	reg := txRegistrations.Registrations[tx.RegistrationIndex]
 	publicKey := publicKeyListByCounter[reg.PublicKeyIndex]
 
