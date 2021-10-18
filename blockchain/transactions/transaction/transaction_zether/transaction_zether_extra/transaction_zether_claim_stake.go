@@ -28,6 +28,23 @@ func (tx *TransactionZetherClaimStake) BeforeIncludeTransaction(txRegistrations 
 	var acc *account.Account
 	var exists bool
 
+	amount := tx.DelegatedStakingClaimAmount
+	if err = helpers.SafeUint64Add(&amount, payloads[0].Statement.Fees); err != nil {
+		return
+	}
+
+	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(tx.DelegatePublicKey, blockHeight)
+	if err != nil {
+		return
+	}
+	if plainAcc == nil {
+		return errors.New("PlainAccount doesn't exist")
+	}
+
+	if err = plainAcc.AddUnclaimed(false, amount); err != nil {
+		return
+	}
+
 	reg := txRegistrations.Registrations[tx.RegistrationIndex]
 	publicKey := publicKeyListByCounter[reg.PublicKeyIndex]
 
@@ -43,11 +60,6 @@ func (tx *TransactionZetherClaimStake) BeforeIncludeTransaction(txRegistrations 
 		return errors.New("Account should not exist!")
 	}
 	if acc, err = accs.CreateAccount(publicKey); err != nil {
-		return
-	}
-
-	amount := tx.DelegatedStakingClaimAmount
-	if err = helpers.SafeUint64Add(&amount, payloads[0].Statement.Fees); err != nil {
 		return
 	}
 

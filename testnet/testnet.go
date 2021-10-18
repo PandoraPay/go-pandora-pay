@@ -51,7 +51,7 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 		return
 	}
 
-	from := []string{}
+	from := []string{""}
 	dsts := []string{dstAddr.AddressRegistrationEncoded}
 	dstsAmounts, burn := []uint64{amount}, []uint64{0}
 	dstsAssets := [][]byte{config_coins.NATIVE_ASSET_FULL}
@@ -59,7 +59,7 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 	fees := []*wizard.TransactionsWizardFee{{0, 0, 0, true}}
 
 	var ring []string
-	if ring, err = testnet.transactionsBuilder.CreateZetherRing("", addr.AddressEncoded, dstsAssets[0], -1, -1); err != nil {
+	if ring, err = testnet.transactionsBuilder.CreateZetherRing(from[0], addr.AddressEncoded, dstsAssets[0], -1, -1); err != nil {
 		return
 	}
 	ringMembers := [][]string{ring}
@@ -185,25 +185,21 @@ func (testnet *Testnet) run() {
 		}
 	}
 
-	var ctx context.Context
-	var cancel context.CancelFunc
+	//var ctx context.Context
+	//var cancel context.CancelFunc
+	ctx2, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	for {
 
 		blockHeightReceived, ok := <-updateChannel
-		if ctx != nil {
-			cancel()
-		}
 		if !ok {
 			return
 		}
 
-		ctx, cancel = context.WithCancel(context.Background())
-
 		blockHeight := blockHeightReceived.(uint64)
 		syncTime := testnet.chain.Sync.GetSyncTime()
 
-		ctx2 := ctx
 		recovery.SafeGo(func() {
 
 			gui.GUI.Log("UpdateNewChain received! 1")
@@ -278,27 +274,27 @@ func (testnet *Testnet) run() {
 							}
 						}
 
-						if unclaimed > config_coins.ConvertToUnitsUint64Forced(10) {
+						if creatingTransactions.IsNotSet() {
 
-							if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether.SCRIPT_CLAIM_STAKE) {
-								testnet.testnetCreateClaimTx(0, unclaimed/4, ctx2)
-								testnet.testnetCreateClaimTx(1, unclaimed/4, ctx2)
-								testnet.testnetCreateClaimTx(2, unclaimed/4, ctx2)
-								testnet.testnetCreateClaimTx(3, unclaimed/4-config_coins.ConvertToUnitsUint64Forced(10), ctx2)
-							}
+							creatingTransactions.Set()
+							defer creatingTransactions.UnSet()
 
-						} else if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
-							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
-								if _, err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
-									return
+							if unclaimed > config_coins.ConvertToUnitsUint64Forced(10) {
+
+								if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether.SCRIPT_CLAIM_STAKE) {
+									testnet.testnetCreateClaimTx(0, unclaimed/4, ctx2)
+									testnet.testnetCreateClaimTx(1, unclaimed/4, ctx2)
+									testnet.testnetCreateClaimTx(2, unclaimed/4, ctx2)
+									testnet.testnetCreateClaimTx(3, unclaimed/4-config_coins.ConvertToUnitsUint64Forced(10), ctx2)
 								}
-							}
-						} else {
 
-							if creatingTransactions.IsNotSet() {
-
-								creatingTransactions.Set()
-								defer creatingTransactions.UnSet()
+							} else if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
+								if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
+									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
+										return
+									}
+								}
+							} else {
 
 								for i := 1; i < 4; i++ {
 									testnet.testnetCreateTransfers(i, ctx2)

@@ -162,26 +162,40 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, dstsAsts
 	return builder.CreateZetherTx(from, dstsAsts, amountsFinal, dsts, burnsFinal, ringMembers, data, finalFees, propagateTx, awaitAnswer, awaitBroadcast, validateTx, ctx, statusCallback)
 }
 
-func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, createFakeSenderBalance bool, ctx context.Context, statusCallback func(string)) ([]*wizard.ZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.ZetherPublicKeyIndex, uint64, []byte, error) {
+func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, ctx context.Context, statusCallback func(string)) ([]*wizard.ZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.ZetherPublicKeyIndex, uint64, []byte, error) {
 
-	var privateKeys []*addresses.PrivateKey
-	var fromWalletAddresses []*wallet_address.WalletAddress
+	if len(from) != len(dstsAsts) || len(dstsAsts) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
+		return nil, nil, nil, nil, 0, nil, errors.New("Length of from and transfers are not matching")
+	}
 
-	privateKeys = make([]*addresses.PrivateKey, len(dstsAsts))
-	if createFakeSenderBalance {
-		from = make([]string, len(dstsAsts))
-		for t := range dstsAsts {
-			privateKeys[t] = addresses.GenerateNewPrivateKey()
-			addr, err := privateKeys[t].GenerateAddress(true, 0, nil)
+	fromPrivateKeys := make([]*addresses.PrivateKey, len(from))
+	fromWalletAddresses := make([]*wallet_address.WalletAddress, len(from))
+
+	for t := range from {
+		if from[t] == "" {
+			fromPrivateKeys[t] = addresses.GenerateNewPrivateKey()
+			addr, err := fromPrivateKeys[t].GenerateAddress(true, 0, nil)
 			if err != nil {
 				return nil, nil, nil, nil, 0, nil, err
 			}
 			from[t] = addr.EncodeAddr()
-		}
-	}
 
-	if len(from) != len(dstsAsts) || len(dstsAsts) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
-		return nil, nil, nil, nil, 0, nil, errors.New("Length of from and transfers are not matching")
+		} else {
+
+			addr, err := builder.wallet.GetWalletAddressByEncodedAddress(from[t])
+			if err != nil {
+				return nil, nil, nil, nil, 0, nil, err
+			}
+
+			if addr.PrivateKey == nil {
+				return nil, nil, nil, nil, 0, nil, errors.New("Can't be used for transactions as the private key is missing")
+			}
+
+			fromPrivateKeys[t] = &addresses.PrivateKey{Key: addr.PrivateKey.Key[:]}
+			from[t] = addr.AddressRegistrationEncoded
+			fromWalletAddresses[t] = addr
+		}
+
 	}
 
 	var chainHeight uint64
@@ -208,7 +222,7 @@ func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, a
 
 			transfers[t] = &wizard.ZetherTransfer{
 				Asset:       ast,
-				From:        privateKeys[t].Key[:],
+				From:        fromPrivateKeys[t].Key[:],
 				Destination: dsts[t],
 				Amount:      amounts[t],
 				Burn:        burns[t],
@@ -254,7 +268,7 @@ func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, a
 
 				if from[t] == address { //sender
 
-					if createFakeSenderBalance {
+					if fromWalletAddresses[t] == nil {
 						transfers[t].FromBalanceDecoded = transfers[t].Amount
 					} else {
 						balancePoint := new(crypto.ElGamal)
@@ -263,6 +277,7 @@ func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, a
 						}
 
 						var fromBalanceDecoded uint64
+
 						if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, ast, true, true, ctx, statusCallback); err != nil {
 							return
 						}
@@ -328,7 +343,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, asts [][]byte,
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, false, ctx, statusCallback)
+	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +370,7 @@ func (builder *TransactionsBuilder) CreateZetherClaimStakeTx(delegatePrivateKey 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, true, ctx, statusCallback)
+	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
 	if err != nil {
 		return nil, err
 	}
