@@ -178,6 +178,9 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (err error) {
 
 	var n uint64
+	if n, err = r.ReadUvarint(); err != nil {
+		return
+	}
 
 	payload.PayloadScript = PayloadScriptType(n)
 	switch payload.PayloadScript {
