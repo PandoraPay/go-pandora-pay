@@ -14,6 +14,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
@@ -281,7 +282,7 @@ func (testnet *Testnet) run() {
 
 							if unclaimed > config_coins.ConvertToUnitsUint64Forced(10) {
 
-								if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether.SCRIPT_CLAIM_STAKE) {
+								if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload.SCRIPT_CLAIM_STAKE) {
 									testnet.testnetCreateClaimTx(0, unclaimed/4, ctx2)
 									testnet.testnetCreateClaimTx(1, unclaimed/4, ctx2)
 									testnet.testnetCreateClaimTx(2, unclaimed/4, ctx2)

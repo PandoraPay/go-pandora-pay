@@ -4,7 +4,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/network/api/api_common/api_types"
@@ -119,10 +119,10 @@ func Initialize(startMainCb func()) {
 					}),
 				}),
 				"transactionZether": js.ValueOf(map[string]interface{}{
-					"ScriptType": js.ValueOf(map[string]interface{}{
-						"SCRIPT_TRANSFER":       js.ValueOf(uint64(transaction_zether.SCRIPT_TRANSFER)),
-						"SCRIPT_DELEGATE_STAKE": js.ValueOf(uint64(transaction_zether.SCRIPT_DELEGATE_STAKE)),
-						"SCRIPT_CLAIM_STAKE":    js.ValueOf(uint64(transaction_zether.SCRIPT_CLAIM_STAKE)),
+					"PayloadScriptType": js.ValueOf(map[string]interface{}{
+						"SCRIPT_TRANSFER":       js.ValueOf(uint64(transaction_zether_payload.SCRIPT_TRANSFER)),
+						"SCRIPT_DELEGATE_STAKE": js.ValueOf(uint64(transaction_zether_payload.SCRIPT_DELEGATE_STAKE)),
+						"SCRIPT_CLAIM_STAKE":    js.ValueOf(uint64(transaction_zether_payload.SCRIPT_CLAIM_STAKE)),
 					}),
 				}),
 			}),

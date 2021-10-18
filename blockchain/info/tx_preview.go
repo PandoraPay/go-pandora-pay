@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/helpers"
 )
 
@@ -24,16 +25,16 @@ type TxPreviewSimple struct {
 }
 
 type TxPreviewZetherPayload struct {
-	Asset      helpers.HexBytes   `json:"asset"`
-	BurnValue  uint64             `json:"burnValue"`
-	DataPublic helpers.HexBytes   `json:"dataPublic"`
-	Publickeys []helpers.HexBytes `json:"publicKeys"`
-	Fees       uint64             `json:"fees"`
+	PayloadScript transaction_zether_payload.PayloadScriptType `json:"payloadScript"`
+	Asset         helpers.HexBytes                             `json:"asset"`
+	BurnValue     uint64                                       `json:"burnValue"`
+	DataPublic    helpers.HexBytes                             `json:"dataPublic"`
+	Publickeys    []helpers.HexBytes                           `json:"publicKeys"`
+	Fees          uint64                                       `json:"fees"`
 }
 
 type TxPreviewZether struct {
-	TxScript transaction_zether.ScriptType `json:"txScript"`
-	Payloads []*TxPreviewZetherPayload     `json:"payloads"`
+	Payloads []*TxPreviewZetherPayload `json:"payloads"`
 }
 
 type TxPreview struct {
@@ -87,16 +88,17 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 			}
 
 			payloads[i] = &TxPreviewZetherPayload{
+				payload.PayloadScript,
 				payload.Asset,
 				payload.BurnValue,
 				dataPublic,
 				publicKeys,
 				payload.Statement.Fees,
 			}
+
 		}
 
 		base = &TxPreviewZether{
-			TxScript: txBase.TxScript,
 			Payloads: payloads,
 		}
 	default:

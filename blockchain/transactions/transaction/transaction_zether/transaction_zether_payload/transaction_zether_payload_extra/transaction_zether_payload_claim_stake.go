@@ -1,4 +1,4 @@
-package transaction_zether_extra
+package transaction_zether_payload_extra
 
 import (
 	"bytes"
@@ -7,29 +7,28 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
-type TransactionZetherClaimStake struct {
-	TransactionZetherExtraInterface
+type TransactionZetherPayloadClaimStake struct {
+	TransactionZetherPayloadExtraInterface
 	DelegatePublicKey           []byte
 	DelegatedStakingClaimAmount uint64
 	RegistrationIndex           byte
 	DelegateSignature           []byte
 }
 
-func (tx *TransactionZetherClaimStake) BeforeIncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, payloads []*transaction_zether_payload.TransactionZetherPayload, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (tx *TransactionZetherPayloadClaimStake) BeforeIncludeTxPayload(txRegistrations *transaction_data.TransactionDataTransactions, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
 	var acc *account.Account
 	var exists bool
 
 	amount := tx.DelegatedStakingClaimAmount
-	if err = helpers.SafeUint64Add(&amount, payloads[0].Statement.Fees); err != nil {
+	if err = helpers.SafeUint64Add(&amount, payloadStatement.Fees); err != nil {
 		return
 	}
 
@@ -52,7 +51,7 @@ func (tx *TransactionZetherClaimStake) BeforeIncludeTransaction(txRegistrations 
 	reg := txRegistrations.Registrations[tx.RegistrationIndex]
 	publicKey := publicKeyListByCounter[reg.PublicKeyIndex]
 
-	if accs, err = dataStorage.AccsCollection.GetMap(payloads[0].Asset); err != nil {
+	if accs, err = dataStorage.AccsCollection.GetMap(payloadAsset); err != nil {
 		return
 	}
 
@@ -74,10 +73,10 @@ func (tx *TransactionZetherClaimStake) BeforeIncludeTransaction(txRegistrations 
 	return accs.Update(string(publicKey), acc)
 }
 
-func (tx *TransactionZetherClaimStake) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, payloads []*transaction_zether_payload.TransactionZetherPayload, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (tx *TransactionZetherPayloadClaimStake) IncludeTxPayload(txRegistrations *transaction_data.TransactionDataTransactions, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
-	if accs, err = dataStorage.AccsCollection.GetMap(payloads[0].Asset); err != nil {
+	if accs, err = dataStorage.AccsCollection.GetMap(payloadAsset); err != nil {
 		return
 	}
 
@@ -89,14 +88,15 @@ func (tx *TransactionZetherClaimStake) IncludeTransaction(txRegistrations *trans
 	return
 }
 
-func (tx *TransactionZetherClaimStake) Validate(txRegistrations *transaction_data.TransactionDataTransactions, payloads []*transaction_zether_payload.TransactionZetherPayload) error {
+func (tx *TransactionZetherPayloadClaimStake) Validate(txRegistrations *transaction_data.TransactionDataTransactions, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) error {
 
-	if len(payloads) != 1 {
-		return errors.New("Payloads length must be 1")
-	}
-	if bytes.Equal(payloads[0].Asset, config_coins.NATIVE_ASSET_FULL) == false {
+	if bytes.Equal(payloadAsset, config_coins.NATIVE_ASSET_FULL) == false {
 		return errors.New("Payload[0] asset must be a native asset")
 	}
+	if payloadBurnValue == 0 {
+		return errors.New("Payload burn value msut be greater than zero")
+	}
+
 	if int(tx.RegistrationIndex) >= len(txRegistrations.Registrations) {
 		return errors.New("RegistrationIndex is invalid")
 	}
@@ -111,11 +111,11 @@ func (tx *TransactionZetherClaimStake) Validate(txRegistrations *transaction_dat
 	return nil
 }
 
-func (tx *TransactionZetherClaimStake) VerifySignatureManually(hashForSignature []byte) bool {
+func (tx *TransactionZetherPayloadClaimStake) VerifySignatureManually(hashForSignature []byte) bool {
 	return crypto.VerifySignature(hashForSignature, tx.DelegateSignature, tx.DelegatePublicKey)
 }
 
-func (tx *TransactionZetherClaimStake) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (tx *TransactionZetherPayloadClaimStake) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.Write(tx.DelegatePublicKey)
 	w.WriteUvarint(tx.DelegatedStakingClaimAmount)
 	w.WriteByte(tx.RegistrationIndex)
@@ -124,7 +124,7 @@ func (tx *TransactionZetherClaimStake) Serialize(w *helpers.BufferWriter, inclSi
 	}
 }
 
-func (tx *TransactionZetherClaimStake) Deserialize(r *helpers.BufferReader) (err error) {
+func (tx *TransactionZetherPayloadClaimStake) Deserialize(r *helpers.BufferReader) (err error) {
 	if tx.DelegatePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}

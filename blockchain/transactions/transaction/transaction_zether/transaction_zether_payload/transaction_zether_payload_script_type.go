@@ -1,15 +1,15 @@
-package transaction_zether
+package transaction_zether_payload
 
-type ScriptType uint64
+type PayloadScriptType uint64
 
 const (
-	SCRIPT_TRANSFER ScriptType = iota
+	SCRIPT_TRANSFER PayloadScriptType = iota
 	SCRIPT_DELEGATE_STAKE
 	SCRIPT_CLAIM_STAKE
 	SCRIPT_END
 )
 
-func (t ScriptType) String() string {
+func (t PayloadScriptType) String() string {
 	switch t {
 	case SCRIPT_TRANSFER:
 		return "SCRIPT_TRANSFER"

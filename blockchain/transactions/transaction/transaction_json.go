@@ -10,8 +10,8 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -70,13 +70,12 @@ type json_TransactionSimpleUnstake struct {
 }
 
 type json_Only_TransactionZether struct {
-	TxScript      transaction_zether.ScriptType   `json:"txScript"`
 	Height        uint64                          `json:"height"`
 	Registrations []*json_TransactionRegistration `json:"registrations"`
 	Payloads      []*json_Only_TransactionPayload `json:"payloads"`
 }
 
-type json_Only_TransactionZetherExtraDelegateStake struct {
+type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
 	DelegatePublicKey            helpers.HexBytes `json:"delegatePublicKey"`
 	DelegatedStakingNewInfo      bool             `json:"delegatedStakingNewInfo"`
 	DelegatedStakingNewPublicKey helpers.HexBytes `json:"delegatedStakingNewPublicKey"`
@@ -84,7 +83,7 @@ type json_Only_TransactionZetherExtraDelegateStake struct {
 	DelegateSignature            helpers.HexBytes `json:"delegateSignature"`
 }
 
-type json_Only_TransactionZetherExtraClaimStake struct {
+type json_Only_TransactionZetherPayloadExtraClaimStake struct {
 	DelegatePublicKey           helpers.HexBytes `json:"delegatePublicKey"`
 	DelegatedStakingClaimAmount uint64           `json:"delegatedStakingClaimAmount"`
 	RegistrationIndex           byte             `json:"registrationIndex"`
@@ -102,27 +101,19 @@ type json_Only_TransactionZetherStatement struct {
 }
 
 type json_Only_TransactionPayload struct {
-	Asset       helpers.HexBytes                        `json:"asset"`
-	BurnValue   uint64                                  `json:"burnValue"`
-	DataVersion transaction_data.TransactionDataVersion `json:"dataType"`
-	Data        helpers.HexBytes                        `json:"data"`
-	Statement   *json_Only_TransactionZetherStatement   `json:"statement"`
-	Proof       helpers.HexBytes                        `json:"proof"`
+	PayloadScript transaction_zether_payload.PayloadScriptType `json:"payloadScript"`
+	Asset         helpers.HexBytes                             `json:"asset"`
+	BurnValue     uint64                                       `json:"burnValue"`
+	DataVersion   transaction_data.TransactionDataVersion      `json:"dataType"`
+	Data          helpers.HexBytes                             `json:"data"`
+	Statement     *json_Only_TransactionZetherStatement        `json:"statement"`
+	Proof         helpers.HexBytes                             `json:"proof"`
+	Extra         interface{}                                  `json:"extra"`
 }
 
 type json_TransactionZether struct {
 	*json_Transaction
 	*json_Only_TransactionZether
-}
-
-type json_TransactionZetherDelegateStake struct {
-	*json_TransactionZether
-	*json_Only_TransactionZetherExtraDelegateStake
-}
-
-type json_TransactionZetherExtraClaimStake struct {
-	*json_TransactionZether
-	*json_Only_TransactionZetherExtraClaimStake
 }
 
 func (tx *Transaction) MarshalJSON() ([]byte, error) {
@@ -205,55 +196,55 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			payload.Proof.Serialize(w)
 			proofJson := w.Bytes()
 
+			var extra interface{}
+
+			switch payload.PayloadScript {
+			case transaction_zether_payload.SCRIPT_TRANSFER:
+				//no payload
+			case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
+				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake)
+				extra = &json_Only_TransactionZetherPayloadExtraDelegateStake{
+					payloadExtra.DelegatePublicKey,
+					payloadExtra.DelegatedStakingNewInfo,
+					payloadExtra.DelegatedStakingNewPublicKey,
+					payloadExtra.DelegatedStakingNewFee,
+					payloadExtra.DelegateSignature,
+				}
+			case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
+				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadClaimStake)
+				extra = &json_Only_TransactionZetherPayloadExtraClaimStake{
+					payloadExtra.DelegatePublicKey,
+					payloadExtra.DelegatedStakingClaimAmount,
+					payloadExtra.RegistrationIndex,
+					payloadExtra.DelegateSignature,
+				}
+			default:
+				return nil, errors.New("Invalid zether.TxScript")
+			}
+
 			payloadsJson[i] = &json_Only_TransactionPayload{
+				payload.PayloadScript,
 				payload.Asset,
 				payload.BurnValue,
 				payload.DataVersion,
 				payload.Data,
 				statementJson,
 				proofJson,
+				extra,
 			}
+
 		}
 
 		zetherJson := &json_TransactionZether{
 			txJson,
 			&json_Only_TransactionZether{
-				base.TxScript,
 				base.Height,
 				registrations,
 				payloadsJson,
 			},
 		}
 
-		switch base.TxScript {
-		case transaction_zether.SCRIPT_TRANSFER:
-			return json.Marshal(zetherJson)
-		case transaction_zether.SCRIPT_DELEGATE_STAKE:
-			extra := base.Extra.(*transaction_zether_extra.TransactionZetherDelegateStake)
-			return json.Marshal(&json_TransactionZetherDelegateStake{
-				zetherJson,
-				&json_Only_TransactionZetherExtraDelegateStake{
-					extra.DelegatePublicKey,
-					extra.DelegatedStakingNewInfo,
-					extra.DelegatedStakingNewPublicKey,
-					extra.DelegatedStakingNewFee,
-					extra.DelegateSignature,
-				},
-			})
-		case transaction_zether.SCRIPT_CLAIM_STAKE:
-			extra := base.Extra.(*transaction_zether_extra.TransactionZetherClaimStake)
-			return json.Marshal(&json_TransactionZetherExtraClaimStake{
-				zetherJson,
-				&json_Only_TransactionZetherExtraClaimStake{
-					extra.DelegatePublicKey,
-					extra.DelegatedStakingClaimAmount,
-					extra.RegistrationIndex,
-					extra.DelegateSignature,
-				},
-			})
-		default:
-			return nil, errors.New("Invalid zether.TxScript")
-		}
+		return json.Marshal(zetherJson)
 
 	default:
 		return nil, errors.New("Invalid Tx Version")
@@ -398,11 +389,44 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 				},
 				Proof: proof,
 			}
+
+			switch payload.PayloadScript {
+			case transaction_zether_payload.SCRIPT_TRANSFER:
+			case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
+				extraJSON := &json_Only_TransactionZetherPayloadExtraDelegateStake{}
+				if err := json.Unmarshal(data, extraJSON); err != nil {
+					return err
+				}
+
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake{
+					DelegatePublicKey:            extraJSON.DelegatePublicKey,
+					DelegatedStakingNewInfo:      extraJSON.DelegatedStakingNewInfo,
+					DelegatedStakingNewPublicKey: extraJSON.DelegatedStakingNewPublicKey,
+					DelegatedStakingNewFee:       extraJSON.DelegatedStakingNewFee,
+					DelegateSignature:            extraJSON.DelegateSignature,
+				}
+
+			case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
+				extraJSON := &json_Only_TransactionZetherPayloadExtraClaimStake{}
+				if err := json.Unmarshal(data, extraJSON); err != nil {
+					return err
+				}
+
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadClaimStake{
+					DelegatePublicKey:           extraJSON.DelegatePublicKey,
+					RegistrationIndex:           extraJSON.RegistrationIndex,
+					DelegateSignature:           extraJSON.DelegateSignature,
+					DelegatedStakingClaimAmount: extraJSON.DelegatedStakingClaimAmount,
+				}
+
+			default:
+				return errors.New("Invalid Zether TxScript")
+			}
+
 		}
 
 		base := &transaction_zether.TransactionZether{
-			TxScript: simpleZether.TxScript,
-			Height:   simpleZether.Height,
+			Height: simpleZether.Height,
 			Registrations: &transaction_data.TransactionDataTransactions{
 				Registrations: make([]*transaction_data.TransactionDataRegistration, len(simpleZether.Registrations)),
 			},
@@ -417,38 +441,6 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 		}
 
 		tx.TransactionBaseInterface = base
-
-		switch simpleZether.TxScript {
-		case transaction_zether.SCRIPT_TRANSFER:
-		case transaction_zether.SCRIPT_DELEGATE_STAKE:
-			extraJSON := &json_Only_TransactionZetherExtraDelegateStake{}
-			if err := json.Unmarshal(data, extraJSON); err != nil {
-				return err
-			}
-
-			base.Extra = &transaction_zether_extra.TransactionZetherDelegateStake{
-				DelegatePublicKey:            extraJSON.DelegatePublicKey,
-				DelegatedStakingNewInfo:      extraJSON.DelegatedStakingNewInfo,
-				DelegatedStakingNewPublicKey: extraJSON.DelegatedStakingNewPublicKey,
-				DelegatedStakingNewFee:       extraJSON.DelegatedStakingNewFee,
-				DelegateSignature:            extraJSON.DelegateSignature,
-			}
-
-		case transaction_zether.SCRIPT_CLAIM_STAKE:
-			extraJSON := &json_Only_TransactionZetherExtraClaimStake{}
-			if err := json.Unmarshal(data, extraJSON); err != nil {
-				return err
-			}
-
-			base.Extra = &transaction_zether_extra.TransactionZetherClaimStake{
-				DelegatePublicKey:           extraJSON.DelegatePublicKey,
-				RegistrationIndex:           extraJSON.RegistrationIndex,
-				DelegateSignature:           extraJSON.DelegateSignature,
-				DelegatedStakingClaimAmount: extraJSON.DelegatedStakingClaimAmount,
-			}
-		default:
-			return errors.New("Invalid Zether TxScript")
-		}
 
 	default:
 		return errors.New("Invalid Version")

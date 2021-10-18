@@ -1,4 +1,4 @@
-package transaction_zether_extra
+package transaction_zether_payload_extra
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
@@ -14,8 +13,8 @@ import (
 	"pandora-pay/helpers"
 )
 
-type TransactionZetherDelegateStake struct {
-	TransactionZetherExtraInterface
+type TransactionZetherPayloadDelegateStake struct {
+	TransactionZetherPayloadExtraInterface
 	DelegatePublicKey            []byte
 	DelegatedStakingNewInfo      bool
 	DelegatedStakingNewPublicKey []byte
@@ -23,11 +22,11 @@ type TransactionZetherDelegateStake struct {
 	DelegateSignature            []byte //if newInfo then the signature is required to verify that he is owner
 }
 
-func (tx *TransactionZetherDelegateStake) BeforeIncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, payloads []*transaction_zether_payload.TransactionZetherPayload, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) error {
+func (tx *TransactionZetherPayloadDelegateStake) BeforeIncludeTxPayload(txRegistrations *transaction_data.TransactionDataTransactions, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) error {
 	return nil
 }
 
-func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *transaction_data.TransactionDataTransactions, payloads []*transaction_zether_payload.TransactionZetherPayload, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (tx *TransactionZetherPayloadDelegateStake) IncludeTxPayload(txRegistrations *transaction_data.TransactionDataTransactions, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var plainAcc *plain_account.PlainAccount
 	if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(tx.DelegatePublicKey, blockHeight); err != nil {
@@ -50,7 +49,7 @@ func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *tr
 			plainAcc.DelegatedStake.DelegatedStakeFee = tx.DelegatedStakingNewFee
 		}
 	}
-	if err = plainAcc.DelegatedStake.AddStakePendingStake(payloads[0].BurnValue, blockHeight); err != nil {
+	if err = plainAcc.DelegatedStake.AddStakePendingStake(payloadBurnValue, blockHeight); err != nil {
 		return
 	}
 
@@ -61,16 +60,13 @@ func (tx *TransactionZetherDelegateStake) IncludeTransaction(txRegistrations *tr
 	return nil
 }
 
-func (tx *TransactionZetherDelegateStake) Validate(txRegistrations *transaction_data.TransactionDataTransactions, payloads []*transaction_zether_payload.TransactionZetherPayload) error {
+func (tx *TransactionZetherPayloadDelegateStake) Validate(txRegistrations *transaction_data.TransactionDataTransactions, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) error {
 
-	if len(payloads) != 1 {
-		return errors.New("Payloads length must be 1")
-	}
-	if bytes.Equal(payloads[0].Asset, config_coins.NATIVE_ASSET_FULL) == false {
+	if bytes.Equal(payloadAsset, config_coins.NATIVE_ASSET_FULL) == false {
 		return errors.New("Payload[0] asset must be a native asset")
 	}
-	if payloads[0].BurnValue == 0 {
-		return errors.New("Payload[0] burn value msut be greater than zero")
+	if payloadBurnValue == 0 {
+		return errors.New("Payload burn value msut be greater than zero")
 	}
 
 	if tx.DelegatedStakingNewInfo {
@@ -92,11 +88,11 @@ func (tx *TransactionZetherDelegateStake) Validate(txRegistrations *transaction_
 	return nil
 }
 
-func (tx *TransactionZetherDelegateStake) VerifySignatureManually(hashForSignature []byte) bool {
+func (tx *TransactionZetherPayloadDelegateStake) VerifySignatureManually(hashForSignature []byte) bool {
 	return crypto.VerifySignature(hashForSignature, tx.DelegateSignature, tx.DelegatePublicKey)
 }
 
-func (tx *TransactionZetherDelegateStake) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (tx *TransactionZetherPayloadDelegateStake) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.Write(tx.DelegatePublicKey)
 	w.WriteBool(tx.DelegatedStakingNewInfo)
 	if tx.DelegatedStakingNewInfo {
@@ -108,7 +104,7 @@ func (tx *TransactionZetherDelegateStake) Serialize(w *helpers.BufferWriter, inc
 	}
 }
 
-func (tx *TransactionZetherDelegateStake) Deserialize(r *helpers.BufferReader) (err error) {
+func (tx *TransactionZetherPayloadDelegateStake) Deserialize(r *helpers.BufferReader) (err error) {
 	if tx.DelegatePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
