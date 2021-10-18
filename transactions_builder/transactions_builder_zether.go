@@ -23,6 +23,7 @@ import (
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/transactions_builder/wizard"
+	"pandora-pay/wallet/wallet_address"
 )
 
 func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, assetId []byte, ringSize int, newAccounts int) ([]string, error) {
@@ -49,10 +50,13 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, assetId [
 	}
 
 	alreadyUsed := make(map[string]bool)
-	if addr, err = addresses.DecodeAddr(from); err != nil {
-		return nil, err
+
+	if from != "" {
+		if addr, err = addresses.DecodeAddr(from); err != nil {
+			return nil, err
+		}
+		alreadyUsed[string(addr.PublicKey)] = true
 	}
-	alreadyUsed[string(addr.PublicKey)] = true
 
 	if addr, err = addresses.DecodeAddr(dst); err != nil {
 		return nil, err
@@ -158,7 +162,23 @@ func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, dstsAsts
 	return builder.CreateZetherTx(from, dstsAsts, amountsFinal, dsts, burnsFinal, ringMembers, data, finalFees, propagateTx, awaitAnswer, awaitBroadcast, validateTx, ctx, statusCallback)
 }
 
-func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, ctx context.Context, statusCallback func(string)) ([]*wizard.ZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.ZetherPublicKeyIndex, uint64, []byte, error) {
+func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, createFakeSenderBalance bool, ctx context.Context, statusCallback func(string)) ([]*wizard.ZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.ZetherPublicKeyIndex, uint64, []byte, error) {
+
+	var privateKeys []*addresses.PrivateKey
+	var fromWalletAddresses []*wallet_address.WalletAddress
+
+	privateKeys = make([]*addresses.PrivateKey, len(dstsAsts))
+	if createFakeSenderBalance {
+		from = make([]string, len(dstsAsts))
+		for t := range dstsAsts {
+			privateKeys[t] = addresses.GenerateNewPrivateKey()
+			addr, err := privateKeys[t].GenerateAddress(true, 0, nil)
+			if err != nil {
+				return nil, nil, nil, nil, 0, nil, err
+			}
+			from[t] = addr.EncodeAddr()
+		}
+	}
 
 	if len(from) != len(dstsAsts) || len(dstsAsts) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
 		return nil, nil, nil, nil, 0, nil, errors.New("Length of from and transfers are not matching")
@@ -166,11 +186,6 @@ func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, a
 
 	var chainHeight uint64
 	var chainHash []byte
-
-	fromWalletAddresses, err := builder.getWalletAddresses(from)
-	if err != nil {
-		return nil, nil, nil, nil, 0, nil, err
-	}
 
 	transfers := make([]*wizard.ZetherTransfer, len(from))
 	emap := wizard.InitializeEmap(dstsAsts)
@@ -193,7 +208,7 @@ func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, a
 
 			transfers[t] = &wizard.ZetherTransfer{
 				Asset:       ast,
-				From:        fromWalletAddresses[t].PrivateKey.Key[:],
+				From:        privateKeys[t].Key[:],
 				Destination: dsts[t],
 				Amount:      amounts[t],
 				Burn:        burns[t],
@@ -239,25 +254,27 @@ func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, a
 
 				if from[t] == address { //sender
 
-					balancePoint := new(crypto.ElGamal)
-					if balancePoint, err = balancePoint.Deserialize(balance); err != nil {
-						return
-					}
+					if createFakeSenderBalance {
+						transfers[t].FromBalanceDecoded = transfers[t].Amount
+					} else {
+						balancePoint := new(crypto.ElGamal)
+						if balancePoint, err = balancePoint.Deserialize(balance); err != nil {
+							return
+						}
 
-					var fromBalanceDecoded uint64
-					if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, ast, true, true, ctx, statusCallback); err != nil {
-						return
-					}
+						var fromBalanceDecoded uint64
+						if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, ast, true, true, ctx, statusCallback); err != nil {
+							return
+						}
 
-					if fromBalanceDecoded == 0 {
-						return errors.New("You have no funds")
+						if fromBalanceDecoded == 0 {
+							return errors.New("You have no funds")
+						}
+						if fromBalanceDecoded < amounts[t] {
+							return errors.New("Not enough funds")
+						}
+						transfers[t].FromBalanceDecoded = fromBalanceDecoded
 					}
-
-					if fromBalanceDecoded < amounts[t] {
-						return errors.New("Not enough funds")
-					}
-					transfers[t].FromBalanceDecoded = fromBalanceDecoded
-
 				}
 
 				emap[string(ast)][p.G1().String()] = balance
@@ -311,7 +328,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, asts [][]byte,
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
+	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, false, ctx, statusCallback)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +355,7 @@ func (builder *TransactionsBuilder) CreateZetherClaimStakeTx(delegatePrivateKey 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
+	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, true, ctx, statusCallback)
 	if err != nil {
 		return nil, err
 	}

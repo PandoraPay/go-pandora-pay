@@ -46,7 +46,12 @@ func (tx *TransactionZetherClaimStake) BeforeIncludeTransaction(txRegistrations 
 		return
 	}
 
-	if err = acc.Balance.AddBalanceUint(tx.DelegatedStakingClaimAmount); err != nil {
+	amount := tx.DelegatedStakingClaimAmount
+	if err = helpers.SafeUint64Add(&amount, payloads[0].Statement.Fees); err != nil {
+		return
+	}
+
+	if err = acc.Balance.AddBalanceUint(amount); err != nil {
 		return
 	}
 

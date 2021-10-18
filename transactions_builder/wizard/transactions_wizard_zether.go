@@ -195,7 +195,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		statusCallback("Transaction Set fees")
 
 		if createFakeSenderBalance {
-
 			for i := range publickeylist { // setup commitments
 				if i == witness_index[0] {
 					fakeBalance := value + fees + burn_value
@@ -204,12 +203,12 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 						return
 					}
 					balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
-					balance.Plus(new(big.Int).SetUint64(fakeBalance))
+					balance = balance.Plus(new(big.Int).SetUint64(fakeBalance))
 
 					emap[string(transfers[t].Asset)][publickeylist[i].String()] = balance.Serialize()
+					break
 				}
 			}
-
 		}
 
 		// Lots of ToDo for this, enables satisfying lots of  other things
@@ -477,6 +476,15 @@ func CreateZetherClaimStakeTx(delegatePrivateKey []byte, transfers []*ZetherTran
 
 	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, true, ctx, statusCallback); err != nil {
 		return
+	}
+
+	senderKey := &addresses.PrivateKey{Key: transfers[0].From}
+	senderPublicKey := senderKey.GeneratePublicKey()
+	for i, reg := range txBase.Registrations.Registrations {
+		if bytes.Equal(txBase.Payloads[0].Statement.Publickeylist[reg.PublicKeyIndex].EncodeCompressed(), senderPublicKey) {
+			txBaseExtra.RegistrationIndex = byte(i)
+			break
+		}
 	}
 
 	if txBaseExtra.DelegateSignature, err = key.Sign(tx.SerializeForSigning()); err != nil {

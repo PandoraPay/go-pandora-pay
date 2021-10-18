@@ -51,14 +51,7 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 		return
 	}
 
-	walletAddr, err := testnet.wallet.AddNewAddress(true)
-	if err != nil {
-		return
-	}
-
-	defer testnet.wallet.RemoveAddressByWalletAddress(walletAddr, true)
-
-	from := []string{walletAddr.AddressRegistrationEncoded}
+	from := []string{}
 	dsts := []string{dstAddr.AddressRegistrationEncoded}
 	dstsAmounts, burn := []uint64{amount}, []uint64{0}
 	dstsAssets := [][]byte{config_coins.NATIVE_ASSET_FULL}
@@ -66,7 +59,7 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 	fees := []*wizard.TransactionsWizardFee{{0, 0, 0, true}}
 
 	var ring []string
-	if ring, err = testnet.transactionsBuilder.CreateZetherRing(from[0], addr.AddressEncoded, dstsAssets[0], -1, -1); err != nil {
+	if ring, err = testnet.transactionsBuilder.CreateZetherRing("", addr.AddressEncoded, dstsAssets[0], -1, -1); err != nil {
 		return
 	}
 	ringMembers := [][]string{ring}
