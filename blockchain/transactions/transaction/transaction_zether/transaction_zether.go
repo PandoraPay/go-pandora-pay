@@ -2,6 +2,7 @@ package transaction_zether
 
 import (
 	"bytes"
+	"fmt"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
@@ -33,9 +34,13 @@ func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, dataStorage 
 		return
 	}
 
+	if tx.Height > blockHeight {
+		return fmt.Errorf("Zether TxHeight is invalid %d > %d", tx.Height, blockHeight)
+	}
+
 	counter := 0
 	for _, payload := range tx.Payloads {
-		if err = payload.IncludePayload(tx.Registrations, tx.Bloom.publicKeyListByCounter, tx.Height, dataStorage, &counter); err != nil {
+		if err = payload.IncludePayload(tx.Registrations, tx.Bloom.publicKeyListByCounter, blockHeight, dataStorage, &counter); err != nil {
 			return
 		}
 	}

@@ -44,7 +44,7 @@ func (tx *TransactionZetherPayloadClaimStake) BeforeIncludeTxPayload(txRegistrat
 		return
 	}
 
-	if err = dataStorage.PlainAccs.Update(string(plainAcc.PublicKey), acc); err != nil {
+	if err = dataStorage.PlainAccs.Update(string(plainAcc.PublicKey), plainAcc); err != nil {
 		return
 	}
 
