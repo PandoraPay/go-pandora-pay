@@ -5,13 +5,12 @@ import (
 	"errors"
 	"pandora-pay/app"
 	"pandora-pay/helpers"
-	"pandora-pay/transactions_builder"
 	"pandora-pay/transactions_builder/wizard"
 	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
 )
 
-func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
+func createUpdateDelegateTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if len(args) != 3 || args[0].Type() != js.TypeString || args[1].Type() != js.TypeFunction || args[2].Type() != js.TypeString {
@@ -23,15 +22,15 @@ func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 		}
 
 		type DelegateTxFloatData struct {
-			From                         string                                            `json:"from"`
-			Nonce                        uint64                                            `json:"nonce"`
-			DelegatedStakingNewPublicKey helpers.HexBytes                                  `json:"delegatedStakingNewPublicKey"`
-			DelegatedStakingNewFee       uint64                                            `json:"delegatedStakingNewFee"`
-			DelegatedStakingClaimAmount  float64                                           `json:"delegatedStakingClaimAmount"`
-			Data                         *wizard.TransactionsWizardData                    `json:"data"`
-			Fee                          *transactions_builder.TransactionsBuilderFeeFloat `json:"fee"`
-			PropagateTx                  bool                                              `json:"propagateTx"`
-			AwaitAnswer                  bool                                              `json:"awaitAnswer"`
+			From                         string                         `json:"from"`
+			Nonce                        uint64                         `json:"nonce"`
+			DelegatedStakingNewPublicKey helpers.HexBytes               `json:"delegatedStakingNewPublicKey"`
+			DelegatedStakingNewFee       uint64                         `json:"delegatedStakingNewFee"`
+			DelegatedStakingClaimAmount  uint64                         `json:"delegatedStakingClaimAmount"`
+			Data                         *wizard.TransactionsWizardData `json:"data"`
+			Fee                          *wizard.TransactionsWizardFee  `json:"fee"`
+			PropagateTx                  bool                           `json:"propagateTx"`
+			AwaitAnswer                  bool                           `json:"awaitAnswer"`
 		}
 
 		txData := &DelegateTxFloatData{}
@@ -39,7 +38,7 @@ func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.CreateUpdateDelegateTx_Float(txData.From, txData.Nonce, txData.DelegatedStakingNewPublicKey, txData.DelegatedStakingNewFee, txData.DelegatedStakingClaimAmount, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
+		tx, err := app.TransactionsBuilder.CreateUpdateDelegateTx(txData.From, txData.Nonce, txData.DelegatedStakingNewPublicKey, txData.DelegatedStakingNewFee, txData.DelegatedStakingClaimAmount, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {
@@ -51,7 +50,7 @@ func createUpdateDelegateTx_Float(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func createUnstakeTx_Float(this js.Value, args []js.Value) interface{} {
+func createUnstakeTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if len(args) != 3 || args[0].Type() != js.TypeString || args[1].Type() != js.TypeFunction || args[2].Type() != js.TypeString {
@@ -63,13 +62,13 @@ func createUnstakeTx_Float(this js.Value, args []js.Value) interface{} {
 		}
 
 		type DelegateTxFloatData struct {
-			From          string                                            `json:"from"`
-			Nonce         uint64                                            `json:"nonce"`
-			UnstakeAmount float64                                           `json:"unstakeAmount"`
-			Data          *wizard.TransactionsWizardData                    `json:"data"`
-			Fee           *transactions_builder.TransactionsBuilderFeeFloat `json:"fee"`
-			PropagateTx   bool                                              `json:"propagateTx"`
-			AwaitAnswer   bool                                              `json:"awaitAnswer"`
+			From          string                         `json:"from"`
+			Nonce         uint64                         `json:"nonce"`
+			UnstakeAmount uint64                         `json:"unstakeAmount"`
+			Data          *wizard.TransactionsWizardData `json:"data"`
+			Fee           *wizard.TransactionsWizardFee  `json:"fee"`
+			PropagateTx   bool                           `json:"propagateTx"`
+			AwaitAnswer   bool                           `json:"awaitAnswer"`
 		}
 
 		txData := &DelegateTxFloatData{}
@@ -77,7 +76,7 @@ func createUnstakeTx_Float(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.CreateUnstakeTx_Float(txData.From, txData.Nonce, txData.UnstakeAmount, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
+		tx, err := app.TransactionsBuilder.CreateUnstakeTx(txData.From, txData.Nonce, txData.UnstakeAmount, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {

@@ -152,67 +152,6 @@ func (builder *TransactionsBuilder) initCLI() {
 		return
 	}
 
-	//cliPrivateDelegate := func(cmd string) (err error) {
-	//
-	//	builder.showWarningIfNotSyncCLI()
-	//
-	//	walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Transfer")
-	//	if err != nil {
-	//		return
-	//	}
-	//
-	//	assetId, ok := gui.GUI.OutputReadBytes("Asset. Leave empty for Native Asset", []int{0, config_coins.ASSET_LENGTH})
-	//	if !ok {
-	//		return
-	//	}
-	//	if len(assetId) != 0 && len(assetId) != 40 {
-	//		return errors.New("Invalid AssetId")
-	//	}
-	//
-	//	amount, ok := gui.GUI.OutputReadFloat64("Amount", nil)
-	//	if !ok {
-	//		return
-	//	}
-	//
-	//	destinationAddress, ok := gui.GUI.OutputReadAddress("Destination Address")
-	//	if !ok {
-	//		return
-	//	}
-	//
-	//	data, ok := builder.readData()
-	//	if !ok {
-	//		return
-	//	}
-	//
-	//	propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
-	//	if !ok {
-	//		return
-	//	}
-	//
-	//	fee, ok := builder.readFees()
-	//	if !ok {
-	//		return
-	//	}
-	//
-	//	ringMembers := make([][]string, 1)
-	//	if ringMembers[0], err = builder.CreateZetherRing(walletAddress.AddressEncoded, destinationAddress.EncodeAddr(), assetId, -1, -1); err != nil {
-	//		return
-	//	}
-	//
-	//	ctx, cancel := context.WithCancel(context.Background())
-	//	defer cancel()
-	//
-	//	tx, err := builder.CreateZetherClaimStakeTx_Float([]string{walletAddress.AddressEncoded}, [][]byte{assetId}, []float64{amount}, []string{destinationAddress.EncodeAddr()}, []float64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*TransactionsBuilderFeeFloat{fee}, propagate, true, true, false, ctx, func(status string) {
-	//		gui.GUI.OutputWrite(status)
-	//	})
-	//	if err != nil {
-	//		return
-	//	}
-	//
-	//	gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
-	//	return
-	//}
-
 	cliUpdateDelegate := func(cmd string) (err error) {
 
 		builder.showWarningIfNotSyncCLI()
