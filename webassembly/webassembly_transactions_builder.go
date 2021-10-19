@@ -1,7 +1,6 @@
 package webassembly
 
 import (
-	"encoding/json"
 	"errors"
 	"pandora-pay/app"
 	"pandora-pay/helpers"
@@ -13,7 +12,7 @@ import (
 func createUpdateDelegateTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		if len(args) != 3 || args[0].Type() != js.TypeString || args[1].Type() != js.TypeFunction || args[2].Type() != js.TypeString {
+		if len(args) != 3 || args[0].Type() != js.TypeObject || args[1].Type() != js.TypeFunction || args[2].Type() != js.TypeString {
 			return nil, errors.New("Argument must be a string and a callback")
 		}
 
@@ -21,7 +20,7 @@ func createUpdateDelegateTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		type DelegateTxFloatData struct {
+		txData := &struct {
 			From                         string                         `json:"from"`
 			Nonce                        uint64                         `json:"nonce"`
 			DelegatedStakingNewPublicKey helpers.HexBytes               `json:"delegatedStakingNewPublicKey"`
@@ -31,10 +30,9 @@ func createUpdateDelegateTx(this js.Value, args []js.Value) interface{} {
 			Fee                          *wizard.TransactionsWizardFee  `json:"fee"`
 			PropagateTx                  bool                           `json:"propagateTx"`
 			AwaitAnswer                  bool                           `json:"awaitAnswer"`
-		}
+		}{}
 
-		txData := &DelegateTxFloatData{}
-		if err := json.Unmarshal([]byte(args[0].String()), txData); err != nil {
+		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
 			return nil, err
 		}
 
@@ -53,7 +51,7 @@ func createUpdateDelegateTx(this js.Value, args []js.Value) interface{} {
 func createUnstakeTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		if len(args) != 3 || args[0].Type() != js.TypeString || args[1].Type() != js.TypeFunction || args[2].Type() != js.TypeString {
+		if len(args) != 3 || args[0].Type() != js.TypeObject || args[1].Type() != js.TypeFunction || args[2].Type() != js.TypeString {
 			return nil, errors.New("Argument must be a string and a callback")
 		}
 
@@ -61,7 +59,7 @@ func createUnstakeTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		type DelegateTxFloatData struct {
+		txData := &struct {
 			From          string                         `json:"from"`
 			Nonce         uint64                         `json:"nonce"`
 			UnstakeAmount uint64                         `json:"unstakeAmount"`
@@ -69,10 +67,9 @@ func createUnstakeTx(this js.Value, args []js.Value) interface{} {
 			Fee           *wizard.TransactionsWizardFee  `json:"fee"`
 			PropagateTx   bool                           `json:"propagateTx"`
 			AwaitAnswer   bool                           `json:"awaitAnswer"`
-		}
+		}{}
 
-		txData := &DelegateTxFloatData{}
-		if err := json.Unmarshal([]byte(args[0].String()), txData); err != nil {
+		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
 			return nil, err
 		}
 
