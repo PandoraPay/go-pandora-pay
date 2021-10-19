@@ -53,6 +53,7 @@ func ProcessArgument(any ...interface{}) string {
 		case uint64:
 			s += strconv.FormatUint(v, 10)
 		case []byte:
+			s += hex.EncodeToString(v)
 		case helpers.HexBytes:
 			s += hex.EncodeToString(v)
 		case error:
