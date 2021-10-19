@@ -265,7 +265,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		gui.GUI.Info("Exported successfully to: " + str)
+		gui.GUI.Info("Exported successfully to: ", str)
 		return
 	}
 
@@ -315,7 +315,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return errors.New("Error writing into file")
 		}
 
-		gui.GUI.Info("Exported successfully to: " + str)
+		gui.GUI.Info("Exported successfully to: ", str)
 		return
 	}
 
@@ -335,7 +335,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		gui.GUI.Info("Imported successfully from: " + str)
+		gui.GUI.Info("Imported successfully from: ", str)
 		return
 	}
 
@@ -365,7 +365,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return errors.New("Error writing into file")
 		}
 
-		gui.GUI.Info("Wallet Exported successfully to: " + str)
+		gui.GUI.Info("Wallet Exported successfully to: ", str)
 		return
 	}
 
@@ -394,7 +394,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		gui.GUI.Info("Wallet Imported Successfully from: " + str)
+		gui.GUI.Info("Wallet Imported Successfully from: ", str)
 		return
 	}
 
