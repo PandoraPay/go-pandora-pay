@@ -391,8 +391,11 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 }
 
 func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+
 	payloadsExtra := []transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface{}
-	payloadsExtra = append(payloadsExtra, nil)
+	for range transfers {
+		payloadsExtra = append(payloadsExtra, nil)
+	}
 
 	txBase := &transaction_zether.TransactionZether{
 		Registrations: &transaction_data.TransactionDataTransactions{},
