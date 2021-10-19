@@ -93,8 +93,8 @@ func (tx *TransactionZetherPayloadClaimStake) Validate(txRegistrations *transact
 	if bytes.Equal(payloadAsset, config_coins.NATIVE_ASSET_FULL) == false {
 		return errors.New("Payload[0] asset must be a native asset")
 	}
-	if payloadBurnValue == 0 {
-		return errors.New("Payload burn value msut be greater than zero")
+	if payloadBurnValue != 0 {
+		return errors.New("Payload burn value must be zero")
 	}
 
 	if int(tx.RegistrationIndex) >= len(txRegistrations.Registrations) {

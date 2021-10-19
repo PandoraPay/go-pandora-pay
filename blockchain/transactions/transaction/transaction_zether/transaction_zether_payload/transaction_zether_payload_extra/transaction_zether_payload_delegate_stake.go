@@ -66,7 +66,7 @@ func (tx *TransactionZetherPayloadDelegateStake) Validate(txRegistrations *trans
 		return errors.New("Payload[0] asset must be a native asset")
 	}
 	if payloadBurnValue == 0 {
-		return errors.New("Payload burn value msut be greater than zero")
+		return errors.New("Payload burn value must be greater than zero")
 	}
 
 	if tx.DelegatedStakingNewInfo {

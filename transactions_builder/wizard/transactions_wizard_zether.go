@@ -336,6 +336,17 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		payload.Statement = &statement
 		payload.Extra = payloadsExtra[t]
 
+		if payload.Extra == nil {
+			payload.PayloadScript = transaction_zether_payload.SCRIPT_TRANSFER
+		} else {
+			switch payload.Extra.(type) {
+			case *transaction_zether_payload_extra.TransactionZetherPayloadClaimStake:
+				payload.PayloadScript = transaction_zether_payload.SCRIPT_CLAIM_STAKE
+			case *transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake:
+				payload.PayloadScript = transaction_zether_payload.SCRIPT_DELEGATE_STAKE
+			}
+		}
+
 		payloads[t] = &payload
 
 		// get ready for another round by internal processing of state
