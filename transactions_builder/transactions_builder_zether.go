@@ -10,8 +10,6 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/blockchain/data_storage/assets"
-	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/globals"
@@ -116,50 +114,6 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, assetId [
 	}
 
 	return rings, nil
-}
-
-func (builder *TransactionsBuilder) CreateZetherTx_Float(from []string, dstsAsts [][]byte, amounts []float64, dsts []string, burns []float64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
-
-	amountsFinal := make([]uint64, len(amounts))
-	burnsFinal := make([]uint64, len(burns))
-	finalFees := make([]*wizard.TransactionsWizardFee, len(fees))
-
-	statusCallback("Converting Floats to Numbers")
-
-	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-		asts := assets.NewAssets(reader)
-
-		for i := range amounts {
-			if err != nil {
-				return
-			}
-
-			var ast *asset.Asset
-			if ast, err = asts.GetAsset(dstsAsts[i]); err != nil {
-				return
-			}
-			if ast == nil {
-				return errors.New("Asset was not found")
-			}
-
-			if amountsFinal[i], err = ast.ConvertToUnits(amounts[i]); err != nil {
-				return
-			}
-			if burnsFinal[i], err = ast.ConvertToUnits(burns[i]); err != nil {
-				return
-			}
-			if finalFees[i], err = fees[i].convertToWizardFee(ast); err != nil {
-				return
-			}
-		}
-
-		return
-	}); err != nil {
-		return nil, err
-	}
-
-	return builder.CreateZetherTx(from, dstsAsts, amountsFinal, dsts, burnsFinal, ringMembers, data, finalFees, propagateTx, awaitAnswer, awaitBroadcast, validateTx, ctx, statusCallback)
 }
 
 func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, ctx context.Context, statusCallback func(string)) ([]*wizard.ZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.ZetherPublicKeyIndex, uint64, []byte, error) {

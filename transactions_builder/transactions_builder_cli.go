@@ -5,9 +5,13 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"pandora-pay/blockchain/data_storage/assets"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
+	"pandora-pay/store"
+	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/transactions_builder/wizard"
 	"pandora-pay/wallet/wallet_address"
 )
@@ -16,28 +20,6 @@ func (builder *TransactionsBuilder) showWarningIfNotSyncCLI() {
 	if builder.chain.Sync.GetSyncTime() == 0 {
 		gui.GUI.OutputWrite("Your node is not Sync yet. Wait for it to get sync.")
 	}
-}
-
-func (builder *TransactionsBuilder) readFees() (out *TransactionsBuilderFeeFloat, ok bool) {
-
-	fee := &TransactionsBuilderFeeFloat{}
-
-	if fee.PerByteAuto, ok = gui.GUI.OutputReadBool("Compute Automatically Fee Per Byte. Type y\n"); !ok {
-		return
-	}
-	if !fee.PerByteAuto {
-		if fee.PerByte, ok = gui.GUI.OutputReadFloat64("Fee per byte", nil); !ok {
-			return
-		}
-
-		if fee.PerByte == 0 {
-			if fee.Fixed, ok = gui.GUI.OutputReadFloat64("Fee per byte", nil); !ok {
-				return
-			}
-		}
-	}
-
-	return fee, true
 }
 
 func (builder *TransactionsBuilder) readData() (out *wizard.TransactionsWizardData, ok bool) {
@@ -58,9 +40,58 @@ func (builder *TransactionsBuilder) readData() (out *wizard.TransactionsWizardDa
 	return data, ok
 }
 
+func (builder *TransactionsBuilder) readAmount(assetId []byte, text string) (amount uint64, ok bool, err error) {
+
+	amountFloat, ok := gui.GUI.OutputReadFloat64(text, nil)
+	if !ok {
+		return
+	}
+
+	err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		asts := assets.NewAssets(reader)
+		var ast *asset.Asset
+		if ast, err = asts.GetAsset(assetId); err != nil {
+			return
+		}
+		if ast == nil {
+			return errors.New("Asset was not found")
+		}
+		if amount, err = ast.ConvertToUnits(amountFloat); err != nil {
+			return
+		}
+
+		return
+	})
+
+	return
+}
+
+func (builder *TransactionsBuilder) readFees(assetId []byte) (fee *wizard.TransactionsWizardFee, ok bool, err error) {
+
+	fee = &wizard.TransactionsWizardFee{}
+
+	if fee.PerByteAuto, ok = gui.GUI.OutputReadBool("Compute Automatically Fee Per Byte. Type y\n"); !ok {
+		return
+	}
+	if !fee.PerByteAuto {
+
+		if fee.PerByte, ok, err = builder.readAmount(assetId, "Fee per byte"); !ok || err != nil {
+			return
+		}
+
+		if fee.PerByte == 0 {
+			if fee.Fixed, ok, err = builder.readAmount(assetId, "Fee per byte"); !ok || err != nil {
+				return
+			}
+		}
+	}
+
+	return
+}
+
 func (builder *TransactionsBuilder) initCLI() {
 
-	cliTransfer := func(cmd string) (err error) {
+	cliPrivateTransfer := func(cmd string) (err error) {
 
 		builder.showWarningIfNotSyncCLI()
 
@@ -69,16 +100,16 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		assetId, ok := gui.GUI.OutputReadBytes("Asset. Leave empty for Native Asset", []int{0, config_coins.ASSET_LENGTH})
+		assetId, ok := gui.GUI.OutputReadBytes("Asset. Leave empty for Native Asset", []int{config_coins.ASSET_LENGTH})
 		if !ok {
 			return
 		}
-		if len(assetId) != 0 && len(assetId) != 40 {
+		if len(assetId) != 40 {
 			return errors.New("Invalid AssetId")
 		}
 
-		amount, ok := gui.GUI.OutputReadFloat64("Amount", nil)
-		if !ok {
+		amount, ok, err := builder.readAmount(assetId, "Amount")
+		if !ok || err != nil {
 			return
 		}
 
@@ -97,8 +128,8 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		fee, ok := builder.readFees()
-		if !ok {
+		fee, ok, err := builder.readFees(assetId)
+		if !ok || err != nil {
 			return
 		}
 
@@ -110,7 +141,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		tx, err := builder.CreateZetherTx_Float([]string{walletAddress.AddressEncoded}, [][]byte{assetId}, []float64{amount}, []string{destinationAddress.EncodeAddr()}, []float64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*TransactionsBuilderFeeFloat{fee}, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateZetherTx([]string{walletAddress.AddressEncoded}, [][]byte{assetId}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -118,19 +149,75 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
-
-		if propagate {
-			gui.GUI.OutputWrite("Tx was inserted in mempool")
-		}
-
 		return
 	}
 
-	cliDelegate := func(cmd string) (err error) {
+	//cliPrivateDelegate := func(cmd string) (err error) {
+	//
+	//	builder.showWarningIfNotSyncCLI()
+	//
+	//	walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Transfer")
+	//	if err != nil {
+	//		return
+	//	}
+	//
+	//	assetId, ok := gui.GUI.OutputReadBytes("Asset. Leave empty for Native Asset", []int{0, config_coins.ASSET_LENGTH})
+	//	if !ok {
+	//		return
+	//	}
+	//	if len(assetId) != 0 && len(assetId) != 40 {
+	//		return errors.New("Invalid AssetId")
+	//	}
+	//
+	//	amount, ok := gui.GUI.OutputReadFloat64("Amount", nil)
+	//	if !ok {
+	//		return
+	//	}
+	//
+	//	destinationAddress, ok := gui.GUI.OutputReadAddress("Destination Address")
+	//	if !ok {
+	//		return
+	//	}
+	//
+	//	data, ok := builder.readData()
+	//	if !ok {
+	//		return
+	//	}
+	//
+	//	propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
+	//	if !ok {
+	//		return
+	//	}
+	//
+	//	fee, ok := builder.readFees()
+	//	if !ok {
+	//		return
+	//	}
+	//
+	//	ringMembers := make([][]string, 1)
+	//	if ringMembers[0], err = builder.CreateZetherRing(walletAddress.AddressEncoded, destinationAddress.EncodeAddr(), assetId, -1, -1); err != nil {
+	//		return
+	//	}
+	//
+	//	ctx, cancel := context.WithCancel(context.Background())
+	//	defer cancel()
+	//
+	//	tx, err := builder.CreateZetherClaimStakeTx_Float([]string{walletAddress.AddressEncoded}, [][]byte{assetId}, []float64{amount}, []string{destinationAddress.EncodeAddr()}, []float64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*TransactionsBuilderFeeFloat{fee}, propagate, true, true, false, ctx, func(status string) {
+	//		gui.GUI.OutputWrite(status)
+	//	})
+	//	if err != nil {
+	//		return
+	//	}
+	//
+	//	gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
+	//	return
+	//}
+
+	cliUpdateDelegate := func(cmd string) (err error) {
 
 		builder.showWarningIfNotSyncCLI()
 
-		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Delegate")
+		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Update Delegate")
 		if err != nil {
 			return
 		}
@@ -166,8 +253,8 @@ func (builder *TransactionsBuilder) initCLI() {
 			delegatedStakingNewFee = number
 		}
 
-		delegatedStakingClaimAmount, ok := gui.GUI.OutputReadFloat64("Update Delegated Staking Amount", nil)
-		if !ok {
+		delegatedStakingClaimAmount, ok, err := builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Update Delegated Staking Amount")
+		if !ok || err != nil {
 			return
 		}
 
@@ -176,8 +263,8 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		fee, ok := builder.readFees()
-		if !ok {
+		fee, ok, err := builder.readFees(config_coins.NATIVE_ASSET_FULL)
+		if !ok || err != nil {
 			return
 		}
 
@@ -186,7 +273,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateUpdateDelegateTx_Float(walletAddress.AddressEncoded, nonce, delegatedStakingNewPublicKey, delegatedStakingNewFee, delegatedStakingClaimAmount, data, fee, propagate, true, true, false, func(status string) {
+		tx, err := builder.CreateUpdateDelegateTx(walletAddress.AddressEncoded, nonce, delegatedStakingNewPublicKey, delegatedStakingNewFee, delegatedStakingClaimAmount, data, fee, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -194,10 +281,6 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
-		if propagate {
-			gui.GUI.OutputWrite("Tx was inserted in mempool")
-		}
-
 		return
 	}
 
@@ -210,8 +293,8 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		amount, ok := gui.GUI.OutputReadFloat64("Amount", nil)
-		if !ok {
+		amount, ok, err := builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Amount")
+		if !ok || err != nil {
 			return
 		}
 
@@ -225,8 +308,8 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		fee, ok := builder.readFees()
-		if !ok {
+		fee, ok, err := builder.readFees(config_coins.NATIVE_ASSET_FULL)
+		if !ok || err != nil {
 			return
 		}
 
@@ -235,7 +318,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateUnstakeTx_Float(walletAddress.AddressEncoded, nonce, amount, data, fee, propagate, true, true, false, func(status string) {
+		tx, err := builder.CreateUnstakeTx(walletAddress.AddressEncoded, nonce, amount, data, fee, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -243,16 +326,12 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
-
-		if propagate {
-			gui.GUI.OutputWrite("Tx was inserted in mempool")
-		}
-
 		return
 	}
 
-	gui.GUI.CommandDefineCallback("Transfer", cliTransfer, true)
-	gui.GUI.CommandDefineCallback("Delegate", cliDelegate, true)
+	gui.GUI.CommandDefineCallback("Private Transfer", cliPrivateTransfer, true)
+	//gui.GUI.CommandDefineCallback("Private Delegate", cliPrivateDelegate, true)
+	gui.GUI.CommandDefineCallback("Update Delegate", cliUpdateDelegate, true)
 	gui.GUI.CommandDefineCallback("Unstake", cliUnstake, true)
 
 }

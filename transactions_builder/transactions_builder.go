@@ -4,12 +4,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"pandora-pay/blockchain"
-	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/config/config_coins"
 	"pandora-pay/mempool"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
@@ -102,41 +100,6 @@ func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet
 	return fromWalletAddress, nil
 }
 
-func (builder *TransactionsBuilder) CreateUnstakeTx_Float(from string, nonce uint64, unstakeAmount float64, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(status string)) (*transaction.Transaction, error) {
-
-	statusCallback("Converting Floats to Numbers")
-
-	unstakeAmountFinal, err := config_coins.ConvertToUnits(unstakeAmount)
-	if err != nil {
-		return nil, err
-	}
-
-	feeFinal := &wizard.TransactionsWizardFee{}
-
-	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-		asts := assets.NewAssets(reader)
-
-		ast, err := asts.GetAsset(config_coins.NATIVE_ASSET_FULL)
-		if err != nil {
-			return
-		}
-		if ast == nil {
-			return errors.New("Asset was not found")
-		}
-
-		if feeFinal, err = fee.convertToWizardFee(ast); err != nil {
-			return
-		}
-
-		return
-	}); err != nil {
-		return nil, err
-	}
-
-	return builder.CreateUnstakeTx(from, nonce, unstakeAmountFinal, data, feeFinal, propagateTx, awaitAnswer, awaitBroadcast, false, statusCallback)
-}
-
 func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeAmount uint64, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(status string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
@@ -196,39 +159,6 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	}
 
 	return tx, nil
-}
-
-func (builder *TransactionsBuilder) CreateUpdateDelegateTx_Float(from string, nonce uint64, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, delegatedStakingClaimAmount float64, data *wizard.TransactionsWizardData, fee *TransactionsBuilderFeeFloat, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
-
-	var finalFee *wizard.TransactionsWizardFee
-	var finalDelegatedStakingClaimAmount uint64
-
-	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-		asts := assets.NewAssets(reader)
-
-		ast, err := asts.GetAsset(config_coins.NATIVE_ASSET_FULL)
-		if err != nil {
-			return
-		}
-		if ast == nil {
-			return errors.New("Asset was not found")
-		}
-
-		if finalFee, err = fee.convertToWizardFee(ast); err != nil {
-			return
-		}
-
-		if finalDelegatedStakingClaimAmount, err = ast.ConvertToUnits(delegatedStakingClaimAmount); err != nil {
-			return
-		}
-
-		return
-	}); err != nil {
-		return nil, err
-	}
-
-	return builder.CreateUpdateDelegateTx(from, nonce, delegatedStakingNewPublicKey, delegatedStakingNewFee, finalDelegatedStakingClaimAmount, data, finalFee, propagateTx, awaitAnswer, awaitBroadcast, false, statusCallback)
 }
 
 func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce uint64, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee, delegatedStakingClaimAmount uint64, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {

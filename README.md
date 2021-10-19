@@ -89,14 +89,13 @@ you can also create an account on hcaptcha
     - [x] Transaction Builder
     - [x] Fee calculator
     - [ ] Multi Threading signature verification **   
-- [x] Simple Transactions 
-  - [x] Simple Transactions
-  - [x] Unstake Transaction
-  - [x] Update Delegate
+- [x] Simple Transactions
+  - [x] Unstake Tx
+  - [x] Update Delegate Tx
 - [x] Zether Transactions 
-  - [ ] Reclaim Transaction
-  - [ ] Delegate Stake
-  - [x] Transfer Transactions
+  - [x] Claim Tx
+  - [x] Delegate Stake
+  - [x] Transfer Tx
 - [ ] Mem Pool
     - [ ] Saving/Loading
     - [X] Inserting Txs
