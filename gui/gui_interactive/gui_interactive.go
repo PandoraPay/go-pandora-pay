@@ -14,12 +14,13 @@ type GUIInteractive struct {
 	gui_interface.GUIInterface
 	logger *gui_logger.GUILogger
 
-	cmd        *widgets.List
+	cmd *widgets.List
+
 	cmdRows    []string
-	cmdStatus  string //string
-	cmdInput   string //string
+	cmdStatus  string
+	cmdInput   string
 	cmdInputCn chan string
-	cmdMutex   sync.RWMutex
+	cmdChanges sync.RWMutex
 
 	logs *widgets.Paragraph
 

@@ -433,7 +433,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliShowPrivateKey := func(cmd string) (err error) {
 
-		_, index, err := wallet.CliSelectAddress("Select Address to be Removed")
+		_, index, err := wallet.CliSelectAddress("Select Address to show the private key")
 		if err != nil {
 			return
 		}

@@ -65,15 +65,15 @@ func (g *GUIInteractive) CommandDefineCallback(Text string, callback func(string
 		callback = nil
 	}
 
-	g.cmdMutex.RLock()
+	g.cmdChanges.Lock()
 	for i := range commands {
 		if commands[i].Text == Text {
 			commands[i].Callback = callback
-			g.cmdMutex.RUnlock()
+			g.cmdChanges.Unlock()
 			return
 		}
 	}
-	g.cmdMutex.RUnlock()
+	g.cmdChanges.Unlock()
 
 	g.Error(errors.New("Command " + Text + " was not found"))
 }
@@ -81,7 +81,8 @@ func (g *GUIInteractive) CommandDefineCallback(Text string, callback func(string
 func (g *GUIInteractive) cmdProcess(e ui.Event) {
 
 	var command *Command
-	g.cmdMutex.RLock()
+
+	g.cmdChanges.RLock()
 	status := g.cmdStatus
 	input := g.cmdInput
 	cn := g.cmdInputCn
@@ -90,16 +91,23 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 		if g.cmd.SelectedRow >= len(commands) && len(commands) > 0 {
 			g.cmd.SelectedRow = len(commands) - 1
 		}
-		command = &commands[g.cmd.SelectedRow]
+		command = &Command{
+			commands[g.cmd.SelectedRow].Name,
+			commands[g.cmd.SelectedRow].Text,
+			commands[g.cmd.SelectedRow].Callback,
+		}
 		g.cmd.Unlock()
 	}
-	g.cmdMutex.RUnlock()
+	g.cmdChanges.RUnlock()
 
 	switch e.ID {
 	case "<C-c>":
 		if status == "read" {
 			if cn != nil {
 				close(cn)
+				g.cmdChanges.Lock()
+				g.cmdInputCn = nil
+				g.cmdChanges.Unlock()
 			}
 			return
 		}
@@ -126,6 +134,7 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 
 			if command.Callback != nil {
 				g.outputClear("", nil)
+
 				go func() {
 
 					defer func() {
@@ -133,13 +142,17 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 						if err != nil {
 							g.Error(err)
 						}
+
+						g.outputDone()
 					}()
 
 					if err := command.Callback(command.Text); err != nil {
 						g.OutputWrite(err)
-						g.cmdMutex.Lock()
+
+						g.cmdChanges.Lock()
 						g.cmdStatus = "output done"
-						g.cmdMutex.Unlock()
+						g.cmdChanges.Unlock()
+
 					} else {
 						g.outputDone()
 					}
@@ -149,7 +162,9 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 		} else if status == "output done" {
 			g.outputRestore()
 		} else if status == "read" {
-			cn <- input
+			if cn != nil {
+				cn <- input
+			}
 		}
 
 	}
@@ -170,9 +185,9 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 		}
 		str += char
 
-		g.cmdMutex.Lock()
+		g.cmdChanges.Lock()
 		g.cmdInput = str
-		g.cmdMutex.Unlock()
+		g.cmdChanges.Unlock()
 
 		g.cmd.Lock()
 		g.cmd.Rows[len(g.cmd.Rows)-1] = "-> " + str
@@ -200,11 +215,11 @@ func (g *GUIInteractive) outputRead(text string) <-chan string {
 	g.cmd.Unlock()
 
 	cn := make(chan string)
-	g.cmdMutex.Lock()
+	g.cmdChanges.Lock()
 	g.cmdInput = ""
 	g.cmdStatus = "read"
 	g.cmdInputCn = cn
-	defer g.cmdMutex.Unlock()
+	g.cmdChanges.Unlock()
 	return cn
 }
 
@@ -235,7 +250,7 @@ func (g *GUIInteractive) OutputReadInt(text string, validateCb func(value int) b
 			continue
 		}
 
-		if validateCb != nil || !validateCb(out) {
+		if validateCb != nil && !validateCb(out) {
 			g.OutputWrite("Invalid value. Try again")
 			continue
 		}
@@ -254,7 +269,7 @@ func (g *GUIInteractive) OutputReadUint64(text string, validateCb func(value uin
 			continue
 		}
 
-		if validateCb != nil || !validateCb(out) {
+		if validateCb != nil && !validateCb(out) {
 			g.OutputWrite("Invalid value. Try again")
 			continue
 		}
@@ -332,20 +347,20 @@ func (g *GUIInteractive) outputClear(newCmdStatus string, rows []string) {
 	g.cmd.Lock()
 	g.cmd.Rows = rows
 	g.cmd.SelectedRow = 0
-	g.cmd.Unlock()
 	if newCmdStatus != "" {
-		g.cmdMutex.Lock()
+		g.cmdChanges.Lock()
 		g.cmdStatus = newCmdStatus
-		g.cmdMutex.Unlock()
+		g.cmdChanges.Unlock()
 	}
+	g.cmd.Unlock()
 }
 
 func (g *GUIInteractive) outputDone() {
 	g.OutputWrite("------------------------")
 	g.OutputWrite("Press space to return...")
-	g.cmdMutex.Lock()
+	g.cmdChanges.Lock()
 	g.cmdStatus = "output done"
-	g.cmdMutex.Unlock()
+	g.cmdChanges.Unlock()
 }
 
 func (g *GUIInteractive) outputRestore() {
