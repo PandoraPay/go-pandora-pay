@@ -141,9 +141,8 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 						err := recover()
 						if err != nil {
 							g.Error(err)
+							g.outputDone()
 						}
-
-						g.outputDone()
 					}()
 
 					if err := command.Callback(command.Text); err != nil {
