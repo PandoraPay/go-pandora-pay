@@ -3,10 +3,13 @@ package gui_interface
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"pandora-pay/addresses"
 	"pandora-pay/helpers"
 	"strconv"
 )
+
+var GUIInterfaceError = errors.New("Ctrl+C Suspended")
 
 type GUIInterface interface {
 	Close()
@@ -19,14 +22,14 @@ type GUIInterface interface {
 	Info2Update(key string, text string)
 	OutputWrite(any ...interface{})
 	CommandDefineCallback(Text string, callback func(string) error, useIt bool)
-	OutputReadString(text string) (out string, ok bool)
-	OutputReadFilename(text, extension string) (out string, ok bool)
-	OutputReadInt(text string, acceptedValues []int) (out int, ok bool)
-	OutputReadUint64(text string, acceptedValues []uint64, acceptEmpty bool) (out uint64, ok bool)
-	OutputReadFloat64(text string, acceptedValues []float64) (out float64, ok bool)
-	OutputReadAddress(text string) (address *addresses.Address, ok bool)
-	OutputReadBool(text string) (out bool, ok bool)
-	OutputReadBytes(text string, acceptedLengths []int) (data []byte, ok bool)
+	OutputReadString(text string) string
+	OutputReadFilename(text, extension string) string
+	OutputReadInt(text string, validateCb func(int) bool) int
+	OutputReadUint64(text string, validateCb func(uint64) bool) uint64
+	OutputReadFloat64(text string, validateCb func(float64) bool) float64
+	OutputReadAddress(text string) (address *addresses.Address)
+	OutputReadBool(text string) (out bool)
+	OutputReadBytes(text string, validateCb func([]byte) bool) (data []byte)
 }
 
 func ProcessArgument(any ...interface{}) string {

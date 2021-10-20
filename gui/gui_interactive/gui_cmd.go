@@ -128,6 +128,13 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 				g.outputClear("", nil)
 				go func() {
 
+					defer func() {
+						err := recover()
+						if err != nil {
+							g.Error(err)
+						}
+					}()
+
 					if err := command.Callback(command.Text); err != nil {
 						g.OutputWrite(err)
 						g.cmdMutex.Lock()
@@ -201,160 +208,120 @@ func (g *GUIInteractive) outputRead(text string) <-chan string {
 	return cn
 }
 
-func (g *GUIInteractive) OutputReadString(text string) (out string, ok bool) {
-	out, ok = <-g.outputRead(text)
-	return
+func (g *GUIInteractive) OutputReadString(text string) string {
+	out, ok := <-g.outputRead(text)
+	if !ok {
+		panic(gui_interface.GUIInterfaceError)
+	}
+	return out
 }
 
-func (g *GUIInteractive) OutputReadFilename(text, extension string) (out string, ok bool) {
-	if out, ok = <-g.outputRead(text); !ok {
-		return "", false
-	}
+func (g *GUIInteractive) OutputReadFilename(text, extension string) string {
+	out := g.OutputReadString(text)
 	if path.Ext(out) == "" {
 		out += "." + extension
 	}
-	return
+	return out
 }
 
-func (g *GUIInteractive) OutputReadInt(text string, acceptedValues []int) (out int, ok bool) {
-	var str string
-	var err error
+func (g *GUIInteractive) OutputReadInt(text string, validateCb func(value int) bool) int {
 	for {
-		if str, ok = <-g.outputRead(text); !ok {
-			return
-		}
-		if out, err = strconv.Atoi(str); err != nil {
+
+		str := g.OutputReadString(text)
+
+		out, err := strconv.Atoi(str)
+		if err != nil {
 			g.OutputWrite("Invalid Number")
 			continue
 		}
-		if acceptedValues != nil {
-			acceptedValuesStr := ""
-			for _, acceptedValue := range acceptedValues {
-				if out == acceptedValue {
-					return
-				}
-				acceptedValuesStr += strconv.Itoa(acceptedValue) + " "
-			}
-			g.OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
+
+		if validateCb != nil || !validateCb(out) {
+			g.OutputWrite("Invalid value. Try again")
 			continue
 		}
-		return
+		return out
 	}
 }
 
-func (g *GUIInteractive) OutputReadUint64(text string, acceptedValues []uint64, acceptEmpty bool) (out uint64, ok bool) {
-	var str string
-	var err error
-	for {
-		if str, ok = <-g.outputRead(text); !ok {
-			return
-		}
-		if acceptEmpty && str == "" {
-			return
-		}
+func (g *GUIInteractive) OutputReadUint64(text string, validateCb func(value uint64) bool) uint64 {
 
-		if out, err = strconv.ParseUint(str, 10, 64); err != nil {
+	for {
+		str := g.OutputReadString(text)
+
+		out, err := strconv.ParseUint(str, 10, 64)
+		if err != nil {
 			g.OutputWrite("Invalid Number")
 			continue
 		}
-		if acceptedValues != nil {
-			acceptedValuesStr := ""
-			for _, acceptedValue := range acceptedValues {
-				if out == acceptedValue {
-					return
-				}
-				acceptedValuesStr += strconv.FormatUint(acceptedValue, 64) + " "
-			}
-			g.OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
+
+		if validateCb != nil || !validateCb(out) {
+			g.OutputWrite("Invalid value. Try again")
 			continue
 		}
-		return
+		return out
 	}
 }
 
-func (g *GUIInteractive) OutputReadFloat64(text string, acceptedValues []float64) (out float64, ok bool) {
-	var str string
-	var err error
+func (g *GUIInteractive) OutputReadFloat64(text string, validateCb func(float64) bool) float64 {
 	for {
-		if str, ok = <-g.outputRead(text); !ok {
-			return
-		}
-		if out, err = strconv.ParseFloat(str, 64); err != nil {
+		str := g.OutputReadString(text)
+
+		out, err := strconv.ParseFloat(str, 64)
+		if err != nil {
 			g.OutputWrite("Invalid Number")
 			continue
 		}
-		if acceptedValues != nil {
-			acceptedValuesStr := ""
-			for _, acceptedValue := range acceptedValues {
-				if out == acceptedValue {
-					return
-				}
-				acceptedValuesStr += strconv.FormatFloat(acceptedValue, 'f', 10, 64) + " "
-			}
-			g.OutputWrite("Invalid values. Values accepted: " + acceptedValuesStr)
+
+		if validateCb != nil && !validateCb(out) {
+			g.OutputWrite("Invalid value. Try again")
 			continue
 		}
-		return
+
+		return out
 	}
 }
 
-func (g *GUIInteractive) OutputReadAddress(text string) (address *addresses.Address, ok bool) {
-	var str string
-	var err error
-
+func (g *GUIInteractive) OutputReadAddress(text string) *addresses.Address {
 	for {
-		if str, ok = <-g.outputRead(text); !ok {
-			return
-		}
-		address, err = addresses.DecodeAddr(str)
+		str := g.OutputReadString(text)
+		address, err := addresses.DecodeAddr(str)
 		if err != nil {
 			g.OutputWrite("Invalid Address")
 			continue
 		}
-		return
+		return address
 	}
 }
 
-func (g *GUIInteractive) OutputReadBool(text string) (out bool, ok bool) {
-	var str string
+func (g *GUIInteractive) OutputReadBool(text string) bool {
 	for {
-		if str, ok = <-g.outputRead(text); !ok {
-			return
-		}
+		str := g.OutputReadString(text)
 		if str == "y" {
-			return true, true
+			return true
 		} else if str == "n" {
-			return false, true
-		} else {
-			g.OutputWrite("Invalid boolean answer")
-			continue
+			return false
 		}
+		g.OutputWrite("Invalid boolean answer")
 	}
 }
 
-func (g *GUIInteractive) OutputReadBytes(text string, acceptedLengths []int) (input []byte, ok bool) {
-	var str string
-	var err error
+func (g *GUIInteractive) OutputReadBytes(text string, validateCb func([]byte) bool) []byte {
+
 	for {
-		if str, ok = <-g.outputRead(text); !ok {
-			return
-		}
-		if input, err = hex.DecodeString(str); err != nil {
+		str := g.OutputReadString(text)
+		input, err := hex.DecodeString(str)
+
+		if err != nil {
 			g.OutputWrite("Invalid Data. The input has to be a hex")
 			continue
 		}
 
-		if acceptedLengths != nil {
-			acceptedLengthsStr := ""
-			for _, acceptedLength := range acceptedLengths {
-				acceptedLengthsStr = acceptedLengthsStr + strconv.Itoa(acceptedLength) + " , "
-				if len(input) == acceptedLength {
-					return
-				}
-			}
-			g.OutputWrite("Invalid value. Lengths accepted: " + acceptedLengthsStr)
+		if validateCb != nil && !validateCb(input) {
+			g.OutputWrite("Invalid value. Try again")
 			continue
 		}
+		return input
+
 	}
 }
 

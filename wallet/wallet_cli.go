@@ -214,25 +214,22 @@ func (wallet *Wallet) CliSelectAddress(text string) (*wallet_address.WalletAddre
 		return nil, 0, err
 	}
 
-	index, ok := gui.GUI.OutputReadInt(text, nil)
-	if !ok {
-		return nil, 0, errors.New("Canceled")
-	}
+	index := gui.GUI.OutputReadInt(text, func(value int) bool {
+		return value < wallet.GetAddressesCount()
+	})
 
 	walletAddress, err := wallet.GetWalletAddress(index)
 	if err != nil {
 		return nil, 0, err
 	}
+
 	return walletAddress, index, nil
 }
 
 func (wallet *Wallet) initWalletCLI() {
 
 	cliExportAddresses := func(cmd string) (err error) {
-		str, ok := gui.GUI.OutputReadFilename("Path to export", "txt")
-		if !ok {
-			return
-		}
+		str := gui.GUI.OutputReadFilename("Path to export", "txt")
 
 		f, err := os.Create(str)
 		if err != nil {
@@ -274,15 +271,9 @@ func (wallet *Wallet) initWalletCLI() {
 		if err = wallet.CliListAddresses(""); err != nil {
 			return
 		}
-		index, ok := gui.GUI.OutputReadInt("Select Address to be Exported", nil)
-		if !ok {
-			return
-		}
 
-		str, ok := gui.GUI.OutputReadFilename("Path to export", "pandora")
-		if !ok {
-			return
-		}
+		index := gui.GUI.OutputReadInt("Select Address to be Exported", nil)
+		str := gui.GUI.OutputReadFilename("Path to export", "pandora")
 
 		f, err := os.Create(str)
 		if err != nil {
@@ -321,10 +312,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliImportAddressJSON := func(cmd string) (err error) {
 
-		str, ok := gui.GUI.OutputReadString("Path to import")
-		if !ok {
-			return
-		}
+		str := gui.GUI.OutputReadString("Path to import")
 
 		data, err := os.ReadFile(str + ".pandora")
 		if err != nil {
@@ -341,10 +329,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliExportWalletJSON := func(cmd string) (err error) {
 
-		str, ok := gui.GUI.OutputReadFilename("Path to export", "pandora")
-		if !ok {
-			return
-		}
+		str := gui.GUI.OutputReadFilename("Path to export", "pandora")
 
 		f, err := os.Create(str)
 		if err != nil {
@@ -371,15 +356,8 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliImportWalletJSON := func(cmd string) (err error) {
 
-		str, ok := gui.GUI.OutputReadString("Path to import Wallet")
-		if !ok {
-			return
-		}
-
-		done, ok := gui.GUI.OutputReadBool("Your wallet will be REPLACED with this one! [y/n]")
-		if !ok {
-			return
-		}
+		str := gui.GUI.OutputReadString("Path to import Wallet")
+		done := gui.GUI.OutputReadBool("Your wallet will be REPLACED with this one! [y/n]")
 
 		if !done {
 			return errors.New("You didn't accept REPLACING your existing wallet")
@@ -435,15 +413,8 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		nonce, ok := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", nil, true)
-		if !ok {
-			return
-		}
-
-		path, ok := gui.GUI.OutputReadString("Path to export to a file")
-		if !ok {
-			return
-		}
+		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", nil)
+		path := gui.GUI.OutputReadString("Path to export to a file")
 
 		return wallet.deriveDelegatedStake(addr, nonce, path, true)
 
@@ -478,15 +449,11 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliImportPrivateKey := func(cmd string) (err error) {
 
-		privateKey, ok := gui.GUI.OutputReadBytes("Write Private key", []int{32})
-		if !ok {
-			return
-		}
+		privateKey := gui.GUI.OutputReadBytes("Write Private key", func(input []byte) bool {
+			return len(input) == 32
+		})
 
-		name, ok := gui.GUI.OutputReadString("Write Name of the newly imported address")
-		if !ok {
-			return
-		}
+		name := gui.GUI.OutputReadString("Write Name of the newly imported address")
 
 		var adr *wallet_address.WalletAddress
 		if adr, err = wallet.ImportPrivateKey(name, privateKey); err != nil {
@@ -499,15 +466,11 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	cliEncryptWallet := func(cmd string) (err error) {
-		password, ok := gui.GUI.OutputReadString("Password for encrypting wallet")
-		if !ok {
-			return
-		}
 
-		difficulty, ok := gui.GUI.OutputReadInt("Difficulty for encryption", []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
-		if !ok {
-			return
-		}
+		password := gui.GUI.OutputReadString("Password for encrypting wallet")
+		difficulty := gui.GUI.OutputReadInt("Difficulty for encryption", func(value int) bool {
+			return value >= 1 && value <= 10
+		})
 
 		gui.GUI.OutputWrite("Wallet encrypting...")
 
@@ -518,10 +481,8 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	cliDecryptWallet := func(cmd string) (err error) {
-		password, ok := gui.GUI.OutputReadString("Password for decrypting wallet")
-		if !ok {
-			return
-		}
+
+		password := gui.GUI.OutputReadString("Password for decrypting wallet")
 
 		gui.GUI.OutputWrite("Wallet decrypting...")
 
