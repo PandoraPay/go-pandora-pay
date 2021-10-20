@@ -62,7 +62,7 @@ func (tx *TransactionZether) BloomNow(hashForSignature []byte) (err error) {
 		switch payload.PayloadScript {
 		case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
 			extra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake)
-			if extra.DelegatedStakingNewInfo && extra.VerifySignatureManually(hashForSignature) == false {
+			if extra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo && extra.VerifySignatureManually(hashForSignature) == false {
 				return errors.New("DelegatedPublicKey signature failed")
 			}
 		case transaction_zether_payload.SCRIPT_CLAIM_STAKE:

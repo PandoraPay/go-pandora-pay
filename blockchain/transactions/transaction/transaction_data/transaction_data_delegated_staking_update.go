@@ -2,6 +2,7 @@ package transaction_data
 
 import (
 	"errors"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -11,6 +12,25 @@ type TransactionDataDelegatedStakingUpdate struct {
 	DelegatedStakingHasNewInfo   bool
 	DelegatedStakingNewPublicKey helpers.HexBytes //20 byte
 	DelegatedStakingNewFee       uint64
+}
+
+func (data *TransactionDataDelegatedStakingUpdate) Include(plainAcc *plain_account.PlainAccount) (err error) {
+
+	if plainAcc == nil {
+		return errors.New("PlainAcc is null")
+	}
+
+	if data.DelegatedStakingHasNewInfo {
+		if !plainAcc.HasDelegatedStake() {
+			if err = plainAcc.CreateDelegatedStake(0, data.DelegatedStakingNewPublicKey, data.DelegatedStakingNewFee); err != nil {
+				return
+			}
+		} else {
+			plainAcc.DelegatedStake.DelegatedStakePublicKey = data.DelegatedStakingNewPublicKey
+			plainAcc.DelegatedStake.DelegatedStakeFee = data.DelegatedStakingNewFee
+		}
+	}
+	return
 }
 
 func (data *TransactionDataDelegatedStakingUpdate) Validate() error {

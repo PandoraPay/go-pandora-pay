@@ -20,19 +20,8 @@ type TransactionSimpleUpdateDelegate struct {
 
 func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
 
-	if plainAcc == nil {
-		return errors.New("PlainAcc is null")
-	}
-
-	if tx.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
-		if !plainAcc.HasDelegatedStake() {
-			if err = plainAcc.CreateDelegatedStake(0, tx.DelegatedStakingUpdate.DelegatedStakingNewPublicKey, tx.DelegatedStakingUpdate.DelegatedStakingNewFee); err != nil {
-				return
-			}
-		} else {
-			plainAcc.DelegatedStake.DelegatedStakePublicKey = tx.DelegatedStakingUpdate.DelegatedStakingNewPublicKey
-			plainAcc.DelegatedStake.DelegatedStakeFee = tx.DelegatedStakingUpdate.DelegatedStakingNewFee
-		}
+	if err = tx.DelegatedStakingUpdate.Include(plainAcc); err != nil {
+		return
 	}
 
 	if tx.DelegatedStakingClaimAmount > 0 {
@@ -47,9 +36,9 @@ func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(blockHeight ui
 	return
 }
 
-func (tx *TransactionSimpleUpdateDelegate) Validate() error {
-	if err := tx.DelegatedStakingUpdate.Validate(); err != nil {
-		return err
+func (tx *TransactionSimpleUpdateDelegate) Validate() (err error) {
+	if err = tx.DelegatedStakingUpdate.Validate(); err != nil {
+		return
 	}
 
 	if !tx.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
@@ -58,7 +47,7 @@ func (tx *TransactionSimpleUpdateDelegate) Validate() error {
 		}
 	}
 
-	return nil
+	return
 }
 
 func (tx *TransactionSimpleUpdateDelegate) Serialize(w *helpers.BufferWriter, inclSignature bool) {

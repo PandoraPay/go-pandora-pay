@@ -57,7 +57,7 @@ type json_TransactionSimpleInput struct {
 
 type json_Only_TransactionSimpleUpdateDelegate struct {
 	DelegatedStakingClaimAmount uint64                                      `json:"delegatedStakingClaimAmount"`
-	DelegatedStakingUpdate      *json_TransactionDataDelegatedStakingUpdate `json:"DelegatedStakingUpdate"`
+	DelegatedStakingUpdate      *json_TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
 }
 
 type json_TransactionSimpleUpdateDelegate struct {
@@ -81,11 +81,9 @@ type json_Only_TransactionZether struct {
 }
 
 type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
-	DelegatePublicKey            helpers.HexBytes `json:"delegatePublicKey"`
-	DelegatedStakingNewInfo      bool             `json:"delegatedStakingNewInfo"`
-	DelegatedStakingNewPublicKey helpers.HexBytes `json:"delegatedStakingNewPublicKey"`
-	DelegatedStakingNewFee       uint64           `json:"delegatedStakingNewFee"`
-	DelegateSignature            helpers.HexBytes `json:"delegateSignature"`
+	DelegatePublicKey      helpers.HexBytes                            `json:"delegatePublicKey"`
+	DelegatedStakingUpdate *json_TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
+	DelegateSignature      helpers.HexBytes                            `json:"delegateSignature"`
 }
 
 type json_Only_TransactionZetherPayloadExtraClaimStake struct {
@@ -212,9 +210,11 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake)
 				extra = &json_Only_TransactionZetherPayloadExtraDelegateStake{
 					payloadExtra.DelegatePublicKey,
-					payloadExtra.DelegatedStakingNewInfo,
-					payloadExtra.DelegatedStakingNewPublicKey,
-					payloadExtra.DelegatedStakingNewFee,
+					&json_TransactionDataDelegatedStakingUpdate{
+						payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
+						payloadExtra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
+						payloadExtra.DelegatedStakingUpdate.DelegatedStakingNewFee,
+					},
 					payloadExtra.DelegateSignature,
 				}
 			case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
@@ -408,11 +408,13 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 				}
 
 				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake{
-					DelegatePublicKey:            extraJSON.DelegatePublicKey,
-					DelegatedStakingNewInfo:      extraJSON.DelegatedStakingNewInfo,
-					DelegatedStakingNewPublicKey: extraJSON.DelegatedStakingNewPublicKey,
-					DelegatedStakingNewFee:       extraJSON.DelegatedStakingNewFee,
-					DelegateSignature:            extraJSON.DelegateSignature,
+					DelegatePublicKey: extraJSON.DelegatePublicKey,
+					DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{
+						extraJSON.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
+						extraJSON.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
+						extraJSON.DelegatedStakingUpdate.DelegatedStakingNewFee,
+					},
+					DelegateSignature: extraJSON.DelegateSignature,
 				}
 
 			case transaction_zether_payload.SCRIPT_CLAIM_STAKE:

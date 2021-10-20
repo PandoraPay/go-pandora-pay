@@ -431,10 +431,12 @@ func CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingHasNe
 	}
 
 	payloadExtra := &transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake{
-		DelegatePublicKey:            delegatePublicKey,
-		DelegatedStakingNewInfo:      delegatedStakingHasNewInfo,
-		DelegatedStakingNewPublicKey: delegatedStakingNewPublicKey,
-		DelegatedStakingNewFee:       delegatedStakingNewFee,
+		DelegatePublicKey: delegatePublicKey,
+		DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{
+			delegatedStakingHasNewInfo,
+			delegatedStakingNewPublicKey,
+			delegatedStakingNewFee,
+		},
 	}
 	payloadsExtra = append(payloadsExtra, payloadExtra)
 
