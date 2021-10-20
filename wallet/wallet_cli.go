@@ -376,7 +376,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		done, ok := gui.GUI.OutputReadBool("Your wallet will be REPLACED with this one. Are you sure ?")
+		done, ok := gui.GUI.OutputReadBool("Your wallet will be REPLACED with this one! [y/n]")
 		if !ok {
 			return
 		}

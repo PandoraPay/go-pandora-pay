@@ -32,7 +32,7 @@ func (builder *TransactionsBuilder) readData() (out *wizard.TransactionsWizardDa
 	if len(str) > 0 {
 		data.Data = []byte(str)
 
-		data.Encrypt, ok = gui.GUI.OutputReadBool("Encrypt message (data). Type y/n")
+		data.Encrypt, ok = gui.GUI.OutputReadBool("Encrypt message (data)? [y/n]")
 
 	}
 
@@ -69,7 +69,7 @@ func (builder *TransactionsBuilder) readFees(assetId []byte) (fee *wizard.Transa
 
 	fee = &wizard.TransactionsWizardFee{}
 
-	if fee.PerByteAuto, ok = gui.GUI.OutputReadBool("Compute Automatically Fee Per Byte. Type y\n"); !ok {
+	if fee.PerByteAuto, ok = gui.GUI.OutputReadBool("Compute Automatically Fee Per Byte? [y/n]"); !ok {
 		return
 	}
 	if !fee.PerByteAuto {
@@ -122,7 +122,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
+		propagate, ok := gui.GUI.OutputReadBool("Propagate? [y/n]")
 		if !ok {
 			return
 		}
@@ -177,7 +177,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		delegateWalletAddress := builder.wallet.GetWalletAddressByPublicKey(delegateAddress.PublicKey)
 		if delegateWalletAddress != nil {
 
-			if delegatedStakingHasNewInfo, ok = gui.GUI.OutputReadBool("New Delegate Info ? Type y/n"); !ok {
+			if delegatedStakingHasNewInfo, ok = gui.GUI.OutputReadBool("New Delegate Info? [y/n]"); !ok {
 				return
 			}
 
@@ -191,7 +191,7 @@ func (builder *TransactionsBuilder) initCLI() {
 
 				if len(delegatedStakingNewPublicKey) == 0 {
 					var derivedDelegatedStake *wallet_address.WalletAddressDelegatedStake
-					if derivedDelegatedStake, err = builder.DeriveDelegatedStake(0, walletAddress.PublicKey); err != nil {
+					if derivedDelegatedStake, err = builder.DeriveDelegatedStake(0, delegateWalletAddress.PublicKey); err != nil {
 						return
 					}
 					delegatedStakingNewPublicKey = derivedDelegatedStake.PublicKey
@@ -221,7 +221,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
+		propagate, ok := gui.GUI.OutputReadBool("Propagate? [y/n]")
 		if !ok {
 			return
 		}
@@ -250,64 +250,64 @@ func (builder *TransactionsBuilder) initCLI() {
 		return
 	}
 
-	//cliPrivateClaim := func(cmd string) (err error) {
-	//
-	//	builder.showWarningIfNotSyncCLI()
-	//
-	//	walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Claim")
-	//	if err != nil {
-	//		return
-	//	}
-	//
-	//	amount, ok, err := builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Amount to Claim")
-	//	if !ok || err != nil {
-	//		return
-	//	}
-	//
-	//	destinationAddress, ok := gui.GUI.OutputReadAddress("Destination Address")
-	//	if !ok {
-	//		return
-	//	}
-	//
-	//	data, ok := builder.readData()
-	//	if !ok {
-	//		return
-	//	}
-	//
-	//	propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
-	//	if !ok {
-	//		return
-	//	}
-	//
-	//	fee, ok, err := builder.readFees(config_coins.NATIVE_ASSET_FULL)
-	//	if !ok || err != nil {
-	//		return
-	//	}
-	//
-	//	ringMembers := make([][]string, 1)
-	//	if ringMembers[0], err = builder.CreateZetherRing(walletAddress.AddressEncoded, destinationAddress.EncodeAddr(), assetId, -1, -1); err != nil {
-	//		return
-	//	}
-	//
-	//	ctx, cancel := context.WithCancel(context.Background())
-	//	defer cancel()
-	//
-	//	tx, err := builder.CreateZetherClaimStakeTx( []byte{walletAddress.PrivateKey.Key}, [][]byte{assetId}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
-	//		gui.GUI.OutputWrite(status)
-	//	})
-	//	if err != nil {
-	//		return
-	//	}
-	//
-	//	gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
-	//	return
-	//}
+	cliPrivateClaimStake := func(cmd string) (err error) {
+
+		builder.showWarningIfNotSyncCLI()
+
+		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address from which should Claim")
+		if err != nil {
+			return
+		}
+
+		amount, ok, err := builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Amount to Claim")
+		if !ok || err != nil {
+			return
+		}
+
+		destinationAddress, ok := gui.GUI.OutputReadAddress("Destination Address")
+		if !ok {
+			return
+		}
+
+		data, ok := builder.readData()
+		if !ok {
+			return
+		}
+
+		propagate, ok := gui.GUI.OutputReadBool("Propagate? [y/n]")
+		if !ok {
+			return
+		}
+
+		fee, ok, err := builder.readFees(config_coins.NATIVE_ASSET_FULL)
+		if !ok || err != nil {
+			return
+		}
+
+		ringMembers := make([][]string, 1)
+		if ringMembers[0], err = builder.CreateZetherRing("", destinationAddress.EncodeAddr(), config_coins.NATIVE_ASSET_FULL, -1, -1); err != nil {
+			return
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		tx, err := builder.CreateZetherClaimStakeTx(delegateWalletAddress.PrivateKey.Key, []string{""}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
+			gui.GUI.OutputWrite(status)
+		})
+		if err != nil {
+			return
+		}
+
+		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
+		return
+	}
 
 	cliUpdateDelegate := func(cmd string) (err error) {
 
 		builder.showWarningIfNotSyncCLI()
 
-		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Update Delegate")
+		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Update Delegate")
 		if err != nil {
 			return
 		}
@@ -317,7 +317,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		delegatedStakingHasNewInfo, ok := gui.GUI.OutputReadBool("New Delegate Info ? Type y/n")
+		delegatedStakingHasNewInfo, ok := gui.GUI.OutputReadBool("New Delegate Info? [y/n]")
 		if !ok {
 			return
 		}
@@ -332,7 +332,7 @@ func (builder *TransactionsBuilder) initCLI() {
 
 			if len(delegatedStakingNewPublicKey) == 0 {
 				var derivedDelegatedStake *wallet_address.WalletAddressDelegatedStake
-				if derivedDelegatedStake, err = builder.DeriveDelegatedStake(0, walletAddress.PublicKey); err != nil {
+				if derivedDelegatedStake, err = builder.DeriveDelegatedStake(0, delegateWalletAddress.PublicKey); err != nil {
 					return
 				}
 				delegatedStakingNewPublicKey = derivedDelegatedStake.PublicKey
@@ -360,12 +360,12 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
+		propagate, ok := gui.GUI.OutputReadBool("Propagate? [y/n]")
 		if !ok {
 			return
 		}
 
-		tx, err := builder.CreateUpdateDelegateTx(walletAddress.AddressEncoded, nonce, delegatedStakingClaimAmount, delegatedStakingHasNewInfo, delegatedStakingNewPublicKey, delegatedStakingNewFee, data, fee, propagate, true, true, false, func(status string) {
+		tx, err := builder.CreateUpdateDelegateTx(delegateWalletAddress.AddressEncoded, nonce, delegatedStakingClaimAmount, delegatedStakingHasNewInfo, delegatedStakingNewPublicKey, delegatedStakingNewFee, data, fee, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -380,7 +380,7 @@ func (builder *TransactionsBuilder) initCLI() {
 
 		builder.showWarningIfNotSyncCLI()
 
-		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Delegate")
+		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Delegate")
 		if err != nil {
 			return
 		}
@@ -405,12 +405,12 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		propagate, ok := gui.GUI.OutputReadBool("Propagate. Type y/n")
+		propagate, ok := gui.GUI.OutputReadBool("Propagate? [y/n]")
 		if !ok {
 			return
 		}
 
-		tx, err := builder.CreateUnstakeTx(walletAddress.AddressEncoded, nonce, amount, data, fee, propagate, true, true, false, func(status string) {
+		tx, err := builder.CreateUnstakeTx(delegateWalletAddress.AddressEncoded, nonce, amount, data, fee, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -423,6 +423,7 @@ func (builder *TransactionsBuilder) initCLI() {
 
 	gui.GUI.CommandDefineCallback("Private Transfer", cliPrivateTransfer, true)
 	gui.GUI.CommandDefineCallback("Private Delegate Stake", cliPrivateDelegateStake, true)
+	gui.GUI.CommandDefineCallback("Private Claim Stake", cliPrivateClaimStake, true)
 	gui.GUI.CommandDefineCallback("Update Delegate", cliUpdateDelegate, true)
 	gui.GUI.CommandDefineCallback("Unstake", cliUnstake, true)
 
