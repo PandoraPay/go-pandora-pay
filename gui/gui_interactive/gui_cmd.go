@@ -43,6 +43,7 @@ var commands = []Command{
 	{Name: "Wallet", Text: "Remove Address"},
 	{Name: "Wallet", Text: "Derive Delegated Stake"},
 	{Name: "Wallet:TX", Text: "Private Transfer"},
+	{Name: "Wallet:TX", Text: "Private Delegate Stake"},
 	{Name: "Wallet:TX", Text: "Update Delegate"},
 	{Name: "Wallet:TX", Text: "Unstake"},
 	{Name: "Wallet", Text: "Export Addresses"},

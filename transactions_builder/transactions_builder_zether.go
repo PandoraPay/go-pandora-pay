@@ -15,7 +15,6 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
@@ -303,9 +302,63 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, asts [][]byte,
 	}
 
 	var tx *transaction.Transaction
-
 	if tx, err = wizard.CreateZetherTx(transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, validateTx, ctx, statusCallback); err != nil {
-		gui.GUI.Error("Error creating Tx: ", err)
+		return nil, err
+	}
+
+	statusCallback("Transaction Created")
+	if propagateTx {
+		if err := builder.mempool.AddTxToMemPool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
+			return nil, err
+		}
+	}
+
+	return tx, nil
+}
+
+func (builder *TransactionsBuilder) CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingHasNewInfo bool, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+
+	builder.lock.Lock()
+	defer builder.lock.Unlock()
+
+	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
+	if err != nil {
+		return nil, err
+	}
+
+	var delegatePrivateKey []byte
+	if delegatedStakingHasNewInfo {
+		if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+			dataStorage := data_storage.CreateDataStorage(reader)
+			chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
+
+			plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(delegatePublicKey, chainHeight)
+			if err != nil {
+				return
+			}
+
+			walletAddr := builder.wallet.GetWalletAddressByPublicKey(delegatePublicKey)
+			if walletAddr == nil {
+				return errors.New("DelegatePublicKey doesn't exist in your wallet")
+			}
+
+			if delegatedStakingNewPublicKey == nil {
+				var walletAddressDelegatedStake *wallet_address.WalletAddressDelegatedStake
+				if walletAddressDelegatedStake, err = walletAddr.DeriveDelegatedStake(uint32(plainAcc.Nonce)); err != nil {
+					return
+				}
+				delegatedStakingNewPublicKey = walletAddressDelegatedStake.PublicKey
+			}
+
+			return
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	var tx *transaction.Transaction
+	if tx, err = wizard.CreateZetherDelegateStakeTx(delegatePublicKey, delegatedStakingHasNewInfo, delegatePrivateKey, delegatedStakingNewPublicKey, delegatedStakingNewFee, transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, validateTx, ctx, statusCallback); err != nil {
 		return nil, err
 	}
 
@@ -331,7 +384,6 @@ func (builder *TransactionsBuilder) CreateZetherClaimStakeTx(delegatePrivateKey 
 
 	var tx *transaction.Transaction
 	if tx, err = wizard.CreateZetherClaimStakeTx(delegatePrivateKey, transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, validateTx, ctx, statusCallback); err != nil {
-		gui.GUI.Error("Error creating Tx: ", err)
 		return nil, err
 	}
 

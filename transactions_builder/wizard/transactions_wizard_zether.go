@@ -417,13 +417,9 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	return tx, nil
 }
 
-func CreateZetherDelegateStakeTx(delegatePublicKey, delegatePrivateKey []byte, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
-	payloadsExtra := []transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface{}
+func CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingHasNewInfo bool, delegatePrivateKey, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
-	delegatedStakingHasNewInfo := false
-	if len(delegatedStakingNewPublicKey) == cryptography.PublicKeySize {
-		delegatedStakingHasNewInfo = true
-	}
+	payloadsExtra := []transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface{}
 
 	var key *addresses.PrivateKey
 	if delegatedStakingHasNewInfo {
