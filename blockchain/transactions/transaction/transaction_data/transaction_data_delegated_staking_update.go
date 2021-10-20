@@ -9,9 +9,9 @@ import (
 )
 
 type TransactionDataDelegatedStakingUpdate struct {
-	DelegatedStakingHasNewInfo   bool
-	DelegatedStakingNewPublicKey helpers.HexBytes //20 byte
-	DelegatedStakingNewFee       uint64
+	DelegatedStakingHasNewInfo   bool             `json:"delegatedStakingHasNewInfo"`
+	DelegatedStakingNewPublicKey helpers.HexBytes `json:"delegatedStakingNewPublicKey"` //20 byte
+	DelegatedStakingNewFee       uint64           `json:"delegatedStakingNewFee"`
 }
 
 func (data *TransactionDataDelegatedStakingUpdate) Include(plainAcc *plain_account.PlainAccount) (err error) {

@@ -9,6 +9,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
+	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -192,12 +193,10 @@ func createZetherDelegateStakeTx(this js.Value, args []js.Value) interface{} {
 		}
 
 		txData := &struct {
-			Data                         *zetherTxDataBase
-			DelegateDestination          string           `json:"delegateDestination"`
-			DelegatedStakingHasNewInfo   bool             `json:"delegatedStakingHasNewInfo"`
-			DelegatePrivateKey           helpers.HexBytes `json:"delegatePrivateKey"`
-			DelegatedStakingNewPublicKey helpers.HexBytes `json:"delegatedStakingNewPublicKey"`
-			DelegatedStakingNewFee       uint64           `json:"delegatedStakingNewFee"`
+			Data                   *zetherTxDataBase
+			DelegateDestination    string                                                  `json:"delegateDestination"`
+			DelegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
+			DelegatePrivateKey     helpers.HexBytes                                        `json:"delegatePrivateKey"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
@@ -217,7 +216,7 @@ func createZetherDelegateStakeTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := wizard.CreateZetherDelegateStakeTx(address.PublicKey, txData.DelegatedStakingHasNewInfo, txData.DelegatePrivateKey, txData.DelegatedStakingNewPublicKey, txData.DelegatedStakingNewFee, transfers, emap, rings, txData.Data.Height, txData.Data.Hash, publicKeyIndexes, txData.Data.Fees, false, ctx, func(status string) {
+		tx, err := wizard.CreateZetherDelegateStakeTx(address.PublicKey, txData.DelegatedStakingUpdate, txData.DelegatePrivateKey, transfers, emap, rings, txData.Data.Height, txData.Data.Hash, publicKeyIndexes, txData.Data.Fees, false, ctx, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {

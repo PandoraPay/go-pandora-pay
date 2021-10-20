@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/helpers"
@@ -13,12 +14,15 @@ import (
 func TestCreateUpdateDelegateTx(t *testing.T) {
 
 	delegatedStakingPrivKey := addresses.GenerateNewPrivateKey()
-	delegatedStakingPubKey := delegatedStakingPrivKey.GeneratePublicKey()
-	delegatedStakingFee := uint64(10000)
+	delegatedStakingUpdate := &transaction_data.TransactionDataDelegatedStakingUpdate{
+		DelegatedStakingHasNewInfo:   true,
+		DelegatedStakingNewPublicKey: delegatedStakingPrivKey.GeneratePublicKey(),
+		DelegatedStakingNewFee:       10000,
+	}
 	delegatedStakingClaimAmount := uint64(0)
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateUpdateDelegateTx(0, privateKey.Key, delegatedStakingPubKey, delegatedStakingFee, delegatedStakingClaimAmount, &TransactionsWizardData{[]byte{}, false}, &TransactionsWizardFee{PerByteAuto: true}, true, func(status string) {})
+	tx, err := CreateUpdateDelegateTx(0, privateKey.Key, delegatedStakingClaimAmount, delegatedStakingUpdate, &TransactionsWizardData{[]byte{}, false}, &TransactionsWizardFee{PerByteAuto: true}, true, func(status string) {})
 	assert.NoError(t, err)
 	assert.NotNil(t, tx, "creating update delegate tx is nil")
 
@@ -41,8 +45,8 @@ func TestCreateUpdateDelegateTx(t *testing.T) {
 	assert.Equal(t, fees, base.Fees, "Fees are not paid by vin")
 
 	updateDelegate := base.Extra.(*transaction_simple_extra.TransactionSimpleUpdateDelegate)
-	assert.Equal(t, updateDelegate.DelegatedStakingNewFee, delegatedStakingFee, "Update delegate new fee is not set")
-	assert.Equal(t, string(updateDelegate.DelegatedStakingNewPublicKey), string(delegatedStakingPubKey), "Update delegate new public key is not set")
+	assert.Equal(t, updateDelegate.DelegatedStakingUpdate.DelegatedStakingNewFee, delegatedStakingUpdate.DelegatedStakingNewFee, "Update delegate new fee is not set")
+	assert.Equal(t, string(updateDelegate.DelegatedStakingUpdate.DelegatedStakingNewPublicKey), string(delegatedStakingUpdate.DelegatedStakingNewPublicKey), "Update delegate new public key is not set")
 
 }
 

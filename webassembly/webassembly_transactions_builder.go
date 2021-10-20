@@ -3,7 +3,7 @@ package webassembly
 import (
 	"errors"
 	"pandora-pay/app"
-	"pandora-pay/helpers"
+	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/transactions_builder/wizard"
 	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
@@ -21,23 +21,21 @@ func createUpdateDelegateTx(this js.Value, args []js.Value) interface{} {
 		}
 
 		txData := &struct {
-			From                         string                         `json:"from"`
-			Nonce                        uint64                         `json:"nonce"`
-			DelegatedStakingClaimAmount  uint64                         `json:"delegatedStakingClaimAmount"`
-			DelegatedStakingHasNewInfo   bool                           `json:"delegatedStakingHasNewInfo"`
-			DelegatedStakingNewPublicKey helpers.HexBytes               `json:"delegatedStakingNewPublicKey"`
-			DelegatedStakingNewFee       uint64                         `json:"delegatedStakingNewFee"`
-			Data                         *wizard.TransactionsWizardData `json:"data"`
-			Fee                          *wizard.TransactionsWizardFee  `json:"fee"`
-			PropagateTx                  bool                           `json:"propagateTx"`
-			AwaitAnswer                  bool                           `json:"awaitAnswer"`
+			From                        string                                                  `json:"from"`
+			Nonce                       uint64                                                  `json:"nonce"`
+			DelegatedStakingClaimAmount uint64                                                  `json:"delegatedStakingClaimAmount"`
+			DelegatedStakingUpdate      *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
+			Data                        *wizard.TransactionsWizardData                          `json:"data"`
+			Fee                         *wizard.TransactionsWizardFee                           `json:"fee"`
+			PropagateTx                 bool                                                    `json:"propagateTx"`
+			AwaitAnswer                 bool                                                    `json:"awaitAnswer"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.CreateUpdateDelegateTx(txData.From, txData.Nonce, txData.DelegatedStakingClaimAmount, txData.DelegatedStakingHasNewInfo, txData.DelegatedStakingNewPublicKey, txData.DelegatedStakingNewFee, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
+		tx, err := app.TransactionsBuilder.CreateUpdateDelegateTx(txData.From, txData.Nonce, txData.DelegatedStakingClaimAmount, txData.DelegatedStakingUpdate, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {

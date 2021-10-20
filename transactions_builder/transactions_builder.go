@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/mempool"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
@@ -32,10 +33,10 @@ func (builder *TransactionsBuilder) getNonce(nonce uint64, publicKey []byte, acc
 	return builder.mempool.GetNonce(publicKey, accNonce)
 }
 
-func (builder *TransactionsBuilder) DeriveDelegatedStake(nonce uint64, addressPublicKey []byte) (*wallet_address.WalletAddressDelegatedStake, error) {
+func (builder *TransactionsBuilder) DeriveDelegatedStake(nonce uint64, addressPublicKey []byte) (delegatedStakePublicKey []byte, delegatedStakePrivateKey []byte, err error) {
 
 	var accNonce uint64
-	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 		plainAccs := plain_accounts.NewPlainAccounts(reader)
@@ -50,7 +51,7 @@ func (builder *TransactionsBuilder) DeriveDelegatedStake(nonce uint64, addressPu
 
 		return
 	}); err != nil {
-		return nil, err
+		return
 	}
 
 	nonce = builder.getNonce(nonce, addressPublicKey, accNonce)
@@ -60,10 +61,14 @@ func (builder *TransactionsBuilder) DeriveDelegatedStake(nonce uint64, addressPu
 
 	addr := builder.wallet.GetWalletAddressByPublicKey(addressPublicKey)
 	if addr == nil {
-		return nil, errors.New("Wallet was not found")
+		return nil, nil, errors.New("Wallet was not found")
 	}
 
-	return addr.DeriveDelegatedStake(uint32(nonce))
+	walletAddressDelegatedStake, err := addr.DeriveDelegatedStake(uint32(nonce))
+	if err != nil {
+		return
+	}
+	return walletAddressDelegatedStake.PublicKey, walletAddressDelegatedStake.PrivateKey.Key, nil
 }
 
 func (builder *TransactionsBuilder) convertFloatAmounts(amounts []float64, ast *asset.Asset) ([]uint64, error) {
@@ -161,7 +166,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	return tx, nil
 }
 
-func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce uint64, delegatedStakingClaimAmount uint64, delegatedStakingHasNewInfo bool, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce uint64, delegatedStakingClaimAmount uint64, delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
@@ -195,7 +200,7 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 
 	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
 
-	if tx, err = wizard.CreateUpdateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegatedStakingClaimAmount, delegatedStakingHasNewInfo, delegatedStakingNewPublicKey, delegatedStakingNewFee, data, fee, false, statusCallback); err != nil {
+	if tx, err = wizard.CreateUpdateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegatedStakingClaimAmount, delegatedStakingUpdate, data, fee, false, statusCallback); err != nil {
 		return nil, err
 	}
 

@@ -66,7 +66,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	return tx, nil
 }
 
-func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingClaimAmount uint64, delegatedStakingHasNewInfo bool, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingClaimAmount uint64, delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	dataFinal, err := data.getData()
 	if err != nil {
@@ -82,11 +82,7 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingClaimAmoun
 		Nonce:       nonce,
 		Extra: &transaction_simple_extra.TransactionSimpleUpdateDelegate{
 			DelegatedStakingClaimAmount: delegatedStakingClaimAmount,
-			DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{
-				delegatedStakingHasNewInfo,
-				delegatedStakingNewPublicKey,
-				delegatedStakingNewFee,
-			},
+			DelegatedStakingUpdate:      delegatedStakingUpdate,
 		},
 		Vin: &transaction_simple_parts.TransactionSimpleInput{
 			PublicKey: privateKey.GeneratePublicKey(),

@@ -12,6 +12,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -316,7 +317,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, asts [][]byte,
 	return tx, nil
 }
 
-func (builder *TransactionsBuilder) CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingHasNewInfo bool, delegatePrivateKey, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, delegatePrivateKey []byte, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
@@ -327,7 +328,7 @@ func (builder *TransactionsBuilder) CreateZetherDelegateStakeTx(delegatePublicKe
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherDelegateStakeTx(delegatePublicKey, delegatedStakingHasNewInfo, delegatePrivateKey, delegatedStakingNewPublicKey, delegatedStakingNewFee, transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, validateTx, ctx, statusCallback); err != nil {
+	if tx, err = wizard.CreateZetherDelegateStakeTx(delegatePublicKey, delegatedStakingUpdate, delegatePrivateKey, transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, validateTx, ctx, statusCallback); err != nil {
 		return nil, err
 	}
 

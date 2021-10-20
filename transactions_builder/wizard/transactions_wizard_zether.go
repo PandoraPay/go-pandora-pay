@@ -418,12 +418,12 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	return tx, nil
 }
 
-func CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingHasNewInfo bool, delegatePrivateKey, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, delegatePrivateKey []byte, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	payloadsExtra := []transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface{}
 
 	var key *addresses.PrivateKey
-	if delegatedStakingHasNewInfo {
+	if delegatedStakingUpdate.DelegatedStakingHasNewInfo {
 		key = &addresses.PrivateKey{Key: delegatePrivateKey}
 		if bytes.Equal(key.GeneratePublicKey(), delegatePublicKey) == false {
 			return nil, errors.New("delegatePrivateKey is not matching delegatePublicKey")
@@ -431,12 +431,8 @@ func CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingHasNe
 	}
 
 	payloadExtra := &transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake{
-		DelegatePublicKey: delegatePublicKey,
-		DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{
-			delegatedStakingHasNewInfo,
-			delegatedStakingNewPublicKey,
-			delegatedStakingNewFee,
-		},
+		DelegatePublicKey:      delegatePublicKey,
+		DelegatedStakingUpdate: delegatedStakingUpdate,
 	}
 	payloadsExtra = append(payloadsExtra, payloadExtra)
 
@@ -454,7 +450,7 @@ func CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingHasNe
 		return
 	}
 
-	if delegatedStakingHasNewInfo {
+	if delegatedStakingUpdate.DelegatedStakingHasNewInfo {
 		if payloadExtra.DelegateSignature, err = key.Sign(tx.SerializeForSigning()); err != nil {
 			return
 		}
