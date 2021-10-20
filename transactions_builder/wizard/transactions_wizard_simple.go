@@ -1,7 +1,6 @@
 package wizard
 
 import (
-	"errors"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
@@ -66,20 +65,11 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	return tx, nil
 }
 
-func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee, delegatedStakingClaimAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingClaimAmount uint64, delegatedStakingHasNewInfo bool, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	dataFinal, err := data.getData()
 	if err != nil {
 		return
-	}
-
-	delegatedStakingHasNewInfo := false
-	if len(delegatedStakingNewPublicKey) == cryptography.PublicKeySize {
-		delegatedStakingHasNewInfo = true
-	}
-
-	if len(delegatedStakingNewPublicKey) != cryptography.PublicKeySize && delegatedStakingNewFee > 0 {
-		return nil, errors.New("delegatedStakingNewFee is > 0 while the delegatedStakingNewPublicKey is not right")
 	}
 
 	privateKey := &addresses.PrivateKey{Key: key}

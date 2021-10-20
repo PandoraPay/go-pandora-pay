@@ -316,7 +316,7 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, asts [][]byte,
 	return tx, nil
 }
 
-func (builder *TransactionsBuilder) CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingHasNewInfo bool, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingHasNewInfo bool, delegatePrivateKey, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
@@ -324,37 +324,6 @@ func (builder *TransactionsBuilder) CreateZetherDelegateStakeTx(delegatePublicKe
 	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
 	if err != nil {
 		return nil, err
-	}
-
-	var delegatePrivateKey []byte
-	if delegatedStakingHasNewInfo {
-		if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-			dataStorage := data_storage.CreateDataStorage(reader)
-			chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
-
-			plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(delegatePublicKey, chainHeight)
-			if err != nil {
-				return
-			}
-
-			walletAddr := builder.wallet.GetWalletAddressByPublicKey(delegatePublicKey)
-			if walletAddr == nil {
-				return errors.New("DelegatePublicKey doesn't exist in your wallet")
-			}
-
-			if delegatedStakingNewPublicKey == nil {
-				var walletAddressDelegatedStake *wallet_address.WalletAddressDelegatedStake
-				if walletAddressDelegatedStake, err = walletAddr.DeriveDelegatedStake(uint32(plainAcc.Nonce)); err != nil {
-					return
-				}
-				delegatedStakingNewPublicKey = walletAddressDelegatedStake.PublicKey
-			}
-
-			return
-		}); err != nil {
-			return nil, err
-		}
 	}
 
 	var tx *transaction.Transaction

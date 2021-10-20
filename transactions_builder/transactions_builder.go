@@ -161,7 +161,7 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	return tx, nil
 }
 
-func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce uint64, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee, delegatedStakingClaimAmount uint64, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce uint64, delegatedStakingClaimAmount uint64, delegatedStakingHasNewInfo bool, delegatedStakingNewPublicKey []byte, delegatedStakingNewFee uint64, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
@@ -195,7 +195,7 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 
 	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
 
-	if tx, err = wizard.CreateUpdateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegatedStakingNewPublicKey, delegatedStakingNewFee, delegatedStakingClaimAmount, data, fee, false, statusCallback); err != nil {
+	if tx, err = wizard.CreateUpdateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegatedStakingClaimAmount, delegatedStakingHasNewInfo, delegatedStakingNewPublicKey, delegatedStakingNewFee, data, fee, false, statusCallback); err != nil {
 		return nil, err
 	}
 

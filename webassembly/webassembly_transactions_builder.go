@@ -23,9 +23,10 @@ func createUpdateDelegateTx(this js.Value, args []js.Value) interface{} {
 		txData := &struct {
 			From                         string                         `json:"from"`
 			Nonce                        uint64                         `json:"nonce"`
+			DelegatedStakingClaimAmount  uint64                         `json:"delegatedStakingClaimAmount"`
+			DelegatedStakingHasNewInfo   bool                           `json:"delegatedStakingHasNewInfo"`
 			DelegatedStakingNewPublicKey helpers.HexBytes               `json:"delegatedStakingNewPublicKey"`
 			DelegatedStakingNewFee       uint64                         `json:"delegatedStakingNewFee"`
-			DelegatedStakingClaimAmount  uint64                         `json:"delegatedStakingClaimAmount"`
 			Data                         *wizard.TransactionsWizardData `json:"data"`
 			Fee                          *wizard.TransactionsWizardFee  `json:"fee"`
 			PropagateTx                  bool                           `json:"propagateTx"`
@@ -36,7 +37,7 @@ func createUpdateDelegateTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := app.TransactionsBuilder.CreateUpdateDelegateTx(txData.From, txData.Nonce, txData.DelegatedStakingNewPublicKey, txData.DelegatedStakingNewFee, txData.DelegatedStakingClaimAmount, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
+		tx, err := app.TransactionsBuilder.CreateUpdateDelegateTx(txData.From, txData.Nonce, txData.DelegatedStakingClaimAmount, txData.DelegatedStakingHasNewInfo, txData.DelegatedStakingNewPublicKey, txData.DelegatedStakingNewFee, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {

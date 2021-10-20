@@ -1,7 +1,6 @@
 package transactions_builder
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -9,7 +8,6 @@ import (
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
-	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -172,27 +170,35 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		var delegatedStakingNewPublicKey []byte
-		var delegateStakingNewFee uint64
-
 		delegatedStakingHasNewInfo := false
+		var delegatePrivateKey, delegatedStakingNewPublicKey []byte
+		var delegatedStakingNewFee uint64
+
 		delegateWalletAddress := builder.wallet.GetWalletAddressByPublicKey(delegateAddress.PublicKey)
 		if delegateWalletAddress != nil {
 
-			delegatedStakingHasNewInfo, ok = gui.GUI.OutputReadBool("New Delegate Info ? Type y/n")
-			if !ok {
+			if delegatedStakingHasNewInfo, ok = gui.GUI.OutputReadBool("New Delegate Info ? Type y/n"); !ok {
 				return
 			}
 
 			if delegatedStakingHasNewInfo {
 
-				delegatedStakingNewPublicKey, ok = gui.GUI.OutputReadBytes("Delegated Staking New PublicKey. Leave Empty to automatically derive pubKey", []int{20, 0})
-				if !ok {
+				delegatePrivateKey = delegateWalletAddress.PrivateKey.Key
+
+				if delegatedStakingNewPublicKey, ok = gui.GUI.OutputReadBytes("Delegated Staking New PublicKey. Leave Empty to automatically derive pubKey", []int{20, 0}); !ok {
 					return
 				}
 
-				delegateStakingNewFee, ok = gui.GUI.OutputReadUint64("Delegated Staking New Fee. Leave empty for nothing", nil, true)
-				if delegateStakingNewFee > config_stake.DELEGATING_STAKING_FEES_MAX_VALUE {
+				if len(delegatedStakingNewPublicKey) == 0 {
+					var derivedDelegatedStake *wallet_address.WalletAddressDelegatedStake
+					if derivedDelegatedStake, err = builder.DeriveDelegatedStake(0, walletAddress.PublicKey); err != nil {
+						return
+					}
+					delegatedStakingNewPublicKey = derivedDelegatedStake.PublicKey
+				}
+
+				delegatedStakingNewFee, ok = gui.GUI.OutputReadUint64("Delegated Staking New Fee. Leave empty for nothing", nil, true)
+				if delegatedStakingNewFee > config_stake.DELEGATING_STAKING_FEES_MAX_VALUE {
 					return errors.New("Invalid NewFee")
 				}
 
@@ -233,7 +239,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		tx, err := builder.CreateZetherDelegateStakeTx(delegateAddress.PublicKey, delegatedStakingHasNewInfo, delegatedStakingNewPublicKey, delegateStakingNewFee, []string{walletAddress.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{delegateAmount}, ringMembers, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateZetherDelegateStakeTx(delegateAddress.PublicKey, delegatedStakingHasNewInfo, delegatePrivateKey, delegatedStakingNewPublicKey, delegatedStakingNewFee, []string{walletAddress.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{delegateAmount}, ringMembers, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -311,30 +317,32 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		delegatedStakingNewPublicKey, ok := gui.GUI.OutputReadBytes("Delegate New Public Key. Use empty for not changing. Use '01' for generating a new one. ", []int{0, 1, cryptography.PublicKeySize})
+		delegatedStakingHasNewInfo, ok := gui.GUI.OutputReadBool("New Delegate Info ? Type y/n")
 		if !ok {
 			return
 		}
 
-		if len(delegatedStakingNewPublicKey) == 1 {
-			if bytes.Equal(delegatedStakingNewPublicKey, []byte{1}) {
+		var delegatedStakingNewPublicKey []byte
+		var delegatedStakingNewFee uint64
+		if delegatedStakingHasNewInfo {
+
+			if delegatedStakingNewPublicKey, ok = gui.GUI.OutputReadBytes("Delegated Staking New PublicKey. Leave Empty to automatically derive pubKey", []int{20, 0}); !ok {
+				return
+			}
+
+			if len(delegatedStakingNewPublicKey) == 0 {
 				var derivedDelegatedStake *wallet_address.WalletAddressDelegatedStake
-				if derivedDelegatedStake, err = builder.DeriveDelegatedStake(nonce, walletAddress.PublicKey); err != nil {
+				if derivedDelegatedStake, err = builder.DeriveDelegatedStake(0, walletAddress.PublicKey); err != nil {
 					return
 				}
 				delegatedStakingNewPublicKey = derivedDelegatedStake.PublicKey
-			} else {
-				return errors.New("Invalid value for New Public key Hash")
 			}
-		}
 
-		var delegatedStakingNewFee uint64
-		if len(delegatedStakingNewPublicKey) > 0 {
-			number, ok := gui.GUI.OutputReadUint64("New Fee", nil, true)
-			if !ok {
-				return
+			delegatedStakingNewFee, ok = gui.GUI.OutputReadUint64("Delegated Staking New Fee. Leave empty for nothing", nil, true)
+			if delegatedStakingNewFee > config_stake.DELEGATING_STAKING_FEES_MAX_VALUE {
+				return errors.New("Invalid NewFee")
 			}
-			delegatedStakingNewFee = number
+
 		}
 
 		delegatedStakingClaimAmount, ok, err := builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Update Delegated Staking Amount")
@@ -357,7 +365,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateUpdateDelegateTx(walletAddress.AddressEncoded, nonce, delegatedStakingNewPublicKey, delegatedStakingNewFee, delegatedStakingClaimAmount, data, fee, propagate, true, true, false, func(status string) {
+		tx, err := builder.CreateUpdateDelegateTx(walletAddress.AddressEncoded, nonce, delegatedStakingClaimAmount, delegatedStakingHasNewInfo, delegatedStakingNewPublicKey, delegatedStakingNewFee, data, fee, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

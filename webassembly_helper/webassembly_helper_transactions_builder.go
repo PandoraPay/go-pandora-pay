@@ -194,6 +194,7 @@ func createZetherDelegateStakeTx(this js.Value, args []js.Value) interface{} {
 		txData := &struct {
 			Data                         *zetherTxDataBase
 			DelegateDestination          string           `json:"delegateDestination"`
+			DelegatedStakingHasNewInfo   bool             `json:"delegatedStakingHasNewInfo"`
 			DelegatePrivateKey           helpers.HexBytes `json:"delegatePrivateKey"`
 			DelegatedStakingNewPublicKey helpers.HexBytes `json:"delegatedStakingNewPublicKey"`
 			DelegatedStakingNewFee       uint64           `json:"delegatedStakingNewFee"`
@@ -216,7 +217,7 @@ func createZetherDelegateStakeTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := wizard.CreateZetherDelegateStakeTx(address.PublicKey, txData.DelegatePrivateKey, txData.DelegatedStakingNewPublicKey, txData.DelegatedStakingNewFee, transfers, emap, rings, txData.Data.Height, txData.Data.Hash, publicKeyIndexes, txData.Data.Fees, false, ctx, func(status string) {
+		tx, err := wizard.CreateZetherDelegateStakeTx(address.PublicKey, txData.DelegatedStakingHasNewInfo, txData.DelegatePrivateKey, txData.DelegatedStakingNewPublicKey, txData.DelegatedStakingNewFee, transfers, emap, rings, txData.Data.Height, txData.Data.Hash, publicKeyIndexes, txData.Data.Fees, false, ctx, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {
