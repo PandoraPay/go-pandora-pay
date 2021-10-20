@@ -14,6 +14,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
@@ -51,7 +52,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 	statusCallback("Transaction Signing...")
 
-	registrations := make([]*transaction_data.TransactionDataRegistration, 0)
+	registrations := make([]*transaction_zether_registrations.TransactionZetherDataRegistration, 0)
 	registrationsAlready := make(map[string]bool)
 
 	senders, receivers := make([]*bn256.G1, len(transfers)), make([]*bn256.G1, len(transfers))
@@ -109,7 +110,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 						return fmt.Errorf("Registration Signature is invalid for ring member %d", c)
 					}
 
-					registrations = append(registrations, &transaction_data.TransactionDataRegistration{
+					registrations = append(registrations, &transaction_zether_registrations.TransactionZetherDataRegistration{
 						c,
 						publicKeyIndex.RegistrationSignature,
 					})
@@ -398,7 +399,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	}
 
 	txBase := &transaction_zether.TransactionZether{
-		Registrations: &transaction_data.TransactionDataTransactions{},
+		Registrations: &transaction_zether_registrations.TransactionZetherDataRegistrations{},
 		Height:        height,
 	}
 
@@ -439,7 +440,7 @@ func CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingHasNe
 
 	txBase := &transaction_zether.TransactionZether{
 		Height:        height,
-		Registrations: &transaction_data.TransactionDataTransactions{},
+		Registrations: &transaction_zether_registrations.TransactionZetherDataRegistrations{},
 	}
 
 	tx := &transaction.Transaction{
@@ -479,7 +480,7 @@ func CreateZetherClaimStakeTx(delegatePrivateKey []byte, transfers []*ZetherTran
 
 	txBase := &transaction_zether.TransactionZether{
 		Height:        height,
-		Registrations: &transaction_data.TransactionDataTransactions{},
+		Registrations: &transaction_zether_registrations.TransactionZetherDataRegistrations{},
 	}
 
 	tx := &transaction.Transaction{

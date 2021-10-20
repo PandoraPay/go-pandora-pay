@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -29,7 +30,7 @@ type TransactionZetherPayload struct {
 	Extra transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface
 }
 
-func (payload *TransactionZetherPayload) IncludePayload(txRegistrations *transaction_data.TransactionDataTransactions, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage, counter *int) (err error) {
+func (payload *TransactionZetherPayload) IncludePayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage, counter *int) (err error) {
 
 	var accs *accounts.Accounts
 	var acc *account.Account
@@ -110,7 +111,7 @@ func (payload *TransactionZetherPayload) ComputeAllKeys(out map[string]bool) {
 
 }
 
-func (payload *TransactionZetherPayload) Validate(txRegistrations *transaction_data.TransactionDataTransactions) (err error) {
+func (payload *TransactionZetherPayload) Validate(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations) (err error) {
 	// check sanity
 	if payload.Statement.RingSize < 2 { // ring size minimum 4
 		return fmt.Errorf("RingSize cannot be less than 2")

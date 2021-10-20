@@ -6,7 +6,7 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/blockchain/transactions/transaction/transaction_data"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
@@ -21,7 +21,7 @@ type TransactionZetherPayloadClaimStake struct {
 	DelegateSignature           []byte
 }
 
-func (tx *TransactionZetherPayloadClaimStake) BeforeIncludeTxPayload(txRegistrations *transaction_data.TransactionDataTransactions, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (tx *TransactionZetherPayloadClaimStake) BeforeIncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
 	var acc *account.Account
@@ -73,7 +73,7 @@ func (tx *TransactionZetherPayloadClaimStake) BeforeIncludeTxPayload(txRegistrat
 	return accs.Update(string(publicKey), acc)
 }
 
-func (tx *TransactionZetherPayloadClaimStake) IncludeTxPayload(txRegistrations *transaction_data.TransactionDataTransactions, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (tx *TransactionZetherPayloadClaimStake) IncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
 	if accs, err = dataStorage.AccsCollection.GetMap(payloadAsset); err != nil {
@@ -88,7 +88,7 @@ func (tx *TransactionZetherPayloadClaimStake) IncludeTxPayload(txRegistrations *
 	return
 }
 
-func (tx *TransactionZetherPayloadClaimStake) Validate(txRegistrations *transaction_data.TransactionDataTransactions, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) error {
+func (tx *TransactionZetherPayloadClaimStake) Validate(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) error {
 
 	if bytes.Equal(payloadAsset, config_coins.NATIVE_ASSET_FULL) == false {
 		return errors.New("Payload[0] asset must be a native asset")

@@ -1,4 +1,4 @@
-package transaction_data
+package transaction_zether_registrations
 
 import (
 	"errors"
@@ -9,11 +9,11 @@ import (
 	"pandora-pay/helpers"
 )
 
-type TransactionDataTransactions struct {
-	Registrations []*TransactionDataRegistration
+type TransactionZetherDataRegistrations struct {
+	Registrations []*TransactionZetherDataRegistration
 }
 
-func (self *TransactionDataTransactions) ValidateRegistrations(publickeylist []*bn256.G1) (err error) {
+func (self *TransactionZetherDataRegistrations) ValidateRegistrations(publickeylist []*bn256.G1) (err error) {
 
 	for _, reg := range self.Registrations {
 
@@ -31,7 +31,7 @@ func (self *TransactionDataTransactions) ValidateRegistrations(publickeylist []*
 	return
 }
 
-func (self *TransactionDataTransactions) RegisterNow(dataStorage *data_storage.DataStorage, publicKeyList [][]byte) (err error) {
+func (self *TransactionZetherDataRegistrations) RegisterNow(dataStorage *data_storage.DataStorage, publicKeyList [][]byte) (err error) {
 
 	var isReg bool
 	for _, reg := range self.Registrations {
@@ -62,23 +62,23 @@ func (self *TransactionDataTransactions) RegisterNow(dataStorage *data_storage.D
 	return
 }
 
-func (self *TransactionDataTransactions) Serialize(w *helpers.BufferWriter) {
+func (self *TransactionZetherDataRegistrations) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(uint64(len(self.Registrations)))
 	for _, registration := range self.Registrations {
 		registration.Serialize(w)
 	}
 }
 
-func (self *TransactionDataTransactions) Deserialize(r *helpers.BufferReader) (err error) {
+func (self *TransactionZetherDataRegistrations) Deserialize(r *helpers.BufferReader) (err error) {
 
 	var n uint64
 	if n, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
-	self.Registrations = make([]*TransactionDataRegistration, n)
+	self.Registrations = make([]*TransactionZetherDataRegistration, n)
 	for i := uint64(0); i < n; i++ {
-		registration := &TransactionDataRegistration{}
+		registration := &TransactionZetherDataRegistration{}
 		if err = registration.Deserialize(r); err != nil {
 			return
 		}

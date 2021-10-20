@@ -3,6 +3,7 @@ package wizard
 import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
@@ -80,10 +81,12 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingClaimAmoun
 		Data:        dataFinal,
 		Nonce:       nonce,
 		Extra: &transaction_simple_extra.TransactionSimpleUpdateDelegate{
-			DelegatedStakingClaimAmount:  delegatedStakingClaimAmount,
-			DelegatedStakingHasNewInfo:   delegatedStakingHasNewInfo,
-			DelegatedStakingNewPublicKey: delegatedStakingNewPublicKey,
-			DelegatedStakingNewFee:       delegatedStakingNewFee,
+			DelegatedStakingClaimAmount: delegatedStakingClaimAmount,
+			DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{
+				delegatedStakingHasNewInfo,
+				delegatedStakingNewPublicKey,
+				delegatedStakingNewFee,
+			},
 		},
 		Vin: &transaction_simple_parts.TransactionSimpleInput{
 			PublicKey: privateKey.GeneratePublicKey(),

@@ -12,15 +12,22 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
-type json_TransactionRegistration struct {
+type json_TransactionDataRegistration struct {
 	PublicKeyIndex        uint64           `json:"publicKeyIndex"`
 	RegistrationSignature helpers.HexBytes `json:"signature"`
+}
+
+type json_TransactionDataDelegatedStakingUpdate struct {
+	DelegatedStakingHasNewInfo   bool             `json:"delegatedStakingHasNewInfo"`
+	DelegatedStakingNewPublicKey helpers.HexBytes `json:"delegatedStakingNewPublicKey"` //20 byte
+	DelegatedStakingNewFee       uint64           `json:"delegatedStakingNewFee"`
 }
 
 type json_Transaction struct {
@@ -49,10 +56,8 @@ type json_TransactionSimpleInput struct {
 }
 
 type json_Only_TransactionSimpleUpdateDelegate struct {
-	DelegatedStakingClaimAmount  uint64           `json:"delegatedStakingClaimAmount"`
-	DelegatedStakingHasNewInfo   bool             `json:"delegatedStakingHasNewInfo"`
-	DelegatedStakingNewPublicKey helpers.HexBytes `json:"delegatedStakingNewPublicKey"` //20 byte
-	DelegatedStakingNewFee       uint64           `json:"delegatedStakingNewFee"`       //20 byte
+	DelegatedStakingClaimAmount uint64                                      `json:"delegatedStakingClaimAmount"`
+	DelegatedStakingUpdate      *json_TransactionDataDelegatedStakingUpdate `json:"DelegatedStakingUpdate"`
 }
 
 type json_TransactionSimpleUpdateDelegate struct {
@@ -70,9 +75,9 @@ type json_TransactionSimpleUnstake struct {
 }
 
 type json_Only_TransactionZether struct {
-	Height        uint64                          `json:"height"`
-	Registrations []*json_TransactionRegistration `json:"registrations"`
-	Payloads      []*json_Only_TransactionPayload `json:"payloads"`
+	Height        uint64                              `json:"height"`
+	Registrations []*json_TransactionDataRegistration `json:"registrations"`
+	Payloads      []*json_Only_TransactionPayload     `json:"payloads"`
 }
 
 type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
@@ -152,9 +157,11 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				simpleJson,
 				&json_Only_TransactionSimpleUpdateDelegate{
 					extra.DelegatedStakingClaimAmount,
-					extra.DelegatedStakingHasNewInfo,
-					extra.DelegatedStakingNewPublicKey,
-					extra.DelegatedStakingNewFee,
+					&json_TransactionDataDelegatedStakingUpdate{
+						extra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
+						extra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
+						extra.DelegatedStakingUpdate.DelegatedStakingNewFee,
+					},
 				},
 			})
 		case transaction_simple.SCRIPT_UNSTAKE:
@@ -171,9 +178,9 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 	case transaction_type.TX_ZETHER:
 		base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
 
-		registrations := make([]*json_TransactionRegistration, len(base.Registrations.Registrations))
+		registrations := make([]*json_TransactionDataRegistration, len(base.Registrations.Registrations))
 		for i, reg := range base.Registrations.Registrations {
-			registrations[i] = &json_TransactionRegistration{
+			registrations[i] = &json_TransactionDataRegistration{
 				reg.PublicKeyIndex,
 				reg.RegistrationSignature,
 			}
@@ -312,10 +319,12 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			}
 
 			base.Extra = &transaction_simple_extra.TransactionSimpleUpdateDelegate{
-				DelegatedStakingClaimAmount:  extraJson.DelegatedStakingClaimAmount,
-				DelegatedStakingHasNewInfo:   extraJson.DelegatedStakingHasNewInfo,
-				DelegatedStakingNewPublicKey: extraJson.DelegatedStakingNewPublicKey,
-				DelegatedStakingNewFee:       extraJson.DelegatedStakingNewFee,
+				DelegatedStakingClaimAmount: extraJson.DelegatedStakingClaimAmount,
+				DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{
+					extraJson.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
+					extraJson.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
+					extraJson.DelegatedStakingUpdate.DelegatedStakingNewFee,
+				},
 			}
 
 		case transaction_simple.SCRIPT_UNSTAKE:
@@ -427,14 +436,14 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 
 		base := &transaction_zether.TransactionZether{
 			Height: simpleZether.Height,
-			Registrations: &transaction_data.TransactionDataTransactions{
-				Registrations: make([]*transaction_data.TransactionDataRegistration, len(simpleZether.Registrations)),
+			Registrations: &transaction_zether_registrations.TransactionZetherDataRegistrations{
+				Registrations: make([]*transaction_zether_registrations.TransactionZetherDataRegistration, len(simpleZether.Registrations)),
 			},
 			Payloads: payloads,
 		}
 
 		for i, reg := range simpleZether.Registrations {
-			base.Registrations.Registrations[i] = &transaction_data.TransactionDataRegistration{
+			base.Registrations.Registrations[i] = &transaction_zether_registrations.TransactionZetherDataRegistration{
 				reg.PublicKeyIndex,
 				reg.RegistrationSignature,
 			}

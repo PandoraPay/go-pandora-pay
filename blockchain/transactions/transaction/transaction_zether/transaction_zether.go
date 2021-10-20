@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
-	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -15,7 +15,7 @@ import (
 type TransactionZether struct {
 	transaction_base_interface.TransactionBaseInterface
 	Height         uint64
-	Registrations  *transaction_data.TransactionDataTransactions
+	Registrations  *transaction_zether_registrations.TransactionZetherDataRegistrations
 	Payloads       []*transaction_zether_payload.TransactionZetherPayload
 	Bloom          *TransactionZetherBloom
 	publicKeysList [][]byte //it calculated with
@@ -122,7 +122,7 @@ func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 
-	tx.Registrations = new(transaction_data.TransactionDataTransactions)
+	tx.Registrations = new(transaction_zether_registrations.TransactionZetherDataRegistrations)
 	if err = tx.Registrations.Deserialize(r); err != nil {
 		return
 	}
