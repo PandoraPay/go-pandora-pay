@@ -88,30 +88,25 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 	cn := g.cmdInputCn
 	if status == "cmd" {
 		g.cmd.Lock()
-		if g.cmd.SelectedRow >= len(commands) && len(commands) > 0 {
-			g.cmd.SelectedRow = len(commands) - 1
-		}
-		command = &Command{
-			commands[g.cmd.SelectedRow].Name,
-			commands[g.cmd.SelectedRow].Text,
-			commands[g.cmd.SelectedRow].Callback,
+		if g.cmd.SelectedRow < len(commands) && g.cmd.SelectedRow >= 0 {
+			command = &Command{
+				commands[g.cmd.SelectedRow].Name,
+				commands[g.cmd.SelectedRow].Text,
+				commands[g.cmd.SelectedRow].Callback,
+			}
 		}
 		g.cmd.Unlock()
 	}
 	g.cmdChanges.RUnlock()
 
+	unlockRequired := false
 	switch e.ID {
-	case "<C-c>":
-		if status == "read" {
-			if cn != nil {
-				close(cn)
-				g.cmdChanges.Lock()
-				g.cmdInputCn = nil
-				g.cmdChanges.Unlock()
-			}
-			return
-		}
-		g.Close()
+	case "<Down>", "<Up>", "<C-d>", "<C-u>", "<C-f>", "<C-b>", "<Home>", "<End>":
+		unlockRequired = true
+		g.cmd.Lock()
+	}
+
+	switch e.ID {
 	case "<Down>":
 		g.cmd.ScrollDown()
 	case "<Up>":
@@ -128,12 +123,38 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 		g.cmd.ScrollTop()
 	case "<End>":
 		g.cmd.ScrollBottom()
+	}
+
+	if unlockRequired {
+		if g.cmd.SelectedRow >= len(commands) {
+			g.cmd.SelectedRow = len(commands) - 1
+		}
+		if g.cmd.SelectedRow < 0 {
+			g.cmd.SelectedRow = 0
+		}
+
+		g.cmd.Unlock()
+	}
+
+	switch e.ID {
+	case "<C-c>":
+		if status == "read" {
+			if cn != nil {
+				close(cn)
+				g.cmdChanges.Lock()
+				g.cmdInputCn = nil
+				g.cmdChanges.Unlock()
+			}
+			return
+		}
+		g.Close()
 	case "<Enter>":
 
 		if status == "cmd" {
 
-			if command.Callback != nil {
+			if command != nil && command.Callback != nil {
 				g.outputClear("", nil)
+				g.OutputWrite("Executing command", command.Name, command.Text, "...")
 
 				go func() {
 
