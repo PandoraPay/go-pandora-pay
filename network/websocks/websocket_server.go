@@ -22,7 +22,7 @@ func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r
 
 	var c *websocket.Conn
 	if c, err = websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true}); err != nil {
-		http.Error(w, err.Error(), 400)
+		//http.Error is not required because websocket.Accept will automatically send the error to the socket!
 		return
 	}
 
