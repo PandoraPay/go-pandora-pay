@@ -36,18 +36,15 @@ type json_Transaction struct {
 	Hash    helpers.HexBytes                    `json:"hash"`
 }
 
-type json_Only_TransactionSimple struct {
+type json_TransactionSimple struct {
+	*json_Transaction
 	TxScript    transaction_simple.ScriptType           `json:"txScript"`
 	DataVersion transaction_data.TransactionDataVersion `json:"dataVersion"`
 	Data        helpers.HexBytes                        `json:"data"`
 	Nonce       uint64                                  `json:"nonce"`
 	Fees        uint64                                  `json:"fee"`
 	Vin         *json_TransactionSimpleInput            `json:"vin"`
-}
-
-type json_TransactionSimple struct {
-	*json_Transaction
-	*json_Only_TransactionSimple
+	Extra       interface{}                             `json:"extra"`
 }
 
 type json_TransactionSimpleInput struct {
@@ -55,23 +52,13 @@ type json_TransactionSimpleInput struct {
 	Signature helpers.HexBytes `json:"signature"`           //64
 }
 
-type json_Only_TransactionSimpleUpdateDelegate struct {
+type json_Only_TransactionSimpleExtraUpdateDelegate struct {
 	DelegatedStakingClaimAmount uint64                                      `json:"delegatedStakingClaimAmount"`
 	DelegatedStakingUpdate      *json_TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
 }
 
-type json_TransactionSimpleUpdateDelegate struct {
-	*json_TransactionSimple
-	*json_Only_TransactionSimpleUpdateDelegate
-}
-
-type json_Only_TransactionSimpleUnstake struct {
+type json_Only_TransactionSimpleExtraUnstake struct {
 	Amount uint64 `json:"amount"`
-}
-
-type json_TransactionSimpleUnstake struct {
-	*json_TransactionSimple
-	*json_Only_TransactionSimpleUnstake
 }
 
 type json_Only_TransactionZether struct {
@@ -138,41 +125,37 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 
 		simpleJson := &json_TransactionSimple{
 			txJson,
-			&json_Only_TransactionSimple{
-				base.TxScript,
-				base.DataVersion,
-				base.Data,
-				base.Nonce,
-				base.Fees,
-				vinJson,
-			},
+			base.TxScript,
+			base.DataVersion,
+			base.Data,
+			base.Nonce,
+			base.Fees,
+			vinJson,
+			nil,
 		}
 
 		switch base.TxScript {
 		case transaction_simple.SCRIPT_UPDATE_DELEGATE:
 			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleUpdateDelegate)
-			return json.Marshal(&json_TransactionSimpleUpdateDelegate{
-				simpleJson,
-				&json_Only_TransactionSimpleUpdateDelegate{
-					extra.DelegatedStakingClaimAmount,
-					&json_TransactionDataDelegatedStakingUpdate{
-						extra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
-						extra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
-						extra.DelegatedStakingUpdate.DelegatedStakingNewFee,
-					},
+			simpleJson.Extra = &json_Only_TransactionSimpleExtraUpdateDelegate{
+				extra.DelegatedStakingClaimAmount,
+				&json_TransactionDataDelegatedStakingUpdate{
+					extra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
+					extra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
+					extra.DelegatedStakingUpdate.DelegatedStakingNewFee,
 				},
-			})
+			}
 		case transaction_simple.SCRIPT_UNSTAKE:
 			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake)
-			return json.Marshal(&json_TransactionSimpleUnstake{
-				simpleJson,
-				&json_Only_TransactionSimpleUnstake{
-					extra.Amount,
-				},
-			})
+			simpleJson.Extra = json_Only_TransactionSimpleExtraUnstake{
+				extra.Amount,
+			}
 		default:
 			return nil, errors.New("Invalid simple.TxScript")
 		}
+
+		return json.Marshal(simpleJson)
+
 	case transaction_type.TX_ZETHER:
 		base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
 
@@ -277,7 +260,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 
-		simpleJson := &json_Only_TransactionSimple{}
+		simpleJson := &json_TransactionSimple{}
 		if err := json.Unmarshal(data, simpleJson); err != nil {
 			return err
 		}
@@ -313,7 +296,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 		switch simpleJson.TxScript {
 		case transaction_simple.SCRIPT_UPDATE_DELEGATE:
 
-			extraJson := &json_Only_TransactionSimpleUpdateDelegate{}
+			extraJson := &json_Only_TransactionSimpleExtraUpdateDelegate{}
 			if err := json.Unmarshal(data, extraJson); err != nil {
 				return err
 			}
@@ -328,7 +311,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 			}
 
 		case transaction_simple.SCRIPT_UNSTAKE:
-			extraJSON := &json_Only_TransactionSimpleUnstake{}
+			extraJSON := &json_Only_TransactionSimpleExtraUnstake{}
 			if err := json.Unmarshal(data, extraJSON); err != nil {
 				return err
 			}
