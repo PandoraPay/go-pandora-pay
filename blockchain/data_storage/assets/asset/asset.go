@@ -47,6 +47,9 @@ func (asset *Asset) Validate() error {
 	if len(asset.Description) > 512 {
 		return errors.New("asset  description length is invalid")
 	}
+	if asset.MaxSupply == 0 {
+		return errors.New("Max supply must be greater than 0")
+	}
 
 	if !regexAssetName.MatchString(asset.Name) {
 		return errors.New("Asset name is invalid")

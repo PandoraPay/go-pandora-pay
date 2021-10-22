@@ -39,8 +39,8 @@ func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, dataStorage 
 	}
 
 	counter := 0
-	for _, payload := range tx.Payloads {
-		if err = payload.IncludePayload(tx.Registrations, tx.Bloom.publicKeyListByCounter, blockHeight, dataStorage, &counter); err != nil {
+	for payloadIndex, payload := range tx.Payloads {
+		if err = payload.IncludePayload(tx.Registrations, payloadIndex, tx.Bloom.publicKeyListByCounter, blockHeight, dataStorage, &counter); err != nil {
 			return
 		}
 	}
@@ -73,8 +73,8 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 
 func (tx *TransactionZether) Validate() (err error) {
 
-	for _, payload := range tx.Payloads {
-		if err = payload.Validate(tx.Registrations); err != nil {
+	for payloadIndex, payload := range tx.Payloads {
+		if err = payload.Validate(tx.Registrations, payloadIndex); err != nil {
 			return
 		}
 	}

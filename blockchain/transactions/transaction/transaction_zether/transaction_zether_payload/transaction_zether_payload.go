@@ -30,7 +30,7 @@ type TransactionZetherPayload struct {
 	Extra transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface
 }
 
-func (payload *TransactionZetherPayload) IncludePayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage, counter *int) (err error) {
+func (payload *TransactionZetherPayload) IncludePayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex int, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage, counter *int) (err error) {
 
 	var accs *accounts.Accounts
 	var acc *account.Account
@@ -38,7 +38,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txRegistrations *transac
 	var balance *crypto.ElGamal
 
 	if payload.Extra != nil {
-		if err = payload.Extra.BeforeIncludeTxPayload(txRegistrations, payload.Asset, payload.BurnValue, payload.Statement, publicKeyListByCounter, blockHeight, dataStorage); err != nil {
+		if err = payload.Extra.BeforeIncludeTxPayload(txRegistrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement, publicKeyListByCounter, blockHeight, dataStorage); err != nil {
 			return
 		}
 	}
@@ -85,7 +85,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txRegistrations *transac
 	}
 
 	if payload.Extra != nil {
-		if err = payload.Extra.IncludeTxPayload(txRegistrations, payload.Asset, payload.BurnValue, payload.Statement, publicKeyListByCounter, blockHeight, dataStorage); err != nil {
+		if err = payload.Extra.IncludeTxPayload(txRegistrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement, publicKeyListByCounter, blockHeight, dataStorage); err != nil {
 			return
 		}
 	}
@@ -111,7 +111,7 @@ func (payload *TransactionZetherPayload) ComputeAllKeys(out map[string]bool) {
 
 }
 
-func (payload *TransactionZetherPayload) Validate(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations) (err error) {
+func (payload *TransactionZetherPayload) Validate(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex int) (err error) {
 	// check sanity
 	if payload.Statement.RingSize < 2 { // ring size minimum 4
 		return fmt.Errorf("RingSize cannot be less than 2")
@@ -140,7 +140,7 @@ func (payload *TransactionZetherPayload) Validate(txRegistrations *transaction_z
 		if payload.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
-		if err = payload.Extra.Validate(txRegistrations, payload.Asset, payload.BurnValue, payload.Statement); err != nil {
+		if err = payload.Extra.Validate(txRegistrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement); err != nil {
 			return
 		}
 	default:
