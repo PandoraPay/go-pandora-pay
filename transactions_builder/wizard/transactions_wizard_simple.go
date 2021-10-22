@@ -43,7 +43,7 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 		Data:        dataFinal,
 		Nonce:       nonce,
 		Fees:        0,
-		Extra: &transaction_simple_extra.TransactionSimpleUnstake{
+		Extra: &transaction_simple_extra.TransactionSimpleExtraUnstake{
 			Amount: unstakeAmount,
 		},
 		Vin: &transaction_simple_parts.TransactionSimpleInput{
@@ -80,7 +80,7 @@ func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingClaimAmoun
 		DataVersion: data.getDataVersion(),
 		Data:        dataFinal,
 		Nonce:       nonce,
-		Extra: &transaction_simple_extra.TransactionSimpleUpdateDelegate{
+		Extra: &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{
 			DelegatedStakingClaimAmount: delegatedStakingClaimAmount,
 			DelegatedStakingUpdate:      delegatedStakingUpdate,
 		},

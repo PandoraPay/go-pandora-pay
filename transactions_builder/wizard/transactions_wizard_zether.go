@@ -341,9 +341,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			payload.PayloadScript = transaction_zether_payload.SCRIPT_TRANSFER
 		} else {
 			switch payload.Extra.(type) {
-			case *transaction_zether_payload_extra.TransactionZetherPayloadClaimStake:
+			case *transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake:
 				payload.PayloadScript = transaction_zether_payload.SCRIPT_CLAIM_STAKE
-			case *transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake:
+			case *transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake:
 				payload.PayloadScript = transaction_zether_payload.SCRIPT_DELEGATE_STAKE
 			}
 		}
@@ -430,7 +430,7 @@ func CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingUpdat
 		}
 	}
 
-	payloadExtra := &transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake{
+	payloadExtra := &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
 		DelegatePublicKey:      delegatePublicKey,
 		DelegatedStakingUpdate: delegatedStakingUpdate,
 	}
@@ -470,7 +470,7 @@ func CreateZetherClaimStakeTx(delegatePrivateKey []byte, transfers []*ZetherTran
 	key := &addresses.PrivateKey{Key: delegatePrivateKey}
 	delegatePublicKey := key.GeneratePublicKey()
 
-	payloadExtra := &transaction_zether_payload_extra.TransactionZetherPayloadClaimStake{
+	payloadExtra := &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake{
 		DelegatePublicKey:           delegatePublicKey,
 		DelegatedStakingClaimAmount: transfers[0].Amount,
 	}

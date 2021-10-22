@@ -44,7 +44,7 @@ func TestCreateUpdateDelegateTx(t *testing.T) {
 	base := tx2.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 	assert.Equal(t, fees, base.Fees, "Fees are not paid by vin")
 
-	updateDelegate := base.Extra.(*transaction_simple_extra.TransactionSimpleUpdateDelegate)
+	updateDelegate := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraUpdateDelegate)
 	assert.Equal(t, updateDelegate.DelegatedStakingUpdate.DelegatedStakingNewFee, delegatedStakingUpdate.DelegatedStakingNewFee, "Update delegate new fee is not set")
 	assert.Equal(t, string(updateDelegate.DelegatedStakingUpdate.DelegatedStakingNewPublicKey), string(delegatedStakingUpdate.DelegatedStakingNewPublicKey), "Update delegate new public key is not set")
 
@@ -75,7 +75,7 @@ func TestCreateUnstakeTx(t *testing.T) {
 	base := tx2.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 	assert.Equal(t, fees, base.Fees, "Fees are not paid by vin")
 
-	unstake := base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake)
+	unstake := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraUnstake)
 	assert.Equal(t, uint64(534), unstake.Amount, "Unstake amount is not set")
 
 }

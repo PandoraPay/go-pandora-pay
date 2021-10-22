@@ -136,7 +136,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 
 		switch base.TxScript {
 		case transaction_simple.SCRIPT_UPDATE_DELEGATE:
-			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleUpdateDelegate)
+			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraUpdateDelegate)
 			simpleJson.Extra = &json_Only_TransactionSimpleExtraUpdateDelegate{
 				extra.DelegatedStakingClaimAmount,
 				&json_TransactionDataDelegatedStakingUpdate{
@@ -146,7 +146,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				},
 			}
 		case transaction_simple.SCRIPT_UNSTAKE:
-			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleUnstake)
+			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraUnstake)
 			simpleJson.Extra = json_Only_TransactionSimpleExtraUnstake{
 				extra.Amount,
 			}
@@ -190,7 +190,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			case transaction_zether_payload.SCRIPT_TRANSFER:
 				//no payload
 			case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
-				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake)
+				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake)
 				extra = &json_Only_TransactionZetherPayloadExtraDelegateStake{
 					payloadExtra.DelegatePublicKey,
 					&json_TransactionDataDelegatedStakingUpdate{
@@ -201,7 +201,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 					payloadExtra.DelegateSignature,
 				}
 			case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
-				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadClaimStake)
+				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake)
 				extra = &json_Only_TransactionZetherPayloadExtraClaimStake{
 					payloadExtra.DelegatePublicKey,
 					payloadExtra.DelegatedStakingClaimAmount,
@@ -301,7 +301,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 				return err
 			}
 
-			base.Extra = &transaction_simple_extra.TransactionSimpleUpdateDelegate{
+			base.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{
 				DelegatedStakingClaimAmount: extraJson.DelegatedStakingClaimAmount,
 				DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{
 					extraJson.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
@@ -316,7 +316,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 				return err
 			}
 
-			base.Extra = &transaction_simple_extra.TransactionSimpleUnstake{
+			base.Extra = &transaction_simple_extra.TransactionSimpleExtraUnstake{
 				Amount: extraJSON.Amount,
 			}
 		default:
@@ -390,7 +390,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 					return err
 				}
 
-				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake{
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
 					DelegatePublicKey: extraJSON.DelegatePublicKey,
 					DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{
 						extraJSON.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
@@ -406,7 +406,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 					return err
 				}
 
-				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadClaimStake{
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake{
 					DelegatePublicKey:           extraJSON.DelegatePublicKey,
 					RegistrationIndex:           extraJSON.RegistrationIndex,
 					DelegateSignature:           extraJSON.DelegateSignature,

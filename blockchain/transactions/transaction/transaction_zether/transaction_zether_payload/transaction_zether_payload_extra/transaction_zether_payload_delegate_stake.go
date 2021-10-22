@@ -13,29 +13,29 @@ import (
 	"pandora-pay/helpers"
 )
 
-type TransactionZetherPayloadDelegateStake struct {
+type TransactionZetherPayloadExtraDelegateStake struct {
 	TransactionZetherPayloadExtraInterface
 	DelegatePublicKey      []byte
 	DelegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate
 	DelegateSignature      []byte //if newInfo then the signature is required to verify that he is owner
 }
 
-func (tx *TransactionZetherPayloadDelegateStake) BeforeIncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) error {
+func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) BeforeIncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) error {
 	return nil
 }
 
-func (tx *TransactionZetherPayloadDelegateStake) IncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) IncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var plainAcc *plain_account.PlainAccount
-	if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(tx.DelegatePublicKey, blockHeight); err != nil {
+	if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(payloadExtra.DelegatePublicKey, blockHeight); err != nil {
 		return
 	}
 
 	if plainAcc == nil {
-		plainAcc = plain_account.NewPlainAccount(tx.DelegatePublicKey)
+		plainAcc = plain_account.NewPlainAccount(payloadExtra.DelegatePublicKey)
 	}
 
-	if err = tx.DelegatedStakingUpdate.Include(plainAcc); err != nil {
+	if err = payloadExtra.DelegatedStakingUpdate.Include(plainAcc); err != nil {
 		return
 	}
 
@@ -43,14 +43,14 @@ func (tx *TransactionZetherPayloadDelegateStake) IncludeTxPayload(txRegistration
 		return
 	}
 
-	if err = dataStorage.PlainAccs.Update(string(tx.DelegatePublicKey), plainAcc); err != nil {
+	if err = dataStorage.PlainAccs.Update(string(payloadExtra.DelegatePublicKey), plainAcc); err != nil {
 		return
 	}
 
 	return nil
 }
 
-func (tx *TransactionZetherPayloadDelegateStake) Validate(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) Validate(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) (err error) {
 
 	if bytes.Equal(payloadAsset, config_coins.NATIVE_ASSET_FULL) == false {
 		return errors.New("Payload[0] asset must be a native asset")
@@ -59,44 +59,44 @@ func (tx *TransactionZetherPayloadDelegateStake) Validate(txRegistrations *trans
 		return errors.New("Payload burn value must be greater than zero")
 	}
 
-	if err = tx.DelegatedStakingUpdate.Validate(); err != nil {
+	if err = payloadExtra.DelegatedStakingUpdate.Validate(); err != nil {
 		return
 	}
 
-	if tx.DelegatedStakingUpdate.DelegatedStakingHasNewInfo && len(tx.DelegateSignature) != cryptography.SignatureSize {
+	if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo && len(payloadExtra.DelegateSignature) != cryptography.SignatureSize {
 		return errors.New("tx.DelegateSignature length is invalid")
-	} else if !tx.DelegatedStakingUpdate.DelegatedStakingHasNewInfo && len(tx.DelegateSignature) != 0 {
+	} else if !payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo && len(payloadExtra.DelegateSignature) != 0 {
 		return errors.New("tx.DelegateSignature length is not zero")
 	}
 
 	return
 }
 
-func (tx *TransactionZetherPayloadDelegateStake) VerifyExtraSignature(hashForSignature []byte) bool {
-	if tx.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
-		return crypto.VerifySignature(hashForSignature, tx.DelegateSignature, tx.DelegatePublicKey)
+func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) VerifyExtraSignature(hashForSignature []byte) bool {
+	if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
+		return crypto.VerifySignature(hashForSignature, payloadExtra.DelegateSignature, payloadExtra.DelegatePublicKey)
 	}
 	return true
 }
 
-func (tx *TransactionZetherPayloadDelegateStake) Serialize(w *helpers.BufferWriter, inclSignature bool) {
-	w.Write(tx.DelegatePublicKey)
-	tx.DelegatedStakingUpdate.Serialize(w)
-	if tx.DelegatedStakingUpdate.DelegatedStakingHasNewInfo && inclSignature {
-		w.Write(tx.DelegateSignature)
+func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+	w.Write(payloadExtra.DelegatePublicKey)
+	payloadExtra.DelegatedStakingUpdate.Serialize(w)
+	if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo && inclSignature {
+		w.Write(payloadExtra.DelegateSignature)
 	}
 }
 
-func (tx *TransactionZetherPayloadDelegateStake) Deserialize(r *helpers.BufferReader) (err error) {
-	if tx.DelegatePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) Deserialize(r *helpers.BufferReader) (err error) {
+	if payloadExtra.DelegatePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	tx.DelegatedStakingUpdate = &transaction_data.TransactionDataDelegatedStakingUpdate{}
-	if err = tx.DelegatedStakingUpdate.Deserialize(r); err != nil {
+	payloadExtra.DelegatedStakingUpdate = &transaction_data.TransactionDataDelegatedStakingUpdate{}
+	if err = payloadExtra.DelegatedStakingUpdate.Deserialize(r); err != nil {
 		return
 	}
-	if tx.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
-		if tx.DelegateSignature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
+	if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
+		if payloadExtra.DelegateSignature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
 			return
 		}
 	}

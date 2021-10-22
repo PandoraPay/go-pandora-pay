@@ -146,9 +146,9 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 	tx.TxScript = ScriptType(n)
 	switch tx.TxScript {
 	case SCRIPT_UNSTAKE:
-		tx.Extra = &transaction_simple_extra.TransactionSimpleUnstake{}
+		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraUnstake{}
 	case SCRIPT_UPDATE_DELEGATE:
-		tx.Extra = &transaction_simple_extra.TransactionSimpleUpdateDelegate{}
+		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{}
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}

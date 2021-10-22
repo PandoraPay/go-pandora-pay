@@ -100,10 +100,10 @@ func (payload *TransactionZetherPayload) ComputeAllKeys(out map[string]bool) {
 
 		switch payload.PayloadScript {
 		case SCRIPT_CLAIM_STAKE:
-			extra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadClaimStake)
+			extra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake)
 			out[string(extra.DelegatePublicKey)] = true
 		case SCRIPT_DELEGATE_STAKE:
-			extra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake)
+			extra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake)
 			out[string(extra.DelegatePublicKey)] = true
 		}
 
@@ -188,9 +188,9 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 	case SCRIPT_TRANSFER:
 		payload.Extra = nil
 	case SCRIPT_DELEGATE_STAKE:
-		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake{}
+		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{}
 	case SCRIPT_CLAIM_STAKE:
-		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadClaimStake{}
+		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake{}
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}

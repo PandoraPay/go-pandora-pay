@@ -56,7 +56,7 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 		case transaction_simple.SCRIPT_UPDATE_DELEGATE: //nothing to be copied
 
 		case transaction_simple.SCRIPT_UNSTAKE:
-			txExtra := txBase.Extra.(*transaction_simple_extra.TransactionSimpleUnstake)
+			txExtra := txBase.Extra.(*transaction_simple_extra.TransactionSimpleExtraUnstake)
 			baseExtra = &TxPreviewSimpleExtraUnstake{Amount: txExtra.Amount}
 		}
 

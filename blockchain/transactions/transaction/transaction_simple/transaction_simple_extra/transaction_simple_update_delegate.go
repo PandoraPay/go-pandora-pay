@@ -12,23 +12,23 @@ import (
 Substracting DelegatedStakingClaimAmount from the Unclaimed
 Creating a Stake Pending with DelegatedStakingClaimAmount
 */
-type TransactionSimpleUpdateDelegate struct {
+type TransactionSimpleExtraUpdateDelegate struct {
 	TransactionSimpleExtraInterface
 	DelegatedStakingClaimAmount uint64
 	DelegatedStakingUpdate      *transaction_data.TransactionDataDelegatedStakingUpdate
 }
 
-func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
+func (txExtra *TransactionSimpleExtraUpdateDelegate) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
 
-	if err = tx.DelegatedStakingUpdate.Include(plainAcc); err != nil {
+	if err = txExtra.DelegatedStakingUpdate.Include(plainAcc); err != nil {
 		return
 	}
 
-	if tx.DelegatedStakingClaimAmount > 0 {
-		if err = plainAcc.AddUnclaimed(false, tx.DelegatedStakingClaimAmount); err != nil {
+	if txExtra.DelegatedStakingClaimAmount > 0 {
+		if err = plainAcc.AddUnclaimed(false, txExtra.DelegatedStakingClaimAmount); err != nil {
 			return
 		}
-		if err = plainAcc.DelegatedStake.AddStakePendingStake(tx.DelegatedStakingClaimAmount, blockHeight); err != nil {
+		if err = plainAcc.DelegatedStake.AddStakePendingStake(txExtra.DelegatedStakingClaimAmount, blockHeight); err != nil {
 			return
 		}
 	}
@@ -36,13 +36,13 @@ func (tx *TransactionSimpleUpdateDelegate) IncludeTransactionVin0(blockHeight ui
 	return
 }
 
-func (tx *TransactionSimpleUpdateDelegate) Validate() (err error) {
-	if err = tx.DelegatedStakingUpdate.Validate(); err != nil {
+func (txExtra *TransactionSimpleExtraUpdateDelegate) Validate() (err error) {
+	if err = txExtra.DelegatedStakingUpdate.Validate(); err != nil {
 		return
 	}
 
-	if !tx.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
-		if tx.DelegatedStakingClaimAmount == 0 {
+	if !txExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
+		if txExtra.DelegatedStakingClaimAmount == 0 {
 			return errors.New("UpdateDelegateTx has no operation")
 		}
 	}
@@ -50,15 +50,15 @@ func (tx *TransactionSimpleUpdateDelegate) Validate() (err error) {
 	return
 }
 
-func (tx *TransactionSimpleUpdateDelegate) Serialize(w *helpers.BufferWriter, inclSignature bool) {
-	w.WriteUvarint(tx.DelegatedStakingClaimAmount)
-	tx.DelegatedStakingUpdate.Serialize(w)
+func (txExtra *TransactionSimpleExtraUpdateDelegate) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+	w.WriteUvarint(txExtra.DelegatedStakingClaimAmount)
+	txExtra.DelegatedStakingUpdate.Serialize(w)
 }
 
-func (tx *TransactionSimpleUpdateDelegate) Deserialize(r *helpers.BufferReader) (err error) {
-	if tx.DelegatedStakingClaimAmount, err = r.ReadUvarint(); err != nil {
+func (txExtra *TransactionSimpleExtraUpdateDelegate) Deserialize(r *helpers.BufferReader) (err error) {
+	if txExtra.DelegatedStakingClaimAmount, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	tx.DelegatedStakingUpdate = &transaction_data.TransactionDataDelegatedStakingUpdate{}
-	return tx.DelegatedStakingUpdate.Deserialize(r)
+	txExtra.DelegatedStakingUpdate = &transaction_data.TransactionDataDelegatedStakingUpdate{}
+	return txExtra.DelegatedStakingUpdate.Deserialize(r)
 }
