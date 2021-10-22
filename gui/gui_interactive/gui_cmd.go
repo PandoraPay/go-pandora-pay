@@ -154,7 +154,9 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 
 			if command != nil && command.Callback != nil {
 				g.outputClear("", nil)
-				g.OutputWrite("Executing command", command.Name, command.Text, "...")
+
+				g.OutputWrite(fmt.Sprintf("Executing cmd %s::%s ...", command.Name, command.Text))
+				g.OutputWrite("")
 
 				go func() {
 
@@ -259,15 +261,17 @@ func (g *GUIInteractive) OutputReadFilename(text, extension string) string {
 	return out
 }
 
-func (g *GUIInteractive) OutputReadInt(text string, validateCb func(value int) bool) int {
+func (g *GUIInteractive) OutputReadInt(text string, allowEmpty bool, validateCb func(value int) bool) int {
 	for {
 
 		str := g.OutputReadString(text)
 
 		out, err := strconv.Atoi(str)
-		if err != nil {
-			g.OutputWrite("Invalid Number")
-			continue
+		if !(allowEmpty && str == "") {
+			if err != nil {
+				g.OutputWrite("Invalid Number")
+				continue
+			}
 		}
 
 		if validateCb != nil && !validateCb(out) {
@@ -278,15 +282,17 @@ func (g *GUIInteractive) OutputReadInt(text string, validateCb func(value int) b
 	}
 }
 
-func (g *GUIInteractive) OutputReadUint64(text string, validateCb func(value uint64) bool) uint64 {
+func (g *GUIInteractive) OutputReadUint64(text string, allowEmpty bool, validateCb func(value uint64) bool) uint64 {
 
 	for {
 		str := g.OutputReadString(text)
 
 		out, err := strconv.ParseUint(str, 10, 64)
-		if err != nil {
-			g.OutputWrite("Invalid Number")
-			continue
+		if !(allowEmpty && str == "") {
+			if err != nil {
+				g.OutputWrite("Invalid Number")
+				continue
+			}
 		}
 
 		if validateCb != nil && !validateCb(out) {
@@ -297,14 +303,16 @@ func (g *GUIInteractive) OutputReadUint64(text string, validateCb func(value uin
 	}
 }
 
-func (g *GUIInteractive) OutputReadFloat64(text string, validateCb func(float64) bool) float64 {
+func (g *GUIInteractive) OutputReadFloat64(text string, allowEmpty bool, validateCb func(float64) bool) float64 {
 	for {
 		str := g.OutputReadString(text)
 
 		out, err := strconv.ParseFloat(str, 64)
-		if err != nil {
-			g.OutputWrite("Invalid Number")
-			continue
+		if !(allowEmpty && str == "") {
+			if err != nil {
+				g.OutputWrite("Invalid Number")
+				continue
+			}
 		}
 
 		if validateCb != nil && !validateCb(out) {
@@ -364,15 +372,15 @@ func (g *GUIInteractive) outputClear(newCmdStatus string, rows []string) {
 	if rows == nil {
 		rows = []string{}
 	}
+
 	g.cmd.Lock()
 	g.cmd.Rows = rows
 	g.cmd.SelectedRow = 0
-	if newCmdStatus != "" {
-		g.cmdChanges.Lock()
-		g.cmdStatus = newCmdStatus
-		g.cmdChanges.Unlock()
-	}
 	g.cmd.Unlock()
+
+	g.cmdChanges.Lock()
+	g.cmdStatus = newCmdStatus
+	g.cmdChanges.Unlock()
 }
 
 func (g *GUIInteractive) outputDone() {

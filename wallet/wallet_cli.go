@@ -214,7 +214,7 @@ func (wallet *Wallet) CliSelectAddress(text string) (*wallet_address.WalletAddre
 		return nil, 0, err
 	}
 
-	index := gui.GUI.OutputReadInt(text, func(value int) bool {
+	index := gui.GUI.OutputReadInt(text, false, func(value int) bool {
 		return value < wallet.GetAddressesCount()
 	})
 
@@ -272,7 +272,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		index := gui.GUI.OutputReadInt("Select Address to be Exported", nil)
+		index := gui.GUI.OutputReadInt("Select Address to be Exported", false, nil)
 		str := gui.GUI.OutputReadFilename("Path to export", "pandora")
 
 		f, err := os.Create(str)
@@ -413,7 +413,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", nil)
+		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
 		path := gui.GUI.OutputReadString("Path to export to a file")
 
 		return wallet.deriveDelegatedStake(addr, nonce, path, true)
@@ -468,7 +468,7 @@ func (wallet *Wallet) initWalletCLI() {
 	cliEncryptWallet := func(cmd string) (err error) {
 
 		password := gui.GUI.OutputReadString("Password for encrypting wallet")
-		difficulty := gui.GUI.OutputReadInt("Difficulty for encryption", func(value int) bool {
+		difficulty := gui.GUI.OutputReadInt("Difficulty for encryption", false, func(value int) bool {
 			return value >= 1 && value <= 10
 		})
 

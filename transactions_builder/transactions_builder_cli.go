@@ -37,7 +37,7 @@ func (builder *TransactionsBuilder) readData() (out *wizard.TransactionsWizardDa
 
 func (builder *TransactionsBuilder) readAmount(assetId []byte, text string) (amount uint64, err error) {
 
-	amountFloat := gui.GUI.OutputReadFloat64(text, nil)
+	amountFloat := gui.GUI.OutputReadFloat64(text, false, nil)
 
 	err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		asts := assets.NewAssets(reader)
@@ -94,7 +94,7 @@ func (builder *TransactionsBuilder) readDelegatedStakingUpdate(delegatedStakingU
 			}
 		}
 
-		delegatedStakingUpdate.DelegatedStakingNewFee = gui.GUI.OutputReadUint64("Delegated Staking New Fee. Leave empty for nothing", func(value uint64) bool {
+		delegatedStakingUpdate.DelegatedStakingNewFee = gui.GUI.OutputReadUint64("Delegated Staking New Fee. Leave empty for nothing", true, func(value uint64) bool {
 			return value <= config_stake.DELEGATING_STAKING_FEES_MAX_VALUE
 		})
 	}
@@ -157,7 +157,7 @@ func (builder *TransactionsBuilder) initCLI() {
 
 		builder.showWarningIfNotSyncCLI()
 
-		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address from which to Delegate")
+		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Delegate")
 		if err != nil {
 			return
 		}
@@ -221,7 +221,7 @@ func (builder *TransactionsBuilder) initCLI() {
 
 		builder.showWarningIfNotSyncCLI()
 
-		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address from which should Claim")
+		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address from which Claim")
 		if err != nil {
 			return
 		}
@@ -270,7 +270,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", nil)
+		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
 
 		delegatedStakingUpdate := &transaction_data.TransactionDataDelegatedStakingUpdate{}
 		if err = builder.readDelegatedStakingUpdate(delegatedStakingUpdate, delegateWalletAddress.PublicKey); err != nil {
@@ -306,7 +306,7 @@ func (builder *TransactionsBuilder) initCLI() {
 
 		builder.showWarningIfNotSyncCLI()
 
-		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Delegate")
+		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Unstake")
 		if err != nil {
 			return
 		}
@@ -316,7 +316,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		nonce := gui.GUI.OutputReadUint64("Nonce. Leave for automatically detection", nil)
+		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
 
 		data := builder.readData()
 

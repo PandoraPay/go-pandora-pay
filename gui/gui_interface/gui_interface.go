@@ -24,9 +24,9 @@ type GUIInterface interface {
 	CommandDefineCallback(Text string, callback func(string) error, useIt bool)
 	OutputReadString(text string) string
 	OutputReadFilename(text, extension string) string
-	OutputReadInt(text string, validateCb func(int) bool) int
-	OutputReadUint64(text string, validateCb func(uint64) bool) uint64
-	OutputReadFloat64(text string, validateCb func(float64) bool) float64
+	OutputReadInt(text string, allowEmpty bool, validateCb func(int) bool) int
+	OutputReadUint64(text string, allowEmpty bool, validateCb func(uint64) bool) uint64
+	OutputReadFloat64(text string, allowEmpty bool, validateCb func(float64) bool) float64
 	OutputReadAddress(text string) (address *addresses.Address)
 	OutputReadBool(text string) (out bool)
 	OutputReadBytes(text string, validateCb func([]byte) bool) (data []byte)
