@@ -111,7 +111,7 @@ func (tx *TransactionZetherPayloadClaimStake) Validate(txRegistrations *transact
 	return nil
 }
 
-func (tx *TransactionZetherPayloadClaimStake) VerifySignatureManually(hashForSignature []byte) bool {
+func (tx *TransactionZetherPayloadClaimStake) VerifyExtraSignature(hashForSignature []byte) bool {
 	return crypto.VerifySignature(hashForSignature, tx.DelegateSignature, tx.DelegatePublicKey)
 }
 

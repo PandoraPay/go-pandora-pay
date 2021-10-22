@@ -13,4 +13,5 @@ type TransactionZetherPayloadExtraInterface interface {
 	Validate(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) error
 	Serialize(w *helpers.BufferWriter, inclSignature bool)
 	Deserialize(r *helpers.BufferReader) error
+	VerifyExtraSignature(hashForSignature []byte) bool
 }

@@ -72,8 +72,11 @@ func (tx *TransactionZetherPayloadDelegateStake) Validate(txRegistrations *trans
 	return
 }
 
-func (tx *TransactionZetherPayloadDelegateStake) VerifySignatureManually(hashForSignature []byte) bool {
-	return crypto.VerifySignature(hashForSignature, tx.DelegateSignature, tx.DelegatePublicKey)
+func (tx *TransactionZetherPayloadDelegateStake) VerifyExtraSignature(hashForSignature []byte) bool {
+	if tx.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
+		return crypto.VerifySignature(hashForSignature, tx.DelegateSignature, tx.DelegatePublicKey)
+	}
+	return true
 }
 
 func (tx *TransactionZetherPayloadDelegateStake) Serialize(w *helpers.BufferWriter, inclSignature bool) {

@@ -3,7 +3,6 @@ package transaction_zether
 import (
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/cryptography/bn256"
 )
 
@@ -60,14 +59,8 @@ func (tx *TransactionZether) BloomNow(hashForSignature []byte) (err error) {
 
 	for _, payload := range tx.Payloads {
 		switch payload.PayloadScript {
-		case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
-			extra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadDelegateStake)
-			if extra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo && extra.VerifySignatureManually(hashForSignature) == false {
-				return errors.New("DelegatedPublicKey signature failed")
-			}
-		case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
-			extra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadClaimStake)
-			if extra.VerifySignatureManually(hashForSignature) == false {
+		case transaction_zether_payload.SCRIPT_DELEGATE_STAKE, transaction_zether_payload.SCRIPT_CLAIM_STAKE:
+			if payload.Extra.VerifyExtraSignature(hashForSignature) == false {
 				return errors.New("DelegatedPublicKey signature failed")
 			}
 		}
