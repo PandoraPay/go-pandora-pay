@@ -239,6 +239,7 @@ func (g *GUIInteractive) outputRead(text string) <-chan string {
 	cn := make(chan string)
 	g.cmdChanges.Lock()
 	g.cmdInput = ""
+
 	g.cmdStatus = "read"
 	g.cmdInputCn = cn
 	g.cmdChanges.Unlock()

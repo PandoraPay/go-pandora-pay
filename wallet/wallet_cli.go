@@ -422,10 +422,10 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliShowMnemonic := func(string) (err error) {
 
-		gui.GUI.OutputWrite("Mnemonic \n")
+		gui.GUI.OutputWrite("Mnemonic")
 		gui.GUI.OutputWrite(wallet.Mnemonic)
 
-		gui.GUI.OutputWrite("Seed \n")
+		gui.GUI.OutputWrite("Seed")
 		gui.GUI.OutputWrite(wallet.Seed)
 
 		return
