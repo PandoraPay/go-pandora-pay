@@ -52,7 +52,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 	statusCallback("Transaction Signing...")
 
-	registrations := make([]*transaction_zether_registrations.TransactionZetherDataRegistration, 0)
+	registrations := make([][]*transaction_zether_registrations.TransactionZetherDataRegistration, 0)
 	registrationsAlready := make(map[string]bool)
 
 	senders, receivers := make([]*bn256.G1, len(transfers)), make([]*bn256.G1, len(transfers))
@@ -96,9 +96,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	}
 	statusCallback("Transaction public keys were shuffled")
 
-	c := uint64(0)
-	for _, publickeylist := range publickeylists {
-		for _, publicKeyPoint := range publickeylist {
+	for t, publickeylist := range publickeylists {
+
+		registrations[t] = make([]*transaction_zether_registrations.TransactionZetherDataRegistration, 0)
+		for i, publicKeyPoint := range publickeylist {
 
 			publicKey := publicKeyPoint.EncodeCompressed()
 
@@ -107,23 +108,21 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				if !publicKeyIndex.Registered && !registrationsAlready[string(publicKey)] {
 					registrationsAlready[string(publicKey)] = true
 					if len(publicKeyIndex.RegistrationSignature) != cryptography.SignatureSize {
-						return fmt.Errorf("Registration Signature is invalid for ring member %d", c)
+						return fmt.Errorf("Registration Signature is invalid for ring member %d", i)
 					}
 
-					registrations = append(registrations, &transaction_zether_registrations.TransactionZetherDataRegistration{
-						c,
+					registrations[t] = append(registrations[t], &transaction_zether_registrations.TransactionZetherDataRegistration{
+						byte(i),
 						publicKeyIndex.RegistrationSignature,
 					})
 				}
 
 			} else {
-				return fmt.Errorf("Public Key Index was not specified for ring member %d", c)
+				return fmt.Errorf("Public Key Index was not specified for ring member %d", i)
 			}
 
-			c += 1
 		}
 	}
-	txBase.Registrations.Registrations = registrations
 	statusCallback("Transaction registrations created")
 
 	payloads := make([]*transaction_zether_payload.TransactionZetherPayload, len(transfers))
@@ -334,6 +333,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		// this goes to proof.u
 
 		//Print(statement, witness)
+		payload.Registrations = &transaction_zether_registrations.TransactionZetherDataRegistrations{
+			registrations[t],
+		}
 		payload.Statement = &statement
 		payload.Extra = payloadsExtra[t]
 
@@ -399,8 +401,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	}
 
 	txBase := &transaction_zether.TransactionZether{
-		Registrations: &transaction_zether_registrations.TransactionZetherDataRegistrations{},
-		Height:        height,
+		Height: height,
 	}
 
 	tx := &transaction.Transaction{
@@ -437,8 +438,7 @@ func CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingUpdat
 	payloadsExtra = append(payloadsExtra, payloadExtra)
 
 	txBase := &transaction_zether.TransactionZether{
-		Height:        height,
-		Registrations: &transaction_zether_registrations.TransactionZetherDataRegistrations{},
+		Height: height,
 	}
 
 	tx := &transaction.Transaction{
@@ -477,8 +477,7 @@ func CreateZetherClaimStakeTx(delegatePrivateKey []byte, transfers []*ZetherTran
 	payloadsExtra = append(payloadsExtra, payloadExtra)
 
 	txBase := &transaction_zether.TransactionZether{
-		Height:        height,
-		Registrations: &transaction_zether_registrations.TransactionZetherDataRegistrations{},
+		Height: height,
 	}
 
 	tx := &transaction.Transaction{
@@ -492,7 +491,7 @@ func CreateZetherClaimStakeTx(delegatePrivateKey []byte, transfers []*ZetherTran
 
 	senderKey := &addresses.PrivateKey{Key: transfers[0].From}
 	senderPublicKey := senderKey.GeneratePublicKey()
-	for i, reg := range txBase.Registrations.Registrations {
+	for i, reg := range txBase.Payloads[0].Registrations.Registrations {
 		if bytes.Equal(txBase.Payloads[0].Statement.Publickeylist[reg.PublicKeyIndex].EncodeCompressed(), senderPublicKey) {
 			payloadExtra.RegistrationIndex = byte(i)
 			break

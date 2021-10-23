@@ -3,16 +3,15 @@ package transaction_zether
 import (
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
-	"pandora-pay/cryptography/bn256"
 )
 
 type TransactionZetherBloom struct {
-	Nonce1                 []byte
-	Nonce2                 []byte
-	publicKeyListByCounter [][]byte
-	registrationsVerified  bool
-	signatureVerified      bool
-	bloomed                bool
+	Nonce1                []byte
+	Nonce2                []byte
+	publicKeyLists        [][][]byte
+	registrationsVerified bool
+	signatureVerified     bool
+	bloomed               bool
 }
 
 /**
@@ -26,25 +25,15 @@ func (tx *TransactionZether) BloomNow(hashForSignature []byte) (err error) {
 
 	tx.Bloom = new(TransactionZetherBloom)
 
-	c := 0
-	for _, payload := range tx.Payloads {
-		c += len(payload.Statement.Publickeylist)
-	}
-
-	publicKeyListByCounter := make([]*bn256.G1, c)
-	tx.Bloom.publicKeyListByCounter = make([][]byte, c)
-
-	c = 0
-	for _, payload := range tx.Payloads {
-		for _, publicKey := range payload.Statement.Publickeylist {
-			publicKeyListByCounter[c] = publicKey
-			tx.Bloom.publicKeyListByCounter[c] = publicKey.EncodeCompressed()
-			c += 1
+	tx.Bloom.publicKeyLists = make([][][]byte, len(tx.Payloads))
+	for payloadIndex, payload := range tx.Payloads {
+		tx.Bloom.publicKeyLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))
+		for i, publicKey := range payload.Statement.Publickeylist {
+			tx.Bloom.publicKeyLists[payloadIndex][i] = publicKey.EncodeCompressed()
 		}
-	}
-
-	if err = tx.Registrations.ValidateRegistrations(publicKeyListByCounter); err != nil {
-		return
+		if err = payload.Registrations.ValidateRegistrations(payload.Statement.Publickeylist); err != nil {
+			return
+		}
 	}
 
 	//verify signature
@@ -89,13 +78,11 @@ func (tx *TransactionZether) BloomNowSignatureVerified() (err error) {
 		c += len(payload.Statement.Publickeylist)
 	}
 
-	tx.Bloom.publicKeyListByCounter = make([][]byte, c)
-
-	c = 0
-	for _, payload := range tx.Payloads {
-		for _, publicKey := range payload.Statement.Publickeylist {
-			tx.Bloom.publicKeyListByCounter[c] = publicKey.EncodeCompressed()
-			c += 1
+	tx.Bloom.publicKeyLists = make([][][]byte, len(tx.Payloads))
+	for payloadIndex, payload := range tx.Payloads {
+		tx.Bloom.publicKeyLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))
+		for i, publicKey := range payload.Statement.Publickeylist {
+			tx.Bloom.publicKeyLists[payloadIndex][i] = publicKey.EncodeCompressed()
 		}
 	}
 

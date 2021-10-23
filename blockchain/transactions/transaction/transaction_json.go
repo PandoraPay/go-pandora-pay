@@ -20,7 +20,7 @@ import (
 )
 
 type json_TransactionDataRegistration struct {
-	PublicKeyIndex        uint64           `json:"publicKeyIndex"`
+	PublicKeyIndex        byte             `json:"publicKeyIndex"`
 	RegistrationSignature helpers.HexBytes `json:"signature"`
 }
 
@@ -62,9 +62,8 @@ type json_Only_TransactionSimpleExtraUnstake struct {
 }
 
 type json_Only_TransactionZether struct {
-	Height        uint64                              `json:"height"`
-	Registrations []*json_TransactionDataRegistration `json:"registrations"`
-	Payloads      []*json_Only_TransactionPayload     `json:"payloads"`
+	Height   uint64                          `json:"height"`
+	Payloads []*json_Only_TransactionPayload `json:"payloads"`
 }
 
 type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
@@ -96,6 +95,7 @@ type json_Only_TransactionPayload struct {
 	BurnValue     uint64                                       `json:"burnValue"`
 	DataVersion   transaction_data.TransactionDataVersion      `json:"dataType"`
 	Data          helpers.HexBytes                             `json:"data"`
+	Registrations []*json_TransactionDataRegistration          `json:"registrations"`
 	Statement     *json_Only_TransactionZetherStatement        `json:"statement"`
 	Proof         helpers.HexBytes                             `json:"proof"`
 	Extra         interface{}                                  `json:"extra"`
@@ -159,16 +159,16 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 	case transaction_type.TX_ZETHER:
 		base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
 
-		registrations := make([]*json_TransactionDataRegistration, len(base.Registrations.Registrations))
-		for i, reg := range base.Registrations.Registrations {
-			registrations[i] = &json_TransactionDataRegistration{
-				reg.PublicKeyIndex,
-				reg.RegistrationSignature,
-			}
-		}
-
 		payloadsJson := make([]*json_Only_TransactionPayload, len(base.Payloads))
 		for i, payload := range base.Payloads {
+
+			registrations := make([]*json_TransactionDataRegistration, len(payload.Registrations.Registrations))
+			for i, reg := range payload.Registrations.Registrations {
+				registrations[i] = &json_TransactionDataRegistration{
+					reg.PublicKeyIndex,
+					reg.RegistrationSignature,
+				}
+			}
 
 			statementJson := &json_Only_TransactionZetherStatement{
 				RingSize:      payload.Statement.RingSize,
@@ -218,6 +218,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				payload.BurnValue,
 				payload.DataVersion,
 				payload.Data,
+				registrations,
 				statementJson,
 				proofJson,
 				extra,
@@ -229,7 +230,6 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			txJson,
 			&json_Only_TransactionZether{
 				base.Height,
-				registrations,
 				payloadsJson,
 			},
 		}
@@ -370,6 +370,9 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 				BurnValue:   payload.BurnValue,
 				DataVersion: payload.DataVersion,
 				Data:        payload.Data,
+				Registrations: &transaction_zether_registrations.TransactionZetherDataRegistrations{
+					Registrations: make([]*transaction_zether_registrations.TransactionZetherDataRegistration, len(payload.Registrations)),
+				},
 				Statement: &crypto.Statement{
 					RingSize:      payload.Statement.RingSize,
 					CLn:           CLn,
@@ -380,6 +383,13 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 					Fees:          payload.Statement.Fees,
 				},
 				Proof: proof,
+			}
+
+			for i, reg := range payload.Registrations {
+				payloads[i].Registrations.Registrations[i] = &transaction_zether_registrations.TransactionZetherDataRegistration{
+					reg.PublicKeyIndex,
+					reg.RegistrationSignature,
+				}
 			}
 
 			switch payload.PayloadScript {
@@ -420,18 +430,8 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 		}
 
 		base := &transaction_zether.TransactionZether{
-			Height: simpleZether.Height,
-			Registrations: &transaction_zether_registrations.TransactionZetherDataRegistrations{
-				Registrations: make([]*transaction_zether_registrations.TransactionZetherDataRegistration, len(simpleZether.Registrations)),
-			},
+			Height:   simpleZether.Height,
 			Payloads: payloads,
-		}
-
-		for i, reg := range simpleZether.Registrations {
-			base.Registrations.Registrations[i] = &transaction_zether_registrations.TransactionZetherDataRegistration{
-				reg.PublicKeyIndex,
-				reg.RegistrationSignature,
-			}
 		}
 
 		tx.TransactionBaseInterface = base

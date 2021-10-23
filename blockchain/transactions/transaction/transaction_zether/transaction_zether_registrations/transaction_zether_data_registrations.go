@@ -17,7 +17,7 @@ func (self *TransactionZetherDataRegistrations) ValidateRegistrations(publickeyl
 
 	for _, reg := range self.Registrations {
 
-		if reg.PublicKeyIndex >= uint64(len(publickeylist)) {
+		if reg.PublicKeyIndex >= byte(len(publickeylist)) {
 			return fmt.Errorf("reg.PublicKeyIndex %d exceeds %d ", reg.PublicKeyIndex, len(publickeylist))
 		}
 

@@ -6,7 +6,6 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -15,14 +14,18 @@ import (
 type TransactionZether struct {
 	transaction_base_interface.TransactionBaseInterface
 	Height         uint64
-	Registrations  *transaction_zether_registrations.TransactionZetherDataRegistrations
 	Payloads       []*transaction_zether_payload.TransactionZetherPayload
 	Bloom          *TransactionZetherBloom
 	publicKeysList [][]byte //it calculated with
 }
 
 func (tx *TransactionZether) ComputeExtraSpace() uint64 {
-	return uint64(64 * len(tx.Registrations.Registrations))
+
+	totalRegistrations := 0
+	for _, payload := range tx.Payloads {
+		totalRegistrations += len(payload.Registrations.Registrations)
+	}
+	return uint64(64 * totalRegistrations)
 }
 
 /**
@@ -30,22 +33,17 @@ Zether requires another verification that the bloomed publicKeys, CL, CR are the
 */
 func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
-	if err = tx.Registrations.RegisterNow(dataStorage, tx.Bloom.publicKeyListByCounter); err != nil {
-		return
-	}
-
 	if tx.Height > blockHeight {
 		return fmt.Errorf("Zether TxHeight is invalid %d > %d", tx.Height, blockHeight)
 	}
 
-	counter := 0
 	for payloadIndex, payload := range tx.Payloads {
-		if err = payload.IncludePayload(tx.Registrations, payloadIndex, tx.Bloom.publicKeyListByCounter, blockHeight, dataStorage, &counter); err != nil {
+		if err = payload.IncludePayload(payloadIndex, tx.Bloom.publicKeyLists[payloadIndex], blockHeight, dataStorage); err != nil {
 			return
 		}
 	}
 
-	return nil
+	return
 }
 
 func (tx *TransactionZether) ComputeFees() (uint64, error) {
@@ -74,7 +72,7 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 func (tx *TransactionZether) Validate() (err error) {
 
 	for payloadIndex, payload := range tx.Payloads {
-		if err = payload.Validate(tx.Registrations, payloadIndex); err != nil {
+		if err = payload.Validate(payloadIndex); err != nil {
 			return
 		}
 	}
@@ -95,8 +93,6 @@ func (tx *TransactionZether) VerifySignatureManually(hash []byte) bool {
 
 func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(tx.Height)
-
-	tx.Registrations.Serialize(w)
 
 	w.WriteUvarint(uint64(len(tx.Payloads)))
 	for _, payload := range tx.Payloads {
@@ -119,11 +115,6 @@ func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 	var n uint64
 
 	if tx.Height, err = r.ReadUvarint(); err != nil {
-		return
-	}
-
-	tx.Registrations = new(transaction_zether_registrations.TransactionZetherDataRegistrations)
-	if err = tx.Registrations.Deserialize(r); err != nil {
 		return
 	}
 

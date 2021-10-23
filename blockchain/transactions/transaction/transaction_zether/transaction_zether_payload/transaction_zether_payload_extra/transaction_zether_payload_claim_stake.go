@@ -21,7 +21,7 @@ type TransactionZetherPayloadExtraClaimStake struct {
 	DelegateSignature           []byte
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraClaimStake) BeforeIncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex int, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraClaimStake) BeforeIncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex int, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
 	var acc *account.Account
@@ -49,7 +49,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaimStake) BeforeIncludeTxPayl
 	}
 
 	reg := txRegistrations.Registrations[payloadExtra.RegistrationIndex]
-	publicKey := publicKeyListByCounter[reg.PublicKeyIndex]
+	publicKey := publicKeyList[reg.PublicKeyIndex]
 
 	if accs, err = dataStorage.AccsCollection.GetMap(payloadAsset); err != nil {
 		return
@@ -73,7 +73,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaimStake) BeforeIncludeTxPayl
 	return accs.Update(string(publicKey), acc)
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraClaimStake) IncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex int, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraClaimStake) IncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex int, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
 	if accs, err = dataStorage.AccsCollection.GetMap(payloadAsset); err != nil {
@@ -81,7 +81,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaimStake) IncludeTxPayload(tx
 	}
 
 	reg := txRegistrations.Registrations[payloadExtra.RegistrationIndex]
-	publicKey := publicKeyListByCounter[reg.PublicKeyIndex]
+	publicKey := publicKeyList[reg.PublicKeyIndex]
 
 	accs.Delete(string(publicKey))
 

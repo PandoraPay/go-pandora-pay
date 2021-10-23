@@ -24,21 +24,28 @@ type TransactionZetherPayload struct {
 	DataVersion transaction_data.TransactionDataVersion
 	Data        []byte // sender position in ring representation in a byte, upto 256 ring
 	// 144 byte payload  ( to implement specific functionality such as delivery of keys etc), user dependent encryption
+
+	Registrations *transaction_zether_registrations.TransactionZetherDataRegistrations
+
 	Statement *crypto.Statement // note statement containts fees
 	Proof     *crypto.Proof
 
 	Extra transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface
 }
 
-func (payload *TransactionZetherPayload) IncludePayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex int, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage, counter *int) (err error) {
+func (payload *TransactionZetherPayload) IncludePayload(payloadIndex int, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
 	var acc *account.Account
 	var acckey crypto.Point
 	var balance *crypto.ElGamal
 
+	if err = payload.Registrations.RegisterNow(dataStorage, publicKeyList); err != nil {
+		return
+	}
+
 	if payload.Extra != nil {
-		if err = payload.Extra.BeforeIncludeTxPayload(txRegistrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement, publicKeyListByCounter, blockHeight, dataStorage); err != nil {
+		if err = payload.Extra.BeforeIncludeTxPayload(payload.Registrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement, publicKeyList, blockHeight, dataStorage); err != nil {
 			return
 		}
 	}
@@ -49,8 +56,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txRegistrations *transac
 
 	for i := range payload.Statement.Publickeylist {
 
-		publicKey := publicKeyListByCounter[*counter]
-		*counter += 1
+		publicKey := publicKeyList[i]
 
 		if acc, err = accs.GetAccount(publicKey); err != nil {
 			return
@@ -85,7 +91,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txRegistrations *transac
 	}
 
 	if payload.Extra != nil {
-		if err = payload.Extra.IncludeTxPayload(txRegistrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement, publicKeyListByCounter, blockHeight, dataStorage); err != nil {
+		if err = payload.Extra.IncludeTxPayload(payload.Registrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement, publicKeyList, blockHeight, dataStorage); err != nil {
 			return
 		}
 	}
@@ -111,7 +117,7 @@ func (payload *TransactionZetherPayload) ComputeAllKeys(out map[string]bool) {
 
 }
 
-func (payload *TransactionZetherPayload) Validate(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex int) (err error) {
+func (payload *TransactionZetherPayload) Validate(payloadIndex int) (err error) {
 	// check sanity
 	if payload.Statement.RingSize < 2 { // ring size minimum 4
 		return fmt.Errorf("RingSize cannot be less than 2")
@@ -140,7 +146,7 @@ func (payload *TransactionZetherPayload) Validate(txRegistrations *transaction_z
 		if payload.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
-		if err = payload.Extra.Validate(txRegistrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement); err != nil {
+		if err = payload.Extra.Validate(payload.Registrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement); err != nil {
 			return
 		}
 	default:
@@ -164,6 +170,8 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 	} else if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED { //fixed 145
 		w.Write(payload.Data)
 	}
+
+	payload.Registrations.Serialize(w)
 
 	payload.Statement.Serialize(w)
 
@@ -227,6 +235,11 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		}
 	default:
 		return errors.New("Invalid Tx.DataVersion")
+	}
+
+	payload.Registrations = new(transaction_zether_registrations.TransactionZetherDataRegistrations)
+	if err = payload.Registrations.Deserialize(r); err != nil {
+		return
 	}
 
 	if err = payload.Statement.Deserialize(r); err != nil {
