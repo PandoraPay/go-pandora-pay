@@ -69,7 +69,7 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 		return nil, err
 	}
 
-	gui.GUI.Info("Create Unclaim Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).Height, tx.Bloom.Hash)
+	gui.GUI.Info("Create Claim Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).Height, tx.Bloom.Hash)
 	return
 }
 

@@ -84,6 +84,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaimStake) IncludeTxPayload(tx
 	publicKey := publicKeyList[reg.PublicKeyIndex]
 
 	accs.Delete(string(publicKey))
+	dataStorage.Regs.Delete(string(publicKey))
 
 	return
 }

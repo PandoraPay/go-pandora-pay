@@ -73,11 +73,6 @@ func (tx *TransactionZether) BloomNowSignatureVerified() (err error) {
 	tx.Bloom.Nonce1 = tx.Payloads[0].Proof.Nonce1()
 	tx.Bloom.Nonce2 = tx.Payloads[0].Proof.Nonce2()
 
-	c := 0
-	for _, payload := range tx.Payloads {
-		c += len(payload.Statement.Publickeylist)
-	}
-
 	tx.Bloom.publicKeyLists = make([][][]byte, len(tx.Payloads))
 	for payloadIndex, payload := range tx.Payloads {
 		tx.Bloom.publicKeyLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))

@@ -141,8 +141,8 @@ func (payload *TransactionZetherPayload) Validate(payloadIndex byte) (err error)
 	}
 
 	switch payload.PayloadScript {
-	case SCRIPT_TRANSFER, SCRIPT_ASSET_CREATE:
-	case SCRIPT_DELEGATE_STAKE, SCRIPT_CLAIM_STAKE:
+	case SCRIPT_TRANSFER:
+	case SCRIPT_DELEGATE_STAKE, SCRIPT_CLAIM_STAKE, SCRIPT_ASSET_CREATE, SCRIPT_ASSET_SUPPLY_INCREASE:
 		if payload.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
@@ -201,6 +201,8 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake{}
 	case SCRIPT_ASSET_CREATE:
 		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{}
+	case SCRIPT_ASSET_SUPPLY_INCREASE:
+		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{}
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}

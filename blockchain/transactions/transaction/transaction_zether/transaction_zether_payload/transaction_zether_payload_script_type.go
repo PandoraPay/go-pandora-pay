@@ -7,6 +7,7 @@ const (
 	SCRIPT_DELEGATE_STAKE
 	SCRIPT_CLAIM_STAKE
 	SCRIPT_ASSET_CREATE
+	SCRIPT_ASSET_SUPPLY_INCREASE
 	SCRIPT_END
 )
 
@@ -20,6 +21,8 @@ func (t PayloadScriptType) String() string {
 		return "SCRIPT_CLAIM_STAKE"
 	case SCRIPT_ASSET_CREATE:
 		return "SCRIPT_ASSET_CREATE"
+	case SCRIPT_ASSET_SUPPLY_INCREASE:
+		return "SCRIPT_ASSET_SUPPLY_INCREASE"
 	default:
 		return "Unknown ScriptType"
 	}

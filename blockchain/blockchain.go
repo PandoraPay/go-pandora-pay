@@ -138,7 +138,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				return
 			}
 			if accs.Count != dataStorage.Regs.Count {
-				gui.GUI.Log("accs != regs")
+				gui.GUI.Log("accs != regs %d != %d", dataStorage.Regs.Count, accs.Count)
 			}
 
 			//let's filter existing blocks
@@ -201,10 +201,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				}
 
 			}
-			gui.GUI.Log("regs", dataStorage.Regs.Count)
-			gui.GUI.Log("accs", accs.Count)
 			if accs.Count != dataStorage.Regs.Count {
-				gui.GUI.Log("accs != regs")
+				gui.GUI.Log("accs != regs %d != %d", dataStorage.Regs.Count, accs.Count)
 			}
 
 			if blocksComplete[0].Block.Height != newChainData.Height {
