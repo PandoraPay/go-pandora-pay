@@ -19,7 +19,7 @@ type Asset struct {
 	CanUpgrade                    bool             `json:"canUpgrade,omitempty"`               //upgrade different settings
 	CanMint                       bool             `json:"canMint,omitempty"`                  //increase supply
 	CanBurn                       bool             `json:"canBurn,omitempty"`                  //decrease supply
-	CanChangePublicKey            bool             `json:"canChangePublicKey,omitempty"`       //can change key
+	CanChangeUpdatePublicKey      bool             `json:"canChangeUpdatePublicKey,omitempty"` //can change key
 	CanChangeSupplyPublicKey      bool             `json:"canChangeSupplyPublicKey,omitempty"` //can change supply key
 	CanPause                      bool             `json:"canPause,omitempty"`                 //can pause (suspend transactions)
 	CanFreeze                     bool             `json:"canFreeze,omitempty"`                //freeze supply changes
@@ -105,7 +105,7 @@ func (asset *Asset) Serialize(w *helpers.BufferWriter) {
 	w.WriteBool(asset.CanUpgrade)
 	w.WriteBool(asset.CanMint)
 	w.WriteBool(asset.CanBurn)
-	w.WriteBool(asset.CanChangePublicKey)
+	w.WriteBool(asset.CanChangeUpdatePublicKey)
 	w.WriteBool(asset.CanChangeSupplyPublicKey)
 	w.WriteBool(asset.CanPause)
 	w.WriteBool(asset.CanFreeze)
@@ -143,7 +143,7 @@ func (asset *Asset) Deserialize(r *helpers.BufferReader) (err error) {
 	if asset.CanBurn, err = r.ReadBool(); err != nil {
 		return
 	}
-	if asset.CanChangePublicKey, err = r.ReadBool(); err != nil {
+	if asset.CanChangeUpdatePublicKey, err = r.ReadBool(); err != nil {
 		return
 	}
 	if asset.CanChangeSupplyPublicKey, err = r.ReadBool(); err != nil {

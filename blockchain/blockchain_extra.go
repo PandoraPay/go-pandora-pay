@@ -116,7 +116,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 		Ticker:                   config_coins.NATIVE_ASSET_TICKER,
 		Description:              config_coins.NATIVE_ASSET_DESCRIPTION,
 		DecimalSeparator:         byte(config_coins.DECIMAL_SEPARATOR),
-		CanChangePublicKey:       false,
+		CanChangeUpdatePublicKey: false,
 		CanChangeSupplyPublicKey: false,
 		CanBurn:                  true,
 		CanMint:                  true,

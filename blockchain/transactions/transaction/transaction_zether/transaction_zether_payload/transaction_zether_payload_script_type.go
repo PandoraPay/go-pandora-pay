@@ -6,6 +6,7 @@ const (
 	SCRIPT_TRANSFER PayloadScriptType = iota
 	SCRIPT_DELEGATE_STAKE
 	SCRIPT_CLAIM_STAKE
+	SCRIPT_ASSET_CREATE
 	SCRIPT_END
 )
 
@@ -17,6 +18,8 @@ func (t PayloadScriptType) String() string {
 		return "SCRIPT_DELEGATE_STAKE"
 	case SCRIPT_CLAIM_STAKE:
 		return "SCRIPT_CLAIM_STAKE"
+	case SCRIPT_ASSET_CREATE:
+		return "SCRIPT_ASSET_CREATE"
 	default:
 		return "Unknown ScriptType"
 	}
