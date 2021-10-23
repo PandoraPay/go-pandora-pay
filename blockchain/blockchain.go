@@ -137,8 +137,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
 				return
 			}
-			gui.GUI.Log("regs", dataStorage.Regs.Count)
-			gui.GUI.Log("accs", accs.Count)
 			if accs.Count != dataStorage.Regs.Count {
 				gui.GUI.Log("accs != regs")
 			}
