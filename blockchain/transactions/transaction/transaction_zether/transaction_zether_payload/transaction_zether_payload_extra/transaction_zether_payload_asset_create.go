@@ -17,14 +17,17 @@ type TransactionZetherPayloadAssetCreate struct {
 	AssetInfo *asset.Asset
 }
 
-func (payloadExtra *TransactionZetherPayloadAssetCreate) BeforeIncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex int, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadAssetCreate) BeforeIncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 	return
 }
 
-func (payloadExtra *TransactionZetherPayloadAssetCreate) IncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex int, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyListByCounter [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadAssetCreate) IncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	list := helpers.NewBufferWriter()
-	list.WriteUvarint(uint64(payloadIndex))
+	list.WriteByte(payloadIndex)
+	for _, publicKey := range publicKeyList {
+		list.Write(publicKey)
+	}
 	list.WriteUvarint(blockHeight)
 
 	hash := cryptography.SHA3(list.Bytes())

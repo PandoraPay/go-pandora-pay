@@ -33,7 +33,7 @@ type TransactionZetherPayload struct {
 	Extra transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface
 }
 
-func (payload *TransactionZetherPayload) IncludePayload(payloadIndex int, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payload *TransactionZetherPayload) IncludePayload(payloadIndex byte, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
 	var acc *account.Account
@@ -117,7 +117,7 @@ func (payload *TransactionZetherPayload) ComputeAllKeys(out map[string]bool) {
 
 }
 
-func (payload *TransactionZetherPayload) Validate(payloadIndex int) (err error) {
+func (payload *TransactionZetherPayload) Validate(payloadIndex byte) (err error) {
 	// check sanity
 	if payload.Statement.RingSize < 2 { // ring size minimum 4
 		return fmt.Errorf("RingSize cannot be less than 2")

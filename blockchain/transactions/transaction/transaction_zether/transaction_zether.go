@@ -13,10 +13,9 @@ import (
 
 type TransactionZether struct {
 	transaction_base_interface.TransactionBaseInterface
-	Height         uint64
-	Payloads       []*transaction_zether_payload.TransactionZetherPayload
-	Bloom          *TransactionZetherBloom
-	publicKeysList [][]byte //it calculated with
+	Height   uint64
+	Payloads []*transaction_zether_payload.TransactionZetherPayload
+	Bloom    *TransactionZetherBloom
 }
 
 func (tx *TransactionZether) ComputeExtraSpace() uint64 {
@@ -38,7 +37,7 @@ func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, dataStorage 
 	}
 
 	for payloadIndex, payload := range tx.Payloads {
-		if err = payload.IncludePayload(payloadIndex, tx.Bloom.publicKeyLists[payloadIndex], blockHeight, dataStorage); err != nil {
+		if err = payload.IncludePayload(byte(payloadIndex), tx.Bloom.publicKeyLists[payloadIndex], blockHeight, dataStorage); err != nil {
 			return
 		}
 	}
@@ -72,7 +71,7 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 func (tx *TransactionZether) Validate() (err error) {
 
 	for payloadIndex, payload := range tx.Payloads {
-		if err = payload.Validate(payloadIndex); err != nil {
+		if err = payload.Validate(byte(payloadIndex)); err != nil {
 			return
 		}
 	}
@@ -94,7 +93,7 @@ func (tx *TransactionZether) VerifySignatureManually(hash []byte) bool {
 func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(tx.Height)
 
-	w.WriteUvarint(uint64(len(tx.Payloads)))
+	w.WriteByte(byte(len(tx.Payloads)))
 	for _, payload := range tx.Payloads {
 		payload.Serialize(w, inclSignature)
 	}
@@ -112,16 +111,16 @@ func (tx *TransactionZether) SerializeToBytes() []byte {
 }
 
 func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
-	var n uint64
 
 	if tx.Height, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
-	if n, err = r.ReadUvarint(); err != nil {
+	var n byte
+	if n, err = r.ReadByte(); err != nil {
 		return
 	}
-	for i := uint64(0); i < n; i++ {
+	for i := byte(0); i < n; i++ {
 		payload := transaction_zether_payload.TransactionZetherPayload{
 			Statement: &crypto.Statement{},
 			Proof:     &crypto.Proof{},
