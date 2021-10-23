@@ -1,6 +1,7 @@
 package gui_interface
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -21,7 +22,7 @@ type GUIInterface interface {
 	InfoUpdate(key string, text string)
 	Info2Update(key string, text string)
 	OutputWrite(any ...interface{})
-	CommandDefineCallback(Text string, callback func(string) error, useIt bool)
+	CommandDefineCallback(Text string, callback func(string, context.Context) error, useIt bool)
 	OutputReadString(text string) string
 	OutputReadFilename(text, extension string) string
 	OutputReadInt(text string, allowEmpty bool, validateCb func(int) bool) int

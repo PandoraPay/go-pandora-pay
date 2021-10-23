@@ -14,7 +14,7 @@ import (
 
 type TransactionZetherPayloadAssetCreate struct {
 	TransactionZetherPayloadExtraInterface
-	AssetInfo *asset.Asset
+	Asset *asset.Asset
 }
 
 func (payloadExtra *TransactionZetherPayloadAssetCreate) BeforeIncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
@@ -30,8 +30,8 @@ func (payloadExtra *TransactionZetherPayloadAssetCreate) IncludeTxPayload(txRegi
 	}
 	list.WriteUvarint(blockHeight)
 
-	hash := cryptography.SHA3(list.Bytes())
-	if err = dataStorage.Asts.CreateAsset(hash, payloadExtra.AssetInfo); err != nil {
+	hash := cryptography.RIPEMD(cryptography.SHA3(list.Bytes()))
+	if err = dataStorage.Asts.CreateAsset(hash, payloadExtra.Asset); err != nil {
 		return
 	}
 
@@ -40,20 +40,20 @@ func (payloadExtra *TransactionZetherPayloadAssetCreate) IncludeTxPayload(txRegi
 
 func (payloadExtra *TransactionZetherPayloadAssetCreate) Validate(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) error {
 
-	if payloadExtra.AssetInfo.Supply != 0 {
+	if payloadExtra.Asset.Supply != 0 {
 		return errors.New("AssetInfo Supply must be zero")
 	}
 	if !bytes.Equal(payloadAsset, config_coins.NATIVE_ASSET_FULL) {
 		return errors.New("payloadAsset must be NATIVE_ASSET_FULL")
 	}
 
-	return payloadExtra.AssetInfo.Validate()
+	return payloadExtra.Asset.Validate()
 }
 
 func (payloadExtra *TransactionZetherPayloadAssetCreate) Serialize(w *helpers.BufferWriter, inclSignature bool) {
-	payloadExtra.AssetInfo.Serialize(w)
+	payloadExtra.Asset.Serialize(w)
 }
 
 func (payloadExtra *TransactionZetherPayloadAssetCreate) Deserialize(r *helpers.BufferReader) (err error) {
-	return payloadExtra.AssetInfo.Deserialize(r)
+	return payloadExtra.Asset.Deserialize(r)
 }

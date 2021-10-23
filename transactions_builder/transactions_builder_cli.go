@@ -104,11 +104,11 @@ func (builder *TransactionsBuilder) readDelegatedStakingUpdate(delegatedStakingU
 
 func (builder *TransactionsBuilder) initCLI() {
 
-	cliPrivateTransfer := func(cmd string) (err error) {
+	cliPrivateTransfer := func(cmd string, ctx context.Context) (err error) {
 
 		builder.showWarningIfNotSyncCLI()
 
-		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Transfer")
+		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Transfer", ctx)
 		if err != nil {
 			return
 		}
@@ -139,9 +139,6 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
 		tx, err := builder.CreateZetherTx([]string{walletAddress.AddressEncoded}, [][]byte{assetId}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
@@ -153,11 +150,11 @@ func (builder *TransactionsBuilder) initCLI() {
 		return
 	}
 
-	cliPrivateDelegateStake := func(cmd string) (err error) {
+	cliPrivateDelegateStake := func(cmd string, ctx context.Context) (err error) {
 
 		builder.showWarningIfNotSyncCLI()
 
-		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Delegate")
+		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Delegate", ctx)
 		if err != nil {
 			return
 		}
@@ -203,9 +200,6 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
 		tx, err := builder.CreateZetherDelegateStakeTx(delegateAddress.PublicKey, delegatedStakingUpdate, delegatePrivateKey, []string{walletAddress.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{delegateAmount}, ringMembers, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
@@ -217,11 +211,11 @@ func (builder *TransactionsBuilder) initCLI() {
 		return
 	}
 
-	cliPrivateClaimStake := func(cmd string) (err error) {
+	cliPrivateClaimStake := func(cmd string, ctx context.Context) (err error) {
 
 		builder.showWarningIfNotSyncCLI()
 
-		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address from which Claim")
+		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address from which Claim", ctx)
 		if err != nil {
 			return
 		}
@@ -247,9 +241,6 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
 		tx, err := builder.CreateZetherClaimStakeTx(delegateWalletAddress.PrivateKey.Key, []string{""}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
@@ -261,11 +252,11 @@ func (builder *TransactionsBuilder) initCLI() {
 		return
 	}
 
-	cliUpdateDelegate := func(cmd string) (err error) {
+	cliUpdateDelegate := func(cmd string, ctx context.Context) (err error) {
 
 		builder.showWarningIfNotSyncCLI()
 
-		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Update Delegate")
+		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Update Delegate", ctx)
 		if err != nil {
 			return
 		}
@@ -302,11 +293,11 @@ func (builder *TransactionsBuilder) initCLI() {
 		return
 	}
 
-	cliUnstake := func(cmd string) (err error) {
+	cliUnstake := func(cmd string, ctx context.Context) (err error) {
 
 		builder.showWarningIfNotSyncCLI()
 
-		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Unstake")
+		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Unstake", ctx)
 		if err != nil {
 			return
 		}

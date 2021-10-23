@@ -1,6 +1,7 @@
 package gui_interactive
 
 import (
+	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"pandora-pay/gui/gui_interface"
 	"path"
 	"strconv"
+	"sync"
 )
 
 var notAcceptedCharacters = map[string]bool{
@@ -31,7 +33,7 @@ var notAcceptedCharacters = map[string]bool{
 type Command struct {
 	Name     string
 	Text     string
-	Callback func(string) error
+	Callback func(string, context.Context) error
 }
 
 var commands = []Command{
@@ -58,35 +60,33 @@ var commands = []Command{
 	{Name: "Mempool", Text: "Show Txs"},
 	{Name: "App", Text: "Exit"},
 }
+var commandsLock sync.Mutex
 
-func (g *GUIInteractive) CommandDefineCallback(Text string, callback func(string) error, useIt bool) {
+func (g *GUIInteractive) CommandDefineCallback(Text string, callback func(string, context.Context) error, useIt bool) {
 
 	if !useIt {
 		callback = nil
 	}
 
-	g.cmdChanges.Lock()
+	commandsLock.Lock()
+	defer commandsLock.Unlock()
+
 	for i := range commands {
 		if commands[i].Text == Text {
 			commands[i].Callback = callback
-			g.cmdChanges.Unlock()
 			return
 		}
 	}
-	g.cmdChanges.Unlock()
 
 	g.Error(errors.New("Command " + Text + " was not found"))
 }
 
 func (g *GUIInteractive) cmdProcess(e ui.Event) {
 
-	var command *Command
+	cmdData := g.cmdData.Load().(*GUIInteractiveData)
 
-	g.cmdChanges.RLock()
-	status := g.cmdStatus
-	input := g.cmdInput
-	cn := g.cmdInputCn
-	if status == "cmd" {
+	var command *Command
+	if cmdData.cmdStatus == "cmd" {
 		g.cmd.Lock()
 		if g.cmd.SelectedRow < len(commands) && g.cmd.SelectedRow >= 0 {
 			command = &Command{
@@ -97,7 +97,6 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 		}
 		g.cmd.Unlock()
 	}
-	g.cmdChanges.RUnlock()
 
 	unlockRequired := false
 	switch e.ID {
@@ -138,27 +137,27 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 
 	switch e.ID {
 	case "<C-c>":
-		if status == "read" {
-			if cn != nil {
-				close(cn)
-				g.cmdChanges.Lock()
-				g.cmdInputCn = nil
-				g.cmdChanges.Unlock()
-			}
+		if cmdData.cmdStatus == "read" {
+			cmdData.cmdStatusCtxCancel()
 			return
 		}
 		g.Close()
 	case "<Enter>":
 
-		if status == "cmd" {
+		if cmdData.cmdStatus == "cmd" {
 
 			if command != nil && command.Callback != nil {
-				g.outputClear("", nil)
+
+				ctx, cancel := context.WithCancel(context.Background())
+
+				g.outputClear("", nil, ctx, cancel)
 
 				g.OutputWrite(fmt.Sprintf("Executing cmd %s::%s ...", command.Name, command.Text))
 				g.OutputWrite("")
 
 				go func() {
+
+					defer cancel()
 
 					defer func() {
 						err := recover()
@@ -168,12 +167,12 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 						}
 					}()
 
-					if err := command.Callback(command.Text); err != nil {
+					if err := command.Callback(command.Text, ctx); err != nil {
 						g.OutputWrite(err)
 
-						g.cmdChanges.Lock()
-						g.cmdStatus = "output done"
-						g.cmdChanges.Unlock()
+						g.cmdData.Store(&GUIInteractiveData{
+							cmdStatus: "output done",
+						})
 
 					} else {
 						g.outputDone()
@@ -181,19 +180,19 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 
 				}()
 			}
-		} else if status == "output done" {
+		} else if cmdData.cmdStatus == "output done" {
 			g.outputRestore()
-		} else if status == "read" {
-			if cn != nil {
-				cn <- input
+		} else if cmdData.cmdStatus == "read" {
+			if cmdData.cmdInputCn != nil {
+				cmdData.cmdInputCn <- cmdData.cmdInput
 			}
 		}
 
 	}
 
-	if status == "read" && !notAcceptedCharacters[e.ID] {
+	if cmdData.cmdStatus == "read" && !notAcceptedCharacters[e.ID] {
 
-		str := input
+		str := cmdData.cmdInput
 
 		char := e.ID
 		if char == "<Space>" {
@@ -207,9 +206,13 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 		}
 		str += char
 
-		g.cmdChanges.Lock()
-		g.cmdInput = str
-		g.cmdChanges.Unlock()
+		g.cmdData.Store(&GUIInteractiveData{
+			cmdData.cmdStatus,
+			str,
+			cmdData.cmdInputCn,
+			cmdData.cmdStatusCtx,
+			cmdData.cmdStatusCtxCancel,
+		})
 
 		g.cmd.Lock()
 		g.cmd.Rows[len(g.cmd.Rows)-1] = "-> " + str
@@ -227,7 +230,7 @@ func (g *GUIInteractive) OutputWrite(any ...interface{}) {
 	g.cmd.Unlock()
 }
 
-func (g *GUIInteractive) outputRead(text string) <-chan string {
+func (g *GUIInteractive) outputRead(text string) (<-chan string, context.Context) {
 
 	g.cmd.Lock()
 	g.cmd.Rows = append(g.cmd.Rows, "")
@@ -237,21 +240,33 @@ func (g *GUIInteractive) outputRead(text string) <-chan string {
 	g.cmd.Unlock()
 
 	cn := make(chan string)
-	g.cmdChanges.Lock()
-	g.cmdInput = ""
+	cmdData := g.cmdData.Load().(*GUIInteractiveData)
 
-	g.cmdStatus = "read"
-	g.cmdInputCn = cn
-	g.cmdChanges.Unlock()
-	return cn
+	g.cmdData.Store(&GUIInteractiveData{
+		"read",
+		"",
+		cn,
+		cmdData.cmdStatusCtx,
+		cmdData.cmdStatusCtxCancel,
+	})
+
+	return cn, cmdData.cmdStatusCtx
 }
 
 func (g *GUIInteractive) OutputReadString(text string) string {
-	out, ok := <-g.outputRead(text)
-	if !ok {
+
+	dataCn, ctx := g.outputRead(text)
+
+	select {
+	case out, ok := <-dataCn:
+		if !ok {
+			panic(gui_interface.GUIInterfaceError)
+		}
+		return out
+	case <-ctx.Done():
 		panic(gui_interface.GUIInterfaceError)
 	}
-	return out
+
 }
 
 func (g *GUIInteractive) OutputReadFilename(text, extension string) string {
@@ -369,7 +384,7 @@ func (g *GUIInteractive) OutputReadBytes(text string, validateCb func([]byte) bo
 	}
 }
 
-func (g *GUIInteractive) outputClear(newCmdStatus string, rows []string) {
+func (g *GUIInteractive) outputClear(newCmdStatus string, rows []string, ctx context.Context, cancel context.CancelFunc) {
 	if rows == nil {
 		rows = []string{}
 	}
@@ -379,26 +394,34 @@ func (g *GUIInteractive) outputClear(newCmdStatus string, rows []string) {
 	g.cmd.SelectedRow = 0
 	g.cmd.Unlock()
 
-	g.cmdChanges.Lock()
-	g.cmdStatus = newCmdStatus
-	g.cmdChanges.Unlock()
+	g.cmdData.Store(&GUIInteractiveData{
+		newCmdStatus,
+		"", nil, ctx, cancel,
+	})
+
 }
 
 func (g *GUIInteractive) outputDone() {
 	g.OutputWrite("------------------------")
 	g.OutputWrite("Press space to return...")
-	g.cmdChanges.Lock()
-	g.cmdStatus = "output done"
-	g.cmdChanges.Unlock()
+
+	g.cmdData.Store(&GUIInteractiveData{
+		"output done",
+		"", nil, nil, nil,
+	})
+
 }
 
 func (g *GUIInteractive) outputRestore() {
-	g.outputClear("cmd", g.cmdRows)
+	g.outputClear("cmd", g.cmdRows, nil, nil)
 }
 
 func (g *GUIInteractive) cmdInit() {
-	g.cmdStatus = "cmd"
-	g.cmdInput = ""
+
+	g.cmdData.Store(&GUIInteractiveData{
+		cmdStatus: "cmd",
+		cmdInput:  "",
+	})
 
 	g.cmd = widgets.NewList()
 	g.cmd.Title = "Commands"

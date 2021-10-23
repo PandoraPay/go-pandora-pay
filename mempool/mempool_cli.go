@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
@@ -11,7 +12,7 @@ import (
 
 func (mempool *Mempool) initCLI() {
 
-	cliShowTxs := func(cmd string) (err error) {
+	cliShowTxs := func(cmd string, ctx context.Context) (err error) {
 
 		transactions := mempool.Txs.GetTxsFromMap()
 		if len(transactions) == 0 {

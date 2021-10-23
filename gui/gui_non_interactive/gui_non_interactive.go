@@ -1,6 +1,7 @@
 package gui_non_interactive
 
 import (
+	"context"
 	"pandora-pay/gui/gui_interface"
 	"pandora-pay/gui/gui_logger"
 	"runtime"
@@ -46,5 +47,5 @@ func (g *GUINonInteractive) Info2Update(key string, text string) {
 func (g *GUINonInteractive) OutputWrite(any ...interface{}) {
 }
 
-func (g *GUINonInteractive) CommandDefineCallback(Text string, callback func(string) error, useIt bool) {
+func (g *GUINonInteractive) CommandDefineCallback(Text string, callback func(string, context.Context) error, useIt bool) {
 }

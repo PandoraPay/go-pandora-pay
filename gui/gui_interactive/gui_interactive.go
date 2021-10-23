@@ -1,26 +1,33 @@
 package gui_interactive
 
 import (
+	"context"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"os"
 	"pandora-pay/gui/gui_interface"
 	"pandora-pay/gui/gui_logger"
 	"sync"
+	"sync/atomic"
 	"time"
 )
+
+type GUIInteractiveData struct {
+	cmdStatus          string
+	cmdInput           string
+	cmdInputCn         chan string
+	cmdStatusCtx       context.Context
+	cmdStatusCtxCancel context.CancelFunc
+}
 
 type GUIInteractive struct {
 	gui_interface.GUIInterface
 	logger *gui_logger.GUILogger
 
-	cmd *widgets.List
+	cmd     *widgets.List
+	cmdRows []string
 
-	cmdRows    []string
-	cmdStatus  string
-	cmdInput   string
-	cmdInputCn chan string
-	cmdChanges sync.RWMutex
+	cmdData atomic.Value //*GUIInteractiveData
 
 	logs *widgets.Paragraph
 
@@ -120,7 +127,7 @@ func CreateGUIInteractive() (*GUIInteractive, error) {
 		}
 	}()
 
-	g.CommandDefineCallback("Exit", func(string) error {
+	g.CommandDefineCallback("Exit", func(string, context.Context) error {
 		os.Exit(1)
 		return nil
 	}, true)

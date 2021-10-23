@@ -80,7 +80,7 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 	})
 }
 
-func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
+func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err error) {
 
 	wallet.Lock()
 	defer wallet.Unlock()
@@ -105,9 +105,6 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 		var acc *account.Account
 
 		regs := registrations.NewRegistrations(reader)
-
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
 
 		for _, walletAddress := range wallet.Addresses {
 
@@ -208,9 +205,9 @@ func (wallet *Wallet) CliListAddresses(cmd string) (err error) {
 	})
 }
 
-func (wallet *Wallet) CliSelectAddress(text string) (*wallet_address.WalletAddress, int, error) {
+func (wallet *Wallet) CliSelectAddress(text string, ctx context.Context) (*wallet_address.WalletAddress, int, error) {
 
-	if err := wallet.CliListAddresses(""); err != nil {
+	if err := wallet.CliListAddresses("", ctx); err != nil {
 		return nil, 0, err
 	}
 
@@ -228,7 +225,7 @@ func (wallet *Wallet) CliSelectAddress(text string) (*wallet_address.WalletAddre
 
 func (wallet *Wallet) initWalletCLI() {
 
-	cliExportAddresses := func(cmd string) (err error) {
+	cliExportAddresses := func(cmd string, ctx context.Context) (err error) {
 		str := gui.GUI.OutputReadFilename("Path to export", "txt")
 
 		f, err := os.Create(str)
@@ -266,9 +263,9 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliExportAddressJSON := func(cmd string) (err error) {
+	cliExportAddressJSON := func(cmd string, ctx context.Context) (err error) {
 
-		if err = wallet.CliListAddresses(""); err != nil {
+		if err = wallet.CliListAddresses("", ctx); err != nil {
 			return
 		}
 
@@ -310,7 +307,7 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliImportAddressJSON := func(cmd string) (err error) {
+	cliImportAddressJSON := func(cmd string, ctx context.Context) (err error) {
 
 		str := gui.GUI.OutputReadString("Path to import")
 
@@ -327,7 +324,7 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliExportWalletJSON := func(cmd string) (err error) {
+	cliExportWalletJSON := func(cmd string, ctx context.Context) (err error) {
 
 		str := gui.GUI.OutputReadFilename("Path to export", "pandora")
 
@@ -354,7 +351,7 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliImportWalletJSON := func(cmd string) (err error) {
+	cliImportWalletJSON := func(cmd string, ctx context.Context) (err error) {
 
 		str := gui.GUI.OutputReadString("Path to import Wallet")
 		done := gui.GUI.OutputReadBool("Your wallet will be REPLACED with this one! [y/n]")
@@ -376,16 +373,16 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliCreateNewAddress := func(cmd string) (err error) {
+	cliCreateNewAddress := func(cmd string, ctx context.Context) (err error) {
 		if _, err = wallet.AddNewAddress(true); err != nil {
 			return
 		}
-		return wallet.CliListAddresses(cmd)
+		return wallet.CliListAddresses(cmd, ctx)
 	}
 
-	cliRemoveAddress := func(cmd string) (err error) {
+	cliRemoveAddress := func(cmd string, ctx context.Context) (err error) {
 
-		_, index, err := wallet.CliSelectAddress("Select Address to be Removed")
+		_, index, err := wallet.CliSelectAddress("Select Address to be Removed", ctx)
 		if err != nil {
 			return
 		}
@@ -394,7 +391,7 @@ func (wallet *Wallet) initWalletCLI() {
 		if success, err = wallet.RemoveAddressByIndex(index, true); err != nil {
 			return
 		}
-		if err = wallet.CliListAddresses(""); err != nil {
+		if err = wallet.CliListAddresses("", ctx); err != nil {
 			return
 		}
 
@@ -406,9 +403,9 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliDeriveDelegatedStake := func(cmd string) (err error) {
+	cliDeriveDelegatedStake := func(cmd string, ctx context.Context) (err error) {
 
-		addr, _, err := wallet.CliSelectAddress("Select Address to Derive Delegated Stake")
+		addr, _, err := wallet.CliSelectAddress("Select Address to Derive Delegated Stake", ctx)
 		if err != nil {
 			return
 		}
@@ -420,7 +417,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 	}
 
-	cliShowMnemonic := func(string) (err error) {
+	cliShowMnemonic := func(cmd string, ctx context.Context) (err error) {
 
 		gui.GUI.OutputWrite("Mnemonic")
 		gui.GUI.OutputWrite(wallet.Mnemonic)
@@ -431,9 +428,9 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliShowPrivateKey := func(cmd string) (err error) {
+	cliShowPrivateKey := func(cmd string, ctx context.Context) (err error) {
 
-		_, index, err := wallet.CliSelectAddress("Select Address to show the private key")
+		_, index, err := wallet.CliSelectAddress("Select Address to show the private key", ctx)
 		if err != nil {
 			return
 		}
@@ -447,7 +444,7 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliImportPrivateKey := func(cmd string) (err error) {
+	cliImportPrivateKey := func(cmd string, ctx context.Context) (err error) {
 
 		privateKey := gui.GUI.OutputReadBytes("Write Private key", func(input []byte) bool {
 			return len(input) == 32
@@ -465,7 +462,7 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliEncryptWallet := func(cmd string) (err error) {
+	cliEncryptWallet := func(cmd string, ctx context.Context) (err error) {
 
 		password := gui.GUI.OutputReadString("Password for encrypting wallet")
 		difficulty := gui.GUI.OutputReadInt("Difficulty for encryption", false, func(value int) bool {
@@ -480,7 +477,7 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliDecryptWallet := func(cmd string) (err error) {
+	cliDecryptWallet := func(cmd string, ctx context.Context) (err error) {
 
 		password := gui.GUI.OutputReadString("Password for decrypting wallet")
 
@@ -492,7 +489,7 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliRemoveEncryption := func(cmd string) (err error) {
+	cliRemoveEncryption := func(cmd string, ctx context.Context) (err error) {
 		gui.GUI.OutputWrite("Wallet removing encryption...")
 		if err = wallet.Encryption.RemoveEncryption(); err == nil {
 			gui.GUI.OutputWrite("Wallet encryption was removed successfully")

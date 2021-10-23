@@ -52,9 +52,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 	statusCallback("Transaction Signing...")
 
-	registrations := make([][]*transaction_zether_registrations.TransactionZetherDataRegistration, 0)
-	registrationsAlready := make(map[string]bool)
-
 	senders, receivers := make([]*bn256.G1, len(transfers)), make([]*bn256.G1, len(transfers))
 	publickeylists := make([][]*bn256.G1, len(transfers))
 	witness_indexes := make([][]int, len(transfers))
@@ -96,6 +93,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	}
 	statusCallback("Transaction public keys were shuffled")
 
+	registrations := make([][]*transaction_zether_registrations.TransactionZetherDataRegistration, len(publickeylists))
+	registrationsAlready := make(map[string]bool)
 	for t, publickeylist := range publickeylists {
 
 		registrations[t] = make([]*transaction_zether_registrations.TransactionZetherDataRegistration, 0)
