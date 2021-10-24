@@ -65,7 +65,7 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 	}
 	ringMembers := [][]string{ring}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherClaimStakeTx(addr.PrivateKey.Key, from, dstsAssets, dstsAmounts, dsts, burn, ringMembers, data, fees, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]wizard.ZetherTransferPayloadExtra{&wizard.ZetherTransferPayloadExtraClaimStake{addr.PrivateKey.Key}}, from, dstsAssets, dstsAmounts, dsts, burn, ringMembers, data, fees, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -97,6 +97,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 	data := []*wizard.TransactionsWizardData{}
 	ringMembers := [][]string{}
 	fees := []*wizard.TransactionsWizardFee{}
+	payloadsExtra := []wizard.ZetherTransferPayloadExtra{}
 
 	for i := uint64(0); i < testnet.nodes; i++ {
 
@@ -126,9 +127,10 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 
 		data = append(data, &wizard.TransactionsWizardData{[]byte{}, false})
 		fees = append(fees, &wizard.TransactionsWizardFee{0, 0, 0, true})
+		payloadsExtra = append(payloadsExtra, nil)
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx(from, dstsAssets, dstsAmounts, dsts, burn, ringMembers, data, fees, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx(payloadsExtra, from, dstsAssets, dstsAmounts, dsts, burn, ringMembers, data, fees, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -163,7 +165,7 @@ func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int, ctx co
 		return
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]string{srcAddr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]wizard.ZetherTransferPayloadExtra{nil}, []string{srcAddr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{dst}, []uint64{burn}, [][]string{ringMembers}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 

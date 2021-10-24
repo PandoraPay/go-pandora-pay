@@ -1,7 +1,6 @@
 package wizard
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -22,22 +21,6 @@ import (
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
-
-type ZetherTransfer struct {
-	Asset              helpers.HexBytes
-	From               []byte //private key
-	FromBalanceDecoded uint64
-	Destination        string
-	Amount             uint64
-	Burn               uint64
-	Data               *TransactionsWizardData
-}
-
-type ZetherPublicKeyIndex struct {
-	Registered            bool
-	RegisteredIndex       uint64
-	RegistrationSignature []byte
-}
 
 func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
 	emap := make(map[string]map[string][]byte) //initialize all maps
@@ -417,96 +400,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		return
 	}
 
-	return tx, nil
-}
-
-func CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, delegatePrivateKey []byte, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
-
-	payloadsExtra := []transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface{}
-
-	var key *addresses.PrivateKey
-	if delegatedStakingUpdate.DelegatedStakingHasNewInfo {
-		key = &addresses.PrivateKey{Key: delegatePrivateKey}
-		if bytes.Equal(key.GeneratePublicKey(), delegatePublicKey) == false {
-			return nil, errors.New("delegatePrivateKey is not matching delegatePublicKey")
-		}
-	}
-
-	payloadExtra := &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
-		DelegatePublicKey:      delegatePublicKey,
-		DelegatedStakingUpdate: delegatedStakingUpdate,
-	}
-	payloadsExtra = append(payloadsExtra, payloadExtra)
-
-	txBase := &transaction_zether.TransactionZether{
-		Height: height,
-	}
-
-	tx := &transaction.Transaction{
-		Version:                  transaction_type.TX_ZETHER,
-		TransactionBaseInterface: txBase,
-	}
-
-	if err = signZetherTx(tx, txBase, payloadsExtra, transfers, emap, rings, fees, height, hash, publicKeyIndexes, false, ctx, statusCallback); err != nil {
-		return
-	}
-
-	if delegatedStakingUpdate.DelegatedStakingHasNewInfo {
-		if payloadExtra.DelegateSignature, err = key.Sign(tx.SerializeForSigning()); err != nil {
-			return
-		}
-	}
-
-	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
-		return
-	}
-
-	return tx, nil
-}
-
-func CreateZetherClaimStakeTx(delegatePrivateKey []byte, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
-
-	payloadsExtra := []transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface{}
-
-	key := &addresses.PrivateKey{Key: delegatePrivateKey}
-	delegatePublicKey := key.GeneratePublicKey()
-
-	payloadExtra := &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake{
-		DelegatePublicKey:           delegatePublicKey,
-		DelegatedStakingClaimAmount: transfers[0].Amount,
-	}
-	payloadsExtra = append(payloadsExtra, payloadExtra)
-
-	txBase := &transaction_zether.TransactionZether{
-		Height: height,
-	}
-
-	tx := &transaction.Transaction{
-		Version:                  transaction_type.TX_ZETHER,
-		TransactionBaseInterface: txBase,
-	}
-
-	if err = signZetherTx(tx, txBase, payloadsExtra, transfers, emap, rings, fees, height, hash, publicKeyIndexes, true, ctx, statusCallback); err != nil {
-		return
-	}
-
-	senderKey := &addresses.PrivateKey{Key: transfers[0].From}
-	senderPublicKey := senderKey.GeneratePublicKey()
-	for i, reg := range txBase.Payloads[0].Registrations.Registrations {
-		if bytes.Equal(txBase.Payloads[0].Statement.Publickeylist[reg.PublicKeyIndex].EncodeCompressed(), senderPublicKey) {
-			payloadExtra.RegistrationIndex = byte(i)
-			break
-		}
-	}
-
-	if payloadExtra.DelegateSignature, err = key.Sign(tx.SerializeForSigning()); err != nil {
-		return
-	}
-
-	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
-		return
-	}
-
+	statusCallback("Transaction Created")
 	return tx, nil
 }
 

@@ -12,7 +12,6 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -116,7 +115,7 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, assetId [
 	return rings, nil
 }
 
-func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, ctx context.Context, statusCallback func(string)) ([]*wizard.ZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.ZetherPublicKeyIndex, uint64, []byte, error) {
+func (builder *TransactionsBuilder) prebuild(payloads []wizard.ZetherTransferPayloadExtra, from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, ctx context.Context, statusCallback func(string)) ([]*wizard.ZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.ZetherPublicKeyIndex, uint64, []byte, error) {
 
 	if len(from) != len(dstsAsts) || len(dstsAsts) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
 		return nil, nil, nil, nil, 0, nil, errors.New("Length of from and transfers are not matching")
@@ -175,12 +174,13 @@ func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, a
 			}
 
 			transfers[t] = &wizard.ZetherTransfer{
-				Asset:       ast,
-				From:        fromPrivateKeys[t].Key[:],
-				Destination: dsts[t],
-				Amount:      amounts[t],
-				Burn:        burns[t],
-				Data:        data[t],
+				Asset:        ast,
+				From:         fromPrivateKeys[t].Key[:],
+				Destination:  dsts[t],
+				Amount:       amounts[t],
+				Burn:         burns[t],
+				Data:         data[t],
+				PayloadExtra: payloads[t],
 			}
 
 			var ring []*bn256.G1
@@ -292,12 +292,12 @@ func (builder *TransactionsBuilder) prebuild(from []string, dstsAsts [][]byte, a
 	return transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, nil
 }
 
-func (builder *TransactionsBuilder) CreateZetherTx(from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx(payloads []wizard.ZetherTransferPayloadExtra, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
+	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(payloads, from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
 	if err != nil {
 		return nil, err
 	}
@@ -307,57 +307,6 @@ func (builder *TransactionsBuilder) CreateZetherTx(from []string, asts [][]byte,
 		return nil, err
 	}
 
-	statusCallback("Transaction Created")
-	if propagateTx {
-		if err := builder.mempool.AddTxToMemPool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
-			return nil, err
-		}
-	}
-
-	return tx, nil
-}
-
-func (builder *TransactionsBuilder) CreateZetherDelegateStakeTx(delegatePublicKey []byte, delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, delegatePrivateKey []byte, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
-
-	builder.lock.Lock()
-	defer builder.lock.Unlock()
-
-	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
-	if err != nil {
-		return nil, err
-	}
-
-	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherDelegateStakeTx(delegatePublicKey, delegatedStakingUpdate, delegatePrivateKey, transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, validateTx, ctx, statusCallback); err != nil {
-		return nil, err
-	}
-
-	statusCallback("Transaction Created")
-	if propagateTx {
-		if err := builder.mempool.AddTxToMemPool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
-			return nil, err
-		}
-	}
-
-	return tx, nil
-}
-
-func (builder *TransactionsBuilder) CreateZetherClaimStakeTx(delegatePrivateKey []byte, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
-
-	builder.lock.Lock()
-	defer builder.lock.Unlock()
-
-	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
-	if err != nil {
-		return nil, err
-	}
-
-	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherClaimStakeTx(delegatePrivateKey, transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, validateTx, ctx, statusCallback); err != nil {
-		return nil, err
-	}
-
-	statusCallback("Transaction Created")
 	if propagateTx {
 		if err := builder.mempool.AddTxToMemPool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
 			return nil, err
