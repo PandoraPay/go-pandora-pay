@@ -1,6 +1,7 @@
 package wizard
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -32,7 +33,7 @@ func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
 	return emap
 }
 
-func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, payloadsExtra []transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, createFakeSenderBalance bool, ctx context.Context, statusCallback func(string)) (err error) {
+func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, createFakeSenderBalance bool, ctx context.Context, statusCallback func(string)) (err error) {
 
 	statusCallback("Transaction Signing...")
 
@@ -110,6 +111,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 	payloads := make([]*transaction_zether_payload.TransactionZetherPayload, len(transfers))
 
+	privateKeysForSign := make([]*addresses.PrivateKey, len(transfers))
+
 	var witness_list []crypto.Witness
 	for t, transfer := range transfers {
 
@@ -147,6 +150,73 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		var payload transaction_zether_payload.TransactionZetherPayload
 
+		privateKeysForSign[t] = nil
+
+		if transfers[t].PayloadExtra == nil {
+			payload.PayloadScript = transaction_zether_payload.SCRIPT_TRANSFER
+		} else {
+			switch payloadExtra := transfers[t].PayloadExtra.(type) {
+			case *ZetherTransferPayloadExtraClaimStake:
+				payload.PayloadScript = transaction_zether_payload.SCRIPT_CLAIM_STAKE
+
+				var registrationIndex byte
+
+				senderKey := &addresses.PrivateKey{Key: transfers[t].From}
+				senderPublicKey := senderKey.GeneratePublicKey()
+				for i, reg := range registrations[t] {
+					if bytes.Equal(publickeylist[reg.PublicKeyIndex].EncodeCompressed(), senderPublicKey) {
+						registrationIndex = byte(i)
+						break
+					}
+				}
+
+				key := &addresses.PrivateKey{Key: payloadExtra.DelegatePrivateKey}
+				delegatePublicKey := key.GeneratePublicKey()
+				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake{
+					DelegatePublicKey:           delegatePublicKey,
+					DelegatedStakingClaimAmount: transfers[t].Amount,
+					RegistrationIndex:           registrationIndex,
+					DelegateSignature:           helpers.EmptyBytes(cryptography.SignatureSize),
+				}
+
+				privateKeysForSign[t] = key
+
+			case ZetherTransferPayloadExtraDelegateStake:
+				payload.PayloadScript = transaction_zether_payload.SCRIPT_DELEGATE_STAKE
+
+				if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
+					key := &addresses.PrivateKey{Key: payloadExtra.DelegatePrivateKey}
+					if bytes.Equal(key.GeneratePublicKey(), payloadExtra.DelegatePublicKey) == false {
+						return errors.New("delegatePrivateKey is not matching delegatePublicKey")
+					}
+
+					privateKeysForSign[t] = key
+				}
+
+				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
+					DelegatePublicKey:      payloadExtra.DelegatePublicKey,
+					DelegatedStakingUpdate: payloadExtra.DelegatedStakingUpdate,
+					DelegateSignature:      helpers.EmptyBytes(cryptography.SignatureSize),
+				}
+
+			case ZetherTransferPayloadExtraAssetCreate:
+				payload.PayloadScript = transaction_zether_payload.SCRIPT_ASSET_CREATE
+				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{
+					Asset: payloadExtra.Asset,
+				}
+
+			case ZetherTransferPayloadExtraAssetSupplyIncrease:
+				payload.PayloadScript = transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE
+				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{
+					AssetId:              payloadExtra.AssetId,
+					ReceiverPublicKey:    payloadExtra.ReceiverPublicKey,
+					Value:                payloadExtra.Value,
+					AssetSupplyPublicKey: payloadExtra.AssetSupplyPublicKey,
+					AssetSignature:       helpers.EmptyBytes(cryptography.SignatureSize),
+				}
+			}
+		}
+
 		payload.Asset = transfers[t].Asset
 		payload.BurnValue = transfers[t].Burn
 
@@ -174,6 +244,12 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		extraBytes += 33*(22+m*8) + 32*(10)                                                   //proof arrays + proof data
 		extraBytes += 2 * m * 32                                                              //proof field array
 		extraBytes += int(config_fees.FEES_PER_BYTE_EXTRA_SPACE) * 64 * len(registrations[t]) //registrations are a penalty
+
+		if payload.Extra != nil {
+			writer := helpers.NewBufferWriter()
+			payload.Extra.Serialize(writer, true)
+			extraBytes += len(writer.Bytes())
+		}
 		fees := setFee(tx, extraBytes, myFees[t].Clone(), t == 0)
 
 		statusCallback("Transaction Set fees")
@@ -321,18 +397,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			registrations[t],
 		}
 		payload.Statement = &statement
-		payload.Extra = payloadsExtra[t]
-
-		if payload.Extra == nil {
-			payload.PayloadScript = transaction_zether_payload.SCRIPT_TRANSFER
-		} else {
-			switch payload.Extra.(type) {
-			case *transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake:
-				payload.PayloadScript = transaction_zether_payload.SCRIPT_CLAIM_STAKE
-			case *transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake:
-				payload.PayloadScript = transaction_zether_payload.SCRIPT_DELEGATE_STAKE
-			}
-		}
 
 		payloads[t] = &payload
 
@@ -373,16 +437,29 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		}
 	}
 
+	for t := range transfers {
+		if privateKeysForSign[t] != nil {
+
+			var signature []byte
+			if signature, err = privateKeysForSign[t].Sign(tx.SerializeForSigning()); err != nil {
+				return
+			}
+
+			switch txBase.Payloads[t].PayloadScript {
+			case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
+				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake).DelegateSignature = signature
+			case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
+				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake).DelegateSignature = signature
+			}
+
+		}
+	}
+
 	statusCallback("Transaction Zether Proofs generated")
 	return
 }
 
 func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
-
-	payloadsExtra := []transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface{}
-	for range transfers {
-		payloadsExtra = append(payloadsExtra, nil)
-	}
 
 	txBase := &transaction_zether.TransactionZether{
 		Height: height,
@@ -393,7 +470,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		TransactionBaseInterface: txBase,
 	}
 
-	if err = signZetherTx(tx, txBase, payloadsExtra, transfers, emap, rings, fees, height, hash, publicKeyIndexes, false, ctx, statusCallback); err != nil {
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, false, ctx, statusCallback); err != nil {
 		return
 	}
 	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {

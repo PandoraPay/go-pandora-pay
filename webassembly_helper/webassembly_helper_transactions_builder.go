@@ -9,7 +9,6 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
-	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -24,18 +23,19 @@ type zetherTxDataFrom struct {
 }
 
 type zetherTxDataBase struct {
-	From        []*zetherTxDataFrom                    `json:"from"`
-	Assets      []helpers.HexBytes                     `json:"assets"`
-	Amounts     []uint64                               `json:"amounts"`
-	Dsts        []string                               `json:"dsts"`
-	Burns       []uint64                               `json:"burns"`
-	RingMembers [][]string                             `json:"ringMembers"`
-	Data        []*wizard.TransactionsWizardData       `json:"data"`
-	Fees        []*wizard.TransactionsWizardFee        `json:"fees"`
-	Accs        map[string]map[string]helpers.HexBytes `json:"accs"`
-	Regs        map[string]helpers.HexBytes            `json:"regs"`
-	Height      uint64                                 `json:"height"`
-	Hash        helpers.HexBytes                       `json:"hash"`
+	From         []*zetherTxDataFrom                    `json:"from"`
+	Assets       []helpers.HexBytes                     `json:"assets"`
+	Amounts      []uint64                               `json:"amounts"`
+	Dsts         []string                               `json:"dsts"`
+	Burns        []uint64                               `json:"burns"`
+	RingMembers  [][]string                             `json:"ringMembers"`
+	Data         []*wizard.TransactionsWizardData       `json:"data"`
+	Fees         []*wizard.TransactionsWizardFee        `json:"fees"`
+	PayloadExtra []wizard.ZetherTransferPayloadExtra    `json:"payloadExtra"`
+	Accs         map[string]map[string]helpers.HexBytes `json:"accs"`
+	Regs         map[string]helpers.HexBytes            `json:"regs"`
+	Height       uint64                                 `json:"height"`
+	Hash         helpers.HexBytes                       `json:"hash"`
 }
 
 func prepareData(txData *zetherTxDataBase) (transfers []*wizard.ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, publicKeyIndexes map[string]*wizard.ZetherPublicKeyIndex, err error) {
@@ -64,6 +64,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.ZetherTransfer, 
 			Amount:             txData.Amounts[t],
 			Burn:               txData.Burns[t],
 			Data:               txData.Data[t],
+			PayloadExtra:       txData.PayloadExtra[t],
 		}
 
 		uniqueMap := make(map[string]bool)
@@ -150,10 +151,7 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("Argument must be a string and a callback")
 		}
 
-		txData := &struct {
-			Data *zetherTxDataBase
-		}{}
-
+		txData := &zetherTxDataBase{}
 		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
 			return nil, err
 		}
@@ -161,105 +159,12 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		transfers, emap, rings, publicKeyIndexes, err := prepareData(txData.Data)
+		transfers, emap, rings, publicKeyIndexes, err := prepareData(txData)
 		if err != nil {
 			return nil, err
 		}
 
-		tx, err := wizard.CreateZetherTx(transfers, emap, rings, txData.Data.Height, txData.Data.Hash, publicKeyIndexes, txData.Data.Fees, false, ctx, func(status string) {
-			args[1].Invoke(status)
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		txJson, err := json.Marshal(tx)
-		if err != nil {
-			return nil, err
-		}
-
-		return []interface{}{
-			webassembly_utils.ConvertBytes(txJson),
-			webassembly_utils.ConvertBytes(tx.Bloom.Serialized),
-		}, nil
-	})
-}
-
-func createZetherDelegateStakeTx(this js.Value, args []js.Value) interface{} {
-	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-
-		if len(args) != 2 || args[0].Type() != js.TypeObject || args[1].Type() != js.TypeFunction {
-			return nil, errors.New("Argument must be a string and a callback")
-		}
-
-		txData := &struct {
-			Data                   *zetherTxDataBase
-			DelegateDestination    string                                                  `json:"delegateDestination"`
-			DelegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
-			DelegatePrivateKey     helpers.HexBytes                                        `json:"delegatePrivateKey"`
-		}{}
-
-		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
-			return nil, err
-		}
-
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		transfers, emap, rings, publicKeyIndexes, err := prepareData(txData.Data)
-		if err != nil {
-			return nil, err
-		}
-
-		address, err := addresses.DecodeAddr(txData.DelegateDestination)
-		if err != nil {
-			return nil, err
-		}
-
-		tx, err := wizard.CreateZetherDelegateStakeTx(address.PublicKey, txData.DelegatedStakingUpdate, txData.DelegatePrivateKey, transfers, emap, rings, txData.Data.Height, txData.Data.Hash, publicKeyIndexes, txData.Data.Fees, false, ctx, func(status string) {
-			args[1].Invoke(status)
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		txJson, err := json.Marshal(tx)
-		if err != nil {
-			return nil, err
-		}
-
-		return []interface{}{
-			webassembly_utils.ConvertBytes(txJson),
-			webassembly_utils.ConvertBytes(tx.Bloom.Serialized),
-		}, nil
-	})
-}
-
-func createZetherClaimStakeTx(this js.Value, args []js.Value) interface{} {
-	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-
-		if len(args) != 2 || args[0].Type() != js.TypeObject || args[1].Type() != js.TypeFunction {
-			return nil, errors.New("Argument must be a string and a callback")
-		}
-
-		txData := &struct {
-			Data               *zetherTxDataBase
-			DelegatePrivateKey helpers.HexBytes `json:"delegatePrivateKey"`
-		}{}
-
-		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
-			return nil, err
-		}
-
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		transfers, emap, rings, publicKeyIndexes, err := prepareData(txData.Data)
-		if err != nil {
-			return nil, err
-		}
-
-		tx, err := wizard.CreateZetherClaimStakeTx(txData.DelegatePrivateKey, transfers, emap, rings, txData.Data.Height, txData.Data.Hash, publicKeyIndexes, txData.Data.Fees, false, ctx, func(status string) {
+		tx, err := wizard.CreateZetherTx(transfers, emap, rings, txData.Height, txData.Hash, publicKeyIndexes, txData.Fees, false, ctx, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {

@@ -28,9 +28,7 @@ func main() {
 		}),
 		"transactions": js.ValueOf(map[string]interface{}{
 			"builder": js.ValueOf(map[string]interface{}{
-				"createZetherTx":              js.FuncOf(createZetherTx),
-				"createZetherDelegateStakeTx": js.FuncOf(createZetherDelegateStakeTx),
-				"createZetherClaimStakeTx":    js.FuncOf(createZetherClaimStakeTx),
+				"createZetherTx": js.FuncOf(createZetherTx),
 			}),
 		}),
 	}))

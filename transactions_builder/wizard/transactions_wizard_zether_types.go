@@ -7,17 +7,28 @@ import (
 )
 
 type ZetherTransferPayloadExtraDelegateStake struct {
-	DelegatePublicKey      []byte
-	DelegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate
-	DelegatePrivateKey     []byte
+	ZetherTransferPayloadExtra
+	DelegatePublicKey      helpers.HexBytes                                        `json:"delegatePublicKey"`
+	DelegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
+	DelegatePrivateKey     helpers.HexBytes                                        `json:"delegatePrivateKey"`
 }
 
 type ZetherTransferPayloadExtraClaimStake struct {
+	ZetherTransferPayloadExtra
 	DelegatePrivateKey helpers.HexBytes `json:"delegatePrivateKey"`
 }
 
 type ZetherTransferPayloadExtraAssetCreate struct {
+	ZetherTransferPayloadExtra
 	Asset *asset.Asset `json:"asset"`
+}
+
+type ZetherTransferPayloadExtraAssetSupplyIncrease struct {
+	ZetherTransferPayloadExtra
+	AssetId              helpers.HexBytes `json:"assetId"`
+	ReceiverPublicKey    helpers.HexBytes `json:"receiverPublicKey"`
+	Value                uint64           `json:"value"`
+	AssetSupplyPublicKey helpers.HexBytes `json:"assetSupplyPublicKey"`
 }
 
 type ZetherTransferPayloadExtra interface {
