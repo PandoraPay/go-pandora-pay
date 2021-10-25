@@ -33,7 +33,7 @@ func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
 	return emap
 }
 
-func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, createFakeSenderBalance bool, ctx context.Context, statusCallback func(string)) (err error) {
+func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
 
 	statusCallback("Transaction Signing...")
 
@@ -254,7 +254,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		statusCallback("Transaction Set fees")
 
-		if createFakeSenderBalance {
+		//fake balance
+		if payload.PayloadScript == transaction_zether_payload.SCRIPT_CLAIM_STAKE {
 			for i := range publickeylist { // setup commitments
 				if i == witness_index[0] {
 					fakeBalance := value + fees + burn_value
@@ -470,7 +471,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 		TransactionBaseInterface: txBase,
 	}
 
-	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, false, ctx, statusCallback); err != nil {
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return
 	}
 	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
