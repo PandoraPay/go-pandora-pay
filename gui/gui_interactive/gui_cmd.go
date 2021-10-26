@@ -125,8 +125,8 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 	}
 
 	if unlockRequired {
-		if g.cmd.SelectedRow >= len(commands) {
-			g.cmd.SelectedRow = len(commands) - 1
+		if g.cmd.SelectedRow >= len(g.cmd.Rows) {
+			g.cmd.SelectedRow = len(g.cmd.Rows) - 1
 		}
 		if g.cmd.SelectedRow < 0 {
 			g.cmd.SelectedRow = 0

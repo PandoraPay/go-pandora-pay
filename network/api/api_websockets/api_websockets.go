@@ -272,7 +272,7 @@ func (api *APIWebsockets) postMempoolTxIdInsert(conn *connection.AdvancedConnect
 		return
 	}
 
-	result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APITransactionRequest{0, values, api_types.RETURN_SERIALIZED}, 0)
+	result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APITransactionRequest{0, values, api_types.RETURN_SERIALIZED}, nil)
 	if result.Err != nil {
 		err = result.Err
 		return

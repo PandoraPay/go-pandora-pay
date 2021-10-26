@@ -33,7 +33,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 
 	var err error
 
-	answer := conn.SendJSONAwaitAnswer([]byte("block"), &api_types.APIBlockRequest{height, nil, api_types.RETURN_SERIALIZED}, 0)
+	answer := conn.SendJSONAwaitAnswer([]byte("block"), &api_types.APIBlockRequest{height, nil, api_types.RETURN_SERIALIZED}, nil)
 	if answer.Err != nil {
 		return nil, answer.Err
 	}
@@ -104,7 +104,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 		}
 	}
 
-	answer = conn.SendJSONAwaitAnswer([]byte("block-miss-txs"), &api_types.APIBlockCompleteMissingTxsRequest{blkWithTx.Block.Bloom.Hash, missingTxs}, 0)
+	answer = conn.SendJSONAwaitAnswer([]byte("block-miss-txs"), &api_types.APIBlockCompleteMissingTxsRequest{blkWithTx.Block.Bloom.Hash, missingTxs}, nil)
 	if answer.Err != nil {
 		return nil, answer.Err
 	}

@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain"
@@ -11,10 +12,11 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
+	"time"
 )
 
 func (consensus *Consensus) chainGet(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	conn.SendJSON([]byte("chain-update"), consensus.getUpdateNotification(nil))
+	conn.SendJSON([]byte("chain-update"), consensus.getUpdateNotification(nil), nil)
 	return nil, nil
 }
 
@@ -62,17 +64,17 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 
 	} else {
 		//let's notify him tha we have a better chain
-		conn.SendJSON([]byte("chain-update"), consensus.getUpdateNotification(nil))
+		conn.SendJSON([]byte("chain-update"), consensus.getUpdateNotification(nil), nil)
 	}
 
 	return nil, nil
 }
 
-func (consensus *Consensus) broadcastChain(newChainData *blockchain.BlockchainData) {
-	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain-update"), consensus.getUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true}, advanced_connection_types.UUID_ALL)
+func (consensus *Consensus) broadcastChain(newChainData *blockchain.BlockchainData, ctx context.Context) {
+	consensus.httpServer.Websockets.BroadcastJSON([]byte("chain-update"), consensus.getUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true}, advanced_connection_types.UUID_ALL, ctx)
 }
 
-func (consensus *Consensus) BroadcastTxs(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID) (errs []error) {
+func (consensus *Consensus) BroadcastTxs(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context) (errs []error) {
 
 	errs = make([]error, len(txs))
 
@@ -81,6 +83,17 @@ func (consensus *Consensus) BroadcastTxs(txs []*transaction.Transaction, justCre
 		key = []byte("mem-pool/new-tx")
 	} else {
 		key = []byte("mem-pool/new-tx-id")
+	}
+
+	if ctx == nil {
+		factor := time.Duration(1)
+		if awaitPropagation {
+			factor = 2
+		}
+
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(nil, factor*config.WEBSOCKETS_TIMEOUT)
+		defer cancel()
 	}
 
 	for i, tx := range txs {
@@ -92,8 +105,7 @@ func (consensus *Consensus) BroadcastTxs(txs []*transaction.Transaction, justCre
 			}
 
 			if awaitPropagation {
-
-				out := consensus.httpServer.Websockets.BroadcastAwaitAnswer(key, value, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, 2*config.WEBSOCKETS_TIMEOUT)
+				out := consensus.httpServer.Websockets.BroadcastAwaitAnswer(key, value, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctx)
 				for j := range out {
 					if out[j] != nil && out[j].Err != nil {
 						errs[i] = out[j].Err
@@ -102,7 +114,7 @@ func (consensus *Consensus) BroadcastTxs(txs []*transaction.Transaction, justCre
 				}
 
 			} else {
-				consensus.httpServer.Websockets.Broadcast(key, value, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID)
+				consensus.httpServer.Websockets.Broadcast(key, value, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctx)
 			}
 		}
 	}

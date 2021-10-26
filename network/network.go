@@ -76,7 +76,7 @@ func (network *Network) continuouslyDownloadMempool() {
 		conn := network.Websockets.GetRandomSocket()
 		if conn != nil {
 
-			conn.Send([]byte("chain-get"), nil)
+			conn.Send([]byte("chain-get"), nil, nil)
 
 			if config.CONSENSUS == config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.CONSENSUS_TYPE_FULL {
 				network.MempoolSync.DownloadMempool(conn)
@@ -106,7 +106,7 @@ func (network *Network) syncNewConnections() {
 			//making it async
 			recovery.SafeGo(func() {
 
-				conn.Send([]byte("chain-get"), nil)
+				conn.Send([]byte("chain-get"), nil, nil)
 
 				if config.CONSENSUS == config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.CONSENSUS_TYPE_FULL {
 					network.MempoolSync.DownloadMempool(conn)

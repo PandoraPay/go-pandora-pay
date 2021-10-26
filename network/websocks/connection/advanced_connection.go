@@ -43,6 +43,10 @@ type AdvancedConnection struct {
 	ConnectionType          bool
 }
 
+func (c *AdvancedConnection) GetTimeout() time.Duration {
+	return config.WEBSOCKETS_TIMEOUT
+}
+
 func (c *AdvancedConnection) Close(reason string) error {
 	if c.IsClosed.SetToIf(false, true) {
 		close(c.Closed)
@@ -50,7 +54,7 @@ func (c *AdvancedConnection) Close(reason string) error {
 	return c.Conn.Close(websocket.StatusNormalClosure, reason)
 }
 
-func (c *AdvancedConnection) connSendJSON(message interface{}) error {
+func (c *AdvancedConnection) connSendJSON(message interface{}, ctx context.Context) error {
 
 	data, err := json.Marshal(message)
 	if err != nil {
@@ -61,8 +65,11 @@ func (c *AdvancedConnection) connSendJSON(message interface{}) error {
 		return errors.New("Closed")
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	if ctx == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(context.Background())
+		defer cancel()
+	}
 
 	return c.Conn.Write(ctx, websocket.MessageBinary, data)
 }
@@ -79,7 +86,7 @@ func (c *AdvancedConnection) connSendPing() error {
 	return c.Conn.Ping(ctx)
 }
 
-func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byte, reply bool) error {
+func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byte, reply bool, ctx context.Context) error {
 	message := &advanced_connection_types.AdvancedConnectionMessage{
 		replyBackId,
 		reply,
@@ -87,13 +94,15 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 		name,
 		data,
 	}
-	return c.connSendJSON(message)
+	return c.connSendJSON(message, ctx)
 }
 
-func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, timeout time.Duration) *advanced_connection_types.AdvancedConnectionAnswer {
+func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, ctx context.Context) *advanced_connection_types.AdvancedConnectionAnswer {
 
-	if timeout == 0 {
-		timeout = config.WEBSOCKETS_TIMEOUT
+	if ctx == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(nil, c.GetTimeout())
+		defer cancel()
 	}
 
 	replyBackId := atomic.AddUint32(&c.answerCounter, 1)
@@ -111,12 +120,9 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 		data,
 	}
 
-	if err := c.connSendJSON(message); err != nil {
+	if err := c.connSendJSON(message, ctx); err != nil {
 		return &advanced_connection_types.AdvancedConnectionAnswer{nil, err}
 	}
-
-	timer := time.NewTimer(timeout)
-	defer timer.Stop()
 
 	select {
 	case out, ok := <-eventCn:
@@ -124,7 +130,7 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 			return &advanced_connection_types.AdvancedConnectionAnswer{nil, errors.New("Timeout - Closed channel")}
 		}
 		return out
-	case <-timer.C:
+	case <-ctx.Done():
 
 		var closeChannel bool
 
@@ -141,28 +147,28 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 	}
 }
 
-func (c *AdvancedConnection) Send(name []byte, data []byte) error {
-	return c.sendNow(0, name, data, false)
+func (c *AdvancedConnection) Send(name []byte, data []byte, ctx context.Context) error {
+	return c.sendNow(0, name, data, false, ctx)
 }
 
-func (c *AdvancedConnection) SendJSON(name []byte, data interface{}) error {
+func (c *AdvancedConnection) SendJSON(name []byte, data interface{}, ctx context.Context) error {
 	out, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
-	return c.sendNow(0, name, out, false)
+	return c.sendNow(0, name, out, false, ctx)
 }
 
-func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte, timeout time.Duration) *advanced_connection_types.AdvancedConnectionAnswer {
-	return c.sendNowAwait(name, data, false, timeout)
+func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte, ctx context.Context) *advanced_connection_types.AdvancedConnectionAnswer {
+	return c.sendNowAwait(name, data, false, ctx)
 }
 
-func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, timeout time.Duration) *advanced_connection_types.AdvancedConnectionAnswer {
+func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, ctx context.Context) *advanced_connection_types.AdvancedConnectionAnswer {
 	out, err := json.Marshal(data)
 	if err != nil {
 		panic("Error marshaling data")
 	}
-	return c.sendNowAwait(name, out, false, timeout)
+	return c.sendNowAwait(name, out, false, ctx)
 }
 
 func (c *AdvancedConnection) get(message *advanced_connection_types.AdvancedConnectionMessage) ([]byte, error) {
@@ -184,9 +190,9 @@ func (c *AdvancedConnection) processRead(message *advanced_connection_types.Adva
 
 		if message.ReplyAwait {
 			if err != nil {
-				_ = c.sendNow(message.ReplyId, []byte{0}, []byte(err.Error()), true)
+				_ = c.sendNow(message.ReplyId, []byte{0}, []byte(err.Error()), true, nil)
 			} else {
-				_ = c.sendNow(message.ReplyId, []byte{1}, out, true)
+				_ = c.sendNow(message.ReplyId, []byte{1}, out, true, nil)
 			}
 		}
 

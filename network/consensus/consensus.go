@@ -1,8 +1,10 @@
 package consensus
 
 import (
+	"context"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/config"
 	"pandora-pay/mempool"
 	"pandora-pay/network/server/node_http"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
@@ -24,6 +26,9 @@ func (consensus *Consensus) execute() {
 		updateNewChainUpdateListener := consensus.chain.UpdateNewChainDataUpdate.AddListener()
 		defer consensus.chain.UpdateNewChainDataUpdate.RemoveChannel(updateNewChainUpdateListener)
 
+		var ctx context.Context
+		var cancel context.CancelFunc
+
 		for {
 			newChainDataUpdateReceived, ok := <-updateNewChainUpdateListener
 			if !ok {
@@ -33,13 +38,21 @@ func (consensus *Consensus) execute() {
 			newChainDataUpdate := newChainDataUpdateReceived.(*blockchain.BlockchainDataUpdate)
 
 			//it is safe to read
-			consensus.broadcastChain(newChainDataUpdate.Update)
+			go func() {
+
+				if ctx != nil { //let's cancel the previous one
+					cancel()
+				}
+
+				ctx, cancel = context.WithTimeout(nil, config.WEBSOCKETS_TIMEOUT)
+				consensus.broadcastChain(newChainDataUpdate.Update, ctx)
+			}()
 		}
 
 	})
 
 	consensus.mempool.OnBroadcastNewTransaction = func(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID) []error {
-		return consensus.BroadcastTxs(txs, justCreated, awaitPropagation, exceptSocketUUID)
+		return consensus.BroadcastTxs(txs, justCreated, awaitPropagation, exceptSocketUUID, nil)
 	}
 
 	//discover forks

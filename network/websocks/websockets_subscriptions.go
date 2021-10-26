@@ -68,7 +68,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 	for _, subNot := range list {
 
 		if element == nil && elementBytes == nil && extra == nil {
-			_ = subNot.Conn.Send(key, nil)
+			_ = subNot.Conn.Send(key, nil, nil)
 			continue
 		}
 
@@ -83,7 +83,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 			if serialized == nil {
 				serialized = &api_types.APISubscriptionNotification{subscriptionType, key, bytes, extraMarshalled}
 			}
-			_ = subNot.Conn.SendJSON(apiRoute, serialized)
+			_ = subNot.Conn.SendJSON(apiRoute, serialized, nil)
 		} else if subNot.Subscription.ReturnType == api_types.RETURN_JSON {
 			if marshalled == nil {
 				var bytes []byte
@@ -96,7 +96,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 				}
 				marshalled = &api_types.APISubscriptionNotification{subscriptionType, key, bytes, extraMarshalled}
 			}
-			_ = subNot.Conn.SendJSON(apiRoute, marshalled)
+			_ = subNot.Conn.SendJSON(apiRoute, marshalled, nil)
 		}
 
 	}
