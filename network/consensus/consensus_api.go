@@ -92,7 +92,7 @@ func (consensus *Consensus) BroadcastTxs(txs []*transaction.Transaction, justCre
 		}
 
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(nil, factor*config.WEBSOCKETS_TIMEOUT)
+		ctx, cancel = context.WithTimeout(context.Background(), factor*config.WEBSOCKETS_TIMEOUT)
 		defer cancel()
 	}
 

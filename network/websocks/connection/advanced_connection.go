@@ -101,7 +101,7 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 
 	if ctx == nil {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(nil, c.GetTimeout())
+		ctx, cancel = context.WithTimeout(context.Background(), c.GetTimeout())
 		defer cancel()
 	}
 

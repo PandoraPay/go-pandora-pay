@@ -37,14 +37,14 @@ func (consensus *Consensus) execute() {
 
 			newChainDataUpdate := newChainDataUpdateReceived.(*blockchain.BlockchainDataUpdate)
 
+			if ctx != nil { //let's cancel the previous one
+				cancel()
+				ctx = nil
+			}
+			ctx, cancel = context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
+
 			//it is safe to read
 			go func() {
-
-				if ctx != nil { //let's cancel the previous one
-					cancel()
-				}
-
-				ctx, cancel = context.WithTimeout(nil, config.WEBSOCKETS_TIMEOUT)
 				consensus.broadcastChain(newChainDataUpdate.Update, ctx)
 			}()
 		}
