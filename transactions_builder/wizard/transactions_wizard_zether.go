@@ -3,6 +3,7 @@ package wizard
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -181,9 +182,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 				privateKeysForSign[t] = key
 
-			case ZetherTransferPayloadExtraDelegateStake:
+			case *ZetherTransferPayloadExtraDelegateStake:
 				payload.PayloadScript = transaction_zether_payload.SCRIPT_DELEGATE_STAKE
 
+				blankSignature := []byte{}
 				if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
 					key := &addresses.PrivateKey{Key: payloadExtra.DelegatePrivateKey}
 					if bytes.Equal(key.GeneratePublicKey(), payloadExtra.DelegatePublicKey) == false {
@@ -191,21 +193,22 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					}
 
 					privateKeysForSign[t] = key
+					blankSignature = helpers.EmptyBytes(cryptography.SignatureSize)
 				}
 
 				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
 					DelegatePublicKey:      payloadExtra.DelegatePublicKey,
 					DelegatedStakingUpdate: payloadExtra.DelegatedStakingUpdate,
-					DelegateSignature:      helpers.EmptyBytes(cryptography.SignatureSize),
+					DelegateSignature:      blankSignature,
 				}
 
-			case ZetherTransferPayloadExtraAssetCreate:
+			case *ZetherTransferPayloadExtraAssetCreate:
 				payload.PayloadScript = transaction_zether_payload.SCRIPT_ASSET_CREATE
 				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{
 					Asset: payloadExtra.Asset,
 				}
 
-			case ZetherTransferPayloadExtraAssetSupplyIncrease:
+			case *ZetherTransferPayloadExtraAssetSupplyIncrease:
 				payload.PayloadScript = transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE
 				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{
 					AssetId:              payloadExtra.AssetId,
@@ -214,6 +217,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					AssetSupplyPublicKey: payloadExtra.AssetSupplyPublicKey,
 					AssetSignature:       helpers.EmptyBytes(cryptography.SignatureSize),
 				}
+			default:
+				x, _ := json.Marshal(transfers[t].PayloadExtra)
+				fmt.Println(string(x))
+				return errors.New("Invalid payload")
 			}
 		}
 

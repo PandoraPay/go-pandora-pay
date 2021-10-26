@@ -294,9 +294,6 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 
 func (builder *TransactionsBuilder) CreateZetherTx(extraPayloads []wizard.ZetherTransferPayloadExtra, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
 
-	builder.lock.Lock()
-	defer builder.lock.Unlock()
-
 	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(extraPayloads, from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
 	if err != nil {
 		return nil, err

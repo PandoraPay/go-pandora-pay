@@ -139,7 +139,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		tx, err := builder.CreateZetherTx([]wizard.ZetherTransferPayloadExtra{}, []string{walletAddress.AddressEncoded}, [][]byte{assetId}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateZetherTx([]wizard.ZetherTransferPayloadExtra{nil}, []string{walletAddress.AddressEncoded}, [][]byte{assetId}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, ringMembers, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

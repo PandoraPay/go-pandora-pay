@@ -16,14 +16,12 @@ import (
 	"pandora-pay/transactions_builder/wizard"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
-	"sync"
 )
 
 type TransactionsBuilder struct {
 	wallet  *wallet.Wallet
 	mempool *mempool.Mempool
 	chain   *blockchain.Blockchain
-	lock    *sync.Mutex //TODO replace sync.Mutex with a snyc.Map in order to optimize the transactions creation
 }
 
 func (builder *TransactionsBuilder) getNonce(nonce uint64, publicKey []byte, accNonce uint64) uint64 {
@@ -114,9 +112,6 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 
 	statusCallback("Wallet Addresses Found")
 
-	builder.lock.Lock()
-	defer builder.lock.Unlock()
-
 	var tx *transaction.Transaction
 	var plainAcc *plain_account.PlainAccount
 	var chainHeight uint64
@@ -173,9 +168,6 @@ func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce ui
 		return nil, err
 	}
 
-	builder.lock.Lock()
-	defer builder.lock.Unlock()
-
 	var tx *transaction.Transaction
 	var plainAcc *plain_account.PlainAccount
 	var chainHeight uint64
@@ -219,7 +211,6 @@ func TransactionsBuilderInit(wallet *wallet.Wallet, mempool *mempool.Mempool, ch
 		wallet:  wallet,
 		chain:   chain,
 		mempool: mempool,
-		lock:    &sync.Mutex{},
 	}
 
 	builder.initCLI()

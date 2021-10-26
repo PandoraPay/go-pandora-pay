@@ -9,6 +9,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -23,19 +24,20 @@ type zetherTxDataFrom struct {
 }
 
 type zetherTxDataBase struct {
-	From         []*zetherTxDataFrom                    `json:"from"`
-	Assets       []helpers.HexBytes                     `json:"assets"`
-	Amounts      []uint64                               `json:"amounts"`
-	Dsts         []string                               `json:"dsts"`
-	Burns        []uint64                               `json:"burns"`
-	RingMembers  [][]string                             `json:"ringMembers"`
-	Data         []*wizard.TransactionsWizardData       `json:"data"`
-	Fees         []*wizard.TransactionsWizardFee        `json:"fees"`
-	PayloadExtra []wizard.ZetherTransferPayloadExtra    `json:"payloadExtra"`
-	Accs         map[string]map[string]helpers.HexBytes `json:"accs"`
-	Regs         map[string]helpers.HexBytes            `json:"regs"`
-	Height       uint64                                 `json:"height"`
-	Hash         helpers.HexBytes                       `json:"hash"`
+	From              []*zetherTxDataFrom                            `json:"from"`
+	Assets            []helpers.HexBytes                             `json:"assets"`
+	Amounts           []uint64                                       `json:"amounts"`
+	Dsts              []string                                       `json:"dsts"`
+	Burns             []uint64                                       `json:"burns"`
+	RingMembers       [][]string                                     `json:"ringMembers"`
+	Data              []*wizard.TransactionsWizardData               `json:"data"`
+	Fees              []*wizard.TransactionsWizardFee                `json:"fees"`
+	PayloadScriptType []transaction_zether_payload.PayloadScriptType `json:"payloadScriptType"`
+	PayloadExtra      []wizard.ZetherTransferPayloadExtra            `json:"payloadExtra"`
+	Accs              map[string]map[string]helpers.HexBytes         `json:"accs"`
+	Regs              map[string]helpers.HexBytes                    `json:"regs"`
+	Height            uint64                                         `json:"height"`
+	Hash              helpers.HexBytes                               `json:"hash"`
 }
 
 func prepareData(txData *zetherTxDataBase) (transfers []*wizard.ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, publicKeyIndexes map[string]*wizard.ZetherPublicKeyIndex, err error) {
@@ -64,8 +66,40 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.ZetherTransfer, 
 			Amount:             txData.Amounts[t],
 			Burn:               txData.Burns[t],
 			Data:               txData.Data[t],
-			PayloadExtra:       txData.PayloadExtra[t],
 		}
+
+		var payloadExtra wizard.ZetherTransferPayloadExtra
+
+		switch txData.PayloadScriptType[t] {
+		case transaction_zether_payload.SCRIPT_TRANSFER:
+			payloadExtra = nil
+		case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
+			payloadExtra = &wizard.ZetherTransferPayloadExtraClaimStake{}
+		case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
+			payloadExtra = &wizard.ZetherTransferPayloadExtraDelegateStake{}
+		case transaction_zether_payload.SCRIPT_ASSET_CREATE:
+			payloadExtra = &wizard.ZetherTransferPayloadExtraAssetCreate{}
+		case transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE:
+			payloadExtra = &wizard.ZetherTransferPayloadExtraAssetSupplyIncrease{}
+		default:
+			err = errors.New("Invalid PayloadScriptType")
+			return
+		}
+
+		if payloadExtra != nil {
+			var data []byte
+			if data, err = json.Marshal(txData.PayloadExtra[t]); err != nil {
+				return
+			}
+			if err = json.Unmarshal(data, payloadExtra); err != nil {
+				return
+			}
+		}
+
+		var x []byte
+		x, err = json.Marshal(payloadExtra)
+		fmt.Println(string(x))
+		transfers[t].PayloadExtra = payloadExtra
 
 		uniqueMap := make(map[string]bool)
 		var ring []*bn256.G1
