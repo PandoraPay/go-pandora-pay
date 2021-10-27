@@ -39,7 +39,6 @@ func (consensus *Consensus) execute() {
 
 			if ctx != nil { //let's cancel the previous one
 				cancel()
-				ctx = nil
 			}
 			ctx, cancel = context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
 

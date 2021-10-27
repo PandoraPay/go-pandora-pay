@@ -241,7 +241,7 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		return errors.New("Invalid Tx.DataVersion")
 	}
 
-	payload.Registrations = new(transaction_zether_registrations.TransactionZetherDataRegistrations)
+	payload.Registrations = &transaction_zether_registrations.TransactionZetherDataRegistrations{}
 	if err = payload.Registrations.Deserialize(r); err != nil {
 		return
 	}

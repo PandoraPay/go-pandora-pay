@@ -246,7 +246,9 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 					}
 				}
 
-				emap[string(ast)][p.G1().String()] = balance
+				if emap[string(ast)][p.G1().String()] == nil {
+					emap[string(ast)][p.G1().String()] = balance
+				}
 				ring = append(ring, p.G1())
 
 				var reg *registration.Registration

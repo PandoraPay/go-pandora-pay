@@ -3,7 +3,6 @@ package wizard
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -38,7 +37,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 	statusCallback("Transaction Signing...")
 
-	senders, receivers := make([]*bn256.G1, len(transfers)), make([]*bn256.G1, len(transfers))
+	receivers := make([]*bn256.G1, len(transfers))
 	publickeylists := make([][]*bn256.G1, len(transfers))
 	witness_indexes := make([][]int, len(transfers))
 
@@ -59,7 +58,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		}
 		receiver := receiverPoint.G1()
 
-		senders[t] = sender
 		receivers[t] = receiver
 
 		witness_indexes[t] = helpers.ShuffleArray_for_Zether(len(rings[t]))
@@ -131,7 +129,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		senderKey := &addresses.PrivateKey{Key: transfer.From}
 		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
-		sender := senders[t]
+		sender := crypto.GPoint.ScalarMult(secretPoint).G1()
 		receiver := receivers[t]
 		sender_secret := secretPoint.BigInt()
 
@@ -162,7 +160,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 				var registrationIndex byte
 
-				senderKey := &addresses.PrivateKey{Key: transfers[t].From}
 				senderPublicKey := senderKey.GeneratePublicKey()
 				for i, reg := range registrations[t] {
 					if bytes.Equal(publickeylist[reg.PublicKeyIndex].EncodeCompressed(), senderPublicKey) {
@@ -218,8 +215,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					AssetSignature:       helpers.EmptyBytes(cryptography.SignatureSize),
 				}
 			default:
-				x, _ := json.Marshal(transfers[t].PayloadExtra)
-				fmt.Println(string(x))
 				return errors.New("Invalid payload")
 			}
 		}
@@ -237,7 +232,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		if payload.DataVersion == transaction_data.TX_DATA_NONE {
 			dataLength = 0
 		} else if payload.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT {
-			dataLength = helpers.BytesLengthSerialized(uint64(len(dataFinal)))
+			dataLength += helpers.BytesLengthSerialized(uint64(len(dataFinal)))
 		} else if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
 			dataLength = transaction_zether_payload.PAYLOAD0_LIMIT
 		}
@@ -245,7 +240,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		m := int(math.Log2(float64(len(rings[t]))))
 
 		extraBytes := 1 + len(payload.Asset) + helpers.BytesLengthSerialized(payload.BurnValue)
-		extraBytes += helpers.BytesLengthSerialized(uint64(len(transfers))) - 1
+		extraBytes += 1 + cryptography.SignatureSize + 1                                      //registrations length
 		extraBytes += 1 + dataLength                                                          //dataVersion + data
 		extraBytes += len(rings[t])*33*4 + 33 + 1                                             // statement
 		extraBytes += 33*(22+m*8) + 32*(10)                                                   //proof arrays + proof data
@@ -265,15 +260,19 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		if payload.PayloadScript == transaction_zether_payload.SCRIPT_CLAIM_STAKE {
 			for i := range publickeylist { // setup commitments
 				if i == witness_index[0] {
+
 					fakeBalance := value + fees + burn_value
 					var acckey crypto.Point
-					if err = acckey.DecodeCompressed(publickeylist[i].EncodeCompressed()); err != nil {
+
+					if err = acckey.DecodeCompressed(senderKey.GeneratePublicKey()); err != nil {
 						return
 					}
 					balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
 					balance = balance.Plus(new(big.Int).SetUint64(fakeBalance))
 
-					emap[string(transfers[t].Asset)][publickeylist[i].String()] = balance.Serialize()
+					transfer.FromBalanceDecoded = fakeBalance
+
+					emap[string(transfer.Asset)][publickeylist[i].String()] = balance.Serialize()
 					break
 				}
 			}
