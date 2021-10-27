@@ -37,7 +37,6 @@ func (payload *TransactionZetherPayload) IncludePayload(payloadIndex byte, publi
 
 	var accs *accounts.Accounts
 	var acc *account.Account
-	var acckey crypto.Point
 	var balance *crypto.ElGamal
 
 	if err = payload.Registrations.RegisterNow(dataStorage, publicKeyList); err != nil {
@@ -62,26 +61,19 @@ func (payload *TransactionZetherPayload) IncludePayload(payloadIndex byte, publi
 			return
 		}
 
-		if acc == nil { //zero balance
-			if err = acckey.DecodeCompressed(publicKey); err != nil {
+		if acc == nil {
+			if acc, err = accs.CreateAccount(publicKey); err != nil {
 				return
 			}
-			balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
-		} else {
-			balance = acc.GetBalance()
 		}
+
+		balance = acc.GetBalance()
 		echanges := crypto.ConstructElGamal(payload.Statement.C[i], payload.Statement.D)
 		balance = balance.Add(echanges) // homomorphic addition of changes
 
 		//verify
 		if payload.Statement.CLn[i].String() != balance.Left.String() || payload.Statement.CRn[i].String() != balance.Right.String() {
 			return errors.New("CLn or CRn is not matching")
-		}
-
-		if acc == nil {
-			if acc, err = accs.CreateAccount(publicKey); err != nil {
-				return
-			}
 		}
 
 		acc.Balance.Amount = balance

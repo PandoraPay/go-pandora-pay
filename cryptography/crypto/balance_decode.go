@@ -151,10 +151,6 @@ func (t *LookupTable) Lookup(p *bn256.G1, ctx context.Context, statusCallback fu
 		}
 		loop_counter++
 
-		//if loop_counter >= 10 {
-		//    break;
-		// }
-
 		compressed := pcopy.EncodeCompressed()
 
 		compressed[32] = 0

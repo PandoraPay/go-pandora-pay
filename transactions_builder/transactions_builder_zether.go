@@ -126,6 +126,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 
 	for t := range from {
 		if from[t] == "" {
+
 			fromPrivateKeys[t] = addresses.GenerateNewPrivateKey()
 			addr, err := fromPrivateKeys[t].GenerateAddress(true, 0, nil)
 			if err != nil {
@@ -202,68 +203,70 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 					return
 				}
 
-				var acc *account.Account
-				if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
-					return
-				}
-
-				var balance []byte
-				if acc != nil {
-					balance = acc.Balance.Amount.Serialize()
-				}
-
-				if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance); err != nil {
-					return
-				}
-
-				if balance == nil {
-					balance = crypto.ConstructElGamal(p.G1(), crypto.ElGamal_BASE_G).Serialize()
-				}
-
-				if from[t] == address { //sender
-
-					if fromWalletAddresses[t] == nil {
-						transfers[t].FromBalanceDecoded = transfers[t].Amount
-					} else {
-						balancePoint := new(crypto.ElGamal)
-						if balancePoint, err = balancePoint.Deserialize(balance); err != nil {
-							return
-						}
-
-						var fromBalanceDecoded uint64
-
-						if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, ast, true, true, ctx, statusCallback); err != nil {
-							return
-						}
-
-						if fromBalanceDecoded == 0 {
-							return errors.New("You have no funds")
-						}
-						if fromBalanceDecoded < amounts[t] {
-							return errors.New("Not enough funds")
-						}
-						transfers[t].FromBalanceDecoded = fromBalanceDecoded
-					}
-				}
-
 				if emap[string(ast)][p.G1().String()] == nil {
+
+					var acc *account.Account
+					if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
+						return
+					}
+
+					var balance []byte
+					if acc != nil {
+						balance = acc.Balance.Amount.Serialize()
+					}
+
+					//if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance); err != nil {
+					//	return
+					//}
+
+					if balance == nil {
+						balance = crypto.ConstructElGamal(p.G1(), crypto.ElGamal_BASE_G).Serialize()
+					}
+
+					if from[t] == address { //sender
+
+						if fromWalletAddresses[t] == nil {
+							transfers[t].FromBalanceDecoded = transfers[t].Amount
+						} else {
+							balancePoint := new(crypto.ElGamal)
+							if balancePoint, err = balancePoint.Deserialize(balance); err != nil {
+								return
+							}
+
+							var fromBalanceDecoded uint64
+							if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, ast, true, true, ctx, statusCallback); err != nil {
+								return
+							}
+
+							if fromBalanceDecoded == 0 {
+								return errors.New("You have no funds")
+							}
+							if fromBalanceDecoded < amounts[t] {
+								return errors.New("Not enough funds")
+							}
+							transfers[t].FromBalanceDecoded = fromBalanceDecoded
+						}
+					}
+
 					emap[string(ast)][p.G1().String()] = balance
 				}
 				ring = append(ring, p.G1())
 
-				var reg *registration.Registration
-				if reg, err = dataStorage.Regs.GetRegistration(addr.PublicKey); err != nil {
-					return
-				}
+				if publicKeyIndexes[string(addr.PublicKey)] == nil {
+					var reg *registration.Registration
+					if reg, err = dataStorage.Regs.GetRegistration(addr.PublicKey); err != nil {
+						return
+					}
 
-				publicKeyIndex := &wizard.ZetherPublicKeyIndex{}
-				publicKeyIndexes[string(addr.PublicKey)] = publicKeyIndex
+					publicKeyIndex := &wizard.ZetherPublicKeyIndex{}
+					publicKeyIndexes[string(addr.PublicKey)] = publicKeyIndex
 
-				if reg != nil {
-					publicKeyIndex.Registered = true
-					publicKeyIndex.RegisteredIndex = reg.Index
-				} else {
-					publicKeyIndex.RegistrationSignature = addr.Registration
+					if reg != nil {
+						publicKeyIndex.Registered = true
+						publicKeyIndex.RegisteredIndex = reg.Index
+					} else {
+						publicKeyIndex.RegistrationSignature = addr.Registration
+					}
 				}
 
 				return
@@ -295,6 +298,9 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 }
 
 func (builder *TransactionsBuilder) CreateZetherTx(extraPayloads []wizard.ZetherTransferPayloadExtra, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+
+	builder.lock.Lock()
+	defer builder.lock.Unlock()
 
 	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(extraPayloads, from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
 	if err != nil {

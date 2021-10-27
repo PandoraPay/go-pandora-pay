@@ -120,15 +120,17 @@ func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 	if n, err = r.ReadByte(); err != nil {
 		return
 	}
+
+	tx.Payloads = make([]*transaction_zether_payload.TransactionZetherPayload, n)
 	for i := byte(0); i < n; i++ {
-		payload := transaction_zether_payload.TransactionZetherPayload{
+		payload := &transaction_zether_payload.TransactionZetherPayload{
 			Statement: &crypto.Statement{},
 			Proof:     &crypto.Proof{},
 		}
 		if err = payload.Deserialize(r); err != nil {
 			return
 		}
-		tx.Payloads = append(tx.Payloads, &payload)
+		tx.Payloads[i] = payload
 	}
 
 	return

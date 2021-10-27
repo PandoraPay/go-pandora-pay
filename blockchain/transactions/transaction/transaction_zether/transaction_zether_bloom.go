@@ -28,8 +28,8 @@ func (tx *TransactionZether) BloomNow(hashForSignature []byte) (err error) {
 	tx.Bloom.publicKeyLists = make([][][]byte, len(tx.Payloads))
 	for payloadIndex, payload := range tx.Payloads {
 		tx.Bloom.publicKeyLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))
-		for i, publicKey := range payload.Statement.Publickeylist {
-			tx.Bloom.publicKeyLists[payloadIndex][i] = publicKey.EncodeCompressed()
+		for i, publicKeyPoint := range payload.Statement.Publickeylist {
+			tx.Bloom.publicKeyLists[payloadIndex][i] = publicKeyPoint.EncodeCompressed()
 		}
 		if err = payload.Registrations.ValidateRegistrations(payload.Statement.Publickeylist); err != nil {
 			return
@@ -77,8 +77,8 @@ func (tx *TransactionZether) BloomNowSignatureVerified() (err error) {
 	tx.Bloom.publicKeyLists = make([][][]byte, len(tx.Payloads))
 	for payloadIndex, payload := range tx.Payloads {
 		tx.Bloom.publicKeyLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))
-		for i, publicKey := range payload.Statement.Publickeylist {
-			tx.Bloom.publicKeyLists[payloadIndex][i] = publicKey.EncodeCompressed()
+		for i, publicKeyPoint := range payload.Statement.Publickeylist {
+			tx.Bloom.publicKeyLists[payloadIndex][i] = publicKeyPoint.EncodeCompressed()
 		}
 	}
 

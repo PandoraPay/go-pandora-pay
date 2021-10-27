@@ -258,40 +258,28 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		//fake balance
 		if payload.PayloadScript == transaction_zether_payload.SCRIPT_CLAIM_STAKE {
-			for i := range publickeylist { // setup commitments
-				if i == witness_index[0] {
+			fakeBalance := value + fees + burn_value
+			var acckey crypto.Point
 
-					fakeBalance := value + fees + burn_value
-					var acckey crypto.Point
-
-					if err = acckey.DecodeCompressed(senderKey.GeneratePublicKey()); err != nil {
-						return
-					}
-					balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
-					balance = balance.Plus(new(big.Int).SetUint64(fakeBalance))
-
-					transfer.FromBalanceDecoded = fakeBalance
-
-					emap[string(transfer.Asset)][publickeylist[i].String()] = balance.Serialize()
-					break
-				}
+			if err = acckey.DecodeCompressed(senderKey.GeneratePublicKey()); err != nil {
+				return
 			}
+			balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
+			balance = balance.Plus(new(big.Int).SetUint64(fakeBalance))
+
+			transfer.FromBalanceDecoded = fakeBalance
+
+			emap[string(transfer.Asset)][sender.String()] = balance.Serialize()
 		}
 
 		// Lots of ToDo for this, enables satisfying lots of  other things
-		ebalances_list := make([]*crypto.ElGamal, 0, len(rings[t]))
+		ebalances_list := make([]*crypto.ElGamal, len(rings[t]))
 		for i := range witness_index {
-
-			data := publickeylist[i].String()
-
 			var pt *crypto.ElGamal
-			if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Asset)][data]); err != nil {
+			if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][publickeylist[i].String()]); err != nil {
 				return
 			}
-			ebalances_list = append(ebalances_list, pt)
-
-			// fmt.Printf("adding %d %s  (ring count %d) \n", i,publickeylist[i].String(), len(anonset_publickeys))
-
+			ebalances_list[i] = pt
 		}
 
 		for i := range publickeylist { // setup commitments
@@ -345,11 +333,11 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 			switch {
 			case i == witness_index[0]:
-				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Asset)][sender.String()]); err != nil {
+				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][sender.String()]); err != nil {
 					return
 				}
 			case i == witness_index[1]:
-				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Asset)][receiver.String()]); err != nil {
+				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][receiver.String()]); err != nil {
 					return
 				}
 				//fmt.Printf("receiver %s \n", x.String())
@@ -374,7 +362,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		// decode balance now
 		var pt *crypto.ElGamal
-		if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Asset)][sender.String()]); err != nil {
+		if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][sender.String()]); err != nil {
 			return
 		}
 
@@ -411,13 +399,13 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		for i := range publickeylist {
 
 			var balance *crypto.ElGamal
-			if balance, err = new(crypto.ElGamal).Deserialize(emap[string(transfers[t].Asset)][publickeylist[i].String()]); err != nil {
+			if balance, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][publickeylist[i].String()]); err != nil {
 				return
 			}
 			echanges := crypto.ConstructElGamal(statement.C[i], statement.D)
 
-			balance = balance.Add(echanges)                                                   // homomorphic addition of changes
-			emap[string(transfers[t].Asset)][publickeylist[i].String()] = balance.Serialize() // reserialize and store
+			balance = balance.Add(echanges)                                               // homomorphic addition of changes
+			emap[string(transfer.Asset)][publickeylist[i].String()] = balance.Serialize() // reserialize and store
 		}
 
 	}
