@@ -53,9 +53,11 @@ func (payload *TransactionZetherPayload) IncludePayload(payloadIndex byte, publi
 		return
 	}
 
-	for i := range payload.Statement.Publickeylist {
+	if len(payload.Statement.Publickeylist) != len(publicKeyList) {
+		return errors.New("publicKeyList was not precomputed")
+	}
 
-		publicKey := publicKeyList[i]
+	for i, publicKey := range publicKeyList {
 
 		if acc, err = accs.GetAccount(publicKey); err != nil {
 			return

@@ -43,9 +43,9 @@ func (consensus *Consensus) execute() {
 			ctx, cancel = context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
 
 			//it is safe to read
-			go func() {
+			recovery.SafeGo(func() {
 				consensus.broadcastChain(newChainDataUpdate.Update, ctx)
-			}()
+			})
 		}
 
 	})

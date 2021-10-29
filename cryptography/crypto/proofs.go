@@ -74,7 +74,6 @@ func (s *Statement) Deserialize(r *helpers.BufferReader) (err error) {
 		if s.Publickeylist[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-
 		if s.C[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}

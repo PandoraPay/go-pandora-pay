@@ -48,7 +48,7 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 
 		if newTableSize == 0 {
 			if runtime.GOARCH != "wasm" {
-				newTableSize = 1 << 22 //32mb ram
+				newTableSize = 1 << 23 //32mb ram
 			} else {
 				newTableSize = 1 << 16 //4mb ram
 			}

@@ -220,7 +220,11 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 					//}
 
 					if balance == nil {
-						balance = crypto.ConstructElGamal(p.G1(), crypto.ElGamal_BASE_G).Serialize()
+						var acckey crypto.Point
+						if err = acckey.DecodeCompressed(addr.PublicKey); err != nil {
+							return
+						}
+						balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G).Serialize()
 					}
 
 					if from[t] == address { //sender

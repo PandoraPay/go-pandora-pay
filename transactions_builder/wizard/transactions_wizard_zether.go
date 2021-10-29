@@ -33,11 +33,10 @@ func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
 	return emap
 }
 
-func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
+func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, blockHash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
 
 	statusCallback("Transaction Signing...")
 
-	receivers := make([]*bn256.G1, len(transfers))
 	publickeylists := make([][]*bn256.G1, len(transfers))
 	witness_indexes := make([][]int, len(transfers))
 
@@ -58,22 +57,40 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		}
 		receiver := receiverPoint.G1()
 
-		receivers[t] = receiver
+		if bytes.Equal(sender.EncodeUncompressed(), receiver.EncodeCompressed()) {
+			return errors.New("Sender must be the receiver")
+		}
+		if bytes.Equal(rings[t][0].EncodeUncompressed(), sender.EncodeCompressed()) {
+			return errors.New("Rings[0] must be the sender")
+		}
+		if bytes.Equal(rings[t][1].EncodeUncompressed(), receiver.EncodeCompressed()) {
+			return errors.New("Rings[1] must be the receiver")
+		}
 
 		witness_indexes[t] = helpers.ShuffleArray_for_Zether(len(rings[t]))
 		anonset_publickeys := rings[t][2:]
 		publickeylists[t] = make([]*bn256.G1, 0)
+
+		unique := make(map[string]bool)
 		for i := range witness_indexes[t] {
+
+			var publicKey *bn256.G1
 			switch i {
 			case witness_indexes[t][0]:
-				publickeylists[t] = append(publickeylists[t], sender)
+				publicKey = sender
 			case witness_indexes[t][1]:
-				publickeylists[t] = append(publickeylists[t], receiver)
+				publicKey = receiver
 			default:
-				publickeylists[t] = append(publickeylists[t], anonset_publickeys[0])
+				publicKey = anonset_publickeys[0]
 				anonset_publickeys = anonset_publickeys[1:]
 			}
+			publickeylists[t] = append(publickeylists[t], publicKey)
+			unique[string(publicKey.EncodeCompressed())] = true
 		}
+		if len(unique) != len(rings[t]) {
+			return errors.New("Duplicates detected")
+		}
+
 	}
 	statusCallback("Transaction public keys were shuffled")
 
@@ -130,14 +147,13 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		senderKey := &addresses.PrivateKey{Key: transfer.From}
 		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
 		sender := crypto.GPoint.ScalarMult(secretPoint).G1()
-		receiver := receivers[t]
 		sender_secret := secretPoint.BigInt()
 
 		//  fmt.Printf("len of publickeylist  %d \n", len(publickeylist))
 
 		//  revealing r will disclose the amount and the sender and receiver and separate anonymous ring members
 		// calculate r deterministically, so its different every transaction, in emergency it can be given to other, and still will not allows key attacks
-		rinputs := append([]byte{}, hash[:]...)
+		rinputs := append([]byte{}, blockHash[:]...)
 		for i := range publickeylist {
 			rinputs = append(rinputs, publickeylist[i].EncodeCompressed()...)
 		}
@@ -259,8 +275,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		//fake balance
 		if payload.PayloadScript == transaction_zether_payload.SCRIPT_CLAIM_STAKE {
 			fakeBalance := value + fees + burn_value
-			var acckey crypto.Point
 
+			var acckey crypto.Point
 			if err = acckey.DecodeCompressed(senderKey.GeneratePublicKey()); err != nil {
 				return
 			}
@@ -329,23 +345,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		//fmt.Printf("t %d publickeylist %d\n", t, len(publickeylist))
 		for i := range publickeylist {
-			var ebalance *crypto.ElGamal
 
-			switch {
-			case i == witness_index[0]:
-				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][sender.String()]); err != nil {
-					return
-				}
-			case i == witness_index[1]:
-				if ebalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][receiver.String()]); err != nil {
-					return
-				}
-				//fmt.Printf("receiver %s \n", x.String())
-			default:
-				//x.ScalarMult(crypto.G, new(big.Int).SetInt64(0))
-				// panic("anon ring currently not supported")
-				ebalance = ebalances_list[i]
-			}
+			ebalance := ebalances_list[i]
 
 			var ll, rr bn256.G1
 			//ebalance := b.balances[publickeylist[i].String()] // note these are taken from the chain live
@@ -468,7 +469,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return
 	}
-	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
+	if err = bloomAllTx(tx, true, statusCallback); err != nil {
 		return
 	}
 
