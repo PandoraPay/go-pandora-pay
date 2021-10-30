@@ -18,7 +18,7 @@ type TransactionSimpleExtraUnstake struct {
 
 func (txExtra *TransactionSimpleExtraUnstake) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
 	if plainAcc == nil || !plainAcc.HasDelegatedStake() {
-		return errors.New("acc.HasDelegatedStake is null")
+		return errors.New("acc.HasDelegatedStake is false")
 	}
 	if err = plainAcc.DelegatedStake.AddStakeAvailable(false, txExtra.Amount); err != nil {
 		return

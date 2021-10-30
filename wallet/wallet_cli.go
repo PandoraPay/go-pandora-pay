@@ -106,7 +106,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 		regs := registrations.NewRegistrations(reader)
 
-		for _, walletAddress := range wallet.Addresses {
+		for i, walletAddress := range wallet.Addresses {
 
 			var isReg bool
 			if isReg, err = regs.Exists(string(walletAddress.PublicKey)); err != nil {
@@ -115,7 +115,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 			addressStr := walletAddress.GetAddress(isReg)
 
-			gui.GUI.OutputWrite(walletAddress.Name + " : " + walletAddress.Version.String() + " : " + addressStr)
+			gui.GUI.OutputWrite(fmt.Sprintf("%d) %s : %s :: %s", i, walletAddress.Name, walletAddress.Version.String(), addressStr))
 
 			if walletAddress.Version == wallet_address.VERSION_NORMAL {
 

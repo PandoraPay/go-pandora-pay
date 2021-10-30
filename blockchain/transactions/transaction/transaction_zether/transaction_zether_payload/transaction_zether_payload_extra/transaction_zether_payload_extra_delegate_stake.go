@@ -39,6 +39,10 @@ func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) IncludeTxPayload
 		return
 	}
 
+	if !plainAcc.HasDelegatedStake() {
+		return errors.New("acc.HasDelegatedStake is false")
+	}
+
 	if err = plainAcc.DelegatedStake.AddStakePendingStake(payloadBurnValue, blockHeight); err != nil {
 		return
 	}

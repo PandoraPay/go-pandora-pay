@@ -23,7 +23,25 @@ import (
 	"pandora-pay/wallet/wallet_address"
 )
 
-func (builder *TransactionsBuilder) createZetherRing(from, dst string, assetId []byte, ringConfiguration *ZetherRingConfiguration, dataStorage *data_storage.DataStorage) ([]string, error) {
+func (builder *TransactionsBuilder) getRandomAccount(accs *accounts.Accounts) (addr *addresses.Address, err error) {
+
+	var acc *account.Account
+
+	if acc, err = accs.GetRandomAccount(); err != nil {
+		return nil, err
+	}
+	if acc == nil {
+		return nil, errors.New("Error getting any random account")
+	}
+
+	if addr, err = addresses.CreateAddr(acc.PublicKey, nil, 0, nil); err != nil {
+		return nil, err
+	}
+
+	return
+}
+
+func (builder *TransactionsBuilder) createZetherRing(from string, dst *string, assetId []byte, ringConfiguration *ZetherRingConfiguration, dataStorage *data_storage.DataStorage) ([]string, error) {
 
 	var addr *addresses.Address
 	var err error
@@ -46,28 +64,32 @@ func (builder *TransactionsBuilder) createZetherRing(from, dst string, assetId [
 		return nil, errors.New("New accounts needs to be in the interval [0, ringSize-2] ")
 	}
 
-	alreadyUsed := make(map[string]bool)
+	var accs *accounts.Accounts
 
-	if from != "" {
-		if addr, err = addresses.DecodeAddr(from); err != nil {
-			return nil, err
-		}
-		alreadyUsed[string(addr.PublicKey)] = true
+	if accs, err = dataStorage.AccsCollection.GetMap(assetId); err != nil {
+		return nil, err
 	}
 
-	if addr, err = addresses.DecodeAddr(dst); err != nil {
+	alreadyUsed := make(map[string]bool)
+
+	if addr, err = addresses.DecodeAddr(from); err != nil {
+		return nil, err
+	}
+	alreadyUsed[string(addr.PublicKey)] = true
+
+	if *dst == "" {
+		if addr, err = builder.getRandomAccount(accs); err != nil {
+			return nil, err
+		}
+		*dst = addr.EncodeAddr()
+	}
+
+	if addr, err = addresses.DecodeAddr(*dst); err != nil {
 		return nil, err
 	}
 	alreadyUsed[string(addr.PublicKey)] = true
 
 	rings := make([]string, ringConfiguration.RingSize-2)
-
-	var accs *accounts.Accounts
-	var acc *account.Account
-
-	if accs, err = dataStorage.AccsCollection.GetMap(assetId); err != nil {
-		return nil, err
-	}
 
 	if globals.Arguments["--new-devnet"] == true && accs.Count < 80000 {
 		ringConfiguration.NewAccounts = ringConfiguration.RingSize - 2
@@ -81,18 +103,9 @@ func (builder *TransactionsBuilder) createZetherRing(from, dst string, assetId [
 				return nil, err
 			}
 		} else {
-
-			if acc, err = accs.GetRandomAccount(); err != nil {
+			if addr, err = builder.getRandomAccount(accs); err != nil {
 				return nil, err
 			}
-			if acc == nil {
-				return nil, errors.New("Error getting any random account")
-			}
-
-			if addr, err = addresses.CreateAddr(acc.PublicKey, nil, 0, nil); err != nil {
-				return nil, err
-			}
-
 		}
 
 		if alreadyUsed[string(addr.PublicKey)] {
@@ -158,7 +171,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 		dataStorage := data_storage.CreateDataStorage(reader)
 
 		for t := range from {
-			if ringMembers[t], err = builder.createZetherRing(from[t], dsts[t], dstsAsts[t], ringsConfiguration[t], dataStorage); err != nil {
+			if ringMembers[t], err = builder.createZetherRing(from[t], &dsts[t], dstsAsts[t], ringsConfiguration[t], dataStorage); err != nil {
 				return
 			}
 		}

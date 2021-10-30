@@ -43,6 +43,9 @@ func CreateAddr(key, registration []byte, amount uint64, paymentID []byte) (*Add
 }
 
 func (a *Address) EncodeAddr() string {
+	if a == nil {
+		return ""
+	}
 
 	writer := helpers.NewBufferWriter()
 

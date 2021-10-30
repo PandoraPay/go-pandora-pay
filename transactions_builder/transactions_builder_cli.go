@@ -63,7 +63,7 @@ func (builder *TransactionsBuilder) readAddress(text string, assetId []byte, all
 
 	text2 := text
 	if allowRandomAddress {
-		text2 = text + " Leave empty for no transfer"
+		text2 = text + ". Leave empty for none"
 	}
 
 	address = gui.GUI.OutputReadAddress(text2, allowRandomAddress)
@@ -81,7 +81,7 @@ func (builder *TransactionsBuilder) readAddress(text string, assetId []byte, all
 func (builder *TransactionsBuilder) readZetherRingConfiguration() *ZetherRingConfiguration {
 
 	configuration := &ZetherRingConfiguration{}
-	configuration.RingSize = gui.GUI.OutputReadInt("Ring Size (-1, 2,4,8,16,32,64,128,256):", false, func(value int) bool {
+	configuration.RingSize = gui.GUI.OutputReadInt("Ring Size (-1,2,4,8,16,32,64,128,256):", false, func(value int) bool {
 		switch value {
 		case -1, 2, 4, 8, 16, 32, 64, 128, 256:
 			return true
@@ -211,7 +211,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			delegatePrivateKey = delegateWalletAddress.PrivateKey.Key
 		}
 
-		destinationAddress, destinationAmount, err := builder.readAddress("Destination Address", config_coins.NATIVE_ASSET_FULL, true)
+		destinationAddress, destinationAmount, err := builder.readAddress("Transfer Destination Address", config_coins.NATIVE_ASSET_FULL, true)
 		if err != nil {
 			return
 		}
