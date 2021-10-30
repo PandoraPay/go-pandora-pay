@@ -75,6 +75,11 @@ func (tx *StoreDBJSTransaction) Get(key string) []byte {
 	}
 }
 
+func (tx *StoreDBJSTransaction) GetClone(key string) []byte {
+	//TODO: check if the cloneBytes is required
+	return helpers.CloneBytes(tx.Get(key))
+}
+
 func (tx *StoreDBJSTransaction) Exists(key string) bool {
 	result := tx.Get(key)
 	if result != nil {

@@ -25,9 +25,14 @@ func (tx *StoreDBBoltTransaction) Put(key string, value []byte) error {
 	return tx.bucket.Put([]byte(key), value)
 }
 
+//bolt requires the data to be cloned
+//github issue see here https://github.com/etcd-io/bbolt/issues/298
 func (tx *StoreDBBoltTransaction) Get(key string) []byte {
-	x := tx.bucket.Get([]byte(key))
-	return helpers.CloneBytes(x)
+	return helpers.CloneBytes(tx.bucket.Get([]byte(key)))
+}
+
+func (tx *StoreDBBoltTransaction) GetClone(key string) []byte {
+	return tx.Get(key) //it is already cloned
 }
 
 func (tx *StoreDBBoltTransaction) Exists(key string) bool {

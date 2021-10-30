@@ -42,6 +42,7 @@ func (tx *StoreDBBuntTransaction) Exists(key string) bool {
 }
 
 func (tx *StoreDBBuntTransaction) GetClone(key string) (out []byte) {
+	//TODO: check if cloneBytes is necessary for BuntDB
 	return helpers.CloneBytes(tx.Get(key))
 }
 
