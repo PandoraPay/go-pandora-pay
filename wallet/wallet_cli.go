@@ -354,7 +354,7 @@ func (wallet *Wallet) initWalletCLI() {
 	cliImportWalletJSON := func(cmd string, ctx context.Context) (err error) {
 
 		str := gui.GUI.OutputReadString("Path to import Wallet")
-		done := gui.GUI.OutputReadBool("Your wallet will be REPLACED with this one! [y/n]")
+		done := gui.GUI.OutputReadBool("Your wallet will be REPLACED with this one! y/n")
 
 		if !done {
 			return errors.New("You didn't accept REPLACING your existing wallet")

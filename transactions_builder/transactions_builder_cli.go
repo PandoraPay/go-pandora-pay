@@ -29,7 +29,7 @@ func (builder *TransactionsBuilder) readData() (out *wizard.TransactionsWizardDa
 
 	if len(str) > 0 {
 		data.Data = []byte(str)
-		data.Encrypt = gui.GUI.OutputReadBool("Encrypt message (data)? [y/n]")
+		data.Encrypt = gui.GUI.OutputReadBool("Encrypt message (data)? y/n")
 	}
 
 	return data
@@ -62,7 +62,7 @@ func (builder *TransactionsBuilder) readFees(assetId []byte) (fee *wizard.Transa
 
 	fee = &wizard.TransactionsWizardFee{}
 
-	fee.PerByteAuto = gui.GUI.OutputReadBool("Compute Automatically Fee Per Byte? [y/n]")
+	fee.PerByteAuto = gui.GUI.OutputReadBool("Compute Automatically Fee Per Byte? y/n")
 	if !fee.PerByteAuto {
 
 		if fee.PerByte, err = builder.readAmount(assetId, "Fee per byte"); err != nil {
@@ -80,7 +80,7 @@ func (builder *TransactionsBuilder) readFees(assetId []byte) (fee *wizard.Transa
 }
 
 func (builder *TransactionsBuilder) readDelegatedStakingUpdate(delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, delegateWalletPublicKey []byte) (err error) {
-	delegatedStakingUpdate.DelegatedStakingHasNewInfo = gui.GUI.OutputReadBool("New Delegate Info? [y/n]")
+	delegatedStakingUpdate.DelegatedStakingHasNewInfo = gui.GUI.OutputReadBool("New Delegate Info? y/n")
 
 	if delegatedStakingUpdate.DelegatedStakingHasNewInfo {
 
@@ -127,12 +127,13 @@ func (builder *TransactionsBuilder) initCLI() {
 
 		destinationAddress := gui.GUI.OutputReadAddress("Destination Address")
 		data := builder.readData()
-		propagate := gui.GUI.OutputReadBool("Propagate? [y/n]")
 
 		fee, err := builder.readFees(assetId)
 		if err != nil {
 			return
 		}
+
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
 		ringMembers := make([][]string, 1)
 		if ringMembers[0], err = builder.CreateZetherRing(walletAddress.AddressEncoded, destinationAddress.EncodeAddr(), assetId, -1, -1); err != nil {
@@ -188,12 +189,12 @@ func (builder *TransactionsBuilder) initCLI() {
 
 		data := builder.readData()
 
-		propagate := gui.GUI.OutputReadBool("Propagate? [y/n]")
-
 		fee, err := builder.readFees(config_coins.NATIVE_ASSET_FULL)
 		if err != nil {
 			return
 		}
+
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
 		ringMembers := make([][]string, 1)
 		if ringMembers[0], err = builder.CreateZetherRing(walletAddress.AddressEncoded, destinationAddress.EncodeAddr(), config_coins.NATIVE_ASSET_FULL, -1, -1); err != nil {
@@ -229,12 +230,12 @@ func (builder *TransactionsBuilder) initCLI() {
 
 		data := builder.readData()
 
-		propagate := gui.GUI.OutputReadBool("Propagate? [y/n]")
-
 		fee, err := builder.readFees(config_coins.NATIVE_ASSET_FULL)
 		if err != nil {
 			return
 		}
+
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
 		ringMembers := make([][]string, 1)
 		if ringMembers[0], err = builder.CreateZetherRing("", destinationAddress.EncodeAddr(), config_coins.NATIVE_ASSET_FULL, -1, -1); err != nil {
@@ -280,7 +281,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		propagate := gui.GUI.OutputReadBool("Propagate? [y/n]")
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
 		tx, err := builder.CreateUpdateDelegateTx(delegateWalletAddress.AddressEncoded, nonce, delegatedStakingClaimAmount, delegatedStakingUpdate, data, fee, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
@@ -316,7 +317,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		propagate := gui.GUI.OutputReadBool("Propagate? [y/n]")
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
 		tx, err := builder.CreateUnstakeTx(delegateWalletAddress.AddressEncoded, nonce, amount, data, fee, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
