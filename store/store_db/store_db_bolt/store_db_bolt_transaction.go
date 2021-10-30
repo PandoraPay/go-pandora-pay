@@ -26,15 +26,12 @@ func (tx *StoreDBBoltTransaction) Put(key string, value []byte) error {
 }
 
 func (tx *StoreDBBoltTransaction) Get(key string) []byte {
-	return tx.bucket.Get([]byte(key))
+	x := tx.bucket.Get([]byte(key))
+	return helpers.CloneBytes(x)
 }
 
 func (tx *StoreDBBoltTransaction) Exists(key string) bool {
 	return tx.bucket.Get([]byte(key)) != nil
-}
-
-func (tx *StoreDBBoltTransaction) GetClone(key string) []byte {
-	return helpers.CloneBytes(tx.Get(key))
 }
 
 func (tx *StoreDBBoltTransaction) PutClone(key string, value []byte) error {

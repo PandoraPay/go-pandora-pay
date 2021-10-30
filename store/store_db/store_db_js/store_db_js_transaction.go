@@ -83,10 +83,6 @@ func (tx *StoreDBJSTransaction) Exists(key string) bool {
 	return false
 }
 
-func (tx *StoreDBJSTransaction) GetClone(key string) []byte {
-	return helpers.CloneBytes(tx.Get(key))
-}
-
 func (tx *StoreDBJSTransaction) PutClone(key string, value []byte) error {
 	return tx.Put(key, helpers.CloneBytes(value))
 }

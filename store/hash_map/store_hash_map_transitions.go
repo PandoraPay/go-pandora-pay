@@ -55,7 +55,7 @@ func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) (err e
 func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err error) {
 
 	//Clone required to avoid changing the data afterwards
-	data := hashMap.Tx.GetClone(hashMap.name + ":transitions:" + prefix)
+	data := hashMap.Tx.Get(hashMap.name + ":transitions:" + prefix)
 	if data == nil {
 		return errors.New("transitions didn't exist")
 	}

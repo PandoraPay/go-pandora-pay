@@ -401,7 +401,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 				for _, change := range allTransactionsChanges {
 					if !change.Inserted && removedTxHashes[change.TxHashStr] != nil && insertedTxs[change.TxHashStr] == nil {
-						removedTxsList[removedCount] = writer.GetClone("tx:" + change.TxHashStr) //required because the garbage collector sometimes it deletes the underlying buffers
+						removedTxsList[removedCount] = writer.Get("tx:" + change.TxHashStr) //required because the garbage collector sometimes it deletes the underlying buffers
 						if err = writer.Delete("tx:" + change.TxHashStr); err != nil {
 							panic("Error deleting transaction: " + err.Error())
 						}

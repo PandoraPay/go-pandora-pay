@@ -47,7 +47,7 @@ func (hashMap *HashMap) GetKeyByIndex(index uint64) (key []byte, err error) {
 	}
 
 	//Clone require because key might get altered afterwards
-	key = hashMap.Tx.GetClone(hashMap.name + ":list:" + strconv.FormatUint(index, 10))
+	key = hashMap.Tx.Get(hashMap.name + ":list:" + strconv.FormatUint(index, 10))
 	if key == nil {
 		return nil, errors.New("Not found")
 	}
@@ -135,7 +135,7 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 		}
 	} else {
 		//Clone required because data could be altered afterwards
-		outData = hashMap.Tx.GetClone(hashMap.name + ":map:" + key)
+		outData = hashMap.Tx.Get(hashMap.name + ":map:" + key)
 	}
 
 	if outData != nil {

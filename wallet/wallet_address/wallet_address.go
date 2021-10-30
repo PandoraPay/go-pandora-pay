@@ -97,8 +97,7 @@ func (adr *WalletAddress) DecodeAccount(acc *account.Account, store bool, ctx co
 	if acc == nil {
 		if store {
 			adr.BalancesDecoded[string(acc.Asset)] = &WalletAddressBalanceDecoded{
-				AmountDecoded: 0,
-				Asset:         acc.Asset,
+				0, acc.Asset,
 			}
 		}
 		return 0, nil

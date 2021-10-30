@@ -475,7 +475,7 @@ func (apiStore *APIStore) loadTx(reader store_db_interface.StoreDBTransactionInt
 	hashStr := string(hash)
 	var data []byte
 
-	if data = reader.GetClone("tx:" + hashStr); data == nil {
+	if data = reader.Get("tx:" + hashStr); data == nil {
 		return nil, nil, errors.New("Tx not found")
 	}
 

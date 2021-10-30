@@ -59,10 +59,6 @@ func (tx *StoreDBMemoryTransaction) Exists(key string) bool {
 	return false
 }
 
-func (tx *StoreDBMemoryTransaction) GetClone(key string) []byte {
-	return helpers.CloneBytes(tx.Get(key))
-}
-
 func (tx *StoreDBMemoryTransaction) Delete(key string) error {
 	if !tx.write {
 		return errors.New("Transaction is not writeable")
