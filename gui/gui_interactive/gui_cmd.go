@@ -47,6 +47,8 @@ var commands = []Command{
 	{Name: "Wallet:TX", Text: "Private Transfer"},
 	{Name: "Wallet:TX", Text: "Private Delegate Stake"},
 	{Name: "Wallet:TX", Text: "Private Claim Stake"},
+	{Name: "Wallet:TX", Text: "Private Asset Create"},
+	{Name: "Wallet:TX", Text: "Private Asset Supply Increase"},
 	{Name: "Wallet:TX", Text: "Update Delegate"},
 	{Name: "Wallet:TX", Text: "Unstake"},
 	{Name: "Wallet", Text: "Export Addresses"},
@@ -340,9 +342,13 @@ func (g *GUIInteractive) OutputReadFloat64(text string, allowEmpty bool, validat
 	}
 }
 
-func (g *GUIInteractive) OutputReadAddress(text string) *addresses.Address {
+func (g *GUIInteractive) OutputReadAddress(text string, allowEmpty bool) *addresses.Address {
 	for {
 		str := g.OutputReadString(text)
+		if str == "" && allowEmpty {
+			return nil
+		}
+
 		address, err := addresses.DecodeAddr(str)
 		if err != nil {
 			g.OutputWrite("Invalid Address")

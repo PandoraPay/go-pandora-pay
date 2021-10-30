@@ -23,26 +23,26 @@ import (
 	"pandora-pay/wallet/wallet_address"
 )
 
-func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, assetId []byte, ringSize int, newAccounts int) ([]string, error) {
+func (builder *TransactionsBuilder) createZetherRing(from, dst string, assetId []byte, ringConfiguration *ZetherRingConfiguration, dataStorage *data_storage.DataStorage) ([]string, error) {
 
 	var addr *addresses.Address
 	var err error
 
-	if ringSize == -1 {
+	if ringConfiguration.RingSize == -1 {
 		pow := rand.Intn(4) + 4
-		ringSize = int(math.Pow(2, float64(pow)))
+		ringConfiguration.RingSize = int(math.Pow(2, float64(pow)))
 	}
-	if newAccounts == -1 {
-		newAccounts = rand.Intn(ringSize / 5)
+	if ringConfiguration.NewAccounts == -1 {
+		ringConfiguration.NewAccounts = rand.Intn(ringConfiguration.RingSize / 5)
 	}
 
-	if ringSize < 0 {
+	if ringConfiguration.RingSize < 0 {
 		return nil, errors.New("number is negative")
 	}
-	if !crypto.IsPowerOf2(ringSize) {
+	if !crypto.IsPowerOf2(ringConfiguration.RingSize) {
 		return nil, errors.New("ring size is not a power of 2")
 	}
-	if newAccounts < 0 || newAccounts > ringSize-2 {
+	if ringConfiguration.NewAccounts < 0 || ringConfiguration.NewAccounts > ringConfiguration.RingSize-2 {
 		return nil, errors.New("New accounts needs to be in the interval [0, ringSize-2] ")
 	}
 
@@ -60,62 +60,53 @@ func (builder *TransactionsBuilder) CreateZetherRing(from, dst string, assetId [
 	}
 	alreadyUsed[string(addr.PublicKey)] = true
 
-	rings := make([]string, ringSize-2)
+	rings := make([]string, ringConfiguration.RingSize-2)
 
-	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+	var accs *accounts.Accounts
+	var acc *account.Account
 
-		accsCollection := accounts.NewAccountsCollection(reader)
-
-		var accs *accounts.Accounts
-		var acc *account.Account
-
-		if accs, err = accsCollection.GetMap(assetId); err != nil {
-			return
-		}
-
-		if globals.Arguments["--new-devnet"] == true && accs.Count < 80000 {
-			newAccounts = ringSize - 2
-		}
-
-		for i := 0; i < ringSize-2; i++ {
-
-			if i < newAccounts || accs.Count-2+uint64(newAccounts) <= uint64(i) {
-				priv := addresses.GenerateNewPrivateKey()
-				if addr, err = priv.GenerateAddress(true, 0, nil); err != nil {
-					return
-				}
-			} else {
-
-				if acc, err = accs.GetRandomAccount(); err != nil {
-					return
-				}
-				if acc == nil {
-					return errors.New("Error getting any random account")
-				}
-
-				if addr, err = addresses.CreateAddr(acc.PublicKey, nil, 0, nil); err != nil {
-					return
-				}
-
-			}
-
-			if alreadyUsed[string(addr.PublicKey)] {
-				i--
-				continue
-			}
-			alreadyUsed[string(addr.PublicKey)] = true
-			rings[i] = addr.EncodeAddr()
-		}
-
-		return
-	}); err != nil {
+	if accs, err = dataStorage.AccsCollection.GetMap(assetId); err != nil {
 		return nil, err
+	}
+
+	if globals.Arguments["--new-devnet"] == true && accs.Count < 80000 {
+		ringConfiguration.NewAccounts = ringConfiguration.RingSize - 2
+	}
+
+	for i := 0; i < ringConfiguration.RingSize-2; i++ {
+
+		if i < ringConfiguration.NewAccounts || accs.Count-2+uint64(ringConfiguration.NewAccounts) <= uint64(i) {
+			priv := addresses.GenerateNewPrivateKey()
+			if addr, err = priv.GenerateAddress(true, 0, nil); err != nil {
+				return nil, err
+			}
+		} else {
+
+			if acc, err = accs.GetRandomAccount(); err != nil {
+				return nil, err
+			}
+			if acc == nil {
+				return nil, errors.New("Error getting any random account")
+			}
+
+			if addr, err = addresses.CreateAddr(acc.PublicKey, nil, 0, nil); err != nil {
+				return nil, err
+			}
+
+		}
+
+		if alreadyUsed[string(addr.PublicKey)] {
+			i--
+			continue
+		}
+		alreadyUsed[string(addr.PublicKey)] = true
+		rings[i] = addr.EncodeAddr()
 	}
 
 	return rings, nil
 }
 
-func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransferPayloadExtra, from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, ctx context.Context, statusCallback func(string)) ([]*wizard.ZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.ZetherPublicKeyIndex, uint64, []byte, error) {
+func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransferPayloadExtra, from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringsConfiguration []*ZetherRingConfiguration, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, ctx context.Context, statusCallback func(string)) ([]*wizard.ZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.ZetherPublicKeyIndex, uint64, []byte, error) {
 
 	if len(from) != len(dstsAsts) || len(dstsAsts) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
 		return nil, nil, nil, nil, 0, nil, errors.New("Length of from and transfers are not matching")
@@ -152,6 +143,8 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 
 	}
 
+	ringMembers := make([][]string, len(from))
+
 	var chainHeight uint64
 	var chainHash []byte
 
@@ -163,6 +156,12 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		dataStorage := data_storage.CreateDataStorage(reader)
+
+		for t := range from {
+			if ringMembers[t], err = builder.createZetherRing(from[t], dsts[t], dstsAsts[t], ringsConfiguration[t], dataStorage); err != nil {
+				return
+			}
+		}
 
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 		chainHash = helpers.CloneBytes(reader.Get("chainHash"))
@@ -301,18 +300,18 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 	return transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, nil
 }
 
-func (builder *TransactionsBuilder) CreateZetherTx(extraPayloads []wizard.ZetherTransferPayloadExtra, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringMembers [][]string, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx(extraPayloads []wizard.ZetherTransferPayloadExtra, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringsConfiguration []*ZetherRingConfiguration, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(extraPayloads, from, asts, amounts, dsts, burns, ringMembers, data, fees, ctx, statusCallback)
+	transfers, emap, ringMembers, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(extraPayloads, from, asts, amounts, dsts, burns, ringsConfiguration, data, fees, ctx, statusCallback)
 	if err != nil {
 		return nil, err
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, rings, chainHeight, chainHash, publicKeyIndexes, fees, validateTx, ctx, statusCallback); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, chainHeight, chainHash, publicKeyIndexes, fees, validateTx, ctx, statusCallback); err != nil {
 		return nil, err
 	}
 
