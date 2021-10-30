@@ -1,4 +1,4 @@
-package crypto
+package balance_decoder
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"pandora-pay/cryptography/bn256"
+	"pandora-pay/cryptography/crypto"
 	"runtime"
 	"sort"
 )
@@ -51,7 +52,7 @@ func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable,
 	//terminal := isatty.IsTerminal(os.Stdout.Fd())
 
 	var acc bn256.G1 // avoid allocations every loop
-	acc.ScalarMult(G, new(big.Int).SetUint64(0))
+	acc.ScalarMult(crypto.G, new(big.Int).SetUint64(0))
 
 	small_table := make([]*bn256.G1, 256, 256)
 	for k := range small_table {
@@ -67,7 +68,7 @@ func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable,
 
 			for k := range small_table {
 				small_table[k].Set(&acc)
-				acc.Add(small_table[k], G)
+				acc.Add(small_table[k], crypto.G)
 			}
 			(bn256.G1Array(small_table)).MakeAffine() // precompute everything ASAP
 
@@ -127,7 +128,7 @@ func (t *LookupTable) Lookup(p *bn256.G1, ctx context.Context, statusCallback fu
 
 	pcopy := new(bn256.G1).Set(p)
 
-	work_per_loop.ScalarMult(G, new(big.Int).SetUint64(balance_per_loop))
+	work_per_loop.ScalarMult(crypto.G, new(big.Int).SetUint64(balance_per_loop))
 	work_per_loop = new(bn256.G1).Neg(work_per_loop)
 
 	loop_counter := 0
@@ -165,7 +166,7 @@ func (t *LookupTable) Lookup(p *bn256.G1, ctx context.Context, statusCallback fu
 			if index < len((*t)[i]) && ((*t)[i][index]&0xffffffffff000000) == big_part {
 
 				balance_part = ((*t)[i][index]) & 0xffffff
-				acc.ScalarMult(G, new(big.Int).SetUint64(balance+balance_part))
+				acc.ScalarMult(crypto.G, new(big.Int).SetUint64(balance+balance_part))
 
 				//if bytes.Equal( acc.EncodeUncompressed(), p.EncodeUncompressed() )  { // since we may have part collisions, make sure full point is checked
 				if acc.String() == p.String() { // since we may have part collisions, make sure full point is checked

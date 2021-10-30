@@ -5,6 +5,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
+	"pandora-pay/cryptography/crypto/balance-decoder"
 	"pandora-pay/helpers"
 )
 
@@ -48,7 +49,7 @@ func (pk *PrivateKey) Decrypt(message []byte) ([]byte, error) {
 func (pk *PrivateKey) DecodeBalance(balance *crypto.ElGamal, previousValue uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
 	priv := new(crypto.BNRed).SetBytes(pk.Key)
 	balancePoint := new(bn256.G1).Add(balance.Left, new(bn256.G1).Neg(new(bn256.G1).ScalarMult(balance.Right, priv.BigInt())))
-	return crypto.BalanceDecoder.BalanceDecode(balancePoint, previousValue, ctx, statusCallback)
+	return balance_decoder.BalanceDecoder.BalanceDecode(balancePoint, previousValue, ctx, statusCallback)
 }
 
 func GenerateNewPrivateKey() *PrivateKey {

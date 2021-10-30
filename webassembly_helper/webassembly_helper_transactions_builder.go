@@ -131,7 +131,11 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.ZetherTransfer, 
 				}
 				emap[string(ast)][p.G1().String()] = acc.Balance.Amount.Serialize()
 			} else {
-				emap[string(ast)][p.G1().String()] = crypto.ConstructElGamal(p.G1(), crypto.ElGamal_BASE_G).Serialize()
+				var acckey crypto.Point
+				if err = acckey.DecodeCompressed(addr.PublicKey); err != nil {
+					return
+				}
+				emap[string(ast)][p.G1().String()] = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G).Serialize()
 			}
 
 			ring = append(ring, p.G1())

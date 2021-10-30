@@ -4,6 +4,7 @@ import (
 	"context"
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography/crypto"
+	"pandora-pay/cryptography/crypto/balance-decoder"
 	"pandora-pay/helpers"
 	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
@@ -16,7 +17,7 @@ func initializeBalanceDecoder(this js.Value, args []js.Value) interface{} {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		crypto.BalanceDecoder.SetTableSize(args[0].Int(), ctx, func(status string) {
+		balance_decoder.BalanceDecoder.SetTableSize(args[0].Int(), ctx, func(status string) {
 			args[1].Invoke(status)
 		})
 

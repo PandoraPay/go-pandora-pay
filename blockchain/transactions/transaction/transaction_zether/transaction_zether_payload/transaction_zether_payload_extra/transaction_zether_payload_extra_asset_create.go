@@ -55,5 +55,6 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Serialize(w *helpe
 }
 
 func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Deserialize(r *helpers.BufferReader) (err error) {
+	payloadExtra.Asset = &asset.Asset{}
 	return payloadExtra.Asset.Deserialize(r)
 }

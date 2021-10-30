@@ -71,7 +71,7 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 			}
 
 			if _, err = fmt.Fprint(f, string(marshal)); err != nil {
-				return errors.New("Error writing into file")
+				return err
 			}
 
 		}
@@ -226,9 +226,9 @@ func (wallet *Wallet) CliSelectAddress(text string, ctx context.Context) (*walle
 func (wallet *Wallet) initWalletCLI() {
 
 	cliExportAddresses := func(cmd string, ctx context.Context) (err error) {
-		str := gui.GUI.OutputReadFilename("Path to export", "txt")
+		filename := gui.GUI.OutputReadFilename("Path to export", "txt")
 
-		f, err := os.Create(str)
+		f, err := os.Create(filename)
 		if err != nil {
 			return
 		}
@@ -250,7 +250,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 				addressStr := walletAddress.GetAddress(isReg)
 				if _, err = fmt.Fprintln(f, addressStr); err != nil {
-					return errors.New("Error writing into file")
+					return
 				}
 			}
 
@@ -259,7 +259,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		gui.GUI.Info("Exported successfully to: ", str)
+		gui.GUI.Info("Exported successfully to: ", filename)
 		return
 	}
 
@@ -270,9 +270,9 @@ func (wallet *Wallet) initWalletCLI() {
 		}
 
 		index := gui.GUI.OutputReadInt("Select Address to be Exported", false, nil)
-		str := gui.GUI.OutputReadFilename("Path to export", "pandora")
+		filename := gui.GUI.OutputReadFilename("Path to export", "pandora")
 
-		f, err := os.Create(str)
+		f, err := os.Create(filename)
 		if err != nil {
 			return
 		}
@@ -300,10 +300,10 @@ func (wallet *Wallet) initWalletCLI() {
 		}
 
 		if _, err = fmt.Fprint(f, string(marshal)); err != nil {
-			return errors.New("Error writing into file")
+			return
 		}
 
-		gui.GUI.Info("Exported successfully to: ", str)
+		gui.GUI.Info("Exported successfully to: ", filename)
 		return
 	}
 
@@ -326,9 +326,9 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliExportWalletJSON := func(cmd string, ctx context.Context) (err error) {
 
-		str := gui.GUI.OutputReadFilename("Path to export", "pandora")
+		filename := gui.GUI.OutputReadFilename("Path to export", "pandora")
 
-		f, err := os.Create(str)
+		f, err := os.Create(filename)
 		if err != nil {
 			return
 		}
@@ -344,10 +344,10 @@ func (wallet *Wallet) initWalletCLI() {
 		}
 
 		if _, err = fmt.Fprint(f, string(marshal)); err != nil {
-			return errors.New("Error writing into file")
+			return
 		}
 
-		gui.GUI.Info("Wallet Exported successfully to: ", str)
+		gui.GUI.Info("Wallet Exported successfully to: ", filename)
 		return
 	}
 

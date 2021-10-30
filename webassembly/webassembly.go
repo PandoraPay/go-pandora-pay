@@ -120,9 +120,11 @@ func Initialize(startMainCb func()) {
 				}),
 				"transactionZether": js.ValueOf(map[string]interface{}{
 					"PayloadScriptType": js.ValueOf(map[string]interface{}{
-						"SCRIPT_TRANSFER":       js.ValueOf(uint64(transaction_zether_payload.SCRIPT_TRANSFER)),
-						"SCRIPT_DELEGATE_STAKE": js.ValueOf(uint64(transaction_zether_payload.SCRIPT_DELEGATE_STAKE)),
-						"SCRIPT_CLAIM_STAKE":    js.ValueOf(uint64(transaction_zether_payload.SCRIPT_CLAIM_STAKE)),
+						"SCRIPT_TRANSFER":              js.ValueOf(uint64(transaction_zether_payload.SCRIPT_TRANSFER)),
+						"SCRIPT_DELEGATE_STAKE":        js.ValueOf(uint64(transaction_zether_payload.SCRIPT_DELEGATE_STAKE)),
+						"SCRIPT_CLAIM_STAKE":           js.ValueOf(uint64(transaction_zether_payload.SCRIPT_CLAIM_STAKE)),
+						"SCRIPT_ASSET_CREATE":          js.ValueOf(uint64(transaction_zether_payload.SCRIPT_ASSET_CREATE)),
+						"SCRIPT_ASSET_SUPPLY_INCREASE": js.ValueOf(uint64(transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE)),
 					}),
 				}),
 			}),

@@ -3,7 +3,10 @@ package transactions_builder
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
@@ -91,26 +94,27 @@ func (builder *TransactionsBuilder) readZetherRingConfiguration() *ZetherRingCon
 	})
 
 	configuration.NewAccounts = gui.GUI.OutputReadInt("Ring New Accounts (-1,0...n-2)", false, func(value int) bool {
-		return value >= -1 && value <= configuration.RingSize-2
+		return value >= -1
 	})
 
 	return configuration
 }
 
-func (builder *TransactionsBuilder) readFees(assetId []byte) (fee *wizard.TransactionsWizardFee, err error) {
+func (builder *TransactionsBuilder) readFees(assetId []byte) (fee *wizard.TransactionsWizardFee) {
 
+	var err error
 	fee = &wizard.TransactionsWizardFee{}
 
 	fee.PerByteAuto = gui.GUI.OutputReadBool("Compute Automatically Fee Per Byte? y/n")
 	if !fee.PerByteAuto {
 
 		if fee.PerByte, err = builder.readAmount(assetId, "Fee per byte"); err != nil {
-			return
+			panic(err)
 		}
 
 		if fee.PerByte == 0 {
 			if fee.Fixed, err = builder.readAmount(assetId, "Fee per byte"); err != nil {
-				return
+				panic(err)
 			}
 		}
 	}
@@ -166,12 +170,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		ringConfiguration := builder.readZetherRingConfiguration()
 
 		data := builder.readData()
-
-		fee, err := builder.readFees(assetId)
-		if err != nil {
-			return
-		}
-
+		fee := builder.readFees(assetId)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
 		tx, err := builder.CreateZetherTx([]wizard.ZetherTransferPayloadExtra{nil}, []string{walletAddress.AddressEncoded}, [][]byte{assetId}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
@@ -181,7 +180,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
 		return
 	}
 
@@ -219,12 +218,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		ringConfiguration := builder.readZetherRingConfiguration()
 
 		data := builder.readData()
-
-		fee, err := builder.readFees(config_coins.NATIVE_ASSET_FULL)
-		if err != nil {
-			return
-		}
-
+		fee := builder.readFees(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
 		tx, err := builder.CreateZetherTx([]wizard.ZetherTransferPayloadExtra{&wizard.ZetherTransferPayloadExtraDelegateStake{DelegatePublicKey: delegateAddress.PublicKey, DelegatedStakingUpdate: delegatedStakingUpdate, DelegatePrivateKey: delegatePrivateKey}}, []string{walletAddress.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{destinationAmount}, []string{destinationAddress.EncodeAddr()}, []uint64{delegateAmount}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
@@ -234,7 +228,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
 		return
 	}
 
@@ -252,14 +246,8 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		ringConfiguration := builder.readZetherRingConfiguration()
-
 		data := builder.readData()
-
-		fee, err := builder.readFees(config_coins.NATIVE_ASSET_FULL)
-		if err != nil {
-			return
-		}
-
+		fee := builder.readFees(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
 		tx, err := builder.CreateZetherTx([]wizard.ZetherTransferPayloadExtra{&wizard.ZetherTransferPayloadExtraClaimStake{DelegatePrivateKey: delegateWalletAddress.PrivateKey.Key}}, []string{""}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
@@ -269,39 +257,71 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
 		return
 	}
 
 	cliPrivateAssetCreate := func(cmd string, ctx context.Context) (err error) {
 		builder.showWarningIfNotSyncCLI()
-		//
-		//walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address which will create the asset", ctx)
-		//if err != nil {
-		//	return
-		//}
-		//
-		//destinationAddress, amount, err := builder.readAddress("Destination Address", config_coins.NATIVE_ASSET_FULL, true )
-		//
-		//ringConfiguration := builder.readZetherRingConfiguration()
-		//
-		//data := builder.readData()
-		//
-		//fee, err := builder.readFees(config_coins.NATIVE_ASSET_FULL)
-		//if err != nil {
-		//	return
-		//}
-		//
-		//propagate := gui.GUI.OutputReadBool("Propagate? y/n")
-		//
-		//tx, err := builder.CreateZetherTx([]wizard.ZetherTransferPayloadExtra{&wizard.ZetherTransferPayloadExtraAssetCreate{ Asset: ast }}, []string{""}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
-		//	gui.GUI.OutputWrite(status)
-		//})
-		//if err != nil {
-		//	return
-		//}
-		//
-		//gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
+
+		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address which will create the asset", ctx)
+		if err != nil {
+			return
+		}
+
+		ast := &asset.Asset{}
+		str := gui.GUI.OutputReadString("Asset as JSON")
+		if err = json.Unmarshal([]byte(str), ast); err != nil {
+			return
+		}
+
+		var updatePrivKey, supplyPrivKey *addresses.PrivateKey
+		if len(ast.UpdatePublicKey) == 0 {
+			updatePrivKey = addresses.GenerateNewPrivateKey()
+			ast.UpdatePublicKey = updatePrivKey.GeneratePublicKey()
+		}
+		if len(ast.SupplyPublicKey) == 0 {
+			supplyPrivKey = addresses.GenerateNewPrivateKey()
+			ast.SupplyPublicKey = supplyPrivKey.GeneratePublicKey()
+		}
+
+		destinationAddress, destinationAmount, err := builder.readAddress("Transfer Address", config_coins.NATIVE_ASSET_FULL, true)
+		if err != nil {
+			return
+		}
+
+		ringConfiguration := builder.readZetherRingConfiguration()
+		data := builder.readData()
+		fee := builder.readFees(config_coins.NATIVE_ASSET_FULL)
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
+
+		tx, err := builder.CreateZetherTx([]wizard.ZetherTransferPayloadExtra{&wizard.ZetherTransferPayloadExtraAssetCreate{Asset: ast}}, []string{walletAddress.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{destinationAmount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
+			gui.GUI.OutputWrite(status)
+		})
+		if err != nil {
+			return
+		}
+
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
+
+		if updatePrivKey != nil || supplyPrivKey != nil {
+
+			var f *os.File
+			if f, err = os.Create(gui.GUI.OutputReadFilename("Path to export Asset Private Keys", "keys")); err != nil {
+				return
+			}
+			defer f.Close()
+
+			if _, err = fmt.Fprintln(f, "Asset name: ", ast.Name, " ", ast.Ticker); err != nil {
+				return
+			}
+			if _, err = fmt.Fprintln(f, "Supply Private Key: ", hex.EncodeToString(supplyPrivKey.Key)); err != nil {
+				return
+			}
+			if _, err = fmt.Fprintln(f, "Update Private Key: ", hex.EncodeToString(updatePrivKey.Key)); err != nil {
+				return
+			}
+		}
 
 		return
 	}
@@ -334,12 +354,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		data := builder.readData()
-
-		fee, err := builder.readFees(config_coins.NATIVE_ASSET_FULL)
-		if err != nil {
-			return
-		}
-
+		fee := builder.readFees(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
 		tx, err := builder.CreateUpdateDelegateTx(delegateWalletAddress.AddressEncoded, nonce, delegatedStakingClaimAmount, delegatedStakingUpdate, data, fee, propagate, true, true, false, func(status string) {
@@ -349,7 +364,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
 		return
 	}
 
@@ -370,12 +385,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
 
 		data := builder.readData()
-
-		fee, err := builder.readFees(config_coins.NATIVE_ASSET_FULL)
-		if err != nil {
-			return
-		}
-
+		fee := builder.readFees(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
 		tx, err := builder.CreateUnstakeTx(delegateWalletAddress.AddressEncoded, nonce, amount, data, fee, propagate, true, true, false, func(status string) {
@@ -385,7 +395,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite("Tx created: " + hex.EncodeToString(tx.Bloom.Hash))
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
 		return
 	}
 

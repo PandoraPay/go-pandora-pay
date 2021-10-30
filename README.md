@@ -81,8 +81,9 @@ you can also create an account on hcaptcha
 - [ ] Patricia Trie ? **
 - [ ] Assets
     - [X] Asset
-    - [ ] Creation
-    - [ ] Update  
+    - [x] Creation
+    - [x] Increase Supply
+    - [ ] Decrease Supply
     - [ ] Liquidity Pools for Tx Fees
 - [x] Transactions
     - [x] Transaction Wizard
@@ -150,6 +151,7 @@ Using profiling to debug memory leaks/CPU
 
 ### DOCS
 [WebAssembly DOCS](/docs/webassembly.md)
+[Assets DOCS](/docs/assets.md)
 
 ### Scripts
 `scripts/compile-wasm.sh` compiles to WASM

@@ -170,7 +170,7 @@ func (g *GUIInteractive) cmdProcess(e ui.Event) {
 					}()
 
 					if err := command.Callback(command.Text, ctx); err != nil {
-						g.OutputWrite(err)
+						g.OutputWrite(fmt.Sprintf("Error: %s", err.Error()))
 
 						g.cmdData.Store(&GUIInteractiveData{
 							cmdStatus: "output done",

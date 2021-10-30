@@ -7,7 +7,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -123,10 +122,7 @@ func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 
 	tx.Payloads = make([]*transaction_zether_payload.TransactionZetherPayload, n)
 	for i := byte(0); i < n; i++ {
-		payload := &transaction_zether_payload.TransactionZetherPayload{
-			Statement: &crypto.Statement{},
-			Proof:     &crypto.Proof{},
-		}
+		payload := &transaction_zether_payload.TransactionZetherPayload{}
 		if err = payload.Deserialize(r); err != nil {
 			return
 		}

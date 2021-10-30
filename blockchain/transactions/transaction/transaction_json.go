@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
@@ -77,6 +78,10 @@ type json_Only_TransactionZetherPayloadExtraClaimStake struct {
 	DelegatedStakingClaimAmount uint64           `json:"delegatedStakingClaimAmount"`
 	RegistrationIndex           byte             `json:"registrationIndex"`
 	DelegateSignature           helpers.HexBytes `json:"delegateSignature"`
+}
+
+type json_Only_TransactionZetherPayloadExtraAssetCreate struct {
+	Asset *asset.Asset `json:"asset"`
 }
 
 type json_Only_TransactionZetherStatement struct {
@@ -207,6 +212,11 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 					payloadExtra.DelegatedStakingClaimAmount,
 					payloadExtra.RegistrationIndex,
 					payloadExtra.DelegateSignature,
+				}
+			case transaction_zether_payload.SCRIPT_ASSET_CREATE:
+				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate)
+				extra = &json_Only_TransactionZetherPayloadExtraAssetCreate{
+					payloadExtra.Asset,
 				}
 			default:
 				return nil, errors.New("Invalid zether.TxScript")
@@ -421,6 +431,15 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 					RegistrationIndex:           extraJSON.RegistrationIndex,
 					DelegateSignature:           extraJSON.DelegateSignature,
 					DelegatedStakingClaimAmount: extraJSON.DelegatedStakingClaimAmount,
+				}
+
+			case transaction_zether_payload.SCRIPT_ASSET_CREATE:
+				extraJSON := &json_Only_TransactionZetherPayloadExtraAssetCreate{}
+				if err := json.Unmarshal(data, extraJSON); err != nil {
+					return err
+				}
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{
+					Asset: extraJSON.Asset,
 				}
 
 			default:

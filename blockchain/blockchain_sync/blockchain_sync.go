@@ -1,10 +1,10 @@
 package blockchain_sync
 
 import (
+	"fmt"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/recovery"
-	"strconv"
 	"sync/atomic"
 	"time"
 )
@@ -95,11 +95,10 @@ func (self *BlockchainSync) start() {
 			}
 
 			if chainSyncData.SyncTime != 0 {
-				gui.GUI.Info2Update("Sync", time.Unix(int64(chainSyncData.SyncTime), 0).Format("2006-01-02 15:04:05"))
+				gui.GUI.Info2Update("Sync", fmt.Sprintf("%s %d", time.Unix(int64(chainSyncData.SyncTime), 0).Format("15:04:05"), chainSyncData.BlocksChangedLastInterval))
 			} else {
-				gui.GUI.Info2Update("Sync", "FALSE")
+				gui.GUI.Info2Update("Sync", fmt.Sprintf("FALSE %d", chainSyncData.BlocksChangedLastInterval))
 			}
-			gui.GUI.Info2Update("Sync Blocks", strconv.FormatUint(uint64(chainSyncData.BlocksChangedLastInterval), 10))
 		}
 	})
 }

@@ -240,6 +240,7 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		return
 	}
 
+	payload.Statement = &crypto.Statement{}
 	if err = payload.Statement.Deserialize(r); err != nil {
 		return
 	}
@@ -249,6 +250,7 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		return errors.New("log failed")
 	}
 
+	payload.Proof = &crypto.Proof{}
 	if err = payload.Proof.Deserialize(r, m); err != nil {
 		return
 	}

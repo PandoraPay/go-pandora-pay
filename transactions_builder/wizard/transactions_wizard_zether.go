@@ -469,7 +469,7 @@ func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]by
 	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return
 	}
-	if err = bloomAllTx(tx, true, statusCallback); err != nil {
+	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
 		return
 	}
 
