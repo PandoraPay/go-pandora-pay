@@ -11,6 +11,8 @@ import (
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
@@ -168,7 +170,6 @@ func (builder *TransactionsBuilder) initCLI() {
 		}
 
 		ringConfiguration := builder.readZetherRingConfiguration()
-
 		data := builder.readData()
 		fee := builder.readFees(assetId)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
@@ -304,23 +305,33 @@ func (builder *TransactionsBuilder) initCLI() {
 
 		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
 
+		assetId := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).Payloads[0].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate).GetAssetId(tx.Bloom.Hash, 0)
+		gui.GUI.OutputWrite(fmt.Sprintf("Asset Id: %s", hex.EncodeToString(assetId), cmd))
+
 		if updatePrivKey != nil || supplyPrivKey != nil {
 
+			filename := gui.GUI.OutputReadFilename("Path to export Asset Private Keys", "keys")
+
 			var f *os.File
-			if f, err = os.Create(gui.GUI.OutputReadFilename("Path to export Asset Private Keys", "keys")); err != nil {
+			if f, err = os.Create(filename); err != nil {
 				return
 			}
 			defer f.Close()
 
-			if _, err = fmt.Fprintln(f, "Asset name: ", ast.Name, " ", ast.Ticker); err != nil {
+			if _, err = fmt.Fprintln(f, "Asset ID:", assetId); err != nil {
 				return
 			}
-			if _, err = fmt.Fprintln(f, "Supply Private Key: ", hex.EncodeToString(supplyPrivKey.Key)); err != nil {
+			if _, err = fmt.Fprintln(f, "Asset name:", ast.Name, ast.Ticker); err != nil {
 				return
 			}
-			if _, err = fmt.Fprintln(f, "Update Private Key: ", hex.EncodeToString(updatePrivKey.Key)); err != nil {
+			if _, err = fmt.Fprintln(f, "Supply Private Key:", hex.EncodeToString(supplyPrivKey.Key)); err != nil {
 				return
 			}
+			if _, err = fmt.Fprintln(f, "Update Private Key:", hex.EncodeToString(updatePrivKey.Key)); err != nil {
+				return
+			}
+
+			gui.GUI.Info("Asset Keys Exported successfully to: ", filename)
 		}
 
 		return
@@ -328,6 +339,43 @@ func (builder *TransactionsBuilder) initCLI() {
 
 	cliPrivateAssetSupplyIncrease := func(cmd string, ctx context.Context) (err error) {
 		builder.showWarningIfNotSyncCLI()
+
+		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address which will increase the supply of asset", ctx)
+		if err != nil {
+			return
+		}
+
+		assetId := gui.GUI.OutputReadBytes("Asset Id", func(value []byte) bool {
+			return len(value) == config_coins.ASSET_LENGTH
+		})
+
+		assetSupplyPrivateKey := gui.GUI.OutputReadBytes("Asset Supply Update Private Key", func(value []byte) bool {
+			return len(value) == cryptography.PrivateKeySize
+		})
+
+		receiver, value, err := builder.readAddress("Receiver Address", assetId, false)
+		if err != nil {
+			return
+		}
+
+		destinationAddress, destinationAmount, err := builder.readAddress("Transfer Address", config_coins.NATIVE_ASSET_FULL, true)
+		if err != nil {
+			return
+		}
+
+		ringConfiguration := builder.readZetherRingConfiguration()
+		data := builder.readData()
+		fee := builder.readFees(config_coins.NATIVE_ASSET_FULL)
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
+
+		tx, err := builder.CreateZetherTx([]wizard.ZetherTransferPayloadExtra{&wizard.ZetherTransferPayloadExtraAssetSupplyIncrease{AssetId: assetId, ReceiverPublicKey: receiver.PublicKey, Value: value, AssetSupplyPrivateKey: assetSupplyPrivateKey}}, []string{walletAddress.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{destinationAmount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
+			gui.GUI.OutputWrite(status)
+		})
+		if err != nil {
+			return
+		}
+
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
 
 		return
 	}

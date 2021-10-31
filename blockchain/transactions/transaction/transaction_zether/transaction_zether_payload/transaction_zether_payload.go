@@ -33,7 +33,7 @@ type TransactionZetherPayload struct {
 	Extra transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface
 }
 
-func (payload *TransactionZetherPayload) IncludePayload(payloadIndex byte, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIndex byte, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
 	var acc *account.Account
@@ -44,7 +44,7 @@ func (payload *TransactionZetherPayload) IncludePayload(payloadIndex byte, publi
 	}
 
 	if payload.Extra != nil {
-		if err = payload.Extra.BeforeIncludeTxPayload(payload.Registrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement, publicKeyList, blockHeight, dataStorage); err != nil {
+		if err = payload.Extra.BeforeIncludeTxPayload(txHash, payload.Registrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement, publicKeyList, blockHeight, dataStorage); err != nil {
 			return
 		}
 	}
@@ -85,7 +85,7 @@ func (payload *TransactionZetherPayload) IncludePayload(payloadIndex byte, publi
 	}
 
 	if payload.Extra != nil {
-		if err = payload.Extra.IncludeTxPayload(payload.Registrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement, publicKeyList, blockHeight, dataStorage); err != nil {
+		if err = payload.Extra.IncludeTxPayload(txHash, payload.Registrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement, publicKeyList, blockHeight, dataStorage); err != nil {
 			return
 		}
 	}

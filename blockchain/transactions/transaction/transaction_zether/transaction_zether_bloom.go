@@ -8,10 +8,32 @@ import (
 type TransactionZetherBloom struct {
 	Nonce1                []byte
 	Nonce2                []byte
-	publicKeyLists        [][][]byte
+	PublicKeyLists        [][][]byte
+	CLnLists              [][][]byte
+	CRnLists              [][][]byte
 	registrationsVerified bool
 	signatureVerified     bool
 	bloomed               bool
+}
+
+func (tx *TransactionZether) bloomLists() (err error) {
+	tx.Bloom.PublicKeyLists = make([][][]byte, len(tx.Payloads))
+	tx.Bloom.CLnLists = make([][][]byte, len(tx.Payloads))
+	tx.Bloom.CRnLists = make([][][]byte, len(tx.Payloads))
+	for payloadIndex, payload := range tx.Payloads {
+		tx.Bloom.PublicKeyLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))
+		tx.Bloom.CLnLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))
+		tx.Bloom.CRnLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))
+		for i := range payload.Statement.Publickeylist {
+			tx.Bloom.PublicKeyLists[payloadIndex][i] = payload.Statement.Publickeylist[i].EncodeCompressed()
+			tx.Bloom.CLnLists[payloadIndex][i] = payload.Statement.CLn[i].EncodeCompressed()
+			tx.Bloom.CRnLists[payloadIndex][i] = payload.Statement.CRn[i].EncodeCompressed()
+		}
+		if err = payload.Registrations.ValidateRegistrations(payload.Statement.Publickeylist); err != nil {
+			return
+		}
+	}
+	return
 }
 
 /**
@@ -25,15 +47,8 @@ func (tx *TransactionZether) BloomNow(hashForSignature []byte) (err error) {
 
 	tx.Bloom = new(TransactionZetherBloom)
 
-	tx.Bloom.publicKeyLists = make([][][]byte, len(tx.Payloads))
-	for payloadIndex, payload := range tx.Payloads {
-		tx.Bloom.publicKeyLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))
-		for i, publicKeyPoint := range payload.Statement.Publickeylist {
-			tx.Bloom.publicKeyLists[payloadIndex][i] = publicKeyPoint.EncodeCompressed()
-		}
-		if err = payload.Registrations.ValidateRegistrations(payload.Statement.Publickeylist); err != nil {
-			return
-		}
+	if err = tx.bloomLists(); err != nil {
+		return
 	}
 
 	//verify signature
@@ -71,16 +86,12 @@ func (tx *TransactionZether) BloomNowSignatureVerified() (err error) {
 
 	tx.Bloom = new(TransactionZetherBloom)
 
+	if err = tx.bloomLists(); err != nil {
+		return
+	}
+
 	tx.Bloom.Nonce1 = tx.Payloads[0].Proof.Nonce1()
 	tx.Bloom.Nonce2 = tx.Payloads[0].Proof.Nonce2()
-
-	tx.Bloom.publicKeyLists = make([][][]byte, len(tx.Payloads))
-	for payloadIndex, payload := range tx.Payloads {
-		tx.Bloom.publicKeyLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))
-		for i, publicKeyPoint := range payload.Statement.Publickeylist {
-			tx.Bloom.publicKeyLists[payloadIndex][i] = publicKeyPoint.EncodeCompressed()
-		}
-	}
 
 	tx.Bloom.signatureVerified = true
 	tx.Bloom.registrationsVerified = true

@@ -28,7 +28,7 @@ type ZetherTransferPayloadExtraAssetSupplyIncrease struct {
 	AssetId                    helpers.HexBytes `json:"assetId"`
 	ReceiverPublicKey          helpers.HexBytes `json:"receiverPublicKey"`
 	Value                      uint64           `json:"value"`
-	AssetSupplyPublicKey       helpers.HexBytes `json:"assetSupplyPublicKey"`
+	AssetSupplyPrivateKey      helpers.HexBytes `json:"assetSupplyPublicKey"`
 }
 
 type ZetherTransferPayloadExtra interface {

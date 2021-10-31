@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"errors"
+	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
@@ -14,6 +15,10 @@ type Transaction struct {
 	transaction_base_interface.TransactionBaseInterface
 	Version transaction_type.TransactionVersion
 	Bloom   *TransactionBloom
+}
+
+func (tx *Transaction) IncludeTransaction(blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+	return tx.TransactionBaseInterface.IncludeTransaction(blockHeight, tx.Bloom.Hash, dataStorage)
 }
 
 func (tx *Transaction) ComputeExtraSpace() uint64 {

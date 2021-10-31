@@ -223,11 +223,12 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 			case *ZetherTransferPayloadExtraAssetSupplyIncrease:
 				payload.PayloadScript = transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE
+				privateKeysForSign[t] = &addresses.PrivateKey{Key: payloadExtra.AssetSupplyPrivateKey}
 				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{
 					AssetId:              payloadExtra.AssetId,
 					ReceiverPublicKey:    payloadExtra.ReceiverPublicKey,
 					Value:                payloadExtra.Value,
-					AssetSupplyPublicKey: payloadExtra.AssetSupplyPublicKey,
+					AssetSupplyPublicKey: payloadExtra.AssetSupplyPrivateKey,
 					AssetSignature:       helpers.EmptyBytes(cryptography.SignatureSize),
 				}
 			default:
@@ -446,6 +447,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake).DelegateSignature = signature
 			case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
 				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake).DelegateSignature = signature
+			case transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE:
+				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease).AssetSignature = signature
 			}
 
 		}

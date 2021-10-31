@@ -17,20 +17,28 @@ type TransactionZetherPayloadExtraAssetCreate struct {
 	Asset *asset.Asset
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) BeforeIncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) BeforeIncludeTxPayload(txHash []byte, txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 	return
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) IncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
-
+func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) GetAssetId(txHash []byte, payloadIndex byte) []byte {
 	list := helpers.NewBufferWriter()
 	list.WriteByte(payloadIndex)
-	list.WriteUvarint(blockHeight)
-	for _, publicKey := range publicKeyList {
-		list.Write(publicKey)
-	}
+	list.Write(txHash)
+	return cryptography.RIPEMD(cryptography.SHA3(list.Bytes()))
+}
 
-	hash := cryptography.RIPEMD(cryptography.SHA3(list.Bytes()))
+func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) IncludeTxPayload(txHash []byte, txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+
+	var exists bool
+	hash := payloadExtra.GetAssetId(txHash, payloadIndex)
+
+	if exists, err = dataStorage.Asts.Exists(string(hash)); err != nil {
+		return
+	}
+	if exists {
+		return errors.New("Asset with this Id already exists")
+	}
 	if err = dataStorage.Asts.CreateAsset(hash, payloadExtra.Asset); err != nil {
 		return
 	}
@@ -38,7 +46,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) IncludeTxPayload(t
 	return
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Validate(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) error {
+func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) error {
 
 	if payloadExtra.Asset.Supply != 0 {
 		return errors.New("AssetInfo Supply must be zero")

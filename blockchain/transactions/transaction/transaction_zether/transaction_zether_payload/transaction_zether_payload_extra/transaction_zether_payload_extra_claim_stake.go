@@ -21,7 +21,7 @@ type TransactionZetherPayloadExtraClaimStake struct {
 	DelegateSignature           []byte
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraClaimStake) BeforeIncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraClaimStake) BeforeIncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
 	var acc *account.Account
@@ -48,7 +48,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaimStake) BeforeIncludeTxPayl
 		return
 	}
 
-	reg := txRegistrations.Registrations[payloadExtra.RegistrationIndex]
+	reg := payloadRegistrations.Registrations[payloadExtra.RegistrationIndex]
 	publicKey := publicKeyList[reg.PublicKeyIndex]
 
 	if accs, err = dataStorage.AccsCollection.GetMap(payloadAsset); err != nil {
@@ -73,14 +73,14 @@ func (payloadExtra *TransactionZetherPayloadExtraClaimStake) BeforeIncludeTxPayl
 	return accs.Update(string(publicKey), acc)
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraClaimStake) IncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraClaimStake) IncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
 	if accs, err = dataStorage.AccsCollection.GetMap(payloadAsset); err != nil {
 		return
 	}
 
-	reg := txRegistrations.Registrations[payloadExtra.RegistrationIndex]
+	reg := payloadRegistrations.Registrations[payloadExtra.RegistrationIndex]
 	publicKey := publicKeyList[reg.PublicKeyIndex]
 
 	accs.Delete(string(publicKey))
@@ -89,7 +89,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaimStake) IncludeTxPayload(tx
 	return
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraClaimStake) Validate(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) error {
+func (payloadExtra *TransactionZetherPayloadExtraClaimStake) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) error {
 
 	if bytes.Equal(payloadAsset, config_coins.NATIVE_ASSET_FULL) == false {
 		return errors.New("Payload[0] asset must be a native asset")
@@ -98,7 +98,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaimStake) Validate(txRegistra
 		return errors.New("Payload burn value must be zero")
 	}
 
-	if int(payloadExtra.RegistrationIndex) >= len(txRegistrations.Registrations) {
+	if int(payloadExtra.RegistrationIndex) >= len(payloadRegistrations.Registrations) {
 		return errors.New("RegistrationIndex is invalid")
 	}
 

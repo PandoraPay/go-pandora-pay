@@ -16,15 +16,15 @@ type TransactionZetherPayloadExtraAssetSupplyIncrease struct {
 	AssetId              []byte
 	ReceiverPublicKey    []byte //must be registered before
 	Value                uint64
-	AssetSupplyPublicKey []byte
+	AssetSupplyPublicKey []byte //TODO: it can be bloomed
 	AssetSignature       []byte
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) BeforeIncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) BeforeIncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 	return
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) IncludeTxPayload(txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) IncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	ast, err := dataStorage.Asts.GetAsset(payloadExtra.AssetId)
 	if err != nil {

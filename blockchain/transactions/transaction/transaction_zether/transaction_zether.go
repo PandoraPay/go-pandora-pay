@@ -29,14 +29,14 @@ func (tx *TransactionZether) ComputeExtraSpace() uint64 {
 /**
 Zether requires another verification that the bloomed publicKeys, CL, CR are the same
 */
-func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, txHash []byte, dataStorage *data_storage.DataStorage) (err error) {
 
 	if tx.Height > blockHeight {
 		return fmt.Errorf("Zether TxHeight is invalid %d > %d", tx.Height, blockHeight)
 	}
 
 	for payloadIndex, payload := range tx.Payloads {
-		if err = payload.IncludePayload(byte(payloadIndex), tx.Bloom.publicKeyLists[payloadIndex], blockHeight, dataStorage); err != nil {
+		if err = payload.IncludePayload(txHash, byte(payloadIndex), tx.Bloom.PublicKeyLists[payloadIndex], blockHeight, dataStorage); err != nil {
 			return
 		}
 	}

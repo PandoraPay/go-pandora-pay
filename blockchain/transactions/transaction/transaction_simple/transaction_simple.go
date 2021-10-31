@@ -30,7 +30,7 @@ func (tx *TransactionSimple) ComputeExtraSpace() uint64 {
 	return 0
 }
 
-func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byte, dataStorage *data_storage.DataStorage) (err error) {
 
 	var plainAcc *plain_account.PlainAccount
 	if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(tx.Vin.PublicKey, blockHeight); err != nil {
