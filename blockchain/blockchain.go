@@ -95,16 +95,18 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	//chain.RLock() is not required because it is guaranteed that no other thread is writing now in the chain
 	var newChainData = &BlockchainData{
-		Hash:                  helpers.CloneBytes(chainData.Hash),             //atomic copy
-		PrevHash:              helpers.CloneBytes(chainData.PrevHash),         //atomic copy
-		KernelHash:            helpers.CloneBytes(chainData.KernelHash),       //atomic copy
-		PrevKernelHash:        helpers.CloneBytes(chainData.PrevKernelHash),   //atomic copy
-		Height:                chainData.Height,                               //atomic copy
-		Timestamp:             chainData.Timestamp,                            //atomic copy
-		Target:                new(big.Int).Set(chainData.Target),             //atomic copy
-		BigTotalDifficulty:    new(big.Int).Set(chainData.BigTotalDifficulty), //atomic copy
-		ConsecutiveSelfForged: chainData.ConsecutiveSelfForged,                //atomic copy
-		TransactionsCount:     chainData.TransactionsCount,                    //atomic copy
+		helpers.CloneBytes(chainData.Hash),             //atomic copy
+		helpers.CloneBytes(chainData.PrevHash),         //atomic copy
+		helpers.CloneBytes(chainData.KernelHash),       //atomic copy
+		helpers.CloneBytes(chainData.PrevKernelHash),   //atomic copy
+		chainData.Height,                               //atomic copy
+		chainData.Timestamp,                            //atomic copy
+		new(big.Int).Set(chainData.Target),             //atomic copy
+		new(big.Int).Set(chainData.BigTotalDifficulty), //atomic copy
+		chainData.TransactionsCount,                    //atomic copy
+		chainData.AccountsCount,                        //atomic copy
+		chainData.AssetsCount,                          //atomic copy
+		chainData.ConsecutiveSelfForged,                //atomic copy
 	}
 
 	allTransactionsChanges := []*blockchain_types.BlockchainTransactionUpdate{}
@@ -426,6 +428,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					panic(err)
 				}
 
+				newChainData.AssetsCount = dataStorage.Asts.Count
+				newChainData.AccountsCount = dataStorage.Regs.Count + dataStorage.PlainAccs.Count
 				chain.ChainData.Store(newChainData)
 
 			} else {

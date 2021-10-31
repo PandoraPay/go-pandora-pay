@@ -283,16 +283,15 @@ func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) ([
 }
 
 func (api *APICommon) GetAssetInfo(request *api_types.APIAssetInfoRequest) ([]byte, error) {
-	var astInfo *info.AssetInfo
-	var err error
 
 	if len(request.Hash) == 0 {
 		request.Hash = config_coins.NATIVE_ASSET_FULL
 	}
 
-	if request.Hash != nil && len(request.Hash) == config_coins.ASSET_LENGTH {
-		astInfo, err = api.ApiStore.openLoadAssetInfo(request.Hash)
+	if request.Hash == nil && len(request.Hash) != config_coins.ASSET_LENGTH {
+		return nil, errors.New("Invalid request")
 	}
+	astInfo, err := api.ApiStore.openLoadAssetInfo(request.Hash)
 	if err != nil || astInfo == nil {
 		return nil, err
 	}
@@ -300,6 +299,10 @@ func (api *APICommon) GetAssetInfo(request *api_types.APIAssetInfoRequest) ([]by
 }
 
 func (api *APICommon) GetAsset(request *api_types.APIAssetRequest) ([]byte, error) {
+	if len(request.Hash) == 0 {
+		request.Hash = config_coins.NATIVE_ASSET_FULL
+	}
+
 	asset, err := api.ApiStore.openLoadAssetFromHash(request.Hash)
 	if err != nil || asset == nil {
 		return nil, err
@@ -485,15 +488,17 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocke
 //make sure it is safe to read
 func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.BlockchainDataUpdate) {
 	newLocalChain := &api_types.APIBlockchain{
-		Height:            newChainDataUpdate.Update.Height,
-		Hash:              hex.EncodeToString(newChainDataUpdate.Update.Hash),
-		PrevHash:          hex.EncodeToString(newChainDataUpdate.Update.PrevHash),
-		KernelHash:        hex.EncodeToString(newChainDataUpdate.Update.KernelHash),
-		PrevKernelHash:    hex.EncodeToString(newChainDataUpdate.Update.PrevKernelHash),
-		Timestamp:         newChainDataUpdate.Update.Timestamp,
-		TransactionsCount: newChainDataUpdate.Update.TransactionsCount,
-		Target:            newChainDataUpdate.Update.Target.String(),
-		TotalDifficulty:   newChainDataUpdate.Update.BigTotalDifficulty.String(),
+		newChainDataUpdate.Update.Height,
+		hex.EncodeToString(newChainDataUpdate.Update.Hash),
+		hex.EncodeToString(newChainDataUpdate.Update.PrevHash),
+		hex.EncodeToString(newChainDataUpdate.Update.KernelHash),
+		hex.EncodeToString(newChainDataUpdate.Update.PrevKernelHash),
+		newChainDataUpdate.Update.Timestamp,
+		newChainDataUpdate.Update.TransactionsCount,
+		newChainDataUpdate.Update.AccountsCount,
+		newChainDataUpdate.Update.AssetsCount,
+		newChainDataUpdate.Update.Target.String(),
+		newChainDataUpdate.Update.BigTotalDifficulty.String(),
 	}
 	api.localChain.Store(newLocalChain)
 	api.MempoolProcessedThisBlock.Store(&sync.Map{})

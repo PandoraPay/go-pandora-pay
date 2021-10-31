@@ -28,6 +28,8 @@ type APIBlockchain struct {
 	PrevKernelHash    string `json:"prevKernelHash"`
 	Timestamp         uint64 `json:"timestamp"`
 	TransactionsCount uint64 `json:"transactions"`
+	AccountsCount     uint64 `json:"accounts"`
+	AssetsCount       uint64 `json:"assets"`
 	Target            string `json:"target"`
 	TotalDifficulty   string `json:"totalDifficulty"`
 }

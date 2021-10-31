@@ -107,12 +107,11 @@ func (api *API) getAssetInfo(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APIAssetInfoRequest{}
 
-	err := errors.New("parameter 'hash' is missing")
+	var err error
 	if values.Get("hash") != "" {
-		request.Hash, err = hex.DecodeString(values.Get("hash"))
-	}
-	if err != nil {
-		return nil, err
+		if request.Hash, err = hex.DecodeString(values.Get("hash")); err != nil {
+			return nil, err
+		}
 	}
 
 	return api.apiCommon.GetAssetInfo(request)
@@ -197,12 +196,12 @@ func (api *API) getAccountTxs(values *url.Values) (interface{}, error) {
 
 	var err error
 	if values.Get("next") != "" {
-		if request.Next, err = strconv.ParseUint(values.Get("start"), 10, 64); err != nil {
+		if request.Next, err = strconv.ParseUint(values.Get("next"), 10, 64); err != nil {
 			return nil, err
 		}
 	}
 
-	if err := request.ImportFromValues(values); err != nil {
+	if err = request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
 
@@ -223,12 +222,11 @@ func (api *API) getAsset(values *url.Values) (interface{}, error) {
 	request := &api_types.APIAssetRequest{}
 	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
 
-	err := errors.New("parameter 'hash' was not specified")
+	var err error
 	if values.Get("hash") != "" {
-		request.Hash, err = hex.DecodeString(values.Get("hash"))
-	}
-	if err != nil {
-		return nil, err
+		if request.Hash, err = hex.DecodeString(values.Get("hash")); err != nil {
+			return nil, err
+		}
 	}
 	return api.apiCommon.GetAsset(request)
 }
@@ -362,6 +360,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 	api.GetMap = map[string]func(values *url.Values) (interface{}, error){
 		"":                       api.getInfo,
 		"chain":                  api.getBlockchain,
+		"blockchain":             api.getBlockchain,
 		"sync":                   api.getBlockchainSync,
 		"ping":                   api.getPing,
 		"block":                  api.getBlock,

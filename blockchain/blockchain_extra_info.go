@@ -104,6 +104,7 @@ func saveAssetsInfo(asts *assets.Assets) (err error) {
 
 			ast := v.Element.(*asset.Asset)
 			astInfo := &info.AssetInfo{
+				Version:          ast.Version,
 				Name:             ast.Name,
 				Ticker:           ast.Ticker,
 				DecimalSeparator: ast.DecimalSeparator,

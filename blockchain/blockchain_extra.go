@@ -39,15 +39,18 @@ func (chain *Blockchain) GetChainDataUpdate() *BlockchainDataUpdate {
 
 func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 	return &BlockchainData{
-		Height:             0,
-		Hash:               helpers.CloneBytes(genesis.GenesisData.Hash),
-		PrevHash:           helpers.CloneBytes(genesis.GenesisData.Hash),
-		KernelHash:         helpers.CloneBytes(genesis.GenesisData.KernelHash),
-		PrevKernelHash:     helpers.CloneBytes(genesis.GenesisData.KernelHash),
-		Target:             new(big.Int).SetBytes(helpers.CloneBytes(genesis.GenesisData.Target)),
-		BigTotalDifficulty: new(big.Int).SetUint64(0),
-		TransactionsCount:  0,
-		AssetsCount:        1,
+		helpers.CloneBytes(genesis.GenesisData.Hash),
+		helpers.CloneBytes(genesis.GenesisData.Hash),
+		helpers.CloneBytes(genesis.GenesisData.KernelHash),
+		helpers.CloneBytes(genesis.GenesisData.KernelHash),
+		0,
+		0,
+		new(big.Int).SetBytes(helpers.CloneBytes(genesis.GenesisData.Target)),
+		new(big.Int).SetUint64(0),
+		0,
+		0,
+		0,
+		0,
 	}
 }
 
@@ -111,19 +114,23 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 	}
 
 	ast := &asset.Asset{
-		Version:                  0,
-		Name:                     config_coins.NATIVE_ASSET_NAME,
-		Ticker:                   config_coins.NATIVE_ASSET_TICKER,
-		Description:              config_coins.NATIVE_ASSET_DESCRIPTION,
-		DecimalSeparator:         byte(config_coins.DECIMAL_SEPARATOR),
-		CanChangeUpdatePublicKey: false,
-		CanChangeSupplyPublicKey: false,
-		CanBurn:                  true,
-		CanMint:                  true,
-		Supply:                   supply,
-		MaxSupply:                config_coins.MAX_SUPPLY_COINS_UNITS,
-		UpdatePublicKey:          config_coins.BURN_PUBLIC_KEY,
-		SupplyPublicKey:          config_coins.BURN_PUBLIC_KEY,
+		nil,
+		0,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		byte(config_coins.DECIMAL_SEPARATOR),
+		supply,
+		config_coins.MAX_SUPPLY_COINS_UNITS,
+		config_coins.BURN_PUBLIC_KEY,
+		config_coins.BURN_PUBLIC_KEY,
+		config_coins.NATIVE_ASSET_NAME,
+		config_coins.NATIVE_ASSET_TICKER,
+		config_coins.NATIVE_ASSET_DESCRIPTION,
 	}
 
 	if err = dataStorage.Asts.CreateAsset(config_coins.NATIVE_ASSET_FULL, ast); err != nil {
@@ -133,6 +140,9 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 	if err = dataStorage.CommitChanges(); err != nil {
 		return
 	}
+
+	chainData.AssetsCount = dataStorage.Asts.Count
+	chainData.AccountsCount = dataStorage.Regs.Count + dataStorage.PlainAccs.Count
 
 	return
 }

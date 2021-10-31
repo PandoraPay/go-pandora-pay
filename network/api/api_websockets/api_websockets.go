@@ -318,6 +318,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error){
 		"":                       api.getInfo,
 		"chain":                  api.getBlockchain,
+		"blockchain":             api.getBlockchain,
 		"sync":                   api.getBlockchainSync,
 		"handshake":              api.getHandshake,
 		"ping":                   api.getPing,
