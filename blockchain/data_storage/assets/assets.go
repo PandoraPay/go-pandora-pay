@@ -62,6 +62,7 @@ func NewAssets(tx store_db_interface.StoreDBTransactionInterface) (assets *Asset
 	assets = &Assets{
 		HashMap: *hashMap,
 	}
+
 	assets.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {
 		var ast = &asset.Asset{}
 		if err := ast.Deserialize(helpers.NewBufferReader(data)); err != nil {
@@ -69,5 +70,6 @@ func NewAssets(tx store_db_interface.StoreDBTransactionInterface) (assets *Asset
 		}
 		return ast, nil
 	}
+
 	return
 }

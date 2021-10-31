@@ -71,13 +71,22 @@ func (builder *TransactionsBuilder) readAddress(text string, assetId []byte, all
 		text2 = text + ". Leave empty for none"
 	}
 
-	address = gui.GUI.OutputReadAddress(text2, allowRandomAddress)
-	if address == nil {
-		return
-	} else {
-		if amount, err = builder.readAmount(assetId, text+" Amount"); err != nil {
+	for {
+		str := gui.GUI.OutputReadString(text2)
+		if str == "" && allowRandomAddress {
 			return
 		}
+
+		address, err = addresses.DecodeAddr(str)
+		if err != nil {
+			gui.GUI.OutputWrite("Invalid Address")
+			continue
+		}
+		break
+	}
+
+	if amount, err = builder.readAmount(assetId, text+" Amount"); err != nil {
+		return
 	}
 
 	return
@@ -275,6 +284,9 @@ func (builder *TransactionsBuilder) initCLI() {
 		if err = json.Unmarshal([]byte(str), ast); err != nil {
 			return
 		}
+		if err = ast.Validate(); err != nil {
+			return
+		}
 
 		var updatePrivKey, supplyPrivKey *addresses.PrivateKey
 		if len(ast.UpdatePublicKey) == 0 {
@@ -318,7 +330,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			}
 			defer f.Close()
 
-			if _, err = fmt.Fprintln(f, "Asset ID:", assetId); err != nil {
+			if _, err = fmt.Fprintln(f, "Asset ID:", hex.EncodeToString(assetId)); err != nil {
 				return
 			}
 			if _, err = fmt.Fprintln(f, "Asset name:", ast.Name, ast.Ticker); err != nil {

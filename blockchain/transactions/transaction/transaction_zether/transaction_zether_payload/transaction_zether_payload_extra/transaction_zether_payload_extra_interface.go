@@ -14,4 +14,5 @@ type TransactionZetherPayloadExtraInterface interface {
 	Serialize(w *helpers.BufferWriter, inclSignature bool)
 	Deserialize(r *helpers.BufferReader) error
 	VerifyExtraSignature(hashForSignature []byte) bool
+	ComputeAllKeys(out map[string]bool)
 }

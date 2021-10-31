@@ -30,15 +30,9 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) GetAssetId(txHash 
 
 func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) IncludeTxPayload(txHash []byte, txRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
-	var exists bool
 	hash := payloadExtra.GetAssetId(txHash, payloadIndex)
 
-	if exists, err = dataStorage.Asts.Exists(string(hash)); err != nil {
-		return
-	}
-	if exists {
-		return errors.New("Asset with this Id already exists")
-	}
+	//existence verification is done in CreateAsset
 	if err = dataStorage.Asts.CreateAsset(hash, payloadExtra.Asset); err != nil {
 		return
 	}
@@ -56,6 +50,10 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Validate(payloadRe
 	}
 
 	return payloadExtra.Asset.Validate()
+}
+
+func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) ComputeAllKeys(out map[string]bool) {
+
 }
 
 func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Serialize(w *helpers.BufferWriter, inclSignature bool) {

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
-	"pandora-pay/addresses"
 	"pandora-pay/gui/gui_interface"
 	"path"
 	"strconv"
@@ -339,22 +338,6 @@ func (g *GUIInteractive) OutputReadFloat64(text string, allowEmpty bool, validat
 		}
 
 		return out
-	}
-}
-
-func (g *GUIInteractive) OutputReadAddress(text string, allowEmpty bool) *addresses.Address {
-	for {
-		str := g.OutputReadString(text)
-		if str == "" && allowEmpty {
-			return nil
-		}
-
-		address, err := addresses.DecodeAddr(str)
-		if err != nil {
-			g.OutputWrite("Invalid Address")
-			continue
-		}
-		return address
 	}
 }
 

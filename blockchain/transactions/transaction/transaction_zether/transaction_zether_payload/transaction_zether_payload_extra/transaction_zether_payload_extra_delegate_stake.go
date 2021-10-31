@@ -54,6 +54,10 @@ func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) IncludeTxPayload
 	return nil
 }
 
+func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) ComputeAllKeys(out map[string]bool) {
+	out[string(payloadExtra.DelegatePublicKey)] = true
+}
+
 func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) (err error) {
 
 	if bytes.Equal(payloadAsset, config_coins.NATIVE_ASSET_FULL) == false {

@@ -97,18 +97,11 @@ func (payload *TransactionZetherPayload) ComputeAllKeys(out map[string]bool) {
 
 	for _, publicKey := range payload.Statement.Publickeylist {
 		out[string(publicKey.EncodeCompressed())] = true
-
-		switch payload.PayloadScript {
-		case SCRIPT_CLAIM_STAKE:
-			extra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake)
-			out[string(extra.DelegatePublicKey)] = true
-		case SCRIPT_DELEGATE_STAKE:
-			extra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake)
-			out[string(extra.DelegatePublicKey)] = true
-		}
-
 	}
 
+	if payload.Extra != nil {
+		payload.Extra.ComputeAllKeys(out)
+	}
 }
 
 func (payload *TransactionZetherPayload) Validate(payloadIndex byte) (err error) {

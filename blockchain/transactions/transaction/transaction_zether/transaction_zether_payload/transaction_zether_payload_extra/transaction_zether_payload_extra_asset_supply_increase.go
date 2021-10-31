@@ -83,6 +83,10 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) IncludeTxP
 	return
 }
 
+func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) ComputeAllKeys(out map[string]bool) {
+	out[string(payloadExtra.ReceiverPublicKey)] = true
+}
+
 func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) VerifyExtraSignature(hashForSignature []byte) bool {
 	return crypto.VerifySignature(hashForSignature, payloadExtra.AssetSignature, payloadExtra.AssetSupplyPublicKey)
 }

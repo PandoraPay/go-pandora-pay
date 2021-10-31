@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"pandora-pay/addresses"
 	"pandora-pay/helpers"
 	"strconv"
 )
@@ -28,7 +27,6 @@ type GUIInterface interface {
 	OutputReadInt(text string, allowEmpty bool, validateCb func(int) bool) int
 	OutputReadUint64(text string, allowEmpty bool, validateCb func(uint64) bool) uint64
 	OutputReadFloat64(text string, allowEmpty bool, validateCb func(float64) bool) float64
-	OutputReadAddress(text string, allowEmpty bool) (address *addresses.Address)
 	OutputReadBool(text string) (out bool)
 	OutputReadBytes(text string, validateCb func([]byte) bool) (data []byte)
 }

@@ -41,7 +41,7 @@ func (asset *Asset) Validate() error {
 	if len(asset.Name) > 15 || len(asset.Name) < 3 {
 		return errors.New("asset name length is invalid")
 	}
-	if len(asset.Ticker) > 7 || len(asset.Ticker) < 2 {
+	if len(asset.Ticker) > 10 || len(asset.Ticker) < 2 {
 		return errors.New("asset ticker length is invalid")
 	}
 	if len(asset.Description) > 512 {

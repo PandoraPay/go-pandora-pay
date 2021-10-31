@@ -2,12 +2,12 @@ package accounts
 
 import (
 	"errors"
+	"fmt"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
-	"strconv"
 )
 
 type Accounts struct {
@@ -121,7 +121,7 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 
 		element.Element.(*account.Account).Index = accounts.HashMap.Count
 
-		return tx.Put("accounts:assetByIndex:"+string(key)+":"+strconv.FormatUint(count, 10), element.Element.(*account.Account).Asset)
+		return tx.Put(fmt.Sprintf("accounts:assetByIndex:%s:%d", string(key), count), element.Element.(*account.Account).Asset)
 	}
 
 	accounts.HashMap.DeletedEvent = func(key []byte) (err error) {
@@ -135,7 +135,7 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 			return
 		}
 
-		return tx.Delete("accounts:assetByIndex:" + string(key) + ":" + strconv.FormatUint(count, 10))
+		return tx.Delete(fmt.Sprintf("accounts:assetByIndex:%s:%d", string(key), count))
 	}
 
 	return

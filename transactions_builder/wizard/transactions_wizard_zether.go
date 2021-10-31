@@ -228,7 +228,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					AssetId:              payloadExtra.AssetId,
 					ReceiverPublicKey:    payloadExtra.ReceiverPublicKey,
 					Value:                payloadExtra.Value,
-					AssetSupplyPublicKey: payloadExtra.AssetSupplyPrivateKey,
+					AssetSupplyPublicKey: privateKeysForSign[t].GeneratePublicKey(),
 					AssetSignature:       helpers.EmptyBytes(cryptography.SignatureSize),
 				}
 			default:
