@@ -164,9 +164,12 @@ func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte, ctx conte
 }
 
 func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, ctx context.Context) *advanced_connection_types.AdvancedConnectionAnswer {
+	if c == nil {
+		return &advanced_connection_types.AdvancedConnectionAnswer{nil, errors.New("Socket is null")}
+	}
 	out, err := json.Marshal(data)
 	if err != nil {
-		panic("Error marshaling data")
+		return &advanced_connection_types.AdvancedConnectionAnswer{nil, errors.New("Error marshaling data")}
 	}
 	return c.sendNowAwait(name, out, false, ctx)
 }
