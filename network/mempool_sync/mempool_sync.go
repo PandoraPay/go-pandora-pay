@@ -16,7 +16,7 @@ func (mempoolSync *MempoolSync) DownloadMempool(conn *connection.AdvancedConnect
 
 	cb := mempoolSync.websockets.ApiWebsockets.GetMap["mem-pool/new-tx-id"]
 
-	index, page := 0, 0
+	index, page := int32(0), 0
 	count := config.API_MEMPOOL_MAX_TRANSACTIONS
 
 	var chainHash []byte
@@ -46,7 +46,7 @@ func (mempoolSync *MempoolSync) DownloadMempool(conn *connection.AdvancedConnect
 			cb(conn, tx)
 		}
 
-		index += len(data.Hashes)
+		index += int32(len(data.Hashes))
 		page++
 
 		if page > 20 || len(data.Hashes) != count { //done

@@ -8,7 +8,7 @@ import (
 
 func (api *APIWebsockets) subscribe(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_types.APISubscriptionRequest{[]byte{}, api_types.SUBSCRIPTION_ACCOUNT, api_types.RETURN_SERIALIZED}
+	request := &api_types.APISubscriptionRequest{[]byte{}, api_types.SubscriptionType_SUBSCRIPTION_ACCOUNT, api_types.APIReturnType_RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}

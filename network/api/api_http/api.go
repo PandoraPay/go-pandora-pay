@@ -24,24 +24,24 @@ type API struct {
 }
 
 func (api *API) getBlockchain(values *url.Values) (interface{}, error) {
-	return api.apiCommon.GetBlockchain()
+	return api.apiCommon.GetBlockchain(api_types.GetReturnType(values.Get("return"), api_types.APIReturnType_RETURN_JSON))
 }
 
 func (api *API) getBlockchainSync(values *url.Values) (interface{}, error) {
-	return api.apiCommon.GetBlockchainSync()
+	return api.apiCommon.GetBlockchainSync(api_types.GetReturnType(values.Get("return"), api_types.APIReturnType_RETURN_JSON))
 }
 
 func (api *API) getInfo(values *url.Values) (interface{}, error) {
-	return api.apiCommon.GetInfo()
+	return api.apiCommon.GetInfo(api_types.GetReturnType(values.Get("return"), api_types.APIReturnType_RETURN_JSON))
 }
 
 func (api *API) getPing(values *url.Values) (interface{}, error) {
-	return api.apiCommon.GetPing()
+	return api.apiCommon.GetPing(api_types.GetReturnType(values.Get("return"), api_types.APIReturnType_RETURN_JSON))
 }
 
 func (api *API) getBlockComplete(values *url.Values) (interface{}, error) {
 
-	request := &api_types.APIBlockCompleteRequest{api_types.APIHeightHash{0, nil}, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
+	request := &api_types.APIBlockCompleteRequest{api_types.APIHeightHash{0, nil}, api_types.GetReturnType(values.Get("type"), api_types.APIReturnType_RETURN_JSON)}
 	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (api *API) getTxPreview(values *url.Values) (interface{}, error) {
 
 func (api *API) getTx(values *url.Values) (interface{}, error) {
 
-	request := &api_types.APITransactionRequest{api_types.APIHeightHash{0, nil}, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
+	request := &api_types.APITransactionRequest{api_types.APIHeightHash{0, nil}, api_types.GetReturnType(values.Get("type"), api_types.APIReturnType_RETURN_JSON)}
 
 	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ func (api *API) getTxHash(values *url.Values) (interface{}, error) {
 }
 
 func (api *API) getAccount(values *url.Values) (interface{}, error) {
-	request := &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
+	request := &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.GetReturnType(values.Get("type"), api_types.APIReturnType_RETURN_JSON)}
 
 	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
@@ -178,7 +178,7 @@ func (api *API) getAsset(values *url.Values) (interface{}, error) {
 	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
-	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
+	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.APIReturnType_RETURN_JSON)
 	return api.apiCommon.GetAsset(request)
 }
 
@@ -215,7 +215,7 @@ func (api *API) getAccountsByKeys(values *url.Values) (interface{}, error) {
 
 	var err error
 
-	request := &api_types.APIAccountsByKeysRequest{ReturnType: api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
+	request := &api_types.APIAccountsByKeysRequest{ReturnType: api_types.GetReturnType(values.Get("type"), api_types.APIReturnType_RETURN_JSON)}
 
 	if values.Get("publicKeys") != "" {
 		v := strings.Split(values.Get("publicKeys"), ",")

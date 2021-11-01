@@ -234,7 +234,7 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKey(publicKey []byte, next
 
 		answer = &api_types.APIAccountTxs{
 			Count: count,
-			Txs:   make([]helpers.HexBytes, next-index),
+			Txs:   make([][]byte, next-index),
 		}
 		for i := index; i < next; i++ {
 			hash := reader.Get("addrTx:" + publicKeyStr + ":" + strconv.FormatUint(i, 10))
@@ -280,7 +280,7 @@ func (apiStore *APIStore) openLoadAccountsCountFromAssetId(hash []byte) (output 
 	return
 }
 
-func (apiStore *APIStore) openLoadAccountsKeysByIndex(indexes []uint64, assetId []byte) (output []helpers.HexBytes, errFinal error) {
+func (apiStore *APIStore) openLoadAccountsKeysByIndex(indexes []uint64, assetId []byte) (output [][]byte, errFinal error) {
 
 	if len(indexes) > 512*2 {
 		return nil, fmt.Errorf("Too many indexes to process: limit %d, found %d", 512*2, len(indexes))
@@ -294,7 +294,7 @@ func (apiStore *APIStore) openLoadAccountsKeysByIndex(indexes []uint64, assetId 
 			return
 		}
 
-		output = make([]helpers.HexBytes, len(indexes))
+		output = make([][]byte, len(indexes))
 		for i := 0; i < len(indexes); i++ {
 			if output[i], err = accs.GetKeyByIndex(indexes[i]); err != nil {
 				return
@@ -372,7 +372,7 @@ func (apiStore *APIStore) loadBlockCompleteMissingTxs(reader store_db_interface.
 		return nil, err
 	}
 
-	out.Txs = make([]helpers.HexBytes, len(missingTxs))
+	out.Txs = make([][]byte, len(missingTxs))
 	for i, txMissingIndex := range missingTxs {
 		if txMissingIndex >= 0 && txMissingIndex < len(txHashes) {
 			tx := reader.Get("tx:" + string(txHashes[txMissingIndex]))

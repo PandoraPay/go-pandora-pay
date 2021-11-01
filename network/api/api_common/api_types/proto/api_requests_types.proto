@@ -1,0 +1,19 @@
+syntax = "proto3";
+package proto;
+
+option go_package = "./;api_types";
+
+enum APIReturnType {
+    RETURN_JSON = 0;
+    RETURN_SERIALIZED = 1;
+}
+
+enum SubscriptionType {
+    SUBSCRIPTION_ACCOUNT = 0;
+    SUBSCRIPTION_PLAIN_ACCOUNT = 1;
+    SUBSCRIPTION_ACCOUNT_TRANSACTIONS = 2;
+    SUBSCRIPTION_ASSET = 3;
+    SUBSCRIPTION_REGISTRATION = 4;
+    SUBSCRIPTION_TRANSACTION = 5;
+}
+

@@ -11,61 +11,32 @@ import (
 	"strings"
 )
 
-type SubscriptionType uint8
-
-const (
-	SUBSCRIPTION_ACCOUNT SubscriptionType = iota
-	SUBSCRIPTION_PLAIN_ACCOUNT
-	SUBSCRIPTION_ACCOUNT_TRANSACTIONS
-	SUBSCRIPTION_ASSET
-	SUBSCRIPTION_REGISTRATION
-	SUBSCRIPTION_TRANSACTION
-)
-
-type APIReturnType uint8
-
-const (
-	RETURN_JSON APIReturnType = iota
-	RETURN_SERIALIZED
-)
-
-func GetReturnType(s string, defaultValue APIReturnType) APIReturnType {
-	switch s {
-	case "0":
-		return RETURN_JSON
-	case "1":
-		return RETURN_SERIALIZED
-	default:
-		return defaultValue
-	}
-}
-
 type APIBlockRequest struct {
-	APIHeightHash
-	ReturnType APIReturnType `json:"returnType,omitempty"`
+	APIHeightHash `json:"req"`
+	ReturnType    APIReturnType `json:"returnType,omitempty"`
 }
 
 type APIBlockInfoRequest struct {
-	APIHeightHash
+	APIHeightHash `json:"req"`
 }
 
 type APIBlockCompleteMissingTxsRequest struct {
-	Hash       helpers.HexBytes `json:"hash,omitempty"`
-	MissingTxs []int            `json:"missingTxs,omitempty"`
+	APIHeightHash `json:"req"`
+	MissingTxs    []int `json:"missingTxs,omitempty"`
 }
 
 type APIBlockCompleteRequest struct {
-	APIHeightHash
-	ReturnType APIReturnType `json:"returnType,omitempty"`
+	APIHeightHash `json:"req"`
+	ReturnType    APIReturnType `json:"returnType,omitempty"`
 }
 
 type APITransactionRequest struct {
-	APIHeightHash
-	ReturnType APIReturnType `json:"returnType,omitempty"`
+	APIHeightHash `json:"req"`
+	ReturnType    APIReturnType `json:"returnType,omitempty"`
 }
 
 type APITransactionInfoRequest struct {
-	APIHeightHash
+	APIHeightHash `json:"req"`
 }
 
 type APIAccountBaseRequest struct {
@@ -74,13 +45,13 @@ type APIAccountBaseRequest struct {
 }
 
 type APIAccountRequest struct {
-	APIAccountBaseRequest
-	ReturnType APIReturnType `json:"returnType,omitempty"`
+	APIAccountBaseRequest `json:"req"`
+	ReturnType            APIReturnType `json:"returnType,omitempty"`
 }
 
 type APIAccountTxsRequest struct {
-	APIAccountBaseRequest
-	Next uint64 `json:"next,omitempty"`
+	APIAccountBaseRequest `json:"req"`
+	Next                  uint64 `json:"next,omitempty"`
 }
 
 type APIAccountsKeysByIndexRequest struct {
@@ -96,30 +67,13 @@ type APIAccountsByKeysRequest struct {
 	ReturnType     APIReturnType            `json:"returnType,omitempty"`
 }
 
-func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
-	var publicKey []byte
-	if request.Address != "" {
-		address, err := addresses.DecodeAddr(request.Address)
-		if err != nil {
-			return nil, errors.New("Invalid address")
-		}
-		publicKey = address.PublicKey
-	} else if request.PublicKey != nil && len(request.PublicKey) == cryptography.PublicKeySize {
-		publicKey = request.PublicKey
-	} else {
-		return nil, errors.New("Invalid address")
-	}
-
-	return publicKey, nil
-}
-
 type APIAssetInfoRequest struct {
-	APIHeightHash
+	APIHeightHash `json:"req"`
 }
 
 type APIAssetRequest struct {
-	APIHeightHash
-	ReturnType APIReturnType `json:"returnType,omitempty"`
+	APIHeightHash `json:"req"`
+	ReturnType    APIReturnType `json:"returnType,omitempty"`
 }
 
 type APISubscriptionRequest struct {
@@ -142,6 +96,23 @@ type APIMempoolRequest struct {
 type APIHeightHash struct {
 	Height uint64           `json:"height,omitempty"`
 	Hash   helpers.HexBytes `json:"hash,omitempty"`
+}
+
+func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
+	var publicKey []byte
+	if request.Address != "" {
+		address, err := addresses.DecodeAddr(request.Address)
+		if err != nil {
+			return nil, errors.New("Invalid address")
+		}
+		publicKey = address.PublicKey
+	} else if request.PublicKey != nil && len(request.PublicKey) == cryptography.PublicKeySize {
+		publicKey = request.PublicKey
+	} else {
+		return nil, errors.New("Invalid address")
+	}
+
+	return publicKey, nil
 }
 
 func (self *APIHeightHash) ImportFromValues(values *url.Values) (err error) {

@@ -10,32 +10,21 @@ import (
 	"pandora-pay/helpers"
 )
 
-type APIBlockCompleteMissingTxs struct {
-	Txs []helpers.HexBytes `json:"txs,omitempty"`
+func GetReturnType(s string, defaultValue APIReturnType) APIReturnType {
+	switch s {
+	case "0":
+		return APIReturnType_RETURN_JSON
+	case "1":
+		return APIReturnType_RETURN_SERIALIZED
+	default:
+		return defaultValue
+	}
 }
 
 type APIBlockWithTxs struct {
 	Block           *block.Block       `json:"block,omitempty"`
 	BlockSerialized helpers.HexBytes   `json:"serialized,omitempty"`
 	Txs             []helpers.HexBytes `json:"txs,omitempty"`
-}
-
-type APIBlockchain struct {
-	Height            uint64 `json:"height"`
-	Hash              string `json:"hash"`
-	PrevHash          string `json:"prevHash"`
-	KernelHash        string `json:"kernelHash"`
-	PrevKernelHash    string `json:"prevKernelHash"`
-	Timestamp         uint64 `json:"timestamp"`
-	TransactionsCount uint64 `json:"transactions"`
-	AccountsCount     uint64 `json:"accounts"`
-	AssetsCount       uint64 `json:"assets"`
-	Target            string `json:"target"`
-	TotalDifficulty   string `json:"totalDifficulty"`
-}
-
-type APIBlockchainSync struct {
-	SyncTime uint64 `json:"syncTime"`
 }
 
 type APIAccount struct {
@@ -48,21 +37,11 @@ type APIAccount struct {
 	RegSerialized      helpers.HexBytes            `json:"registrationSerialized,omitempty"`
 }
 
-type APIAccountsKeysByIndex struct {
-	PublicKeys []helpers.HexBytes `json:"publicKeys,omitempty"`
-	Addresses  []string           `json:"addresses,omitempty"`
-}
-
 type APIAccountsByKeys struct {
 	Acc           []*account.Account           `json:"acc,omitempty"`
 	AccSerialized []helpers.HexBytes           `json:"accSerialized,omitempty"`
 	Reg           []*registration.Registration `json:"registration,omitempty"`
 	RegSerialized []helpers.HexBytes           `json:"registrationSerialized,omitempty"`
-}
-
-type APIAccountsCount struct {
-	PublicKeys []helpers.HexBytes `json:"publicKeys,omitempty"`
-	Addresses  []string           `json:"addresses,omitempty"`
 }
 
 type APITransaction struct {
@@ -78,63 +57,9 @@ type APITransactionPreview struct {
 	Info      *info.TxInfo    `json:"info,omitempty"`
 }
 
-type APIMempoolAnswer struct {
-	ChainHash helpers.HexBytes   `json:"chainHash"`
-	Count     int                `json:"count"`
-	Hashes    []helpers.HexBytes `json:"hashes"`
-}
-
 type APISubscriptionNotification struct {
 	SubscriptionType SubscriptionType `json:"type,omitempty"`
 	Key              helpers.HexBytes `json:"key,omitempty"`
 	Data             helpers.HexBytes `json:"data,omitempty"`
 	Extra            helpers.HexBytes `json:"extra,omitempty"`
-}
-
-type APISubscriptionNotificationTxExtraBlockchain struct {
-	Inserted     bool   `json:"inserted,omitempty"`
-	BlkHeight    uint64 `json:"blkHeight,omitempty"`
-	BlkTimestamp uint64 `json:"blkTimestamp,omitempty"`
-	Height       uint64 `json:"height,omitempty"`
-}
-
-type APISubscriptionNotificationAccountTxExtraBlockchain struct {
-	Inserted     bool   `json:"inserted,omitempty"`
-	TxsCount     uint64 `json:"txsCount,omitempty"`
-	BlkHeight    uint64 `json:"blkHeight,omitempty"`
-	BlkTimestamp uint64 `json:"blkTimestamp,omitempty"`
-	Height       uint64 `json:"height,omitempty"`
-}
-
-type APISubscriptionNotificationAccountTxExtraMempool struct {
-	Inserted bool `json:"inserted,omitempty"`
-}
-
-type APISubscriptionNotificationAccountExtra struct {
-	Asset helpers.HexBytes `json:"asset"`
-}
-
-type APISubscriptionNotificationAccountTxExtra struct {
-	Blockchain *APISubscriptionNotificationAccountTxExtraBlockchain `json:"blockchain,omitempty"`
-	Mempool    *APISubscriptionNotificationAccountTxExtraMempool    `json:"mempool,omitempty"`
-}
-
-type APISubscriptionNotificationTxExtraMempool struct {
-	Inserted bool `json:"inserted,omitempty"`
-}
-
-type APISubscriptionNotificationTxExtra struct {
-	Blockchain *APISubscriptionNotificationTxExtraBlockchain `json:"blockchain,omitempty"`
-	Mempool    *APISubscriptionNotificationTxExtraMempool    `json:"mempool,omitempty"`
-}
-
-type APIAccountTxs struct {
-	Count uint64             `json:"count,omitempty"`
-	Txs   []helpers.HexBytes `json:"txs,omitempty"`
-}
-
-type APIFaucetInfo struct {
-	HCaptchaSiteKey      string `json:"hCaptchaSiteKey,omitempty"`
-	FaucetTestnetEnabled bool   `json:"faucetTestnetEnabled,omitempty"`
-	FaucetTestnetCoins   uint64 `json:"faucetTestnetCoins,omitempty"`
 }

@@ -1,0 +1,106 @@
+syntax = "proto3";
+package proto;
+
+option go_package = "./;api_types";
+
+message APIBlockchain {
+    uint64 height = 1;
+    bytes hash = 2;
+    bytes prevHash = 3;
+    bytes kernelHash = 4;
+    bytes prevKernelHash = 5;
+    uint64 timestamp = 6;
+    uint64 transactionsCount = 7;
+    uint64 accountsCount = 8;
+    uint64 assetsCount = 9;
+    string target = 10;
+    string totalDifficulty = 11;
+}
+
+message APIBlockchainSync  {
+    uint64 syncTime = 1;
+    uint32 blocksChangedLastInterval = 2;
+    bool sync = 3;
+}
+
+message APIBlockchainInfo {
+    string name = 1;
+    string version = 2;
+    uint64 network = 3;
+    int32 CPUThreads = 4;
+}
+
+message APIPong {
+    string ping = 1;
+}
+
+message APIBlockCompleteMissingTxs {
+    repeated bytes txs = 1;
+}
+
+message APIAccountsKeysByIndex {
+    repeated bytes publicKeys = 1;
+    repeated string addresses = 2;
+}
+
+message APIFaucetInfo {
+    string hCaptchaSiteKey = 1;
+    bool faucetTestnetEnabled  = 2;
+    uint64 faucetTestnetCoins =3;
+}
+
+
+message APIAccountTxs {
+    uint64 count = 1;
+    repeated bytes txs = 2;
+}
+
+
+message APISubscriptionNotificationTxExtraBlockchain {
+    bool inserted = 1;
+    uint64 blkHeight = 2;
+    uint64 blkTimestamp = 3;
+    uint64 height = 4;
+}
+message APISubscriptionNotificationTxExtraMempool {
+    bool inserted = 1;
+}
+
+message APISubscriptionNotificationTxExtra {
+    oneof type {
+        APISubscriptionNotificationTxExtraBlockchain blockchain = 1;
+        APISubscriptionNotificationTxExtraMempool mempool = 2;
+    }
+}
+
+message APISubscriptionNotificationAccountExtra {
+    bytes asset = 1;
+}
+
+
+message APISubscriptionNotificationAccountTxExtraBlockchain {
+    bool inserted = 1;
+    uint64 txsCount = 2;
+    uint64 blkHeight = 3;
+    uint64 blkTimestamp = 4;
+    uint64 height = 5;
+}
+
+message APISubscriptionNotificationAccountTxExtraMempool {
+    bool inserted = 1;
+}
+message APISubscriptionNotificationAccountTxExtra {
+    oneof type {
+        APISubscriptionNotificationAccountTxExtraBlockchain blockchain = 1;
+        APISubscriptionNotificationAccountTxExtraMempool mempool = 2;
+    }
+}
+
+
+message APIMempoolAnswer {
+    bytes chainHash = 1;
+    int32 count = 2;
+    repeated bytes hashes = 3;
+}
+
+

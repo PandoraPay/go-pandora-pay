@@ -72,7 +72,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 			continue
 		}
 
-		if subNot.Subscription.ReturnType == api_types.RETURN_SERIALIZED {
+		if subNot.Subscription.ReturnType == api_types.APIReturnType_RETURN_SERIALIZED {
 			var bytes []byte
 			if element != nil {
 				bytes = element.SerializeToBytes()
@@ -84,7 +84,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 				serialized = &api_types.APISubscriptionNotification{subscriptionType, key, bytes, extraMarshalled}
 			}
 			_ = subNot.Conn.SendJSON(apiRoute, serialized, nil)
-		} else if subNot.Subscription.ReturnType == api_types.RETURN_JSON {
+		} else if subNot.Subscription.ReturnType == api_types.APIReturnType_RETURN_JSON {
 			if marshalled == nil {
 				var bytes []byte
 				if element != nil {
@@ -104,13 +104,13 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 
 func (this *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.SubscriptionType) (subsMap map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification) {
 	switch subscriptionType {
-	case api_types.SUBSCRIPTION_ACCOUNT, api_types.SUBSCRIPTION_PLAIN_ACCOUNT, api_types.SUBSCRIPTION_REGISTRATION:
+	case api_types.SubscriptionType_SUBSCRIPTION_ACCOUNT, api_types.SubscriptionType_SUBSCRIPTION_PLAIN_ACCOUNT, api_types.SubscriptionType_SUBSCRIPTION_REGISTRATION:
 		subsMap = this.accountsSubscriptions
-	case api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
+	case api_types.SubscriptionType_SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
 		subsMap = this.accountsTransactionsSubscriptions
-	case api_types.SUBSCRIPTION_ASSET:
+	case api_types.SubscriptionType_SUBSCRIPTION_ASSET:
 		subsMap = this.assetsSubscriptions
-	case api_types.SUBSCRIPTION_TRANSACTION:
+	case api_types.SubscriptionType_SUBSCRIPTION_TRANSACTION:
 		subsMap = this.transactionsSubscriptions
 	}
 	return
@@ -208,8 +208,8 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 						if v.Element != nil {
 							element = v.Element.(*account.Account)
 						}
-						this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, element, nil, &api_types.APISubscriptionNotificationAccountExtra{
-							accs.Asset,
+						this.send(api_types.SubscriptionType_SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, element, nil, &api_types.APISubscriptionNotificationAccountExtra{
+							Asset: accs.Asset,
 						})
 					}
 				}
@@ -226,7 +226,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 					if v.Element != nil {
 						element = v.Element.(*plain_account.PlainAccount)
 					}
-					this.send(api_types.SUBSCRIPTION_PLAIN_ACCOUNT, []byte("sub/notify"), []byte(k), list, element, nil, nil)
+					this.send(api_types.SubscriptionType_SUBSCRIPTION_PLAIN_ACCOUNT, []byte("sub/notify"), []byte(k), list, element, nil, nil)
 				}
 			}
 
@@ -241,7 +241,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 					if v.Element != nil {
 						element = v.Element.(*asset.Asset)
 					}
-					this.send(api_types.SUBSCRIPTION_ASSET, []byte("sub/notify"), []byte(k), list, element, nil, nil)
+					this.send(api_types.SubscriptionType_SUBSCRIPTION_ASSET, []byte("sub/notify"), []byte(k), list, element, nil, nil)
 				}
 			}
 
@@ -256,7 +256,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 					if v.Element != nil {
 						element = v.Element.(*registration.Registration)
 					}
-					this.send(api_types.SUBSCRIPTION_REGISTRATION, []byte("sub/notify"), []byte(k), list, element, nil, nil)
+					this.send(api_types.SubscriptionType_SUBSCRIPTION_REGISTRATION, []byte("sub/notify"), []byte(k), list, element, nil, nil)
 				}
 			}
 
@@ -269,18 +269,22 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			for _, v := range txsUpdates {
 				for _, key := range v.Keys {
 					if list := this.accountsTransactionsSubscriptions[string(key.PublicKey)]; list != nil {
-						this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), key.PublicKey, list, nil, v.TxHash, &api_types.APISubscriptionNotificationAccountTxExtra{
-							Blockchain: &api_types.APISubscriptionNotificationAccountTxExtraBlockchain{
-								v.Inserted, key.TxsCount, v.BlockHeight, v.BlockTimestamp, v.Height,
+						this.send(api_types.SubscriptionType_SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), key.PublicKey, list, nil, v.TxHash, &api_types.APISubscriptionNotificationAccountTxExtra{
+							Type: &api_types.APISubscriptionNotificationAccountTxExtra_Blockchain{
+								&api_types.APISubscriptionNotificationAccountTxExtraBlockchain{
+									Inserted: v.Inserted, TxsCount: key.TxsCount, BlkHeight: v.BlockHeight, BlkTimestamp: v.BlockTimestamp, Height: v.Height,
+								},
 							},
 						})
 					}
 				}
 
 				if list := this.transactionsSubscriptions[v.TxHashStr]; list != nil {
-					this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), v.TxHash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
-						Blockchain: &api_types.APISubscriptionNotificationTxExtraBlockchain{
-							v.Inserted, v.BlockHeight, v.BlockTimestamp, v.Height,
+					this.send(api_types.SubscriptionType_SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), v.TxHash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
+						Type: &api_types.APISubscriptionNotificationTxExtra_Blockchain{
+							&api_types.APISubscriptionNotificationTxExtraBlockchain{
+								Inserted: v.Inserted, BlkHeight: v.BlockHeight, BlkTimestamp: v.BlockTimestamp, Height: v.Height,
+							},
 						},
 					})
 				}
@@ -296,16 +300,24 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			if !txUpdate.BlockchainNotification {
 				for key := range txUpdate.Keys {
 					if list := this.accountsTransactionsSubscriptions[key]; list != nil {
-						this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), []byte(key), list, nil, txUpdate.Tx.Bloom.Hash, &api_types.APISubscriptionNotificationAccountTxExtra{
-							Mempool: &api_types.APISubscriptionNotificationAccountTxExtraMempool{txUpdate.Inserted},
+						this.send(api_types.SubscriptionType_SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), []byte(key), list, nil, txUpdate.Tx.Bloom.Hash, &api_types.APISubscriptionNotificationAccountTxExtra{
+							Type: &api_types.APISubscriptionNotificationAccountTxExtra_Mempool{
+								&api_types.APISubscriptionNotificationAccountTxExtraMempool{
+									Inserted: txUpdate.Inserted,
+								},
+							},
 						})
 					}
 				}
 			}
 
 			if list := this.transactionsSubscriptions[txUpdate.Tx.Bloom.HashStr]; list != nil {
-				this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), txUpdate.Tx.Bloom.Hash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
-					Mempool: &api_types.APISubscriptionNotificationTxExtraMempool{txUpdate.Inserted},
+				this.send(api_types.SubscriptionType_SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), txUpdate.Tx.Bloom.Hash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
+					Type: &api_types.APISubscriptionNotificationTxExtra_Mempool{
+						&api_types.APISubscriptionNotificationTxExtraMempool{
+							Inserted: txUpdate.Inserted,
+						},
+					},
 				})
 			}
 
@@ -314,10 +326,10 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				return
 			}
 
-			this.removeConnection(conn, api_types.SUBSCRIPTION_ACCOUNT)
-			this.removeConnection(conn, api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS)
-			this.removeConnection(conn, api_types.SUBSCRIPTION_ASSET)
-			this.removeConnection(conn, api_types.SUBSCRIPTION_TRANSACTION)
+			this.removeConnection(conn, api_types.SubscriptionType_SUBSCRIPTION_ACCOUNT)
+			this.removeConnection(conn, api_types.SubscriptionType_SUBSCRIPTION_ACCOUNT_TRANSACTIONS)
+			this.removeConnection(conn, api_types.SubscriptionType_SUBSCRIPTION_ASSET)
+			this.removeConnection(conn, api_types.SubscriptionType_SUBSCRIPTION_TRANSACTION)
 
 		}
 

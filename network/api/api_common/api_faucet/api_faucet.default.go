@@ -28,9 +28,9 @@ type APICommonFaucet struct {
 
 func (api *APICommonFaucet) GetFaucetInfo() ([]byte, error) {
 	return json.Marshal(&api_types.APIFaucetInfo{
-		config.HCAPTCHA_SITE_KEY,
-		config.FAUCET_TESTNET_ENABLED,
-		config.FAUCET_TESTNET_COINS,
+		HCaptchaSiteKey:      config.HCAPTCHA_SITE_KEY,
+		FaucetTestnetEnabled: config.FAUCET_TESTNET_ENABLED,
+		FaucetTestnetCoins:   config.FAUCET_TESTNET_COINS,
 	})
 }
 

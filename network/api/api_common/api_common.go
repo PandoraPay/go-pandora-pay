@@ -1,9 +1,9 @@
 package api_common
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"google.golang.org/protobuf/proto"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/blockchain_sync"
@@ -31,7 +31,7 @@ type APICommon struct {
 	mempool                   *mempool.Mempool
 	chain                     *blockchain.Blockchain
 	localChain                *atomic.Value //*APIBlockchain
-	localChainSync            *atomic.Value //*blockchain_sync.BlockchainSyncData
+	localChainSync            *atomic.Value //*APIBlockchainSync
 	APICommonFaucet           *api_faucet.APICommonFaucet
 	APIDelegatesNode          *api_delegates_node.APIDelegatesNode
 	ApiStore                  *APIStore
@@ -39,34 +39,36 @@ type APICommon struct {
 	MempoolProcessedThisBlock *atomic.Value // *sync.Map //[string]error
 }
 
-func (api *APICommon) GetBlockchain() ([]byte, error) {
-	chain := api.localChain.Load().(*api_types.APIBlockchain)
-	return json.Marshal(chain)
+func (api *APICommon) ReturnAnswer(object proto.Message, returnType api_types.APIReturnType) ([]byte, error) {
+	switch returnType {
+	case api_types.APIReturnType_RETURN_SERIALIZED:
+		return proto.Marshal(object)
+	case api_types.APIReturnType_RETURN_JSON:
+		return json.Marshal(object)
+	default:
+		return nil, errors.New("Error returnType")
+	}
 }
 
-func (api *APICommon) GetBlockchainSync() ([]byte, error) {
-	sync := api.localChainSync.Load().(*blockchain_sync.BlockchainSyncData)
-	return json.Marshal(sync)
+func (api *APICommon) GetBlockchain(returnType api_types.APIReturnType) ([]byte, error) {
+	return api.ReturnAnswer(api.localChain.Load().(*api_types.APIBlockchain), returnType)
 }
 
-func (api *APICommon) GetInfo() ([]byte, error) {
-	return json.Marshal(&struct {
-		Name       string `json:"name"`
-		Version    string `json:"version"`
-		Network    uint64 `json:"network"`
-		CPUThreads int    `json:"CPUThreads"`
-	}{
+func (api *APICommon) GetBlockchainSync(returnType api_types.APIReturnType) ([]byte, error) {
+	return api.ReturnAnswer(api.localChainSync.Load().(*api_types.APIBlockchainSync), returnType)
+}
+
+func (api *APICommon) GetInfo(returnType api_types.APIReturnType) ([]byte, error) {
+	return api.ReturnAnswer(&api_types.APIBlockchainInfo{
 		Name:       config.NAME,
 		Version:    config.VERSION,
 		Network:    config.NETWORK_SELECTED,
-		CPUThreads: config.CPU_THREADS,
-	})
+		CPUThreads: int32(config.CPU_THREADS),
+	}, returnType)
 }
 
-func (api *APICommon) GetPing() ([]byte, error) {
-	return json.Marshal(&struct {
-		Ping string `json:"ping"`
-	}{Ping: "pong"})
+func (api *APICommon) GetPing(returnType api_types.APIReturnType) ([]byte, error) {
+	return api.ReturnAnswer(&api_types.APIPong{Ping: "pong"}, returnType)
 }
 
 func (api *APICommon) GetBlockHash(blockHeight uint64) (helpers.HexBytes, error) {
@@ -104,7 +106,7 @@ func (api *APICommon) GetBlockComplete(request *api_types.APIBlockCompleteReques
 	if err != nil || blockComplete == nil {
 		return nil, err
 	}
-	if request.ReturnType == api_types.RETURN_SERIALIZED {
+	if request.ReturnType == api_types.APIReturnType_RETURN_SERIALIZED {
 		return blockComplete.BloomBlkComplete.Serialized, nil
 	}
 	return json.Marshal(blockComplete)
@@ -124,7 +126,7 @@ func (api *APICommon) GetBlock(request *api_types.APIBlockRequest) ([]byte, erro
 		return nil, err
 	}
 
-	if request.ReturnType == api_types.RETURN_SERIALIZED {
+	if request.ReturnType == api_types.APIReturnType_RETURN_SERIALIZED {
 		out.BlockSerialized = out.Block.SerializeToBytes()
 		out.Block = nil
 	}
@@ -152,7 +154,7 @@ func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) ([]byte, 
 		return nil, err
 	}
 
-	if request.ReturnType == api_types.RETURN_SERIALIZED {
+	if request.ReturnType == api_types.APIReturnType_RETURN_SERIALIZED {
 
 		outAcc.AccsSerialized = make([]helpers.HexBytes, len(outAcc.Accs))
 		for i, acc := range outAcc.Accs {
@@ -234,9 +236,9 @@ func (api *APICommon) GetTx(request *api_types.APITransactionRequest) ([]byte, e
 	}
 
 	result := &api_types.APITransaction{nil, nil, mempool, txInfo}
-	if request.ReturnType == api_types.RETURN_SERIALIZED {
+	if request.ReturnType == api_types.APIReturnType_RETURN_SERIALIZED {
 		result.TxSerialized = tx.Bloom.Serialized
-	} else if request.ReturnType == api_types.RETURN_JSON {
+	} else if request.ReturnType == api_types.APIReturnType_RETURN_JSON {
 		result.Tx = tx
 	} else {
 		return nil, errors.New("Invalid return type")
@@ -294,7 +296,7 @@ func (api *APICommon) GetAsset(request *api_types.APIAssetRequest) ([]byte, erro
 	if err != nil || asset == nil {
 		return nil, err
 	}
-	if request.ReturnType == api_types.RETURN_SERIALIZED {
+	if request.ReturnType == api_types.APIReturnType_RETURN_SERIALIZED {
 		return asset.SerializeToBytes(), nil
 	}
 	return json.Marshal(asset)
@@ -362,7 +364,7 @@ func (api *APICommon) GetAccountsByKeys(request *api_types.APIAccountsByKeysRequ
 		}
 	}
 
-	if request.ReturnType == api_types.RETURN_SERIALIZED {
+	if request.ReturnType == api_types.APIReturnType_RETURN_SERIALIZED {
 		out.AccSerialized = make([]helpers.HexBytes, len(out.Acc))
 		for i, acc := range out.Acc {
 			if acc != nil {
@@ -401,8 +403,8 @@ func (api *APICommon) GetMempool(request *api_types.APIMempoolRequest) ([]byte, 
 	}
 
 	result := &api_types.APIMempoolAnswer{
-		Count:  len(transactions),
-		Hashes: make([]helpers.HexBytes, length),
+		Count:  int32(len(transactions)),
+		Hashes: make([][]byte, length),
 	}
 
 	if request.ChainHash == nil {
@@ -474,26 +476,29 @@ func (api *APICommon) PostMempoolInsert(tx *transaction.Transaction, exceptSocke
 
 //make sure it is safe to read
 func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.BlockchainDataUpdate) {
-	newLocalChain := &api_types.APIBlockchain{
-		newChainDataUpdate.Update.Height,
-		hex.EncodeToString(newChainDataUpdate.Update.Hash),
-		hex.EncodeToString(newChainDataUpdate.Update.PrevHash),
-		hex.EncodeToString(newChainDataUpdate.Update.KernelHash),
-		hex.EncodeToString(newChainDataUpdate.Update.PrevKernelHash),
-		newChainDataUpdate.Update.Timestamp,
-		newChainDataUpdate.Update.TransactionsCount,
-		newChainDataUpdate.Update.AccountsCount,
-		newChainDataUpdate.Update.AssetsCount,
-		newChainDataUpdate.Update.Target.String(),
-		newChainDataUpdate.Update.BigTotalDifficulty.String(),
-	}
-	api.localChain.Store(newLocalChain)
+	api.localChain.Store(&api_types.APIBlockchain{
+		Height:            newChainDataUpdate.Update.Height,
+		Hash:              newChainDataUpdate.Update.Hash,
+		PrevHash:          newChainDataUpdate.Update.PrevHash,
+		KernelHash:        newChainDataUpdate.Update.KernelHash,
+		PrevKernelHash:    newChainDataUpdate.Update.PrevKernelHash,
+		Timestamp:         newChainDataUpdate.Update.Timestamp,
+		TransactionsCount: newChainDataUpdate.Update.TransactionsCount,
+		AccountsCount:     newChainDataUpdate.Update.AccountsCount,
+		AssetsCount:       newChainDataUpdate.Update.AssetsCount,
+		Target:            newChainDataUpdate.Update.Target.String(),
+		TotalDifficulty:   newChainDataUpdate.Update.BigTotalDifficulty.String(),
+	})
 	api.MempoolProcessedThisBlock.Store(&sync.Map{})
 }
 
 //make sure it is safe to read
-func (api *APICommon) readLocalBlockchainSync(newLocalSync *blockchain_sync.BlockchainSyncData) {
-	api.localChainSync.Store(newLocalSync)
+func (api *APICommon) readLocalBlockchainSync(newLocalSyncUpdate *blockchain_sync.BlockchainSyncData) {
+	api.localChainSync.Store(&api_types.APIBlockchainSync{
+		Sync:                      newLocalSyncUpdate.Sync,
+		SyncTime:                  newLocalSyncUpdate.SyncTime,
+		BlocksChangedLastInterval: newLocalSyncUpdate.BlocksChangedLastInterval,
+	})
 }
 
 func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder, apiStore *APIStore) (api *APICommon, err error) {

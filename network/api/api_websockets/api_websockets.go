@@ -32,19 +32,19 @@ func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, valu
 }
 
 func (api *APIWebsockets) getBlockchain(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.apiCommon.GetBlockchain()
+	return api.apiCommon.GetBlockchain(api_types.APIReturnType_RETURN_JSON)
 }
 
 func (api *APIWebsockets) getBlockchainSync(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.apiCommon.GetBlockchainSync()
+	return api.apiCommon.GetBlockchainSync(api_types.APIReturnType_RETURN_JSON)
 }
 
 func (api *APIWebsockets) getInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.apiCommon.GetInfo()
+	return api.apiCommon.GetInfo(api_types.APIReturnType_RETURN_JSON)
 }
 
 func (api *APIWebsockets) getPing(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.apiCommon.GetPing()
+	return api.apiCommon.GetPing(api_types.APIReturnType_RETURN_JSON)
 }
 
 func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -57,7 +57,7 @@ func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []
 
 func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_types.APIBlockRequest{api_types.APIHeightHash{0, nil}, api_types.RETURN_SERIALIZED}
+	request := &api_types.APIBlockRequest{api_types.APIHeightHash{0, nil}, api_types.APIReturnType_RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, request); err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, valu
 
 func (api *APIWebsockets) getBlockCompleteMissingTxs(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_types.APIBlockCompleteMissingTxsRequest{nil, []int{}}
+	request := &api_types.APIBlockCompleteMissingTxsRequest{api_types.APIHeightHash{0, nil}, []int{}}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (api *APIWebsockets) getBlockCompleteMissingTxs(conn *connection.AdvancedCo
 
 func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_types.APIBlockCompleteRequest{api_types.APIHeightHash{0, nil}, api_types.RETURN_SERIALIZED}
+	request := &api_types.APIBlockCompleteRequest{api_types.APIHeightHash{0, nil}, api_types.APIReturnType_RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, 
 }
 
 func (api *APIWebsockets) getAccount(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.RETURN_SERIALIZED}
+	request := &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.APIReturnType_RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (api *APIWebsockets) getAssetInfo(conn *connection.AdvancedConnection, valu
 }
 
 func (api *APIWebsockets) getAsset(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIAssetRequest{api_types.APIHeightHash{0, nil}, api_types.RETURN_SERIALIZED}
+	request := &api_types.APIAssetRequest{api_types.APIHeightHash{0, nil}, api_types.APIReturnType_RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (api *APIWebsockets) getAccountsKeysByIndex(conn *connection.AdvancedConnec
 
 func (api *APIWebsockets) getAccountsByKeys(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_types.APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
+	request := &api_types.APIAccountsByKeysRequest{nil, nil, false, api_types.APIReturnType_RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
@@ -272,7 +272,7 @@ func (api *APIWebsockets) postMempoolTxIdInsert(conn *connection.AdvancedConnect
 		return
 	}
 
-	result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APITransactionRequest{api_types.APIHeightHash{0, values}, api_types.RETURN_SERIALIZED}, nil)
+	result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APITransactionRequest{api_types.APIHeightHash{0, values}, api_types.APIReturnType_RETURN_SERIALIZED}, nil)
 	if result.Err != nil {
 		err = result.Err
 		return
