@@ -11,7 +11,6 @@ import (
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
-	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -283,15 +282,7 @@ func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) ([
 }
 
 func (api *APICommon) GetAssetInfo(request *api_types.APIAssetInfoRequest) ([]byte, error) {
-
-	if len(request.Hash) == 0 {
-		request.Hash = config_coins.NATIVE_ASSET_FULL
-	}
-
-	if request.Hash == nil && len(request.Hash) != config_coins.ASSET_LENGTH {
-		return nil, errors.New("Invalid request")
-	}
-	astInfo, err := api.ApiStore.openLoadAssetInfo(request.Hash)
+	astInfo, err := api.ApiStore.openLoadAssetInfo(request.Hash, request.Height)
 	if err != nil || astInfo == nil {
 		return nil, err
 	}
@@ -299,11 +290,7 @@ func (api *APICommon) GetAssetInfo(request *api_types.APIAssetInfoRequest) ([]by
 }
 
 func (api *APICommon) GetAsset(request *api_types.APIAssetRequest) ([]byte, error) {
-	if len(request.Hash) == 0 {
-		request.Hash = config_coins.NATIVE_ASSET_FULL
-	}
-
-	asset, err := api.ApiStore.openLoadAssetFromHash(request.Hash)
+	asset, err := api.ApiStore.openLoadAssetFromHash(request.Hash, request.Height)
 	if err != nil || asset == nil {
 		return nil, err
 	}

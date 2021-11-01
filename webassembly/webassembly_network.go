@@ -22,6 +22,21 @@ import (
 	"time"
 )
 
+func getNetworkBlockchain(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+		socket := app.Network.Websockets.GetFirstSocket()
+		if socket == nil {
+			return nil, errors.New("You are not connected to any node")
+		}
+
+		data := socket.SendJSONAwaitAnswer([]byte("chain"), nil, nil)
+		if data.Err != nil {
+			return nil, data.Err
+		}
+		return webassembly_utils.ConvertBytes(data.Out), nil
+	})
+}
+
 func getNetworkFaucetCoins(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		socket := app.Network.Websockets.GetFirstSocket()
@@ -67,7 +82,7 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 				return nil, err
 			}
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("block-info"), &api_types.APIBlockInfoRequest{uint64(args[0].Int()), hash}, nil)
+		data := socket.SendJSONAwaitAnswer([]byte("block-info"), &api_types.APIBlockInfoRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -93,7 +108,7 @@ func getNetworkBlockWithTxs(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("block"), &api_types.APIBlockRequest{height, hash, api_types.RETURN_SERIALIZED}, nil)
+		data := socket.SendJSONAwaitAnswer([]byte("block"), &api_types.APIBlockRequest{api_types.APIHeightHash{height, hash}, api_types.RETURN_SERIALIZED}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -302,7 +317,7 @@ func getNetworkTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("tx"), &api_types.APIBlockCompleteRequest{height, hash, api_types.RETURN_SERIALIZED}, nil)
+		data := socket.SendJSONAwaitAnswer([]byte("tx"), &api_types.APIBlockCompleteRequest{api_types.APIHeightHash{height, hash}, api_types.RETURN_SERIALIZED}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -353,11 +368,18 @@ func getNetworkAssetInfo(this js.Value, args []js.Value) interface{} {
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
-		hash, err := hex.DecodeString(args[0].String())
+
+		height, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
 			return nil, err
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("asset-info"), &api_types.APIAssetInfoRequest{hash}, nil)
+
+		hash, err := hex.DecodeString(args[1].String())
+		if err != nil {
+			return nil, err
+		}
+
+		data := socket.SendJSONAwaitAnswer([]byte("asset-info"), &api_types.APIAssetInfoRequest{api_types.APIHeightHash{height, hash}}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -372,14 +394,21 @@ func getNetworkAsset(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		hash, err := hex.DecodeString(args[0].String())
+		height, err := strconv.ParseUint(args[0].String(), 10, 64)
 		if err != nil {
 			return nil, err
 		}
-		data := socket.SendJSONAwaitAnswer([]byte("asset"), &api_types.APIAssetRequest{hash, api_types.RETURN_SERIALIZED}, nil)
+
+		hash, err := hex.DecodeString(args[1].String())
+		if err != nil {
+			return nil, err
+		}
+
+		data := socket.SendJSONAwaitAnswer([]byte("asset"), &api_types.APIAssetRequest{api_types.APIHeightHash{height, hash}, api_types.RETURN_SERIALIZED}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
+
 		ast := &asset.Asset{}
 		if err = ast.Deserialize(helpers.NewBufferReader(data.Out)); err != nil {
 			return nil, err

@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"pandora-pay/config"
 	"pandora-pay/config/arguments"
+	"pandora-pay/gui"
 	"syscall"
 	"syscall/js"
 )
@@ -17,6 +18,10 @@ func main() {
 		panic(err)
 	}
 	if err := config.InitConfig(); err != nil {
+		panic(err)
+	}
+
+	if err := gui.InitGUI(); err != nil {
 		panic(err)
 	}
 

@@ -10,6 +10,7 @@ import (
 	"pandora-pay/cryptography/crypto"
 	"runtime"
 	"sort"
+	"strconv"
 )
 
 // this file implements balance decoder whih has to be bruteforced
@@ -144,7 +145,7 @@ func (t *LookupTable) Lookup(p *bn256.G1, ctx context.Context, statusCallback fu
 				return 0, errors.New("Scanning Suspended")
 			default:
 			}
-			statusCallback(fmt.Sprintf("%d", balance))
+			statusCallback(strconv.FormatUint(balance, 10))
 		}
 
 		if loop_counter != 0 {

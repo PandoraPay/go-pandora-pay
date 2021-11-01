@@ -3,7 +3,6 @@ package balance_decoder
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/tevino/abool"
 	"math"
 	"math/big"
@@ -11,6 +10,7 @@ import (
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"runtime"
+	"strconv"
 	"sync/atomic"
 )
 
@@ -73,7 +73,7 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 		}
 		self.info.Store(info)
 
-		gui.GUI.Info2Update("Decoder", fmt.Sprintf("Init... %d", int(math.Log2(float64(info.tableSize)))))
+		gui.GUI.Info2Update("Decoder", "Init... "+strconv.Itoa(int(math.Log2(float64(info.tableSize)))))
 
 		if oldInfo != nil && oldInfo.hasError.SetToIf(false, true) {
 			close(oldInfo.readyCn)
@@ -89,7 +89,7 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 				close(info.readyCn)
 			}
 			info.tableLookup = tableLookup
-			gui.GUI.Info2Update("Decoder", fmt.Sprintf("Ready %d", int(math.Log2(float64(info.tableSize)))))
+			gui.GUI.Info2Update("Decoder", "Ready "+strconv.Itoa(int(math.Log2(float64(info.tableSize)))))
 			return tableLookup
 		case <-ctx.Done():
 			if info.hasError.SetToIf(false, true) {

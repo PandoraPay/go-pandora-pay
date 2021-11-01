@@ -3,7 +3,6 @@ package hash_map
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"math/rand"
 	"pandora-pay/helpers"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -29,7 +28,7 @@ func (hashMap *HashMap) GetIndexByKey(key string) (uint64, error) {
 	}
 
 	//safe to Get because it won't change
-	data := hashMap.Tx.Get(fmt.Sprintf("%s:listKey:%s", hashMap.name, key))
+	data := hashMap.Tx.Get(hashMap.name + ":listKey:" + key)
 	if data == nil {
 		return 0, errors.New("Key not found")
 	}
@@ -48,7 +47,7 @@ func (hashMap *HashMap) GetKeyByIndex(index uint64) (key []byte, err error) {
 	}
 
 	//Clone require because key might get altered afterwards
-	key = hashMap.Tx.GetClone(fmt.Sprintf("%s:list:%d", hashMap.name, index))
+	key = hashMap.Tx.GetClone(hashMap.name + ":list:" + strconv.FormatUint(index, 10))
 	if key == nil {
 		return nil, errors.New("Not found")
 	}
@@ -136,7 +135,7 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 		}
 	} else {
 		//Clone required because data could be altered afterwards
-		outData = hashMap.Tx.GetClone(fmt.Sprintf("%s:map:%s", hashMap.name, key))
+		outData = hashMap.Tx.GetClone(hashMap.name + ":map:" + key)
 	}
 
 	if outData != nil {
@@ -232,20 +231,20 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 			committed.Status = "view"
 			committed.Element = nil
 
-			if hashMap.Tx.Exists(fmt.Sprintf("%s:map:%s", hashMap.name, k)) {
+			if hashMap.Tx.Exists(hashMap.name + ":map:" + k) {
 				hashMap.Count -= 1
 
 				if hashMap.Tx.IsWritable() {
 
-					if err = hashMap.Tx.Delete(fmt.Sprintf("%s:map:%s", hashMap.name, k)); err != nil {
+					if err = hashMap.Tx.Delete(hashMap.name + ":map:" + k); err != nil {
 						return
 					}
 
 					if hashMap.Indexable {
-						if err = hashMap.Tx.Delete(fmt.Sprintf("%s:list:%d", hashMap.name, hashMap.Count)); err != nil {
+						if err = hashMap.Tx.Delete(hashMap.name + ":list:" + strconv.FormatUint(hashMap.Count, 10)); err != nil {
 							return
 						}
-						if err = hashMap.Tx.Delete(fmt.Sprintf("%s:listKey:%s", hashMap.name, k)); err != nil {
+						if err = hashMap.Tx.Delete(hashMap.name + ":listKeys" + k); err != nil {
 							return
 						}
 					}
@@ -279,15 +278,15 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 
 			committed.Element = v.Element
 
-			if !hashMap.Tx.Exists(fmt.Sprintf("%s:map:%s", hashMap.name, k)) {
+			if !hashMap.Tx.Exists(hashMap.name + ":map:" + k) {
 
 				if hashMap.Tx.IsWritable() && hashMap.Indexable {
 					//safe
-					if err = hashMap.Tx.Put(fmt.Sprintf("%s:list:%d", hashMap.name, hashMap.Count), []byte(k)); err != nil {
+					if err = hashMap.Tx.Put(hashMap.name+":list:"+strconv.FormatUint(hashMap.Count, 10), []byte(k)); err != nil {
 						return
 					}
 					//safe
-					if err = hashMap.Tx.Put(fmt.Sprintf("%s:listKey:%s", hashMap.name, k), []byte(strconv.FormatUint(hashMap.Count, 10))); err != nil {
+					if err = hashMap.Tx.Put(hashMap.name+":listKeys"+k, []byte(strconv.FormatUint(hashMap.Count, 10))); err != nil {
 						return
 					}
 				}
@@ -302,7 +301,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 
 			if hashMap.Tx.IsWritable() {
 				//clone required because the element could change later on
-				if err = hashMap.Tx.PutClone(fmt.Sprintf("%s:map:%s", hashMap.name, k), v.Element.SerializeToBytes()); err != nil {
+				if err = hashMap.Tx.PutClone(hashMap.name+":map:"+k, v.Element.SerializeToBytes()); err != nil {
 					return
 				}
 			}
@@ -322,7 +321,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 		buf := make([]byte, binary.MaxVarintLen64)
 		n := binary.PutUvarint(buf, hashMap.Count)
 		//safe
-		if err = hashMap.Tx.Put(fmt.Sprintf("%s:count", hashMap.name), buf[:n]); err != nil {
+		if err = hashMap.Tx.Put(hashMap.name+":count", buf[:n]); err != nil {
 			return
 		}
 	}

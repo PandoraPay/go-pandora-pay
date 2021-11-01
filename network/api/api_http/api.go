@@ -41,15 +41,8 @@ func (api *API) getPing(values *url.Values) (interface{}, error) {
 
 func (api *API) getBlockComplete(values *url.Values) (interface{}, error) {
 
-	request := &api_types.APIBlockCompleteRequest{0, nil, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
-
-	err := errors.New("parameter 'hash' or 'height' are missing")
-	if values.Get("height") != "" {
-		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
-	} else if values.Get("hash") != "" {
-		request.Hash, err = hex.DecodeString(values.Get("hash"))
-	}
-	if err != nil {
+	request := &api_types.APIBlockCompleteRequest{api_types.APIHeightHash{0, nil}, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
+	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
 
@@ -72,14 +65,7 @@ func (api *API) getBlockHash(values *url.Values) (interface{}, error) {
 func (api *API) getBlock(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APIBlockRequest{}
-
-	err := errors.New("parameter 'hash' or 'height' are missing")
-	if values.Get("height") != "" {
-		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
-	} else if values.Get("hash") != "" {
-		request.Hash, err = hex.DecodeString(values.Get("hash"))
-	}
-	if err != nil {
+	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
 
@@ -89,14 +75,7 @@ func (api *API) getBlock(values *url.Values) (interface{}, error) {
 func (api *API) getBlockInfo(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APIBlockInfoRequest{}
-
-	err := errors.New("parameter 'hash' or 'height' are missing")
-	if values.Get("height") != "" {
-		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
-	} else if values.Get("hash") != "" {
-		request.Hash, err = hex.DecodeString(values.Get("hash"))
-	}
-	if err != nil {
+	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
 
@@ -106,12 +85,8 @@ func (api *API) getBlockInfo(values *url.Values) (interface{}, error) {
 func (api *API) getAssetInfo(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APIAssetInfoRequest{}
-
-	var err error
-	if values.Get("hash") != "" {
-		if request.Hash, err = hex.DecodeString(values.Get("hash")); err != nil {
-			return nil, err
-		}
+	if err := request.ImportFromValues(values); err != nil {
+		return nil, err
 	}
 
 	return api.apiCommon.GetAssetInfo(request)
@@ -120,14 +95,7 @@ func (api *API) getAssetInfo(values *url.Values) (interface{}, error) {
 func (api *API) getTxInfo(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APITransactionInfoRequest{}
-
-	err := errors.New("parameter 'hash' or 'height' are missing")
-	if values.Get("height") != "" {
-		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
-	} else if values.Get("hash") != "" {
-		request.Hash, err = hex.DecodeString(values.Get("hash"))
-	}
-	if err != nil {
+	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
 
@@ -137,14 +105,7 @@ func (api *API) getTxInfo(values *url.Values) (interface{}, error) {
 func (api *API) getTxPreview(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APITransactionInfoRequest{}
-
-	err := errors.New("parameter 'hash' or 'height' are missing")
-	if values.Get("height") != "" {
-		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
-	} else if values.Get("hash") != "" {
-		request.Hash, err = hex.DecodeString(values.Get("hash"))
-	}
-	if err != nil {
+	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
 
@@ -153,15 +114,9 @@ func (api *API) getTxPreview(values *url.Values) (interface{}, error) {
 
 func (api *API) getTx(values *url.Values) (interface{}, error) {
 
-	request := &api_types.APITransactionRequest{0, nil, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
+	request := &api_types.APITransactionRequest{api_types.APIHeightHash{0, nil}, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
 
-	err := errors.New("parameter 'hash' or 'height' are missing")
-	if values.Get("height") != "" {
-		request.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
-	} else if values.Get("hash") != "" {
-		request.Hash, err = hex.DecodeString(values.Get("hash"))
-	}
-	if err != nil {
+	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
 
@@ -220,14 +175,10 @@ func (api *API) getAccountMempool(values *url.Values) (interface{}, error) {
 
 func (api *API) getAsset(values *url.Values) (interface{}, error) {
 	request := &api_types.APIAssetRequest{}
-	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
-
-	var err error
-	if values.Get("hash") != "" {
-		if request.Hash, err = hex.DecodeString(values.Get("hash")); err != nil {
-			return nil, err
-		}
+	if err := request.ImportFromValues(values); err != nil {
+		return nil, err
 	}
+	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
 	return api.apiCommon.GetAsset(request)
 }
 

@@ -28,6 +28,7 @@ import (
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/wallet"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -91,7 +92,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	chainData := chain.GetChainData()
 
-	gui.GUI.Info(fmt.Sprintf("Including blocks %d ... %d", chainData.Height, chainData.Height+uint64(len(blocksComplete))))
+	gui.GUI.Info("Including blocks " + strconv.FormatUint(chainData.Height, 10) + " ... " + strconv.FormatUint(chainData.Height+uint64(len(blocksComplete)), 10))
 
 	//chain.RLock() is not required because it is guaranteed that no other thread is writing now in the chain
 	var newChainData = &BlockchainData{

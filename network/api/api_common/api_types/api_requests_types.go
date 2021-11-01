@@ -41,14 +41,12 @@ func GetReturnType(s string, defaultValue APIReturnType) APIReturnType {
 }
 
 type APIBlockRequest struct {
-	Height     uint64           `json:"height,omitempty"`
-	Hash       helpers.HexBytes `json:"hash,omitempty"`
-	ReturnType APIReturnType    `json:"returnType,omitempty"`
+	APIHeightHash
+	ReturnType APIReturnType `json:"returnType,omitempty"`
 }
 
 type APIBlockInfoRequest struct {
-	Height uint64           `json:"height,omitempty"`
-	Hash   helpers.HexBytes `json:"hash,omitempty"`
+	APIHeightHash
 }
 
 type APIBlockCompleteMissingTxsRequest struct {
@@ -57,20 +55,17 @@ type APIBlockCompleteMissingTxsRequest struct {
 }
 
 type APIBlockCompleteRequest struct {
-	Height     uint64           `json:"height,omitempty"`
-	Hash       helpers.HexBytes `json:"hash,omitempty"`
-	ReturnType APIReturnType    `json:"returnType,omitempty"`
+	APIHeightHash
+	ReturnType APIReturnType `json:"returnType,omitempty"`
 }
 
 type APITransactionRequest struct {
-	Height     uint64           `json:"height,omitempty"`
-	Hash       helpers.HexBytes `json:"hash,omitempty"`
-	ReturnType APIReturnType    `json:"returnType,omitempty"`
+	APIHeightHash
+	ReturnType APIReturnType `json:"returnType,omitempty"`
 }
 
 type APITransactionInfoRequest struct {
-	Height uint64           `json:"height,omitempty"`
-	Hash   helpers.HexBytes `json:"hash,omitempty"`
+	APIHeightHash
 }
 
 type APIAccountBaseRequest struct {
@@ -119,12 +114,12 @@ func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
 }
 
 type APIAssetInfoRequest struct {
-	Hash helpers.HexBytes `json:"hash"`
+	APIHeightHash
 }
 
 type APIAssetRequest struct {
-	Hash       helpers.HexBytes `json:"hash"`
-	ReturnType APIReturnType    `json:"returnType"`
+	APIHeightHash
+	ReturnType APIReturnType `json:"returnType"`
 }
 
 type APISubscriptionRequest struct {
@@ -142,6 +137,21 @@ type APIMempoolRequest struct {
 	ChainHash helpers.HexBytes `json:"chainHash,omitempty"`
 	Page      int              `json:"page,omitempty"`
 	Count     int              `json:"count,omitempty"`
+}
+
+type APIHeightHash struct {
+	Height uint64           `json:"height,omitempty"`
+	Hash   helpers.HexBytes `json:"hash,omitempty"`
+}
+
+func (self *APIHeightHash) ImportFromValues(values *url.Values) (err error) {
+	err = errors.New("parameter 'hash' or 'height' are missing")
+	if values.Get("height") != "" {
+		self.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
+	} else if values.Get("hash") != "" {
+		self.Hash, err = hex.DecodeString(values.Get("hash"))
+	}
+	return
 }
 
 func (self *APIAccountBaseRequest) ImportFromValues(values *url.Values) (err error) {

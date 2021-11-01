@@ -29,8 +29,15 @@ type APIStore struct {
 	chain *blockchain.Blockchain
 }
 
-func (apiStore *APIStore) openLoadAssetInfo(hash []byte) (astInfo *info.AssetInfo, errFinal error) {
+func (apiStore *APIStore) openLoadAssetInfo(hash []byte, height uint64) (astInfo *info.AssetInfo, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		if hash == nil {
+			if hash, err = apiStore.loadAssetHash(reader, height); err != nil {
+				return
+			}
+		}
+
 		astInfo, err = apiStore.loadAssetInfo(reader, hash)
 		return
 	})
@@ -242,8 +249,15 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKey(publicKey []byte, next
 	return
 }
 
-func (apiStore *APIStore) openLoadAssetFromHash(hash []byte) (ast *asset.Asset, errFinal error) {
+func (apiStore *APIStore) openLoadAssetFromHash(hash []byte, height uint64) (ast *asset.Asset, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		if hash == nil {
+			if hash, err = apiStore.loadAssetHash(reader, height); err != nil {
+				return
+			}
+		}
+
 		asts := assets.NewAssets(reader)
 		ast, err = asts.GetAsset(hash)
 		return
@@ -499,6 +513,15 @@ func (apiStore *APIStore) loadTx(reader store_db_interface.StoreDBTransactionInt
 	}
 
 	return tx, txInfo, nil
+}
+
+func (apiStore *APIStore) loadAssetHash(reader store_db_interface.StoreDBTransactionInterface, height uint64) ([]byte, error) {
+	if height < 0 {
+		return nil, errors.New("Height is invalid")
+	}
+
+	hash := reader.Get("txHash_ByHeight" + strconv.FormatUint(height, 10))
+	return hash, nil
 }
 
 func (apiStore *APIStore) loadTxHash(reader store_db_interface.StoreDBTransactionInterface, height uint64) ([]byte, error) {
