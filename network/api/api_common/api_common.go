@@ -290,7 +290,7 @@ func (api *APICommon) GetAssetInfo(request *api_types.APIAssetInfoRequest) ([]by
 }
 
 func (api *APICommon) GetAsset(request *api_types.APIAssetRequest) ([]byte, error) {
-	asset, err := api.ApiStore.openLoadAssetFromHash(request.Hash, request.Height)
+	asset, err := api.ApiStore.openLoadAsset(request.Hash, request.Height)
 	if err != nil || asset == nil {
 		return nil, err
 	}

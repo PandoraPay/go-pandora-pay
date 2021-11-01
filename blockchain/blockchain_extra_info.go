@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/info"
+	"pandora-pay/helpers"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
@@ -109,6 +110,7 @@ func saveAssetsInfo(asts *assets.Assets) (err error) {
 				Ticker:           ast.Ticker,
 				DecimalSeparator: ast.DecimalSeparator,
 				Description:      ast.Description,
+				Hash:             helpers.HexBytes(k),
 			}
 			var data []byte
 			if data, err = json.Marshal(astInfo); err != nil {

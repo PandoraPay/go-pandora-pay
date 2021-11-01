@@ -32,7 +32,7 @@ type APIStore struct {
 func (apiStore *APIStore) openLoadAssetInfo(hash []byte, height uint64) (astInfo *info.AssetInfo, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		if hash == nil {
+		if len(hash) == 0 {
 			if hash, err = apiStore.loadAssetHash(reader, height); err != nil {
 				return
 			}
@@ -47,7 +47,7 @@ func (apiStore *APIStore) openLoadAssetInfo(hash []byte, height uint64) (astInfo
 func (apiStore *APIStore) openLoadTxInfo(hash []byte, txHeight uint64) (txInfo *info.TxInfo, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		if hash == nil {
+		if len(hash) == 0 {
 			if hash, err = apiStore.loadTxHash(reader, txHeight); err != nil {
 				return
 			}
@@ -62,7 +62,7 @@ func (apiStore *APIStore) openLoadTxInfo(hash []byte, txHeight uint64) (txInfo *
 func (apiStore *APIStore) openLoadTxPreview(hash []byte, txHeight uint64) (txPreview *info.TxPreview, txInfo *info.TxInfo, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		if hash == nil {
+		if len(hash) == 0 {
 			if hash, err = apiStore.loadTxHash(reader, txHeight); err != nil {
 				return
 			}
@@ -80,7 +80,7 @@ func (apiStore *APIStore) openLoadTxPreview(hash []byte, txHeight uint64) (txPre
 func (apiStore *APIStore) openLoadBlockInfo(blockHeight uint64, hash []byte) (blkInfo *info.BlockInfo, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		if hash == nil {
+		if len(hash) == 0 {
 			if hash, err = apiStore.chain.LoadBlockHash(reader, blockHeight); err != nil {
 				return
 			}
@@ -249,7 +249,7 @@ func (apiStore *APIStore) openLoadAccountTxsFromPublicKey(publicKey []byte, next
 	return
 }
 
-func (apiStore *APIStore) openLoadAssetFromHash(hash []byte, height uint64) (ast *asset.Asset, errFinal error) {
+func (apiStore *APIStore) openLoadAsset(hash []byte, height uint64) (ast *asset.Asset, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if hash == nil {
@@ -519,18 +519,14 @@ func (apiStore *APIStore) loadAssetHash(reader store_db_interface.StoreDBTransac
 	if height < 0 {
 		return nil, errors.New("Height is invalid")
 	}
-
-	hash := reader.Get("txHash_ByHeight" + strconv.FormatUint(height, 10))
-	return hash, nil
+	return reader.Get("assets::list:" + strconv.FormatUint(height, 10)), nil
 }
 
 func (apiStore *APIStore) loadTxHash(reader store_db_interface.StoreDBTransactionInterface, height uint64) ([]byte, error) {
 	if height < 0 {
 		return nil, errors.New("Height is invalid")
 	}
-
-	hash := reader.Get("txHash_ByHeight" + strconv.FormatUint(height, 10))
-	return hash, nil
+	return reader.Get("txHash_ByHeight" + strconv.FormatUint(height, 10)), nil
 }
 
 func (chain *APIStore) loadBlock(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*block.Block, error) {

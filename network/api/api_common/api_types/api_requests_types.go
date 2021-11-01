@@ -119,7 +119,7 @@ type APIAssetInfoRequest struct {
 
 type APIAssetRequest struct {
 	APIHeightHash
-	ReturnType APIReturnType `json:"returnType"`
+	ReturnType APIReturnType `json:"returnType,omitempty"`
 }
 
 type APISubscriptionRequest struct {

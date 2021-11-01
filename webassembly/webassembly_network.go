@@ -75,12 +75,9 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 		if socket == nil {
 			return nil, errors.New("You are not connected to any node")
 		}
-		var hash []byte
-		var err error
-		if len(args) >= 2 {
-			if hash, err = hex.DecodeString(args[1].String()); err != nil {
-				return nil, err
-			}
+		hash, err := hex.DecodeString(args[1].String())
+		if err != nil {
+			return nil, err
 		}
 		data := socket.SendJSONAwaitAnswer([]byte("block-info"), &api_types.APIBlockInfoRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}}, nil)
 		if data.Err != nil {
@@ -98,17 +95,12 @@ func getNetworkBlockWithTxs(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		height, err := strconv.ParseUint(args[0].String(), 10, 64)
-		if err != nil {
-			return nil, err
-		}
-
 		hash, err := hex.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("block"), &api_types.APIBlockRequest{api_types.APIHeightHash{height, hash}, api_types.RETURN_SERIALIZED}, nil)
+		data := socket.SendJSONAwaitAnswer([]byte("block"), &api_types.APIBlockRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}, api_types.RETURN_SERIALIZED}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -307,17 +299,12 @@ func getNetworkTx(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		height, err := strconv.ParseUint(args[0].String(), 10, 64)
-		if err != nil {
-			return nil, err
-		}
-
 		hash, err := hex.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("tx"), &api_types.APIBlockCompleteRequest{api_types.APIHeightHash{height, hash}, api_types.RETURN_SERIALIZED}, nil)
+		data := socket.SendJSONAwaitAnswer([]byte("tx"), &api_types.APIBlockCompleteRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}, api_types.RETURN_SERIALIZED}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -343,17 +330,12 @@ func getNetworkTxPreview(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		height, err := strconv.ParseUint(args[0].String(), 10, 64)
-		if err != nil {
-			return nil, err
-		}
-
 		hash, err := hex.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("tx-preview"), &api_types.APITransactionInfoRequest{height, hash}, nil)
+		data := socket.SendJSONAwaitAnswer([]byte("tx-preview"), &api_types.APITransactionInfoRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -369,17 +351,12 @@ func getNetworkAssetInfo(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		height, err := strconv.ParseUint(args[0].String(), 10, 64)
-		if err != nil {
-			return nil, err
-		}
-
 		hash, err := hex.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("asset-info"), &api_types.APIAssetInfoRequest{api_types.APIHeightHash{height, hash}}, nil)
+		data := socket.SendJSONAwaitAnswer([]byte("asset-info"), &api_types.APIAssetInfoRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -394,17 +371,12 @@ func getNetworkAsset(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("You are not connected to any node")
 		}
 
-		height, err := strconv.ParseUint(args[0].String(), 10, 64)
-		if err != nil {
-			return nil, err
-		}
-
 		hash, err := hex.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
 
-		data := socket.SendJSONAwaitAnswer([]byte("asset"), &api_types.APIAssetRequest{api_types.APIHeightHash{height, hash}, api_types.RETURN_SERIALIZED}, nil)
+		data := socket.SendJSONAwaitAnswer([]byte("asset"), &api_types.APIAssetRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}, api_types.RETURN_SERIALIZED}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
