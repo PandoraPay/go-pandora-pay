@@ -1,6 +1,7 @@
 package dpos
 
 import (
+	"errors"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -15,10 +16,16 @@ type DelegatedStake struct {
 }
 
 func (dstake *DelegatedStake) AddStakeAvailable(sign bool, amount uint64) error {
+	if dstake == nil {
+		return errors.New("delegatedStake is null")
+	}
 	return helpers.SafeUint64Update(sign, &dstake.StakeAvailable, amount)
 }
 
 func (dstake *DelegatedStake) AddStakePendingStake(amount, blockHeight uint64) error {
+	if dstake == nil {
+		return errors.New("delegatedStake is null")
+	}
 
 	if amount == 0 {
 		return nil

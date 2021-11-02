@@ -47,7 +47,7 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 	if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(blk.Forger, blk.Height); err != nil {
 		return
 	}
-	if plainAcc == nil || !plainAcc.HasDelegatedStake() {
+	if plainAcc == nil {
 		return errors.New("Account not found")
 	}
 

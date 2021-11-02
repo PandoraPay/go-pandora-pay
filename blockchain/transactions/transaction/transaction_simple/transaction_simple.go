@@ -48,7 +48,13 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE:
+	case SCRIPT_UPDATE_DELEGATE:
+		if plainAcc.Unclaimed >= tx.Fees {
+			err = plainAcc.AddUnclaimed(false, tx.Fees)
+		} else {
+			err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fees)
+		}
+	case SCRIPT_UNSTAKE:
 		err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fees)
 	default:
 		err = errors.New("Invalid Simple TxScript")

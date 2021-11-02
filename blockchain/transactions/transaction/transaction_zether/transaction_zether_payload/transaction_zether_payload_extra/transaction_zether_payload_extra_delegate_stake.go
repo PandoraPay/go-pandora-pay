@@ -16,6 +16,7 @@ import (
 type TransactionZetherPayloadExtraDelegateStake struct {
 	TransactionZetherPayloadExtraInterface
 	DelegatePublicKey      []byte
+	ConvertToUnclaim       bool
 	DelegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate
 	DelegateSignature      []byte //if newInfo then the signature is required to verify that he is owner
 }
@@ -39,19 +40,21 @@ func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) IncludeTxPayload
 		return
 	}
 
-	if !plainAcc.HasDelegatedStake() {
-		return errors.New("acc.HasDelegatedStake is false")
-	}
-
-	if err = plainAcc.DelegatedStake.AddStakePendingStake(payloadBurnValue, blockHeight); err != nil {
-		return
+	if payloadExtra.ConvertToUnclaim {
+		if err = plainAcc.AddUnclaimed(true, payloadBurnValue); err != nil {
+			return
+		}
+	} else {
+		if err = plainAcc.DelegatedStake.AddStakePendingStake(payloadBurnValue, blockHeight); err != nil {
+			return
+		}
 	}
 
 	if err = dataStorage.PlainAccs.Update(string(payloadExtra.DelegatePublicKey), plainAcc); err != nil {
 		return
 	}
 
-	return nil
+	return
 }
 
 func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) ComputeAllKeys(out map[string]bool) {
@@ -89,6 +92,7 @@ func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) VerifyExtraSigna
 
 func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.Write(payloadExtra.DelegatePublicKey)
+	w.WriteBool(payloadExtra.ConvertToUnclaim)
 	payloadExtra.DelegatedStakingUpdate.Serialize(w)
 	if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo && inclSignature {
 		w.Write(payloadExtra.DelegateSignature)
@@ -97,6 +101,9 @@ func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) Serialize(w *hel
 
 func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) Deserialize(r *helpers.BufferReader) (err error) {
 	if payloadExtra.DelegatePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+		return
+	}
+	if payloadExtra.ConvertToUnclaim, err = r.ReadBool(); err != nil {
 		return
 	}
 	payloadExtra.DelegatedStakingUpdate = &transaction_data.TransactionDataDelegatedStakingUpdate{}

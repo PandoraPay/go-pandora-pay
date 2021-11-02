@@ -69,6 +69,7 @@ type json_Only_TransactionZether struct {
 
 type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
 	DelegatePublicKey      helpers.HexBytes                            `json:"delegatePublicKey"`
+	ConvertToUnclaim       bool                                        `json:"convertToUnclaim"`
 	DelegatedStakingUpdate *json_TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
 	DelegateSignature      helpers.HexBytes                            `json:"delegateSignature"`
 }
@@ -198,6 +199,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake)
 				extra = &json_Only_TransactionZetherPayloadExtraDelegateStake{
 					payloadExtra.DelegatePublicKey,
+					payloadExtra.ConvertToUnclaim,
 					&json_TransactionDataDelegatedStakingUpdate{
 						payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
 						payloadExtra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
@@ -252,11 +254,11 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 
 }
 
-func (tx *Transaction) UnmarshalJSON(data []byte) error {
+func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 
 	txOnlyJson := &json_Transaction{}
-	if err := json.Unmarshal(data, txOnlyJson); err != nil {
-		return err
+	if err = json.Unmarshal(data, txOnlyJson); err != nil {
+		return
 	}
 
 	switch txOnlyJson.Version {
@@ -271,8 +273,8 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 	case transaction_type.TX_SIMPLE:
 
 		simpleJson := &json_TransactionSimple{}
-		if err := json.Unmarshal(data, simpleJson); err != nil {
-			return err
+		if err = json.Unmarshal(data, simpleJson); err != nil {
+			return
 		}
 
 		switch simpleJson.DataVersion {
@@ -307,8 +309,8 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 		case transaction_simple.SCRIPT_UPDATE_DELEGATE:
 
 			extraJson := &json_Only_TransactionSimpleExtraUpdateDelegate{}
-			if err := json.Unmarshal(data, extraJson); err != nil {
-				return err
+			if err = json.Unmarshal(data, extraJson); err != nil {
+				return
 			}
 
 			base.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{
@@ -322,8 +324,8 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 
 		case transaction_simple.SCRIPT_UNSTAKE:
 			extraJSON := &json_Only_TransactionSimpleExtraUnstake{}
-			if err := json.Unmarshal(data, extraJSON); err != nil {
-				return err
+			if err = json.Unmarshal(data, extraJSON); err != nil {
+				return
 			}
 
 			base.Extra = &transaction_simple_extra.TransactionSimpleExtraUnstake{
@@ -336,32 +338,33 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 	case transaction_type.TX_ZETHER:
 
 		simpleZether := &json_Only_TransactionZether{}
-		if err := json.Unmarshal(data, simpleZether); err != nil {
-			return err
+		if err = json.Unmarshal(data, simpleZether); err != nil {
+			return
 		}
 
 		payloads := make([]*transaction_zether_payload.TransactionZetherPayload, len(simpleZether.Payloads))
 		for i, payload := range simpleZether.Payloads {
 
-			CLn, err := helpers.ConvertToBN256Array(payload.Statement.CLn)
-			if err != nil {
-				return err
-			}
-			CRn, err := helpers.ConvertToBN256Array(payload.Statement.CRn)
-			if err != nil {
-				return err
-			}
-			Publickeylist, err := helpers.ConvertToBN256Array(payload.Statement.Publickeylist)
-			if err != nil {
-				return err
-			}
-			C, err := helpers.ConvertToBN256Array(payload.Statement.C)
-			if err != nil {
-				return err
+			statement := &crypto.Statement{
+				RingSize: payload.Statement.RingSize,
+				Fees:     payload.Statement.Fees,
 			}
 
-			D := new(bn256.G1)
-			if err = D.DecodeCompressed(payload.Statement.D); err != nil {
+			if statement.CLn, err = helpers.ConvertToBN256Array(payload.Statement.CLn); err != nil {
+				return
+			}
+			if statement.CRn, err = helpers.ConvertToBN256Array(payload.Statement.CRn); err != nil {
+				return
+			}
+			if statement.Publickeylist, err = helpers.ConvertToBN256Array(payload.Statement.Publickeylist); err != nil {
+				return
+			}
+			if statement.C, err = helpers.ConvertToBN256Array(payload.Statement.C); err != nil {
+				return
+			}
+
+			statement.D = new(bn256.G1)
+			if err = statement.D.DecodeCompressed(payload.Statement.D); err != nil {
 				return err
 			}
 
@@ -383,16 +386,8 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 				Registrations: &transaction_zether_registrations.TransactionZetherDataRegistrations{
 					Registrations: make([]*transaction_zether_registrations.TransactionZetherDataRegistration, len(payload.Registrations)),
 				},
-				Statement: &crypto.Statement{
-					RingSize:      payload.Statement.RingSize,
-					CLn:           CLn,
-					CRn:           CRn,
-					Publickeylist: Publickeylist,
-					C:             C,
-					D:             D,
-					Fees:          payload.Statement.Fees,
-				},
-				Proof: proof,
+				Statement: statement,
+				Proof:     proof,
 			}
 
 			for i, reg := range payload.Registrations {
@@ -412,6 +407,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 
 				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
 					DelegatePublicKey: extraJSON.DelegatePublicKey,
+					ConvertToUnclaim:  extraJSON.ConvertToUnclaim,
 					DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{
 						extraJSON.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
 						extraJSON.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
