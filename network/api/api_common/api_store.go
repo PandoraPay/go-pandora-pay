@@ -519,7 +519,7 @@ func (apiStore *APIStore) loadAssetHash(reader store_db_interface.StoreDBTransac
 	if height < 0 {
 		return nil, errors.New("Height is invalid")
 	}
-	return reader.Get("assets::list:" + strconv.FormatUint(height, 10)), nil
+	return reader.Get("assets:list:" + strconv.FormatUint(height, 10)), nil
 }
 
 func (apiStore *APIStore) loadTxHash(reader store_db_interface.StoreDBTransactionInterface, height uint64) ([]byte, error) {

@@ -96,7 +96,7 @@ func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name st
 	}
 
 	hashMap = &HashMap{
-		name:      name + ":",
+		name:      name,
 		Committed: make(map[string]*CommittedMapElement),
 		Changes:   make(map[string]*ChangesMapElement),
 		Tx:        tx,
@@ -244,7 +244,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 						if err = hashMap.Tx.Delete(hashMap.name + ":list:" + strconv.FormatUint(hashMap.Count, 10)); err != nil {
 							return
 						}
-						if err = hashMap.Tx.Delete(hashMap.name + ":listKeys" + k); err != nil {
+						if err = hashMap.Tx.Delete(hashMap.name + ":listKeys:" + k); err != nil {
 							return
 						}
 					}
@@ -286,7 +286,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 						return
 					}
 					//safe
-					if err = hashMap.Tx.Put(hashMap.name+":listKeys"+k, []byte(strconv.FormatUint(hashMap.Count, 10))); err != nil {
+					if err = hashMap.Tx.Put(hashMap.name+":listKeys:"+k, []byte(strconv.FormatUint(hashMap.Count, 10))); err != nil {
 						return
 					}
 				}

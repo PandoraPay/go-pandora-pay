@@ -15,16 +15,16 @@ import (
 	"testing"
 )
 
-func getNewBalance(addr *addresses.Address, amount uint64) (*crypto.ElGamal, error) {
+func getNewBalance(addr *addresses.Address, amount uint64) *crypto.ElGamal {
 	var acckey crypto.Point
 	if err := acckey.DecodeCompressed(addr.PublicKey); err != nil {
-		return nil, err
+		panic(err)
 	}
 	balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
 	if amount > 0 {
 		balance = balance.Plus(new(big.Int).SetUint64(amount))
 	}
-	return balance, nil
+	return balance
 }
 
 func TestCreateZetherTx(t *testing.T) {
@@ -45,11 +45,7 @@ func TestCreateZetherTx(t *testing.T) {
 	emap[config_coins.NATIVE_ASSET_FULL_STRING] = make(map[string][]byte)
 
 	senderPoint, _ := senderAdress.GetPoint()
-	point, err := getNewBalance(senderAdress, amount)
-	if err != nil {
-		return
-	}
-	emap[config_coins.NATIVE_ASSET_FULL_STRING][senderPoint.G1().String()] = point.Serialize()
+	emap[config_coins.NATIVE_ASSET_FULL_STRING][senderPoint.G1().String()] = getNewBalance(senderAdress, amount).Serialize()
 
 	diff := amount / uint64(count)
 
