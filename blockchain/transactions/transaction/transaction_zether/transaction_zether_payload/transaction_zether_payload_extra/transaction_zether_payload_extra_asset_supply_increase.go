@@ -66,7 +66,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) IncludeTxP
 		}
 	}
 
-	if err = ast.AddSupply(true, payloadExtra.Value); err != nil {
+	if err = ast.AddSupply(true, payloadExtra.Value, false); err != nil {
 		return
 	}
 	if err = acc.Balance.AddBalanceUint(payloadExtra.Value); err != nil {

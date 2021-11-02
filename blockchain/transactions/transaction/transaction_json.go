@@ -69,7 +69,7 @@ type json_Only_TransactionZether struct {
 
 type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
 	DelegatePublicKey      helpers.HexBytes                            `json:"delegatePublicKey"`
-	ConvertToUnclaim       bool                                        `json:"convertToUnclaim"`
+	ConvertToUnclaimed     bool                                        `json:"convertToUnclaimed"`
 	DelegatedStakingUpdate *json_TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
 	DelegateSignature      helpers.HexBytes                            `json:"delegateSignature"`
 }
@@ -199,7 +199,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake)
 				extra = &json_Only_TransactionZetherPayloadExtraDelegateStake{
 					payloadExtra.DelegatePublicKey,
-					payloadExtra.ConvertToUnclaim,
+					payloadExtra.ConvertToUnclaimed,
 					&json_TransactionDataDelegatedStakingUpdate{
 						payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
 						payloadExtra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
@@ -406,8 +406,8 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				}
 
 				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
-					DelegatePublicKey: extraJSON.DelegatePublicKey,
-					ConvertToUnclaim:  extraJSON.ConvertToUnclaim,
+					DelegatePublicKey:  extraJSON.DelegatePublicKey,
+					ConvertToUnclaimed: extraJSON.ConvertToUnclaimed,
 					DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{
 						extraJSON.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
 						extraJSON.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,

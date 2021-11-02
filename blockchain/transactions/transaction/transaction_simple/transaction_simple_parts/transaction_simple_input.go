@@ -14,6 +14,7 @@ type TransactionSimpleInput struct {
 }
 
 func (vin *TransactionSimpleInput) Validate() error {
+
 	if bytes.Equal(vin.PublicKey, config_coins.BURN_PUBLIC_KEY) {
 		return errors.New("Input includes BURN ADDR")
 	}

@@ -1,9 +1,11 @@
 package asset
 
 import (
+	"bytes"
 	"errors"
 	"math"
 	"pandora-pay/config/config_assets"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"regexp"
@@ -77,10 +79,14 @@ func (asset *Asset) ConvertToBase(amount uint64) float64 {
 	return float64(amount) / COIN_DENOMINATION
 }
 
-func (asset *Asset) AddSupply(sign bool, amount uint64) error {
+func (asset *Asset) AddSupply(sign bool, amount uint64, blockRewards bool) error {
+
+	if !blockRewards && bytes.Equal(asset.SupplyPublicKey, config_coins.BURN_PUBLIC_KEY) {
+		return errors.New("BURN PUBLIC KEY")
+	}
 
 	if sign {
-		if !asset.CanMint {
+		if !asset.CanMint && !blockRewards {
 			return errors.New("Can't mint")
 		}
 		if asset.MaxSupply-asset.Supply < amount {
@@ -89,11 +95,11 @@ func (asset *Asset) AddSupply(sign bool, amount uint64) error {
 		return helpers.SafeUint64Add(&asset.Supply, amount)
 	}
 
-	if !asset.CanBurn {
-		errors.New("Can't burn")
+	if !asset.CanBurn && !blockRewards {
+		return errors.New("Can't burn")
 	}
 	if asset.Supply < amount {
-		errors.New("Supply would become negative")
+		return errors.New("Supply would become negative")
 	}
 	return helpers.SafeUint64Sub(&asset.Supply, amount)
 }

@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/cryptography/crypto"
+	"pandora-pay/helpers"
 	"sort"
 )
 
@@ -142,7 +143,7 @@ func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesIn
 			}
 			balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
 		} else {
-			if balance, err = new(crypto.ElGamal).Deserialize(balanceInit); err != nil {
+			if balance, err = new(crypto.ElGamal).Deserialize(helpers.CloneBytes(balanceInit)); err != nil {
 				return nil, err
 			}
 		}

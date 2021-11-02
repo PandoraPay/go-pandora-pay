@@ -51,10 +51,10 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 		return errors.New("Account not found")
 	}
 
-	if err = plainAcc.DelegatedStake.AddStakePendingStake(reward, blk.Height); err != nil {
+	if err = plainAcc.AddStakePendingStake(reward, blk.Height); err != nil {
 		return
 	}
-	if err = plainAcc.DelegatedStake.AddStakePendingStake(allFees, blk.Height); err != nil {
+	if err = plainAcc.AddStakePendingStake(allFees, blk.Height); err != nil {
 		return
 	}
 
@@ -67,7 +67,7 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 		return
 	}
 
-	if err = ast.AddSupply(true, reward); err != nil {
+	if err = ast.AddSupply(true, reward, true); err != nil {
 		return
 	}
 	if err = dataStorage.Asts.UpdateAsset(config_coins.NATIVE_ASSET_FULL, ast); err != nil {

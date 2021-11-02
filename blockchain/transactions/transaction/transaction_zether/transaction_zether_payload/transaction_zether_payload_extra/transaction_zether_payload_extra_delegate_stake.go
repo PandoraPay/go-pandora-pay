@@ -16,7 +16,7 @@ import (
 type TransactionZetherPayloadExtraDelegateStake struct {
 	TransactionZetherPayloadExtraInterface
 	DelegatePublicKey      []byte
-	ConvertToUnclaim       bool
+	ConvertToUnclaimed     bool
 	DelegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate
 	DelegateSignature      []byte //if newInfo then the signature is required to verify that he is owner
 }
@@ -40,12 +40,12 @@ func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) IncludeTxPayload
 		return
 	}
 
-	if payloadExtra.ConvertToUnclaim {
+	if payloadExtra.ConvertToUnclaimed {
 		if err = plainAcc.AddUnclaimed(true, payloadBurnValue); err != nil {
 			return
 		}
 	} else {
-		if err = plainAcc.DelegatedStake.AddStakePendingStake(payloadBurnValue, blockHeight); err != nil {
+		if err = plainAcc.AddStakePendingStake(payloadBurnValue, blockHeight); err != nil {
 			return
 		}
 	}
@@ -92,7 +92,7 @@ func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) VerifyExtraSigna
 
 func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.Write(payloadExtra.DelegatePublicKey)
-	w.WriteBool(payloadExtra.ConvertToUnclaim)
+	w.WriteBool(payloadExtra.ConvertToUnclaimed)
 	payloadExtra.DelegatedStakingUpdate.Serialize(w)
 	if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo && inclSignature {
 		w.Write(payloadExtra.DelegateSignature)
@@ -103,7 +103,7 @@ func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) Deserialize(r *h
 	if payloadExtra.DelegatePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if payloadExtra.ConvertToUnclaim, err = r.ReadBool(); err != nil {
+	if payloadExtra.ConvertToUnclaimed, err = r.ReadBool(); err != nil {
 		return
 	}
 	payloadExtra.DelegatedStakingUpdate = &transaction_data.TransactionDataDelegatedStakingUpdate{}

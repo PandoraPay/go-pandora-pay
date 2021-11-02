@@ -211,6 +211,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
 					DelegatePublicKey:      payloadExtra.DelegatePublicKey,
+					ConvertToUnclaimed:     payloadExtra.ConvertToUnclaimed,
 					DelegatedStakingUpdate: payloadExtra.DelegatedStakingUpdate,
 					DelegateSignature:      blankSignature,
 				}
@@ -275,16 +276,15 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		//fake balance
 		if payload.PayloadScript == transaction_zether_payload.SCRIPT_CLAIM_STAKE {
-			fakeBalance := value + fees + burn_value
+
+			transfer.FromBalanceDecoded = value + fees + burn_value
 
 			var acckey crypto.Point
 			if err = acckey.DecodeCompressed(senderKey.GeneratePublicKey()); err != nil {
 				return
 			}
 			balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
-			balance = balance.Plus(new(big.Int).SetUint64(fakeBalance))
-
-			transfer.FromBalanceDecoded = fakeBalance
+			balance = balance.Plus(new(big.Int).SetUint64(transfer.FromBalanceDecoded))
 
 			emap[string(transfer.Asset)][sender.String()] = balance.Serialize()
 		}
@@ -350,16 +350,12 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			ebalance := ebalances_list[i]
 
 			var ll, rr bn256.G1
-			//ebalance := b.balances[publickeylist[i].String()] // note these are taken from the chain live
 
 			ll.Add(ebalance.Left, C[i])
 			CLn = append(CLn, &ll)
-			//  fmt.Printf("%d CLnG %x\n", i,CLn[i].EncodeCompressed())
 
 			rr.Add(ebalance.Right, &D)
 			CRn = append(CRn, &rr)
-			//  fmt.Printf("%d CRnG %x\n",i, CRn[i].EncodeCompressed())
-
 		}
 
 		// decode balance now

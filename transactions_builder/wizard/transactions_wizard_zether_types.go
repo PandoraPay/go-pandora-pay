@@ -9,6 +9,7 @@ import (
 type ZetherTransferPayloadExtraDelegateStake struct {
 	ZetherTransferPayloadExtra `json:"-"`
 	DelegatePublicKey          helpers.HexBytes                                        `json:"delegatePublicKey"`
+	ConvertToUnclaimed         bool                                                    `json:"convertToUnclaimed"`
 	DelegatedStakingUpdate     *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
 	DelegatePrivateKey         helpers.HexBytes                                        `json:"delegatePrivateKey,omitempty"`
 }

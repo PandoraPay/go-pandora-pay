@@ -35,6 +35,27 @@ func (plainAccount *PlainAccount) AddUnclaimed(sign bool, amount uint64) error {
 	return helpers.SafeUint64Update(sign, &plainAccount.Unclaimed, amount)
 }
 
+func (plainAccount *PlainAccount) AddStakePendingStake(amount, blockHeight uint64) error {
+	if !plainAccount.HasDelegatedStake() {
+		return errors.New("plainAccount.HasDelegatedStake is false")
+	}
+	return plainAccount.DelegatedStake.AddStakePendingStake(amount, blockHeight)
+}
+
+func (plainAccount *PlainAccount) AddStakeAvailable(sign bool, amount uint64) error {
+	if !plainAccount.HasDelegatedStake() {
+		return errors.New("plainAccount.HasDelegatedStake is false")
+	}
+	return plainAccount.DelegatedStake.AddStakeAvailable(sign, amount)
+}
+
+func (plainAccount *PlainAccount) AddStakePendingUnstake(amount, blockHeight uint64) error {
+	if !plainAccount.HasDelegatedStake() {
+		return errors.New("plainAccount.HasDelegatedStake is false")
+	}
+	return plainAccount.DelegatedStake.AddStakePendingUnstake(amount, blockHeight)
+}
+
 func (plainAccount *PlainAccount) RefreshDelegatedStake(blockHeight uint64) (err error) {
 
 	if plainAccount.DelegatedStakeVersion == 0 {

@@ -267,9 +267,9 @@ func (testnet *Testnet) run() {
 							creatingTransactions.Set()
 							defer creatingTransactions.UnSet()
 
-							if unclaimed > config_coins.ConvertToUnitsUint64Forced(20) {
+							if unclaimed > config_coins.ConvertToUnitsUint64Forced(30) {
 
-								unclaimed -= config_coins.ConvertToUnitsUint64Forced(10)
+								unclaimed -= config_coins.ConvertToUnitsUint64Forced(20)
 
 								if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload.SCRIPT_CLAIM_STAKE) {
 									testnet.testnetCreateClaimTx(0, unclaimed/4, ctx2)

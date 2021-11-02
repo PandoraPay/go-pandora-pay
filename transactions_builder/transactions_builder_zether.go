@@ -224,7 +224,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 
 					var balance []byte
 					if acc != nil {
-						balance = acc.Balance.Amount.Serialize()
+						balance = helpers.CloneBytes(acc.Balance.Amount.Serialize())
 					}
 
 					if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance); err != nil {
@@ -244,23 +244,21 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 						if fromWalletAddresses[t] == nil {
 							transfers[t].FromBalanceDecoded = transfers[t].Amount
 						} else {
-							balancePoint := new(crypto.ElGamal)
-							if balancePoint, err = balancePoint.Deserialize(balance); err != nil {
+							var balancePoint *crypto.ElGamal
+							if balancePoint, err = new(crypto.ElGamal).Deserialize(balance); err != nil {
 								return
 							}
 
-							var fromBalanceDecoded uint64
-							if fromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, ast, true, true, ctx, statusCallback); err != nil {
+							if transfers[t].FromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, ast, true, true, ctx, statusCallback); err != nil {
 								return
 							}
 
-							if fromBalanceDecoded == 0 {
-								return errors.New("You have no funds")
-							}
-							if fromBalanceDecoded < amounts[t] {
-								return errors.New("Not enough funds")
-							}
-							transfers[t].FromBalanceDecoded = fromBalanceDecoded
+						}
+						if transfers[t].FromBalanceDecoded == 0 {
+							return errors.New("You have no funds")
+						}
+						if transfers[t].FromBalanceDecoded < amounts[t] {
+							return errors.New("Not enough funds")
 						}
 					}
 
