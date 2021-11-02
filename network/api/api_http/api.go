@@ -39,6 +39,30 @@ func (api *API) getPing(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetPing(api_types.GetReturnType(values.Get("return"), api_types.APIReturnType_RETURN_JSON))
 }
 
+func (api *API) getBlockHash(values *url.Values) (interface{}, error) {
+
+	req := &api_types.APIBlockHashRequest{}
+	if values.Get("height") != "" {
+		var err error
+		req.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return api.apiCommon.GetBlockHash(req)
+}
+
+func (api *API) getBlock(values *url.Values) (interface{}, error) {
+
+	request := &api_types.APIBlockRequest{}
+	//if err := request.ImportFromValues(values); err != nil {
+	//	return nil, err
+	//}
+
+	return api.apiCommon.GetBlock(request, api_types.GetReturnType(values.Get("return"), api_types.APIReturnType_RETURN_JSON))
+}
+
 func (api *API) getBlockComplete(values *url.Values) (interface{}, error) {
 
 	request := &api_types.APIBlockCompleteRequest{api_types.APIHeightHash{0, nil}, api_types.GetReturnType(values.Get("type"), api_types.APIReturnType_RETURN_JSON)}
@@ -47,29 +71,6 @@ func (api *API) getBlockComplete(values *url.Values) (interface{}, error) {
 	}
 
 	return api.apiCommon.GetBlockComplete(request)
-}
-
-func (api *API) getBlockHash(values *url.Values) (interface{}, error) {
-
-	if values.Get("height") != "" {
-		height, err := strconv.ParseUint(values.Get("height"), 10, 64)
-		if err != nil {
-			return nil, errors.New("parameter 'height' is not a number")
-		}
-		return api.apiCommon.GetBlockHash(height)
-	}
-
-	return nil, errors.New("parameter `height` is missing")
-}
-
-func (api *API) getBlock(values *url.Values) (interface{}, error) {
-
-	request := &api_types.APIBlockRequest{}
-	if err := request.ImportFromValues(values); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.GetBlock(request)
 }
 
 func (api *API) getBlockInfo(values *url.Values) (interface{}, error) {

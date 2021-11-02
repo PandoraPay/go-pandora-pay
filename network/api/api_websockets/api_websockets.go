@@ -47,22 +47,22 @@ func (api *APIWebsockets) getPing(conn *connection.AdvancedConnection, values []
 	return api.apiCommon.GetPing(api_types.APIReturnType_RETURN_JSON)
 }
 
-func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := APIBlockHeight(0)
-	if err := json.Unmarshal(values, &request); err != nil {
+func (api *APIWebsockets) getBlockHash(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := &api_types.APIBlockHashRequest{}
+	if err := api.apiCommon.UnmarshalAnswer(values, request, conn.CommunicationType); err != nil {
 		return nil, err
 	}
-	return api.apiCommon.GetBlockHash(uint64(request))
+	return api.apiCommon.GetBlockHash(request)
 }
 
 func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
-	request := &api_types.APIBlockRequest{api_types.APIHeightHash{0, nil}, api_types.APIReturnType_RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, request); err != nil {
+	request := new(api_types.APIBlockRequest)
+	if err := api.apiCommon.UnmarshalAnswer(values, request, conn.CommunicationType); err != nil {
 		return nil, err
 	}
 
-	return api.apiCommon.GetBlock(request)
+	return api.apiCommon.GetBlock(request, api_types.APIReturnType_RETURN_JSON)
 }
 
 func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -324,7 +324,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"ping":                   api.getPing,
 		"block":                  api.getBlock,
 		"block-miss-txs":         api.getBlockCompleteMissingTxs,
-		"block-hash":             api.getHash,
+		"block-hash":             api.getBlockHash,
 		"block-complete":         api.getBlockComplete,
 		"tx":                     api.getTx,
 		"tx-hash":                api.getTxHash,

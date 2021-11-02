@@ -17,3 +17,17 @@ enum SubscriptionType {
     SUBSCRIPTION_TRANSACTION = 5;
 }
 
+message APIBlockHashRequest {
+    uint64 height = 1 ;
+}
+
+message APIHeightHashRequest {
+    oneof type {
+        uint64 height = 1;
+        bytes hash = 2;
+    }
+}
+
+message APIBlockRequest {
+    APIHeightHashRequest req = 1;
+}

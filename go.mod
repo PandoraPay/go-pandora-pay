@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/docopt/docopt.go v0.0.0-20180111231733-ee0de3bc6815
 	github.com/gizak/termui/v3 v3.1.0
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/mackerelio/go-osstat v0.1.0
 	github.com/stretchr/testify v1.7.0
 	github.com/tevino/abool v1.2.0

@@ -1,7 +1,6 @@
 package api_types
 
 import (
-	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
@@ -19,12 +18,6 @@ func GetReturnType(s string, defaultValue APIReturnType) APIReturnType {
 	default:
 		return defaultValue
 	}
-}
-
-type APIBlockWithTxs struct {
-	Block           *block.Block       `json:"block,omitempty"`
-	BlockSerialized helpers.HexBytes   `json:"serialized,omitempty"`
-	Txs             []helpers.HexBytes `json:"txs,omitempty"`
 }
 
 type APIAccount struct {

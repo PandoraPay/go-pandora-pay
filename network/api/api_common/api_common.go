@@ -39,7 +39,7 @@ type APICommon struct {
 	MempoolProcessedThisBlock *atomic.Value // *sync.Map //[string]error
 }
 
-func (api *APICommon) ReturnAnswer(object proto.Message, returnType api_types.APIReturnType) ([]byte, error) {
+func (api *APICommon) MarshalAnswer(object proto.Message, returnType api_types.APIReturnType) ([]byte, error) {
 	switch returnType {
 	case api_types.APIReturnType_RETURN_SERIALIZED:
 		return proto.Marshal(object)
@@ -50,16 +50,27 @@ func (api *APICommon) ReturnAnswer(object proto.Message, returnType api_types.AP
 	}
 }
 
+func (api *APICommon) UnmarshalAnswer(data []byte, obj proto.Message, returnType api_types.APIReturnType) error {
+	switch returnType {
+	case api_types.APIReturnType_RETURN_SERIALIZED:
+		return proto.Unmarshal(data, obj)
+	case api_types.APIReturnType_RETURN_JSON:
+		return json.Unmarshal(data, obj)
+	default:
+		return errors.New("Error returnType")
+	}
+}
+
 func (api *APICommon) GetBlockchain(returnType api_types.APIReturnType) ([]byte, error) {
-	return api.ReturnAnswer(api.localChain.Load().(*api_types.APIBlockchain), returnType)
+	return api.MarshalAnswer(api.localChain.Load().(*api_types.APIBlockchain), returnType)
 }
 
 func (api *APICommon) GetBlockchainSync(returnType api_types.APIReturnType) ([]byte, error) {
-	return api.ReturnAnswer(api.localChainSync.Load().(*api_types.APIBlockchainSync), returnType)
+	return api.MarshalAnswer(api.localChainSync.Load().(*api_types.APIBlockchainSync), returnType)
 }
 
 func (api *APICommon) GetInfo(returnType api_types.APIReturnType) ([]byte, error) {
-	return api.ReturnAnswer(&api_types.APIBlockchainInfo{
+	return api.MarshalAnswer(&api_types.APIBlockchainInfo{
 		Name:       config.NAME,
 		Version:    config.VERSION,
 		Network:    config.NETWORK_SELECTED,
@@ -68,15 +79,24 @@ func (api *APICommon) GetInfo(returnType api_types.APIReturnType) ([]byte, error
 }
 
 func (api *APICommon) GetPing(returnType api_types.APIReturnType) ([]byte, error) {
-	return api.ReturnAnswer(&api_types.APIPong{Ping: "pong"}, returnType)
+	return api.MarshalAnswer(&api_types.APIPong{Ping: "pong"}, returnType)
 }
 
-func (api *APICommon) GetBlockHash(blockHeight uint64) (helpers.HexBytes, error) {
-	return api.ApiStore.chain.OpenLoadBlockHash(blockHeight)
+func (api *APICommon) GetBlockHash(request *api_types.APIBlockHashRequest) (helpers.HexBytes, error) {
+	return api.ApiStore.chain.OpenLoadBlockHash(request.Height)
 }
 
 func (api *APICommon) GetTxHash(blockHeight uint64) (helpers.HexBytes, error) {
 	return api.ApiStore.openLoadTxHash(blockHeight)
+}
+
+func (api *APICommon) GetBlock(request *api_types.APIBlockRequest, returnType api_types.APIReturnType) ([]byte, error) {
+
+	out, err := api.ApiStore.openLoadBlockWithTXsFromHash(request.Req.GetHash(), request.Req.GetHeight(), returnType)
+	if err != nil || out.Block == nil {
+		return nil, err
+	}
+	return api.MarshalAnswer(out, returnType)
 }
 
 func (api *APICommon) GetBlockCompleteMissingTxs(request *api_types.APIBlockCompleteMissingTxsRequest) ([]byte, error) {
@@ -110,28 +130,6 @@ func (api *APICommon) GetBlockComplete(request *api_types.APIBlockCompleteReques
 		return blockComplete.BloomBlkComplete.Serialized, nil
 	}
 	return json.Marshal(blockComplete)
-}
-
-func (api *APICommon) GetBlock(request *api_types.APIBlockRequest) ([]byte, error) {
-
-	var out *api_types.APIBlockWithTxs
-
-	var err error
-	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
-		out, err = api.ApiStore.openLoadBlockWithTXsFromHash(request.Hash)
-	} else {
-		out, err = api.ApiStore.openLoadBlockWithTXsFromHeight(request.Height)
-	}
-	if err != nil || out.Block == nil {
-		return nil, err
-	}
-
-	if request.ReturnType == api_types.APIReturnType_RETURN_SERIALIZED {
-		out.BlockSerialized = out.Block.SerializeToBytes()
-		out.Block = nil
-	}
-
-	return json.Marshal(out)
 }
 
 func (api *APICommon) GetBlockInfo(request *api_types.APIBlockInfoRequest) ([]byte, error) {

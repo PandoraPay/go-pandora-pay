@@ -120,9 +120,14 @@ func (apiStore *APIStore) openLoadBlockCompleteFromHeight(blockHeight uint64) (b
 	return
 }
 
-func (apiStore *APIStore) openLoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *api_types.APIBlockWithTxs, errFinal error) {
+func (apiStore *APIStore) openLoadBlockWithTXsFromHash(hash []byte, blockHeight uint64, returnType api_types.APIReturnType) (blkWithTXs *api_types.APIBlockWithTxs, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-		blkWithTXs, err = apiStore.loadBlockWithTxHashes(reader, hash)
+		if len(hash) == 0 {
+			if hash, err = apiStore.chain.LoadBlockHash(reader, blockHeight); err != nil {
+				return
+			}
+		}
+		blkWithTXs, err = apiStore.loadBlockWithTxHashes(reader, hash, returnType)
 		return
 	})
 	return
@@ -138,18 +143,6 @@ func (apiStore *APIStore) openLoadTx(hash []byte, txHeight uint64) (tx *transact
 		}
 
 		tx, txInfo, err = apiStore.loadTx(reader, hash)
-		return
-	})
-	return
-}
-
-func (apiStore *APIStore) openLoadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *api_types.APIBlockWithTxs, errFinal error) {
-	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-		hash, err := apiStore.chain.LoadBlockHash(reader, blockHeight)
-		if err != nil {
-			return
-		}
-		blkWithTXs, err = apiStore.loadBlockWithTxHashes(reader, hash)
 		return
 	})
 	return
@@ -424,27 +417,30 @@ func (apiStore *APIStore) loadBlockComplete(reader store_db_interface.StoreDBTra
 	return blkComplete, nil
 }
 
-func (apiStore *APIStore) loadBlockWithTxHashes(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*api_types.APIBlockWithTxs, error) {
+func (apiStore *APIStore) loadBlockWithTxHashes(reader store_db_interface.StoreDBTransactionInterface, hash []byte, returnType api_types.APIReturnType) (*api_types.APIBlockWithTxs, error) {
 	blk, err := apiStore.loadBlock(reader, hash)
 	if blk == nil || err != nil {
 		return nil, err
 	}
 
-	txHashes := [][]byte{}
+	out := &api_types.APIBlockWithTxs{}
 	data := reader.Get("blockTxs" + strconv.FormatUint(blk.Height, 10))
-	if err = json.Unmarshal(data, &txHashes); err != nil {
+	if err = json.Unmarshal(data, &out.Txs); err != nil {
 		return nil, err
 	}
 
-	txs := make([]helpers.HexBytes, len(txHashes))
-	for i, txHash := range txHashes {
-		txs[i] = txHash
+	switch returnType {
+	case api_types.APIReturnType_RETURN_JSON:
+		var marshal []byte
+		if marshal, err = json.Marshal(blk); err != nil {
+			return nil, err
+		}
+		out.Block = &api_types.APIBlockWithTxs_Json{string(marshal)}
+	case api_types.APIReturnType_RETURN_SERIALIZED:
+		out.Block = &api_types.APIBlockWithTxs_Serialized{blk.SerializeToBytes()}
 	}
 
-	return &api_types.APIBlockWithTxs{
-		Block: blk,
-		Txs:   txs,
-	}, nil
+	return out, nil
 }
 
 func (apiStore *APIStore) loadBlockInfo(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*info.BlockInfo, error) {

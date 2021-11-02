@@ -7,6 +7,7 @@ import (
 	"github.com/tevino/abool"
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
+	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 	"sync"
@@ -41,6 +42,7 @@ type AdvancedConnection struct {
 	contextConnectionCancel context.CancelFunc
 	Subscriptions           *Subscriptions
 	ConnectionType          bool
+	CommunicationType       api_types.APIReturnType
 }
 
 func (c *AdvancedConnection) GetTimeout() time.Duration {

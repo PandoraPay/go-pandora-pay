@@ -34,6 +34,14 @@ message APIPong {
     string ping = 1;
 }
 
+message APIBlockWithTxs {
+    oneof block{
+        bytes serialized = 1;
+        string json = 2;
+    }
+    repeated bytes txs = 3;
+}
+
 message APIBlockCompleteMissingTxs {
     repeated bytes txs = 1;
 }

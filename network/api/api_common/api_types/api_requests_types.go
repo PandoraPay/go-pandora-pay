@@ -11,11 +11,6 @@ import (
 	"strings"
 )
 
-type APIBlockRequest struct {
-	APIHeightHash `json:"req"`
-	ReturnType    APIReturnType `json:"returnType,omitempty"`
-}
-
 type APIBlockInfoRequest struct {
 	APIHeightHash `json:"req"`
 }
