@@ -68,8 +68,13 @@ func Generate(keyData []byte, width, height int) (*image.RGBA, error) {
 }
 
 func getColor(data []byte) color.RGBA {
+	c := byte(0)
+	for _, it := range data {
+		c += it
+	}
+
 	hsv := HSV{
-		H: float64(data[0]) / 255,
+		H: float64(c) / 255,
 		S: 0.7,
 		V: 0.8,
 	}
