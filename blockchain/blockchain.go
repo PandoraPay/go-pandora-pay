@@ -240,12 +240,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return
 					}
 
-					if plainAcc == nil || !plainAcc.HasDelegatedStake() {
+					if plainAcc == nil {
 						return errors.New("Forger Account deson't exist or hasn't delegated stake")
 					}
 
 					var stakingAmount uint64
-					stakingAmount, err = plainAcc.ComputeDelegatedStakeAvailable(newChainData.Height)
+					stakingAmount, err = plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(newChainData.Height)
 					if err != nil {
 						return
 					}

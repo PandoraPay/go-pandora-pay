@@ -41,7 +41,7 @@ func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64
 
 		stakingAmount := uint64(0)
 		if threadAddr.walletAdr.plainAcc != nil {
-			stakingAmount, _ = threadAddr.walletAdr.plainAcc.ComputeDelegatedStakeAvailable(height)
+			stakingAmount, _ = threadAddr.walletAdr.plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(height)
 		}
 
 		if stakingAmount >= config_stake.GetRequiredStake(height) {

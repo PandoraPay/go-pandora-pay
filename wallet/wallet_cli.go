@@ -138,7 +138,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Nonce", strconv.FormatUint(plainAcc.Nonce, 10)))
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Unclaimed", strconv.FormatFloat(config_coins.ConvertToBase(plainAcc.Unclaimed), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
-					if plainAcc.HasDelegatedStake() {
+					if plainAcc.DelegatedStake.HasDelegatedStake() {
 						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config_coins.ConvertToBase(plainAcc.DelegatedStake.StakeAvailable), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
 
 						if len(plainAcc.DelegatedStake.StakesPending) > 0 {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -345,16 +344,13 @@ func getNetworkMempool(this js.Value, args []js.Value) interface{} {
 
 func postNetworkMempoolBroadcastTransaction(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-		if socket := app.Network.Websockets.GetFirstSocket(); socket == nil {
-			return nil, errors.New("You are not connected to any node")
-		}
 
 		tx := &transaction.Transaction{}
 		if err := tx.Deserialize(helpers.NewBufferReader(webassembly_utils.GetBytes(args[0]))); err != nil {
 			return nil, err
 		}
 
-		errs := app.Network.Consensus.BroadcastTxs([]*transaction.Transaction{tx}, true, false, advanced_connection_types.UUID_ALL, nil)
+		errs := app.Network.Consensus.BroadcastTxs([]*transaction.Transaction{tx}, true, true, advanced_connection_types.UUID_ALL, nil)
 		if errs[0] != nil {
 			return nil, errs[0]
 		}

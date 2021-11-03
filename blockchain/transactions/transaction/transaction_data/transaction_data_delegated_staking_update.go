@@ -21,8 +21,8 @@ func (data *TransactionDataDelegatedStakingUpdate) Include(plainAcc *plain_accou
 	}
 
 	if data.DelegatedStakingHasNewInfo {
-		if !plainAcc.HasDelegatedStake() {
-			if err = plainAcc.CreateDelegatedStake(0, data.DelegatedStakingNewPublicKey, data.DelegatedStakingNewFee); err != nil {
+		if !plainAcc.DelegatedStake.HasDelegatedStake() {
+			if err = plainAcc.DelegatedStake.CreateDelegatedStake(0, data.DelegatedStakingNewPublicKey, data.DelegatedStakingNewFee); err != nil {
 				return
 			}
 		} else {

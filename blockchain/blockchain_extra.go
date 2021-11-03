@@ -84,7 +84,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 			if plainAcc, err = dataStorage.PlainAccs.CreatePlainAccount(addr.PublicKey); err != nil {
 				return
 			}
-			if err = plainAcc.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
+			if err = plainAcc.DelegatedStake.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
 				return
 			}
 			if err = dataStorage.PlainAccs.Update(string(addr.PublicKey), plainAcc); err != nil {

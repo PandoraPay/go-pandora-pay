@@ -147,7 +147,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 				}
 			}
 
-			publicKeyIndex := &wizard.ZetherPublicKeyIndex{}
+			publicKeyIndex := &wizard.WizardZetherPublicKeyIndex{}
 			publicKeyIndexes[string(addr.PublicKey)] = publicKeyIndex
 
 			if reg != nil {

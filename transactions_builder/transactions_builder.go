@@ -132,7 +132,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, ex
 			return errors.New("Account doesn't exist")
 		}
 
-		availableStake, err := plainAcc.ComputeDelegatedStakeAvailable(chainHeight)
+		availableStake, err := plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(chainHeight)
 		if err != nil {
 			return
 		}

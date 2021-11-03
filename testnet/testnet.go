@@ -243,8 +243,8 @@ func (testnet *Testnet) run() {
 						}
 
 						if plainAcc != nil {
-							delegatedStakeAvailable = plainAcc.GetDelegatedStakeAvailable()
-							delegatedUnstakePending, _ = plainAcc.ComputeDelegatedUnstakePending()
+							delegatedStakeAvailable = plainAcc.DelegatedStake.GetDelegatedStakeAvailable()
+							delegatedUnstakePending, _ = plainAcc.DelegatedStake.ComputeDelegatedUnstakePending()
 							unclaimed = plainAcc.Unclaimed
 						}
 

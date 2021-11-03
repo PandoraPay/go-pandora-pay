@@ -20,10 +20,10 @@ func (txExtra *TransactionSimpleExtraUnstake) IncludeTransactionVin0(blockHeight
 	if plainAcc == nil {
 		return errors.New("acc is null")
 	}
-	if err = plainAcc.AddStakeAvailable(false, txExtra.Amount); err != nil {
+	if err = plainAcc.DelegatedStake.AddStakeAvailable(false, txExtra.Amount); err != nil {
 		return
 	}
-	if err = plainAcc.AddStakePendingUnstake(txExtra.Amount, blockHeight); err != nil {
+	if err = plainAcc.DelegatedStake.AddStakePendingUnstake(txExtra.Amount, blockHeight); err != nil {
 		return
 	}
 	return

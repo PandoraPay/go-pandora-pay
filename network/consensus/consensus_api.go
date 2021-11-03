@@ -109,7 +109,6 @@ func (consensus *Consensus) BroadcastTxs(txs []*transaction.Transaction, justCre
 				for j := range out {
 					if out[j] != nil && out[j].Err != nil {
 						errs[i] = out[j].Err
-						break
 					}
 				}
 

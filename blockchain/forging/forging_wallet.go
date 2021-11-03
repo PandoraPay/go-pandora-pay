@@ -162,7 +162,7 @@ func (w *ForgingWallet) processUpdates() {
 						return errors.New("Plain Account was not found")
 					}
 
-					if plainAcc.DelegatedStake == nil || !bytes.Equal(plainAcc.DelegatedStake.DelegatedStakePublicKey, delegatedStakePublicKey) {
+					if !plainAcc.DelegatedStake.HasDelegatedStake() || !bytes.Equal(plainAcc.DelegatedStake.DelegatedStakePublicKey, delegatedStakePublicKey) {
 						return errors.New("Delegated stake is not matching")
 					}
 

@@ -471,7 +471,7 @@ func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAcc
 		return
 	}
 
-	if adr.DelegatedStake != nil && plainAcc.DelegatedStake == nil {
+	if adr.DelegatedStake != nil && !plainAcc.DelegatedStake.HasDelegatedStake() {
 		adr.DelegatedStake = nil
 
 		if adr.PrivateKey == nil {
@@ -482,15 +482,15 @@ func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAcc
 		return
 	}
 
-	if (adr.DelegatedStake != nil && plainAcc.DelegatedStake != nil && !bytes.Equal(adr.DelegatedStake.PublicKey, plainAcc.DelegatedStake.DelegatedStakePublicKey)) ||
-		(adr.DelegatedStake == nil && plainAcc.DelegatedStake != nil) {
+	if (adr.DelegatedStake != nil && plainAcc.DelegatedStake.HasDelegatedStake() && !bytes.Equal(adr.DelegatedStake.PublicKey, plainAcc.DelegatedStake.DelegatedStakePublicKey)) ||
+		(adr.DelegatedStake == nil && plainAcc.DelegatedStake.HasDelegatedStake()) {
 
 		if adr.PrivateKey == nil {
 			_, err = wallet.RemoveAddressByWalletAddress(adr, lock)
 			return
 		}
 
-		if plainAcc.DelegatedStake != nil {
+		if plainAcc.DelegatedStake.HasDelegatedStake() {
 
 			lastKnownNonce := uint32(0)
 			if adr.DelegatedStake != nil {
