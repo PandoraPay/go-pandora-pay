@@ -69,7 +69,6 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.ZetherTransfer, 
 		}
 
 		var payloadExtra wizard.ZetherTransferPayloadExtra
-
 		switch txData.PayloadScriptType[t] {
 		case transaction_zether_payload.SCRIPT_TRANSFER:
 			payloadExtra = nil

@@ -74,7 +74,7 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 		return
 	}
 
-	if tx, err = testnet.transactionsBuilder.CreateUnstakeTx(addr.AddressEncoded, 0, amount, &wizard.TransactionsWizardData{nil, false}, &wizard.TransactionsWizardFee{0, 0, 0, true}, true, true, true, false, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateSimpleTx(addr.AddressEncoded, 0, &wizard.TxTransferSimpleExtraUnstake{Amount: amount}, &wizard.TransactionsWizardData{nil, false}, &wizard.TransactionsWizardFee{0, 0, 0, true}, true, true, true, false, func(string) {}); err != nil {
 		return nil, err
 	}
 

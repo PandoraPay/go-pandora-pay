@@ -3,7 +3,6 @@ package wizard
 import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
@@ -28,7 +27,7 @@ func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.Pr
 	return
 }
 
-func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateSimpleTx(nonce uint64, key []byte, extra TxTransferSimpleExtra, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	privateKey := &addresses.PrivateKey{Key: key}
 
@@ -37,15 +36,29 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 		return
 	}
 
+	var txScript transaction_simple.ScriptType
+	var extraFinal transaction_simple_extra.TransactionSimpleExtraInterface
+	switch txExtra := extra.(type) {
+	case *TxTransferSimpleExtraUpdateDelegate:
+		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{
+			DelegatedStakingClaimAmount: txExtra.DelegatedStakingClaimAmount,
+			DelegatedStakingUpdate:      txExtra.DelegatedStakingUpdate,
+		}
+		txScript = transaction_simple.SCRIPT_UPDATE_DELEGATE
+	case *TxTransferSimpleExtraUnstake:
+		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUnstake{
+			Amount: txExtra.Amount,
+		}
+		txScript = transaction_simple.SCRIPT_UNSTAKE
+	}
+
 	txBase := &transaction_simple.TransactionSimple{
-		TxScript:    transaction_simple.SCRIPT_UNSTAKE,
+		TxScript:    txScript,
 		DataVersion: data.getDataVersion(),
 		Data:        dataFinal,
 		Nonce:       nonce,
 		Fees:        0,
-		Extra: &transaction_simple_extra.TransactionSimpleExtraUnstake{
-			Amount: unstakeAmount,
-		},
+		Extra:       extraFinal,
 		Vin: &transaction_simple_parts.TransactionSimpleInput{
 			PublicKey: privateKey.GeneratePublicKey(),
 		},
@@ -63,44 +76,5 @@ func CreateUnstakeTx(nonce uint64, key []byte, unstakeAmount uint64, data *Trans
 	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
 		return
 	}
-	return tx, nil
-}
-
-func CreateUpdateDelegateTx(nonce uint64, key []byte, delegatedStakingClaimAmount uint64, delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
-
-	dataFinal, err := data.getData()
-	if err != nil {
-		return
-	}
-
-	privateKey := &addresses.PrivateKey{Key: key}
-
-	txBase := &transaction_simple.TransactionSimple{
-		TxScript:    transaction_simple.SCRIPT_UPDATE_DELEGATE,
-		DataVersion: data.getDataVersion(),
-		Data:        dataFinal,
-		Nonce:       nonce,
-		Extra: &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{
-			DelegatedStakingClaimAmount: delegatedStakingClaimAmount,
-			DelegatedStakingUpdate:      delegatedStakingUpdate,
-		},
-		Vin: &transaction_simple_parts.TransactionSimpleInput{
-			PublicKey: privateKey.GeneratePublicKey(),
-		},
-	}
-
-	tx := &transaction.Transaction{
-		Version:                  transaction_type.TX_SIMPLE,
-		TransactionBaseInterface: txBase,
-	}
-	statusCallback("Transaction Created")
-
-	if err = signSimpleTransaction(tx, privateKey, fee, validateTx, statusCallback); err != nil {
-		return
-	}
-	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
-		return
-	}
-
 	return tx, nil
 }

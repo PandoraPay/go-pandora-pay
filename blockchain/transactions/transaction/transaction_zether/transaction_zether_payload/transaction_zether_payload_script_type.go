@@ -8,7 +8,6 @@ const (
 	SCRIPT_CLAIM_STAKE
 	SCRIPT_ASSET_CREATE
 	SCRIPT_ASSET_SUPPLY_INCREASE
-	SCRIPT_END
 )
 
 func (t PayloadScriptType) String() string {

@@ -90,8 +90,7 @@ func Initialize(startMainCb func()) {
 		}),
 		"transactions": js.ValueOf(map[string]interface{}{
 			"builder": js.ValueOf(map[string]interface{}{
-				"createUpdateDelegateTx": js.FuncOf(createUpdateDelegateTx),
-				"createUnstakeTx":        js.FuncOf(createUnstakeTx),
+				"createSimpleTx": js.FuncOf(createSimpleTx),
 			}),
 		}),
 		"store": js.ValueOf(map[string]interface{}{

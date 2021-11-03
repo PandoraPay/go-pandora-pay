@@ -405,13 +405,12 @@ func (builder *TransactionsBuilder) initCLI() {
 
 		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
 
-		delegatedStakingUpdate := &transaction_data.TransactionDataDelegatedStakingUpdate{}
-		if err = builder.readDelegatedStakingUpdate(delegatedStakingUpdate, delegateWalletAddress.PublicKey); err != nil {
+		txExtra := &wizard.TxTransferSimpleExtraUpdateDelegate{DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{}}
+		if err = builder.readDelegatedStakingUpdate(txExtra.DelegatedStakingUpdate, delegateWalletAddress.PublicKey); err != nil {
 			return
 		}
 
-		delegatedStakingClaimAmount, err := builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Update Delegated Staking Amount")
-		if err != nil {
+		if txExtra.DelegatedStakingClaimAmount, err = builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Update Delegated Staking Amount"); err != nil {
 			return
 		}
 
@@ -419,7 +418,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		fee := builder.readFees(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
-		tx, err := builder.CreateUpdateDelegateTx(delegateWalletAddress.AddressEncoded, nonce, delegatedStakingClaimAmount, delegatedStakingUpdate, data, fee, propagate, true, true, false, func(status string) {
+		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -439,8 +438,8 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		amount, err := builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Amount")
-		if err != nil {
+		txExtra := &wizard.TxTransferSimpleExtraUnstake{}
+		if txExtra.Amount, err = builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Amount"); err != nil {
 			return
 		}
 
@@ -450,7 +449,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		fee := builder.readFees(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
-		tx, err := builder.CreateUnstakeTx(delegateWalletAddress.AddressEncoded, nonce, amount, data, fee, propagate, true, true, false, func(status string) {
+		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

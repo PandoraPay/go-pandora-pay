@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/mempool"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
@@ -105,7 +104,7 @@ func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet
 	return fromWalletAddress, nil
 }
 
-func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeAmount uint64, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(status string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizard.TxTransferSimpleExtra, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(status string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
@@ -138,8 +137,12 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 			return
 		}
 
-		if availableStake < unstakeAmount {
-			return errors.New("You don't have enough staked coins")
+		switch txExtra := extra.(type) {
+		case *wizard.TxTransferSimpleExtraUpdateDelegate:
+		case *wizard.TxTransferSimpleExtraUnstake:
+			if availableStake < txExtra.Amount {
+				return errors.New("You don't have enough staked coins")
+			}
 		}
 
 		return
@@ -152,57 +155,10 @@ func (builder *TransactionsBuilder) CreateUnstakeTx(from string, nonce, unstakeA
 	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
 	statusCallback("Getting Nonce from Mempool")
 
-	if tx, err = wizard.CreateUnstakeTx(nonce, fromWalletAddresses[0].PrivateKey.Key, unstakeAmount, data, fee, false, statusCallback); err != nil {
+	if tx, err = wizard.CreateSimpleTx(nonce, fromWalletAddresses[0].PrivateKey.Key, extra, data, fee, false, statusCallback); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Created")
-
-	if propagateTx {
-		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
-			return nil, err
-		}
-	}
-
-	return tx, nil
-}
-
-func (builder *TransactionsBuilder) CreateUpdateDelegateTx(from string, nonce uint64, delegatedStakingClaimAmount uint64, delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(string)) (*transaction.Transaction, error) {
-
-	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
-	if err != nil {
-		return nil, err
-	}
-
-	builder.lock.Lock()
-	defer builder.lock.Unlock()
-
-	var tx *transaction.Transaction
-	var plainAcc *plain_account.PlainAccount
-	var chainHeight uint64
-
-	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
-
-		plainAccs := plain_accounts.NewPlainAccounts(reader)
-
-		if plainAcc, err = plainAccs.GetPlainAccount(fromWalletAddresses[0].PublicKey, chainHeight); err != nil {
-			return
-		}
-		if plainAcc == nil {
-			return errors.New("Account doesn't exist")
-		}
-
-		return
-	}); err != nil {
-		return nil, err
-	}
-
-	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
-
-	if tx, err = wizard.CreateUpdateDelegateTx(nonce, fromWalletAddresses[0].PrivateKey.Key, delegatedStakingClaimAmount, delegatedStakingUpdate, data, fee, false, statusCallback); err != nil {
-		return nil, err
-	}
 
 	if propagateTx {
 		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {

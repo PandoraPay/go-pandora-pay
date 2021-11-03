@@ -48,7 +48,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_DELEGATE:
+	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
 		if plainAcc.Unclaimed >= tx.Fees {
 			err = plainAcc.AddUnclaimed(false, tx.Fees)
 		} else {
@@ -65,7 +65,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE:
+	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
 		if err = tx.Extra.IncludeTransactionVin0(blockHeight, plainAcc, dataStorage); err != nil {
 			return
 		}
@@ -155,6 +155,8 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraUnstake{}
 	case SCRIPT_UPDATE_DELEGATE:
 		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{}
+	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
+		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{}
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}
