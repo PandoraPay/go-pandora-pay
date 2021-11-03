@@ -119,7 +119,7 @@ func (builder *TransactionsBuilder) createZetherRing(from string, dst *string, a
 	return rings, nil
 }
 
-func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransferPayloadExtra, from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringsConfiguration []*ZetherRingConfiguration, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, ctx context.Context, statusCallback func(string)) ([]*wizard.ZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.ZetherPublicKeyIndex, uint64, []byte, error) {
+func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadExtra, from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringsConfiguration []*ZetherRingConfiguration, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
 
 	if len(from) != len(dstsAsts) || len(dstsAsts) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
 		return nil, nil, nil, nil, 0, nil, errors.New("Length of from and transfers are not matching")
@@ -161,10 +161,10 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 	var chainHeight uint64
 	var chainHash []byte
 
-	transfers := make([]*wizard.ZetherTransfer, len(from))
+	transfers := make([]*wizard.WizardZetherTransfer, len(from))
 	emap := wizard.InitializeEmap(dstsAsts)
 	rings := make([][]*bn256.G1, len(from))
-	publicKeyIndexes := make(map[string]*wizard.ZetherPublicKeyIndex)
+	publicKeyIndexes := make(map[string]*wizard.WizardZetherPublicKeyIndex)
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -186,7 +186,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 				return
 			}
 
-			transfers[t] = &wizard.ZetherTransfer{
+			transfers[t] = &wizard.WizardZetherTransfer{
 				Asset:        ast,
 				From:         fromPrivateKeys[t].Key[:],
 				Destination:  dsts[t],
@@ -272,7 +272,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 						return
 					}
 
-					publicKeyIndex := &wizard.ZetherPublicKeyIndex{}
+					publicKeyIndex := &wizard.WizardZetherPublicKeyIndex{}
 					publicKeyIndexes[string(addr.PublicKey)] = publicKeyIndex
 
 					if reg != nil {
@@ -311,7 +311,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.ZetherTransf
 	return transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, nil
 }
 
-func (builder *TransactionsBuilder) CreateZetherTx(extraPayloads []wizard.ZetherTransferPayloadExtra, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringsConfiguration []*ZetherRingConfiguration, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx(extraPayloads []wizard.WizardZetherPayloadExtra, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringsConfiguration []*ZetherRingConfiguration, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()

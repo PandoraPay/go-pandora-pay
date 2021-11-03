@@ -28,7 +28,7 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			Nonce                       uint64                                                  `json:"nonce"`
 			DelegatedStakingClaimAmount uint64                                                  `json:"delegatedStakingClaimAmount"`
 			DelegatedStakingUpdate      *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
-			Extra                       wizard.TxTransferSimpleExtra                            `json:"extra"`
+			Extra                       wizard.WizardTxSimpleExtra                              `json:"extra"`
 			Data                        *wizard.TransactionsWizardData                          `json:"data"`
 			Fee                         *wizard.TransactionsWizardFee                           `json:"fee"`
 			PropagateTx                 bool                                                    `json:"propagateTx"`
@@ -39,12 +39,12 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		var payloadExtra wizard.TxTransferSimpleExtra
+		var payloadExtra wizard.WizardTxSimpleExtra
 		switch txData.TxScript {
 		case transaction_simple.SCRIPT_UNSTAKE:
-			payloadExtra = &wizard.TxTransferSimpleExtraUnstake{}
+			payloadExtra = &wizard.WizardTxSimpleExtraUnstake{}
 		case transaction_simple.SCRIPT_UPDATE_DELEGATE:
-			payloadExtra = &wizard.TxTransferSimpleExtraUpdateDelegate{}
+			payloadExtra = &wizard.WizardTxSimpleExtraUpdateDelegate{}
 		default:
 			return nil, errors.New("Invalid PayloadScriptType")
 		}

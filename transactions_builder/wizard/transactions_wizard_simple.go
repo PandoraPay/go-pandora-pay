@@ -27,7 +27,7 @@ func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.Pr
 	return
 }
 
-func CreateSimpleTx(nonce uint64, key []byte, extra TxTransferSimpleExtra, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateSimpleTx(nonce uint64, key []byte, extra WizardTxSimpleExtra, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	privateKey := &addresses.PrivateKey{Key: key}
 
@@ -39,13 +39,13 @@ func CreateSimpleTx(nonce uint64, key []byte, extra TxTransferSimpleExtra, data 
 	var txScript transaction_simple.ScriptType
 	var extraFinal transaction_simple_extra.TransactionSimpleExtraInterface
 	switch txExtra := extra.(type) {
-	case *TxTransferSimpleExtraUpdateDelegate:
+	case *WizardTxSimpleExtraUpdateDelegate:
 		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{
 			DelegatedStakingClaimAmount: txExtra.DelegatedStakingClaimAmount,
 			DelegatedStakingUpdate:      txExtra.DelegatedStakingUpdate,
 		}
 		txScript = transaction_simple.SCRIPT_UPDATE_DELEGATE
-	case *TxTransferSimpleExtraUnstake:
+	case *WizardTxSimpleExtraUnstake:
 		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUnstake{
 			Amount: txExtra.Amount,
 		}

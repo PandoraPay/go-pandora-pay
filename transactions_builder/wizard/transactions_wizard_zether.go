@@ -33,7 +33,7 @@ func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
 	return emap
 }
 
-func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, blockHash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
+func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, blockHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
 
 	statusCallback("Transaction Signing...")
 
@@ -171,7 +171,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			payload.PayloadScript = transaction_zether_payload.SCRIPT_TRANSFER
 		} else {
 			switch payloadExtra := transfers[t].PayloadExtra.(type) {
-			case *ZetherTransferPayloadExtraClaimStake:
+			case *WizardZetherPayloadExtraClaimStake:
 				payload.PayloadScript = transaction_zether_payload.SCRIPT_CLAIM_STAKE
 
 				var registrationIndex byte
@@ -195,7 +195,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 				privateKeysForSign[t] = key
 
-			case *ZetherTransferPayloadExtraDelegateStake:
+			case *WizardZetherPayloadExtraDelegateStake:
 				payload.PayloadScript = transaction_zether_payload.SCRIPT_DELEGATE_STAKE
 
 				blankSignature := []byte{}
@@ -216,13 +216,13 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					DelegateSignature:      blankSignature,
 				}
 
-			case *ZetherTransferPayloadExtraAssetCreate:
+			case *WizardZetherPayloadExtraAssetCreate:
 				payload.PayloadScript = transaction_zether_payload.SCRIPT_ASSET_CREATE
 				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{
 					Asset: payloadExtra.Asset,
 				}
 
-			case *ZetherTransferPayloadExtraAssetSupplyIncrease:
+			case *WizardZetherPayloadExtraAssetSupplyIncrease:
 				payload.PayloadScript = transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE
 				privateKeysForSign[t] = &addresses.PrivateKey{Key: payloadExtra.AssetSupplyPrivateKey}
 				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{
@@ -454,7 +454,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	return
 }
 
-func CreateZetherTx(transfers []*ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*ZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	txBase := &transaction_zether.TransactionZether{
 		Height: height,

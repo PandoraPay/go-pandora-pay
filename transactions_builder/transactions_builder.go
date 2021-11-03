@@ -104,7 +104,7 @@ func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet
 	return fromWalletAddress, nil
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizard.TxTransferSimpleExtra, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(status string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizard.WizardTxSimpleExtra, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(status string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
@@ -138,8 +138,8 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, ex
 		}
 
 		switch txExtra := extra.(type) {
-		case *wizard.TxTransferSimpleExtraUpdateDelegate:
-		case *wizard.TxTransferSimpleExtraUnstake:
+		case *wizard.WizardTxSimpleExtraUpdateDelegate:
+		case *wizard.WizardTxSimpleExtraUnstake:
 			if availableStake < txExtra.Amount {
 				return errors.New("You don't have enough staked coins")
 			}

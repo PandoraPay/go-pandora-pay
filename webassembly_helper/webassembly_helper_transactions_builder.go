@@ -33,20 +33,20 @@ type zetherTxDataBase struct {
 	Data              []*wizard.TransactionsWizardData               `json:"data"`
 	Fees              []*wizard.TransactionsWizardFee                `json:"fees"`
 	PayloadScriptType []transaction_zether_payload.PayloadScriptType `json:"payloadScriptType"`
-	PayloadExtra      []wizard.ZetherTransferPayloadExtra            `json:"payloadExtra"`
+	PayloadExtra      []wizard.WizardZetherPayloadExtra              `json:"payloadExtra"`
 	Accs              map[string]map[string]helpers.HexBytes         `json:"accs"`
 	Regs              map[string]helpers.HexBytes                    `json:"regs"`
 	Height            uint64                                         `json:"height"`
 	Hash              helpers.HexBytes                               `json:"hash"`
 }
 
-func prepareData(txData *zetherTxDataBase) (transfers []*wizard.ZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, publicKeyIndexes map[string]*wizard.ZetherPublicKeyIndex, err error) {
+func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, publicKeyIndexes map[string]*wizard.WizardZetherPublicKeyIndex, err error) {
 
 	assetsList := helpers.ConvertHexBytesArraysToBytesArray(txData.Assets)
-	transfers = make([]*wizard.ZetherTransfer, len(txData.From))
+	transfers = make([]*wizard.WizardZetherTransfer, len(txData.From))
 	emap = wizard.InitializeEmap(assetsList)
 	rings = make([][]*bn256.G1, len(txData.From))
-	publicKeyIndexes = make(map[string]*wizard.ZetherPublicKeyIndex)
+	publicKeyIndexes = make(map[string]*wizard.WizardZetherPublicKeyIndex)
 
 	for t, ast := range assetsList {
 
@@ -58,7 +58,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.ZetherTransfer, 
 			return
 		}
 
-		transfers[t] = &wizard.ZetherTransfer{
+		transfers[t] = &wizard.WizardZetherTransfer{
 			Asset:              ast,
 			From:               txData.From[t].PrivateKey,
 			FromBalanceDecoded: txData.From[t].BalanceDecoded,
@@ -68,18 +68,18 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.ZetherTransfer, 
 			Data:               txData.Data[t],
 		}
 
-		var payloadExtra wizard.ZetherTransferPayloadExtra
+		var payloadExtra wizard.WizardZetherPayloadExtra
 		switch txData.PayloadScriptType[t] {
 		case transaction_zether_payload.SCRIPT_TRANSFER:
 			payloadExtra = nil
 		case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
-			payloadExtra = &wizard.ZetherTransferPayloadExtraClaimStake{}
+			payloadExtra = &wizard.WizardZetherPayloadExtraClaimStake{}
 		case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
-			payloadExtra = &wizard.ZetherTransferPayloadExtraDelegateStake{}
+			payloadExtra = &wizard.WizardZetherPayloadExtraDelegateStake{}
 		case transaction_zether_payload.SCRIPT_ASSET_CREATE:
-			payloadExtra = &wizard.ZetherTransferPayloadExtraAssetCreate{}
+			payloadExtra = &wizard.WizardZetherPayloadExtraAssetCreate{}
 		case transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE:
-			payloadExtra = &wizard.ZetherTransferPayloadExtraAssetSupplyIncrease{}
+			payloadExtra = &wizard.WizardZetherPayloadExtraAssetSupplyIncrease{}
 		default:
 			err = errors.New("Invalid PayloadScriptType")
 			return

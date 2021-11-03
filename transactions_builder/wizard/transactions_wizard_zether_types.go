@@ -6,36 +6,36 @@ import (
 	"pandora-pay/helpers"
 )
 
-type ZetherTransferPayloadExtraDelegateStake struct {
-	ZetherTransferPayloadExtra `json:"-"`
-	DelegatePublicKey          helpers.HexBytes                                        `json:"delegatePublicKey"`
-	ConvertToUnclaimed         bool                                                    `json:"convertToUnclaimed"`
-	DelegatedStakingUpdate     *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
-	DelegatePrivateKey         helpers.HexBytes                                        `json:"delegatePrivateKey,omitempty"`
+type WizardZetherPayloadExtraDelegateStake struct {
+	WizardZetherPayloadExtra `json:"-"`
+	DelegatePublicKey        helpers.HexBytes                                        `json:"delegatePublicKey"`
+	ConvertToUnclaimed       bool                                                    `json:"convertToUnclaimed"`
+	DelegatedStakingUpdate   *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
+	DelegatePrivateKey       helpers.HexBytes                                        `json:"delegatePrivateKey,omitempty"`
 }
 
-type ZetherTransferPayloadExtraClaimStake struct {
-	ZetherTransferPayloadExtra `json:"-"`
-	DelegatePrivateKey         helpers.HexBytes `json:"delegatePrivateKey"`
+type WizardZetherPayloadExtraClaimStake struct {
+	WizardZetherPayloadExtra `json:"-"`
+	DelegatePrivateKey       helpers.HexBytes `json:"delegatePrivateKey"`
 }
 
-type ZetherTransferPayloadExtraAssetCreate struct {
-	ZetherTransferPayloadExtra `json:"-"`
-	Asset                      *asset.Asset `json:"asset"`
+type WizardZetherPayloadExtraAssetCreate struct {
+	WizardZetherPayloadExtra `json:"-"`
+	Asset                    *asset.Asset `json:"asset"`
 }
 
-type ZetherTransferPayloadExtraAssetSupplyIncrease struct {
-	ZetherTransferPayloadExtra `json:"-"`
-	AssetId                    helpers.HexBytes `json:"assetId"`
-	ReceiverPublicKey          helpers.HexBytes `json:"receiverPublicKey"`
-	Value                      uint64           `json:"value"`
-	AssetSupplyPrivateKey      helpers.HexBytes `json:"assetSupplyPublicKey"`
+type WizardZetherPayloadExtraAssetSupplyIncrease struct {
+	WizardZetherPayloadExtra `json:"-"`
+	AssetId                  helpers.HexBytes `json:"assetId"`
+	ReceiverPublicKey        helpers.HexBytes `json:"receiverPublicKey"`
+	Value                    uint64           `json:"value"`
+	AssetSupplyPrivateKey    helpers.HexBytes `json:"assetSupplyPublicKey"`
 }
 
-type ZetherTransferPayloadExtra interface {
+type WizardZetherPayloadExtra interface {
 }
 
-type ZetherTransfer struct {
+type WizardZetherTransfer struct {
 	Asset              helpers.HexBytes
 	From               []byte //private key
 	FromBalanceDecoded uint64
@@ -43,10 +43,10 @@ type ZetherTransfer struct {
 	Amount             uint64
 	Burn               uint64
 	Data               *TransactionsWizardData
-	PayloadExtra       ZetherTransferPayloadExtra
+	PayloadExtra       WizardZetherPayloadExtra
 }
 
-type ZetherPublicKeyIndex struct {
+type WizardZetherPublicKeyIndex struct {
 	Registered            bool
 	RegisteredIndex       uint64
 	RegistrationSignature []byte
