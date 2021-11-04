@@ -54,5 +54,22 @@ func NewPlainAccounts(tx store_db_interface.StoreDBTransactionInterface) (plainA
 		}
 		return plainAcc, nil
 	}
+
+	plainAccs.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) (err error) {
+		if !tx.IsWritable() {
+			return
+		}
+
+		return
+	}
+
+	plainAccs.HashMap.DeletedEvent = func(key []byte) (err error) {
+		if !tx.IsWritable() {
+			return
+		}
+
+		return
+	}
+
 	return
 }

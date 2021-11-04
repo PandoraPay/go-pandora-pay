@@ -44,10 +44,6 @@ func (plainAccount *PlainAccount) RefreshDelegatedStake(blockHeight uint64) erro
 	return plainAccount.AddUnclaimed(true, unclaimed)
 }
 
-func (plainAccount *PlainAccount) UpdateAssetFeeLiquidity(assetId []byte, conversionRate uint64) error {
-	return nil
-}
-
 func (plainAccount *PlainAccount) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(plainAccount.Nonce)
 	w.WriteUvarint(plainAccount.Unclaimed)

@@ -4,32 +4,23 @@ import (
 	"errors"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/helpers"
+	"pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
 
 type AccountsCollection struct {
-	tx      store_db_interface.StoreDBTransactionInterface
-	accsMap map[string]*Accounts
+	tx       store_db_interface.StoreDBTransactionInterface
+	accsMap  map[string]*Accounts
+	listMaps []*hash_map.HashMap
 }
 
-func (collection *AccountsCollection) GetAllMap() map[string]*Accounts {
+func (collection *AccountsCollection) GetAllMaps() map[string]*Accounts {
 	return collection.accsMap
 }
 
-func (collection *AccountsCollection) GetAccountAssetsCount(key []byte) (uint64, error) {
-
-	var count uint64
-	var err error
-
-	data := collection.tx.Get("accounts:assetsCount:" + string(key))
-	if data != nil {
-		if count, err = helpers.NewBufferReader(data).ReadUvarint(); err != nil {
-			return 0, err
-		}
-	}
-
-	return count, nil
+func (collection *AccountsCollection) GetAllHashmaps() []*hash_map.HashMap {
+	return collection.listMaps
 }
 
 func (collection *AccountsCollection) GetMap(assetId []byte) (*Accounts, error) {
@@ -44,9 +35,24 @@ func (collection *AccountsCollection) GetMap(assetId []byte) (*Accounts, error) 
 		if accs, err = NewAccounts(collection.tx, assetId); err != nil {
 			return nil, err
 		}
+		collection.listMaps = append(collection.listMaps, &accs.HashMap)
 		collection.accsMap[string(assetId)] = accs
 	}
 	return accs, nil
+}
+
+func (collection *AccountsCollection) GetAccountAssetsCount(key []byte) (uint64, error) {
+
+	data := collection.tx.Get("accounts:assetsCount:" + string(key))
+	if data != nil {
+		count, err := helpers.NewBufferReader(data).ReadUvarint()
+		if err != nil {
+			return 0, err
+		}
+		return count, nil
+	}
+
+	return 0, nil
 }
 
 func (collection *AccountsCollection) GetAccountAssets(key []byte) ([][]byte, error) {
@@ -69,64 +75,10 @@ func (collection *AccountsCollection) GetAccountAssets(key []byte) ([][]byte, er
 	return out, nil
 }
 
-func (collection *AccountsCollection) SetTx(tx store_db_interface.StoreDBTransactionInterface) {
-	collection.tx = tx
-	for _, accs := range collection.accsMap {
-		accs.SetTx(tx)
-	}
-}
-
-func (collection *AccountsCollection) Rollback() {
-	for _, accs := range collection.accsMap {
-		accs.Rollback()
-	}
-}
-
-func (collection *AccountsCollection) CloneCommitted() (err error) {
-	for _, accs := range collection.accsMap {
-		if err = accs.CloneCommitted(); err != nil {
-			return
-		}
-	}
-	return
-}
-
-func (collection *AccountsCollection) CommitChanges() (err error) {
-	for _, accs := range collection.accsMap {
-		if err = accs.CommitChanges(); err != nil {
-			return
-		}
-	}
-	return
-}
-
-func (collection *AccountsCollection) WriteTransitionalChangesToStore(prefix string) (err error) {
-	for _, accs := range collection.accsMap {
-		if err = accs.WriteTransitionalChangesToStore(prefix); err != nil {
-			return
-		}
-	}
-	return
-}
-
-func (collection *AccountsCollection) ReadTransitionalChangesFromStore(prefix string) (err error) {
-	for _, accs := range collection.accsMap {
-		if err = accs.ReadTransitionalChangesFromStore(prefix); err != nil {
-			return
-		}
-	}
-	return
-}
-func (collection *AccountsCollection) DeleteTransitionalChangesFromStore(prefix string) {
-	for _, accs := range collection.accsMap {
-		accs.DeleteTransitionalChangesFromStore(prefix)
-	}
-	return
-}
-
 func NewAccountsCollection(tx store_db_interface.StoreDBTransactionInterface) *AccountsCollection {
 	return &AccountsCollection{
 		tx,
 		make(map[string]*Accounts),
+		make([]*hash_map.HashMap, 0),
 	}
 }

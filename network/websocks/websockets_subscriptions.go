@@ -199,7 +199,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			}
 
 			accsCollection := data.(*accounts.AccountsCollection)
-			accsMap := accsCollection.GetAllMap()
+			accsMap := accsCollection.GetAllMaps()
 
 			for _, accs := range accsMap {
 				for k, v := range accs.HashMap.Committed {

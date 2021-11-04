@@ -21,9 +21,16 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransaction
 	}
 
 	for _, liquidity := range txExtra.Liquidities {
-		if err = plainAcc.UpdateAssetFeeLiquidity(liquidity.AssetId, liquidity.ConversionRate); err != nil {
+
+		var status asset_fee_liquidity.UpdateLiquidityStatus
+		if status, err = plainAcc.AssetFeeLiquidities.UpdateLiquidity(liquidity); err != nil {
 			return
 		}
+
+		if err = dataStorage.AstsFeeLiquidityCollection.UpdateLiquidity(plainAcc.PublicKey, liquidity.ConversionRate, liquidity.AssetId, status); err != nil {
+			return
+		}
+
 	}
 
 	return

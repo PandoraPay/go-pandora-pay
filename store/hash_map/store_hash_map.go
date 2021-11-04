@@ -283,8 +283,8 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 	return
 }
 
-func (hashMap *HashMap) SetTx(tx store_db_interface.StoreDBTransactionInterface) {
-	hashMap.Tx = tx
+func (hashMap *HashMap) SetTx(dbTx store_db_interface.StoreDBTransactionInterface) {
+	hashMap.Tx = dbTx
 }
 
 func (hashMap *HashMap) Rollback() {

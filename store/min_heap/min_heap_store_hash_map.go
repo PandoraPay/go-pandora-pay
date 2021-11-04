@@ -9,12 +9,12 @@ import (
 
 type MinHeapStoreHashMap struct {
 	*MinHeap
-	hashMap *hash_map.HashMap
-	dictMap *hash_map.HashMap
+	HashMap *hash_map.HashMap
+	DictMap *hash_map.HashMap
 }
 
 func (self *MinHeapStoreHashMap) DeleteByKey(key []byte) error {
-	found, err := self.dictMap.Get(string(key))
+	found, err := self.DictMap.Get(string(key))
 	if err != nil {
 		return err
 	}

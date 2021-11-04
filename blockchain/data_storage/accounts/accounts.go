@@ -116,7 +116,7 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 		element.Element.(*account.Account).Index = accounts.HashMap.Count
 
 		tx.Put("accounts:assetByIndex:"+string(key)+":"+strconv.FormatUint(count, 10), element.Element.(*account.Account).Asset)
-		return nil
+		return
 	}
 
 	accounts.HashMap.DeletedEvent = func(key []byte) (err error) {
@@ -131,7 +131,7 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 		}
 
 		tx.Delete("accounts:assetByIndex:" + string(key) + ":" + strconv.FormatUint(count, 10))
-		return nil
+		return
 	}
 
 	return

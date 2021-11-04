@@ -7,7 +7,6 @@ import (
 
 type MinHeapElement struct {
 	helpers.SerializableInterface
-	Data  helpers.SerializableInterface
 	Key   []byte
 	Score uint64
 }
@@ -18,15 +17,11 @@ type MinHeapDictElement struct {
 }
 
 func (self *MinHeapElement) Serialize(w *helpers.BufferWriter) {
-	self.Data.Serialize(w)
 	w.Write(self.Key)
 	w.WriteUvarint(self.Score)
 }
 
 func (self *MinHeapElement) Deserialize(r *helpers.BufferReader) (err error) {
-	if err = self.Data.Deserialize(r); err != nil {
-		return
-	}
 	if self.Key, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}

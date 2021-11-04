@@ -1,7 +1,5 @@
 package min_heap
 
-import "pandora-pay/helpers"
-
 // based on https://golangbyexample.com/minheap-in-golang/
 
 type MinHeap struct {
@@ -31,8 +29,8 @@ func (m *MinHeap) rightchild(index uint64) uint64 {
 	return 2*index + 2
 }
 
-func (m *MinHeap) Insert(score uint64, key []byte, data helpers.SerializableInterface) error {
-	m.addElement(&MinHeapElement{nil, data, key, score})
+func (m *MinHeap) Insert(score uint64, key []byte) error {
+	m.addElement(&MinHeapElement{nil, key, score})
 	return m.upHeapify(m.getSize() - 1)
 }
 
