@@ -12,7 +12,7 @@ type PlainAccount struct {
 	Nonce                         uint64                                   `json:"nonce"`
 	Unclaimed                     uint64                                   `json:"unclaimed"`
 	DelegatedStake                *dpos.DelegatedStake                     `json:"delegatedStake"`
-	AssetFeeLiquidity             []*asset_fee_liquidity.AssetFeeLiquidity `json:"assetFeeLiquidity"`
+	AssetFeeLiquidities           *asset_fee_liquidity.AssetFeeLiquidities `json:"assetFeeLiquidities"`
 }
 
 func (plainAccount *PlainAccount) Validate() error {
@@ -52,6 +52,7 @@ func (plainAccount *PlainAccount) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(plainAccount.Nonce)
 	w.WriteUvarint(plainAccount.Unclaimed)
 	plainAccount.DelegatedStake.Serialize(w)
+	plainAccount.AssetFeeLiquidities.Serialize(w)
 }
 
 func (plainAccount *PlainAccount) SerializeToBytes() []byte {
@@ -69,8 +70,10 @@ func (plainAccount *PlainAccount) Deserialize(r *helpers.BufferReader) (err erro
 		return
 	}
 
-	plainAccount.DelegatedStake = new(dpos.DelegatedStake)
 	if err = plainAccount.DelegatedStake.Deserialize(r); err != nil {
+		return
+	}
+	if err = plainAccount.AssetFeeLiquidities.Deserialize(r); err != nil {
 		return
 	}
 
@@ -79,7 +82,8 @@ func (plainAccount *PlainAccount) Deserialize(r *helpers.BufferReader) (err erro
 
 func NewPlainAccount(publicKey []byte) *PlainAccount {
 	return &PlainAccount{
-		PublicKey:      publicKey,
-		DelegatedStake: &dpos.DelegatedStake{},
+		PublicKey:           publicKey,
+		DelegatedStake:      &dpos.DelegatedStake{},
+		AssetFeeLiquidities: &asset_fee_liquidity.AssetFeeLiquidities{},
 	}
 }

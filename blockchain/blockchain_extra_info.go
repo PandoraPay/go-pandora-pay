@@ -15,9 +15,7 @@ import (
 
 func removeBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface, hash []byte, txHashes [][]byte, localTransactionChanges []*blockchain_types.BlockchainTransactionUpdate) (err error) {
 
-	if err = writer.Delete("blockInfo_ByHash" + string(hash)); err != nil {
-		return
-	}
+	writer.Delete("blockInfo_ByHash" + string(hash))
 
 	for i, txHash := range txHashes {
 
@@ -48,51 +46,33 @@ func removeBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterfa
 			}
 
 			count -= 1
-			if err = writer.Delete("addrTx:" + string(key) + ":" + strconv.FormatUint(count, 10)); err != nil {
-				return
-			}
+			writer.Delete("addrTx:" + string(key) + ":" + strconv.FormatUint(count, 10))
 			if count == 0 {
-				if err = writer.Delete("addrTxsCount:" + string(key)); err != nil {
-					return
-				}
+				writer.Delete("addrTxsCount:" + string(key))
 			} else {
-				if err = writer.Put("addrTxsCount:"+string(key), []byte(strconv.FormatUint(count, 10))); err != nil {
-					return
-				}
+				writer.Put("addrTxsCount:"+string(key), []byte(strconv.FormatUint(count, 10)))
 			}
 		}
 
-		if err = writer.Delete("txKeys:" + string(txHash)); err != nil {
-			return
-		}
+		writer.Delete("txKeys:" + string(txHash))
 	}
 
 	return
 }
 
-func removeUnusedTransactions(writer store_db_interface.StoreDBTransactionInterface, starting, count uint64) (err error) {
+func removeUnusedTransactions(writer store_db_interface.StoreDBTransactionInterface, starting, count uint64) {
 
 	for i := starting; i < count; i++ {
-		if err = writer.Delete("txHash_ByHeight" + strconv.FormatUint(i, 10)); err != nil {
-			return errors.New("Error deleting unused transaction: " + err.Error())
-		}
+		writer.Delete("txHash_ByHeight" + strconv.FormatUint(i, 10))
 	}
-
-	return
 }
 
-func removeTxsInfo(writer store_db_interface.StoreDBTransactionInterface, removedTxHashes map[string][]byte) (err error) {
+func removeTxsInfo(writer store_db_interface.StoreDBTransactionInterface, removedTxHashes map[string][]byte) {
 
 	for txHash := range removedTxHashes {
-		if err = writer.Delete("txInfo_ByHash" + txHash); err != nil {
-			panic("Error deleting transaction info " + err.Error())
-		}
-		if err = writer.Delete("txPreview_ByHash" + txHash); err != nil {
-			panic("Error deleting transaction info " + err.Error())
-		}
+		writer.Delete("txInfo_ByHash" + txHash)
+		writer.Delete("txPreview_ByHash" + txHash)
 	}
-
-	return
 }
 
 func saveAssetsInfo(asts *assets.Assets) (err error) {
@@ -100,7 +80,7 @@ func saveAssetsInfo(asts *assets.Assets) (err error) {
 	for k, v := range asts.Committed {
 
 		if v.Stored == "del" {
-			err = asts.Tx.DeleteForcefully("assetInfo_ByHash:" + k)
+			asts.Tx.Delete("assetInfo_ByHash:" + k)
 		} else if v.Stored == "update" {
 
 			ast := v.Element.(*asset.Asset)
@@ -117,12 +97,9 @@ func saveAssetsInfo(asts *assets.Assets) (err error) {
 				return
 			}
 
-			err = asts.Tx.Put("assetInfo_ByHash:"+k, data)
+			asts.Tx.Put("assetInfo_ByHash:"+k, data)
 		}
 
-		if err != nil {
-			return
-		}
 	}
 
 	return
@@ -142,17 +119,13 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 		return
 	}
 
-	if err = writer.Put("blockInfo_ByHash"+string(blkComplete.Block.Bloom.Hash), blockInfoMarshal); err != nil {
-		return
-	}
+	writer.Put("blockInfo_ByHash"+string(blkComplete.Block.Bloom.Hash), blockInfoMarshal)
 
 	for i, tx := range blkComplete.Txs {
 
 		height := transactionsCount + uint64(i)
 		indexStr := strconv.FormatUint(height, 10)
-		if err = writer.Put("txHash_ByHeight"+indexStr, tx.Bloom.Hash); err != nil {
-			return
-		}
+		writer.Put("txHash_ByHeight"+indexStr, tx.Bloom.Hash)
 
 		var buffer []byte
 		if buffer, err = json.Marshal(&info.TxInfo{
@@ -162,9 +135,7 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 		}); err != nil {
 			return
 		}
-		if err = writer.Put("txInfo_ByHash"+tx.Bloom.HashStr, buffer); err != nil {
-			return
-		}
+		writer.Put("txInfo_ByHash"+tx.Bloom.HashStr, buffer)
 
 		var txPreview *info.TxPreview
 		if txPreview, err = info.CreateTxPreviewFromTx(tx); err != nil {
@@ -173,9 +144,7 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 		if buffer, err = json.Marshal(txPreview); err != nil {
 			return
 		}
-		if err = writer.Put("txPreview_ByHash"+tx.Bloom.HashStr, buffer); err != nil {
-			return
-		}
+		writer.Put("txPreview_ByHash"+tx.Bloom.HashStr, buffer)
 
 		keys := tx.GetAllKeys()
 
@@ -191,9 +160,7 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 			return
 		}
 
-		if err = writer.Put("txKeys:"+tx.Bloom.HashStr, keysArrayMarshal); err != nil {
-			return
-		}
+		writer.Put("txKeys:"+tx.Bloom.HashStr, keysArrayMarshal)
 
 		localTransactionChanges[i].Keys = make([]*blockchain_types.BlockchainTransactionKeyUpdate, len(keysArray))
 		for j, key := range keysArray {
@@ -211,12 +178,8 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 				key, count,
 			}
 
-			if err = writer.Put("addrTx:"+keyStr+":"+strconv.FormatUint(count, 10), tx.Bloom.Hash); err != nil {
-				return
-			}
-			if err = writer.Put("addrTxsCount:"+keyStr, []byte(strconv.FormatUint(count+1, 10))); err != nil {
-				return
-			}
+			writer.Put("addrTx:"+keyStr+":"+strconv.FormatUint(count, 10), tx.Bloom.Hash)
+			writer.Put("addrTxsCount:"+keyStr, []byte(strconv.FormatUint(count+1, 10)))
 		}
 
 	}

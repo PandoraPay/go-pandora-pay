@@ -1,7 +1,6 @@
 package store_db_bolt
 
 import (
-	"errors"
 	bolt "go.etcd.io/bbolt"
 	"pandora-pay/helpers"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -18,11 +17,10 @@ func (tx *StoreDBBoltTransaction) IsWritable() bool {
 	return tx.write
 }
 
-func (tx *StoreDBBoltTransaction) Put(key string, value []byte) error {
-	if !tx.write {
-		return errors.New("Transaction is not writeable")
+func (tx *StoreDBBoltTransaction) Put(key string, value []byte) {
+	if err := tx.bucket.Put([]byte(key), value); err != nil {
+		panic(err)
 	}
-	return tx.bucket.Put([]byte(key), value)
 }
 
 //bolt requires the data to be cloned
@@ -39,20 +37,10 @@ func (tx *StoreDBBoltTransaction) Exists(key string) bool {
 	return tx.bucket.Get([]byte(key)) != nil
 }
 
-func (tx *StoreDBBoltTransaction) PutClone(key string, value []byte) error {
-	return tx.Put(key, helpers.CloneBytes(value))
+func (tx *StoreDBBoltTransaction) PutClone(key string, value []byte) {
+	tx.Put(key, helpers.CloneBytes(value))
 }
 
-func (tx *StoreDBBoltTransaction) Delete(key string) error {
-	if !tx.write {
-		return errors.New("Transaction is not writeable")
-	}
-	return tx.bucket.Delete([]byte(key))
-}
-
-func (tx *StoreDBBoltTransaction) DeleteForcefully(key string) error {
-	if !tx.write {
-		return errors.New("Transaction is not writeable")
-	}
-	return tx.bucket.Delete([]byte(key))
+func (tx *StoreDBBoltTransaction) Delete(key string) {
+	tx.bucket.Delete([]byte(key))
 }

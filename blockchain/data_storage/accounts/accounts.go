@@ -72,13 +72,9 @@ func (accounts *Accounts) saveAssetsCount(key []byte, sign bool) (uint64, error)
 	if count > 0 {
 		w := helpers.NewBufferWriter()
 		w.WriteUvarint(count)
-		err = accounts.Tx.Put("accounts:assetsCount:"+string(key), w.Bytes())
+		accounts.Tx.Put("accounts:assetsCount:"+string(key), w.Bytes())
 	} else {
-		err = accounts.Tx.Delete("accounts:assetsCount:" + string(key))
-	}
-
-	if err != nil {
-		return 0, err
+		accounts.Tx.Delete("accounts:assetsCount:" + string(key))
 	}
 
 	return countOriginal, nil
@@ -121,7 +117,8 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 
 		element.Element.(*account.Account).Index = accounts.HashMap.Count
 
-		return tx.Put("accounts:assetByIndex:"+string(key)+":"+strconv.FormatUint(count, 10), element.Element.(*account.Account).Asset)
+		tx.Put("accounts:assetByIndex:"+string(key)+":"+strconv.FormatUint(count, 10), element.Element.(*account.Account).Asset)
+		return nil
 	}
 
 	accounts.HashMap.DeletedEvent = func(key []byte) (err error) {
@@ -135,7 +132,8 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 			return
 		}
 
-		return tx.Delete("accounts:assetByIndex:" + string(key) + ":" + strconv.FormatUint(count, 10))
+		tx.Delete("accounts:assetByIndex:" + string(key) + ":" + strconv.FormatUint(count, 10))
+		return nil
 	}
 
 	return

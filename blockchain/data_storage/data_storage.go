@@ -82,17 +82,11 @@ func (data *DataStorage) WriteTransitionalChangesToStore(prefix string) (err err
 	}
 	return data.Regs.WriteTransitionalChangesToStore(prefix)
 }
-func (data *DataStorage) DeleteTransitionalChangesFromStore(prefix string) (err error) {
-	if err = data.AccsCollection.DeleteTransitionalChangesFromStore(prefix); err != nil {
-		return
-	}
-	if err = data.PlainAccs.DeleteTransitionalChangesFromStore(prefix); err != nil {
-		return
-	}
-	if err = data.Asts.DeleteTransitionalChangesFromStore(prefix); err != nil {
-		return
-	}
-	return data.Regs.DeleteTransitionalChangesFromStore(prefix)
+func (data *DataStorage) DeleteTransitionalChangesFromStore(prefix string) {
+	data.AccsCollection.DeleteTransitionalChangesFromStore(prefix)
+	data.PlainAccs.DeleteTransitionalChangesFromStore(prefix)
+	data.Asts.DeleteTransitionalChangesFromStore(prefix)
+	data.Regs.DeleteTransitionalChangesFromStore(prefix)
 }
 
 func CreateDataStorage(tx store_db_interface.StoreDBTransactionInterface) *DataStorage {

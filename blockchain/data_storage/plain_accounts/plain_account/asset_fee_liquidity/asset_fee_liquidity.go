@@ -1,6 +1,8 @@
 package asset_fee_liquidity
 
 import (
+	"bytes"
+	"errors"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/helpers"
 )
@@ -11,16 +13,28 @@ type AssetFeeLiquidity struct {
 	ConversionRate                uint64           `json:"conversionRate"`
 }
 
-func (plainAccount *AssetFeeLiquidity) Serialize(w *helpers.BufferWriter) {
-	w.Write(plainAccount.AssetId)
-	w.WriteUvarint(plainAccount.ConversionRate)
+func (self *AssetFeeLiquidity) Validate() error {
+	if len(self.AssetId) != config_coins.ASSET_LENGTH {
+		return errors.New("AssetId length is invalid")
+	}
+
+	if bytes.Equal(self.AssetId, config_coins.NATIVE_ASSET_FULL) {
+		return errors.New("AssetId NATIVE_ASSET_FULL is not allowed")
+	}
+
+	return nil
 }
 
-func (plainAccount *AssetFeeLiquidity) Deserialize(r *helpers.BufferReader) (err error) {
-	if plainAccount.AssetId, err = r.ReadBytes(config_coins.ASSET_LENGTH); err != nil {
+func (self *AssetFeeLiquidity) Serialize(w *helpers.BufferWriter) {
+	w.Write(self.AssetId)
+	w.WriteUvarint(self.ConversionRate)
+}
+
+func (self *AssetFeeLiquidity) Deserialize(r *helpers.BufferReader) (err error) {
+	if self.AssetId, err = r.ReadBytes(config_coins.ASSET_LENGTH); err != nil {
 		return
 	}
-	if plainAccount.ConversionRate, err = r.ReadUvarint(); err != nil {
+	if self.ConversionRate, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	return

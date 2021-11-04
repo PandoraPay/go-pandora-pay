@@ -1,20 +1,17 @@
 package transaction_simple_extra
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/config/config_asset_fee"
-	"pandora-pay/config/config_coins"
 	"pandora-pay/helpers"
 )
 
 type TransactionSimpleExtraUpdateAssetFeeLiquidity struct {
 	TransactionSimpleExtraInterface
-	AssetId        []byte
-	ConversionRate uint64
+	Liquidities []*asset_fee_liquidity.AssetFeeLiquidity
 }
 
 func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
@@ -23,8 +20,10 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransaction
 		return fmt.Errorf("Unclaimed must be greater than %d", config_asset_fee.GetRequiredAssetFee(blockHeight))
 	}
 
-	if err = plainAcc.UpdateAssetFeeLiquidity(txExtra.AssetId, txExtra.ConversionRate); err != nil {
-		return
+	for _, liquidity := range txExtra.Liquidities {
+		if err = plainAcc.UpdateAssetFeeLiquidity(liquidity.AssetId, liquidity.ConversionRate); err != nil {
+			return
+		}
 	}
 
 	return
@@ -32,28 +31,34 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransaction
 
 func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Validate() (err error) {
 
-	if len(txExtra.AssetId) != config_coins.ASSET_LENGTH {
-		return errors.New("AssetId length is invalid")
-	}
-
-	if bytes.Equal(txExtra.AssetId, config_coins.NATIVE_ASSET_FULL) {
-		return errors.New("AssetId NATIVE_ASSET_FULL is not allowed")
+	for _, liquidity := range txExtra.Liquidities {
+		if err = liquidity.Validate(); err != nil {
+			return
+		}
 	}
 
 	return
 }
 
 func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Serialize(w *helpers.BufferWriter, inclSignature bool) {
-	w.Write(txExtra.AssetId)
-	w.WriteUvarint(txExtra.ConversionRate)
+	w.WriteByte(byte(len(txExtra.Liquidities)))
+	for _, liquidity := range txExtra.Liquidities {
+		liquidity.Serialize(w)
+	}
 }
 
 func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Deserialize(r *helpers.BufferReader) (err error) {
-	if txExtra.AssetId, err = r.ReadBytes(config_coins.ASSET_LENGTH); err != nil {
+	var count byte
+	if count, err = r.ReadByte(); err != nil {
 		return
 	}
-	if txExtra.ConversionRate, err = r.ReadUvarint(); err != nil {
-		return
+
+	txExtra.Liquidities = make([]*asset_fee_liquidity.AssetFeeLiquidity, count)
+	for _, item := range txExtra.Liquidities {
+		if err = item.Deserialize(r); err != nil {
+			return
+		}
 	}
+
 	return
 }

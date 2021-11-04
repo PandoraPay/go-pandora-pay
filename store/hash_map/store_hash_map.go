@@ -89,38 +89,9 @@ func (hashMap *HashMap) CloneCommitted() (err error) {
 	return
 }
 
-func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int, indexable bool) (hashMap *HashMap) {
-
-	if len(name) <= 4 {
-		panic("Invalid name")
-	}
-
-	hashMap = &HashMap{
-		name:      name,
-		Committed: make(map[string]*CommittedMapElement),
-		Changes:   make(map[string]*ChangesMapElement),
-		Tx:        tx,
-		Count:     0,
-		KeyLength: keyLength,
-		Indexable: indexable,
-	}
-
-	//safe to Get because int doesn't change the data
-	buffer := tx.Get(hashMap.name + ":count")
-	if buffer != nil {
-		count, p := binary.Uvarint(buffer)
-		if p <= 0 {
-			panic("Error reading")
-		}
-		hashMap.Count = count
-	}
-
-	return
-}
-
 func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err error) {
 
-	if len(key) != hashMap.KeyLength {
+	if hashMap.KeyLength != 0 && len(key) != hashMap.KeyLength {
 		return nil, errors.New("key length is invalid")
 	}
 	if exists := hashMap.Changes[key]; exists != nil {
@@ -149,7 +120,7 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 
 func (hashMap *HashMap) Exists(key string) (bool, error) {
 
-	if len(key) != hashMap.KeyLength {
+	if hashMap.KeyLength != 0 && len(key) != hashMap.KeyLength {
 		return false, errors.New("key length is invalid")
 	}
 	if exists := hashMap.Changes[key]; exists != nil {
@@ -165,7 +136,7 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 
 func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) error {
 
-	if len(key) != hashMap.KeyLength {
+	if hashMap.KeyLength != 0 && len(key) != hashMap.KeyLength {
 		return errors.New("key length is invalid")
 	}
 
@@ -208,7 +179,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 
 	c := 0
 	for k, v := range hashMap.Changes {
-		if len(k) != hashMap.KeyLength {
+		if hashMap.KeyLength != 0 && len(k) != hashMap.KeyLength {
 			return errors.New("key length is invalid")
 		}
 		if v.Status == "update" {
@@ -236,17 +207,11 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 
 				if hashMap.Tx.IsWritable() {
 
-					if err = hashMap.Tx.Delete(hashMap.name + ":map:" + k); err != nil {
-						return
-					}
+					hashMap.Tx.Delete(hashMap.name + ":map:" + k)
 
 					if hashMap.Indexable {
-						if err = hashMap.Tx.Delete(hashMap.name + ":list:" + strconv.FormatUint(hashMap.Count, 10)); err != nil {
-							return
-						}
-						if err = hashMap.Tx.Delete(hashMap.name + ":listKeys:" + k); err != nil {
-							return
-						}
+						hashMap.Tx.Delete(hashMap.name + ":list:" + strconv.FormatUint(hashMap.Count, 10))
+						hashMap.Tx.Delete(hashMap.name + ":listKeys:" + k)
 					}
 
 				}
@@ -282,15 +247,10 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 
 				if hashMap.Tx.IsWritable() && hashMap.Indexable {
 					//safe
-					if err = hashMap.Tx.Put(hashMap.name+":list:"+strconv.FormatUint(hashMap.Count, 10), []byte(k)); err != nil {
-						return
-					}
+					hashMap.Tx.Put(hashMap.name+":list:"+strconv.FormatUint(hashMap.Count, 10), []byte(k))
 					//safe
-					if err = hashMap.Tx.Put(hashMap.name+":listKeys:"+k, []byte(strconv.FormatUint(hashMap.Count, 10))); err != nil {
-						return
-					}
+					hashMap.Tx.Put(hashMap.name+":listKeys:"+k, []byte(strconv.FormatUint(hashMap.Count, 10)))
 				}
-
 				if hashMap.StoredEvent != nil {
 					if err = hashMap.StoredEvent([]byte(k), committed); err != nil {
 						return
@@ -301,9 +261,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 
 			if hashMap.Tx.IsWritable() {
 				//clone required because the element could change later on
-				if err = hashMap.Tx.PutClone(hashMap.name+":map:"+k, v.Element.SerializeToBytes()); err != nil {
-					return
-				}
+				hashMap.Tx.PutClone(hashMap.name+":map:"+k, v.Element.SerializeToBytes())
 			}
 
 			committed.Status = "view"
@@ -321,9 +279,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 		buf := make([]byte, binary.MaxVarintLen64)
 		n := binary.PutUvarint(buf, hashMap.Count)
 		//safe
-		if err = hashMap.Tx.Put(hashMap.name+":count", buf[:n]); err != nil {
-			return
-		}
+		hashMap.Tx.Put(hashMap.name+":count", buf[:n])
 	}
 
 	return
@@ -339,4 +295,33 @@ func (hashMap *HashMap) Rollback() {
 
 func (hashMap *HashMap) Reset() {
 	hashMap.Committed = make(map[string]*CommittedMapElement)
+}
+
+func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int, indexable bool) (hashMap *HashMap) {
+
+	if len(name) <= 4 {
+		panic("Invalid name")
+	}
+
+	hashMap = &HashMap{
+		name:      name,
+		Committed: make(map[string]*CommittedMapElement),
+		Changes:   make(map[string]*ChangesMapElement),
+		Tx:        tx,
+		Count:     0,
+		KeyLength: keyLength,
+		Indexable: indexable,
+	}
+
+	//safe to Get because int doesn't change the data
+	buffer := tx.Get(hashMap.name + ":count")
+	if buffer != nil {
+		count, p := binary.Uvarint(buffer)
+		if p <= 0 {
+			panic("Error reading")
+		}
+		hashMap.Count = count
+	}
+
+	return
 }

@@ -50,16 +50,12 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 
 		var marshal []byte
 
-		if err = writer.Put("saved", []byte{0}); err != nil {
-			return
-		}
+		writer.Put("saved", []byte{0})
 
 		if marshal, err = helpers.GetJSON(wallet.Encryption); err != nil {
 			return
 		}
-		if err = writer.Put("encryption", marshal); err != nil {
-			return
-		}
+		writer.Put("encryption", marshal)
 
 		if marshal, err = helpers.GetJSON(wallet, "addresses", "encryption"); err != nil {
 			return
@@ -68,9 +64,7 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 			return
 		}
 
-		if err = writer.Put("wallet", marshal); err != nil {
-			return
-		}
+		writer.Put("wallet", marshal)
 
 		if end > len(wallet.Addresses) {
 			end = len(wallet.Addresses)
@@ -83,20 +77,13 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 			if marshal, err = wallet.Encryption.encryptData(marshal); err != nil {
 				return
 			}
-			if err = writer.Put("wallet-address-"+strconv.Itoa(i), marshal); err != nil {
-				return
-			}
+			writer.Put("wallet-address-"+strconv.Itoa(i), marshal)
 		}
 		if deleteIndex != -1 {
-			if err = writer.Delete("wallet-address-" + strconv.Itoa(deleteIndex)); err != nil {
-				return
-			}
+			writer.Delete("wallet-address-" + strconv.Itoa(deleteIndex))
 		}
 
-		if err = writer.Put("saved", []byte{1}); err != nil {
-			return
-		}
-
+		writer.Put("saved", []byte{1})
 		return
 	})
 }

@@ -11,9 +11,13 @@ type transactionChange struct {
 	Transition []byte
 }
 
+type transactionChanges struct {
+	List []*transactionChange
+}
+
 func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err error) {
 
-	values := make([]*transactionChange, 0)
+	changes := &transactionChanges{}
 	for k, v := range hashMap.Changes {
 		if v.Status == "del" || v.Status == "update" {
 
@@ -32,24 +36,22 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 				change.Transition = hashMap.Tx.Get(hashMap.name + ":map:" + k)
 			}
 
-			values = append(values, change)
+			changes.List = append(changes.List, change)
 		}
 	}
 
-	marshal, err := json.Marshal(values)
+	marshal, err := json.Marshal(changes)
 	if err != nil {
 		return
 	}
 
-	if err = hashMap.Tx.PutClone(hashMap.name+":transitions:"+prefix, marshal); err != nil {
-		return
-	}
+	hashMap.Tx.PutClone(hashMap.name+":transitions:"+prefix, marshal)
 
 	return nil
 }
 
-func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) (err error) {
-	return hashMap.Tx.Delete(hashMap.name + ":transitions:" + prefix)
+func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) {
+	hashMap.Tx.Delete(hashMap.name + ":transitions:" + prefix)
 }
 
 func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err error) {
@@ -60,12 +62,12 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 		return errors.New("transitions didn't exist")
 	}
 
-	values := make([]*transactionChange, 0)
-	if err = json.Unmarshal(data, &values); err != nil {
+	changes := &transactionChanges{}
+	if err = json.Unmarshal(data, &changes); err != nil {
 		return err
 	}
 
-	for _, change := range values {
+	for _, change := range changes.List {
 		if change.Transition == nil {
 
 			hashMap.Changes[string(change.Key)] = &ChangesMapElement{

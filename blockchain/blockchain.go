@@ -316,27 +316,14 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					newChainData.TransactionsCount += uint64(len(blkComplete.Txs))
 					insertedBlocks = append(insertedBlocks, blkComplete)
 
-					if err = newChainData.saveTotalDifficultyExtra(writer); err != nil {
-						return
-					}
+					newChainData.saveTotalDifficultyExtra(writer)
 
-					if err = writer.Put("chainHash", newChainData.Hash); err != nil {
-						return
-					}
-					if err = writer.Put("chainPrevHash", newChainData.PrevHash); err != nil {
-						return
-					}
-					if err = writer.Put("chainKernelHash", newChainData.KernelHash); err != nil {
-						return
-					}
-					if err = writer.Put("chainPrevKernelHash", newChainData.PrevKernelHash); err != nil {
-						return
-					}
+					writer.Put("chainHash", newChainData.Hash)
+					writer.Put("chainPrevHash", newChainData.PrevHash)
+					writer.Put("chainKernelHash", newChainData.KernelHash)
+					writer.Put("chainPrevKernelHash", newChainData.PrevKernelHash)
 
-					if err = newChainData.saveBlockchainHeight(writer); err != nil {
-						return
-					}
-
+					newChainData.saveBlockchainHeight(writer)
 					if err = newChainData.saveBlockchainInfo(writer); err != nil {
 						return
 					}
@@ -375,16 +362,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 					//remove unused blocks
 					for _, removedBlock := range removedBlocksHeights {
-						if err = chain.deleteUnusedBlocksComplete(writer, removedBlock, dataStorage); err != nil {
-							panic("Error deleting unused blocks: " + err.Error())
-						}
+						chain.deleteUnusedBlocksComplete(writer, removedBlock, dataStorage)
 					}
 
 					//removing unused transactions
 					if config.SEED_WALLET_NODES_INFO {
-						if err = removeUnusedTransactions(writer, newChainData.TransactionsCount, removedBlocksTransactionsCount); err != nil {
-							panic(err)
-						}
+						removeUnusedTransactions(writer, newChainData.TransactionsCount, removedBlocksTransactionsCount)
 					}
 				}
 
@@ -405,12 +388,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				for _, change := range allTransactionsChanges {
 					if !change.Inserted && removedTxHashes[change.TxHashStr] != nil && insertedTxs[change.TxHashStr] == nil {
 						removedTxsList[removedCount] = writer.Get("tx:" + change.TxHashStr) //required because the garbage collector sometimes it deletes the underlying buffers
-						if err = writer.Delete("tx:" + change.TxHashStr); err != nil {
-							panic("Error deleting transaction: " + err.Error())
-						}
-						if err = writer.Delete("txHash:" + change.TxHashStr); err != nil {
-							panic("Error deleting transaction exists: " + err.Error())
-						}
+						writer.Delete("tx:" + change.TxHashStr)
+						writer.Delete("txHash:" + change.TxHashStr)
 						removedCount += 1
 					}
 					if change.Inserted && insertedTxs[change.TxHashStr] != nil && removedTxHashes[change.TxHashStr] == nil {
@@ -420,9 +399,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				}
 
 				if config.SEED_WALLET_NODES_INFO {
-					if err = removeTxsInfo(writer, removedTxHashes); err != nil {
-						panic(err)
-					}
+					removeTxsInfo(writer, removedTxHashes)
 				}
 
 				if err = chain.saveBlockchainHashmaps(dataStorage); err != nil {

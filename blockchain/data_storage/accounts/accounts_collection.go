@@ -117,11 +117,9 @@ func (collection *AccountsCollection) ReadTransitionalChangesFromStore(prefix st
 	}
 	return
 }
-func (collection *AccountsCollection) DeleteTransitionalChangesFromStore(prefix string) (err error) {
+func (collection *AccountsCollection) DeleteTransitionalChangesFromStore(prefix string) {
 	for _, accs := range collection.accsMap {
-		if err = accs.DeleteTransitionalChangesFromStore(prefix); err != nil {
-			return
-		}
+		accs.DeleteTransitionalChangesFromStore(prefix)
 	}
 	return
 }

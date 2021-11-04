@@ -45,6 +45,8 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			payloadExtra = &wizard.WizardTxSimpleExtraUnstake{}
 		case transaction_simple.SCRIPT_UPDATE_DELEGATE:
 			payloadExtra = &wizard.WizardTxSimpleExtraUpdateDelegate{}
+		case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
+			payloadExtra = &wizard.WizardTxSimpleExtraUpdateAssetFeeLiquidity{}
 		default:
 			return nil, errors.New("Invalid PayloadScriptType")
 		}

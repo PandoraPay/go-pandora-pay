@@ -23,16 +23,15 @@ func (tx *StoreDBMemoryTransaction) IsWritable() bool {
 	return tx.write
 }
 
-func (tx *StoreDBMemoryTransaction) Put(key string, value []byte) error {
+func (tx *StoreDBMemoryTransaction) Put(key string, value []byte) {
 	if !tx.write {
-		return errors.New("Transaction is not writeable")
+		panic("Transaction is not writeable")
 	}
 	tx.local.Store(key, &StoreDBMemoryTransactionData{value, "put"})
-	return nil
 }
 
-func (tx *StoreDBMemoryTransaction) PutClone(key string, value []byte) error {
-	return tx.Put(key, helpers.CloneBytes(value))
+func (tx *StoreDBMemoryTransaction) PutClone(key string, value []byte) {
+	tx.Put(key, helpers.CloneBytes(value))
 }
 
 func (tx *StoreDBMemoryTransaction) Get(key string) []byte {
@@ -63,20 +62,11 @@ func (tx *StoreDBMemoryTransaction) Exists(key string) bool {
 	return false
 }
 
-func (tx *StoreDBMemoryTransaction) Delete(key string) error {
+func (tx *StoreDBMemoryTransaction) Delete(key string) {
 	if !tx.write {
-		return errors.New("Transaction is not writeable")
+		panic("Transaction is not writeable")
 	}
 	tx.local.Store(key, &StoreDBMemoryTransactionData{nil, "del"})
-	return nil
-}
-
-func (tx *StoreDBMemoryTransaction) DeleteForcefully(key string) (err error) {
-	if !tx.write {
-		return errors.New("Transaction is not writeable")
-	}
-	tx.local.Store(key, &StoreDBMemoryTransactionData{nil, "del"})
-	return
 }
 
 func (tx *StoreDBMemoryTransaction) writeTx() error {

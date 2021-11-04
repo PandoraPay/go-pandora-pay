@@ -9,8 +9,6 @@ type TransactionZetherBloom struct {
 	Nonce1                []byte
 	Nonce2                []byte
 	PublicKeyLists        [][][]byte
-	CLnLists              [][][]byte
-	CRnLists              [][][]byte
 	registrationsVerified bool
 	signatureVerified     bool
 	bloomed               bool
@@ -18,16 +16,10 @@ type TransactionZetherBloom struct {
 
 func (tx *TransactionZether) bloomLists() (err error) {
 	tx.Bloom.PublicKeyLists = make([][][]byte, len(tx.Payloads))
-	tx.Bloom.CLnLists = make([][][]byte, len(tx.Payloads))
-	tx.Bloom.CRnLists = make([][][]byte, len(tx.Payloads))
 	for payloadIndex, payload := range tx.Payloads {
 		tx.Bloom.PublicKeyLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))
-		tx.Bloom.CLnLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))
-		tx.Bloom.CRnLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))
 		for i := range payload.Statement.Publickeylist {
 			tx.Bloom.PublicKeyLists[payloadIndex][i] = payload.Statement.Publickeylist[i].EncodeCompressed()
-			tx.Bloom.CLnLists[payloadIndex][i] = payload.Statement.CLn[i].EncodeCompressed()
-			tx.Bloom.CRnLists[payloadIndex][i] = payload.Statement.CRn[i].EncodeCompressed()
 		}
 		if err = payload.Registrations.ValidateRegistrations(payload.Statement.Publickeylist); err != nil {
 			return
