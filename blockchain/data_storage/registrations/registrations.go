@@ -23,16 +23,14 @@ func (registrations *Registrations) VerifyRegistrationPoint(publicKey *bn256.G1,
 	return crypto.VerifySignaturePoint([]byte("registration"), registrationSignature, publicKey)
 }
 
-func (registrations *Registrations) CreateRegistration(publicKey, registrationSignature []byte) (*registration.Registration, error) {
+func (registrations *Registrations) CreateRegistration(publicKey []byte) (*registration.Registration, error) {
 
 	if len(publicKey) != cryptography.PublicKeySize {
 		return nil, errors.New("Key is not a valid public key")
 	}
 
 	reg := registration.NewRegistration(publicKey)
-	if err := registrations.Update(string(publicKey), reg); err != nil {
-		return nil, err
-	}
+	registrations.Update(string(publicKey), reg)
 	return reg, nil
 }
 

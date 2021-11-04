@@ -9,7 +9,7 @@ import (
 )
 
 type DataStorage struct {
-	Tx             store_db_interface.StoreDBTransactionInterface
+	dbTx           store_db_interface.StoreDBTransactionInterface
 	Regs           *registrations.Registrations
 	PlainAccs      *plain_accounts.PlainAccounts
 	AccsCollection *accounts.AccountsCollection
@@ -50,7 +50,7 @@ func (data *DataStorage) CloneCommitted() (err error) {
 }
 
 func (data *DataStorage) SetTx(dbTx store_db_interface.StoreDBTransactionInterface) {
-	data.Tx = dbTx
+	data.dbTx = dbTx
 	data.AccsCollection.SetTx(dbTx)
 	data.Asts.SetTx(dbTx)
 	data.PlainAccs.SetTx(dbTx)
@@ -89,12 +89,12 @@ func (data *DataStorage) DeleteTransitionalChangesFromStore(prefix string) {
 	data.Regs.DeleteTransitionalChangesFromStore(prefix)
 }
 
-func CreateDataStorage(tx store_db_interface.StoreDBTransactionInterface) *DataStorage {
+func CreateDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) *DataStorage {
 	return &DataStorage{
-		tx,
-		registrations.NewRegistrations(tx),
-		plain_accounts.NewPlainAccounts(tx),
-		accounts.NewAccountsCollection(tx),
-		assets.NewAssets(tx),
+		dbTx,
+		registrations.NewRegistrations(dbTx),
+		plain_accounts.NewPlainAccounts(dbTx),
+		accounts.NewAccountsCollection(dbTx),
+		assets.NewAssets(dbTx),
 	}
 }

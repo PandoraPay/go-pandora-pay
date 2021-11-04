@@ -24,7 +24,7 @@ type HashMap struct {
 
 func (hashMap *HashMap) GetIndexByKey(key string) (uint64, error) {
 	if !hashMap.Indexable {
-		return 0, errors.New("HashMap is not Indexable")
+		panic("HashMap is not Indexable")
 	}
 
 	//safe to Get because it won't change
@@ -39,7 +39,7 @@ func (hashMap *HashMap) GetIndexByKey(key string) (uint64, error) {
 func (hashMap *HashMap) GetKeyByIndex(index uint64) (key []byte, err error) {
 
 	if !hashMap.Indexable {
-		return nil, errors.New("HashMap is not Indexable")
+		panic("HashMap is not Indexable")
 	}
 
 	if index > hashMap.Count {
@@ -68,7 +68,7 @@ func (hashMap *HashMap) GetByIndex(index uint64) (data helpers.SerializableInter
 func (hashMap *HashMap) GetRandom() (data helpers.SerializableInterface, err error) {
 
 	if !hashMap.Indexable {
-		return nil, errors.New("HashMap is not Indexable")
+		panic("HashMap is not Indexable")
 	}
 
 	index := rand.Uint64() % hashMap.Count
@@ -134,14 +134,13 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 	return hashMap.Tx.Exists(hashMap.name + ":map:" + key), nil
 }
 
-func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) error {
+func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) {
 
 	if hashMap.KeyLength != 0 && len(key) != hashMap.KeyLength {
-		return errors.New("key length is invalid")
+		panic("key length is invalid")
 	}
-
 	if data == nil {
-		return errors.New("Data is null and it should not be")
+		panic("Data is null and it should not be")
 	}
 
 	exists := hashMap.Changes[key]
@@ -151,7 +150,6 @@ func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) e
 	}
 	exists.Status = "update"
 	exists.Element = data
-	return nil
 }
 
 func (hashMap *HashMap) Delete(key string) {
@@ -165,12 +163,12 @@ func (hashMap *HashMap) Delete(key string) {
 	return
 }
 
-func (hashMap *HashMap) UpdateOrDelete(key string, data helpers.SerializableInterface) error {
+func (hashMap *HashMap) UpdateOrDelete(key string, data helpers.SerializableInterface) {
 	if data == nil {
 		hashMap.Delete(key)
-		return nil
+		return
 	}
-	return hashMap.Update(key, data)
+	hashMap.Update(key, data)
 }
 
 func (hashMap *HashMap) CommitChanges() (err error) {

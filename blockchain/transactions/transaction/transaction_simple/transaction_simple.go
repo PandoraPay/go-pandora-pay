@@ -71,10 +71,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 		}
 	}
 
-	if err = dataStorage.PlainAccs.Update(string(tx.Vin.PublicKey), plainAcc); err != nil {
-		return
-	}
-
+	dataStorage.PlainAccs.Update(string(tx.Vin.PublicKey), plainAcc)
 	return
 }
 

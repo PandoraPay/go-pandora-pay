@@ -20,9 +20,7 @@ func (plainAccounts *PlainAccounts) CreatePlainAccount(publicKey []byte) (*plain
 	}
 
 	plainAcc := plain_account.NewPlainAccount(publicKey)
-	if err := plainAccounts.Update(string(publicKey), plainAcc); err != nil {
-		return nil, err
-	}
+	plainAccounts.Update(string(publicKey), plainAcc)
 	return plainAcc, nil
 }
 

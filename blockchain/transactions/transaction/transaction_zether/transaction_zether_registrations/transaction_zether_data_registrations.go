@@ -45,7 +45,7 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(dataStorage *data_st
 		}
 
 		//let's register
-		if _, err = dataStorage.Regs.CreateRegistration(publicKeyList[reg.PublicKeyIndex], reg.RegistrationSignature); err != nil {
+		if _, err = dataStorage.Regs.CreateRegistration(publicKeyList[reg.PublicKeyIndex]); err != nil {
 			return
 		}
 	}

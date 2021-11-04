@@ -37,14 +37,12 @@ func (assets *Assets) CreateAsset(key []byte, ast *asset.Asset) (err error) {
 		return errors.New("Asset already exists")
 	}
 
-	if err = assets.UpdateAsset(key, ast); err != nil {
-		return
-	}
+	assets.UpdateAsset(key, ast)
 	return
 }
 
-func (assets *Assets) UpdateAsset(key []byte, ast *asset.Asset) error {
-	return assets.Update(string(key), ast)
+func (assets *Assets) UpdateAsset(key []byte, ast *asset.Asset) {
+	assets.Update(string(key), ast)
 }
 
 func (assets *Assets) ExistsAsset(key []byte) (bool, error) {

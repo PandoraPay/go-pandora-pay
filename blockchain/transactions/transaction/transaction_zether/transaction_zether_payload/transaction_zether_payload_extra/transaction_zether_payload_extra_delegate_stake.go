@@ -50,9 +50,7 @@ func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) IncludeTxPayload
 		}
 	}
 
-	if err = dataStorage.PlainAccs.Update(string(payloadExtra.DelegatePublicKey), plainAcc); err != nil {
-		return
-	}
+	dataStorage.PlainAccs.Update(string(payloadExtra.DelegatePublicKey), plainAcc)
 
 	return
 }

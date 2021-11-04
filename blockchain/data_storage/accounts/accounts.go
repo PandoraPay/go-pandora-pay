@@ -25,9 +25,7 @@ func (accounts *Accounts) CreateAccount(publicKey []byte) (*account.Account, err
 	if err != nil {
 		return nil, err
 	}
-	if err = accounts.Update(string(publicKey), acc); err != nil {
-		return nil, err
-	}
+	accounts.Update(string(publicKey), acc)
 	return acc, nil
 }
 

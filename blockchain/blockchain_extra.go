@@ -87,16 +87,14 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 			if err = plainAcc.DelegatedStake.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
 				return
 			}
-			if err = dataStorage.PlainAccs.Update(string(addr.PublicKey), plainAcc); err != nil {
-				return
-			}
+			dataStorage.PlainAccs.Update(string(addr.PublicKey), plainAcc)
 		} else {
 
 			if dataStorage.Regs.VerifyRegistration(addr.PublicKey, addr.Registration) == false {
 				return errors.New("Registration verification is false")
 			}
 
-			if _, err = dataStorage.Regs.CreateRegistration(addr.PublicKey, addr.Registration); err != nil {
+			if _, err = dataStorage.Regs.CreateRegistration(addr.PublicKey); err != nil {
 				return
 			}
 			var acc *account.Account
@@ -106,9 +104,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 			if err = acc.Balance.AddBalanceUint(airdrop.Amount); err != nil {
 				return
 			}
-			if err = accs.Update(string(addr.PublicKey), acc); err != nil {
-				return
-			}
+			accs.Update(string(addr.PublicKey), acc)
 		}
 
 	}

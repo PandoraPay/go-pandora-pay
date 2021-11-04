@@ -73,13 +73,8 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) IncludeTxP
 		return
 	}
 
-	if err = accs.Update(string(payloadExtra.ReceiverPublicKey), acc); err != nil {
-		return
-	}
-	if err = dataStorage.Asts.UpdateAsset(payloadExtra.AssetId, ast); err != nil {
-		return
-	}
-
+	accs.Update(string(payloadExtra.ReceiverPublicKey), acc)
+	dataStorage.Asts.UpdateAsset(payloadExtra.AssetId, ast)
 	return
 }
 

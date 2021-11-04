@@ -44,9 +44,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaimStake) BeforeIncludeTxPayl
 		return
 	}
 
-	if err = dataStorage.PlainAccs.Update(string(plainAcc.PublicKey), plainAcc); err != nil {
-		return
-	}
+	dataStorage.PlainAccs.Update(string(plainAcc.PublicKey), plainAcc)
 
 	reg := payloadRegistrations.Registrations[payloadExtra.RegistrationIndex]
 	publicKey := publicKeyList[reg.PublicKeyIndex]
@@ -70,7 +68,8 @@ func (payloadExtra *TransactionZetherPayloadExtraClaimStake) BeforeIncludeTxPayl
 		return
 	}
 
-	return accs.Update(string(publicKey), acc)
+	accs.Update(string(publicKey), acc)
+	return
 }
 
 func (payloadExtra *TransactionZetherPayloadExtraClaimStake) IncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {

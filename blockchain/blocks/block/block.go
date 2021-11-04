@@ -58,9 +58,7 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 		return
 	}
 
-	if err = dataStorage.PlainAccs.Update(string(blk.Forger), plainAcc); err != nil {
-		return
-	}
+	dataStorage.PlainAccs.Update(string(blk.Forger), plainAcc)
 
 	var ast *asset.Asset
 	if ast, err = dataStorage.Asts.GetAsset(config_coins.NATIVE_ASSET_FULL); err != nil {
@@ -70,9 +68,7 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 	if err = ast.AddSupply(true, reward, true); err != nil {
 		return
 	}
-	if err = dataStorage.Asts.UpdateAsset(config_coins.NATIVE_ASSET_FULL, ast); err != nil {
-		return
-	}
+	dataStorage.Asts.UpdateAsset(config_coins.NATIVE_ASSET_FULL, ast)
 
 	return
 }
