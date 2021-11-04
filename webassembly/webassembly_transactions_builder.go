@@ -31,6 +31,7 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			Extra                       wizard.WizardTxSimpleExtra                              `json:"extra"`
 			Data                        *wizard.TransactionsWizardData                          `json:"data"`
 			Fee                         *wizard.TransactionsWizardFee                           `json:"fee"`
+			FeeVersion                  bool                                                    `json:"feeVersion"`
 			PropagateTx                 bool                                                    `json:"propagateTx"`
 			AwaitAnswer                 bool                                                    `json:"awaitAnswer"`
 		}{}
@@ -61,7 +62,7 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			}
 		}
 
-		tx, err := app.TransactionsBuilder.CreateSimpleTx(txData.From, txData.Nonce, payloadExtra, txData.Data, txData.Fee, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
+		tx, err := app.TransactionsBuilder.CreateSimpleTx(txData.From, txData.Nonce, payloadExtra, txData.Data, txData.Fee, txData.FeeVersion, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {

@@ -23,7 +23,7 @@ func (wallet *Wallet) updateAccountsChanges() {
 	//		accsCollection := accsCollectionData.(*accounts.AccountsCollection)
 	//
 	//		wallet.Lock()
-	//		accsMap := accsCollection.GetAllMap()
+	//		accsMap := accsCollection.GetAllMaps()
 	//		for _, accs := range accsMap {
 	//			for k, v := range accs.HashMap.Committed {
 	//				if wallet.addressesMap[k] != nil {

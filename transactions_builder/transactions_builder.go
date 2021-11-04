@@ -104,7 +104,7 @@ func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet
 	return fromWalletAddress, nil
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizard.WizardTxSimpleExtra, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(status string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizard.WizardTxSimpleExtra, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, feeVersion bool, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(status string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
@@ -155,7 +155,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, ex
 	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
 	statusCallback("Getting Nonce from Mempool")
 
-	if tx, err = wizard.CreateSimpleTx(nonce, fromWalletAddresses[0].PrivateKey.Key, extra, data, fee, false, statusCallback); err != nil {
+	if tx, err = wizard.CreateSimpleTx(nonce, fromWalletAddresses[0].PrivateKey.Key, extra, data, fee, feeVersion, false, statusCallback); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Created")

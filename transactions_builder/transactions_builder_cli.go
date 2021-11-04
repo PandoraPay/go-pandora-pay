@@ -414,11 +414,13 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
+		feeVersion := gui.GUI.OutputReadBool("Fee Version? y/n")
+
 		data := builder.readData()
 		fee := builder.readFees(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
-		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, propagate, true, true, false, func(status string) {
+		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, feeVersion, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -438,18 +440,20 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
+		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
+
 		txExtra := &wizard.WizardTxSimpleExtraUnstake{}
 		if txExtra.Amount, err = builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Amount"); err != nil {
 			return
 		}
 
-		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
+		feeVersion := gui.GUI.OutputReadBool("Fee Version? y/n")
 
 		data := builder.readData()
 		fee := builder.readFees(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
-		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, propagate, true, true, false, func(status string) {
+		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, feeVersion, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -459,6 +463,37 @@ func (builder *TransactionsBuilder) initCLI() {
 		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
 		return
 	}
+
+	//cliUpdateAssetFeeLiquidity := func(cmd string, ctx context.Context) (err error) {
+	//
+	//	builder.showWarningIfNotSyncCLI()
+	//
+	//	delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Unstake", ctx)
+	//	if err != nil {
+	//		return
+	//	}
+	//
+	//	txExtra := &wizard.WizardTxSimpleExtraUpdateAssetFeeLiquidity{}
+	//	if txExtra.Amount, err = builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Amount"); err != nil {
+	//		return
+	//	}
+	//
+	//	nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
+	//
+	//	data := builder.readData()
+	//	fee := builder.readFees(config_coins.NATIVE_ASSET_FULL)
+	//	propagate := gui.GUI.OutputReadBool("Propagate? y/n")
+	//
+	//	tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, propagate, true, true, false, func(status string) {
+	//		gui.GUI.OutputWrite(status)
+	//	})
+	//	if err != nil {
+	//		return
+	//	}
+	//
+	//	gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
+	//	return
+	//}
 
 	gui.GUI.CommandDefineCallback("Private Transfer", cliPrivateTransfer, true)
 	gui.GUI.CommandDefineCallback("Private Delegate Stake", cliPrivateDelegateStake, true)

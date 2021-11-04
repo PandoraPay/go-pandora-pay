@@ -10,7 +10,7 @@ import (
 	"pandora-pay/cryptography"
 )
 
-func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.PrivateKey, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (err error) {
+func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.PrivateKey, fee *TransactionsWizardFee, statusCallback func(string)) (err error) {
 
 	txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
@@ -27,7 +27,7 @@ func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.Pr
 	return
 }
 
-func CreateSimpleTx(nonce uint64, key []byte, extra WizardTxSimpleExtra, data *TransactionsWizardData, fee *TransactionsWizardFee, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateSimpleTx(nonce uint64, key []byte, extra WizardTxSimpleExtra, data *TransactionsWizardData, fee *TransactionsWizardFee, feesVersion bool, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	privateKey := &addresses.PrivateKey{Key: key}
 
@@ -58,6 +58,7 @@ func CreateSimpleTx(nonce uint64, key []byte, extra WizardTxSimpleExtra, data *T
 		Data:        dataFinal,
 		Nonce:       nonce,
 		Fees:        0,
+		FeesVersion: feesVersion,
 		Extra:       extraFinal,
 		Vin: &transaction_simple_parts.TransactionSimpleInput{
 			PublicKey: privateKey.GeneratePublicKey(),
@@ -70,7 +71,7 @@ func CreateSimpleTx(nonce uint64, key []byte, extra WizardTxSimpleExtra, data *T
 	}
 	statusCallback("Transaction Created")
 
-	if err = signSimpleTransaction(tx, privateKey, fee, validateTx, statusCallback); err != nil {
+	if err = signSimpleTransaction(tx, privateKey, fee, statusCallback); err != nil {
 		return
 	}
 	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {

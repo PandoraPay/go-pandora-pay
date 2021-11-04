@@ -1,6 +1,9 @@
 package wizard
 
-import "pandora-pay/blockchain/transactions/transaction/transaction_data"
+import (
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
+	"pandora-pay/blockchain/transactions/transaction/transaction_data"
+)
 
 type WizardTxSimpleExtraUpdateDelegate struct {
 	WizardTxSimpleExtra         `json:"-"`
@@ -11,6 +14,11 @@ type WizardTxSimpleExtraUpdateDelegate struct {
 type WizardTxSimpleExtraUnstake struct {
 	WizardTxSimpleExtra `json:"-"`
 	Amount              uint64 `json:"amount"`
+}
+
+type WizardTxSimpleExtraUpdateAssetFeeLiquidity struct {
+	WizardTxSimpleExtra `json:"-"`
+	Liquidities         []*asset_fee_liquidity.AssetFeeLiquidity
 }
 
 type WizardTxSimpleExtra interface {
