@@ -38,7 +38,8 @@ func (tx *StoreDBBoltTransaction) Exists(key string) bool {
 }
 
 func (tx *StoreDBBoltTransaction) PutClone(key string, value []byte) {
-	tx.Put(key, helpers.CloneBytes(value))
+	//verified, the value is being cloned by bbolt
+	tx.Put(key, value)
 }
 
 func (tx *StoreDBBoltTransaction) Delete(key string) {

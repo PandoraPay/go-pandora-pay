@@ -84,7 +84,7 @@ you can also create an account on hcaptcha
     - [x] Creation
     - [x] Increase Supply
     - [ ] Decrease Supply
-    - [ ] Liquidity Pools for Tx Fees
+    - [x] Liquidity Pools for Tx Fees
 - [x] Transactions
     - [x] Transaction Wizard
     - [x] Transaction Builder

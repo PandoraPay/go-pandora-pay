@@ -38,24 +38,23 @@ func (tx *Transaction) BloomAll() (err error) {
 	return tx.bloomExtraNow()
 }
 
-func (tx *Transaction) bloomExtraNow() (err error) {
+func (tx *Transaction) bloomExtraNow() error {
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 		if base.Bloom != nil {
-			return
+			return nil
 		}
-		err = base.BloomNow(tx.SerializeForSigning())
+		return base.BloomNow(tx.SerializeForSigning())
 	case transaction_type.TX_ZETHER:
 		base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
 		if base.Bloom != nil {
-			return
+			return nil
 		}
-		err = base.BloomNow(tx.SerializeForSigning())
+		return base.BloomNow(tx.SerializeForSigning())
 	default:
-		err = errors.New("Invalid TxType")
+		return errors.New("Invalid TxType")
 	}
-	return
 }
 
 func (tx *Transaction) BloomExtraVerified() (err error) {

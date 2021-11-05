@@ -15,7 +15,6 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -65,7 +64,6 @@ func (builder *TransactionsBuilder) createZetherRing(from string, dst *string, a
 	}
 
 	var accs *accounts.Accounts
-
 	if accs, err = dataStorage.AccsCollection.GetMap(assetId); err != nil {
 		return nil, err
 	}
@@ -177,7 +175,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 		}
 
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
-		chainHash = helpers.CloneBytes(reader.Get("chainHash"))
+		chainHash = reader.Get("chainHash")
 
 		for t, ast := range dstsAsts {
 
@@ -224,12 +222,12 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 
 					var balance []byte
 					if acc != nil {
-						balance = helpers.CloneBytes(acc.Balance.Amount.Serialize())
+						balance = acc.Balance.Amount.Serialize()
 					}
 
-					if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance); err != nil {
-						return
-					}
+					//if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance); err != nil {
+					//	return
+					//}
 
 					if balance == nil {
 						var acckey crypto.Point
