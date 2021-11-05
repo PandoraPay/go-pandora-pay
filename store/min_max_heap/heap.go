@@ -1,42 +1,43 @@
-package min_heap
+package min_max_heap
 
-// based on https://golangbyexample.com/minheap-in-golang/
+// based on https://golangbyexample.com/Heap-in-golang/
 
-type MinHeap struct {
-	getElement    func(index uint64) (*MinHeapElement, error)
-	updateElement func(index uint64, x *MinHeapElement) error
-	addElement    func(x *MinHeapElement) error
-	removeElement func() (*MinHeapElement, error)
+type Heap struct {
+	getElement    func(index uint64) (*HeapElement, error)
+	updateElement func(index uint64, x *HeapElement) error
+	addElement    func(x *HeapElement) error
+	removeElement func() (*HeapElement, error)
 	getSize       func() uint64
+	compare       func(a, b uint64) bool
 }
 
-func (m *MinHeap) leaf(index uint64) bool {
+func (m *Heap) leaf(index uint64) bool {
 	return index >= (m.getSize()/2) && index <= m.getSize()
 }
 
-func (m *MinHeap) parent(index uint64) uint64 {
+func (m *Heap) parent(index uint64) uint64 {
 	if index == 0 {
 		return 0
 	}
 	return (index - 1) / 2
 }
 
-func (m *MinHeap) leftchild(index uint64) uint64 {
+func (m *Heap) leftchild(index uint64) uint64 {
 	return 2*index + 1
 }
 
-func (m *MinHeap) rightchild(index uint64) uint64 {
+func (m *Heap) rightchild(index uint64) uint64 {
 	return 2*index + 2
 }
 
-func (m *MinHeap) Insert(score uint64, key []byte) error {
-	if err := m.addElement(&MinHeapElement{nil, key, score}); err != nil {
+func (m *Heap) Insert(score uint64, key []byte) error {
+	if err := m.addElement(&HeapElement{nil, key, score}); err != nil {
 		return err
 	}
 	return m.upHeapify(m.getSize() - 1)
 }
 
-func (m *MinHeap) swap(first, second uint64) error {
+func (m *Heap) swap(first, second uint64) error {
 	firstEl, err := m.getElement(first)
 	if err != nil {
 		return err
@@ -53,8 +54,8 @@ func (m *MinHeap) swap(first, second uint64) error {
 	return m.updateElement(second, firstEl)
 }
 
-func (m *MinHeap) upHeapify(index uint64) (err error) {
-	var a, b *MinHeapElement
+func (m *Heap) upHeapify(index uint64) (err error) {
+	var a, b *HeapElement
 	for {
 		if a, err = m.getElement(index); err != nil {
 			return
@@ -63,7 +64,7 @@ func (m *MinHeap) upHeapify(index uint64) (err error) {
 			return
 		}
 
-		if a.Score >= b.Score {
+		if !m.compare(a.Score, b.Score) {
 			return
 		}
 		if err = m.swap(index, m.parent(index)); err != nil {
@@ -73,12 +74,12 @@ func (m *MinHeap) upHeapify(index uint64) (err error) {
 	}
 }
 
-func (m *MinHeap) downHeapify(current uint64) (err error) {
+func (m *Heap) downHeapify(current uint64) (err error) {
 	if m.leaf(current) {
 		return
 	}
 
-	var a, b *MinHeapElement
+	var a, b *HeapElement
 
 	smallest := current
 	leftChildIndex := m.leftchild(current)
@@ -92,13 +93,13 @@ func (m *MinHeap) downHeapify(current uint64) (err error) {
 		if b, err = m.getElement(smallest); err != nil {
 			return
 		}
-		if a.Score < b.Score {
+		if m.compare(a.Score, b.Score) {
 			smallest = leftChildIndex
 		}
 	}
 
 	if rightRightIndex < m.getSize() {
-		if a.Score < b.Score {
+		if m.compare(a.Score, b.Score) {
 			if a, err = m.getElement(rightRightIndex); err != nil {
 				return
 			}
@@ -120,7 +121,7 @@ func (m *MinHeap) downHeapify(current uint64) (err error) {
 }
 
 //https://stackoverflow.com/a/12664523/14319261
-func (m *MinHeap) Delete(index uint64) error {
+func (m *Heap) Delete(index uint64) error {
 
 	element, err := m.removeElement()
 	if err != nil {
@@ -141,7 +142,7 @@ func (m *MinHeap) Delete(index uint64) error {
 			return err
 		}
 
-		if index > 0 && element.Score > middle.Score {
+		if index > 0 && m.compare(middle.Score, element.Score) {
 			return m.upHeapify(index)
 		}
 
@@ -154,7 +155,7 @@ func (m *MinHeap) Delete(index uint64) error {
 	return nil
 }
 
-func (m *MinHeap) RemoveMin() (*MinHeapElement, error) {
+func (m *Heap) RemoveTop() (*HeapElement, error) {
 
 	if err := m.swap(0, m.getSize()-1); err != nil {
 		return nil, err
@@ -171,10 +172,23 @@ func (m *MinHeap) RemoveMin() (*MinHeapElement, error) {
 	return top, nil
 }
 
-func (m *MinHeap) GetMin() (*MinHeapElement, error) {
+func (m *Heap) GetTop() (*HeapElement, error) {
 	return m.getElement(0)
 }
 
-func NewMinHeap() *MinHeap {
-	return &MinHeap{}
+/**
+Minheap
+func (a,b uint64) bool{
+	return a < b
+}
+
+Maxheap
+func (a,b uint64) bool{
+	return b < a
+}
+*/
+func NewHeap(compare func(a, b uint64) bool) *Heap {
+	return &Heap{
+		compare: compare,
+	}
 }

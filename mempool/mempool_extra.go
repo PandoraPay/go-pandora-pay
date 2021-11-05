@@ -127,7 +127,7 @@ func (mempool *Mempool) GetZetherBalance(publicKey []byte, balanceInit []byte) (
 func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit [][]byte) ([][]byte, error) {
 
 	txs := mempool.Txs.GetTxsFromMap()
-	var balance *crypto.ElGamal
+	var balance, balanceTemp *crypto.ElGamal
 	var err error
 	var acckey crypto.Point
 
@@ -155,9 +155,17 @@ func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesIn
 					for i, publicKeyPoint := range payload.Statement.Publickeylist {
 						txPublicKey := publicKeyPoint.EncodeCompressed()
 						if bytes.Equal(publicKey, txPublicKey) {
+
 							echanges := crypto.ConstructElGamal(payload.Statement.C[i], payload.Statement.D)
-							balance = balance.Add(echanges) // homomorphic addition of changes
-							changed = true
+							if balanceTemp, err = new(crypto.ElGamal).Deserialize(balance.Serialize()); err != nil {
+								return nil, err
+							}
+							balanceTemp = balance.Add(echanges) // homomorphic addition of changes
+
+							if payload.Statement.CLn[i].String() == balanceTemp.Left.String() && payload.Statement.CRn[i].String() == balanceTemp.Right.String() {
+								balance = balanceTemp
+								changed = true
+							}
 						}
 					}
 				}

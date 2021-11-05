@@ -225,9 +225,9 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 						balance = acc.Balance.Amount.Serialize()
 					}
 
-					//if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance); err != nil {
-					//	return
-					//}
+					if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance); err != nil {
+						return
+					}
 
 					if balance == nil {
 						var acckey crypto.Point

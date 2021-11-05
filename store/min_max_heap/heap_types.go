@@ -1,27 +1,27 @@
-package min_heap
+package min_max_heap
 
 import (
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
-type MinHeapElement struct {
+type HeapElement struct {
 	helpers.SerializableInterface
 	Key   []byte
 	Score uint64
 }
 
-type MinHeapDictElement struct {
+type HeapDictElement struct {
 	helpers.SerializableInterface
 	Index uint64
 }
 
-func (self *MinHeapElement) Serialize(w *helpers.BufferWriter) {
+func (self *HeapElement) Serialize(w *helpers.BufferWriter) {
 	w.Write(self.Key)
 	w.WriteUvarint(self.Score)
 }
 
-func (self *MinHeapElement) Deserialize(r *helpers.BufferReader) (err error) {
+func (self *HeapElement) Deserialize(r *helpers.BufferReader) (err error) {
 	if self.Key, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
@@ -29,11 +29,11 @@ func (self *MinHeapElement) Deserialize(r *helpers.BufferReader) (err error) {
 	return
 }
 
-func (self *MinHeapDictElement) Serialize(w *helpers.BufferWriter) {
+func (self *HeapDictElement) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(self.Index)
 }
 
-func (self *MinHeapDictElement) Deserialize(r *helpers.BufferReader) (err error) {
+func (self *HeapDictElement) Deserialize(r *helpers.BufferReader) (err error) {
 	self.Index, err = r.ReadUvarint()
 	return
 }
