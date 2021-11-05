@@ -10,6 +10,10 @@ type Registration struct {
 	Index                         uint64 `json:"index"`
 }
 
+func (registration *Registration) Validate() error {
+	return nil
+}
+
 func (registration *Registration) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(registration.Index)
 }

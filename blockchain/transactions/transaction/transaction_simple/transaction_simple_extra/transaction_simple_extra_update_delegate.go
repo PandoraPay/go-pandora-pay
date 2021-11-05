@@ -25,7 +25,7 @@ func (txExtra *TransactionSimpleExtraUpdateDelegate) IncludeTransactionVin0(bloc
 	}
 
 	if txExtra.DelegatedStakingClaimAmount > 0 {
-		if err = plainAcc.AddUnclaimed(false, txExtra.DelegatedStakingClaimAmount); err != nil {
+		if err = dataStorage.SubtractUnclaimed(plainAcc, txExtra.DelegatedStakingClaimAmount, blockHeight); err != nil {
 			return
 		}
 		if err = plainAcc.DelegatedStake.AddStakePendingStake(txExtra.DelegatedStakingClaimAmount, blockHeight); err != nil {

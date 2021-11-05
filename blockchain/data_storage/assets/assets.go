@@ -10,7 +10,7 @@ import (
 )
 
 type Assets struct {
-	hash_map.HashMap `json:"-"`
+	*hash_map.HashMap `json:"-"`
 }
 
 func (assets *Assets) GetAsset(key []byte) (*asset.Asset, error) {
@@ -25,10 +25,6 @@ func (assets *Assets) GetAsset(key []byte) (*asset.Asset, error) {
 
 func (assets *Assets) CreateAsset(key []byte, ast *asset.Asset) (err error) {
 
-	if err = ast.Validate(); err != nil {
-		return
-	}
-
 	var exists bool
 	if exists, err = assets.ExistsAsset(key); err != nil {
 		return
@@ -37,12 +33,7 @@ func (assets *Assets) CreateAsset(key []byte, ast *asset.Asset) (err error) {
 		return errors.New("Asset already exists")
 	}
 
-	assets.UpdateAsset(key, ast)
-	return
-}
-
-func (assets *Assets) UpdateAsset(key []byte, ast *asset.Asset) {
-	assets.Update(string(key), ast)
+	return assets.Update(string(key), ast)
 }
 
 func (assets *Assets) ExistsAsset(key []byte) (bool, error) {
@@ -58,7 +49,7 @@ func NewAssets(tx store_db_interface.StoreDBTransactionInterface) (assets *Asset
 	hashMap := hash_map.CreateNewHashMap(tx, "assets", config_coins.ASSET_LENGTH, true)
 
 	assets = &Assets{
-		HashMap: *hashMap,
+		hashMap,
 	}
 
 	assets.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {

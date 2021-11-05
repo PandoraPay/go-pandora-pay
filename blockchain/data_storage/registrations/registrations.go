@@ -7,12 +7,12 @@ import (
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
-	hash_map "pandora-pay/store/hash_map"
+	"pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type Registrations struct {
-	hash_map.HashMap `json:"-"`
+	*hash_map.HashMap
 }
 
 func (registrations *Registrations) VerifyRegistration(publicKey, registrationSignature []byte) bool {
@@ -30,13 +30,15 @@ func (registrations *Registrations) CreateRegistration(publicKey []byte) (*regis
 	}
 
 	reg := registration.NewRegistration(publicKey)
-	registrations.Update(string(publicKey), reg)
+	if err := registrations.HashMap.Update(string(publicKey), reg); err != nil {
+		return nil, err
+	}
 	return reg, nil
 }
 
 func (registrations *Registrations) GetRegistration(key []byte) (*registration.Registration, error) {
 
-	data, err := registrations.Get(string(key))
+	data, err := registrations.HashMap.Get(string(key))
 	if data == nil || err != nil {
 		return nil, err
 	}
@@ -46,7 +48,7 @@ func (registrations *Registrations) GetRegistration(key []byte) (*registration.R
 }
 
 func (registrations *Registrations) GetRandomRegistration() (*registration.Registration, error) {
-	data, err := registrations.GetRandom()
+	data, err := registrations.HashMap.GetRandom()
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +60,7 @@ func NewRegistrations(tx store_db_interface.StoreDBTransactionInterface) (regist
 	hashmap := hash_map.CreateNewHashMap(tx, "registrations", cryptography.PublicKeySize, true)
 
 	registrations = &Registrations{
-		HashMap: *hashmap,
+		HashMap: hashmap,
 	}
 
 	registrations.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {

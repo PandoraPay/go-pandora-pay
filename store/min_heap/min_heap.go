@@ -4,8 +4,8 @@ package min_heap
 
 type MinHeap struct {
 	getElement    func(index uint64) (*MinHeapElement, error)
-	updateElement func(index uint64, x *MinHeapElement)
-	addElement    func(x *MinHeapElement)
+	updateElement func(index uint64, x *MinHeapElement) error
+	addElement    func(x *MinHeapElement) error
 	removeElement func() (*MinHeapElement, error)
 	getSize       func() uint64
 }
@@ -30,7 +30,9 @@ func (m *MinHeap) rightchild(index uint64) uint64 {
 }
 
 func (m *MinHeap) Insert(score uint64, key []byte) error {
-	m.addElement(&MinHeapElement{nil, key, score})
+	if err := m.addElement(&MinHeapElement{nil, key, score}); err != nil {
+		return err
+	}
 	return m.upHeapify(m.getSize() - 1)
 }
 
@@ -44,9 +46,11 @@ func (m *MinHeap) swap(first, second uint64) error {
 	if err != nil {
 		return err
 	}
-	m.updateElement(first, secondEl)
-	m.updateElement(second, firstEl)
-	return nil
+
+	if err = m.updateElement(first, secondEl); err != nil {
+		return err
+	}
+	return m.updateElement(second, firstEl)
 }
 
 func (m *MinHeap) upHeapify(index uint64) (err error) {
@@ -127,7 +131,9 @@ func (m *MinHeap) Delete(index uint64) error {
 		return nil
 	}
 
-	m.updateElement(index, element)
+	if err = m.updateElement(index, element); err != nil {
+		return err
+	}
 
 	if index > 0 {
 		middle, err := m.getElement((index - 1) / 2)

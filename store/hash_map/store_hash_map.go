@@ -134,13 +134,17 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 	return hashMap.Tx.Exists(hashMap.name + ":map:" + key), nil
 }
 
-func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) {
+func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) error {
 
 	if hashMap.KeyLength != 0 && len(key) != hashMap.KeyLength {
-		panic("key length is invalid")
+		return errors.New("key length is invalid")
 	}
 	if data == nil {
-		panic("Data is null and it should not be")
+		return errors.New("Data is null and it should not be")
+	}
+
+	if err := data.Validate(); err != nil {
+		return err
 	}
 
 	exists := hashMap.Changes[key]
@@ -150,6 +154,8 @@ func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) {
 	}
 	exists.Status = "update"
 	exists.Element = data
+
+	return nil
 }
 
 func (hashMap *HashMap) Delete(key string) {
@@ -163,12 +169,12 @@ func (hashMap *HashMap) Delete(key string) {
 	return
 }
 
-func (hashMap *HashMap) UpdateOrDelete(key string, data helpers.SerializableInterface) {
+func (hashMap *HashMap) UpdateOrDelete(key string, data helpers.SerializableInterface) error {
 	if data == nil {
 		hashMap.Delete(key)
-		return
+		return nil
 	}
-	hashMap.Update(key, data)
+	return hashMap.Update(key, data)
 }
 
 func (hashMap *HashMap) CommitChanges() (err error) {

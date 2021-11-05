@@ -25,14 +25,16 @@ func NewMinHeapMemory() *MinHeapMemory {
 
 	size := uint64(0)
 
-	minHeap.updateElement = func(index uint64, x *MinHeapElement) {
+	minHeap.updateElement = func(index uint64, x *MinHeapElement) error {
 		array[index] = x
 		dict[string(x.Key)] = index
+		return nil
 	}
-	minHeap.addElement = func(x *MinHeapElement) {
+	minHeap.addElement = func(x *MinHeapElement) error {
 		array = append(array, x)
 		dict[string(x.Key)] = size
 		size += 1
+		return nil
 	}
 	minHeap.removeElement = func() (*MinHeapElement, error) {
 		size -= 1

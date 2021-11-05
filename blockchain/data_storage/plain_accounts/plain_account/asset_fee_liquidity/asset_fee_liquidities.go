@@ -3,6 +3,7 @@ package asset_fee_liquidity
 import (
 	"bytes"
 	"errors"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
@@ -10,17 +11,23 @@ type AssetFeeLiquidities struct {
 	helpers.SerializableInterface `json:"-"`
 	Version                       AssetFeeLiquiditiesVersion `json:"version"`
 	List                          []*AssetFeeLiquidity       `json:"list"`
-	changes                       []*AssetFeeLiquidity
+	Collector                     []byte                     `json:"collector"`
 }
 
-type UpdateLiquidityStatus byte
+func (self *AssetFeeLiquidities) Clear() {
+	self.List = make([]*AssetFeeLiquidity, 0)
+	self.Collector = nil
+}
 
-const (
-	UPDATE_LIQUIDITY_NOTHING = iota
-	UPDATE_LIQUIDITY_OVERWRITTEN
-	UPDATE_LIQUIDITY_INSERTED
-	UPDATE_LIQUIDITY_DELETED
-)
+func (self *AssetFeeLiquidities) Validate() error {
+	if len(self.List) == 0 && len(self.Collector) != 0 {
+		return errors.New("Collector can not be set while there is no liquidity set")
+	}
+	if len(self.List) > 0 && len(self.Collector) != cryptography.PublicKeySize {
+		return errors.New("Collector need to be set when there is at least one liquidity provided")
+	}
+	return nil
+}
 
 func (self *AssetFeeLiquidities) UpdateLiquidity(updateLiquidity *AssetFeeLiquidity) (UpdateLiquidityStatus, error) {
 
@@ -58,6 +65,7 @@ func (self *AssetFeeLiquidities) Serialize(w *helpers.BufferWriter) {
 		for _, liquidity := range self.List {
 			liquidity.Serialize(w)
 		}
+		w.Write(self.Collector)
 	}
 }
 
@@ -87,6 +95,10 @@ func (self *AssetFeeLiquidities) Deserialize(r *helpers.BufferReader) (err error
 			if err = item.Deserialize(r); err != nil {
 				return
 			}
+		}
+
+		if self.Collector, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+			return
 		}
 	}
 

@@ -40,11 +40,13 @@ func (payloadExtra *TransactionZetherPayloadExtraClaimStake) BeforeIncludeTxPayl
 		return errors.New("PlainAccount doesn't exist")
 	}
 
-	if err = plainAcc.AddUnclaimed(false, amount); err != nil {
+	if err = dataStorage.SubtractUnclaimed(plainAcc, amount, blockHeight); err != nil {
 		return
 	}
 
-	dataStorage.PlainAccs.Update(string(plainAcc.PublicKey), plainAcc)
+	if err = dataStorage.PlainAccs.Update(string(plainAcc.PublicKey), plainAcc); err != nil {
+		return
+	}
 
 	reg := payloadRegistrations.Registrations[payloadExtra.RegistrationIndex]
 	publicKey := publicKeyList[reg.PublicKeyIndex]
@@ -68,8 +70,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaimStake) BeforeIncludeTxPayl
 		return
 	}
 
-	accs.Update(string(publicKey), acc)
-	return
+	return accs.Update(string(publicKey), acc)
 }
 
 func (payloadExtra *TransactionZetherPayloadExtraClaimStake) IncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {

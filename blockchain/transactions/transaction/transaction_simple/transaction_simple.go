@@ -49,7 +49,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 	}
 
 	if tx.FeesVersion {
-		err = plainAcc.AddUnclaimed(false, tx.Fees)
+		err = dataStorage.SubtractUnclaimed(plainAcc, tx.Fees, blockHeight)
 	} else {
 		err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fees)
 	}
@@ -65,8 +65,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 		}
 	}
 
-	dataStorage.PlainAccs.Update(string(tx.Vin.PublicKey), plainAcc)
-	return
+	return dataStorage.PlainAccs.Update(string(tx.Vin.PublicKey), plainAcc)
 }
 
 func (tx *TransactionSimple) ComputeFees() (uint64, error) {

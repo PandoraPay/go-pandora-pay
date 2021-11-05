@@ -14,3 +14,12 @@ func (t AssetFeeLiquiditiesVersion) String() string {
 		return "Unknown AssetFeeLiquiditiesVersion"
 	}
 }
+
+type UpdateLiquidityStatus byte
+
+const (
+	UPDATE_LIQUIDITY_NOTHING = iota
+	UPDATE_LIQUIDITY_OVERWRITTEN
+	UPDATE_LIQUIDITY_INSERTED
+	UPDATE_LIQUIDITY_DELETED
+)

@@ -10,7 +10,7 @@ import (
 )
 
 type PlainAccounts struct {
-	hash_map.HashMap `json:"-"`
+	*hash_map.HashMap `json:"-"`
 }
 
 func (plainAccounts *PlainAccounts) CreatePlainAccount(publicKey []byte) (*plain_account.PlainAccount, error) {
@@ -20,7 +20,9 @@ func (plainAccounts *PlainAccounts) CreatePlainAccount(publicKey []byte) (*plain
 	}
 
 	plainAcc := plain_account.NewPlainAccount(publicKey)
-	plainAccounts.Update(string(publicKey), plainAcc)
+	if err := plainAccounts.Update(string(publicKey), plainAcc); err != nil {
+		return nil, err
+	}
 	return plainAcc, nil
 }
 
@@ -44,7 +46,7 @@ func NewPlainAccounts(tx store_db_interface.StoreDBTransactionInterface) (plainA
 	hashmap := hash_map.CreateNewHashMap(tx, "plainAccs", cryptography.PublicKeySize, false)
 
 	plainAccs = &PlainAccounts{
-		HashMap: *hashmap,
+		HashMap: hashmap,
 	}
 
 	plainAccs.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {
@@ -53,22 +55,6 @@ func NewPlainAccounts(tx store_db_interface.StoreDBTransactionInterface) (plainA
 			return nil, err
 		}
 		return plainAcc, nil
-	}
-
-	plainAccs.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) (err error) {
-		if !tx.IsWritable() {
-			return
-		}
-
-		return
-	}
-
-	plainAccs.HashMap.DeletedEvent = func(key []byte) (err error) {
-		if !tx.IsWritable() {
-			return
-		}
-
-		return
 	}
 
 	return

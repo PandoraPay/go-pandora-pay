@@ -19,6 +19,9 @@ func (plainAccount *PlainAccount) Validate() error {
 	if err := plainAccount.DelegatedStake.Validate(); err != nil {
 		return err
 	}
+	if err := plainAccount.AssetFeeLiquidities.Validate(); err != nil {
+		return err
+	}
 	return nil
 }
 

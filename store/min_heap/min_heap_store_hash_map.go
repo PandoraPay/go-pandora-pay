@@ -33,17 +33,22 @@ func NewMinHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface,
 
 	newSize := hashMap.Count
 
-	minHeap.updateElement = func(index uint64, x *MinHeapElement) {
-		hashMap.Update(strconv.FormatUint(index, 10), x)
-		dictMap.Update(string(x.Key), &MinHeapDictElement{nil, index})
-		return
+	minHeap.updateElement = func(index uint64, x *MinHeapElement) (err error) {
+		if err = hashMap.Update(strconv.FormatUint(index, 10), x); err != nil {
+			return
+		}
+		return dictMap.Update(string(x.Key), &MinHeapDictElement{nil, index})
 	}
 
-	minHeap.addElement = func(x *MinHeapElement) {
-		hashMap.Update(strconv.FormatUint(newSize, 10), x)
-		dictMap.Update(string(x.Key), &MinHeapDictElement{nil, newSize})
+	minHeap.addElement = func(x *MinHeapElement) (err error) {
+		if err = hashMap.Update(strconv.FormatUint(newSize, 10), x); err != nil {
+			return
+		}
+		if err = dictMap.Update(string(x.Key), &MinHeapDictElement{nil, newSize}); err != nil {
+			return
+		}
 		newSize += 1
-		return
+		return nil
 	}
 
 	minHeap.removeElement = func() (*MinHeapElement, error) {

@@ -79,7 +79,9 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		}
 
 		acc.Balance.Amount = balance
-		accs.Update(string(publicKey), acc)
+		if err = accs.Update(string(publicKey), acc); err != nil {
+			return
+		}
 	}
 
 	if payload.Extra != nil {

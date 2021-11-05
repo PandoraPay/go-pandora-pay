@@ -6,12 +6,15 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/config/config_asset_fee"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
 type TransactionSimpleExtraUpdateAssetFeeLiquidity struct {
 	TransactionSimpleExtraInterface
-	Liquidities []*asset_fee_liquidity.AssetFeeLiquidity
+	Liquidities     []*asset_fee_liquidity.AssetFeeLiquidity
+	CollectorHasNew bool
+	Collector       []byte
 }
 
 func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
@@ -33,6 +36,10 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransaction
 
 	}
 
+	if txExtra.CollectorHasNew {
+		plainAcc.AssetFeeLiquidities.Collector = txExtra.Collector
+	}
+
 	return
 }
 
@@ -52,6 +59,8 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Serialize(w *helpe
 	for _, liquidity := range txExtra.Liquidities {
 		liquidity.Serialize(w)
 	}
+	w.WriteBool(txExtra.CollectorHasNew)
+	w.Write(txExtra.Collector)
 }
 
 func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Deserialize(r *helpers.BufferReader) (err error) {
@@ -63,6 +72,16 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Deserialize(r *hel
 	txExtra.Liquidities = make([]*asset_fee_liquidity.AssetFeeLiquidity, count)
 	for _, item := range txExtra.Liquidities {
 		if err = item.Deserialize(r); err != nil {
+			return
+		}
+	}
+
+	if txExtra.CollectorHasNew, err = r.ReadBool(); err != nil {
+		return
+	}
+
+	if txExtra.CollectorHasNew {
+		if txExtra.Collector, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 			return
 		}
 	}
