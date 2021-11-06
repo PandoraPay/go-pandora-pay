@@ -166,7 +166,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		dataStorage := data_storage.CreateDataStorage(reader)
+		dataStorage := data_storage.NewDataStorage(reader)
 
 		for t := range from {
 			if ringMembers[t], err = builder.createZetherRing(from[t], &dsts[t], dstsAsts[t], ringsConfiguration[t], dataStorage); err != nil {

@@ -122,6 +122,10 @@ type APIAssetRequest struct {
 	ReturnType APIReturnType `json:"returnType,omitempty"`
 }
 
+type APIAssetFeeLiquidityFeeRequest struct {
+	APIHeightHash
+}
+
 type APISubscriptionRequest struct {
 	Key        []byte           `json:"key,omitempty"`
 	Type       SubscriptionType `json:"type,omitempty"`

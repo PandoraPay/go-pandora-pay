@@ -8,11 +8,13 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block_complete"
+	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/info"
@@ -260,6 +262,24 @@ func (apiStore *APIStore) openLoadAsset(hash []byte, height uint64) (ast *asset.
 
 		asts := assets.NewAssets(reader)
 		ast, err = asts.GetAsset(hash)
+		return
+	})
+	return
+}
+
+func (apiStore *APIStore) openLoadAssetFeeLiquidity(hash []byte, height uint64) (astFeeLiquidity *asset_fee_liquidity.AssetFeeLiquidity, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		if hash == nil {
+			if hash, err = apiStore.loadAssetHash(reader, height); err != nil {
+				return
+			}
+		}
+
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+		dataStorage := data_storage.NewDataStorage(reader)
+
+		astFeeLiquidity, err = dataStorage.GetAssetTopLiquidity(hash, chainHeight)
 		return
 	})
 	return

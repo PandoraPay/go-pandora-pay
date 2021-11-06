@@ -168,7 +168,7 @@ func (worker *mempoolWorker) processing(
 			for {
 
 				if dataStorage == nil {
-					dataStorage = data_storage.CreateDataStorage(dbTx)
+					dataStorage = data_storage.NewDataStorage(dbTx)
 				}
 
 				select {

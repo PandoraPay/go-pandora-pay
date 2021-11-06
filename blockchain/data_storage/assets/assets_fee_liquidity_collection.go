@@ -61,7 +61,21 @@ func (collection *AssetsFeeLiquidityCollection) UpdateLiquidity(publicKey []byte
 
 }
 
-func NewFeeLiquidityCollection(tx store_db_interface.StoreDBTransactionInterface) *AssetsFeeLiquidityCollection {
+func (collection *AssetsFeeLiquidityCollection) GetTopLiquidity(assetId []byte) ([]byte, error) {
+	maxheap, err := collection.GetMaxHeap(assetId)
+	if err != nil {
+		return nil, err
+	}
+
+	top, err := maxheap.GetTop()
+	if top == nil || err != nil {
+		return nil, err
+	}
+
+	return top.Key, nil
+}
+
+func NewAssetsFeeLiquidityCollection(tx store_db_interface.StoreDBTransactionInterface) *AssetsFeeLiquidityCollection {
 	return &AssetsFeeLiquidityCollection{
 		tx,
 		make(map[string]*min_max_heap.HeapStoreHashMap),

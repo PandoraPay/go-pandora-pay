@@ -29,6 +29,15 @@ func (self *AssetFeeLiquidities) Validate() error {
 	return nil
 }
 
+func (self *AssetFeeLiquidities) GetLiquidity(assetId []byte) *AssetFeeLiquidity {
+	for _, it := range self.List {
+		if bytes.Equal(it.AssetId, assetId) {
+			return it
+		}
+	}
+	return nil
+}
+
 func (self *AssetFeeLiquidities) UpdateLiquidity(updateLiquidity *AssetFeeLiquidity) (UpdateLiquidityStatus, error) {
 
 	if updateLiquidity.ConversionRate == 0 {

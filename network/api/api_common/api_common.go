@@ -40,13 +40,11 @@ type APICommon struct {
 }
 
 func (api *APICommon) GetBlockchain() ([]byte, error) {
-	chain := api.localChain.Load().(*api_types.APIBlockchain)
-	return json.Marshal(chain)
+	return json.Marshal(api.localChain.Load().(*api_types.APIBlockchain))
 }
 
 func (api *APICommon) GetBlockchainSync() ([]byte, error) {
-	sync := api.localChainSync.Load().(*blockchain_sync.BlockchainSyncData)
-	return json.Marshal(sync)
+	return json.Marshal(api.localChainSync.Load().(*blockchain_sync.BlockchainSyncData))
 }
 
 func (api *APICommon) GetInfo() ([]byte, error) {
@@ -287,6 +285,14 @@ func (api *APICommon) GetAssetInfo(request *api_types.APIAssetInfoRequest) ([]by
 		return nil, err
 	}
 	return json.Marshal(astInfo)
+}
+
+func (api *APICommon) GetAssetFeeLiquidity(request *api_types.APIAssetFeeLiquidityFeeRequest) ([]byte, error) {
+	out, err := api.ApiStore.openLoadAssetFeeLiquidity(request.Hash, request.Height)
+	if err != nil || out == nil {
+		return nil, err
+	}
+	return json.Marshal(out)
 }
 
 func (api *APICommon) GetAsset(request *api_types.APIAssetRequest) ([]byte, error) {

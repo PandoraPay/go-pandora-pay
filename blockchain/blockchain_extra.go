@@ -153,7 +153,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 	if err := store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		dataStorage := data_storage.CreateDataStorage(writer)
+		dataStorage := data_storage.NewDataStorage(writer)
 
 		if err = chain.initializeNewChain(chainData, dataStorage); err != nil {
 			return

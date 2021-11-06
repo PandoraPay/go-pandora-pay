@@ -10,6 +10,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
@@ -64,7 +65,23 @@ func (builder *TransactionsBuilder) readAmount(assetId []byte, text string) (amo
 	return
 }
 
-func (builder *TransactionsBuilder) readAddress(text string, assetId []byte, allowRandomAddress bool) (address *addresses.Address, amount uint64, err error) {
+func (builder *TransactionsBuilder) readAddress(text string) (address *addresses.Address, err error) {
+
+	for {
+		str := gui.GUI.OutputReadString(text)
+
+		address, err = addresses.DecodeAddr(str)
+		if err != nil {
+			gui.GUI.OutputWrite("Invalid Address")
+			continue
+		}
+		break
+	}
+
+	return
+}
+
+func (builder *TransactionsBuilder) readAddressOptional(text string, assetId []byte, allowRandomAddress bool) (address *addresses.Address, amount uint64, err error) {
 
 	text2 := text
 	if allowRandomAddress {
@@ -133,6 +150,16 @@ func (builder *TransactionsBuilder) readFees(assetId []byte) (fee *wizard.Transa
 	return
 }
 
+func (builder *TransactionsBuilder) readAsset(text string) []byte {
+	assetId := gui.GUI.OutputReadBytes(text, func(input []byte) bool {
+		return len(input) == 0 || len(input) == config_coins.ASSET_LENGTH
+	})
+	if len(assetId) == 0 {
+		assetId = config_coins.NATIVE_ASSET_FULL
+	}
+	return assetId
+}
+
 func (builder *TransactionsBuilder) readDelegatedStakingUpdate(delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, delegateWalletPublicKey []byte) (err error) {
 	delegatedStakingUpdate.DelegatedStakingHasNewInfo = gui.GUI.OutputReadBool("New Delegate Info? y/n")
 
@@ -166,14 +193,9 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		assetId := gui.GUI.OutputReadBytes("Asset. Leave empty for Native Asset", func(input []byte) bool {
-			return len(input) == 0 || len(input) == config_coins.ASSET_LENGTH
-		})
-		if len(assetId) == 0 {
-			assetId = config_coins.NATIVE_ASSET_FULL
-		}
+		assetId := builder.readAsset("Asset. Leave empty for Native Asset")
 
-		destinationAddress, amount, err := builder.readAddress("Destination Address", assetId, false)
+		destinationAddress, amount, err := builder.readAddressOptional("Destination Address", assetId, false)
 		if err != nil {
 			return
 		}
@@ -202,7 +224,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		delegateAddress, delegateAmount, err := builder.readAddress("Delegate Address", config_coins.NATIVE_ASSET_FULL, false)
+		delegateAddress, delegateAmount, err := builder.readAddressOptional("Delegate Address", config_coins.NATIVE_ASSET_FULL, false)
 		if err != nil {
 			return
 		}
@@ -222,7 +244,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			delegatePrivateKey = delegateWalletAddress.PrivateKey.Key
 		}
 
-		destinationAddress, destinationAmount, err := builder.readAddress("Transfer Destination Address", config_coins.NATIVE_ASSET_FULL, true)
+		destinationAddress, destinationAmount, err := builder.readAddressOptional("Transfer Destination Address", config_coins.NATIVE_ASSET_FULL, true)
 		if err != nil {
 			return
 		}
@@ -252,7 +274,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		destinationAddress, amount, err := builder.readAddress("Claim Address", config_coins.NATIVE_ASSET_FULL, false)
+		destinationAddress, amount, err := builder.readAddressOptional("Claim Address", config_coins.NATIVE_ASSET_FULL, false)
 		if err != nil {
 			return
 		}
@@ -300,7 +322,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			ast.SupplyPublicKey = supplyPrivKey.GeneratePublicKey()
 		}
 
-		destinationAddress, destinationAmount, err := builder.readAddress("Transfer Address", config_coins.NATIVE_ASSET_FULL, true)
+		destinationAddress, destinationAmount, err := builder.readAddressOptional("Transfer Address", config_coins.NATIVE_ASSET_FULL, true)
 		if err != nil {
 			return
 		}
@@ -359,20 +381,18 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		assetId := gui.GUI.OutputReadBytes("Asset Id", func(value []byte) bool {
-			return len(value) == config_coins.ASSET_LENGTH
-		})
+		assetId := builder.readAsset("Asset. Leave empty for Native Asset")
 
 		assetSupplyPrivateKey := gui.GUI.OutputReadBytes("Asset Supply Update Private Key", func(value []byte) bool {
 			return len(value) == cryptography.PrivateKeySize
 		})
 
-		receiver, value, err := builder.readAddress("Receiver Address", assetId, false)
+		receiver, value, err := builder.readAddressOptional("Receiver Address", assetId, false)
 		if err != nil {
 			return
 		}
 
-		destinationAddress, destinationAmount, err := builder.readAddress("Transfer Address", config_coins.NATIVE_ASSET_FULL, true)
+		destinationAddress, destinationAmount, err := builder.readAddressOptional("Transfer Address", config_coins.NATIVE_ASSET_FULL, true)
 		if err != nil {
 			return
 		}
@@ -464,36 +484,52 @@ func (builder *TransactionsBuilder) initCLI() {
 		return
 	}
 
-	//cliUpdateAssetFeeLiquidity := func(cmd string, ctx context.Context) (err error) {
-	//
-	//	builder.showWarningIfNotSyncCLI()
-	//
-	//	delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Unstake", ctx)
-	//	if err != nil {
-	//		return
-	//	}
-	//
-	//	txExtra := &wizard.WizardTxSimpleExtraUpdateAssetFeeLiquidity{}
-	//	if txExtra.Amount, err = builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Amount"); err != nil {
-	//		return
-	//	}
-	//
-	//	nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
-	//
-	//	data := builder.readData()
-	//	fee := builder.readFees(config_coins.NATIVE_ASSET_FULL)
-	//	propagate := gui.GUI.OutputReadBool("Propagate? y/n")
-	//
-	//	tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, propagate, true, true, false, func(status string) {
-	//		gui.GUI.OutputWrite(status)
-	//	})
-	//	if err != nil {
-	//		return
-	//	}
-	//
-	//	gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
-	//	return
-	//}
+	cliUpdateAssetFeeLiquidity := func(cmd string, ctx context.Context) (err error) {
+
+		builder.showWarningIfNotSyncCLI()
+
+		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Unstake", ctx)
+		if err != nil {
+			return
+		}
+
+		txExtra := &wizard.WizardTxSimpleExtraUpdateAssetFeeLiquidity{}
+		txExtra.CollectorHasNew = gui.GUI.OutputReadBool("New collector address ? y/n")
+		if txExtra.CollectorHasNew {
+			var addr *addresses.Address
+			if addr, err = builder.readAddress("Collector address"); err != nil {
+				return
+			}
+			txExtra.Collector = addr.PublicKey
+		}
+
+		for {
+			newLiquidity := gui.GUI.OutputReadBool("New Liquidity? y/n")
+			if !newLiquidity {
+				break
+			}
+			liquidity := &asset_fee_liquidity.AssetFeeLiquidity{}
+			liquidity.AssetId = builder.readAsset("AssetId. Leave empty for Native Asset")
+			liquidity.ConversionRate = gui.GUI.OutputReadUint64("Conversion Rate", false, nil)
+			txExtra.Liquidities = append(txExtra.Liquidities, liquidity)
+		}
+
+		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
+
+		data := builder.readData()
+		fee := builder.readFees(config_coins.NATIVE_ASSET_FULL)
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
+
+		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, propagate, true, true, false, false, func(status string) {
+			gui.GUI.OutputWrite(status)
+		})
+		if err != nil {
+			return
+		}
+
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
+		return
+	}
 
 	gui.GUI.CommandDefineCallback("Private Transfer", cliPrivateTransfer, true)
 	gui.GUI.CommandDefineCallback("Private Delegate Stake", cliPrivateDelegateStake, true)
@@ -502,5 +538,6 @@ func (builder *TransactionsBuilder) initCLI() {
 	gui.GUI.CommandDefineCallback("Private Asset Supply Increase", cliPrivateAssetSupplyIncrease, true)
 	gui.GUI.CommandDefineCallback("Update Delegate", cliUpdateDelegate, true)
 	gui.GUI.CommandDefineCallback("Unstake", cliUnstake, true)
+	gui.GUI.CommandDefineCallback("Update Asset Fee Liquidity", cliUpdateAssetFeeLiquidity, true)
 
 }

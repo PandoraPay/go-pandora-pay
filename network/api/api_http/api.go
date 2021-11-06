@@ -174,12 +174,19 @@ func (api *API) getAccountMempool(values *url.Values) (interface{}, error) {
 }
 
 func (api *API) getAsset(values *url.Values) (interface{}, error) {
-	request := &api_types.APIAssetRequest{}
+	request := &api_types.APIAssetRequest{ReturnType: api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
 	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
-	request.ReturnType = api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)
 	return api.apiCommon.GetAsset(request)
+}
+
+func (api *API) getAssetFeeLiquidity(values *url.Values) (interface{}, error) {
+	request := &api_types.APIAssetFeeLiquidityFeeRequest{}
+	if err := request.ImportFromValues(values); err != nil {
+		return nil, err
+	}
+	return api.apiCommon.GetAssetFeeLiquidity(request)
 }
 
 func (api *API) getAccountsCount(values *url.Values) (interface{}, error) {
@@ -324,6 +331,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		"accounts/keys-by-index": api.getAccountsKeysByIndex,
 		"accounts/by-keys":       api.getAccountsByKeys,
 		"asset":                  api.getAsset,
+		"asset/fee-liquidity":    api.getAssetFeeLiquidity,
 		"mem-pool":               api.getMempool,
 		"mem-pool/tx-exists":     api.getMempoolExists,
 		"mem-pool/new-tx":        api.postMempoolInsert,

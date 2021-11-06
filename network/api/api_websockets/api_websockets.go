@@ -135,6 +135,14 @@ func (api *APIWebsockets) getAsset(conn *connection.AdvancedConnection, values [
 	return api.apiCommon.GetAsset(request)
 }
 
+func (api *APIWebsockets) getAssetFeeLiquidity(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := &api_types.APIAssetFeeLiquidityFeeRequest{api_types.APIHeightHash{0, nil}}
+	if err := json.Unmarshal(values, &request); err != nil {
+		return nil, err
+	}
+	return api.apiCommon.GetAssetFeeLiquidity(request)
+}
+
 func (api *APIWebsockets) getAccountsCount(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	count, err := api.apiCommon.GetAccountsCount(values)
 	if err != nil {
@@ -333,6 +341,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"accounts/keys-by-index": api.getAccountsKeysByIndex,
 		"accounts/by-keys":       api.getAccountsByKeys,
 		"asset":                  api.getAsset,
+		"asset/fee-liquidity":    api.getAssetFeeLiquidity,
 		"mem-pool":               api.getMempool,
 		"mem-pool/tx-exists":     api.getMempoolExists,
 		"mem-pool/new-tx":        api.postMempoolInsert,

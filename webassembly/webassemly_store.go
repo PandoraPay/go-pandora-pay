@@ -44,7 +44,7 @@ func storeAccount(this js.Value, args []js.Value) interface{} {
 
 		if err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
-			dataStorage := data_storage.CreateDataStorage(writer)
+			dataStorage := data_storage.NewDataStorage(writer)
 
 			var accs *accounts.Accounts
 
@@ -133,7 +133,7 @@ func storeAsset(this js.Value, args []js.Value) interface{} {
 			if ast == nil {
 				asts.DeleteAsset(hash)
 			} else {
-				if err = asts.UpdateAsset(hash, ast); err != nil {
+				if err = asts.Update(string(hash), ast); err != nil {
 					return
 				}
 			}

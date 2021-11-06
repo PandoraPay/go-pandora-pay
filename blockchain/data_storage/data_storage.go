@@ -39,7 +39,20 @@ func (dataStorage *DataStorage) SubtractUnclaimed(plainAcc *plain_account.PlainA
 	return nil
 }
 
-func CreateDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *DataStorage) {
+func (dataStorage *DataStorage) GetAssetTopLiquidity(assetId []byte, blockHeight uint64) (*asset_fee_liquidity.AssetFeeLiquidity, error) {
+	key, err := dataStorage.AstsFeeLiquidityCollection.GetTopLiquidity(assetId)
+	if key == nil || err != nil {
+		return nil, err
+	}
+	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(key, blockHeight)
+	if plainAcc == nil || err != nil {
+		return nil, err
+	}
+
+	return plainAcc.AssetFeeLiquidities.GetLiquidity(assetId), nil
+}
+
+func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *DataStorage) {
 	out = &DataStorage{
 		hash_map.StoreHashMapRepository{},
 		dbTx,
@@ -47,7 +60,7 @@ func CreateDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out
 		plain_accounts.NewPlainAccounts(dbTx),
 		accounts.NewAccountsCollection(dbTx),
 		assets.NewAssets(dbTx),
-		assets.NewFeeLiquidityCollection(dbTx),
+		assets.NewAssetsFeeLiquidityCollection(dbTx),
 	}
 
 	out.GetList = func() (list []*hash_map.HashMap) {
