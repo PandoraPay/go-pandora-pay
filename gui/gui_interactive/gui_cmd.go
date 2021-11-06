@@ -49,7 +49,7 @@ var commands = []Command{
 	{Name: "Wallet:TX", Text: "Private Asset Create"},
 	{Name: "Wallet:TX", Text: "Private Asset Supply Increase"},
 	{Name: "Wallet:TX", Text: "Update Delegate"},
-	{Name: "Wallet:TX", Text: "Update Delegate"},
+	{Name: "Wallet:TX", Text: "Unstake"},
 	{Name: "Wallet:TX", Text: "Update Asset Fee Liquidity"},
 	{Name: "Wallet", Text: "Export Addresses"},
 	{Name: "Wallet", Text: "Export Address JSON"},

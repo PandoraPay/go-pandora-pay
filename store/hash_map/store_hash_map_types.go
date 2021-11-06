@@ -5,6 +5,7 @@ import "pandora-pay/helpers"
 type ChangesMapElement struct {
 	Element helpers.SerializableInterface
 	Status  string
+	index   uint64
 }
 
 type CommittedMapElement struct {

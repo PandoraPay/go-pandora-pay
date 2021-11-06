@@ -57,7 +57,7 @@ func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) {
 func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err error) {
 
 	//Clone required to avoid changing the data afterwards
-	data := hashMap.Tx.GetClone(hashMap.name + ":transitions:" + prefix)
+	data := hashMap.Tx.Get(hashMap.name + ":transitions:" + prefix)
 	if data == nil {
 		return errors.New("transitions didn't exist")
 	}
@@ -67,13 +67,14 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 		return err
 	}
 
-	for _, change := range changes.List {
+	//in reverse
+	for i := len(changes.List) - 1; i >= 0; i-- {
+
+		change := changes.List[i]
+
 		if change.Transition == nil {
 
-			hashMap.Changes[string(change.Key)] = &ChangesMapElement{
-				Element: nil,
-				Status:  "del",
-			}
+			hashMap.Delete(string(change.Key))
 
 		} else {
 
@@ -82,12 +83,11 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 				return
 			}
 
-			hashMap.Changes[string(change.Key)] = &ChangesMapElement{
-				Element: element,
-				Status:  "update",
+			if err = hashMap.Update(string(change.Key), element); err != nil {
+				return
 			}
-
 		}
+
 	}
 
 	return nil
