@@ -119,7 +119,6 @@ func (dstake *DelegatedStake) Serialize(w *helpers.BufferWriter) {
 			stakePending.Serialize(w)
 		}
 	}
-
 }
 
 func (dstake *DelegatedStake) Deserialize(r *helpers.BufferReader) (err error) {

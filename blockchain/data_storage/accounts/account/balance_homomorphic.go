@@ -10,7 +10,8 @@ import (
 )
 
 type BalanceHomomorphic struct {
-	Amount *crypto.ElGamal `json:"amount"`
+	helpers.SerializableInterface `json:"-"`
+	Amount                        *crypto.ElGamal `json:"amount"`
 }
 
 // MarshalJSON serializes ElGamal into byteArray
@@ -47,12 +48,6 @@ func (balance *BalanceHomomorphic) AddBalance(encryptedAmount []byte) (err error
 
 func (balance *BalanceHomomorphic) Serialize(w *helpers.BufferWriter) {
 	w.Write(balance.Amount.Serialize())
-}
-
-func (balance *BalanceHomomorphic) SerializeToBytes() []byte {
-	writer := helpers.NewBufferWriter()
-	balance.Serialize(writer)
-	return writer.Bytes()
 }
 
 func (balance *BalanceHomomorphic) Deserialize(r *helpers.BufferReader) (err error) {

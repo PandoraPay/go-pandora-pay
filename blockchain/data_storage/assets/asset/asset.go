@@ -123,13 +123,6 @@ func (asset *Asset) Serialize(w *helpers.BufferWriter) {
 	w.WriteString(asset.Name)
 	w.WriteString(asset.Ticker)
 	w.WriteString(asset.Description)
-
-}
-
-func (asset *Asset) SerializeToBytes() []byte {
-	w := helpers.NewBufferWriter()
-	asset.Serialize(w)
-	return w.Bytes()
 }
 
 func (asset *Asset) Deserialize(r *helpers.BufferReader) (err error) {

@@ -54,12 +54,6 @@ func (plainAccount *PlainAccount) Serialize(w *helpers.BufferWriter) {
 	plainAccount.AssetFeeLiquidities.Serialize(w)
 }
 
-func (plainAccount *PlainAccount) SerializeToBytes() []byte {
-	w := helpers.NewBufferWriter()
-	plainAccount.Serialize(w)
-	return w.Bytes()
-}
-
 func (plainAccount *PlainAccount) Deserialize(r *helpers.BufferReader) (err error) {
 
 	if plainAccount.Nonce, err = r.ReadUvarint(); err != nil {

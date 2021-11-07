@@ -18,12 +18,6 @@ func (registration *Registration) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(registration.Index)
 }
 
-func (registration *Registration) SerializeToBytes() []byte {
-	w := helpers.NewBufferWriter()
-	registration.Serialize(w)
-	return w.Bytes()
-}
-
 func (registration *Registration) Deserialize(r *helpers.BufferReader) (err error) {
 	if registration.Index, err = r.ReadUvarint(); err != nil {
 		return

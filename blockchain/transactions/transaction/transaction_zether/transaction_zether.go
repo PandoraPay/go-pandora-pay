@@ -17,15 +17,6 @@ type TransactionZether struct {
 	Bloom    *TransactionZetherBloom
 }
 
-func (tx *TransactionZether) ComputeExtraSpace() uint64 {
-
-	totalRegistrations := 0
-	for _, payload := range tx.Payloads {
-		totalRegistrations += len(payload.Registrations.Registrations)
-	}
-	return uint64(64 * totalRegistrations)
-}
-
 /**
 Zether requires another verification that the bloomed publicKeys, CL, CR are the same
 */
@@ -101,12 +92,6 @@ func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 
 func (tx *TransactionZether) Serialize(w *helpers.BufferWriter) {
 	tx.SerializeAdvanced(w, true)
-}
-
-func (tx *TransactionZether) SerializeToBytes() []byte {
-	w := helpers.NewBufferWriter()
-	tx.Serialize(w)
-	return w.Bytes()
 }
 
 func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {

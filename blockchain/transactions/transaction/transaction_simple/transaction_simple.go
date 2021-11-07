@@ -27,10 +27,6 @@ type TransactionSimple struct {
 	Bloom       *TransactionSimpleBloom
 }
 
-func (tx *TransactionSimple) ComputeExtraSpace() uint64 {
-	return 0
-}
-
 func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byte, dataStorage *data_storage.DataStorage) (err error) {
 
 	var plainAcc *plain_account.PlainAccount
@@ -125,12 +121,6 @@ func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 
 func (tx *TransactionSimple) Serialize(w *helpers.BufferWriter) {
 	tx.SerializeAdvanced(w, true)
-}
-
-func (tx *TransactionSimple) SerializeToBytes() []byte {
-	w := helpers.NewBufferWriter()
-	tx.Serialize(w)
-	return w.Bytes()
 }
 
 func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {

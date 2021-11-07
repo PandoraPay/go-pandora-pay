@@ -16,3 +16,9 @@ type TransactionZetherPayloadExtraInterface interface {
 	VerifyExtraSignature(hashForSignature []byte) bool
 	ComputeAllKeys(out map[string]bool)
 }
+
+func SerializeToBytes(self TransactionZetherPayloadExtraInterface, inclSignature bool) []byte {
+	w := helpers.NewBufferWriter()
+	self.Serialize(w, inclSignature)
+	return w.Bytes()
+}

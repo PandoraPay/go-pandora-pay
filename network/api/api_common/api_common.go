@@ -154,16 +154,16 @@ func (api *APICommon) GetAccount(request *api_types.APIAccountRequest) ([]byte, 
 
 		outAcc.AccsSerialized = make([]helpers.HexBytes, len(outAcc.Accs))
 		for i, acc := range outAcc.Accs {
-			outAcc.AccsSerialized[i] = acc.SerializeToBytes()
+			outAcc.AccsSerialized[i] = helpers.SerializeToBytes(acc)
 		}
 		outAcc.Accs = nil
 
 		if outAcc.PlainAcc != nil {
-			outAcc.PlainAccSerialized = outAcc.PlainAcc.SerializeToBytes()
+			outAcc.PlainAccSerialized = helpers.SerializeToBytes(outAcc.PlainAcc)
 			outAcc.PlainAcc = nil
 		}
 		if outAcc.Reg != nil {
-			outAcc.RegSerialized = outAcc.Reg.SerializeToBytes()
+			outAcc.RegSerialized = helpers.SerializeToBytes(outAcc.Reg)
 			outAcc.Reg = nil
 		}
 
@@ -301,7 +301,7 @@ func (api *APICommon) GetAsset(request *api_types.APIAssetRequest) ([]byte, erro
 		return nil, err
 	}
 	if request.ReturnType == api_types.RETURN_SERIALIZED {
-		return asset.SerializeToBytes(), nil
+		return helpers.SerializeToBytes(asset), nil
 	}
 	return json.Marshal(asset)
 }
@@ -353,7 +353,7 @@ func (api *APICommon) GetAccountsByKeys(request *api_types.APIAccountsByKeysRequ
 		balancesInit := make([][]byte, len(publicKeys))
 		for i, acc := range out.Acc {
 			if acc != nil {
-				balancesInit[i] = acc.Balance.SerializeToBytes()
+				balancesInit[i] = helpers.SerializeToBytes(acc.Balance)
 			}
 		}
 		if balancesInit, err = api.mempool.GetZetherBalanceMultiple(publicKeys, balancesInit); err != nil {
@@ -372,7 +372,7 @@ func (api *APICommon) GetAccountsByKeys(request *api_types.APIAccountsByKeysRequ
 		out.AccSerialized = make([]helpers.HexBytes, len(out.Acc))
 		for i, acc := range out.Acc {
 			if acc != nil {
-				out.AccSerialized[i] = acc.SerializeToBytes()
+				out.AccSerialized[i] = helpers.SerializeToBytes(acc)
 			}
 		}
 		out.Acc = nil
@@ -380,7 +380,7 @@ func (api *APICommon) GetAccountsByKeys(request *api_types.APIAccountsByKeysRequ
 		out.RegSerialized = make([]helpers.HexBytes, len(out.Reg))
 		for i, reg := range out.Reg {
 			if reg != nil {
-				out.RegSerialized[i] = reg.SerializeToBytes()
+				out.RegSerialized[i] = helpers.SerializeToBytes(reg)
 			}
 		}
 		out.Reg = nil

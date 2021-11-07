@@ -12,7 +12,7 @@ import (
 
 type Accounts struct {
 	hash_map.HashMap `json:"-"`
-	Asset            []byte
+	Asset            []byte `json:"-"`
 }
 
 func (accounts *Accounts) CreateAccount(publicKey []byte) (*account.Account, error) {
@@ -114,8 +114,6 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 		if count, err = accounts.saveAssetsCount(key, true); err != nil {
 			return
 		}
-
-		element.Element.(*account.Account).Index = accounts.HashMap.Count
 
 		tx.Put("accounts:assetByIndex:"+string(key)+":"+strconv.FormatUint(count, 10), element.Element.(*account.Account).Asset)
 		return

@@ -13,16 +13,25 @@ import (
 
 type Transaction struct {
 	transaction_base_interface.TransactionBaseInterface
-	Version transaction_type.TransactionVersion
-	Bloom   *TransactionBloom
+	Version    transaction_type.TransactionVersion
+	SpaceExtra uint64
+	Bloom      *TransactionBloom
 }
 
-func (tx *Transaction) IncludeTransaction(blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
-	return tx.TransactionBaseInterface.IncludeTransaction(blockHeight, tx.Bloom.Hash, dataStorage)
-}
+func (tx *Transaction) IncludeTransaction(blockHeight uint64, dataStorage *data_storage.DataStorage) error {
 
-func (tx *Transaction) ComputeExtraSpace() uint64 {
-	return tx.TransactionBaseInterface.ComputeExtraSpace()
+	dataStorage.ResetChangesSize()
+
+	if err := tx.TransactionBaseInterface.IncludeTransaction(blockHeight, tx.Bloom.Hash, dataStorage); err != nil {
+		return err
+	}
+
+	changesSize := dataStorage.ComputeChangesSize()
+	if changesSize > tx.SpaceExtra {
+		return errors.New("Changes Size is greater than Tx.SpaceExtra")
+	}
+
+	return nil
 }
 
 func (tx *Transaction) GetAllFees() (uint64, error) {
@@ -52,7 +61,7 @@ func (tx *Transaction) GetHashSigningManually() []byte {
 
 func (tx *Transaction) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(uint64(tx.Version))
-
+	w.WriteUvarint(tx.SpaceExtra)
 	tx.TransactionBaseInterface.SerializeAdvanced(w, inclSignature)
 }
 
@@ -95,6 +104,10 @@ func (tx *Transaction) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 	tx.Version = transaction_type.TransactionVersion(n)
+
+	if tx.SpaceExtra, err = r.ReadUvarint(); err != nil {
+		return
+	}
 
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:

@@ -75,7 +75,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 		if subNot.Subscription.ReturnType == api_types.RETURN_SERIALIZED {
 			var bytes []byte
 			if element != nil {
-				bytes = element.SerializeToBytes()
+				bytes = helpers.SerializeToBytes(element)
 			} else {
 				bytes = elementBytes
 			}
