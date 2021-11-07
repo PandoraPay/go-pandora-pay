@@ -17,6 +17,10 @@ type AssetsFeeLiquidityCollection struct {
 	listMaps          []*hash_map.HashMap
 }
 
+func (collection *AssetsFeeLiquidityCollection) SetTx(tx store_db_interface.StoreDBTransactionInterface) {
+	collection.tx = tx
+}
+
 func (collection *AssetsFeeLiquidityCollection) GetAllHashmaps() []*hash_map.HashMap {
 	return collection.listMaps
 }

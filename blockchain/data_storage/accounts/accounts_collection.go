@@ -15,6 +15,10 @@ type AccountsCollection struct {
 	listMaps []*hash_map.HashMap
 }
 
+func (collection *AccountsCollection) SetTx(tx store_db_interface.StoreDBTransactionInterface) {
+	collection.tx = tx
+}
+
 func (collection *AccountsCollection) GetAllMaps() map[string]*Accounts {
 	return collection.accsMap
 }

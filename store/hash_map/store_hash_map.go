@@ -29,6 +29,10 @@ func (hashMap *HashMap) GetIndexByKey(key string) (uint64, error) {
 		return 0, errors.New("HashMap is not Indexable")
 	}
 
+	if len(hashMap.Changes) > 0 {
+		return 0, errors.New("GetIndexByKey is supported only when is committed")
+	}
+
 	//safe to Get because it won't change
 	data := hashMap.Tx.Get(hashMap.name + ":listKey:" + key)
 	if data == nil {
@@ -42,6 +46,10 @@ func (hashMap *HashMap) GetIndexByKey(key string) (uint64, error) {
 func (hashMap *HashMap) GetKeyByIndex(index uint64) ([]byte, error) {
 	if !hashMap.Indexable {
 		return nil, errors.New("HashMap is not Indexable")
+	}
+
+	if len(hashMap.Changes) > 0 {
+		return nil, errors.New("GetIndexByKey is supported only when is committed")
 	}
 
 	if index > hashMap.CountCommitted {
@@ -128,8 +136,8 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 	if exists := hashMap.Changes[key]; exists != nil {
 		return exists.Element != nil, nil
 	}
-	if exists := hashMap.Committed[key]; exists != nil {
-		return exists.Element != nil, nil
+	if exists2 := hashMap.Committed[key]; exists2 != nil {
+		return exists2.Element != nil, nil
 	}
 
 	return hashMap.Tx.Exists(hashMap.name + ":exists:" + key), nil
