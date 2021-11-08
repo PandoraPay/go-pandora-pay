@@ -13,11 +13,12 @@ type HashMap struct {
 	name           string
 	Tx             store_db_interface.StoreDBTransactionInterface
 	Count          uint64
-	CountCommitted uint64
+	countCommitted uint64
 	Changes        map[string]*ChangesMapElement
-	ChangesSize    map[string]*ChangesMapElement //used for computing the
+	changed        bool
+	changesSize    map[string]*ChangesMapElement //used for computing the
 	Committed      map[string]*CommittedMapElement
-	KeyLength      int
+	keyLength      int
 	Deserialize    func([]byte, []byte) (helpers.SerializableInterface, error)
 	DeletedEvent   func([]byte) error
 	StoredEvent    func([]byte, *CommittedMapElement) error
@@ -30,7 +31,7 @@ func (hashMap *HashMap) GetIndexByKey(key string) (uint64, error) {
 		return 0, errors.New("HashMap is not Indexable")
 	}
 
-	if len(hashMap.Changes) > 0 {
+	if hashMap.changed {
 		return 0, errors.New("GetIndexByKey is supported only when is committed")
 	}
 
@@ -49,11 +50,11 @@ func (hashMap *HashMap) GetKeyByIndex(index uint64) ([]byte, error) {
 		return nil, errors.New("HashMap is not Indexable")
 	}
 
-	if len(hashMap.Changes) > 0 {
+	if hashMap.changed {
 		return nil, errors.New("GetIndexByKey is supported only when is committed")
 	}
 
-	if index >= hashMap.CountCommitted {
+	if index >= hashMap.Count {
 		return nil, errors.New("Index exceeds count")
 	}
 
@@ -102,7 +103,7 @@ func (hashMap *HashMap) CloneCommitted() (err error) {
 
 func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err error) {
 
-	if hashMap.KeyLength != 0 && len(key) != hashMap.KeyLength {
+	if hashMap.keyLength != 0 && len(key) != hashMap.keyLength {
 		return nil, errors.New("key length is invalid")
 	}
 	if exists := hashMap.Changes[key]; exists != nil {
@@ -131,7 +132,7 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 
 func (hashMap *HashMap) Exists(key string) (bool, error) {
 
-	if hashMap.KeyLength != 0 && len(key) != hashMap.KeyLength {
+	if hashMap.keyLength != 0 && len(key) != hashMap.keyLength {
 		return false, errors.New("key length is invalid")
 	}
 	if exists := hashMap.Changes[key]; exists != nil {
@@ -146,7 +147,7 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 
 func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) error {
 
-	if hashMap.KeyLength != 0 && len(key) != hashMap.KeyLength {
+	if hashMap.keyLength != 0 && len(key) != hashMap.keyLength {
 		return errors.New("key length is invalid")
 	}
 	if data == nil {
@@ -164,7 +165,7 @@ func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) e
 	if exists == nil {
 		exists = new(ChangesMapElement)
 		hashMap.Changes[key] = exists
-		hashMap.ChangesSize[key] = exists
+		hashMap.changesSize[key] = exists
 	}
 	exists.Status = "update"
 	exists.Element = data
@@ -174,6 +175,8 @@ func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) e
 		hashMap.Count += 1
 		exists.indexProcess = true
 	}
+
+	hashMap.changed = true
 
 	return nil
 }
@@ -186,7 +189,7 @@ func (hashMap *HashMap) Delete(key string) {
 	if exists == nil {
 		exists = new(ChangesMapElement)
 		hashMap.Changes[key] = exists
-		hashMap.ChangesSize[key] = exists
+		hashMap.changesSize[key] = exists
 	}
 	exists.Status = "del"
 	exists.Element = nil
@@ -206,6 +209,8 @@ func (hashMap *HashMap) Delete(key string) {
 		}
 	}
 
+	hashMap.changed = true
+
 	return
 }
 
@@ -219,7 +224,7 @@ func (hashMap *HashMap) UpdateOrDelete(key string, data helpers.SerializableInte
 
 func (hashMap *HashMap) ComputeChangesSize() (out uint64) {
 
-	for k, v := range hashMap.ChangesSize {
+	for k, v := range hashMap.changesSize {
 		if v.Status == "update" {
 
 			oldSize := 0
@@ -256,7 +261,7 @@ func (hashMap *HashMap) ComputeChangesSize() (out uint64) {
 }
 
 func (hashMap *HashMap) ResetChangesSize() {
-	hashMap.ChangesSize = make(map[string]*ChangesMapElement)
+	hashMap.changesSize = make(map[string]*ChangesMapElement)
 }
 
 func (hashMap *HashMap) CommitChanges() (err error) {
@@ -265,7 +270,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 
 	c := 0
 	for k, v := range hashMap.Changes {
-		if hashMap.KeyLength != 0 && len(k) != hashMap.KeyLength {
+		if hashMap.keyLength != 0 && len(k) != hashMap.keyLength {
 			return errors.New("key length is invalid")
 		}
 		if v.Status == "update" {
@@ -373,7 +378,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 		delete(hashMap.Changes, removed[i])
 	}
 
-	hashMap.CountCommitted = hashMap.Count
+	hashMap.countCommitted = hashMap.Count
 
 	if hashMap.Tx.IsWritable() {
 		buf := make([]byte, binary.MaxVarintLen64)
@@ -381,6 +386,8 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 		//safe
 		hashMap.Tx.Put(hashMap.name+":count", buf[:n])
 	}
+
+	hashMap.changed = false
 
 	return
 }
@@ -391,14 +398,16 @@ func (hashMap *HashMap) SetTx(dbTx store_db_interface.StoreDBTransactionInterfac
 
 func (hashMap *HashMap) Rollback() {
 	hashMap.Changes = make(map[string]*ChangesMapElement)
-	hashMap.ChangesSize = make(map[string]*ChangesMapElement)
-	hashMap.Count = hashMap.CountCommitted
+	hashMap.changesSize = make(map[string]*ChangesMapElement)
+	hashMap.Count = hashMap.countCommitted
+	hashMap.changed = false
 }
 
 func (hashMap *HashMap) Reset() {
 	hashMap.Committed = make(map[string]*CommittedMapElement)
 	hashMap.Changes = make(map[string]*ChangesMapElement)
-	hashMap.ChangesSize = make(map[string]*ChangesMapElement)
+	hashMap.changesSize = make(map[string]*ChangesMapElement)
+	hashMap.changed = false
 }
 
 func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int, indexable bool) (hashMap *HashMap) {
@@ -411,10 +420,10 @@ func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name st
 		name:        name,
 		Committed:   make(map[string]*CommittedMapElement),
 		Changes:     make(map[string]*ChangesMapElement),
-		ChangesSize: make(map[string]*ChangesMapElement),
+		changesSize: make(map[string]*ChangesMapElement),
 		Tx:          tx,
 		Count:       0,
-		KeyLength:   keyLength,
+		keyLength:   keyLength,
 		Indexable:   indexable,
 	}
 
@@ -427,7 +436,7 @@ func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name st
 		}
 		hashMap.Count = count
 	}
-	hashMap.CountCommitted = hashMap.Count
+	hashMap.countCommitted = hashMap.Count
 
 	return
 }
