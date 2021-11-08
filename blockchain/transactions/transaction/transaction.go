@@ -28,7 +28,7 @@ func (tx *Transaction) IncludeTransaction(blockHeight uint64, dataStorage *data_
 
 	changesSize := dataStorage.ComputeChangesSize()
 	if changesSize > tx.SpaceExtra {
-		return errors.New("Changes Size is greater than Tx.SpaceExtra")
+		return errors.New("Real.Changes Size is greater than Tx.SpaceExtra")
 	}
 
 	return nil
@@ -67,10 +67,6 @@ func (tx *Transaction) SerializeAdvanced(w *helpers.BufferWriter, inclSignature 
 
 func (tx *Transaction) Serialize(w *helpers.BufferWriter) {
 	w.Write(tx.Bloom.Serialized)
-}
-
-func (tx *Transaction) SerializeToBytes() []byte {
-	return tx.Bloom.Serialized
 }
 
 func (tx *Transaction) SerializeManualToBytes() []byte {

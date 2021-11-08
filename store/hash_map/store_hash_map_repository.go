@@ -13,6 +13,21 @@ func (repository *StoreHashMapRepository) SetTx(tx store_db_interface.StoreDBTra
 	}
 }
 
+func (repository *StoreHashMapRepository) ComputeChangesSize() (out uint64) {
+	list := repository.GetList()
+	for _, it := range list {
+		out += it.ComputeChangesSize()
+	}
+	return
+}
+
+func (repository *StoreHashMapRepository) ResetChangesSize() {
+	list := repository.GetList()
+	for _, it := range list {
+		it.ResetChangesSize()
+	}
+}
+
 func (repository *StoreHashMapRepository) Rollback() {
 	list := repository.GetList()
 	for _, it := range list {

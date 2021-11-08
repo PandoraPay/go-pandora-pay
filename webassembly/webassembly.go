@@ -114,8 +114,9 @@ func Initialize(startMainCb func()) {
 				}),
 				"transactionSimple": js.ValueOf(map[string]interface{}{
 					"ScriptType": js.ValueOf(map[string]interface{}{
-						"SCRIPT_UNSTAKE":         js.ValueOf(uint64(transaction_simple.SCRIPT_UNSTAKE)),
-						"SCRIPT_UPDATE_DELEGATE": js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_DELEGATE)),
+						"SCRIPT_UNSTAKE":                    js.ValueOf(uint64(transaction_simple.SCRIPT_UNSTAKE)),
+						"SCRIPT_UPDATE_DELEGATE":            js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_DELEGATE)),
+						"SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY": js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY)),
 					}),
 				}),
 				"transactionZether": js.ValueOf(map[string]interface{}{

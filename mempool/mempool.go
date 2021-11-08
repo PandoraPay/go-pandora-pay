@@ -89,7 +89,7 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 		}
 
 		computedFeePerByte := minerFees
-		if err = helpers.SafeUint64Sub(&computedFeePerByte, tx.ComputeExtraSpace()*config_fees.FEES_PER_BYTE_EXTRA_SPACE); err != nil {
+		if err = helpers.SafeUint64Sub(&computedFeePerByte, tx.SpaceExtra*config_fees.FEES_PER_BYTE_EXTRA_SPACE); err != nil {
 			errs[i] = err
 			continue
 		}

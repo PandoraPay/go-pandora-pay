@@ -15,6 +15,7 @@ type HashMap struct {
 	Count          uint64
 	CountCommitted uint64
 	Changes        map[string]*ChangesMapElement
+	ChangesSize    map[string]*ChangesMapElement //used for computing the
 	Committed      map[string]*CommittedMapElement
 	KeyLength      int
 	Deserialize    func([]byte, []byte) (helpers.SerializableInterface, error)
@@ -52,7 +53,7 @@ func (hashMap *HashMap) GetKeyByIndex(index uint64) ([]byte, error) {
 		return nil, errors.New("GetIndexByKey is supported only when is committed")
 	}
 
-	if index > hashMap.CountCommitted {
+	if index >= hashMap.CountCommitted {
 		return nil, errors.New("Index exceeds count")
 	}
 
@@ -90,7 +91,7 @@ func (hashMap *HashMap) CloneCommitted() (err error) {
 
 	for key, v := range hashMap.Committed {
 		if v.Element != nil {
-			if v.Element, err = hashMap.Deserialize([]byte(key), helpers.CloneBytes(v.Element.SerializeToBytes())); err != nil {
+			if v.Element, err = hashMap.Deserialize([]byte(key), helpers.CloneBytes(helpers.SerializeToBytes(v.Element))); err != nil {
 				return
 			}
 		}
@@ -112,11 +113,11 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 
 	if exists2 := hashMap.Committed[key]; exists2 != nil {
 		if exists2.Element != nil {
-			outData = helpers.CloneBytes(exists2.Element.SerializeToBytes())
+			outData = helpers.CloneBytes(exists2.serialized)
 		}
 	} else {
 		//Clone required because data could be altered afterwards
-		outData = hashMap.Tx.Get(hashMap.name + ":map:" + key)
+		outData = hashMap.Tx.GetClone(hashMap.name + ":map:" + key)
 	}
 
 	if outData != nil {
@@ -124,7 +125,7 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 			return nil, err
 		}
 	}
-	hashMap.Changes[key] = &ChangesMapElement{out, "view", 0}
+	hashMap.Changes[key] = &ChangesMapElement{out, "view", 0, false}
 	return
 }
 
@@ -163,6 +164,7 @@ func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) e
 	if exists == nil {
 		exists = new(ChangesMapElement)
 		hashMap.Changes[key] = exists
+		hashMap.ChangesSize[key] = exists
 	}
 	exists.Status = "update"
 	exists.Element = data
@@ -170,6 +172,7 @@ func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) e
 	if bEmpty && hashMap.Committed[key] == nil && !hashMap.Tx.Exists(hashMap.name+":exists:"+key) {
 		exists.index = hashMap.Count
 		hashMap.Count += 1
+		exists.indexProcess = true
 	}
 
 	return nil
@@ -178,18 +181,29 @@ func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) e
 func (hashMap *HashMap) Delete(key string) {
 	exists := hashMap.Changes[key]
 
-	bEmpty := exists != nil && exists.Element != nil
+	bNotEmpty := exists != nil && exists.Element != nil
 
 	if exists == nil {
 		exists = new(ChangesMapElement)
 		hashMap.Changes[key] = exists
+		hashMap.ChangesSize[key] = exists
 	}
 	exists.Status = "del"
 	exists.Element = nil
 
-	if bEmpty || hashMap.Committed[key] != nil || hashMap.Tx.Exists(hashMap.name+":exists:"+key) {
-		exists.index = hashMap.Count
+	if bNotEmpty || hashMap.Committed[key] != nil || hashMap.Tx.Exists(hashMap.name+":exists:"+key) {
 		hashMap.Count -= 1
+		if exists.indexProcess {
+			for _, v := range hashMap.Changes {
+				if v.index > exists.index {
+					v.index -= 1
+				}
+			}
+			exists.indexProcess = false
+		} else {
+			exists.index = hashMap.Count
+			exists.indexProcess = true
+		}
 	}
 
 	return
@@ -201,6 +215,48 @@ func (hashMap *HashMap) UpdateOrDelete(key string, data helpers.SerializableInte
 		return nil
 	}
 	return hashMap.Update(key, data)
+}
+
+func (hashMap *HashMap) ComputeChangesSize() (out uint64) {
+
+	for k, v := range hashMap.ChangesSize {
+		if v.Status == "update" {
+
+			oldSize := 0
+
+			serialized := helpers.SerializeToBytes(v.Element)
+			newSize := len(serialized)
+
+			isNew := false
+
+			if exists := hashMap.Committed[k]; exists != nil {
+				oldSize = exists.size
+				if exists.Element == nil {
+					isNew = true
+				}
+			} else {
+				if data := hashMap.Tx.Get(hashMap.name + ":map:" + k); data != nil {
+					oldSize = len(data)
+				} else {
+					isNew = true
+				}
+			}
+
+			if newSize > oldSize {
+				out += uint64(newSize - oldSize)
+				if isNew {
+					out += uint64(len(k))
+				}
+			}
+
+		}
+	}
+
+	return
+}
+
+func (hashMap *HashMap) ResetChangesSize() {
+	hashMap.ChangesSize = make(map[string]*ChangesMapElement)
 }
 
 func (hashMap *HashMap) CommitChanges() (err error) {
@@ -231,6 +287,8 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 			v.Status = "view"
 			committed.Status = "view"
 			committed.Element = nil
+			committed.size = 0
+			committed.serialized = nil
 
 			if hashMap.Tx.Exists(hashMap.name + ":exists:" + k) {
 
@@ -239,7 +297,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 					hashMap.Tx.Delete(hashMap.name + ":map:" + k)
 					hashMap.Tx.Delete(hashMap.name + ":exists:" + k)
 
-					if hashMap.Indexable {
+					if hashMap.Indexable && v.indexProcess {
 						hashMap.Tx.Delete(hashMap.name + ":list:" + strconv.FormatUint(v.index, 10))
 						hashMap.Tx.Delete(hashMap.name + ":listKeys:" + k)
 					}
@@ -257,7 +315,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 				committed.Stored = "view"
 			}
 
-			v.index = 0
+			v.indexProcess = false
 		}
 
 	}
@@ -277,9 +335,10 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 			if !hashMap.Tx.Exists(hashMap.name + ":exists:" + k) {
 
 				if hashMap.Tx.IsWritable() {
+
 					hashMap.Tx.Put(hashMap.name+":exists:"+k, []byte{1})
 
-					if hashMap.Indexable {
+					if hashMap.Indexable && v.indexProcess {
 						//safe
 						hashMap.Tx.Put(hashMap.name+":list:"+strconv.FormatUint(v.index, 10), []byte(k))
 						//safe
@@ -295,16 +354,19 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 				}
 			}
 
+			committed.serialized = helpers.SerializeToBytes(v.Element)
+			committed.size = len(committed.serialized)
+
 			if hashMap.Tx.IsWritable() {
 				//clone required because the element could change later on
-				hashMap.Tx.Put(hashMap.name+":map:"+k, v.Element.SerializeToBytes())
+				hashMap.Tx.Put(hashMap.name+":map:"+k, committed.serialized)
 			}
 
 			committed.Status = "view"
 			committed.Stored = "update"
-			v.index = 0
-		}
 
+			v.indexProcess = false
+		}
 	}
 
 	for i := 0; i < c; i++ {
@@ -329,11 +391,14 @@ func (hashMap *HashMap) SetTx(dbTx store_db_interface.StoreDBTransactionInterfac
 
 func (hashMap *HashMap) Rollback() {
 	hashMap.Changes = make(map[string]*ChangesMapElement)
+	hashMap.ChangesSize = make(map[string]*ChangesMapElement)
 	hashMap.Count = hashMap.CountCommitted
 }
 
 func (hashMap *HashMap) Reset() {
 	hashMap.Committed = make(map[string]*CommittedMapElement)
+	hashMap.Changes = make(map[string]*ChangesMapElement)
+	hashMap.ChangesSize = make(map[string]*ChangesMapElement)
 }
 
 func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int, indexable bool) (hashMap *HashMap) {
@@ -343,13 +408,14 @@ func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name st
 	}
 
 	hashMap = &HashMap{
-		name:      name,
-		Committed: make(map[string]*CommittedMapElement),
-		Changes:   make(map[string]*ChangesMapElement),
-		Tx:        tx,
-		Count:     0,
-		KeyLength: keyLength,
-		Indexable: indexable,
+		name:        name,
+		Committed:   make(map[string]*CommittedMapElement),
+		Changes:     make(map[string]*ChangesMapElement),
+		ChangesSize: make(map[string]*ChangesMapElement),
+		Tx:          tx,
+		Count:       0,
+		KeyLength:   keyLength,
+		Indexable:   indexable,
 	}
 
 	//safe to Get because int doesn't change the data

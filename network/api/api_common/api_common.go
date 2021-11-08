@@ -123,7 +123,7 @@ func (api *APICommon) GetBlock(request *api_types.APIBlockRequest) ([]byte, erro
 	}
 
 	if request.ReturnType == api_types.RETURN_SERIALIZED {
-		out.BlockSerialized = out.Block.SerializeToBytes()
+		out.BlockSerialized = helpers.SerializeToBytes(out.Block)
 		out.Block = nil
 	}
 

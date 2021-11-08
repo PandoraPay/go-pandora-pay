@@ -78,7 +78,7 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 }
 
 func (blk *Block) computeHash() []byte {
-	return cryptography.SHA3(blk.SerializeToBytes())
+	return cryptography.SHA3(helpers.SerializeToBytes(blk))
 }
 
 func (blk *Block) ComputeKernelHashOnly() []byte {
@@ -136,10 +136,6 @@ func (blk *Block) SerializeForForging(w *helpers.BufferWriter) {
 
 func (blk *Block) Serialize(w *helpers.BufferWriter) {
 	w.Write(blk.Bloom.Serialized)
-}
-
-func (blk *Block) SerializeToBytes() []byte {
-	return blk.Bloom.Serialized
 }
 
 func (blk *Block) SerializeManualToBytes() []byte {

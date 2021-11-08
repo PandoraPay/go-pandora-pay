@@ -272,10 +272,10 @@ func (testnet *Testnet) run() {
 								unclaimed -= config_coins.ConvertToUnitsUint64Forced(20)
 
 								if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload.SCRIPT_CLAIM_STAKE) {
-									testnet.testnetCreateClaimTx(0, unclaimed/4, ctx2)
-									testnet.testnetCreateClaimTx(1, unclaimed/4, ctx2)
-									testnet.testnetCreateClaimTx(2, unclaimed/4, ctx2)
-									testnet.testnetCreateClaimTx(3, unclaimed/4, ctx2)
+									testnet.testnetCreateClaimTx(0, unclaimed/5, ctx2)
+									testnet.testnetCreateClaimTx(1, unclaimed/5, ctx2)
+									testnet.testnetCreateClaimTx(2, unclaimed/5, ctx2)
+									testnet.testnetCreateClaimTx(3, unclaimed/5, ctx2)
 								}
 
 							} else if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {

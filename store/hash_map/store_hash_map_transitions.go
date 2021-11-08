@@ -29,7 +29,7 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 
 			if existsCommitted != nil {
 				if existsCommitted.Element != nil {
-					change.Transition = existsCommitted.Element.SerializeToBytes()
+					change.Transition = helpers.SerializeToBytes(existsCommitted.Element)
 				}
 			} else {
 				//safe to Get because it will be cloned afterwards

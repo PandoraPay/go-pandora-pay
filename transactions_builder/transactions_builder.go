@@ -155,7 +155,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, ex
 	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
 	statusCallback("Getting Nonce from Mempool")
 
-	if tx, err = wizard.CreateSimpleTx(nonce, fromWalletAddresses[0].PrivateKey.Key, extra, data, fee, feeVersion, false, statusCallback); err != nil {
+	if tx, err = wizard.CreateSimpleTx(nonce, fromWalletAddresses[0].PrivateKey.Key, chainHeight, extra, data, fee, feeVersion, false, statusCallback); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Created")

@@ -3,11 +3,13 @@ package wizard
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
 	"math/big"
 	"pandora-pay/addresses"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/dpos"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
@@ -16,10 +18,12 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_fees"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 )
 
@@ -126,8 +130,124 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	statusCallback("Transaction registrations created")
 
 	payloads := make([]*transaction_zether_payload.TransactionZetherPayload, len(transfers))
-
 	privateKeysForSign := make([]*addresses.PrivateKey, len(transfers))
+
+	spaceExtra := 0
+
+	registered := make(map[string]bool)
+	for t, transfer := range transfers {
+
+		publickeylist := publickeylists[t]
+		senderKey := &addresses.PrivateKey{Key: transfer.From}
+
+		spaceExtra += len(registrations[t]) * (cryptography.PublicKeySize + binary.MaxVarintLen64)
+
+		payloads[t] = &transaction_zether_payload.TransactionZetherPayload{}
+
+		emptyAccounts := 0
+		for _, publicKeyPoint := range publickeylist {
+			publicKey := publicKeyPoint.EncodeCompressed()
+			if emap[string(publicKey)] == nil && !registered[string(publicKey)] {
+				registered[string(publicKey)] = true
+				emptyAccounts += 1
+			}
+		}
+
+		spaceExtra += emptyAccounts * (cryptography.PublicKeySize + 1 + 66)
+
+		if transfers[t].PayloadExtra == nil {
+			payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_TRANSFER
+		} else {
+
+			switch payloadExtra := transfers[t].PayloadExtra.(type) {
+			case *WizardZetherPayloadExtraClaimStake:
+				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_CLAIM_STAKE
+
+				var registrationIndex byte
+
+				senderPublicKey := senderKey.GeneratePublicKey()
+				for i, reg := range registrations[t] {
+					if bytes.Equal(publickeylist[reg.PublicKeyIndex].EncodeCompressed(), senderPublicKey) {
+						registrationIndex = byte(i)
+						break
+					}
+				}
+
+				key := &addresses.PrivateKey{Key: payloadExtra.DelegatePrivateKey}
+				delegatePublicKey := key.GeneratePublicKey()
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake{
+					DelegatePublicKey:           delegatePublicKey,
+					DelegatedStakingClaimAmount: transfers[t].Amount,
+					RegistrationIndex:           registrationIndex,
+					DelegateSignature:           helpers.EmptyBytes(cryptography.SignatureSize),
+				}
+
+				privateKeysForSign[t] = key
+
+				//space extra is 0
+
+			case *WizardZetherPayloadExtraDelegateStake:
+				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_DELEGATE_STAKE
+
+				blankSignature := []byte{}
+				if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
+					key := &addresses.PrivateKey{Key: payloadExtra.DelegatePrivateKey}
+					if bytes.Equal(key.GeneratePublicKey(), payloadExtra.DelegatePublicKey) == false {
+						return errors.New("delegatePrivateKey is not matching delegatePublicKey")
+					}
+
+					privateKeysForSign[t] = key
+					blankSignature = helpers.EmptyBytes(cryptography.SignatureSize)
+				}
+
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
+					DelegatePublicKey:      payloadExtra.DelegatePublicKey,
+					ConvertToUnclaimed:     payloadExtra.ConvertToUnclaimed,
+					DelegatedStakingUpdate: payloadExtra.DelegatedStakingUpdate,
+					DelegateSignature:      blankSignature,
+				}
+
+				if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
+					spaceExtra += len(payloadExtra.DelegatePublicKey) //not required when account exists
+					spaceExtra += len(payloadExtra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey)
+					spaceExtra += helpers.BytesLengthSerialized(payloadExtra.DelegatedStakingUpdate.DelegatedStakingNewFee)
+				}
+
+				if payloadExtra.ConvertToUnclaimed {
+					spaceExtra += binary.MaxVarintLen64
+				} else {
+					spaceExtra += len(helpers.SerializeToBytes(&dpos.DelegatedStakePending{nil, transfers[t].Burn, height + 100, dpos.DelegatedStakePendingStake}))
+					spaceExtra += cryptography.PublicKeySize //key
+				}
+
+			case *WizardZetherPayloadExtraAssetCreate:
+				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_ASSET_CREATE
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{
+					Asset: payloadExtra.Asset,
+				}
+
+				spaceExtra += config_coins.ASSET_LENGTH + len(helpers.SerializeToBytes(payloadExtra.Asset))
+
+			case *WizardZetherPayloadExtraAssetSupplyIncrease:
+				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE
+				privateKeysForSign[t] = &addresses.PrivateKey{Key: payloadExtra.AssetSupplyPrivateKey}
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{
+					AssetId:              payloadExtra.AssetId,
+					ReceiverPublicKey:    payloadExtra.ReceiverPublicKey,
+					Value:                payloadExtra.Value,
+					AssetSupplyPublicKey: privateKeysForSign[t].GeneratePublicKey(),
+					AssetSignature:       helpers.EmptyBytes(cryptography.SignatureSize),
+				}
+
+				spaceExtra += binary.MaxVarintLen64
+
+			default:
+				return errors.New("Invalid payload")
+			}
+		}
+
+	}
+	tx.SpaceExtra = uint64(spaceExtra)
 
 	var witness_list []crypto.Witness
 	for t, transfer := range transfers {
@@ -153,90 +273,14 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		//  revealing r will disclose the amount and the sender and receiver and separate anonymous ring members
 		// calculate r deterministically, so its different every transaction, in emergency it can be given to other, and still will not allows key attacks
-		rinputs := append([]byte{}, blockHash[:]...)
+		rinputs := append([]byte{}, helpers.CloneBytes(blockHash)...)
 		for i := range publickeylist {
 			rinputs = append(rinputs, publickeylist[i].EncodeCompressed()...)
 		}
 		rencrypted := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(append([]byte(crypto.PROTOCOL_CONSTANT), rinputs...))), sender_secret)
 		r := crypto.ReducedHash(rencrypted.EncodeCompressed())
 
-		//r := crypto.RandomScalarFixed()
-		//fmt.Printf("r %s\n", r.Text(16))
-
-		var payload transaction_zether_payload.TransactionZetherPayload
-
-		privateKeysForSign[t] = nil
-
-		if transfers[t].PayloadExtra == nil {
-			payload.PayloadScript = transaction_zether_payload.SCRIPT_TRANSFER
-		} else {
-			switch payloadExtra := transfers[t].PayloadExtra.(type) {
-			case *WizardZetherPayloadExtraClaimStake:
-				payload.PayloadScript = transaction_zether_payload.SCRIPT_CLAIM_STAKE
-
-				var registrationIndex byte
-
-				senderPublicKey := senderKey.GeneratePublicKey()
-				for i, reg := range registrations[t] {
-					if bytes.Equal(publickeylist[reg.PublicKeyIndex].EncodeCompressed(), senderPublicKey) {
-						registrationIndex = byte(i)
-						break
-					}
-				}
-
-				key := &addresses.PrivateKey{Key: payloadExtra.DelegatePrivateKey}
-				delegatePublicKey := key.GeneratePublicKey()
-				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake{
-					DelegatePublicKey:           delegatePublicKey,
-					DelegatedStakingClaimAmount: transfers[t].Amount,
-					RegistrationIndex:           registrationIndex,
-					DelegateSignature:           helpers.EmptyBytes(cryptography.SignatureSize),
-				}
-
-				privateKeysForSign[t] = key
-
-			case *WizardZetherPayloadExtraDelegateStake:
-				payload.PayloadScript = transaction_zether_payload.SCRIPT_DELEGATE_STAKE
-
-				blankSignature := []byte{}
-				if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
-					key := &addresses.PrivateKey{Key: payloadExtra.DelegatePrivateKey}
-					if bytes.Equal(key.GeneratePublicKey(), payloadExtra.DelegatePublicKey) == false {
-						return errors.New("delegatePrivateKey is not matching delegatePublicKey")
-					}
-
-					privateKeysForSign[t] = key
-					blankSignature = helpers.EmptyBytes(cryptography.SignatureSize)
-				}
-
-				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
-					DelegatePublicKey:      payloadExtra.DelegatePublicKey,
-					ConvertToUnclaimed:     payloadExtra.ConvertToUnclaimed,
-					DelegatedStakingUpdate: payloadExtra.DelegatedStakingUpdate,
-					DelegateSignature:      blankSignature,
-				}
-
-			case *WizardZetherPayloadExtraAssetCreate:
-				payload.PayloadScript = transaction_zether_payload.SCRIPT_ASSET_CREATE
-				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{
-					Asset: payloadExtra.Asset,
-				}
-
-			case *WizardZetherPayloadExtraAssetSupplyIncrease:
-				payload.PayloadScript = transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE
-				privateKeysForSign[t] = &addresses.PrivateKey{Key: payloadExtra.AssetSupplyPrivateKey}
-				payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{
-					AssetId:              payloadExtra.AssetId,
-					ReceiverPublicKey:    payloadExtra.ReceiverPublicKey,
-					Value:                payloadExtra.Value,
-					AssetSupplyPublicKey: privateKeysForSign[t].GeneratePublicKey(),
-					AssetSignature:       helpers.EmptyBytes(cryptography.SignatureSize),
-				}
-			default:
-				return errors.New("Invalid payload")
-			}
-		}
-
+		payload := payloads[t]
 		payload.Asset = transfers[t].Asset
 		payload.BurnValue = transfers[t].Burn
 
@@ -266,10 +310,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		extraBytes += int(config_fees.FEES_PER_BYTE_EXTRA_SPACE) * 64 * len(registrations[t]) //registrations are a penalty
 
 		if payload.Extra != nil {
-			writer := helpers.NewBufferWriter()
-			payload.Extra.Serialize(writer, true)
-			extraBytes += len(writer.Bytes())
+			extraBytes += len(transaction_zether_payload_extra.SerializeToBytes(payload.Extra, true))
 		}
+
 		fees := setFee(tx, extraBytes, myFees[t].Clone(), t == 0)
 
 		statusCallback("Transaction Set fees")
@@ -391,8 +434,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		}
 		payload.Statement = &statement
 
-		payloads[t] = &payload
-
 		// get ready for another round by internal processing of state
 		for i := range publickeylist {
 
@@ -468,7 +509,13 @@ func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[strin
 	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return
 	}
-	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
+	if err = bloomAllTx(tx, true, statusCallback); err != nil {
+		gui.GUI.Error("ERROR TX VERIFY FAILED!!!!")
+		tx.Bloom = nil
+		tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).Bloom = nil
+		if err = bloomAllTx(tx, true, statusCallback); err != nil {
+			return
+		}
 		return
 	}
 

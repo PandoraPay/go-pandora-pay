@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/config"
+	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
@@ -114,7 +115,7 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		return allTransactionsChanges, err
 	}
 
-	writer.Put("block_ByHash"+string(blkComplete.Block.Bloom.Hash), blkComplete.Block.SerializeToBytes())
+	writer.Put("block_ByHash"+string(blkComplete.Block.Bloom.Hash), helpers.SerializeToBytes(blkComplete.Block))
 	writer.Put("blockHash_ByHeight"+blockHeightStr, blkComplete.Block.Bloom.Hash)
 	writer.Put("blockHeight_ByHash"+string(blkComplete.Block.Bloom.Hash), []byte(blockHeightStr))
 
