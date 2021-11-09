@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/big"
 	"pandora-pay/cryptography/bn256"
+	"strconv"
 )
 
 // below 2 structures form bulletproofs and many to many proofs
@@ -40,8 +41,8 @@ type ProtocolSupport struct {
 
 // sigma protocol
 type SigmaSupport struct {
-	c                                  *big.Int
-	A_y, A_D, A_b, A_X, A_t, A_u, A_u1 *bn256.G1
+	c                            *big.Int
+	A_y, A_D, A_b, A_X, A_t, A_u *bn256.G1
 }
 
 // support structures are those which
@@ -57,7 +58,7 @@ var gparams = NewGeneratorParams(128) // these can be pregenerated similarly as 
 
 // verify proof
 // first generate supporting structures
-func (proof *Proof) Verify(s *Statement, txid []byte, height uint64, extra_value uint64) bool {
+func (proof *Proof) Verify(assetId []byte, assetIndex int, chainHash []byte, s *Statement, txid []byte, extra_value uint64) bool {
 
 	var anonsupport AnonSupport
 	var protsupport ProtocolSupport
@@ -88,9 +89,17 @@ func (proof *Proof) Verify(s *Statement, txid []byte, height uint64, extra_value
 
 	anonsupport.f = make([][2]*big.Int, 2*m, 2*m)
 
+	// the secret parity is checked cryptographically
 	for k := 0; k < 2*m; k++ {
 		anonsupport.f[k][1] = new(big.Int).Set(proof.f.vector[k])
 		anonsupport.f[k][0] = new(big.Int).Mod(new(big.Int).Sub(anonsupport.w, proof.f.vector[k]), bn256.Order)
+	}
+
+	// check parity condition
+	if anonsupport.w.Cmp(proof.f.vector[0]) == 0 || anonsupport.w.Cmp(proof.f.vector[m]) == 0 {
+		//	fmt.Printf("parity is well formed\n")
+	} else { // test failed, reject the tx
+		return false
 	}
 
 	anonsupport.temp = new(bn256.G1)
@@ -338,22 +347,25 @@ func (proof *Proof) Verify(s *Statement, txid []byte, height uint64, extra_value
 	//	klog.V(2).Infof("protsupport.tEval %s\n", protsupport.tEval.String())
 
 	{
-		point := HeightToPoint(height)
+		var input []byte
+		input = append(input, []byte(PROTOCOL_CONSTANT)...)
+		input = append(input, chainHash[:]...)
+
+		input = append(input, assetId[:]...)
+		input = append(input, strconv.Itoa(assetIndex)...)
+
+		point := HashToPoint(HashtoNumber(input))
+
 		sigmasupport.A_u = new(bn256.G1).ScalarMult(point, proof.s_sk)
 		sigmasupport.A_u.Add(new(bn256.G1).Set(sigmasupport.A_u), new(bn256.G1).ScalarMult(proof.u, proof_c_neg))
-
-		point = HeightToPoint(height + BLOCK_BATCH_SIZE)
-		sigmasupport.A_u1 = new(bn256.G1).ScalarMult(point, proof.s_sk)
-		sigmasupport.A_u1.Add(new(bn256.G1).Set(sigmasupport.A_u1), new(bn256.G1).ScalarMult(proof.u1, proof_c_neg))
-
 	}
 
-	//	klog.V(2).Infof("A_y %s\n", sigmasupport.A_y.String())
-	//	klog.V(2).Infof("A_D %s\n", sigmasupport.A_D.String())
-	//	klog.V(2).Infof("A_b %s\n", sigmasupport.A_b.String())
-	//	klog.V(2).Infof("A_X %s\n", sigmasupport.A_X.String())
-	//	klog.V(2).Infof("A_t %s\n", sigmasupport.A_t.String())
-	//	klog.V(2).Infof("A_u %s\n", sigmasupport.A_u.String())
+	//fmt.Printf("A_y %s\n", sigmasupport.A_y.String())
+	//fmt.Printf("A_D %s\n", sigmasupport.A_D.String())
+	//fmt.Printf("A_b %s\n", sigmasupport.A_b.String())
+	//fmt.Printf("A_X %s\n", sigmasupport.A_X.String())
+	//fmt.Printf("A_t %s\n", sigmasupport.A_t.String())
+	//fmt.Printf("A_u %s\n", sigmasupport.A_u.String())
 
 	{
 		var input []byte
@@ -364,7 +376,6 @@ func (proof *Proof) Verify(s *Statement, txid []byte, height uint64, extra_value
 		input = append(input, sigmasupport.A_X.Marshal()...)
 		input = append(input, sigmasupport.A_t.Marshal()...)
 		input = append(input, sigmasupport.A_u.Marshal()...)
-		input = append(input, sigmasupport.A_u1.Marshal()...)
 		// fmt.Printf("C calculation expected %s actual %s\n",proof.c.Text(16), reducedhash(input).Text(16) )
 
 		if reducedhash(input).Text(16) != proof.c.Text(16) { // we must fail here

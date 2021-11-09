@@ -6,8 +6,7 @@ import (
 )
 
 type TransactionZetherBloom struct {
-	Nonce1                []byte
-	Nonce2                []byte
+	Nonces                [][]byte
 	PublicKeyLists        [][][]byte
 	registrationsVerified bool
 	signatureVerified     bool
@@ -15,15 +14,18 @@ type TransactionZetherBloom struct {
 }
 
 func (tx *TransactionZether) bloomLists() (err error) {
+	tx.Bloom.Nonces = make([][]byte, len(tx.Payloads))
 	tx.Bloom.PublicKeyLists = make([][][]byte, len(tx.Payloads))
-	for payloadIndex, payload := range tx.Payloads {
-		tx.Bloom.PublicKeyLists[payloadIndex] = make([][]byte, len(payload.Statement.Publickeylist))
+	for t, payload := range tx.Payloads {
+		tx.Bloom.PublicKeyLists[t] = make([][]byte, len(payload.Statement.Publickeylist))
 		for i := range payload.Statement.Publickeylist {
-			tx.Bloom.PublicKeyLists[payloadIndex][i] = payload.Statement.Publickeylist[i].EncodeCompressed()
+			tx.Bloom.PublicKeyLists[t][i] = payload.Statement.Publickeylist[i].EncodeCompressed()
 		}
 		if err = payload.Registrations.ValidateRegistrations(payload.Statement.Publickeylist); err != nil {
 			return
 		}
+
+		tx.Bloom.Nonces[t] = payload.Proof.Nonce()
 	}
 	return
 }
@@ -44,14 +46,13 @@ func (tx *TransactionZether) BloomNow(hashForSignature []byte) (err error) {
 	}
 
 	//verify signature
+	assetMap := map[string]int{}
 	for _, payload := range tx.Payloads {
-		if payload.Proof.Verify(payload.Statement, hashForSignature, tx.Height, payload.BurnValue) == false {
+		if payload.Proof.Verify(payload.Asset, assetMap[string(payload.Asset)], tx.ChainHash, payload.Statement, hashForSignature, payload.BurnValue) == false {
 			return errors.New("Zether Failed for Transaction")
 		}
+		assetMap[string(payload.Asset)] = assetMap[string(payload.Asset)] + 1
 	}
-
-	tx.Bloom.Nonce1 = tx.Payloads[0].Proof.Nonce1()
-	tx.Bloom.Nonce2 = tx.Payloads[0].Proof.Nonce2()
 
 	for _, payload := range tx.Payloads {
 		switch payload.PayloadScript {
@@ -81,9 +82,6 @@ func (tx *TransactionZether) BloomNowSignatureVerified() (err error) {
 	if err = tx.bloomLists(); err != nil {
 		return
 	}
-
-	tx.Bloom.Nonce1 = tx.Payloads[0].Proof.Nonce1()
-	tx.Bloom.Nonce2 = tx.Payloads[0].Proof.Nonce2()
 
 	tx.Bloom.signatureVerified = true
 	tx.Bloom.registrationsVerified = true

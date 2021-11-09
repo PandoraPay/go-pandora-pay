@@ -39,6 +39,10 @@ func (fv *FieldVector) Clone() *FieldVector {
 	return fv.Slice(0, len(fv.vector))
 }
 
+func (fv *FieldVector) Element(index int) *big.Int {
+	return fv.vector[index]
+}
+
 func (fv *FieldVector) SliceRaw(start, end int) []*big.Int {
 	var result FieldVector
 	for i := start; i < end; i++ {

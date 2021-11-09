@@ -63,7 +63,7 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 		return nil, err
 	}
 
-	gui.GUI.Info("Create Claim Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).Height, tx.Bloom.Hash)
+	gui.GUI.Info("Create Claim Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).ChainHeight, tx.Bloom.Hash)
 	return
 }
 
@@ -124,7 +124,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 		return nil, err
 	}
 
-	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).Height, tx.Bloom.Hash)
+	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).ChainHeight, tx.Bloom.Hash)
 	return
 }
 
@@ -154,7 +154,7 @@ func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int, ctx co
 		return nil, err
 	}
 
-	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).Height, tx.Bloom.Hash)
+	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).ChainHeight, tx.Bloom.Hash)
 	return
 }
 

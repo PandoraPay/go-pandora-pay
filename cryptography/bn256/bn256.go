@@ -9,8 +9,13 @@
 //
 // This package specifically implements the Optimal Ate pairing over a 256-bit
 // Barreto-Naehrig curve as described in
-// http://cryptojedi.org/papers/dclxvi-20100714.pdf. Its output is compatible
-// with the implementation described in that paper.
+// http://cryptojedi.org/papers/dclxvi-20100714.pdf. Its output is not
+// compatible with the implementation described in that paper, as different
+// parameters are chosen.
+//
+// (This package previously claimed to operate at a 128-bit security level.
+// However, recent improvements in attacks mean that is no longer true. See
+// https://moderncrypto.org/mail-archive/curves/2016/000740.html.)
 package bn256
 
 import (
@@ -23,7 +28,7 @@ import (
 func randomK(r io.Reader) (k *big.Int, err error) {
 	for {
 		k, err = rand.Int(r, Order)
-		if k.Sign() > 0 || err != nil {
+		if err != nil || k.Sign() > 0 {
 			return
 		}
 	}
@@ -45,8 +50,8 @@ func RandomG1(r io.Reader) (*big.Int, *G1, error) {
 	return k, new(G1).ScalarBaseMult(k), nil
 }
 
-func (e *G1) String() string {
-	return "bn256.G1" + e.p.String()
+func (g *G1) String() string {
+	return "bn256.G1" + g.p.String()
 }
 
 // ScalarBaseMult sets e to g*k where g is the generator of the group and then

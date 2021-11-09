@@ -2,19 +2,22 @@ package transaction_zether
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config/config_coins"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
 type TransactionZether struct {
 	transaction_base_interface.TransactionBaseInterface
-	Height   uint64
-	Payloads []*transaction_zether_payload.TransactionZetherPayload
-	Bloom    *TransactionZetherBloom
+	ChainHeight uint64
+	ChainHash   []byte
+	Payloads    []*transaction_zether_payload.TransactionZetherPayload
+	Bloom       *TransactionZetherBloom
 }
 
 /**
@@ -22,8 +25,8 @@ Zether requires another verification that the bloomed publicKeys, CL, CR are the
 */
 func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, txHash []byte, dataStorage *data_storage.DataStorage) (err error) {
 
-	if tx.Height > blockHeight {
-		return fmt.Errorf("Zether TxHeight is invalid %d > %d", tx.Height, blockHeight)
+	if tx.ChainHeight > blockHeight {
+		return fmt.Errorf("Zether ChainHeight is invalid %d > %d", tx.ChainHeight, blockHeight)
 	}
 
 	for payloadIndex, payload := range tx.Payloads {
@@ -60,6 +63,10 @@ func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 
 func (tx *TransactionZether) Validate() (err error) {
 
+	if len(tx.Payloads) == 0 {
+		return errors.New("You need at least one payload")
+	}
+
 	for payloadIndex, payload := range tx.Payloads {
 		if err = payload.Validate(byte(payloadIndex)); err != nil {
 			return
@@ -69,19 +76,22 @@ func (tx *TransactionZether) Validate() (err error) {
 	return
 }
 
-func (tx *TransactionZether) VerifySignatureManually(hash []byte) bool {
+func (tx *TransactionZether) VerifySignatureManually(txHash []byte) bool {
 
-	for t := range tx.Payloads {
-		if tx.Payloads[t].Proof.Verify(tx.Payloads[t].Statement, hash, tx.Height, tx.Payloads[t].BurnValue) == false {
+	assetMap := map[string]int{}
+	for _, payload := range tx.Payloads {
+		if payload.Proof.Verify(payload.Asset, assetMap[string(payload.Asset)], tx.ChainHash, payload.Statement, txHash, payload.BurnValue) == false {
 			return false
 		}
+		assetMap[string(payload.Asset)] = assetMap[string(payload.Asset)] + 1
 	}
 
 	return true
 }
 
 func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
-	w.WriteUvarint(tx.Height)
+	w.WriteUvarint(tx.ChainHeight)
+	w.Write(tx.ChainHash)
 
 	w.WriteByte(byte(len(tx.Payloads)))
 	for _, payload := range tx.Payloads {
@@ -96,12 +106,16 @@ func (tx *TransactionZether) Serialize(w *helpers.BufferWriter) {
 
 func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 
-	if tx.Height, err = r.ReadUvarint(); err != nil {
+	if tx.ChainHeight, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
 	var n byte
 	if n, err = r.ReadByte(); err != nil {
+		return
+	}
+
+	if tx.ChainHash, err = r.ReadBytes(cryptography.HashSize); err != nil {
 		return
 	}
 

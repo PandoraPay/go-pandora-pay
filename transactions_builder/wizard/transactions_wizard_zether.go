@@ -25,6 +25,7 @@ import (
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"strconv"
 )
 
 func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
@@ -37,7 +38,7 @@ func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
 	return emap
 }
 
-func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, height uint64, blockHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
+func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, chainHeight uint64, chainHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
 
 	statusCallback("Transaction Signing...")
 
@@ -216,7 +217,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				if payloadExtra.ConvertToUnclaimed {
 					spaceExtra += binary.MaxVarintLen64
 				} else {
-					spaceExtra += len(helpers.SerializeToBytes(&dpos.DelegatedStakePending{nil, transfers[t].Burn, height + 100, dpos.DelegatedStakePendingStake}))
+					spaceExtra += len(helpers.SerializeToBytes(&dpos.DelegatedStakePending{nil, transfers[t].Burn, chainHeight + 100, dpos.DelegatedStakePendingStake}))
 					spaceExtra += cryptography.PublicKeySize //key
 				}
 
@@ -273,7 +274,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		//  revealing r will disclose the amount and the sender and receiver and separate anonymous ring members
 		// calculate r deterministically, so its different every transaction, in emergency it can be given to other, and still will not allows key attacks
-		rinputs := append([]byte{}, helpers.CloneBytes(blockHash)...)
+		rinputs := append([]byte{}, helpers.CloneBytes(chainHash)...)
 		for i := range publickeylist {
 			rinputs = append(rinputs, publickeylist[i].EncodeCompressed()...)
 		}
@@ -353,7 +354,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				//fmt.Printf("receiver %s \n", x.String())
 
 				// lets encrypt the payment id, it's simple, we XOR the paymentID
-				blinder := new(bn256.G1).ScalarMult(publickeylist[i], r)
+				var shared_key []byte
+				if shared_key, err = crypto.GenerateSharedSecret(r, publickeylist[i]); err != nil {
+					return
+				}
 
 				// we must obfuscate it for non-client call
 				if len(publickeylist) >= config.TRANSACTIONS_ZETHER_RING_MAX {
@@ -368,7 +372,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					payload.Data = append([]byte{byte(uint(witness_index[0]))}, dataFinal...)
 
 					// make sure used data encryption is optional, just in case we would like to play together with ring members
-					if err = crypto.EncryptDecryptUserData(blinder, payload.Data); err != nil {
+					if err = crypto.EncryptDecryptUserData(cryptography.SHA3(append(shared_key[:], publickeylist[i].EncodeCompressed()...)), payload.Data); err != nil {
 						return
 					}
 				} else if payload.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT {
@@ -454,9 +458,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	senderKey := &addresses.PrivateKey{Key: transfers[0].From}
 	sender_secret := new(crypto.BNRed).SetBytes(senderKey.Key).BigInt()
 
-	u := new(bn256.G1).ScalarMult(crypto.HeightToPoint(height), sender_secret)                          // this should be moved to generate proof
-	u1 := new(bn256.G1).ScalarMult(crypto.HeightToPoint(height+crypto.BLOCK_BATCH_SIZE), sender_secret) // this should be moved to generate proof
-
+	assetMap := map[string]int{}
 	for t := range transfers {
 
 		select {
@@ -465,8 +467,18 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		default:
 		}
 
+		// the u is dependent on roothash,SCID and counter ( counter is dynamic and depends on order of assets)
+		uinput := append([]byte(crypto.PROTOCOL_CONSTANT), chainHash[:]...)
+		assetIndex := assetMap[string(txBase.Payloads[t].Asset)]
+		uinput = append(uinput, txBase.Payloads[t].Asset[:]...)
+		uinput = append(uinput, strconv.Itoa(assetIndex)...)
+
+		u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), sender_secret) // this should be moved to generate proof
+
+		assetMap[string(txBase.Payloads[t].Asset)] = assetMap[string(txBase.Payloads[t].Asset)] + 1
+
 		statusCallback(fmt.Sprintf("Payload %d generating zero knowledge proofs... ", t+1))
-		if txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Statement, &witness_list[t], u, u1, height, tx.GetHashSigningManually(), txBase.Payloads[t].BurnValue); err != nil {
+		if txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Asset, assetIndex, txBase.ChainHash, txBase.Payloads[t].Statement, &witness_list[t], u, tx.GetHashSigningManually(), txBase.Payloads[t].BurnValue); err != nil {
 			return
 		}
 	}
@@ -495,10 +507,11 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	return
 }
 
-func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, height uint64, hash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, chainHeight uint64, chainHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	txBase := &transaction_zether.TransactionZether{
-		Height: height,
+		ChainHeight: chainHeight,
+		ChainHash:   chainHash,
 	}
 
 	tx := &transaction.Transaction{
@@ -506,7 +519,7 @@ func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[strin
 		TransactionBaseInterface: txBase,
 	}
 
-	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, height, hash, publicKeyIndexes, ctx, statusCallback); err != nil {
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, chainHeight, chainHash, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return
 	}
 	if err = bloomAllTx(tx, true, statusCallback); err != nil {

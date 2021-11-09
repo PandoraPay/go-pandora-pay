@@ -1,7 +1,6 @@
 package crypto
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
@@ -9,10 +8,8 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/helpers"
+	"strconv"
 )
-
-// see comment in config package
-const BLOCK_BATCH_SIZE = 10
 
 type Proof struct {
 	BA *bn256.G1
@@ -22,8 +19,7 @@ type Proof struct {
 
 	CLnG, CRnG, C_0G, DG, y_0G, gG, C_XG, y_XG []*bn256.G1
 
-	u  *bn256.G1
-	u1 *bn256.G1
+	u *bn256.G1
 
 	f *FieldVector
 
@@ -52,11 +48,16 @@ type IPWitness struct {
 }
 
 // this is based on roothash and user's secret key and thus is the basis of protection from a number of double spending attacks
-func (p *Proof) Nonce1() []byte {
+func (p *Proof) Nonce() []byte {
 	return cryptography.SHA3(p.u.EncodeCompressed())
 }
-func (p *Proof) Nonce2() []byte {
-	return cryptography.SHA3(p.u1.EncodeCompressed())
+
+func (p *Proof) Parity() bool {
+	zero := big.NewInt(0)
+	if zero.Cmp(p.f.Element(0)) == 0 {
+		return true
+	}
+	return false
 }
 
 func (p *Proof) Serialize(w *helpers.BufferWriter) {
@@ -81,7 +82,6 @@ func (p *Proof) Serialize(w *helpers.BufferWriter) {
 	}
 
 	w.Write(p.u.EncodeCompressed())
-	w.Write(p.u1.EncodeCompressed())
 
 	//if len(p.CLnG) != len(p.f.vector) {
 	//	panic(fmt.Sprintf("different size %d %d", len(p.CLnG), len(p.f.vector)))
@@ -168,9 +168,6 @@ func (proof *Proof) Deserialize(r *helpers.BufferReader, length int) (err error)
 	}
 
 	if proof.u, err = r.ReadBN256G1(); err != nil {
-		return
-	}
-	if proof.u1, err = r.ReadBN256G1(); err != nil {
 		return
 	}
 
@@ -308,25 +305,12 @@ func reverse(s string) string {
 	return string(rns)
 }
 
-func HeightToPoint(height uint64) *bn256.G1 {
-	var input []byte
-	var h [8]byte
-	input = append(input, []byte(PROTOCOL_CONSTANT)...)
-
-	binary.BigEndian.PutUint64(h[:], height)
-	input = append(input, h[:]...)
-
-	point := HashToPoint(HashtoNumber(input))
-	return point
-}
-
 var params = NewGeneratorParams(128) // these can be pregenerated similarly as in DERO project
 
-func GenerateProof(s *Statement, witness *Witness, u, u1 *bn256.G1, height uint64, txid []byte, burn_value uint64) (*Proof, error) {
+func GenerateProof(assetId []byte, assetIndex int, chainHash []byte, s *Statement, witness *Witness, u *bn256.G1, txid []byte, burn_value uint64) (*Proof, error) {
 
 	var proof Proof
 	proof.u = u
-	proof.u1 = u1
 
 	statementhash := reducedhash(txid[:])
 
@@ -386,7 +370,11 @@ func GenerateProof(s *Statement, witness *Witness, u, u1 *bn256.G1, height uint6
 
 	var aa, ba, bspecial []*big.Int
 	for i := 0; i < 2*m; i++ {
-		aa = append(aa, RandomScalarFixed())
+		if i == 0 || i == m {
+			aa = append(aa, new(big.Int).SetUint64(0))
+		} else {
+			aa = append(aa, RandomScalarFixed())
+		}
 	}
 
 	witness_index := reverse(fmt.Sprintf("%0"+fmt.Sprintf("%db", m)+"%0"+fmt.Sprintf("%db", m), witness.Index[1], witness.Index[0]))
@@ -984,8 +972,20 @@ func GenerateProof(s *Statement, witness *Witness, u, u1 *bn256.G1, height uint6
 	A_t := new(bn256.G1).ScalarMult(params.G, new(big.Int).Mod(new(big.Int).Neg(k_b), bn256.Order))
 	A_t = new(bn256.G1).Add(A_t, new(bn256.G1).ScalarMult(params.H, k_tau))
 
-	A_u := new(bn256.G1).ScalarMult(HeightToPoint(height), k_sk)
-	A_u1 := new(bn256.G1).ScalarMult(HeightToPoint(height+BLOCK_BATCH_SIZE), k_sk)
+	A_u := new(bn256.G1)
+
+	{
+		var input []byte
+		input = append(input, []byte(PROTOCOL_CONSTANT)...)
+		input = append(input, chainHash[:]...)
+
+		input = append(input, assetId[:]...)
+		input = append(input, strconv.Itoa(assetIndex)...)
+
+		point := HashToPoint(HashtoNumber(input))
+
+		A_u = new(bn256.G1).ScalarMult(point, k_sk)
+	}
 
 	//	klog.V(2).Infof("A_y %s\n", A_y.String())
 	//	klog.V(2).Infof("A_D %s\n", A_D.String())
@@ -1003,7 +1003,6 @@ func GenerateProof(s *Statement, witness *Witness, u, u1 *bn256.G1, height uint6
 		input = append(input, A_X.Marshal()...)
 		input = append(input, A_t.Marshal()...)
 		input = append(input, A_u.Marshal()...)
-		input = append(input, A_u1.Marshal()...)
 		proof.c = reducedhash(input)
 	}
 

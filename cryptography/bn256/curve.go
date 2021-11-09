@@ -171,15 +171,15 @@ func (c *curvePoint) Double(a *curvePoint) {
 	gfpAdd(t, d, d)
 	gfpSub(&c.x, f, t)
 
+	gfpMul(&c.z, &a.y, &a.z)
+	gfpAdd(&c.z, &c.z, &c.z)
+
 	gfpAdd(t, C, C)
 	gfpAdd(t2, t, t)
 	gfpAdd(t, t2, t2)
 	gfpSub(&c.y, d, &c.x)
 	gfpMul(t2, e, &c.y)
 	gfpSub(&c.y, t2, t)
-
-	gfpMul(t, &a.y, &a.z)
-	gfpAdd(&c.z, t, t)
 }
 
 func (c *curvePoint) Mul(a *curvePoint, scalar *big.Int) {
@@ -206,17 +206,12 @@ func (c *curvePoint) Mul(a *curvePoint, scalar *big.Int) {
 	c.Set(sum)
 }
 
-// Transforms Jacobian coordinates to Affine coordinates
-// (X' : Y' : Z) -> (X'/(Z^2) : Y'/(Z^3) : 1)
 func (c *curvePoint) MakeAffine() {
-	//  point0 := *newGFp(0)
-	// point1 := *newGFp(1)
-
-	if c.z == point1 {
+	if c.z == *newGFp(1) {
 		return
-	} else if c.z == point0 { // return point at infinity if z = 0
+	} else if c.z == *newGFp(0) {
 		c.x = gfP{0}
-		c.y = point1
+		c.y = *newGFp(1)
 		c.t = gfP{0}
 		return
 	}
@@ -225,14 +220,14 @@ func (c *curvePoint) MakeAffine() {
 	zInv.Invert(&c.z)
 
 	t, zInv2 := &gfP{}, &gfP{}
-	gfpMul(t, &c.y, zInv)     // t = y/z
-	gfpMul(zInv2, zInv, zInv) // zInv2 = 1/(z^2)
+	gfpMul(t, &c.y, zInv)
+	gfpMul(zInv2, zInv, zInv)
 
-	gfpMul(&c.x, &c.x, zInv2) // x = x/(z^2)
-	gfpMul(&c.y, t, zInv2)    // y = y/(z^3)
+	gfpMul(&c.x, &c.x, zInv2)
+	gfpMul(&c.y, t, zInv2)
 
-	c.z = point1
-	c.t = point1
+	c.z = *newGFp(1)
+	c.t = *newGFp(1)
 }
 
 func (c *curvePoint) Neg(a *curvePoint) {
@@ -240,79 +235,4 @@ func (c *curvePoint) Neg(a *curvePoint) {
 	gfpNeg(&c.y, &a.y)
 	c.z.Set(&a.z)
 	c.t = gfP{0}
-}
-
-var point0 = *newGFp(0)
-var point1 = *newGFp(1)
-
-// this will do batch inversions and thus optimize lookup table generation
-// Montgomery Batch Inversion based trick
-type G1Array []*G1
-
-func (points G1Array) MakeAffine() {
-	// point0 := *newGFp(0)
-	// point1 := *newGFp(1)
-
-	accum := newGFp(1)
-
-	var scratch_backup [256]gfP
-
-	var scratch []gfP
-	if len(points) <= 256 {
-		scratch = scratch_backup[:0] // avoid allocation is possible
-	}
-	for _, e := range points {
-		if e.p == nil {
-			e.p = &curvePoint{}
-		}
-		scratch = append(scratch, *accum)
-		if e.p.z == point1 {
-			continue
-		} else if e.p.z == point0 { // return point at infinity if z = 0
-			e.p.x = gfP{0}
-			e.p.y = point1
-			e.p.t = gfP{0}
-			continue
-		}
-
-		gfpMul(accum, accum, &e.p.z) //  accum *= z
-
-		/*
-		   	    zInv := &gfP{}
-		   	    zInv.Invert(&e.p.z)
-		           fmt.Printf("%d inv %s\n",i, zInv)
-		*/
-	}
-
-	zInv_accum := gfP{}
-	zInv_accum.Invert(accum)
-
-	tmp := gfP{}
-	zInv := &gfP{}
-
-	for i := len(points) - 1; i >= 0; i-- {
-		e := points[i]
-
-		if e.p.z == point1 {
-			continue
-		} else if e.p.z == point0 { // return point at infinity if z = 0
-			continue
-		}
-
-		tmp = gfP{}
-		gfpMul(&tmp, &zInv_accum, &e.p.z)
-		gfpMul(zInv, &zInv_accum, &scratch[i])
-		zInv_accum = tmp
-		// fmt.Printf("%d inv %s\n",i, zInv)
-
-		t, zInv2 := &gfP{}, &gfP{}
-		gfpMul(t, &e.p.y, zInv)   // t = y/z
-		gfpMul(zInv2, zInv, zInv) // zInv2 = 1/(z^2)
-
-		gfpMul(&e.p.x, &e.p.x, zInv2) // x = x/(z^2)
-		gfpMul(&e.p.y, t, zInv2)      // y = y/(z^3)
-
-		e.p.z = point1
-		e.p.t = point1
-	}
 }

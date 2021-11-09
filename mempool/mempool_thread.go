@@ -224,8 +224,11 @@ func (worker *mempoolWorker) processing(
 
 						if finalErr == nil && tx.Tx.Version == transaction_type.TX_ZETHER {
 							base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-							if includedZetherNonceMap[string(base.Bloom.Nonce1)] || includedZetherNonceMap[string(base.Bloom.Nonce2)] {
-								finalErr = errors.New("Zether Nonce exists")
+
+							for t := range base.Payloads {
+								if includedZetherNonceMap[string(base.Bloom.Nonces[t])] {
+									finalErr = errors.New("Zether Nonce exists")
+								}
 							}
 						}
 
@@ -246,8 +249,10 @@ func (worker *mempoolWorker) processing(
 
 								if tx.Tx.Version == transaction_type.TX_ZETHER {
 									base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-									includedZetherNonceMap[string(base.Bloom.Nonce1)] = true
-									includedZetherNonceMap[string(base.Bloom.Nonce2)] = true
+
+									for t := range base.Payloads {
+										includedZetherNonceMap[string(base.Bloom.Nonces[t])] = true
+									}
 								}
 
 								if err = dataStorage.CommitChanges(); err != nil {
