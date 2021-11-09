@@ -32,9 +32,10 @@ type json_TransactionDataDelegatedStakingUpdate struct {
 }
 
 type json_Transaction struct {
-	Version transaction_type.TransactionVersion `json:"version"`
-	Size    uint64                              `json:"size"`
-	Hash    helpers.HexBytes                    `json:"hash"`
+	Version    transaction_type.TransactionVersion `json:"version"`
+	Size       uint64                              `json:"size"`
+	SpaceExtra uint64                              `json:"spaceExtra"`
+	Hash       helpers.HexBytes                    `json:"hash"`
 }
 
 type json_TransactionSimple struct {
@@ -118,6 +119,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 	txJson := &json_Transaction{
 		tx.Version,
 		tx.Bloom.Size,
+		tx.SpaceExtra,
 		tx.Bloom.Hash,
 	}
 
@@ -270,6 +272,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 	}
 
 	tx.Version = txOnlyJson.Version
+	tx.SpaceExtra = txOnlyJson.SpaceExtra
 
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:

@@ -17,6 +17,7 @@ var regexAssetDescription = regexp.MustCompile("[\\w|\\W]+")
 
 type Asset struct {
 	helpers.SerializableInterface `json:"-"`
+	PublicKey                     helpers.HexBytes `json:"-"`
 	Version                       uint64           `json:"version,omitempty"`
 	CanUpgrade                    bool             `json:"canUpgrade,omitempty"`               //upgrade different settings
 	CanMint                       bool             `json:"canMint,omitempty"`                  //increase supply
@@ -177,4 +178,8 @@ func (asset *Asset) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 
 	return
+}
+
+func NewAsset(publicKey []byte) *Asset {
+	return &Asset{PublicKey: publicKey}
 }

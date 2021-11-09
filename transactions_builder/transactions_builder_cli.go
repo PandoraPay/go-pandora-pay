@@ -303,7 +303,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		ast := &asset.Asset{}
+		ast := asset.NewAsset(nil)
 		str := gui.GUI.OutputReadString("Asset as JSON")
 		if err = json.Unmarshal([]byte(str), ast); err != nil {
 			return

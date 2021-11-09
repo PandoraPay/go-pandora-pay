@@ -19,7 +19,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/config/config_fees"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -303,12 +302,11 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		m := int(math.Log2(float64(len(rings[t]))))
 
 		extraBytes := 1 + len(payload.Asset) + helpers.BytesLengthSerialized(payload.BurnValue)
-		extraBytes += 1 + cryptography.SignatureSize + 1                                      //registrations length
-		extraBytes += 1 + dataLength                                                          //dataVersion + data
-		extraBytes += len(rings[t])*33*4 + 33 + 1                                             // statement
-		extraBytes += 33*(22+m*8) + 32*(10)                                                   //proof arrays + proof data
-		extraBytes += 2 * m * 32                                                              //proof field array
-		extraBytes += int(config_fees.FEES_PER_BYTE_EXTRA_SPACE) * 64 * len(registrations[t]) //registrations are a penalty
+		extraBytes += 1 + cryptography.SignatureSize + 1 //registrations length
+		extraBytes += 1 + dataLength                     //dataVersion + data
+		extraBytes += len(rings[t])*33*4 + 33 + 1        // statement
+		extraBytes += 33*(21+m*8) + 32*(10)              //proof arrays + proof data
+		extraBytes += 2 * m * 32                         //proof field array
 
 		if payload.Extra != nil {
 			extraBytes += len(transaction_zether_payload_extra.SerializeToBytes(payload.Extra, true))

@@ -106,19 +106,19 @@ func storeAsset(this js.Value, args []js.Value) interface{} {
 
 		var err error
 
+		hash, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
+		}
+
 		var ast *asset.Asset
 		if !args[1].IsNull() {
-			ast = &asset.Asset{}
+			ast = asset.NewAsset(hash)
 			data := make([]byte, args[1].Get("byteLength").Int())
 			js.CopyBytesToGo(data, args[1])
 			if err = json.Unmarshal(data, &ast); err != nil {
 				return nil, err
 			}
-		}
-
-		hash, err := hex.DecodeString(args[0].String())
-		if err != nil {
-			return nil, err
 		}
 
 		mutex.Lock()
