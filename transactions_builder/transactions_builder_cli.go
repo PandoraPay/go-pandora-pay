@@ -150,9 +150,9 @@ func (builder *TransactionsBuilder) readFee(assetId []byte) (fee *wizard.Transac
 	return
 }
 
-func (builder *TransactionsBuilder) readAsset(text string) []byte {
+func (builder *TransactionsBuilder) readAsset(text string, allowEmptyAsset bool) []byte {
 	assetId := gui.GUI.OutputReadBytes(text, func(input []byte) bool {
-		return len(input) == 0 || len(input) == config_coins.ASSET_LENGTH
+		return (allowEmptyAsset && len(input) == 0) || len(input) == config_coins.ASSET_LENGTH
 	})
 	if len(assetId) == 0 {
 		assetId = config_coins.NATIVE_ASSET_FULL
@@ -193,7 +193,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		assetId := builder.readAsset("Asset. Leave empty for Native Asset")
+		assetId := builder.readAsset("Asset. Leave empty for Native Asset", true)
 
 		destinationAddress, amount, err := builder.readAddressOptional("Destination Address", assetId, false)
 		if err != nil {
@@ -381,7 +381,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			return
 		}
 
-		assetId := builder.readAsset("Asset. Leave empty for Native Asset")
+		assetId := builder.readAsset("Asset", false)
 
 		assetSupplyPrivateKey := gui.GUI.OutputReadBytes("Asset Supply Update Private Key", func(value []byte) bool {
 			return len(value) == cryptography.PrivateKeySize
@@ -509,7 +509,7 @@ func (builder *TransactionsBuilder) initCLI() {
 				break
 			}
 			liquidity := &asset_fee_liquidity.AssetFeeLiquidity{}
-			liquidity.AssetId = builder.readAsset("AssetId. Leave empty for Native Asset")
+			liquidity.AssetId = builder.readAsset("AssetId. Leave empty for Native Asset", true)
 			liquidity.ConversionRate = gui.GUI.OutputReadUint64("Conversion Rate", false, nil)
 			txExtra.Liquidities = append(txExtra.Liquidities, liquidity)
 		}

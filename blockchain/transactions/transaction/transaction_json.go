@@ -88,6 +88,14 @@ type json_Only_TransactionZetherPayloadExtraAssetCreate struct {
 	Asset *asset.Asset `json:"asset"`
 }
 
+type json_Only_TransactionZetherPayloadExtraAssetSupplyIncrease struct {
+	AssetId              helpers.HexBytes
+	ReceiverPublicKey    helpers.HexBytes //must be registered before
+	Value                uint64
+	AssetSupplyPublicKey helpers.HexBytes //TODO: it can be bloomed
+	AssetSignature       helpers.HexBytes
+}
+
 type json_Only_TransactionZetherStatement struct {
 	RingSize      uint64             `json:"ringSize"`
 	CLn           []helpers.HexBytes `json:"cLn"`
@@ -182,13 +190,13 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			}
 
 			statementJson := &json_Only_TransactionZetherStatement{
-				RingSize:      payload.Statement.RingSize,
-				CLn:           helpers.ConvertBN256Array(payload.Statement.CLn),
-				CRn:           helpers.ConvertBN256Array(payload.Statement.CRn),
-				Publickeylist: helpers.ConvertBN256Array(payload.Statement.Publickeylist),
-				C:             helpers.ConvertBN256Array(payload.Statement.C),
-				D:             payload.Statement.D.EncodeCompressed(),
-				Fee:           payload.Statement.Fee,
+				payload.Statement.RingSize,
+				helpers.ConvertBN256Array(payload.Statement.CLn),
+				helpers.ConvertBN256Array(payload.Statement.CRn),
+				helpers.ConvertBN256Array(payload.Statement.Publickeylist),
+				helpers.ConvertBN256Array(payload.Statement.C),
+				payload.Statement.D.EncodeCompressed(),
+				payload.Statement.Fee,
 			}
 
 			w := helpers.NewBufferWriter()
@@ -224,6 +232,15 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate)
 				extra = &json_Only_TransactionZetherPayloadExtraAssetCreate{
 					payloadExtra.Asset,
+				}
+			case transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE:
+				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease)
+				extra = &json_Only_TransactionZetherPayloadExtraAssetSupplyIncrease{
+					payloadExtra.AssetId,
+					payloadExtra.ReceiverPublicKey,
+					payloadExtra.Value,
+					payloadExtra.AssetSignature,
+					payloadExtra.AssetSupplyPublicKey,
 				}
 			default:
 				return nil, errors.New("Invalid zether.TxScript")
@@ -303,13 +320,16 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 		}
 
 		base := &transaction_simple.TransactionSimple{
-			TxScript:    simpleJson.TxScript,
-			DataVersion: simpleJson.DataVersion,
-			Data:        simpleJson.Data,
-			Nonce:       simpleJson.Nonce,
-			Fee:         simpleJson.Fee,
-			FeeVersion:  simpleJson.FeeVersion,
-			Vin:         vin,
+			nil,
+			nil,
+			simpleJson.TxScript,
+			simpleJson.DataVersion,
+			simpleJson.Data,
+			simpleJson.Nonce,
+			simpleJson.Fee,
+			simpleJson.FeeVersion,
+			vin,
+			nil,
 		}
 		tx.TransactionBaseInterface = base
 
@@ -322,8 +342,9 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 			}
 
 			base.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{
-				DelegatedStakingClaimAmount: extraJson.DelegatedStakingClaimAmount,
-				DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{
+				nil,
+				extraJson.DelegatedStakingClaimAmount,
+				&transaction_data.TransactionDataDelegatedStakingUpdate{
 					extraJson.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
 					extraJson.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
 					extraJson.DelegatedStakingUpdate.DelegatedStakingNewFee,
@@ -387,15 +408,17 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 			}
 
 			payloads[i] = &transaction_zether_payload.TransactionZetherPayload{
-				Asset:       payload.Asset,
-				BurnValue:   payload.BurnValue,
-				DataVersion: payload.DataVersion,
-				Data:        payload.Data,
-				Registrations: &transaction_zether_registrations.TransactionZetherDataRegistrations{
+				payload.PayloadScript,
+				payload.Asset,
+				payload.BurnValue,
+				payload.DataVersion,
+				payload.Data,
+				&transaction_zether_registrations.TransactionZetherDataRegistrations{
 					Registrations: make([]*transaction_zether_registrations.TransactionZetherDataRegistration, len(payload.Registrations)),
 				},
-				Statement: statement,
-				Proof:     proof,
+				statement,
+				proof,
+				nil,
 			}
 
 			for i, reg := range payload.Registrations {
@@ -414,14 +437,15 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				}
 
 				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
-					DelegatePublicKey:  extraJSON.DelegatePublicKey,
-					ConvertToUnclaimed: extraJSON.ConvertToUnclaimed,
-					DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{
+					nil,
+					extraJSON.DelegatePublicKey,
+					extraJSON.ConvertToUnclaimed,
+					&transaction_data.TransactionDataDelegatedStakingUpdate{
 						extraJSON.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
 						extraJSON.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
 						extraJSON.DelegatedStakingUpdate.DelegatedStakingNewFee,
 					},
-					DelegateSignature: extraJSON.DelegateSignature,
+					extraJSON.DelegateSignature,
 				}
 
 			case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
@@ -431,10 +455,11 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				}
 
 				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake{
-					DelegatePublicKey:           extraJSON.DelegatePublicKey,
-					RegistrationIndex:           extraJSON.RegistrationIndex,
-					DelegateSignature:           extraJSON.DelegateSignature,
-					DelegatedStakingClaimAmount: extraJSON.DelegatedStakingClaimAmount,
+					nil,
+					extraJSON.DelegatePublicKey,
+					extraJSON.DelegatedStakingClaimAmount,
+					extraJSON.RegistrationIndex,
+					extraJSON.DelegateSignature,
 				}
 
 			case transaction_zether_payload.SCRIPT_ASSET_CREATE:
@@ -444,6 +469,19 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				}
 				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{
 					Asset: extraJSON.Asset,
+				}
+			case transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE:
+				extraJSON := &json_Only_TransactionZetherPayloadExtraAssetSupplyIncrease{}
+				if err := json.Unmarshal(data, extraJSON); err != nil {
+					return err
+				}
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{
+					nil,
+					extraJSON.AssetId,
+					extraJSON.ReceiverPublicKey,
+					extraJSON.Value,
+					extraJSON.AssetSignature,
+					extraJSON.AssetSupplyPublicKey,
 				}
 
 			default:
