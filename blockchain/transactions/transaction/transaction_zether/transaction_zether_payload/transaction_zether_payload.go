@@ -27,7 +27,7 @@ type TransactionZetherPayload struct {
 
 	Registrations *transaction_zether_registrations.TransactionZetherDataRegistrations
 
-	Statement *crypto.Statement // note statement containts fees
+	Statement *crypto.Statement // note statement containts fee
 	Proof     *crypto.Proof
 
 	Extra transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface

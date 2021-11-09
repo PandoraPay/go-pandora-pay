@@ -54,11 +54,11 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(dataStorage *data_storage
 
 	allFees := uint64(0)
 	for _, tx := range blkComplete.Txs {
-		var fees uint64
-		if fees, err = tx.ComputeFees(); err != nil {
+		var fee uint64
+		if fee, err = tx.ComputeFee(); err != nil {
 			return
 		}
-		if err = helpers.SafeUint64Add(&allFees, fees); err != nil {
+		if err = helpers.SafeUint64Add(&allFees, fee); err != nil {
 			return
 		}
 	}

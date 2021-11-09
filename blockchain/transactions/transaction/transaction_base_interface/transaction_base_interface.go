@@ -9,7 +9,7 @@ type TransactionBaseInterface interface {
 	helpers.SerializableInterface
 	SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool)
 	IncludeTransaction(blockHeight uint64, txHash []byte, dataStorage *data_storage.DataStorage) error
-	ComputeFees() (uint64, error)
+	ComputeFee() (uint64, error)
 	ComputeAllKeys(out map[string]bool)
 	VerifySignatureManually(hashForSignature []byte) bool
 	Validate() error

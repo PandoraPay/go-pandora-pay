@@ -28,7 +28,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaimStake) BeforeIncludeTxPayl
 	var exists bool
 
 	amount := payloadExtra.DelegatedStakingClaimAmount
-	if err = helpers.SafeUint64Add(&amount, payloadStatement.Fees); err != nil {
+	if err = helpers.SafeUint64Add(&amount, payloadStatement.Fee); err != nil {
 		return
 	}
 

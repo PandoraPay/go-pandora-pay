@@ -34,8 +34,8 @@ func (tx *Transaction) IncludeTransaction(blockHeight uint64, dataStorage *data_
 	return nil
 }
 
-func (tx *Transaction) GetAllFees() (uint64, error) {
-	return tx.ComputeFees()
+func (tx *Transaction) GetAllFee() (uint64, error) {
+	return tx.ComputeFee()
 }
 
 func (tx *Transaction) GetAllKeys() map[string]bool {

@@ -38,12 +38,12 @@ func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, txHash []byt
 	return
 }
 
-func (tx *TransactionZether) ComputeFees() (uint64, error) {
+func (tx *TransactionZether) ComputeFee() (uint64, error) {
 
 	sum := uint64(0)
 	for _, payload := range tx.Payloads {
 		if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
-			if err := helpers.SafeUint64Add(&sum, payload.Statement.Fees); err != nil {
+			if err := helpers.SafeUint64Add(&sum, payload.Statement.Fee); err != nil {
 				return 0, err
 			}
 		}

@@ -17,8 +17,8 @@ func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.Pr
 	txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
 	extraBytes := cryptography.SignatureSize
-	txBase.Fees = setFee(tx, extraBytes, fee.Clone(), true)
-	statusCallback("Transaction Fees set")
+	txBase.Fee = setFee(tx, extraBytes, fee.Clone(), true)
+	statusCallback("Transaction Fee set")
 
 	statusCallback("Transaction Signing...")
 	if txBase.Vin.Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
@@ -29,7 +29,7 @@ func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.Pr
 	return
 }
 
-func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTxSimpleExtra, data *TransactionsWizardData, fee *TransactionsWizardFee, feesVersion bool, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTxSimpleExtra, data *TransactionsWizardData, fee *TransactionsWizardFee, feeVersion bool, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	privateKey := &addresses.PrivateKey{Key: key}
 
@@ -71,8 +71,8 @@ func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTx
 		DataVersion: data.getDataVersion(),
 		Data:        dataFinal,
 		Nonce:       nonce,
-		Fees:        0,
-		FeesVersion: feesVersion,
+		Fee:         0,
+		FeeVersion:  feeVersion,
 		Extra:       extraFinal,
 		Vin: &transaction_simple_parts.TransactionSimpleInput{
 			PublicKey: privateKey.GeneratePublicKey(),

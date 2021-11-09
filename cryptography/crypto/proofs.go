@@ -13,7 +13,7 @@ type Statement struct {
 	Publickeylist []*bn256.G1 //bloomed
 	C             []*bn256.G1 // commitments
 	D             *bn256.G1
-	Fees          uint64
+	Fee           uint64
 }
 
 type Witness struct {
@@ -31,7 +31,7 @@ func (s *Statement) Serialize(w *helpers.BufferWriter) {
 		panic(err)
 	}
 	w.WriteByte(byte(pow)) // len(s.Publickeylist) is always power of 2
-	w.WriteUvarint(s.Fees)
+	w.WriteUvarint(s.Fee)
 	w.Write(s.D.EncodeCompressed())
 
 	for i := 0; i < len(s.C); i++ {
@@ -51,7 +51,7 @@ func (s *Statement) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 	s.RingSize = 1 << length
 
-	if s.Fees, err = r.ReadUvarint(); err != nil {
+	if s.Fee, err = r.ReadUvarint(); err != nil {
 		return
 	}
 

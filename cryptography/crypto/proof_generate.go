@@ -569,10 +569,10 @@ func GenerateProof(assetId []byte, assetIndex int, chainHash []byte, s *Statemen
 
 		for j := range C_XG {
 
-			amount := new(big.Int).SetUint64(uint64(witness.TransferAmount))
+			amount := new(big.Int).SetUint64(witness.TransferAmount)
 			amount_neg := new(big.Int).Neg(amount)
-			amount_fees := new(big.Int).SetUint64(s.Fees + burn_value)
-			left := new(big.Int).Sub(amount_neg, amount_fees)
+			amount_fee := new(big.Int).SetUint64(s.Fee + burn_value)
+			left := new(big.Int).Sub(amount_neg, amount_fee)
 			left = new(big.Int).Mod(new(big.Int).Mul(new(big.Int).Set(left), poly[j][(witness.Index[0]+N-(i-i%2))%N]), bn256.Order)
 
 			right := new(big.Int).Mod(new(big.Int).Mul(new(big.Int).Set(amount), poly[j][(witness.Index[1]+N-(i-i%2))%N]), bn256.Order)

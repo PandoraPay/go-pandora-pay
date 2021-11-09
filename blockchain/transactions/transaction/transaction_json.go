@@ -44,7 +44,8 @@ type json_TransactionSimple struct {
 	DataVersion transaction_data.TransactionDataVersion `json:"dataVersion"`
 	Data        helpers.HexBytes                        `json:"data"`
 	Nonce       uint64                                  `json:"nonce"`
-	Fees        uint64                                  `json:"fee"`
+	Fee         uint64                                  `json:"fee"`
+	FeeVersion  bool                                    `json:"feeVersion"`
 	Vin         *json_TransactionSimpleInput            `json:"vin"`
 	Extra       interface{}                             `json:"extra"`
 }
@@ -94,7 +95,7 @@ type json_Only_TransactionZetherStatement struct {
 	Publickeylist []helpers.HexBytes `json:"publickeylist"`
 	C             []helpers.HexBytes `json:"c"`
 	D             helpers.HexBytes   `json:"d"`
-	Fees          uint64             `json:"fees"`
+	Fee           uint64             `json:"fee"`
 }
 
 type json_Only_TransactionPayload struct {
@@ -138,7 +139,8 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			base.DataVersion,
 			base.Data,
 			base.Nonce,
-			base.Fees,
+			base.Fee,
+			base.FeeVersion,
 			vinJson,
 			nil,
 		}
@@ -186,7 +188,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				Publickeylist: helpers.ConvertBN256Array(payload.Statement.Publickeylist),
 				C:             helpers.ConvertBN256Array(payload.Statement.C),
 				D:             payload.Statement.D.EncodeCompressed(),
-				Fees:          payload.Statement.Fees,
+				Fee:           payload.Statement.Fee,
 			}
 
 			w := helpers.NewBufferWriter()
@@ -305,7 +307,8 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 			DataVersion: simpleJson.DataVersion,
 			Data:        simpleJson.Data,
 			Nonce:       simpleJson.Nonce,
-			Fees:        simpleJson.Fees,
+			Fee:         simpleJson.Fee,
+			FeeVersion:  simpleJson.FeeVersion,
 			Vin:         vin,
 		}
 		tx.TransactionBaseInterface = base
@@ -352,7 +355,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 
 			statement := &crypto.Statement{
 				RingSize: payload.Statement.RingSize,
-				Fees:     payload.Statement.Fees,
+				Fee:      payload.Statement.Fee,
 			}
 
 			if statement.CLn, err = helpers.ConvertToBN256Array(payload.Statement.CLn); err != nil {

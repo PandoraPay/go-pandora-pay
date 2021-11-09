@@ -38,7 +38,7 @@ func (data *TransactionDataDelegatedStakingUpdate) Validate() error {
 		if len(data.DelegatedStakingNewPublicKey) != cryptography.PublicKeySize {
 			return errors.New("New Public Key Hash length is invalid")
 		}
-		if data.DelegatedStakingNewFee > config_stake.DELEGATING_STAKING_FEES_MAX_VALUE {
+		if data.DelegatedStakingNewFee > config_stake.DELEGATING_STAKING_FEE_MAX_VALUE {
 			return errors.New("Invalid NewDelegatedStakingNewFee")
 		}
 	} else {

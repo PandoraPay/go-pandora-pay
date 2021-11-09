@@ -312,14 +312,14 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			extraBytes += len(transaction_zether_payload_extra.SerializeToBytes(payload.Extra, true))
 		}
 
-		fees := setFee(tx, extraBytes, myFees[t].Clone(), t == 0)
+		fee := setFee(tx, extraBytes, myFees[t].Clone(), t == 0)
 
-		statusCallback("Transaction Set fees")
+		statusCallback("Transaction Set fee")
 
 		//fake balance
 		if payload.PayloadScript == transaction_zether_payload.SCRIPT_CLAIM_STAKE {
 
-			transfer.FromBalanceDecoded = value + fees + burn_value
+			transfer.FromBalanceDecoded = value + fee + burn_value
 
 			var acckey crypto.Point
 			if err = acckey.DecodeCompressed(senderKey.GeneratePublicKey()); err != nil {
@@ -345,7 +345,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			var x bn256.G1
 			switch {
 			case i == witness_index[0]:
-				x.ScalarMult(crypto.G, new(big.Int).SetInt64(0-int64(value)-int64(fees)-int64(burn_value))) // decrease senders balance
+				x.ScalarMult(crypto.G, new(big.Int).SetInt64(0-int64(value)-int64(fee)-int64(burn_value))) // decrease senders balance
 				//fmt.Printf("sender %s \n", x.String())
 			case i == witness_index[1]:
 				x.ScalarMult(crypto.G, new(big.Int).SetInt64(int64(value))) // increase receiver's balance
@@ -420,11 +420,11 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		statusCallback("Homomorphic balance Decoded")
 
 		// time for bullets-sigma
-		statement := GenerateStatement(CLn, CRn, publickeylist, C, &D, fees) // generate statement
+		statement := GenerateStatement(CLn, CRn, publickeylist, C, &D, fee) // generate statement
 
 		statement.RingSize = uint64(len(publickeylist))
 
-		witness := GenerateWitness(sender_secret, r, value, balance-value-fees-burn_value, witness_index)
+		witness := GenerateWitness(sender_secret, r, value, balance-value-fee-burn_value, witness_index)
 
 		witness_list = append(witness_list, witness)
 
@@ -535,8 +535,8 @@ func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[strin
 }
 
 // generate statement
-func GenerateStatement(CLn, CRn, publickeylist, C []*bn256.G1, D *bn256.G1, fees uint64) crypto.Statement {
-	return crypto.Statement{CLn: CLn, CRn: CRn, Publickeylist: publickeylist, C: C, D: D, Fees: fees}
+func GenerateStatement(CLn, CRn, publickeylist, C []*bn256.G1, D *bn256.G1, fee uint64) crypto.Statement {
+	return crypto.Statement{CLn: CLn, CRn: CRn, Publickeylist: publickeylist, C: C, D: D, Fee: fee}
 }
 
 // generate witness

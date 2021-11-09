@@ -82,26 +82,26 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 			continue
 		}
 
-		minerFees, err := tx.GetAllFees()
+		minerFee, err := tx.GetAllFee()
 		if err != nil {
 			errs[i] = err
 			continue
 		}
 
-		computedFeePerByte := minerFees
-		if err = helpers.SafeUint64Sub(&computedFeePerByte, tx.SpaceExtra*config_fees.FEES_PER_BYTE_EXTRA_SPACE); err != nil {
+		computedFeePerByte := minerFee
+		if err = helpers.SafeUint64Sub(&computedFeePerByte, tx.SpaceExtra*config_fees.FEE_PER_BYTE_EXTRA_SPACE); err != nil {
 			errs[i] = err
 			continue
 		}
 
-		computedFeePerByte = minerFees / tx.Bloom.Size
+		computedFeePerByte = minerFee / tx.Bloom.Size
 
 		requiredFeePerByte := uint64(0)
 		switch tx.Version {
 		case transaction_type.TX_SIMPLE:
-			requiredFeePerByte = config_fees.FEES_PER_BYTE
+			requiredFeePerByte = config_fees.FEE_PER_BYTE
 		case transaction_type.TX_ZETHER:
-			requiredFeePerByte = config_fees.FEES_PER_BYTE_ZETHER
+			requiredFeePerByte = config_fees.FEE_PER_BYTE_ZETHER
 		default:
 			errs[i] = errors.New("Invalid Tx.Version")
 			continue

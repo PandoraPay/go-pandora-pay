@@ -68,8 +68,8 @@ func (proof *Proof) Verify(assetId []byte, assetIndex int, chainHash []byte, s *
 		return false
 	}
 
-	total_open_value := s.Fees + extra_value
-	if total_open_value < s.Fees || total_open_value < extra_value { // stop over flowing attacks
+	total_open_value := s.Fee + extra_value
+	if total_open_value < s.Fee || total_open_value < extra_value { // stop over flowing attacks
 		return false
 	}
 
@@ -315,8 +315,8 @@ func (proof *Proof) Verify(assetId []byte, assetIndex int, chainHash []byte, s *
 	left = new(bn256.G1).ScalarMult(new(bn256.G1).Set(left), proof.s_sk)
 
 	// TODO mid seems wrong
-	amount_fees := new(big.Int).SetUint64(total_open_value)
-	mid := new(bn256.G1).ScalarMult(G, new(big.Int).Mod(new(big.Int).Mul(amount_fees, anonsupport.wPow), bn256.Order))
+	amount_fee := new(big.Int).SetUint64(total_open_value)
+	mid := new(bn256.G1).ScalarMult(G, new(big.Int).Mod(new(big.Int).Mul(amount_fee, anonsupport.wPow), bn256.Order))
 	mid.Add(new(bn256.G1).Set(mid), new(bn256.G1).Set(anonsupport.CR[0][0]))
 
 	right := new(bn256.G1).ScalarMult(mid, zs0_neg)
@@ -330,9 +330,9 @@ func (proof *Proof) Verify(assetId []byte, assetIndex int, chainHash []byte, s *
 	//-        sigmaAuxiliaries.A_b = Utils.g().mul(proof.s_b).add(anonAuxiliaries.DR.mul(zetherAuxiliaries.zs[0].neg()).add(anonAuxiliaries.CRnR.mul(zetherAuxiliaries.zs[1])).mul(proof.s_sk).add(anonAuxiliaries.CR[0][0]                                                         .mul(zetherAuxiliaries.zs[0].neg()).add(anonAuxiliaries.CLnR.mul(zetherAuxiliaries.zs[1])).mul(proof.c.neg())));
 	//+        sigmaAuxiliaries.A_b = Utils.g().mul(proof.s_b).add(anonAuxiliaries.DR.mul(zetherAuxiliaries.zs[0].neg()).add(anonAuxiliaries.CRnR.mul(zetherAuxiliaries.zs[1])).mul(proof.s_sk).add(anonAuxiliaries.CR[0][0].add(Utils.g().mul(Utils.fee().mul(anonAuxiliaries.wPow))).mul(zetherAuxiliaries.zs[0].neg()).add(anonAuxiliaries.CLnR.mul(zetherAuxiliaries.zs[1])).mul(proof.c.neg())));
 
-	//var fees bn256.G1
-	//fees.ScalarMult(G, new(big.Int).SetInt64(int64( -1 )))
-	//anonsupport.C_XR.Add( new(bn256.G1).Set(anonsupport.C_XR), &fees)
+	//var fee bn256.G1
+	//fee.ScalarMult(G, new(big.Int).SetInt64(int64( -1 )))
+	//anonsupport.C_XR.Add( new(bn256.G1).Set(anonsupport.C_XR), &fee)
 
 	sigmasupport.A_X = new(bn256.G1).Add(new(bn256.G1).ScalarMult(anonsupport.y_XR, proof.s_r), new(bn256.G1).ScalarMult(anonsupport.C_XR, proof_c_neg))
 

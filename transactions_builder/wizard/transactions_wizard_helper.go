@@ -17,8 +17,8 @@ func setFee(tx *transaction.Transaction, extraBytes int, fee *TransactionsWizard
 	}
 
 	if fee.PerByte == 0 && fee.PerByteAuto {
-		fee.PerByte = config_fees.FEES_PER_BYTE_ZETHER
-		fee.PerByteExtraSpace = config_fees.FEES_PER_BYTE_EXTRA_SPACE
+		fee.PerByte = config_fees.FEE_PER_BYTE_ZETHER
+		fee.PerByteExtraSpace = config_fees.FEE_PER_BYTE_EXTRA_SPACE
 	}
 
 	spaceExtra := tx.SpaceExtra
@@ -31,7 +31,7 @@ func setFee(tx *transaction.Transaction, extraBytes int, fee *TransactionsWizard
 			serializeLength = uint64(len(tx.SerializeManualToBytes()))
 		}
 
-		feeValue = config_fees.ComputeTxFees(serializeLength+uint64(helpers.BytesLengthSerialized(feeValue)+extraBytes), fee.PerByte, spaceExtra, fee.PerByteExtraSpace)
+		feeValue = config_fees.ComputeTxFee(serializeLength+uint64(helpers.BytesLengthSerialized(feeValue)+extraBytes), fee.PerByte, spaceExtra, fee.PerByteExtraSpace)
 
 		if oldFee == feeValue {
 			break

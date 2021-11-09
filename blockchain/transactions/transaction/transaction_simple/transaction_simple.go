@@ -21,8 +21,8 @@ type TransactionSimple struct {
 	DataVersion transaction_data.TransactionDataVersion
 	Data        []byte
 	Nonce       uint64
-	Fees        uint64
-	FeesVersion bool
+	Fee         uint64
+	FeeVersion  bool
 	Vin         *transaction_simple_parts.TransactionSimpleInput
 	Bloom       *TransactionSimpleBloom
 }
@@ -44,10 +44,10 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 		return
 	}
 
-	if tx.FeesVersion {
-		err = dataStorage.SubtractUnclaimed(plainAcc, tx.Fees, blockHeight)
+	if tx.FeeVersion {
+		err = dataStorage.SubtractUnclaimed(plainAcc, tx.Fee, blockHeight)
 	} else {
-		err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fees)
+		err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fee)
 	}
 
 	if err != nil {
@@ -64,8 +64,8 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 	return dataStorage.PlainAccs.Update(string(tx.Vin.PublicKey), plainAcc)
 }
 
-func (tx *TransactionSimple) ComputeFees() (uint64, error) {
-	return tx.Fees, nil
+func (tx *TransactionSimple) ComputeFee() (uint64, error) {
+	return tx.Fee, nil
 }
 
 func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
@@ -109,8 +109,8 @@ func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 	}
 
 	w.WriteUvarint(tx.Nonce)
-	w.WriteUvarint(tx.Fees)
-	w.WriteBool(tx.FeesVersion)
+	w.WriteUvarint(tx.Fee)
+	w.WriteBool(tx.FeeVersion)
 
 	tx.Vin.Serialize(w, inclSignature)
 
@@ -168,10 +168,10 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 
-	if tx.Fees, err = r.ReadUvarint(); err != nil {
+	if tx.Fee, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if tx.FeesVersion, err = r.ReadBool(); err != nil {
+	if tx.FeeVersion, err = r.ReadBool(); err != nil {
 		return
 	}
 
