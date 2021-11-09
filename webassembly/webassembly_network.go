@@ -184,7 +184,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			result.AccsSerialized = nil
 
 			if result.PlainAccSerialized != nil {
-				result.PlainAcc = &plain_account.PlainAccount{}
+				result.PlainAcc = plain_account.NewPlainAccount(publicKey)
 				if err = result.PlainAcc.Deserialize(helpers.NewBufferReader(result.PlainAccSerialized)); err != nil {
 					return nil, err
 				}
@@ -192,7 +192,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			}
 
 			if result.RegSerialized != nil {
-				result.Reg = &registration.Registration{}
+				result.Reg = registration.NewRegistration(publicKey)
 				if err = result.Reg.Deserialize(helpers.NewBufferReader(result.RegSerialized)); err != nil {
 					return nil, err
 				}

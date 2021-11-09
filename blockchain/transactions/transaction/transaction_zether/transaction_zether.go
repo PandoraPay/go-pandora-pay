@@ -110,12 +110,12 @@ func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 
-	var n byte
-	if n, err = r.ReadByte(); err != nil {
+	if tx.ChainHash, err = r.ReadBytes(cryptography.HashSize); err != nil {
 		return
 	}
 
-	if tx.ChainHash, err = r.ReadBytes(cryptography.HashSize); err != nil {
+	var n byte
+	if n, err = r.ReadByte(); err != nil {
 		return
 	}
 

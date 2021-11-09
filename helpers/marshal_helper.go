@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"pandora-pay/cryptography/bn256"
 )
 
@@ -13,7 +12,7 @@ type HexBytes []byte
 
 // MarshalJSON serializes ByteArray to hex
 func (s HexBytes) MarshalJSON() ([]byte, error) {
-	return json.Marshal(fmt.Sprintf("%x", string(s)))
+	return json.Marshal(hex.EncodeToString(s))
 }
 
 // UnmarshalJSON deserializes ByteArray to hex
