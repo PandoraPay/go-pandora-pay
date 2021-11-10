@@ -329,7 +329,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliExportWalletJSON := func(cmd string, ctx context.Context) (err error) {
 
-		filename := gui.GUI.OutputReadFilename("Path to export", "pandora")
+		filename := gui.GUI.OutputReadFilename("Path to export", "pandorawallet")
 
 		f, err := os.Create(filename)
 		if err != nil {
@@ -356,7 +356,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliImportWalletJSON := func(cmd string, ctx context.Context) (err error) {
 
-		str := gui.GUI.OutputReadFilename("Path to import Wallet", "pandora")
+		str := gui.GUI.OutputReadFilename("Path to import Wallet", "pandorawallet")
 
 		done := gui.GUI.OutputReadBool("Your wallet will be REPLACED with this one! y/n")
 

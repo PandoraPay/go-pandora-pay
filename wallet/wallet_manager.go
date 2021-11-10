@@ -3,6 +3,7 @@ package wallet
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"github.com/tyler-smith/go-bip32"
@@ -91,6 +92,14 @@ func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string) (*
 	}
 
 	return out, nil
+}
+
+func (wallet *Wallet) GetWalletAddressByPublicKeyHex(publicKeyHex string) (*wallet_address.WalletAddress, error) {
+	publicKey, err := hex.DecodeString(publicKeyHex)
+	if err != nil {
+		return nil, err
+	}
+	return wallet.GetWalletAddressByPublicKey(publicKey), nil
 }
 
 func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte) *wallet_address.WalletAddress {
