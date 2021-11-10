@@ -19,6 +19,10 @@ func (g *GUIInteractive) info2Render() {
 }
 
 func (g *GUIInteractive) Info2Update(key string, text string) {
+	if text == "" {
+		g.info2Map.Delete(key)
+		return
+	}
 	g.info2Map.Store(key, text)
 }
 

@@ -54,7 +54,7 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 		if path != "" {
 
 			var f *os.File
-			if f, err = os.Create(path + ".delegatedStake"); err != nil {
+			if f, err = os.Create(path); err != nil {
 				return
 			}
 
@@ -171,8 +171,6 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 					}
 
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "BALANCES DECRYPTING", "PLEASE WAIT..."))
-
 					for _, assetId := range assetsList {
 						if ast, err = asts.GetAsset(assetId); err != nil {
 							return
@@ -186,9 +184,14 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 						}
 
 						var decoded uint64
-						if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, acc.Balance.Amount, assetId, true, false, ctx, func(string) {}); err != nil {
+						if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, acc.Balance.Amount, assetId, true, false, ctx, func(status string) {
+							gui.GUI.Info2Update("Decoding", status)
+						}); err != nil {
 							return
 						}
+
+						gui.GUI.Info2Update("Decoding", "")
+
 						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config_coins.ConvertToBase(decoded), 'f', config_coins.DECIMAL_SEPARATOR, 64), ast.Name))
 
 					}
@@ -309,9 +312,9 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliImportAddressJSON := func(cmd string, ctx context.Context) (err error) {
 
-		str := gui.GUI.OutputReadString("Path to import")
+		str := gui.GUI.OutputReadFilename("Path to import Address", "pandora")
 
-		data, err := os.ReadFile(str + ".pandora")
+		data, err := os.ReadFile(str)
 		if err != nil {
 			return
 		}
@@ -353,7 +356,8 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliImportWalletJSON := func(cmd string, ctx context.Context) (err error) {
 
-		str := gui.GUI.OutputReadString("Path to import Wallet")
+		str := gui.GUI.OutputReadFilename("Path to import Wallet", "pandora")
+
 		done := gui.GUI.OutputReadBool("Your wallet will be REPLACED with this one! y/n")
 
 		if !done {
@@ -411,7 +415,7 @@ func (wallet *Wallet) initWalletCLI() {
 		}
 
 		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
-		path := gui.GUI.OutputReadString("Path to export to a file")
+		path := gui.GUI.OutputReadFilename("Path to export to a file", "delegatedStake")
 
 		return wallet.deriveDelegatedStake(addr, nonce, path, true)
 

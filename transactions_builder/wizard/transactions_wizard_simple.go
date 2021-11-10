@@ -64,6 +64,20 @@ func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTx
 		txScript = transaction_simple.SCRIPT_UNSTAKE
 
 		spaceExtra += len(helpers.SerializeToBytes(&dpos.DelegatedStakePending{nil, txExtra.Amount, chainHeight + 100, dpos.DelegatedStakePendingUnstake}))
+	case *WizardTxSimpleExtraUpdateAssetFeeLiquidity:
+		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{
+			Liquidities:     txExtra.Liquidities,
+			CollectorHasNew: txExtra.CollectorHasNew,
+			Collector:       txExtra.Collector,
+		}
+		txScript = transaction_simple.SCRIPT_UNSTAKE
+
+		spaceExtra += len(txExtra.Collector)
+		for _, liquidity := range txExtra.Liquidities {
+			if liquidity.ConversionRate > 0 {
+				spaceExtra += len(helpers.SerializeToBytes(liquidity))
+			}
+		}
 	}
 
 	txBase := &transaction_simple.TransactionSimple{

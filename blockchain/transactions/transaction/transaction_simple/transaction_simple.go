@@ -84,7 +84,7 @@ func (tx *TransactionSimple) Validate() (err error) {
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE:
+	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
 		if tx.Extra == nil {
 			return errors.New("extra is not assigned")
 		}

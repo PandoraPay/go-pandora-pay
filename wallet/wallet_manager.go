@@ -522,9 +522,13 @@ func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAcc
 
 func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.WalletAddress, error) {
 
-	adr := &wallet_address.WalletAddress{}
-	if err := json.Unmarshal(data, adr); err != nil {
+	addr := &wallet_address.WalletAddress{}
+	if err := json.Unmarshal(data, addr); err != nil {
 		return nil, errors.New("Error unmarshaling wallet")
+	}
+
+	if addr.PrivateKey == nil {
+		return nil, errors.New("Private Key is missing")
 	}
 
 	wallet.RLock()
@@ -532,22 +536,22 @@ func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.Wall
 
 	isMine := false
 	if wallet.SeedIndex != 0 {
-		key, err := wallet.GeneratePrivateKey(adr.SeedIndex, false)
-		if err == nil && key != nil {
+		key, err := wallet.GeneratePrivateKey(addr.SeedIndex, false)
+		if err == nil && key != nil && bytes.Equal(key, addr.PrivateKey.Key) {
 			isMine = true
 		}
 	}
 
 	if !isMine {
-		adr.IsMine = false
-		adr.SeedIndex = 0
+		addr.IsMine = false
+		addr.SeedIndex = 0
 	}
 
-	if err := wallet.AddAddress(adr, false, false, isMine); err != nil {
+	if err := wallet.AddAddress(addr, false, false, isMine); err != nil {
 		return nil, err
 	}
 
-	return adr, nil
+	return addr, nil
 }
 
 func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {

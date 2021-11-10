@@ -22,6 +22,10 @@ func (g *GUIInteractive) infoRender() {
 }
 
 func (g *GUIInteractive) InfoUpdate(key string, text string) {
+	if text == "" {
+		g.infoMap.Delete(key)
+		return
+	}
 	g.infoMap.Store(key, text)
 }
 

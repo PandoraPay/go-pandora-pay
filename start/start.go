@@ -1,12 +1,14 @@
 package start
 
 import (
+	"context"
 	"os"
 	"pandora-pay/app"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config/globals"
+	balance_decoder "pandora-pay/cryptography/crypto/balance-decoder"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/debugging"
 	"pandora-pay/mempool"
@@ -16,6 +18,7 @@ import (
 	"pandora-pay/testnet"
 	"pandora-pay/transactions_builder"
 	"pandora-pay/wallet"
+	"runtime"
 )
 
 func _startMain() (err error) {
@@ -86,6 +89,12 @@ func _startMain() (err error) {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "settings initialized")
+
+	if runtime.GOARCH != "wasm" {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		balance_decoder.BalanceDecoder.SetTableSize(0, ctx, func(string) {})
+	}
 
 	app.TransactionsBuilder = transactions_builder.TransactionsBuilderInit(app.Wallet, app.Mempool, app.Chain)
 	globals.MainEvents.BroadcastEvent("main", "transactions builder initialized")
