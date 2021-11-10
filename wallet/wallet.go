@@ -48,7 +48,6 @@ func (wallet *Wallet) clearWallet() {
 	wallet.SeedIndex = 0
 	wallet.Count = 0
 	wallet.CountImportedIndex = 0
-	wallet.SeedIndex = 1
 	wallet.Addresses = make([]*wallet_address.WalletAddress, 0)
 	wallet.addressesMap = make(map[string]*wallet_address.WalletAddress)
 	wallet.Encryption = createEncryption(wallet)

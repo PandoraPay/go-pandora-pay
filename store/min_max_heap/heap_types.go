@@ -16,6 +16,10 @@ type HeapDictElement struct {
 	Index uint64
 }
 
+func (self *HeapElement) Validation() error {
+	return nil
+}
+
 func (self *HeapElement) Serialize(w *helpers.BufferWriter) {
 	w.Write(self.Key)
 	w.WriteUvarint(self.Score)
@@ -27,6 +31,10 @@ func (self *HeapElement) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 	self.Score, err = r.ReadUvarint()
 	return
+}
+
+func (self *HeapDictElement) Validation() error {
+	return nil
 }
 
 func (self *HeapDictElement) Serialize(w *helpers.BufferWriter) {

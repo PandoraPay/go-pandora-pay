@@ -509,7 +509,7 @@ func (builder *TransactionsBuilder) initCLI() {
 				break
 			}
 			liquidity := &asset_fee_liquidity.AssetFeeLiquidity{}
-			liquidity.AssetId = builder.readAsset("AssetId. Leave empty for Native Asset", true)
+			liquidity.AssetId = builder.readAsset("AssetId", false)
 			liquidity.ConversionRate = gui.GUI.OutputReadUint64("Conversion Rate", false, nil)
 			txExtra.Liquidities = append(txExtra.Liquidities, liquidity)
 		}

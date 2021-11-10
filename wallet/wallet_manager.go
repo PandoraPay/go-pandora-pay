@@ -296,7 +296,7 @@ func (wallet *Wallet) AddNewAddress(lock bool) (*wallet_address.WalletAddress, e
 	}
 
 	adr := &wallet_address.WalletAddress{
-		Name:           "Addr " + strconv.FormatUint(uint64(wallet.SeedIndex), 10),
+		Name:           "Addr_" + strconv.FormatUint(uint64(wallet.SeedIndex), 10),
 		PrivateKey:     key,
 		Registration:   reg,
 		SeedIndex:      wallet.SeedIndex,
