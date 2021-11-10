@@ -266,7 +266,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		return
 	}
 
-	cliPrivateClaimStake := func(cmd string, ctx context.Context) (err error) {
+	cliPrivateClaim := func(cmd string, ctx context.Context) (err error) {
 		builder.showWarningIfNotSyncCLI()
 
 		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address from which Claim", ctx)
@@ -284,7 +284,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		fee := builder.readFee(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
-		tx, err := builder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{&wizard.WizardZetherPayloadExtraClaimStake{DelegatePrivateKey: delegateWalletAddress.PrivateKey.Key}}, []string{""}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{&wizard.WizardZetherPayloadExtraClaim{DelegatePrivateKey: delegateWalletAddress.PrivateKey.Key}}, []string{""}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{destinationAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -488,7 +488,7 @@ func (builder *TransactionsBuilder) initCLI() {
 
 		builder.showWarningIfNotSyncCLI()
 
-		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Unstake", ctx)
+		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Update Asset Fee Liquidity", ctx)
 		if err != nil {
 			return
 		}
@@ -533,7 +533,7 @@ func (builder *TransactionsBuilder) initCLI() {
 
 	gui.GUI.CommandDefineCallback("Private Transfer", cliPrivateTransfer, true)
 	gui.GUI.CommandDefineCallback("Private Delegate Stake", cliPrivateDelegateStake, true)
-	gui.GUI.CommandDefineCallback("Private Claim Stake", cliPrivateClaimStake, true)
+	gui.GUI.CommandDefineCallback("Private Claim", cliPrivateClaim, true)
 	gui.GUI.CommandDefineCallback("Private Asset Create", cliPrivateAssetCreate, true)
 	gui.GUI.CommandDefineCallback("Private Asset Supply Increase", cliPrivateAssetSupplyIncrease, true)
 	gui.GUI.CommandDefineCallback("Update Delegate", cliUpdateDelegate, true)

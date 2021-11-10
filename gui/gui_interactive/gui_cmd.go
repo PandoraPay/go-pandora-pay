@@ -45,7 +45,7 @@ var commands = []Command{
 	{Name: "Wallet", Text: "Derive Delegated Stake"},
 	{Name: "Wallet:TX", Text: "Private Transfer"},
 	{Name: "Wallet:TX", Text: "Private Delegate Stake"},
-	{Name: "Wallet:TX", Text: "Private Claim Stake"},
+	{Name: "Wallet:TX", Text: "Private Claim"},
 	{Name: "Wallet:TX", Text: "Private Asset Create"},
 	{Name: "Wallet:TX", Text: "Private Asset Supply Increase"},
 	{Name: "Wallet:TX", Text: "Update Delegate"},

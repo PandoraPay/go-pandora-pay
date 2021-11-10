@@ -151,7 +151,10 @@ Using profiling to debug memory leaks/CPU
 
 ### DOCS
 [WebAssembly DOCS](/docs/webassembly.md)
+
 [Assets DOCS](/docs/assets.md)
+
+[Transactions DOCS](/docs/transactions.md)
 
 ### Scripts
 `scripts/compile-wasm.sh` compiles to WASM

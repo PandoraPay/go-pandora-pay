@@ -14,7 +14,7 @@ type WizardZetherPayloadExtraDelegateStake struct {
 	DelegatePrivateKey       helpers.HexBytes                                        `json:"delegatePrivateKey,omitempty"`
 }
 
-type WizardZetherPayloadExtraClaimStake struct {
+type WizardZetherPayloadExtraClaim struct {
 	WizardZetherPayloadExtra `json:"-"`
 	DelegatePrivateKey       helpers.HexBytes `json:"delegatePrivateKey"`
 }

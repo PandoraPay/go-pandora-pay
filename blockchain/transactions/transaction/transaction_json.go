@@ -77,7 +77,7 @@ type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
 	DelegateSignature      helpers.HexBytes                            `json:"delegateSignature"`
 }
 
-type json_Only_TransactionZetherPayloadExtraClaimStake struct {
+type json_Only_TransactionZetherPayloadExtraClaim struct {
 	DelegatePublicKey           helpers.HexBytes `json:"delegatePublicKey"`
 	DelegatedStakingClaimAmount uint64           `json:"delegatedStakingClaimAmount"`
 	RegistrationIndex           byte             `json:"registrationIndex"`
@@ -220,9 +220,9 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 					},
 					payloadExtra.DelegateSignature,
 				}
-			case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
-				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake)
-				extra = &json_Only_TransactionZetherPayloadExtraClaimStake{
+			case transaction_zether_payload.SCRIPT_CLAIM:
+				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraClaim)
+				extra = &json_Only_TransactionZetherPayloadExtraClaim{
 					payloadExtra.DelegatePublicKey,
 					payloadExtra.DelegatedStakingClaimAmount,
 					payloadExtra.RegistrationIndex,
@@ -448,13 +448,13 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 					extraJSON.DelegateSignature,
 				}
 
-			case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
-				extraJSON := &json_Only_TransactionZetherPayloadExtraClaimStake{}
+			case transaction_zether_payload.SCRIPT_CLAIM:
+				extraJSON := &json_Only_TransactionZetherPayloadExtraClaim{}
 				if err := json.Unmarshal(data, extraJSON); err != nil {
 					return err
 				}
 
-				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake{
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaim{
 					nil,
 					extraJSON.DelegatePublicKey,
 					extraJSON.DelegatedStakingClaimAmount,

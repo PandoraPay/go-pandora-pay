@@ -63,7 +63,7 @@ func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, na
 
 	heap.getElement = func(index uint64) (*HeapElement, error) {
 		el, err := hashMap.Get(strconv.FormatUint(index, 10))
-		if err != nil {
+		if err != nil || el == nil {
 			return nil, err
 		}
 		return el.(*HeapElement), nil

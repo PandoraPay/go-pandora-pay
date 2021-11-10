@@ -72,8 +72,8 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 		switch txData.PayloadScriptType[t] {
 		case transaction_zether_payload.SCRIPT_TRANSFER:
 			payloadExtra = nil
-		case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
-			payloadExtra = &wizard.WizardZetherPayloadExtraClaimStake{}
+		case transaction_zether_payload.SCRIPT_CLAIM:
+			payloadExtra = &wizard.WizardZetherPayloadExtraClaim{}
 		case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
 			payloadExtra = &wizard.WizardZetherPayloadExtraDelegateStake{}
 		case transaction_zether_payload.SCRIPT_ASSET_CREATE:

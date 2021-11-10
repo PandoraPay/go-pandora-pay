@@ -59,7 +59,7 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 	data := []*wizard.TransactionsWizardData{{[]byte{}, false}}
 	fees := []*wizard.TransactionsWizardFee{{0, 0, 0, true}}
 
-	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{&wizard.WizardZetherPayloadExtraClaimStake{DelegatePrivateKey: addr.PrivateKey.Key}}, from, dstsAssets, dstsAmounts, dsts, burn, []*transactions_builder.ZetherRingConfiguration{{-1, -1}}, data, fees, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{&wizard.WizardZetherPayloadExtraClaim{DelegatePrivateKey: addr.PrivateKey.Key}}, from, dstsAssets, dstsAmounts, dsts, burn, []*transactions_builder.ZetherRingConfiguration{{-1, -1}}, data, fees, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -271,7 +271,7 @@ func (testnet *Testnet) run() {
 
 								unclaimed -= config_coins.ConvertToUnitsUint64Forced(20)
 
-								if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload.SCRIPT_CLAIM_STAKE) {
+								if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload.SCRIPT_CLAIM) {
 									testnet.testnetCreateClaimTx(0, unclaimed/5, ctx2)
 									testnet.testnetCreateClaimTx(1, unclaimed/5, ctx2)
 									testnet.testnetCreateClaimTx(2, unclaimed/5, ctx2)

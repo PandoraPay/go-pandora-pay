@@ -160,8 +160,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		} else {
 
 			switch payloadExtra := transfers[t].PayloadExtra.(type) {
-			case *WizardZetherPayloadExtraClaimStake:
-				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_CLAIM_STAKE
+			case *WizardZetherPayloadExtraClaim:
+				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_CLAIM
 
 				var registrationIndex byte
 
@@ -175,7 +175,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 				key := &addresses.PrivateKey{Key: payloadExtra.DelegatePrivateKey}
 				delegatePublicKey := key.GeneratePublicKey()
-				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake{
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaim{
 					DelegatePublicKey:           delegatePublicKey,
 					DelegatedStakingClaimAmount: transfers[t].Amount,
 					RegistrationIndex:           registrationIndex,
@@ -317,7 +317,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		statusCallback("Transaction Set fee")
 
 		//fake balance
-		if payload.PayloadScript == transaction_zether_payload.SCRIPT_CLAIM_STAKE {
+		if payload.PayloadScript == transaction_zether_payload.SCRIPT_CLAIM {
 
 			transfer.FromBalanceDecoded = value + fee + burn_value
 
@@ -492,8 +492,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			switch txBase.Payloads[t].PayloadScript {
 			case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
 				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake).DelegateSignature = signature
-			case transaction_zether_payload.SCRIPT_CLAIM_STAKE:
-				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraClaimStake).DelegateSignature = signature
+			case transaction_zether_payload.SCRIPT_CLAIM:
+				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraClaim).DelegateSignature = signature
 			case transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE:
 				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease).AssetSignature = signature
 			}
