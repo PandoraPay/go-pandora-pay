@@ -26,7 +26,7 @@ func (assets *Assets) GetAsset(key []byte) (*asset.Asset, error) {
 func (assets *Assets) CreateAsset(key []byte, ast *asset.Asset) (err error) {
 
 	var exists bool
-	if exists, err = assets.ExistsAsset(key); err != nil {
+	if exists, err = assets.Exists(string(key)); err != nil {
 		return
 	}
 	if exists {
@@ -34,14 +34,6 @@ func (assets *Assets) CreateAsset(key []byte, ast *asset.Asset) (err error) {
 	}
 
 	return assets.Update(string(key), ast)
-}
-
-func (assets *Assets) ExistsAsset(key []byte) (bool, error) {
-	return assets.Exists(string(key))
-}
-
-func (assets *Assets) DeleteAsset(key []byte) {
-	assets.Delete(string(key))
 }
 
 func NewAssets(tx store_db_interface.StoreDBTransactionInterface) (assets *Assets) {
@@ -52,12 +44,8 @@ func NewAssets(tx store_db_interface.StoreDBTransactionInterface) (assets *Asset
 		hashMap,
 	}
 
-	assets.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {
-		var ast = asset.NewAsset(key)
-		if err := ast.Deserialize(helpers.NewBufferReader(data)); err != nil {
-			return nil, err
-		}
-		return ast, nil
+	assets.HashMap.CreateObject = func(key []byte) (helpers.SerializableInterface, error) {
+		return asset.NewAsset(key), nil
 	}
 
 	return

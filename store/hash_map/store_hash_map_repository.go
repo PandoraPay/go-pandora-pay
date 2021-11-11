@@ -3,18 +3,18 @@ package hash_map
 import "pandora-pay/store/store_db/store_db_interface"
 
 type StoreHashMapRepository struct {
-	GetList func() []*HashMap
+	GetList func(computeChangesSize bool) []*HashMap
 }
 
 func (repository *StoreHashMapRepository) SetTx(tx store_db_interface.StoreDBTransactionInterface) {
-	list := repository.GetList()
+	list := repository.GetList(false)
 	for _, it := range list {
 		it.SetTx(tx)
 	}
 }
 
 func (repository *StoreHashMapRepository) ComputeChangesSize() (out uint64) {
-	list := repository.GetList()
+	list := repository.GetList(true)
 	for _, it := range list {
 		out += it.ComputeChangesSize()
 	}
@@ -22,21 +22,21 @@ func (repository *StoreHashMapRepository) ComputeChangesSize() (out uint64) {
 }
 
 func (repository *StoreHashMapRepository) ResetChangesSize() {
-	list := repository.GetList()
+	list := repository.GetList(false)
 	for _, it := range list {
 		it.ResetChangesSize()
 	}
 }
 
 func (repository *StoreHashMapRepository) Rollback() {
-	list := repository.GetList()
+	list := repository.GetList(false)
 	for _, it := range list {
 		it.Rollback()
 	}
 }
 
 func (repository *StoreHashMapRepository) CloneCommitted() (err error) {
-	list := repository.GetList()
+	list := repository.GetList(false)
 	for _, it := range list {
 		if err = it.CloneCommitted(); err != nil {
 			return
@@ -46,7 +46,7 @@ func (repository *StoreHashMapRepository) CloneCommitted() (err error) {
 }
 
 func (repository *StoreHashMapRepository) CommitChanges() (err error) {
-	list := repository.GetList()
+	list := repository.GetList(false)
 	for _, it := range list {
 		if err = it.CommitChanges(); err != nil {
 			return
@@ -56,7 +56,7 @@ func (repository *StoreHashMapRepository) CommitChanges() (err error) {
 }
 
 func (repository *StoreHashMapRepository) WriteTransitionalChangesToStore(prefix string) (err error) {
-	list := repository.GetList()
+	list := repository.GetList(false)
 	for _, it := range list {
 		if err = it.WriteTransitionalChangesToStore(prefix); err != nil {
 			return
@@ -66,7 +66,7 @@ func (repository *StoreHashMapRepository) WriteTransitionalChangesToStore(prefix
 }
 
 func (repository *StoreHashMapRepository) ReadTransitionalChangesFromStore(prefix string) (err error) {
-	list := repository.GetList()
+	list := repository.GetList(false)
 	for _, it := range list {
 		if err = it.ReadTransitionalChangesFromStore(prefix); err != nil {
 			return
@@ -75,7 +75,7 @@ func (repository *StoreHashMapRepository) ReadTransitionalChangesFromStore(prefi
 	return
 }
 func (repository *StoreHashMapRepository) DeleteTransitionalChangesFromStore(prefix string) {
-	list := repository.GetList()
+	list := repository.GetList(false)
 	for _, it := range list {
 		it.DeleteTransitionalChangesFromStore(prefix)
 	}

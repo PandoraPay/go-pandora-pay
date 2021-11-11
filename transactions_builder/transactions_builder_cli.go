@@ -510,7 +510,7 @@ func (builder *TransactionsBuilder) initCLI() {
 			}
 			liquidity := &asset_fee_liquidity.AssetFeeLiquidity{}
 			liquidity.AssetId = builder.readAsset("AssetId", false)
-			liquidity.ConversionRate = gui.GUI.OutputReadUint64("Conversion Rate", false, nil)
+			liquidity.Rate = gui.GUI.OutputReadUint64("Conversion Rate", false, nil)
 			txExtra.Liquidities = append(txExtra.Liquidities, liquidity)
 		}
 
@@ -520,7 +520,7 @@ func (builder *TransactionsBuilder) initCLI() {
 		fee := builder.readFee(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
 
-		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, propagate, true, true, false, false, func(status string) {
+		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, true, propagate, true, true, false, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

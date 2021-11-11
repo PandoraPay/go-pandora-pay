@@ -3,7 +3,8 @@ package asset_fee_liquidity
 type AssetFeeLiquiditiesVersion uint64
 
 const (
-	SIMPLE AssetFeeLiquiditiesVersion = iota
+	NONE AssetFeeLiquiditiesVersion = iota
+	SIMPLE
 )
 
 func (t AssetFeeLiquiditiesVersion) String() string {

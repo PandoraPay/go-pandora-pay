@@ -63,10 +63,8 @@ func NewRegistrations(tx store_db_interface.StoreDBTransactionInterface) (regist
 		HashMap: hashmap,
 	}
 
-	registrations.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {
-		var reg = registration.NewRegistration(key)
-		err := reg.Deserialize(helpers.NewBufferReader(data))
-		return reg, err
+	registrations.HashMap.CreateObject = func(key []byte) (helpers.SerializableInterface, error) {
+		return registration.NewRegistration(key), nil
 	}
 
 	registrations.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) error {

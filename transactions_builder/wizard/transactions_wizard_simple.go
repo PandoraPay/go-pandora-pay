@@ -70,11 +70,11 @@ func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTx
 			CollectorHasNew: txExtra.CollectorHasNew,
 			Collector:       txExtra.Collector,
 		}
-		txScript = transaction_simple.SCRIPT_UNSTAKE
+		txScript = transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY
 
-		spaceExtra += len(txExtra.Collector)
+		spaceExtra += 1 + len(txExtra.Collector) + 1
 		for _, liquidity := range txExtra.Liquidities {
-			if liquidity.ConversionRate > 0 {
+			if liquidity.Rate > 0 {
 				spaceExtra += len(helpers.SerializeToBytes(liquidity))
 			}
 		}

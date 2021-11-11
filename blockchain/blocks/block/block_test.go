@@ -75,5 +75,5 @@ func TestBlock_SerializeForSigning(t *testing.T) {
 	assert.NotEqual(t, signature, helpers.EmptyBytes(cryptography.SignatureSize), "Invalid signature")
 	blk.Signature = signature
 
-	assert.Equal(t, true, blk.VerifySignatureManually(), "Signature Validation failed")
+	assert.Equal(t, true, blk.VerifySignatureManually(), "Signature Validate failed")
 }

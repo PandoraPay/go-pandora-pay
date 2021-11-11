@@ -49,12 +49,8 @@ func NewPlainAccounts(tx store_db_interface.StoreDBTransactionInterface) (plainA
 		HashMap: hashmap,
 	}
 
-	plainAccs.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {
-		var plainAcc = plain_account.NewPlainAccount(key)
-		if err := plainAcc.Deserialize(helpers.NewBufferReader(data)); err != nil {
-			return nil, err
-		}
-		return plainAcc, nil
+	plainAccs.HashMap.CreateObject = func(key []byte) (helpers.SerializableInterface, error) {
+		return plain_account.NewPlainAccount(key), nil
 	}
 
 	return

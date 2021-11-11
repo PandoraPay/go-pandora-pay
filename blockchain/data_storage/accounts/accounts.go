@@ -93,15 +93,8 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 		Asset:   AssetId,
 	}
 
-	accounts.HashMap.Deserialize = func(key, data []byte) (helpers.SerializableInterface, error) {
-		acc, err := account.NewAccount(key, accounts.Asset)
-		if err != nil {
-			return nil, err
-		}
-		if err = acc.Deserialize(helpers.NewBufferReader(data)); err != nil {
-			return nil, err
-		}
-		return acc, nil
+	accounts.HashMap.CreateObject = func(key []byte) (helpers.SerializableInterface, error) {
+		return account.NewAccount(key, accounts.Asset)
 	}
 
 	accounts.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) (err error) {

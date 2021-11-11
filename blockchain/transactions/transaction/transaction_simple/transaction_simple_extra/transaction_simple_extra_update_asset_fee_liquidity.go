@@ -23,6 +23,10 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransaction
 		return fmt.Errorf("Unclaimed must be greater than %d", config_asset_fee.GetRequiredAssetFee(blockHeight))
 	}
 
+	if txExtra.CollectorHasNew {
+		plainAcc.AssetFeeLiquidities.Collector = txExtra.Collector
+	}
+
 	for _, liquidity := range txExtra.Liquidities {
 
 		var status asset_fee_liquidity.UpdateLiquidityStatus
@@ -30,15 +34,13 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransaction
 			return
 		}
 
-		if err = dataStorage.AstsFeeLiquidityCollection.UpdateLiquidity(plainAcc.PublicKey, liquidity.ConversionRate, liquidity.AssetId, status); err != nil {
+		if err = dataStorage.AstsFeeLiquidityCollection.UpdateLiquidity(plainAcc.PublicKey, liquidity.Rate, liquidity.AssetId, status); err != nil {
 			return
 		}
 
 	}
 
-	if txExtra.CollectorHasNew {
-		plainAcc.AssetFeeLiquidities.Collector = txExtra.Collector
-	}
+	plainAcc.AssetFeeLiquidities.Version = asset_fee_liquidity.SIMPLE
 
 	return
 }

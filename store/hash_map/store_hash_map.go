@@ -19,10 +19,21 @@ type HashMap struct {
 	changesSize    map[string]*ChangesMapElement //used for computing the
 	Committed      map[string]*CommittedMapElement
 	keyLength      int
-	Deserialize    func([]byte, []byte) (helpers.SerializableInterface, error)
+	CreateObject   func(key []byte) (helpers.SerializableInterface, error)
 	DeletedEvent   func([]byte) error
 	StoredEvent    func([]byte, *CommittedMapElement) error
 	Indexable      bool
+}
+
+func (hashMap *HashMap) deserialize(key, data []byte) (helpers.SerializableInterface, error) {
+	obj, err := hashMap.CreateObject(key)
+	if err != nil {
+		return nil, err
+	}
+	if err := obj.Deserialize(helpers.NewBufferReader(data)); err != nil {
+		return nil, err
+	}
+	return obj, nil
 }
 
 //support only for commited data
@@ -92,7 +103,7 @@ func (hashMap *HashMap) CloneCommitted() (err error) {
 
 	for key, v := range hashMap.Committed {
 		if v.Element != nil {
-			if v.Element, err = hashMap.Deserialize([]byte(key), helpers.CloneBytes(helpers.SerializeToBytes(v.Element))); err != nil {
+			if v.Element, err = hashMap.deserialize([]byte(key), helpers.CloneBytes(helpers.SerializeToBytes(v.Element))); err != nil {
 				return
 			}
 		}
@@ -122,7 +133,7 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 	}
 
 	if outData != nil {
-		if out, err = hashMap.Deserialize([]byte(key), outData); err != nil {
+		if out, err = hashMap.deserialize([]byte(key), outData); err != nil {
 			return nil, err
 		}
 	}

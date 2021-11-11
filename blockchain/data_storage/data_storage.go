@@ -70,7 +70,7 @@ func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *D
 		assets.NewAssetsFeeLiquidityCollection(dbTx),
 	}
 
-	out.GetList = func() (list []*hash_map.HashMap) {
+	out.GetList = func(computeChangesSize bool) (list []*hash_map.HashMap) {
 
 		list = []*hash_map.HashMap{
 			out.Regs.HashMap,
@@ -78,7 +78,10 @@ func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *D
 			out.Asts.HashMap,
 		}
 		list = append(list, out.AccsCollection.GetAllHashmaps()...)
-		list = append(list, out.AstsFeeLiquidityCollection.GetAllHashmaps()...)
+
+		if !computeChangesSize {
+			list = append(list, out.AstsFeeLiquidityCollection.GetAllHashmaps()...)
+		}
 
 		return
 	}

@@ -16,7 +16,7 @@ type HeapDictElement struct {
 	Index uint64
 }
 
-func (self *HeapElement) Validation() error {
+func (self *HeapElement) Validate() error {
 	return nil
 }
 
@@ -33,7 +33,7 @@ func (self *HeapElement) Deserialize(r *helpers.BufferReader) (err error) {
 	return
 }
 
-func (self *HeapDictElement) Validation() error {
+func (self *HeapDictElement) Validate() error {
 	return nil
 }
 

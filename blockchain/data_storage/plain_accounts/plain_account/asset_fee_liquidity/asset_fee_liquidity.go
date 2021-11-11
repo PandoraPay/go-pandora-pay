@@ -10,7 +10,7 @@ import (
 type AssetFeeLiquidity struct {
 	helpers.SerializableInterface `json:"-"`
 	AssetId                       helpers.HexBytes `json:"assetId"`
-	ConversionRate                uint64           `json:"conversionRate"`
+	Rate                          uint64           `json:"rate"`
 }
 
 func (self *AssetFeeLiquidity) Validate() error {
@@ -27,14 +27,14 @@ func (self *AssetFeeLiquidity) Validate() error {
 
 func (self *AssetFeeLiquidity) Serialize(w *helpers.BufferWriter) {
 	w.Write(self.AssetId)
-	w.WriteUvarint(self.ConversionRate)
+	w.WriteUvarint(self.Rate)
 }
 
 func (self *AssetFeeLiquidity) Deserialize(r *helpers.BufferReader) (err error) {
 	if self.AssetId, err = r.ReadBytes(config_coins.ASSET_LENGTH); err != nil {
 		return
 	}
-	if self.ConversionRate, err = r.ReadUvarint(); err != nil {
+	if self.Rate, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	return
