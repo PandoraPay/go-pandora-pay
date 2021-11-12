@@ -22,7 +22,6 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"strconv"
 )
@@ -37,7 +36,7 @@ func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
 	return emap
 }
 
-func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*TransactionsWizardFee, chainHeight uint64, chainHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
+func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, myFees []*WizardTransactionFee, chainHeight uint64, chainHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
 
 	statusCallback("Transaction Signing...")
 
@@ -505,7 +504,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	return
 }
 
-func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, chainHeight uint64, chainHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, fees []*TransactionsWizardFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, chainHeight uint64, chainHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, fees []*WizardTransactionFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	txBase := &transaction_zether.TransactionZether{
 		ChainHeight: chainHeight,
@@ -520,13 +519,7 @@ func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[strin
 	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, chainHeight, chainHash, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return
 	}
-	if err = bloomAllTx(tx, true, statusCallback); err != nil {
-		gui.GUI.Error("ERROR TX VERIFY FAILED!!!!")
-		tx.Bloom = nil
-		tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).Bloom = nil
-		if err = bloomAllTx(tx, true, statusCallback); err != nil {
-			return
-		}
+	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
 		return
 	}
 
