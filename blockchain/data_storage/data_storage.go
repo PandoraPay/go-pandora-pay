@@ -26,7 +26,7 @@ func (dataStorage *DataStorage) SubtractUnclaimed(plainAcc *plain_account.PlainA
 	if err = plainAcc.AddUnclaimed(false, amount); err != nil {
 		return
 	}
-	if plainAcc.Unclaimed < config_asset_fee.GetRequiredAssetFee(blockHeight) {
+	if plainAcc.AssetFeeLiquidities.HasAssetFeeLiquidities() && plainAcc.Unclaimed < config_asset_fee.GetRequiredAssetFee(blockHeight) {
 
 		for _, assetFeeLiquidity := range plainAcc.AssetFeeLiquidities.List {
 			if err = dataStorage.AstsFeeLiquidityCollection.UpdateLiquidity(plainAcc.PublicKey, 0, assetFeeLiquidity.AssetId, asset_fee_liquidity.UPDATE_LIQUIDITY_DELETED); err != nil {
@@ -39,13 +39,19 @@ func (dataStorage *DataStorage) SubtractUnclaimed(plainAcc *plain_account.PlainA
 	return nil
 }
 
-func (dataStorage *DataStorage) GetAssetTopLiquidity(assetId []byte, blockHeight uint64) (*asset_fee_liquidity.AssetFeeLiquidity, error) {
+func (dataStorage *DataStorage) GetWhoHasAssetTopLiquidity(assetId []byte, blockHeight uint64) (*plain_account.PlainAccount, error) {
 	key, err := dataStorage.AstsFeeLiquidityCollection.GetTopLiquidity(assetId)
-	if key == nil || err != nil {
+	if err != nil || key == nil {
 		return nil, err
 	}
-	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(key, blockHeight)
-	if plainAcc == nil || err != nil {
+
+	return dataStorage.PlainAccs.GetPlainAccount(key, blockHeight)
+}
+
+func (dataStorage *DataStorage) GetAssetFeeLiquidityTop(assetId []byte, blockHeight uint64) (*asset_fee_liquidity.AssetFeeLiquidity, error) {
+
+	plainAcc, err := dataStorage.GetWhoHasAssetTopLiquidity(assetId, blockHeight)
+	if err != nil || plainAcc == nil {
 		return nil, err
 	}
 

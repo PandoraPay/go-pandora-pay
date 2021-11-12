@@ -37,9 +37,8 @@ func (s *BalanceHomomorphic) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
-func (balance *BalanceHomomorphic) AddBalanceUint(amount uint64) (err error) {
+func (balance *BalanceHomomorphic) AddBalanceUint(amount uint64) {
 	balance.Amount = balance.Amount.Plus(new(big.Int).SetUint64(amount))
-	return
 }
 
 func (balance *BalanceHomomorphic) AddBalance(encryptedAmount []byte) (err error) {

@@ -12,7 +12,7 @@ import (
 	"pandora-pay/helpers"
 )
 
-func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.PrivateKey, fee *TransactionsWizardFee, statusCallback func(string)) (err error) {
+func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.PrivateKey, fee *WizardTransactionFee, statusCallback func(string)) (err error) {
 
 	txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
@@ -29,7 +29,7 @@ func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.Pr
 	return
 }
 
-func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTxSimpleExtra, data *TransactionsWizardData, fee *TransactionsWizardFee, feeVersion bool, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTxSimpleExtra, data *WizardTransactionData, fee *WizardTransactionFee, feeVersion bool, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	privateKey := &addresses.PrivateKey{Key: key}
 

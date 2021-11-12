@@ -104,7 +104,7 @@ func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet
 	return fromWalletAddress, nil
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizard.WizardTxSimpleExtra, data *wizard.TransactionsWizardData, fee *wizard.TransactionsWizardFee, feeVersion bool, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(status string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizard.WizardTxSimpleExtra, data *wizard.WizardTransactionData, fee *wizard.WizardTransactionFee, feeVersion bool, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(status string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {

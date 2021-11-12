@@ -1,6 +1,7 @@
 package transactions_builder
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"errors"
@@ -10,8 +11,10 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -117,7 +120,7 @@ func (builder *TransactionsBuilder) createZetherRing(from string, dst *string, a
 	return rings, nil
 }
 
-func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadExtra, from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringsConfiguration []*ZetherRingConfiguration, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
+func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadExtra, from []string, dstsAsts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringsConfiguration []*ZetherRingConfiguration, data []*wizard.WizardTransactionData, fees []*wizard.WizardZetherTransactionFee, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
 
 	if len(from) != len(dstsAsts) || len(dstsAsts) != len(amounts) || len(amounts) != len(dsts) || len(dsts) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
 		return nil, nil, nil, nil, 0, nil, errors.New("Length of from and transfers are not matching")
@@ -184,6 +187,17 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 				return
 			}
 
+			if !bytes.Equal(ast, config_coins.NATIVE_ASSET_FULL) && fees[t].RateMaxAuto {
+				var assetFeeLiquidity *asset_fee_liquidity.AssetFeeLiquidity
+				if assetFeeLiquidity, err = dataStorage.GetAssetFeeLiquidityTop(ast, chainHeight); err != nil {
+					return
+				}
+				if assetFeeLiquidity == nil {
+					return errors.New("There is no Asset Fee Liquidity for this asset")
+				}
+				fees[t].RateMax = assetFeeLiquidity.Rate
+			}
+
 			transfers[t] = &wizard.WizardZetherTransfer{
 				Asset:        ast,
 				From:         fromPrivateKeys[t].Key[:],
@@ -191,6 +205,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 				Amount:       amounts[t],
 				Burn:         burns[t],
 				Data:         data[t],
+				FeeRateMax:   fees[t].RateMax,
 				PayloadExtra: extraPayloads[t],
 			}
 
@@ -309,7 +324,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 	return transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, nil
 }
 
-func (builder *TransactionsBuilder) CreateZetherTx(extraPayloads []wizard.WizardZetherPayloadExtra, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringsConfiguration []*ZetherRingConfiguration, data []*wizard.TransactionsWizardData, fees []*wizard.TransactionsWizardFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TransactionsBuilder) CreateZetherTx(extraPayloads []wizard.WizardZetherPayloadExtra, from []string, asts [][]byte, amounts []uint64, dsts []string, burns []uint64, ringsConfiguration []*ZetherRingConfiguration, data []*wizard.WizardTransactionData, fees []*wizard.WizardZetherTransactionFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
@@ -319,8 +334,13 @@ func (builder *TransactionsBuilder) CreateZetherTx(extraPayloads []wizard.Wizard
 		return nil, err
 	}
 
+	feesFinal := make([]*wizard.WizardTransactionFee, len(fees))
+	for t, fee := range fees {
+		feesFinal[t] = fee.WizardTransactionFee
+	}
+
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, chainHeight, chainHash, publicKeyIndexes, fees, validateTx, ctx, statusCallback); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, chainHeight, chainHash, publicKeyIndexes, feesFinal, validateTx, ctx, statusCallback); err != nil {
 		return nil, err
 	}
 

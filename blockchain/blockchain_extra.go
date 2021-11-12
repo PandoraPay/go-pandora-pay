@@ -103,9 +103,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 			if acc, err = accs.CreateAccount(addr.PublicKey); err != nil {
 				return
 			}
-			if err = acc.Balance.AddBalanceUint(airdrop.Amount); err != nil {
-				return
-			}
+			acc.Balance.AddBalanceUint(airdrop.Amount)
 			if err = accs.Update(string(addr.PublicKey), acc); err != nil {
 				return
 			}

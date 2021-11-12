@@ -279,7 +279,7 @@ func (apiStore *APIStore) openLoadAssetFeeLiquidity(hash []byte, height uint64) 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 		dataStorage := data_storage.NewDataStorage(reader)
 
-		astFeeLiquidity, err = dataStorage.GetAssetTopLiquidity(hash, chainHeight)
+		astFeeLiquidity, err = dataStorage.GetAssetFeeLiquidityTop(hash, chainHeight)
 		return
 	})
 	return

@@ -72,7 +72,7 @@ func (collection *AssetsFeeLiquidityCollection) GetTopLiquidity(assetId []byte) 
 	}
 
 	top, err := maxheap.GetTop()
-	if top == nil || err != nil {
+	if err != nil || top == nil {
 		return nil, err
 	}
 

@@ -29,8 +29,8 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			DelegatedStakingClaimAmount uint64                                                  `json:"delegatedStakingClaimAmount"`
 			DelegatedStakingUpdate      *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
 			Extra                       wizard.WizardTxSimpleExtra                              `json:"extra"`
-			Data                        *wizard.TransactionsWizardData                          `json:"data"`
-			Fee                         *wizard.TransactionsWizardFee                           `json:"fee"`
+			Data                        *wizard.WizardTransactionData                           `json:"data"`
+			Fee                         *wizard.WizardTransactionFee                            `json:"fee"`
 			FeeVersion                  bool                                                    `json:"feeVersion"`
 			PropagateTx                 bool                                                    `json:"propagateTx"`
 			AwaitAnswer                 bool                                                    `json:"awaitAnswer"`

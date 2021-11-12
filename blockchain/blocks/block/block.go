@@ -51,7 +51,8 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 		return errors.New("Account not found")
 	}
 
-	if err = plainAcc.DelegatedStake.AddStakePendingStake(reward, blk.Height); err != nil {
+	final := reward
+	if err = helpers.SafeUint64Add(&final, allFees); err != nil {
 		return
 	}
 	if err = plainAcc.DelegatedStake.AddStakePendingStake(allFees, blk.Height); err != nil {

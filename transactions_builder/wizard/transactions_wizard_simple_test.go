@@ -22,7 +22,7 @@ func TestCreateUpdateDelegateTx(t *testing.T) {
 	delegatedStakingClaimAmount := uint64(0)
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateSimpleTx(0, privateKey.Key, 0, &WizardTxSimpleExtraUpdateDelegate{nil, delegatedStakingClaimAmount, delegatedStakingUpdate}, &TransactionsWizardData{[]byte{}, false}, &TransactionsWizardFee{PerByteAuto: true}, false, true, func(status string) {})
+	tx, err := CreateSimpleTx(0, privateKey.Key, 0, &WizardTxSimpleExtraUpdateDelegate{nil, delegatedStakingClaimAmount, delegatedStakingUpdate}, &WizardTransactionData{[]byte{}, false}, &WizardTransactionFee{PerByteAuto: true}, false, true, func(status string) {})
 	assert.NoError(t, err)
 	assert.NotNil(t, tx, "creating update delegate tx is nil")
 
@@ -53,7 +53,7 @@ func TestCreateUpdateDelegateTx(t *testing.T) {
 func TestCreateUnstakeTx(t *testing.T) {
 
 	privateKey := addresses.GenerateNewPrivateKey()
-	tx, err := CreateSimpleTx(0, privateKey.Key, 0, &WizardTxSimpleExtraUnstake{nil, 534}, &TransactionsWizardData{[]byte{}, false}, &TransactionsWizardFee{PerByteAuto: true}, false, true, func(status string) {})
+	tx, err := CreateSimpleTx(0, privateKey.Key, 0, &WizardTxSimpleExtraUnstake{nil, 534}, &WizardTransactionData{[]byte{}, false}, &WizardTransactionFee{PerByteAuto: true}, false, true, func(status string) {})
 	assert.NoError(t, err)
 	assert.NotNil(t, tx, "creating unstake tx is nil")
 

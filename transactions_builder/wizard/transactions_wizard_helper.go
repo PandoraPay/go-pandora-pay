@@ -6,7 +6,7 @@ import (
 	"pandora-pay/helpers"
 )
 
-func setFee(tx *transaction.Transaction, extraBytes int, fee *TransactionsWizardFee, includeSerialize bool) uint64 {
+func setFee(tx *transaction.Transaction, extraBytes int, fee *WizardTransactionFee, includeSerialize bool) uint64 {
 
 	if fee.Fixed > 0 {
 		return fee.Fixed

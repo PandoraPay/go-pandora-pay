@@ -30,8 +30,8 @@ type zetherTxDataBase struct {
 	Dsts              []string                                       `json:"dsts"`
 	Burns             []uint64                                       `json:"burns"`
 	RingMembers       [][]string                                     `json:"ringMembers"`
-	Data              []*wizard.TransactionsWizardData               `json:"data"`
-	Fees              []*wizard.TransactionsWizardFee                `json:"fees"`
+	Data              []*wizard.WizardTransactionData                `json:"data"`
+	Fees              []*wizard.WizardTransactionFee                 `json:"fees"`
 	PayloadScriptType []transaction_zether_payload.PayloadScriptType `json:"payloadScriptType"`
 	PayloadExtra      []wizard.WizardZetherPayloadExtra              `json:"payloadExtra"`
 	Accs              map[string]map[string]helpers.HexBytes         `json:"accs"`

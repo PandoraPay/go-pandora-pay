@@ -1,6 +1,7 @@
 package transaction_zether_payload
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math"
@@ -11,6 +12,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
@@ -27,10 +29,61 @@ type TransactionZetherPayload struct {
 
 	Registrations *transaction_zether_registrations.TransactionZetherDataRegistrations
 
-	Statement *crypto.Statement // note statement containts fee
-	Proof     *crypto.Proof
+	Statement  *crypto.Statement // note statement containts fee
+	FeeRateMax uint64            //serialized only if asset is not native
 
+	Proof *crypto.Proof
 	Extra transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface
+}
+
+func (payload *TransactionZetherPayload) processAssetFee(assetId []byte, txFee, txFeeRateMax, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+
+	key, err := dataStorage.AstsFeeLiquidityCollection.GetTopLiquidity(assetId)
+	if err != nil {
+		return err
+	}
+
+	if key == nil {
+		return errors.New("There is no Asset Fee Liquidity Available")
+	}
+
+	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(key, blockHeight)
+	if err != nil {
+		return
+	}
+
+	assetFeeLiquidity := plainAcc.AssetFeeLiquidities.GetLiquidity(assetId)
+
+	if assetFeeLiquidity.Rate < txFeeRateMax {
+		return errors.New("assetFeeLiquidity.Rate < txFeeRateMax")
+	}
+
+	final := txFee //it will copy
+	if err = helpers.SafeUint64Mul(&final, txFeeRateMax); err != nil {
+		return
+	}
+	if err = dataStorage.SubtractUnclaimed(plainAcc, final, blockHeight); err != nil {
+		return
+	}
+
+	accs, err := dataStorage.AccsCollection.GetMap(assetId)
+	if err != nil {
+		return
+	}
+
+	acc, err := accs.GetAccount(plainAcc.AssetFeeLiquidities.Collector)
+	if err != nil {
+		return
+	}
+
+	if acc == nil {
+		if acc, err = accs.CreateAccount(plainAcc.AssetFeeLiquidities.Collector); err != nil {
+			return
+		}
+	}
+
+	acc.Balance.AddBalanceUint(txFee)
+	return accs.Update(string(plainAcc.AssetFeeLiquidities.Collector), acc)
 }
 
 func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIndex byte, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
@@ -38,6 +91,12 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 	var accs *accounts.Accounts
 	var acc *account.Account
 	var balance *crypto.ElGamal
+
+	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
+		if err = payload.processAssetFee(payload.Asset, payload.Statement.Fee, payload.FeeRateMax, blockHeight, dataStorage); err != nil {
+			return
+		}
+	}
 
 	if err = payload.Registrations.RegisterNow(dataStorage, publicKeyList); err != nil {
 		return
@@ -162,6 +221,10 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 
 	payload.Statement.Serialize(w)
 
+	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
+		w.WriteUvarint(payload.FeeRateMax)
+	}
+
 	if inclSignature {
 		payload.Proof.Serialize(w)
 	}
@@ -236,6 +299,12 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 	payload.Statement = &crypto.Statement{}
 	if err = payload.Statement.Deserialize(r); err != nil {
 		return
+	}
+
+	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
+		if payload.FeeRateMax, err = r.ReadUvarint(); err != nil {
+			return
+		}
 	}
 
 	m := int(math.Log2(float64(payload.Statement.RingSize)))

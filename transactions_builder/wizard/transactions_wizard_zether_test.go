@@ -52,7 +52,7 @@ func TestCreateZetherTx(t *testing.T) {
 	publicKeyIndexes := make(map[string]*WizardZetherPublicKeyIndex)
 	publicKeyIndexes[string(senderAdress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, senderAdress.Registration}
 
-	fees := make([]*TransactionsWizardFee, count)
+	fees := make([]*WizardTransactionFee, count)
 
 	transfers := make([]*WizardZetherTransfer, count)
 	for i := range transfers {
@@ -69,7 +69,7 @@ func TestCreateZetherTx(t *testing.T) {
 			Destination:        dstAddress.EncodeAddr(),
 			Amount:             diff,
 			Burn:               0,
-			Data:               &TransactionsWizardData{[]byte{}, false},
+			Data:               &WizardTransactionData{[]byte{}, false},
 		}
 		amount -= diff
 
@@ -96,7 +96,7 @@ func TestCreateZetherTx(t *testing.T) {
 			emap[config_coins.NATIVE_ASSET_FULL_STRING][ringMemberPoint.G1().String()] = getNewBalance(ringMemberAddress, 0).Serialize()
 		}
 
-		fees[i] = &TransactionsWizardFee{0, 0, 0, false}
+		fees[i] = &WizardTransactionFee{0, 0, 0, false}
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

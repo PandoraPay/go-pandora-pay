@@ -114,6 +114,7 @@ type json_Only_TransactionPayload struct {
 	Data          helpers.HexBytes                             `json:"data"`
 	Registrations []*json_TransactionDataRegistration          `json:"registrations"`
 	Statement     *json_Only_TransactionZetherStatement        `json:"statement"`
+	FeeRateMax    uint64                                       `json:"feeRateMax"`
 	Proof         helpers.HexBytes                             `json:"proof"`
 	Extra         interface{}                                  `json:"extra"`
 }
@@ -254,6 +255,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				payload.Data,
 				registrations,
 				statementJson,
+				payload.FeeRateMax,
 				proofJson,
 				extra,
 			}
@@ -417,6 +419,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 					Registrations: make([]*transaction_zether_registrations.TransactionZetherDataRegistration, len(payload.Registrations)),
 				},
 				statement,
+				payload.FeeRateMax,
 				proof,
 				nil,
 			}

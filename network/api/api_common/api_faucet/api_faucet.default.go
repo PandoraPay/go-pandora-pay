@@ -54,13 +54,13 @@ func (api *APICommonFaucet) GetFaucetCoins(request *APIFaucetCoinsRequest) ([]by
 		return nil, err
 	}
 
-	data := &wizard.TransactionsWizardData{[]byte("Testnet Faucet Tx"), false}
-	fee := &wizard.TransactionsWizardFee{0, 0, 0, true}
+	data := &wizard.WizardTransactionData{[]byte("Testnet Faucet Tx"), false}
+	fees := []*wizard.WizardZetherTransactionFee{{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0}}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tx, err := api.transactionsBuilder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{nil}, []string{addr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, []string{request.Address}, []uint64{0}, []*transactions_builder.ZetherRingConfiguration{{-1, -1}}, []*wizard.TransactionsWizardData{data}, []*wizard.TransactionsWizardFee{fee}, true, false, false, false, ctx, func(status string) {})
+	tx, err := api.transactionsBuilder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{nil}, []string{addr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, []string{request.Address}, []uint64{0}, []*transactions_builder.ZetherRingConfiguration{{-1, -1}}, []*wizard.WizardTransactionData{data}, fees, true, false, false, false, ctx, func(status string) {})
 	if err != nil {
 		return nil, err
 	}

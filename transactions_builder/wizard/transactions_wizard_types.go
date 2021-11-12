@@ -5,15 +5,15 @@ import (
 	"pandora-pay/helpers"
 )
 
-type TransactionsWizardFee struct {
+type WizardTransactionFee struct {
 	Fixed             uint64 `json:"fixed,omitempty"`
 	PerByte           uint64 `json:"perByte,omitempty"`
 	PerByteExtraSpace uint64 `json:"perByteExtraSpace,omitempty"`
 	PerByteAuto       bool   `json:"perByteAuto,omitempty"`
 }
 
-func (fee *TransactionsWizardFee) Clone() *TransactionsWizardFee {
-	return &TransactionsWizardFee{
+func (fee *WizardTransactionFee) Clone() *WizardTransactionFee {
+	return &WizardTransactionFee{
 		Fixed:             fee.Fixed,
 		PerByte:           fee.PerByte,
 		PerByteExtraSpace: fee.PerByteExtraSpace,
@@ -21,12 +21,12 @@ func (fee *TransactionsWizardFee) Clone() *TransactionsWizardFee {
 	}
 }
 
-type TransactionsWizardData struct {
+type WizardTransactionData struct {
 	Data    helpers.HexBytes `json:"data,omitempty"`
 	Encrypt bool             `json:"encrypt,omitempty"`
 }
 
-func (data *TransactionsWizardData) getDataVersion() transaction_data.TransactionDataVersion {
+func (data *WizardTransactionData) getDataVersion() transaction_data.TransactionDataVersion {
 	if data.Data == nil || len(data.Data) == 0 {
 		return transaction_data.TX_DATA_NONE
 	}
@@ -36,7 +36,7 @@ func (data *TransactionsWizardData) getDataVersion() transaction_data.Transactio
 	return transaction_data.TX_DATA_PLAIN_TEXT
 }
 
-func (data *TransactionsWizardData) getData() ([]byte, error) {
+func (data *WizardTransactionData) getData() ([]byte, error) {
 	if len(data.Data) == 0 {
 		return nil, nil
 	}

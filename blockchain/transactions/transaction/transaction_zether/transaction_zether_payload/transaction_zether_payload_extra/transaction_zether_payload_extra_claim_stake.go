@@ -66,9 +66,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) BeforeIncludeTxPayload(t
 		return
 	}
 
-	if err = acc.Balance.AddBalanceUint(amount); err != nil {
-		return
-	}
+	acc.Balance.AddBalanceUint(amount)
 
 	return accs.Update(string(publicKey), acc)
 }
