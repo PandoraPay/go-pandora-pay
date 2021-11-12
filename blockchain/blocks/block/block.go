@@ -67,7 +67,7 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 		return
 	}
 
-	if err = ast.AddSupply(true, reward, true); err != nil {
+	if err = ast.AddNativeSupply(true, reward); err != nil {
 		return
 	}
 	if err = dataStorage.Asts.Update(string(config_coins.NATIVE_ASSET_FULL), ast); err != nil {

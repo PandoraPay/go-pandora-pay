@@ -77,14 +77,28 @@ func (asset *Asset) ConvertToBase(amount uint64) float64 {
 	return float64(amount) / COIN_DENOMINATION
 }
 
-func (asset *Asset) AddSupply(sign bool, amount uint64, blockRewards bool) error {
+func (asset *Asset) AddNativeSupply(sign bool, amount uint64) error {
+	if sign {
+		if asset.MaxSupply-asset.Supply < amount {
+			return errors.New("Supply exceeded max supply")
+		}
+		return helpers.SafeUint64Add(&asset.Supply, amount)
+	}
 
-	if !blockRewards && bytes.Equal(asset.SupplyPublicKey, config_coins.BURN_PUBLIC_KEY) {
+	if asset.Supply < amount {
+		return errors.New("Supply would become negative")
+	}
+	return helpers.SafeUint64Sub(&asset.Supply, amount)
+}
+
+func (asset *Asset) AddSupply(sign bool, amount uint64) error {
+
+	if bytes.Equal(asset.SupplyPublicKey, config_coins.BURN_PUBLIC_KEY) {
 		return errors.New("BURN PUBLIC KEY")
 	}
 
 	if sign {
-		if !asset.CanMint && !blockRewards {
+		if !asset.CanMint {
 			return errors.New("Can't mint")
 		}
 		if asset.MaxSupply-asset.Supply < amount {
@@ -93,7 +107,7 @@ func (asset *Asset) AddSupply(sign bool, amount uint64, blockRewards bool) error
 		return helpers.SafeUint64Add(&asset.Supply, amount)
 	}
 
-	if !asset.CanBurn && !blockRewards {
+	if !asset.CanBurn {
 		return errors.New("Can't burn")
 	}
 	if asset.Supply < amount {

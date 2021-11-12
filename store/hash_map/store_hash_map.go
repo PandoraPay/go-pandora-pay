@@ -171,7 +171,11 @@ func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) e
 
 	exists := hashMap.Changes[key]
 
-	bEmpty := exists == nil || exists.Element == nil
+	increase := false
+	if (exists != nil && exists.Element == nil) ||
+		(exists == nil && !hashMap.Tx.Exists(hashMap.name+":exists:"+key)) {
+		increase = true
+	}
 
 	if exists == nil {
 		exists = new(ChangesMapElement)
@@ -181,21 +185,26 @@ func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) e
 	exists.Status = "update"
 	exists.Element = data
 
-	if bEmpty && hashMap.Committed[key] == nil && !hashMap.Tx.Exists(hashMap.name+":exists:"+key) {
+	hashMap.changed = true
+
+	if increase {
 		exists.index = hashMap.Count
 		hashMap.Count += 1
 		exists.indexProcess = true
 	}
 
-	hashMap.changed = true
-
 	return nil
 }
 
 func (hashMap *HashMap) Delete(key string) {
+
 	exists := hashMap.Changes[key]
 
-	bNotEmpty := exists != nil && exists.Element != nil
+	decrease := false
+	if (exists != nil && exists.Element != nil) ||
+		(exists == nil && hashMap.Tx.Exists(hashMap.name+":exists:"+key)) {
+		decrease = true
+	}
 
 	if exists == nil {
 		exists = new(ChangesMapElement)
@@ -205,7 +214,9 @@ func (hashMap *HashMap) Delete(key string) {
 	exists.Status = "del"
 	exists.Element = nil
 
-	if bNotEmpty || hashMap.Committed[key] != nil || hashMap.Tx.Exists(hashMap.name+":exists:"+key) {
+	hashMap.changed = true
+
+	if decrease {
 		hashMap.Count -= 1
 		if exists.indexProcess {
 			for _, v := range hashMap.Changes {
@@ -219,8 +230,6 @@ func (hashMap *HashMap) Delete(key string) {
 			exists.indexProcess = true
 		}
 	}
-
-	hashMap.changed = true
 
 	return
 }

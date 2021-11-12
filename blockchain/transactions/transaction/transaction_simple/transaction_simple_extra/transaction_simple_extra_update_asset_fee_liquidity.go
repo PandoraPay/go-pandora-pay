@@ -1,6 +1,7 @@
 package transaction_simple_extra
 
 import (
+	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
@@ -24,6 +25,13 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransaction
 	}
 
 	if txExtra.CollectorHasNew {
+		var isReg bool
+		if isReg, err = dataStorage.Regs.Exists(string(txExtra.Collector)); err != nil {
+			return
+		}
+		if !isReg {
+			return errors.New("Collector must be registered before!")
+		}
 		plainAcc.AssetFeeLiquidities.Collector = txExtra.Collector
 	}
 

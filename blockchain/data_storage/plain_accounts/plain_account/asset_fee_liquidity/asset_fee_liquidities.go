@@ -14,6 +14,10 @@ type AssetFeeLiquidities struct {
 	Collector                     []byte                     `json:"collector"`
 }
 
+func (self *AssetFeeLiquidities) HasAssetFeeLiquidities() bool {
+	return self.Version == SIMPLE
+}
+
 func (self *AssetFeeLiquidities) Clear() {
 	self.List = make([]*AssetFeeLiquidity, 0)
 	self.Collector = nil

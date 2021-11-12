@@ -131,7 +131,7 @@ func storeAsset(this js.Value, args []js.Value) interface{} {
 
 			asts := assets.NewAssets(writer)
 			if ast == nil {
-				asts.DeleteAsset(hash)
+				asts.Delete(string(hash))
 			} else {
 				if err = asts.Update(string(hash), ast); err != nil {
 					return

@@ -136,7 +136,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 				if plainAcc != nil {
 
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Nonce", strconv.FormatUint(plainAcc.Nonce, 10)))
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %d", "Nonce", plainAcc.Nonce))
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Unclaimed", strconv.FormatFloat(config_coins.ConvertToBase(plainAcc.Unclaimed), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
 					if plainAcc.DelegatedStake.HasDelegatedStake() {
 						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config_coins.ConvertToBase(plainAcc.DelegatedStake.StakeAvailable), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
@@ -150,6 +150,16 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES:", "EMPTY"))
 						}
 					}
+
+					if plainAcc.AssetFeeLiquidities.HasAssetFeeLiquidities() {
+
+						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %d", "Liquidities", len(plainAcc.AssetFeeLiquidities.List)))
+						for i, assetFeeLiquidity := range plainAcc.AssetFeeLiquidities.List {
+							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %20s %d", strconv.Itoa(i), hex.EncodeToString(assetFeeLiquidity.AssetId), assetFeeLiquidity.Rate))
+						}
+
+					}
+
 				}
 
 				if len(assetsList) > 0 {
