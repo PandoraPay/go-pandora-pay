@@ -86,7 +86,7 @@ var CURVE_B = new(big.Int).SetUint64(3)
 // a = (p+1) / 4
 var CURVE_A = new(big.Int).Div(new(big.Int).Add(FIELD_ORDER, new(big.Int).SetUint64(1)), new(big.Int).SetUint64(4))
 
-func HashToPointNew(seed *big.Int) *bn256.G1 {
+func HashToPoint(seed *big.Int) *bn256.G1 {
 	y_squared := new(big.Int)
 	one := new(big.Int).SetUint64(1)
 
@@ -162,70 +162,4 @@ func isOnCurve(x, y *big.Int) bool {
 
 	// return addmod(p_cubed, CURVE_B, FIELD_ORDER) == mulmod(p.Y, p.Y, FIELD_ORDER);
 	return p_cubed.Cmp(new(big.Int).Exp(y, new(big.Int).SetUint64(2), FIELD_ORDER)) == 0
-}
-
-// this should be merged , simplified  just as simple as 25519
-func HashToPoint(seed *big.Int) *bn256.G1 {
-	/*
-	    var x, _ = new(big.Int).SetString("0d36fdf1852f1563df9c904374055bb2a4d351571b853971764b9561ae203a9e",16)
-	    var y, _ = new(big.Int).SetString("06efda2e606d7bafec34b82914953fa253d21ca3ced18db99c410e9057dccd50",16)
-
-
-
-	   fmt.Printf("hardcode point on curve %+v\n", isOnCurve(x,y))
-	   panic("done")
-	*/
-	return HashToPointNew(seed)
-
-	seed_reduced := new(big.Int)
-	seed_reduced.Mod(seed, FIELD_MODULUS)
-
-	counter := 0
-
-	p_1_4 := new(big.Int).Add(FIELD_MODULUS, new(big.Int).SetInt64(1))
-	p_1_4 = p_1_4.Div(p_1_4, new(big.Int).SetInt64(4))
-
-	for {
-		tmp := new(big.Int)
-		y, y_squared, y_resquare := new(big.Int), new(big.Int), new(big.Int) // basically y_sqaured = seed ^3 + 3 mod group order
-		tmp.Exp(seed_reduced, new(big.Int).SetInt64(3), FIELD_MODULUS)
-		y_squared.Add(tmp, new(big.Int).SetInt64(3))
-		y_squared.Mod(y_squared, FIELD_MODULUS)
-
-		y = y.Exp(y_squared, p_1_4, FIELD_MODULUS)
-
-		y_resquare = y_resquare.Exp(y, new(big.Int).SetInt64(2), FIELD_MODULUS)
-
-		if y_resquare.Cmp(y_squared) == 0 { // seed becomes x and y iis usy
-			xstring := seed_reduced.Text(16)
-			ystring := y.Text(16)
-
-			var point bn256.G1
-			xbytes, err := hex.DecodeString(makestring64(xstring))
-			if err != nil {
-				panic(err)
-			}
-			ybytes, err := hex.DecodeString(makestring64(ystring))
-			if err != nil {
-				panic(err)
-			}
-
-			if _, err = point.Unmarshal(append(xbytes, ybytes...)); err == nil {
-				return &point
-			} else {
-				// continue finding
-				counter++
-
-				if counter%10000 == 0 {
-					fmt.Printf("tried %d times\n", counter)
-				}
-
-			}
-
-		}
-		seed_reduced.Add(seed_reduced, new(big.Int).SetInt64(1))
-		seed_reduced.Mod(seed_reduced, FIELD_MODULUS)
-	}
-
-	return nil
 }

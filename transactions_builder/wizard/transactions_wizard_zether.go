@@ -357,8 +357,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				}
 
 				// we must obfuscate it for non-client call
-				if len(publickeylist) >= config.TRANSACTIONS_ZETHER_RING_MAX {
-					return errors.New("currently we do not support ring size >= 512")
+				if len(publickeylist) > config.TRANSACTIONS_ZETHER_RING_MAX {
+					return errors.New("currently we do not support ring size > 256")
 				}
 
 				if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {

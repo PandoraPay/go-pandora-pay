@@ -29,8 +29,9 @@ type TransactionZetherPayload struct {
 
 	Registrations *transaction_zether_registrations.TransactionZetherDataRegistrations
 
-	Statement  *crypto.Statement // note statement containts fee
-	FeeRateMax uint64            //serialized only if asset is not native
+	Statement *crypto.Statement // note statement containts fee
+
+	FeeRate uint64 //serialized only if asset is not native
 
 	Proof *crypto.Proof
 	Extra transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface
@@ -93,7 +94,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 	var balance *crypto.ElGamal
 
 	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
-		if err = payload.processAssetFee(payload.Asset, payload.Statement.Fee, payload.FeeRateMax, blockHeight, dataStorage); err != nil {
+		if err = payload.processAssetFee(payload.Asset, payload.Statement.Fee, payload.FeeRate, blockHeight, dataStorage); err != nil {
 			return
 		}
 	}
@@ -169,7 +170,7 @@ func (payload *TransactionZetherPayload) Validate(payloadIndex byte) (err error)
 		return fmt.Errorf("RingSize cannot be less than 2")
 	}
 
-	if payload.Statement.RingSize >= config.TRANSACTIONS_ZETHER_RING_MAX { // ring size current limited to 256
+	if payload.Statement.RingSize > config.TRANSACTIONS_ZETHER_RING_MAX { // ring size current limited to 256
 		return fmt.Errorf("RingSize cannot be that big")
 	}
 
@@ -222,7 +223,7 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 	payload.Statement.Serialize(w)
 
 	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
-		w.WriteUvarint(payload.FeeRateMax)
+		w.WriteUvarint(payload.FeeRate)
 	}
 
 	if inclSignature {
@@ -302,7 +303,7 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 	}
 
 	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
-		if payload.FeeRateMax, err = r.ReadUvarint(); err != nil {
+		if payload.FeeRate, err = r.ReadUvarint(); err != nil {
 			return
 		}
 	}

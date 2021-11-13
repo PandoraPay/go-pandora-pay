@@ -48,7 +48,7 @@ func (tx *TransactionZether) ComputeFee() (uint64, error) {
 			}
 		} else {
 			value := payload.Statement.Fee
-			if err := helpers.SafeUint64Mul(&value, payload.FeeRateMax); err != nil {
+			if err := helpers.SafeUint64Mul(&value, payload.FeeRate); err != nil {
 				return 0, err
 			}
 			if err := helpers.SafeUint64Add(&sum, value); err != nil {

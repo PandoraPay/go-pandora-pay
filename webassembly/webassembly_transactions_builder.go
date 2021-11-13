@@ -69,7 +69,15 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return webassembly_utils.ConvertJSONBytes(tx)
+		txJson, err := json.Marshal(tx)
+		if err != nil {
+			return nil, err
+		}
+
+		return []interface{}{
+			webassembly_utils.ConvertBytes(txJson),
+			webassembly_utils.ConvertBytes(tx.Bloom.Serialized),
+		}, nil
 
 	})
 }

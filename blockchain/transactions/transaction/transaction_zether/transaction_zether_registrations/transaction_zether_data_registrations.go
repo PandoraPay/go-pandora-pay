@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -15,9 +16,13 @@ type TransactionZetherDataRegistrations struct {
 
 func (self *TransactionZetherDataRegistrations) ValidateRegistrations(publickeylist []*bn256.G1) (err error) {
 
+	if len(publickeylist) == 0 || len(publickeylist) > config.TRANSACTIONS_ZETHER_RING_MAX {
+		return errors.New("Invalid PublicKeys length")
+	}
+
 	for _, reg := range self.Registrations {
 
-		if reg.PublicKeyIndex >= byte(len(publickeylist)) {
+		if reg.PublicKeyIndex > byte(len(publickeylist)-1) {
 			return fmt.Errorf("reg.PublicKeyIndex %d exceeds %d ", reg.PublicKeyIndex, len(publickeylist))
 		}
 

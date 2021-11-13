@@ -91,9 +91,11 @@ func _startMain() (err error) {
 	globals.MainEvents.BroadcastEvent("main", "settings initialized")
 
 	if runtime.GOARCH != "wasm" {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		balance_decoder.BalanceDecoder.SetTableSize(0, ctx, func(string) {})
+		go func() {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			balance_decoder.BalanceDecoder.SetTableSize(0, ctx, func(string) {})
+		}()
 	}
 
 	app.TransactionsBuilder = transactions_builder.TransactionsBuilderInit(app.Wallet, app.Mempool, app.Chain)

@@ -49,7 +49,7 @@ func (builder *TransactionsBuilder) createZetherRing(from string, dst *string, a
 	var err error
 
 	if ringConfiguration.RingSize == -1 {
-		pow := rand.Intn(4) + 4
+		pow := rand.Intn(5) + 4
 		ringConfiguration.RingSize = int(math.Pow(2, float64(pow)))
 	}
 	if ringConfiguration.NewAccounts == -1 {
@@ -167,6 +167,8 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 	rings := make([][]*bn256.G1, len(from))
 	publicKeyIndexes := make(map[string]*wizard.WizardZetherPublicKeyIndex)
 
+	balancesFromSender := make([][]byte, len(from))
+
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		dataStorage := data_storage.NewDataStorage(reader)
@@ -253,26 +255,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 					}
 
 					if from[t] == address { //sender
-
-						if fromWalletAddresses[t] == nil {
-							transfers[t].FromBalanceDecoded = transfers[t].Amount
-						} else {
-							var balancePoint *crypto.ElGamal
-							if balancePoint, err = new(crypto.ElGamal).Deserialize(balance); err != nil {
-								return
-							}
-
-							if transfers[t].FromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, ast, true, true, ctx, statusCallback); err != nil {
-								return
-							}
-
-						}
-						if transfers[t].FromBalanceDecoded == 0 {
-							return errors.New("You have no funds")
-						}
-						if transfers[t].FromBalanceDecoded < amounts[t] {
-							return errors.New("Not enough funds")
-						}
+						balancesFromSender[t] = balance
 					}
 
 					emap[string(ast)][p.G1().String()] = balance
@@ -320,6 +303,31 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 		return nil, nil, nil, nil, 0, nil, err
 	}
 	statusCallback("Balances checked")
+
+	for t := range transfers {
+		if fromWalletAddresses[t] == nil {
+			transfers[t].FromBalanceDecoded = transfers[t].Amount
+		} else {
+
+			balancePoint, err := new(crypto.ElGamal).Deserialize(balancesFromSender[t])
+			if err != nil {
+				return nil, nil, nil, nil, 0, nil, err
+			}
+
+			if transfers[t].FromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, transfers[t].Asset, true, true, ctx, statusCallback); err != nil {
+				return nil, nil, nil, nil, 0, nil, err
+			}
+
+		}
+		if transfers[t].FromBalanceDecoded == 0 {
+			return nil, nil, nil, nil, 0, nil, errors.New("You have no funds")
+		}
+		if transfers[t].FromBalanceDecoded < amounts[t] {
+			return nil, nil, nil, nil, 0, nil, errors.New("Not enough funds")
+		}
+	}
+
+	statusCallback("Balances decoded")
 
 	return transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, nil
 }
