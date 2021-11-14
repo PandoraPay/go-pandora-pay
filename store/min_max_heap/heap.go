@@ -8,7 +8,7 @@ type Heap struct {
 	addElement    func(x *HeapElement) error
 	removeElement func() (*HeapElement, error)
 	getSize       func() uint64
-	compare       func(a, b uint64) bool
+	compare       func(a, b float64) bool
 }
 
 func (m *Heap) leaf(index uint64) bool {
@@ -30,7 +30,7 @@ func (m *Heap) rightchild(index uint64) uint64 {
 	return 2*index + 2
 }
 
-func (m *Heap) Insert(score uint64, key []byte) error {
+func (m *Heap) Insert(score float64, key []byte) error {
 	if err := m.addElement(&HeapElement{nil, key, score}); err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (a,b uint64) bool{
 	return b < a
 }
 */
-func NewHeap(compare func(a, b uint64) bool) *Heap {
+func NewHeap(compare func(a, b float64) bool) *Heap {
 	return &Heap{
 		compare: compare,
 	}

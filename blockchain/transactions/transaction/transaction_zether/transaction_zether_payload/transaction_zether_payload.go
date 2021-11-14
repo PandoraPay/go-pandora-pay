@@ -12,6 +12,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/config"
+	"pandora-pay/config/config_assets"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -31,13 +32,14 @@ type TransactionZetherPayload struct {
 
 	Statement *crypto.Statement // note statement containts fee
 
-	FeeRate uint64 //serialized only if asset is not native
+	FeeRate        uint64 //serialized only if asset is not native
+	FeeLeadingZero byte
 
 	Proof *crypto.Proof
 	Extra transaction_zether_payload_extra.TransactionZetherPayloadExtraInterface
 }
 
-func (payload *TransactionZetherPayload) processAssetFee(assetId []byte, txFee, txFeeRateMax, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payload *TransactionZetherPayload) processAssetFee(assetId []byte, txFee, txFeeRate uint64, txFeeLeadingZeros byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	key, err := dataStorage.AstsFeeLiquidityCollection.GetTopLiquidity(assetId)
 	if err != nil {
@@ -55,14 +57,16 @@ func (payload *TransactionZetherPayload) processAssetFee(assetId []byte, txFee, 
 
 	assetFeeLiquidity := plainAcc.AssetFeeLiquidities.GetLiquidity(assetId)
 
-	if assetFeeLiquidity.Rate < txFeeRateMax {
+	if assetFeeLiquidity.Rate < txFeeRate {
 		return errors.New("assetFeeLiquidity.Rate < txFeeRateMax")
 	}
 
 	final := txFee //it will copy
-	if err = helpers.SafeUint64Mul(&final, txFeeRateMax); err != nil {
+	if err = helpers.SafeUint64Mul(&final, txFeeRate); err != nil {
 		return
 	}
+	final = final / helpers.Pow10(txFeeLeadingZeros)
+
 	if err = dataStorage.SubtractUnclaimed(plainAcc, final, blockHeight); err != nil {
 		return
 	}
@@ -94,7 +98,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 	var balance *crypto.ElGamal
 
 	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
-		if err = payload.processAssetFee(payload.Asset, payload.Statement.Fee, payload.FeeRate, blockHeight, dataStorage); err != nil {
+		if err = payload.processAssetFee(payload.Asset, payload.Statement.Fee, payload.FeeRate, payload.FeeLeadingZero, blockHeight, dataStorage); err != nil {
 			return
 		}
 	}
@@ -165,6 +169,17 @@ func (payload *TransactionZetherPayload) ComputeAllKeys(out map[string]bool) {
 }
 
 func (payload *TransactionZetherPayload) Validate(payloadIndex byte) (err error) {
+
+	if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
+		if payload.FeeLeadingZero != 0 || payload.FeeRate != 0 {
+			return errors.New(" Leading Zeros must be zero")
+		}
+	} else {
+		if payload.FeeLeadingZero > config_assets.ASSETS_DECIMAL_SEPARATOR_MAX_BYTE {
+			return errors.New("Invalid Leading Zeros")
+		}
+	}
+
 	// check sanity
 	if payload.Statement.RingSize < 2 { // ring size minimum 4
 		return fmt.Errorf("RingSize cannot be less than 2")
@@ -224,6 +239,7 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 
 	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
 		w.WriteUvarint(payload.FeeRate)
+		w.WriteByte(payload.FeeLeadingZero)
 	}
 
 	if inclSignature {
@@ -304,6 +320,9 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 
 	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
 		if payload.FeeRate, err = r.ReadUvarint(); err != nil {
+			return
+		}
+		if payload.FeeLeadingZero, err = r.ReadByte(); err != nil {
 			return
 		}
 	}

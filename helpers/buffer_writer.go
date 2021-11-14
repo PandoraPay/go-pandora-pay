@@ -3,17 +3,13 @@ package helpers
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"math"
 )
 
 type BufferWriter struct {
 	array [][]byte
 	len   int
 	temp  []byte
-}
-
-func NewBufferWriter() *BufferWriter {
-	temp := make([]byte, binary.MaxVarintLen64)
-	return &BufferWriter{temp: temp}
 }
 
 func (writer *BufferWriter) Write(value []byte) {
@@ -43,13 +39,19 @@ func (writer *BufferWriter) WriteByte(value byte) {
 }
 
 func (writer *BufferWriter) WriteUvarint(value uint64) {
-
 	n := binary.PutUvarint(writer.temp, value)
 	buf := make([]byte, n)
 	copy(buf[:], writer.temp[:n])
 	writer.array = append(writer.array, buf)
 	writer.len += n
+}
 
+func (writer *BufferWriter) WriteFloat64(value float64) {
+	bits := math.Float64bits(value)
+	bytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bytes, bits)
+	writer.array = append(writer.array, bytes)
+	writer.len += 8
 }
 
 func (writer *BufferWriter) WriteAsset(asset []byte) {
@@ -78,4 +80,9 @@ func (writer *BufferWriter) Hex() string {
 
 func (writer *BufferWriter) Length() int {
 	return writer.len
+}
+
+func NewBufferWriter() *BufferWriter {
+	temp := make([]byte, binary.MaxVarintLen64)
+	return &BufferWriter{temp: temp}
 }

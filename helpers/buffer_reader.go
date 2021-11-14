@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"math"
 	"math/big"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
@@ -135,4 +136,14 @@ func (reader *BufferReader) ReadUvarint() (uint64, error) {
 		c += 1
 	}
 	return 0, errors.New("Error reading value")
+}
+
+func (reader *BufferReader) ReadFloat64() (float64, error) {
+	data, err := reader.ReadBytes(8)
+	if err != nil {
+		return 0, err
+	}
+	bits := binary.LittleEndian.Uint64(data)
+	float := math.Float64frombits(bits)
+	return float, nil
 }

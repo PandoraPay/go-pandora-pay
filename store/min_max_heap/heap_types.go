@@ -8,7 +8,7 @@ import (
 type HeapElement struct {
 	helpers.SerializableInterface
 	Key   []byte
-	Score uint64
+	Score float64
 }
 
 type HeapDictElement struct {
@@ -22,14 +22,14 @@ func (self *HeapElement) Validate() error {
 
 func (self *HeapElement) Serialize(w *helpers.BufferWriter) {
 	w.Write(self.Key)
-	w.WriteUvarint(self.Score)
+	w.WriteFloat64(self.Score)
 }
 
 func (self *HeapElement) Deserialize(r *helpers.BufferReader) (err error) {
 	if self.Key, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	self.Score, err = r.ReadUvarint()
+	self.Score, err = r.ReadFloat64()
 	return
 }
 

@@ -15,6 +15,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
+	"pandora-pay/config/config_assets"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
@@ -529,6 +530,9 @@ func (builder *TransactionsBuilder) initCLI() {
 			liquidity := &asset_fee_liquidity.AssetFeeLiquidity{}
 			liquidity.AssetId = builder.readAsset("AssetId", false)
 			liquidity.Rate = gui.GUI.OutputReadUint64("Conversion Rate", false, nil)
+			liquidity.LeadingZeros = byte(gui.GUI.OutputReadUint64("Leading Zeros", true, func(value uint64) bool {
+				return value <= uint64(config_assets.ASSETS_DECIMAL_SEPARATOR_MAX_BYTE)
+			}))
 			txExtra.Liquidities = append(txExtra.Liquidities, liquidity)
 		}
 

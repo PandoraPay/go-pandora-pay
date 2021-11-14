@@ -2,6 +2,7 @@ package assets
 
 import (
 	"errors"
+	"math"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/store/hash_map"
@@ -42,7 +43,7 @@ func (collection *AssetsFeeLiquidityCollection) GetMaxHeap(assetId []byte) (*min
 	return maxheap, nil
 }
 
-func (collection *AssetsFeeLiquidityCollection) UpdateLiquidity(publicKey []byte, score uint64, assetId []byte, status asset_fee_liquidity.UpdateLiquidityStatus) error {
+func (collection *AssetsFeeLiquidityCollection) UpdateLiquidity(publicKey []byte, rate uint64, leadingZeros byte, assetId []byte, status asset_fee_liquidity.UpdateLiquidityStatus) error {
 
 	maxheap, err := collection.GetMaxHeap(assetId)
 	if err != nil {
@@ -54,8 +55,10 @@ func (collection *AssetsFeeLiquidityCollection) UpdateLiquidity(publicKey []byte
 		if err = maxheap.DeleteByKey(publicKey); err != nil {
 			return err
 		}
+		score := float64(rate) / math.Pow10(int(leadingZeros))
 		return maxheap.Insert(score, publicKey)
 	case asset_fee_liquidity.UPDATE_LIQUIDITY_INSERTED:
+		score := float64(rate) / math.Pow10(int(leadingZeros))
 		return maxheap.Insert(score, publicKey)
 	case asset_fee_liquidity.UPDATE_LIQUIDITY_DELETED:
 		return maxheap.DeleteByKey(publicKey)

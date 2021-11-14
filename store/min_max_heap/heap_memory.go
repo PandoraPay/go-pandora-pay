@@ -16,7 +16,7 @@ func (self *HeapMemory) DeleteByKey(key []byte) error {
 	return self.Delete(value)
 }
 
-func NewHeapMemory(compare func(a, b uint64) bool) *HeapMemory {
+func NewHeapMemory(compare func(a, b float64) bool) *HeapMemory {
 
 	heap := NewHeap(compare)
 

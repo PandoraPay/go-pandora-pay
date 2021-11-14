@@ -11,6 +11,12 @@ func RandomUint64() uint64 {
 	return binary.LittleEndian.Uint64(buf)
 }
 
+var powsOf10 []uint64
+
+func Pow10(exp byte) uint64 {
+	return powsOf10[exp]
+}
+
 type CryptoRandSource struct{}
 
 func NewCryptoRandSource() CryptoRandSource {
@@ -55,3 +61,7 @@ func ShuffleArray_for_Zether(count int) []int {
 }
 
 var Global_Random = rand.New(NewCryptoRandSource())
+
+func init() {
+	powsOf10 = []uint64{1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000, 1000000000000, 10000000000000, 100000000000000, 1000000000000000, 10000000000000000, 100000000000000000, 1000000000000000000, 10000000000000000000}
+}

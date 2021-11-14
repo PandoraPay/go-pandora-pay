@@ -26,7 +26,7 @@ func (self *HeapStoreHashMap) DeleteByKey(key []byte) error {
 	return self.Delete(found.(*HeapDictElement).Index)
 }
 
-func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, name string, compare func(a, b uint64) bool) *HeapStoreHashMap {
+func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, name string, compare func(a, b float64) bool) *HeapStoreHashMap {
 
 	heap := NewHeap(compare)
 	hashMap := hash_map.CreateNewHashMap(dbTx, name, 0, false)
@@ -93,13 +93,13 @@ func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, na
 }
 
 func NewMinHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, name string) *HeapStoreHashMap {
-	return NewHeapStoreHashMap(dbTx, name, func(a, b uint64) bool {
+	return NewHeapStoreHashMap(dbTx, name, func(a, b float64) bool {
 		return a < b
 	})
 }
 
 func NewMaxHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, name string) *HeapStoreHashMap {
-	return NewHeapStoreHashMap(dbTx, name, func(a, b uint64) bool {
+	return NewHeapStoreHashMap(dbTx, name, func(a, b float64) bool {
 		return b < a
 	})
 }

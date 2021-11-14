@@ -76,8 +76,10 @@ func (self *AssetFeeLiquidities) UpdateLiquidity(updateLiquidity *AssetFeeLiquid
 			return 0, errors.New("AssetFeeLiquidityList will exceed the max")
 		}
 		self.List = append(self.List, &AssetFeeLiquidity{
-			AssetId: updateLiquidity.AssetId,
-			Rate:    updateLiquidity.Rate,
+			nil,
+			updateLiquidity.AssetId,
+			updateLiquidity.Rate,
+			updateLiquidity.LeadingZeros,
 		})
 		return UPDATE_LIQUIDITY_INSERTED, nil
 	}

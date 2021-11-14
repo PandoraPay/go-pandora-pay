@@ -42,7 +42,7 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransaction
 			return
 		}
 
-		if err = dataStorage.AstsFeeLiquidityCollection.UpdateLiquidity(plainAcc.PublicKey, liquidity.Rate, liquidity.AssetId, status); err != nil {
+		if err = dataStorage.AstsFeeLiquidityCollection.UpdateLiquidity(plainAcc.PublicKey, liquidity.Rate, liquidity.LeadingZeros, liquidity.AssetId, status); err != nil {
 			return
 		}
 
@@ -65,15 +65,27 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Validate() (err er
 }
 
 func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+	w.WriteBool(txExtra.CollectorHasNew)
+	w.Write(txExtra.Collector)
+
 	w.WriteByte(byte(len(txExtra.Liquidities)))
 	for _, liquidity := range txExtra.Liquidities {
 		liquidity.Serialize(w)
 	}
-	w.WriteBool(txExtra.CollectorHasNew)
-	w.Write(txExtra.Collector)
 }
 
 func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Deserialize(r *helpers.BufferReader) (err error) {
+
+	if txExtra.CollectorHasNew, err = r.ReadBool(); err != nil {
+		return
+	}
+
+	if txExtra.CollectorHasNew {
+		if txExtra.Collector, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+			return
+		}
+	}
+
 	var count byte
 	if count, err = r.ReadByte(); err != nil {
 		return
@@ -82,16 +94,6 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Deserialize(r *hel
 	txExtra.Liquidities = make([]*asset_fee_liquidity.AssetFeeLiquidity, count)
 	for _, item := range txExtra.Liquidities {
 		if err = item.Deserialize(r); err != nil {
-			return
-		}
-	}
-
-	if txExtra.CollectorHasNew, err = r.ReadBool(); err != nil {
-		return
-	}
-
-	if txExtra.CollectorHasNew {
-		if txExtra.Collector, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 			return
 		}
 	}

@@ -155,7 +155,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %d", "Liquidities", len(plainAcc.AssetFeeLiquidities.List)))
 						for i, assetFeeLiquidity := range plainAcc.AssetFeeLiquidities.List {
-							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %20s %d", strconv.Itoa(i), hex.EncodeToString(assetFeeLiquidity.AssetId), assetFeeLiquidity.Rate))
+							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %20s Rate %d LeadingZeros %d", strconv.Itoa(i), hex.EncodeToString(assetFeeLiquidity.AssetId), assetFeeLiquidity.Rate, assetFeeLiquidity.LeadingZeros))
 						}
 
 					}

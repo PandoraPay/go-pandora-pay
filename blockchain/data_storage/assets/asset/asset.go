@@ -41,6 +41,7 @@ func (asset *Asset) Validate() error {
 	if asset.DecimalSeparator > config_assets.ASSETS_DECIMAL_SEPARATOR_MAX_BYTE {
 		return errors.New("asset decimal separator is invalid")
 	}
+
 	if len(asset.Name) > 15 || len(asset.Name) < 3 {
 		return errors.New("asset name length is invalid")
 	}

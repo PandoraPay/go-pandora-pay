@@ -107,16 +107,17 @@ type json_Only_TransactionZetherStatement struct {
 }
 
 type json_Only_TransactionPayload struct {
-	PayloadScript transaction_zether_payload.PayloadScriptType `json:"payloadScript"`
-	Asset         helpers.HexBytes                             `json:"asset"`
-	BurnValue     uint64                                       `json:"burnValue"`
-	DataVersion   transaction_data.TransactionDataVersion      `json:"dataType"`
-	Data          helpers.HexBytes                             `json:"data"`
-	Registrations []*json_TransactionDataRegistration          `json:"registrations"`
-	Statement     *json_Only_TransactionZetherStatement        `json:"statement"`
-	FeeRate       uint64                                       `json:"feeRate"`
-	Proof         helpers.HexBytes                             `json:"proof"`
-	Extra         interface{}                                  `json:"extra"`
+	PayloadScript  transaction_zether_payload.PayloadScriptType `json:"payloadScript"`
+	Asset          helpers.HexBytes                             `json:"asset"`
+	BurnValue      uint64                                       `json:"burnValue"`
+	DataVersion    transaction_data.TransactionDataVersion      `json:"dataType"`
+	Data           helpers.HexBytes                             `json:"data"`
+	Registrations  []*json_TransactionDataRegistration          `json:"registrations"`
+	Statement      *json_Only_TransactionZetherStatement        `json:"statement"`
+	FeeRate        uint64                                       `json:"feeRate"`
+	FeeLeadingZero byte                                         `json:"feeLeadingZero"`
+	Proof          helpers.HexBytes                             `json:"proof"`
+	Extra          interface{}                                  `json:"extra"`
 }
 
 type json_TransactionZether struct {
@@ -256,6 +257,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 				registrations,
 				statementJson,
 				payload.FeeRate,
+				payload.FeeLeadingZero,
 				proofJson,
 				extra,
 			}
@@ -420,6 +422,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				},
 				statement,
 				payload.FeeRate,
+				payload.FeeLeadingZero,
 				proof,
 				nil,
 			}
