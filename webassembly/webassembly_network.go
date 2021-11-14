@@ -359,6 +359,23 @@ func postNetworkMempoolBroadcastTransaction(this js.Value, args []js.Value) inte
 	})
 }
 
+func postNetworkFeeLiquidity(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+
+		hash, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
+		}
+
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("asset/fee-liquidity"), &api_types.APIAssetFeeLiquidityFeeRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}}, nil)
+		if data.Err != nil {
+			return nil, data.Err
+		}
+
+		return webassembly_utils.ConvertJSONBytes(data.Out)
+	})
+}
+
 func subscribeNetwork(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 

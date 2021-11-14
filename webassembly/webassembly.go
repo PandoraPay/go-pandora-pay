@@ -86,6 +86,7 @@ func Initialize(startMainCb func()) {
 			"getNetworkAsset":                        js.FuncOf(getNetworkAsset),
 			"getNetworkMempool":                      js.FuncOf(getNetworkMempool),
 			"postNetworkMempoolBroadcastTransaction": js.FuncOf(postNetworkMempoolBroadcastTransaction),
+			"postNetworkFeeLiquidity":                js.FuncOf(postNetworkFeeLiquidity),
 			"subscribeNetwork":                       js.FuncOf(subscribeNetwork),
 			"unsubscribeNetwork":                     js.FuncOf(unsubscribeNetwork),
 		}),
