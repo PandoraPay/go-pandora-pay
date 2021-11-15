@@ -78,8 +78,8 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 
 		} else {
 
-			var element helpers.SerializableInterface
-			if element, err = hashMap.deserialize(change.Key, change.Transition); err != nil {
+			var element HashMapElementSerializableInterface
+			if element, err = hashMap.deserialize(change.Key, change.Transition, 0); err != nil {
 				return
 			}
 

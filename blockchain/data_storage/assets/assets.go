@@ -4,7 +4,6 @@ import (
 	"errors"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/helpers"
 	"pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
 )
@@ -44,7 +43,7 @@ func NewAssets(tx store_db_interface.StoreDBTransactionInterface) (assets *Asset
 		hashMap,
 	}
 
-	assets.HashMap.CreateObject = func(key []byte) (helpers.SerializableInterface, error) {
+	assets.HashMap.CreateObject = func(key []byte) (hash_map.HashMapElementSerializableInterface, error) {
 		return asset.NewAsset(key), nil
 	}
 

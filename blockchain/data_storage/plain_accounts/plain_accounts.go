@@ -4,7 +4,6 @@ import (
 	"errors"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
 	hash_map "pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
 )
@@ -49,7 +48,7 @@ func NewPlainAccounts(tx store_db_interface.StoreDBTransactionInterface) (plainA
 		HashMap: hashmap,
 	}
 
-	plainAccs.HashMap.CreateObject = func(key []byte) (helpers.SerializableInterface, error) {
+	plainAccs.HashMap.CreateObject = func(key []byte) (hash_map.HashMapElementSerializableInterface, error) {
 		return plain_account.NewPlainAccount(key), nil
 	}
 

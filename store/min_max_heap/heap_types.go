@@ -3,16 +3,17 @@ package min_max_heap
 import (
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/store/hash_map"
 )
 
 type HeapElement struct {
-	helpers.SerializableInterface
+	hash_map.HashMapElementSerializableInterface
 	Key   []byte
 	Score float64
 }
 
 type HeapDictElement struct {
-	helpers.SerializableInterface
+	hash_map.HashMapElementSerializableInterface
 	Index uint64
 }
 

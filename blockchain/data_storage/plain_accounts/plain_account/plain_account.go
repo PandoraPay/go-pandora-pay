@@ -4,15 +4,25 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	dpos "pandora-pay/blockchain/data_storage/plain_accounts/plain_account/dpos"
 	"pandora-pay/helpers"
+	"pandora-pay/store/hash_map"
 )
 
 type PlainAccount struct {
-	helpers.SerializableInterface `json:"-"`
-	PublicKey                     []byte                                   `json:"-"`
-	Nonce                         uint64                                   `json:"nonce"`
-	Unclaimed                     uint64                                   `json:"unclaimed"`
-	DelegatedStake                *dpos.DelegatedStake                     `json:"delegatedStake"`
-	AssetFeeLiquidities           *asset_fee_liquidity.AssetFeeLiquidities `json:"assetFeeLiquidities"`
+	hash_map.HashMapElementSerializableInterface `json:"-"`
+	PublicKey                                    []byte                                   `json:"publicKey"` //hashMap key
+	Index                                        uint64                                   `json:"index"`     //hashMap index
+	Nonce                                        uint64                                   `json:"nonce"`
+	Unclaimed                                    uint64                                   `json:"unclaimed"`
+	DelegatedStake                               *dpos.DelegatedStake                     `json:"delegatedStake"`
+	AssetFeeLiquidities                          *asset_fee_liquidity.AssetFeeLiquidities `json:"assetFeeLiquidities"`
+}
+
+func (plainAccount *PlainAccount) SetIndex(value uint64) {
+	plainAccount.Index = value
+}
+
+func (plainAccount *PlainAccount) GetIndex() uint64 {
+	return plainAccount.Index
 }
 
 func (plainAccount *PlainAccount) Validate() error {

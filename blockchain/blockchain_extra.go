@@ -115,6 +115,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 		nil,
 		nil,
 		0,
+		0,
 		false,
 		false,
 		false,

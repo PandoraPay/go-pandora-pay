@@ -93,7 +93,7 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 		Asset:   AssetId,
 	}
 
-	accounts.HashMap.CreateObject = func(key []byte) (helpers.SerializableInterface, error) {
+	accounts.HashMap.CreateObject = func(key []byte) (hash_map.HashMapElementSerializableInterface, error) {
 		return account.NewAccount(key, accounts.Asset)
 	}
 

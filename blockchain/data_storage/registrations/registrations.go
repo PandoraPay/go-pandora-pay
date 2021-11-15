@@ -6,7 +6,6 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
 	"pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
 )
@@ -63,12 +62,11 @@ func NewRegistrations(tx store_db_interface.StoreDBTransactionInterface) (regist
 		HashMap: hashmap,
 	}
 
-	registrations.HashMap.CreateObject = func(key []byte) (helpers.SerializableInterface, error) {
+	registrations.HashMap.CreateObject = func(key []byte) (hash_map.HashMapElementSerializableInterface, error) {
 		return registration.NewRegistration(key), nil
 	}
 
 	registrations.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) error {
-		element.Element.(*registration.Registration).Index = registrations.HashMap.Count
 		return nil
 	}
 

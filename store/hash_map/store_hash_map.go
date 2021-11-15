@@ -19,19 +19,22 @@ type HashMap struct {
 	changesSize    map[string]*ChangesMapElement //used for computing the
 	Committed      map[string]*CommittedMapElement
 	keyLength      int
-	CreateObject   func(key []byte) (helpers.SerializableInterface, error)
+	CreateObject   func(key []byte) (HashMapElementSerializableInterface, error)
 	DeletedEvent   func([]byte) error
 	StoredEvent    func([]byte, *CommittedMapElement) error
 	Indexable      bool
 }
 
-func (hashMap *HashMap) deserialize(key, data []byte) (helpers.SerializableInterface, error) {
+func (hashMap *HashMap) deserialize(key, data []byte, index uint64) (HashMapElementSerializableInterface, error) {
 	obj, err := hashMap.CreateObject(key)
 	if err != nil {
 		return nil, err
 	}
 	if err := obj.Deserialize(helpers.NewBufferReader(data)); err != nil {
 		return nil, err
+	}
+	if hashMap.Indexable {
+		obj.SetIndex(index)
 	}
 	return obj, nil
 }
@@ -47,7 +50,7 @@ func (hashMap *HashMap) GetIndexByKey(key string) (uint64, error) {
 	}
 
 	//safe to Get because it won't change
-	data := hashMap.Tx.Get(hashMap.name + ":listKey:" + key)
+	data := hashMap.Tx.Get(hashMap.name + ":listKeys:" + key)
 	if data == nil {
 		return 0, errors.New("Key not found")
 	}
@@ -103,7 +106,7 @@ func (hashMap *HashMap) CloneCommitted() (err error) {
 
 	for key, v := range hashMap.Committed {
 		if v.Element != nil {
-			if v.Element, err = hashMap.deserialize([]byte(key), helpers.CloneBytes(helpers.SerializeToBytes(v.Element))); err != nil {
+			if v.Element, err = hashMap.deserialize([]byte(key), helpers.CloneBytes(helpers.SerializeToBytes(v.Element)), v.Element.GetIndex()); err != nil {
 				return
 			}
 		}
@@ -112,7 +115,7 @@ func (hashMap *HashMap) CloneCommitted() (err error) {
 	return
 }
 
-func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err error) {
+func (hashMap *HashMap) Get(key string) (out HashMapElementSerializableInterface, err error) {
 
 	if hashMap.keyLength != 0 && len(key) != hashMap.keyLength {
 		return nil, errors.New("key length is invalid")
@@ -122,18 +125,32 @@ func (hashMap *HashMap) Get(key string) (out helpers.SerializableInterface, err 
 	}
 
 	var outData []byte
+	var index uint64
 
 	if exists2 := hashMap.Committed[key]; exists2 != nil {
 		if exists2.Element != nil {
 			outData = helpers.CloneBytes(exists2.serialized)
+			if hashMap.Indexable {
+				index = exists2.Element.GetIndex()
+			}
 		}
 	} else {
 		//Clone required because data could be altered afterwards
 		outData = hashMap.Tx.GetClone(hashMap.name + ":map:" + key)
+		if outData != nil && hashMap.Indexable {
+			data := hashMap.Tx.Get(hashMap.name + ":listKeys:" + key)
+			if data == nil {
+				return nil, errors.New("Key not found")
+			}
+
+			if index, err = strconv.ParseUint(string(data), 10, 64); err != nil {
+				return
+			}
+		}
 	}
 
 	if outData != nil {
-		if out, err = hashMap.deserialize([]byte(key), outData); err != nil {
+		if out, err = hashMap.deserialize([]byte(key), outData, index); err != nil {
 			return nil, err
 		}
 	}
@@ -156,7 +173,7 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 	return hashMap.Tx.Exists(hashMap.name + ":exists:" + key), nil
 }
 
-func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) error {
+func (hashMap *HashMap) Update(key string, data HashMapElementSerializableInterface) error {
 
 	if hashMap.keyLength != 0 && len(key) != hashMap.keyLength {
 		return errors.New("key length is invalid")
@@ -188,9 +205,12 @@ func (hashMap *HashMap) Update(key string, data helpers.SerializableInterface) e
 	hashMap.changed = true
 
 	if increase {
-		exists.index = hashMap.Count
+		if hashMap.Indexable {
+			exists.index = hashMap.Count
+			exists.Element.SetIndex(hashMap.Count)
+			exists.indexProcess = true
+		}
 		hashMap.Count += 1
-		exists.indexProcess = true
 	}
 
 	return nil
@@ -218,23 +238,30 @@ func (hashMap *HashMap) Delete(key string) {
 
 	if decrease {
 		hashMap.Count -= 1
-		if exists.indexProcess {
-			for _, v := range hashMap.Changes {
-				if v.index > exists.index {
-					v.index -= 1
+
+		if hashMap.Indexable {
+			if exists.indexProcess {
+				for _, v := range hashMap.Changes {
+					if v.index > exists.index {
+						v.index -= 1
+						if v.Element != nil {
+							v.Element.SetIndex(v.index)
+						}
+					}
 				}
+				exists.indexProcess = false
+			} else {
+				exists.index = hashMap.Count
+				exists.indexProcess = true
 			}
-			exists.indexProcess = false
-		} else {
-			exists.index = hashMap.Count
-			exists.indexProcess = true
 		}
+
 	}
 
 	return
 }
 
-func (hashMap *HashMap) UpdateOrDelete(key string, data helpers.SerializableInterface) error {
+func (hashMap *HashMap) UpdateOrDelete(key string, data HashMapElementSerializableInterface) error {
 	if data == nil {
 		hashMap.Delete(key)
 		return nil

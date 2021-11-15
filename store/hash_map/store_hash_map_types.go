@@ -2,15 +2,21 @@ package hash_map
 
 import "pandora-pay/helpers"
 
+type HashMapElementSerializableInterface interface {
+	helpers.SerializableInterface
+	SetIndex(index uint64)
+	GetIndex() uint64
+}
+
 type ChangesMapElement struct {
-	Element      helpers.SerializableInterface
+	Element      HashMapElementSerializableInterface
 	Status       string
 	index        uint64
 	indexProcess bool
 }
 
 type CommittedMapElement struct {
-	Element    helpers.SerializableInterface
+	Element    HashMapElementSerializableInterface
 	Status     string
 	Stored     string
 	serialized []byte

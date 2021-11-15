@@ -8,6 +8,7 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/store/hash_map"
 	"regexp"
 )
 
@@ -16,24 +17,33 @@ var regexAssetTicker = regexp.MustCompile("^[A-Z0-9]+$") // only lowercase ascii
 var regexAssetDescription = regexp.MustCompile("[\\w|\\W]+")
 
 type Asset struct {
-	helpers.SerializableInterface `json:"-"`
-	PublicKey                     helpers.HexBytes `json:"-"`
-	Version                       uint64           `json:"version,omitempty"`
-	CanUpgrade                    bool             `json:"canUpgrade,omitempty"`               //upgrade different settings
-	CanMint                       bool             `json:"canMint,omitempty"`                  //increase supply
-	CanBurn                       bool             `json:"canBurn,omitempty"`                  //decrease supply
-	CanChangeUpdatePublicKey      bool             `json:"canChangeUpdatePublicKey,omitempty"` //can change key
-	CanChangeSupplyPublicKey      bool             `json:"canChangeSupplyPublicKey,omitempty"` //can change supply key
-	CanPause                      bool             `json:"canPause,omitempty"`                 //can pause (suspend transactions)
-	CanFreeze                     bool             `json:"canFreeze,omitempty"`                //freeze supply changes
-	DecimalSeparator              byte             `json:"decimalSeparator,omitempty"`
-	MaxSupply                     uint64           `json:"maxSupply,omitempty"`
-	Supply                        uint64           `json:"supply,omitempty"`
-	UpdatePublicKey               helpers.HexBytes `json:"updatePublicKey,omitempty"` //33 byte
-	SupplyPublicKey               helpers.HexBytes `json:"supplyPublicKey,omitempty"` //33 byte
-	Name                          string           `json:"name"`
-	Ticker                        string           `json:"ticker"`
-	Description                   string           `json:"description,omitempty"`
+	hash_map.HashMapElementSerializableInterface `json:"-"`
+	PublicKey                                    helpers.HexBytes `json:"publicKey"` //hashmap key
+	Index                                        uint64           `json:"index"`     //hashMap index
+	Version                                      uint64           `json:"version,omitempty"`
+	CanUpgrade                                   bool             `json:"canUpgrade,omitempty"`               //upgrade different settings
+	CanMint                                      bool             `json:"canMint,omitempty"`                  //increase supply
+	CanBurn                                      bool             `json:"canBurn,omitempty"`                  //decrease supply
+	CanChangeUpdatePublicKey                     bool             `json:"canChangeUpdatePublicKey,omitempty"` //can change key
+	CanChangeSupplyPublicKey                     bool             `json:"canChangeSupplyPublicKey,omitempty"` //can change supply key
+	CanPause                                     bool             `json:"canPause,omitempty"`                 //can pause (suspend transactions)
+	CanFreeze                                    bool             `json:"canFreeze,omitempty"`                //freeze supply changes
+	DecimalSeparator                             byte             `json:"decimalSeparator,omitempty"`
+	MaxSupply                                    uint64           `json:"maxSupply,omitempty"`
+	Supply                                       uint64           `json:"supply,omitempty"`
+	UpdatePublicKey                              helpers.HexBytes `json:"updatePublicKey,omitempty"` //33 byte
+	SupplyPublicKey                              helpers.HexBytes `json:"supplyPublicKey,omitempty"` //33 byte
+	Name                                         string           `json:"name"`
+	Ticker                                       string           `json:"ticker"`
+	Description                                  string           `json:"description,omitempty"`
+}
+
+func (asset *Asset) SetIndex(value uint64) {
+	asset.Index = value
+}
+
+func (asset *Asset) GetIndex() uint64 {
+	return asset.Index
 }
 
 func (asset *Asset) Validate() error {

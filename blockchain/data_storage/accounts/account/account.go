@@ -4,14 +4,24 @@ import (
 	"errors"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
+	"pandora-pay/store/hash_map"
 )
 
 type Account struct {
-	helpers.SerializableInterface `json:"-"`
-	PublicKey                     []byte              `json:"-"` //hashmap key
-	Asset                         []byte              `json:"-"` //collection asset
-	Version                       uint64              `json:"version"`
-	Balance                       *BalanceHomomorphic `json:"balance"`
+	hash_map.HashMapElementSerializableInterface `json:"-"`
+	PublicKey                                    []byte              `json:"publicKey"` //hashmap key
+	Asset                                        []byte              `json:"asset"`     //collection asset
+	Index                                        uint64              `json:"index"`     //
+	Version                                      uint64              `json:"version"`
+	Balance                                      *BalanceHomomorphic `json:"balance"`
+}
+
+func (account *Account) SetIndex(value uint64) {
+	account.Index = value
+}
+
+func (account *Account) GetIndex() uint64 {
+	return account.Index
 }
 
 func (account *Account) Validate() error {

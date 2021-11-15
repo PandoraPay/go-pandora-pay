@@ -2,7 +2,6 @@ package min_max_heap
 
 import (
 	"errors"
-	"pandora-pay/helpers"
 	"pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
@@ -32,11 +31,11 @@ func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, na
 	hashMap := hash_map.CreateNewHashMap(dbTx, name, 0, false)
 	dictMap := hash_map.CreateNewHashMap(dbTx, name+"_dict", 0, false)
 
-	hashMap.CreateObject = func(key []byte) (helpers.SerializableInterface, error) {
+	hashMap.CreateObject = func(key []byte) (hash_map.HashMapElementSerializableInterface, error) {
 		return &HeapElement{}, nil
 	}
 
-	dictMap.CreateObject = func(key []byte) (helpers.SerializableInterface, error) {
+	dictMap.CreateObject = func(key []byte) (hash_map.HashMapElementSerializableInterface, error) {
 		return &HeapDictElement{}, nil
 	}
 
