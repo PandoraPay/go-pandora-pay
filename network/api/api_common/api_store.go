@@ -174,11 +174,9 @@ func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*api_t
 		}
 
 		apiAcc.Accs = make([]*account.Account, len(assetsList))
-		apiAcc.Assets = make([]helpers.HexBytes, len(assetsList))
+		apiAcc.AccsExtra = make([]*api_types.APISubscriptionNotificationAccountExtra, len(assetsList))
 
 		for i, assetId := range assetsList {
-
-			apiAcc.Assets[i] = assetId
 
 			var accs *accounts.Accounts
 			if accs, err = accsCollection.GetMap(assetId); err != nil {
@@ -191,14 +189,30 @@ func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*api_t
 			}
 
 			apiAcc.Accs[i] = acc
+			if acc != nil {
+				apiAcc.AccsExtra[i] = &api_types.APISubscriptionNotificationAccountExtra{
+					assetId,
+					acc.Index,
+				}
+			}
 		}
 
 		if apiAcc.PlainAcc, err = plainAccs.GetPlainAccount(publicKey, chainHeight); err != nil {
 			return
 		}
+		if apiAcc.PlainAcc != nil {
+			apiAcc.PlainAccExtra = &api_types.APISubscriptionNotificationPlainAccExtra{
+				apiAcc.PlainAcc.Index,
+			}
+		}
 
 		if apiAcc.Reg, err = regs.GetRegistration(publicKey); err != nil {
 			return
+		}
+		if apiAcc.Reg != nil {
+			apiAcc.RegExtra = &api_types.APISubscriptionNotificationRegistrationExtra{
+				apiAcc.Reg.Index,
+			}
 		}
 
 		return
@@ -206,6 +220,27 @@ func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*api_t
 		return nil, errFinal
 	}
 	return apiAcc, nil
+}
+
+func (apiStore *APIStore) OpenLoadPlainAccountNonceFromPublicKey(publicKey []byte) (nonce uint64, err error) {
+	if errFinal := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) error {
+
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+		plainAccs := plain_accounts.NewPlainAccounts(reader)
+
+		plainAcc, err := plainAccs.GetPlainAccount(publicKey, chainHeight)
+		if err != nil {
+			return err
+		}
+		if plainAcc != nil {
+			nonce = plainAcc.Nonce
+		}
+
+		return nil
+	}); errFinal != nil {
+		return 0, errFinal
+	}
+	return
 }
 
 func (apiStore *APIStore) openLoadAccountTxsFromPublicKey(publicKey []byte, next uint64) (answer *api_types.APIAccountTxs, errFinal error) {

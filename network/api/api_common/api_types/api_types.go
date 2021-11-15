@@ -39,13 +39,15 @@ type APIBlockchainSync struct {
 }
 
 type APIAccount struct {
-	Assets             []helpers.HexBytes          `json:"assets,omitempty"`
-	Accs               []*account.Account          `json:"accounts,omitempty"`
-	AccsSerialized     []helpers.HexBytes          `json:"accountsSerialized,omitempty"`
-	PlainAcc           *plain_account.PlainAccount `json:"plainAccount,omitempty"`
-	PlainAccSerialized helpers.HexBytes            `json:"plainAccountSerialized,omitempty"`
-	Reg                *registration.Registration  `json:"registration,omitempty"`
-	RegSerialized      helpers.HexBytes            `json:"registrationSerialized,omitempty"`
+	Accs               []*account.Account                            `json:"accounts,omitempty"`
+	AccsSerialized     []helpers.HexBytes                            `json:"accountsSerialized,omitempty"`
+	AccsExtra          []*APISubscriptionNotificationAccountExtra    `json:"accountsExtra,omitempty"`
+	PlainAcc           *plain_account.PlainAccount                   `json:"plainAccount,omitempty"`
+	PlainAccSerialized helpers.HexBytes                              `json:"plainAccountSerialized,omitempty"`
+	PlainAccExtra      *APISubscriptionNotificationPlainAccExtra     `json:"plainAccountExtra,omitempty"`
+	Reg                *registration.Registration                    `json:"registration,omitempty"`
+	RegSerialized      helpers.HexBytes                              `json:"registrationSerialized,omitempty"`
+	RegExtra           *APISubscriptionNotificationRegistrationExtra `json:"registrationExtra,omitempty"`
 }
 
 type APIAccountsKeysByIndex struct {
@@ -112,6 +114,19 @@ type APISubscriptionNotificationAccountTxExtraMempool struct {
 
 type APISubscriptionNotificationAccountExtra struct {
 	Asset helpers.HexBytes `json:"asset"`
+	Index uint64           `json:"index"`
+}
+
+type APISubscriptionNotificationPlainAccExtra struct {
+	Index uint64 `json:"index"`
+}
+
+type APISubscriptionNotificationRegistrationExtra struct {
+	Index uint64 `json:"index"`
+}
+
+type APISubscriptionNotificationAssetExtra struct {
+	Index uint64 `json:"index"`
 }
 
 type APISubscriptionNotificationAccountTxExtra struct {

@@ -209,6 +209,20 @@ func (api *APICommon) GetAccountMempool(request *api_types.APIAccountBaseRequest
 	return json.Marshal(answer)
 }
 
+func (api *APICommon) GetAccountMempoolNonce(request *api_types.APIAccountBaseRequest) ([]byte, error) {
+	publicKey, err := request.GetPublicKey()
+	if err != nil {
+		return nil, err
+	}
+
+	nonce, err := api.ApiStore.OpenLoadPlainAccountNonceFromPublicKey(publicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(api.mempool.GetNonce(publicKey, nonce))
+}
+
 func (api *APICommon) GetTx(request *api_types.APITransactionRequest) ([]byte, error) {
 	var tx *transaction.Transaction
 	var err error

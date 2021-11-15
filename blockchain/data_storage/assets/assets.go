@@ -43,8 +43,8 @@ func NewAssets(tx store_db_interface.StoreDBTransactionInterface) (assets *Asset
 		hashMap,
 	}
 
-	assets.HashMap.CreateObject = func(key []byte) (hash_map.HashMapElementSerializableInterface, error) {
-		return asset.NewAsset(key), nil
+	assets.HashMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
+		return asset.NewAsset(key, index), nil
 	}
 
 	return

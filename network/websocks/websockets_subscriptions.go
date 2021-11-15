@@ -5,13 +5,9 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/data_storage/accounts"
-	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets"
-	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
-	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
@@ -19,6 +15,7 @@ import (
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
+	"pandora-pay/store/hash_map"
 )
 
 type WebsocketSubscriptions struct {
@@ -134,6 +131,13 @@ func (this *WebsocketSubscriptions) removeConnection(conn *connection.AdvancedCo
 	}
 }
 
+func (this *WebsocketSubscriptions) getElementIndex(element hash_map.HashMapElementSerializableInterface) uint64 {
+	if element != nil {
+		return element.GetIndex()
+	}
+	return 0
+}
+
 func (this *WebsocketSubscriptions) processSubscriptions() {
 
 	updateAccountsCn := this.chain.UpdateAccounts.AddListener()
@@ -157,8 +161,6 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 	var subsMap map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
 
 	for {
-
-		var element helpers.SerializableInterface
 
 		select {
 		case subscription, ok := <-this.newSubscriptionCn:
@@ -205,11 +207,9 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				for k, v := range accs.HashMap.Committed {
 					if list := this.accountsSubscriptions[k]; list != nil {
 
-						if v.Element != nil {
-							element = v.Element.(*account.Account)
-						}
-						this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, element, nil, &api_types.APISubscriptionNotificationAccountExtra{
+						this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationAccountExtra{
 							accs.Asset,
+							this.getElementIndex(v.Element),
 						})
 					}
 				}
@@ -223,10 +223,10 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			plainAccs := data.(*plain_accounts.PlainAccounts)
 			for k, v := range plainAccs.HashMap.Committed {
 				if list := this.accountsSubscriptions[k]; list != nil {
-					if v.Element != nil {
-						element = v.Element.(*plain_account.PlainAccount)
-					}
-					this.send(api_types.SUBSCRIPTION_PLAIN_ACCOUNT, []byte("sub/notify"), []byte(k), list, element, nil, nil)
+
+					this.send(api_types.SUBSCRIPTION_PLAIN_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationPlainAccExtra{
+						this.getElementIndex(v.Element),
+					})
 				}
 			}
 
@@ -238,10 +238,10 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			asts := data.(*assets.Assets)
 			for k, v := range asts.HashMap.Committed {
 				if list := this.assetsSubscriptions[k]; list != nil {
-					if v.Element != nil {
-						element = v.Element.(*asset.Asset)
-					}
-					this.send(api_types.SUBSCRIPTION_ASSET, []byte("sub/notify"), []byte(k), list, element, nil, nil)
+
+					this.send(api_types.SUBSCRIPTION_ASSET, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationAssetExtra{
+						this.getElementIndex(v.Element),
+					})
 				}
 			}
 
@@ -253,10 +253,10 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			registrations := data.(*registrations.Registrations)
 			for k, v := range registrations.HashMap.Committed {
 				if list := this.assetsSubscriptions[k]; list != nil {
-					if v.Element != nil {
-						element = v.Element.(*registration.Registration)
-					}
-					this.send(api_types.SUBSCRIPTION_REGISTRATION, []byte("sub/notify"), []byte(k), list, element, nil, nil)
+
+					this.send(api_types.SUBSCRIPTION_REGISTRATION, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationRegistrationExtra{
+						this.getElementIndex(v.Element),
+					})
 				}
 			}
 

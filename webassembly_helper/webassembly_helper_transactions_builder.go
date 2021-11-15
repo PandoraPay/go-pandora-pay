@@ -122,7 +122,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 
 			var acc *account.Account
 			if accData := txData.Accs[hex.EncodeToString(ast)][hex.EncodeToString(addr.PublicKey)]; len(accData) > 0 {
-				if acc, err = account.NewAccount(addr.PublicKey, ast); err != nil {
+				if acc, err = account.NewAccount(addr.PublicKey, 0, ast); err != nil {
 					return
 				}
 				if err = acc.Deserialize(helpers.NewBufferReader(accData)); err != nil {
@@ -141,7 +141,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 
 			var reg *registration.Registration
 			if regData := txData.Regs[hex.EncodeToString(addr.PublicKey)]; len(regData) > 0 {
-				reg = registration.NewRegistration(addr.PublicKey)
+				reg = registration.NewRegistration(addr.PublicKey, 0)
 				if err = reg.Deserialize(helpers.NewBufferReader(regData)); err != nil {
 					return
 				}

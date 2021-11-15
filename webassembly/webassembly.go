@@ -82,6 +82,7 @@ func Initialize(startMainCb func()) {
 			"getNetworkAccount":                      js.FuncOf(getNetworkAccount),
 			"getNetworkAccountTxs":                   js.FuncOf(getNetworkAccountTxs),
 			"getNetworkAccountMempool":               js.FuncOf(getNetworkAccountMempool),
+			"getNetworkAccountMempoolNonce":          js.FuncOf(getNetworkAccountMempoolNonce),
 			"getNetworkAssetInfo":                    js.FuncOf(getNetworkAssetInfo),
 			"getNetworkAsset":                        js.FuncOf(getNetworkAsset),
 			"getNetworkMempool":                      js.FuncOf(getNetworkMempool),
@@ -94,10 +95,6 @@ func Initialize(startMainCb func()) {
 			"builder": js.ValueOf(map[string]interface{}{
 				"createSimpleTx": js.FuncOf(createSimpleTx),
 			}),
-		}),
-		"store": js.ValueOf(map[string]interface{}{
-			"storeAccount": js.FuncOf(storeAccount),
-			"storeAsset":   js.FuncOf(storeAsset),
 		}),
 		"mempool": js.ValueOf(map[string]interface{}{
 			"mempoolRemoveTx": js.FuncOf(mempoolRemoveTx),

@@ -33,7 +33,9 @@ func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) IncludeTxPayload
 	}
 
 	if plainAcc == nil {
-		plainAcc = plain_account.NewPlainAccount(payloadExtra.DelegatePublicKey)
+		if plainAcc, err = dataStorage.PlainAccs.CreatePlainAccount(payloadExtra.DelegatePublicKey); err != nil {
+			return
+		}
 	}
 
 	if err = payloadExtra.DelegatedStakingUpdate.Include(plainAcc); err != nil {

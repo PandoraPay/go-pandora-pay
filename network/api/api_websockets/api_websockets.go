@@ -119,6 +119,14 @@ func (api *APIWebsockets) getAccountMempool(conn *connection.AdvancedConnection,
 	return api.apiCommon.GetAccountMempool(request)
 }
 
+func (api *APIWebsockets) getAccountMempoolNonce(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := &api_types.APIAccountBaseRequest{}
+	if err := json.Unmarshal(values, &request); err != nil {
+		return nil, err
+	}
+	return api.apiCommon.GetAccountMempoolNonce(request)
+}
+
 func (api *APIWebsockets) getAssetInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	request := &api_types.APIAssetInfoRequest{api_types.APIHeightHash{0, nil}}
 	if err := json.Unmarshal(values, &request); err != nil {
@@ -357,6 +365,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		api.GetMap["tx-preview"] = api.getTxPreview
 		api.GetMap["account/txs"] = api.getAccountTxs
 		api.GetMap["account/mem-pool"] = api.getAccountMempool
+		api.GetMap["account/mem-pool-nonce"] = api.getAccountMempoolNonce
 	}
 
 	if config.SEED_WALLET_NODES_INFO || config.CONSENSUS == config.CONSENSUS_TYPE_WALLET {

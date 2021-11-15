@@ -205,6 +205,9 @@ func (asset *Asset) Deserialize(r *helpers.BufferReader) (err error) {
 	return
 }
 
-func NewAsset(publicKey []byte) *Asset {
-	return &Asset{PublicKey: publicKey}
+func NewAsset(publicKey []byte, index uint64) *Asset {
+	return &Asset{
+		PublicKey: publicKey,
+		Index:     index,
+	}
 }

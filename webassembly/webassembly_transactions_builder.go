@@ -32,8 +32,7 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			Data                        *wizard.WizardTransactionData                           `json:"data"`
 			Fee                         *wizard.WizardTransactionFee                            `json:"fee"`
 			FeeVersion                  bool                                                    `json:"feeVersion"`
-			PropagateTx                 bool                                                    `json:"propagateTx"`
-			AwaitAnswer                 bool                                                    `json:"awaitAnswer"`
+			Height                      uint64                                                  `json:"height"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
@@ -62,7 +61,16 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			}
 		}
 
-		tx, err := app.TransactionsBuilder.CreateSimpleTx(txData.From, txData.Nonce, payloadExtra, txData.Data, txData.Fee, txData.FeeVersion, txData.PropagateTx, txData.AwaitAnswer, false, false, func(status string) {
+		fromWalletAddr, err := app.Wallet.GetWalletAddressByEncodedAddress(txData.From)
+		if err != nil {
+			return nil, err
+		}
+
+		if fromWalletAddr.PrivateKey.Key == nil {
+			return nil, errors.New("Can't be used for transactions as the private key is missing")
+		}
+
+		tx, err := wizard.CreateSimpleTx(txData.Nonce, fromWalletAddr.PrivateKey.Key, txData.Height, payloadExtra, txData.Data, txData.Fee, txData.FeeVersion, false, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {

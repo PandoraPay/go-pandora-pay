@@ -28,7 +28,7 @@ func (registrations *Registrations) CreateRegistration(publicKey []byte) (*regis
 		return nil, errors.New("Key is not a valid public key")
 	}
 
-	reg := registration.NewRegistration(publicKey)
+	reg := registration.NewRegistration(publicKey, 0) //index will be set by update
 	if err := registrations.HashMap.Update(string(publicKey), reg); err != nil {
 		return nil, err
 	}
@@ -62,8 +62,8 @@ func NewRegistrations(tx store_db_interface.StoreDBTransactionInterface) (regist
 		HashMap: hashmap,
 	}
 
-	registrations.HashMap.CreateObject = func(key []byte) (hash_map.HashMapElementSerializableInterface, error) {
-		return registration.NewRegistration(key), nil
+	registrations.HashMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
+		return registration.NewRegistration(key, index), nil
 	}
 
 	registrations.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) error {

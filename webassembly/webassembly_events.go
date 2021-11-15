@@ -90,17 +90,18 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 				switch data.SubscriptionType {
 				case api_types.SUBSCRIPTION_ACCOUNT:
 					var acc *account.Account
-					if acc, err = account.NewAccount(data.Key, nil); err != nil {
-						continue
-					}
 					if data.Data != nil {
+
+						if acc, err = account.NewAccount(data.Key, 0, nil); err != nil {
+							continue
+						}
 						if err = acc.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
 							continue
 						}
 					}
 					object = acc
 				case api_types.SUBSCRIPTION_PLAIN_ACCOUNT:
-					plainAcc := plain_account.NewPlainAccount(data.Key)
+					plainAcc := plain_account.NewPlainAccount(data.Key, 0)
 					if data.Data != nil {
 						if err = plainAcc.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
 							continue
@@ -108,7 +109,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					}
 					object = plainAcc
 				case api_types.SUBSCRIPTION_ASSET:
-					ast := asset.NewAsset(data.Key)
+					ast := asset.NewAsset(data.Key, 0)
 					if data.Data != nil {
 						if err = ast.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
 							continue
@@ -116,7 +117,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					}
 					object = ast
 				case api_types.SUBSCRIPTION_REGISTRATION:
-					reg := registration.NewRegistration(data.Key)
+					reg := registration.NewRegistration(data.Key, 0)
 					if data.Data != nil {
 						if err = reg.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
 							continue

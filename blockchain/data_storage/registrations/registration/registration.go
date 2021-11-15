@@ -8,8 +8,8 @@ import (
 
 type Registration struct {
 	hash_map.HashMapElementSerializableInterface `json:"-"`
-	PublicKey                                    []byte `json:"publicKey"` //hashMap key
-	Index                                        uint64 `json:"index"`     //hashMap index
+	PublicKey                                    []byte `json:"-"` //hashMap key
+	Index                                        uint64 `json:"-"` //hashMap index
 	Version                                      uint64 `json:"version"`
 }
 
@@ -39,9 +39,10 @@ func (registration *Registration) Deserialize(r *helpers.BufferReader) (err erro
 	return
 }
 
-func NewRegistration(publicKey []byte) *Registration {
+func NewRegistration(publicKey []byte, index uint64) *Registration {
 	return &Registration{
 		PublicKey: publicKey,
+		Index:     index,
 		Version:   0,
 	}
 }

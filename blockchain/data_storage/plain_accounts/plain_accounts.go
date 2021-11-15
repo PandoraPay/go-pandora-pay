@@ -18,7 +18,7 @@ func (plainAccounts *PlainAccounts) CreatePlainAccount(publicKey []byte) (*plain
 		return nil, errors.New("Key is not a valid public key")
 	}
 
-	plainAcc := plain_account.NewPlainAccount(publicKey)
+	plainAcc := plain_account.NewPlainAccount(publicKey, 0) //index will be set by update
 	if err := plainAccounts.Update(string(publicKey), plainAcc); err != nil {
 		return nil, err
 	}
@@ -48,8 +48,8 @@ func NewPlainAccounts(tx store_db_interface.StoreDBTransactionInterface) (plainA
 		HashMap: hashmap,
 	}
 
-	plainAccs.HashMap.CreateObject = func(key []byte) (hash_map.HashMapElementSerializableInterface, error) {
-		return plain_account.NewPlainAccount(key), nil
+	plainAccs.HashMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
+		return plain_account.NewPlainAccount(key, index), nil
 	}
 
 	return

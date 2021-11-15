@@ -99,6 +99,11 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 		}
 
 	}
+
+	select {
+	case <-info.ctx.Done():
+	}
+
 	return info.tableLookup.Load().(*LookupTable)
 }
 

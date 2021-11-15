@@ -19,22 +19,19 @@ type HashMap struct {
 	changesSize    map[string]*ChangesMapElement //used for computing the
 	Committed      map[string]*CommittedMapElement
 	keyLength      int
-	CreateObject   func(key []byte) (HashMapElementSerializableInterface, error)
+	CreateObject   func(key []byte, index uint64) (HashMapElementSerializableInterface, error)
 	DeletedEvent   func([]byte) error
 	StoredEvent    func([]byte, *CommittedMapElement) error
 	Indexable      bool
 }
 
 func (hashMap *HashMap) deserialize(key, data []byte, index uint64) (HashMapElementSerializableInterface, error) {
-	obj, err := hashMap.CreateObject(key)
+	obj, err := hashMap.CreateObject(key, index)
 	if err != nil {
 		return nil, err
 	}
 	if err := obj.Deserialize(helpers.NewBufferReader(data)); err != nil {
 		return nil, err
-	}
-	if hashMap.Indexable {
-		obj.SetIndex(index)
 	}
 	return obj, nil
 }

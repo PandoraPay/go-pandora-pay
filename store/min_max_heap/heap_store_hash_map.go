@@ -31,11 +31,11 @@ func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, na
 	hashMap := hash_map.CreateNewHashMap(dbTx, name, 0, false)
 	dictMap := hash_map.CreateNewHashMap(dbTx, name+"_dict", 0, false)
 
-	hashMap.CreateObject = func(key []byte) (hash_map.HashMapElementSerializableInterface, error) {
+	hashMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
 		return &HeapElement{}, nil
 	}
 
-	dictMap.CreateObject = func(key []byte) (hash_map.HashMapElementSerializableInterface, error) {
+	dictMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
 		return &HeapDictElement{}, nil
 	}
 

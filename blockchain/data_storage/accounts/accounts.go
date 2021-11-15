@@ -21,7 +21,7 @@ func (accounts *Accounts) CreateAccount(publicKey []byte) (*account.Account, err
 		return nil, errors.New("Key is not a valid public key")
 	}
 
-	acc, err := account.NewAccount(publicKey, accounts.Asset)
+	acc, err := account.NewAccount(publicKey, 0, accounts.Asset) //will be set by update
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +93,8 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 		Asset:   AssetId,
 	}
 
-	accounts.HashMap.CreateObject = func(key []byte) (hash_map.HashMapElementSerializableInterface, error) {
-		return account.NewAccount(key, accounts.Asset)
+	accounts.HashMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
+		return account.NewAccount(key, index, accounts.Asset)
 	}
 
 	accounts.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) (err error) {

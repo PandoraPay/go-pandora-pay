@@ -173,6 +173,15 @@ func (api *API) getAccountMempool(values *url.Values) (interface{}, error) {
 	return api.apiCommon.GetAccountMempool(request)
 }
 
+func (api *API) getAccountMempoolNonce(values *url.Values) (interface{}, error) {
+	request := &api_types.APIAccountBaseRequest{}
+	if err := request.ImportFromValues(values); err != nil {
+		return nil, err
+	}
+
+	return api.apiCommon.GetAccountMempoolNonce(request)
+}
+
 func (api *API) getAsset(values *url.Values) (interface{}, error) {
 	request := &api_types.APIAssetRequest{ReturnType: api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
 	if err := request.ImportFromValues(values); err != nil {
@@ -344,6 +353,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		api.GetMap["tx-preview"] = api.getTxPreview
 		api.GetMap["account/txs"] = api.getAccountTxs
 		api.GetMap["account/mem-pool"] = api.getAccountMempool
+		api.GetMap["account/mem-pool-nonce"] = api.getAccountMempoolNonce
 	}
 
 	if api.apiCommon.APICommonFaucet != nil {

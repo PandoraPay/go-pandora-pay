@@ -9,8 +9,8 @@ import (
 
 type PlainAccount struct {
 	hash_map.HashMapElementSerializableInterface `json:"-"`
-	PublicKey                                    []byte                                   `json:"publicKey"` //hashMap key
-	Index                                        uint64                                   `json:"index"`     //hashMap index
+	PublicKey                                    []byte                                   `json:"-"` //hashMap key
+	Index                                        uint64                                   `json:"-"` //hashMap index
 	Nonce                                        uint64                                   `json:"nonce"`
 	Unclaimed                                    uint64                                   `json:"unclaimed"`
 	DelegatedStake                               *dpos.DelegatedStake                     `json:"delegatedStake"`
@@ -83,9 +83,10 @@ func (plainAccount *PlainAccount) Deserialize(r *helpers.BufferReader) (err erro
 	return
 }
 
-func NewPlainAccount(publicKey []byte) *PlainAccount {
+func NewPlainAccount(publicKey []byte, index uint64) *PlainAccount {
 	return &PlainAccount{
 		PublicKey:           publicKey,
+		Index:               index,
 		DelegatedStake:      &dpos.DelegatedStake{},
 		AssetFeeLiquidities: &asset_fee_liquidity.AssetFeeLiquidities{},
 	}

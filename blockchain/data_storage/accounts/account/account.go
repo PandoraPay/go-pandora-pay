@@ -9,9 +9,9 @@ import (
 
 type Account struct {
 	hash_map.HashMapElementSerializableInterface `json:"-"`
-	PublicKey                                    []byte              `json:"publicKey"` //hashmap key
-	Asset                                        []byte              `json:"asset"`     //collection asset
-	Index                                        uint64              `json:"index"`     //
+	PublicKey                                    []byte              `json:"-"` //hashmap key
+	Asset                                        []byte              `json:"-"` //collection asset
+	Index                                        uint64              `json:"-"` //hashmap Index
 	Version                                      uint64              `json:"version"`
 	Balance                                      *BalanceHomomorphic `json:"balance"`
 }
@@ -58,7 +58,7 @@ func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 	return
 }
 
-func NewAccount(publicKey []byte, asset []byte) (*Account, error) {
+func NewAccount(publicKey []byte, index uint64, asset []byte) (*Account, error) {
 
 	var acckey crypto.Point
 	if err := acckey.DecodeCompressed(publicKey); err != nil {
@@ -68,6 +68,7 @@ func NewAccount(publicKey []byte, asset []byte) (*Account, error) {
 	acc := &Account{
 		PublicKey: publicKey,
 		Asset:     asset,
+		Index:     index,
 		Balance:   &BalanceHomomorphic{nil, crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)},
 	}
 
