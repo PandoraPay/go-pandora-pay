@@ -18,7 +18,7 @@ import (
 
 type BalanceDecoderInfo struct {
 	tableSize       int
-	tableLookup     *LookupTable
+	tableLookup     atomic.Value //*LookupTable
 	tableComputedCn chan *LookupTable
 	ctx             context.Context
 	readyCn         chan struct{}
@@ -65,7 +65,7 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 
 		info = &BalanceDecoderInfo{
 			newTableSize,
-			nil,
+			atomic.Value{},
 			make(chan *LookupTable),
 			ctx,
 			make(chan struct{}),
@@ -88,7 +88,7 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 			if tableLookup == nil && info.hasError.SetToIf(false, true) {
 				close(info.readyCn)
 			}
-			info.tableLookup = tableLookup
+			info.tableLookup.Store(tableLookup)
 			gui.GUI.Info2Update("Decoder", "Ready "+strconv.Itoa(int(math.Log2(float64(info.tableSize)))))
 			return tableLookup
 		case <-ctx.Done():
@@ -99,7 +99,7 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 		}
 
 	}
-	return info.tableLookup
+	return info.tableLookup.Load().(*LookupTable)
 }
 
 func CreateBalanceDecoder() *BalanceDecoderType {
