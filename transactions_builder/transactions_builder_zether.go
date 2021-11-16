@@ -189,7 +189,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 				return
 			}
 
-			if !bytes.Equal(ast, config_coins.NATIVE_ASSET_FULL) && fees[t].RateMaxAuto {
+			if !bytes.Equal(ast, config_coins.NATIVE_ASSET_FULL) && fees[t].Auto {
 				var assetFeeLiquidity *asset_fee_liquidity.AssetFeeLiquidity
 				if assetFeeLiquidity, err = dataStorage.GetAssetFeeLiquidityTop(ast, chainHeight); err != nil {
 					return
@@ -197,18 +197,20 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 				if assetFeeLiquidity == nil {
 					return errors.New("There is no Asset Fee Liquidity for this asset")
 				}
-				fees[t].RateMax = assetFeeLiquidity.Rate
+				fees[t].Rate = assetFeeLiquidity.Rate
+				fees[t].LeadingZeros = assetFeeLiquidity.LeadingZeros
 			}
 
 			transfers[t] = &wizard.WizardZetherTransfer{
-				Asset:        ast,
-				From:         fromPrivateKeys[t].Key[:],
-				Destination:  dsts[t],
-				Amount:       amounts[t],
-				Burn:         burns[t],
-				Data:         data[t],
-				FeeRateMax:   fees[t].RateMax,
-				PayloadExtra: extraPayloads[t],
+				Asset:           ast,
+				From:            fromPrivateKeys[t].Key[:],
+				Destination:     dsts[t],
+				Amount:          amounts[t],
+				Burn:            burns[t],
+				Data:            data[t],
+				FeeRate:         fees[t].Rate,
+				FeeLeadingZeros: fees[t].LeadingZeros,
+				PayloadExtra:    extraPayloads[t],
 			}
 
 			var ring []*bn256.G1

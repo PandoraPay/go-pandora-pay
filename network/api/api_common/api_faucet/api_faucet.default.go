@@ -55,7 +55,7 @@ func (api *APICommonFaucet) GetFaucetCoins(request *APIFaucetCoinsRequest) ([]by
 	}
 
 	data := &wizard.WizardTransactionData{[]byte("Testnet Faucet Tx"), false}
-	fees := []*wizard.WizardZetherTransactionFee{{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0}}
+	fees := []*wizard.WizardZetherTransactionFee{{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0}}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

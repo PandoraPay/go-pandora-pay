@@ -387,10 +387,10 @@ func postNetworkMempoolBroadcastTransaction(this js.Value, args []js.Value) inte
 	})
 }
 
-func postNetworkFeeLiquidity(this js.Value, args []js.Value) interface{} {
+func getNetworkFeeLiquidity(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		hash, err := hex.DecodeString(args[0].String())
+		hash, err := hex.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
@@ -400,7 +400,7 @@ func postNetworkFeeLiquidity(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		return webassembly_utils.ConvertJSONBytes(data.Out)
+		return webassembly_utils.ConvertBytes(data.Out), nil
 	})
 }
 

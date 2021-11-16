@@ -283,6 +283,11 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		payload.Asset = transfers[t].Asset
 		payload.BurnValue = transfers[t].Burn
 
+		if !bytes.Equal(transfers[t].Asset, config_coins.NATIVE_ASSET_FULL) {
+			payload.FeeRate = transfers[t].FeeRate
+			payload.FeeLeadingZeros = transfers[t].FeeLeadingZeros
+		}
+
 		value := transfers[t].Amount
 		burn_value := transfers[t].Burn
 

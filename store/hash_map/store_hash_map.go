@@ -103,7 +103,11 @@ func (hashMap *HashMap) CloneCommitted() (err error) {
 
 	for key, v := range hashMap.Committed {
 		if v.Element != nil {
-			if v.Element, err = hashMap.deserialize([]byte(key), helpers.CloneBytes(helpers.SerializeToBytes(v.Element)), v.Element.GetIndex()); err != nil {
+			var index uint64
+			if hashMap.Indexable {
+				index = v.Element.GetIndex()
+			}
+			if v.Element, err = hashMap.deserialize([]byte(key), helpers.CloneBytes(helpers.SerializeToBytes(v.Element)), index); err != nil {
 				return
 			}
 		}

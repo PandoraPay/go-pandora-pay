@@ -57,7 +57,7 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 	dstsAmounts, burn := []uint64{amount}, []uint64{0}
 	dstsAssets := [][]byte{config_coins.NATIVE_ASSET_FULL}
 	data := []*wizard.WizardTransactionData{{[]byte{}, false}}
-	fees := []*wizard.WizardZetherTransactionFee{{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0}}
+	fees := []*wizard.WizardZetherTransactionFee{{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0}}
 
 	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{&wizard.WizardZetherPayloadExtraClaim{DelegatePrivateKey: addr.PrivateKey.Key}}, from, dstsAssets, dstsAmounts, dsts, burn, []*transactions_builder.ZetherRingConfiguration{{-1, -1}}, data, fees, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
@@ -116,7 +116,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 		ringsConfigurations = append(ringsConfigurations, &transactions_builder.ZetherRingConfiguration{-1, -1})
 
 		data = append(data, &wizard.WizardTransactionData{[]byte{}, false})
-		fees = append(fees, &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0})
+		fees = append(fees, &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0})
 		payloadsExtra = append(payloadsExtra, nil)
 	}
 
@@ -148,7 +148,7 @@ func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int, ctx co
 	dst := addr.EncodeAddr()
 
 	data := &wizard.WizardTransactionData{nil, false}
-	fees := []*wizard.WizardZetherTransactionFee{{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0}}
+	fees := []*wizard.WizardZetherTransactionFee{{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0}}
 
 	if tx, err = testnet.transactionsBuilder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{nil}, []string{srcAddr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{dst}, []uint64{burn}, []*transactions_builder.ZetherRingConfiguration{{-1, -1}}, []*wizard.WizardTransactionData{data}, fees, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err

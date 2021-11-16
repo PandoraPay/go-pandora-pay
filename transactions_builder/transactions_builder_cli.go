@@ -158,11 +158,14 @@ func (builder *TransactionsBuilder) readZetherFee(assetId []byte) (fee *wizard.W
 	fee.WizardTransactionFee = builder.readFee(assetId)
 
 	if !bytes.Equal(assetId, config_coins.NATIVE_ASSET_FULL) {
-		fee.RateMaxAuto = gui.GUI.OutputReadBool("Compute autoamtically Fee Rate Max for Asset")
-		if !fee.RateMaxAuto {
-			fee.RateMax = gui.GUI.OutputReadUint64("Fee Rate Max for Asset", true, func(value uint64) bool {
+		fee.Auto = gui.GUI.OutputReadBool("Compute autoamtically Fee Rate Max for Asset")
+		if !fee.Auto {
+			fee.Rate = gui.GUI.OutputReadUint64("Fee Rate for Asset", true, func(value uint64) bool {
 				return true
 			})
+			fee.LeadingZeros = byte(gui.GUI.OutputReadUint64("Fee Leading Zeros for Asset", true, func(value uint64) bool {
+				return value <= uint64(config_assets.ASSETS_DECIMAL_SEPARATOR_MAX)
+			}))
 		}
 	}
 

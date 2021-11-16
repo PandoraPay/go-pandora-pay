@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -31,7 +33,7 @@ type zetherTxDataBase struct {
 	Burns             []uint64                                       `json:"burns"`
 	RingMembers       [][]string                                     `json:"ringMembers"`
 	Data              []*wizard.WizardTransactionData                `json:"data"`
-	Fees              []*wizard.WizardTransactionFee                 `json:"fees"`
+	Fees              []*wizard.WizardZetherTransactionFee           `json:"fees"`
 	PayloadScriptType []transaction_zether_payload.PayloadScriptType `json:"payloadScriptType"`
 	PayloadExtra      []wizard.WizardZetherPayloadExtra              `json:"payloadExtra"`
 	Accs              map[string]map[string]helpers.HexBytes         `json:"accs"`
@@ -66,6 +68,11 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 			Amount:             txData.Amounts[t],
 			Burn:               txData.Burns[t],
 			Data:               txData.Data[t],
+		}
+
+		if !bytes.Equal(txData.Assets[t], config_coins.NATIVE_ASSET_FULL) {
+			transfers[t].FeeRate = txData.Fees[t].Rate
+			transfers[t].FeeLeadingZeros = txData.Fees[t].LeadingZeros
 		}
 
 		var payloadExtra wizard.WizardZetherPayloadExtra
@@ -201,7 +208,12 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		tx, err := wizard.CreateZetherTx(transfers, emap, rings, txData.Height, txData.Hash, publicKeyIndexes, txData.Fees, false, ctx, func(status string) {
+		feesFinal := make([]*wizard.WizardTransactionFee, len(txData.Fees))
+		for t, fee := range txData.Fees {
+			feesFinal[t] = fee.WizardTransactionFee
+		}
+
+		tx, err := wizard.CreateZetherTx(transfers, emap, rings, txData.Height, txData.Hash, publicKeyIndexes, feesFinal, false, ctx, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {

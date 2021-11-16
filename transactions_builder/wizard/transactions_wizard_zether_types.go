@@ -42,7 +42,8 @@ type WizardZetherTransfer struct {
 	Destination        string
 	Amount             uint64
 	Burn               uint64
-	FeeRateMax         uint64
+	FeeRate            uint64
+	FeeLeadingZeros    byte
 	Data               *WizardTransactionData
 	PayloadExtra       WizardZetherPayloadExtra
 }
@@ -55,6 +56,7 @@ type WizardZetherPublicKeyIndex struct {
 
 type WizardZetherTransactionFee struct {
 	*WizardTransactionFee
-	RateMaxAuto bool   `json:"rateMaxAuto"`
-	RateMax     uint64 `json:"rateMax"`
+	Auto         bool   `json:"auto"`
+	Rate         uint64 `json:"rate"`
+	LeadingZeros byte   `json:"leadingZeros"`
 }
