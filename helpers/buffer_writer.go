@@ -1,9 +1,11 @@
 package helpers
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"math"
+	"pandora-pay/config/config_coins"
 )
 
 type BufferWriter struct {
@@ -55,7 +57,7 @@ func (writer *BufferWriter) WriteFloat64(value float64) {
 }
 
 func (writer *BufferWriter) WriteAsset(asset []byte) {
-	if len(asset) == 0 {
+	if bytes.Equal(asset, config_coins.NATIVE_ASSET_FULL) {
 		writer.WriteByte(0)
 	} else {
 		writer.WriteByte(1)
