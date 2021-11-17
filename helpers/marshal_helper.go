@@ -12,19 +12,19 @@ type HexBytes []byte
 
 // MarshalJSON serializes ByteArray to hex
 func (s HexBytes) MarshalJSON() ([]byte, error) {
-	return json.Marshal(hex.EncodeToString(s))
+	dst := make([]byte, len(s)*2+2)
+	hex.Encode(dst[1:], s)
+	dst[0] = 34          // "
+	dst[len(dst)-1] = 34 // "
+	return dst, nil
 }
 
 // UnmarshalJSON deserializes ByteArray to hex
 func (s *HexBytes) UnmarshalJSON(data []byte) (err error) {
 
-	var x string
-	var str []byte
+	str := make([]byte, len(data)/2-1)
 
-	if err = json.Unmarshal(data, &x); err != nil {
-		return
-	}
-	if str, err = hex.DecodeString(x); err != nil {
+	if _, err = hex.Decode(str, data[1:len(data)-1]); err != nil {
 		return
 	}
 	*s = str
