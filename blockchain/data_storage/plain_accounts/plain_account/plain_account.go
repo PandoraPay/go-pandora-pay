@@ -17,6 +17,10 @@ type PlainAccount struct {
 	AssetFeeLiquidities                          *asset_fee_liquidity.AssetFeeLiquidities `json:"assetFeeLiquidities"`
 }
 
+func (plainAccount *PlainAccount) SetKey(key []byte) {
+	plainAccount.PublicKey = key
+}
+
 func (plainAccount *PlainAccount) SetIndex(value uint64) {
 	plainAccount.Index = value
 }

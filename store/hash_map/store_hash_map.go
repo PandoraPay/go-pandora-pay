@@ -183,6 +183,8 @@ func (hashMap *HashMap) Update(key string, data HashMapElementSerializableInterf
 		return errors.New("Data is null and it should not be")
 	}
 
+	data.SetKey([]byte(key))
+
 	if err := data.Validate(); err != nil {
 		return err
 	}

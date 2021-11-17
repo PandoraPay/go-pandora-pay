@@ -32,18 +32,18 @@ func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, na
 	dictMap := hash_map.CreateNewHashMap(dbTx, name+"_dict", 0, false)
 
 	hashMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
-		return &HeapElement{}, nil
+		return &HeapElement{Key: key}, nil
 	}
 
 	dictMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
-		return &HeapDictElement{}, nil
+		return &HeapDictElement{Key: key}, nil
 	}
 
 	heap.updateElement = func(index uint64, x *HeapElement) (err error) {
 		if err = hashMap.Update(strconv.FormatUint(index, 10), x); err != nil {
 			return
 		}
-		return dictMap.Update(string(x.Key), &HeapDictElement{nil, index})
+		return dictMap.Update(string(x.Key), &HeapDictElement{nil, x.Key, index})
 	}
 
 	heap.addElement = func(x *HeapElement) (err error) {
@@ -51,7 +51,7 @@ func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, na
 		if err = hashMap.Update(strconv.FormatUint(index, 10), x); err != nil {
 			return
 		}
-		if err = dictMap.Update(string(x.Key), &HeapDictElement{nil, index}); err != nil {
+		if err = dictMap.Update(string(x.Key), &HeapDictElement{nil, x.Key, index}); err != nil {
 			return
 		}
 		return nil

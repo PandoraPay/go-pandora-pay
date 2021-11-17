@@ -39,6 +39,10 @@ type Asset struct {
 	Description                                  string           `json:"description,omitempty"`
 }
 
+func (asset *Asset) SetKey(key []byte) {
+	asset.PublicKey = key
+}
+
 func (asset *Asset) SetIndex(value uint64) {
 	asset.Index = value
 }

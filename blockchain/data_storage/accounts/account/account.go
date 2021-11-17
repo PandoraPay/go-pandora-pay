@@ -16,6 +16,10 @@ type Account struct {
 	Balance                                      *BalanceHomomorphic `json:"balance"`
 }
 
+func (account *Account) SetKey(key []byte) {
+	account.PublicKey = key
+}
+
 func (account *Account) SetIndex(value uint64) {
 	account.Index = value
 }

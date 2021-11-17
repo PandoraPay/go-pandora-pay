@@ -13,6 +13,10 @@ type Registration struct {
 	Version                                      uint64 `json:"version"`
 }
 
+func (registration *Registration) SetKey(key []byte) {
+	registration.PublicKey = key
+}
+
 func (registration *Registration) SetIndex(value uint64) {
 	registration.Index = value
 }

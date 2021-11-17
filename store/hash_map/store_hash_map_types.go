@@ -5,6 +5,7 @@ import "pandora-pay/helpers"
 type HashMapElementSerializableInterface interface {
 	helpers.SerializableInterface
 	SetIndex(index uint64)
+	SetKey(key []byte)
 	GetIndex() uint64
 }
 

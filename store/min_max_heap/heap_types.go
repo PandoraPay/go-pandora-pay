@@ -14,7 +14,12 @@ type HeapElement struct {
 
 type HeapDictElement struct {
 	hash_map.HashMapElementSerializableInterface
+	Key   []byte
 	Index uint64
+}
+
+func (self *HeapElement) SetKey(key []byte) {
+	self.Key = key
 }
 
 func (self *HeapElement) Validate() error {
@@ -32,6 +37,10 @@ func (self *HeapElement) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 	self.Score, err = r.ReadFloat64()
 	return
+}
+
+func (self *HeapDictElement) SetKey(key []byte) {
+	self.Key = key
 }
 
 func (self *HeapDictElement) Validate() error {
