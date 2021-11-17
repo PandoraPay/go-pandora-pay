@@ -244,7 +244,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 						balance = acc.Balance.Amount.Serialize()
 					}
 
-					if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance); err != nil {
+					if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance, ast); err != nil {
 						return
 					}
 

@@ -116,15 +116,15 @@ func (mempool *Mempool) GetNonce(publicKey []byte, nonce uint64) uint64 {
 	return nonce
 }
 
-func (mempool *Mempool) GetZetherBalance(publicKey []byte, balanceInit []byte) ([]byte, error) {
-	result, err := mempool.GetZetherBalanceMultiple([][]byte{publicKey}, [][]byte{balanceInit})
+func (mempool *Mempool) GetZetherBalance(publicKey []byte, balanceInit []byte, asset []byte) ([]byte, error) {
+	result, err := mempool.GetZetherBalanceMultiple([][]byte{publicKey}, [][]byte{balanceInit}, asset)
 	if err != nil {
 		return nil, err
 	}
 	return result[0], nil
 }
 
-func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit [][]byte) ([][]byte, error) {
+func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit [][]byte, asset []byte) ([][]byte, error) {
 
 	txs := mempool.Txs.GetTxsFromMap()
 	var balance, balanceTemp *crypto.ElGamal
@@ -152,19 +152,21 @@ func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesIn
 			if tx.Tx.Version == transaction_type.TX_ZETHER {
 				base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
 				for _, payload := range base.Payloads {
-					for i, publicKeyPoint := range payload.Statement.Publickeylist {
-						txPublicKey := publicKeyPoint.EncodeCompressed()
-						if bytes.Equal(publicKey, txPublicKey) {
+					if bytes.Equal(payload.Asset, asset) {
+						for i, publicKeyPoint := range payload.Statement.Publickeylist {
+							txPublicKey := publicKeyPoint.EncodeCompressed()
+							if bytes.Equal(publicKey, txPublicKey) {
 
-							echanges := crypto.ConstructElGamal(payload.Statement.C[i], payload.Statement.D)
-							if balanceTemp, err = new(crypto.ElGamal).Deserialize(balance.Serialize()); err != nil {
-								return nil, err
-							}
-							balanceTemp = balance.Add(echanges) // homomorphic addition of changes
+								echanges := crypto.ConstructElGamal(payload.Statement.C[i], payload.Statement.D)
+								if balanceTemp, err = new(crypto.ElGamal).Deserialize(balance.Serialize()); err != nil {
+									return nil, err
+								}
+								balanceTemp = balance.Add(echanges) // homomorphic addition of changes
 
-							if payload.Statement.CLn[i].String() == balanceTemp.Left.String() && payload.Statement.CRn[i].String() == balanceTemp.Right.String() {
-								balance = balanceTemp
-								changed = true
+								if payload.Statement.CLn[i].String() == balanceTemp.Left.String() && payload.Statement.CRn[i].String() == balanceTemp.Right.String() {
+									balance = balanceTemp
+									changed = true
+								}
 							}
 						}
 					}

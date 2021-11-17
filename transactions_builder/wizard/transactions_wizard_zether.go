@@ -133,7 +133,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 	spaceExtra := 0
 
-	registered := make(map[string]bool)
 	for t, transfer := range transfers {
 
 		publickeylist := publickeylists[t]
@@ -144,9 +143,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		payloads[t] = &transaction_zether_payload.TransactionZetherPayload{}
 
 		emptyAccounts := 0
+		registered := make(map[string]bool)
 		for _, publicKeyPoint := range publickeylist {
 			publicKey := publicKeyPoint.EncodeCompressed()
-			if emap[string(publicKey)] == nil && !registered[string(publicKey)] {
+			if emap[string(transfer.Asset)][publicKeyPoint.String()] == nil && !registered[string(publicKey)] {
 				registered[string(publicKey)] = true
 				emptyAccounts += 1
 			}
@@ -283,11 +283,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		payload.Asset = transfers[t].Asset
 		payload.BurnValue = transfers[t].Burn
 
-		if !bytes.Equal(transfers[t].Asset, config_coins.NATIVE_ASSET_FULL) {
-			payload.FeeRate = transfers[t].FeeRate
-			payload.FeeLeadingZeros = transfers[t].FeeLeadingZeros
-		}
-
 		value := transfers[t].Amount
 		burn_value := transfers[t].Burn
 
@@ -319,6 +314,14 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		fee := setFee(tx, extraBytes, myFees[t].Clone(), t == 0)
 
 		statusCallback("Transaction Set fee")
+
+		if !bytes.Equal(transfers[t].Asset, config_coins.NATIVE_ASSET_FULL) {
+			payload.FeeRate = transfers[t].FeeRate
+			payload.FeeLeadingZeros = transfers[t].FeeLeadingZeros
+
+			fee = (fee * helpers.Pow10(transfers[t].FeeLeadingZeros)) / transfers[t].FeeRate
+			statusCallback("Transaction Set conversion fee")
+		}
 
 		//fake balance
 		if payload.PayloadScript == transaction_zether_payload.SCRIPT_CLAIM {

@@ -370,7 +370,7 @@ func (api *APICommon) GetAccountsByKeys(request *api_types.APIAccountsByKeysRequ
 				balancesInit[i] = helpers.SerializeToBytes(acc.Balance)
 			}
 		}
-		if balancesInit, err = api.mempool.GetZetherBalanceMultiple(publicKeys, balancesInit); err != nil {
+		if balancesInit, err = api.mempool.GetZetherBalanceMultiple(publicKeys, balancesInit, request.Asset); err != nil {
 			return nil, err
 		}
 		for i, acc := range out.Acc {

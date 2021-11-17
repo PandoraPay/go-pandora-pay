@@ -109,8 +109,8 @@ func (reader *BufferReader) ReadAsset() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		if !bytes.Equal(buff, config_coins.NATIVE_ASSET_FULL) {
-			return nil, errors.New("NATIVE_ASSET_FULL should be writen as  NATIVE_ASSET")
+		if bytes.Equal(buff, config_coins.NATIVE_ASSET_FULL) {
+			return nil, errors.New("NATIVE_ASSET_FULL should be written as short")
 		}
 		return buff, nil
 	}
