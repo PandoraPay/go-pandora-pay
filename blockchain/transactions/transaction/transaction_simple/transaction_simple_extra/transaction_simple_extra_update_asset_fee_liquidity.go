@@ -42,7 +42,7 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransaction
 			return
 		}
 
-		if err = dataStorage.AstsFeeLiquidityCollection.UpdateLiquidity(plainAcc.PublicKey, liquidity.Rate, liquidity.LeadingZeros, liquidity.AssetId, status); err != nil {
+		if err = dataStorage.AstsFeeLiquidityCollection.UpdateLiquidity(plainAcc.PublicKey, liquidity.Rate, liquidity.LeadingZeros, liquidity.Asset, status); err != nil {
 			return
 		}
 

@@ -11,7 +11,7 @@ type AssetFeeLiquidities struct {
 	helpers.SerializableInterface `json:"-"`
 	Version                       AssetFeeLiquiditiesVersion `json:"version"`
 	List                          []*AssetFeeLiquidity       `json:"list"`
-	Collector                     []byte                     `json:"collector"`
+	Collector                     helpers.HexBytes           `json:"collector"`
 }
 
 func (self *AssetFeeLiquidities) HasAssetFeeLiquidities() bool {
@@ -43,7 +43,7 @@ func (self *AssetFeeLiquidities) Validate() error {
 
 func (self *AssetFeeLiquidities) GetLiquidity(assetId []byte) *AssetFeeLiquidity {
 	for _, it := range self.List {
-		if bytes.Equal(it.AssetId, assetId) {
+		if bytes.Equal(it.Asset, assetId) {
 			return it
 		}
 	}
@@ -54,7 +54,7 @@ func (self *AssetFeeLiquidities) UpdateLiquidity(updateLiquidity *AssetFeeLiquid
 
 	if updateLiquidity.Rate == 0 {
 		for i, it := range self.List {
-			if bytes.Equal(it.AssetId, updateLiquidity.AssetId) {
+			if bytes.Equal(it.Asset, updateLiquidity.Asset) {
 				self.List = append(self.List[:i], self.List[i+1:]...)
 
 				if len(self.List) == 0 {
@@ -67,7 +67,7 @@ func (self *AssetFeeLiquidities) UpdateLiquidity(updateLiquidity *AssetFeeLiquid
 		return UPDATE_LIQUIDITY_NOTHING, nil
 	} else {
 		for _, it := range self.List {
-			if bytes.Equal(it.AssetId, updateLiquidity.AssetId) {
+			if bytes.Equal(it.Asset, updateLiquidity.Asset) {
 				it.Rate = updateLiquidity.Rate
 				return UPDATE_LIQUIDITY_OVERWRITTEN, nil
 			}
@@ -77,7 +77,7 @@ func (self *AssetFeeLiquidities) UpdateLiquidity(updateLiquidity *AssetFeeLiquid
 		}
 		self.List = append(self.List, &AssetFeeLiquidity{
 			nil,
-			updateLiquidity.AssetId,
+			updateLiquidity.Asset,
 			updateLiquidity.Rate,
 			updateLiquidity.LeadingZeros,
 		})

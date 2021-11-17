@@ -139,7 +139,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 
 		//verify
 		if payload.Statement.CLn[i].String() != balance.Left.String() || payload.Statement.CRn[i].String() != balance.Right.String() {
-			return errors.New("CLn or CRn is not matching")
+			return fmt.Errorf("CLn or CRn is not matching for %d", i)
 		}
 
 		acc.Balance.Amount = balance

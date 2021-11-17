@@ -14,7 +14,7 @@ import (
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/info"
@@ -302,7 +302,7 @@ func (apiStore *APIStore) openLoadAsset(hash []byte, height uint64) (ast *asset.
 	return
 }
 
-func (apiStore *APIStore) openLoadAssetFeeLiquidity(hash []byte, height uint64) (astFeeLiquidity *asset_fee_liquidity.AssetFeeLiquidity, errFinal error) {
+func (apiStore *APIStore) openLoadAssetFeeLiquidity(hash []byte, height uint64) (output *api_types.APIAssetFeeLiquidity, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if hash == nil {
@@ -314,7 +314,26 @@ func (apiStore *APIStore) openLoadAssetFeeLiquidity(hash []byte, height uint64) 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 		dataStorage := data_storage.NewDataStorage(reader)
 
-		astFeeLiquidity, err = dataStorage.GetAssetFeeLiquidityTop(hash, chainHeight)
+		var plainAcc *plain_account.PlainAccount
+		if plainAcc, err = dataStorage.GetWhoHasAssetTopLiquidity(hash, chainHeight); err != nil {
+			return
+		}
+
+		if plainAcc == nil {
+			return
+		}
+
+		liquditity := plainAcc.AssetFeeLiquidities.GetLiquidity(hash)
+		if liquditity == nil {
+			return errors.New("Strange. It should have the liquidity")
+		}
+
+		output = &api_types.APIAssetFeeLiquidity{
+			hash,
+			liquditity.Rate,
+			liquditity.LeadingZeros,
+			plainAcc.AssetFeeLiquidities.Collector,
+		}
 		return
 	})
 	return

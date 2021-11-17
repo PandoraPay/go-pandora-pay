@@ -531,7 +531,7 @@ func (builder *TransactionsBuilder) initCLI() {
 				break
 			}
 			liquidity := &asset_fee_liquidity.AssetFeeLiquidity{}
-			liquidity.AssetId = builder.readAsset("AssetId", false)
+			liquidity.Asset = builder.readAsset("Asset", false)
 			liquidity.Rate = gui.GUI.OutputReadUint64("Conversion Rate", false, nil)
 			liquidity.LeadingZeros = byte(gui.GUI.OutputReadUint64("Leading Zeros", true, func(value uint64) bool {
 				return value <= uint64(config_assets.ASSETS_DECIMAL_SEPARATOR_MAX_BYTE)

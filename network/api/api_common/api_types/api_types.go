@@ -153,3 +153,10 @@ type APIFaucetInfo struct {
 	FaucetTestnetEnabled bool   `json:"faucetTestnetEnabled,omitempty"`
 	FaucetTestnetCoins   uint64 `json:"faucetTestnetCoins,omitempty"`
 }
+
+type APIAssetFeeLiquidity struct {
+	Asset        helpers.HexBytes `json:"asset"`
+	Rate         uint64           `json:"rate"`
+	LeadingZeros byte             `json:"leadingZeros"`
+	Collector    helpers.HexBytes `json:"collector"` //collector Public Key
+}
