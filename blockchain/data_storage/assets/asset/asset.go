@@ -10,6 +10,7 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash_map"
 	"regexp"
+	"strings"
 )
 
 var regexAssetName = regexp.MustCompile("^([a-zA-Z0-9]+ )+[a-zA-Z0-9]+$|^[a-zA-Z0-9]+")
@@ -18,8 +19,8 @@ var regexAssetDescription = regexp.MustCompile("[\\w|\\W]+")
 
 type Asset struct {
 	hash_map.HashMapElementSerializableInterface `json:"-"`
-	PublicKey                                    helpers.HexBytes `json:"publicKey"` //hashmap key
-	Index                                        uint64           `json:"index"`     //hashMap index
+	PublicKey                                    helpers.HexBytes `json:"-"` //hashmap key
+	Index                                        uint64           `json:"-"` //hashMap index
 	Version                                      uint64           `json:"version,omitempty"`
 	CanUpgrade                                   bool             `json:"canUpgrade,omitempty"`               //upgrade different settings
 	CanMint                                      bool             `json:"canMint,omitempty"`                  //increase supply
@@ -58,7 +59,7 @@ func (asset *Asset) Validate() error {
 	if len(asset.Ticker) > 10 || len(asset.Ticker) < 2 {
 		return errors.New("asset ticker length is invalid")
 	}
-	if len(asset.Description) > 512 {
+	if len(asset.Description) > 1023 {
 		return errors.New("asset  description length is invalid")
 	}
 
@@ -70,6 +71,17 @@ func (asset *Asset) Validate() error {
 	}
 	if !regexAssetDescription.MatchString(asset.Description) {
 		return errors.New("Asset description is invalid")
+	}
+
+	if !bytes.Equal(asset.PublicKey, config_coins.NATIVE_ASSET_FULL) {
+
+		if strings.ToUpper(asset.Name) == config_coins.NATIVE_ASSET_NAME {
+			return errors.New("Asset can not contain same name")
+		}
+		if asset.Ticker == config_coins.NATIVE_ASSET_TICKER {
+			return errors.New("Asset can not contain same ticker")
+		}
+
 	}
 
 	return nil
