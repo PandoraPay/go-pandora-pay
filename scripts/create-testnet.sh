@@ -29,11 +29,11 @@ sleep 0.5
 for (( i=0; i < $nodes; ++i ))
 do
     echo "running $i"
-    xterm -e go run main.go --instance="devnet" --instance-id="$i" --network="devnet" --wallet-derive-delegated-stake="0,0,delegated" --exit
-    mv ./_build/devnet_$i/DEV/delegated.delegatedStake ./_build/devnet_0/DEV/$i.delegatedStake
+    xterm -e go run main.go --instance="devnet" --instance-id="$i" --network="devnet" --wallet-derive-delegated-stake="0,0,delegated.stake" --exit
+    mv ./_build/devnet_$i/DEV/delegated.delegatedStake ./_build/devnet_0/DEV/$i.stake
     echo "runned"
 
-    str+="$i.delegatedStake"
+    str+="$i.stake"
 
     if [ $i != $(( nodes-1 )) ]; then
       str+=","
