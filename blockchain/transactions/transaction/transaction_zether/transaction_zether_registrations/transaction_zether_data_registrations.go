@@ -68,7 +68,7 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(dataStorage *data_st
 }
 
 func (self *TransactionZetherDataRegistrations) Serialize(w *helpers.BufferWriter) {
-	w.WriteByte(byte(len(self.Registrations)))
+	w.WriteUvarint(uint64(len(self.Registrations))) //it could exceed byte
 	for _, registration := range self.Registrations {
 		registration.Serialize(w)
 	}
@@ -76,13 +76,13 @@ func (self *TransactionZetherDataRegistrations) Serialize(w *helpers.BufferWrite
 
 func (self *TransactionZetherDataRegistrations) Deserialize(r *helpers.BufferReader) (err error) {
 
-	var n byte
-	if n, err = r.ReadByte(); err != nil {
+	var n uint64
+	if n, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
 	self.Registrations = make([]*TransactionZetherDataRegistration, n)
-	for i := byte(0); i < n; i++ {
+	for i := uint64(0); i < n; i++ {
 		self.Registrations[i] = &TransactionZetherDataRegistration{}
 		if err = self.Registrations[i].Deserialize(r); err != nil {
 			return

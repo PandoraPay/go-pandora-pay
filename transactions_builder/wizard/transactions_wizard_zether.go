@@ -30,7 +30,7 @@ func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
 	emap := make(map[string]map[string][]byte) //initialize all maps
 	for i := range assets {
 		if emap[string(assets[i])] == nil {
-			emap[string(assets[i])] = map[string][]byte{}
+			emap[string(assets[i])] = make(map[string][]byte)
 		}
 	}
 	return emap

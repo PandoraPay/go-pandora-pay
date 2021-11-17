@@ -16,8 +16,7 @@ import (
 )
 
 func (consensus *Consensus) chainGet(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	conn.SendJSON([]byte("chain-update"), consensus.getUpdateNotification(nil), nil)
-	return nil, nil
+	return nil, conn.SendJSON([]byte("chain-update"), consensus.getUpdateNotification(nil), nil)
 }
 
 func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -36,7 +35,9 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		return nil, nil
 	}
 
-	forkFound, exists := consensus.forks.hashes.Load(string(chainUpdateNotification.Hash))
+	hashStr := string(chainUpdateNotification.Hash)
+
+	forkFound, exists := consensus.forks.hashes.Load(hashStr)
 	if exists {
 		fork := forkFound.(*Fork)
 		fork.AddConn(conn, true)
@@ -52,7 +53,7 @@ func (consensus *Consensus) chainUpdate(conn *connection.AdvancedConnection, val
 		fork := &Fork{
 			End:                chainUpdateNotification.End,
 			Hash:               chainUpdateNotification.Hash,
-			HashStr:            string(chainUpdateNotification.Hash),
+			HashStr:            hashStr,
 			PrevHash:           chainUpdateNotification.PrevHash,
 			BigTotalDifficulty: chainUpdateNotification.BigTotalDifficulty,
 			Initialized:        false,
