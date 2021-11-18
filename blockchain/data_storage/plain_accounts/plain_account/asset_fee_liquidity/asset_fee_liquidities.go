@@ -34,6 +34,9 @@ func (self *AssetFeeLiquidities) Validate() error {
 		if len(self.List) == 0 || len(self.Collector) != cryptography.PublicKeySize {
 			return errors.New("Collector need to be set when there is at least one liquidity provided")
 		}
+		if len(self.List) > 255 {
+			return errors.New("Invalid List length")
+		}
 	default:
 		return errors.New("Invalid Version")
 	}
@@ -87,13 +90,19 @@ func (self *AssetFeeLiquidities) UpdateLiquidity(updateLiquidity *AssetFeeLiquid
 }
 
 func (self *AssetFeeLiquidities) Serialize(w *helpers.BufferWriter) {
-	w.WriteByte(byte(len(self.List)))
-	if len(self.List) > 0 {
-		w.WriteUvarint(uint64(self.Version))
-		for _, liquidity := range self.List {
-			liquidity.Serialize(w)
+
+	w.WriteUvarint(uint64(self.Version))
+
+	switch self.Version {
+	case SIMPLE:
+		w.WriteByte(byte(len(self.List)))
+		if len(self.List) > 0 {
+			w.WriteUvarint(uint64(self.Version))
+			for _, liquidity := range self.List {
+				liquidity.Serialize(w)
+			}
+			w.Write(self.Collector)
 		}
-		w.Write(self.Collector)
 	}
 }
 
