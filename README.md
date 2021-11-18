@@ -70,7 +70,8 @@ you can also create an account on hcaptcha
 - [x] Forging
     - [x] Forging with wallets Multithreading    
     - [X] Forging with delegated stakes
-        - [x] Accepting to delegate stakes from network  
+        - [x] Accepting to delegate stakes from network
+        - [x] Integrating delegate stakes fee 
 - [x] Balances
     - [x] Balance and Nonce Update
     - [x] Delegating stake
