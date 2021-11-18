@@ -92,8 +92,9 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Deserialize(r *hel
 	}
 
 	txExtra.Liquidities = make([]*asset_fee_liquidity.AssetFeeLiquidity, count)
-	for _, item := range txExtra.Liquidities {
-		if err = item.Deserialize(r); err != nil {
+	for i := range txExtra.Liquidities {
+		txExtra.Liquidities[i] = &asset_fee_liquidity.AssetFeeLiquidity{}
+		if err = txExtra.Liquidities[i].Deserialize(r); err != nil {
 			return
 		}
 	}
