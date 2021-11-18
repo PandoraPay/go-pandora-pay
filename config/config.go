@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/config/globals"
+	"pandora-pay/cryptography"
+	"pandora-pay/helpers"
 	"runtime"
 	"strconv"
 	"time"
@@ -169,8 +171,28 @@ func InitConfig() (err error) {
 
 	}
 
+	if globals.Arguments["--delegates-maximum"] != nil {
+		if config_nodes.DELEGATES_MAXIMUM, err = strconv.Atoi(globals.Arguments["--delegates-maximum"].(string)); err != nil {
+			return
+		}
+	}
+
+	if globals.Arguments["--delegator-fee"] != nil {
+		if config_nodes.DELEGATOR_FEE, err = strconv.ParseUint(globals.Arguments["--delegator-fee"].(string), 10, 64); err != nil {
+			return
+		}
+	}
+
+	if globals.Arguments["--delegator-reward-collector-pub-key"] != nil {
+		config_nodes.DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY = helpers.DecodeHex(globals.Arguments["--delegator-reward-collector-pub-key"].(string))
+	}
+
 	if globals.Arguments["--delegates-allowed-enabled"] == "true" {
-		config_nodes.DELEGATES_ALLOWED_ACTIVATED = true
+		config_nodes.DELEGATES_ALLOWED_ENABLED = true
+
+		if config_nodes.DELEGATOR_FEE > 0 && len(config_nodes.DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY) != cryptography.PublicKeySize {
+			return errors.New("DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY is invalid")
+		}
 	}
 
 	if err = config_init(); err != nil {

@@ -10,7 +10,7 @@ type ApiDelegatesNodeInfoRequest struct {
 type ApiDelegatesNodeInfoAnswer struct {
 	MaximumAllowed int              `json:"maximumAllowed"`
 	DelegatesCount int              `json:"delegatesCount"`
-	DelegatesFee   uint16           `json:"delegatesFee"`
+	DelegatesFee   uint64           `json:"delegatesFee"`
 	Challenge      helpers.HexBytes `json:"challenge"`
 }
 

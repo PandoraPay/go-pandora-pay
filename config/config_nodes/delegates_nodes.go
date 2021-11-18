@@ -58,7 +58,8 @@ var (
 )
 
 var (
-	DELEGATES_ALLOWED_ACTIVATED = false
-	DELEGATES_MAXIMUM           = 10000
-	DELEGATES_FEE               = uint16(math.Floor(float64(0.00 * config_stake.DELEGATING_STAKING_FEE_MAX_VALUE))) // max DELEGATING_STAKING_FEE_MAX_VALUE
+	DELEGATES_ALLOWED_ENABLED             = false
+	DELEGATES_MAXIMUM                     = 10000
+	DELEGATOR_FEE                         = uint64(math.Floor(0.00 * float64(config_stake.DELEGATING_STAKING_FEE_MAX_VALUE))) // max DELEGATING_STAKING_FEE_MAX_VALUE
+	DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY = []byte{}
 )

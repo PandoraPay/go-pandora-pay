@@ -255,6 +255,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return errors.New("Block Staking Delegated Public Key is not matching")
 					}
 
+					if blkComplete.Block.DelegatedStakeFee != plainAcc.DelegatedStake.DelegatedStakeFee {
+						return fmt.Errorf("Block Delegated Stake Fee doesn't match %d %d", blkComplete.Block.DelegatedStakeFee, plainAcc.DelegatedStake.DelegatedStakeFee)
+					}
+
 					if blkComplete.Block.StakingAmount != stakingAmount {
 						return fmt.Errorf("Block Staking Amount doesn't match %d %d", blkComplete.Block.StakingAmount, stakingAmount)
 					}

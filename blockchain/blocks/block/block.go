@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_reward"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -14,15 +15,17 @@ import (
 
 type Block struct {
 	*BlockHeader
-	MerkleHash              helpers.HexBytes `json:"merkleHash"`     //32 byte
-	PrevHash                helpers.HexBytes `json:"prevHash"`       //32 byte
-	PrevKernelHash          helpers.HexBytes `json:"prevKernelHash"` //32 byte
-	Timestamp               uint64           `json:"timestamp"`
-	StakingAmount           uint64           `json:"stakingAmount"`
-	Forger                  helpers.HexBytes `json:"forger"`                  // 33 byte public key
-	DelegatedStakePublicKey helpers.HexBytes `json:"delegatedStakePublicKey"` // 33 byte public key can also be found into the accounts tree
-	Signature               helpers.HexBytes `json:"signature"`               // 64 byte signature
-	Bloom                   *BlockBloom      `json:"bloom"`
+	MerkleHash               helpers.HexBytes `json:"merkleHash"`     //32 byte
+	PrevHash                 helpers.HexBytes `json:"prevHash"`       //32 byte
+	PrevKernelHash           helpers.HexBytes `json:"prevKernelHash"` //32 byte
+	Timestamp                uint64           `json:"timestamp"`
+	StakingAmount            uint64           `json:"stakingAmount"`
+	Forger                   helpers.HexBytes `json:"forger"`                  // 33 byte public key
+	DelegatedStakePublicKey  helpers.HexBytes `json:"delegatedStakePublicKey"` // 33 byte public key can also be found into the accounts tree
+	DelegatedStakeFee        uint64           `json:"delegatedStakeFee"`
+	RewardCollectorPublicKey helpers.HexBytes `json:"rewardCollectorPublicKey"` // 33 byte public key only if rewardFee > 0
+	Signature                helpers.HexBytes `json:"signature"`                // 64 byte signature
+	Bloom                    *BlockBloom      `json:"bloom"`
 }
 
 func CreateEmptyBlock() *Block {
@@ -32,7 +35,21 @@ func CreateEmptyBlock() *Block {
 }
 
 func (blk *Block) validate() error {
-	return blk.BlockHeader.validate()
+	if err := blk.BlockHeader.validate(); err != nil {
+		return err
+	}
+
+	if blk.DelegatedStakeFee == 0 && len(blk.RewardCollectorPublicKey) != 0 {
+		return errors.New("blk.RewardCollectorPublicKey must be nil")
+	}
+	if blk.DelegatedStakeFee > 0 && len(blk.RewardCollectorPublicKey) != cryptography.PublicKeySize {
+		return errors.New("blk.RewardCollectorPublicKey invalid length")
+	}
+	if blk.DelegatedStakeFee > config_stake.DELEGATING_STAKING_FEE_MAX_VALUE {
+		return errors.New("DelegatedStakeFee is invalid")
+	}
+
+	return nil
 }
 
 func (blk *Block) Verify() error {
@@ -55,7 +72,41 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 	if err = helpers.SafeUint64Add(&final, allFees); err != nil {
 		return
 	}
-	if err = plainAcc.DelegatedStake.AddStakePendingStake(allFees, blk.Height); err != nil {
+
+	if blk.DelegatedStakeFee > 0 {
+
+		//compute the commission
+		commission := final
+		if err = helpers.SafeUint64Mul(&commission, blk.DelegatedStakeFee); err != nil {
+			return
+		}
+		commission /= config_stake.DELEGATING_STAKING_FEE_MAX_VALUE
+
+		if err = helpers.SafeUint64Sub(&final, commission); err != nil {
+			return
+		}
+
+		//let's add the commission
+		var plainAccRewardCollector *plain_account.PlainAccount
+		if plainAccRewardCollector, err = dataStorage.PlainAccs.GetPlainAccount(blk.RewardCollectorPublicKey, blk.Height); err != nil {
+			return
+		}
+		if plainAccRewardCollector == nil {
+			if plainAccRewardCollector, err = dataStorage.PlainAccs.CreatePlainAccount(blk.RewardCollectorPublicKey); err != nil {
+				return
+			}
+		}
+		if err = plainAccRewardCollector.DelegatedStake.AddStakePendingStake(commission, blk.Height); err != nil {
+			return
+		}
+
+		if err = dataStorage.PlainAccs.Update(string(blk.RewardCollectorPublicKey), plainAcc); err != nil {
+			return
+		}
+
+	}
+
+	if err = plainAcc.DelegatedStake.AddStakePendingStake(final, blk.Height); err != nil {
 		return
 	}
 
@@ -124,6 +175,10 @@ func (blk *Block) AdvancedSerialization(w *helpers.BufferWriter, kernelHash bool
 	w.Write(blk.Forger)
 	if !kernelHash {
 		w.Write(blk.DelegatedStakePublicKey)
+		w.WriteUvarint(blk.DelegatedStakeFee)
+		if blk.DelegatedStakeFee > 0 {
+			w.Write(blk.RewardCollectorPublicKey)
+		}
 	}
 
 	if inclSignature {
@@ -172,6 +227,14 @@ func (blk *Block) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 	if blk.DelegatedStakePublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
+	}
+	if blk.DelegatedStakeFee, err = r.ReadUvarint(); err != nil {
+		return
+	}
+	if blk.DelegatedStakeFee > 0 {
+		if blk.RewardCollectorPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+			return
+		}
 	}
 	if blk.Signature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
 		return

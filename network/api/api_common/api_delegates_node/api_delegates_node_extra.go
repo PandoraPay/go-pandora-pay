@@ -5,6 +5,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/config/config_nodes"
 	"pandora-pay/recovery"
 	"pandora-pay/wallet/wallet_address"
 	"sync/atomic"
@@ -82,6 +83,10 @@ func (api *APIDelegatesNode) updateAccountsChanges() {
 					if v.Stored == "update" {
 						plainAcc := v.Element.(*plain_account.PlainAccount)
 						if plainAcc.DelegatedStake.HasDelegatedStake() && bytes.Equal(plainAcc.DelegatedStake.DelegatedStakePublicKey, pendingDelegatingStakeChange.delegateStakingPublicKey) {
+
+							if plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE {
+								continue
+							}
 
 							addr, err := addresses.CreateAddr(pendingDelegatingStakeChange.publicKey, nil, 0, nil)
 							if err != nil {

@@ -174,7 +174,7 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 func (wallet *Wallet) walletLoaded() {
 
 	for _, addr := range wallet.Addresses {
-		wallet.forging.Wallet.AddWallet(addr.GetDelegatedStakePrivateKey(), addr.PublicKey)
+		wallet.forging.Wallet.AddWallet(addr.GetDelegatedStakePrivateKey(), addr.PublicKey, false, nil)
 	}
 
 	wallet.updateWallet()

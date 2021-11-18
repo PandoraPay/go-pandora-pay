@@ -32,7 +32,6 @@ func CreateForging(mempool *mempool.Mempool) (*Forging, error) {
 			[]*ForgingWorkerThread{},
 			nil,
 			make(chan *ForgingWalletAddressUpdate),
-			make(chan struct{}),
 			nil,
 			nil,
 			nil,

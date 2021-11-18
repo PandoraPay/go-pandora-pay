@@ -12,6 +12,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config"
+	"pandora-pay/config/config_nodes"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
@@ -161,6 +162,10 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 		return errors.New("Wallet was not loaded!")
 	}
 
+	if wallet.Count > config_nodes.DELEGATES_MAXIMUM {
+		return errors.New("DELEGATES_MAXIMUM exceeded")
+	}
+
 	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, adr.PublicKey, nil, 0, nil)
 	if err != nil {
 		return
@@ -175,10 +180,9 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 	wallet.Addresses = append(wallet.Addresses, adr)
 	wallet.addressesMap[string(adr.PublicKey)] = adr
 
-	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKey)
+	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKey, false, nil)
 
 	wallet.Count += 1
-	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKey)
 
 	wallet.updateWallet()
 	gui.GUI.Info("wallet.saveWallet", len(wallet.Addresses))
@@ -236,7 +240,7 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 		wallet.CountImportedIndex += 1
 	}
 
-	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKey)
+	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKey, false, nil)
 
 	wallet.updateWallet()
 	gui.GUI.Info("wallet.saveWallet", len(wallet.Addresses))
@@ -336,7 +340,7 @@ func (wallet *Wallet) RemoveAddressByIndex(index int, lock bool) (bool, error) {
 
 	wallet.Count -= 1
 
-	wallet.forging.Wallet.RemoveWallet(removing.PublicKey)
+	wallet.forging.Wallet.RemoveWallet(removing.PublicKey, false, nil)
 
 	wallet.updateWallet()
 	if err := wallet.saveWallet(index, index+1, wallet.Count, false); err != nil {
@@ -501,6 +505,11 @@ func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAcc
 
 		if plainAcc.DelegatedStake.HasDelegatedStake() {
 
+			if plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE {
+				_, err = wallet.RemoveAddressByWalletAddress(adr, lock)
+				return
+			}
+
 			lastKnownNonce := uint32(0)
 			if adr.DelegatedStake != nil {
 				lastKnownNonce = adr.DelegatedStake.LastKnownNonce
@@ -514,14 +523,14 @@ func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAcc
 
 			if delegatedStake != nil {
 				adr.DelegatedStake = delegatedStake
-				wallet.forging.Wallet.AddWallet(adr.DelegatedStake.PrivateKey.Key, adr.PublicKey)
+				wallet.forging.Wallet.AddWallet(adr.DelegatedStake.PrivateKey.Key, adr.PublicKey, true, plainAcc)
 				return wallet.saveWalletAddress(adr, lock)
 			}
 
 		}
 
 		adr.DelegatedStake = nil
-		wallet.forging.Wallet.AddWallet(nil, adr.PublicKey)
+		wallet.forging.Wallet.RemoveWallet(adr.PublicKey, true, plainAcc)
 
 		return wallet.saveWalletAddress(adr, lock)
 	}
