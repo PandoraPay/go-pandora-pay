@@ -3,41 +3,19 @@ PandoraPay blockchain in go
 
 The main design pattern that has been taken in consideration is to be **dead-simple**. A source code that is simple is bug free and easy to be developed and improved over time.
 
-## Installing
+### DOCS
 
-Go 1.18 will be required once released as go-pandora-pay will use generics.
+[Installation](/docs/installation.md)
 
-Tested with 1.17 and 1.16
+[Running](/docs/running.md)
 
-1. Install golang https://golang.org/doc/install
-2. Installing missing packages `go get -t .`
-3. Run the node
+[Scripts](/docs/scripts.md)
 
-## Running
+[Debugging](/docs/debugging.md)
 
-### Running your own devnet
+[Assets](/docs/assets.md)
 
-`--debugging --network="devnet" --new-devnet --tcp-server-port="5231" --set-genesis="file"  --staking`
-
-#### Activating devnet faucet
-
-`--hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true"`
-
-you can also create an account on hcaptcha 
-
-### Running the node as a Tor Hidden Server
-1. Install Tor
-2. Configure Tor 
-    - Ubuntu: 
-        - open `sudo nano /etc/tor/torrc` 
-        - add & save
-            ``` 
-            HiddenServiceDir /var/lib/tor/pandora_pay_hidden_service/
-            HiddenServicePort 80 127.0.0.1:8080
-            ```      
-        - restart tor `sudo service tor restart`
-        - copy your onion address `sudo nano /var/lib/tor/pandora_pay_hidden_service/` 
-        - use the parameter `--tor-onion="YOUR_ONION_ADDRESS_FROM_ABOVE"`
+[Transactions](/docs/transactions.md)
 
 ## Status of Blockchain implementation:
 
@@ -137,32 +115,6 @@ The main reasons why DPOS has been chosen over POS:
     1. state trie proofs to prove to light clients the state.     
     2. sharding. Creating multiple distinct shards and splitting the state trie into `n` shards
     3. creating macro blocks by selecting specific nodes for a meta chain. This allows light consensus.
-  
-### Debugging
-
-Using profiling to debug memory leaks/CPU
-0. Install graphviz by running `sudo apt install graphviz` 
-1. use `--debugging`
-2. The following command will request for a 5s CPU
-   profile and will launch a browser with an SVG file. `go tool pprof -web http://:6060/debug/pprof/profile?seconds=5`
-4. To view the goroutines `go tool pprof -http :8080 http://:6060/debug/pprof/goroutine`
-
-#### Debugging races
- GORACE="log_path=/PandoraPay/pandora-pay-go/report" go run -race main.go 
-
-### DOCS
-[WebAssembly DOCS](/docs/webassembly.md)
-
-[Assets DOCS](/docs/assets.md)
-
-[Transactions DOCS](/docs/transactions.md)
-
-### Scripts
-`scripts/compile-wasm.sh` compiles to WASM
-
-### Checking and Installing a specific go version
-1. `go env GOROOT`
-2. download from https://golang.org/doc/manage-install
 
 # DISCLAIMER:
 This source code is released for research purposes only, with the intent of researching and studying a decentralized p2p network protocol.
