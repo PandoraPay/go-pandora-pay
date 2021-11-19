@@ -60,23 +60,6 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataSt
 			}
 		}
 
-		if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED || reg.RegistrationType == transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT {
-
-			var acc *account.Account
-			if acc, err = accs.GetAccount(publicKeyList[i]); err != nil {
-				return
-			}
-
-			if acc != nil {
-				return errors.New("Account is already registered")
-			}
-
-			if acc, err = accs.CreateAccount(publicKeyList[i]); err != nil {
-				return
-			}
-
-		}
-
 	}
 
 	for _, publicKey := range publicKeyList {
@@ -85,6 +68,27 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataSt
 		}
 		if !isReg {
 			return errors.New("PublicKey is already registered")
+		}
+	}
+
+	for i, reg := range self.Registrations {
+
+		if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED || reg.RegistrationType == transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT {
+
+			var exists bool
+			if exists, err = accs.Exists(string(publicKeyList[i])); err != nil {
+				return
+			}
+
+			if exists {
+				return errors.New("Account is already registered")
+			}
+
+			var acc *account.Account
+			if acc, err = accs.CreateAccount(publicKeyList[i]); err != nil {
+				return
+			}
+
 		}
 	}
 
