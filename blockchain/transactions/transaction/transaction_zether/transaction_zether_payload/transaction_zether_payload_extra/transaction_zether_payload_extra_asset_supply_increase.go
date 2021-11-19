@@ -132,3 +132,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) Deserializ
 	}
 	return
 }
+
+func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) UpdateStatement(payloadStatement *crypto.Statement) error {
+	return nil
+}

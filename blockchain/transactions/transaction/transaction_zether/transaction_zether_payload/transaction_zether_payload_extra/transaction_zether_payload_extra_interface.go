@@ -15,6 +15,7 @@ type TransactionZetherPayloadExtraInterface interface {
 	Deserialize(r *helpers.BufferReader) error
 	VerifyExtraSignature(hashForSignature []byte) bool
 	ComputeAllKeys(out map[string]bool)
+	UpdateStatement(payloadStatement *crypto.Statement) error
 }
 
 func SerializeToBytes(self TransactionZetherPayloadExtraInterface, inclSignature bool) []byte {

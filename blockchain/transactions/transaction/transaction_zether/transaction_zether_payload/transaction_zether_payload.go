@@ -338,7 +338,12 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 	}
 
 	if payload.Extra != nil {
-		return payload.Extra.Deserialize(r)
+		if err = payload.Extra.Deserialize(r); err != nil {
+			return
+		}
+		if err = payload.Extra.UpdateStatement(payload.Statement); err != nil {
+			return
+		}
 	}
 
 	return

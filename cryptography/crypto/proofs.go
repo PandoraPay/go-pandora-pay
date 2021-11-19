@@ -42,11 +42,11 @@ func (s *Statement) Serialize(w *helpers.BufferWriter, payloadRegistrations []*t
 
 	for i := 0; i < len(s.C); i++ {
 		w.Write(s.Publickeylist[i].EncodeCompressed()) //can be bloomed
+		w.Write(s.C[i].EncodeCompressed())
 		if payloadRegistrations[i].RegistrationType == transaction_zether_registration.REGISTERED_ACCOUNT {
 			w.Write(s.CLn[i].EncodeCompressed()) //can be bloomed
 			w.Write(s.CRn[i].EncodeCompressed()) //can be bloomed
 		}
-		w.Write(s.C[i].EncodeCompressed())
 	}
 
 }
@@ -85,6 +85,9 @@ func (s *Statement) Deserialize(r *helpers.BufferReader, payloadRegistrations []
 		if s.Publickeylist[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
+		if s.C[i], err = r.ReadBN256G1(); err != nil {
+			return
+		}
 		if payloadRegistrations[i].RegistrationType == transaction_zether_registration.REGISTERED_ACCOUNT {
 			if s.CLn[i], err = r.ReadBN256G1(); err != nil {
 				return
@@ -97,12 +100,11 @@ func (s *Statement) Deserialize(r *helpers.BufferReader, payloadRegistrations []
 			if err = acckey.DecodeCompressed(s.Publickeylist[i].EncodeCompressed()); err != nil {
 				return
 			}
-			empty := ConstructElGamal(acckey.G1(), ElGamal_BASE_G)
-			s.CLn[i] = empty.Left
-			s.CRn[i] = empty.Right
-		}
-		if s.C[i], err = r.ReadBN256G1(); err != nil {
-			return
+			balance := ConstructElGamal(acckey.G1(), ElGamal_BASE_G)
+			echanges := ConstructElGamal(s.C[i], s.D)
+			balance = balance.Add(echanges)
+			s.CLn[i] = balance.Left
+			s.CRn[i] = balance.Right
 		}
 	}
 

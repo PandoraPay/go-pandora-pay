@@ -64,3 +64,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Deserialize(r *hel
 	payloadExtra.Asset = asset.NewAsset(nil, 0)
 	return payloadExtra.Asset.Deserialize(r)
 }
+
+func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) UpdateStatement(payloadStatement *crypto.Statement) error {
+	return nil
+}

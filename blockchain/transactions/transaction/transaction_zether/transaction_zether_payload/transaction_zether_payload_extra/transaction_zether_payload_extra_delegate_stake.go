@@ -119,3 +119,7 @@ func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) Deserialize(r *h
 	}
 	return
 }
+
+func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) UpdateStatement(payloadStatement *crypto.Statement) error {
+	return nil
+}

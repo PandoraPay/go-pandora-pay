@@ -109,45 +109,44 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 			publicKey := publicKeyPoint.EncodeCompressed()
 
-			if publicKeyIndex := publicKeyIndexes[string(publicKey)]; publicKeyIndex != nil {
+			publicKeyIndex := publicKeyIndexes[string(publicKey)]
+			if publicKeyIndex == nil {
+				return fmt.Errorf("Public Key Index was not specified for ring member %d", i)
+			}
 
-				if !publicKeyIndex.Registered && !registrationsAlready[string(publicKey)] {
+			if !publicKeyIndex.Registered && !registrationsAlready[string(publicKey)] {
 
-					registrationsAlready[string(publicKey)] = true
-					if len(publicKeyIndex.RegistrationSignature) != cryptography.SignatureSize {
-						return fmt.Errorf("Registration Signature is invalid for ring member %d", i)
-					}
-
-					registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
-						transaction_zether_registration.NOT_REGISTERED,
-						publicKeyIndex.RegistrationSignature,
-					}
-
-				} else if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil {
-
-					registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
-						transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT,
-						nil,
-					}
-
-				} else {
-					registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
-						transaction_zether_registration.REGISTERED_ACCOUNT,
-						nil,
-					}
+				registrationsAlready[string(publicKey)] = true
+				if len(publicKeyIndex.RegistrationSignature) != cryptography.SignatureSize {
+					return fmt.Errorf("Registration Signature is invalid for ring member %d", i)
 				}
 
-				if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil {
-					var acckey crypto.Point
-					if err = acckey.DecodeCompressed(publickeylist[i].EncodeCompressed()); err != nil {
-						return
-					}
-					balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G).Serialize()
-					emap[string(transfers[t].Asset)][publickeylist[i].String()] = balance
+				registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
+					transaction_zether_registration.NOT_REGISTERED,
+					publicKeyIndex.RegistrationSignature,
+				}
+
+			} else if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil {
+
+				registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
+					transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT,
+					nil,
 				}
 
 			} else {
-				return fmt.Errorf("Public Key Index was not specified for ring member %d", i)
+				registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
+					transaction_zether_registration.REGISTERED_ACCOUNT,
+					nil,
+				}
+			}
+
+			if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil {
+				var acckey crypto.Point
+				if err = acckey.DecodeCompressed(publicKeyPoint.EncodeCompressed()); err != nil {
+					return
+				}
+				balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
+				emap[string(transfers[t].Asset)][publicKeyPoint.String()] = balance.Serialize()
 			}
 
 		}

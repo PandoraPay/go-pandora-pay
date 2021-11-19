@@ -3,6 +3,7 @@ package transaction_zether_payload_extra
 import (
 	"bytes"
 	"errors"
+	"math/big"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -22,13 +23,21 @@ type TransactionZetherPayloadExtraClaim struct {
 	DelegateSignature           []byte
 }
 
+func (payloadExtra *TransactionZetherPayloadExtraClaim) getAmount(payloadStatement *crypto.Statement) (uint64, error) {
+	amount := payloadExtra.DelegatedStakingClaimAmount
+	if err := helpers.SafeUint64Add(&amount, payloadStatement.Fee); err != nil {
+		return 0, err
+	}
+	return amount, nil
+}
+
 func (payloadExtra *TransactionZetherPayloadExtraClaim) BeforeIncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
 	var acc *account.Account
 
-	amount := payloadExtra.DelegatedStakingClaimAmount
-	if err = helpers.SafeUint64Add(&amount, payloadStatement.Fee); err != nil {
+	amount, err := payloadExtra.getAmount(payloadStatement)
+	if err != nil {
 		return
 	}
 
@@ -135,5 +144,28 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) Deserialize(r *helpers.B
 	if payloadExtra.DelegateSignature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
 		return
 	}
+
+	return
+}
+
+func (payloadExtra *TransactionZetherPayloadExtraClaim) UpdateStatement(payloadStatement *crypto.Statement) (err error) {
+
+	serialized := append(payloadStatement.CLn[payloadExtra.RegistrationIndex].EncodeCompressed(), payloadStatement.CRn[payloadExtra.RegistrationIndex].EncodeCompressed()...)
+
+	var balance *crypto.ElGamal
+	if balance, err = new(crypto.ElGamal).Deserialize(serialized); err != nil {
+		return
+	}
+
+	amount, err := payloadExtra.getAmount(payloadStatement)
+	if err != nil {
+		return
+	}
+
+	balance = balance.Plus(new(big.Int).SetUint64(amount))
+
+	payloadStatement.CLn[payloadExtra.RegistrationIndex] = balance.Left
+	payloadStatement.CRn[payloadExtra.RegistrationIndex] = balance.Right
+
 	return
 }
