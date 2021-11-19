@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
-	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
@@ -84,8 +83,7 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataSt
 				return errors.New("Account is already registered")
 			}
 
-			var acc *account.Account
-			if acc, err = accs.CreateAccount(publicKeyList[i]); err != nil {
+			if _, err = accs.CreateAccount(publicKeyList[i]); err != nil {
 				return
 			}
 
