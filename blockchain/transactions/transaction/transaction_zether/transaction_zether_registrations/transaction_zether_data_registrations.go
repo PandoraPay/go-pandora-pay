@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -11,7 +14,7 @@ import (
 )
 
 type TransactionZetherDataRegistrations struct {
-	Registrations []*TransactionZetherDataRegistration
+	Registrations []*transaction_zether_registration.TransactionZetherDataRegistration
 }
 
 func (self *TransactionZetherDataRegistrations) ValidateRegistrations(publickeylist []*bn256.G1) (err error) {
@@ -20,39 +23,60 @@ func (self *TransactionZetherDataRegistrations) ValidateRegistrations(publickeyl
 		return errors.New("Invalid PublicKeys length")
 	}
 
-	for _, reg := range self.Registrations {
-
-		if reg.PublicKeyIndex > byte(len(publickeylist)-1) {
-			return fmt.Errorf("reg.PublicKeyIndex %d exceeds %d ", reg.PublicKeyIndex, len(publickeylist))
+	for i, reg := range self.Registrations {
+		if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
+			publicKey := publickeylist[i]
+			if crypto.VerifySignaturePoint([]byte("registration"), reg.RegistrationSignature, publicKey) == false {
+				return fmt.Errorf("Registration is invalid for %d", i)
+			}
 		}
-
-		publicKey := publickeylist[reg.PublicKeyIndex]
-		if crypto.VerifySignaturePoint([]byte("registration"), reg.RegistrationSignature, publicKey) == false {
-			return fmt.Errorf("Registration is invalid for %d", reg.PublicKeyIndex)
-		}
-
 	}
 
 	return
 }
 
-func (self *TransactionZetherDataRegistrations) RegisterNow(dataStorage *data_storage.DataStorage, publicKeyList [][]byte) (err error) {
+func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataStorage *data_storage.DataStorage, publicKeyList [][]byte) (err error) {
+
+	var accs *accounts.Accounts
+	if accs, err = dataStorage.AccsCollection.GetMap(asset); err != nil {
+		return
+	}
 
 	var isReg bool
-	for _, reg := range self.Registrations {
+	for i, reg := range self.Registrations {
 
-		//verify that the other accounts did not register meanwhile
-		if isReg, err = dataStorage.Regs.Exists(string(publicKeyList[reg.PublicKeyIndex])); err != nil {
-			return
-		}
-		if isReg {
-			return errors.New("PublicKey is already registered")
+		if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
+			//verify that the other accounts did not register meanwhile
+			if isReg, err = dataStorage.Regs.Exists(string(publicKeyList[i])); err != nil {
+				return
+			}
+			if isReg {
+				return errors.New("PublicKey is already registered")
+			}
+
+			//let's register
+			if _, err = dataStorage.Regs.CreateRegistration(publicKeyList[i]); err != nil {
+				return
+			}
 		}
 
-		//let's register
-		if _, err = dataStorage.Regs.CreateRegistration(publicKeyList[reg.PublicKeyIndex]); err != nil {
-			return
+		if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED || reg.RegistrationType == transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT {
+
+			var acc *account.Account
+			if acc, err = accs.GetAccount(publicKeyList[i]); err != nil {
+				return
+			}
+
+			if acc != nil {
+				return errors.New("Account is already registered")
+			}
+
+			if acc, err = accs.CreateAccount(publicKeyList[i]); err != nil {
+				return
+			}
+
 		}
+
 	}
 
 	for _, publicKey := range publicKeyList {
@@ -68,22 +92,16 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(dataStorage *data_st
 }
 
 func (self *TransactionZetherDataRegistrations) Serialize(w *helpers.BufferWriter) {
-	w.WriteUvarint(uint64(len(self.Registrations))) //it could exceed byte
 	for _, registration := range self.Registrations {
 		registration.Serialize(w)
 	}
 }
 
-func (self *TransactionZetherDataRegistrations) Deserialize(r *helpers.BufferReader) (err error) {
+func (self *TransactionZetherDataRegistrations) Deserialize(r *helpers.BufferReader, ringSize int) (err error) {
 
-	var n uint64
-	if n, err = r.ReadUvarint(); err != nil {
-		return
-	}
-
-	self.Registrations = make([]*TransactionZetherDataRegistration, n)
-	for i := uint64(0); i < n; i++ {
-		self.Registrations[i] = &TransactionZetherDataRegistration{}
+	self.Registrations = make([]*transaction_zether_registration.TransactionZetherDataRegistration, ringSize)
+	for i := 0; i < ringSize; i++ {
+		self.Registrations[i] = &transaction_zether_registration.TransactionZetherDataRegistration{}
 		if err = self.Registrations[i].Deserialize(r); err != nil {
 			return
 		}

@@ -20,7 +20,6 @@ type TxPreviewSimple struct {
 	Extra      interface{}                   `json:"extra"`
 	TxScript   transaction_simple.ScriptType `json:"txScript"`
 	DataPublic helpers.HexBytes              `json:"dataPublic"`
-	Fee        uint64                        `json:"fee"`
 	Vin        helpers.HexBytes              `json:"vin"`
 }
 
@@ -30,7 +29,6 @@ type TxPreviewZetherPayload struct {
 	BurnValue     uint64                                       `json:"burnValue"`
 	DataPublic    helpers.HexBytes                             `json:"dataPublic"`
 	Publickeys    []helpers.HexBytes                           `json:"publicKeys"`
-	Fee           uint64                                       `json:"fee"`
 }
 
 type TxPreviewZether struct {
@@ -41,6 +39,7 @@ type TxPreview struct {
 	TxBase  interface{}                         `json:"base"`
 	Version transaction_type.TransactionVersion `json:"version"`
 	Hash    helpers.HexBytes                    `json:"hash"`
+	Fee     uint64                              `json:"fee"`
 }
 
 func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
@@ -68,7 +67,6 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 		base = &TxPreviewSimple{
 			Extra:      baseExtra,
 			TxScript:   txBase.TxScript,
-			Fee:        txBase.Fee,
 			Vin:        txBase.Vin.PublicKey,
 			DataPublic: dataPublic,
 		}
@@ -93,7 +91,6 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 				payload.BurnValue,
 				dataPublic,
 				publicKeys,
-				payload.Statement.Fee,
 			}
 
 		}
@@ -105,9 +102,15 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 		return nil, errors.New("Invalid tx.Version")
 	}
 
+	fee, err := tx.ComputeFee()
+	if err != nil {
+		return nil, err
+	}
+
 	return &TxPreview{
 		base,
 		tx.Version,
 		tx.Bloom.Hash,
+		fee,
 	}, nil
 }

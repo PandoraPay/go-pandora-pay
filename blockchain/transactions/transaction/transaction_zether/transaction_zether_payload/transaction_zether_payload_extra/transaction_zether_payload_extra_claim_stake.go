@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
@@ -25,7 +26,6 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) BeforeIncludeTxPayload(t
 
 	var accs *accounts.Accounts
 	var acc *account.Account
-	var exists bool
 
 	amount := payloadExtra.DelegatedStakingClaimAmount
 	if err = helpers.SafeUint64Add(&amount, payloadStatement.Fee); err != nil {
@@ -48,21 +48,17 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) BeforeIncludeTxPayload(t
 		return
 	}
 
-	reg := payloadRegistrations.Registrations[payloadExtra.RegistrationIndex]
-	publicKey := publicKeyList[reg.PublicKeyIndex]
+	if payloadRegistrations.Registrations[payloadExtra.RegistrationIndex].RegistrationType != transaction_zether_registration.NOT_REGISTERED {
+		return errors.New("Account must not be registered before! It should be a new one")
+	}
+
+	publicKey := publicKeyList[payloadExtra.RegistrationIndex]
 
 	if accs, err = dataStorage.AccsCollection.GetMap(payloadAsset); err != nil {
 		return
 	}
 
-	if exists, err = accs.Exists(string(publicKey)); err != nil {
-		return
-	}
-
-	if exists {
-		return errors.New("Account should not exist!")
-	}
-	if acc, err = accs.CreateAccount(publicKey); err != nil {
+	if acc, err = accs.GetAccount(publicKey); err != nil {
 		return
 	}
 
@@ -78,8 +74,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) IncludeTxPayload(txHash 
 		return
 	}
 
-	reg := payloadRegistrations.Registrations[payloadExtra.RegistrationIndex]
-	publicKey := publicKeyList[reg.PublicKeyIndex]
+	publicKey := publicKeyList[payloadExtra.RegistrationIndex]
 
 	accs.Delete(string(publicKey))
 	dataStorage.Regs.Delete(string(publicKey))

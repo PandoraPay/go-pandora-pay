@@ -8,5 +8,6 @@ type BlockInfo struct {
 	Timestamp  uint64           `json:"timestamp"`
 	Size       uint64           `json:"size"`
 	TXs        uint64           `json:"txs"`
+	Fees       uint64           `json:"fees"`
 	Forger     helpers.HexBytes `json:"forger"` //20 bytes
 }

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"math"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -103,7 +102,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		}
 	}
 
-	if err = payload.Registrations.RegisterNow(dataStorage, publicKeyList); err != nil {
+	if err = payload.Registrations.RegisterNow(payload.Asset, dataStorage, publicKeyList); err != nil {
 		return
 	}
 
@@ -128,9 +127,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		}
 
 		if acc == nil {
-			if acc, err = accs.CreateAccount(publicKey); err != nil {
-				return
-			}
+			return errors.New("Account doesn't exist")
 		}
 
 		balance = acc.GetBalance()
@@ -189,16 +186,16 @@ func (payload *TransactionZetherPayload) Validate(payloadIndex byte) (err error)
 		return fmt.Errorf("RingSize cannot be that big")
 	}
 
-	if !crypto.IsPowerOf2(int(payload.Statement.RingSize)) {
+	if !crypto.IsPowerOf2(payload.Statement.RingSize) {
 		return fmt.Errorf("corrupted key pointers")
 	}
 
 	// check duplicate ring members within the tx
 	key_map := map[string]bool{}
-	for i := 0; i < int(payload.Statement.RingSize); i++ {
+	for i := 0; i < payload.Statement.RingSize; i++ {
 		key_map[string(payload.Statement.Publickeylist[i].EncodeCompressed())] = true
 	}
-	if len(key_map) != int(payload.Statement.RingSize) {
+	if len(key_map) != payload.Statement.RingSize {
 		return fmt.Errorf("Duplicated ring members")
 	}
 
@@ -233,9 +230,11 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 		w.Write(payload.Data)
 	}
 
+	payload.Statement.SerializeRingSize(w)
+
 	payload.Registrations.Serialize(w)
 
-	payload.Statement.Serialize(w)
+	payload.Statement.Serialize(w, payload.Registrations.Registrations)
 
 	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
 		w.WriteUvarint(payload.FeeRate)
@@ -308,13 +307,19 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		return errors.New("Invalid Tx.DataVersion")
 	}
 
-	payload.Registrations = &transaction_zether_registrations.TransactionZetherDataRegistrations{}
-	if err = payload.Registrations.Deserialize(r); err != nil {
+	payload.Statement = &crypto.Statement{}
+
+	ringPower, ringSize, err := payload.Statement.DeserializeRingSize(r)
+	if err != nil {
 		return
 	}
 
-	payload.Statement = &crypto.Statement{}
-	if err = payload.Statement.Deserialize(r); err != nil {
+	payload.Registrations = &transaction_zether_registrations.TransactionZetherDataRegistrations{}
+	if err = payload.Registrations.Deserialize(r, ringSize); err != nil {
+		return
+	}
+
+	if err = payload.Statement.Deserialize(r, payload.Registrations.Registrations); err != nil {
 		return
 	}
 
@@ -327,13 +332,8 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		}
 	}
 
-	m := int(math.Log2(float64(payload.Statement.RingSize)))
-	if math.Pow(2, float64(m)) != float64(payload.Statement.RingSize) {
-		return errors.New("log failed")
-	}
-
 	payload.Proof = &crypto.Proof{}
-	if err = payload.Proof.Deserialize(r, m); err != nil {
+	if err = payload.Proof.Deserialize(r, int(ringPower)); err != nil {
 		return
 	}
 

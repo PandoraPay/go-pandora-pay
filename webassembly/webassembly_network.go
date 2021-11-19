@@ -95,8 +95,6 @@ func getNetworkBlockWithTxs(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		blkWithTxs.BlockSerialized = nil
-
 		return webassembly_utils.ConvertJSONBytes(blkWithTxs)
 	})
 }

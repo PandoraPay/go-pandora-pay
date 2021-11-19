@@ -14,6 +14,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -21,8 +22,8 @@ import (
 )
 
 type json_TransactionDataRegistration struct {
-	PublicKeyIndex        byte             `json:"publicKeyIndex"`
-	RegistrationSignature helpers.HexBytes `json:"signature"`
+	RegistrationType      transaction_zether_registration.TransactionZetherDataRegistrationType `json:"registrationType"`
+	RegistrationSignature helpers.HexBytes                                                      `json:"signature"`
 }
 
 type json_TransactionDataDelegatedStakingUpdate struct {
@@ -97,7 +98,7 @@ type json_Only_TransactionZetherPayloadExtraAssetSupplyIncrease struct {
 }
 
 type json_Only_TransactionZetherStatement struct {
-	RingSize      uint64             `json:"ringSize"`
+	RingSize      int                `json:"ringSize"`
 	CLn           []helpers.HexBytes `json:"cLn"`
 	CRn           []helpers.HexBytes `json:"cRn"`
 	Publickeylist []helpers.HexBytes `json:"publickeylist"`
@@ -186,7 +187,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			registrations := make([]*json_TransactionDataRegistration, len(payload.Registrations.Registrations))
 			for i, reg := range payload.Registrations.Registrations {
 				registrations[i] = &json_TransactionDataRegistration{
-					reg.PublicKeyIndex,
+					reg.RegistrationType,
 					reg.RegistrationSignature,
 				}
 			}
@@ -418,7 +419,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				payload.DataVersion,
 				payload.Data,
 				&transaction_zether_registrations.TransactionZetherDataRegistrations{
-					Registrations: make([]*transaction_zether_registrations.TransactionZetherDataRegistration, len(payload.Registrations)),
+					Registrations: make([]*transaction_zether_registration.TransactionZetherDataRegistration, len(payload.Registrations)),
 				},
 				statement,
 				payload.FeeRate,
@@ -428,8 +429,8 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 			}
 
 			for i, reg := range payload.Registrations {
-				payloads[i].Registrations.Registrations[i] = &transaction_zether_registrations.TransactionZetherDataRegistration{
-					reg.PublicKeyIndex,
+				payloads[i].Registrations.Registrations[i] = &transaction_zether_registration.TransactionZetherDataRegistration{
+					reg.RegistrationType,
 					reg.RegistrationSignature,
 				}
 			}

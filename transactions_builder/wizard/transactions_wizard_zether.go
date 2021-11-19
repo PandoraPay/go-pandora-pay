@@ -17,6 +17,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
@@ -97,11 +98,14 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	}
 	statusCallback("Transaction public keys were shuffled")
 
-	registrations := make([][]*transaction_zether_registrations.TransactionZetherDataRegistration, len(publickeylists))
+	registrations := make([][]*transaction_zether_registration.TransactionZetherDataRegistration, len(publickeylists))
 	registrationsAlready := make(map[string]bool)
+
+	emptyAccountsMap := make(map[string]bool)
 	for t, publickeylist := range publickeylists {
 
-		registrations[t] = make([]*transaction_zether_registrations.TransactionZetherDataRegistration, 0)
+		registrations[t] = make([]*transaction_zether_registration.TransactionZetherDataRegistration, len(publickeylist))
+
 		for i, publicKeyPoint := range publickeylist {
 
 			publicKey := publicKeyPoint.EncodeCompressed()
@@ -109,15 +113,31 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			if publicKeyIndex := publicKeyIndexes[string(publicKey)]; publicKeyIndex != nil {
 
 				if !publicKeyIndex.Registered && !registrationsAlready[string(publicKey)] {
+
 					registrationsAlready[string(publicKey)] = true
 					if len(publicKeyIndex.RegistrationSignature) != cryptography.SignatureSize {
 						return fmt.Errorf("Registration Signature is invalid for ring member %d", i)
 					}
 
-					registrations[t] = append(registrations[t], &transaction_zether_registrations.TransactionZetherDataRegistration{
-						byte(i),
+					registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
+						transaction_zether_registration.NOT_REGISTERED,
 						publicKeyIndex.RegistrationSignature,
-					})
+					}
+
+				} else if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil && !emptyAccountsMap[string(publicKey)] {
+
+					emptyAccountsMap[string(publicKey)] = true
+
+					registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
+						transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT,
+						nil,
+					}
+
+				} else {
+					registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
+						transaction_zether_registration.REGISTERED_ACCOUNT,
+						nil,
+					}
 				}
 
 			} else {
@@ -152,7 +172,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			}
 		}
 
-		spaceExtra += emptyAccounts * (cryptography.PublicKeySize + 1 + 66)
+		spaceExtra += emptyAccounts * (cryptography.PublicKeySize + 66)
 
 		if transfers[t].PayloadExtra == nil {
 			payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_TRANSFER
@@ -165,8 +185,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				var registrationIndex byte
 
 				senderPublicKey := senderKey.GeneratePublicKey()
-				for i, reg := range registrations[t] {
-					if bytes.Equal(publickeylist[reg.PublicKeyIndex].EncodeCompressed(), senderPublicKey) {
+				for i := range registrations[t] {
+					if bytes.Equal(publickeylist[i].EncodeCompressed(), senderPublicKey) {
 						registrationIndex = byte(i)
 						break
 					}
@@ -429,7 +449,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		// time for bullets-sigma
 		statement := GenerateStatement(CLn, CRn, publickeylist, C, &D, fee) // generate statement
 
-		statement.RingSize = uint64(len(publickeylist))
+		statement.RingSize = len(publickeylist)
 
 		witness := GenerateWitness(sender_secret, r, value, balance-value-fee-burn_value, witness_index)
 

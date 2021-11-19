@@ -107,6 +107,11 @@ func saveAssetsInfo(asts *assets.Assets) (err error) {
 
 func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface, blkComplete *block_complete.BlockComplete, transactionsCount uint64, localTransactionChanges []*blockchain_types.BlockchainTransactionUpdate) (err error) {
 
+	var fees uint64
+	if fees, err = blkComplete.ComputeFees(); err != nil {
+		return
+	}
+
 	var blockInfoMarshal []byte
 	if blockInfoMarshal, err = json.Marshal(&info.BlockInfo{
 		Hash:       blkComplete.Block.Bloom.Hash,
@@ -114,6 +119,7 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 		Timestamp:  blkComplete.Block.Timestamp,
 		Size:       blkComplete.BloomBlkComplete.Size,
 		TXs:        uint64(len(blkComplete.Txs)),
+		Fees:       fees,
 		Forger:     blkComplete.Block.Forger,
 	}); err != nil {
 		return

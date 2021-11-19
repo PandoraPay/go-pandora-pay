@@ -50,6 +50,22 @@ func (blkComplete *BlockComplete) MerkleHash() []byte {
 	}
 }
 
+func (blkComplete *BlockComplete) ComputeFees() (uint64, error) {
+	var finalFees, fee uint64
+	var err error
+
+	for _, tx := range blkComplete.Txs {
+		if fee, err = tx.ComputeFee(); err != nil {
+			return 0, err
+		}
+		if err = helpers.SafeUint64Add(&finalFees, fee); err != nil {
+			return 0, err
+		}
+	}
+
+	return finalFees, nil
+}
+
 func (blkComplete *BlockComplete) IncludeBlockComplete(dataStorage *data_storage.DataStorage) (err error) {
 
 	var finalFees, fee uint64

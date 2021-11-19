@@ -114,7 +114,7 @@ func (p *Proof) Serialize(w *helpers.BufferWriter) {
 	p.ip.Serialize(w)
 }
 
-func (proof *Proof) Deserialize(r *helpers.BufferReader, length int) (err error) {
+func (proof *Proof) Deserialize(r *helpers.BufferReader, ringPower int) (err error) {
 
 	if proof.BA, err = r.ReadBN256G1(); err != nil {
 		return
@@ -131,16 +131,16 @@ func (proof *Proof) Deserialize(r *helpers.BufferReader, length int) (err error)
 	}
 
 	//optimization using make
-	proof.CLnG = make([]*bn256.G1, length)
-	proof.CRnG = make([]*bn256.G1, length)
-	proof.C_0G = make([]*bn256.G1, length)
-	proof.DG = make([]*bn256.G1, length)
-	proof.y_0G = make([]*bn256.G1, length)
-	proof.gG = make([]*bn256.G1, length)
-	proof.C_XG = make([]*bn256.G1, length)
-	proof.y_XG = make([]*bn256.G1, length)
+	proof.CLnG = make([]*bn256.G1, ringPower)
+	proof.CRnG = make([]*bn256.G1, ringPower)
+	proof.C_0G = make([]*bn256.G1, ringPower)
+	proof.DG = make([]*bn256.G1, ringPower)
+	proof.y_0G = make([]*bn256.G1, ringPower)
+	proof.gG = make([]*bn256.G1, ringPower)
+	proof.C_XG = make([]*bn256.G1, ringPower)
+	proof.y_XG = make([]*bn256.G1, ringPower)
 
-	for i := 0; i < length; i++ {
+	for i := 0; i < ringPower; i++ {
 		if proof.CLnG[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
@@ -172,11 +172,11 @@ func (proof *Proof) Deserialize(r *helpers.BufferReader, length int) (err error)
 	}
 
 	proof.f = &FieldVector{
-		vector: make([]*big.Int, length*2),
+		vector: make([]*big.Int, ringPower*2),
 	}
 
 	//fmt.Printf("flen  %d\n", flen )
-	for j := 0; j < length*2; j++ {
+	for j := 0; j < ringPower*2; j++ {
 		if proof.f.vector[j], err = r.ReadBigInt(); err != nil {
 			return
 		}
