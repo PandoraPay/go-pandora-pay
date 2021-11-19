@@ -49,7 +49,7 @@ func (api *APICommonFaucet) GetFaucetCoins(request *APIFaucetCoinsRequest) ([]by
 		return nil, errors.New("Faucet token is invalid")
 	}
 
-	addr, err := api.wallet.GetWalletAddress(0)
+	addr, err := api.wallet.GetWalletAddress(1)
 	if err != nil {
 		return nil, err
 	}

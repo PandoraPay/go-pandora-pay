@@ -97,7 +97,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 
 		var addr *wallet_address.WalletAddress
 
-		if addr, err = testnet.wallet.GetWalletAddress(0); err != nil {
+		if addr, err = testnet.wallet.GetWalletAddress(1); err != nil {
 			return
 		}
 		from = append(from, addr.AddressEncoded)
@@ -272,10 +272,10 @@ func (testnet *Testnet) run() {
 								unclaimed -= config_coins.ConvertToUnitsUint64Forced(20)
 
 								if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload.SCRIPT_CLAIM) {
-									testnet.testnetCreateClaimTx(0, unclaimed/5, ctx2)
 									testnet.testnetCreateClaimTx(1, unclaimed/5, ctx2)
 									testnet.testnetCreateClaimTx(2, unclaimed/5, ctx2)
 									testnet.testnetCreateClaimTx(3, unclaimed/5, ctx2)
+									testnet.testnetCreateClaimTx(4, unclaimed/5, ctx2)
 								}
 
 							} else if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
@@ -286,7 +286,7 @@ func (testnet *Testnet) run() {
 								}
 							} else {
 
-								for i := 1; i < 4; i++ {
+								for i := 2; i < 5; i++ {
 									testnet.testnetCreateTransfers(i, ctx2)
 									time.Sleep(time.Millisecond * 50)
 								}

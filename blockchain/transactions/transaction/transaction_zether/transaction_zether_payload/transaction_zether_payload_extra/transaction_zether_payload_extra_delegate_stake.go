@@ -28,14 +28,8 @@ func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) BeforeIncludeTxP
 func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) IncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var plainAcc *plain_account.PlainAccount
-	if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(payloadExtra.DelegatePublicKey, blockHeight); err != nil {
+	if plainAcc, err = dataStorage.GetOrCreatePlainAccount(payloadExtra.DelegatePublicKey, blockHeight); err != nil {
 		return
-	}
-
-	if plainAcc == nil {
-		if plainAcc, err = dataStorage.PlainAccs.CreatePlainAccount(payloadExtra.DelegatePublicKey); err != nil {
-			return
-		}
 	}
 
 	if err = payloadExtra.DelegatedStakingUpdate.Include(plainAcc); err != nil {

@@ -70,20 +70,9 @@ func (payload *TransactionZetherPayload) processAssetFee(assetId []byte, txFee, 
 		return
 	}
 
-	accs, err := dataStorage.AccsCollection.GetMap(assetId)
+	accs, acc, err := dataStorage.GetOrCreateAccount(assetId, plainAcc.AssetFeeLiquidities.Collector)
 	if err != nil {
 		return
-	}
-
-	acc, err := accs.GetAccount(plainAcc.AssetFeeLiquidities.Collector)
-	if err != nil {
-		return
-	}
-
-	if acc == nil {
-		if acc, err = accs.CreateAccount(plainAcc.AssetFeeLiquidities.Collector); err != nil {
-			return
-		}
 	}
 
 	acc.Balance.AddBalanceUint(txFee)

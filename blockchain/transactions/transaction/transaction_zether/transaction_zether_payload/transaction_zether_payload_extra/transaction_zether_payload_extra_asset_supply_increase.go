@@ -39,31 +39,9 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) IncludeTxP
 		return errors.New("Asset SupplyPublicKey is not matching")
 	}
 
-	accs, err := dataStorage.AccsCollection.GetMap(payloadExtra.AssetId)
+	accs, acc, err := dataStorage.GetOrCreateAccount(payloadExtra.AssetId, payloadExtra.ReceiverPublicKey)
 	if err != nil {
 		return
-	}
-	if accs == nil {
-		return errors.New("Accs was not found")
-	}
-
-	isReg, err := dataStorage.Regs.Exists(string(payloadExtra.ReceiverPublicKey))
-	if err != nil {
-		return
-	}
-	if !isReg {
-		return errors.New("Receiver Public Key is not registered")
-	}
-
-	acc, err := accs.GetAccount(payloadExtra.ReceiverPublicKey)
-	if err != nil {
-		return
-	}
-
-	if acc == nil {
-		if acc, err = accs.CreateAccount(payloadExtra.ReceiverPublicKey); err != nil {
-			return
-		}
 	}
 
 	if err = ast.AddSupply(true, payloadExtra.Value); err != nil {

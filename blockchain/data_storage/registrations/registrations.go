@@ -1,7 +1,6 @@
 package registrations
 
 import (
-	"errors"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
@@ -22,14 +21,10 @@ func (registrations *Registrations) VerifyRegistrationPoint(publicKey *bn256.G1,
 	return crypto.VerifySignaturePoint([]byte("registration"), registrationSignature, publicKey)
 }
 
-func (registrations *Registrations) CreateRegistration(publicKey []byte) (*registration.Registration, error) {
-
-	if len(publicKey) != cryptography.PublicKeySize {
-		return nil, errors.New("Key is not a valid public key")
-	}
-
+//WARNING: should NOT be used manually without being called from DataStorage
+func (registrations *Registrations) CreateNewRegistration(publicKey []byte) (*registration.Registration, error) {
 	reg := registration.NewRegistration(publicKey, 0) //index will be set by update
-	if err := registrations.HashMap.Update(string(publicKey), reg); err != nil {
+	if err := registrations.HashMap.Create(string(publicKey), reg); err != nil {
 		return nil, err
 	}
 	return reg, nil

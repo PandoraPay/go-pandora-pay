@@ -1,7 +1,6 @@
 package plain_accounts
 
 import (
-	"errors"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/cryptography"
 	hash_map "pandora-pay/store/hash_map"
@@ -12,14 +11,10 @@ type PlainAccounts struct {
 	*hash_map.HashMap `json:"-"`
 }
 
-func (plainAccounts *PlainAccounts) CreatePlainAccount(publicKey []byte) (*plain_account.PlainAccount, error) {
-
-	if len(publicKey) != cryptography.PublicKeySize {
-		return nil, errors.New("Key is not a valid public key")
-	}
-
+//WARNING: should NOT be used manually without being called from DataStorage
+func (plainAccounts *PlainAccounts) CreateNewPlainAccount(publicKey []byte) (*plain_account.PlainAccount, error) {
 	plainAcc := plain_account.NewPlainAccount(publicKey, 0) //index will be set by update
-	if err := plainAccounts.Update(string(publicKey), plainAcc); err != nil {
+	if err := plainAccounts.Create(string(publicKey), plainAcc); err != nil {
 		return nil, err
 	}
 	return plainAcc, nil

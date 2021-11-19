@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
-	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
@@ -36,25 +35,11 @@ func (self *TransactionZetherDataRegistrations) ValidateRegistrations(publickeyl
 
 func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataStorage *data_storage.DataStorage, publicKeyList [][]byte) (err error) {
 
-	var accs *accounts.Accounts
-	if accs, err = dataStorage.AccsCollection.GetMap(asset); err != nil {
-		return
-	}
-
 	var isReg bool
 	for i, reg := range self.Registrations {
 
 		if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
-			//verify that the other accounts did not register meanwhile
-			if isReg, err = dataStorage.Regs.Exists(string(publicKeyList[i])); err != nil {
-				return
-			}
-			if isReg {
-				return errors.New("PublicKey is already registered")
-			}
-
-			//let's register
-			if _, err = dataStorage.Regs.CreateRegistration(publicKeyList[i]); err != nil {
+			if _, err = dataStorage.CreateRegistration(publicKeyList[i]); err != nil {
 				return
 			}
 		}
@@ -74,16 +59,7 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataSt
 
 		if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED || reg.RegistrationType == transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT {
 
-			var exists bool
-			if exists, err = accs.Exists(string(publicKeyList[i])); err != nil {
-				return
-			}
-
-			if exists {
-				return errors.New("Account is already registered")
-			}
-
-			if _, err = accs.CreateAccount(publicKeyList[i]); err != nil {
+			if _, err = dataStorage.CreateAccount(asset, publicKeyList[i]); err != nil {
 				return
 			}
 

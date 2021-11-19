@@ -174,6 +174,18 @@ func (hashMap *HashMap) Exists(key string) (bool, error) {
 	return hashMap.Tx.Exists(hashMap.name + ":exists:" + key), nil
 }
 
+//this will verify if the data still exists
+func (hashMap *HashMap) Create(key string, data HashMapElementSerializableInterface) error {
+	exists, err := hashMap.Exists(key)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return errors.New("Element already exists in Hashmap")
+	}
+	return hashMap.Update(key, data)
+}
+
 func (hashMap *HashMap) Update(key string, data HashMapElementSerializableInterface) error {
 
 	if hashMap.keyLength != 0 && len(key) != hashMap.keyLength {

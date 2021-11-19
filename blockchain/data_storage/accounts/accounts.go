@@ -15,17 +15,13 @@ type Accounts struct {
 	Asset            []byte `json:"-"`
 }
 
-func (accounts *Accounts) CreateAccount(publicKey []byte) (*account.Account, error) {
-
-	if len(publicKey) != cryptography.PublicKeySize {
-		return nil, errors.New("Key is not a valid public key")
-	}
-
+//WARNING: should NOT be used manually without being called from DataStorage
+func (accounts *Accounts) CreateNewAccount(publicKey []byte) (*account.Account, error) {
 	acc, err := account.NewAccount(publicKey, 0, accounts.Asset) //will be set by update
 	if err != nil {
 		return nil, err
 	}
-	if err = accounts.Update(string(publicKey), acc); err != nil {
+	if err = accounts.Create(string(publicKey), acc); err != nil {
 		return nil, err
 	}
 	return acc, nil

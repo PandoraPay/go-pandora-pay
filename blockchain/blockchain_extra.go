@@ -56,12 +56,6 @@ func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 
 func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStorage *data_storage.DataStorage) (err error) {
 
-	var accs *accounts.Accounts
-
-	if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
-		return
-	}
-
 	supply := uint64(0)
 
 	for _, airdrop := range genesis.GenesisData.AirDrops {
@@ -81,7 +75,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 
 		if airdrop.DelegatedStakePublicKey != nil {
 			var plainAcc *plain_account.PlainAccount
-			if plainAcc, err = dataStorage.PlainAccs.CreatePlainAccount(addr.PublicKey); err != nil {
+			if plainAcc, err = dataStorage.CreatePlainAccount(addr.PublicKey); err != nil {
 				return
 			}
 			if err = plainAcc.DelegatedStake.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
@@ -96,11 +90,13 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 				return errors.New("Registration verification is false")
 			}
 
-			if _, err = dataStorage.Regs.CreateRegistration(addr.PublicKey); err != nil {
+			if _, err = dataStorage.CreateRegistration(addr.PublicKey); err != nil {
 				return
 			}
+			var accs *accounts.Accounts
 			var acc *account.Account
-			if acc, err = accs.CreateAccount(addr.PublicKey); err != nil {
+
+			if accs, acc, err = dataStorage.GetOrCreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey); err != nil {
 				return
 			}
 			acc.Balance.AddBalanceUint(airdrop.Amount)

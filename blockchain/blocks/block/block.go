@@ -88,14 +88,10 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 
 		//let's add the commission
 		var plainAccRewardCollector *plain_account.PlainAccount
-		if plainAccRewardCollector, err = dataStorage.PlainAccs.GetPlainAccount(blk.RewardCollectorPublicKey, blk.Height); err != nil {
+		if plainAccRewardCollector, err = dataStorage.GetOrCreatePlainAccount(blk.RewardCollectorPublicKey, blk.Height); err != nil {
 			return
 		}
-		if plainAccRewardCollector == nil {
-			if plainAccRewardCollector, err = dataStorage.PlainAccs.CreatePlainAccount(blk.RewardCollectorPublicKey); err != nil {
-				return
-			}
-		}
+
 		if err = plainAccRewardCollector.DelegatedStake.AddStakePendingStake(commission, blk.Height); err != nil {
 			return
 		}
