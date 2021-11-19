@@ -101,7 +101,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	registrations := make([][]*transaction_zether_registration.TransactionZetherDataRegistration, len(publickeylists))
 	registrationsAlready := make(map[string]bool)
 
-	emptyAccountsMap := make(map[string]bool)
 	for t, publickeylist := range publickeylists {
 
 		registrations[t] = make([]*transaction_zether_registration.TransactionZetherDataRegistration, len(publickeylist))
@@ -124,9 +123,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 						publicKeyIndex.RegistrationSignature,
 					}
 
-				} else if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil && !emptyAccountsMap[string(publicKey)] {
-
-					emptyAccountsMap[string(publicKey)] = true
+				} else if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil {
 
 					registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
 						transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT,
@@ -138,6 +135,15 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 						transaction_zether_registration.REGISTERED_ACCOUNT,
 						nil,
 					}
+				}
+
+				if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil {
+					var acckey crypto.Point
+					if err = acckey.DecodeCompressed(publickeylist[i].EncodeCompressed()); err != nil {
+						return
+					}
+					balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G).Serialize()
+					emap[string(transfers[t].Asset)][publickeylist[i].String()] = balance
 				}
 
 			} else {
@@ -163,11 +169,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		payloads[t] = &transaction_zether_payload.TransactionZetherPayload{}
 
 		emptyAccounts := 0
-		registered := make(map[string]bool)
-		for _, publicKeyPoint := range publickeylist {
-			publicKey := publicKeyPoint.EncodeCompressed()
-			if emap[string(transfer.Asset)][publicKeyPoint.String()] == nil && !registered[string(publicKey)] {
-				registered[string(publicKey)] = true
+		for _, reg := range registrations[t] {
+			if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED || reg.RegistrationType == transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT {
 				emptyAccounts += 1
 			}
 		}
@@ -361,19 +364,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		// Lots of ToDo for this, enables satisfying lots of  other things
 		ebalances_list := make([]*crypto.ElGamal, len(rings[t]))
 		for i := range witness_index {
-
-			balance := emap[string(transfer.Asset)][publickeylist[i].String()]
-			if balance == nil {
-				var acckey crypto.Point
-				if err = acckey.DecodeCompressed(publickeylist[i].EncodeCompressed()); err != nil {
-					return
-				}
-				balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G).Serialize()
-				emap[string(transfer.Asset)][publickeylist[i].String()] = balance
-			}
-
 			var pt *crypto.ElGamal
-			if pt, err = new(crypto.ElGamal).Deserialize(balance); err != nil {
+			if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][publickeylist[i].String()]); err != nil {
 				return
 			}
 			ebalances_list[i] = pt
