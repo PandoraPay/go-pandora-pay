@@ -239,21 +239,13 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 						return
 					}
 
-					var balance []byte
+					var balance []byte = nil
 					if acc != nil {
 						balance = acc.Balance.Amount.Serialize()
 					}
 
 					if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance, ast); err != nil {
 						return
-					}
-
-					if balance == nil {
-						var acckey crypto.Point
-						if err = acckey.DecodeCompressed(addr.PublicKey); err != nil {
-							return
-						}
-						balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G).Serialize()
 					}
 
 					if from[t] == address { //sender

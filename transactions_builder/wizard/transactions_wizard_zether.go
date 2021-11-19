@@ -361,8 +361,19 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		// Lots of ToDo for this, enables satisfying lots of  other things
 		ebalances_list := make([]*crypto.ElGamal, len(rings[t]))
 		for i := range witness_index {
+
+			balance := emap[string(transfer.Asset)][publickeylist[i].String()]
+			if balance == nil {
+				var acckey crypto.Point
+				if err = acckey.DecodeCompressed(publickeylist[i].EncodeCompressed()); err != nil {
+					return
+				}
+				balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G).Serialize()
+				emap[string(transfer.Asset)][publickeylist[i].String()] = balance
+			}
+
 			var pt *crypto.ElGamal
-			if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][publickeylist[i].String()]); err != nil {
+			if pt, err = new(crypto.ElGamal).Deserialize(balance); err != nil {
 				return
 			}
 			ebalances_list[i] = pt
