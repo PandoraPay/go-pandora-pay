@@ -163,18 +163,20 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		publickeylist := publickeylists[t]
 		senderKey := &addresses.PrivateKey{Key: transfer.From}
 
-		spaceExtra += len(registrations[t]) * (cryptography.PublicKeySize + binary.MaxVarintLen64)
-
 		payloads[t] = &transaction_zether_payload.TransactionZetherPayload{}
 
-		emptyAccounts := 0
+		var unregisteredAccounts, emptyAccounts int
 		for _, reg := range registrations[t] {
-			if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED || reg.RegistrationType == transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT {
+			if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
+				unregisteredAccounts += 1
+			}
+			if reg.RegistrationType == transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT {
 				emptyAccounts += 1
 			}
 		}
 
-		spaceExtra += emptyAccounts * (cryptography.PublicKeySize + 66)
+		spaceExtra += unregisteredAccounts * (cryptography.PublicKeySize + 1 + cryptography.SignatureSize)
+		spaceExtra += (unregisteredAccounts + emptyAccounts) * (cryptography.PublicKeySize + 1 + 66)
 
 		if transfers[t].PayloadExtra == nil {
 			payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_TRANSFER

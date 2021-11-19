@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"errors"
+	"fmt"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
@@ -28,7 +29,7 @@ func (tx *Transaction) IncludeTransaction(blockHeight uint64, dataStorage *data_
 
 	changesSize := dataStorage.ComputeChangesSize()
 	if changesSize > tx.SpaceExtra {
-		return errors.New("Real.Changes Size is greater than Tx.SpaceExtra")
+		return fmt.Errorf("Real.Changes Size %d is greater than Tx.SpaceExtra %d", changesSize, tx.SpaceExtra)
 	}
 
 	return nil
