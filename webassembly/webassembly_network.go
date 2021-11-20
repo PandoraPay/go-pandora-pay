@@ -12,6 +12,7 @@ import (
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
+	"pandora-pay/network/api/api_common"
 	"pandora-pay/network/api/api_common/api_faucet"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
@@ -77,12 +78,12 @@ func getNetworkBlockWithTxs(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("block"), &api_types.APIBlockRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}, api_types.RETURN_SERIALIZED}, nil)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("block"), &api_common.APIBlockRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}, api_types.RETURN_SERIALIZED}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
 
-		blkWithTxs := &api_types.APIBlockWithTxs{}
+		blkWithTxs := &api_common.APIBlockWithTxs{}
 		if err := json.Unmarshal(data.Out, blkWithTxs); err != nil {
 			return nil, err
 		}
@@ -119,7 +120,7 @@ func getNetworkAccountsCount(this js.Value, args []js.Value) interface{} {
 func getNetworkAccountsKeysByIndex(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		request := &api_types.APIAccountsKeysByIndexRequest{nil, nil, false}
+		request := &api_common.APIAccountsKeysByIndexRequest{nil, nil, false}
 		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
@@ -136,7 +137,7 @@ func getNetworkAccountsKeysByIndex(this js.Value, args []js.Value) interface{} {
 func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		request := &api_types.APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
+		request := &api_common.APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
 		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
@@ -153,7 +154,7 @@ func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
 func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		request := &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{}, api_types.RETURN_SERIALIZED}
+		request := &api_common.APIAccountRequest{api_types.APIAccountBaseRequest{}, api_types.RETURN_SERIALIZED}
 		err := webassembly_utils.UnmarshalBytes(args[0], request)
 		if err != nil {
 			return nil, err
@@ -169,7 +170,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		result := &api_types.APIAccount{}
+		result := &api_common.APIAccount{}
 		if err = json.Unmarshal(data.Out, result); err != nil {
 			return nil, err
 		}
@@ -278,12 +279,12 @@ func getNetworkTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("tx"), &api_types.APIBlockCompleteRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}, api_types.RETURN_SERIALIZED}, nil)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("tx"), &api_common.APIBlockCompleteRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}, api_types.RETURN_SERIALIZED}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
 
-		received := &api_types.APITransaction{}
+		received := &api_common.APITransaction{}
 		if err = json.Unmarshal(data.Out, received); err != nil {
 			return nil, err
 		}
@@ -338,7 +339,7 @@ func getNetworkAsset(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("asset"), &api_types.APIAssetRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}, api_types.RETURN_SERIALIZED}, nil)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("asset"), &api_common.APIAssetRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}, api_types.RETURN_SERIALIZED}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -359,7 +360,7 @@ func getNetworkMempool(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("mem-pool"), &api_types.APIMempoolRequest{chainHash, args[1].Int(), args[2].Int()}, nil)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("mem-pool"), &api_common.APIMempoolRequest{chainHash, args[1].Int(), args[2].Int()}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -393,7 +394,7 @@ func getNetworkFeeLiquidity(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("asset/fee-liquidity"), &api_types.APIAssetFeeLiquidityFeeRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}}, nil)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("asset/fee-liquidity"), &api_common.APIAssetFeeLiquidityFeeRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}

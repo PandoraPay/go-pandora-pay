@@ -8,7 +8,6 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"strconv"
-	"strings"
 )
 
 type SubscriptionType uint8
@@ -40,28 +39,8 @@ func GetReturnType(s string, defaultValue APIReturnType) APIReturnType {
 	}
 }
 
-type APIBlockRequest struct {
-	APIHeightHash
-	ReturnType APIReturnType `json:"returnType,omitempty"`
-}
-
 type APIBlockInfoRequest struct {
 	APIHeightHash
-}
-
-type APIBlockCompleteMissingTxsRequest struct {
-	Hash       helpers.HexBytes `json:"hash,omitempty"`
-	MissingTxs []int            `json:"missingTxs,omitempty"`
-}
-
-type APIBlockCompleteRequest struct {
-	APIHeightHash
-	ReturnType APIReturnType `json:"returnType,omitempty"`
-}
-
-type APITransactionRequest struct {
-	APIHeightHash
-	ReturnType APIReturnType `json:"returnType,omitempty"`
 }
 
 type APITransactionInfoRequest struct {
@@ -73,27 +52,9 @@ type APIAccountBaseRequest struct {
 	PublicKey helpers.HexBytes `json:"publicKey,omitempty"`
 }
 
-type APIAccountRequest struct {
-	APIAccountBaseRequest
-	ReturnType APIReturnType `json:"returnType,omitempty"`
-}
-
 type APIAccountTxsRequest struct {
 	APIAccountBaseRequest
 	Next uint64 `json:"next,omitempty"`
-}
-
-type APIAccountsKeysByIndexRequest struct {
-	Indexes         []uint64         `json:"indexes"`
-	Asset           helpers.HexBytes `json:"asset"`
-	EncodeAddresses bool             `json:"encodeAddresses"`
-}
-
-type APIAccountsByKeysRequest struct {
-	Keys           []*APIAccountBaseRequest `json:"keys,omitempty"`
-	Asset          helpers.HexBytes         `json:"asset,omitempty"`
-	IncludeMempool bool                     `json:"includeMempool,omitempty"`
-	ReturnType     APIReturnType            `json:"returnType,omitempty"`
 }
 
 func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
@@ -117,15 +78,6 @@ type APIAssetInfoRequest struct {
 	APIHeightHash
 }
 
-type APIAssetRequest struct {
-	APIHeightHash
-	ReturnType APIReturnType `json:"returnType,omitempty"`
-}
-
-type APIAssetFeeLiquidityFeeRequest struct {
-	APIHeightHash
-}
-
 type APISubscriptionRequest struct {
 	Key        []byte           `json:"key,omitempty"`
 	Type       SubscriptionType `json:"type,omitempty"`
@@ -135,12 +87,6 @@ type APISubscriptionRequest struct {
 type APIUnsubscriptionRequest struct {
 	Key  []byte           `json:"Key,omitempty"`
 	Type SubscriptionType `json:"type,omitempty"`
-}
-
-type APIMempoolRequest struct {
-	ChainHash helpers.HexBytes `json:"chainHash,omitempty"`
-	Page      int              `json:"page,omitempty"`
-	Count     int              `json:"count,omitempty"`
 }
 
 type APIHeightHash struct {
@@ -166,29 +112,6 @@ func (self *APIAccountBaseRequest) ImportFromValues(values *url.Values) (err err
 		self.PublicKey, err = hex.DecodeString(values.Get("publicKey"))
 	} else {
 		err = errors.New("parameter 'address' or 'hash' was not specified")
-	}
-
-	return
-}
-
-func (self *APIAccountsKeysByIndexRequest) ImportFromValues(values *url.Values) (err error) {
-
-	if values.Get("indexes") != "" {
-		v := strings.Split(values.Get("indexes"), ",")
-		self.Indexes = make([]uint64, len(v))
-		for i := 0; i < len(v); i++ {
-			if self.Indexes[i], err = strconv.ParseUint(v[i], 10, 64); err != nil {
-				return err
-			}
-		}
-	} else {
-		return errors.New("parameter `indexes` is missing")
-	}
-
-	if values.Get("asset") != "" {
-		if self.Asset, err = hex.DecodeString(values.Get("asset")); err != nil {
-			return err
-		}
 	}
 
 	return

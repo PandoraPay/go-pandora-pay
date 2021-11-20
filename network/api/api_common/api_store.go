@@ -94,7 +94,7 @@ func (apiStore *APIStore) openLoadBlockInfo(blockHeight uint64, hash []byte) (bl
 	return
 }
 
-func (apiStore *APIStore) openLoadBlockCompleteMissingTxsFromHash(hash []byte, missingTxs []int) (blockCompleteMissingTxs *api_types.APIBlockCompleteMissingTxs, errFinal error) {
+func (apiStore *APIStore) openLoadBlockCompleteMissingTxsFromHash(hash []byte, missingTxs []int) (blockCompleteMissingTxs *APIBlockCompleteMissingTxs, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		blockCompleteMissingTxs, err = apiStore.loadBlockCompleteMissingTxs(reader, hash, missingTxs)
 		return
@@ -122,7 +122,7 @@ func (apiStore *APIStore) openLoadBlockCompleteFromHeight(blockHeight uint64) (b
 	return
 }
 
-func (apiStore *APIStore) openLoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *api_types.APIBlockWithTxs, errFinal error) {
+func (apiStore *APIStore) openLoadBlockWithTXsFromHash(hash []byte) (blkWithTXs *APIBlockWithTxs, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		blkWithTXs, err = apiStore.loadBlockWithTxHashes(reader, hash)
 		return
@@ -145,7 +145,7 @@ func (apiStore *APIStore) openLoadTx(hash []byte, txHeight uint64) (tx *transact
 	return
 }
 
-func (apiStore *APIStore) openLoadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *api_types.APIBlockWithTxs, errFinal error) {
+func (apiStore *APIStore) openLoadBlockWithTXsFromHeight(blockHeight uint64) (blkWithTXs *APIBlockWithTxs, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		hash, err := apiStore.chain.LoadBlockHash(reader, blockHeight)
 		if err != nil {
@@ -157,9 +157,9 @@ func (apiStore *APIStore) openLoadBlockWithTXsFromHeight(blockHeight uint64) (bl
 	return
 }
 
-func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*api_types.APIAccount, error) {
+func (apiStore *APIStore) OpenLoadAccountFromPublicKey(publicKey []byte) (*APIAccount, error) {
 
-	apiAcc := &api_types.APIAccount{}
+	apiAcc := &APIAccount{}
 
 	if errFinal := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -302,7 +302,7 @@ func (apiStore *APIStore) openLoadAsset(hash []byte, height uint64) (ast *asset.
 	return
 }
 
-func (apiStore *APIStore) openLoadAssetFeeLiquidity(hash []byte, height uint64) (output *api_types.APIAssetFeeLiquidity, errFinal error) {
+func (apiStore *APIStore) openLoadAssetFeeLiquidity(hash []byte, height uint64) (output *APIAssetFeeLiquidity, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if hash == nil {
@@ -328,7 +328,7 @@ func (apiStore *APIStore) openLoadAssetFeeLiquidity(hash []byte, height uint64) 
 			return errors.New("Strange. It should have the liquidity")
 		}
 
-		output = &api_types.APIAssetFeeLiquidity{
+		output = &APIAssetFeeLiquidity{
 			hash,
 			liquditity.Rate,
 			liquditity.LeadingZeros,
@@ -380,7 +380,7 @@ func (apiStore *APIStore) openLoadAccountsKeysByIndex(indexes []uint64, assetId 
 	return
 }
 
-func (apiStore *APIStore) openLoadAccountsByKeys(publicKeys [][]byte, assetId []byte) (output *api_types.APIAccountsByKeys, errFinal error) {
+func (apiStore *APIStore) openLoadAccountsByKeys(publicKeys [][]byte, assetId []byte) (output *APIAccountsByKeys, errFinal error) {
 
 	if len(publicKeys) > 512*2 {
 		return nil, fmt.Errorf("Too many indexes to process: limit %d, found %d", 512*2, len(publicKeys))
@@ -396,7 +396,7 @@ func (apiStore *APIStore) openLoadAccountsByKeys(publicKeys [][]byte, assetId []
 			return
 		}
 
-		output = &api_types.APIAccountsByKeys{
+		output = &APIAccountsByKeys{
 			Acc: make([]*account.Account, len(publicKeys)),
 			Reg: make([]*registration.Registration, len(publicKeys)),
 		}
@@ -423,7 +423,7 @@ func (apiStore *APIStore) openLoadTxHash(blockHeight uint64) (hash []byte, errFi
 	return
 }
 
-func (apiStore *APIStore) loadBlockCompleteMissingTxs(reader store_db_interface.StoreDBTransactionInterface, hash []byte, missingTxs []int) (out *api_types.APIBlockCompleteMissingTxs, err error) {
+func (apiStore *APIStore) loadBlockCompleteMissingTxs(reader store_db_interface.StoreDBTransactionInterface, hash []byte, missingTxs []int) (out *APIBlockCompleteMissingTxs, err error) {
 
 	heightStr := reader.Get("blockHeight_ByHash" + string(hash))
 	if heightStr == nil {
@@ -435,7 +435,7 @@ func (apiStore *APIStore) loadBlockCompleteMissingTxs(reader store_db_interface.
 		return
 	}
 
-	out = &api_types.APIBlockCompleteMissingTxs{}
+	out = &APIBlockCompleteMissingTxs{}
 	data := reader.Get("blockTxs" + strconv.FormatUint(height, 10))
 	if data == nil {
 		return nil, nil
@@ -498,7 +498,7 @@ func (apiStore *APIStore) loadBlockComplete(reader store_db_interface.StoreDBTra
 	return blkComplete, nil
 }
 
-func (apiStore *APIStore) loadBlockWithTxHashes(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*api_types.APIBlockWithTxs, error) {
+func (apiStore *APIStore) loadBlockWithTxHashes(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*APIBlockWithTxs, error) {
 	blk, err := apiStore.loadBlock(reader, hash)
 	if blk == nil || err != nil {
 		return nil, err
@@ -515,7 +515,7 @@ func (apiStore *APIStore) loadBlockWithTxHashes(reader store_db_interface.StoreD
 		txs[i] = txHash
 	}
 
-	return &api_types.APIBlockWithTxs{
+	return &APIBlockWithTxs{
 		Block: blk,
 		Txs:   txs,
 	}, nil

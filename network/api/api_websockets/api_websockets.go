@@ -2,19 +2,14 @@ package api_websockets
 
 import (
 	"encoding/json"
-	"errors"
 	"pandora-pay/blockchain"
-	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_common"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/settings"
-	"strconv"
-	"sync"
 )
 
 type APIWebsockets struct {
@@ -31,40 +26,6 @@ func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, valu
 	return json.Marshal(&connection.ConnectionHandshake{config.NAME, config.VERSION, config.NETWORK_SELECTED, config.CONSENSUS, config.NETWORK_ADDRESS_URL_STRING, nil})
 }
 
-func (api *APIWebsockets) getBlockchain(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.apiCommon.GetBlockchain()
-}
-
-func (api *APIWebsockets) getBlockchainSync(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.apiCommon.GetBlockchainSync()
-}
-
-func (api *APIWebsockets) getInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.apiCommon.GetInfo()
-}
-
-func (api *APIWebsockets) getPing(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.apiCommon.GetPing()
-}
-
-func (api *APIWebsockets) getHash(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := APIBlockHeight(0)
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetBlockHash(uint64(request))
-}
-
-func (api *APIWebsockets) getBlock(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-
-	request := &api_types.APIBlockRequest{api_types.APIHeightHash{0, nil}, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, request); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.GetBlock(request)
-}
-
 func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 
 	request := &api_types.APIBlockInfoRequest{api_types.APIHeightHash{0, nil}}
@@ -73,34 +34,6 @@ func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, valu
 	}
 
 	return api.apiCommon.GetBlockInfo(request)
-}
-
-func (api *APIWebsockets) getBlockCompleteMissingTxs(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-
-	request := &api_types.APIBlockCompleteMissingTxsRequest{nil, []int{}}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.GetBlockCompleteMissingTxs(request)
-}
-
-func (api *APIWebsockets) getBlockComplete(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-
-	request := &api_types.APIBlockCompleteRequest{api_types.APIHeightHash{0, nil}, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.GetBlockComplete(request)
-}
-
-func (api *APIWebsockets) getAccount(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetAccount(request)
 }
 
 func (api *APIWebsockets) getAccountTxs(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -135,65 +68,6 @@ func (api *APIWebsockets) getAssetInfo(conn *connection.AdvancedConnection, valu
 	return api.apiCommon.GetAssetInfo(request)
 }
 
-func (api *APIWebsockets) getAsset(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIAssetRequest{api_types.APIHeightHash{0, nil}, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetAsset(request)
-}
-
-func (api *APIWebsockets) getAssetFeeLiquidity(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIAssetFeeLiquidityFeeRequest{api_types.APIHeightHash{0, nil}}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetAssetFeeLiquidity(request)
-}
-
-func (api *APIWebsockets) getAccountsCount(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	count, err := api.apiCommon.GetAccountsCount(values)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(strconv.FormatUint(count, 10)), nil
-}
-
-func (api *APIWebsockets) getAccountsKeysByIndex(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIAccountsKeysByIndexRequest{nil, nil, false}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetAccountsKeysByIndex(request)
-}
-
-func (api *APIWebsockets) getAccountsByKeys(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-
-	request := &api_types.APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetAccountsByKeys(request)
-}
-
-func (api *APIWebsockets) getMempool(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIMempoolRequest{}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetMempool(request)
-}
-
-func (api *APIWebsockets) getMempoolInsert(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-
-	tx := &transaction.Transaction{}
-	if err := tx.Deserialize(helpers.NewBufferReader(values)); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.PostMempoolInsert(tx, conn.UUID)
-}
-
 func (api *APIWebsockets) getTxInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	request := &api_types.APITransactionInfoRequest{api_types.APIHeightHash{0, nil}}
 	if err := json.Unmarshal(values, &request); err != nil {
@@ -210,116 +84,6 @@ func (api *APIWebsockets) getTxPreview(conn *connection.AdvancedConnection, valu
 	return api.apiCommon.GetTxPreview(request)
 }
 
-func (api *APIWebsockets) getTx(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APITransactionRequest{}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.GetTx(request)
-}
-
-func (api *APIWebsockets) getTxHash(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := APIBlockHeight(0)
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetTxHash(uint64(request))
-}
-
-func (api *APIWebsockets) getMempoolExists(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	if len(values) != 32 {
-		return nil, errors.New("Invalid hash")
-	}
-	if api.mempool.Txs.Exists(string(values)) {
-		return []byte{1}, nil
-	} else {
-		return []byte{0}, nil
-	}
-}
-
-func (api *APIWebsockets) postMempoolInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
-	tx := &transaction.Transaction{}
-	if err = tx.Deserialize(helpers.NewBufferReader(values)); err != nil {
-		return
-	}
-
-	return api.apiCommon.PostMempoolInsert(tx, conn.UUID)
-}
-
-func (api *APIWebsockets) postMempoolTxIdInsert(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
-
-	if len(values) != 32 {
-		return nil, errors.New("Invalid hash")
-	}
-	hashStr := string(values)
-
-	mempoolProcessedThisBlock := api.apiCommon.MempoolProcessedThisBlock.Load().(*sync.Map)
-	processedAlreadyFound, loaded := mempoolProcessedThisBlock.Load(hashStr)
-	if loaded {
-		if processedAlreadyFound != nil {
-			return nil, processedAlreadyFound.(error)
-		}
-		return []byte{1}, nil
-	}
-
-	multicastFound, loaded := api.apiCommon.MempoolDownloadPending.LoadOrStore(hashStr, multicast.NewMulticastChannel())
-	multicast := multicastFound.(*multicast.MulticastChannel)
-
-	if loaded {
-		if errData := <-multicast.AddListener(); errData != nil {
-			return nil, errData.(error)
-		}
-		return []byte{1}, nil
-	}
-
-	defer func() {
-		mempoolProcessedThisBlock.Store(hashStr, err)
-		api.apiCommon.MempoolDownloadPending.Delete(hashStr)
-		multicast.Broadcast(err)
-	}()
-
-	if api.mempool.Txs.Exists(hashStr) {
-		return []byte{1}, nil
-	}
-
-	var exists bool
-	if exists, err = api.chain.OpenExistsTx(values); exists || err != nil {
-		return
-	}
-
-	result := conn.SendJSONAwaitAnswer([]byte("tx"), &api_types.APITransactionRequest{api_types.APIHeightHash{0, values}, api_types.RETURN_SERIALIZED}, nil)
-	if result.Err != nil {
-		err = result.Err
-		return
-	}
-
-	if result.Out == nil {
-		err = errors.New("Tx was not downloaded")
-		return
-	}
-
-	data := &api_types.APITransaction{}
-	if err = json.Unmarshal(result.Out, data); err != nil {
-		return
-	}
-
-	tx := &transaction.Transaction{}
-	if err = tx.Deserialize(helpers.NewBufferReader(data.TxSerialized)); err != nil {
-		return
-	}
-	if err = tx.BloomAll(); err != nil {
-		return
-	}
-
-	if err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, false, true, false, conn.UUID); err != nil {
-		return
-	}
-
-	out = []byte{1}
-	return
-}
-
 func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
 
 	api := &APIWebsockets{
@@ -332,28 +96,29 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 	}
 
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error){
-		"":                       api.getInfo,
-		"chain":                  api.getBlockchain,
-		"blockchain":             api.getBlockchain,
-		"sync":                   api.getBlockchainSync,
-		"handshake":              api.getHandshake,
-		"ping":                   api.getPing,
-		"block":                  api.getBlock,
-		"block-miss-txs":         api.getBlockCompleteMissingTxs,
-		"block-hash":             api.getHash,
-		"block-complete":         api.getBlockComplete,
-		"tx":                     api.getTx,
-		"tx-hash":                api.getTxHash,
-		"account":                api.getAccount,
-		"accounts/count":         api.getAccountsCount,
-		"accounts/keys-by-index": api.getAccountsKeysByIndex,
-		"accounts/by-keys":       api.getAccountsByKeys,
-		"asset":                  api.getAsset,
-		"asset/fee-liquidity":    api.getAssetFeeLiquidity,
-		"mem-pool":               api.getMempool,
-		"mem-pool/tx-exists":     api.getMempoolExists,
-		"mem-pool/new-tx":        api.postMempoolInsert,
-		"mem-pool/new-tx-id":     api.postMempoolTxIdInsert,
+		"":                       api.apiCommon.GetInfo_websockets,
+		"chain":                  api.apiCommon.GetBlockchain_websockets,
+		"blockchain":             api.apiCommon.GetBlockchain_websockets,
+		"sync":                   api.apiCommon.GetBlockchainSync_websockets,
+		"ping":                   api.apiCommon.GetPing_websockets,
+		"block-hash":             api.apiCommon.GetBlockHash_websockets,
+		"block":                  api.apiCommon.GetBlock_websockets,
+		"block-complete":         api.apiCommon.GetBlockComplete_websockets,
+		"tx":                     api.apiCommon.GetTx_websockets,
+		"tx-hash":                api.apiCommon.GetTxHash_websockets,
+		"account":                api.apiCommon.GetAccount_websockets,
+		"accounts/count":         api.apiCommon.GetAccountsCount_websockets,
+		"accounts/keys-by-index": api.apiCommon.GetAccountsKeysByIndex_websockets,
+		"accounts/by-keys":       api.apiCommon.GetAccountsByKeys_websockets,
+		"asset":                  api.apiCommon.GetAsset_websockets,
+		"asset/fee-liquidity":    api.apiCommon.GetAssetFeeLiquidity_websockets,
+		"mem-pool":               api.apiCommon.GetMempool_websockets,
+		"mem-pool/tx-exists":     api.apiCommon.GetMempoolExists_websockets,
+		"mem-pool/new-tx":        api.apiCommon.MempoolNewTx_websockets,
+		//below are ONLY websockets API
+		"block-miss-txs":     api.apiCommon.GetBlockCompleteMissingTxs_websockets,
+		"handshake":          api.getHandshake,
+		"mem-pool/new-tx-id": api.apiCommon.MempoolNewTxId_websockets,
 	}
 
 	if config.SEED_WALLET_NODES_INFO {

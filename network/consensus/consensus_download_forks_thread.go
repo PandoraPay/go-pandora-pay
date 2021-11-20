@@ -33,12 +33,12 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 
 	var err error
 
-	answer := conn.SendJSONAwaitAnswer([]byte("block"), &api_types.APIBlockRequest{api_types.APIHeightHash{height, nil}, api_types.RETURN_SERIALIZED}, nil)
+	answer := conn.SendJSONAwaitAnswer([]byte("block"), &api_common.APIBlockRequest{api_types.APIHeightHash{height, nil}, api_types.RETURN_SERIALIZED}, nil)
 	if answer.Err != nil {
 		return nil, answer.Err
 	}
 
-	blkWithTx := &api_types.APIBlockWithTxs{}
+	blkWithTx := &api_common.APIBlockWithTxs{}
 	if err = json.Unmarshal(answer.Out, &blkWithTx); err != nil {
 		return nil, err
 	}
@@ -104,11 +104,11 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 		}
 	}
 
-	answer = conn.SendJSONAwaitAnswer([]byte("block-miss-txs"), &api_types.APIBlockCompleteMissingTxsRequest{blkWithTx.Block.Bloom.Hash, missingTxs}, nil)
+	answer = conn.SendJSONAwaitAnswer([]byte("block-miss-txs"), &api_common.APIBlockCompleteMissingTxsRequest{blkWithTx.Block.Bloom.Hash, missingTxs}, nil)
 	if answer.Err != nil {
 		return nil, answer.Err
 	}
-	blkCompleteMissingTxs := &api_types.APIBlockCompleteMissingTxs{}
+	blkCompleteMissingTxs := &api_common.APIBlockCompleteMissingTxs{}
 
 	if err = json.Unmarshal(answer.Out, blkCompleteMissingTxs); err != nil {
 		return nil, err
