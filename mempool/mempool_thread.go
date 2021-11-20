@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/config"
+	"pandora-pay/gui"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"sync/atomic"
@@ -163,11 +164,15 @@ func (worker *mempoolWorker) processing(
 
 			if dataStorage != nil {
 				dataStorage.SetTx(dbTx)
-			} else {
-				dataStorage = data_storage.NewDataStorage(dbTx)
 			}
 
 			for {
+
+				dataStorage = data_storage.NewDataStorage(dbTx)
+
+				if dataStorage == nil {
+					gui.GUI.Log("ERROR!!!")
+				}
 
 				select {
 				case <-suspendProcessingCn:
