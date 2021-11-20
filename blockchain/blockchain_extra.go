@@ -156,7 +156,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 		}
 
 		if config.SEED_WALLET_NODES_INFO {
-			if err = saveAssetsInfo(dataStorage.Asts); err != nil {
+			if err = saveExtra(writer, dataStorage); err != nil {
 				return
 			}
 		}

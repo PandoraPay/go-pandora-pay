@@ -111,19 +111,14 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		chainData.ConsecutiveSelfForged,                //atomic copy
 	}
 
-	allTransactionsChanges := []*blockchain_types.BlockchainTransactionUpdate{}
-
 	insertedBlocks := []*block_complete.BlockComplete{}
 
 	//remove blocks which are different
-	removedTxHashes := make(map[string][]byte)
 	insertedTxs := make(map[string]*transaction.Transaction)
 
-	var removedTxsList [][]byte                    //ordered list
-	var insertedTxsList []*transaction.Transaction //ordered list
-
-	removedBlocksHeights := []uint64{}
-	removedBlocksTransactionsCount := uint64(0)
+	removedTxsList := make([][]byte, 0)                    //ordered list
+	insertedTxsList := make([]*transaction.Transaction, 0) //ordered list
+	allTransactionsChanges := make([]*blockchain_types.BlockchainTransactionUpdate, 0)
 
 	var dataStorage *data_storage.DataStorage
 
@@ -173,11 +168,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				index := newChainData.Height - 1
 				for {
 
-					removedBlocksHeights = append(removedBlocksHeights, 0)
-					copy(removedBlocksHeights[1:], removedBlocksHeights)
-					removedBlocksHeights[0] = index
-
-					if allTransactionsChanges, err = chain.removeBlockComplete(writer, index, removedTxHashes, allTransactionsChanges, dataStorage); err != nil {
+					blockHeightNextStr := strconv.FormatUint(index, 10)
+					if err = dataStorage.ReadTransitionalChangesFromStore(blockHeightNextStr); err != nil {
 						return
 					}
 
@@ -186,14 +178,13 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					} else {
 						break
 					}
+
 				}
 
 				if firstBlockComplete.Block.Height == 0 {
 					gui.GUI.Info("chain.createGenesisBlockchainData called")
 					newChainData = chain.createGenesisBlockchainData()
-					removedBlocksTransactionsCount = 0
 				} else {
-					removedBlocksTransactionsCount = newChainData.TransactionsCount
 					newChainData = &BlockchainData{}
 					if err = newChainData.loadBlockchainInfo(writer, firstBlockComplete.Block.Height); err != nil {
 						return
@@ -296,12 +287,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					//to detect if the savedBlock was done correctly
 					savedBlock = false
 
-					if allTransactionsChanges, err = chain.saveBlockComplete(writer, blkComplete, newChainData.TransactionsCount, removedTxHashes, allTransactionsChanges, dataStorage); err != nil {
-						return errors.New("Error saving block complete: " + err.Error())
-					}
-
-					if len(removedBlocksHeights) > 0 {
-						removedBlocksHeights = removedBlocksHeights[1:]
+					if err = chain.saveBlock(blkComplete, dataStorage); err != nil {
+						return
 					}
 
 					newChainData.PrevHash = newChainData.Hash
@@ -324,9 +311,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					newChainData.saveTotalDifficultyExtra(writer)
 
 					writer.Put("chainHash", newChainData.Hash)
-					writer.Put("chainPrevHash", newChainData.PrevHash)
-					writer.Put("chainKernelHash", newChainData.KernelHash)
-					writer.Put("chainPrevKernelHash", newChainData.PrevKernelHash)
 
 					newChainData.saveBlockchainHeight(writer)
 					if err = newChainData.saveBlockchainInfo(writer); err != nil {
@@ -344,14 +328,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			if savedBlock && chainData.BigTotalDifficulty.Cmp(newChainData.BigTotalDifficulty) < 0 {
 
 				//let's recompute removedTxHashes
-				removedTxHashes = make(map[string][]byte)
-				for _, change := range allTransactionsChanges {
-					if !change.Inserted {
-						removedTxHashes[change.TxHashStr] = change.TxHash
-					} else {
-						insertedTxs[change.Tx.Bloom.HashStr] = change.Tx
-					}
-				}
 
 				if calledByForging {
 					newChainData.ConsecutiveSelfForged += 1
@@ -363,51 +339,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					panic("Error saving Blockchain " + err.Error())
 				}
 
-				if len(removedBlocksHeights) > 0 {
-
-					//remove unused blocks
-					for _, removedBlock := range removedBlocksHeights {
-						chain.deleteUnusedBlocksComplete(writer, removedBlock, dataStorage)
-					}
-
-					//removing unused transactions
-					if config.SEED_WALLET_NODES_INFO {
-						removeUnusedTransactions(writer, newChainData.TransactionsCount, removedBlocksTransactionsCount)
-					}
-				}
-
-				//let's keep the order as well
-				var removedCount, insertedCount int
-				for _, change := range allTransactionsChanges {
-					if !change.Inserted && removedTxHashes[change.TxHashStr] != nil && insertedTxs[change.TxHashStr] == nil {
-						removedCount += 1
-					}
-					if change.Inserted && insertedTxs[change.TxHashStr] != nil && removedTxHashes[change.TxHashStr] == nil {
-						insertedCount += 1
-					}
-				}
-				removedTxsList = make([][]byte, removedCount)
-				insertedTxsList = make([]*transaction.Transaction, insertedCount)
-				removedCount, insertedCount = 0, 0
-
-				for _, change := range allTransactionsChanges {
-					if !change.Inserted && removedTxHashes[change.TxHashStr] != nil && insertedTxs[change.TxHashStr] == nil {
-						removedTxsList[removedCount] = writer.Get("tx:" + change.TxHashStr) //required because the garbage collector sometimes it deletes the underlying buffers
-						writer.Delete("tx:" + change.TxHashStr)
-						writer.Delete("txHash:" + change.TxHashStr)
-						removedCount += 1
-					}
-					if change.Inserted && insertedTxs[change.TxHashStr] != nil && removedTxHashes[change.TxHashStr] == nil {
-						insertedTxsList[insertedCount] = change.Tx
-						insertedCount += 1
-					}
-				}
-
-				if config.SEED_WALLET_NODES_INFO {
-					removeTxsInfo(writer, removedTxHashes)
-				}
-
-				if err = chain.saveBlockchainHashmaps(dataStorage); err != nil {
+				if err = chain.saveBlockchainHashmaps(writer, dataStorage); err != nil {
 					panic(err)
 				}
 
@@ -452,7 +384,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		update.newChainData = newChainData
 		update.dataStorage = dataStorage
 		update.removedTxsList = removedTxsList
-		update.removedTxHashes = removedTxHashes
 		update.insertedTxs = insertedTxs
 		update.insertedTxsList = insertedTxsList
 		update.insertedBlocks = insertedBlocks

@@ -23,6 +23,7 @@ type HashMap struct {
 	DeletedEvent   func([]byte) error
 	StoredEvent    func([]byte, *CommittedMapElement) error
 	Indexable      bool
+	ListChanges    []*ChangesMapElement
 }
 
 func (hashMap *HashMap) deserialize(key, data []byte, index uint64) (HashMapElementSerializableInterface, error) {
@@ -209,8 +210,11 @@ func (hashMap *HashMap) Update(key string, data HashMapElementSerializableInterf
 		increase = true
 	}
 
+	hashMap.ListChanges = append(hashMap.ListChanges, &ChangesMapElement{data, "update", 0, false})
+
 	if exists == nil {
-		exists = new(ChangesMapElement)
+		exists = &ChangesMapElement{}
+
 		hashMap.Changes[key] = exists
 		hashMap.changesSize[key] = exists
 	}
@@ -241,8 +245,11 @@ func (hashMap *HashMap) Delete(key string) {
 		decrease = true
 	}
 
+	hashMap.ListChanges = append(hashMap.ListChanges, &ChangesMapElement{nil, "update", 0, false})
+
 	if exists == nil {
-		exists = new(ChangesMapElement)
+		exists = &ChangesMapElement{}
+
 		hashMap.Changes[key] = exists
 		hashMap.changesSize[key] = exists
 	}
@@ -474,7 +481,7 @@ func (hashMap *HashMap) Reset() {
 
 func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int, indexable bool) (hashMap *HashMap) {
 
-	if len(name) <= 4 {
+	if len(name) < 3 {
 		panic("Invalid name")
 	}
 

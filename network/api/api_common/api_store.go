@@ -425,7 +425,7 @@ func (apiStore *APIStore) openLoadTxHash(blockHeight uint64) (hash []byte, errFi
 
 func (apiStore *APIStore) loadBlockCompleteMissingTxs(reader store_db_interface.StoreDBTransactionInterface, hash []byte, missingTxs []int) (out *api_types.APIBlockCompleteMissingTxs, err error) {
 
-	heightStr := reader.Get("blockHeight_ByHash" + string(hash))
+	heightStr := reader.Get("blocks:listKeys:" + string(hash))
 	if heightStr == nil {
 		return nil, errors.New("Block was not found by hash")
 	}
@@ -600,11 +600,11 @@ func (apiStore *APIStore) loadTxHash(reader store_db_interface.StoreDBTransactio
 	if height < 0 {
 		return nil, errors.New("Height is invalid")
 	}
-	return reader.Get("txHash_ByHeight" + strconv.FormatUint(height, 10)), nil
+	return reader.Get("txs:list:" + strconv.FormatUint(height, 10)), nil
 }
 
 func (chain *APIStore) loadBlock(reader store_db_interface.StoreDBTransactionInterface, hash []byte) (*block.Block, error) {
-	blockData := reader.Get("block_ByHash" + string(hash))
+	blockData := reader.Get("blocks:map:" + string(hash))
 	if blockData == nil {
 		return nil, errors.New("Block was not found")
 	}

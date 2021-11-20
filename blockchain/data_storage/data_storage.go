@@ -5,11 +5,13 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets"
+	"pandora-pay/blockchain/data_storage/blocks"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
+	"pandora-pay/blockchain/data_storage/txs"
 	"pandora-pay/config/config_asset_fee"
 	"pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -23,6 +25,8 @@ type DataStorage struct {
 	AccsCollection             *accounts.AccountsCollection
 	Asts                       *assets.Assets
 	AstsFeeLiquidityCollection *assets.AssetsFeeLiquidityCollection
+	Blocks                     *blocks.Blocks
+	Txs                        *txs.Txs
 }
 
 func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte) (*accounts.Accounts, *account.Account, error) {
@@ -149,6 +153,8 @@ func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *D
 		accounts.NewAccountsCollection(dbTx),
 		assets.NewAssets(dbTx),
 		assets.NewAssetsFeeLiquidityCollection(dbTx),
+		blocks.NewBlocks(dbTx),
+		txs.NewTxs(dbTx),
 	}
 
 	out.GetList = func(computeChangesSize bool) (list []*hash_map.HashMap) {
@@ -157,6 +163,8 @@ func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *D
 			out.Regs.HashMap,
 			out.PlainAccs.HashMap,
 			out.Asts.HashMap,
+			out.Blocks.HashMap,
+			out.Txs.HashMap,
 		}
 		list = append(list, out.AccsCollection.GetAllHashmaps()...)
 

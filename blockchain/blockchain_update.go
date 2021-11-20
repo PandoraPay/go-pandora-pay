@@ -25,7 +25,6 @@ type BlockchainUpdate struct {
 	newChainData           *BlockchainData
 	dataStorage            *data_storage.DataStorage
 	allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate
-	removedTxHashes        map[string][]byte
 	removedTxsList         [][]byte //ordered kept
 	insertedTxs            map[string]*transaction.Transaction
 	insertedTxsList        []*transaction.Transaction
