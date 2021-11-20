@@ -19,12 +19,20 @@ type APIAssetFeeLiquidity struct {
 	Collector    helpers.HexBytes `json:"collector"` //collector Public Key
 }
 
+func (api *APICommon) getAssetFeeLiquidity(request *APIAssetFeeLiquidityFeeRequest) ([]byte, error) {
+	out, err := api.ApiStore.openLoadAssetFeeLiquidity(request.Hash, request.Height)
+	if err != nil || out == nil {
+		return nil, err
+	}
+	return json.Marshal(out)
+}
+
 func (api *APICommon) GetAssetFeeLiquidity_http(values *url.Values) (interface{}, error) {
 	request := &APIAssetFeeLiquidityFeeRequest{}
 	if err := request.ImportFromValues(values); err != nil {
 		return nil, err
 	}
-	return api.GetAssetFeeLiquidity(request)
+	return api.getAssetFeeLiquidity(request)
 }
 
 func (api *APICommon) GetAssetFeeLiquidity_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
@@ -32,5 +40,5 @@ func (api *APICommon) GetAssetFeeLiquidity_websockets(conn *connection.AdvancedC
 	if err := json.Unmarshal(values, &request); err != nil {
 		return nil, err
 	}
-	return api.GetAssetFeeLiquidity(request)
+	return api.getAssetFeeLiquidity(request)
 }

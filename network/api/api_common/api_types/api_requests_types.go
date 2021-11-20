@@ -39,22 +39,9 @@ func GetReturnType(s string, defaultValue APIReturnType) APIReturnType {
 	}
 }
 
-type APIBlockInfoRequest struct {
-	APIHeightHash
-}
-
-type APITransactionInfoRequest struct {
-	APIHeightHash
-}
-
 type APIAccountBaseRequest struct {
 	Address   string           `json:"address,omitempty"`
 	PublicKey helpers.HexBytes `json:"publicKey,omitempty"`
-}
-
-type APIAccountTxsRequest struct {
-	APIAccountBaseRequest
-	Next uint64 `json:"next,omitempty"`
 }
 
 func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
@@ -72,10 +59,6 @@ func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
 	}
 
 	return publicKey, nil
-}
-
-type APIAssetInfoRequest struct {
-	APIHeightHash
 }
 
 type APISubscriptionRequest struct {

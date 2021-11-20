@@ -62,7 +62,7 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("block-info"), &api_types.APIBlockInfoRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}}, nil)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("block-info"), &api_common.APIBlockInfoRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -83,7 +83,7 @@ func getNetworkBlockWithTxs(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		blkWithTxs := &api_common.APIBlockWithTxs{}
+		blkWithTxs := &api_common.APIBlockWithTxsAnswer{}
 		if err := json.Unmarshal(data.Out, blkWithTxs); err != nil {
 			return nil, err
 		}
@@ -213,7 +213,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 func getNetworkAccountTxs(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		request := &api_types.APIAccountTxsRequest{}
+		request := &api_common.APIAccountTxsRequest{}
 		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
@@ -284,7 +284,7 @@ func getNetworkTx(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		received := &api_common.APITransaction{}
+		received := &api_common.APITransactionAnswer{}
 		if err = json.Unmarshal(data.Out, received); err != nil {
 			return nil, err
 		}
@@ -306,7 +306,7 @@ func getNetworkTxPreview(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("tx-preview"), &api_types.APITransactionInfoRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}}, nil)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("tx-preview"), &api_common.APITransactionInfoRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -323,7 +323,7 @@ func getNetworkAssetInfo(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("asset-info"), &api_types.APIAssetInfoRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}}, nil)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("asset-info"), &api_common.APIAssetInfoRequest{api_types.APIHeightHash{uint64(args[0].Int()), hash}}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}

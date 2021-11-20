@@ -15,7 +15,7 @@ type APIBlockRequest struct {
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty"`
 }
 
-type APIBlockWithTxs struct {
+type APIBlockWithTxsAnswer struct {
 	Block           *block.Block       `json:"block,omitempty"`
 	BlockSerialized helpers.HexBytes   `json:"serialized,omitempty"`
 	Txs             []helpers.HexBytes `json:"txs,omitempty"`
@@ -23,7 +23,7 @@ type APIBlockWithTxs struct {
 
 func (api *APICommon) getBlock(request *APIBlockRequest) ([]byte, error) {
 
-	var out *APIBlockWithTxs
+	var out *APIBlockWithTxsAnswer
 
 	var err error
 	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {

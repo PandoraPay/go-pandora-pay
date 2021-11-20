@@ -17,7 +17,7 @@ type APITransactionRequest struct {
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty"`
 }
 
-type APITransaction struct {
+type APITransactionAnswer struct {
 	Tx           *transaction.Transaction `json:"tx,omitempty"`
 	TxSerialized helpers.HexBytes         `json:"serialized,omitempty"`
 	Mempool      bool                     `json:"mempool,omitempty"`
@@ -46,7 +46,7 @@ func (api *APICommon) getTx(request *APITransactionRequest) ([]byte, error) {
 		return nil, err
 	}
 
-	result := &APITransaction{nil, nil, mempool, txInfo}
+	result := &APITransactionAnswer{nil, nil, mempool, txInfo}
 	if request.ReturnType == api_types.RETURN_SERIALIZED {
 		result.TxSerialized = tx.Bloom.Serialized
 	} else if request.ReturnType == api_types.RETURN_JSON {

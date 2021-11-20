@@ -2,18 +2,13 @@ package api_common
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/blockchain_sync"
-	"pandora-pay/blockchain/info"
 	"pandora-pay/config"
 	"pandora-pay/config/config_nodes"
-	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_common/api_delegates_node"
 	"pandora-pay/network/api/api_common/api_faucet"
-	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/recovery"
 	"pandora-pay/transactions_builder"
 	"pandora-pay/wallet"
@@ -31,117 +26,6 @@ type APICommon struct {
 	ApiStore                  *APIStore
 	MempoolDownloadPending    *sync.Map     //[string]chan error
 	MempoolProcessedThisBlock *atomic.Value // *sync.Map //[string]error
-}
-
-func (api *APICommon) GetBlockInfo(request *api_types.APIBlockInfoRequest) ([]byte, error) {
-	blockInfo, err := api.ApiStore.openLoadBlockInfo(request.Height, request.Hash)
-	if err != nil || blockInfo == nil {
-		return nil, err
-	}
-	return json.Marshal(blockInfo)
-}
-
-func (api *APICommon) GetAccountTxs(request *api_types.APIAccountTxsRequest) ([]byte, error) {
-
-	publicKey, err := request.GetPublicKey()
-	if err != nil {
-		return nil, err
-	}
-
-	answer, err := api.ApiStore.openLoadAccountTxsFromPublicKey(publicKey, request.Next)
-	if err != nil || answer == nil {
-		return nil, err
-	}
-
-	return json.Marshal(answer)
-}
-
-func (api *APICommon) GetAccountMempool(request *api_types.APIAccountBaseRequest) ([]byte, error) {
-
-	publicKey, err := request.GetPublicKey()
-	if err != nil {
-		return nil, err
-	}
-
-	txs := api.mempool.Txs.GetAccountTxs(publicKey)
-
-	var answer []helpers.HexBytes
-	if txs != nil {
-		answer = make([]helpers.HexBytes, len(txs))
-		c := 0
-		for _, tx := range txs {
-			answer[c] = tx.Tx.Bloom.Hash
-			c += 1
-		}
-	}
-
-	return json.Marshal(answer)
-}
-
-func (api *APICommon) GetAccountMempoolNonce(request *api_types.APIAccountBaseRequest) ([]byte, error) {
-	publicKey, err := request.GetPublicKey()
-	if err != nil {
-		return nil, err
-	}
-
-	nonce, err := api.ApiStore.OpenLoadPlainAccountNonceFromPublicKey(publicKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return json.Marshal(api.mempool.GetNonce(publicKey, nonce))
-}
-
-func (api *APICommon) GetTxPreview(request *api_types.APITransactionInfoRequest) ([]byte, error) {
-	var txPreview *info.TxPreview
-	var txInfo *info.TxInfo
-	var err error
-
-	mempool := false
-	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
-		txMemPool := api.mempool.Txs.Get(string(request.Hash))
-		if txMemPool != nil {
-			mempool = true
-			if txPreview, err = info.CreateTxPreviewFromTx(txMemPool.Tx); err != nil {
-				return nil, err
-			}
-		} else {
-			txPreview, txInfo, err = api.ApiStore.openLoadTxPreview(request.Hash, 0)
-		}
-	} else {
-		txPreview, txInfo, err = api.ApiStore.openLoadTxPreview(nil, request.Height)
-	}
-
-	if err != nil || txPreview == nil {
-		return nil, err
-	}
-
-	result := &api_types.APITransactionPreview{txPreview, mempool, txInfo}
-	return json.Marshal(result)
-}
-
-func (api *APICommon) GetTxInfo(request *api_types.APITransactionInfoRequest) ([]byte, error) {
-	txInfo, err := api.ApiStore.openLoadTxInfo(request.Hash, request.Height)
-	if err != nil || txInfo == nil {
-		return nil, err
-	}
-	return json.Marshal(txInfo)
-}
-
-func (api *APICommon) GetAssetInfo(request *api_types.APIAssetInfoRequest) ([]byte, error) {
-	astInfo, err := api.ApiStore.openLoadAssetInfo(request.Hash, request.Height)
-	if err != nil || astInfo == nil {
-		return nil, err
-	}
-	return json.Marshal(astInfo)
-}
-
-func (api *APICommon) GetAssetFeeLiquidity(request *APIAssetFeeLiquidityFeeRequest) ([]byte, error) {
-	out, err := api.ApiStore.openLoadAssetFeeLiquidity(request.Hash, request.Height)
-	if err != nil || out == nil {
-		return nil, err
-	}
-	return json.Marshal(out)
 }
 
 //make sure it is safe to read

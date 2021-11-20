@@ -20,14 +20,14 @@ type APIBlockchain struct {
 	TotalDifficulty   string `json:"totalDifficulty"`
 }
 
-func (api *APICommon) GetBlockchain() ([]byte, error) {
+func (api *APICommon) getBlockchain() ([]byte, error) {
 	return json.Marshal(api.localChain.Load().(*APIBlockchain))
 }
 
 func (api *APICommon) GetBlockchain_http(values *url.Values) (interface{}, error) {
-	return api.GetBlockchain()
+	return api.getBlockchain()
 }
 
 func (api *APICommon) GetBlockchain_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.GetBlockchain()
+	return api.getBlockchain()
 }

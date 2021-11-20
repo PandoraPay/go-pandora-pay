@@ -63,7 +63,7 @@ func (api *APICommon) MempoolNewTxId_websockets(conn *connection.AdvancedConnect
 		return
 	}
 
-	data := &APITransaction{}
+	data := &APITransactionAnswer{}
 	if err = json.Unmarshal(result.Out, data); err != nil {
 		return
 	}

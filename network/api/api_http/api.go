@@ -5,8 +5,6 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/network/api/api_common"
-	"pandora-pay/network/api/api_common/api_types"
-	"strconv"
 )
 
 type API struct {
@@ -14,83 +12,6 @@ type API struct {
 	chain     *blockchain.Blockchain
 	apiCommon *api_common.APICommon
 	apiStore  *api_common.APIStore
-}
-
-func (api *API) getBlockInfo(values *url.Values) (interface{}, error) {
-
-	request := &api_types.APIBlockInfoRequest{}
-	if err := request.ImportFromValues(values); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.GetBlockInfo(request)
-}
-
-func (api *API) getAssetInfo(values *url.Values) (interface{}, error) {
-
-	request := &api_types.APIAssetInfoRequest{}
-	if err := request.ImportFromValues(values); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.GetAssetInfo(request)
-}
-
-func (api *API) getTxInfo(values *url.Values) (interface{}, error) {
-
-	request := &api_types.APITransactionInfoRequest{}
-	if err := request.ImportFromValues(values); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.GetTxInfo(request)
-}
-
-func (api *API) getTxPreview(values *url.Values) (interface{}, error) {
-
-	request := &api_types.APITransactionInfoRequest{}
-	if err := request.ImportFromValues(values); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.GetTxPreview(request)
-}
-
-func (api *API) getAccountTxs(values *url.Values) (interface{}, error) {
-
-	request := &api_types.APIAccountTxsRequest{}
-
-	var err error
-	if values.Get("next") != "" {
-		if request.Next, err = strconv.ParseUint(values.Get("next"), 10, 64); err != nil {
-			return nil, err
-		}
-	}
-
-	if err = request.ImportFromValues(values); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.GetAccountTxs(request)
-}
-
-func (api *API) getAccountMempool(values *url.Values) (interface{}, error) {
-
-	request := &api_types.APIAccountBaseRequest{}
-	if err := request.ImportFromValues(values); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.GetAccountMempool(request)
-}
-
-func (api *API) getAccountMempoolNonce(values *url.Values) (interface{}, error) {
-	request := &api_types.APIAccountBaseRequest{}
-	if err := request.ImportFromValues(values); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.GetAccountMempoolNonce(request)
 }
 
 func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain) *API {
@@ -124,13 +45,13 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
-		api.GetMap["asset-info"] = api.getAssetInfo
-		api.GetMap["block-info"] = api.getBlockInfo
-		api.GetMap["tx-info"] = api.getTxInfo
-		api.GetMap["tx-preview"] = api.getTxPreview
-		api.GetMap["account/txs"] = api.getAccountTxs
-		api.GetMap["account/mem-pool"] = api.getAccountMempool
-		api.GetMap["account/mem-pool-nonce"] = api.getAccountMempoolNonce
+		api.GetMap["asset-info"] = api.apiCommon.GetAssetInfo_http
+		api.GetMap["block-info"] = api.apiCommon.GetBlockInfo_http
+		api.GetMap["tx-info"] = api.apiCommon.GetTxInfo_http
+		api.GetMap["tx-preview"] = api.apiCommon.GetTxPreview_http
+		api.GetMap["account/txs"] = api.apiCommon.GetAccountTxs_http
+		api.GetMap["account/mem-pool"] = api.apiCommon.GetAccountMempool_http
+		api.GetMap["account/mem-pool-nonce"] = api.apiCommon.GetAccountMempoolNonce_http
 	}
 
 	if api.apiCommon.APICommonFaucet != nil {

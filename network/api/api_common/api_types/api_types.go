@@ -1,15 +1,8 @@
 package api_types
 
 import (
-	"pandora-pay/blockchain/info"
 	"pandora-pay/helpers"
 )
-
-type APITransactionPreview struct {
-	TxPreview *info.TxPreview `json:"txPreview,omitempty"`
-	Mempool   bool            `json:"mempool,omitempty"`
-	Info      *info.TxInfo    `json:"info,omitempty"`
-}
 
 type APISubscriptionNotification struct {
 	SubscriptionType SubscriptionType `json:"type,omitempty"`
@@ -66,11 +59,6 @@ type APISubscriptionNotificationTxExtraMempool struct {
 type APISubscriptionNotificationTxExtra struct {
 	Blockchain *APISubscriptionNotificationTxExtraBlockchain `json:"blockchain,omitempty"`
 	Mempool    *APISubscriptionNotificationTxExtraMempool    `json:"mempool,omitempty"`
-}
-
-type APIAccountTxs struct {
-	Count uint64             `json:"count,omitempty"`
-	Txs   []helpers.HexBytes `json:"txs,omitempty"`
 }
 
 type APIFaucetInfo struct {

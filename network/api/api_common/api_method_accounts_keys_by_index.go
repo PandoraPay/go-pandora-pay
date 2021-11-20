@@ -18,7 +18,7 @@ type APIAccountsKeysByIndexRequest struct {
 	EncodeAddresses bool             `json:"encodeAddresses"`
 }
 
-type APIAccountsKeysByIndex struct {
+type APIAccountsKeysByIndexAnswer struct {
 	PublicKeys []helpers.HexBytes `json:"publicKeys,omitempty"`
 	Addresses  []string           `json:"addresses,omitempty"`
 }
@@ -52,7 +52,7 @@ func (api *APICommon) getAccountsKeysByIndex(request *APIAccountsKeysByIndexRequ
 		return nil, err
 	}
 
-	answer := &APIAccountsKeysByIndex{}
+	answer := &APIAccountsKeysByIndexAnswer{}
 	if !request.EncodeAddresses {
 		answer.PublicKeys = out
 	} else {

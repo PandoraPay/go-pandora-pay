@@ -20,7 +20,7 @@ type APIAccountsByKeysRequest struct {
 	ReturnType     api_types.APIReturnType            `json:"returnType,omitempty"`
 }
 
-type APIAccountsByKeys struct {
+type APIAccountsByKeysAnswer struct {
 	Acc           []*account.Account           `json:"acc,omitempty"`
 	AccSerialized []helpers.HexBytes           `json:"accSerialized,omitempty"`
 	Reg           []*registration.Registration `json:"registration,omitempty"`

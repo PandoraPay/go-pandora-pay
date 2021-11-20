@@ -7,7 +7,6 @@ import (
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_common"
-	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/settings"
 )
@@ -24,64 +23,6 @@ type APIWebsockets struct {
 
 func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	return json.Marshal(&connection.ConnectionHandshake{config.NAME, config.VERSION, config.NETWORK_SELECTED, config.CONSENSUS, config.NETWORK_ADDRESS_URL_STRING, nil})
-}
-
-func (api *APIWebsockets) getBlockInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-
-	request := &api_types.APIBlockInfoRequest{api_types.APIHeightHash{0, nil}}
-	if err := json.Unmarshal(values, request); err != nil {
-		return nil, err
-	}
-
-	return api.apiCommon.GetBlockInfo(request)
-}
-
-func (api *APIWebsockets) getAccountTxs(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIAccountTxsRequest{}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetAccountTxs(request)
-}
-
-func (api *APIWebsockets) getAccountMempool(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIAccountBaseRequest{}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetAccountMempool(request)
-}
-
-func (api *APIWebsockets) getAccountMempoolNonce(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIAccountBaseRequest{}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetAccountMempoolNonce(request)
-}
-
-func (api *APIWebsockets) getAssetInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APIAssetInfoRequest{api_types.APIHeightHash{0, nil}}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetAssetInfo(request)
-}
-
-func (api *APIWebsockets) getTxInfo(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APITransactionInfoRequest{api_types.APIHeightHash{0, nil}}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetTxInfo(request)
-}
-
-func (api *APIWebsockets) getTxPreview(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &api_types.APITransactionInfoRequest{api_types.APIHeightHash{0, nil}}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.apiCommon.GetTxPreview(request)
 }
 
 func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
@@ -124,13 +65,13 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 	if config.SEED_WALLET_NODES_INFO {
 		api.GetMap["sub"] = api.subscribe
 		api.GetMap["unsub"] = api.unsubscribe
-		api.GetMap["asset-info"] = api.getAssetInfo
-		api.GetMap["block-info"] = api.getBlockInfo
-		api.GetMap["tx-info"] = api.getTxInfo
-		api.GetMap["tx-preview"] = api.getTxPreview
-		api.GetMap["account/txs"] = api.getAccountTxs
-		api.GetMap["account/mem-pool"] = api.getAccountMempool
-		api.GetMap["account/mem-pool-nonce"] = api.getAccountMempoolNonce
+		api.GetMap["asset-info"] = api.apiCommon.GetAssetInfo_websockets
+		api.GetMap["block-info"] = api.apiCommon.GetBlockInfo_websockets
+		api.GetMap["tx-info"] = api.apiCommon.GetTxInfo_websockets
+		api.GetMap["tx-preview"] = api.apiCommon.GetTxPreview_websockets
+		api.GetMap["account/txs"] = api.apiCommon.GetAccountTxs_websockets
+		api.GetMap["account/mem-pool"] = api.apiCommon.GetAccountMempool_websockets
+		api.GetMap["account/mem-pool-nonce"] = api.apiCommon.GetAccountMempoolNonce_websockets
 	}
 
 	if config.SEED_WALLET_NODES_INFO || config.CONSENSUS == config.CONSENSUS_TYPE_WALLET {
