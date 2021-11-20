@@ -53,13 +53,13 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"accounts/by-keys":       api.apiCommon.GetAccountsByKeys_websockets,
 		"asset":                  api.apiCommon.GetAsset_websockets,
 		"asset/fee-liquidity":    api.apiCommon.GetAssetFeeLiquidity_websockets,
-		"mem-pool":               api.apiCommon.GetMempool_websockets,
-		"mem-pool/tx-exists":     api.apiCommon.GetMempoolExists_websockets,
-		"mem-pool/new-tx":        api.apiCommon.MempoolNewTx_websockets,
+		"mempool":                api.apiCommon.GetMempool_websockets,
+		"mempool/tx-exists":      api.apiCommon.GetMempoolExists_websockets,
+		"mempool/new-tx":         api.apiCommon.MempoolNewTx_websockets,
 		//below are ONLY websockets API
-		"block-miss-txs":     api.apiCommon.GetBlockCompleteMissingTxs_websockets,
-		"handshake":          api.getHandshake,
-		"mem-pool/new-tx-id": api.apiCommon.MempoolNewTxId_websockets,
+		"block-miss-txs":    api.apiCommon.GetBlockCompleteMissingTxs_websockets,
+		"handshake":         api.getHandshake,
+		"mempool/new-tx-id": api.apiCommon.MempoolNewTxId_websockets,
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
@@ -70,8 +70,8 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		api.GetMap["tx-info"] = api.apiCommon.GetTxInfo_websockets
 		api.GetMap["tx-preview"] = api.apiCommon.GetTxPreview_websockets
 		api.GetMap["account/txs"] = api.apiCommon.GetAccountTxs_websockets
-		api.GetMap["account/mem-pool"] = api.apiCommon.GetAccountMempool_websockets
-		api.GetMap["account/mem-pool-nonce"] = api.apiCommon.GetAccountMempoolNonce_websockets
+		api.GetMap["account/mempool"] = api.apiCommon.GetAccountMempool_websockets
+		api.GetMap["account/mempool-nonce"] = api.apiCommon.GetAccountMempoolNonce_websockets
 	}
 
 	if config.SEED_WALLET_NODES_INFO || config.CONSENSUS == config.CONSENSUS_TYPE_WALLET {

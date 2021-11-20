@@ -26,10 +26,10 @@ func (api *APICommon) GetTxPreview(request *APITransactionPreviewRequest) ([]byt
 
 	mempool := false
 	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
-		txMemPool := api.mempool.Txs.Get(string(request.Hash))
-		if txMemPool != nil {
+		txMempool := api.mempool.Txs.Get(string(request.Hash))
+		if txMempool != nil {
 			mempool = true
-			if txPreview, err = info.CreateTxPreviewFromTx(txMemPool.Tx); err != nil {
+			if txPreview, err = info.CreateTxPreviewFromTx(txMempool.Tx); err != nil {
 				return nil, err
 			}
 		} else {

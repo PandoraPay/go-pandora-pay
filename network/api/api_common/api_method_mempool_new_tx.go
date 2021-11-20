@@ -51,7 +51,7 @@ func (api *APICommon) mempoolNewTx(tx *transaction.Transaction, exceptSocketUUID
 	if err = tx.BloomAll(); err != nil {
 		return
 	}
-	if err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, false, true, false, exceptSocketUUID); err != nil {
+	if err = api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, true, false, exceptSocketUUID); err != nil {
 		return
 	}
 

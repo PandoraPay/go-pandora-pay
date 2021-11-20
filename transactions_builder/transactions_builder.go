@@ -161,7 +161,7 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, ex
 	statusCallback("Transaction Created")
 
 	if propagateTx {
-		if err = builder.mempool.AddTxToMemPool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
+		if err = builder.mempool.AddTxToMempool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
 			return nil, err
 		}
 	}

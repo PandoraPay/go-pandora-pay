@@ -31,10 +31,10 @@ func (api *APICommon) getTx(request *APITransactionRequest) ([]byte, error) {
 	mempool := false
 	var txInfo *info.TxInfo
 	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
-		txMemPool := api.mempool.Txs.Get(string(request.Hash))
-		if txMemPool != nil {
+		txMempool := api.mempool.Txs.Get(string(request.Hash))
+		if txMempool != nil {
 			mempool = true
-			tx = txMemPool.Tx
+			tx = txMempool.Tx
 		} else {
 			tx, txInfo, err = api.ApiStore.openLoadTx(request.Hash, 0)
 		}

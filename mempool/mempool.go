@@ -46,7 +46,7 @@ func (mempool *Mempool) RemoveInsertedTxsFromBlockchain(txs []string) bool {
 
 func (mempool *Mempool) InsertRemovedTxsFromBlockchain(txs []*transaction.Transaction, height uint64) bool {
 
-	finalTxs, _ := mempool.processTxsToMemPool(txs, height)
+	finalTxs, _ := mempool.processTxsToMempool(txs, height)
 
 	insertTxs := make([]*mempoolTx, len(finalTxs))
 	for i, it := range finalTxs {
@@ -61,12 +61,12 @@ func (mempool *Mempool) InsertRemovedTxsFromBlockchain(txs []*transaction.Transa
 
 }
 
-func (mempool *Mempool) AddTxToMemPool(tx *transaction.Transaction, height uint64, justCreated bool, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID) error {
-	result := mempool.AddTxsToMemPool([]*transaction.Transaction{tx}, height, justCreated, awaitAnswer, awaitBroadcasting, exceptSocketUUID)
+func (mempool *Mempool) AddTxToMempool(tx *transaction.Transaction, height uint64, justCreated bool, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID) error {
+	result := mempool.AddTxsToMempool([]*transaction.Transaction{tx}, height, justCreated, awaitAnswer, awaitBroadcasting, exceptSocketUUID)
 	return result[0]
 }
 
-func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, height uint64) (finalTxs []*mempoolTx, errs []error) {
+func (mempool *Mempool) processTxsToMempool(txs []*transaction.Transaction, height uint64) (finalTxs []*mempoolTx, errs []error) {
 
 	finalTxs = make([]*mempoolTx, len(txs))
 	errs = make([]error, len(txs))
@@ -124,9 +124,9 @@ func (mempool *Mempool) processTxsToMemPool(txs []*transaction.Transaction, heig
 	return
 }
 
-func (mempool *Mempool) AddTxsToMemPool(txs []*transaction.Transaction, height uint64, justCreated, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID) []error {
+func (mempool *Mempool) AddTxsToMempool(txs []*transaction.Transaction, height uint64, justCreated, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID) []error {
 
-	finalTxs, errs := mempool.processTxsToMemPool(txs, height)
+	finalTxs, errs := mempool.processTxsToMempool(txs, height)
 
 	//making sure that the transaction is not inserted twice
 	if runtime.GOARCH != "wasm" {
@@ -203,9 +203,9 @@ func (mempool *Mempool) ContinueWork() {
 	mempool.newWorkCn <- newWork
 }
 
-func CreateMemPool() (*Mempool, error) {
+func CreateMempool() (*Mempool, error) {
 
-	gui.GUI.Log("MemPool init...")
+	gui.GUI.Log("Mempool init...")
 
 	mempool := &Mempool{
 		result:               &atomic.Value{}, // *MempoolResult

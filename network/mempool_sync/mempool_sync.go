@@ -14,7 +14,7 @@ type MempoolSync struct {
 
 func (mempoolSync *MempoolSync) DownloadMempool(conn *connection.AdvancedConnection) (err error) {
 
-	cb := mempoolSync.websockets.ApiWebsockets.GetMap["mem-pool/new-tx-id"]
+	cb := mempoolSync.websockets.ApiWebsockets.GetMap["mempool/new-tx-id"]
 
 	index, page := 0, 0
 	count := config.API_MEMPOOL_MAX_TRANSACTIONS
@@ -24,7 +24,7 @@ func (mempoolSync *MempoolSync) DownloadMempool(conn *connection.AdvancedConnect
 	//times is used to avoid infinite loops
 	for {
 
-		out := conn.SendJSONAwaitAnswer([]byte("mem-pool"), &api_common.APIMempoolRequest{chainHash, page, 0}, nil)
+		out := conn.SendJSONAwaitAnswer([]byte("mempool"), &api_common.APIMempoolRequest{chainHash, page, 0}, nil)
 		if out.Err != nil {
 			return
 		}

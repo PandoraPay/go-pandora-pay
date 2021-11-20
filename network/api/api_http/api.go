@@ -39,9 +39,9 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		"accounts/by-keys":       api.apiCommon.GetAccountsByKeys_http,
 		"asset":                  api.apiCommon.GetAsset_http,
 		"asset/fee-liquidity":    api.apiCommon.GetAssetFeeLiquidity_http,
-		"mem-pool":               api.apiCommon.GetMempool_http,
-		"mem-pool/tx-exists":     api.apiCommon.GetMempoolExists_http,
-		"mem-pool/new-tx":        api.apiCommon.MempoolNewTx_http,
+		"mempool":                api.apiCommon.GetMempool_http,
+		"mempool/tx-exists":      api.apiCommon.GetMempoolExists_http,
+		"mempool/new-tx":         api.apiCommon.MempoolNewTx_http,
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
@@ -50,8 +50,8 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		api.GetMap["tx-info"] = api.apiCommon.GetTxInfo_http
 		api.GetMap["tx-preview"] = api.apiCommon.GetTxPreview_http
 		api.GetMap["account/txs"] = api.apiCommon.GetAccountTxs_http
-		api.GetMap["account/mem-pool"] = api.apiCommon.GetAccountMempool_http
-		api.GetMap["account/mem-pool-nonce"] = api.apiCommon.GetAccountMempoolNonce_http
+		api.GetMap["account/mempool"] = api.apiCommon.GetAccountMempool_http
+		api.GetMap["account/mempool-nonce"] = api.apiCommon.GetAccountMempoolNonce_http
 	}
 
 	if api.apiCommon.APICommonFaucet != nil {

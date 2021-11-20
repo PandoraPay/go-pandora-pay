@@ -76,7 +76,7 @@ func (api *APICommon) MempoolNewTxId_websockets(conn *connection.AdvancedConnect
 		return
 	}
 
-	if err = api.mempool.AddTxToMemPool(tx, api.chain.GetChainData().Height, false, true, false, conn.UUID); err != nil {
+	if err = api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, true, false, conn.UUID); err != nil {
 		return
 	}
 

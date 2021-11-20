@@ -235,7 +235,7 @@ func getNetworkAccountMempool(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("account/mem-pool"), request, nil)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("account/mempool"), request, nil)
 		if data.Out == nil || data.Err != nil {
 			return nil, data.Err
 		}
@@ -257,7 +257,7 @@ func getNetworkAccountMempoolNonce(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("account/mem-pool-nonce"), request, nil)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("account/mempool-nonce"), request, nil)
 		if data.Out == nil || data.Err != nil {
 			return nil, data.Err
 		}
@@ -360,7 +360,7 @@ func getNetworkMempool(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("mem-pool"), &api_common.APIMempoolRequest{chainHash, args[1].Int(), args[2].Int()}, nil)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("mempool"), &api_common.APIMempoolRequest{chainHash, args[1].Int(), args[2].Int()}, nil)
 		if data.Err != nil {
 			return nil, data.Err
 		}

@@ -81,9 +81,9 @@ func (consensus *Consensus) BroadcastTxs(txs []*transaction.Transaction, justCre
 
 	var key, value []byte
 	if justCreated {
-		key = []byte("mem-pool/new-tx")
+		key = []byte("mempool/new-tx")
 	} else {
-		key = []byte("mem-pool/new-tx-id")
+		key = []byte("mempool/new-tx-id")
 	}
 
 	if ctx == nil {
