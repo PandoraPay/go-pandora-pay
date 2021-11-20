@@ -11,8 +11,8 @@ import (
 )
 
 type Accounts struct {
-	hash_map.HashMap `json:"-"`
-	Asset            []byte `json:"-"`
+	*hash_map.HashMap `json:"-"`
+	Asset             []byte `json:"-"`
 }
 
 //WARNING: should NOT be used manually without being called from DataStorage
@@ -85,7 +85,7 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 	hashmap := hash_map.CreateNewHashMap(tx, "accounts_"+string(AssetId), cryptography.PublicKeySize, true)
 
 	accounts = &Accounts{
-		HashMap: *hashmap,
+		HashMap: hashmap,
 		Asset:   AssetId,
 	}
 

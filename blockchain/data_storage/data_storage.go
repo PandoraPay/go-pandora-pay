@@ -139,6 +139,11 @@ func (dataStorage *DataStorage) GetAssetFeeLiquidityTop(assetId []byte, blockHei
 	return plainAcc.AssetFeeLiquidities.GetLiquidity(assetId), nil
 }
 
+func (dataStorage *DataStorage) SetTx(dbTx store_db_interface.StoreDBTransactionInterface) {
+	dataStorage.dbTx = dbTx
+	dataStorage.StoreHashMapRepository.SetTx(dbTx)
+}
+
 func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *DataStorage) {
 
 	out = &DataStorage{

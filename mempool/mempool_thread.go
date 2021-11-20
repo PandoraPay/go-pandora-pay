@@ -163,13 +163,11 @@ func (worker *mempoolWorker) processing(
 
 			if dataStorage != nil {
 				dataStorage.SetTx(dbTx)
+			} else {
+				dataStorage = data_storage.NewDataStorage(dbTx)
 			}
 
 			for {
-
-				if dataStorage == nil {
-					dataStorage = data_storage.NewDataStorage(dbTx)
-				}
 
 				select {
 				case <-suspendProcessingCn:

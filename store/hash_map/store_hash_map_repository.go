@@ -6,10 +6,10 @@ type StoreHashMapRepository struct {
 	GetList func(computeChangesSize bool) []*HashMap
 }
 
-func (repository *StoreHashMapRepository) SetTx(tx store_db_interface.StoreDBTransactionInterface) {
+func (repository *StoreHashMapRepository) SetTx(dbTx store_db_interface.StoreDBTransactionInterface) {
 	list := repository.GetList(false)
 	for _, it := range list {
-		it.SetTx(tx)
+		it.SetTx(dbTx)
 	}
 }
 

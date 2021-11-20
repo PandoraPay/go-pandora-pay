@@ -39,7 +39,7 @@ func (collection *AccountsCollection) GetMap(assetId []byte) (*Accounts, error) 
 		if accs, err = NewAccounts(collection.tx, assetId); err != nil {
 			return nil, err
 		}
-		collection.listMaps = append(collection.listMaps, &accs.HashMap)
+		collection.listMaps = append(collection.listMaps, accs.HashMap)
 		collection.accsMap[string(assetId)] = accs
 	}
 	return accs, nil
