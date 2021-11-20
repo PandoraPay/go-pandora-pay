@@ -60,9 +60,3 @@ type APISubscriptionNotificationTxExtra struct {
 	Blockchain *APISubscriptionNotificationTxExtraBlockchain `json:"blockchain,omitempty"`
 	Mempool    *APISubscriptionNotificationTxExtraMempool    `json:"mempool,omitempty"`
 }
-
-type APIFaucetInfo struct {
-	HCaptchaSiteKey      string `json:"hCaptchaSiteKey,omitempty"`
-	FaucetTestnetEnabled bool   `json:"faucetTestnetEnabled,omitempty"`
-	FaucetTestnetCoins   uint64 `json:"faucetTestnetCoins,omitempty"`
-}

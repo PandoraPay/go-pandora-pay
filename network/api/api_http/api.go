@@ -55,15 +55,15 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 	}
 
 	if api.apiCommon.APICommonFaucet != nil {
-		api.GetMap["faucet/info"] = api.apiCommon.APICommonFaucet.GetFaucetInfoHttp
+		api.GetMap["faucet/info"] = api.apiCommon.APICommonFaucet.GetFaucetInfo_http
 		if config.FAUCET_TESTNET_ENABLED {
-			api.GetMap["faucet/coins"] = api.apiCommon.APICommonFaucet.GetFaucetCoinsHttp
+			api.GetMap["faucet/coins"] = api.apiCommon.APICommonFaucet.GetFaucetCoins_http
 		}
 	}
 
-	if api.apiCommon.APIDelegatesNode != nil {
-		api.GetMap["delegates/info"] = api.apiCommon.APIDelegatesNode.GetDelegatesInfoHttp
-		api.GetMap["delegates/ask"] = api.apiCommon.APIDelegatesNode.GetDelegatesAskHttp
+	if api.apiCommon.APIDelegatorNode != nil {
+		api.GetMap["delegator-node/info"] = api.apiCommon.APIDelegatorNode.GetDelegatorNodeInfo_http
+		api.GetMap["delegator-node/ask"] = api.apiCommon.APIDelegatorNode.GetDelegatorNodeAsk_http
 	}
 
 	return &api

@@ -79,15 +79,15 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 	}
 
 	if api.apiCommon.APICommonFaucet != nil {
-		api.GetMap["faucet/info"] = api.apiCommon.APICommonFaucet.GetFaucetInfoWebsocket
+		api.GetMap["faucet/info"] = api.apiCommon.APICommonFaucet.GetFaucetInfo_websockets
 		if config.FAUCET_TESTNET_ENABLED {
-			api.GetMap["faucet/coins"] = api.apiCommon.APICommonFaucet.GetFaucetCoinsWebsocket
+			api.GetMap["faucet/coins"] = api.apiCommon.APICommonFaucet.GetFaucetCoins_websockets
 		}
 	}
 
-	if api.apiCommon.APIDelegatesNode != nil {
-		api.GetMap["delegates/info"] = api.apiCommon.APIDelegatesNode.GetDelegatesInfoWebsocket
-		api.GetMap["delegates/ask"] = api.apiCommon.APIDelegatesNode.GetDelegatesAskWebsocket
+	if api.apiCommon.APIDelegatorNode != nil {
+		api.GetMap["delegator-node/info"] = api.apiCommon.APIDelegatorNode.GetDelegatorNodeInfo_websockets
+		api.GetMap["delegator-node/ask"] = api.apiCommon.APIDelegatorNode.GetDelegatorNodeAsk_websockets
 	}
 
 	return api

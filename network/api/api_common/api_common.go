@@ -7,7 +7,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/mempool"
-	"pandora-pay/network/api/api_common/api_delegates_node"
+	"pandora-pay/network/api/api_common/api_delegator_node"
 	"pandora-pay/network/api/api_common/api_faucet"
 	"pandora-pay/recovery"
 	"pandora-pay/transactions_builder"
@@ -22,7 +22,7 @@ type APICommon struct {
 	localChain                *atomic.Value //*APIBlockchain
 	localChainSync            *atomic.Value //*blockchain_sync.BlockchainSyncData
 	APICommonFaucet           *api_faucet.APICommonFaucet
-	APIDelegatesNode          *api_delegates_node.APIDelegatesNode
+	APIDelegatorNode          *api_delegator_node.APIDelegatorNode
 	ApiStore                  *APIStore
 	MempoolDownloadPending    *sync.Map     //[string]chan error
 	MempoolProcessedThisBlock *atomic.Value // *sync.Map //[string]error
@@ -61,9 +61,9 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wal
 		}
 	}
 
-	var apiDelegatesNode *api_delegates_node.APIDelegatesNode
+	var apiDelegatorNode *api_delegator_node.APIDelegatorNode
 	if config_nodes.DELEGATES_ALLOWED_ENABLED {
-		apiDelegatesNode = api_delegates_node.CreateDelegatesNode(chain, wallet)
+		apiDelegatorNode = api_delegator_node.CreateDelegatorNode(chain, wallet)
 	}
 
 	api = &APICommon{
@@ -72,7 +72,7 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wal
 		&atomic.Value{}, //*APIBlockchain
 		&atomic.Value{}, //*APIBlockchainSync
 		apiCommonFaucet,
-		apiDelegatesNode,
+		apiDelegatorNode,
 		apiStore,
 		&sync.Map{},
 		&atomic.Value{},

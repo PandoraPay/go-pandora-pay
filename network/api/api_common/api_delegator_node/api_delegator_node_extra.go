@@ -1,4 +1,4 @@
-package api_delegates_node
+package api_delegator_node
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func (api *APIDelegatesNode) execute() {
+func (api *APIDelegatorNode) execute() {
 	recovery.SafeGo(func() {
 
 		updateNewChainUpdateListener := api.chain.UpdateNewChain.AddListener()
@@ -58,7 +58,7 @@ func (api *APIDelegatesNode) execute() {
 
 }
 
-func (api *APIDelegatesNode) updateAccountsChanges() {
+func (api *APIDelegatorNode) updateAccountsChanges() {
 
 	recovery.SafeGo(func() {
 

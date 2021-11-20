@@ -1,53 +1,33 @@
-package api_delegates_node
+package api_delegator_node
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"net/url"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/config/config_nodes"
-	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
-	"pandora-pay/wallet"
-	"sync"
 	"sync/atomic"
-	"time"
 )
 
-type apiPendingDelegateStakeChange struct {
-	delegateStakingPrivateKey *addresses.PrivateKey
-	delegateStakingPublicKey  []byte
-	publicKey                 []byte
-	blockHeight               uint64
+type ApiDelegatorNodeAskRequest struct {
+	PublicKey          helpers.HexBytes `json:"publicKey"`
+	ChallengeSignature helpers.HexBytes `json:"challengeSignature"`
 }
 
-type APIDelegatesNode struct {
-	challenge                     []byte
-	chainHeight                   uint64    //use atomic
-	pendingDelegatesStakesChanges *sync.Map //*apiPendingDelegateStakeChange
-	ticker                        *time.Ticker
-	wallet                        *wallet.Wallet
-	chain                         *blockchain.Blockchain
+type ApiDelegatorNodeAskAnswer struct {
+	Exists                   bool             `json:"exists"`
+	DelegateStakingPublicKey helpers.HexBytes `json:"delegateStakingPublicKey"`
 }
 
-func (api *APIDelegatesNode) getDelegatesInfo(request *ApiDelegatesNodeInfoRequest) ([]byte, error) {
-
-	answer := &ApiDelegatesNodeInfoAnswer{
-		config_nodes.DELEGATES_MAXIMUM,
-		api.wallet.GetDelegatesCount(),
-		config_nodes.DELEGATOR_FEE,
-		api.challenge,
-	}
-
-	return json.Marshal(answer)
-}
-
-func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest) ([]byte, error) {
+func (api *APIDelegatorNode) getDelegatesAsk(request *ApiDelegatorNodeAskRequest) ([]byte, error) {
 
 	publicKey := request.PublicKey
 
@@ -70,7 +50,7 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 
 	addr := api.wallet.GetWalletAddressByPublicKey(publicKey)
 	if addr != nil {
-		return json.Marshal(&ApiDelegatesNodeAskAnswer{
+		return json.Marshal(&ApiDelegatorNodeAskAnswer{
 			Exists: true,
 		})
 	}
@@ -90,7 +70,7 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 		delegateStakingPublicKey = pendingDelegateStakeChange.delegateStakingPublicKey
 	}
 
-	answer := &ApiDelegatesNodeAskAnswer{
+	answer := &ApiDelegatorNodeAskAnswer{
 		Exists:                   false,
 		DelegateStakingPublicKey: delegateStakingPublicKey,
 	}
@@ -98,20 +78,35 @@ func (api *APIDelegatesNode) getDelegatesAsk(request *ApiDelegatesNodeAskRequest
 	return json.Marshal(answer)
 }
 
-func CreateDelegatesNode(chain *blockchain.Blockchain, wallet *wallet.Wallet) (delegates *APIDelegatesNode) {
-
-	challenge := helpers.RandomBytes(cryptography.HashSize)
-
-	delegates = &APIDelegatesNode{
-		challenge,
-		0,
-		&sync.Map{},
-		nil,
-		wallet,
-		chain,
+func (api *APIDelegatorNode) GetDelegatorNodeAsk_http(values *url.Values) (interface{}, error) {
+	request := &ApiDelegatorNodeAskRequest{}
+	var err error
+	if challengeSignature := values.Get("challengeSignature"); challengeSignature != "" {
+		request.ChallengeSignature, err = hex.DecodeString(challengeSignature)
+	} else {
+		err = errors.New("'challengeSignature' parameter is missing")
+	}
+	if err != nil {
+		return nil, err
 	}
 
-	delegates.execute()
+	if publicKey := values.Get("publicKey"); publicKey != "" {
+		request.PublicKey, err = hex.DecodeString(publicKey)
+	} else {
+		err = errors.New("'publicKey' parameter is missing")
+	}
+	if err != nil {
+		return nil, err
+	}
 
-	return
+	return api.getDelegatesAsk(request)
+}
+
+func (api *APIDelegatorNode) GetDelegatorNodeAsk_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	request := &ApiDelegatorNodeAskRequest{}
+	if err := json.Unmarshal(values, request); err != nil {
+		return nil, err
+	}
+
+	return api.getDelegatesAsk(request)
 }
