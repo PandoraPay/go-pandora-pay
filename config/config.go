@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math/big"
 	"math/rand"
-	"net/url"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
@@ -95,7 +94,6 @@ var (
 )
 
 var (
-	NETWORK_ADDRESS_URL        *url.URL
 	NETWORK_ADDRESS_URL_STRING string
 )
 

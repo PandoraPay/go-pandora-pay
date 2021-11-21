@@ -73,7 +73,6 @@ func CreateTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_no
 	server.Port = port
 	server.URL = &url.URL{Scheme: "ws", Host: address + ":" + port, Path: "/ws"}
 
-	config.NETWORK_ADDRESS_URL = server.URL
 	config.NETWORK_ADDRESS_URL_STRING = server.URL.String()
 
 	bannedNodes.Ban(server.URL, "", "You can't connect to yourself", 10*365*24*time.Hour)
