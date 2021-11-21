@@ -39,12 +39,17 @@ func (network *Network) continuouslyConnectNewPeers() {
 				if knownNode != nil {
 					_, err := websocks.CreateWebsocketClient(network.Websockets, knownNode)
 					if err != nil {
-						if config.DEBUG && err.Error() != "Already connected" {
+
+						if err.Error() != "Already connected" {
 							if knownNode.IncrementScore(-5, false) {
 								network.KnownNodes.RemoveKnownNode(knownNode)
 							}
-							gui.GUI.Error("error connecting to: "+knownNode.URL, err)
+
+							if config.DEBUG {
+								gui.GUI.Error("error connecting to: "+knownNode.URL, err)
+							}
 						}
+
 					} else {
 						gui.GUI.Log("connected to: " + knownNode.URL)
 					}
