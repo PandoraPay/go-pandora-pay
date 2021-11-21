@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/url"
+	"pandora-pay/config"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store/min_max_heap"
@@ -11,7 +12,16 @@ import (
 	"time"
 )
 
-func (api *APICommon) getList() ([]*known_nodes.KnownNode, error) {
+type GetNetworkNodesListNode struct {
+	URL   string `json:"url"`
+	Score int    `json:"score"`
+}
+
+type GetNetworkNodesListAnswer struct {
+	Nodes []*GetNetworkNodesListNode `json:"nodes"`
+}
+
+func (api *APICommon) getList() (*GetNetworkNodesListAnswer, error) {
 
 	deadline := time.Now().Add(time.Minute * 5)
 	if api.temporaryListCreation.Load().(time.Time).Before(deadline) {
@@ -25,22 +35,31 @@ func (api *APICommon) getList() ([]*known_nodes.KnownNode, error) {
 		}
 
 		index := 0
-		newTemporaryList := make([]*known_nodes.KnownNode, count)
+		newTemporaryList := &GetNetworkNodesListAnswer{
+			Nodes: make([]*GetNetworkNodesListNode, count),
+		}
 
 		//1st my address
+		if config.NETWORK_ADDRESS_URL_STRING != "" {
+			newTemporaryList.Nodes[0] = &GetNetworkNodesListNode{
+				config.NETWORK_ADDRESS_URL_STRING,
+				3000,
+			}
+			index = 1
+		}
 
 		//50% top
 		maxHeap := min_max_heap.NewHeapMemory(func(a, b float64) bool {
 			return b < a
 		})
 
-		allKnowNodes := map[string]*known_nodes.KnownNode{}
+		allKnowNodes := map[string]*known_nodes.KnownNodeScored{}
 
 		for _, knownNode := range knownList {
 			if err := maxHeap.Insert(float64(atomic.LoadInt32(&knownNode.Score)), []byte(knownNode.URL)); err != nil {
 				return nil, err
 			}
-			allKnowNodes[knownNode.URL] = &knownNode.KnownNode
+			allKnowNodes[knownNode.URL] = knownNode
 		}
 
 		includedMap := make(map[string]bool)
@@ -50,7 +69,12 @@ func (api *APICommon) getList() ([]*known_nodes.KnownNode, error) {
 				return nil, err
 			}
 			if element != nil {
-				newTemporaryList[index] = allKnowNodes[string(element.Key)]
+
+				node := allKnowNodes[string(element.Key)]
+				newTemporaryList.Nodes[index] = &GetNetworkNodesListNode{
+					node.URL,
+					int(atomic.LoadInt32(&node.Score)),
+				}
 				includedMap[string(element.Key)] = true
 				index += 1
 			}
@@ -59,12 +83,16 @@ func (api *APICommon) getList() ([]*known_nodes.KnownNode, error) {
 		//50% random
 		for index < count {
 			for {
-				element := knownList[rand.Intn(len(knownList))]
-				if includedMap[element.URL] {
-					element = nil
+				node := knownList[rand.Intn(len(knownList))]
+				if includedMap[node.URL] {
+					node = nil
 				} else {
-					includedMap[element.URL] = true
-					newTemporaryList[index] = &element.KnownNode
+					includedMap[node.URL] = true
+
+					newTemporaryList.Nodes[index] = &GetNetworkNodesListNode{
+						node.URL,
+						int(atomic.LoadInt32(&node.Score)),
+					}
 					index += 1
 					break
 				}
@@ -74,7 +102,7 @@ func (api *APICommon) getList() ([]*known_nodes.KnownNode, error) {
 		api.temporaryList.Store(newTemporaryList)
 	}
 
-	return api.temporaryList.Load().([]*known_nodes.KnownNode), nil
+	return api.temporaryList.Load().(*GetNetworkNodesListAnswer), nil
 }
 
 func (api *APICommon) getNetworkNodesList() ([]byte, error) {
