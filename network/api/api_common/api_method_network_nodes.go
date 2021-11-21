@@ -23,9 +23,10 @@ type GetNetworkNodesListAnswer struct {
 
 func (api *APICommon) getList() (*GetNetworkNodesListAnswer, error) {
 
-	deadline := time.Now().Add(time.Minute * 5)
-	if api.temporaryListCreation.Load().(time.Time).Before(deadline) {
-		api.temporaryListCreation.Store(deadline)
+	now := time.Now()
+	if now.After(api.temporaryListCreation.Load().(time.Time)) {
+
+		api.temporaryListCreation.Store(now.Add(time.Minute * 1))
 
 		knownList := api.knownNodes.GetList()
 
@@ -39,6 +40,8 @@ func (api *APICommon) getList() (*GetNetworkNodesListAnswer, error) {
 			Nodes: make([]*GetNetworkNodesListNode, count),
 		}
 
+		includedMap := make(map[string]bool)
+
 		//1st my address
 		if config.NETWORK_ADDRESS_URL_STRING != "" {
 			newTemporaryList.Nodes[0] = &GetNetworkNodesListNode{
@@ -46,6 +49,7 @@ func (api *APICommon) getList() (*GetNetworkNodesListAnswer, error) {
 				3000,
 			}
 			index = 1
+			includedMap[config.NETWORK_ADDRESS_URL_STRING] = true
 		}
 
 		//50% top
@@ -62,27 +66,31 @@ func (api *APICommon) getList() (*GetNetworkNodesListAnswer, error) {
 			allKnowNodes[knownNode.URL] = knownNode
 		}
 
-		includedMap := make(map[string]bool)
 		for index < count/2 {
-			element, err := maxHeap.GetTop()
+			element, err := maxHeap.RemoveTop()
 			if err != nil {
 				return nil, err
 			}
-			if element != nil {
+			if element == nil {
+				break
+			}
+			if !includedMap[string(element.Key)] {
 
 				node := allKnowNodes[string(element.Key)]
 				newTemporaryList.Nodes[index] = &GetNetworkNodesListNode{
 					node.URL,
 					int(atomic.LoadInt32(&node.Score)),
 				}
-				includedMap[string(element.Key)] = true
+				includedMap[node.URL] = true
 				index += 1
 			}
 		}
 
 		//50% random
-		for index < count {
+		for index < count && len(includedMap) != len(allKnowNodes) {
+
 			for {
+
 				node := knownList[rand.Intn(len(knownList))]
 				if includedMap[node.URL] {
 					node = nil
@@ -105,7 +113,7 @@ func (api *APICommon) getList() (*GetNetworkNodesListAnswer, error) {
 	return api.temporaryList.Load().(*GetNetworkNodesListAnswer), nil
 }
 
-func (api *APICommon) getNetworkNodesList() ([]byte, error) {
+func (api *APICommon) getNetworkNodes() ([]byte, error) {
 	list, err := api.getList()
 	if err != nil {
 		return nil, err
@@ -113,10 +121,10 @@ func (api *APICommon) getNetworkNodesList() ([]byte, error) {
 	return json.Marshal(list)
 }
 
-func (api *APICommon) GetNetworkNodesList_http(values *url.Values) (interface{}, error) {
-	return api.getNetworkNodesList()
+func (api *APICommon) GetNetworkNodes_http(values *url.Values) (interface{}, error) {
+	return api.getNetworkNodes()
 }
 
-func (api *APICommon) GetNetworkNodesList_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.getNetworkNodesList()
+func (api *APICommon) GetNetworkNodes_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+	return api.getNetworkNodes()
 }

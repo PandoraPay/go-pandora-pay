@@ -56,7 +56,7 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		"mempool":                api.apiCommon.GetMempool_websockets,
 		"mempool/tx-exists":      api.apiCommon.GetMempoolExists_websockets,
 		"mempool/new-tx":         api.apiCommon.MempoolNewTx_websockets,
-		"network/nodes-list":     api.apiCommon.GetNetworkNodesList_websockets,
+		"network/nodes":          api.apiCommon.GetNetworkNodes_websockets,
 		//below are ONLY websockets API
 		"block-miss-txs":    api.apiCommon.GetBlockCompleteMissingTxs_websockets,
 		"handshake":         api.getHandshake,

@@ -42,7 +42,7 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		"mempool":                api.apiCommon.GetMempool_http,
 		"mempool/tx-exists":      api.apiCommon.GetMempoolExists_http,
 		"mempool/new-tx":         api.apiCommon.MempoolNewTx_http,
-		"network/nodes-list":     api.apiCommon.GetNetworkNodesList_http,
+		"network/nodes":          api.apiCommon.GetNetworkNodes_http,
 	}
 
 	if config.SEED_WALLET_NODES_INFO {
