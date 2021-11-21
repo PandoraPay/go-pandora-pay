@@ -38,7 +38,7 @@ func CreateHttpServer(chain *blockchain.Blockchain, settings *settings.Settings,
 	websockets := websocks.CreateWebsockets(chain, mempool, settings, bannedNodes, api, apiWebsockets)
 
 	server := &HttpServer{
-		websocketServer: websocks.CreateWebsocketServer(websockets),
+		websocketServer: websocks.CreateWebsocketServer(websockets, knownNodes),
 		Websockets:      websockets,
 		GetMap:          make(map[string]func(values *url.Values) (interface{}, error)),
 		Api:             api,

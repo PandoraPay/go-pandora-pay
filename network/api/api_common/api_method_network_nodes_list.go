@@ -7,6 +7,7 @@ import (
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store/min_max_heap"
+	"sync/atomic"
 	"time"
 )
 
@@ -36,10 +37,10 @@ func (api *APICommon) getList() ([]*known_nodes.KnownNode, error) {
 		allKnowNodes := map[string]*known_nodes.KnownNode{}
 
 		for _, knownNode := range knownList {
-			if err := maxHeap.Insert(float64(knownNode.Score), []byte(knownNode.UrlStr)); err != nil {
+			if err := maxHeap.Insert(float64(atomic.LoadInt32(&knownNode.Score)), []byte(knownNode.URL)); err != nil {
 				return nil, err
 			}
-			allKnowNodes[knownNode.UrlStr] = &knownNode.KnownNode
+			allKnowNodes[knownNode.URL] = &knownNode.KnownNode
 		}
 
 		includedMap := make(map[string]bool)
@@ -59,10 +60,10 @@ func (api *APICommon) getList() ([]*known_nodes.KnownNode, error) {
 		for index < count {
 			for {
 				element := knownList[rand.Intn(len(knownList))]
-				if includedMap[element.UrlStr] {
+				if includedMap[element.URL] {
 					element = nil
 				} else {
-					includedMap[element.UrlStr] = true
+					includedMap[element.URL] = true
 					newTemporaryList[index] = &element.KnownNode
 					index += 1
 					break

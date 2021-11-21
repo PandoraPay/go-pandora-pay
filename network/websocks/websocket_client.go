@@ -28,12 +28,12 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
 	defer cancel()
 
-	c, _, err := websocket.Dial(ctx, knownNode.UrlStr, nil)
+	c, _, err := websocket.Dial(ctx, knownNode.URL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if wsClient.conn, err = websockets.NewConnection(c, knownNode.UrlStr, knownNode, false); err != nil {
+	if wsClient.conn, err = websockets.NewConnection(c, knownNode.URL, knownNode, false); err != nil {
 		return nil, err
 	}
 

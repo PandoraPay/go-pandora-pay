@@ -227,7 +227,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 		return errors.New("Handshake is invalid")
 	}
 
-	if websockets.bannedNodes.IsBanned(handshakeReceived.URLStr) {
+	if handshakeReceived.URL != "" && websockets.bannedNodes.IsBanned(handshakeReceived.URL) {
 		return errors.New("Socket is banned")
 	}
 

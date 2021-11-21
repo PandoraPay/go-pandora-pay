@@ -42,25 +42,28 @@ func (network *Network) execute() {
 			continue
 		}
 
-		if network.BannedNodes.IsBanned(knownNode.UrlStr) {
+		if network.BannedNodes.IsBanned(knownNode.URL) {
 			continue //banned already
 		}
 
-		_, exists := network.Websockets.AllAddresses.Load(knownNode.UrlStr)
+		_, exists := network.Websockets.AllAddresses.Load(knownNode.URL)
 		if !exists {
 
 			if config.DEBUG {
-				gui.GUI.Log("connecting to: " + knownNode.UrlStr)
+				gui.GUI.Log("connecting to: " + knownNode.URL)
 			}
 
 			if knownNode != nil {
 				_, err := websocks.CreateWebsocketClient(network.Websockets, knownNode)
 				if err != nil {
 					if config.DEBUG && err.Error() != "Already connected" {
-						gui.GUI.Error("error connecting to: "+knownNode.UrlStr, err)
+						if knownNode.IncrementScore(-5, false) {
+							network.KnownNodes.RemoveKnownNode(knownNode)
+						}
+						gui.GUI.Error("error connecting to: "+knownNode.URL, err)
 					}
 				} else {
-					gui.GUI.Log("connected to: " + knownNode.UrlStr)
+					gui.GUI.Log("connected to: " + knownNode.URL)
 				}
 			}
 		}

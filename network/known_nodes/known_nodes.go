@@ -5,17 +5,6 @@ import (
 	"sync"
 )
 
-type KnownNode struct {
-	UrlStr string
-	IsSeed bool
-}
-
-type KnownNodeScored struct {
-	KnownNode
-	Score int
-	sync.RWMutex
-}
-
 type KnownNodes struct {
 	knownMap       *sync.Map //*KnownNode
 	knownList      []*KnownNodeScored
@@ -39,30 +28,30 @@ func (self *KnownNodes) GetRandomKnownNode() *KnownNodeScored {
 	return self.knownList[rand.Intn(len(self.knownList))]
 }
 
-func (self *KnownNodes) AddKnownNode(url string, isSeed bool) bool {
+func (self *KnownNodes) AddKnownNode(url string, isSeed bool) *KnownNodeScored {
 
 	knownNode := &KnownNodeScored{
 		KnownNode: KnownNode{
-			UrlStr: url,
+			URL:    url,
 			IsSeed: isSeed,
 		},
 		Score: 0,
 	}
 
 	if _, exists := self.knownMap.LoadOrStore(url, knownNode); exists {
-		return false
+		return nil
 	}
 
 	self.knownListMutex.Lock()
 	self.knownList = append(self.knownList, knownNode)
 	self.knownListMutex.Unlock()
 
-	return true
+	return knownNode
 }
 
 func (self *KnownNodes) RemoveKnownNode(knownNode *KnownNodeScored) {
 
-	if _, exists := self.knownMap.LoadAndDelete(knownNode.UrlStr); exists {
+	if _, exists := self.knownMap.LoadAndDelete(knownNode.URL); exists {
 		self.knownListMutex.Lock()
 		defer self.knownListMutex.Unlock()
 		for i, knownNode2 := range self.knownList {

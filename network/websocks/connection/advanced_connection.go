@@ -29,7 +29,7 @@ type AdvancedConnection struct {
 	UUID                    advanced_connection_types.UUID
 	Conn                    *websocket.Conn
 	Handshake               *ConnectionHandshake
-	knownNode               *known_nodes.KnownNodeScored
+	KnownNode               *known_nodes.KnownNodeScored
 	RemoteAddr              string
 	answerCounter           uint32
 	Closed                  chan struct{}
@@ -293,14 +293,7 @@ func (c *AdvancedConnection) IncreaseKnownNodeScore() {
 			return
 		}
 
-		c.knownNode.Lock()
-		if c.knownNode.Score < 1000 {
-			c.knownNode.Score += 1
-		} else {
-			c.knownNode.Unlock()
-			return
-		}
-		c.knownNode.Unlock()
+		c.KnownNode.IncrementScore(1, c.ConnectionType)
 
 	}
 
@@ -320,7 +313,7 @@ func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode
 		Conn:                    conn,
 		Handshake:               nil,
 		RemoteAddr:              remoteAddr,
-		knownNode:               knownNode,
+		KnownNode:               knownNode,
 		Closed:                  make(chan struct{}),
 		InitializedStatus:       INITIALIZED_STATUS_CREATED,
 		InitializedStatusMutex:  &sync.Mutex{},
