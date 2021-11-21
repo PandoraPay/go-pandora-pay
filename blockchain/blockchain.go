@@ -413,13 +413,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 				newChainData.AssetsCount = dataStorage.Asts.Count
 				newChainData.AccountsCount = dataStorage.Regs.Count + dataStorage.PlainAccs.Count
-				chain.ChainData.Store(newChainData)
 
-			} else {
-				//only rollback
-				if err == nil {
-					err = errors.New("Rollback")
-				}
+			} else if err == nil { //only rollback
+				err = errors.New("Rollback")
 			}
 
 			if dataStorage != nil {
@@ -439,6 +435,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	if err == nil {
 		chain.mempool.ContinueProcessingCn <- mempool.CONTINUE_PROCESSING_NO_ERROR
 	} else {
+		chain.ChainData.Store(newChainData)
 		chain.mempool.ContinueProcessingCn <- mempool.CONTINUE_PROCESSING_ERROR
 	}
 
