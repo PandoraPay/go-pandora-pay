@@ -433,9 +433,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	}
 
 	if err == nil {
+		chain.ChainData.Store(newChainData)
 		chain.mempool.ContinueProcessingCn <- mempool.CONTINUE_PROCESSING_NO_ERROR
 	} else {
-		chain.ChainData.Store(newChainData)
 		chain.mempool.ContinueProcessingCn <- mempool.CONTINUE_PROCESSING_ERROR
 	}
 
