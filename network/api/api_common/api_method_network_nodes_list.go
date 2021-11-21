@@ -29,7 +29,7 @@ func (api *APICommon) getList() (*GetNetworkNodesListAnswer, error) {
 
 		knownList := api.knownNodes.GetList()
 
-		count := 100
+		count := config.NETWORK_KNOWN_NODES_LIST_RETURN
 		if count > len(knownList) {
 			count = len(knownList)
 		}

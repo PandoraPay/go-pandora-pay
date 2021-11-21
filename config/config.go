@@ -94,7 +94,9 @@ var (
 )
 
 var (
-	NETWORK_ADDRESS_URL_STRING string
+	NETWORK_ADDRESS_URL_STRING      string
+	NETWORK_KNOWN_NODES_LIMIT       int32 = 5000
+	NETWORK_KNOWN_NODES_LIST_RETURN       = 100
 )
 
 func StartConfig() {

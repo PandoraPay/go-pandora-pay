@@ -6,6 +6,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/recovery"
 	"sync/atomic"
 )
 
@@ -36,7 +37,10 @@ func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r
 	}
 
 	if conn.Handshake.URL != "" {
-		conn.KnownNode = wserver.knownNodes.AddKnownNode(conn.Handshake.URL, false)
+		conn.KnownNode, err = wserver.knownNodes.AddKnownNode(conn.Handshake.URL, false)
+		if conn.KnownNode != nil {
+			recovery.SafeGo(conn.IncreaseKnownNodeScore)
+		}
 	}
 
 }

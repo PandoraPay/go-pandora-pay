@@ -1,14 +1,18 @@
 package known_nodes
 
 import (
+	"errors"
 	"math/rand"
+	"pandora-pay/config"
 	"sync"
+	"sync/atomic"
 )
 
 type KnownNodes struct {
 	knownMap       *sync.Map //*KnownNode
 	knownList      []*KnownNodeScored
 	knownListMutex sync.RWMutex
+	knownCount     int32 //atomic required
 }
 
 func (self *KnownNodes) GetList() []*KnownNodeScored {
@@ -28,7 +32,11 @@ func (self *KnownNodes) GetRandomKnownNode() *KnownNodeScored {
 	return self.knownList[rand.Intn(len(self.knownList))]
 }
 
-func (self *KnownNodes) AddKnownNode(url string, isSeed bool) *KnownNodeScored {
+func (self *KnownNodes) AddKnownNode(url string, isSeed bool) (*KnownNodeScored, error) {
+
+	if atomic.LoadInt32(&self.knownCount) > config.NETWORK_KNOWN_NODES_LIMIT {
+		return nil, errors.New("Too many nodes already in the list")
+	}
 
 	knownNode := &KnownNodeScored{
 		KnownNode: KnownNode{
@@ -39,14 +47,16 @@ func (self *KnownNodes) AddKnownNode(url string, isSeed bool) *KnownNodeScored {
 	}
 
 	if _, exists := self.knownMap.LoadOrStore(url, knownNode); exists {
-		return nil
+		return nil, errors.New("Already exists")
 	}
 
 	self.knownListMutex.Lock()
 	self.knownList = append(self.knownList, knownNode)
 	self.knownListMutex.Unlock()
 
-	return knownNode
+	atomic.AddInt32(&self.knownCount, +1)
+
+	return knownNode, nil
 }
 
 func (self *KnownNodes) RemoveKnownNode(knownNode *KnownNodeScored) {
@@ -58,10 +68,12 @@ func (self *KnownNodes) RemoveKnownNode(knownNode *KnownNodeScored) {
 			if knownNode2 == knownNode {
 				self.knownList[i] = self.knownList[len(self.knownList)-1]
 				self.knownList = self.knownList[:len(self.knownList)-1]
+				atomic.AddInt32(&self.knownCount, -1)
 				return
 			}
 		}
 	}
+
 }
 
 func CreateKnownNodes() (knownNodes *KnownNodes) {
@@ -70,6 +82,7 @@ func CreateKnownNodes() (knownNodes *KnownNodes) {
 		&sync.Map{},
 		make([]*KnownNodeScored, 0),
 		sync.RWMutex{},
+		0,
 	}
 
 	return
