@@ -48,7 +48,7 @@ func NewHeapMemory(compare func(a, b float64) bool) *HeapMemory {
 	heap.getElement = func(index uint64) (*HeapElement, error) {
 		return array[index], nil
 	}
-	heap.getSize = func() uint64 {
+	heap.GetSize = func() uint64 {
 		return size
 	}
 

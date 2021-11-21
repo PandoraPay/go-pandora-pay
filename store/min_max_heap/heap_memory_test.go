@@ -9,14 +9,14 @@ import (
 	"time"
 )
 
-func sum(v []uint64) uint64 {
-	out := uint64(0)
+func sum(v []float64) float64 {
+	out := float64(0)
 	for _, x := range v {
 		out += x
 	}
 	return out
 }
-func getMax(v []uint64) uint64 {
+func getMax(v []float64) float64 {
 	max := v[0]
 	for _, x := range v {
 		if max < x {
@@ -26,7 +26,7 @@ func getMax(v []uint64) uint64 {
 	return max
 }
 
-func getMin(v []uint64) uint64 {
+func getMin(v []float64) float64 {
 	min := v[0]
 	for _, x := range v {
 		if min > x {
@@ -39,14 +39,14 @@ func getMin(v []uint64) uint64 {
 func TestCreateMaxHeapMemory(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 
-	v := []uint64{6, 5, 3, 7, 2, 8}
+	v := []float64{6, 5, 3, 7, 2, 8}
 	keys := make([][]byte, len(v))
 
 	for i := range v {
 		keys[i] = helpers.RandomBytes(cryptography.PublicKeySize)
 	}
 
-	maxHeap := NewHeapMemory(func(a, b uint64) bool {
+	maxHeap := NewHeapMemory(func(a, b float64) bool {
 		return b < a
 	})
 
@@ -62,9 +62,9 @@ func TestCreateMaxHeapMemory(t *testing.T) {
 	x := append(v[:index], v[index+1:]...)
 	assert.Nil(t, maxHeap.DeleteByKey(keys[index]))
 
-	assert.Equal(t, maxHeap.getSize(), uint64(len(x)))
+	assert.Equal(t, maxHeap.GetSize(), uint64(len(x)))
 
-	final2 := uint64(0)
+	final2 := float64(0)
 	for range x {
 		el, err := maxHeap.RemoveTop()
 		assert.Nil(t, err)
@@ -76,17 +76,17 @@ func TestCreateMaxHeapMemory(t *testing.T) {
 func TestCreateMaxHeapMemory2(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 
-	v := []uint64{}
+	v := []float64{}
 	keys := make([][]byte, len(v))
 
 	dict := map[string]int{}
 	for i := 0; i < 10000; i++ {
-		v = append(v, rand.Uint64())
+		v = append(v, float64(rand.Uint32()))
 		keys = append(keys, helpers.RandomBytes(cryptography.PublicKeySize))
 		dict[string(keys[i])] = i
 	}
 
-	maxHeap := NewHeapMemory(func(a, b uint64) bool {
+	maxHeap := NewHeapMemory(func(a, b float64) bool {
 		return b < a
 	})
 	for i := 0; i < len(v); i++ {
@@ -101,9 +101,9 @@ func TestCreateMaxHeapMemory2(t *testing.T) {
 	x := append(v[:index], v[index+1:]...)
 	assert.Nil(t, maxHeap.DeleteByKey(keys[index]))
 
-	assert.Equal(t, maxHeap.getSize(), uint64(len(x)))
+	assert.Equal(t, maxHeap.GetSize(), uint64(len(x)))
 
-	final2 := uint64(0)
+	final2 := float64(0)
 	for range x {
 		el, err := maxHeap.RemoveTop()
 		assert.Nil(t, err)
@@ -115,17 +115,17 @@ func TestCreateMaxHeapMemory2(t *testing.T) {
 func TestCreateMinHeapMemory(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 
-	v := []uint64{}
+	v := []float64{}
 	keys := make([][]byte, len(v))
 
 	dict := map[string]int{}
 	for i := 0; i < 10000; i++ {
-		v = append(v, rand.Uint64())
+		v = append(v, float64(rand.Uint32()))
 		keys = append(keys, helpers.RandomBytes(cryptography.PublicKeySize))
 		dict[string(keys[i])] = i
 	}
 
-	minHeap := NewHeapMemory(func(a, b uint64) bool {
+	minHeap := NewHeapMemory(func(a, b float64) bool {
 		return a < b
 	})
 	for i := 0; i < len(v); i++ {
@@ -140,9 +140,9 @@ func TestCreateMinHeapMemory(t *testing.T) {
 	x := append(v[:index], v[index+1:]...)
 	assert.Nil(t, minHeap.DeleteByKey(keys[index]))
 
-	assert.Equal(t, minHeap.getSize(), uint64(len(x)))
+	assert.Equal(t, minHeap.GetSize(), uint64(len(x)))
 
-	final2 := uint64(0)
+	final2 := float64(0)
 	for range x {
 		el, err := minHeap.RemoveTop()
 		assert.Nil(t, err)

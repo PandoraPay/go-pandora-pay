@@ -7,6 +7,7 @@ import (
 	"github.com/tevino/abool"
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
+	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 	"sync"
@@ -28,6 +29,7 @@ type AdvancedConnection struct {
 	UUID                    advanced_connection_types.UUID
 	Conn                    *websocket.Conn
 	Handshake               *ConnectionHandshake
+	knownNode               *known_nodes.KnownNodeScored
 	RemoteAddr              string
 	answerCounter           uint32
 	Closed                  chan struct{}
@@ -230,6 +232,7 @@ func (c *AdvancedConnection) ReadPump() {
 
 	ctx, cancel = context.WithCancel(context.Background())
 	defer cancel()
+
 	for {
 
 		_, read, err := c.Conn.Read(ctx)
@@ -252,24 +255,58 @@ func (c *AdvancedConnection) ReadPump() {
 func (c *AdvancedConnection) WritePump() {
 
 	pingTicker := time.NewTicker(config.WEBSOCKETS_PING_INTERVAL)
+	defer pingTicker.Stop()
 
 	for {
 
-		if _, ok := <-pingTicker.C; !ok {
-			break
+		select {
+		case _, ok := <-pingTicker.C:
+			if !ok {
+				return
+			}
+		case <-c.Closed:
+			return
 		}
 
 		if err := c.connSendPing(); err != nil {
-			break
+			c.Close(err.Error())
+			return
 		}
-	}
 
-	pingTicker.Stop()
-	c.Close("Ping send")
+	}
 
 }
 
-func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification) (*AdvancedConnection, error) {
+func (c *AdvancedConnection) IncreaseKnownNodeScore() {
+
+	ticker := time.NewTicker(config.WEBSOCKETS_INCREASE_KNOWN_NODE_SCORE_INTERVAL)
+	defer ticker.Stop()
+
+	for {
+
+		select {
+		case _, ok := <-ticker.C:
+			if !ok {
+				return
+			}
+		case <-c.Closed:
+			return
+		}
+
+		c.knownNode.Lock()
+		if c.knownNode.Score < 1000 {
+			c.knownNode.Score += 1
+		} else {
+			c.knownNode.Unlock()
+			return
+		}
+		c.knownNode.Unlock()
+
+	}
+
+}
+
+func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification) (*AdvancedConnection, error) {
 
 	u := advanced_connection_types.UUID(0)
 	for u <= advanced_connection_types.UUID_SKIP_ALL {
@@ -283,6 +320,7 @@ func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, getMap ma
 		Conn:                    conn,
 		Handshake:               nil,
 		RemoteAddr:              remoteAddr,
+		knownNode:               knownNode,
 		Closed:                  make(chan struct{}),
 		InitializedStatus:       INITIALIZED_STATUS_CREATED,
 		InitializedStatusMutex:  &sync.Mutex{},

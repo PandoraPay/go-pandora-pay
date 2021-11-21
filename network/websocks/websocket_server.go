@@ -26,7 +26,7 @@ func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r
 		return
 	}
 
-	if _, err = wserver.websockets.NewConnection(c, r.RemoteAddr, true); err != nil {
+	if _, err = wserver.websockets.NewConnection(c, r.RemoteAddr, nil, true); err != nil {
 		return
 	}
 

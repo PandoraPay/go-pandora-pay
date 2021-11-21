@@ -9,7 +9,7 @@ import (
 )
 
 type WebsocketClient struct {
-	knownNode  *known_nodes.KnownNode
+	knownNode  *known_nodes.KnownNodeScored
 	conn       *connection.AdvancedConnection
 	websockets *Websockets
 }
@@ -18,7 +18,7 @@ func (wsClient *WebsocketClient) Close(reason string) error {
 	return wsClient.conn.Close(reason)
 }
 
-func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownNode) (*WebsocketClient, error) {
+func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownNodeScored) (*WebsocketClient, error) {
 
 	wsClient := &WebsocketClient{
 		knownNode:  knownNode,
@@ -33,7 +33,7 @@ func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownN
 		return nil, err
 	}
 
-	if wsClient.conn, err = websockets.NewConnection(c, knownNode.UrlStr, false); err != nil {
+	if wsClient.conn, err = websockets.NewConnection(c, knownNode.UrlStr, knownNode, false); err != nil {
 		return nil, err
 	}
 

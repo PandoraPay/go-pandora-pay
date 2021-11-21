@@ -1,9 +1,7 @@
 package config
 
-import "net/url"
-
 type SeedNode struct {
-	Url *url.URL `json:"url"`
+	Url string `json:"url"`
 }
 
 var (
@@ -11,34 +9,34 @@ var (
 
 	TEST_NET_SEED_NODES = []*SeedNode{
 		{
-			&url.URL{Scheme: "ws", Host: "helloworldx.ddns.net:16000", Path: "/ws"},
+			"ws://helloworldx.ddns.net:16000/ws",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "helloworldx.ddns.net:16001", Path: "/ws"},
+			"ws://helloworldx.ddns.net:16001/ws",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "helloworldx.ddns.net:16002", Path: "/ws"},
+			"ws://helloworldx.ddns.net:16002/ws",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "helloworldx.ddns.net:16003", Path: "/ws"},
+			"ws://helloworldx.ddns.net:16003/ws",
 		},
 	}
 
 	DEV_NET_SEED_NODES = []*SeedNode{
 		{
-			&url.URL{Scheme: "ws", Host: "127.0.0.1:5230", Path: "/ws"},
+			"ws://127.0.0.1:5230/ws",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "127.0.0.1:5231", Path: "/ws"},
+			"ws://127.0.0.1:5231/ws",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "127.0.0.1:5232", Path: "/ws"},
+			"ws://127.0.0.1:5232/ws",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "127.0.0.1:5233", Path: "/ws"},
+			"ws://127.0.0.1:5233/ws",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "127.0.0.1:5234", Path: "/ws"},
+			"ws://127.0.0.1:5234/ws",
 		},
 	}
 )

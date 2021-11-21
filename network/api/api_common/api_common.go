@@ -9,16 +9,19 @@ import (
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_common/api_delegator_node"
 	"pandora-pay/network/api/api_common/api_faucet"
+	"pandora-pay/network/known_nodes"
 	"pandora-pay/recovery"
 	"pandora-pay/transactions_builder"
 	"pandora-pay/wallet"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 type APICommon struct {
 	mempool                   *mempool.Mempool
 	chain                     *blockchain.Blockchain
+	knownNodes                *known_nodes.KnownNodes
 	localChain                *atomic.Value //*APIBlockchain
 	localChainSync            *atomic.Value //*blockchain_sync.BlockchainSyncData
 	APICommonFaucet           *api_faucet.APICommonFaucet
@@ -26,6 +29,9 @@ type APICommon struct {
 	ApiStore                  *APIStore
 	MempoolDownloadPending    *sync.Map     //[string]chan error
 	MempoolProcessedThisBlock *atomic.Value // *sync.Map //[string]error
+
+	temporaryList         atomic.Value //[]*KnownNode
+	temporaryListCreation atomic.Value //time.Time
 }
 
 //make sure it is safe to read
@@ -52,7 +58,7 @@ func (api *APICommon) readLocalBlockchainSync(newLocalSync *blockchain_sync.Bloc
 	api.localChainSync.Store(newLocalSync)
 }
 
-func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder, apiStore *APIStore) (api *APICommon, err error) {
+func CreateAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder, apiStore *APIStore) (api *APICommon, err error) {
 
 	var apiCommonFaucet *api_faucet.APICommonFaucet
 	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
@@ -69,6 +75,7 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wal
 	api = &APICommon{
 		mempool,
 		chain,
+		knownNodes,
 		&atomic.Value{}, //*APIBlockchain
 		&atomic.Value{}, //*APIBlockchainSync
 		apiCommonFaucet,
@@ -76,7 +83,11 @@ func CreateAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wal
 		apiStore,
 		&sync.Map{},
 		&atomic.Value{},
+		atomic.Value{},
+		atomic.Value{},
 	}
+
+	api.temporaryListCreation.Store(time.Now())
 
 	api.MempoolProcessedThisBlock.Store(&sync.Map{})
 

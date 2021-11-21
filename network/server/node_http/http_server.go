@@ -8,6 +8,7 @@ import (
 	"pandora-pay/network/api/api_http"
 	"pandora-pay/network/api/api_websockets"
 	"pandora-pay/network/banned_nodes"
+	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/websocks"
 	"pandora-pay/settings"
 	"pandora-pay/transactions_builder"
@@ -23,10 +24,10 @@ type HttpServer struct {
 	GetMap          map[string]func(values *url.Values) (interface{}, error)
 }
 
-func CreateHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*HttpServer, error) {
+func CreateHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*HttpServer, error) {
 
 	apiStore := api_common.CreateAPIStore(chain)
-	apiCommon, err := api_common.CreateAPICommon(mempool, chain, wallet, transactionsBuilder, apiStore)
+	apiCommon, err := api_common.CreateAPICommon(knownNodes, mempool, chain, wallet, transactionsBuilder, apiStore)
 	if err != nil {
 		return nil, err
 	}

@@ -33,7 +33,7 @@ func (network *Network) execute() {
 	for {
 
 		if network.Websockets.GetClients() >= config.WEBSOCKETS_NETWORK_CLIENTS_MAX {
-			time.Sleep(1000 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 
@@ -127,7 +127,7 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 
 	bannedNodes := banned_nodes.CreateBannedNodes()
 
-	tcpServer, err := node_tcp.CreateTcpServer(bannedNodes, settings, chain, mempool, wallet, transactionsBuilder)
+	tcpServer, err := node_tcp.CreateTcpServer(bannedNodes, knownNodes, settings, chain, mempool, wallet, transactionsBuilder)
 	if err != nil {
 		return nil, err
 	}

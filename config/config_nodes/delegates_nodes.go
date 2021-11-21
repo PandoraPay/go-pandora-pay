@@ -2,13 +2,12 @@ package config_nodes
 
 import (
 	"math"
-	"net/url"
 	"pandora-pay/config/config_stake"
 )
 
 type DelegateNode struct {
-	Url  *url.URL `json:"url"`
-	Name string   `json:"name"`
+	Url  string `json:"url"`
+	Name string `json:"name"`
 }
 
 var (
@@ -16,42 +15,42 @@ var (
 
 	TEST_NET_DELEGATES_NODES = []*DelegateNode{
 		{
-			&url.URL{Scheme: "ws", Host: "helloworldx.ddns.net:16000", Path: "/ws"},
+			"ws://helloworldx.ddns.net:16000/ws",
 			"helloworldx 1",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "helloworldx.ddns.net:16001", Path: "/ws"},
+			"ws://helloworldx.ddns.net:16001/ws",
 			"helloworldx 2",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "helloworldx.ddns.net:16002", Path: "/ws"},
+			"ws://helloworldx.ddns.net:16002/ws",
 			"helloworldx 3",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "helloworldx.ddns.net:16003", Path: "/ws"},
+			"ws://helloworldx.ddns.net:16003/ws",
 			"helloworldx 4",
 		},
 	}
 
 	DEV_NET_DELEGATES_NODES = []*DelegateNode{
 		{
-			&url.URL{Scheme: "ws", Host: "127.0.0.1:5230", Path: "/ws"},
+			"ws://127.0.0.1:5230/ws",
 			"127.0.0.1 1",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "127.0.0.1:5231", Path: "/ws"},
+			"ws://127.0.0.1:5231/ws",
 			"127.0.0.1 2",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "127.0.0.1:5232", Path: "/ws"},
+			"ws://127.0.0.1:5232/ws",
 			"127.0.0.1 3",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "127.0.0.1:5233", Path: "/ws"},
+			"ws://127.0.0.1:5233/ws",
 			"127.0.0.1 4",
 		},
 		{
-			&url.URL{Scheme: "ws", Host: "127.0.0.1:5234", Path: "/ws"},
+			"ws://127.0.0.1:5234/ws",
 			"127.0.0.1 5",
 		},
 	}

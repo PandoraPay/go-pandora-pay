@@ -80,7 +80,7 @@ func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, na
 		return el.(*HeapElement), nil
 	}
 
-	heap.getSize = func() uint64 {
+	heap.GetSize = func() uint64 {
 		return hashMap.Count
 	}
 

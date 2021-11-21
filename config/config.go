@@ -63,11 +63,12 @@ var (
 )
 
 const (
-	WEBSOCKETS_TIMEOUT           = 5 * time.Second  //seconds
-	WEBSOCKETS_PONG_WAIT         = 60 * time.Second // Time allowed to read the next pong message from the peer.
-	WEBSOCKETS_PING_INTERVAL     = (WEBSOCKETS_PONG_WAIT * 8) / 10
-	WEBSOCKETS_MAX_READ          = BLOCK_MAX_SIZE + 1024
-	WEBSOCKETS_MAX_SUBSCRIPTIONS = 20
+	WEBSOCKETS_TIMEOUT                            = 5 * time.Second  //seconds
+	WEBSOCKETS_PONG_WAIT                          = 60 * time.Second // Time allowed to read the next pong message from the peer.
+	WEBSOCKETS_PING_INTERVAL                      = (WEBSOCKETS_PONG_WAIT * 8) / 10
+	WEBSOCKETS_MAX_READ                           = BLOCK_MAX_SIZE + 1024
+	WEBSOCKETS_MAX_SUBSCRIPTIONS                  = 20
+	WEBSOCKETS_INCREASE_KNOWN_NODE_SCORE_INTERVAL = 1 * time.Minute
 )
 
 var (

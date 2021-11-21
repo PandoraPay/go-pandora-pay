@@ -7,12 +7,12 @@ type Heap struct {
 	updateElement func(index uint64, x *HeapElement) error
 	addElement    func(x *HeapElement) error
 	removeElement func() (*HeapElement, error)
-	getSize       func() uint64
+	GetSize       func() uint64
 	compare       func(a, b float64) bool
 }
 
 func (m *Heap) leaf(index uint64) bool {
-	return index >= (m.getSize()/2) && index <= m.getSize()
+	return index >= (m.GetSize()/2) && index <= m.GetSize()
 }
 
 func (m *Heap) parent(index uint64) uint64 {
@@ -34,7 +34,7 @@ func (m *Heap) Insert(score float64, key []byte) error {
 	if err := m.addElement(&HeapElement{nil, key, score}); err != nil {
 		return err
 	}
-	return m.upHeapify(m.getSize() - 1)
+	return m.upHeapify(m.GetSize() - 1)
 }
 
 func (m *Heap) swap(first, second uint64) error {
@@ -86,7 +86,7 @@ func (m *Heap) downHeapify(current uint64) (err error) {
 	rightRightIndex := m.rightchild(current)
 	//If current is smallest then return
 
-	if leftChildIndex < m.getSize() {
+	if leftChildIndex < m.GetSize() {
 		if a, err = m.getElement(leftChildIndex); err != nil {
 			return
 		}
@@ -98,7 +98,7 @@ func (m *Heap) downHeapify(current uint64) (err error) {
 		}
 	}
 
-	if rightRightIndex < m.getSize() {
+	if rightRightIndex < m.GetSize() {
 		if m.compare(a.Score, b.Score) {
 			if a, err = m.getElement(rightRightIndex); err != nil {
 				return
@@ -128,7 +128,7 @@ func (m *Heap) Delete(index uint64) error {
 		return err
 	}
 
-	if index == m.getSize() {
+	if index == m.GetSize() {
 		return nil
 	}
 
@@ -148,7 +148,7 @@ func (m *Heap) Delete(index uint64) error {
 
 	}
 
-	if index < m.getSize()/2 {
+	if index < m.GetSize()/2 {
 		return m.downHeapify(index)
 	}
 
@@ -157,7 +157,7 @@ func (m *Heap) Delete(index uint64) error {
 
 func (m *Heap) RemoveTop() (*HeapElement, error) {
 
-	if err := m.swap(0, m.getSize()-1); err != nil {
+	if err := m.swap(0, m.GetSize()-1); err != nil {
 		return nil, err
 	}
 

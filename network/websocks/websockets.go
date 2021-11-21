@@ -15,6 +15,7 @@ import (
 	"pandora-pay/network/api/api_http"
 	"pandora-pay/network/api/api_websockets"
 	"pandora-pay/network/banned_nodes"
+	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
@@ -175,19 +176,22 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
 }
 
-func (websockets *Websockets) NewConnection(c *websocket.Conn, addr string, connectionType bool) (*connection.AdvancedConnection, error) {
+func (websockets *Websockets) NewConnection(c *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, connectionType bool) (*connection.AdvancedConnection, error) {
 
-	conn, err := connection.CreateAdvancedConnection(c, addr, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn, websockets.subscriptions.removeSubscriptionCn)
+	conn, err := connection.CreateAdvancedConnection(c, remoteAddr, knownNode, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn, websockets.subscriptions.removeSubscriptionCn)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, exists := websockets.AllAddresses.LoadOrStore(addr, conn); exists {
+	if _, exists := websockets.AllAddresses.LoadOrStore(remoteAddr, conn); exists {
 		return nil, errors.New("Already connected")
 	}
 
 	recovery.SafeGo(conn.ReadPump)
 	recovery.SafeGo(conn.WritePump)
+	if knownNode != nil {
+		recovery.SafeGo(conn.IncreaseKnownNodeScore)
+	}
 	recovery.SafeGo(func() { websockets.closedConnection(conn) })
 
 	if err = websockets.InitializeConnection(conn); err != nil {
