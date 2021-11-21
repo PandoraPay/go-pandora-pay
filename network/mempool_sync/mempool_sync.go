@@ -12,9 +12,9 @@ type MempoolSync struct {
 	websockets *websocks.Websockets
 }
 
-func (mempoolSync *MempoolSync) DownloadMempool(conn *connection.AdvancedConnection) (err error) {
+func (self *MempoolSync) DownloadMempool(conn *connection.AdvancedConnection) (err error) {
 
-	cb := mempoolSync.websockets.ApiWebsockets.GetMap["mempool/new-tx-id"]
+	cb := self.websockets.ApiWebsockets.GetMap["mempool/new-tx-id"]
 
 	index, page := 0, 0
 	count := config.API_MEMPOOL_MAX_TRANSACTIONS
