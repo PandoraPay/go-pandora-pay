@@ -252,7 +252,7 @@ func (testnet *Testnet) run() {
 									testnet.testnetCreateClaimTx(4, unclaimed/5, ctx2)
 								}
 
-							} else if atomic.LoadInt32(&unstakesCount) < 4 && delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
+							} else if atomic.LoadInt32(&unstakesCount) < 4 && delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > 5000 {
 								if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
 									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-unclaimed); err != nil {
 										return
