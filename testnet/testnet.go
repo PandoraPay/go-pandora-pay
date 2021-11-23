@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
+	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
@@ -214,6 +215,11 @@ func (testnet *Testnet) run() {
 					gui.GUI.Log("UpdateNewChain received! 2")
 
 					if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+						plainAccs := plain_accounts.NewPlainAccounts(reader)
+						if plainAcc, err = plainAccs.GetPlainAccount(addr.PublicKey, blockHeight); err != nil {
+							return
+						}
 
 						if plainAcc != nil {
 							delegatedStakeAvailable = plainAcc.DelegatedStake.GetDelegatedStakeAvailable()
