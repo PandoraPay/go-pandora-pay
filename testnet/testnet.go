@@ -7,9 +7,6 @@ import (
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
-	"pandora-pay/blockchain/data_storage/accounts"
-	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
@@ -18,7 +15,6 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
-	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
@@ -211,36 +207,13 @@ func (testnet *Testnet) run() {
 					var addr *wallet_address.WalletAddress
 					addr, _ = testnet.wallet.GetWalletAddress(0)
 
-					publicKey := addr.PublicKey
-
 					var delegatedStakeAvailable, delegatedUnstakePending, unclaimed uint64
-					var balanceHomo *crypto.ElGamal
 
-					var acc *account.Account
 					var plainAcc *plain_account.PlainAccount
 
 					gui.GUI.Log("UpdateNewChain received! 2")
 
 					if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-						accsCollection := accounts.NewAccountsCollection(reader)
-
-						accs, err := accsCollection.GetMap(config_coins.NATIVE_ASSET_FULL)
-						if err != nil {
-							return
-						}
-						if acc, err = accs.GetAccount(publicKey); err != nil {
-							return
-						}
-
-						plainAccs := plain_accounts.NewPlainAccounts(reader)
-						if plainAcc, err = plainAccs.GetPlainAccount(publicKey, blockHeight); err != nil {
-							return
-						}
-
-						if acc != nil {
-							balanceHomo = acc.GetBalance()
-						}
 
 						if plainAcc != nil {
 							delegatedStakeAvailable = plainAcc.DelegatedStake.GetDelegatedStakeAvailable()
@@ -253,14 +226,7 @@ func (testnet *Testnet) run() {
 						return
 					}
 
-					if acc != nil || plainAcc != nil {
-
-						var balance uint64
-						if acc != nil {
-							if balance, err = testnet.wallet.DecodeBalanceByPublicKey(publicKey, balanceHomo, config_coins.NATIVE_ASSET_FULL, true, true, ctx2, func(string) {}); err != nil {
-								return
-							}
-						}
+					if plainAcc != nil {
 
 						if creatingTransactions.IsNotSet() {
 
@@ -278,9 +244,9 @@ func (testnet *Testnet) run() {
 									testnet.testnetCreateClaimTx(4, unclaimed/5, ctx2)
 								}
 
-							} else if delegatedStakeAvailable > 0 && balance < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
+							} else if delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
 								if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
-									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-balance); err != nil {
+									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-unclaimed); err != nil {
 										return
 									}
 								}

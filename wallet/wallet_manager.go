@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
 	"pandora-pay/addresses"
@@ -457,8 +458,7 @@ func (wallet *Wallet) createEmptyWallet() (err error) {
 }
 
 func (wallet *Wallet) updateWallet() {
-	gui.GUI.InfoUpdate("Wallet", wallet.Encryption.Encrypted.String())
-	gui.GUI.InfoUpdate("Wallet Addrs", strconv.Itoa(wallet.Count))
+	gui.GUI.InfoUpdate("Wallet Addrs", fmt.Sprintf("%d  %s", wallet.Count, wallet.Encryption.Encrypted))
 }
 
 //wallet must be locked before
