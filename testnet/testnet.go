@@ -26,6 +26,7 @@ import (
 	"pandora-pay/transactions_builder/wizard"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
+	"sync/atomic"
 	"time"
 )
 
@@ -161,6 +162,7 @@ func (testnet *Testnet) run() {
 	defer testnet.chain.UpdateNewChain.RemoveChannel(updateChannel)
 
 	creatingTransactions := abool.New()
+	unstakesCount := int32(0)
 
 	for i := uint64(0); i < testnet.nodes; i++ {
 		if uint64(testnet.wallet.GetAddressesCount()) <= i+1 {
@@ -239,9 +241,9 @@ func (testnet *Testnet) run() {
 							creatingTransactions.Set()
 							defer creatingTransactions.UnSet()
 
-							if unclaimed > config_coins.ConvertToUnitsUint64Forced(30) {
+							if unclaimed > config_coins.ConvertToUnitsUint64Forced(40) {
 
-								unclaimed -= config_coins.ConvertToUnitsUint64Forced(20)
+								unclaimed -= config_coins.ConvertToUnitsUint64Forced(30)
 
 								if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload.SCRIPT_CLAIM) {
 									testnet.testnetCreateClaimTx(1, unclaimed/5, ctx2)
@@ -250,17 +252,18 @@ func (testnet *Testnet) run() {
 									testnet.testnetCreateClaimTx(4, unclaimed/5, ctx2)
 								}
 
-							} else if delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
+							} else if atomic.LoadInt32(&unstakesCount) < 4 && delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 {
 								if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
 									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-unclaimed); err != nil {
 										return
 									}
 								}
+								atomic.AddInt32(&unstakesCount, 1)
 							} else {
 
+								time.Sleep(time.Millisecond * 100) //making sure the block got propagated
 								for i := 2; i < 5; i++ {
 									testnet.testnetCreateTransfers(i, ctx2)
-									time.Sleep(time.Millisecond * 50)
 								}
 
 							}
