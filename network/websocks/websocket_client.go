@@ -18,7 +18,7 @@ func (wsClient *WebsocketClient) Close(reason string) error {
 	return wsClient.conn.Close(reason)
 }
 
-func CreateWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownNodeScored) (*WebsocketClient, error) {
+func NewWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownNodeScored) (*WebsocketClient, error) {
 
 	wsClient := &WebsocketClient{
 		knownNode:  knownNode,

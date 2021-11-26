@@ -32,7 +32,7 @@ func (self *KnownNodesSync) DownloadNetworkNodes(conn *connection.AdvancedConnec
 	return
 }
 
-func CreateNodesKnownSync(websockets *websocks.Websockets, knownNodes *known_nodes.KnownNodes) *KnownNodesSync {
+func NewNodesKnownSync(websockets *websocks.Websockets, knownNodes *known_nodes.KnownNodes) *KnownNodesSync {
 	return &KnownNodesSync{
 		websockets: websockets,
 		knownNodes: knownNodes,

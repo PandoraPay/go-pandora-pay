@@ -15,11 +15,11 @@ type Consensus struct {
 
 func (consensus *Consensus) execute() {
 	//discover forks
-	processForksThread := createConsensusProcessForksThread(consensus.forks, consensus.chain, consensus.mempool)
+	processForksThread := newConsensusProcessForksThread(consensus.forks, consensus.chain, consensus.mempool)
 	recovery.SafeGo(processForksThread.execute)
 }
 
-func CreateConsensus(chain *blockchain.Blockchain, mempool *mempool.Mempool) *Consensus {
+func NewConsensus(chain *blockchain.Blockchain, mempool *mempool.Mempool) *Consensus {
 
 	consensus := &Consensus{
 		chain:   chain,

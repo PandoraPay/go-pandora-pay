@@ -178,7 +178,7 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 
 func (websockets *Websockets) NewConnection(c *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, connectionType bool) (*connection.AdvancedConnection, error) {
 
-	conn, err := connection.CreateAdvancedConnection(c, remoteAddr, knownNode, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn, websockets.subscriptions.removeSubscriptionCn)
+	conn, err := connection.NewAdvancedConnection(c, remoteAddr, knownNode, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn, websockets.subscriptions.removeSubscriptionCn)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	return nil
 }
 
-func CreateWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
+func NewWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
 		AllAddresses:                 &sync.Map{},

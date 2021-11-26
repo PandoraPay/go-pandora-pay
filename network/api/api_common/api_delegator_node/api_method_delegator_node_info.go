@@ -18,7 +18,7 @@ type ApiDelegatorNodeInfoAnswer struct {
 	Challenge      helpers.HexBytes `json:"challenge"`
 }
 
-func (api *APIDelegatorNode) getDelegatorNodeInfo(request *ApiDelegatorNodeInfoRequest) ([]byte, error) {
+func (api *DelegatorNode) getDelegatorNodeInfo(request *ApiDelegatorNodeInfoRequest) ([]byte, error) {
 
 	answer := &ApiDelegatorNodeInfoAnswer{
 		config_nodes.DELEGATES_MAXIMUM,
@@ -30,12 +30,12 @@ func (api *APIDelegatorNode) getDelegatorNodeInfo(request *ApiDelegatorNodeInfoR
 	return json.Marshal(answer)
 }
 
-func (api *APIDelegatorNode) GetDelegatorNodeInfo_http(values *url.Values) (interface{}, error) {
+func (api *DelegatorNode) GetDelegatorNodeInfo_http(values *url.Values) (interface{}, error) {
 	request := &ApiDelegatorNodeInfoRequest{}
 	return api.getDelegatorNodeInfo(request)
 }
 
-func (api *APIDelegatorNode) GetDelegatorNodeInfo_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+func (api *DelegatorNode) GetDelegatorNodeInfo_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	request := &ApiDelegatorNodeInfoRequest{}
 	if err := json.Unmarshal(values, request); err != nil {
 		return nil, err

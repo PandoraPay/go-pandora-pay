@@ -10,27 +10,27 @@ import (
 	"time"
 )
 
-type apiPendingDelegateStakeChange struct {
+type pendingDelegateStakeChange struct {
 	delegateStakingPrivateKey *addresses.PrivateKey
 	delegateStakingPublicKey  []byte
 	publicKey                 []byte
 	blockHeight               uint64
 }
 
-type APIDelegatorNode struct {
+type DelegatorNode struct {
 	challenge                     []byte
 	chainHeight                   uint64    //use atomic
-	pendingDelegatesStakesChanges *sync.Map //*apiPendingDelegateStakeChange
+	pendingDelegatesStakesChanges *sync.Map //*pendingDelegateStakeChange
 	ticker                        *time.Ticker
 	wallet                        *wallet.Wallet
 	chain                         *blockchain.Blockchain
 }
 
-func CreateDelegatorNode(chain *blockchain.Blockchain, wallet *wallet.Wallet) (delegator *APIDelegatorNode) {
+func NewDelegatorNode(chain *blockchain.Blockchain, wallet *wallet.Wallet) (delegator *DelegatorNode) {
 
 	challenge := helpers.RandomBytes(cryptography.HashSize)
 
-	delegator = &APIDelegatorNode{
+	delegator = &DelegatorNode{
 		challenge,
 		0,
 		&sync.Map{},

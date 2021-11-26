@@ -24,16 +24,16 @@ type Network struct {
 	KnownNodesSync *known_nodes_sync.KnownNodesSync
 }
 
-func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*Network, error) {
+func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*Network, error) {
 
-	knownNodes := known_nodes.CreateKnownNodes()
+	knownNodes := known_nodes.NewKnownNodes()
 	for _, seed := range config.NETWORK_SELECTED_SEEDS {
 		knownNodes.AddKnownNode(seed.Url, true)
 	}
 
-	bannedNodes := banned_nodes.CreateBannedNodes()
+	bannedNodes := banned_nodes.NewBannedNodes()
 
-	tcpServer, err := node_tcp.CreateTcpServer(bannedNodes, knownNodes, settings, chain, mempool, wallet, transactionsBuilder)
+	tcpServer, err := node_tcp.NewTcpServer(bannedNodes, knownNodes, settings, chain, mempool, wallet, transactionsBuilder)
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +43,8 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 		Websockets:     tcpServer.HttpServer.Websockets,
 		KnownNodes:     knownNodes,
 		BannedNodes:    bannedNodes,
-		MempoolSync:    mempool_sync.CreateMempoolSync(tcpServer.HttpServer.Websockets),
-		KnownNodesSync: known_nodes_sync.CreateNodesKnownSync(tcpServer.HttpServer.Websockets, knownNodes),
+		MempoolSync:    mempool_sync.NewMempoolSync(tcpServer.HttpServer.Websockets),
+		KnownNodesSync: known_nodes_sync.NewNodesKnownSync(tcpServer.HttpServer.Websockets, knownNodes),
 	}
 	tcpServer.HttpServer.Initialize()
 

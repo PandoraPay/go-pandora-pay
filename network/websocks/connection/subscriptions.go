@@ -88,7 +88,7 @@ func (s *Subscriptions) RemoveSubscription(subscriptionType api_types.Subscripti
 	return errors.New("Subscription not found")
 }
 
-func CreateSubscriptions(conn *AdvancedConnection, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification) (s *Subscriptions) {
+func NewSubscriptions(conn *AdvancedConnection, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification) (s *Subscriptions) {
 	return &Subscriptions{
 		conn:                 conn,
 		newSubscriptionCn:    newSubscriptionCn,

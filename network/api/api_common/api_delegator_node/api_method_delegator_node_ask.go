@@ -27,7 +27,7 @@ type ApiDelegatorNodeAskAnswer struct {
 	DelegateStakingPublicKey helpers.HexBytes `json:"delegateStakingPublicKey"`
 }
 
-func (api *APIDelegatorNode) getDelegatesAsk(request *ApiDelegatorNodeAskRequest) ([]byte, error) {
+func (api *DelegatorNode) getDelegatesAsk(request *ApiDelegatorNodeAskRequest) ([]byte, error) {
 
 	publicKey := request.PublicKey
 
@@ -58,14 +58,14 @@ func (api *APIDelegatorNode) getDelegatesAsk(request *ApiDelegatorNodeAskRequest
 	delegateStakingPrivateKey := addresses.GenerateNewPrivateKey()
 	delegateStakingPublicKey := delegateStakingPrivateKey.GeneratePublicKey()
 
-	data, loaded := api.pendingDelegatesStakesChanges.LoadOrStore(string(publicKey), &apiPendingDelegateStakeChange{
+	data, loaded := api.pendingDelegatesStakesChanges.LoadOrStore(string(publicKey), &pendingDelegateStakeChange{
 		delegateStakingPrivateKey,
 		delegateStakingPublicKey,
 		publicKey,
 		atomic.LoadUint64(&api.chainHeight),
 	})
 	if loaded {
-		pendingDelegateStakeChange := data.(*apiPendingDelegateStakeChange)
+		pendingDelegateStakeChange := data.(*pendingDelegateStakeChange)
 		delegateStakingPrivateKey = pendingDelegateStakeChange.delegateStakingPrivateKey
 		delegateStakingPublicKey = pendingDelegateStakeChange.delegateStakingPublicKey
 	}
@@ -78,7 +78,7 @@ func (api *APIDelegatorNode) getDelegatesAsk(request *ApiDelegatorNodeAskRequest
 	return json.Marshal(answer)
 }
 
-func (api *APIDelegatorNode) GetDelegatorNodeAsk_http(values *url.Values) (interface{}, error) {
+func (api *DelegatorNode) GetDelegatorNodeAsk_http(values *url.Values) (interface{}, error) {
 	request := &ApiDelegatorNodeAskRequest{}
 	var err error
 	if challengeSignature := values.Get("challengeSignature"); challengeSignature != "" {
@@ -102,7 +102,7 @@ func (api *APIDelegatorNode) GetDelegatorNodeAsk_http(values *url.Values) (inter
 	return api.getDelegatesAsk(request)
 }
 
-func (api *APIDelegatorNode) GetDelegatorNodeAsk_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+func (api *DelegatorNode) GetDelegatorNodeAsk_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	request := &ApiDelegatorNodeAskRequest{}
 	if err := json.Unmarshal(values, request); err != nil {
 		return nil, err

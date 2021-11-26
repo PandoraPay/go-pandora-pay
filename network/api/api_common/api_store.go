@@ -612,7 +612,7 @@ func (chain *APIStore) loadBlock(reader store_db_interface.StoreDBTransactionInt
 	return blk, blk.Deserialize(helpers.NewBufferReader(blockData))
 }
 
-func CreateAPIStore(chain *blockchain.Blockchain) *APIStore {
+func NewAPIStore(chain *blockchain.Blockchain) *APIStore {
 	return &APIStore{
 		chain: chain,
 	}

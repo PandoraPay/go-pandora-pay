@@ -25,7 +25,7 @@ type APICommon struct {
 	localChain                *atomic.Value //*APIBlockchain
 	localChainSync            *atomic.Value //*blockchain_sync.BlockchainSyncData
 	Faucet                    *api_faucet.Faucet
-	APIDelegatorNode          *api_delegator_node.APIDelegatorNode
+	DelegatorNode             *api_delegator_node.DelegatorNode
 	ApiStore                  *APIStore
 	MempoolDownloadPending    *sync.Map     //[string]chan error
 	MempoolProcessedThisBlock *atomic.Value // *sync.Map //[string]error
@@ -58,18 +58,18 @@ func (api *APICommon) readLocalBlockchainSync(newLocalSync *blockchain_sync.Bloc
 	api.localChainSync.Store(newLocalSync)
 }
 
-func CreateAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder, apiStore *APIStore) (api *APICommon, err error) {
+func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder, apiStore *APIStore) (api *APICommon, err error) {
 
 	var faucet *api_faucet.Faucet
 	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
-		if faucet, err = api_faucet.CreateFaucet(mempool, chain, wallet, transactionsBuilder); err != nil {
+		if faucet, err = api_faucet.NewFaucet(mempool, chain, wallet, transactionsBuilder); err != nil {
 			return
 		}
 	}
 
-	var apiDelegatorNode *api_delegator_node.APIDelegatorNode
+	var delegatorNode *api_delegator_node.DelegatorNode
 	if config_nodes.DELEGATES_ALLOWED_ENABLED {
-		apiDelegatorNode = api_delegator_node.CreateDelegatorNode(chain, wallet)
+		delegatorNode = api_delegator_node.NewDelegatorNode(chain, wallet)
 	}
 
 	api = &APICommon{
@@ -79,7 +79,7 @@ func CreateAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempoo
 		&atomic.Value{}, //*APIBlockchain
 		&atomic.Value{}, //*APIBlockchainSync
 		faucet,
-		apiDelegatorNode,
+		delegatorNode,
 		apiStore,
 		&sync.Map{},
 		&atomic.Value{},

@@ -13,6 +13,6 @@ import (
 type Faucet struct {
 }
 
-func CreateFaucet(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*Faucet, error) {
+func NewFaucet(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*Faucet, error) {
 	return &Faucet{}, nil
 }

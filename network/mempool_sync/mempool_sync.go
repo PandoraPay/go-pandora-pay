@@ -58,7 +58,7 @@ func (self *MempoolSync) DownloadMempool(conn *connection.AdvancedConnection) (e
 	return
 }
 
-func CreateMempoolSync(websockets *websocks.Websockets) *MempoolSync {
+func NewMempoolSync(websockets *websocks.Websockets) *MempoolSync {
 	return &MempoolSync{
 		websockets: websockets,
 	}

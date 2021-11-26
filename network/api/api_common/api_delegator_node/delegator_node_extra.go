@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func (api *APIDelegatorNode) execute() {
+func (api *DelegatorNode) execute() {
 	recovery.SafeGo(func() {
 
 		updateNewChainUpdateListener := api.chain.UpdateNewChain.AddListener()
@@ -44,7 +44,7 @@ func (api *APIDelegatorNode) execute() {
 				lastHeight = chainHeight
 
 				api.pendingDelegatesStakesChanges.Range(func(key, value interface{}) bool {
-					pendingDelegateStakeChange := value.(*apiPendingDelegateStakeChange)
+					pendingDelegateStakeChange := value.(*pendingDelegateStakeChange)
 					if chainHeight >= pendingDelegateStakeChange.blockHeight+10 {
 						api.pendingDelegatesStakesChanges.Delete(key)
 					}
@@ -58,7 +58,7 @@ func (api *APIDelegatorNode) execute() {
 
 }
 
-func (api *APIDelegatorNode) updateAccountsChanges() {
+func (api *DelegatorNode) updateAccountsChanges() {
 
 	recovery.SafeGo(func() {
 
@@ -78,7 +78,7 @@ func (api *APIDelegatorNode) updateAccountsChanges() {
 				data, loaded := api.pendingDelegatesStakesChanges.Load(k)
 				if loaded {
 
-					pendingDelegatingStakeChange := data.(*apiPendingDelegateStakeChange)
+					pendingDelegatingStakeChange := data.(*pendingDelegateStakeChange)
 
 					if v.Stored == "update" {
 						plainAcc := v.Element.(*plain_account.PlainAccount)

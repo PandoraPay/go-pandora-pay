@@ -27,11 +27,11 @@ func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, valu
 	return json.Marshal(&connection.ConnectionHandshake{config.NAME, config.VERSION, config.NETWORK_SELECTED, config.CONSENSUS, config.NETWORK_ADDRESS_URL_STRING})
 }
 
-func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
+func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
 
 	api := &APIWebsockets{
 		nil,
-		consensus.CreateConsensus(chain, mempool),
+		consensus.NewConsensus(chain, mempool),
 		chain,
 		mempool,
 		settings,
@@ -93,9 +93,9 @@ func CreateWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.AP
 		}
 	}
 
-	if api.apiCommon.APIDelegatorNode != nil {
-		api.GetMap["delegator-node/info"] = api.apiCommon.APIDelegatorNode.GetDelegatorNodeInfo_websockets
-		api.GetMap["delegator-node/ask"] = api.apiCommon.APIDelegatorNode.GetDelegatorNodeAsk_websockets
+	if api.apiCommon.DelegatorNode != nil {
+		api.GetMap["delegator-node/info"] = api.apiCommon.DelegatorNode.GetDelegatorNodeInfo_websockets
+		api.GetMap["delegator-node/ask"] = api.apiCommon.DelegatorNode.GetDelegatorNodeAsk_websockets
 	}
 
 	return api

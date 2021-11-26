@@ -76,7 +76,7 @@ func (self *KnownNodes) RemoveKnownNode(knownNode *KnownNodeScored) {
 
 }
 
-func CreateKnownNodes() (knownNodes *KnownNodes) {
+func NewKnownNodes() (knownNodes *KnownNodes) {
 
 	knownNodes = &KnownNodes{
 		&sync.Map{},

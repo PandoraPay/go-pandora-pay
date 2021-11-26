@@ -24,21 +24,21 @@ type HttpServer struct {
 	GetMap          map[string]func(values *url.Values) (interface{}, error)
 }
 
-func CreateHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*HttpServer, error) {
+func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*HttpServer, error) {
 
-	apiStore := api_common.CreateAPIStore(chain)
-	apiCommon, err := api_common.CreateAPICommon(knownNodes, mempool, chain, wallet, transactionsBuilder, apiStore)
+	apiStore := api_common.NewAPIStore(chain)
+	apiCommon, err := api_common.NewAPICommon(knownNodes, mempool, chain, wallet, transactionsBuilder, apiStore)
 	if err != nil {
 		return nil, err
 	}
 
-	apiWebsockets := api_websockets.CreateWebsocketsAPI(apiStore, apiCommon, chain, settings, mempool)
-	api := api_http.CreateAPI(apiStore, apiCommon, chain)
+	apiWebsockets := api_websockets.NewWebsocketsAPI(apiStore, apiCommon, chain, settings, mempool)
+	api := api_http.NewAPI(apiStore, apiCommon, chain)
 
-	websockets := websocks.CreateWebsockets(chain, mempool, settings, bannedNodes, api, apiWebsockets)
+	websockets := websocks.NewWebsockets(chain, mempool, settings, bannedNodes, api, apiWebsockets)
 
 	server := &HttpServer{
-		websocketServer: websocks.CreateWebsocketServer(websockets, knownNodes),
+		websocketServer: websocks.NewWebsocketServer(websockets, knownNodes),
 		Websockets:      websockets,
 		GetMap:          make(map[string]func(values *url.Values) (interface{}, error)),
 		Api:             api,

@@ -37,7 +37,7 @@ func (self *BannedNodes) Ban(url *url.URL, urlStr, message string, duration time
 	})
 }
 
-func CreateBannedNodes() *BannedNodes {
+func NewBannedNodes() *BannedNodes {
 	return &BannedNodes{
 		bannedMap: &sync.Map{},
 	}

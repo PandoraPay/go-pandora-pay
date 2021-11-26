@@ -299,7 +299,7 @@ func (c *AdvancedConnection) IncreaseKnownNodeScore() {
 
 }
 
-func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification) (*AdvancedConnection, error) {
+func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification) (*AdvancedConnection, error) {
 
 	u := advanced_connection_types.UUID(0)
 	for u <= advanced_connection_types.UUID_SKIP_ALL {
@@ -326,6 +326,6 @@ func CreateAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode
 		contextConnection:       ctx,
 		contextConnectionCancel: cancel,
 	}
-	advancedConnection.Subscriptions = CreateSubscriptions(advancedConnection, newSubscriptionCn, removeSubscriptionCn)
+	advancedConnection.Subscriptions = NewSubscriptions(advancedConnection, newSubscriptionCn, removeSubscriptionCn)
 	return advancedConnection, nil
 }

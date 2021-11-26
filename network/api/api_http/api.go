@@ -14,7 +14,7 @@ type API struct {
 	apiStore  *api_common.APIStore
 }
 
-func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain) *API {
+func NewAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain) *API {
 
 	api := API{
 		chain:     chain,
@@ -62,9 +62,9 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		}
 	}
 
-	if api.apiCommon.APIDelegatorNode != nil {
-		api.GetMap["delegator-node/info"] = api.apiCommon.APIDelegatorNode.GetDelegatorNodeInfo_http
-		api.GetMap["delegator-node/ask"] = api.apiCommon.APIDelegatorNode.GetDelegatorNodeAsk_http
+	if api.apiCommon.DelegatorNode != nil {
+		api.GetMap["delegator-node/info"] = api.apiCommon.DelegatorNode.GetDelegatorNodeInfo_http
+		api.GetMap["delegator-node/ask"] = api.apiCommon.DelegatorNode.GetDelegatorNodeAsk_http
 	}
 
 	return &api

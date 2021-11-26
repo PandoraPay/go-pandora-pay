@@ -20,7 +20,7 @@ type Faucet struct {
 	hcpatchaClient      *hcaptcha.Client
 }
 
-func CreateFaucet(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*Faucet, error) {
+func NewFaucet(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*Faucet, error) {
 
 	api := &Faucet{
 		mempool, chain, wallet, transactionsBuilder, nil,

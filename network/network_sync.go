@@ -37,7 +37,7 @@ func (network *Network) continuouslyConnectNewPeers() {
 				}
 
 				if knownNode != nil {
-					_, err := websocks.CreateWebsocketClient(network.Websockets, knownNode)
+					_, err := websocks.NewWebsocketClient(network.Websockets, knownNode)
 					if err != nil {
 
 						if err.Error() != "Already connected" {

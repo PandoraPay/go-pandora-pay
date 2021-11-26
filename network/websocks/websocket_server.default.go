@@ -48,7 +48,7 @@ func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r
 
 }
 
-func CreateWebsocketServer(websockets *Websockets, knownNodes *known_nodes.KnownNodes) *WebsocketServer {
+func NewWebsocketServer(websockets *Websockets, knownNodes *known_nodes.KnownNodes) *WebsocketServer {
 
 	wserver := &WebsocketServer{
 		websockets: websockets,

@@ -306,7 +306,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 	}
 }
 
-func createConsensusProcessForksThread(forks *Forks, chain *blockchain.Blockchain, mempool *mempool.Mempool) *ConsensusProcessForksThread {
+func newConsensusProcessForksThread(forks *Forks, chain *blockchain.Blockchain, mempool *mempool.Mempool) *ConsensusProcessForksThread {
 	return &ConsensusProcessForksThread{
 		chain,
 		forks,
