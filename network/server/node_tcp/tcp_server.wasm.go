@@ -15,7 +15,6 @@ import (
 )
 
 type TcpServer struct {
-	Port       string
 	HttpServer *node_http.HttpServer
 }
 

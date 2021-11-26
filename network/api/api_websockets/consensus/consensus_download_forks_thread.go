@@ -23,10 +23,9 @@ import (
 )
 
 type ConsensusProcessForksThread struct {
-	chain    *blockchain.Blockchain
-	forks    *Forks
-	mempool  *mempool.Mempool
-	apiStore *api_common.APIStore
+	chain   *blockchain.Blockchain
+	forks   *Forks
+	mempool *mempool.Mempool
 }
 
 func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connection.AdvancedConnection, fork *Fork, height uint64) (*block_complete.BlockComplete, error) {
@@ -307,11 +306,10 @@ func (thread *ConsensusProcessForksThread) execute() {
 	}
 }
 
-func createConsensusProcessForksThread(forks *Forks, chain *blockchain.Blockchain, mempool *mempool.Mempool, apiStore *api_common.APIStore) *ConsensusProcessForksThread {
+func createConsensusProcessForksThread(forks *Forks, chain *blockchain.Blockchain, mempool *mempool.Mempool) *ConsensusProcessForksThread {
 	return &ConsensusProcessForksThread{
 		chain,
 		forks,
 		mempool,
-		apiStore,
 	}
 }

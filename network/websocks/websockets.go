@@ -279,5 +279,7 @@ func CreateWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, se
 		}
 	})
 
+	websockets.initializeConsensus(chain, mempool)
+
 	return websockets
 }

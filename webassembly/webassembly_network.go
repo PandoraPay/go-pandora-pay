@@ -377,7 +377,7 @@ func postNetworkMempoolBroadcastTransaction(this js.Value, args []js.Value) inte
 			return nil, err
 		}
 
-		errs := app.Network.Consensus.BroadcastTxs([]*transaction.Transaction{tx}, true, true, advanced_connection_types.UUID_ALL, nil)
+		errs := app.Network.Websockets.BroadcastTxs([]*transaction.Transaction{tx}, true, true, advanced_connection_types.UUID_ALL, nil)
 		if errs[0] != nil {
 			return nil, errs[0]
 		}

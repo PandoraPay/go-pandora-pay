@@ -16,7 +16,7 @@ type APIFaucetInfo struct {
 	FaucetTestnetCoins   uint64 `json:"faucetTestnetCoins,omitempty"`
 }
 
-func (api *APICommonFaucet) getFaucetInfo() ([]byte, error) {
+func (api *Faucet) getFaucetInfo() ([]byte, error) {
 	return json.Marshal(&APIFaucetInfo{
 		config.HCAPTCHA_SITE_KEY,
 		config.FAUCET_TESTNET_ENABLED,
@@ -24,10 +24,10 @@ func (api *APICommonFaucet) getFaucetInfo() ([]byte, error) {
 	})
 }
 
-func (api *APICommonFaucet) GetFaucetInfo_http(values *url.Values) (interface{}, error) {
+func (api *Faucet) GetFaucetInfo_http(values *url.Values) (interface{}, error) {
 	return api.getFaucetInfo()
 }
 
-func (api *APICommonFaucet) GetFaucetInfo_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+func (api *Faucet) GetFaucetInfo_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
 	return api.getFaucetInfo()
 }

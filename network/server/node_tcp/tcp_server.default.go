@@ -24,8 +24,6 @@ import (
 	"time"
 )
 
-// ControllerAddr is the Tor controller interface address
-// Note:
 type TcpServer struct {
 	Address     string
 	Port        string

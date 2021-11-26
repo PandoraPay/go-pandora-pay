@@ -5,7 +5,6 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/mempool"
 	"pandora-pay/network/banned_nodes"
-	"pandora-pay/network/consensus"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/known_nodes_sync"
 	"pandora-pay/network/mempool_sync"
@@ -18,12 +17,11 @@ import (
 
 type Network struct {
 	tcpServer      *node_tcp.TcpServer
+	Websockets     *websocks.Websockets
 	KnownNodes     *known_nodes.KnownNodes
 	BannedNodes    *banned_nodes.BannedNodes
 	MempoolSync    *mempool_sync.MempoolSync
 	KnownNodesSync *known_nodes_sync.KnownNodesSync
-	Websockets     *websocks.Websockets
-	Consensus      *consensus.Consensus
 }
 
 func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*Network, error) {
@@ -42,16 +40,17 @@ func CreateNetwork(settings *settings.Settings, chain *blockchain.Blockchain, me
 
 	network := &Network{
 		tcpServer:      tcpServer,
+		Websockets:     tcpServer.HttpServer.Websockets,
 		KnownNodes:     knownNodes,
 		BannedNodes:    bannedNodes,
 		MempoolSync:    mempool_sync.CreateMempoolSync(tcpServer.HttpServer.Websockets),
 		KnownNodesSync: known_nodes_sync.CreateNodesKnownSync(tcpServer.HttpServer.Websockets, knownNodes),
-		Websockets:     tcpServer.HttpServer.Websockets,
-		Consensus:      consensus.CreateConsensus(tcpServer.HttpServer, chain, mempool),
 	}
 	tcpServer.HttpServer.Initialize()
 
 	network.continuouslyConnectNewPeers()
+
+	network.continuouslyDownloadChain()
 
 	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
 		network.continuouslyDownloadMempool()

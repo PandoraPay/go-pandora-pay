@@ -23,16 +23,16 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 	}
 
 	api.GetMap = map[string]func(values *url.Values) (interface{}, error){
+		"ping":                   api.apiCommon.GetPing_http,
 		"":                       api.apiCommon.GetInfo_http,
 		"chain":                  api.apiCommon.GetBlockchain_http,
 		"blockchain":             api.apiCommon.GetBlockchain_http,
 		"sync":                   api.apiCommon.GetBlockchainSync_http,
-		"ping":                   api.apiCommon.GetPing_http,
-		"block":                  api.apiCommon.GetBlock_http,
 		"block-hash":             api.apiCommon.GetBlockHash_http,
+		"block":                  api.apiCommon.GetBlock_http,
 		"block-complete":         api.apiCommon.GetBlockComplete_http,
-		"tx":                     api.apiCommon.GetTx_http,
 		"tx-hash":                api.apiCommon.GetTxHash_http,
+		"tx":                     api.apiCommon.GetTx_http,
 		"account":                api.apiCommon.GetAccount_http,
 		"accounts/count":         api.apiCommon.GetAccountsCount_http,
 		"accounts/keys-by-index": api.apiCommon.GetAccountsKeysByIndex_http,
@@ -55,10 +55,10 @@ func CreateAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, c
 		api.GetMap["account/mempool-nonce"] = api.apiCommon.GetAccountMempoolNonce_http
 	}
 
-	if api.apiCommon.APICommonFaucet != nil {
-		api.GetMap["faucet/info"] = api.apiCommon.APICommonFaucet.GetFaucetInfo_http
+	if api.apiCommon.Faucet != nil {
+		api.GetMap["faucet/info"] = api.apiCommon.Faucet.GetFaucetInfo_http
 		if config.FAUCET_TESTNET_ENABLED {
-			api.GetMap["faucet/coins"] = api.apiCommon.APICommonFaucet.GetFaucetCoins_http
+			api.GetMap["faucet/coins"] = api.apiCommon.Faucet.GetFaucetCoins_http
 		}
 	}
 

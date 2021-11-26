@@ -63,21 +63,34 @@ func (network *Network) continuouslyConnectNewPeers() {
 
 }
 
+func (network *Network) continuouslyDownloadChain() {
+	recovery.SafeGo(func() {
+
+		for {
+
+			if conn := network.Websockets.GetRandomSocket(); conn != nil {
+				data := conn.SendJSONAwaitAnswer([]byte("chain-get"), nil, nil)
+				if data.Err == nil && data.Out != nil {
+					network.Websockets.ApiWebsockets.Consensus.ChainUpdate_websockets(conn, data.Out)
+				}
+			}
+
+			time.Sleep(2000 * time.Millisecond)
+		}
+
+	})
+}
+
 func (network *Network) continuouslyDownloadMempool() {
 
 	recovery.SafeGo(func() {
 
 		for {
 
-			conn := network.Websockets.GetRandomSocket()
-			if conn != nil {
-
-				conn.Send([]byte("chain-get"), nil, nil)
-
+			if conn := network.Websockets.GetRandomSocket(); conn != nil {
 				if config.CONSENSUS == config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.CONSENSUS_TYPE_FULL {
 					network.MempoolSync.DownloadMempool(conn)
 				}
-
 			}
 
 			time.Sleep(2000 * time.Millisecond)
@@ -126,7 +139,10 @@ func (network *Network) syncBlockchainNewConnections() {
 			//making it async
 			recovery.SafeGo(func() {
 
-				conn.Send([]byte("chain-get"), nil, nil)
+				data := conn.SendJSONAwaitAnswer([]byte("chain-get"), nil, nil)
+				if data.Err == nil && data.Out != nil {
+					network.Websockets.ApiWebsockets.Consensus.ChainUpdate_websockets(conn, data.Out)
+				}
 
 				if config.CONSENSUS == config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.CONSENSUS_TYPE_FULL {
 					network.MempoolSync.DownloadMempool(conn)

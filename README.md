@@ -9,6 +9,8 @@ The main design pattern that has been taken in consideration is to be **dead-sim
 
 [Running](/docs/running.md)
 
+[API](/docs/api.md)
+
 [Scripts](/docs/scripts.md)
 
 [Debugging](/docs/debugging.md)

@@ -12,7 +12,7 @@ import (
 	"pandora-pay/wallet"
 )
 
-type APICommonFaucet struct {
+type Faucet struct {
 	mempool             *mempool.Mempool
 	chain               *blockchain.Blockchain
 	wallet              *wallet.Wallet
@@ -20,9 +20,9 @@ type APICommonFaucet struct {
 	hcpatchaClient      *hcaptcha.Client
 }
 
-func CreateAPICommonFaucet(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*APICommonFaucet, error) {
+func CreateFaucet(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*Faucet, error) {
 
-	api := &APICommonFaucet{
+	api := &Faucet{
 		mempool, chain, wallet, transactionsBuilder, nil,
 	}
 
