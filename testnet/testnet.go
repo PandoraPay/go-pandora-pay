@@ -40,6 +40,12 @@ type Testnet struct {
 
 func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+
 	addr, err := testnet.wallet.GetWalletAddress(0)
 	if err != nil {
 		return
@@ -128,6 +134,12 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 
 func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int, ctx context.Context) (tx *transaction.Transaction, err error) {
 
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+
 	srcAddr, err := testnet.wallet.GetWalletAddress(srcAddressWalletIndex)
 	if err != nil {
 		return
@@ -172,10 +184,7 @@ func (testnet *Testnet) run() {
 		}
 	}
 
-	//var ctx context.Context
-	//var cancel context.CancelFunc
-	ctx2, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	var oldCancel context.CancelFunc
 
 	for {
 
@@ -183,6 +192,12 @@ func (testnet *Testnet) run() {
 		if !ok {
 			return
 		}
+
+		if oldCancel != nil {
+			oldCancel()
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		oldCancel = cancel
 
 		blockHeight := blockHeightReceived.(uint64)
 		syncTime := testnet.chain.Sync.GetSyncTime()
@@ -192,7 +207,7 @@ func (testnet *Testnet) run() {
 			gui.GUI.Log("UpdateNewChain received! 1")
 			defer gui.GUI.Log("UpdateNewChain received! DONE")
 
-			err := func() (err error) {
+			if err := func() (err error) {
 
 				if blockHeight == 20 {
 					if _, err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*config_stake.GetRequiredStake(blockHeight)); err != nil {
@@ -200,7 +215,7 @@ func (testnet *Testnet) run() {
 					}
 				}
 				if blockHeight == 100 {
-					if _, err = testnet.testnetCreateTransfersNewWallets(blockHeight, ctx2); err != nil {
+					if _, err = testnet.testnetCreateTransfersNewWallets(blockHeight, ctx); err != nil {
 						return
 					}
 				}
@@ -246,10 +261,10 @@ func (testnet *Testnet) run() {
 								unclaimed -= config_coins.ConvertToUnitsUint64Forced(30)
 
 								if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload.SCRIPT_CLAIM) {
-									testnet.testnetCreateClaimTx(1, unclaimed/5, ctx2)
-									testnet.testnetCreateClaimTx(2, unclaimed/5, ctx2)
-									testnet.testnetCreateClaimTx(3, unclaimed/5, ctx2)
-									testnet.testnetCreateClaimTx(4, unclaimed/5, ctx2)
+									testnet.testnetCreateClaimTx(1, unclaimed/5, ctx)
+									testnet.testnetCreateClaimTx(2, unclaimed/5, ctx)
+									testnet.testnetCreateClaimTx(3, unclaimed/5, ctx)
+									testnet.testnetCreateClaimTx(4, unclaimed/5, ctx)
 								}
 
 							} else if atomic.LoadInt32(&unstakesCount) < 4 && delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > 5000 {
@@ -263,7 +278,7 @@ func (testnet *Testnet) run() {
 
 								time.Sleep(time.Millisecond * 100) //making sure the block got propagated
 								for i := 2; i < 5; i++ {
-									testnet.testnetCreateTransfers(i, ctx2)
+									testnet.testnetCreateTransfers(i, ctx)
 								}
 
 							}
@@ -274,9 +289,7 @@ func (testnet *Testnet) run() {
 				}
 
 				return
-			}()
-
-			if err != nil {
+			}(); err != nil {
 				gui.GUI.Error("Error creating testnet Tx", err)
 				err = nil
 			}
@@ -284,6 +297,9 @@ func (testnet *Testnet) run() {
 		})
 
 	}
+
+	oldCancel()
+
 }
 
 func TestnetInit(wallet *wallet.Wallet, mempool *mempool.Mempool, chain *blockchain.Blockchain, transactionsBuilder *transactions_builder.TransactionsBuilder) (testnet *Testnet) {

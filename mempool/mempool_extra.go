@@ -134,9 +134,7 @@ func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesIn
 	output := make([][]byte, len(publicKeys))
 	for i, publicKey := range publicKeys {
 
-		balanceInit := balancesInit[i]
-
-		if balanceInit == nil {
+		if balanceInit := balancesInit[i]; balanceInit == nil {
 			if err = acckey.DecodeCompressed(publicKey); err != nil {
 				return nil, err
 			}
@@ -174,7 +172,7 @@ func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesIn
 			}
 		}
 
-		if changed || balanceInit != nil {
+		if changed || balancesInit[i] != nil {
 			output[i] = balance.Serialize()
 		}
 	}
