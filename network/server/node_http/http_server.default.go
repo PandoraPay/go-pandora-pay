@@ -15,6 +15,12 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
+	defer func() {
+		if err := recover(); err != nil {
+			http.Error(w, err.(error).Error(), http.StatusInternalServerError)
+		}
+	}()
+
 	var err error
 	var output interface{}
 

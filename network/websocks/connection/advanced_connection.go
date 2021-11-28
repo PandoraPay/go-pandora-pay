@@ -177,9 +177,14 @@ func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, 
 	return c.sendNowAwait(name, out, false, ctx)
 }
 
-func (c *AdvancedConnection) get(message *advanced_connection_types.AdvancedConnectionMessage) ([]byte, error) {
+func (c *AdvancedConnection) get(message *advanced_connection_types.AdvancedConnectionMessage) (final []byte, err error) {
 
-	var err error
+	defer func() {
+		if err2 := recover(); err2 != nil {
+			err = err2.(error)
+		}
+	}()
+
 	var output interface{}
 
 	route := string(message.Name)
