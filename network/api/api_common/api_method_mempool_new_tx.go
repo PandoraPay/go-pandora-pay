@@ -21,10 +21,10 @@ type APIMempoolNewTxRequest struct {
 func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *[]byte, exceptSocketUUID advanced_connection_types.UUID) (err error) {
 
 	tx := &transaction.Transaction{}
-	if args.Type == 0 { //json
-		err = json.Unmarshal(args.Tx, args.Tx)
-	} else if args.Type == 1 {
+	if args.Type == 0 {
 		err = tx.Deserialize(helpers.NewBufferReader(args.Tx))
+	} else if args.Type == 1 { //json
+		err = json.Unmarshal(args.Tx, tx)
 	}
 
 	if err != nil {

@@ -107,7 +107,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 	if answer.Err != nil {
 		return nil, answer.Err
 	}
-	blkCompleteMissingTxs := &api_common.APIBlockCompleteMissingTxs{}
+	blkCompleteMissingTxs := &api_common.APIBlockCompleteMissingTxsReply{}
 
 	if err = json.Unmarshal(answer.Out, blkCompleteMissingTxs); err != nil {
 		return nil, err

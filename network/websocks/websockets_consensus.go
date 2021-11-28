@@ -2,10 +2,12 @@ package websocks
 
 import (
 	"context"
+	"encoding/json"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/mempool"
+	"pandora-pay/network/api/api_common"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 	"time"
@@ -20,6 +22,7 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 	errs = make([]error, len(txs))
 
 	var key, value []byte
+
 	if justCreated {
 		key = []byte("mempool/new-tx")
 	} else {
@@ -39,8 +42,10 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 
 	for i, tx := range txs {
 		if tx != nil {
+
 			if justCreated {
-				value = tx.Bloom.Serialized
+				data := &api_common.APIMempoolNewTxRequest{Type: 0, Tx: tx.Bloom.Serialized}
+				value, _ = json.Marshal(data)
 			} else {
 				value = tx.Bloom.Hash
 			}
