@@ -3,17 +3,23 @@ package api_common
 import (
 	"encoding/json"
 	"errors"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/store"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type APITransactionRequest struct {
-	api_types.APIHeightHash
+	Height     uint64                  `json:"height,omitempty"`
+	Hash       helpers.HexBytes        `json:"hash,omitempty"`
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty"`
 }
 
@@ -24,56 +30,84 @@ type APITransactionAnswer struct {
 	Info         *info.TxInfo             `json:"info,omitempty"`
 }
 
-func (api *APICommon) getTx(request *APITransactionRequest) ([]byte, error) {
-	var tx *transaction.Transaction
-	var err error
+func (api *APICommon) openLoadTx(args *APITransactionRequest, reply *APITransactionAnswer) error {
+	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-	mempool := false
-	var txInfo *info.TxInfo
-	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
-		txMempool := api.mempool.Txs.Get(string(request.Hash))
+		if len(args.Hash) == 0 {
+			if args.Hash, err = api.ApiStore.loadTxHash(reader, args.Height); err != nil {
+				return
+			}
+		}
+
+		hashStr := string(args.Hash)
+		var data []byte
+
+		if data = reader.Get("tx:" + hashStr); data == nil {
+			return errors.New("Tx not found")
+		}
+
+		reply.Tx = &transaction.Transaction{}
+		if err = reply.Tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
+			return err
+		}
+		if err = reply.Tx.BloomExtraVerified(); err != nil {
+			return err
+		}
+
+		if config.SEED_WALLET_NODES_INFO {
+			if data = reader.Get("txInfo_ByHash" + hashStr); data == nil {
+				return errors.New("TxInfo was not found")
+			}
+			reply.Info = &info.TxInfo{}
+			if err = json.Unmarshal(data, reply.Info); err != nil {
+				return err
+			}
+		}
+
+		return
+	})
+}
+
+func (api *APICommon) Tx(r *http.Request, args *APITransactionRequest, reply *APITransactionAnswer) (err error) {
+
+	if len(args.Hash) == cryptography.HashSize {
+		txMempool := api.mempool.Txs.Get(string(args.Hash))
 		if txMempool != nil {
-			mempool = true
-			tx = txMempool.Tx
+			reply.Mempool = true
+			reply.Tx = txMempool.Tx
 		} else {
-			tx, txInfo, err = api.ApiStore.openLoadTx(request.Hash, 0)
+			err = api.openLoadTx(args, reply)
 		}
 	} else {
-		tx, txInfo, err = api.ApiStore.openLoadTx(nil, request.Height)
+		err = api.openLoadTx(args, reply)
 	}
 
-	if err != nil || tx == nil {
-		return nil, err
+	if err != nil || reply.Tx == nil {
+		return err
 	}
 
-	result := &APITransactionAnswer{nil, nil, mempool, txInfo}
-	if request.ReturnType == api_types.RETURN_SERIALIZED {
-		result.TxSerialized = tx.Bloom.Serialized
-	} else if request.ReturnType == api_types.RETURN_JSON {
-		result.Tx = tx
-	} else {
-		return nil, errors.New("Invalid return type")
+	if args.ReturnType == api_types.RETURN_SERIALIZED {
+		reply.TxSerialized = reply.Tx.Bloom.Serialized
+		reply.Tx = nil
 	}
 
-	return json.Marshal(result)
+	return
 }
 
-func (api *APICommon) GetTx_http(values *url.Values) (interface{}, error) {
-
-	request := &APITransactionRequest{api_types.APIHeightHash{0, nil}, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
-
-	if err := request.ImportFromValues(values); err != nil {
+func (api *APICommon) GetTx_http(values url.Values) (interface{}, error) {
+	args := &APITransactionRequest{0, nil, api_types.RETURN_JSON}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-
-	return api.getTx(request)
+	reply := &APITransactionAnswer{}
+	return reply, api.Tx(nil, args, reply)
 }
 
-func (api *APICommon) GetTx_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &APITransactionRequest{}
-	if err := json.Unmarshal(values, &request); err != nil {
+func (api *APICommon) GetTx_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APITransactionRequest{}
+	if err := json.Unmarshal(values, &args); err != nil {
 		return nil, err
 	}
-
-	return api.getTx(request)
+	reply := &APITransactionAnswer{}
+	return reply, api.Tx(nil, args, reply)
 }

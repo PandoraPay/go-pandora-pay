@@ -1,7 +1,6 @@
 package api_websockets
 
 import (
-	"encoding/json"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/helpers/multicast"
@@ -13,7 +12,7 @@ import (
 )
 
 type APIWebsockets struct {
-	GetMap                    map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error)
+	GetMap                    map[string]func(conn *connection.AdvancedConnection, values []byte) (interface{}, error)
 	Consensus                 *consensus.Consensus
 	chain                     *blockchain.Blockchain
 	mempool                   *mempool.Mempool
@@ -23,8 +22,8 @@ type APIWebsockets struct {
 	SubscriptionNotifications *multicast.MulticastChannel //*api_common.APISubscriptionNotification
 }
 
-func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return json.Marshal(&connection.ConnectionHandshake{config.NAME, config.VERSION, config.NETWORK_SELECTED, config.CONSENSUS, config.NETWORK_ADDRESS_URL_STRING})
+func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	return &connection.ConnectionHandshake{config.NAME, config.VERSION, config.NETWORK_SELECTED, config.CONSENSUS, config.NETWORK_ADDRESS_URL_STRING}, nil
 }
 
 func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
@@ -40,7 +39,7 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		multicast.NewMulticastChannel(),
 	}
 
-	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) ([]byte, error){
+	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) (interface{}, error){
 		"ping":                   api.apiCommon.GetPing_websockets,
 		"":                       api.apiCommon.GetInfo_websockets,
 		"chain":                  api.apiCommon.GetBlockchain_websockets,

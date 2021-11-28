@@ -1,14 +1,22 @@
 package api_common
 
 import (
+	"encoding/binary"
 	"encoding/json"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
+	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/store"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type APIAccountRequest struct {
@@ -28,54 +36,108 @@ type APIAccount struct {
 	RegExtra           *api_types.APISubscriptionNotificationRegistrationExtra `json:"registrationExtra,omitempty"`
 }
 
-func (api *APICommon) getAccount(request *APIAccountRequest) ([]byte, error) {
+func (api *APICommon) Account(r *http.Request, args *APIAccountRequest, reply *APIAccount) (err error) {
 
-	publicKey, err := request.GetPublicKey()
+	publicKey, err := args.GetPublicKey()
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	outAcc, err := api.ApiStore.OpenLoadAccountFromPublicKey(publicKey)
-	if err != nil {
-		return nil, err
+	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+		accsCollection := accounts.NewAccountsCollection(reader)
+		plainAccs := plain_accounts.NewPlainAccounts(reader)
+		regs := registrations.NewRegistrations(reader)
+
+		assetsList, err := accsCollection.GetAccountAssets(publicKey)
+		if err != nil {
+			return
+		}
+
+		reply.Accs = make([]*account.Account, len(assetsList))
+		reply.AccsExtra = make([]*api_types.APISubscriptionNotificationAccountExtra, len(assetsList))
+
+		for i, assetId := range assetsList {
+
+			var accs *accounts.Accounts
+			if accs, err = accsCollection.GetMap(assetId); err != nil {
+				return
+			}
+
+			var acc *account.Account
+			if acc, err = accs.GetAccount(publicKey); err != nil {
+				return
+			}
+
+			reply.Accs[i] = acc
+			if acc != nil {
+				reply.AccsExtra[i] = &api_types.APISubscriptionNotificationAccountExtra{
+					assetId,
+					acc.Index,
+				}
+			}
+		}
+
+		if reply.PlainAcc, err = plainAccs.GetPlainAccount(publicKey, chainHeight); err != nil {
+			return
+		}
+		if reply.PlainAcc != nil {
+			reply.PlainAccExtra = &api_types.APISubscriptionNotificationPlainAccExtra{
+				reply.PlainAcc.Index,
+			}
+		}
+
+		if reply.Reg, err = regs.GetRegistration(publicKey); err != nil {
+			return
+		}
+		if reply.Reg != nil {
+			reply.RegExtra = &api_types.APISubscriptionNotificationRegistrationExtra{
+				reply.Reg.Index,
+			}
+		}
+
+		return
+	}); err != nil {
+		return err
 	}
 
-	if request.ReturnType == api_types.RETURN_SERIALIZED {
+	if args.ReturnType == api_types.RETURN_SERIALIZED {
 
-		outAcc.AccsSerialized = make([]helpers.HexBytes, len(outAcc.Accs))
-		for i, acc := range outAcc.Accs {
-			outAcc.AccsSerialized[i] = helpers.SerializeToBytes(acc)
+		reply.AccsSerialized = make([]helpers.HexBytes, len(reply.Accs))
+		for i, acc := range reply.Accs {
+			reply.AccsSerialized[i] = helpers.SerializeToBytes(acc)
 		}
-		outAcc.Accs = nil
+		reply.Accs = nil
 
-		if outAcc.PlainAcc != nil {
-			outAcc.PlainAccSerialized = helpers.SerializeToBytes(outAcc.PlainAcc)
-			outAcc.PlainAcc = nil
+		if reply.PlainAcc != nil {
+			reply.PlainAccSerialized = helpers.SerializeToBytes(reply.PlainAcc)
+			reply.PlainAcc = nil
 		}
-		if outAcc.Reg != nil {
-			outAcc.RegSerialized = helpers.SerializeToBytes(outAcc.Reg)
-			outAcc.Reg = nil
+		if reply.Reg != nil {
+			reply.RegSerialized = helpers.SerializeToBytes(reply.Reg)
+			reply.Reg = nil
 		}
 
 	}
 
-	return json.Marshal(outAcc)
+	return
 }
 
-func (api *APICommon) GetAccount_http(values *url.Values) (interface{}, error) {
-	request := &APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
-
-	if err := request.ImportFromValues(values); err != nil {
+func (api *APICommon) GetAccount_http(values url.Values) (interface{}, error) {
+	args := &APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.RETURN_JSON}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-
-	return api.getAccount(request)
+	reply := &APIAccount{}
+	return reply, api.Account(nil, args, reply)
 }
 
-func (api *APICommon) GetAccount_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, &request); err != nil {
+func (api *APICommon) GetAccount_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.RETURN_SERIALIZED}
+	if err := json.Unmarshal(values, &args); err != nil {
 		return nil, err
 	}
-	return api.getAccount(request)
+	reply := &APIAccount{}
+	return reply, api.Account(nil, args, reply)
 }

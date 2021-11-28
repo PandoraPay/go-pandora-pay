@@ -8,10 +8,10 @@ import (
 	"pandora-pay/network/websocks/connection"
 )
 
-func (api *Faucet) GetFaucetInfo_http(values *url.Values) (interface{}, error) {
+func (api *Faucet) GetFaucetInfo_http(values url.Values) (interface{}, error) {
 	return nil, nil
 }
 
-func (api *Faucet) GetFaucetInfo_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+func (api *Faucet) GetFaucetInfo_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	return nil, nil
 }

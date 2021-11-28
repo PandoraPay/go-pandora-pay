@@ -11,7 +11,7 @@ import (
 	"sync"
 )
 
-func (api *APICommon) MempoolNewTxId_websockets(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
+func (api *APICommon) MempoolNewTxId_websockets(conn *connection.AdvancedConnection, values []byte) (out interface{}, err error) {
 
 	if len(values) != 32 {
 		return nil, errors.New("Invalid hash")
@@ -52,7 +52,7 @@ func (api *APICommon) MempoolNewTxId_websockets(conn *connection.AdvancedConnect
 		return
 	}
 
-	result := conn.SendJSONAwaitAnswer([]byte("tx"), &APITransactionRequest{api_types.APIHeightHash{0, values}, api_types.RETURN_SERIALIZED}, nil)
+	result := conn.SendJSONAwaitAnswer([]byte("tx"), &APITransactionRequest{0, values, api_types.RETURN_SERIALIZED}, nil)
 	if result.Err != nil {
 		err = result.Err
 		return

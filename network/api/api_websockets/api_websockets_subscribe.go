@@ -6,7 +6,7 @@ import (
 	"pandora-pay/network/websocks/connection"
 )
 
-func (api *APIWebsockets) subscribe(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+func (api *APIWebsockets) subscribe(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 
 	request := &api_types.APISubscriptionRequest{[]byte{}, api_types.SUBSCRIPTION_ACCOUNT, api_types.RETURN_SERIALIZED}
 	if err := json.Unmarshal(values, &request); err != nil {
@@ -16,7 +16,7 @@ func (api *APIWebsockets) subscribe(conn *connection.AdvancedConnection, values 
 	return nil, conn.Subscriptions.AddSubscription(request.Type, request.Key, request.ReturnType)
 }
 
-func (api *APIWebsockets) subscribedNotificationReceived(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+func (api *APIWebsockets) subscribedNotificationReceived(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 
 	var notification *api_types.APISubscriptionNotification
 	if err := json.Unmarshal(values, &notification); err != nil {
@@ -28,7 +28,7 @@ func (api *APIWebsockets) subscribedNotificationReceived(conn *connection.Advanc
 	return nil, nil
 }
 
-func (api *APIWebsockets) unsubscribe(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+func (api *APIWebsockets) unsubscribe(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 
 	var unsubscribeRequest *api_types.APIUnsubscriptionRequest
 	if err := json.Unmarshal(values, &unsubscribeRequest); err != nil {

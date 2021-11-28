@@ -2,15 +2,20 @@ package api_common
 
 import (
 	"encoding/json"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/cryptography"
-	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/store"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type APITransactionPreviewRequest struct {
-	api_types.APIHeightHash
+	Height uint64           `json:"height,omitempty"`
+	Hash   helpers.HexBytes `json:"hash,omitempty"`
 }
 
 type APITransactionPreviewAnswer struct {
@@ -19,48 +24,61 @@ type APITransactionPreviewAnswer struct {
 	Info      *info.TxInfo    `json:"info,omitempty"`
 }
 
-func (api *APICommon) GetTxPreview(request *APITransactionPreviewRequest) ([]byte, error) {
-	var txPreview *info.TxPreview
-	var txInfo *info.TxInfo
-	var err error
+func (apiStore *APIStore) openLoadTxPreview(args *APITransactionPreviewRequest, reply *APITransactionPreviewAnswer) error {
+	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-	mempool := false
-	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
-		txMempool := api.mempool.Txs.Get(string(request.Hash))
+		if len(args.Hash) == 0 {
+			if args.Hash, err = apiStore.loadTxHash(reader, args.Height); err != nil {
+				return
+			}
+		}
+
+		reply.TxPreview = &info.TxPreview{}
+		if err = apiStore.loadTxPreview(reader, args.Hash, reply.TxPreview); err != nil {
+			return
+		}
+		reply.Info = &info.TxInfo{}
+		return apiStore.loadTxInfo(reader, args.Hash, reply.Info)
+	})
+}
+
+func (api *APICommon) TxPreview(r *http.Request, args *APITransactionPreviewRequest, reply *APITransactionPreviewAnswer) (err error) {
+
+	if args.Hash != nil && len(args.Hash) == cryptography.HashSize {
+		txMempool := api.mempool.Txs.Get(string(args.Hash))
 		if txMempool != nil {
-			mempool = true
-			if txPreview, err = info.CreateTxPreviewFromTx(txMempool.Tx); err != nil {
-				return nil, err
+			reply.Mempool = true
+			if reply.TxPreview, err = info.CreateTxPreviewFromTx(txMempool.Tx); err != nil {
+				return
 			}
 		} else {
-			txPreview, txInfo, err = api.ApiStore.openLoadTxPreview(request.Hash, 0)
+			err = api.ApiStore.openLoadTxPreview(args, reply)
 		}
 	} else {
-		txPreview, txInfo, err = api.ApiStore.openLoadTxPreview(nil, request.Height)
+		err = api.ApiStore.openLoadTxPreview(args, reply)
 	}
 
-	if err != nil || txPreview == nil {
-		return nil, err
+	if err != nil {
+		return
 	}
 
-	result := &APITransactionPreviewAnswer{txPreview, mempool, txInfo}
-	return json.Marshal(result)
+	return
 }
 
-func (api *APICommon) GetTxPreview_http(values *url.Values) (interface{}, error) {
-
-	request := &APITransactionPreviewRequest{}
-	if err := request.ImportFromValues(values); err != nil {
+func (api *APICommon) GetTxPreview_http(values url.Values) (interface{}, error) {
+	args := &APITransactionPreviewRequest{}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-
-	return api.GetTxPreview(request)
+	reply := &APITransactionPreviewAnswer{}
+	return reply, api.TxPreview(nil, args, reply)
 }
 
-func (api *APICommon) GetTxPreview_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &APITransactionPreviewRequest{api_types.APIHeightHash{0, nil}}
-	if err := json.Unmarshal(values, &request); err != nil {
+func (api *APICommon) GetTxPreview_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APITransactionPreviewRequest{}
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	return api.GetTxPreview(request)
+	reply := &APITransactionPreviewAnswer{}
+	return reply, api.TxPreview(nil, args, reply)
 }

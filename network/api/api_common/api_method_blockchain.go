@@ -1,7 +1,7 @@
 package api_common
 
 import (
-	"encoding/json"
+	"net/http"
 	"net/url"
 	"pandora-pay/network/websocks/connection"
 )
@@ -20,14 +20,22 @@ type APIBlockchain struct {
 	TotalDifficulty   string `json:"totalDifficulty"`
 }
 
-func (api *APICommon) getBlockchain() ([]byte, error) {
-	return json.Marshal(api.localChain.Load().(*APIBlockchain))
+func (api *APICommon) Blockchain(r *http.Request, args *struct{}, reply *APIBlockchain) error {
+	x := api.localChain.Load().(*APIBlockchain)
+	*reply = *x
+	return nil
 }
 
-func (api *APICommon) GetBlockchain_http(values *url.Values) (interface{}, error) {
-	return api.getBlockchain()
+func (api *APICommon) Chain(r *http.Request, args *struct{}, reply *APIBlockchain) error {
+	return api.Blockchain(r, args, reply)
 }
 
-func (api *APICommon) GetBlockchain_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.getBlockchain()
+func (api *APICommon) GetBlockchain_http(values url.Values) (interface{}, error) {
+	reply := &APIBlockchain{}
+	return reply, api.Blockchain(nil, nil, reply)
+}
+
+func (api *APICommon) GetBlockchain_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	reply := &APIBlockchain{}
+	return reply, api.Blockchain(nil, nil, reply)
 }

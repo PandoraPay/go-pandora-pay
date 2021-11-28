@@ -1,13 +1,13 @@
 package api_common
 
 import (
-	"encoding/hex"
 	"encoding/json"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
-	"strconv"
 )
 
 type APIMempoolRequest struct {
@@ -22,15 +22,15 @@ type APIMempoolAnswer struct {
 	Hashes    []helpers.HexBytes `json:"hashes"`
 }
 
-func (api *APICommon) GetMempool(request *APIMempoolRequest) ([]byte, error) {
+func (api *APICommon) Mempool(r *http.Request, args *APIMempoolRequest, reply *APIMempoolAnswer) error {
 
-	transactions, finalChainHash := api.mempool.GetNextTransactionsToInclude(request.ChainHash)
+	transactions, finalChainHash := api.mempool.GetNextTransactionsToInclude(args.ChainHash)
 
-	if request.Count == 0 {
-		request.Count = config.API_MEMPOOL_MAX_TRANSACTIONS
+	if args.Count == 0 {
+		args.Count = config.API_MEMPOOL_MAX_TRANSACTIONS
 	}
 
-	start := request.Page * request.Count
+	start := args.Page * args.Count
 
 	length := len(transactions) - start
 	if length < 0 {
@@ -40,49 +40,34 @@ func (api *APICommon) GetMempool(request *APIMempoolRequest) ([]byte, error) {
 		length = config.API_MEMPOOL_MAX_TRANSACTIONS
 	}
 
-	result := &APIMempoolAnswer{
-		Count:  len(transactions),
-		Hashes: make([]helpers.HexBytes, length),
+	reply.Count = len(transactions)
+	reply.Hashes = make([]helpers.HexBytes, length)
+
+	if args.ChainHash == nil {
+		reply.ChainHash = finalChainHash
 	}
 
-	if request.ChainHash == nil {
-		result.ChainHash = finalChainHash
+	for i := range reply.Hashes {
+		reply.Hashes[i] = transactions[start+i].Bloom.Hash
 	}
 
-	for i := range result.Hashes {
-		result.Hashes[i] = transactions[start+i].Bloom.Hash
-	}
-
-	return json.Marshal(result)
+	return nil
 }
 
-func (api *APICommon) GetMempool_http(values *url.Values) (interface{}, error) {
-	request := &APIMempoolRequest{}
-
-	var err error
-	if values.Get("chainHash") != "" {
-		if request.ChainHash, err = hex.DecodeString(values.Get("chainHash")); err != nil {
-			return nil, err
-		}
-	}
-	if values.Get("page") != "" {
-		if request.Page, err = strconv.Atoi(values.Get("page")); err != nil {
-			return nil, err
-		}
-	}
-	if values.Get("count") != "" {
-		if request.Count, err = strconv.Atoi(values.Get("count")); err != nil {
-			return nil, err
-		}
-	}
-
-	return api.GetMempool(request)
-}
-
-func (api *APICommon) GetMempool_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &APIMempoolRequest{}
-	if err := json.Unmarshal(values, &request); err != nil {
+func (api *APICommon) GetMempool_http(values url.Values) (interface{}, error) {
+	args := &APIMempoolRequest{}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	return api.GetMempool(request)
+	reply := &APIMempoolAnswer{}
+	return reply, api.Mempool(nil, args, reply)
+}
+
+func (api *APICommon) GetMempool_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APIMempoolRequest{}
+	if err := json.Unmarshal(values, &args); err != nil {
+		return nil, err
+	}
+	reply := &APIMempoolAnswer{}
+	return reply, api.Mempool(nil, args, reply)
 }

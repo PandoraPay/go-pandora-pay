@@ -32,7 +32,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 
 	var err error
 
-	answer := conn.SendJSONAwaitAnswer([]byte("block"), &api_common.APIBlockRequest{api_types.APIHeightHash{height, nil}, api_types.RETURN_SERIALIZED}, nil)
+	answer := conn.SendJSONAwaitAnswer([]byte("block"), &api_common.APIBlockRequest{height, nil, api_types.RETURN_SERIALIZED}, nil)
 	if answer.Err != nil {
 		return nil, answer.Err
 	}

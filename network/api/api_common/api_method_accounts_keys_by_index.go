@@ -1,15 +1,17 @@
 package api_common
 
 import (
-	"encoding/hex"
 	"encoding/json"
-	"errors"
+	"fmt"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
 	"pandora-pay/addresses"
+	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
-	"strconv"
-	"strings"
+	"pandora-pay/store"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type APIAccountsKeysByIndexRequest struct {
@@ -23,71 +25,59 @@ type APIAccountsKeysByIndexAnswer struct {
 	Addresses  []string           `json:"addresses,omitempty"`
 }
 
-func (self *APIAccountsKeysByIndexRequest) ImportFromValues(values *url.Values) (err error) {
+func (api *APICommon) AccountsKeysByIndex(r *http.Request, args *APIAccountsKeysByIndexRequest, reply *APIAccountsKeysByIndexAnswer) (err error) {
 
-	if values.Get("indexes") != "" {
-		v := strings.Split(values.Get("indexes"), ",")
-		self.Indexes = make([]uint64, len(v))
-		for i := 0; i < len(v); i++ {
-			if self.Indexes[i], err = strconv.ParseUint(v[i], 10, 64); err != nil {
-				return err
+	if len(args.Indexes) > 512*2 {
+		return fmt.Errorf("Too many indexes to process: limit %d, found %d", 512*2, len(args.Indexes))
+	}
+
+	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		accs, err := accounts.NewAccountsCollection(reader).GetMap(args.Asset)
+		if err != nil {
+			return
+		}
+
+		reply.PublicKeys = make([]helpers.HexBytes, len(args.Indexes))
+		for i := 0; i < len(args.Indexes); i++ {
+			if reply.PublicKeys[i], err = accs.GetKeyByIndex(args.Indexes[i]); err != nil {
+				return
 			}
 		}
-	} else {
-		return errors.New("parameter `indexes` is missing")
+
+		return
+	}); err != nil {
+		return
 	}
 
-	if values.Get("asset") != "" {
-		if self.Asset, err = hex.DecodeString(values.Get("asset")); err != nil {
-			return err
+	if args.EncodeAddresses {
+		reply.Addresses = make([]string, len(reply.PublicKeys))
+		for i, publicKey := range reply.PublicKeys {
+			var addr *addresses.Address
+			if addr, err = addresses.CreateAddr(publicKey, nil, 0, nil); err != nil {
+				return
+			}
+			reply.Addresses[i] = addr.EncodeAddr()
 		}
+		reply.PublicKeys = nil
 	}
-
 	return
 }
 
-func (api *APICommon) getAccountsKeysByIndex(request *APIAccountsKeysByIndexRequest) ([]byte, error) {
-	out, err := api.ApiStore.openLoadAccountsKeysByIndex(request.Indexes, request.Asset)
-	if err != nil {
+func (api *APICommon) GetAccountsKeysByIndex_http(values url.Values) (interface{}, error) {
+	args := &APIAccountsKeysByIndexRequest{nil, nil, true}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-
-	answer := &APIAccountsKeysByIndexAnswer{}
-	if !request.EncodeAddresses {
-		answer.PublicKeys = out
-	} else {
-		answer.Addresses = make([]string, len(out))
-		for i, publicKey := range out {
-			addr, err := addresses.CreateAddr(publicKey, nil, 0, nil)
-			if err != nil {
-				return nil, err
-			}
-			answer.Addresses[i] = addr.EncodeAddr()
-		}
-		answer.PublicKeys = nil
-	}
-	return json.Marshal(answer)
+	reply := &APIAccountsKeysByIndexAnswer{}
+	return reply, api.AccountsKeysByIndex(nil, args, reply)
 }
 
-func (api *APICommon) GetAccountsKeysByIndex_http(values *url.Values) (interface{}, error) {
-
-	request := &APIAccountsKeysByIndexRequest{}
-
-	if values.Get("encodeAddresses") == "1" {
-		request.EncodeAddresses = true
-	}
-
-	if err := request.ImportFromValues(values); err != nil {
+func (api *APICommon) GetAccountsKeysByIndex_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APIAccountsKeysByIndexRequest{nil, nil, false}
+	if err := json.Unmarshal(values, &args); err != nil {
 		return nil, err
 	}
-
-	return api.getAccountsKeysByIndex(request)
-}
-
-func (api *APICommon) GetAccountsKeysByIndex_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &APIAccountsKeysByIndexRequest{nil, nil, false}
-	if err := json.Unmarshal(values, &request); err != nil {
-		return nil, err
-	}
-	return api.getAccountsKeysByIndex(request)
+	reply := &APIAccountsKeysByIndexAnswer{}
+	return reply, api.AccountsKeysByIndex(nil, args, reply)
 }

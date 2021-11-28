@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"encoding/json"
 	"pandora-pay/blockchain"
 	"pandora-pay/network/websocks/connection"
 )
@@ -20,6 +19,6 @@ func (consensus *Consensus) GetUpdateNotification(newChainData *blockchain.Block
 	}
 }
 
-func (consensus *Consensus) ChainGet_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return json.Marshal(consensus.GetUpdateNotification(nil))
+func (consensus *Consensus) ChainGet_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	return consensus.GetUpdateNotification(nil), nil
 }

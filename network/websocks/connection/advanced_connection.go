@@ -7,6 +7,7 @@ import (
 	"github.com/tevino/abool"
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
+	"pandora-pay/helpers"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
@@ -36,7 +37,7 @@ type AdvancedConnection struct {
 	InitializedStatus       InitializedStatusType //use the mutex
 	InitializedStatusMutex  *sync.Mutex
 	IsClosed                *abool.AtomicBool
-	getMap                  map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error)
+	getMap                  map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)
 	answerMap               map[uint32]chan *advanced_connection_types.AdvancedConnectionAnswer
 	answerMapLock           *sync.Mutex
 	contextConnection       context.Context
@@ -178,13 +179,39 @@ func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, 
 
 func (c *AdvancedConnection) get(message *advanced_connection_types.AdvancedConnectionMessage) ([]byte, error) {
 
+	var err error
+	var output interface{}
+
 	route := string(message.Name)
-	var callback func(conn *AdvancedConnection, values []byte) ([]byte, error)
+	var callback func(conn *AdvancedConnection, values []byte) (interface{}, error)
 	if callback = c.getMap[route]; callback != nil {
-		return callback(c, message.Data)
+		output, err = callback(c, message.Data)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err = errors.New("Unknown request")
 	}
 
-	return nil, errors.New("Unknown GET request")
+	if err != nil {
+		return nil, err
+	}
+
+	switch v := output.(type) {
+	case string:
+		return []byte(v), nil
+	case helpers.HexBytes:
+		return v, nil
+	case []byte:
+		return v, nil
+	default:
+		var final []byte
+		if final, err = json.Marshal(output); err != nil {
+			return nil, err
+		}
+		return final, nil
+	}
+
 }
 
 func (c *AdvancedConnection) processRead(message *advanced_connection_types.AdvancedConnectionMessage) {
@@ -299,7 +326,7 @@ func (c *AdvancedConnection) IncreaseKnownNodeScore() {
 
 }
 
-func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) ([]byte, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification) (*AdvancedConnection, error) {
+func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification) (*AdvancedConnection, error) {
 
 	u := advanced_connection_types.UUID(0)
 	for u <= advanced_connection_types.UUID_SKIP_ALL {

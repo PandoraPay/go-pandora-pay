@@ -2,6 +2,8 @@ package api_common
 
 import (
 	"encoding/json"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
@@ -12,42 +14,45 @@ type APIAccountMempoolRequest struct {
 	api_types.APIAccountBaseRequest
 }
 
-func (api *APICommon) GetAccountMempool(request *APIAccountMempoolRequest) ([]byte, error) {
+type APIAccountMempoolReply struct {
+	List []helpers.HexBytes `json:"list"`
+}
 
-	publicKey, err := request.GetPublicKey()
+func (api *APICommon) AccountMempool(r *http.Request, args *APIAccountMempoolRequest, reply *APIAccountMempoolReply) error {
+
+	publicKey, err := args.GetPublicKey()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	txs := api.mempool.Txs.GetAccountTxs(publicKey)
 
-	var answer []helpers.HexBytes
 	if txs != nil {
-		answer = make([]helpers.HexBytes, len(txs))
+		reply.List = make([]helpers.HexBytes, len(txs))
 		c := 0
 		for _, tx := range txs {
-			answer[c] = tx.Tx.Bloom.Hash
+			reply.List[c] = tx.Tx.Bloom.Hash
 			c += 1
 		}
 	}
 
-	return json.Marshal(answer)
+	return nil
 }
 
-func (api *APICommon) GetAccountMempool_http(values *url.Values) (interface{}, error) {
-
-	request := &APIAccountMempoolRequest{}
-	if err := request.ImportFromValues(values); err != nil {
+func (api *APICommon) GetAccountMempool_http(values url.Values) (interface{}, error) {
+	args := &APIAccountMempoolRequest{}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-
-	return api.GetAccountMempool(request)
+	reply := &APIAccountMempoolReply{}
+	return reply, api.AccountMempool(nil, args, reply)
 }
 
-func (api *APICommon) GetAccountMempool_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &APIAccountMempoolRequest{}
-	if err := json.Unmarshal(values, &request); err != nil {
+func (api *APICommon) GetAccountMempool_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APIAccountMempoolRequest{}
+	if err := json.Unmarshal(values, &args); err != nil {
 		return nil, err
 	}
-	return api.GetAccountMempool(request)
+	reply := &APIAccountMempoolReply{}
+	return reply, api.AccountMempool(nil, args, reply)
 }

@@ -2,39 +2,53 @@ package api_common
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
-	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/blockchain/info"
+	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/store"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type APIBlockInfoRequest struct {
-	api_types.APIHeightHash
+	Height uint64           `json:"height,omitempty"`
+	Hash   helpers.HexBytes `json:"hash,omitempty"`
 }
 
-func (api *APICommon) getBlockInfo(request *APIBlockInfoRequest) ([]byte, error) {
-	blockInfo, err := api.ApiStore.openLoadBlockInfo(request.Height, request.Hash)
-	if err != nil || blockInfo == nil {
-		return nil, err
-	}
-	return json.Marshal(blockInfo)
+func (api *APICommon) BlockInfo(r *http.Request, args *APIBlockInfoRequest, reply *info.BlockInfo) error {
+	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		if len(args.Hash) == 0 {
+			if args.Hash, err = api.ApiStore.chain.LoadBlockHash(reader, args.Height); err != nil {
+				return
+			}
+		}
+
+		data := reader.Get("blockInfo_ByHash" + string(args.Hash))
+		if data == nil {
+			return errors.New("BlockInfo was not found")
+		}
+		return json.Unmarshal(data, reply)
+	})
 }
 
-func (api *APICommon) GetBlockInfo_http(values *url.Values) (interface{}, error) {
-
-	request := &APIBlockInfoRequest{}
-	if err := request.ImportFromValues(values); err != nil {
+func (api *APICommon) GetBlockInfo_http(values url.Values) (interface{}, error) {
+	args := &APIBlockInfoRequest{}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-
-	return api.getBlockInfo(request)
+	reply := &info.BlockInfo{}
+	return reply, api.BlockInfo(nil, args, reply)
 }
 
-func (api *APICommon) GetBlockInfo_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-
-	request := &APIBlockInfoRequest{api_types.APIHeightHash{0, nil}}
-	if err := json.Unmarshal(values, request); err != nil {
+func (api *APICommon) GetBlockInfo_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APIBlockInfoRequest{}
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-
-	return api.getBlockInfo(request)
+	reply := &info.BlockInfo{}
+	return reply, api.BlockInfo(nil, args, reply)
 }

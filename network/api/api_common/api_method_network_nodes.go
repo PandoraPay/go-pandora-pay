@@ -1,8 +1,8 @@
 package api_common
 
 import (
-	"encoding/json"
 	"math/rand"
+	"net/http"
 	"net/url"
 	"pandora-pay/config"
 	"pandora-pay/network/known_nodes"
@@ -17,11 +17,11 @@ type GetNetworkNodesListNode struct {
 	Score int    `json:"score"`
 }
 
-type GetNetworkNodesListAnswer struct {
+type GetNetworkNodesListReply struct {
 	Nodes []*GetNetworkNodesListNode `json:"nodes"`
 }
 
-func (api *APICommon) getList() (*GetNetworkNodesListAnswer, error) {
+func (api *APICommon) GetList(reply *GetNetworkNodesListReply) (err error) {
 
 	now := time.Now()
 	if now.After(api.temporaryListCreation.Load().(time.Time)) {
@@ -36,7 +36,7 @@ func (api *APICommon) getList() (*GetNetworkNodesListAnswer, error) {
 		}
 
 		index := 0
-		newTemporaryList := &GetNetworkNodesListAnswer{
+		newTemporaryList := &GetNetworkNodesListReply{
 			Nodes: make([]*GetNetworkNodesListNode, count),
 		}
 
@@ -60,16 +60,16 @@ func (api *APICommon) getList() (*GetNetworkNodesListAnswer, error) {
 		allKnowNodes := map[string]*known_nodes.KnownNodeScored{}
 
 		for _, knownNode := range knownList {
-			if err := maxHeap.Insert(float64(atomic.LoadInt32(&knownNode.Score)), []byte(knownNode.URL)); err != nil {
-				return nil, err
+			if err = maxHeap.Insert(float64(atomic.LoadInt32(&knownNode.Score)), []byte(knownNode.URL)); err != nil {
+				return
 			}
 			allKnowNodes[knownNode.URL] = knownNode
 		}
 
 		for index < count/2 {
-			element, err := maxHeap.RemoveTop()
-			if err != nil {
-				return nil, err
+			var element *min_max_heap.HeapElement
+			if element, err = maxHeap.RemoveTop(); err != nil {
+				return
 			}
 			if element == nil {
 				break
@@ -110,21 +110,21 @@ func (api *APICommon) getList() (*GetNetworkNodesListAnswer, error) {
 		api.temporaryList.Store(newTemporaryList)
 	}
 
-	return api.temporaryList.Load().(*GetNetworkNodesListAnswer), nil
+	list := api.temporaryList.Load().(*GetNetworkNodesListReply)
+	*reply = *list
+	return
 }
 
-func (api *APICommon) getNetworkNodes() ([]byte, error) {
-	list, err := api.getList()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(list)
+func (api *APICommon) NetworkNodes(r *http.Request, args *struct{}, reply *GetNetworkNodesListReply) error {
+	return api.GetList(reply)
 }
 
-func (api *APICommon) GetNetworkNodes_http(values *url.Values) (interface{}, error) {
-	return api.getNetworkNodes()
+func (api *APICommon) GetNetworkNodes_http(values url.Values) (interface{}, error) {
+	reply := &GetNetworkNodesListReply{}
+	return reply, api.NetworkNodes(nil, nil, reply)
 }
 
-func (api *APICommon) GetNetworkNodes_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	return api.getNetworkNodes()
+func (api *APICommon) GetNetworkNodes_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	reply := &GetNetworkNodesListReply{}
+	return reply, api.NetworkNodes(nil, nil, reply)
 }

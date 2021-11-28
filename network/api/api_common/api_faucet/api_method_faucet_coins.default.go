@@ -7,33 +7,36 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/go-pg/urlstruct"
 	"go.jolheiser.com/hcaptcha"
+	"net/http"
 	"net/url"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
+	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/transactions_builder"
 	"pandora-pay/transactions_builder/wizard"
 )
 
-func (api *Faucet) getFaucetCoins(request *APIFaucetCoinsRequest) ([]byte, error) {
+func (api *Faucet) FaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, reply *helpers.HexBytes) error {
 
 	if !config.FAUCET_TESTNET_ENABLED {
-		return nil, errors.New("Faucet Testnet is not enabled")
+		return errors.New("Faucet Testnet is not enabled")
 	}
 
-	resp, err := api.hcpatchaClient.Verify(request.FaucetToken, hcaptcha.PostOptions{})
+	resp, err := api.hcpatchaClient.Verify(args.FaucetToken, hcaptcha.PostOptions{})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if !resp.Success {
-		return nil, errors.New("Faucet token is invalid")
+		return errors.New("Faucet token is invalid")
 	}
 
 	addr, err := api.wallet.GetWalletAddress(1)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	data := &wizard.WizardTransactionData{[]byte("Testnet Faucet Tx"), false}
@@ -42,36 +45,30 @@ func (api *Faucet) getFaucetCoins(request *APIFaucetCoinsRequest) ([]byte, error
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tx, err := api.transactionsBuilder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{nil}, []string{addr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, []string{request.Address}, []uint64{0}, []*transactions_builder.ZetherRingConfiguration{{-1, -1}}, []*wizard.WizardTransactionData{data}, fees, true, false, false, false, ctx, func(status string) {})
+	tx, err := api.transactionsBuilder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{nil}, []string{addr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, []string{args.Address}, []uint64{0}, []*transactions_builder.ZetherRingConfiguration{{-1, -1}}, []*wizard.WizardTransactionData{data}, fees, true, false, false, false, ctx, func(status string) {})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return tx.Bloom.Hash, nil
+	*reply = tx.Bloom.Hash
+	return nil
 
 }
 
-func (api *Faucet) GetFaucetCoins_http(values *url.Values) (interface{}, error) {
-
-	request := &APIFaucetCoinsRequest{"", ""}
-
-	if values.Get("address") != "" {
-		request.Address = values.Get("address")
-	} else {
-		return nil, errors.New("parameter 'address' was not specified")
-	}
-
-	if values.Get("faucetToken") != "" {
-		request.FaucetToken = values.Get("faucetToken")
-	}
-
-	return api.getFaucetCoins(request)
-}
-
-func (api *Faucet) GetFaucetCoins_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &APIFaucetCoinsRequest{"", ""}
-	if err := json.Unmarshal(values, request); err != nil {
+func (api *Faucet) GetFaucetCoins_http(values url.Values) (interface{}, error) {
+	args := &APIFaucetCoinsRequest{}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	return api.getFaucetCoins(request)
+	var reply helpers.HexBytes
+	return reply, api.FaucetCoins(nil, args, &reply)
+}
+
+func (api *Faucet) GetFaucetCoins_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APIFaucetCoinsRequest{}
+	if err := json.Unmarshal(values, args); err != nil {
+		return nil, err
+	}
+	var reply helpers.HexBytes
+	return reply, api.FaucetCoins(nil, args, &reply)
 }

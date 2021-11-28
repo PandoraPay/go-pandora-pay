@@ -2,36 +2,36 @@ package api_common
 
 import (
 	"encoding/json"
-	"errors"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
-	"strconv"
 )
 
-type APIBlockHeight uint64
-
-func (api *APICommon) getBlockHash(blockHeight uint64) (helpers.HexBytes, error) {
-	return api.ApiStore.chain.OpenLoadBlockHash(blockHeight)
+type APIBlockHashRequest struct {
+	Height uint64 `json:"height"`
 }
 
-func (api *APICommon) GetBlockHash_http(values *url.Values) (interface{}, error) {
-
-	if values.Get("height") != "" {
-		height, err := strconv.ParseUint(values.Get("height"), 10, 64)
-		if err != nil {
-			return nil, errors.New("parameter 'height' is not a number")
-		}
-		return api.getBlockHash(height)
-	}
-
-	return nil, errors.New("parameter `height` is missing")
+func (api *APICommon) BlockHash(r *http.Request, args *APIBlockHashRequest, reply *helpers.HexBytes) (err error) {
+	*reply, err = api.ApiStore.chain.OpenLoadBlockHash(args.Height)
+	return
 }
 
-func (api *APICommon) GetBlockHash_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := APIBlockHeight(0)
-	if err := json.Unmarshal(values, &request); err != nil {
+func (api *APICommon) GetBlockHash_http(values url.Values) (interface{}, error) {
+	args := &APIBlockHashRequest{}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	return api.getBlockHash(uint64(request))
+	var reply helpers.HexBytes
+	return reply, api.BlockHash(nil, args, &reply)
+}
+
+func (api *APICommon) GetBlockHash_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APIBlockHashRequest{0}
+	if err := json.Unmarshal(values, &args); err != nil {
+		return nil, err
+	}
+	var reply helpers.HexBytes
+	return reply, api.BlockHash(nil, args, &reply)
 }

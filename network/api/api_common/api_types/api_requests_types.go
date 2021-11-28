@@ -1,13 +1,10 @@
 package api_types
 
 import (
-	"encoding/hex"
 	"errors"
-	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
-	"strconv"
 )
 
 type SubscriptionType uint8
@@ -27,17 +24,6 @@ const (
 	RETURN_JSON APIReturnType = iota
 	RETURN_SERIALIZED
 )
-
-func GetReturnType(s string, defaultValue APIReturnType) APIReturnType {
-	switch s {
-	case "0":
-		return RETURN_JSON
-	case "1":
-		return RETURN_SERIALIZED
-	default:
-		return defaultValue
-	}
-}
 
 type APIAccountBaseRequest struct {
 	Address   string           `json:"address,omitempty"`
@@ -70,32 +56,4 @@ type APISubscriptionRequest struct {
 type APIUnsubscriptionRequest struct {
 	Key  []byte           `json:"Key,omitempty"`
 	Type SubscriptionType `json:"type,omitempty"`
-}
-
-type APIHeightHash struct {
-	Height uint64           `json:"height,omitempty"`
-	Hash   helpers.HexBytes `json:"hash,omitempty"`
-}
-
-func (self *APIHeightHash) ImportFromValues(values *url.Values) (err error) {
-	err = errors.New("parameter 'hash' or 'height' are missing")
-	if values.Get("height") != "" {
-		self.Height, err = strconv.ParseUint(values.Get("height"), 10, 64)
-	} else if values.Get("hash") != "" {
-		self.Hash, err = hex.DecodeString(values.Get("hash"))
-	}
-	return
-}
-
-func (self *APIAccountBaseRequest) ImportFromValues(values *url.Values) (err error) {
-
-	if values.Get("address") != "" {
-		self.Address = values.Get("address")
-	} else if values.Get("publicKey") != "" {
-		self.PublicKey, err = hex.DecodeString(values.Get("publicKey"))
-	} else {
-		err = errors.New("parameter 'address' or 'hash' was not specified")
-	}
-
-	return
 }

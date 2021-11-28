@@ -9,7 +9,7 @@ import (
 	"pandora-pay/network/websocks/connection"
 )
 
-func (consensus *Consensus) ChainUpdate_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
+func (consensus *Consensus) ChainUpdate_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 
 	chainUpdateNotification := new(ChainUpdateNotification)
 	if err := json.Unmarshal(values, &chainUpdateNotification); err != nil {

@@ -1,9 +1,9 @@
 package api_common
 
 import (
-	"encoding/hex"
 	"encoding/json"
-	"errors"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
@@ -13,7 +13,23 @@ import (
 	"sync"
 )
 
-func (api *APICommon) mempoolNewTx(tx *transaction.Transaction, exceptSocketUUID advanced_connection_types.UUID) (out []byte, err error) {
+type APIMempoolNewTxRequest struct {
+	Type byte             `json:"type,omitempty"`
+	Tx   helpers.HexBytes `json:"tx,omitempty"`
+}
+
+func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *[]byte, exceptSocketUUID advanced_connection_types.UUID) (err error) {
+
+	tx := &transaction.Transaction{}
+	if args.Type == 0 { //json
+		err = json.Unmarshal(args.Tx, args.Tx)
+	} else if args.Type == 1 {
+		err = tx.Deserialize(helpers.NewBufferReader(args.Tx))
+	}
+
+	if err != nil {
+		return
+	}
 
 	//it needs to compute  tx.Bloom.HashStr
 	hash := tx.HashManual()
@@ -23,9 +39,10 @@ func (api *APICommon) mempoolNewTx(tx *transaction.Transaction, exceptSocketUUID
 	processedAlreadyFound, loaded := mempoolProcessedThisBlock.Load(hashStr)
 	if loaded {
 		if processedAlreadyFound != nil {
-			return nil, processedAlreadyFound.(error)
+			return processedAlreadyFound.(error)
 		}
-		return []byte{1}, nil
+		*reply = []byte{1}
+		return
 	}
 
 	multicastFound, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, multicast.NewMulticastChannel())
@@ -33,9 +50,10 @@ func (api *APICommon) mempoolNewTx(tx *transaction.Transaction, exceptSocketUUID
 
 	if loaded {
 		if errData := <-multicast.AddListener(); errData != nil {
-			return nil, errData.(error)
+			return errData.(error)
 		}
-		return []byte{1}, nil
+		*reply = []byte{1}
+		return
 	}
 
 	defer func() {
@@ -45,7 +63,8 @@ func (api *APICommon) mempoolNewTx(tx *transaction.Transaction, exceptSocketUUID
 	}()
 
 	if api.mempool.Txs.Exists(hashStr) {
-		return []byte{1}, nil
+		*reply = []byte{1}
+		return
 	}
 
 	if err = tx.BloomAll(); err != nil {
@@ -55,37 +74,28 @@ func (api *APICommon) mempoolNewTx(tx *transaction.Transaction, exceptSocketUUID
 		return
 	}
 
-	return []byte{1}, nil
+	*reply = []byte{1}
+	return
 }
 
-func (api *APICommon) MempoolNewTx_http(values *url.Values) (interface{}, error) {
+func (api *APICommon) MempoolNewTx(r *http.Request, args *APIMempoolNewTxRequest, reply *[]byte) error {
+	return api.mempoolNewTx(args, reply, advanced_connection_types.UUID_ALL)
+}
 
-	tx := &transaction.Transaction{}
-
-	err := errors.New("parameter 'type' was not specified or is invalid")
-	if values.Get("type") == "json" {
-		data := values.Get("tx")
-		err = json.Unmarshal([]byte(data), tx)
-	} else if values.Get("type") == "binary" {
-		data, err := hex.DecodeString(values.Get("tx"))
-		if err != nil {
-			return nil, err
-		}
-		err = tx.Deserialize(helpers.NewBufferReader(data))
-	}
-
-	if err != nil {
+func (api *APICommon) MempoolNewTx_http(values url.Values) (interface{}, error) {
+	args := &APIMempoolNewTxRequest{}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-
-	return api.mempoolNewTx(tx, advanced_connection_types.UUID_ALL)
+	reply := []byte{}
+	return reply, api.MempoolNewTx(nil, args, &reply)
 }
 
-func (api *APICommon) MempoolNewTx_websockets(conn *connection.AdvancedConnection, values []byte) (out []byte, err error) {
-	tx := &transaction.Transaction{}
-	if err = tx.Deserialize(helpers.NewBufferReader(values)); err != nil {
-		return
+func (api *APICommon) MempoolNewTx_websockets(conn *connection.AdvancedConnection, values []byte) (out interface{}, err error) {
+	args := &APIMempoolNewTxRequest{}
+	if err := json.Unmarshal(values, args); err != nil {
+		return nil, err
 	}
-
-	return api.mempoolNewTx(tx, conn.UUID)
+	reply := []byte{}
+	return reply, api.mempoolNewTx(args, &reply, conn.UUID)
 }

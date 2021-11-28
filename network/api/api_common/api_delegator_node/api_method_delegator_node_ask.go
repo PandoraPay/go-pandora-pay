@@ -2,9 +2,9 @@ package api_delegator_node
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"encoding/json"
-	"errors"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts"
@@ -22,14 +22,14 @@ type ApiDelegatorNodeAskRequest struct {
 	ChallengeSignature helpers.HexBytes `json:"challengeSignature"`
 }
 
-type ApiDelegatorNodeAskAnswer struct {
+type ApiDelegatorNodeAskReply struct {
 	Exists                   bool             `json:"exists"`
 	DelegateStakingPublicKey helpers.HexBytes `json:"delegateStakingPublicKey"`
 }
 
-func (api *DelegatorNode) getDelegatesAsk(request *ApiDelegatorNodeAskRequest) ([]byte, error) {
+func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAskRequest, reply *ApiDelegatorNodeAskReply) error {
 
-	publicKey := request.PublicKey
+	publicKey := args.PublicKey
 
 	var chainHeight uint64
 	var acc *account.Account
@@ -45,14 +45,13 @@ func (api *DelegatorNode) getDelegatesAsk(request *ApiDelegatorNodeAskRequest) (
 		return
 
 	}); err != nil {
-		return nil, err
+		return err
 	}
 
 	addr := api.wallet.GetWalletAddressByPublicKey(publicKey)
 	if addr != nil {
-		return json.Marshal(&ApiDelegatorNodeAskAnswer{
-			Exists: true,
-		})
+		reply.Exists = true
+		return nil
 	}
 
 	delegateStakingPrivateKey := addresses.GenerateNewPrivateKey()
@@ -70,43 +69,24 @@ func (api *DelegatorNode) getDelegatesAsk(request *ApiDelegatorNodeAskRequest) (
 		delegateStakingPublicKey = pendingDelegateStakeChange.delegateStakingPublicKey
 	}
 
-	answer := &ApiDelegatorNodeAskAnswer{
-		Exists:                   false,
-		DelegateStakingPublicKey: delegateStakingPublicKey,
-	}
-
-	return json.Marshal(answer)
+	reply.DelegateStakingPublicKey = delegateStakingPublicKey
+	return nil
 }
 
-func (api *DelegatorNode) GetDelegatorNodeAsk_http(values *url.Values) (interface{}, error) {
-	request := &ApiDelegatorNodeAskRequest{}
-	var err error
-	if challengeSignature := values.Get("challengeSignature"); challengeSignature != "" {
-		request.ChallengeSignature, err = hex.DecodeString(challengeSignature)
-	} else {
-		err = errors.New("'challengeSignature' parameter is missing")
-	}
-	if err != nil {
+func (api *DelegatorNode) GetDelegatorNodeAsk_http(values url.Values) (interface{}, error) {
+	args := &ApiDelegatorNodeAskRequest{}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-
-	if publicKey := values.Get("publicKey"); publicKey != "" {
-		request.PublicKey, err = hex.DecodeString(publicKey)
-	} else {
-		err = errors.New("'publicKey' parameter is missing")
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return api.getDelegatesAsk(request)
+	reply := &ApiDelegatorNodeAskReply{}
+	return reply, api.DelegatesAsk(nil, args, reply)
 }
 
-func (api *DelegatorNode) GetDelegatorNodeAsk_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &ApiDelegatorNodeAskRequest{}
-	if err := json.Unmarshal(values, request); err != nil {
+func (api *DelegatorNode) GetDelegatorNodeAsk_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &ApiDelegatorNodeAskRequest{}
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-
-	return api.getDelegatesAsk(request)
+	reply := &ApiDelegatorNodeAskReply{}
+	return reply, api.DelegatesAsk(nil, args, reply)
 }

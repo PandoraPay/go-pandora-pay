@@ -2,36 +2,40 @@ package api_common
 
 import (
 	"encoding/json"
-	"errors"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
-	"strconv"
+	"pandora-pay/store"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
-type APITxHeight uint64
-
-func (api *APICommon) GetTxHash(txHeight uint64) (helpers.HexBytes, error) {
-	return api.ApiStore.openLoadTxHash(txHeight)
+type APITxHashRequest struct {
+	Height uint64 `json:"height"`
 }
 
-func (api *APICommon) GetTxHash_http(values *url.Values) (interface{}, error) {
-
-	if values.Get("height") != "" {
-		height, err := strconv.ParseUint(values.Get("height"), 10, 64)
-		if err != nil {
-			return nil, errors.New("parameter 'height' is not a number")
-		}
-		return api.getBlockHash(height)
-	}
-
-	return nil, errors.New("parameter `height` is missing")
+func (api *APICommon) TxHash(r *http.Request, args *APITxHashRequest, reply *helpers.HexBytes) (err error) {
+	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		*reply, err = api.ApiStore.loadTxHash(reader, args.Height)
+		return
+	})
 }
 
-func (api *APICommon) GetTxHash_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := APITxHeight(0)
-	if err := json.Unmarshal(values, &request); err != nil {
+func (api *APICommon) GetTxHash_http(values url.Values) (interface{}, error) {
+	args := &APITxHashRequest{0}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	return api.getBlockHash(uint64(request))
+	var out helpers.HexBytes
+	return out, api.TxHash(nil, args, &out)
+}
+
+func (api *APICommon) GetTxHash_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APITxHashRequest{0}
+	if err := json.Unmarshal(values, &args); err != nil {
+		return nil, err
+	}
+	var out helpers.HexBytes
+	return out, api.TxHash(nil, args, &out)
 }

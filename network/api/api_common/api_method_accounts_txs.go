@@ -2,10 +2,16 @@ package api_common
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
+	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/store"
+	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
 
@@ -19,43 +25,64 @@ type APIAccountTxsAnswer struct {
 	Txs   []helpers.HexBytes `json:"txs,omitempty"`
 }
 
-func (api *APICommon) getAccountTxs(request *APIAccountTxsRequest) ([]byte, error) {
+func (api *APICommon) AccountTxs(r *http.Request, args *APIAccountTxsRequest, reply *APIAccountTxsAnswer) (err error) {
 
-	publicKey, err := request.GetPublicKey()
+	publicKey, err := args.GetPublicKey()
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	answer, err := api.ApiStore.openLoadAccountTxsFromPublicKey(publicKey, request.Next)
-	if err != nil || answer == nil {
-		return nil, err
-	}
+	publicKeyStr := string(publicKey)
 
-	return json.Marshal(answer)
-}
+	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-func (api *APICommon) GetAccountTxs_http(values *url.Values) (interface{}, error) {
-
-	request := &APIAccountTxsRequest{}
-
-	var err error
-	if values.Get("next") != "" {
-		if request.Next, err = strconv.ParseUint(values.Get("next"), 10, 64); err != nil {
-			return nil, err
+		data := reader.Get("addrTxsCount:" + publicKeyStr)
+		if data == nil {
+			return nil
 		}
-	}
 
-	if err = request.ImportFromValues(values); err != nil {
-		return nil, err
-	}
+		if reply.Count, err = strconv.ParseUint(string(data), 10, 64); err != nil {
+			return
+		}
 
-	return api.getAccountTxs(request)
+		if args.Next > reply.Count {
+			args.Next = reply.Count
+		}
+
+		index := args.Next
+		if index < config.API_ACCOUNT_MAX_TXS {
+			index = 0
+		} else {
+			index -= config.API_ACCOUNT_MAX_TXS
+		}
+
+		reply.Txs = make([]helpers.HexBytes, args.Next-index)
+		for i := index; i < args.Next; i++ {
+			hash := reader.Get("addrTx:" + publicKeyStr + ":" + strconv.FormatUint(i, 10))
+			if hash == nil {
+				return errors.New("Error reading address transaction")
+			}
+			reply.Txs[args.Next-i-1] = hash
+		}
+
+		return
+	})
 }
 
-func (api *APICommon) GetAccountTxs_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-	request := &APIAccountTxsRequest{}
-	if err := json.Unmarshal(values, &request); err != nil {
+func (api *APICommon) GetAccountTxs_http(values url.Values) (interface{}, error) {
+	args := &APIAccountTxsRequest{}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	return api.getAccountTxs(request)
+	reply := &APIAccountTxsAnswer{}
+	return reply, api.AccountTxs(nil, args, reply)
+}
+
+func (api *APICommon) GetAccountTxs_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APIAccountTxsRequest{}
+	if err := json.Unmarshal(values, &args); err != nil {
+		return nil, err
+	}
+	reply := &APIAccountTxsAnswer{}
+	return reply, api.AccountTxs(nil, args, reply)
 }

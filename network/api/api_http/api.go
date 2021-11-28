@@ -8,7 +8,7 @@ import (
 )
 
 type API struct {
-	GetMap    map[string]func(values *url.Values) (interface{}, error)
+	GetMap    map[string]func(values url.Values) (interface{}, error)
 	chain     *blockchain.Blockchain
 	apiCommon *api_common.APICommon
 	apiStore  *api_common.APIStore
@@ -22,7 +22,7 @@ func NewAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chai
 		apiCommon: apiCommon,
 	}
 
-	api.GetMap = map[string]func(values *url.Values) (interface{}, error){
+	api.GetMap = map[string]func(values url.Values) (interface{}, error){
 		"ping":                   api.apiCommon.GetPing_http,
 		"":                       api.apiCommon.GetInfo_http,
 		"chain":                  api.apiCommon.GetBlockchain_http,

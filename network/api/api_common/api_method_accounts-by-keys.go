@@ -1,16 +1,20 @@
 package api_common
 
 import (
-	"encoding/hex"
 	"encoding/json"
-	"errors"
+	"fmt"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
+	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
-	"strings"
+	"pandora-pay/store"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type APIAccountsByKeysRequest struct {
@@ -27,101 +31,100 @@ type APIAccountsByKeysAnswer struct {
 	RegSerialized []helpers.HexBytes           `json:"registrationSerialized,omitempty"`
 }
 
-func (api *APICommon) getAccountsByKeys(request *APIAccountsByKeysRequest) ([]byte, error) {
+func (api *APICommon) AccountsByKeys(r *http.Request, args *APIAccountsByKeysRequest, reply *APIAccountsByKeysAnswer) (err error) {
 
-	publicKeys := make([][]byte, len(request.Keys))
-	var err error
+	publicKeys := make([][]byte, len(args.Keys))
 
-	for i, key := range request.Keys {
+	for i, key := range args.Keys {
 		if publicKeys[i], err = key.GetPublicKey(); err != nil {
-			return nil, err
+			return
 		}
 	}
 
-	out, err := api.ApiStore.openLoadAccountsByKeys(publicKeys, request.Asset)
-	if err != nil {
-		return nil, err
+	if len(publicKeys) > 512*2 {
+		return fmt.Errorf("Too many indexes to process: limit %d, found %d", 512*2, len(publicKeys))
 	}
 
-	if request.IncludeMempool {
+	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		accsCollection := accounts.NewAccountsCollection(reader)
+		regs := registrations.NewRegistrations(reader)
+
+		accs, err := accsCollection.GetMap(args.Asset)
+		if err != nil {
+			return
+		}
+
+		reply.Acc = make([]*account.Account, len(publicKeys))
+		reply.Reg = make([]*registration.Registration, len(publicKeys))
+
+		for i := 0; i < len(publicKeys); i++ {
+			if reply.Acc[i], err = accs.GetAccount(publicKeys[i]); err != nil {
+				return
+			}
+			if reply.Reg[i], err = regs.GetRegistration(publicKeys[i]); err != nil {
+				return
+			}
+		}
+
+		return
+	}); err != nil {
+		return
+	}
+
+	if args.IncludeMempool {
 		balancesInit := make([][]byte, len(publicKeys))
-		for i, acc := range out.Acc {
+		for i, acc := range reply.Acc {
 			if acc != nil {
 				balancesInit[i] = helpers.SerializeToBytes(acc.Balance)
 			}
 		}
-		if balancesInit, err = api.mempool.GetZetherBalanceMultiple(publicKeys, balancesInit, request.Asset); err != nil {
-			return nil, err
+		if balancesInit, err = api.mempool.GetZetherBalanceMultiple(publicKeys, balancesInit, args.Asset); err != nil {
+			return
 		}
-		for i, acc := range out.Acc {
+		for i, acc := range reply.Acc {
 			if balancesInit[i] != nil {
 				if err = acc.Balance.Deserialize(helpers.NewBufferReader(balancesInit[i])); err != nil {
-					return nil, err
+					return
 				}
 			}
 		}
 	}
 
-	if request.ReturnType == api_types.RETURN_SERIALIZED {
-		out.AccSerialized = make([]helpers.HexBytes, len(out.Acc))
-		for i, acc := range out.Acc {
+	if args.ReturnType == api_types.RETURN_SERIALIZED {
+		reply.AccSerialized = make([]helpers.HexBytes, len(reply.Acc))
+		for i, acc := range reply.Acc {
 			if acc != nil {
-				out.AccSerialized[i] = helpers.SerializeToBytes(acc)
+				reply.AccSerialized[i] = helpers.SerializeToBytes(acc)
 			}
 		}
-		out.Acc = nil
+		reply.Acc = nil
 
-		out.RegSerialized = make([]helpers.HexBytes, len(out.Reg))
-		for i, reg := range out.Reg {
+		reply.RegSerialized = make([]helpers.HexBytes, len(reply.Reg))
+		for i, reg := range reply.Reg {
 			if reg != nil {
-				out.RegSerialized[i] = helpers.SerializeToBytes(reg)
+				reply.RegSerialized[i] = helpers.SerializeToBytes(reg)
 			}
 		}
-		out.Reg = nil
+		reply.Reg = nil
 	}
-	return json.Marshal(out)
+	return
 }
 
-func (api *APICommon) GetAccountsByKeys_http(values *url.Values) (interface{}, error) {
-
-	var err error
-
-	request := &APIAccountsByKeysRequest{ReturnType: api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
-
-	if values.Get("publicKeys") != "" {
-		v := strings.Split(values.Get("publicKeys"), ",")
-		request.Keys = make([]*api_types.APIAccountBaseRequest, len(v))
-		for i := range v {
-			request.Keys[i] = &api_types.APIAccountBaseRequest{}
-			if request.Keys[i].PublicKey, err = hex.DecodeString(v[i]); err != nil {
-				return nil, err
-			}
-		}
-	} else if values.Get("addresses") != "" {
-		v := strings.Split(values.Get("addresses"), ",")
-		request.Keys = make([]*api_types.APIAccountBaseRequest, len(v))
-		for i := range v {
-			request.Keys[i] = &api_types.APIAccountBaseRequest{Address: v[i]}
-		}
-	} else {
-		return nil, errors.New("parameter `publicKeys` or `addresses` are missing")
-	}
-
-	if values.Get("asset") != "" {
-		if request.Asset, err = hex.DecodeString(values.Get("asset")); err != nil {
-			return nil, err
-		}
-	}
-	request.IncludeMempool = values.Get("includeMempool") == "1"
-
-	return api.getAccountsByKeys(request)
-}
-
-func (api *APICommon) GetAccountsByKeys_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-
-	request := &APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, &request); err != nil {
+func (api *APICommon) GetAccountsByKeys_http(values url.Values) (interface{}, error) {
+	args := &APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_JSON}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	return api.getAccountsByKeys(request)
+	reply := &APIAccountsByKeysAnswer{}
+	return reply, api.AccountsByKeys(nil, args, reply)
+}
+
+func (api *APICommon) GetAccountsByKeys_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
+	if err := json.Unmarshal(values, &args); err != nil {
+		return nil, err
+	}
+	reply := &APIAccountsByKeysAnswer{}
+	return reply, api.AccountsByKeys(nil, args, reply)
 }

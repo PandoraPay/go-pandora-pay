@@ -2,53 +2,90 @@ package api_common
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/go-pg/urlstruct"
+	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/blocks/block_complete"
-	"pandora-pay/cryptography"
+	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/store"
+	"pandora-pay/store/store_db/store_db_interface"
+	"strconv"
 )
 
 type APIBlockCompleteRequest struct {
-	api_types.APIHeightHash
+	Height     uint64                  `json:"height,omitempty"`
+	Hash       helpers.HexBytes        `json:"hash,omitempty"`
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty"`
 }
 
-func (api *APICommon) getBlockComplete(request *APIBlockCompleteRequest) ([]byte, error) {
-
-	var blockComplete *block_complete.BlockComplete
-	var err error
-
-	if request.Hash != nil && len(request.Hash) == cryptography.HashSize {
-		blockComplete, err = api.ApiStore.openLoadBlockCompleteFromHash(request.Hash)
-	} else {
-		blockComplete, err = api.ApiStore.openLoadBlockCompleteFromHeight(request.Height)
-	}
-	if err != nil || blockComplete == nil {
-		return nil, err
-	}
-	if request.ReturnType == api_types.RETURN_SERIALIZED {
-		return blockComplete.BloomBlkComplete.Serialized, nil
-	}
-	return json.Marshal(blockComplete)
+type APIBlockCompleteReply struct {
+	BlockComplete *block_complete.BlockComplete `json:"blockComplete,omitempty"`
+	Serialized    helpers.HexBytes              `json:"serialized"`
 }
 
-func (api *APICommon) GetBlockComplete_http(values *url.Values) (interface{}, error) {
+func (api *APICommon) BlockComplete(r *http.Request, args *APIBlockCompleteRequest, reply *APIBlockCompleteReply) error {
 
-	request := &APIBlockCompleteRequest{api_types.APIHeightHash{0, nil}, api_types.GetReturnType(values.Get("type"), api_types.RETURN_JSON)}
-	if err := request.ImportFromValues(values); err != nil {
-		return nil, err
+	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		if len(args.Hash) == 0 {
+			args.Hash, err = api.ApiStore.chain.LoadBlockHash(reader, args.Height)
+		}
+
+		reply.BlockComplete = &block_complete.BlockComplete{}
+
+		if reply.BlockComplete.Block, err = api.ApiStore.loadBlock(reader, args.Hash); err != nil || reply.BlockComplete.Block == nil {
+			return helpers.ReturnErrorIfNot(err, "Block was not found")
+		}
+
+		data := reader.Get("blockTxs" + strconv.FormatUint(reply.BlockComplete.Block.Height, 10))
+		if data == nil {
+			return errors.New("Strange. blockTxs was not found")
+		}
+
+		txHashes := [][]byte{}
+		if err = json.Unmarshal(data, &txHashes); err != nil {
+			return
+		}
+
+		reply.BlockComplete.Txs = make([]*transaction.Transaction, len(txHashes))
+		for i, txHash := range txHashes {
+			data = reader.Get("tx:" + string(txHash))
+			reply.BlockComplete.Txs[i] = &transaction.Transaction{}
+			if err = reply.BlockComplete.Txs[i].Deserialize(helpers.NewBufferReader(data)); err != nil {
+				return
+			}
+		}
+
+		return reply.BlockComplete.BloomCompleteBySerialized(reply.BlockComplete.SerializeManualToBytes())
+	}); err != nil {
+		return err
 	}
 
-	return api.getBlockComplete(request)
+	if args.ReturnType == api_types.RETURN_SERIALIZED {
+		reply.Serialized = reply.BlockComplete.BloomBlkComplete.Serialized
+		reply.BlockComplete = nil
+	}
+
+	return nil
 }
 
-func (api *APICommon) GetBlockComplete_websockets(conn *connection.AdvancedConnection, values []byte) ([]byte, error) {
-
-	request := &APIBlockCompleteRequest{api_types.APIHeightHash{0, nil}, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, &request); err != nil {
+func (api *APICommon) GetBlockComplete_http(values url.Values) (interface{}, error) {
+	args := &APIBlockCompleteRequest{0, nil, api_types.RETURN_JSON}
+	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
+	reply := &APIBlockCompleteReply{}
+	return reply, api.BlockComplete(nil, args, reply)
+}
 
-	return api.getBlockComplete(request)
+func (api *APICommon) GetBlockComplete_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APIBlockCompleteRequest{0, nil, api_types.RETURN_SERIALIZED}
+	if err := json.Unmarshal(values, &args); err != nil {
+		return nil, err
+	}
+	reply := &APIBlockCompleteReply{}
+	return reply, api.BlockComplete(nil, args, reply)
 }
