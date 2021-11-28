@@ -29,8 +29,7 @@ type APIAssetFeeLiquidityReply struct {
 }
 
 func (api *APICommon) AssetFeeLiquidity(r *http.Request, args *APIAssetFeeLiquidityFeeRequest, reply *APIAssetFeeLiquidityReply) error {
-
-	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if args.Hash == nil {
 			if args.Hash, err = api.ApiStore.loadAssetHash(reader, args.Height); err != nil {
@@ -57,11 +56,7 @@ func (api *APICommon) AssetFeeLiquidity(r *http.Request, args *APIAssetFeeLiquid
 		reply.Collector = plainAcc.AssetFeeLiquidities.Collector
 
 		return
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 func (api *APICommon) GetAssetFeeLiquidity_http(values url.Values) (interface{}, error) {

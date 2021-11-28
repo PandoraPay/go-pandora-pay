@@ -3,7 +3,6 @@ package api_common
 import (
 	"encoding/json"
 	"errors"
-	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -16,18 +15,12 @@ type APIBlockCompleteMissingTxsRequest struct {
 	MissingTxs []int            `json:"missingTxs,omitempty"`
 }
 
-type APIBlockCompleteMissingTxs struct {
+type APIBlockCompleteMissingTxsReply struct {
 	Txs []helpers.HexBytes `json:"txs,omitempty"`
 }
 
-func (api *APICommon) getBlockCompleteMissingTxs(args *APIBlockCompleteMissingTxsRequest) (interface{}, error) {
-
-	blockCompleteMissingTxs := &APIBlockCompleteMissingTxs{}
-
-	if len(args.Hash) == cryptography.HashSize {
-		return nil, errors.New("Invalid Block Hash")
-	}
-	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+func (api *APICommon) getBlockCompleteMissingTxs(args *APIBlockCompleteMissingTxsRequest, reply *APIBlockCompleteMissingTxsReply) error {
+	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		heightStr := reader.Get("blockHeight_ByHash" + string(args.Hash))
 		if heightStr == nil {
@@ -49,30 +42,26 @@ func (api *APICommon) getBlockCompleteMissingTxs(args *APIBlockCompleteMissingTx
 			return
 		}
 
-		blockCompleteMissingTxs.Txs = make([]helpers.HexBytes, len(args.MissingTxs))
+		reply.Txs = make([]helpers.HexBytes, len(args.MissingTxs))
 		for i, txMissingIndex := range args.MissingTxs {
 			if txMissingIndex >= 0 && txMissingIndex < len(txHashes) {
 				tx := reader.Get("tx:" + string(txHashes[txMissingIndex]))
 				if tx == nil {
 					return errors.New("Tx was not found")
 				}
-				blockCompleteMissingTxs.Txs[i] = tx
+				reply.Txs[i] = tx
 			}
 		}
 
 		return
-	}); err != nil {
-		return nil, err
-	}
-	return blockCompleteMissingTxs, nil
+	})
 }
 
 func (api *APICommon) GetBlockCompleteMissingTxs_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-
-	request := &APIBlockCompleteMissingTxsRequest{nil, []int{}}
-	if err := json.Unmarshal(values, &request); err != nil {
+	args := &APIBlockCompleteMissingTxsRequest{nil, []int{}}
+	if err := json.Unmarshal(values, &args); err != nil {
 		return nil, err
 	}
-
-	return api.getBlockCompleteMissingTxs(request)
+	reply := &APIBlockCompleteMissingTxsReply{}
+	return reply, api.getBlockCompleteMissingTxs(args, reply)
 }
