@@ -6,8 +6,6 @@ import (
 	"pandora-pay/store/store_db/store_db_interface"
 )
 
-const dbName = "bolt"
-
 type StoreDBBolt struct {
 	store_db_interface.StoreDBInterface
 	DB   *bolt.DB
@@ -56,7 +54,7 @@ func CreateStoreDBBolt(name string) (*StoreDBBolt, error) {
 
 	// Open the my.store data file in your current directory.
 	// It will be created if it doesn't exist.
-	if store.DB, err = bolt.Open(prefix+name+"_store"+"."+dbName, 0600, nil); err != nil {
+	if store.DB, err = bolt.Open(prefix+name+"_store"+".bolt", 0600, nil); err != nil {
 		return nil, err
 	}
 
