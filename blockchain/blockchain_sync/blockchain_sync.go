@@ -107,7 +107,7 @@ func CreateBlockchainSync() (out *BlockchainSync) {
 
 	out = &BlockchainSync{
 		syncData:            &atomic.Value{},
-		UpdateSyncMulticast: multicast.NewMulticastChannel(),
+		UpdateSyncMulticast: multicast.NewMulticastChannel(false),
 		updateCn:            make(chan *BlockchainSyncData),
 	}
 	out.syncData.Store(&BlockchainSyncData{})

@@ -191,14 +191,12 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 		}
 
 		//prepend
-		fork.Blocks = append(fork.Blocks, nil)
-		copy(fork.Blocks[1:], fork.Blocks)
-		fork.Blocks[0] = blkComplete
+		fork.Blocks.PushFront(blkComplete)
 
 		start -= 1
 	}
 
-	fork.Current = start + uint64(len(fork.Blocks))
+	fork.Current = start + uint64(fork.Blocks.Length)
 
 	fork.Initialized = true
 
@@ -234,12 +232,12 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 			continue
 		}
 
-		fork.Blocks = append(fork.Blocks, blkComplete)
+		fork.Blocks.Push(blkComplete)
 		fork.Current += 1
 
 	}
 
-	return len(fork.Blocks) > 0
+	return fork.Blocks.Length > 0
 
 }
 
@@ -265,12 +263,21 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 						gui.GUI.Log("Status. AddBlocks fork")
 
-						if err := thread.chain.AddBlocks(fork.Blocks, false, advanced_connection_types.UUID_ALL); err != nil {
+						blocks := make([]*block_complete.BlockComplete, fork.Blocks.Length)
+						it := fork.Blocks.First
+						i := 0
+						for it != nil {
+							blocks[i] = it.Data.(*block_complete.BlockComplete)
+							i += 1
+							it = it.Next
+						}
+
+						if err := thread.chain.AddBlocks(blocks, false, advanced_connection_types.UUID_ALL); err != nil {
 							gui.GUI.Error("Invalid Fork", err)
 						} else {
 							fork.Lock()
 							if fork.Current < fork.End {
-								fork.Blocks = []*block_complete.BlockComplete{}
+								fork.Blocks.Empty()
 								fork.errors = 0
 								willRemove = false
 							}

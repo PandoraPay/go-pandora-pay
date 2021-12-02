@@ -11,6 +11,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/multicast"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 )
@@ -35,13 +36,13 @@ type BlockchainUpdate struct {
 }
 
 type BlockchainUpdatesQueue struct {
-	updatesCn chan *BlockchainUpdate //buffered
-	chain     *Blockchain
+	updates *multicast.MulticastChannel //*BlockchainUpdate //buffered
+	chain   *Blockchain
 }
 
 func createBlockchainUpdatesQueue() *BlockchainUpdatesQueue {
 	return &BlockchainUpdatesQueue{
-		updatesCn: make(chan *BlockchainUpdate, 100),
+		updates: multicast.NewMulticastChannel(true),
 	}
 }
 
@@ -147,26 +148,19 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 func (queue *BlockchainUpdatesQueue) processQueue() {
 	recovery.SafeGo(func() {
 
-		var updates []*BlockchainUpdate
+		listener := queue.updates.AddListenerQueue()
+		defer queue.updates.RemoveChannelQueue(listener)
+
 		for {
 
-			updates = []*BlockchainUpdate{}
-			exitCn := make(chan struct{})
+			data, ok := <-listener
+			if !ok {
+				return
+			}
 
-			finished := false
-			for !finished {
-				select {
-				case newUpdate, ok := <-queue.updatesCn:
-					if !ok {
-						return
-					}
-					updates = append(updates, newUpdate)
-					if len(updates) == 1 {
-						close(exitCn)
-					}
-				case <-exitCn:
-					finished = true
-				}
+			updates := make([]*BlockchainUpdate, len(data))
+			for i := range data {
+				updates[i] = data[i].(*BlockchainUpdate)
 			}
 
 			for len(updates) > 0 {

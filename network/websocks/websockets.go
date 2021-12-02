@@ -262,7 +262,7 @@ func NewWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, setti
 		serverSockets:                0,
 		allList:                      &atomic.Value{}, //[]*connection.AdvancedConnection
 		allListMutex:                 &sync.Mutex{},
-		UpdateNewConnectionMulticast: multicast.NewMulticastChannel(),
+		UpdateNewConnectionMulticast: multicast.NewMulticastChannel(false),
 		api:                          api,
 		ApiWebsockets:                apiWebsockets,
 		settings:                     settings,

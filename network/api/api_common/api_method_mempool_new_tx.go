@@ -45,7 +45,7 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *[]byte, 
 		return
 	}
 
-	multicastFound, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, multicast.NewMulticastChannel())
+	multicastFound, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, multicast.NewMulticastChannel(false))
 	multicast := multicastFound.(*multicast.MulticastChannel)
 
 	if loaded {

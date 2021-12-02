@@ -36,7 +36,7 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		settings,
 		apiCommon,
 		apiStore,
-		multicast.NewMulticastChannel(),
+		multicast.NewMulticastChannel(false),
 	}
 
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) (interface{}, error){

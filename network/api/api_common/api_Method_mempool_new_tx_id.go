@@ -27,7 +27,7 @@ func (api *APICommon) MempoolNewTxId_websockets(conn *connection.AdvancedConnect
 		return []byte{1}, nil
 	}
 
-	multicastFound, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, multicast.NewMulticastChannel())
+	multicastFound, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, multicast.NewMulticastChannel(false))
 	multicast := multicastFound.(*multicast.MulticastChannel)
 
 	if loaded {

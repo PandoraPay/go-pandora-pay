@@ -169,7 +169,7 @@ func createMempoolTxs() (txs *MempoolTxs) {
 		0,
 		&sync.Map{},
 		&sync.Map{},
-		multicast.NewMulticastChannel(),
+		multicast.NewMulticastChannel(false),
 	}
 
 	if config.DEBUG {

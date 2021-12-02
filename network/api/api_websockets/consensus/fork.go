@@ -3,21 +3,21 @@ package consensus
 import (
 	"math/big"
 	"math/rand"
-	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/linked_list"
 	"pandora-pay/network/websocks/connection"
 	"sync"
 )
 
 type Fork struct {
-	BigTotalDifficulty *big.Int                        `json:"bigTotalDifficulty"`
-	Initialized        bool                            `json:"initialized"`
-	End                uint64                          `json:"end"`
-	Current            uint64                          `json:"current"`
-	Blocks             []*block_complete.BlockComplete `json:"blocks"`
-	Hash               helpers.HexBytes                `json:"hash"`     //32
-	HashStr            string                          `json:"hashStr"`  //32
-	PrevHash           helpers.HexBytes                `json:"prevHash"` //32
+	BigTotalDifficulty *big.Int                `json:"bigTotalDifficulty"`
+	Initialized        bool                    `json:"initialized"`
+	End                uint64                  `json:"end"`
+	Current            uint64                  `json:"current"`
+	Blocks             *linked_list.LinkedList `json:"blocks"`   //block_complete.BlockComplete
+	Hash               helpers.HexBytes        `json:"hash"`     //32
+	HashStr            string                  `json:"hashStr"`  //32
+	PrevHash           helpers.HexBytes        `json:"prevHash"` //32
 	conns              []*connection.AdvancedConnection
 	errors             int
 	sync.RWMutex       `json:"-"`

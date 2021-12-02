@@ -1,40 +1,50 @@
 package linked_list
 
 type linkedListItem struct {
-	next *linkedListItem
-	data interface{}
+	Next *linkedListItem
+	Data interface{}
 }
 
 type LinkedList struct {
-	First *linkedListItem
-	last  *linkedListItem
+	First  *linkedListItem
+	Last   *linkedListItem
+	Length int
+}
+
+func (list *LinkedList) Empty() {
+	list.First = nil
+	list.Last = nil
+	list.Length = 0
 }
 
 func (list *LinkedList) PushFront(data interface{}) {
 	if list.First == nil {
 		list.First = &linkedListItem{nil, data}
-		list.last = list.First
+		list.Last = list.First
 	} else {
 		next := &linkedListItem{list.First, data}
 		list.First = next
 	}
+	list.Length++
 }
 
 func (list *LinkedList) Push(data interface{}) {
 	if list.First == nil {
 		list.First = &linkedListItem{nil, data}
-		list.last = list.First
+		list.Last = list.First
 	} else {
 		next := &linkedListItem{nil, data}
-		list.last.next = next
-		list.last = next
+		list.Last.Next = next
+		list.Last = next
 	}
+	list.Length++
 }
 
 func (list *LinkedList) PopFirst() interface{} {
 	if list.First != nil {
-		data := list.First.data
-		list.First = list.First.next
+		data := list.First.Data
+		list.First = list.First.Next
+		list.Length--
 		return data
 	}
 	return nil
@@ -42,14 +52,14 @@ func (list *LinkedList) PopFirst() interface{} {
 
 func (list *LinkedList) GetFirst() interface{} {
 	if list.First != nil {
-		return list.First.data
+		return list.First.Data
 	}
 	return nil
 }
 
 func (list *LinkedList) GetLast() interface{} {
-	if list.last != nil {
-		return list.last.data
+	if list.Last != nil {
+		return list.Last.Data
 	}
 	return nil
 }

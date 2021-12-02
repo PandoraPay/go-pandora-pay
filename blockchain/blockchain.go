@@ -456,7 +456,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		update.allTransactionsChanges = allTransactionsChanges
 	}
 
-	chain.updatesQueue.updatesCn <- update
+	chain.updatesQueue.updates.Broadcast(update)
 
 	return
 }
@@ -472,13 +472,13 @@ func CreateBlockchain(mempool *mempool.Mempool) (*Blockchain, error) {
 		updatesQueue:             createBlockchainUpdatesQueue(),
 		Sync:                     blockchain_sync.CreateBlockchainSync(),
 		ForgingSolutionCn:        make(chan *block_complete.BlockComplete),
-		UpdateNewChain:           multicast.NewMulticastChannel(),
-		UpdateNewChainDataUpdate: multicast.NewMulticastChannel(),
-		UpdateAccounts:           multicast.NewMulticastChannel(),
-		UpdatePlainAccounts:      multicast.NewMulticastChannel(),
-		UpdateAssets:             multicast.NewMulticastChannel(),
-		UpdateRegistrations:      multicast.NewMulticastChannel(),
-		UpdateTransactions:       multicast.NewMulticastChannel(),
+		UpdateNewChain:           multicast.NewMulticastChannel(false),
+		UpdateNewChainDataUpdate: multicast.NewMulticastChannel(false),
+		UpdateAccounts:           multicast.NewMulticastChannel(false),
+		UpdatePlainAccounts:      multicast.NewMulticastChannel(false),
+		UpdateAssets:             multicast.NewMulticastChannel(false),
+		UpdateRegistrations:      multicast.NewMulticastChannel(false),
+		UpdateTransactions:       multicast.NewMulticastChannel(false),
 		NextBlockCreatedCn:       make(chan *forging_block_work.ForgingWork),
 	}
 
