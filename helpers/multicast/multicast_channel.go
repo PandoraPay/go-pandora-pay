@@ -5,14 +5,11 @@ import (
 	"sync/atomic"
 )
 
-type MulticastChannelData struct {
-	Answer chan interface{}
-	Data   interface{}
-}
-
 type MulticastChannel struct {
-	listeners *atomic.Value //[]chan interface{}
-	count     int
+	listeners           *atomic.Value //[]chan interface{}
+	queueBroadcastCn    chan interface{}
+	internalBroadcastCn chan interface{}
+	count               int
 	sync.Mutex
 }
 
@@ -29,34 +26,7 @@ func (self *MulticastChannel) AddListener() <-chan interface{} {
 }
 
 func (self *MulticastChannel) Broadcast(data interface{}) {
-
-	listeners := self.listeners.Load().([]chan interface{})
-
-	for _, channel := range listeners {
-		channel <- data
-	}
-
-}
-
-func (self *MulticastChannel) BroadcastAwait(data interface{}) {
-
-	listeners := self.listeners.Load().([]chan interface{})
-
-	answers := make(chan interface{}, len(listeners)+1)
-
-	for _, channel := range listeners {
-
-		channel <- &MulticastChannelData{
-			answers,
-			data,
-		}
-
-	}
-
-	for range listeners {
-		<-answers
-	}
-
+	self.queueBroadcastCn <- data
 }
 
 func (self *MulticastChannel) RemoveChannel(channel <-chan interface{}) bool {
@@ -88,12 +58,60 @@ func (self *MulticastChannel) CloseAll() {
 	self.listeners.Store(make([]chan<- interface{}, 0))
 }
 
+func (self *MulticastChannel) runQueueBroadcast() {
+
+	//using linked list
+	type linkedListElement struct {
+		next *linkedListElement
+		data interface{}
+	}
+
+	var queueFirst *linkedListElement
+	var queueLast *linkedListElement
+
+	for {
+		if queueFirst != nil {
+			select {
+			case data := <-self.queueBroadcastCn:
+				queueLast.next = &linkedListElement{nil, data}
+				queueLast = queueLast.next
+			case self.internalBroadcastCn <- queueFirst.data:
+				queueFirst = queueFirst.next
+			}
+		} else {
+			select {
+			case data := <-self.queueBroadcastCn:
+				queueFirst = &linkedListElement{nil, data}
+				queueLast = queueFirst
+			}
+		}
+	}
+
+}
+
+func (self *MulticastChannel) runInternalBroadcast() {
+
+	for {
+		data := <-self.internalBroadcastCn
+
+		listeners := self.listeners.Load().([]chan interface{})
+		for _, channel := range listeners {
+			channel <- data
+		}
+	}
+}
+
 func NewMulticastChannel() *MulticastChannel {
 
 	multicast := &MulticastChannel{
-		listeners: &atomic.Value{}, //[]chan interface{}
+		listeners:           &atomic.Value{}, //[]chan interface{}
+		queueBroadcastCn:    make(chan interface{}),
+		internalBroadcastCn: make(chan interface{}),
 	}
 	multicast.listeners.Store(make([]chan interface{}, 0))
+
+	go multicast.runQueueBroadcast()
+	go multicast.runInternalBroadcast()
 
 	return multicast
 }
