@@ -1,6 +1,7 @@
 package multicast
 
 import (
+	"pandora-pay/helpers/linked_list"
 	"sync"
 	"sync/atomic"
 )
@@ -60,29 +61,20 @@ func (self *MulticastChannel) CloseAll() {
 
 func (self *MulticastChannel) runQueueBroadcast() {
 
-	//using linked list
-	type linkedListElement struct {
-		next *linkedListElement
-		data interface{}
-	}
-
-	var queueFirst *linkedListElement
-	var queueLast *linkedListElement
+	linkedList := linked_list.NewLinkedList()
 
 	for {
-		if queueFirst != nil {
+		if first := linkedList.GetFirst(); first != nil {
 			select {
 			case data := <-self.queueBroadcastCn:
-				queueLast.next = &linkedListElement{nil, data}
-				queueLast = queueLast.next
-			case self.internalBroadcastCn <- queueFirst.data:
-				queueFirst = queueFirst.next
+				linkedList.Push(data)
+			case self.internalBroadcastCn <- first:
+				linkedList.PopFirst()
 			}
 		} else {
 			select {
 			case data := <-self.queueBroadcastCn:
-				queueFirst = &linkedListElement{nil, data}
-				queueLast = queueFirst
+				linkedList.Push(data)
 			}
 		}
 	}
