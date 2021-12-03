@@ -149,6 +149,8 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 				if err := queue.processUpdate(update); err != nil {
 					gui.GUI.Error("Error processUpdate", err)
 				}
+			} else {
+				queue.chain.createNextBlockForForging(nil, update.calledByForging)
 			}
 
 		}
