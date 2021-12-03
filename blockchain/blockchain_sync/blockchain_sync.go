@@ -78,11 +78,15 @@ func (self *BlockchainSync) resetBlocksChanged(propagateNotification bool) *Bloc
 func (self *BlockchainSync) start() {
 
 	recovery.SafeGo(func() {
+
+		ticker := time.Tick(time.Minute)
 		for {
+			_, ok := <-ticker
+			if !ok {
+				return
+			}
 
-			time.Sleep(time.Minute)
 			self.resetBlocksChanged(true)
-
 		}
 	})
 
@@ -107,7 +111,7 @@ func CreateBlockchainSync() (out *BlockchainSync) {
 
 	out = &BlockchainSync{
 		syncData:            &atomic.Value{},
-		UpdateSyncMulticast: multicast.NewMulticastChannel(false),
+		UpdateSyncMulticast: multicast.NewMulticastChannel(),
 		updateCn:            make(chan *BlockchainSyncData),
 	}
 	out.syncData.Store(&BlockchainSyncData{})

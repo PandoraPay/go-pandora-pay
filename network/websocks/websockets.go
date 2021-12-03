@@ -188,7 +188,8 @@ func (websockets *Websockets) NewConnection(c *websocket.Conn, remoteAddr string
 	}
 
 	recovery.SafeGo(conn.ReadPump)
-	recovery.SafeGo(conn.WritePump)
+	recovery.SafeGo(conn.SendPings)
+
 	if knownNode != nil {
 		recovery.SafeGo(conn.IncreaseKnownNodeScore)
 	}
@@ -262,7 +263,7 @@ func NewWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, setti
 		serverSockets:                0,
 		allList:                      &atomic.Value{}, //[]*connection.AdvancedConnection
 		allListMutex:                 &sync.Mutex{},
-		UpdateNewConnectionMulticast: multicast.NewMulticastChannel(false),
+		UpdateNewConnectionMulticast: multicast.NewMulticastChannel(),
 		api:                          api,
 		ApiWebsockets:                apiWebsockets,
 		settings:                     settings,

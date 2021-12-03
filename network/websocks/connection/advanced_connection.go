@@ -143,9 +143,11 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 			closeChannel = true
 		}
 		c.answerMapLock.Unlock()
+
 		if closeChannel {
 			close(eventCn)
 		}
+
 		return &advanced_connection_types.AdvancedConnectionAnswer{nil, errors.New("Timeout")}
 	}
 }
@@ -271,7 +273,7 @@ func (c *AdvancedConnection) ReadPump() {
 
 		if err != nil {
 			c.Close("Error reading")
-			break
+			return
 		}
 
 		message := new(advanced_connection_types.AdvancedConnectionMessage)
@@ -284,7 +286,7 @@ func (c *AdvancedConnection) ReadPump() {
 
 }
 
-func (c *AdvancedConnection) WritePump() {
+func (c *AdvancedConnection) SendPings() {
 
 	pingTicker := time.NewTicker(config.WEBSOCKETS_PING_INTERVAL)
 	defer pingTicker.Stop()
@@ -325,8 +327,9 @@ func (c *AdvancedConnection) IncreaseKnownNodeScore() {
 			return
 		}
 
-		c.KnownNode.IncrementScore(1, c.ConnectionType)
-
+		if c.KnownNode.IncreaseScore(1, c.ConnectionType) {
+			break
+		}
 	}
 
 }

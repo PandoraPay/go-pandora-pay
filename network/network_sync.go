@@ -41,7 +41,7 @@ func (network *Network) continuouslyConnectNewPeers() {
 					if err != nil {
 
 						if err.Error() != "Already connected" {
-							if knownNode.IncrementScore(-5, false) {
+							if knownNode.DecreaseScore(-5, false) {
 								network.KnownNodes.RemoveKnownNode(knownNode)
 							}
 

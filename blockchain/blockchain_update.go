@@ -42,7 +42,7 @@ type BlockchainUpdatesQueue struct {
 
 func createBlockchainUpdatesQueue() *BlockchainUpdatesQueue {
 	return &BlockchainUpdatesQueue{
-		updates: multicast.NewMulticastChannel(true),
+		updates: multicast.NewMulticastChannel(),
 	}
 }
 
@@ -65,15 +65,7 @@ func (queue *BlockchainUpdatesQueue) hasAnySuccess(updates []*BlockchainUpdate) 
 	return false
 }
 
-func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, updates []*BlockchainUpdate) (bool, error) {
-
-	if update.err != nil {
-		if !queue.hasAnySuccess(updates) {
-			queue.chain.createNextBlockForForging(nil, queue.hasCalledByForging(updates))
-			return true, nil
-		}
-		return false, nil
-	}
+func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate) error {
 
 	gui.GUI.Warning("-------------------------------------------")
 	gui.GUI.Warning(fmt.Sprintf("Included blocks %d | TXs: %d | Hash %s", len(update.insertedBlocks), len(update.insertedTxs), hex.EncodeToString(update.newChainData.Hash)))
@@ -104,10 +96,10 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 		for i, txData := range update.removedTxsList {
 			tx := &transaction.Transaction{}
 			if err := tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
-				return false, err
+				return err
 			}
 			if err := tx.BloomExtraVerified(); err != nil {
-				return false, err
+				return err
 			}
 			removedTxs[i] = tx
 			for _, change := range update.allTransactionsChanges {
@@ -122,34 +114,27 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate, upd
 
 	queue.chain.UpdateTransactions.Broadcast(update.allTransactionsChanges)
 
-	hasAnySuccess := queue.hasAnySuccess(updates[1:])
+	chainSyncData := queue.chain.Sync.AddBlocksChanged(uint32(len(update.insertedBlocks)), true)
 
-	chainSyncData := queue.chain.Sync.AddBlocksChanged(uint32(len(update.insertedBlocks)), hasAnySuccess)
+	//create next block and the workers will be automatically reset
+	queue.chain.createNextBlockForForging(update.newChainData, true)
 
-	if !hasAnySuccess {
+	gui.GUI.Log("queue.chain.UpdateNewChain fired")
+	queue.chain.UpdateNewChain.Broadcast(update.newChainData.Height)
 
-		//create next block and the workers will be automatically reset
-		queue.chain.createNextBlockForForging(update.newChainData, true)
+	queue.chain.UpdateNewChainDataUpdate.Broadcast(&BlockchainDataUpdate{
+		update.newChainData,
+		chainSyncData,
+	})
 
-		gui.GUI.Log("queue.chain.UpdateNewChain fired")
-		queue.chain.UpdateNewChain.Broadcast(update.newChainData.Height)
-
-		queue.chain.UpdateNewChainDataUpdate.Broadcast(&BlockchainDataUpdate{
-			update.newChainData,
-			chainSyncData,
-		})
-
-		return true, nil
-	}
-
-	return false, nil
+	return nil
 }
 
 func (queue *BlockchainUpdatesQueue) processQueue() {
 	recovery.SafeGo(func() {
 
-		listener := queue.updates.AddListenerQueue()
-		defer queue.updates.RemoveChannelQueue(listener)
+		listener := queue.updates.AddListener()
+		defer queue.updates.RemoveChannel(listener)
 
 		for {
 
@@ -158,24 +143,12 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 				return
 			}
 
-			updates := make([]*BlockchainUpdate, len(data))
-			for i := range data {
-				updates[i] = data[i].(*BlockchainUpdate)
-			}
+			update := data.(*BlockchainUpdate)
 
-			for len(updates) > 0 {
-
-				result, err := queue.processUpdate(updates[0], updates)
-
-				if err != nil {
+			if update.err == nil {
+				if err := queue.processUpdate(update); err != nil {
 					gui.GUI.Error("Error processUpdate", err)
 				}
-				if result {
-					break
-				}
-
-				updates = updates[1:]
-
 			}
 
 		}

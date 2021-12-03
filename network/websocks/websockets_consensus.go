@@ -2,7 +2,6 @@ package websocks
 
 import (
 	"context"
-	"encoding/json"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
@@ -21,14 +20,6 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 
 	errs = make([]error, len(txs))
 
-	var key, value []byte
-
-	if justCreated {
-		key = []byte("mempool/new-tx")
-	} else {
-		key = []byte("mempool/new-tx-id")
-	}
-
 	if ctx == nil {
 		factor := time.Duration(1)
 		if awaitPropagation {
@@ -44,23 +35,33 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 		if tx != nil {
 
 			if justCreated {
-				data := &api_common.APIMempoolNewTxRequest{Type: 0, Tx: tx.Bloom.Serialized}
-				value, _ = json.Marshal(data)
-			} else {
-				value = tx.Bloom.Hash
-			}
 
-			if awaitPropagation {
-				out := websockets.BroadcastAwaitAnswer(key, value, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctx)
-				for j := range out {
-					if out[j] != nil && out[j].Err != nil {
-						errs[i] = out[j].Err
+				data := &api_common.APIMempoolNewTxRequest{Type: 0, Tx: tx.Bloom.Serialized}
+
+				if awaitPropagation {
+					out := websockets.BroadcastJSONAwaitAnswer([]byte("mempool/new-tx"), data, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctx)
+					for j := range out {
+						if out[j] != nil && out[j].Err != nil {
+							errs[i] = out[j].Err
+						}
 					}
+				} else {
+					websockets.BroadcastJSON([]byte("mempool/new-tx"), data, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctx)
 				}
 
 			} else {
-				websockets.Broadcast(key, value, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctx)
+				if awaitPropagation {
+					out := websockets.BroadcastAwaitAnswer([]byte("mempool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctx)
+					for j := range out {
+						if out[j] != nil && out[j].Err != nil {
+							errs[i] = out[j].Err
+						}
+					}
+				} else {
+					websockets.Broadcast([]byte("mempool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctx)
+				}
 			}
+
 		}
 	}
 

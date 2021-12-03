@@ -36,7 +36,7 @@ func (self *Events) BroadcastEvent(name string, data interface{}) {
 func NewEvents() *Events {
 
 	events := &Events{
-		*multicast.NewMulticastChannel(false),
+		*multicast.NewMulticastChannel(),
 	}
 
 	return events

@@ -14,10 +14,6 @@ type WebsocketClient struct {
 	websockets *Websockets
 }
 
-func (wsClient *WebsocketClient) Close(reason string) error {
-	return wsClient.conn.Close(reason)
-}
-
 func NewWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownNodeScored) (*WebsocketClient, error) {
 
 	wsClient := &WebsocketClient{

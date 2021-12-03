@@ -169,9 +169,10 @@ func createMempoolTxs() (txs *MempoolTxs) {
 		0,
 		&sync.Map{},
 		&sync.Map{},
-		multicast.NewMulticastChannel(false),
+		multicast.NewMulticastChannel(),
 	}
 
+	//printing from time to time the mempool
 	if config.DEBUG {
 		recovery.SafeGo(func() {
 			for {

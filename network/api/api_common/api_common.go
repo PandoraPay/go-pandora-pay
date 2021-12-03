@@ -27,8 +27,8 @@ type APICommon struct {
 	Faucet                    *api_faucet.Faucet
 	DelegatorNode             *api_delegator_node.DelegatorNode
 	ApiStore                  *APIStore
-	MempoolDownloadPending    *sync.Map     //[string]chan error
-	MempoolProcessedThisBlock *atomic.Value // *sync.Map //[string]error
+	MempoolDownloadPending    *sync.Map     //[string]*mempoolNewTxAnswer
+	MempoolProcessedThisBlock *atomic.Value // *sync.Map //[string]*APIMempoolNewTxReply
 
 	temporaryList         atomic.Value //[]*KnownNode
 	temporaryListCreation atomic.Value //time.Time
@@ -99,7 +99,7 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 		for {
 			newChainDataUpdateReceived, ok := <-updateNewChainDataUpdateListener
 			if !ok {
-				break
+				return
 			}
 
 			newChainDataUpdate := newChainDataUpdateReceived.(*blockchain.BlockchainDataUpdate)
@@ -116,7 +116,7 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 		for {
 			newSyncDataReceived, ok := <-updateNewSync
 			if !ok {
-				break
+				return
 			}
 
 			newSyncData := newSyncDataReceived.(*blockchain_sync.BlockchainSyncData)

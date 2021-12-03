@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/multicast"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"sync"
@@ -18,17 +17,27 @@ type APIMempoolNewTxRequest struct {
 	Tx   helpers.HexBytes `json:"tx,omitempty"`
 }
 
-func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *[]byte, exceptSocketUUID advanced_connection_types.UUID) (err error) {
+type APIMempoolNewTxReply struct {
+	Result bool  `json:"result"`
+	Error  error `json:"error"`
+}
+
+type mempoolNewTxAnswer struct {
+	wait  chan struct{}
+	reply *APIMempoolNewTxReply
+}
+
+func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempoolNewTxReply, exceptSocketUUID advanced_connection_types.UUID) error {
 
 	tx := &transaction.Transaction{}
 	if args.Type == 0 {
-		err = tx.Deserialize(helpers.NewBufferReader(args.Tx))
+		if err := tx.Deserialize(helpers.NewBufferReader(args.Tx)); err != nil {
+			return err
+		}
 	} else if args.Type == 1 { //json
-		err = json.Unmarshal(args.Tx, tx)
-	}
-
-	if err != nil {
-		return
+		if err := json.Unmarshal(args.Tx, tx); err != nil {
+			return err
+		}
 	}
 
 	//it needs to compute  tx.Bloom.HashStr
@@ -37,48 +46,47 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *[]byte, 
 
 	mempoolProcessedThisBlock := api.MempoolProcessedThisBlock.Load().(*sync.Map)
 	processedAlreadyFound, loaded := mempoolProcessedThisBlock.Load(hashStr)
+
 	if loaded {
-		if processedAlreadyFound != nil {
-			return processedAlreadyFound.(error)
-		}
-		*reply = []byte{1}
-		return
+		answer := processedAlreadyFound.(*APIMempoolNewTxReply)
+		*reply = *answer
+		return nil
 	}
 
-	multicastFound, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, multicast.NewMulticastChannel(false))
-	multicast := multicastFound.(*multicast.MulticastChannel)
+	actual, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, &mempoolNewTxAnswer{make(chan struct{}), nil})
+	answer := actual.(*mempoolNewTxAnswer)
 
 	if loaded {
-		if errData := <-multicast.AddListener(); errData != nil {
-			return errData.(error)
-		}
-		*reply = []byte{1}
-		return
+		<-answer.wait
+		*reply = *answer.reply
+		return nil
 	}
 
 	defer func() {
-		mempoolProcessedThisBlock.Store(hashStr, err)
-		api.MempoolDownloadPending.Delete(hashStr)
-		multicast.Broadcast(err)
+		mempoolProcessedThisBlock.Store(hashStr, reply)
+		answer.reply = reply
+		close(answer.wait)
 	}()
 
 	if api.mempool.Txs.Exists(hashStr) {
-		*reply = []byte{1}
-		return
+		(*reply).Result = true
+		return nil
 	}
 
-	if err = tx.BloomAll(); err != nil {
-		return
+	if err := tx.BloomAll(); err != nil {
+		(*reply).Error = err
+		return nil
 	}
-	if err = api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, true, false, exceptSocketUUID); err != nil {
-		return
+	if err := api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, true, false, exceptSocketUUID); err != nil {
+		(*reply).Error = err
+		return nil
 	}
 
-	*reply = []byte{1}
-	return
+	(*reply).Result = true
+	return nil
 }
 
-func (api *APICommon) MempoolNewTx(r *http.Request, args *APIMempoolNewTxRequest, reply *[]byte) error {
+func (api *APICommon) MempoolNewTx(r *http.Request, args *APIMempoolNewTxRequest, reply *APIMempoolNewTxReply) error {
 	return api.mempoolNewTx(args, reply, advanced_connection_types.UUID_ALL)
 }
 
@@ -87,8 +95,8 @@ func (api *APICommon) MempoolNewTx_http(values url.Values) (interface{}, error) 
 	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	reply := []byte{}
-	return reply, api.MempoolNewTx(nil, args, &reply)
+	reply := &APIMempoolNewTxReply{}
+	return reply, api.MempoolNewTx(nil, args, reply)
 }
 
 func (api *APICommon) MempoolNewTx_websockets(conn *connection.AdvancedConnection, values []byte) (out interface{}, err error) {
@@ -96,6 +104,6 @@ func (api *APICommon) MempoolNewTx_websockets(conn *connection.AdvancedConnectio
 	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	reply := []byte{}
-	return reply, api.mempoolNewTx(args, &reply, conn.UUID)
+	reply := &APIMempoolNewTxReply{}
+	return reply, api.mempoolNewTx(args, reply, conn.UUID)
 }
