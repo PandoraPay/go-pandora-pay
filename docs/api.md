@@ -1,9 +1,11 @@
 # PandoraPay API
 
+## Summary of API
+
 There are three types of API in order to interact with PandoraPay DAEMON
 
 1. HTTP
-   1. [ ] authentication :checked:
+   1. [X] authentication
    2. [ ] notifications
 2. HTTP RPC 
    1. [X] authentication
@@ -13,6 +15,8 @@ There are three types of API in order to interact with PandoraPay DAEMON
    1. [X] authentication
    2. [x] wallet
    3. [X] notifications
+
+## List of API 
 
 List of all APIs
 
@@ -58,3 +62,21 @@ List of all APIs
 | delegator-node/ask     | Request                                                                                                                                                                       | ✓ | ✓  | ✓        | Requires                                                          |
 
 TODO: TCP
+
+## Integration to a third party app
+
+The best and the most efficient way is to use the PaymentID attribute
+and require the paymentIDs for each transaction. Instead of having a newly created address for 
+every user or product/good, you should use a new PaymentID. By using this 
+PaymentID, you can distinguish which user paid for which product/good was paid for. Your 
+app should check all transactions, verify that something has 
+really received and based on the paymentID to link and identify the user who paid for or the product/good that was paid for.
+
+# DISCLAIMER:
+This source code is released for research purposes only, with the intent of researching and studying a decentralized p2p network protocol.
+
+PANDORAPAY IS AN OPEN SOURCE COMMUNITY DRIVEN RESEARCH PROJECT. THIS IS RESEARCH CODE PROVIDED TO YOU "AS IS" WITH NO WARRANTIES OF CORRECTNESS. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES. USE AT YOUR OWN RISK.
+
+You may not use this source code for any illegal or unethical purpose; including activities which would give rise to criminal or civil liability.
+
+Under no event shall the Licensor be responsible for the activities, or any misdeeds, conducted by the Licensee.

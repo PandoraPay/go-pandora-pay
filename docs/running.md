@@ -23,3 +23,14 @@ you can also create an account on hcaptcha
         - restart tor `sudo service tor restart`
         - copy your onion address `sudo nano /var/lib/tor/pandora_pay_hidden_service/`
         - use the parameter `--tor-onion="YOUR_ONION_ADDRESS_FROM_ABOVE"`
+
+
+
+# DISCLAIMER:
+This source code is released for research purposes only, with the intent of researching and studying a decentralized p2p network protocol.
+
+PANDORAPAY IS AN OPEN SOURCE COMMUNITY DRIVEN RESEARCH PROJECT. THIS IS RESEARCH CODE PROVIDED TO YOU "AS IS" WITH NO WARRANTIES OF CORRECTNESS. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES. USE AT YOUR OWN RISK.
+
+You may not use this source code for any illegal or unethical purpose; including activities which would give rise to criminal or civil liability.
+
+Under no event shall the Licensor be responsible for the activities, or any misdeeds, conducted by the Licensee.
