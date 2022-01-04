@@ -3,11 +3,6 @@ package websocks
 import (
 	"encoding/json"
 	"pandora-pay/blockchain"
-	"pandora-pay/blockchain/blockchain_types"
-	"pandora-pay/blockchain/data_storage/accounts"
-	"pandora-pay/blockchain/data_storage/assets"
-	"pandora-pay/blockchain/data_storage/plain_accounts"
-	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
@@ -195,12 +190,11 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
-		case data, ok := <-updateAccountsCn:
+		case accsCollection, ok := <-updateAccountsCn:
 			if !ok {
 				return
 			}
 
-			accsCollection := data.(*accounts.AccountsCollection)
 			accsMap := accsCollection.GetAllMaps()
 
 			for _, accs := range accsMap {
@@ -215,12 +209,11 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
-		case data, ok := <-updatePlainAccountsCn:
+		case plainAccs, ok := <-updatePlainAccountsCn:
 			if !ok {
 				return
 			}
 
-			plainAccs := data.(*plain_accounts.PlainAccounts)
 			for k, v := range plainAccs.HashMap.Committed {
 				if list := this.accountsSubscriptions[k]; list != nil {
 
@@ -230,12 +223,11 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
-		case data, ok := <-updateAssetsCn:
+		case asts, ok := <-updateAssetsCn:
 			if !ok {
 				return
 			}
 
-			asts := data.(*assets.Assets)
 			for k, v := range asts.HashMap.Committed {
 				if list := this.assetsSubscriptions[k]; list != nil {
 
@@ -245,12 +237,11 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
-		case data, ok := <-updateRegistrationsCn:
+		case registrations, ok := <-updateRegistrationsCn:
 			if !ok {
 				return
 			}
 
-			registrations := data.(*registrations.Registrations)
 			for k, v := range registrations.HashMap.Committed {
 				if list := this.assetsSubscriptions[k]; list != nil {
 
@@ -260,12 +251,11 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
-		case data, ok := <-updateTransactionsCn:
+		case txsUpdates, ok := <-updateTransactionsCn:
 			if !ok {
 				return
 			}
 
-			txsUpdates := data.([]*blockchain_types.BlockchainTransactionUpdate)
 			for _, v := range txsUpdates {
 				for _, key := range v.Keys {
 					if list := this.accountsTransactionsSubscriptions[string(key.PublicKey)]; list != nil {
@@ -286,12 +276,10 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
-		case data, ok := <-updateMempoolTransactionsCn:
+		case txUpdate, ok := <-updateMempoolTransactionsCn:
 			if !ok {
 				return
 			}
-
-			txUpdate := data.(*blockchain_types.MempoolTransactionUpdate)
 
 			if !txUpdate.BlockchainNotification {
 				for key := range txUpdate.Keys {

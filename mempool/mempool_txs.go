@@ -22,9 +22,9 @@ type MempoolAccountTxs struct {
 
 type MempoolTxs struct {
 	count                     int32
-	txsMap                    *sync.Map                   //[string]*mempoolTx
-	accountsMapTxs            *sync.Map                   //[string]*MempoolAccountTxs
-	UpdateMempoolTransactions *multicast.MulticastChannel //*MempoolTransactionUpdate
+	txsMap                    *sync.Map //[string]*mempoolTx
+	accountsMapTxs            *sync.Map //[string]*MempoolAccountTxs
+	UpdateMempoolTransactions *multicast.MulticastChannel[*blockchain_types.MempoolTransactionUpdate]
 }
 
 func (self *MempoolTxs) insertTx(tx *mempoolTx) bool {
@@ -169,7 +169,7 @@ func createMempoolTxs() (txs *MempoolTxs) {
 		0,
 		&sync.Map{},
 		&sync.Map{},
-		multicast.NewMulticastChannel(),
+		multicast.NewMulticastChannel[*blockchain_types.MempoolTransactionUpdate](),
 	}
 
 	//printing from time to time the mempool

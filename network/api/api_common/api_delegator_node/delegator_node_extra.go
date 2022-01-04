@@ -3,7 +3,6 @@ package api_delegator_node
 import (
 	"bytes"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/recovery"
@@ -19,12 +18,12 @@ func (api *DelegatorNode) execute() {
 		defer api.chain.UpdateNewChain.RemoveChannel(updateNewChainUpdateListener)
 
 		for {
-			data, ok := <-updateNewChainUpdateListener
+
+			chainHeight, ok := <-updateNewChainUpdateListener
 			if !ok {
 				return
 			}
 
-			chainHeight := data.(uint64)
 			atomic.StoreUint64(&api.chainHeight, chainHeight)
 		}
 	})
@@ -67,12 +66,10 @@ func (api *DelegatorNode) updateAccountsChanges() {
 
 		for {
 
-			plainAccsData, ok := <-updatePlainAccountsCn
+			plainAccs, ok := <-updatePlainAccountsCn
 			if !ok {
 				return
 			}
-
-			plainAccs := plainAccsData.(*plain_accounts.PlainAccounts)
 
 			for k, v := range plainAccs.HashMap.Committed {
 				data, loaded := api.pendingDelegatesStakesChanges.Load(k)

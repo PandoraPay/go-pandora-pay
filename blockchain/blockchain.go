@@ -12,7 +12,10 @@ import (
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/assets"
+	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
@@ -42,14 +45,14 @@ type Blockchain struct {
 	mutex                    *sync.Mutex //writing mutex
 	updatesQueue             *BlockchainUpdatesQueue
 	ForgingSolutionCn        chan *block_complete.BlockComplete
-	UpdateNewChain           *multicast.MulticastChannel          //uint64
-	UpdateNewChainDataUpdate *multicast.MulticastChannel          //*BlockchainDataUpdate
-	UpdateAccounts           *multicast.MulticastChannel          //*accounts
-	UpdatePlainAccounts      *multicast.MulticastChannel          //*plainAccounts
-	UpdateAssets             *multicast.MulticastChannel          //*assets
-	UpdateRegistrations      *multicast.MulticastChannel          //*registrations
-	UpdateTransactions       *multicast.MulticastChannel          //[]*blockchain_types.BlockchainTransactionUpdate
-	NextBlockCreatedCn       chan *forging_block_work.ForgingWork //
+	UpdateNewChain           *multicast.MulticastChannel[uint64]
+	UpdateNewChainDataUpdate *multicast.MulticastChannel[*BlockchainDataUpdate]
+	UpdateAccounts           *multicast.MulticastChannel[*accounts.AccountsCollection]
+	UpdatePlainAccounts      *multicast.MulticastChannel[*plain_accounts.PlainAccounts]
+	UpdateAssets             *multicast.MulticastChannel[*assets.Assets]
+	UpdateRegistrations      *multicast.MulticastChannel[*registrations.Registrations]
+	UpdateTransactions       *multicast.MulticastChannel[[]*blockchain_types.BlockchainTransactionUpdate]
+	NextBlockCreatedCn       chan *forging_block_work.ForgingWork
 }
 
 func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockComplete) (err error) {
@@ -472,13 +475,13 @@ func CreateBlockchain(mempool *mempool.Mempool) (*Blockchain, error) {
 		updatesQueue:             createBlockchainUpdatesQueue(),
 		Sync:                     blockchain_sync.CreateBlockchainSync(),
 		ForgingSolutionCn:        make(chan *block_complete.BlockComplete),
-		UpdateNewChain:           multicast.NewMulticastChannel(),
-		UpdateNewChainDataUpdate: multicast.NewMulticastChannel(),
-		UpdateAccounts:           multicast.NewMulticastChannel(),
-		UpdatePlainAccounts:      multicast.NewMulticastChannel(),
-		UpdateAssets:             multicast.NewMulticastChannel(),
-		UpdateRegistrations:      multicast.NewMulticastChannel(),
-		UpdateTransactions:       multicast.NewMulticastChannel(),
+		UpdateNewChain:           multicast.NewMulticastChannel[uint64](),
+		UpdateNewChainDataUpdate: multicast.NewMulticastChannel[*BlockchainDataUpdate](),
+		UpdateAccounts:           multicast.NewMulticastChannel[*accounts.AccountsCollection](),
+		UpdatePlainAccounts:      multicast.NewMulticastChannel[*plain_accounts.PlainAccounts](),
+		UpdateAssets:             multicast.NewMulticastChannel[*assets.Assets](),
+		UpdateRegistrations:      multicast.NewMulticastChannel[*registrations.Registrations](),
+		UpdateTransactions:       multicast.NewMulticastChannel[[]*blockchain_types.BlockchainTransactionUpdate](),
 		NextBlockCreatedCn:       make(chan *forging_block_work.ForgingWork),
 	}
 

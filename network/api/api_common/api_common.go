@@ -97,12 +97,11 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 		defer api.chain.UpdateNewChainDataUpdate.RemoveChannel(updateNewChainDataUpdateListener)
 
 		for {
-			newChainDataUpdateReceived, ok := <-updateNewChainDataUpdateListener
+			newChainDataUpdate, ok := <-updateNewChainDataUpdateListener
 			if !ok {
 				return
 			}
 
-			newChainDataUpdate := newChainDataUpdateReceived.(*blockchain.BlockchainDataUpdate)
 			//it is safe to read
 			api.readLocalBlockchain(newChainDataUpdate)
 
@@ -114,12 +113,11 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 		defer api.chain.Sync.UpdateSyncMulticast.RemoveChannel(updateNewSync)
 
 		for {
-			newSyncDataReceived, ok := <-updateNewSync
+			newSyncData, ok := <-updateNewSync
 			if !ok {
 				return
 			}
 
-			newSyncData := newSyncDataReceived.(*blockchain_sync.BlockchainSyncData)
 			api.readLocalBlockchainSync(newSyncData)
 		}
 	})

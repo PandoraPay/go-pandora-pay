@@ -16,7 +16,7 @@ import (
 func main() {
 
 	var err error
-	globals.MainEvents = events.NewEvents()
+	globals.MainEvents = events.NewEvents[any]()
 
 	config.StartConfig()
 

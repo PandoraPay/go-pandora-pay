@@ -4,18 +4,18 @@ import (
 	"pandora-pay/helpers/multicast"
 )
 
-type EventData struct {
+type EventData[T any] struct {
 	Name string
-	Data interface{}
+	Data T
 }
 
-type Events struct {
-	multicast.MulticastChannel
+type Events[T any] struct {
+	*multicast.MulticastChannel[*EventData[T]]
 }
 
-func (self *Events) BroadcastEventAwait(name string, data interface{}) {
+func (self *Events[T]) BroadcastEventAwait(name string, data T) {
 
-	finalData := &EventData{
+	finalData := &EventData[T]{
 		Name: name,
 		Data: data,
 	}
@@ -23,9 +23,9 @@ func (self *Events) BroadcastEventAwait(name string, data interface{}) {
 	self.Broadcast(finalData)
 }
 
-func (self *Events) BroadcastEvent(name string, data interface{}) {
+func (self *Events[T]) BroadcastEvent(name string, data T) {
 
-	finalData := &EventData{
+	finalData := &EventData[T]{
 		Name: name,
 		Data: data,
 	}
@@ -33,10 +33,10 @@ func (self *Events) BroadcastEvent(name string, data interface{}) {
 	self.Broadcast(finalData)
 }
 
-func NewEvents() *Events {
+func NewEvents[T any]() *Events[T] {
 
-	events := &Events{
-		*multicast.NewMulticastChannel(),
+	events := &Events[T]{
+		multicast.NewMulticastChannel[*EventData[T]](),
 	}
 
 	return events

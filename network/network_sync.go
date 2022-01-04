@@ -4,7 +4,6 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/network/websocks"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/recovery"
 	"time"
 )
@@ -130,11 +129,10 @@ func (network *Network) syncBlockchainNewConnections() {
 
 		for {
 
-			data, ok := <-cn
+			conn, ok := <-cn
 			if !ok {
 				return
 			}
-			conn := data.(*connection.AdvancedConnection)
 
 			//making it async
 			recovery.SafeGo(func() {

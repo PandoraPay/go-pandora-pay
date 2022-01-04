@@ -6,6 +6,7 @@ import (
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_common"
+	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/api/api_websockets/consensus"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/settings"
@@ -19,7 +20,7 @@ type APIWebsockets struct {
 	settings                  *settings.Settings
 	apiCommon                 *api_common.APICommon
 	apiStore                  *api_common.APIStore
-	SubscriptionNotifications *multicast.MulticastChannel //*api_common.APISubscriptionNotification
+	SubscriptionNotifications *multicast.MulticastChannel[*api_types.APISubscriptionNotification]
 }
 
 func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
@@ -32,7 +33,7 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		settings,
 		apiCommon,
 		apiStore,
-		multicast.NewMulticastChannel(),
+		multicast.NewMulticastChannel[*api_types.APISubscriptionNotification](),
 	}
 
 	api.GetMap = map[string]func(conn *connection.AdvancedConnection, values []byte) (interface{}, error){

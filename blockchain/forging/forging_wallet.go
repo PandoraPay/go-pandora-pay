@@ -20,7 +20,7 @@ type ForgingWallet struct {
 	addressesMap          map[string]*ForgingWalletAddress
 	workersAddresses      []int
 	workers               []*ForgingWorkerThread
-	updatePlainAccounts   *multicast.MulticastChannel
+	updatePlainAccounts   *multicast.MulticastChannel[*plain_accounts.PlainAccounts]
 	updateWalletAddressCn chan *ForgingWalletAddressUpdate
 	workersCreatedCn      <-chan []*ForgingWorkerThread
 	workersDestroyedCn    <-chan struct{}
@@ -219,12 +219,10 @@ func (w *ForgingWallet) processUpdates() {
 				}
 
 			}
-		case plainAccountData, ok := <-updatePlainAccountsCn:
+		case plainAccounts, ok := <-updatePlainAccountsCn:
 			if !ok {
 				return
 			}
-
-			plainAccounts := plainAccountData.(*plain_accounts.PlainAccounts)
 
 			for k, v := range plainAccounts.HashMap.Committed {
 				if w.addressesMap[k] != nil {

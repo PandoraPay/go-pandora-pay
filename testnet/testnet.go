@@ -187,7 +187,7 @@ func (testnet *Testnet) run() {
 
 	for {
 
-		blockHeightReceived, ok := <-updateChannel
+		blockHeight, ok := <-updateChannel
 		if !ok {
 			return
 		}
@@ -198,7 +198,6 @@ func (testnet *Testnet) run() {
 		ctx, cancel := context.WithCancel(context.Background())
 		oldCancel = cancel
 
-		blockHeight := blockHeightReceived.(uint64)
 		syncTime := testnet.chain.Sync.GetSyncTime()
 
 		recovery.SafeGo(func() {

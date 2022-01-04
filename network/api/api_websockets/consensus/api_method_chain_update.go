@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers/linked_list"
 	"pandora-pay/network/websocks/connection"
@@ -47,7 +48,7 @@ func (consensus *Consensus) ChainUpdate_websockets(conn *connection.AdvancedConn
 			PrevHash:           chainUpdateNotification.PrevHash,
 			BigTotalDifficulty: chainUpdateNotification.BigTotalDifficulty,
 			Initialized:        false,
-			Blocks:             linked_list.NewLinkedList(),
+			Blocks:             linked_list.NewLinkedList[*block_complete.BlockComplete](),
 			conns:              []*connection.AdvancedConnection{conn},
 		}
 

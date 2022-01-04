@@ -78,12 +78,10 @@ func (websockets *Websockets) initializeConsensus(chain *blockchain.Blockchain, 
 		var cancelOld context.CancelFunc
 
 		for {
-			newChainDataUpdateReceived, ok := <-updateNewChainUpdateListener
+			newChainDataUpdate, ok := <-updateNewChainUpdateListener
 			if !ok {
 				return
 			}
-
-			newChainDataUpdate := newChainDataUpdateReceived.(*blockchain.BlockchainDataUpdate)
 
 			if cancelOld != nil { //let's cancel the previous one
 				cancelOld()

@@ -1,6 +1,8 @@
 package wallet
 
 import (
+	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
@@ -24,12 +26,12 @@ type Wallet struct {
 	addressesMap        map[string]*wallet_address.WalletAddress
 	forging             *forging.Forging
 	mempool             *mempool.Mempool
-	updateAccounts      *multicast.MulticastChannel
-	updatePlainAccounts *multicast.MulticastChannel
+	updateAccounts      *multicast.MulticastChannel[*accounts.AccountsCollection]
+	updatePlainAccounts *multicast.MulticastChannel[*plain_accounts.PlainAccounts]
 	sync.RWMutex        `json:"-"`
 }
 
-func createWallet(forging *forging.Forging, mempool *mempool.Mempool, updateAccounts *multicast.MulticastChannel, updatePlainAccounts *multicast.MulticastChannel) (wallet *Wallet) {
+func createWallet(forging *forging.Forging, mempool *mempool.Mempool, updateAccounts *multicast.MulticastChannel[*accounts.AccountsCollection], updatePlainAccounts *multicast.MulticastChannel[*plain_accounts.PlainAccounts]) (wallet *Wallet) {
 	wallet = &Wallet{
 		forging:             forging,
 		mempool:             mempool,
@@ -79,7 +81,7 @@ func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool) (*Wallet, 
 	return wallet, nil
 }
 
-func (wallet *Wallet) InitializeWallet(updateAccounts *multicast.MulticastChannel, updatePlainAccounts *multicast.MulticastChannel) {
+func (wallet *Wallet) InitializeWallet(updateAccounts *multicast.MulticastChannel[*accounts.AccountsCollection], updatePlainAccounts *multicast.MulticastChannel[*plain_accounts.PlainAccounts]) {
 	wallet.Lock()
 	wallet.updateAccounts = updateAccounts
 	wallet.updatePlainAccounts = updatePlainAccounts

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math/big"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/blockchain_sync"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
@@ -287,13 +286,12 @@ func (chain *Blockchain) InitForging() {
 
 		for {
 
-			newSyncDataReceived, ok := <-updateNewSyncCn
+			newSync, ok := <-updateNewSyncCn
 			if !ok {
 				break
 			}
 
-			newSyncData := newSyncDataReceived.(*blockchain_sync.BlockchainSyncData)
-			if newSyncData.Sync {
+			if newSync.Sync {
 				chain.createNextBlockForForging(chain.GetChainData(), true)
 			}
 

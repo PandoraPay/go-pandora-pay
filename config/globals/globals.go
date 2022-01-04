@@ -6,6 +6,6 @@ import "pandora-pay/helpers/events"
 var (
 	Arguments   map[string]interface{}
 	Data        = map[string]interface{}{}
-	MainEvents  = events.NewEvents()
+	MainEvents  = events.NewEvents[any]()
 	MainStarted = false
 )

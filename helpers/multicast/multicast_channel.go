@@ -6,36 +6,37 @@ import (
 	"sync/atomic"
 )
 
-type MulticastChannel struct {
+type MulticastChannel[T any] struct {
 	listeners           *atomic.Value //[]chan interface{}
-	queueBroadcastCn    chan interface{}
-	internalBroadcastCn chan interface{}
+	queueBroadcastCn    chan T
+	internalBroadcastCn chan T
 	count               int
 	lock                *sync.Mutex
 }
 
-func (self *MulticastChannel) AddListener() <-chan interface{} {
+func (self *MulticastChannel[T]) AddListener() <-chan T {
+
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	listeners := self.listeners.Load().([]chan interface{})
-	newChan := make(chan interface{})
+	listeners := self.listeners.Load().([]chan T)
+	newChan := make(chan T)
 
 	self.listeners.Store(append(listeners, newChan))
 	return newChan
 
 }
 
-func (self *MulticastChannel) Broadcast(data interface{}) {
+func (self *MulticastChannel[T]) Broadcast(data T) {
 	self.queueBroadcastCn <- data
 }
 
-func (self *MulticastChannel) RemoveChannel(channel <-chan interface{}) bool {
+func (self *MulticastChannel[T]) RemoveChannel(channel <-chan T) bool {
 
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	listeners := self.listeners.Load().([]chan interface{})
+	listeners := self.listeners.Load().([]chan T)
 	for i, cn := range listeners {
 		if cn == channel {
 			close(cn)
@@ -48,25 +49,26 @@ func (self *MulticastChannel) RemoveChannel(channel <-chan interface{}) bool {
 	return false
 }
 
-func (self *MulticastChannel) CloseAll() {
+func (self *MulticastChannel[T]) CloseAll() {
+
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	listeners := self.listeners.Load().([]chan interface{})
+	listeners := self.listeners.Load().([]chan T)
 	for _, channel := range listeners {
 		close(channel)
 	}
-	self.listeners.Store(make([]chan<- interface{}, 0))
+	self.listeners.Store(make([]chan<- T, 0))
 
 	close(self.internalBroadcastCn)
 }
 
-func (self *MulticastChannel) runQueueBroadcast() {
+func (self *MulticastChannel[T]) runQueueBroadcast() {
 
-	linkedList := linked_list.NewLinkedList()
+	linkedList := linked_list.NewLinkedList[T]()
 
 	for {
-		if first := linkedList.GetFirst(); first != nil {
+		if first, ok := linkedList.GetFirst(); ok {
 			select {
 			case data, ok := <-self.queueBroadcastCn:
 				if !ok {
@@ -89,7 +91,7 @@ func (self *MulticastChannel) runQueueBroadcast() {
 
 }
 
-func (self *MulticastChannel) runInternalBroadcast() {
+func (self *MulticastChannel[T]) runInternalBroadcast() {
 
 	for {
 		data, ok := <-self.internalBroadcastCn
@@ -97,24 +99,25 @@ func (self *MulticastChannel) runInternalBroadcast() {
 			return
 		}
 
-		listeners := self.listeners.Load().([]chan interface{})
+		listeners := self.listeners.Load().([]chan T)
 		for _, channel := range listeners {
 			channel <- data
 		}
 	}
 }
 
-func NewMulticastChannel() *MulticastChannel {
+func NewMulticastChannel[T any]() *MulticastChannel[T] {
 
-	multicast := &MulticastChannel{
+	multicast := &MulticastChannel[T]{
 		&atomic.Value{}, //[]chan interface{}
-		make(chan interface{}),
-		make(chan interface{}),
+		make(chan T),
+		make(chan T),
 		0,
 		&sync.Mutex{},
 	}
 
-	multicast.listeners.Store(make([]chan interface{}, 0))
+	multicast.listeners.Store(make([]chan T, 0))
+
 	go multicast.runInternalBroadcast()
 	go multicast.runQueueBroadcast()
 

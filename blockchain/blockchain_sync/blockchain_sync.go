@@ -16,8 +16,8 @@ type BlockchainSyncData struct {
 }
 
 type BlockchainSync struct {
-	syncData            *atomic.Value               //*BlockchainSyncData
-	UpdateSyncMulticast *multicast.MulticastChannel `json:"-"` //chan *BlockchainSyncData
+	syncData            *atomic.Value                                    //*BlockchainSyncData
+	UpdateSyncMulticast *multicast.MulticastChannel[*BlockchainSyncData] `json:"-"`
 	updateCn            chan *BlockchainSyncData
 }
 
@@ -111,7 +111,7 @@ func CreateBlockchainSync() (out *BlockchainSync) {
 
 	out = &BlockchainSync{
 		syncData:            &atomic.Value{},
-		UpdateSyncMulticast: multicast.NewMulticastChannel(),
+		UpdateSyncMulticast: multicast.NewMulticastChannel[*BlockchainSyncData](),
 		updateCn:            make(chan *BlockchainSyncData),
 	}
 	out.syncData.Store(&BlockchainSyncData{})

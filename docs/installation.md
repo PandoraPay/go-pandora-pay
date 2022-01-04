@@ -1,8 +1,7 @@
 ## Installing
 
-Go 1.18 will be required once released as go-pandora-pay will use generics.
+Go **1.18** is required as go-pandora-pay uses generics.
 
-Tested with 1.17 and 1.16
 
 1. Install golang https://golang.org/doc/install
    1. For Linux

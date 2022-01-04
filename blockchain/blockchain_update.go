@@ -36,13 +36,13 @@ type BlockchainUpdate struct {
 }
 
 type BlockchainUpdatesQueue struct {
-	updates *multicast.MulticastChannel //*BlockchainUpdate //buffered
+	updates *multicast.MulticastChannel[*BlockchainUpdate] //buffered
 	chain   *Blockchain
 }
 
 func createBlockchainUpdatesQueue() *BlockchainUpdatesQueue {
 	return &BlockchainUpdatesQueue{
-		updates: multicast.NewMulticastChannel(),
+		updates: multicast.NewMulticastChannel[*BlockchainUpdate](),
 	}
 }
 
@@ -138,12 +138,10 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 
 		for {
 
-			data, ok := <-listener
+			update, ok := <-listener
 			if !ok {
 				return
 			}
-
-			update := data.(*BlockchainUpdate)
 
 			if update.err == nil {
 				if err := queue.processUpdate(update); err != nil {

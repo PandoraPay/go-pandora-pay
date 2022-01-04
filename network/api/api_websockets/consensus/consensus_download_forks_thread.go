@@ -267,7 +267,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 						it := fork.Blocks.First
 						i := 0
 						for it != nil {
-							blocks[i] = it.Data.(*block_complete.BlockComplete)
+							blocks[i] = it.Data
 							i += 1
 							it = it.Next
 						}

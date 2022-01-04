@@ -34,7 +34,7 @@ type Websockets struct {
 	clients                      int64 //use atomic
 	serverSockets                int64 //use atomic
 	totalSockets                 int64 //use atomic
-	UpdateNewConnectionMulticast *multicast.MulticastChannel
+	UpdateNewConnectionMulticast *multicast.MulticastChannel[*connection.AdvancedConnection]
 	bannedNodes                  *banned_nodes.BannedNodes
 	subscriptions                *WebsocketSubscriptions
 	api                          *api_http.API
@@ -263,7 +263,7 @@ func NewWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, setti
 		serverSockets:                0,
 		allList:                      &atomic.Value{}, //[]*connection.AdvancedConnection
 		allListMutex:                 &sync.Mutex{},
-		UpdateNewConnectionMulticast: multicast.NewMulticastChannel(),
+		UpdateNewConnectionMulticast: multicast.NewMulticastChannel[*connection.AdvancedConnection](),
 		api:                          api,
 		ApiWebsockets:                apiWebsockets,
 		settings:                     settings,

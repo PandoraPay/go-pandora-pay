@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/recovery"
 )
@@ -53,12 +52,10 @@ func (wallet *Wallet) updateAccountsChanges() {
 		defer wallet.updatePlainAccounts.RemoveChannel(updatePlainAccountsCn)
 
 		for {
-			plainAccsData, ok := <-updatePlainAccountsCn
+			plainAccs, ok := <-updatePlainAccountsCn
 			if !ok {
 				return
 			}
-
-			plainAccs := plainAccsData.(*plain_accounts.PlainAccounts)
 
 			wallet.Lock()
 			for k, v := range plainAccs.HashMap.Committed {
