@@ -19,7 +19,7 @@ func (pk *PrivateKey) GeneratePublicKey() []byte {
 	return publicKey.EncodeCompressed()
 }
 
-func (pk *PrivateKey) GenerateAddress(registration bool, amount uint64, paymentID []byte) (*Address, error) {
+func (pk *PrivateKey) GenerateAddress(registration bool, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	publicKey := pk.GeneratePublicKey()
 
 	var reg []byte
@@ -30,7 +30,7 @@ func (pk *PrivateKey) GenerateAddress(registration bool, amount uint64, paymentI
 		}
 	}
 
-	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY, publicKey, reg, amount, paymentID)
+	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY, publicKey, reg, paymentID, paymentAmount, paymentAsset)
 }
 
 func (pk *PrivateKey) GetRegistration() ([]byte, error) {

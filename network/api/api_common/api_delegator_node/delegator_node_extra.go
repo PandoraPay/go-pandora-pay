@@ -88,7 +88,7 @@ func (api *DelegatorNode) updateAccountsChanges() {
 								continue
 							}
 
-							addr, err := addresses.CreateAddr(pendingDelegatingStakeChange.publicKey, nil, 0, nil)
+							addr, err := addresses.CreateAddr(pendingDelegatingStakeChange.publicKey, nil, nil, 0, nil)
 							if err != nil {
 								continue
 							}

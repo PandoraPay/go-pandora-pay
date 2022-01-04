@@ -54,7 +54,7 @@ func (api *APICommon) AccountsKeysByIndex(r *http.Request, args *APIAccountsKeys
 		reply.Addresses = make([]string, len(reply.PublicKeys))
 		for i, publicKey := range reply.PublicKeys {
 			var addr *addresses.Address
-			if addr, err = addresses.CreateAddr(publicKey, nil, 0, nil); err != nil {
+			if addr, err = addresses.CreateAddr(publicKey, nil, nil, 0, nil); err != nil {
 				return
 			}
 			reply.Addresses[i] = addr.EncodeAddr()

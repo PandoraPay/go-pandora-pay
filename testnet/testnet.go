@@ -17,7 +17,6 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
 	"pandora-pay/store"
@@ -150,7 +149,7 @@ func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int, ctx co
 
 	privateKey := addresses.GenerateNewPrivateKey()
 
-	addr, err := privateKey.GenerateAddress(true, 0, helpers.EmptyBytes(0))
+	addr, err := privateKey.GenerateAddress(true, nil, 0, nil)
 	if err != nil {
 		return
 	}

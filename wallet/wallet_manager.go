@@ -167,7 +167,7 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 		return errors.New("DELEGATES_MAXIMUM exceeded")
 	}
 
-	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, adr.PublicKey, nil, 0, nil)
+	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, adr.PublicKey, nil, nil, 0, nil)
 	if err != nil {
 		return
 	}
@@ -207,11 +207,11 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 	}
 
 	var addr1, addr2 *addresses.Address
-	if addr1, err = adr.PrivateKey.GenerateAddress(false, 0, []byte{}); err != nil {
+	if addr1, err = adr.PrivateKey.GenerateAddress(false, nil, 0, nil); err != nil {
 		return
 	}
 
-	if addr2, err = adr.PrivateKey.GenerateAddress(true, 0, []byte{}); err != nil {
+	if addr2, err = adr.PrivateKey.GenerateAddress(true, nil, 0, nil); err != nil {
 		return
 	}
 

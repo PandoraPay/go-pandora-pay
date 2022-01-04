@@ -36,7 +36,7 @@ func (builder *TransactionsBuilder) getRandomAccount(accs *accounts.Accounts) (a
 		return nil, errors.New("Error getting any random account")
 	}
 
-	if addr, err = addresses.CreateAddr(acc.PublicKey, nil, 0, nil); err != nil {
+	if addr, err = addresses.CreateAddr(acc.PublicKey, nil, nil, 0, nil); err != nil {
 		return nil, err
 	}
 
@@ -100,7 +100,7 @@ func (builder *TransactionsBuilder) createZetherRing(from string, dst *string, a
 
 		if i < ringConfiguration.NewAccounts || accs.Count-2+uint64(ringConfiguration.NewAccounts) <= uint64(i) {
 			priv := addresses.GenerateNewPrivateKey()
-			if addr, err = priv.GenerateAddress(true, 0, nil); err != nil {
+			if addr, err = priv.GenerateAddress(true, nil, 0, nil); err != nil {
 				return nil, err
 			}
 		} else {
@@ -133,7 +133,7 @@ func (builder *TransactionsBuilder) prebuild(extraPayloads []wizard.WizardZether
 		if from[t] == "" {
 
 			fromPrivateKeys[t] = addresses.GenerateNewPrivateKey()
-			addr, err := fromPrivateKeys[t].GenerateAddress(true, 0, nil)
+			addr, err := fromPrivateKeys[t].GenerateAddress(true, nil, 0, nil)
 			if err != nil {
 				return nil, nil, nil, nil, 0, nil, err
 			}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
@@ -11,22 +12,23 @@ import (
 )
 
 type Address struct {
-	Network      uint64           `json:"network"`
-	Version      AddressVersion   `json:"version"`
-	PublicKey    helpers.HexBytes `json:"publicKey"`
-	Registration helpers.HexBytes `json:"registration"`
-	Amount       uint64           `json:"amount"`    // amount to be paid
-	PaymentID    helpers.HexBytes `json:"paymentId"` // payment id
+	Network       uint64           `json:"network"`
+	Version       AddressVersion   `json:"version"`
+	PublicKey     helpers.HexBytes `json:"publicKey"`
+	Registration  helpers.HexBytes `json:"registration"`
+	PaymentID     helpers.HexBytes `json:"paymentId"`     // payment id
+	PaymentAmount uint64           `json:"paymentAmount"` // amount to be paid
+	PaymentAsset  helpers.HexBytes `json:"paymentAsset"`
 }
 
-func NewAddr(network uint64, version AddressVersion, publicKey []byte, registration []byte, amount uint64, paymentID []byte) (*Address, error) {
+func NewAddr(network uint64, version AddressVersion, publicKey []byte, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	if len(paymentID) != 8 && len(paymentID) != 0 {
 		return nil, errors.New("Invalid PaymentId. It must be an 8 byte")
 	}
-	return &Address{network, version, publicKey, registration, amount, paymentID}, nil
+	return &Address{network, version, publicKey, registration, paymentID, paymentAmount, paymentAsset}, nil
 }
 
-func CreateAddr(key, registration []byte, amount uint64, paymentID []byte) (*Address, error) {
+func CreateAddr(key, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 
 	var publicKey []byte
 
@@ -39,7 +41,7 @@ func CreateAddr(key, registration []byte, amount uint64, paymentID []byte) (*Add
 		return nil, errors.New("Invalid Key length")
 	}
 
-	return NewAddr(config.NETWORK_SELECTED, version, publicKey, registration, amount, paymentID)
+	return NewAddr(config.NETWORK_SELECTED, version, publicKey, registration, paymentID, paymentAmount, paymentAsset)
 }
 
 func (a *Address) EncodeAddr() string {
@@ -77,7 +79,10 @@ func (a *Address) EncodeAddr() string {
 		writer.Write(a.PaymentID)
 	}
 	if a.IsIntegratedAmount() {
-		writer.WriteUvarint(a.Amount)
+		writer.WriteUvarint(a.PaymentAmount)
+	}
+	if a.IsIntegratedPaymentAsset() {
+		writer.Write(a.PaymentID)
 	}
 
 	buffer := writer.Bytes()
@@ -159,7 +164,12 @@ func DecodeAddr(input string) (*Address, error) {
 		}
 	}
 	if integrationByte&(1<<2) != 0 {
-		if adr.Amount, err = reader.ReadUvarint(); err != nil {
+		if adr.PaymentAmount, err = reader.ReadUvarint(); err != nil {
+			return nil, err
+		}
+	}
+	if integrationByte&(1<<3) != 0 {
+		if adr.PaymentAsset, err = reader.ReadBytes(config_coins.ASSET_LENGTH); err != nil {
 			return nil, err
 		}
 	}
@@ -179,26 +189,35 @@ func (a *Address) IntegrationByte() (out byte) {
 		out |= 1 << 1
 	}
 
-	if a.Amount > 0 {
+	if a.PaymentAmount > 0 {
 		out |= 1 << 2
+	}
+
+	if len(a.PaymentAsset) > 0 {
+		out |= 1 << 3
 	}
 
 	return
 }
 
-// tells whether address contains a paymentId
+// if address contains a paymentId
 func (a *Address) IsIntegratedRegistration() bool {
 	return len(a.Registration) > 0
 }
 
-// tells whether address contains a paymentId
+// if address contains amount
+func (a *Address) IsIntegratedAmount() bool {
+	return a.PaymentAmount > 0
+}
+
+// if address contains a paymentId
 func (a *Address) IsIntegratedPaymentID() bool {
 	return len(a.PaymentID) > 0
 }
 
-// tells whether address contains amount
-func (a *Address) IsIntegratedAmount() bool {
-	return a.Amount > 0
+// if address contains a PaymentAsset
+func (a *Address) IsIntegratedPaymentAsset() bool {
+	return len(a.PaymentAsset) > 0
 }
 
 func (a *Address) EncryptMessage(message []byte) ([]byte, error) {

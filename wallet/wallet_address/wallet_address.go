@@ -76,7 +76,7 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDele
 	finalKey := cryptography.SHA3(key.Key)
 	privateKey := &addresses.PrivateKey{Key: finalKey}
 
-	address, err := privateKey.GenerateAddress(false, 0, []byte{})
+	address, err := privateKey.GenerateAddress(false, nil, 0, nil)
 	if err != nil {
 		return nil, err
 	}
