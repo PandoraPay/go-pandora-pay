@@ -22,10 +22,6 @@ type APIWebsockets struct {
 	SubscriptionNotifications *multicast.MulticastChannel //*api_common.APISubscriptionNotification
 }
 
-func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	return &connection.ConnectionHandshake{config.NAME, config.VERSION, config.NETWORK_SELECTED, config.CONSENSUS, config.NETWORK_ADDRESS_URL_STRING}, nil
-}
-
 func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
 
 	api := &APIWebsockets{
@@ -66,6 +62,8 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		"mempool/new-tx-id": api.apiCommon.MempoolNewTxId_websockets,
 		"chain-get":         api.Consensus.ChainGet_websockets,
 		"chain-update":      api.Consensus.ChainUpdate_websockets,
+		"login":             api.GetLogin_websockets,
+		"logout":            api.GetLogout_websockets,
 	}
 
 	api.GetMap["sub"] = api.subscribe

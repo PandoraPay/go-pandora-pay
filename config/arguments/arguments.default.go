@@ -8,7 +8,7 @@ package arguments
 const commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--debugging] [--network=network] [--debug] [--staking] [--new-devnet] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tor-onion=onion] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-derive-delegated-stake=args] [--hcaptcha-site-key=args] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegates-allowed-enabled=args] [--delegates-maximum=args] [--delegator-fee=args] [--delegator-reward-collector-pub-key=args] [--exit]
+  pandorapay [--debugging] [--network=network] [--debug] [--staking] [--new-devnet] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tor-onion=onion] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-derive-delegated-stake=args] [--hcaptcha-site-key=args] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegates-allowed-enabled=args] [--delegates-maximum=args] [--delegator-fee=args] [--delegator-reward-collector-pub-key=args] [--auth-users=args] [--exit]
   pandorapay -h | --help
   pandorapay -v | --version
 
@@ -44,5 +44,6 @@ Options:
   --delegates-maximum=args                           Maximum number of Delegates
   --delegator-fee=args                               Fee required for Delegates
   --delegator-reward-collector-pub-key=args          Delegator Reward Collector Address
+  --auth-users=args                                  Credential for Authenticated Users. Arguments must be a JSON [{'user': 'username', 'pass': 'secret'}].
   --exit                                             Exit node.
 `

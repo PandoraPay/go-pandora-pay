@@ -1,8 +1,13 @@
 package config_nodes
 
 import (
+	"errors"
 	"math"
 	"pandora-pay/config/config_stake"
+	"pandora-pay/config/globals"
+	"pandora-pay/cryptography"
+	"pandora-pay/helpers"
+	"strconv"
 )
 
 type DelegateNode struct {
@@ -62,3 +67,32 @@ var (
 	DELEGATOR_FEE                         = uint64(math.Floor(0.00 * float64(config_stake.DELEGATING_STAKING_FEE_MAX_VALUE))) // max DELEGATING_STAKING_FEE_MAX_VALUE
 	DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY = []byte{}
 )
+
+func InitConfig() (err error) {
+
+	if globals.Arguments["--delegates-maximum"] != nil {
+		if DELEGATES_MAXIMUM, err = strconv.Atoi(globals.Arguments["--delegates-maximum"].(string)); err != nil {
+			return
+		}
+	}
+
+	if globals.Arguments["--delegator-fee"] != nil {
+		if DELEGATOR_FEE, err = strconv.ParseUint(globals.Arguments["--delegator-fee"].(string), 10, 64); err != nil {
+			return
+		}
+	}
+
+	if globals.Arguments["--delegator-reward-collector-pub-key"] != nil {
+		DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY = helpers.DecodeHex(globals.Arguments["--delegator-reward-collector-pub-key"].(string))
+	}
+
+	if globals.Arguments["--delegates-allowed-enabled"] == "true" {
+		DELEGATES_ALLOWED_ENABLED = true
+
+		if DELEGATOR_FEE > 0 && len(DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY) != cryptography.PublicKeySize {
+			return errors.New("DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY is invalid")
+		}
+	}
+
+	return nil
+}

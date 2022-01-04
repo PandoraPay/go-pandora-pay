@@ -27,6 +27,7 @@ const (
 var uuidGenerator uint32 //use atomic
 
 type AdvancedConnection struct {
+	Authenticated           bool
 	UUID                    advanced_connection_types.UUID
 	Conn                    *websocket.Conn
 	Handshake               *ConnectionHandshake
