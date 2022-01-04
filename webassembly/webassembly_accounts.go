@@ -22,17 +22,18 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		parameters := struct {
-			PublicKey    helpers.HexBytes `json:"publicKey"`
-			Registration helpers.HexBytes `json:"registration"`
-			PaymentId    helpers.HexBytes `json:"paymentId"`
-			Amount       uint64           `json:"amount"`
+			PublicKey     helpers.HexBytes `json:"publicKey"`
+			Registration  helpers.HexBytes `json:"registration"`
+			PaymentID     helpers.HexBytes `json:"paymentID"`
+			PaymentAmount uint64           `json:"paymentAmount"`
+			PaymentAsset  helpers.HexBytes `json:"paymentAsset"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], &parameters); err != nil {
 			return nil, err
 		}
 
-		addr, err := addresses.CreateAddr(parameters.PublicKey, parameters.Registration, parameters.Amount, parameters.PaymentId)
+		addr, err := addresses.CreateAddr(parameters.PublicKey, parameters.Registration, parameters.PaymentID, parameters.PaymentAmount, parameters.PaymentAsset)
 		if err != nil {
 			return nil, err
 		}
@@ -48,7 +49,7 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 func generateNewAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		priv := addresses.GenerateNewPrivateKey()
-		addr, err := priv.GenerateAddress(true, 0, nil)
+		addr, err := priv.GenerateAddress(true, nil, 0, nil)
 
 		if err != nil {
 			return nil, err

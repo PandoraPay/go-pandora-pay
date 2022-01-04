@@ -23,7 +23,7 @@ type Address struct {
 
 func NewAddr(network uint64, version AddressVersion, publicKey []byte, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	if len(paymentID) != 8 && len(paymentID) != 0 {
-		return nil, errors.New("Invalid PaymentId. It must be an 8 byte")
+		return nil, errors.New("Invalid PaymentID. It must be an 8 byte")
 	}
 	return &Address{network, version, publicKey, registration, paymentID, paymentAmount, paymentAsset}, nil
 }

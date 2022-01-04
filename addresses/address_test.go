@@ -42,12 +42,12 @@ func TestAddress_EncodeAddr(t *testing.T) {
 	assert.Equal(t, len(address.PaymentID), 8, "Address Generated is invalid")
 	assert.Equal(t, address.Amount, uint64(20), "Address Generated Amount is invalid")
 
-	encodedAmountPaymentId := address.EncodeAddr()
+	encodedAmountPaymentID := address.EncodeAddr()
 	assert.Nil(t, err, "Encoding Address raised an error")
-	assert.NotEqual(t, len(encodedAmount), len(encodedAmountPaymentId), "Encoded Amounts are invalid")
-	assert.NotEqual(t, len(encoded), len(encodedAmountPaymentId), "Encoded Amounts are invalid")
-	assert.NotEqual(t, encodedAmount, encodedAmountPaymentId, "Encoded Amounts are invalid")
-	assert.NotEqual(t, encoded, encodedAmountPaymentId, "Encoded Amounts are invalid")
+	assert.NotEqual(t, len(encodedAmount), len(encodedAmountPaymentID), "Encoded Amounts are invalid")
+	assert.NotEqual(t, len(encoded), len(encodedAmountPaymentID), "Encoded Amounts are invalid")
+	assert.NotEqual(t, encodedAmount, encodedAmountPaymentID, "Encoded Amounts are invalid")
+	assert.NotEqual(t, encoded, encodedAmountPaymentID, "Encoded Amounts are invalid")
 
 }
 
