@@ -25,6 +25,9 @@ func NewAddr(network uint64, version AddressVersion, publicKey []byte, registrat
 	if len(paymentID) != 8 && len(paymentID) != 0 {
 		return nil, errors.New("Invalid PaymentID. It must be an 8 byte")
 	}
+	if len(paymentAsset) != 0 && len(paymentAsset) != 20 {
+		return nil, errors.New("Invalid PaymentAsset size")
+	}
 	return &Address{network, version, publicKey, registration, paymentID, paymentAmount, paymentAsset}, nil
 }
 
@@ -82,7 +85,7 @@ func (a *Address) EncodeAddr() string {
 		writer.WriteUvarint(a.PaymentAmount)
 	}
 	if a.IsIntegratedPaymentAsset() {
-		writer.Write(a.PaymentID)
+		writer.Write(a.PaymentAsset)
 	}
 
 	buffer := writer.Bytes()

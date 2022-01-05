@@ -83,7 +83,7 @@ func (api *APICommon) GetBlockComplete_http(values url.Values) (interface{}, err
 
 func (api *APICommon) GetBlockComplete_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIBlockCompleteRequest{0, nil, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, &args); err != nil {
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIBlockCompleteReply{}

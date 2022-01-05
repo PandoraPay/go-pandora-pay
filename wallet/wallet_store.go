@@ -115,7 +115,7 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 			if unmarshal == nil {
 				return errors.New("encryption data was not found")
 			}
-			if err = json.Unmarshal(unmarshal, &wallet.Encryption); err != nil {
+			if err = json.Unmarshal(unmarshal, wallet.Encryption); err != nil {
 				return
 			}
 
@@ -132,7 +132,7 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 			if unmarshal, err = wallet.Encryption.decryptData(reader.Get("wallet")); err != nil {
 				return
 			}
-			if err = json.Unmarshal(unmarshal, &wallet); err != nil {
+			if err = json.Unmarshal(unmarshal, wallet); err != nil {
 				return
 			}
 

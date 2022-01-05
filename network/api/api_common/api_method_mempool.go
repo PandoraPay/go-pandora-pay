@@ -65,7 +65,7 @@ func (api *APICommon) GetMempool_http(values url.Values) (interface{}, error) {
 
 func (api *APICommon) GetMempool_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIMempoolRequest{}
-	if err := json.Unmarshal(values, &args); err != nil {
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIMempoolAnswer{}

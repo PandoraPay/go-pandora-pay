@@ -33,7 +33,7 @@ func (api *APICommon) GetTxHash_http(values url.Values) (interface{}, error) {
 
 func (api *APICommon) GetTxHash_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APITxHashRequest{0}
-	if err := json.Unmarshal(values, &args); err != nil {
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	var out helpers.HexBytes

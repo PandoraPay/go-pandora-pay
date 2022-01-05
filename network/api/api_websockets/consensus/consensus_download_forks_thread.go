@@ -38,7 +38,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 	}
 
 	blkWithTx := &api_common.APIBlockWithTxsAnswer{}
-	if err = json.Unmarshal(answer.Out, &blkWithTx); err != nil {
+	if err = json.Unmarshal(answer.Out, blkWithTx); err != nil {
 		return nil, err
 	}
 	blkWithTx.Block = block.CreateEmptyBlock()

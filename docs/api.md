@@ -63,6 +63,10 @@ List of all APIs
 
 TODO: TCP
 
+## Enable Authentication
+
+To Set users and enable authentication use argument `--auth-users='[{"user": "username", "pass": "secret"}]'`
+
 ## Integration to a third party app
 
 The best and the most efficient way is to use the PaymentID attribute

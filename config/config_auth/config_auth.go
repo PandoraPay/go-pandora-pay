@@ -18,7 +18,7 @@ var (
 func InitConfig() (err error) {
 
 	if str := globals.Arguments["--auth-users"]; str != nil {
-		if err = json.Unmarshal([]byte(str.(string)), CONFIG_AUTH_USERS_LIST); err != nil {
+		if err = json.Unmarshal([]byte(str.(string)), &CONFIG_AUTH_USERS_LIST); err != nil {
 			return
 		}
 	}

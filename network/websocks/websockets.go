@@ -220,8 +220,8 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 		return errors.New("Handshake was not received")
 	}
 
-	handshakeReceived := new(connection.ConnectionHandshake)
-	if err := json.Unmarshal(out.Out, &handshakeReceived); err != nil {
+	handshakeReceived := &connection.ConnectionHandshake{}
+	if err := json.Unmarshal(out.Out, handshakeReceived); err != nil {
 		return errors.New("Handshake received was invalid")
 	}
 

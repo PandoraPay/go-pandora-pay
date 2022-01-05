@@ -122,7 +122,7 @@ func (api *APICommon) GetAccountsByKeys_http(values url.Values) (interface{}, er
 
 func (api *APICommon) GetAccountsByKeys_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, &args); err != nil {
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIAccountsByKeysAnswer{}

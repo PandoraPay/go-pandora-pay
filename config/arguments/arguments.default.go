@@ -44,6 +44,6 @@ Options:
   --delegates-maximum=args                           Maximum number of Delegates
   --delegator-fee=args                               Fee required for Delegates
   --delegator-reward-collector-pub-key=args          Delegator Reward Collector Address
-  --auth-users=args                                  Credential for Authenticated Users. Arguments must be a JSON [{'user': 'username', 'pass': 'secret'}].
+  --auth-users=args                                  Credential for Authenticated Users. Arguments must be a JSON "[{'user': 'username', 'pass': 'secret'}]".
   --exit                                             Exit node.
 `

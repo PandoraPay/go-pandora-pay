@@ -105,7 +105,7 @@ func (api *APICommon) GetTx_http(values url.Values) (interface{}, error) {
 
 func (api *APICommon) GetTx_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APITransactionRequest{}
-	if err := json.Unmarshal(values, &args); err != nil {
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APITransactionAnswer{}

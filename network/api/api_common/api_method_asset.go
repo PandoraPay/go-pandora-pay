@@ -58,7 +58,7 @@ func (api *APICommon) GetAsset_http(values url.Values) (interface{}, error) {
 
 func (api *APICommon) GetAsset_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAssetRequest{0, nil, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, &args); err != nil {
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIAssetReply{}

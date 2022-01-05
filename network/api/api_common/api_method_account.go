@@ -135,7 +135,7 @@ func (api *APICommon) GetAccount_http(values url.Values) (interface{}, error) {
 
 func (api *APICommon) GetAccount_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, &args); err != nil {
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIAccount{}

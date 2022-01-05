@@ -39,7 +39,7 @@ func (settings *Settings) loadSettings() error {
 			gui.GUI.Log("Settings Loading... ")
 
 			unmarshal := reader.Get("settings")
-			if err = json.Unmarshal(unmarshal, &settings); err != nil {
+			if err = json.Unmarshal(unmarshal, settings); err != nil {
 				return err
 			}
 

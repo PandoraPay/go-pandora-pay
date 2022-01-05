@@ -277,8 +277,8 @@ func (c *AdvancedConnection) ReadPump() {
 			return
 		}
 
-		message := new(advanced_connection_types.AdvancedConnectionMessage)
-		if err = json.Unmarshal(read, &message); err != nil {
+		message := &advanced_connection_types.AdvancedConnectionMessage{}
+		if err = json.Unmarshal(read, message); err != nil {
 			continue
 		}
 

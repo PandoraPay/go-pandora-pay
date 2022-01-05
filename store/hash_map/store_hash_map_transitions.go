@@ -63,7 +63,7 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 	}
 
 	changes := &transactionChanges{}
-	if err = json.Unmarshal(data, &changes); err != nil {
+	if err = json.Unmarshal(data, changes); err != nil {
 		return err
 	}
 

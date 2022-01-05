@@ -56,7 +56,7 @@ func (api *APICommon) GetAccountMempoolNonce_http(values url.Values) (interface{
 
 func (api *APICommon) GetAccountMempoolNonce_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAccountMempoolNonceRequest{}
-	if err := json.Unmarshal(values, &args); err != nil {
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	var reply uint64

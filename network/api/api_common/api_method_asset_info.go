@@ -47,7 +47,7 @@ func (api *APICommon) GetAssetInfo_http(values url.Values) (interface{}, error) 
 
 func (api *APICommon) GetAssetInfo_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAssetInfoRequest{}
-	if err := json.Unmarshal(values, &args); err != nil {
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &info.AssetInfo{}

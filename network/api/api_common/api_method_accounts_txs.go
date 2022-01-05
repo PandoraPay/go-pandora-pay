@@ -80,7 +80,7 @@ func (api *APICommon) GetAccountTxs_http(values url.Values) (interface{}, error)
 
 func (api *APICommon) GetAccountTxs_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAccountTxsRequest{}
-	if err := json.Unmarshal(values, &args); err != nil {
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIAccountTxsAnswer{}

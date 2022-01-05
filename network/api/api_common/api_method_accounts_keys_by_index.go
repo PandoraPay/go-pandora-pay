@@ -75,7 +75,7 @@ func (api *APICommon) GetAccountsKeysByIndex_http(values url.Values) (interface{
 
 func (api *APICommon) GetAccountsKeysByIndex_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAccountsKeysByIndexRequest{nil, nil, false}
-	if err := json.Unmarshal(values, &args); err != nil {
+	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIAccountsKeysByIndexAnswer{}
