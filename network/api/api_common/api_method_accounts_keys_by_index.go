@@ -20,12 +20,12 @@ type APIAccountsKeysByIndexRequest struct {
 	EncodeAddresses bool             `json:"encodeAddresses"`
 }
 
-type APIAccountsKeysByIndexAnswer struct {
+type APIAccountsKeysByIndexReply struct {
 	PublicKeys []helpers.HexBytes `json:"publicKeys,omitempty"`
 	Addresses  []string           `json:"addresses,omitempty"`
 }
 
-func (api *APICommon) AccountsKeysByIndex(r *http.Request, args *APIAccountsKeysByIndexRequest, reply *APIAccountsKeysByIndexAnswer) (err error) {
+func (api *APICommon) AccountsKeysByIndex(r *http.Request, args *APIAccountsKeysByIndexRequest, reply *APIAccountsKeysByIndexReply) (err error) {
 
 	if len(args.Indexes) > 512*2 {
 		return fmt.Errorf("Too many indexes to process: limit %d, found %d", 512*2, len(args.Indexes))
@@ -69,7 +69,7 @@ func (api *APICommon) GetAccountsKeysByIndex_http(values url.Values) (interface{
 	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	reply := &APIAccountsKeysByIndexAnswer{}
+	reply := &APIAccountsKeysByIndexReply{}
 	return reply, api.AccountsKeysByIndex(nil, args, reply)
 }
 
@@ -78,6 +78,6 @@ func (api *APICommon) GetAccountsKeysByIndex_websockets(conn *connection.Advance
 	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	reply := &APIAccountsKeysByIndexAnswer{}
+	reply := &APIAccountsKeysByIndexReply{}
 	return reply, api.AccountsKeysByIndex(nil, args, reply)
 }

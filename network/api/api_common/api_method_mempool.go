@@ -16,13 +16,13 @@ type APIMempoolRequest struct {
 	Count     int              `json:"count,omitempty"`
 }
 
-type APIMempoolAnswer struct {
+type APIMempoolReply struct {
 	ChainHash helpers.HexBytes   `json:"chainHash"`
 	Count     int                `json:"count"`
 	Hashes    []helpers.HexBytes `json:"hashes"`
 }
 
-func (api *APICommon) Mempool(r *http.Request, args *APIMempoolRequest, reply *APIMempoolAnswer) error {
+func (api *APICommon) Mempool(r *http.Request, args *APIMempoolRequest, reply *APIMempoolReply) error {
 
 	transactions, finalChainHash := api.mempool.GetNextTransactionsToInclude(args.ChainHash)
 
@@ -59,7 +59,7 @@ func (api *APICommon) GetMempool_http(values url.Values) (interface{}, error) {
 	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	reply := &APIMempoolAnswer{}
+	reply := &APIMempoolReply{}
 	return reply, api.Mempool(nil, args, reply)
 }
 
@@ -68,6 +68,6 @@ func (api *APICommon) GetMempool_websockets(conn *connection.AdvancedConnection,
 	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	reply := &APIMempoolAnswer{}
+	reply := &APIMempoolReply{}
 	return reply, api.Mempool(nil, args, reply)
 }

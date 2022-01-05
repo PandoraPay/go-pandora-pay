@@ -4,19 +4,19 @@ import (
 	"pandora-pay/network/websocks/connection"
 )
 
-type APILogoutAnswer struct {
+type APILogoutReply struct {
 	Status bool `json:"status"`
 }
 
 func (api *APIWebsockets) GetLogout_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 
-	reply := &APILogoutAnswer{}
+	reply := &APILogoutReply{}
 
-	if !conn.Authenticated {
+	if conn.Authenticated.IsNotSet() {
 		return reply, nil
 	}
 
-	conn.Authenticated = false
+	conn.Authenticated.UnSet()
 	reply.Status = true
 
 	return reply, nil

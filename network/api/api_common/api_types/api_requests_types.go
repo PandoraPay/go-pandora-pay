@@ -3,6 +3,7 @@ package api_types
 import (
 	"errors"
 	"pandora-pay/addresses"
+	"pandora-pay/config/config_auth"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
@@ -26,8 +27,8 @@ const (
 )
 
 type APIAccountBaseRequest struct {
-	Address   string           `json:"address,omitempty"`
-	PublicKey helpers.HexBytes `json:"publicKey,omitempty"`
+	Address   string           `json:"address,omitempty"  urlstruct:"address"`
+	PublicKey helpers.HexBytes `json:"publicKey,omitempty"  urlstruct:"publicKey"`
 }
 
 func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
@@ -54,6 +55,20 @@ type APISubscriptionRequest struct {
 }
 
 type APIUnsubscriptionRequest struct {
-	Key  []byte           `json:"Key,omitempty"`
+	Key  []byte           `json:"key,omitempty"`
 	Type SubscriptionType `json:"type,omitempty"`
+}
+
+type APIAuthenticateBaseRequest struct {
+	Username string `json:"user" urlstruct:"user"`
+	Password string `json:"pass" urlstruct:"pass"`
+}
+
+func (request *APIAuthenticateBaseRequest) CheckAuthenticated() bool {
+	user := config_auth.CONFIG_AUTH_USERS_MAP[request.Username]
+	if user == nil {
+		return false
+	}
+
+	return user.Password == request.Password
 }

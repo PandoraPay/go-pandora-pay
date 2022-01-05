@@ -20,12 +20,12 @@ type APIAccountTxsRequest struct {
 	Next uint64 `json:"next,omitempty"`
 }
 
-type APIAccountTxsAnswer struct {
+type APIAccountTxsReply struct {
 	Count uint64             `json:"count,omitempty"`
 	Txs   []helpers.HexBytes `json:"txs,omitempty"`
 }
 
-func (api *APICommon) AccountTxs(r *http.Request, args *APIAccountTxsRequest, reply *APIAccountTxsAnswer) (err error) {
+func (api *APICommon) AccountTxs(r *http.Request, args *APIAccountTxsRequest, reply *APIAccountTxsReply) (err error) {
 
 	publicKey, err := args.GetPublicKey()
 	if err != nil {
@@ -74,7 +74,7 @@ func (api *APICommon) GetAccountTxs_http(values url.Values) (interface{}, error)
 	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	reply := &APIAccountTxsAnswer{}
+	reply := &APIAccountTxsReply{}
 	return reply, api.AccountTxs(nil, args, reply)
 }
 
@@ -83,6 +83,6 @@ func (api *APICommon) GetAccountTxs_websockets(conn *connection.AdvancedConnecti
 	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	reply := &APIAccountTxsAnswer{}
+	reply := &APIAccountTxsReply{}
 	return reply, api.AccountTxs(nil, args, reply)
 }

@@ -23,14 +23,14 @@ type APITransactionRequest struct {
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty"`
 }
 
-type APITransactionAnswer struct {
+type APITransactionReply struct {
 	Tx           *transaction.Transaction `json:"tx,omitempty"`
 	TxSerialized helpers.HexBytes         `json:"serialized,omitempty"`
 	Mempool      bool                     `json:"mempool,omitempty"`
 	Info         *info.TxInfo             `json:"info,omitempty"`
 }
 
-func (api *APICommon) openLoadTx(args *APITransactionRequest, reply *APITransactionAnswer) error {
+func (api *APICommon) openLoadTx(args *APITransactionRequest, reply *APITransactionReply) error {
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if len(args.Hash) == 0 {
@@ -68,7 +68,7 @@ func (api *APICommon) openLoadTx(args *APITransactionRequest, reply *APITransact
 	})
 }
 
-func (api *APICommon) Tx(r *http.Request, args *APITransactionRequest, reply *APITransactionAnswer) (err error) {
+func (api *APICommon) Tx(r *http.Request, args *APITransactionRequest, reply *APITransactionReply) (err error) {
 
 	if len(args.Hash) == cryptography.HashSize {
 		txMempool := api.mempool.Txs.Get(string(args.Hash))
@@ -99,7 +99,7 @@ func (api *APICommon) GetTx_http(values url.Values) (interface{}, error) {
 	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	reply := &APITransactionAnswer{}
+	reply := &APITransactionReply{}
 	return reply, api.Tx(nil, args, reply)
 }
 
@@ -108,6 +108,6 @@ func (api *APICommon) GetTx_websockets(conn *connection.AdvancedConnection, valu
 	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	reply := &APITransactionAnswer{}
+	reply := &APITransactionReply{}
 	return reply, api.Tx(nil, args, reply)
 }

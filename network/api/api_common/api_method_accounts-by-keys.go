@@ -24,14 +24,14 @@ type APIAccountsByKeysRequest struct {
 	ReturnType     api_types.APIReturnType            `json:"returnType,omitempty"`
 }
 
-type APIAccountsByKeysAnswer struct {
+type APIAccountsByKeysReply struct {
 	Acc           []*account.Account           `json:"acc,omitempty"`
 	AccSerialized []helpers.HexBytes           `json:"accSerialized,omitempty"`
 	Reg           []*registration.Registration `json:"registration,omitempty"`
 	RegSerialized []helpers.HexBytes           `json:"registrationSerialized,omitempty"`
 }
 
-func (api *APICommon) AccountsByKeys(r *http.Request, args *APIAccountsByKeysRequest, reply *APIAccountsByKeysAnswer) (err error) {
+func (api *APICommon) AccountsByKeys(r *http.Request, args *APIAccountsByKeysRequest, reply *APIAccountsByKeysReply) (err error) {
 
 	publicKeys := make([][]byte, len(args.Keys))
 
@@ -116,7 +116,7 @@ func (api *APICommon) GetAccountsByKeys_http(values url.Values) (interface{}, er
 	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	reply := &APIAccountsByKeysAnswer{}
+	reply := &APIAccountsByKeysReply{}
 	return reply, api.AccountsByKeys(nil, args, reply)
 }
 
@@ -125,6 +125,6 @@ func (api *APICommon) GetAccountsByKeys_websockets(conn *connection.AdvancedConn
 	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	reply := &APIAccountsByKeysAnswer{}
+	reply := &APIAccountsByKeysReply{}
 	return reply, api.AccountsByKeys(nil, args, reply)
 }

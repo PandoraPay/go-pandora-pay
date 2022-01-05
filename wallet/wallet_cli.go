@@ -8,14 +8,15 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/config/config_coins"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -92,24 +93,29 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 	gui.GUI.OutputWrite("Count: " + strconv.Itoa(wallet.Count))
 	gui.GUI.OutputWrite("")
 
-	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+	type AddressAsset struct {
+		balance *crypto.ElGamal
+		assetId []byte
+		ast     *asset.Asset
+	}
+	type Address struct {
+		assetsList []*AddressAsset
+	}
+	addresses := make([]*Address, len(wallet.Addresses))
+
+	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+		dataStorage := data_storage.NewDataStorage(reader)
 
-		accsCollection := accounts.NewAccountsCollection(reader)
-
-		asts := assets.NewAssets(reader)
-		plainAccs := plain_accounts.NewPlainAccounts(reader)
 		var ast *asset.Asset
 		var accs *accounts.Accounts
 		var acc *account.Account
 
-		regs := registrations.NewRegistrations(reader)
-
 		for i, walletAddress := range wallet.Addresses {
 
 			var isReg bool
-			if isReg, err = regs.Exists(string(walletAddress.PublicKey)); err != nil {
+			if isReg, err = dataStorage.Regs.Exists(string(walletAddress.PublicKey)); err != nil {
 				return
 			}
 
@@ -117,15 +123,17 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 			gui.GUI.OutputWrite(fmt.Sprintf("%d) %s : %s :: %s", i, walletAddress.Name, walletAddress.Version.String(), addressStr))
 
-			if walletAddress.Version == wallet_address.VERSION_NORMAL {
+			switch walletAddress.Version {
+
+			case wallet_address.VERSION_NORMAL:
 
 				var assetsList [][]byte
-				if assetsList, err = accsCollection.GetAccountAssets(walletAddress.PublicKey); err != nil {
+				if assetsList, err = dataStorage.AccsCollection.GetAccountAssets(walletAddress.PublicKey); err != nil {
 					return
 				}
 
 				var plainAcc *plain_account.PlainAccount
-				if plainAcc, err = plainAccs.GetPlainAccount(walletAddress.PublicKey, chainHeight); err != nil {
+				if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(walletAddress.PublicKey, chainHeight); err != nil {
 					return
 				}
 
@@ -162,15 +170,16 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 				}
 
+				addresses[i] = &Address{}
 				if len(assetsList) > 0 {
 
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s %d", "BALANCES ENCRYPTED", "", len(assetsList)))
 					for _, assetId := range assetsList {
 
-						if ast, err = asts.GetAsset(assetId); err != nil {
+						if ast, err = dataStorage.Asts.GetAsset(assetId); err != nil {
 							return
 						}
-						if accs, err = accsCollection.GetMap(assetId); err != nil {
+						if accs, err = dataStorage.AccsCollection.GetMap(assetId); err != nil {
 							return
 						}
 
@@ -179,43 +188,46 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 						}
 						gui.GUI.OutputWrite(fmt.Sprintf("%260s: %s", hex.EncodeToString(acc.Balance.Amount.Serialize()), ast.Name))
 
-					}
-
-					for _, assetId := range assetsList {
-						if ast, err = asts.GetAsset(assetId); err != nil {
-							return
-						}
-						if accs, err = accsCollection.GetMap(assetId); err != nil {
-							return
-						}
-
-						if acc, err = accs.GetAccount(walletAddress.PublicKey); err != nil {
-							return
-						}
-
-						var decoded uint64
-						if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, acc.Balance.Amount, assetId, true, false, ctx, func(status string) {
-							gui.GUI.Info2Update("Decoding", status)
-						}); err != nil {
-							return
-						}
-
-						gui.GUI.Info2Update("Decoding", "")
-
-						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config_coins.ConvertToBase(decoded), 'f', config_coins.DECIMAL_SEPARATOR, 64), ast.Name))
+						addresses[i].assetsList = append(addresses[i].assetsList, &AddressAsset{
+							acc.Balance.Amount,
+							assetId,
+							ast,
+						})
 
 					}
-
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s", "DONE DECRYPTING"))
 
 				}
-
+			default:
+				return errors.New("Invalid Address version")
 			}
 
 		}
 
 		return
-	})
+	}); err != nil {
+		return
+	}
+
+	for i, walletAddress := range wallet.Addresses {
+		for _, data := range addresses[i].assetsList {
+
+			var decoded uint64
+			if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, data.balance, data.assetId, true, false, ctx, func(status string) {
+				gui.GUI.Info2Update("Decoding", status)
+			}); err != nil {
+				return
+			}
+
+			gui.GUI.Info2Update("Decoding", "")
+
+			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config_coins.ConvertToBase(decoded), 'f', config_coins.DECIMAL_SEPARATOR, 64), data.ast.Name))
+		}
+
+		gui.GUI.OutputWrite(fmt.Sprintf("%18s", "DONE DECRYPTING"))
+
+	}
+
+	return
 }
 
 func (wallet *Wallet) CliSelectAddress(text string, ctx context.Context) (*wallet_address.WalletAddress, int, error) {

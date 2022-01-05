@@ -20,13 +20,13 @@ type APIBlockRequest struct {
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty"`
 }
 
-type APIBlockWithTxsAnswer struct {
+type APIBlockWithTxsReply struct {
 	Block           *block.Block       `json:"block,omitempty"`
 	BlockSerialized helpers.HexBytes   `json:"serialized,omitempty"`
 	Txs             []helpers.HexBytes `json:"txs,omitempty"`
 }
 
-func (api *APICommon) Block(r *http.Request, args *APIBlockRequest, reply *APIBlockWithTxsAnswer) error {
+func (api *APICommon) Block(r *http.Request, args *APIBlockRequest, reply *APIBlockWithTxsReply) error {
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -69,7 +69,7 @@ func (api *APICommon) GetBlock_http(values url.Values) (interface{}, error) {
 	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	reply := &APIBlockWithTxsAnswer{}
+	reply := &APIBlockWithTxsReply{}
 	return reply, api.Block(nil, args, reply)
 }
 
@@ -78,6 +78,6 @@ func (api *APICommon) GetBlock_websockets(conn *connection.AdvancedConnection, v
 	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	reply := &APIBlockWithTxsAnswer{}
+	reply := &APIBlockWithTxsReply{}
 	return reply, api.Block(nil, args, reply)
 }

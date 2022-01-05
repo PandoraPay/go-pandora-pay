@@ -86,7 +86,7 @@ func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeA
 
 }
 
-func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context) []*advanced_connection_types.AdvancedConnectionAnswer {
+func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context) []*advanced_connection_types.AdvancedConnectionReply {
 
 	if exceptSocketUUID == advanced_connection_types.UUID_SKIP_ALL {
 		return nil
@@ -94,7 +94,7 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 
 	all := websockets.GetAllSockets()
 
-	chans := make(chan *advanced_connection_types.AdvancedConnectionAnswer, len(all)+1)
+	chans := make(chan *advanced_connection_types.AdvancedConnectionReply, len(all)+1)
 	for _, conn := range all {
 		if conn.UUID != exceptSocketUUID && consensusTypeAccepted[conn.Handshake.Consensus] {
 			go func(conn *connection.AdvancedConnection) {
@@ -106,7 +106,7 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 		}
 	}
 
-	out := make([]*advanced_connection_types.AdvancedConnectionAnswer, len(all))
+	out := make([]*advanced_connection_types.AdvancedConnectionReply, len(all))
 	for i := range all {
 		out[i] = <-chans
 		if out[i] != nil && out[i].Err != nil {
@@ -122,7 +122,7 @@ func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, conse
 	websockets.Broadcast(name, out, consensusTypeAccepted, exceptSocketUUID, ctx)
 }
 
-func (websockets *Websockets) BroadcastJSONAwaitAnswer(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context) []*advanced_connection_types.AdvancedConnectionAnswer {
+func (websockets *Websockets) BroadcastJSONAwaitAnswer(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context) []*advanced_connection_types.AdvancedConnectionReply {
 	out, _ := json.Marshal(data)
 	return websockets.BroadcastAwaitAnswer(name, out, consensusTypeAccepted, exceptSocketUUID, ctx)
 }

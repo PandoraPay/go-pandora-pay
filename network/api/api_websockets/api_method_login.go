@@ -11,7 +11,7 @@ type APILogin struct {
 	Password string `json:"password"`
 }
 
-type APILoginAnswer struct {
+type APILoginReply struct {
 	Status bool `json:"status"`
 }
 
@@ -20,14 +20,14 @@ func (api *APIWebsockets) GetLogin_websockets(conn *connection.AdvancedConnectio
 	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	reply := &APILoginAnswer{}
+	reply := &APILoginReply{}
 
 	user := config_auth.CONFIG_AUTH_USERS_MAP[args.Username]
 	if user == nil || user.Password != args.Password {
 		return reply, nil
 	}
 
-	conn.Authenticated = true
+	conn.Authenticated.Set()
 	reply.Status = true
 
 	return reply, nil

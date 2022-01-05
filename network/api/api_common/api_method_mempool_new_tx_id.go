@@ -23,7 +23,7 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 		return nil
 	}
 
-	answer, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, &mempoolNewTxAnswer{make(chan struct{}), nil})
+	answer, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), nil})
 
 	if loaded {
 		<-answer.wait
@@ -58,7 +58,7 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 		return nil
 	}
 
-	data := &APITransactionAnswer{}
+	data := &APITransactionReply{}
 	if err := json.Unmarshal(result.Out, data); err != nil {
 		(*reply).Error = err
 		return nil

@@ -23,6 +23,7 @@ func InitConfig() (err error) {
 		}
 	}
 
+	CONFIG_AUTH_USERS_MAP = map[string]*ConfigAuth{}
 	for _, auth := range CONFIG_AUTH_USERS_LIST {
 		CONFIG_AUTH_USERS_MAP[auth.Username] = auth
 	}

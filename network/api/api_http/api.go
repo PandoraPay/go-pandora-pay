@@ -43,6 +43,8 @@ func NewAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chai
 		"mempool/tx-exists":      api.apiCommon.GetMempoolExists_http,
 		"mempool/new-tx":         api.apiCommon.MempoolNewTx_http,
 		"network/nodes":          api.apiCommon.GetNetworkNodes_http,
+		"wallet/get-addresses":   api.apiCommon.WalletGetAddresses_http,
+		"wallet/create-address":  api.apiCommon.WalletCreateAddress_http,
 	}
 
 	if config.SEED_WALLET_NODES_INFO {

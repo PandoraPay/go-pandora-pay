@@ -8,7 +8,7 @@ type AdvancedConnectionMessage struct {
 	Data        []byte
 }
 
-type AdvancedConnectionAnswer struct {
+type AdvancedConnectionReply struct {
 	Out []byte
 	Err error
 }

@@ -29,7 +29,7 @@ func (self *MempoolSync) DownloadMempool(conn *connection.AdvancedConnection) (e
 			return
 		}
 
-		data := &api_common.APIMempoolAnswer{}
+		data := &api_common.APIMempoolReply{}
 		if err = json.Unmarshal(out.Out, data); err != nil {
 			return
 		}

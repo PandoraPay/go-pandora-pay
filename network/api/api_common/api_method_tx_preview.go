@@ -18,13 +18,13 @@ type APITransactionPreviewRequest struct {
 	Hash   helpers.HexBytes `json:"hash,omitempty"`
 }
 
-type APITransactionPreviewAnswer struct {
+type APITransactionPreviewReply struct {
 	TxPreview *info.TxPreview `json:"txPreview,omitempty"`
 	Mempool   bool            `json:"mempool,omitempty"`
 	Info      *info.TxInfo    `json:"info,omitempty"`
 }
 
-func (apiStore *APIStore) openLoadTxPreview(args *APITransactionPreviewRequest, reply *APITransactionPreviewAnswer) error {
+func (apiStore *APIStore) openLoadTxPreview(args *APITransactionPreviewRequest, reply *APITransactionPreviewReply) error {
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if len(args.Hash) == 0 {
@@ -42,7 +42,7 @@ func (apiStore *APIStore) openLoadTxPreview(args *APITransactionPreviewRequest, 
 	})
 }
 
-func (api *APICommon) TxPreview(r *http.Request, args *APITransactionPreviewRequest, reply *APITransactionPreviewAnswer) (err error) {
+func (api *APICommon) TxPreview(r *http.Request, args *APITransactionPreviewRequest, reply *APITransactionPreviewReply) (err error) {
 
 	if args.Hash != nil && len(args.Hash) == cryptography.HashSize {
 		txMempool := api.mempool.Txs.Get(string(args.Hash))
@@ -70,7 +70,7 @@ func (api *APICommon) GetTxPreview_http(values url.Values) (interface{}, error) 
 	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
 		return nil, err
 	}
-	reply := &APITransactionPreviewAnswer{}
+	reply := &APITransactionPreviewReply{}
 	return reply, api.TxPreview(nil, args, reply)
 }
 
@@ -79,6 +79,6 @@ func (api *APICommon) GetTxPreview_websockets(conn *connection.AdvancedConnectio
 	if err := json.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	reply := &APITransactionPreviewAnswer{}
+	reply := &APITransactionPreviewReply{}
 	return reply, api.TxPreview(nil, args, reply)
 }

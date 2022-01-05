@@ -27,7 +27,7 @@ const (
 var uuidGenerator uint32 //use atomic
 
 type AdvancedConnection struct {
-	Authenticated           bool
+	Authenticated           *abool.AtomicBool
 	UUID                    advanced_connection_types.UUID
 	Conn                    *websocket.Conn
 	Handshake               *ConnectionHandshake
@@ -39,7 +39,7 @@ type AdvancedConnection struct {
 	InitializedStatusMutex  *sync.Mutex
 	IsClosed                *abool.AtomicBool
 	getMap                  map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)
-	answerMap               map[uint32]chan *advanced_connection_types.AdvancedConnectionAnswer
+	answerMap               map[uint32]chan *advanced_connection_types.AdvancedConnectionReply
 	answerMapLock           *sync.Mutex
 	contextConnection       context.Context
 	contextConnectionCancel context.CancelFunc
@@ -101,7 +101,7 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 	return c.connSendJSON(message, ctx)
 }
 
-func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, ctx context.Context) *advanced_connection_types.AdvancedConnectionAnswer {
+func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, ctx context.Context) *advanced_connection_types.AdvancedConnectionReply {
 
 	if ctx == nil {
 		var cancel context.CancelFunc
@@ -111,7 +111,7 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 
 	replyBackId := atomic.AddUint32(&c.answerCounter, 1)
 
-	eventCn := make(chan *advanced_connection_types.AdvancedConnectionAnswer)
+	eventCn := make(chan *advanced_connection_types.AdvancedConnectionReply)
 	c.answerMapLock.Lock()
 	c.answerMap[replyBackId] = eventCn
 	c.answerMapLock.Unlock()
@@ -125,13 +125,13 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 	}
 
 	if err := c.connSendJSON(message, ctx); err != nil {
-		return &advanced_connection_types.AdvancedConnectionAnswer{nil, err}
+		return &advanced_connection_types.AdvancedConnectionReply{nil, err}
 	}
 
 	select {
 	case out, ok := <-eventCn:
 		if !ok {
-			return &advanced_connection_types.AdvancedConnectionAnswer{nil, errors.New("Timeout - Closed channel")}
+			return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout - Closed channel")}
 		}
 		return out
 	case <-ctx.Done():
@@ -149,7 +149,7 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 			close(eventCn)
 		}
 
-		return &advanced_connection_types.AdvancedConnectionAnswer{nil, errors.New("Timeout")}
+		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout")}
 	}
 }
 
@@ -165,17 +165,17 @@ func (c *AdvancedConnection) SendJSON(name []byte, data interface{}, ctx context
 	return c.sendNow(0, name, out, false, ctx)
 }
 
-func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte, ctx context.Context) *advanced_connection_types.AdvancedConnectionAnswer {
+func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte, ctx context.Context) *advanced_connection_types.AdvancedConnectionReply {
 	return c.sendNowAwait(name, data, false, ctx)
 }
 
-func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, ctx context.Context) *advanced_connection_types.AdvancedConnectionAnswer {
+func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, ctx context.Context) *advanced_connection_types.AdvancedConnectionReply {
 	if c == nil {
-		return &advanced_connection_types.AdvancedConnectionAnswer{nil, errors.New("Socket is null")}
+		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Socket is null")}
 	}
 	out, err := json.Marshal(data)
 	if err != nil {
-		return &advanced_connection_types.AdvancedConnectionAnswer{nil, errors.New("Error marshaling data")}
+		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Error marshaling data")}
 	}
 	return c.sendNowAwait(name, out, false, ctx)
 }
@@ -238,7 +238,7 @@ func (c *AdvancedConnection) processRead(message *advanced_connection_types.Adva
 
 	} else {
 
-		output := &advanced_connection_types.AdvancedConnectionAnswer{}
+		output := &advanced_connection_types.AdvancedConnectionReply{}
 		if len(message.Name) == 1 && message.Name[0] == 1 {
 			output.Out = message.Data
 		} else {
@@ -345,6 +345,7 @@ func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *k
 	ctx, cancel := context.WithCancel(context.Background())
 
 	advancedConnection := &AdvancedConnection{
+		Authenticated:           abool.New(),
 		UUID:                    u,
 		Conn:                    conn,
 		Handshake:               nil,
@@ -356,7 +357,7 @@ func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *k
 		IsClosed:                abool.New(),
 		answerCounter:           0,
 		getMap:                  getMap,
-		answerMap:               make(map[uint32]chan *advanced_connection_types.AdvancedConnectionAnswer),
+		answerMap:               make(map[uint32]chan *advanced_connection_types.AdvancedConnectionReply),
 		answerMapLock:           &sync.Mutex{},
 		ConnectionType:          connectionType,
 		contextConnection:       ctx,

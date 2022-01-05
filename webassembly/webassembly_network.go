@@ -82,7 +82,7 @@ func getNetworkBlockWithTxs(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		blkWithTxs := &api_common.APIBlockWithTxsAnswer{}
+		blkWithTxs := &api_common.APIBlockWithTxsReply{}
 		if err := json.Unmarshal(data.Out, blkWithTxs); err != nil {
 			return nil, err
 		}
@@ -273,7 +273,7 @@ func getNetworkTx(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		received := &api_common.APITransactionAnswer{}
+		received := &api_common.APITransactionReply{}
 		if err = json.Unmarshal(data.Out, received); err != nil {
 			return nil, err
 		}

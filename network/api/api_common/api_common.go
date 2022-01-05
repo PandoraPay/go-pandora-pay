@@ -20,13 +20,14 @@ import (
 type APICommon struct {
 	mempool                   *mempool.Mempool
 	chain                     *blockchain.Blockchain
+	wallet                    *wallet.Wallet
 	knownNodes                *known_nodes.KnownNodes
 	localChain                *generics.Value[*APIBlockchain]
 	localChainSync            *generics.Value[*blockchain_sync.BlockchainSyncData]
 	Faucet                    *api_faucet.Faucet
 	DelegatorNode             *api_delegator_node.DelegatorNode
 	ApiStore                  *APIStore
-	MempoolDownloadPending    *generics.Map[string, *mempoolNewTxAnswer]
+	MempoolDownloadPending    *generics.Map[string, *mempoolNewTxReply]
 	MempoolProcessedThisBlock *generics.Value[*generics.Map[string, *APIMempoolNewTxReply]]
 
 	temporaryList         *generics.Value[*APINetworkNodesReply]
@@ -74,13 +75,14 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 	api = &APICommon{
 		mempool,
 		chain,
+		wallet,
 		knownNodes,
 		&generics.Value[*APIBlockchain]{},
 		&generics.Value[*blockchain_sync.BlockchainSyncData]{},
 		faucet,
 		delegatorNode,
 		apiStore,
-		&generics.Map[string, *mempoolNewTxAnswer]{},
+		&generics.Map[string, *mempoolNewTxReply]{},
 		&generics.Value[*generics.Map[string, *APIMempoolNewTxReply]]{},
 		&generics.Value[*APINetworkNodesReply]{},
 		&generics.Value[time.Time]{},

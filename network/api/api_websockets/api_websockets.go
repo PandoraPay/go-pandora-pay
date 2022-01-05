@@ -58,13 +58,15 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		"mempool/new-tx":         api.apiCommon.MempoolNewTx_websockets,
 		"network/nodes":          api.apiCommon.GetNetworkNodes_websockets,
 		//below are ONLY websockets API
-		"block-miss-txs":    api.apiCommon.GetBlockCompleteMissingTxs_websockets,
-		"handshake":         api.getHandshake,
-		"mempool/new-tx-id": api.apiCommon.MempoolNewTxId_websockets,
-		"chain-get":         api.Consensus.ChainGet_websockets,
-		"chain-update":      api.Consensus.ChainUpdate_websockets,
-		"login":             api.GetLogin_websockets,
-		"logout":            api.GetLogout_websockets,
+		"block-miss-txs":        api.apiCommon.GetBlockCompleteMissingTxs_websockets,
+		"handshake":             api.getHandshake,
+		"mempool/new-tx-id":     api.apiCommon.MempoolNewTxId_websockets,
+		"chain-get":             api.Consensus.ChainGet_websockets,
+		"chain-update":          api.Consensus.ChainUpdate_websockets,
+		"login":                 api.GetLogin_websockets,
+		"logout":                api.GetLogout_websockets,
+		"wallet/get-addresses":  api.apiCommon.WalletGetAddresses_websockets,
+		"wallet/create-address": api.apiCommon.WalletCreateAddress_websockets,
 	}
 
 	api.GetMap["sub"] = api.subscribe

@@ -21,7 +21,7 @@ type APIMempoolNewTxReply struct {
 	Error  error `json:"error"`
 }
 
-type mempoolNewTxAnswer struct {
+type mempoolNewTxReply struct {
 	wait  chan struct{}
 	reply *APIMempoolNewTxReply
 }
@@ -51,7 +51,7 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 		return nil
 	}
 
-	answer, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, &mempoolNewTxAnswer{make(chan struct{}), nil})
+	answer, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), nil})
 
 	if loaded {
 		<-answer.wait
