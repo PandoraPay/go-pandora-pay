@@ -8,7 +8,6 @@ import (
 	"pandora-pay/gui/gui_interface"
 	"pandora-pay/gui/gui_logger"
 	"pandora-pay/helpers/generics"
-	"sync"
 	"time"
 )
 
@@ -32,10 +31,10 @@ type GUIInteractive struct {
 	logs *widgets.Paragraph
 
 	info2    *widgets.List
-	info2Map *sync.Map
+	info2Map *generics.Map[string, string]
 
 	info    *widgets.List
-	infoMap *sync.Map
+	infoMap *generics.Map[string, string]
 
 	tickerRender *time.Ticker
 
@@ -62,8 +61,8 @@ func CreateGUIInteractive() (*GUIInteractive, error) {
 
 	g := &GUIInteractive{
 		logger:   logger,
-		infoMap:  &sync.Map{},
-		info2Map: &sync.Map{},
+		infoMap:  &generics.Map[string, string]{},
+		info2Map: &generics.Map[string, string]{},
 		cmdData:  &generics.Value[*GUIInteractiveData]{},
 	}
 

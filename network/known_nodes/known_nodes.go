@@ -4,12 +4,13 @@ import (
 	"errors"
 	"math/rand"
 	"pandora-pay/config"
+	"pandora-pay/helpers/generics"
 	"sync"
 	"sync/atomic"
 )
 
 type KnownNodes struct {
-	knownMap       *sync.Map //*KnownNode
+	knownMap       *generics.Map[string, *KnownNodeScored]
 	knownList      []*KnownNodeScored
 	knownListMutex sync.RWMutex
 	knownCount     int32 //atomic required
@@ -79,7 +80,7 @@ func (self *KnownNodes) RemoveKnownNode(knownNode *KnownNodeScored) {
 func NewKnownNodes() (knownNodes *KnownNodes) {
 
 	knownNodes = &KnownNodes{
-		&sync.Map{},
+		&generics.Map[string, *KnownNodeScored]{},
 		make([]*KnownNodeScored, 0),
 		sync.RWMutex{},
 		0,

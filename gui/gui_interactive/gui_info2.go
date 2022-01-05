@@ -8,8 +8,8 @@ import (
 func (g *GUIInteractive) info2Render() {
 
 	rows := []string{}
-	g.info2Map.Range(func(key, value interface{}) bool {
-		rows = append(rows, key.(string)+": "+value.(string))
+	g.info2Map.Range(func(key, value string) bool {
+		rows = append(rows, key+": "+value)
 		return true
 	})
 	sort.Strings(rows)

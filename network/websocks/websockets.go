@@ -28,7 +28,7 @@ import (
 )
 
 type Websockets struct {
-	AllAddresses                 *sync.Map
+	AllAddresses                 *generics.Map[string, *connection.AdvancedConnection]
 	ApiWebsockets                *api_websockets.APIWebsockets
 	allList                      *generics.Value[[]*connection.AdvancedConnection]
 	allListMutex                 *sync.Mutex
@@ -259,7 +259,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 func NewWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
-		AllAddresses:                 &sync.Map{},
+		AllAddresses:                 &generics.Map[string, *connection.AdvancedConnection]{},
 		clients:                      0,
 		serverSockets:                0,
 		allList:                      &generics.Value[[]*connection.AdvancedConnection]{},

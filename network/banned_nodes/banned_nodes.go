@@ -2,7 +2,7 @@ package banned_nodes
 
 import (
 	"net/url"
-	"sync"
+	"pandora-pay/helpers/generics"
 	"time"
 )
 
@@ -14,7 +14,7 @@ type BannedNode struct {
 }
 
 type BannedNodes struct {
-	bannedMap *sync.Map //map[string]
+	bannedMap *generics.Map[string, *BannedNode]
 }
 
 func (self *BannedNodes) IsBanned(urlStr string) bool {
@@ -39,6 +39,6 @@ func (self *BannedNodes) Ban(url *url.URL, urlStr, message string, duration time
 
 func NewBannedNodes() *BannedNodes {
 	return &BannedNodes{
-		bannedMap: &sync.Map{},
+		bannedMap: &generics.Map[string, *BannedNode]{},
 	}
 }

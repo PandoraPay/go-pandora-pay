@@ -11,8 +11,8 @@ import (
 
 func (g *GUIInteractive) infoRender() {
 	rows := []string{}
-	g.infoMap.Range(func(key, value interface{}) bool {
-		rows = append(rows, key.(string)+": "+value.(string))
+	g.infoMap.Range(func(key, value string) bool {
+		rows = append(rows, key+": "+value)
 		return true
 	})
 	sort.Strings(rows)

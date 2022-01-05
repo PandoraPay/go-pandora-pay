@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/config"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/recovery"
 	"strconv"
@@ -22,8 +23,8 @@ type MempoolAccountTxs struct {
 
 type MempoolTxs struct {
 	count                     int32
-	txsMap                    *sync.Map //[string]*mempoolTx
-	accountsMapTxs            *sync.Map //[string]*MempoolAccountTxs
+	txsMap                    *generics.Map[string, *mempoolTx]
+	accountsMapTxs            *generics.Map[string, *MempoolAccountTxs]
 	UpdateMempoolTransactions *multicast.MulticastChannel[*blockchain_types.MempoolTransactionUpdate]
 }
 
@@ -42,8 +43,8 @@ func (self *MempoolTxs) inserted(tx *mempoolTx) {
 		for key := range keys {
 
 			for {
-				foundMapData, _ := self.accountsMapTxs.LoadOrStore(key, &MempoolAccountTxs{})
-				foundMap := foundMapData.(*MempoolAccountTxs)
+				foundMap, _ := self.accountsMapTxs.LoadOrStore(key, &MempoolAccountTxs{})
+
 				foundMap.Lock()
 				if foundMap.deleted {
 					foundMap.Unlock()
@@ -81,8 +82,8 @@ func (self *MempoolTxs) deleted(tx *mempoolTx, blockchainNotification bool) {
 
 		keys := tx.Tx.GetAllKeys()
 		for key := range keys {
-			foundMapData, _ := self.accountsMapTxs.LoadOrStore(key, &MempoolAccountTxs{})
-			foundMap := foundMapData.(*MempoolAccountTxs)
+			foundMap, _ := self.accountsMapTxs.LoadOrStore(key, &MempoolAccountTxs{})
+
 			foundMap.Lock()
 			delete(foundMap.txs, tx.Tx.Bloom.HashStr)
 			if len(foundMap.txs) == 0 {
@@ -106,8 +107,8 @@ func (self *MempoolTxs) deleted(tx *mempoolTx, blockchainNotification bool) {
 func (self *MempoolTxs) GetTxsFromMap() (out map[string]*mempoolTx) {
 
 	out = make(map[string]*mempoolTx)
-	self.txsMap.Range(func(key, value interface{}) bool {
-		out[key.(string)] = value.(*mempoolTx)
+	self.txsMap.Range(func(key string, value *mempoolTx) bool {
+		out[key] = value
 		return true
 	})
 
@@ -137,13 +138,12 @@ func (self *MempoolTxs) Get(txId string) *mempoolTx {
 	if !loaded {
 		return nil
 	}
-	return value.(*mempoolTx)
+	return value
 }
 
 func (self *MempoolTxs) GetAccountTxs(publicKey []byte) []*mempoolTx {
 	if config.SEED_WALLET_NODES_INFO {
-		if foundMapData, found := self.accountsMapTxs.Load(string(publicKey)); found {
-			foundMap := foundMapData.(*MempoolAccountTxs)
+		if foundMap, found := self.accountsMapTxs.Load(string(publicKey)); found {
 
 			foundMap.RLock()
 
@@ -167,8 +167,8 @@ func createMempoolTxs() (txs *MempoolTxs) {
 
 	txs = &MempoolTxs{
 		0,
-		&sync.Map{},
-		&sync.Map{},
+		&generics.Map[string, *mempoolTx]{},
+		&generics.Map[string, *MempoolAccountTxs]{},
 		multicast.NewMulticastChannel[*blockchain_types.MempoolTransactionUpdate](),
 	}
 

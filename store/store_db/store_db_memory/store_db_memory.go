@@ -1,6 +1,7 @@
 package store_db_memory
 
 import (
+	"pandora-pay/helpers/generics"
 	"pandora-pay/store/store_db/store_db_interface"
 	"sync"
 )
@@ -22,7 +23,7 @@ func (store *StoreDBMemory) View(callback func(dbTx store_db_interface.StoreDBTr
 
 	tx := &StoreDBMemoryTransaction{
 		store: store.store,
-		local: &sync.Map{},
+		local: &generics.Map[string, *StoreDBMemoryTransactionData]{},
 	}
 	return callback(tx)
 }
@@ -33,7 +34,7 @@ func (store *StoreDBMemory) Update(callback func(dbTx store_db_interface.StoreDB
 
 	tx := &StoreDBMemoryTransaction{
 		store: store.store,
-		local: &sync.Map{},
+		local: &generics.Map[string, *StoreDBMemoryTransactionData]{},
 		write: true,
 	}
 

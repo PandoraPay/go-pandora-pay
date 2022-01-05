@@ -2,20 +2,19 @@ package consensus
 
 import (
 	"pandora-pay/config"
-	"sync"
+	"pandora-pay/helpers/generics"
 )
 
 type Forks struct {
-	hashes *sync.Map
+	hashes *generics.Map[string, *Fork]
 }
 
 func (forks *Forks) getBestFork() (selectedFork *Fork) {
 
 	bigTotalDifficulty := config.BIG_INT_ZERO
 
-	forks.hashes.Range(func(key interface{}, value interface{}) bool {
+	forks.hashes.Range(func(key string, fork *Fork) bool {
 
-		fork := value.(*Fork)
 		fork.RLock()
 		if fork.BigTotalDifficulty.Cmp(bigTotalDifficulty) > 0 {
 			bigTotalDifficulty = fork.BigTotalDifficulty

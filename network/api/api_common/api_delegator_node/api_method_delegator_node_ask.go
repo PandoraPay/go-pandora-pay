@@ -34,14 +34,14 @@ func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAs
 	delegateStakingPrivateKey := addresses.GenerateNewPrivateKey()
 	delegateStakingPublicKey := delegateStakingPrivateKey.GeneratePublicKey()
 
-	data, loaded := api.pendingDelegatesStakesChanges.LoadOrStore(string(publicKey), &pendingDelegateStakeChange{
+	pendingDelegateStakeChange, loaded := api.pendingDelegatesStakesChanges.LoadOrStore(string(publicKey), &PendingDelegateStakeChange{
 		delegateStakingPrivateKey,
 		delegateStakingPublicKey,
 		publicKey,
 		atomic.LoadUint64(&api.chainHeight),
 	})
+
 	if loaded {
-		pendingDelegateStakeChange := data.(*pendingDelegateStakeChange)
 		delegateStakingPrivateKey = pendingDelegateStakeChange.delegateStakingPrivateKey
 		delegateStakingPublicKey = pendingDelegateStakeChange.delegateStakingPublicKey
 	}

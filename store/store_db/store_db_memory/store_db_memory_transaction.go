@@ -3,8 +3,8 @@ package store_db_memory
 import (
 	"errors"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/store/store_db/store_db_interface"
-	"sync"
 )
 
 type StoreDBMemoryTransactionData struct {
@@ -16,7 +16,7 @@ type StoreDBMemoryTransaction struct {
 	store_db_interface.StoreDBTransactionInterface
 	store map[string][]byte
 	write bool
-	local *sync.Map
+	local *generics.Map[string, *StoreDBMemoryTransactionData]
 }
 
 func (tx *StoreDBMemoryTransaction) IsWritable() bool {
@@ -36,9 +36,8 @@ func (tx *StoreDBMemoryTransaction) PutClone(key string, value []byte) {
 
 func (tx *StoreDBMemoryTransaction) Get(key string) []byte {
 
-	out, ok := tx.local.Load(key)
+	data, ok := tx.local.Load(key)
 	if ok {
-		data := out.(*StoreDBMemoryTransactionData)
 		if data.operation == "del" {
 			return nil
 		}
@@ -75,14 +74,12 @@ func (tx *StoreDBMemoryTransaction) writeTx() error {
 		return errors.New("Transaction is not writeable")
 	}
 
-	tx.local.Range(func(key, value interface{}) bool {
-
-		data := value.(*StoreDBMemoryTransactionData)
+	tx.local.Range(func(key string, data *StoreDBMemoryTransactionData) bool {
 
 		if data.operation == "del" {
-			delete(tx.store, key.(string))
+			delete(tx.store, key)
 		} else if data.operation == "put" {
-			tx.store[key.(string)] = data.value
+			tx.store[key] = data.value
 		}
 		return true
 	})

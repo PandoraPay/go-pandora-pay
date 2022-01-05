@@ -28,9 +28,8 @@ func (consensus *Consensus) ChainUpdate_websockets(conn *connection.AdvancedConn
 
 	hashStr := string(chainUpdateNotification.Hash)
 
-	forkFound, exists := consensus.forks.hashes.Load(hashStr)
+	fork, exists := consensus.forks.hashes.Load(hashStr)
 	if exists {
-		fork := forkFound.(*Fork)
 		fork.AddConn(conn, true)
 		return nil, nil
 	}

@@ -2,9 +2,9 @@ package consensus
 
 import (
 	"pandora-pay/blockchain"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
-	"sync"
 )
 
 type Consensus struct {
@@ -25,7 +25,7 @@ func NewConsensus(chain *blockchain.Blockchain, mempool *mempool.Mempool) *Conse
 		chain:   chain,
 		mempool: mempool,
 		forks: &Forks{
-			hashes: &sync.Map{},
+			hashes: &generics.Map[string, *Fork]{},
 		},
 	}
 

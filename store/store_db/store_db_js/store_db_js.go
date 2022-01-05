@@ -2,6 +2,7 @@ package store_db_js
 
 import (
 	"errors"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/store/store_db/store_db_interface"
 	"sync"
 	"syscall/js"
@@ -24,7 +25,7 @@ func (store *StoreDBJS) View(callback func(dbTx store_db_interface.StoreDBTransa
 
 	tx := &StoreDBJSTransaction{
 		jsStore: store.jsStore,
-		local:   &sync.Map{},
+		local:   &generics.Map[string, *StoreDBJSTransactionData]{},
 	}
 	return callback(tx)
 }
@@ -35,7 +36,7 @@ func (store *StoreDBJS) Update(callback func(dbTx store_db_interface.StoreDBTran
 
 	tx := &StoreDBJSTransaction{
 		jsStore: store.jsStore,
-		local:   &sync.Map{},
+		local:   &generics.Map[string, *StoreDBJSTransactionData]{},
 		write:   true,
 	}
 

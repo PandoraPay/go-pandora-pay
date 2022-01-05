@@ -14,7 +14,6 @@ import (
 	"pandora-pay/recovery"
 	"pandora-pay/transactions_builder"
 	"pandora-pay/wallet"
-	"sync"
 	"time"
 )
 
@@ -27,8 +26,8 @@ type APICommon struct {
 	Faucet                    *api_faucet.Faucet
 	DelegatorNode             *api_delegator_node.DelegatorNode
 	ApiStore                  *APIStore
-	MempoolDownloadPending    *sync.Map                  //[string]*mempoolNewTxAnswer
-	MempoolProcessedThisBlock *generics.Value[*sync.Map] //[string]*APIMempoolNewTxReply
+	MempoolDownloadPending    *generics.Map[string, *mempoolNewTxAnswer]
+	MempoolProcessedThisBlock *generics.Value[*generics.Map[string, *APIMempoolNewTxReply]]
 
 	temporaryList         *generics.Value[*APINetworkNodesReply]
 	temporaryListCreation *generics.Value[time.Time]
@@ -50,7 +49,7 @@ func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.Blockch
 		newChainDataUpdate.Update.BigTotalDifficulty.String(),
 	}
 	api.localChain.Store(newLocalChain)
-	api.MempoolProcessedThisBlock.Store(&sync.Map{})
+	api.MempoolProcessedThisBlock.Store(&generics.Map[string, *APIMempoolNewTxReply]{})
 }
 
 //make sure it is safe to read
@@ -81,15 +80,15 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 		faucet,
 		delegatorNode,
 		apiStore,
-		&sync.Map{},
-		&generics.Value[*sync.Map]{},
+		&generics.Map[string, *mempoolNewTxAnswer]{},
+		&generics.Value[*generics.Map[string, *APIMempoolNewTxReply]]{},
 		&generics.Value[*APINetworkNodesReply]{},
 		&generics.Value[time.Time]{},
 	}
 
 	api.temporaryListCreation.Store(time.Now())
 
-	api.MempoolProcessedThisBlock.Store(&sync.Map{})
+	api.MempoolProcessedThisBlock.Store(&generics.Map[string, *APIMempoolNewTxReply]{})
 
 	recovery.SafeGo(func() {
 

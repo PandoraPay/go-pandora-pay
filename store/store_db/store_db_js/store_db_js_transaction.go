@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/store/store_db/store_db_interface"
-	"sync"
 	"syscall/js"
 )
 
@@ -18,7 +18,7 @@ type StoreDBJSTransaction struct {
 	store_db_interface.StoreDBTransactionInterface
 	jsStore js.Value
 	write   bool
-	local   *sync.Map
+	local   *generics.Map[string, *StoreDBJSTransactionData]
 }
 
 func (tx *StoreDBJSTransaction) IsWritable() bool {
@@ -34,9 +34,8 @@ func (tx *StoreDBJSTransaction) Put(key string, value []byte) {
 
 func (tx *StoreDBJSTransaction) Get(key string) []byte {
 
-	out, ok := tx.local.Load(key)
+	data, ok := tx.local.Load(key)
 	if ok {
-		data := out.(*StoreDBJSTransactionData)
 		if data.operation == "del" {
 			return nil
 		}
@@ -104,9 +103,8 @@ func (tx *StoreDBJSTransaction) writeTx() error {
 		return errors.New("Transaction is not writeable")
 	}
 
-	tx.local.Range(func(key, value interface{}) bool {
+	tx.local.Range(func(key string, data *StoreDBJSTransactionData) bool {
 
-		data := value.(*StoreDBJSTransactionData)
 		respCh := make(chan bool)
 		defer close(respCh)
 
@@ -116,7 +114,7 @@ func (tx *StoreDBJSTransaction) writeTx() error {
 		process := true
 		if data.operation == "del" {
 
-			promise := tx.jsStore.Call("removeItem", key.(string))
+			promise := tx.jsStore.Call("removeItem", key)
 
 			promise.Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 				respCh <- true
@@ -136,7 +134,7 @@ func (tx *StoreDBJSTransaction) writeTx() error {
 				js.CopyBytesToJS(final, data.value)
 			}
 
-			promise := tx.jsStore.Call("setItem", key.(string), final)
+			promise := tx.jsStore.Call("setItem", key, final)
 
 			promise.Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 				respCh <- true

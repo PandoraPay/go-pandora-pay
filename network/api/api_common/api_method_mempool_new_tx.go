@@ -47,13 +47,11 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 	processedAlreadyFound, loaded := mempoolProcessedThisBlock.Load(hashStr)
 
 	if loaded {
-		answer := processedAlreadyFound.(*APIMempoolNewTxReply)
-		*reply = *answer
+		*reply = *processedAlreadyFound
 		return nil
 	}
 
-	actual, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, &mempoolNewTxAnswer{make(chan struct{}), nil})
-	answer := actual.(*mempoolNewTxAnswer)
+	answer, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, &mempoolNewTxAnswer{make(chan struct{}), nil})
 
 	if loaded {
 		<-answer.wait

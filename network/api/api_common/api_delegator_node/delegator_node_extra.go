@@ -42,8 +42,7 @@ func (api *DelegatorNode) execute() {
 			if lastHeight != chainHeight {
 				lastHeight = chainHeight
 
-				api.pendingDelegatesStakesChanges.Range(func(key, value interface{}) bool {
-					pendingDelegateStakeChange := value.(*pendingDelegateStakeChange)
+				api.pendingDelegatesStakesChanges.Range(func(key string, pendingDelegateStakeChange *PendingDelegateStakeChange) bool {
 					if chainHeight >= pendingDelegateStakeChange.blockHeight+10 {
 						api.pendingDelegatesStakesChanges.Delete(key)
 					}
@@ -72,10 +71,9 @@ func (api *DelegatorNode) updateAccountsChanges() {
 			}
 
 			for k, v := range plainAccs.HashMap.Committed {
-				data, loaded := api.pendingDelegatesStakesChanges.Load(k)
-				if loaded {
 
-					pendingDelegatingStakeChange := data.(*pendingDelegateStakeChange)
+				pendingDelegatingStakeChange, loaded := api.pendingDelegatesStakesChanges.Load(k)
+				if loaded {
 
 					if v.Stored == "update" {
 						plainAcc := v.Element.(*plain_account.PlainAccount)
