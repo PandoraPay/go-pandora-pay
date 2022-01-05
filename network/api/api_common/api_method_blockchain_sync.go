@@ -8,7 +8,7 @@ import (
 )
 
 func (api *APICommon) BlockchainSync(r *http.Request, args *struct{}, reply *blockchain_sync.BlockchainSyncData) error {
-	*reply = *api.localChainSync.Load().(*blockchain_sync.BlockchainSyncData)
+	*reply = *api.localChainSync.Load()
 	return nil
 }
 

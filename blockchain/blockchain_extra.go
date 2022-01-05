@@ -28,12 +28,11 @@ import (
 )
 
 func (chain *Blockchain) GetChainData() *BlockchainData {
-	return chain.ChainData.Load().(*BlockchainData)
+	return chain.ChainData.Load()
 }
 
 func (chain *Blockchain) GetChainDataUpdate() *BlockchainDataUpdate {
-	chainData := chain.ChainData.Load().(*BlockchainData)
-	return &BlockchainDataUpdate{chainData, chain.Sync.GetSyncData()}
+	return &BlockchainDataUpdate{chain.ChainData.Load(), chain.Sync.GetSyncData()}
 }
 
 func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {

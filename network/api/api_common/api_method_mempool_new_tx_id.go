@@ -7,7 +7,6 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
-	"sync"
 )
 
 func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash []byte, reply *APIMempoolNewTxReply) error {
@@ -17,7 +16,7 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 	}
 	hashStr := string(hash)
 
-	mempoolProcessedThisBlock := api.MempoolProcessedThisBlock.Load().(*sync.Map)
+	mempoolProcessedThisBlock := api.MempoolProcessedThisBlock.Load()
 	processedAlreadyFound, loaded := mempoolProcessedThisBlock.Load(hashStr)
 	if loaded {
 		answer := processedAlreadyFound.(*APIMempoolNewTxReply)

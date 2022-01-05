@@ -182,13 +182,11 @@ func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesIn
 
 func (mempool *Mempool) GetNextTransactionsToInclude(chainHash []byte) (out []*transaction.Transaction, outChainHash []byte) {
 
-	result := mempool.result.Load()
-	if result != nil {
-
-		res := result.(*MempoolResult)
+	res := mempool.result.Load()
+	if res != nil {
 
 		if chainHash == nil || bytes.Equal(res.chainHash, chainHash) {
-			txs := res.txs.Load().([]*mempoolTx)
+			txs := res.txs.Load()
 			finalTxs := make([]*transaction.Transaction, len(txs))
 			for i, tx := range txs {
 				finalTxs[i] = tx.Tx

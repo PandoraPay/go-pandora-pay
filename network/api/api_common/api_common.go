@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/blockchain_sync"
 	"pandora-pay/config"
 	"pandora-pay/config/config_nodes"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_common/api_delegator_node"
 	"pandora-pay/network/api/api_common/api_faucet"
@@ -14,7 +15,6 @@ import (
 	"pandora-pay/transactions_builder"
 	"pandora-pay/wallet"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -22,16 +22,16 @@ type APICommon struct {
 	mempool                   *mempool.Mempool
 	chain                     *blockchain.Blockchain
 	knownNodes                *known_nodes.KnownNodes
-	localChain                *atomic.Value //*APIBlockchain
-	localChainSync            *atomic.Value //*blockchain_sync.BlockchainSyncData
+	localChain                *generics.Value[*APIBlockchain]
+	localChainSync            *generics.Value[*blockchain_sync.BlockchainSyncData]
 	Faucet                    *api_faucet.Faucet
 	DelegatorNode             *api_delegator_node.DelegatorNode
 	ApiStore                  *APIStore
-	MempoolDownloadPending    *sync.Map     //[string]*mempoolNewTxAnswer
-	MempoolProcessedThisBlock *atomic.Value // *sync.Map //[string]*APIMempoolNewTxReply
+	MempoolDownloadPending    *sync.Map                  //[string]*mempoolNewTxAnswer
+	MempoolProcessedThisBlock *generics.Value[*sync.Map] //[string]*APIMempoolNewTxReply
 
-	temporaryList         atomic.Value //[]*KnownNode
-	temporaryListCreation atomic.Value //time.Time
+	temporaryList         *generics.Value[*APINetworkNodesReply]
+	temporaryListCreation *generics.Value[time.Time]
 }
 
 //make sure it is safe to read
@@ -76,15 +76,15 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 		mempool,
 		chain,
 		knownNodes,
-		&atomic.Value{}, //*APIBlockchain
-		&atomic.Value{}, //*APIBlockchainSync
+		&generics.Value[*APIBlockchain]{},
+		&generics.Value[*blockchain_sync.BlockchainSyncData]{},
 		faucet,
 		delegatorNode,
 		apiStore,
 		&sync.Map{},
-		&atomic.Value{},
-		atomic.Value{},
-		atomic.Value{},
+		&generics.Value[*sync.Map]{},
+		&generics.Value[*APINetworkNodesReply]{},
+		&generics.Value[time.Time]{},
 	}
 
 	api.temporaryListCreation.Store(time.Now())

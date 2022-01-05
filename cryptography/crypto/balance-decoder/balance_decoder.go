@@ -9,16 +9,16 @@ import (
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/generics"
 	"runtime"
 	"strconv"
-	"sync/atomic"
 )
 
 // table size cannot be more than 1<<24
 
 type BalanceDecoderInfo struct {
 	tableSize       int
-	tableLookup     atomic.Value //*LookupTable
+	tableLookup     *generics.Value[*LookupTable]
 	tableComputedCn chan *LookupTable
 	ctx             context.Context
 	readyCn         chan struct{}
@@ -26,7 +26,7 @@ type BalanceDecoderInfo struct {
 }
 
 type BalanceDecoderType struct {
-	info *atomic.Value //*BalanceDecoderInfo
+	info *generics.Value[*BalanceDecoderInfo]
 }
 
 func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
@@ -47,7 +47,7 @@ func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint6
 
 func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Context, statusCallback func(string)) *LookupTable {
 
-	info := self.info.Load().(*BalanceDecoderInfo)
+	info := self.info.Load()
 	if info.tableSize == 0 || info.tableSize < newTableSize || info.hasError.IsSet() {
 
 		if newTableSize == 0 {
@@ -65,7 +65,7 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 
 		info = &BalanceDecoderInfo{
 			newTableSize,
-			atomic.Value{},
+			&generics.Value[*LookupTable]{},
 			make(chan *LookupTable),
 			ctx,
 			make(chan struct{}),
@@ -104,12 +104,12 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 	case <-info.ctx.Done():
 	}
 
-	return info.tableLookup.Load().(*LookupTable)
+	return info.tableLookup.Load()
 }
 
 func CreateBalanceDecoder() *BalanceDecoderType {
 	out := &BalanceDecoderType{
-		&atomic.Value{},
+		&generics.Value[*BalanceDecoderInfo]{},
 	}
 	info := &BalanceDecoderInfo{
 		tableSize: 0,

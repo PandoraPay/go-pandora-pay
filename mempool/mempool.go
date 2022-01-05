@@ -7,10 +7,10 @@ import (
 	"pandora-pay/config/config_fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 	"runtime"
-	"sync/atomic"
 	"time"
 )
 
@@ -23,14 +23,14 @@ type mempoolTx struct {
 }
 
 type Mempool struct {
-	result                    *atomic.Value                `json:"-"` //*MempoolResult
-	SuspendProcessingCn       chan struct{}                `json:"-"`
-	ContinueProcessingCn      chan ContinueProcessingType  `json:"-"`
-	newWorkCn                 chan *mempoolWork            `json:"-"`
-	addTransactionCn          chan *MempoolWorkerAddTx     `json:"-"`
-	removeTransactionsCn      chan *MempoolWorkerRemoveTxs `json:"-"`
-	insertTransactionsCn      chan *MempoolWorkerInsertTxs `json:"-"`
-	Txs                       *MempoolTxs                  `json:"-"`
+	result                    *generics.Value[*MempoolResult] `json:"-"`
+	SuspendProcessingCn       chan struct{}                   `json:"-"`
+	ContinueProcessingCn      chan ContinueProcessingType     `json:"-"`
+	newWorkCn                 chan *mempoolWork               `json:"-"`
+	addTransactionCn          chan *MempoolWorkerAddTx        `json:"-"`
+	removeTransactionsCn      chan *MempoolWorkerRemoveTxs    `json:"-"`
+	insertTransactionsCn      chan *MempoolWorkerInsertTxs    `json:"-"`
+	Txs                       *MempoolTxs                     `json:"-"`
 	OnBroadcastNewTransaction func([]*transaction.Transaction, bool, bool, advanced_connection_types.UUID) []error
 }
 
@@ -181,7 +181,7 @@ func (mempool *Mempool) AddTxsToMempool(txs []*transaction.Transaction, height u
 func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
 
 	result := &MempoolResult{
-		txs:         &atomic.Value{}, //[]*mempoolTx{} , appendOnly
+		txs:         &generics.Value[[]*mempoolTx]{}, //, appendOnly
 		totalSize:   0,
 		chainHash:   hash,
 		chainHeight: height,
@@ -208,7 +208,7 @@ func CreateMempool() (*Mempool, error) {
 	gui.GUI.Log("Mempool init...")
 
 	mempool := &Mempool{
-		result:               &atomic.Value{}, // *MempoolResult
+		result:               &generics.Value[*MempoolResult]{}, // *MempoolResult
 		Txs:                  createMempoolTxs(),
 		SuspendProcessingCn:  make(chan struct{}),
 		ContinueProcessingCn: make(chan ContinueProcessingType),

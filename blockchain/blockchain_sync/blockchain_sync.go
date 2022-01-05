@@ -3,9 +3,9 @@ package blockchain_sync
 import (
 	"fmt"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/recovery"
-	"sync/atomic"
 	"time"
 )
 
@@ -16,22 +16,22 @@ type BlockchainSyncData struct {
 }
 
 type BlockchainSync struct {
-	syncData            *atomic.Value                                    //*BlockchainSyncData
+	syncData            *generics.Value[*BlockchainSyncData]
 	UpdateSyncMulticast *multicast.MulticastChannel[*BlockchainSyncData] `json:"-"`
 	updateCn            chan *BlockchainSyncData
 }
 
 func (self *BlockchainSync) GetSyncData() *BlockchainSyncData {
-	return self.syncData.Load().(*BlockchainSyncData)
+	return self.syncData.Load()
 }
 
 func (self *BlockchainSync) GetSyncTime() uint64 {
-	return self.syncData.Load().(*BlockchainSyncData).SyncTime
+	return self.syncData.Load().SyncTime
 }
 
 func (self *BlockchainSync) AddBlocksChanged(blocks uint32, propagateNotification bool) *BlockchainSyncData {
 
-	chainSyncData := self.syncData.Load().(*BlockchainSyncData)
+	chainSyncData := self.syncData.Load()
 
 	newChainSyncData := &BlockchainSyncData{
 		BlocksChangedLastInterval: chainSyncData.BlocksChangedLastInterval + blocks,
@@ -55,7 +55,7 @@ func (self *BlockchainSync) AddBlocksChanged(blocks uint32, propagateNotificatio
 
 func (self *BlockchainSync) resetBlocksChanged(propagateNotification bool) *BlockchainSyncData {
 
-	chainSyncData := self.syncData.Load().(*BlockchainSyncData)
+	chainSyncData := self.syncData.Load()
 
 	newChainSyncData := &BlockchainSyncData{}
 
@@ -110,7 +110,7 @@ func (self *BlockchainSync) start() {
 func CreateBlockchainSync() (out *BlockchainSync) {
 
 	out = &BlockchainSync{
-		syncData:            &atomic.Value{},
+		syncData:            &generics.Value[*BlockchainSyncData]{},
 		UpdateSyncMulticast: multicast.NewMulticastChannel[*BlockchainSyncData](),
 		updateCn:            make(chan *BlockchainSyncData),
 	}

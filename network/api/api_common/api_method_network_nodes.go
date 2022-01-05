@@ -12,19 +12,19 @@ import (
 	"time"
 )
 
-type GetNetworkNodesListNode struct {
+type APINetworkNode struct {
 	URL   string `json:"url"`
 	Score int    `json:"score"`
 }
 
-type GetNetworkNodesListReply struct {
-	Nodes []*GetNetworkNodesListNode `json:"nodes"`
+type APINetworkNodesReply struct {
+	Nodes []*APINetworkNode `json:"nodes"`
 }
 
-func (api *APICommon) GetList(reply *GetNetworkNodesListReply) (err error) {
+func (api *APICommon) GetList(reply *APINetworkNodesReply) (err error) {
 
 	now := time.Now()
-	if now.After(api.temporaryListCreation.Load().(time.Time)) {
+	if now.After(api.temporaryListCreation.Load()) {
 
 		api.temporaryListCreation.Store(now.Add(time.Minute * 1))
 
@@ -36,15 +36,15 @@ func (api *APICommon) GetList(reply *GetNetworkNodesListReply) (err error) {
 		}
 
 		index := 0
-		newTemporaryList := &GetNetworkNodesListReply{
-			Nodes: make([]*GetNetworkNodesListNode, count),
+		newTemporaryList := &APINetworkNodesReply{
+			Nodes: make([]*APINetworkNode, count),
 		}
 
 		includedMap := make(map[string]bool)
 
 		//1st my address
 		if config.NETWORK_ADDRESS_URL_STRING != "" {
-			newTemporaryList.Nodes[0] = &GetNetworkNodesListNode{
+			newTemporaryList.Nodes[0] = &APINetworkNode{
 				config.NETWORK_ADDRESS_URL_STRING,
 				3000,
 			}
@@ -77,7 +77,7 @@ func (api *APICommon) GetList(reply *GetNetworkNodesListReply) (err error) {
 			if !includedMap[string(element.Key)] {
 
 				node := allKnowNodes[string(element.Key)]
-				newTemporaryList.Nodes[index] = &GetNetworkNodesListNode{
+				newTemporaryList.Nodes[index] = &APINetworkNode{
 					node.URL,
 					int(atomic.LoadInt32(&node.Score)),
 				}
@@ -97,7 +97,7 @@ func (api *APICommon) GetList(reply *GetNetworkNodesListReply) (err error) {
 				} else {
 					includedMap[node.URL] = true
 
-					newTemporaryList.Nodes[index] = &GetNetworkNodesListNode{
+					newTemporaryList.Nodes[index] = &APINetworkNode{
 						node.URL,
 						int(atomic.LoadInt32(&node.Score)),
 					}
@@ -110,21 +110,21 @@ func (api *APICommon) GetList(reply *GetNetworkNodesListReply) (err error) {
 		api.temporaryList.Store(newTemporaryList)
 	}
 
-	list := api.temporaryList.Load().(*GetNetworkNodesListReply)
+	list := api.temporaryList.Load()
 	*reply = *list
 	return
 }
 
-func (api *APICommon) NetworkNodes(r *http.Request, args *struct{}, reply *GetNetworkNodesListReply) error {
+func (api *APICommon) NetworkNodes(r *http.Request, args *struct{}, reply *APINetworkNodesReply) error {
 	return api.GetList(reply)
 }
 
 func (api *APICommon) GetNetworkNodes_http(values url.Values) (interface{}, error) {
-	reply := &GetNetworkNodesListReply{}
+	reply := &APINetworkNodesReply{}
 	return reply, api.NetworkNodes(nil, nil, reply)
 }
 
 func (api *APICommon) GetNetworkNodes_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	reply := &GetNetworkNodesListReply{}
+	reply := &APINetworkNodesReply{}
 	return reply, api.NetworkNodes(nil, nil, reply)
 }

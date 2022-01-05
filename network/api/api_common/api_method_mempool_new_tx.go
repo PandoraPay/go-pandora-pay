@@ -9,7 +9,6 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
-	"sync"
 )
 
 type APIMempoolNewTxRequest struct {
@@ -44,7 +43,7 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 	hash := tx.HashManual()
 	hashStr := string(hash)
 
-	mempoolProcessedThisBlock := api.MempoolProcessedThisBlock.Load().(*sync.Map)
+	mempoolProcessedThisBlock := api.MempoolProcessedThisBlock.Load()
 	processedAlreadyFound, loaded := mempoolProcessedThisBlock.Load(hashStr)
 
 	if loaded {

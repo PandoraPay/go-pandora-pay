@@ -11,7 +11,6 @@ import (
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/events"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/recovery"
 	"pandora-pay/webassembly/webassembly_utils"
@@ -33,12 +32,10 @@ func listenEvents(this js.Value, args []js.Value) interface{} {
 
 	recovery.SafeGo(func() {
 		for {
-			dataValue, ok := <-channel
+			data, ok := <-channel
 			if !ok {
 				return
 			}
-
-			data := dataValue.(*events.EventData)
 
 			var final interface{}
 
@@ -76,12 +73,10 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 
 			var err error
 			for {
-				dataValue, ok := <-subscriptionsCn
+				data, ok := <-subscriptionsCn
 				if !ok {
 					return
 				}
-
-				data := dataValue.(*api_types.APISubscriptionNotification)
 
 				var object interface{}
 

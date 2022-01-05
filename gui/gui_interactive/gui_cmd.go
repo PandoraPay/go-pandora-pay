@@ -85,7 +85,7 @@ func (g *GUIInteractive) CommandDefineCallback(Text string, callback func(string
 
 func (g *GUIInteractive) cmdProcess(e ui.Event) {
 
-	cmdData := g.cmdData.Load().(*GUIInteractiveData)
+	cmdData := g.cmdData.Load()
 
 	var command *Command
 	if cmdData.cmdStatus == "cmd" {
@@ -242,7 +242,7 @@ func (g *GUIInteractive) outputRead(text string) (<-chan string, context.Context
 	g.cmd.Unlock()
 
 	cn := make(chan string)
-	cmdData := g.cmdData.Load().(*GUIInteractiveData)
+	cmdData := g.cmdData.Load()
 
 	g.cmdData.Store(&GUIInteractiveData{
 		"read",

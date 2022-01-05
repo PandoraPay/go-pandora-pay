@@ -1,4 +1,4 @@
-package helpers
+package generics
 
 // usage: Zero(T)()
 // e.g. Zero(string)() == ""

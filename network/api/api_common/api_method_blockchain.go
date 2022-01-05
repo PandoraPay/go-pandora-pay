@@ -21,7 +21,7 @@ type APIBlockchain struct {
 }
 
 func (api *APICommon) Blockchain(r *http.Request, args *struct{}, reply *APIBlockchain) error {
-	x := api.localChain.Load().(*APIBlockchain)
+	x := api.localChain.Load()
 	*reply = *x
 	return nil
 }

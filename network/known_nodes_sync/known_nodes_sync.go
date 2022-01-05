@@ -20,7 +20,7 @@ func (self *KnownNodesSync) DownloadNetworkNodes(conn *connection.AdvancedConnec
 		return
 	}
 
-	data := &api_common.GetNetworkNodesListReply{}
+	data := &api_common.APINetworkNodesReply{}
 	if err = json.Unmarshal(out.Out, data); err != nil {
 		return
 	}

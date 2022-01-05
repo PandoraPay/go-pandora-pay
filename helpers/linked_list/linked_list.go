@@ -1,6 +1,8 @@
 package linked_list
 
-import "pandora-pay/helpers"
+import (
+	"pandora-pay/helpers/generics"
+)
 
 type linkedListItem[T any] struct {
 	Next *linkedListItem[T]
@@ -49,21 +51,21 @@ func (list *LinkedList[T]) PopFirst() (T, bool) {
 		list.Length--
 		return data, true
 	}
-	return helpers.Zero[T](), false
+	return generics.Zero[T](), false
 }
 
 func (list *LinkedList[T]) GetFirst() (T, bool) {
 	if list.First != nil {
 		return list.First.Data, true
 	}
-	return helpers.Zero[T](), false
+	return generics.Zero[T](), false
 }
 
 func (list *LinkedList[T]) GetLast() (T, bool) {
 	if list.Last != nil {
 		return list.Last.Data, true
 	}
-	return helpers.Zero[T](), false
+	return generics.Zero[T](), false
 }
 
 func NewLinkedList[T any]() *LinkedList[T] {

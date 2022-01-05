@@ -25,6 +25,7 @@ import (
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
@@ -33,12 +34,11 @@ import (
 	"pandora-pay/wallet"
 	"strconv"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
 type Blockchain struct {
-	ChainData                *atomic.Value //*BlockchainData
+	ChainData                *generics.Value[*BlockchainData]
 	Sync                     *blockchain_sync.BlockchainSync
 	mempool                  *mempool.Mempool
 	wallet                   *wallet.Wallet
@@ -469,7 +469,7 @@ func CreateBlockchain(mempool *mempool.Mempool) (*Blockchain, error) {
 	gui.GUI.Log("Blockchain init...")
 
 	chain := &Blockchain{
-		ChainData:                &atomic.Value{}, //*BlockchainData
+		ChainData:                &generics.Value[*BlockchainData]{},
 		mutex:                    &sync.Mutex{},
 		mempool:                  mempool,
 		updatesQueue:             createBlockchainUpdatesQueue(),

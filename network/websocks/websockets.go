@@ -10,6 +10,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_http"
@@ -29,7 +30,7 @@ import (
 type Websockets struct {
 	AllAddresses                 *sync.Map
 	ApiWebsockets                *api_websockets.APIWebsockets
-	allList                      *atomic.Value //[]*connection.AdvancedConnection
+	allList                      *generics.Value[[]*connection.AdvancedConnection]
 	allListMutex                 *sync.Mutex
 	clients                      int64 //use atomic
 	serverSockets                int64 //use atomic
@@ -50,7 +51,7 @@ func (websockets *Websockets) GetServerSockets() int64 {
 }
 
 func (websockets *Websockets) GetFirstSocket() *connection.AdvancedConnection {
-	list := websockets.allList.Load().([]*connection.AdvancedConnection)
+	list := websockets.allList.Load()
 	if len(list) > 0 {
 		return list[0]
 	}
@@ -58,7 +59,7 @@ func (websockets *Websockets) GetFirstSocket() *connection.AdvancedConnection {
 }
 
 func (websockets *Websockets) GetAllSockets() []*connection.AdvancedConnection {
-	return websockets.allList.Load().([]*connection.AdvancedConnection)
+	return websockets.allList.Load()
 }
 
 func (websockets *Websockets) GetRandomSocket() *connection.AdvancedConnection {
@@ -138,10 +139,10 @@ func (websockets *Websockets) closedConnectionNow(conn *connection.AdvancedConne
 	websockets.AllAddresses.LoadAndDelete(conn.RemoteAddr)
 
 	websockets.allListMutex.Lock()
-	all := websockets.allList.Load().([]*connection.AdvancedConnection)
+	all := websockets.allList.Load()
 	for i, conn2 := range all {
 		if conn2 == conn {
-			//removing atomic.Value array
+			//removing from array array
 			list2 := make([]*connection.AdvancedConnection, len(all)-1)
 			copy(list2, all)
 			if len(all) > 1 && i != len(all)-1 {
@@ -236,7 +237,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 
 	conn.InitializedStatusMutex.Lock()
 	websockets.allListMutex.Lock()
-	websockets.allList.Store(append(websockets.allList.Load().([]*connection.AdvancedConnection), conn))
+	websockets.allList.Store(append(websockets.allList.Load(), conn))
 	websockets.allListMutex.Unlock()
 	conn.InitializedStatus = connection.INITIALIZED_STATUS_INITIALIZED
 	conn.InitializedStatusMutex.Unlock()
@@ -261,7 +262,7 @@ func NewWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, setti
 		AllAddresses:                 &sync.Map{},
 		clients:                      0,
 		serverSockets:                0,
-		allList:                      &atomic.Value{}, //[]*connection.AdvancedConnection
+		allList:                      &generics.Value[[]*connection.AdvancedConnection]{},
 		allListMutex:                 &sync.Mutex{},
 		UpdateNewConnectionMulticast: multicast.NewMulticastChannel[*connection.AdvancedConnection](),
 		api:                          api,

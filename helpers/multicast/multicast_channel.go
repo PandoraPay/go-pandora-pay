@@ -1,13 +1,13 @@
 package multicast
 
 import (
+	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/linked_list"
 	"sync"
-	"sync/atomic"
 )
 
 type MulticastChannel[T any] struct {
-	listeners           *atomic.Value //[]chan interface{}
+	listeners           *generics.Value[[]chan T]
 	queueBroadcastCn    chan T
 	internalBroadcastCn chan T
 	count               int
@@ -19,7 +19,7 @@ func (self *MulticastChannel[T]) AddListener() <-chan T {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	listeners := self.listeners.Load().([]chan T)
+	listeners := self.listeners.Load()
 	newChan := make(chan T)
 
 	self.listeners.Store(append(listeners, newChan))
@@ -36,7 +36,7 @@ func (self *MulticastChannel[T]) RemoveChannel(channel <-chan T) bool {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	listeners := self.listeners.Load().([]chan T)
+	listeners := self.listeners.Load()
 	for i, cn := range listeners {
 		if cn == channel {
 			close(cn)
@@ -54,11 +54,11 @@ func (self *MulticastChannel[T]) CloseAll() {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	listeners := self.listeners.Load().([]chan T)
+	listeners := self.listeners.Load()
 	for _, channel := range listeners {
 		close(channel)
 	}
-	self.listeners.Store(make([]chan<- T, 0))
+	self.listeners.Store(make([]chan T, 0))
 
 	close(self.internalBroadcastCn)
 }
@@ -99,7 +99,7 @@ func (self *MulticastChannel[T]) runInternalBroadcast() {
 			return
 		}
 
-		listeners := self.listeners.Load().([]chan T)
+		listeners := self.listeners.Load()
 		for _, channel := range listeners {
 			channel <- data
 		}
@@ -109,7 +109,7 @@ func (self *MulticastChannel[T]) runInternalBroadcast() {
 func NewMulticastChannel[T any]() *MulticastChannel[T] {
 
 	multicast := &MulticastChannel[T]{
-		&atomic.Value{}, //[]chan interface{}
+		&generics.Value[[]chan T]{},
 		make(chan T),
 		make(chan T),
 		0,

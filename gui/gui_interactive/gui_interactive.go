@@ -7,8 +7,8 @@ import (
 	"os"
 	"pandora-pay/gui/gui_interface"
 	"pandora-pay/gui/gui_logger"
+	"pandora-pay/helpers/generics"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -27,7 +27,7 @@ type GUIInteractive struct {
 	cmd     *widgets.List
 	cmdRows []string
 
-	cmdData atomic.Value //*GUIInteractiveData
+	cmdData *generics.Value[*GUIInteractiveData]
 
 	logs *widgets.Paragraph
 
@@ -64,6 +64,7 @@ func CreateGUIInteractive() (*GUIInteractive, error) {
 		logger:   logger,
 		infoMap:  &sync.Map{},
 		info2Map: &sync.Map{},
+		cmdData:  &generics.Value[*GUIInteractiveData]{},
 	}
 
 	if err = ui.Init(); err != nil {
