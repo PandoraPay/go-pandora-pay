@@ -191,7 +191,10 @@ func createMempoolTxs() (txs *MempoolTxs) {
 
 	recovery.SafeGo(func() {
 		last := int32(-1)
+
+		ticker := time.NewTicker(1 * time.Second).C
 		for {
+			<-ticker
 
 			txsCount := atomic.LoadInt32(&txs.count)
 
@@ -200,7 +203,6 @@ func createMempoolTxs() (txs *MempoolTxs) {
 				last = txsCount
 			}
 
-			time.Sleep(1 * time.Second)
 		}
 	})
 

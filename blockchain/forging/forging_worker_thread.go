@@ -8,6 +8,7 @@ import (
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/generics"
 	"sync/atomic"
 	"time"
 )
@@ -156,12 +157,9 @@ func (worker *ForgingWorkerThread) forge() {
 
 		timeLimit := uint64(timeLimitMs / 1000)
 		//forge with my wallets
-		diff := int(timeLimit - timestamp)
-		if diff > 20 {
-			diff = 20
-		}
-		if diff < 0 {
-			diff = 0
+		diff := 0
+		if timeLimit > timestamp {
+			diff = int(generics.Min(timeLimit-timestamp, 20))
 		}
 
 		for i := 0; i <= diff; i++ {
@@ -196,7 +194,6 @@ func (worker *ForgingWorkerThread) forge() {
 					suspended = true
 					validateWork()
 
-					diff = -1
 					break
 
 				} else {
@@ -204,6 +201,10 @@ func (worker *ForgingWorkerThread) forge() {
 					// gui.GUI.Log(hex.EncodeToString(kernelHash), strconv.FormatUint(timestamp, 10 ))
 				}
 
+			}
+
+			if suspended {
+				break
 			}
 
 			timestamp += 1

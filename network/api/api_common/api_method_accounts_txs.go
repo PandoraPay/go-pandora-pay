@@ -49,11 +49,9 @@ func (api *APICommon) AccountTxs(r *http.Request, args *APIAccountTxsRequest, re
 			args.Next = reply.Count
 		}
 
-		index := args.Next
-		if index < config.API_ACCOUNT_MAX_TXS {
-			index = 0
-		} else {
-			index -= config.API_ACCOUNT_MAX_TXS
+		index := uint64(0)
+		if args.Next > config.API_ACCOUNT_MAX_TXS {
+			index = args.Next - config.API_ACCOUNT_MAX_TXS
 		}
 
 		reply.Txs = make([]helpers.HexBytes, args.Next-index)

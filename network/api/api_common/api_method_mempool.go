@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 )
@@ -30,15 +31,9 @@ func (api *APICommon) Mempool(r *http.Request, args *APIMempoolRequest, reply *A
 		args.Count = config.API_MEMPOOL_MAX_TRANSACTIONS
 	}
 
-	start := args.Page * args.Count
+	start := generics.Max(args.Page*args.Count, 0)
 
-	length := len(transactions) - start
-	if length < 0 {
-		length = 0
-	}
-	if length > config.API_MEMPOOL_MAX_TRANSACTIONS {
-		length = config.API_MEMPOOL_MAX_TRANSACTIONS
-	}
+	length := generics.Min(generics.Max(len(transactions)-start, 0), config.API_MEMPOOL_MAX_TRANSACTIONS)
 
 	reply.Count = len(transactions)
 	reply.Hashes = make([]helpers.HexBytes, length)

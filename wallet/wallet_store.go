@@ -10,6 +10,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/wallet/wallet_address"
@@ -42,6 +43,9 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 		defer wallet.RUnlock()
 	}
 
+	start = generics.Max(0, start)
+	end = generics.Min(end, len(wallet.Addresses))
+
 	if !wallet.Loaded {
 		return errors.New("Can't save your wallet because your stored wallet on the drive was not successfully loaded")
 	}
@@ -65,10 +69,6 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 		}
 
 		writer.Put("wallet", marshal)
-
-		if end > len(wallet.Addresses) {
-			end = len(wallet.Addresses)
-		}
 
 		for i := start; i < end; i++ {
 			if marshal, err = json.Marshal(wallet.Addresses[i]); err != nil {

@@ -295,10 +295,7 @@ func (c *AdvancedConnection) SendPings() {
 	for {
 
 		select {
-		case _, ok := <-pingTicker.C:
-			if !ok {
-				return
-			}
+		case <-pingTicker.C:
 		case <-c.Closed:
 			return
 		}
@@ -320,10 +317,7 @@ func (c *AdvancedConnection) IncreaseKnownNodeScore() {
 	for {
 
 		select {
-		case _, ok := <-ticker.C:
-			if !ok {
-				return
-			}
+		case <-ticker.C:
 		case <-c.Closed:
 			return
 		}

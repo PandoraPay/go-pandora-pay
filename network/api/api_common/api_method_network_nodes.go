@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/config"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store/min_max_heap"
@@ -30,10 +31,7 @@ func (api *APICommon) GetList(reply *APINetworkNodesReply) (err error) {
 
 		knownList := api.knownNodes.GetList()
 
-		count := config.NETWORK_KNOWN_NODES_LIST_RETURN
-		if count > len(knownList) {
-			count = len(knownList)
-		}
+		count := generics.Min(config.NETWORK_KNOWN_NODES_LIST_RETURN, len(knownList))
 
 		index := 0
 		newTemporaryList := &APINetworkNodesReply{

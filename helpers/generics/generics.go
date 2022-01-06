@@ -1,6 +1,9 @@
 package generics
 
-import "encoding/json"
+import (
+	"constraints"
+	"encoding/json"
+)
 
 // usage: Zero(T)()
 // e.g. Zero(string)() == ""
@@ -16,4 +19,18 @@ func Clone[T any](a, z T) (T, error) {
 
 	err = json.Unmarshal(data, z)
 	return z, err
+}
+
+func Max[T constraints.Ordered](x, y T) T {
+	if x > y {
+		return x
+	}
+	return y
+}
+
+func Min[T constraints.Ordered](x, y T) T {
+	if x < y {
+		return x
+	}
+	return y
 }

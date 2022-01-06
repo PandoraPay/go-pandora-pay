@@ -93,7 +93,6 @@ func CreateGUIInteractive() (*GUIInteractive, error) {
 	ui.Render(grid)
 
 	g.tickerRender = time.NewTicker(100 * time.Millisecond)
-	ticker := g.tickerRender.C
 	go func() {
 
 		uiEvents := ui.PollEvents()
@@ -113,7 +112,7 @@ func CreateGUIInteractive() (*GUIInteractive, error) {
 				default:
 					g.cmdProcess(e)
 				}
-			case _, ok := <-ticker:
+			case _, ok := <-g.tickerRender.C:
 				if !ok {
 					return
 				}

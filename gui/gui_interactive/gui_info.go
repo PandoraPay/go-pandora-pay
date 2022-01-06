@@ -36,6 +36,8 @@ func (g *GUIInteractive) infoInit() {
 
 	go func() {
 
+		ticker := time.NewTicker(1 * time.Second).C
+
 		for {
 
 			var m runtime.MemStats
@@ -43,14 +45,15 @@ func (g *GUIInteractive) infoInit() {
 			g.InfoUpdate("memory", bToMb(m.Alloc)+"M "+bToMb(m.TotalAlloc)+"M "+bToMb(m.Alloc)+"M "+strconv.FormatUint(uint64(m.NumGC), 10))
 
 			before, err1 := cpu.Get()
-			time.Sleep(1 * time.Second)
+			<-ticker
+
 			after, err2 := cpu.Get()
 			if err1 == nil && err2 == nil {
 				total := float64(after.Total - before.Total)
 				g.InfoUpdate("cpu", strconv.FormatFloat(float64(after.User-before.User)/total*100, 'f', 2, 64)+"% "+strconv.FormatFloat(float64(after.System-before.System)/total*100, 'f', 2, 64)+"% "+strconv.FormatFloat(float64(after.Idle-before.Idle)/total*100, 'f', 2, 64)+"% ")
 			}
 
-			time.Sleep(1 * time.Second)
+			<-ticker
 		}
 
 	}()
