@@ -1,6 +1,7 @@
 package debugging
 
 import (
+	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 	"pandora-pay/config"
@@ -11,9 +12,11 @@ import (
 func Start() (err error) {
 
 	recovery.SafeGo(func() {
-		if err := http.ListenAndServe("localhost:"+strconv.Itoa(6060+config.INSTANCE_ID), nil); err != nil {
+		addr := "localhost:" + strconv.Itoa(6060+config.INSTANCE_ID)
+		if err := http.ListenAndServe(addr, nil); err != nil {
 			panic(err)
 		}
+		fmt.Println("DEBUGGING STARTED ON ", addr)
 	})
 
 	return nil

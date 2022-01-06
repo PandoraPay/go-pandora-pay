@@ -135,13 +135,10 @@ Output
 
 ```
 {
-    "results":[
-        {
+    "results":[{
             "address": "PANDDEVABc3D9FePUuPADupO1p8jvtwEAVG5L3>sDttvmCw><jgAAABpTAR",
             "plainAcc": null,
-            "balance":
-            [
-                {
+            "balance":[ {
                     "amount": "15f8136864b1c06ebed9c03a006a61386d9d2c93310ff9758b7d3a5580a49a6d0018b822c42c27ad84d2971544d743417bb28ff7530f848e9d52c23598a665b01d01",
                     "value": 65205984,
                     "asset": "0000000000000000000000000000000000000000"

@@ -1,6 +1,8 @@
 if [ $# -eq 0 ]; then
   echo "argument missing"
-  echo "'race' or 'empty'"
+  echo "include 'normal' for starting in normal mode"
+  echo "include 'race' to enable the race detection"
+  echo "include 'debugging' to enable debugging using profiling"
   exit 1
 fi
 
@@ -8,9 +10,17 @@ SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 nodes=4
 race=false
-if [ $1 = "race" ]; then
-  race=true
-fi
+debugging=""
+
+for arg in $@
+do
+  if [ $arg = "debugging" ]; then
+    debugging="--debugging"
+  fi
+  if [ $arg = "race" ]; then
+      race=true
+    fi
+done
 
 str="genesis.data,"
 
@@ -63,9 +73,9 @@ for (( i=0; i < $nodes; ++i ))
 do
   echo "opening $i"
   if $race ; then
-    qterminal GORACE="log_path=/$SCRIPTPATH/report"  -e go run -race main.go --instance="devnet" --instance-id="$i" --tcp-server-port="5230" --new-devnet --network="devnet" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" --debugging &
+    qterminal GORACE="log_path=/$SCRIPTPATH/report"  -e go run -race main.go --instance="devnet" --instance-id="$i" --tcp-server-port="5230" --new-devnet --network="devnet" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" $debugging &
   else
-    xterm -e go run main.go --instance="devnet" --instance-id="$i" --tcp-server-port="5230" --new-devnet --network="devnet" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" --debugging &
+    xterm -e go run main.go --instance="devnet" --instance-id="$i" --tcp-server-port="5230" --new-devnet --network="devnet" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" $debugging &
   fi
 done
 
