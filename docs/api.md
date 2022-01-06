@@ -65,6 +65,7 @@ List of all APIs
 | wallet/get-addresses   | Get all wallet accounts                                                                                                                                                       | ✓    | ✓        | ✓              | !             | Requires --auth-users                    |
 | wallet/create-address  | Create a new empty address                                                                                                                                                    | ✓    | ✓        | ✓              | !             | Requires --auth-users                    |
 | wallet/get-balances    | Get the balances (decoded) of the requested wallet addresses                                                                                                                  | ✓    | ✓        | ✓              | !             | Requires --auth-users                    |
+| wallet/delete-address  | Delete an address from the wallet                                                                                                                                             | ✓    | ✓        | ✓              | !             | Requires --auth-users                    |
 
 
 TODO: TCP

@@ -354,25 +354,15 @@ func (wallet *Wallet) RemoveAddressByIndex(index int, lock bool) (bool, error) {
 
 func (wallet *Wallet) RemoveAddress(encodedAddress string, lock bool) (bool, error) {
 
-	if lock {
-		wallet.Lock()
-		defer wallet.Unlock()
+	addr, err := addresses.DecodeAddr(encodedAddress)
+	if err != nil {
+		return false, err
 	}
 
-	if !wallet.Loaded {
-		return false, errors.New("Wallet was not loaded!")
-	}
-
-	for i, addr := range wallet.Addresses {
-		if addr.AddressEncoded == encodedAddress {
-			return wallet.RemoveAddressByIndex(i, false)
-		}
-	}
-
-	return false, nil
+	return wallet.RemoveAddressByPublicKey(addr.PublicKey, lock)
 }
 
-func (wallet *Wallet) RemoveAddressByWalletAddress(address *wallet_address.WalletAddress, lock bool) (bool, error) {
+func (wallet *Wallet) RemoveAddressByPublicKey(publicKey []byte, lock bool) (bool, error) {
 
 	if lock {
 		wallet.Lock()
@@ -384,7 +374,7 @@ func (wallet *Wallet) RemoveAddressByWalletAddress(address *wallet_address.Walle
 	}
 
 	for i, addr := range wallet.Addresses {
-		if addr == address {
+		if bytes.Equal(addr.PublicKey, publicKey) {
 			return wallet.RemoveAddressByIndex(i, false)
 		}
 	}
@@ -488,7 +478,7 @@ func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAcc
 		adr.DelegatedStake = nil
 
 		if adr.PrivateKey == nil {
-			_, err = wallet.RemoveAddressByWalletAddress(adr, lock)
+			_, err = wallet.RemoveAddressByPublicKey(adr.PublicKey, lock)
 			return
 		}
 
@@ -499,14 +489,14 @@ func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAcc
 		(adr.DelegatedStake == nil && plainAcc.DelegatedStake.HasDelegatedStake()) {
 
 		if adr.PrivateKey == nil {
-			_, err = wallet.RemoveAddressByWalletAddress(adr, lock)
+			_, err = wallet.RemoveAddressByPublicKey(adr.PublicKey, lock)
 			return
 		}
 
 		if plainAcc.DelegatedStake.HasDelegatedStake() {
 
 			if plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE {
-				_, err = wallet.RemoveAddressByWalletAddress(adr, lock)
+				_, err = wallet.RemoveAddressByPublicKey(adr.PublicKey, lock)
 				return
 			}
 
@@ -517,7 +507,7 @@ func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAcc
 
 			var delegatedStake *wallet_address.WalletAddressDelegatedStake
 			if delegatedStake, err = adr.FindDelegatedStake(uint32(plainAcc.Nonce), lastKnownNonce, plainAcc.DelegatedStake.DelegatedStakePublicKey); err != nil {
-				_, err = wallet.RemoveAddressByWalletAddress(adr, lock)
+				_, err = wallet.RemoveAddressByPublicKey(adr.PublicKey, lock)
 				return
 			}
 

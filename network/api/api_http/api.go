@@ -45,6 +45,7 @@ func NewAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chai
 		"network/nodes":          api.apiCommon.GetNetworkNodes_http,
 		"wallet/get-addresses":   api.apiCommon.WalletGetAddresses_http,
 		"wallet/create-address":  api.apiCommon.WalletCreateAddress_http,
+		"wallet/delete-address":  api.apiCommon.WalletDeleteAddress_http,
 		"wallet/get-balances":    api.apiCommon.WalletGetBalances_http,
 	}
 

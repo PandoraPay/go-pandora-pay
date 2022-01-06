@@ -66,6 +66,7 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		"login":                 api.GetLogin_websockets,
 		"logout":                api.GetLogout_websockets,
 		"wallet/get-addresses":  api.apiCommon.WalletGetAddresses_websockets,
+		"wallet/delete-address": api.apiCommon.WalletDeleteAddress_websockets,
 		"wallet/create-address": api.apiCommon.WalletCreateAddress_websockets,
 		"wallet/get-balances":   api.apiCommon.WalletGetBalances_websockets,
 	}
