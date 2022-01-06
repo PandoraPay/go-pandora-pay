@@ -3,12 +3,12 @@ package api_common
 import (
 	"encoding/json"
 	"errors"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -74,7 +74,7 @@ func (api *APICommon) BlockComplete(r *http.Request, args *APIBlockCompleteReque
 
 func (api *APICommon) GetBlockComplete_http(values url.Values) (interface{}, error) {
 	args := &APIBlockCompleteRequest{0, nil, api_types.RETURN_JSON}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &APIBlockCompleteReply{}

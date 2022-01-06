@@ -27,8 +27,8 @@ const (
 )
 
 type APIAccountBaseRequest struct {
-	Address   string           `json:"address,omitempty"  urlstruct:"address"`
-	PublicKey helpers.HexBytes `json:"publicKey,omitempty"  urlstruct:"publicKey"`
+	Address   string           `json:"address,omitempty"  schema:"address"`
+	PublicKey helpers.HexBytes `json:"publicKey,omitempty"  schema:"publicKey"`
 }
 
 func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
@@ -42,7 +42,7 @@ func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
 	} else if request.PublicKey != nil && len(request.PublicKey) == cryptography.PublicKeySize {
 		publicKey = request.PublicKey
 	} else {
-		return nil, errors.New("Invalid address")
+		return nil, errors.New("Invalid address or publicKey")
 	}
 
 	return publicKey, nil
@@ -60,8 +60,8 @@ type APIUnsubscriptionRequest struct {
 }
 
 type APIAuthenticateBaseRequest struct {
-	Username string `json:"user" urlstruct:"user"`
-	Password string `json:"pass" urlstruct:"pass"`
+	Username string `json:"user" schema:"user"`
+	Password string `json:"pass" schema:"pass"`
 }
 
 func (request *APIAuthenticateBaseRequest) CheckAuthenticated() bool {

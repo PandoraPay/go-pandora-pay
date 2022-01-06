@@ -2,10 +2,10 @@ package api_common
 
 import (
 	"encoding/json"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 )
@@ -41,7 +41,7 @@ func (api *APICommon) AccountMempool(r *http.Request, args *APIAccountMempoolReq
 
 func (api *APICommon) GetAccountMempool_http(values url.Values) (interface{}, error) {
 	args := &APIAccountMempoolRequest{}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &APIAccountMempoolReply{}

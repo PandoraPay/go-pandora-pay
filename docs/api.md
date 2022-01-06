@@ -64,7 +64,7 @@ List of all APIs
 | logout                 | Logout user from connection                                                                                                                                                   | ✗    | ✗        | ✓              | !             | Requires --auth-users                    |
 | wallet/get-addresses   | Get all wallet accounts                                                                                                                                                       | ✓    | ✓        | ✓              | !             | Requires --auth-users                    |
 | wallet/create-address  | Create a new empty address                                                                                                                                                    | ✓    | ✓        | ✓              | !             | Requires --auth-users                    |
-|                        |                                                                                                                                                                               |      |          |                |               |                                          |
+| wallet/get-balances    | Get the balances (decoded) of the requested wallet addresses                                                                                                                  | ✓    | ✓        | ✓              | !             | Requires --auth-users                    |
 
 
 TODO: TCP
@@ -81,6 +81,81 @@ every user or product/good, you should use a new PaymentID. By using this
 PaymentID, you can distinguish which user paid for which product/good was paid for. Your 
 app should check all transactions, verify that something has 
 really received and based on the paymentID to link and identify the user who paid for or the product/good that was paid for.
+
+## Examples of APIs
+
+#### wallet/get-addresses
+Request `curl http://127.0.0.1:5230/wallet/get-addresses?user=username&pass=password`
+
+Output
+```
+{
+    "version": 0,
+    "encrypted": 0,
+    "addresses": [ {
+         "version": 0,
+         "name": "Addr_0",
+         "seedIndex": 0,
+         "isMine": true,
+         "privateKey": {
+             "key": "82f9fa0ec4d13f39008ce2a8aab8169a6f1cf3a453b6f4ade19f36dcd675b175"
+         },
+         "registration": "16fb6f16f399dcd7dc1657444a033f80e9a7029e31fbaa4451f7b772c8703d7b0c117d768516a26707274ef595c084f7512582f00ee4d32359183b1a5cb3e8ce",
+         "publicKey": "027140ac2fc222d87aee8dce2539b83aaa8882658cb23e9ebda18618361e5eb001",
+         "balancesDecoded": {
+             "0000000000000000000000000000000000000000": {
+                 "amount": 242927,
+                 "asset": "0000000000000000000000000000000000000000"
+             }
+         },
+         "addressEncoded": "PANDDEVAAJxQKwvwiLYeu6NziU5uDqqiIJljLI<nr2hhhg2Hl6wAQCT7qfa",
+         "addressRegistrationEncoded": "PANDDEVAAJxQKwvwiLYeu6NziU5uDqqiIJljLI<nr2hhhg2Hl6wAQEKZR0gGenCYXf4jt<ZFx6<e7Nr0SIN9507FRvGT2jOIBGufNElj02S9aKZZ5G9FgmNN06oHjMgbiZRoYdW57NWvfkqfQ==",
+         "delegatedStake": {
+             "privateKey": {
+                 "key": "3110c3e2c9bc8acb43bf930684adc96ffc83ed3795539ec106d8755464fe7b85"
+             },
+             "publicKey": "2cef23fc2b72689a1e1324a9da1e810972f42444f9b7f40a4fffe395f4d7190300",
+             "lastKnownNonce": 0
+         }
+    }, ...
+    ]
+}
+```
+
+#### wallet/get-balances
+
+Request Using PublicKey `curl http://127.0.0.1:5230/wallet/get-balances?list.0.publicKey=82f9fa0ec4d13f39008ce2a8aab8169a6f1cf3a453b6f4ade19f36dcd675b175&user=username&pass=password`
+
+OR
+
+Request Using Address `curl http://127.0.0.1:5230/wallet/get-balances?list.0.address=PANDDEVAAJxQKwvwiLYeu6NziU5uDqqiIJljLI<nr2hhhg2Hl6wAQCT7qfa&user=username&pass=password`
+
+Output
+
+```
+{
+    "results":[
+        {
+            "address": "PANDDEVABc3D9FePUuPADupO1p8jvtwEAVG5L3>sDttvmCw><jgAAABpTAR",
+            "plainAcc": null,
+            "balance":
+            [
+                {
+                    "amount": "15f8136864b1c06ebed9c03a006a61386d9d2c93310ff9758b7d3a5580a49a6d0018b822c42c27ad84d2971544d743417bb28ff7530f848e9d52c23598a665b01d01",
+                    "value": 65205984,
+                    "asset": "0000000000000000000000000000000000000000"
+                }
+            ]
+        }
+    ]
+}
+```
+
+**Amount** is the encrypted balance using ElGamal
+
+**Value** is the decrypted value.
+
+WARNING! The decoding algorithm is a brute force. If you have more than 8 decimals values, it could take even a few minutes to decode the balance is case it was changed.
 
 # DISCLAIMER:
 This source code is released for research purposes only, with the intent of researching and studying a decentralized p2p network protocol.

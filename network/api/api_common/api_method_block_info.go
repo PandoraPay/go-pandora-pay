@@ -3,11 +3,11 @@ package api_common
 import (
 	"encoding/json"
 	"errors"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -37,7 +37,7 @@ func (api *APICommon) BlockInfo(r *http.Request, args *APIBlockInfoRequest, repl
 
 func (api *APICommon) GetBlockInfo_http(values url.Values) (interface{}, error) {
 	args := &APIBlockInfoRequest{}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &info.BlockInfo{}

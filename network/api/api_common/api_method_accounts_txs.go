@@ -3,11 +3,11 @@ package api_common
 import (
 	"encoding/json"
 	"errors"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -71,7 +71,7 @@ func (api *APICommon) AccountTxs(r *http.Request, args *APIAccountTxsRequest, re
 
 func (api *APICommon) GetAccountTxs_http(values url.Values) (interface{}, error) {
 	args := &APIAccountTxsRequest{}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &APIAccountTxsReply{}

@@ -3,6 +3,7 @@ package wallet_address
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"errors"
 	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
@@ -96,7 +97,7 @@ func (adr *WalletAddress) DecodeAccount(acc *account.Account, store bool, ctx co
 
 	if acc == nil {
 		if store {
-			adr.BalancesDecoded[string(acc.Asset)] = &WalletAddressBalanceDecoded{
+			adr.BalancesDecoded[hex.EncodeToString(acc.Asset)] = &WalletAddressBalanceDecoded{
 				0, acc.Asset,
 			}
 		}
@@ -113,7 +114,7 @@ func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, assetId []byte,
 	}
 
 	previousValue := uint64(0)
-	found := adr.BalancesDecoded[string(assetId)]
+	found := adr.BalancesDecoded[hex.EncodeToString(assetId)]
 	if found != nil {
 		previousValue = found.AmountDecoded
 	}
@@ -127,7 +128,7 @@ func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, assetId []byte,
 		if found != nil {
 			found.AmountDecoded = newValue
 		} else {
-			adr.BalancesDecoded[string(assetId)] = &WalletAddressBalanceDecoded{
+			adr.BalancesDecoded[hex.EncodeToString(assetId)] = &WalletAddressBalanceDecoded{
 				newValue, assetId,
 			}
 		}

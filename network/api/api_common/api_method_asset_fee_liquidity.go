@@ -4,13 +4,13 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -61,7 +61,7 @@ func (api *APICommon) AssetFeeLiquidity(r *http.Request, args *APIAssetFeeLiquid
 
 func (api *APICommon) GetAssetFeeLiquidity_http(values url.Values) (interface{}, error) {
 	args := &APIAssetFeeLiquidityFeeRequest{}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &APIAssetFeeLiquidityReply{}

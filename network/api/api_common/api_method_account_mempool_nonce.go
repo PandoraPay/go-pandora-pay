@@ -3,10 +3,10 @@ package api_common
 import (
 	"encoding/binary"
 	"encoding/json"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -47,7 +47,7 @@ func (api *APICommon) AccountMempoolNonce(r *http.Request, args *APIAccountMempo
 
 func (api *APICommon) GetAccountMempoolNonce_http(values url.Values) (interface{}, error) {
 	args := &APIAccountMempoolNonceRequest{}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	var reply uint64

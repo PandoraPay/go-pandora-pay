@@ -2,11 +2,11 @@ package api_delegator_node
 
 import (
 	"encoding/json"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"sync/atomic"
 )
@@ -52,7 +52,7 @@ func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAs
 
 func (api *DelegatorNode) GetDelegatorNodeAsk_http(values url.Values) (interface{}, error) {
 	args := &ApiDelegatorNodeAskRequest{}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &ApiDelegatorNodeAskReply{}

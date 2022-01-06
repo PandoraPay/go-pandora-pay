@@ -99,6 +99,8 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 		ast     *asset.Asset
 	}
 	type Address struct {
+		isReg      bool
+		plainAcc   *plain_account.PlainAccount
 		assetsList []*AddressAsset
 	}
 	addresses := make([]*Address, len(wallet.Addresses))
@@ -114,66 +116,26 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 		for i, walletAddress := range wallet.Addresses {
 
-			var isReg bool
-			if isReg, err = dataStorage.Regs.Exists(string(walletAddress.PublicKey)); err != nil {
-				return
-			}
-
-			addressStr := walletAddress.GetAddress(isReg)
-
-			gui.GUI.OutputWrite(fmt.Sprintf("%d) %s : %s :: %s", i, walletAddress.Name, walletAddress.Version.String(), addressStr))
+			addresses[i] = &Address{}
 
 			switch walletAddress.Version {
-
 			case wallet_address.VERSION_NORMAL:
+
+				if addresses[i].isReg, err = dataStorage.Regs.Exists(string(walletAddress.PublicKey)); err != nil {
+					return
+				}
 
 				var assetsList [][]byte
 				if assetsList, err = dataStorage.AccsCollection.GetAccountAssets(walletAddress.PublicKey); err != nil {
 					return
 				}
 
-				var plainAcc *plain_account.PlainAccount
-				if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(walletAddress.PublicKey, chainHeight); err != nil {
+				if addresses[i].plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(walletAddress.PublicKey, chainHeight); err != nil {
 					return
 				}
 
-				if len(assetsList) == 0 && plainAcc == nil {
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))
-					continue
-				}
-
-				if plainAcc != nil {
-
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %d", "Nonce", plainAcc.Nonce))
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Unclaimed", strconv.FormatFloat(config_coins.ConvertToBase(plainAcc.Unclaimed), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
-					if plainAcc.DelegatedStake.HasDelegatedStake() {
-						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config_coins.ConvertToBase(plainAcc.DelegatedStake.StakeAvailable), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
-
-						if len(plainAcc.DelegatedStake.StakesPending) > 0 {
-							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES", ""))
-							for _, stakePending := range plainAcc.DelegatedStake.StakesPending {
-								gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %t", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatFloat(config_coins.ConvertToBase(stakePending.PendingAmount), 'f', config_coins.DECIMAL_SEPARATOR, 64), stakePending.PendingType))
-							}
-						} else {
-							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES:", "EMPTY"))
-						}
-					}
-
-					if plainAcc.AssetFeeLiquidities.HasAssetFeeLiquidities() {
-
-						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %d", "Liquidities", len(plainAcc.AssetFeeLiquidities.List)))
-						for i, assetFeeLiquidity := range plainAcc.AssetFeeLiquidities.List {
-							gui.GUI.OutputWrite(fmt.Sprintf("%18s: %20s Rate %d LeadingZeros %d", strconv.Itoa(i), hex.EncodeToString(assetFeeLiquidity.Asset), assetFeeLiquidity.Rate, assetFeeLiquidity.LeadingZeros))
-						}
-
-					}
-
-				}
-
-				addresses[i] = &Address{}
 				if len(assetsList) > 0 {
 
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s %d", "BALANCES ENCRYPTED", "", len(assetsList)))
 					for _, assetId := range assetsList {
 
 						if ast, err = dataStorage.Asts.GetAsset(assetId); err != nil {
@@ -186,7 +148,6 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 						if acc, err = accs.GetAccount(walletAddress.PublicKey); err != nil {
 							return
 						}
-						gui.GUI.OutputWrite(fmt.Sprintf("%260s: %s", hex.EncodeToString(acc.Balance.Amount.Serialize()), ast.Name))
 
 						addresses[i].assetsList = append(addresses[i].assetsList, &AddressAsset{
 							acc.Balance.Amount,
@@ -209,23 +170,72 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 	}
 
 	for i, walletAddress := range wallet.Addresses {
-		for _, data := range addresses[i].assetsList {
 
-			var decoded uint64
-			if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, data.balance, data.assetId, true, false, ctx, func(status string) {
-				gui.GUI.Info2Update("Decoding", status)
-			}); err != nil {
-				return
-			}
+		addressStr := walletAddress.GetAddress(addresses[i].isReg)
+		gui.GUI.OutputWrite(fmt.Sprintf("%d) %s : %s :: %s", i, walletAddress.Name, walletAddress.Version.String(), addressStr))
 
-			gui.GUI.Info2Update("Decoding", "")
-
-			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", strconv.FormatFloat(config_coins.ConvertToBase(decoded), 'f', config_coins.DECIMAL_SEPARATOR, 64), data.ast.Name))
+		if len(addresses[i].assetsList) == 0 && addresses[i].plainAcc == nil {
+			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))
+			continue
 		}
 
-		gui.GUI.OutputWrite(fmt.Sprintf("%18s", "DONE DECRYPTING"))
+		if addresses[i].plainAcc != nil {
+
+			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %d", "Nonce", addresses[i].plainAcc.Nonce))
+			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Unclaimed", strconv.FormatFloat(config_coins.ConvertToBase(addresses[i].plainAcc.Unclaimed), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
+			if addresses[i].plainAcc.DelegatedStake.HasDelegatedStake() {
+				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config_coins.ConvertToBase(addresses[i].plainAcc.DelegatedStake.StakeAvailable), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
+
+				if len(addresses[i].plainAcc.DelegatedStake.StakesPending) > 0 {
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES", ""))
+					for _, stakePending := range addresses[i].plainAcc.DelegatedStake.StakesPending {
+						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %t", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatFloat(config_coins.ConvertToBase(stakePending.PendingAmount), 'f', config_coins.DECIMAL_SEPARATOR, 64), stakePending.PendingType))
+					}
+				} else {
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES:", "EMPTY"))
+				}
+			}
+
+			if addresses[i].plainAcc.AssetFeeLiquidities.HasAssetFeeLiquidities() {
+
+				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %d", "Liquidities", len(addresses[i].plainAcc.AssetFeeLiquidities.List)))
+				for i, assetFeeLiquidity := range addresses[i].plainAcc.AssetFeeLiquidities.List {
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %20s Rate %d LeadingZeros %d", strconv.Itoa(i), hex.EncodeToString(assetFeeLiquidity.Asset), assetFeeLiquidity.Rate, assetFeeLiquidity.LeadingZeros))
+				}
+
+			}
+
+		}
+
+		if len(addresses[i].assetsList) > 0 {
+
+			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s %d", "BALANCES ENCRYPTED", "", len(addresses[i].assetsList)))
+			for _, data := range addresses[i].assetsList {
+				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %64s", data.ast.Name, hex.EncodeToString(data.balance.Serialize())))
+			}
+
+			gui.GUI.OutputWrite(fmt.Sprintf("%18s", "Decoding...."))
+
+			for _, data := range addresses[i].assetsList {
+				gui.GUI.Info2Update("Decoding", "")
+
+				var decoded uint64
+				if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, data.balance, data.assetId, true, false, ctx, func(status string) {
+					gui.GUI.Info2Update("Decoding", status)
+				}); err != nil {
+					return
+				}
+
+				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %18s", data.ast.Name, strconv.FormatFloat(config_coins.ConvertToBase(decoded), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
+			}
+
+		}
+
+		gui.GUI.Info2Update("Decoding", "")
 
 	}
+
+	gui.GUI.OutputWrite(fmt.Sprintf("%18s", "DONE"))
 
 	return
 }

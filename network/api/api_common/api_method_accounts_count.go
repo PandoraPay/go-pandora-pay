@@ -2,11 +2,11 @@ package api_common
 
 import (
 	"encoding/json"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -34,7 +34,7 @@ func (api *APICommon) AccountsCount(r *http.Request, args *APIAccountsCountReque
 
 func (api *APICommon) GetAccountsCount_http(values url.Values) (interface{}, error) {
 	args := &APIAccountsCountRequest{}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &APIAccountsCountReply{}

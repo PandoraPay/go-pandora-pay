@@ -7,13 +7,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/go-pg/urlstruct"
 	"go.jolheiser.com/hcaptcha"
 	"net/http"
 	"net/url"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/transactions_builder"
 	"pandora-pay/transactions_builder/wizard"
@@ -57,7 +57,7 @@ func (api *Faucet) FaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, rep
 
 func (api *Faucet) GetFaucetCoins_http(values url.Values) (interface{}, error) {
 	args := &APIFaucetCoinsRequest{}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	var reply helpers.HexBytes

@@ -120,8 +120,8 @@ func (wallet *Wallet) GetDataForDecodingBalance(publicKey, asset []byte) (privat
 	addr := wallet.addressesMap[string(publicKey)]
 	privateKey = addr.PrivateKey.Key
 
-	if addr.BalancesDecoded[string(asset)] != nil {
-		previousValue = addr.BalancesDecoded[string(asset)].AmountDecoded
+	if addr.BalancesDecoded[hex.EncodeToString(asset)] != nil {
+		previousValue = addr.BalancesDecoded[hex.EncodeToString(asset)].AmountDecoded
 	}
 
 	return

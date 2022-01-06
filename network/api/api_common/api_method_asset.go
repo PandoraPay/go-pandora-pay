@@ -2,12 +2,12 @@ package api_common
 
 import (
 	"encoding/json"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -49,7 +49,7 @@ func (api *APICommon) Asset(r *http.Request, args *APIAssetRequest, reply *APIAs
 
 func (api *APICommon) GetAsset_http(values url.Values) (interface{}, error) {
 	args := &APIAssetRequest{0, nil, api_types.RETURN_JSON}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &APIAssetReply{}

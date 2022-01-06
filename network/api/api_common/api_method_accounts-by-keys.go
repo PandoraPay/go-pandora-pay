@@ -3,7 +3,6 @@ package api_common
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/data_storage/accounts"
@@ -11,6 +10,7 @@ import (
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -113,7 +113,7 @@ func (api *APICommon) AccountsByKeys(r *http.Request, args *APIAccountsByKeysReq
 
 func (api *APICommon) GetAccountsByKeys_http(values url.Values) (interface{}, error) {
 	args := &APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_JSON}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &APIAccountsByKeysReply{}

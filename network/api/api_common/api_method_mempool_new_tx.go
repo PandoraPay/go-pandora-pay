@@ -2,11 +2,11 @@ package api_common
 
 import (
 	"encoding/json"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 )
@@ -89,7 +89,7 @@ func (api *APICommon) MempoolNewTx(r *http.Request, args *APIMempoolNewTxRequest
 
 func (api *APICommon) MempoolNewTx_http(values url.Values) (interface{}, error) {
 	args := &APIMempoolNewTxRequest{}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &APIMempoolNewTxReply{}

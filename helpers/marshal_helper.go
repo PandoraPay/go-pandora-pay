@@ -31,6 +31,19 @@ func (s *HexBytes) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
+// UnmarshalText for Gorilla Decoder
+// see https://github.com/gorilla/schema/blob/8285576f31afd6804df356a38883f4fa05014373/decoder_test.go#L20
+func (s *HexBytes) UnmarshalText(data []byte) (err error) {
+
+	str := make([]byte, len(data)/2)
+
+	if _, err = hex.Decode(str, data); err != nil {
+		return
+	}
+	*s = str
+	return
+}
+
 func ConvertHexBytesArraysToBytesArray(data []HexBytes) [][]byte {
 	out := make([][]byte, len(data))
 	for i := range data {
@@ -90,4 +103,7 @@ func GetJSON(obj interface{}, ignoreFields ...string) ([]byte, error) {
 func BytesLengthSerialized(value uint64) int {
 	buf := make([]byte, binary.MaxVarintLen64)
 	return binary.PutUvarint(buf, value)
+}
+
+func init() {
 }

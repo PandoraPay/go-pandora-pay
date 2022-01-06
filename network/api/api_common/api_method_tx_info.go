@@ -2,11 +2,11 @@ package api_common
 
 import (
 	"encoding/json"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -32,7 +32,7 @@ func (api *APICommon) GetTxInfo(r *http.Request, args *APITransactionInfoRequest
 
 func (api *APICommon) GetTxInfo_http(values url.Values) (interface{}, error) {
 	args := &APITransactionInfoRequest{}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &info.TxInfo{}

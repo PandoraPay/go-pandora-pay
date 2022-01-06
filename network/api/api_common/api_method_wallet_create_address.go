@@ -2,11 +2,13 @@ package api_common
 
 import (
 	"errors"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
+	"pandora-pay/helpers/generics"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/wallet/wallet_address"
 )
 
 type APIWalletCreateAddress struct {
@@ -14,7 +16,7 @@ type APIWalletCreateAddress struct {
 }
 
 type APIWalletCreateAddressReply struct {
-	Address *APIWalletReplyAddress
+	Address *wallet_address.WalletAddress `json:"address"`
 }
 
 func (api *APICommon) WalletCreateAddress(r *http.Request, args *struct{}, reply *APIWalletCreateAddressReply, authenticated bool) error {
@@ -27,13 +29,13 @@ func (api *APICommon) WalletCreateAddress(r *http.Request, args *struct{}, reply
 		return err
 	}
 
-	reply.Address = importWalletAddress(addr)
+	reply.Address, err = generics.Clone[*wallet_address.WalletAddress](addr, new(wallet_address.WalletAddress))
 	return nil
 }
 
 func (api *APICommon) WalletCreateAddress_http(values url.Values) (interface{}, error) {
 	args := &APIWalletGetAccounts{}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &APIWalletCreateAddressReply{}

@@ -3,12 +3,12 @@ package api_common
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -66,7 +66,7 @@ func (api *APICommon) AccountsKeysByIndex(r *http.Request, args *APIAccountsKeys
 
 func (api *APICommon) GetAccountsKeysByIndex_http(values url.Values) (interface{}, error) {
 	args := &APIAccountsKeysByIndexRequest{nil, nil, true}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &APIAccountsKeysByIndexReply{}

@@ -2,10 +2,10 @@ package api_common
 
 import (
 	"errors"
-	"github.com/go-pg/urlstruct"
 	"net/http"
 	"net/url"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/generics"
+	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/wallet"
@@ -17,50 +17,12 @@ type APIWalletGetAccounts struct {
 }
 
 type APIWalletGetAccountsReply struct {
-	Version   wallet.Version          `json:"version"`
-	Encrypted wallet.EncryptedVersion `json:"encrypted"`
-	Addresses []*APIWalletReplyAddress
+	Version   wallet.Version                  `json:"version"`
+	Encrypted wallet.EncryptedVersion         `json:"encrypted"`
+	Addresses []*wallet_address.WalletAddress `json:"addresses"`
 }
 
-type APIWalletReplyAddress struct {
-	Version                    wallet_address.Version                          `json:"version"`
-	Name                       string                                          `json:"name"`
-	SeedIndex                  uint32                                          `json:"seedIndex"`
-	IsMine                     bool                                            `json:"isMine"`
-	PrivateKey                 helpers.HexBytes                                `json:"privateKey"`
-	Registration               helpers.HexBytes                                `json:"registration"`
-	PublicKey                  helpers.HexBytes                                `json:"publicKey"`
-	AddressEncoded             string                                          `json:"addressEncoded"`
-	AddressRegistrationEncoded string                                          `json:"addressRegistrationEncoded"`
-	DelegatedStake             *APIWalletGetAccountsReplyAddressDelegatedStake `json:"delegatedStake"`
-}
-
-type APIWalletGetAccountsReplyAddressDelegatedStake struct {
-	PrivateKey     helpers.HexBytes `json:"privateKey"`
-	PublicKey      helpers.HexBytes `json:"publicKey"`
-	LastKnownNonce uint32           `json:"lastKnownNonce"`
-}
-
-func importWalletAddress(addr *wallet_address.WalletAddress) *APIWalletReplyAddress {
-	return &APIWalletReplyAddress{
-		addr.Version,
-		addr.Name,
-		addr.SeedIndex,
-		addr.IsMine,
-		addr.PrivateKey.Key,
-		addr.Registration,
-		addr.PublicKey,
-		addr.AddressEncoded,
-		addr.AddressRegistrationEncoded,
-		&APIWalletGetAccountsReplyAddressDelegatedStake{
-			addr.DelegatedStake.PrivateKey.Key,
-			addr.DelegatedStake.PublicKey,
-			addr.DelegatedStake.LastKnownNonce,
-		},
-	}
-}
-
-func (api *APICommon) WalletGetAddresses(r *http.Request, args *struct{}, reply *APIWalletGetAccountsReply, authenticated bool) error {
+func (api *APICommon) WalletGetAddresses(r *http.Request, args *struct{}, reply *APIWalletGetAccountsReply, authenticated bool) (err error) {
 
 	if !authenticated {
 		return errors.New("Invalid User or Password")
@@ -72,17 +34,19 @@ func (api *APICommon) WalletGetAddresses(r *http.Request, args *struct{}, reply 
 	reply.Version = api.wallet.Version
 	reply.Encrypted = api.wallet.Encryption.Encrypted
 
-	reply.Addresses = make([]*APIWalletReplyAddress, len(api.wallet.Addresses))
+	reply.Addresses = make([]*wallet_address.WalletAddress, len(api.wallet.Addresses))
 	for i, addr := range api.wallet.Addresses {
-		reply.Addresses[i] = importWalletAddress(addr)
+		if reply.Addresses[i], err = generics.Clone[*wallet_address.WalletAddress](addr, new(wallet_address.WalletAddress)); err != nil {
+			return
+		}
 	}
 
-	return nil
+	return
 }
 
 func (api *APICommon) WalletGetAddresses_http(values url.Values) (interface{}, error) {
 	args := &APIWalletGetAccounts{}
-	if err := urlstruct.Unmarshal(nil, values, args); err != nil {
+	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
 	reply := &APIWalletGetAccountsReply{}
