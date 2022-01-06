@@ -31,12 +31,10 @@ func (api *DelegatorNode) execute() {
 	recovery.SafeGo(func() {
 
 		lastHeight := uint64(0)
-		api.ticker = time.NewTicker(10 * time.Second)
+		ticker := time.NewTicker(10 * time.Second)
 
 		for {
-			if _, ok := <-api.ticker.C; !ok {
-				return
-			}
+			<-ticker.C
 
 			chainHeight := atomic.LoadUint64(&api.chainHeight)
 			if lastHeight != chainHeight {

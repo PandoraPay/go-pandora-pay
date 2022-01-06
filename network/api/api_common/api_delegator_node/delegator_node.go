@@ -7,7 +7,6 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/wallet"
-	"time"
 )
 
 type PendingDelegateStakeChange struct {
@@ -21,7 +20,6 @@ type DelegatorNode struct {
 	challenge                     []byte
 	chainHeight                   uint64 //use atomic
 	pendingDelegatesStakesChanges *generics.Map[string, *PendingDelegateStakeChange]
-	ticker                        *time.Ticker
 	wallet                        *wallet.Wallet
 	chain                         *blockchain.Blockchain
 }
@@ -34,7 +32,6 @@ func NewDelegatorNode(chain *blockchain.Blockchain, wallet *wallet.Wallet) (dele
 		challenge,
 		0,
 		&generics.Map[string, *PendingDelegateStakeChange]{},
-		nil,
 		wallet,
 		chain,
 	}
