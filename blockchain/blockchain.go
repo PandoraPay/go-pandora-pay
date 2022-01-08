@@ -43,6 +43,7 @@ type Blockchain struct {
 	Sync                     *blockchain_sync.BlockchainSync
 	mempool                  *mempool.Mempool
 	wallet                   *wallet.Wallet
+	txsValidator             *txs_validator.TxsValidator
 	mutex                    *sync.Mutex //writing mutex
 	updatesQueue             *BlockchainUpdatesQueue
 	ForgingSolutionCn        chan *block_complete.BlockComplete
@@ -63,8 +64,15 @@ func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockCo
 	}
 
 	for _, blkComplete := range blocksComplete {
+
 		if err = blkComplete.Verify(); err != nil {
 			return
+		}
+
+		for _, tx := range blkComplete.Txs {
+			if err = chain.txsValidator.ValidateTx(tx); err != nil {
+				return
+			}
 		}
 
 		nonceMap := make(map[string]bool)
@@ -470,20 +478,22 @@ func CreateBlockchain(mempool *mempool.Mempool, txsValidator *txs_validator.TxsV
 	gui.GUI.Log("Blockchain init...")
 
 	chain := &Blockchain{
-		ChainData:                &generics.Value[*BlockchainData]{},
-		mutex:                    &sync.Mutex{},
-		mempool:                  mempool,
-		updatesQueue:             createBlockchainUpdatesQueue(txsValidator),
-		Sync:                     blockchain_sync.CreateBlockchainSync(),
-		ForgingSolutionCn:        make(chan *block_complete.BlockComplete),
-		UpdateNewChain:           multicast.NewMulticastChannel[uint64](),
-		UpdateNewChainDataUpdate: multicast.NewMulticastChannel[*BlockchainDataUpdate](),
-		UpdateAccounts:           multicast.NewMulticastChannel[*accounts.AccountsCollection](),
-		UpdatePlainAccounts:      multicast.NewMulticastChannel[*plain_accounts.PlainAccounts](),
-		UpdateAssets:             multicast.NewMulticastChannel[*assets.Assets](),
-		UpdateRegistrations:      multicast.NewMulticastChannel[*registrations.Registrations](),
-		UpdateTransactions:       multicast.NewMulticastChannel[[]*blockchain_types.BlockchainTransactionUpdate](),
-		NextBlockCreatedCn:       make(chan *forging_block_work.ForgingWork),
+		&generics.Value[*BlockchainData]{},
+		blockchain_sync.CreateBlockchainSync(),
+		mempool,
+		nil,
+		txsValidator,
+		&sync.Mutex{},
+		createBlockchainUpdatesQueue(txsValidator),
+		make(chan *block_complete.BlockComplete),
+		multicast.NewMulticastChannel[uint64](),
+		multicast.NewMulticastChannel[*BlockchainDataUpdate](),
+		multicast.NewMulticastChannel[*accounts.AccountsCollection](),
+		multicast.NewMulticastChannel[*plain_accounts.PlainAccounts](),
+		multicast.NewMulticastChannel[*assets.Assets](),
+		multicast.NewMulticastChannel[*registrations.Registrations](),
+		multicast.NewMulticastChannel[[]*blockchain_types.BlockchainTransactionUpdate](),
+		make(chan *forging_block_work.ForgingWork),
 	}
 
 	chain.updatesQueue.chain = chain

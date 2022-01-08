@@ -187,6 +187,9 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 	return
 }
 
-func (tx *TransactionSimple) VerifyBloomAll() (err error) {
+func (tx *TransactionSimple) VerifyBloomAll() error {
+	if tx.Bloom == nil {
+		return errors.New("Tx was not bloomed")
+	}
 	return tx.Bloom.verifyIfBloomed()
 }

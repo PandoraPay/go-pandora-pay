@@ -4,15 +4,9 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/helpers/generics"
+	"sync/atomic"
 	"time"
 )
-
-type txValidated struct {
-	tx     *transaction.Transaction
-	wait   chan struct{}
-	time   *generics.Value[int64]
-	result error
-}
 
 type TxsValidator struct {
 	all        *generics.Map[string, *txValidated]
@@ -20,20 +14,17 @@ type TxsValidator struct {
 	workers    []*TxsValidatorWorker
 }
 
-const (
-	EXPIRE_TIME_MS = 10 * 60 * time.Second
-)
-
 func (validator *TxsValidator) MarkAsValidatedTx(tx *transaction.Transaction) error {
 
 	if err := tx.BloomAll(); err != nil {
 		return err
 	}
 
-	result, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{tx, make(chan struct{}), &generics.Value[int64]{}, nil})
+	result, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{make(chan struct{}), int32(TX_VALIDATED_INIT), tx, 0, nil})
 	if !loaded {
 		result.tx = nil
-		result.time.Store(time.Now().Add(EXPIRE_TIME_MS).Unix())
+		atomic.StoreInt32(&result.status, TX_VALIDATED_PROCCESSED)
+		result.time = time.Now().Add(EXPIRE_TIME_MS).Unix()
 		close(result.wait)
 	}
 
@@ -43,7 +34,7 @@ func (validator *TxsValidator) MarkAsValidatedTx(tx *transaction.Transaction) er
 //blocking
 func (validator *TxsValidator) ValidateTx(tx *transaction.Transaction) error {
 
-	result, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{tx, make(chan struct{}), &generics.Value[int64]{}, nil})
+	result, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil})
 	if !loaded {
 		validator.processing.Store(tx.Bloom.HashStr, result)
 	}
@@ -66,13 +57,16 @@ func (validator *TxsValidator) runRemoveExpiredTransactions() {
 
 		validator.all.Range(func(key string, work *txValidated) bool {
 
-			if t := work.time.Load(); t != 0 && t < now {
-				validator.all.Delete(key)
-			}
+			if atomic.LoadInt32(&work.status) == TX_VALIDATED_PROCCESSED {
 
-			c += 1
-			if c%1000 == 0 {
-				<-ticker.C
+				if work.time < now {
+					validator.all.Delete(key)
+				}
+
+				c += 1
+				if c%1000 == 0 {
+					<-ticker.C
+				}
 			}
 
 			return true

@@ -17,7 +17,7 @@ type Consensus struct {
 
 func (consensus *Consensus) execute() {
 	//discover forks
-	processForksThread := newConsensusProcessForksThread(consensus.forks, consensus.txsValidator, consensus.chain, consensus.mempool)
+	processForksThread := newConsensusProcessForksThread(consensus.forks, consensus.chain, consensus.mempool, consensus.txsValidator)
 	recovery.SafeGo(processForksThread.execute)
 }
 

@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/helpers/generics"
+	"sync/atomic"
 	"time"
 )
 
@@ -30,7 +31,7 @@ func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidated) error {
 	case transaction_type.TX_SIMPLE:
 		base := foundWork.tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 		if !base.VerifySignatureManually(hashForSignature) {
-
+			return errors.New("Signature Verified failed")
 		}
 
 	case transaction_type.TX_ZETHER:
@@ -66,9 +67,16 @@ func (worker *TxsValidatorWorker) run() {
 
 	for {
 		var foundWork *txValidated
+
 		worker.processing.Range(func(key string, value *txValidated) bool {
-			foundWork = value
-			return false
+
+			if atomic.CompareAndSwapInt32(&value.status, TX_VALIDATED_INIT, TX_VALIDATED_PROCESSING) {
+				worker.processing.LoadAndDelete(key)
+				foundWork = value
+				return false
+			}
+
+			return true
 		})
 
 		if foundWork == nil {
@@ -83,9 +91,8 @@ func (worker *TxsValidatorWorker) run() {
 		}
 
 		foundWork.tx = nil
-		foundWork.time.Store(time.Now().Add(EXPIRE_TIME_MS).Unix())
-
-		worker.processing.Delete(foundWork.tx.Bloom.HashStr)
+		foundWork.time = time.Now().Add(EXPIRE_TIME_MS).Unix()
+		atomic.StoreInt32(&foundWork.status, TX_VALIDATED_PROCCESSED)
 
 		close(foundWork.wait)
 

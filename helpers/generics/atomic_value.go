@@ -6,8 +6,12 @@ type Value[T any] struct {
 	v atomic.Value
 }
 
-func (v *Value[T]) Load() T {
-	return v.v.Load().(T)
+func (v *Value[T]) Load() (z T) {
+	out := v.v.Load()
+	if out != nil {
+		z = out.(T)
+	}
+	return
 }
 
 func (v *Value[T]) Store(val T) {

@@ -11,6 +11,7 @@ import (
 	"pandora-pay/network/server/node_http"
 	"pandora-pay/settings"
 	"pandora-pay/txs_builder"
+	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
 )
 

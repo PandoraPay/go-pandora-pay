@@ -140,6 +140,9 @@ func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 	return
 }
 
-func (tx *TransactionZether) VerifyBloomAll() (err error) {
+func (tx *TransactionZether) VerifyBloomAll() error {
+	if tx.Bloom == nil {
+		return errors.New("Tx was not bloomed")
+	}
 	return tx.Bloom.verifyIfBloomed()
 }

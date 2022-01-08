@@ -23,10 +23,10 @@ import (
 )
 
 type ConsensusProcessForksThread struct {
-	chain   *blockchain.Blockchain
+	chain        *blockchain.Blockchain
 	txsValidator *txs_validator.TxsValidator
-	forks   *Forks
-	mempool *mempool.Mempool
+	forks        *Forks
+	mempool      *mempool.Mempool
 }
 
 func (thread *ConsensusProcessForksThread) downloadBlockHash(conn *connection.AdvancedConnection, fork *Fork, height uint64) ([]byte, error) {
@@ -117,8 +117,10 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 		}
 	}
 
-	for i, tx := range txs {
-		if err = thread.
+	for _, tx := range txs {
+		if err = thread.txsValidator.ValidateTx(tx); err != nil {
+			return nil, err
+		}
 	}
 
 	blkComplete.Txs = txs
@@ -314,7 +316,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 	}
 }
 
-func newConsensusProcessForksThread(forks *Forks, chain *blockchain.Blockchain, txsValidator *txs_validator.TxsValidator, mempool *mempool.Mempool) *ConsensusProcessForksThread {
+func newConsensusProcessForksThread(forks *Forks, chain *blockchain.Blockchain, mempool *mempool.Mempool, txsValidator *txs_validator.TxsValidator) *ConsensusProcessForksThread {
 	return &ConsensusProcessForksThread{
 		chain,
 		txsValidator,
