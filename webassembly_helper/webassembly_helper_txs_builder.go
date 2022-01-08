@@ -15,7 +15,7 @@ import (
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
-	"pandora-pay/transactions_builder/wizard"
+	"pandora-pay/txs_builder/wizard"
 	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
 )

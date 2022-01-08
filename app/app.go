@@ -8,18 +8,20 @@ import (
 	"pandora-pay/network"
 	"pandora-pay/settings"
 	"pandora-pay/store"
-	"pandora-pay/transactions_builder"
+	"pandora-pay/txs_builder"
+	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
 )
 
 var (
-	Settings            *settings.Settings
-	Wallet              *wallet.Wallet
-	Forging             *forging.Forging
-	Mempool             *mempool.Mempool
-	Chain               *blockchain.Blockchain
-	Network             *network.Network
-	TransactionsBuilder *transactions_builder.TransactionsBuilder
+	Settings     *settings.Settings
+	Wallet       *wallet.Wallet
+	Forging      *forging.Forging
+	Mempool      *mempool.Mempool
+	TxsValidator *txs_validator.TxsValidator
+	Chain        *blockchain.Blockchain
+	Network      *network.Network
+	TxsBuilder   *txs_builder.TxsBuilder
 )
 
 func Close() {

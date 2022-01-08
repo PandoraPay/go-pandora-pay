@@ -12,7 +12,7 @@ import (
 	"pandora-pay/network/server/node_http_rpc"
 	"pandora-pay/network/websocks"
 	"pandora-pay/settings"
-	"pandora-pay/transactions_builder"
+	"pandora-pay/txs_builder"
 	"pandora-pay/wallet"
 )
 
@@ -25,10 +25,10 @@ type HttpServer struct {
 	GetMap          map[string]func(values url.Values) (interface{}, error)
 }
 
-func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*HttpServer, error) {
+func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, wallet *wallet.Wallet, txsBuilder *txs_builder.TxsBuilder) (*HttpServer, error) {
 
 	apiStore := api_common.NewAPIStore(chain)
-	apiCommon, err := api_common.NewAPICommon(knownNodes, mempool, chain, wallet, transactionsBuilder, apiStore)
+	apiCommon, err := api_common.NewAPICommon(knownNodes, mempool, chain, wallet, txsBuilder, apiStore)
 	if err != nil {
 		return nil, err
 	}

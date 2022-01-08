@@ -11,7 +11,7 @@ import (
 	"pandora-pay/network/server/node_tcp"
 	"pandora-pay/network/websocks"
 	"pandora-pay/settings"
-	"pandora-pay/transactions_builder"
+	"pandora-pay/txs_builder"
 	"pandora-pay/wallet"
 )
 
@@ -24,7 +24,7 @@ type Network struct {
 	KnownNodesSync *known_nodes_sync.KnownNodesSync
 }
 
-func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder) (*Network, error) {
+func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, txsBuilder *txs_builder.TxsBuilder) (*Network, error) {
 
 	knownNodes := known_nodes.NewKnownNodes()
 	for _, seed := range config.NETWORK_SELECTED_SEEDS {
@@ -33,7 +33,7 @@ func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempo
 
 	bannedNodes := banned_nodes.NewBannedNodes()
 
-	tcpServer, err := node_tcp.NewTcpServer(bannedNodes, knownNodes, settings, chain, mempool, wallet, transactionsBuilder)
+	tcpServer, err := node_tcp.NewTcpServer(bannedNodes, knownNodes, settings, chain, mempool, wallet, txsBuilder)
 	if err != nil {
 		return nil, err
 	}

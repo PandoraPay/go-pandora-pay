@@ -1,4 +1,4 @@
-package transactions_builder
+package txs_builder
 
 import (
 	"encoding/binary"
@@ -12,27 +12,27 @@ import (
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
-	"pandora-pay/transactions_builder/wizard"
+	"pandora-pay/txs_builder/wizard"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
 	"sync"
 )
 
-type TransactionsBuilder struct {
+type TxsBuilder struct {
 	wallet  *wallet.Wallet
 	mempool *mempool.Mempool
 	chain   *blockchain.Blockchain
 	lock    *sync.Mutex
 }
 
-func (builder *TransactionsBuilder) getNonce(nonce uint64, publicKey []byte, accNonce uint64) uint64 {
+func (builder *TxsBuilder) getNonce(nonce uint64, publicKey []byte, accNonce uint64) uint64 {
 	if nonce != 0 {
 		return nonce
 	}
 	return builder.mempool.GetNonce(publicKey, accNonce)
 }
 
-func (builder *TransactionsBuilder) DeriveDelegatedStake(nonce uint64, addressPublicKey []byte) (delegatedStakePublicKey []byte, delegatedStakePrivateKey []byte, err error) {
+func (builder *TxsBuilder) DeriveDelegatedStake(nonce uint64, addressPublicKey []byte) (delegatedStakePublicKey []byte, delegatedStakePrivateKey []byte, err error) {
 
 	var accNonce uint64
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
@@ -70,7 +70,7 @@ func (builder *TransactionsBuilder) DeriveDelegatedStake(nonce uint64, addressPu
 	return walletAddressDelegatedStake.PublicKey, walletAddressDelegatedStake.PrivateKey.Key, nil
 }
 
-func (builder *TransactionsBuilder) convertFloatAmounts(amounts []float64, ast *asset.Asset) ([]uint64, error) {
+func (builder *TxsBuilder) convertFloatAmounts(amounts []float64, ast *asset.Asset) ([]uint64, error) {
 
 	var err error
 
@@ -87,7 +87,7 @@ func (builder *TransactionsBuilder) convertFloatAmounts(amounts []float64, ast *
 	return amountsFinal, nil
 }
 
-func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet_address.WalletAddress, error) {
+func (builder *TxsBuilder) getWalletAddresses(from []string) ([]*wallet_address.WalletAddress, error) {
 
 	fromWalletAddress := make([]*wallet_address.WalletAddress, len(from))
 	var err error
@@ -104,7 +104,7 @@ func (builder *TransactionsBuilder) getWalletAddresses(from []string) ([]*wallet
 	return fromWalletAddress, nil
 }
 
-func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizard.WizardTxSimpleExtra, data *wizard.WizardTransactionData, fee *wizard.WizardTransactionFee, feeVersion bool, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(status string)) (*transaction.Transaction, error) {
+func (builder *TxsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizard.WizardTxSimpleExtra, data *wizard.WizardTransactionData, fee *wizard.WizardTransactionFee, feeVersion bool, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(status string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
@@ -169,9 +169,9 @@ func (builder *TransactionsBuilder) CreateSimpleTx(from string, nonce uint64, ex
 	return tx, nil
 }
 
-func TransactionsBuilderInit(wallet *wallet.Wallet, mempool *mempool.Mempool, chain *blockchain.Blockchain) (builder *TransactionsBuilder) {
+func TxsBuilderInit(wallet *wallet.Wallet, mempool *mempool.Mempool, chain *blockchain.Blockchain) (builder *TxsBuilder) {
 
-	builder = &TransactionsBuilder{
+	builder = &TxsBuilder{
 		wallet:  wallet,
 		chain:   chain,
 		mempool: mempool,

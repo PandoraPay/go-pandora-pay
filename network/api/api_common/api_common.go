@@ -12,7 +12,7 @@ import (
 	"pandora-pay/network/api/api_common/api_faucet"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/recovery"
-	"pandora-pay/transactions_builder"
+	"pandora-pay/txs_builder"
 	"pandora-pay/wallet"
 	"time"
 )
@@ -61,11 +61,11 @@ func (api *APICommon) readLocalBlockchainSync(newLocalSync *blockchain_sync.Bloc
 	api.localChainSync.Store(newLocalSync)
 }
 
-func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, transactionsBuilder *transactions_builder.TransactionsBuilder, apiStore *APIStore) (api *APICommon, err error) {
+func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, txsBuilder *txs_builder.TxsBuilder, apiStore *APIStore) (api *APICommon, err error) {
 
 	var faucet *api_faucet.Faucet
 	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
-		if faucet, err = api_faucet.NewFaucet(mempool, chain, wallet, transactionsBuilder); err != nil {
+		if faucet, err = api_faucet.NewFaucet(mempool, chain, wallet, txsBuilder); err != nil {
 			return
 		}
 	}

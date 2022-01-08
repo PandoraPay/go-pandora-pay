@@ -1,4 +1,4 @@
-package transactions_builder
+package txs_builder
 
 import (
 	"bytes"
@@ -22,16 +22,16 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
-	"pandora-pay/transactions_builder/wizard"
+	"pandora-pay/txs_builder/wizard"
 )
 
-func (builder *TransactionsBuilder) showWarningIfNotSyncCLI() {
+func (builder *TxsBuilder) showWarningIfNotSyncCLI() {
 	if builder.chain.Sync.GetSyncTime() == 0 {
 		gui.GUI.OutputWrite("Your node is not Sync yet. Wait for it to get sync.")
 	}
 }
 
-func (builder *TransactionsBuilder) readData() (out *wizard.WizardTransactionData) {
+func (builder *TxsBuilder) readData() (out *wizard.WizardTransactionData) {
 
 	data := &wizard.WizardTransactionData{}
 	str := gui.GUI.OutputReadString("Message (data). Leave empty for none")
@@ -44,7 +44,7 @@ func (builder *TransactionsBuilder) readData() (out *wizard.WizardTransactionDat
 	return data
 }
 
-func (builder *TransactionsBuilder) readAmount(assetId []byte, text string) (amount uint64, err error) {
+func (builder *TxsBuilder) readAmount(assetId []byte, text string) (amount uint64, err error) {
 
 	amountFloat := gui.GUI.OutputReadFloat64(text, false, nil)
 
@@ -67,7 +67,7 @@ func (builder *TransactionsBuilder) readAmount(assetId []byte, text string) (amo
 	return
 }
 
-func (builder *TransactionsBuilder) readAddress(text string) (address *addresses.Address, err error) {
+func (builder *TxsBuilder) readAddress(text string) (address *addresses.Address, err error) {
 
 	for {
 		str := gui.GUI.OutputReadString(text)
@@ -83,7 +83,7 @@ func (builder *TransactionsBuilder) readAddress(text string) (address *addresses
 	return
 }
 
-func (builder *TransactionsBuilder) readAddressOptional(text string, assetId []byte, allowRandomAddress bool) (address *addresses.Address, amount uint64, err error) {
+func (builder *TxsBuilder) readAddressOptional(text string, assetId []byte, allowRandomAddress bool) (address *addresses.Address, amount uint64, err error) {
 
 	text2 := text
 	if allowRandomAddress {
@@ -111,7 +111,7 @@ func (builder *TransactionsBuilder) readAddressOptional(text string, assetId []b
 	return
 }
 
-func (builder *TransactionsBuilder) readZetherRingConfiguration() *ZetherRingConfiguration {
+func (builder *TxsBuilder) readZetherRingConfiguration() *ZetherRingConfiguration {
 
 	configuration := &ZetherRingConfiguration{}
 	configuration.RingSize = gui.GUI.OutputReadInt("Ring Size (-1,2,4,8,16,32,64,128,256):", false, func(value int) bool {
@@ -130,7 +130,7 @@ func (builder *TransactionsBuilder) readZetherRingConfiguration() *ZetherRingCon
 	return configuration
 }
 
-func (builder *TransactionsBuilder) readFee(assetId []byte) (fee *wizard.WizardTransactionFee) {
+func (builder *TxsBuilder) readFee(assetId []byte) (fee *wizard.WizardTransactionFee) {
 
 	var err error
 	fee = &wizard.WizardTransactionFee{}
@@ -152,7 +152,7 @@ func (builder *TransactionsBuilder) readFee(assetId []byte) (fee *wizard.WizardT
 	return
 }
 
-func (builder *TransactionsBuilder) readZetherFee(assetId []byte) (fee *wizard.WizardZetherTransactionFee) {
+func (builder *TxsBuilder) readZetherFee(assetId []byte) (fee *wizard.WizardZetherTransactionFee) {
 
 	fee = &wizard.WizardZetherTransactionFee{}
 	fee.WizardTransactionFee = builder.readFee(assetId)
@@ -172,7 +172,7 @@ func (builder *TransactionsBuilder) readZetherFee(assetId []byte) (fee *wizard.W
 	return
 }
 
-func (builder *TransactionsBuilder) readAsset(text string, allowEmptyAsset bool) []byte {
+func (builder *TxsBuilder) readAsset(text string, allowEmptyAsset bool) []byte {
 	assetId := gui.GUI.OutputReadBytes(text, func(input []byte) bool {
 		return (allowEmptyAsset && len(input) == 0) || len(input) == config_coins.ASSET_LENGTH
 	})
@@ -182,7 +182,7 @@ func (builder *TransactionsBuilder) readAsset(text string, allowEmptyAsset bool)
 	return assetId
 }
 
-func (builder *TransactionsBuilder) readDelegatedStakingUpdate(delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, delegateWalletPublicKey []byte) (err error) {
+func (builder *TxsBuilder) readDelegatedStakingUpdate(delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, delegateWalletPublicKey []byte) (err error) {
 	delegatedStakingUpdate.DelegatedStakingHasNewInfo = gui.GUI.OutputReadBool("New Delegate Info? y/n")
 
 	if delegatedStakingUpdate.DelegatedStakingHasNewInfo {
@@ -205,7 +205,7 @@ func (builder *TransactionsBuilder) readDelegatedStakingUpdate(delegatedStakingU
 	return
 }
 
-func (builder *TransactionsBuilder) initCLI() {
+func (builder *TxsBuilder) initCLI() {
 
 	cliPrivateTransfer := func(cmd string, ctx context.Context) (err error) {
 		builder.showWarningIfNotSyncCLI()

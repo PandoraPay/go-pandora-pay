@@ -16,7 +16,8 @@ import (
 	"pandora-pay/settings"
 	"pandora-pay/store"
 	"pandora-pay/testnet"
-	"pandora-pay/transactions_builder"
+	"pandora-pay/txs_builder"
+	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
 	"runtime"
 )
@@ -43,6 +44,11 @@ func _startMain() (err error) {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "database initialized")
+
+	if app.TxsValidator, err = txs_validator.NewTxsValidator(); err != nil {
+		return
+	}
+	globals.MainEvents.BroadcastEvent("main", "transactions validator initialized")
 
 	if app.Mempool, err = mempool.CreateMempool(); err != nil {
 		return
@@ -98,7 +104,7 @@ func _startMain() (err error) {
 		}()
 	}
 
-	app.TransactionsBuilder = transactions_builder.TransactionsBuilderInit(app.Wallet, app.Mempool, app.Chain)
+	app.TxsBuilder = txs_builder.TxsBuilderInit(app.Wallet, app.Mempool, app.Chain)
 	globals.MainEvents.BroadcastEvent("main", "transactions builder initialized")
 
 	if globals.Arguments["--exit"] == true {
@@ -107,11 +113,11 @@ func _startMain() (err error) {
 	}
 
 	if globals.Arguments["--new-devnet"] == true {
-		myTestnet := testnet.TestnetInit(app.Wallet, app.Mempool, app.Chain, app.TransactionsBuilder)
+		myTestnet := testnet.TestnetInit(app.Wallet, app.Mempool, app.Chain, app.TxsBuilder)
 		globals.Data["testnet"] = myTestnet
 	}
 
-	if app.Network, err = network.NewNetwork(app.Settings, app.Chain, app.Mempool, app.Wallet, app.TransactionsBuilder); err != nil {
+	if app.Network, err = network.NewNetwork(app.Settings, app.Chain, app.Mempool, app.Wallet, app.TxsBuilder); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "network initialized")
