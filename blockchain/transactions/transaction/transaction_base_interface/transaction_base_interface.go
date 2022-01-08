@@ -14,4 +14,5 @@ type TransactionBaseInterface interface {
 	VerifySignatureManually(hashForSignature []byte) bool
 	Validate() error
 	VerifyBloomAll() error
+	BloomNow() error
 }

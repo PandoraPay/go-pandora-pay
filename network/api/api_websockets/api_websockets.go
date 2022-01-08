@@ -10,6 +10,7 @@ import (
 	"pandora-pay/network/api/api_websockets/consensus"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/settings"
+	"pandora-pay/txs_validator"
 )
 
 type APIWebsockets struct {
@@ -23,11 +24,11 @@ type APIWebsockets struct {
 	SubscriptionNotifications *multicast.MulticastChannel[*api_types.APISubscriptionNotification]
 }
 
-func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
+func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool, txsValidator *txs_validator.TxsValidator) *APIWebsockets {
 
 	api := &APIWebsockets{
 		nil,
-		consensus.NewConsensus(chain, mempool),
+		consensus.NewConsensus(chain, mempool, txsValidator),
 		chain,
 		mempool,
 		settings,

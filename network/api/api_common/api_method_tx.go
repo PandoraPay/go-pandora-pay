@@ -50,7 +50,7 @@ func (api *APICommon) openLoadTx(args *APITransactionRequest, reply *APITransact
 		if err = reply.Tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
 			return err
 		}
-		if err = reply.Tx.BloomExtraVerified(); err != nil {
+		if err = reply.Tx.BloomAll(); err != nil {
 			return err
 		}
 

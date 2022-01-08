@@ -18,11 +18,13 @@ import (
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
+	"pandora-pay/txs_validator"
 	"time"
 )
 
 type ConsensusProcessForksThread struct {
 	chain   *blockchain.Blockchain
+	txsValidator *txs_validator.TxsValidator
 	forks   *Forks
 	mempool *mempool.Mempool
 }
@@ -111,11 +113,12 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 			if err = tx.Deserialize(helpers.NewBufferReader(blkCompleteMissingTxs.Txs[i])); err != nil {
 				return nil, err
 			}
-			if err = tx.BloomAll(); err != nil {
-				return nil, err
-			}
 			txs[missingTx] = tx
 		}
+	}
+
+	for i, tx := range txs {
+		if err = thread.
 	}
 
 	blkComplete.Txs = txs
@@ -311,9 +314,10 @@ func (thread *ConsensusProcessForksThread) execute() {
 	}
 }
 
-func newConsensusProcessForksThread(forks *Forks, chain *blockchain.Blockchain, mempool *mempool.Mempool) *ConsensusProcessForksThread {
+func newConsensusProcessForksThread(forks *Forks, chain *blockchain.Blockchain, txsValidator *txs_validator.TxsValidator, mempool *mempool.Mempool) *ConsensusProcessForksThread {
 	return &ConsensusProcessForksThread{
 		chain,
+		txsValidator,
 		forks,
 		mempool,
 	}

@@ -13,6 +13,7 @@ import (
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/recovery"
 	"pandora-pay/txs_builder"
+	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
 	"time"
 )
@@ -24,6 +25,7 @@ type mempoolNewTxReply struct {
 
 type APICommon struct {
 	mempool                   *mempool.Mempool
+	txsValidator              *txs_validator.TxsValidator
 	chain                     *blockchain.Blockchain
 	wallet                    *wallet.Wallet
 	knownNodes                *known_nodes.KnownNodes
@@ -32,7 +34,7 @@ type APICommon struct {
 	Faucet                    *api_faucet.Faucet
 	DelegatorNode             *api_delegator_node.DelegatorNode
 	ApiStore                  *APIStore
-	MempoolProcessedThisBlock *generics.Value[*generics.Map[string, *mempoolNewTxReply]]
+	mempoolProcessedThisBlock *generics.Value[*generics.Map[string, *mempoolNewTxReply]]
 	temporaryList             *generics.Value[*APINetworkNodesReply]
 	temporaryListCreation     *generics.Value[time.Time]
 }
@@ -53,7 +55,7 @@ func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.Blockch
 		newChainDataUpdate.Update.BigTotalDifficulty.String(),
 	}
 	api.localChain.Store(newLocalChain)
-	api.MempoolProcessedThisBlock.Store(&generics.Map[string, *mempoolNewTxReply]{})
+	api.mempoolProcessedThisBlock.Store(&generics.Map[string, *mempoolNewTxReply]{})
 }
 
 //make sure it is safe to read
@@ -61,7 +63,7 @@ func (api *APICommon) readLocalBlockchainSync(newLocalSync *blockchain_sync.Bloc
 	api.localChainSync.Store(newLocalSync)
 }
 
-func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, txsBuilder *txs_builder.TxsBuilder, apiStore *APIStore) (api *APICommon, err error) {
+func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, txsValidator *txs_validator.TxsValidator, txsBuilder *txs_builder.TxsBuilder, apiStore *APIStore) (api *APICommon, err error) {
 
 	var faucet *api_faucet.Faucet
 	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
@@ -77,6 +79,7 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 
 	api = &APICommon{
 		mempool,
+		txsValidator,
 		chain,
 		wallet,
 		knownNodes,
@@ -92,7 +95,7 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 
 	api.temporaryListCreation.Store(time.Now())
 
-	api.MempoolProcessedThisBlock.Store(&generics.Map[string, *mempoolNewTxReply]{})
+	api.mempoolProcessedThisBlock.Store(&generics.Map[string, *mempoolNewTxReply]{})
 
 	recovery.SafeGo(func() {
 

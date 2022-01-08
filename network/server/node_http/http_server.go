@@ -13,6 +13,7 @@ import (
 	"pandora-pay/network/websocks"
 	"pandora-pay/settings"
 	"pandora-pay/txs_builder"
+	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
 )
 
@@ -25,15 +26,15 @@ type HttpServer struct {
 	GetMap          map[string]func(values url.Values) (interface{}, error)
 }
 
-func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, wallet *wallet.Wallet, txsBuilder *txs_builder.TxsBuilder) (*HttpServer, error) {
+func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, wallet *wallet.Wallet, txsValidator *txs_validator.TxsValidator, txsBuilder *txs_builder.TxsBuilder) (*HttpServer, error) {
 
 	apiStore := api_common.NewAPIStore(chain)
-	apiCommon, err := api_common.NewAPICommon(knownNodes, mempool, chain, wallet, txsBuilder, apiStore)
+	apiCommon, err := api_common.NewAPICommon(knownNodes, mempool, chain, wallet, txsValidator, txsBuilder, apiStore)
 	if err != nil {
 		return nil, err
 	}
 
-	apiWebsockets := api_websockets.NewWebsocketsAPI(apiStore, apiCommon, chain, settings, mempool)
+	apiWebsockets := api_websockets.NewWebsocketsAPI(apiStore, apiCommon, chain, settings, mempool, txsValidator)
 	api := api_http.NewAPI(apiStore, apiCommon, chain)
 
 	websockets := websocks.NewWebsockets(chain, mempool, settings, bannedNodes, api, apiWebsockets)

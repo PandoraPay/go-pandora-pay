@@ -2,9 +2,7 @@ package transaction
 
 import (
 	"errors"
-	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
@@ -40,33 +38,11 @@ func (tx *Transaction) BloomAll() (err error) {
 
 func (tx *Transaction) bloomExtraNow() error {
 	switch tx.Version {
-	case transaction_type.TX_SIMPLE:
-		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-		if base.Bloom != nil {
-			return nil
-		}
-		return base.BloomNow(tx.SerializeForSigning())
-	case transaction_type.TX_ZETHER:
-		base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-		if base.Bloom != nil {
-			return nil
-		}
-		return base.BloomNow(tx.SerializeForSigning())
+	case transaction_type.TX_SIMPLE, transaction_type.TX_ZETHER:
+		return tx.TransactionBaseInterface.BloomNow()
 	default:
 		return errors.New("Invalid TxType")
 	}
-}
-
-func (tx *Transaction) BloomExtraVerified() (err error) {
-	switch tx.Version {
-	case transaction_type.TX_SIMPLE:
-		err = tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).BloomNowSignatureVerified()
-	case transaction_type.TX_ZETHER:
-		err = tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).BloomNowSignatureVerified()
-	default:
-		err = errors.New("Invalid TxType")
-	}
-	return
 }
 
 func (tx *Transaction) VerifyBloomAll() (err error) {

@@ -17,7 +17,7 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 	}
 	hashStr := string(hash)
 
-	mempoolProcessedThisBlock := api.MempoolProcessedThisBlock.Load()
+	mempoolProcessedThisBlock := api.mempoolProcessedThisBlock.Load()
 	processedAlreadyFound, loaded := mempoolProcessedThisBlock.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), nil})
 
 	if loaded {
@@ -65,7 +65,8 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 		closeConnection(err, true)
 		return nil
 	}
-	if err := tx.BloomAll(); err != nil {
+
+	if err := api.txsValidator.ValidateTx(tx); err != nil {
 		closeConnection(err, true)
 		return nil
 	}

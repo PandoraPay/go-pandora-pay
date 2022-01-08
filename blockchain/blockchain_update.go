@@ -14,6 +14,7 @@ import (
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
+	"pandora-pay/txs_validator"
 )
 
 type BlockchainDataUpdate struct {
@@ -36,13 +37,16 @@ type BlockchainUpdate struct {
 }
 
 type BlockchainUpdatesQueue struct {
-	updates *multicast.MulticastChannel[*BlockchainUpdate] //buffered
-	chain   *Blockchain
+	updates      *multicast.MulticastChannel[*BlockchainUpdate] //buffered
+	chain        *Blockchain
+	txsValidator *txs_validator.TxsValidator
 }
 
-func createBlockchainUpdatesQueue() *BlockchainUpdatesQueue {
+func createBlockchainUpdatesQueue(txsValidator *txs_validator.TxsValidator) *BlockchainUpdatesQueue {
 	return &BlockchainUpdatesQueue{
-		updates: multicast.NewMulticastChannel[*BlockchainUpdate](),
+		multicast.NewMulticastChannel[*BlockchainUpdate](),
+		nil,
+		txsValidator,
 	}
 }
 
@@ -98,9 +102,10 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate) err
 			if err := tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
 				return err
 			}
-			if err := tx.BloomExtraVerified(); err != nil {
+			if err := queue.txsValidator.MarkAsValidatedTx(tx); err != nil {
 				return err
 			}
+
 			removedTxs[i] = tx
 			for _, change := range update.allTransactionsChanges {
 				if bytes.Equal(change.TxHash, tx.Bloom.Hash) {

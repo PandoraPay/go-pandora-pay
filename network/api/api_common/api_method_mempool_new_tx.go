@@ -41,7 +41,7 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 	//it needs to compute  tx.Bloom.HashStr
 	hashStr := string(hash)
 
-	mempoolProcessedThisBlock := api.MempoolProcessedThisBlock.Load()
+	mempoolProcessedThisBlock := api.mempoolProcessedThisBlock.Load()
 	processedAlreadyFound, loaded := mempoolProcessedThisBlock.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), nil})
 
 	if loaded {
@@ -60,10 +60,11 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 		return nil
 	}
 
-	if err := tx.BloomAll(); err != nil {
+	if err := api.txsValidator.ValidateTx(tx); err != nil {
 		(*reply).Error = err
 		return nil
 	}
+
 	if err := api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, true, false, exceptSocketUUID); err != nil {
 		(*reply).Error = err
 		return nil

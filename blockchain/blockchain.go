@@ -31,6 +31,7 @@ import (
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
 	"strconv"
 	"sync"
@@ -464,7 +465,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	return
 }
 
-func CreateBlockchain(mempool *mempool.Mempool) (*Blockchain, error) {
+func CreateBlockchain(mempool *mempool.Mempool, txsValidator *txs_validator.TxsValidator) (*Blockchain, error) {
 
 	gui.GUI.Log("Blockchain init...")
 
@@ -472,7 +473,7 @@ func CreateBlockchain(mempool *mempool.Mempool) (*Blockchain, error) {
 		ChainData:                &generics.Value[*BlockchainData]{},
 		mutex:                    &sync.Mutex{},
 		mempool:                  mempool,
-		updatesQueue:             createBlockchainUpdatesQueue(),
+		updatesQueue:             createBlockchainUpdatesQueue(txsValidator),
 		Sync:                     blockchain_sync.CreateBlockchainSync(),
 		ForgingSolutionCn:        make(chan *block_complete.BlockComplete),
 		UpdateNewChain:           multicast.NewMulticastChannel[uint64](),

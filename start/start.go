@@ -48,7 +48,7 @@ func _startMain() (err error) {
 	if app.TxsValidator, err = txs_validator.NewTxsValidator(); err != nil {
 		return
 	}
-	globals.MainEvents.BroadcastEvent("main", "transactions validator initialized")
+	globals.MainEvents.BroadcastEvent("main", "txs validator initialized")
 
 	if app.Mempool, err = mempool.CreateMempool(); err != nil {
 		return
@@ -60,7 +60,7 @@ func _startMain() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "forging initialized")
 
-	if app.Chain, err = blockchain.CreateBlockchain(app.Mempool); err != nil {
+	if app.Chain, err = blockchain.CreateBlockchain(app.Mempool, app.TxsValidator); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
@@ -117,7 +117,7 @@ func _startMain() (err error) {
 		globals.Data["testnet"] = myTestnet
 	}
 
-	if app.Network, err = network.NewNetwork(app.Settings, app.Chain, app.Mempool, app.Wallet, app.TxsBuilder); err != nil {
+	if app.Network, err = network.NewNetwork(app.Settings, app.Chain, app.Mempool, app.Wallet, app.TxsValidator, app.TxsBuilder); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "network initialized")
