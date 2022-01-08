@@ -10,6 +10,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
+	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
@@ -17,8 +18,6 @@ import (
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
-	"pandora-pay/store"
-	"pandora-pay/store/store_db/store_db_interface"
 	"time"
 )
 
@@ -26,6 +25,19 @@ type ConsensusProcessForksThread struct {
 	chain   *blockchain.Blockchain
 	forks   *Forks
 	mempool *mempool.Mempool
+}
+
+func (thread *ConsensusProcessForksThread) downloadBlockHash(conn *connection.AdvancedConnection, fork *Fork, height uint64) ([]byte, error) {
+	answer := conn.SendJSONAwaitAnswer([]byte("block-hash"), &api_common.APIBlockHashRequest{height}, nil)
+	if answer.Err != nil {
+		return nil, answer.Err
+	}
+
+	if len(answer.Out) != cryptography.HashSize {
+		return nil, errors.New("Hash size is invalid")
+	}
+
+	return answer.Out, nil
 }
 
 func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connection.AdvancedConnection, fork *Fork, height uint64) (*block_complete.BlockComplete, error) {
@@ -56,34 +68,6 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 		}
 	}
 
-	if txsFound < len(txs) {
-
-		serializedTxs := make([][]byte, len(txs))
-
-		_ = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-			for i := range txs {
-				if txs[i] == nil {
-					serializedTxs[i] = reader.Get("tx:" + string(blkWithTx.Txs[i]))
-				}
-			}
-			return
-		})
-
-		for i, serializedTx := range serializedTxs {
-			if serializedTx != nil {
-				tx := &transaction.Transaction{}
-				if err = tx.Deserialize(helpers.NewBufferReader(serializedTx)); err != nil {
-					return nil, err
-				}
-				if err = tx.BloomExtraVerified(); err != nil {
-					return nil, err
-				}
-				txs[i] = tx
-			}
-		}
-
-	}
-
 	blkComplete := block_complete.CreateEmptyBlockComplete()
 	blkComplete.Block = blkWithTx.Block
 
@@ -94,43 +78,44 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 		}
 	}
 
-	missingTxs := make([]int, missingTxsCount)
-	c := 0
-	for i, tx := range txs {
-		if tx == nil {
-			missingTxs[c] = i
-			c++
+	if missingTxsCount > 0 {
+		missingTxs := make([]int, missingTxsCount)
+		c := 0
+		for i, tx := range txs {
+			if tx == nil {
+				missingTxs[c] = i
+				c++
+			}
 		}
-	}
-
-	answer = conn.SendJSONAwaitAnswer([]byte("block-miss-txs"), &api_common.APIBlockCompleteMissingTxsRequest{blkWithTx.Block.Bloom.Hash, missingTxs}, nil)
-	if answer.Err != nil {
-		return nil, answer.Err
-	}
-	blkCompleteMissingTxs := &api_common.APIBlockCompleteMissingTxsReply{}
-
-	if err = json.Unmarshal(answer.Out, blkCompleteMissingTxs); err != nil {
-		return nil, err
-	}
-	if len(blkCompleteMissingTxs.Txs) != len(missingTxs) {
-		return nil, errors.New("blkCompleteMissingTxs.Txs length is not matching")
-	}
-
-	for _, missingTx := range blkCompleteMissingTxs.Txs {
-		if missingTx == nil {
-			return nil, errors.New("blkCompleteMissingTxs.Tx is null")
+		answer = conn.SendJSONAwaitAnswer([]byte("block-miss-txs"), &api_common.APIBlockCompleteMissingTxsRequest{blkWithTx.Block.Bloom.Hash, missingTxs}, nil)
+		if answer.Err != nil {
+			return nil, answer.Err
 		}
-	}
+		blkCompleteMissingTxs := &api_common.APIBlockCompleteMissingTxsReply{}
 
-	for i, missingTx := range missingTxs {
-		tx := &transaction.Transaction{}
-		if err = tx.Deserialize(helpers.NewBufferReader(blkCompleteMissingTxs.Txs[i])); err != nil {
+		if err = json.Unmarshal(answer.Out, blkCompleteMissingTxs); err != nil {
 			return nil, err
 		}
-		if err = tx.BloomExtraVerified(); err != nil {
-			return nil, err
+		if len(blkCompleteMissingTxs.Txs) != len(missingTxs) {
+			return nil, errors.New("blkCompleteMissingTxs.Txs length is not matching")
 		}
-		txs[missingTx] = tx
+
+		for _, missingTx := range blkCompleteMissingTxs.Txs {
+			if missingTx == nil {
+				return nil, errors.New("blkCompleteMissingTxs.Tx is null")
+			}
+		}
+
+		for i, missingTx := range missingTxs {
+			tx := &transaction.Transaction{}
+			if err = tx.Deserialize(helpers.NewBufferReader(blkCompleteMissingTxs.Txs[i])); err != nil {
+				return nil, err
+			}
+			if err = tx.BloomAll(); err != nil {
+				return nil, err
+			}
+			txs[missingTx] = tx
+		}
 	}
 
 	blkComplete.Txs = txs
@@ -179,15 +164,26 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 			return false
 		}
 
-		blkComplete, err := thread.downloadBlockComplete(conn, fork, start-1)
+		hash, err := thread.downloadBlockHash(conn, fork, start-1)
 		if err != nil {
 			fork.errors += 1
 			continue
 		}
 
 		chainHash, err := thread.chain.OpenLoadBlockHash(start - 1)
-		if err == nil && bytes.Equal(blkComplete.Block.Bloom.Hash, chainHash) {
+		if err == nil && bytes.Equal(hash, chainHash) {
 			break
+		}
+
+		blkComplete, err := thread.downloadBlockComplete(conn, fork, start-1)
+		if err != nil {
+			fork.errors += 1
+			continue
+		}
+
+		if !bytes.Equal(blkComplete.Bloom.Hash, hash) { //it is not the same block
+			fork.errors += 1
+			continue
 		}
 
 		//prepend

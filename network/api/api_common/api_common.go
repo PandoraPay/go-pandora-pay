@@ -17,6 +17,11 @@ import (
 	"time"
 )
 
+type mempoolNewTxReply struct {
+	wait  chan struct{}
+	reply *APIMempoolNewTxReply
+}
+
 type APICommon struct {
 	mempool                   *mempool.Mempool
 	chain                     *blockchain.Blockchain
@@ -27,11 +32,9 @@ type APICommon struct {
 	Faucet                    *api_faucet.Faucet
 	DelegatorNode             *api_delegator_node.DelegatorNode
 	ApiStore                  *APIStore
-	MempoolDownloadPending    *generics.Map[string, *mempoolNewTxReply]
-	MempoolProcessedThisBlock *generics.Value[*generics.Map[string, *APIMempoolNewTxReply]]
-
-	temporaryList         *generics.Value[*APINetworkNodesReply]
-	temporaryListCreation *generics.Value[time.Time]
+	MempoolProcessedThisBlock *generics.Value[*generics.Map[string, *mempoolNewTxReply]]
+	temporaryList             *generics.Value[*APINetworkNodesReply]
+	temporaryListCreation     *generics.Value[time.Time]
 }
 
 //make sure it is safe to read
@@ -50,7 +53,7 @@ func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.Blockch
 		newChainDataUpdate.Update.BigTotalDifficulty.String(),
 	}
 	api.localChain.Store(newLocalChain)
-	api.MempoolProcessedThisBlock.Store(&generics.Map[string, *APIMempoolNewTxReply]{})
+	api.MempoolProcessedThisBlock.Store(&generics.Map[string, *mempoolNewTxReply]{})
 }
 
 //make sure it is safe to read
@@ -82,15 +85,14 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 		faucet,
 		delegatorNode,
 		apiStore,
-		&generics.Map[string, *mempoolNewTxReply]{},
-		&generics.Value[*generics.Map[string, *APIMempoolNewTxReply]]{},
+		&generics.Value[*generics.Map[string, *mempoolNewTxReply]]{},
 		&generics.Value[*APINetworkNodesReply]{},
 		&generics.Value[time.Time]{},
 	}
 
 	api.temporaryListCreation.Store(time.Now())
 
-	api.MempoolProcessedThisBlock.Store(&generics.Map[string, *APIMempoolNewTxReply]{})
+	api.MempoolProcessedThisBlock.Store(&generics.Map[string, *mempoolNewTxReply]{})
 
 	recovery.SafeGo(func() {
 

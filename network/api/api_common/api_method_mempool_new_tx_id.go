@@ -1,6 +1,7 @@
 package api_common
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -17,24 +18,17 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 	hashStr := string(hash)
 
 	mempoolProcessedThisBlock := api.MempoolProcessedThisBlock.Load()
-	processedAlreadyFound, loaded := mempoolProcessedThisBlock.Load(hashStr)
-	if loaded {
-		*reply = *processedAlreadyFound
-		return nil
-	}
-
-	answer, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), nil})
+	processedAlreadyFound, loaded := mempoolProcessedThisBlock.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), nil})
 
 	if loaded {
-		<-answer.wait
-		*reply = *answer.reply
+		<-processedAlreadyFound.wait
+		*reply = *processedAlreadyFound.reply
 		return nil
 	}
 
 	defer func() {
-		mempoolProcessedThisBlock.Store(hashStr, reply)
-		answer.reply = reply
-		close(answer.wait)
+		processedAlreadyFound.reply = reply
+		close(processedAlreadyFound.wait)
 	}()
 
 	if api.mempool.Txs.Exists(hashStr) {
@@ -42,35 +36,42 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 		return nil
 	}
 
-	if exists, err := api.chain.OpenExistsTx(hash); exists || err != nil {
-		(*reply).Result = true
-		return nil
+	closeConnection := func(reason error, close bool) {
+		if close {
+			conn.Close(reason.Error())
+		}
+		(*reply).Error = reason
 	}
 
 	result := conn.SendJSONAwaitAnswer([]byte("tx"), &APITransactionRequest{0, hash, api_types.RETURN_SERIALIZED}, nil)
 	if result.Err != nil {
-		(*reply).Error = result.Err
+		closeConnection(result.Err, false)
 		return nil
 	}
 
 	if result.Out == nil {
-		(*reply).Error = errors.New("Tx was not downloaded")
+		closeConnection(result.Err, false)
 		return nil
 	}
 
 	data := &APITransactionReply{}
 	if err := json.Unmarshal(result.Out, data); err != nil {
-		(*reply).Error = err
+		closeConnection(err, true)
 		return nil
 	}
 
 	tx := &transaction.Transaction{}
 	if err := tx.Deserialize(helpers.NewBufferReader(data.TxSerialized)); err != nil {
-		(*reply).Error = err
+		closeConnection(err, true)
 		return nil
 	}
 	if err := tx.BloomAll(); err != nil {
-		(*reply).Error = err
+		closeConnection(err, true)
+		return nil
+	}
+
+	if !bytes.Equal(tx.Bloom.Hash, hash) {
+		closeConnection(errors.New("Wrong transaction"), true)
 		return nil
 	}
 

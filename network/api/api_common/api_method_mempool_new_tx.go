@@ -21,48 +21,38 @@ type APIMempoolNewTxReply struct {
 	Error  error `json:"error"`
 }
 
-type mempoolNewTxReply struct {
-	wait  chan struct{}
-	reply *APIMempoolNewTxReply
-}
-
 func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempoolNewTxReply, exceptSocketUUID advanced_connection_types.UUID) error {
+
+	var hash []byte
 
 	tx := &transaction.Transaction{}
 	if args.Type == 0 {
 		if err := tx.Deserialize(helpers.NewBufferReader(args.Tx)); err != nil {
 			return err
 		}
+		hash = tx.Bloom.Hash
 	} else if args.Type == 1 { //json
 		if err := json.Unmarshal(args.Tx, tx); err != nil {
 			return err
 		}
+		hash = tx.HashManual()
 	}
 
 	//it needs to compute  tx.Bloom.HashStr
-	hash := tx.HashManual()
 	hashStr := string(hash)
 
 	mempoolProcessedThisBlock := api.MempoolProcessedThisBlock.Load()
-	processedAlreadyFound, loaded := mempoolProcessedThisBlock.Load(hashStr)
+	processedAlreadyFound, loaded := mempoolProcessedThisBlock.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), nil})
 
 	if loaded {
-		*reply = *processedAlreadyFound
-		return nil
-	}
-
-	answer, loaded := api.MempoolDownloadPending.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), nil})
-
-	if loaded {
-		<-answer.wait
-		*reply = *answer.reply
+		<-processedAlreadyFound.wait
+		*reply = *processedAlreadyFound.reply
 		return nil
 	}
 
 	defer func() {
-		mempoolProcessedThisBlock.Store(hashStr, reply)
-		answer.reply = reply
-		close(answer.wait)
+		processedAlreadyFound.reply = reply
+		close(processedAlreadyFound.wait)
 	}()
 
 	if api.mempool.Txs.Exists(hashStr) {
