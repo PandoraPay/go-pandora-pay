@@ -69,10 +69,8 @@ func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockCo
 			return
 		}
 
-		for _, tx := range blkComplete.Txs {
-			if err = chain.txsValidator.ValidateTx(tx); err != nil {
-				return
-			}
+		if err = chain.txsValidator.ValidateTxs(blkComplete.Txs); err != nil {
+			return
 		}
 
 		nonceMap := make(map[string]bool)

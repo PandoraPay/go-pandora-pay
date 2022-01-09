@@ -70,14 +70,14 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 	return
 }
 
-func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64) (tx *transaction.Transaction, err error) {
+func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
 	addr, err := testnet.wallet.GetWalletAddress(0)
 	if err != nil {
 		return
 	}
 
-	if tx, err = testnet.txsBuilder.CreateSimpleTx(addr.AddressEncoded, 0, &wizard.WizardTxSimpleExtraUnstake{Amount: amount}, &wizard.WizardTransactionData{nil, false}, &wizard.WizardTransactionFee{0, 0, 0, true}, false, true, true, true, false, func(string) {}); err != nil {
+	if tx, err = testnet.txsBuilder.CreateSimpleTx(addr.AddressEncoded, 0, &wizard.WizardTxSimpleExtraUnstake{Amount: amount}, &wizard.WizardTransactionData{nil, false}, &wizard.WizardTransactionFee{0, 0, 0, true}, false, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -208,7 +208,7 @@ func (testnet *Testnet) run() {
 			if err := func() (err error) {
 
 				if blockHeight == 20 {
-					if _, err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*config_stake.GetRequiredStake(blockHeight)); err != nil {
+					if _, err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*config_stake.GetRequiredStake(blockHeight), ctx); err != nil {
 						return
 					}
 				}
@@ -267,7 +267,7 @@ func (testnet *Testnet) run() {
 
 							} else if atomic.LoadInt32(&unstakesCount) < 4 && delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > 5000 {
 								if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
-									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-unclaimed); err != nil {
+									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-unclaimed, ctx); err != nil {
 										return
 									}
 								}

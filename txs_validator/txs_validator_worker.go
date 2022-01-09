@@ -17,10 +17,6 @@ type TxsValidatorWorker struct {
 
 func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidated) error {
 
-	if err := foundWork.tx.BloomAll(); err != nil {
-		return err
-	}
-
 	if err := foundWork.tx.VerifyBloomAll(); err != nil {
 		return err
 	}
@@ -84,10 +80,13 @@ func (worker *TxsValidatorWorker) run() {
 			continue
 		}
 
-		if err := worker.verifyTx(foundWork); err != nil {
+		if err := foundWork.tx.BloomAll(); err != nil {
 			foundWork.result = err
 		} else {
-
+			foundWork.bloomExtra = foundWork.tx.TransactionBaseInterface.GetBloomExtra()
+			if err := worker.verifyTx(foundWork); err != nil {
+				foundWork.result = err
+			}
 		}
 
 		foundWork.tx = nil

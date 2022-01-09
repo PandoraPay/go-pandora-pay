@@ -50,9 +50,6 @@ func (api *APICommon) openLoadTx(args *APITransactionRequest, reply *APITransact
 		if err = reply.Tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
 			return err
 		}
-		if err = reply.Tx.BloomAll(); err != nil {
-			return err
-		}
 
 		if config.SEED_WALLET_NODES_INFO {
 			if data = reader.Get("txInfo_ByHash" + hashStr); data == nil {

@@ -15,4 +15,6 @@ type TransactionBaseInterface interface {
 	Validate() error
 	VerifyBloomAll() error
 	BloomNow() error
+	GetBloomExtra() any
+	SetBloomExtra(bloom any)
 }

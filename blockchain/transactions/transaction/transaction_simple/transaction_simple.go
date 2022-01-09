@@ -193,3 +193,13 @@ func (tx *TransactionSimple) VerifyBloomAll() error {
 	}
 	return tx.Bloom.verifyIfBloomed()
 }
+
+func (tx *TransactionSimple) GetBloomExtra() any {
+	return tx.Bloom
+}
+
+func (tx *TransactionSimple) SetBloomExtra(bloom any) {
+	if tx.Bloom == nil {
+		tx.Bloom = bloom.(*TransactionSimpleBloom)
+	}
+}

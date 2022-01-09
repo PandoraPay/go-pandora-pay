@@ -2,7 +2,6 @@ package transaction
 
 import (
 	"errors"
-	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
@@ -37,12 +36,7 @@ func (tx *Transaction) BloomAll() (err error) {
 }
 
 func (tx *Transaction) bloomExtraNow() error {
-	switch tx.Version {
-	case transaction_type.TX_SIMPLE, transaction_type.TX_ZETHER:
-		return tx.TransactionBaseInterface.BloomNow()
-	default:
-		return errors.New("Invalid TxType")
-	}
+	return tx.TransactionBaseInterface.BloomNow()
 }
 
 func (tx *Transaction) VerifyBloomAll() (err error) {

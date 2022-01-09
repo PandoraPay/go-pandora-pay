@@ -146,3 +146,13 @@ func (tx *TransactionZether) VerifyBloomAll() error {
 	}
 	return tx.Bloom.verifyIfBloomed()
 }
+
+func (tx *TransactionZether) GetBloomExtra() any {
+	return tx.Bloom
+}
+
+func (tx *TransactionZether) SetBloomExtra(bloom any) {
+	if tx.Bloom == nil {
+		tx.Bloom = bloom.(*TransactionZetherBloom)
+	}
+}

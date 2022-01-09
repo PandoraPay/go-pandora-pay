@@ -2,6 +2,7 @@ package api_common
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -76,7 +77,7 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 		return nil
 	}
 
-	if err := api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, true, false, conn.UUID); err != nil {
+	if err := api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, false, false, conn.UUID, context.Background()); err != nil {
 		(*reply).Error = err
 		return nil
 	}
@@ -85,7 +86,7 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 	return nil
 }
 
-func (api *APICommon) MempoolNewTxId_websockets(conn *connection.AdvancedConnection, values []byte) (out interface{}, err error) {
+func (api *APICommon) MempoolNewTxId_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	reply := &APIMempoolNewTxReply{}
 	return reply, api.mempoolNewTxId(conn, values, reply)
 }

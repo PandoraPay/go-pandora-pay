@@ -1,6 +1,7 @@
 package api_common
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -65,7 +66,7 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 		return nil
 	}
 
-	if err := api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, true, false, exceptSocketUUID); err != nil {
+	if err := api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, false, false, exceptSocketUUID, context.Background()); err != nil {
 		(*reply).Error = err
 		return nil
 	}

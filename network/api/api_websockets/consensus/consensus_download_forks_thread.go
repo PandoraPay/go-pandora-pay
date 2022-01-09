@@ -117,13 +117,12 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 		}
 	}
 
-	for _, tx := range txs {
-		if err = thread.txsValidator.ValidateTx(tx); err != nil {
-			return nil, err
-		}
+	blkComplete.Txs = txs
+
+	if err = thread.txsValidator.ValidateTxs(txs); err != nil {
+		return nil, err
 	}
 
-	blkComplete.Txs = txs
 	if err = blkComplete.BloomAll(); err != nil {
 		return nil, err
 	}

@@ -16,17 +16,24 @@ type TxsValidator struct {
 
 func (validator *TxsValidator) MarkAsValidatedTx(tx *transaction.Transaction) error {
 
-	if err := tx.BloomAll(); err != nil {
+	foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
+	if !loaded {
+		if err := foundWork.tx.BloomAll(); err != nil {
+			foundWork.result = err
+		}
+		foundWork.bloomExtra = foundWork.tx.TransactionBaseInterface.GetBloomExtra()
+		foundWork.tx = nil
+		atomic.StoreInt32(&foundWork.status, TX_VALIDATED_PROCCESSED)
+		foundWork.time = time.Now().Add(EXPIRE_TIME_MS).Unix()
+		close(foundWork.wait)
+	}
+
+	<-foundWork.wait
+	if err := foundWork.result; err != nil {
 		return err
 	}
 
-	result, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{make(chan struct{}), int32(TX_VALIDATED_INIT), tx, 0, nil})
-	if !loaded {
-		result.tx = nil
-		atomic.StoreInt32(&result.status, TX_VALIDATED_PROCCESSED)
-		result.time = time.Now().Add(EXPIRE_TIME_MS).Unix()
-		close(result.wait)
-	}
+	tx.TransactionBaseInterface.SetBloomExtra(foundWork.bloomExtra)
 
 	return nil
 }
@@ -34,14 +41,44 @@ func (validator *TxsValidator) MarkAsValidatedTx(tx *transaction.Transaction) er
 //blocking
 func (validator *TxsValidator) ValidateTx(tx *transaction.Transaction) error {
 
-	result, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil})
+	foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
 	if !loaded {
-		validator.processing.Store(tx.Bloom.HashStr, result)
+		validator.processing.Store(tx.Bloom.HashStr, foundWork)
 	}
 
-	<-result.wait
+	<-foundWork.wait
+	if err := foundWork.result; err != nil {
+		return err
+	}
 
-	return result.result
+	tx.TransactionBaseInterface.SetBloomExtra(foundWork.bloomExtra)
+
+	return nil
+}
+
+func (validator *TxsValidator) ValidateTxs(txs []*transaction.Transaction) error {
+
+	outputs := make([]*txValidated, len(txs))
+	for i, tx := range txs {
+		foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
+		if !loaded {
+			validator.processing.Store(tx.Bloom.HashStr, foundWork)
+		}
+		outputs[i] = foundWork
+	}
+
+	for _, foundWork := range outputs {
+		<-foundWork.wait
+		if foundWork.result != nil {
+			return foundWork.result
+		}
+	}
+
+	for i, foundWork := range outputs {
+		txs[i].TransactionBaseInterface.SetBloomExtra(foundWork.bloomExtra)
+	}
+
+	return nil
 }
 
 func (validator *TxsValidator) runRemoveExpiredTransactions() {

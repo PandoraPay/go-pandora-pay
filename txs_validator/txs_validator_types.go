@@ -6,11 +6,12 @@ import (
 )
 
 type txValidated struct {
-	wait   chan struct{}
-	status int32 //use atomic
-	tx     *transaction.Transaction
-	time   int64
-	result error
+	wait       chan struct{}
+	status     int32 //use atomic
+	tx         *transaction.Transaction
+	time       int64
+	result     error
+	bloomExtra any
 }
 
 const (

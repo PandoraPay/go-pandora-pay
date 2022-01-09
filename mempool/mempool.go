@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"context"
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
@@ -31,7 +32,7 @@ type Mempool struct {
 	removeTransactionsCn      chan *MempoolWorkerRemoveTxs    `json:"-"`
 	insertTransactionsCn      chan *MempoolWorkerInsertTxs    `json:"-"`
 	Txs                       *MempoolTxs                     `json:"-"`
-	OnBroadcastNewTransaction func([]*transaction.Transaction, bool, bool, advanced_connection_types.UUID) []error
+	OnBroadcastNewTransaction func([]*transaction.Transaction, bool, bool, advanced_connection_types.UUID, context.Context) []error
 }
 
 func (mempool *Mempool) ContinueProcessing(continueProcessingType ContinueProcessingType) {
@@ -46,7 +47,7 @@ func (mempool *Mempool) RemoveInsertedTxsFromBlockchain(txs []string) bool {
 
 func (mempool *Mempool) InsertRemovedTxsFromBlockchain(txs []*transaction.Transaction, height uint64) bool {
 
-	finalTxs, _ := mempool.processTxsToMempool(txs, height)
+	finalTxs, _ := mempool.processTxsToMempool(txs, height, context.Background())
 
 	insertTxs := make([]*mempoolTx, len(finalTxs))
 	for i, it := range finalTxs {
@@ -61,17 +62,23 @@ func (mempool *Mempool) InsertRemovedTxsFromBlockchain(txs []*transaction.Transa
 
 }
 
-func (mempool *Mempool) AddTxToMempool(tx *transaction.Transaction, height uint64, justCreated bool, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID) error {
-	result := mempool.AddTxsToMempool([]*transaction.Transaction{tx}, height, justCreated, awaitAnswer, awaitBroadcasting, exceptSocketUUID)
+func (mempool *Mempool) AddTxToMempool(tx *transaction.Transaction, height uint64, justCreated bool, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context) error {
+	result := mempool.AddTxsToMempool([]*transaction.Transaction{tx}, height, justCreated, awaitAnswer, awaitBroadcasting, exceptSocketUUID, ctx)
 	return result[0]
 }
 
-func (mempool *Mempool) processTxsToMempool(txs []*transaction.Transaction, height uint64) (finalTxs []*mempoolTx, errs []error) {
+func (mempool *Mempool) processTxsToMempool(txs []*transaction.Transaction, height uint64, ctx context.Context) (finalTxs []*mempoolTx, errs []error) {
 
 	finalTxs = make([]*mempoolTx, len(txs))
 	errs = make([]error, len(txs))
 
 	for i, tx := range txs {
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 
 		if err := tx.VerifyBloomAll(); err != nil {
 			errs[i] = err
@@ -124,14 +131,20 @@ func (mempool *Mempool) processTxsToMempool(txs []*transaction.Transaction, heig
 	return
 }
 
-func (mempool *Mempool) AddTxsToMempool(txs []*transaction.Transaction, height uint64, justCreated, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID) []error {
+func (mempool *Mempool) AddTxsToMempool(txs []*transaction.Transaction, height uint64, justCreated, awaitAnswer, awaitBroadcasting bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context) []error {
 
-	finalTxs, errs := mempool.processTxsToMempool(txs, height)
+	finalTxs, errs := mempool.processTxsToMempool(txs, height, ctx)
 
 	//making sure that the transaction is not inserted twice
 	if runtime.GOARCH != "wasm" {
 		for i, finalTx := range finalTxs {
 			if finalTx != nil {
+
+				select {
+				case <-ctx.Done():
+					return errs
+				default:
+				}
 
 				var errorResult error
 
@@ -157,14 +170,14 @@ func (mempool *Mempool) AddTxsToMempool(txs []*transaction.Transaction, height u
 
 	if exceptSocketUUID != advanced_connection_types.UUID_SKIP_ALL {
 
-		broadcastTxs := make([]*transaction.Transaction, len(finalTxs))
-		for i, finalTx := range finalTxs {
+		broadcastTxs := make([]*transaction.Transaction, 0)
+		for _, finalTx := range finalTxs {
 			if finalTx != nil {
-				broadcastTxs[i] = finalTx.Tx
+				broadcastTxs = append(broadcastTxs, finalTx.Tx)
 			}
 		}
 
-		errors2 := mempool.OnBroadcastNewTransaction(broadcastTxs, justCreated, awaitBroadcasting, exceptSocketUUID)
+		errors2 := mempool.OnBroadcastNewTransaction(broadcastTxs, justCreated, awaitBroadcasting, exceptSocketUUID, ctx)
 		for i, err := range errors2 {
 			if err != nil {
 				errs[i] = err

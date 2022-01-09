@@ -70,7 +70,7 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [x] Transaction Wizard
     - [x] Transaction Builder
     - [x] Fee calculator
-    - [ ] Multi Threading signature verification **   
+    - [x] Multi Threading signature verification   
 - [x] Simple Transactions
   - [x] Unstake Tx
   - [x] Update Delegate Tx

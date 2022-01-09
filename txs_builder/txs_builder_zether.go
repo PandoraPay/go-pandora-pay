@@ -347,7 +347,7 @@ func (builder *TxsBuilder) CreateZetherTx(extraPayloads []wizard.WizardZetherPay
 	}
 
 	if propagateTx {
-		if err := builder.mempool.AddTxToMempool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
+		if err := builder.mempool.AddTxToMempool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL, ctx); err != nil {
 			return nil, err
 		}
 	}

@@ -1,6 +1,7 @@
 package txs_builder
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"pandora-pay/blockchain"
@@ -104,7 +105,7 @@ func (builder *TxsBuilder) getWalletAddresses(from []string) ([]*wallet_address.
 	return fromWalletAddress, nil
 }
 
-func (builder *TxsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizard.WizardTxSimpleExtra, data *wizard.WizardTransactionData, fee *wizard.WizardTransactionFee, feeVersion bool, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, statusCallback func(status string)) (*transaction.Transaction, error) {
+func (builder *TxsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizard.WizardTxSimpleExtra, data *wizard.WizardTransactionData, fee *wizard.WizardTransactionFee, feeVersion bool, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, ctx context.Context, statusCallback func(status string)) (*transaction.Transaction, error) {
 
 	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
 	if err != nil {
@@ -161,7 +162,7 @@ func (builder *TxsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizar
 	statusCallback("Transaction Created")
 
 	if propagateTx {
-		if err = builder.mempool.AddTxToMempool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL); err != nil {
+		if err = builder.mempool.AddTxToMempool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL, ctx); err != nil {
 			return nil, err
 		}
 	}
