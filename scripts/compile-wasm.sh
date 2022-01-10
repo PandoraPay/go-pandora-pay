@@ -29,6 +29,7 @@ fi
 
 buildOutput=${buildOutput}".wasm"
 
+go version
 (cd ${src} && GOOS=js GOARCH=wasm go build -ldflags "-X pandora-pay/config.BUILD_VERSION=${gitVersionShort}" -o ${buildOutput} )
 
 buildOutput=${src}${buildOutput}
