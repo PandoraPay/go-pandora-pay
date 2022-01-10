@@ -45,7 +45,7 @@ func mempoolInsertTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		err := app.Mempool.AddTxToMempool(tx, 0, false, true, false, advanced_connection_types.UUID_SKIP_ALL, context.Background())
+		err := app.Mempool.AddTxToMempool(tx, 0, false, true, true, advanced_connection_types.UUID_SKIP_ALL, context.Background())
 
 		return nil, err
 	})

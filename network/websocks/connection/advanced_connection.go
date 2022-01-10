@@ -8,6 +8,7 @@ import (
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
@@ -55,7 +56,7 @@ func (c *AdvancedConnection) Close(reason string) error {
 	if c.IsClosed.SetToIf(false, true) {
 		close(c.Closed)
 	}
-	return c.Conn.Close(websocket.StatusNormalClosure, reason)
+	return c.Conn.Close(websocket.StatusNormalClosure, reason[:generics.Min(100, len(reason))])
 }
 
 func (c *AdvancedConnection) connSendJSON(message interface{}, ctx context.Context) error {
@@ -76,18 +77,6 @@ func (c *AdvancedConnection) connSendJSON(message interface{}, ctx context.Conte
 	}
 
 	return c.Conn.Write(ctx, websocket.MessageBinary, data)
-}
-
-func (c *AdvancedConnection) connSendPing() error {
-
-	if c.IsClosed.IsSet() {
-		return errors.New("Closed")
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_PONG_WAIT)
-	defer cancel()
-
-	return c.Conn.Ping(ctx)
 }
 
 func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byte, reply bool, ctx context.Context) error {
@@ -262,10 +251,7 @@ func (c *AdvancedConnection) ReadPump() {
 
 	c.Conn.SetReadLimit(int64(config.WEBSOCKETS_MAX_READ))
 
-	var ctx context.Context
-	var cancel context.CancelFunc
-
-	ctx, cancel = context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	for {
@@ -277,14 +263,27 @@ func (c *AdvancedConnection) ReadPump() {
 			return
 		}
 
-		message := &advanced_connection_types.AdvancedConnectionMessage{}
-		if err = json.Unmarshal(read, message); err != nil {
-			continue
-		}
+		recovery.SafeGo(func() {
+			message := &advanced_connection_types.AdvancedConnectionMessage{}
+			if err = json.Unmarshal(read, message); err == nil {
+				c.processRead(message)
+			}
+		})
 
-		recovery.SafeGo(func() { c.processRead(message) })
 	}
 
+}
+
+func (c *AdvancedConnection) connSendPing() error {
+
+	if c.IsClosed.IsSet() {
+		return errors.New("Closed")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_PONG_WAIT)
+	defer cancel()
+
+	return c.Conn.Ping(ctx)
 }
 
 func (c *AdvancedConnection) SendPings() {

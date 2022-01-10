@@ -183,7 +183,8 @@ func (testnet *Testnet) run() {
 		}
 	}
 
-	var oldCancel context.CancelFunc
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	for {
 
@@ -191,12 +192,6 @@ func (testnet *Testnet) run() {
 		if !ok {
 			return
 		}
-
-		if oldCancel != nil {
-			oldCancel()
-		}
-		ctx, cancel := context.WithCancel(context.Background())
-		oldCancel = cancel
 
 		syncTime := testnet.chain.Sync.GetSyncTime()
 
@@ -274,8 +269,9 @@ func (testnet *Testnet) run() {
 								atomic.AddInt32(&unstakesCount, 1)
 							} else {
 
-								time.Sleep(time.Millisecond * 100) //making sure the block got propagated
+								time.Sleep(time.Millisecond * 200) //making sure the block got propagated
 								for i := 2; i < 5; i++ {
+									time.Sleep(time.Millisecond * 200)
 									testnet.testnetCreateTransfers(i, ctx)
 								}
 
@@ -295,8 +291,6 @@ func (testnet *Testnet) run() {
 		})
 
 	}
-
-	oldCancel()
 
 }
 

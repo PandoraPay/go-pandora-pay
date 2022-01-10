@@ -18,12 +18,16 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 	}
 	hashStr := string(hash)
 
+	if api.mempool.Txs.Exists(hashStr) {
+		(*reply).Result = true
+		return nil
+	}
+
 	mempoolProcessedThisBlock := api.mempoolProcessedThisBlock.Load()
 	processedAlreadyFound, loaded := mempoolProcessedThisBlock.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), nil})
 
 	if loaded {
-		<-processedAlreadyFound.wait
-		*reply = *processedAlreadyFound.reply
+		reply.Result = true
 		return nil
 	}
 
@@ -31,11 +35,6 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 		processedAlreadyFound.reply = reply
 		close(processedAlreadyFound.wait)
 	}()
-
-	if api.mempool.Txs.Exists(hashStr) {
-		(*reply).Result = true
-		return nil
-	}
 
 	closeConnection := func(reason error, close bool) {
 		if close {
@@ -46,13 +45,11 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 
 	result := conn.SendJSONAwaitAnswer([]byte("tx"), &APITransactionRequest{0, hash, api_types.RETURN_SERIALIZED}, nil)
 	if result.Err != nil {
-		closeConnection(result.Err, false)
-		return nil
+		return result.Err
 	}
 
 	if result.Out == nil {
-		closeConnection(result.Err, false)
-		return nil
+		return errors.New("Tx was not found")
 	}
 
 	data := &APITransactionReply{}

@@ -45,7 +45,7 @@ func (api *Faucet) FaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, rep
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tx, err := api.txsBuilder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{nil}, []string{addr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, []string{args.Address}, []uint64{0}, []*txs_builder.ZetherRingConfiguration{{-1, -1}}, []*wizard.WizardTransactionData{data}, fees, true, false, false, false, ctx, func(status string) {})
+	tx, err := api.txsBuilder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{nil}, []string{addr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{config.FAUCET_TESTNET_COINS_UNITS}, []string{args.Address}, []uint64{0}, []*txs_builder.ZetherRingConfiguration{{-1, -1}}, []*wizard.WizardTransactionData{data}, fees, true, true, true, false, ctx, func(status string) {})
 	if err != nil {
 		return err
 	}

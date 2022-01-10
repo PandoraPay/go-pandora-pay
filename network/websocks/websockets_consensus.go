@@ -30,7 +30,7 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 
 		timeout := time.Duration(1) * config.WEBSOCKETS_TIMEOUT
 		if awaitPropagation {
-			timeout = time.Duration(5) * config.WEBSOCKETS_TIMEOUT
+			timeout = time.Duration(3) * config.WEBSOCKETS_TIMEOUT
 		}
 
 		if justCreated {
