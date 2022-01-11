@@ -55,7 +55,6 @@ func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.Blockch
 		newChainDataUpdate.Update.BigTotalDifficulty.String(),
 	}
 	api.localChain.Store(newLocalChain)
-	api.mempoolProcessedThisBlock.Store(&generics.Map[string, *mempoolNewTxReply]{})
 }
 
 //make sure it is safe to read
