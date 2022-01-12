@@ -2,8 +2,10 @@ package gui_interactive
 
 import (
 	"github.com/gizak/termui/v3/widgets"
+	"pandora-pay/config"
 	"pandora-pay/gui/gui_interface"
 	"strings"
+	"time"
 )
 
 func (g *GUIInteractive) logsRender() {
@@ -18,11 +20,19 @@ func (g *GUIInteractive) logsRender() {
 }
 
 func (g *GUIInteractive) message(prefix string, color string, any ...interface{}) {
+
 	text := gui_interface.ProcessArgument(any...)
 
+	if config.DEBUG {
+		text = time.Now().Format("2006-01-02 15:04:05  ") + text
+	}
+
+	final1 := prefix + " " + text + "\n"
+	final2 := "[" + text + "]" + color + "\n"
+
 	g.logs.Lock()
-	g.logger.GeneralLog.WriteString(prefix + " " + text + "\n")
-	g.logs.Text = g.logs.Text + "[" + text + "]" + color + "\n"
+	g.logger.GeneralLog.WriteString(final1)
+	g.logs.Text += final2
 	g.logs.Unlock()
 }
 
