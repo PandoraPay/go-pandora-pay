@@ -1,4 +1,4 @@
-package debugging
+package debugging_pprof
 
 import (
 	"fmt"

@@ -6,7 +6,7 @@ package arguments
 const commands = `PANDORA PAY WASM.
 
 Usage:
-  pandorapay [--debugging] [--version] [--network=network] [--debug] [--staking] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-derive-delegated-stake=args] [--instance=prefix] [--instance-id=id] [--exit]
+  pandorapay [--pprof] [--version] [--network=network] [--debug] [--staking] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-derive-delegated-stake=args] [--instance=prefix] [--instance-id=id] [--exit]
   pandorapay -h | --help
   pandorapay -v | --version
 

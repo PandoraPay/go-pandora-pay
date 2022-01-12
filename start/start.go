@@ -10,7 +10,7 @@ import (
 	"pandora-pay/config/globals"
 	balance_decoder "pandora-pay/cryptography/crypto/balance-decoder"
 	"pandora-pay/gui"
-	"pandora-pay/helpers/debugging"
+	"pandora-pay/helpers/debugging_pprof"
 	"pandora-pay/mempool"
 	"pandora-pay/network"
 	"pandora-pay/settings"
@@ -29,8 +29,8 @@ func _startMain() (err error) {
 	}
 	globals.MainStarted = true
 
-	if globals.Arguments["--debugging"] == true {
-		if err = debugging.Start(); err != nil {
+	if globals.Arguments["--pprof"] == true {
+		if err = debugging_pprof.Start(); err != nil {
 			return
 		}
 	}
