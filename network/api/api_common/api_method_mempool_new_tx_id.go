@@ -33,6 +33,7 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 
 	defer func() {
 		processedAlreadyFound.reply = reply
+		mempoolProcessedThisBlock.Delete(hashStr)
 		close(processedAlreadyFound.wait)
 	}()
 
