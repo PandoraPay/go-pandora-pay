@@ -6,13 +6,12 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
-	"pandora-pay/helpers/generics"
 	"sync/atomic"
 	"time"
 )
 
 type TxsValidatorWorker struct {
-	processing *generics.Map[string, *txValidated]
+	newValidationWorkCn chan *txValidated
 }
 
 func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidated) error {
@@ -59,26 +58,8 @@ func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidated) error {
 
 func (worker *TxsValidatorWorker) run() {
 
-	ticker := time.NewTicker(10 * time.Millisecond)
-
 	for {
-		var foundWork *txValidated
-
-		worker.processing.Range(func(key string, value *txValidated) bool {
-
-			if atomic.CompareAndSwapInt32(&value.status, TX_VALIDATED_INIT, TX_VALIDATED_PROCESSING) {
-				worker.processing.LoadAndDelete(key)
-				foundWork = value
-				return false
-			}
-
-			return true
-		})
-
-		if foundWork == nil {
-			<-ticker.C
-			continue
-		}
+		foundWork, _ := <-worker.newValidationWorkCn
 
 		if err := foundWork.tx.BloomAll(); err != nil {
 			foundWork.result = err
@@ -102,9 +83,9 @@ func (worker *TxsValidatorWorker) start() {
 	go worker.run()
 }
 
-func newTxsValidatorWorker(processing *generics.Map[string, *txValidated]) *TxsValidatorWorker {
+func newTxsValidatorWorker(newValidationWorkCn chan *txValidated) *TxsValidatorWorker {
 	worker := &TxsValidatorWorker{
-		processing,
+		newValidationWorkCn,
 	}
 	return worker
 }

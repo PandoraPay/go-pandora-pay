@@ -9,9 +9,9 @@ import (
 )
 
 type TxsValidator struct {
-	all        *generics.Map[string, *txValidated]
-	processing *generics.Map[string, *txValidated]
-	workers    []*TxsValidatorWorker
+	all                 *generics.Map[string, *txValidated]
+	workers             []*TxsValidatorWorker
+	newValidationWorkCn chan *txValidated
 }
 
 func (validator *TxsValidator) MarkAsValidatedTx(tx *transaction.Transaction) error {
@@ -43,7 +43,7 @@ func (validator *TxsValidator) ValidateTx(tx *transaction.Transaction) error {
 
 	foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
 	if !loaded {
-		validator.processing.Store(tx.Bloom.HashStr, foundWork)
+		validator.newValidationWorkCn <- foundWork
 	}
 
 	<-foundWork.wait
@@ -62,7 +62,7 @@ func (validator *TxsValidator) ValidateTxs(txs []*transaction.Transaction) error
 	for i, tx := range txs {
 		foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
 		if !loaded {
-			validator.processing.Store(tx.Bloom.HashStr, foundWork)
+			validator.newValidationWorkCn <- foundWork
 		}
 		outputs[i] = foundWork
 	}
@@ -116,13 +116,13 @@ func NewTxsValidator() (*TxsValidator, error) {
 
 	txsValidator := &TxsValidator{
 		&generics.Map[string, *txValidated]{},
-		&generics.Map[string, *txValidated]{},
 		nil,
+		make(chan *txValidated),
 	}
 
 	workers := make([]*TxsValidatorWorker, config.CPU_THREADS)
 	for i := range workers {
-		workers[i] = newTxsValidatorWorker(txsValidator.processing)
+		workers[i] = newTxsValidatorWorker(txsValidator.newValidationWorkCn)
 	}
 
 	txsValidator.workers = workers
