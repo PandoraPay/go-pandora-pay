@@ -1,8 +1,8 @@
 package api_common
 
 import (
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/helpers/urldecoder"
@@ -20,7 +20,7 @@ type APIWalletDeleteAddressBase struct {
 }
 
 type APIWalletDeleteAddressReply struct {
-	Status bool `json:"status"`
+	Status bool `json:"status" msgpack:"status"`
 }
 
 func (api *APICommon) WalletDeleteAddress(r *http.Request, args *APIWalletDeleteAddressBase, reply *APIWalletDeleteAddressReply, authenticated bool) error {
@@ -48,7 +48,7 @@ func (api *APICommon) WalletDeleteAddress_http(values url.Values) (interface{}, 
 
 func (api *APICommon) WalletDeleteAddress_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIWalletDeleteAddressBase{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIWalletDeleteAddressReply{}

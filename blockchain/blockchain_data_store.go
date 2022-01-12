@@ -2,8 +2,8 @@ package blockchain
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"math/big"
 	"pandora-pay/helpers"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -59,7 +59,7 @@ func (chainData *BlockchainData) loadBlockchainInfo(reader store_db_interface.St
 	if chainInfoData == nil {
 		return errors.New("Chain not found")
 	}
-	return json.Unmarshal(chainInfoData, chainData)
+	return msgpack.Unmarshal(chainInfoData, chainData)
 }
 
 func (chainData *BlockchainData) saveBlockchainHeight(writer store_db_interface.StoreDBTransactionInterface) {
@@ -71,7 +71,7 @@ func (chainData *BlockchainData) saveBlockchainHeight(writer store_db_interface.
 
 func (chainData *BlockchainData) saveBlockchainInfo(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 	var data []byte
-	if data, err = json.Marshal(chainData); err != nil {
+	if data, err = msgpack.Marshal(chainData); err != nil {
 		return
 	}
 
@@ -80,7 +80,7 @@ func (chainData *BlockchainData) saveBlockchainInfo(writer store_db_interface.St
 }
 
 func (chainData *BlockchainData) saveBlockchain(writer store_db_interface.StoreDBTransactionInterface) error {
-	marshal, err := json.Marshal(chainData)
+	marshal, err := msgpack.Marshal(chainData)
 	if err != nil {
 		return err
 	}

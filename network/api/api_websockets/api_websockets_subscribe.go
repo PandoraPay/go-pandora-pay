@@ -1,7 +1,7 @@
 package api_websockets
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 )
@@ -9,7 +9,7 @@ import (
 func (api *APIWebsockets) subscribe(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 
 	request := &api_types.APISubscriptionRequest{[]byte{}, api_types.SUBSCRIPTION_ACCOUNT, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, request); err != nil {
+	if err := msgpack.Unmarshal(values, request); err != nil {
 		return nil, err
 	}
 
@@ -19,7 +19,7 @@ func (api *APIWebsockets) subscribe(conn *connection.AdvancedConnection, values 
 func (api *APIWebsockets) subscribedNotificationReceived(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 
 	notification := &api_types.APISubscriptionNotification{}
-	if err := json.Unmarshal(values, notification); err != nil {
+	if err := msgpack.Unmarshal(values, notification); err != nil {
 		return nil, err
 	}
 
@@ -31,7 +31,7 @@ func (api *APIWebsockets) subscribedNotificationReceived(conn *connection.Advanc
 func (api *APIWebsockets) unsubscribe(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 
 	unsubscribeRequest := &api_types.APIUnsubscriptionRequest{}
-	if err := json.Unmarshal(values, unsubscribeRequest); err != nil {
+	if err := msgpack.Unmarshal(values, unsubscribeRequest); err != nil {
 		return nil, err
 	}
 

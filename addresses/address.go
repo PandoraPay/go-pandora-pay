@@ -12,13 +12,13 @@ import (
 )
 
 type Address struct {
-	Network       uint64           `json:"network"`
-	Version       AddressVersion   `json:"version"`
-	PublicKey     helpers.HexBytes `json:"publicKey"`
-	Registration  helpers.HexBytes `json:"registration"`
-	PaymentID     helpers.HexBytes `json:"paymentId"`     // payment id
-	PaymentAmount uint64           `json:"paymentAmount"` // amount to be paid
-	PaymentAsset  helpers.HexBytes `json:"paymentAsset"`
+	Network       uint64           `json:"network" msgpack:"network"`
+	Version       AddressVersion   `json:"version" msgpack:"version"`
+	PublicKey     helpers.HexBytes `json:"publicKey" msgpack:"publicKey"`
+	Registration  helpers.HexBytes `json:"registration" msgpack:"registration"`
+	PaymentID     helpers.HexBytes `json:"paymentId" msgpack:"paymentId"`         // payment id
+	PaymentAmount uint64           `json:"paymentAmount" msgpack:"paymentAmount"` // amount to be paid
+	PaymentAsset  helpers.HexBytes `json:"paymentAsset" msgpack:"paymentAsset"`
 }
 
 func NewAddr(network uint64, version AddressVersion, publicKey []byte, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {

@@ -8,7 +8,7 @@ import (
 )
 
 type PlainAccounts struct {
-	*hash_map.HashMap `json:"-"`
+	*hash_map.HashMap
 }
 
 //WARNING: should NOT be used manually without being called from DataStorage

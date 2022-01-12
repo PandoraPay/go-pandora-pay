@@ -11,8 +11,8 @@ import (
 )
 
 type DelegateNode struct {
-	Url  string `json:"url"`
-	Name string `json:"name"`
+	Url  string `json:"url" msgpack:"url" `
+	Name string `json:"name" msgpack:"name" `
 }
 
 var (

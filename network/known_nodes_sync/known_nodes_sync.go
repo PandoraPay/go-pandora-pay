@@ -1,7 +1,7 @@
 package known_nodes_sync
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/network/api/api_common"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/websocks"
@@ -21,7 +21,7 @@ func (self *KnownNodesSync) DownloadNetworkNodes(conn *connection.AdvancedConnec
 	}
 
 	data := &api_common.APINetworkNodesReply{}
-	if err = json.Unmarshal(out.Out, data); err != nil {
+	if err = msgpack.Unmarshal(out.Out, data); err != nil {
 		return
 	}
 

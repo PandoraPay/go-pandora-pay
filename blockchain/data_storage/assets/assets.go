@@ -9,7 +9,7 @@ import (
 )
 
 type Assets struct {
-	*hash_map.HashMap `json:"-"`
+	*hash_map.HashMap
 }
 
 func (assets *Assets) GetAsset(key []byte) (*asset.Asset, error) {

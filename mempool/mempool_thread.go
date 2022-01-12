@@ -12,13 +12,13 @@ import (
 )
 
 type mempoolWork struct {
-	chainHash   []byte         `json:"-"` //32 byte
-	chainHeight uint64         `json:"-"`
-	result      *MempoolResult `json:"-"`
+	chainHash   []byte //32 byte
+	chainHeight uint64
+	result      *MempoolResult
 }
 
 type mempoolWorker struct {
-	dbTx store_db_interface.StoreDBTransactionInterface `json:"-"`
+	dbTx store_db_interface.StoreDBTransactionInterface
 }
 
 type MempoolWorkerAddTx struct {

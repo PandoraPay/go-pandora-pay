@@ -1,8 +1,8 @@
 package hash_map
 
 import (
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/helpers"
 )
 
@@ -40,7 +40,7 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 		}
 	}
 
-	marshal, err := json.Marshal(changes)
+	marshal, err := msgpack.Marshal(changes)
 	if err != nil {
 		return
 	}
@@ -63,7 +63,7 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 	}
 
 	changes := &transactionChanges{}
-	if err = json.Unmarshal(data, changes); err != nil {
+	if err = msgpack.Unmarshal(data, changes); err != nil {
 		return err
 	}
 

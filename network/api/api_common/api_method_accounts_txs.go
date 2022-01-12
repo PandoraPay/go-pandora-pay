@@ -1,8 +1,8 @@
 package api_common
 
 import (
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/config"
@@ -17,12 +17,12 @@ import (
 
 type APIAccountTxsRequest struct {
 	api_types.APIAccountBaseRequest
-	Next uint64 `json:"next,omitempty"`
+	Next uint64 `json:"next,omitempty" msgpack:"next,omitempty"`
 }
 
 type APIAccountTxsReply struct {
-	Count uint64             `json:"count,omitempty"`
-	Txs   []helpers.HexBytes `json:"txs,omitempty"`
+	Count uint64             `json:"count,omitempty" msgpack:"count,omitempty"`
+	Txs   []helpers.HexBytes `json:"txs,omitempty" msgpack:"txs,omitempty"`
 }
 
 func (api *APICommon) AccountTxs(r *http.Request, args *APIAccountTxsRequest, reply *APIAccountTxsReply) (err error) {
@@ -78,7 +78,7 @@ func (api *APICommon) GetAccountTxs_http(values url.Values) (interface{}, error)
 
 func (api *APICommon) GetAccountTxs_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAccountTxsRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIAccountTxsReply{}

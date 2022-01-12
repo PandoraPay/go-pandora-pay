@@ -4,19 +4,25 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/vmihailenco/msgpack/v5"
 	"math/big"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
 type BalanceHomomorphic struct {
-	helpers.SerializableInterface `json:"-"`
-	Amount                        *crypto.ElGamal `json:"amount"`
+	helpers.SerializableInterface `json:"-" msgpack:"-"`
+	Amount                        *crypto.ElGamal `json:"amount" msgpack:"amount"`
 }
 
 // MarshalJSON serializes ElGamal into byteArray
 func (s BalanceHomomorphic) MarshalJSON() ([]byte, error) {
 	return json.Marshal(fmt.Sprintf("%x", string(s.Amount.Serialize())))
+}
+
+// EncodeMsgpack serializes ElGamal into byteArray
+func (s BalanceHomomorphic) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeBytes(s.Amount.Serialize())
 }
 
 // UnmarshalJSON deserializes ByteArray to hex
@@ -35,6 +41,19 @@ func (s *BalanceHomomorphic) UnmarshalJSON(data []byte) (err error) {
 		return
 	}
 	return
+}
+
+// DecodeMsgpack deserializes ByteArray to hex
+func (s *BalanceHomomorphic) DecodeMsgpack(dec *msgpack.Decoder) error {
+	bytes, err := dec.DecodeBytes()
+	if err != nil {
+		return err
+	}
+
+	if s.Amount, err = new(crypto.ElGamal).Deserialize(bytes); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (balance *BalanceHomomorphic) AddBalanceUint(amount uint64) {

@@ -1,8 +1,8 @@
 package api_common
 
 import (
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/info"
@@ -20,7 +20,7 @@ func (apiStore *APIStore) loadTxInfo(reader store_db_interface.StoreDBTransactio
 	if data == nil {
 		return errors.New("TxInfo was not found")
 	}
-	return json.Unmarshal(data, reply)
+	return msgpack.Unmarshal(data, reply)
 }
 
 func (apiStore *APIStore) loadTxPreview(reader store_db_interface.StoreDBTransactionInterface, hash []byte, reply *info.TxPreview) error {
@@ -28,7 +28,7 @@ func (apiStore *APIStore) loadTxPreview(reader store_db_interface.StoreDBTransac
 	if data == nil {
 		return errors.New("TxPreview was not found")
 	}
-	return json.Unmarshal(data, reply)
+	return msgpack.Unmarshal(data, reply)
 }
 
 func (apiStore *APIStore) loadAssetHash(reader store_db_interface.StoreDBTransactionInterface, height uint64) ([]byte, error) {

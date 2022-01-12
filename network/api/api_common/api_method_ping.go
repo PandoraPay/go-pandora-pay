@@ -7,7 +7,7 @@ import (
 )
 
 type Pong struct {
-	Ping string `json:"ping"`
+	Ping string `json:"ping" msgpack:"ping"`
 }
 
 func (api *APICommon) Ping(r *http.Request, args *struct{}, reply *Pong) error {

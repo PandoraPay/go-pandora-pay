@@ -9,10 +9,10 @@ import (
 )
 
 type ApiDelegatorNodeInfoReply struct {
-	MaximumAllowed int              `json:"maximumAllowed"`
-	DelegatesCount int              `json:"delegatesCount"`
-	DelegatesFee   uint64           `json:"delegatesFee"`
-	Challenge      helpers.HexBytes `json:"challenge"`
+	MaximumAllowed int              `json:"maximumAllowed" msgpack:"maximumAllowed"`
+	DelegatesCount int              `json:"delegatesCount" msgpack:"delegatesCount"`
+	DelegatesFee   uint64           `json:"delegatesFee" msgpack:"delegatesFee"`
+	Challenge      helpers.HexBytes `json:"challenge" msgpack:"challenge"`
 }
 
 func (api *DelegatorNode) DelegatorNodeInfo(r *http.Request, args *struct{}, reply *ApiDelegatorNodeInfoReply) error {

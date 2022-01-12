@@ -1,8 +1,8 @@
 package api_common
 
 import (
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/info"
@@ -14,8 +14,8 @@ import (
 )
 
 type APIBlockInfoRequest struct {
-	Height uint64           `json:"height,omitempty"`
-	Hash   helpers.HexBytes `json:"hash,omitempty"`
+	Height uint64           `json:"height,omitempty"  msgpack:"height,omitempty"`
+	Hash   helpers.HexBytes `json:"hash,omitempty"  msgpack:"hash,omitempty"`
 }
 
 func (api *APICommon) BlockInfo(r *http.Request, args *APIBlockInfoRequest, reply *info.BlockInfo) error {
@@ -31,7 +31,7 @@ func (api *APICommon) BlockInfo(r *http.Request, args *APIBlockInfoRequest, repl
 		if data == nil {
 			return errors.New("BlockInfo was not found")
 		}
-		return json.Unmarshal(data, reply)
+		return msgpack.Unmarshal(data, reply)
 	})
 }
 
@@ -46,7 +46,7 @@ func (api *APICommon) GetBlockInfo_http(values url.Values) (interface{}, error) 
 
 func (api *APICommon) GetBlockInfo_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIBlockInfoRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &info.BlockInfo{}

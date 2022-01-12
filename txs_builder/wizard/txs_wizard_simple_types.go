@@ -7,21 +7,21 @@ import (
 )
 
 type WizardTxSimpleExtraUpdateDelegate struct {
-	WizardTxSimpleExtra         `json:"-"`
-	DelegatedStakingClaimAmount uint64                                                  `json:"delegatedStakingClaimAmount"`
-	DelegatedStakingUpdate      *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
+	WizardTxSimpleExtra         `json:"-"  msgpack:"-"`
+	DelegatedStakingClaimAmount uint64                                                  `json:"delegatedStakingClaimAmount"  msgpack:"delegatedStakingClaimAmount"`
+	DelegatedStakingUpdate      *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"  msgpack:"delegatedStakingUpdate"`
 }
 
 type WizardTxSimpleExtraUnstake struct {
-	WizardTxSimpleExtra `json:"-"`
-	Amount              uint64 `json:"amount"`
+	WizardTxSimpleExtra `json:"-"  msgpack:"-"`
+	Amount              uint64 `json:"amount"  msgpack:"amount"`
 }
 
 type WizardTxSimpleExtraUpdateAssetFeeLiquidity struct {
-	WizardTxSimpleExtra `json:"-"`
-	Liquidities         []*asset_fee_liquidity.AssetFeeLiquidity
-	CollectorHasNew     bool             `json:"CollectorHasNew"`
-	Collector           helpers.HexBytes `json:"collector"`
+	WizardTxSimpleExtra `json:"-"  msgpack:"-"`
+	Liquidities         []*asset_fee_liquidity.AssetFeeLiquidity `json:"liquidities"  msgpack:"liquidities"`
+	CollectorHasNew     bool                                     `json:"collectorHasNew"  msgpack:"collectorHasNew"`
+	Collector           helpers.HexBytes                         `json:"collector"  msgpack:"collector"`
 }
 
 type WizardTxSimpleExtra interface {

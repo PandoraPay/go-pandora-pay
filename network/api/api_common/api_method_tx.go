@@ -1,8 +1,8 @@
 package api_common
 
 import (
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/info"
@@ -18,16 +18,16 @@ import (
 )
 
 type APITransactionRequest struct {
-	Height     uint64                  `json:"height,omitempty"`
-	Hash       helpers.HexBytes        `json:"hash,omitempty"`
-	ReturnType api_types.APIReturnType `json:"returnType,omitempty"`
+	Height     uint64                  `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash       helpers.HexBytes        `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APITransactionReply struct {
-	Tx           *transaction.Transaction `json:"tx,omitempty"`
-	TxSerialized helpers.HexBytes         `json:"serialized,omitempty"`
-	Mempool      bool                     `json:"mempool,omitempty"`
-	Info         *info.TxInfo             `json:"info,omitempty"`
+	Tx           *transaction.Transaction `json:"tx,omitempty" msgpack:"tx,omitempty"`
+	TxSerialized helpers.HexBytes         `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
+	Mempool      bool                     `json:"mempool,omitempty" msgpack:"mempool,omitempty"`
+	Info         *info.TxInfo             `json:"info,omitempty" msgpack:"info,omitempty"`
 }
 
 func (api *APICommon) openLoadTx(args *APITransactionRequest, reply *APITransactionReply) error {
@@ -56,7 +56,7 @@ func (api *APICommon) openLoadTx(args *APITransactionRequest, reply *APITransact
 				return errors.New("TxInfo was not found")
 			}
 			reply.Info = &info.TxInfo{}
-			if err = json.Unmarshal(data, reply.Info); err != nil {
+			if err = msgpack.Unmarshal(data, reply.Info); err != nil {
 				return err
 			}
 		}
@@ -102,7 +102,7 @@ func (api *APICommon) GetTx_http(values url.Values) (interface{}, error) {
 
 func (api *APICommon) GetTx_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APITransactionRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APITransactionReply{}

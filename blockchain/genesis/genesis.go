@@ -1,9 +1,9 @@
 package genesis
 
 import (
-	"bufio"
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
+	"io/ioutil"
 	"os"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/config"
@@ -18,18 +18,18 @@ import (
 )
 
 type GenesisDataAirDropType struct {
-	Address                 string           `json:"address"`
-	Amount                  uint64           `json:"amount"`
-	DelegatedStakePublicKey helpers.HexBytes `json:"delegatedStakePublicKey"`
-	DelegatedStakeFee       uint64           `json:"stakingFee"`
+	Address                 string           `json:"address" msgpack:"address"`
+	Amount                  uint64           `json:"amount" msgpack:"amount"`
+	DelegatedStakePublicKey helpers.HexBytes `json:"delegatedStakePublicKey" msgpack:"delegatedStakePublicKey"`
+	DelegatedStakeFee       uint64           `json:"stakingFee" msgpack:"stakingFee"`
 }
 
 type GenesisDataType struct {
-	Hash       helpers.HexBytes          `json:"hash"`       //32 byte
-	KernelHash helpers.HexBytes          `json:"kernelHash"` //32 byte
-	Timestamp  uint64                    `json:"timestamp"`
-	Target     helpers.HexBytes          `json:"target"` //32 byte
-	AirDrops   []*GenesisDataAirDropType `json:"airDrops"`
+	Hash       helpers.HexBytes          `json:"hash" msgpack:"hash"`             //32 byte
+	KernelHash helpers.HexBytes          `json:"kernelHash" msgpack:"kernelHash"` //32 byte
+	Timestamp  uint64                    `json:"timestamp" msgpack:"timestamp"`
+	Target     helpers.HexBytes          `json:"target" msgpack:"target"` //32 byte
+	AirDrops   []*GenesisDataAirDropType `json:"airDrops" msgpack:"airDrops"`
 }
 
 var genesisMainet = GenesisDataType{
@@ -98,6 +98,8 @@ func createNewGenesis(v []string) (err error) {
 
 	defer file.Close()
 
+	var data []byte
+
 	GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
 	GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 
@@ -106,18 +108,12 @@ func createNewGenesis(v []string) (err error) {
 
 		if err = func() (err error) {
 
-			var file2 *os.File
-			if file2, err = os.OpenFile(v[i], os.O_RDONLY, 0666); err != nil {
+			if data, err = ioutil.ReadFile(v[i]); err != nil {
 				return
 			}
 
-			defer file2.Close()
-
-			scanner := bufio.NewScanner(file2)
-			scanner.Scan()
-
 			delegatedStakeOutput := &wallet.DelegatedStakeOutput{}
-			if err = json.Unmarshal(scanner.Bytes(), delegatedStakeOutput); err != nil {
+			if err = msgpack.Unmarshal(data, delegatedStakeOutput); err != nil {
 				return
 			}
 
@@ -134,8 +130,7 @@ func createNewGenesis(v []string) (err error) {
 
 	}
 
-	var data []byte
-	if data, err = json.Marshal(GenesisData); err != nil {
+	if data, err = msgpack.Marshal(GenesisData); err != nil {
 		return
 	}
 
@@ -176,7 +171,7 @@ func createSimpleGenesis(wallet *wallet.Wallet) (err error) {
 	defer file.Close()
 
 	var data []byte
-	if data, err = json.Marshal(GenesisData); err != nil {
+	if data, err = msgpack.Marshal(GenesisData); err != nil {
 		return
 	}
 
@@ -211,19 +206,13 @@ func GenesisInit(w *wallet.Wallet) (err error) {
 				}
 			}
 
-			var file *os.File
-			if file, err = os.OpenFile("./genesis.data", os.O_RDONLY, 0666); err != nil {
+			if data, err = ioutil.ReadFile("./genesis.data"); err != nil {
 				return
 			}
-			defer file.Close()
 
-			scanner := bufio.NewScanner(file)
-			scanner.Scan()
-
-			data = scanner.Bytes()
 		}
 
-		if err = json.Unmarshal(data, &GenesisData); err != nil {
+		if err = msgpack.Unmarshal(data, &GenesisData); err != nil {
 			return
 		}
 

@@ -10,12 +10,6 @@ import (
 	"pandora-pay/network/websocks/connection"
 )
 
-type APIFaucetInfo struct {
-	HCaptchaSiteKey      string `json:"hCaptchaSiteKey,omitempty"`
-	FaucetTestnetEnabled bool   `json:"faucetTestnetEnabled,omitempty"`
-	FaucetTestnetCoins   uint64 `json:"faucetTestnetCoins,omitempty"`
-}
-
 func (api *Faucet) FaucetInfo(r *http.Request, args *struct{}, reply *APIFaucetInfo) error {
 	reply.HCaptchaSiteKey = config.HCAPTCHA_SITE_KEY
 	reply.FaucetTestnetEnabled = config.FAUCET_TESTNET_ENABLED

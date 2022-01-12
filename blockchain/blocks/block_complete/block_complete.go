@@ -13,8 +13,8 @@ import (
 
 type BlockComplete struct {
 	*block.Block
-	Txs              []*transaction.Transaction `json:"txs"`
-	BloomBlkComplete *BlockCompleteBloom        `json:"bloomBlkComplete"`
+	Txs              []*transaction.Transaction `json:"txs" msgpack:"txs"`
+	BloomBlkComplete *BlockCompleteBloom        `json:"bloomBlkComplete" msgpack:"bloomBlkComplete"`
 }
 
 func (blkComplete *BlockComplete) validate() (err error) {

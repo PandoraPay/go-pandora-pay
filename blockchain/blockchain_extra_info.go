@@ -1,8 +1,8 @@
 package blockchain
 
 import (
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage/assets"
@@ -24,7 +24,7 @@ func removeBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterfa
 			return errors.New("TxKeys is missing")
 		}
 		keys := make([][]byte, 0)
-		if err = json.Unmarshal(data, &keys); err != nil {
+		if err = msgpack.Unmarshal(data, &keys); err != nil {
 			return
 		}
 
@@ -93,7 +93,7 @@ func saveAssetsInfo(asts *assets.Assets) (err error) {
 				Hash:             helpers.HexBytes(k),
 			}
 			var data []byte
-			if data, err = json.Marshal(astInfo); err != nil {
+			if data, err = msgpack.Marshal(astInfo); err != nil {
 				return
 			}
 
@@ -113,7 +113,7 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 	}
 
 	var blockInfoMarshal []byte
-	if blockInfoMarshal, err = json.Marshal(&info.BlockInfo{
+	if blockInfoMarshal, err = msgpack.Marshal(&info.BlockInfo{
 		Hash:       blkComplete.Block.Bloom.Hash,
 		KernelHash: blkComplete.Block.Bloom.KernelHash,
 		Timestamp:  blkComplete.Block.Timestamp,
@@ -134,7 +134,7 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 		writer.Put("txHash_ByHeight"+indexStr, tx.Bloom.Hash)
 
 		var buffer []byte
-		if buffer, err = json.Marshal(&info.TxInfo{
+		if buffer, err = msgpack.Marshal(&info.TxInfo{
 			height,
 			blkComplete.Height,
 			blkComplete.Timestamp,
@@ -147,7 +147,7 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 		if txPreview, err = info.CreateTxPreviewFromTx(tx); err != nil {
 			return
 		}
-		if buffer, err = json.Marshal(txPreview); err != nil {
+		if buffer, err = msgpack.Marshal(txPreview); err != nil {
 			return
 		}
 		writer.Put("txPreview_ByHash"+tx.Bloom.HashStr, buffer)
@@ -162,7 +162,7 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 		}
 
 		var keysArrayMarshal []byte
-		if keysArrayMarshal, err = json.Marshal(keysArray); err != nil {
+		if keysArrayMarshal, err = msgpack.Marshal(keysArray); err != nil {
 			return
 		}
 

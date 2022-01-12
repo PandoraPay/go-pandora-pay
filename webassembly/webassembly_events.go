@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets/asset"
@@ -78,7 +79,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					return
 				}
 
-				var object interface{}
+				var object, extra interface{}
 
 				//gui.GUI.Log(int(data.SubscriptionType))
 
@@ -95,6 +96,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 						}
 					}
 					object = acc
+					extra = &api_types.APISubscriptionNotificationAccountExtra{}
 				case api_types.SUBSCRIPTION_PLAIN_ACCOUNT:
 					plainAcc := plain_account.NewPlainAccount(data.Key, 0)
 					if data.Data != nil {
@@ -103,6 +105,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 						}
 					}
 					object = plainAcc
+					extra = &api_types.APISubscriptionNotificationPlainAccExtra{}
 				case api_types.SUBSCRIPTION_ASSET:
 					ast := asset.NewAsset(data.Key, 0)
 					if data.Data != nil {
@@ -111,6 +114,8 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 						}
 					}
 					object = ast
+
+					extra = &api_types.APISubscriptionNotificationAssetExtra{}
 				case api_types.SUBSCRIPTION_REGISTRATION:
 					reg := registration.NewRegistration(data.Key, 0)
 					if data.Data != nil {
@@ -119,22 +124,33 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 						}
 					}
 					object = reg
+					extra = &api_types.APISubscriptionNotificationRegistrationExtra{}
 				case api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
 					object = data.Data
+					extra = &api_types.APISubscriptionNotificationAccountTxExtra{}
 				case api_types.SUBSCRIPTION_TRANSACTION:
 					object = data.Data
+					extra = &api_types.APISubscriptionNotificationTxExtra{}
 				}
 
-				var output []byte
+				if err = msgpack.Unmarshal(data.Extra, extra); err != nil {
+					return
+				}
+
+				var output, extraOutput []byte
 				if output, err = json.Marshal(object); err != nil {
+					continue
+				}
+
+				if extraOutput, err = json.Marshal(extra); err != nil {
 					continue
 				}
 
 				jsOutData := js.Global().Get("Uint8Array").New(len(output))
 				js.CopyBytesToJS(jsOutData, output)
 
-				jsOutExtra := js.Global().Get("Uint8Array").New(len(data.Extra))
-				js.CopyBytesToJS(jsOutExtra, data.Extra)
+				jsOutExtra := js.Global().Get("Uint8Array").New(len(extraOutput))
+				js.CopyBytesToJS(jsOutExtra, extraOutput)
 
 				callback.Invoke(int(data.SubscriptionType), hex.EncodeToString(data.Key), jsOutData, jsOutExtra)
 

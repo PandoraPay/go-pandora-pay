@@ -11,8 +11,8 @@ import (
 )
 
 type Accounts struct {
-	*hash_map.HashMap `json:"-"`
-	Asset             []byte `json:"-"`
+	*hash_map.HashMap
+	Asset []byte
 }
 
 //WARNING: should NOT be used manually without being called from DataStorage

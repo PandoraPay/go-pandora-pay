@@ -13,33 +13,33 @@ import (
 )
 
 type TxPreviewSimpleExtraUnstake struct {
-	Amount uint64 `json:"amount"`
+	Amount uint64 `json:"amount" msgpack:"amount"`
 }
 
 type TxPreviewSimple struct {
-	Extra      interface{}                   `json:"extra"`
-	TxScript   transaction_simple.ScriptType `json:"txScript"`
-	DataPublic helpers.HexBytes              `json:"dataPublic"`
-	Vin        helpers.HexBytes              `json:"vin"`
+	Extra      interface{}                   `json:"extra" msgpack:"extra"`
+	TxScript   transaction_simple.ScriptType `json:"txScript" msgpack:"txScript"`
+	DataPublic helpers.HexBytes              `json:"dataPublic" msgpack:"dataPublic"`
+	Vin        helpers.HexBytes              `json:"vin" msgpack:"vin"`
 }
 
 type TxPreviewZetherPayload struct {
-	PayloadScript transaction_zether_payload.PayloadScriptType `json:"payloadScript"`
-	Asset         helpers.HexBytes                             `json:"asset"`
-	BurnValue     uint64                                       `json:"burnValue"`
-	DataPublic    helpers.HexBytes                             `json:"dataPublic"`
-	Publickeys    []helpers.HexBytes                           `json:"publicKeys"`
+	PayloadScript transaction_zether_payload.PayloadScriptType `json:"payloadScript" msgpack:"payloadScript"`
+	Asset         helpers.HexBytes                             `json:"asset" msgpack:"asset"`
+	BurnValue     uint64                                       `json:"burnValue" msgpack:"burnValue"`
+	DataPublic    helpers.HexBytes                             `json:"dataPublic" msgpack:"dataPublic"`
+	Publickeys    []helpers.HexBytes                           `json:"publicKeys" msgpack:"publicKeys"`
 }
 
 type TxPreviewZether struct {
-	Payloads []*TxPreviewZetherPayload `json:"payloads"`
+	Payloads []*TxPreviewZetherPayload `json:"payloads"  msgpack:"payloads"`
 }
 
 type TxPreview struct {
-	TxBase  interface{}                         `json:"base"`
-	Version transaction_type.TransactionVersion `json:"version"`
-	Hash    helpers.HexBytes                    `json:"hash"`
-	Fee     uint64                              `json:"fee"`
+	TxBase  interface{}                         `json:"base"  msgpack:"base"`
+	Version transaction_type.TransactionVersion `json:"version"  msgpack:"version"`
+	Hash    helpers.HexBytes                    `json:"hash"  msgpack:"hash"`
+	Fee     uint64                              `json:"fee"  msgpack:"fee"`
 }
 
 func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {

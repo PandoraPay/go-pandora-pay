@@ -13,22 +13,22 @@ import (
 )
 
 type Wallet struct {
-	Encryption          *WalletEncryption               `json:"encryption"`
-	Version             Version                         `json:"version"`
-	Mnemonic            string                          `json:"mnemonic"`
-	Seed                helpers.HexBytes                `json:"seed"` //32 byte
-	SeedIndex           uint32                          `json:"seedIndex"`
-	Count               int                             `json:"count"`
-	CountImportedIndex  int                             `json:"countIndex"`
-	Addresses           []*wallet_address.WalletAddress `json:"addresses"`
-	Loaded              bool                            `json:"loaded"`
-	DelegatesCount      int                             `json:"delegatesCount"`
+	Encryption          *WalletEncryption               `json:"encryption" msgpack:"encryption"`
+	Version             Version                         `json:"version" msgpack:"version"`
+	Mnemonic            string                          `json:"mnemonic" msgpack:"mnemonic"`
+	Seed                helpers.HexBytes                `json:"seed" msgpack:"seed"` //32 byte
+	SeedIndex           uint32                          `json:"seedIndex" msgpack:"seedIndex"`
+	Count               int                             `json:"count" msgpack:"count"`
+	CountImportedIndex  int                             `json:"countIndex" msgpack:"countIndex"`
+	Addresses           []*wallet_address.WalletAddress `json:"addresses" msgpack:"addresses"`
+	Loaded              bool                            `json:"loaded" msgpack:"loaded"`
+	DelegatesCount      int                             `json:"delegatesCount" msgpack:"delegatesCount"`
 	addressesMap        map[string]*wallet_address.WalletAddress
 	forging             *forging.Forging
 	mempool             *mempool.Mempool
 	updateAccounts      *multicast.MulticastChannel[*accounts.AccountsCollection]
 	updatePlainAccounts *multicast.MulticastChannel[*plain_accounts.PlainAccounts]
-	sync.RWMutex        `json:"-"`
+	sync.RWMutex        `json:"-" msgpack:"-"`
 }
 
 func createWallet(forging *forging.Forging, mempool *mempool.Mempool, updateAccounts *multicast.MulticastChannel[*accounts.AccountsCollection], updatePlainAccounts *multicast.MulticastChannel[*plain_accounts.PlainAccounts]) (wallet *Wallet) {

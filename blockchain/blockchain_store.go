@@ -1,8 +1,8 @@
 package blockchain
 
 import (
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
@@ -74,7 +74,7 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 	data := writer.Get("blockTxs" + blockHeightStr)
 	txHashes := [][]byte{} //32 byte
 
-	if err := json.Unmarshal(data, &txHashes); err != nil {
+	if err := msgpack.Unmarshal(data, &txHashes); err != nil {
 		return allTransactionsChanges, err
 	}
 
@@ -123,7 +123,7 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 	for i, tx := range blkComplete.Txs {
 		txHashes[i] = tx.Bloom.Hash
 	}
-	marshal, err := json.Marshal(txHashes)
+	marshal, err := msgpack.Marshal(txHashes)
 	if err != nil {
 		return allTransactionsChanges, err
 	}
@@ -198,7 +198,7 @@ func (chain *Blockchain) loadBlockchain() error {
 
 		chainData := &BlockchainData{}
 
-		if err = json.Unmarshal(chainInfoData, chainData); err != nil {
+		if err = msgpack.Unmarshal(chainInfoData, chainData); err != nil {
 			return err
 		}
 		chain.ChainData.Store(chainData)

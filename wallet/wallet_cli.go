@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/vmihailenco/msgpack/v5"
 	"os"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
@@ -67,7 +68,7 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 			}
 
 			var marshal []byte
-			if marshal, err = json.Marshal(delegatedStakeOut); err != nil {
+			if marshal, err = msgpack.Marshal(delegatedStakeOut); err != nil {
 				return
 			}
 

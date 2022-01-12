@@ -1,7 +1,7 @@
 package api_common
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/config"
@@ -12,15 +12,15 @@ import (
 )
 
 type APIMempoolRequest struct {
-	ChainHash helpers.HexBytes `json:"chainHash,omitempty"`
-	Page      int              `json:"page,omitempty"`
-	Count     int              `json:"count,omitempty"`
+	ChainHash helpers.HexBytes `json:"chainHash,omitempty" msgpack:"chainHash,omitempty"`
+	Page      int              `json:"page,omitempty" msgpack:"page,omitempty"`
+	Count     int              `json:"count,omitempty" msgpack:"count,omitempty"`
 }
 
 type APIMempoolReply struct {
-	ChainHash helpers.HexBytes   `json:"chainHash"`
-	Count     int                `json:"count"`
-	Hashes    []helpers.HexBytes `json:"hashes"`
+	ChainHash helpers.HexBytes   `json:"chainHash" msgpack:"chainHash"`
+	Count     int                `json:"count" msgpack:"count"`
+	Hashes    []helpers.HexBytes `json:"hashes" msgpack:"hashes"`
 }
 
 func (api *APICommon) Mempool(r *http.Request, args *APIMempoolRequest, reply *APIMempoolReply) error {
@@ -60,7 +60,7 @@ func (api *APICommon) GetMempool_http(values url.Values) (interface{}, error) {
 
 func (api *APICommon) GetMempool_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIMempoolRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIMempoolReply{}

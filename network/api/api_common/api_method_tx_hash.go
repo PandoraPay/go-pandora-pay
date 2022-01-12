@@ -1,7 +1,7 @@
 package api_common
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/helpers"
@@ -12,7 +12,7 @@ import (
 )
 
 type APITxHashRequest struct {
-	Height uint64 `json:"height"`
+	Height uint64 `json:"height" msgpack:"height"`
 }
 
 func (api *APICommon) TxHash(r *http.Request, args *APITxHashRequest, reply *helpers.HexBytes) (err error) {
@@ -33,7 +33,7 @@ func (api *APICommon) GetTxHash_http(values url.Values) (interface{}, error) {
 
 func (api *APICommon) GetTxHash_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APITxHashRequest{0}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	var out helpers.HexBytes

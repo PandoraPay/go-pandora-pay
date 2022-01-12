@@ -14,17 +14,17 @@ import (
 )
 
 type WalletAddress struct {
-	Version                    Version                                 `json:"version"`
-	Name                       string                                  `json:"name"`
-	SeedIndex                  uint32                                  `json:"seedIndex"`
-	IsMine                     bool                                    `json:"isMine"`
-	PrivateKey                 *addresses.PrivateKey                   `json:"privateKey"`
-	Registration               helpers.HexBytes                        `json:"registration"`
-	PublicKey                  helpers.HexBytes                        `json:"publicKey"`
-	BalancesDecoded            map[string]*WalletAddressBalanceDecoded `json:"balancesDecoded"`
-	AddressEncoded             string                                  `json:"addressEncoded"`
-	AddressRegistrationEncoded string                                  `json:"addressRegistrationEncoded"`
-	DelegatedStake             *WalletAddressDelegatedStake            `json:"delegatedStake"`
+	Version                    Version                                 `json:"version" msgpack:"version"`
+	Name                       string                                  `json:"name" msgpack:"name"`
+	SeedIndex                  uint32                                  `json:"seedIndex" msgpack:"seedIndex"`
+	IsMine                     bool                                    `json:"isMine" msgpack:"isMine"`
+	PrivateKey                 *addresses.PrivateKey                   `json:"privateKey" msgpack:"privateKey"`
+	Registration               helpers.HexBytes                        `json:"registration" msgpack:"registration"`
+	PublicKey                  helpers.HexBytes                        `json:"publicKey" msgpack:"publicKey"`
+	BalancesDecoded            map[string]*WalletAddressBalanceDecoded `json:"balancesDecoded" msgpack:"balancesDecoded"`
+	AddressEncoded             string                                  `json:"addressEncoded" msgpack:"addressEncoded"`
+	AddressRegistrationEncoded string                                  `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
+	DelegatedStake             *WalletAddressDelegatedStake            `json:"delegatedStake" msgpack:"delegatedStake"`
 }
 
 func (adr *WalletAddress) GetDelegatedStakePrivateKey() []byte {

@@ -3,8 +3,8 @@ package api_common
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
@@ -53,7 +53,7 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 	}
 
 	data := &APITransactionReply{}
-	if err := json.Unmarshal(result.Out, data); err != nil {
+	if err := msgpack.Unmarshal(result.Out, data); err != nil {
 		closeConnection(err, true)
 		return nil
 	}

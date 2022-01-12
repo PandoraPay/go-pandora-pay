@@ -6,7 +6,7 @@ import (
 )
 
 type WalletAddressDelegatedStake struct {
-	PrivateKey     *addresses.PrivateKey `json:"privateKey"`
-	PublicKey      helpers.HexBytes      `json:"publicKey"`
-	LastKnownNonce uint32                `json:"lastKnownNonce"`
+	PrivateKey     *addresses.PrivateKey `json:"privateKey" msgpack:"privateKey"`
+	PublicKey      helpers.HexBytes      `json:"publicKey" msgpack:"publicKey"`
+	LastKnownNonce uint32                `json:"lastKnownNonce" msgpack:"lastKnownNonce"`
 }

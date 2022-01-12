@@ -16,11 +16,11 @@ import (
 )
 
 type mempoolTx struct {
-	Tx          *transaction.Transaction `json:"tx"`
-	Added       int64                    `json:"added"`
-	Mine        bool                     `json:"mine"`
-	FeePerByte  uint64                   `json:"feePerByte"`
-	ChainHeight uint64                   `json:"chainHeight"`
+	Tx          *transaction.Transaction `json:"tx" msgpack:"tx"`
+	Added       int64                    `json:"added" msgpack:"added"`
+	Mine        bool                     `json:"mine" msgpack:"mine"`
+	FeePerByte  uint64                   `json:"feePerByte" msgpack:"feePerByte"`
+	ChainHeight uint64                   `json:"chainHeight" msgpack:"chainHeight"`
 }
 
 type Mempool struct {

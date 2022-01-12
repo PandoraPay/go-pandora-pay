@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/vmihailenco/msgpack/v5"
 	"os"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/assets"
@@ -327,7 +327,7 @@ func (builder *TxsBuilder) initCLI() {
 
 		ast := asset.NewAsset(nil, 0)
 		str := gui.GUI.OutputReadString("Asset as JSON")
-		if err = json.Unmarshal([]byte(str), ast); err != nil {
+		if err = msgpack.Unmarshal([]byte(str), ast); err != nil {
 			return
 		}
 		if err = ast.Validate(); err != nil {

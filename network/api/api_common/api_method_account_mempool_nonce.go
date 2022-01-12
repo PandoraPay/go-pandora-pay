@@ -2,7 +2,7 @@ package api_common
 
 import (
 	"encoding/binary"
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
@@ -17,7 +17,11 @@ type APIAccountMempoolNonceRequest struct {
 	api_types.APIAccountBaseRequest
 }
 
-func (api *APICommon) AccountMempoolNonce(r *http.Request, args *APIAccountMempoolNonceRequest, reply *uint64) error {
+type APIAccountMempoolNonceReply struct {
+	Nonce uint64 `json:"nonce" msgpack:"nonce"`
+}
+
+func (api *APICommon) AccountMempoolNonce(r *http.Request, args *APIAccountMempoolNonceRequest, reply *APIAccountMempoolNonceReply) error {
 	publicKey, err := args.GetPublicKey()
 	if err != nil {
 		return err
@@ -33,7 +37,7 @@ func (api *APICommon) AccountMempoolNonce(r *http.Request, args *APIAccountMempo
 			return err
 		}
 		if plainAcc != nil {
-			*reply = plainAcc.Nonce
+			reply.Nonce = plainAcc.Nonce
 		}
 
 		return nil
@@ -41,7 +45,7 @@ func (api *APICommon) AccountMempoolNonce(r *http.Request, args *APIAccountMempo
 		return err
 	}
 
-	*reply = api.mempool.GetNonce(publicKey, *reply)
+	reply.Nonce = api.mempool.GetNonce(publicKey, reply.Nonce)
 	return nil
 }
 
@@ -50,15 +54,15 @@ func (api *APICommon) GetAccountMempoolNonce_http(values url.Values) (interface{
 	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
-	var reply uint64
-	return reply, api.AccountMempoolNonce(nil, args, &reply)
+	reply := &APIAccountMempoolNonceReply{}
+	return reply, api.AccountMempoolNonce(nil, args, reply)
 }
 
 func (api *APICommon) GetAccountMempoolNonce_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAccountMempoolNonceRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	var reply uint64
-	return reply, api.AccountMempoolNonce(nil, args, &reply)
+	reply := &APIAccountMempoolNonceReply{}
+	return reply, api.AccountMempoolNonce(nil, args, reply)
 }

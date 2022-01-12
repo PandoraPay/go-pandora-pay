@@ -5,8 +5,8 @@ package api_faucet
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"go.jolheiser.com/hcaptcha"
 	"net/http"
 	"net/url"
@@ -66,7 +66,7 @@ func (api *Faucet) GetFaucetCoins_http(values url.Values) (interface{}, error) {
 
 func (api *Faucet) GetFaucetCoins_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIFaucetCoinsRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	var reply helpers.HexBytes

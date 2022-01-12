@@ -7,56 +7,56 @@ import (
 )
 
 type WizardZetherPayloadExtraDelegateStake struct {
-	WizardZetherPayloadExtra `json:"-"`
-	DelegatePublicKey        helpers.HexBytes                                        `json:"delegatePublicKey"`
-	ConvertToUnclaimed       bool                                                    `json:"convertToUnclaimed"`
-	DelegatedStakingUpdate   *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
-	DelegatePrivateKey       helpers.HexBytes                                        `json:"delegatePrivateKey,omitempty"`
+	WizardZetherPayloadExtra `json:"-" msgpack:"-"`
+	DelegatePublicKey        helpers.HexBytes                                        `json:"delegatePublicKey" msgpack:"delegatePublicKey"`
+	ConvertToUnclaimed       bool                                                    `json:"convertToUnclaimed" msgpack:"convertToUnclaimed"`
+	DelegatedStakingUpdate   *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate" msgpack:"delegatedStakingUpdate"`
+	DelegatePrivateKey       helpers.HexBytes                                        `json:"delegatePrivateKey,omitempty" msgpack:"delegatePrivateKey,omitempty"`
 }
 
 type WizardZetherPayloadExtraClaim struct {
-	WizardZetherPayloadExtra `json:"-"`
-	DelegatePrivateKey       helpers.HexBytes `json:"delegatePrivateKey"`
+	WizardZetherPayloadExtra `json:"-"  msgpack:""`
+	DelegatePrivateKey       helpers.HexBytes `json:"delegatePrivateKey" msgpack:"delegatePrivateKey"`
 }
 
 type WizardZetherPayloadExtraAssetCreate struct {
-	WizardZetherPayloadExtra `json:"-"`
-	Asset                    *asset.Asset `json:"asset"`
+	WizardZetherPayloadExtra `json:"-" msgpack:""`
+	Asset                    *asset.Asset `json:"asset" msgpack:"asset"`
 }
 
 type WizardZetherPayloadExtraAssetSupplyIncrease struct {
-	WizardZetherPayloadExtra `json:"-"`
-	AssetId                  helpers.HexBytes `json:"assetId"`
-	ReceiverPublicKey        helpers.HexBytes `json:"receiverPublicKey"`
-	Value                    uint64           `json:"value"`
-	AssetSupplyPrivateKey    helpers.HexBytes `json:"assetSupplyPublicKey"`
+	WizardZetherPayloadExtra `json:"-" msgpack:""`
+	AssetId                  helpers.HexBytes `json:"assetId" msgpack:"assetId"`
+	ReceiverPublicKey        helpers.HexBytes `json:"receiverPublicKey" msgpack:"receiverPublicKey"`
+	Value                    uint64           `json:"value" msgpack:"value"`
+	AssetSupplyPrivateKey    helpers.HexBytes `json:"assetSupplyPublicKey" msgpack:"assetSupplyPublicKey"`
 }
 
 type WizardZetherPayloadExtra interface {
 }
 
 type WizardZetherTransfer struct {
-	Asset              helpers.HexBytes
-	From               []byte //private key
-	FromBalanceDecoded uint64
-	Destination        string
-	Amount             uint64
-	Burn               uint64
-	FeeRate            uint64
-	FeeLeadingZeros    byte
-	Data               *WizardTransactionData
-	PayloadExtra       WizardZetherPayloadExtra
+	Asset              helpers.HexBytes         `json:"asset" msgpack:"asset"`
+	From               []byte                   `json:"from" msgpack:"from"` //private key
+	FromBalanceDecoded uint64                   `json:"fromBalanceDecoded" msgpack:"fromBalanceDecoded"`
+	Destination        string                   `json:"destination" msgpack:"destination"`
+	Amount             uint64                   `json:"amount" msgpack:"amount"`
+	Burn               uint64                   `json:"burn" msgpack:"burn"`
+	FeeRate            uint64                   `json:"feeRate" msgpack:"feeRate"`
+	FeeLeadingZeros    byte                     `json:"feeLeadingZeros" msgpack:"feeLeadingZeros"`
+	Data               *WizardTransactionData   `json:"data" msgpack:"data"`
+	PayloadExtra       WizardZetherPayloadExtra `json:"payloadExtra" msgpack:"payloadExtra"`
 }
 
 type WizardZetherPublicKeyIndex struct {
-	Registered            bool   `json:"registered"`
-	RegisteredIndex       uint64 `json:"registeredIndex"`
-	RegistrationSignature []byte `json:"registrationSignature"`
+	Registered            bool   `json:"registered" msgpack:"registered"`
+	RegisteredIndex       uint64 `json:"registeredIndex" msgpack:"registeredIndex"`
+	RegistrationSignature []byte `json:"registrationSignature" msgpack:"registrationSignature"`
 }
 
 type WizardZetherTransactionFee struct {
 	*WizardTransactionFee
-	Auto         bool   `json:"auto"`
-	Rate         uint64 `json:"rate"`
-	LeadingZeros byte   `json:"leadingZeros"`
+	Auto         bool   `json:"auto" msgpack:"auto"`
+	Rate         uint64 `json:"rate" msgpack:"rate"`
+	LeadingZeros byte   `json:"leadingZeros" msgpack:"leadingZeros"`
 }

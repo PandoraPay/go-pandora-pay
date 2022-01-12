@@ -6,12 +6,12 @@ import (
 )
 
 type ChainUpdateNotification struct {
-	End                uint64           `json:"end"`
-	Hash               helpers.HexBytes `json:"hash"`
-	PrevHash           helpers.HexBytes `json:"prevHash"`
-	BigTotalDifficulty *big.Int         `json:"bigTotalDifficulty"`
+	End                uint64           `json:"end" msgpack:"end"`
+	Hash               helpers.HexBytes `json:"hash" msgpack:"hash"`
+	PrevHash           helpers.HexBytes `json:"prevHash" msgpack:"prevHash"`
+	BigTotalDifficulty *big.Int         `json:"bigTotalDifficulty" msgpack:"bigTotalDifficulty"`
 }
 
 type ChainLastUpdate struct {
-	BigTotalDifficulty *big.Int `json:"bigTotalDifficulty"`
+	BigTotalDifficulty *big.Int `json:"bigTotalDifficulty" msgpack:"bigTotalDifficulty"`
 }

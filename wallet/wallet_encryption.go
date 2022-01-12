@@ -9,11 +9,11 @@ import (
 
 type WalletEncryption struct {
 	wallet           *Wallet
-	Encrypted        EncryptedVersion             `json:"encrypted"`
-	Salt             []byte                       `json:"salt"`
-	Difficulty       int                          `json:"difficulty"`
-	password         string                       `json:"-"`
-	encryptionCipher *encryption.EncryptionCipher `json:"-"`
+	Encrypted        EncryptedVersion `json:"encrypted" msgpack:"encrypted"`
+	Salt             helpers.HexBytes `json:"salt" msgpack:"salt"`
+	Difficulty       int              `json:"difficulty" msgpack:"difficulty"`
+	password         string
+	encryptionCipher *encryption.EncryptionCipher
 }
 
 func createEncryption(wallet *Wallet) *WalletEncryption {

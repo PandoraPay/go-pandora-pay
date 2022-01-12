@@ -6,9 +6,9 @@ import (
 )
 
 type BlockHeader struct {
-	helpers.SerializableInterface `json:"-"`
-	Version                       uint64 `json:"version"`
-	Height                        uint64 `json:"height"`
+	helpers.SerializableInterface `json:"-" msgpack:"-"`
+	Version                       uint64 `json:"version" msgpack:"version"`
+	Height                        uint64 `json:"height" msgpack:"height"`
 }
 
 func (blockHeader *BlockHeader) validate() error {

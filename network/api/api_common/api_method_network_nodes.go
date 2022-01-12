@@ -14,12 +14,12 @@ import (
 )
 
 type APINetworkNode struct {
-	URL   string `json:"url"`
-	Score int    `json:"score"`
+	URL   string `json:"url" msgpack:"url"`
+	Score int    `json:"score" msgpack:"score"`
 }
 
 type APINetworkNodesReply struct {
-	Nodes []*APINetworkNode `json:"nodes"`
+	Nodes []*APINetworkNode `json:"nodes" msgpack:"nodes"`
 }
 
 func (api *APICommon) GetList(reply *APINetworkNodesReply) (err error) {

@@ -1,7 +1,7 @@
 package mempool_sync
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/config"
 	"pandora-pay/network/api/api_common"
 	"pandora-pay/network/websocks"
@@ -30,7 +30,7 @@ func (self *MempoolSync) DownloadMempool(conn *connection.AdvancedConnection) (e
 		}
 
 		data := &api_common.APIMempoolReply{}
-		if err = json.Unmarshal(out.Out, data); err != nil {
+		if err = msgpack.Unmarshal(out.Out, data); err != nil {
 			return
 		}
 

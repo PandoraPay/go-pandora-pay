@@ -7,8 +7,8 @@ import (
 )
 
 type BlockCompleteBloom struct {
-	Serialized                helpers.HexBytes `json:"-"`
-	Size                      uint64           `json:"size"`
+	Serialized                helpers.HexBytes `json:"-" msgpack:"-"`
+	Size                      uint64           `json:"size" msgpack:"size"`
 	merkleTreeVerified        bool
 	bloomedSize               bool
 	bloomedMerkleTreeVerified bool

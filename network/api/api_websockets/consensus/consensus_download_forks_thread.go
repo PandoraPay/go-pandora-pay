@@ -2,8 +2,8 @@ package consensus
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block_complete"
@@ -52,7 +52,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 	}
 
 	blkWithTx := &api_common.APIBlockWithTxsReply{}
-	if err = json.Unmarshal(answer.Out, blkWithTx); err != nil {
+	if err = msgpack.Unmarshal(answer.Out, blkWithTx); err != nil {
 		return nil, err
 	}
 	blkWithTx.Block = block.CreateEmptyBlock()
@@ -95,7 +95,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 		}
 		blkCompleteMissingTxs := &api_common.APIBlockCompleteMissingTxsReply{}
 
-		if err = json.Unmarshal(answer.Out, blkCompleteMissingTxs); err != nil {
+		if err = msgpack.Unmarshal(answer.Out, blkCompleteMissingTxs); err != nil {
 			return nil, err
 		}
 		if len(blkCompleteMissingTxs.Txs) != len(missingTxs) {

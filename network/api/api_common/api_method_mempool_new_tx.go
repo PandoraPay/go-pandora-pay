@@ -2,7 +2,7 @@ package api_common
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -13,13 +13,13 @@ import (
 )
 
 type APIMempoolNewTxRequest struct {
-	Type byte             `json:"type,omitempty"`
-	Tx   helpers.HexBytes `json:"tx,omitempty"`
+	Type byte             `json:"type,omitempty" msgpack:"type,omitempty"`
+	Tx   helpers.HexBytes `json:"tx,omitempty" msgpack:"tx,omitempty"`
 }
 
 type APIMempoolNewTxReply struct {
-	Result bool  `json:"result"`
-	Error  error `json:"error"`
+	Result bool  `json:"result" msgpack:"result"`
+	Error  error `json:"error" msgpack:"error"`
 }
 
 func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempoolNewTxReply, exceptSocketUUID advanced_connection_types.UUID) error {
@@ -33,7 +33,7 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 		}
 		hash = tx.Bloom.Hash
 	} else if args.Type == 1 { //json
-		if err := json.Unmarshal(args.Tx, tx); err != nil {
+		if err := msgpack.Unmarshal(args.Tx, tx); err != nil {
 			return err
 		}
 		hash = tx.HashManual()
@@ -91,7 +91,7 @@ func (api *APICommon) MempoolNewTx_http(values url.Values) (interface{}, error) 
 
 func (api *APICommon) MempoolNewTx_websockets(conn *connection.AdvancedConnection, values []byte) (out interface{}, err error) {
 	args := &APIMempoolNewTxRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIMempoolNewTxReply{}

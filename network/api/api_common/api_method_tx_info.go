@@ -1,7 +1,7 @@
 package api_common
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/info"
@@ -13,8 +13,8 @@ import (
 )
 
 type APITransactionInfoRequest struct {
-	Height uint64           `json:"height,omitempty"`
-	Hash   helpers.HexBytes `json:"hash,omitempty"`
+	Height uint64           `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash   helpers.HexBytes `json:"hash,omitempty" msgpack:"hash,omitempty"`
 }
 
 func (api *APICommon) GetTxInfo(r *http.Request, args *APITransactionInfoRequest, reply *info.TxInfo) error {
@@ -41,7 +41,7 @@ func (api *APICommon) GetTxInfo_http(values url.Values) (interface{}, error) {
 
 func (api *APICommon) GetTxInfo_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APITransactionInfoRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &info.TxInfo{}

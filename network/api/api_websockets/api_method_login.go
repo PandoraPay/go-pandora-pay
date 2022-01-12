@@ -1,23 +1,23 @@
 package api_websockets
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/config/config_auth"
 	"pandora-pay/network/websocks/connection"
 )
 
 type APILogin struct {
-	Username string `json:"user"`
-	Password string `json:"password"`
+	Username string `json:"user" msgpack:"user"`
+	Password string `json:"pass" msgpack:"pass"`
 }
 
 type APILoginReply struct {
-	Status bool `json:"status"`
+	Status bool `json:"status" msgpack:"status"`
 }
 
 func (api *APIWebsockets) GetLogin_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APILogin{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APILoginReply{}

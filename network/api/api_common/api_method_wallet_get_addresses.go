@@ -17,9 +17,9 @@ type APIWalletGetAccounts struct {
 }
 
 type APIWalletGetAccountsReply struct {
-	Version   wallet.Version                  `json:"version"`
-	Encrypted wallet.EncryptedVersion         `json:"encrypted"`
-	Addresses []*wallet_address.WalletAddress `json:"addresses"`
+	Version   wallet.Version                  `json:"version" msgpack:"version"`
+	Encrypted wallet.EncryptedVersion         `json:"encrypted" msgpack:"encrypted"`
+	Addresses []*wallet_address.WalletAddress `json:"addresses" msgpack:"addresses"`
 }
 
 func (api *APICommon) WalletGetAddresses(r *http.Request, args *struct{}, reply *APIWalletGetAccountsReply, authenticated bool) (err error) {

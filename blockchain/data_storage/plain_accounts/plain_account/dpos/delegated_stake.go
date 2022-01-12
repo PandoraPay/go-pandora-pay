@@ -8,12 +8,12 @@ import (
 )
 
 type DelegatedStake struct {
-	helpers.SerializableInterface `json:"-"`
-	Version                       DelegatedStakeVersion    `json:"version"`
-	DelegatedStakePublicKey       helpers.HexBytes         `json:"delegatedStakePublicKey,omitempty"` //public key for delegation  20 bytes
-	DelegatedStakeFee             uint64                   `json:"delegatedStakeFee,omitempty"`
-	StakeAvailable                uint64                   `json:"stakeAvailable,omitempty"` //confirmed stake
-	StakesPending                 []*DelegatedStakePending `json:"stakesPending,omitempty"`  //Pending stakes
+	helpers.SerializableInterface `json:"-" msgpack:"-"`
+	Version                       DelegatedStakeVersion    `json:"version" msgpack:"version"`
+	DelegatedStakePublicKey       helpers.HexBytes         `json:"delegatedStakePublicKey,omitempty" msgpack:"delegatedStakePublicKey,omitempty"` //public key for delegation  20 bytes
+	DelegatedStakeFee             uint64                   `json:"delegatedStakeFee,omitempty" msgpack:"delegatedStakeFee,omitempty"`
+	StakeAvailable                uint64                   `json:"stakeAvailable,omitempty" msgpack:"stakeAvailable,omitempty"` //confirmed stake
+	StakesPending                 []*DelegatedStakePending `json:"stakesPending,omitempty" msgpack:"stakesPending,omitempty"`   //Pending stakes
 }
 
 func (dstake *DelegatedStake) Validate() error {

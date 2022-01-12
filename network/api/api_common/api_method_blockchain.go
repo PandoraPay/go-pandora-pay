@@ -7,17 +7,17 @@ import (
 )
 
 type APIBlockchain struct {
-	Height            uint64 `json:"height"`
-	Hash              string `json:"hash"`
-	PrevHash          string `json:"prevHash"`
-	KernelHash        string `json:"kernelHash"`
-	PrevKernelHash    string `json:"prevKernelHash"`
-	Timestamp         uint64 `json:"timestamp"`
-	TransactionsCount uint64 `json:"transactions"`
-	AccountsCount     uint64 `json:"accounts"`
-	AssetsCount       uint64 `json:"assets"`
-	Target            string `json:"target"`
-	TotalDifficulty   string `json:"totalDifficulty"`
+	Height            uint64 `json:"height" msgpack:"height"`
+	Hash              string `json:"hash" msgpack:"hash"`
+	PrevHash          string `json:"prevHash" msgpack:"prevHash"`
+	KernelHash        string `json:"kernelHash" msgpack:"kernelHash"`
+	PrevKernelHash    string `json:"prevKernelHash" msgpack:"prevKernelHash"`
+	Timestamp         uint64 `json:"timestamp" msgpack:"timestamp"`
+	TransactionsCount uint64 `json:"transactions" msgpack:"transactions"`
+	AccountsCount     uint64 `json:"accounts" msgpack:"accounts"`
+	AssetsCount       uint64 `json:"assets" msgpack:"assets"`
+	Target            string `json:"target" msgpack:"target"`
+	TotalDifficulty   string `json:"totalDifficulty" msgpack:"totalDifficulty"`
 }
 
 func (api *APICommon) Blockchain(r *http.Request, args *struct{}, reply *APIBlockchain) error {

@@ -1,7 +1,7 @@
 package api_common
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/helpers"
@@ -10,7 +10,7 @@ import (
 )
 
 type APIBlockHashRequest struct {
-	Height uint64 `json:"height"`
+	Height uint64 `json:"height" msgpack:"height"`
 }
 
 func (api *APICommon) BlockHash(r *http.Request, args *APIBlockHashRequest, reply *helpers.HexBytes) (err error) {
@@ -29,7 +29,7 @@ func (api *APICommon) GetBlockHash_http(values url.Values) (interface{}, error) 
 
 func (api *APICommon) GetBlockHash_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIBlockHashRequest{0}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	var reply helpers.HexBytes

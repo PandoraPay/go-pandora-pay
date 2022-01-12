@@ -1,7 +1,7 @@
 package api_common
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/blocks/block"
@@ -15,15 +15,15 @@ import (
 )
 
 type APIBlockRequest struct {
-	Height     uint64                  `json:"height,omitempty"`
-	Hash       helpers.HexBytes        `json:"hash,omitempty"`
-	ReturnType api_types.APIReturnType `json:"returnType,omitempty"`
+	Height     uint64                  `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash       helpers.HexBytes        `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APIBlockWithTxsReply struct {
-	Block           *block.Block       `json:"block,omitempty"`
-	BlockSerialized helpers.HexBytes   `json:"serialized,omitempty"`
-	Txs             []helpers.HexBytes `json:"txs,omitempty"`
+	Block           *block.Block       `json:"block,omitempty" msgpack:"block,omitempty"`
+	BlockSerialized helpers.HexBytes   `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
+	Txs             []helpers.HexBytes `json:"txs,omitempty" msgpack:"txs,omitempty"`
 }
 
 func (api *APICommon) Block(r *http.Request, args *APIBlockRequest, reply *APIBlockWithTxsReply) error {
@@ -42,7 +42,7 @@ func (api *APICommon) Block(r *http.Request, args *APIBlockRequest, reply *APIBl
 
 		txHashes := [][]byte{}
 		data := reader.Get("blockTxs" + strconv.FormatUint(reply.Block.Height, 10))
-		if err = json.Unmarshal(data, &txHashes); err != nil {
+		if err = msgpack.Unmarshal(data, &txHashes); err != nil {
 			return nil
 		}
 
@@ -75,7 +75,7 @@ func (api *APICommon) GetBlock_http(values url.Values) (interface{}, error) {
 
 func (api *APICommon) GetBlock_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIBlockRequest{0, nil, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIBlockWithTxsReply{}

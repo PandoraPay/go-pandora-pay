@@ -3,6 +3,7 @@ package transaction
 import (
 	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"math"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
@@ -22,113 +23,113 @@ import (
 )
 
 type json_TransactionDataRegistration struct {
-	RegistrationType      transaction_zether_registration.TransactionZetherDataRegistrationType `json:"registrationType"`
-	RegistrationSignature helpers.HexBytes                                                      `json:"signature"`
+	RegistrationType      transaction_zether_registration.TransactionZetherDataRegistrationType `json:"registrationType"  msgpack:"registrationType"`
+	RegistrationSignature helpers.HexBytes                                                      `json:"signature"  msgpack:"signature"`
 }
 
 type json_TransactionDataDelegatedStakingUpdate struct {
-	DelegatedStakingHasNewInfo   bool             `json:"delegatedStakingHasNewInfo"`
-	DelegatedStakingNewPublicKey helpers.HexBytes `json:"delegatedStakingNewPublicKey"` //20 byte
-	DelegatedStakingNewFee       uint64           `json:"delegatedStakingNewFee"`
+	DelegatedStakingHasNewInfo   bool             `json:"delegatedStakingHasNewInfo" msgpack:"delegatedStakingHasNewInfo"`
+	DelegatedStakingNewPublicKey helpers.HexBytes `json:"delegatedStakingNewPublicKey" msgpack:"delegatedStakingNewPublicKey"` //20 byte
+	DelegatedStakingNewFee       uint64           `json:"delegatedStakingNewFee" msgpack:"delegatedStakingNewFee"`
 }
 
-type json_Transaction struct {
-	Version    transaction_type.TransactionVersion `json:"version"`
-	Size       uint64                              `json:"size"`
-	SpaceExtra uint64                              `json:"spaceExtra"`
-	Hash       helpers.HexBytes                    `json:"hash"`
+type Json_Transaction struct {
+	Version    transaction_type.TransactionVersion `json:"version" msgpack:"version"`
+	Size       uint64                              `json:"size" msgpack:"size"`
+	SpaceExtra uint64                              `json:"spaceExtra" msgpack:"spaceExtra"`
+	Hash       helpers.HexBytes                    `json:"hash" msgpack:"hash"`
 }
 
 type json_TransactionSimple struct {
-	*json_Transaction
-	TxScript    transaction_simple.ScriptType           `json:"txScript"`
-	DataVersion transaction_data.TransactionDataVersion `json:"dataVersion"`
-	Data        helpers.HexBytes                        `json:"data"`
-	Nonce       uint64                                  `json:"nonce"`
-	Fee         uint64                                  `json:"fee"`
-	FeeVersion  bool                                    `json:"feeVersion"`
-	Vin         *json_TransactionSimpleInput            `json:"vin"`
-	Extra       interface{}                             `json:"extra"`
+	*Json_Transaction
+	TxScript    transaction_simple.ScriptType           `json:"txScript" msgpack:"txScript"`
+	DataVersion transaction_data.TransactionDataVersion `json:"dataVersion" msgpack:"dataVersion"`
+	Data        helpers.HexBytes                        `json:"data" msgpack:"data"`
+	Nonce       uint64                                  `json:"nonce" msgpack:"nonce"`
+	Fee         uint64                                  `json:"fee" msgpack:"fee"`
+	FeeVersion  bool                                    `json:"feeVersion" msgpack:"feeVersion"`
+	Vin         *json_TransactionSimpleInput            `json:"vin" msgpack:"vin"`
+	Extra       interface{}                             `json:"extra" msgpack:"extra"`
 }
 
 type json_TransactionSimpleInput struct {
-	PublicKey helpers.HexBytes `json:"publicKey,omitempty"` //32
-	Signature helpers.HexBytes `json:"signature"`           //64
+	PublicKey helpers.HexBytes `json:"publicKey,omitempty" msgpack:"publicKey,omitempty"` //32
+	Signature helpers.HexBytes `json:"signature" msgpack:"signature"`                     //64
 }
 
 type json_Only_TransactionSimpleExtraUpdateDelegate struct {
-	DelegatedStakingClaimAmount uint64                                      `json:"delegatedStakingClaimAmount"`
-	DelegatedStakingUpdate      *json_TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
+	DelegatedStakingClaimAmount uint64                                      `json:"delegatedStakingClaimAmount"  msgpack:"delegatedStakingClaimAmount"`
+	DelegatedStakingUpdate      *json_TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"  msgpack:"delegatedStakingUpdate"`
 }
 
 type json_Only_TransactionSimpleExtraUnstake struct {
-	Amount uint64 `json:"amount"`
+	Amount uint64 `json:"amount"  msgpack:"amount"`
 }
 
 type json_Only_TransactionZether struct {
-	ChainHeight uint64                          `json:"chainHeight"`
-	ChainHash   helpers.HexBytes                `json:"chainHash"`
-	Payloads    []*json_Only_TransactionPayload `json:"payloads"`
+	ChainHeight uint64                          `json:"chainHeight"  msgpack:"chainHeight"`
+	ChainHash   helpers.HexBytes                `json:"chainHash"  msgpack:"chainHash"`
+	Payloads    []*json_Only_TransactionPayload `json:"payloads"  msgpack:"payloads"`
 }
 
 type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
-	DelegatePublicKey      helpers.HexBytes                            `json:"delegatePublicKey"`
-	ConvertToUnclaimed     bool                                        `json:"convertToUnclaimed"`
-	DelegatedStakingUpdate *json_TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
-	DelegateSignature      helpers.HexBytes                            `json:"delegateSignature"`
+	DelegatePublicKey      helpers.HexBytes                            `json:"delegatePublicKey"  msgpack:"delegatePublicKey"`
+	ConvertToUnclaimed     bool                                        `json:"convertToUnclaimed"  msgpack:"convertToUnclaimed"`
+	DelegatedStakingUpdate *json_TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"  msgpack:"delegatedStakingUpdate"`
+	DelegateSignature      helpers.HexBytes                            `json:"delegateSignature"  msgpack:"delegateSignature"`
 }
 
 type json_Only_TransactionZetherPayloadExtraClaim struct {
-	DelegatePublicKey           helpers.HexBytes `json:"delegatePublicKey"`
-	DelegatedStakingClaimAmount uint64           `json:"delegatedStakingClaimAmount"`
-	RegistrationIndex           byte             `json:"registrationIndex"`
-	DelegateSignature           helpers.HexBytes `json:"delegateSignature"`
+	DelegatePublicKey           helpers.HexBytes `json:"delegatePublicKey"  msgpack:"delegatePublicKey"`
+	DelegatedStakingClaimAmount uint64           `json:"delegatedStakingClaimAmount"  msgpack:"delegatedStakingClaimAmount"`
+	RegistrationIndex           byte             `json:"registrationIndex"  msgpack:"registrationIndex"`
+	DelegateSignature           helpers.HexBytes `json:"delegateSignature"  msgpack:"delegateSignature"`
 }
 
 type json_Only_TransactionZetherPayloadExtraAssetCreate struct {
-	Asset *asset.Asset `json:"asset"`
+	Asset *asset.Asset `json:"asset"  msgpack:"asset"`
 }
 
 type json_Only_TransactionZetherPayloadExtraAssetSupplyIncrease struct {
-	AssetId              helpers.HexBytes
-	ReceiverPublicKey    helpers.HexBytes //must be registered before
-	Value                uint64
-	AssetSupplyPublicKey helpers.HexBytes //TODO: it can be bloomed
-	AssetSignature       helpers.HexBytes
+	AssetId              helpers.HexBytes `json:"assetId"  msgpack:"assetId"`
+	ReceiverPublicKey    helpers.HexBytes `json:"receiverPublicKey"  msgpack:"receiverPublicKey"` //must be registered before
+	Value                uint64           `json:"value"  msgpack:"value"`
+	AssetSupplyPublicKey helpers.HexBytes `json:"assetSupplyPublicKey"  msgpack:"assetSupplyPublicKey"` //TODO: it can be bloomed
+	AssetSignature       helpers.HexBytes `json:"assetSignature"  msgpack:"assetSignature"`
 }
 
 type json_Only_TransactionZetherStatement struct {
-	RingSize      int                `json:"ringSize"`
-	CLn           []helpers.HexBytes `json:"cLn"`
-	CRn           []helpers.HexBytes `json:"cRn"`
-	Publickeylist []helpers.HexBytes `json:"publickeylist"`
-	C             []helpers.HexBytes `json:"c"`
-	D             helpers.HexBytes   `json:"d"`
-	Fee           uint64             `json:"fee"`
+	RingSize      int                `json:"ringSize"  msgpack:"ringSize"`
+	CLn           []helpers.HexBytes `json:"cLn"  msgpack:"cLn"`
+	CRn           []helpers.HexBytes `json:"cRn"  msgpack:"cRn"`
+	Publickeylist []helpers.HexBytes `json:"publickeylist"  msgpack:"publickeylist"`
+	C             []helpers.HexBytes `json:"c"  msgpack:"c"`
+	D             helpers.HexBytes   `json:"d"  msgpack:"d"`
+	Fee           uint64             `json:"fee"  msgpack:"fee"`
 }
 
 type json_Only_TransactionPayload struct {
-	PayloadScript   transaction_zether_payload.PayloadScriptType `json:"payloadScript"`
-	Asset           helpers.HexBytes                             `json:"asset"`
-	BurnValue       uint64                                       `json:"burnValue"`
-	DataVersion     transaction_data.TransactionDataVersion      `json:"dataType"`
-	Data            helpers.HexBytes                             `json:"data"`
-	Registrations   []*json_TransactionDataRegistration          `json:"registrations"`
-	Statement       *json_Only_TransactionZetherStatement        `json:"statement"`
-	FeeRate         uint64                                       `json:"feeRate"`
-	FeeLeadingZeros byte                                         `json:"feeLeadingZeros"`
-	Proof           helpers.HexBytes                             `json:"proof"`
-	Extra           interface{}                                  `json:"extra"`
+	PayloadScript   transaction_zether_payload.PayloadScriptType `json:"payloadScript"  msgpack:"payloadScript"`
+	Asset           helpers.HexBytes                             `json:"asset"  msgpack:"asset"`
+	BurnValue       uint64                                       `json:"burnValue"  msgpack:"burnValue"`
+	DataVersion     transaction_data.TransactionDataVersion      `json:"dataType"  msgpack:"dataType"`
+	Data            helpers.HexBytes                             `json:"data"  msgpack:"data"`
+	Registrations   []*json_TransactionDataRegistration          `json:"registrations"  msgpack:"registrations"`
+	Statement       *json_Only_TransactionZetherStatement        `json:"statement"  msgpack:"statement"`
+	FeeRate         uint64                                       `json:"feeRate"  msgpack:"feeRate"`
+	FeeLeadingZeros byte                                         `json:"feeLeadingZeros"  msgpack:"feeLeadingZeros"`
+	Proof           helpers.HexBytes                             `json:"proof"  msgpack:"proof"`
+	Extra           interface{}                                  `json:"extra"  msgpack:"extra"`
 }
 
 type json_TransactionZether struct {
-	*json_Transaction
+	*Json_Transaction
 	*json_Only_TransactionZether
 }
 
-func (tx *Transaction) MarshalJSON() ([]byte, error) {
+func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, error) {
 
-	txJson := &json_Transaction{
+	txJson := &Json_Transaction{
 		tx.Version,
 		tx.Bloom.Size,
 		tx.SpaceExtra,
@@ -176,7 +177,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			return nil, errors.New("Invalid simple.TxScript")
 		}
 
-		return json.Marshal(simpleJson)
+		return marshal(simpleJson)
 
 	case transaction_type.TX_ZETHER:
 		base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
@@ -274,17 +275,29 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			},
 		}
 
-		return json.Marshal(zetherJson)
-
+		return marshal(zetherJson)
 	default:
 		return nil, errors.New("Invalid Tx Version")
 	}
 
 }
 
+func (tx *Transaction) MarshalJSON() ([]byte, error) {
+	return marshalJSON(tx, json.Marshal)
+}
+
+func (tx *Transaction) EncodeMsgpack(enc *msgpack.Encoder) error {
+	bytes, err := marshalJSON(tx, json.Marshal)
+	if err != nil {
+		return err
+	}
+
+	return enc.EncodeBytes(bytes)
+}
+
 func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 
-	txOnlyJson := &json_Transaction{}
+	txOnlyJson := &Json_Transaction{}
 	if err = json.Unmarshal(data, txOnlyJson); err != nil {
 		return
 	}
@@ -510,4 +523,13 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 	}
 
 	return nil
+}
+
+func (tx *Transaction) DecodeMsgpack(dec *msgpack.Decoder) error {
+	bytes, err := dec.DecodeBytes()
+	if err != nil {
+		return err
+	}
+
+	return tx.UnmarshalJSON(bytes)
 }

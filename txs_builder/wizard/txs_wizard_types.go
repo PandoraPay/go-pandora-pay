@@ -6,10 +6,10 @@ import (
 )
 
 type WizardTransactionFee struct {
-	Fixed             uint64 `json:"fixed,omitempty"`
-	PerByte           uint64 `json:"perByte,omitempty"`
-	PerByteExtraSpace uint64 `json:"perByteExtraSpace,omitempty"`
-	PerByteAuto       bool   `json:"perByteAuto,omitempty"`
+	Fixed             uint64 `json:"fixed,omitempty" msgpack:"fixed,omitempty"`
+	PerByte           uint64 `json:"perByte,omitempty" msgpack:"perByte,omitempty"`
+	PerByteExtraSpace uint64 `json:"perByteExtraSpace,omitempty" msgpack:"perByteExtraSpace,omitempty"`
+	PerByteAuto       bool   `json:"perByteAuto,omitempty" msgpack:"perByteAuto,omitempty"`
 }
 
 func (fee *WizardTransactionFee) Clone() *WizardTransactionFee {
@@ -22,8 +22,8 @@ func (fee *WizardTransactionFee) Clone() *WizardTransactionFee {
 }
 
 type WizardTransactionData struct {
-	Data    helpers.HexBytes `json:"data,omitempty"`
-	Encrypt bool             `json:"encrypt,omitempty"`
+	Data    helpers.HexBytes `json:"data,omitempty" msgpack:"data,omitempty"`
+	Encrypt bool             `json:"encrypt,omitempty" msgpack:"encrypt,omitempty"`
 }
 
 func (data *WizardTransactionData) getDataVersion() transaction_data.TransactionDataVersion {

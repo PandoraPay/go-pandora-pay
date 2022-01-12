@@ -8,12 +8,12 @@ import (
 )
 
 type BlockBloom struct {
-	Serialized                 helpers.HexBytes `json:"-"`
-	Hash                       helpers.HexBytes `json:"hash"`
-	KernelHash                 helpers.HexBytes `json:"kernelHash"`
-	DelegatedSignatureVerified bool             `json:"delegatedSignatureVerified"`
-	bloomedHash                bool             `json:"-"`
-	bloomedKernelHash          bool             `json:"-"`
+	Serialized                 helpers.HexBytes `json:"-" msgpack:"-"`
+	Hash                       helpers.HexBytes `json:"hash" msgpack:"hash"`
+	KernelHash                 helpers.HexBytes `json:"kernelHash" msgpack:"kernelHash"`
+	DelegatedSignatureVerified bool             `json:"delegatedSignatureVerified" msgpack:"delegatedSignatureVerified"`
+	bloomedHash                bool
+	bloomedKernelHash          bool
 }
 
 func (blk *Block) BloomSerializedNow(serialized []byte) {

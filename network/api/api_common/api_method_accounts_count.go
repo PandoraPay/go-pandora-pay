@@ -1,7 +1,7 @@
 package api_common
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/data_storage/accounts"
@@ -13,11 +13,11 @@ import (
 )
 
 type APIAccountsCountRequest struct {
-	Asset helpers.HexBytes `json:"asset"`
+	Asset helpers.HexBytes `json:"asset" msgpack:"asset"`
 }
 
 type APIAccountsCountReply struct {
-	Count uint64 `json:"count"`
+	Count uint64 `json:"count" msgpack:"count"`
 }
 
 func (api *APICommon) AccountsCount(r *http.Request, args *APIAccountsCountRequest, reply *APIAccountsCountReply) error {
@@ -43,7 +43,7 @@ func (api *APICommon) GetAccountsCount_http(values url.Values) (interface{}, err
 
 func (api *APICommon) GetAccountsCount_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAccountsCountRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIAccountsCountReply{}

@@ -1,7 +1,7 @@
 package api_common
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/helpers"
@@ -15,7 +15,7 @@ type APIAccountMempoolRequest struct {
 }
 
 type APIAccountMempoolReply struct {
-	List []helpers.HexBytes `json:"list"`
+	List []helpers.HexBytes `json:"list" msgpack:"list"`
 }
 
 func (api *APICommon) AccountMempool(r *http.Request, args *APIAccountMempoolRequest, reply *APIAccountMempoolReply) error {
@@ -50,7 +50,7 @@ func (api *APICommon) GetAccountMempool_http(values url.Values) (interface{}, er
 
 func (api *APICommon) GetAccountMempool_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAccountMempoolRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIAccountMempoolReply{}

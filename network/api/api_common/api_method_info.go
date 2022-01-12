@@ -8,10 +8,10 @@ import (
 )
 
 type AppInfo struct {
-	Name       string `json:"name"`
-	Version    string `json:"version"`
-	Network    uint64 `json:"network"`
-	CPUThreads int    `json:"CPUThreads"`
+	Name       string `json:"name" msgpack:"name"`
+	Version    string `json:"version" msgpack:"version"`
+	Network    uint64 `json:"network" msgpack:"network"`
+	CPUThreads int    `json:"CPUThreads" msgpack:"CPUThreads"`
 }
 
 func (api *APICommon) Info(r *http.Request, args *struct{}, reply *AppInfo) error {

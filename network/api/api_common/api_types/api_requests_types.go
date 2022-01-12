@@ -27,8 +27,8 @@ const (
 )
 
 type APIAccountBaseRequest struct {
-	Address   string           `json:"address,omitempty"  schema:"address"`
-	PublicKey helpers.HexBytes `json:"publicKey,omitempty"  schema:"publicKey"`
+	Address   string           `json:"address,omitempty" msgpack:"address,omitempty"`
+	PublicKey helpers.HexBytes `json:"publicKey,omitempty"  msgpack:"publicKey,omitempty"`
 }
 
 func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
@@ -49,19 +49,19 @@ func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
 }
 
 type APISubscriptionRequest struct {
-	Key        []byte           `json:"key,omitempty"`
-	Type       SubscriptionType `json:"type,omitempty"`
-	ReturnType APIReturnType    `json:"returnType,omitempty"`
+	Key        []byte           `json:"key,omitempty" msgpack:"key,omitempty"`
+	Type       SubscriptionType `json:"type,omitempty"  msgpack:"type,omitempty"`
+	ReturnType APIReturnType    `json:"returnType,omitempty"  msgpack:"returnType,omitempty"`
 }
 
 type APIUnsubscriptionRequest struct {
-	Key  []byte           `json:"key,omitempty"`
-	Type SubscriptionType `json:"type,omitempty"`
+	Key  []byte           `json:"key,omitempty" msgpack:"key,omitempty"`
+	Type SubscriptionType `json:"type,omitempty" msgpack:"type,omitempty"`
 }
 
 type APIAuthenticateBaseRequest struct {
-	Username string `json:"user" schema:"user"`
-	Password string `json:"pass" schema:"pass"`
+	Username string `json:"user" schema:"user" msgpack:"user"`
+	Password string `json:"pass" schema:"pass" msgpack:"pass"`
 }
 
 func (request *APIAuthenticateBaseRequest) CheckAuthenticated() bool {

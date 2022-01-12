@@ -2,7 +2,7 @@ package api_common
 
 import (
 	"encoding/binary"
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/data_storage/accounts"
@@ -21,19 +21,19 @@ import (
 
 type APIAccountRequest struct {
 	api_types.APIAccountBaseRequest
-	ReturnType api_types.APIReturnType `json:"returnType,omitempty"`
+	ReturnType api_types.APIReturnType `json:"returnType,omitempty"  msgpack:"returnType,omitempty" `
 }
 
 type APIAccount struct {
-	Accs               []*account.Account                                      `json:"accounts,omitempty"`
-	AccsSerialized     []helpers.HexBytes                                      `json:"accountsSerialized,omitempty"`
-	AccsExtra          []*api_types.APISubscriptionNotificationAccountExtra    `json:"accountsExtra,omitempty"`
-	PlainAcc           *plain_account.PlainAccount                             `json:"plainAccount,omitempty"`
-	PlainAccSerialized helpers.HexBytes                                        `json:"plainAccountSerialized,omitempty"`
-	PlainAccExtra      *api_types.APISubscriptionNotificationPlainAccExtra     `json:"plainAccountExtra,omitempty"`
-	Reg                *registration.Registration                              `json:"registration,omitempty"`
-	RegSerialized      helpers.HexBytes                                        `json:"registrationSerialized,omitempty"`
-	RegExtra           *api_types.APISubscriptionNotificationRegistrationExtra `json:"registrationExtra,omitempty"`
+	Accs               []*account.Account                                      `json:"accounts,omitempty" msgpack:"accounts,omitempty"`
+	AccsSerialized     []helpers.HexBytes                                      `json:"accountsSerialized,omitempty" msgpack:"accountsSerialized,omitempty"`
+	AccsExtra          []*api_types.APISubscriptionNotificationAccountExtra    `json:"accountsExtra,omitempty" msgpack:"accountsExtra,omitempty"`
+	PlainAcc           *plain_account.PlainAccount                             `json:"plainAccount,omitempty" msgpack:"plainAccount,omitempty"`
+	PlainAccSerialized helpers.HexBytes                                        `json:"plainAccountSerialized,omitempty" msgpack:"plainAccountSerialized,omitempty"`
+	PlainAccExtra      *api_types.APISubscriptionNotificationPlainAccExtra     `json:"plainAccountExtra,omitempty" msgpack:"plainAccountExtra,omitempty"`
+	Reg                *registration.Registration                              `json:"registration,omitempty" msgpack:"registration,omitempty"`
+	RegSerialized      helpers.HexBytes                                        `json:"registrationSerialized,omitempty" msgpack:"registrationSerialized,omitempty"`
+	RegExtra           *api_types.APISubscriptionNotificationRegistrationExtra `json:"registrationExtra,omitempty" msgpack:"registrationExtra,omitempty"`
 }
 
 func (api *APICommon) Account(r *http.Request, args *APIAccountRequest, reply *APIAccount) (err error) {
@@ -135,7 +135,7 @@ func (api *APICommon) GetAccount_http(values url.Values) (interface{}, error) {
 
 func (api *APICommon) GetAccount_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIAccount{}

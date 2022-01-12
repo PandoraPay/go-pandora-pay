@@ -2,8 +2,8 @@ package api_common
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/data_storage"
@@ -17,15 +17,15 @@ import (
 )
 
 type APIAssetFeeLiquidityFeeRequest struct {
-	Height uint64           `json:"height,omitempty"`
-	Hash   helpers.HexBytes `json:"hash,omitempty"`
+	Height uint64           `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash   helpers.HexBytes `json:"hash,omitempty" msgpack:"hash,omitempty"`
 }
 
 type APIAssetFeeLiquidityReply struct {
-	Asset        helpers.HexBytes `json:"asset"`
-	Rate         uint64           `json:"rate"`
-	LeadingZeros byte             `json:"leadingZeros"`
-	Collector    helpers.HexBytes `json:"collector"` //collector Public Key
+	Asset        helpers.HexBytes `json:"asset" msgpack:"asset"`
+	Rate         uint64           `json:"rate" msgpack:"rate"`
+	LeadingZeros byte             `json:"leadingZeros" msgpack:"leadingZeros"`
+	Collector    helpers.HexBytes `json:"collector"  msgpack:"collector"` //collector Public Key
 }
 
 func (api *APICommon) AssetFeeLiquidity(r *http.Request, args *APIAssetFeeLiquidityFeeRequest, reply *APIAssetFeeLiquidityReply) error {
@@ -70,7 +70,7 @@ func (api *APICommon) GetAssetFeeLiquidity_http(values url.Values) (interface{},
 
 func (api *APICommon) GetAssetFeeLiquidity_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAssetFeeLiquidityFeeRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIAssetFeeLiquidityReply{}

@@ -1,8 +1,8 @@
 package api_common
 
 import (
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/info"
@@ -14,11 +14,11 @@ import (
 )
 
 type APIAssetInfoRequest struct {
-	Height uint64           `json:"height,omitempty"`
-	Hash   helpers.HexBytes `json:"hash,omitempty"`
+	Height uint64           `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash   helpers.HexBytes `json:"hash,omitempty" msgpack:"hash,omitempty"`
 }
 
-func (api *APICommon) AssetInfo(r *http.Request, args *APIAssetInfoRequest, reply *info.AssetInfo) error {
+func (api *APICommon) getAssetInfo(r *http.Request, args *APIAssetInfoRequest, reply *info.AssetInfo) error {
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if len(args.Hash) == 0 {
@@ -32,7 +32,7 @@ func (api *APICommon) AssetInfo(r *http.Request, args *APIAssetInfoRequest, repl
 			return errors.New("AssetInfo was not found")
 		}
 
-		return json.Unmarshal(data, reply)
+		return msgpack.Unmarshal(data, reply)
 	})
 }
 
@@ -42,14 +42,14 @@ func (api *APICommon) GetAssetInfo_http(values url.Values) (interface{}, error) 
 		return nil, err
 	}
 	reply := &info.AssetInfo{}
-	return reply, api.AssetInfo(nil, args, reply)
+	return reply, api.getAssetInfo(nil, args, reply)
 }
 
 func (api *APICommon) GetAssetInfo_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAssetInfoRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &info.AssetInfo{}
-	return reply, api.AssetInfo(nil, args, reply)
+	return reply, api.getAssetInfo(nil, args, reply)
 }

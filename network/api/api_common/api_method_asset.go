@@ -1,7 +1,7 @@
 package api_common
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/data_storage/assets"
@@ -15,14 +15,14 @@ import (
 )
 
 type APIAssetRequest struct {
-	Height     uint64                  `json:"height,omitempty"`
-	Hash       helpers.HexBytes        `json:"hash,omitempty"`
-	ReturnType api_types.APIReturnType `json:"returnType,omitempty"`
+	Height     uint64                  `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash       helpers.HexBytes        `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APIAssetReply struct {
-	Asset      *asset.Asset     `json:"account,omitempty"`
-	Serialized helpers.HexBytes `json:"serialized,omitempty"`
+	Asset      *asset.Asset     `json:"account,omitempty" msgpack:"account,omitempty"`
+	Serialized helpers.HexBytes `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
 }
 
 func (api *APICommon) Asset(r *http.Request, args *APIAssetRequest, reply *APIAssetReply) (err error) {
@@ -58,7 +58,7 @@ func (api *APICommon) GetAsset_http(values url.Values) (interface{}, error) {
 
 func (api *APICommon) GetAsset_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAssetRequest{0, nil, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIAssetReply{}

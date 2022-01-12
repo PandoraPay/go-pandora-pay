@@ -10,14 +10,14 @@ import (
 )
 
 type BlockchainSyncData struct {
-	SyncTime                  uint64 `json:"syncTime"`
-	BlocksChangedLastInterval uint32 `json:"blocksChangedLastInterval"`
-	Sync                      bool   `json:"sync"`
+	SyncTime                  uint64 `json:"syncTime" msgpack:"syncTime" `
+	BlocksChangedLastInterval uint32 `json:"blocksChangedLastInterval" msgpack:"blocksChangedLastInterval"`
+	Sync                      bool   `json:"sync" msgpack:"sync" `
 }
 
 type BlockchainSync struct {
 	syncData            *generics.Value[*BlockchainSyncData]
-	UpdateSyncMulticast *multicast.MulticastChannel[*BlockchainSyncData] `json:"-"`
+	UpdateSyncMulticast *multicast.MulticastChannel[*BlockchainSyncData]
 	updateCn            chan *BlockchainSyncData
 }
 

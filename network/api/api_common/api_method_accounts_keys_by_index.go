@@ -1,8 +1,8 @@
 package api_common
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/addresses"
@@ -15,14 +15,14 @@ import (
 )
 
 type APIAccountsKeysByIndexRequest struct {
-	Indexes         []uint64         `json:"indexes"`
-	Asset           helpers.HexBytes `json:"asset"`
-	EncodeAddresses bool             `json:"encodeAddresses"`
+	Indexes         []uint64         `json:"indexes" msgpack:"indexes"`
+	Asset           helpers.HexBytes `json:"asset" msgpack:"asset"`
+	EncodeAddresses bool             `json:"encodeAddresses" msgpack:"encodeAddresses"`
 }
 
 type APIAccountsKeysByIndexReply struct {
-	PublicKeys []helpers.HexBytes `json:"publicKeys,omitempty"`
-	Addresses  []string           `json:"addresses,omitempty"`
+	PublicKeys []helpers.HexBytes `json:"publicKeys,omitempty" msgpack:"publicKeys,omitempty"`
+	Addresses  []string           `json:"addresses,omitempty" msgpack:"addresses,omitempty"`
 }
 
 func (api *APICommon) AccountsKeysByIndex(r *http.Request, args *APIAccountsKeysByIndexRequest, reply *APIAccountsKeysByIndexReply) (err error) {
@@ -75,7 +75,7 @@ func (api *APICommon) GetAccountsKeysByIndex_http(values url.Values) (interface{
 
 func (api *APICommon) GetAccountsKeysByIndex_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAccountsKeysByIndexRequest{nil, nil, false}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIAccountsKeysByIndexReply{}

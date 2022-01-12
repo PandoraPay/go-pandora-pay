@@ -8,14 +8,22 @@ There are three types of API in order to interact with PandoraPay DAEMON
    1. [X] authentication
    2. [x] wallet
    3. [ ] notifications
+
+   Data is packed using `json`
+
 2. HTTP RPC 
    1. [X] authentication
    2. [x] wallet
-   3. [ ] notifications 
+   3. [ ] notifications
+   
+   Data is packed using `json`
+
 3. HTTP Websockets
    1. [X] authentication
    2. [x] wallet
    3. [X] notifications
+
+   Data is packed using `msgpack`
 
 ## List of API 
 

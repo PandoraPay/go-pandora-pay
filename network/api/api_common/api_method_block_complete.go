@@ -1,8 +1,8 @@
 package api_common
 
 import (
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/blocks/block_complete"
@@ -17,14 +17,14 @@ import (
 )
 
 type APIBlockCompleteRequest struct {
-	Height     uint64                  `json:"height,omitempty"`
-	Hash       helpers.HexBytes        `json:"hash,omitempty"`
-	ReturnType api_types.APIReturnType `json:"returnType,omitempty"`
+	Height     uint64                  `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash       helpers.HexBytes        `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APIBlockCompleteReply struct {
-	BlockComplete *block_complete.BlockComplete `json:"blockComplete,omitempty"`
-	Serialized    helpers.HexBytes              `json:"serialized"`
+	BlockComplete *block_complete.BlockComplete `json:"blockComplete,omitempty" msgpack:"blockComplete,omitempty"`
+	Serialized    helpers.HexBytes              `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
 }
 
 func (api *APICommon) BlockComplete(r *http.Request, args *APIBlockCompleteRequest, reply *APIBlockCompleteReply) error {
@@ -46,7 +46,7 @@ func (api *APICommon) BlockComplete(r *http.Request, args *APIBlockCompleteReque
 		}
 
 		txHashes := [][]byte{}
-		if err = json.Unmarshal(data, &txHashes); err != nil {
+		if err = msgpack.Unmarshal(data, &txHashes); err != nil {
 			return
 		}
 
@@ -83,7 +83,7 @@ func (api *APICommon) GetBlockComplete_http(values url.Values) (interface{}, err
 
 func (api *APICommon) GetBlockComplete_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIBlockCompleteRequest{0, nil, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIBlockCompleteReply{}

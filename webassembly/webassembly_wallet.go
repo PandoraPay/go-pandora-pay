@@ -14,7 +14,7 @@ func getWallet(this js.Value, args []js.Value) interface{} {
 		app.Wallet.RLock()
 		defer app.Wallet.RUnlock()
 
-		data, err := helpers.GetJSON(app.Wallet, "mnemonic")
+		data, err := helpers.GetJSONDataExcept(app.Wallet, "mnemonic")
 		if err != nil {
 			return nil, err
 		}
@@ -33,7 +33,7 @@ func exportWalletJSON(this js.Value, args []js.Value) interface{} {
 		app.Wallet.RLock()
 		defer app.Wallet.RUnlock()
 
-		data, err := helpers.GetJSON(app.Wallet)
+		data, err := helpers.GetJSONDataExcept(app.Wallet)
 		if err != nil {
 			return nil, err
 		}

@@ -1,7 +1,7 @@
 package api_common
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/info"
@@ -14,14 +14,14 @@ import (
 )
 
 type APITransactionPreviewRequest struct {
-	Height uint64           `json:"height,omitempty"`
-	Hash   helpers.HexBytes `json:"hash,omitempty"`
+	Height uint64           `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash   helpers.HexBytes `json:"hash,omitempty" msgpack:"hash,omitempty"`
 }
 
 type APITransactionPreviewReply struct {
-	TxPreview *info.TxPreview `json:"txPreview,omitempty"`
-	Mempool   bool            `json:"mempool,omitempty"`
-	Info      *info.TxInfo    `json:"info,omitempty"`
+	TxPreview *info.TxPreview `json:"txPreview,omitempty" msgpack:"txPreview,omitempty"`
+	Mempool   bool            `json:"mempool,omitempty" msgpack:"mempool,omitempty"`
+	Info      *info.TxInfo    `json:"info,omitempty" msgpack:"info,omitempty"`
 }
 
 func (apiStore *APIStore) openLoadTxPreview(args *APITransactionPreviewRequest, reply *APITransactionPreviewReply) error {
@@ -58,10 +58,6 @@ func (api *APICommon) TxPreview(r *http.Request, args *APITransactionPreviewRequ
 		err = api.ApiStore.openLoadTxPreview(args, reply)
 	}
 
-	if err != nil {
-		return
-	}
-
 	return
 }
 
@@ -76,7 +72,7 @@ func (api *APICommon) GetTxPreview_http(values url.Values) (interface{}, error) 
 
 func (api *APICommon) GetTxPreview_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APITransactionPreviewRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APITransactionPreviewReply{}

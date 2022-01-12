@@ -2,8 +2,8 @@ package settings
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/gui"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -15,7 +15,7 @@ func (settings *Settings) saveSettings() error {
 
 		writer.Put("saved", []byte{2})
 
-		marshal, err := json.Marshal(settings)
+		marshal, err := msgpack.Marshal(settings)
 		if err != nil {
 			return
 		}
@@ -39,7 +39,7 @@ func (settings *Settings) loadSettings() error {
 			gui.GUI.Log("Settings Loading... ")
 
 			unmarshal := reader.Get("settings")
-			if err = json.Unmarshal(unmarshal, settings); err != nil {
+			if err = msgpack.Unmarshal(unmarshal, settings); err != nil {
 				return err
 			}
 

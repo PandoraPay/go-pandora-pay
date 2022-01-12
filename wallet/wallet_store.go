@@ -3,8 +3,8 @@ package wallet
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/globals"
@@ -56,12 +56,12 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 
 		writer.Put("saved", []byte{0})
 
-		if marshal, err = helpers.GetJSON(wallet.Encryption); err != nil {
+		if marshal, err = helpers.GetMarshalledDataExcept(wallet.Encryption); err != nil {
 			return
 		}
 		writer.Put("encryption", marshal)
 
-		if marshal, err = helpers.GetJSON(wallet, "addresses", "encryption"); err != nil {
+		if marshal, err = helpers.GetMarshalledDataExcept(wallet, "addresses", "encryption"); err != nil {
 			return
 		}
 		if marshal, err = wallet.Encryption.encryptData(marshal); err != nil {
@@ -71,7 +71,7 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 		writer.Put("wallet", marshal)
 
 		for i := start; i < end; i++ {
-			if marshal, err = json.Marshal(wallet.Addresses[i]); err != nil {
+			if marshal, err = msgpack.Marshal(wallet.Addresses[i]); err != nil {
 				return
 			}
 			if marshal, err = wallet.Encryption.encryptData(marshal); err != nil {
@@ -115,7 +115,7 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 			if unmarshal == nil {
 				return errors.New("encryption data was not found")
 			}
-			if err = json.Unmarshal(unmarshal, wallet.Encryption); err != nil {
+			if err = msgpack.Unmarshal(unmarshal, wallet.Encryption); err != nil {
 				return
 			}
 
@@ -132,7 +132,7 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 			if unmarshal, err = wallet.Encryption.decryptData(reader.Get("wallet")); err != nil {
 				return
 			}
-			if err = json.Unmarshal(unmarshal, wallet); err != nil {
+			if err = msgpack.Unmarshal(unmarshal, wallet); err != nil {
 				return
 			}
 
@@ -146,7 +146,7 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 				}
 
 				newWalletAddress := &wallet_address.WalletAddress{}
-				if err = json.Unmarshal(unmarshal, newWalletAddress); err != nil {
+				if err = msgpack.Unmarshal(unmarshal, newWalletAddress); err != nil {
 					return
 				}
 

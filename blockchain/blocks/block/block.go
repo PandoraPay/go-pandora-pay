@@ -15,17 +15,17 @@ import (
 
 type Block struct {
 	*BlockHeader
-	MerkleHash               helpers.HexBytes `json:"merkleHash"`     //32 byte
-	PrevHash                 helpers.HexBytes `json:"prevHash"`       //32 byte
-	PrevKernelHash           helpers.HexBytes `json:"prevKernelHash"` //32 byte
-	Timestamp                uint64           `json:"timestamp"`
-	StakingAmount            uint64           `json:"stakingAmount"`
-	Forger                   helpers.HexBytes `json:"forger"`                  // 33 byte public key
-	DelegatedStakePublicKey  helpers.HexBytes `json:"delegatedStakePublicKey"` // 33 byte public key can also be found into the accounts tree
-	DelegatedStakeFee        uint64           `json:"delegatedStakeFee"`
-	RewardCollectorPublicKey helpers.HexBytes `json:"rewardCollectorPublicKey"` // 33 byte public key only if rewardFee > 0
-	Signature                helpers.HexBytes `json:"signature"`                // 64 byte signature
-	Bloom                    *BlockBloom      `json:"bloom"`
+	MerkleHash               helpers.HexBytes `json:"merkleHash" msgpack:"merkleHash"`          //32 byte
+	PrevHash                 helpers.HexBytes `json:"prevHash"  msgpack:"prevHash"`             //32 byte
+	PrevKernelHash           helpers.HexBytes `json:"prevKernelHash"  msgpack:"prevKernelHash"` //32 byte
+	Timestamp                uint64           `json:"timestamp" msgpack:"timestamp"`
+	StakingAmount            uint64           `json:"stakingAmount" msgpack:"stakingAmount"`
+	Forger                   helpers.HexBytes `json:"forger" msgpack:"forger"`                                   // 33 byte public key
+	DelegatedStakePublicKey  helpers.HexBytes `json:"delegatedStakePublicKey" msgpack:"delegatedStakePublicKey"` // 33 byte public key can also be found into the accounts tree
+	DelegatedStakeFee        uint64           `json:"delegatedStakeFee" msgpack:"delegatedStakeFee"`
+	RewardCollectorPublicKey helpers.HexBytes `json:"rewardCollectorPublicKey" msgpack:"rewardCollectorPublicKey"` // 33 byte public key only if rewardFee > 0
+	Signature                helpers.HexBytes `json:"signature" msgpack:"signature"`                               // 64 byte signature
+	Bloom                    *BlockBloom      `json:"bloom" msgpack:"bloom"`
 }
 
 func CreateEmptyBlock() *Block {

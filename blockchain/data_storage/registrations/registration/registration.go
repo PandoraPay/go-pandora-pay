@@ -7,10 +7,10 @@ import (
 )
 
 type Registration struct {
-	hash_map.HashMapElementSerializableInterface `json:"-"`
-	PublicKey                                    []byte `json:"-"` //hashMap key
-	Index                                        uint64 `json:"-"` //hashMap index
-	Version                                      uint64 `json:"version"`
+	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
+	PublicKey                                    []byte `json:"-" msgpack:"-"` //hashMap key
+	Index                                        uint64 `json:"-" msgpack:"-"` //hashMap index
+	Version                                      uint64 `json:"version" msgpack:"version"`
 }
 
 func (registration *Registration) SetKey(key []byte) {

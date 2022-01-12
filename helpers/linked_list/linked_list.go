@@ -5,14 +5,14 @@ import (
 )
 
 type linkedListItem[T any] struct {
-	Next *linkedListItem[T]
-	Data T
+	Next *linkedListItem[T] `json:"next" msgpack:"next"`
+	Data T                  `json:"data" msgpack:"data"`
 }
 
 type LinkedList[T any] struct {
-	First  *linkedListItem[T]
-	Last   *linkedListItem[T]
-	Length int
+	First  *linkedListItem[T] `json:"first" msgpack:"first"`
+	Last   *linkedListItem[T] `json:"last" msgpack:"last"`
+	Length int                `json:"length" msgpack:"length"`
 }
 
 func (list *LinkedList[T]) Empty() {

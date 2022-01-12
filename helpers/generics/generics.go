@@ -2,7 +2,7 @@ package generics
 
 import (
 	"constraints"
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 // usage: Zero(T)()
@@ -12,12 +12,12 @@ func Zero[T any]() (z T) {
 }
 
 func Clone[T any](a, z T) (T, error) {
-	data, err := json.Marshal(a)
+	data, err := msgpack.Marshal(a)
 	if err != nil {
 		return z, err
 	}
 
-	err = json.Unmarshal(data, z)
+	err = msgpack.Unmarshal(data, z)
 	return z, err
 }
 

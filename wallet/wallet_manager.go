@@ -17,6 +17,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"pandora-pay/wallet/wallet_address"
 	"strconv"
 )
@@ -112,7 +113,7 @@ func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte) *wallet_addr
 	return wallet.addressesMap[string(publicKey)]
 }
 
-func (wallet *Wallet) GetDataForDecodingBalance(publicKey, asset []byte) (privateKey []byte, previousValue uint64) {
+func (wallet *Wallet) GetDataForDecodingBalance(publicKey, asset []byte) (privateKey helpers.HexBytes, previousValue uint64) {
 
 	wallet.RLock()
 	defer wallet.RUnlock()

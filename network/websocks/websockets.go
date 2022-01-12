@@ -2,8 +2,8 @@ package websocks
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"math/rand"
 	"nhooyr.io/websocket"
 	"pandora-pay/blockchain"
@@ -136,12 +136,12 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 }
 
 func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context) {
-	out, _ := json.Marshal(data)
+	out, _ := msgpack.Marshal(data)
 	websockets.Broadcast(name, out, consensusTypeAccepted, exceptSocketUUID, ctx)
 }
 
 func (websockets *Websockets) BroadcastJSONAwaitAnswer(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) []*advanced_connection_types.AdvancedConnectionReply {
-	out, _ := json.Marshal(data)
+	out, _ := msgpack.Marshal(data)
 	return websockets.BroadcastAwaitAnswer(name, out, consensusTypeAccepted, exceptSocketUUID, ctx, ctxDuration)
 }
 
@@ -225,7 +225,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	}
 
 	handshakeReceived := &connection.ConnectionHandshake{}
-	if err := json.Unmarshal(out.Out, handshakeReceived); err != nil {
+	if err := msgpack.Unmarshal(out.Out, handshakeReceived); err != nil {
 		return errors.New("Handshake received was invalid")
 	}
 

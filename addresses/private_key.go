@@ -10,7 +10,7 @@ import (
 )
 
 type PrivateKey struct {
-	Key helpers.HexBytes `json:"key"` //32 byte
+	Key helpers.HexBytes `json:"key" msgpack:"key"` //32 byte
 }
 
 func (pk *PrivateKey) GeneratePublicKey() []byte {

@@ -1,8 +1,8 @@
 package api_common
 
 import (
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -11,12 +11,12 @@ import (
 )
 
 type APIBlockCompleteMissingTxsRequest struct {
-	Hash       helpers.HexBytes `json:"hash,omitempty"`
-	MissingTxs []int            `json:"missingTxs,omitempty"`
+	Hash       helpers.HexBytes `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	MissingTxs []int            `json:"missingTxs,omitempty" msgpack:"missingTxs,omitempty"`
 }
 
 type APIBlockCompleteMissingTxsReply struct {
-	Txs []helpers.HexBytes `json:"txs,omitempty"`
+	Txs []helpers.HexBytes `json:"txs,omitempty" msgpack:"txs,omitempty"`
 }
 
 func (api *APICommon) getBlockCompleteMissingTxs(args *APIBlockCompleteMissingTxsRequest, reply *APIBlockCompleteMissingTxsReply) error {
@@ -38,7 +38,7 @@ func (api *APICommon) getBlockCompleteMissingTxs(args *APIBlockCompleteMissingTx
 		}
 
 		txHashes := [][]byte{}
-		if err = json.Unmarshal(data, &txHashes); err != nil {
+		if err = msgpack.Unmarshal(data, &txHashes); err != nil {
 			return
 		}
 
@@ -59,7 +59,7 @@ func (api *APICommon) getBlockCompleteMissingTxs(args *APIBlockCompleteMissingTx
 
 func (api *APICommon) GetBlockCompleteMissingTxs_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIBlockCompleteMissingTxsRequest{nil, []int{}}
-	if err := json.Unmarshal(values, &args); err != nil {
+	if err := msgpack.Unmarshal(values, &args); err != nil {
 		return nil, err
 	}
 	reply := &APIBlockCompleteMissingTxsReply{}

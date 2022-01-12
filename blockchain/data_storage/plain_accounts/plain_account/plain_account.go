@@ -8,13 +8,13 @@ import (
 )
 
 type PlainAccount struct {
-	hash_map.HashMapElementSerializableInterface `json:"-"`
-	PublicKey                                    []byte                                   `json:"-"` //hashMap key
-	Index                                        uint64                                   `json:"-"` //hashMap index
-	Nonce                                        uint64                                   `json:"nonce"`
-	Unclaimed                                    uint64                                   `json:"unclaimed"`
-	DelegatedStake                               *dpos.DelegatedStake                     `json:"delegatedStake"`
-	AssetFeeLiquidities                          *asset_fee_liquidity.AssetFeeLiquidities `json:"assetFeeLiquidities"`
+	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
+	PublicKey                                    []byte                                   `json:"-" msgpack:"-"` //hashMap key
+	Index                                        uint64                                   `json:"-" msgpack:"-"` //hashMap index
+	Nonce                                        uint64                                   `json:"nonce" msgpack:"nonce"`
+	Unclaimed                                    uint64                                   `json:"unclaimed" msgpack:"unclaimed"`
+	DelegatedStake                               *dpos.DelegatedStake                     `json:"delegatedStake" msgpack:"delegatedStake"`
+	AssetFeeLiquidities                          *asset_fee_liquidity.AssetFeeLiquidities `json:"assetFeeLiquidities" msgpack:"assetFeeLiquidities"`
 }
 
 func (plainAccount *PlainAccount) SetKey(key []byte) {

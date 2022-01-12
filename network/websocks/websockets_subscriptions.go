@@ -1,7 +1,7 @@
 package websocks
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
@@ -52,7 +52,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 	var serialized, marshalled *api_types.APISubscriptionNotification
 
 	if extra != nil {
-		if extraMarshalled, err = json.Marshal(extra); err != nil {
+		if extraMarshalled, err = msgpack.Marshal(extra); err != nil {
 			panic(err)
 		}
 	}
@@ -80,7 +80,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 			if marshalled == nil {
 				var bytes []byte
 				if element != nil {
-					if bytes, err = json.Marshal(element); err != nil {
+					if bytes, err = msgpack.Marshal(element); err != nil {
 						panic(err)
 					}
 				} else {

@@ -1,7 +1,7 @@
 package api_delegator_node
 
 import (
-	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/addresses"
@@ -12,13 +12,13 @@ import (
 )
 
 type ApiDelegatorNodeAskRequest struct {
-	PublicKey          helpers.HexBytes `json:"publicKey"`
-	ChallengeSignature helpers.HexBytes `json:"challengeSignature"`
+	PublicKey          helpers.HexBytes `json:"publicKey" msgpack:"publicKey"`
+	ChallengeSignature helpers.HexBytes `json:"challengeSignature" msgpack:"challengeSignature"`
 }
 
 type ApiDelegatorNodeAskReply struct {
-	Exists                   bool             `json:"exists"`
-	DelegateStakingPublicKey helpers.HexBytes `json:"delegateStakingPublicKey"`
+	Exists                   bool             `json:"exists" msgpack:"exists"`
+	DelegateStakingPublicKey helpers.HexBytes `json:"delegateStakingPublicKey" msgpack:"delegateStakingPublicKey"`
 }
 
 func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAskRequest, reply *ApiDelegatorNodeAskReply) error {
@@ -61,7 +61,7 @@ func (api *DelegatorNode) GetDelegatorNodeAsk_http(values url.Values) (interface
 
 func (api *DelegatorNode) GetDelegatorNodeAsk_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &ApiDelegatorNodeAskRequest{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &ApiDelegatorNodeAskReply{}

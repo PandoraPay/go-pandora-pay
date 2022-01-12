@@ -8,12 +8,12 @@ import (
 )
 
 type Account struct {
-	hash_map.HashMapElementSerializableInterface `json:"-"`
-	PublicKey                                    []byte              `json:"-"` //hashmap key
-	Asset                                        []byte              `json:"-"` //collection asset
-	Index                                        uint64              `json:"-"` //hashmap Index
-	Version                                      uint64              `json:"version"`
-	Balance                                      *BalanceHomomorphic `json:"balance"`
+	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
+	PublicKey                                    []byte              `json:"-" msgpack:"-"` //hashmap key
+	Asset                                        []byte              `json:"-" msgpack:"-"` //collection asset
+	Index                                        uint64              `json:"-" msgpack:"-"` //hashmap Index
+	Version                                      uint64              `json:"version" msgpack:"version"`
+	Balance                                      *BalanceHomomorphic `json:"balance" msgpack:"balance"`
 }
 
 func (account *Account) SetKey(key []byte) {

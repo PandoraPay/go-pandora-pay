@@ -1,7 +1,7 @@
 package config
 
 type SeedNode struct {
-	Url string `json:"url"`
+	Url string `json:"url" msgpack:"url"`
 }
 
 var (

@@ -5,7 +5,7 @@ import (
 )
 
 type APILogoutReply struct {
-	Status bool `json:"status"`
+	Status bool `json:"status" msgpack:""`
 }
 
 func (api *APIWebsockets) GetLogout_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {

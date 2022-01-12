@@ -2,8 +2,8 @@ package consensus
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers/linked_list"
@@ -13,7 +13,7 @@ import (
 func (consensus *Consensus) ChainUpdate_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 
 	chainUpdateNotification := new(ChainUpdateNotification)
-	if err := json.Unmarshal(values, &chainUpdateNotification); err != nil {
+	if err := msgpack.Unmarshal(values, &chainUpdateNotification); err != nil {
 		return nil, err
 	}
 

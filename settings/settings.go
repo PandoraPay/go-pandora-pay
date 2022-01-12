@@ -8,8 +8,8 @@ import (
 )
 
 type Settings struct {
-	Name         string `json:"name"`
-	sync.RWMutex `json:"-"`
+	Name         string `json:"name"  msgpack:"name"`
+	sync.RWMutex `json:"-"  msgpack:"-"`
 }
 
 func SettingsInit() (*Settings, error) {

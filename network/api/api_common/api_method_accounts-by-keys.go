@@ -1,8 +1,8 @@
 package api_common
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/data_storage/accounts"
@@ -18,17 +18,17 @@ import (
 )
 
 type APIAccountsByKeysRequest struct {
-	Keys           []*api_types.APIAccountBaseRequest `json:"keys,omitempty"`
-	Asset          helpers.HexBytes                   `json:"asset,omitempty"`
-	IncludeMempool bool                               `json:"includeMempool,omitempty"`
-	ReturnType     api_types.APIReturnType            `json:"returnType,omitempty"`
+	Keys           []*api_types.APIAccountBaseRequest `json:"keys,omitempty" msgpack:"keys,omitempty"`
+	Asset          helpers.HexBytes                   `json:"asset,omitempty" msgpack:"asset,omitempty"`
+	IncludeMempool bool                               `json:"includeMempool,omitempty" msgpack:"includeMempool,omitempty"`
+	ReturnType     api_types.APIReturnType            `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APIAccountsByKeysReply struct {
-	Acc           []*account.Account           `json:"acc,omitempty"`
-	AccSerialized []helpers.HexBytes           `json:"accSerialized,omitempty"`
-	Reg           []*registration.Registration `json:"registration,omitempty"`
-	RegSerialized []helpers.HexBytes           `json:"registrationSerialized,omitempty"`
+	Acc           []*account.Account           `json:"acc,omitempty" msgpack:"acc,omitempty"`
+	AccSerialized []helpers.HexBytes           `json:"accSerialized,omitempty" msgpack:"accSerialized,omitempty"`
+	Reg           []*registration.Registration `json:"registration,omitempty" msgpack:"registration,omitempty"`
+	RegSerialized []helpers.HexBytes           `json:"registrationSerialized,omitempty" msgpack:"registrationSerialized,omitempty"`
 }
 
 func (api *APICommon) AccountsByKeys(r *http.Request, args *APIAccountsByKeysRequest, reply *APIAccountsByKeysReply) (err error) {
@@ -122,7 +122,7 @@ func (api *APICommon) GetAccountsByKeys_http(values url.Values) (interface{}, er
 
 func (api *APICommon) GetAccountsByKeys_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIAccountsByKeysReply{}

@@ -2,9 +2,9 @@ package api_common
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/data_storage"
@@ -27,23 +27,23 @@ type APIWalletGetBalance struct {
 }
 
 type APIWalletGetBalancesBase struct {
-	List []*api_types.APIAccountBaseRequest `json:"list"  schema:"list"`
+	List []*api_types.APIAccountBaseRequest `json:"list" msgpack:"list"`
 }
 
 type APIWalletGetBalancesReply struct {
-	Results []*APIWalletGetBalancesResultReply `json:"results"`
+	Results []*APIWalletGetBalancesResultReply `json:"results" msgpack:"results"`
 }
 
 type APIWalletGetBalancesResultReply struct {
-	Address  string                          `json:"address"`
-	PlainAcc *plain_account.PlainAccount     `json:"plainAcc"`
-	Balances []*APIWalletGetBalanceDataReply `json:"balance"`
+	Address  string                          `json:"address" msgpack:"address"`
+	PlainAcc *plain_account.PlainAccount     `json:"plainAcc" msgpack:"plainAcc"`
+	Balances []*APIWalletGetBalanceDataReply `json:"balance" msgpack:"balance"`
 }
 
 type APIWalletGetBalanceDataReply struct {
-	Balance helpers.HexBytes `json:"amount"`
-	Value   uint64           `json:"value"`
-	Asset   helpers.HexBytes `json:"asset"`
+	Balance helpers.HexBytes `json:"amount" msgpack:"amount"`
+	Value   uint64           `json:"value" msgpack:"value"`
+	Asset   helpers.HexBytes `json:"asset" msgpack:"asset"`
 }
 
 func (api *APICommon) WalletGetBalances(r *http.Request, args *APIWalletGetBalancesBase, reply *APIWalletGetBalancesReply, authenticated bool) (err error) {
@@ -150,7 +150,7 @@ func (api *APICommon) WalletGetBalances_http(values url.Values) (interface{}, er
 
 func (api *APICommon) WalletGetBalances_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APIWalletGetBalancesBase{}
-	if err := json.Unmarshal(values, args); err != nil {
+	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
 	reply := &APIWalletGetBalancesReply{}

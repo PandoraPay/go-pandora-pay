@@ -13,18 +13,18 @@ import (
 )
 
 type BlockchainData struct {
-	Hash                  helpers.HexBytes `json:"hash"`           //32
-	PrevHash              helpers.HexBytes `json:"prevHash"`       //32
-	KernelHash            helpers.HexBytes `json:"kernelHash"`     //32
-	PrevKernelHash        helpers.HexBytes `json:"prevKernelHash"` //32
-	Height                uint64           `json:"height"`
-	Timestamp             uint64           `json:"timestamp"`
-	Target                *big.Int         `json:"target"`
-	BigTotalDifficulty    *big.Int         `json:"bigTotalDifficulty"`
-	TransactionsCount     uint64           `json:"transactionsCount"` //count of the number of txs
-	AccountsCount         uint64           `json:"accountsCount"`     //count of the number of assets
-	AssetsCount           uint64           `json:"assetsCount"`       //count of the number of assets
-	ConsecutiveSelfForged uint64           `json:"consecutiveSelfForged"`
+	Hash                  helpers.HexBytes `json:"hash" msgpack:"hash"`                     //32
+	PrevHash              helpers.HexBytes `json:"prevHash" msgpack:"prevHash"`             //32
+	KernelHash            helpers.HexBytes `json:"kernelHash" msgpack:"kernelHash"`         //32
+	PrevKernelHash        helpers.HexBytes `json:"prevKernelHash" msgpack:"prevKernelHash"` //32
+	Height                uint64           `json:"height" msgpack:"height"`
+	Timestamp             uint64           `json:"timestamp" msgpack:"timestamp"`
+	Target                *big.Int         `json:"target" msgpack:"target"`
+	BigTotalDifficulty    *big.Int         `json:"bigTotalDifficulty" msgpack:"bigTotalDifficulty"`
+	TransactionsCount     uint64           `json:"transactionsCount" msgpack:"transactionsCount"` //count of the number of txs
+	AccountsCount         uint64           `json:"accountsCount" msgpack:"accountsCount"`         //count of the number of assets
+	AssetsCount           uint64           `json:"assetsCount" msgpack:"assetsCount"`             //count of the number of assets
+	ConsecutiveSelfForged uint64           `json:"consecutiveSelfForged" msgpack:"consecutiveSelfForged"`
 }
 
 func (chainData *BlockchainData) computeNextTargetBig(reader store_db_interface.StoreDBTransactionInterface) (*big.Int, error) {

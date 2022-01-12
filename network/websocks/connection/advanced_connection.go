@@ -2,9 +2,9 @@ package connection
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"github.com/tevino/abool"
+	"github.com/vmihailenco/msgpack/v5"
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
@@ -59,9 +59,9 @@ func (c *AdvancedConnection) Close(reason string) error {
 	return c.Conn.Close(websocket.StatusNormalClosure, reason[:generics.Min(100, len(reason))])
 }
 
-func (c *AdvancedConnection) connSendJSON(message interface{}, ctx context.Context) error {
+func (c *AdvancedConnection) connSendMessage(message interface{}, ctx context.Context) error {
 
-	data, err := json.Marshal(message)
+	data, err := msgpack.Marshal(message)
 	if err != nil {
 		return nil
 	}
@@ -72,7 +72,7 @@ func (c *AdvancedConnection) connSendJSON(message interface{}, ctx context.Conte
 
 	if ctx == nil {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx, cancel = context.WithTimeout(context.Background(), c.GetTimeout())
 		defer cancel()
 	}
 
@@ -87,7 +87,7 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 		name,
 		data,
 	}
-	return c.connSendJSON(message, ctx)
+	return c.connSendMessage(message, ctx)
 }
 
 func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, ctx context.Context) *advanced_connection_types.AdvancedConnectionReply {
@@ -113,7 +113,7 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 		data,
 	}
 
-	if err := c.connSendJSON(message, ctx); err != nil {
+	if err := c.connSendMessage(message, ctx); err != nil {
 		return &advanced_connection_types.AdvancedConnectionReply{nil, err}
 	}
 
@@ -147,7 +147,7 @@ func (c *AdvancedConnection) Send(name []byte, data []byte, ctx context.Context)
 }
 
 func (c *AdvancedConnection) SendJSON(name []byte, data interface{}, ctx context.Context) error {
-	out, err := json.Marshal(data)
+	out, err := msgpack.Marshal(data)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, 
 	if c == nil {
 		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Socket is null")}
 	}
-	out, err := json.Marshal(data)
+	out, err := msgpack.Marshal(data)
 	if err != nil {
 		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Error marshaling data")}
 	}
@@ -202,11 +202,7 @@ func (c *AdvancedConnection) get(message *advanced_connection_types.AdvancedConn
 	case []byte:
 		return v, nil
 	default:
-		var final []byte
-		if final, err = json.Marshal(output); err != nil {
-			return nil, err
-		}
-		return final, nil
+		return msgpack.Marshal(output)
 	}
 
 }
@@ -265,7 +261,7 @@ func (c *AdvancedConnection) ReadPump() {
 
 		recovery.SafeGo(func() {
 			message := &advanced_connection_types.AdvancedConnectionMessage{}
-			if err = json.Unmarshal(read, message); err == nil {
+			if err = msgpack.Unmarshal(read, message); err == nil {
 				c.processRead(message)
 			}
 		})

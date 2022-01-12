@@ -11,17 +11,17 @@ import (
 )
 
 type Fork struct {
-	BigTotalDifficulty *big.Int                                               `json:"bigTotalDifficulty"`
-	Initialized        bool                                                   `json:"initialized"`
-	End                uint64                                                 `json:"end"`
-	Current            uint64                                                 `json:"current"`
-	Blocks             *linked_list.LinkedList[*block_complete.BlockComplete] `json:"blocks"`
-	Hash               helpers.HexBytes                                       `json:"hash"`     //32
-	HashStr            string                                                 `json:"hashStr"`  //32
-	PrevHash           helpers.HexBytes                                       `json:"prevHash"` //32
+	BigTotalDifficulty *big.Int                                               `json:"bigTotalDifficulty" msgpack:"bigTotalDifficulty"`
+	Initialized        bool                                                   `json:"initialized" msgpack:"initialized"`
+	End                uint64                                                 `json:"end" msgpack:"end"`
+	Current            uint64                                                 `json:"current" msgpack:"current"`
+	Blocks             *linked_list.LinkedList[*block_complete.BlockComplete] `json:"blocks" msgpack:"blocks"`
+	Hash               helpers.HexBytes                                       `json:"hash" msgpack:"hash"`
+	HashStr            string                                                 `json:"hashStr" msgpack:"hashStr"`
+	PrevHash           helpers.HexBytes                                       `json:"prevHash" msgpack:"prevHash"`
 	conns              []*connection.AdvancedConnection
 	errors             int
-	sync.RWMutex       `json:"-"`
+	sync.RWMutex       `json:"-" msgpack:"-"`
 }
 
 //is locked before

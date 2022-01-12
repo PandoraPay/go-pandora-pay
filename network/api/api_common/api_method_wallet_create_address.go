@@ -16,7 +16,7 @@ type APIWalletCreateAddress struct {
 }
 
 type APIWalletCreateAddressReply struct {
-	Address *wallet_address.WalletAddress `json:"address"`
+	Address *wallet_address.WalletAddress `json:"address" msgpack:"address"`
 }
 
 func (api *APICommon) WalletCreateAddress(r *http.Request, args *struct{}, reply *APIWalletCreateAddressReply, authenticated bool) error {

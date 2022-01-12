@@ -6,11 +6,11 @@ import (
 )
 
 type ConnectionHandshake struct {
-	Name      string               `json:"name"`
-	Version   string               `json:"version"`
-	Network   uint64               `json:"network"`
-	Consensus config.ConsensusType `json:"consensus"`
-	URL       string               `json:"url"`
+	Name      string               `json:"name" msgpack:"name"`
+	Version   string               `json:"version" msgpack:"version"`
+	Network   uint64               `json:"network" msgpack:"network"`
+	Consensus config.ConsensusType `json:"consensus" msgpack:"consensus"`
+	URL       string               `json:"url" msgpack:"url"`
 }
 
 func (handshake *ConnectionHandshake) ValidateHandshake() error {

@@ -6,8 +6,8 @@ import (
 )
 
 type ConfigAuth struct {
-	Username string `json:"user"`
-	Password string `json:"pass"`
+	Username string `json:"user" msgpack:"user"`
+	Password string `json:"pass"  msgpack:"pass"`
 }
 
 var (

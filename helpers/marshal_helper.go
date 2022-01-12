@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/cryptography/bn256"
 )
 
@@ -29,6 +30,21 @@ func (s *HexBytes) UnmarshalJSON(data []byte) (err error) {
 	}
 	*s = str
 	return
+}
+
+// EncodeMsgpack serializes ElGamal into byteArray
+func (s *HexBytes) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeBytes(*s)
+}
+
+// DecodeMsgpack deserializes ByteArray to hex
+func (s *HexBytes) DecodeMsgpack(dec *msgpack.Decoder) error {
+	bytes, err := dec.DecodeBytes()
+	if err != nil {
+		return err
+	}
+	*s = bytes
+	return nil
 }
 
 // UnmarshalText for Gorilla Decoder
@@ -73,7 +89,30 @@ func ConvertToBN256Array(array []HexBytes) ([]*bn256.G1, error) {
 	return out, nil
 }
 
-func GetJSON(obj interface{}, ignoreFields ...string) ([]byte, error) {
+func GetMarshalledDataExcept(obj interface{}, ignoreFields ...string) ([]byte, error) {
+
+	toJson, err := msgpack.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(ignoreFields) == 0 {
+		return toJson, nil
+	}
+
+	toMap := map[string]interface{}{}
+	if err = msgpack.Unmarshal(toJson, &toMap); err != nil {
+		return nil, err
+	}
+
+	for key := range ignoreFields {
+		delete(toMap, ignoreFields[key])
+	}
+
+	return msgpack.Marshal(toMap)
+}
+
+func GetJSONDataExcept(obj interface{}, ignoreFields ...string) ([]byte, error) {
 
 	toJson, err := json.Marshal(obj)
 	if err != nil {
@@ -93,11 +132,7 @@ func GetJSON(obj interface{}, ignoreFields ...string) ([]byte, error) {
 		delete(toMap, ignoreFields[key])
 	}
 
-	if toJson, err = json.Marshal(toMap); err != nil {
-		return nil, err
-	}
-
-	return toJson, nil
+	return json.Marshal(toMap)
 }
 
 func BytesLengthSerialized(value uint64) int {
