@@ -16,13 +16,13 @@ extraArgs=""
 for arg in $@
 do
   if [ $arg = "pprof" ]; then
-    extraArgs+="--pprof"
+    extraArgs+=" --pprof "
   fi
   if [ $arg = "race" ]; then
       race=true
   fi
   if [ $arg = "debug" ]; then
-      extraArgs="--debug"
+      extraArgs=" --debug "
     fi
 done
 

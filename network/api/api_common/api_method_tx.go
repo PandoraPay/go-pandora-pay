@@ -46,9 +46,13 @@ func (api *APICommon) openLoadTx(args *APITransactionRequest, reply *APITransact
 			return errors.New("Tx not found")
 		}
 
-		reply.Tx = &transaction.Transaction{}
-		if err = reply.Tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
-			return err
+		if args.ReturnType == api_types.RETURN_SERIALIZED {
+			reply.TxSerialized = data
+		} else {
+			reply.Tx = &transaction.Transaction{}
+			if err = reply.Tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
+				return err
+			}
 		}
 
 		if config.SEED_WALLET_NODES_INFO {
@@ -65,30 +69,22 @@ func (api *APICommon) openLoadTx(args *APITransactionRequest, reply *APITransact
 	})
 }
 
-func (api *APICommon) Tx(r *http.Request, args *APITransactionRequest, reply *APITransactionReply) (err error) {
+func (api *APICommon) Tx(r *http.Request, args *APITransactionRequest, reply *APITransactionReply) error {
 
 	if len(args.Hash) == cryptography.HashSize {
 		txMempool := api.mempool.Txs.Get(string(args.Hash))
 		if txMempool != nil {
 			reply.Mempool = true
 			reply.Tx = txMempool.Tx
-		} else {
-			err = api.openLoadTx(args, reply)
+			if args.ReturnType == api_types.RETURN_SERIALIZED {
+				reply.TxSerialized = reply.Tx.Bloom.Serialized
+				reply.Tx = nil
+			}
+			return nil
 		}
-	} else {
-		err = api.openLoadTx(args, reply)
 	}
 
-	if err != nil || reply.Tx == nil {
-		return err
-	}
-
-	if args.ReturnType == api_types.RETURN_SERIALIZED {
-		reply.TxSerialized = reply.Tx.Bloom.Serialized
-		reply.Tx = nil
-	}
-
-	return
+	return api.openLoadTx(args, reply)
 }
 
 func (api *APICommon) GetTx_http(values url.Values) (interface{}, error) {

@@ -25,6 +25,8 @@ func (g *GUIInteractive) message(prefix string, color string, any ...interface{}
 
 	if config.DEBUG {
 		text = time.Now().Format("2006-01-02 15:04:05  ") + text
+	} else {
+		text = time.Now().Format("15:04:05  ") + text
 	}
 
 	final1 := prefix + " " + text + "\n"

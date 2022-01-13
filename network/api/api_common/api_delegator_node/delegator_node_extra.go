@@ -31,11 +31,8 @@ func (api *DelegatorNode) execute() {
 	recovery.SafeGo(func() {
 
 		lastHeight := uint64(0)
-		ticker := time.NewTicker(10 * time.Second)
 
 		for {
-			<-ticker.C
-
 			chainHeight := atomic.LoadUint64(&api.chainHeight)
 			if lastHeight != chainHeight {
 				lastHeight = chainHeight
@@ -47,6 +44,8 @@ func (api *DelegatorNode) execute() {
 					return true
 				})
 			}
+
+			time.Sleep(10 * time.Second)
 		}
 	})
 

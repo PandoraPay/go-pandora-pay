@@ -65,7 +65,6 @@ func (network *Network) continuouslyConnectNewPeers() {
 func (network *Network) continuouslyDownloadChain() {
 	recovery.SafeGo(func() {
 
-		ticker := time.NewTicker(2000 * time.Millisecond)
 		for {
 
 			if conn := network.Websockets.GetRandomSocket(); conn != nil {
@@ -75,7 +74,7 @@ func (network *Network) continuouslyDownloadChain() {
 				}
 			}
 
-			<-ticker.C
+			time.Sleep(2000 * time.Millisecond)
 		}
 
 	})
@@ -85,7 +84,6 @@ func (network *Network) continuouslyDownloadMempool() {
 
 	recovery.SafeGo(func() {
 
-		ticker := time.NewTicker(2000 * time.Millisecond)
 		for {
 
 			if conn := network.Websockets.GetRandomSocket(); conn != nil {
@@ -94,7 +92,7 @@ func (network *Network) continuouslyDownloadMempool() {
 				}
 			}
 
-			<-ticker.C
+			time.Sleep(2000 * time.Millisecond)
 		}
 
 	})

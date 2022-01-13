@@ -269,10 +269,10 @@ func (testnet *Testnet) run() {
 								atomic.AddInt32(&unstakesCount, 1)
 							} else {
 
-								time.Sleep(time.Millisecond * 200) //making sure the block got propagated
+								time.Sleep(time.Millisecond * 500) //making sure the block got propagated
 								for i := 2; i < 5; i++ {
-									time.Sleep(time.Millisecond * 200)
 									testnet.testnetCreateTransfers(i, ctx)
+									time.Sleep(time.Millisecond * 1000)
 								}
 
 							}

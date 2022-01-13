@@ -78,10 +78,8 @@ func (self *BlockchainSync) resetBlocksChanged(propagateNotification bool) *Bloc
 func (self *BlockchainSync) start() {
 
 	recovery.SafeGo(func() {
-
-		ticker := time.NewTicker(1 * time.Minute).C
 		for {
-			<-ticker
+			time.Sleep(1 * time.Minute)
 			self.resetBlocksChanged(true)
 		}
 	})

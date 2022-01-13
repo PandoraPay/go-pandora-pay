@@ -21,7 +21,6 @@ type ForgingThread struct {
 	workers            []*ForgingWorkerThread
 	workersCreatedCn   chan []*ForgingWorkerThread
 	workersDestroyedCn chan struct{}
-	ticker             *time.Ticker
 }
 
 func (thread *ForgingThread) stopForging() {
@@ -29,7 +28,6 @@ func (thread *ForgingThread) stopForging() {
 	for i := 0; i < len(thread.workers); i++ {
 		close(thread.workers[i].workCn)
 	}
-	thread.ticker.Stop()
 }
 
 func (thread *ForgingThread) startForging() {
@@ -43,13 +41,8 @@ func (thread *ForgingThread) startForging() {
 	}
 	thread.workersCreatedCn <- thread.workers
 
-	thread.ticker = time.NewTicker(1 * time.Second)
-
 	recovery.SafeGo(func() {
 		for {
-			if _, ok := <-thread.ticker.C; !ok {
-				return
-			}
 
 			s := ""
 			for i := 0; i < thread.threads; i++ {
@@ -57,6 +50,8 @@ func (thread *ForgingThread) startForging() {
 				s += strconv.FormatUint(uint64(hashesPerSecond), 10) + " "
 			}
 			gui.GUI.InfoUpdate("Hashes/s", s)
+
+			time.Sleep(time.Second)
 		}
 	})
 
@@ -142,6 +137,5 @@ func createForgingThread(threads int, mempool *mempool.Mempool, solutionCn chan<
 		[]*ForgingWorkerThread{},
 		make(chan []*ForgingWorkerThread),
 		make(chan struct{}),
-		nil,
 	}
 }

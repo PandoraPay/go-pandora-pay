@@ -275,11 +275,9 @@ func NewWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, setti
 	websockets.subscriptions = newWebsocketSubscriptions(websockets, chain, mempool)
 
 	recovery.SafeGo(func() {
-
-		ticker := time.NewTicker(1 * time.Second).C
 		for {
-			<-ticker
 			gui.GUI.InfoUpdate("sockets", strconv.FormatInt(atomic.LoadInt64(&websockets.clients), 32)+" "+strconv.FormatInt(atomic.LoadInt64(&websockets.serverSockets), 32))
+			time.Sleep(1 * time.Second)
 		}
 	})
 

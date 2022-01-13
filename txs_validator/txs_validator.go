@@ -83,12 +83,8 @@ func (validator *TxsValidator) ValidateTxs(txs []*transaction.Transaction) error
 
 func (validator *TxsValidator) runRemoveExpiredTransactions() {
 
-	ticker := time.NewTicker(100 * time.Millisecond)
-
 	c := 0
 	for {
-
-		<-ticker.C
 
 		now := time.Now().Unix()
 
@@ -101,14 +97,15 @@ func (validator *TxsValidator) runRemoveExpiredTransactions() {
 				}
 
 				c += 1
-				if c%1000 == 0 {
-					<-ticker.C
+				if c%200 == 0 {
+					time.Sleep(50 * time.Millisecond)
 				}
 			}
 
 			return true
 		})
 
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
@@ -116,18 +113,15 @@ func NewTxsValidator() (*TxsValidator, error) {
 
 	txsValidator := &TxsValidator{
 		&generics.Map[string, *txValidated]{},
-		nil,
-		make(chan *txValidated),
+		make([]*TxsValidatorWorker, config.CPU_THREADS),
+		make(chan *txValidated, 1),
 	}
 
-	workers := make([]*TxsValidatorWorker, config.CPU_THREADS)
-	for i := range workers {
-		workers[i] = newTxsValidatorWorker(txsValidator.newValidationWorkCn)
+	for i := range txsValidator.workers {
+		txsValidator.workers[i] = newTxsValidatorWorker(txsValidator.newValidationWorkCn)
 	}
 
-	txsValidator.workers = workers
-
-	for _, worker := range workers {
+	for _, worker := range txsValidator.workers {
 		worker.start()
 	}
 
