@@ -285,7 +285,7 @@ func getNetworkAssetInfo(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return webassembly_utils.ConvertMsgPackToJSONBytes(app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("asset-info"), &api_common.APIAssetInfoRequest{uint64(args[0].Int()), hash}, nil), &api_common.APIAssetReply{})
+		return webassembly_utils.ConvertMsgPackToJSONBytes(app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("asset-info"), &api_common.APIAssetInfoRequest{uint64(args[0].Int()), hash}, nil), &info.AssetInfo{})
 	})
 }
 

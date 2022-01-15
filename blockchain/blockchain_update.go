@@ -11,7 +11,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/multicast"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 	"pandora-pay/txs_validator"
@@ -37,14 +36,14 @@ type BlockchainUpdate struct {
 }
 
 type BlockchainUpdatesQueue struct {
-	updates      *multicast.MulticastChannel[*BlockchainUpdate] //buffered
+	updates      chan *BlockchainUpdate //buffered
 	chain        *Blockchain
 	txsValidator *txs_validator.TxsValidator
 }
 
 func createBlockchainUpdatesQueue(txsValidator *txs_validator.TxsValidator) *BlockchainUpdatesQueue {
 	return &BlockchainUpdatesQueue{
-		multicast.NewMulticastChannel[*BlockchainUpdate](),
+		make(chan *BlockchainUpdate, 100),
 		nil,
 		txsValidator,
 	}
@@ -59,14 +58,14 @@ func (queue *BlockchainUpdatesQueue) hasCalledByForging(updates []*BlockchainUpd
 	return false
 }
 
-func (queue *BlockchainUpdatesQueue) hasAnySuccess(updates []*BlockchainUpdate) bool {
-	for _, update := range updates {
-		if update.err == nil {
-			return true
+func (queue *BlockchainUpdatesQueue) lastSuccess(updates []*BlockchainUpdate) *BlockchainData {
+	for i := len(updates) - 1; i >= 0; i-- {
+		if updates[i].err == nil {
+			return updates[i].newChainData
 		}
 	}
 
-	return false
+	return nil
 }
 
 func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate) error {
@@ -121,9 +120,6 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate) err
 
 	chainSyncData := queue.chain.Sync.AddBlocksChanged(uint32(len(update.insertedBlocks)), true)
 
-	//create next block and the workers will be automatically reset
-	queue.chain.createNextBlockForForging(update.newChainData, true)
-
 	gui.GUI.Log("queue.chain.UpdateNewChain fired")
 	queue.chain.UpdateNewChain.Broadcast(update.newChainData.Height)
 
@@ -138,23 +134,34 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate) err
 func (queue *BlockchainUpdatesQueue) processQueue() {
 	recovery.SafeGo(func() {
 
-		listener := queue.updates.AddListener()
-		defer queue.updates.RemoveChannel(listener)
-
 		for {
 
-			update, ok := <-listener
-			if !ok {
-				return
+			works := make([]*BlockchainUpdate, 0)
+			update, _ := <-queue.updates
+			works = append(works, update)
+
+			loop := true
+			for loop {
+				select {
+				case update, _ = <-queue.updates:
+					works = append(works, update)
+				default:
+					loop = false
+				}
 			}
 
-			if update.err == nil {
-				if err := queue.processUpdate(update); err != nil {
-					gui.GUI.Error("Error processUpdate", err)
+			lastSuccessUpdate := queue.lastSuccess(works)
+			updateForging := lastSuccessUpdate != nil || queue.hasCalledByForging(works)
+			for _, update = range works {
+				if update.err == nil {
+					if err := queue.processUpdate(update); err != nil {
+						gui.GUI.Error("Error processUpdate", err)
+					}
 				}
-			} else {
-				queue.chain.createNextBlockForForging(nil, update.calledByForging)
 			}
+
+			//create next block and the workers will be automatically reset
+			queue.chain.createNextBlockForForging(lastSuccessUpdate, updateForging)
 
 		}
 
