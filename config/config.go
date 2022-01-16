@@ -13,13 +13,14 @@ import (
 )
 
 var (
-	DEBUG         = false
-	CPU_THREADS   = 1
-	ARCHITECTURE  = ""
-	OS            = ""
-	NAME          = "PANDORA PAY"
-	VERSION       = "0.01"
-	BUILD_VERSION = ""
+	DEBUG              = false
+	CPU_THREADS        = 1
+	ARCHITECTURE       = ""
+	OS                 = ""
+	NAME               = "PANDORA PAY"
+	VERSION            = "0.01"
+	BUILD_VERSION      = ""
+	LIGHT_COMPUTATIONS = false
 )
 
 const (
@@ -155,6 +156,10 @@ func InitConfig() (err error) {
 		CONSENSUS = CONSENSUS_TYPE_NONE
 	default:
 		return errors.New("invalid consensus argument")
+	}
+
+	if globals.Arguments["--light-computations"] == "true" {
+		LIGHT_COMPUTATIONS = true
 	}
 
 	if NETWORK_SELECTED == TEST_NET_NETWORK_BYTE || NETWORK_SELECTED == DEV_NET_NETWORK_BYTE {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"github.com/tevino/abool"
+	"math"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
@@ -116,7 +117,11 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 		dstsAssets = append(dstsAssets, asset)
 		burn = append(burn, 0)
 
-		ringsConfigurations = append(ringsConfigurations, &txs_builder.ZetherRingConfiguration{-1, -1})
+		zetherRingConfiguration := &txs_builder.ZetherRingConfiguration{-1, -1}
+		if config.LIGHT_COMPUTATIONS {
+			zetherRingConfiguration = &txs_builder.ZetherRingConfiguration{int(math.Pow(2, float64(rand.Intn(2)+3))), rand.Intn(zetherRingConfiguration.RingSize / 5)}
+		}
+		ringsConfigurations = append(ringsConfigurations, zetherRingConfiguration)
 
 		data = append(data, &wizard.WizardTransactionData{[]byte{}, false})
 		fees = append(fees, &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0})
@@ -156,10 +161,15 @@ func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int, ctx co
 
 	dst := addr.EncodeAddr()
 
+	zetherRingConfiguration := &txs_builder.ZetherRingConfiguration{-1, -1}
+	if config.LIGHT_COMPUTATIONS {
+		zetherRingConfiguration = &txs_builder.ZetherRingConfiguration{int(math.Pow(2, float64(rand.Intn(2)+3))), rand.Intn(zetherRingConfiguration.RingSize / 5)}
+	}
+
 	data := &wizard.WizardTransactionData{nil, false}
 	fees := []*wizard.WizardZetherTransactionFee{{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0}}
 
-	if tx, err = testnet.txsBuilder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{nil}, []string{srcAddr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{dst}, []uint64{burn}, []*txs_builder.ZetherRingConfiguration{{-1, -1}}, []*wizard.WizardTransactionData{data}, fees, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = testnet.txsBuilder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{nil}, []string{srcAddr.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{dst}, []uint64{burn}, []*txs_builder.ZetherRingConfiguration{zetherRingConfiguration}, []*wizard.WizardTransactionData{data}, fees, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 

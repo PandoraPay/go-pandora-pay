@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
+	"pandora-pay/config"
 	"sync/atomic"
 	"time"
 )
@@ -75,6 +76,10 @@ func (worker *TxsValidatorWorker) run() {
 		atomic.StoreInt32(&foundWork.status, TX_VALIDATED_PROCCESSED)
 
 		close(foundWork.wait)
+
+		if config.LIGHT_COMPUTATIONS {
+			time.Sleep(50 * time.Millisecond)
+		}
 
 	}
 }

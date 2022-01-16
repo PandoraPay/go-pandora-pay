@@ -4,10 +4,12 @@
 package node_tcp
 
 import (
+	"crypto/tls"
 	"errors"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
@@ -77,9 +79,20 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 	bannedNodes.Ban(server.URL, "", "You can't connect to yourself", 10*365*24*time.Hour)
 	bannedNodes.Ban(&url.URL{Scheme: "ws", Host: "127.0.0.1:" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
 
-	server.tcpListener, err = net.Listen("tcp", ":"+port)
-	if err != nil {
-		return nil, errors.New("Error creating TcpServer" + err.Error())
+	if _, err = os.Stat("./server.crt"); os.IsNotExist(err) {
+		server.tcpListener, err = net.Listen("tcp", ":"+port)
+		if err != nil {
+			return nil, errors.New("Error creating TcpServer" + err.Error())
+		}
+	} else {
+		cer, err := tls.LoadX509KeyPair("server.crt", "server.key")
+		if err != nil {
+			return nil, err
+		}
+		config := &tls.Config{Certificates: []tls.Certificate{cer}}
+		if server.tcpListener, err = tls.Listen("tcp", ":port", config); err != nil {
+			return nil, err
+		}
 	}
 
 	gui.GUI.InfoUpdate("TCP", address+":"+port)
