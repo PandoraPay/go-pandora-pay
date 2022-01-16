@@ -5,6 +5,7 @@ if [ $# -eq 0 ]; then
   echo "pprof to enable debugging using profiling"
   echo "debug to enable debug info"
   echo "light-computations to make the testnet use less CPU"
+  echo "--tcp-server-address=domain:port"
   exit 1
 fi
 
@@ -30,11 +31,12 @@ for arg in $@; do
   if [ $arg = "light-computations" ]; then
     extraArgs+=" --light-computations=true"
   fi
+  if [[ $arg == *"--tcp-server-address="* ]]; then
+    extraArgs+=" $arg "
+  fi
 done
 
 str="genesis.data,"
-
-echo "test2 $race"
 
 go build main.go
 
