@@ -2,11 +2,12 @@ if [ $# -eq 0 ]; then
   echo "argument missing"
   echo "mode=normal for starting in normal mode"
   echo "mode=race to enable the race detection"
-  echo "pprof to enable debugging using profiling"
-  echo "debug to enable debug info"
-  echo "light-computations to make the testnet use less CPU"
+  echo "--pprof to enable debugging using profiling"
+  echo "--debug to enable debug info"
+  echo "--light-computations to make the testnet use less CPU"
   echo "--tcp-server-address=\"domain:port\""
   echo "--tcp-server-port=\"16000\""
+  echo "--tcp-server-auto-tls-certificate=\"true\""
   exit 1
 fi
 
@@ -20,16 +21,16 @@ race=false
 extraArgs=""
 
 for arg in $@; do
-  if [ $arg = "pprof" ]; then
+  if [ $arg = "--pprof" ]; then
     extraArgs+=" --pprof "
   fi
   if [ $arg = "mode=race" ]; then
     race=true
   fi
-  if [ $arg = "debug" ]; then
+  if [ $arg = "--debug" ]; then
     extraArgs+=" --debug "
   fi
-  if [ $arg = "light-computations" ]; then
+  if [ $arg = "--light-computations" ]; then
     extraArgs+=" --light-computations=true"
   fi
   if [[ $arg == *"--tcp-server-address="* ]]; then
@@ -38,6 +39,9 @@ for arg in $@; do
   if [[ $arg == *"--tcp-server-port="* ]]; then
     extraArgs+=" $arg "
   fi
+  if [[ $arg == *"--tcp-server-auto-tls-certificate="* ]]; then
+      extraArgs+=" $arg "
+    fi
 done
 
 str="genesis.data,"
