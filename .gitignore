@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+
 ./main
 
 # Test binary, built with `go test -c`
@@ -17,5 +18,9 @@
 
 # Remove local storage
 /_build
+
+# Remove certificates
+./certificate.crt
+./certificate.key
 
 /webassembly/dist/PandoraPay.wasm
