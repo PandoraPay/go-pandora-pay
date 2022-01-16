@@ -8,7 +8,7 @@ package arguments
 const commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--pprof] [--network=network] [--debug] [--staking] [--new-devnet] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tcp-server-auto-tls-certificate=bool] [--tor-onion=onion] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--seed-wallet-nodes-info] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-derive-delegated-stake=args] [--hcaptcha-site-key=args] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegates-allowed-enabled=args] [--delegates-maximum=args] [--delegator-fee=args] [--delegator-reward-collector-pub-key=args] [--auth-users=args] [--light-computations] [--exit]
+  pandorapay [--pprof] [--network=network] [--debug] [--staking] [--new-devnet] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tcp-server-auto-tls-certificate=bool] [--tor-onion=onion] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-derive-delegated-stake=args] [--hcaptcha-site-key=args] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegates-allowed-enabled=args] [--delegates-maximum=args] [--delegator-fee=args] [--delegator-reward-collector-pub-key=args] [--auth-users=args] [--light-computations] [--exit]
   pandorapay -h | --help
   pandorapay -v | --version
 
@@ -33,7 +33,7 @@ Options:
   --tcp-server-auto-tls-certificate                  If no certificate.crt is provided, this option will generate a valid TLS certificate via autocert package. You still need a valid domain provided and set --tcp-server-address. 
   --tor-onion=onion                                  Define your tor onion address to be used.
   --consensus=type                                   Consensus type. Accepted values: "full|wallet|none" [default: full].
-  --seed-wallet-nodes-info                           Storing and serving additional info to wallet nodes. [default: true]. To enable, it requires full node
+  --seed-wallet-nodes-info=bool                      Storing and serving additional info to wallet nodes. [default: true]. To enable, it requires full node
   --wallet-encrypt=args                              Encrypt wallet. Argument must be "password,difficulty".
   --wallet-decrypt=password                          Decrypt wallet.
   --wallet-remove-encryption                         Remove wallet encryption.

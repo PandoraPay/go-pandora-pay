@@ -147,7 +147,7 @@ func InitConfig() (err error) {
 	switch globals.Arguments["--consensus"] {
 	case "full":
 		CONSENSUS = CONSENSUS_TYPE_FULL
-		if globals.Arguments["--seed-wallet-nodes-info"] == true {
+		if globals.Arguments["--seed-wallet-nodes-info"] == "true" {
 			SEED_WALLET_NODES_INFO = true
 		}
 	case "wallet":

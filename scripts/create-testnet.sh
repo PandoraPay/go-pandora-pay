@@ -7,7 +7,7 @@ if [ $# -eq 0 ]; then
   echo "--light-computations to make the testnet use less CPU"
   echo "--tcp-server-address=\"domain:port\""
   echo "--tcp-server-port=\"16000\""
-  echo "--tcp-server-auto-tls-certificate=\"true\""
+  echo "--tcp-server-auto-tls-certificate"
   exit 1
 fi
 
@@ -21,17 +21,17 @@ race=false
 extraArgs=""
 
 for arg in $@; do
-  if [ $arg = "--pprof" ]; then
+  if [ $arg == "--pprof" ]; then
     extraArgs+=" --pprof "
   fi
-  if [ $arg = "mode=race" ]; then
+  if [ $arg == "mode=race" ]; then
     race=true
   fi
-  if [ $arg = "--debug" ]; then
+  if [ $arg == "--debug" ]; then
     extraArgs+=" --debug "
   fi
-  if [ $arg = "--light-computations" ]; then
-    extraArgs+=" --light-computations=true"
+  if [ $arg == "--light-computations" ]; then
+    extraArgs+=" --light-computations"
   fi
   if [[ $arg == *"--tcp-server-address="* ]]; then
     extraArgs+=" $arg "
@@ -39,9 +39,9 @@ for arg in $@; do
   if [[ $arg == *"--tcp-server-port="* ]]; then
     extraArgs+=" $arg "
   fi
-  if [[ $arg == *"--tcp-server-auto-tls-certificate="* ]]; then
+  if [[ $arg == "--tcp-server-auto-tls-certificate" ]]; then
       extraArgs+=" $arg "
-    fi
+  fi
 done
 
 str="genesis.data,"
@@ -64,7 +64,7 @@ done
 sleep 0.2
 
 # In case the genesis file is not found, let's create new wallets and generate the delegated stakes files
-if [ genesisExists == false ]; then
+if [ $genesisExists == false ]; then
 
   for ((i = 0; i < $nodes; ++i)); do
 

@@ -90,7 +90,7 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 		config = &tls.Config{Certificates: []tls.Certificate{cer}}
 	} else {
 
-		if globals.Arguments["--tcp-server-auto-tls-certificate"] == "true" {
+		if globals.Arguments["--tcp-server-auto-tls-certificate"] == true {
 
 			if globals.Arguments["--tcp-server-address"] == "" {
 				return nil, errors.New("To get an automatic Automatic you need to specify a domain --tcp-server-address=\"domain.com\"")
