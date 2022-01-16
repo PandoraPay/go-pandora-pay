@@ -94,17 +94,16 @@ echo "let's copy the genesis file to each node"
 for ((i = 1; i < $nodes; ++i)); do
   echo "copying genesis $i"
   cp ./_build/devnet_0/DEV/genesis.data ./_build/devnet_$i/DEV/genesis.data
-
-  if [ -e ./certificate.crt ]; then
-    cp ./certificate.crt ./_build/devnet_$i/DEV/certificate.crt
-    cp ./certificate.key ./_build/devnet_$i/DEV/certificate.key
-  fi
-
 done
 
 echo "let's delete again the blockchain to restart"
 for ((i = 0; i < $nodes; ++i)); do
   rm ./_build/devnet_$i/DEV/store/blockchain_store.bolt 2>/dev/null
+
+  if [ -e ./certificate.crt ]; then
+      cp ./certificate.crt ./_build/devnet_$i/DEV/certificate.crt
+      cp ./certificate.key ./_build/devnet_$i/DEV/certificate.key
+  fi
 done
 
 sleep 0.1
