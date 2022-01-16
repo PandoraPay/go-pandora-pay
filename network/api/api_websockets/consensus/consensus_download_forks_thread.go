@@ -243,10 +243,7 @@ func (thread *ConsensusProcessForksThread) downloadRemainingBlocks(fork *Fork) b
 
 func (thread *ConsensusProcessForksThread) execute() {
 
-	ticker := time.NewTicker(25 * time.Millisecond).C
-
 	for {
-		<-ticker
 
 		fork := thread.forks.getBestFork()
 		if fork != nil {
@@ -312,6 +309,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 		}
 
+		time.Sleep(25 * time.Millisecond)
 	}
 }
 

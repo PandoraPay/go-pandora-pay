@@ -466,7 +466,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		update.allTransactionsChanges = allTransactionsChanges
 	}
 
-	chain.updatesQueue.updates.Broadcast(update)
+	chain.updatesQueue.updates <- update
 
 	return
 }
