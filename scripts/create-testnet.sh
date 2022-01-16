@@ -5,7 +5,8 @@ if [ $# -eq 0 ]; then
   echo "pprof to enable debugging using profiling"
   echo "debug to enable debug info"
   echo "light-computations to make the testnet use less CPU"
-  echo "--tcp-server-address=domain:port"
+  echo "--tcp-server-address=\"domain:port\""
+  echo "--tcp-server-port=\"16000\""
   exit 1
 fi
 
@@ -34,6 +35,9 @@ for arg in $@; do
   if [[ $arg == *"--tcp-server-address="* ]]; then
     extraArgs+=" $arg "
   fi
+  if [[ $arg == *"--tcp-server-port="* ]]; then
+    extraArgs+=" $arg "
+  fi
 done
 
 str="genesis.data,"
@@ -44,9 +48,9 @@ go build main.go
 genesisExists=true
 for ((i = 0; i < $nodes; ++i)); do
   echo "deleting $i"
-  rm -r ./_build/devnet_$i/DEV/logs
-  rm ./_build/devnet_$i/DEV/store/blockchain_store.bolt
-  rm ./_build/devnet_$i/DEV/store/mempool_store.bolt
+  rm -r ./_build/devnet_$i/DEV/logs 2>/dev/null
+  rm ./_build/devnet_$i/DEV/store/blockchain_store.bolt 2>/dev/null
+  rm ./_build/devnet_$i/DEV/store/mempool_store.bolt 2>/dev/null
 
   if [ ! -e /_build/devnet_$i/DEV/genesis.data ]; then
     genesisExists=false
@@ -61,7 +65,7 @@ if [ genesisExists == false ]; then
   for ((i = 0; i < $nodes; ++i)); do
 
     echo "delete wallet $i"
-    rm ./_build/devnet_$i/DEV/store/wallet_store.bolt
+    rm ./_build/devnet_$i/DEV/store/wallet_store.bolt 2>/dev/null
 
     echo "running $i"
     xterm -e go run main.go --instance="devnet" --instance-id="$i" --network="devnet" --wallet-derive-delegated-stake="0,0,delegated.stake" --exit
@@ -100,7 +104,7 @@ done
 
 echo "let's delete again the blockchain to restart"
 for ((i = 0; i < $nodes; ++i)); do
-  rm ./_build/devnet_$i/DEV/store/blockchain_store.bolt
+  rm ./_build/devnet_$i/DEV/store/blockchain_store.bolt 2>/dev/null
 done
 
 sleep 0.1
@@ -110,8 +114,8 @@ for ((i = 0; i < $nodes; ++i)); do
   if $race; then
     qterminal GORACE="log_path=/$SCRIPTPATH/report" -e go run -race main.go --instance="devnet" --instance-id="$i" --tcp-server-port="5230" --new-devnet --network="devnet" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" $extraArgs &
   else
-    echo 'xterm -e go run main.go --instance="devnet" --instance-id="$i" --tcp-server-port="5230" --new-devnet --network="devnet" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" $extraArgs &'
-    xterm -e go run main.go --instance="devnet" --instance-id="$i" --tcp-server-port="5230" --new-devnet --network="devnet" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" $extraArgs &
+    echo 'xterm -e go run main.go --instance="devnet" --instance-id="$i" --new-devnet --network="devnet" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" $extraArgs &'
+    xterm -e go run main.go --instance="devnet" --instance-id="$i" --new-devnet --network="devnet" --set-genesis="file" --staking --hcaptcha-site-key="10000000-ffff-ffff-ffff-000000000001" --hcaptcha-secret="0x0000000000000000000000000000000000000000" --faucet-testnet-enabled="true" --delegates-allowed-enabled="true" $extraArgs &
   fi
 done
 

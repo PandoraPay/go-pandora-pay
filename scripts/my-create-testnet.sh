@@ -1,0 +1,1 @@
+./scripts/create-testnet.sh mode=normal pprof light-computations --tcp-server-port="5230"
