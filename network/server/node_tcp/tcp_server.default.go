@@ -97,11 +97,19 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 				return nil, errors.New("To get an automatic Automatic you need to specify a domain --tcp-server-address=\"domain.com\"")
 			}
 
+			cache := path.Join(config.ORIGINAL_PATH, "certManager")
+
+			if _, err = os.Stat(cache); os.IsNotExist(err) {
+				if err = os.Mkdir(cache, 0755); err != nil {
+					return nil, err
+				}
+			}
+
 			// create the autocert.Manager with domains and path to the cache
 			certManager := autocert.Manager{
 				Prompt:     autocert.AcceptTOS,
 				HostPolicy: autocert.HostWhitelist(address),
-				Cache:      autocert.DirCache(path.Join(config.ORIGINAL_PATH, "certManager")), //it is designed to avoid generating multiple certificates for the same instance
+				Cache:      autocert.DirCache(cache), //it is designed to avoid generating multiple certificates for the same instance
 			}
 
 			tlsConfig = &tls.Config{GetCertificate: certManager.GetCertificate}
@@ -109,6 +117,9 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 		}
 
 	}
+
+	gui.GUI.Log(path.Join(config.ORIGINAL_PATH, "certManager"))
+
 	if tlsConfig != nil {
 		if server.tcpListener, err = tls.Listen("tcp", ":"+port, tlsConfig); err != nil {
 			return nil, err
