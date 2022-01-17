@@ -290,8 +290,9 @@ func (chain *Blockchain) InitForging() {
 				break
 			}
 
-			if newSync.Sync {
+			if newSync.Started {
 				chain.createNextBlockForForging(chain.GetChainData(), true)
+				break
 			}
 
 		}

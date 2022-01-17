@@ -19,7 +19,7 @@ Follow the command. For Asset JSON use the following template. The JSON needs to
 {"name": "My Asset", "ticker": "AST", "description": "My simple Asset", "version": 0, "canUpgrade": true, "canMint": true, "canBurn": true, "canChangeUpdatePublicKey": true, "canChangeSupplyPublicKey": true, "canPause": false, "canFreeze": false, "decimalSeparator": 5, "maxSupply": 21000000000000, "supply": 0, "updatePublicKey": "", "supplyPublicKey": ""}
 ```
 
-In case `updatePublicKey` or `supplyPublicKey` is not supplied the daemon will create you new key pairs and will store them in a separate file.
+In case `updatePublicKey` or `supplyPublicKey` is not supplied, the daemon will create you new key pairs and will store them in a separate file.
 
 ## Increase Supply
 
@@ -27,7 +27,7 @@ In case `updatePublicKey` or `supplyPublicKey` is not supplied the daemon will c
 
 ## Transfer
 
-Assets can be transfered using "Private Transfer" or in the web wallet.
+Assets can be transferred using "Private Transfer" or in the web wallet.
 
 
 # DISCLAIMER:

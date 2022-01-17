@@ -79,7 +79,7 @@ The main design pattern that has been taken in consideration is to be **dead-sim
   - [x] Delegate Stake
   - [x] Transfer Tx
 - [ ] Mem Pool
-    - [ ] Saving/Loading
+    - [ ] Saving/Loading **
     - [X] Inserting Txs
     - [x] Sorting by fee per byte
     - [x] Network propagation
@@ -110,13 +110,13 @@ The main design pattern that has been taken in consideration is to be **dead-sim
 
 The main reasons why DPOS has been chosen over POS:
 1. Delegating your stake increases security. 
-2. Delegating your stake to someone to stake increases anonymity as you don't need to be online for staking. 
+2. Delegating your stake to someone to stake increases privacy as you don't need to be online for staking. 
 3. Completely offline can be done to increase the security. 
-4. DPOS avoids using the griding technique to solve the POS short range vulnerability
+4. Griding technique and short range attack vector attack is solved using DPOS
 5. Future proposals:
-    1. state trie proofs to prove to light clients the state.     
-    2. sharding. Creating multiple distinct shards and splitting the state trie into `n` shards
-    3. creating macro blocks by selecting specific nodes for a meta chain. This allows light consensus.
+    1. state trie proofs to prove to light clients the state.
+    2. creating macro blocks by selecting specific nodes for a meta chain. This allows light consensus.
+    3. scalability. There will be research done to understand the best way to scale up the technology.
 
 # DISCLAIMER:
 This source code is released for research purposes only, with the intent of researching and studying a decentralized p2p network protocol.

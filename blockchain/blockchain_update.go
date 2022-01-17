@@ -160,8 +160,11 @@ func (queue *BlockchainUpdatesQueue) processQueue() {
 				}
 			}
 
-			//create next block and the workers will be automatically reset
-			queue.chain.createNextBlockForForging(lastSuccessUpdate, updateForging)
+			chainSyncData := queue.chain.Sync.GetSyncData()
+			if chainSyncData.Started {
+				//create next block and the workers will be automatically reset
+				queue.chain.createNextBlockForForging(lastSuccessUpdate, updateForging)
+			}
 
 		}
 

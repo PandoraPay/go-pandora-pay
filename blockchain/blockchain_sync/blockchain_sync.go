@@ -13,6 +13,7 @@ type BlockchainSyncData struct {
 	SyncTime                  uint64 `json:"syncTime" msgpack:"syncTime" `
 	BlocksChangedLastInterval uint32 `json:"blocksChangedLastInterval" msgpack:"blocksChangedLastInterval"`
 	Sync                      bool   `json:"sync" msgpack:"sync" `
+	Started                   bool   `json:"started" msgpack:"started" `
 }
 
 type BlockchainSync struct {
@@ -35,11 +36,11 @@ func (self *BlockchainSync) AddBlocksChanged(blocks uint32, propagateNotificatio
 
 	newChainSyncData := &BlockchainSyncData{
 		BlocksChangedLastInterval: chainSyncData.BlocksChangedLastInterval + blocks,
+		Started:                   chainSyncData.Started,
 	}
 
 	if newChainSyncData.BlocksChangedLastInterval < 3 {
 		newChainSyncData.Sync = chainSyncData.Sync
-		newChainSyncData.SyncTime = chainSyncData.SyncTime
 	}
 
 	if propagateNotification {
@@ -57,11 +58,14 @@ func (self *BlockchainSync) resetBlocksChanged(propagateNotification bool) *Bloc
 
 	chainSyncData := self.syncData.Load()
 
-	newChainSyncData := &BlockchainSyncData{}
+	newChainSyncData := &BlockchainSyncData{
+		Started: chainSyncData.Started,
+	}
 
-	if chainSyncData.BlocksChangedLastInterval < 4 {
+	if chainSyncData.BlocksChangedLastInterval < 4 && (chainSyncData.Started || chainSyncData.BlocksChangedLastInterval > 0) {
 		newChainSyncData.SyncTime = uint64(time.Now().Unix())
 		newChainSyncData.Sync = true
+		newChainSyncData.Started = true
 	}
 
 	self.syncData.Store(newChainSyncData)
