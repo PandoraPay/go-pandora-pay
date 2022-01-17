@@ -21,6 +21,16 @@ Go **1.18** is required as go-pandora-pay uses generics.
 1. `go env GOROOT`
 2. download from https://golang.org/doc/manage-install
 
+### Installing TLS/SSL Certificates
+
+To install TLS certificates, you need to place the certificates in the application root folder with the following names
+`certificate.crt`
+`certificate.key`
+
+You also need to specify the **domain address** by using the argument `--tcp-server-address="domain.net"`
+
+To get authority certificates, you can use [cerbot](https://certbot.eff.org) (it's easy!) / or [Let's Encrypt](https://letsencrypt.org/) 
+
 # DISCLAIMER:
 This source code is released for research purposes only, with the intent of researching and studying a decentralized p2p network protocol.
 

@@ -2,7 +2,9 @@
 
 `scripts/compile-wasm.sh` compiles to WASM
 
-`scripts/create-testnet.sh` creates a new testnet
+`scripts/create-testnet.sh` creates a new testnet, but it will require some parameters
+
+`scripts/my-create-testnet.sh` creates a simple testnet with 4 instances for testing.
 
 
 # DISCLAIMER:
