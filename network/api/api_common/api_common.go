@@ -110,6 +110,16 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 			//it is safe to read
 			api.readLocalBlockchain(newChainDataUpdate)
 
+			mempoolProcessedThisBlock := api.mempoolProcessedThisBlock.Load()
+			mempoolProcessedThisBlock.Range(func(key string, value *mempoolNewTxReply) bool {
+				select {
+				case <-value.wait:
+					mempoolProcessedThisBlock.Delete(key)
+				default:
+				}
+				return true
+			})
+
 		}
 	})
 

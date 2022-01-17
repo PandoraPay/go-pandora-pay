@@ -58,7 +58,6 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 
 	defer func() {
 		processedAlreadyFound.reply = reply
-		mempoolProcessedThisBlock.Delete(hashStr)
 		close(processedAlreadyFound.wait)
 	}()
 

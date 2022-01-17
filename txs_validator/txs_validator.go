@@ -105,7 +105,6 @@ func (validator *TxsValidator) runRemoveExpiredTransactions() {
 			return true
 		})
 
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 
