@@ -111,9 +111,14 @@ func (validator *TxsValidator) runRemoveExpiredTransactions() {
 
 func NewTxsValidator() (*TxsValidator, error) {
 
+	threadsCount := config.CPU_THREADS
+	if config.LIGHT_COMPUTATIONS {
+		threadsCount = generics.Max(1, config.CPU_THREADS/2)
+	}
+
 	txsValidator := &TxsValidator{
 		&generics.Map[string, *txValidated]{},
-		make([]*TxsValidatorWorker, config.CPU_THREADS),
+		make([]*TxsValidatorWorker, threadsCount),
 		make(chan *txValidated, 1),
 	}
 

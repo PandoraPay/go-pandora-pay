@@ -89,32 +89,28 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 			return nil, err
 		}
 		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cer}}
-	} else {
+	} else if globals.Arguments["--tcp-server-auto-tls-certificate"] == true {
 
-		if globals.Arguments["--tcp-server-auto-tls-certificate"] == true {
-
-			if globals.Arguments["--tcp-server-address"] == "" {
-				return nil, errors.New("To get an automatic Automatic you need to specify a domain --tcp-server-address=\"domain.com\"")
-			}
-
-			cache := path.Join(config.ORIGINAL_PATH, "certManager")
-
-			if _, err = os.Stat(cache); os.IsNotExist(err) {
-				if err = os.Mkdir(cache, 0755); err != nil {
-					return nil, err
-				}
-			}
-
-			// create the autocert.Manager with domains and path to the cache
-			certManager := autocert.Manager{
-				Prompt:     autocert.AcceptTOS,
-				HostPolicy: autocert.HostWhitelist(address),
-				Cache:      autocert.DirCache(cache), //it is designed to avoid generating multiple certificates for the same instance
-			}
-
-			tlsConfig = certManager.TLSConfig()
-
+		if globals.Arguments["--tcp-server-address"] == "" {
+			return nil, errors.New("To get an automatic Automatic you need to specify a domain --tcp-server-address=\"domain.com\"")
 		}
+
+		cache := path.Join(config.ORIGINAL_PATH, "certManager")
+
+		if _, err = os.Stat(cache); os.IsNotExist(err) {
+			if err = os.Mkdir(cache, 0755); err != nil {
+				return nil, err
+			}
+		}
+
+		// create the autocert.Manager with domains and path to the cache
+		certManager := autocert.Manager{
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(address),
+			Cache:      autocert.DirCache(cache), //it is designed to avoid generating multiple certificates for the same instance
+		}
+
+		tlsConfig = certManager.TLSConfig()
 
 	}
 
@@ -125,8 +121,7 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 		gui.GUI.Info("TLS Certificate loaded for ", address, port)
 	} else {
 		// no ssl at all
-		server.tcpListener, err = net.Listen("tcp", ":"+port)
-		if err != nil {
+		if server.tcpListener, err = net.Listen("tcp", ":"+port); err != nil {
 			return nil, errors.New("Error creating TcpServer" + err.Error())
 		}
 	}

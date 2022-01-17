@@ -281,7 +281,7 @@ func (testnet *Testnet) run() {
 								time.Sleep(time.Millisecond * 500) //making sure the block got propagated
 								for i := 2; i < 5; i++ {
 									testnet.testnetCreateTransfers(i, ctx)
-									time.Sleep(time.Millisecond * 3000)
+									time.Sleep(time.Millisecond * 5000)
 								}
 
 							}
