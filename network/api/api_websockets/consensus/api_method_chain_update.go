@@ -55,7 +55,7 @@ func (consensus *Consensus) ChainUpdate_websockets(conn *connection.AdvancedConn
 
 	} else {
 		//let's notify him tha we have a better chain
-		conn.SendJSON([]byte("chain-update"), consensus.GetUpdateNotification(nil), nil)
+		conn.SendJSON([]byte("chain-update"), consensus.GetUpdateNotification(nil), nil, 0)
 	}
 
 	return nil, nil

@@ -24,7 +24,7 @@ func (self *MempoolSync) DownloadMempool(conn *connection.AdvancedConnection) (e
 	//times is used to avoid infinite loops
 	for {
 
-		out := conn.SendJSONAwaitAnswer([]byte("mempool"), &api_common.APIMempoolRequest{chainHash, page, 0}, nil)
+		out := conn.SendJSONAwaitAnswer([]byte("mempool"), &api_common.APIMempoolRequest{chainHash, page, 0}, nil, 0)
 		if out.Err != nil {
 			return
 		}

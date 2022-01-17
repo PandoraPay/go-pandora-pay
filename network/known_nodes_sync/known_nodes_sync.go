@@ -15,7 +15,7 @@ type KnownNodesSync struct {
 
 func (self *KnownNodesSync) DownloadNetworkNodes(conn *connection.AdvancedConnection) (err error) {
 
-	out := conn.SendJSONAwaitAnswer([]byte("network/nodes"), nil, nil)
+	out := conn.SendJSONAwaitAnswer([]byte("network/nodes"), nil, nil, 0)
 	if out.Err != nil {
 		return
 	}

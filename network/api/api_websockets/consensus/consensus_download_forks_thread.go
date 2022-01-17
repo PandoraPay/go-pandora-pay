@@ -30,7 +30,7 @@ type ConsensusProcessForksThread struct {
 }
 
 func (thread *ConsensusProcessForksThread) downloadBlockHash(conn *connection.AdvancedConnection, fork *Fork, height uint64) ([]byte, error) {
-	answer := conn.SendJSONAwaitAnswer([]byte("block-hash"), &api_common.APIBlockHashRequest{height}, nil)
+	answer := conn.SendJSONAwaitAnswer([]byte("block-hash"), &api_common.APIBlockHashRequest{height}, nil, 0)
 	if answer.Err != nil {
 		return nil, answer.Err
 	}
@@ -46,7 +46,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 
 	var err error
 
-	answer := conn.SendJSONAwaitAnswer([]byte("block"), &api_common.APIBlockRequest{height, nil, api_types.RETURN_SERIALIZED}, nil)
+	answer := conn.SendJSONAwaitAnswer([]byte("block"), &api_common.APIBlockRequest{height, nil, api_types.RETURN_SERIALIZED}, nil, 0)
 	if answer.Err != nil {
 		return nil, answer.Err
 	}
@@ -89,7 +89,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 				c++
 			}
 		}
-		answer = conn.SendJSONAwaitAnswer([]byte("block-miss-txs"), &api_common.APIBlockCompleteMissingTxsRequest{blkWithTx.Block.Bloom.Hash, missingTxs}, nil)
+		answer = conn.SendJSONAwaitAnswer([]byte("block-miss-txs"), &api_common.APIBlockCompleteMissingTxsRequest{blkWithTx.Block.Bloom.Hash, missingTxs}, nil, 0)
 		if answer.Err != nil {
 			return nil, answer.Err
 		}

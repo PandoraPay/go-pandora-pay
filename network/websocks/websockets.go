@@ -70,7 +70,7 @@ func (websockets *Websockets) GetRandomSocket() *connection.AdvancedConnection {
 	return nil
 }
 
-func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context) {
+func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) {
 
 	if exceptSocketUUID == advanced_connection_types.UUID_SKIP_ALL {
 		return
@@ -81,13 +81,7 @@ func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeA
 	for i, conn := range all {
 		if conn.UUID != exceptSocketUUID && consensusTypeAccepted[conn.Handshake.Consensus] {
 			go func(conn *connection.AdvancedConnection, i int) {
-				ctx2 := ctx
-				if ctx != nil {
-					var cancel context.CancelFunc
-					ctx2, cancel = context.WithTimeout(ctx, config.WEBSOCKETS_TIMEOUT)
-					defer cancel()
-				}
-				conn.Send(name, data, ctx2)
+				conn.Send(name, data, ctx, ctxDuration)
 			}(conn, i)
 		}
 	}
@@ -110,13 +104,7 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 	for i, conn := range all {
 		if conn.UUID != exceptSocketUUID && consensusTypeAccepted[conn.Handshake.Consensus] {
 			go func(conn *connection.AdvancedConnection, i int) {
-				ctx2 := ctx
-				if ctx != nil {
-					var cancel context.CancelFunc
-					ctx2, cancel = context.WithTimeout(ctx, generics.Max(config.WEBSOCKETS_TIMEOUT, ctxDuration))
-					defer cancel()
-				}
-				answer := conn.SendAwaitAnswer(name, data, ctx2)
+				answer := conn.SendAwaitAnswer(name, data, ctx, ctxDuration)
 				chans <- answer
 			}(conn, i)
 		} else {
@@ -135,9 +123,9 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 	return out
 }
 
-func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context) {
+func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) {
 	out, _ := msgpack.Marshal(data)
-	websockets.Broadcast(name, out, consensusTypeAccepted, exceptSocketUUID, ctx)
+	websockets.Broadcast(name, out, consensusTypeAccepted, exceptSocketUUID, ctx, ctxDuration)
 }
 
 func (websockets *Websockets) BroadcastJSONAwaitAnswer(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) []*advanced_connection_types.AdvancedConnectionReply {
@@ -215,7 +203,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 		}
 	}()
 
-	out := conn.SendAwaitAnswer([]byte("handshake"), nil, nil)
+	out := conn.SendAwaitAnswer([]byte("handshake"), nil, nil, 0)
 
 	if out.Err != nil {
 		return errors.New("Error sending handshake")

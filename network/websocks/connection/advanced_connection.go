@@ -59,7 +59,7 @@ func (c *AdvancedConnection) Close(reason string) error {
 	return c.Conn.Close(websocket.StatusNormalClosure, reason[:generics.Min(100, len(reason))])
 }
 
-func (c *AdvancedConnection) connSendMessage(message interface{}, ctx context.Context) error {
+func (c *AdvancedConnection) connSendMessage(message interface{}, ctxParent context.Context, ctxDuration time.Duration) error {
 
 	data, err := msgpack.Marshal(message)
 	if err != nil {
@@ -70,16 +70,13 @@ func (c *AdvancedConnection) connSendMessage(message interface{}, ctx context.Co
 		return errors.New("Closed")
 	}
 
-	if ctx == nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(context.Background(), c.GetTimeout())
-		defer cancel()
-	}
+	ctx, cancel := context.WithTimeout(helpers.GetContext(ctxParent), generics.Max(ctxDuration, config.WEBSOCKETS_TIMEOUT))
+	defer cancel()
 
 	return c.Conn.Write(ctx, websocket.MessageBinary, data)
 }
 
-func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byte, reply bool, ctx context.Context) error {
+func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byte, reply bool, ctxParent context.Context, ctxDuration time.Duration) error {
 	message := &advanced_connection_types.AdvancedConnectionMessage{
 		replyBackId,
 		reply,
@@ -87,16 +84,13 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 		name,
 		data,
 	}
-	return c.connSendMessage(message, ctx)
+	return c.connSendMessage(message, ctxParent, ctxDuration)
 }
 
-func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, ctx context.Context) *advanced_connection_types.AdvancedConnectionReply {
+func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, ctxParent context.Context, ctxDuration time.Duration) *advanced_connection_types.AdvancedConnectionReply {
 
-	if ctx == nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(context.Background(), c.GetTimeout())
-		defer cancel()
-	}
+	ctx, cancel := context.WithTimeout(helpers.GetContext(ctxParent), generics.Max(ctxDuration, config.WEBSOCKETS_TIMEOUT))
+	defer cancel()
 
 	replyBackId := atomic.AddUint32(&c.answerCounter, 1)
 
@@ -113,7 +107,7 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 		data,
 	}
 
-	if err := c.connSendMessage(message, ctx); err != nil {
+	if err := c.connSendMessage(message, ctx, ctxDuration); err != nil {
 		return &advanced_connection_types.AdvancedConnectionReply{nil, err}
 	}
 
@@ -142,23 +136,23 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 	}
 }
 
-func (c *AdvancedConnection) Send(name []byte, data []byte, ctx context.Context) error {
-	return c.sendNow(0, name, data, false, ctx)
+func (c *AdvancedConnection) Send(name []byte, data []byte, ctxParent context.Context, ctxDuration time.Duration) error {
+	return c.sendNow(0, name, data, false, ctxParent, ctxDuration)
 }
 
-func (c *AdvancedConnection) SendJSON(name []byte, data interface{}, ctx context.Context) error {
+func (c *AdvancedConnection) SendJSON(name []byte, data interface{}, ctxParent context.Context, ctxDuration time.Duration) error {
 	out, err := msgpack.Marshal(data)
 	if err != nil {
 		return err
 	}
-	return c.sendNow(0, name, out, false, ctx)
+	return c.sendNow(0, name, out, false, ctxParent, ctxDuration)
 }
 
-func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte, ctx context.Context) *advanced_connection_types.AdvancedConnectionReply {
-	return c.sendNowAwait(name, data, false, ctx)
+func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte, ctxParent context.Context, ctxDuration time.Duration) *advanced_connection_types.AdvancedConnectionReply {
+	return c.sendNowAwait(name, data, false, ctxParent, ctxDuration)
 }
 
-func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, ctx context.Context) *advanced_connection_types.AdvancedConnectionReply {
+func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, ctxParent context.Context, ctxDuration time.Duration) *advanced_connection_types.AdvancedConnectionReply {
 	if c == nil {
 		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Socket is null")}
 	}
@@ -166,7 +160,7 @@ func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, 
 	if err != nil {
 		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Error marshaling data")}
 	}
-	return c.sendNowAwait(name, out, false, ctx)
+	return c.sendNowAwait(name, out, false, ctxParent, ctxDuration)
 }
 
 func (c *AdvancedConnection) get(message *advanced_connection_types.AdvancedConnectionMessage) (final []byte, err error) {
@@ -215,9 +209,9 @@ func (c *AdvancedConnection) processRead(message *advanced_connection_types.Adva
 
 		if message.ReplyAwait {
 			if err != nil {
-				_ = c.sendNow(message.ReplyId, []byte{0}, []byte(err.Error()), true, nil)
+				_ = c.sendNow(message.ReplyId, []byte{0}, []byte(err.Error()), true, nil, config.WEBSOCKETS_TIMEOUT)
 			} else {
-				_ = c.sendNow(message.ReplyId, []byte{1}, out, true, nil)
+				_ = c.sendNow(message.ReplyId, []byte{1}, out, true, nil, config.WEBSOCKETS_TIMEOUT)
 			}
 		}
 

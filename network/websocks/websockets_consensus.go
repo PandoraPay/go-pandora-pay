@@ -12,18 +12,18 @@ import (
 	"time"
 )
 
-func (websockets *Websockets) broadcastChain(newChainData *blockchain.BlockchainData, ctx context.Context) {
-	websockets.BroadcastJSON([]byte("chain-update"), websockets.ApiWebsockets.Consensus.GetUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true}, advanced_connection_types.UUID_ALL, ctx)
+func (websockets *Websockets) broadcastChain(newChainData *blockchain.BlockchainData, ctxParent context.Context) {
+	websockets.BroadcastJSON([]byte("chain-update"), websockets.ApiWebsockets.Consensus.GetUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true}, advanced_connection_types.UUID_ALL, ctxParent, 0)
 }
 
-func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context) (errs []error) {
+func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID, ctxParent context.Context) (errs []error) {
 
 	errs = make([]error, len(txs))
 
 	for i, tx := range txs {
 
 		select {
-		case <-ctx.Done():
+		case <-ctxParent.Done():
 			return errs
 		default:
 		}
@@ -38,26 +38,26 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 			data := &api_common.APIMempoolNewTxRequest{Type: 0, Tx: tx.Bloom.Serialized}
 
 			if awaitPropagation {
-				out := websockets.BroadcastJSONAwaitAnswer([]byte("mempool/new-tx"), data, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctx, timeout)
+				out := websockets.BroadcastJSONAwaitAnswer([]byte("mempool/new-tx"), data, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctxParent, timeout)
 				for j := range out {
 					if out[j] != nil && out[j].Err != nil {
 						errs[i] = out[j].Err
 					}
 				}
 			} else {
-				websockets.BroadcastJSON([]byte("mempool/new-tx"), data, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctx)
+				websockets.BroadcastJSON([]byte("mempool/new-tx"), data, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctxParent, 0)
 			}
 
 		} else {
 			if awaitPropagation {
-				out := websockets.BroadcastAwaitAnswer([]byte("mempool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctx, timeout)
+				out := websockets.BroadcastAwaitAnswer([]byte("mempool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctxParent, timeout)
 				for j := range out {
 					if out[j] != nil && out[j].Err != nil {
 						errs[i] = out[j].Err
 					}
 				}
 			} else {
-				websockets.Broadcast([]byte("mempool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctx)
+				websockets.Broadcast([]byte("mempool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctxParent, 0)
 			}
 		}
 
