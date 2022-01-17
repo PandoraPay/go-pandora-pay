@@ -119,7 +119,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 
 		zetherRingConfiguration := &txs_builder.ZetherRingConfiguration{-1, -1}
 		if config.LIGHT_COMPUTATIONS {
-			zetherRingConfiguration = &txs_builder.ZetherRingConfiguration{int(math.Pow(2, float64(rand.Intn(2)+3))), rand.Intn(zetherRingConfiguration.RingSize / 5)}
+			zetherRingConfiguration.RingSize = int(math.Pow(2, float64(rand.Intn(2)+3)))
 		}
 		ringsConfigurations = append(ringsConfigurations, zetherRingConfiguration)
 
@@ -163,7 +163,7 @@ func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int, ctx co
 
 	zetherRingConfiguration := &txs_builder.ZetherRingConfiguration{-1, -1}
 	if config.LIGHT_COMPUTATIONS {
-		zetherRingConfiguration = &txs_builder.ZetherRingConfiguration{int(math.Pow(2, float64(rand.Intn(2)+3))), rand.Intn(zetherRingConfiguration.RingSize / 5)}
+		zetherRingConfiguration.RingSize = int(math.Pow(2, float64(rand.Intn(2)+3)))
 	}
 
 	data := &wizard.WizardTransactionData{nil, false}
