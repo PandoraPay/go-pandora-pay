@@ -142,10 +142,6 @@ func (network *Network) syncBlockchainNewConnections() {
 					network.Websockets.ApiWebsockets.Consensus.ChainUpdate_websockets(conn, data.Out)
 				}
 
-				if config.CONSENSUS == config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.CONSENSUS_TYPE_FULL {
-					network.MempoolSync.DownloadMempool(conn)
-				}
-
 			})
 
 		}
