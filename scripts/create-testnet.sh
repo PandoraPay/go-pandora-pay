@@ -22,13 +22,13 @@ extraArgs=""
 
 for arg in $@; do
   if [ $arg == "--pprof" ]; then
-    extraArgs+=" --pprof "
+    extraArgs+=" $arg "
   fi
   if [ $arg == "mode=race" ]; then
     race=true
   fi
   if [ $arg == "--debug" ]; then
-    extraArgs+=" --debug "
+    extraArgs+=" $arg "
   fi
   if [ $arg == "--light-computations" ]; then
     extraArgs+=" --light-computations"
@@ -39,7 +39,7 @@ for arg in $@; do
   if [[ $arg == *"--tcp-server-port="* ]]; then
     extraArgs+=" $arg "
   fi
-  if [[ $arg == "--tcp-server-auto-tls-certificate" ]]; then
+  if [ $arg == "--tcp-server-auto-tls-certificate" ]; then
       extraArgs+=" $arg "
   fi
 done
