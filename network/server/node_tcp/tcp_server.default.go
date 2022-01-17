@@ -24,6 +24,7 @@ import (
 	"pandora-pay/txs_builder"
 	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
+	"path"
 	"strconv"
 	"time"
 )
@@ -80,14 +81,14 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 	bannedNodes.Ban(server.URL, "", "You can't connect to yourself", 10*365*24*time.Hour)
 	bannedNodes.Ban(&url.URL{Scheme: "ws", Host: "127.0.0.1:" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
 
-	var config *tls.Config
+	var tlsConfig *tls.Config
 	if _, err = os.Stat("./certificate.crt"); os.IsExist(err) {
 
 		cer, err := tls.LoadX509KeyPair("certificate.crt", "certificate.key")
 		if err != nil {
 			return nil, err
 		}
-		config = &tls.Config{Certificates: []tls.Certificate{cer}}
+		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cer}}
 	} else {
 
 		if globals.Arguments["--tcp-server-auto-tls-certificate"] == true {
@@ -100,16 +101,16 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 			certManager := autocert.Manager{
 				Prompt:     autocert.AcceptTOS,
 				HostPolicy: autocert.HostWhitelist(address),
-				Cache:      autocert.DirCache("../certManager"), //it is designed to avoid generating multiple certificates for the same instance
+				Cache:      autocert.DirCache(path.Join(config.ORIGINAL_PATH, "certManager")), //it is designed to avoid generating multiple certificates for the same instance
 			}
 
-			config = &tls.Config{GetCertificate: certManager.GetCertificate}
+			tlsConfig = &tls.Config{GetCertificate: certManager.GetCertificate}
 
 		}
 
 	}
-	if config != nil {
-		if server.tcpListener, err = tls.Listen("tcp", ":"+port, config); err != nil {
+	if tlsConfig != nil {
+		if server.tcpListener, err = tls.Listen("tcp", ":"+port, tlsConfig); err != nil {
 			return nil, err
 		}
 	} else {

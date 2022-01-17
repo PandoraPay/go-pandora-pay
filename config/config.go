@@ -21,6 +21,7 @@ var (
 	VERSION            = "0.01"
 	BUILD_VERSION      = ""
 	LIGHT_COMPUTATIONS = false
+	ORIGINAL_PATH      = "" //the original path where the software is located
 )
 
 const (

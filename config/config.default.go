@@ -6,54 +6,56 @@ package config
 import (
 	"os"
 	"pandora-pay/config/globals"
-	"runtime"
 	"strconv"
 )
 
 func config_init() (err error) {
 
-	if runtime.GOARCH != "wasm" {
-		if _, err = os.Stat("./_build"); os.IsNotExist(err) {
-			if err = os.Mkdir("./_build", 0755); err != nil {
-				return
-			}
-		}
-		if err = os.Chdir("./_build"); err != nil {
+	if _, err = os.Stat("./_build"); os.IsNotExist(err) {
+		if err = os.Mkdir("./_build", 0755); err != nil {
 			return
 		}
+	}
 
-		var prefix string
-		if globals.Arguments["--instance"] != nil {
-			INSTANCE = globals.Arguments["--instance"].(string)
-			prefix = INSTANCE
-		} else {
-			prefix = "default"
-		}
+	if ORIGINAL_PATH, err = os.Getwd(); err != nil {
+		return
+	}
 
-		if globals.Arguments["--instance-id"] != nil {
-			a := globals.Arguments["--instance-id"].(string)
-			if INSTANCE_ID, err = strconv.Atoi(a); err != nil {
-				return
-			}
-		}
-		prefix += "_" + strconv.Itoa(INSTANCE_ID)
+	if err = os.Chdir("./_build"); err != nil {
+		return
+	}
 
-		if _, err = os.Stat("./" + prefix); os.IsNotExist(err) {
-			if err = os.Mkdir("./"+prefix, 0755); err != nil {
-				return
-			}
-		}
+	var prefix string
+	if globals.Arguments["--instance"] != nil {
+		INSTANCE = globals.Arguments["--instance"].(string)
+		prefix = INSTANCE
+	} else {
+		prefix = "default"
+	}
 
-		prefix += "/" + NETWORK_SELECTED_NAME
-		if _, err = os.Stat("./" + prefix); os.IsNotExist(err) {
-			if err = os.Mkdir("./"+prefix, 0755); err != nil {
-				return
-			}
-		}
-
-		if err = os.Chdir("./" + prefix); err != nil {
+	if globals.Arguments["--instance-id"] != nil {
+		a := globals.Arguments["--instance-id"].(string)
+		if INSTANCE_ID, err = strconv.Atoi(a); err != nil {
 			return
 		}
+	}
+	prefix += "_" + strconv.Itoa(INSTANCE_ID)
+
+	if _, err = os.Stat("./" + prefix); os.IsNotExist(err) {
+		if err = os.Mkdir("./"+prefix, 0755); err != nil {
+			return
+		}
+	}
+
+	prefix += "/" + NETWORK_SELECTED_NAME
+	if _, err = os.Stat("./" + prefix); os.IsNotExist(err) {
+		if err = os.Mkdir("./"+prefix, 0755); err != nil {
+			return
+		}
+	}
+
+	if err = os.Chdir("./" + prefix); err != nil {
+		return
 	}
 
 	return
