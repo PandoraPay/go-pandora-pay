@@ -82,7 +82,7 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 	bannedNodes.Ban(&url.URL{Scheme: "ws", Host: "127.0.0.1:" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
 
 	var tlsConfig *tls.Config
-	if _, err = os.Stat(path.Join(config.ORIGINAL_PATH, "certificate.crt")); os.IsExist(err) {
+	if _, err = os.Stat(path.Join(config.ORIGINAL_PATH, "certificate.crt")); err == nil {
 
 		cer, err := tls.LoadX509KeyPair(path.Join(config.ORIGINAL_PATH, "certificate.crt"), path.Join(config.ORIGINAL_PATH, "certificate.key"))
 		if err != nil {
@@ -118,12 +118,11 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 
 	}
 
-	gui.GUI.Log(path.Join(config.ORIGINAL_PATH, "certManager"))
-
 	if tlsConfig != nil {
 		if server.tcpListener, err = tls.Listen("tcp", ":"+port, tlsConfig); err != nil {
 			return nil, err
 		}
+		gui.GUI.Info("TLS Certificate loaded for ", address, port)
 	} else {
 		// no ssl at all
 		server.tcpListener, err = net.Listen("tcp", ":"+port)
@@ -131,8 +130,6 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 			return nil, errors.New("Error creating TcpServer" + err.Error())
 		}
 	}
-
-	gui.GUI.Info("TLS Certificate loaded for ", address, port)
 
 	gui.GUI.InfoUpdate("TCP", address+":"+port)
 
