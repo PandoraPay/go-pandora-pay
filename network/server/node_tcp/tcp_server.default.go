@@ -112,7 +112,7 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 				Cache:      autocert.DirCache(cache), //it is designed to avoid generating multiple certificates for the same instance
 			}
 
-			tlsConfig = &tls.Config{GetCertificate: certManager.GetCertificate}
+			tlsConfig = certManager.TLSConfig()
 
 		}
 
