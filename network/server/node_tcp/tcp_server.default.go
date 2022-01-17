@@ -82,9 +82,9 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 	bannedNodes.Ban(&url.URL{Scheme: "ws", Host: "127.0.0.1:" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
 
 	var tlsConfig *tls.Config
-	if _, err = os.Stat("./certificate.crt"); os.IsExist(err) {
+	if _, err = os.Stat(path.Join(config.ORIGINAL_PATH, "certificate.crt")); os.IsExist(err) {
 
-		cer, err := tls.LoadX509KeyPair("certificate.crt", "certificate.key")
+		cer, err := tls.LoadX509KeyPair(path.Join(config.ORIGINAL_PATH, "certificate.crt"), path.Join(config.ORIGINAL_PATH, "certificate.key"))
 		if err != nil {
 			return nil, err
 		}
