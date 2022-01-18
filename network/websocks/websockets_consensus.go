@@ -28,7 +28,7 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 		default:
 		}
 
-		timeout := time.Duration(1) * config.WEBSOCKETS_TIMEOUT
+		var timeout time.Duration //default 0
 		if awaitPropagation {
 			timeout = time.Duration(3) * config.WEBSOCKETS_TIMEOUT
 		}
@@ -39,9 +39,9 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 
 			if awaitPropagation {
 				out := websockets.BroadcastJSONAwaitAnswer([]byte("mempool/new-tx"), data, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctxParent, timeout)
-				for j := range out {
-					if out[j] != nil && out[j].Err != nil {
-						errs[i] = out[j].Err
+				for _, o := range out {
+					if o != nil && o.Err != nil {
+						errs[i] = o.Err
 					}
 				}
 			} else {
@@ -51,9 +51,9 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 		} else {
 			if awaitPropagation {
 				out := websockets.BroadcastAwaitAnswer([]byte("mempool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctxParent, timeout)
-				for j := range out {
-					if out[j] != nil && out[j].Err != nil {
-						errs[i] = out[j].Err
+				for _, o := range out {
+					if o != nil && o.Err != nil {
+						errs[i] = o.Err
 					}
 				}
 			} else {

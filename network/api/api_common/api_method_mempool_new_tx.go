@@ -18,11 +18,10 @@ type APIMempoolNewTxRequest struct {
 }
 
 type APIMempoolNewTxReply struct {
-	Result bool  `json:"result" msgpack:"result"`
-	Error  error `json:"error" msgpack:"error"`
+	Result bool `json:"result" msgpack:"result"`
 }
 
-func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempoolNewTxReply, exceptSocketUUID advanced_connection_types.UUID) error {
+func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempoolNewTxReply, exceptSocketUUID advanced_connection_types.UUID) (err error) {
 
 	var hash []byte
 
@@ -48,31 +47,30 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 	}
 
 	mempoolProcessedThisBlock := api.mempoolProcessedThisBlock.Load()
-	processedAlreadyFound, loaded := mempoolProcessedThisBlock.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), nil})
+	processedAlreadyFound, loaded := mempoolProcessedThisBlock.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), nil, nil})
 
 	if loaded {
 		<-processedAlreadyFound.wait
 		*reply = *processedAlreadyFound.reply
-		return nil
+		return processedAlreadyFound.err
 	}
 
 	defer func() {
+		processedAlreadyFound.err = err
 		processedAlreadyFound.reply = reply
 		close(processedAlreadyFound.wait)
 	}()
 
-	if err := api.txsValidator.ValidateTx(tx); err != nil {
-		(*reply).Error = err
-		return nil
+	if err = api.txsValidator.ValidateTx(tx); err != nil {
+		return
 	}
 
-	if err := api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, false, false, exceptSocketUUID, context.Background()); err != nil {
-		(*reply).Error = err
-		return nil
+	if err = api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, false, false, exceptSocketUUID, context.Background()); err != nil {
+		return
 	}
 
 	(*reply).Result = true
-	return nil
+	return
 }
 
 func (api *APICommon) MempoolNewTx(r *http.Request, args *APIMempoolNewTxRequest, reply *APIMempoolNewTxReply) error {

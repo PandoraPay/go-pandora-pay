@@ -21,6 +21,7 @@ import (
 type mempoolNewTxReply struct {
 	wait  chan struct{}
 	reply *APIMempoolNewTxReply
+	err   error
 }
 
 type APICommon struct {
