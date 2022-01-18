@@ -85,12 +85,12 @@ func saveAssetsInfo(asts *assets.Assets) (err error) {
 
 			ast := v.Element.(*asset.Asset)
 			astInfo := &info.AssetInfo{
-				Version:          ast.Version,
-				Name:             ast.Name,
-				Ticker:           ast.Ticker,
-				DecimalSeparator: ast.DecimalSeparator,
-				Description:      ast.Description,
-				Hash:             helpers.HexBytes(k),
+				ast.Version,
+				ast.Name,
+				ast.Ticker,
+				ast.DecimalSeparator,
+				ast.Description,
+				helpers.HexBytes(k),
 			}
 			var data []byte
 			if data, err = msgpack.Marshal(astInfo); err != nil {

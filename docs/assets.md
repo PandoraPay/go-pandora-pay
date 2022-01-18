@@ -11,7 +11,8 @@ The following options can be done with assets:
 
 ## Create Asset
 
-To create an asset you need to use the CLI command: "Private Asset Create". The creation is also made privately by using Zether private transactions.
+To create an asset you need to use the CLI command: "Private Asset Create". 
+The creation is also made privately by using Zether private transactions.
 
 Follow the command. For Asset JSON use the following template. The JSON needs to be oneliner.
 

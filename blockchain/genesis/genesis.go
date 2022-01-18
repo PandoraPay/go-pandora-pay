@@ -1,6 +1,7 @@
 package genesis
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"io/ioutil"
@@ -113,7 +114,7 @@ func createNewGenesis(v []string) (err error) {
 			}
 
 			delegatedStakeOutput := &wallet.DelegatedStakeOutput{}
-			if err = msgpack.Unmarshal(data, delegatedStakeOutput); err != nil {
+			if err = json.Unmarshal(data, delegatedStakeOutput); err != nil {
 				return
 			}
 
