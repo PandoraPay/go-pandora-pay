@@ -143,10 +143,10 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 	return
 }
 
-func (payload *TransactionZetherPayload) ComputeAllKeys(out map[string]bool) {
+func (payload *TransactionZetherPayload) ComputeAllKeys(out map[string]bool, publicKeyList [][]byte) {
 
-	for _, publicKey := range payload.Statement.Publickeylist {
-		out[string(publicKey.EncodeCompressed())] = true
+	for _, publicKey := range publicKeyList {
+		out[string(publicKey)] = true
 	}
 
 	if payload.Extra != nil {

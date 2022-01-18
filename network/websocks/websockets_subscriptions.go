@@ -243,7 +243,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			}
 
 			for k, v := range registrations.HashMap.Committed {
-				if list := this.assetsSubscriptions[k]; list != nil {
+				if list := this.accountsSubscriptions[k]; list != nil {
 
 					this.send(api_types.SUBSCRIPTION_REGISTRATION, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationRegistrationExtra{
 						this.getElementIndex(v.Element),

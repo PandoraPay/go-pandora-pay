@@ -63,8 +63,8 @@ func (tx *TransactionZether) ComputeFee() (uint64, error) {
 
 func (tx *TransactionZether) ComputeAllKeys(out map[string]bool) {
 
-	for _, payload := range tx.Payloads {
-		payload.ComputeAllKeys(out)
+	for payloadIndex, payload := range tx.Payloads {
+		payload.ComputeAllKeys(out, tx.Bloom.PublicKeyLists[payloadIndex])
 	}
 
 	return
