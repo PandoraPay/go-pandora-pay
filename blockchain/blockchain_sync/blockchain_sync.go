@@ -10,10 +10,11 @@ import (
 )
 
 type BlockchainSyncData struct {
-	SyncTime                  uint64 `json:"syncTime" msgpack:"syncTime" `
-	BlocksChangedLastInterval uint32 `json:"blocksChangedLastInterval" msgpack:"blocksChangedLastInterval"`
-	Sync                      bool   `json:"sync" msgpack:"sync" `
-	Started                   bool   `json:"started" msgpack:"started" `
+	SyncTime                      uint64 `json:"syncTime" msgpack:"syncTime" `
+	BlocksChangedLastInterval     uint32 `json:"blocksChangedLastInterval" msgpack:"blocksChangedLastInterval"`
+	BlocksChangedPreviousInterval uint32 `json:"blocksChangedPreviousInterval" msgpack:"blocksChangedPreviousInterval"`
+	Sync                          bool   `json:"sync" msgpack:"sync" `
+	Started                       bool   `json:"started" msgpack:"started" `
 }
 
 type BlockchainSync struct {
@@ -35,12 +36,14 @@ func (self *BlockchainSync) AddBlocksChanged(blocks uint32, propagateNotificatio
 	chainSyncData := self.syncData.Load()
 
 	newChainSyncData := &BlockchainSyncData{
-		BlocksChangedLastInterval: chainSyncData.BlocksChangedLastInterval + blocks,
-		Started:                   chainSyncData.Started,
+		BlocksChangedPreviousInterval: chainSyncData.BlocksChangedPreviousInterval,
+		BlocksChangedLastInterval:     chainSyncData.BlocksChangedLastInterval + blocks,
+		Started:                       chainSyncData.Started,
 	}
 
 	if newChainSyncData.BlocksChangedLastInterval < 3 {
 		newChainSyncData.Sync = chainSyncData.Sync
+		newChainSyncData.SyncTime = chainSyncData.SyncTime
 	}
 
 	if propagateNotification {
@@ -59,10 +62,11 @@ func (self *BlockchainSync) resetBlocksChanged(propagateNotification bool) *Bloc
 	chainSyncData := self.syncData.Load()
 
 	newChainSyncData := &BlockchainSyncData{
-		Started: chainSyncData.Started,
+		BlocksChangedPreviousInterval: chainSyncData.BlocksChangedLastInterval,
+		Started:                       chainSyncData.Started,
 	}
 
-	if chainSyncData.BlocksChangedLastInterval < 4 && (chainSyncData.Started || chainSyncData.BlocksChangedLastInterval > 0) {
+	if chainSyncData.BlocksChangedLastInterval < 4 && (chainSyncData.Started || chainSyncData.BlocksChangedPreviousInterval < 4) {
 		newChainSyncData.SyncTime = uint64(time.Now().Unix())
 		newChainSyncData.Sync = true
 		newChainSyncData.Started = true
@@ -112,7 +116,9 @@ func CreateBlockchainSync() (out *BlockchainSync) {
 		UpdateSyncMulticast: multicast.NewMulticastChannel[*BlockchainSyncData](),
 		updateCn:            make(chan *BlockchainSyncData),
 	}
-	out.syncData.Store(&BlockchainSyncData{})
+	out.syncData.Store(&BlockchainSyncData{
+		BlocksChangedPreviousInterval: 1000,
+	})
 
 	out.start()
 
