@@ -2,6 +2,7 @@ package blockchain_sync
 
 import (
 	"fmt"
+	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
@@ -109,18 +110,30 @@ func (self *BlockchainSync) start() {
 	})
 }
 
-func CreateBlockchainSync() (out *BlockchainSync) {
+func CreateBlockchainSync() (sync *BlockchainSync) {
 
-	out = &BlockchainSync{
+	sync = &BlockchainSync{
 		syncData:            &generics.Value[*BlockchainSyncData]{},
 		UpdateSyncMulticast: multicast.NewMulticastChannel[*BlockchainSyncData](),
 		updateCn:            make(chan *BlockchainSyncData),
 	}
-	out.syncData.Store(&BlockchainSyncData{
-		BlocksChangedPreviousInterval: 1000,
-	})
 
-	out.start()
+	if globals.Arguments["--skip-init-sync"] == true {
+		sync.syncData.Store(&BlockchainSyncData{
+			BlocksChangedPreviousInterval: 0,
+			Started:                       true,
+		})
+		go func() {
+			time.Sleep(1000 * time.Millisecond)
+			sync.resetBlocksChanged(true)
+		}()
+	} else {
+		sync.syncData.Store(&BlockchainSyncData{
+			BlocksChangedPreviousInterval: 1000,
+		})
+	}
+
+	sync.start()
 
 	return
 }
