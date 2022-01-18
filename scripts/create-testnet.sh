@@ -2,6 +2,7 @@ if [ $# -eq 0 ]; then
   echo "argument missing"
   echo "mode=normal for starting in normal mode"
   echo "mode=race to enable the race detection"
+  echo "continue to just open the instances"
   echo "--pprof to enable debugging using profiling"
   echo "--debug to enable debug info"
   echo "--light-computations to make the testnet use less CPU"
@@ -18,6 +19,7 @@ SCRIPTPATH="$(
 
 nodes=4
 race=false
+continue=false
 extraArgs=""
 
 for arg in $@; do
@@ -42,68 +44,74 @@ for arg in $@; do
   if [ $arg == "--tcp-server-auto-tls-certificate" ]; then
       extraArgs+=" $arg "
   fi
+  if [ $arg == "continue" ]; then
+    continue=true
+  fi
 done
 
 str="genesis.data,"
 
 go build main.go
 
-# Let's delete old blockchain and verify if all nodes still have a genesis file
-genesisExists=true
-for ((i = 0; i < $nodes; ++i)); do
-  echo "deleting $i"
-  rm -r ./_build/devnet_$i/DEV/logs 2>/dev/null
-  rm ./_build/devnet_$i/DEV/store/blockchain_store.bolt 2>/dev/null
-  rm ./_build/devnet_$i/DEV/store/mempool_store.bolt 2>/dev/null
+if [ ! $continue ]; then
 
-  if [ ! -e /_build/devnet_$i/DEV/genesis.data ]; then
-    genesisExists=false
-  fi
-done
-
-sleep 0.2
-
-# In case the genesis file is not found, let's create new wallets and generate the delegated stakes files
-if [ $genesisExists == false ]; then
-
+  # Let's delete old blockchain and verify if all nodes still have a genesis file
+  genesisExists=true
   for ((i = 0; i < $nodes; ++i)); do
+    echo "deleting $i"
+    rm -r ./_build/devnet_$i/DEV/logs 2>/dev/null
+    rm ./_build/devnet_$i/DEV/store/blockchain_store.bolt 2>/dev/null
+    rm ./_build/devnet_$i/DEV/store/mempool_store.bolt 2>/dev/null
 
-    echo "delete wallet $i"
-    rm ./_build/devnet_$i/DEV/store/wallet_store.bolt 2>/dev/null
-
-    echo "running $i"
-    xterm -e go run main.go --instance="devnet" --instance-id="$i" --network="devnet" --wallet-derive-delegated-stake="0,0,delegated.stake" --exit
-    mv ./_build/devnet_$i/DEV/delegated.stake ./_build/devnet_0/DEV/$i.stake
-    echo "executed"
-
+    if [ ! -e /_build/devnet_$i/DEV/genesis.data ]; then
+      genesisExists=false
+    fi
   done
 
-fi
+  sleep 0.2
 
-for ((i = 0; i < $nodes; ++i)); do
-  str+="$i.stake"
+  # In case the genesis file is not found, let's create new wallets and generate the delegated stakes files
+  if [ $genesisExists == false ]; then
 
-  if [ $i != $((nodes - 1)) ]; then
-    str+=","
+    for ((i = 0; i < $nodes; ++i)); do
+
+      echo "delete wallet $i"
+      rm ./_build/devnet_$i/DEV/store/wallet_store.bolt 2>/dev/null
+
+      echo "running $i"
+      xterm -e go run main.go --instance="devnet" --instance-id="$i" --network="devnet" --wallet-derive-delegated-stake="0,0,delegated.stake" --exit
+      mv ./_build/devnet_$i/DEV/delegated.stake ./_build/devnet_0/DEV/$i.stake
+      echo "executed"
+
+    done
+
   fi
-done
 
-# A new genesis file will be created to restart the timestamp
-echo "creating genesis $str"
-xterm -e go run main.go --instance="devnet" --instance-id="0" --network="devnet" --create-new-genesis="$str" --exit
+  for ((i = 0; i < $nodes; ++i)); do
+    str+="$i.stake"
 
-sleep 0.1
+    if [ $i != $((nodes - 1)) ]; then
+      str+=","
+    fi
+  done
 
-echo "let's copy the genesis file to each node"
-for ((i = 1; i < $nodes; ++i)); do
-  echo "copying genesis $i"
-  cp ./_build/devnet_0/DEV/genesis.data ./_build/devnet_$i/DEV/genesis.data
-done
+  # A new genesis file will be created to restart the timestamp
+  echo "creating genesis $str"
+  xterm -e go run main.go --instance="devnet" --instance-id="0" --network="devnet" --create-new-genesis="$str" --exit
 
-echo "let's delete again the blockchain to restart"
-for ((i = 0; i < $nodes; ++i)); do
-  rm ./_build/devnet_$i/DEV/store/blockchain_store.bolt 2>/dev/null
-done
+  sleep 0.1
+
+  echo "let's copy the genesis file to each node"
+  for ((i = 1; i < $nodes; ++i)); do
+    echo "copying genesis $i"
+    cp ./_build/devnet_0/DEV/genesis.data ./_build/devnet_$i/DEV/genesis.data
+  done
+
+  echo "let's delete again the blockchain to restart"
+  for ((i = 0; i < $nodes; ++i)); do
+    rm ./_build/devnet_$i/DEV/store/blockchain_store.bolt 2>/dev/null
+  done
+fi
 
 sleep 0.1
 
