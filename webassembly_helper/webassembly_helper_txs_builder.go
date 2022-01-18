@@ -17,6 +17,7 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/txs_builder/wizard"
 	"pandora-pay/webassembly/webassembly_utils"
+	"strconv"
 	"syscall/js"
 )
 
@@ -28,7 +29,7 @@ type zetherTxDataFrom struct {
 type zetherTxDataBase struct {
 	From              []*zetherTxDataFrom                            `json:"from"`
 	Assets            []helpers.HexBytes                             `json:"assets"`
-	Amounts           []uint64                                       `json:"amounts"`
+	Amounts           []string                                       `json:"amounts"`
 	Dsts              []string                                       `json:"dsts"`
 	Burns             []uint64                                       `json:"burns"`
 	RingMembers       [][]string                                     `json:"ringMembers"`
@@ -60,12 +61,17 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 			return
 		}
 
+		var amount uint64
+		if amount, err = strconv.ParseUint(txData.Amounts[t], 10, 64); err != nil {
+			return
+		}
+
 		transfers[t] = &wizard.WizardZetherTransfer{
 			Asset:              ast,
 			From:               txData.From[t].PrivateKey,
 			FromBalanceDecoded: txData.From[t].BalanceDecoded,
 			Destination:        txData.Dsts[t],
-			Amount:             txData.Amounts[t],
+			Amount:             amount,
 			Burn:               txData.Burns[t],
 			Data:               txData.Data[t],
 		}
@@ -103,7 +109,10 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 		}
 
 		var x []byte
-		x, err = json.Marshal(payloadExtra)
+		if x, err = json.Marshal(payloadExtra); err != nil {
+			return
+		}
+
 		fmt.Println(string(x))
 		transfers[t].PayloadExtra = payloadExtra
 
