@@ -45,9 +45,9 @@ if [ "$2" == "wallet-build" ]; then
 
   echo "Deleting..."
   if [ "$3" == "brotli" ]; then
-    rm ${buildOutput}.br
+    rm ${buildOutput}.br 2>/dev/null
   else
-    rm ${buildOutput}.gz
+    rm ${buildOutput}.gz 2>/dev/null
   fi
 
   finalOutput="../PandoraPay-wallet/dist/build/wasm"
