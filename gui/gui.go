@@ -1,9 +1,9 @@
 package gui
 
 import (
+	"fmt"
 	"pandora-pay/config"
 	"pandora-pay/gui/gui_interface"
-	"strconv"
 )
 
 var GUI gui_interface.GUIInterface
@@ -16,7 +16,7 @@ func InitGUI() (err error) {
 	}
 
 	GUI.Info("GO " + config.NAME)
-	GUI.Info("OS: " + config.OS + "ARCH: " + config.ARCHITECTURE + "CPU: " + strconv.Itoa(config.CPU_THREADS))
+	GUI.Info(fmt.Sprintf("OS: %s ARCH: %s %d", config.OS, config.ARCHITECTURE, config.CPU_THREADS))
 	GUI.Info("VERSION " + config.VERSION)
 	GUI.Info("BUILD_VERSION " + config.BUILD_VERSION)
 
