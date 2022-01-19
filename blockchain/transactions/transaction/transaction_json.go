@@ -112,7 +112,7 @@ type json_Only_TransactionPayload struct {
 	PayloadScript   transaction_zether_payload.PayloadScriptType `json:"payloadScript"  msgpack:"payloadScript"`
 	Asset           helpers.HexBytes                             `json:"asset"  msgpack:"asset"`
 	BurnValue       uint64                                       `json:"burnValue"  msgpack:"burnValue"`
-	DataVersion     transaction_data.TransactionDataVersion      `json:"dataType"  msgpack:"dataType"`
+	DataVersion     transaction_data.TransactionDataVersion      `json:"dataVersion"  msgpack:"dataVersion"`
 	Data            helpers.HexBytes                             `json:"data"  msgpack:"data"`
 	Registrations   []*json_TransactionDataRegistration          `json:"registrations"  msgpack:"registrations"`
 	Statement       *json_Only_TransactionZetherStatement        `json:"statement"  msgpack:"statement"`

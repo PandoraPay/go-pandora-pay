@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"pandora-pay/app"
-	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/txs_builder/wizard"
 	"pandora-pay/webassembly/webassembly_utils"
@@ -23,16 +22,14 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 		}
 
 		txData := &struct {
-			TxScript                    transaction_simple.ScriptType                           `json:"txScript"`
-			From                        string                                                  `json:"from"`
-			Nonce                       uint64                                                  `json:"nonce"`
-			DelegatedStakingClaimAmount uint64                                                  `json:"delegatedStakingClaimAmount"`
-			DelegatedStakingUpdate      *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"`
-			Extra                       wizard.WizardTxSimpleExtra                              `json:"extra"`
-			Data                        *wizard.WizardTransactionData                           `json:"data"`
-			Fee                         *wizard.WizardTransactionFee                            `json:"fee"`
-			FeeVersion                  bool                                                    `json:"feeVersion"`
-			Height                      uint64                                                  `json:"height"`
+			TxScript   transaction_simple.ScriptType `json:"txScript"`
+			From       string                        `json:"from"`
+			Nonce      uint64                        `json:"nonce"`
+			Extra      wizard.WizardTxSimpleExtra    `json:"extra"`
+			Data       *wizard.WizardTransactionData `json:"data"`
+			Fee        *wizard.WizardTransactionFee  `json:"fee"`
+			FeeVersion bool                          `json:"feeVersion"`
+			Height     uint64                        `json:"height"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {

@@ -105,8 +105,12 @@ func getRequiredStake(this js.Value, args []js.Value) interface{} {
 
 func getRewardAt(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-		value := config_reward.GetRewardAt(uint64(args[0].Int()))
-		return value, nil
+		blockHeight, err := strconv.ParseUint(args[0].String(), 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		return strconv.FormatUint(config_reward.GetRewardAt(blockHeight), 10), nil
 	})
 }
 

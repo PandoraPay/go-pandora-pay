@@ -7,6 +7,7 @@ import (
 	"pandora-pay/cryptography/crypto/balance-decoder"
 	"pandora-pay/helpers"
 	"pandora-pay/webassembly/webassembly_utils"
+	"strconv"
 	"syscall/js"
 	"time"
 )
@@ -77,7 +78,7 @@ func decodeBalance(this js.Value, args []js.Value) interface{} {
 
 				return []interface{}{
 					done,
-					value,
+					strconv.FormatUint(value, 10),
 					out,
 				}
 			}),
