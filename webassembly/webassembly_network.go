@@ -318,12 +318,12 @@ func getNetworkAsset(this js.Value, args []js.Value) interface{} {
 func getNetworkMempool(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		chainHash, err := hex.DecodeString(args[0].String())
-		if err != nil {
+		request := &api_common.APIMempoolRequest{}
+		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
 
-		return webassembly_utils.ConvertMsgPackToJSONBytes(app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("mempool"), &api_common.APIMempoolRequest{chainHash, args[1].Int(), args[2].Int()}, nil, 0), &api_common.APIMempoolReply{})
+		return webassembly_utils.ConvertMsgPackToJSONBytes(app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("mempool"), request, nil, 0), &api_common.APIMempoolReply{})
 	})
 }
 
