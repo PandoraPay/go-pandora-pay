@@ -23,8 +23,8 @@ func (validator *TxsValidator) MarkAsValidatedTx(tx *transaction.Transaction) er
 		}
 		foundWork.bloomExtra = foundWork.tx.TransactionBaseInterface.GetBloomExtra()
 		foundWork.tx = nil
-		atomic.StoreInt32(&foundWork.status, TX_VALIDATED_PROCCESSED)
 		foundWork.time = time.Now().Add(EXPIRE_TIME_MS).Unix()
+		atomic.StoreInt32(&foundWork.status, TX_VALIDATED_PROCCESSED)
 		close(foundWork.wait)
 	}
 
