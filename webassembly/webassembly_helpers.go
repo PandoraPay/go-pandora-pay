@@ -52,7 +52,7 @@ func randomUint64N(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		return helpers.RandomUint64() % n, nil
+		return strconv.FormatUint(helpers.RandomUint64()%n, 10), nil
 	})
 }
 

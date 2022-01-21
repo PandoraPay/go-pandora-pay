@@ -282,12 +282,12 @@ func getNetworkTxPreview(this js.Value, args []js.Value) interface{} {
 func getNetworkAssetInfo(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		hash, err := hex.DecodeString(args[1].String())
-		if err != nil {
+		request := &api_common.APIAssetInfoRequest{}
+		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
 
-		return webassembly_utils.ConvertMsgPackToJSONBytes(app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("asset-info"), &api_common.APIAssetInfoRequest{uint64(args[0].Int()), hash}, nil, 0), &info.AssetInfo{})
+		return webassembly_utils.ConvertMsgPackToJSONBytes(app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("asset-info"), request, nil, 0), &info.AssetInfo{})
 	})
 }
 
