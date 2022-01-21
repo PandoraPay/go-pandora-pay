@@ -51,23 +51,25 @@ func getNetworkFaucetInfo(this js.Value, args []js.Value) interface{} {
 
 func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-		hash, err := hex.DecodeString(args[1].String())
-		if err != nil {
+
+		request := &api_common.APIBlockInfoRequest{}
+		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
 
-		return webassembly_utils.ConvertMsgPackToJSONBytes(app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("block-info"), &api_common.APIBlockInfoRequest{uint64(args[0].Int()), hash}, nil, 0), &info.BlockInfo{})
+		return webassembly_utils.ConvertMsgPackToJSONBytes(app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("block-info"), request, nil, 0), &info.BlockInfo{})
 	})
 }
 
 func getNetworkBlockWithTxs(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-		hash, err := hex.DecodeString(args[1].String())
-		if err != nil {
+
+		request := &api_common.APIBlockRequest{0, nil, api_types.RETURN_SERIALIZED}
+		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
 
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("block"), &api_common.APIBlockRequest{uint64(args[0].Int()), hash, api_types.RETURN_SERIALIZED}, nil, 0)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("block"), request, nil, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
@@ -81,7 +83,7 @@ func getNetworkBlockWithTxs(this js.Value, args []js.Value) interface{} {
 		if err := blkWithTxs.Block.Deserialize(helpers.NewBufferReader(blkWithTxs.BlockSerialized)); err != nil {
 			return nil, err
 		}
-		if err = blkWithTxs.Block.BloomNow(); err != nil {
+		if err := blkWithTxs.Block.BloomNow(); err != nil {
 			return nil, err
 		}
 
@@ -224,23 +226,23 @@ func getNetworkAccountMempoolNonce(this js.Value, args []js.Value) interface{} {
 func getNetworkTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		hash, err := hex.DecodeString(args[1].String())
-		if err != nil {
+		request := &api_common.APITransactionRequest{0, nil, api_types.RETURN_SERIALIZED}
+		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
 
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("tx"), &api_common.APIBlockCompleteRequest{uint64(args[0].Int()), hash, api_types.RETURN_SERIALIZED}, nil, 0)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("tx"), request, nil, 0)
 		if data.Err != nil {
 			return nil, data.Err
 		}
 
 		received := &api_common.APITransactionReply{}
-		if err = msgpack.Unmarshal(data.Out, received); err != nil {
+		if err := msgpack.Unmarshal(data.Out, received); err != nil {
 			return nil, err
 		}
 
 		received.Tx = &transaction.Transaction{}
-		if err = received.Tx.Deserialize(helpers.NewBufferReader(received.TxSerialized)); err != nil {
+		if err := received.Tx.Deserialize(helpers.NewBufferReader(received.TxSerialized)); err != nil {
 			return nil, err
 		}
 
@@ -251,12 +253,12 @@ func getNetworkTx(this js.Value, args []js.Value) interface{} {
 func getNetworkTxPreview(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		hash, err := hex.DecodeString(args[1].String())
-		if err != nil {
+		request := &api_common.APITransactionPreviewRequest{0, nil}
+		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
 
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("tx-preview"), &api_common.APITransactionInfoRequest{uint64(args[0].Int()), hash}, nil, 0)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("tx-preview"), request, nil, 0)
 		if data.Err != nil || data.Out == nil {
 			return nil, data.Err
 		}
