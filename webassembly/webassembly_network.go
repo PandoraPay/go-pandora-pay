@@ -31,11 +31,7 @@ func getNetworkBlockchain(this js.Value, args []js.Value) interface{} {
 
 func getNetworkFaucetCoins(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		defer cancel()
-
-		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("faucet/coins"), &api_faucet.APIFaucetCoinsRequest{args[0].String(), args[1].String()}, ctx, 0)
+		data := app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("faucet/coins"), &api_faucet.APIFaucetCoinsRequest{args[0].String(), args[1].String()}, nil, time.Minute)
 		if data.Err != nil {
 			return nil, data.Err
 		}
