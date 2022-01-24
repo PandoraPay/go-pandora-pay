@@ -358,8 +358,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				for _, change := range allTransactionsChanges {
 					if !change.Inserted {
 						removedTxHashes[change.TxHashStr] = change.TxHash
-					} else {
-						insertedTxs[change.Tx.Bloom.HashStr] = change.Tx
+					}
+				}
+				for _, change := range allTransactionsChanges {
+					if change.Inserted {
+						insertedTxs[change.TxHashStr] = change.Tx
+						delete(removedTxHashes, change.TxHashStr)
 					}
 				}
 
