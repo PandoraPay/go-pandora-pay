@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
-	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 )
 
@@ -43,7 +41,7 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 		close(processedAlreadyFound.wait)
 	}()
 
-	result := conn.SendJSONAwaitAnswer([]byte("tx"), &APITransactionRequest{0, hash, api_types.RETURN_SERIALIZED}, nil, 0)
+	result := conn.SendJSONAwaitAnswer([]byte("tx-raw"), &APITransactionRawRequest{0, hash}, nil, 0)
 	if result.Err != nil {
 		closeConnection = true
 		err = result.Err
@@ -56,14 +54,8 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 		return
 	}
 
-	data := &APITransactionReply{}
-	if err = msgpack.Unmarshal(result.Out, data); err != nil {
-		closeConnection = true
-		return
-	}
-
 	tx := &transaction.Transaction{}
-	if err = tx.Deserialize(helpers.NewBufferReader(data.TxSerialized)); err != nil {
+	if err = tx.Deserialize(helpers.NewBufferReader(result.Out)); err != nil {
 		closeConnection = true
 		return
 	}

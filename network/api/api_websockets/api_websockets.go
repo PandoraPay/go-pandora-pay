@@ -48,6 +48,7 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		"block-complete":         api.apiCommon.GetBlockComplete_websockets,
 		"tx-hash":                api.apiCommon.GetTxHash_websockets,
 		"tx":                     api.apiCommon.GetTx_websockets,
+		"tx-raw":                 api.apiCommon.GetTxRaw_websockets,
 		"account":                api.apiCommon.GetAccount_websockets,
 		"accounts/count":         api.apiCommon.GetAccountsCount_websockets,
 		"accounts/keys-by-index": api.apiCommon.GetAccountsKeysByIndex_websockets,

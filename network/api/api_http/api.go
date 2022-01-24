@@ -33,6 +33,7 @@ func NewAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chai
 		"block-complete":         api.apiCommon.GetBlockComplete_http,
 		"tx-hash":                api.apiCommon.GetTxHash_http,
 		"tx":                     api.apiCommon.GetTx_http,
+		"tx-raw":                 api.apiCommon.GetTxRaw_http,
 		"account":                api.apiCommon.GetAccount_http,
 		"accounts/count":         api.apiCommon.GetAccountsCount_http,
 		"accounts/keys-by-index": api.apiCommon.GetAccountsKeysByIndex_http,
