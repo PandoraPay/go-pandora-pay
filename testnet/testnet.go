@@ -54,12 +54,12 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 	default:
 	}
 
-	addr, err := testnet.wallet.GetWalletAddress(0)
+	addr, err := testnet.wallet.GetWalletAddress(0, true)
 	if err != nil {
 		return
 	}
 
-	dstAddr, err := testnet.wallet.GetWalletAddress(dstAddressWalletIndex)
+	dstAddr, err := testnet.wallet.GetWalletAddress(dstAddressWalletIndex, true)
 	if err != nil {
 		return
 	}
@@ -81,7 +81,7 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 
 func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
-	addr, err := testnet.wallet.GetWalletAddress(0)
+	addr, err := testnet.wallet.GetWalletAddress(0, true)
 	if err != nil {
 		return
 	}
@@ -109,12 +109,12 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 
 		var addr *wallet_address.WalletAddress
 
-		if addr, err = testnet.wallet.GetWalletAddress(1); err != nil {
+		if addr, err = testnet.wallet.GetWalletAddress(1, true); err != nil {
 			return
 		}
 		from = append(from, addr.AddressEncoded)
 
-		if addr, err = testnet.wallet.GetWalletAddress(int(i + 1)); err != nil {
+		if addr, err = testnet.wallet.GetWalletAddress(int(i+1), true); err != nil {
 			return
 		}
 
@@ -148,7 +148,7 @@ func (testnet *Testnet) testnetCreateTransfers(srcAddressWalletIndex int, ctx co
 	default:
 	}
 
-	srcAddr, err := testnet.wallet.GetWalletAddress(srcAddressWalletIndex)
+	srcAddr, err := testnet.wallet.GetWalletAddress(srcAddressWalletIndex, true)
 	if err != nil {
 		return
 	}
@@ -225,7 +225,7 @@ func (testnet *Testnet) run() {
 				if blockHeight >= 40 && syncTime != 0 {
 
 					var addr *wallet_address.WalletAddress
-					addr, _ = testnet.wallet.GetWalletAddress(0)
+					addr, _ = testnet.wallet.GetWalletAddress(0, true)
 
 					var delegatedStakeAvailable, delegatedUnstakePending, unclaimed uint64
 

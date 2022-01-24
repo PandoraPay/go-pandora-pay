@@ -43,7 +43,7 @@ func (wallet *Wallet) ProcessWalletArguments() (err error) {
 		if index, err = strconv.Atoi(v[0]); err != nil {
 			return
 		} else {
-			if addr, err = wallet.GetWalletAddress(index); err != nil {
+			if addr, err = wallet.GetWalletAddress(index, true); err != nil {
 				return
 			}
 		}

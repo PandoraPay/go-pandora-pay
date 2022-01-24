@@ -25,7 +25,7 @@ func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAs
 
 	publicKey := args.PublicKey
 
-	addr := api.wallet.GetWalletAddressByPublicKey(publicKey)
+	addr := api.wallet.GetWalletAddressByPublicKey(publicKey, false)
 	if addr != nil {
 		reply.Exists = true
 		return nil

@@ -255,7 +255,7 @@ func (builder *TxsBuilder) initCLI() {
 
 		var delegatePrivateKey []byte
 
-		delegateWalletAddress := builder.wallet.GetWalletAddressByPublicKey(delegateAddress.PublicKey)
+		delegateWalletAddress := builder.wallet.GetWalletAddressByPublicKey(delegateAddress.PublicKey, false)
 		delegatedStakingUpdate := &transaction_data.TransactionDataDelegatedStakingUpdate{}
 		if delegateWalletAddress != nil {
 			if err = builder.readDelegatedStakingUpdate(delegatedStakingUpdate, delegateWalletAddress.PublicKey); err != nil {

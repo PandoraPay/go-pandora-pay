@@ -250,7 +250,7 @@ func (wallet *Wallet) CliSelectAddress(text string, ctx context.Context) (*walle
 		return value < wallet.GetAddressesCount()
 	})
 
-	walletAddress, err := wallet.GetWalletAddress(index)
+	walletAddress, err := wallet.GetWalletAddress(index, true)
 	if err != nil {
 		return nil, 0, err
 	}

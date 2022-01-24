@@ -45,6 +45,7 @@ func Initialize(startMainCb func()) {
 				"getWalletAddress":        js.FuncOf(getWalletAddress),
 				"addNewWalletAddress":     js.FuncOf(addNewWalletAddress),
 				"removeWalletAddress":     js.FuncOf(removeWalletAddress),
+				"renameWalletAddress":     js.FuncOf(renameWalletAddress),
 				"importWalletPrivateKey":  js.FuncOf(importWalletPrivateKey),
 				"importWalletJSON":        js.FuncOf(importWalletJSON),
 				"exportWalletJSON":        js.FuncOf(exportWalletJSON),

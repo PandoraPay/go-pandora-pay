@@ -116,7 +116,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		}
 
 		if acc == nil {
-			return errors.New("Account doesn't exist")
+			return errors.New("Private Account doesn't exist")
 		}
 
 		balance = acc.GetBalance()

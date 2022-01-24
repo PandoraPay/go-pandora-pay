@@ -46,7 +46,7 @@ func (builder *TxsBuilder) DeriveDelegatedStake(nonce uint64, addressPublicKey [
 			return
 		}
 		if plainAcc == nil {
-			return errors.New("Account doesn't exist")
+			return errors.New("Plain Account doesn't exist")
 		}
 
 		return
@@ -59,7 +59,7 @@ func (builder *TxsBuilder) DeriveDelegatedStake(nonce uint64, addressPublicKey [
 	builder.wallet.RLock()
 	defer builder.wallet.RUnlock()
 
-	addr := builder.wallet.GetWalletAddressByPublicKey(addressPublicKey)
+	addr := builder.wallet.GetWalletAddressByPublicKey(addressPublicKey, false)
 	if addr == nil {
 		return nil, nil, errors.New("Wallet was not found")
 	}
@@ -130,7 +130,7 @@ func (builder *TxsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizar
 			return
 		}
 		if plainAcc == nil {
-			return errors.New("Account doesn't exist")
+			return errors.New("Plain Account doesn't exist")
 		}
 
 		availableStake, err := plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(chainHeight)

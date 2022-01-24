@@ -106,7 +106,27 @@ func removeWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return app.Wallet.RemoveAddress(args[1].String(), true)
+		publicKey, err := hex.DecodeString(args[1].String())
+		if err != nil {
+			return nil, err
+		}
+
+		return app.Wallet.RemoveAddressByPublicKey(publicKey, true)
+	})
+}
+
+func renameWalletAddress(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+			return nil, err
+		}
+
+		publicKey, err := hex.DecodeString(args[1].String())
+		if err != nil {
+			return nil, err
+		}
+
+		return app.Wallet.RenameAddressByPublicKey(publicKey, args[2].String(), true)
 	})
 }
 

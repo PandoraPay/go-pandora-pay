@@ -102,13 +102,15 @@ func (wallet *Wallet) GetWalletAddressByPublicKeyHex(publicKeyHex string) (*wall
 	if err != nil {
 		return nil, err
 	}
-	return wallet.GetWalletAddressByPublicKey(publicKey), nil
+	return wallet.GetWalletAddressByPublicKey(publicKey, false), nil
 }
 
-func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte) *wallet_address.WalletAddress {
+func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte, lock bool) *wallet_address.WalletAddress {
 
-	wallet.RLock()
-	defer wallet.RUnlock()
+	if lock {
+		wallet.RLock()
+		defer wallet.RUnlock()
+	}
 
 	return wallet.addressesMap[string(publicKey)]
 }
@@ -383,9 +385,33 @@ func (wallet *Wallet) RemoveAddressByPublicKey(publicKey []byte, lock bool) (boo
 	return false, nil
 }
 
-func (wallet *Wallet) GetWalletAddress(index int) (*wallet_address.WalletAddress, error) {
-	wallet.RLock()
-	defer wallet.RUnlock()
+func (wallet *Wallet) RenameAddressByPublicKey(publicKey []byte, newName string, lock bool) (bool, error) {
+
+	if lock {
+		wallet.Lock()
+		defer wallet.Unlock()
+	}
+
+	if !wallet.Loaded {
+		return false, errors.New("Wallet was not loaded!")
+	}
+
+	addr := wallet.GetWalletAddressByPublicKey(publicKey, false)
+	if addr == nil {
+		return false, nil
+	}
+
+	addr.Name = newName
+
+	return true, wallet.saveWalletAddress(addr, false)
+}
+
+func (wallet *Wallet) GetWalletAddress(index int, lock bool) (*wallet_address.WalletAddress, error) {
+
+	if lock {
+		wallet.RLock()
+		defer wallet.RUnlock()
+	}
 
 	if index < 0 || index > len(wallet.Addresses) {
 		return nil, errors.New("Invalid Address Index")
