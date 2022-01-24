@@ -29,25 +29,23 @@ const (
 var uuidGenerator uint32 //use atomic
 
 type AdvancedConnection struct {
-	Authenticated           *abool.AtomicBool
-	UUID                    advanced_connection_types.UUID
-	Conn                    *websocket.Conn
-	Handshake               *ConnectionHandshake
-	KnownNode               *known_nodes.KnownNodeScored
-	RemoteAddr              string
-	answerCounter           uint32
-	Closed                  chan struct{}
-	InitializedStatus       InitializedStatusType //use the mutex
-	InitializedStatusMutex  *sync.Mutex
-	IsClosed                *abool.AtomicBool
-	getMap                  map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)
-	answerMap               map[uint32]chan *advanced_connection_types.AdvancedConnectionReply
-	answerMapLock           *sync.Mutex
-	contextConnection       context.Context
-	contextConnectionCancel context.CancelFunc
-	Subscriptions           *Subscriptions
-	ConnectionType          bool
-	onClosedConnection      func(c *AdvancedConnection)
+	Authenticated          *abool.AtomicBool
+	UUID                   advanced_connection_types.UUID
+	Conn                   *websocket.Conn
+	Handshake              *ConnectionHandshake
+	KnownNode              *known_nodes.KnownNodeScored
+	RemoteAddr             string
+	answerCounter          uint32
+	Closed                 chan struct{}
+	InitializedStatus      InitializedStatusType //use the mutex
+	InitializedStatusMutex *sync.Mutex
+	IsClosed               *abool.AtomicBool
+	getMap                 map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)
+	answerMap              map[uint32]chan *advanced_connection_types.AdvancedConnectionReply
+	answerMapLock          *sync.Mutex
+	Subscriptions          *Subscriptions
+	ConnectionType         bool
+	onClosedConnection     func(c *AdvancedConnection)
 }
 
 func (c *AdvancedConnection) GetTimeout() time.Duration {
@@ -331,8 +329,6 @@ func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *k
 		u = advanced_connection_types.UUID(atomic.AddUint32(&uuidGenerator, 1))
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-
 	advancedConnection := &AdvancedConnection{
 		abool.New(),
 		u,
@@ -348,8 +344,6 @@ func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *k
 		getMap,
 		make(map[uint32]chan *advanced_connection_types.AdvancedConnectionReply),
 		&sync.Mutex{},
-		ctx,
-		cancel,
 		nil,
 		connectionType,
 		onClosedConnection,
