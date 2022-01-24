@@ -23,6 +23,12 @@ import (
 	"time"
 )
 
+func networkDisconnect(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+		return app.Network.Websockets.Disconnect(), nil
+	})
+}
+
 func getNetworkBlockchain(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		return webassembly_utils.ConvertMsgPackToJSONBytes(app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("chain"), nil, nil, 0), &api_common.APIBlockchain{})

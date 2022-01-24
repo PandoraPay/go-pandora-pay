@@ -7,6 +7,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/network/known_nodes"
@@ -46,6 +47,7 @@ type AdvancedConnection struct {
 	contextConnectionCancel context.CancelFunc
 	Subscriptions           *Subscriptions
 	ConnectionType          bool
+	onClosedConnection      func(c *AdvancedConnection)
 }
 
 func (c *AdvancedConnection) GetTimeout() time.Duration {
@@ -54,9 +56,14 @@ func (c *AdvancedConnection) GetTimeout() time.Duration {
 
 func (c *AdvancedConnection) Close(reason string) error {
 	if c.IsClosed.SetToIf(false, true) {
+		gui.GUI.Log("Disconnecting............111")
 		close(c.Closed)
+		gui.GUI.Log("Disconnecting............22222")
+		c.onClosedConnection(c)
+		gui.GUI.Log("Disconnecting am trimis............")
+		return c.Conn.Close(websocket.StatusNormalClosure, reason[:generics.Min(100, len(reason))])
 	}
-	return c.Conn.Close(websocket.StatusNormalClosure, reason[:generics.Min(100, len(reason))])
+	return nil
 }
 
 func (c *AdvancedConnection) connSendMessage(message interface{}, ctxParent context.Context, ctxDuration time.Duration) error {
@@ -112,11 +119,10 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 	}
 
 	select {
-	case out, ok := <-eventCn:
-		if !ok {
-			return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout - Closed channel")}
-		}
+	case out := <-eventCn:
 		return out
+	case <-c.Closed:
+		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout Closed")}
 	case <-ctx.Done():
 
 		var closeChannel bool
@@ -318,7 +324,7 @@ func (c *AdvancedConnection) IncreaseKnownNodeScore() {
 
 }
 
-func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification) (*AdvancedConnection, error) {
+func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification, onClosedConnection func(c *AdvancedConnection)) (*AdvancedConnection, error) {
 
 	u := advanced_connection_types.UUID(0)
 	for u <= advanced_connection_types.UUID_SKIP_ALL {
@@ -328,23 +334,25 @@ func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *k
 	ctx, cancel := context.WithCancel(context.Background())
 
 	advancedConnection := &AdvancedConnection{
-		Authenticated:           abool.New(),
-		UUID:                    u,
-		Conn:                    conn,
-		Handshake:               nil,
-		RemoteAddr:              remoteAddr,
-		KnownNode:               knownNode,
-		Closed:                  make(chan struct{}),
-		InitializedStatus:       INITIALIZED_STATUS_CREATED,
-		InitializedStatusMutex:  &sync.Mutex{},
-		IsClosed:                abool.New(),
-		answerCounter:           0,
-		getMap:                  getMap,
-		answerMap:               make(map[uint32]chan *advanced_connection_types.AdvancedConnectionReply),
-		answerMapLock:           &sync.Mutex{},
-		ConnectionType:          connectionType,
-		contextConnection:       ctx,
-		contextConnectionCancel: cancel,
+		abool.New(),
+		u,
+		conn,
+		nil,
+		knownNode,
+		remoteAddr,
+		0,
+		make(chan struct{}),
+		INITIALIZED_STATUS_CREATED,
+		&sync.Mutex{},
+		abool.New(),
+		getMap,
+		make(map[uint32]chan *advanced_connection_types.AdvancedConnectionReply),
+		&sync.Mutex{},
+		ctx,
+		cancel,
+		nil,
+		connectionType,
+		onClosedConnection,
 	}
 	advancedConnection.Subscriptions = NewSubscriptions(advancedConnection, newSubscriptionCn, removeSubscriptionCn)
 	return advancedConnection, nil

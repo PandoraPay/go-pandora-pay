@@ -70,6 +70,14 @@ func (websockets *Websockets) GetRandomSocket() *connection.AdvancedConnection {
 	return nil
 }
 
+func (websockets *Websockets) Disconnect() int {
+	list := websockets.GetAllSockets()
+	for _, sock := range list {
+		sock.Close("Forcefully disconnected")
+	}
+	return len(list)
+}
+
 func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) {
 
 	if exceptSocketUUID == advanced_connection_types.UUID_SKIP_ALL {
@@ -152,13 +160,13 @@ func (websockets *Websockets) closedConnectionNow(conn *connection.AdvancedConne
 
 func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnection) {
 
-	<-conn.Closed
-
 	if !websockets.closedConnectionNow(conn) {
 		return
 	}
 
-	websockets.subscriptions.websocketClosedCn <- conn
+	if config.SEED_WALLET_NODES_INFO {
+		websockets.subscriptions.websocketClosedCn <- conn
+	}
 
 	if conn.ConnectionType {
 		atomic.AddInt64(&websockets.serverSockets, -1)
@@ -171,7 +179,7 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 
 func (websockets *Websockets) NewConnection(c *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, connectionType bool) (*connection.AdvancedConnection, error) {
 
-	conn, err := connection.NewAdvancedConnection(c, remoteAddr, knownNode, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn, websockets.subscriptions.removeSubscriptionCn)
+	conn, err := connection.NewAdvancedConnection(c, remoteAddr, knownNode, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn, websockets.subscriptions.removeSubscriptionCn, websockets.closedConnection)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +194,6 @@ func (websockets *Websockets) NewConnection(c *websocket.Conn, remoteAddr string
 	if knownNode != nil {
 		recovery.SafeGo(conn.IncreaseKnownNodeScore)
 	}
-	recovery.SafeGo(func() { websockets.closedConnection(conn) })
 
 	if err = websockets.InitializeConnection(conn); err != nil {
 		return nil, err
@@ -226,6 +233,10 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	}
 
 	conn.Handshake = handshakeReceived
+
+	if conn.IsClosed.IsSet() {
+		return
+	}
 
 	conn.InitializedStatusMutex.Lock()
 	websockets.allList.Push(conn)

@@ -69,6 +69,7 @@ func Initialize(startMainCb func()) {
 		}),
 		"cryptography": js.ValueOf(map[string]interface{}{}),
 		"network": js.ValueOf(map[string]interface{}{
+			"networkDisconnect":                      js.FuncOf(networkDisconnect),
 			"getNetworkFaucetInfo":                   js.FuncOf(getNetworkFaucetInfo),
 			"getNetworkFaucetCoins":                  js.FuncOf(getNetworkFaucetCoins),
 			"getNetworkBlockchain":                   js.FuncOf(getNetworkBlockchain),
