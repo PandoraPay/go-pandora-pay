@@ -13,8 +13,6 @@ import (
 
 func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
 	defer func() {
 		if err := recover(); err != nil {
 			http.Error(w, err.(error).Error(), http.StatusInternalServerError)
@@ -52,6 +50,7 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(final)
 }

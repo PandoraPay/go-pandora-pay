@@ -7,7 +7,6 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/network/known_nodes"
@@ -54,11 +53,8 @@ func (c *AdvancedConnection) GetTimeout() time.Duration {
 
 func (c *AdvancedConnection) Close(reason string) error {
 	if c.IsClosed.SetToIf(false, true) {
-		gui.GUI.Log("Disconnecting............111")
 		close(c.Closed)
-		gui.GUI.Log("Disconnecting............22222")
 		c.onClosedConnection(c)
-		gui.GUI.Log("Disconnecting am trimis............")
 		return c.Conn.Close(websocket.StatusNormalClosure, reason[:generics.Min(100, len(reason))])
 	}
 	return nil
@@ -324,14 +320,15 @@ func (c *AdvancedConnection) IncreaseKnownNodeScore() {
 
 func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification, onClosedConnection func(c *AdvancedConnection)) (*AdvancedConnection, error) {
 
-	u := advanced_connection_types.UUID(0)
-	for u <= advanced_connection_types.UUID_SKIP_ALL {
-		u = advanced_connection_types.UUID(atomic.AddUint32(&uuidGenerator, 1))
+	//making sure u is not collided with UUID_ALL and UUID_SKIP_ALL
+	uuid := advanced_connection_types.UUID(atomic.AddUint32(&uuidGenerator, 1))
+	for uuid <= advanced_connection_types.UUID_SKIP_ALL {
+		uuid = advanced_connection_types.UUID(atomic.AddUint32(&uuidGenerator, 1))
 	}
 
 	advancedConnection := &AdvancedConnection{
 		abool.New(),
-		u,
+		uuid,
 		conn,
 		nil,
 		knownNode,

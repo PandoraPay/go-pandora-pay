@@ -16,9 +16,9 @@ func (websockets *Websockets) broadcastChain(newChainData *blockchain.Blockchain
 	websockets.BroadcastJSON([]byte("chain-update"), websockets.ApiWebsockets.Consensus.GetUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true}, advanced_connection_types.UUID_ALL, ctxParent, 0)
 }
 
-func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID, ctxParent context.Context) (errs []error) {
+func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID, ctxParent context.Context) []error {
 
-	errs = make([]error, len(txs))
+	errs := make([]error, len(txs))
 
 	for i, tx := range txs {
 
@@ -63,7 +63,7 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 
 	}
 
-	return
+	return errs
 }
 
 func (websockets *Websockets) initializeConsensus(chain *blockchain.Blockchain, mempool *mempool.Mempool) {

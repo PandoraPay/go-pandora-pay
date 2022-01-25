@@ -71,7 +71,7 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 		return
 	}
 
-	if err = api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, false, false, conn.UUID, context.Background()); err != nil {
+	if err = api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, true, false, conn.UUID, context.Background()); err != nil {
 		return
 	}
 

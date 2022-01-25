@@ -65,7 +65,7 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 		return
 	}
 
-	if err = api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, false, false, exceptSocketUUID, context.Background()); err != nil {
+	if err = api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, true, false, exceptSocketUUID, context.Background()); err != nil {
 		return
 	}
 

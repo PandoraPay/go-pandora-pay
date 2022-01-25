@@ -26,7 +26,7 @@ func Safe(cb func()) {
 			}
 
 			fmt.Println("Error: \n\n", err, stackTrace)
-			os.Exit(0)
+			os.Exit(1)
 		}
 	}()
 	cb()
