@@ -143,6 +143,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 		err = store.StoreBlockchain.DB.Update(func(writer store_db_interface.StoreDBTransactionInterface) (err error) {
 
+			defer func() {
+				if errReturned := recover(); errReturned != nil {
+					err = errReturned.(error)
+				}
+			}()
+
 			savedBlock := false
 
 			dataStorage = data_storage.NewDataStorage(writer)
@@ -256,8 +262,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 
 					var stakingAmount uint64
-					stakingAmount, err = plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(newChainData.Height)
-					if err != nil {
+					if stakingAmount, err = plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(newChainData.Height); err != nil {
 						return
 					}
 

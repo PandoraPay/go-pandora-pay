@@ -6,6 +6,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"math"
 	"pandora-pay/blockchain/data_storage/assets/asset"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
@@ -64,6 +65,12 @@ type json_Only_TransactionSimpleExtraUpdateDelegate struct {
 
 type json_Only_TransactionSimpleExtraUnstake struct {
 	Amount uint64 `json:"amount"  msgpack:"amount"`
+}
+
+type json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity struct {
+	Liquidities     []*asset_fee_liquidity.AssetFeeLiquidity `json:"liquidities"`
+	CollectorHasNew bool                                     `json:"collectorHasNew"`
+	Collector       helpers.HexBytes                         `json:"collector"`
 }
 
 type json_Only_TransactionZether struct {
@@ -172,6 +179,13 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraUnstake)
 			simpleJson.Extra = json_Only_TransactionSimpleExtraUnstake{
 				extra.Amount,
+			}
+		case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
+			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity)
+			simpleJson.Extra = json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity{
+				extra.Liquidities,
+				extra.CollectorHasNew,
+				extra.Collector,
 			}
 		default:
 			return nil, errors.New("Invalid simple.TxScript")
@@ -377,6 +391,18 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 
 			base.Extra = &transaction_simple_extra.TransactionSimpleExtraUnstake{
 				Amount: extraJson.Amount,
+			}
+		case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
+			extraJson := &json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity{}
+			if err = json.Unmarshal(data, extraJson); err != nil {
+				return
+			}
+
+			base.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{
+				nil,
+				extraJson.Liquidities,
+				extraJson.CollectorHasNew,
+				extraJson.Collector,
 			}
 		default:
 			return errors.New("Invalid json Simple TxScript")

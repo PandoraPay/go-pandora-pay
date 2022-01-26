@@ -96,13 +96,10 @@ func (self *AssetFeeLiquidities) Serialize(w *helpers.BufferWriter) {
 	switch self.Version {
 	case SIMPLE:
 		w.WriteByte(byte(len(self.List)))
-		if len(self.List) > 0 {
-			w.WriteUvarint(uint64(self.Version))
-			for _, liquidity := range self.List {
-				liquidity.Serialize(w)
-			}
-			w.Write(self.Collector)
+		for _, liquidity := range self.List {
+			liquidity.Serialize(w)
 		}
+		w.Write(self.Collector)
 	}
 }
 

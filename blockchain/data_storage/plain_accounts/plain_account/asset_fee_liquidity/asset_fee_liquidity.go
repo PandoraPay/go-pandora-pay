@@ -43,10 +43,8 @@ func (self *AssetFeeLiquidity) Deserialize(r *helpers.BufferReader) (err error) 
 	if self.Rate, err = r.ReadUvarint(); err != nil {
 		return
 	}
-
 	if self.LeadingZeros, err = r.ReadByte(); err != nil {
 		return
 	}
-
 	return
 }

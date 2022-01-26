@@ -15,8 +15,7 @@ func SafeGo(cb func()) {
 
 func Safe(cb func()) {
 	defer func() {
-		err := recover()
-		if err != nil {
+		if err := recover(); err != nil {
 
 			stackTrace := string(debug.Stack())
 

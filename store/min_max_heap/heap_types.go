@@ -1,7 +1,7 @@
 package min_max_heap
 
 import (
-	"pandora-pay/cryptography"
+	"errors"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash_map"
 )
@@ -23,16 +23,25 @@ func (self *HeapElement) SetKey(key []byte) {
 }
 
 func (self *HeapElement) Validate() error {
+	if len(self.Key) == 0 || len(self.Key) > 255 {
+		return errors.New("Heap Element Key length is invalid")
+	}
 	return nil
 }
 
 func (self *HeapElement) Serialize(w *helpers.BufferWriter) {
+	w.WriteByte(byte(len(self.Key)))
 	w.Write(self.Key)
 	w.WriteFloat64(self.Score)
 }
 
 func (self *HeapElement) Deserialize(r *helpers.BufferReader) (err error) {
-	if self.Key, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+	var count byte
+	if count, err = r.ReadByte(); err != nil {
+		return
+	}
+
+	if self.Key, err = r.ReadBytes(int(count)); err != nil {
 		return
 	}
 	self.Score, err = r.ReadFloat64()

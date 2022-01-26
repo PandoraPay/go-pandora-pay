@@ -67,10 +67,13 @@ func (builder *TxsBuilder) readAmount(assetId []byte, text string) (amount uint6
 	return
 }
 
-func (builder *TxsBuilder) readAddress(text string) (address *addresses.Address, err error) {
+func (builder *TxsBuilder) readAddress(text string, leaveEmpty bool) (address *addresses.Address, err error) {
 
 	for {
 		str := gui.GUI.OutputReadString(text)
+		if leaveEmpty && len(str) == 0 {
+			break
+		}
 
 		address, err = addresses.DecodeAddr(str)
 		if err != nil {
@@ -516,12 +519,13 @@ func (builder *TxsBuilder) initCLI() {
 		}
 
 		txExtra := &wizard.WizardTxSimpleExtraUpdateAssetFeeLiquidity{}
-		txExtra.CollectorHasNew = gui.GUI.OutputReadBool("New collector address ? y/n")
-		if txExtra.CollectorHasNew {
-			var addr *addresses.Address
-			if addr, err = builder.readAddress("Collector address"); err != nil {
-				return
-			}
+
+		var addr *addresses.Address
+		if addr, err = builder.readAddress("Collector address. Leave empty for no new address", true); err != nil {
+			return
+		}
+		if addr != nil {
+			txExtra.CollectorHasNew = true
 			txExtra.Collector = addr.PublicKey
 		}
 
