@@ -48,7 +48,12 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransaction
 
 	}
 
-	plainAcc.AssetFeeLiquidities.Version = asset_fee_liquidity.SIMPLE
+	if len(plainAcc.AssetFeeLiquidities.List) == 0 {
+		plainAcc.AssetFeeLiquidities.Collector = nil
+		plainAcc.AssetFeeLiquidities.Version = asset_fee_liquidity.NONE
+	} else {
+		plainAcc.AssetFeeLiquidities.Version = asset_fee_liquidity.SIMPLE
+	}
 
 	return
 }
