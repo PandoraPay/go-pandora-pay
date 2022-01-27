@@ -31,7 +31,7 @@ func (m *Heap) rightchild(index uint64) uint64 {
 }
 
 func (m *Heap) Insert(score float64, key []byte) error {
-	if err := m.addElement(&HeapElement{nil, key, score}); err != nil {
+	if err := m.addElement(&HeapElement{nil, nil, key, score}); err != nil {
 		return err
 	}
 	return m.upHeapify(m.GetSize() - 1)

@@ -1,15 +1,15 @@
 package min_max_heap
 
 import (
-	"errors"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash_map"
 )
 
 type HeapElement struct {
 	hash_map.HashMapElementSerializableInterface
-	Key   []byte
-	Score float64
+	HeapKey []byte
+	Key     []byte
+	Score   float64
 }
 
 type HeapDictElement struct {
@@ -19,13 +19,10 @@ type HeapDictElement struct {
 }
 
 func (self *HeapElement) SetKey(key []byte) {
-	self.Key = key
+	self.HeapKey = key
 }
 
 func (self *HeapElement) Validate() error {
-	if len(self.Key) == 0 || len(self.Key) > 255 {
-		return errors.New("Heap Element Key length is invalid")
-	}
 	return nil
 }
 

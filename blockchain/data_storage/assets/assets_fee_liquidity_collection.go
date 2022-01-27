@@ -51,13 +51,12 @@ func (collection *AssetsFeeLiquidityCollection) UpdateLiquidity(publicKey []byte
 	}
 
 	switch status {
-	case asset_fee_liquidity.UPDATE_LIQUIDITY_OVERWRITTEN:
-		if err = maxheap.DeleteByKey(publicKey); err != nil {
-			return err
+	case asset_fee_liquidity.UPDATE_LIQUIDITY_OVERWRITTEN, asset_fee_liquidity.UPDATE_LIQUIDITY_INSERTED:
+		if status == asset_fee_liquidity.UPDATE_LIQUIDITY_OVERWRITTEN {
+			if err = maxheap.DeleteByKey(publicKey); err != nil {
+				return err
+			}
 		}
-		score := float64(rate) / math.Pow10(int(leadingZeros))
-		return maxheap.Insert(score, publicKey)
-	case asset_fee_liquidity.UPDATE_LIQUIDITY_INSERTED:
 		score := float64(rate) / math.Pow10(int(leadingZeros))
 		return maxheap.Insert(score, publicKey)
 	case asset_fee_liquidity.UPDATE_LIQUIDITY_DELETED:

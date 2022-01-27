@@ -25,6 +25,18 @@ func (self *HeapStoreHashMap) DeleteByKey(key []byte) error {
 	return self.Delete(found.(*HeapDictElement).Index)
 }
 
+func (self *HeapStoreHashMap) GetKey(Key []byte) (*HeapDictElement, error) {
+	found, err := self.DictMap.Get(string(Key))
+	if err != nil {
+		return nil, err
+	}
+	if found == nil {
+		return nil, errors.New("Key is not found")
+	}
+
+	return found.(*HeapDictElement), nil
+}
+
 func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, name string, compare func(a, b float64) bool) *HeapStoreHashMap {
 
 	heap := NewHeap(compare)
@@ -32,7 +44,7 @@ func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, na
 	dictMap := hash_map.CreateNewHashMap(dbTx, name+"_dict", 0, false)
 
 	hashMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
-		return &HeapElement{Key: key}, nil
+		return &HeapElement{HeapKey: key}, nil
 	}
 
 	dictMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
@@ -51,10 +63,7 @@ func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, na
 		if err = hashMap.Update(strconv.FormatUint(index, 10), x); err != nil {
 			return
 		}
-		if err = dictMap.Update(string(x.Key), &HeapDictElement{nil, x.Key, index}); err != nil {
-			return
-		}
-		return nil
+		return dictMap.Update(string(x.Key), &HeapDictElement{nil, x.Key, index})
 	}
 
 	heap.removeElement = func() (*HeapElement, error) {
