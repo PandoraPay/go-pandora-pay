@@ -35,7 +35,7 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 
 		if justCreated {
 
-			data := &api_common.APIMempoolNewTxRequest{Type: 0, Tx: tx.Bloom.Serialized}
+			data := &api_common.APIMempoolNewTxRequest{Tx: tx.Bloom.Serialized}
 
 			if awaitPropagation {
 				out := websockets.BroadcastJSONAwaitAnswer([]byte("mempool/new-tx"), data, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctxParent, timeout)

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
@@ -13,8 +14,7 @@ import (
 )
 
 type APIMempoolNewTxRequest struct {
-	Type byte             `json:"type,omitempty" msgpack:"type,omitempty"`
-	Tx   helpers.HexBytes `json:"tx,omitempty" msgpack:"tx,omitempty"`
+	Tx helpers.HexBytes `json:"tx,omitempty" msgpack:"tx,omitempty"`
 }
 
 type APIMempoolNewTxReply struct {
@@ -23,22 +23,9 @@ type APIMempoolNewTxReply struct {
 
 func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempoolNewTxReply, exceptSocketUUID advanced_connection_types.UUID) (err error) {
 
-	var hash []byte
+	hash := cryptography.SHA3(args.Tx)
 
-	tx := &transaction.Transaction{}
-	if args.Type == 0 {
-		if err := tx.Deserialize(helpers.NewBufferReader(args.Tx)); err != nil {
-			return err
-		}
-		hash = tx.Bloom.Hash
-	} else if args.Type == 1 { //json
-		if err := msgpack.Unmarshal(args.Tx, tx); err != nil {
-			return err
-		}
-		hash = tx.HashManual()
-	}
-
-	//it needs to compute  tx.Bloom.HashStr
+	//it needs to compute  tx.Bloom.HashStrx
 	hashStr := string(hash)
 
 	if api.mempool.Txs.Exists(hashStr) {
@@ -60,6 +47,11 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 		processedAlreadyFound.reply = reply
 		close(processedAlreadyFound.wait)
 	}()
+
+	tx := &transaction.Transaction{}
+	if err = tx.Deserialize(helpers.NewBufferReader(args.Tx)); err != nil {
+		return err
+	}
 
 	if err = api.txsValidator.ValidateTx(tx); err != nil {
 		return
