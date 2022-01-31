@@ -253,7 +253,7 @@ func (testnet *Testnet) run() {
 
 					if plainAcc != nil {
 
-						if creatingTransactions.IsNotSet() {
+						if creatingTransactions.IsNotSet() && syncTime != 0 {
 
 							creatingTransactions.Set()
 							defer creatingTransactions.UnSet()
