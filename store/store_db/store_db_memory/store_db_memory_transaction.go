@@ -27,11 +27,7 @@ func (tx *StoreDBMemoryTransaction) Put(key string, value []byte) {
 	if !tx.write {
 		panic("Transaction is not writeable")
 	}
-	tx.local.Store(key, &StoreDBMemoryTransactionData{value, "put"})
-}
-
-func (tx *StoreDBMemoryTransaction) PutClone(key string, value []byte) {
-	tx.Put(key, helpers.CloneBytes(value))
+	tx.local.Store(key, &StoreDBMemoryTransactionData{helpers.CloneBytes(value), "put"})
 }
 
 func (tx *StoreDBMemoryTransaction) Get(key string) []byte {
@@ -41,16 +37,12 @@ func (tx *StoreDBMemoryTransaction) Get(key string) []byte {
 		if data.operation == "del" {
 			return nil
 		}
-		return data.value
+		return helpers.CloneBytes(data.value)
 	}
 
-	resp := tx.store[key]
+	resp := helpers.CloneBytes(tx.store[key])
 	tx.local.Store(key, &StoreDBMemoryTransactionData{resp, "get"})
 	return resp
-}
-
-func (tx *StoreDBMemoryTransaction) GetClone(key string) []byte {
-	return helpers.CloneBytes(tx.Get(key))
 }
 
 func (tx *StoreDBMemoryTransaction) Exists(key string) bool {

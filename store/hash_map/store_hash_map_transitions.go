@@ -45,7 +45,7 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 		return
 	}
 
-	hashMap.Tx.PutClone(hashMap.name+":transitions:"+prefix, marshal)
+	hashMap.Tx.Put(hashMap.name+":transitions:"+prefix, marshal)
 
 	return nil
 }

@@ -100,7 +100,7 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 
 	return store.StoreWallet.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		saved := reader.Get("saved")
+		saved := reader.Get("saved") //safe only internal
 		if saved == nil {
 			return errors.New("Wallet doesn't exist")
 		}

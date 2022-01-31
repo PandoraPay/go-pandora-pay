@@ -67,7 +67,7 @@ func (self *BlockchainSync) resetBlocksChanged(propagateNotification bool) *Bloc
 		Started:                       chainSyncData.Started,
 	}
 
-	if chainSyncData.BlocksChangedLastInterval < 4 && (chainSyncData.Started || chainSyncData.BlocksChangedPreviousInterval < 4) {
+	if chainSyncData.BlocksChangedLastInterval < 5 && (chainSyncData.Started || chainSyncData.BlocksChangedPreviousInterval < 4) {
 		newChainSyncData.SyncTime = uint64(time.Now().Unix())
 		newChainSyncData.Sync = true
 		newChainSyncData.Started = true
@@ -88,7 +88,7 @@ func (self *BlockchainSync) start() {
 
 	recovery.SafeGo(func() {
 		for {
-			time.Sleep(1 * time.Minute)
+			time.Sleep(2 * time.Minute)
 			self.resetBlocksChanged(true)
 		}
 	})

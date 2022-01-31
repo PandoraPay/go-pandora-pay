@@ -167,9 +167,6 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 func (chain *Blockchain) saveBlockchainHashmaps(dataStorage *data_storage.DataStorage) (err error) {
 
 	dataStorage.Rollback()
-	if err = dataStorage.CloneCommitted(); err != nil {
-		return
-	}
 
 	if config.SEED_WALLET_NODES_INFO {
 		if err = saveAssetsInfo(dataStorage.Asts); err != nil {

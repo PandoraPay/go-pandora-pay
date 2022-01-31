@@ -54,6 +54,10 @@ func (payload *TransactionZetherPayload) processAssetFee(assetId []byte, txFee, 
 		return
 	}
 
+	if plainAcc == nil {
+		return errors.New("Plain account doesn't exist")
+	}
+
 	assetFeeLiquidity := plainAcc.AssetFeeLiquidities.GetLiquidity(assetId)
 
 	if assetFeeLiquidity.Rate < txFeeRate {

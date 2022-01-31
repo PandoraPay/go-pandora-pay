@@ -29,7 +29,7 @@ func (tx *StoreDBJSTransaction) Put(key string, value []byte) {
 	if !tx.write {
 		panic("Transaction is not writeable")
 	}
-	tx.local.Store(key, &StoreDBJSTransactionData{value, "put"})
+	tx.local.Store(key, &StoreDBJSTransactionData{helpers.CloneBytes(value), "put"})
 }
 
 func (tx *StoreDBJSTransaction) Get(key string) []byte {
@@ -57,7 +57,7 @@ func (tx *StoreDBJSTransaction) Get(key string) []byte {
 			js.CopyBytesToGo(result, args[0])
 		}
 
-		respCh <- result
+		respCh <- helpers.CloneBytes(result)
 		return nil
 	}), js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		errCh <- fmt.Errorf("error reading js db %s", args[0].Get("message").String())
@@ -73,21 +73,12 @@ func (tx *StoreDBJSTransaction) Get(key string) []byte {
 	}
 }
 
-func (tx *StoreDBJSTransaction) GetClone(key string) []byte {
-	//TODO: check if the cloneBytes is required
-	return helpers.CloneBytes(tx.Get(key))
-}
-
 func (tx *StoreDBJSTransaction) Exists(key string) bool {
 	result := tx.Get(key)
 	if result != nil {
 		return true
 	}
 	return false
-}
-
-func (tx *StoreDBJSTransaction) PutClone(key string, value []byte) {
-	tx.Put(key, helpers.CloneBytes(value))
 }
 
 func (tx *StoreDBJSTransaction) Delete(key string) {

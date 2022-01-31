@@ -35,16 +35,6 @@ func (repository *StoreHashMapRepository) Rollback() {
 	}
 }
 
-func (repository *StoreHashMapRepository) CloneCommitted() (err error) {
-	list := repository.GetList(false)
-	for _, it := range list {
-		if err = it.CloneCommitted(); err != nil {
-			return
-		}
-	}
-	return
-}
-
 func (repository *StoreHashMapRepository) CommitChanges() (err error) {
 	list := repository.GetList(false)
 	for _, it := range list {

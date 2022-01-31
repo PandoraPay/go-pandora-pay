@@ -65,7 +65,7 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 		return
 	}
 	if plainAcc == nil {
-		return errors.New("Account not found")
+		return errors.New("Plain Account not found")
 	}
 
 	final := reward

@@ -99,23 +99,6 @@ func (hashMap *HashMap) GetRandom() (data helpers.SerializableInterface, err err
 	return hashMap.GetByIndex(index)
 }
 
-func (hashMap *HashMap) CloneCommitted() (err error) {
-
-	for key, v := range hashMap.Committed {
-		if v.Element != nil {
-			var index uint64
-			if hashMap.Indexable {
-				index = v.Element.GetIndex()
-			}
-			if v.Element, err = hashMap.deserialize([]byte(key), helpers.CloneBytes(helpers.SerializeToBytes(v.Element)), index); err != nil {
-				return
-			}
-		}
-	}
-
-	return
-}
-
 func (hashMap *HashMap) Get(key string) (out HashMapElementSerializableInterface, err error) {
 
 	if hashMap.keyLength != 0 && len(key) != hashMap.keyLength {
@@ -136,9 +119,11 @@ func (hashMap *HashMap) Get(key string) (out HashMapElementSerializableInterface
 			}
 		}
 	} else {
-		//Clone required because data could be altered afterwards
-		outData = hashMap.Tx.GetClone(hashMap.name + ":map:" + key)
+		//clone required because data could be altered afterwards
+		outData = hashMap.Tx.Get(hashMap.name + ":map:" + key)
 		if outData != nil && hashMap.Indexable {
+
+			//safe because the bytes will be converted into an integer
 			data := hashMap.Tx.Get(hashMap.name + ":listKeys:" + key)
 			if data == nil {
 				return nil, errors.New("Key not found")
@@ -302,6 +287,7 @@ func (hashMap *HashMap) ComputeChangesSize() (out uint64) {
 					isNew = true
 				}
 			} else {
+				//safe because only length is used
 				if data := hashMap.Tx.Get(hashMap.name + ":map:" + k); data != nil {
 					oldSize = len(data)
 				} else {
@@ -403,6 +389,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 
 				if hashMap.Tx.IsWritable() {
 
+					//safe
 					hashMap.Tx.Put(hashMap.name+":exists:"+k, []byte{1})
 
 					if hashMap.Indexable && v.indexProcess {
@@ -489,9 +476,8 @@ func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name st
 		Indexable:   indexable,
 	}
 
-	//safe to Get because int doesn't change the data
-	buffer := tx.Get(hashMap.name + ":count")
-	if buffer != nil {
+	//safe to Get because data will be converted into an integer
+	if buffer := tx.Get(hashMap.name + ":count"); buffer != nil {
 		count, p := binary.Uvarint(buffer)
 		if p <= 0 {
 			panic("Error reading")
