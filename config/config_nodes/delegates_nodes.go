@@ -94,5 +94,9 @@ func InitConfig() (err error) {
 		}
 	}
 
+	if DELEGATOR_FEE > config_stake.DELEGATING_STAKING_FEE_MAX_VALUE {
+		return errors.New("DELEGATOR_FEE is invalid")
+	}
+
 	return nil
 }

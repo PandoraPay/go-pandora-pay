@@ -254,7 +254,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		convertToUnclaimed := gui.GUI.OutputReadBool("Convert the amount to Unclaimed")
+		convertToUnclaimed := gui.GUI.OutputReadBool("Convert the amount to Unclaimed y/n")
 
 		var delegatePrivateKey []byte
 

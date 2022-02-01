@@ -1,6 +1,7 @@
 package block
 
 import (
+	"bytes"
 	"errors"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/assets/asset"
@@ -47,6 +48,9 @@ func (blk *Block) validate() error {
 	}
 	if blk.DelegatedStakeFee > config_stake.DELEGATING_STAKING_FEE_MAX_VALUE {
 		return errors.New("DelegatedStakeFee is invalid")
+	}
+	if bytes.Equal(blk.RewardCollectorPublicKey, blk.DelegatedStakePublicKey) {
+		return errors.New("RewardCollectorPublicKey should not be the same with DelegatedStakePublicKey")
 	}
 
 	return nil

@@ -2,6 +2,7 @@ package transaction_data
 
 import (
 	"errors"
+	"fmt"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
@@ -36,14 +37,14 @@ func (data *TransactionDataDelegatedStakingUpdate) Include(plainAcc *plain_accou
 func (data *TransactionDataDelegatedStakingUpdate) Validate() error {
 	if data.DelegatedStakingHasNewInfo {
 		if len(data.DelegatedStakingNewPublicKey) != cryptography.PublicKeySize {
-			return errors.New("New Public Key Hash length is invalid")
+			return fmt.Errorf("New Public Key Hash length is invalid. It should be %d", cryptography.PublicKeySize)
 		}
 		if data.DelegatedStakingNewFee > config_stake.DELEGATING_STAKING_FEE_MAX_VALUE {
 			return errors.New("Invalid NewDelegatedStakingNewFee")
 		}
 	} else {
 		if len(data.DelegatedStakingNewPublicKey) != 0 {
-			return errors.New("New Public Key Hash length is invalid")
+			return errors.New("New Public Key Hash length is invalid. It should have been zero")
 		}
 		if data.DelegatedStakingNewFee != 0 {
 			return errors.New("Invalid NewDelegatedStakingNewFee")

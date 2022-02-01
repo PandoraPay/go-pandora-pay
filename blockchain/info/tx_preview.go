@@ -16,6 +16,10 @@ type TxPreviewSimpleExtraUnstake struct {
 	Amount uint64 `json:"amount" msgpack:"amount"`
 }
 
+type TxPreviewSimpleExtraUpdateDelegate struct {
+	DelegatedStakingClaimAmount uint64 `json:"delegatedStakingClaimAmount" msgpack:"delegatedStakingClaimAmount"`
+}
+
 type TxPreviewSimple struct {
 	Extra      interface{}                   `json:"extra" msgpack:"extra"`
 	TxScript   transaction_simple.ScriptType `json:"txScript" msgpack:"txScript"`
@@ -53,10 +57,11 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 		var baseExtra interface{}
 		switch txBase.TxScript {
 		case transaction_simple.SCRIPT_UPDATE_DELEGATE: //nothing to be copied
-
+			txExtra := txBase.Extra.(*transaction_simple_extra.TransactionSimpleExtraUpdateDelegate)
+			baseExtra = &TxPreviewSimpleExtraUpdateDelegate{txExtra.DelegatedStakingClaimAmount}
 		case transaction_simple.SCRIPT_UNSTAKE:
 			txExtra := txBase.Extra.(*transaction_simple_extra.TransactionSimpleExtraUnstake)
-			baseExtra = &TxPreviewSimpleExtraUnstake{Amount: txExtra.Amount}
+			baseExtra = &TxPreviewSimpleExtraUnstake{txExtra.Amount}
 		}
 
 		var dataPublic helpers.HexBytes

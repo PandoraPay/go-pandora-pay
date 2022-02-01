@@ -45,13 +45,13 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 	}
 
 	if tx.FeeVersion {
-		err = dataStorage.SubtractUnclaimed(plainAcc, tx.Fee, blockHeight)
+		if err = dataStorage.SubtractUnclaimed(plainAcc, tx.Fee, blockHeight); err != nil {
+			return errors.New("Not enought Unclaimed funds to substract Tx.Fee")
+		}
 	} else {
-		err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fee)
-	}
-
-	if err != nil {
-		return
+		if err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fee); err != nil {
+			return errors.New("Not enought StakeAvailable funds to subtract Tx.Fee")
+		}
 	}
 
 	switch tx.TxScript {
