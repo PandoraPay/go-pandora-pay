@@ -96,11 +96,17 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 			return
 		}
 
-		if err = plainAccRewardCollector.DelegatedStake.AddStakePendingStake(commission, blk.Height); err != nil {
-			return
+		if plainAccRewardCollector.DelegatedStake.HasDelegatedStake() {
+			if err = plainAccRewardCollector.DelegatedStake.AddStakePendingStake(commission, blk.Height); err != nil {
+				return
+			}
+		} else {
+			if err = plainAccRewardCollector.AddUnclaimed(true, commission); err != nil {
+				return
+			}
 		}
 
-		if err = dataStorage.PlainAccs.Update(string(blk.RewardCollectorPublicKey), plainAcc); err != nil {
+		if err = dataStorage.PlainAccs.Update(string(blk.RewardCollectorPublicKey), plainAccRewardCollector); err != nil {
 			return
 		}
 

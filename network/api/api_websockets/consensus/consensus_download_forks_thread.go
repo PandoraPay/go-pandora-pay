@@ -119,13 +119,19 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 
 	blkComplete.Txs = txs
 
+	gui.GUI.Log("fork validating txs", len(txs))
+
 	if err = thread.txsValidator.ValidateTxs(txs); err != nil {
 		return nil, err
 	}
 
+	gui.GUI.Log("fork validatated txs", len(txs))
+
 	if err = blkComplete.BloomAll(); err != nil {
 		return nil, err
 	}
+
+	gui.GUI.Log("fork bloomed txs", len(txs))
 
 	return blkComplete, nil
 }

@@ -5,6 +5,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_nodes"
+	"pandora-pay/gui"
 	"pandora-pay/recovery"
 	"pandora-pay/wallet/wallet_address"
 	"sync/atomic"
@@ -38,7 +39,7 @@ func (api *DelegatorNode) execute() {
 				lastHeight = chainHeight
 
 				api.pendingDelegatesStakesChanges.Range(func(key string, pendingDelegateStakeChange *PendingDelegateStakeChange) bool {
-					if chainHeight >= pendingDelegateStakeChange.blockHeight+10 {
+					if chainHeight >= pendingDelegateStakeChange.blockHeight+100 {
 						api.pendingDelegatesStakesChanges.Delete(key)
 					}
 					return true
@@ -78,6 +79,10 @@ func (api *DelegatorNode) updateAccountsChanges() {
 
 							if plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE {
 								continue
+							}
+
+							if plainAcc.DelegatedStake.DelegatedStakeFee > 0 && len(config_nodes.DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY) == 0 {
+								gui.GUI.Error("You need to set the DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY")
 							}
 
 							addr, err := addresses.CreateAddr(pendingDelegatingStakeChange.publicKey, nil, nil, 0, nil)

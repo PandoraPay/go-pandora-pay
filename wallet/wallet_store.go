@@ -150,8 +150,10 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 					return
 				}
 
-				if !bytes.Equal(newWalletAddress.PrivateKey.GeneratePublicKey(), newWalletAddress.PublicKey) {
-					return errors.New("Public Keys are not matching!")
+				if newWalletAddress.PrivateKey != nil {
+					if !bytes.Equal(newWalletAddress.PrivateKey.GeneratePublicKey(), newWalletAddress.PublicKey) {
+						return errors.New("Public Keys are not matching!")
+					}
 				}
 
 				wallet.Addresses = append(wallet.Addresses, newWalletAddress)
