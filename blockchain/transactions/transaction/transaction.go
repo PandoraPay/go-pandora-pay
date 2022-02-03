@@ -102,10 +102,6 @@ func (tx *Transaction) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 	tx.Version = transaction_type.TransactionVersion(n)
 
-	if tx.SpaceExtra, err = r.ReadUvarint(); err != nil {
-		return
-	}
-
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 		tx.TransactionBaseInterface = &transaction_simple.TransactionSimple{}
@@ -113,6 +109,10 @@ func (tx *Transaction) Deserialize(r *helpers.BufferReader) (err error) {
 		tx.TransactionBaseInterface = &transaction_zether.TransactionZether{}
 	default:
 		return errors.New("Invalid TxType")
+	}
+
+	if tx.SpaceExtra, err = r.ReadUvarint(); err != nil {
+		return
 	}
 
 	if err = tx.TransactionBaseInterface.Deserialize(r); err != nil {

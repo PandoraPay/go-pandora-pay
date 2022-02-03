@@ -3,10 +3,12 @@ package api_common
 import (
 	"context"
 	"github.com/vmihailenco/msgpack/v5"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/cryptography"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
@@ -34,32 +36,43 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 	}
 
 	mempoolProcessedThisBlock := api.mempoolProcessedThisBlock.Load()
-	processedAlreadyFound, loaded := mempoolProcessedThisBlock.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), nil, nil})
+	processedAlreadyFound, loaded := mempoolProcessedThisBlock.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), false, nil})
 
 	if loaded {
 		<-processedAlreadyFound.wait
-		*reply = *processedAlreadyFound.reply
+		reply.Result = processedAlreadyFound.result
 		return processedAlreadyFound.err
 	}
 
 	defer func() {
+		if errReturned := recover(); errReturned != nil {
+			err = errReturned.(error)
+		}
 		processedAlreadyFound.err = err
-		processedAlreadyFound.reply = reply
+		processedAlreadyFound.result = reply.Result
 		close(processedAlreadyFound.wait)
 	}()
 
+	x := rand.Int()
+	gui.GUI.Log(x, "111")
 	tx := &transaction.Transaction{}
 	if err = tx.Deserialize(helpers.NewBufferReader(args.Tx)); err != nil {
 		return err
 	}
 
+	gui.GUI.Log(x, "2222")
+
 	if err = api.txsValidator.ValidateTx(tx); err != nil {
 		return
 	}
 
+	gui.GUI.Log(x, "33333")
+
 	if err = api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, true, false, exceptSocketUUID, context.Background()); err != nil {
 		return
 	}
+
+	gui.GUI.Log(x, "444444")
 
 	(*reply).Result = true
 	return

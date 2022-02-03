@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
 )
@@ -22,19 +23,22 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 	}
 
 	mempoolProcessedThisBlock := api.mempoolProcessedThisBlock.Load()
-	processedAlreadyFound, loaded := mempoolProcessedThisBlock.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), nil, nil})
+	processedAlreadyFound, loaded := mempoolProcessedThisBlock.LoadOrStore(hashStr, &mempoolNewTxReply{make(chan struct{}), false, nil})
 
 	if loaded {
 		<-processedAlreadyFound.wait
-		*reply = *processedAlreadyFound.reply
+		reply.Result = processedAlreadyFound.result
 		return processedAlreadyFound.err
 	}
 
 	closeConnection := false
 
 	defer func() {
+		if errReturned := recover(); errReturned != nil {
+			err = errReturned.(error)
+		}
 		processedAlreadyFound.err = err
-		processedAlreadyFound.reply = reply
+		processedAlreadyFound.result = reply.Result
 		if closeConnection {
 			mempoolProcessedThisBlock.Delete(hashStr)
 		}

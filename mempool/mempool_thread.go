@@ -232,44 +232,54 @@ func (worker *mempoolWorker) processing(
 							}
 						}
 
-						//was rejected by mempool nonce map
-						if finalErr != nil {
+						if finalErr == nil {
+							//was rejected by mempool nonce map
+							func() {
 
-						} else if finalErr = tx.Tx.IncludeTransaction(work.chainHeight, dataStorage); finalErr != nil {
-							dataStorage.Rollback()
-						} else {
-
-							if includedTotalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
-
-								includedTotalSize += tx.Tx.Bloom.Size
-								includedTxs = append(includedTxs, tx)
-
-								atomic.StoreUint64(&work.result.totalSize, includedTotalSize)
-								work.result.txs.Store(includedTxs)
-
-								if tx.Tx.Version == transaction_type.TX_ZETHER {
-									base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-
-									for t := range base.Payloads {
-										includedZetherNonceMap[string(base.Bloom.Nonces[t])] = true
+								defer func() {
+									if errReturned := recover(); errReturned != nil {
+										err = errReturned.(error)
 									}
+								}()
+
+								if finalErr = tx.Tx.IncludeTransaction(work.chainHeight, dataStorage); finalErr != nil {
+									dataStorage.Rollback()
+								} else {
+
+									if includedTotalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
+
+										includedTotalSize += tx.Tx.Bloom.Size
+										includedTxs = append(includedTxs, tx)
+
+										atomic.StoreUint64(&work.result.totalSize, includedTotalSize)
+										work.result.txs.Store(includedTxs)
+
+										if tx.Tx.Version == transaction_type.TX_ZETHER {
+											base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+
+											for t := range base.Payloads {
+												includedZetherNonceMap[string(base.Bloom.Nonces[t])] = true
+											}
+										}
+
+										if err = dataStorage.CommitChanges(); err != nil {
+											return
+										}
+
+									} else {
+										dataStorage.Rollback()
+									}
+
+									if newAddTx != nil {
+										txsList = append(txsList, newAddTx.Tx)
+										listIndex += 1
+										txsMap[tx.Tx.Bloom.HashStr] = newAddTx.Tx
+										txs.inserted(tx)
+									}
+
 								}
 
-								if err = dataStorage.CommitChanges(); err != nil {
-									return
-								}
-
-							} else {
-								dataStorage.Rollback()
-							}
-
-							if newAddTx != nil {
-								txsList = append(txsList, newAddTx.Tx)
-								listIndex += 1
-								txsMap[tx.Tx.Bloom.HashStr] = newAddTx.Tx
-								txs.inserted(tx)
-							}
-
+							}()
 						}
 
 					}

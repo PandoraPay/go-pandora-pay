@@ -19,9 +19,9 @@ import (
 )
 
 type mempoolNewTxReply struct {
-	wait  chan struct{}
-	reply *APIMempoolNewTxReply
-	err   error
+	wait   chan struct{}
+	result bool
+	err    error
 }
 
 type APICommon struct {
@@ -111,15 +111,7 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 			//it is safe to read
 			api.readLocalBlockchain(newChainDataUpdate)
 
-			mempoolProcessedThisBlock := api.mempoolProcessedThisBlock.Load()
-			mempoolProcessedThisBlock.Range(func(key string, value *mempoolNewTxReply) bool {
-				select {
-				case <-value.wait:
-					mempoolProcessedThisBlock.Delete(key)
-				default:
-				}
-				return true
-			})
+			api.mempoolProcessedThisBlock.Store(&generics.Map[string, *mempoolNewTxReply]{})
 
 		}
 	})

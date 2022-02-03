@@ -119,19 +119,13 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 
 	blkComplete.Txs = txs
 
-	gui.GUI.Log("fork validating txs", len(txs))
-
 	if err = thread.txsValidator.ValidateTxs(txs); err != nil {
 		return nil, err
 	}
 
-	gui.GUI.Log("fork validatated txs", len(txs))
-
 	if err = blkComplete.BloomAll(); err != nil {
 		return nil, err
 	}
-
-	gui.GUI.Log("fork bloomed txs", len(txs))
 
 	return blkComplete, nil
 }
@@ -256,18 +250,13 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 			willRemove := true
 
-			gui.GUI.Log("Status. Downloading fork", fork.Hash)
 			if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
 
 				if thread.downloadFork(fork) {
 
-					gui.GUI.Log("Status. DownloadingRemainingBlocks fork")
-
 					globals.MainEvents.BroadcastEvent("consensus/update", fork)
 
 					if thread.downloadRemainingBlocks(fork) {
-
-						gui.GUI.Log("Status. AddBlocks fork")
 
 						blocks := make([]*block_complete.BlockComplete, fork.Blocks.Length)
 						it := fork.Blocks.First
@@ -279,7 +268,9 @@ func (thread *ConsensusProcessForksThread) execute() {
 						}
 
 						if err := thread.chain.AddBlocks(blocks, false, advanced_connection_types.UUID_ALL); err != nil {
-							gui.GUI.Error("Invalid Fork", err)
+							if config.DEBUG {
+								gui.GUI.Error("Invalid Fork", err)
+							}
 						} else {
 							fork.Lock()
 							if fork.Current < fork.End {
@@ -289,7 +280,6 @@ func (thread *ConsensusProcessForksThread) execute() {
 							}
 							fork.Unlock()
 						}
-						gui.GUI.Log("Status. AddBlocks DONE fork")
 
 					}
 				}

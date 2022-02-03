@@ -28,11 +28,13 @@ func (api *APICommon) openLoadTxOnly(args *APITransactionRawRequest, reply *help
 		}
 
 		hashStr := string(args.Hash)
-		var data []byte
+		var data helpers.HexBytes
 
-		if *reply = reader.Get("tx:" + hashStr); data == nil {
+		if data = reader.Get("tx:" + hashStr); data == nil {
 			return errors.New("Tx not found")
 		}
+
+		*reply = data
 
 		return
 	})
@@ -56,8 +58,8 @@ func (api *APICommon) GetTxRaw_http(values url.Values) (interface{}, error) {
 	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
-	var reply *helpers.HexBytes
-	return reply, api.TxRaw(nil, args, reply)
+	var reply helpers.HexBytes
+	return reply, api.TxRaw(nil, args, &reply)
 }
 
 func (api *APICommon) GetTxRaw_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
@@ -65,6 +67,6 @@ func (api *APICommon) GetTxRaw_websockets(conn *connection.AdvancedConnection, v
 	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	var reply *helpers.HexBytes
-	return reply, api.TxRaw(nil, args, reply)
+	var reply helpers.HexBytes
+	return reply, api.TxRaw(nil, args, &reply)
 }
