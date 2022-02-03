@@ -53,26 +53,18 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 		close(processedAlreadyFound.wait)
 	}()
 
-	x := rand.Int()
-	gui.GUI.Log(x, "111")
 	tx := &transaction.Transaction{}
 	if err = tx.Deserialize(helpers.NewBufferReader(args.Tx)); err != nil {
 		return err
 	}
 
-	gui.GUI.Log(x, "2222")
-
 	if err = api.txsValidator.ValidateTx(tx); err != nil {
 		return
 	}
 
-	gui.GUI.Log(x, "33333")
-
 	if err = api.mempool.AddTxToMempool(tx, api.chain.GetChainData().Height, false, true, false, exceptSocketUUID, context.Background()); err != nil {
 		return
 	}
-
-	gui.GUI.Log(x, "444444")
 
 	(*reply).Result = true
 	return
