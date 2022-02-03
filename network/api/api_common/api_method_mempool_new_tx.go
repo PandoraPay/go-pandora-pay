@@ -3,12 +3,10 @@ package api_common
 import (
 	"context"
 	"github.com/vmihailenco/msgpack/v5"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/cryptography"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
