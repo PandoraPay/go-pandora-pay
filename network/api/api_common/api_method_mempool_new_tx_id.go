@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
 )
