@@ -2,6 +2,7 @@ package wizard
 
 import (
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/config/config_fees"
 	"pandora-pay/helpers"
 )
@@ -17,7 +18,12 @@ func setFee(tx *transaction.Transaction, extraBytes int, fee *WizardTransactionF
 	}
 
 	if fee.PerByte == 0 && fee.PerByteAuto {
-		fee.PerByte = config_fees.FEE_PER_BYTE_ZETHER
+		switch tx.Version {
+		case transaction_type.TX_SIMPLE:
+			fee.PerByte = config_fees.FEE_PER_BYTE
+		case transaction_type.TX_ZETHER:
+			fee.PerByte = config_fees.FEE_PER_BYTE_ZETHER
+		}
 		fee.PerByteExtraSpace = config_fees.FEE_PER_BYTE_EXTRA_SPACE
 	}
 

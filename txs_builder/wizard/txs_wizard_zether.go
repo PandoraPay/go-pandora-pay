@@ -158,6 +158,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 	spaceExtra := 0
 
+	unregisteredAccounts := make([]int, len(transfers))
+	emptyAccounts := make([]int, len(transfers))
+
 	for t, transfer := range transfers {
 
 		publickeylist := publickeylists[t]
@@ -165,18 +168,17 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		payloads[t] = &transaction_zether_payload.TransactionZetherPayload{}
 
-		var unregisteredAccounts, emptyAccounts int
 		for _, reg := range registrations[t] {
 			if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
-				unregisteredAccounts += 1
+				unregisteredAccounts[t] += 1
 			}
 			if reg.RegistrationType == transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT {
-				emptyAccounts += 1
+				emptyAccounts[t] += 1
 			}
 		}
 
-		spaceExtra += unregisteredAccounts * (cryptography.PublicKeySize + 1 + cryptography.SignatureSize)
-		spaceExtra += (unregisteredAccounts + emptyAccounts) * (cryptography.PublicKeySize + 1 + 66)
+		spaceExtra += unregisteredAccounts[t] * (cryptography.PublicKeySize + 1 + cryptography.SignatureSize)
+		spaceExtra += (unregisteredAccounts[t] + emptyAccounts[t]) * (cryptography.PublicKeySize + 1 + 66)
 
 		if transfers[t].PayloadExtra == nil {
 			payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_TRANSFER
@@ -324,12 +326,20 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		m := int(math.Log2(float64(len(rings[t]))))
 
-		extraBytes := 1 + len(payload.Asset) + helpers.BytesLengthSerialized(payload.BurnValue)
-		extraBytes += 1 + cryptography.SignatureSize + 1 //registrations length
-		extraBytes += 1 + dataLength                     //dataVersion + data
-		extraBytes += len(rings[t])*33*4 + 33 + 1        // statement
-		extraBytes += 33*(21+m*8) + 32*(10)              //proof arrays + proof data
-		extraBytes += 2 * m * 32                         //proof field array
+		extraBytes := helpers.BytesLengthSerialized(uint64(payload.PayloadScript)) + helpers.BytesLengthSerialized(payload.BurnValue) //PayloadScript + Burn
+		if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {                                                               //Asset Length
+			extraBytes += 1
+		} else {
+			extraBytes += 1 + len(payload.Asset)
+		}
+		extraBytes += len(rings[t])*1 + unregisteredAccounts[t]*cryptography.SignatureSize //registrations length
+		extraBytes += 1 + dataLength                                                       //dataVersion + data
+		extraBytes += len(rings[t])*33*2 + (len(rings[t])-emptyAccounts[t])*33*2 + 33 + 1  //statement
+		if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
+			extraBytes += helpers.BytesLengthSerialized(transfers[t].FeeRate) + 1 //feeRate + FeeLeadingZeros
+		}
+		extraBytes += 33*(21+m*8) + 32*(10) //proof arrays + proof data
+		extraBytes += 2 * m * 32            //proof field array
 
 		if payload.Extra != nil {
 			extraBytes += len(transaction_zether_payload_extra.SerializeToBytes(payload.Extra, true))
