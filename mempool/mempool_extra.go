@@ -161,10 +161,9 @@ func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesIn
 								}
 								balanceTemp = balance.Add(echanges) // homomorphic addition of changes
 
-								if payload.Statement.CLn[i].String() == balanceTemp.Left.String() && payload.Statement.CRn[i].String() == balanceTemp.Right.String() {
-									balance = balanceTemp
-									changed = true
-								}
+								balance = balanceTemp
+								changed = true
+								break
 							}
 						}
 					}
