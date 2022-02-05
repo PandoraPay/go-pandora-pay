@@ -48,12 +48,11 @@ func (worker *mempoolWorker) processing(
 ) {
 
 	var work *mempoolWork
+	var dataStorage *data_storage.DataStorage
 
 	txsList := []*mempoolTx{}
 	txsMap := make(map[string]*mempoolTx)
 	listIndex := 0
-
-	var dataStorage *data_storage.DataStorage
 
 	includedTotalSize := uint64(0)
 	includedTxs := []*mempoolTx{}
@@ -318,7 +317,7 @@ func (worker *mempoolWorker) processing(
 							txsList = append(txsList[:listIndex-1], txsList[listIndex:]...)
 							listIndex--
 						}
-						removeTxNow(tx, newAddTx != nil, false)
+						removeTxNow(tx, newAddTx == nil, false)
 					}
 
 					if newAddTx != nil && newAddTx.Result != nil {
