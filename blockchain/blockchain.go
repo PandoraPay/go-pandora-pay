@@ -504,7 +504,8 @@ func CreateBlockchain(mempool *mempool.Mempool, txsValidator *txs_validator.TxsV
 	}
 
 	chain.updatesQueue.chain = chain
-	chain.updatesQueue.processQueue()
+	chain.updatesQueue.processBlockchainUpdatesQueue()
+	chain.updatesQueue.processBlockchainUpdateMempool()
 
 	return chain, nil
 }
