@@ -68,7 +68,7 @@ func (queue *BlockchainUpdatesQueue) lastSuccess(updates []*BlockchainUpdate) *B
 	return nil
 }
 
-func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate) error {
+func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate) (err error) {
 
 	gui.GUI.Warning("-------------------------------------------")
 	gui.GUI.Warning(fmt.Sprintf("Included blocks %d | TXs: %d | Hash %s", len(update.insertedBlocks), len(update.insertedTxs), hex.EncodeToString(update.newChainData.Hash)))
@@ -98,11 +98,11 @@ func (queue *BlockchainUpdatesQueue) processUpdate(update *BlockchainUpdate) err
 		removedTxs := make([]*transaction.Transaction, len(update.removedTxsList))
 		for i, txData := range update.removedTxsList {
 			tx := &transaction.Transaction{}
-			if err := tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
-				return err
+			if err = tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
+				return
 			}
-			if err := queue.txsValidator.MarkAsValidatedTx(tx); err != nil {
-				return err
+			if err = queue.txsValidator.MarkAsValidatedTx(tx); err != nil {
+				return
 			}
 
 			removedTxs[i] = tx

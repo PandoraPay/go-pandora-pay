@@ -10,62 +10,72 @@ type linkedListItem[T any] struct {
 }
 
 type LinkedList[T any] struct {
-	First  *linkedListItem[T] `json:"first" msgpack:"first"`
-	Last   *linkedListItem[T] `json:"last" msgpack:"last"`
+	Head   *linkedListItem[T] `json:"head" msgpack:"head"`
+	Tail   *linkedListItem[T] `json:"tail" msgpack:"tail"`
 	Length int                `json:"length" msgpack:"length"`
 }
 
 func (list *LinkedList[T]) Empty() {
-	list.First = nil
-	list.Last = nil
+	list.Head = nil
+	list.Tail = nil
 	list.Length = 0
 }
 
 func (list *LinkedList[T]) PushFront(data T) {
-	if list.First == nil {
-		list.First = &linkedListItem[T]{nil, data}
-		list.Last = list.First
+	if list.Head == nil {
+		list.Head = &linkedListItem[T]{nil, data}
+		list.Tail = list.Head
 	} else {
-		next := &linkedListItem[T]{list.First, data}
-		list.First = next
+		next := &linkedListItem[T]{list.Head, data}
+		list.Head = next
 	}
 	list.Length++
 }
 
 func (list *LinkedList[T]) Push(data T) {
-	if list.First == nil {
-		list.First = &linkedListItem[T]{nil, data}
-		list.Last = list.First
+	if list.Head == nil {
+		list.Head = &linkedListItem[T]{nil, data}
+		list.Tail = list.Head
 	} else {
 		next := &linkedListItem[T]{nil, data}
-		list.Last.Next = next
-		list.Last = next
+		list.Tail.Next = next
+		list.Tail = next
 	}
 	list.Length++
 }
 
-func (list *LinkedList[T]) PopFirst() (T, bool) {
-	if list.First != nil {
-		data := list.First.Data
-		list.First = list.First.Next
+func (list *LinkedList[T]) PopHead() (T, bool) {
+	if list.Head != nil {
+		data := list.Head.Data
+		list.Head = list.Head.Next
 		list.Length--
 		return data, true
 	}
 	return generics.Zero[T](), false
 }
 
-func (list *LinkedList[T]) GetFirst() (T, bool) {
-	if list.First != nil {
-		return list.First.Data, true
+func (list *LinkedList[T]) GetHead() (T, bool) {
+	if list.Head != nil {
+		return list.Head.Data, true
 	}
 	return generics.Zero[T](), false
 }
 
-func (list *LinkedList[T]) GetLast() (T, bool) {
-	if list.Last != nil {
-		return list.Last.Data, true
+func (list *LinkedList[T]) GetTail() (T, bool) {
+	if list.Tail != nil {
+		return list.Tail.Data, true
 	}
 	return generics.Zero[T](), false
+}
+
+func (list *LinkedList[T]) GetList() []T {
+	a := make([]T, 0)
+	head := list.Head
+	for head != nil {
+		a = append(a, head.Data)
+		head = head.Next
+	}
+	return a
 }
 
 func NewLinkedList[T any]() *LinkedList[T] {

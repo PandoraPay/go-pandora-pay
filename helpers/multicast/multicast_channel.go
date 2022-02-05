@@ -44,7 +44,7 @@ func (self *MulticastChannel[T]) runQueueBroadcast() {
 	linkedList := linked_list.NewLinkedList[T]()
 
 	for {
-		if first, ok := linkedList.GetFirst(); ok {
+		if first, ok := linkedList.GetHead(); ok {
 			select {
 			case data, ok := <-self.queueBroadcastCn:
 				if !ok {
@@ -52,7 +52,7 @@ func (self *MulticastChannel[T]) runQueueBroadcast() {
 				}
 				linkedList.Push(data)
 			case self.internalBroadcastCn <- first:
-				linkedList.PopFirst()
+				linkedList.PopHead()
 			}
 		} else {
 			select {

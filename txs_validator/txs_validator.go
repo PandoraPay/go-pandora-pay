@@ -26,6 +26,7 @@ func (validator *TxsValidator) MarkAsValidatedTx(tx *transaction.Transaction) er
 		foundWork.time = time.Now().Add(EXPIRE_TIME_MS).Unix()
 		atomic.StoreInt32(&foundWork.status, TX_VALIDATED_PROCCESSED)
 		close(foundWork.wait)
+		return nil
 	}
 
 	<-foundWork.wait
@@ -105,7 +106,7 @@ func (validator *TxsValidator) runRemoveExpiredTransactions() {
 			return true
 		})
 
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(time.Second)
 	}
 }
 

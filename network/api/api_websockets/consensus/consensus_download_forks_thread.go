@@ -259,7 +259,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 					if thread.downloadRemainingBlocks(fork) {
 
 						blocks := make([]*block_complete.BlockComplete, fork.Blocks.Length)
-						it := fork.Blocks.First
+						it := fork.Blocks.Head
 						i := 0
 						for it != nil {
 							blocks[i] = it.Data
