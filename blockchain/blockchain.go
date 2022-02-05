@@ -475,7 +475,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		update.allTransactionsChanges = allTransactionsChanges
 	}
 
-	chain.updatesQueue.updates <- update
+	chain.updatesQueue.updatesCn <- update
 
 	return
 }
