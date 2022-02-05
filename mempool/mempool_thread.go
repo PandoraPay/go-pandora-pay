@@ -254,8 +254,9 @@ func (worker *mempoolWorker) processing(
 					}
 
 					var finalErr error
+					var exists bool
 
-					if exists := dbTx.Exists("txHash:" + string(tx.Tx.Bloom.HashStr)); exists {
+					if exists = dbTx.Exists("txHash:" + string(tx.Tx.Bloom.HashStr)); exists {
 						finalErr = errors.New("Tx is already included in blockchain")
 					}
 
@@ -317,7 +318,7 @@ func (worker *mempoolWorker) processing(
 							txsList = append(txsList[:listIndex-1], txsList[listIndex:]...)
 							listIndex--
 						}
-						removeTxNow(tx, newAddTx == nil, false)
+						removeTxNow(tx, newAddTx == nil, newAddTx == nil && exists)
 					}
 
 					if newAddTx != nil && newAddTx.Result != nil {
