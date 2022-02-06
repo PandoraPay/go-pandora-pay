@@ -16,14 +16,12 @@ import (
 	"pandora-pay/txs_builder/wizard"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
-	"sync"
 )
 
 type TxsBuilder struct {
 	wallet  *wallet.Wallet
 	mempool *mempool.Mempool
 	chain   *blockchain.Blockchain
-	lock    *sync.Mutex
 }
 
 func (builder *TxsBuilder) getNonce(nonce uint64, publicKey []byte, accNonce uint64) uint64 {
@@ -100,9 +98,6 @@ func (builder *TxsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizar
 		return nil, err
 	}
 
-	builder.lock.Lock()
-	defer builder.lock.Unlock()
-
 	statusCallback("Wallet Addresses Found")
 
 	var tx *transaction.Transaction
@@ -164,7 +159,6 @@ func TxsBuilderInit(wallet *wallet.Wallet, mempool *mempool.Mempool, chain *bloc
 		wallet:  wallet,
 		chain:   chain,
 		mempool: mempool,
-		lock:    &sync.Mutex{},
 	}
 
 	builder.initCLI()
