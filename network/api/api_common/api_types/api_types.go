@@ -13,17 +13,17 @@ type APISubscriptionNotification struct {
 
 type APISubscriptionNotificationTxExtraBlockchain struct {
 	Inserted     bool   `json:"inserted,omitempty" msgpack:"inserted,omitempty"`
-	BlkHeight    uint64 `json:"blkHeight,omitempty" msgpack:"blkHeight,omitempty"`
-	BlkTimestamp uint64 `json:"blkTimestamp,omitempty" msgpack:"blkTimestamp,omitempty"`
-	Height       uint64 `json:"height,omitempty" msgpack:"height,omitempty"`
+	BlkHeight    uint64 `json:"blkHeight" msgpack:"blkHeight"`
+	BlkTimestamp uint64 `json:"blkTimestamp" msgpack:"blkTimestamp"`
+	Height       uint64 `json:"height" msgpack:"height"`
 }
 
 type APISubscriptionNotificationAccountTxExtraBlockchain struct {
 	Inserted     bool   `json:"inserted,omitempty" msgpack:"inserted,omitempty"`
-	TxsCount     uint64 `json:"txsCount,omitempty" msgpack:"txsCount,omitempty"`
-	BlkHeight    uint64 `json:"blkHeight,omitempty" msgpack:"blkHeight,omitempty"`
-	BlkTimestamp uint64 `json:"blkTimestamp,omitempty" msgpack:"blkTimestamp,omitempty"`
-	Height       uint64 `json:"height,omitempty" msgpack:"height,omitempty"`
+	TxsCount     uint64 `json:"txsCount" msgpack:"txsCount"`
+	BlkHeight    uint64 `json:"blkHeight" msgpack:"blkHeight"`
+	BlkTimestamp uint64 `json:"blkTimestamp" msgpack:"blkTimestamp"`
+	Height       uint64 `json:"height" msgpack:"height"`
 }
 
 type APISubscriptionNotificationAccountTxExtraMempool struct {

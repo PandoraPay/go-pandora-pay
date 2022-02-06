@@ -2,14 +2,11 @@ package wallet_address
 
 import (
 	"bytes"
-	"context"
 	"encoding/hex"
 	"errors"
 	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -87,48 +84,6 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDele
 		PublicKey:      address.PublicKey,
 		LastKnownNonce: nonce,
 	}, nil
-}
-
-func (adr *WalletAddress) DecodeAccount(acc *account.Account, store bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
-
-	if adr.PrivateKey == nil {
-		return 0, nil
-	}
-
-	if acc == nil {
-		if store {
-			adr.BalancesDecoded[hex.EncodeToString(acc.Asset)] = &WalletAddressBalanceDecoded{
-				0, acc.Asset,
-			}
-		}
-		return 0, nil
-	}
-
-	return adr.DecodeBalance(acc.Balance.Amount, acc.Asset, store, ctx, statusCallback)
-}
-
-func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, assetId []byte, store bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
-
-	if adr.PrivateKey == nil {
-		return 0, errors.New("PrivateKey is missing")
-	}
-
-	previousValue := uint64(0)
-	found := adr.BalancesDecoded[hex.EncodeToString(assetId)]
-	if found != nil {
-		previousValue = found.AmountDecoded
-	}
-
-	newValue, err := adr.PrivateKey.DecodeBalance(balance, previousValue, ctx, statusCallback)
-	if err != nil {
-		return 0, err
-	}
-
-	if store {
-		adr.UpdatePreviousValue(newValue, assetId)
-	}
-
-	return newValue, nil
 }
 
 func (adr *WalletAddress) UpdatePreviousValue(newPreviousValue uint64, assetId []byte) {

@@ -28,7 +28,7 @@ type Wallet struct {
 	mempool             *mempool.Mempool
 	updateAccounts      *multicast.MulticastChannel[*accounts.AccountsCollection]
 	updatePlainAccounts *multicast.MulticastChannel[*plain_accounts.PlainAccounts]
-	sync.RWMutex        `json:"-" msgpack:"-"`
+	Lock                sync.RWMutex `json:"-" msgpack:"-"`
 }
 
 func createWallet(forging *forging.Forging, mempool *mempool.Mempool, updateAccounts *multicast.MulticastChannel[*accounts.AccountsCollection], updatePlainAccounts *multicast.MulticastChannel[*plain_accounts.PlainAccounts]) (wallet *Wallet) {
@@ -82,10 +82,10 @@ func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool) (*Wallet, 
 }
 
 func (wallet *Wallet) InitializeWallet(updateAccounts *multicast.MulticastChannel[*accounts.AccountsCollection], updatePlainAccounts *multicast.MulticastChannel[*plain_accounts.PlainAccounts]) {
-	wallet.Lock()
+	wallet.Lock.Lock()
 	wallet.updateAccounts = updateAccounts
 	wallet.updatePlainAccounts = updatePlainAccounts
-	wallet.Unlock()
+	wallet.Lock.Unlock()
 
 	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
 		wallet.updateAccountsChanges()

@@ -24,8 +24,8 @@ func createEncryption(wallet *Wallet) *WalletEncryption {
 }
 
 func (self *WalletEncryption) Encrypt(newPassword string, difficulty int) (err error) {
-	self.wallet.Lock()
-	defer self.wallet.Unlock()
+	self.wallet.Lock.Lock()
+	defer self.wallet.Lock.Unlock()
 
 	if !self.wallet.Loaded {
 		return errors.New("Wallet was not loaded!")
@@ -82,8 +82,8 @@ func (self *WalletEncryption) decryptData(input []byte) ([]byte, error) {
 }
 
 func (self *WalletEncryption) CheckPassword(password string, requirePassword bool) error {
-	self.wallet.RLock()
-	defer self.wallet.RUnlock()
+	self.wallet.Lock.RLock()
+	defer self.wallet.Lock.RUnlock()
 
 	if !self.wallet.Loaded {
 		return errors.New("Wallet was not loaded!")
@@ -106,8 +106,8 @@ func (self *WalletEncryption) CheckPassword(password string, requirePassword boo
 }
 
 func (self *WalletEncryption) RemoveEncryption() (err error) {
-	self.wallet.Lock()
-	defer self.wallet.Unlock()
+	self.wallet.Lock.Lock()
+	defer self.wallet.Lock.Unlock()
 
 	if !self.wallet.Loaded {
 		return errors.New("Wallet was not loaded!")
@@ -129,17 +129,17 @@ func (self *WalletEncryption) RemoveEncryption() (err error) {
 }
 
 func (self *WalletEncryption) Logout() (err error) {
-	self.wallet.Lock()
+	self.wallet.Lock.Lock()
 	if !self.wallet.Loaded {
-		self.wallet.Unlock()
+		self.wallet.Lock.Unlock()
 		return
 	}
 	if self.Encrypted == ENCRYPTED_VERSION_PLAIN_TEXT {
-		self.wallet.Unlock()
+		self.wallet.Lock.Unlock()
 		return errors.New("Wallet is not encrypted!")
 	}
 	self.wallet.clearWallet()
-	self.wallet.Unlock()
+	self.wallet.Lock.Unlock()
 
 	if err = self.wallet.loadWallet("", true); err != nil {
 		return nil

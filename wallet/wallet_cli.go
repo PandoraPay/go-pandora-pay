@@ -18,6 +18,7 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/wallet/wallet_address"
@@ -83,9 +84,21 @@ func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, n
 
 func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err error) {
 
-	wallet.Lock()
-	defer wallet.Unlock()
+	type AddressAsset struct {
+		balance *crypto.ElGamal
+		assetId []byte
+		ast     *asset.Asset
+	}
+	type Address struct {
+		isReg         bool
+		plainAcc      *plain_account.PlainAccount
+		assetsList    []*AddressAsset
+		publicKey     []byte
+		name          string
+		addressString string
+	}
 
+	wallet.Lock.RLock()
 	gui.GUI.OutputWrite("Wallet")
 	gui.GUI.OutputWrite("Version: " + wallet.Version.String())
 	gui.GUI.OutputWrite("Encrypted: " + wallet.Encryption.Encrypted.String())
@@ -93,17 +106,12 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 	gui.GUI.OutputWrite("Count: " + strconv.Itoa(wallet.Count))
 	gui.GUI.OutputWrite("")
 
-	type AddressAsset struct {
-		balance *crypto.ElGamal
-		assetId []byte
-		ast     *asset.Asset
-	}
-	type Address struct {
-		isReg      bool
-		plainAcc   *plain_account.PlainAccount
-		assetsList []*AddressAsset
-	}
 	addresses := make([]*Address, len(wallet.Addresses))
+
+	for i, walletAddress := range wallet.Addresses {
+		addresses[i] = &Address{publicKey: helpers.CloneBytes(walletAddress.PublicKey), name: walletAddress.Name, addressString: walletAddress.GetAddress(false)}
+	}
+	wallet.Lock.RUnlock()
 
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -114,52 +122,44 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 		var accs *accounts.Accounts
 		var acc *account.Account
 
-		for i, walletAddress := range wallet.Addresses {
+		for i, address := range addresses {
 
-			addresses[i] = &Address{}
+			if addresses[i].isReg, err = dataStorage.Regs.Exists(string(address.publicKey)); err != nil {
+				return
+			}
 
-			switch walletAddress.Version {
-			case wallet_address.VERSION_NORMAL:
+			var assetsList [][]byte
+			if assetsList, err = dataStorage.AccsCollection.GetAccountAssets(address.publicKey); err != nil {
+				return
+			}
 
-				if addresses[i].isReg, err = dataStorage.Regs.Exists(string(walletAddress.PublicKey)); err != nil {
-					return
-				}
+			if addresses[i].plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(address.publicKey, chainHeight); err != nil {
+				return
+			}
 
-				var assetsList [][]byte
-				if assetsList, err = dataStorage.AccsCollection.GetAccountAssets(walletAddress.PublicKey); err != nil {
-					return
-				}
+			if len(assetsList) > 0 {
 
-				if addresses[i].plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(walletAddress.PublicKey, chainHeight); err != nil {
-					return
-				}
+				for _, assetId := range assetsList {
 
-				if len(assetsList) > 0 {
-
-					for _, assetId := range assetsList {
-
-						if ast, err = dataStorage.Asts.GetAsset(assetId); err != nil {
-							return
-						}
-						if accs, err = dataStorage.AccsCollection.GetMap(assetId); err != nil {
-							return
-						}
-
-						if acc, err = accs.GetAccount(walletAddress.PublicKey); err != nil {
-							return
-						}
-
-						addresses[i].assetsList = append(addresses[i].assetsList, &AddressAsset{
-							acc.Balance.Amount,
-							assetId,
-							ast,
-						})
-
+					if ast, err = dataStorage.Asts.GetAsset(assetId); err != nil {
+						return
+					}
+					if accs, err = dataStorage.AccsCollection.GetMap(assetId); err != nil {
+						return
 					}
 
+					if acc, err = accs.GetAccount(address.publicKey); err != nil {
+						return
+					}
+
+					addresses[i].assetsList = append(addresses[i].assetsList, &AddressAsset{
+						acc.Balance.Amount,
+						assetId,
+						ast,
+					})
+
 				}
-			default:
-				return errors.New("Invalid Address version")
+
 			}
 
 		}
@@ -169,10 +169,9 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 		return
 	}
 
-	for i, walletAddress := range wallet.Addresses {
+	for i, address := range addresses {
 
-		addressStr := walletAddress.GetAddress(addresses[i].isReg)
-		gui.GUI.OutputWrite(fmt.Sprintf("%d) %s : %s :: %s", i, walletAddress.Name, walletAddress.Version.String(), addressStr))
+		gui.GUI.OutputWrite(fmt.Sprintf("%d) %s :: %s", i, address.name, address.addressString))
 
 		if len(addresses[i].assetsList) == 0 && addresses[i].plainAcc == nil {
 			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))
@@ -220,7 +219,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 				gui.GUI.Info2Update("Decoding", "")
 
 				var decoded uint64
-				if decoded, err = wallet.DecodeBalanceByPublicKey(walletAddress.PublicKey, data.balance, data.assetId, true, false, ctx, func(status string) {
+				if decoded, err = wallet.DecodeBalanceByPublicKey(address.publicKey, data.balance, data.assetId, true, true, ctx, func(status string) {
 					gui.GUI.Info2Update("Decoding", status)
 				}); err != nil {
 					return
@@ -270,8 +269,8 @@ func (wallet *Wallet) initWalletCLI() {
 
 		defer f.Close()
 
-		wallet.RLock()
-		defer wallet.RUnlock()
+		wallet.Lock.RLock()
+		defer wallet.Lock.RUnlock()
 
 		if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 			regs := registrations.NewRegistrations(reader)
@@ -314,8 +313,8 @@ func (wallet *Wallet) initWalletCLI() {
 
 		defer f.Close()
 
-		wallet.RLock()
-		defer wallet.RUnlock()
+		wallet.Lock.RLock()
+		defer wallet.Lock.RUnlock()
 
 		if index < 0 {
 			return errors.New("Invalid index")
@@ -370,8 +369,8 @@ func (wallet *Wallet) initWalletCLI() {
 
 		defer f.Close()
 
-		wallet.RLock()
-		defer wallet.RUnlock()
+		wallet.Lock.RLock()
+		defer wallet.Lock.RUnlock()
 
 		var marshal []byte
 		if marshal, err = json.Marshal(wallet); err != nil {

@@ -10,7 +10,6 @@ import (
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config"
 	"pandora-pay/config/config_nodes"
@@ -23,15 +22,15 @@ import (
 )
 
 func (wallet *Wallet) GetAddressesCount() int {
-	wallet.Lock()
-	defer wallet.Unlock()
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
 	return len(wallet.Addresses)
 }
 
 func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (string, []byte, error) {
 
-	wallet.Lock()
-	defer wallet.Unlock()
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
 
 	if len(wallet.Addresses) == 0 || !wallet.Loaded {
 		return "", nil, errors.New("Wallet is empty")
@@ -46,18 +45,13 @@ func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (string, []byte, e
 	return addr.AddressRegistrationEncoded, delegatedStake.PublicKey, nil
 }
 
+//you should not lock it before
 func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, asset []byte, store, lock bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
-	if lock {
-
-		if store {
-			wallet.Lock()
-			defer wallet.Unlock()
-		} else {
-			wallet.RLock()
-			defer wallet.RUnlock()
-		}
-
+	if lock && store {
+		wallet.Lock.Lock()
+	} else if lock && !store {
+		wallet.Lock.RLock()
 	}
 
 	addr := wallet.addressesMap[string(publicKey)]
@@ -65,12 +59,35 @@ func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto
 		return 0, errors.New("address was not found")
 	}
 
-	decoded, err := addr.DecodeBalance(balance, asset, store, ctx, statusCallback)
+	priv := &addresses.PrivateKey{helpers.CloneBytes(addr.PrivateKey.Key)}
+
+	previousValue := uint64(0)
+	if found := addr.BalancesDecoded[hex.EncodeToString(asset)]; found != nil {
+		previousValue = found.AmountDecoded
+	}
+
+	if lock && store {
+		wallet.Lock.Unlock()
+	} else if lock && !store {
+		wallet.Lock.RUnlock()
+	}
+
+	decoded, err := priv.DecodeBalance(balance, previousValue, ctx, statusCallback)
 	if err != nil {
 		return 0, err
 	}
 
 	if store {
+		if lock {
+			wallet.Lock.Lock()
+			defer wallet.Lock.Unlock()
+		}
+		if addr = wallet.addressesMap[string(publicKey)]; addr == nil {
+			return 0, errors.New("address for storing the new decoded value was not found")
+		}
+
+		addr.UpdatePreviousValue(decoded, asset)
+
 		if err := wallet.saveWalletAddress(addr, false); err != nil {
 			gui.GUI.Error("error storing balance update", publicKey)
 		}
@@ -80,8 +97,8 @@ func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto
 }
 
 func (wallet *Wallet) UpdatePreviousValueByPublicKey(publicKey []byte, newPreviousValue uint64, asset []byte) error {
-	wallet.Lock()
-	defer wallet.Unlock()
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
 
 	addr := wallet.addressesMap[string(publicKey)]
 	if addr == nil {
@@ -100,8 +117,8 @@ func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string) (*
 		return nil, err
 	}
 
-	wallet.RLock()
-	defer wallet.RUnlock()
+	wallet.Lock.RLock()
+	defer wallet.Lock.RUnlock()
 
 	out := wallet.addressesMap[string(address.PublicKey)]
 	if out == nil {
@@ -122,26 +139,11 @@ func (wallet *Wallet) GetWalletAddressByPublicKeyHex(publicKeyHex string) (*wall
 func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte, lock bool) *wallet_address.WalletAddress {
 
 	if lock {
-		wallet.RLock()
-		defer wallet.RUnlock()
+		wallet.Lock.RLock()
+		defer wallet.Lock.RUnlock()
 	}
 
 	return wallet.addressesMap[string(publicKey)]
-}
-
-func (wallet *Wallet) GetDataForDecodingBalance(publicKey, asset []byte) (privateKey helpers.HexBytes, previousValue uint64) {
-
-	wallet.RLock()
-	defer wallet.RUnlock()
-
-	addr := wallet.addressesMap[string(publicKey)]
-	privateKey = addr.PrivateKey.Key
-
-	if addr.BalancesDecoded[hex.EncodeToString(asset)] != nil {
-		previousValue = addr.BalancesDecoded[hex.EncodeToString(asset)].AmountDecoded
-	}
-
-	return
 }
 
 func (wallet *Wallet) DecodeBalanceIfMatchesPreviousValue(publicKey, asset, balanceEncoded []byte) (uint64, bool, error) {
@@ -151,8 +153,8 @@ func (wallet *Wallet) DecodeBalanceIfMatchesPreviousValue(publicKey, asset, bala
 		return 0, false, err
 	}
 
-	wallet.RLock()
-	defer wallet.RUnlock()
+	wallet.Lock.RLock()
+	defer wallet.Lock.RUnlock()
 
 	addr := wallet.addressesMap[string(publicKey)]
 
@@ -199,8 +201,8 @@ func (wallet *Wallet) ImportPrivateKey(name string, privateKey []byte) (*wallet_
 
 func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress, lock bool) (err error) {
 	if lock {
-		wallet.Lock()
-		defer wallet.Unlock()
+		wallet.Lock.Lock()
+		defer wallet.Lock.Unlock()
 	}
 	if !wallet.Loaded {
 		return errors.New("Wallet was not loaded!")
@@ -241,8 +243,8 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, incrementSeedIndex bool, incrementImportedCountIndex bool) (err error) {
 
 	if lock {
-		wallet.Lock()
-		defer wallet.Unlock()
+		wallet.Lock.Lock()
+		defer wallet.Lock.Unlock()
 	}
 
 	if !wallet.Loaded {
@@ -299,8 +301,8 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 
 func (wallet *Wallet) GeneratePrivateKey(seedIndex uint32, lock bool) ([]byte, error) {
 	if lock {
-		wallet.Lock()
-		defer wallet.Unlock()
+		wallet.Lock.Lock()
+		defer wallet.Lock.Unlock()
 	}
 
 	if !wallet.Loaded {
@@ -324,8 +326,8 @@ func (wallet *Wallet) AddNewAddress(lock bool) (*wallet_address.WalletAddress, e
 
 	//avoid generating the same address twice
 	if lock {
-		wallet.Lock()
-		defer wallet.Unlock()
+		wallet.Lock.Lock()
+		defer wallet.Lock.Unlock()
 	}
 
 	if !wallet.Loaded {
@@ -359,11 +361,27 @@ func (wallet *Wallet) AddNewAddress(lock bool) (*wallet_address.WalletAddress, e
 	return adr, nil
 }
 
+func (wallet *Wallet) DeriveDelegatedStakeByPublicKey(addressPublicKey []byte, nonce uint64) ([]byte, []byte, error) {
+	wallet.Lock.RLock()
+	defer wallet.Lock.RUnlock()
+
+	addr := wallet.GetWalletAddressByPublicKey(addressPublicKey, false)
+	if addr == nil {
+		return nil, nil, errors.New("Wallet was not found")
+	}
+
+	walletAddressDelegatedStake, err := addr.DeriveDelegatedStake(uint32(nonce))
+	if err != nil {
+		return nil, nil, err
+	}
+	return walletAddressDelegatedStake.PublicKey, walletAddressDelegatedStake.PrivateKey.Key, nil
+}
+
 func (wallet *Wallet) RemoveAddressByIndex(index int, lock bool) (bool, error) {
 
 	if lock {
-		wallet.Lock()
-		defer wallet.Unlock()
+		wallet.Lock.Lock()
+		defer wallet.Lock.Unlock()
 	}
 
 	if !wallet.Loaded {
@@ -408,8 +426,8 @@ func (wallet *Wallet) RemoveAddress(encodedAddress string, lock bool) (bool, err
 func (wallet *Wallet) RemoveAddressByPublicKey(publicKey []byte, lock bool) (bool, error) {
 
 	if lock {
-		wallet.Lock()
-		defer wallet.Unlock()
+		wallet.Lock.Lock()
+		defer wallet.Lock.Unlock()
 	}
 
 	if !wallet.Loaded {
@@ -428,8 +446,8 @@ func (wallet *Wallet) RemoveAddressByPublicKey(publicKey []byte, lock bool) (boo
 func (wallet *Wallet) RenameAddressByPublicKey(publicKey []byte, newName string, lock bool) (bool, error) {
 
 	if lock {
-		wallet.Lock()
-		defer wallet.Unlock()
+		wallet.Lock.Lock()
+		defer wallet.Lock.Unlock()
 	}
 
 	if !wallet.Loaded {
@@ -449,8 +467,8 @@ func (wallet *Wallet) RenameAddressByPublicKey(publicKey []byte, newName string,
 func (wallet *Wallet) GetWalletAddress(index int, lock bool) (*wallet_address.WalletAddress, error) {
 
 	if lock {
-		wallet.RLock()
-		defer wallet.RUnlock()
+		wallet.Lock.RLock()
+		defer wallet.Lock.RUnlock()
 	}
 
 	if index < 0 || index > len(wallet.Addresses) {
@@ -461,8 +479,8 @@ func (wallet *Wallet) GetWalletAddress(index int, lock bool) (*wallet_address.Wa
 
 func (wallet *Wallet) ShowPrivateKey(index int) ([]byte, error) { //32 byte
 
-	wallet.RLock()
-	defer wallet.RUnlock()
+	wallet.Lock.RLock()
+	defer wallet.Lock.RUnlock()
 
 	if index < 0 || index > len(wallet.Addresses) {
 		return nil, errors.New("Invalid Address Index")
@@ -473,8 +491,8 @@ func (wallet *Wallet) ShowPrivateKey(index int) ([]byte, error) { //32 byte
 func (wallet *Wallet) createSeed(lock bool) error {
 
 	if lock {
-		wallet.Lock()
-		defer wallet.Unlock()
+		wallet.Lock.Lock()
+		defer wallet.Lock.Unlock()
 	}
 
 	if !wallet.Loaded {
@@ -500,8 +518,8 @@ func (wallet *Wallet) createSeed(lock bool) error {
 }
 
 func (wallet *Wallet) createEmptyWallet() (err error) {
-	wallet.Lock()
-	defer wallet.Unlock()
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
 
 	wallet.setLoaded(true)
 	if err = wallet.createSeed(false); err != nil {
@@ -516,23 +534,6 @@ func (wallet *Wallet) createEmptyWallet() (err error) {
 
 func (wallet *Wallet) updateWallet() {
 	gui.GUI.InfoUpdate("Wallet Addrs", fmt.Sprintf("%d  %s", wallet.Count, wallet.Encryption.Encrypted))
-}
-
-//wallet must be locked before
-//acc read only
-
-func (wallet *Wallet) refreshWalletAccount(acc *account.Account, adr *wallet_address.WalletAddress, lock bool) (err error) {
-
-	if acc == nil {
-		return
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	_, err = adr.DecodeAccount(acc, true, ctx, func(string) {})
-
-	return
 }
 
 func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAccount, adr *wallet_address.WalletAddress, lock bool) (err error) {
@@ -606,8 +607,8 @@ func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.Wall
 		return nil, errors.New("Private Key is missing")
 	}
 
-	wallet.RLock()
-	defer wallet.RUnlock()
+	wallet.Lock.RLock()
+	defer wallet.Lock.RUnlock()
 
 	isMine := false
 	if wallet.SeedIndex != 0 {
@@ -636,8 +637,8 @@ func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {
 		return errors.New("Error unmarshaling wallet")
 	}
 
-	wallet.RLock()
-	defer wallet.RUnlock()
+	wallet.Lock.RLock()
+	defer wallet.Lock.RUnlock()
 
 	if err = json.Unmarshal(data, wallet); err != nil {
 		return errors.New("Error unmarshaling wallet 2")
@@ -652,8 +653,8 @@ func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {
 }
 
 func (wallet *Wallet) GetDelegatesCount() int {
-	wallet.RLock()
-	defer wallet.RUnlock()
+	wallet.Lock.RLock()
+	defer wallet.Lock.RUnlock()
 
 	return wallet.DelegatesCount
 }

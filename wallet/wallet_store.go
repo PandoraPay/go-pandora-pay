@@ -19,9 +19,14 @@ import (
 
 func (wallet *Wallet) saveWalletAddress(adr *wallet_address.WalletAddress, lock bool) error {
 
+	if lock {
+		wallet.Lock.RLock()
+		defer wallet.Lock.RUnlock()
+	}
+
 	for i, adr2 := range wallet.Addresses {
 		if adr2 == adr {
-			return wallet.saveWallet(i, i+1, -1, lock)
+			return wallet.saveWallet(i, i+1, -1, false)
 		}
 	}
 
@@ -30,8 +35,8 @@ func (wallet *Wallet) saveWalletAddress(adr *wallet_address.WalletAddress, lock 
 
 func (wallet *Wallet) saveWalletEntire(lock bool) error {
 	if lock {
-		wallet.RLock()
-		defer wallet.RUnlock()
+		wallet.Lock.RLock()
+		defer wallet.Lock.RUnlock()
 	}
 	return wallet.saveWallet(0, wallet.Count, -1, false)
 }
@@ -39,8 +44,8 @@ func (wallet *Wallet) saveWalletEntire(lock bool) error {
 func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 
 	if lock {
-		wallet.RLock()
-		defer wallet.RUnlock()
+		wallet.Lock.RLock()
+		defer wallet.Lock.RUnlock()
 	}
 
 	start = generics.Max(0, start)
@@ -89,8 +94,8 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 }
 
 func (wallet *Wallet) loadWallet(password string, first bool) error {
-	wallet.Lock()
-	defer wallet.Unlock()
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
 
 	if wallet.Loaded {
 		return errors.New("Wallet was already loaded!")
@@ -187,8 +192,8 @@ func (wallet *Wallet) walletLoaded() {
 
 func (wallet *Wallet) StartWallet() error {
 
-	wallet.Lock()
-	defer wallet.Unlock()
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
 
 	wallet.walletLoaded()
 

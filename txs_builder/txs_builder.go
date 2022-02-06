@@ -56,19 +56,7 @@ func (builder *TxsBuilder) DeriveDelegatedStake(nonce uint64, addressPublicKey [
 
 	nonce = builder.getNonce(nonce, addressPublicKey, accNonce)
 
-	builder.wallet.RLock()
-	defer builder.wallet.RUnlock()
-
-	addr := builder.wallet.GetWalletAddressByPublicKey(addressPublicKey, false)
-	if addr == nil {
-		return nil, nil, errors.New("Wallet was not found")
-	}
-
-	walletAddressDelegatedStake, err := addr.DeriveDelegatedStake(uint32(nonce))
-	if err != nil {
-		return
-	}
-	return walletAddressDelegatedStake.PublicKey, walletAddressDelegatedStake.PrivateKey.Key, nil
+	return builder.wallet.DeriveDelegatedStakeByPublicKey(addressPublicKey, nonce)
 }
 
 func (builder *TxsBuilder) convertFloatAmounts(amounts []float64, ast *asset.Asset) ([]uint64, error) {

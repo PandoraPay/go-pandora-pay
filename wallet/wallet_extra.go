@@ -57,24 +57,23 @@ func (wallet *Wallet) updateAccountsChanges() {
 				return
 			}
 
-			wallet.Lock()
 			for k, v := range plainAccs.HashMap.Committed {
-				if wallet.addressesMap[k] != nil {
+				if wallet.GetWalletAddressByPublicKey([]byte(k), true) != nil {
 
 					if v.Stored == "update" {
 						acc := v.Element.(*plain_account.PlainAccount)
-						if err = wallet.refreshWalletPlainAccount(acc, wallet.addressesMap[k], false); err != nil {
+						if err = wallet.refreshWalletPlainAccount(acc, wallet.addressesMap[k], true); err != nil {
 							return
 						}
 					} else if v.Stored == "delete" {
-						if err = wallet.refreshWalletPlainAccount(nil, wallet.addressesMap[k], false); err != nil {
+						if err = wallet.refreshWalletPlainAccount(nil, wallet.addressesMap[k], true); err != nil {
 							return
 						}
 					}
 
 				}
 			}
-			wallet.Unlock()
+
 		}
 	})
 

@@ -28,8 +28,8 @@ func (api *APICommon) WalletGetAddresses(r *http.Request, args *struct{}, reply 
 		return errors.New("Invalid User or Password")
 	}
 
-	api.wallet.RLock()
-	defer api.wallet.RUnlock()
+	api.wallet.Lock.RLock()
+	defer api.wallet.Lock.RUnlock()
 
 	reply.Version = api.wallet.Version
 	reply.Encrypted = api.wallet.Encryption.Encrypted

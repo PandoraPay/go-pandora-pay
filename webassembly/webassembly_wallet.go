@@ -11,8 +11,8 @@ import (
 
 func getWallet(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-		app.Wallet.RLock()
-		defer app.Wallet.RUnlock()
+		app.Wallet.Lock.RLock()
+		defer app.Wallet.Lock.RUnlock()
 
 		data, err := helpers.GetJSONDataExcept(app.Wallet, "mnemonic")
 		if err != nil {
@@ -30,8 +30,8 @@ func exportWalletJSON(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		app.Wallet.RLock()
-		defer app.Wallet.RUnlock()
+		app.Wallet.Lock.RLock()
+		defer app.Wallet.Lock.RUnlock()
 
 		data, err := helpers.GetJSONDataExcept(app.Wallet)
 		if err != nil {
@@ -47,8 +47,8 @@ func getWalletMnemonic(this js.Value, args []js.Value) interface{} {
 		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
 			return nil, err
 		}
-		app.Wallet.RLock()
-		defer app.Wallet.RUnlock()
+		app.Wallet.Lock.RLock()
+		defer app.Wallet.Lock.RUnlock()
 		return app.Wallet.Mnemonic, nil
 	})
 }
@@ -231,8 +231,8 @@ func signMessageWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		app.Wallet.RLock()
-		defer app.Wallet.RUnlock()
+		app.Wallet.Lock.RLock()
+		defer app.Wallet.Lock.RUnlock()
 
 		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
 		if err != nil {
@@ -259,8 +259,8 @@ func decryptMessageWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		app.Wallet.RLock()
-		defer app.Wallet.RUnlock()
+		app.Wallet.Lock.RLock()
+		defer app.Wallet.Lock.RUnlock()
 
 		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
 		if err != nil {
@@ -288,8 +288,8 @@ func deriveDelegatedStakeWalletAddress(this js.Value, args []js.Value) interface
 			return nil, err
 		}
 
-		app.Wallet.RLock()
-		defer app.Wallet.RUnlock()
+		app.Wallet.Lock.RLock()
+		defer app.Wallet.Lock.RUnlock()
 
 		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
 		if err != nil {
