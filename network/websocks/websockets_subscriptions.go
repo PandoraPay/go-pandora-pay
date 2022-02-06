@@ -289,12 +289,12 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 						})
 					}
 				}
-			}
 
-			if list := this.transactionsSubscriptions[txUpdate.Tx.Bloom.HashStr]; list != nil {
-				this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), txUpdate.Tx.Bloom.Hash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
-					Mempool: &api_types.APISubscriptionNotificationTxExtraMempool{txUpdate.Inserted},
-				})
+				if list := this.transactionsSubscriptions[txUpdate.Tx.Bloom.HashStr]; list != nil {
+					this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), txUpdate.Tx.Bloom.Hash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
+						Mempool: &api_types.APISubscriptionNotificationTxExtraMempool{txUpdate.Inserted},
+					})
+				}
 			}
 
 		case conn, ok := <-this.websocketClosedCn:
