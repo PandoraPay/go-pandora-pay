@@ -318,7 +318,7 @@ func (worker *mempoolWorker) processing(
 							txsList = append(txsList[:listIndex-1], txsList[listIndex:]...)
 							listIndex--
 						}
-						removeTxNow(tx, newAddTx == nil, newAddTx == nil && exists)
+						removeTxNow(tx, newAddTx == nil, exists)
 					}
 
 					if newAddTx != nil && newAddTx.Result != nil {
