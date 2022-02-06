@@ -52,6 +52,12 @@ func (pk *PrivateKey) DecodeBalance(balance *crypto.ElGamal, previousValue uint6
 	return balance_decoder.BalanceDecoder.BalanceDecode(balancePoint, previousValue, ctx, statusCallback)
 }
 
+func (pk *PrivateKey) CheckMatchBalanceDecoded(balance *crypto.ElGamal, matchValue uint64) bool {
+	priv := new(crypto.BNRed).SetBytes(pk.Key)
+	balancePoint := new(bn256.G1).Add(balance.Left, new(bn256.G1).Neg(new(bn256.G1).ScalarMult(balance.Right, priv.BigInt())))
+	return balance_decoder.BalanceDecoder.CheckMatchBalanceDecoded(balancePoint, matchValue)
+}
+
 func GenerateNewPrivateKey() *PrivateKey {
 	seed := crypto.RandomScalarBNRed()
 	privateKey := seed.ToBytes()

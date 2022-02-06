@@ -79,6 +79,20 @@ func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto
 	return decoded, nil
 }
 
+func (wallet *Wallet) UpdatePreviousValueByPublicKey(publicKey []byte, newPreviousValue uint64, asset []byte) error {
+	wallet.Lock()
+	defer wallet.Unlock()
+
+	addr := wallet.addressesMap[string(publicKey)]
+	if addr == nil {
+		return errors.New("address was not found")
+	}
+
+	addr.UpdatePreviousValue(newPreviousValue, asset)
+
+	return wallet.saveWalletAddress(addr, false)
+}
+
 func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string) (*wallet_address.WalletAddress, error) {
 
 	address, err := addresses.DecodeAddr(addressEncoded)
@@ -128,6 +142,32 @@ func (wallet *Wallet) GetDataForDecodingBalance(publicKey, asset []byte) (privat
 	}
 
 	return
+}
+
+func (wallet *Wallet) DecodeBalanceIfMatchesPreviousValue(publicKey, asset, balanceEncoded []byte) (uint64, bool, error) {
+
+	balance, err := new(crypto.ElGamal).Deserialize(balanceEncoded)
+	if err != nil {
+		return 0, false, err
+	}
+
+	wallet.RLock()
+	defer wallet.RUnlock()
+
+	addr := wallet.addressesMap[string(publicKey)]
+
+	if addr.BalancesDecoded[hex.EncodeToString(asset)] == nil {
+		return 0, false, nil
+	}
+
+	previousValue := addr.BalancesDecoded[hex.EncodeToString(asset)].AmountDecoded
+
+	ok := addr.PrivateKey.CheckMatchBalanceDecoded(balance, previousValue)
+	if ok {
+		return previousValue, true, nil
+	}
+
+	return 0, false, nil
 }
 
 func (wallet *Wallet) ImportPrivateKey(name string, privateKey []byte) (*wallet_address.WalletAddress, error) {

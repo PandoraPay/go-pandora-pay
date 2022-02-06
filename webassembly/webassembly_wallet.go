@@ -306,6 +306,60 @@ func deriveDelegatedStakeWalletAddress(this js.Value, args []js.Value) interface
 	})
 }
 
+func updatePreviousValueWalletAddress(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+
+		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {
+			return false, err
+		}
+
+		parameters := &struct {
+			PublicKey helpers.HexBytes `json:"publicKey"`
+			Asset     helpers.HexBytes `json:"asset"`
+			Value     uint64           `json:"value"`
+		}{}
+
+		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
+			return nil, err
+		}
+
+		if err := app.Wallet.UpdatePreviousValueByPublicKey(parameters.PublicKey, parameters.Value, parameters.Asset); err != nil {
+			return nil, err
+		}
+
+		return true, nil
+	})
+}
+
+func decodeBalanceIfMatchesPreviousValueWalletAddress(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+
+		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {
+			return false, err
+		}
+
+		parameters := &struct {
+			PublicKey      helpers.HexBytes `json:"publicKey"`
+			Asset          helpers.HexBytes `json:"asset"`
+			BalanceEncoded helpers.HexBytes `json:"balanceEncoded"`
+		}{}
+
+		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
+			return nil, err
+		}
+
+		value, decoded, err := app.Wallet.DecodeBalanceIfMatchesPreviousValue(parameters.PublicKey, parameters.Asset, parameters.BalanceEncoded)
+		if err != nil {
+			return nil, err
+		}
+
+		return webassembly_utils.ConvertJSONBytes(struct {
+			Value   uint64 `json:"value"`
+			Decoded bool   `json:"decoded"`
+		}{value, decoded})
+	})
+}
+
 func getPrivateDataForDecodingBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 

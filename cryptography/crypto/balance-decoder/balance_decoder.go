@@ -29,8 +29,17 @@ type BalanceDecoderType struct {
 	info *generics.Value[*BalanceDecoderInfo]
 }
 
+func (self *BalanceDecoderType) CheckMatchBalanceDecoded(p *bn256.G1, matchBalance uint64) bool {
+	var acc bn256.G1
+	acc.ScalarMult(crypto.G, new(big.Int).SetUint64(matchBalance))
+	return acc.String() == p.String()
+}
+
 func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
+	if self.CheckMatchBalanceDecoded(p, previousBalance) {
+		return previousBalance, nil
+	}
 	var acc bn256.G1
 	acc.ScalarMult(crypto.G, new(big.Int).SetUint64(previousBalance))
 	if acc.String() == p.String() {

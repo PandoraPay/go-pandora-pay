@@ -125,16 +125,21 @@ func (adr *WalletAddress) DecodeBalance(balance *crypto.ElGamal, assetId []byte,
 	}
 
 	if store {
-		if found != nil {
-			found.AmountDecoded = newValue
-		} else {
-			adr.BalancesDecoded[hex.EncodeToString(assetId)] = &WalletAddressBalanceDecoded{
-				newValue, assetId,
-			}
-		}
+		adr.UpdatePreviousValue(newValue, assetId)
 	}
 
 	return newValue, nil
+}
+
+func (adr *WalletAddress) UpdatePreviousValue(newPreviousValue uint64, assetId []byte) {
+	found := adr.BalancesDecoded[hex.EncodeToString(assetId)]
+	if found != nil {
+		found.AmountDecoded = newPreviousValue
+	} else {
+		adr.BalancesDecoded[hex.EncodeToString(assetId)] = &WalletAddressBalanceDecoded{
+			newPreviousValue, assetId,
+		}
+	}
 }
 
 func (adr *WalletAddress) GetAddress(registered bool) string {
