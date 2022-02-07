@@ -148,10 +148,7 @@ func (mempool *Mempool) AddTxsToMempool(txs []*transaction.Transaction, height u
 
 				var errorResult error
 
-				inserted := mempool.Txs.insertTx(finalTx)
-				if !inserted {
-					errorResult = errors.New("Tx already exists")
-				} else if awaitAnswer {
+				if awaitAnswer {
 					answerCn := make(chan error)
 					mempool.addTransactionCn <- &MempoolWorkerAddTx{finalTx, answerCn}
 					errorResult = <-answerCn

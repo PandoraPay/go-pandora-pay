@@ -73,11 +73,13 @@ func (worker *mempoolWorker) processing(
 	}
 
 	removeTxNow := func(tx *mempoolTx, txWasInserted bool, includedInBlockchainNotification bool) {
+
 		delete(txsMap, tx.Tx.Bloom.HashStr)
-		txs.deleteTx(tx.Tx.Bloom.HashStr)
 
 		if txWasInserted {
-			txs.deleted(tx, includedInBlockchainNotification)
+			txs.deleteTx(tx.Tx.Bloom.HashStr)
+			txs.deleted(tx, txWasInserted, includedInBlockchainNotification)
+
 			if tx.Tx.Version == transaction_type.TX_ZETHER {
 				base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
 				for t := range base.Payloads {
@@ -114,11 +116,9 @@ func (worker *mempoolWorker) processing(
 				if !removedTxsMap[tx.Tx.Bloom.HashStr] {
 					newList[c] = tx
 					c += 1
-				} else {
-					if index <= listIndex && listIndex > 0 {
-						listIndex -= 1
-						index -= 1
-					}
+				} else if index < listIndex && listIndex > 0 {
+					listIndex--
+					index--
 				}
 				index++
 			}
@@ -208,20 +208,20 @@ func (worker *mempoolWorker) processing(
 					dataStorage = data_storage.NewDataStorage(dbTx)
 				}
 
+				tx = nil
+				newAddTx = nil
+
 				if listIndex == len(txsList) {
 					select {
 					case newWork := <-newWorkCn:
 						resetNow(newWork)
-						continue
 					case <-suspendProcessingCn:
 						suspended = true
 						return
 					case data := <-removeTransactionsCn:
 						removeTxs(data)
-						continue
 					case data := <-insertTransactionsCn:
 						insertTxs(data)
-						continue
 					case newAddTx = <-addTransactionCn:
 						tx = newAddTx.Tx
 						if txsMap[tx.Tx.Bloom.HashStr] != nil {
@@ -251,21 +251,18 @@ func (worker *mempoolWorker) processing(
 					select {
 					case newWork := <-newWorkCn:
 						resetNow(newWork)
-						continue
 					case <-suspendProcessingCn:
 						suspended = true
 						return
 					case data := <-removeTransactionsCn:
 						removeTxs(data)
-						continue
 					case data := <-insertTransactionsCn:
 						insertTxs(data)
-						continue
 					default:
+						tx = txsList[listIndex]
+						listIndex += 1
 					}
 
-					tx = txsList[listIndex]
-					listIndex += 1
 				}
 
 				if tx == nil {
@@ -318,9 +315,10 @@ func (worker *mempoolWorker) processing(
 									}
 								}
 
-								txsList = append(txsList, newAddTx.Tx)
 								listIndex += 1
+								txsList = append(txsList, newAddTx.Tx)
 								txsMap[tx.Tx.Bloom.HashStr] = newAddTx.Tx
+								txs.insertTx(tx)
 								txs.inserted(tx)
 							}
 

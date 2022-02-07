@@ -77,7 +77,7 @@ func (self *MempoolTxs) deleteTx(hashStr string) bool {
 	return deleted
 }
 
-func (self *MempoolTxs) deleted(tx *mempoolTx, includedInBlockchainNotification bool) {
+func (self *MempoolTxs) deleted(tx *mempoolTx, broadcastNotifications, includedInBlockchainNotification bool) {
 	if config.SEED_WALLET_NODES_INFO {
 
 		keys := tx.Tx.GetAllKeys()
@@ -94,12 +94,14 @@ func (self *MempoolTxs) deleted(tx *mempoolTx, includedInBlockchainNotification 
 			foundMap.Unlock()
 		}
 
-		self.UpdateMempoolTransactions.Broadcast(&blockchain_types.MempoolTransactionUpdate{
-			false,
-			tx.Tx,
-			includedInBlockchainNotification,
-			keys,
-		})
+		if broadcastNotifications {
+			self.UpdateMempoolTransactions.Broadcast(&blockchain_types.MempoolTransactionUpdate{
+				false,
+				tx.Tx,
+				includedInBlockchainNotification,
+				keys,
+			})
+		}
 
 	}
 }
