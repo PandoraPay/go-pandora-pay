@@ -109,11 +109,18 @@ func (worker *mempoolWorker) processing(
 
 			newList := make([]*mempoolTx, newLength)
 			c := 0
+			index := 0
 			for _, tx := range txsList {
 				if !removedTxsMap[tx.Tx.Bloom.HashStr] {
 					newList[c] = tx
 					c += 1
+				} else {
+					if index <= listIndex && listIndex > 0 {
+						listIndex -= 1
+						index -= 1
+					}
 				}
+				index++
 			}
 			txsList = newList
 		}
@@ -192,124 +199,135 @@ func (worker *mempoolWorker) processing(
 				dataStorage.SetTx(dbTx)
 			}
 
+			var tx *mempoolTx
+			var newAddTx *MempoolWorkerAddTx
+
 			for {
 
 				if dataStorage == nil {
 					dataStorage = data_storage.NewDataStorage(dbTx)
 				}
 
-				select {
-				case <-suspendProcessingCn:
-					suspended = true
-					return
-				case newWork := <-newWorkCn:
-					resetNow(newWork)
-				default:
-
-					var tx *mempoolTx
-					var newAddTx *MempoolWorkerAddTx
-
-					if listIndex == len(txsList) {
-
-						select {
-						case newWork := <-newWorkCn:
-							resetNow(newWork)
+				if listIndex == len(txsList) {
+					select {
+					case newWork := <-newWorkCn:
+						resetNow(newWork)
+						continue
+					case <-suspendProcessingCn:
+						suspended = true
+						return
+					case data := <-removeTransactionsCn:
+						removeTxs(data)
+						continue
+					case data := <-insertTransactionsCn:
+						insertTxs(data)
+						continue
+					case newAddTx = <-addTransactionCn:
+						tx = newAddTx.Tx
+						if txsMap[tx.Tx.Bloom.HashStr] != nil {
+							if newAddTx.Result != nil {
+								newAddTx.Result <- errors.New("Already found")
+							}
 							continue
-						case <-suspendProcessingCn:
-							suspended = true
-							return
-						case newAddTx = <-addTransactionCn:
-							tx = newAddTx.Tx
-							if txsMap[tx.Tx.Bloom.HashStr] != nil {
-								if newAddTx.Result != nil {
-									newAddTx.Result <- errors.New("Already found")
+						}
+						if tx.Tx.Version == transaction_type.TX_ZETHER {
+							base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+							nonceFound := false
+							for t := range base.Payloads {
+								if includedZetherNonceMap[string(base.Bloom.Nonces[t])] {
+									if newAddTx.Result != nil {
+										nonceFound = true
+										newAddTx.Result <- errors.New("Zether Nonce exists")
+										break
+									}
 								}
+							}
+							if nonceFound {
 								continue
 							}
-							if tx.Tx.Version == transaction_type.TX_ZETHER {
-								base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-								nonceFound := false
-								for t := range base.Payloads {
-									if includedZetherNonceMap[string(base.Bloom.Nonces[t])] {
-										if newAddTx.Result != nil {
-											nonceFound = true
-											newAddTx.Result <- errors.New("Zether Nonce exists")
-											break
-										}
+						}
+					}
+				} else {
+					select {
+					case newWork := <-newWorkCn:
+						resetNow(newWork)
+						continue
+					case <-suspendProcessingCn:
+						suspended = true
+						return
+					case data := <-removeTransactionsCn:
+						removeTxs(data)
+						continue
+					case data := <-insertTransactionsCn:
+						insertTxs(data)
+						continue
+					default:
+					}
+
+					tx = txsList[listIndex]
+					listIndex += 1
+				}
+
+				if tx == nil {
+					continue
+				}
+
+				var finalErr error
+				var exists bool
+
+				if exists = dbTx.Exists("txHash:" + string(tx.Tx.Bloom.HashStr)); exists {
+					finalErr = errors.New("Tx is already included in blockchain")
+				}
+
+				if finalErr == nil {
+					//was rejected by mempool nonce map
+					finalErr = func() (err error) {
+
+						defer func() {
+							if errReturned := recover(); errReturned != nil {
+								err = errReturned.(error)
+							}
+						}()
+
+						if err = tx.Tx.IncludeTransaction(work.chainHeight, dataStorage); err != nil {
+							dataStorage.Rollback()
+						} else {
+
+							if includedTotalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
+
+								includedTotalSize += tx.Tx.Bloom.Size
+								includedTxs = append(includedTxs, tx)
+
+								atomic.StoreUint64(&work.result.totalSize, includedTotalSize)
+								work.result.txs.Store(includedTxs)
+
+								if err = dataStorage.CommitChanges(); err != nil {
+									return
+								}
+
+							} else {
+								dataStorage.Rollback()
+							}
+
+							if newAddTx != nil {
+
+								if tx.Tx.Version == transaction_type.TX_ZETHER {
+									base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+									for t := range base.Payloads {
+										includedZetherNonceMap[string(base.Bloom.Nonces[t])] = true
 									}
 								}
-								if nonceFound {
-									continue
-								}
+
+								txsList = append(txsList, newAddTx.Tx)
+								listIndex += 1
+								txsMap[tx.Tx.Bloom.HashStr] = newAddTx.Tx
+								txs.inserted(tx)
 							}
+
 						}
 
-					} else {
-						tx = txsList[listIndex]
-						listIndex += 1
-					}
-
-					if tx == nil {
-						continue
-					}
-
-					var finalErr error
-					var exists bool
-
-					if exists = dbTx.Exists("txHash:" + string(tx.Tx.Bloom.HashStr)); exists {
-						finalErr = errors.New("Tx is already included in blockchain")
-					}
-
-					if finalErr == nil {
-						//was rejected by mempool nonce map
-						finalErr = func() (err error) {
-
-							defer func() {
-								if errReturned := recover(); errReturned != nil {
-									err = errReturned.(error)
-								}
-							}()
-
-							if err = tx.Tx.IncludeTransaction(work.chainHeight, dataStorage); err != nil {
-								dataStorage.Rollback()
-							} else {
-
-								if includedTotalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
-
-									includedTotalSize += tx.Tx.Bloom.Size
-									includedTxs = append(includedTxs, tx)
-
-									atomic.StoreUint64(&work.result.totalSize, includedTotalSize)
-									work.result.txs.Store(includedTxs)
-
-									if err = dataStorage.CommitChanges(); err != nil {
-										return
-									}
-
-								} else {
-									dataStorage.Rollback()
-								}
-
-								if newAddTx != nil {
-
-									if tx.Tx.Version == transaction_type.TX_ZETHER {
-										base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-										for t := range base.Payloads {
-											includedZetherNonceMap[string(base.Bloom.Nonces[t])] = true
-										}
-									}
-
-									txsList = append(txsList, newAddTx.Tx)
-									listIndex += 1
-									txsMap[tx.Tx.Bloom.HashStr] = newAddTx.Tx
-									txs.inserted(tx)
-								}
-
-							}
-
-							return
-						}()
-					}
+						return
+					}()
 
 					if finalErr != nil {
 						if newAddTx == nil {
