@@ -7,13 +7,33 @@ import (
 	"pandora-pay/recovery"
 )
 
+func (queue *BlockchainUpdatesQueue) processBlockchainUpdateNotifications() {
+	recovery.SafeGo(func() {
+
+		updatesNotificationsCn := queue.updatesNotifications.AddListener()
+		defer queue.updatesNotifications.RemoveChannel(updatesNotificationsCn)
+
+		for {
+			update := <-updatesNotificationsCn
+
+			queue.chain.UpdateSocketsSubscriptionsNotifications.Broadcast(update.dataStorage)
+		}
+
+	})
+}
+
+//async mempool notifications
 func (queue *BlockchainUpdatesQueue) processBlockchainUpdateMempool() {
 	recovery.SafeGo(func() {
 
 		var err error
+
+		updatesMempoolCn := queue.updatesMempool.AddListener()
+		defer queue.updatesMempool.RemoveChannel(updatesMempoolCn)
+
 		for {
 
-			update := <-queue.updatesMempoolCn
+			update := <-updatesMempoolCn
 
 			//let's remove the transactions from the mempool
 			if len(update.insertedTxsList) > 0 {
@@ -50,7 +70,7 @@ func (queue *BlockchainUpdatesQueue) processBlockchainUpdateMempool() {
 				queue.chain.mempool.InsertRemovedTxsFromBlockchain(removedTxs, update.newChainData.Height)
 			}
 
-			queue.chain.UpdateTransactions.Broadcast(update.allTransactionsChanges)
+			queue.chain.UpdateSocketsSubscriptionsTransactions.Broadcast(update.allTransactionsChanges)
 		}
 
 	})

@@ -39,22 +39,23 @@ import (
 )
 
 type Blockchain struct {
-	ChainData                *generics.Value[*BlockchainData]
-	Sync                     *blockchain_sync.BlockchainSync
-	mempool                  *mempool.Mempool
-	wallet                   *wallet.Wallet
-	txsValidator             *txs_validator.TxsValidator
-	mutex                    *sync.Mutex //writing mutex
-	updatesQueue             *BlockchainUpdatesQueue
-	ForgingSolutionCn        chan *block_complete.BlockComplete
-	UpdateNewChain           *multicast.MulticastChannel[uint64]
-	UpdateNewChainDataUpdate *multicast.MulticastChannel[*BlockchainDataUpdate]
-	UpdateAccounts           *multicast.MulticastChannel[*accounts.AccountsCollection]
-	UpdatePlainAccounts      *multicast.MulticastChannel[*plain_accounts.PlainAccounts]
-	UpdateAssets             *multicast.MulticastChannel[*assets.Assets]
-	UpdateRegistrations      *multicast.MulticastChannel[*registrations.Registrations]
-	UpdateTransactions       *multicast.MulticastChannel[[]*blockchain_types.BlockchainTransactionUpdate]
-	NextBlockCreatedCn       chan *forging_block_work.ForgingWork
+	ChainData                               *generics.Value[*BlockchainData]
+	Sync                                    *blockchain_sync.BlockchainSync
+	mempool                                 *mempool.Mempool
+	wallet                                  *wallet.Wallet
+	txsValidator                            *txs_validator.TxsValidator
+	mutex                                   *sync.Mutex //writing mutex
+	updatesQueue                            *BlockchainUpdatesQueue
+	ForgingSolutionCn                       chan *block_complete.BlockComplete
+	UpdateNewChain                          *multicast.MulticastChannel[uint64]
+	UpdateNewChainDataUpdate                *multicast.MulticastChannel[*BlockchainDataUpdate]
+	UpdateAccounts                          *multicast.MulticastChannel[*accounts.AccountsCollection]
+	UpdatePlainAccounts                     *multicast.MulticastChannel[*plain_accounts.PlainAccounts]
+	UpdateAssets                            *multicast.MulticastChannel[*assets.Assets]
+	UpdateRegistrations                     *multicast.MulticastChannel[*registrations.Registrations]
+	UpdateSocketsSubscriptionsTransactions  *multicast.MulticastChannel[[]*blockchain_types.BlockchainTransactionUpdate]
+	UpdateSocketsSubscriptionsNotifications *multicast.MulticastChannel[*data_storage.DataStorage]
+	NextBlockCreatedCn                      chan *forging_block_work.ForgingWork
 }
 
 func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockComplete) (err error) {
@@ -500,12 +501,14 @@ func CreateBlockchain(mempool *mempool.Mempool, txsValidator *txs_validator.TxsV
 		multicast.NewMulticastChannel[*assets.Assets](),
 		multicast.NewMulticastChannel[*registrations.Registrations](),
 		multicast.NewMulticastChannel[[]*blockchain_types.BlockchainTransactionUpdate](),
+		multicast.NewMulticastChannel[*data_storage.DataStorage](),
 		make(chan *forging_block_work.ForgingWork),
 	}
 
 	chain.updatesQueue.chain = chain
 	chain.updatesQueue.processBlockchainUpdatesQueue()
 	chain.updatesQueue.processBlockchainUpdateMempool()
+	chain.updatesQueue.processBlockchainUpdateNotifications()
 
 	return chain, nil
 }

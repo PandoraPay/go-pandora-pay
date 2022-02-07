@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/multicast"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 	"pandora-pay/txs_validator"
@@ -34,16 +35,18 @@ type BlockchainUpdate struct {
 }
 
 type BlockchainUpdatesQueue struct {
-	updatesCn        chan *BlockchainUpdate //buffered
-	updatesMempoolCn chan *BlockchainUpdate //buffered
-	chain            *Blockchain
-	txsValidator     *txs_validator.TxsValidator
+	updatesCn            chan *BlockchainUpdate //buffered
+	updatesMempool       *multicast.MulticastChannel[*BlockchainUpdate]
+	updatesNotifications *multicast.MulticastChannel[*BlockchainUpdate]
+	chain                *Blockchain
+	txsValidator         *txs_validator.TxsValidator
 }
 
 func createBlockchainUpdatesQueue(txsValidator *txs_validator.TxsValidator) *BlockchainUpdatesQueue {
 	return &BlockchainUpdatesQueue{
 		make(chan *BlockchainUpdate, 100),
-		make(chan *BlockchainUpdate, 200),
+		multicast.NewMulticastChannel[*BlockchainUpdate](),
+		multicast.NewMulticastChannel[*BlockchainUpdate](),
 		nil,
 		txsValidator,
 	}
@@ -83,7 +86,8 @@ func (queue *BlockchainUpdatesQueue) executeUpdate(update *BlockchainUpdate) (er
 
 	chainSyncData := queue.chain.Sync.AddBlocksChanged(uint32(len(update.insertedBlocks)), true)
 
-	queue.updatesMempoolCn <- update
+	queue.updatesMempool.Broadcast(update)
+	queue.updatesNotifications.Broadcast(update)
 
 	gui.GUI.Log("queue.chain.UpdateNewChain fired")
 	queue.chain.UpdateNewChain.Broadcast(update.newChainData.Height)

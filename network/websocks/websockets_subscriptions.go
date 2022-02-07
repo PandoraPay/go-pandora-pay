@@ -135,20 +135,11 @@ func (this *WebsocketSubscriptions) getElementIndex(element hash_map.HashMapElem
 
 func (this *WebsocketSubscriptions) processSubscriptions() {
 
-	updateAccountsCn := this.chain.UpdateAccounts.AddListener()
-	defer this.chain.UpdateAccounts.RemoveChannel(updateAccountsCn)
+	updateNotificationsCn := this.chain.UpdateSocketsSubscriptionsNotifications.AddListener()
+	defer this.chain.UpdateSocketsSubscriptionsNotifications.RemoveChannel(updateNotificationsCn)
 
-	updatePlainAccountsCn := this.chain.UpdatePlainAccounts.AddListener()
-	defer this.chain.UpdatePlainAccounts.RemoveChannel(updatePlainAccountsCn)
-
-	updateAssetsCn := this.chain.UpdateAssets.AddListener()
-	defer this.chain.UpdateAssets.RemoveChannel(updateAssetsCn)
-
-	updateRegistrationsCn := this.chain.UpdateRegistrations.AddListener()
-	defer this.chain.UpdateRegistrations.RemoveChannel(updateRegistrationsCn)
-
-	updateTransactionsCn := this.chain.UpdateTransactions.AddListener()
-	defer this.chain.UpdateTransactions.RemoveChannel(updateTransactionsCn)
+	updateTransactionsCn := this.chain.UpdateSocketsSubscriptionsTransactions.AddListener()
+	defer this.chain.UpdateSocketsSubscriptionsTransactions.RemoveChannel(updateTransactionsCn)
 
 	updateMempoolTransactionsCn := this.mempool.Txs.UpdateMempoolTransactions.AddListener()
 	defer this.mempool.Txs.UpdateMempoolTransactions.RemoveChannel(updateMempoolTransactionsCn)
@@ -158,10 +149,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 	for {
 
 		select {
-		case subscription, ok := <-this.newSubscriptionCn:
-			if !ok {
-				return
-			}
+		case subscription := <-this.newSubscriptionCn:
 
 			if subsMap = this.getSubsMap(subscription.Subscription.Type); subsMap == nil {
 				continue
@@ -173,10 +161,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			}
 			subsMap[keyStr][subscription.Conn.UUID] = subscription
 
-		case subscription, ok := <-this.removeSubscriptionCn:
-			if !ok {
-				return
-			}
+		case subscription := <-this.removeSubscriptionCn:
 
 			if subsMap = this.getSubsMap(subscription.Subscription.Type); subsMap == nil {
 				continue
@@ -190,12 +175,9 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
-		case accsCollection, ok := <-updateAccountsCn:
-			if !ok {
-				return
-			}
+		case dataStorage := <-updateNotificationsCn:
 
-			accsMap := accsCollection.GetAllMaps()
+			accsMap := dataStorage.AccsCollection.GetAllMaps()
 
 			for _, accs := range accsMap {
 				for k, v := range accs.HashMap.Committed {
@@ -209,12 +191,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
-		case plainAccs, ok := <-updatePlainAccountsCn:
-			if !ok {
-				return
-			}
-
-			for k, v := range plainAccs.HashMap.Committed {
+			for k, v := range dataStorage.PlainAccs.HashMap.Committed {
 				if list := this.accountsSubscriptions[k]; list != nil {
 
 					this.send(api_types.SUBSCRIPTION_PLAIN_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationPlainAccExtra{
@@ -223,12 +200,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
-		case asts, ok := <-updateAssetsCn:
-			if !ok {
-				return
-			}
-
-			for k, v := range asts.HashMap.Committed {
+			for k, v := range dataStorage.Asts.HashMap.Committed {
 				if list := this.assetsSubscriptions[k]; list != nil {
 
 					this.send(api_types.SUBSCRIPTION_ASSET, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationAssetExtra{
@@ -237,12 +209,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
-		case registrations, ok := <-updateRegistrationsCn:
-			if !ok {
-				return
-			}
-
-			for k, v := range registrations.HashMap.Committed {
+			for k, v := range dataStorage.Regs.HashMap.Committed {
 				if list := this.accountsSubscriptions[k]; list != nil {
 
 					this.send(api_types.SUBSCRIPTION_REGISTRATION, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationRegistrationExtra{
