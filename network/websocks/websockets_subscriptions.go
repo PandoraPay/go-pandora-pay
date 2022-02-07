@@ -281,20 +281,18 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				return
 			}
 
-			if !txUpdate.BlockchainNotification {
-				for key := range txUpdate.Keys {
-					if list := this.accountsTransactionsSubscriptions[key]; list != nil {
-						this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), []byte(key), list, nil, txUpdate.Tx.Bloom.Hash, &api_types.APISubscriptionNotificationAccountTxExtra{
-							Mempool: &api_types.APISubscriptionNotificationAccountTxExtraMempool{txUpdate.Inserted},
-						})
-					}
-				}
-
-				if list := this.transactionsSubscriptions[txUpdate.Tx.Bloom.HashStr]; list != nil {
-					this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), txUpdate.Tx.Bloom.Hash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
-						Mempool: &api_types.APISubscriptionNotificationTxExtraMempool{txUpdate.Inserted},
+			for key := range txUpdate.Keys {
+				if list := this.accountsTransactionsSubscriptions[key]; list != nil {
+					this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), []byte(key), list, nil, txUpdate.Tx.Bloom.Hash, &api_types.APISubscriptionNotificationAccountTxExtra{
+						Mempool: &api_types.APISubscriptionNotificationAccountTxExtraMempool{txUpdate.Inserted, txUpdate.IncludedInBlockchainNotification},
 					})
 				}
+			}
+
+			if list := this.transactionsSubscriptions[txUpdate.Tx.Bloom.HashStr]; list != nil {
+				this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), txUpdate.Tx.Bloom.Hash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
+					Mempool: &api_types.APISubscriptionNotificationTxExtraMempool{txUpdate.Inserted, txUpdate.IncludedInBlockchainNotification},
+				})
 			}
 
 		case conn, ok := <-this.websocketClosedCn:

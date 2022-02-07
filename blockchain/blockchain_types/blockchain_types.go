@@ -19,8 +19,8 @@ type BlockchainTransactionUpdate struct {
 }
 
 type MempoolTransactionUpdate struct {
-	Inserted               bool
-	Tx                     *transaction.Transaction
-	BlockchainNotification bool
-	Keys                   map[string]bool
+	Inserted                         bool
+	Tx                               *transaction.Transaction
+	IncludedInBlockchainNotification bool
+	Keys                             map[string]bool
 }

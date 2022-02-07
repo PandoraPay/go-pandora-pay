@@ -72,12 +72,12 @@ func (worker *mempoolWorker) processing(
 		}
 	}
 
-	removeTxNow := func(tx *mempoolTx, txWasInserted bool, blockchainNotification bool) {
+	removeTxNow := func(tx *mempoolTx, txWasInserted bool, includedInBlockchainNotification bool) {
 		delete(txsMap, tx.Tx.Bloom.HashStr)
 		txs.deleteTx(tx.Tx.Bloom.HashStr)
 
 		if txWasInserted {
-			txs.deleted(tx, blockchainNotification)
+			txs.deleted(tx, includedInBlockchainNotification)
 			if tx.Tx.Version == transaction_type.TX_ZETHER {
 				base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
 				for t := range base.Payloads {

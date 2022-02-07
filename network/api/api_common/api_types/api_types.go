@@ -28,6 +28,7 @@ type APISubscriptionNotificationAccountTxExtraBlockchain struct {
 
 type APISubscriptionNotificationAccountTxExtraMempool struct {
 	Inserted bool `json:"inserted,omitempty" msgpack:"inserted,omitempty"`
+	Included bool `json:"included,omitempty" msgpack:"included,omitempty"`
 }
 
 type APISubscriptionNotificationAccountExtra struct {
@@ -54,6 +55,7 @@ type APISubscriptionNotificationAccountTxExtra struct {
 
 type APISubscriptionNotificationTxExtraMempool struct {
 	Inserted bool `json:"inserted,omitempty" msgpack:"inserted,omitempty"`
+	Included bool `json:"included,omitempty" msgpack:"included,omitempty"`
 }
 
 type APISubscriptionNotificationTxExtra struct {
