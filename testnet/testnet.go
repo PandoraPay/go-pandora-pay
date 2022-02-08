@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
+	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -17,6 +18,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
@@ -62,6 +64,32 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 	dstAddr, err := testnet.wallet.GetWalletAddress(dstAddressWalletIndex, true)
 	if err != nil {
 		return
+	}
+
+	var balance *crypto.ElGamal
+	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		accs, err := accounts.NewAccountsCollection(reader).GetMap(config_coins.NATIVE_ASSET_FULL)
+		if err != nil {
+			return
+		}
+		acc, err := accs.GetAccount(dstAddr.PublicKey)
+		if err != nil || acc == nil {
+			return
+		}
+		balance = acc.Balance.Amount
+		return
+	}); err != nil {
+		return
+	}
+
+	if balance != nil {
+		var balanceDecoded uint64
+		if balanceDecoded, err = testnet.wallet.DecodeBalanceByPublicKey(dstAddr.PublicKey, balance, config_coins.NATIVE_ASSET_FULL, false, 0, true, true, ctx, nil); err != nil {
+			return
+		}
+		if balanceDecoded > 10000 {
+			return
+		}
 	}
 
 	from := []string{""}
@@ -269,21 +297,19 @@ func (testnet *Testnet) run() {
 									testnet.testnetCreateClaimTx(4, unclaimed/5, ctx)
 								}
 
-							} else if atomic.LoadInt32(&unstakesCount) < 4 && delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > 5000 {
+							} else if atomic.LoadInt32(&unstakesCount) < 4 && delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > 5000 && unclaimed < 5000 {
 								if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
 									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-unclaimed, ctx); err != nil {
 										return
 									}
 								}
 								atomic.AddInt32(&unstakesCount, 1)
-							} else {
+							}
 
-								time.Sleep(time.Millisecond * 500) //making sure the block got propagated
-								for i := 2; i < 5; i++ {
-									testnet.testnetCreateTransfers(i, ctx)
-									time.Sleep(time.Millisecond * 5000)
-								}
-
+							time.Sleep(time.Millisecond * 500) //making sure the block got propagated
+							for i := 2; i < 5; i++ {
+								testnet.testnetCreateTransfers(i, ctx)
+								time.Sleep(time.Millisecond * 5000)
 							}
 						}
 

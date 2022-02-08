@@ -71,6 +71,7 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		"wallet/delete-address": api.apiCommon.WalletDeleteAddress_websockets,
 		"wallet/create-address": api.apiCommon.WalletCreateAddress_websockets,
 		"wallet/get-balances":   api.apiCommon.WalletGetBalances_websockets,
+		"wallet/decode-tx":      api.apiCommon.WalletDecodeTx_websockets,
 	}
 
 	api.GetMap["sub"] = api.subscribe

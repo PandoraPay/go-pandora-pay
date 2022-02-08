@@ -219,7 +219,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 				gui.GUI.Info2Update("Decoding", "")
 
 				var decoded uint64
-				if decoded, err = wallet.DecodeBalanceByPublicKey(address.publicKey, data.balance, data.assetId, true, true, ctx, func(status string) {
+				if decoded, err = wallet.DecodeBalanceByPublicKey(address.publicKey, data.balance, data.assetId, false, 0, true, true, ctx, func(status string) {
 					gui.GUI.Info2Update("Decoding", status)
 				}); err != nil {
 					return

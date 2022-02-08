@@ -308,7 +308,7 @@ func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadEx
 				return nil, nil, nil, nil, 0, nil, err
 			}
 
-			if transfers[t].FromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, transfers[t].Asset, true, true, ctx, statusCallback); err != nil {
+			if transfers[t].FromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, transfers[t].Asset, false, 0, true, true, ctx, statusCallback); err != nil {
 				return nil, nil, nil, nil, 0, nil, err
 			}
 

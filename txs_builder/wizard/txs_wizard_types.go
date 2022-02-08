@@ -1,6 +1,7 @@
 package wizard
 
 import (
+	"errors"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/helpers"
 )
@@ -43,8 +44,7 @@ func (data *WizardTransactionData) getData() ([]byte, error) {
 	if !data.Encrypt {
 		return data.Data, nil
 	} else {
-
-		panic("not implemented")
+		return nil, errors.New("Not supported right now")
 		//pub, err := ecdsa.DecompressPubkey(data.PublicKeyToEncrypt)
 		//if err != nil {
 		//	return nil, err

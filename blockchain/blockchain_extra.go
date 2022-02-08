@@ -285,10 +285,7 @@ func (chain *Blockchain) InitForging() {
 
 		for {
 
-			newSync, ok := <-updateNewSyncCn
-			if !ok {
-				break
-			}
+			newSync := <-updateNewSyncCn
 
 			if newSync.Started {
 				chain.createNextBlockForForging(chain.GetChainData(), true)
