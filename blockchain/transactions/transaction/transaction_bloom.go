@@ -25,6 +25,7 @@ func (tx *Transaction) BloomAll() (err error) {
 	}
 
 	bloom := new(TransactionBloom)
+
 	bloom.Serialized = tx.SerializeManualToBytes()
 	bloom.Size = uint64(len(bloom.Serialized))
 	bloom.Hash = cryptography.SHA3(bloom.Serialized)

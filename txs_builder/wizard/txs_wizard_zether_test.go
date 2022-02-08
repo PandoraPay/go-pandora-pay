@@ -1,13 +1,16 @@
 package wizard
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"math"
 	"math/big"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -30,7 +33,7 @@ func getNewBalance(addr *addresses.Address, amount uint64) *crypto.ElGamal {
 func TestCreateZetherTx(t *testing.T) {
 
 	senderPrivateKey := addresses.GenerateNewPrivateKey()
-	senderAdress, err := senderPrivateKey.GenerateAddress(true, 0, nil)
+	senderAdress, err := senderPrivateKey.GenerateAddress(true, nil, 0, nil)
 	assert.NoError(t, err)
 
 	var amount uint64
@@ -58,7 +61,7 @@ func TestCreateZetherTx(t *testing.T) {
 	for i := range transfers {
 
 		dstPrivateKey := addresses.GenerateNewPrivateKey()
-		dstAddress, _ := dstPrivateKey.GenerateAddress(true, 0, nil)
+		dstAddress, _ := dstPrivateKey.GenerateAddress(true, nil, 0, nil)
 
 		publicKeyIndexes[string(dstAddress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, dstAddress.Registration}
 
@@ -87,7 +90,7 @@ func TestCreateZetherTx(t *testing.T) {
 
 		for j := 2; j < ringSize; j++ {
 			ringMemberPrivateKey := addresses.GenerateNewPrivateKey()
-			ringMemberAddress, _ := ringMemberPrivateKey.GenerateAddress(true, 0, nil)
+			ringMemberAddress, _ := ringMemberPrivateKey.GenerateAddress(true, nil, 0, nil)
 
 			publicKeyIndexes[string(ringMemberAddress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, ringMemberAddress.Registration}
 
@@ -110,14 +113,38 @@ func TestCreateZetherTx(t *testing.T) {
 	serialized := tx.SerializeManualToBytes()
 
 	tx2 := &transaction.Transaction{}
-	err = tx2.Deserialize(helpers.NewBufferReader(serialized))
-	assert.NoError(t, err)
+	assert.NoError(t, tx2.Deserialize(helpers.NewBufferReader(serialized)))
 	assert.NotNil(t, t, tx2)
 
-	//fmt.Println("test")
+	assert.NoError(t, tx2.BloomAll())
+
+	assert.Equal(t, true, bytes.Equal(tx.HashManual(), tx2.HashManual()))
+	assert.Equal(t, true, bytes.Equal(tx.SerializeForSigning(), tx2.SerializeForSigning()))
+
 	//fmt.Println(hex.EncodeToString(tx.SerializeManualToBytes()))
 	//fmt.Println(hex.EncodeToString(tx2.SerializeManualToBytes()))
-	assert.Equal(t, serialized, tx2.SerializeManualToBytes())
+	assert.Equal(t, true, bytes.Equal(serialized, tx2.SerializeManualToBytes()))
+
+	tx1Base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+	tx2Base := tx2.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+	for i, payload := range tx1Base.Payloads {
+		for j, publicKey := range payload.Statement.Publickeylist {
+			if bytes.Equal(publicKey.EncodeCompressed(), senderAdress.PublicKey) {
+				tx2Base.Payloads[i].Statement.CLn[j] = payload.Statement.CLn[j]
+				tx2Base.Payloads[i].Statement.CRn[j] = payload.Statement.CRn[j]
+			}
+			assert.Equal(t, true, bytes.Equal(payload.Statement.CLn[j].EncodeCompressed(), tx2Base.Payloads[i].Statement.CLn[j].EncodeCompressed()))
+			assert.Equal(t, true, bytes.Equal(payload.Statement.CRn[j].EncodeCompressed(), tx2Base.Payloads[i].Statement.CRn[j].EncodeCompressed()))
+		}
+	}
+
+	bytes1, err := json.Marshal(tx)
+	assert.NoError(t, err)
+
+	bytes2, err := json.Marshal(tx2)
+	assert.NoError(t, err)
+
+	assert.Equal(t, true, bytes.Equal(bytes1, bytes2))
 
 	//let's verify
 	assert.Equal(t, true, tx.VerifySignatureManually())

@@ -31,6 +31,9 @@ type TransactionZetherPayload struct {
 
 	Statement *crypto.Statement // note statement containts fee
 
+	WhisperSender    []byte
+	WhisperRecipient []byte
+
 	FeeRate         uint64 //serialized only if asset is not native
 	FeeLeadingZeros byte
 
@@ -229,6 +232,9 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 
 	payload.Statement.Serialize(w, payload.Registrations.Registrations)
 
+	w.Write(payload.WhisperSender)
+	w.Write(payload.WhisperRecipient)
+
 	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
 		w.WriteUvarint(payload.FeeRate)
 		w.WriteByte(payload.FeeLeadingZeros)
@@ -313,6 +319,13 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 	}
 
 	if err = payload.Statement.Deserialize(r, payload.Registrations.Registrations); err != nil {
+		return
+	}
+
+	if payload.WhisperSender, err = r.ReadBytes(32); err != nil {
+		return
+	}
+	if payload.WhisperRecipient, err = r.ReadBytes(32); err != nil {
 		return
 	}
 

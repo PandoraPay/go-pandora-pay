@@ -101,10 +101,13 @@ func (s *Statement) Deserialize(r *helpers.BufferReader, payloadRegistrations []
 				return
 			}
 			balance := ConstructElGamal(acckey.G1(), ElGamal_BASE_G)
-			echanges := ConstructElGamal(s.C[i], s.D)
-			balance = balance.Add(echanges)
-			s.CLn[i] = balance.Left
-			s.CRn[i] = balance.Right
+
+			var left, right bn256.G1
+			left.Add(balance.Left, s.C[i])
+			s.CLn[i] = &left
+
+			right.Add(balance.Right, s.D)
+			s.CRn[i] = &right
 		}
 	}
 

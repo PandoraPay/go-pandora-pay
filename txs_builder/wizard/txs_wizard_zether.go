@@ -490,6 +490,18 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			emap[string(transfer.Asset)][publickeylist[i].String()] = balance.Serialize() // reserialize and store
 		}
 
+		//whisper the value to the sender
+		v2 := crypto.ReducedHash(new(bn256.G1).ScalarMult(publickeylist[witness_index[0]], r).EncodeCompressed())
+		v2 = new(big.Int).Add(v2, new(big.Int).SetUint64(value))
+		v2Proof := new(big.Int).Mod(v2, bn256.Order)
+		payload.WhisperSender = crypto.ConvertBigIntToByte(v2Proof)
+
+		//whisper the value to the recipient
+		v1 := crypto.ReducedHash(new(bn256.G1).ScalarMult(publickeylist[witness_index[0]], r).EncodeCompressed())
+		v1 = new(big.Int).Add(v1, new(big.Int).SetUint64(value))
+		v1proof := new(big.Int).Mod(v1, bn256.Order)
+		payload.WhisperRecipient = crypto.ConvertBigIntToByte(v1proof)
+
 	}
 	txBase.Payloads = payloads
 	statusCallback("Transaction Zether Statements created")
