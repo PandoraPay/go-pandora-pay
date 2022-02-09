@@ -2,6 +2,7 @@ package addresses
 
 import (
 	"context"
+	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -43,7 +44,7 @@ func (pk *PrivateKey) Sign(message []byte) ([]byte, error) {
 }
 
 func (pk *PrivateKey) Decrypt(message []byte) ([]byte, error) {
-	panic("not implemented")
+	return nil, errors.New("Encryption is not supported right now")
 }
 
 func (pk *PrivateKey) DecodeBalance(balance *crypto.ElGamal, previousValue uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {

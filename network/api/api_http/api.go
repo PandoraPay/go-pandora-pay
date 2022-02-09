@@ -48,7 +48,7 @@ func NewAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chai
 		"wallet/create-address":  api.apiCommon.WalletCreateAddress_http,
 		"wallet/delete-address":  api.apiCommon.WalletDeleteAddress_http,
 		"wallet/get-balances":    api.apiCommon.WalletGetBalances_http,
-		"wallet/decode-tx":       api.apiCommon.WalletDecodeTx_http,
+		"wallet/decrypt-tx":      api.apiCommon.WalletDecryptTx_http,
 	}
 
 	if config.SEED_WALLET_NODES_INFO {

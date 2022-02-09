@@ -15,20 +15,20 @@ import (
 	"pandora-pay/wallet"
 )
 
-type APIWalletDecodeTx struct {
+type APIWalletDecryptTx struct {
 	api_types.APIAuthenticateBaseRequest
-	APIWalletDecodeTxBase
+	APIWalletDecryptTxBase
 }
 
-type APIWalletDecodeTxBase struct {
+type APIWalletDecryptTxBase struct {
 	Hash helpers.HexBytes `json:"hash" msgpack:"hash"`
 }
 
-type APIWalletDecodeTxReply struct {
-	Decoded *wallet.DecodedTx `json:"decoded" msgpack:"decoded"`
+type APIWalletDecryptTxReply struct {
+	Decrypted *wallet.DecryptedTx `json:"decrypted" msgpack:"decrypted"`
 }
 
-func (api *APICommon) WalletDecodeTx(r *http.Request, args *APIWalletDecodeTxBase, reply *APIWalletDecodeTxReply, authenticated bool) (err error) {
+func (api *APICommon) WalletDecryptTx(r *http.Request, args *APIWalletDecryptTxBase, reply *APIWalletDecryptTxReply, authenticated bool) (err error) {
 
 	if !authenticated {
 		return errors.New("Invalid User or Password")
@@ -53,25 +53,25 @@ func (api *APICommon) WalletDecodeTx(r *http.Request, args *APIWalletDecodeTxBas
 		return
 	}
 
-	reply.Decoded, err = api.wallet.DecodeTx(tx)
+	reply.Decrypted, err = api.wallet.DecryptTx(tx)
 
 	return
 }
 
-func (api *APICommon) WalletDecodeTx_http(values url.Values) (interface{}, error) {
-	args := &APIWalletDecodeTx{}
+func (api *APICommon) WalletDecryptTx_http(values url.Values) (interface{}, error) {
+	args := &APIWalletDecryptTx{}
 	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
-	reply := &APIWalletDecodeTxReply{}
-	return reply, api.WalletDecodeTx(nil, &args.APIWalletDecodeTxBase, reply, args.CheckAuthenticated())
+	reply := &APIWalletDecryptTxReply{}
+	return reply, api.WalletDecryptTx(nil, &args.APIWalletDecryptTxBase, reply, args.CheckAuthenticated())
 }
 
-func (api *APICommon) WalletDecodeTx_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	args := &APIWalletDecodeTxBase{}
+func (api *APICommon) WalletDecryptTx_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+	args := &APIWalletDecryptTxBase{}
 	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	reply := &APIWalletDecodeTxReply{}
-	return reply, api.WalletDecodeTx(nil, args, reply, conn.Authenticated.IsSet())
+	reply := &APIWalletDecryptTxReply{}
+	return reply, api.WalletDecryptTx(nil, args, reply, conn.Authenticated.IsSet())
 }
