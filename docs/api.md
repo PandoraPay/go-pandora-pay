@@ -116,6 +116,7 @@ Output
          "balancesDecrypted": {
              "0000000000000000000000000000000000000000": {
                  "amount": 242927,                
+                 "balance": "15f8136864b1c06ebed9c03a006a61386d9d2c93310ff9758b7d3a5580a49a6d0018b822c42c27ad84d2971544d743417bb28ff7530f848e9d52c23598a665b01d01",
              }
          },
          "addressEncoded": "PANDDEVAAJxQKwvwiLYeu6NziU5uDqqiIJljLI<nr2hhhg2Hl6wAQCT7qfa",
@@ -162,7 +163,7 @@ Output
 
 **amount** is the decrypted value.
 
-WARNING! The decryting algorithm is a brute force. If you have more than 8 decimals values, it could take even a few minutes to decrypt the balance is case it was changed.
+**WARNING!** The decryptor is a making brute force trying all possible balances starting from 0. If you have more than 8 decimals values, it could take even a few minutes to decrypt the balance is case it was changed.
 
 #### wallet/decrypt-tx
 
@@ -174,8 +175,7 @@ Output
    "decrypted":{
       "type":1,
       "zetherTx":{
-         "payloads":[
-            {
+         "payloads":[ {
                "whisperSenderValid":true,
                "sentAmount":100703740,
                "whisperRecipientValid":false,
@@ -189,17 +189,19 @@ Output
 }
 ```
 
-**whisperSenderValid** true if you were the sender and the whisper encrypted amount was successfully verified. In case the whisper is malformed it will return false.
+**whisperSenderValid** true if you were the sender and the whisper encrypted amount was successfully verified. 
 
-**sentAmount**  amount if you were the sender and the whisper encrypted amount was successfully verified. In case the whisper is malformed it will return 0.
+**sentAmount**  amount if you were the sender and the whisper encrypted amount was successfully verified.
 
 **recipientIndex** ring member position of the recipient if you were the sender
 
-**whisperRecipientValid** true if you were the recipient and the whisper encrypted amount was successfully verified. In case the whisper is malformed it will return false.
+**whisperRecipientValid** true if you were the recipient and the whisper encrypted amount was successfully verified. 
 
-**receivedAmount** amount if you were the recipient and the whisper encrypted amount was successfully verified. In case the whisper is malformed it will return 0.
+**receivedAmount** amount if you were the recipient and the whisper encrypted amount was successfully verified.
 
 **message** decrypted shared messaged
+
+In case the whisper is malformed it will return accordingly.
 
 # DISCLAIMER:
 This source code is released for research purposes only, with the intent of researching and studying a decentralized p2p network protocol.

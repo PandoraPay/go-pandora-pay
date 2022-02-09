@@ -124,7 +124,7 @@ func (api *APICommon) WalletGetBalances(r *http.Request, args *APIWalletGetBalan
 	for i, publicKey := range publicKeys {
 		for _, data := range reply.Results[i].Balances {
 
-			if data.Value, err = api.wallet.DecryptBalanceByPublicKey(publicKey, data.Balance, data.Asset, false, 0, true, true, nil, func(status string) {}); err != nil {
+			if data.Amount, err = api.wallet.DecryptBalanceByPublicKey(publicKey, data.Balance, data.Asset, false, 0, true, true, nil, func(status string) {}); err != nil {
 				return
 			}
 		}

@@ -3,6 +3,7 @@ package webassembly
 import (
 	"encoding/hex"
 	"pandora-pay/app"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	"pandora-pay/webassembly/webassembly_utils"
 	"strconv"
@@ -375,5 +376,26 @@ func getPrivateDataForDecryptingBalanceWalletAddress(this js.Value, args []js.Va
 			PreviousValue uint64           `json:"previousValue"`
 		}{privateKey, previousValue})
 
+	})
+}
+
+func decryptTx(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+
+		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {
+			return false, err
+		}
+
+		tx := &transaction.Transaction{}
+		if err := tx.Deserialize(args[0]); err != nil {
+			return nil, err
+		}
+
+		decrypted, err := app.Wallet.DecryptTx(tx)
+		if err != nil {
+			return nil, err
+		}
+
+		return webassembly_utils.ConvertJSONBytes(decrypted)
 	})
 }

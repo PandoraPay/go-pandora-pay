@@ -65,6 +65,7 @@ func Initialize(startMainCb func()) {
 			"updatePreviousDecryptedBalanceValueWalletAddress": js.FuncOf(updatePreviousDecryptedBalanceValueWalletAddress),
 			"tryDecryptBalance":                                js.FuncOf(tryDecryptBalance),
 			"getPrivateDataForDecryptingBalanceWalletAddress":  js.FuncOf(getPrivateDataForDecryptingBalanceWalletAddress),
+			"decryptTx": js.FuncOf(decryptTx),
 		}),
 		"addresses": js.ValueOf(map[string]interface{}{
 			"decodeAddress":      js.FuncOf(decodeAddress),
