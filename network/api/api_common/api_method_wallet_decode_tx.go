@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
@@ -26,8 +25,7 @@ type APIWalletDecodeTxBase struct {
 }
 
 type APIWalletDecodeTxReply struct {
-	Type   transaction_type.TransactionVersion `json:"type" msgpack:"type"`
-	Output []*wallet.PayloadOutput             `json:"output" msgpack:"output"`
+	Decoded *wallet.DecodedTx `json:"decoded" msgpack:"decoded"`
 }
 
 func (api *APICommon) WalletDecodeTx(r *http.Request, args *APIWalletDecodeTxBase, reply *APIWalletDecodeTxReply, authenticated bool) (err error) {
@@ -55,12 +53,7 @@ func (api *APICommon) WalletDecodeTx(r *http.Request, args *APIWalletDecodeTxBas
 		return
 	}
 
-	reply.Type = tx.Version
-
-	switch tx.Version {
-	case transaction_type.TX_ZETHER:
-		reply.Output, err = api.wallet.DecodeZetherTx(tx)
-	}
+	reply.Decoded, err = api.wallet.DecodeTx(tx)
 
 	return
 }

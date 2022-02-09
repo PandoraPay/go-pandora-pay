@@ -321,7 +321,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		} else if payload.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT {
 			dataLength += helpers.BytesLengthSerialized(uint64(len(dataFinal)))
 		} else if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
-			dataLength = transaction_zether_payload.PAYLOAD0_LIMIT
+			dataLength = transaction_zether_payload.PAYLOAD_LIMIT
 		}
 
 		m := int(math.Log2(float64(len(rings[t]))))
@@ -404,11 +404,11 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				}
 
 				if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
-					if len(dataFinal) > transaction_zether_payload.PAYLOAD0_LIMIT {
+					if len(dataFinal) > transaction_zether_payload.PAYLOAD_LIMIT {
 						return errors.New("Data final exceeds")
 					}
-					dataFinal = append(dataFinal, make([]byte, transaction_zether_payload.PAYLOAD0_LIMIT-len(dataFinal))...)
-					payload.Data = append([]byte{byte(uint(witness_index[0]))}, dataFinal...)
+					dataFinal = append(dataFinal, make([]byte, transaction_zether_payload.PAYLOAD_LIMIT-len(dataFinal))...)
+					payload.Data = append([]byte{}, dataFinal...)
 
 					// make sure used data encryption is optional, just in case we would like to play together with ring members
 					if err = crypto.EncryptDecryptUserData(cryptography.SHA3(append(shared_key[:], publickeylist[i].EncodeCompressed()...)), payload.Data); err != nil {
