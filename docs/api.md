@@ -148,8 +148,8 @@ Output
             "address": "PANDDEVABc3D9FePUuPADupO1p8jvtwEAVG5L3>sDttvmCw><jgAAABpTAR",
             "plainAcc": null,
             "balance":[ {
-                    "amount": "15f8136864b1c06ebed9c03a006a61386d9d2c93310ff9758b7d3a5580a49a6d0018b822c42c27ad84d2971544d743417bb28ff7530f848e9d52c23598a665b01d01",
-                    "value": 65205984,
+                    "balance": "15f8136864b1c06ebed9c03a006a61386d9d2c93310ff9758b7d3a5580a49a6d0018b822c42c27ad84d2971544d743417bb28ff7530f848e9d52c23598a665b01d01",
+                    "amount": 65205984,
                     "asset": "0000000000000000000000000000000000000000"
                 }
             ]
@@ -158,11 +158,48 @@ Output
 }
 ```
 
-**Amount** is the encrypted balance using ElGamal
+**balance** is the ElGamal encrypted balance 
 
-**Value** is the decrypted value.
+**amount** is the decrypted value.
 
 WARNING! The decryting algorithm is a brute force. If you have more than 8 decimals values, it could take even a few minutes to decrypt the balance is case it was changed.
+
+#### wallet/decrypt-tx
+
+Request Using TxHash `curl http://127.0.0.1:5230/wallet/decrypt-tx?hash=74a4df703278811715d51c79645b57c6cae1d98c256a58c32dab2de60ddfd6b6&user=username&pass=password`
+
+Output
+```
+{
+   "decrypted":{
+      "type":1,
+      "zetherTx":{
+         "payloads":[
+            {
+               "whisperSenderValid":true,
+               "sentAmount":100703740,
+               "whisperRecipientValid":false,
+               "receivedAmount":0,
+               "recipientIndex":9,
+               "message":"546573746e657420466175636574205478"
+            }
+         ]
+      }
+   }
+}
+```
+
+**whisperSenderValid** true if you were the sender and the whisper encrypted amount was successfully verified. In case the whisper is malformed it will return false.
+
+**sentAmount**  amount if you were the sender and the whisper encrypted amount was successfully verified. In case the whisper is malformed it will return 0.
+
+**recipientIndex** ring member position of the recipient if you were the sender
+
+**whisperRecipientValid** true if you were the recipient and the whisper encrypted amount was successfully verified. In case the whisper is malformed it will return false.
+
+**receivedAmount** amount if you were the recipient and the whisper encrypted amount was successfully verified. In case the whisper is malformed it will return 0.
+
+**message** decrypted shared messaged
 
 # DISCLAIMER:
 This source code is released for research purposes only, with the intent of researching and studying a decentralized p2p network protocol.

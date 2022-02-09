@@ -40,8 +40,8 @@ type APIWalletGetBalancesResultReply struct {
 }
 
 type APIWalletGetBalanceDataReply struct {
-	Balance helpers.HexBytes `json:"amount" msgpack:"amount"`
-	Value   uint64           `json:"value" msgpack:"value"`
+	Balance helpers.HexBytes `json:"balance" msgpack:"balance"`
+	Amount  uint64           `json:"amount" msgpack:"amount"`
 	Asset   helpers.HexBytes `json:"asset" msgpack:"asset"`
 }
 
