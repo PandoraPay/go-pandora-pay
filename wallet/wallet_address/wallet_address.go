@@ -11,17 +11,17 @@ import (
 )
 
 type WalletAddress struct {
-	Version                    Version                                 `json:"version" msgpack:"version"`
-	Name                       string                                  `json:"name" msgpack:"name"`
-	SeedIndex                  uint32                                  `json:"seedIndex" msgpack:"seedIndex"`
-	IsMine                     bool                                    `json:"isMine" msgpack:"isMine"`
-	PrivateKey                 *addresses.PrivateKey                   `json:"privateKey" msgpack:"privateKey"`
-	Registration               helpers.HexBytes                        `json:"registration" msgpack:"registration"`
-	PublicKey                  helpers.HexBytes                        `json:"publicKey" msgpack:"publicKey"`
-	BalancesDecoded            map[string]*WalletAddressBalanceDecoded `json:"balancesDecoded" msgpack:"balancesDecoded"`
-	AddressEncoded             string                                  `json:"addressEncoded" msgpack:"addressEncoded"`
-	AddressRegistrationEncoded string                                  `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
-	DelegatedStake             *WalletAddressDelegatedStake            `json:"delegatedStake" msgpack:"delegatedStake"`
+	Version                    Version                                   `json:"version" msgpack:"version"`
+	Name                       string                                    `json:"name" msgpack:"name"`
+	SeedIndex                  uint32                                    `json:"seedIndex" msgpack:"seedIndex"`
+	IsMine                     bool                                      `json:"isMine" msgpack:"isMine"`
+	PrivateKey                 *addresses.PrivateKey                     `json:"privateKey" msgpack:"privateKey"`
+	Registration               helpers.HexBytes                          `json:"registration" msgpack:"registration"`
+	PublicKey                  helpers.HexBytes                          `json:"publicKey" msgpack:"publicKey"`
+	BalancesDecrypted          map[string]*WalletAddressBalanceDecrypted `json:"balancesDecrypted" msgpack:"balancesDecrypted"`
+	AddressEncoded             string                                    `json:"addressEncoded" msgpack:"addressEncoded"`
+	AddressRegistrationEncoded string                                    `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
+	DelegatedStake             *WalletAddressDelegatedStake              `json:"delegatedStake" msgpack:"delegatedStake"`
 }
 
 func (addr *WalletAddress) GetDelegatedStakePrivateKey() []byte {
@@ -86,13 +86,13 @@ func (addr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDel
 	}, nil
 }
 
-func (addr *WalletAddress) UpdateDecodedBalance(newPreviousValue uint64, assetId []byte) {
-	found := addr.BalancesDecoded[hex.EncodeToString(assetId)]
+func (addr *WalletAddress) UpdateDecryptedBalance(newPreviousValue uint64, assetId []byte) {
+	found := addr.BalancesDecrypted[hex.EncodeToString(assetId)]
 	if found != nil {
-		found.AmountDecoded = newPreviousValue
+		found.AmountDecrypted = newPreviousValue
 	} else {
-		addr.BalancesDecoded[hex.EncodeToString(assetId)] = &WalletAddressBalanceDecoded{
-			newPreviousValue, assetId,
+		addr.BalancesDecrypted[hex.EncodeToString(assetId)] = &WalletAddressBalanceDecrypted{
+			newPreviousValue,
 		}
 	}
 }
@@ -124,9 +124,9 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		return nil
 	}
 
-	balancesDecoded := make(map[string]*WalletAddressBalanceDecoded)
-	for k, v := range addr.BalancesDecoded {
-		balancesDecoded[k] = v
+	balancesDecrypted := make(map[string]*WalletAddressBalanceDecrypted)
+	for k, v := range addr.BalancesDecrypted {
+		balancesDecrypted[k] = v
 	}
 
 	return &WalletAddress{
@@ -137,7 +137,7 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		addr.PrivateKey,
 		addr.Registration,
 		addr.PublicKey,
-		balancesDecoded,
+		balancesDecrypted,
 		addr.AddressEncoded,
 		addr.AddressRegistrationEncoded,
 		addr.DelegatedStake,

@@ -29,7 +29,7 @@ func main() {
 		"helloPandoraHelper": js.FuncOf(helloPandoraHelper),
 		"wallet": js.ValueOf(map[string]interface{}{
 			"initializeBalanceDecoder": js.FuncOf(initializeBalanceDecoder),
-			"decodeBalance":            js.FuncOf(decodeBalance),
+			"decryptBalance":           js.FuncOf(decryptBalance),
 		}),
 		"transactions": js.ValueOf(map[string]interface{}{
 			"builder": js.ValueOf(map[string]interface{}{

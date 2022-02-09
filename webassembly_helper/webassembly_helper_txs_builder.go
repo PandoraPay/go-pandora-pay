@@ -21,8 +21,8 @@ import (
 )
 
 type zetherTxDataFrom struct {
-	PrivateKey     helpers.HexBytes `json:"privateKey"`
-	BalanceDecoded uint64           `json:"balanceDecoded"`
+	PrivateKey       helpers.HexBytes `json:"privateKey"`
+	BalanceDecrypted uint64           `json:"balanceDecrypted"`
 }
 
 type zetherTxDataBase struct {
@@ -61,13 +61,13 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 		}
 
 		transfers[t] = &wizard.WizardZetherTransfer{
-			Asset:              ast,
-			From:               txData.From[t].PrivateKey,
-			FromBalanceDecoded: txData.From[t].BalanceDecoded,
-			Destination:        txData.Dsts[t],
-			Amount:             txData.Amounts[t],
-			Burn:               txData.Burns[t],
-			Data:               txData.Data[t],
+			Asset:                ast,
+			From:                 txData.From[t].PrivateKey,
+			FromBalanceDecrypted: txData.From[t].BalanceDecrypted,
+			Destination:          txData.Dsts[t],
+			Amount:               txData.Amounts[t],
+			Burn:                 txData.Burns[t],
+			Data:                 txData.Data[t],
 		}
 
 		if !bytes.Equal(txData.Assets[t], config_coins.NATIVE_ASSET_FULL) {

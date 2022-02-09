@@ -29,20 +29,15 @@ type BalanceDecoderType struct {
 	info *generics.Value[*BalanceDecoderInfo]
 }
 
-func (self *BalanceDecoderType) CheckMatchBalanceDecoded(p *bn256.G1, matchBalance uint64) bool {
+func (self *BalanceDecoderType) TryDecryptBalance(p *bn256.G1, matchBalance uint64) bool {
 	var acc bn256.G1
 	acc.ScalarMult(crypto.G, new(big.Int).SetUint64(matchBalance))
 	return acc.String() == p.String()
 }
 
-func (self *BalanceDecoderType) BalanceDecode(p *bn256.G1, previousBalance uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
+func (self *BalanceDecoderType) DecryptBalance(p *bn256.G1, previousBalance uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
-	if self.CheckMatchBalanceDecoded(p, previousBalance) {
-		return previousBalance, nil
-	}
-	var acc bn256.G1
-	acc.ScalarMult(crypto.G, new(big.Int).SetUint64(previousBalance))
-	if acc.String() == p.String() {
+	if self.TryDecryptBalance(p, previousBalance) {
 		return previousBalance, nil
 	}
 
@@ -82,7 +77,7 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 		}
 		self.info.Store(info)
 
-		gui.GUI.Info2Update("Decoder", "Init... "+strconv.Itoa(int(math.Log2(float64(info.tableSize)))))
+		gui.GUI.Info2Update("Decrypter", "Init... "+strconv.Itoa(int(math.Log2(float64(info.tableSize)))))
 
 		if oldInfo != nil && oldInfo.hasError.SetToIf(false, true) {
 			close(oldInfo.readyCn)
@@ -98,7 +93,7 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 				close(info.readyCn)
 			}
 			info.tableLookup.Store(tableLookup)
-			gui.GUI.Info2Update("Decoder", "Ready "+strconv.Itoa(int(math.Log2(float64(info.tableSize)))))
+			gui.GUI.Info2Update("Decrypter", "Ready "+strconv.Itoa(int(math.Log2(float64(info.tableSize)))))
 			return tableLookup
 		case <-ctx.Done():
 			if info.hasError.SetToIf(false, true) {

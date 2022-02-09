@@ -314,7 +314,7 @@ func updatePreviousValueWalletAddress(this js.Value, args []js.Value) interface{
 			return nil, err
 		}
 
-		if err := app.Wallet.UpdatePreviousValueByPublicKey(parameters.PublicKey, parameters.Value, parameters.Asset); err != nil {
+		if err := app.Wallet.UpdatePreviousDecryptedBalanceValueByPublicKey(parameters.PublicKey, parameters.Value, parameters.Asset); err != nil {
 			return nil, err
 		}
 
@@ -322,7 +322,7 @@ func updatePreviousValueWalletAddress(this js.Value, args []js.Value) interface{
 	})
 }
 
-func decodeBalanceIfMatchesPreviousValueWalletAddress(this js.Value, args []js.Value) interface{} {
+func tryDecryptBalance(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {
@@ -339,7 +339,7 @@ func decodeBalanceIfMatchesPreviousValueWalletAddress(this js.Value, args []js.V
 			return nil, err
 		}
 
-		value, decoded, err := app.Wallet.DecodeBalanceIfMatchesPreviousValue(parameters.PublicKey, parameters.Asset, parameters.BalanceEncoded)
+		value, decoded, err := app.Wallet.TryDecryptBalance(parameters.PublicKey, parameters.Asset, parameters.BalanceEncoded)
 		if err != nil {
 			return nil, err
 		}
@@ -351,7 +351,7 @@ func decodeBalanceIfMatchesPreviousValueWalletAddress(this js.Value, args []js.V
 	})
 }
 
-func getPrivateDataForDecodingBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
+func getPrivateDataForDecryptingBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {
@@ -367,7 +367,7 @@ func getPrivateDataForDecodingBalanceWalletAddress(this js.Value, args []js.Valu
 			return nil, err
 		}
 
-		privateKey, previousValue := app.Wallet.GetDataForDecodingBalance(parameters.PublicKey, parameters.Asset)
+		privateKey, previousValue := app.Wallet.GetDataForDecryptingBalance(parameters.PublicKey, parameters.Asset)
 
 		return webassembly_utils.ConvertJSONBytes(struct {
 			PrivateKey    helpers.HexBytes `json:"privateKey"`

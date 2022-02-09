@@ -83,11 +83,11 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 	}
 
 	if balance != nil {
-		var balanceDecoded uint64
-		if balanceDecoded, err = testnet.wallet.DecodeBalanceByPublicKey(dstAddr.PublicKey, balance, config_coins.NATIVE_ASSET_FULL, false, 0, true, true, ctx, nil); err != nil {
+		var balanceDecrypted uint64
+		if balanceDecrypted, err = testnet.wallet.DecryptBalanceByPublicKey(dstAddr.PublicKey, balance, config_coins.NATIVE_ASSET_FULL, false, 0, true, true, ctx, nil); err != nil {
 			return
 		}
-		if balanceDecoded > 10000 {
+		if balanceDecrypted > 10000 {
 			return
 		}
 	}

@@ -47,16 +47,16 @@ func (pk *PrivateKey) Decrypt(message []byte) ([]byte, error) {
 	return nil, errors.New("Encryption is not supported right now")
 }
 
-func (pk *PrivateKey) DecodeBalance(balance *crypto.ElGamal, previousValue uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
+func (pk *PrivateKey) DecryptBalance(balance *crypto.ElGamal, previousValue uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
 	priv := new(crypto.BNRed).SetBytes(pk.Key)
 	balancePoint := new(bn256.G1).Add(balance.Left, new(bn256.G1).Neg(new(bn256.G1).ScalarMult(balance.Right, priv.BigInt())))
-	return balance_decoder.BalanceDecoder.BalanceDecode(balancePoint, previousValue, ctx, statusCallback)
+	return balance_decoder.BalanceDecoder.DecryptBalance(balancePoint, previousValue, ctx, statusCallback)
 }
 
-func (pk *PrivateKey) CheckMatchBalanceDecoded(balance *crypto.ElGamal, matchValue uint64) bool {
+func (pk *PrivateKey) TryDecryptBalance(balance *crypto.ElGamal, matchValue uint64) bool {
 	priv := new(crypto.BNRed).SetBytes(pk.Key)
 	balancePoint := new(bn256.G1).Add(balance.Left, new(bn256.G1).Neg(new(bn256.G1).ScalarMult(balance.Right, priv.BigInt())))
-	return balance_decoder.BalanceDecoder.CheckMatchBalanceDecoded(balancePoint, matchValue)
+	return balance_decoder.BalanceDecoder.TryDecryptBalance(balancePoint, matchValue)
 }
 
 func GenerateNewPrivateKey() *PrivateKey {

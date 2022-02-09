@@ -74,7 +74,7 @@ func (w *Wallet) DecryptTx(tx *transaction.Transaction) (*DecryptedTx, error) {
 						amount := v2Value.Uint64()
 						if err := helpers.SafeUint64Add(&amount, payload.Statement.Fee); err == nil {
 							if err := helpers.SafeUint64Add(&amount, payload.BurnValue); err == nil {
-								if addr.PrivateKey.CheckMatchBalanceDecoded(echanges.Neg(), amount) {
+								if addr.PrivateKey.TryDecryptBalance(echanges.Neg(), amount) {
 									decyptedZetherPayload.WhisperSenderValid = true
 									decyptedZetherPayload.SentAmount = amount
 								}
@@ -91,7 +91,7 @@ func (w *Wallet) DecryptTx(tx *transaction.Transaction) (*DecryptedTx, error) {
 						amount := v1Value.Uint64()
 						if err := helpers.SafeUint64Add(&amount, payload.Statement.Fee); err == nil {
 							if err := helpers.SafeUint64Add(&amount, payload.BurnValue); err == nil {
-								if addr.PrivateKey.CheckMatchBalanceDecoded(echanges, amount) {
+								if addr.PrivateKey.TryDecryptBalance(echanges, amount) {
 									decyptedZetherPayload.WhisperRecipientValid = true
 									decyptedZetherPayload.ReceivedAmount = v1Value.Uint64()
 								}

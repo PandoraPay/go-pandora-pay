@@ -66,13 +66,13 @@ func TestCreateZetherTx(t *testing.T) {
 		publicKeyIndexes[string(dstAddress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, dstAddress.Registration}
 
 		transfers[i] = &WizardZetherTransfer{
-			Asset:              config_coins.NATIVE_ASSET_FULL,
-			From:               senderPrivateKey.Key,
-			FromBalanceDecoded: amount,
-			Destination:        dstAddress.EncodeAddr(),
-			Amount:             diff,
-			Burn:               0,
-			Data:               &WizardTransactionData{[]byte{}, false},
+			Asset:                config_coins.NATIVE_ASSET_FULL,
+			From:                 senderPrivateKey.Key,
+			FromBalanceDecrypted: amount,
+			Destination:          dstAddress.EncodeAddr(),
+			Amount:               diff,
+			Burn:                 0,
+			Data:                 &WizardTransactionData{[]byte{}, false},
 		}
 		amount -= diff
 

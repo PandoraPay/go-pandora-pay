@@ -43,7 +43,7 @@ func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, []byte, 
 }
 
 //you should not lock it before
-func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, store, lock bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
+func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, store, lock bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	if !lock {
 		return 0, errors.New("You shouldn't lock the wallet before as it will lock wallet functionality for some time")
@@ -64,8 +64,8 @@ func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto
 
 	var previousValue uint64
 	if !useNewPreviousValue {
-		if found := addr.BalancesDecoded[hex.EncodeToString(asset)]; found != nil {
-			previousValue = found.AmountDecoded
+		if found := addr.BalancesDecrypted[hex.EncodeToString(asset)]; found != nil {
+			previousValue = found.AmountDecrypted
 		}
 	} else {
 		previousValue = newPreviousValue
@@ -77,7 +77,7 @@ func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto
 		wallet.Lock.RUnlock()
 	}
 
-	decoded, err := priv.DecodeBalance(balance, previousValue, ctx, statusCallback)
+	decrypted, err := priv.DecryptBalance(balance, previousValue, ctx, statusCallback)
 	if err != nil {
 		return 0, err
 	}
@@ -88,20 +88,20 @@ func (wallet *Wallet) DecodeBalanceByPublicKey(publicKey []byte, balance *crypto
 			defer wallet.Lock.Unlock()
 		}
 		if addr = wallet.addressesMap[string(publicKey)]; addr == nil {
-			return 0, errors.New("address for storing the new decoded value was not found")
+			return 0, errors.New("address for storing the new decrypted value was not found")
 		}
 
-		addr.UpdateDecodedBalance(decoded, asset)
+		addr.UpdateDecryptedBalance(decrypted, asset)
 
 		if err := wallet.saveWalletAddress(addr, false); err != nil {
 			gui.GUI.Error("error storing balance update", publicKey)
 		}
 	}
 
-	return decoded, nil
+	return decrypted, nil
 }
 
-func (wallet *Wallet) UpdatePreviousValueByPublicKey(publicKey []byte, newPreviousValue uint64, asset []byte) error {
+func (wallet *Wallet) UpdatePreviousDecryptedBalanceValueByPublicKey(publicKey []byte, newPreviousValue uint64, asset []byte) error {
 	wallet.Lock.Lock()
 	defer wallet.Lock.Unlock()
 
@@ -110,7 +110,7 @@ func (wallet *Wallet) UpdatePreviousValueByPublicKey(publicKey []byte, newPrevio
 		return errors.New("address was not found")
 	}
 
-	addr.UpdateDecodedBalance(newPreviousValue, asset)
+	addr.UpdateDecryptedBalance(newPreviousValue, asset)
 
 	return wallet.saveWalletAddress(addr, false)
 }
@@ -143,7 +143,7 @@ func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte, lock bool) *
 	return wallet.addressesMap[string(publicKey)].Clone()
 }
 
-func (wallet *Wallet) DecodeBalanceIfMatchesPreviousValue(publicKey, asset, balanceEncoded []byte) (uint64, bool, error) {
+func (wallet *Wallet) TryDecryptBalance(publicKey, asset, balanceEncoded []byte) (uint64, bool, error) {
 
 	balance, err := new(crypto.ElGamal).Deserialize(balanceEncoded)
 	if err != nil {
@@ -155,13 +155,13 @@ func (wallet *Wallet) DecodeBalanceIfMatchesPreviousValue(publicKey, asset, bala
 
 	addr := wallet.addressesMap[string(publicKey)]
 
-	if addr.BalancesDecoded[hex.EncodeToString(asset)] == nil {
+	if addr.BalancesDecrypted[hex.EncodeToString(asset)] == nil {
 		return 0, false, nil
 	}
 
-	previousValue := addr.BalancesDecoded[hex.EncodeToString(asset)].AmountDecoded
+	previousValue := addr.BalancesDecrypted[hex.EncodeToString(asset)].AmountDecrypted
 
-	ok := addr.PrivateKey.CheckMatchBalanceDecoded(balance, previousValue)
+	ok := addr.PrivateKey.TryDecryptBalance(balance, previousValue)
 	if ok {
 		return previousValue, true, nil
 	}
@@ -260,8 +260,8 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 
 	publicKey := adr.PrivateKey.GeneratePublicKey()
 
-	if adr.BalancesDecoded == nil {
-		adr.BalancesDecoded = make(map[string]*wallet_address.WalletAddressBalanceDecoded)
+	if adr.BalancesDecrypted == nil {
+		adr.BalancesDecrypted = make(map[string]*wallet_address.WalletAddressBalanceDecrypted)
 	}
 	adr.AddressEncoded = addr1.EncodeAddr()
 	adr.AddressRegistrationEncoded = addr2.EncodeAddr()

@@ -36,16 +36,16 @@ type WizardZetherPayloadExtra interface {
 }
 
 type WizardZetherTransfer struct {
-	Asset              helpers.HexBytes         `json:"asset" msgpack:"asset"`
-	From               []byte                   `json:"from" msgpack:"from"` //private key
-	FromBalanceDecoded uint64                   `json:"fromBalanceDecoded" msgpack:"fromBalanceDecoded"`
-	Destination        string                   `json:"destination" msgpack:"destination"`
-	Amount             uint64                   `json:"amount" msgpack:"amount"`
-	Burn               uint64                   `json:"burn" msgpack:"burn"`
-	FeeRate            uint64                   `json:"feeRate" msgpack:"feeRate"`
-	FeeLeadingZeros    byte                     `json:"feeLeadingZeros" msgpack:"feeLeadingZeros"`
-	Data               *WizardTransactionData   `json:"data" msgpack:"data"`
-	PayloadExtra       WizardZetherPayloadExtra `json:"payloadExtra" msgpack:"payloadExtra"`
+	Asset                helpers.HexBytes         `json:"asset" msgpack:"asset"`
+	From                 []byte                   `json:"from" msgpack:"from"` //private key
+	FromBalanceDecrypted uint64                   `json:"fromBalanceDecrypted" msgpack:"fromBalanceDecrypted"`
+	Destination          string                   `json:"destination" msgpack:"destination"`
+	Amount               uint64                   `json:"amount" msgpack:"amount"`
+	Burn                 uint64                   `json:"burn" msgpack:"burn"`
+	FeeRate              uint64                   `json:"feeRate" msgpack:"feeRate"`
+	FeeLeadingZeros      byte                     `json:"feeLeadingZeros" msgpack:"feeLeadingZeros"`
+	Data                 *WizardTransactionData   `json:"data" msgpack:"data"`
+	PayloadExtra         WizardZetherPayloadExtra `json:"payloadExtra" msgpack:"payloadExtra"`
 }
 
 type WizardZetherPublicKeyIndex struct {

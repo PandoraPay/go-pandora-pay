@@ -73,7 +73,7 @@ List of all APIs
 | logout                 | Logout user from connection                                                                                                                                                   | ✗    | ✗        | ✓              | !             | Requires --auth-users                    |
 | wallet/get-addresses   | Get all wallet accounts                                                                                                                                                       | ✓    | ✓        | ✓              | !             | Requires --auth-users                    |
 | wallet/create-address  | Create a new empty address                                                                                                                                                    | ✓    | ✓        | ✓              | !             | Requires --auth-users                    |
-| wallet/get-balances    | Get the balances (decoded) of the requested wallet addresses                                                                                                                  | ✓    | ✓        | ✓              | !             | Requires --auth-users                    |
+| wallet/get-balances    | Get the balances (decrypted) of the requested wallet addresses                                                                                                                | ✓    | ✓        | ✓              | !             | Requires --auth-users                    |
 | wallet/delete-address  | Delete an address from the wallet                                                                                                                                             | ✓    | ✓        | ✓              | !             | Requires --auth-users                    |
 
 
@@ -112,7 +112,7 @@ Output
          },
          "registration": "16fb6f16f399dcd7dc1657444a033f80e9a7029e31fbaa4451f7b772c8703d7b0c117d768516a26707274ef595c084f7512582f00ee4d32359183b1a5cb3e8ce",
          "publicKey": "027140ac2fc222d87aee8dce2539b83aaa8882658cb23e9ebda18618361e5eb001",
-         "balancesDecoded": {
+         "balancesDecrypted": {
              "0000000000000000000000000000000000000000": {
                  "amount": 242927,
                  "asset": "0000000000000000000000000000000000000000"
@@ -162,7 +162,7 @@ Output
 
 **Value** is the decrypted value.
 
-WARNING! The decoding algorithm is a brute force. If you have more than 8 decimals values, it could take even a few minutes to decode the balance is case it was changed.
+WARNING! The decryting algorithm is a brute force. If you have more than 8 decimals values, it could take even a few minutes to decrypt the balance is case it was changed.
 
 # DISCLAIMER:
 This source code is released for research purposes only, with the intent of researching and studying a decentralized p2p network protocol.

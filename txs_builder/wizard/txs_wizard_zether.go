@@ -360,14 +360,14 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		//fake balance
 		if payload.PayloadScript == transaction_zether_payload.SCRIPT_CLAIM {
 
-			transfer.FromBalanceDecoded = value + fee + burn_value
+			transfer.FromBalanceDecrypted = value + fee + burn_value
 
 			var acckey crypto.Point
 			if err = acckey.DecodeCompressed(senderKey.GeneratePublicKey()); err != nil {
 				return
 			}
 			balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
-			balance = balance.Plus(new(big.Int).SetUint64(transfer.FromBalanceDecoded))
+			balance = balance.Plus(new(big.Int).SetUint64(transfer.FromBalanceDecrypted))
 
 			emap[string(transfer.Asset)][sender.String()] = balance.Serialize()
 		}
@@ -450,15 +450,15 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			return
 		}
 
-		statusCallback("Homomorphic balance Decoding...")
+		statusCallback("Homomorphic balance Decrypting...")
 
 		var balance uint64
-		if balance, err = senderKey.DecodeBalance(pt, transfer.FromBalanceDecoded, ctx, statusCallback); err != nil {
+		if balance, err = senderKey.DecryptBalance(pt, transfer.FromBalanceDecrypted, ctx, statusCallback); err != nil {
 			return
 		}
-		transfer.FromBalanceDecoded = balance //let's update it for the next
+		transfer.FromBalanceDecrypted = balance //let's update it for the next
 
-		statusCallback("Homomorphic balance Decoded")
+		statusCallback("Homomorphic balance Decrypted")
 
 		//whisper the value to the sender
 		v2 := crypto.ReducedHash(new(bn256.G1).ScalarMult(publickeylist[witness_index[0]], r).EncodeCompressed())

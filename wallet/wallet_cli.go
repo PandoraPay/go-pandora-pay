@@ -218,14 +218,14 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 			for _, data := range addresses[i].assetsList {
 				gui.GUI.Info2Update("Decoding", "")
 
-				var decoded uint64
-				if decoded, err = wallet.DecodeBalanceByPublicKey(address.publicKey, data.balance, data.assetId, false, 0, true, true, ctx, func(status string) {
-					gui.GUI.Info2Update("Decoding", status)
+				var decrypted uint64
+				if decrypted, err = wallet.DecryptBalanceByPublicKey(address.publicKey, data.balance, data.assetId, false, 0, true, true, ctx, func(status string) {
+					gui.GUI.Info2Update("Decrypted", status)
 				}); err != nil {
 					return
 				}
 
-				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %18s", data.ast.Name, strconv.FormatFloat(config_coins.ConvertToBase(decoded), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
+				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %18s", data.ast.Name, strconv.FormatFloat(config_coins.ConvertToBase(decrypted), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
 			}
 
 		}

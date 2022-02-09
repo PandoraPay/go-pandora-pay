@@ -130,7 +130,7 @@ func (api *APICommon) WalletGetBalances(r *http.Request, args *APIWalletGetBalan
 				return
 			}
 
-			if data.Value, err = api.wallet.DecodeBalanceByPublicKey(publicKey, balancePoint, data.Asset, false, 0, true, true, nil, func(status string) {}); err != nil {
+			if data.Value, err = api.wallet.DecryptBalanceByPublicKey(publicKey, balancePoint, data.Asset, false, 0, true, true, nil, func(status string) {}); err != nil {
 				return
 			}
 		}

@@ -300,7 +300,7 @@ func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadEx
 
 	for t := range transfers {
 		if fromWalletAddresses[t] == nil {
-			transfers[t].FromBalanceDecoded = transfers[t].Amount
+			transfers[t].FromBalanceDecrypted = transfers[t].Amount
 		} else {
 
 			balancePoint, err := new(crypto.ElGamal).Deserialize(balancesFromSender[t])
@@ -308,15 +308,15 @@ func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadEx
 				return nil, nil, nil, nil, 0, nil, err
 			}
 
-			if transfers[t].FromBalanceDecoded, err = builder.wallet.DecodeBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, transfers[t].Asset, false, 0, true, true, ctx, statusCallback); err != nil {
+			if transfers[t].FromBalanceDecrypted, err = builder.wallet.DecryptBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, transfers[t].Asset, false, 0, true, true, ctx, statusCallback); err != nil {
 				return nil, nil, nil, nil, 0, nil, err
 			}
 
 		}
-		if transfers[t].FromBalanceDecoded == 0 {
+		if transfers[t].FromBalanceDecrypted == 0 {
 			return nil, nil, nil, nil, 0, nil, errors.New("You have no funds")
 		}
-		if transfers[t].FromBalanceDecoded < amounts[t] {
+		if transfers[t].FromBalanceDecrypted < amounts[t] {
 			return nil, nil, nil, nil, 0, nil, errors.New("Not enough funds")
 		}
 	}
