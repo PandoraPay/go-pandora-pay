@@ -155,7 +155,7 @@ func createSimpleGenesis(wallet *wallet.Wallet) (err error) {
 
 	var address string
 	var delegatedStakePublicKey []byte
-	if address, delegatedStakePublicKey, err = wallet.GetFirstWalletForDevnetGenesisAirdrop(); err != nil {
+	if address, delegatedStakePublicKey, err = wallet.GetFirstAddressForDevnetGenesisAirdrop(); err != nil {
 		return
 	}
 

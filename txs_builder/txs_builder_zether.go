@@ -141,7 +141,7 @@ func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadEx
 
 		} else {
 
-			addr, err := builder.wallet.GetWalletAddressByEncodedAddress(from[t])
+			addr, err := builder.wallet.GetWalletAddressByEncodedAddress(from[t], true)
 			if err != nil {
 				return nil, nil, nil, nil, 0, nil, err
 			}

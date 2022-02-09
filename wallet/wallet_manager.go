@@ -24,7 +24,7 @@ func (wallet *Wallet) GetAddressesCount() int {
 	return len(wallet.Addresses)
 }
 
-func (wallet *Wallet) GetFirstWalletForDevnetGenesisAirdrop() (string, []byte, error) {
+func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, []byte, error) {
 
 	wallet.Lock.Lock()
 	defer wallet.Lock.Unlock()
@@ -115,30 +115,22 @@ func (wallet *Wallet) UpdatePreviousValueByPublicKey(publicKey []byte, newPrevio
 	return wallet.saveWalletAddress(addr, false)
 }
 
-func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string, lock bool) (*wallet_address.WalletAddress, error) {
 
 	address, err := addresses.DecodeAddr(addressEncoded)
 	if err != nil {
 		return nil, err
 	}
 
-	wallet.Lock.RLock()
-	defer wallet.Lock.RUnlock()
-
-	out := wallet.addressesMap[string(address.PublicKey)]
-	if out == nil {
-		return nil, errors.New("address was not found")
-	}
-
-	return out, nil
+	return wallet.GetWalletAddressByPublicKey(address.PublicKey, lock), nil
 }
 
-func (wallet *Wallet) GetWalletAddressByPublicKeyHex(publicKeyHex string) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) GetWalletAddressByPublicKeyHex(publicKeyHex string, lock bool) (*wallet_address.WalletAddress, error) {
 	publicKey, err := hex.DecodeString(publicKeyHex)
 	if err != nil {
 		return nil, err
 	}
-	return wallet.GetWalletAddressByPublicKey(publicKey, false), nil
+	return wallet.GetWalletAddressByPublicKey(publicKey, lock), nil
 }
 
 func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte, lock bool) *wallet_address.WalletAddress {
@@ -148,7 +140,7 @@ func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte, lock bool) *
 		defer wallet.Lock.RUnlock()
 	}
 
-	return wallet.addressesMap[string(publicKey)]
+	return wallet.addressesMap[string(publicKey)].Clone()
 }
 
 func (wallet *Wallet) DecodeBalanceIfMatchesPreviousValue(publicKey, asset, balanceEncoded []byte) (uint64, bool, error) {
@@ -188,6 +180,7 @@ func (wallet *Wallet) ImportPrivateKey(name string, privateKey []byte) (*wallet_
 	if err != nil {
 		return nil, err
 	}
+
 	addr := &wallet_address.WalletAddress{
 		Name:           name,
 		PrivateKey:     priv,
@@ -236,7 +229,7 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 	wallet.Count += 1
 
 	wallet.updateWallet()
-	gui.GUI.Info("wallet.saveWallet", len(wallet.Addresses))
+
 	if err = wallet.saveWallet(len(wallet.Addresses)-1, len(wallet.Addresses), -1, false); err != nil {
 		return
 	}
@@ -294,7 +287,7 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKey, false, nil)
 
 	wallet.updateWallet()
-	gui.GUI.Info("wallet.saveWallet", len(wallet.Addresses))
+
 	if err = wallet.saveWallet(len(wallet.Addresses)-1, len(wallet.Addresses), -1, false); err != nil {
 		return
 	}
@@ -479,10 +472,10 @@ func (wallet *Wallet) GetWalletAddress(index int, lock bool) (*wallet_address.Wa
 	if index < 0 || index > len(wallet.Addresses) {
 		return nil, errors.New("Invalid Address Index")
 	}
-	return wallet.Addresses[index], nil
+	return wallet.Addresses[index].Clone(), nil
 }
 
-func (wallet *Wallet) ShowPrivateKey(index int) ([]byte, error) { //32 byte
+func (wallet *Wallet) GetPrivateKey(index int) ([]byte, error) { //32 byte
 
 	wallet.Lock.RLock()
 	defer wallet.Lock.RUnlock()

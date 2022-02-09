@@ -58,7 +58,7 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			}
 		}
 
-		fromWalletAddr, err := app.Wallet.GetWalletAddressByEncodedAddress(txData.From)
+		fromWalletAddr, err := app.Wallet.GetWalletAddressByEncodedAddress(txData.From, true)
 		if err != nil {
 			return nil, err
 		}

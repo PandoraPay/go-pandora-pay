@@ -24,25 +24,25 @@ type WalletAddress struct {
 	DelegatedStake             *WalletAddressDelegatedStake            `json:"delegatedStake" msgpack:"delegatedStake"`
 }
 
-func (adr *WalletAddress) GetDelegatedStakePrivateKey() []byte {
-	if adr.DelegatedStake != nil {
-		return adr.DelegatedStake.PrivateKey.Key
+func (addr *WalletAddress) GetDelegatedStakePrivateKey() []byte {
+	if addr.DelegatedStake != nil {
+		return addr.DelegatedStake.PrivateKey.Key
 	}
 	return nil
 }
 
-func (adr *WalletAddress) GetDelegatedStakePublicKey() []byte {
-	if adr.DelegatedStake != nil {
-		return adr.DelegatedStake.PublicKey
+func (addr *WalletAddress) GetDelegatedStakePublicKey() []byte {
+	if addr.DelegatedStake != nil {
+		return addr.DelegatedStake.PublicKey
 	}
 	return nil
 }
 
-func (adr *WalletAddress) FindDelegatedStake(currentNonce, lastKnownNonce uint32, delegatedStakePublicKey []byte) (*WalletAddressDelegatedStake, error) {
+func (addr *WalletAddress) FindDelegatedStake(currentNonce, lastKnownNonce uint32, delegatedStakePublicKey []byte) (*WalletAddressDelegatedStake, error) {
 
 	for nonce := lastKnownNonce; nonce <= currentNonce; nonce++ {
 
-		delegatedStake, err := adr.DeriveDelegatedStake(nonce)
+		delegatedStake, err := addr.DeriveDelegatedStake(nonce)
 		if err != nil {
 			return nil, err
 		}
@@ -55,13 +55,13 @@ func (adr *WalletAddress) FindDelegatedStake(currentNonce, lastKnownNonce uint32
 	return nil, errors.New("Nonce not found")
 }
 
-func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDelegatedStake, error) {
+func (addr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDelegatedStake, error) {
 
-	if adr.PrivateKey == nil {
+	if addr.PrivateKey == nil {
 		return nil, errors.New("Private Key is missing")
 	}
 
-	masterKey, err := bip32.NewMasterKey(adr.PrivateKey.Key)
+	masterKey, err := bip32.NewMasterKey(addr.PrivateKey.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -86,34 +86,60 @@ func (adr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDele
 	}, nil
 }
 
-func (adr *WalletAddress) UpdateDecodedBalance(newPreviousValue uint64, assetId []byte) {
-	found := adr.BalancesDecoded[hex.EncodeToString(assetId)]
+func (addr *WalletAddress) UpdateDecodedBalance(newPreviousValue uint64, assetId []byte) {
+	found := addr.BalancesDecoded[hex.EncodeToString(assetId)]
 	if found != nil {
 		found.AmountDecoded = newPreviousValue
 	} else {
-		adr.BalancesDecoded[hex.EncodeToString(assetId)] = &WalletAddressBalanceDecoded{
+		addr.BalancesDecoded[hex.EncodeToString(assetId)] = &WalletAddressBalanceDecoded{
 			newPreviousValue, assetId,
 		}
 	}
 }
 
-func (adr *WalletAddress) GetAddress(registered bool) string {
+func (addr *WalletAddress) GetAddress(registered bool) string {
 	if registered {
-		return adr.AddressEncoded
+		return addr.AddressEncoded
 	}
-	return adr.AddressRegistrationEncoded
+	return addr.AddressRegistrationEncoded
 }
 
-func (adr *WalletAddress) DecryptMessage(message []byte) ([]byte, error) {
-	if adr.PrivateKey == nil {
+func (addr *WalletAddress) DecryptMessage(message []byte) ([]byte, error) {
+	if addr.PrivateKey == nil {
 		return nil, errors.New("Private Key is missing")
 	}
-	return adr.PrivateKey.Decrypt(message)
+	return addr.PrivateKey.Decrypt(message)
 }
 
-func (adr *WalletAddress) SignMessage(message []byte) ([]byte, error) {
-	if adr.PrivateKey == nil {
+func (addr *WalletAddress) SignMessage(message []byte) ([]byte, error) {
+	if addr.PrivateKey == nil {
 		return nil, errors.New("Private Key is missing")
 	}
-	return adr.PrivateKey.Sign(message)
+	return addr.PrivateKey.Sign(message)
+}
+
+func (addr *WalletAddress) Clone() *WalletAddress {
+
+	if addr == nil {
+		return nil
+	}
+
+	balancesDecoded := make(map[string]*WalletAddressBalanceDecoded)
+	for k, v := range addr.BalancesDecoded {
+		balancesDecoded[k] = v
+	}
+
+	return &WalletAddress{
+		addr.Version,
+		addr.Name,
+		addr.SeedIndex,
+		addr.IsMine,
+		addr.PrivateKey,
+		addr.Registration,
+		addr.PublicKey,
+		balancesDecoded,
+		addr.AddressEncoded,
+		addr.AddressRegistrationEncoded,
+		addr.DelegatedStake,
+	}
 }

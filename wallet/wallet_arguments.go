@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"errors"
 	"pandora-pay/config/globals"
 	"pandora-pay/wallet/wallet_address"
 	"strconv"
@@ -49,9 +50,13 @@ func (wallet *Wallet) ProcessWalletArguments() (err error) {
 		}
 
 		if addr == nil {
-			if addr, err = wallet.GetWalletAddressByEncodedAddress(v[0]); err != nil {
+			if addr, err = wallet.GetWalletAddressByEncodedAddress(v[0], true); err != nil {
 				return
 			}
+		}
+
+		if addr == nil {
+			return errors.New("Address specified by --wallet-derive-delegated-stake was not found")
 		}
 
 		var nonce uint64

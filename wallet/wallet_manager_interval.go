@@ -59,61 +59,61 @@ func (wallet *Wallet) updateWallet() {
 	gui.GUI.InfoUpdate("Wallet Addrs", fmt.Sprintf("%d  %s", wallet.Count, wallet.Encryption.Encrypted))
 }
 
-func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAccount, adr *wallet_address.WalletAddress, lock bool) (err error) {
+func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAccount, addr *wallet_address.WalletAddress, lock bool) (err error) {
 
 	if plainAcc == nil {
 		return
 	}
 
-	if adr.DelegatedStake != nil && !plainAcc.DelegatedStake.HasDelegatedStake() {
-		adr.DelegatedStake = nil
+	if addr.DelegatedStake != nil && !plainAcc.DelegatedStake.HasDelegatedStake() {
+		addr.DelegatedStake = nil
 
-		if adr.PrivateKey == nil {
-			_, err = wallet.RemoveAddressByPublicKey(adr.PublicKey, lock)
+		if addr.PrivateKey == nil {
+			_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, lock)
 			return
 		}
 
 		return
 	}
 
-	if (adr.DelegatedStake != nil && plainAcc.DelegatedStake.HasDelegatedStake() && !bytes.Equal(adr.DelegatedStake.PublicKey, plainAcc.DelegatedStake.DelegatedStakePublicKey)) ||
-		(adr.DelegatedStake == nil && plainAcc.DelegatedStake.HasDelegatedStake()) {
+	if (addr.DelegatedStake != nil && plainAcc.DelegatedStake.HasDelegatedStake() && !bytes.Equal(addr.DelegatedStake.PublicKey, plainAcc.DelegatedStake.DelegatedStakePublicKey)) ||
+		(addr.DelegatedStake == nil && plainAcc.DelegatedStake.HasDelegatedStake()) {
 
-		if adr.PrivateKey == nil {
-			_, err = wallet.RemoveAddressByPublicKey(adr.PublicKey, lock)
+		if addr.PrivateKey == nil {
+			_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, lock)
 			return
 		}
 
 		if plainAcc.DelegatedStake.HasDelegatedStake() {
 
 			if plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE {
-				_, err = wallet.RemoveAddressByPublicKey(adr.PublicKey, lock)
+				_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, lock)
 				return
 			}
 
 			lastKnownNonce := uint32(0)
-			if adr.DelegatedStake != nil {
-				lastKnownNonce = adr.DelegatedStake.LastKnownNonce
+			if addr.DelegatedStake != nil {
+				lastKnownNonce = addr.DelegatedStake.LastKnownNonce
 			}
 
 			var delegatedStake *wallet_address.WalletAddressDelegatedStake
-			if delegatedStake, err = adr.FindDelegatedStake(uint32(plainAcc.Nonce), lastKnownNonce, plainAcc.DelegatedStake.DelegatedStakePublicKey); err != nil {
-				_, err = wallet.RemoveAddressByPublicKey(adr.PublicKey, lock)
+			if delegatedStake, err = addr.FindDelegatedStake(uint32(plainAcc.Nonce), lastKnownNonce, plainAcc.DelegatedStake.DelegatedStakePublicKey); err != nil {
+				_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, lock)
 				return
 			}
 
 			if delegatedStake != nil {
-				adr.DelegatedStake = delegatedStake
-				wallet.forging.Wallet.AddWallet(adr.DelegatedStake.PrivateKey.Key, adr.PublicKey, true, plainAcc)
-				return wallet.saveWalletAddress(adr, lock)
+				addr.DelegatedStake = delegatedStake
+				wallet.forging.Wallet.AddWallet(addr.DelegatedStake.PrivateKey.Key, addr.PublicKey, true, plainAcc)
+				return wallet.saveWalletAddress(addr, lock)
 			}
 
 		}
 
-		adr.DelegatedStake = nil
-		wallet.forging.Wallet.RemoveWallet(adr.PublicKey, true, plainAcc)
+		addr.DelegatedStake = nil
+		wallet.forging.Wallet.RemoveWallet(addr.PublicKey, true, plainAcc)
 
-		return wallet.saveWalletAddress(adr, lock)
+		return wallet.saveWalletAddress(addr, lock)
 	}
 
 	return

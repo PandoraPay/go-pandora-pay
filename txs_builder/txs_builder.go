@@ -82,7 +82,7 @@ func (builder *TxsBuilder) getWalletAddresses(from []string) ([]*wallet_address.
 	var err error
 
 	for i, fromAddress := range from {
-		if fromWalletAddress[i], err = builder.wallet.GetWalletAddressByEncodedAddress(fromAddress); err != nil {
+		if fromWalletAddress[i], err = builder.wallet.GetWalletAddressByEncodedAddress(fromAddress, true); err != nil {
 			return nil, err
 		}
 		if fromWalletAddress[i].PrivateKey == nil {

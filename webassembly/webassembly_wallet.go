@@ -60,7 +60,7 @@ func getWalletAddressPrivateKey(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		addr, err := app.Wallet.GetWalletAddressByPublicKeyHex(args[0].String())
+		addr, err := app.Wallet.GetWalletAddressByPublicKeyHex(args[0].String(), true)
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +76,7 @@ func getWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		adr, err := app.Wallet.GetWalletAddressByPublicKeyHex(args[0].String())
+		adr, err := app.Wallet.GetWalletAddressByPublicKeyHex(args[0].String(), true)
 		if err != nil {
 			return nil, err
 		}
@@ -231,10 +231,7 @@ func signMessageWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		app.Wallet.Lock.RLock()
-		defer app.Wallet.Lock.RUnlock()
-
-		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
+		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String(), true)
 		if err != nil {
 			return nil, err
 		}
@@ -259,10 +256,7 @@ func decryptMessageWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		app.Wallet.Lock.RLock()
-		defer app.Wallet.Lock.RUnlock()
-
-		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
+		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String(), true)
 		if err != nil {
 			return nil, err
 		}
@@ -288,10 +282,7 @@ func deriveDelegatedStakeWalletAddress(this js.Value, args []js.Value) interface
 			return nil, err
 		}
 
-		app.Wallet.Lock.RLock()
-		defer app.Wallet.Lock.RUnlock()
-
-		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String())
+		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String(), true)
 		if err != nil {
 			return nil, err
 		}

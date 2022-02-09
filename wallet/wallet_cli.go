@@ -470,7 +470,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		privateKey, err := wallet.ShowPrivateKey(index)
+		privateKey, err := wallet.GetPrivateKey(index)
 		if err != nil {
 			return
 		}

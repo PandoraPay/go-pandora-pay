@@ -1,7 +1,6 @@
 package api_common
 
 import (
-	"context"
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/wallet"
 )
 
 type APIWalletDecodeTx struct {
@@ -22,11 +22,12 @@ type APIWalletDecodeTx struct {
 }
 
 type APIWalletDecodeTxBase struct {
-	TxHash helpers.HexBytes `json:"txHash" msgpack:"txHash"`
+	Hash helpers.HexBytes `json:"hash" msgpack:"hash"`
 }
 
 type APIWalletDecodeTxReply struct {
-	Type transaction_type.TransactionVersion `json:"type" msgpack:"type"`
+	Type   transaction_type.TransactionVersion `json:"type" msgpack:"type"`
+	Output []*wallet.PayloadOutput             `json:"output" msgpack:"output"`
 }
 
 func (api *APICommon) WalletDecodeTx(r *http.Request, args *APIWalletDecodeTxBase, reply *APIWalletDecodeTxReply, authenticated bool) (err error) {
@@ -38,7 +39,7 @@ func (api *APICommon) WalletDecodeTx(r *http.Request, args *APIWalletDecodeTxBas
 	var txSerialized []byte
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		txSerialized = reader.Get("tx:" + string(args.TxHash))
+		txSerialized = reader.Get("tx:" + string(args.Hash))
 
 		return
 	}); err != nil {
@@ -58,7 +59,7 @@ func (api *APICommon) WalletDecodeTx(r *http.Request, args *APIWalletDecodeTxBas
 
 	switch tx.Version {
 	case transaction_type.TX_ZETHER:
-		err = api.wallet.DecodeZetherTx(tx, context.Background())
+		reply.Output, err = api.wallet.DecodeZetherTx(tx)
 	}
 
 	return
