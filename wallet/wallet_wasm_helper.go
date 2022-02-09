@@ -14,7 +14,7 @@ func (wallet *Wallet) GetDataForDecryptingBalance(publicKey, asset []byte) (priv
 	privateKey = addr.PrivateKey.Key
 
 	if addr.BalancesDecrypted[hex.EncodeToString(asset)] != nil {
-		previousValue = addr.BalancesDecrypted[hex.EncodeToString(asset)].AmountDecrypted
+		previousValue = addr.BalancesDecrypted[hex.EncodeToString(asset)].Amount
 	}
 
 	return

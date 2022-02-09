@@ -43,7 +43,7 @@ func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, []byte, 
 }
 
 //you should not lock it before
-func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, balance *crypto.ElGamal, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, store, lock bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
+func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, balance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, store, lock bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	if !lock {
 		return 0, errors.New("You shouldn't lock the wallet before as it will lock wallet functionality for some time")
@@ -65,7 +65,7 @@ func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, balance *crypt
 	var previousValue uint64
 	if !useNewPreviousValue {
 		if found := addr.BalancesDecrypted[hex.EncodeToString(asset)]; found != nil {
-			previousValue = found.AmountDecrypted
+			previousValue = found.Amount
 		}
 	} else {
 		previousValue = newPreviousValue
@@ -77,7 +77,12 @@ func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, balance *crypt
 		wallet.Lock.RUnlock()
 	}
 
-	decrypted, err := priv.DecryptBalance(balance, previousValue, ctx, statusCallback)
+	balancePoint, err := new(crypto.ElGamal).Deserialize(balance)
+	if err != nil {
+		return 0, err
+	}
+
+	decrypted, err := priv.DecryptBalance(balancePoint, previousValue, ctx, statusCallback)
 	if err != nil {
 		return 0, err
 	}
@@ -91,7 +96,7 @@ func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, balance *crypt
 			return 0, errors.New("address for storing the new decrypted value was not found")
 		}
 
-		addr.UpdateDecryptedBalance(decrypted, asset)
+		addr.UpdateDecryptedBalance(decrypted, balance, asset)
 
 		if err := wallet.saveWalletAddress(addr, false); err != nil {
 			gui.GUI.Error("error storing balance update", publicKey)
@@ -101,7 +106,7 @@ func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, balance *crypt
 	return decrypted, nil
 }
 
-func (wallet *Wallet) UpdatePreviousDecryptedBalanceValueByPublicKey(publicKey []byte, newPreviousValue uint64, asset []byte) error {
+func (wallet *Wallet) UpdatePreviousDecryptedBalanceValueByPublicKey(publicKey []byte, newDecodedBalance uint64, balanceEncrypted, asset []byte) error {
 	wallet.Lock.Lock()
 	defer wallet.Lock.Unlock()
 
@@ -110,7 +115,7 @@ func (wallet *Wallet) UpdatePreviousDecryptedBalanceValueByPublicKey(publicKey [
 		return errors.New("address was not found")
 	}
 
-	addr.UpdateDecryptedBalance(newPreviousValue, asset)
+	addr.UpdateDecryptedBalance(newDecodedBalance, balanceEncrypted, asset)
 
 	return wallet.saveWalletAddress(addr, false)
 }
@@ -143,9 +148,9 @@ func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte, lock bool) *
 	return wallet.addressesMap[string(publicKey)].Clone()
 }
 
-func (wallet *Wallet) TryDecryptBalance(publicKey, asset, balanceEncoded []byte) (uint64, bool, error) {
+func (wallet *Wallet) TryDecryptBalance(publicKey, asset, balance []byte) (uint64, bool, error) {
 
-	balance, err := new(crypto.ElGamal).Deserialize(balanceEncoded)
+	balancePoint, err := new(crypto.ElGamal).Deserialize(balance)
 	if err != nil {
 		return 0, false, err
 	}
@@ -159,9 +164,9 @@ func (wallet *Wallet) TryDecryptBalance(publicKey, asset, balanceEncoded []byte)
 		return 0, false, nil
 	}
 
-	previousValue := addr.BalancesDecrypted[hex.EncodeToString(asset)].AmountDecrypted
+	previousValue := addr.BalancesDecrypted[hex.EncodeToString(asset)].Amount
 
-	ok := addr.PrivateKey.TryDecryptBalance(balance, previousValue)
+	ok := addr.PrivateKey.TryDecryptBalance(balancePoint, previousValue)
 	if ok {
 		return previousValue, true, nil
 	}

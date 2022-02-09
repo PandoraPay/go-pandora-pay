@@ -30,10 +30,10 @@ func decryptBalance(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		parameters := &struct {
-			PrivateKey     helpers.HexBytes `json:"privateKey"`
-			PreviousValue  uint64           `json:"previousValue"`
-			BalanceEncoded helpers.HexBytes `json:"balanceEncoded"`
-			Asset          helpers.HexBytes `json:"asset"`
+			PrivateKey    helpers.HexBytes `json:"privateKey"`
+			PreviousValue uint64           `json:"previousValue"`
+			Balance       helpers.HexBytes `json:"balance"`
+			Asset         helpers.HexBytes `json:"asset"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
@@ -42,7 +42,7 @@ func decryptBalance(this js.Value, args []js.Value) interface{} {
 
 		privateKey := &addresses.PrivateKey{Key: parameters.PrivateKey}
 
-		balance, err := new(crypto.ElGamal).Deserialize(parameters.BalanceEncoded)
+		balance, err := new(crypto.ElGamal).Deserialize(parameters.Balance)
 		if err != nil {
 			return nil, err
 		}

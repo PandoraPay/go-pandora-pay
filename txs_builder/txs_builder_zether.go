@@ -303,12 +303,8 @@ func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadEx
 			transfers[t].FromBalanceDecrypted = transfers[t].Amount
 		} else {
 
-			balancePoint, err := new(crypto.ElGamal).Deserialize(balancesFromSender[t])
-			if err != nil {
-				return nil, nil, nil, nil, 0, nil, err
-			}
-
-			if transfers[t].FromBalanceDecrypted, err = builder.wallet.DecryptBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancePoint, transfers[t].Asset, false, 0, true, true, ctx, statusCallback); err != nil {
+			var err error
+			if transfers[t].FromBalanceDecrypted, err = builder.wallet.DecryptBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancesFromSender[t], transfers[t].Asset, false, 0, true, true, ctx, statusCallback); err != nil {
 				return nil, nil, nil, nil, 0, nil, err
 			}
 

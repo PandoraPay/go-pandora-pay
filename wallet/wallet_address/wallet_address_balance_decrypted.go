@@ -1,5 +1,8 @@
 package wallet_address
 
+import "pandora-pay/helpers"
+
 type WalletAddressBalanceDecrypted struct {
-	AmountDecrypted uint64 `json:"amount" msgpack:"amount"`
+	Amount  uint64           `json:"amount" msgpack:"amount"`
+	Balance helpers.HexBytes `json:"balance" msgpack:"balance"`
 }

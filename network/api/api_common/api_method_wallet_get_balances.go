@@ -11,7 +11,6 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
@@ -125,12 +124,7 @@ func (api *APICommon) WalletGetBalances(r *http.Request, args *APIWalletGetBalan
 	for i, publicKey := range publicKeys {
 		for _, data := range reply.Results[i].Balances {
 
-			var balancePoint *crypto.ElGamal
-			if balancePoint, err = new(crypto.ElGamal).Deserialize(data.Balance); err != nil {
-				return
-			}
-
-			if data.Value, err = api.wallet.DecryptBalanceByPublicKey(publicKey, balancePoint, data.Asset, false, 0, true, true, nil, func(status string) {}); err != nil {
+			if data.Value, err = api.wallet.DecryptBalanceByPublicKey(publicKey, data.Balance, data.Asset, false, 0, true, true, nil, func(status string) {}); err != nil {
 				return
 			}
 		}

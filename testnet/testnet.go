@@ -18,7 +18,6 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
-	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
@@ -66,7 +65,7 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 		return
 	}
 
-	var balance *crypto.ElGamal
+	var balance []byte
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		accs, err := accounts.NewAccountsCollection(reader).GetMap(config_coins.NATIVE_ASSET_FULL)
 		if err != nil {
@@ -76,7 +75,7 @@ func (testnet *Testnet) testnetCreateClaimTx(dstAddressWalletIndex int, amount u
 		if err != nil || acc == nil {
 			return
 		}
-		balance = acc.Balance.Amount
+		balance = acc.Balance.Amount.Serialize()
 		return
 	}); err != nil {
 		return

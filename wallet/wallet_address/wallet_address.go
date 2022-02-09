@@ -86,13 +86,14 @@ func (addr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDel
 	}, nil
 }
 
-func (addr *WalletAddress) UpdateDecryptedBalance(newPreviousValue uint64, assetId []byte) {
+func (addr *WalletAddress) UpdateDecryptedBalance(newDecryptedBalance uint64, balance []byte, assetId []byte) {
 	found := addr.BalancesDecrypted[hex.EncodeToString(assetId)]
 	if found != nil {
-		found.AmountDecrypted = newPreviousValue
+		found.Amount = newDecryptedBalance
 	} else {
 		addr.BalancesDecrypted[hex.EncodeToString(assetId)] = &WalletAddressBalanceDecrypted{
-			newPreviousValue,
+			newDecryptedBalance,
+			balance,
 		}
 	}
 }

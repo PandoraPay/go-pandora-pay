@@ -297,7 +297,7 @@ func deriveDelegatedStakeWalletAddress(this js.Value, args []js.Value) interface
 	})
 }
 
-func updatePreviousValueWalletAddress(this js.Value, args []js.Value) interface{} {
+func updatePreviousDecryptedBalanceValueWalletAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {
@@ -307,14 +307,15 @@ func updatePreviousValueWalletAddress(this js.Value, args []js.Value) interface{
 		parameters := &struct {
 			PublicKey helpers.HexBytes `json:"publicKey"`
 			Asset     helpers.HexBytes `json:"asset"`
-			Value     uint64           `json:"value"`
+			Amount    uint64           `json:"amount"`
+			Balance   helpers.HexBytes `json:"balance"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
 			return nil, err
 		}
 
-		if err := app.Wallet.UpdatePreviousDecryptedBalanceValueByPublicKey(parameters.PublicKey, parameters.Value, parameters.Asset); err != nil {
+		if err := app.Wallet.UpdatePreviousDecryptedBalanceValueByPublicKey(parameters.PublicKey, parameters.Amount, parameters.Balance, parameters.Asset); err != nil {
 			return nil, err
 		}
 
@@ -330,16 +331,16 @@ func tryDecryptBalance(this js.Value, args []js.Value) interface{} {
 		}
 
 		parameters := &struct {
-			PublicKey      helpers.HexBytes `json:"publicKey"`
-			Asset          helpers.HexBytes `json:"asset"`
-			BalanceEncoded helpers.HexBytes `json:"balanceEncoded"`
+			PublicKey helpers.HexBytes `json:"publicKey"`
+			Asset     helpers.HexBytes `json:"asset"`
+			Balance   helpers.HexBytes `json:"balance"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
 			return nil, err
 		}
 
-		value, decoded, err := app.Wallet.TryDecryptBalance(parameters.PublicKey, parameters.Asset, parameters.BalanceEncoded)
+		value, decoded, err := app.Wallet.TryDecryptBalance(parameters.PublicKey, parameters.Asset, parameters.Balance)
 		if err != nil {
 			return nil, err
 		}
