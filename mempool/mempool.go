@@ -11,6 +11,7 @@ import (
 	"pandora-pay/helpers/generics"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
+	"pandora-pay/txs_validator"
 	"runtime"
 	"time"
 )
@@ -24,14 +25,15 @@ type mempoolTx struct {
 }
 
 type Mempool struct {
-	result                    *generics.Value[*MempoolResult] `json:"-"`
-	SuspendProcessingCn       chan struct{}                   `json:"-"`
-	ContinueProcessingCn      chan ContinueProcessingType     `json:"-"`
-	newWorkCn                 chan *mempoolWork               `json:"-"`
-	addTransactionCn          chan *MempoolWorkerAddTx        `json:"-"`
-	removeTransactionsCn      chan *MempoolWorkerRemoveTxs    `json:"-"`
-	insertTransactionsCn      chan *MempoolWorkerInsertTxs    `json:"-"`
-	Txs                       *MempoolTxs                     `json:"-"`
+	txsValidator              *txs_validator.TxsValidator
+	result                    *generics.Value[*MempoolResult]
+	SuspendProcessingCn       chan struct{}
+	ContinueProcessingCn      chan ContinueProcessingType
+	newWorkCn                 chan *mempoolWork
+	addTransactionCn          chan *MempoolWorkerAddTx
+	removeTransactionsCn      chan *MempoolWorkerRemoveTxs
+	insertTransactionsCn      chan *MempoolWorkerInsertTxs
+	Txs                       *MempoolTxs
 	OnBroadcastNewTransaction func([]*transaction.Transaction, bool, bool, advanced_connection_types.UUID, context.Context) []error
 }
 
@@ -80,9 +82,8 @@ func (mempool *Mempool) processTxsToMempool(txs []*transaction.Transaction, heig
 		default:
 		}
 
-		if err := tx.VerifyBloomAll(); err != nil {
-			errs[i] = err
-			continue
+		if errs[i] = mempool.txsValidator.ValidateTx(tx); errs[i] != nil {
+			return
 		}
 
 		if mempool.Txs.Exists(tx.Bloom.HashStr) {
@@ -96,8 +97,7 @@ func (mempool *Mempool) processTxsToMempool(txs []*transaction.Transaction, heig
 		}
 
 		computedFeePerByte := minerFee
-		if err = helpers.SafeUint64Sub(&computedFeePerByte, tx.SpaceExtra*config_fees.FEE_PER_BYTE_EXTRA_SPACE); err != nil {
-			errs[i] = err
+		if errs[i] = helpers.SafeUint64Sub(&computedFeePerByte, tx.SpaceExtra*config_fees.FEE_PER_BYTE_EXTRA_SPACE); errs[i] != nil {
 			continue
 		}
 
@@ -213,19 +213,21 @@ func (mempool *Mempool) ContinueWork() {
 	mempool.newWorkCn <- newWork
 }
 
-func CreateMempool() (*Mempool, error) {
+func CreateMempool(txsValidator *txs_validator.TxsValidator) (*Mempool, error) {
 
 	gui.GUI.Log("Mempool init...")
 
 	mempool := &Mempool{
-		result:               &generics.Value[*MempoolResult]{}, // *MempoolResult
-		Txs:                  createMempoolTxs(),
-		SuspendProcessingCn:  make(chan struct{}),
-		ContinueProcessingCn: make(chan ContinueProcessingType),
-		newWorkCn:            make(chan *mempoolWork),
-		addTransactionCn:     make(chan *MempoolWorkerAddTx, 1000),
-		removeTransactionsCn: make(chan *MempoolWorkerRemoveTxs),
-		insertTransactionsCn: make(chan *MempoolWorkerInsertTxs),
+		txsValidator,
+		&generics.Value[*MempoolResult]{},
+		make(chan struct{}),
+		make(chan ContinueProcessingType),
+		make(chan *mempoolWork),
+		make(chan *MempoolWorkerAddTx, 1000),
+		make(chan *MempoolWorkerRemoveTxs),
+		make(chan *MempoolWorkerInsertTxs),
+		createMempoolTxs(),
+		nil,
 	}
 
 	worker := new(mempoolWorker)

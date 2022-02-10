@@ -312,6 +312,18 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		value := transfers[t].Amount
 		burn_value := transfers[t].Burn
 
+		//whisper the value to the sender
+		v2 := crypto.ReducedHash(new(bn256.G1).ScalarMult(publickeylist[witness_index[0]], r).EncodeCompressed())
+		v2 = new(big.Int).Add(v2, new(big.Int).SetUint64(value))
+		v2Proof := new(big.Int).Mod(v2, bn256.Order)
+		payload.WhisperSender = crypto.ConvertBigIntToByte(v2Proof)
+
+		//whisper the value to the recipient
+		v1 := crypto.ReducedHash(new(bn256.G1).ScalarMult(publickeylist[witness_index[1]], r).EncodeCompressed())
+		v1 = new(big.Int).Add(v1, new(big.Int).SetUint64(value))
+		v1proof := new(big.Int).Mod(v1, bn256.Order)
+		payload.WhisperRecipient = crypto.ConvertBigIntToByte(v1proof)
+
 		dataFinal := transfer.Data.Data
 		payload.DataVersion = transfer.Data.getDataVersion()
 
@@ -459,18 +471,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		transfer.FromDecryptedBalance = balance //let's update it for the next
 
 		statusCallback("Homomorphic balance Decrypted")
-
-		//whisper the value to the sender
-		v2 := crypto.ReducedHash(new(bn256.G1).ScalarMult(publickeylist[witness_index[0]], r).EncodeCompressed())
-		v2 = new(big.Int).Add(v2, new(big.Int).SetUint64(value))
-		v2Proof := new(big.Int).Mod(v2, bn256.Order)
-		payload.WhisperSender = crypto.ConvertBigIntToByte(v2Proof)
-
-		//whisper the value to the recipient
-		v1 := crypto.ReducedHash(new(bn256.G1).ScalarMult(publickeylist[witness_index[1]], r).EncodeCompressed())
-		v1 = new(big.Int).Add(v1, new(big.Int).SetUint64(value))
-		v1proof := new(big.Int).Mod(v1, bn256.Order)
-		payload.WhisperRecipient = crypto.ConvertBigIntToByte(v1proof)
 
 		// time for bullets-sigma
 		statement := GenerateStatement(CLn, CRn, publickeylist, C, &D, fee) // generate statement

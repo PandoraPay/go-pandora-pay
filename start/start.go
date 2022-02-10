@@ -50,7 +50,7 @@ func _startMain() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "txs validator initialized")
 
-	if app.Mempool, err = mempool.CreateMempool(); err != nil {
+	if app.Mempool, err = mempool.CreateMempool(app.TxsValidator); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "mempool initialized")

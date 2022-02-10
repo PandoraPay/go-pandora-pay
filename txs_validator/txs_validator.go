@@ -48,8 +48,8 @@ func (validator *TxsValidator) ValidateTx(tx *transaction.Transaction) error {
 	}
 
 	<-foundWork.wait
-	if err := foundWork.result; err != nil {
-		return err
+	if foundWork.result != nil {
+		return foundWork.result
 	}
 
 	tx.TransactionBaseInterface.SetBloomExtra(foundWork.bloomExtra)
