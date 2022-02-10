@@ -22,6 +22,7 @@ type APIWalletDecryptTx struct {
 
 type APIWalletDecryptTxBase struct {
 	Hash helpers.HexBytes `json:"hash" msgpack:"hash"`
+	api_types.APIAccountBaseRequest
 }
 
 type APIWalletDecryptTxReply struct {
@@ -32,6 +33,11 @@ func (api *APICommon) WalletDecryptTx(r *http.Request, args *APIWalletDecryptTxB
 
 	if !authenticated {
 		return errors.New("Invalid User or Password")
+	}
+
+	publicKey, err := args.GetPublicKey(false)
+	if err != nil {
+		return
 	}
 
 	var txSerialized []byte
@@ -53,7 +59,7 @@ func (api *APICommon) WalletDecryptTx(r *http.Request, args *APIWalletDecryptTxB
 		return
 	}
 
-	reply.Decrypted, err = api.wallet.DecryptTx(tx)
+	reply.Decrypted, err = api.wallet.DecryptTx(tx, publicKey)
 
 	return
 }

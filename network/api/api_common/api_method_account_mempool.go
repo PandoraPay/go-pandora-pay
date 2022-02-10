@@ -20,7 +20,7 @@ type APIAccountMempoolReply struct {
 
 func (api *APICommon) AccountMempool(r *http.Request, args *APIAccountMempoolRequest, reply *APIAccountMempoolReply) error {
 
-	publicKey, err := args.GetPublicKey()
+	publicKey, err := args.GetPublicKey(true)
 	if err != nil {
 		return err
 	}

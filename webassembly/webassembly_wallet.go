@@ -341,15 +341,15 @@ func tryDecryptBalance(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		value, decoded, err := app.Wallet.TryDecryptBalance(parameters.PublicKey, parameters.Asset, parameters.Balance)
+		value, decrypted, err := app.Wallet.TryDecryptBalance(parameters.PublicKey, parameters.Asset, parameters.Balance)
 		if err != nil {
 			return nil, err
 		}
 
 		return webassembly_utils.ConvertJSONBytes(struct {
-			Value   uint64 `json:"value"`
-			Decoded bool   `json:"decoded"`
-		}{value, decoded})
+			Value     uint64 `json:"value"`
+			Decrypted bool   `json:"decrypted"`
+		}{value, decrypted})
 	})
 }
 
@@ -382,6 +382,11 @@ func getPrivateDataForDecryptingBalanceWalletAddress(this js.Value, args []js.Va
 func decryptTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
+		publicKey, err := hex.DecodeString(args[1].String())
+		if err != nil {
+			return nil, err
+		}
+
 		data := webassembly_utils.GetBytes(args[0])
 
 		tx := &transaction.Transaction{}
@@ -389,7 +394,7 @@ func decryptTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		decrypted, err := app.Wallet.DecryptTx(tx)
+		decrypted, err := app.Wallet.DecryptTx(tx, publicKey)
 		if err != nil {
 			return nil, err
 		}

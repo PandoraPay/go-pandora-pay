@@ -27,7 +27,7 @@ type APIAccountTxsReply struct {
 
 func (api *APICommon) AccountTxs(r *http.Request, args *APIAccountTxsRequest, reply *APIAccountTxsReply) (err error) {
 
-	publicKey, err := args.GetPublicKey()
+	publicKey, err := args.GetPublicKey(true)
 	if err != nil {
 		return
 	}

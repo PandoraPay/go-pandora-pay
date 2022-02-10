@@ -31,7 +31,7 @@ type APIAccountBaseRequest struct {
 	PublicKey helpers.HexBytes `json:"publicKey,omitempty"  msgpack:"publicKey,omitempty"`
 }
 
-func (request *APIAccountBaseRequest) GetPublicKey() ([]byte, error) {
+func (request *APIAccountBaseRequest) GetPublicKey(required bool) ([]byte, error) {
 	var publicKey []byte
 	if request.Address != "" {
 		address, err := addresses.DecodeAddr(request.Address)

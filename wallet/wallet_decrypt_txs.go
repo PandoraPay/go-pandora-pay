@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"bytes"
 	"errors"
 	"math/big"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -17,6 +18,7 @@ type DecryptZetherPayloadOutput struct {
 	WhisperSenderValid    bool             `json:"whisperSenderValid" msgpack:"whisperSenderValid"`
 	SentAmount            uint64           `json:"sentAmount" msgpack:"sentAmount"`
 	WhisperRecipientValid bool             `json:"whisperRecipientValid" msgpack:"whisperRecipientValid"`
+	Blinder               helpers.HexBytes `json:"blinder" msgpack:"blinder"`
 	ReceivedAmount        uint64           `json:"receivedAmount" msgpack:"receivedAmount"`
 	RecipientIndex        int              `json:"recipientIndex" msgpack:"recipientIndex"`
 	Message               helpers.HexBytes `json:"message" msgpack:"message"`
@@ -31,7 +33,7 @@ type DecryptedTx struct {
 	ZetherTx *DecryptTxZether                    `json:"zetherTx" msgpack:"zetherTx"`
 }
 
-func (w *Wallet) DecryptTx(tx *transaction.Transaction) (*DecryptedTx, error) {
+func (w *Wallet) DecryptTx(tx *transaction.Transaction, walletPublicKey []byte) (*DecryptedTx, error) {
 
 	if tx == nil {
 		return nil, errors.New("Transaction is invalid")
@@ -55,6 +57,10 @@ func (w *Wallet) DecryptTx(tx *transaction.Transaction) (*DecryptedTx, error) {
 
 		for t, payload := range txBase.Payloads {
 			for i, publicKey := range txBase.Bloom.PublicKeyLists[t] {
+				if len(walletPublicKey) > 0 && !bytes.Equal(publicKey, walletPublicKey) {
+					continue
+				}
+
 				if addr := w.GetWalletAddressByPublicKey(publicKey, true); addr != nil {
 
 					decyptedZetherPayload := &DecryptZetherPayloadOutput{
@@ -96,6 +102,7 @@ func (w *Wallet) DecryptTx(tx *transaction.Transaction) (*DecryptedTx, error) {
 					}
 
 					if output.ZetherTx.Payloads[t].WhisperSenderValid {
+
 						rinputs := append([]byte{}, txBase.ChainHash...)
 						for _, publicKey2 := range txBase.Bloom.PublicKeyLists[t] {
 							rinputs = append(rinputs, publicKey2...)
@@ -110,14 +117,14 @@ func (w *Wallet) DecryptTx(tx *transaction.Transaction) (*DecryptedTx, error) {
 								continue
 							}
 
-							if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
+							if output.ZetherTx.Payloads[t].SentAmount == 0 && payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
 								shared_key, err := crypto.GenerateSharedSecret(r, payload.Statement.Publickeylist[k])
 								if err != nil {
 									continue
 								}
 
-								data = append([]byte{}, payload.Data...)
-								if err = crypto.EncryptDecryptUserData(cryptography.SHA3(append(shared_key, payload.Statement.Publickeylist[k].EncodeCompressed()...)), data); err != nil {
+								data = helpers.CloneBytes(payload.Data)
+								if err = crypto.EncryptDecryptUserData(cryptography.SHA3(append(shared_key, txBase.Bloom.PublicKeyLists[t][k]...)), data); err != nil {
 									continue
 								}
 
@@ -126,41 +133,54 @@ func (w *Wallet) DecryptTx(tx *transaction.Transaction) (*DecryptedTx, error) {
 								break
 							}
 
-							var x bn256.G1
-							x.ScalarMult(crypto.G, new(big.Int).SetUint64(decyptedZetherPayload.SentAmount-payload.Statement.Fee-payload.BurnValue))
-							x.Add(new(bn256.G1).Set(&x), new(bn256.G1).ScalarMult(payload.Statement.Publickeylist[k], r))
+							if output.ZetherTx.Payloads[t].SentAmount != 0 {
+								var x bn256.G1
+								x.ScalarMult(crypto.G, new(big.Int).SetUint64(output.ZetherTx.Payloads[t].SentAmount-payload.Statement.Fee-2*payload.BurnValue))
+								x.Add(new(bn256.G1).Set(&x), new(bn256.G1).ScalarMult(payload.Statement.Publickeylist[k], r))
 
-							if x.String() == payload.Statement.C[k].String() {
+								if x.String() == payload.Statement.C[k].String() {
+									var x bn256.G1
+									x.ScalarMult(crypto.G, new(big.Int).Neg(new(big.Int).SetUint64(output.ZetherTx.Payloads[t].SentAmount)))
+									x.Add(new(bn256.G1).Set(&x), payload.Statement.C[k]) // get the blinder
 
-								shared_key, err := crypto.GenerateSharedSecret(r, payload.Statement.Publickeylist[k])
-								if err != nil {
-									continue
-								}
+									decyptedZetherPayload.Blinder = x.EncodeCompressed()
 
-								if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
-									data = append([]byte{}, payload.Data...)
-									if err = crypto.EncryptDecryptUserData(cryptography.SHA3(append(shared_key, payload.Statement.Publickeylist[k].EncodeCompressed()...)), data); err != nil {
+									shared_key, err := crypto.GenerateSharedSecret(r, payload.Statement.Publickeylist[k])
+									if err != nil {
+										continue
+									}
+
+									data = helpers.CloneBytes(payload.Data)
+									if err = crypto.EncryptDecryptUserData(cryptography.SHA3(append(shared_key, txBase.Bloom.PublicKeyLists[t][k]...)), data); err != nil {
 										continue
 									}
 
 									decyptedZetherPayload.Message = data
-								} else if payload.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT {
-									decyptedZetherPayload.Message = payload.Data
+									decyptedZetherPayload.RecipientIndex = k
+									break
 								}
-
-								output.ZetherTx.Payloads[t].RecipientIndex = k
 							}
 
 						}
 
 					} else if decyptedZetherPayload.WhisperRecipientValid {
 
-						shared_key, err := crypto.GenerateSharedSecret(secretPoint.BigInt(), payload.Statement.D)
-						if err != nil {
-							continue
+						parity := payload.Proof.Parity()
+						for k, publicKey2 := range txBase.Bloom.PublicKeyLists[t] {
+							if (k%2 == 0) == parity {
+								continue
+							}
+							if bytes.Equal(publicKey2, publicKey) {
+								output.ZetherTx.Payloads[t].RecipientIndex = k
+								break
+							}
 						}
 
 						if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
+							shared_key, err := crypto.GenerateSharedSecret(secretPoint.BigInt(), payload.Statement.D)
+							if err != nil {
+								continue
+							}
 							data = append([]byte{}, payload.Data...)
 							if err = crypto.EncryptDecryptUserData(cryptography.SHA3(append(shared_key, addr.PublicKey...)), data); err != nil {
 								continue

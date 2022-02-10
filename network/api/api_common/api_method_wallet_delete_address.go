@@ -28,7 +28,7 @@ func (api *APICommon) WalletDeleteAddress(r *http.Request, args *APIWalletDelete
 		return errors.New("Invalid User or Password")
 	}
 
-	publicKey, err := args.GetPublicKey()
+	publicKey, err := args.GetPublicKey(true)
 	if err != nil {
 		return err
 	}

@@ -138,7 +138,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		publicKey, err := request.GetPublicKey()
+		publicKey, err := request.GetPublicKey(true)
 		if err != nil {
 			return nil, err
 		}

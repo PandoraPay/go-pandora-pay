@@ -36,7 +36,7 @@ func (api *APICommon) AccountsByKeys(r *http.Request, args *APIAccountsByKeysReq
 	publicKeys := make([][]byte, len(args.Keys))
 
 	for i, key := range args.Keys {
-		if publicKeys[i], err = key.GetPublicKey(); err != nil {
+		if publicKeys[i], err = key.GetPublicKey(true); err != nil {
 			return
 		}
 	}

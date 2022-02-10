@@ -38,7 +38,7 @@ type APIAccount struct {
 
 func (api *APICommon) Account(r *http.Request, args *APIAccountRequest, reply *APIAccount) (err error) {
 
-	publicKey, err := args.GetPublicKey()
+	publicKey, err := args.GetPublicKey(true)
 	if err != nil {
 		return
 	}

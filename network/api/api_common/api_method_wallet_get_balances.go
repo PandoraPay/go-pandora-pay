@@ -53,7 +53,7 @@ func (api *APICommon) WalletGetBalances(r *http.Request, args *APIWalletGetBalan
 
 	publicKeys := make([][]byte, len(args.List))
 	for i, it := range args.List {
-		if publicKeys[i], err = it.GetPublicKey(); err != nil {
+		if publicKeys[i], err = it.GetPublicKey(true); err != nil {
 			return
 		}
 	}
