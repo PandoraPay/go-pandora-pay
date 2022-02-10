@@ -66,7 +66,7 @@ func (worker *TxsValidatorWorker) run() {
 			foundWork.result = err
 		} else {
 			foundWork.bloomExtra = foundWork.tx.TransactionBaseInterface.GetBloomExtra()
-			if err := worker.verifyTx(foundWork); err != nil {
+			if err = worker.verifyTx(foundWork); err != nil {
 				foundWork.result = err
 			}
 		}
