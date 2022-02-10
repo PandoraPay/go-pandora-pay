@@ -18,7 +18,7 @@ type WalletAddress struct {
 	PrivateKey                 *addresses.PrivateKey                     `json:"privateKey" msgpack:"privateKey"`
 	Registration               helpers.HexBytes                          `json:"registration" msgpack:"registration"`
 	PublicKey                  helpers.HexBytes                          `json:"publicKey" msgpack:"publicKey"`
-	BalancesDecrypted          map[string]*WalletAddressBalanceDecrypted `json:"balancesDecrypted" msgpack:"balancesDecrypted"`
+	DecryptedBalances          map[string]*WalletAddressDecryptedBalance `json:"decryptedBalances" msgpack:"decryptedBalances"`
 	AddressEncoded             string                                    `json:"addressEncoded" msgpack:"addressEncoded"`
 	AddressRegistrationEncoded string                                    `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
 	DelegatedStake             *WalletAddressDelegatedStake              `json:"delegatedStake" msgpack:"delegatedStake"`
@@ -87,11 +87,11 @@ func (addr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDel
 }
 
 func (addr *WalletAddress) UpdateDecryptedBalance(newDecryptedBalance uint64, balance []byte, assetId []byte) {
-	found := addr.BalancesDecrypted[hex.EncodeToString(assetId)]
+	found := addr.DecryptedBalances[hex.EncodeToString(assetId)]
 	if found != nil {
 		found.Amount = newDecryptedBalance
 	} else {
-		addr.BalancesDecrypted[hex.EncodeToString(assetId)] = &WalletAddressBalanceDecrypted{
+		addr.DecryptedBalances[hex.EncodeToString(assetId)] = &WalletAddressDecryptedBalance{
 			newDecryptedBalance,
 			balance,
 		}
@@ -125,9 +125,9 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		return nil
 	}
 
-	balancesDecrypted := make(map[string]*WalletAddressBalanceDecrypted)
-	for k, v := range addr.BalancesDecrypted {
-		balancesDecrypted[k] = v
+	decryptedBalances := make(map[string]*WalletAddressDecryptedBalance)
+	for k, v := range addr.DecryptedBalances {
+		decryptedBalances[k] = v
 	}
 
 	return &WalletAddress{
@@ -138,7 +138,7 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		addr.PrivateKey,
 		addr.Registration,
 		addr.PublicKey,
-		balancesDecrypted,
+		decryptedBalances,
 		addr.AddressEncoded,
 		addr.AddressRegistrationEncoded,
 		addr.DelegatedStake,

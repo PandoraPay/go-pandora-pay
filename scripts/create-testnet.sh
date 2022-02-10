@@ -53,7 +53,7 @@ str="genesis.data,"
 
 go build main.go
 
-if [ ! $continue ]; then
+if [ $continue == false ]; then
 
   # Let's delete old blockchain and verify if all nodes still have a genesis file
   genesisExists=true

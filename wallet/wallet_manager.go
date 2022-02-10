@@ -64,7 +64,7 @@ func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, balance, asset
 
 	var previousValue uint64
 	if !useNewPreviousValue {
-		if found := addr.BalancesDecrypted[hex.EncodeToString(asset)]; found != nil {
+		if found := addr.DecryptedBalances[hex.EncodeToString(asset)]; found != nil {
 			previousValue = found.Amount
 		}
 	} else {
@@ -160,11 +160,11 @@ func (wallet *Wallet) TryDecryptBalance(publicKey, asset, balance []byte) (uint6
 
 	addr := wallet.addressesMap[string(publicKey)]
 
-	if addr.BalancesDecrypted[hex.EncodeToString(asset)] == nil {
+	if addr.DecryptedBalances[hex.EncodeToString(asset)] == nil {
 		return 0, false, nil
 	}
 
-	previousValue := addr.BalancesDecrypted[hex.EncodeToString(asset)].Amount
+	previousValue := addr.DecryptedBalances[hex.EncodeToString(asset)].Amount
 
 	ok := addr.PrivateKey.TryDecryptBalance(balancePoint, previousValue)
 	if ok {
@@ -265,8 +265,8 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 
 	publicKey := adr.PrivateKey.GeneratePublicKey()
 
-	if adr.BalancesDecrypted == nil {
-		adr.BalancesDecrypted = make(map[string]*wallet_address.WalletAddressBalanceDecrypted)
+	if adr.DecryptedBalances == nil {
+		adr.DecryptedBalances = make(map[string]*wallet_address.WalletAddressDecryptedBalance)
 	}
 	adr.AddressEncoded = addr1.EncodeAddr()
 	adr.AddressRegistrationEncoded = addr2.EncodeAddr()

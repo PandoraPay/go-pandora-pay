@@ -113,10 +113,10 @@ Output
          },
          "registration": "16fb6f16f399dcd7dc1657444a033f80e9a7029e31fbaa4451f7b772c8703d7b0c117d768516a26707274ef595c084f7512582f00ee4d32359183b1a5cb3e8ce",
          "publicKey": "027140ac2fc222d87aee8dce2539b83aaa8882658cb23e9ebda18618361e5eb001",
-         "balancesDecrypted": {
+         "decryptedBalances": {
              "0000000000000000000000000000000000000000": {
                  "amount": 242927,                
-                 "balance": "15f8136864b1c06ebed9c03a006a61386d9d2c93310ff9758b7d3a5580a49a6d0018b822c42c27ad84d2971544d743417bb28ff7530f848e9d52c23598a665b01d01",
+                 "encryptedBalance": "15f8136864b1c06ebed9c03a006a61386d9d2c93310ff9758b7d3a5580a49a6d0018b822c42c27ad84d2971544d743417bb28ff7530f848e9d52c23598a665b01d01",
              }
          },
          "addressEncoded": "PANDDEVAAJxQKwvwiLYeu6NziU5uDqqiIJljLI<nr2hhhg2Hl6wAQCT7qfa",

@@ -68,7 +68,7 @@ func TestCreateZetherTx(t *testing.T) {
 		transfers[i] = &WizardZetherTransfer{
 			Asset:                config_coins.NATIVE_ASSET_FULL,
 			From:                 senderPrivateKey.Key,
-			FromBalanceDecrypted: amount,
+			FromDecryptedBalance: amount,
 			Destination:          dstAddress.EncodeAddr(),
 			Amount:               diff,
 			Burn:                 0,

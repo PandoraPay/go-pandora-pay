@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -21,18 +22,20 @@ type TxPreviewSimpleExtraUpdateDelegate struct {
 }
 
 type TxPreviewSimple struct {
-	Extra      interface{}                   `json:"extra" msgpack:"extra"`
-	TxScript   transaction_simple.ScriptType `json:"txScript" msgpack:"txScript"`
-	DataPublic helpers.HexBytes              `json:"dataPublic" msgpack:"dataPublic"`
-	Vin        helpers.HexBytes              `json:"vin" msgpack:"vin"`
+	Extra       interface{}                             `json:"extra" msgpack:"extra"`
+	TxScript    transaction_simple.ScriptType           `json:"txScript" msgpack:"txScript"`
+	DataVersion transaction_data.TransactionDataVersion `json:"dataVersion" msgpack:"dataVersion"`
+	DataPublic  helpers.HexBytes                        `json:"dataPublic" msgpack:"dataPublic"`
+	Vin         helpers.HexBytes                        `json:"vin" msgpack:"vin"`
 }
 
 type TxPreviewZetherPayload struct {
 	PayloadScript transaction_zether_payload.PayloadScriptType `json:"payloadScript" msgpack:"payloadScript"`
 	Asset         helpers.HexBytes                             `json:"asset" msgpack:"asset"`
 	BurnValue     uint64                                       `json:"burnValue" msgpack:"burnValue"`
+	DataVersion   transaction_data.TransactionDataVersion      `json:"dataVersion" msgpack:"dataVersion"`
 	DataPublic    helpers.HexBytes                             `json:"dataPublic" msgpack:"dataPublic"`
-	Publickeys    []helpers.HexBytes                           `json:"publicKeys" msgpack:"publicKeys"`
+	Ring          byte                                         `json:"ring" msgpack:"ring"`
 }
 
 type TxPreviewZether struct {
@@ -70,32 +73,35 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 		}
 
 		base = &TxPreviewSimple{
-			Extra:      baseExtra,
-			TxScript:   txBase.TxScript,
-			Vin:        txBase.Vin.PublicKey,
-			DataPublic: dataPublic,
+			baseExtra,
+			txBase.TxScript,
+			txBase.DataVersion,
+			dataPublic,
+			txBase.Vin.PublicKey,
 		}
 
 	case transaction_type.TX_ZETHER:
 		txBase := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
 		payloads := make([]*TxPreviewZetherPayload, len(txBase.Payloads))
 		for i, payload := range txBase.Payloads {
-			publicKeys := make([]helpers.HexBytes, len(payload.Statement.Publickeylist))
-			for i, publicKeyPoint := range payload.Statement.Publickeylist {
-				publicKeys[i] = publicKeyPoint.EncodeCompressed()
-			}
 
 			var dataPublic helpers.HexBytes
 			if payload.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT {
 				dataPublic = payload.Data
 			}
 
+			power, err := crypto.GetPowerof2(len(payload.Statement.C))
+			if err != nil {
+				return nil, err
+			}
+
 			payloads[i] = &TxPreviewZetherPayload{
 				payload.PayloadScript,
 				payload.Asset,
 				payload.BurnValue,
+				payload.DataVersion,
 				dataPublic,
-				publicKeys,
+				byte(power),
 			}
 
 		}

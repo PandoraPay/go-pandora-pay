@@ -22,7 +22,7 @@ import (
 
 type zetherTxDataFrom struct {
 	PrivateKey       helpers.HexBytes `json:"privateKey"`
-	BalanceDecrypted uint64           `json:"balanceDecrypted"`
+	DecryptedBalance uint64           `json:"decryptedBalance"`
 }
 
 type zetherTxDataBase struct {
@@ -63,7 +63,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 		transfers[t] = &wizard.WizardZetherTransfer{
 			Asset:                ast,
 			From:                 txData.From[t].PrivateKey,
-			FromBalanceDecrypted: txData.From[t].BalanceDecrypted,
+			FromDecryptedBalance: txData.From[t].DecryptedBalance,
 			Destination:          txData.Dsts[t],
 			Amount:               txData.Amounts[t],
 			Burn:                 txData.Burns[t],

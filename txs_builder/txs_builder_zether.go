@@ -300,19 +300,19 @@ func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadEx
 
 	for t := range transfers {
 		if fromWalletAddresses[t] == nil {
-			transfers[t].FromBalanceDecrypted = transfers[t].Amount
+			transfers[t].FromDecryptedBalance = transfers[t].Amount
 		} else {
 
 			var err error
-			if transfers[t].FromBalanceDecrypted, err = builder.wallet.DecryptBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancesFromSender[t], transfers[t].Asset, false, 0, true, true, ctx, statusCallback); err != nil {
+			if transfers[t].FromDecryptedBalance, err = builder.wallet.DecryptBalanceByPublicKey(fromWalletAddresses[t].PublicKey, balancesFromSender[t], transfers[t].Asset, false, 0, true, true, ctx, statusCallback); err != nil {
 				return nil, nil, nil, nil, 0, nil, err
 			}
 
 		}
-		if transfers[t].FromBalanceDecrypted == 0 {
+		if transfers[t].FromDecryptedBalance == 0 {
 			return nil, nil, nil, nil, 0, nil, errors.New("You have no funds")
 		}
-		if transfers[t].FromBalanceDecrypted < amounts[t] {
+		if transfers[t].FromDecryptedBalance < amounts[t] {
 			return nil, nil, nil, nil, 0, nil, errors.New("Not enough funds")
 		}
 	}

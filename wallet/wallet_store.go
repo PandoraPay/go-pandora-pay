@@ -162,8 +162,8 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 				}
 
 				//temporary fix
-				if newWalletAddress.BalancesDecrypted == nil {
-					newWalletAddress.BalancesDecrypted = make(map[string]*wallet_address.WalletAddressBalanceDecrypted)
+				if newWalletAddress.DecryptedBalances == nil {
+					newWalletAddress.DecryptedBalances = make(map[string]*wallet_address.WalletAddressDecryptedBalance)
 				}
 
 				wallet.Addresses = append(wallet.Addresses, newWalletAddress)
