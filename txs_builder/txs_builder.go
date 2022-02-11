@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
@@ -76,26 +77,26 @@ func (builder *TxsBuilder) convertFloatAmounts(amounts []float64, ast *asset.Ass
 	return amountsFinal, nil
 }
 
-func (builder *TxsBuilder) getWalletAddresses(from []string) ([]*wallet_address.WalletAddress, error) {
+func (builder *TxsBuilder) getWalletAddresses(senders []string) ([]*wallet_address.WalletAddress, error) {
 
-	fromWalletAddress := make([]*wallet_address.WalletAddress, len(from))
+	sendersWalletAddress := make([]*wallet_address.WalletAddress, len(senders))
 	var err error
 
-	for i, fromAddress := range from {
-		if fromWalletAddress[i], err = builder.wallet.GetWalletAddressByEncodedAddress(fromAddress, true); err != nil {
+	for i, senderAddress := range senders {
+		if sendersWalletAddress[i], err = builder.wallet.GetWalletAddressByEncodedAddress(senderAddress, true); err != nil {
 			return nil, err
 		}
-		if fromWalletAddress[i].PrivateKey == nil {
-			return nil, errors.New("Can't be used for transactions as the private key is missing")
+		if sendersWalletAddress[i].PrivateKey == nil {
+			return nil, fmt.Errorf("Can't be used for transactions as the private key is missing for sender %s", senderAddress)
 		}
 	}
 
-	return fromWalletAddress, nil
+	return sendersWalletAddress, nil
 }
 
-func (builder *TxsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizard.WizardTxSimpleExtra, data *wizard.WizardTransactionData, fee *wizard.WizardTransactionFee, feeVersion bool, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, ctx context.Context, statusCallback func(status string)) (*transaction.Transaction, error) {
+func (builder *TxsBuilder) CreateSimpleTx(sender string, nonce uint64, extra wizard.WizardTxSimpleExtra, data *wizard.WizardTransactionData, fee *wizard.WizardTransactionFee, feeVersion bool, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, ctx context.Context, statusCallback func(status string)) (*transaction.Transaction, error) {
 
-	fromWalletAddresses, err := builder.getWalletAddresses([]string{from})
+	sendersWalletAddresses, err := builder.getWalletAddresses([]string{sender})
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +115,7 @@ func (builder *TxsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizar
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 		plainAccs := plain_accounts.NewPlainAccounts(reader)
 
-		if plainAcc, err = plainAccs.GetPlainAccount(fromWalletAddresses[0].PublicKey, chainHeight); err != nil {
+		if plainAcc, err = plainAccs.GetPlainAccount(sendersWalletAddresses[0].PublicKey, chainHeight); err != nil {
 			return
 		}
 		if plainAcc == nil {
@@ -141,10 +142,10 @@ func (builder *TxsBuilder) CreateSimpleTx(from string, nonce uint64, extra wizar
 
 	statusCallback("Balances checked")
 
-	nonce = builder.getNonce(nonce, fromWalletAddresses[0].PublicKey, plainAcc.Nonce)
+	nonce = builder.getNonce(nonce, sendersWalletAddresses[0].PublicKey, plainAcc.Nonce)
 	statusCallback("Getting Nonce from Mempool")
 
-	if tx, err = wizard.CreateSimpleTx(nonce, fromWalletAddresses[0].PrivateKey.Key, chainHeight, extra, data, fee, feeVersion, false, statusCallback); err != nil {
+	if tx, err = wizard.CreateSimpleTx(nonce, sendersWalletAddresses[0].PrivateKey.Key, chainHeight, extra, data, fee, feeVersion, false, statusCallback); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Created")

@@ -20,16 +20,16 @@ import (
 	"syscall/js"
 )
 
-type zetherTxDataFrom struct {
+type zetherTxDataSender struct {
 	PrivateKey       helpers.HexBytes `json:"privateKey"`
 	DecryptedBalance uint64           `json:"decryptedBalance"`
 }
 
 type zetherTxDataBase struct {
-	From              []*zetherTxDataFrom                            `json:"from"`
+	Senders           []*zetherTxDataSender                          `json:"senders"`
 	Assets            []helpers.HexBytes                             `json:"assets"`
 	Amounts           []uint64                                       `json:"amounts"`
-	Dsts              []string                                       `json:"dsts"`
+	Recipients        []string                                       `json:"recipients"`
 	Burns             []uint64                                       `json:"burns"`
 	RingMembers       [][]string                                     `json:"ringMembers"`
 	Data              []*wizard.WizardTransactionData                `json:"data"`
@@ -45,29 +45,29 @@ type zetherTxDataBase struct {
 func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, publicKeyIndexes map[string]*wizard.WizardZetherPublicKeyIndex, err error) {
 
 	assetsList := helpers.ConvertHexBytesArraysToBytesArray(txData.Assets)
-	transfers = make([]*wizard.WizardZetherTransfer, len(txData.From))
+	transfers = make([]*wizard.WizardZetherTransfer, len(txData.Senders))
 	emap = wizard.InitializeEmap(assetsList)
-	rings = make([][]*bn256.G1, len(txData.From))
+	rings = make([][]*bn256.G1, len(txData.Senders))
 	publicKeyIndexes = make(map[string]*wizard.WizardZetherPublicKeyIndex)
 
 	for t, ast := range assetsList {
 
-		key := addresses.PrivateKey{Key: txData.From[t].PrivateKey}
+		key := addresses.PrivateKey{Key: txData.Senders[t].PrivateKey}
 
-		var fromAddr *addresses.Address
-		fromAddr, err = key.GenerateAddress(txData.Regs[string(key.GeneratePublicKey())] == nil, nil, 0, nil)
+		var senderAddr *addresses.Address
+		senderAddr, err = key.GenerateAddress(txData.Regs[string(key.GeneratePublicKey())] == nil, nil, 0, nil)
 		if err != nil {
 			return
 		}
 
 		transfers[t] = &wizard.WizardZetherTransfer{
-			Asset:                ast,
-			From:                 txData.From[t].PrivateKey,
-			FromDecryptedBalance: txData.From[t].DecryptedBalance,
-			Destination:          txData.Dsts[t],
-			Amount:               txData.Amounts[t],
-			Burn:                 txData.Burns[t],
-			Data:                 txData.Data[t],
+			Asset:                  ast,
+			Sender:                 txData.Senders[t].PrivateKey,
+			SenderDecryptedBalance: txData.Senders[t].DecryptedBalance,
+			Recipient:              txData.Recipients[t],
+			Amount:                 txData.Amounts[t],
+			Burn:                   txData.Burns[t],
+			Data:                   txData.Data[t],
 		}
 
 		if !bytes.Equal(txData.Assets[t], config_coins.NATIVE_ASSET_FULL) {
@@ -167,10 +167,10 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 			return
 		}
 
-		if err = addPoint(fromAddr.EncodeAddr()); err != nil {
+		if err = addPoint(senderAddr.EncodeAddr()); err != nil {
 			return
 		}
-		if err = addPoint(txData.Dsts[t]); err != nil {
+		if err = addPoint(txData.Recipients[t]); err != nil {
 			return
 		}
 		for _, ringMember := range txData.RingMembers[t] {

@@ -46,29 +46,29 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 	for t, transfer := range transfers {
 
-		senderKey := &addresses.PrivateKey{Key: transfer.From}
+		senderKey := &addresses.PrivateKey{Key: transfer.Sender}
 		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
 		sender := crypto.GPoint.ScalarMult(secretPoint).G1()
 
-		var receiver_addr *addresses.Address
-		if receiver_addr, err = addresses.DecodeAddr(transfer.Destination); err != nil {
+		var recipientAddr *addresses.Address
+		if recipientAddr, err = addresses.DecodeAddr(transfer.Recipient); err != nil {
 			return
 		}
 
-		var receiverPoint *crypto.Point
-		if receiverPoint, err = receiver_addr.GetPoint(); err != nil {
+		var recipientPoint *crypto.Point
+		if recipientPoint, err = recipientAddr.GetPoint(); err != nil {
 			return
 		}
-		receiver := receiverPoint.G1()
+		recipient := recipientPoint.G1()
 
-		if bytes.Equal(sender.EncodeUncompressed(), receiver.EncodeCompressed()) {
-			return errors.New("Sender must be the receiver")
+		if bytes.Equal(sender.EncodeUncompressed(), recipient.EncodeCompressed()) {
+			return errors.New("Sender must NOT be the recipient")
 		}
 		if bytes.Equal(rings[t][0].EncodeUncompressed(), sender.EncodeCompressed()) {
 			return errors.New("Rings[0] must be the sender")
 		}
-		if bytes.Equal(rings[t][1].EncodeUncompressed(), receiver.EncodeCompressed()) {
-			return errors.New("Rings[1] must be the receiver")
+		if bytes.Equal(rings[t][1].EncodeUncompressed(), recipient.EncodeCompressed()) {
+			return errors.New("Rings[1] must be the recipient")
 		}
 
 		witness_indexes[t] = helpers.ShuffleArray_for_Zether(len(rings[t]))
@@ -83,7 +83,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			case witness_indexes[t][0]:
 				publicKey = sender
 			case witness_indexes[t][1]:
-				publicKey = receiver
+				publicKey = recipient
 			default:
 				publicKey = anonset_publickeys[0]
 				anonset_publickeys = anonset_publickeys[1:]
@@ -164,7 +164,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	for t, transfer := range transfers {
 
 		publickeylist := publickeylists[t]
-		senderKey := &addresses.PrivateKey{Key: transfer.From}
+		senderKey := &addresses.PrivateKey{Key: transfer.Sender}
 
 		payloads[t] = &transaction_zether_payload.TransactionZetherPayload{}
 
@@ -289,7 +289,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		publickeylist := publickeylists[t]
 		witness_index := witness_indexes[t]
 
-		senderKey := &addresses.PrivateKey{Key: transfer.From}
+		senderKey := &addresses.PrivateKey{Key: transfer.Sender}
 		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
 		sender := crypto.GPoint.ScalarMult(secretPoint).G1()
 		sender_secret := secretPoint.BigInt()
@@ -372,14 +372,14 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		//fake balance
 		if payload.PayloadScript == transaction_zether_payload.SCRIPT_CLAIM {
 
-			transfer.FromDecryptedBalance = value + fee + burn_value
+			transfer.SenderDecryptedBalance = value + fee + burn_value
 
 			var acckey crypto.Point
 			if err = acckey.DecodeCompressed(senderKey.GeneratePublicKey()); err != nil {
 				return
 			}
 			balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
-			balance = balance.Plus(new(big.Int).SetUint64(transfer.FromDecryptedBalance))
+			balance = balance.Plus(new(big.Int).SetUint64(transfer.SenderDecryptedBalance))
 
 			emap[string(transfer.Asset)][sender.String()] = balance.Serialize()
 		}
@@ -465,10 +465,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		statusCallback("Homomorphic balance Decrypting...")
 
 		var balance uint64
-		if balance, err = senderKey.DecryptBalance(pt, transfer.FromDecryptedBalance, ctx, statusCallback); err != nil {
+		if balance, err = senderKey.DecryptBalance(pt, transfer.SenderDecryptedBalance, ctx, statusCallback); err != nil {
 			return
 		}
-		transfer.FromDecryptedBalance = balance //let's update it for the next
+		transfer.SenderDecryptedBalance = balance //let's update it for the next
 
 		statusCallback("Homomorphic balance Decrypted")
 
@@ -506,7 +506,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	txBase.Payloads = payloads
 	statusCallback("Transaction Zether Statements created")
 
-	senderKey := &addresses.PrivateKey{Key: transfers[0].From}
+	senderKey := &addresses.PrivateKey{Key: transfers[0].Sender}
 	sender_secret := new(crypto.BNRed).SetBytes(senderKey.Key).BigInt()
 
 	assetMap := map[string]int{}

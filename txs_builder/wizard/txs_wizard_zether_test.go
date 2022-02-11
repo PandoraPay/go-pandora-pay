@@ -60,19 +60,19 @@ func TestCreateZetherTx(t *testing.T) {
 	transfers := make([]*WizardZetherTransfer, count)
 	for i := range transfers {
 
-		dstPrivateKey := addresses.GenerateNewPrivateKey()
-		dstAddress, _ := dstPrivateKey.GenerateAddress(true, nil, 0, nil)
+		recipientPrivateKey := addresses.GenerateNewPrivateKey()
+		recipientAddress, _ := recipientPrivateKey.GenerateAddress(true, nil, 0, nil)
 
-		publicKeyIndexes[string(dstAddress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, dstAddress.Registration}
+		publicKeyIndexes[string(recipientAddress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, recipientAddress.Registration}
 
 		transfers[i] = &WizardZetherTransfer{
-			Asset:                config_coins.NATIVE_ASSET_FULL,
-			From:                 senderPrivateKey.Key,
-			FromDecryptedBalance: amount,
-			Destination:          dstAddress.EncodeAddr(),
-			Amount:               diff,
-			Burn:                 0,
-			Data:                 &WizardTransactionData{[]byte{}, false},
+			Asset:                  config_coins.NATIVE_ASSET_FULL,
+			Sender:                 senderPrivateKey.Key,
+			SenderDecryptedBalance: amount,
+			Recipient:              recipientAddress.EncodeAddr(),
+			Amount:                 diff,
+			Burn:                   0,
+			Data:                   &WizardTransactionData{[]byte{}, false},
 		}
 		amount -= diff
 
@@ -84,9 +84,9 @@ func TestCreateZetherTx(t *testing.T) {
 
 		rings[i][0] = senderPoint.G1()
 
-		dstPoint, _ := dstAddress.GetPoint()
-		rings[i][1] = dstPoint.G1()
-		emap[config_coins.NATIVE_ASSET_FULL_STRING][dstPoint.G1().String()] = getNewBalance(dstAddress, 0).Serialize()
+		recipientPoint, _ := recipientAddress.GetPoint()
+		rings[i][1] = recipientPoint.G1()
+		emap[config_coins.NATIVE_ASSET_FULL_STRING][recipientPoint.G1().String()] = getNewBalance(recipientAddress, 0).Serialize()
 
 		for j := 2; j < ringSize; j++ {
 			ringMemberPrivateKey := addresses.GenerateNewPrivateKey()

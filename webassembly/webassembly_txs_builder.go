@@ -23,7 +23,7 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 
 		txData := &struct {
 			TxScript   transaction_simple.ScriptType `json:"txScript"`
-			From       string                        `json:"from"`
+			Sender     string                        `json:"sender"`
 			Nonce      uint64                        `json:"nonce"`
 			Extra      wizard.WizardTxSimpleExtra    `json:"extra"`
 			Data       *wizard.WizardTransactionData `json:"data"`
@@ -58,16 +58,16 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			}
 		}
 
-		fromWalletAddr, err := app.Wallet.GetWalletAddressByEncodedAddress(txData.From, true)
+		senderWalletAddr, err := app.Wallet.GetWalletAddressByEncodedAddress(txData.Sender, true)
 		if err != nil {
 			return nil, err
 		}
 
-		if fromWalletAddr.PrivateKey.Key == nil {
+		if senderWalletAddr.PrivateKey.Key == nil {
 			return nil, errors.New("Can't be used for transactions as the private key is missing")
 		}
 
-		tx, err := wizard.CreateSimpleTx(txData.Nonce, fromWalletAddr.PrivateKey.Key, txData.Height, payloadExtra, txData.Data, txData.Fee, txData.FeeVersion, false, func(status string) {
+		tx, err := wizard.CreateSimpleTx(txData.Nonce, senderWalletAddr.PrivateKey.Key, txData.Height, payloadExtra, txData.Data, txData.Fee, txData.FeeVersion, false, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {
