@@ -357,6 +357,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			extraBytes += len(transaction_zether_payload_extra.SerializeToBytes(payload.Extra, true))
 		}
 
+		extraBytes += len(payload.WhisperRecipient)
+		extraBytes += len(payload.WhisperSender)
+
 		fee := setFee(tx, extraBytes, myFees[t].Clone(), t == 0)
 
 		statusCallback("Transaction Set fee")
