@@ -19,6 +19,7 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
 	"pandora-pay/store"
@@ -283,7 +284,7 @@ func (testnet *Testnet) run() {
 							creatingTransactions.Set()
 							defer creatingTransactions.UnSet()
 
-							if unclaimed > config_coins.ConvertToUnitsUint64Forced(40) {
+							if unclaimed > config_coins.ConvertToUnitsUint64Forced(100) {
 
 								unclaimed -= config_coins.ConvertToUnitsUint64Forced(30)
 
@@ -296,7 +297,7 @@ func (testnet *Testnet) run() {
 
 							} else if delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > 5000 && unclaimed < 5000 {
 								if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
-									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-unclaimed, ctx); err != nil {
+									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, generics.Min(5000, delegatedStakeAvailable/2-unclaimed), ctx); err != nil {
 										return
 									}
 								}
