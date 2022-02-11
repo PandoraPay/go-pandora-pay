@@ -295,9 +295,9 @@ func (testnet *Testnet) run() {
 									testnet.testnetCreateClaimTx(4, unclaimed/5, ctx)
 								}
 
-							} else if delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > config_coins.ConvertToUnitsUint64Forced(1000) && unclaimed < config_coins.ConvertToUnitsUint64Forced(5000) {
+							} else if delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > config_coins.ConvertToUnitsUint64Forced(5000) && unclaimed < config_coins.ConvertToUnitsUint64Forced(1000) {
 								if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
-									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, generics.Min(5000, delegatedStakeAvailable/4), ctx); err != nil {
+									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, generics.Min(config_coins.ConvertToUnitsUint64Forced(1000), delegatedStakeAvailable/4), ctx); err != nil {
 										return
 									}
 								}
