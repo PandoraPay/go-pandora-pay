@@ -86,7 +86,7 @@ func (testnet *Testnet) testnetCreateClaimTx(recipientAddressWalletIndex int, am
 		if decryptedBalance, err = testnet.wallet.DecryptBalanceByPublicKey(recipientAddr.PublicKey, balance, config_coins.NATIVE_ASSET_FULL, false, 0, true, true, ctx, nil); err != nil {
 			return
 		}
-		if decryptedBalance > 10000 {
+		if decryptedBalance > config_coins.ConvertToUnitsUint64Forced(10000) {
 			return
 		}
 	}
@@ -295,9 +295,9 @@ func (testnet *Testnet) run() {
 									testnet.testnetCreateClaimTx(4, unclaimed/5, ctx)
 								}
 
-							} else if delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > config_coins.ConvertToUnitsUint64Forced(5000) && unclaimed < config_coins.ConvertToUnitsUint64Forced(5000) {
+							} else if delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > config_coins.ConvertToUnitsUint64Forced(1000) && unclaimed < config_coins.ConvertToUnitsUint64Forced(5000) {
 								if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
-									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, generics.Min(5000, delegatedStakeAvailable/2-unclaimed), ctx); err != nil {
+									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, generics.Min(5000, delegatedStakeAvailable/4), ctx); err != nil {
 										return
 									}
 								}
