@@ -27,7 +27,6 @@ import (
 	"pandora-pay/txs_builder/wizard"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
-	"sync/atomic"
 	"time"
 )
 
@@ -209,7 +208,6 @@ func (testnet *Testnet) run() {
 	defer testnet.chain.UpdateNewChain.RemoveChannel(updateChannel)
 
 	creatingTransactions := abool.New()
-	unstakesCount := int32(0)
 
 	for i := uint64(0); i < testnet.nodes; i++ {
 		if uint64(testnet.wallet.GetAddressesCount()) <= i+1 {
@@ -296,13 +294,12 @@ func (testnet *Testnet) run() {
 									testnet.testnetCreateClaimTx(4, unclaimed/5, ctx)
 								}
 
-							} else if atomic.LoadInt32(&unstakesCount) < 4 && delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > 5000 && unclaimed < 5000 {
+							} else if delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > 5000 && unclaimed < 5000 {
 								if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
 									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, delegatedStakeAvailable/2-unclaimed, ctx); err != nil {
 										return
 									}
 								}
-								atomic.AddInt32(&unstakesCount, 1)
 							}
 
 							time.Sleep(time.Millisecond * 500) //making sure the block got propagated
