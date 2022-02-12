@@ -94,7 +94,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 			var accs *accounts.Accounts
 			var acc *account.Account
 
-			if accs, acc, err = dataStorage.GetOrCreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey); err != nil {
+			if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey, false); err != nil {
 				return
 			}
 			acc.Balance.AddBalanceUint(airdrop.Amount)

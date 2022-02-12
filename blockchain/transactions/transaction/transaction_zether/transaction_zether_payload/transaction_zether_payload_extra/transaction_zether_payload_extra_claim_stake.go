@@ -58,7 +58,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) BeforeIncludeTxPayload(t
 	}
 
 	reg := payloadRegistrations.Registrations[payloadExtra.RegistrationIndex]
-	if reg != nil && reg.RegistrationType != transaction_zether_registration.NOT_REGISTERED {
+	if reg == nil || reg.RegistrationType != transaction_zether_registration.NOT_REGISTERED {
 		return errors.New("Account must not be registered before! It should be a new one")
 	}
 

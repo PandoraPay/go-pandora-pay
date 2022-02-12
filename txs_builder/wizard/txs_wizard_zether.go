@@ -132,10 +132,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				unregisteredAccounts[t] += 1
 
 			} else if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil {
-				registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
-					transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT,
-					nil,
-				}
+				registrations[t][i] = nil //transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT
 				emptyAccounts[t] += 1
 			} else {
 				registrations[t][i] = nil //transaction_zether_registration.REGISTERED_ACCOUNT

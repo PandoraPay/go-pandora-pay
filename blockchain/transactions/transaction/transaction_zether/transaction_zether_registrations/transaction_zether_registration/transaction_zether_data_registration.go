@@ -32,8 +32,7 @@ func (registration *TransactionZetherDataRegistration) Deserialize(r *helpers.Bu
 		if registration.RegistrationSignature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
 			return
 		}
-	case REGISTERED_EMPTY_ACCOUNT:
-	case REGISTERED_ACCOUNT:
+	case REGISTERED_EMPTY_ACCOUNT, REGISTERED_ACCOUNT:
 		return errors.New("Registered accounts should not be manually specified")
 	default:
 		return errors.New("Invalid RegistrationType")

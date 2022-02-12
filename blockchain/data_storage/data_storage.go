@@ -25,7 +25,18 @@ type DataStorage struct {
 	AstsFeeLiquidityCollection *assets.AssetsFeeLiquidityCollection
 }
 
-func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte) (*accounts.Accounts, *account.Account, error) {
+func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
+
+	if validateRegistration {
+		exists, err := dataStorage.Regs.Exists(string(publicKey))
+		if err != nil {
+			return nil, nil, err
+		}
+		if !exists {
+			return nil, nil, errors.New("Can't create Account as it is not Registered")
+		}
+	}
+
 	accs, err := dataStorage.AccsCollection.GetMap(assetId)
 	if err != nil {
 		return nil, nil, err
@@ -40,30 +51,45 @@ func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte) (*
 		return accs, acc, nil
 	}
 
-	acc, err = dataStorage.CreateAccount(assetId, publicKey)
-	if err != nil {
+	if acc, err = accs.CreateNewAccount(publicKey); err != nil {
 		return nil, nil, err
 	}
 
 	return accs, acc, nil
 }
 
-func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte) (*account.Account, error) {
+func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
 
-	exists, err := dataStorage.Regs.Exists(string(publicKey))
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.New("Can't create Account as it is not Registered")
+	if validateRegistration {
+		exists, err := dataStorage.Regs.Exists(string(publicKey))
+		if err != nil {
+			return nil, nil, err
+		}
+		if !exists {
+			return nil, nil, errors.New("Can't create Account as it is not Registered")
+		}
 	}
 
 	accs, err := dataStorage.AccsCollection.GetMap(assetId)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return accs.CreateNewAccount(publicKey)
+	exists, err := accs.Exists(string(publicKey))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if exists {
+		return nil, nil, errors.New("Account already exists")
+	}
+
+	acc, err := accs.CreateNewAccount(publicKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return accs, acc, nil
 }
 
 func (dataStorage *DataStorage) GetOrCreatePlainAccount(publicKey []byte, blockHeight uint64) (*plain_account.PlainAccount, error) {

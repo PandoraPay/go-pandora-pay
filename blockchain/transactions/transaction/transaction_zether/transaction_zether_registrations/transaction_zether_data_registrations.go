@@ -22,7 +22,7 @@ func (self *TransactionZetherDataRegistrations) ValidateRegistrations(publickeyl
 	}
 
 	for i, reg := range self.Registrations {
-		if reg != nil && reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
+		if reg != nil {
 			publicKey := publickeylist[i]
 			if crypto.VerifySignaturePoint([]byte("registration"), reg.RegistrationSignature, publicKey) == false {
 				return fmt.Errorf("Registration is invalid for %d", i)
@@ -35,27 +35,21 @@ func (self *TransactionZetherDataRegistrations) ValidateRegistrations(publickeyl
 
 func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataStorage *data_storage.DataStorage, publicKeyList [][]byte) (err error) {
 
-	var isReg bool
 	for i, reg := range self.Registrations {
-		if reg != nil && reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
+		if reg != nil {
 			if _, err = dataStorage.CreateRegistration(publicKeyList[i]); err != nil {
 				return
 			}
 		}
 	}
 
-	for _, publicKey := range publicKeyList {
-		if isReg, err = dataStorage.Regs.Exists(string(publicKey)); err != nil {
-			return
-		}
-		if !isReg {
-			return errors.New("PublicKey is already registered")
-		}
-	}
-
 	for i, reg := range self.Registrations {
-		if reg != nil && (reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED || reg.RegistrationType == transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT) {
-			if _, err = dataStorage.CreateAccount(asset, publicKeyList[i]); err != nil {
+		if reg != nil && reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
+			if _, _, err = dataStorage.CreateAccount(asset, publicKeyList[i], true); err != nil {
+				return
+			}
+		} else {
+			if _, _, err = dataStorage.GetOrCreateAccount(asset, publicKeyList[i], true); err != nil {
 				return
 			}
 		}
