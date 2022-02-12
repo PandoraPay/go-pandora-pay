@@ -39,7 +39,7 @@ func (api *Faucet) FaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, rep
 		return err
 	}
 
-	data := &wizard.WizardTransactionData{[]byte("Testnet Faucet Tx"), false}
+	data := &wizard.WizardTransactionData{[]byte("Testnet Faucet Tx"), true}
 	fees := []*wizard.WizardZetherTransactionFee{{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0}}
 
 	ctx, cancel := context.WithCancel(context.Background())

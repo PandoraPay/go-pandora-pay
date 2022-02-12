@@ -2,8 +2,6 @@ package account
 
 import (
 	"encoding/hex"
-	"encoding/json"
-	"fmt"
 	"github.com/vmihailenco/msgpack/v5"
 	"math/big"
 	"pandora-pay/cryptography/crypto"
@@ -17,7 +15,12 @@ type BalanceHomomorphic struct {
 
 // MarshalJSON serializes ElGamal into byteArray
 func (s BalanceHomomorphic) MarshalJSON() ([]byte, error) {
-	return json.Marshal(fmt.Sprintf("%x", string(s.Amount.Serialize())))
+	serialized := s.Amount.Serialize()
+	dst := make([]byte, len(serialized)*2+2)
+	hex.Encode(dst[1:], serialized)
+	dst[0] = 34          // "
+	dst[len(dst)-1] = 34 // "
+	return dst, nil
 }
 
 // EncodeMsgpack serializes ElGamal into byteArray
@@ -27,13 +30,9 @@ func (s BalanceHomomorphic) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 // UnmarshalJSON deserializes ByteArray to hex
 func (s *BalanceHomomorphic) UnmarshalJSON(data []byte) (err error) {
-	var x string
-	var str []byte
+	str := make([]byte, len(data)/2-1)
 
-	if err = json.Unmarshal(data, &x); err != nil {
-		return
-	}
-	if str, err = hex.DecodeString(x); err != nil {
+	if _, err = hex.Decode(str, data[1:len(data)-1]); err != nil {
 		return
 	}
 
@@ -58,10 +57,6 @@ func (s *BalanceHomomorphic) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 func (balance *BalanceHomomorphic) AddBalanceUint(amount uint64) {
 	balance.Amount = balance.Amount.Plus(new(big.Int).SetUint64(amount))
-}
-
-func (balance *BalanceHomomorphic) AddBalance(encryptedAmount []byte) (err error) {
-	panic("not implemented")
 }
 
 func (balance *BalanceHomomorphic) Serialize(w *helpers.BufferWriter) {

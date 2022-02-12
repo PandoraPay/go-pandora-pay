@@ -36,6 +36,10 @@ func (accounts *Accounts) GetAccount(key []byte) (*account.Account, error) {
 	return data.(*account.Account), nil
 }
 
+func (accounts *Accounts) ExistAccount(key []byte) (bool, error) {
+	return accounts.Exists(string(key))
+}
+
 func (accounts *Accounts) GetRandomAccount() (*account.Account, error) {
 	data, err := accounts.GetRandom()
 	if err != nil {
