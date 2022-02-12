@@ -43,7 +43,7 @@ func (s *Statement) Serialize(w *helpers.BufferWriter, payloadRegistrations []*t
 	for i := 0; i < len(s.C); i++ {
 		w.Write(s.Publickeylist[i].EncodeCompressed()) //can be bloomed
 		w.Write(s.C[i].EncodeCompressed())
-		if payloadRegistrations[i].RegistrationType == transaction_zether_registration.REGISTERED_ACCOUNT {
+		if payloadRegistrations[i] == nil { //REGISTERED_ACCOUNT
 			w.Write(s.CLn[i].EncodeCompressed()) //can be bloomed
 			w.Write(s.CRn[i].EncodeCompressed()) //can be bloomed
 		}
@@ -88,7 +88,7 @@ func (s *Statement) Deserialize(r *helpers.BufferReader, payloadRegistrations []
 		if s.C[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		if payloadRegistrations[i].RegistrationType == transaction_zether_registration.REGISTERED_ACCOUNT {
+		if payloadRegistrations[i] == nil { //REGISTERED_ACCOUNT
 			if s.CLn[i], err = r.ReadBN256G1(); err != nil {
 				return
 			}

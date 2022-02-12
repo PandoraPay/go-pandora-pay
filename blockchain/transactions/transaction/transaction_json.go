@@ -89,7 +89,7 @@ type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
 type json_Only_TransactionZetherPayloadExtraClaim struct {
 	DelegatePublicKey           helpers.HexBytes `json:"delegatePublicKey"  msgpack:"delegatePublicKey"`
 	DelegatedStakingClaimAmount uint64           `json:"delegatedStakingClaimAmount"  msgpack:"delegatedStakingClaimAmount"`
-	RegistrationIndex           byte             `json:"registrationIndex"  msgpack:"registrationIndex"`
+	RegistrationIndex           uint64           `json:"registrationIndex"  msgpack:"registrationIndex"`
 	DelegateSignature           helpers.HexBytes `json:"delegateSignature"  msgpack:"delegateSignature"`
 }
 
@@ -203,9 +203,11 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 
 			registrations := make([]*json_TransactionDataRegistration, len(payload.Registrations.Registrations))
 			for i, reg := range payload.Registrations.Registrations {
-				registrations[i] = &json_TransactionDataRegistration{
-					reg.RegistrationType,
-					reg.RegistrationSignature,
+				if reg != nil {
+					registrations[i] = &json_TransactionDataRegistration{
+						reg.RegistrationType,
+						reg.RegistrationSignature,
+					}
 				}
 			}
 
@@ -474,9 +476,11 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 			}
 
 			for i, reg := range payload.Registrations {
-				payloads[i].Registrations.Registrations[i] = &transaction_zether_registration.TransactionZetherDataRegistration{
-					reg.RegistrationType,
-					reg.RegistrationSignature,
+				if reg != nil {
+					payloads[i].Registrations.Registrations[i] = &transaction_zether_registration.TransactionZetherDataRegistration{
+						reg.RegistrationType,
+						reg.RegistrationSignature,
+					}
 				}
 			}
 

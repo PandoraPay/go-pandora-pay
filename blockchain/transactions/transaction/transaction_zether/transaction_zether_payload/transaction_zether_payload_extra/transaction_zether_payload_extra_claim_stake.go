@@ -19,7 +19,7 @@ type TransactionZetherPayloadExtraClaim struct {
 	TransactionZetherPayloadExtraInterface
 	DelegatePublicKey           []byte
 	DelegatedStakingClaimAmount uint64
-	RegistrationIndex           byte
+	RegistrationIndex           uint64
 	DelegateSignature           []byte
 }
 
@@ -57,7 +57,8 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) BeforeIncludeTxPayload(t
 		return
 	}
 
-	if payloadRegistrations.Registrations[payloadExtra.RegistrationIndex].RegistrationType != transaction_zether_registration.NOT_REGISTERED {
+	reg := payloadRegistrations.Registrations[payloadExtra.RegistrationIndex]
+	if reg != nil && reg.RegistrationType != transaction_zether_registration.NOT_REGISTERED {
 		return errors.New("Account must not be registered before! It should be a new one")
 	}
 
@@ -125,7 +126,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) VerifyExtraSignature(has
 func (payloadExtra *TransactionZetherPayloadExtraClaim) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.Write(payloadExtra.DelegatePublicKey)
 	w.WriteUvarint(payloadExtra.DelegatedStakingClaimAmount)
-	w.WriteByte(payloadExtra.RegistrationIndex)
+	w.WriteUvarint(payloadExtra.RegistrationIndex)
 	if inclSignature {
 		w.Write(payloadExtra.DelegateSignature)
 	}
@@ -138,7 +139,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) Deserialize(r *helpers.B
 	if payloadExtra.DelegatedStakingClaimAmount, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if payloadExtra.RegistrationIndex, err = r.ReadByte(); err != nil {
+	if payloadExtra.RegistrationIndex, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	if payloadExtra.DelegateSignature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {

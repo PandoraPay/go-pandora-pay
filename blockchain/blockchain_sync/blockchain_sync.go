@@ -67,7 +67,7 @@ func (self *BlockchainSync) resetBlocksChanged(propagateNotification bool) *Bloc
 		Started:                       chainSyncData.Started,
 	}
 
-	if chainSyncData.BlocksChangedLastInterval < 5 && (chainSyncData.Started || chainSyncData.BlocksChangedPreviousInterval < 4) {
+	if chainSyncData.BlocksChangedLastInterval < 5 && (chainSyncData.Started || chainSyncData.BlocksChangedPreviousInterval < 5) {
 		newChainSyncData.SyncTime = uint64(time.Now().Unix())
 		newChainSyncData.Sync = true
 		newChainSyncData.Started = true

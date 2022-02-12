@@ -101,6 +101,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	registrations := make([][]*transaction_zether_registration.TransactionZetherDataRegistration, len(publickeylists))
 	registrationsAlready := make(map[string]bool)
 
+	unregisteredAccounts := make([]int, len(transfers))
+	emptyAccounts := make([]int, len(transfers))
+
 	for t, publickeylist := range publickeylists {
 
 		registrations[t] = make([]*transaction_zether_registration.TransactionZetherDataRegistration, len(publickeylist))
@@ -126,18 +129,16 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					publicKeyIndex.RegistrationSignature,
 				}
 
-			} else if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil {
+				unregisteredAccounts[t] += 1
 
+			} else if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil {
 				registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
 					transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT,
 					nil,
 				}
-
+				emptyAccounts[t] += 1
 			} else {
-				registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
-					transaction_zether_registration.REGISTERED_ACCOUNT,
-					nil,
-				}
+				registrations[t][i] = nil //transaction_zether_registration.REGISTERED_ACCOUNT
 			}
 
 			if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil {
@@ -151,6 +152,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		}
 	}
+
 	statusCallback("Transaction registrations created")
 
 	payloads := make([]*transaction_zether_payload.TransactionZetherPayload, len(transfers))
@@ -158,24 +160,12 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 	spaceExtra := 0
 
-	unregisteredAccounts := make([]int, len(transfers))
-	emptyAccounts := make([]int, len(transfers))
-
 	for t, transfer := range transfers {
 
 		publickeylist := publickeylists[t]
 		senderKey := &addresses.PrivateKey{Key: transfer.Sender}
 
 		payloads[t] = &transaction_zether_payload.TransactionZetherPayload{}
-
-		for _, reg := range registrations[t] {
-			if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
-				unregisteredAccounts[t] += 1
-			}
-			if reg.RegistrationType == transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT {
-				emptyAccounts[t] += 1
-			}
-		}
 
 		spaceExtra += unregisteredAccounts[t] * (cryptography.PublicKeySize + 1 + cryptography.SignatureSize)
 		spaceExtra += (unregisteredAccounts[t] + emptyAccounts[t]) * (cryptography.PublicKeySize + 1 + 66)
@@ -188,12 +178,12 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			case *WizardZetherPayloadExtraClaim:
 				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_CLAIM
 
-				var registrationIndex byte
+				var registrationIndex uint64
 
 				senderPublicKey := senderKey.GeneratePublicKey()
 				for i := range registrations[t] {
 					if bytes.Equal(publickeylist[i].EncodeCompressed(), senderPublicKey) {
-						registrationIndex = byte(i)
+						registrationIndex = uint64(i)
 						break
 					}
 				}

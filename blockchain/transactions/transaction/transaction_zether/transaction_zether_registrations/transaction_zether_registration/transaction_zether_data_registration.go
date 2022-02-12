@@ -13,7 +13,9 @@ type TransactionZetherDataRegistration struct {
 
 func (registration *TransactionZetherDataRegistration) Serialize(w *helpers.BufferWriter) {
 	w.WriteByte(byte(registration.RegistrationType))
-	w.Write(registration.RegistrationSignature)
+	if registration.RegistrationType == NOT_REGISTERED {
+		w.Write(registration.RegistrationSignature)
+	}
 }
 
 func (registration *TransactionZetherDataRegistration) Deserialize(r *helpers.BufferReader) (err error) {
@@ -32,6 +34,7 @@ func (registration *TransactionZetherDataRegistration) Deserialize(r *helpers.Bu
 		}
 	case REGISTERED_EMPTY_ACCOUNT:
 	case REGISTERED_ACCOUNT:
+		return errors.New("Registered accounts should not be manually specified")
 	default:
 		return errors.New("Invalid RegistrationType")
 	}

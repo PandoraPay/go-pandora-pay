@@ -22,7 +22,7 @@ func (self *TransactionZetherDataRegistrations) ValidateRegistrations(publickeyl
 	}
 
 	for i, reg := range self.Registrations {
-		if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
+		if reg != nil && reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
 			publicKey := publickeylist[i]
 			if crypto.VerifySignaturePoint([]byte("registration"), reg.RegistrationSignature, publicKey) == false {
 				return fmt.Errorf("Registration is invalid for %d", i)
@@ -37,13 +37,11 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataSt
 
 	var isReg bool
 	for i, reg := range self.Registrations {
-
-		if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
+		if reg != nil && reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
 			if _, err = dataStorage.CreateRegistration(publicKeyList[i]); err != nil {
 				return
 			}
 		}
-
 	}
 
 	for _, publicKey := range publicKeyList {
@@ -56,13 +54,10 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataSt
 	}
 
 	for i, reg := range self.Registrations {
-
-		if reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED || reg.RegistrationType == transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT {
-
+		if reg != nil && (reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED || reg.RegistrationType == transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT) {
 			if _, err = dataStorage.CreateAccount(asset, publicKeyList[i]); err != nil {
 				return
 			}
-
 		}
 	}
 
@@ -70,17 +65,48 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataSt
 }
 
 func (self *TransactionZetherDataRegistrations) Serialize(w *helpers.BufferWriter) {
+
+	count := uint64(0)
 	for _, registration := range self.Registrations {
-		registration.Serialize(w)
+		if registration != nil {
+			count += 1
+		}
+	}
+
+	w.WriteUvarint(count)
+	for i, registration := range self.Registrations {
+		if registration != nil {
+			w.WriteUvarint(uint64(i))
+			registration.Serialize(w)
+		}
 	}
 }
 
 func (self *TransactionZetherDataRegistrations) Deserialize(r *helpers.BufferReader, ringSize int) (err error) {
 
+	var count uint64
+	if count, err = r.ReadUvarint(); err != nil {
+		return
+	}
+
 	self.Registrations = make([]*transaction_zether_registration.TransactionZetherDataRegistration, ringSize)
-	for i := 0; i < ringSize; i++ {
-		self.Registrations[i] = &transaction_zether_registration.TransactionZetherDataRegistration{}
-		if err = self.Registrations[i].Deserialize(r); err != nil {
+
+	for i := uint64(0); i < count; i++ {
+
+		var index uint64
+		if index, err = r.ReadUvarint(); err != nil {
+			return
+		}
+
+		if index >= uint64(ringSize) {
+			return errors.New("Registration Index is invalid")
+		}
+		if self.Registrations[index] != nil {
+			return errors.New("Registration already exists")
+		}
+
+		self.Registrations[index] = &transaction_zether_registration.TransactionZetherDataRegistration{}
+		if err = self.Registrations[index].Deserialize(r); err != nil {
 			return
 		}
 	}
