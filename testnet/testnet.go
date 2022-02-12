@@ -284,7 +284,7 @@ func (testnet *Testnet) run() {
 							creatingTransactions.Set()
 							defer creatingTransactions.UnSet()
 
-							if unclaimed > config_coins.ConvertToUnitsUint64Forced(100) {
+							if unclaimed > config_coins.ConvertToUnitsUint64Forced(200) {
 
 								unclaimed -= config_coins.ConvertToUnitsUint64Forced(30)
 
@@ -295,7 +295,7 @@ func (testnet *Testnet) run() {
 									testnet.testnetCreateClaimTx(4, unclaimed/5, ctx)
 								}
 
-							} else if delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > config_coins.ConvertToUnitsUint64Forced(5000) && unclaimed < config_coins.ConvertToUnitsUint64Forced(1000) {
+							} else if delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > config_coins.ConvertToUnitsUint64Forced(5000) && unclaimed < config_coins.ConvertToUnitsUint64Forced(2000) {
 								if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
 									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, generics.Min(config_coins.ConvertToUnitsUint64Forced(1000), delegatedStakeAvailable/4), ctx); err != nil {
 										return

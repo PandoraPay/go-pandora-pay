@@ -45,6 +45,10 @@ func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, []byte, 
 //you should not lock it before
 func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, balance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, store, lock bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
+	if len(balance) == 0 {
+		return 0, errors.New("Encrypted Balance is nil")
+	}
+
 	if !lock {
 		return 0, errors.New("You shouldn't lock the wallet before as it will lock wallet functionality for some time")
 	}

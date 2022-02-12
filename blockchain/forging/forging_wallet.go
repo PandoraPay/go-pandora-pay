@@ -188,6 +188,10 @@ func (w *ForgingWallet) processUpdates() {
 						return errors.New("DelegatedStakeFee is less than it should be")
 					}
 
+					if plainAcc.DelegatedStake.DelegatedStakeFee > 0 && len(config_nodes.DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY) == 0 {
+						return errors.New("DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY argument is missing")
+					}
+
 					delegatedStakeFee := plainAcc.DelegatedStake.DelegatedStakeFee
 
 					address := w.addressesMap[key]
@@ -242,6 +246,10 @@ func (w *ForgingWallet) processUpdates() {
 
 							if plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE {
 								return errors.New("DelegatedStakeFee is less than it should be")
+							}
+
+							if plainAcc.DelegatedStake.DelegatedStakeFee > 0 && len(config_nodes.DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY) == 0 {
+								return errors.New("DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY argument is missing")
 							}
 
 							w.addressesMap[k].delegatedStakeFee = plainAcc.DelegatedStake.DelegatedStakeFee
