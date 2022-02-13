@@ -6,6 +6,7 @@ import (
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
+	"sync/atomic"
 )
 
 type ApiDelegatorNodeInfoReply struct {
@@ -13,6 +14,7 @@ type ApiDelegatorNodeInfoReply struct {
 	DelegatesCount int              `json:"delegatesCount" msgpack:"delegatesCount"`
 	DelegatesFee   uint64           `json:"delegatesFee" msgpack:"delegatesFee"`
 	Challenge      helpers.HexBytes `json:"challenge" msgpack:"challenge"`
+	Blocks         uint64           `json:"blocks" msgpack:"blocks"`
 }
 
 func (api *DelegatorNode) DelegatorNodeInfo(r *http.Request, args *struct{}, reply *ApiDelegatorNodeInfoReply) error {
@@ -20,6 +22,7 @@ func (api *DelegatorNode) DelegatorNodeInfo(r *http.Request, args *struct{}, rep
 	reply.DelegatesCount = api.wallet.GetDelegatesCount()
 	reply.DelegatesFee = config_nodes.DELEGATOR_FEE
 	reply.Challenge = api.challenge
+	reply.Blocks = atomic.LoadUint64(&api.chainHeight)
 	return nil
 }
 

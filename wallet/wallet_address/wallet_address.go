@@ -119,6 +119,14 @@ func (addr *WalletAddress) SignMessage(message []byte) ([]byte, error) {
 	return addr.PrivateKey.Sign(message)
 }
 
+func (addr *WalletAddress) VerifySignedMessage(message, signature []byte) (bool, error) {
+	address, err := addresses.DecodeAddr(addr.GetAddress(false))
+	if err != nil {
+		return false, err
+	}
+	return address.VerifySignedMessage(message, signature), nil
+}
+
 func (addr *WalletAddress) Clone() *WalletAddress {
 
 	if addr == nil {

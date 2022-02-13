@@ -1,6 +1,7 @@
 package api_delegator_node
 
 import (
+	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
@@ -24,6 +25,14 @@ type ApiDelegatorNodeAskReply struct {
 func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAskRequest, reply *ApiDelegatorNodeAskReply) error {
 
 	publicKey := args.PublicKey
+
+	address, err := addresses.CreateAddr(publicKey, nil, nil, 0, nil)
+	if err != nil {
+		return nil
+	}
+	if !address.VerifySignedMessage(args.ChallengeSignature, api.challenge) {
+		return errors.New("Challenge was not verified!")
+	}
 
 	addr := api.wallet.GetWalletAddressByPublicKey(publicKey, false)
 	if addr != nil {

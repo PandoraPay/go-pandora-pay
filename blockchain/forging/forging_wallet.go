@@ -69,30 +69,31 @@ func (w *ForgingWallet) RemoveWallet(DelegatedStakePublicKey []byte, hasPlainAcc
 	w.AddWallet(nil, DelegatedStakePublicKey, hasPlainAcc, plainAcc)
 }
 
-func (w *ForgingWallet) accountUpdated(addr *ForgingWalletAddress) {
-	if addr.workerIndex != -1 {
-		w.workers[addr.workerIndex].addWalletAddressCn <- addr.clone()
-	}
-}
+func (w *ForgingWallet) updateAccountToForgingWorkers(addr *ForgingWalletAddress) {
 
-func (w *ForgingWallet) accountInserted(addr *ForgingWalletAddress) {
-	min := 0
-	index := -1
-	for i := 0; i < len(w.workersAddresses); i++ {
-		if i == 0 || min > w.workersAddresses[i] {
-			min = w.workersAddresses[i]
-			index = i
+	if len(w.workers) == 0 { //in case it was not started yet
+		return
+	}
+
+	if addr.workerIndex == -1 {
+		min := 0
+		index := -1
+		for i := 0; i < len(w.workersAddresses); i++ {
+			if i == 0 || min > w.workersAddresses[i] {
+				min = w.workersAddresses[i]
+				index = i
+			}
 		}
-	}
 
-	addr.workerIndex = index
-	if index != -1 {
+		addr.workerIndex = index
 		w.workersAddresses[index]++
 		w.workers[index].addWalletAddressCn <- addr.clone()
 	}
+
+	w.workers[addr.workerIndex].addWalletAddressCn <- addr.clone()
 }
 
-func (w *ForgingWallet) accountRemoved(addr *ForgingWalletAddress) {
+func (w *ForgingWallet) removeAccountFromForgingWorkers(addr *ForgingWalletAddress) {
 	if addr != nil && addr.workerIndex != -1 {
 		w.workers[addr.workerIndex].removeWalletAddressCn <- addr.publicKeyStr
 		w.workersAddresses[addr.workerIndex]--
@@ -103,7 +104,7 @@ func (w *ForgingWallet) accountRemoved(addr *ForgingWalletAddress) {
 func (w *ForgingWallet) deleteAccount(publicKey string) {
 	if account := w.addressesMap[publicKey]; account != nil {
 		delete(w.addressesMap, publicKey)
-		w.accountRemoved(account)
+		w.removeAccountFromForgingWorkers(account)
 	}
 }
 
@@ -123,7 +124,7 @@ func (w *ForgingWallet) processUpdates() {
 			w.workers = workers
 			w.workersAddresses = make([]int, len(workers))
 			for _, addr := range w.addressesMap {
-				w.accountInserted(addr)
+				w.updateAccountToForgingWorkers(addr)
 			}
 		case _, ok := <-w.workersDestroyedCn:
 			if !ok {
@@ -143,7 +144,7 @@ func (w *ForgingWallet) processUpdates() {
 			//let's delete it
 			if update.delegatedPriv == nil {
 
-				w.accountRemoved(w.addressesMap[string(update.pubKey)])
+				w.removeAccountFromForgingWorkers(w.addressesMap[string(update.pubKey)])
 
 			} else {
 
@@ -200,18 +201,18 @@ func (w *ForgingWallet) processUpdates() {
 							-1,
 						}
 						w.addressesMap[key] = address
-						w.accountInserted(address)
 					} else {
 						address.delegatedPrivateKey = delegatedPrivateKey
 						address.delegatedStakePublicKey = delegatedStakePublicKey
 						address.delegatedStakeFee = delegatedStakeFee
 						address.plainAcc = plainAcc
-						w.accountUpdated(address)
 					}
+
+					w.updateAccountToForgingWorkers(address)
 
 					return
 				}(); err != nil {
-					w.accountRemoved(w.addressesMap[key])
+					w.removeAccountFromForgingWorkers(w.addressesMap[key])
 					gui.GUI.Error(err)
 				}
 
@@ -248,16 +249,16 @@ func (w *ForgingWallet) processUpdates() {
 							w.addressesMap[k].delegatedStakeFee = plainAcc.DelegatedStake.DelegatedStakeFee
 							w.addressesMap[k].plainAcc = plainAcc
 
-							w.accountUpdated(w.addressesMap[k])
+							w.updateAccountToForgingWorkers(w.addressesMap[k])
 
 							return
 						}(); err != nil {
-							w.accountRemoved(w.addressesMap[k])
+							w.removeAccountFromForgingWorkers(w.addressesMap[k])
 							gui.GUI.Error(err)
 						}
 
 					} else if v.Stored == "delete" {
-						w.accountRemoved(w.addressesMap[k])
+						w.removeAccountFromForgingWorkers(w.addressesMap[k])
 						gui.GUI.Error("Account was deleted from Forging")
 					}
 
