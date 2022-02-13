@@ -2,10 +2,13 @@ package api_delegator_node
 
 import (
 	"errors"
+	"fmt"
 	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/addresses"
+	"pandora-pay/config/globals"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
@@ -13,13 +16,14 @@ import (
 )
 
 type ApiDelegatorNodeAskRequest struct {
-	PublicKey          helpers.HexBytes `json:"publicKey" msgpack:"publicKey"`
-	ChallengeSignature helpers.HexBytes `json:"challengeSignature" msgpack:"challengeSignature"`
+	PublicKey                  helpers.HexBytes `json:"publicKey" msgpack:"publicKey"`
+	ChallengeSignature         helpers.HexBytes `json:"challengeSignature" msgpack:"challengeSignature"`
+	DelegatedStakingPrivateKey helpers.HexBytes `json:"delegatedStakingPrivateKey" msgpack:"delegatedStakingPrivateKey"`
 }
 
 type ApiDelegatorNodeAskReply struct {
-	Exists                   bool             `json:"exists" msgpack:"exists"`
-	DelegateStakingPublicKey helpers.HexBytes `json:"delegateStakingPublicKey" msgpack:"delegateStakingPublicKey"`
+	Exists                    bool             `json:"exists" msgpack:"exists"`
+	DelegatedStakingPublicKey helpers.HexBytes `json:"delegatedStakingPublicKey" msgpack:"delegatedStakingPublicKey"`
 }
 
 func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAskRequest, reply *ApiDelegatorNodeAskReply) error {
@@ -40,22 +44,31 @@ func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAs
 		return nil
 	}
 
-	delegateStakingPrivateKey := addresses.GenerateNewPrivateKey()
-	delegateStakingPublicKey := delegateStakingPrivateKey.GeneratePublicKey()
+	var delegatedStakingPrivateKey *addresses.PrivateKey
+	if globals.Arguments["--delegator-accept-custom-keys"] != "true" {
+		delegatedStakingPrivateKey = addresses.GenerateNewPrivateKey()
+	} else {
+		if len(args.DelegatedStakingPrivateKey) != cryptography.PrivateKeySize {
+			return fmt.Errorf("delegatedStakingPrivateKey must be of size %d", cryptography.PrivateKeySize)
+		}
+		delegatedStakingPrivateKey = &addresses.PrivateKey{args.DelegatedStakingPrivateKey}
+	}
+
+	delegatedStakingPublicKey := delegatedStakingPrivateKey.GeneratePublicKey()
 
 	pendingDelegateStakeChange, loaded := api.pendingDelegatesStakesChanges.LoadOrStore(string(publicKey), &PendingDelegateStakeChange{
-		delegateStakingPrivateKey,
-		delegateStakingPublicKey,
+		delegatedStakingPrivateKey,
+		delegatedStakingPublicKey,
 		publicKey,
 		atomic.LoadUint64(&api.chainHeight),
 	})
 
 	if loaded {
-		delegateStakingPrivateKey = pendingDelegateStakeChange.delegateStakingPrivateKey
-		delegateStakingPublicKey = pendingDelegateStakeChange.delegateStakingPublicKey
+		delegatedStakingPrivateKey = pendingDelegateStakeChange.delegateStakingPrivateKey
+		delegatedStakingPublicKey = pendingDelegateStakeChange.delegateStakingPublicKey
 	}
 
-	reply.DelegateStakingPublicKey = delegateStakingPublicKey
+	reply.DelegatedStakingPublicKey = delegatedStakingPublicKey
 	return nil
 }
 
