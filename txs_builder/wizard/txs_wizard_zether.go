@@ -175,12 +175,12 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			case *WizardZetherPayloadExtraClaim:
 				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_CLAIM
 
-				var registrationIndex uint64
+				var temporaryAccountRegistrationIndex uint64
 
 				senderPublicKey := senderKey.GeneratePublicKey()
 				for i := range registrations[t] {
 					if bytes.Equal(publickeylist[i].EncodeCompressed(), senderPublicKey) {
-						registrationIndex = uint64(i)
+						temporaryAccountRegistrationIndex = uint64(i)
 						break
 					}
 				}
@@ -188,10 +188,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				key := &addresses.PrivateKey{Key: payloadExtra.DelegatePrivateKey}
 				delegatePublicKey := key.GeneratePublicKey()
 				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaim{
-					DelegatePublicKey:           delegatePublicKey,
-					DelegatedStakingClaimAmount: transfers[t].Amount,
-					RegistrationIndex:           registrationIndex,
-					DelegateSignature:           helpers.EmptyBytes(cryptography.SignatureSize),
+					DelegatePublicKey:                 delegatePublicKey,
+					DelegatedStakingClaimAmount:       transfers[t].Amount,
+					TemporaryAccountRegistrationIndex: temporaryAccountRegistrationIndex,
+					DelegateSignature:                 helpers.EmptyBytes(cryptography.SignatureSize),
 				}
 
 				privateKeysForSign[t] = key

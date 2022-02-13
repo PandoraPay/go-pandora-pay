@@ -87,10 +87,10 @@ type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
 }
 
 type json_Only_TransactionZetherPayloadExtraClaim struct {
-	DelegatePublicKey           helpers.HexBytes `json:"delegatePublicKey"  msgpack:"delegatePublicKey"`
-	DelegatedStakingClaimAmount uint64           `json:"delegatedStakingClaimAmount"  msgpack:"delegatedStakingClaimAmount"`
-	RegistrationIndex           uint64           `json:"registrationIndex"  msgpack:"registrationIndex"`
-	DelegateSignature           helpers.HexBytes `json:"delegateSignature"  msgpack:"delegateSignature"`
+	DelegatePublicKey                 helpers.HexBytes `json:"delegatePublicKey"  msgpack:"delegatePublicKey"`
+	DelegatedStakingClaimAmount       uint64           `json:"delegatedStakingClaimAmount"  msgpack:"delegatedStakingClaimAmount"`
+	TemporaryAccountRegistrationIndex uint64           `json:"temporaryAccountRegistrationIndex"  msgpack:"temporaryAccountRegistrationIndex"`
+	DelegateSignature                 helpers.HexBytes `json:"delegateSignature"  msgpack:"delegateSignature"`
 }
 
 type json_Only_TransactionZetherPayloadExtraAssetCreate struct {
@@ -247,7 +247,7 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 				extra = &json_Only_TransactionZetherPayloadExtraClaim{
 					payloadExtra.DelegatePublicKey,
 					payloadExtra.DelegatedStakingClaimAmount,
-					payloadExtra.RegistrationIndex,
+					payloadExtra.TemporaryAccountRegistrationIndex,
 					payloadExtra.DelegateSignature,
 				}
 			case transaction_zether_payload.SCRIPT_ASSET_CREATE:
@@ -514,7 +514,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 					nil,
 					extraJson.DelegatePublicKey,
 					extraJson.DelegatedStakingClaimAmount,
-					extraJson.RegistrationIndex,
+					extraJson.TemporaryAccountRegistrationIndex,
 					extraJson.DelegateSignature,
 				}
 

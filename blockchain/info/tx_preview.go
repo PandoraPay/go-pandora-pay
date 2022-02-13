@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
@@ -29,6 +30,15 @@ type TxPreviewSimple struct {
 	Vin         helpers.HexBytes                        `json:"vin" msgpack:"vin"`
 }
 
+type TxPreviewZetherPayloadExtraClaim struct {
+	DelegatePublicKey           helpers.HexBytes `json:"delegatePublicKey" msgpack:"delegatePublicKey"`
+	DelegatedStakingClaimAmount uint64           `json:"delegatedStakingClaimAmount" msgpack:"delegatedStakingClaimAmount"`
+}
+
+type TxPreviewZetherPayloadExtraDelegateStake struct {
+	DelegatePublicKey helpers.HexBytes `json:"delegatePublicKey" msgpack:"delegatePublicKey"`
+}
+
 type TxPreviewZetherPayload struct {
 	PayloadScript transaction_zether_payload.PayloadScriptType `json:"payloadScript" msgpack:"payloadScript"`
 	Asset         helpers.HexBytes                             `json:"asset" msgpack:"asset"`
@@ -36,6 +46,7 @@ type TxPreviewZetherPayload struct {
 	DataVersion   transaction_data.TransactionDataVersion      `json:"dataVersion" msgpack:"dataVersion"`
 	DataPublic    helpers.HexBytes                             `json:"dataPublic" msgpack:"dataPublic"`
 	Ring          byte                                         `json:"ring" msgpack:"ring"`
+	Extra         interface{}                                  `json:"extra" msgpack:"extra"`
 }
 
 type TxPreviewZether struct {
@@ -95,6 +106,16 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 				return nil, err
 			}
 
+			var payloadExtra interface{}
+			switch payload.PayloadScript {
+			case transaction_zether_payload.SCRIPT_CLAIM:
+				txPayloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraClaim)
+				payloadExtra = &TxPreviewZetherPayloadExtraClaim{txPayloadExtra.DelegatePublicKey, txPayloadExtra.DelegatedStakingClaimAmount}
+			case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
+				txPayloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake)
+				payloadExtra = &TxPreviewZetherPayloadExtraDelegateStake{txPayloadExtra.DelegatePublicKey}
+			}
+
 			payloads[i] = &TxPreviewZetherPayload{
 				payload.PayloadScript,
 				payload.Asset,
@@ -102,6 +123,7 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 				payload.DataVersion,
 				dataPublic,
 				byte(power),
+				payloadExtra,
 			}
 
 		}

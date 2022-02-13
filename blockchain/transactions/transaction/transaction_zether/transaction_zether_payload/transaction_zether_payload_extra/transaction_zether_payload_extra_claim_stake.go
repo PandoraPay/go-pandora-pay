@@ -17,10 +17,10 @@ import (
 
 type TransactionZetherPayloadExtraClaim struct {
 	TransactionZetherPayloadExtraInterface
-	DelegatePublicKey           []byte
-	DelegatedStakingClaimAmount uint64
-	RegistrationIndex           uint64
-	DelegateSignature           []byte
+	DelegatePublicKey                 []byte
+	DelegatedStakingClaimAmount       uint64
+	TemporaryAccountRegistrationIndex uint64
+	DelegateSignature                 []byte
 }
 
 func (payloadExtra *TransactionZetherPayloadExtraClaim) getAmount(payloadStatement *crypto.Statement) (uint64, error) {
@@ -34,7 +34,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) getAmount(payloadStateme
 func (payloadExtra *TransactionZetherPayloadExtraClaim) BeforeIncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	var accs *accounts.Accounts
-	var acc *account.Account
+	var tempAcc *account.Account
 
 	amount, err := payloadExtra.getAmount(payloadStatement)
 	if err != nil {
@@ -57,24 +57,23 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) BeforeIncludeTxPayload(t
 		return
 	}
 
-	reg := payloadRegistrations.Registrations[payloadExtra.RegistrationIndex]
+	reg := payloadRegistrations.Registrations[payloadExtra.TemporaryAccountRegistrationIndex]
 	if reg == nil || reg.RegistrationType != transaction_zether_registration.NOT_REGISTERED {
 		return errors.New("Account must not be registered before! It should be a new one")
 	}
 
-	publicKey := publicKeyList[payloadExtra.RegistrationIndex]
-
+	newAccountPublicKey := publicKeyList[payloadExtra.TemporaryAccountRegistrationIndex]
 	if accs, err = dataStorage.AccsCollection.GetMap(payloadAsset); err != nil {
 		return
 	}
 
-	if acc, err = accs.GetAccount(publicKey); err != nil {
+	if tempAcc, err = accs.GetAccount(newAccountPublicKey); err != nil {
 		return
 	}
 
-	acc.Balance.AddBalanceUint(amount)
+	tempAcc.Balance.AddBalanceUint(amount)
 
-	return accs.Update(string(publicKey), acc)
+	return accs.Update(string(newAccountPublicKey), tempAcc)
 }
 
 func (payloadExtra *TransactionZetherPayloadExtraClaim) IncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
@@ -84,10 +83,10 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) IncludeTxPayload(txHash 
 		return
 	}
 
-	publicKey := publicKeyList[payloadExtra.RegistrationIndex]
+	newAccountPublicKey := publicKeyList[payloadExtra.TemporaryAccountRegistrationIndex]
 
-	accs.Delete(string(publicKey))
-	dataStorage.Regs.Delete(string(publicKey))
+	accs.Delete(string(newAccountPublicKey))
+	dataStorage.Regs.Delete(string(newAccountPublicKey))
 
 	return
 }
@@ -105,7 +104,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) Validate(payloadRegistra
 		return errors.New("Payload burn value must be zero")
 	}
 
-	if int(payloadExtra.RegistrationIndex) >= len(payloadRegistrations.Registrations) {
+	if int(payloadExtra.TemporaryAccountRegistrationIndex) >= len(payloadRegistrations.Registrations) {
 		return errors.New("RegistrationIndex is invalid")
 	}
 
@@ -126,7 +125,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) VerifyExtraSignature(has
 func (payloadExtra *TransactionZetherPayloadExtraClaim) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.Write(payloadExtra.DelegatePublicKey)
 	w.WriteUvarint(payloadExtra.DelegatedStakingClaimAmount)
-	w.WriteUvarint(payloadExtra.RegistrationIndex)
+	w.WriteUvarint(payloadExtra.TemporaryAccountRegistrationIndex)
 	if inclSignature {
 		w.Write(payloadExtra.DelegateSignature)
 	}
@@ -139,7 +138,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) Deserialize(r *helpers.B
 	if payloadExtra.DelegatedStakingClaimAmount, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if payloadExtra.RegistrationIndex, err = r.ReadUvarint(); err != nil {
+	if payloadExtra.TemporaryAccountRegistrationIndex, err = r.ReadUvarint(); err != nil {
 		return
 	}
 	if payloadExtra.DelegateSignature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
@@ -151,7 +150,7 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) Deserialize(r *helpers.B
 
 func (payloadExtra *TransactionZetherPayloadExtraClaim) UpdateStatement(payloadStatement *crypto.Statement) (err error) {
 
-	serialized := append(payloadStatement.CLn[payloadExtra.RegistrationIndex].EncodeCompressed(), payloadStatement.CRn[payloadExtra.RegistrationIndex].EncodeCompressed()...)
+	serialized := append(payloadStatement.CLn[payloadExtra.TemporaryAccountRegistrationIndex].EncodeCompressed(), payloadStatement.CRn[payloadExtra.TemporaryAccountRegistrationIndex].EncodeCompressed()...)
 
 	var balance *crypto.ElGamal
 	if balance, err = new(crypto.ElGamal).Deserialize(serialized); err != nil {
@@ -165,8 +164,8 @@ func (payloadExtra *TransactionZetherPayloadExtraClaim) UpdateStatement(payloadS
 
 	balance = balance.Plus(new(big.Int).SetUint64(amount))
 
-	payloadStatement.CLn[payloadExtra.RegistrationIndex] = balance.Left
-	payloadStatement.CRn[payloadExtra.RegistrationIndex] = balance.Right
+	payloadStatement.CLn[payloadExtra.TemporaryAccountRegistrationIndex] = balance.Left
+	payloadStatement.CRn[payloadExtra.TemporaryAccountRegistrationIndex] = balance.Right
 
 	return
 }
