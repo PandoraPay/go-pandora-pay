@@ -88,6 +88,6 @@ func (wallet *Wallet) InitializeWallet(updateAccounts *multicast.MulticastChanne
 	wallet.Lock.Unlock()
 
 	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
-		wallet.updateAccountsChanges()
+		wallet.processRefreshWallets()
 	}
 }

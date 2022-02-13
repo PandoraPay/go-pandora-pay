@@ -206,23 +206,6 @@ func (wallet *Wallet) StartWallet() error {
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 
-		//accsCollection := accounts.NewAccountsCollection(reader)
-		//accs, err := accsCollection.GetMap(config_coins.NATIVE_ASSET_FULL)
-		//if err != nil {
-		//	return
-		//}
-
-		//for _, adr := range wallet.Addresses {
-		//	var acc *account.Account
-		//	if acc, err = accs.GetAccount(adr.PublicKey); err != nil {
-		//		return
-		//	}
-		//
-		//	if err = wallet.refreshWalletAccount(acc, adr, false); err != nil {
-		//		return
-		//	}
-		//}
-
 		plainAccs := plain_accounts.NewPlainAccounts(reader)
 		for _, adr := range wallet.Addresses {
 			var plainAcc *plain_account.PlainAccount

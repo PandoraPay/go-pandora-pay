@@ -29,37 +29,32 @@ type ForgingWallet struct {
 type ForgingWalletAddressUpdate struct {
 	delegatedPriv helpers.HexBytes
 	pubKey        helpers.HexBytes
-	hasPlainAcc   bool
 	plainAcc      *plain_account.PlainAccount
 }
 
-type ForgingWalletAddress struct {
-	delegatedPrivateKey     *addresses.PrivateKey
-	delegatedStakePublicKey helpers.HexBytes //20 byte
-	delegatedStakeFee       uint64
-	publicKey               helpers.HexBytes //20byte
-	publicKeyStr            string
-	plainAcc                *plain_account.PlainAccount
-	workerIndex             int
-}
+func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasPlainAcc bool, plainAcc *plain_account.PlainAccount) (err error) {
 
-func (walletAddr *ForgingWalletAddress) clone() *ForgingWalletAddress {
-	return &ForgingWalletAddress{
-		walletAddr.delegatedPrivateKey,
-		walletAddr.delegatedStakePublicKey,
-		walletAddr.delegatedStakeFee,
-		walletAddr.publicKey,
-		walletAddr.publicKeyStr,
-		walletAddr.plainAcc,
-		walletAddr.workerIndex,
+	if !hasPlainAcc {
+
+		//let's read the balance
+		if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+			chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+			plainAccs := plain_accounts.NewPlainAccounts(reader)
+			if plainAcc, err = plainAccs.GetPlainAccount(pubKey, chainHeight); err != nil {
+				return
+			}
+
+			return
+		}); err != nil {
+			return
+		}
+
 	}
-}
 
-func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasPlainAcc bool, plainAcc *plain_account.PlainAccount) {
 	w.updateWalletAddressCn <- &ForgingWalletAddressUpdate{
 		delegatedPriv,
 		pubKey,
-		hasPlainAcc,
 		plainAcc,
 	}
 	return
@@ -87,13 +82,20 @@ func (w *ForgingWallet) updateAccountToForgingWorkers(addr *ForgingWalletAddress
 
 		addr.workerIndex = index
 		w.workersAddresses[index]++
-		w.workers[index].addWalletAddressCn <- addr.clone()
+
+	}
+	newWorkerIndex := addr.workerIndex
+
+	if newWorkerIndex != -1 {
+		w.workers[addr.workerIndex].addWalletAddressCn <- addr.clone()
 	}
 
-	w.workers[addr.workerIndex].addWalletAddressCn <- addr.clone()
 }
 
-func (w *ForgingWallet) removeAccountFromForgingWorkers(addr *ForgingWalletAddress) {
+func (w *ForgingWallet) removeAccountFromForgingWorkers(publicKey string) {
+
+	addr := w.addressesMap[publicKey]
+
 	if addr != nil && addr.workerIndex != -1 {
 		w.workers[addr.workerIndex].removeWalletAddressCn <- addr.publicKeyStr
 		w.workersAddresses[addr.workerIndex]--
@@ -102,9 +104,8 @@ func (w *ForgingWallet) removeAccountFromForgingWorkers(addr *ForgingWalletAddre
 }
 
 func (w *ForgingWallet) deleteAccount(publicKey string) {
-	if account := w.addressesMap[publicKey]; account != nil {
-		delete(w.addressesMap, publicKey)
-		w.removeAccountFromForgingWorkers(account)
+	if addr := w.addressesMap[publicKey]; addr != nil {
+		w.removeAccountFromForgingWorkers(publicKey)
 	}
 }
 
@@ -143,9 +144,7 @@ func (w *ForgingWallet) processUpdates() {
 
 			//let's delete it
 			if update.delegatedPriv == nil {
-
-				w.removeAccountFromForgingWorkers(w.addressesMap[string(update.pubKey)])
-
+				w.removeAccountFromForgingWorkers(key)
 			} else {
 
 				delegatedPrivateKey := &addresses.PrivateKey{Key: update.delegatedPriv}
@@ -154,22 +153,6 @@ func (w *ForgingWallet) processUpdates() {
 				plainAcc := update.plainAcc
 
 				if err = func() (err error) {
-
-					if !update.hasPlainAcc {
-						//let's read the balance
-						if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-							chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
-							plainAccs := plain_accounts.NewPlainAccounts(reader)
-							if plainAcc, err = plainAccs.GetPlainAccount(update.pubKey, chainHeight); err != nil {
-								return
-							}
-
-							return
-						}); err != nil {
-							return
-						}
-					}
 
 					if plainAcc == nil {
 						return errors.New("Plain Account was not found")
@@ -212,7 +195,7 @@ func (w *ForgingWallet) processUpdates() {
 
 					return
 				}(); err != nil {
-					w.removeAccountFromForgingWorkers(w.addressesMap[key])
+					w.deleteAccount(key)
 					gui.GUI.Error(err)
 				}
 
@@ -253,12 +236,12 @@ func (w *ForgingWallet) processUpdates() {
 
 							return
 						}(); err != nil {
-							w.removeAccountFromForgingWorkers(w.addressesMap[k])
+							w.deleteAccount(k)
 							gui.GUI.Error(err)
 						}
 
 					} else if v.Stored == "delete" {
-						w.removeAccountFromForgingWorkers(w.addressesMap[k])
+						w.deleteAccount(k)
 						gui.GUI.Error("Account was deleted from Forging")
 					}
 

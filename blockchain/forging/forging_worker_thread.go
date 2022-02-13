@@ -121,8 +121,8 @@ func (worker *ForgingWorkerThread) forge() {
 		case newWalletAddr := <-worker.addWalletAddressCn:
 			walletAddr := wallets[newWalletAddr.publicKeyStr]
 			if walletAddr == nil {
-				walletAddr = &ForgingWorkerThreadAddress{ //making sure i have a copy
-					newWalletAddr.clone(),
+				walletAddr = &ForgingWorkerThreadAddress{ //making sure the has a copy
+					newWalletAddr, //already it is copied
 					0,
 				}
 				wallets[newWalletAddr.publicKeyStr] = walletAddr

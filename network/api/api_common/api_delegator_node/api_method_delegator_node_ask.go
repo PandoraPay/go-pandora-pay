@@ -30,7 +30,7 @@ func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAs
 	if err != nil {
 		return nil
 	}
-	if !address.VerifySignedMessage(args.ChallengeSignature, api.challenge) {
+	if !address.VerifySignedMessage(api.challenge, args.ChallengeSignature) {
 		return errors.New("Challenge was not verified!")
 	}
 

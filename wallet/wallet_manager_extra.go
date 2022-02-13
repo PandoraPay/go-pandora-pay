@@ -59,43 +59,41 @@ func (wallet *Wallet) updateWallet() {
 	gui.GUI.InfoUpdate("Wallet Addrs", fmt.Sprintf("%d  %s", wallet.Count, wallet.Encryption.Encrypted))
 }
 
+//it must be locked and use original walletAddresses, not cloned ones
 func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAccount, addr *wallet_address.WalletAddress, lock bool) (err error) {
 
-	if plainAcc == nil {
-		return
+	if lock {
+		return errors.New("wallet should be locked before")
 	}
 
-	if addr.DelegatedStake != nil && !plainAcc.DelegatedStake.HasDelegatedStake() {
+	prevDelegatedStake := addr.DelegatedStake
+
+	if plainAcc == nil || !plainAcc.DelegatedStake.HasDelegatedStake() {
 		addr.DelegatedStake = nil
-
-		if addr.PrivateKey == nil {
-			_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, lock)
-			return
+	} else {
+		if (plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE) ||
+			(plainAcc.DelegatedStake.DelegatedStakeFee > 0 && len(config_nodes.DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY) == 0) {
+			addr.DelegatedStake = nil
 		}
-
-		return
+		if addr.DelegatedStake != nil && !bytes.Equal(addr.DelegatedStake.PublicKey, plainAcc.DelegatedStake.DelegatedStakePublicKey) {
+			addr.DelegatedStake = nil
+		}
 	}
 
-	if (addr.DelegatedStake != nil && plainAcc.DelegatedStake.HasDelegatedStake() && !bytes.Equal(addr.DelegatedStake.PublicKey, plainAcc.DelegatedStake.DelegatedStakePublicKey)) ||
-		(addr.DelegatedStake == nil && plainAcc.DelegatedStake.HasDelegatedStake()) {
+	if addr.DelegatedStake == nil {
 
 		if addr.PrivateKey == nil {
+			wallet.forging.Wallet.RemoveWallet(addr.PublicKey, true, plainAcc)
 			_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, lock)
 			return
 		}
 
-		if plainAcc.DelegatedStake.HasDelegatedStake() {
+		lastKnownNonce := uint32(0)
+		if addr.DelegatedStake != nil {
+			lastKnownNonce = addr.DelegatedStake.LastKnownNonce
+		}
 
-			if plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE {
-				_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, lock)
-				return
-			}
-
-			lastKnownNonce := uint32(0)
-			if addr.DelegatedStake != nil {
-				lastKnownNonce = addr.DelegatedStake.LastKnownNonce
-			}
-
+		if plainAcc != nil {
 			var delegatedStake *wallet_address.WalletAddressDelegatedStake
 			if delegatedStake, err = addr.FindDelegatedStake(uint32(plainAcc.Nonce), lastKnownNonce, plainAcc.DelegatedStake.DelegatedStakePublicKey); err != nil {
 				_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, lock)
@@ -105,14 +103,12 @@ func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAcc
 			if delegatedStake != nil {
 				addr.DelegatedStake = delegatedStake
 				wallet.forging.Wallet.AddWallet(addr.DelegatedStake.PrivateKey.Key, addr.PublicKey, true, plainAcc)
-				return wallet.saveWalletAddress(addr, lock)
 			}
-
 		}
 
-		addr.DelegatedStake = nil
-		wallet.forging.Wallet.RemoveWallet(addr.PublicKey, true, plainAcc)
+	}
 
+	if prevDelegatedStake != addr.DelegatedStake {
 		return wallet.saveWalletAddress(addr, lock)
 	}
 
