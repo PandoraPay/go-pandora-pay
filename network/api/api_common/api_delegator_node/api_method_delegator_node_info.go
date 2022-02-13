@@ -10,15 +10,17 @@ import (
 )
 
 type ApiDelegatorNodeInfoReply struct {
-	MaximumAllowed int              `json:"maximumAllowed" msgpack:"maximumAllowed"`
-	DelegatesCount int              `json:"delegatesCount" msgpack:"delegatesCount"`
-	DelegatesFee   uint64           `json:"delegatesFee" msgpack:"delegatesFee"`
-	Challenge      helpers.HexBytes `json:"challenge" msgpack:"challenge"`
-	Blocks         uint64           `json:"blocks" msgpack:"blocks"`
+	MaximumAllowed   int              `json:"maximumAllowed" msgpack:"maximumAllowed"`
+	DelegatesCount   int              `json:"delegatesCount" msgpack:"delegatesCount"`
+	DelegatesFee     uint64           `json:"delegatesFee" msgpack:"delegatesFee"`
+	Challenge        helpers.HexBytes `json:"challenge" msgpack:"challenge"`
+	Blocks           uint64           `json:"blocks" msgpack:"blocks"`
+	AcceptCustomKeys bool             `json:"acceptCustomKeys" msgpack:"acceptCustomKeys"`
 }
 
 func (api *DelegatorNode) DelegatorNodeInfo(r *http.Request, args *struct{}, reply *ApiDelegatorNodeInfoReply) error {
 	reply.MaximumAllowed = config_nodes.DELEGATES_MAXIMUM
+	reply.AcceptCustomKeys = config_nodes.DELEGATOR_ACCEPT_CUSTOM_KEYS
 	reply.DelegatesCount = api.wallet.GetDelegatesCount()
 	reply.DelegatesFee = config_nodes.DELEGATOR_FEE
 	reply.Challenge = api.challenge

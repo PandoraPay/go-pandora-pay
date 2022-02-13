@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/addresses"
-	"pandora-pay/config/globals"
+	"pandora-pay/config/config_nodes"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
@@ -45,7 +45,7 @@ func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAs
 	}
 
 	var delegatedStakingPrivateKey *addresses.PrivateKey
-	if globals.Arguments["--delegator-accept-custom-keys"] != "true" {
+	if config_nodes.DELEGATOR_ACCEPT_CUSTOM_KEYS {
 		delegatedStakingPrivateKey = addresses.GenerateNewPrivateKey()
 	} else {
 		if len(args.DelegatedStakingPrivateKey) != cryptography.PrivateKeySize {

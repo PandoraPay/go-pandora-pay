@@ -62,10 +62,19 @@ var (
 )
 
 var (
-	DELEGATES_ALLOWED_ENABLED             = false
+	/* DELEGATES_ALLOWED_ENABLES
+	this will enable accepting delegating for other users their delegated stakes
+	*/
+	DELEGATOR_ENABLED                     = false
 	DELEGATES_MAXIMUM                     = 10000
 	DELEGATOR_FEE                         = uint64(math.Floor(0.00 * float64(config_stake.DELEGATING_STAKING_FEE_MAX_VALUE))) // max DELEGATING_STAKING_FEE_MAX_VALUE
 	DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY = []byte{}
+	/* DELEGATOR_ACCEPT_CUSTOM_KEYS
+	This will allow the full node to accept user generated delegated stakes.
+	Be aware that the user can share the private key with other delegators.
+	This option should be used only if the reward is NOT divided (like a staking pool)!
+	*/
+	DELEGATOR_ACCEPT_CUSTOM_KEYS = false
 )
 
 func InitConfig() (err error) {
@@ -82,20 +91,24 @@ func InitConfig() (err error) {
 		}
 	}
 
+	if DELEGATOR_FEE > config_stake.DELEGATING_STAKING_FEE_MAX_VALUE {
+		return errors.New("DELEGATOR_FEE is invalid")
+	}
+
 	if globals.Arguments["--delegator-reward-collector-pub-key"] != nil {
 		DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY = helpers.DecodeHex(globals.Arguments["--delegator-reward-collector-pub-key"].(string))
 	}
 
-	if globals.Arguments["--delegates-allowed-enabled"] == "true" {
-		DELEGATES_ALLOWED_ENABLED = true
+	if globals.Arguments["--delegator-enabled"] == "true" {
+		DELEGATOR_ENABLED = true
 
 		if DELEGATOR_FEE > 0 && len(DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY) != cryptography.PublicKeySize {
 			return errors.New("DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY is invalid")
 		}
 	}
 
-	if DELEGATOR_FEE > config_stake.DELEGATING_STAKING_FEE_MAX_VALUE {
-		return errors.New("DELEGATOR_FEE is invalid")
+	if globals.Arguments["--delegator-accept-custom-keys"] == "true" {
+		DELEGATOR_ACCEPT_CUSTOM_KEYS = true
 	}
 
 	return nil

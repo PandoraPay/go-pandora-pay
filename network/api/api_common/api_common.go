@@ -73,7 +73,7 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 	}
 
 	var delegatorNode *api_delegator_node.DelegatorNode
-	if config_nodes.DELEGATES_ALLOWED_ENABLED {
+	if config_nodes.DELEGATOR_ENABLED {
 		delegatorNode = api_delegator_node.NewDelegatorNode(chain, wallet)
 	}
 
