@@ -27,7 +27,6 @@ func CreateForging(mempool *mempool.Mempool) (*Forging, error) {
 	forging := &Forging{
 		mempool,
 		&ForgingWallet{
-			[]*ForgingWalletAddress{},
 			map[string]*ForgingWalletAddress{},
 			[]int{},
 			[]*ForgingWorkerThread{},

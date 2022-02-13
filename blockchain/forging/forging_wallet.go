@@ -16,7 +16,6 @@ import (
 )
 
 type ForgingWallet struct {
-	addresses             []*ForgingWalletAddress
 	addressesMap          map[string]*ForgingWalletAddress
 	workersAddresses      []int
 	workers               []*ForgingWorkerThread
@@ -94,22 +93,17 @@ func (w *ForgingWallet) accountInserted(addr *ForgingWalletAddress) {
 }
 
 func (w *ForgingWallet) accountRemoved(addr *ForgingWalletAddress) {
-	if addr.workerIndex != -1 {
+	if addr != nil && addr.workerIndex != -1 {
 		w.workers[addr.workerIndex].removeWalletAddressCn <- addr.publicKeyStr
 		w.workersAddresses[addr.workerIndex]--
 		addr.workerIndex = -1
 	}
 }
 
-func (w *ForgingWallet) deleteAccount(publicKey []byte) {
-
-	delete(w.addressesMap, string(publicKey))
-	for i, address := range w.addresses {
-		if bytes.Equal(address.publicKey, publicKey) {
-			w.addresses = append(w.addresses[:i], w.addresses[:i+1]...)
-			w.accountRemoved(address)
-			return
-		}
+func (w *ForgingWallet) deleteAccount(publicKey string) {
+	if account := w.addressesMap[publicKey]; account != nil {
+		delete(w.addressesMap, publicKey)
+		w.accountRemoved(account)
 	}
 }
 
@@ -128,7 +122,7 @@ func (w *ForgingWallet) processUpdates() {
 			}
 			w.workers = workers
 			w.workersAddresses = make([]int, len(workers))
-			for _, addr := range w.addresses {
+			for _, addr := range w.addressesMap {
 				w.accountInserted(addr)
 			}
 		case _, ok := <-w.workersDestroyedCn:
@@ -137,7 +131,7 @@ func (w *ForgingWallet) processUpdates() {
 			}
 			w.workers = []*ForgingWorkerThread{}
 			w.workersAddresses = []int{}
-			for _, addr := range w.addresses {
+			for _, addr := range w.addressesMap {
 				addr.workerIndex = -1
 			}
 		case update, ok := <-w.updateWalletAddressCn:
@@ -149,7 +143,7 @@ func (w *ForgingWallet) processUpdates() {
 			//let's delete it
 			if update.delegatedPriv == nil {
 
-				w.deleteAccount(update.pubKey)
+				w.accountRemoved(w.addressesMap[string(update.pubKey)])
 
 			} else {
 
@@ -205,7 +199,6 @@ func (w *ForgingWallet) processUpdates() {
 							plainAcc,
 							-1,
 						}
-						w.addresses = append(w.addresses, address)
 						w.addressesMap[key] = address
 						w.accountInserted(address)
 					} else {
@@ -218,7 +211,7 @@ func (w *ForgingWallet) processUpdates() {
 
 					return
 				}(); err != nil {
-					w.deleteAccount(update.pubKey)
+					w.accountRemoved(w.addressesMap[key])
 					gui.GUI.Error(err)
 				}
 
@@ -259,13 +252,13 @@ func (w *ForgingWallet) processUpdates() {
 
 							return
 						}(); err != nil {
-							w.deleteAccount([]byte(k))
+							w.accountRemoved(w.addressesMap[k])
 							gui.GUI.Error(err)
 						}
 
 					} else if v.Stored == "delete" {
-						w.deleteAccount([]byte(k))
-						gui.GUI.Error("Account was deleted")
+						w.accountRemoved(w.addressesMap[k])
+						gui.GUI.Error("Account was deleted from Forging")
 					}
 
 				}
