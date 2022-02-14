@@ -2,13 +2,11 @@ package api_delegator_node
 
 import (
 	"errors"
-	"fmt"
 	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/config/config_nodes"
-	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
@@ -38,35 +36,29 @@ func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAs
 		return errors.New("Challenge was not verified!")
 	}
 
-	addr := api.wallet.GetWalletAddressByPublicKey(publicKey, false)
-	if addr != nil {
+	addr := api.wallet.GetWalletAddressByPublicKey(publicKey, true)
+	if addr != nil && addr.PrivateKey == nil {
 		reply.Exists = true
 		return nil
 	}
 
 	var delegatedStakingPrivateKey *addresses.PrivateKey
-	if config_nodes.DELEGATOR_ACCEPT_CUSTOM_KEYS {
+	if !config_nodes.DELEGATOR_ACCEPT_CUSTOM_KEYS || len(args.DelegatedStakingPrivateKey) == 0 {
 		delegatedStakingPrivateKey = addresses.GenerateNewPrivateKey()
 	} else {
-		if len(args.DelegatedStakingPrivateKey) != cryptography.PrivateKeySize {
-			return fmt.Errorf("delegatedStakingPrivateKey must be of size %d", cryptography.PrivateKeySize)
+		if delegatedStakingPrivateKey, err = addresses.CreatePrivateKeyFromSeed(args.DelegatedStakingPrivateKey); err != nil {
+			return err
 		}
-		delegatedStakingPrivateKey = &addresses.PrivateKey{args.DelegatedStakingPrivateKey}
 	}
 
 	delegatedStakingPublicKey := delegatedStakingPrivateKey.GeneratePublicKey()
 
-	pendingDelegateStakeChange, loaded := api.pendingDelegatesStakesChanges.LoadOrStore(string(publicKey), &PendingDelegateStakeChange{
+	api.pendingDelegatesStakesChanges.Store(string(publicKey), &PendingDelegateStakeChange{
 		delegatedStakingPrivateKey,
 		delegatedStakingPublicKey,
 		publicKey,
 		atomic.LoadUint64(&api.chainHeight),
 	})
-
-	if loaded {
-		delegatedStakingPrivateKey = pendingDelegateStakeChange.delegateStakingPrivateKey
-		delegatedStakingPublicKey = pendingDelegateStakeChange.delegateStakingPublicKey
-	}
 
 	reply.DelegatedStakingPublicKey = delegatedStakingPublicKey
 	return nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"pandora-pay/config"
+	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/cryptography/crypto/balance-decoder"
@@ -66,6 +67,9 @@ func GenerateNewPrivateKey() *PrivateKey {
 	return &PrivateKey{Key: privateKey}
 }
 
-func CreatePrivateKeyFromSeed(seed []byte) *PrivateKey {
-	return &PrivateKey{Key: seed}
+func CreatePrivateKeyFromSeed(key []byte) (*PrivateKey, error) {
+	if len(key) != cryptography.PrivateKeySize {
+		return nil, errors.New("Private key length is invalid")
+	}
+	return &PrivateKey{Key: key}, nil
 }

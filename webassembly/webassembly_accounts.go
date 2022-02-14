@@ -18,7 +18,7 @@ func decodeAddress(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func generateAddress(this js.Value, args []js.Value) interface{} {
+func createAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		parameters := struct {
@@ -49,6 +49,33 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 func generateNewAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		priv := addresses.GenerateNewPrivateKey()
+		addr, err := priv.GenerateAddress(true, nil, 0, nil)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return webassembly_utils.ConvertJSONBytes([]interface{}{
+			hex.EncodeToString(priv.Key),
+			addr.EncodeAddr(),
+			hex.EncodeToString(addr.PublicKey),
+		})
+	})
+}
+
+func generateAddress(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+
+		privateKey, err := hex.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
+		}
+
+		priv, err := addresses.CreatePrivateKeyFromSeed(privateKey)
+		if err != nil {
+			return nil, err
+		}
+
 		addr, err := priv.GenerateAddress(true, nil, 0, nil)
 
 		if err != nil {

@@ -12,7 +12,7 @@ import (
 type ApiDelegatorNodeInfoReply struct {
 	MaximumAllowed   int              `json:"maximumAllowed" msgpack:"maximumAllowed"`
 	DelegatesCount   int              `json:"delegatesCount" msgpack:"delegatesCount"`
-	DelegatesFee     uint64           `json:"delegatesFee" msgpack:"delegatesFee"`
+	DelegatorFee     uint64           `json:"delegatorFee" msgpack:"delegatorFee"`
 	Challenge        helpers.HexBytes `json:"challenge" msgpack:"challenge"`
 	Blocks           uint64           `json:"blocks" msgpack:"blocks"`
 	AcceptCustomKeys bool             `json:"acceptCustomKeys" msgpack:"acceptCustomKeys"`
@@ -22,7 +22,7 @@ func (api *DelegatorNode) DelegatorNodeInfo(r *http.Request, args *struct{}, rep
 	reply.MaximumAllowed = config_nodes.DELEGATES_MAXIMUM
 	reply.AcceptCustomKeys = config_nodes.DELEGATOR_ACCEPT_CUSTOM_KEYS
 	reply.DelegatesCount = api.wallet.GetDelegatesCount()
-	reply.DelegatesFee = config_nodes.DELEGATOR_FEE
+	reply.DelegatorFee = config_nodes.DELEGATOR_FEE
 	reply.Challenge = api.challenge
 	reply.Blocks = atomic.LoadUint64(&api.chainHeight)
 	return nil

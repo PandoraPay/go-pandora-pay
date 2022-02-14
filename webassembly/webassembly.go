@@ -68,6 +68,7 @@ func Initialize(startMainCb func()) {
 			"decryptTx": js.FuncOf(decryptTx),
 		}),
 		"addresses": js.ValueOf(map[string]interface{}{
+			"createAddress":      js.FuncOf(createAddress),
 			"decodeAddress":      js.FuncOf(decodeAddress),
 			"generateAddress":    js.FuncOf(generateAddress),
 			"generateNewAddress": js.FuncOf(generateNewAddress),
