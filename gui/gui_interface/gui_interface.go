@@ -24,10 +24,10 @@ type GUIInterface interface {
 	CommandDefineCallback(Text string, callback func(string, context.Context) error, useIt bool)
 	OutputReadString(text string) string
 	OutputReadFilename(text, extension string) string
-	OutputReadInt(text string, allowEmpty bool, validateCb func(int) bool) int
-	OutputReadUint64(text string, allowEmpty bool, validateCb func(uint64) bool) uint64
-	OutputReadFloat64(text string, allowEmpty bool, validateCb func(float64) bool) float64
-	OutputReadBool(text string) (out bool)
+	OutputReadInt(text string, allowEmpty bool, emptyValue int, validateCb func(int) bool) int
+	OutputReadUint64(text string, allowEmpty bool, emptyValue uint64, validateCb func(uint64) bool) uint64
+	OutputReadFloat64(text string, allowEmpty bool, emptyValue float64, validateCb func(float64) bool) float64
+	OutputReadBool(text string, allowEmpty bool, emptyValue bool) (out bool)
 	OutputReadBytes(text string, validateCb func([]byte) bool) (data []byte)
 }
 

@@ -38,7 +38,7 @@ func (builder *TxsBuilder) readData() (out *wizard.WizardTransactionData) {
 
 	if len(str) > 0 {
 		data.Data = []byte(str)
-		data.Encrypt = gui.GUI.OutputReadBool("Encrypt message (data)? y/n")
+		data.Encrypt = gui.GUI.OutputReadBool("Encrypt message (data)? y/n. Leave empty for no", true, false)
 	}
 
 	return data
@@ -46,7 +46,7 @@ func (builder *TxsBuilder) readData() (out *wizard.WizardTransactionData) {
 
 func (builder *TxsBuilder) readAmount(assetId []byte, text string) (amount uint64, err error) {
 
-	amountFloat := gui.GUI.OutputReadFloat64(text, false, nil)
+	amountFloat := gui.GUI.OutputReadFloat64(text, false, 0, nil)
 
 	err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		asts := assets.NewAssets(reader)
@@ -117,17 +117,17 @@ func (builder *TxsBuilder) readAddressOptional(text string, assetId []byte, allo
 func (builder *TxsBuilder) readZetherRingConfiguration() *ZetherRingConfiguration {
 
 	configuration := &ZetherRingConfiguration{}
-	configuration.RingSize = gui.GUI.OutputReadInt("Ring Size (-1,2,4,8,16,32,64,128,256):", false, func(value int) bool {
+	configuration.RingSize = gui.GUI.OutputReadInt("Ring Size (2,4,8,16,32,64,128,256). Leave empty for random", true, -1, func(value int) bool {
 		switch value {
-		case -1, 2, 4, 8, 16, 32, 64, 128, 256:
+		case 2, 4, 8, 16, 32, 64, 128, 256:
 			return true
 		default:
 			return false
 		}
 	})
 
-	configuration.NewAccounts = gui.GUI.OutputReadInt("Ring New Accounts (-1,0...n-2)", false, func(value int) bool {
-		return value >= -1
+	configuration.NewAccounts = gui.GUI.OutputReadInt("Ring New Accounts (0...n-2). Use empty for random", true, -1, func(value int) bool {
+		return value >= 0
 	})
 
 	return configuration
@@ -138,7 +138,7 @@ func (builder *TxsBuilder) readFee(assetId []byte) (fee *wizard.WizardTransactio
 	var err error
 	fee = &wizard.WizardTransactionFee{}
 
-	fee.PerByteAuto = gui.GUI.OutputReadBool("Compute Automatically Fee Per Byte? y/n")
+	fee.PerByteAuto = gui.GUI.OutputReadBool("Compute Automatically Fee Per Byte? y/n. Leave empty for yes", true, true)
 	if !fee.PerByteAuto {
 
 		if fee.PerByte, err = builder.readAmount(assetId, "Fee per byte"); err != nil {
@@ -161,12 +161,10 @@ func (builder *TxsBuilder) readZetherFee(assetId []byte) (fee *wizard.WizardZeth
 	fee.WizardTransactionFee = builder.readFee(assetId)
 
 	if !bytes.Equal(assetId, config_coins.NATIVE_ASSET_FULL) {
-		fee.Auto = gui.GUI.OutputReadBool("Compute autoamtically Fee Rate Max for Asset")
+		fee.Auto = gui.GUI.OutputReadBool("Compute autoamtically Fee Rate Max for Asset. y/n. Leave empty for yes", true, true)
 		if !fee.Auto {
-			fee.Rate = gui.GUI.OutputReadUint64("Fee Rate for Asset", true, func(value uint64) bool {
-				return true
-			})
-			fee.LeadingZeros = byte(gui.GUI.OutputReadUint64("Fee Leading Zeros for Asset", true, func(value uint64) bool {
+			fee.Rate = gui.GUI.OutputReadUint64("Fee Rate for Asset", true, 0, nil)
+			fee.LeadingZeros = byte(gui.GUI.OutputReadUint64("Fee Leading Zeros for Asset", true, 0, func(value uint64) bool {
 				return value <= uint64(config_assets.ASSETS_DECIMAL_SEPARATOR_MAX)
 			}))
 		}
@@ -186,7 +184,7 @@ func (builder *TxsBuilder) readAsset(text string, allowEmptyAsset bool) []byte {
 }
 
 func (builder *TxsBuilder) readDelegatedStakingUpdate(delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, delegateWalletPublicKey []byte) (err error) {
-	delegatedStakingUpdate.DelegatedStakingHasNewInfo = gui.GUI.OutputReadBool("New Delegate Info? y/n")
+	delegatedStakingUpdate.DelegatedStakingHasNewInfo = gui.GUI.OutputReadBool("New Delegate Info? y/n. Leave empty for no", true, false)
 
 	if delegatedStakingUpdate.DelegatedStakingHasNewInfo {
 
@@ -200,7 +198,7 @@ func (builder *TxsBuilder) readDelegatedStakingUpdate(delegatedStakingUpdate *tr
 			}
 		}
 
-		delegatedStakingUpdate.DelegatedStakingNewFee = gui.GUI.OutputReadUint64("Delegated Staking New Fee. Leave empty for nothing", true, func(value uint64) bool {
+		delegatedStakingUpdate.DelegatedStakingNewFee = gui.GUI.OutputReadUint64("Delegated Staking New Fee. Leave empty for zero fee", true, 0, func(value uint64) bool {
 			return value <= config_stake.DELEGATING_STAKING_FEE_MAX_VALUE
 		})
 	}
@@ -228,7 +226,7 @@ func (builder *TxsBuilder) initCLI() {
 		ringConfiguration := builder.readZetherRingConfiguration()
 		data := builder.readData()
 		fee := builder.readZetherFee(assetId)
-		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
 		tx, err := builder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{nil}, []string{walletAddress.AddressEncoded}, [][]byte{assetId}, []uint64{amount}, []string{recipientAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.WizardTransactionData{data}, []*wizard.WizardZetherTransactionFee{fee}, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
@@ -254,7 +252,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		convertToUnclaimed := gui.GUI.OutputReadBool("Convert the amount to Unclaimed y/n")
+		convertToUnclaimed := gui.GUI.OutputReadBool("Convert the amount to Unclaimed y/n. Leave empty for false", true, false)
 
 		var delegatePrivateKey []byte
 
@@ -278,7 +276,7 @@ func (builder *TxsBuilder) initCLI() {
 
 		data := builder.readData()
 		fee := builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
-		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
 		tx, err := builder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{&wizard.WizardZetherPayloadExtraDelegateStake{DelegatePublicKey: delegateAddress.PublicKey, ConvertToUnclaimed: convertToUnclaimed, DelegatedStakingUpdate: delegatedStakingUpdate, DelegatePrivateKey: delegatePrivateKey}}, []string{walletAddress.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{recipientAmount}, []string{recipientAddress.EncodeAddr()}, []uint64{delegateAmount}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.WizardTransactionData{data}, []*wizard.WizardZetherTransactionFee{fee}, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
@@ -307,7 +305,7 @@ func (builder *TxsBuilder) initCLI() {
 		ringConfiguration := builder.readZetherRingConfiguration()
 		data := builder.readData()
 		fee := builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
-		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
 		tx, err := builder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{&wizard.WizardZetherPayloadExtraClaim{DelegatePrivateKey: delegateWalletAddress.PrivateKey.Key}}, []string{""}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{recipientAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.WizardTransactionData{data}, []*wizard.WizardZetherTransactionFee{fee}, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
@@ -355,7 +353,7 @@ func (builder *TxsBuilder) initCLI() {
 		ringConfiguration := builder.readZetherRingConfiguration()
 		data := builder.readData()
 		fee := builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
-		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
 		tx, err := builder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{&wizard.WizardZetherPayloadExtraAssetCreate{Asset: ast}}, []string{walletAddress.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{recipientAmount}, []string{recipientAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.WizardTransactionData{data}, []*wizard.WizardZetherTransactionFee{fee}, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
@@ -425,7 +423,7 @@ func (builder *TxsBuilder) initCLI() {
 		ringConfiguration := builder.readZetherRingConfiguration()
 		data := builder.readData()
 		fee := builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
-		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
 		tx, err := builder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{&wizard.WizardZetherPayloadExtraAssetSupplyIncrease{AssetId: assetId, ReceiverPublicKey: receiver.PublicKey, Value: value, AssetSupplyPrivateKey: assetSupplyPrivateKey}}, []string{walletAddress.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{recipientAmount}, []string{recipientAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.WizardTransactionData{data}, []*wizard.WizardZetherTransactionFee{fee}, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
@@ -448,7 +446,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
+		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
 
 		txExtra := &wizard.WizardTxSimpleExtraUpdateDelegate{DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{}}
 		if err = builder.readDelegatedStakingUpdate(txExtra.DelegatedStakingUpdate, delegateWalletAddress.PublicKey); err != nil {
@@ -459,11 +457,11 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		feeVersion := gui.GUI.OutputReadBool("Fee Version? y/n")
+		feeVersion := gui.GUI.OutputReadBool("Subtract the fee from unclaimed? y/n. Leave empty for no", true, false)
 
 		data := builder.readData()
 		fee := builder.readFee(config_coins.NATIVE_ASSET_FULL)
-		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
 		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, feeVersion, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
@@ -485,18 +483,18 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
+		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
 
 		txExtra := &wizard.WizardTxSimpleExtraUnstake{}
 		if txExtra.Amount, err = builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Amount"); err != nil {
 			return
 		}
 
-		feeVersion := gui.GUI.OutputReadBool("Fee Version? y/n")
+		feeVersion := gui.GUI.OutputReadBool("Subtract the fee from unclaimed? y/n. Leave empty for no", true, false)
 
 		data := builder.readData()
 		fee := builder.readFee(config_coins.NATIVE_ASSET_FULL)
-		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
 		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, feeVersion, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
@@ -530,24 +528,24 @@ func (builder *TxsBuilder) initCLI() {
 		}
 
 		for {
-			newLiquidity := gui.GUI.OutputReadBool("New Liquidity? y/n")
+			newLiquidity := gui.GUI.OutputReadBool("New Liquidity? y/n", false, false)
 			if !newLiquidity {
 				break
 			}
 			liquidity := &asset_fee_liquidity.AssetFeeLiquidity{}
 			liquidity.Asset = builder.readAsset("Asset", false)
-			liquidity.Rate = gui.GUI.OutputReadUint64("Conversion Rate", false, nil)
-			liquidity.LeadingZeros = byte(gui.GUI.OutputReadUint64("Leading Zeros", true, func(value uint64) bool {
+			liquidity.Rate = gui.GUI.OutputReadUint64("Conversion Rate", false, 0, nil)
+			liquidity.LeadingZeros = byte(gui.GUI.OutputReadUint64("Leading Zeros", true, 0, func(value uint64) bool {
 				return value <= uint64(config_assets.ASSETS_DECIMAL_SEPARATOR_MAX_BYTE)
 			}))
 			txExtra.Liquidities = append(txExtra.Liquidities, liquidity)
 		}
 
-		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
+		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
 
 		data := builder.readData()
 		fee := builder.readFee(config_coins.NATIVE_ASSET_FULL)
-		propagate := gui.GUI.OutputReadBool("Propagate? y/n")
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
 		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, true, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)

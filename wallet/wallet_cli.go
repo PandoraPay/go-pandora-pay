@@ -245,7 +245,7 @@ func (wallet *Wallet) CliSelectAddress(text string, ctx context.Context) (*walle
 		return nil, 0, err
 	}
 
-	index := gui.GUI.OutputReadInt(text, false, func(value int) bool {
+	index := gui.GUI.OutputReadInt(text, false, 0, func(value int) bool {
 		return value < wallet.GetAddressesCount()
 	})
 
@@ -303,7 +303,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		index := gui.GUI.OutputReadInt("Select Address to be Exported", false, nil)
+		index := gui.GUI.OutputReadInt("Select Address to be Exported", false, 0, nil)
 		filename := gui.GUI.OutputReadFilename("Path to export", "pandora")
 
 		f, err := os.Create(filename)
@@ -389,7 +389,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 		str := gui.GUI.OutputReadFilename("Path to import Wallet", "pandorawallet")
 
-		done := gui.GUI.OutputReadBool("Your wallet will be REPLACED with this one! y/n")
+		done := gui.GUI.OutputReadBool("Your wallet will be REPLACED with this one! y/n", false, false)
 
 		if !done {
 			return errors.New("You didn't accept REPLACING your existing wallet")
@@ -445,7 +445,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, nil)
+		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
 		path := gui.GUI.OutputReadFilename("Path to export to a file", "delegatedStake")
 
 		return wallet.deriveDelegatedStake(addr, nonce, path, true)
@@ -500,7 +500,7 @@ func (wallet *Wallet) initWalletCLI() {
 	cliEncryptWallet := func(cmd string, ctx context.Context) (err error) {
 
 		password := gui.GUI.OutputReadString("Password for encrypting wallet")
-		difficulty := gui.GUI.OutputReadInt("Difficulty for encryption", false, func(value int) bool {
+		difficulty := gui.GUI.OutputReadInt("Difficulty for encryption", false, 0, func(value int) bool {
 			return value >= 1 && value <= 10
 		})
 

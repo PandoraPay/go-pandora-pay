@@ -279,17 +279,21 @@ func (g *GUIInteractive) OutputReadFilename(text, extension string) string {
 	return out
 }
 
-func (g *GUIInteractive) OutputReadInt(text string, allowEmpty bool, validateCb func(value int) bool) int {
+func (g *GUIInteractive) OutputReadInt(text string, allowEmpty bool, emptyValue int, validateCb func(value int) bool) int {
 	for {
+
+		var out int
+		var err error
 
 		str := g.OutputReadString(text)
 
-		out, err := strconv.Atoi(str)
 		if !(allowEmpty && str == "") {
-			if err != nil {
+			if out, err = strconv.Atoi(str); err != nil {
 				g.OutputWrite("Invalid Number")
 				continue
 			}
+		} else if allowEmpty {
+			return emptyValue
 		}
 
 		if validateCb != nil && !validateCb(out) {
@@ -300,7 +304,7 @@ func (g *GUIInteractive) OutputReadInt(text string, allowEmpty bool, validateCb 
 	}
 }
 
-func (g *GUIInteractive) OutputReadUint64(text string, allowEmpty bool, validateCb func(value uint64) bool) uint64 {
+func (g *GUIInteractive) OutputReadUint64(text string, allowEmpty bool, emptyValue uint64, validateCb func(value uint64) bool) uint64 {
 
 	for {
 		str := g.OutputReadString(text)
@@ -311,6 +315,8 @@ func (g *GUIInteractive) OutputReadUint64(text string, allowEmpty bool, validate
 				g.OutputWrite("Invalid Number")
 				continue
 			}
+		} else if allowEmpty {
+			return emptyValue
 		}
 
 		if validateCb != nil && !validateCb(out) {
@@ -321,7 +327,7 @@ func (g *GUIInteractive) OutputReadUint64(text string, allowEmpty bool, validate
 	}
 }
 
-func (g *GUIInteractive) OutputReadFloat64(text string, allowEmpty bool, validateCb func(float64) bool) float64 {
+func (g *GUIInteractive) OutputReadFloat64(text string, allowEmpty bool, emptyValue float64, validateCb func(float64) bool) float64 {
 	for {
 		str := g.OutputReadString(text)
 
@@ -331,6 +337,8 @@ func (g *GUIInteractive) OutputReadFloat64(text string, allowEmpty bool, validat
 				g.OutputWrite("Invalid Number")
 				continue
 			}
+		} else if allowEmpty {
+			return emptyValue
 		}
 
 		if validateCb != nil && !validateCb(out) {
@@ -342,9 +350,12 @@ func (g *GUIInteractive) OutputReadFloat64(text string, allowEmpty bool, validat
 	}
 }
 
-func (g *GUIInteractive) OutputReadBool(text string) bool {
+func (g *GUIInteractive) OutputReadBool(text string, allowEmpty bool, emptyValue bool) bool {
 	for {
 		str := g.OutputReadString(text)
+		if allowEmpty && str == "" {
+			return emptyValue
+		}
 		if str == "y" {
 			return true
 		} else if str == "n" {
