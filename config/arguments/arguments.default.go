@@ -41,7 +41,7 @@ Options:
   --hcaptcha-site-key=args                           hcaptcha Site key.
   --hcaptcha-secret=args                             hcaptcha Secret.
   --faucet-testnet-enabled=args                      Enable Faucet Testnet. Use "true" to enable it
-  --delegator-enabled=bool                   Enable Delegator. Will allow other users to Delegate to the node. Use "true" to enable it
+  --delegator-enabled=bool                           Enable Delegator. Will allow other users to Delegate to the node. Use "true" to enable it
   --delegates-maximum=args                           Maximum number of Delegates
   --delegator-fee=args                               Fee required for Delegates
   --delegator-reward-collector-pub-key=args          Delegator Reward Collector Address
