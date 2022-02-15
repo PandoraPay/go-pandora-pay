@@ -14,7 +14,7 @@ import (
 )
 
 type APIMempoolNewTxRequest struct {
-	Tx []byte `json:"tx,omitempty" msgpack:"tx,omitempty"`
+	Tx helpers.Base64 `json:"tx,omitempty" msgpack:"tx,omitempty"`
 }
 
 type APIMempoolNewTxReply struct {

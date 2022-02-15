@@ -3,6 +3,7 @@ package api_common
 import (
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
+	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -10,8 +11,8 @@ import (
 )
 
 type APIBlockCompleteMissingTxsRequest struct {
-	Hash       []byte `json:"hash,omitempty" msgpack:"hash,omitempty"`
-	MissingTxs []int  `json:"missingTxs,omitempty" msgpack:"missingTxs,omitempty"`
+	Hash       helpers.Base64 `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	MissingTxs []int          `json:"missingTxs,omitempty" msgpack:"missingTxs,omitempty"`
 }
 
 type APIBlockCompleteMissingTxsReply struct {

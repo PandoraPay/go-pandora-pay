@@ -16,7 +16,7 @@ import (
 
 type APIBlockRequest struct {
 	Height     uint64                  `json:"height,omitempty" msgpack:"height,omitempty"`
-	Hash       []byte                  `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	Hash       helpers.Base64          `json:"hash,omitempty" msgpack:"hash,omitempty"`
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 

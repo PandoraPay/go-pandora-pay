@@ -4,6 +4,8 @@
 
 There are three types of API in order to interact with PandoraPay DAEMON
 
+Binary data is passed using **base64** not HEX! Passing GET arguments requires **URLEncode**.
+
 1. HTTP
    1. [X] authentication
    2. [x] wallet
@@ -111,23 +113,23 @@ Output
          "seedIndex": 0,
          "isMine": true,
          "privateKey": {
-             "key": "82f9fa0ec4d13f39008ce2a8aab8169a6f1cf3a453b6f4ade19f36dcd675b175"
+             "key": "gvn6DsTRPzkAjOKoqrgWmm8c86RTtvSt4Z823NZ1sXU="
          },
-         "registration": "16fb6f16f399dcd7dc1657444a033f80e9a7029e31fbaa4451f7b772c8703d7b0c117d768516a26707274ef595c084f7512582f00ee4d32359183b1a5cb3e8ce",
-         "publicKey": "027140ac2fc222d87aee8dce2539b83aaa8882658cb23e9ebda18618361e5eb001",
+         "registration": "FvtvFvOZ3NfcFldESgM/gOmnAp4x+6pEUfe3cshwPXsMEX12hRaiZwcnTvWVwIT3USWC8A7k0yNZGDsaXLPozg==",
+         "publicKey": "AnFArC/CIth67o3OJTm4OqqIgmWMsj6evaGGGDYeXrAB",
          "decryptedBalances": {
-             "0000000000000000000000000000000000000000": {
+             "AAAAAAAAAAAAAAAAAAAAAAAAAAA=": {
                  "amount": 242927,                
-                 "encryptedBalance": "15f8136864b1c06ebed9c03a006a61386d9d2c93310ff9758b7d3a5580a49a6d0018b822c42c27ad84d2971544d743417bb28ff7530f848e9d52c23598a665b01d01",
+                 "encryptedBalance": "FfgTaGSxwG6+2cA6AGphOG2dLJMxD/l1i306VYCkmm0AGLgixCwnrYTSlxVE10NBe7KP91MPhI6dUsI1mKZlsB0B",
              }
          },
          "addressEncoded": "PANDDEVAAJxQKwvwiLYeu6NziU5uDqqiIJljLI<nr2hhhg2Hl6wAQCT7qfa",
          "addressRegistrationEncoded": "PANDDEVAAJxQKwvwiLYeu6NziU5uDqqiIJljLI<nr2hhhg2Hl6wAQEKZR0gGenCYXf4jt<ZFx6<e7Nr0SIN9507FRvGT2jOIBGufNElj02S9aKZZ5G9FgmNN06oHjMgbiZRoYdW57NWvfkqfQ==",
          "delegatedStake": {
              "privateKey": {
-                 "key": "3110c3e2c9bc8acb43bf930684adc96ffc83ed3795539ec106d8755464fe7b85"
+                 "key": "MRDD4sm8istDv5MGhK3Jb/yD7TeVU57BBth1VGT+e4U="
              },
-             "publicKey": "2cef23fc2b72689a1e1324a9da1e810972f42444f9b7f40a4fffe395f4d7190300",
+             "publicKey": "LO8j/CtyaJoeEySp2h6BCXL0JET5t/QKT//jlfTXGQMA",
              "lastKnownNonce": 0
          }
     }, ...
@@ -137,7 +139,7 @@ Output
 
 #### wallet/get-balances
 
-Request Using PublicKey `curl http://127.0.0.1:5230/wallet/get-balances?list.0.publicKey=82f9fa0ec4d13f39008ce2a8aab8169a6f1cf3a453b6f4ade19f36dcd675b175&user=username&pass=password`
+Request Using PublicKey `curl http://127.0.0.1:5230/wallet/get-balances?list.0.publicKey=EkgfeoxQYNAeDTR%2BXz85AG8mHEhsPYM8fFSslBsgO7EB&user=username&pass=password`
 
 OR
 
@@ -151,9 +153,9 @@ Output
             "address": "PANDDEVABc3D9FePUuPADupO1p8jvtwEAVG5L3>sDttvmCw><jgAAABpTAR",
             "plainAcc": null,
             "balance":[ {
-                    "balance": "15f8136864b1c06ebed9c03a006a61386d9d2c93310ff9758b7d3a5580a49a6d0018b822c42c27ad84d2971544d743417bb28ff7530f848e9d52c23598a665b01d01",
+                    "balance": "FfgTaGSxwG6+2cA6AGphOG2dLJMxD/l1i306VYCkmm0AGLgixCwnrYTSlxVE10NBe7KP91MPhI6dUsI1mKZlsB0B",
                     "amount": 65205984,
-                    "asset": "0000000000000000000000000000000000000000"
+                    "asset": "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
                 }
             ]
         }
@@ -169,7 +171,7 @@ Output
 
 #### wallet/decrypt-tx
 
-Request Using TxHash `curl http://127.0.0.1:5230/wallet/decrypt-tx?hash=74a4df703278811715d51c79645b57c6cae1d98c256a58c32dab2de60ddfd6b6&user=username&pass=password`
+Request Using TxHash `curl http://127.0.0.1:5230/wallet/decrypt-tx?hash=dKTfcDJ4gRcV1Rx5ZFtXxsrh2YwlaljDLast5g3f1rY%3D&user=username&pass=password`
 
 Output
 ```
@@ -183,7 +185,7 @@ Output
                "whisperRecipientValid":false,
                "receivedAmount":0,
                "recipientIndex":9,
-               "message":"546573746e657420466175636574205478"
+               "message":"VGVzdG5ldCBGYXVjZXQgVHg="
             }
          ]
       }
@@ -207,7 +209,11 @@ In case the whisper is malformed it will return accordingly.
 
 #### wallet/private-transfer
 
-Creating private transfer `curl http://127.0.0.1:5230/wallet/create-trasfer?&user=username&pass=password`
+Creating private transfer `
+curl -X POST  \
+-H 'Content-Type: application/json'  \
+-d '{ "user": "user", "pass": "pass", "data": { "payloads": [ {"sender":  "PANDDEVAAaBVqiVyecV\u003cysBwcT\u003cGRkIHPBdbHZ9hwaS4wfV4xKYAQAPLjdy",  "recipient":  "PANDDEVABjp7xeB<oGlMe5PdvIq7oGhUq3iquvERZS3<Ax6CCzqAABnVMdN",  "amount": 100 }] }, "propagate": true }' http://127.0.0.1:5232/wallet/private-transfer
+`
 
 **WARNING!** When creating a private transfer, the balance must be decrypted for signing. The decryptor is a making brute force trying all possible balances starting from 0. If you have more than 8 decimals values, it could take even a few minutes to decrypt the balance is case it was changed.
 

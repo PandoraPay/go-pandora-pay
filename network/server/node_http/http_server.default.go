@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 )
 
 func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
@@ -22,8 +23,12 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
 	callback := server.GetMap[req.URL.Path]
 	if callback != nil {
-		arguments := req.URL.Query()
-		output, err = callback(arguments)
+		args, err := url.ParseQuery(req.URL.RawQuery)
+		if err != nil {
+			http.Error(w, err.(error).Error(), http.StatusInternalServerError)
+			return
+		}
+		output, err = callback(args)
 	} else {
 		err = errors.New("Unknown request")
 	}
@@ -62,13 +67,9 @@ func (server *HttpServer) post(w http.ResponseWriter, req *http.Request) {
 	var err error
 	var output interface{}
 
-	callback := server.GetMap[req.URL.Path]
+	callback := server.PostMap[req.URL.Path]
 	if callback != nil {
-		if err = req.ParseForm(); err == nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		output, err = callback(req.Form)
+		output, err = callback(req.Body)
 	} else {
 		err = errors.New("Unknown request")
 	}

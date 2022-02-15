@@ -4,17 +4,18 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/config/config_nodes"
+	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
 	"sync/atomic"
 )
 
 type ApiDelegatorNodeInfoReply struct {
-	MaximumAllowed   int    `json:"maximumAllowed" msgpack:"maximumAllowed"`
-	DelegatesCount   int    `json:"delegatesCount" msgpack:"delegatesCount"`
-	DelegatorFee     uint64 `json:"delegatorFee" msgpack:"delegatorFee"`
-	Challenge        []byte `json:"challenge" msgpack:"challenge"`
-	Blocks           uint64 `json:"blocks" msgpack:"blocks"`
-	AcceptCustomKeys bool   `json:"acceptCustomKeys" msgpack:"acceptCustomKeys"`
+	MaximumAllowed   int            `json:"maximumAllowed" msgpack:"maximumAllowed"`
+	DelegatesCount   int            `json:"delegatesCount" msgpack:"delegatesCount"`
+	DelegatorFee     uint64         `json:"delegatorFee" msgpack:"delegatorFee"`
+	Challenge        helpers.Base64 `json:"challenge" msgpack:"challenge"`
+	Blocks           uint64         `json:"blocks" msgpack:"blocks"`
+	AcceptCustomKeys bool           `json:"acceptCustomKeys" msgpack:"acceptCustomKeys"`
 }
 
 func (api *DelegatorNode) DelegatorNodeInfo(r *http.Request, args *struct{}, reply *ApiDelegatorNodeInfoReply) error {

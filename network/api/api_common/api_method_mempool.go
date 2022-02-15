@@ -5,15 +5,16 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/config"
+	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 )
 
 type APIMempoolRequest struct {
-	ChainHash []byte `json:"chainHash,omitempty" msgpack:"chainHash,omitempty"`
-	Page      int    `json:"page,omitempty" msgpack:"page,omitempty"`
-	Count     int    `json:"count,omitempty" msgpack:"count,omitempty"`
+	ChainHash helpers.Base64 `json:"chainHash,omitempty" msgpack:"chainHash,omitempty"`
+	Page      int            `json:"page,omitempty" msgpack:"page,omitempty"`
+	Count     int            `json:"count,omitempty" msgpack:"count,omitempty"`
 }
 
 type APIMempoolReply struct {

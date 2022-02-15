@@ -2,12 +2,12 @@ package api_common
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
+	"io"
 	"net/http"
-	"net/url"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/txs_builder"
@@ -24,8 +24,8 @@ type APIWalletPrivateTransferBase struct {
 }
 
 type APIWalletPrivateTransferReply struct {
-	Results []*APIWalletGetBalancesResultReply `json:"results" msgpack:"results"`
-	Tx      *transaction.Transaction           `json:"tx" msgpack:"tx"`
+	Result bool                     `json:"result" msgpack:"result"`
+	Tx     *transaction.Transaction `json:"tx" msgpack:"tx"`
 }
 
 func (api *APICommon) WalletPrivateTransfer(r *http.Request, args *APIWalletPrivateTransferBase, reply *APIWalletPrivateTransferReply, authenticated bool) (err error) {
@@ -38,12 +38,14 @@ func (api *APICommon) WalletPrivateTransfer(r *http.Request, args *APIWalletPriv
 		return
 	}
 
+	reply.Result = true
+
 	return
 }
 
-func (api *APICommon) WalletPrivateTransfer_http(values url.Values) (interface{}, error) {
+func (api *APICommon) WalletPrivateTransfer_http(values io.ReadCloser) (interface{}, error) {
 	args := &APIWalletPrivateTransfer{}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
+	if err := json.NewDecoder(values).Decode(args); err != nil {
 		return nil, err
 	}
 	reply := &APIWalletPrivateTransferReply{}

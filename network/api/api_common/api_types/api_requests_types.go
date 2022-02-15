@@ -5,6 +5,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/config/config_auth"
 	"pandora-pay/cryptography"
+	"pandora-pay/helpers"
 )
 
 type SubscriptionType uint8
@@ -26,8 +27,8 @@ const (
 )
 
 type APIAccountBaseRequest struct {
-	Address   string `json:"address,omitempty" msgpack:"address,omitempty"`
-	PublicKey []byte `json:"publicKey,omitempty"  msgpack:"publicKey,omitempty"`
+	Address   string         `json:"address,omitempty" msgpack:"address,omitempty"`
+	PublicKey helpers.Base64 `json:"publicKey,omitempty"  msgpack:"publicKey,omitempty"`
 }
 
 func (request *APIAccountBaseRequest) GetPublicKey(required bool) ([]byte, error) {
@@ -48,13 +49,13 @@ func (request *APIAccountBaseRequest) GetPublicKey(required bool) ([]byte, error
 }
 
 type APISubscriptionRequest struct {
-	Key        []byte           `json:"key,omitempty" msgpack:"key,omitempty"`
+	Key        helpers.Base64   `json:"key,omitempty" msgpack:"key,omitempty"`
 	Type       SubscriptionType `json:"type,omitempty"  msgpack:"type,omitempty"`
 	ReturnType APIReturnType    `json:"returnType,omitempty"  msgpack:"returnType,omitempty"`
 }
 
 type APIUnsubscriptionRequest struct {
-	Key  []byte           `json:"key,omitempty" msgpack:"key,omitempty"`
+	Key  helpers.Base64   `json:"key,omitempty" msgpack:"key,omitempty"`
 	Type SubscriptionType `json:"type,omitempty" msgpack:"type,omitempty"`
 }
 

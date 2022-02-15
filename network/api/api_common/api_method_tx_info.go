@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/info"
+	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -12,8 +13,8 @@ import (
 )
 
 type APITransactionInfoRequest struct {
-	Height uint64 `json:"height,omitempty" msgpack:"height,omitempty"`
-	Hash   []byte `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	Height uint64         `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash   helpers.Base64 `json:"hash,omitempty" msgpack:"hash,omitempty"`
 }
 
 func (api *APICommon) GetTxInfo(r *http.Request, args *APITransactionInfoRequest, reply *info.TxInfo) error {

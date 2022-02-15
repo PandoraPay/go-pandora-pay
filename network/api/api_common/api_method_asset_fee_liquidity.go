@@ -17,8 +17,8 @@ import (
 )
 
 type APIAssetFeeLiquidityFeeRequest struct {
-	Height uint64 `json:"height,omitempty" msgpack:"height,omitempty"`
-	Hash   []byte `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	Height uint64         `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash   helpers.Base64 `json:"hash,omitempty" msgpack:"hash,omitempty"`
 }
 
 type APIAssetFeeLiquidityReply struct {

@@ -19,7 +19,7 @@ import (
 
 type APIAccountsByKeysRequest struct {
 	Keys           []*api_types.APIAccountBaseRequest `json:"keys,omitempty" msgpack:"keys,omitempty"`
-	Asset          []byte                             `json:"asset,omitempty" msgpack:"asset,omitempty"`
+	Asset          helpers.Base64                     `json:"asset,omitempty" msgpack:"asset,omitempty"`
 	IncludeMempool bool                               `json:"includeMempool,omitempty" msgpack:"includeMempool,omitempty"`
 	ReturnType     api_types.APIReturnType            `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }

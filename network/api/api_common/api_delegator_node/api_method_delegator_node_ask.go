@@ -7,15 +7,16 @@ import (
 	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/config/config_nodes"
+	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"sync/atomic"
 )
 
 type ApiDelegatorNodeAskRequest struct {
-	PublicKey                  []byte `json:"publicKey" msgpack:"publicKey"`
-	ChallengeSignature         []byte `json:"challengeSignature" msgpack:"challengeSignature"`
-	DelegatedStakingPrivateKey []byte `json:"delegatedStakingPrivateKey" msgpack:"delegatedStakingPrivateKey"`
+	PublicKey                  helpers.Base64 `json:"publicKey" msgpack:"publicKey"`
+	ChallengeSignature         helpers.Base64 `json:"challengeSignature" msgpack:"challengeSignature"`
+	DelegatedStakingPrivateKey helpers.Base64 `json:"delegatedStakingPrivateKey" msgpack:"delegatedStakingPrivateKey"`
 }
 
 type ApiDelegatorNodeAskReply struct {

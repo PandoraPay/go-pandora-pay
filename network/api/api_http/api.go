@@ -1,6 +1,7 @@
 package api_http
 
 import (
+	"io"
 	"net/url"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
@@ -9,7 +10,7 @@ import (
 
 type API struct {
 	GetMap    map[string]func(values url.Values) (interface{}, error)
-	PostMap   map[string]func(values url.Values) (interface{}, error)
+	PostMap   map[string]func(values io.ReadCloser) (interface{}, error)
 	chain     *blockchain.Blockchain
 	apiCommon *api_common.APICommon
 	apiStore  *api_common.APIStore
@@ -52,7 +53,7 @@ func NewAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chai
 		"wallet/decrypt-tx":      api.apiCommon.WalletDecryptTx_http,
 	}
 
-	api.PostMap = map[string]func(values url.Values) (interface{}, error){
+	api.PostMap = map[string]func(values io.ReadCloser) (interface{}, error){
 		"wallet/private-transfer": api.apiCommon.WalletPrivateTransfer_http,
 	}
 

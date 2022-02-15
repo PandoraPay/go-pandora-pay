@@ -1,11 +1,24 @@
 package helpers
 
 import (
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/cryptography/bn256"
 )
+
+// HexBytes is a byte array that serializes to hex
+type Base64 []byte
+
+// UnmarshalText for Gorilla Decoder
+// see https://github.com/gorilla/schema/blob/8285576f31afd6804df356a38883f4fa05014373/decoder_test.go#L20
+func (s *Base64) UnmarshalText(data []byte) (err error) {
+	if *s, err = base64.StdEncoding.DecodeString(string(data)); err != nil {
+		return
+	}
+	return
+}
 
 func ConvertBN256Array(array []*bn256.G1) [][]byte {
 	out := make([][]byte, len(array))

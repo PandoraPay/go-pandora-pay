@@ -128,8 +128,14 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 
 	for t, payload := range txData.Payloads {
 
+		if payload.Asset == nil {
+			payload.Asset = config_coins.NATIVE_ASSET_FULL
+		}
 		if payload.Data == nil {
 			payload.Data = &wizard.WizardTransactionData{[]byte{}, false}
+		}
+		if payload.RingConfiguration == nil {
+			payload.RingConfiguration = &ZetherRingConfiguration{-1, -1}
 		}
 		if payload.Fee == nil {
 			payload.Fee = &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0}

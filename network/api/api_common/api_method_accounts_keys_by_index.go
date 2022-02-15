@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -14,9 +15,9 @@ import (
 )
 
 type APIAccountsKeysByIndexRequest struct {
-	Indexes         []uint64 `json:"indexes" msgpack:"indexes"`
-	Asset           []byte   `json:"asset" msgpack:"asset"`
-	EncodeAddresses bool     `json:"encodeAddresses" msgpack:"encodeAddresses"`
+	Indexes         []uint64       `json:"indexes" msgpack:"indexes"`
+	Asset           helpers.Base64 `json:"asset" msgpack:"asset"`
+	EncodeAddresses bool           `json:"encodeAddresses" msgpack:"encodeAddresses"`
 }
 
 type APIAccountsKeysByIndexReply struct {
