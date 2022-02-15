@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/data_storage/accounts"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -13,7 +12,7 @@ import (
 )
 
 type APIAccountsCountRequest struct {
-	Asset helpers.HexBytes `json:"asset" msgpack:"asset"`
+	Asset []byte `json:"asset" msgpack:"asset"`
 }
 
 type APIAccountsCountReply struct {

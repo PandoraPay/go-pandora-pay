@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/config"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
@@ -21,8 +20,8 @@ type APIAccountTxsRequest struct {
 }
 
 type APIAccountTxsReply struct {
-	Count uint64             `json:"count,omitempty" msgpack:"count,omitempty"`
-	Txs   []helpers.HexBytes `json:"txs,omitempty" msgpack:"txs,omitempty"`
+	Count uint64   `json:"count,omitempty" msgpack:"count,omitempty"`
+	Txs   [][]byte `json:"txs,omitempty" msgpack:"txs,omitempty"`
 }
 
 func (api *APICommon) AccountTxs(r *http.Request, args *APIAccountTxsRequest, reply *APIAccountTxsReply) (err error) {
@@ -54,7 +53,7 @@ func (api *APICommon) AccountTxs(r *http.Request, args *APIAccountTxsRequest, re
 			index = args.Next - config.API_ACCOUNT_MAX_TXS
 		}
 
-		reply.Txs = make([]helpers.HexBytes, args.Next-index)
+		reply.Txs = make([][]byte, args.Next-index)
 		for i := index; i < args.Next; i++ {
 			hash := reader.Get("addrTx:" + publicKeyStr + ":" + strconv.FormatUint(i, 10))
 			if hash == nil {

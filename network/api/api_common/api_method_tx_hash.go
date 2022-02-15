@@ -4,7 +4,6 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -15,7 +14,7 @@ type APITxHashRequest struct {
 	Height uint64 `json:"height" msgpack:"height"`
 }
 
-func (api *APICommon) TxHash(r *http.Request, args *APITxHashRequest, reply *helpers.HexBytes) (err error) {
+func (api *APICommon) TxHash(r *http.Request, args *APITxHashRequest, reply *[]byte) (err error) {
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		*reply, err = api.ApiStore.loadTxHash(reader, args.Height)
 		return
@@ -27,7 +26,7 @@ func (api *APICommon) GetTxHash_http(values url.Values) (interface{}, error) {
 	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
-	var out helpers.HexBytes
+	var out []byte
 	return out, api.TxHash(nil, args, &out)
 }
 
@@ -36,6 +35,6 @@ func (api *APICommon) GetTxHash_websockets(conn *connection.AdvancedConnection, 
 	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	var out helpers.HexBytes
+	var out []byte
 	return out, api.TxHash(nil, args, &out)
 }

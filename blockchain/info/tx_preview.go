@@ -11,7 +11,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
 )
 
 type TxPreviewSimpleExtraUnstake struct {
@@ -26,25 +25,25 @@ type TxPreviewSimple struct {
 	Extra       interface{}                             `json:"extra" msgpack:"extra"`
 	TxScript    transaction_simple.ScriptType           `json:"txScript" msgpack:"txScript"`
 	DataVersion transaction_data.TransactionDataVersion `json:"dataVersion" msgpack:"dataVersion"`
-	DataPublic  helpers.HexBytes                        `json:"dataPublic" msgpack:"dataPublic"`
-	Vin         helpers.HexBytes                        `json:"vin" msgpack:"vin"`
+	DataPublic  []byte                                  `json:"dataPublic" msgpack:"dataPublic"`
+	Vin         []byte                                  `json:"vin" msgpack:"vin"`
 }
 
 type TxPreviewZetherPayloadExtraClaim struct {
-	DelegatePublicKey           helpers.HexBytes `json:"delegatePublicKey" msgpack:"delegatePublicKey"`
-	DelegatedStakingClaimAmount uint64           `json:"delegatedStakingClaimAmount" msgpack:"delegatedStakingClaimAmount"`
+	DelegatePublicKey           []byte `json:"delegatePublicKey" msgpack:"delegatePublicKey"`
+	DelegatedStakingClaimAmount uint64 `json:"delegatedStakingClaimAmount" msgpack:"delegatedStakingClaimAmount"`
 }
 
 type TxPreviewZetherPayloadExtraDelegateStake struct {
-	DelegatePublicKey helpers.HexBytes `json:"delegatePublicKey" msgpack:"delegatePublicKey"`
+	DelegatePublicKey []byte `json:"delegatePublicKey" msgpack:"delegatePublicKey"`
 }
 
 type TxPreviewZetherPayload struct {
 	PayloadScript transaction_zether_payload.PayloadScriptType `json:"payloadScript" msgpack:"payloadScript"`
-	Asset         helpers.HexBytes                             `json:"asset" msgpack:"asset"`
+	Asset         []byte                                       `json:"asset" msgpack:"asset"`
 	BurnValue     uint64                                       `json:"burnValue" msgpack:"burnValue"`
 	DataVersion   transaction_data.TransactionDataVersion      `json:"dataVersion" msgpack:"dataVersion"`
-	DataPublic    helpers.HexBytes                             `json:"dataPublic" msgpack:"dataPublic"`
+	DataPublic    []byte                                       `json:"dataPublic" msgpack:"dataPublic"`
 	Ring          byte                                         `json:"ring" msgpack:"ring"`
 	Extra         interface{}                                  `json:"extra" msgpack:"extra"`
 }
@@ -56,7 +55,7 @@ type TxPreviewZether struct {
 type TxPreview struct {
 	TxBase  interface{}                         `json:"base"  msgpack:"base"`
 	Version transaction_type.TransactionVersion `json:"version"  msgpack:"version"`
-	Hash    helpers.HexBytes                    `json:"hash"  msgpack:"hash"`
+	Hash    []byte                              `json:"hash"  msgpack:"hash"`
 	Fee     uint64                              `json:"fee"  msgpack:"fee"`
 }
 
@@ -78,7 +77,7 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 			baseExtra = &TxPreviewSimpleExtraUnstake{txExtra.Amount}
 		}
 
-		var dataPublic helpers.HexBytes
+		var dataPublic []byte
 		if txBase.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT {
 			dataPublic = txBase.Data
 		}
@@ -96,7 +95,7 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 		payloads := make([]*TxPreviewZetherPayload, len(txBase.Payloads))
 		for i, payload := range txBase.Payloads {
 
-			var dataPublic helpers.HexBytes
+			var dataPublic []byte
 			if payload.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT {
 				dataPublic = payload.Data
 			}

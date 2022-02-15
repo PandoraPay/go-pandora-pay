@@ -3,13 +3,12 @@ package transaction
 import (
 	"errors"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
 )
 
 type TransactionBloom struct {
-	Serialized helpers.HexBytes
+	Serialized []byte
 	Size       uint64
-	Hash       helpers.HexBytes
+	Hash       []byte
 	HashStr    string
 	bloomed    bool
 }

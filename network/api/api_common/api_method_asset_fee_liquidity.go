@@ -17,15 +17,15 @@ import (
 )
 
 type APIAssetFeeLiquidityFeeRequest struct {
-	Height uint64           `json:"height,omitempty" msgpack:"height,omitempty"`
-	Hash   helpers.HexBytes `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	Height uint64 `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash   []byte `json:"hash,omitempty" msgpack:"hash,omitempty"`
 }
 
 type APIAssetFeeLiquidityReply struct {
-	Asset        helpers.HexBytes `json:"asset" msgpack:"asset"`
-	Rate         uint64           `json:"rate" msgpack:"rate"`
-	LeadingZeros byte             `json:"leadingZeros" msgpack:"leadingZeros"`
-	Collector    helpers.HexBytes `json:"collector"  msgpack:"collector"` //collector Public Key
+	Asset        []byte `json:"asset" msgpack:"asset"`
+	Rate         uint64 `json:"rate" msgpack:"rate"`
+	LeadingZeros byte   `json:"leadingZeros" msgpack:"leadingZeros"`
+	Collector    []byte `json:"collector"  msgpack:"collector"` //collector Public Key
 }
 
 func (api *APICommon) AssetFeeLiquidity(r *http.Request, args *APIAssetFeeLiquidityFeeRequest, reply *APIAssetFeeLiquidityReply) error {

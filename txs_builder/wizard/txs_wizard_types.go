@@ -3,7 +3,6 @@ package wizard
 import (
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
-	"pandora-pay/helpers"
 )
 
 type WizardTransactionFee struct {
@@ -23,8 +22,8 @@ func (fee *WizardTransactionFee) Clone() *WizardTransactionFee {
 }
 
 type WizardTransactionData struct {
-	Data    helpers.HexBytes `json:"data,omitempty" msgpack:"data,omitempty"`
-	Encrypt bool             `json:"encrypt,omitempty" msgpack:"encrypt,omitempty"`
+	Data    []byte `json:"data,omitempty" msgpack:"data,omitempty"`
+	Encrypt bool   `json:"encrypt,omitempty" msgpack:"encrypt,omitempty"`
 }
 
 func (data *WizardTransactionData) getDataVersion() transaction_data.TransactionDataVersion {

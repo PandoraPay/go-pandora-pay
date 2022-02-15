@@ -1,7 +1,7 @@
 package webassembly
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"fmt"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/identicon"
@@ -27,7 +27,7 @@ func start(this js.Value, args []js.Value) interface{} {
 func getIdenticon(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		publicKey, err := hex.DecodeString(args[0].String())
+		publicKey, err := base64.StdEncoding.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
 		}

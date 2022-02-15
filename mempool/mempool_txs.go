@@ -1,7 +1,7 @@
 package mempool
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"fmt"
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/config"
@@ -182,7 +182,7 @@ func createMempoolTxs() (txs *MempoolTxs) {
 				if len(transactions) != 0 {
 					gui.GUI.Log("")
 					for _, out := range transactions {
-						gui.GUI.Log(fmt.Sprintf("%12s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC822), out.Tx.Bloom.Size, out.ChainHeight, hex.EncodeToString(out.Tx.Bloom.Hash[0:15])))
+						gui.GUI.Log(fmt.Sprintf("%12s %7d B %5d %15s", time.Unix(out.Added, 0).UTC().Format(time.RFC822), out.Tx.Bloom.Size, out.ChainHeight, base64.StdEncoding.EncodeToString(out.Tx.Bloom.Hash[0:15])))
 					}
 					gui.GUI.Log("")
 				}

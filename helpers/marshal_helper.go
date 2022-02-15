@@ -2,81 +2,20 @@ package helpers
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"encoding/json"
 	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/cryptography/bn256"
 )
 
-// HexBytes is a byte array that serializes to hex
-type HexBytes []byte
-
-// MarshalJSON serializes ByteArray to hex
-func (s HexBytes) MarshalJSON() ([]byte, error) {
-	dst := make([]byte, len(s)*2+2)
-	hex.Encode(dst[1:], s)
-	dst[0] = 34          // "
-	dst[len(dst)-1] = 34 // "
-	return dst, nil
-}
-
-// UnmarshalJSON deserializes ByteArray to hex
-func (s *HexBytes) UnmarshalJSON(data []byte) (err error) {
-
-	str := make([]byte, len(data)/2-1)
-
-	if _, err = hex.Decode(str, data[1:len(data)-1]); err != nil {
-		return
-	}
-	*s = str
-	return
-}
-
-// EncodeMsgpack serializes ElGamal into byteArray
-func (s *HexBytes) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeBytes(*s)
-}
-
-// DecodeMsgpack deserializes ByteArray to hex
-func (s *HexBytes) DecodeMsgpack(dec *msgpack.Decoder) error {
-	bytes, err := dec.DecodeBytes()
-	if err != nil {
-		return err
-	}
-	*s = bytes
-	return nil
-}
-
-// UnmarshalText for Gorilla Decoder
-// see https://github.com/gorilla/schema/blob/8285576f31afd6804df356a38883f4fa05014373/decoder_test.go#L20
-func (s *HexBytes) UnmarshalText(data []byte) (err error) {
-
-	str := make([]byte, len(data)/2)
-
-	if _, err = hex.Decode(str, data); err != nil {
-		return
-	}
-	*s = str
-	return
-}
-
-func ConvertHexBytesArraysToBytesArray(data []HexBytes) [][]byte {
-	out := make([][]byte, len(data))
-	for i := range data {
-		out[i] = data[i]
-	}
-	return out
-}
-
-func ConvertBN256Array(array []*bn256.G1) []HexBytes {
-	out := make([]HexBytes, len(array))
+func ConvertBN256Array(array []*bn256.G1) [][]byte {
+	out := make([][]byte, len(array))
 	for i, it := range array {
 		out[i] = it.EncodeCompressed()
 	}
 	return out
 }
 
-func ConvertToBN256Array(array []HexBytes) ([]*bn256.G1, error) {
+func ConvertToBN256Array(array [][]byte) ([]*bn256.G1, error) {
 	out := make([]*bn256.G1, len(array))
 	for i := range array {
 

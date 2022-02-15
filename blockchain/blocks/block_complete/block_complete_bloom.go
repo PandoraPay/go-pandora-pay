@@ -3,12 +3,11 @@ package block_complete
 import (
 	"bytes"
 	"errors"
-	"pandora-pay/helpers"
 )
 
 type BlockCompleteBloom struct {
-	Serialized                helpers.HexBytes `json:"-" msgpack:"-"`
-	Size                      uint64           `json:"size" msgpack:"size"`
+	Serialized                []byte `json:"-" msgpack:"-"`
+	Size                      uint64 `json:"size" msgpack:"size"`
 	merkleTreeVerified        bool
 	bloomedSize               bool
 	bloomedMerkleTreeVerified bool

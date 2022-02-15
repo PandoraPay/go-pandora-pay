@@ -3,7 +3,6 @@ package wizard
 import (
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
-	"pandora-pay/helpers"
 )
 
 type WizardTxSimpleExtraUpdateDelegate struct {
@@ -21,7 +20,7 @@ type WizardTxSimpleExtraUpdateAssetFeeLiquidity struct {
 	WizardTxSimpleExtra `json:"-"  msgpack:"-"`
 	Liquidities         []*asset_fee_liquidity.AssetFeeLiquidity `json:"liquidities"  msgpack:"liquidities"`
 	CollectorHasNew     bool                                     `json:"collectorHasNew"  msgpack:"collectorHasNew"`
-	Collector           helpers.HexBytes                         `json:"collector"  msgpack:"collector"`
+	Collector           []byte                                   `json:"collector"  msgpack:"collector"`
 }
 
 type WizardTxSimpleExtra interface {

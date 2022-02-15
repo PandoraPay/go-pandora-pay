@@ -191,8 +191,6 @@ func (c *AdvancedConnection) get(message *advanced_connection_types.AdvancedConn
 	switch v := output.(type) {
 	case string:
 		return []byte(v), nil
-	case helpers.HexBytes:
-		return v, nil
 	case []byte:
 		return v, nil
 	default:

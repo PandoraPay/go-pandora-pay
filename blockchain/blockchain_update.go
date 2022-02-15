@@ -1,7 +1,7 @@
 package blockchain
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"fmt"
 	"pandora-pay/blockchain/blockchain_sync"
 	"pandora-pay/blockchain/blockchain_types"
@@ -74,8 +74,8 @@ func (queue *BlockchainUpdatesQueue) lastSuccess(updates []*BlockchainUpdate) *B
 func (queue *BlockchainUpdatesQueue) executeUpdate(update *BlockchainUpdate) (err error) {
 
 	gui.GUI.Warning("-------------------------------------------")
-	gui.GUI.Warning(fmt.Sprintf("Included blocks %d | TXs: %d | Hash %s", len(update.insertedBlocks), len(update.insertedTxs), hex.EncodeToString(update.newChainData.Hash)))
-	gui.GUI.Warning(update.newChainData.Height, hex.EncodeToString(update.newChainData.Hash), update.newChainData.Target.Text(10), update.newChainData.BigTotalDifficulty.Text(10))
+	gui.GUI.Warning(fmt.Sprintf("Included blocks %d | TXs: %d | Hash %s", len(update.insertedBlocks), len(update.insertedTxs), base64.StdEncoding.EncodeToString(update.newChainData.Hash)))
+	gui.GUI.Warning(update.newChainData.Height, base64.StdEncoding.EncodeToString(update.newChainData.Hash), update.newChainData.Target.Text(10), update.newChainData.BigTotalDifficulty.Text(10))
 	gui.GUI.Warning("-------------------------------------------")
 	update.newChainData.updateChainInfo()
 

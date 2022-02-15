@@ -11,7 +11,6 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
@@ -40,9 +39,9 @@ type APIWalletGetBalancesResultReply struct {
 }
 
 type APIWalletGetBalanceDataReply struct {
-	Balance helpers.HexBytes `json:"balance" msgpack:"balance"`
-	Amount  uint64           `json:"amount" msgpack:"amount"`
-	Asset   helpers.HexBytes `json:"asset" msgpack:"asset"`
+	Balance []byte `json:"balance" msgpack:"balance"`
+	Amount  uint64 `json:"amount" msgpack:"amount"`
+	Asset   []byte `json:"asset" msgpack:"asset"`
 }
 
 func (api *APICommon) WalletGetBalances(r *http.Request, args *APIWalletGetBalancesBase, reply *APIWalletGetBalancesReply, authenticated bool) (err error) {

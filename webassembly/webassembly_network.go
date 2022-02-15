@@ -2,7 +2,7 @@ package webassembly
 
 import (
 	"context"
-	"encoding/hex"
+	"encoding/base64"
 	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/blocks/block"
@@ -41,7 +41,7 @@ func getNetworkFaucetCoins(this js.Value, args []js.Value) interface{} {
 		if data.Err != nil {
 			return nil, data.Err
 		}
-		return hex.EncodeToString(data.Out), nil
+		return base64.StdEncoding.EncodeToString(data.Out), nil
 	})
 }
 
@@ -96,7 +96,7 @@ func getNetworkBlockWithTxs(this js.Value, args []js.Value) interface{} {
 func getNetworkAccountsCount(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		assetId, err := hex.DecodeString(args[0].String())
+		assetId, err := base64.StdEncoding.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
 		}
@@ -296,7 +296,7 @@ func getNetworkAssetInfo(this js.Value, args []js.Value) interface{} {
 func getNetworkAsset(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		hash, err := hex.DecodeString(args[1].String())
+		hash, err := base64.StdEncoding.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
@@ -351,7 +351,7 @@ func postNetworkMempoolBroadcastTransaction(this js.Value, args []js.Value) inte
 func getNetworkFeeLiquidity(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		hash, err := hex.DecodeString(args[1].String())
+		hash, err := base64.StdEncoding.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
@@ -363,7 +363,7 @@ func getNetworkFeeLiquidity(this js.Value, args []js.Value) interface{} {
 func subscribeNetwork(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		key, err := hex.DecodeString(args[0].String())
+		key, err := base64.StdEncoding.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
 		}
@@ -377,7 +377,7 @@ func subscribeNetwork(this js.Value, args []js.Value) interface{} {
 func unsubscribeNetwork(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		key, err := hex.DecodeString(args[0].String())
+		key, err := base64.StdEncoding.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
 		}

@@ -9,7 +9,6 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -27,8 +26,8 @@ type ForgingWallet struct {
 }
 
 type ForgingWalletAddressUpdate struct {
-	delegatedPriv helpers.HexBytes
-	pubKey        helpers.HexBytes
+	delegatedPriv []byte
+	pubKey        []byte
 	plainAcc      *plain_account.PlainAccount
 }
 

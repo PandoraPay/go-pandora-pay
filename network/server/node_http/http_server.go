@@ -23,7 +23,8 @@ type HttpServer struct {
 	Api             *api_http.API
 	ApiWebsockets   *api_websockets.APIWebsockets
 	ApiStore        *api_common.APIStore
-	GetMap          map[string]func(values url.Values) (interface{}, error)
+	GetMap          map[string]func(values url.Values) (any, error)
+	PostMap         map[string]func(values url.Values) (any, error)
 }
 
 func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, wallet *wallet.Wallet, txsValidator *txs_validator.TxsValidator, txsBuilder *txs_builder.TxsBuilder) (*HttpServer, error) {
@@ -42,7 +43,8 @@ func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, ba
 	server := &HttpServer{
 		websocketServer: websocks.NewWebsocketServer(websockets, knownNodes),
 		Websockets:      websockets,
-		GetMap:          make(map[string]func(values url.Values) (interface{}, error)),
+		GetMap:          make(map[string]func(values url.Values) (any, error)),
+		PostMap:         make(map[string]func(values url.Values) (any, error)),
 		Api:             api,
 		ApiWebsockets:   apiWebsockets,
 		ApiStore:        apiStore,

@@ -11,7 +11,7 @@ type AssetFeeLiquidities struct {
 	helpers.SerializableInterface `json:"-" msgpack:"-"`
 	Version                       AssetFeeLiquiditiesVersion `json:"version" msgpack:"version"`
 	List                          []*AssetFeeLiquidity       `json:"list" msgpack:"list"`
-	Collector                     helpers.HexBytes           `json:"collector" msgpack:"collector"`
+	Collector                     []byte                     `json:"collector" msgpack:"collector"`
 }
 
 func (self *AssetFeeLiquidities) HasAssetFeeLiquidities() bool {

@@ -72,8 +72,8 @@ func NextTargetBig(deltaTotalDifficulty *big.Int, deltaTime uint64) (*big.Int, e
 		final = config.BIG_INT_MAX_256
 	}
 
-	//hexstr := hex.EncodeToString(final.Bytes())
-	//gui.Log("final "+hex.EncodeToString(helpers.EmptyBytes(32-len(hexstr)/2))+hexstr, final.String())
+	//hexstr := base64.StdEncoding.EncodeToString(final.Bytes())
+	//gui.Log("final "+base64.StdEncoding.EncodeToString(helpers.EmptyBytes(32-len(hexstr)/2))+hexstr, final.String())
 
 	return final, nil
 }

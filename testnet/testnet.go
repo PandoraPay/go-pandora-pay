@@ -2,7 +2,7 @@ package testnet
 
 import (
 	"context"
-	"encoding/hex"
+	"encoding/base64"
 	"github.com/tevino/abool"
 	"math"
 	"math/rand"
@@ -121,7 +121,7 @@ func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64
 		return nil, err
 	}
 
-	gui.GUI.Info("Unstake tx was created: " + hex.EncodeToString(tx.Bloom.Hash))
+	gui.GUI.Info("Unstake tx was created: " + base64.StdEncoding.EncodeToString(tx.Bloom.Hash))
 	return
 }
 

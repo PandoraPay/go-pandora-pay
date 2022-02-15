@@ -26,13 +26,13 @@ type APIAccountRequest struct {
 
 type APIAccount struct {
 	Accs               []*account.Account                                      `json:"accounts,omitempty" msgpack:"accounts,omitempty"`
-	AccsSerialized     []helpers.HexBytes                                      `json:"accountsSerialized,omitempty" msgpack:"accountsSerialized,omitempty"`
+	AccsSerialized     [][]byte                                                `json:"accountsSerialized,omitempty" msgpack:"accountsSerialized,omitempty"`
 	AccsExtra          []*api_types.APISubscriptionNotificationAccountExtra    `json:"accountsExtra,omitempty" msgpack:"accountsExtra,omitempty"`
 	PlainAcc           *plain_account.PlainAccount                             `json:"plainAccount,omitempty" msgpack:"plainAccount,omitempty"`
-	PlainAccSerialized helpers.HexBytes                                        `json:"plainAccountSerialized,omitempty" msgpack:"plainAccountSerialized,omitempty"`
+	PlainAccSerialized []byte                                                  `json:"plainAccountSerialized,omitempty" msgpack:"plainAccountSerialized,omitempty"`
 	PlainAccExtra      *api_types.APISubscriptionNotificationPlainAccExtra     `json:"plainAccountExtra,omitempty" msgpack:"plainAccountExtra,omitempty"`
 	Reg                *registration.Registration                              `json:"registration,omitempty" msgpack:"registration,omitempty"`
-	RegSerialized      helpers.HexBytes                                        `json:"registrationSerialized,omitempty" msgpack:"registrationSerialized,omitempty"`
+	RegSerialized      []byte                                                  `json:"registrationSerialized,omitempty" msgpack:"registrationSerialized,omitempty"`
 	RegExtra           *api_types.APISubscriptionNotificationRegistrationExtra `json:"registrationExtra,omitempty" msgpack:"registrationExtra,omitempty"`
 }
 
@@ -104,7 +104,7 @@ func (api *APICommon) Account(r *http.Request, args *APIAccountRequest, reply *A
 
 	if args.ReturnType == api_types.RETURN_SERIALIZED {
 
-		reply.AccsSerialized = make([]helpers.HexBytes, len(reply.Accs))
+		reply.AccsSerialized = make([][]byte, len(reply.Accs))
 		for i, acc := range reply.Accs {
 			reply.AccsSerialized[i] = helpers.SerializeToBytes(acc)
 		}

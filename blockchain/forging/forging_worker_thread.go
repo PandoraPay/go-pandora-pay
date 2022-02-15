@@ -198,7 +198,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 				} else {
 					// for debugging only
-					// gui.GUI.Log(hex.EncodeToString(kernelHash), strconv.FormatUint(timestamp, 10 ))
+					// gui.GUI.Log(base64.StdEncoding.EncodeToString(kernelHash), strconv.FormatUint(timestamp, 10 ))
 				}
 
 			}

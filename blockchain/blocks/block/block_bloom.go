@@ -4,14 +4,13 @@ import (
 	"errors"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
 )
 
 type BlockBloom struct {
-	Serialized                 helpers.HexBytes `json:"-" msgpack:"-"`
-	Hash                       helpers.HexBytes `json:"hash" msgpack:"hash"`
-	KernelHash                 helpers.HexBytes `json:"kernelHash" msgpack:"kernelHash"`
-	DelegatedSignatureVerified bool             `json:"delegatedSignatureVerified" msgpack:"delegatedSignatureVerified"`
+	Serialized                 []byte `json:"-" msgpack:"-"`
+	Hash                       []byte `json:"hash" msgpack:"hash"`
+	KernelHash                 []byte `json:"kernelHash" msgpack:"kernelHash"`
+	DelegatedSignatureVerified bool   `json:"delegatedSignatureVerified" msgpack:"delegatedSignatureVerified"`
 	bloomedHash                bool
 	bloomedKernelHash          bool
 }

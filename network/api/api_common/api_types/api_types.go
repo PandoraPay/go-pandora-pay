@@ -1,14 +1,10 @@
 package api_types
 
-import (
-	"pandora-pay/helpers"
-)
-
 type APISubscriptionNotification struct {
 	SubscriptionType SubscriptionType `json:"type,omitempty" msgpack:"type,omitempty"`
-	Key              helpers.HexBytes `json:"key,omitempty" msgpack:"key,omitempty"`
-	Data             helpers.HexBytes `json:"data,omitempty" msgpack:"data,omitempty"`
-	Extra            helpers.HexBytes `json:"extra,omitempty" msgpack:"extra,omitempty"`
+	Key              []byte           `json:"key,omitempty" msgpack:"key,omitempty"`
+	Data             []byte           `json:"data,omitempty" msgpack:"data,omitempty"`
+	Extra            []byte           `json:"extra,omitempty" msgpack:"extra,omitempty"`
 }
 
 type APISubscriptionNotificationTxExtraBlockchain struct {
@@ -32,8 +28,8 @@ type APISubscriptionNotificationAccountTxExtraMempool struct {
 }
 
 type APISubscriptionNotificationAccountExtra struct {
-	Asset helpers.HexBytes `json:"asset" msgpack:"asset"`
-	Index uint64           `json:"index" msgpack:"index"`
+	Asset []byte `json:"asset" msgpack:"asset"`
+	Index uint64 `json:"index" msgpack:"index"`
 }
 
 type APISubscriptionNotificationPlainAccExtra struct {

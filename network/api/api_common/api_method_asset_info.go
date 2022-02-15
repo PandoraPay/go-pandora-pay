@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/info"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -14,8 +13,8 @@ import (
 )
 
 type APIAssetInfoRequest struct {
-	Height uint64           `json:"height,omitempty" msgpack:"height,omitempty"`
-	Hash   helpers.HexBytes `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	Height uint64 `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash   []byte `json:"hash,omitempty" msgpack:"hash,omitempty"`
 }
 
 func (api *APICommon) getAssetInfo(r *http.Request, args *APIAssetInfoRequest, reply *info.AssetInfo) error {

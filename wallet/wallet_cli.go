@@ -2,8 +2,8 @@ package wallet
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/binary"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -199,7 +199,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %d", "Liquidities", len(addresses[i].plainAcc.AssetFeeLiquidities.List)))
 				for i, assetFeeLiquidity := range addresses[i].plainAcc.AssetFeeLiquidities.List {
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %20s Rate %d LeadingZeros %d", strconv.Itoa(i), hex.EncodeToString(assetFeeLiquidity.Asset), assetFeeLiquidity.Rate, assetFeeLiquidity.LeadingZeros))
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %20s Rate %d LeadingZeros %d", strconv.Itoa(i), base64.StdEncoding.EncodeToString(assetFeeLiquidity.Asset), assetFeeLiquidity.Rate, assetFeeLiquidity.LeadingZeros))
 				}
 
 			}
@@ -210,7 +210,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s %d", "BALANCES ENCRYPTED", "", len(addresses[i].assetsList)))
 			for _, data := range addresses[i].assetsList {
-				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %64s", data.ast.Name, hex.EncodeToString(data.balance.Serialize())))
+				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %64s", data.ast.Name, base64.StdEncoding.EncodeToString(data.balance.Serialize())))
 			}
 
 			gui.GUI.OutputWrite(fmt.Sprintf("%18s", "Decoding...."))

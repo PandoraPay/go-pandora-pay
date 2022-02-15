@@ -10,7 +10,7 @@ import (
 type WalletEncryption struct {
 	wallet           *Wallet
 	Encrypted        EncryptedVersion `json:"encrypted" msgpack:"encrypted"`
-	Salt             helpers.HexBytes `json:"salt" msgpack:"salt"`
+	Salt             []byte           `json:"salt" msgpack:"salt"`
 	Difficulty       int              `json:"difficulty" msgpack:"difficulty"`
 	password         string
 	encryptionCipher *encryption.EncryptionCipher

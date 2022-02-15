@@ -8,11 +8,10 @@ import (
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/cryptography/crypto/balance-decoder"
-	"pandora-pay/helpers"
 )
 
 type PrivateKey struct {
-	Key helpers.HexBytes `json:"key" msgpack:"key"` //32 byte
+	Key []byte `json:"key" msgpack:"key"` //32 byte
 }
 
 func (pk *PrivateKey) GeneratePublicKey() []byte {

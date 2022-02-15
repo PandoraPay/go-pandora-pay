@@ -16,14 +16,14 @@ import (
 
 type APIBlockRequest struct {
 	Height     uint64                  `json:"height,omitempty" msgpack:"height,omitempty"`
-	Hash       helpers.HexBytes        `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	Hash       []byte                  `json:"hash,omitempty" msgpack:"hash,omitempty"`
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APIBlockWithTxsReply struct {
-	Block           *block.Block       `json:"block,omitempty" msgpack:"block,omitempty"`
-	BlockSerialized helpers.HexBytes   `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
-	Txs             []helpers.HexBytes `json:"txs,omitempty" msgpack:"txs,omitempty"`
+	Block           *block.Block `json:"block,omitempty" msgpack:"block,omitempty"`
+	BlockSerialized []byte       `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
+	Txs             [][]byte     `json:"txs,omitempty" msgpack:"txs,omitempty"`
 }
 
 func (api *APICommon) Block(r *http.Request, args *APIBlockRequest, reply *APIBlockWithTxsReply) error {
@@ -46,7 +46,7 @@ func (api *APICommon) Block(r *http.Request, args *APIBlockRequest, reply *APIBl
 			return nil
 		}
 
-		reply.Txs = make([]helpers.HexBytes, len(txHashes))
+		reply.Txs = make([][]byte, len(txHashes))
 		for i, txHash := range txHashes {
 			reply.Txs[i] = txHash
 		}

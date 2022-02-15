@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain/info"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -14,8 +13,8 @@ import (
 )
 
 type APIBlockInfoRequest struct {
-	Height uint64           `json:"height,omitempty"  msgpack:"height,omitempty"`
-	Hash   helpers.HexBytes `json:"hash,omitempty"  msgpack:"hash,omitempty"`
+	Height uint64 `json:"height,omitempty"  msgpack:"height,omitempty"`
+	Hash   []byte `json:"hash,omitempty"  msgpack:"hash,omitempty"`
 }
 
 func (api *APICommon) BlockInfo(r *http.Request, args *APIBlockInfoRequest, reply *info.BlockInfo) error {

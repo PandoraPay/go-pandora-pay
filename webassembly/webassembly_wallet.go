@@ -1,7 +1,7 @@
 package webassembly
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
@@ -61,12 +61,12 @@ func getWalletAddressPrivateKey(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		addr, err := app.Wallet.GetWalletAddressByPublicKeyHex(args[0].String(), true)
+		addr, err := app.Wallet.GetWalletAddressByPublicKeyString(args[0].String(), true)
 		if err != nil {
 			return nil, err
 		}
 
-		return hex.EncodeToString(addr.PrivateKey.Key), nil
+		return base64.StdEncoding.EncodeToString(addr.PrivateKey.Key), nil
 	})
 }
 
@@ -77,7 +77,7 @@ func getWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		adr, err := app.Wallet.GetWalletAddressByPublicKeyHex(args[0].String(), true)
+		adr, err := app.Wallet.GetWalletAddressByPublicKeyString(args[0].String(), true)
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +107,7 @@ func removeWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		publicKey, err := hex.DecodeString(args[1].String())
+		publicKey, err := base64.StdEncoding.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
@@ -122,7 +122,7 @@ func renameWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		publicKey, err := hex.DecodeString(args[1].String())
+		publicKey, err := base64.StdEncoding.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
@@ -138,7 +138,7 @@ func importWalletPrivateKey(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		key, err := hex.DecodeString(args[1].String())
+		key, err := base64.StdEncoding.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
@@ -227,7 +227,7 @@ func signMessageWalletAddress(this js.Value, args []js.Value) interface{} {
 			return false, err
 		}
 
-		message, err := hex.DecodeString(args[0].String())
+		message, err := base64.StdEncoding.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
 		}
@@ -242,7 +242,7 @@ func signMessageWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return hex.EncodeToString(out), nil
+		return base64.StdEncoding.EncodeToString(out), nil
 	})
 }
 
@@ -252,7 +252,7 @@ func decryptMessageWalletAddress(this js.Value, args []js.Value) interface{} {
 			return false, err
 		}
 
-		data, err := hex.DecodeString(args[0].String())
+		data, err := base64.StdEncoding.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
 		}
@@ -267,7 +267,7 @@ func decryptMessageWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return hex.EncodeToString(out), nil
+		return base64.StdEncoding.EncodeToString(out), nil
 	})
 }
 
@@ -306,10 +306,10 @@ func updatePreviousDecryptedBalanceValueWalletAddress(this js.Value, args []js.V
 		}
 
 		parameters := &struct {
-			PublicKey helpers.HexBytes `json:"publicKey"`
-			Asset     helpers.HexBytes `json:"asset"`
-			Amount    uint64           `json:"amount"`
-			Balance   helpers.HexBytes `json:"balance"`
+			PublicKey []byte `json:"publicKey"`
+			Asset     []byte `json:"asset"`
+			Amount    uint64 `json:"amount"`
+			Balance   []byte `json:"balance"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
@@ -332,9 +332,9 @@ func tryDecryptBalance(this js.Value, args []js.Value) interface{} {
 		}
 
 		parameters := &struct {
-			PublicKey helpers.HexBytes `json:"publicKey"`
-			Asset     helpers.HexBytes `json:"asset"`
-			Balance   helpers.HexBytes `json:"balance"`
+			PublicKey []byte `json:"publicKey"`
+			Asset     []byte `json:"asset"`
+			Balance   []byte `json:"balance"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
@@ -361,8 +361,8 @@ func getPrivateDataForDecryptingBalanceWalletAddress(this js.Value, args []js.Va
 		}
 
 		parameters := &struct {
-			PublicKey helpers.HexBytes `json:"publicKey"`
-			Asset     helpers.HexBytes `json:"asset"`
+			PublicKey []byte `json:"publicKey"`
+			Asset     []byte `json:"asset"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
@@ -372,8 +372,8 @@ func getPrivateDataForDecryptingBalanceWalletAddress(this js.Value, args []js.Va
 		privateKey, previousValue := app.Wallet.GetDataForDecryptingBalance(parameters.PublicKey, parameters.Asset)
 
 		return webassembly_utils.ConvertJSONBytes(struct {
-			PrivateKey    helpers.HexBytes `json:"privateKey"`
-			PreviousValue uint64           `json:"previousValue"`
+			PrivateKey    []byte `json:"privateKey"`
+			PreviousValue uint64 `json:"previousValue"`
 		}{privateKey, previousValue})
 
 	})
@@ -382,7 +382,7 @@ func getPrivateDataForDecryptingBalanceWalletAddress(this js.Value, args []js.Va
 func decryptTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		publicKey, err := hex.DecodeString(args[1].String())
+		publicKey, err := base64.StdEncoding.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}

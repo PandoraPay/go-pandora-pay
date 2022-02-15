@@ -15,13 +15,13 @@ import (
 )
 
 type DecryptZetherPayloadOutput struct {
-	WhisperSenderValid    bool             `json:"whisperSenderValid" msgpack:"whisperSenderValid"`
-	SentAmount            uint64           `json:"sentAmount" msgpack:"sentAmount"`
-	WhisperRecipientValid bool             `json:"whisperRecipientValid" msgpack:"whisperRecipientValid"`
-	Blinder               helpers.HexBytes `json:"blinder" msgpack:"blinder"`
-	ReceivedAmount        uint64           `json:"receivedAmount" msgpack:"receivedAmount"`
-	RecipientIndex        int              `json:"recipientIndex" msgpack:"recipientIndex"`
-	Message               helpers.HexBytes `json:"message" msgpack:"message"`
+	WhisperSenderValid    bool   `json:"whisperSenderValid" msgpack:"whisperSenderValid"`
+	SentAmount            uint64 `json:"sentAmount" msgpack:"sentAmount"`
+	WhisperRecipientValid bool   `json:"whisperRecipientValid" msgpack:"whisperRecipientValid"`
+	Blinder               []byte `json:"blinder" msgpack:"blinder"`
+	ReceivedAmount        uint64 `json:"receivedAmount" msgpack:"receivedAmount"`
+	RecipientIndex        int    `json:"recipientIndex" msgpack:"recipientIndex"`
+	Message               []byte `json:"message" msgpack:"message"`
 }
 
 type DecryptTxZether struct {

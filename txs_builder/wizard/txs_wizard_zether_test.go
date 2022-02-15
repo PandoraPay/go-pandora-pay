@@ -121,8 +121,8 @@ func TestCreateZetherTx(t *testing.T) {
 	assert.Equal(t, true, bytes.Equal(tx.HashManual(), tx2.HashManual()))
 	assert.Equal(t, true, bytes.Equal(tx.SerializeForSigning(), tx2.SerializeForSigning()))
 
-	//fmt.Println(hex.EncodeToString(tx.SerializeManualToBytes()))
-	//fmt.Println(hex.EncodeToString(tx2.SerializeManualToBytes()))
+	//fmt.Println(base64.StdEncoding(tx.SerializeManualToBytes()))
+	//fmt.Println(base64.StdEncoding(tx2.SerializeManualToBytes()))
 	assert.Equal(t, true, bytes.Equal(serialized, tx2.SerializeManualToBytes()))
 
 	tx1Base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)

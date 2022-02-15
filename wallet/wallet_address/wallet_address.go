@@ -2,12 +2,11 @@ package wallet_address
 
 import (
 	"bytes"
-	"encoding/hex"
+	"encoding/base64"
 	"errors"
 	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
 )
 
 type WalletAddress struct {
@@ -16,8 +15,8 @@ type WalletAddress struct {
 	SeedIndex                  uint32                                    `json:"seedIndex" msgpack:"seedIndex"`
 	IsMine                     bool                                      `json:"isMine" msgpack:"isMine"`
 	PrivateKey                 *addresses.PrivateKey                     `json:"privateKey" msgpack:"privateKey"`
-	Registration               helpers.HexBytes                          `json:"registration" msgpack:"registration"`
-	PublicKey                  helpers.HexBytes                          `json:"publicKey" msgpack:"publicKey"`
+	Registration               []byte                                    `json:"registration" msgpack:"registration"`
+	PublicKey                  []byte                                    `json:"publicKey" msgpack:"publicKey"`
 	DecryptedBalances          map[string]*WalletAddressDecryptedBalance `json:"decryptedBalances" msgpack:"decryptedBalances"`
 	AddressEncoded             string                                    `json:"addressEncoded" msgpack:"addressEncoded"`
 	AddressRegistrationEncoded string                                    `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
@@ -87,11 +86,11 @@ func (addr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDel
 }
 
 func (addr *WalletAddress) UpdateDecryptedBalance(newDecryptedBalance uint64, balance []byte, assetId []byte) {
-	found := addr.DecryptedBalances[hex.EncodeToString(assetId)]
+	found := addr.DecryptedBalances[base64.StdEncoding.EncodeToString(assetId)]
 	if found != nil {
 		found.Amount = newDecryptedBalance
 	} else {
-		addr.DecryptedBalances[hex.EncodeToString(assetId)] = &WalletAddressDecryptedBalance{
+		addr.DecryptedBalances[base64.StdEncoding.EncodeToString(assetId)] = &WalletAddressDecryptedBalance{
 			newDecryptedBalance,
 			balance,
 		}

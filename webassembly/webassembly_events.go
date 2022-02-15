@@ -1,7 +1,7 @@
 package webassembly
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
@@ -152,7 +152,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 				jsOutExtra := js.Global().Get("Uint8Array").New(len(extraOutput))
 				js.CopyBytesToJS(jsOutExtra, extraOutput)
 
-				callback.Invoke(int(data.SubscriptionType), hex.EncodeToString(data.Key), jsOutData, jsOutExtra)
+				callback.Invoke(int(data.SubscriptionType), base64.StdEncoding.EncodeToString(data.Key), jsOutData, jsOutExtra)
 
 			}
 		})

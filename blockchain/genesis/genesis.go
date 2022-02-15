@@ -19,17 +19,17 @@ import (
 )
 
 type GenesisDataAirDropType struct {
-	Address                 string           `json:"address" msgpack:"address"`
-	Amount                  uint64           `json:"amount" msgpack:"amount"`
-	DelegatedStakePublicKey helpers.HexBytes `json:"delegatedStakePublicKey" msgpack:"delegatedStakePublicKey"`
-	DelegatedStakeFee       uint64           `json:"stakingFee" msgpack:"stakingFee"`
+	Address                 string `json:"address" msgpack:"address"`
+	Amount                  uint64 `json:"amount" msgpack:"amount"`
+	DelegatedStakePublicKey []byte `json:"delegatedStakePublicKey" msgpack:"delegatedStakePublicKey"`
+	DelegatedStakeFee       uint64 `json:"stakingFee" msgpack:"stakingFee"`
 }
 
 type GenesisDataType struct {
-	Hash       helpers.HexBytes          `json:"hash" msgpack:"hash"`             //32 byte
-	KernelHash helpers.HexBytes          `json:"kernelHash" msgpack:"kernelHash"` //32 byte
+	Hash       []byte                    `json:"hash" msgpack:"hash"`             //32 byte
+	KernelHash []byte                    `json:"kernelHash" msgpack:"kernelHash"` //32 byte
 	Timestamp  uint64                    `json:"timestamp" msgpack:"timestamp"`
-	Target     helpers.HexBytes          `json:"target" msgpack:"target"` //32 byte
+	Target     []byte                    `json:"target" msgpack:"target"` //32 byte
 	AirDrops   []*GenesisDataAirDropType `json:"airDrops" msgpack:"airDrops"`
 }
 

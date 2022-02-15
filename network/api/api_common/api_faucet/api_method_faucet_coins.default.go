@@ -12,14 +12,13 @@ import (
 	"net/url"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/txs_builder"
 	"pandora-pay/txs_builder/wizard"
 )
 
-func (api *Faucet) FaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, reply *helpers.HexBytes) error {
+func (api *Faucet) FaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, reply *[]byte) error {
 
 	if !config.FAUCET_TESTNET_ENABLED {
 		return errors.New("Faucet Testnet is not enabled")
@@ -69,7 +68,7 @@ func (api *Faucet) GetFaucetCoins_http(values url.Values) (interface{}, error) {
 	if err := urldecoder.Decoder.Decode(args, values); err != nil {
 		return nil, err
 	}
-	var reply helpers.HexBytes
+	var reply []byte
 	return reply, api.FaucetCoins(nil, args, &reply)
 }
 
@@ -78,6 +77,6 @@ func (api *Faucet) GetFaucetCoins_websockets(conn *connection.AdvancedConnection
 	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err
 	}
-	var reply helpers.HexBytes
+	var reply []byte
 	return reply, api.FaucetCoins(nil, args, &reply)
 }

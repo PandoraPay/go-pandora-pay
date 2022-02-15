@@ -1,7 +1,6 @@
 package txs_builder
 
 import (
-	"pandora-pay/helpers"
 	"pandora-pay/txs_builder/wizard"
 )
 
@@ -12,7 +11,7 @@ type ZetherRingConfiguration struct {
 
 type TxBuilderCreateZetherTxPayload struct {
 	Sender            string                             `json:"sender" msgpack:"sender"`
-	Asset             helpers.HexBytes                   `json:"asset" msgpack:"asset"`
+	Asset             []byte                             `json:"asset" msgpack:"asset"`
 	Amount            uint64                             `json:"amount" msgpack:"amount"`
 	Recipient         string                             `json:"recipient" msgpack:"recipient"`
 	Burn              uint64                             `json:"burn" msgpack:"burn"`

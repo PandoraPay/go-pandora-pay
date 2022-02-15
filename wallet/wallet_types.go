@@ -1,10 +1,8 @@
 package wallet
 
-import "pandora-pay/helpers"
-
 type DelegatedStakeOutput struct {
-	Address                 string           `json:"address" msgpack:"address"`
-	DelegatedStakePublicKey helpers.HexBytes `json:"delegatedStakePublicKey" msgpack:"delegatedStakePublicKey"`
+	Address                 string `json:"address" msgpack:"address"`
+	DelegatedStakePublicKey []byte `json:"delegatedStakePublicKey" msgpack:"delegatedStakePublicKey"`
 }
 
 type Version int

@@ -1,7 +1,7 @@
 package config_coins
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"errors"
 	"math"
 	"pandora-pay/cryptography"
@@ -25,9 +25,9 @@ var (
 	NATIVE_ASSET_TICKER      = "NATIVE"
 	NATIVE_ASSET_DESCRIPTION = "NATIVE ASSET"
 
-	NATIVE_ASSET_FULL            = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	NATIVE_ASSET_FULL_STRING     = string(NATIVE_ASSET_FULL)
-	NATIVE_ASSET_FULL_STRING_HEX = hex.EncodeToString(NATIVE_ASSET_FULL)
+	NATIVE_ASSET_FULL               = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	NATIVE_ASSET_FULL_STRING        = string(NATIVE_ASSET_FULL)
+	NATIVE_ASSET_FULL_STRING_BASE64 = base64.StdEncoding.EncodeToString(NATIVE_ASSET_FULL)
 )
 
 func ConvertToUnitsUint64Forced(number uint64) uint64 {

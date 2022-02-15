@@ -5,7 +5,6 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/config"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/wallet/wallet_address"
@@ -16,7 +15,7 @@ type Wallet struct {
 	Encryption          *WalletEncryption               `json:"encryption" msgpack:"encryption"`
 	Version             Version                         `json:"version" msgpack:"version"`
 	Mnemonic            string                          `json:"mnemonic" msgpack:"mnemonic"`
-	Seed                helpers.HexBytes                `json:"seed" msgpack:"seed"` //32 byte
+	Seed                []byte                          `json:"seed" msgpack:"seed"` //32 byte
 	SeedIndex           uint32                          `json:"seedIndex" msgpack:"seedIndex"`
 	Count               int                             `json:"count" msgpack:"count"`
 	CountImportedIndex  int                             `json:"countIndex" msgpack:"countIndex"`

@@ -1,30 +1,29 @@
 package blockchain
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"errors"
 	"math/big"
 	"pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/config"
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
 
 type BlockchainData struct {
-	Hash                  helpers.HexBytes `json:"hash" msgpack:"hash"`                     //32
-	PrevHash              helpers.HexBytes `json:"prevHash" msgpack:"prevHash"`             //32
-	KernelHash            helpers.HexBytes `json:"kernelHash" msgpack:"kernelHash"`         //32
-	PrevKernelHash        helpers.HexBytes `json:"prevKernelHash" msgpack:"prevKernelHash"` //32
-	Height                uint64           `json:"height" msgpack:"height"`
-	Timestamp             uint64           `json:"timestamp" msgpack:"timestamp"`
-	Target                *big.Int         `json:"target" msgpack:"target"`
-	BigTotalDifficulty    *big.Int         `json:"bigTotalDifficulty" msgpack:"bigTotalDifficulty"`
-	TransactionsCount     uint64           `json:"transactionsCount" msgpack:"transactionsCount"` //count of the number of txs
-	AccountsCount         uint64           `json:"accountsCount" msgpack:"accountsCount"`         //count of the number of assets
-	AssetsCount           uint64           `json:"assetsCount" msgpack:"assetsCount"`             //count of the number of assets
-	ConsecutiveSelfForged uint64           `json:"consecutiveSelfForged" msgpack:"consecutiveSelfForged"`
+	Hash                  []byte   `json:"hash" msgpack:"hash"`                     //32
+	PrevHash              []byte   `json:"prevHash" msgpack:"prevHash"`             //32
+	KernelHash            []byte   `json:"kernelHash" msgpack:"kernelHash"`         //32
+	PrevKernelHash        []byte   `json:"prevKernelHash" msgpack:"prevKernelHash"` //32
+	Height                uint64   `json:"height" msgpack:"height"`
+	Timestamp             uint64   `json:"timestamp" msgpack:"timestamp"`
+	Target                *big.Int `json:"target" msgpack:"target"`
+	BigTotalDifficulty    *big.Int `json:"bigTotalDifficulty" msgpack:"bigTotalDifficulty"`
+	TransactionsCount     uint64   `json:"transactionsCount" msgpack:"transactionsCount"` //count of the number of txs
+	AccountsCount         uint64   `json:"accountsCount" msgpack:"accountsCount"`         //count of the number of assets
+	AssetsCount           uint64   `json:"assetsCount" msgpack:"assetsCount"`             //count of the number of assets
+	ConsecutiveSelfForged uint64   `json:"consecutiveSelfForged" msgpack:"consecutiveSelfForged"`
 }
 
 func (chainData *BlockchainData) computeNextTargetBig(reader store_db_interface.StoreDBTransactionInterface) (*big.Int, error) {
@@ -56,7 +55,7 @@ func (chainData *BlockchainData) computeNextTargetBig(reader store_db_interface.
 
 func (chainData *BlockchainData) updateChainInfo() {
 	gui.GUI.Info2Update("Blocks", strconv.FormatUint(chainData.Height, 10))
-	gui.GUI.Info2Update("Chain  Hash", hex.EncodeToString(chainData.Hash))
-	gui.GUI.Info2Update("Chain KHash", hex.EncodeToString(chainData.KernelHash))
+	gui.GUI.Info2Update("Chain  Hash", base64.StdEncoding.EncodeToString(chainData.Hash))
+	gui.GUI.Info2Update("Chain KHash", base64.StdEncoding.EncodeToString(chainData.KernelHash))
 	gui.GUI.Info2Update("TXs", strconv.FormatUint(chainData.TransactionsCount, 10))
 }

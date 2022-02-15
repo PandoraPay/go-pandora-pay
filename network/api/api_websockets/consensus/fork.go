@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"math/rand"
 	"pandora-pay/blockchain/blocks/block_complete"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/linked_list"
 	"pandora-pay/network/websocks/connection"
 	"sync"
@@ -16,9 +15,9 @@ type Fork struct {
 	End                uint64                                                 `json:"end" msgpack:"end"`
 	Current            uint64                                                 `json:"current" msgpack:"current"`
 	Blocks             *linked_list.LinkedList[*block_complete.BlockComplete] `json:"blocks" msgpack:"blocks"`
-	Hash               helpers.HexBytes                                       `json:"hash" msgpack:"hash"`
+	Hash               []byte                                                 `json:"hash" msgpack:"hash"`
 	HashStr            string                                                 `json:"hashStr" msgpack:"hashStr"`
-	PrevHash           helpers.HexBytes                                       `json:"prevHash" msgpack:"prevHash"`
+	PrevHash           []byte                                                 `json:"prevHash" msgpack:"prevHash"`
 	conns              []*connection.AdvancedConnection
 	errors             int
 	sync.RWMutex       `json:"-" msgpack:"-"`

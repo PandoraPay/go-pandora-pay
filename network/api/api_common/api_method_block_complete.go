@@ -18,13 +18,13 @@ import (
 
 type APIBlockCompleteRequest struct {
 	Height     uint64                  `json:"height,omitempty" msgpack:"height,omitempty"`
-	Hash       helpers.HexBytes        `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	Hash       []byte                  `json:"hash,omitempty" msgpack:"hash,omitempty"`
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APIBlockCompleteReply struct {
 	BlockComplete *block_complete.BlockComplete `json:"blockComplete,omitempty" msgpack:"blockComplete,omitempty"`
-	Serialized    helpers.HexBytes              `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
+	Serialized    []byte                        `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
 }
 
 func (api *APICommon) BlockComplete(r *http.Request, args *APIBlockCompleteRequest, reply *APIBlockCompleteReply) error {

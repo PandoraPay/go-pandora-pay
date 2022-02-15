@@ -9,8 +9,8 @@ import (
 )
 
 type TransactionSimpleInput struct {
-	PublicKey helpers.HexBytes //33
-	Signature helpers.HexBytes //64
+	PublicKey []byte //33
+	Signature []byte //64
 }
 
 func (vin *TransactionSimpleInput) Validate() error {

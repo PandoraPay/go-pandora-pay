@@ -7,21 +7,20 @@ import (
 	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/config/config_nodes"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"sync/atomic"
 )
 
 type ApiDelegatorNodeAskRequest struct {
-	PublicKey                  helpers.HexBytes `json:"publicKey" msgpack:"publicKey"`
-	ChallengeSignature         helpers.HexBytes `json:"challengeSignature" msgpack:"challengeSignature"`
-	DelegatedStakingPrivateKey helpers.HexBytes `json:"delegatedStakingPrivateKey" msgpack:"delegatedStakingPrivateKey"`
+	PublicKey                  []byte `json:"publicKey" msgpack:"publicKey"`
+	ChallengeSignature         []byte `json:"challengeSignature" msgpack:"challengeSignature"`
+	DelegatedStakingPrivateKey []byte `json:"delegatedStakingPrivateKey" msgpack:"delegatedStakingPrivateKey"`
 }
 
 type ApiDelegatorNodeAskReply struct {
-	Exists                    bool             `json:"exists" msgpack:"exists"`
-	DelegatedStakingPublicKey helpers.HexBytes `json:"delegatedStakingPublicKey" msgpack:"delegatedStakingPublicKey"`
+	Exists                    bool   `json:"exists" msgpack:"exists"`
+	DelegatedStakingPublicKey []byte `json:"delegatedStakingPublicKey" msgpack:"delegatedStakingPublicKey"`
 }
 
 func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAskRequest, reply *ApiDelegatorNodeAskReply) error {

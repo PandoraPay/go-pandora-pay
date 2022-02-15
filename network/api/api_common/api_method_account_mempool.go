@@ -4,7 +4,6 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 	"net/url"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
@@ -15,7 +14,7 @@ type APIAccountMempoolRequest struct {
 }
 
 type APIAccountMempoolReply struct {
-	List []helpers.HexBytes `json:"list" msgpack:"list"`
+	List [][]byte `json:"list" msgpack:"list"`
 }
 
 func (api *APICommon) AccountMempool(r *http.Request, args *APIAccountMempoolRequest, reply *APIAccountMempoolReply) error {
@@ -28,7 +27,7 @@ func (api *APICommon) AccountMempool(r *http.Request, args *APIAccountMempoolReq
 	txs := api.mempool.Txs.GetAccountTxs(publicKey)
 
 	if txs != nil {
-		reply.List = make([]helpers.HexBytes, len(txs))
+		reply.List = make([][]byte, len(txs))
 		c := 0
 		for _, tx := range txs {
 			reply.List[c] = tx.Tx.Bloom.Hash

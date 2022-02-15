@@ -2,7 +2,7 @@ package blockchain
 
 import (
 	"bytes"
-	"encoding/hex"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math/big"
@@ -237,7 +237,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 			}
 
 			if !bytes.Equal(firstBlockComplete.Block.PrevHash, newChainData.Hash) {
-				return fmt.Errorf("First block hash is not matching chain hash %d %s %s ", firstBlockComplete.Block.Height, hex.EncodeToString(firstBlockComplete.Bloom.Hash), hex.EncodeToString(newChainData.Hash))
+				return fmt.Errorf("First block hash is not matching chain hash %d %s %s ", firstBlockComplete.Block.Height, base64.StdEncoding.EncodeToString(firstBlockComplete.Bloom.Hash), base64.StdEncoding.EncodeToString(newChainData.Hash))
 			}
 
 			if !bytes.Equal(firstBlockComplete.Block.PrevKernelHash, newChainData.KernelHash) {

@@ -19,24 +19,24 @@ var regexAssetDescription = regexp.MustCompile("[\\w|\\W]+")
 
 type Asset struct {
 	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
-	PublicKey                                    helpers.HexBytes `json:"-" msgpack:"-"` //hashmap key
-	Index                                        uint64           `json:"-" msgpack:"-"` //hashMap index
-	Version                                      uint64           `json:"version,omitempty" msgpack:"version,omitempty"`
-	CanUpgrade                                   bool             `json:"canUpgrade,omitempty" msgpack:"canUpgrade,omitempty"`                             //upgrade different setting s
-	CanMint                                      bool             `json:"canMint,omitempty" msgpack:"canMint,omitempty"`                                   //increase supply
-	CanBurn                                      bool             `json:"canBurn,omitempty" msgpack:"canBurn,omitempty"`                                   //decrease supply
-	CanChangeUpdatePublicKey                     bool             `json:"canChangeUpdatePublicKey,omitempty" msgpack:"canChangeUpdatePublicKey,omitempty"` //can change key
-	CanChangeSupplyPublicKey                     bool             `json:"canChangeSupplyPublicKey,omitempty" msgpack:"canChangeSupplyPublicKey,omitempty"` //can change supply key
-	CanPause                                     bool             `json:"canPause,omitempty" msgpack:"canPause,omitempty"`                                 //can pause (suspend transactions)
-	CanFreeze                                    bool             `json:"canFreeze,omitempty" msgpack:"canFreeze,omitempty"`                               //freeze supply changes
-	DecimalSeparator                             byte             `json:"decimalSeparator,omitempty" msgpack:"decimalSeparator,omitempty"`
-	MaxSupply                                    uint64           `json:"maxSupply,omitempty" msgpack:"maxSupply,omitempty"`
-	Supply                                       uint64           `json:"supply,omitempty" msgpack:"supply,omitempty"`
-	UpdatePublicKey                              helpers.HexBytes `json:"updatePublicKey,omitempty" msgpack:"updatePublicKey,omitempty"` //33 byte
-	SupplyPublicKey                              helpers.HexBytes `json:"supplyPublicKey,omitempty" msgpack:"supplyPublicKey,omitempty"` //33 byte
-	Name                                         string           `json:"name" msgpack:"name"`
-	Ticker                                       string           `json:"ticker" msgpack:"ticker"`
-	Description                                  string           `json:"description,omitempty" msgpack:"description,omitempty"`
+	PublicKey                                    []byte `json:"-" msgpack:"-"` //hashmap key
+	Index                                        uint64 `json:"-" msgpack:"-"` //hashMap index
+	Version                                      uint64 `json:"version,omitempty" msgpack:"version,omitempty"`
+	CanUpgrade                                   bool   `json:"canUpgrade,omitempty" msgpack:"canUpgrade,omitempty"`                             //upgrade different setting s
+	CanMint                                      bool   `json:"canMint,omitempty" msgpack:"canMint,omitempty"`                                   //increase supply
+	CanBurn                                      bool   `json:"canBurn,omitempty" msgpack:"canBurn,omitempty"`                                   //decrease supply
+	CanChangeUpdatePublicKey                     bool   `json:"canChangeUpdatePublicKey,omitempty" msgpack:"canChangeUpdatePublicKey,omitempty"` //can change key
+	CanChangeSupplyPublicKey                     bool   `json:"canChangeSupplyPublicKey,omitempty" msgpack:"canChangeSupplyPublicKey,omitempty"` //can change supply key
+	CanPause                                     bool   `json:"canPause,omitempty" msgpack:"canPause,omitempty"`                                 //can pause (suspend transactions)
+	CanFreeze                                    bool   `json:"canFreeze,omitempty" msgpack:"canFreeze,omitempty"`                               //freeze supply changes
+	DecimalSeparator                             byte   `json:"decimalSeparator,omitempty" msgpack:"decimalSeparator,omitempty"`
+	MaxSupply                                    uint64 `json:"maxSupply,omitempty" msgpack:"maxSupply,omitempty"`
+	Supply                                       uint64 `json:"supply,omitempty" msgpack:"supply,omitempty"`
+	UpdatePublicKey                              []byte `json:"updatePublicKey,omitempty" msgpack:"updatePublicKey,omitempty"` //33 byte
+	SupplyPublicKey                              []byte `json:"supplyPublicKey,omitempty" msgpack:"supplyPublicKey,omitempty"` //33 byte
+	Name                                         string `json:"name" msgpack:"name"`
+	Ticker                                       string `json:"ticker" msgpack:"ticker"`
+	Description                                  string `json:"description,omitempty" msgpack:"description,omitempty"`
 }
 
 func (asset *Asset) SetKey(key []byte) {

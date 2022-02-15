@@ -21,7 +21,7 @@ type APIWalletDecryptTx struct {
 }
 
 type APIWalletDecryptTxBase struct {
-	Hash helpers.HexBytes `json:"hash" msgpack:"hash"`
+	Hash []byte `json:"hash" msgpack:"hash"`
 	api_types.APIAccountBaseRequest
 }
 

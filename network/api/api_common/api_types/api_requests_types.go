@@ -5,7 +5,6 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/config/config_auth"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
 )
 
 type SubscriptionType uint8
@@ -27,8 +26,8 @@ const (
 )
 
 type APIAccountBaseRequest struct {
-	Address   string           `json:"address,omitempty" msgpack:"address,omitempty"`
-	PublicKey helpers.HexBytes `json:"publicKey,omitempty"  msgpack:"publicKey,omitempty"`
+	Address   string `json:"address,omitempty" msgpack:"address,omitempty"`
+	PublicKey []byte `json:"publicKey,omitempty"  msgpack:"publicKey,omitempty"`
 }
 
 func (request *APIAccountBaseRequest) GetPublicKey(required bool) ([]byte, error) {

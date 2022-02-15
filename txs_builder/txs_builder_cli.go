@@ -3,7 +3,7 @@ package txs_builder
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -239,7 +239,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
 		return
 	}
 
@@ -296,7 +296,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
 		return
 	}
 
@@ -335,7 +335,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
 		return
 	}
 
@@ -390,10 +390,10 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
 
 		assetId := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).Payloads[0].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate).GetAssetId(tx.Bloom.Hash, 0)
-		gui.GUI.OutputWrite(fmt.Sprintf("Asset Id: %s", hex.EncodeToString(assetId), cmd))
+		gui.GUI.OutputWrite(fmt.Sprintf("Asset Id: %s", base64.StdEncoding.EncodeToString(assetId), cmd))
 
 		if updatePrivKey != nil || supplyPrivKey != nil {
 
@@ -405,16 +405,16 @@ func (builder *TxsBuilder) initCLI() {
 			}
 			defer f.Close()
 
-			if _, err = fmt.Fprintln(f, "Asset ID:", hex.EncodeToString(assetId)); err != nil {
+			if _, err = fmt.Fprintln(f, "Asset ID:", base64.StdEncoding.EncodeToString(assetId)); err != nil {
 				return
 			}
 			if _, err = fmt.Fprintln(f, "Asset name:", extra.Asset.Name, extra.Asset.Ticker); err != nil {
 				return
 			}
-			if _, err = fmt.Fprintln(f, "Supply Private Key:", hex.EncodeToString(supplyPrivKey.Key)); err != nil {
+			if _, err = fmt.Fprintln(f, "Supply Private Key:", base64.StdEncoding.EncodeToString(supplyPrivKey.Key)); err != nil {
 				return
 			}
-			if _, err = fmt.Fprintln(f, "Update Private Key:", hex.EncodeToString(updatePrivKey.Key)); err != nil {
+			if _, err = fmt.Fprintln(f, "Update Private Key:", base64.StdEncoding.EncodeToString(updatePrivKey.Key)); err != nil {
 				return
 			}
 
@@ -467,7 +467,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
 
 		return
 	}
@@ -508,7 +508,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
 		return
 	}
 
@@ -541,7 +541,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
 		return
 	}
 
@@ -595,7 +595,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", hex.EncodeToString(tx.Bloom.Hash), cmd))
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
 		return
 	}
 

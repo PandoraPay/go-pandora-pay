@@ -2,7 +2,7 @@ package webassembly
 
 import (
 	"context"
-	"encoding/hex"
+	"encoding/base64"
 	"encoding/json"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -17,7 +17,7 @@ import (
 func mempoolRemoveTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		hash, err := hex.DecodeString(args[0].String())
+		hash, err := base64.StdEncoding.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
 		}

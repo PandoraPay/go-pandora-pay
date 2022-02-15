@@ -16,13 +16,13 @@ import (
 
 type APIAssetRequest struct {
 	Height     uint64                  `json:"height,omitempty" msgpack:"height,omitempty"`
-	Hash       helpers.HexBytes        `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	Hash       []byte                  `json:"hash,omitempty" msgpack:"hash,omitempty"`
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APIAssetReply struct {
-	Asset      *asset.Asset     `json:"account,omitempty" msgpack:"account,omitempty"`
-	Serialized helpers.HexBytes `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
+	Asset      *asset.Asset `json:"account,omitempty" msgpack:"account,omitempty"`
+	Serialized []byte       `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
 }
 
 func (api *APICommon) Asset(r *http.Request, args *APIAssetRequest, reply *APIAssetReply) (err error) {

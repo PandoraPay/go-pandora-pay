@@ -5,7 +5,6 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/cryptography/crypto/balance-decoder"
-	"pandora-pay/helpers"
 	"pandora-pay/webassembly/webassembly_utils"
 	"strconv"
 	"syscall/js"
@@ -30,10 +29,10 @@ func decryptBalance(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		parameters := &struct {
-			PrivateKey    helpers.HexBytes `json:"privateKey"`
-			PreviousValue uint64           `json:"previousValue"`
-			Balance       helpers.HexBytes `json:"balance"`
-			Asset         helpers.HexBytes `json:"asset"`
+			PrivateKey    []byte `json:"privateKey"`
+			PreviousValue uint64 `json:"previousValue"`
+			Balance       []byte `json:"balance"`
+			Asset         []byte `json:"asset"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {

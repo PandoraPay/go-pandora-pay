@@ -19,16 +19,16 @@ import (
 
 type APIAccountsByKeysRequest struct {
 	Keys           []*api_types.APIAccountBaseRequest `json:"keys,omitempty" msgpack:"keys,omitempty"`
-	Asset          helpers.HexBytes                   `json:"asset,omitempty" msgpack:"asset,omitempty"`
+	Asset          []byte                             `json:"asset,omitempty" msgpack:"asset,omitempty"`
 	IncludeMempool bool                               `json:"includeMempool,omitempty" msgpack:"includeMempool,omitempty"`
 	ReturnType     api_types.APIReturnType            `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APIAccountsByKeysReply struct {
 	Acc           []*account.Account           `json:"acc,omitempty" msgpack:"acc,omitempty"`
-	AccSerialized []helpers.HexBytes           `json:"accSerialized,omitempty" msgpack:"accSerialized,omitempty"`
+	AccSerialized [][]byte                     `json:"accSerialized,omitempty" msgpack:"accSerialized,omitempty"`
 	Reg           []*registration.Registration `json:"registration,omitempty" msgpack:"registration,omitempty"`
-	RegSerialized []helpers.HexBytes           `json:"registrationSerialized,omitempty" msgpack:"registrationSerialized,omitempty"`
+	RegSerialized [][]byte                     `json:"registrationSerialized,omitempty" msgpack:"registrationSerialized,omitempty"`
 }
 
 func (api *APICommon) AccountsByKeys(r *http.Request, args *APIAccountsByKeysRequest, reply *APIAccountsByKeysReply) (err error) {
@@ -92,7 +92,7 @@ func (api *APICommon) AccountsByKeys(r *http.Request, args *APIAccountsByKeysReq
 	}
 
 	if args.ReturnType == api_types.RETURN_SERIALIZED {
-		reply.AccSerialized = make([]helpers.HexBytes, len(reply.Acc))
+		reply.AccSerialized = make([][]byte, len(reply.Acc))
 		for i, acc := range reply.Acc {
 			if acc != nil {
 				reply.AccSerialized[i] = helpers.SerializeToBytes(acc)
@@ -100,7 +100,7 @@ func (api *APICommon) AccountsByKeys(r *http.Request, args *APIAccountsByKeysReq
 		}
 		reply.Acc = nil
 
-		reply.RegSerialized = make([]helpers.HexBytes, len(reply.Reg))
+		reply.RegSerialized = make([][]byte, len(reply.Reg))
 		for i, reg := range reply.Reg {
 			if reg != nil {
 				reply.RegSerialized[i] = helpers.SerializeToBytes(reg)

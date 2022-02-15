@@ -3,7 +3,7 @@ package wallet
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"github.com/tyler-smith/go-bip32"
@@ -68,7 +68,7 @@ func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, balance, asset
 
 	var previousValue uint64
 	if !useNewPreviousValue {
-		if found := addr.DecryptedBalances[hex.EncodeToString(asset)]; found != nil {
+		if found := addr.DecryptedBalances[base64.StdEncoding.EncodeToString(asset)]; found != nil {
 			previousValue = found.Amount
 		}
 	} else {
@@ -134,8 +134,8 @@ func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string, lo
 	return wallet.GetWalletAddressByPublicKey(address.PublicKey, lock), nil
 }
 
-func (wallet *Wallet) GetWalletAddressByPublicKeyHex(publicKeyHex string, lock bool) (*wallet_address.WalletAddress, error) {
-	publicKey, err := hex.DecodeString(publicKeyHex)
+func (wallet *Wallet) GetWalletAddressByPublicKeyString(publicKeyStr string, lock bool) (*wallet_address.WalletAddress, error) {
+	publicKey, err := base64.StdEncoding.DecodeString(publicKeyStr)
 	if err != nil {
 		return nil, err
 	}
@@ -164,11 +164,11 @@ func (wallet *Wallet) TryDecryptBalance(publicKey, asset, balance []byte) (uint6
 
 	addr := wallet.addressesMap[string(publicKey)]
 
-	if addr.DecryptedBalances[hex.EncodeToString(asset)] == nil {
+	if addr.DecryptedBalances[base64.StdEncoding.EncodeToString(asset)] == nil {
 		return 0, false, nil
 	}
 
-	previousValue := addr.DecryptedBalances[hex.EncodeToString(asset)].Amount
+	previousValue := addr.DecryptedBalances[base64.StdEncoding.EncodeToString(asset)].Amount
 
 	ok := addr.PrivateKey.TryDecryptBalance(balancePoint, previousValue)
 	if ok {

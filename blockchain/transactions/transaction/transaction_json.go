@@ -25,27 +25,27 @@ import (
 
 type json_TransactionDataRegistration struct {
 	RegistrationType      transaction_zether_registration.TransactionZetherDataRegistrationType `json:"registrationType"  msgpack:"registrationType"`
-	RegistrationSignature helpers.HexBytes                                                      `json:"signature"  msgpack:"signature"`
+	RegistrationSignature []byte
 }
 
 type json_TransactionDataDelegatedStakingUpdate struct {
-	DelegatedStakingHasNewInfo   bool             `json:"delegatedStakingHasNewInfo" msgpack:"delegatedStakingHasNewInfo"`
-	DelegatedStakingNewPublicKey helpers.HexBytes `json:"delegatedStakingNewPublicKey" msgpack:"delegatedStakingNewPublicKey"` //20 byte
-	DelegatedStakingNewFee       uint64           `json:"delegatedStakingNewFee" msgpack:"delegatedStakingNewFee"`
+	DelegatedStakingHasNewInfo   bool   `json:"delegatedStakingHasNewInfo" msgpack:"delegatedStakingHasNewInfo"`
+	DelegatedStakingNewPublicKey []byte `json:"delegatedStakingNewPublicKey" msgpack:"delegatedStakingNewPublicKey"` //20 byte
+	DelegatedStakingNewFee       uint64 `json:"delegatedStakingNewFee" msgpack:"delegatedStakingNewFee"`
 }
 
 type Json_Transaction struct {
 	Version    transaction_type.TransactionVersion `json:"version" msgpack:"version"`
 	Size       uint64                              `json:"size" msgpack:"size"`
 	SpaceExtra uint64                              `json:"spaceExtra" msgpack:"spaceExtra"`
-	Hash       helpers.HexBytes                    `json:"hash" msgpack:"hash"`
+	Hash       []byte                              `json:"hash" msgpack:"hash"`
 }
 
 type json_TransactionSimple struct {
 	*Json_Transaction
 	TxScript    transaction_simple.ScriptType           `json:"txScript" msgpack:"txScript"`
 	DataVersion transaction_data.TransactionDataVersion `json:"dataVersion" msgpack:"dataVersion"`
-	Data        helpers.HexBytes                        `json:"data" msgpack:"data"`
+	Data        []byte                                  `json:"data" msgpack:"data"`
 	Nonce       uint64                                  `json:"nonce" msgpack:"nonce"`
 	Fee         uint64                                  `json:"fee" msgpack:"fee"`
 	FeeVersion  bool                                    `json:"feeVersion" msgpack:"feeVersion"`
@@ -54,8 +54,8 @@ type json_TransactionSimple struct {
 }
 
 type json_TransactionSimpleInput struct {
-	PublicKey helpers.HexBytes `json:"publicKey,omitempty" msgpack:"publicKey,omitempty"` //32
-	Signature helpers.HexBytes `json:"signature" msgpack:"signature"`                     //64
+	PublicKey []byte `json:"publicKey,omitempty" msgpack:"publicKey,omitempty"` //32
+	Signature []byte `json:"signature" msgpack:"signature"`                     //64
 }
 
 type json_Only_TransactionSimpleExtraUpdateDelegate struct {
@@ -70,27 +70,27 @@ type json_Only_TransactionSimpleExtraUnstake struct {
 type json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity struct {
 	Liquidities     []*asset_fee_liquidity.AssetFeeLiquidity `json:"liquidities"`
 	CollectorHasNew bool                                     `json:"collectorHasNew"`
-	Collector       helpers.HexBytes                         `json:"collector"`
+	Collector       []byte                                   `json:"collector"`
 }
 
 type json_Only_TransactionZether struct {
 	ChainHeight uint64                          `json:"chainHeight"  msgpack:"chainHeight"`
-	ChainHash   helpers.HexBytes                `json:"chainHash"  msgpack:"chainHash"`
+	ChainHash   []byte                          `json:"chainHash"  msgpack:"chainHash"`
 	Payloads    []*json_Only_TransactionPayload `json:"payloads"  msgpack:"payloads"`
 }
 
 type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
-	DelegatePublicKey      helpers.HexBytes                            `json:"delegatePublicKey"  msgpack:"delegatePublicKey"`
+	DelegatePublicKey      []byte                                      `json:"delegatePublicKey"  msgpack:"delegatePublicKey"`
 	ConvertToUnclaimed     bool                                        `json:"convertToUnclaimed"  msgpack:"convertToUnclaimed"`
 	DelegatedStakingUpdate *json_TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"  msgpack:"delegatedStakingUpdate"`
-	DelegateSignature      helpers.HexBytes                            `json:"delegateSignature"  msgpack:"delegateSignature"`
+	DelegateSignature      []byte                                      `json:"delegateSignature"  msgpack:"delegateSignature"`
 }
 
 type json_Only_TransactionZetherPayloadExtraClaim struct {
-	DelegatePublicKey                 helpers.HexBytes `json:"delegatePublicKey"  msgpack:"delegatePublicKey"`
-	DelegatedStakingClaimAmount       uint64           `json:"delegatedStakingClaimAmount"  msgpack:"delegatedStakingClaimAmount"`
-	TemporaryAccountRegistrationIndex uint64           `json:"temporaryAccountRegistrationIndex"  msgpack:"temporaryAccountRegistrationIndex"`
-	DelegateSignature                 helpers.HexBytes `json:"delegateSignature"  msgpack:"delegateSignature"`
+	DelegatePublicKey                 []byte `json:"delegatePublicKey"  msgpack:"delegatePublicKey"`
+	DelegatedStakingClaimAmount       uint64 `json:"delegatedStakingClaimAmount"  msgpack:"delegatedStakingClaimAmount"`
+	TemporaryAccountRegistrationIndex uint64 `json:"temporaryAccountRegistrationIndex"  msgpack:"temporaryAccountRegistrationIndex"`
+	DelegateSignature                 []byte `json:"delegateSignature"  msgpack:"delegateSignature"`
 }
 
 type json_Only_TransactionZetherPayloadExtraAssetCreate struct {
@@ -98,36 +98,36 @@ type json_Only_TransactionZetherPayloadExtraAssetCreate struct {
 }
 
 type json_Only_TransactionZetherPayloadExtraAssetSupplyIncrease struct {
-	AssetId              helpers.HexBytes `json:"assetId"  msgpack:"assetId"`
-	ReceiverPublicKey    helpers.HexBytes `json:"receiverPublicKey"  msgpack:"receiverPublicKey"` //must be registered before
-	Value                uint64           `json:"value"  msgpack:"value"`
-	AssetSupplyPublicKey helpers.HexBytes `json:"assetSupplyPublicKey"  msgpack:"assetSupplyPublicKey"` //TODO: it can be bloomed
-	AssetSignature       helpers.HexBytes `json:"assetSignature"  msgpack:"assetSignature"`
+	AssetId              []byte `json:"assetId"  msgpack:"assetId"`
+	ReceiverPublicKey    []byte `json:"receiverPublicKey"  msgpack:"receiverPublicKey"` //must be registered before
+	Value                uint64 `json:"value"  msgpack:"value"`
+	AssetSupplyPublicKey []byte `json:"assetSupplyPublicKey"  msgpack:"assetSupplyPublicKey"` //TODO: it can be bloomed
+	AssetSignature       []byte `json:"assetSignature"  msgpack:"assetSignature"`
 }
 
 type json_Only_TransactionZetherStatement struct {
-	RingSize      int                `json:"ringSize"  msgpack:"ringSize"`
-	CLn           []helpers.HexBytes `json:"cLn"  msgpack:"cLn"`
-	CRn           []helpers.HexBytes `json:"cRn"  msgpack:"cRn"`
-	Publickeylist []helpers.HexBytes `json:"publickeylist"  msgpack:"publickeylist"`
-	C             []helpers.HexBytes `json:"c"  msgpack:"c"`
-	D             helpers.HexBytes   `json:"d"  msgpack:"d"`
-	Fee           uint64             `json:"fee"  msgpack:"fee"`
+	RingSize      int      `json:"ringSize"  msgpack:"ringSize"`
+	CLn           [][]byte `json:"cLn"  msgpack:"cLn"`
+	CRn           [][]byte `json:"cRn"  msgpack:"cRn"`
+	Publickeylist [][]byte `json:"publickeylist"  msgpack:"publickeylist"`
+	C             [][]byte `json:"c"  msgpack:"c"`
+	D             []byte   `json:"d"  msgpack:"d"`
+	Fee           uint64   `json:"fee"  msgpack:"fee"`
 }
 
 type json_Only_TransactionPayload struct {
 	PayloadScript    transaction_zether_payload.PayloadScriptType `json:"payloadScript"  msgpack:"payloadScript"`
-	Asset            helpers.HexBytes                             `json:"asset"  msgpack:"asset"`
+	Asset            []byte                                       `json:"asset"  msgpack:"asset"`
 	BurnValue        uint64                                       `json:"burnValue"  msgpack:"burnValue"`
 	DataVersion      transaction_data.TransactionDataVersion      `json:"dataVersion"  msgpack:"dataVersion"`
-	Data             helpers.HexBytes                             `json:"data"  msgpack:"data"`
+	Data             []byte                                       `json:"data"  msgpack:"data"`
 	Registrations    []*json_TransactionDataRegistration          `json:"registrations"  msgpack:"registrations"`
 	Statement        *json_Only_TransactionZetherStatement        `json:"statement"  msgpack:"statement"`
-	WhisperSender    helpers.HexBytes                             `json:"whisperSender" msgpack:"whisperSender"`
-	WhisperRecipient helpers.HexBytes                             `json:"whisperRecipient" msgpack:"whisperRecipient"`
+	WhisperSender    []byte                                       `json:"whisperSender" msgpack:"whisperSender"`
+	WhisperRecipient []byte                                       `json:"whisperRecipient" msgpack:"whisperRecipient"`
 	FeeRate          uint64                                       `json:"feeRate"  msgpack:"feeRate"`
 	FeeLeadingZeros  byte                                         `json:"feeLeadingZeros"  msgpack:"feeLeadingZeros"`
-	Proof            helpers.HexBytes                             `json:"proof"  msgpack:"proof"`
+	Proof            []byte                                       `json:"proof"  msgpack:"proof"`
 	Extra            interface{}                                  `json:"extra"  msgpack:"extra"`
 }
 

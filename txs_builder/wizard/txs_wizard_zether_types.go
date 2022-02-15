@@ -3,20 +3,19 @@ package wizard
 import (
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
-	"pandora-pay/helpers"
 )
 
 type WizardZetherPayloadExtraDelegateStake struct {
 	WizardZetherPayloadExtra `json:"-" msgpack:"-"`
-	DelegatePublicKey        helpers.HexBytes                                        `json:"delegatePublicKey" msgpack:"delegatePublicKey"`
+	DelegatePublicKey        []byte                                                  `json:"delegatePublicKey" msgpack:"delegatePublicKey"`
 	ConvertToUnclaimed       bool                                                    `json:"convertToUnclaimed" msgpack:"convertToUnclaimed"`
 	DelegatedStakingUpdate   *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate" msgpack:"delegatedStakingUpdate"`
-	DelegatePrivateKey       helpers.HexBytes                                        `json:"delegatePrivateKey,omitempty" msgpack:"delegatePrivateKey,omitempty"`
+	DelegatePrivateKey       []byte                                                  `json:"delegatePrivateKey,omitempty" msgpack:"delegatePrivateKey,omitempty"`
 }
 
 type WizardZetherPayloadExtraClaim struct {
 	WizardZetherPayloadExtra `json:"-"  msgpack:""`
-	DelegatePrivateKey       helpers.HexBytes `json:"delegatePrivateKey" msgpack:"delegatePrivateKey"`
+	DelegatePrivateKey       []byte `json:"delegatePrivateKey" msgpack:"delegatePrivateKey"`
 }
 
 type WizardZetherPayloadExtraAssetCreate struct {
@@ -26,18 +25,18 @@ type WizardZetherPayloadExtraAssetCreate struct {
 
 type WizardZetherPayloadExtraAssetSupplyIncrease struct {
 	WizardZetherPayloadExtra `json:"-" msgpack:""`
-	AssetId                  helpers.HexBytes `json:"assetId" msgpack:"assetId"`
-	ReceiverPublicKey        helpers.HexBytes `json:"receiverPublicKey" msgpack:"receiverPublicKey"`
-	Value                    uint64           `json:"value" msgpack:"value"`
-	AssetSupplyPrivateKey    helpers.HexBytes `json:"assetSupplyPublicKey" msgpack:"assetSupplyPublicKey"`
+	AssetId                  []byte `json:"assetId" msgpack:"assetId"`
+	ReceiverPublicKey        []byte `json:"receiverPublicKey" msgpack:"receiverPublicKey"`
+	Value                    uint64 `json:"value" msgpack:"value"`
+	AssetSupplyPrivateKey    []byte `json:"assetSupplyPublicKey" msgpack:"assetSupplyPublicKey"`
 }
 
 type WizardZetherPayloadExtra interface {
 }
 
 type WizardZetherTransfer struct {
-	Asset                  helpers.HexBytes         `json:"asset" msgpack:"asset"`
-	Sender                 helpers.HexBytes         `json:"sender" msgpack:"sender"` //private key
+	Asset                  []byte                   `json:"asset" msgpack:"asset"`
+	Sender                 []byte                   `json:"sender" msgpack:"sender"` //private key
 	SenderDecryptedBalance uint64                   `json:"senderDecryptedBalance" msgpack:"senderDecryptedBalance"`
 	Recipient              string                   `json:"recipient" msgpack:"recipient"`
 	Amount                 uint64                   `json:"amount" msgpack:"amount"`

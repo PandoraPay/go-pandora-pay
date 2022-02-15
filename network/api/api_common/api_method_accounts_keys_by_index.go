@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
@@ -15,14 +14,14 @@ import (
 )
 
 type APIAccountsKeysByIndexRequest struct {
-	Indexes         []uint64         `json:"indexes" msgpack:"indexes"`
-	Asset           helpers.HexBytes `json:"asset" msgpack:"asset"`
-	EncodeAddresses bool             `json:"encodeAddresses" msgpack:"encodeAddresses"`
+	Indexes         []uint64 `json:"indexes" msgpack:"indexes"`
+	Asset           []byte   `json:"asset" msgpack:"asset"`
+	EncodeAddresses bool     `json:"encodeAddresses" msgpack:"encodeAddresses"`
 }
 
 type APIAccountsKeysByIndexReply struct {
-	PublicKeys []helpers.HexBytes `json:"publicKeys,omitempty" msgpack:"publicKeys,omitempty"`
-	Addresses  []string           `json:"addresses,omitempty" msgpack:"addresses,omitempty"`
+	PublicKeys [][]byte `json:"publicKeys,omitempty" msgpack:"publicKeys,omitempty"`
+	Addresses  []string `json:"addresses,omitempty" msgpack:"addresses,omitempty"`
 }
 
 func (api *APICommon) AccountsKeysByIndex(r *http.Request, args *APIAccountsKeysByIndexRequest, reply *APIAccountsKeysByIndexReply) (err error) {
@@ -38,7 +37,7 @@ func (api *APICommon) AccountsKeysByIndex(r *http.Request, args *APIAccountsKeys
 			return
 		}
 
-		reply.PublicKeys = make([]helpers.HexBytes, len(args.Indexes))
+		reply.PublicKeys = make([][]byte, len(args.Indexes))
 		for i := 0; i < len(args.Indexes); i++ {
 			if reply.PublicKeys[i], err = accs.GetKeyByIndex(args.Indexes[i]); err != nil {
 				return

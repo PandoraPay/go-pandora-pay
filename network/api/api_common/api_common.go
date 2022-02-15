@@ -1,7 +1,7 @@
 package api_common
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/blockchain_sync"
 	"pandora-pay/config"
@@ -45,10 +45,10 @@ type APICommon struct {
 func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.BlockchainDataUpdate) {
 	newLocalChain := &APIBlockchain{
 		newChainDataUpdate.Update.Height,
-		hex.EncodeToString(newChainDataUpdate.Update.Hash),
-		hex.EncodeToString(newChainDataUpdate.Update.PrevHash),
-		hex.EncodeToString(newChainDataUpdate.Update.KernelHash),
-		hex.EncodeToString(newChainDataUpdate.Update.PrevKernelHash),
+		base64.StdEncoding.EncodeToString(newChainDataUpdate.Update.Hash),
+		base64.StdEncoding.EncodeToString(newChainDataUpdate.Update.PrevHash),
+		base64.StdEncoding.EncodeToString(newChainDataUpdate.Update.KernelHash),
+		base64.StdEncoding.EncodeToString(newChainDataUpdate.Update.PrevKernelHash),
 		newChainDataUpdate.Update.Timestamp,
 		newChainDataUpdate.Update.TransactionsCount,
 		newChainDataUpdate.Update.AccountsCount,

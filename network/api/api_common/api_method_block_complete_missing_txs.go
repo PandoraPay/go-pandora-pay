@@ -3,7 +3,6 @@ package api_common
 import (
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
-	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -11,12 +10,12 @@ import (
 )
 
 type APIBlockCompleteMissingTxsRequest struct {
-	Hash       helpers.HexBytes `json:"hash,omitempty" msgpack:"hash,omitempty"`
-	MissingTxs []int            `json:"missingTxs,omitempty" msgpack:"missingTxs,omitempty"`
+	Hash       []byte `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	MissingTxs []int  `json:"missingTxs,omitempty" msgpack:"missingTxs,omitempty"`
 }
 
 type APIBlockCompleteMissingTxsReply struct {
-	Txs []helpers.HexBytes `json:"txs,omitempty" msgpack:"txs,omitempty"`
+	Txs [][]byte `json:"txs,omitempty" msgpack:"txs,omitempty"`
 }
 
 func (api *APICommon) getBlockCompleteMissingTxs(args *APIBlockCompleteMissingTxsRequest, reply *APIBlockCompleteMissingTxsReply) error {
@@ -42,7 +41,7 @@ func (api *APICommon) getBlockCompleteMissingTxs(args *APIBlockCompleteMissingTx
 			return
 		}
 
-		reply.Txs = make([]helpers.HexBytes, len(args.MissingTxs))
+		reply.Txs = make([][]byte, len(args.MissingTxs))
 		for i, txMissingIndex := range args.MissingTxs {
 			if txMissingIndex >= 0 && txMissingIndex < len(txHashes) {
 				tx := reader.Get("tx:" + string(txHashes[txMissingIndex]))

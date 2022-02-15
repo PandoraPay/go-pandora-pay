@@ -19,13 +19,13 @@ import (
 
 type APITransactionRequest struct {
 	Height     uint64                  `json:"height,omitempty" msgpack:"height,omitempty"`
-	Hash       helpers.HexBytes        `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	Hash       []byte                  `json:"hash,omitempty" msgpack:"hash,omitempty"`
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APITransactionReply struct {
 	Tx           *transaction.Transaction `json:"tx,omitempty" msgpack:"tx,omitempty"`
-	TxSerialized helpers.HexBytes         `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
+	TxSerialized []byte                   `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
 	Mempool      bool                     `json:"mempool,omitempty" msgpack:"mempool,omitempty"`
 	Info         *info.TxInfo             `json:"info,omitempty" msgpack:"info,omitempty"`
 }

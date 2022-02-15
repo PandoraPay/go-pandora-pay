@@ -1,9 +1,8 @@
 package webassembly
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"pandora-pay/addresses"
-	"pandora-pay/helpers"
 	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
 )
@@ -22,11 +21,11 @@ func createAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		parameters := struct {
-			PublicKey     helpers.HexBytes `json:"publicKey"`
-			Registration  helpers.HexBytes `json:"registration"`
-			PaymentID     helpers.HexBytes `json:"paymentID"`
-			PaymentAmount uint64           `json:"paymentAmount"`
-			PaymentAsset  helpers.HexBytes `json:"paymentAsset"`
+			PublicKey     []byte `json:"publicKey"`
+			Registration  []byte `json:"registration"`
+			PaymentID     []byte `json:"paymentID"`
+			PaymentAmount uint64 `json:"paymentAmount"`
+			PaymentAsset  []byte `json:"paymentAsset"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], &parameters); err != nil {
@@ -56,9 +55,9 @@ func generateNewAddress(this js.Value, args []js.Value) interface{} {
 		}
 
 		return webassembly_utils.ConvertJSONBytes([]interface{}{
-			hex.EncodeToString(priv.Key),
+			base64.StdEncoding.EncodeToString(priv.Key),
 			addr.EncodeAddr(),
-			hex.EncodeToString(addr.PublicKey),
+			base64.StdEncoding.EncodeToString(addr.PublicKey),
 		})
 	})
 }
@@ -66,7 +65,7 @@ func generateNewAddress(this js.Value, args []js.Value) interface{} {
 func generateAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		privateKey, err := hex.DecodeString(args[0].String())
+		privateKey, err := base64.StdEncoding.DecodeString(args[0].String())
 		if err != nil {
 			return nil, err
 		}
@@ -83,9 +82,9 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 		}
 
 		return webassembly_utils.ConvertJSONBytes([]interface{}{
-			hex.EncodeToString(priv.Key),
+			base64.StdEncoding.EncodeToString(priv.Key),
 			addr.EncodeAddr(),
-			hex.EncodeToString(addr.PublicKey),
+			base64.StdEncoding.EncodeToString(addr.PublicKey),
 		})
 	})
 }
