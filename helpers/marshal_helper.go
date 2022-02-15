@@ -20,6 +20,21 @@ func (s *Base64) UnmarshalText(data []byte) (err error) {
 	return
 }
 
+// EncodeMsgpack serializes ElGamal into byteArray
+func (s *Base64) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeBytes(*s)
+}
+
+// DecodeMsgpack deserializes ByteArray to hex
+func (s *Base64) DecodeMsgpack(dec *msgpack.Decoder) error {
+	bytes, err := dec.DecodeBytes()
+	if err != nil {
+		return err
+	}
+	*s = bytes
+	return nil
+}
+
 func ConvertBN256Array(array []*bn256.G1) [][]byte {
 	out := make([][]byte, len(array))
 	for i, it := range array {
