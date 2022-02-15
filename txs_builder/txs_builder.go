@@ -94,9 +94,16 @@ func (builder *TxsBuilder) getWalletAddresses(senders []string) ([]*wallet_addre
 	return sendersWalletAddress, nil
 }
 
-func (builder *TxsBuilder) CreateSimpleTx(sender string, nonce uint64, extra wizard.WizardTxSimpleExtra, data *wizard.WizardTransactionData, fee *wizard.WizardTransactionFee, feeVersion bool, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, ctx context.Context, statusCallback func(status string)) (*transaction.Transaction, error) {
+func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, ctx context.Context, statusCallback func(status string)) (*transaction.Transaction, error) {
 
-	sendersWalletAddresses, err := builder.getWalletAddresses([]string{sender})
+	if txData.Data == nil {
+		txData.Data = &wizard.WizardTransactionData{nil, false}
+	}
+	if txData.Fee == nil {
+		txData.Fee = &wizard.WizardTransactionFee{0, 0, 0, true}
+	}
+
+	sendersWalletAddresses, err := builder.getWalletAddresses([]string{txData.Sender})
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +134,7 @@ func (builder *TxsBuilder) CreateSimpleTx(sender string, nonce uint64, extra wiz
 			return
 		}
 
-		switch txExtra := extra.(type) {
+		switch txExtra := txData.Extra.(type) {
 		case *wizard.WizardTxSimpleExtraUpdateDelegate:
 		case *wizard.WizardTxSimpleExtraUnstake:
 			if availableStake < txExtra.Amount {
@@ -142,10 +149,10 @@ func (builder *TxsBuilder) CreateSimpleTx(sender string, nonce uint64, extra wiz
 
 	statusCallback("Balances checked")
 
-	nonce = builder.getNonce(nonce, sendersWalletAddresses[0].PublicKey, plainAcc.Nonce)
+	txData.Nonce = builder.getNonce(txData.Nonce, sendersWalletAddresses[0].PublicKey, plainAcc.Nonce)
 	statusCallback("Getting Nonce from Mempool")
 
-	if tx, err = wizard.CreateSimpleTx(nonce, sendersWalletAddresses[0].PrivateKey.Key, chainHeight, extra, data, fee, feeVersion, false, statusCallback); err != nil {
+	if tx, err = wizard.CreateSimpleTx(txData.Nonce, sendersWalletAddresses[0].PrivateKey.Key, chainHeight, txData.Extra, txData.Data, txData.Fee, txData.FeeVersion, false, statusCallback); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Created")

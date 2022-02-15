@@ -239,10 +239,10 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 	return
 }
 
-func (wallet *Wallet) CliSelectAddress(text string, ctx context.Context) (*wallet_address.WalletAddress, int, error) {
+func (wallet *Wallet) CliSelectAddress(text string, ctx context.Context) (*wallet_address.WalletAddress, string, int, error) {
 
 	if err := wallet.CliListAddresses("", ctx); err != nil {
-		return nil, 0, err
+		return nil, "", 0, err
 	}
 
 	index := gui.GUI.OutputReadInt(text, false, 0, func(value int) bool {
@@ -251,10 +251,10 @@ func (wallet *Wallet) CliSelectAddress(text string, ctx context.Context) (*walle
 
 	walletAddress, err := wallet.GetWalletAddress(index, true)
 	if err != nil {
-		return nil, 0, err
+		return nil, "", 0, err
 	}
 
-	return walletAddress, index, nil
+	return walletAddress, walletAddress.AddressEncoded, index, nil
 }
 
 func (wallet *Wallet) initWalletCLI() {
@@ -417,7 +417,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliRemoveAddress := func(cmd string, ctx context.Context) (err error) {
 
-		_, index, err := wallet.CliSelectAddress("Select Address to be Removed", ctx)
+		_, _, index, err := wallet.CliSelectAddress("Select Address to be Removed", ctx)
 		if err != nil {
 			return
 		}
@@ -440,7 +440,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliDeriveDelegatedStake := func(cmd string, ctx context.Context) (err error) {
 
-		addr, _, err := wallet.CliSelectAddress("Select Address to Derive Delegated Stake", ctx)
+		addr, _, _, err := wallet.CliSelectAddress("Select Address to Derive Delegated Stake", ctx)
 		if err != nil {
 			return
 		}
@@ -465,7 +465,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliShowPrivateKey := func(cmd string, ctx context.Context) (err error) {
 
-		_, index, err := wallet.CliSelectAddress("Select Address to show the private key", ctx)
+		_, _, index, err := wallet.CliSelectAddress("Select Address to show the private key", ctx)
 		if err != nil {
 			return
 		}

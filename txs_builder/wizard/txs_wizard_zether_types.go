@@ -37,7 +37,7 @@ type WizardZetherPayloadExtra interface {
 
 type WizardZetherTransfer struct {
 	Asset                  helpers.HexBytes         `json:"asset" msgpack:"asset"`
-	Sender                 []byte                   `json:"sender" msgpack:"sender"` //private key
+	Sender                 helpers.HexBytes         `json:"sender" msgpack:"sender"` //private key
 	SenderDecryptedBalance uint64                   `json:"senderDecryptedBalance" msgpack:"senderDecryptedBalance"`
 	Recipient              string                   `json:"recipient" msgpack:"recipient"`
 	Amount                 uint64                   `json:"amount" msgpack:"amount"`

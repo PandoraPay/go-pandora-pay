@@ -23,6 +23,7 @@ import (
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/txs_builder/wizard"
+	"pandora-pay/wallet/wallet_address"
 )
 
 func (builder *TxsBuilder) showWarningIfNotSyncCLI() {
@@ -86,7 +87,7 @@ func (builder *TxsBuilder) readAddress(text string, leaveEmpty bool) (address *a
 	return
 }
 
-func (builder *TxsBuilder) readAddressOptional(text string, assetId []byte, allowRandomAddress bool) (address *addresses.Address, amount uint64, err error) {
+func (builder *TxsBuilder) readAddressOptional(text string, assetId []byte, allowRandomAddress bool) (address *addresses.Address, addressEncoded string, amount uint64, err error) {
 
 	text2 := text
 	if allowRandomAddress {
@@ -111,6 +112,7 @@ func (builder *TxsBuilder) readAddressOptional(text string, assetId []byte, allo
 		return
 	}
 
+	addressEncoded = address.EncodeAddr()
 	return
 }
 
@@ -211,24 +213,26 @@ func (builder *TxsBuilder) initCLI() {
 	cliPrivateTransfer := func(cmd string, ctx context.Context) (err error) {
 		builder.showWarningIfNotSyncCLI()
 
-		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Transfer", ctx)
-		if err != nil {
+		txData := &TxBuilderCreateZetherTxData{
+			Payloads: []*TxBuilderCreateZetherTxPayload{{}},
+		}
+
+		if _, txData.Payloads[0].Sender, _, err = builder.wallet.CliSelectAddress("Select Address to Transfer", ctx); err != nil {
 			return
 		}
 
-		assetId := builder.readAsset("Asset. Leave empty for Native Asset", true)
+		txData.Payloads[0].Asset = builder.readAsset("Asset. Leave empty for Native Asset", true)
 
-		recipientAddress, amount, err := builder.readAddressOptional("Recipient Address", assetId, false)
-		if err != nil {
+		if _, txData.Payloads[0].Recipient, txData.Payloads[0].Amount, err = builder.readAddressOptional("Recipient Address", txData.Payloads[0].Asset, false); err != nil {
 			return
 		}
 
-		ringConfiguration := builder.readZetherRingConfiguration()
-		data := builder.readData()
-		fee := builder.readZetherFee(assetId)
+		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
+		txData.Payloads[0].Data = builder.readData()
+		txData.Payloads[0].Fee = builder.readZetherFee(txData.Payloads[0].Asset)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
-		tx, err := builder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{nil}, []string{walletAddress.AddressEncoded}, [][]byte{assetId}, []uint64{amount}, []string{recipientAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.WizardTransactionData{data}, []*wizard.WizardZetherTransactionFee{fee}, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateZetherTx(txData, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -242,43 +246,50 @@ func (builder *TxsBuilder) initCLI() {
 	cliPrivateDelegateStake := func(cmd string, ctx context.Context) (err error) {
 		builder.showWarningIfNotSyncCLI()
 
-		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address from which Delegate", ctx)
-		if err != nil {
+		extra := &wizard.WizardZetherPayloadExtraDelegateStake{}
+		txData := &TxBuilderCreateZetherTxData{
+			Payloads: []*TxBuilderCreateZetherTxPayload{{
+				Extra: extra,
+				Asset: config_coins.NATIVE_ASSET_FULL,
+			}},
+		}
+
+		if _, txData.Payloads[0].Sender, _, err = builder.wallet.CliSelectAddress("Select Address from which Delegate", ctx); err != nil {
 			return
 		}
 
-		delegateAddress, delegateAmount, err := builder.readAddressOptional("Delegate Address", config_coins.NATIVE_ASSET_FULL, false)
-		if err != nil {
+		var delegateAddress *addresses.Address
+		if delegateAddress, _, txData.Payloads[0].Burn, err = builder.readAddressOptional("Delegate Address", config_coins.NATIVE_ASSET_FULL, false); err != nil {
 			return
 		}
 
-		convertToUnclaimed := gui.GUI.OutputReadBool("Convert the amount to Unclaimed y/n. Leave empty for false", true, false)
-
-		var delegatePrivateKey []byte
+		extra.DelegatePublicKey = delegateAddress.PublicKey
+		extra.ConvertToUnclaimed = gui.GUI.OutputReadBool("Convert the amount to Unclaimed y/n. Leave empty for false", true, false)
 
 		delegateWalletAddress := builder.wallet.GetWalletAddressByPublicKey(delegateAddress.PublicKey, false)
-		delegatedStakingUpdate := &transaction_data.TransactionDataDelegatedStakingUpdate{}
+
+		extra.DelegatedStakingUpdate = &transaction_data.TransactionDataDelegatedStakingUpdate{}
 		if delegateWalletAddress != nil {
-			if err = builder.readDelegatedStakingUpdate(delegatedStakingUpdate, delegateWalletAddress.PublicKey); err != nil {
+			if err = builder.readDelegatedStakingUpdate(extra.DelegatedStakingUpdate, delegateWalletAddress.PublicKey); err != nil {
 				return
 			}
 		}
-		if delegatedStakingUpdate.DelegatedStakingHasNewInfo {
-			delegatePrivateKey = delegateWalletAddress.PrivateKey.Key
+
+		if extra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
+			extra.DelegatePrivateKey = delegateWalletAddress.PrivateKey.Key
 		}
 
-		recipientAddress, recipientAmount, err := builder.readAddressOptional("Transfer Recipient Address", config_coins.NATIVE_ASSET_FULL, true)
-		if err != nil {
+		if _, txData.Payloads[0].Recipient, txData.Payloads[0].Amount, err = builder.readAddressOptional("Transfer Recipient Address", config_coins.NATIVE_ASSET_FULL, true); err != nil {
 			return
 		}
 
-		ringConfiguration := builder.readZetherRingConfiguration()
+		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
+		txData.Payloads[0].Data = builder.readData()
+		txData.Payloads[0].Fee = builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
 
-		data := builder.readData()
-		fee := builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
-		tx, err := builder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{&wizard.WizardZetherPayloadExtraDelegateStake{DelegatePublicKey: delegateAddress.PublicKey, ConvertToUnclaimed: convertToUnclaimed, DelegatedStakingUpdate: delegatedStakingUpdate, DelegatePrivateKey: delegatePrivateKey}}, []string{walletAddress.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{recipientAmount}, []string{recipientAddress.EncodeAddr()}, []uint64{delegateAmount}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.WizardTransactionData{data}, []*wizard.WizardZetherTransactionFee{fee}, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateZetherTx(txData, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -292,22 +303,32 @@ func (builder *TxsBuilder) initCLI() {
 	cliPrivateClaim := func(cmd string, ctx context.Context) (err error) {
 		builder.showWarningIfNotSyncCLI()
 
-		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address from which Claim", ctx)
+		extra := &wizard.WizardZetherPayloadExtraClaim{}
+		txData := &TxBuilderCreateZetherTxData{
+			Payloads: []*TxBuilderCreateZetherTxPayload{{
+				Extra: extra,
+				Asset: config_coins.NATIVE_ASSET_FULL,
+			}},
+		}
+
+		delegateWalletAddress, _, _, err := builder.wallet.CliSelectAddress("Select Address from which Claim", ctx)
 		if err != nil {
 			return
 		}
 
-		recipientAddress, amount, err := builder.readAddressOptional("Claim Address", config_coins.NATIVE_ASSET_FULL, false)
-		if err != nil {
-			return
+		extra.DelegatePrivateKey = delegateWalletAddress.PrivateKey.Key
+
+		if _, txData.Payloads[0].Recipient, txData.Payloads[0].Amount, err = builder.readAddressOptional("Claim Address", config_coins.NATIVE_ASSET_FULL, false); err != nil {
+			return nil
 		}
 
-		ringConfiguration := builder.readZetherRingConfiguration()
-		data := builder.readData()
-		fee := builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
+		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
+		txData.Payloads[0].Data = builder.readData()
+		txData.Payloads[0].Fee = builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
+
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
-		tx, err := builder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{&wizard.WizardZetherPayloadExtraClaim{DelegatePrivateKey: delegateWalletAddress.PrivateKey.Key}}, []string{""}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{amount}, []string{recipientAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.WizardTransactionData{data}, []*wizard.WizardZetherTransactionFee{fee}, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateZetherTx(txData, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -321,41 +342,48 @@ func (builder *TxsBuilder) initCLI() {
 	cliPrivateAssetCreate := func(cmd string, ctx context.Context) (err error) {
 		builder.showWarningIfNotSyncCLI()
 
-		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address which will create the asset", ctx)
-		if err != nil {
+		extra := &wizard.WizardZetherPayloadExtraAssetCreate{}
+		txData := &TxBuilderCreateZetherTxData{
+			Payloads: []*TxBuilderCreateZetherTxPayload{{
+				Extra: extra,
+				Asset: config_coins.NATIVE_ASSET_FULL,
+			}},
+		}
+
+		if _, txData.Payloads[0].Sender, _, err = builder.wallet.CliSelectAddress("Select Address which will create the asset", ctx); err != nil {
 			return
 		}
 
-		ast := asset.NewAsset(nil, 0)
+		extra.Asset = asset.NewAsset(nil, 0)
 		str := gui.GUI.OutputReadString("Asset as JSON")
-		if err = json.Unmarshal([]byte(str), ast); err != nil {
+		if err = json.Unmarshal([]byte(str), extra.Asset); err != nil {
 			return
 		}
-		if err = ast.Validate(); err != nil {
+		if err = extra.Asset.Validate(); err != nil {
 			return
 		}
 
 		var updatePrivKey, supplyPrivKey *addresses.PrivateKey
-		if len(ast.UpdatePublicKey) == 0 {
+		if len(extra.Asset.UpdatePublicKey) == 0 {
 			updatePrivKey = addresses.GenerateNewPrivateKey()
-			ast.UpdatePublicKey = updatePrivKey.GeneratePublicKey()
+			extra.Asset.UpdatePublicKey = updatePrivKey.GeneratePublicKey()
 		}
-		if len(ast.SupplyPublicKey) == 0 {
+		if len(extra.Asset.SupplyPublicKey) == 0 {
 			supplyPrivKey = addresses.GenerateNewPrivateKey()
-			ast.SupplyPublicKey = supplyPrivKey.GeneratePublicKey()
+			extra.Asset.SupplyPublicKey = supplyPrivKey.GeneratePublicKey()
 		}
 
-		recipientAddress, recipientAmount, err := builder.readAddressOptional("Transfer Address", config_coins.NATIVE_ASSET_FULL, true)
-		if err != nil {
+		if _, txData.Payloads[0].Recipient, txData.Payloads[0].Amount, err = builder.readAddressOptional("Transfer Address", config_coins.NATIVE_ASSET_FULL, true); err != nil {
 			return
 		}
 
-		ringConfiguration := builder.readZetherRingConfiguration()
-		data := builder.readData()
-		fee := builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
+		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
+		txData.Payloads[0].Data = builder.readData()
+		txData.Payloads[0].Fee = builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
+
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
-		tx, err := builder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{&wizard.WizardZetherPayloadExtraAssetCreate{Asset: ast}}, []string{walletAddress.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{recipientAmount}, []string{recipientAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.WizardTransactionData{data}, []*wizard.WizardZetherTransactionFee{fee}, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateZetherTx(txData, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -380,7 +408,7 @@ func (builder *TxsBuilder) initCLI() {
 			if _, err = fmt.Fprintln(f, "Asset ID:", hex.EncodeToString(assetId)); err != nil {
 				return
 			}
-			if _, err = fmt.Fprintln(f, "Asset name:", ast.Name, ast.Ticker); err != nil {
+			if _, err = fmt.Fprintln(f, "Asset name:", extra.Asset.Name, extra.Asset.Ticker); err != nil {
 				return
 			}
 			if _, err = fmt.Fprintln(f, "Supply Private Key:", hex.EncodeToString(supplyPrivKey.Key)); err != nil {
@@ -399,33 +427,40 @@ func (builder *TxsBuilder) initCLI() {
 	cliPrivateAssetSupplyIncrease := func(cmd string, ctx context.Context) (err error) {
 		builder.showWarningIfNotSyncCLI()
 
-		walletAddress, _, err := builder.wallet.CliSelectAddress("Select Address which will increase the supply of asset", ctx)
-		if err != nil {
+		extra := &wizard.WizardZetherPayloadExtraAssetSupplyIncrease{}
+		txData := &TxBuilderCreateZetherTxData{
+			Payloads: []*TxBuilderCreateZetherTxPayload{{
+				Extra: extra,
+				Asset: config_coins.NATIVE_ASSET_FULL,
+			}},
+		}
+
+		if _, txData.Payloads[0].Sender, _, err = builder.wallet.CliSelectAddress("Select Address which will increase the supply of asset", ctx); err != nil {
 			return
 		}
 
-		assetId := builder.readAsset("Asset", false)
+		extra.AssetId = builder.readAsset("Asset", false)
 
-		assetSupplyPrivateKey := gui.GUI.OutputReadBytes("Asset Supply Update Private Key", func(value []byte) bool {
+		extra.AssetSupplyPrivateKey = gui.GUI.OutputReadBytes("Asset Supply Update Private Key", func(value []byte) bool {
 			return len(value) == cryptography.PrivateKeySize
 		})
 
-		receiver, value, err := builder.readAddressOptional("Receiver Address", assetId, false)
-		if err != nil {
+		var receiverAddress *addresses.Address
+		if receiverAddress, _, extra.Value, err = builder.readAddressOptional("Receiver Address", extra.AssetId, false); err != nil {
+			return
+		}
+		extra.ReceiverPublicKey = receiverAddress.PublicKey
+
+		if _, txData.Payloads[0].Recipient, txData.Payloads[0].Amount, err = builder.readAddressOptional("Transfer Address", config_coins.NATIVE_ASSET_FULL, true); err != nil {
 			return
 		}
 
-		recipientAddress, recipientAmount, err := builder.readAddressOptional("Transfer Address", config_coins.NATIVE_ASSET_FULL, true)
-		if err != nil {
-			return
-		}
-
-		ringConfiguration := builder.readZetherRingConfiguration()
-		data := builder.readData()
-		fee := builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
+		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
+		txData.Payloads[0].Data = builder.readData()
+		txData.Payloads[0].Fee = builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
-		tx, err := builder.CreateZetherTx([]wizard.WizardZetherPayloadExtra{&wizard.WizardZetherPayloadExtraAssetSupplyIncrease{AssetId: assetId, ReceiverPublicKey: receiver.PublicKey, Value: value, AssetSupplyPrivateKey: assetSupplyPrivateKey}}, []string{walletAddress.AddressEncoded}, [][]byte{config_coins.NATIVE_ASSET_FULL}, []uint64{recipientAmount}, []string{recipientAddress.EncodeAddr()}, []uint64{0}, []*ZetherRingConfiguration{ringConfiguration}, []*wizard.WizardTransactionData{data}, []*wizard.WizardZetherTransactionFee{fee}, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateZetherTx(txData, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -441,14 +476,16 @@ func (builder *TxsBuilder) initCLI() {
 
 		builder.showWarningIfNotSyncCLI()
 
-		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Update Delegate", ctx)
-		if err != nil {
+		txExtra := &wizard.WizardTxSimpleExtraUpdateDelegate{DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{}}
+		txData := &TxBuilderCreateSimpleTx{Extra: txExtra}
+
+		var delegateWalletAddress *wallet_address.WalletAddress
+		if delegateWalletAddress, txData.Sender, _, err = builder.wallet.CliSelectAddress("Select Address to Update Delegate", ctx); err != nil {
 			return
 		}
 
-		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
+		txData.Nonce = gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
 
-		txExtra := &wizard.WizardTxSimpleExtraUpdateDelegate{DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{}}
 		if err = builder.readDelegatedStakingUpdate(txExtra.DelegatedStakingUpdate, delegateWalletAddress.PublicKey); err != nil {
 			return
 		}
@@ -457,13 +494,14 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		feeVersion := gui.GUI.OutputReadBool("Subtract the fee from unclaimed? y/n. Leave empty for no", true, false)
+		txData.FeeVersion = gui.GUI.OutputReadBool("Subtract the fee from unclaimed? y/n. Leave empty for no", true, false)
 
-		data := builder.readData()
-		fee := builder.readFee(config_coins.NATIVE_ASSET_FULL)
+		txData.Data = builder.readData()
+		txData.Fee = builder.readFee(config_coins.NATIVE_ASSET_FULL)
+
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
-		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, feeVersion, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateSimpleTx(txData, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -478,25 +516,25 @@ func (builder *TxsBuilder) initCLI() {
 
 		builder.showWarningIfNotSyncCLI()
 
-		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Unstake", ctx)
-		if err != nil {
+		txExtra := &wizard.WizardTxSimpleExtraUnstake{}
+		txData := &TxBuilderCreateSimpleTx{Extra: txExtra}
+		if _, txData.Sender, _, err = builder.wallet.CliSelectAddress("Select Address to Unstake", ctx); err != nil {
 			return
 		}
 
-		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
+		txData.Nonce = gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
 
-		txExtra := &wizard.WizardTxSimpleExtraUnstake{}
 		if txExtra.Amount, err = builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Amount"); err != nil {
 			return
 		}
 
-		feeVersion := gui.GUI.OutputReadBool("Subtract the fee from unclaimed? y/n. Leave empty for no", true, false)
+		txData.FeeVersion = gui.GUI.OutputReadBool("Subtract the fee from unclaimed? y/n. Leave empty for no", true, false)
 
-		data := builder.readData()
-		fee := builder.readFee(config_coins.NATIVE_ASSET_FULL)
+		txData.Data = builder.readData()
+		txData.Fee = builder.readFee(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
-		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, feeVersion, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateSimpleTx(txData, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -511,12 +549,15 @@ func (builder *TxsBuilder) initCLI() {
 
 		builder.showWarningIfNotSyncCLI()
 
-		delegateWalletAddress, _, err := builder.wallet.CliSelectAddress("Select Address to Update Asset Fee Liquidity", ctx)
-		if err != nil {
-			return
+		txExtra := &wizard.WizardTxSimpleExtraUpdateAssetFeeLiquidity{}
+		txData := &TxBuilderCreateSimpleTx{
+			Extra:      txExtra,
+			FeeVersion: true,
 		}
 
-		txExtra := &wizard.WizardTxSimpleExtraUpdateAssetFeeLiquidity{}
+		if _, txData.Sender, _, err = builder.wallet.CliSelectAddress("Select Address to Update Asset Fee Liquidity", ctx); err != nil {
+			return
+		}
 
 		var addr *addresses.Address
 		if addr, err = builder.readAddress("Collector address. Leave empty for no new address", true); err != nil {
@@ -541,13 +582,13 @@ func (builder *TxsBuilder) initCLI() {
 			txExtra.Liquidities = append(txExtra.Liquidities, liquidity)
 		}
 
-		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
+		txData.Nonce = gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
+		txData.Data = builder.readData()
+		txData.Fee = builder.readFee(config_coins.NATIVE_ASSET_FULL)
 
-		data := builder.readData()
-		fee := builder.readFee(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
-		tx, err := builder.CreateSimpleTx(delegateWalletAddress.AddressEncoded, nonce, txExtra, data, fee, true, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateSimpleTx(txData, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

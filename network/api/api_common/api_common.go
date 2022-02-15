@@ -27,6 +27,7 @@ type mempoolNewTxReply struct {
 type APICommon struct {
 	mempool                   *mempool.Mempool
 	txsValidator              *txs_validator.TxsValidator
+	txsBuilder                *txs_builder.TxsBuilder
 	chain                     *blockchain.Blockchain
 	wallet                    *wallet.Wallet
 	knownNodes                *known_nodes.KnownNodes
@@ -80,6 +81,7 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 	api = &APICommon{
 		mempool,
 		txsValidator,
+		txsBuilder,
 		chain,
 		wallet,
 		knownNodes,

@@ -120,28 +120,34 @@ func (builder *TxsBuilder) createZetherRing(sender string, recipient *string, as
 	return rings, nil
 }
 
-func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadExtra, senders []string, sendAssets [][]byte, amounts []uint64, recipients []string, burns []uint64, ringsConfiguration []*ZetherRingConfiguration, data []*wizard.WizardTransactionData, fees []*wizard.WizardZetherTransactionFee, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
+func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
 
-	if len(senders) != len(sendAssets) || len(sendAssets) != len(amounts) || len(amounts) != len(recipients) || len(recipients) != len(burns) || len(burns) != len(data) || len(data) != len(fees) {
-		return nil, nil, nil, nil, 0, nil, errors.New("Length of senders and transfers are not matching")
-	}
+	sendersPrivateKeys := make([]*addresses.PrivateKey, len(txData.Payloads))
+	sendersWalletAddresses := make([]*wallet_address.WalletAddress, len(txData.Payloads))
+	sendAssets := make([][]byte, len(txData.Payloads))
 
-	sendersPrivateKeys := make([]*addresses.PrivateKey, len(senders))
-	sendersWalletAddresses := make([]*wallet_address.WalletAddress, len(senders))
+	for t, payload := range txData.Payloads {
 
-	for t := range senders {
-		if senders[t] == "" {
+		if payload.Data == nil {
+			payload.Data = &wizard.WizardTransactionData{[]byte{}, false}
+		}
+		if payload.Fee == nil {
+			payload.Fee = &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0}
+		}
+
+		sendAssets[t] = payload.Asset
+		if payload.Sender == "" {
 
 			sendersPrivateKeys[t] = addresses.GenerateNewPrivateKey()
 			addr, err := sendersPrivateKeys[t].GenerateAddress(true, nil, 0, nil)
 			if err != nil {
 				return nil, nil, nil, nil, 0, nil, err
 			}
-			senders[t] = addr.EncodeAddr()
+			payload.Sender = addr.EncodeAddr()
 
 		} else {
 
-			addr, err := builder.wallet.GetWalletAddressByEncodedAddress(senders[t], true)
+			addr, err := builder.wallet.GetWalletAddressByEncodedAddress(payload.Sender, true)
 			if err != nil {
 				return nil, nil, nil, nil, 0, nil, err
 			}
@@ -151,30 +157,30 @@ func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadEx
 			}
 
 			sendersPrivateKeys[t] = &addresses.PrivateKey{Key: addr.PrivateKey.Key[:]}
-			senders[t] = addr.AddressRegistrationEncoded
+			payload.Sender = addr.AddressRegistrationEncoded
 			sendersWalletAddresses[t] = addr
 		}
 
 	}
 
-	ringMembers := make([][]string, len(senders))
+	ringMembers := make([][]string, len(txData.Payloads))
 
 	var chainHeight uint64
 	var chainHash []byte
 
-	transfers := make([]*wizard.WizardZetherTransfer, len(senders))
+	transfers := make([]*wizard.WizardZetherTransfer, len(txData.Payloads))
 	emap := wizard.InitializeEmap(sendAssets)
-	rings := make([][]*bn256.G1, len(senders))
+	rings := make([][]*bn256.G1, len(txData.Payloads))
 	publicKeyIndexes := make(map[string]*wizard.WizardZetherPublicKeyIndex)
 
-	sendersEncryptedBalances := make([][]byte, len(senders))
+	sendersEncryptedBalances := make([][]byte, len(txData.Payloads))
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		dataStorage := data_storage.NewDataStorage(reader)
 
-		for t := range senders {
-			if ringMembers[t], err = builder.createZetherRing(senders[t], &recipients[t], sendAssets[t], ringsConfiguration[t], dataStorage); err != nil {
+		for t, payload := range txData.Payloads {
+			if ringMembers[t], err = builder.createZetherRing(payload.Sender, &payload.Recipient, payload.Asset, payload.RingConfiguration, dataStorage); err != nil {
 				return
 			}
 		}
@@ -182,35 +188,35 @@ func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadEx
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 		chainHash = reader.Get("chainHash")
 
-		for t, ast := range sendAssets {
+		for t, payload := range txData.Payloads {
 
 			var accs *accounts.Accounts
-			if accs, err = dataStorage.AccsCollection.GetMap(ast); err != nil {
+			if accs, err = dataStorage.AccsCollection.GetMap(payload.Asset); err != nil {
 				return
 			}
 
-			if !bytes.Equal(ast, config_coins.NATIVE_ASSET_FULL) && fees[t].Auto {
+			if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && payload.Fee.Auto {
 				var assetFeeLiquidity *asset_fee_liquidity.AssetFeeLiquidity
-				if assetFeeLiquidity, err = dataStorage.GetAssetFeeLiquidityTop(ast, chainHeight); err != nil {
+				if assetFeeLiquidity, err = dataStorage.GetAssetFeeLiquidityTop(payload.Asset, chainHeight); err != nil {
 					return
 				}
 				if assetFeeLiquidity == nil {
 					return errors.New("There is no Asset Fee Liquidity for this asset")
 				}
-				fees[t].Rate = assetFeeLiquidity.Rate
-				fees[t].LeadingZeros = assetFeeLiquidity.LeadingZeros
+				payload.Fee.Rate = assetFeeLiquidity.Rate
+				payload.Fee.LeadingZeros = assetFeeLiquidity.LeadingZeros
 			}
 
 			transfers[t] = &wizard.WizardZetherTransfer{
-				Asset:           ast,
+				Asset:           payload.Asset,
 				Sender:          sendersPrivateKeys[t].Key[:],
-				Recipient:       recipients[t],
-				Amount:          amounts[t],
-				Burn:            burns[t],
-				Data:            data[t],
-				FeeRate:         fees[t].Rate,
-				FeeLeadingZeros: fees[t].LeadingZeros,
-				PayloadExtra:    extraPayloads[t],
+				Recipient:       payload.Recipient,
+				Amount:          payload.Amount,
+				Burn:            payload.Burn,
+				Data:            payload.Data,
+				FeeRate:         payload.Fee.Rate,
+				FeeLeadingZeros: payload.Fee.LeadingZeros,
+				PayloadExtra:    payload.Extra,
 			}
 
 			var ring []*bn256.G1
@@ -232,7 +238,7 @@ func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadEx
 					return
 				}
 
-				if emap[string(ast)][p.G1().String()] == nil {
+				if emap[string(payload.Asset)][p.G1().String()] == nil {
 
 					var acc *account.Account
 					if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
@@ -244,15 +250,15 @@ func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadEx
 						balance = acc.Balance.Amount.Serialize()
 					}
 
-					if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance, ast); err != nil {
+					if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance, payload.Asset); err != nil {
 						return
 					}
 
-					if senders[t] == address { //sender
+					if payload.Sender == address { //sender
 						sendersEncryptedBalances[t] = balance
 					}
 
-					emap[string(ast)][p.G1().String()] = balance
+					emap[string(payload.Asset)][p.G1().String()] = balance
 				}
 				ring = append(ring, p.G1())
 
@@ -276,10 +282,10 @@ func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadEx
 				return
 			}
 
-			if err = addPoint(senders[t]); err != nil {
+			if err = addPoint(payload.Sender); err != nil {
 				return
 			}
-			if err = addPoint(recipients[t]); err != nil {
+			if err = addPoint(payload.Recipient); err != nil {
 				return
 			}
 			for _, ringMember := range ringMembers[t] {
@@ -312,7 +318,7 @@ func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadEx
 		if transfers[t].SenderDecryptedBalance == 0 {
 			return nil, nil, nil, nil, 0, nil, errors.New("You have no funds")
 		}
-		if transfers[t].SenderDecryptedBalance < amounts[t] {
+		if transfers[t].SenderDecryptedBalance < txData.Payloads[t].Amount {
 			return nil, nil, nil, nil, 0, nil, errors.New("Not enough funds")
 		}
 	}
@@ -322,19 +328,19 @@ func (builder *TxsBuilder) prebuild(extraPayloads []wizard.WizardZetherPayloadEx
 	return transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, nil
 }
 
-func (builder *TxsBuilder) CreateZetherTx(extraPayloads []wizard.WizardZetherPayloadExtra, senders []string, sendAssets [][]byte, amounts []uint64, recipients []string, burns []uint64, ringsConfiguration []*ZetherRingConfiguration, data []*wizard.WizardTransactionData, fees []*wizard.WizardZetherTransactionFee, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	transfers, emap, ringMembers, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(extraPayloads, senders, sendAssets, amounts, recipients, burns, ringsConfiguration, data, fees, ctx, statusCallback)
+	transfers, emap, ringMembers, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(txData, ctx, statusCallback)
 	if err != nil {
 		return nil, err
 	}
 
-	feesFinal := make([]*wizard.WizardTransactionFee, len(fees))
-	for t, fee := range fees {
-		feesFinal[t] = fee.WizardTransactionFee
+	feesFinal := make([]*wizard.WizardTransactionFee, len(txData.Payloads))
+	for t, payload := range txData.Payloads {
+		feesFinal[t] = payload.Fee.WizardTransactionFee
 	}
 
 	var tx *transaction.Transaction
