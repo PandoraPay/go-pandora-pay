@@ -1,4 +1,4 @@
-package balance_decoder
+package balance_decryptor
 
 import (
 	"context"
@@ -25,17 +25,17 @@ type BalanceDecoderInfo struct {
 	hasError        *abool.AtomicBool
 }
 
-type BalanceDecoderType struct {
+type BalanceDecryptorType struct {
 	info *generics.Value[*BalanceDecoderInfo]
 }
 
-func (self *BalanceDecoderType) TryDecryptBalance(p *bn256.G1, matchBalance uint64) bool {
+func (self *BalanceDecryptorType) TryDecryptBalance(p *bn256.G1, matchBalance uint64) bool {
 	var acc bn256.G1
 	acc.ScalarMult(crypto.G, new(big.Int).SetUint64(matchBalance))
 	return acc.String() == p.String()
 }
 
-func (self *BalanceDecoderType) DecryptBalance(p *bn256.G1, previousBalance uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
+func (self *BalanceDecryptorType) DecryptBalance(p *bn256.G1, previousBalance uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	if self.TryDecryptBalance(p, previousBalance) {
 		return previousBalance, nil
@@ -49,7 +49,7 @@ func (self *BalanceDecoderType) DecryptBalance(p *bn256.G1, previousBalance uint
 	return tableLookup.Lookup(p, ctx, statusCallback)
 }
 
-func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Context, statusCallback func(string)) *LookupTable {
+func (self *BalanceDecryptorType) SetTableSize(newTableSize int, ctx context.Context, statusCallback func(string)) *LookupTable {
 
 	info := self.info.Load()
 	if info.tableSize == 0 || info.tableSize < newTableSize || info.hasError.IsSet() {
@@ -111,23 +111,19 @@ func (self *BalanceDecoderType) SetTableSize(newTableSize int, ctx context.Conte
 	return info.tableLookup.Load()
 }
 
-func CreateBalanceDecoder() *BalanceDecoderType {
-	out := &BalanceDecoderType{
+var BalanceDecryptor *BalanceDecryptorType
+
+func init() {
+
+	BalanceDecryptor = &BalanceDecryptorType{
 		&generics.Value[*BalanceDecoderInfo]{},
 	}
+
 	info := &BalanceDecoderInfo{
 		tableSize: 0,
 		readyCn:   make(chan struct{}),
 		hasError:  abool.New(),
 	}
 	info.hasError.SetTo(true)
-	out.info.Store(info)
-
-	return out
-}
-
-var BalanceDecoder *BalanceDecoderType
-
-func init() {
-	BalanceDecoder = CreateBalanceDecoder()
+	BalanceDecryptor.info.Store(info)
 }

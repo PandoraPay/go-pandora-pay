@@ -1,4 +1,4 @@
-package balance_decoder
+package balance_decryptor
 
 import (
 	"context"

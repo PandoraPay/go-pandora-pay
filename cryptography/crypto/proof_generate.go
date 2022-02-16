@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/helpers"
@@ -976,7 +977,7 @@ func GenerateProof(assetId []byte, assetIndex int, chainHash []byte, s *Statemen
 
 	{
 		var input []byte
-		input = append(input, []byte(PROTOCOL_CONSTANT)...)
+		input = append(input, []byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT)...)
 		input = append(input, chainHash[:]...)
 
 		input = append(input, assetId[:]...)

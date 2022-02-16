@@ -8,7 +8,7 @@ import (
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config/globals"
-	balance_decoder "pandora-pay/cryptography/crypto/balance-decoder"
+	balance_decoder "pandora-pay/cryptography/crypto/balance-decryptor"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/debugging_pprof"
 	"pandora-pay/mempool"
@@ -100,7 +100,7 @@ func _startMain() (err error) {
 		go func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			balance_decoder.BalanceDecoder.SetTableSize(0, ctx, func(string) {})
+			balance_decoder.BalanceDecryptor.SetTableSize(0, ctx, func(string) {})
 		}()
 	}
 
