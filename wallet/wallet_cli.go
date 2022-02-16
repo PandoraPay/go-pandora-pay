@@ -455,9 +455,13 @@ func (wallet *Wallet) initWalletCLI() {
 	cliShowMnemonic := func(cmd string, ctx context.Context) (err error) {
 
 		gui.GUI.OutputWrite("Mnemonic")
+		gui.GUI.OutputWrite("---------------------")
 		gui.GUI.OutputWrite(wallet.Mnemonic)
 
+		gui.GUI.OutputWrite("\n")
+
 		gui.GUI.OutputWrite("Seed")
+		gui.GUI.OutputWrite("---------------------")
 		gui.GUI.OutputWrite(wallet.Seed)
 
 		return
