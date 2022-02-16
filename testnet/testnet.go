@@ -208,7 +208,7 @@ func (testnet *Testnet) run() {
 
 	for i := uint64(0); i < testnet.nodes; i++ {
 		if uint64(testnet.wallet.GetAddressesCount()) <= i+1 {
-			if _, err := testnet.wallet.AddNewAddress(true); err != nil {
+			if _, err := testnet.wallet.AddNewAddress(true, "Testnet wallet"); err != nil {
 				return
 			}
 		}

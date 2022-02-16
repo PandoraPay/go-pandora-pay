@@ -409,7 +409,10 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	cliCreateNewAddress := func(cmd string, ctx context.Context) (err error) {
-		if _, err = wallet.AddNewAddress(true); err != nil {
+
+		name := gui.GUI.OutputReadFilename("Name of your new address", "")
+
+		if _, err = wallet.AddNewAddress(true, name); err != nil {
 			return
 		}
 		return wallet.CliListAddresses(cmd, ctx)
