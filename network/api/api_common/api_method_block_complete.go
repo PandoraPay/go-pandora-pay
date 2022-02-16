@@ -4,13 +4,10 @@ import (
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
-	"net/url"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
@@ -27,7 +24,7 @@ type APIBlockCompleteReply struct {
 	Serialized    []byte                        `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
 }
 
-func (api *APICommon) BlockComplete(r *http.Request, args *APIBlockCompleteRequest, reply *APIBlockCompleteReply) error {
+func (api *APICommon) GetBlockComplete(r *http.Request, args *APIBlockCompleteRequest, reply *APIBlockCompleteReply) error {
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 		if len(args.Hash) == 0 {
@@ -70,22 +67,4 @@ func (api *APICommon) BlockComplete(r *http.Request, args *APIBlockCompleteReque
 	}
 
 	return nil
-}
-
-func (api *APICommon) GetBlockComplete_http(values url.Values) (interface{}, error) {
-	args := &APIBlockCompleteRequest{0, nil, api_types.RETURN_JSON}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &APIBlockCompleteReply{}
-	return reply, api.BlockComplete(nil, args, reply)
-}
-
-func (api *APICommon) GetBlockComplete_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	args := &APIBlockCompleteRequest{0, nil, api_types.RETURN_SERIALIZED}
-	if err := msgpack.Unmarshal(values, args); err != nil {
-		return nil, err
-	}
-	reply := &APIBlockCompleteReply{}
-	return reply, api.BlockComplete(nil, args, reply)
 }

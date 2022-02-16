@@ -3,18 +3,10 @@ package api_common
 import (
 	"errors"
 	"net/http"
-	"net/url"
 	"pandora-pay/helpers/generics"
-	"pandora-pay/helpers/urldecoder"
-	"pandora-pay/network/api/api_common/api_types"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
 )
-
-type APIWalletGetAccounts struct {
-	api_types.APIAuthenticateBaseRequest
-}
 
 type APIWalletGetAccountsReply struct {
 	Version   wallet.Version                  `json:"version" msgpack:"version"`
@@ -22,7 +14,7 @@ type APIWalletGetAccountsReply struct {
 	Addresses []*wallet_address.WalletAddress `json:"addresses" msgpack:"addresses"`
 }
 
-func (api *APICommon) WalletGetAddresses(r *http.Request, args *struct{}, reply *APIWalletGetAccountsReply, authenticated bool) (err error) {
+func (api *APICommon) GetWalletAddresses(r *http.Request, args *struct{}, reply *APIWalletGetAccountsReply, authenticated bool) (err error) {
 
 	if !authenticated {
 		return errors.New("Invalid User or Password")
@@ -42,18 +34,4 @@ func (api *APICommon) WalletGetAddresses(r *http.Request, args *struct{}, reply 
 	}
 
 	return
-}
-
-func (api *APICommon) WalletGetAddresses_http(values url.Values) (interface{}, error) {
-	args := &APIWalletGetAccounts{}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &APIWalletGetAccountsReply{}
-	return reply, api.WalletGetAddresses(nil, &struct{}{}, reply, args.CheckAuthenticated())
-}
-
-func (api *APICommon) WalletGetAddresses_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	reply := &APIWalletGetAccountsReply{}
-	return reply, api.WalletGetAddresses(nil, &struct{}{}, reply, conn.Authenticated.IsSet())
 }

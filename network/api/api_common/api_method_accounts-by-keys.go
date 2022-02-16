@@ -2,17 +2,13 @@ package api_common
 
 import (
 	"fmt"
-	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
-	"net/url"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 )
@@ -31,7 +27,7 @@ type APIAccountsByKeysReply struct {
 	RegSerialized [][]byte                     `json:"registrationSerialized,omitempty" msgpack:"registrationSerialized,omitempty"`
 }
 
-func (api *APICommon) AccountsByKeys(r *http.Request, args *APIAccountsByKeysRequest, reply *APIAccountsByKeysReply) (err error) {
+func (api *APICommon) GetAccountsByKeys(r *http.Request, args *APIAccountsByKeysRequest, reply *APIAccountsByKeysReply) (err error) {
 
 	publicKeys := make([][]byte, len(args.Keys))
 
@@ -109,22 +105,4 @@ func (api *APICommon) AccountsByKeys(r *http.Request, args *APIAccountsByKeysReq
 		reply.Reg = nil
 	}
 	return
-}
-
-func (api *APICommon) GetAccountsByKeys_http(values url.Values) (interface{}, error) {
-	args := &APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_JSON}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &APIAccountsByKeysReply{}
-	return reply, api.AccountsByKeys(nil, args, reply)
-}
-
-func (api *APICommon) GetAccountsByKeys_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	args := &APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
-	if err := msgpack.Unmarshal(values, args); err != nil {
-		return nil, err
-	}
-	reply := &APIAccountsByKeysReply{}
-	return reply, api.AccountsByKeys(nil, args, reply)
 }

@@ -2,13 +2,9 @@ package api_common
 
 import (
 	"errors"
-	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
-	"net/url"
 	"pandora-pay/config"
-	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
@@ -24,7 +20,7 @@ type APIAccountTxsReply struct {
 	Txs   [][]byte `json:"txs,omitempty" msgpack:"txs,omitempty"`
 }
 
-func (api *APICommon) AccountTxs(r *http.Request, args *APIAccountTxsRequest, reply *APIAccountTxsReply) (err error) {
+func (api *APICommon) GetAccountTxs(r *http.Request, args *APIAccountTxsRequest, reply *APIAccountTxsReply) (err error) {
 
 	publicKey, err := args.GetPublicKey(true)
 	if err != nil {
@@ -64,22 +60,4 @@ func (api *APICommon) AccountTxs(r *http.Request, args *APIAccountTxsRequest, re
 
 		return
 	})
-}
-
-func (api *APICommon) GetAccountTxs_http(values url.Values) (interface{}, error) {
-	args := &APIAccountTxsRequest{}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &APIAccountTxsReply{}
-	return reply, api.AccountTxs(nil, args, reply)
-}
-
-func (api *APICommon) GetAccountTxs_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	args := &APIAccountTxsRequest{}
-	if err := msgpack.Unmarshal(values, args); err != nil {
-		return nil, err
-	}
-	reply := &APIAccountTxsReply{}
-	return reply, api.AccountTxs(nil, args, reply)
 }

@@ -9,7 +9,7 @@ import (
 	"pandora-pay/network/websocks/connection"
 )
 
-func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash []byte, reply *APIMempoolNewTxReply) (err error) {
+func (api *APICommon) mempoolNewTxIdProcess(conn *connection.AdvancedConnection, hash []byte, reply *APIMempoolNewTxReply) (err error) {
 
 	if len(hash) != 32 {
 		return errors.New("Invalid hash")
@@ -82,7 +82,7 @@ func (api *APICommon) mempoolNewTxId(conn *connection.AdvancedConnection, hash [
 	return
 }
 
-func (api *APICommon) MempoolNewTxId_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+func (api *APICommon) MempoolNewTxId(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	reply := &APIMempoolNewTxReply{}
-	return reply, api.mempoolNewTxId(conn, values, reply)
+	return reply, api.mempoolNewTxIdProcess(conn, values, reply)
 }

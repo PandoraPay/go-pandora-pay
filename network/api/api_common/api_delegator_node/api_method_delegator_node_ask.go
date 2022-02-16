@@ -2,14 +2,10 @@ package api_delegator_node
 
 import (
 	"errors"
-	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
-	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/urldecoder"
-	"pandora-pay/network/websocks/connection"
 	"sync/atomic"
 )
 
@@ -24,7 +20,7 @@ type ApiDelegatorNodeAskReply struct {
 	DelegatedStakingPublicKey []byte `json:"delegatedStakingPublicKey" msgpack:"delegatedStakingPublicKey"`
 }
 
-func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAskRequest, reply *ApiDelegatorNodeAskReply) error {
+func (api *DelegatorNode) GetDelegatesAsk(r *http.Request, args *ApiDelegatorNodeAskRequest, reply *ApiDelegatorNodeAskReply) error {
 
 	publicKey := args.PublicKey
 
@@ -62,22 +58,4 @@ func (api *DelegatorNode) DelegatesAsk(r *http.Request, args *ApiDelegatorNodeAs
 
 	reply.DelegatedStakingPublicKey = delegatedStakingPublicKey
 	return nil
-}
-
-func (api *DelegatorNode) GetDelegatorNodeAsk_http(values url.Values) (interface{}, error) {
-	args := &ApiDelegatorNodeAskRequest{}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &ApiDelegatorNodeAskReply{}
-	return reply, api.DelegatesAsk(nil, args, reply)
-}
-
-func (api *DelegatorNode) GetDelegatorNodeAsk_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	args := &ApiDelegatorNodeAskRequest{}
-	if err := msgpack.Unmarshal(values, args); err != nil {
-		return nil, err
-	}
-	reply := &ApiDelegatorNodeAskReply{}
-	return reply, api.DelegatesAsk(nil, args, reply)
 }

@@ -1,14 +1,10 @@
 package api_common
 
 import (
-	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
-	"net/url"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
-	"pandora-pay/helpers/urldecoder"
-	"pandora-pay/network/websocks/connection"
 )
 
 type APIMempoolRequest struct {
@@ -23,7 +19,7 @@ type APIMempoolReply struct {
 	Hashes    [][]byte `json:"hashes" msgpack:"hashes"`
 }
 
-func (api *APICommon) Mempool(r *http.Request, args *APIMempoolRequest, reply *APIMempoolReply) error {
+func (api *APICommon) GetMempool(r *http.Request, args *APIMempoolRequest, reply *APIMempoolReply) error {
 
 	transactions, finalChainHash := api.mempool.GetNextTransactionsToInclude(args.ChainHash)
 
@@ -47,22 +43,4 @@ func (api *APICommon) Mempool(r *http.Request, args *APIMempoolRequest, reply *A
 	}
 
 	return nil
-}
-
-func (api *APICommon) GetMempool_http(values url.Values) (interface{}, error) {
-	args := &APIMempoolRequest{}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &APIMempoolReply{}
-	return reply, api.Mempool(nil, args, reply)
-}
-
-func (api *APICommon) GetMempool_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	args := &APIMempoolRequest{}
-	if err := msgpack.Unmarshal(values, args); err != nil {
-		return nil, err
-	}
-	reply := &APIMempoolReply{}
-	return reply, api.Mempool(nil, args, reply)
 }

@@ -3,12 +3,9 @@ package api_common
 import (
 	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
-	"net/url"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
@@ -20,13 +17,13 @@ type APIBlockRequest struct {
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
-type APIBlockWithTxsReply struct {
+type APIBlockReply struct {
 	Block           *block.Block `json:"block,omitempty" msgpack:"block,omitempty"`
 	BlockSerialized []byte       `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
 	Txs             [][]byte     `json:"txs,omitempty" msgpack:"txs,omitempty"`
 }
 
-func (api *APICommon) Block(r *http.Request, args *APIBlockRequest, reply *APIBlockWithTxsReply) error {
+func (api *APICommon) GetBlock(r *http.Request, args *APIBlockRequest, reply *APIBlockReply) error {
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -62,22 +59,4 @@ func (api *APICommon) Block(r *http.Request, args *APIBlockRequest, reply *APIBl
 	}
 
 	return nil
-}
-
-func (api *APICommon) GetBlock_http(values url.Values) (interface{}, error) {
-	args := &APIBlockRequest{}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &APIBlockWithTxsReply{}
-	return reply, api.Block(nil, args, reply)
-}
-
-func (api *APICommon) GetBlock_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	args := &APIBlockRequest{0, nil, api_types.RETURN_SERIALIZED}
-	if err := msgpack.Unmarshal(values, args); err != nil {
-		return nil, err
-	}
-	reply := &APIBlockWithTxsReply{}
-	return reply, api.Block(nil, args, reply)
 }

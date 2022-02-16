@@ -2,34 +2,25 @@ package api_common
 
 import (
 	"errors"
-	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
-	"net/url"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/wallet"
 )
 
-type APIWalletDecryptTx struct {
-	api_types.APIAuthenticateBaseRequest
-	APIWalletDecryptTxBase
-}
-
-type APIWalletDecryptTxBase struct {
-	Hash []byte `json:"hash" msgpack:"hash"`
+type APIWalletDecryptTxRequest struct {
 	api_types.APIAccountBaseRequest
+	Hash []byte `json:"hash" msgpack:"hash"`
 }
 
 type APIWalletDecryptTxReply struct {
 	Decrypted *wallet.DecryptedTx `json:"decrypted" msgpack:"decrypted"`
 }
 
-func (api *APICommon) WalletDecryptTx(r *http.Request, args *APIWalletDecryptTxBase, reply *APIWalletDecryptTxReply, authenticated bool) (err error) {
+func (api *APICommon) GetWalletDecryptTx(r *http.Request, args *APIWalletDecryptTxRequest, reply *APIWalletDecryptTxReply, authenticated bool) (err error) {
 
 	if !authenticated {
 		return errors.New("Invalid User or Password")
@@ -62,22 +53,4 @@ func (api *APICommon) WalletDecryptTx(r *http.Request, args *APIWalletDecryptTxB
 	reply.Decrypted, err = api.wallet.DecryptTx(tx, publicKey)
 
 	return
-}
-
-func (api *APICommon) WalletDecryptTx_http(values url.Values) (interface{}, error) {
-	args := &APIWalletDecryptTx{}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &APIWalletDecryptTxReply{}
-	return reply, api.WalletDecryptTx(nil, &args.APIWalletDecryptTxBase, reply, args.CheckAuthenticated())
-}
-
-func (api *APICommon) WalletDecryptTx_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	args := &APIWalletDecryptTxBase{}
-	if err := msgpack.Unmarshal(values, args); err != nil {
-		return nil, err
-	}
-	reply := &APIWalletDecryptTxReply{}
-	return reply, api.WalletDecryptTx(nil, args, reply, conn.Authenticated.IsSet())
 }

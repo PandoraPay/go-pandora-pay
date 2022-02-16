@@ -2,14 +2,10 @@ package api_common
 
 import (
 	"fmt"
-	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
-	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/urldecoder"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 )
@@ -25,7 +21,7 @@ type APIAccountsKeysByIndexReply struct {
 	Addresses  []string `json:"addresses,omitempty" msgpack:"addresses,omitempty"`
 }
 
-func (api *APICommon) AccountsKeysByIndex(r *http.Request, args *APIAccountsKeysByIndexRequest, reply *APIAccountsKeysByIndexReply) (err error) {
+func (api *APICommon) GetAccountsKeysByIndex(r *http.Request, args *APIAccountsKeysByIndexRequest, reply *APIAccountsKeysByIndexReply) (err error) {
 
 	if len(args.Indexes) > 512*2 {
 		return fmt.Errorf("Too many indexes to process: limit %d, found %d", 512*2, len(args.Indexes))
@@ -62,22 +58,4 @@ func (api *APICommon) AccountsKeysByIndex(r *http.Request, args *APIAccountsKeys
 		reply.PublicKeys = nil
 	}
 	return
-}
-
-func (api *APICommon) GetAccountsKeysByIndex_http(values url.Values) (interface{}, error) {
-	args := &APIAccountsKeysByIndexRequest{nil, nil, true}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &APIAccountsKeysByIndexReply{}
-	return reply, api.AccountsKeysByIndex(nil, args, reply)
-}
-
-func (api *APICommon) GetAccountsKeysByIndex_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	args := &APIAccountsKeysByIndexRequest{nil, nil, false}
-	if err := msgpack.Unmarshal(values, args); err != nil {
-		return nil, err
-	}
-	reply := &APIAccountsKeysByIndexReply{}
-	return reply, api.AccountsKeysByIndex(nil, args, reply)
 }

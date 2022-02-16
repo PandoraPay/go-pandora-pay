@@ -2,6 +2,7 @@ package api_types
 
 import (
 	"errors"
+	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/config/config_auth"
 	"pandora-pay/cryptography"
@@ -22,8 +23,8 @@ const (
 type APIReturnType uint8
 
 const (
-	RETURN_JSON APIReturnType = iota
-	RETURN_SERIALIZED
+	RETURN_SERIALIZED APIReturnType = iota
+	RETURN_JSON
 )
 
 type APIAccountBaseRequest struct {
@@ -59,16 +60,26 @@ type APIUnsubscriptionRequest struct {
 	Type SubscriptionType `json:"type,omitempty" msgpack:"type,omitempty"`
 }
 
-type APIAuthenticateBaseRequest struct {
-	Username string `json:"user" schema:"user" msgpack:"user"`
-	Password string `json:"pass" schema:"pass" msgpack:"pass"`
+type APIAuthenticated struct {
+	User string `json:"user"`
+	Pass string `json:"pass"`
 }
 
-func (request *APIAuthenticateBaseRequest) CheckAuthenticated() bool {
-	user := config_auth.CONFIG_AUTH_USERS_MAP[request.Username]
+func CheckAuthenticated(args url.Values) bool {
+
+	user := config_auth.CONFIG_AUTH_USERS_MAP[args.Get("user")]
 	if user == nil {
 		return false
 	}
 
-	return user.Password == request.Password
+	return user.Password == args.Get("pass")
+}
+
+func (authenticated *APIAuthenticated) CheckAuthenticated() bool {
+	user := config_auth.CONFIG_AUTH_USERS_MAP[authenticated.User]
+	if user == nil {
+		return false
+	}
+
+	return user.Password == authenticated.Pass
 }

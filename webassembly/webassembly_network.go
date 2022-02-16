@@ -76,7 +76,7 @@ func getNetworkBlockWithTxs(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		blkWithTxs := &api_common.APIBlockWithTxsReply{}
+		blkWithTxs := &api_common.APIBlockReply{}
 		if err := msgpack.Unmarshal(data.Out, blkWithTxs); err != nil {
 			return nil, err
 		}
@@ -149,7 +149,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			return nil, data.Err
 		}
 
-		result := &api_common.APIAccount{}
+		result := &api_common.APIAccountReply{}
 		if err = msgpack.Unmarshal(data.Out, result); err != nil {
 			return nil, err
 		}
@@ -356,7 +356,7 @@ func getNetworkFeeLiquidity(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return webassembly_utils.ConvertMsgPackToJSONBytes(app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("asset/fee-liquidity"), &api_common.APIAssetFeeLiquidityFeeRequest{uint64(args[0].Int()), hash}, nil, 0), &api_common.APIAssetFeeLiquidityReply{})
+		return webassembly_utils.ConvertMsgPackToJSONBytes(app.Network.Websockets.GetFirstSocket().SendJSONAwaitAnswer([]byte("asset/fee-liquidity"), &api_common.APIAssetFeeLiquidityFeeRequest{uint64(args[0].Int()), hash}, nil, 0), &api_common.APIAssetFeeLiquidityFeeReply{})
 	})
 }
 

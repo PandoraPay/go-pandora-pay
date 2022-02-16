@@ -2,9 +2,7 @@ package api_common
 
 import (
 	"encoding/binary"
-	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
-	"net/url"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
@@ -12,9 +10,7 @@ import (
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 )
@@ -24,7 +20,7 @@ type APIAccountRequest struct {
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty"  msgpack:"returnType,omitempty" `
 }
 
-type APIAccount struct {
+type APIAccountReply struct {
 	Accs               []*account.Account                                      `json:"accounts,omitempty" msgpack:"accounts,omitempty"`
 	AccsSerialized     [][]byte                                                `json:"accountsSerialized,omitempty" msgpack:"accountsSerialized,omitempty"`
 	AccsExtra          []*api_types.APISubscriptionNotificationAccountExtra    `json:"accountsExtra,omitempty" msgpack:"accountsExtra,omitempty"`
@@ -36,7 +32,7 @@ type APIAccount struct {
 	RegExtra           *api_types.APISubscriptionNotificationRegistrationExtra `json:"registrationExtra,omitempty" msgpack:"registrationExtra,omitempty"`
 }
 
-func (api *APICommon) Account(r *http.Request, args *APIAccountRequest, reply *APIAccount) (err error) {
+func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply *APIAccountReply) (err error) {
 
 	publicKey, err := args.GetPublicKey(true)
 	if err != nil {
@@ -122,22 +118,4 @@ func (api *APICommon) Account(r *http.Request, args *APIAccountRequest, reply *A
 	}
 
 	return
-}
-
-func (api *APICommon) GetAccount_http(values url.Values) (interface{}, error) {
-	args := &APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.RETURN_JSON}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &APIAccount{}
-	return reply, api.Account(nil, args, reply)
-}
-
-func (api *APICommon) GetAccount_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	args := &APIAccountRequest{api_types.APIAccountBaseRequest{"", nil}, api_types.RETURN_SERIALIZED}
-	if err := msgpack.Unmarshal(values, args); err != nil {
-		return nil, err
-	}
-	reply := &APIAccount{}
-	return reply, api.Account(nil, args, reply)
 }

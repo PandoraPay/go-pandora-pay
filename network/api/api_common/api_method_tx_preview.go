@@ -1,14 +1,10 @@
 package api_common
 
 import (
-	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
-	"net/url"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/urldecoder"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 )
@@ -42,7 +38,7 @@ func (apiStore *APIStore) openLoadTxPreview(args *APITransactionPreviewRequest, 
 	})
 }
 
-func (api *APICommon) TxPreview(r *http.Request, args *APITransactionPreviewRequest, reply *APITransactionPreviewReply) (err error) {
+func (api *APICommon) GetTxPreview(r *http.Request, args *APITransactionPreviewRequest, reply *APITransactionPreviewReply) (err error) {
 
 	if args.Hash != nil && len(args.Hash) == cryptography.HashSize {
 		txMempool := api.mempool.Txs.Get(string(args.Hash))
@@ -59,22 +55,4 @@ func (api *APICommon) TxPreview(r *http.Request, args *APITransactionPreviewRequ
 	}
 
 	return
-}
-
-func (api *APICommon) GetTxPreview_http(values url.Values) (interface{}, error) {
-	args := &APITransactionPreviewRequest{}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &APITransactionPreviewReply{}
-	return reply, api.TxPreview(nil, args, reply)
-}
-
-func (api *APICommon) GetTxPreview_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	args := &APITransactionPreviewRequest{}
-	if err := msgpack.Unmarshal(values, args); err != nil {
-		return nil, err
-	}
-	reply := &APITransactionPreviewReply{}
-	return reply, api.TxPreview(nil, args, reply)
 }

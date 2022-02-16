@@ -15,7 +15,7 @@ type APILoginReply struct {
 	Status bool `json:"status" msgpack:"status"`
 }
 
-func (api *APIWebsockets) GetLogin_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+func (api *APIWebsockets) login(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	args := &APILogin{}
 	if err := msgpack.Unmarshal(values, args); err != nil {
 		return nil, err

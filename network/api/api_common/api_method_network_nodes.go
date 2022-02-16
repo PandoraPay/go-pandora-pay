@@ -3,11 +3,9 @@ package api_common
 import (
 	"math/rand"
 	"net/http"
-	"net/url"
 	"pandora-pay/config"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/network/known_nodes"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store/min_max_heap"
 	"sync/atomic"
 	"time"
@@ -113,16 +111,6 @@ func (api *APICommon) GetList(reply *APINetworkNodesReply) (err error) {
 	return
 }
 
-func (api *APICommon) NetworkNodes(r *http.Request, args *struct{}, reply *APINetworkNodesReply) error {
+func (api *APICommon) GetNetworkNodes(r *http.Request, args *struct{}, reply *APINetworkNodesReply) error {
 	return api.GetList(reply)
-}
-
-func (api *APICommon) GetNetworkNodes_http(values url.Values) (interface{}, error) {
-	reply := &APINetworkNodesReply{}
-	return reply, api.NetworkNodes(nil, nil, reply)
-}
-
-func (api *APICommon) GetNetworkNodes_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	reply := &APINetworkNodesReply{}
-	return reply, api.NetworkNodes(nil, nil, reply)
 }

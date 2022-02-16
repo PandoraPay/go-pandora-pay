@@ -3,15 +3,8 @@
 
 package api_faucet
 
-import (
-	"net/url"
-	"pandora-pay/network/websocks/connection"
-)
+import "net/http"
 
-func (api *Faucet) GetFaucetInfo_http(values url.Values) (interface{}, error) {
-	return nil, nil
-}
-
-func (api *Faucet) GetFaucetInfo_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	return nil, nil
+func (api *Faucet) GetFaucetInfo(r *http.Request, args *struct{}, reply *APIFaucetInfo) error {
+	return nil
 }

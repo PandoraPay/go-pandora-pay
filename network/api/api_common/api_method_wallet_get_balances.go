@@ -4,27 +4,18 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
-	"net/url"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/helpers/urldecoder"
 	"pandora-pay/network/api/api_common/api_types"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/wallet/wallet_address"
 )
 
-type APIWalletGetBalance struct {
-	api_types.APIAuthenticateBaseRequest
-	APIWalletGetBalancesBase
-}
-
-type APIWalletGetBalancesBase struct {
+type APIWalletGetBalanceRequest struct {
 	List []*api_types.APIAccountBaseRequest `json:"list" msgpack:"list"`
 }
 
@@ -44,7 +35,7 @@ type APIWalletGetBalanceDataReply struct {
 	Asset   []byte `json:"asset" msgpack:"asset"`
 }
 
-func (api *APICommon) WalletGetBalances(r *http.Request, args *APIWalletGetBalancesBase, reply *APIWalletGetBalancesReply, authenticated bool) (err error) {
+func (api *APICommon) GetWalletBalances(r *http.Request, args *APIWalletGetBalanceRequest, reply *APIWalletGetBalancesReply, authenticated bool) (err error) {
 
 	if !authenticated {
 		return errors.New("Invalid User or Password")
@@ -130,22 +121,4 @@ func (api *APICommon) WalletGetBalances(r *http.Request, args *APIWalletGetBalan
 	}
 
 	return
-}
-
-func (api *APICommon) WalletGetBalances_http(values url.Values) (interface{}, error) {
-	args := &APIWalletGetBalance{}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &APIWalletGetBalancesReply{}
-	return reply, api.WalletGetBalances(nil, &args.APIWalletGetBalancesBase, reply, args.CheckAuthenticated())
-}
-
-func (api *APICommon) WalletGetBalances_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	args := &APIWalletGetBalancesBase{}
-	if err := msgpack.Unmarshal(values, args); err != nil {
-		return nil, err
-	}
-	reply := &APIWalletGetBalancesReply{}
-	return reply, api.WalletGetBalances(nil, args, reply, conn.Authenticated.IsSet())
 }

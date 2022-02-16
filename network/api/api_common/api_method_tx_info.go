@@ -1,13 +1,9 @@
 package api_common
 
 import (
-	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
-	"net/url"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/urldecoder"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 )
@@ -28,22 +24,4 @@ func (api *APICommon) GetTxInfo(r *http.Request, args *APITransactionInfoRequest
 
 		return api.ApiStore.loadTxInfo(reader, args.Hash, reply)
 	})
-}
-
-func (api *APICommon) GetTxInfo_http(values url.Values) (interface{}, error) {
-	args := &APITransactionInfoRequest{}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &info.TxInfo{}
-	return reply, api.GetTxInfo(nil, args, reply)
-}
-
-func (api *APICommon) GetTxInfo_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	args := &APITransactionInfoRequest{}
-	if err := msgpack.Unmarshal(values, args); err != nil {
-		return nil, err
-	}
-	reply := &info.TxInfo{}
-	return reply, api.GetTxInfo(nil, args, reply)
 }

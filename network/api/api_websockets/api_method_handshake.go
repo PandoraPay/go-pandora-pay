@@ -5,6 +5,6 @@ import (
 	"pandora-pay/network/websocks/connection"
 )
 
-func (api *APIWebsockets) getHandshake(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+func (api *APIWebsockets) handshake(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	return &connection.ConnectionHandshake{config.NAME, config.VERSION, config.NETWORK_SELECTED, config.CONSENSUS, config.NETWORK_ADDRESS_URL_STRING}, nil
 }

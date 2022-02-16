@@ -2,14 +2,10 @@ package api_common
 
 import (
 	"context"
-	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
-	"net/url"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/urldecoder"
-	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 )
 
@@ -70,22 +66,4 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 
 func (api *APICommon) MempoolNewTx(r *http.Request, args *APIMempoolNewTxRequest, reply *APIMempoolNewTxReply) error {
 	return api.mempoolNewTx(args, reply, advanced_connection_types.UUID_ALL)
-}
-
-func (api *APICommon) MempoolNewTx_http(values url.Values) (interface{}, error) {
-	args := &APIMempoolNewTxRequest{}
-	if err := urldecoder.Decoder.Decode(args, values); err != nil {
-		return nil, err
-	}
-	reply := &APIMempoolNewTxReply{}
-	return reply, api.MempoolNewTx(nil, args, reply)
-}
-
-func (api *APICommon) MempoolNewTx_websockets(conn *connection.AdvancedConnection, values []byte) (out interface{}, err error) {
-	args := &APIMempoolNewTxRequest{}
-	if err := msgpack.Unmarshal(values, args); err != nil {
-		return nil, err
-	}
-	reply := &APIMempoolNewTxReply{}
-	return reply, api.mempoolNewTx(args, reply, conn.UUID)
 }

@@ -35,11 +35,16 @@ func (thread *ConsensusProcessForksThread) downloadBlockHash(conn *connection.Ad
 		return nil, answer.Err
 	}
 
-	if len(answer.Out) != cryptography.HashSize {
+	data := &api_common.APIBlockHashReply{}
+	if err := msgpack.Unmarshal(answer.Out, data); err != nil {
+		return nil, err
+	}
+
+	if len(data.Hash) != cryptography.HashSize {
 		return nil, errors.New("Hash size is invalid")
 	}
 
-	return answer.Out, nil
+	return data.Hash, nil
 }
 
 func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connection.AdvancedConnection, fork *Fork, height uint64) (*block_complete.BlockComplete, error) {
@@ -51,7 +56,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 		return nil, answer.Err
 	}
 
-	blkWithTx := &api_common.APIBlockWithTxsReply{}
+	blkWithTx := &api_common.APIBlockReply{}
 	if err = msgpack.Unmarshal(answer.Out, blkWithTx); err != nil {
 		return nil, err
 	}
@@ -89,11 +94,11 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 				c++
 			}
 		}
-		answer = conn.SendJSONAwaitAnswer([]byte("block-miss-txs"), &api_common.APIBlockCompleteMissingTxsRequest{blkWithTx.Block.Bloom.Hash, missingTxs}, nil, 0)
+		answer = conn.SendJSONAwaitAnswer([]byte("block-miss-txs"), &APIBlockCompleteMissingTxsRequest{blkWithTx.Block.Bloom.Hash, missingTxs}, nil, 0)
 		if answer.Err != nil {
 			return nil, answer.Err
 		}
-		blkCompleteMissingTxs := &api_common.APIBlockCompleteMissingTxsReply{}
+		blkCompleteMissingTxs := &APIBlockCompleteMissingTxsReply{}
 
 		if err = msgpack.Unmarshal(answer.Out, blkCompleteMissingTxs); err != nil {
 			return nil, err

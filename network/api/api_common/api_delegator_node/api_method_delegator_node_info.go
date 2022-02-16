@@ -2,10 +2,8 @@ package api_delegator_node
 
 import (
 	"net/http"
-	"net/url"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/helpers"
-	"pandora-pay/network/websocks/connection"
 	"sync/atomic"
 )
 
@@ -18,7 +16,7 @@ type ApiDelegatorNodeInfoReply struct {
 	AcceptCustomKeys bool           `json:"acceptCustomKeys" msgpack:"acceptCustomKeys"`
 }
 
-func (api *DelegatorNode) DelegatorNodeInfo(r *http.Request, args *struct{}, reply *ApiDelegatorNodeInfoReply) error {
+func (api *DelegatorNode) GetDelegatorNodeInfo(r *http.Request, args *struct{}, reply *ApiDelegatorNodeInfoReply) error {
 	reply.MaximumAllowed = config_nodes.DELEGATES_MAXIMUM
 	reply.AcceptCustomKeys = config_nodes.DELEGATOR_ACCEPT_CUSTOM_KEYS
 	reply.DelegatesCount = api.wallet.GetDelegatesCount()
@@ -26,14 +24,4 @@ func (api *DelegatorNode) DelegatorNodeInfo(r *http.Request, args *struct{}, rep
 	reply.Challenge = api.challenge
 	reply.Blocks = atomic.LoadUint64(&api.chainHeight)
 	return nil
-}
-
-func (api *DelegatorNode) GetDelegatorNodeInfo_http(values url.Values) (interface{}, error) {
-	reply := &ApiDelegatorNodeInfoReply{}
-	return reply, api.DelegatorNodeInfo(nil, nil, reply)
-}
-
-func (api *DelegatorNode) GetDelegatorNodeInfo_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-	reply := &ApiDelegatorNodeInfoReply{}
-	return reply, api.DelegatorNodeInfo(nil, nil, reply)
 }

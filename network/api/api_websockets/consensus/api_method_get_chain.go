@@ -19,6 +19,6 @@ func (consensus *Consensus) GetUpdateNotification(newChainData *blockchain.Block
 	}
 }
 
-func (consensus *Consensus) ChainGet_websockets(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+func (consensus *Consensus) GetChain(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 	return consensus.GetUpdateNotification(nil), nil
 }

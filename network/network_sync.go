@@ -68,9 +68,9 @@ func (network *Network) continuouslyDownloadChain() {
 		for {
 
 			if conn := network.Websockets.GetRandomSocket(); conn != nil {
-				data := conn.SendJSONAwaitAnswer([]byte("chain-get"), nil, nil, 0)
+				data := conn.SendJSONAwaitAnswer([]byte("get-chain"), nil, nil, 0)
 				if data.Err == nil && data.Out != nil {
-					network.Websockets.ApiWebsockets.Consensus.ChainUpdate_websockets(conn, data.Out)
+					network.Websockets.ApiWebsockets.Consensus.ChainUpdate(conn, data.Out)
 				}
 			}
 
@@ -137,9 +137,9 @@ func (network *Network) syncBlockchainNewConnections() {
 			//making it async
 			recovery.SafeGo(func() {
 
-				data := conn.SendJSONAwaitAnswer([]byte("chain-get"), nil, nil, 0)
+				data := conn.SendJSONAwaitAnswer([]byte("get-chain"), nil, nil, 0)
 				if data.Err == nil && data.Out != nil {
-					network.Websockets.ApiWebsockets.Consensus.ChainUpdate_websockets(conn, data.Out)
+					network.Websockets.ApiWebsockets.Consensus.ChainUpdate(conn, data.Out)
 				}
 
 			})
