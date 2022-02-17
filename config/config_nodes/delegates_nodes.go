@@ -66,6 +66,7 @@ var (
 	this will enable accepting delegating for other users their delegated stakes
 	*/
 	DELEGATOR_ENABLED                     = false
+	DELEGATOR_REQUIRE_AUTH                = false
 	DELEGATES_MAXIMUM                     = 10000
 	DELEGATOR_FEE                         = uint64(math.Floor(0.00 * float64(config_stake.DELEGATING_STAKING_FEE_MAX_VALUE))) // max DELEGATING_STAKING_FEE_MAX_VALUE
 	DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY = []byte{}
@@ -105,6 +106,10 @@ func InitConfig() (err error) {
 		if DELEGATOR_FEE > 0 && len(DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY) != cryptography.PublicKeySize {
 			return errors.New("DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY is invalid")
 		}
+	}
+
+	if globals.Arguments["--delegator-require-auth"] == "true" {
+		DELEGATOR_REQUIRE_AUTH = true
 	}
 
 	if globals.Arguments["--delegator-accept-custom-keys"] == "true" {

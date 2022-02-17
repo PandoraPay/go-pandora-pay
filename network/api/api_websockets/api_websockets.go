@@ -130,7 +130,7 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 
 	if api.apiCommon.DelegatorNode != nil {
 		api.GetMap["delegator-node/info"] = handle[struct{}, api_delegator_node.ApiDelegatorNodeInfoReply](api.apiCommon.DelegatorNode.GetDelegatorNodeInfo)
-		api.GetMap["delegator-node/ask"] = handle[api_delegator_node.ApiDelegatorNodeAskRequest, api_delegator_node.ApiDelegatorNodeAskReply](api.apiCommon.DelegatorNode.GetDelegatesAsk)
+		api.GetMap["delegator-node/ask"] = handleAuthenticated[api_delegator_node.ApiDelegatorNodeAskRequest, api_delegator_node.ApiDelegatorNodeAskReply](api.apiCommon.DelegatorNode.GetDelegatesAsk)
 	}
 
 	return api

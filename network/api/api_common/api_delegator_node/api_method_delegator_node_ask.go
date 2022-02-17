@@ -20,7 +20,11 @@ type ApiDelegatorNodeAskReply struct {
 	DelegatedStakingPublicKey []byte `json:"delegatedStakingPublicKey" msgpack:"delegatedStakingPublicKey"`
 }
 
-func (api *DelegatorNode) GetDelegatesAsk(r *http.Request, args *ApiDelegatorNodeAskRequest, reply *ApiDelegatorNodeAskReply) error {
+func (api *DelegatorNode) GetDelegatesAsk(r *http.Request, args *ApiDelegatorNodeAskRequest, reply *ApiDelegatorNodeAskReply, authenticated bool) error {
+
+	if config_nodes.DELEGATOR_REQUIRE_AUTH && !authenticated {
+		return errors.New("Invalid User or Password")
+	}
 
 	publicKey := args.PublicKey
 

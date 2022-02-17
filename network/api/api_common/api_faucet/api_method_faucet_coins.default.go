@@ -16,10 +16,6 @@ import (
 
 func (api *Faucet) GetFaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, reply *APIFaucetCoinsReply) error {
 
-	if !config.FAUCET_TESTNET_ENABLED {
-		return errors.New("Faucet Testnet is not enabled")
-	}
-
 	resp, err := api.hcpatchaClient.Verify(args.FaucetToken, hcaptcha.PostOptions{})
 	if err != nil {
 		return err
