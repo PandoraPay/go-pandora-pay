@@ -220,8 +220,7 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 
 	w.WriteByte(byte(payload.DataVersion))
 	if payload.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT { //variable
-		w.WriteUvarint(uint64(len(payload.Data)))
-		w.Write(payload.Data)
+		w.WriteVariableBytes(payload.Data)
 	} else if payload.DataVersion == transaction_data.TX_DATA_ENCRYPTED { //fixed 145
 		w.Write(payload.Data)
 	}
@@ -289,13 +288,7 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 	switch payload.DataVersion {
 	case transaction_data.TX_DATA_NONE:
 	case transaction_data.TX_DATA_PLAIN_TEXT:
-		if n, err = r.ReadUvarint(); err != nil {
-			return
-		}
-		if n == 0 || n > config.TRANSACTIONS_MAX_DATA_LENGTH {
-			return errors.New("Tx.Data length is invalid")
-		}
-		if payload.Data, err = r.ReadBytes(int(n)); err != nil {
+		if payload.Data, err = r.ReadVariableBytes(config.TRANSACTIONS_MAX_DATA_LENGTH); err != nil {
 			return
 		}
 	case transaction_data.TX_DATA_ENCRYPTED:

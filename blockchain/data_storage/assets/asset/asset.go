@@ -37,6 +37,7 @@ type Asset struct {
 	Name                                         string `json:"name" msgpack:"name"`
 	Ticker                                       string `json:"ticker" msgpack:"ticker"`
 	Description                                  string `json:"description,omitempty" msgpack:"description,omitempty"`
+	Data                                         []byte `json:"data,omitempty" msgpack:"data,omitempty"`
 }
 
 func (asset *Asset) SetKey(key []byte) {
@@ -63,8 +64,11 @@ func (asset *Asset) Validate() error {
 	if len(asset.Ticker) > 10 || len(asset.Ticker) < 2 {
 		return errors.New("asset ticker length is invalid")
 	}
-	if len(asset.Description) > 1023 {
-		return errors.New("asset  description length is invalid")
+	if len(asset.Description) > 1024 {
+		return errors.New("asset description length is invalid")
+	}
+	if len(asset.Data) > 5120 {
+		return errors.New("asset data length is invalid")
 	}
 
 	if !regexAssetName.MatchString(asset.Name) {
@@ -165,6 +169,7 @@ func (asset *Asset) Serialize(w *helpers.BufferWriter) {
 	w.WriteString(asset.Name)
 	w.WriteString(asset.Ticker)
 	w.WriteString(asset.Description)
+	w.WriteVariableBytes(asset.Data)
 }
 
 func (asset *Asset) Deserialize(r *helpers.BufferReader) (err error) {
@@ -208,13 +213,16 @@ func (asset *Asset) Deserialize(r *helpers.BufferReader) (err error) {
 	if asset.SupplyPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if asset.Name, err = r.ReadString(); err != nil {
+	if asset.Name, err = r.ReadString(15); err != nil {
 		return
 	}
-	if asset.Ticker, err = r.ReadString(); err != nil {
+	if asset.Ticker, err = r.ReadString(10); err != nil {
 		return
 	}
-	if asset.Description, err = r.ReadString(); err != nil {
+	if asset.Description, err = r.ReadString(1024); err != nil {
+		return
+	}
+	if asset.Data, err = r.ReadVariableBytes(5120); err != nil {
 		return
 	}
 

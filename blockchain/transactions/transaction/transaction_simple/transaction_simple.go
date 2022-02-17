@@ -104,8 +104,7 @@ func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 
 	w.WriteByte(byte(tx.DataVersion))
 	if tx.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT || tx.DataVersion == transaction_data.TX_DATA_ENCRYPTED {
-		w.WriteUvarint(uint64(len(tx.Data)))
-		w.Write(tx.Data)
+		w.WriteVariableBytes(tx.Data)
 	}
 
 	w.WriteUvarint(tx.Nonce)
@@ -151,13 +150,7 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 	switch tx.DataVersion {
 	case transaction_data.TX_DATA_NONE:
 	case transaction_data.TX_DATA_PLAIN_TEXT, transaction_data.TX_DATA_ENCRYPTED:
-		if n, err = r.ReadUvarint(); err != nil {
-			return
-		}
-		if n == 0 || n > config.TRANSACTIONS_MAX_DATA_LENGTH {
-			return errors.New("Tx.Data length is invalid")
-		}
-		if tx.Data, err = r.ReadBytes(int(n)); err != nil {
+		if tx.Data, err = r.ReadVariableBytes(config.TRANSACTIONS_MAX_DATA_LENGTH); err != nil {
 			return
 		}
 	default:

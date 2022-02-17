@@ -75,16 +75,27 @@ func (reader *BufferReader) ReadBN256G1() (p *bn256.G1, err error) {
 	return
 }
 
-func (reader *BufferReader) ReadString() (string, error) {
-	length, err := reader.ReadUvarint()
+func (reader *BufferReader) ReadString(limit uint64) (string, error) {
+	bytes, err := reader.ReadVariableBytes(limit)
 	if err != nil {
 		return "", err
 	}
+	return string(bytes), nil
+}
+
+func (reader *BufferReader) ReadVariableBytes(limit uint64) ([]byte, error) {
+	length, err := reader.ReadUvarint()
+	if err != nil {
+		return nil, err
+	}
+	if length > limit {
+		return nil, errors.New("Variable bytes exceeding maximum length")
+	}
 	var bytes []byte
 	if bytes, err = reader.ReadBytes(int(length)); err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(bytes), nil
+	return bytes, nil
 }
 
 func (reader *BufferReader) ReadHash() ([]byte, error) {

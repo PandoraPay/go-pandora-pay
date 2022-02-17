@@ -39,7 +39,7 @@ func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, []byte, 
 		return "", nil, err
 	}
 
-	return addr.AddressRegistrationEncoded, delegatedStake.PublicKey, nil
+	return addr.AddressEncoded, delegatedStake.PublicKey, nil
 }
 
 //you should not lock it before

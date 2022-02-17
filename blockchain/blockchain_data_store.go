@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
+	"math"
 	"math/big"
 	"pandora-pay/helpers"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -18,8 +19,7 @@ func (chainData *BlockchainData) saveTotalDifficultyExtra(writer store_db_interf
 	bufferWriter.WriteUvarint(chainData.Timestamp)
 
 	bytes := chainData.BigTotalDifficulty.Bytes()
-	bufferWriter.WriteUvarint(uint64(len(bytes)))
-	bufferWriter.Write(bytes)
+	bufferWriter.WriteVariableBytes(bytes)
 
 	writer.Put(key, bufferWriter.Bytes())
 }
@@ -41,12 +41,7 @@ func (chainData *BlockchainData) LoadTotalDifficultyExtra(reader store_db_interf
 		return nil, 0, err
 	}
 
-	length, err := bufferReader.ReadUvarint()
-	if err != nil {
-		return nil, 0, err
-	}
-
-	bytes, err := bufferReader.ReadBytes(int(length))
+	bytes, err := bufferReader.ReadVariableBytes(math.MaxUint64)
 	if err != nil {
 		return nil, 0, err
 	}

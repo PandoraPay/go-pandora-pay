@@ -88,7 +88,7 @@ func saveAssetsInfo(asts *assets.Assets) (err error) {
 				ast.Name,
 				ast.Ticker,
 				ast.DecimalSeparator,
-				ast.Description,
+				ast.Description[:100],
 				[]byte(k),
 			}
 			var data []byte

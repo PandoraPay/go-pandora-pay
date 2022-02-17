@@ -20,7 +20,10 @@ func (writer *BufferWriter) Write(value []byte) {
 }
 
 func (writer *BufferWriter) WriteString(string string) {
-	value := []byte(string)
+	writer.WriteVariableBytes([]byte(string))
+}
+
+func (writer *BufferWriter) WriteVariableBytes(value []byte) {
 	writer.WriteUvarint(uint64(len(value)))
 	writer.array = append(writer.array, value)
 	writer.len += len(value)

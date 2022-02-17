@@ -67,11 +67,16 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 		if err != nil {
 			return
 		}
-		if addr.IsIntegratedAmount() || addr.IsIntegratedPaymentID() {
-			return errors.New("Amount or PaymentID are integrated there should not be")
+		if addr.IsIntegratedAmount() || addr.IsIntegratedPaymentID() || addr.IsIntegratedPaymentAsset() {
+			return errors.New("Amount, PaymentID or IntegratedPaymentAsset are not allowed in the airdrop address")
 		}
 
 		if airdrop.DelegatedStakePublicKey != nil {
+
+			if len(addr.Registration) > 0 {
+				return errors.New("Airdrop delegated stakes should not have registration")
+			}
+
 			var plainAcc *plain_account.PlainAccount
 			if plainAcc, err = dataStorage.CreatePlainAccount(addr.PublicKey); err != nil {
 				return
@@ -125,6 +130,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 		config_coins.NATIVE_ASSET_NAME,
 		config_coins.NATIVE_ASSET_TICKER,
 		config_coins.NATIVE_ASSET_DESCRIPTION,
+		nil,
 	}
 
 	if err = dataStorage.Asts.CreateAsset(config_coins.NATIVE_ASSET_FULL, ast); err != nil {
