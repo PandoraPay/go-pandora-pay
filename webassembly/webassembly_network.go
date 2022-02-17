@@ -36,11 +36,7 @@ func getNetworkBlockchain(this js.Value, args []js.Value) interface{} {
 
 func getNetworkFaucetCoins(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-		data, err := connection.SendJSONAwaitAnswer[api_faucet.APIFaucetCoinsReply](app.Network.Websockets.GetFirstSocket(), []byte("faucet/coins"), &api_faucet.APIFaucetCoinsRequest{args[0].String(), args[1].String()}, nil, 120*time.Second)
-		if err != nil {
-			return nil, err
-		}
-		return base64.StdEncoding.EncodeToString(data.Hash), nil
+		return webassembly_utils.ConvertToJSONBytes(connection.SendJSONAwaitAnswer[api_faucet.APIFaucetCoinsReply](app.Network.Websockets.GetFirstSocket(), []byte("faucet/coins"), &api_faucet.APIFaucetCoinsRequest{args[0].String(), args[1].String()}, nil, 120*time.Second))
 	})
 }
 
