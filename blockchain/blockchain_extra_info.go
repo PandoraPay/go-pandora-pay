@@ -8,6 +8,7 @@ import (
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/info"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
@@ -88,7 +89,7 @@ func saveAssetsInfo(asts *assets.Assets) (err error) {
 				ast.Name,
 				ast.Ticker,
 				ast.DecimalSeparator,
-				ast.Description[:100],
+				ast.Description[:generics.Min(100, len(ast.Description))],
 				[]byte(k),
 			}
 			var data []byte
