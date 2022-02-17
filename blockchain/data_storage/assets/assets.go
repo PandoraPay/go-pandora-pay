@@ -72,7 +72,7 @@ func NewAssets(tx store_db_interface.StoreDBTransactionInterface) (assets *Asset
 			return
 		}
 
-		tokenIdentification := tx.Get("assets:tickers:" + string(key))
+		tokenIdentification := tx.Get("assets:tickers:by:" + string(key))
 
 		tx.Delete("assets:tickers:by:" + string(key))
 		tx.Delete("assets:tickers:used:" + string(tokenIdentification))
