@@ -107,27 +107,20 @@ func createNewGenesis(v []string) (err error) {
 	amount := 10000 * config_stake.GetRequiredStake(0)
 	for i := 1; i < len(v); i++ {
 
-		if err = func() (err error) {
-
-			if data, err = ioutil.ReadFile(v[i]); err != nil {
-				return
-			}
-
-			delegatedStakeOutput := &wallet.DelegatedStakeOutput{}
-			if err = json.Unmarshal(data, delegatedStakeOutput); err != nil {
-				return
-			}
-
-			GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-				Address:                 delegatedStakeOutput.Address,
-				Amount:                  amount,
-				DelegatedStakePublicKey: delegatedStakeOutput.DelegatedStakePublicKey,
-			})
-
-			return
-		}(); err != nil {
+		if data, err = ioutil.ReadFile(v[i]); err != nil {
 			return
 		}
+
+		delegatedStakeOutput := &wallet.DelegatedStakeOutput{}
+		if err = json.Unmarshal(data, delegatedStakeOutput); err != nil {
+			return
+		}
+
+		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
+			Address:                 delegatedStakeOutput.Address,
+			Amount:                  amount,
+			DelegatedStakePublicKey: delegatedStakeOutput.DelegatedStakePublicKey,
+		})
 
 	}
 
