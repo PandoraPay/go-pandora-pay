@@ -2,25 +2,19 @@ package webassembly_utils
 
 import (
 	"encoding/json"
-	"github.com/vmihailenco/msgpack/v5"
-	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 	"syscall/js"
 )
 
 var PromiseConstructor, ErrorConstructor js.Value
 
-func ConvertMsgPackToJSONBytes(reply *advanced_connection_types.AdvancedConnectionReply, obj any) (js.Value, error) {
+func ConvertToJSONBytes(reply any, err error) (js.Value, error) {
 
-	if reply.Err != nil || reply.Out == nil {
-		return js.Null(), reply.Err
-	}
-
-	if err := msgpack.Unmarshal(reply.Out, &obj); err != nil {
+	if err != nil {
 		return js.Null(), err
 	}
 
-	return ConvertJSONBytes(obj)
+	return ConvertJSONBytes(reply)
 }
 
 func ConvertJSONBytes(obj interface{}) (js.Value, error) {

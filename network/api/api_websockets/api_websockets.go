@@ -103,10 +103,9 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		"chain-update":      api.Consensus.ChainUpdate,
 		"login":             api.login,
 		"logout":            api.logout,
+		"sub":               api.subscribe,
+		"unsub":             api.unsubscribe,
 	}
-
-	api.GetMap["sub"] = api.subscribe
-	api.GetMap["unsub"] = api.unsubscribe
 
 	if config.SEED_WALLET_NODES_INFO {
 		api.GetMap["asset-info"] = handle[api_common.APIAssetInfoRequest, info.AssetInfo](api.apiCommon.GetAssetInfo)
@@ -125,7 +124,7 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 	if api.apiCommon.Faucet != nil {
 		api.GetMap["faucet/info"] = handle[struct{}, api_faucet.APIFaucetInfo](api.apiCommon.Faucet.GetFaucetInfo)
 		if config.FAUCET_TESTNET_ENABLED {
-			api.GetMap["faucet/coins"] = handle[api_faucet.APIFaucetCoinsRequest, []byte](api.apiCommon.Faucet.GetFaucetCoins)
+			api.GetMap["faucet/coins"] = handle[api_faucet.APIFaucetCoinsRequest, api_faucet.APIFaucetCoinsReply](api.apiCommon.Faucet.GetFaucetCoins)
 		}
 	}
 

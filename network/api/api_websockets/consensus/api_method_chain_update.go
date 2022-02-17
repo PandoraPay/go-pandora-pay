@@ -10,12 +10,7 @@ import (
 	"pandora-pay/network/websocks/connection"
 )
 
-func (consensus *Consensus) ChainUpdate(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
-
-	chainUpdateNotification := new(ChainUpdateNotification)
-	if err := msgpack.Unmarshal(values, &chainUpdateNotification); err != nil {
-		return nil, err
-	}
+func (consensus *Consensus) ChainUpdateProcess(conn *connection.AdvancedConnection, chainUpdateNotification *ChainUpdateNotification) (interface{}, error) {
 
 	if len(chainUpdateNotification.Hash) != cryptography.HashSize {
 		return nil, errors.New("Chain Update Hash Length is invalid")
@@ -60,4 +55,12 @@ func (consensus *Consensus) ChainUpdate(conn *connection.AdvancedConnection, val
 
 	return nil, nil
 
+}
+
+func (consensus *Consensus) ChainUpdate(conn *connection.AdvancedConnection, data []byte) (interface{}, error) {
+	chainUpdateNotification := &ChainUpdateNotification{}
+	if err := msgpack.Unmarshal(data, chainUpdateNotification); err != nil {
+		return nil, err
+	}
+	return consensus.ChainUpdateProcess(conn, chainUpdateNotification)
 }

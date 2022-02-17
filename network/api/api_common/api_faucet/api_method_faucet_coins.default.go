@@ -14,7 +14,7 @@ import (
 	"pandora-pay/txs_builder/wizard"
 )
 
-func (api *Faucet) GetFaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, reply *[]byte) error {
+func (api *Faucet) GetFaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, reply *APIFaucetCoinsReply) error {
 
 	if !config.FAUCET_TESTNET_ENABLED {
 		return errors.New("Faucet Testnet is not enabled")
@@ -54,7 +54,7 @@ func (api *Faucet) GetFaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, 
 		return err
 	}
 
-	*reply = tx.Bloom.Hash
+	reply.Hash = tx.Bloom.Hash
 	return nil
 
 }

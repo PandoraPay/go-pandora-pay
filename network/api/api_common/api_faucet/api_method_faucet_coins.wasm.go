@@ -5,6 +5,6 @@ package api_faucet
 
 import "net/http"
 
-func (api *Faucet) GetFaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, reply *[]byte) error {
+func (api *Faucet) GetFaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, reply *APIFaucetCoinsReply) error {
 	return nil
 }

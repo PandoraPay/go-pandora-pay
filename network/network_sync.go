@@ -3,7 +3,9 @@ package network
 import (
 	"pandora-pay/config"
 	"pandora-pay/gui"
+	"pandora-pay/network/api/api_websockets/consensus"
 	"pandora-pay/network/websocks"
+	"pandora-pay/network/websocks/connection"
 	"pandora-pay/recovery"
 	"time"
 )
@@ -68,9 +70,9 @@ func (network *Network) continuouslyDownloadChain() {
 		for {
 
 			if conn := network.Websockets.GetRandomSocket(); conn != nil {
-				data := conn.SendJSONAwaitAnswer([]byte("get-chain"), nil, nil, 0)
-				if data.Err == nil && data.Out != nil {
-					network.Websockets.ApiWebsockets.Consensus.ChainUpdate(conn, data.Out)
+				data, err := connection.SendJSONAwaitAnswer[consensus.ChainUpdateNotification](conn, []byte("get-chain"), nil, nil, 0)
+				if err == nil {
+					network.Websockets.ApiWebsockets.Consensus.ChainUpdateProcess(conn, data)
 				}
 			}
 
@@ -137,9 +139,9 @@ func (network *Network) syncBlockchainNewConnections() {
 			//making it async
 			recovery.SafeGo(func() {
 
-				data := conn.SendJSONAwaitAnswer([]byte("get-chain"), nil, nil, 0)
-				if data.Err == nil && data.Out != nil {
-					network.Websockets.ApiWebsockets.Consensus.ChainUpdate(conn, data.Out)
+				data, err := connection.SendJSONAwaitAnswer[consensus.ChainUpdateNotification](conn, []byte("get-chain"), nil, nil, 0)
+				if err == nil {
+					network.Websockets.ApiWebsockets.Consensus.ChainUpdateProcess(conn, data)
 				}
 
 			})

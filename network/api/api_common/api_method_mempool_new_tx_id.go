@@ -44,21 +44,14 @@ func (api *APICommon) mempoolNewTxIdProcess(conn *connection.AdvancedConnection,
 		close(processedAlreadyFound.wait)
 	}()
 
-	result := conn.SendJSONAwaitAnswer([]byte("tx-raw"), &APITransactionRawRequest{0, hash}, nil, 0)
-	if result.Err != nil {
+	result, err := connection.SendJSONAwaitAnswer[APITransactionRawReply](conn, []byte("tx-raw"), &APITransactionRawRequest{0, hash}, nil, 0)
+	if err != nil {
 		closeConnection = true
-		err = result.Err
-		return
-	}
-
-	if result.Out == nil {
-		closeConnection = true
-		err = errors.New("Tx was not found")
 		return
 	}
 
 	tx := &transaction.Transaction{}
-	if err = tx.Deserialize(helpers.NewBufferReader(result.Out)); err != nil {
+	if err = tx.Deserialize(helpers.NewBufferReader(result.Tx)); err != nil {
 		closeConnection = true
 		return
 	}

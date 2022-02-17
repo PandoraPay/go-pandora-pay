@@ -3,7 +3,6 @@ package consensus
 import (
 	"bytes"
 	"errors"
-	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block_complete"
@@ -30,36 +29,25 @@ type ConsensusProcessForksThread struct {
 }
 
 func (thread *ConsensusProcessForksThread) downloadBlockHash(conn *connection.AdvancedConnection, fork *Fork, height uint64) ([]byte, error) {
-	answer := conn.SendJSONAwaitAnswer([]byte("block-hash"), &api_common.APIBlockHashRequest{height}, nil, 0)
-	if answer.Err != nil {
-		return nil, answer.Err
-	}
-
-	data := &api_common.APIBlockHashReply{}
-	if err := msgpack.Unmarshal(answer.Out, data); err != nil {
+	answer, err := connection.SendJSONAwaitAnswer[api_common.APIBlockHashReply](conn, []byte("block-hash"), &api_common.APIBlockHashRequest{height}, nil, 0)
+	if err != nil {
 		return nil, err
 	}
 
-	if len(data.Hash) != cryptography.HashSize {
+	if len(answer.Hash) != cryptography.HashSize {
 		return nil, errors.New("Hash size is invalid")
 	}
 
-	return data.Hash, nil
+	return answer.Hash, nil
 }
 
 func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connection.AdvancedConnection, fork *Fork, height uint64) (*block_complete.BlockComplete, error) {
 
-	var err error
-
-	answer := conn.SendJSONAwaitAnswer([]byte("block"), &api_common.APIBlockRequest{height, nil, api_types.RETURN_SERIALIZED}, nil, 0)
-	if answer.Err != nil {
-		return nil, answer.Err
-	}
-
-	blkWithTx := &api_common.APIBlockReply{}
-	if err = msgpack.Unmarshal(answer.Out, blkWithTx); err != nil {
+	blkWithTx, err := connection.SendJSONAwaitAnswer[api_common.APIBlockReply](conn, []byte("block"), &api_common.APIBlockRequest{height, nil, api_types.RETURN_SERIALIZED}, nil, 0)
+	if err != nil {
 		return nil, err
 	}
+
 	blkWithTx.Block = block.CreateEmptyBlock()
 	if err = blkWithTx.Block.Deserialize(helpers.NewBufferReader(blkWithTx.BlockSerialized)); err != nil {
 		return nil, err
@@ -94,15 +82,12 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 				c++
 			}
 		}
-		answer = conn.SendJSONAwaitAnswer([]byte("block-miss-txs"), &APIBlockCompleteMissingTxsRequest{blkWithTx.Block.Bloom.Hash, missingTxs}, nil, 0)
-		if answer.Err != nil {
-			return nil, answer.Err
-		}
-		blkCompleteMissingTxs := &APIBlockCompleteMissingTxsReply{}
 
-		if err = msgpack.Unmarshal(answer.Out, blkCompleteMissingTxs); err != nil {
+		blkCompleteMissingTxs, err := connection.SendJSONAwaitAnswer[APIBlockCompleteMissingTxsReply](conn, []byte("block-miss-txs"), &APIBlockCompleteMissingTxsRequest{blkWithTx.Block.Bloom.Hash, missingTxs}, nil, 0)
+		if err != nil {
 			return nil, err
 		}
+
 		if len(blkCompleteMissingTxs.Txs) != len(missingTxs) {
 			return nil, errors.New("blkCompleteMissingTxs.Txs length is not matching")
 		}

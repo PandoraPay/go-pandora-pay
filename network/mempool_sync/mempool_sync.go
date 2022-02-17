@@ -1,7 +1,6 @@
 package mempool_sync
 
 import (
-	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/config"
 	"pandora-pay/network/api/api_common"
 	"pandora-pay/network/websocks"
@@ -24,13 +23,8 @@ func (self *MempoolSync) DownloadMempool(conn *connection.AdvancedConnection) (e
 	//times is used to avoid infinite loops
 	for {
 
-		out := conn.SendJSONAwaitAnswer([]byte("mempool"), &api_common.APIMempoolRequest{chainHash, page, 0}, nil, 0)
-		if out.Err != nil {
-			return
-		}
-
-		data := &api_common.APIMempoolReply{}
-		if err = msgpack.Unmarshal(out.Out, data); err != nil {
+		var data *api_common.APIMempoolReply
+		if data, err = connection.SendJSONAwaitAnswer[api_common.APIMempoolReply](conn, []byte("mempool"), &api_common.APIMempoolRequest{chainHash, page, 0}, nil, 0); err != nil {
 			return
 		}
 

@@ -134,7 +134,7 @@ func NewAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chai
 	if api.apiCommon.Faucet != nil {
 		api.GetMap["faucet/info"] = handle[struct{}, api_faucet.APIFaucetInfo](api.apiCommon.Faucet.GetFaucetInfo)
 		if config.FAUCET_TESTNET_ENABLED {
-			api.GetMap["faucet/coins"] = handle[api_faucet.APIFaucetCoinsRequest, []byte](api.apiCommon.Faucet.GetFaucetCoins)
+			api.GetMap["faucet/coins"] = handle[api_faucet.APIFaucetCoinsRequest, api_faucet.APIFaucetCoinsReply](api.apiCommon.Faucet.GetFaucetCoins)
 		}
 	}
 

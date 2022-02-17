@@ -152,15 +152,24 @@ func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte, ctxParent
 	return c.sendNowAwait(name, data, false, ctxParent, ctxDuration)
 }
 
-func (c *AdvancedConnection) SendJSONAwaitAnswer(name []byte, data interface{}, ctxParent context.Context, ctxDuration time.Duration) *advanced_connection_types.AdvancedConnectionReply {
+func SendJSONAwaitAnswer[T any](c *AdvancedConnection, name []byte, data any, ctxParent context.Context, ctxDuration time.Duration) (*T, error) {
 	if c == nil {
-		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Socket is null")}
+		return nil, errors.New("Socket is null")
 	}
-	out, err := msgpack.Marshal(data)
+	input, err := msgpack.Marshal(data)
 	if err != nil {
-		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Error marshaling data")}
+		return nil, errors.New("Error marshaling data")
 	}
-	return c.sendNowAwait(name, out, false, ctxParent, ctxDuration)
+	out := c.sendNowAwait(name, input, false, ctxParent, ctxDuration)
+	if out.Err != nil {
+		return nil, out.Err
+	}
+
+	final := new(T)
+	if err = msgpack.Unmarshal(out.Out, final); err != nil {
+		return nil, err
+	}
+	return final, nil
 }
 
 func (c *AdvancedConnection) get(message *advanced_connection_types.AdvancedConnectionMessage) (final []byte, err error) {
