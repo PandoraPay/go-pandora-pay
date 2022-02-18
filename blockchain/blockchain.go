@@ -110,6 +110,15 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	chainData := chain.GetChainData()
 
+	if blocksComplete[len(blocksComplete)-1].Height == chainData.Height-1 && chainData.ConsecutiveSelfForged > 0 {
+		err = errors.New("Block was already forged by a different thread")
+		chain.updatesQueue.updatesCn <- &BlockchainUpdate{
+			err:             err,
+			calledByForging: calledByForging,
+		}
+		return
+	}
+
 	gui.GUI.Info("Including blocks " + strconv.FormatUint(chainData.Height, 10) + " ... " + strconv.FormatUint(chainData.Height+uint64(len(blocksComplete)), 10))
 
 	//chain.RLock() is not required because it is guaranteed that no other thread is writing now in the chain
@@ -499,7 +508,7 @@ func CreateBlockchain(mempool *mempool.Mempool, txsValidator *txs_validator.TxsV
 		txsValidator,
 		&sync.Mutex{},
 		createBlockchainUpdatesQueue(txsValidator),
-		make(chan *block_complete.BlockComplete),
+		make(chan *block_complete.BlockComplete, 100),
 		multicast.NewMulticastChannel[uint64](),
 		multicast.NewMulticastChannel[*BlockchainDataUpdate](),
 		multicast.NewMulticastChannel[*accounts.AccountsCollection](),
@@ -546,6 +555,6 @@ func (chain *Blockchain) Close() {
 	chain.UpdatePlainAccounts.CloseAll()
 	chain.UpdateAssets.CloseAll()
 	chain.UpdateRegistrations.CloseAll()
-	close(chain.NextBlockCreatedCn)
 	close(chain.ForgingSolutionCn)
+	close(chain.NextBlockCreatedCn)
 }

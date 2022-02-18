@@ -19,7 +19,7 @@ type Forging struct {
 	started            *abool.AtomicBool
 	forgingThread      *ForgingThread
 	nextBlockCreatedCn <-chan *forging_block_work.ForgingWork
-	solutionCn         chan<- *block_complete.BlockComplete
+	forgingSolutionCn  chan<- *block_complete.BlockComplete
 }
 
 func CreateForging(mempool *mempool.Mempool) (*Forging, error) {
@@ -48,9 +48,9 @@ func (forging *Forging) InitializeForging(nextBlockCreatedCn <-chan *forging_blo
 
 	forging.nextBlockCreatedCn = nextBlockCreatedCn
 	forging.Wallet.updatePlainAccounts = updatePlainAccs
-	forging.solutionCn = forgingSolutionCn
+	forging.forgingSolutionCn = forgingSolutionCn
 
-	forging.forgingThread = createForgingThread(config.CPU_THREADS, forging.mempool, forging.solutionCn, forging.nextBlockCreatedCn)
+	forging.forgingThread = createForgingThread(config.CPU_THREADS, forging.mempool, forging.forgingSolutionCn, forging.nextBlockCreatedCn)
 	forging.Wallet.workersCreatedCn = forging.forgingThread.workersCreatedCn
 	forging.Wallet.workersDestroyedCn = forging.forgingThread.workersDestroyedCn
 

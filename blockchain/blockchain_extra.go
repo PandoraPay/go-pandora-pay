@@ -278,7 +278,6 @@ func (chain *Blockchain) InitForging() {
 					gui.GUI.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), forgingErr)
 				}
 			})
-
 		}
 
 	})

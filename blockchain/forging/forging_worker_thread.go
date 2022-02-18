@@ -163,7 +163,7 @@ func (worker *ForgingWorkerThread) forge() {
 		}
 
 		for i := 0; i <= diff; i++ {
-			for _, address := range walletsStakable {
+			for key, address := range walletsStakable {
 
 				n2 := binary.PutUvarint(buf, timestamp)
 
@@ -193,6 +193,8 @@ func (worker *ForgingWorkerThread) forge() {
 
 					suspended = true
 					validateWork()
+
+					delete(walletsStakable, key)
 
 					break
 
