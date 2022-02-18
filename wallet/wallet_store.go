@@ -7,6 +7,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/config/config_forging"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -173,7 +174,9 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 
 			wallet.setLoaded(true)
 			if !first {
-				wallet.walletLoaded()
+				if err = wallet.walletLoaded(); err != nil {
+					return
+				}
 			}
 
 		} else {
@@ -183,16 +186,17 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 	})
 }
 
-func (wallet *Wallet) walletLoaded() {
+func (wallet *Wallet) walletLoaded() error {
 
-	for _, addr := range wallet.Addresses {
-		wallet.forging.Wallet.AddWallet(addr.GetDelegatedStakePrivateKey(), addr.PublicKey, false, nil, 0)
+	if err := wallet.InitForgingWallet(); err != nil {
+		return err
 	}
 
 	wallet.updateWallet()
 	globals.MainEvents.BroadcastEvent("wallet/loaded", wallet.Count)
 	gui.GUI.Log("Wallet Loaded! " + strconv.Itoa(wallet.Count))
 
+	return nil
 }
 
 func (wallet *Wallet) StartWallet() error {
@@ -200,7 +204,20 @@ func (wallet *Wallet) StartWallet() error {
 	wallet.Lock.Lock()
 	defer wallet.Lock.Unlock()
 
-	wallet.walletLoaded()
+	return wallet.walletLoaded()
+}
+
+func (wallet *Wallet) InitForgingWallet() (err error) {
+
+	if !config_forging.FORGING_ENABLED {
+		return nil
+	}
+
+	for _, addr := range wallet.Addresses {
+		if err = wallet.forging.Wallet.AddWallet(addr.GetDelegatedStakePrivateKey(), addr.PublicKey, false, nil, 0); err != nil {
+			return
+		}
+	}
 
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 

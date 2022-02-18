@@ -16,7 +16,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/config/globals"
+	"pandora-pay/config/config_forging"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -177,7 +177,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, newWork bool) {
 
-	if config.CONSENSUS != config.CONSENSUS_TYPE_FULL || globals.Arguments["--staking"] == false {
+	if config.CONSENSUS != config.CONSENSUS_TYPE_FULL || !config_forging.FORGING_ENABLED {
 		return
 	}
 

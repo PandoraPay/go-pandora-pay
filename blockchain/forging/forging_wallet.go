@@ -8,6 +8,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/config/config_forging"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
@@ -35,6 +36,10 @@ type ForgingWalletAddressUpdate struct {
 }
 
 func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasPlainAcc bool, plainAcc *plain_account.PlainAccount, chainHeight uint64) (err error) {
+
+	if !config_forging.FORGING_ENABLED {
+		return
+	}
 
 	if !hasPlainAcc {
 

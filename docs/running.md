@@ -2,7 +2,7 @@
 
 ### Running your own devnet
 
-`--debugging --network="devnet" --new-devnet --tcp-server-port="5231" --set-genesis="file"  --staking`
+`--debugging --network="devnet" --new-devnet --tcp-server-port="5231" --set-genesis="file"  --forging`
 
 #### Activating devnet faucet
 

@@ -6,7 +6,7 @@ package arguments
 const commands = `PANDORA PAY WASM.
 
 Usage:
-  pandorapay [--pprof] [--version] [--network=network] [--debug] [--staking] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-derive-delegated-stake=args] [--instance=prefix] [--instance-id=id] [--exit]
+  pandorapay [--pprof] [--version] [--network=network] [--debug] [--forging] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-derive-delegated-stake=args] [--instance=prefix] [--instance-id=id] [--exit]
   pandorapay -h | --help
   pandorapay -v | --version
 
@@ -19,7 +19,7 @@ Options:
   --store-wallet-type=type                           Set Wallet Store Type. Accepted values: "bunt-memory|memory|js". [default: js]
   --store-chain-type=type                            Set Chain Store Type. Accepted values: "bunt-memory|memory|js". [default: memory].
   --debug                                            Debug mode enabled (print log message).
-  --staking                                          Start staking.
+  --forging                                          Start forging blocks.
   --instance=prefix                                  Prefix of the instance [default: 0].
   --instance-id=id                                   Number of forked instance (when you open multiple instances). It should be a string number like "1","2","3","4" etc
   --tcp-max-clients=limit                            Change limit of clients [default: 1].

@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
+	"pandora-pay/config/config_forging"
 	"pandora-pay/config/globals"
 	balance_decoder "pandora-pay/cryptography/crypto/balance-decryptor"
 	"pandora-pay/gui"
@@ -87,7 +88,9 @@ func _startMain() (err error) {
 		return
 	}
 
-	app.Forging.StartForging()
+	if config_forging.FORGING_ENABLED {
+		app.Forging.StartForging()
+	}
 
 	app.Chain.InitForging()
 

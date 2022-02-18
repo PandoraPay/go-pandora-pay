@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"math/rand"
 	"pandora-pay/config/config_auth"
+	"pandora-pay/config/config_forging"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/config/globals"
 	"runtime"
@@ -188,6 +189,10 @@ func InitConfig() (err error) {
 	}
 
 	if err = config_init(); err != nil {
+		return
+	}
+
+	if err = config_forging.InitConfig(); err != nil {
 		return
 	}
 

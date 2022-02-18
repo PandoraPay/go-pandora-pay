@@ -6,7 +6,6 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/config"
-	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
@@ -60,10 +59,6 @@ func (forging *Forging) InitializeForging(nextBlockCreatedCn <-chan *forging_blo
 
 func (forging *Forging) StartForging() bool {
 
-	if globals.Arguments["--staking"] == false {
-		gui.GUI.Warning(`Staking was not started as "--staking" is missing`)
-		return false
-	}
 	if config.CONSENSUS != config.CONSENSUS_TYPE_FULL {
 		gui.GUI.Warning(`Staking was not started as "--consensus=full" is missing`)
 		return false
