@@ -60,9 +60,10 @@ type APIUnsubscriptionRequest struct {
 	Type SubscriptionType `json:"type,omitempty" msgpack:"type,omitempty"`
 }
 
-type APIAuthenticated struct {
-	User string `json:"user"`
-	Pass string `json:"pass"`
+type APIAuthenticated[T any] struct {
+	User string `json:"user" msgpack:"user"`
+	Pass string `json:"pass" msgpack:"pass"`
+	Data T      `json:",inline" msgpack:",inline"`
 }
 
 func CheckAuthenticated(args url.Values) bool {
@@ -75,7 +76,7 @@ func CheckAuthenticated(args url.Values) bool {
 	return user.Password == args.Get("pass")
 }
 
-func (authenticated *APIAuthenticated) CheckAuthenticated() bool {
+func (authenticated *APIAuthenticated[T]) CheckAuthenticated() bool {
 	user := config_auth.CONFIG_AUTH_USERS_MAP[authenticated.User]
 	if user == nil {
 		return false

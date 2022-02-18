@@ -26,13 +26,18 @@ type API struct {
 
 func handleAuthenticated[T any, B any](callback func(r *http.Request, args *T, reply *B, authenticated bool) error) func(values url.Values) (interface{}, error) {
 	return func(values url.Values) (interface{}, error) {
+
+		authenticated := api_types.CheckAuthenticated(values)
+		values.Del("user")
+		values.Del("pass")
+
 		args := new(T)
 		if err := urldecoder.Decoder.Decode(args, values); err != nil {
 			return nil, err
 		}
 
 		reply := new(B)
-		return reply, callback(nil, args, reply, api_types.CheckAuthenticated(values))
+		return reply, callback(nil, args, reply, authenticated)
 	}
 }
 
@@ -52,13 +57,8 @@ func handlePOSTAuthenticated[T any, B any](callback func(r *http.Request, args *
 	return func(values io.ReadCloser) (interface{}, error) {
 		args := new(T)
 
-		decoder := json.NewDecoder(values)
-		if err := decoder.Decode(args); err != nil {
-			return nil, err
-		}
-
-		authenticated := &api_types.APIAuthenticated{}
-		if err := decoder.Decode(authenticated); err != nil {
+		authenticated := new(api_types.APIAuthenticated[T])
+		if err := json.NewDecoder(values).Decode(authenticated); err != nil {
 			return nil, err
 		}
 
