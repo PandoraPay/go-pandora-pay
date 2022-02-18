@@ -2,7 +2,7 @@ package forging
 
 import (
 	"encoding/binary"
-	"pandora-pay/blockchain/blocks/block/difficulty"
+	"math/big"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/config"
 	"pandora-pay/config/config_stake"
@@ -180,9 +180,9 @@ func (worker *ForgingWorkerThread) forge() {
 
 				kernelHash := cryptography.SHA3(serialized)
 
-				kernelHash = cryptography.ComputeKernelHash(kernelHash, address.stakingAmount)
+				kernel := new(big.Int).Div(new(big.Int).SetBytes(kernelHash), new(big.Int).SetUint64(address.stakingAmount))
 
-				if difficulty.CheckKernelHashBig(kernelHash, work.Target) {
+				if kernel.Cmp(work.Target) <= 0 {
 
 					worker.workerSolutionCn <- &ForgingSolution{
 						timestamp,
