@@ -112,9 +112,11 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	if blocksComplete[len(blocksComplete)-1].Height == chainData.Height-1 && chainData.ConsecutiveSelfForged > 0 {
 		err = errors.New("Block was already forged by a different thread")
-		chain.updatesQueue.updatesCn <- &BlockchainUpdate{
-			err:             err,
-			calledByForging: calledByForging,
+		if calledByForging {
+			chain.updatesQueue.updatesCn <- &BlockchainUpdate{
+				err:             err,
+				calledByForging: calledByForging,
+			}
 		}
 		return
 	}
