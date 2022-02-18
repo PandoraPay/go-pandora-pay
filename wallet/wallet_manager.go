@@ -233,7 +233,7 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 	wallet.Addresses = append(wallet.Addresses, adr)
 	wallet.addressesMap[string(adr.PublicKey)] = adr
 
-	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKey, false, nil)
+	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKey, false, nil, 0)
 
 	wallet.Count += 1
 
@@ -293,7 +293,7 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 		wallet.CountImportedIndex += 1
 	}
 
-	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKey, false, nil)
+	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKey, false, nil, 0)
 
 	wallet.updateWallet()
 
@@ -413,7 +413,7 @@ func (wallet *Wallet) RemoveAddressByIndex(index int, lock bool) (bool, error) {
 
 	wallet.Count -= 1
 
-	wallet.forging.Wallet.RemoveWallet(removing.PublicKey, false, nil)
+	wallet.forging.Wallet.RemoveWallet(removing.PublicKey, false, nil, 0)
 
 	wallet.updateWallet()
 	if err := wallet.saveWallet(index, index+1, wallet.Count, false); err != nil {

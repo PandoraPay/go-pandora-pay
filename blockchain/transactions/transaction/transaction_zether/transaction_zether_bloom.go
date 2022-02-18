@@ -1,7 +1,9 @@
 package transaction_zether
 
 import (
+	"bytes"
 	"errors"
+	"pandora-pay/config/config_coins"
 )
 
 type TransactionZetherBloom struct {
@@ -16,7 +18,11 @@ func (tx *TransactionZether) bloomLists() (err error) {
 	for t, payload := range tx.Payloads {
 		tx.Bloom.PublicKeyLists[t] = make([][]byte, len(payload.Statement.Publickeylist))
 		for i := range payload.Statement.Publickeylist {
-			tx.Bloom.PublicKeyLists[t][i] = payload.Statement.Publickeylist[i].EncodeCompressed()
+			publicKey := payload.Statement.Publickeylist[i].EncodeCompressed()
+			if bytes.Equal(publicKey, config_coins.BURN_PUBLIC_KEY) {
+				return errors.New("Ring member can not be BURN address")
+			}
+			tx.Bloom.PublicKeyLists[t][i] = publicKey
 		}
 		if err = payload.Registrations.ValidateRegistrations(payload.Statement.Publickeylist); err != nil {
 			return

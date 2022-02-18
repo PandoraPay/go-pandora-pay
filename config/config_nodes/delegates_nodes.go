@@ -3,9 +3,9 @@ package config_nodes
 import (
 	"errors"
 	"math"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/config/globals"
-	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"strconv"
 )
@@ -98,14 +98,12 @@ func InitConfig() (err error) {
 
 	if globals.Arguments["--delegator-reward-collector-pub-key"] != nil {
 		DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY = helpers.DecodeHex(globals.Arguments["--delegator-reward-collector-pub-key"].(string))
+	} else {
+		DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY = config_coins.BURN_PUBLIC_KEY
 	}
 
 	if globals.Arguments["--delegator-enabled"] == "true" {
 		DELEGATOR_ENABLED = true
-
-		if DELEGATOR_FEE > 0 && len(DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY) != cryptography.PublicKeySize {
-			return errors.New("DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY is invalid")
-		}
 	}
 
 	if globals.Arguments["--delegator-require-auth"] == "true" {

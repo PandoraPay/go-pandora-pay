@@ -42,7 +42,7 @@ func (wallet *Wallet) processRefreshWallets() {
 						return
 					}
 
-					if err = wallet.refreshWalletPlainAccount(plainAcc, addr, false); err != nil {
+					if err = wallet.refreshWalletPlainAccount(plainAcc, chainHeight, addr, false); err != nil {
 						return
 					}
 				}

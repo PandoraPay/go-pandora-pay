@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"math"
 	"net/http"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/config/config_nodes"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -85,8 +87,13 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 			return errors.New("The fee is not set correctly")
 		}
 
-		if plainAcc.DelegatedStake.DelegatedStakeFee > 0 && len(config_nodes.DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY) == 0 {
-			return errors.New("The pool can not stake with fees as it did not set the DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY")
+		amount, err := plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(math.MaxUint64)
+		if err != nil {
+			return
+		}
+
+		if amount < config_stake.GetRequiredStake(chainHeight) {
+			return errors.New("Your stake is not accepted because you will need at least the minimum staking amount")
 		}
 
 		return api.wallet.AddDelegateStakeAddress(&wallet_address.WalletAddress{

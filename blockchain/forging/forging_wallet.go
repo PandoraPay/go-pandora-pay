@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"math"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_nodes"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/store"
@@ -26,19 +28,20 @@ type ForgingWallet struct {
 }
 
 type ForgingWalletAddressUpdate struct {
+	chainHeight   uint64
 	delegatedPriv []byte
 	pubKey        []byte
 	plainAcc      *plain_account.PlainAccount
 }
 
-func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasPlainAcc bool, plainAcc *plain_account.PlainAccount) (err error) {
+func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasPlainAcc bool, plainAcc *plain_account.PlainAccount, chainHeight uint64) (err error) {
 
 	if !hasPlainAcc {
 
 		//let's read the balance
 		if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-			chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+			chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 			plainAccs := plain_accounts.NewPlainAccounts(reader)
 			if plainAcc, err = plainAccs.GetPlainAccount(pubKey, chainHeight); err != nil {
 				return
@@ -52,6 +55,7 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasPlainA
 	}
 
 	w.updateWalletAddressCn <- &ForgingWalletAddressUpdate{
+		chainHeight,
 		delegatedPriv,
 		pubKey,
 		plainAcc,
@@ -59,8 +63,8 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasPlainA
 	return
 }
 
-func (w *ForgingWallet) RemoveWallet(DelegatedStakePublicKey []byte, hasPlainAcc bool, plainAcc *plain_account.PlainAccount) { //20 byte
-	w.AddWallet(nil, DelegatedStakePublicKey, hasPlainAcc, plainAcc)
+func (w *ForgingWallet) RemoveWallet(DelegatedStakePublicKey []byte, hasPlainAcc bool, plainAcc *plain_account.PlainAccount, chainHeight uint64) { //20 byte
+	w.AddWallet(nil, DelegatedStakePublicKey, hasPlainAcc, plainAcc, chainHeight)
 }
 
 func (w *ForgingWallet) updateAccountToForgingWorkers(addr *ForgingWalletAddress) {
@@ -165,8 +169,13 @@ func (w *ForgingWallet) processUpdates() {
 						return errors.New("DelegatedStakeFee is less than it should be")
 					}
 
-					if plainAcc.DelegatedStake.DelegatedStakeFee > 0 && len(config_nodes.DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY) == 0 {
-						return errors.New("DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY argument is missing")
+					var amount uint64
+					if amount, err = plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(math.MaxUint64); err != nil {
+						return
+					}
+
+					if amount < config_stake.GetRequiredStake(update.chainHeight) {
+						return errors.New("Your stake is not accepted because you will need at least the minimum staking amount")
 					}
 
 					delegatedStakeFee := plainAcc.DelegatedStake.DelegatedStakeFee
@@ -222,10 +231,6 @@ func (w *ForgingWallet) processUpdates() {
 
 							if plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE {
 								return errors.New("DelegatedStakeFee is less than it should be")
-							}
-
-							if plainAcc.DelegatedStake.DelegatedStakeFee > 0 && len(config_nodes.DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY) == 0 {
-								return errors.New("DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY argument is missing")
 							}
 
 							w.addressesMap[k].delegatedStakeFee = plainAcc.DelegatedStake.DelegatedStakeFee

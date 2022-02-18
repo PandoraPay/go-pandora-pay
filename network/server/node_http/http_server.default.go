@@ -12,6 +12,8 @@ import (
 
 func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	defer func() {
 		if err := recover(); err != nil {
 			http.Error(w, err.(error).Error(), http.StatusInternalServerError)
@@ -26,10 +28,7 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
 		var args url.Values
 		if args, err = url.ParseQuery(req.URL.RawQuery); err != nil {
-			return
-		}
-		if err != nil {
-			http.Error(w, err.(error).Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		output, err = callback(args)
@@ -38,7 +37,7 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -55,12 +54,13 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(final)
 }
 
 func (server *HttpServer) post(w http.ResponseWriter, req *http.Request) {
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -96,7 +96,6 @@ func (server *HttpServer) post(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(final)
 }
