@@ -23,7 +23,11 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
 	callback := server.GetMap[req.URL.Path]
 	if callback != nil {
-		args, err := url.ParseQuery(req.URL.RawQuery)
+
+		var args url.Values
+		if args, err = url.ParseQuery(req.URL.RawQuery); err != nil {
+			return
+		}
 		if err != nil {
 			http.Error(w, err.(error).Error(), http.StatusInternalServerError)
 			return
