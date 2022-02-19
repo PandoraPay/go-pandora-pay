@@ -69,9 +69,6 @@ func (worker *ForgingWorkerThread) forge() {
 	wallets := make(map[string]*ForgingWorkerThreadAddress)
 	walletsStakable := make(map[string]*ForgingWorkerThreadAddress)
 
-	var walletsStakableList []*ForgingWorkerThreadAddress
-	var shuffle []int
-
 	waitCn := make(chan struct{})
 	waitCnClosed := false
 
@@ -107,15 +104,6 @@ func (worker *ForgingWorkerThread) forge() {
 				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
 			}
 		}
-
-		walletsStakableList = make([]*ForgingWorkerThreadAddress, len(walletsStakable))
-		index := 0
-		for _, v := range walletsStakable {
-			walletsStakableList[index] = v
-			index++
-		}
-
-		shuffle = helpers.ShuffleArray(len(walletsStakableList))
 
 		validateWork()
 	}
@@ -170,7 +158,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 		func() {
 			for i := 0; i <= diff; i++ {
-				for _, pos := range shuffle {
+				for key, address := range walletsStakable {
 
 					select {
 					case newWorkReceived := <-worker.workCn: //or the work was changed meanwhile
@@ -178,12 +166,6 @@ func (worker *ForgingWorkerThread) forge() {
 						return
 					default:
 					}
-
-					address := walletsStakableList[pos]
-					if address == nil || walletsStakable[address.walletAdr.publicKeyStr] == nil {
-						continue
-					}
-					key := address.walletAdr.publicKeyStr
 
 					n2 := binary.PutUvarint(buf, timestamp)
 
