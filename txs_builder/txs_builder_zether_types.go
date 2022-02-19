@@ -5,8 +5,9 @@ import (
 )
 
 type ZetherRingConfiguration struct {
-	RingSize    int `json:"ringSize"  msgpack:"ringSize"`
-	NewAccounts int `json:"newAccounts"  msgpack:"newAccounts"`
+	RingSize       int      `json:"ringSize"  msgpack:"ringSize"`
+	NewAccounts    int      `json:"newAccounts"  msgpack:"newAccounts"`
+	IncludeMembers []string `json:"includeMembers" msgpack:"includeMembers"`
 }
 
 type TxBuilderCreateZetherTxPayload struct {

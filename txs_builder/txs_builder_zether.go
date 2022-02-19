@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
-	"math"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage"
@@ -49,11 +48,26 @@ func (builder *TxsBuilder) createZetherRing(sender string, recipient *string, as
 	var err error
 
 	if ringConfiguration.RingSize == -1 {
-		pow := rand.Intn(5) + 4
-		ringConfiguration.RingSize = int(math.Pow(2, float64(pow)))
+		probability := rand.Intn(1000)
+		if probability < 400 {
+			ringConfiguration.RingSize = 32
+		} else if probability < 600 {
+			ringConfiguration.RingSize = 64
+		} else if probability < 800 {
+			ringConfiguration.RingSize = 128
+		} else {
+			ringConfiguration.RingSize = 256
+		}
 	}
 	if ringConfiguration.NewAccounts == -1 {
-		ringConfiguration.NewAccounts = rand.Intn(ringConfiguration.RingSize / 5)
+		probability := rand.Intn(1000)
+		if probability < 800 {
+			ringConfiguration.NewAccounts = 0
+		} else if probability < 900 {
+			ringConfiguration.NewAccounts = 1
+		} else {
+			ringConfiguration.NewAccounts = 2
+		}
 	}
 
 	if ringConfiguration.RingSize < 0 {
@@ -90,15 +104,41 @@ func (builder *TxsBuilder) createZetherRing(sender string, recipient *string, as
 	}
 	alreadyUsed[string(addr.PublicKey)] = true
 
-	rings := make([]string, ringConfiguration.RingSize-2)
+	ring := make([]string, 0)
+
+	if ringConfiguration.IncludeMembers != nil {
+		for _, member := range ringConfiguration.IncludeMembers {
+			if addr, err = addresses.DecodeAddr(member); err != nil {
+				return nil, err
+			}
+			if alreadyUsed[string(addr.PublicKey)] {
+				continue
+			}
+			alreadyUsed[string(addr.PublicKey)] = true
+			ring = append(ring, addr.EncodeAddr())
+		}
+	}
 
 	if globals.Arguments["--new-devnet"] == true && accs.Count < 80000 {
 		ringConfiguration.NewAccounts = ringConfiguration.RingSize - 2
 	}
 
-	for i := 0; i < ringConfiguration.RingSize-2; i++ {
+	for i := 0; i < ringConfiguration.NewAccounts && len(ring) < ringConfiguration.RingSize-2; i++ {
+		priv := addresses.GenerateNewPrivateKey()
+		if addr, err = priv.GenerateAddress(true, nil, 0, nil); err != nil {
+			return nil, err
+		}
+		if alreadyUsed[string(addr.PublicKey)] {
+			i--
+			continue
+		}
+		alreadyUsed[string(addr.PublicKey)] = true
+		ring = append(ring, addr.EncodeAddr())
+	}
 
-		if i < ringConfiguration.NewAccounts || accs.Count-2+uint64(ringConfiguration.NewAccounts) <= uint64(i) {
+	for len(ring) < ringConfiguration.RingSize-2 {
+
+		if accs.Count-2+uint64(ringConfiguration.NewAccounts) <= uint64(ringConfiguration.RingSize) {
 			priv := addresses.GenerateNewPrivateKey()
 			if addr, err = priv.GenerateAddress(true, nil, 0, nil); err != nil {
 				return nil, err
@@ -110,14 +150,13 @@ func (builder *TxsBuilder) createZetherRing(sender string, recipient *string, as
 		}
 
 		if alreadyUsed[string(addr.PublicKey)] {
-			i--
 			continue
 		}
 		alreadyUsed[string(addr.PublicKey)] = true
-		rings[i] = addr.EncodeAddr()
+		ring = append(ring, addr.EncodeAddr())
 	}
 
-	return rings, nil
+	return ring, nil
 }
 
 func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
@@ -135,7 +174,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 			payload.Data = &wizard.WizardTransactionData{[]byte{}, false}
 		}
 		if payload.RingConfiguration == nil {
-			payload.RingConfiguration = &ZetherRingConfiguration{-1, -1}
+			payload.RingConfiguration = &ZetherRingConfiguration{-1, -1, nil}
 		}
 		if payload.Fee == nil {
 			payload.Fee = &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0}
