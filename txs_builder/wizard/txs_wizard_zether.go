@@ -43,6 +43,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 	publickeylists := make([][]*bn256.G1, len(transfers))
 	witness_indexes := make([][]int, len(transfers))
+	parities := make([]bool, len(transfers))
 
 	for t, transfer := range transfers {
 
@@ -74,6 +75,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		witness_indexes[t] = helpers.ShuffleArray_for_Zether(len(rings[t]))
 		anonset_publickeys := rings[t][2:]
 		publickeylists[t] = make([]*bn256.G1, 0)
+
+		parities[t] = witness_indexes[t][0]%2 == 0
 
 		unique := make(map[string]bool)
 		for i := range witness_indexes[t] {
@@ -139,11 +142,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			}
 
 			if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil {
-				var acckey crypto.Point
-				if err = acckey.DecodeCompressed(publicKeyPoint.EncodeCompressed()); err != nil {
-					return
-				}
-				balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
+				balance := crypto.ConstructElGamal(publicKeyPoint, crypto.ElGamal_BASE_G)
 				emap[string(transfers[t].Asset)][publicKeyPoint.String()] = balance.Serialize()
 			}
 
@@ -162,7 +161,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		publickeylist := publickeylists[t]
 		senderKey := &addresses.PrivateKey{Key: transfer.Sender}
 
-		payloads[t] = &transaction_zether_payload.TransactionZetherPayload{}
+		payloads[t] = &transaction_zether_payload.TransactionZetherPayload{
+			Parity: parities[t],
+		}
 
 		spaceExtra += unregisteredAccounts[t] * (cryptography.PublicKeySize + 1 + cryptography.SignatureSize)
 		spaceExtra += (unregisteredAccounts[t] + emptyAccounts[t]) * (cryptography.PublicKeySize + 1 + 66)
@@ -433,17 +434,18 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		D.ScalarMult(crypto.G, r)
 
 		//fmt.Printf("t %d publickeylist %d\n", t, len(publickeylist))
-		for i := range publickeylist {
+		for i, pulibcKeyPoint := range publickeylist {
 
-			ebalance := ebalances_list[i]
+			var ebalance *crypto.ElGamal
 
-			var ll, rr bn256.G1
+			if (i%2 == 0) == parities[t] {
+				ebalance = ebalances_list[i]
+			} else {
+				ebalance = crypto.ConstructElGamal(pulibcKeyPoint, crypto.ElGamal_BASE_G)
+			}
 
-			ll.Add(ebalance.Left, C[i])
-			CLn = append(CLn, &ll)
-
-			rr.Add(ebalance.Right, &D)
-			CRn = append(CRn, &rr)
+			CLn = append(CLn, new(bn256.G1).Add(ebalance.Left, C[i]))
+			CRn = append(CRn, new(bn256.G1).Add(ebalance.Right, &D))
 		}
 
 		// decode balance now
@@ -482,14 +484,14 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		// get ready for another round by internal processing of state
 		for i := range publickeylist {
 
-			var balance *crypto.ElGamal
-			if balance, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][publickeylist[i].String()]); err != nil {
+			var encryptedBalance *crypto.ElGamal
+			if encryptedBalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][publickeylist[i].String()]); err != nil {
 				return
 			}
 			echanges := crypto.ConstructElGamal(statement.C[i], statement.D)
 
-			balance = balance.Add(echanges)                                               // homomorphic addition of changes
-			emap[string(transfer.Asset)][publickeylist[i].String()] = balance.Serialize() // reserialize and store
+			encryptedBalance = encryptedBalance.Add(echanges)                                      // homomorphic addition of changes
+			emap[string(transfer.Asset)][publickeylist[i].String()] = encryptedBalance.Serialize() // reserialize and store
 		}
 
 	}
@@ -522,6 +524,11 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		if txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Asset, assetIndex, txBase.ChainHash, txBase.Payloads[t].Statement, &witness_list[t], u, tx.GetHashSigningManually(), txBase.Payloads[t].BurnValue); err != nil {
 			return
 		}
+
+		if txBase.Payloads[t].Proof.Parity() != parities[t] {
+			return errors.New("ERRROR")
+		}
+
 	}
 
 	for t := range transfers {

@@ -111,7 +111,7 @@ if [ $continue == false ]; then
   for ((i = 0; i < $nodes; ++i)); do
     rm ./_build/devnet_$i/DEV/store/blockchain_store.bolt 2>/dev/null
   done
-else
+
   extraArgs+=" --skip-init-sync "
 fi
 

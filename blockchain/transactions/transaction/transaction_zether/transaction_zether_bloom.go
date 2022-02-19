@@ -9,6 +9,7 @@ import (
 type TransactionZetherBloom struct {
 	Nonces         [][]byte
 	PublicKeyLists [][][]byte
+	parityVerified bool
 	bloomed        bool
 }
 
@@ -47,13 +48,24 @@ func (tx *TransactionZether) BloomNow() (err error) {
 		return
 	}
 
+	for _, payload := range tx.Payloads {
+		if payload.Proof.Parity() != payload.Parity {
+			return errors.New("Parity check failed")
+		}
+	}
+
+	tx.Bloom.parityVerified = true
 	tx.Bloom.bloomed = true
+
 	return
 }
 
 func (tx *TransactionZetherBloom) verifyIfBloomed() error {
 	if !tx.bloomed {
-		return errors.New("TransactionSimpleBloom was not bloomed")
+		return errors.New("TransactionZetherBloom was not bloomed")
+	}
+	if !tx.parityVerified {
+		return errors.New("TransactionZetherBloom did not check the parity")
 	}
 	return nil
 }

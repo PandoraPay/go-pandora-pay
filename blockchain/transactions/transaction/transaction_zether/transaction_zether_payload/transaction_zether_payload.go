@@ -29,6 +29,7 @@ type TransactionZetherPayload struct {
 
 	Registrations *transaction_zether_registrations.TransactionZetherDataRegistrations
 
+	Parity    bool
 	Statement *crypto.Statement // note statement containts fee
 
 	WhisperSender    []byte
@@ -117,7 +118,6 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 	}
 
 	for i, publicKey := range publicKeyList {
-
 		if acc, err = accs.GetAccount(publicKey); err != nil {
 			return
 		}
@@ -130,9 +130,11 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		echanges := crypto.ConstructElGamal(payload.Statement.C[i], payload.Statement.D)
 		balance = balance.Add(echanges) // homomorphic addition of changes
 
-		//verify
-		if payload.Statement.CLn[i].String() != balance.Left.String() || payload.Statement.CRn[i].String() != balance.Right.String() {
-			return fmt.Errorf("CLn or CRn is not matching for %d", i)
+		if (i%2 == 0) == payload.Parity {
+			//verify sender
+			if payload.Statement.CLn[i].String() != balance.Left.String() || payload.Statement.CRn[i].String() != balance.Right.String() {
+				return fmt.Errorf("CLn or CRn is not matching for %d", i)
+			}
 		}
 
 		acc.Balance.Amount = balance
@@ -226,10 +228,11 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 	}
 
 	payload.Statement.SerializeRingSize(w)
+	w.WriteBool(payload.Parity)
 
 	payload.Registrations.Serialize(w)
 
-	payload.Statement.Serialize(w, payload.Registrations.Registrations)
+	payload.Statement.Serialize(w, payload.Registrations.Registrations, payload.Parity)
 
 	w.Write(payload.WhisperSender)
 	w.Write(payload.WhisperRecipient)
@@ -306,12 +309,16 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		return
 	}
 
+	if payload.Parity, err = r.ReadBool(); err != nil {
+		return
+	}
+
 	payload.Registrations = &transaction_zether_registrations.TransactionZetherDataRegistrations{}
 	if err = payload.Registrations.Deserialize(r, ringSize); err != nil {
 		return
 	}
 
-	if err = payload.Statement.Deserialize(r, payload.Registrations.Registrations); err != nil {
+	if err = payload.Statement.Deserialize(r, payload.Registrations.Registrations, payload.Parity); err != nil {
 		return
 	}
 

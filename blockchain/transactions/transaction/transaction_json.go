@@ -122,6 +122,7 @@ type json_Only_TransactionPayload struct {
 	DataVersion      transaction_data.TransactionDataVersion      `json:"dataVersion"  msgpack:"dataVersion"`
 	Data             []byte                                       `json:"data"  msgpack:"data"`
 	Registrations    []*json_TransactionDataRegistration          `json:"registrations"  msgpack:"registrations"`
+	Parity           bool                                         `json:"parity" msgpack:"parity"`
 	Statement        *json_Only_TransactionZetherStatement        `json:"statement"  msgpack:"statement"`
 	WhisperSender    []byte                                       `json:"whisperSender" msgpack:"whisperSender"`
 	WhisperRecipient []byte                                       `json:"whisperRecipient" msgpack:"whisperRecipient"`
@@ -275,6 +276,7 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 				payload.DataVersion,
 				payload.Data,
 				registrations,
+				payload.Parity,
 				statementJson,
 				payload.WhisperSender,
 				payload.WhisperRecipient,
@@ -466,6 +468,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				&transaction_zether_registrations.TransactionZetherDataRegistrations{
 					Registrations: make([]*transaction_zether_registration.TransactionZetherDataRegistration, len(payload.Registrations)),
 				},
+				payload.Parity,
 				statement,
 				payload.WhisperSender,
 				payload.WhisperRecipient,
