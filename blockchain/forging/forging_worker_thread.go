@@ -24,7 +24,6 @@ type ForgingWorkerThread struct {
 	hashes                uint32
 	index                 int
 	workCn                chan *forging_block_work.ForgingWork
-	continueCn            chan struct{}
 	workerSolutionCn      chan *ForgingSolution
 	addWalletAddressCn    chan *ForgingWalletAddress
 	removeWalletAddressCn chan string //publicKey
@@ -60,7 +59,6 @@ func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64
 func (worker *ForgingWorkerThread) forge() {
 
 	var work *forging_block_work.ForgingWork
-	suspended := true
 
 	var timestampMs int64
 	var timestamp, blkHeight uint64
@@ -71,11 +69,14 @@ func (worker *ForgingWorkerThread) forge() {
 	wallets := make(map[string]*ForgingWorkerThreadAddress)
 	walletsStakable := make(map[string]*ForgingWorkerThreadAddress)
 
+	var walletsStakableList []*ForgingWorkerThreadAddress
+	var shuffle []int
+
 	waitCn := make(chan struct{})
 	waitCnClosed := false
 
 	validateWork := func() {
-		if suspended || work == nil || len(walletsStakable) == 0 {
+		if work == nil || len(walletsStakable) == 0 {
 			if waitCnClosed {
 				waitCn = make(chan struct{})
 				waitCnClosed = false
@@ -88,36 +89,43 @@ func (worker *ForgingWorkerThread) forge() {
 		}
 	}
 
+	newWork := func(newWorkReceived *forging_block_work.ForgingWork) {
+
+		work = newWorkReceived
+
+		serialized = helpers.CloneBytes(work.BlkSerialized)
+
+		blkHeight = work.BlkHeight
+		timestamp = work.BlkTimestmap + 1
+		timestampMs = int64(timestamp) * 1000
+
+		n = binary.PutUvarint(buf, timestamp)
+
+		walletsStakable = make(map[string]*ForgingWorkerThreadAddress)
+		for _, walletAddr := range wallets {
+			if walletAddr.computeStakingAmount(blkHeight) > 0 {
+				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
+			}
+		}
+
+		walletsStakableList = make([]*ForgingWorkerThreadAddress, len(walletsStakable))
+		index := 0
+		for _, v := range walletsStakable {
+			walletsStakableList[index] = v
+			index++
+		}
+
+		shuffle = helpers.ShuffleArray(len(walletsStakableList))
+
+		validateWork()
+	}
+
 	for {
 
 		select {
-		case <-worker.continueCn:
-			suspended = false
-			validateWork()
-		case newWork := <-worker.workCn: //or the work was changed meanwhile
-
-			if newWork == nil {
-				continue
-			}
-
-			work = newWork
-
-			serialized = helpers.CloneBytes(work.BlkSerialized)
-
-			blkHeight = work.BlkHeight
-			timestamp = work.BlkTimestmap + 1
-			timestampMs = int64(timestamp) * 1000
-
-			n = binary.PutUvarint(buf, timestamp)
-
-			walletsStakable = make(map[string]*ForgingWorkerThreadAddress)
-			for _, walletAddr := range wallets {
-				if walletAddr.computeStakingAmount(blkHeight) > 0 {
-					walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
-				}
-			}
-
-			validateWork()
+		case newWorkReceived := <-worker.workCn: //or the work was changed meanwhile
+			newWork(newWorkReceived)
+			continue
 		case newWalletAddr := <-worker.addWalletAddressCn:
 			walletAddr := wallets[newWalletAddr.publicKeyStr]
 			if walletAddr == nil {
@@ -135,17 +143,15 @@ func (worker *ForgingWorkerThread) forge() {
 				delete(walletsStakable, walletAddr.walletAdr.publicKeyStr)
 			}
 			validateWork()
+			continue
 		case publicKeyStr := <-worker.removeWalletAddressCn:
 			if wallets[publicKeyStr] != nil {
 				delete(wallets, publicKeyStr)
 				delete(walletsStakable, publicKeyStr)
 			}
 			validateWork()
-		case <-waitCn:
-		}
-
-		if !waitCnClosed {
 			continue
+		case <-waitCn:
 		}
 
 		timeLimitMs := time.Now().UnixNano()/1000000 + config.NETWORK_TIMESTAMP_DRIFT_MAX_INT*1000
@@ -162,56 +168,70 @@ func (worker *ForgingWorkerThread) forge() {
 			diff = int(generics.Min(timeLimit-timestamp, 20))
 		}
 
-		for i := 0; i <= diff; i++ {
-			for key, address := range walletsStakable {
+		func() {
+			for i := 0; i <= diff; i++ {
+				for _, pos := range shuffle {
 
-				n2 := binary.PutUvarint(buf, timestamp)
-
-				if n2 != n {
-					newSerialized := make([]byte, len(serialized)-n+n2)
-					copy(newSerialized, serialized[:-n-cryptography.PublicKeySize])
-					serialized = newSerialized
-					n = n2
-				}
-
-				//optimized POS
-				copy(serialized[len(serialized)-cryptography.PublicKeySize-n2:len(serialized)-cryptography.PublicKeySize], buf)
-				copy(serialized[len(serialized)-cryptography.PublicKeySize:], address.walletAdr.publicKey)
-
-				kernelHash := cryptography.SHA3(serialized)
-
-				kernel := new(big.Int).Div(new(big.Int).SetBytes(kernelHash), new(big.Int).SetUint64(address.stakingAmount))
-
-				if kernel.Cmp(work.Target) <= 0 {
-
-					worker.workerSolutionCn <- &ForgingSolution{
-						timestamp,
-						address.walletAdr,
-						work,
-						address.stakingAmount,
+					select {
+					case newWorkReceived := <-worker.workCn: //or the work was changed meanwhile
+						newWork(newWorkReceived)
+						return
+					default:
 					}
 
-					suspended = true
-					validateWork()
+					address := walletsStakableList[pos]
+					if address == nil || walletsStakable[address.walletAdr.publicKeyStr] == nil {
+						continue
+					}
+					key := address.walletAdr.publicKeyStr
 
-					delete(walletsStakable, key)
+					n2 := binary.PutUvarint(buf, timestamp)
 
-					break
+					if n2 != n {
+						newSerialized := make([]byte, len(serialized)-n+n2)
+						copy(newSerialized, serialized[:-n-cryptography.PublicKeySize])
+						serialized = newSerialized
+						n = n2
+					}
 
-				} /* else { // for debugging only
-					gui.GUI.Log(base64.StdEncoding.EncodeToString(kernelHash), strconv.FormatUint(timestamp, 10 ))
-				}*/
+					//optimized POS
+					copy(serialized[len(serialized)-cryptography.PublicKeySize-n2:len(serialized)-cryptography.PublicKeySize], buf)
+					copy(serialized[len(serialized)-cryptography.PublicKeySize:], address.walletAdr.publicKey)
+
+					kernelHash := cryptography.SHA3(serialized)
+
+					kernel := new(big.Int).Div(new(big.Int).SetBytes(kernelHash), new(big.Int).SetUint64(address.stakingAmount))
+
+					if kernel.Cmp(work.Target) <= 0 {
+
+						solution := &ForgingSolution{
+							timestamp,
+							address.walletAdr,
+							work,
+							address.stakingAmount,
+						}
+
+						select {
+						case worker.workerSolutionCn <- solution:
+						case newWorkReceived := <-worker.workCn: //or the work was changed meanwhile
+							newWork(newWorkReceived)
+							return
+						}
+
+						delete(walletsStakable, key)
+
+					} /* else { // for debugging only
+						gui.GUI.Log(base64.StdEncoding.EncodeToString(kernelHash), strconv.FormatUint(timestamp, 10 ))
+					}*/
+
+				}
+
+				timestamp += 1
+				timestampMs += 1000
 
 			}
-
-			if suspended {
-				break
-			}
-
-			timestamp += 1
-			timestampMs += 1000
-		}
-		atomic.AddUint32(&worker.hashes, uint32((diff+1)*len(walletsStakable)))
+			atomic.AddUint32(&worker.hashes, uint32((diff+1)*len(walletsStakable)))
+		}()
 
 	}
 
@@ -220,7 +240,6 @@ func (worker *ForgingWorkerThread) forge() {
 func createForgingWorkerThread(index int, workerSolutionCn chan *ForgingSolution) *ForgingWorkerThread {
 	return &ForgingWorkerThread{
 		index:                 index,
-		continueCn:            make(chan struct{}),
 		workCn:                make(chan *forging_block_work.ForgingWork),
 		workerSolutionCn:      workerSolutionCn,
 		addWalletAddressCn:    make(chan *ForgingWalletAddress),

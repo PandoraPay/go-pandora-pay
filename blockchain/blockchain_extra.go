@@ -54,6 +54,8 @@ func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 
 func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStorage *data_storage.DataStorage) (err error) {
 
+	gui.GUI.Info("Initializing New Chain")
+
 	supply := uint64(0)
 
 	for _, airdrop := range genesis.GenesisData.AirDrops {
@@ -245,12 +247,6 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 			target,
 		}
 
-	} else {
-
-		if chainData != nil {
-			chain.NextBlockCreatedCn <- nil
-		}
-
 	}
 
 }
@@ -259,7 +255,6 @@ func (chain *Blockchain) InitForging() {
 
 	recovery.SafeGo(func() {
 
-		var err error
 		for {
 
 			blkComplete, ok := <-chain.ForgingSolutionCn
@@ -267,21 +262,11 @@ func (chain *Blockchain) InitForging() {
 				return
 			}
 
-			blkComplete.Block.Bloom = nil
-			blkComplete.Bloom = nil
-
-			if err = blkComplete.BloomAll(); err != nil {
-				gui.GUI.Error("Error blooming forged blkComplete", err)
-				continue
+			if forgingErr := chain.AddBlocks([]*block_complete.BlockComplete{blkComplete}, true, advanced_connection_types.UUID_ALL); forgingErr == nil {
+				gui.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
+			} else {
+				gui.GUI.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), forgingErr)
 			}
-
-			recovery.SafeGo(func() {
-				if forgingErr := chain.AddBlocks([]*block_complete.BlockComplete{blkComplete}, true, advanced_connection_types.UUID_ALL); forgingErr == nil {
-					gui.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
-				} else {
-					gui.GUI.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), forgingErr)
-				}
-			})
 		}
 
 	})

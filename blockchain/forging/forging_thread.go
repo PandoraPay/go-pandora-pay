@@ -76,16 +76,10 @@ func (thread *ForgingThread) startForging() {
 				return
 			}
 
-			if newWork != nil {
-				for i := 0; i < thread.threads; i++ {
-					thread.workers[i].workCn <- newWork
-				}
-				gui.GUI.InfoUpdate("Hash Block", strconv.FormatUint(newWork.BlkHeight, 10))
-			}
-
 			for i := 0; i < thread.threads; i++ {
-				thread.workers[i].continueCn <- struct{}{}
+				thread.workers[i].workCn <- newWork
 			}
+			gui.GUI.InfoUpdate("Hash Block", strconv.FormatUint(newWork.BlkHeight, 10))
 		}
 	})
 
@@ -120,7 +114,11 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 		return
 	}
 
-	newBlk.BloomCompleteManual()
+	newBlk.Bloom = nil
+
+	if err = newBlk.BloomAll(); err != nil {
+		return
+	}
 
 	//send message to blockchain
 	thread.solutionCn <- newBlk

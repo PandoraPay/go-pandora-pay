@@ -118,13 +118,13 @@ func CreateBlockchainSync() (sync *BlockchainSync) {
 		updateCn:            make(chan *BlockchainSyncData),
 	}
 
-	if globals.Arguments["--skip-init-sync"] == true {
+	if globals.Arguments["--skip-init-sync"] != false {
 		sync.syncData.Store(&BlockchainSyncData{
 			BlocksChangedPreviousInterval: 0,
 			Started:                       true,
 		})
 		go func() {
-			time.Sleep(1000 * time.Millisecond)
+			time.Sleep(2000 * time.Millisecond)
 			sync.resetBlocksChanged(true)
 		}()
 	} else {

@@ -40,7 +40,9 @@ func (blk *Block) BloomNow() (err error) {
 	}
 	if !blk.Bloom.bloomedKernelHash {
 
-		blk.Bloom.KernelHash = blk.ComputeKernelHash()
+		if blk.Bloom.KernelHash, err = blk.ComputeKernelHash(); err != nil {
+			return
+		}
 		hashForSignature := blk.SerializeForSigning()
 
 		blk.Bloom.DelegatedSignatureVerified = crypto.VerifySignature(hashForSignature, blk.Signature, blk.DelegatedStakePublicKey)

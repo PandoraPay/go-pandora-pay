@@ -95,12 +95,6 @@ func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockCo
 func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplete, calledByForging bool, exceptSocketUUID advanced_connection_types.UUID) (err error) {
 
 	if err = chain.validateBlocks(blocksComplete); err != nil {
-		if calledByForging {
-			chain.updatesQueue.updatesCn <- &BlockchainUpdate{
-				err:             err,
-				calledByForging: calledByForging,
-			}
-		}
 		return
 	}
 
@@ -112,12 +106,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 	if blocksComplete[len(blocksComplete)-1].Height == chainData.Height-1 && chainData.ConsecutiveSelfForged > 0 {
 		err = errors.New("Block was already forged by a different thread")
-		if calledByForging {
-			chain.updatesQueue.updatesCn <- &BlockchainUpdate{
-				err:             err,
-				calledByForging: calledByForging,
-			}
-		}
 		return
 	}
 
@@ -510,7 +498,7 @@ func CreateBlockchain(mempool *mempool.Mempool, txsValidator *txs_validator.TxsV
 		txsValidator,
 		&sync.Mutex{},
 		createBlockchainUpdatesQueue(txsValidator),
-		make(chan *block_complete.BlockComplete, 100),
+		make(chan *block_complete.BlockComplete),
 		multicast.NewMulticastChannel[uint64](),
 		multicast.NewMulticastChannel[*BlockchainDataUpdate](),
 		multicast.NewMulticastChannel[*accounts.AccountsCollection](),

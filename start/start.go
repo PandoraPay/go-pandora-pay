@@ -76,7 +76,6 @@ func _startMain() (err error) {
 	}
 
 	globals.MainEvents.BroadcastEvent("main", "wallet initialized")
-	app.Wallet.InitializeWallet(app.Chain.UpdateAccounts, app.Chain.UpdatePlainAccounts)
 
 	if err = genesis.GenesisInit(app.Wallet); err != nil {
 		return
@@ -84,6 +83,9 @@ func _startMain() (err error) {
 	if err = app.Chain.InitializeChain(); err != nil {
 		return
 	}
+
+	app.Wallet.InitializeWallet(app.Chain.UpdateAccounts, app.Chain.UpdatePlainAccounts)
+
 	if err = app.Wallet.StartWallet(); err != nil {
 		return
 	}

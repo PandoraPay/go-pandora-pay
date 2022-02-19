@@ -145,7 +145,7 @@ func (blk *Block) ComputeKernelHashOnly() []byte {
 	return cryptography.SHA3(writer.Bytes())
 }
 
-func (blk *Block) ComputeKernelHash() []byte {
+func (blk *Block) ComputeKernelHash() ([]byte, error) {
 	hash := blk.ComputeKernelHashOnly()
 	return cryptography.ComputeKernelHash(hash, blk.StakingAmount)
 }
