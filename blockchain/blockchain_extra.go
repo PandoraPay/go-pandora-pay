@@ -177,7 +177,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, newWork bool) {
 
-	if config.CONSENSUS != config.CONSENSUS_TYPE_FULL || !config_forging.FORGING_ENABLED {
+	if config.CONSENSUS != config.CONSENSUS_TYPE_FULL {
 		return
 	}
 
@@ -185,6 +185,10 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 		chain.mempool.ContinueWork()
 	} else {
 		chain.mempool.UpdateWork(chainData.Hash, chainData.Height)
+	}
+
+	if !config_forging.FORGING_ENABLED {
+		return
 	}
 
 	if newWork {
