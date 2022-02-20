@@ -17,7 +17,7 @@ import (
 
 type DataStorage struct {
 	hash_map.StoreHashMapRepository
-	dbTx                       store_db_interface.StoreDBTransactionInterface
+	DBTx                       store_db_interface.StoreDBTransactionInterface
 	Regs                       *registrations.Registrations
 	PlainAccs                  *plain_accounts.PlainAccounts
 	AccsCollection             *accounts.AccountsCollection
@@ -166,7 +166,7 @@ func (dataStorage *DataStorage) GetAssetFeeLiquidityTop(assetId []byte, blockHei
 }
 
 func (dataStorage *DataStorage) SetTx(dbTx store_db_interface.StoreDBTransactionInterface) {
-	dataStorage.dbTx = dbTx
+	dataStorage.DBTx = dbTx
 	dataStorage.StoreHashMapRepository.SetTx(dbTx)
 	dataStorage.AccsCollection.SetTx(dbTx)
 	dataStorage.AstsFeeLiquidityCollection.SetTx(dbTx)

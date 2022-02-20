@@ -187,7 +187,7 @@ func (blk *Block) AdvancedSerialization(w *helpers.BufferWriter, kernelHash bool
 		}
 	}
 
-	if inclSignature {
+	if !kernelHash && inclSignature {
 		w.Write(blk.Signature)
 	}
 }

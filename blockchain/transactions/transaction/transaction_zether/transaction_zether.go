@@ -10,6 +10,7 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"strconv"
 )
 
 type TransactionZether struct {
@@ -27,6 +28,10 @@ func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, txHash []byt
 
 	if tx.ChainHeight > blockHeight {
 		return fmt.Errorf("Zether ChainHeight is invalid %d > %d", tx.ChainHeight, blockHeight)
+	}
+
+	if !bytes.Equal(dataStorage.DBTx.Get("blockHash_ByHeight"+strconv.FormatUint(tx.ChainHeight, 10)), tx.ChainHash) {
+		return errors.New("Zether ChainHash is invalid")
 	}
 
 	for payloadIndex, payload := range tx.Payloads {
