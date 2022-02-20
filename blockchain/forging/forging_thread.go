@@ -94,28 +94,16 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 		return
 	}
 
-	newBlk.Block.Forger = solution.address.publicKey
+	newBlk.Block.StakingNonce = solution.stakingNonce
 	newBlk.Block.Timestamp = solution.timestamp
 
 	newBlk.Block.StakingAmount = solution.stakingAmount
 
 	newBlk.Txs, _ = thread.mempool.GetNextTransactionsToInclude(newBlk.Block.PrevHash)
 	newBlk.Block.MerkleHash = newBlk.MerkleHash()
-	newBlk.Block.DelegatedStakePublicKey = solution.address.delegatedStakePublicKey
-	newBlk.Block.DelegatedStakeFee = solution.address.delegatedStakeFee
-
-	if newBlk.Block.DelegatedStakeFee > 0 {
-		newBlk.Block.RewardCollectorPublicKey = config_nodes.DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY
-	}
-
-	hashForSignature := newBlk.Block.SerializeForSigning()
-
-	if newBlk.Block.Signature, err = solution.address.delegatedPrivateKey.Sign(hashForSignature); err != nil {
-		return
-	}
+	newBlk.Block.StakingFee = config_nodes.DELEGATOR_FEE
 
 	newBlk.Bloom = nil
-
 	if err = newBlk.BloomAll(); err != nil {
 		return
 	}

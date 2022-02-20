@@ -188,9 +188,7 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 
 func (wallet *Wallet) walletLoaded() error {
 
-	if err := wallet.InitForgingWallet(); err != nil {
-		return err
-	}
+	go wallet.InitForgingWallet()
 
 	wallet.updateWallet()
 	globals.MainEvents.BroadcastEvent("wallet/loaded", wallet.Count)
@@ -214,7 +212,7 @@ func (wallet *Wallet) InitForgingWallet() (err error) {
 	}
 
 	for _, addr := range wallet.Addresses {
-		if err = wallet.forging.Wallet.AddWallet(addr.GetDelegatedStakePrivateKey(), addr.PublicKey, false, nil, 0); err != nil {
+		if err = wallet.forging.Wallet.AddWallet(addr.PrivateKey.Key, addr.PublicKey, false, nil, 0); err != nil {
 			return
 		}
 	}
@@ -230,7 +228,7 @@ func (wallet *Wallet) InitForgingWallet() (err error) {
 				return
 			}
 
-			if err = wallet.refreshWalletPlainAccount(plainAcc, chainHeight, adr, false); err != nil {
+			if err = wallet.refreshWalletPlainAccount(plainAcc, chainHeight, adr); err != nil {
 				return
 			}
 		}

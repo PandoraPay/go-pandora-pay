@@ -27,9 +27,7 @@ import (
 )
 
 func (builder *TxsBuilder) showWarningIfNotSyncCLI() {
-	if builder.chain.Sync.GetSyncTime() == 0 {
-		gui.GUI.OutputWrite("Your node is not Sync yet. Wait for it to get sync.")
-	}
+
 }
 
 func (builder *TxsBuilder) readData() (out *wizard.WizardTransactionData) {
@@ -281,45 +279,6 @@ func (builder *TxsBuilder) initCLI() {
 
 		if _, txData.Payloads[0].Recipient, txData.Payloads[0].Amount, err = builder.readAddressOptional("Transfer Recipient Address", config_coins.NATIVE_ASSET_FULL, true); err != nil {
 			return
-		}
-
-		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
-		txData.Payloads[0].Data = builder.readData()
-		txData.Payloads[0].Fee = builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
-
-		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
-
-		tx, err := builder.CreateZetherTx(txData, propagate, true, true, false, ctx, func(status string) {
-			gui.GUI.OutputWrite(status)
-		})
-		if err != nil {
-			return
-		}
-
-		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
-		return
-	}
-
-	cliPrivateClaim := func(cmd string, ctx context.Context) (err error) {
-		builder.showWarningIfNotSyncCLI()
-
-		extra := &wizard.WizardZetherPayloadExtraClaim{}
-		txData := &TxBuilderCreateZetherTxData{
-			Payloads: []*TxBuilderCreateZetherTxPayload{{
-				Extra: extra,
-				Asset: config_coins.NATIVE_ASSET_FULL,
-			}},
-		}
-
-		delegateWalletAddress, _, _, err := builder.wallet.CliSelectAddress("Select Address from which Claim", ctx)
-		if err != nil {
-			return
-		}
-
-		extra.DelegatePrivateKey = delegateWalletAddress.PrivateKey.Key
-
-		if _, txData.Payloads[0].Recipient, txData.Payloads[0].Amount, err = builder.readAddressOptional("Claim Address", config_coins.NATIVE_ASSET_FULL, false); err != nil {
-			return nil
 		}
 
 		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
@@ -601,7 +560,6 @@ func (builder *TxsBuilder) initCLI() {
 
 	gui.GUI.CommandDefineCallback("Private Transfer", cliPrivateTransfer, true)
 	gui.GUI.CommandDefineCallback("Private Delegate Stake", cliPrivateDelegateStake, true)
-	gui.GUI.CommandDefineCallback("Private Claim", cliPrivateClaim, true)
 	gui.GUI.CommandDefineCallback("Private Asset Create", cliPrivateAssetCreate, true)
 	gui.GUI.CommandDefineCallback("Private Asset Supply Increase", cliPrivateAssetSupplyIncrease, true)
 	gui.GUI.CommandDefineCallback("Update Delegate", cliUpdateDelegate, true)

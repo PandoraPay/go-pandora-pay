@@ -84,6 +84,14 @@ func _startMain() (err error) {
 		return
 	}
 
+	if runtime.GOARCH != "wasm" {
+		go func() {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			balance_decoder.BalanceDecryptor.SetTableSize(0, ctx, func(string) {})
+		}()
+	}
+
 	app.Wallet.InitializeWallet(app.Chain.UpdateAccounts, app.Chain.UpdatePlainAccounts)
 
 	if err = app.Wallet.StartWallet(); err != nil {
@@ -94,23 +102,15 @@ func _startMain() (err error) {
 		app.Forging.StartForging()
 	}
 
-	app.Chain.InitForging()
-
 	if app.Settings, err = settings.SettingsInit(); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "settings initialized")
 
-	if runtime.GOARCH != "wasm" {
-		go func() {
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			balance_decoder.BalanceDecryptor.SetTableSize(0, ctx, func(string) {})
-		}()
-	}
-
-	app.TxsBuilder = txs_builder.TxsBuilderInit(app.Wallet, app.Mempool, app.Chain)
+	app.TxsBuilder = txs_builder.TxsBuilderInit(app.Wallet, app.Mempool)
 	globals.MainEvents.BroadcastEvent("main", "transactions builder initialized")
+
+	app.Chain.InitForging()
 
 	if globals.Arguments["--exit"] == true {
 		os.Exit(1)

@@ -2,9 +2,7 @@ package transaction_simple
 
 import (
 	"errors"
-	"fmt"
 	"pandora-pay/blockchain/data_storage"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
@@ -29,39 +27,40 @@ type TransactionSimple struct {
 
 func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byte, dataStorage *data_storage.DataStorage) (err error) {
 
-	var plainAcc *plain_account.PlainAccount
-	if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(tx.Vin.PublicKey, blockHeight); err != nil {
-		return
-	}
-	if plainAcc == nil {
-		return errors.New("Plain Account was not found")
-	}
-
-	if plainAcc.Nonce != tx.Nonce {
-		return fmt.Errorf("Account nonce doesn't match %d %d", plainAcc.Nonce, tx.Nonce)
-	}
-	if err = plainAcc.IncrementNonce(true); err != nil {
-		return
-	}
-
-	if tx.FeeVersion {
-		if err = dataStorage.SubtractUnclaimed(plainAcc, tx.Fee, blockHeight); err != nil {
-			return errors.New("Not enought Unclaimed funds to substract Tx.Fee")
-		}
-	} else {
-		if err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fee); err != nil {
-			return errors.New("Not enought StakeAvailable funds to subtract Tx.Fee")
-		}
-	}
-
-	switch tx.TxScript {
-	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
-		if err = tx.Extra.IncludeTransactionVin0(blockHeight, plainAcc, dataStorage); err != nil {
-			return
-		}
-	}
-
-	return dataStorage.PlainAccs.Update(string(tx.Vin.PublicKey), plainAcc)
+	//var plainAcc *plain_account.PlainAccount
+	//if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(tx.Vin.PublicKey, blockHeight); err != nil {
+	//	return
+	//}
+	//if plainAcc == nil {
+	//	return errors.New("Plain Account was not found")
+	//}
+	//
+	//if plainAcc.Nonce != tx.Nonce {
+	//	return fmt.Errorf("Account nonce doesn't match %d %d", plainAcc.Nonce, tx.Nonce)
+	//}
+	//if err = plainAcc.IncrementNonce(true); err != nil {
+	//	return
+	//}
+	//
+	//if tx.FeeVersion {
+	//	if err = dataStorage.SubtractUnclaimed(plainAcc, tx.Fee, blockHeight); err != nil {
+	//		return errors.New("Not enought Unclaimed funds to substract Tx.Fee")
+	//	}
+	//} else {
+	//	if err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fee); err != nil {
+	//		return errors.New("Not enought StakeAvailable funds to subtract Tx.Fee")
+	//	}
+	//}
+	//
+	//switch tx.TxScript {
+	//case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
+	//	if err = tx.Extra.IncludeTransactionVin0(blockHeight, plainAcc, dataStorage); err != nil {
+	//		return
+	//	}
+	//}
+	//
+	//return dataStorage.PlainAccs.Update(string(tx.Vin.PublicKey), plainAcc)
+	return
 }
 
 func (tx *TransactionSimple) ComputeFee() (uint64, error) {

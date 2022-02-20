@@ -1,16 +1,13 @@
 package forging
 
 import (
-	"bytes"
 	"encoding/binary"
 	"errors"
-	"math"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_forging"
-	"pandora-pay/config/config_nodes"
-	"pandora-pay/config/config_stake"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/store"
@@ -29,10 +26,10 @@ type ForgingWallet struct {
 }
 
 type ForgingWalletAddressUpdate struct {
-	chainHeight   uint64
-	delegatedPriv []byte
-	pubKey        []byte
-	plainAcc      *plain_account.PlainAccount
+	chainHeight uint64
+	privateKey  []byte
+	publicKey   []byte
+	plainAcc    *plain_account.PlainAccount
 }
 
 func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasPlainAcc bool, plainAcc *plain_account.PlainAccount, chainHeight uint64) (err error) {
@@ -148,15 +145,12 @@ func (w *ForgingWallet) processUpdates() {
 			if !ok {
 				return
 			}
-			key := string(update.pubKey)
+			key := string(update.publicKey)
 
 			//let's delete it
-			if update.delegatedPriv == nil {
+			if update.privateKey == nil {
 				w.removeAccountFromForgingWorkers(key)
 			} else {
-
-				delegatedPrivateKey := &addresses.PrivateKey{Key: update.delegatedPriv}
-				delegatedStakePublicKey := delegatedPrivateKey.GeneratePublicKey()
 
 				plainAcc := update.plainAcc
 
@@ -166,41 +160,25 @@ func (w *ForgingWallet) processUpdates() {
 						return errors.New("Plain Account was not found")
 					}
 
-					if !plainAcc.DelegatedStake.HasDelegatedStake() || !bytes.Equal(plainAcc.DelegatedStake.DelegatedStakePublicKey, delegatedStakePublicKey) {
+					if !plainAcc.DelegatedStake.HasDelegatedStake() {
 						return errors.New("Delegated stake is not matching")
 					}
 
-					if plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE {
-						return errors.New("DelegatedStakeFee is less than it should be")
-					}
-
-					var amount uint64
-					if amount, err = plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(math.MaxUint64); err != nil {
-						return
-					}
-
-					if amount < config_stake.GetRequiredStake(update.chainHeight) {
-						return errors.New("Your stake is not accepted because you will need at least the minimum staking amount")
-					}
-
-					delegatedStakeFee := plainAcc.DelegatedStake.DelegatedStakeFee
-
 					address := w.addressesMap[key]
 					if address == nil {
+
+						keyPoint := new(crypto.BNRed).SetBytes(update.privateKey)
+
 						address = &ForgingWalletAddress{
-							delegatedPrivateKey,
-							delegatedStakePublicKey,
-							delegatedStakeFee,
-							update.pubKey,
-							string(update.pubKey),
+							&addresses.PrivateKey{Key: update.privateKey},
+							keyPoint.BigInt(),
+							update.publicKey,
+							string(update.publicKey),
 							plainAcc,
 							-1,
 						}
 						w.addressesMap[key] = address
 					} else {
-						address.delegatedPrivateKey = delegatedPrivateKey
-						address.delegatedStakePublicKey = delegatedStakePublicKey
-						address.delegatedStakeFee = delegatedStakeFee
 						address.plainAcc = plainAcc
 					}
 
@@ -230,15 +208,6 @@ func (w *ForgingWallet) processUpdates() {
 								return errors.New("has no longer delegated stake")
 							}
 
-							if !bytes.Equal(plainAcc.DelegatedStake.DelegatedStakePublicKey, w.addressesMap[k].delegatedStakePublicKey) {
-								return errors.New("delegated public key is no longer matching")
-							}
-
-							if plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE {
-								return errors.New("DelegatedStakeFee is less than it should be")
-							}
-
-							w.addressesMap[k].delegatedStakeFee = plainAcc.DelegatedStake.DelegatedStakeFee
 							w.addressesMap[k].plainAcc = plainAcc
 
 							w.updateAccountToForgingWorkers(w.addressesMap[k])

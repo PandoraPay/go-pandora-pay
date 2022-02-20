@@ -3,16 +3,14 @@ package block
 import (
 	"errors"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/crypto"
 )
 
 type BlockBloom struct {
-	Serialized                 []byte `json:"-" msgpack:"-"`
-	Hash                       []byte `json:"hash" msgpack:"hash"`
-	KernelHash                 []byte `json:"kernelHash" msgpack:"kernelHash"`
-	DelegatedSignatureVerified bool   `json:"delegatedSignatureVerified" msgpack:"delegatedSignatureVerified"`
-	bloomedHash                bool
-	bloomedKernelHash          bool
+	Serialized        []byte `json:"-" msgpack:"-"`
+	Hash              []byte `json:"hash" msgpack:"hash"`
+	KernelHash        []byte `json:"kernelHash" msgpack:"kernelHash"`
+	bloomedHash       bool
+	bloomedKernelHash bool
 }
 
 func (blk *Block) BloomSerializedNow(serialized []byte) {
@@ -42,12 +40,6 @@ func (blk *Block) BloomNow() (err error) {
 
 		if blk.Bloom.KernelHash, err = blk.ComputeKernelHash(); err != nil {
 			return
-		}
-		hashForSignature := blk.SerializeForSigning()
-
-		blk.Bloom.DelegatedSignatureVerified = crypto.VerifySignature(hashForSignature, blk.Signature, blk.DelegatedStakePublicKey)
-		if !blk.Bloom.DelegatedSignatureVerified {
-			return errors.New("Block signature is invalid")
 		}
 
 		blk.Bloom.bloomedKernelHash = true

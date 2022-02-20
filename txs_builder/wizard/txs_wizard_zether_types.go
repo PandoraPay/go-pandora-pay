@@ -13,9 +13,9 @@ type WizardZetherPayloadExtraDelegateStake struct {
 	DelegatePrivateKey       []byte                                                  `json:"delegatePrivateKey,omitempty" msgpack:"delegatePrivateKey,omitempty"`
 }
 
-type WizardZetherPayloadExtraClaim struct {
+type WizardZetherPayloadExtraStakingReward struct {
 	WizardZetherPayloadExtra `json:"-"  msgpack:""`
-	DelegatePrivateKey       []byte `json:"delegatePrivateKey" msgpack:"delegatePrivateKey"`
+	Reward                   uint64 `json:"reward" msgpack:"reward"`
 }
 
 type WizardZetherPayloadExtraAssetCreate struct {

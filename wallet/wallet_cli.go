@@ -8,11 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets/asset"
-	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/config/config_coins"
@@ -25,61 +25,41 @@ import (
 	"strconv"
 )
 
-func (wallet *Wallet) deriveDelegatedStake(addr *wallet_address.WalletAddress, nonce uint64, path string, print bool) error {
+func (wallet *Wallet) deriveDelegatedStakeSpendKey(addr *wallet_address.WalletAddress, path string, print bool) (err error) {
 
-	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+	key := addresses.GenerateNewPrivateKey()
 
-		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+	if print {
+		gui.GUI.OutputWrite("Delegated stake:")
+		gui.GUI.OutputWrite("   PublicKey", key.GeneratePublicKey())
+		gui.GUI.OutputWrite("   PrivateKey", key.Key)
+	}
 
-		plainAccs := plain_accounts.NewPlainAccounts(reader)
+	if path != "" {
 
-		var plainAcc *plain_account.PlainAccount
-		if plainAcc, err = plainAccs.GetPlainAccount(addr.PublicKey, chainHeight); err != nil {
+		var f *os.File
+		if f, err = os.Create(path); err != nil {
 			return
 		}
 
-		if nonce == 0 && plainAcc != nil {
-			nonce = wallet.mempool.GetNonce(addr.PublicKey, plainAcc.Nonce)
+		defer f.Close()
+
+		delegatedStakeOut := &DelegatedStakeOutput{
+			addr.AddressRegistrationEncoded,
+			key.GeneratePublicKey(),
 		}
 
-		var delegatedStake *wallet_address.WalletAddressDelegatedStake
-		if delegatedStake, err = addr.DeriveDelegatedStake(uint32(nonce)); err != nil {
+		var marshal []byte
+		if marshal, err = json.Marshal(delegatedStakeOut); err != nil {
 			return
 		}
 
-		if print {
-			gui.GUI.OutputWrite("Delegated stake:")
-			gui.GUI.OutputWrite("   PublicKey", delegatedStake.PublicKey)
-			gui.GUI.OutputWrite("   PrivateKey", delegatedStake.PrivateKey.Key)
+		if _, err = fmt.Fprint(f, string(marshal)); err != nil {
+			return err
 		}
+	}
 
-		if path != "" {
-
-			var f *os.File
-			if f, err = os.Create(path); err != nil {
-				return
-			}
-
-			defer f.Close()
-
-			delegatedStakeOut := &DelegatedStakeOutput{
-				addr.AddressEncoded,
-				delegatedStake.PublicKey,
-			}
-
-			var marshal []byte
-			if marshal, err = json.Marshal(delegatedStakeOut); err != nil {
-				return
-			}
-
-			if _, err = fmt.Fprint(f, string(marshal)); err != nil {
-				return err
-			}
-
-		}
-
-		return
-	})
+	return
 }
 
 func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err error) {
@@ -169,6 +149,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 		return
 	}
 
+	var decrypted uint64
 	for i, address := range addresses {
 
 		gui.GUI.OutputWrite(fmt.Sprintf("%d) %s :: %s", i, address.name, address.addressString))
@@ -180,19 +161,38 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 		if addresses[i].plainAcc != nil {
 
-			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %d", "Nonce", addresses[i].plainAcc.Nonce))
 			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Unclaimed", strconv.FormatFloat(config_coins.ConvertToBase(addresses[i].plainAcc.Unclaimed), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
 			if addresses[i].plainAcc.DelegatedStake.HasDelegatedStake() {
-				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Stake Available", strconv.FormatFloat(config_coins.ConvertToBase(addresses[i].plainAcc.DelegatedStake.StakeAvailable), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
+				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %64s", "STAKE AVAILABLE ENCRYPTED", base64.StdEncoding.EncodeToString(addresses[i].plainAcc.DelegatedStake.Balance.Amount.Serialize())))
 
 				if len(addresses[i].plainAcc.DelegatedStake.StakesPending) > 0 {
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES", ""))
 					for _, stakePending := range addresses[i].plainAcc.DelegatedStake.StakesPending {
-						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %t", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatFloat(config_coins.ConvertToBase(stakePending.PendingAmount), 'f', config_coins.DECIMAL_SEPARATOR, 64), stakePending.PendingType))
+						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %64s", "STAKE PENDING ENCRYPTED", strconv.FormatUint(stakePending.ActivationHeight, 10), base64.StdEncoding.EncodeToString(stakePending.PendingAmount.Amount.Serialize())))
 					}
 				} else {
 					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES:", "EMPTY"))
 				}
+
+				gui.GUI.OutputWrite(fmt.Sprintf("%18s", "Decrypting...."))
+
+				if decrypted, err = wallet.DecryptBalanceByPublicKey(address.publicKey, addresses[i].plainAcc.DelegatedStake.Balance.Amount.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, true, true, ctx, func(status string) {
+					gui.GUI.Info2Update("Decrypted", status)
+				}); err != nil {
+					return
+				}
+
+				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %18s", "STAKE AVAILABLE", strconv.FormatFloat(config_coins.ConvertToBase(decrypted), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
+				for _, stakePending := range addresses[i].plainAcc.DelegatedStake.StakesPending {
+
+					if decrypted, err = wallet.DecryptBalanceByPublicKey(address.publicKey, stakePending.PendingAmount.Amount.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, false, true, ctx, func(status string) {
+						gui.GUI.Info2Update("Decrypted", status)
+					}); err != nil {
+						return
+					}
+
+					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %18s", "STAKE PENDING", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatFloat(config_coins.ConvertToBase(decrypted), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
+				}
+
 			}
 
 			if addresses[i].plainAcc.AssetFeeLiquidities.HasAssetFeeLiquidities() {
@@ -213,12 +213,11 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %64s", data.ast.Name, base64.StdEncoding.EncodeToString(data.balance.Serialize())))
 			}
 
-			gui.GUI.OutputWrite(fmt.Sprintf("%18s", "Decoding...."))
+			gui.GUI.OutputWrite(fmt.Sprintf("%18s", "Decrypting...."))
 
 			for _, data := range addresses[i].assetsList {
-				gui.GUI.Info2Update("Decoding", "")
+				gui.GUI.Info2Update("Decrypting", "")
 
-				var decrypted uint64
 				if decrypted, err = wallet.DecryptBalanceByPublicKey(address.publicKey, data.balance.Serialize(), data.assetId, false, 0, true, true, ctx, func(status string) {
 					gui.GUI.Info2Update("Decrypted", status)
 				}); err != nil {
@@ -448,10 +447,9 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		nonce := gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
 		path := gui.GUI.OutputReadFilename("Path to export to a file", "delegatedStake")
 
-		return wallet.deriveDelegatedStake(addr, nonce, path, true)
+		return wallet.deriveDelegatedStakeSpendKey(addr, path, true)
 
 	}
 

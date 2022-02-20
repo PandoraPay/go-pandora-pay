@@ -3,32 +3,22 @@ package testnet
 import (
 	"context"
 	"encoding/base64"
-	"github.com/tevino/abool"
 	"math"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
-	"pandora-pay/blockchain/data_storage/accounts"
-	"pandora-pay/blockchain/data_storage/plain_accounts"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
-	"pandora-pay/helpers/generics"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
-	"pandora-pay/store"
-	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/txs_builder"
 	"pandora-pay/txs_builder/wizard"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
-	"time"
 )
 
 type Testnet struct {
@@ -45,69 +35,6 @@ func (testnet *Testnet) testnetGetZetherRingConfiguration() *txs_builder.ZetherR
 		zetherRingConfiguration.RingSize = int(math.Pow(2, float64(rand.Intn(2)+3)))
 	}
 	return zetherRingConfiguration
-}
-
-func (testnet *Testnet) testnetCreateClaimTx(recipientAddressWalletIndex int, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
-
-	select {
-	case <-ctx.Done():
-		return
-	default:
-	}
-
-	addr, err := testnet.wallet.GetWalletAddress(0, true)
-	if err != nil {
-		return
-	}
-
-	recipientAddr, err := testnet.wallet.GetWalletAddress(recipientAddressWalletIndex, true)
-	if err != nil {
-		return
-	}
-
-	extra := &wizard.WizardZetherPayloadExtraClaim{DelegatePrivateKey: addr.PrivateKey.Key}
-	txData := &txs_builder.TxBuilderCreateZetherTxData{
-		Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{{
-			Extra:             extra,
-			Recipient:         recipientAddr.AddressRegistrationEncoded,
-			Amount:            amount,
-			Asset:             config_coins.NATIVE_ASSET_FULL,
-			RingConfiguration: testnet.testnetGetZetherRingConfiguration(),
-		}},
-	}
-
-	var balance []byte
-	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-		accs, err := accounts.NewAccountsCollection(reader).GetMap(config_coins.NATIVE_ASSET_FULL)
-		if err != nil {
-			return
-		}
-		acc, err := accs.GetAccount(recipientAddr.PublicKey)
-		if err != nil || acc == nil {
-			return
-		}
-		balance = acc.Balance.Amount.Serialize()
-		return
-	}); err != nil {
-		return
-	}
-
-	if balance != nil {
-		var decryptedBalance uint64
-		if decryptedBalance, err = testnet.wallet.DecryptBalanceByPublicKey(recipientAddr.PublicKey, balance, config_coins.NATIVE_ASSET_FULL, false, 0, true, true, ctx, nil); err != nil {
-			return
-		}
-		if decryptedBalance > config_coins.ConvertToUnitsUint64Forced(10000) {
-			return
-		}
-	}
-
-	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, true, true, true, false, ctx, func(string) {}); err != nil {
-		return nil, err
-	}
-
-	gui.GUI.Info("Create Claim Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).ChainHeight, tx.Bloom.Hash)
-	return
 }
 
 func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
@@ -204,7 +131,7 @@ func (testnet *Testnet) run() {
 	updateChannel := testnet.chain.UpdateNewChain.AddListener()
 	defer testnet.chain.UpdateNewChain.RemoveChannel(updateChannel)
 
-	creatingTransactions := abool.New()
+	//creatingTransactions := abool.New()
 
 	for i := uint64(0); i < testnet.nodes; i++ {
 		if uint64(testnet.wallet.GetAddressesCount()) <= i+1 {
@@ -245,68 +172,68 @@ func (testnet *Testnet) run() {
 				}
 
 				if blockHeight >= 40 && syncTime != 0 {
+					//
+					//var addr *wallet_address.WalletAddress
+					//addr, _ = testnet.wallet.GetWalletAddress(0, true)
+					//
+					//var delegatedStakeAvailable, delegatedUnstakePending, unclaimed uint64
+					//
+					//var plainAcc *plain_account.PlainAccount
+					//
+					//gui.GUI.Log("UpdateNewChain received! 2")
 
-					var addr *wallet_address.WalletAddress
-					addr, _ = testnet.wallet.GetWalletAddress(0, true)
-
-					var delegatedStakeAvailable, delegatedUnstakePending, unclaimed uint64
-
-					var plainAcc *plain_account.PlainAccount
-
-					gui.GUI.Log("UpdateNewChain received! 2")
-
-					if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-						plainAccs := plain_accounts.NewPlainAccounts(reader)
-						if plainAcc, err = plainAccs.GetPlainAccount(addr.PublicKey, blockHeight); err != nil {
-							return
-						}
-
-						if plainAcc != nil {
-							delegatedStakeAvailable = plainAcc.DelegatedStake.GetDelegatedStakeAvailable()
-							delegatedUnstakePending, _ = plainAcc.DelegatedStake.ComputeDelegatedUnstakePending()
-							unclaimed = plainAcc.Unclaimed
-						}
-
-						return
-					}); err != nil {
-						return
-					}
-
-					if plainAcc != nil {
-
-						if creatingTransactions.IsNotSet() && syncTime != 0 {
-
-							creatingTransactions.Set()
-							defer creatingTransactions.UnSet()
-
-							if unclaimed > config_coins.ConvertToUnitsUint64Forced(200) {
-
-								unclaimed -= config_coins.ConvertToUnitsUint64Forced(30)
-
-								if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload.SCRIPT_CLAIM) {
-									testnet.testnetCreateClaimTx(1, unclaimed/5, ctx)
-									testnet.testnetCreateClaimTx(2, unclaimed/5, ctx)
-									testnet.testnetCreateClaimTx(3, unclaimed/5, ctx)
-									testnet.testnetCreateClaimTx(4, unclaimed/5, ctx)
-								}
-
-							} else if delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > config_coins.ConvertToUnitsUint64Forced(5000) && unclaimed < config_coins.ConvertToUnitsUint64Forced(2000) {
-								if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
-									if _, err = testnet.testnetCreateUnstakeTx(blockHeight, generics.Min(config_coins.ConvertToUnitsUint64Forced(1000), delegatedStakeAvailable/4), ctx); err != nil {
-										return
-									}
-								}
-							}
-
-							time.Sleep(time.Millisecond * 500) //making sure the block got propagated
-							for i := 2; i < 5; i++ {
-								testnet.testnetCreateTransfers(i, ctx)
-								time.Sleep(time.Millisecond * 5000)
-							}
-						}
-
-					}
+					//if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+					//
+					//	plainAccs := plain_accounts.NewPlainAccounts(reader)
+					//	if plainAcc, err = plainAccs.GetPlainAccount(addr.PublicKey, blockHeight); err != nil {
+					//		return
+					//	}
+					//
+					//	if plainAcc != nil {
+					//		delegatedStakeAvailable = plainAcc.DelegatedStake.GetDelegatedStakeAvailable()
+					//		delegatedUnstakePending, _ = plainAcc.DelegatedStake.ComputeDelegatedUnstakePending()
+					//		unclaimed = plainAcc.Unclaimed
+					//	}
+					//
+					//	return
+					//}); err != nil {
+					//	return
+					//}
+					//
+					//if plainAcc != nil {
+					//
+					//	if creatingTransactions.IsNotSet() && syncTime != 0 {
+					//
+					//		creatingTransactions.Set()
+					//		defer creatingTransactions.UnSet()
+					//
+					//		if unclaimed > config_coins.ConvertToUnitsUint64Forced(200) {
+					//
+					//			unclaimed -= config_coins.ConvertToUnitsUint64Forced(30)
+					//
+					//			if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload.SCRIPT_CLAIM) {
+					//				testnet.testnetCreateClaimTx(1, unclaimed/5, ctx)
+					//				testnet.testnetCreateClaimTx(2, unclaimed/5, ctx)
+					//				testnet.testnetCreateClaimTx(3, unclaimed/5, ctx)
+					//				testnet.testnetCreateClaimTx(4, unclaimed/5, ctx)
+					//			}
+					//
+					//		} else if delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > config_coins.ConvertToUnitsUint64Forced(5000) && unclaimed < config_coins.ConvertToUnitsUint64Forced(2000) {
+					//			if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
+					//				if _, err = testnet.testnetCreateUnstakeTx(blockHeight, generics.Min(config_coins.ConvertToUnitsUint64Forced(1000), delegatedStakeAvailable/4), ctx); err != nil {
+					//					return
+					//				}
+					//			}
+					//		}
+					//
+					//		time.Sleep(time.Millisecond * 500) //making sure the block got propagated
+					//		for i := 2; i < 5; i++ {
+					//			testnet.testnetCreateTransfers(i, ctx)
+					//			time.Sleep(time.Millisecond * 5000)
+					//		}
+					//	}
+					//
+					//}
 
 				}
 

@@ -43,7 +43,7 @@ func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidated) error {
 
 		for _, payload := range base.Payloads {
 			switch payload.PayloadScript {
-			case transaction_zether_payload.SCRIPT_DELEGATE_STAKE, transaction_zether_payload.SCRIPT_CLAIM,
+			case transaction_zether_payload.SCRIPT_DELEGATE_STAKE, transaction_zether_payload.SCRIPT_STAKING_REWARD,
 				transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE:
 				if payload.Extra.VerifyExtraSignature(hashForSignature) == false {
 					return errors.New("DelegatedPublicKey signature failed")

@@ -20,21 +20,6 @@ type WalletAddress struct {
 	DecryptedBalances          map[string]*WalletAddressDecryptedBalance `json:"decryptedBalances" msgpack:"decryptedBalances"`
 	AddressEncoded             string                                    `json:"addressEncoded" msgpack:"addressEncoded"`
 	AddressRegistrationEncoded string                                    `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
-	DelegatedStake             *WalletAddressDelegatedStake              `json:"delegatedStake" msgpack:"delegatedStake"`
-}
-
-func (addr *WalletAddress) GetDelegatedStakePrivateKey() []byte {
-	if addr.DelegatedStake != nil {
-		return addr.DelegatedStake.PrivateKey.Key
-	}
-	return nil
-}
-
-func (addr *WalletAddress) GetDelegatedStakePublicKey() []byte {
-	if addr.DelegatedStake != nil {
-		return addr.DelegatedStake.PublicKey
-	}
-	return nil
 }
 
 func (addr *WalletAddress) FindDelegatedStake(currentNonce, lastKnownNonce uint32, delegatedStakePublicKey []byte) (*WalletAddressDelegatedStake, error) {
@@ -148,6 +133,5 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		decryptedBalances,
 		addr.AddressEncoded,
 		addr.AddressRegistrationEncoded,
-		addr.DelegatedStake,
 	}
 }

@@ -92,7 +92,7 @@ func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte, validat
 	return accs, acc, nil
 }
 
-func (dataStorage *DataStorage) GetOrCreatePlainAccount(publicKey []byte, blockHeight uint64) (*plain_account.PlainAccount, error) {
+func (dataStorage *DataStorage) GetOrCreatePlainAccount(publicKey []byte, blockHeight uint64, validateRegistration bool) (*plain_account.PlainAccount, error) {
 	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(publicKey, blockHeight)
 	if err != nil {
 		return nil, err
@@ -100,17 +100,19 @@ func (dataStorage *DataStorage) GetOrCreatePlainAccount(publicKey []byte, blockH
 	if plainAcc != nil {
 		return plainAcc, nil
 	}
-	return dataStorage.CreatePlainAccount(publicKey)
+	return dataStorage.CreatePlainAccount(publicKey, validateRegistration)
 }
 
-func (dataStorage *DataStorage) CreatePlainAccount(publicKey []byte) (*plain_account.PlainAccount, error) {
+func (dataStorage *DataStorage) CreatePlainAccount(publicKey []byte, validateRegistration bool) (*plain_account.PlainAccount, error) {
 
-	exists, err := dataStorage.Regs.Exists(string(publicKey))
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, errors.New("Can't create PlainAccount as Registration already exists")
+	if validateRegistration {
+		exists, err := dataStorage.Regs.Exists(string(publicKey))
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			return nil, errors.New("PlainAccount must have been registered before")
+		}
 	}
 
 	return dataStorage.PlainAccs.CreateNewPlainAccount(publicKey)

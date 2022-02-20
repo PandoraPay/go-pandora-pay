@@ -19,10 +19,9 @@ import (
 )
 
 type GenesisDataAirDropType struct {
-	Address                 string `json:"address" msgpack:"address"`
-	Amount                  uint64 `json:"amount" msgpack:"amount"`
-	DelegatedStakePublicKey []byte `json:"delegatedStakePublicKey" msgpack:"delegatedStakePublicKey"`
-	DelegatedStakeFee       uint64 `json:"stakingFee" msgpack:"stakingFee"`
+	Address        string `json:"address" msgpack:"address"`
+	Amount         uint64 `json:"amount" msgpack:"amount"`
+	SpendPublicKey []byte `json:"spendPublicKey" msgpack:"spendPublicKey"`
 }
 
 type GenesisDataType struct {
@@ -117,9 +116,9 @@ func createNewGenesis(v []string) (err error) {
 		}
 
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			Address:                 delegatedStakeOutput.Address,
-			Amount:                  amount,
-			DelegatedStakePublicKey: delegatedStakeOutput.DelegatedStakePublicKey,
+			Address:        delegatedStakeOutput.Address,
+			Amount:         amount,
+			SpendPublicKey: []byte{},
 		})
 
 	}
@@ -154,9 +153,9 @@ func createSimpleGenesis(wallet *wallet.Wallet) (err error) {
 
 	amount := 10000 * config_stake.GetRequiredStake(0)
 	GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-		Address:                 address,
-		Amount:                  amount,
-		DelegatedStakePublicKey: delegatedStakePublicKey,
+		Address:        address,
+		Amount:         amount,
+		SpendPublicKey: delegatedStakePublicKey,
 	})
 
 	if file, err = os.OpenFile("./genesis.data", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {

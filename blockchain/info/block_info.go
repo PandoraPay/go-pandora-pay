@@ -7,5 +7,4 @@ type BlockInfo struct {
 	Size       uint64 `json:"size"  msgpack:"size"`
 	TXs        uint64 `json:"txs"  msgpack:"txs"`
 	Fees       uint64 `json:"fees"  msgpack:"fees"`
-	Forger     []byte `json:"forger"  msgpack:"forger"` //20 bytes
 }

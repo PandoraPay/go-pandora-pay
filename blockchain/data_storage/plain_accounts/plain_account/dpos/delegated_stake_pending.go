@@ -1,43 +1,29 @@
 package dpos
 
 import (
+	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/helpers"
 )
 
 type DelegatedStakePendingType bool
 
-const (
-	DelegatedStakePendingStake   DelegatedStakePendingType = true
-	DelegatedStakePendingUnstake DelegatedStakePendingType = false
-)
-
 type DelegatedStakePending struct {
 	helpers.SerializableInterface `json:"-"  msgpack:"-"`
-	PendingAmount                 uint64                    `json:"pendingAmount"  msgpack:"pendingAmount"`       //pending stake
-	ActivationHeight              uint64                    `json:"activationHeight"  msgpack:"activationHeight"` //height when the stake pending was last updated
-	PendingType                   DelegatedStakePendingType `json:"pendingType"  msgpack:"pendingType"`           //true stake pending || false unstake pending
+	PendingAmount                 *account.BalanceHomomorphic `json:"balance" msgpack:"balance"`
+	ActivationHeight              uint64                      `json:"activationHeight"  msgpack:"activationHeight"` //height when the stake pending was last updated
 }
 
 func (delegatedStakePending *DelegatedStakePending) Serialize(w *helpers.BufferWriter) {
-	w.WriteUvarint(delegatedStakePending.PendingAmount)
+	delegatedStakePending.PendingAmount.Serialize(w)
 	w.WriteUvarint(delegatedStakePending.ActivationHeight)
-	w.WriteBool(bool(delegatedStakePending.PendingType))
 }
 
 func (delegatedStakePending *DelegatedStakePending) Deserialize(r *helpers.BufferReader) (err error) {
-
-	if delegatedStakePending.PendingAmount, err = r.ReadUvarint(); err != nil {
+	if err = delegatedStakePending.PendingAmount.Deserialize(r); err != nil {
 		return
 	}
 	if delegatedStakePending.ActivationHeight, err = r.ReadUvarint(); err != nil {
 		return
 	}
-
-	var read bool
-	if read, err = r.ReadBool(); err != nil {
-		return
-	}
-	delegatedStakePending.PendingType = DelegatedStakePendingType(read)
-
 	return
 }

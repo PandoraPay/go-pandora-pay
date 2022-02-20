@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"pandora-pay/blockchain/data_storage"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/config/config_coins"
@@ -27,28 +26,28 @@ func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) BeforeIncludeTxP
 
 func (payloadExtra *TransactionZetherPayloadExtraDelegateStake) IncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
-	var plainAcc *plain_account.PlainAccount
-	if plainAcc, err = dataStorage.GetOrCreatePlainAccount(payloadExtra.DelegatePublicKey, blockHeight); err != nil {
-		return
-	}
-
-	if err = payloadExtra.DelegatedStakingUpdate.Include(plainAcc); err != nil {
-		return
-	}
-
-	if payloadExtra.ConvertToUnclaimed {
-		if err = plainAcc.AddUnclaimed(true, payloadBurnValue); err != nil {
-			return
-		}
-	} else {
-		if err = plainAcc.DelegatedStake.AddStakePendingStake(payloadBurnValue, blockHeight); err != nil {
-			return
-		}
-	}
-
-	if err = dataStorage.PlainAccs.Update(string(payloadExtra.DelegatePublicKey), plainAcc); err != nil {
-		return
-	}
+	//var plainAcc *plain_account.PlainAccount
+	//if plainAcc, err = dataStorage.GetOrCreatePlainAccount(payloadExtra.DelegatePublicKey, blockHeight); err != nil {
+	//	return
+	//}
+	//
+	//if err = payloadExtra.DelegatedStakingUpdate.Include(plainAcc); err != nil {
+	//	return
+	//}
+	//
+	//if payloadExtra.ConvertToUnclaimed {
+	//	if err = plainAcc.AddUnclaimed(true, payloadBurnValue); err != nil {
+	//		return
+	//	}
+	//} else {
+	//	if err = plainAcc.DelegatedStake.AddStakePendingStake(payloadBurnValue, blockHeight); err != nil {
+	//		return
+	//	}
+	//}
+	//
+	//if err = dataStorage.PlainAccs.Update(string(payloadExtra.DelegatePublicKey), plainAcc); err != nil {
+	//	return
+	//}
 
 	return
 }

@@ -94,7 +94,7 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 	}
 
 	accounts.HashMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
-		return account.NewAccount(key, index, accounts.Asset)
+		return account.NewAccountClear(key, index, accounts.Asset)
 	}
 
 	accounts.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) (err error) {

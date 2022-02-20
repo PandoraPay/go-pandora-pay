@@ -73,34 +73,28 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 			return errors.New("Amount, PaymentID or IntegratedPaymentAsset are not allowed in the airdrop address")
 		}
 
-		if airdrop.DelegatedStakePublicKey != nil {
+		if dataStorage.Regs.VerifyRegistration(addr.PublicKey, addr.Registration) == false {
+			return errors.New("Registration verification is false")
+		}
 
-			if len(addr.Registration) > 0 {
-				return errors.New("Airdrop delegated stakes should not have registration")
-			}
+		if _, err = dataStorage.CreateRegistration(addr.PublicKey); err != nil {
+			return
+		}
+		var accs *accounts.Accounts
+		var acc *account.Account
 
+		if airdrop.SpendPublicKey != nil {
 			var plainAcc *plain_account.PlainAccount
-			if plainAcc, err = dataStorage.CreatePlainAccount(addr.PublicKey); err != nil {
+			if plainAcc, err = dataStorage.CreatePlainAccount(addr.PublicKey, false); err != nil {
 				return
 			}
-			if err = plainAcc.DelegatedStake.CreateDelegatedStake(airdrop.Amount, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
+			if err = plainAcc.DelegatedStake.CreateDelegatedStake(addr.PublicKey, airdrop.Amount, airdrop.SpendPublicKey); err != nil {
 				return
 			}
 			if err = dataStorage.PlainAccs.Update(string(addr.PublicKey), plainAcc); err != nil {
 				return
 			}
 		} else {
-
-			if dataStorage.Regs.VerifyRegistration(addr.PublicKey, addr.Registration) == false {
-				return errors.New("Registration verification is false")
-			}
-
-			if _, err = dataStorage.CreateRegistration(addr.PublicKey); err != nil {
-				return
-			}
-			var accs *accounts.Accounts
-			var acc *account.Account
-
 			if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey, false); err != nil {
 				return
 			}
@@ -221,9 +215,7 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 			}
 		}
 
-		blk.Forger = make([]byte, cryptography.PublicKeySize)
-		blk.DelegatedStakePublicKey = make([]byte, cryptography.PublicKeySize)
-		blk.Signature = make([]byte, cryptography.SignatureSize)
+		blk.StakingNonce = make([]byte, 33)
 
 		blk.BloomSerializedNow(blk.SerializeManualToBytes())
 

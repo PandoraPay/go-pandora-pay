@@ -120,7 +120,6 @@ func saveBlockCompleteInfo(writer store_db_interface.StoreDBTransactionInterface
 		Size:       blkComplete.BloomBlkComplete.Size,
 		TXs:        uint64(len(blkComplete.Txs)),
 		Fees:       fees,
-		Forger:     blkComplete.Block.Forger,
 	}); err != nil {
 		return
 	}

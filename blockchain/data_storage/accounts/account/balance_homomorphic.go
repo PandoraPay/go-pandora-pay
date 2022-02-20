@@ -54,6 +54,10 @@ func (balance *BalanceHomomorphic) AddBalanceUint(amount uint64) {
 	balance.Amount = balance.Amount.Plus(new(big.Int).SetUint64(amount))
 }
 
+func (balance *BalanceHomomorphic) AddEchanges(amount *crypto.ElGamal) {
+	balance.Amount = balance.Amount.Add(amount)
+}
+
 func (balance *BalanceHomomorphic) Serialize(w *helpers.BufferWriter) {
 	w.Write(balance.Amount.Serialize())
 }
@@ -69,4 +73,21 @@ func (balance *BalanceHomomorphic) Deserialize(r *helpers.BufferReader) (err err
 	}
 
 	return
+}
+
+func NewBalanceHomomorphicEmptyBalance(publicKey []byte) (*BalanceHomomorphic, error) {
+	var acckey crypto.Point
+	if err := acckey.DecodeCompressed(publicKey); err != nil {
+		return nil, err
+	}
+
+	return &BalanceHomomorphic{nil, crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)}, nil
+}
+
+func NewBalanceHomomorphic(amount *crypto.ElGamal) (*BalanceHomomorphic, error) {
+	el, err := new(crypto.ElGamal).Deserialize(amount.Serialize())
+	if err != nil {
+		return nil, err
+	}
+	return &BalanceHomomorphic{nil, el}, nil
 }

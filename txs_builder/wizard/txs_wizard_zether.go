@@ -9,7 +9,6 @@ import (
 	"math"
 	"math/big"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/dpos"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
@@ -173,8 +172,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		} else {
 
 			switch payloadExtra := transfers[t].PayloadExtra.(type) {
-			case *WizardZetherPayloadExtraClaim:
-				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_CLAIM
+			case *WizardZetherPayloadExtraStakingReward:
+				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_STAKING_REWARD
 
 				var temporaryAccountRegistrationIndex uint64
 
@@ -186,52 +185,46 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					}
 				}
 
-				key := &addresses.PrivateKey{Key: payloadExtra.DelegatePrivateKey}
-				delegatePublicKey := key.GeneratePublicKey()
-				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaim{
-					DelegatePublicKey:                 delegatePublicKey,
-					DelegatedStakingClaimAmount:       transfers[t].Amount,
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward{
+					Reward:                            payloadExtra.Reward,
 					TemporaryAccountRegistrationIndex: temporaryAccountRegistrationIndex,
-					DelegateSignature:                 helpers.EmptyBytes(cryptography.SignatureSize),
 				}
-
-				privateKeysForSign[t] = key
 
 				//space extra is 0
 
 			case *WizardZetherPayloadExtraDelegateStake:
-				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_DELEGATE_STAKE
-
-				blankSignature := []byte{}
-				if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
-					key := &addresses.PrivateKey{Key: payloadExtra.DelegatePrivateKey}
-					if bytes.Equal(key.GeneratePublicKey(), payloadExtra.DelegatePublicKey) == false {
-						return errors.New("delegatePrivateKey is not matching delegatePublicKey")
-					}
-
-					privateKeysForSign[t] = key
-					blankSignature = helpers.EmptyBytes(cryptography.SignatureSize)
-				}
-
-				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
-					DelegatePublicKey:      payloadExtra.DelegatePublicKey,
-					ConvertToUnclaimed:     payloadExtra.ConvertToUnclaimed,
-					DelegatedStakingUpdate: payloadExtra.DelegatedStakingUpdate,
-					DelegateSignature:      blankSignature,
-				}
-
-				if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
-					spaceExtra += len(payloadExtra.DelegatePublicKey) //not required when account exists
-					spaceExtra += len(payloadExtra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey)
-					spaceExtra += helpers.BytesLengthSerialized(payloadExtra.DelegatedStakingUpdate.DelegatedStakingNewFee)
-				}
-
-				if payloadExtra.ConvertToUnclaimed {
-					spaceExtra += binary.MaxVarintLen64
-				} else {
-					spaceExtra += len(helpers.SerializeToBytes(&dpos.DelegatedStakePending{nil, transfers[t].Burn, chainHeight + 100, dpos.DelegatedStakePendingStake}))
-					spaceExtra += cryptography.PublicKeySize //key
-				}
+				//payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_DELEGATE_STAKE
+				//
+				//blankSignature := []byte{}
+				//if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
+				//	key := &addresses.PrivateKey{Key: payloadExtra.DelegatePrivateKey}
+				//	if bytes.Equal(key.GeneratePublicKey(), payloadExtra.DelegatePublicKey) == false {
+				//		return errors.New("delegatePrivateKey is not matching delegatePublicKey")
+				//	}
+				//
+				//	privateKeysForSign[t] = key
+				//	blankSignature = helpers.EmptyBytes(cryptography.SignatureSize)
+				//}
+				//
+				//payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
+				//	DelegatePublicKey:      payloadExtra.DelegatePublicKey,
+				//	ConvertToUnclaimed:     payloadExtra.ConvertToUnclaimed,
+				//	DelegatedStakingUpdate: payloadExtra.DelegatedStakingUpdate,
+				//	DelegateSignature:      blankSignature,
+				//}
+				//
+				//if payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
+				//	spaceExtra += len(payloadExtra.DelegatePublicKey) //not required when account exists
+				//	spaceExtra += len(payloadExtra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey)
+				//	spaceExtra += helpers.BytesLengthSerialized(payloadExtra.DelegatedStakingUpdate.DelegatedStakingNewFee)
+				//}
+				//
+				//if payloadExtra.ConvertToUnclaimed {
+				//	spaceExtra += binary.MaxVarintLen64
+				//} else {
+				//	spaceExtra += len(helpers.SerializeToBytes(&dpos.DelegatedStakePending{nil, transfers[t].Burn, chainHeight + 100, dpos.DelegatedStakePendingStake}))
+				//	spaceExtra += cryptography.PublicKeySize //key
+				//}
 
 			case *WizardZetherPayloadExtraAssetCreate:
 				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_ASSET_CREATE
@@ -361,7 +354,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		}
 
 		//fake balance
-		if payload.PayloadScript == transaction_zether_payload.SCRIPT_CLAIM {
+		if payload.PayloadScript == transaction_zether_payload.SCRIPT_STAKING_REWARD {
 
 			transfer.SenderDecryptedBalance = value + fee + burn_value
 
@@ -542,10 +535,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			switch txBase.Payloads[t].PayloadScript {
 			case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
 				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake).DelegateSignature = signature
-			case transaction_zether_payload.SCRIPT_CLAIM:
-				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraClaim).DelegateSignature = signature
 			case transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE:
 				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease).AssetSignature = signature
+			case transaction_zether_payload.SCRIPT_STAKING_REWARD: //na
 			}
 
 		}

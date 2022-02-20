@@ -1,14 +1,19 @@
 package forging
 
 import (
+	"context"
 	"encoding/binary"
 	"math/big"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
+	"pandora-pay/cryptography/bn256"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
+	"strconv"
 	"sync/atomic"
 	"time"
 )
@@ -18,6 +23,7 @@ type ForgingSolution struct {
 	address       *ForgingWalletAddress
 	work          *forging_block_work.ForgingWork
 	stakingAmount uint64
+	stakingNonce  []byte
 }
 
 type ForgingWorkerThread struct {
@@ -32,25 +38,32 @@ type ForgingWorkerThread struct {
 type ForgingWorkerThreadAddress struct {
 	walletAdr     *ForgingWalletAddress
 	stakingAmount uint64
+	stakingNonce  []byte
 }
 
-func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64) uint64 {
+func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64, prevChainKernelHash []byte) bool {
 
-	threadAddr.stakingAmount = 0
-	if threadAddr.walletAdr.plainAcc != nil && threadAddr.walletAdr.delegatedPrivateKey != nil {
+	if threadAddr.walletAdr.plainAcc != nil && threadAddr.walletAdr.privateKey != nil {
 
-		stakingAmount := uint64(0)
 		if threadAddr.walletAdr.plainAcc != nil {
-			stakingAmount, _ = threadAddr.walletAdr.plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(height)
+			stakingAmountBalance, _ := threadAddr.walletAdr.plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(height)
+
+			threadAddr.stakingAmount, _ = threadAddr.walletAdr.privateKey.DecryptBalance(stakingAmountBalance, threadAddr.stakingAmount, context.Background(), func(string) {})
 		}
 
-		if stakingAmount >= config_stake.GetRequiredStake(height) {
-			threadAddr.stakingAmount = stakingAmount
-			return stakingAmount
+		if threadAddr.stakingAmount >= config_stake.GetRequiredStake(height) {
+
+			uinput := append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), prevChainKernelHash[:]...)
+			uinput = append(uinput, config_coins.NATIVE_ASSET_FULL...)
+			uinput = append(uinput, strconv.Itoa(0)...)
+			u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), threadAddr.walletAdr.privateKeyPoint) // this should be moved to generate proof
+			threadAddr.stakingNonce = u.EncodeCompressed()
+
+			return true
 		}
 
 	}
-	return 0
+	return false
 }
 
 /**
@@ -100,7 +113,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 		walletsStakable = make(map[string]*ForgingWorkerThreadAddress)
 		for _, walletAddr := range wallets {
-			if walletAddr.computeStakingAmount(blkHeight) > 0 {
+			if walletAddr.computeStakingAmount(blkHeight, work.BlkComplete.PrevHash) {
 				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
 			}
 		}
@@ -120,16 +133,21 @@ func (worker *ForgingWorkerThread) forge() {
 				walletAddr = &ForgingWorkerThreadAddress{ //making sure the has a copy
 					newWalletAddr, //already it is copied
 					0,
+					nil,
 				}
 				wallets[newWalletAddr.publicKeyStr] = walletAddr
 			} else {
 				walletAddr.walletAdr = newWalletAddr
 			}
-			if walletAddr.computeStakingAmount(blkHeight) > 0 {
-				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
-			} else {
-				delete(walletsStakable, walletAddr.walletAdr.publicKeyStr)
+
+			if work != nil {
+				if walletAddr.computeStakingAmount(blkHeight, work.BlkComplete.PrevKernelHash) {
+					walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
+				} else {
+					delete(walletsStakable, walletAddr.walletAdr.publicKeyStr)
+				}
 			}
+
 			validateWork()
 			continue
 		case publicKeyStr := <-worker.removeWalletAddressCn:
@@ -171,14 +189,14 @@ func (worker *ForgingWorkerThread) forge() {
 
 					if n2 != n {
 						newSerialized := make([]byte, len(serialized)-n+n2)
-						copy(newSerialized, serialized[:-n-cryptography.PublicKeySize])
+						copy(newSerialized, serialized[:-n-33])
 						serialized = newSerialized
 						n = n2
 					}
 
 					//optimized POS
-					copy(serialized[len(serialized)-cryptography.PublicKeySize-n2:len(serialized)-cryptography.PublicKeySize], buf)
-					copy(serialized[len(serialized)-cryptography.PublicKeySize:], address.walletAdr.publicKey)
+					copy(serialized[len(serialized)-33-n2:len(serialized)-33], buf)
+					copy(serialized[len(serialized)-33:], address.stakingNonce)
 
 					kernelHash := cryptography.SHA3(serialized)
 
@@ -191,6 +209,7 @@ func (worker *ForgingWorkerThread) forge() {
 							address.walletAdr,
 							work,
 							address.stakingAmount,
+							address.stakingNonce,
 						}
 
 						select {

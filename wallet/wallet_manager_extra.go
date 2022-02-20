@@ -1,13 +1,13 @@
 package wallet
 
 import (
-	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/tyler-smith/go-bip39"
 	"math"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/config/config_nodes"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/wallet/wallet_address"
@@ -62,62 +62,32 @@ func (wallet *Wallet) updateWallet() {
 }
 
 //it must be locked and use original walletAddresses, not cloned ones
-func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAccount, chainHeight uint64, addr *wallet_address.WalletAddress, lock bool) (err error) {
+func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAccount, chainHeight uint64, addr *wallet_address.WalletAddress) (err error) {
 
-	if lock {
-		return errors.New("wallet should be locked before")
-	}
-
-	prevDelegatedStake := addr.DelegatedStake
+	deleted := false
 
 	if plainAcc == nil || !plainAcc.DelegatedStake.HasDelegatedStake() {
-		addr.DelegatedStake = nil
+		deleted = true
 	} else {
-		if plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE {
-			addr.DelegatedStake = nil
-		} else if addr.DelegatedStake != nil && !bytes.Equal(addr.DelegatedStake.PublicKey, plainAcc.DelegatedStake.DelegatedStakePublicKey) {
-			addr.DelegatedStake = nil
-		} else {
-			var amount uint64
-			if amount, err = plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(math.MaxUint64); err != nil {
-				addr.DelegatedStake = nil
-			}
-			if amount < config_stake.GetRequiredStake(chainHeight) {
-				addr.DelegatedStake = nil
-			}
+		stakingAmountBalance, _ := plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(math.MaxUint64)
+		stakingAmount, _ := wallet.DecryptBalanceByPublicKey(addr.PublicKey, stakingAmountBalance.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, true, true, context.Background(), func(string) {})
+
+		if stakingAmount < config_stake.GetRequiredStake(chainHeight) {
+			deleted = true
 		}
 	}
 
-	if addr.DelegatedStake == nil {
+	if deleted {
+
+		wallet.forging.Wallet.RemoveWallet(addr.PublicKey, true, plainAcc, chainHeight)
 
 		if addr.PrivateKey == nil {
-			wallet.forging.Wallet.RemoveWallet(addr.PublicKey, true, plainAcc, chainHeight)
-			_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, lock)
+			_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, true)
 			return
 		}
 
-		lastKnownNonce := uint32(0)
-		if addr.DelegatedStake != nil {
-			lastKnownNonce = addr.DelegatedStake.LastKnownNonce
-		}
-
-		if plainAcc != nil {
-			var delegatedStake *wallet_address.WalletAddressDelegatedStake
-			if delegatedStake, err = addr.FindDelegatedStake(uint32(plainAcc.Nonce), lastKnownNonce, plainAcc.DelegatedStake.DelegatedStakePublicKey); err != nil {
-				_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, lock)
-				return
-			}
-
-			if delegatedStake != nil {
-				addr.DelegatedStake = delegatedStake
-				wallet.forging.Wallet.AddWallet(addr.DelegatedStake.PrivateKey.Key, addr.PublicKey, true, plainAcc, chainHeight)
-			}
-		}
-
-	}
-
-	if prevDelegatedStake != addr.DelegatedStake {
-		return wallet.saveWalletAddress(addr, lock)
+	} else {
+		wallet.forging.Wallet.AddWallet(addr.PrivateKey.Key, addr.PublicKey, true, plainAcc, chainHeight)
 	}
 
 	return

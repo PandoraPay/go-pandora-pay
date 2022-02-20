@@ -64,17 +64,24 @@ func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 
 func NewAccount(publicKey []byte, index uint64, asset []byte) (*Account, error) {
 
-	var acckey crypto.Point
-	if err := acckey.DecodeCompressed(publicKey); err != nil {
+	balance, err := NewBalanceHomomorphicEmptyBalance(publicKey)
+	if err != nil {
 		return nil, err
 	}
 
-	acc := &Account{
+	return &Account{
 		PublicKey: publicKey,
 		Asset:     asset,
 		Index:     index,
-		Balance:   &BalanceHomomorphic{nil, crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)},
-	}
+		Balance:   balance,
+	}, nil
+}
 
-	return acc, nil
+func NewAccountClear(publicKey []byte, index uint64, asset []byte) (*Account, error) {
+	return &Account{
+		PublicKey: publicKey,
+		Asset:     asset,
+		Index:     index,
+		Balance:   &BalanceHomomorphic{nil, nil},
+	}, nil
 }

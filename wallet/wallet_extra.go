@@ -2,7 +2,6 @@ package wallet
 
 import (
 	"encoding/binary"
-	"math/rand"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_forging"
@@ -10,6 +9,7 @@ import (
 	"pandora-pay/recovery"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/wallet/wallet_address"
 	"time"
 )
 
@@ -21,38 +21,45 @@ func (wallet *Wallet) processRefreshWallets() {
 		for {
 
 			if config_forging.FORGING_ENABLED {
+
+				plainAccList := []*plain_account.PlainAccount{}
+				addressesList := []*wallet_address.WalletAddress{}
+				var chainHeight uint64
+
 				if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-					chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+					chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 
 					plainAccs := plain_accounts.NewPlainAccounts(reader)
-					wallet.Lock.Lock()
-					defer wallet.Lock.Unlock()
 
-					visited := make(map[int]bool)
+					visited := make(map[string]bool)
 					for i := 0; i < 50; i++ {
-						index := rand.Intn(len(wallet.Addresses))
-						if visited[index] {
+						addr := wallet.GetRandomAddress()
+						if visited[string(addr.PublicKey)] {
 							continue
 						}
-						visited[index] = true
-
-						addr := wallet.Addresses[index]
+						visited[string(addr.PublicKey)] = true
 
 						var plainAcc *plain_account.PlainAccount
 						if plainAcc, err = plainAccs.GetPlainAccount(addr.PublicKey, chainHeight); err != nil {
 							return
 						}
 
-						if err = wallet.refreshWalletPlainAccount(plainAcc, chainHeight, addr, false); err != nil {
-							return
-						}
+						plainAccList = append(plainAccList, plainAcc)
+						addressesList = append(addressesList, addr)
 					}
 
 					return
 				}); err != nil {
 					gui.GUI.Error("Error processRefreshWallets", err)
 				}
+
+				for i, plainAccount := range plainAccList {
+					if err = wallet.refreshWalletPlainAccount(plainAccount, chainHeight, wallet.GetWalletAddressByPublicKey(addressesList[i].PublicKey, true)); err != nil {
+						return
+					}
+				}
+
 			}
 
 			time.Sleep(2 * time.Minute)

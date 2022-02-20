@@ -2,7 +2,6 @@ package wizard
 
 import (
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/dpos"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
@@ -44,26 +43,26 @@ func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTx
 	var extraFinal transaction_simple_extra.TransactionSimpleExtraInterface
 	switch txExtra := extra.(type) {
 	case *WizardTxSimpleExtraUpdateDelegate:
-		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{
-			DelegatedStakingClaimAmount: txExtra.DelegatedStakingClaimAmount,
-			DelegatedStakingUpdate:      txExtra.DelegatedStakingUpdate,
-		}
-		txScript = transaction_simple.SCRIPT_UPDATE_DELEGATE
-
-		if txExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
-			spaceExtra += len(txExtra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey)
-			spaceExtra += helpers.BytesLengthSerialized(txExtra.DelegatedStakingUpdate.DelegatedStakingNewFee)
-		}
-		if txExtra.DelegatedStakingClaimAmount > 0 {
-			spaceExtra += len(helpers.SerializeToBytes(&dpos.DelegatedStakePending{nil, txExtra.DelegatedStakingClaimAmount, chainHeight + 100, dpos.DelegatedStakePendingStake}))
-		}
+		//extraFinal = &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{
+		//	DelegatedStakingClaimAmount: txExtra.DelegatedStakingClaimAmount,
+		//	DelegatedStakingUpdate:      txExtra.DelegatedStakingUpdate,
+		//}
+		//txScript = transaction_simple.SCRIPT_UPDATE_DELEGATE
+		//
+		//if txExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
+		//	spaceExtra += len(txExtra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey)
+		//	spaceExtra += helpers.BytesLengthSerialized(txExtra.DelegatedStakingUpdate.DelegatedStakingNewFee)
+		//}
+		//if txExtra.DelegatedStakingClaimAmount > 0 {
+		//	spaceExtra += len(helpers.SerializeToBytes(&dpos.DelegatedStakePending{nil, txExtra.DelegatedStakingClaimAmount, chainHeight + 100, dpos.DelegatedStakePendingStake}))
+		//}
 	case *WizardTxSimpleExtraUnstake:
-		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUnstake{
-			Amount: txExtra.Amount,
-		}
-		txScript = transaction_simple.SCRIPT_UNSTAKE
-
-		spaceExtra += len(helpers.SerializeToBytes(&dpos.DelegatedStakePending{nil, txExtra.Amount, chainHeight + 100, dpos.DelegatedStakePendingUnstake}))
+		//extraFinal = &transaction_simple_extra.TransactionSimpleExtraUnstake{
+		//	Amount: txExtra.Amount,
+		//}
+		//txScript = transaction_simple.SCRIPT_UNSTAKE
+		//
+		//spaceExtra += len(helpers.SerializeToBytes(&dpos.DelegatedStakePending{nil, txExtra.Amount, chainHeight + 100, dpos.DelegatedStakePendingUnstake}))
 	case *WizardTxSimpleExtraUpdateAssetFeeLiquidity:
 		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{
 			Liquidities:     txExtra.Liquidities,

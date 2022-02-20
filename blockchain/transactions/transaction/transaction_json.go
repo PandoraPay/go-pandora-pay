@@ -86,11 +86,9 @@ type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
 	DelegateSignature      []byte                                      `json:"delegateSignature"  msgpack:"delegateSignature"`
 }
 
-type json_Only_TransactionZetherPayloadExtraClaim struct {
-	DelegatePublicKey                 []byte `json:"delegatePublicKey"  msgpack:"delegatePublicKey"`
-	DelegatedStakingClaimAmount       uint64 `json:"delegatedStakingClaimAmount"  msgpack:"delegatedStakingClaimAmount"`
+type json_Only_TransactionZetherPayloadExtraStakingReward struct {
+	Reward                            uint64 `json:"reward"  msgpack:"reward"`
 	TemporaryAccountRegistrationIndex uint64 `json:"temporaryAccountRegistrationIndex"  msgpack:"temporaryAccountRegistrationIndex"`
-	DelegateSignature                 []byte `json:"delegateSignature"  msgpack:"delegateSignature"`
 }
 
 type json_Only_TransactionZetherPayloadExtraAssetCreate struct {
@@ -243,13 +241,11 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 					},
 					payloadExtra.DelegateSignature,
 				}
-			case transaction_zether_payload.SCRIPT_CLAIM:
-				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraClaim)
-				extra = &json_Only_TransactionZetherPayloadExtraClaim{
-					payloadExtra.DelegatePublicKey,
-					payloadExtra.DelegatedStakingClaimAmount,
+			case transaction_zether_payload.SCRIPT_STAKING_REWARD:
+				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward)
+				extra = &json_Only_TransactionZetherPayloadExtraStakingReward{
+					payloadExtra.Reward,
 					payloadExtra.TemporaryAccountRegistrationIndex,
-					payloadExtra.DelegateSignature,
 				}
 			case transaction_zether_payload.SCRIPT_ASSET_CREATE:
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate)
@@ -507,18 +503,16 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 					extraJson.DelegateSignature,
 				}
 
-			case transaction_zether_payload.SCRIPT_CLAIM:
-				extraJson := &json_Only_TransactionZetherPayloadExtraClaim{}
+			case transaction_zether_payload.SCRIPT_STAKING_REWARD:
+				extraJson := &json_Only_TransactionZetherPayloadExtraStakingReward{}
 				if err := json.Unmarshal(data, extraJson); err != nil {
 					return err
 				}
 
-				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraClaim{
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward{
 					nil,
-					extraJson.DelegatePublicKey,
-					extraJson.DelegatedStakingClaimAmount,
+					extraJson.Reward,
 					extraJson.TemporaryAccountRegistrationIndex,
-					extraJson.DelegateSignature,
 				}
 
 			case transaction_zether_payload.SCRIPT_ASSET_CREATE:

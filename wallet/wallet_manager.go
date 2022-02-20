@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/tyler-smith/go-bip32"
+	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/config"
 	"pandora-pay/config/config_nodes"
@@ -19,15 +20,22 @@ import (
 )
 
 func (wallet *Wallet) GetAddressesCount() int {
-	wallet.Lock.Lock()
-	defer wallet.Lock.Unlock()
+	wallet.Lock.RLock()
+	defer wallet.Lock.RUnlock()
 	return len(wallet.Addresses)
+}
+
+func (wallet *Wallet) GetRandomAddress() *wallet_address.WalletAddress {
+	wallet.Lock.RLock()
+	defer wallet.Lock.RUnlock()
+	index := rand.Intn(len(wallet.Addresses))
+	return wallet.Addresses[index]
 }
 
 func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, []byte, error) {
 
-	wallet.Lock.Lock()
-	defer wallet.Lock.Unlock()
+	wallet.Lock.RLock()
+	defer wallet.Lock.RUnlock()
 
 	if len(wallet.Addresses) == 0 || !wallet.Loaded {
 		return "", nil, errors.New("Wallet is empty")
@@ -39,7 +47,7 @@ func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, []byte, 
 		return "", nil, err
 	}
 
-	return addr.AddressEncoded, delegatedStake.PublicKey, nil
+	return addr.AddressRegistrationEncoded, delegatedStake.PublicKey, nil
 }
 
 //you should not lock it before
@@ -191,12 +199,11 @@ func (wallet *Wallet) ImportPrivateKey(name string, privateKey []byte) (*wallet_
 	}
 
 	addr := &wallet_address.WalletAddress{
-		Name:           name,
-		PrivateKey:     priv,
-		Registration:   reg,
-		SeedIndex:      1,
-		DelegatedStake: nil,
-		IsMine:         true,
+		Name:         name,
+		PrivateKey:   priv,
+		Registration: reg,
+		SeedIndex:    1,
+		IsMine:       true,
 	}
 
 	if err := wallet.AddAddress(addr, true, false, false); err != nil {
@@ -233,7 +240,7 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 	wallet.Addresses = append(wallet.Addresses, adr)
 	wallet.addressesMap[string(adr.PublicKey)] = adr
 
-	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKey, false, nil, 0)
+	wallet.forging.Wallet.AddWallet(adr.PrivateKey.Key, adr.PublicKey, false, nil, 0)
 
 	wallet.Count += 1
 
@@ -293,7 +300,7 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 		wallet.CountImportedIndex += 1
 	}
 
-	wallet.forging.Wallet.AddWallet(adr.GetDelegatedStakePrivateKey(), adr.PublicKey, false, nil, 0)
+	wallet.forging.Wallet.AddWallet(adr.PrivateKey.Key, adr.PublicKey, false, nil, 0)
 
 	wallet.updateWallet()
 
@@ -357,12 +364,11 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string) (*wallet_address.Wal
 	}
 
 	adr := &wallet_address.WalletAddress{
-		Name:           name,
-		PrivateKey:     key,
-		Registration:   reg,
-		SeedIndex:      wallet.SeedIndex,
-		DelegatedStake: nil,
-		IsMine:         true,
+		Name:         name,
+		PrivateKey:   key,
+		Registration: reg,
+		SeedIndex:    wallet.SeedIndex,
+		IsMine:       true,
 	}
 
 	if err = wallet.AddAddress(adr, false, true, false); err != nil {

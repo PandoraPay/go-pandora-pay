@@ -11,7 +11,6 @@ type PlainAccount struct {
 	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
 	PublicKey                                    []byte                                   `json:"-" msgpack:"-"` //hashMap key
 	Index                                        uint64                                   `json:"-" msgpack:"-"` //hashMap index
-	Nonce                                        uint64                                   `json:"nonce" msgpack:"nonce"`
 	Unclaimed                                    uint64                                   `json:"unclaimed" msgpack:"unclaimed"`
 	DelegatedStake                               *dpos.DelegatedStake                     `json:"delegatedStake" msgpack:"delegatedStake"`
 	AssetFeeLiquidities                          *asset_fee_liquidity.AssetFeeLiquidities `json:"assetFeeLiquidities" msgpack:"assetFeeLiquidities"`
@@ -39,30 +38,21 @@ func (plainAccount *PlainAccount) Validate() error {
 	return nil
 }
 
-func (plainAccount *PlainAccount) IncrementNonce(sign bool) error {
-	return helpers.SafeUint64Update(sign, &plainAccount.Nonce, 1)
-}
-
 func (plainAccount *PlainAccount) AddUnclaimed(sign bool, amount uint64) error {
 	return helpers.SafeUint64Update(sign, &plainAccount.Unclaimed, amount)
 }
 
-func (plainAccount *PlainAccount) RefreshDelegatedStake(blockHeight uint64) error {
+func (plainAccount *PlainAccount) RefreshDelegatedStake(blockHeight uint64) {
 
 	if !plainAccount.DelegatedStake.HasDelegatedStake() {
-		return nil
+		return
 	}
 
-	unclaimed, err := plainAccount.DelegatedStake.RefreshDelegatedStake(blockHeight)
-	if err != nil {
-		return err
-	}
+	plainAccount.DelegatedStake.RefreshDelegatedStake(blockHeight)
 
-	return plainAccount.AddUnclaimed(true, unclaimed)
 }
 
 func (plainAccount *PlainAccount) Serialize(w *helpers.BufferWriter) {
-	w.WriteUvarint(plainAccount.Nonce)
 	w.WriteUvarint(plainAccount.Unclaimed)
 	plainAccount.DelegatedStake.Serialize(w)
 	plainAccount.AssetFeeLiquidities.Serialize(w)
@@ -70,13 +60,9 @@ func (plainAccount *PlainAccount) Serialize(w *helpers.BufferWriter) {
 
 func (plainAccount *PlainAccount) Deserialize(r *helpers.BufferReader) (err error) {
 
-	if plainAccount.Nonce, err = r.ReadUvarint(); err != nil {
-		return
-	}
 	if plainAccount.Unclaimed, err = r.ReadUvarint(); err != nil {
 		return
 	}
-
 	if err = plainAccount.DelegatedStake.Deserialize(r); err != nil {
 		return
 	}
@@ -89,9 +75,11 @@ func (plainAccount *PlainAccount) Deserialize(r *helpers.BufferReader) (err erro
 
 func NewPlainAccount(publicKey []byte, index uint64) *PlainAccount {
 	return &PlainAccount{
-		PublicKey:           publicKey,
-		Index:               index,
-		DelegatedStake:      &dpos.DelegatedStake{},
+		PublicKey: publicKey,
+		Index:     index,
+		DelegatedStake: &dpos.DelegatedStake{
+			Version: dpos.NO_STAKING,
+		},
 		AssetFeeLiquidities: &asset_fee_liquidity.AssetFeeLiquidities{},
 	}
 }

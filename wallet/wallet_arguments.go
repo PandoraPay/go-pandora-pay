@@ -59,12 +59,7 @@ func (wallet *Wallet) ProcessWalletArguments() (err error) {
 			return errors.New("Address specified by --wallet-derive-delegated-stake was not found")
 		}
 
-		var nonce uint64
-		if nonce, err = strconv.ParseUint(v[1], 10, 64); err != nil {
-			return
-		}
-
-		if err = wallet.deriveDelegatedStake(addr, nonce, v[2], false); err != nil {
+		if err = wallet.deriveDelegatedStakeSpendKey(addr, v[2], false); err != nil {
 			return
 		}
 

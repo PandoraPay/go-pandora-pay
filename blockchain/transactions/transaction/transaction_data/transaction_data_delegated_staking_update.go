@@ -21,16 +21,17 @@ func (data *TransactionDataDelegatedStakingUpdate) Include(plainAcc *plain_accou
 		return errors.New("PlainAcc is null")
 	}
 
-	if data.DelegatedStakingHasNewInfo {
-		if !plainAcc.DelegatedStake.HasDelegatedStake() {
-			if err = plainAcc.DelegatedStake.CreateDelegatedStake(0, data.DelegatedStakingNewPublicKey, data.DelegatedStakingNewFee); err != nil {
-				return
-			}
-		} else {
-			plainAcc.DelegatedStake.DelegatedStakePublicKey = data.DelegatedStakingNewPublicKey
-			plainAcc.DelegatedStake.DelegatedStakeFee = data.DelegatedStakingNewFee
-		}
-	}
+	//if data.DelegatedStakingHasNewInfo {
+	//	if !plainAcc.DelegatedStake.HasDelegatedStake() {
+	//		if err = plainAcc.DelegatedStake.CreateDelegatedStake(0, data.DelegatedStakingNewPublicKey, data.DelegatedStakingNewFee); err != nil {
+	//			return
+	//		}
+	//	} else {
+	//		plainAcc.DelegatedStake.DelegatedStakePublicKey = data.DelegatedStakingNewPublicKey
+	//		plainAcc.DelegatedStake.DelegatedStakeFee = data.DelegatedStakingNewFee
+	//	}
+	//}
+
 	return
 }
 

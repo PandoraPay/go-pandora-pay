@@ -20,18 +20,18 @@ type TransactionSimpleExtraUpdateDelegate struct {
 
 func (txExtra *TransactionSimpleExtraUpdateDelegate) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
 
-	if err = txExtra.DelegatedStakingUpdate.Include(plainAcc); err != nil {
-		return
-	}
-
-	if txExtra.DelegatedStakingClaimAmount > 0 {
-		if err = dataStorage.SubtractUnclaimed(plainAcc, txExtra.DelegatedStakingClaimAmount, blockHeight); err != nil {
-			return
-		}
-		if err = plainAcc.DelegatedStake.AddStakePendingStake(txExtra.DelegatedStakingClaimAmount, blockHeight); err != nil {
-			return
-		}
-	}
+	//if err = txExtra.DelegatedStakingUpdate.Include(plainAcc); err != nil {
+	//	return
+	//}
+	//
+	//if txExtra.DelegatedStakingClaimAmount > 0 {
+	//	if err = dataStorage.SubtractUnclaimed(plainAcc, txExtra.DelegatedStakingClaimAmount, blockHeight); err != nil {
+	//		return
+	//	}
+	//	if err = plainAcc.DelegatedStake.AddStakePendingStake(txExtra.DelegatedStakingClaimAmount, blockHeight); err != nil {
+	//		return
+	//	}
+	//}
 
 	return
 }

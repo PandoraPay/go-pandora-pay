@@ -14,7 +14,6 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -22,7 +21,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
@@ -258,35 +256,35 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return
 					}
 
-					var plainAcc *plain_account.PlainAccount
-					if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(blkComplete.Block.Forger, blkComplete.Block.Height); err != nil {
-						return
-					}
-
-					if plainAcc == nil {
-						return errors.New("Forger Account deson't exist or hasn't delegated stake")
-					}
-
-					var stakingAmount uint64
-					if stakingAmount, err = plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(newChainData.Height); err != nil {
-						return
-					}
-
-					if !bytes.Equal(blkComplete.Block.DelegatedStakePublicKey, plainAcc.DelegatedStake.DelegatedStakePublicKey) {
-						return errors.New("Block Staking Delegated Public Key is not matching")
-					}
-
-					if blkComplete.Block.DelegatedStakeFee != plainAcc.DelegatedStake.DelegatedStakeFee {
-						return fmt.Errorf("Block Delegated Stake Fee doesn't match %d %d", blkComplete.Block.DelegatedStakeFee, plainAcc.DelegatedStake.DelegatedStakeFee)
-					}
-
-					if blkComplete.Block.StakingAmount != stakingAmount {
-						return fmt.Errorf("Block Staking Amount doesn't match %d %d", blkComplete.Block.StakingAmount, stakingAmount)
-					}
-
-					if blkComplete.Block.StakingAmount < config_stake.GetRequiredStake(blkComplete.Block.Height) {
-						return errors.New("Delegated stake ready amount is not enought")
-					}
+					//var plainAcc *plain_account.PlainAccount
+					//if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(blkComplete.Block.Forger, blkComplete.Block.Height); err != nil {
+					//	return
+					//}
+					//
+					//if plainAcc == nil {
+					//	return errors.New("Forger Account deson't exist or hasn't delegated stake")
+					//}
+					//
+					//var stakingAmount uint64
+					//if stakingAmount, err = plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(newChainData.Height); err != nil {
+					//	return
+					//}
+					//
+					//if !bytes.Equal(blkComplete.Block.DelegatedStakePublicKey, plainAcc.DelegatedStake.DelegatedStakePublicKey) {
+					//	return errors.New("Block Staking Delegated Public Key is not matching")
+					//}
+					//
+					//if blkComplete.Block.DelegatedStakeFee != plainAcc.DelegatedStake.DelegatedStakeFee {
+					//	return fmt.Errorf("Block Delegated Stake Fee doesn't match %d %d", blkComplete.Block.DelegatedStakeFee, plainAcc.DelegatedStake.DelegatedStakeFee)
+					//}
+					//
+					//if blkComplete.Block.StakingAmount != stakingAmount {
+					//	return fmt.Errorf("Block Staking Amount doesn't match %d %d", blkComplete.Block.StakingAmount, stakingAmount)
+					//}
+					//
+					//if blkComplete.Block.StakingAmount < config_stake.GetRequiredStake(blkComplete.Block.Height) {
+					//	return errors.New("Delegated stake ready amount is not enought")
+					//}
 
 					if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHash, newChainData.Target) != true {
 						return errors.New("KernelHash Difficulty is not met")
