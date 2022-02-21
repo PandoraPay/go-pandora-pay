@@ -48,6 +48,7 @@ func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.St
 	dataStorage.DeleteTransitionalChangesFromStore(blockHeightStr)
 
 	writer.Delete("blockHash_ByHeight" + blockHeightStr)
+	writer.Delete("blockKernelHash_ByHeight" + blockHeightStr)
 	writer.Delete("blockTxs" + blockHeightStr)
 }
 
@@ -70,6 +71,8 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 
 	writer.Delete("block_ByHash" + string(hash))
 	writer.Delete("blockHeight_ByHash" + string(hash))
+	writer.Delete("blockHash_ByHeight" + string(blockHeightStr))
+	writer.Delete("blockKernelHash_ByHeight" + string(blockHeightStr))
 
 	data := writer.Get("blockTxs" + blockHeightStr)
 	txHashes := [][]byte{} //32 byte
@@ -117,6 +120,7 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 
 	writer.Put("block_ByHash"+string(blkComplete.Block.Bloom.Hash), helpers.SerializeToBytes(blkComplete.Block))
 	writer.Put("blockHash_ByHeight"+blockHeightStr, blkComplete.Block.Bloom.Hash)
+	writer.Put("blockKernelHash_ByHeight"+blockHeightStr, blkComplete.Block.Bloom.KernelHash)
 	writer.Put("blockHeight_ByHash"+string(blkComplete.Block.Bloom.Hash), []byte(blockHeightStr))
 
 	txHashes := make([][]byte, len(blkComplete.Txs))

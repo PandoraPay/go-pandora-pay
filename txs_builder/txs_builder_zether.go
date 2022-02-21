@@ -213,7 +213,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 	ringMembers := make([][]string, len(txData.Payloads))
 
 	var chainHeight uint64
-	var chainHash []byte
+	var chainKernelHash []byte
 
 	transfers := make([]*wizard.WizardZetherTransfer, len(txData.Payloads))
 	emap := wizard.InitializeEmap(sendAssets)
@@ -233,7 +233,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 		}
 
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
-		chainHash = reader.Get("chainHash")
+		chainKernelHash = reader.Get("chainKernelHash")
 
 		for t, payload := range txData.Payloads {
 
@@ -372,7 +372,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 
 	statusCallback("Balances decoded")
 
-	return transfers, emap, rings, publicKeyIndexes, chainHeight, chainHash, nil
+	return transfers, emap, rings, publicKeyIndexes, chainHeight, chainKernelHash, nil
 }
 
 func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
@@ -380,7 +380,7 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	transfers, emap, ringMembers, publicKeyIndexes, chainHeight, chainHash, err := builder.prebuild(txData, ctx, statusCallback)
+	transfers, emap, ringMembers, publicKeyIndexes, chainHeight, chainKernelHash, err := builder.prebuild(txData, ctx, statusCallback)
 	if err != nil {
 		return nil, err
 	}
@@ -391,7 +391,7 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, chainHeight-1, chainHash, publicKeyIndexes, feesFinal, validateTx, ctx, statusCallback); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, chainHeight-1, chainKernelHash, publicKeyIndexes, feesFinal, validateTx, ctx, statusCallback); err != nil {
 		return nil, err
 	}
 
@@ -449,7 +449,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, chainHeight, blkComplete.PrevHash, publicKeyIndexes, feesFinal, false, context.Background(), func(string) {}); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, chainHeight, blkComplete.PrevKernelHash, publicKeyIndexes, feesFinal, false, context.Background(), func(string) {}); err != nil {
 		return nil, err
 	}
 

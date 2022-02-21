@@ -35,7 +35,7 @@ func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidated) error {
 		//verify signature
 		assetMap := map[string]int{}
 		for _, payload := range base.Payloads {
-			if payload.Proof.Verify(payload.Asset, assetMap[string(payload.Asset)], base.ChainHash, payload.Statement, hashForSignature, payload.BurnValue) == false {
+			if payload.Proof.Verify(payload.Asset, assetMap[string(payload.Asset)], base.ChainKernelHash, payload.Statement, hashForSignature, payload.BurnValue) == false {
 				return errors.New("Zether Failed for Transaction")
 			}
 			assetMap[string(payload.Asset)] = assetMap[string(payload.Asset)] + 1

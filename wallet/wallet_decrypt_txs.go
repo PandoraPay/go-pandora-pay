@@ -104,7 +104,7 @@ func (w *Wallet) DecryptTx(tx *transaction.Transaction, walletPublicKey []byte) 
 
 					if output.ZetherTx.Payloads[t].WhisperSenderValid {
 
-						rinputs := append([]byte{}, txBase.ChainHash...)
+						rinputs := append([]byte{}, txBase.ChainKernelHash...)
 						for _, publicKey2 := range txBase.Bloom.PublicKeyLists[t] {
 							rinputs = append(rinputs, publicKey2...)
 						}

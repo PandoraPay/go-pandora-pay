@@ -514,7 +514,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		assetMap[string(txBase.Payloads[t].Asset)] = assetMap[string(txBase.Payloads[t].Asset)] + 1
 
 		statusCallback(fmt.Sprintf("Payload %d generating zero knowledge proofs... ", t+1))
-		if txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Asset, assetIndex, txBase.ChainHash, txBase.Payloads[t].Statement, &witness_list[t], u, tx.GetHashSigningManually(), txBase.Payloads[t].BurnValue); err != nil {
+		if txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Asset, assetIndex, txBase.ChainKernelHash, txBase.Payloads[t].Statement, &witness_list[t], u, tx.GetHashSigningManually(), txBase.Payloads[t].BurnValue); err != nil {
 			return
 		}
 
@@ -547,11 +547,11 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	return
 }
 
-func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, chainHeight uint64, chainHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, fees []*WizardTransactionFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, chainHeight uint64, chainKernelHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, fees []*WizardTransactionFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	txBase := &transaction_zether.TransactionZether{
-		ChainHeight: chainHeight,
-		ChainHash:   chainHash,
+		ChainHeight:     chainHeight,
+		ChainKernelHash: chainKernelHash,
 	}
 
 	tx := &transaction.Transaction{
@@ -559,7 +559,7 @@ func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[strin
 		TransactionBaseInterface: txBase,
 	}
 
-	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, chainHeight, chainHash, publicKeyIndexes, ctx, statusCallback); err != nil {
+	if err = signZetherTx(tx, txBase, transfers, emap, rings, fees, chainHeight, chainKernelHash, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return
 	}
 	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {

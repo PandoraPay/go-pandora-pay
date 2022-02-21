@@ -74,9 +74,9 @@ type json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity struct {
 }
 
 type json_Only_TransactionZether struct {
-	ChainHeight uint64                          `json:"chainHeight"  msgpack:"chainHeight"`
-	ChainHash   []byte                          `json:"chainHash"  msgpack:"chainHash"`
-	Payloads    []*json_Only_TransactionPayload `json:"payloads"  msgpack:"payloads"`
+	ChainHeight     uint64                          `json:"chainHeight"  msgpack:"chainHeight"`
+	ChainKernelHash []byte                          `json:"chainKernelHash"  msgpack:"chainKernelHash"`
+	Payloads        []*json_Only_TransactionPayload `json:"payloads"  msgpack:"payloads"`
 }
 
 type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
@@ -288,7 +288,7 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 			txJson,
 			&json_Only_TransactionZether{
 				base.ChainHeight,
-				base.ChainHash,
+				base.ChainKernelHash,
 				payloadsJson,
 			},
 		}
@@ -544,9 +544,9 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 		}
 
 		base := &transaction_zether.TransactionZether{
-			ChainHeight: simpleZether.ChainHeight,
-			ChainHash:   simpleZether.ChainHash,
-			Payloads:    payloads,
+			ChainHeight:     simpleZether.ChainHeight,
+			ChainKernelHash: simpleZether.ChainKernelHash,
+			Payloads:        payloads,
 		}
 
 		tx.TransactionBaseInterface = base

@@ -342,11 +342,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 					newChainData.saveTotalDifficultyExtra(writer)
 
-					writer.Put("chainHash", newChainData.Hash)
-					writer.Put("chainPrevHash", newChainData.PrevHash)
-					writer.Put("chainKernelHash", newChainData.KernelHash)
-					writer.Put("chainPrevKernelHash", newChainData.PrevKernelHash)
-
 					newChainData.saveBlockchainHeight(writer)
 					if err = newChainData.saveBlockchainInfo(writer); err != nil {
 						return

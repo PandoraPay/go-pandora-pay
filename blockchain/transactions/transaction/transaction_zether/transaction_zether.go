@@ -16,10 +16,10 @@ import (
 
 type TransactionZether struct {
 	transaction_base_interface.TransactionBaseInterface
-	ChainHeight uint64
-	ChainHash   []byte
-	Payloads    []*transaction_zether_payload.TransactionZetherPayload
-	Bloom       *TransactionZetherBloom
+	ChainHeight     uint64
+	ChainKernelHash []byte
+	Payloads        []*transaction_zether_payload.TransactionZetherPayload
+	Bloom           *TransactionZetherBloom
 }
 
 /**
@@ -31,14 +31,14 @@ func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, txHash []byt
 		return fmt.Errorf("Zether ChainHeight is invalid %d > %d", tx.ChainHeight, blockHeight)
 	}
 
-	var chainHash []byte
+	var chainKernelHash []byte
 	if blockHeight > 0 {
-		chainHash = dataStorage.DBTx.Get("blockHash_ByHeight" + strconv.FormatUint(tx.ChainHeight, 10))
+		chainKernelHash = dataStorage.DBTx.Get("blockKernelHash_ByHeight" + strconv.FormatUint(tx.ChainHeight, 10))
 	} else {
-		chainHash = genesis.Genesis.PrevHash
+		chainKernelHash = genesis.Genesis.PrevKernelHash
 	}
 
-	if !bytes.Equal(chainHash, tx.ChainHash) {
+	if !bytes.Equal(chainKernelHash, tx.ChainKernelHash) {
 		return errors.New("Zether ChainHash is invalid")
 	}
 
@@ -102,7 +102,7 @@ func (tx *TransactionZether) VerifySignatureManually(txHash []byte) bool {
 
 	assetMap := map[string]int{}
 	for _, payload := range tx.Payloads {
-		if payload.Proof.Verify(payload.Asset, assetMap[string(payload.Asset)], tx.ChainHash, payload.Statement, txHash, payload.BurnValue) == false {
+		if payload.Proof.Verify(payload.Asset, assetMap[string(payload.Asset)], tx.ChainKernelHash, payload.Statement, txHash, payload.BurnValue) == false {
 			return false
 		}
 		assetMap[string(payload.Asset)] = assetMap[string(payload.Asset)] + 1
@@ -113,7 +113,7 @@ func (tx *TransactionZether) VerifySignatureManually(txHash []byte) bool {
 
 func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(tx.ChainHeight)
-	w.Write(tx.ChainHash)
+	w.Write(tx.ChainKernelHash)
 
 	w.WriteByte(byte(len(tx.Payloads)))
 	for _, payload := range tx.Payloads {
@@ -132,7 +132,7 @@ func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 
-	if tx.ChainHash, err = r.ReadBytes(cryptography.HashSize); err != nil {
+	if tx.ChainKernelHash, err = r.ReadBytes(cryptography.HashSize); err != nil {
 		return
 	}
 

@@ -62,6 +62,9 @@ func (chainData *BlockchainData) saveBlockchainHeight(writer store_db_interface.
 	n := binary.PutUvarint(buf, chainData.Height)
 	writer.Put("chainHeight", buf[:n])
 	writer.Put("chainHash", chainData.Hash)
+	writer.Put("chainPrevHash", chainData.PrevHash)
+	writer.Put("chainKernelHash", chainData.KernelHash)
+	writer.Put("chainPrevKernelHash", chainData.PrevKernelHash)
 }
 
 func (chainData *BlockchainData) saveBlockchainInfo(writer store_db_interface.StoreDBTransactionInterface) (err error) {
