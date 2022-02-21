@@ -70,7 +70,7 @@ func (payloadExtra *TransactionZetherPayloadExtraStakingReward) Validate(payload
 		return errors.New("Payload burn value must be zero")
 	}
 
-	if payloadExtra.Reward > 0 {
+	if payloadExtra.Reward == 0 {
 		return errors.New("Payload reward must be greater than zero")
 	}
 

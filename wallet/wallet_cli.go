@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/binary"
@@ -12,6 +13,7 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/accounts/account/dpos"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
@@ -65,9 +67,10 @@ func (wallet *Wallet) deriveDelegatedStakeSpendKey(addr *wallet_address.WalletAd
 func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err error) {
 
 	type AddressAsset struct {
-		balance *crypto.ElGamal
-		assetId []byte
-		ast     *asset.Asset
+		balance        *crypto.ElGamal
+		assetId        []byte
+		ast            *asset.Asset
+		delegatedStake *dpos.DelegatedStake
 	}
 	type Address struct {
 		isReg         bool
@@ -136,6 +139,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 						acc.Balance.Amount,
 						assetId,
 						ast,
+						acc.DelegatedStake,
 					})
 
 				}
@@ -162,38 +166,6 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 		if addresses[i].plainAcc != nil {
 
 			//gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Unclaimed", strconv.FormatFloat(config_coins.ConvertToBase(addresses[i].plainAcc.Unclaimed), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
-			//if addresses[i].plainAcc.DelegatedStake.HasDelegatedStake() {
-			//	gui.GUI.OutputWrite(fmt.Sprintf("%18s: %64s", "STAKE AVAILABLE ENCRYPTED", base64.StdEncoding.EncodeToString(addresses[i].plainAcc.DelegatedStake.Balance.Amount.Serialize())))
-			//
-			//	if len(addresses[i].plainAcc.DelegatedStake.StakesPending) > 0 {
-			//		for _, stakePending := range addresses[i].plainAcc.DelegatedStake.StakesPending {
-			//			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %64s", "STAKE PENDING ENCRYPTED", strconv.FormatUint(stakePending.ActivationHeight, 10), base64.StdEncoding.EncodeToString(stakePending.PendingAmount.Amount.Serialize())))
-			//		}
-			//	} else {
-			//		gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "PENDING STAKES:", "EMPTY"))
-			//	}
-			//
-			//	gui.GUI.OutputWrite(fmt.Sprintf("%18s", "Decrypting...."))
-			//
-			//	if decrypted, err = wallet.DecryptBalanceByPublicKey(address.publicKey, addresses[i].plainAcc.DelegatedStake.Balance.Amount.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, true, true, ctx, func(status string) {
-			//		gui.GUI.Info2Update("Decrypted", status)
-			//	}); err != nil {
-			//		return
-			//	}
-			//
-			//	gui.GUI.OutputWrite(fmt.Sprintf("%18s: %18s", "STAKE AVAILABLE", strconv.FormatFloat(config_coins.ConvertToBase(decrypted), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
-			//	for _, stakePending := range addresses[i].plainAcc.DelegatedStake.StakesPending {
-			//
-			//		if decrypted, err = wallet.DecryptBalanceByPublicKey(address.publicKey, stakePending.PendingAmount.Amount.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, false, true, ctx, func(status string) {
-			//			gui.GUI.Info2Update("Decrypted", status)
-			//		}); err != nil {
-			//			return
-			//		}
-			//
-			//		gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %18s", "STAKE PENDING", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatFloat(config_coins.ConvertToBase(decrypted), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
-			//	}
-			//
-			//}
 
 			if addresses[i].plainAcc.AssetFeeLiquidities.HasAssetFeeLiquidities() {
 
@@ -213,6 +185,14 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %64s", data.ast.Name, base64.StdEncoding.EncodeToString(data.balance.Serialize())))
 			}
 
+			for _, data := range addresses[i].assetsList {
+				if bytes.Equal(data.assetId, config_coins.NATIVE_ASSET_FULL) && data.delegatedStake.HasDelegatedStake() && len(data.delegatedStake.StakesPending) > 0 {
+					for _, stakePending := range data.delegatedStake.StakesPending {
+						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %64s", "STAKE PENDING ENCRYPTED", strconv.FormatUint(stakePending.ActivationHeight, 10), base64.StdEncoding.EncodeToString(stakePending.PendingAmount.Amount.Serialize())))
+					}
+				}
+			}
+
 			gui.GUI.OutputWrite(fmt.Sprintf("%18s", "Decrypting...."))
 
 			for _, data := range addresses[i].assetsList {
@@ -225,6 +205,21 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 				}
 
 				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %18s", data.ast.Name, strconv.FormatFloat(config_coins.ConvertToBase(decrypted), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
+			}
+
+			for _, data := range addresses[i].assetsList {
+				if bytes.Equal(data.assetId, config_coins.NATIVE_ASSET_FULL) && data.delegatedStake.HasDelegatedStake() && len(data.delegatedStake.StakesPending) > 0 {
+					for _, stakePending := range data.delegatedStake.StakesPending {
+
+						if decrypted, err = wallet.DecryptBalanceByPublicKey(address.publicKey, stakePending.PendingAmount.Amount.Serialize(), data.assetId, false, 0, false, true, ctx, func(status string) {
+							gui.GUI.Info2Update("Decrypted", status)
+						}); err != nil {
+							return
+						}
+
+						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %18s", "PENDING STAKE", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatFloat(config_coins.ConvertToBase(decrypted), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
+					}
+				}
 			}
 
 		}

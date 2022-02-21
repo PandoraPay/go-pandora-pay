@@ -78,7 +78,7 @@ func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 
 	if account.DelegatedStake != nil {
-		return account.Deserialize(r)
+		return account.DelegatedStake.Deserialize(r)
 	}
 
 	return
@@ -105,6 +105,7 @@ func NewAccount(publicKey []byte, index uint64, asset []byte) (*Account, error) 
 
 	acc := &Account{
 		PublicKey: publicKey,
+		Version:   0,
 		Asset:     asset,
 		Index:     index,
 		Balance:   balance,
@@ -120,6 +121,7 @@ func NewAccount(publicKey []byte, index uint64, asset []byte) (*Account, error) 
 func NewAccountClear(publicKey []byte, index uint64, asset []byte) (*Account, error) {
 	acc := &Account{
 		PublicKey: publicKey,
+		Version:   0,
 		Asset:     asset,
 		Index:     index,
 		Balance:   &account_balance_homomorphic.BalanceHomomorphic{nil, nil},

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"math/rand"
 	"pandora-pay/addresses"
+	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -14,6 +15,7 @@ import (
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/config_coins"
+	"pandora-pay/config/config_reward"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -389,7 +391,7 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, chainHeight, chainHash, publicKeyIndexes, feesFinal, validateTx, ctx, statusCallback); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, chainHeight-1, chainHash, publicKeyIndexes, feesFinal, validateTx, ctx, statusCallback); err != nil {
 		return nil, err
 	}
 
@@ -397,6 +399,53 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 		if err = builder.mempool.AddTxToMempool(tx, chainHeight, true, awaitAnswer, awaitBroadcast, advanced_connection_types.UUID_ALL, ctx); err != nil {
 			return nil, err
 		}
+	}
+
+	return tx, nil
+}
+
+func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete.BlockComplete, forgerPublicKey []byte) (*transaction.Transaction, error) {
+
+	forger, err := addresses.CreateAddr(forgerPublicKey, nil, nil, 0, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	reward := config_reward.GetRewardAt(blkComplete.Height)
+
+	builder.lock.Lock()
+	defer builder.lock.Unlock()
+
+	//reward
+	txData := &TxBuilderCreateZetherTxData{
+		Payloads: []*TxBuilderCreateZetherTxPayload{
+			{
+				"",
+				config_coins.NATIVE_ASSET_FULL,
+				reward,
+				forger.EncodeAddr(),
+				0,
+				&ZetherRingConfiguration{2, 0, nil},
+				nil,
+				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
+				&wizard.WizardZetherPayloadExtraStakingReward{nil, reward},
+			},
+		},
+	}
+
+	transfers, emap, ringMembers, publicKeyIndexes, _, _, err := builder.prebuild(txData, context.Background(), func(string) {})
+	if err != nil {
+		return nil, err
+	}
+
+	feesFinal := make([]*wizard.WizardTransactionFee, len(txData.Payloads))
+	for t, payload := range txData.Payloads {
+		feesFinal[t] = payload.Fee.WizardTransactionFee
+	}
+
+	var tx *transaction.Transaction
+	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, blkComplete.Height-1, blkComplete.PrevHash, publicKeyIndexes, feesFinal, false, context.Background(), func(string) {}); err != nil {
+		return nil, err
 	}
 
 	return tx, nil

@@ -141,8 +141,8 @@ func (testnet *Testnet) run() {
 		}
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	//ctx, cancel := context.WithCancel(context.Background())
+	//defer cancel()
 
 	for {
 
@@ -160,16 +160,16 @@ func (testnet *Testnet) run() {
 
 			if err := func() (err error) {
 
-				if blockHeight == 20 {
-					if _, err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*config_stake.GetRequiredStake(blockHeight), ctx); err != nil {
-						return
-					}
-				}
-				if blockHeight == 100 {
-					if _, err = testnet.testnetCreateTransfersNewWallets(blockHeight, ctx); err != nil {
-						return
-					}
-				}
+				//if blockHeight == 20 {
+				//	if _, err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*config_stake.GetRequiredStake(blockHeight), ctx); err != nil {
+				//		return
+				//	}
+				//}
+				//if blockHeight == 100 {
+				//	if _, err = testnet.testnetCreateTransfersNewWallets(blockHeight, ctx); err != nil {
+				//		return
+				//	}
+				//}
 
 				if blockHeight >= 40 && syncTime != 0 {
 					//

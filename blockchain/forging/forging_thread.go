@@ -3,6 +3,7 @@ package forging
 import (
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/forging/forging_block_work"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -14,13 +15,14 @@ import (
 )
 
 type ForgingThread struct {
-	mempool            *mempool.Mempool
-	threads            int                                    //number of threads
-	solutionCn         chan<- *block_complete.BlockComplete   //broadcasting that a solution thread was received
-	nextBlockCreatedCn <-chan *forging_block_work.ForgingWork //detect if a new work was published
-	workers            []*ForgingWorkerThread
-	workersCreatedCn   chan []*ForgingWorkerThread
-	workersDestroyedCn chan struct{}
+	mempool                   *mempool.Mempool
+	threads                   int                                    //number of threads
+	solutionCn                chan<- *block_complete.BlockComplete   //broadcasting that a solution thread was received
+	nextBlockCreatedCn        <-chan *forging_block_work.ForgingWork //detect if a new work was published
+	workers                   []*ForgingWorkerThread
+	workersCreatedCn          chan []*ForgingWorkerThread
+	workersDestroyedCn        chan struct{}
+	createForgingTransactions func(*block_complete.BlockComplete, []byte) (*transaction.Transaction, error)
 }
 
 func (thread *ForgingThread) stopForging() {
@@ -99,7 +101,16 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 
 	newBlk.Block.StakingAmount = solution.stakingAmount
 
-	newBlk.Txs, _ = thread.mempool.GetNextTransactionsToInclude(newBlk.Block.PrevHash)
+	txs, _ := thread.mempool.GetNextTransactionsToInclude(newBlk.Block.PrevHash)
+
+	txReward, err := thread.createForgingTransactions(newBlk, solution.address.publicKey)
+
+	if err != nil {
+		return
+	}
+	newBlk.Txs = []*transaction.Transaction{txReward}
+	newBlk.Txs = append(newBlk.Txs, txs...)
+
 	newBlk.Block.MerkleHash = newBlk.MerkleHash()
 	newBlk.Block.StakingFee = config_nodes.DELEGATOR_FEE
 
@@ -114,7 +125,7 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 	return
 }
 
-func createForgingThread(threads int, mempool *mempool.Mempool, solutionCn chan<- *block_complete.BlockComplete, nextBlockCreatedCn <-chan *forging_block_work.ForgingWork) *ForgingThread {
+func createForgingThread(threads int, createForgingTransactions func(*block_complete.BlockComplete, []byte) (*transaction.Transaction, error), mempool *mempool.Mempool, solutionCn chan<- *block_complete.BlockComplete, nextBlockCreatedCn <-chan *forging_block_work.ForgingWork) *ForgingThread {
 	return &ForgingThread{
 		mempool,
 		threads,
@@ -123,5 +134,6 @@ func createForgingThread(threads int, mempool *mempool.Mempool, solutionCn chan<
 		[]*ForgingWorkerThread{},
 		make(chan []*ForgingWorkerThread),
 		make(chan struct{}),
+		createForgingTransactions,
 	}
 }

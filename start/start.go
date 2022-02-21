@@ -66,8 +66,6 @@ func _startMain() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
 
-	app.Forging.InitializeForging(app.Chain.NextBlockCreatedCn, app.Chain.UpdateAccounts, app.Chain.ForgingSolutionCn)
-
 	if app.Wallet, err = wallet.CreateWallet(app.Forging, app.Mempool); err != nil {
 		return
 	}
@@ -93,13 +91,8 @@ func _startMain() (err error) {
 	}
 
 	app.Wallet.InitializeWallet(app.Chain.UpdateAccounts, app.Chain.UpdatePlainAccounts)
-
 	if err = app.Wallet.StartWallet(); err != nil {
 		return
-	}
-
-	if config_forging.FORGING_ENABLED {
-		app.Forging.StartForging()
 	}
 
 	if app.Settings, err = settings.SettingsInit(); err != nil {
@@ -109,6 +102,12 @@ func _startMain() (err error) {
 
 	app.TxsBuilder = txs_builder.TxsBuilderInit(app.Wallet, app.Mempool)
 	globals.MainEvents.BroadcastEvent("main", "transactions builder initialized")
+
+	app.Forging.InitializeForging(app.TxsBuilder.CreateForgingTransactions, app.Chain.NextBlockCreatedCn, app.Chain.UpdateAccounts, app.Chain.ForgingSolutionCn)
+
+	if config_forging.FORGING_ENABLED {
+		app.Forging.StartForging()
+	}
 
 	app.Chain.InitForging()
 
