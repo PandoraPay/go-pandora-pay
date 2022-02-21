@@ -137,23 +137,43 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 			}
 		}
 
-		//in case it must be the pending...
-		if (i%2 == 1) == payload.Parity && bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && acc.DelegatedStake.HasDelegatedStake() {
-			if err = acc.DelegatedStake.AddStakePendingStake(echanges, blockHeight); err != nil {
-				return
-			}
-		} else {
-			acc.Balance.Amount = balance
-		}
+		/**
+		STAKING will not update any account
+		REWARD will not update any sender account
+		*/
+		if payload.PayloadScript != SCRIPT_STAKING {
 
-		if err = accs.Update(string(publicKey), acc); err != nil {
-			return
+			//Recipient, in case it is delegated it must be a pending stake
+			update := false
+			if (i%2 == 0) == payload.Parity { //sender
+				if payload.PayloadScript != SCRIPT_STAKING_REWARD {
+					acc.Balance.Amount = balance
+					update = true
+				}
+			} else { //recipient
+				if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && acc.DelegatedStake.HasDelegatedStake() {
+					if err = acc.DelegatedStake.AddStakePendingStake(echanges, blockHeight); err != nil {
+						return
+					}
+					update = true
+				} else {
+					acc.Balance.Amount = balance
+					update = true
+				}
+			}
+
+			if update {
+				if err = accs.Update(string(publicKey), acc); err != nil {
+					return
+				}
+			}
+
 		}
 
 	}
 
 	if payload.Extra != nil {
-		if err = payload.Extra.IncludeTxPayload(txHash, payload.Registrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement, publicKeyList, blockHeight, dataStorage); err != nil {
+		if err = payload.Extra.AfterIncludeTxPayload(txHash, payload.Registrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement, publicKeyList, blockHeight, dataStorage); err != nil {
 			return
 		}
 	}

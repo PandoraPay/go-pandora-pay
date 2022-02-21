@@ -43,7 +43,7 @@ func (payloadExtra *TransactionZetherPayloadExtraStakingReward) BeforeIncludeTxP
 	return accs.Update(string(newAccountPublicKey), tempAcc)
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraStakingReward) IncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraStakingReward) AfterIncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	newAccountPublicKey := publicKeyList[payloadExtra.TemporaryAccountRegistrationIndex]
 
@@ -98,12 +98,9 @@ func (payloadExtra *TransactionZetherPayloadExtraStakingReward) Deserialize(r *h
 
 func (payloadExtra *TransactionZetherPayloadExtraStakingReward) UpdateStatement(payloadStatement *crypto.Statement) (err error) {
 
-	serialized := append(payloadStatement.CLn[payloadExtra.TemporaryAccountRegistrationIndex].EncodeCompressed(), payloadStatement.CRn[payloadExtra.TemporaryAccountRegistrationIndex].EncodeCompressed()...)
-
-	var balance *crypto.ElGamal
-	if balance, err = new(crypto.ElGamal).Deserialize(serialized); err != nil {
-		return
-	}
+	balance := new(crypto.ElGamal)
+	balance.Left.Set(payloadStatement.CLn[payloadExtra.TemporaryAccountRegistrationIndex])
+	balance.Right.Set(payloadStatement.CRn[payloadExtra.TemporaryAccountRegistrationIndex])
 
 	balance = balance.Plus(new(big.Int).SetUint64(payloadExtra.Reward))
 

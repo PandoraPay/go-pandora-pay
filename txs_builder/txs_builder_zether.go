@@ -95,10 +95,19 @@ func (builder *TxsBuilder) createZetherRing(sender string, recipient *string, as
 	alreadyUsed[string(addr.PublicKey)] = true
 
 	if *recipient == "" {
-		if addr, err = builder.getRandomAccount(accs); err != nil {
-			return nil, err
+		if accs.Count == 1 {
+			return nil, errors.New("Accounts have only member. Impossible to get random recipient")
 		}
-		*recipient = addr.EncodeAddr()
+		for {
+			if addr, err = builder.getRandomAccount(accs); err != nil {
+				return nil, err
+			}
+			if alreadyUsed[string(addr.PublicKey)] {
+				continue
+			}
+			*recipient = addr.EncodeAddr()
+			break
+		}
 	}
 
 	if addr, err = addresses.DecodeAddr(*recipient); err != nil {
@@ -419,6 +428,17 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 	//reward
 	txData := &TxBuilderCreateZetherTxData{
 		Payloads: []*TxBuilderCreateZetherTxPayload{
+			{
+				forger.EncodeAddr(),
+				config_coins.NATIVE_ASSET_FULL,
+				0,
+				"",
+				blkComplete.StakingAmount,
+				&ZetherRingConfiguration{2, 0, nil},
+				nil,
+				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
+				&wizard.WizardZetherPayloadExtraStaking{},
+			},
 			{
 				"",
 				config_coins.NATIVE_ASSET_FULL,

@@ -28,7 +28,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) GetAssetId(txHash 
 	return cryptography.RIPEMD(cryptography.SHA3(list.Bytes()))
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) IncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) AfterIncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	hash := payloadExtra.GetAssetId(txHash, payloadIndex)
 

@@ -35,7 +35,7 @@ func (accounts *Accounts) GetAccount(key []byte, blockHeight uint64) (*account.A
 	}
 
 	acc := data.(*account.Account)
-	acc.RefreshDelegatedStake(blockHeight)
+	acc.RolloverDelegatedStakes(blockHeight)
 
 	return acc, nil
 }

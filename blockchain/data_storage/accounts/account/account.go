@@ -84,7 +84,7 @@ func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 	return
 }
 
-func (account *Account) RefreshDelegatedStake(blockHeight uint64) {
+func (account *Account) RolloverDelegatedStakes(blockHeight uint64) {
 	if account.DelegatedStake != nil && account.DelegatedStake.HasDelegatedStake() {
 		for i := len(account.DelegatedStake.StakesPending) - 1; i >= 0; i-- {
 			stakePending := account.DelegatedStake.StakesPending[i]

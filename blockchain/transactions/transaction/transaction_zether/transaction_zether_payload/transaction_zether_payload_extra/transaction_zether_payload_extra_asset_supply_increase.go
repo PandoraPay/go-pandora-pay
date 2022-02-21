@@ -24,7 +24,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) BeforeIncl
 	return
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) IncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) AfterIncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	ast, err := dataStorage.Asts.GetAsset(payloadExtra.AssetId)
 	if err != nil {
