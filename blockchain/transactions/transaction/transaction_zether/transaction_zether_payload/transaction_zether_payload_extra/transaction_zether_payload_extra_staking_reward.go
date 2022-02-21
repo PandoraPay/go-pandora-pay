@@ -5,8 +5,7 @@ import (
 	"errors"
 	"math/big"
 	"pandora-pay/blockchain/data_storage"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/dpos"
+	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/config/config_coins"
@@ -29,22 +28,31 @@ func (payloadExtra *TransactionZetherPayloadExtraStakingReward) BeforeIncludeTxP
 
 	newAccountPublicKey := publicKeyList[payloadExtra.TemporaryAccountRegistrationIndex]
 
-	var tempAcc *plain_account.PlainAccount
-	if tempAcc, err = dataStorage.PlainAccs.GetPlainAccount(newAccountPublicKey, blockHeight); err != nil {
+	accs, err := dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL)
+	if err != nil {
 		return
 	}
 
-	tempAcc.DelegatedStake.Version = dpos.STAKING
-	tempAcc.DelegatedStake.Balance.AddBalanceUint(payloadExtra.Reward)
+	var tempAcc *account.Account
+	if tempAcc, err = accs.GetAccount(newAccountPublicKey, blockHeight); err != nil {
+		return
+	}
 
-	return dataStorage.PlainAccs.Update(string(newAccountPublicKey), tempAcc)
+	tempAcc.Balance.AddBalanceUint(payloadExtra.Reward)
+
+	return accs.Update(string(newAccountPublicKey), tempAcc)
 }
 
 func (payloadExtra *TransactionZetherPayloadExtraStakingReward) IncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 
 	newAccountPublicKey := publicKeyList[payloadExtra.TemporaryAccountRegistrationIndex]
 
-	dataStorage.PlainAccs.Delete(string(newAccountPublicKey))
+	accs, err := dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL)
+	if err != nil {
+		return
+	}
+
+	accs.Delete(string(newAccountPublicKey))
 	dataStorage.Regs.Delete(string(newAccountPublicKey))
 
 	return

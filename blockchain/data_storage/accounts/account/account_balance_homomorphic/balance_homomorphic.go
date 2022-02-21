@@ -1,4 +1,4 @@
-package account
+package account_balance_homomorphic
 
 import (
 	"encoding/json"

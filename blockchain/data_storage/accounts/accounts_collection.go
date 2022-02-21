@@ -45,6 +45,13 @@ func (collection *AccountsCollection) GetMap(assetId []byte) (*Accounts, error) 
 	return accs, nil
 }
 
+func (collection *AccountsCollection) GetOnlyMap(assetId []byte) (*Accounts, error) {
+	if len(assetId) != config_coins.ASSET_LENGTH {
+		return nil, errors.New("Asset was not found")
+	}
+	return collection.accsMap[string(assetId)], nil
+}
+
 func (collection *AccountsCollection) GetAccountAssetsCount(key []byte) (uint64, error) {
 
 	data := collection.tx.Get("accounts:assetsCount:" + string(key))

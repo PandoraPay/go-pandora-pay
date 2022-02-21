@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/tyler-smith/go-bip39"
 	"math"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
@@ -62,24 +62,30 @@ func (wallet *Wallet) updateWallet() {
 }
 
 //it must be locked and use original walletAddresses, not cloned ones
-func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAccount, chainHeight uint64, addr *wallet_address.WalletAddress) (err error) {
+func (wallet *Wallet) refreshWalletAccount(acc *account.Account, chainHeight uint64, addr *wallet_address.WalletAddress) (err error) {
 
 	deleted := false
 
-	if plainAcc == nil || !plainAcc.DelegatedStake.HasDelegatedStake() {
+	if acc == nil || !acc.DelegatedStake.HasDelegatedStake() {
 		deleted = true
 	} else {
-		stakingAmountBalance, _ := plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(math.MaxUint64)
-		stakingAmount, _ := wallet.DecryptBalanceByPublicKey(addr.PublicKey, stakingAmountBalance.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, true, true, context.Background(), func(string) {})
+
+		stakingAmountBalance := acc.DelegatedStake.ComputeDelegatedStakeAvailable(acc.Balance.Amount, math.MaxUint64)
+
+		var stakingAmount uint64
+		if stakingAmountBalance != nil {
+			stakingAmount, _ = wallet.DecryptBalanceByPublicKey(addr.PublicKey, stakingAmountBalance.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, false, true, context.Background(), func(string) {})
+		}
 
 		if stakingAmount < config_stake.GetRequiredStake(chainHeight) {
 			deleted = true
 		}
+
 	}
 
 	if deleted {
 
-		wallet.forging.Wallet.RemoveWallet(addr.PublicKey, true, plainAcc, chainHeight)
+		wallet.forging.Wallet.RemoveWallet(addr.PublicKey, true, acc, chainHeight)
 
 		if addr.PrivateKey == nil {
 			_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, true)
@@ -87,7 +93,7 @@ func (wallet *Wallet) refreshWalletPlainAccount(plainAcc *plain_account.PlainAcc
 		}
 
 	} else {
-		wallet.forging.Wallet.AddWallet(addr.PrivateKey.Key, addr.PublicKey, true, plainAcc, chainHeight)
+		wallet.forging.Wallet.AddWallet(addr.PrivateKey.Key, addr.PublicKey, true, acc, chainHeight)
 	}
 
 	return

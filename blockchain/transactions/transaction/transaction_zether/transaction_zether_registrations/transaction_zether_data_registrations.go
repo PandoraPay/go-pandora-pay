@@ -33,7 +33,7 @@ func (self *TransactionZetherDataRegistrations) ValidateRegistrations(publickeyl
 	return
 }
 
-func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataStorage *data_storage.DataStorage, publicKeyList [][]byte) (err error) {
+func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataStorage *data_storage.DataStorage, publicKeyList [][]byte, blockHeight uint64) (err error) {
 
 	for i, reg := range self.Registrations {
 		if reg != nil {
@@ -49,7 +49,7 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataSt
 				return
 			}
 		} else {
-			if _, _, err = dataStorage.GetOrCreateAccount(asset, publicKeyList[i], true); err != nil {
+			if _, _, err = dataStorage.GetOrCreateAccount(asset, publicKeyList[i], blockHeight, true); err != nil {
 				return
 			}
 		}

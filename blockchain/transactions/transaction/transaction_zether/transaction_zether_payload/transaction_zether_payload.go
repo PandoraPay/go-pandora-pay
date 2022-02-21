@@ -78,7 +78,7 @@ func (payload *TransactionZetherPayload) processAssetFee(assetId []byte, txFee, 
 		return
 	}
 
-	accs, acc, err := dataStorage.GetOrCreateAccount(assetId, plainAcc.AssetFeeLiquidities.Collector, true)
+	accs, acc, err := dataStorage.GetOrCreateAccount(assetId, plainAcc.AssetFeeLiquidities.Collector, blockHeight, true)
 	if err != nil {
 		return
 	}
@@ -99,7 +99,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		}
 	}
 
-	if err = payload.Registrations.RegisterNow(payload.Asset, dataStorage, publicKeyList); err != nil {
+	if err = payload.Registrations.RegisterNow(payload.Asset, dataStorage, publicKeyList, blockHeight); err != nil {
 		return
 	}
 
@@ -118,7 +118,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 	}
 
 	for i, publicKey := range publicKeyList {
-		if acc, err = accs.GetAccount(publicKey); err != nil {
+		if acc, err = accs.GetAccount(publicKey, blockHeight); err != nil {
 			return
 		}
 

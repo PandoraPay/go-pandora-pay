@@ -92,7 +92,7 @@ func (api *APICommon) GetWalletBalances(r *http.Request, args *APIWalletGetBalan
 				if accs, err = dataStorage.AccsCollection.GetMap(assetId); err != nil {
 					return
 				}
-				if acc, err = accs.GetAccount(walletAddresses[i].PublicKey); err != nil {
+				if acc, err = accs.GetAccount(walletAddresses[i].PublicKey, chainHeight); err != nil {
 					return
 				}
 

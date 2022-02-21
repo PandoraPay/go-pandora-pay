@@ -25,7 +25,7 @@ type DataStorage struct {
 	AstsFeeLiquidityCollection *assets.AssetsFeeLiquidityCollection
 }
 
-func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
+func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, blockHeight uint64, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
 
 	if validateRegistration {
 		exists, err := dataStorage.Regs.Exists(string(publicKey))
@@ -42,7 +42,7 @@ func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, va
 		return nil, nil, err
 	}
 
-	acc, err := accs.GetAccount(publicKey)
+	acc, err := accs.GetAccount(publicKey, blockHeight)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -110,8 +110,8 @@ func (dataStorage *DataStorage) CreatePlainAccount(publicKey []byte, validateReg
 		if err != nil {
 			return nil, err
 		}
-		if !exists {
-			return nil, errors.New("PlainAccount must have been registered before")
+		if exists {
+			return nil, errors.New("PlainAccount should not have been registered before")
 		}
 	}
 

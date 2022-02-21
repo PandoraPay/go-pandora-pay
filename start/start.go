@@ -66,7 +66,7 @@ func _startMain() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
 
-	app.Forging.InitializeForging(app.Chain.NextBlockCreatedCn, app.Chain.UpdatePlainAccounts, app.Chain.ForgingSolutionCn)
+	app.Forging.InitializeForging(app.Chain.NextBlockCreatedCn, app.Chain.UpdateAccounts, app.Chain.ForgingSolutionCn)
 
 	if app.Wallet, err = wallet.CreateWallet(app.Forging, app.Mempool); err != nil {
 		return

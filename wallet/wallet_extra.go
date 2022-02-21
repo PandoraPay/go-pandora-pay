@@ -2,8 +2,10 @@ package wallet
 
 import (
 	"encoding/binary"
-	"pandora-pay/blockchain/data_storage/plain_accounts"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/gui"
 	"pandora-pay/recovery"
@@ -22,7 +24,7 @@ func (wallet *Wallet) processRefreshWallets() {
 
 			if config_forging.FORGING_ENABLED {
 
-				plainAccList := []*plain_account.PlainAccount{}
+				accsList := []*account.Account{}
 				addressesList := []*wallet_address.WalletAddress{}
 				var chainHeight uint64
 
@@ -30,7 +32,12 @@ func (wallet *Wallet) processRefreshWallets() {
 
 					chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 
-					plainAccs := plain_accounts.NewPlainAccounts(reader)
+					dataStorage := data_storage.NewDataStorage(reader)
+
+					var accs *accounts.Accounts
+					if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
+						return
+					}
 
 					visited := make(map[string]bool)
 					for i := 0; i < 50; i++ {
@@ -40,12 +47,12 @@ func (wallet *Wallet) processRefreshWallets() {
 						}
 						visited[string(addr.PublicKey)] = true
 
-						var plainAcc *plain_account.PlainAccount
-						if plainAcc, err = plainAccs.GetPlainAccount(addr.PublicKey, chainHeight); err != nil {
+						var acc *account.Account
+						if acc, err = accs.GetAccount(addr.PublicKey, chainHeight); err != nil {
 							return
 						}
 
-						plainAccList = append(plainAccList, plainAcc)
+						accsList = append(accsList, acc)
 						addressesList = append(addressesList, addr)
 					}
 
@@ -54,8 +61,8 @@ func (wallet *Wallet) processRefreshWallets() {
 					gui.GUI.Error("Error processRefreshWallets", err)
 				}
 
-				for i, plainAccount := range plainAccList {
-					if err = wallet.refreshWalletPlainAccount(plainAccount, chainHeight, wallet.GetWalletAddressByPublicKey(addressesList[i].PublicKey, true)); err != nil {
+				for i, acc := range accsList {
+					if err = wallet.refreshWalletAccount(acc, chainHeight, wallet.GetWalletAddressByPublicKey(addressesList[i].PublicKey, true)); err != nil {
 						return
 					}
 				}

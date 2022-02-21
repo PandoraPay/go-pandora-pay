@@ -4,8 +4,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/data_storage/plain_accounts"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
@@ -18,7 +20,7 @@ type ForgingWallet struct {
 	addressesMap          map[string]*ForgingWalletAddress
 	workersAddresses      []int
 	workers               []*ForgingWorkerThread
-	updatePlainAccounts   *multicast.MulticastChannel[*plain_accounts.PlainAccounts]
+	updateAccounts        *multicast.MulticastChannel[*accounts.AccountsCollection]
 	updateWalletAddressCn chan *ForgingWalletAddressUpdate
 	workersCreatedCn      <-chan []*ForgingWorkerThread
 	workersDestroyedCn    <-chan struct{}
@@ -29,23 +31,29 @@ type ForgingWalletAddressUpdate struct {
 	chainHeight uint64
 	privateKey  []byte
 	publicKey   []byte
-	plainAcc    *plain_account.PlainAccount
+	account     *account.Account
 }
 
-func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasPlainAcc bool, plainAcc *plain_account.PlainAccount, chainHeight uint64) (err error) {
+func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasAccount bool, account *account.Account, chainHeight uint64) (err error) {
 
 	if !config_forging.FORGING_ENABLED {
 		return
 	}
 
-	if !hasPlainAcc {
+	if !hasAccount {
 
 		//let's read the balance
 		if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 			chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
-			plainAccs := plain_accounts.NewPlainAccounts(reader)
-			if plainAcc, err = plainAccs.GetPlainAccount(pubKey, chainHeight); err != nil {
+			dataStorage := data_storage.NewDataStorage(reader)
+
+			var accs *accounts.Accounts
+			if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
+				return
+			}
+
+			if account, err = accs.GetAccount(pubKey, chainHeight); err != nil {
 				return
 			}
 
@@ -60,13 +68,13 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasPlainA
 		chainHeight,
 		delegatedPriv,
 		pubKey,
-		plainAcc,
+		account,
 	}
 	return
 }
 
-func (w *ForgingWallet) RemoveWallet(DelegatedStakePublicKey []byte, hasPlainAcc bool, plainAcc *plain_account.PlainAccount, chainHeight uint64) { //20 byte
-	w.AddWallet(nil, DelegatedStakePublicKey, hasPlainAcc, plainAcc, chainHeight)
+func (w *ForgingWallet) RemoveWallet(DelegatedStakePublicKey []byte, hasAccount bool, acc *account.Account, chainHeight uint64) { //20 byte
+	w.AddWallet(nil, DelegatedStakePublicKey, hasAccount, acc, chainHeight)
 }
 
 func (w *ForgingWallet) updateAccountToForgingWorkers(addr *ForgingWalletAddress) {
@@ -118,8 +126,8 @@ func (w *ForgingWallet) processUpdates() {
 
 	var err error
 
-	updatePlainAccountsCn := w.updatePlainAccounts.AddListener()
-	defer w.updatePlainAccounts.RemoveChannel(updatePlainAccountsCn)
+	updateAccountsCn := w.updateAccounts.AddListener()
+	defer w.updateAccounts.RemoveChannel(updateAccountsCn)
 
 	for {
 		select {
@@ -152,15 +160,13 @@ func (w *ForgingWallet) processUpdates() {
 				w.removeAccountFromForgingWorkers(key)
 			} else {
 
-				plainAcc := update.plainAcc
-
 				if err = func() (err error) {
 
-					if plainAcc == nil {
-						return errors.New("Plain Account was not found")
+					if update.account == nil {
+						return errors.New("Account was not found")
 					}
 
-					if !plainAcc.DelegatedStake.HasDelegatedStake() {
+					if !update.account.DelegatedStake.HasDelegatedStake() {
 						return errors.New("Delegated stake is not matching")
 					}
 
@@ -174,12 +180,12 @@ func (w *ForgingWallet) processUpdates() {
 							keyPoint.BigInt(),
 							update.publicKey,
 							string(update.publicKey),
-							plainAcc,
+							update.account,
 							-1,
 						}
 						w.addressesMap[key] = address
 					} else {
-						address.plainAcc = plainAcc
+						address.account = update.account
 					}
 
 					w.updateAccountToForgingWorkers(address)
@@ -191,25 +197,29 @@ func (w *ForgingWallet) processUpdates() {
 				}
 
 			}
-		case plainAccounts, ok := <-updatePlainAccountsCn:
+		case accsCollection, ok := <-updateAccountsCn:
 			if !ok {
 				return
 			}
 
-			for k, v := range plainAccounts.HashMap.Committed {
+			accs, _ := accsCollection.GetOnlyMap(config_coins.NATIVE_ASSET_FULL)
+			if accs == nil {
+				continue
+			}
+
+			for k, v := range accs.HashMap.Committed {
 				if w.addressesMap[k] != nil {
 					if v.Stored == "update" {
 
-						plainAcc := v.Element.(*plain_account.PlainAccount)
+						acc := v.Element.(*account.Account)
 
 						if err = func() (err error) {
 
-							if !plainAcc.DelegatedStake.HasDelegatedStake() {
+							if !acc.DelegatedStake.HasDelegatedStake() {
 								return errors.New("has no longer delegated stake")
 							}
 
-							w.addressesMap[k].plainAcc = plainAcc
-
+							w.addressesMap[k].account = acc
 							w.updateAccountToForgingWorkers(w.addressesMap[k])
 
 							return

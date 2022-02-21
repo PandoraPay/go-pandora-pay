@@ -3,7 +3,7 @@ package forging
 import (
 	"math/big"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage/accounts/account"
 )
 
 type ForgingWalletAddress struct {
@@ -11,7 +11,7 @@ type ForgingWalletAddress struct {
 	privateKeyPoint *big.Int
 	publicKey       []byte
 	publicKeyStr    string
-	plainAcc        *plain_account.PlainAccount
+	account         *account.Account
 	workerIndex     int
 }
 
@@ -21,7 +21,7 @@ func (walletAddr *ForgingWalletAddress) clone() *ForgingWalletAddress {
 		walletAddr.privateKeyPoint,
 		walletAddr.publicKey,
 		walletAddr.publicKeyStr,
-		walletAddr.plainAcc,
+		walletAddr.account,
 		walletAddr.workerIndex,
 	}
 }

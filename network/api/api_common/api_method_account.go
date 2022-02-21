@@ -62,7 +62,7 @@ func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply
 			}
 
 			var acc *account.Account
-			if acc, err = accs.GetAccount(publicKey); err != nil {
+			if acc, err = accs.GetAccount(publicKey, chainHeight); err != nil {
 				return
 			}
 

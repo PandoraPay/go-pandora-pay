@@ -286,7 +286,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 				if emap[string(payload.Asset)][p.G1().String()] == nil {
 
 					var acc *account.Account
-					if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
+					if acc, err = accs.GetAccount(addr.PublicKey, chainHeight); err != nil {
 						return
 					}
 

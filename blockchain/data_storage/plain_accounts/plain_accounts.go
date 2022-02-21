@@ -28,7 +28,6 @@ func (plainAccounts *PlainAccounts) GetPlainAccount(key []byte, blockHeight uint
 	}
 
 	plainAcc := data.(*plain_account.PlainAccount)
-	plainAcc.RefreshDelegatedStake(blockHeight)
 
 	return plainAcc, nil
 }

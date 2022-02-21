@@ -5,8 +5,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
-	"pandora-pay/blockchain/data_storage/plain_accounts"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
@@ -220,15 +222,20 @@ func (wallet *Wallet) InitForgingWallet() (err error) {
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+		dataStorage := data_storage.NewDataStorage(reader)
+		var accs *accounts.Accounts
+		if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
+			return
+		}
 
-		plainAccs := plain_accounts.NewPlainAccounts(reader)
 		for _, adr := range wallet.Addresses {
-			var plainAcc *plain_account.PlainAccount
-			if plainAcc, err = plainAccs.GetPlainAccount(adr.PublicKey, chainHeight); err != nil {
+
+			var acc *account.Account
+			if acc, err = accs.GetAccount(adr.PublicKey, chainHeight); err != nil {
 				return
 			}
 
-			if err = wallet.refreshWalletPlainAccount(plainAcc, chainHeight, adr); err != nil {
+			if err = wallet.refreshWalletAccount(acc, chainHeight, adr); err != nil {
 				return
 			}
 		}

@@ -10,7 +10,6 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets/asset"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -83,25 +82,19 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 		var accs *accounts.Accounts
 		var acc *account.Account
 
+		if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey, false); err != nil {
+			return
+		}
+		acc.Balance.AddBalanceUint(airdrop.Amount)
+
 		if airdrop.SpendPublicKey != nil {
-			var plainAcc *plain_account.PlainAccount
-			if plainAcc, err = dataStorage.CreatePlainAccount(addr.PublicKey, false); err != nil {
+			if err = acc.DelegatedStake.CreateDelegatedStake(airdrop.SpendPublicKey); err != nil {
 				return
 			}
-			if err = plainAcc.DelegatedStake.CreateDelegatedStake(addr.PublicKey, airdrop.Amount, airdrop.SpendPublicKey); err != nil {
-				return
-			}
-			if err = dataStorage.PlainAccs.Update(string(addr.PublicKey), plainAcc); err != nil {
-				return
-			}
-		} else {
-			if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey, false); err != nil {
-				return
-			}
-			acc.Balance.AddBalanceUint(airdrop.Amount)
-			if err = accs.Update(string(addr.PublicKey), acc); err != nil {
-				return
-			}
+		}
+
+		if err = accs.Update(string(addr.PublicKey), acc); err != nil {
+			return
 		}
 
 	}

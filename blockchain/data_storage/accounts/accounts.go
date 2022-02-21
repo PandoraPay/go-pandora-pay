@@ -27,13 +27,17 @@ func (accounts *Accounts) CreateNewAccount(publicKey []byte) (*account.Account, 
 	return acc, nil
 }
 
-func (accounts *Accounts) GetAccount(key []byte) (*account.Account, error) {
+func (accounts *Accounts) GetAccount(key []byte, blockHeight uint64) (*account.Account, error) {
+
 	data, err := accounts.Get(string(key))
 	if data == nil || err != nil {
 		return nil, err
 	}
 
-	return data.(*account.Account), nil
+	acc := data.(*account.Account)
+	acc.RefreshDelegatedStake(blockHeight)
+
+	return acc, nil
 }
 
 func (accounts *Accounts) ExistAccount(key []byte) (bool, error) {
