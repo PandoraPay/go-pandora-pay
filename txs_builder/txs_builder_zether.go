@@ -170,7 +170,7 @@ func (builder *TxsBuilder) createZetherRing(sender string, recipient *string, as
 	return ring, nil
 }
 
-func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
+func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, map[string]bool, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
 
 	sendersPrivateKeys := make([]*addresses.PrivateKey, len(txData.Payloads))
 	sendersWalletAddresses := make([]*wallet_address.WalletAddress, len(txData.Payloads))
@@ -197,7 +197,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 			sendersPrivateKeys[t] = addresses.GenerateNewPrivateKey()
 			addr, err := sendersPrivateKeys[t].GenerateAddress(true, nil, 0, nil)
 			if err != nil {
-				return nil, nil, nil, nil, 0, nil, err
+				return nil, nil, nil, nil, nil, 0, nil, err
 			}
 			payload.Sender = addr.EncodeAddr()
 
@@ -205,11 +205,11 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 
 			addr, err := builder.wallet.GetWalletAddressByEncodedAddress(payload.Sender, true)
 			if err != nil {
-				return nil, nil, nil, nil, 0, nil, err
+				return nil, nil, nil, nil, nil, 0, nil, err
 			}
 
 			if addr.PrivateKey == nil {
-				return nil, nil, nil, nil, 0, nil, errors.New("Can't be used for transactions as the private key is missing")
+				return nil, nil, nil, nil, nil, 0, nil, errors.New("Can't be used for transactions as the private key is missing")
 			}
 
 			sendersPrivateKeys[t] = &addresses.PrivateKey{Key: addr.PrivateKey.Key[:]}
@@ -226,6 +226,8 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 
 	transfers := make([]*wizard.WizardZetherTransfer, len(txData.Payloads))
 	emap := wizard.InitializeEmap(sendAssets)
+	hasRollovers := make(map[string]bool)
+
 	rings := make([][]*bn256.G1, len(txData.Payloads))
 	publicKeyIndexes := make(map[string]*wizard.WizardZetherPublicKeyIndex)
 
@@ -315,6 +317,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 					}
 
 					emap[string(payload.Asset)][p.G1().String()] = balance
+					hasRollovers[p.G1().String()] = acc != nil && acc.DelegatedStake != nil && acc.DelegatedStake.HasDelegatedStake()
 				}
 				ring = append(ring, p.G1())
 
@@ -356,7 +359,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 
 		return
 	}); err != nil {
-		return nil, nil, nil, nil, 0, nil, err
+		return nil, nil, nil, nil, nil, 0, nil, err
 	}
 	statusCallback("Balances checked")
 
@@ -367,21 +370,21 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 
 			var err error
 			if transfers[t].SenderDecryptedBalance, err = builder.wallet.DecryptBalanceByPublicKey(sendersWalletAddresses[t].PublicKey, sendersEncryptedBalances[t], transfers[t].Asset, false, 0, true, true, ctx, statusCallback); err != nil {
-				return nil, nil, nil, nil, 0, nil, err
+				return nil, nil, nil, nil, nil, 0, nil, err
 			}
 
 		}
 		if transfers[t].SenderDecryptedBalance == 0 {
-			return nil, nil, nil, nil, 0, nil, errors.New("You have no funds")
+			return nil, nil, nil, nil, nil, 0, nil, errors.New("You have no funds")
 		}
 		if transfers[t].SenderDecryptedBalance < txData.Payloads[t].Amount {
-			return nil, nil, nil, nil, 0, nil, errors.New("Not enough funds")
+			return nil, nil, nil, nil, nil, 0, nil, errors.New("Not enough funds")
 		}
 	}
 
 	statusCallback("Balances decoded")
 
-	return transfers, emap, rings, publicKeyIndexes, chainHeight, chainKernelHash, nil
+	return transfers, emap, hasRollovers, rings, publicKeyIndexes, chainHeight, chainKernelHash, nil
 }
 
 func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
@@ -389,7 +392,7 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	transfers, emap, ringMembers, publicKeyIndexes, chainHeight, chainKernelHash, err := builder.prebuild(txData, ctx, statusCallback)
+	transfers, emap, hasRollovers, ringMembers, publicKeyIndexes, chainHeight, chainKernelHash, err := builder.prebuild(txData, ctx, statusCallback)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +403,7 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, chainHeight-1, chainKernelHash, publicKeyIndexes, feesFinal, validateTx, ctx, statusCallback); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringMembers, chainHeight-1, chainKernelHash, publicKeyIndexes, feesFinal, validateTx, ctx, statusCallback); err != nil {
 		return nil, err
 	}
 
@@ -453,7 +456,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 		},
 	}
 
-	transfers, emap, ringMembers, publicKeyIndexes, _, _, err := builder.prebuild(txData, context.Background(), func(string) {})
+	transfers, emap, hasRollovers, ringMembers, publicKeyIndexes, _, _, err := builder.prebuild(txData, context.Background(), func(string) {})
 	if err != nil {
 		return nil, err
 	}
@@ -469,7 +472,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, chainHeight, blkComplete.PrevKernelHash, publicKeyIndexes, feesFinal, false, context.Background(), func(string) {}); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringMembers, chainHeight, blkComplete.PrevKernelHash, publicKeyIndexes, feesFinal, false, context.Background(), func(string) {}); err != nil {
 		return nil, err
 	}
 
