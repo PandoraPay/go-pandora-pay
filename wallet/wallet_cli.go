@@ -17,6 +17,7 @@ import (
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
+	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
@@ -46,7 +47,7 @@ func (wallet *Wallet) deriveDelegatedStakeSpendKey(addr *wallet_address.WalletAd
 
 		defer f.Close()
 
-		delegatedStakeOut := &DelegatedStakeOutput{
+		delegatedStakeOut := &genesis.DelegatedStakeOutput{
 			addr.AddressRegistrationEncoded,
 			key.GeneratePublicKey(),
 		}

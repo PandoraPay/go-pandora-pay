@@ -12,11 +12,15 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
-	"pandora-pay/wallet"
 	"runtime"
 	"strings"
 	"time"
 )
+
+type DelegatedStakeOutput struct {
+	Address                      string `json:"address" msgpack:"address"`
+	DelegatedStakeSpendPublicKey []byte `json:"delegatedStakeSpendPublicKey" msgpack:"delegatedStakeSpendPublicKey"`
+}
 
 type GenesisDataAirDropType struct {
 	Address        string `json:"address" msgpack:"address"`
@@ -110,7 +114,7 @@ func createNewGenesis(v []string) (err error) {
 			return
 		}
 
-		delegatedStakeOutput := &wallet.DelegatedStakeOutput{}
+		delegatedStakeOutput := &DelegatedStakeOutput{}
 		if err = json.Unmarshal(data, delegatedStakeOutput); err != nil {
 			return
 		}
@@ -134,7 +138,7 @@ func createNewGenesis(v []string) (err error) {
 	return
 }
 
-func createSimpleGenesis(wallet *wallet.Wallet) (err error) {
+func createSimpleGenesis(walletGetFirstAddressForDevnetGenesisAirdrop func() (string, []byte, error)) (err error) {
 
 	var file *os.File
 
@@ -145,9 +149,8 @@ func createSimpleGenesis(wallet *wallet.Wallet) (err error) {
 	GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
 	GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 
-	var address string
-	var delegatedStakePublicKey []byte
-	if address, delegatedStakePublicKey, err = wallet.GetFirstAddressForDevnetGenesisAirdrop(); err != nil {
+	address, delegatedStakePublicKey, err := walletGetFirstAddressForDevnetGenesisAirdrop()
+	if err != nil {
 		return
 	}
 
@@ -175,7 +178,7 @@ func createSimpleGenesis(wallet *wallet.Wallet) (err error) {
 	return
 }
 
-func GenesisInit(w *wallet.Wallet) (err error) {
+func GenesisInit(walletGetFirstAddressForDevnetGenesisAirdrop func() (string, []byte, error)) (err error) {
 
 	if GenesisData, err = getGenesis(); err != nil {
 		return
@@ -194,7 +197,7 @@ func GenesisInit(w *wallet.Wallet) (err error) {
 		if string(data) == "file" && runtime.GOARCH != "wasm" {
 
 			if _, err = os.Stat("./genesis.data"); os.IsNotExist(err) {
-				if err = createSimpleGenesis(w); err != nil {
+				if err = createSimpleGenesis(walletGetFirstAddressForDevnetGenesisAirdrop); err != nil {
 					return
 				}
 			}

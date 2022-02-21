@@ -130,17 +130,26 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		echanges := crypto.ConstructElGamal(payload.Statement.C[i], payload.Statement.D)
 		balance = balance.Add(echanges) // homomorphic addition of changes
 
-		if (i%2 == 0) == payload.Parity {
+		if (i%2 == 0) == payload.Parity { //sender
 			//verify sender
 			if payload.Statement.CLn[i].String() != balance.Left.String() || payload.Statement.CRn[i].String() != balance.Right.String() {
 				return fmt.Errorf("CLn or CRn is not matching for %d", i)
 			}
 		}
 
-		acc.Balance.Amount = balance
+		//in case it must be the pending...
+		if (i%2 == 1) == payload.Parity && bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && acc.DelegatedStake.HasDelegatedStake() {
+			if err = acc.DelegatedStake.AddStakePendingStake(echanges, blockHeight); err != nil {
+				return
+			}
+		} else {
+			acc.Balance.Amount = balance
+		}
+
 		if err = accs.Update(string(publicKey), acc); err != nil {
 			return
 		}
+
 	}
 
 	if payload.Extra != nil {

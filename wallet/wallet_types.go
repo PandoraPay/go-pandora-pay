@@ -1,10 +1,5 @@
 package wallet
 
-type DelegatedStakeOutput struct {
-	Address                      string `json:"address" msgpack:"address"`
-	DelegatedStakeSpendPublicKey []byte `json:"delegatedStakeSpendPublicKey" msgpack:"delegatedStakeSpendPublicKey"`
-}
-
 type Version int
 
 const (

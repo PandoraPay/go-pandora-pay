@@ -443,8 +443,13 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 		feesFinal[t] = payload.Fee.WizardTransactionFee
 	}
 
+	chainHeight := blkComplete.Height
+	if chainHeight > 0 {
+		chainHeight--
+	}
+
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, blkComplete.Height-1, blkComplete.PrevHash, publicKeyIndexes, feesFinal, false, context.Background(), func(string) {}); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, ringMembers, chainHeight, blkComplete.PrevHash, publicKeyIndexes, feesFinal, false, context.Background(), func(string) {}); err != nil {
 		return nil, err
 	}
 

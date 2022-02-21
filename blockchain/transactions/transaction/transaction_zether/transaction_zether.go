@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/config/config_coins"
@@ -30,7 +31,14 @@ func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, txHash []byt
 		return fmt.Errorf("Zether ChainHeight is invalid %d > %d", tx.ChainHeight, blockHeight)
 	}
 
-	if !bytes.Equal(dataStorage.DBTx.Get("blockHash_ByHeight"+strconv.FormatUint(tx.ChainHeight, 10)), tx.ChainHash) {
+	var chainHash []byte
+	if blockHeight > 0 {
+		chainHash = dataStorage.DBTx.Get("blockHash_ByHeight" + strconv.FormatUint(tx.ChainHeight, 10))
+	} else {
+		chainHash = genesis.Genesis.PrevHash
+	}
+
+	if !bytes.Equal(chainHash, tx.ChainHash) {
 		return errors.New("Zether ChainHash is invalid")
 	}
 

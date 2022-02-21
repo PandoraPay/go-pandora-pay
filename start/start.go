@@ -75,7 +75,7 @@ func _startMain() (err error) {
 
 	globals.MainEvents.BroadcastEvent("main", "wallet initialized")
 
-	if err = genesis.GenesisInit(app.Wallet); err != nil {
+	if err = genesis.GenesisInit(app.Wallet.GetFirstAddressForDevnetGenesisAirdrop); err != nil {
 		return
 	}
 	if err = app.Chain.InitializeChain(); err != nil {
