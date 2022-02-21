@@ -241,63 +241,6 @@ func (builder *TxsBuilder) initCLI() {
 		return
 	}
 
-	cliPrivateDelegateStake := func(cmd string, ctx context.Context) (err error) {
-		builder.showWarningIfNotSyncCLI()
-
-		extra := &wizard.WizardZetherPayloadExtraDelegateStake{}
-		txData := &TxBuilderCreateZetherTxData{
-			Payloads: []*TxBuilderCreateZetherTxPayload{{
-				Extra: extra,
-				Asset: config_coins.NATIVE_ASSET_FULL,
-			}},
-		}
-
-		if _, txData.Payloads[0].Sender, _, err = builder.wallet.CliSelectAddress("Select Address from which Delegate", ctx); err != nil {
-			return
-		}
-
-		var delegateAddress *addresses.Address
-		if delegateAddress, _, txData.Payloads[0].Burn, err = builder.readAddressOptional("Delegate Address", config_coins.NATIVE_ASSET_FULL, false); err != nil {
-			return
-		}
-
-		extra.DelegatePublicKey = delegateAddress.PublicKey
-		extra.ConvertToUnclaimed = gui.GUI.OutputReadBool("Convert the amount to Unclaimed y/n. Leave empty for false", true, false)
-
-		delegateWalletAddress := builder.wallet.GetWalletAddressByPublicKey(delegateAddress.PublicKey, false)
-
-		extra.DelegatedStakingUpdate = &transaction_data.TransactionDataDelegatedStakingUpdate{}
-		if delegateWalletAddress != nil {
-			if err = builder.readDelegatedStakingUpdate(extra.DelegatedStakingUpdate, delegateWalletAddress.PublicKey); err != nil {
-				return
-			}
-		}
-
-		if extra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
-			extra.DelegatePrivateKey = delegateWalletAddress.PrivateKey.Key
-		}
-
-		if _, txData.Payloads[0].Recipient, txData.Payloads[0].Amount, err = builder.readAddressOptional("Transfer Recipient Address", config_coins.NATIVE_ASSET_FULL, true); err != nil {
-			return
-		}
-
-		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
-		txData.Payloads[0].Data = builder.readData()
-		txData.Payloads[0].Fee = builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
-
-		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
-
-		tx, err := builder.CreateZetherTx(txData, propagate, true, true, false, ctx, func(status string) {
-			gui.GUI.OutputWrite(status)
-		})
-		if err != nil {
-			return
-		}
-
-		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
-		return
-	}
-
 	cliPrivateAssetCreate := func(cmd string, ctx context.Context) (err error) {
 		builder.showWarningIfNotSyncCLI()
 
@@ -559,7 +502,6 @@ func (builder *TxsBuilder) initCLI() {
 	}
 
 	gui.GUI.CommandDefineCallback("Private Transfer", cliPrivateTransfer, true)
-	gui.GUI.CommandDefineCallback("Private Delegate Stake", cliPrivateDelegateStake, true)
 	gui.GUI.CommandDefineCallback("Private Asset Create", cliPrivateAssetCreate, true)
 	gui.GUI.CommandDefineCallback("Private Asset Supply Increase", cliPrivateAssetSupplyIncrease, true)
 	gui.GUI.CommandDefineCallback("Update Delegate", cliUpdateDelegate, true)

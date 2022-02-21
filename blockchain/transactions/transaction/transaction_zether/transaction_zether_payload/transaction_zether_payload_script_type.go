@@ -4,7 +4,7 @@ type PayloadScriptType uint64
 
 const (
 	SCRIPT_TRANSFER PayloadScriptType = iota
-	SCRIPT_DELEGATE_STAKE
+	SCRIPT_STAKING
 	SCRIPT_STAKING_REWARD
 	SCRIPT_ASSET_CREATE
 	SCRIPT_ASSET_SUPPLY_INCREASE
@@ -14,8 +14,8 @@ func (t PayloadScriptType) String() string {
 	switch t {
 	case SCRIPT_TRANSFER:
 		return "SCRIPT_TRANSFER"
-	case SCRIPT_DELEGATE_STAKE:
-		return "SCRIPT_DELEGATE_STAKE"
+	case SCRIPT_STAKING:
+		return "SCRIPT_STAKING"
 	case SCRIPT_STAKING_REWARD:
 		return "SCRIPT_STAKING_REWARD"
 	case SCRIPT_ASSET_CREATE:

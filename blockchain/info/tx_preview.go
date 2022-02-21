@@ -33,8 +33,7 @@ type TxPreviewZetherPayloadExtraStakingReward struct {
 	Reward uint64 `json:"reward" msgpack:"reward"`
 }
 
-type TxPreviewZetherPayloadExtraDelegateStake struct {
-	DelegatePublicKey []byte `json:"delegatePublicKey" msgpack:"delegatePublicKey"`
+type TxPreviewZetherPayloadExtraStaking struct {
 }
 
 type TxPreviewZetherPayload struct {
@@ -109,9 +108,9 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 			case transaction_zether_payload.SCRIPT_STAKING_REWARD:
 				txPayloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward)
 				payloadExtra = &TxPreviewZetherPayloadExtraStakingReward{txPayloadExtra.Reward}
-			case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
-				txPayloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake)
-				payloadExtra = &TxPreviewZetherPayloadExtraDelegateStake{txPayloadExtra.DelegatePublicKey}
+			case transaction_zether_payload.SCRIPT_STAKING:
+				//txPayloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStaking)
+				payloadExtra = &TxPreviewZetherPayloadExtraStaking{}
 			}
 
 			payloads[i] = &TxPreviewZetherPayload{

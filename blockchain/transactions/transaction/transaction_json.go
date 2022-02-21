@@ -79,11 +79,7 @@ type json_Only_TransactionZether struct {
 	Payloads        []*json_Only_TransactionPayload `json:"payloads"  msgpack:"payloads"`
 }
 
-type json_Only_TransactionZetherPayloadExtraDelegateStake struct {
-	DelegatePublicKey      []byte                                      `json:"delegatePublicKey"  msgpack:"delegatePublicKey"`
-	ConvertToUnclaimed     bool                                        `json:"convertToUnclaimed"  msgpack:"convertToUnclaimed"`
-	DelegatedStakingUpdate *json_TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"  msgpack:"delegatedStakingUpdate"`
-	DelegateSignature      []byte                                      `json:"delegateSignature"  msgpack:"delegateSignature"`
+type json_Only_TransactionZetherPayloadExtraStaking struct {
 }
 
 type json_Only_TransactionZetherPayloadExtraStakingReward struct {
@@ -229,18 +225,9 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 			switch payload.PayloadScript {
 			case transaction_zether_payload.SCRIPT_TRANSFER:
 				//no payload
-			case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
-				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake)
-				extra = &json_Only_TransactionZetherPayloadExtraDelegateStake{
-					payloadExtra.DelegatePublicKey,
-					payloadExtra.ConvertToUnclaimed,
-					&json_TransactionDataDelegatedStakingUpdate{
-						payloadExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
-						payloadExtra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
-						payloadExtra.DelegatedStakingUpdate.DelegatedStakingNewFee,
-					},
-					payloadExtra.DelegateSignature,
-				}
+			case transaction_zether_payload.SCRIPT_STAKING:
+				//payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStaking)
+				extra = &json_Only_TransactionZetherPayloadExtraStaking{}
 			case transaction_zether_payload.SCRIPT_STAKING_REWARD:
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward)
 				extra = &json_Only_TransactionZetherPayloadExtraStakingReward{
@@ -485,22 +472,14 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 
 			switch payload.PayloadScript {
 			case transaction_zether_payload.SCRIPT_TRANSFER:
-			case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
-				extraJson := &json_Only_TransactionZetherPayloadExtraDelegateStake{}
+			case transaction_zether_payload.SCRIPT_STAKING:
+				extraJson := &json_Only_TransactionZetherPayloadExtraStaking{}
 				if err := json.Unmarshal(data, extraJson); err != nil {
 					return err
 				}
 
-				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraDelegateStake{
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraStaking{
 					nil,
-					extraJson.DelegatePublicKey,
-					extraJson.ConvertToUnclaimed,
-					&transaction_data.TransactionDataDelegatedStakingUpdate{
-						extraJson.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
-						extraJson.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
-						extraJson.DelegatedStakingUpdate.DelegatedStakingNewFee,
-					},
-					extraJson.DelegateSignature,
 				}
 
 			case transaction_zether_payload.SCRIPT_STAKING_REWARD:

@@ -2,15 +2,10 @@ package wizard
 
 import (
 	"pandora-pay/blockchain/data_storage/assets/asset"
-	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 )
 
-type WizardZetherPayloadExtraDelegateStake struct {
+type WizardZetherPayloadExtraStaking struct {
 	WizardZetherPayloadExtra `json:"-" msgpack:"-"`
-	DelegatePublicKey        []byte                                                  `json:"delegatePublicKey" msgpack:"delegatePublicKey"`
-	ConvertToUnclaimed       bool                                                    `json:"convertToUnclaimed" msgpack:"convertToUnclaimed"`
-	DelegatedStakingUpdate   *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate" msgpack:"delegatedStakingUpdate"`
-	DelegatePrivateKey       []byte                                                  `json:"delegatePrivateKey,omitempty" msgpack:"delegatePrivateKey,omitempty"`
 }
 
 type WizardZetherPayloadExtraStakingReward struct {
