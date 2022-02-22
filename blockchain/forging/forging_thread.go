@@ -98,7 +98,6 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 
 	newBlk.Block.StakingNonce = solution.stakingNonce
 	newBlk.Block.Timestamp = solution.timestamp
-
 	newBlk.Block.StakingAmount = solution.stakingAmount
 
 	txs, _ := thread.mempool.GetNextTransactionsToInclude(newBlk.Block.PrevHash)

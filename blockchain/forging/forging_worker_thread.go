@@ -117,7 +117,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 		walletsStakable = make(map[string]*ForgingWorkerThreadAddress)
 		for _, walletAddr := range wallets {
-			if walletAddr.computeStakingAmount(blkHeight, work.BlkComplete.PrevHash) {
+			if walletAddr.computeStakingAmount(blkHeight, work.BlkComplete.PrevKernelHash) {
 				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
 			}
 		}
@@ -193,14 +193,14 @@ func (worker *ForgingWorkerThread) forge() {
 
 					if n2 != n {
 						newSerialized := make([]byte, len(serialized)-n+n2)
-						copy(newSerialized, serialized[:-n-33])
+						copy(newSerialized, serialized[:-n-32])
 						serialized = newSerialized
 						n = n2
 					}
 
 					//optimized POS
-					copy(serialized[len(serialized)-33-n2:len(serialized)-33], buf)
-					copy(serialized[len(serialized)-33:], address.stakingNonce)
+					copy(serialized[len(serialized)-32-n2:len(serialized)-32], buf)
+					copy(serialized[len(serialized)-32:], address.stakingNonce)
 
 					kernelHash := cryptography.SHA3(serialized)
 
@@ -208,11 +208,13 @@ func (worker *ForgingWorkerThread) forge() {
 
 					if kernel.Cmp(work.Target) <= 0 {
 
+						requireStakingAmount := new(big.Int).Div(new(big.Int).SetBytes(kernelHash), work.Target)
+
 						solution := &ForgingSolution{
 							timestamp,
 							address.walletAdr,
 							work,
-							address.stakingAmount,
+							generics.Min(requireStakingAmount.Uint64()+1, address.stakingAmount),
 							address.stakingNonce,
 						}
 
