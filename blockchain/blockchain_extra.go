@@ -208,7 +208,7 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 			}
 		}
 
-		blk.StakingNonce = make([]byte, 33)
+		blk.StakingNonce = make([]byte, 32)
 
 		blk.BloomSerializedNow(blk.SerializeManualToBytes())
 

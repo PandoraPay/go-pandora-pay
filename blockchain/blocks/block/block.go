@@ -2,10 +2,6 @@ package block
 
 import (
 	"errors"
-	"pandora-pay/blockchain/data_storage"
-	"pandora-pay/blockchain/data_storage/assets/asset"
-	"pandora-pay/config/config_coins"
-	"pandora-pay/config/config_reward"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -43,25 +39,6 @@ func (blk *Block) validate() error {
 
 func (blk *Block) Verify() error {
 	return blk.Bloom.verifyIfBloomed()
-}
-
-func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees uint64) (err error) {
-
-	reward := config_reward.GetRewardAt(blk.Height)
-
-	var ast *asset.Asset
-	if ast, err = dataStorage.Asts.GetAsset(config_coins.NATIVE_ASSET_FULL); err != nil {
-		return
-	}
-
-	if err = ast.AddNativeSupply(true, reward); err != nil {
-		return
-	}
-	if err = dataStorage.Asts.Update(string(config_coins.NATIVE_ASSET_FULL), ast); err != nil {
-		return
-	}
-
-	return
 }
 
 func (blk *Block) computeHash() []byte {
@@ -146,7 +123,7 @@ func (blk *Block) Deserialize(r *helpers.BufferReader) (err error) {
 	if blk.Timestamp, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if blk.StakingNonce, err = r.ReadBytes(33); err != nil {
+	if blk.StakingNonce, err = r.ReadBytes(32); err != nil {
 		return
 	}
 	if blk.StakingFee, err = r.ReadUvarint(); err != nil {

@@ -13,14 +13,19 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/assets"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
+	"pandora-pay/config/config_reward"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
@@ -243,61 +248,98 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 			err = func() (err error) {
 
-				for i, blkComplete := range blocksComplete {
+				for _, blkComplete := range blocksComplete {
 
 					//check block height
 					if blkComplete.Block.Height != newChainData.Height {
 						return errors.New("Block Height is not right!")
 					}
 
-					//check blkComplete balance
+					//check existance of a tx with payloads
+					var foundStakingRewardTx *transaction.Transaction
+					for _, tx := range blkComplete.Txs {
+						if tx.Version == transaction_type.TX_ZETHER {
+							txBase := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+							if len(txBase.Payloads) == 2 && txBase.Payloads[0].PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING && txBase.Payloads[1].PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD {
+								if foundStakingRewardTx != nil {
+									return errors.New("Multiple txs with staking & reward payloads")
+								}
+								foundStakingRewardTx = tx
+								continue
+							}
+							for _, payload := range txBase.Payloads {
+								if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING || payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD {
+									return errors.New("Block contains other staking/reward payloads")
+								}
+							}
+						}
+					}
 
-					if err != nil {
+					// not staking and reward tx
+					if foundStakingRewardTx == nil {
+						return errors.New("Block is missing Staking and Reward Transaction")
+					}
+
+					//check blkComplete balance
+					foundStakingRewardTxBase := foundStakingRewardTx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+					if foundStakingRewardTxBase.Payloads[0].BurnValue < config_stake.GetRequiredStake(blkComplete.Block.Height) {
+						return errors.New("Staked amount is not enough!")
+					}
+
+					//verify staking amount
+					if foundStakingRewardTxBase.Payloads[0].BurnValue != blkComplete.StakingAmount {
+						return errors.New("Staked amount is different that the burn value")
+					}
+
+					if !bytes.Equal(foundStakingRewardTxBase.Payloads[0].Proof.Nonce(), blkComplete.StakingNonce) {
+						return errors.New("Staked Proof Nonce is not matching with the one specified in the block")
+					}
+
+					//verify forger reward
+					reward := config_reward.GetRewardAt(blkComplete.Height)
+
+					var finalFees, fee uint64
+					for _, tx := range blkComplete.Txs {
+						if fee, err = tx.ComputeFee(); err != nil {
+							return
+						}
+						if err = helpers.SafeUint64Add(&finalFees, fee); err != nil {
+							return
+						}
+					}
+
+					finalForgerReward := reward
+					if err = helpers.SafeUint64Add(&finalForgerReward, finalFees); err != nil {
 						return
 					}
 
-					//var plainAcc *plain_account.PlainAccount
-					//if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(blkComplete.Block.Forger, blkComplete.Block.Height); err != nil {
-					//	return
-					//}
-					//
-					//if plainAcc == nil {
-					//	return errors.New("Forger Account deson't exist or hasn't delegated stake")
-					//}
-					//
-					//var stakingAmount uint64
-					//if stakingAmount, err = plainAcc.DelegatedStake.ComputeDelegatedStakeAvailable(newChainData.Height); err != nil {
-					//	return
-					//}
-					//
-					//if !bytes.Equal(blkComplete.Block.DelegatedStakePublicKey, plainAcc.DelegatedStake.DelegatedStakePublicKey) {
-					//	return errors.New("Block Staking Delegated Public Key is not matching")
-					//}
-					//
-					//if blkComplete.Block.DelegatedStakeFee != plainAcc.DelegatedStake.DelegatedStakeFee {
-					//	return fmt.Errorf("Block Delegated Stake Fee doesn't match %d %d", blkComplete.Block.DelegatedStakeFee, plainAcc.DelegatedStake.DelegatedStakeFee)
-					//}
-					//
-					//if blkComplete.Block.StakingAmount != stakingAmount {
-					//	return fmt.Errorf("Block Staking Amount doesn't match %d %d", blkComplete.Block.StakingAmount, stakingAmount)
-					//}
-					//
-					//if blkComplete.Block.StakingAmount < config_stake.GetRequiredStake(blkComplete.Block.Height) {
-					//	return errors.New("Delegated stake ready amount is not enought")
-					//}
+					if finalForgerReward > foundStakingRewardTxBase.Payloads[1].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).Reward {
+						return errors.New("Reward is bigger than it should be")
+					}
+
+					//increase supply
+					var ast *asset.Asset
+					if ast, err = dataStorage.Asts.GetAsset(config_coins.NATIVE_ASSET_FULL); err != nil {
+						return
+					}
+
+					if err = ast.AddNativeSupply(true, reward); err != nil {
+						return
+					}
+					if err = dataStorage.Asts.Update(string(config_coins.NATIVE_ASSET_FULL), ast); err != nil {
+						return
+					}
 
 					if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHash, newChainData.Target) != true {
 						return errors.New("KernelHash Difficulty is not met")
 					}
 
-					//already verified for i == 0
-					if i > 0 {
-						if !bytes.Equal(blkComplete.Block.PrevHash, newChainData.Hash) {
-							return errors.New("PrevHash doesn't match Genesis prevHash")
-						}
-						if !bytes.Equal(blkComplete.Block.PrevKernelHash, newChainData.KernelHash) {
-							return errors.New("PrevHash doesn't match Genesis prevKernelHash")
-						}
+					if !bytes.Equal(blkComplete.Block.PrevHash, newChainData.Hash) {
+						return errors.New("PrevHash doesn't match Genesis prevHash")
+					}
+
+					if !bytes.Equal(blkComplete.Block.PrevKernelHash, newChainData.KernelHash) {
+						return errors.New("PrevHash doesn't match Genesis prevKernelHash")
 					}
 
 					if blkComplete.Block.Timestamp < newChainData.Timestamp {
