@@ -3,6 +3,7 @@ package crypto
 import (
 	"errors"
 	"math/big"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/helpers"
@@ -35,7 +36,7 @@ func (s *Statement) SerializeRingSize(w *helpers.BufferWriter) {
 	w.WriteByte(byte(pow)) // len(s.Publickeylist) is always power of 2
 }
 
-func (s *Statement) Serialize(w *helpers.BufferWriter, payloadRegistrations []*transaction_zether_registration.TransactionZetherDataRegistration, parity bool) {
+func (s *Statement) Serialize(w *helpers.BufferWriter, payloadRegistrations []*transaction_zether_registration.TransactionZetherDataRegistration, parity bool, payloadScript transaction_zether_payload_script.PayloadScriptType) {
 
 	w.WriteUvarint(s.Fee)
 	w.Write(s.D.EncodeCompressed())
@@ -43,7 +44,7 @@ func (s *Statement) Serialize(w *helpers.BufferWriter, payloadRegistrations []*t
 	for i := 0; i < len(s.C); i++ {
 		w.Write(s.Publickeylist[i].EncodeCompressed()) //can be bloomed
 		w.Write(s.C[i].EncodeCompressed())
-		if payloadRegistrations[i] == nil && (i%2 == 0) == parity { //NOT REGISTERED_ACCOUNT and SENDER
+		if payloadRegistrations[i] == nil && (i%2 == 0) == parity && payloadScript != transaction_zether_payload_script.SCRIPT_STAKING_REWARD { //NOT REGISTERED_ACCOUNT and SENDER
 			w.Write(s.CLn[i].EncodeCompressed()) //can be bloomed
 			w.Write(s.CRn[i].EncodeCompressed()) //can be bloomed
 		}
@@ -67,7 +68,7 @@ func (s *Statement) DeserializeRingSize(r *helpers.BufferReader) (byte, int, err
 	return length, s.RingSize, nil
 }
 
-func (s *Statement) Deserialize(r *helpers.BufferReader, payloadRegistrations []*transaction_zether_registration.TransactionZetherDataRegistration, parity bool) (err error) {
+func (s *Statement) Deserialize(r *helpers.BufferReader, payloadRegistrations []*transaction_zether_registration.TransactionZetherDataRegistration, parity bool, payloadScript transaction_zether_payload_script.PayloadScriptType) (err error) {
 
 	if s.Fee, err = r.ReadUvarint(); err != nil {
 		return
@@ -88,7 +89,7 @@ func (s *Statement) Deserialize(r *helpers.BufferReader, payloadRegistrations []
 		if s.C[i], err = r.ReadBN256G1(); err != nil {
 			return
 		}
-		if payloadRegistrations[i] == nil && (i%2 == 0) == parity { //REGISTERED_ACCOUNT
+		if payloadRegistrations[i] == nil && (i%2 == 0) == parity && payloadScript != transaction_zether_payload_script.SCRIPT_STAKING_REWARD { //REGISTERED_ACCOUNT
 			if s.CLn[i], err = r.ReadBN256G1(); err != nil {
 				return
 			}

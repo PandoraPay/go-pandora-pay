@@ -11,6 +11,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -26,20 +27,20 @@ type zetherTxDataSender struct {
 }
 
 type zetherTxDataBase struct {
-	Senders           []*zetherTxDataSender                          `json:"senders"`
-	Assets            [][]byte                                       `json:"assets"`
-	Amounts           []uint64                                       `json:"amounts"`
-	Recipients        []string                                       `json:"recipients"`
-	Burns             []uint64                                       `json:"burns"`
-	RingMembers       [][]string                                     `json:"ringMembers"`
-	Data              []*wizard.WizardTransactionData                `json:"data"`
-	Fees              []*wizard.WizardZetherTransactionFee           `json:"fees"`
-	PayloadScriptType []transaction_zether_payload.PayloadScriptType `json:"payloadScriptType"`
-	PayloadExtra      []wizard.WizardZetherPayloadExtra              `json:"payloadExtra"`
-	Accs              map[string]map[string][]byte                   `json:"accs"`
-	Regs              map[string][]byte                              `json:"regs"`
-	Height            uint64                                         `json:"height"`
-	Hash              []byte                                         `json:"hash"`
+	Senders           []*zetherTxDataSender                                 `json:"senders"`
+	Assets            [][]byte                                              `json:"assets"`
+	Amounts           []uint64                                              `json:"amounts"`
+	Recipients        []string                                              `json:"recipients"`
+	Burns             []uint64                                              `json:"burns"`
+	RingMembers       [][]string                                            `json:"ringMembers"`
+	Data              []*wizard.WizardTransactionData                       `json:"data"`
+	Fees              []*wizard.WizardZetherTransactionFee                  `json:"fees"`
+	PayloadScriptType []transaction_zether_payload_script.PayloadScriptType `json:"payloadScriptType"`
+	PayloadExtra      []wizard.WizardZetherPayloadExtra                     `json:"payloadExtra"`
+	Accs              map[string]map[string][]byte                          `json:"accs"`
+	Regs              map[string][]byte                                     `json:"regs"`
+	Height            uint64                                                `json:"height"`
+	Hash              []byte                                                `json:"hash"`
 }
 
 func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, publicKeyIndexes map[string]*wizard.WizardZetherPublicKeyIndex, err error) {
@@ -76,15 +77,15 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 
 		var payloadExtra wizard.WizardZetherPayloadExtra
 		switch txData.PayloadScriptType[t] {
-		case transaction_zether_payload.SCRIPT_TRANSFER:
+		case transaction_zether_payload_script.SCRIPT_TRANSFER:
 			payloadExtra = nil
 		case transaction_zether_payload.SCRIPT_CLAIM:
 			payloadExtra = &wizard.WizardZetherPayloadExtraClaim{}
 		case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
 			payloadExtra = &wizard.WizardZetherPayloadExtraDelegateStake{}
-		case transaction_zether_payload.SCRIPT_ASSET_CREATE:
+		case transaction_zether_payload_script.SCRIPT_ASSET_CREATE:
 			payloadExtra = &wizard.WizardZetherPayloadExtraAssetCreate{}
-		case transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE:
+		case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
 			payloadExtra = &wizard.WizardZetherPayloadExtraAssetSupplyIncrease{}
 		default:
 			err = errors.New("Invalid PayloadScriptType")

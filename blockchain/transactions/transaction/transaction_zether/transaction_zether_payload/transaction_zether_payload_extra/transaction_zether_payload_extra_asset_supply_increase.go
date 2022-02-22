@@ -66,7 +66,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) VerifyExtr
 	return crypto.VerifySignature(hashForSignature, payloadExtra.AssetSignature, payloadExtra.AssetSupplyPublicKey)
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) error {
+func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, payloadParity bool) error {
 	if payloadExtra.Value == 0 {
 		return errors.New("Asset Supply must be greater than zero")
 	}

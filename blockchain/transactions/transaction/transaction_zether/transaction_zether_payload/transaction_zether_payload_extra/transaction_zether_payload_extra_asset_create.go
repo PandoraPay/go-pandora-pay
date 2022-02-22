@@ -40,7 +40,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) AfterIncludeTxPayl
 	return
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) error {
+func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, payloadParity bool) error {
 
 	if payloadExtra.Asset.Supply != 0 {
 		return errors.New("AssetInfo Supply must be zero")

@@ -6,6 +6,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"io/ioutil"
 	"os"
+	"pandora-pay/addresses"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/config"
 	"pandora-pay/config/config_stake"
@@ -107,7 +108,7 @@ func createNewGenesis(v []string) (err error) {
 	GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
 	GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 
-	amount := 10000 * config_stake.GetRequiredStake(0)
+	amount := 100 * config_stake.GetRequiredStake(0)
 	for i := 1; i < len(v); i++ {
 
 		if data, err = ioutil.ReadFile(v[i]); err != nil {
@@ -125,6 +126,22 @@ func createNewGenesis(v []string) (err error) {
 			SpendPublicKey: []byte{},
 		})
 
+	}
+
+	//let's create 1000 zero wallets
+	for i := 0; i < 1000; i++ {
+		priv := addresses.GenerateNewPrivateKey()
+
+		var addr *addresses.Address
+		if addr, err = priv.GenerateAddress(true, nil, 0, nil); err != nil {
+			return
+		}
+
+		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
+			Address:        addr.EncodeAddr(),
+			Amount:         0,
+			SpendPublicKey: []byte{},
+		})
 	}
 
 	if data, err = msgpack.Marshal(GenesisData); err != nil {
@@ -154,7 +171,7 @@ func createSimpleGenesis(walletGetFirstAddressForDevnetGenesisAirdrop func() (st
 		return
 	}
 
-	amount := 10000 * config_stake.GetRequiredStake(0)
+	amount := 100 * config_stake.GetRequiredStake(0)
 	GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
 		Address:        address,
 		Amount:         amount,

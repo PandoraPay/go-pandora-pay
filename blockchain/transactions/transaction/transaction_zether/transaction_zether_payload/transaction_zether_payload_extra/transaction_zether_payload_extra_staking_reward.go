@@ -61,7 +61,7 @@ func (payloadExtra *TransactionZetherPayloadExtraStakingReward) AfterIncludeTxPa
 func (payloadExtra *TransactionZetherPayloadExtraStakingReward) ComputeAllKeys(out map[string]bool) {
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraStakingReward) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) error {
+func (payloadExtra *TransactionZetherPayloadExtraStakingReward) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, payloadParity bool) error {
 
 	if bytes.Equal(payloadAsset, config_coins.NATIVE_ASSET_FULL) == false {
 		return errors.New("Payload[0] asset must be a native asset")
@@ -76,6 +76,18 @@ func (payloadExtra *TransactionZetherPayloadExtraStakingReward) Validate(payload
 
 	if int(payloadExtra.TemporaryAccountRegistrationIndex) >= len(payloadRegistrations.Registrations) {
 		return errors.New("RegistrationIndex is invalid")
+	}
+
+	if len(payloadStatement.C) != 256 {
+		return errors.New("Payload Extra Reward should had 256 ring members")
+	}
+
+	for i, registration := range payloadRegistrations.Registrations {
+		if (i%2 == 0) == payloadParity { //sender
+			if registration != nil && uint64(i) != payloadExtra.TemporaryAccountRegistrationIndex {
+				return errors.New("Payload Reward should not have new sender account")
+			}
+		}
 	}
 
 	return nil
@@ -98,9 +110,11 @@ func (payloadExtra *TransactionZetherPayloadExtraStakingReward) Deserialize(r *h
 
 func (payloadExtra *TransactionZetherPayloadExtraStakingReward) UpdateStatement(payloadStatement *crypto.Statement) (err error) {
 
-	balance := new(crypto.ElGamal)
-	balance.Left.Set(payloadStatement.CLn[payloadExtra.TemporaryAccountRegistrationIndex])
-	balance.Right.Set(payloadStatement.CRn[payloadExtra.TemporaryAccountRegistrationIndex])
+	if payloadExtra.TemporaryAccountRegistrationIndex >= uint64(len(payloadStatement.C)) {
+		return errors.New("TemporaryAccountRegistrationIndex out of bound")
+	}
+
+	balance := crypto.ConstructElGamal(payloadStatement.CLn[payloadExtra.TemporaryAccountRegistrationIndex], payloadStatement.CRn[payloadExtra.TemporaryAccountRegistrationIndex])
 
 	balance = balance.Plus(new(big.Int).SetUint64(payloadExtra.Reward))
 

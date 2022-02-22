@@ -6,7 +6,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/cryptography/crypto"
 	"sort"
 )
@@ -37,7 +37,7 @@ func (mempool *Mempool) ExistsTxSimpleVersion(publicKey []byte, version transact
 	return false
 }
 
-func (mempool *Mempool) ExistsTxZetherVersion(publicKey []byte, version transaction_zether_payload.PayloadScriptType) bool {
+func (mempool *Mempool) ExistsTxZetherVersion(publicKey []byte, version transaction_zether_payload_script.PayloadScriptType) bool {
 
 	txs := mempool.Txs.GetTxsFromMap()
 	if txs == nil {

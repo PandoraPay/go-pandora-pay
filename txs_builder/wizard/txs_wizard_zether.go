@@ -15,6 +15,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/config"
@@ -167,12 +168,12 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		spaceExtra += (unregisteredAccounts[t] + emptyAccounts[t]) * (cryptography.PublicKeySize + 1 + 66)
 
 		if transfers[t].PayloadExtra == nil {
-			payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_TRANSFER
+			payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_TRANSFER
 		} else {
 
 			switch payloadExtra := transfers[t].PayloadExtra.(type) {
 			case *WizardZetherPayloadExtraStakingReward:
-				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_STAKING_REWARD
+				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_STAKING_REWARD
 
 				var temporaryAccountRegistrationIndex uint64
 
@@ -192,12 +193,12 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				//space extra is 0
 
 			case *WizardZetherPayloadExtraStaking:
-				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_STAKING
+				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_STAKING
 
 				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraStaking{}
 
 			case *WizardZetherPayloadExtraAssetCreate:
-				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_ASSET_CREATE
+				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_ASSET_CREATE
 				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{
 					Asset: payloadExtra.Asset,
 				}
@@ -205,7 +206,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				spaceExtra += config_coins.ASSET_LENGTH + len(helpers.SerializeToBytes(payloadExtra.Asset))
 
 			case *WizardZetherPayloadExtraAssetSupplyIncrease:
-				payloads[t].PayloadScript = transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE
+				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE
 				privateKeysForSign[t] = &addresses.PrivateKey{Key: payloadExtra.AssetSupplyPrivateKey}
 				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{
 					AssetId:              payloadExtra.AssetId,
@@ -324,7 +325,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		}
 
 		//fake balance
-		if payload.PayloadScript == transaction_zether_payload.SCRIPT_STAKING_REWARD {
+		if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD {
 
 			transfer.SenderDecryptedBalance = value + fee + burn_value
 
@@ -447,7 +448,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		// get ready for another round by internal processing of state
 		for i := range publickeylist {
 
-			if payload.PayloadScript != transaction_zether_payload.SCRIPT_STAKING {
+			if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING {
 
 				var encryptedBalance *crypto.ElGamal
 				if encryptedBalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][publickeylist[i].String()]); err != nil {
@@ -457,7 +458,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				encryptedBalance = encryptedBalance.Add(echanges) // homomorphic addition of changes
 
 				if (i%2 == 0) == payload.Parity { //sender
-					if payload.PayloadScript != transaction_zether_payload.SCRIPT_STAKING_REWARD {
+					if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING_REWARD {
 						emap[string(transfer.Asset)][publickeylist[i].String()] = encryptedBalance.Serialize() // reserialize and store
 					}
 				} else { //receiver
@@ -513,9 +514,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			}
 
 			switch txBase.Payloads[t].PayloadScript {
-			case transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE:
+			case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
 				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease).AssetSignature = signature
-			case transaction_zether_payload.SCRIPT_STAKING, transaction_zether_payload.SCRIPT_STAKING_REWARD: //na
+			case transaction_zether_payload_script.SCRIPT_STAKING, transaction_zether_payload_script.SCRIPT_STAKING_REWARD: //na
 			}
 
 		}

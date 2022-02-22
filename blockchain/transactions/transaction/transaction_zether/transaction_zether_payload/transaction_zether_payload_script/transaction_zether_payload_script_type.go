@@ -1,4 +1,4 @@
-package transaction_zether_payload
+package transaction_zether_payload_script
 
 type PayloadScriptType uint64
 

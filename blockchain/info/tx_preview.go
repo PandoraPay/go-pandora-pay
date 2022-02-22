@@ -8,8 +8,8 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/cryptography/crypto"
 )
 
@@ -37,13 +37,13 @@ type TxPreviewZetherPayloadExtraStaking struct {
 }
 
 type TxPreviewZetherPayload struct {
-	PayloadScript transaction_zether_payload.PayloadScriptType `json:"payloadScript" msgpack:"payloadScript"`
-	Asset         []byte                                       `json:"asset" msgpack:"asset"`
-	BurnValue     uint64                                       `json:"burnValue" msgpack:"burnValue"`
-	DataVersion   transaction_data.TransactionDataVersion      `json:"dataVersion" msgpack:"dataVersion"`
-	DataPublic    []byte                                       `json:"dataPublic" msgpack:"dataPublic"`
-	Ring          byte                                         `json:"ring" msgpack:"ring"`
-	Extra         interface{}                                  `json:"extra" msgpack:"extra"`
+	PayloadScript transaction_zether_payload_script.PayloadScriptType `json:"payloadScript" msgpack:"payloadScript"`
+	Asset         []byte                                              `json:"asset" msgpack:"asset"`
+	BurnValue     uint64                                              `json:"burnValue" msgpack:"burnValue"`
+	DataVersion   transaction_data.TransactionDataVersion             `json:"dataVersion" msgpack:"dataVersion"`
+	DataPublic    []byte                                              `json:"dataPublic" msgpack:"dataPublic"`
+	Ring          byte                                                `json:"ring" msgpack:"ring"`
+	Extra         interface{}                                         `json:"extra" msgpack:"extra"`
 }
 
 type TxPreviewZether struct {
@@ -105,10 +105,10 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 
 			var payloadExtra interface{}
 			switch payload.PayloadScript {
-			case transaction_zether_payload.SCRIPT_STAKING_REWARD:
+			case transaction_zether_payload_script.SCRIPT_STAKING_REWARD:
 				txPayloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward)
 				payloadExtra = &TxPreviewZetherPayloadExtraStakingReward{txPayloadExtra.Reward}
-			case transaction_zether_payload.SCRIPT_STAKING:
+			case transaction_zether_payload_script.SCRIPT_STAKING:
 				//txPayloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStaking)
 				payloadExtra = &TxPreviewZetherPayloadExtraStaking{}
 			}

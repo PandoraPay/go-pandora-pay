@@ -26,7 +26,7 @@ func (payloadExtra *TransactionZetherPayloadExtraStaking) AfterIncludeTxPayload(
 func (payloadExtra *TransactionZetherPayloadExtraStaking) ComputeAllKeys(out map[string]bool) {
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraStaking) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraStaking) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, payloadParity bool) (err error) {
 
 	if bytes.Equal(payloadAsset, config_coins.NATIVE_ASSET_FULL) == false {
 		return errors.New("Payload[0] asset must be a native asset")
@@ -34,6 +34,16 @@ func (payloadExtra *TransactionZetherPayloadExtraStaking) Validate(payloadRegist
 
 	if payloadBurnValue == 0 {
 		return errors.New("Payload burn value must be greater than zero")
+	}
+
+	for _, registration := range payloadRegistrations.Registrations {
+		if registration != nil {
+			return errors.New("Payload Extra Staking should not have any registration")
+		}
+	}
+
+	if len(payloadStatement.C) != 256 {
+		return errors.New("Payload Extra Staking should had 256 ring members")
 	}
 
 	return

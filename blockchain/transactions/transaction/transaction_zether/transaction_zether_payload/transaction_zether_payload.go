@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/config"
 	"pandora-pay/config/config_assets"
@@ -18,7 +19,7 @@ import (
 )
 
 type TransactionZetherPayload struct {
-	PayloadScript PayloadScriptType
+	PayloadScript transaction_zether_payload_script.PayloadScriptType
 
 	Asset     []byte
 	BurnValue uint64
@@ -141,12 +142,12 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		STAKING will not update any account
 		REWARD will not update any sender account
 		*/
-		if payload.PayloadScript != SCRIPT_STAKING {
+		if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING {
 
 			//Recipient, in case it is delegated it must be a pending stake
 			update := false
 			if (i%2 == 0) == payload.Parity { //sender
-				if payload.PayloadScript != SCRIPT_STAKING_REWARD {
+				if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING_REWARD {
 					acc.Balance.Amount = balance
 					update = true
 				}
@@ -227,12 +228,12 @@ func (payload *TransactionZetherPayload) Validate(payloadIndex byte) (err error)
 	}
 
 	switch payload.PayloadScript {
-	case SCRIPT_TRANSFER:
-	case SCRIPT_STAKING, SCRIPT_STAKING_REWARD, SCRIPT_ASSET_CREATE, SCRIPT_ASSET_SUPPLY_INCREASE:
+	case transaction_zether_payload_script.SCRIPT_TRANSFER:
+	case transaction_zether_payload_script.SCRIPT_STAKING, transaction_zether_payload_script.SCRIPT_STAKING_REWARD, transaction_zether_payload_script.SCRIPT_ASSET_CREATE, transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
 		if payload.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
-		if err = payload.Extra.Validate(payload.Registrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement); err != nil {
+		if err = payload.Extra.Validate(payload.Registrations, payloadIndex, payload.Asset, payload.BurnValue, payload.Statement, payload.Parity); err != nil {
 			return
 		}
 	default:
@@ -261,10 +262,12 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 
 	payload.Registrations.Serialize(w)
 
-	payload.Statement.Serialize(w, payload.Registrations.Registrations, payload.Parity)
+	payload.Statement.Serialize(w, payload.Registrations.Registrations, payload.Parity, payload.PayloadScript)
 
-	w.Write(payload.WhisperSender)
-	w.Write(payload.WhisperRecipient)
+	if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING_REWARD && payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING {
+		w.Write(payload.WhisperSender)
+		w.Write(payload.WhisperRecipient)
+	}
 
 	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
 		w.WriteUvarint(payload.FeeRate)
@@ -287,17 +290,17 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		return
 	}
 
-	payload.PayloadScript = PayloadScriptType(n)
+	payload.PayloadScript = transaction_zether_payload_script.PayloadScriptType(n)
 	switch payload.PayloadScript {
-	case SCRIPT_TRANSFER:
+	case transaction_zether_payload_script.SCRIPT_TRANSFER:
 		payload.Extra = nil
-	case SCRIPT_STAKING:
+	case transaction_zether_payload_script.SCRIPT_STAKING:
 		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraStaking{}
-	case SCRIPT_STAKING_REWARD:
+	case transaction_zether_payload_script.SCRIPT_STAKING_REWARD:
 		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward{}
-	case SCRIPT_ASSET_CREATE:
+	case transaction_zether_payload_script.SCRIPT_ASSET_CREATE:
 		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{}
-	case SCRIPT_ASSET_SUPPLY_INCREASE:
+	case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
 		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{}
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
@@ -347,15 +350,17 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		return
 	}
 
-	if err = payload.Statement.Deserialize(r, payload.Registrations.Registrations, payload.Parity); err != nil {
+	if err = payload.Statement.Deserialize(r, payload.Registrations.Registrations, payload.Parity, payload.PayloadScript); err != nil {
 		return
 	}
 
-	if payload.WhisperSender, err = r.ReadBytes(32); err != nil {
-		return
-	}
-	if payload.WhisperRecipient, err = r.ReadBytes(32); err != nil {
-		return
+	if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING_REWARD && payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING {
+		if payload.WhisperSender, err = r.ReadBytes(32); err != nil {
+			return
+		}
+		if payload.WhisperRecipient, err = r.ReadBytes(32); err != nil {
+			return
+		}
 	}
 
 	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {

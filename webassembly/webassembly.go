@@ -4,7 +4,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
@@ -127,11 +127,11 @@ func Initialize(startMainCb func()) {
 				}),
 				"transactionZether": js.ValueOf(map[string]interface{}{
 					"PayloadScriptType": js.ValueOf(map[string]interface{}{
-						"SCRIPT_TRANSFER":              js.ValueOf(uint64(transaction_zether_payload.SCRIPT_TRANSFER)),
-						"SCRIPT_DELEGATE_STAKE":        js.ValueOf(uint64(transaction_zether_payload.SCRIPT_DELEGATE_STAKE)),
-						"SCRIPT_CLAIM":                 js.ValueOf(uint64(transaction_zether_payload.SCRIPT_CLAIM)),
-						"SCRIPT_ASSET_CREATE":          js.ValueOf(uint64(transaction_zether_payload.SCRIPT_ASSET_CREATE)),
-						"SCRIPT_ASSET_SUPPLY_INCREASE": js.ValueOf(uint64(transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE)),
+						"SCRIPT_TRANSFER":              js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_TRANSFER)),
+						"SCRIPT_STAKING":               js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_STAKING)),
+						"SCRIPT_STAKING_REWARD":        js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_STAKING_REWARD)),
+						"SCRIPT_ASSET_CREATE":          js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_ASSET_CREATE)),
+						"SCRIPT_ASSET_SUPPLY_INCREASE": js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE)),
 					}),
 				}),
 			}),

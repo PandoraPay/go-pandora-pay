@@ -15,6 +15,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/config"
@@ -110,20 +111,20 @@ type json_Only_TransactionZetherStatement struct {
 }
 
 type json_Only_TransactionPayload struct {
-	PayloadScript    transaction_zether_payload.PayloadScriptType `json:"payloadScript"  msgpack:"payloadScript"`
-	Asset            []byte                                       `json:"asset"  msgpack:"asset"`
-	BurnValue        uint64                                       `json:"burnValue"  msgpack:"burnValue"`
-	DataVersion      transaction_data.TransactionDataVersion      `json:"dataVersion"  msgpack:"dataVersion"`
-	Data             []byte                                       `json:"data"  msgpack:"data"`
-	Registrations    []*json_TransactionDataRegistration          `json:"registrations"  msgpack:"registrations"`
-	Parity           bool                                         `json:"parity" msgpack:"parity"`
-	Statement        *json_Only_TransactionZetherStatement        `json:"statement"  msgpack:"statement"`
-	WhisperSender    []byte                                       `json:"whisperSender" msgpack:"whisperSender"`
-	WhisperRecipient []byte                                       `json:"whisperRecipient" msgpack:"whisperRecipient"`
-	FeeRate          uint64                                       `json:"feeRate"  msgpack:"feeRate"`
-	FeeLeadingZeros  byte                                         `json:"feeLeadingZeros"  msgpack:"feeLeadingZeros"`
-	Proof            []byte                                       `json:"proof"  msgpack:"proof"`
-	Extra            interface{}                                  `json:"extra"  msgpack:"extra"`
+	PayloadScript    transaction_zether_payload_script.PayloadScriptType `json:"payloadScript"  msgpack:"payloadScript"`
+	Asset            []byte                                              `json:"asset"  msgpack:"asset"`
+	BurnValue        uint64                                              `json:"burnValue"  msgpack:"burnValue"`
+	DataVersion      transaction_data.TransactionDataVersion             `json:"dataVersion"  msgpack:"dataVersion"`
+	Data             []byte                                              `json:"data"  msgpack:"data"`
+	Registrations    []*json_TransactionDataRegistration                 `json:"registrations"  msgpack:"registrations"`
+	Parity           bool                                                `json:"parity" msgpack:"parity"`
+	Statement        *json_Only_TransactionZetherStatement               `json:"statement"  msgpack:"statement"`
+	WhisperSender    []byte                                              `json:"whisperSender" msgpack:"whisperSender"`
+	WhisperRecipient []byte                                              `json:"whisperRecipient" msgpack:"whisperRecipient"`
+	FeeRate          uint64                                              `json:"feeRate"  msgpack:"feeRate"`
+	FeeLeadingZeros  byte                                                `json:"feeLeadingZeros"  msgpack:"feeLeadingZeros"`
+	Proof            []byte                                              `json:"proof"  msgpack:"proof"`
+	Extra            interface{}                                         `json:"extra"  msgpack:"extra"`
 }
 
 type json_TransactionZether struct {
@@ -223,23 +224,23 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 			var extra interface{}
 
 			switch payload.PayloadScript {
-			case transaction_zether_payload.SCRIPT_TRANSFER:
+			case transaction_zether_payload_script.SCRIPT_TRANSFER:
 				//no payload
-			case transaction_zether_payload.SCRIPT_STAKING:
+			case transaction_zether_payload_script.SCRIPT_STAKING:
 				//payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStaking)
 				extra = &json_Only_TransactionZetherPayloadExtraStaking{}
-			case transaction_zether_payload.SCRIPT_STAKING_REWARD:
+			case transaction_zether_payload_script.SCRIPT_STAKING_REWARD:
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward)
 				extra = &json_Only_TransactionZetherPayloadExtraStakingReward{
 					payloadExtra.Reward,
 					payloadExtra.TemporaryAccountRegistrationIndex,
 				}
-			case transaction_zether_payload.SCRIPT_ASSET_CREATE:
+			case transaction_zether_payload_script.SCRIPT_ASSET_CREATE:
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate)
 				extra = &json_Only_TransactionZetherPayloadExtraAssetCreate{
 					payloadExtra.Asset,
 				}
-			case transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE:
+			case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease)
 				extra = &json_Only_TransactionZetherPayloadExtraAssetSupplyIncrease{
 					payloadExtra.AssetId,
@@ -471,8 +472,8 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 			}
 
 			switch payload.PayloadScript {
-			case transaction_zether_payload.SCRIPT_TRANSFER:
-			case transaction_zether_payload.SCRIPT_STAKING:
+			case transaction_zether_payload_script.SCRIPT_TRANSFER:
+			case transaction_zether_payload_script.SCRIPT_STAKING:
 				extraJson := &json_Only_TransactionZetherPayloadExtraStaking{}
 				if err := json.Unmarshal(data, extraJson); err != nil {
 					return err
@@ -482,7 +483,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 					nil,
 				}
 
-			case transaction_zether_payload.SCRIPT_STAKING_REWARD:
+			case transaction_zether_payload_script.SCRIPT_STAKING_REWARD:
 				extraJson := &json_Only_TransactionZetherPayloadExtraStakingReward{}
 				if err := json.Unmarshal(data, extraJson); err != nil {
 					return err
@@ -494,7 +495,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 					extraJson.TemporaryAccountRegistrationIndex,
 				}
 
-			case transaction_zether_payload.SCRIPT_ASSET_CREATE:
+			case transaction_zether_payload_script.SCRIPT_ASSET_CREATE:
 				extraJson := &json_Only_TransactionZetherPayloadExtraAssetCreate{}
 				if err := json.Unmarshal(data, extraJson); err != nil {
 					return err
@@ -502,7 +503,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{
 					Asset: extraJson.Asset,
 				}
-			case transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE:
+			case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
 				extraJson := &json_Only_TransactionZetherPayloadExtraAssetSupplyIncrease{}
 				if err := json.Unmarshal(data, extraJson); err != nil {
 					return err

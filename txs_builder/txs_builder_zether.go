@@ -16,7 +16,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_reward"
-	"pandora-pay/config/globals"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
@@ -130,9 +129,9 @@ func (builder *TxsBuilder) createZetherRing(sender string, recipient *string, as
 		}
 	}
 
-	if globals.Arguments["--new-devnet"] == true && accs.Count < 80000 {
-		ringConfiguration.NewAccounts = ringConfiguration.RingSize - 2
-	}
+	//if globals.Arguments["--new-devnet"] == true && accs.Count < 80000 {
+	//	ringConfiguration.NewAccounts = ringConfiguration.RingSize - 2
+	//}
 
 	for i := 0; i < ringConfiguration.NewAccounts && len(ring) < ringConfiguration.RingSize-2; i++ {
 		priv := addresses.GenerateNewPrivateKey()
@@ -437,7 +436,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				0,
 				"",
 				blkComplete.StakingAmount,
-				&ZetherRingConfiguration{2, 0, nil},
+				&ZetherRingConfiguration{256, 0, nil},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStaking{},
@@ -448,7 +447,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				reward,
 				forger.EncodeAddr(),
 				0,
-				&ZetherRingConfiguration{2, 0, nil},
+				&ZetherRingConfiguration{256, 0, nil},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStakingReward{nil, reward},

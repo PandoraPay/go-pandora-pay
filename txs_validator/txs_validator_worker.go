@@ -5,7 +5,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config"
 	"sync/atomic"
 	"time"
@@ -43,11 +43,11 @@ func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidated) error {
 
 		for _, payload := range base.Payloads {
 			switch payload.PayloadScript {
-			case transaction_zether_payload.SCRIPT_ASSET_SUPPLY_INCREASE:
+			case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
 				if payload.Extra.VerifyExtraSignature(hashForSignature) == false {
 					return errors.New("DelegatedPublicKey signature failed")
 				}
-			case transaction_zether_payload.SCRIPT_STAKING_REWARD, transaction_zether_payload.SCRIPT_STAKING: //na
+			case transaction_zether_payload_script.SCRIPT_STAKING_REWARD, transaction_zether_payload_script.SCRIPT_STAKING: //na
 			}
 		}
 	default:
