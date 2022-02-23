@@ -45,15 +45,10 @@ func (blk *Block) computeHash() []byte {
 	return cryptography.SHA3(helpers.SerializeToBytes(blk))
 }
 
-func (blk *Block) ComputeKernelHashOnly() []byte {
+func (blk *Block) ComputeKernelHash() []byte {
 	writer := helpers.NewBufferWriter()
 	blk.AdvancedSerialization(writer, true, false)
 	return cryptography.SHA3(writer.Bytes())
-}
-
-func (blk *Block) ComputeKernelHash() ([]byte, error) {
-	hash := blk.ComputeKernelHashOnly()
-	return cryptography.ComputeKernelHash(hash, blk.StakingAmount)
 }
 
 func (blk *Block) SerializeForSigning() []byte {

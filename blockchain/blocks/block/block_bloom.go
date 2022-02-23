@@ -9,6 +9,7 @@ type BlockBloom struct {
 	Serialized        []byte `json:"-" msgpack:"-"`
 	Hash              []byte `json:"hash" msgpack:"hash"`
 	KernelHash        []byte `json:"kernelHash" msgpack:"kernelHash"`
+	KernelHashStaked  []byte `json:"-" msgpack:"-"`
 	bloomedHash       bool
 	bloomedKernelHash bool
 }
@@ -38,7 +39,8 @@ func (blk *Block) BloomNow() (err error) {
 	}
 	if !blk.Bloom.bloomedKernelHash {
 
-		if blk.Bloom.KernelHash, err = blk.ComputeKernelHash(); err != nil {
+		blk.Bloom.KernelHash = blk.ComputeKernelHash()
+		if blk.Bloom.KernelHashStaked, err = cryptography.ComputeKernelHash(blk.Bloom.KernelHash, blk.StakingAmount); err != nil {
 			return
 		}
 
