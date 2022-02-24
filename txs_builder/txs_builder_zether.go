@@ -281,6 +281,27 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 		dataStorage := data_storage.NewDataStorage(reader)
 
 		for t, payload := range txData.Payloads {
+
+			if payload.Extra != nil {
+				switch payload.Extra.(type) {
+				case *wizard.WizardZetherPayloadExtraStakingReward:
+
+					recipientRingMembers[t] = make([]string, len(senderRingMembers[t-1]))
+					senderRingMembers[t] = make([]string, len(recipientRingMembers[t-1]))
+					copy(recipientRingMembers[t], senderRingMembers[t-1])
+					copy(senderRingMembers[t], recipientRingMembers[t-1])
+					payload.Recipient = txData.Payloads[t-1].Sender
+
+					sendersPrivateKeys[t] = addresses.GenerateNewPrivateKey()
+					var addr *addresses.Address
+					if addr, err = sendersPrivateKeys[t].GenerateAddress(true, nil, 0, nil); err != nil {
+						return
+					}
+					payload.Sender = addr.EncodeAddr()
+					continue
+				}
+			}
+
 			if senderRingMembers[t], recipientRingMembers[t], err = builder.createZetherRing(&payload.Sender, &payload.Recipient, payload.Asset, payload.RingConfiguration, dataStorage); err != nil {
 				return
 			}
