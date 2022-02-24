@@ -55,7 +55,7 @@ type InnerProductSupport struct {
 	o         *big.Int
 }
 
-var gparams = NewGeneratorParams(128) // these can be pregenerated similarly as in DERO project
+var gparams = NewGeneratorParams(128)
 
 // verify proof
 // first generate supporting structures

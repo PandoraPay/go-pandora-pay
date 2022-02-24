@@ -306,7 +306,7 @@ func reverse(s string) string {
 	return string(rns)
 }
 
-var params = NewGeneratorParams(128) // these can be pregenerated similarly as in DERO project
+var params = NewGeneratorParams(128)
 
 func GenerateProof(assetId []byte, assetIndex int, chainHash []byte, s *Statement, witness *Witness, u *bn256.G1, txid []byte, burn_value uint64) (*Proof, error) {
 

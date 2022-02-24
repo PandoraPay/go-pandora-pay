@@ -58,7 +58,7 @@ func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64
 			uinput := append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), prevChainKernelHash[:]...)
 			uinput = append(uinput, config_coins.NATIVE_ASSET_FULL...)
 			uinput = append(uinput, strconv.Itoa(0)...)
-			u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), threadAddr.walletAdr.privateKeyPoint) // this should be moved to generate proof
+			u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), threadAddr.walletAdr.privateKeyPoint)
 			threadAddr.stakingNonce = cryptography.SHA3(u.EncodeCompressed())
 
 			return true

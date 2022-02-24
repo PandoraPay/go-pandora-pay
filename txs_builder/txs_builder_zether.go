@@ -18,6 +18,7 @@ import (
 	"pandora-pay/config/config_reward"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
+	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -43,10 +44,7 @@ func (builder *TxsBuilder) getRandomAccount(accs *accounts.Accounts) (addr *addr
 	return
 }
 
-func (builder *TxsBuilder) createZetherRing(sender string, recipient *string, assetId []byte, ringConfiguration *ZetherRingConfiguration, dataStorage *data_storage.DataStorage) ([]string, error) {
-
-	var addr *addresses.Address
-	var err error
+func (builder *TxsBuilder) presetZetherRing(ringConfiguration *ZetherRingConfiguration) error {
 
 	if ringConfiguration.RingSize == -1 {
 		probability := rand.Intn(1000)
@@ -60,113 +58,152 @@ func (builder *TxsBuilder) createZetherRing(sender string, recipient *string, as
 			ringConfiguration.RingSize = 256
 		}
 	}
-	if ringConfiguration.NewAccounts == -1 {
+	if ringConfiguration.RecipientRingType.NewAccounts == -1 {
 		probability := rand.Intn(1000)
 		if probability < 800 {
-			ringConfiguration.NewAccounts = 0
+			ringConfiguration.RecipientRingType.NewAccounts = 0
 		} else if probability < 900 {
-			ringConfiguration.NewAccounts = 1
+			ringConfiguration.RecipientRingType.NewAccounts = 1
 		} else {
-			ringConfiguration.NewAccounts = 2
+			ringConfiguration.RecipientRingType.NewAccounts = 2
 		}
 	}
 
 	if ringConfiguration.RingSize < 0 {
-		return nil, errors.New("number is negative")
+		return errors.New("number is negative")
 	}
 	if !crypto.IsPowerOf2(ringConfiguration.RingSize) {
-		return nil, errors.New("ring size is not a power of 2")
+		return errors.New("ring size is not a power of 2")
 	}
-	if ringConfiguration.NewAccounts < 0 || ringConfiguration.NewAccounts > ringConfiguration.RingSize-2 {
-		return nil, errors.New("New accounts needs to be in the interval [0, ringSize-2] ")
+	if ringConfiguration.RecipientRingType.NewAccounts < 0 || ringConfiguration.RecipientRingType.NewAccounts > ringConfiguration.RingSize/2-1 {
+		return errors.New("New accounts needs to be in the interval [0, ringSize-2] ")
 	}
+
+	return nil
+}
+
+func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []byte, ringConfiguration *ZetherRingConfiguration, dataStorage *data_storage.DataStorage) ([]string, []string, error) {
+
+	var addr *addresses.Address
+	var err error
 
 	var accs *accounts.Accounts
 	if accs, err = dataStorage.AccsCollection.GetMap(assetId); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	alreadyUsed := make(map[string]bool)
 
-	if addr, err = addresses.DecodeAddr(sender); err != nil {
-		return nil, err
-	}
-	alreadyUsed[string(addr.PublicKey)] = true
-
-	if *recipient == "" {
-		if accs.Count == 1 {
-			return nil, errors.New("Accounts have only member. Impossible to get random recipient")
+	setAddress := func(address *string) (err error) {
+		if *address == "" {
+			if accs.Count == uint64(len(alreadyUsed)) {
+				return errors.New("Accounts have only member. Impossible to get random recipient")
+			}
+			for {
+				if addr, err = builder.getRandomAccount(accs); err != nil {
+					return err
+				}
+				*address = addr.EncodeAddr()
+				break
+			}
+		} else {
+			if addr, err = addresses.DecodeAddr(*address); err != nil {
+				return err
+			}
 		}
-		for {
-			if addr, err = builder.getRandomAccount(accs); err != nil {
-				return nil, err
+		alreadyUsed[string(addr.PublicKey)] = true
+		return nil
+	}
+
+	includeMembers := func(ring *[]string, includeMembers []string) (err error) {
+		if includeMembers != nil {
+			for _, member := range includeMembers {
+				if addr, err = addresses.DecodeAddr(member); err != nil {
+					return err
+				}
+				if alreadyUsed[string(addr.PublicKey)] {
+					continue
+				}
+				alreadyUsed[string(addr.PublicKey)] = true
+				*ring = append(*ring, addr.EncodeAddr())
+			}
+		}
+		return nil
+	}
+
+	newAccounts := func(ring *[]string, newAccounts int) (err error) {
+		for i := 0; i < newAccounts && len(*ring) < ringConfiguration.RingSize/2-1; i++ {
+			priv := addresses.GenerateNewPrivateKey()
+			if addr, err = priv.GenerateAddress(true, nil, 0, nil); err != nil {
+				return
 			}
 			if alreadyUsed[string(addr.PublicKey)] {
+				i--
 				continue
 			}
-			*recipient = addr.EncodeAddr()
-			break
+			alreadyUsed[string(addr.PublicKey)] = true
+			*ring = append(*ring, addr.EncodeAddr())
 		}
+		return
 	}
 
-	if addr, err = addresses.DecodeAddr(*recipient); err != nil {
-		return nil, err
-	}
-	alreadyUsed[string(addr.PublicKey)] = true
+	newRandomAccounts := func(ring *[]string) (err error) {
 
-	ring := make([]string, 0)
+		for len(*ring) < ringConfiguration.RingSize/2-1 {
 
-	if ringConfiguration.IncludeMembers != nil {
-		for _, member := range ringConfiguration.IncludeMembers {
-			if addr, err = addresses.DecodeAddr(member); err != nil {
-				return nil, err
+			if accs.Count <= uint64(len(alreadyUsed)) {
+				priv := addresses.GenerateNewPrivateKey()
+				if addr, err = priv.GenerateAddress(true, nil, 0, nil); err != nil {
+					return
+				}
+			} else {
+				if addr, err = builder.getRandomAccount(accs); err != nil {
+					return
+				}
 			}
+
 			if alreadyUsed[string(addr.PublicKey)] {
 				continue
 			}
 			alreadyUsed[string(addr.PublicKey)] = true
-			ring = append(ring, addr.EncodeAddr())
+			*ring = append(*ring, addr.EncodeAddr())
 		}
+
+		return
 	}
 
-	//if globals.Arguments["--new-devnet"] == true && accs.Count < 80000 {
-	//	ringConfiguration.NewAccounts = ringConfiguration.RingSize - 2
-	//}
-
-	for i := 0; i < ringConfiguration.NewAccounts && len(ring) < ringConfiguration.RingSize-2; i++ {
-		priv := addresses.GenerateNewPrivateKey()
-		if addr, err = priv.GenerateAddress(true, nil, 0, nil); err != nil {
-			return nil, err
-		}
-		if alreadyUsed[string(addr.PublicKey)] {
-			i--
-			continue
-		}
-		alreadyUsed[string(addr.PublicKey)] = true
-		ring = append(ring, addr.EncodeAddr())
+	if err = setAddress(sender); err != nil {
+		return nil, nil, err
+	}
+	if err = setAddress(receiver); err != nil {
+		return nil, nil, err
 	}
 
-	for len(ring) < ringConfiguration.RingSize-2 {
+	senderRing := make([]string, 0)
+	recipientRing := make([]string, 0)
 
-		if accs.Count-2+uint64(ringConfiguration.NewAccounts) <= uint64(ringConfiguration.RingSize) {
-			priv := addresses.GenerateNewPrivateKey()
-			if addr, err = priv.GenerateAddress(true, nil, 0, nil); err != nil {
-				return nil, err
-			}
-		} else {
-			if addr, err = builder.getRandomAccount(accs); err != nil {
-				return nil, err
-			}
-		}
-
-		if alreadyUsed[string(addr.PublicKey)] {
-			continue
-		}
-		alreadyUsed[string(addr.PublicKey)] = true
-		ring = append(ring, addr.EncodeAddr())
+	if err = includeMembers(&senderRing, ringConfiguration.SenderRingType.IncludeMembers); err != nil {
+		return nil, nil, err
+	}
+	if err = includeMembers(&recipientRing, ringConfiguration.RecipientRingType.IncludeMembers); err != nil {
+		return nil, nil, err
 	}
 
-	return ring, nil
+	if err = newAccounts(&senderRing, ringConfiguration.SenderRingType.NewAccounts); err != nil {
+		return nil, nil, err
+	}
+	if err = newAccounts(&recipientRing, ringConfiguration.RecipientRingType.NewAccounts); err != nil {
+		return nil, nil, err
+	}
+
+	if err = newRandomAccounts(&senderRing); err != nil {
+		return nil, nil, err
+	}
+	if err = newRandomAccounts(&recipientRing); err != nil {
+		return nil, nil, err
+	}
+
+	return senderRing, recipientRing, err
 }
 
 func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, map[string]bool, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
@@ -184,7 +221,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 			payload.Data = &wizard.WizardTransactionData{[]byte{}, false}
 		}
 		if payload.RingConfiguration == nil {
-			payload.RingConfiguration = &ZetherRingConfiguration{-1, -1, nil}
+			payload.RingConfiguration = &ZetherRingConfiguration{-1, &ZetherSenderRingType{false, nil, 0}, &ZetherRecipientRingType{false, nil, 0}}
 		}
 		if payload.Fee == nil {
 			payload.Fee = &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0}
@@ -218,7 +255,8 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 
 	}
 
-	ringMembers := make([][]string, len(txData.Payloads))
+	senderRingMembers := make([][]string, len(txData.Payloads))
+	recipientRingMembers := make([][]string, len(txData.Payloads))
 
 	var chainHeight uint64
 	var chainKernelHash []byte
@@ -232,15 +270,30 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 
 	sendersEncryptedBalances := make([][]byte, len(txData.Payloads))
 
+	for _, payload := range txData.Payloads {
+		if err := builder.presetZetherRing(payload.RingConfiguration); err != nil {
+			return nil, nil, nil, nil, nil, 0, nil, err
+		}
+	}
+
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		dataStorage := data_storage.NewDataStorage(reader)
 
 		for t, payload := range txData.Payloads {
-			if ringMembers[t], err = builder.createZetherRing(payload.Sender, &payload.Recipient, payload.Asset, payload.RingConfiguration, dataStorage); err != nil {
+			if senderRingMembers[t], recipientRingMembers[t], err = builder.createZetherRing(&payload.Sender, &payload.Recipient, payload.Asset, payload.RingConfiguration, dataStorage); err != nil {
 				return
 			}
 		}
+
+		return
+	}); err != nil {
+		return nil, nil, nil, nil, nil, 0, nil, err
+	}
+
+	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		dataStorage := data_storage.NewDataStorage(reader)
 
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 		chainKernelHash = reader.Get("chainKernelHash")
@@ -346,11 +399,18 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 			if err = addPoint(payload.Recipient); err != nil {
 				return
 			}
-			for _, ringMember := range ringMembers[t] {
+			for _, ringMember := range senderRingMembers[t] {
 				if err = addPoint(ringMember); err != nil {
 					return
 				}
 			}
+			for _, ringMember := range recipientRingMembers[t] {
+				if err = addPoint(ringMember); err != nil {
+					return
+				}
+			}
+
+			transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(payload.RingConfiguration.RingSize)
 
 			rings[t] = ring
 		}
@@ -436,7 +496,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				0,
 				"",
 				blkComplete.StakingAmount,
-				&ZetherRingConfiguration{256, 0, nil},
+				&ZetherRingConfiguration{256, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStaking{},
@@ -447,7 +507,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				reward,
 				forger.EncodeAddr(),
 				0,
-				&ZetherRingConfiguration{256, 0, nil},
+				&ZetherRingConfiguration{256, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStakingReward{nil, reward},

@@ -4,10 +4,22 @@ import (
 	"pandora-pay/txs_builder/wizard"
 )
 
+type ZetherSenderRingType struct {
+	RequireDelegatedAccounts bool     `json:"requireDelegatedAccounts" msgpack:"requireDelegatedAccounts"`
+	IncludeMembers           []string `json:"includeMembers" msgpack:"includeMembers"`
+	NewAccounts              int      `json:"newAccounts" msgpack:"newAccounts"`
+}
+
+type ZetherRecipientRingType struct {
+	RequireDelegatedAccounts bool     `json:"requireDelegatedAccounts" msgpack:"requireDelegatedAccounts"`
+	IncludeMembers           []string `json:"includeMembers" msgpack:"includeMembers"`
+	NewAccounts              int      `json:"newAccounts" msgpack:"newAccounts"`
+}
+
 type ZetherRingConfiguration struct {
-	RingSize       int      `json:"ringSize"  msgpack:"ringSize"`
-	NewAccounts    int      `json:"newAccounts"  msgpack:"newAccounts"`
-	IncludeMembers []string `json:"includeMembers" msgpack:"includeMembers"`
+	RingSize          int                      `json:"ringSize"  msgpack:"ringSize"`
+	SenderRingType    *ZetherSenderRingType    `json:"senderRingType" msgpack:"senderRingType"`
+	RecipientRingType *ZetherRecipientRingType `json:"recipientRingType" msgpack:"recipientRingType"`
 }
 
 type TxBuilderCreateZetherTxPayload struct {

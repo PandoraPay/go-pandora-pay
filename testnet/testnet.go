@@ -30,7 +30,7 @@ type Testnet struct {
 }
 
 func (testnet *Testnet) testnetGetZetherRingConfiguration() *txs_builder.ZetherRingConfiguration {
-	zetherRingConfiguration := &txs_builder.ZetherRingConfiguration{-1, -1, nil}
+	zetherRingConfiguration := &txs_builder.ZetherRingConfiguration{-1, &txs_builder.ZetherSenderRingType{}, &txs_builder.ZetherRecipientRingType{false, nil, -1}}
 	if config.LIGHT_COMPUTATIONS {
 		zetherRingConfiguration.RingSize = int(math.Pow(2, float64(rand.Intn(2)+3)))
 	}

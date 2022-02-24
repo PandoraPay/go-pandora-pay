@@ -116,7 +116,9 @@ func (builder *TxsBuilder) readAddressOptional(text string, assetId []byte, allo
 
 func (builder *TxsBuilder) readZetherRingConfiguration() *ZetherRingConfiguration {
 
-	configuration := &ZetherRingConfiguration{}
+	configuration := &ZetherRingConfiguration{
+		-1, &ZetherSenderRingType{}, &ZetherRecipientRingType{},
+	}
 	configuration.RingSize = gui.GUI.OutputReadInt("Ring Size (2,4,8,16,32,64,128,256). Leave empty for random", true, -1, func(value int) bool {
 		switch value {
 		case 2, 4, 8, 16, 32, 64, 128, 256:
@@ -126,7 +128,7 @@ func (builder *TxsBuilder) readZetherRingConfiguration() *ZetherRingConfiguratio
 		}
 	})
 
-	configuration.NewAccounts = gui.GUI.OutputReadInt("Ring New Accounts (0...n-2). Use empty for random", true, -1, func(value int) bool {
+	configuration.RecipientRingType.NewAccounts = gui.GUI.OutputReadInt("Ring New Accounts (0...n-2). Use empty for random", true, -1, func(value int) bool {
 		return value >= 0
 	})
 

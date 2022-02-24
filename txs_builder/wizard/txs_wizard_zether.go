@@ -42,7 +42,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	statusCallback("Transaction Signing...")
 
 	publickeylists := make([][]*bn256.G1, len(transfers))
-	witness_indexes := make([][]int, len(transfers))
 	parities := make([]bool, len(transfers))
 
 	for t, transfer := range transfers {
@@ -71,20 +70,20 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			return errors.New("Rings[1] must be the recipient")
 		}
 
-		witness_indexes[t] = helpers.ShuffleArray_for_Zether(len(rings[t]))
+		witness_indexes := transfers[t].WitnessIndexes
 		anonset_publickeys := rings[t][2:]
 		publickeylists[t] = make([]*bn256.G1, 0)
 
-		parities[t] = witness_indexes[t][0]%2 == 0
+		parities[t] = witness_indexes[0]%2 == 0
 
 		unique := make(map[string]bool)
-		for i := range witness_indexes[t] {
+		for i := range witness_indexes {
 
 			var publicKey *bn256.G1
 			switch i {
-			case witness_indexes[t][0]:
+			case witness_indexes[0]:
 				publicKey = sender
-			case witness_indexes[t][1]:
+			case witness_indexes[1]:
 				publicKey = recipient
 			default:
 				publicKey = anonset_publickeys[0]
@@ -239,7 +238,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		var D bn256.G1
 
 		publickeylist := publickeylists[t]
-		witness_index := witness_indexes[t]
+		witness_index := transfers[t].WitnessIndexes
 
 		senderKey := &addresses.PrivateKey{Key: transfer.Sender}
 		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
@@ -492,7 +491,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		uinput = append(uinput, txBase.Payloads[t].Asset[:]...)
 		uinput = append(uinput, strconv.Itoa(assetIndex)...)
 
-		u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), sender_secret) // this should be moved to generate proof
+		u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), sender_secret)
 
 		statusCallback(fmt.Sprintf("Payload %d generating zero knowledge proofs... ", t+1))
 		if txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Asset, assetIndex, txBase.ChainKernelHash, txBase.Payloads[t].Statement, &witness_list[t], u, tx.GetHashSigningManually(), txBase.Payloads[t].BurnValue); err != nil {

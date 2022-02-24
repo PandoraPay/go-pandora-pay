@@ -40,6 +40,7 @@ type WizardZetherTransfer struct {
 	FeeLeadingZeros        byte                     `json:"feeLeadingZeros" msgpack:"feeLeadingZeros"`
 	Data                   *WizardTransactionData   `json:"data" msgpack:"data"`
 	PayloadExtra           WizardZetherPayloadExtra `json:"payloadExtra" msgpack:"payloadExtra"`
+	WitnessIndexes         []int                    `json:"witnessIndexes" msgpack:"witnessIndexes"`
 }
 
 type WizardZetherPublicKeyIndex struct {

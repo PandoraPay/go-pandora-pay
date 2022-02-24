@@ -38,7 +38,7 @@ func (api *Faucet) GetFaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, 
 			Data:              &wizard.WizardTransactionData{[]byte("Testnet Faucet Tx"), true},
 			Fee:               &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0},
 			Amount:            config.FAUCET_TESTNET_COINS_UNITS,
-			RingConfiguration: &txs_builder.ZetherRingConfiguration{128, -1, nil},
+			RingConfiguration: &txs_builder.ZetherRingConfiguration{128, &txs_builder.ZetherSenderRingType{}, &txs_builder.ZetherRecipientRingType{}},
 		}},
 	}
 
