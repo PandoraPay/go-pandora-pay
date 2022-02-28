@@ -1,33 +1,51 @@
 package address_balance_decryptor
 
 import (
+	"pandora-pay/addresses"
 	"pandora-pay/config"
 	"pandora-pay/helpers/generics"
 )
 
 type AddressBalanceDecryptor struct {
-	all                 *generics.Map[string, *addressBalanceDecryptedWork]
-	workers             []*AddressBalanceDecryptorWorker
-	newValidationWorkCn chan *addressBalanceDecryptedWork
+	all            *generics.Map[string, *addressBalanceDecryptorWork]
+	previousValues *generics.Map[string, uint64]
+	workers        []*AddressBalanceDecryptorWorker
+	newWorkCn      chan *addressBalanceDecryptorWork
 }
 
-func (decryptor *AddressBalanceDecryptor) DecryptBalanceByPrivateKey(privateKey []byte) error {
-	return nil
+func (decryptor *AddressBalanceDecryptor) DecryptBalanceByPrivateKey(privateKey, encryptedBalance []byte, usePreviousValue, storeNewPreviousValue bool) (uint64, error) {
+
+	priv := &addresses.PrivateKey{privateKey}
+
+	return decryptor.DecryptBalance(priv.GeneratePublicKey(), privateKey, encryptedBalance, usePreviousValue, storeNewPreviousValue)
 }
 
-func (decryptor *AddressBalanceDecryptor) DecryptBalance(publicKey, privateKey []byte, balance []byte) (uint64, error) {
+func (decryptor *AddressBalanceDecryptor) DecryptBalance(publicKey, privateKey []byte, encryptedBalance []byte, usePreviousValue, storeNewPreviousValue bool) (uint64, error) {
 
-	foundWork, loaded := decryptor.all.LoadOrStore(string(publicKey)+"_"+string(balance), &addressBalanceDecryptedWork{make(chan struct{}), ADDRESS_BALANCE_DECRYPTED_INIT, 0, 0, nil})
+	if len(encryptedBalance) == 0 {
+		return 0, nil
+	}
+
+	previousValue := uint64(0)
+	if usePreviousValue {
+		previousValue, _ = decryptor.previousValues.Load(string(publicKey))
+	}
+
+	foundWork, loaded := decryptor.all.LoadOrStore(string(publicKey)+"_"+string(encryptedBalance), &addressBalanceDecryptorWork{encryptedBalance, privateKey, previousValue, make(chan struct{}), ADDRESS_BALANCE_DECRYPTED_INIT, 0, nil})
 	if !loaded {
-		decryptor.newValidationWorkCn <- foundWork
+		decryptor.newWorkCn <- foundWork
 	}
 
 	<-foundWork.wait
-	if foundWork.result != nil {
-		return 0, foundWork.result
+	if foundWork.result.err != nil {
+		return 0, foundWork.result.err
 	}
 
-	return foundWork.decrypted, nil
+	if storeNewPreviousValue {
+		decryptor.previousValues.Store(string(publicKey), foundWork.result.decryptedBalance)
+	}
+
+	return foundWork.result.decryptedBalance, nil
 }
 
 func NewAddressBalanceDecryptor() (*AddressBalanceDecryptor, error) {
@@ -38,13 +56,14 @@ func NewAddressBalanceDecryptor() (*AddressBalanceDecryptor, error) {
 	}
 
 	addressBalanceDecryptor := &AddressBalanceDecryptor{
-		&generics.Map[string, *addressBalanceDecryptedWork]{},
+		&generics.Map[string, *addressBalanceDecryptorWork]{},
+		&generics.Map[string, uint64]{},
 		make([]*AddressBalanceDecryptorWorker, threadsCount),
-		make(chan *addressBalanceDecryptedWork, 1),
+		make(chan *addressBalanceDecryptorWork, 1),
 	}
 
 	for i := range addressBalanceDecryptor.workers {
-		addressBalanceDecryptor.workers[i] = newAddressBalanceDecryptorWorker(addressBalanceDecryptor.newValidationWorkCn)
+		addressBalanceDecryptor.workers[i] = newAddressBalanceDecryptorWorker(addressBalanceDecryptor.newWorkCn)
 	}
 
 	for _, worker := range addressBalanceDecryptor.workers {

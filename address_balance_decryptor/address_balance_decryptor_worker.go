@@ -1,19 +1,43 @@
 package address_balance_decryptor
 
 import (
+	"context"
+	"pandora-pay/addresses"
 	"pandora-pay/config"
+	"pandora-pay/cryptography/crypto"
 	"sync/atomic"
 	"time"
 )
 
 type AddressBalanceDecryptorWorker struct {
-	newAddressBalanceDecryptedWorkCn chan *addressBalanceDecryptedWork
+	newWorkCn chan *addressBalanceDecryptorWork
+}
+
+func (worker *AddressBalanceDecryptorWorker) processWork(work *addressBalanceDecryptorWork) (uint64, error) {
+
+	balancePoint, err := new(crypto.ElGamal).Deserialize(work.encryptedBalance)
+	if err != nil {
+		return 0, err
+	}
+
+	priv := &addresses.PrivateKey{work.privateKey}
+
+	decrypted, err := priv.DecryptBalance(balancePoint, work.previousValue, context.Background(), func(string) {})
+	if err != nil {
+		return 0, err
+	}
+
+	return decrypted, nil
 }
 
 func (worker *AddressBalanceDecryptorWorker) run() {
 
 	for {
-		foundWork, _ := <-worker.newAddressBalanceDecryptedWorkCn
+		foundWork, _ := <-worker.newWorkCn
+
+		foundWork.result = &addressBalanceDecryptorWorkResult{}
+
+		foundWork.result.decryptedBalance, foundWork.result.err = worker.processWork(foundWork)
 
 		foundWork.time = time.Now().Unix()
 		atomic.StoreInt32(&foundWork.status, ADDRESS_BALANCE_DECRYPTED_PROCESSED)
@@ -31,7 +55,7 @@ func (worker *AddressBalanceDecryptorWorker) start() {
 	go worker.run()
 }
 
-func newAddressBalanceDecryptorWorker(newWorkCn chan *addressBalanceDecryptedWork) *AddressBalanceDecryptorWorker {
+func newAddressBalanceDecryptorWorker(newWorkCn chan *addressBalanceDecryptorWork) *AddressBalanceDecryptorWorker {
 	worker := &AddressBalanceDecryptorWorker{
 		newWorkCn,
 	}

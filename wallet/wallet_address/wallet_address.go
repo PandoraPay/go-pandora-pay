@@ -2,7 +2,6 @@ package wallet_address
 
 import (
 	"bytes"
-	"encoding/base64"
 	"errors"
 	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
@@ -10,16 +9,15 @@ import (
 )
 
 type WalletAddress struct {
-	Version                    Version                                   `json:"version" msgpack:"version"`
-	Name                       string                                    `json:"name" msgpack:"name"`
-	SeedIndex                  uint32                                    `json:"seedIndex" msgpack:"seedIndex"`
-	IsMine                     bool                                      `json:"isMine" msgpack:"isMine"`
-	PrivateKey                 *addresses.PrivateKey                     `json:"privateKey" msgpack:"privateKey"`
-	Registration               []byte                                    `json:"registration" msgpack:"registration"`
-	PublicKey                  []byte                                    `json:"publicKey" msgpack:"publicKey"`
-	DecryptedBalances          map[string]*WalletAddressDecryptedBalance `json:"decryptedBalances" msgpack:"decryptedBalances"`
-	AddressEncoded             string                                    `json:"addressEncoded" msgpack:"addressEncoded"`
-	AddressRegistrationEncoded string                                    `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
+	Version                    Version               `json:"version" msgpack:"version"`
+	Name                       string                `json:"name" msgpack:"name"`
+	SeedIndex                  uint32                `json:"seedIndex" msgpack:"seedIndex"`
+	IsMine                     bool                  `json:"isMine" msgpack:"isMine"`
+	PrivateKey                 *addresses.PrivateKey `json:"privateKey" msgpack:"privateKey"`
+	Registration               []byte                `json:"registration" msgpack:"registration"`
+	PublicKey                  []byte                `json:"publicKey" msgpack:"publicKey"`
+	AddressEncoded             string                `json:"addressEncoded" msgpack:"addressEncoded"`
+	AddressRegistrationEncoded string                `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
 }
 
 func (addr *WalletAddress) FindDelegatedStake(currentNonce, lastKnownNonce uint32, delegatedStakePublicKey []byte) (*WalletAddressDelegatedStake, error) {
@@ -70,18 +68,6 @@ func (addr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDel
 	}, nil
 }
 
-func (addr *WalletAddress) UpdateDecryptedBalance(newDecryptedBalance uint64, balance []byte, assetId []byte) {
-	found := addr.DecryptedBalances[base64.StdEncoding.EncodeToString(assetId)]
-	if found != nil {
-		found.Amount = newDecryptedBalance
-	} else {
-		addr.DecryptedBalances[base64.StdEncoding.EncodeToString(assetId)] = &WalletAddressDecryptedBalance{
-			newDecryptedBalance,
-			balance,
-		}
-	}
-}
-
 func (addr *WalletAddress) GetAddress(registered bool) string {
 	if registered {
 		return addr.AddressEncoded
@@ -117,11 +103,6 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		return nil
 	}
 
-	decryptedBalances := make(map[string]*WalletAddressDecryptedBalance)
-	for k, v := range addr.DecryptedBalances {
-		decryptedBalances[k] = v
-	}
-
 	return &WalletAddress{
 		addr.Version,
 		addr.Name,
@@ -130,7 +111,6 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		addr.PrivateKey,
 		addr.Registration,
 		addr.PublicKey,
-		decryptedBalances,
 		addr.AddressEncoded,
 		addr.AddressRegistrationEncoded,
 	}
