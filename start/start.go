@@ -3,6 +3,7 @@ package start
 import (
 	"context"
 	"os"
+	"pandora-pay/address_balance_decryptor"
 	"pandora-pay/app"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
@@ -50,6 +51,11 @@ func _startMain() (err error) {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "txs validator initialized")
+
+	if app.AddressBalanceDecryptor, err = address_balance_decryptor.NewAddressBalanceDecryptor(); err != nil {
+		return
+	}
+	globals.MainEvents.BroadcastEvent("main", "address balance decryptor validator initialized")
 
 	if app.Mempool, err = mempool.CreateMempool(app.TxsValidator); err != nil {
 		return
