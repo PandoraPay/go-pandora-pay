@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type txValidated struct {
+type txValidatedWork struct {
 	wait       chan struct{}
 	status     int32 //use atomic
 	tx         *transaction.Transaction

@@ -12,10 +12,10 @@ import (
 )
 
 type TxsValidatorWorker struct {
-	newValidationWorkCn chan *txValidated
+	newValidationWorkCn chan *txValidatedWork
 }
 
-func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidated) error {
+func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidatedWork) error {
 
 	if err := foundWork.tx.VerifyBloomAll(); err != nil {
 		return err
@@ -88,7 +88,7 @@ func (worker *TxsValidatorWorker) start() {
 	go worker.run()
 }
 
-func newTxsValidatorWorker(newValidationWorkCn chan *txValidated) *TxsValidatorWorker {
+func newTxsValidatorWorker(newValidationWorkCn chan *txValidatedWork) *TxsValidatorWorker {
 	worker := &TxsValidatorWorker{
 		newValidationWorkCn,
 	}

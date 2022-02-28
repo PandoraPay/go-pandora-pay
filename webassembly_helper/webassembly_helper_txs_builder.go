@@ -10,7 +10,6 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/bn256"
@@ -79,10 +78,6 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 		switch txData.PayloadScriptType[t] {
 		case transaction_zether_payload_script.SCRIPT_TRANSFER:
 			payloadExtra = nil
-		case transaction_zether_payload.SCRIPT_CLAIM:
-			payloadExtra = &wizard.WizardZetherPayloadExtraClaim{}
-		case transaction_zether_payload.SCRIPT_DELEGATE_STAKE:
-			payloadExtra = &wizard.WizardZetherPayloadExtraDelegateStake{}
 		case transaction_zether_payload_script.SCRIPT_ASSET_CREATE:
 			payloadExtra = &wizard.WizardZetherPayloadExtraAssetCreate{}
 		case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:

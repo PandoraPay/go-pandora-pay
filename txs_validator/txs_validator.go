@@ -9,14 +9,14 @@ import (
 )
 
 type TxsValidator struct {
-	all                 *generics.Map[string, *txValidated]
+	all                 *generics.Map[string, *txValidatedWork]
 	workers             []*TxsValidatorWorker
-	newValidationWorkCn chan *txValidated
+	newValidationWorkCn chan *txValidatedWork
 }
 
 func (validator *TxsValidator) MarkAsValidatedTx(tx *transaction.Transaction) error {
 
-	foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
+	foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidatedWork{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
 	if !loaded {
 		if err := foundWork.tx.BloomAll(); err != nil {
 			foundWork.result = err
@@ -42,7 +42,7 @@ func (validator *TxsValidator) MarkAsValidatedTx(tx *transaction.Transaction) er
 //blocking
 func (validator *TxsValidator) ValidateTx(tx *transaction.Transaction) error {
 
-	foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
+	foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidatedWork{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
 	if !loaded {
 		validator.newValidationWorkCn <- foundWork
 	}
@@ -59,9 +59,9 @@ func (validator *TxsValidator) ValidateTx(tx *transaction.Transaction) error {
 
 func (validator *TxsValidator) ValidateTxs(txs []*transaction.Transaction) error {
 
-	outputs := make([]*txValidated, len(txs))
+	outputs := make([]*txValidatedWork, len(txs))
 	for i, tx := range txs {
-		foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidated{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
+		foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidatedWork{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
 		if !loaded {
 			validator.newValidationWorkCn <- foundWork
 		}
@@ -89,7 +89,7 @@ func (validator *TxsValidator) runRemoveExpiredTransactions() {
 
 		now := time.Now().Unix()
 
-		validator.all.Range(func(key string, work *txValidated) bool {
+		validator.all.Range(func(key string, work *txValidatedWork) bool {
 
 			if atomic.LoadInt32(&work.status) == TX_VALIDATED_PROCCESSED {
 
@@ -118,9 +118,9 @@ func NewTxsValidator() (*TxsValidator, error) {
 	}
 
 	txsValidator := &TxsValidator{
-		&generics.Map[string, *txValidated]{},
+		&generics.Map[string, *txValidatedWork]{},
 		make([]*TxsValidatorWorker, threadsCount),
-		make(chan *txValidated, 1),
+		make(chan *txValidatedWork, 1),
 	}
 
 	for i := range txsValidator.workers {

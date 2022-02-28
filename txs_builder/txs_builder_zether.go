@@ -103,6 +103,9 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 				if addr, err = builder.getRandomAccount(accs); err != nil {
 					return err
 				}
+				if alreadyUsed[string(addr.PublicKey)] {
+					continue
+				}
 				*address = addr.EncodeAddr()
 				break
 			}
@@ -110,6 +113,9 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 			if addr, err = addresses.DecodeAddr(*address); err != nil {
 				return err
 			}
+		}
+		if alreadyUsed[string(addr.PublicKey)] {
+			return errors.New("Address was used before")
 		}
 		alreadyUsed[string(addr.PublicKey)] = true
 		return nil

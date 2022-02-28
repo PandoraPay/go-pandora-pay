@@ -4,7 +4,6 @@ import (
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/config/config_nodes"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/mempool"
@@ -102,16 +101,15 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 
 	txs, _ := thread.mempool.GetNextTransactionsToInclude(newBlk.Block.PrevHash)
 
-	txReward, err := thread.createForgingTransactions(newBlk, solution.address.publicKey)
+	txStakingReward, err := thread.createForgingTransactions(newBlk, solution.address.publicKey)
 
 	if err != nil {
 		return
 	}
-	newBlk.Txs = []*transaction.Transaction{txReward}
+	newBlk.Txs = []*transaction.Transaction{txStakingReward}
 	newBlk.Txs = append(newBlk.Txs, txs...)
 
 	newBlk.Block.MerkleHash = newBlk.MerkleHash()
-	newBlk.Block.StakingFee = config_nodes.DELEGATOR_FEE
 
 	newBlk.Bloom = nil
 	if err = newBlk.BloomAll(); err != nil {

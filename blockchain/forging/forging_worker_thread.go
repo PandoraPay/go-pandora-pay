@@ -1,6 +1,7 @@
 package forging
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"math/big"
@@ -36,9 +37,10 @@ type ForgingWorkerThread struct {
 }
 
 type ForgingWorkerThreadAddress struct {
-	walletAdr     *ForgingWalletAddress
-	stakingAmount uint64
-	stakingNonce  []byte
+	walletAdr                       *ForgingWalletAddress
+	stakingAmount                   uint64
+	stakingNonce                    []byte
+	stakingNoncePrevChainKernelHash []byte
 }
 
 func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64, prevChainKernelHash []byte) bool {
@@ -55,11 +57,14 @@ func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64
 
 		if threadAddr.stakingAmount >= config_stake.GetRequiredStake(height) {
 
-			uinput := append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), prevChainKernelHash[:]...)
-			uinput = append(uinput, config_coins.NATIVE_ASSET_FULL...)
-			uinput = append(uinput, strconv.Itoa(0)...)
-			u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), threadAddr.walletAdr.privateKeyPoint)
-			threadAddr.stakingNonce = cryptography.SHA3(u.EncodeCompressed())
+			if !bytes.Equal(threadAddr.stakingNoncePrevChainKernelHash, prevChainKernelHash) {
+				uinput := append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), prevChainKernelHash[:]...)
+				uinput = append(uinput, config_coins.NATIVE_ASSET_FULL...)
+				uinput = append(uinput, strconv.Itoa(0)...)
+				u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), threadAddr.walletAdr.privateKeyPoint)
+				threadAddr.stakingNonce = cryptography.SHA3(u.EncodeCompressed())
+				threadAddr.stakingNoncePrevChainKernelHash = prevChainKernelHash
+			}
 
 			return true
 		}
@@ -137,6 +142,7 @@ func (worker *ForgingWorkerThread) forge() {
 				walletAddr = &ForgingWorkerThreadAddress{ //making sure the has a copy
 					newWalletAddr, //already it is copied
 					0,
+					nil,
 					nil,
 				}
 				wallets[newWalletAddr.publicKeyStr] = walletAddr

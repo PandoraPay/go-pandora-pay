@@ -1,8 +1,6 @@
 package block
 
 import (
-	"errors"
-	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
@@ -15,7 +13,6 @@ type Block struct {
 	Timestamp      uint64      `json:"timestamp" msgpack:"timestamp"`
 	StakingAmount  uint64      `json:"stakingAmount" msgpack:"stakingAmount"`
 	StakingNonce   []byte      `json:"stakingNonce" msgpack:"stakingNonce"` // 33 byte public key can also be found into the accounts tree
-	StakingFee     uint64      `json:"stakingFee" msgpack:"stakingFee"`
 	Bloom          *BlockBloom `json:"bloom" msgpack:"bloom"`
 }
 
@@ -28,10 +25,6 @@ func CreateEmptyBlock() *Block {
 func (blk *Block) validate() error {
 	if err := blk.BlockHeader.validate(); err != nil {
 		return err
-	}
-
-	if blk.StakingFee > config_stake.DELEGATING_STAKING_FEE_MAX_VALUE {
-		return errors.New("DelegatedStakeFee is invalid")
 	}
 
 	return nil
@@ -76,10 +69,6 @@ func (blk *Block) AdvancedSerialization(w *helpers.BufferWriter, kernelHash bool
 
 	w.Write(blk.StakingNonce)
 
-	if !kernelHash {
-		w.WriteUvarint(blk.StakingFee)
-	}
-
 }
 
 func (blk *Block) SerializeForForging(w *helpers.BufferWriter) {
@@ -119,9 +108,6 @@ func (blk *Block) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 	if blk.StakingNonce, err = r.ReadBytes(32); err != nil {
-		return
-	}
-	if blk.StakingFee, err = r.ReadUvarint(); err != nil {
 		return
 	}
 

@@ -86,7 +86,7 @@ func createLookupTable(count, table_size int, tableComputedCn chan *LookupTable,
 				(t)[i][j+k] = binary.BigEndian.Uint64(compressed[25:])
 			}
 
-			if runtime.GOARCH == "wasm" && j&8191 == 0 {
+			if j&8191 == 0 && runtime.GOARCH == "wasm" {
 
 				statusCallback(fmt.Sprintf("%.2f%%", float32(j)*100/float32(len((t)[i]))))
 
@@ -139,7 +139,7 @@ func (t *LookupTable) Lookup(p *bn256.G1, ctx context.Context, statusCallback fu
 	//  fmt.Printf("jumping into loop %d\n", loop_counter)
 	for { // it is an infinite loop
 
-		if runtime.GOARCH == "wasm" && loop_counter&2047 == 0 {
+		if loop_counter&2047 == 0 && runtime.GOARCH == "wasm" {
 			select {
 			case <-ctx.Done():
 				return 0, errors.New("Scanning Suspended")
@@ -169,8 +169,8 @@ func (t *LookupTable) Lookup(p *bn256.G1, ctx context.Context, statusCallback fu
 				balance_part = ((*t)[i][index]) & 0xffffff
 				acc.ScalarMult(crypto.G, new(big.Int).SetUint64(balance+balance_part))
 
-				//if bytes.Equal( acc.EncodeUncompressed(), p.EncodeUncompressed() )  { // since we may have part collisions, make sure full point is checked
-				if acc.String() == p.String() { // since we may have part collisions, make sure full point is checked
+				//if bytes.Equal(acc.EncodeUncompressed(), p.EncodeUncompressed()) { // since we may have part collisions, make sure full point is checked
+				if acc.Equal(p) { // since we may have part collisions, make sure full point is checked
 					balance += balance_part
 					// fmt.Printf("balance found  %d part(%d) index %d   big part %x\n",balance,balance_part, index, big_part );
 
