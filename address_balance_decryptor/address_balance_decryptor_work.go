@@ -1,5 +1,7 @@
 package address_balance_decryptor
 
+import "context"
+
 type addressBalanceDecryptorWorkResult struct {
 	decryptedBalance uint64
 	err              error
@@ -13,6 +15,8 @@ type addressBalanceDecryptorWork struct {
 	status           int32 //use atomic
 	time             int64
 	result           *addressBalanceDecryptorWorkResult
+	ctx              context.Context
+	statusCallback   func(string)
 }
 
 const (

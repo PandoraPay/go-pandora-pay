@@ -1,7 +1,6 @@
 package address_balance_decryptor
 
 import (
-	"context"
 	"pandora-pay/addresses"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/crypto"
@@ -22,7 +21,7 @@ func (worker *AddressBalanceDecryptorWorker) processWork(work *addressBalanceDec
 
 	priv := &addresses.PrivateKey{work.privateKey}
 
-	decrypted, err := priv.DecryptBalance(balancePoint, work.previousValue, context.Background(), func(string) {})
+	decrypted, err := priv.DecryptBalance(balancePoint, work.previousValue, work.ctx, work.statusCallback)
 	if err != nil {
 		return 0, err
 	}

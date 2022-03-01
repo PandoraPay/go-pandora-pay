@@ -62,7 +62,7 @@ func _startMain() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "mempool initialized")
 
-	if app.Forging, err = forging.CreateForging(app.Mempool); err != nil {
+	if app.Forging, err = forging.CreateForging(app.Mempool, app.AddressBalanceDecryptor); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "forging initialized")
@@ -72,7 +72,7 @@ func _startMain() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
 
-	if app.Wallet, err = wallet.CreateWallet(app.Forging, app.Mempool); err != nil {
+	if app.Wallet, err = wallet.CreateWallet(app.Forging, app.Mempool, app.AddressBalanceDecryptor); err != nil {
 		return
 	}
 	if err = app.Wallet.ProcessWalletArguments(); err != nil {

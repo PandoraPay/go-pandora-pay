@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/binary"
 	"math/big"
+	"pandora-pay/address_balance_decryptor"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
@@ -28,12 +29,13 @@ type ForgingSolution struct {
 }
 
 type ForgingWorkerThread struct {
-	hashes                uint32
-	index                 int
-	workCn                chan *forging_block_work.ForgingWork
-	workerSolutionCn      chan *ForgingSolution
-	addWalletAddressCn    chan *ForgingWalletAddress
-	removeWalletAddressCn chan string //publicKey
+	addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor
+	hashes                  uint32
+	index                   int
+	workCn                  chan *forging_block_work.ForgingWork
+	workerSolutionCn        chan *ForgingSolution
+	addWalletAddressCn      chan *ForgingWalletAddress
+	removeWalletAddressCn   chan string //publicKey
 }
 
 type ForgingWorkerThreadAddress struct {
@@ -43,7 +45,7 @@ type ForgingWorkerThreadAddress struct {
 	stakingNoncePrevChainKernelHash []byte
 }
 
-func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64, prevChainKernelHash []byte) bool {
+func (worker *ForgingWorkerThread) computeStakingAmount(threadAddr *ForgingWorkerThreadAddress, height uint64, prevChainKernelHash []byte) bool {
 
 	if threadAddr.walletAdr.account != nil && threadAddr.walletAdr.privateKey != nil {
 
@@ -51,7 +53,7 @@ func (threadAddr *ForgingWorkerThreadAddress) computeStakingAmount(height uint64
 
 			stakingAmountBalance := threadAddr.walletAdr.account.DelegatedStake.ComputeDelegatedStakeAvailable(threadAddr.walletAdr.account.Balance.Amount, height)
 			if stakingAmountBalance != nil {
-				threadAddr.stakingAmount, _ = threadAddr.walletAdr.privateKey.DecryptBalance(stakingAmountBalance, threadAddr.stakingAmount, context.Background(), func(string) {})
+				threadAddr.stakingAmount, _ = worker.addressBalanceDecryptor.DecryptBalance(threadAddr.walletAdr.publicKey, threadAddr.walletAdr.privateKey.Key, stakingAmountBalance.Serialize(), config_coins.NATIVE_ASSET_FULL, true, threadAddr.stakingAmount, true, context.Background(), func(string) {})
 			}
 		}
 
@@ -122,7 +124,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 		walletsStakable = make(map[string]*ForgingWorkerThreadAddress)
 		for _, walletAddr := range wallets {
-			if walletAddr.computeStakingAmount(blkHeight, work.BlkComplete.PrevKernelHash) {
+			if worker.computeStakingAmount(walletAddr, blkHeight, work.BlkComplete.PrevKernelHash) {
 				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
 			}
 		}
@@ -151,7 +153,7 @@ func (worker *ForgingWorkerThread) forge() {
 			}
 
 			if work != nil {
-				if walletAddr.computeStakingAmount(blkHeight, work.BlkComplete.PrevKernelHash) {
+				if worker.computeStakingAmount(walletAddr, blkHeight, work.BlkComplete.PrevKernelHash) {
 					walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
 				} else {
 					delete(walletsStakable, walletAddr.walletAdr.publicKeyStr)
@@ -250,12 +252,13 @@ func (worker *ForgingWorkerThread) forge() {
 
 }
 
-func createForgingWorkerThread(index int, workerSolutionCn chan *ForgingSolution) *ForgingWorkerThread {
+func createForgingWorkerThread(index int, workerSolutionCn chan *ForgingSolution, addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor) *ForgingWorkerThread {
 	return &ForgingWorkerThread{
-		index:                 index,
-		workCn:                make(chan *forging_block_work.ForgingWork),
-		workerSolutionCn:      workerSolutionCn,
-		addWalletAddressCn:    make(chan *ForgingWalletAddress),
-		removeWalletAddressCn: make(chan string),
+		addressBalanceDecryptor: addressBalanceDecryptor,
+		index:                   index,
+		workCn:                  make(chan *forging_block_work.ForgingWork),
+		workerSolutionCn:        workerSolutionCn,
+		addWalletAddressCn:      make(chan *ForgingWalletAddress),
+		removeWalletAddressCn:   make(chan string),
 	}
 }

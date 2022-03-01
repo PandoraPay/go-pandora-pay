@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"pandora-pay/addresses"
+	"pandora-pay/app"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/cryptography/crypto/balance-decryptor"
 	"pandora-pay/webassembly/webassembly_utils"
@@ -57,7 +58,7 @@ func decryptBalance(this js.Value, args []js.Value) interface{} {
 
 			time.Sleep(time.Millisecond * 10)
 
-			value, finalErr = privateKey.DecryptBalance(balance, parameters.PreviousValue, ctx, func(status string) {
+			value, finalErr = app.AddressBalanceDecryptor.DecryptBalanceByPrivateKey(parameters.PrivateKey, balance, parameters.Asset, true, parameters.PreviousValue, true, ctx, func(status string) {
 				args[1].Invoke(status)
 				time.Sleep(500 * time.Microsecond)
 			})

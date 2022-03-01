@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"pandora-pay/address_balance_decryptor"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/forging"
@@ -12,30 +13,32 @@ import (
 )
 
 type Wallet struct {
-	Encryption          *WalletEncryption               `json:"encryption" msgpack:"encryption"`
-	Version             Version                         `json:"version" msgpack:"version"`
-	Mnemonic            string                          `json:"mnemonic" msgpack:"mnemonic"`
-	Seed                []byte                          `json:"seed" msgpack:"seed"` //32 byte
-	SeedIndex           uint32                          `json:"seedIndex" msgpack:"seedIndex"`
-	Count               int                             `json:"count" msgpack:"count"`
-	CountImportedIndex  int                             `json:"countIndex" msgpack:"countIndex"`
-	Addresses           []*wallet_address.WalletAddress `json:"addresses" msgpack:"addresses"`
-	Loaded              bool                            `json:"loaded" msgpack:"loaded"`
-	DelegatesCount      int                             `json:"delegatesCount" msgpack:"delegatesCount"`
-	addressesMap        map[string]*wallet_address.WalletAddress
-	forging             *forging.Forging
-	mempool             *mempool.Mempool
-	updateAccounts      *multicast.MulticastChannel[*accounts.AccountsCollection]
-	updatePlainAccounts *multicast.MulticastChannel[*plain_accounts.PlainAccounts]
-	Lock                sync.RWMutex `json:"-" msgpack:"-"`
+	Encryption              *WalletEncryption               `json:"encryption" msgpack:"encryption"`
+	Version                 Version                         `json:"version" msgpack:"version"`
+	Mnemonic                string                          `json:"mnemonic" msgpack:"mnemonic"`
+	Seed                    []byte                          `json:"seed" msgpack:"seed"` //32 byte
+	SeedIndex               uint32                          `json:"seedIndex" msgpack:"seedIndex"`
+	Count                   int                             `json:"count" msgpack:"count"`
+	CountImportedIndex      int                             `json:"countIndex" msgpack:"countIndex"`
+	Addresses               []*wallet_address.WalletAddress `json:"addresses" msgpack:"addresses"`
+	Loaded                  bool                            `json:"loaded" msgpack:"loaded"`
+	DelegatesCount          int                             `json:"delegatesCount" msgpack:"delegatesCount"`
+	addressesMap            map[string]*wallet_address.WalletAddress
+	forging                 *forging.Forging
+	mempool                 *mempool.Mempool
+	addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor
+	updateAccounts          *multicast.MulticastChannel[*accounts.AccountsCollection]
+	updatePlainAccounts     *multicast.MulticastChannel[*plain_accounts.PlainAccounts]
+	Lock                    sync.RWMutex `json:"-" msgpack:"-"`
 }
 
-func createWallet(forging *forging.Forging, mempool *mempool.Mempool, updateAccounts *multicast.MulticastChannel[*accounts.AccountsCollection], updatePlainAccounts *multicast.MulticastChannel[*plain_accounts.PlainAccounts]) (wallet *Wallet) {
+func createWallet(forging *forging.Forging, mempool *mempool.Mempool, addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor, updateAccounts *multicast.MulticastChannel[*accounts.AccountsCollection], updatePlainAccounts *multicast.MulticastChannel[*plain_accounts.PlainAccounts]) (wallet *Wallet) {
 	wallet = &Wallet{
-		forging:             forging,
-		mempool:             mempool,
-		updateAccounts:      updateAccounts,
-		updatePlainAccounts: updatePlainAccounts,
+		forging:                 forging,
+		mempool:                 mempool,
+		updateAccounts:          updateAccounts,
+		addressBalanceDecryptor: addressBalanceDecryptor,
+		updatePlainAccounts:     updatePlainAccounts,
 	}
 	wallet.clearWallet()
 	return
@@ -61,9 +64,9 @@ func (wallet *Wallet) setLoaded(newValue bool) {
 	wallet.initWalletCLI()
 }
 
-func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool) (*Wallet, error) {
+func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool, addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor) (*Wallet, error) {
 
-	wallet := createWallet(forging, mempool, nil, nil)
+	wallet := createWallet(forging, mempool, addressBalanceDecryptor, nil, nil)
 
 	if err := wallet.loadWallet("", true); err != nil {
 		if err.Error() == "cipher: message authentication failed" {

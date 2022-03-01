@@ -1,6 +1,7 @@
 package forging
 
 import (
+	"pandora-pay/address_balance_decryptor"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -15,6 +16,7 @@ import (
 
 type ForgingThread struct {
 	mempool                   *mempool.Mempool
+	addressBalanceDecryptor   *address_balance_decryptor.AddressBalanceDecryptor
 	threads                   int                                    //number of threads
 	solutionCn                chan<- *block_complete.BlockComplete   //broadcasting that a solution thread was received
 	nextBlockCreatedCn        <-chan *forging_block_work.ForgingWork //detect if a new work was published
@@ -37,7 +39,7 @@ func (thread *ForgingThread) startForging() {
 
 	forgingWorkerSolutionCn := make(chan *ForgingSolution)
 	for i := 0; i < len(thread.workers); i++ {
-		thread.workers[i] = createForgingWorkerThread(i, forgingWorkerSolutionCn)
+		thread.workers[i] = createForgingWorkerThread(i, forgingWorkerSolutionCn, thread.addressBalanceDecryptor)
 		recovery.SafeGo(thread.workers[i].forge)
 	}
 	thread.workersCreatedCn <- thread.workers
@@ -122,9 +124,10 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 	return
 }
 
-func createForgingThread(threads int, createForgingTransactions func(*block_complete.BlockComplete, []byte) (*transaction.Transaction, error), mempool *mempool.Mempool, solutionCn chan<- *block_complete.BlockComplete, nextBlockCreatedCn <-chan *forging_block_work.ForgingWork) *ForgingThread {
+func createForgingThread(threads int, createForgingTransactions func(*block_complete.BlockComplete, []byte) (*transaction.Transaction, error), mempool *mempool.Mempool, addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor, solutionCn chan<- *block_complete.BlockComplete, nextBlockCreatedCn <-chan *forging_block_work.ForgingWork) *ForgingThread {
 	return &ForgingThread{
 		mempool,
+		addressBalanceDecryptor,
 		threads,
 		solutionCn,
 		nextBlockCreatedCn,
