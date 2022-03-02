@@ -437,7 +437,7 @@ func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, encryptedBalan
 		return 0, errors.New("address was not found")
 	}
 
-	return wallet.addressBalanceDecryptor.DecryptBalance(addr.PublicKey, addr.PrivateKey.Key, encryptedBalance, asset, useNewPreviousValue, newPreviousValue, store, ctx, statusCallback)
+	return wallet.addressBalanceDecryptor.DecryptBalance("wallet", addr.PublicKey, addr.PrivateKey.Key, encryptedBalance, asset, useNewPreviousValue, newPreviousValue, store, ctx, statusCallback)
 }
 
 func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {

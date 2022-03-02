@@ -14,14 +14,14 @@ type AddressBalanceDecryptor struct {
 	newWorkCn      chan *addressBalanceDecryptorWork
 }
 
-func (decryptor *AddressBalanceDecryptor) DecryptBalanceByPrivateKey(privateKey, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, storeNewPreviousValue bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
+func (decryptor *AddressBalanceDecryptor) DecryptBalanceByPrivateKey(decryptionName string, privateKey, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, storeNewPreviousValue bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	priv := &addresses.PrivateKey{privateKey}
 
-	return decryptor.DecryptBalance(priv.GeneratePublicKey(), privateKey, encryptedBalance, asset, useNewPreviousValue, newPreviousValue, storeNewPreviousValue, ctx, statusCallback)
+	return decryptor.DecryptBalance(decryptionName, priv.GeneratePublicKey(), privateKey, encryptedBalance, asset, useNewPreviousValue, newPreviousValue, storeNewPreviousValue, ctx, statusCallback)
 }
 
-func (decryptor *AddressBalanceDecryptor) DecryptBalance(publicKey, privateKey, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, storeNewPreviousValue bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
+func (decryptor *AddressBalanceDecryptor) DecryptBalance(decryptionName string, publicKey, privateKey, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, storeNewPreviousValue bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	if len(encryptedBalance) == 0 {
 		return 0, nil
@@ -31,7 +31,7 @@ func (decryptor *AddressBalanceDecryptor) DecryptBalance(publicKey, privateKey, 
 	if useNewPreviousValue {
 		previousValue = newPreviousValue
 	} else {
-		previousValue, _ = decryptor.previousValues.Load(string(publicKey) + "_" + string(asset))
+		previousValue, _ = decryptor.previousValues.Load(string(publicKey) + "_" + string(asset) + "_" + decryptionName)
 	}
 
 	foundWork, loaded := decryptor.all.LoadOrStore(string(publicKey)+"_"+string(encryptedBalance), &addressBalanceDecryptorWork{encryptedBalance, privateKey, previousValue, make(chan struct{}), ADDRESS_BALANCE_DECRYPTED_INIT, 0, nil, ctx, statusCallback})
@@ -45,7 +45,7 @@ func (decryptor *AddressBalanceDecryptor) DecryptBalance(publicKey, privateKey, 
 	}
 
 	if storeNewPreviousValue {
-		decryptor.previousValues.Store(string(publicKey)+"_"+string(asset), foundWork.result.decryptedBalance)
+		decryptor.previousValues.Store(string(publicKey)+"_"+string(asset)+"_"+decryptionName, foundWork.result.decryptedBalance)
 	}
 
 	return foundWork.result.decryptedBalance, nil

@@ -41,19 +41,25 @@ type ForgingWorkerThread struct {
 type ForgingWorkerThreadAddress struct {
 	walletAdr                       *ForgingWalletAddress
 	stakingAmount                   uint64
+	stakingAmountEncryptedBalance   []byte
 	stakingNonce                    []byte
 	stakingNoncePrevChainKernelHash []byte
 }
 
 func (worker *ForgingWorkerThread) computeStakingAmount(threadAddr *ForgingWorkerThreadAddress, height uint64, prevChainKernelHash []byte) bool {
 
+	var stakingAmountEncryptedBalanceSerialized []byte
 	if threadAddr.walletAdr.account != nil && threadAddr.walletAdr.privateKey != nil {
 
 		if threadAddr.walletAdr.account != nil {
 
-			stakingAmountBalance := threadAddr.walletAdr.account.DelegatedStake.ComputeDelegatedStakeAvailable(threadAddr.walletAdr.account.Balance.Amount, height)
-			if stakingAmountBalance != nil {
-				threadAddr.stakingAmount, _ = worker.addressBalanceDecryptor.DecryptBalance(threadAddr.walletAdr.publicKey, threadAddr.walletAdr.privateKey.Key, stakingAmountBalance.Serialize(), config_coins.NATIVE_ASSET_FULL, true, threadAddr.stakingAmount, true, context.Background(), func(string) {})
+			stakingAmountEncryptedBalance := threadAddr.walletAdr.account.DelegatedStake.ComputeDelegatedStakeAvailable(threadAddr.walletAdr.account.Balance.Amount, height)
+			if stakingAmountEncryptedBalance != nil {
+				stakingAmountEncryptedBalanceSerialized = stakingAmountEncryptedBalance.Serialize()
+				if !bytes.Equal(threadAddr.stakingAmountEncryptedBalance, stakingAmountEncryptedBalanceSerialized) {
+					threadAddr.stakingAmount, _ = worker.addressBalanceDecryptor.DecryptBalance("staking", threadAddr.walletAdr.publicKey, threadAddr.walletAdr.privateKey.Key, stakingAmountEncryptedBalanceSerialized, config_coins.NATIVE_ASSET_FULL, true, threadAddr.stakingAmount, true, context.Background(), func(string) {})
+					threadAddr.stakingAmountEncryptedBalance = stakingAmountEncryptedBalanceSerialized
+				}
 			}
 		}
 
@@ -144,6 +150,7 @@ func (worker *ForgingWorkerThread) forge() {
 				walletAddr = &ForgingWorkerThreadAddress{ //making sure the has a copy
 					newWalletAddr, //already it is copied
 					0,
+					nil,
 					nil,
 					nil,
 				}
