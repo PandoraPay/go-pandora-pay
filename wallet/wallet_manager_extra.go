@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/tyler-smith/go-bip39"
-	"math"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
@@ -70,11 +69,11 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, chainHeight uin
 		deleted = true
 	} else {
 
-		stakingAmountBalance := acc.DelegatedStake.ComputeDelegatedStakeAvailable(acc.Balance.Amount, math.MaxUint64)
+		stakingAmountBalance := acc.Balance.Amount.Serialize()
 
 		var stakingAmount uint64
 		if stakingAmountBalance != nil {
-			stakingAmount, _ = wallet.addressBalanceDecryptor.DecryptBalance("staking", addr.PublicKey, addr.PrivateKey.Key, stakingAmountBalance.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, true, context.Background(), func(string) {})
+			stakingAmount, _ = wallet.addressBalanceDecryptor.DecryptBalance("staking", addr.PublicKey, addr.PrivateKey.Key, stakingAmountBalance, config_coins.NATIVE_ASSET_FULL, false, 0, true, context.Background(), func(string) {})
 		}
 
 		if stakingAmount < config_stake.GetRequiredStake(chainHeight) {

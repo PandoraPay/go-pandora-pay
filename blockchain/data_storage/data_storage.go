@@ -4,15 +4,21 @@ import (
 	"errors"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/accounts/account/account_balance_homomorphic"
 	"pandora-pay/blockchain/data_storage/assets"
+	"pandora-pay/blockchain/data_storage/delegated_pending_stakes_list"
+	"pandora-pay/blockchain/data_storage/delegated_pending_stakes_list/delegated_pending_stakes"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/config/config_asset_fee"
+	"pandora-pay/config/config_coins"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
+	"strconv"
 )
 
 type DataStorage struct {
@@ -21,11 +27,12 @@ type DataStorage struct {
 	Regs                       *registrations.Registrations
 	PlainAccs                  *plain_accounts.PlainAccounts
 	AccsCollection             *accounts.AccountsCollection
+	DelegatedPendingStakes     *delegated_pending_stakes_list.DelegatedPendingStakesList
 	Asts                       *assets.Assets
 	AstsFeeLiquidityCollection *assets.AssetsFeeLiquidityCollection
 }
 
-func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, blockHeight uint64, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
+func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
 
 	if validateRegistration {
 		exists, err := dataStorage.Regs.Exists(string(publicKey))
@@ -42,7 +49,7 @@ func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, bl
 		return nil, nil, err
 	}
 
-	acc, err := accs.GetAccount(publicKey, blockHeight)
+	acc, err := accs.GetAccount(publicKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -131,6 +138,84 @@ func (dataStorage *DataStorage) CreateRegistration(publicKey []byte) (*registrat
 	return dataStorage.Regs.CreateNewRegistration(publicKey)
 }
 
+func (dataStorage *DataStorage) AddStakePendingStake(publicKey []byte, amount *crypto.ElGamal, blockHeight uint64) error {
+
+	accs, err := dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL)
+	if err != nil {
+		return err
+	}
+
+	acc, err := accs.GetAccount(publicKey)
+	if err != nil {
+		return err
+	}
+
+	if acc == nil {
+		return errors.New("Account doesn't exist")
+	}
+
+	if !acc.DelegatedStake.HasDelegatedStake() {
+		return errors.New("acc.HasDelegatedStake is false")
+	}
+
+	delegatedPendingStakes, err := dataStorage.DelegatedPendingStakes.GetDelegatedPendingStakes(blockHeight)
+	if err != nil {
+		return err
+	}
+
+	if delegatedPendingStakes == nil {
+		if delegatedPendingStakes, err = dataStorage.DelegatedPendingStakes.CreateNewDelegatedPendingStakes(blockHeight); err != nil {
+			return err
+		}
+	}
+
+	pendingAmount, err := account_balance_homomorphic.NewBalanceHomomorphic(amount)
+	if err != nil {
+		return err
+	}
+
+	delegatedPendingStakes.Pending = append(delegatedPendingStakes.Pending, &delegated_pending_stakes.DelegatedPendingStake{
+		PublicKey:     publicKey,
+		PendingAmount: pendingAmount,
+	})
+
+	return dataStorage.DelegatedPendingStakes.Update(strconv.FormatUint(blockHeight, 10), delegatedPendingStakes)
+}
+
+func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
+
+	accs, err := dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL)
+	if err != nil {
+		return err
+	}
+
+	delegatedPendingStakes, err := dataStorage.DelegatedPendingStakes.GetDelegatedPendingStakes(blockHeight)
+	if err != nil {
+		return err
+	}
+
+	if delegatedPendingStakes == nil {
+		return nil
+	}
+
+	for _, pending := range delegatedPendingStakes.Pending {
+
+		var acc *account.Account
+		if acc, err = accs.GetAccount(pending.PublicKey); err != nil {
+			return err
+		}
+
+		if acc == nil {
+			return errors.New("Account doesn't exist")
+		}
+
+		acc.Balance.AddEchanges(pending.PendingAmount.Amount)
+	}
+
+	dataStorage.DelegatedPendingStakes.Delete(strconv.FormatUint(blockHeight, 10))
+	return nil
+}
+
 func (dataStorage *DataStorage) SubtractUnclaimed(plainAcc *plain_account.PlainAccount, amount, blockHeight uint64) (err error) {
 	if err = plainAcc.AddUnclaimed(false, amount); err != nil {
 		return
@@ -182,6 +267,7 @@ func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *D
 		registrations.NewRegistrations(dbTx),
 		plain_accounts.NewPlainAccounts(dbTx),
 		accounts.NewAccountsCollection(dbTx),
+		delegated_pending_stakes_list.NewDelegatedPendingStakesList(dbTx),
 		assets.NewAssets(dbTx),
 		assets.NewAssetsFeeLiquidityCollection(dbTx),
 	}
@@ -191,6 +277,7 @@ func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *D
 		list = []*hash_map.HashMap{
 			out.Regs.HashMap,
 			out.PlainAccs.HashMap,
+			out.DelegatedPendingStakes.HashMap,
 			out.Asts.HashMap,
 		}
 		list = append(list, out.AccsCollection.GetAllHashmaps()...)

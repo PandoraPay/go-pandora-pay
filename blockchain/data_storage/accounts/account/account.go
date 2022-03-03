@@ -84,18 +84,6 @@ func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 	return
 }
 
-func (account *Account) RolloverDelegatedStakes(blockHeight uint64) {
-	if account.DelegatedStake != nil && account.DelegatedStake.HasDelegatedStake() {
-		for i := len(account.DelegatedStake.StakesPending) - 1; i >= 0; i-- {
-			stakePending := account.DelegatedStake.StakesPending[i]
-			if stakePending.ActivationHeight <= blockHeight {
-				account.Balance.AddEchanges(stakePending.PendingAmount.Amount)
-				account.DelegatedStake.StakesPending = append(account.DelegatedStake.StakesPending[:i], account.DelegatedStake.StakesPending[i+1:]...)
-			}
-		}
-	}
-}
-
 func NewAccount(publicKey []byte, index uint64, asset []byte) (*Account, error) {
 
 	balance, err := account_balance_homomorphic.NewBalanceHomomorphicEmptyBalance(publicKey)

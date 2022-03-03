@@ -48,7 +48,7 @@ func (wallet *Wallet) processRefreshWallets() {
 						visited[string(addr.PublicKey)] = true
 
 						var acc *account.Account
-						if acc, err = accs.GetAccount(addr.PublicKey, chainHeight); err != nil {
+						if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
 							return
 						}
 

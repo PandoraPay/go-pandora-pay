@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/binary"
@@ -132,7 +131,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 						return
 					}
 
-					if acc, err = accs.GetAccount(address.publicKey, chainHeight); err != nil {
+					if acc, err = accs.GetAccount(address.publicKey); err != nil {
 						return
 					}
 
@@ -186,14 +185,6 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %64s", data.ast.Name, base64.StdEncoding.EncodeToString(data.balance.Serialize())))
 			}
 
-			for _, data := range addresses[i].assetsList {
-				if bytes.Equal(data.assetId, config_coins.NATIVE_ASSET_FULL) && data.delegatedStake.HasDelegatedStake() && len(data.delegatedStake.StakesPending) > 0 {
-					for _, stakePending := range data.delegatedStake.StakesPending {
-						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %64s", "STAKE PENDING ENCRYPTED", strconv.FormatUint(stakePending.ActivationHeight, 10), base64.StdEncoding.EncodeToString(stakePending.PendingAmount.Amount.Serialize())))
-					}
-				}
-			}
-
 			gui.GUI.OutputWrite(fmt.Sprintf("%18s", "Decrypting...."))
 
 			for _, data := range addresses[i].assetsList {
@@ -206,21 +197,6 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 				}
 
 				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %18s", data.ast.Name, strconv.FormatFloat(config_coins.ConvertToBase(decrypted), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
-			}
-
-			for _, data := range addresses[i].assetsList {
-				if bytes.Equal(data.assetId, config_coins.NATIVE_ASSET_FULL) && data.delegatedStake.HasDelegatedStake() && len(data.delegatedStake.StakesPending) > 0 {
-					for _, stakePending := range data.delegatedStake.StakesPending {
-
-						if decrypted, err = wallet.DecryptBalanceByPublicKey(address.publicKey, stakePending.PendingAmount.Amount.Serialize(), data.assetId, false, 0, false, true, ctx, func(status string) {
-							gui.GUI.Info2Update("Decrypted", status)
-						}); err != nil {
-							return
-						}
-
-						gui.GUI.OutputWrite(fmt.Sprintf("%18s: %10s %18s", "PENDING STAKE", strconv.FormatUint(stakePending.ActivationHeight, 10), strconv.FormatFloat(config_coins.ConvertToBase(decrypted), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
-					}
-				}
 			}
 
 		}

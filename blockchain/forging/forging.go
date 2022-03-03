@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
@@ -30,6 +31,7 @@ func CreateForging(mempool *mempool.Mempool, addressBalanceDecryptor *address_ba
 		mempool,
 		addressBalanceDecryptor,
 		&ForgingWallet{
+			addressBalanceDecryptor,
 			map[string]*ForgingWalletAddress{},
 			[]int{},
 			[]*ForgingWorkerThread{},
@@ -37,6 +39,7 @@ func CreateForging(mempool *mempool.Mempool, addressBalanceDecryptor *address_ba
 			make(chan *ForgingWalletAddressUpdate),
 			nil,
 			nil,
+			&generics.Map[string, *ForgingWalletAddress]{},
 			nil,
 		},
 		abool.New(),
@@ -57,7 +60,8 @@ func (forging *Forging) InitializeForging(createForgingTransactions func(*block_
 	forging.Wallet.workersCreatedCn = forging.forgingThread.workersCreatedCn
 	forging.Wallet.workersDestroyedCn = forging.forgingThread.workersDestroyedCn
 
-	recovery.SafeGo(forging.Wallet.processUpdates)
+	recovery.SafeGo(forging.Wallet.runProcessUpdates)
+	recovery.SafeGo(forging.Wallet.runDecryptBalanceAndNotifyWorkers)
 
 }
 

@@ -27,7 +27,7 @@ func (accounts *Accounts) CreateNewAccount(publicKey []byte) (*account.Account, 
 	return acc, nil
 }
 
-func (accounts *Accounts) GetAccount(key []byte, blockHeight uint64) (*account.Account, error) {
+func (accounts *Accounts) GetAccount(key []byte) (*account.Account, error) {
 
 	data, err := accounts.Get(string(key))
 	if data == nil || err != nil {
@@ -35,7 +35,6 @@ func (accounts *Accounts) GetAccount(key []byte, blockHeight uint64) (*account.A
 	}
 
 	acc := data.(*account.Account)
-	acc.RolloverDelegatedStakes(blockHeight)
 
 	return acc, nil
 }

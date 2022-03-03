@@ -14,6 +14,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_assets"
 	"pandora-pay/config/config_coins"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
@@ -79,7 +80,7 @@ func (payload *TransactionZetherPayload) processAssetFee(assetId []byte, txFee, 
 		return
 	}
 
-	accs, acc, err := dataStorage.GetOrCreateAccount(assetId, plainAcc.AssetFeeLiquidities.Collector, blockHeight, true)
+	accs, acc, err := dataStorage.GetOrCreateAccount(assetId, plainAcc.AssetFeeLiquidities.Collector, true)
 	if err != nil {
 		return
 	}
@@ -100,7 +101,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		}
 	}
 
-	if err = payload.Registrations.RegisterNow(payload.Asset, dataStorage, publicKeyList, blockHeight); err != nil {
+	if err = payload.Registrations.RegisterNow(payload.Asset, dataStorage, publicKeyList); err != nil {
 		return
 	}
 
@@ -119,7 +120,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 	}
 
 	for i, publicKey := range publicKeyList {
-		if acc, err = accs.GetAccount(publicKey, blockHeight); err != nil {
+		if acc, err = accs.GetAccount(publicKey); err != nil {
 			return
 		}
 
@@ -153,10 +154,9 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 				}
 			} else { //recipient
 				if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && acc.DelegatedStake.HasDelegatedStake() {
-					if err = acc.DelegatedStake.AddStakePendingStake(echanges, blockHeight); err != nil {
+					if err = dataStorage.AddStakePendingStake(publicKey, echanges, blockHeight+config_stake.GetPendingStakeWindow(blockHeight)); err != nil {
 						return
 					}
-					update = true
 				} else {
 					acc.Balance.Amount = balance
 					update = true

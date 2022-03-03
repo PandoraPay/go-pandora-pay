@@ -226,7 +226,7 @@ func (wallet *Wallet) InitForgingWallet() (err error) {
 		for _, adr := range wallet.Addresses {
 
 			var acc *account.Account
-			if acc, err = accs.GetAccount(adr.PublicKey, chainHeight); err != nil {
+			if acc, err = accs.GetAccount(adr.PublicKey); err != nil {
 				return
 			}
 

@@ -354,6 +354,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return errors.New("Error including block into Blockchain: " + err.Error())
 					}
 
+					if err = dataStorage.ProcessPendingStakes(blkComplete.Height); err != nil {
+						return errors.New("Error Processing Pending Stakes: " + err.Error())
+					}
+
 					//to detect if the savedBlock was done correctly
 					savedBlock = false
 

@@ -1,7 +1,6 @@
 package api_common
 
 import (
-	"encoding/binary"
 	"fmt"
 	"net/http"
 	"pandora-pay/blockchain/data_storage/accounts"
@@ -44,8 +43,6 @@ func (api *APICommon) GetAccountsByKeys(r *http.Request, args *APIAccountsByKeys
 
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
-
 		accsCollection := accounts.NewAccountsCollection(reader)
 		regs := registrations.NewRegistrations(reader)
 
@@ -58,7 +55,7 @@ func (api *APICommon) GetAccountsByKeys(r *http.Request, args *APIAccountsByKeys
 		reply.Reg = make([]*registration.Registration, len(publicKeys))
 
 		for i := 0; i < len(publicKeys); i++ {
-			if reply.Acc[i], err = accs.GetAccount(publicKeys[i], chainHeight); err != nil {
+			if reply.Acc[i], err = accs.GetAccount(publicKeys[i]); err != nil {
 				return
 			}
 			if reply.Reg[i], err = regs.GetRegistration(publicKeys[i]); err != nil {

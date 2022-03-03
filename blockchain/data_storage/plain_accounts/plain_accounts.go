@@ -27,9 +27,7 @@ func (plainAccounts *PlainAccounts) GetPlainAccount(key []byte, blockHeight uint
 		return nil, err
 	}
 
-	plainAcc := data.(*plain_account.PlainAccount)
-
-	return plainAcc, nil
+	return data.(*plain_account.PlainAccount), nil
 }
 
 func NewPlainAccounts(tx store_db_interface.StoreDBTransactionInterface) (plainAccs *PlainAccounts) {

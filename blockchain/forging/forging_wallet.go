@@ -1,8 +1,10 @@
 package forging
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
+	"pandora-pay/address_balance_decryptor"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
@@ -11,20 +13,24 @@ import (
 	"pandora-pay/config/config_forging"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
+	"time"
 )
 
 type ForgingWallet struct {
-	addressesMap          map[string]*ForgingWalletAddress
-	workersAddresses      []int
-	workers               []*ForgingWorkerThread
-	updateAccounts        *multicast.MulticastChannel[*accounts.AccountsCollection]
-	updateWalletAddressCn chan *ForgingWalletAddressUpdate
-	workersCreatedCn      <-chan []*ForgingWorkerThread
-	workersDestroyedCn    <-chan struct{}
-	forging               *Forging
+	addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor
+	addressesMap            map[string]*ForgingWalletAddress
+	workersAddresses        []int
+	workers                 []*ForgingWorkerThread
+	updateAccounts          *multicast.MulticastChannel[*accounts.AccountsCollection]
+	updateWalletAddressCn   chan *ForgingWalletAddressUpdate
+	workersCreatedCn        <-chan []*ForgingWorkerThread
+	workersDestroyedCn      <-chan struct{}
+	decryptBalancesUpdates  *generics.Map[string, *ForgingWalletAddress]
+	forging                 *Forging
 }
 
 type ForgingWalletAddressUpdate struct {
@@ -53,7 +59,7 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasAccoun
 				return
 			}
 
-			if account, err = accs.GetAccount(pubKey, chainHeight); err != nil {
+			if account, err = accs.GetAccount(pubKey); err != nil {
 				return
 			}
 
@@ -77,6 +83,32 @@ func (w *ForgingWallet) RemoveWallet(DelegatedStakePublicKey []byte, hasAccount 
 	w.AddWallet(nil, DelegatedStakePublicKey, hasAccount, acc, chainHeight)
 }
 
+func (w *ForgingWallet) runDecryptBalanceAndNotifyWorkers() {
+
+	var addr *ForgingWalletAddress
+	for {
+
+		found := false
+		w.decryptBalancesUpdates.Range(func(publicKey string, _ *ForgingWalletAddress) bool {
+			addr, _ = w.decryptBalancesUpdates.LoadAndDelete(publicKey)
+			found = true
+			return false
+		})
+
+		if !found {
+			time.Sleep(10 * time.Millisecond)
+			continue
+		} else {
+			stakingAmountEncryptedBalance := addr.account.Balance.Amount
+			stakingAmountEncryptedBalanceSerialized := stakingAmountEncryptedBalance.Serialize()
+			addr.decryptedStakingBalance, _ = w.addressBalanceDecryptor.DecryptBalance("staking", addr.publicKey, addr.privateKey.Key, stakingAmountEncryptedBalanceSerialized, config_coins.NATIVE_ASSET_FULL, false, 0, true, context.Background(), func(string) {})
+
+			w.workers[addr.workerIndex].addWalletAddressCn <- addr
+		}
+	}
+
+}
+
 func (w *ForgingWallet) updateAccountToForgingWorkers(addr *ForgingWalletAddress) {
 
 	if len(w.workers) == 0 { //in case it was not started yet
@@ -97,12 +129,8 @@ func (w *ForgingWallet) updateAccountToForgingWorkers(addr *ForgingWalletAddress
 		w.workersAddresses[index]++
 
 	}
-	newWorkerIndex := addr.workerIndex
 
-	if newWorkerIndex != -1 {
-		w.workers[addr.workerIndex].addWalletAddressCn <- addr.clone()
-	}
-
+	w.decryptBalancesUpdates.Store(addr.publicKeyStr, addr.clone())
 }
 
 func (w *ForgingWallet) removeAccountFromForgingWorkers(publicKey string) {
@@ -122,7 +150,7 @@ func (w *ForgingWallet) deleteAccount(publicKey string) {
 	}
 }
 
-func (w *ForgingWallet) processUpdates() {
+func (w *ForgingWallet) runProcessUpdates() {
 
 	var err error
 
@@ -131,28 +159,22 @@ func (w *ForgingWallet) processUpdates() {
 
 	for {
 		select {
-		case workers, ok := <-w.workersCreatedCn:
-			if !ok {
-				return
-			}
+		case workers := <-w.workersCreatedCn:
+
 			w.workers = workers
 			w.workersAddresses = make([]int, len(workers))
 			for _, addr := range w.addressesMap {
 				w.updateAccountToForgingWorkers(addr)
 			}
-		case _, ok := <-w.workersDestroyedCn:
-			if !ok {
-				return
-			}
+		case <-w.workersDestroyedCn:
+
 			w.workers = []*ForgingWorkerThread{}
 			w.workersAddresses = []int{}
 			for _, addr := range w.addressesMap {
 				addr.workerIndex = -1
 			}
-		case update, ok := <-w.updateWalletAddressCn:
-			if !ok {
-				return
-			}
+		case update := <-w.updateWalletAddressCn:
+
 			key := string(update.publicKey)
 
 			//let's delete it
@@ -181,6 +203,7 @@ func (w *ForgingWallet) processUpdates() {
 							update.publicKey,
 							string(update.publicKey),
 							update.account,
+							0,
 							-1,
 						}
 						w.addressesMap[key] = address
@@ -197,10 +220,7 @@ func (w *ForgingWallet) processUpdates() {
 				}
 
 			}
-		case accsCollection, ok := <-updateAccountsCn:
-			if !ok {
-				return
-			}
+		case accsCollection := <-updateAccountsCn:
 
 			accs, _ := accsCollection.GetOnlyMap(config_coins.NATIVE_ASSET_FULL)
 			if accs == nil {
