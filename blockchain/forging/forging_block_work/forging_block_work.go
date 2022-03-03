@@ -11,4 +11,5 @@ type ForgingWork struct {
 	BlkTimestmap  uint64
 	BlkHeight     uint64
 	Target        *big.Int
+	MinimumStake  uint64
 }

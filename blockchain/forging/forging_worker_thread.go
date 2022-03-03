@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -44,19 +43,19 @@ type ForgingWorkerThreadAddress struct {
 	stakingNoncePrevChainKernelHash []byte
 }
 
-func (worker *ForgingWorkerThread) computeStakingAmount(threadAddr *ForgingWorkerThreadAddress, height uint64, prevChainKernelHash []byte) bool {
+func (worker *ForgingWorkerThread) computeStakingAmount(threadAddr *ForgingWorkerThreadAddress, work *forging_block_work.ForgingWork) bool {
 
 	if threadAddr.walletAdr.account != nil && threadAddr.walletAdr.privateKey != nil {
 
-		if threadAddr.walletAdr.decryptedStakingBalance >= config_stake.GetRequiredStake(height) {
+		if threadAddr.walletAdr.decryptedStakingBalance >= work.MinimumStake {
 
-			if !bytes.Equal(threadAddr.stakingNoncePrevChainKernelHash, prevChainKernelHash) {
-				uinput := append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), prevChainKernelHash[:]...)
+			if !bytes.Equal(threadAddr.stakingNoncePrevChainKernelHash, work.BlkComplete.PrevKernelHash) {
+				uinput := append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), work.BlkComplete.PrevKernelHash[:]...)
 				uinput = append(uinput, config_coins.NATIVE_ASSET_FULL...)
 				uinput = append(uinput, strconv.Itoa(0)...)
 				u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), threadAddr.walletAdr.privateKeyPoint)
 				threadAddr.stakingNonce = cryptography.SHA3(u.EncodeCompressed())
-				threadAddr.stakingNoncePrevChainKernelHash = prevChainKernelHash
+				threadAddr.stakingNoncePrevChainKernelHash = work.BlkComplete.PrevKernelHash
 			}
 
 			threadAddr.stakingAmount = threadAddr.walletAdr.decryptedStakingBalance
@@ -77,7 +76,7 @@ func (worker *ForgingWorkerThread) forge() {
 	var work *forging_block_work.ForgingWork
 
 	var timestampMs int64
-	var timestamp, blkHeight uint64
+	var timestamp uint64
 	var serialized []byte
 	var n int
 	buf := make([]byte, binary.MaxVarintLen64)
@@ -108,7 +107,6 @@ func (worker *ForgingWorkerThread) forge() {
 
 		serialized = helpers.CloneBytes(work.BlkSerialized)
 
-		blkHeight = work.BlkHeight
 		timestamp = work.BlkTimestmap + 1
 		timestampMs = int64(timestamp) * 1000
 
@@ -116,7 +114,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 		walletsStakable = make(map[string]*ForgingWorkerThreadAddress)
 		for _, walletAddr := range wallets {
-			if worker.computeStakingAmount(walletAddr, blkHeight, work.BlkComplete.PrevKernelHash) {
+			if worker.computeStakingAmount(walletAddr, work) {
 				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
 			}
 		}
@@ -145,7 +143,7 @@ func (worker *ForgingWorkerThread) forge() {
 			}
 
 			if work != nil {
-				if worker.computeStakingAmount(walletAddr, blkHeight, work.BlkComplete.PrevKernelHash) {
+				if worker.computeStakingAmount(walletAddr, work) {
 					walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
 				} else {
 					delete(walletsStakable, walletAddr.walletAdr.publicKeyStr)
@@ -214,7 +212,7 @@ func (worker *ForgingWorkerThread) forge() {
 							timestamp,
 							address.walletAdr,
 							work,
-							generics.Min(requireStakingAmount.Uint64()+1, address.stakingAmount),
+							generics.Max(generics.Min(requireStakingAmount.Uint64()+1, address.stakingAmount), work.MinimumStake),
 							address.stakingNonce,
 						}
 

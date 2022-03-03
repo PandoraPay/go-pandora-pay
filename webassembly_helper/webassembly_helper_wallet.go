@@ -58,7 +58,7 @@ func decryptBalance(this js.Value, args []js.Value) interface{} {
 
 			time.Sleep(time.Millisecond * 10)
 
-			value, finalErr = app.AddressBalanceDecryptor.DecryptBalanceByPrivateKey(parameters.PrivateKey, balance, parameters.Asset, true, parameters.PreviousValue, true, ctx, func(status string) {
+			value, finalErr = app.AddressBalanceDecryptor.DecryptBalanceByPrivateKey("wallet", parameters.PrivateKey, balance, parameters.Asset, true, parameters.PreviousValue, true, ctx, func(status string) {
 				args[1].Invoke(status)
 				time.Sleep(500 * time.Microsecond)
 			})

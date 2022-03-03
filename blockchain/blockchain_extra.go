@@ -16,6 +16,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_forging"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -230,6 +231,7 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 			blkComplete.Timestamp,
 			blkComplete.Height,
 			target,
+			config_stake.GetRequiredStake(blkComplete.Height),
 		}
 
 	}

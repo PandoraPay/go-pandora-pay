@@ -18,6 +18,7 @@ import (
 	"pandora-pay/config/config_reward"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
@@ -504,6 +505,7 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 
 func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete.BlockComplete, forgerPublicKey []byte) (*transaction.Transaction, error) {
 
+	gui.GUI.Info("CreateForgingTransactions 1")
 	forger, err := addresses.CreateAddr(forgerPublicKey, nil, nil, 0, nil)
 	if err != nil {
 		return nil, err
@@ -523,7 +525,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				0,
 				"",
 				blkComplete.StakingAmount,
-				&ZetherRingConfiguration{256, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
+				&ZetherRingConfiguration{64, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStaking{},
@@ -534,7 +536,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				reward,
 				forger.EncodeAddr(),
 				0,
-				&ZetherRingConfiguration{256, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
+				&ZetherRingConfiguration{64, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStakingReward{nil, reward},
@@ -546,6 +548,8 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 	if err != nil {
 		return nil, err
 	}
+
+	gui.GUI.Info("CreateForgingTransactions 2")
 
 	feesFinal := make([]*wizard.WizardTransactionFee, len(txData.Payloads))
 	for t, payload := range txData.Payloads {
@@ -561,6 +565,8 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringMembers, chainHeight, blkComplete.PrevKernelHash, publicKeyIndexes, feesFinal, false, context.Background(), func(string) {}); err != nil {
 		return nil, err
 	}
+
+	gui.GUI.Info("CreateForgingTransactions 3")
 
 	return tx, nil
 }
