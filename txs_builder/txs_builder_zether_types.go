@@ -26,6 +26,7 @@ type TxBuilderCreateZetherTxPayload struct {
 	Sender            string                             `json:"sender" msgpack:"sender"`
 	Asset             []byte                             `json:"asset" msgpack:"asset"`
 	Amount            uint64                             `json:"amount" msgpack:"amount"`
+	DecryptedBalance  uint64                             `json:"decryptedBalance" msgpack:"decryptedBalance"`
 	Recipient         string                             `json:"recipient" msgpack:"recipient"`
 	Burn              uint64                             `json:"burn" msgpack:"burn"`
 	RingConfiguration *ZetherRingConfiguration           `json:"ringConfiguration" msgpack:"ringConfiguration"`

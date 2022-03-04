@@ -50,7 +50,7 @@ func CreateForging(mempool *mempool.Mempool, addressBalanceDecryptor *address_ba
 	return forging, nil
 }
 
-func (forging *Forging) InitializeForging(createForgingTransactions func(*block_complete.BlockComplete, []byte) (*transaction.Transaction, error), nextBlockCreatedCn <-chan *forging_block_work.ForgingWork, updateAccounts *multicast.MulticastChannel[*accounts.AccountsCollection], forgingSolutionCn chan<- *block_complete.BlockComplete) {
+func (forging *Forging) InitializeForging(createForgingTransactions func(*block_complete.BlockComplete, []byte, uint64) (*transaction.Transaction, error), nextBlockCreatedCn <-chan *forging_block_work.ForgingWork, updateAccounts *multicast.MulticastChannel[*accounts.AccountsCollection], forgingSolutionCn chan<- *block_complete.BlockComplete) {
 
 	forging.nextBlockCreatedCn = nextBlockCreatedCn
 	forging.Wallet.updateAccounts = updateAccounts

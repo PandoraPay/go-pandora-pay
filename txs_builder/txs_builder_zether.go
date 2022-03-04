@@ -453,10 +453,21 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 		if sendersWalletAddresses[t] == nil {
 			transfers[t].SenderDecryptedBalance = transfers[t].Amount
 		} else {
-
-			var err error
-			if transfers[t].SenderDecryptedBalance, err = builder.wallet.DecryptBalanceByPublicKey(sendersWalletAddresses[t].PublicKey, sendersEncryptedBalances[t], transfers[t].Asset, false, 0, true, true, ctx, statusCallback); err != nil {
-				return nil, nil, nil, nil, nil, 0, nil, err
+			if txData.Payloads[t].DecryptedBalance > 0 {
+				ok, err := builder.wallet.TryDecryptBalanceByPublicKey(sendersWalletAddresses[t].PublicKey, sendersEncryptedBalances[t], true, txData.Payloads[t].DecryptedBalance)
+				if err != nil {
+					return nil, nil, nil, nil, nil, 0, nil, err
+				}
+				if !ok {
+					return nil, nil, nil, nil, nil, 0, nil, errors.New("Balance was not matching")
+				}
+				transfers[t].SenderDecryptedBalance = txData.Payloads[t].DecryptedBalance
+			} else {
+				decrypted, err := builder.wallet.DecryptBalanceByPublicKey(sendersWalletAddresses[t].PublicKey, sendersEncryptedBalances[t], transfers[t].Asset, false, 0, true, true, ctx, statusCallback)
+				if err != nil {
+					return nil, nil, nil, nil, nil, 0, nil, err
+				}
+				transfers[t].SenderDecryptedBalance = decrypted
 			}
 
 		}
@@ -506,7 +517,7 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 	return tx, nil
 }
 
-func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete.BlockComplete, forgerPublicKey []byte) (*transaction.Transaction, error) {
+func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete.BlockComplete, forgerPublicKey []byte, decryptedBalance uint64) (*transaction.Transaction, error) {
 
 	forger, err := addresses.CreateAddr(forgerPublicKey, nil, nil, 0, nil)
 	if err != nil {
@@ -525,6 +536,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				forger.EncodeAddr(),
 				config_coins.NATIVE_ASSET_FULL,
 				0,
+				decryptedBalance,
 				"",
 				blkComplete.StakingAmount,
 				&ZetherRingConfiguration{64, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
@@ -536,6 +548,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				"",
 				config_coins.NATIVE_ASSET_FULL,
 				reward,
+				reward, //reward will be the encrypted Balance
 				forger.EncodeAddr(),
 				0,
 				&ZetherRingConfiguration{64, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},

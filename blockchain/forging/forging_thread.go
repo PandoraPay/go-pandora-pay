@@ -23,7 +23,7 @@ type ForgingThread struct {
 	workers                   []*ForgingWorkerThread
 	workersCreatedCn          chan []*ForgingWorkerThread
 	workersDestroyedCn        chan struct{}
-	createForgingTransactions func(*block_complete.BlockComplete, []byte) (*transaction.Transaction, error)
+	createForgingTransactions func(*block_complete.BlockComplete, []byte, uint64) (*transaction.Transaction, error)
 }
 
 func (thread *ForgingThread) stopForging() {
@@ -103,11 +103,11 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 
 	txs, _ := thread.mempool.GetNextTransactionsToInclude(newBlk.Block.PrevHash)
 
-	txStakingReward, err := thread.createForgingTransactions(newBlk, solution.address.publicKey)
-
+	txStakingReward, err := thread.createForgingTransactions(newBlk, solution.address.publicKey, solution.address.decryptedStakingBalance)
 	if err != nil {
 		return
 	}
+
 	newBlk.Txs = []*transaction.Transaction{txStakingReward}
 	newBlk.Txs = append(newBlk.Txs, txs...)
 
@@ -124,7 +124,7 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 	return
 }
 
-func createForgingThread(threads int, createForgingTransactions func(*block_complete.BlockComplete, []byte) (*transaction.Transaction, error), mempool *mempool.Mempool, addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor, solutionCn chan<- *block_complete.BlockComplete, nextBlockCreatedCn <-chan *forging_block_work.ForgingWork) *ForgingThread {
+func createForgingThread(threads int, createForgingTransactions func(*block_complete.BlockComplete, []byte, uint64) (*transaction.Transaction, error), mempool *mempool.Mempool, addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor, solutionCn chan<- *block_complete.BlockComplete, nextBlockCreatedCn <-chan *forging_block_work.ForgingWork) *ForgingThread {
 	return &ForgingThread{
 		mempool,
 		addressBalanceDecryptor,

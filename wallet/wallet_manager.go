@@ -12,6 +12,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/config/globals"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/wallet/wallet_address"
 	"strconv"
 )
@@ -425,7 +426,6 @@ func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.Wall
 	return addr, nil
 }
 
-//you should not lock it before
 func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, store, lock bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	if len(encryptedBalance) == 0 {
@@ -438,6 +438,25 @@ func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, encryptedBalan
 	}
 
 	return wallet.addressBalanceDecryptor.DecryptBalance("wallet", addr.PublicKey, addr.PrivateKey.Key, encryptedBalance, asset, useNewPreviousValue, newPreviousValue, store, ctx, statusCallback)
+}
+
+func (wallet *Wallet) TryDecryptBalanceByPublicKey(publicKey []byte, encryptedBalance []byte, lock bool, matchValue uint64) (bool, error) {
+
+	if len(encryptedBalance) == 0 {
+		return false, errors.New("Encrypted Balance is nil")
+	}
+
+	addr := wallet.GetWalletAddressByPublicKey(publicKey, lock)
+	if addr == nil {
+		return false, errors.New("address was not found")
+	}
+
+	balance, err := new(crypto.ElGamal).Deserialize(encryptedBalance)
+	if err != nil {
+		return false, err
+	}
+
+	return addr.PrivateKey.TryDecryptBalance(balance, matchValue), nil
 }
 
 func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {
