@@ -106,7 +106,7 @@ func _startMain() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "settings initialized")
 
-	app.TxsBuilder = txs_builder.TxsBuilderInit(app.Wallet, app.Mempool)
+	app.TxsBuilder = txs_builder.TxsBuilderInit(app.Wallet, app.Mempool, app.TxsValidator)
 	globals.MainEvents.BroadcastEvent("main", "transactions builder initialized")
 
 	app.Forging.InitializeForging(app.TxsBuilder.CreateForgingTransactions, app.Chain.NextBlockCreatedCn, app.Chain.UpdateAccounts, app.Chain.ForgingSolutionCn)

@@ -18,7 +18,6 @@ import (
 	"pandora-pay/config/config_reward"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
@@ -490,7 +489,11 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringMembers, chainHeight-1, chainKernelHash, publicKeyIndexes, feesFinal, validateTx, ctx, statusCallback); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringMembers, chainHeight-1, chainKernelHash, publicKeyIndexes, feesFinal, ctx, statusCallback); err != nil {
+		return nil, err
+	}
+
+	if err = builder.txsValidator.MarkAsValidatedTx(tx); err != nil {
 		return nil, err
 	}
 
@@ -505,7 +508,6 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 
 func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete.BlockComplete, forgerPublicKey []byte) (*transaction.Transaction, error) {
 
-	gui.GUI.Info("CreateForgingTransactions 1")
 	forger, err := addresses.CreateAddr(forgerPublicKey, nil, nil, 0, nil)
 	if err != nil {
 		return nil, err
@@ -549,8 +551,6 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 		return nil, err
 	}
 
-	gui.GUI.Info("CreateForgingTransactions 2")
-
 	feesFinal := make([]*wizard.WizardTransactionFee, len(txData.Payloads))
 	for t, payload := range txData.Payloads {
 		feesFinal[t] = payload.Fee.WizardTransactionFee
@@ -562,11 +562,13 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringMembers, chainHeight, blkComplete.PrevKernelHash, publicKeyIndexes, feesFinal, false, context.Background(), func(string) {}); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringMembers, chainHeight, blkComplete.PrevKernelHash, publicKeyIndexes, feesFinal, context.Background(), func(string) {}); err != nil {
 		return nil, err
 	}
 
-	gui.GUI.Info("CreateForgingTransactions 3")
+	if err = builder.txsValidator.MarkAsValidatedTx(tx); err != nil {
+		return nil, err
+	}
 
 	return tx, nil
 }

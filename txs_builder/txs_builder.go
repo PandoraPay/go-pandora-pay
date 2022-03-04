@@ -12,15 +12,17 @@ import (
 	"pandora-pay/mempool"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
 	"sync"
 )
 
 type TxsBuilder struct {
-	wallet  *wallet.Wallet
-	mempool *mempool.Mempool
-	lock    *sync.Mutex
+	wallet       *wallet.Wallet
+	txsValidator *txs_validator.TxsValidator
+	mempool      *mempool.Mempool
+	lock         *sync.Mutex
 }
 
 func (builder *TxsBuilder) getNonce(nonce uint64, publicKey []byte, accNonce uint64) uint64 {
@@ -163,12 +165,13 @@ func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propa
 	//return tx, nil
 }
 
-func TxsBuilderInit(wallet *wallet.Wallet, mempool *mempool.Mempool) (builder *TxsBuilder) {
+func TxsBuilderInit(wallet *wallet.Wallet, mempool *mempool.Mempool, txsValidator *txs_validator.TxsValidator) (builder *TxsBuilder) {
 
 	builder = &TxsBuilder{
-		wallet:  wallet,
-		mempool: mempool,
-		lock:    &sync.Mutex{},
+		wallet,
+		txsValidator,
+		mempool,
+		&sync.Mutex{},
 	}
 
 	builder.initCLI()

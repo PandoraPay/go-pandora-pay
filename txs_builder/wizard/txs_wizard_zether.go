@@ -527,7 +527,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	return
 }
 
-func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, rings [][]*bn256.G1, chainHeight uint64, chainKernelHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, fees []*WizardTransactionFee, validateTx bool, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, rings [][]*bn256.G1, chainHeight uint64, chainKernelHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, fees []*WizardTransactionFee, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	txBase := &transaction_zether.TransactionZether{
 		ChainHeight:     chainHeight,
@@ -542,7 +542,7 @@ func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[strin
 	if err = signZetherTx(tx, txBase, transfers, emap, hasRollovers, rings, fees, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return
 	}
-	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
+	if err = bloomAllTx(tx, statusCallback); err != nil {
 		return
 	}
 

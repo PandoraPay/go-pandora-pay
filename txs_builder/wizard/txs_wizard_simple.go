@@ -102,7 +102,7 @@ func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTx
 	if err = signSimpleTransaction(tx, privateKey, fee, statusCallback); err != nil {
 		return
 	}
-	if err = bloomAllTx(tx, validateTx, statusCallback); err != nil {
+	if err = bloomAllTx(tx, statusCallback); err != nil {
 		return
 	}
 	return tx, nil

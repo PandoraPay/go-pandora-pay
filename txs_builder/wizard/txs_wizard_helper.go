@@ -48,7 +48,7 @@ func setFee(tx *transaction.Transaction, extraBytes int, fee *WizardTransactionF
 	return feeValue
 }
 
-func bloomAllTx(tx *transaction.Transaction, validateTx bool, statusCallback func(string)) (err error) {
+func bloomAllTx(tx *transaction.Transaction, statusCallback func(string)) (err error) {
 
 	if err = tx.BloomAll(); err != nil {
 		return
