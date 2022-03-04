@@ -210,6 +210,10 @@ func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
 		}
 
 		acc.Balance.AddEchanges(pending.PendingAmount.Amount)
+
+		if err = accs.Update(string(pending.PublicKey), acc); err != nil {
+			return err
+		}
 	}
 
 	dataStorage.DelegatedPendingStakes.Delete(strconv.FormatUint(blockHeight, 10))

@@ -24,6 +24,7 @@ import (
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
+	"pandora-pay/recovery"
 	"strconv"
 )
 
@@ -226,6 +227,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	tx.SpaceExtra = uint64(spaceExtra)
 
 	var witness_list []crypto.Witness
+	sender_secrets := make([]*big.Int, len(transfers))
+
 	for t, transfer := range transfers {
 
 		select {
@@ -243,7 +246,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		senderKey := &addresses.PrivateKey{Key: transfer.Sender}
 		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
 		sender := crypto.GPoint.ScalarMult(secretPoint).G1()
-		sender_secret := secretPoint.BigInt()
+		sender_secrets[t] = secretPoint.BigInt()
 
 		//  fmt.Printf("len of publickeylist  %d \n", len(publickeylist))
 
@@ -253,7 +256,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		for i := range publickeylist {
 			rinputs = append(rinputs, publickeylist[i].EncodeCompressed()...)
 		}
-		rencrypted := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), rinputs...))), sender_secret)
+		rencrypted := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), rinputs...))), sender_secrets[t])
 		r := crypto.ReducedHash(rencrypted.EncodeCompressed())
 
 		payload := payloads[t]
@@ -434,7 +437,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		statement.RingSize = len(publickeylist)
 
-		witness := GenerateWitness(sender_secret, r, value, balance-value-fee-burn_value, witness_index)
+		witness := GenerateWitness(sender_secrets[t], r, value, balance-value-fee-burn_value, witness_index)
 
 		witness_list = append(witness_list, witness)
 
@@ -474,36 +477,54 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	txBase.Payloads = payloads
 	statusCallback("Transaction Zether Statements created")
 
+	select {
+	case <-ctx.Done():
+		return errors.New("Suspended")
+	default:
+	}
+
 	assetMap := map[string]int{}
+	assetIndexes := make([]int, len(transfers))
 	for t := range transfers {
-
-		select {
-		case <-ctx.Done():
-			return errors.New("Suspended")
-		default:
-		}
-
-		sender_secret := new(crypto.BNRed).SetBytes(transfers[t].Sender).BigInt()
-
-		// the u is dependent on roothash,SCID and counter ( counter is dynamic and depends on order of assets)
-		uinput := append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), txBase.ChainKernelHash[:]...)
-		assetIndex := assetMap[string(txBase.Payloads[t].Asset)]
-		uinput = append(uinput, txBase.Payloads[t].Asset[:]...)
-		uinput = append(uinput, strconv.Itoa(assetIndex)...)
-
-		u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), sender_secret)
-
-		statusCallback(fmt.Sprintf("Payload %d generating zero knowledge proofs... ", t+1))
-		if txBase.Payloads[t].Proof, err = crypto.GenerateProof(txBase.Payloads[t].Asset, assetIndex, txBase.ChainKernelHash, txBase.Payloads[t].Statement, &witness_list[t], u, tx.GetHashSigningManually(), txBase.Payloads[t].BurnValue); err != nil {
-			return
-		}
-
+		assetIndexes[t] = assetMap[string(txBase.Payloads[t].Asset)]
 		assetMap[string(txBase.Payloads[t].Asset)] = assetMap[string(txBase.Payloads[t].Asset)] + 1
+	}
 
-		if txBase.Payloads[t].Proof.Parity() != parities[t] {
-			return errors.New("ERRROR")
+	//make it concurrent
+	proofsCn := make([]chan *crypto.Proof, len(transfers))
+
+	statusCallback(fmt.Sprintf("Generating zero knowledge proofs... "))
+
+	hash := tx.GetHashSigningManually()
+	for i := range transfers {
+		proofsCn[i] = make(chan *crypto.Proof)
+		func(t int) {
+			recovery.SafeGo(func() {
+
+				// the u is dependent on roothash,SCID and counter ( counter is dynamic and depends on order of assets)
+				uinput := append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), txBase.ChainKernelHash[:]...)
+				uinput = append(uinput, txBase.Payloads[t].Asset[:]...)
+				uinput = append(uinput, strconv.Itoa(assetIndexes[t])...)
+
+				u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), sender_secrets[t])
+
+				proof, proofErr := crypto.GenerateProof(txBase.Payloads[t].Asset, assetIndexes[t], txBase.ChainKernelHash, txBase.Payloads[t].Statement, &witness_list[t], u, hash, txBase.Payloads[t].BurnValue)
+				if proofErr != nil {
+					proofsCn[t] <- nil
+					return
+				}
+				proofsCn[t] <- proof
+			})
+		}(i)
+	}
+
+	//let's wait for all of them
+	for t := range transfers {
+		proof := <-proofsCn[t]
+		if proof == nil {
+			return errors.New("Error generating zk proofs")
 		}
-
+		txBase.Payloads[t].Proof = proof
 	}
 
 	for t := range transfers {
