@@ -257,7 +257,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 					//check existance of a tx with payloads
 					var foundStakingRewardTx *transaction.Transaction
-					for _, tx := range blkComplete.Txs {
+					for index, tx := range blkComplete.Txs {
 						if tx.Version == transaction_type.TX_ZETHER {
 							txBase := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
 							if len(txBase.Payloads) == 2 && txBase.Payloads[0].PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING && txBase.Payloads[1].PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD {
@@ -265,6 +265,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 									return errors.New("Multiple txs with staking & reward payloads")
 								}
 								foundStakingRewardTx = tx
+								if index != len(blkComplete.Txs)-1 {
+									return errors.New("Staking reward tx should be the last one")
+								}
 								continue
 							}
 							for _, payload := range txBase.Payloads {

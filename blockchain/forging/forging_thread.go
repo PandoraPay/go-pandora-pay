@@ -108,8 +108,7 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 		return
 	}
 
-	newBlk.Txs = []*transaction.Transaction{txStakingReward}
-	newBlk.Txs = append(newBlk.Txs, txs...)
+	newBlk.Txs = append(txs, txStakingReward)
 
 	newBlk.Block.MerkleHash = newBlk.MerkleHash()
 

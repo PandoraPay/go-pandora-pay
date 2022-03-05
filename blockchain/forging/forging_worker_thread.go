@@ -75,14 +75,15 @@ func (worker *ForgingWorkerThread) forge() {
 
 	var work *forging_block_work.ForgingWork
 
-	var timestampMs int64
-	var timestamp uint64
+	var timestamp, localTimestamp uint64
 	var serialized []byte
 	var n int
+	var hashes int32
 	buf := make([]byte, binary.MaxVarintLen64)
 
 	wallets := make(map[string]*ForgingWorkerThreadAddress)
 	walletsStakable := make(map[string]*ForgingWorkerThreadAddress)
+	walletsStakableTimestamp := make(map[string]uint64)
 
 	waitCn := make(chan struct{})
 	waitCnClosed := false
@@ -108,17 +109,52 @@ func (worker *ForgingWorkerThread) forge() {
 		serialized = helpers.CloneBytes(work.BlkSerialized)
 
 		timestamp = work.BlkTimestmap + 1
-		timestampMs = int64(timestamp) * 1000
 
 		n = binary.PutUvarint(buf, timestamp)
 
 		walletsStakable = make(map[string]*ForgingWorkerThreadAddress)
+		walletsStakableTimestamp = make(map[string]uint64)
 		for _, walletAddr := range wallets {
 			if worker.computeStakingAmount(walletAddr, work) {
 				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
+				walletsStakableTimestamp[walletAddr.walletAdr.publicKeyStr] = timestamp
 			}
 		}
 
+		validateWork()
+	}
+
+	newWalletAddress := func(newWalletAddr *ForgingWalletAddress) {
+		walletAddr := wallets[newWalletAddr.publicKeyStr]
+		if walletAddr == nil {
+			walletAddr = &ForgingWorkerThreadAddress{ //making sure the has a copy
+				newWalletAddr, //already it is copied
+				0,
+				nil,
+				nil,
+			}
+			wallets[newWalletAddr.publicKeyStr] = walletAddr
+		} else {
+			walletAddr.walletAdr = newWalletAddr
+		}
+
+		if work != nil {
+			if worker.computeStakingAmount(walletAddr, work) {
+				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
+				walletsStakableTimestamp[walletAddr.walletAdr.publicKeyStr] = timestamp
+			} else {
+				delete(walletsStakable, walletAddr.walletAdr.publicKeyStr)
+			}
+		}
+
+		validateWork()
+	}
+
+	removeWalletAddr := func(publicKeyStr string) {
+		if wallets[publicKeyStr] != nil {
+			delete(wallets, publicKeyStr)
+			delete(walletsStakable, publicKeyStr)
+		}
 		validateWork()
 	}
 
@@ -129,65 +165,42 @@ func (worker *ForgingWorkerThread) forge() {
 			newWork(newWorkReceived)
 			continue
 		case newWalletAddr := <-worker.addWalletAddressCn:
-			walletAddr := wallets[newWalletAddr.publicKeyStr]
-			if walletAddr == nil {
-				walletAddr = &ForgingWorkerThreadAddress{ //making sure the has a copy
-					newWalletAddr, //already it is copied
-					0,
-					nil,
-					nil,
-				}
-				wallets[newWalletAddr.publicKeyStr] = walletAddr
-			} else {
-				walletAddr.walletAdr = newWalletAddr
-			}
-
-			if work != nil {
-				if worker.computeStakingAmount(walletAddr, work) {
-					walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
-				} else {
-					delete(walletsStakable, walletAddr.walletAdr.publicKeyStr)
-				}
-			}
-
-			validateWork()
+			newWalletAddress(newWalletAddr)
 			continue
 		case publicKeyStr := <-worker.removeWalletAddressCn:
-			if wallets[publicKeyStr] != nil {
-				delete(wallets, publicKeyStr)
-				delete(walletsStakable, publicKeyStr)
-			}
-			validateWork()
+			removeWalletAddr(publicKeyStr)
 			continue
 		case <-waitCn:
 		}
 
-		timeLimitMs := time.Now().UnixNano()/1000000 + config.NETWORK_TIMESTAMP_DRIFT_MAX_INT*1000
-
-		if timestampMs > timeLimitMs {
-			time.Sleep(time.Millisecond * time.Duration(timestampMs-timeLimitMs))
+		if len(walletsStakable) == 0 {
+			validateWork()
 			continue
 		}
 
+		timeLimitMs := time.Now().UnixNano()/1000000 + config.NETWORK_TIMESTAMP_DRIFT_MAX_INT*1000
 		timeLimit := uint64(timeLimitMs / 1000)
-		//forge with my wallets
-		diff := 0
-		if timeLimit > timestamp {
-			diff = int(generics.Min(timeLimit-timestamp, 20))
-		}
 
-		func() {
-			for i := 0; i <= diff; i++ {
-				for key, address := range walletsStakable {
+		hashes = 0
+
+		hasNewWork := func() bool {
+
+			for key, address := range walletsStakable {
+				localTimestamp = walletsStakableTimestamp[key]
+				if localTimestamp < timeLimit {
 
 					select {
 					case newWorkReceived := <-worker.workCn: //or the work was changed meanwhile
 						newWork(newWorkReceived)
-						return
+						return true
+					case newWalletAddr := <-worker.addWalletAddressCn:
+						newWalletAddress(newWalletAddr)
+					case publicKeyStr := <-worker.removeWalletAddressCn:
+						removeWalletAddr(publicKeyStr)
 					default:
 					}
 
-					n2 := binary.PutUvarint(buf, timestamp)
+					n2 := binary.PutUvarint(buf, localTimestamp)
 
 					if n2 != n {
 						newSerialized := make([]byte, len(serialized)-n+n2)
@@ -209,7 +222,7 @@ func (worker *ForgingWorkerThread) forge() {
 						requireStakingAmount := new(big.Int).Div(new(big.Int).SetBytes(kernelHash), work.Target)
 
 						solution := &ForgingSolution{
-							timestamp,
+							localTimestamp,
 							address.walletAdr,
 							work,
 							generics.Max(generics.Min(requireStakingAmount.Uint64()+1, address.stakingAmount), work.MinimumStake),
@@ -220,7 +233,11 @@ func (worker *ForgingWorkerThread) forge() {
 						case worker.workerSolutionCn <- solution:
 						case newWorkReceived := <-worker.workCn: //or the work was changed meanwhile
 							newWork(newWorkReceived)
-							return
+							return true
+						case newWalletAddr := <-worker.addWalletAddressCn:
+							newWalletAddress(newWalletAddr)
+						case publicKeyStr := <-worker.removeWalletAddressCn:
+							removeWalletAddr(publicKeyStr)
 						}
 
 						delete(walletsStakable, key)
@@ -229,14 +246,19 @@ func (worker *ForgingWorkerThread) forge() {
 						gui.GUI.Log(base64.StdEncoding.EncodeToString(kernelHash), strconv.FormatUint(timestamp, 10 ))
 					}*/
 
+					walletsStakableTimestamp[key] += 1
+					hashes++
 				}
 
-				timestamp += 1
-				timestampMs += 1000
-
 			}
-			atomic.AddUint32(&worker.hashes, uint32((diff+1)*len(walletsStakable)))
+
+			return false
 		}()
+		atomic.AddUint32(&worker.hashes, uint32(hashes))
+
+		if hashes == 0 && !hasNewWork {
+			time.Sleep(time.Duration(time.Now().Unix() - timeLimitMs*1000000))
+		}
 
 	}
 
