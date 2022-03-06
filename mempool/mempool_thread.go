@@ -3,8 +3,6 @@ package mempool
 import (
 	"errors"
 	"pandora-pay/blockchain/data_storage"
-	"pandora-pay/blockchain/transactions/transaction/transaction_type"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/config"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -56,7 +54,6 @@ func (worker *mempoolWorker) processing(
 
 	includedTotalSize := uint64(0)
 	includedTxs := []*mempoolTx{}
-	includedZetherNonceMap := make(map[string]bool)
 
 	resetNow := func(newWork *mempoolWork) {
 
@@ -80,12 +77,6 @@ func (worker *mempoolWorker) processing(
 			txs.deleteTx(tx.Tx.Bloom.HashStr)
 			txs.deleted(tx, txWasInserted, includedInBlockchainNotification)
 
-			if tx.Tx.Version == transaction_type.TX_ZETHER {
-				base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-				for t := range base.Payloads {
-					delete(includedZetherNonceMap, string(base.Bloom.Nonces[t]))
-				}
-			}
 		}
 	}
 
@@ -132,24 +123,6 @@ func (worker *mempoolWorker) processing(
 		result := false
 		for _, tx := range data.Txs {
 			if tx != nil && txsMap[tx.Tx.Bloom.HashStr] == nil {
-
-				if tx.Tx.Version == transaction_type.TX_ZETHER {
-					nonceFound := false
-					base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-					for t := range base.Payloads {
-						if includedZetherNonceMap[string(base.Bloom.Nonces[t])] {
-							nonceFound = true
-							break
-						}
-					}
-					if nonceFound {
-						continue
-					}
-					for t := range base.Payloads {
-						includedZetherNonceMap[string(base.Bloom.Nonces[t])] = true
-					}
-				}
-
 				txsMap[tx.Tx.Bloom.HashStr] = tx
 				txs.insertTx(tx)
 				txs.inserted(tx)
@@ -230,22 +203,6 @@ func (worker *mempoolWorker) processing(
 							}
 							continue
 						}
-						if tx.Tx.Version == transaction_type.TX_ZETHER {
-							base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-							nonceFound := false
-							for t := range base.Payloads {
-								if includedZetherNonceMap[string(base.Bloom.Nonces[t])] {
-									if newAddTx.Result != nil {
-										nonceFound = true
-										newAddTx.Result <- errors.New("Zether Nonce exists")
-										break
-									}
-								}
-							}
-							if nonceFound {
-								continue
-							}
-						}
 					}
 				} else {
 					select {
@@ -307,14 +264,6 @@ func (worker *mempoolWorker) processing(
 							}
 
 							if newAddTx != nil {
-
-								if tx.Tx.Version == transaction_type.TX_ZETHER {
-									base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-									for t := range base.Payloads {
-										includedZetherNonceMap[string(base.Bloom.Nonces[t])] = true
-									}
-								}
-
 								listIndex += 1
 								txsList = append(txsList, newAddTx.Tx)
 								txsMap[tx.Tx.Bloom.HashStr] = newAddTx.Tx

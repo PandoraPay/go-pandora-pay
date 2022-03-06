@@ -77,19 +77,6 @@ func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockCo
 			return
 		}
 
-		nonceMap := make(map[string]bool)
-		for _, tx := range blkComplete.Txs {
-			if tx.Version == transaction_type.TX_ZETHER {
-				base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-
-				for t := range base.Payloads {
-					if nonceMap[string(base.Bloom.Nonces[t])] {
-						return errors.New("Zether Nonce exists")
-					}
-					nonceMap[string(base.Bloom.Nonces[t])] = true
-				}
-			}
-		}
 	}
 
 	return

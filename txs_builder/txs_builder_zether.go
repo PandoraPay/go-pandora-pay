@@ -18,6 +18,7 @@ import (
 	"pandora-pay/config/config_reward"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
@@ -519,6 +520,7 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 
 func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete.BlockComplete, forgerPublicKey []byte, decryptedBalance uint64) (*transaction.Transaction, error) {
 
+	gui.GUI.Info("CreateForgingTransactions 1")
 	forger, err := addresses.CreateAddr(forgerPublicKey, nil, nil, 0, nil)
 	if err != nil {
 		return nil, err
@@ -564,6 +566,8 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 		return nil, err
 	}
 
+	gui.GUI.Info("CreateForgingTransactions 2")
+
 	feesFinal := make([]*wizard.WizardTransactionFee, len(txData.Payloads))
 	for t, payload := range txData.Payloads {
 		feesFinal[t] = payload.Fee.WizardTransactionFee
@@ -579,9 +583,13 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 		return nil, err
 	}
 
+	gui.GUI.Info("CreateForgingTransactions 3")
+
 	if err = builder.txsValidator.MarkAsValidatedTx(tx); err != nil {
 		return nil, err
 	}
+
+	gui.GUI.Info("CreateForgingTransactions 4")
 
 	return tx, nil
 }
