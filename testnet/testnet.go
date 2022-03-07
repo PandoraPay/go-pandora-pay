@@ -3,18 +3,25 @@ package testnet
 import (
 	"context"
 	"encoding/base64"
+	"github.com/tevino/abool"
 	"math"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
+	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
+	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
+	"pandora-pay/store"
+	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/txs_builder"
 	"pandora-pay/txs_builder/wizard"
 	"pandora-pay/wallet"
@@ -86,6 +93,67 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 	return
 }
 
+func (testnet *Testnet) testnetCreateClaimTx(recipientAddressWalletIndex int, sendAmount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
+
+	var addrSender, addrRecipient *wallet_address.WalletAddress
+	if addrSender, err = testnet.wallet.GetWalletAddress(0, true); err != nil {
+		return
+	}
+
+	if addrRecipient, err = testnet.wallet.GetWalletAddress(recipientAddressWalletIndex, true); err != nil {
+		return
+	}
+
+	var acc *account.Account
+	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		dataStorage := data_storage.NewDataStorage(reader)
+
+		var accs *accounts.Accounts
+		if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
+			return
+		}
+
+		if acc, err = accs.GetAccount(addrRecipient.PublicKey); err != nil {
+			return
+		}
+		return
+	}); err != nil {
+		return
+	}
+
+	var amount uint64
+	if acc != nil {
+		if amount, err = testnet.wallet.DecryptBalance(addrRecipient, acc.Balance.Amount.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, true, ctx, func(string) {}); err != nil {
+			return
+		}
+	}
+
+	if amount > config_coins.ConvertToUnitsUint64Forced(10000) {
+		return nil, nil
+	}
+
+	txData := &txs_builder.TxBuilderCreateZetherTxData{
+		Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{{
+			Sender:            addrSender.AddressEncoded,
+			Amount:            sendAmount,
+			Recipient:         addrRecipient.AddressRegistrationEncoded,
+			Data:              &wizard.WizardTransactionData{nil, false},
+			Fee:               &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0},
+			Asset:             config_coins.NATIVE_ASSET_FULL,
+			RingConfiguration: testnet.testnetGetZetherRingConfiguration(),
+		}},
+	}
+
+	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, true, true, true, false, ctx, func(string) {}); err != nil {
+		return nil, err
+	}
+
+	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).ChainHeight, tx.Bloom.Hash)
+
+	return
+}
+
 func (testnet *Testnet) testnetCreateTransfers(senderAddressWalletIndex int, ctx context.Context) (tx *transaction.Transaction, err error) {
 
 	select {
@@ -131,7 +199,7 @@ func (testnet *Testnet) run() {
 	updateChannel := testnet.chain.UpdateNewChain.AddListener()
 	defer testnet.chain.UpdateNewChain.RemoveChannel(updateChannel)
 
-	//creatingTransactions := abool.New()
+	creatingTransactions := abool.New()
 
 	for i := uint64(0); i < testnet.nodes; i++ {
 		if uint64(testnet.wallet.GetAddressesCount()) <= i+1 {
@@ -141,8 +209,8 @@ func (testnet *Testnet) run() {
 		}
 	}
 
-	//ctx, cancel := context.WithCancel(context.Background())
-	//defer cancel()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	for {
 
@@ -160,72 +228,56 @@ func (testnet *Testnet) run() {
 
 			if err := func() (err error) {
 
-				//if blockHeight == 20 {
-				//	if _, err = testnet.testnetCreateUnstakeTx(blockHeight, testnet.nodes*config_stake.GetRequiredStake(blockHeight), ctx); err != nil {
-				//		return
-				//	}
-				//}
-				//if blockHeight == 100 {
-				//	if _, err = testnet.testnetCreateTransfersNewWallets(blockHeight, ctx); err != nil {
-				//		return
-				//	}
-				//}
+				if blockHeight == 100 {
+					if _, err = testnet.testnetCreateTransfersNewWallets(blockHeight, ctx); err != nil {
+						return
+					}
+				}
 
-				if blockHeight >= 40 && syncTime != 0 {
-					//
-					//var addr *wallet_address.WalletAddress
-					//addr, _ = testnet.wallet.GetWalletAddress(0, true)
-					//
-					//var delegatedStakeAvailable, delegatedUnstakePending, unclaimed uint64
-					//
-					//var plainAcc *plain_account.PlainAccount
-					//
-					//gui.GUI.Log("UpdateNewChain received! 2")
+				if blockHeight >= 30 && syncTime != 0 {
 
-					//if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-					//
-					//	plainAccs := plain_accounts.NewPlainAccounts(reader)
-					//	if plainAcc, err = plainAccs.GetPlainAccount(addr.PublicKey, blockHeight); err != nil {
-					//		return
-					//	}
-					//
-					//	if plainAcc != nil {
-					//		delegatedStakeAvailable = plainAcc.DelegatedStake.GetDelegatedStakeAvailable()
-					//		delegatedUnstakePending, _ = plainAcc.DelegatedStake.ComputeDelegatedUnstakePending()
-					//		unclaimed = plainAcc.Unclaimed
-					//	}
-					//
-					//	return
-					//}); err != nil {
-					//	return
-					//}
-					//
+					creatingTransactions.Set()
+					defer creatingTransactions.UnSet()
+
+					var addr *wallet_address.WalletAddress
+					addr, _ = testnet.wallet.GetWalletAddress(0, true)
+
+					var acc *account.Account
+
+					gui.GUI.Log("UpdateNewChain received! 2")
+
+					if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+						dataStorage := data_storage.NewDataStorage(reader)
+
+						var accs *accounts.Accounts
+						if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
+							return
+						}
+
+						if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
+							return
+						}
+						return
+					}); err != nil {
+						return
+					}
+
+					var stakingAmount uint64
+					if stakingAmount, err = testnet.wallet.DecryptBalance(addr, acc.Balance.Amount.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, true, ctx, func(string) {}); err != nil {
+						return
+					}
+
+					if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload_script.SCRIPT_TRANSFER) {
+						testnet.testnetCreateClaimTx(1, stakingAmount/5, ctx)
+						testnet.testnetCreateClaimTx(2, stakingAmount/5, ctx)
+						testnet.testnetCreateClaimTx(3, stakingAmount/5, ctx)
+						testnet.testnetCreateClaimTx(4, stakingAmount/5, ctx)
+					}
+
 					//if plainAcc != nil {
 					//
 					//	if creatingTransactions.IsNotSet() && syncTime != 0 {
-					//
-					//		creatingTransactions.Set()
-					//		defer creatingTransactions.UnSet()
-					//
-					//		if unclaimed > config_coins.ConvertToUnitsUint64Forced(200) {
-					//
-					//			unclaimed -= config_coins.ConvertToUnitsUint64Forced(30)
-					//
-					//			if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload.SCRIPT_CLAIM) {
-					//				testnet.testnetCreateClaimTx(1, unclaimed/5, ctx)
-					//				testnet.testnetCreateClaimTx(2, unclaimed/5, ctx)
-					//				testnet.testnetCreateClaimTx(3, unclaimed/5, ctx)
-					//				testnet.testnetCreateClaimTx(4, unclaimed/5, ctx)
-					//			}
-					//
-					//		} else if delegatedStakeAvailable > 0 && unclaimed < delegatedStakeAvailable/4 && delegatedUnstakePending == 0 && delegatedStakeAvailable > config_coins.ConvertToUnitsUint64Forced(5000) && unclaimed < config_coins.ConvertToUnitsUint64Forced(2000) {
-					//			if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_UNSTAKE) {
-					//				if _, err = testnet.testnetCreateUnstakeTx(blockHeight, generics.Min(config_coins.ConvertToUnitsUint64Forced(1000), delegatedStakeAvailable/4), ctx); err != nil {
-					//					return
-					//				}
-					//			}
-					//		}
-					//
 					//		time.Sleep(time.Millisecond * 500) //making sure the block got propagated
 					//		for i := 2; i < 5; i++ {
 					//			testnet.testnetCreateTransfers(i, ctx)

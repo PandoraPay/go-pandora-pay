@@ -455,14 +455,11 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 			transfers[t].SenderDecryptedBalance = transfers[t].Amount
 		} else {
 			if txData.Payloads[t].DecryptedBalance > 0 {
-				ok, err := builder.wallet.TryDecryptBalanceByPublicKey(sendersWalletAddresses[t].PublicKey, sendersEncryptedBalances[t], true, txData.Payloads[t].DecryptedBalance)
+				decrypted, err := builder.wallet.DecryptBalanceByPublicKey(sendersWalletAddresses[t].PublicKey, sendersEncryptedBalances[t], transfers[t].Asset, true, txData.Payloads[t].DecryptedBalance, true, true, ctx, statusCallback)
 				if err != nil {
 					return nil, nil, nil, nil, nil, 0, nil, err
 				}
-				if !ok {
-					return nil, nil, nil, nil, nil, 0, nil, errors.New("Balance was not matching")
-				}
-				transfers[t].SenderDecryptedBalance = txData.Payloads[t].DecryptedBalance
+				transfers[t].SenderDecryptedBalance = decrypted
 			} else {
 				decrypted, err := builder.wallet.DecryptBalanceByPublicKey(sendersWalletAddresses[t].PublicKey, sendersEncryptedBalances[t], transfers[t].Asset, false, 0, true, true, ctx, statusCallback)
 				if err != nil {

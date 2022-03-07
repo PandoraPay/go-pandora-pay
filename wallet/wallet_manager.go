@@ -426,18 +426,23 @@ func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.Wall
 	return addr, nil
 }
 
-func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, store, lock bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
+func (wallet *Wallet) DecryptBalance(addr *wallet_address.WalletAddress, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, store bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	if len(encryptedBalance) == 0 {
 		return 0, errors.New("Encrypted Balance is nil")
 	}
+
+	return wallet.addressBalanceDecryptor.DecryptBalance("wallet", addr.PublicKey, addr.PrivateKey.Key, encryptedBalance, asset, useNewPreviousValue, newPreviousValue, store, ctx, statusCallback)
+}
+
+func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, store, lock bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	addr := wallet.GetWalletAddressByPublicKey(publicKey, lock)
 	if addr == nil {
 		return 0, errors.New("address was not found")
 	}
 
-	return wallet.addressBalanceDecryptor.DecryptBalance("wallet", addr.PublicKey, addr.PrivateKey.Key, encryptedBalance, asset, useNewPreviousValue, newPreviousValue, store, ctx, statusCallback)
+	return wallet.DecryptBalance(addr, encryptedBalance, asset, useNewPreviousValue, newPreviousValue, store, ctx, statusCallback)
 }
 
 func (wallet *Wallet) TryDecryptBalanceByPublicKey(publicKey []byte, encryptedBalance []byte, lock bool, matchValue uint64) (bool, error) {

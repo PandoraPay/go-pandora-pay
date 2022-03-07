@@ -73,7 +73,7 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, chainHeight uin
 
 		var stakingAmount uint64
 		if stakingAmountBalance != nil {
-			stakingAmount, _ = wallet.addressBalanceDecryptor.DecryptBalance("wallet", addr.PublicKey, addr.PrivateKey.Key, stakingAmountBalance, config_coins.NATIVE_ASSET_FULL, false, 0, true, context.Background(), func(string) {})
+			stakingAmount, _ = wallet.DecryptBalance(addr, stakingAmountBalance, config_coins.NATIVE_ASSET_FULL, false, 0, true, context.Background(), func(string) {})
 		}
 
 		if stakingAmount < config_stake.GetRequiredStake(chainHeight) {

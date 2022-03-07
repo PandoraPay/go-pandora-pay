@@ -229,16 +229,7 @@ func (worker *ForgingWorkerThread) forge() {
 							address.stakingNonce,
 						}
 
-						select {
-						case worker.workerSolutionCn <- solution:
-						case newWorkReceived := <-worker.workCn: //or the work was changed meanwhile
-							newWork(newWorkReceived)
-							return true
-						case newWalletAddr := <-worker.addWalletAddressCn:
-							newWalletAddress(newWalletAddr)
-						case publicKeyStr := <-worker.removeWalletAddressCn:
-							removeWalletAddr(publicKeyStr)
-						}
+						worker.workerSolutionCn <- solution
 
 						delete(walletsStakable, key)
 
