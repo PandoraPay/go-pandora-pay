@@ -21,7 +21,7 @@ const (
 
 func (mempool *Mempool) ExistsTxSimpleVersion(publicKey []byte, version transaction_simple.ScriptType) bool {
 
-	txs := mempool.Txs.GetTxsFromMap()
+	txs := mempool.Txs.GetTxsList()
 	if txs == nil {
 		return false
 	}
@@ -39,7 +39,7 @@ func (mempool *Mempool) ExistsTxSimpleVersion(publicKey []byte, version transact
 
 func (mempool *Mempool) ExistsTxZetherVersion(publicKey []byte, version transaction_zether_payload_script.PayloadScriptType) bool {
 
-	txs := mempool.Txs.GetTxsFromMap()
+	txs := mempool.Txs.GetTxsList()
 	if txs == nil {
 		return false
 	}
@@ -63,7 +63,7 @@ func (mempool *Mempool) ExistsTxZetherVersion(publicKey []byte, version transact
 
 func (mempool *Mempool) CountInputTxs(publicKey []byte) uint64 {
 
-	txs := mempool.Txs.GetTxsFromMap()
+	txs := mempool.Txs.GetTxsList()
 
 	count := uint64(0)
 	for _, tx := range txs {
@@ -93,7 +93,7 @@ func (mempool *Mempool) CountInputTxs(publicKey []byte) uint64 {
 
 func (mempool *Mempool) GetNonce(publicKey []byte, nonce uint64) uint64 {
 
-	txs := mempool.Txs.GetTxsFromMap()
+	txs := mempool.Txs.GetTxsList()
 
 	nonces := make(map[uint64]bool)
 	for _, tx := range txs {
@@ -126,7 +126,7 @@ func (mempool *Mempool) GetZetherBalance(publicKey []byte, balanceInit *crypto.E
 
 func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGamal, asset []byte, hasRollovers []bool) ([]*crypto.ElGamal, error) {
 
-	txs := mempool.Txs.GetTxsFromMap()
+	txs := mempool.Txs.GetTxsList()
 
 	var balance *crypto.ElGamal
 	output := make([]*crypto.ElGamal, len(publicKeys))
@@ -151,7 +151,7 @@ func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesIn
 							if bytes.Equal(publicKey, publicKey2) {
 
 								update := true
-								if (i%2 == 0) == payload.Parity && hasRollovers[i] { //sender
+								if (j%2 == 0) != payload.Parity && hasRollovers[i] { //receiver
 									update = false
 								}
 
