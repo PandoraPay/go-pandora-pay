@@ -383,21 +383,23 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 						return
 					}
 
-					var balance []byte = nil
+					hasRollover := acc != nil && acc.DelegatedStake != nil && acc.DelegatedStake.HasDelegatedStake()
+
+					var newBalance *crypto.ElGamal
 					if acc != nil {
-						balance = acc.Balance.Amount.Serialize()
+						newBalance = acc.Balance.Amount
 					}
 
-					if balance, err = builder.mempool.GetZetherBalance(addr.PublicKey, balance, payload.Asset); err != nil {
+					if newBalance, err = builder.mempool.GetZetherBalance(addr.PublicKey, newBalance, payload.Asset, hasRollover); err != nil {
 						return
 					}
 
 					if payload.Sender == address { //sender
-						sendersEncryptedBalances[t] = balance
+						sendersEncryptedBalances[t] = newBalance.Serialize()
 					}
 
-					emap[string(payload.Asset)][p.G1().String()] = balance
-					hasRollovers[p.G1().String()] = acc != nil && acc.DelegatedStake != nil && acc.DelegatedStake.HasDelegatedStake()
+					emap[string(payload.Asset)][p.G1().String()] = newBalance.Serialize()
+					hasRollovers[p.G1().String()] = hasRollover
 				}
 				ring = append(ring, p.G1())
 

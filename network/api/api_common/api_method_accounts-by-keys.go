@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/accounts/account/account_balance_homomorphic"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/store"
@@ -30,6 +32,7 @@ type APIAccountsByKeysReply struct {
 func (api *APICommon) GetAccountsByKeys(r *http.Request, args *APIAccountsByKeysRequest, reply *APIAccountsByKeysReply) (err error) {
 
 	publicKeys := make([][]byte, len(args.Keys))
+	hasRollovers := make([]bool, len(args.Keys))
 
 	for i, key := range args.Keys {
 		if publicKeys[i], err = key.GetPublicKey(true); err != nil {
@@ -61,6 +64,7 @@ func (api *APICommon) GetAccountsByKeys(r *http.Request, args *APIAccountsByKeys
 			if reply.Reg[i], err = regs.GetRegistration(publicKeys[i]); err != nil {
 				return
 			}
+			hasRollovers[i] = reply.Acc[i] != nil && reply.Acc[i].DelegatedStake != nil && reply.Acc[i].DelegatedStake.HasDelegatedStake()
 		}
 
 		return
@@ -69,20 +73,18 @@ func (api *APICommon) GetAccountsByKeys(r *http.Request, args *APIAccountsByKeys
 	}
 
 	if args.IncludeMempool {
-		balancesInit := make([][]byte, len(publicKeys))
+		balancesInit := make([]*crypto.ElGamal, len(publicKeys))
 		for i, acc := range reply.Acc {
 			if acc != nil {
-				balancesInit[i] = helpers.SerializeToBytes(acc.Balance)
+				balancesInit[i] = acc.Balance.Amount
 			}
 		}
-		if balancesInit, err = api.mempool.GetZetherBalanceMultiple(publicKeys, balancesInit, args.Asset); err != nil {
+		if balancesInit, err = api.mempool.GetZetherBalanceMultiple(publicKeys, balancesInit, args.Asset, hasRollovers); err != nil {
 			return
 		}
 		for i, acc := range reply.Acc {
 			if balancesInit[i] != nil {
-				if err = acc.Balance.Deserialize(helpers.NewBufferReader(balancesInit[i])); err != nil {
-					return
-				}
+				acc.Balance = &account_balance_homomorphic.BalanceHomomorphic{nil, balancesInit[i]}
 			}
 		}
 	}

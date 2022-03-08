@@ -116,53 +116,50 @@ func (mempool *Mempool) GetNonce(publicKey []byte, nonce uint64) uint64 {
 	return nonce
 }
 
-func (mempool *Mempool) GetZetherBalance(publicKey []byte, balanceInit []byte, asset []byte) ([]byte, error) {
-	result, err := mempool.GetZetherBalanceMultiple([][]byte{publicKey}, [][]byte{balanceInit}, asset)
+func (mempool *Mempool) GetZetherBalance(publicKey []byte, balanceInit *crypto.ElGamal, asset []byte, hasRollover bool) (*crypto.ElGamal, error) {
+	result, err := mempool.GetZetherBalanceMultiple([][]byte{publicKey}, []*crypto.ElGamal{balanceInit}, asset, []bool{hasRollover})
 	if err != nil {
 		return nil, err
 	}
 	return result[0], nil
 }
 
-func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit [][]byte, asset []byte) ([][]byte, error) {
+func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGamal, asset []byte, hasRollovers []bool) ([]*crypto.ElGamal, error) {
 
 	txs := mempool.Txs.GetTxsFromMap()
-	var balance, balanceTemp *crypto.ElGamal
-	var err error
-	var acckey crypto.Point
 
-	output := make([][]byte, len(publicKeys))
+	var balance *crypto.ElGamal
+	output := make([]*crypto.ElGamal, len(publicKeys))
 	for i, publicKey := range publicKeys {
 
-		if balanceInit := balancesInit[i]; balanceInit == nil {
-			if err = acckey.DecodeCompressed(publicKey); err != nil {
+		if balancesInit[i] != nil {
+			balance = balancesInit[i]
+		} else {
+			var acckey crypto.Point
+			if err := acckey.DecodeCompressed(publicKey); err != nil {
 				return nil, err
 			}
 			balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
-		} else {
-			if balance, err = new(crypto.ElGamal).Deserialize(balanceInit); err != nil {
-				return nil, err
-			}
 		}
 
-		changed := false
 		for _, tx := range txs {
 			if tx.Tx.Version == transaction_type.TX_ZETHER {
 				base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-				for _, payload := range base.Payloads {
+				for payloadIndex, payload := range base.Payloads {
 					if bytes.Equal(payload.Asset, asset) {
-						for i, publicKeyPoint := range payload.Statement.Publickeylist {
-							txPublicKey := publicKeyPoint.EncodeCompressed()
-							if bytes.Equal(publicKey, txPublicKey) {
+						for j, publicKey2 := range base.Bloom.PublicKeyLists[payloadIndex] {
+							if bytes.Equal(publicKey, publicKey2) {
 
-								echanges := crypto.ConstructElGamal(payload.Statement.C[i], payload.Statement.D)
-								if balanceTemp, err = new(crypto.ElGamal).Deserialize(balance.Serialize()); err != nil {
-									return nil, err
+								update := true
+								if (i%2 == 0) == payload.Parity && hasRollovers[i] { //sender
+									update = false
 								}
-								balanceTemp = balance.Add(echanges) // homomorphic addition of changes
 
-								balance = balanceTemp
-								changed = true
+								if update {
+									echanges := crypto.ConstructElGamal(payload.Statement.C[j], payload.Statement.D)
+									balance = balance.Add(echanges) // homomorphic addition of changes
+								}
+
 								break
 							}
 						}
@@ -171,9 +168,7 @@ func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesIn
 			}
 		}
 
-		if changed || balancesInit[i] != nil {
-			output[i] = balance.Serialize()
-		}
+		output[i] = balance
 	}
 
 	return output, nil

@@ -219,7 +219,7 @@ func (testnet *Testnet) run() {
 			return
 		}
 
-		syncTime := testnet.chain.Sync.GetSyncTime()
+		//syncTime := testnet.chain.Sync.GetSyncTime()
 
 		recovery.SafeGo(func() {
 
@@ -234,7 +234,7 @@ func (testnet *Testnet) run() {
 					}
 				}
 
-				if blockHeight >= 30 && syncTime != 0 {
+				if blockHeight >= 30 {
 
 					creatingTransactions.Set()
 					defer creatingTransactions.UnSet()
@@ -268,11 +268,14 @@ func (testnet *Testnet) run() {
 						return
 					}
 
-					if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload_script.SCRIPT_TRANSFER) {
-						testnet.testnetCreateClaimTx(1, stakingAmount/5, ctx)
-						testnet.testnetCreateClaimTx(2, stakingAmount/5, ctx)
-						testnet.testnetCreateClaimTx(3, stakingAmount/5, ctx)
-						testnet.testnetCreateClaimTx(4, stakingAmount/5, ctx)
+					if stakingAmount > config_coins.ConvertToUnitsUint64Forced(20000) {
+						over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(10000)
+						if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload_script.SCRIPT_TRANSFER) {
+							testnet.testnetCreateClaimTx(1, over/5, ctx)
+							testnet.testnetCreateClaimTx(2, over/5, ctx)
+							testnet.testnetCreateClaimTx(3, over/5, ctx)
+							testnet.testnetCreateClaimTx(4, over/5, ctx)
+						}
 					}
 
 					//if plainAcc != nil {
