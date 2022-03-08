@@ -18,6 +18,7 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
 	"pandora-pay/store"
@@ -26,6 +27,7 @@ import (
 	"pandora-pay/txs_builder/wizard"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
+	"time"
 )
 
 type Testnet struct {
@@ -133,6 +135,10 @@ func (testnet *Testnet) testnetCreateClaimTx(recipientAddressWalletIndex int, se
 		return nil, nil
 	}
 
+	if sendAmount > amount+config_coins.ConvertToUnitsUint64Forced(10000) {
+		sendAmount = (config_coins.ConvertToUnitsUint64Forced(10000) + amount) - sendAmount
+	}
+
 	txData := &txs_builder.TxBuilderCreateZetherTxData{
 		Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{{
 			Sender:            addrSender.AddressEncoded,
@@ -149,12 +155,12 @@ func (testnet *Testnet) testnetCreateClaimTx(recipientAddressWalletIndex int, se
 		return nil, err
 	}
 
-	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).ChainHeight, tx.Bloom.Hash)
+	gui.GUI.Info("Create Claim Stake Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).ChainHeight, tx.Bloom.Hash)
 
 	return
 }
 
-func (testnet *Testnet) testnetCreateTransfers(senderAddressWalletIndex int, ctx context.Context) (tx *transaction.Transaction, err error) {
+func (testnet *Testnet) testnetCreateTransfers(senderAddressWalletIndex int, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
 	select {
 	case <-ctx.Done():
@@ -174,10 +180,14 @@ func (testnet *Testnet) testnetCreateTransfers(senderAddressWalletIndex int, ctx
 		return
 	}
 
+	if amount == 0 {
+		amount = uint64(rand.Int63n(6))
+	}
+
 	txData := &txs_builder.TxBuilderCreateZetherTxData{
 		Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{{
 			Sender:            senderAddr.AddressEncoded,
-			Amount:            uint64(rand.Int63n(6)),
+			Amount:            amount,
 			Recipient:         addr.EncodeAddr(),
 			Data:              &wizard.WizardTransactionData{nil, false},
 			Fee:               &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0},
@@ -219,7 +229,7 @@ func (testnet *Testnet) run() {
 			return
 		}
 
-		//syncTime := testnet.chain.Sync.GetSyncTime()
+		syncTime := testnet.chain.Sync.GetSyncTime()
 
 		recovery.SafeGo(func() {
 
@@ -268,27 +278,31 @@ func (testnet *Testnet) run() {
 						return
 					}
 
-					if stakingAmount > config_coins.ConvertToUnitsUint64Forced(20000) {
-						over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(10000)
-						if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload_script.SCRIPT_TRANSFER) {
-							testnet.testnetCreateClaimTx(1, over/5, ctx)
-							testnet.testnetCreateClaimTx(2, over/5, ctx)
-							testnet.testnetCreateClaimTx(3, over/5, ctx)
-							testnet.testnetCreateClaimTx(4, over/5, ctx)
-						}
+					if stakingAmount > config_coins.ConvertToUnitsUint64Forced(120000) {
+						over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(100000)
+						testnet.testnetCreateTransfers(0, over, ctx)
+
+						stakingAmount = generics.Max(0, config_coins.ConvertToUnitsUint64Forced(100000))
 					}
 
-					//if plainAcc != nil {
-					//
-					//	if creatingTransactions.IsNotSet() && syncTime != 0 {
-					//		time.Sleep(time.Millisecond * 500) //making sure the block got propagated
-					//		for i := 2; i < 5; i++ {
-					//			testnet.testnetCreateTransfers(i, ctx)
-					//			time.Sleep(time.Millisecond * 5000)
-					//		}
-					//	}
-					//
-					//}
+					if syncTime > 0 {
+
+						if stakingAmount > config_coins.ConvertToUnitsUint64Forced(20000) {
+							over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(10000)
+							if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload_script.SCRIPT_TRANSFER) {
+								testnet.testnetCreateClaimTx(1, over/5, ctx)
+								testnet.testnetCreateClaimTx(2, over/5, ctx)
+								testnet.testnetCreateClaimTx(3, over/5, ctx)
+								testnet.testnetCreateClaimTx(4, over/5, ctx)
+							}
+						}
+
+						time.Sleep(time.Millisecond * 500) //making sure the block got propagated
+						for i := 2; i < 5; i++ {
+							testnet.testnetCreateTransfers(i, 0, ctx)
+							time.Sleep(time.Millisecond * 5000)
+						}
+					}
 
 				}
 
