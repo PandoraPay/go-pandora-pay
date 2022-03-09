@@ -45,7 +45,7 @@ func (api *Faucet) GetFaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tx, err := api.txsBuilder.CreateZetherTx(txData, true, true, true, false, ctx, func(status string) {})
+	tx, err := api.txsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(status string) {})
 	if err != nil {
 		return err
 	}

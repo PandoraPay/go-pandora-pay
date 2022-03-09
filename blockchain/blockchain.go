@@ -12,10 +12,7 @@ import (
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
-	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
-	"pandora-pay/blockchain/data_storage/plain_accounts"
-	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
@@ -52,10 +49,7 @@ type Blockchain struct {
 	ForgingSolutionCn                       chan *block_complete.BlockComplete
 	UpdateNewChain                          *multicast.MulticastChannel[uint64]
 	UpdateNewChainDataUpdate                *multicast.MulticastChannel[*BlockchainDataUpdate]
-	UpdateAccounts                          *multicast.MulticastChannel[*accounts.AccountsCollection]
-	UpdatePlainAccounts                     *multicast.MulticastChannel[*plain_accounts.PlainAccounts]
-	UpdateAssets                            *multicast.MulticastChannel[*assets.Assets]
-	UpdateRegistrations                     *multicast.MulticastChannel[*registrations.Registrations]
+	UpdateNewChainUpdate                    *multicast.MulticastChannel[*blockchain_types.BlockchainUpdates]
 	UpdateSocketsSubscriptionsTransactions  *multicast.MulticastChannel[[]*blockchain_types.BlockchainTransactionUpdate]
 	UpdateSocketsSubscriptionsNotifications *multicast.MulticastChannel[*data_storage.DataStorage]
 	NextBlockCreatedCn                      chan *forging_block_work.ForgingWork
@@ -530,10 +524,7 @@ func CreateBlockchain(mempool *mempool.Mempool, txsValidator *txs_validator.TxsV
 		make(chan *block_complete.BlockComplete),
 		multicast.NewMulticastChannel[uint64](),
 		multicast.NewMulticastChannel[*BlockchainDataUpdate](),
-		multicast.NewMulticastChannel[*accounts.AccountsCollection](),
-		multicast.NewMulticastChannel[*plain_accounts.PlainAccounts](),
-		multicast.NewMulticastChannel[*assets.Assets](),
-		multicast.NewMulticastChannel[*registrations.Registrations](),
+		multicast.NewMulticastChannel[*blockchain_types.BlockchainUpdates](),
 		multicast.NewMulticastChannel[[]*blockchain_types.BlockchainTransactionUpdate](),
 		multicast.NewMulticastChannel[*data_storage.DataStorage](),
 		make(chan *forging_block_work.ForgingWork),
@@ -570,10 +561,6 @@ func (chain *Blockchain) InitializeChain() (err error) {
 func (chain *Blockchain) Close() {
 	chain.UpdateNewChainDataUpdate.CloseAll()
 	chain.UpdateNewChain.CloseAll()
-	chain.UpdateAccounts.CloseAll()
-	chain.UpdatePlainAccounts.CloseAll()
-	chain.UpdateAssets.CloseAll()
-	chain.UpdateRegistrations.CloseAll()
 	close(chain.ForgingSolutionCn)
 	close(chain.NextBlockCreatedCn)
 }

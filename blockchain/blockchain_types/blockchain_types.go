@@ -1,6 +1,12 @@
 package blockchain_types
 
-import "pandora-pay/blockchain/transactions/transaction"
+import (
+	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/assets"
+	"pandora-pay/blockchain/data_storage/plain_accounts"
+	"pandora-pay/blockchain/data_storage/registrations"
+	"pandora-pay/blockchain/transactions/transaction"
+)
 
 type BlockchainTransactionKeyUpdate struct {
 	PublicKey []byte
@@ -23,4 +29,13 @@ type MempoolTransactionUpdate struct {
 	Tx                               *transaction.Transaction
 	IncludedInBlockchainNotification bool
 	Keys                             map[string]bool
+}
+
+type BlockchainUpdates struct {
+	AccsCollection *accounts.AccountsCollection
+	PlainAccounts  *plain_accounts.PlainAccounts
+	Assets         *assets.Assets
+	Registrations  *registrations.Registrations
+	BlockHeight    uint64
+	BlockHash      []byte
 }

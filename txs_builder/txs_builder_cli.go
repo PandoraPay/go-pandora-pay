@@ -232,7 +232,7 @@ func (builder *TxsBuilder) initCLI() {
 		txData.Payloads[0].Fee = builder.readZetherFee(txData.Payloads[0].Asset)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
-		tx, err := builder.CreateZetherTx(txData, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateZetherTx(txData, nil, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -287,7 +287,7 @@ func (builder *TxsBuilder) initCLI() {
 
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
-		tx, err := builder.CreateZetherTx(txData, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateZetherTx(txData, nil, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {
@@ -364,7 +364,7 @@ func (builder *TxsBuilder) initCLI() {
 		txData.Payloads[0].Fee = builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
 
-		tx, err := builder.CreateZetherTx(txData, propagate, true, true, false, ctx, func(status string) {
+		tx, err := builder.CreateZetherTx(txData, nil, propagate, true, true, false, ctx, func(status string) {
 			gui.GUI.OutputWrite(status)
 		})
 		if err != nil {

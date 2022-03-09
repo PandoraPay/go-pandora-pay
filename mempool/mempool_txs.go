@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"pandora-pay/blockchain/blockchain_types"
+	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/generics"
@@ -124,6 +125,18 @@ func (self *MempoolTxs) GetTxsList() []*mempoolTx {
 	c := 0
 	for _, tx := range data {
 		out[c] = tx
+		c += 1
+	}
+	return out
+}
+
+func (self *MempoolTxs) GetTxsOnlyList() []*transaction.Transaction {
+	data := self.GetTxsFromMap()
+	out := make([]*transaction.Transaction, len(data))
+
+	c := 0
+	for _, tx := range data {
+		out[c] = tx.Tx
 		c += 1
 	}
 	return out

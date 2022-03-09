@@ -79,10 +79,14 @@ func (queue *BlockchainUpdatesQueue) executeUpdate(update *BlockchainUpdate) (er
 	gui.GUI.Warning("-------------------------------------------")
 	update.newChainData.updateChainInfo()
 
-	queue.chain.UpdateAccounts.Broadcast(update.dataStorage.AccsCollection)
-	queue.chain.UpdatePlainAccounts.Broadcast(update.dataStorage.PlainAccs)
-	queue.chain.UpdateAssets.Broadcast(update.dataStorage.Asts)
-	queue.chain.UpdateRegistrations.Broadcast(update.dataStorage.Regs)
+	queue.chain.UpdateNewChainUpdate.Broadcast(&blockchain_types.BlockchainUpdates{
+		update.dataStorage.AccsCollection,
+		update.dataStorage.PlainAccs,
+		update.dataStorage.Asts,
+		update.dataStorage.Regs,
+		update.newChainData.Height,
+		update.newChainData.Hash,
+	})
 
 	chainSyncData := queue.chain.Sync.AddBlocksChanged(uint32(len(update.insertedBlocks)), true)
 

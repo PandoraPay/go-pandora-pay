@@ -14,6 +14,7 @@ type ForgingWalletAddress struct {
 	account                 *account.Account
 	decryptedStakingBalance uint64
 	workerIndex             int
+	chainHash               []byte
 }
 
 func (walletAddr *ForgingWalletAddress) clone() *ForgingWalletAddress {
@@ -25,5 +26,6 @@ func (walletAddr *ForgingWalletAddress) clone() *ForgingWalletAddress {
 		walletAddr.account,
 		walletAddr.decryptedStakingBalance,
 		walletAddr.workerIndex,
+		walletAddr.chainHash,
 	}
 }

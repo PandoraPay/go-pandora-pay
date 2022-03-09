@@ -6,6 +6,7 @@ import (
 	"errors"
 	"pandora-pay/address_balance_decryptor"
 	"pandora-pay/addresses"
+	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -25,7 +26,7 @@ type ForgingWallet struct {
 	addressesMap            map[string]*ForgingWalletAddress
 	workersAddresses        []int
 	workers                 []*ForgingWorkerThread
-	updateAccounts          *multicast.MulticastChannel[*accounts.AccountsCollection]
+	updateNewChainUpdate    *multicast.MulticastChannel[*blockchain_types.BlockchainUpdates]
 	updateWalletAddressCn   chan *ForgingWalletAddressUpdate
 	workersCreatedCn        <-chan []*ForgingWorkerThread
 	workersDestroyedCn      <-chan struct{}
@@ -154,8 +155,10 @@ func (w *ForgingWallet) runProcessUpdates() {
 
 	var err error
 
-	updateAccountsCn := w.updateAccounts.AddListener()
-	defer w.updateAccounts.RemoveChannel(updateAccountsCn)
+	updateNewChainCn := w.updateNewChainUpdate.AddListener()
+	defer w.updateNewChainUpdate.RemoveChannel(updateNewChainCn)
+
+	var chainHash []byte
 
 	for {
 		select {
@@ -205,6 +208,7 @@ func (w *ForgingWallet) runProcessUpdates() {
 							update.account,
 							0,
 							-1,
+							chainHash,
 						}
 						w.addressesMap[key] = address
 						w.updateAccountToForgingWorkers(address)
@@ -217,12 +221,14 @@ func (w *ForgingWallet) runProcessUpdates() {
 				}
 
 			}
-		case accsCollection := <-updateAccountsCn:
+		case update := <-updateNewChainCn:
 
-			accs, _ := accsCollection.GetOnlyMap(config_coins.NATIVE_ASSET_FULL)
+			accs, _ := update.AccsCollection.GetOnlyMap(config_coins.NATIVE_ASSET_FULL)
 			if accs == nil {
 				continue
 			}
+
+			chainHash = update.BlockHash
 
 			for k, v := range accs.HashMap.Committed {
 				if w.addressesMap[k] != nil {
@@ -237,6 +243,7 @@ func (w *ForgingWallet) runProcessUpdates() {
 							}
 
 							w.addressesMap[k].account = acc
+							w.addressesMap[k].chainHash = chainHash
 							w.updateAccountToForgingWorkers(w.addressesMap[k])
 
 							return

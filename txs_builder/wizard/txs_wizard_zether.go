@@ -28,6 +28,62 @@ import (
 	"strconv"
 )
 
+func GetZetherBalance(publicKey []byte, balanceInit *crypto.ElGamal, asset []byte, hasRollover bool, txs []*transaction.Transaction) (*crypto.ElGamal, error) {
+	result, err := GetZetherBalanceMultiple([][]byte{publicKey}, []*crypto.ElGamal{balanceInit}, asset, []bool{hasRollover}, txs)
+	if err != nil {
+		return nil, err
+	}
+	return result[0], nil
+}
+
+func GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGamal, asset []byte, hasRollovers []bool, txs []*transaction.Transaction) ([]*crypto.ElGamal, error) {
+
+	var balance *crypto.ElGamal
+	output := make([]*crypto.ElGamal, len(publicKeys))
+	for i, publicKey := range publicKeys {
+
+		if balancesInit[i] != nil {
+			balance = balancesInit[i]
+		} else {
+			var acckey crypto.Point
+			if err := acckey.DecodeCompressed(publicKey); err != nil {
+				return nil, err
+			}
+			balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
+		}
+
+		for _, tx := range txs {
+			if tx.Version == transaction_type.TX_ZETHER {
+				base := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
+				for payloadIndex, payload := range base.Payloads {
+					if bytes.Equal(payload.Asset, asset) {
+						for j, publicKey2 := range base.Bloom.PublicKeyLists[payloadIndex] {
+							if bytes.Equal(publicKey, publicKey2) {
+
+								update := true
+								if (j%2 == 1) == payload.Parity && hasRollovers[i] { //receiver
+									update = false
+								}
+
+								if update {
+									echanges := crypto.ConstructElGamal(payload.Statement.C[j], payload.Statement.D)
+									balance = balance.Add(echanges) // homomorphic addition of changes
+								}
+
+								break
+							}
+						}
+					}
+				}
+			}
+		}
+
+		output[i] = balance
+	}
+
+	return output, nil
+}
+
 func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
 	emap := make(map[string]map[string][]byte) //initialize all maps
 	for i := range assets {

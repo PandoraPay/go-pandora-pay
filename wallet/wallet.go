@@ -2,8 +2,7 @@ package wallet
 
 import (
 	"pandora-pay/address_balance_decryptor"
-	"pandora-pay/blockchain/data_storage/accounts"
-	"pandora-pay/blockchain/data_storage/plain_accounts"
+	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/config"
 	"pandora-pay/helpers/multicast"
@@ -27,18 +26,16 @@ type Wallet struct {
 	forging                 *forging.Forging
 	mempool                 *mempool.Mempool
 	addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor
-	updateAccounts          *multicast.MulticastChannel[*accounts.AccountsCollection]
-	updatePlainAccounts     *multicast.MulticastChannel[*plain_accounts.PlainAccounts]
+	updateNewChainUpdate    *multicast.MulticastChannel[*blockchain_types.BlockchainUpdates]
 	Lock                    sync.RWMutex `json:"-" msgpack:"-"`
 }
 
-func createWallet(forging *forging.Forging, mempool *mempool.Mempool, addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor, updateAccounts *multicast.MulticastChannel[*accounts.AccountsCollection], updatePlainAccounts *multicast.MulticastChannel[*plain_accounts.PlainAccounts]) (wallet *Wallet) {
+func createWallet(forging *forging.Forging, mempool *mempool.Mempool, addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor, updateNewChainUpdate *multicast.MulticastChannel[*blockchain_types.BlockchainUpdates]) (wallet *Wallet) {
 	wallet = &Wallet{
 		forging:                 forging,
 		mempool:                 mempool,
-		updateAccounts:          updateAccounts,
+		updateNewChainUpdate:    updateNewChainUpdate,
 		addressBalanceDecryptor: addressBalanceDecryptor,
-		updatePlainAccounts:     updatePlainAccounts,
 	}
 	wallet.clearWallet()
 	return
@@ -66,7 +63,7 @@ func (wallet *Wallet) setLoaded(newValue bool) {
 
 func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool, addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor) (*Wallet, error) {
 
-	wallet := createWallet(forging, mempool, addressBalanceDecryptor, nil, nil)
+	wallet := createWallet(forging, mempool, addressBalanceDecryptor, nil)
 
 	if err := wallet.loadWallet("", true); err != nil {
 		if err.Error() == "cipher: message authentication failed" {
@@ -83,10 +80,10 @@ func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool, addressBal
 	return wallet, nil
 }
 
-func (wallet *Wallet) InitializeWallet(updateAccounts *multicast.MulticastChannel[*accounts.AccountsCollection], updatePlainAccounts *multicast.MulticastChannel[*plain_accounts.PlainAccounts]) {
+func (wallet *Wallet) InitializeWallet(updateNewChainUpdate *multicast.MulticastChannel[*blockchain_types.BlockchainUpdates]) {
+
 	wallet.Lock.Lock()
-	wallet.updateAccounts = updateAccounts
-	wallet.updatePlainAccounts = updatePlainAccounts
+	wallet.updateNewChainUpdate = updateNewChainUpdate
 	wallet.Lock.Unlock()
 
 	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {

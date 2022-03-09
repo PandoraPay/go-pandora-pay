@@ -13,6 +13,7 @@ import (
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/txs_builder/wizard"
 )
 
 type APIAccountsByKeysRequest struct {
@@ -79,7 +80,7 @@ func (api *APICommon) GetAccountsByKeys(r *http.Request, args *APIAccountsByKeys
 				balancesInit[i] = acc.Balance.Amount
 			}
 		}
-		if balancesInit, err = api.mempool.GetZetherBalanceMultiple(publicKeys, balancesInit, args.Asset, hasRollovers); err != nil {
+		if balancesInit, err = wizard.GetZetherBalanceMultiple(publicKeys, balancesInit, args.Asset, hasRollovers, api.mempool.Txs.GetTxsOnlyList()); err != nil {
 			return
 		}
 		for i, acc := range reply.Acc {

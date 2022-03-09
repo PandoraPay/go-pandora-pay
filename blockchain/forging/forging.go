@@ -3,8 +3,8 @@ package forging
 import (
 	"github.com/tevino/abool"
 	"pandora-pay/address_balance_decryptor"
+	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/blocks/block_complete"
-	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
@@ -50,10 +50,10 @@ func CreateForging(mempool *mempool.Mempool, addressBalanceDecryptor *address_ba
 	return forging, nil
 }
 
-func (forging *Forging) InitializeForging(createForgingTransactions func(*block_complete.BlockComplete, []byte, uint64) (*transaction.Transaction, error), nextBlockCreatedCn <-chan *forging_block_work.ForgingWork, updateAccounts *multicast.MulticastChannel[*accounts.AccountsCollection], forgingSolutionCn chan<- *block_complete.BlockComplete) {
+func (forging *Forging) InitializeForging(createForgingTransactions func(*block_complete.BlockComplete, []byte, uint64, []*transaction.Transaction) (*transaction.Transaction, error), nextBlockCreatedCn <-chan *forging_block_work.ForgingWork, updateNewChainUpdate *multicast.MulticastChannel[*blockchain_types.BlockchainUpdates], forgingSolutionCn chan<- *block_complete.BlockComplete) {
 
 	forging.nextBlockCreatedCn = nextBlockCreatedCn
-	forging.Wallet.updateAccounts = updateAccounts
+	forging.Wallet.updateNewChainUpdate = updateNewChainUpdate
 	forging.forgingSolutionCn = forgingSolutionCn
 
 	forging.forgingThread = createForgingThread(config.CPU_THREADS, createForgingTransactions, forging.mempool, forging.addressBalanceDecryptor, forging.forgingSolutionCn, forging.nextBlockCreatedCn)

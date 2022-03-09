@@ -13,7 +13,6 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
@@ -27,7 +26,6 @@ import (
 	"pandora-pay/txs_builder/wizard"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
-	"time"
 )
 
 type Testnet struct {
@@ -87,7 +85,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 		})
 	}
 
-	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -151,7 +149,7 @@ func (testnet *Testnet) testnetCreateClaimTx(recipientAddressWalletIndex int, se
 		}},
 	}
 
-	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -196,7 +194,7 @@ func (testnet *Testnet) testnetCreateTransfers(senderAddressWalletIndex int, amo
 		}},
 	}
 
-	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -229,7 +227,7 @@ func (testnet *Testnet) run() {
 			return
 		}
 
-		syncTime := testnet.chain.Sync.GetSyncTime()
+		//syncTime := testnet.chain.Sync.GetSyncTime()
 
 		recovery.SafeGo(func() {
 
@@ -285,24 +283,24 @@ func (testnet *Testnet) run() {
 						stakingAmount = generics.Max(0, config_coins.ConvertToUnitsUint64Forced(100000))
 					}
 
-					if syncTime > 0 {
-
-						if stakingAmount > config_coins.ConvertToUnitsUint64Forced(20000) {
-							over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(10000)
-							if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload_script.SCRIPT_TRANSFER) {
-								testnet.testnetCreateClaimTx(1, over/5, ctx)
-								testnet.testnetCreateClaimTx(2, over/5, ctx)
-								testnet.testnetCreateClaimTx(3, over/5, ctx)
-								testnet.testnetCreateClaimTx(4, over/5, ctx)
-							}
-						}
-
-						time.Sleep(time.Millisecond * 500) //making sure the block got propagated
-						for i := 2; i < 5; i++ {
-							testnet.testnetCreateTransfers(i, 0, ctx)
-							time.Sleep(time.Millisecond * 5000)
-						}
-					}
+					//if syncTime > 0 {
+					//
+					//	if stakingAmount > config_coins.ConvertToUnitsUint64Forced(20000) {
+					//		over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(10000)
+					//		if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload_script.SCRIPT_TRANSFER) {
+					//			testnet.testnetCreateClaimTx(1, over/5, ctx)
+					//			testnet.testnetCreateClaimTx(2, over/5, ctx)
+					//			testnet.testnetCreateClaimTx(3, over/5, ctx)
+					//			testnet.testnetCreateClaimTx(4, over/5, ctx)
+					//		}
+					//	}
+					//
+					//	time.Sleep(time.Millisecond * 500) //making sure the block got propagated
+					//	for i := 2; i < 5; i++ {
+					//		testnet.testnetCreateTransfers(i, 0, ctx)
+					//		time.Sleep(time.Millisecond * 5000)
+					//	}
+					//}
 
 				}
 

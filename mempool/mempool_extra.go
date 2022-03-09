@@ -7,7 +7,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
-	"pandora-pay/cryptography/crypto"
 	"sort"
 )
 
@@ -114,64 +113,6 @@ func (mempool *Mempool) GetNonce(publicKey []byte, nonce uint64) uint64 {
 	}
 
 	return nonce
-}
-
-func (mempool *Mempool) GetZetherBalance(publicKey []byte, balanceInit *crypto.ElGamal, asset []byte, hasRollover bool) (*crypto.ElGamal, error) {
-	result, err := mempool.GetZetherBalanceMultiple([][]byte{publicKey}, []*crypto.ElGamal{balanceInit}, asset, []bool{hasRollover})
-	if err != nil {
-		return nil, err
-	}
-	return result[0], nil
-}
-
-func (mempool *Mempool) GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGamal, asset []byte, hasRollovers []bool) ([]*crypto.ElGamal, error) {
-
-	txs := mempool.Txs.GetTxsList()
-
-	var balance *crypto.ElGamal
-	output := make([]*crypto.ElGamal, len(publicKeys))
-	for i, publicKey := range publicKeys {
-
-		if balancesInit[i] != nil {
-			balance = balancesInit[i]
-		} else {
-			var acckey crypto.Point
-			if err := acckey.DecodeCompressed(publicKey); err != nil {
-				return nil, err
-			}
-			balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
-		}
-
-		for _, tx := range txs {
-			if tx.Tx.Version == transaction_type.TX_ZETHER {
-				base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-				for payloadIndex, payload := range base.Payloads {
-					if bytes.Equal(payload.Asset, asset) {
-						for j, publicKey2 := range base.Bloom.PublicKeyLists[payloadIndex] {
-							if bytes.Equal(publicKey, publicKey2) {
-
-								update := true
-								if (j%2 == 0) != payload.Parity && hasRollovers[i] { //receiver
-									update = false
-								}
-
-								if update {
-									echanges := crypto.ConstructElGamal(payload.Statement.C[j], payload.Statement.D)
-									balance = balance.Add(echanges) // homomorphic addition of changes
-								}
-
-								break
-							}
-						}
-					}
-				}
-			}
-		}
-
-		output[i] = balance
-	}
-
-	return output, nil
 }
 
 func (mempool *Mempool) GetNextTransactionsToInclude(chainHash []byte) (out []*transaction.Transaction, outChainHash []byte) {

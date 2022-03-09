@@ -213,7 +213,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 	return senderRing, recipientRing, err
 }
 
-func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, map[string]bool, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
+func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pendingTxs []*transaction.Transaction, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, map[string]bool, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
 
 	sendersPrivateKeys := make([]*addresses.PrivateKey, len(txData.Payloads))
 	sendersWalletAddresses := make([]*wallet_address.WalletAddress, len(txData.Payloads))
@@ -390,7 +390,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 						newBalance = acc.Balance.Amount
 					}
 
-					if newBalance, err = builder.mempool.GetZetherBalance(addr.PublicKey, newBalance, payload.Asset, hasRollover); err != nil {
+					if newBalance, err = wizard.GetZetherBalance(addr.PublicKey, newBalance, payload.Asset, hasRollover, pendingTxs); err != nil {
 						return
 					}
 
@@ -484,12 +484,16 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, ctx con
 	return transfers, emap, hasRollovers, rings, publicKeyIndexes, chainHeight, chainKernelHash, nil
 }
 
-func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, pendingTxs []*transaction.Transaction, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+
+	if pendingTxs == nil {
+		pendingTxs = builder.mempool.Txs.GetTxsOnlyList()
+	}
 
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	transfers, emap, hasRollovers, ringMembers, publicKeyIndexes, chainHeight, chainKernelHash, err := builder.prebuild(txData, ctx, statusCallback)
+	transfers, emap, hasRollovers, ringMembers, publicKeyIndexes, chainHeight, chainKernelHash, err := builder.prebuild(txData, pendingTxs, ctx, statusCallback)
 	if err != nil {
 		return nil, err
 	}
@@ -517,7 +521,11 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 	return tx, nil
 }
 
-func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete.BlockComplete, forgerPublicKey []byte, decryptedBalance uint64) (*transaction.Transaction, error) {
+func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete.BlockComplete, forgerPublicKey []byte, decryptedBalance uint64, pendingTxs []*transaction.Transaction) (*transaction.Transaction, error) {
+
+	if pendingTxs == nil {
+		pendingTxs = builder.mempool.Txs.GetTxsOnlyList()
+	}
 
 	gui.GUI.Info("CreateForgingTransactions 1")
 	forger, err := addresses.CreateAddr(forgerPublicKey, nil, nil, 0, nil)
@@ -540,7 +548,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				decryptedBalance,
 				"",
 				blkComplete.StakingAmount,
-				&ZetherRingConfiguration{64, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
+				&ZetherRingConfiguration{32, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStaking{},
@@ -552,7 +560,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				reward, //reward will be the encrypted Balance
 				forger.EncodeAddr(),
 				0,
-				&ZetherRingConfiguration{64, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
+				&ZetherRingConfiguration{32, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStakingReward{nil, reward},
@@ -560,7 +568,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 		},
 	}
 
-	transfers, emap, hasRollovers, ringMembers, publicKeyIndexes, _, _, err := builder.prebuild(txData, context.Background(), func(string) {})
+	transfers, emap, hasRollovers, ringMembers, publicKeyIndexes, _, _, err := builder.prebuild(txData, pendingTxs, context.Background(), func(string) {})
 	if err != nil {
 		return nil, err
 	}

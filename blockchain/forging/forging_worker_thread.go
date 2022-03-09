@@ -11,6 +11,7 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
+	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
 	"strconv"
@@ -77,6 +78,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 	var timestamp, localTimestamp uint64
 	var serialized []byte
+	var ok bool
 	var n int
 	var hashes int32
 	buf := make([]byte, binary.MaxVarintLen64)
@@ -84,6 +86,7 @@ func (worker *ForgingWorkerThread) forge() {
 	wallets := make(map[string]*ForgingWorkerThreadAddress)
 	walletsStakable := make(map[string]*ForgingWorkerThreadAddress)
 	walletsStakableTimestamp := make(map[string]uint64)
+	walletsStakableStaked := make(map[string]bool)
 
 	waitCn := make(chan struct{})
 	waitCnClosed := false
@@ -114,6 +117,8 @@ func (worker *ForgingWorkerThread) forge() {
 
 		walletsStakable = make(map[string]*ForgingWorkerThreadAddress)
 		walletsStakableTimestamp = make(map[string]uint64)
+		walletsStakableStaked = make(map[string]bool)
+
 		for _, walletAddr := range wallets {
 			if worker.computeStakingAmount(walletAddr, work) {
 				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
@@ -128,7 +133,7 @@ func (worker *ForgingWorkerThread) forge() {
 		walletAddr := wallets[newWalletAddr.publicKeyStr]
 		if walletAddr == nil {
 			walletAddr = &ForgingWorkerThreadAddress{ //making sure the has a copy
-				newWalletAddr, //already it is copied
+				newWalletAddr, //already it is cloned
 				0,
 				nil,
 				nil,
@@ -140,8 +145,12 @@ func (worker *ForgingWorkerThread) forge() {
 
 		if work != nil {
 			if worker.computeStakingAmount(walletAddr, work) {
-				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
-				walletsStakableTimestamp[walletAddr.walletAdr.publicKeyStr] = timestamp
+				if walletAddr.walletAdr.chainHash == nil || bytes.Equal(walletAddr.walletAdr.chainHash, work.BlkComplete.PrevHash) {
+					if !walletsStakableStaked[walletAddr.walletAdr.publicKeyStr] {
+						walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
+						walletsStakableTimestamp[walletAddr.walletAdr.publicKeyStr] = timestamp
+					}
+				}
 			} else {
 				delete(walletsStakable, walletAddr.walletAdr.publicKeyStr)
 			}
@@ -173,7 +182,7 @@ func (worker *ForgingWorkerThread) forge() {
 		case <-waitCn:
 		}
 
-		if len(walletsStakable) == 0 {
+		if len(walletsStakable) == 0 || work == nil {
 			validateWork()
 			continue
 		}
@@ -186,8 +195,8 @@ func (worker *ForgingWorkerThread) forge() {
 		hasNewWork := func() bool {
 
 			for key, address := range walletsStakable {
-				localTimestamp = walletsStakableTimestamp[key]
-				if localTimestamp < timeLimit {
+				localTimestamp, ok = walletsStakableTimestamp[key]
+				if ok && localTimestamp < timeLimit {
 
 					select {
 					case newWorkReceived := <-worker.workCn: //or the work was changed meanwhile
@@ -204,7 +213,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 					if n2 != n {
 						newSerialized := make([]byte, len(serialized)-n+n2)
-						copy(newSerialized, serialized[:-n-32])
+						copy(newSerialized, serialized[:n-32])
 						serialized = newSerialized
 						n = n2
 					}
@@ -221,6 +230,8 @@ func (worker *ForgingWorkerThread) forge() {
 
 						requireStakingAmount := new(big.Int).Div(new(big.Int).SetBytes(kernelHash), work.Target)
 
+						gui.GUI.Log("forged", work.BlkHeight, work.BlkComplete.PrevHash, address.walletAdr.decryptedStakingBalance)
+
 						solution := &ForgingSolution{
 							localTimestamp,
 							address.walletAdr,
@@ -232,6 +243,7 @@ func (worker *ForgingWorkerThread) forge() {
 						worker.workerSolutionCn <- solution
 
 						delete(walletsStakable, key)
+						walletsStakableStaked[key] = true
 
 					} /* else { // for debugging only
 						gui.GUI.Log(base64.StdEncoding.EncodeToString(kernelHash), strconv.FormatUint(timestamp, 10 ))

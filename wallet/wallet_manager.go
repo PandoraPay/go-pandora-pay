@@ -466,7 +466,7 @@ func (wallet *Wallet) TryDecryptBalanceByPublicKey(publicKey []byte, encryptedBa
 
 func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {
 
-	wallet2 := createWallet(wallet.forging, wallet.mempool, wallet.addressBalanceDecryptor, wallet.updateAccounts, wallet.updatePlainAccounts)
+	wallet2 := createWallet(wallet.forging, wallet.mempool, wallet.addressBalanceDecryptor, wallet.updateNewChainUpdate)
 	if err = json.Unmarshal(data, wallet2); err != nil {
 		return errors.New("Error unmarshaling wallet")
 	}
