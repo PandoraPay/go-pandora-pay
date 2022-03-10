@@ -390,7 +390,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 						newBalance = acc.Balance.Amount
 					}
 
-					if newBalance, err = wizard.GetZetherBalance(addr.PublicKey, newBalance, payload.Asset, hasRollover, pendingTxs); err != nil {
+					if newBalance, err = wizard.GetZetherBalance(addr.PublicKey, newBalance, payload.Asset, hasRollover, true, pendingTxs); err != nil {
 						return
 					}
 

@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"pandora-pay/address_balance_decryptor"
 	"pandora-pay/config"
 	"pandora-pay/config/arguments"
 	"pandora-pay/gui"
@@ -10,7 +11,10 @@ import (
 	"syscall/js"
 )
 
+var AddressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor
+
 func main() {
+	var err error
 
 	config.StartConfig()
 	argv := os.Args[1:]
@@ -23,6 +27,10 @@ func main() {
 
 	if err := gui.InitGUI(); err != nil {
 		panic(err)
+	}
+
+	if AddressBalanceDecryptor, err = address_balance_decryptor.NewAddressBalanceDecryptor(); err != nil {
+		return
 	}
 
 	js.Global().Set("PandoraPay", js.ValueOf(map[string]interface{}{

@@ -28,15 +28,15 @@ import (
 	"strconv"
 )
 
-func GetZetherBalance(publicKey []byte, balanceInit *crypto.ElGamal, asset []byte, hasRollover bool, txs []*transaction.Transaction) (*crypto.ElGamal, error) {
-	result, err := GetZetherBalanceMultiple([][]byte{publicKey}, []*crypto.ElGamal{balanceInit}, asset, []bool{hasRollover}, txs)
+func GetZetherBalance(publicKey []byte, balanceInit *crypto.ElGamal, asset []byte, hasRollover bool, returnNewEmptyBalances bool, txs []*transaction.Transaction) (*crypto.ElGamal, error) {
+	result, err := GetZetherBalanceMultiple([][]byte{publicKey}, []*crypto.ElGamal{balanceInit}, asset, []bool{hasRollover}, returnNewEmptyBalances, txs)
 	if err != nil {
 		return nil, err
 	}
 	return result[0], nil
 }
 
-func GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGamal, asset []byte, hasRollovers []bool, txs []*transaction.Transaction) ([]*crypto.ElGamal, error) {
+func GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGamal, asset []byte, hasRollovers []bool, returnNewEmptyBalances bool, txs []*transaction.Transaction) ([]*crypto.ElGamal, error) {
 
 	var balance *crypto.ElGamal
 	output := make([]*crypto.ElGamal, len(publicKeys))
@@ -51,6 +51,8 @@ func GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGama
 			}
 			balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
 		}
+
+		changed := false
 
 		for _, tx := range txs {
 			if tx.Version == transaction_type.TX_ZETHER {
@@ -68,6 +70,7 @@ func GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGama
 								if update {
 									echanges := crypto.ConstructElGamal(payload.Statement.C[j], payload.Statement.D)
 									balance = balance.Add(echanges) // homomorphic addition of changes
+									changed = true
 								}
 
 								break
@@ -78,7 +81,9 @@ func GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGama
 			}
 		}
 
-		output[i] = balance
+		if returnNewEmptyBalances || (balancesInit[i] != nil || changed) {
+			output[i] = balance
+		}
 	}
 
 	return output, nil
@@ -127,7 +132,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			return errors.New("Rings[1] must be the recipient")
 		}
 
-		witness_indexes := transfers[t].WitnessIndexes
+		witness_indexes := transfer.WitnessIndexes
 		anonset_publickeys := rings[t][2:]
 		publickeylists[t] = make([]*bn256.G1, 0)
 

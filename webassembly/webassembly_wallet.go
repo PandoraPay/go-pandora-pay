@@ -298,32 +298,6 @@ func deriveDelegatedStakeWalletAddress(this js.Value, args []js.Value) interface
 	})
 }
 
-func updatePreviousDecryptedBalanceValueWalletAddress(this js.Value, args []js.Value) interface{} {
-	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-
-		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {
-			return false, err
-		}
-
-		parameters := &struct {
-			PublicKey []byte `json:"publicKey"`
-			Asset     []byte `json:"asset"`
-			Amount    uint64 `json:"amount"`
-			Balance   []byte `json:"balance"`
-		}{}
-
-		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
-			return nil, err
-		}
-
-		if err := app.Wallet.UpdatePreviousDecryptedBalanceValueByPublicKey(parameters.PublicKey, parameters.Amount, parameters.Balance, parameters.Asset); err != nil {
-			return nil, err
-		}
-
-		return true, nil
-	})
-}
-
 func tryDecryptBalance(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
@@ -332,24 +306,24 @@ func tryDecryptBalance(this js.Value, args []js.Value) interface{} {
 		}
 
 		parameters := &struct {
-			PublicKey []byte `json:"publicKey"`
-			Asset     []byte `json:"asset"`
-			Balance   []byte `json:"balance"`
+			PublicKey  []byte `json:"publicKey"`
+			Asset      []byte `json:"asset"`
+			Balance    []byte `json:"balance"`
+			MatchValue uint64 `json:"matchValue"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
 			return nil, err
 		}
 
-		value, decrypted, err := app.Wallet.TryDecryptBalance(parameters.PublicKey, parameters.Asset, parameters.Balance)
+		decrypted, err := app.Wallet.TryDecryptBalanceByPublicKey(parameters.PublicKey, parameters.Balance, true, parameters.MatchValue)
 		if err != nil {
 			return nil, err
 		}
 
 		return webassembly_utils.ConvertJSONBytes(struct {
-			Value     uint64 `json:"value"`
-			Decrypted bool   `json:"decrypted"`
-		}{value, decrypted})
+			Decrypted bool `json:"decrypted"`
+		}{decrypted})
 	})
 }
 

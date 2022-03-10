@@ -39,7 +39,7 @@ func (tx *TransactionZether) IncludeTransaction(blockHeight uint64, txHash []byt
 	}
 
 	if !bytes.Equal(chainKernelHash, tx.ChainKernelHash) {
-		return errors.New("Zether ChainHash is invalid")
+		return errors.New("Zether ChainKernelHash is invalid")
 	}
 
 	for payloadIndex, payload := range tx.Payloads {

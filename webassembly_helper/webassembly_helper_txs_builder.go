@@ -38,16 +38,17 @@ type zetherTxDataBase struct {
 	PayloadExtra      []wizard.WizardZetherPayloadExtra                     `json:"payloadExtra"`
 	Accs              map[string]map[string][]byte                          `json:"accs"`
 	Regs              map[string][]byte                                     `json:"regs"`
-	Height            uint64                                                `json:"height"`
-	Hash              []byte                                                `json:"hash"`
+	ChainKernelHeight uint64                                                `json:"chainKernelHeight"`
+	ChainKernelHash   []byte                                                `json:"chainKernelHash"`
 }
 
-func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTransfer, emap map[string]map[string][]byte, rings [][]*bn256.G1, publicKeyIndexes map[string]*wizard.WizardZetherPublicKeyIndex, err error) {
+func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, rings [][]*bn256.G1, publicKeyIndexes map[string]*wizard.WizardZetherPublicKeyIndex, err error) {
 
 	transfers = make([]*wizard.WizardZetherTransfer, len(txData.Senders))
 	emap = wizard.InitializeEmap(txData.Assets)
 	rings = make([][]*bn256.G1, len(txData.Senders))
 	publicKeyIndexes = make(map[string]*wizard.WizardZetherPublicKeyIndex)
+	hasRollovers = make(map[string]bool)
 
 	for t, ast := range txData.Assets {
 
@@ -128,6 +129,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 					return
 				}
 				emap[string(ast)][p.G1().String()] = acc.Balance.Amount.Serialize()
+				hasRollovers[p.G1().String()] = acc != nil && acc.DelegatedStake != nil && acc.DelegatedStake.HasDelegatedStake()
 			} else {
 				var acckey crypto.Point
 				if err = acckey.DecodeCompressed(addr.PublicKey); err != nil {
@@ -175,6 +177,8 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 		}
 
 		rings[t] = ring
+		transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(len(ring))
+
 	}
 
 	return
@@ -195,7 +199,7 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		transfers, emap, rings, publicKeyIndexes, err := prepareData(txData)
+		transfers, emap, hasRollovers, rings, publicKeyIndexes, err := prepareData(txData)
 		if err != nil {
 			return nil, err
 		}
@@ -205,7 +209,7 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 			feesFinal[t] = txData.Fees[t].WizardTransactionFee
 		}
 
-		tx, err := wizard.CreateZetherTx(transfers, emap, rings, txData.Height, txData.Hash, publicKeyIndexes, feesFinal, false, ctx, func(status string) {
+		tx, err := wizard.CreateZetherTx(transfers, emap, hasRollovers, rings, txData.ChainKernelHeight, txData.ChainKernelHash, publicKeyIndexes, feesFinal, ctx, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {
