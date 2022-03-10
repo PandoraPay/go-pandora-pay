@@ -132,10 +132,18 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		echanges := crypto.ConstructElGamal(payload.Statement.C[i], payload.Statement.D)
 		balance = balance.Add(echanges) // homomorphic addition of changes
 
+		//verify sender
 		if (i%2 == 0) == payload.Parity { //sender
-			//verify sender
-			if payload.Statement.CLn[i].String() != balance.Left.String() || payload.Statement.CRn[i].String() != balance.Right.String() {
-				return fmt.Errorf("CLn or CRn is not matching for %d", i)
+
+			verify := true
+			if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD && uint64(i) != payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).TemporaryAccountRegistrationIndex {
+				verify = false
+			}
+
+			if verify {
+				if payload.Statement.CLn[i].String() != balance.Left.String() || payload.Statement.CRn[i].String() != balance.Right.String() {
+					return fmt.Errorf("CLn or CRn is not matching for %d", i)
+				}
 			}
 		}
 

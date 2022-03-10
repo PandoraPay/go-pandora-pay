@@ -265,9 +265,6 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 	senderRingMembers := make([][]string, len(txData.Payloads))
 	recipientRingMembers := make([][]string, len(txData.Payloads))
 
-	var chainHeight uint64
-	var chainKernelHash []byte
-
 	transfers := make([]*wizard.WizardZetherTransfer, len(txData.Payloads))
 	emap := wizard.InitializeEmap(sendAssets)
 	hasRollovers := make(map[string]bool)
@@ -318,6 +315,9 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 	}); err != nil {
 		return nil, nil, nil, nil, nil, 0, nil, err
 	}
+
+	var chainHeight uint64
+	var chainKernelHash []byte
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -535,6 +535,11 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 
 	reward := config_reward.GetRewardAt(blkComplete.Height)
 
+	chainHeight := blkComplete.Height
+	if chainHeight > 0 {
+		chainHeight--
+	}
+
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
@@ -568,9 +573,17 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 		},
 	}
 
-	transfers, emap, hasRollovers, ringMembers, publicKeyIndexes, _, _, err := builder.prebuild(txData, pendingTxs, context.Background(), func(string) {})
+	transfers, emap, hasRollovers, ringMembers, publicKeyIndexes, _, chainKernelHash2, err := builder.prebuild(txData, pendingTxs, context.Background(), func(string) {})
 	if err != nil {
 		return nil, err
+	}
+
+	if chainHeight == 0 {
+		chainKernelHash2 = blkComplete.PrevKernelHash
+	}
+
+	if !bytes.Equal(chainKernelHash2, blkComplete.PrevKernelHash) {
+		return nil, errors.New("Block already changed")
 	}
 
 	gui.GUI.Info("CreateForgingTransactions 2")
@@ -580,21 +593,16 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 		feesFinal[t] = payload.Fee.WizardTransactionFee
 	}
 
-	chainHeight := blkComplete.Height
-	if chainHeight > 0 {
-		chainHeight--
-	}
-
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringMembers, chainHeight, blkComplete.PrevKernelHash, publicKeyIndexes, feesFinal, context.Background(), func(string) {}); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringMembers, chainHeight, chainKernelHash2, publicKeyIndexes, feesFinal, context.Background(), func(string) {}); err != nil {
 		return nil, err
 	}
 
 	gui.GUI.Info("CreateForgingTransactions 3")
 
-	if err = builder.txsValidator.MarkAsValidatedTx(tx); err != nil {
-		return nil, err
-	}
+	//if err = builder.txsValidator.MarkAsValidatedTx(tx); err != nil {
+	//	return nil, err
+	//}
 
 	gui.GUI.Info("CreateForgingTransactions 4")
 

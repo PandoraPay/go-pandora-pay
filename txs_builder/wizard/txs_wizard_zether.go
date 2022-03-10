@@ -462,7 +462,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 			var ebalance *crypto.ElGamal
 
-			if (i%2 == 0) == parities[t] {
+			if (i%2 == 0) == parities[t] && (payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING_REWARD || uint64(i) == payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).TemporaryAccountRegistrationIndex) { // sender
 				ebalance = ebalances_list[i]
 			} else {
 				ebalance = crypto.ConstructElGamal(pulibcKeyPoint, crypto.ElGamal_BASE_G)
@@ -506,25 +506,26 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		payload.Statement = &statement
 
 		// get ready for another round by internal processing of state
-		for i := range publickeylist {
+		if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING {
+			for i := range publickeylist {
 
-			if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING {
-
-				var encryptedBalance *crypto.ElGamal
-				if encryptedBalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][publickeylist[i].String()]); err != nil {
-					return
-				}
-				echanges := crypto.ConstructElGamal(statement.C[i], statement.D)
-				encryptedBalance = encryptedBalance.Add(echanges) // homomorphic addition of changes
-
+				update := false
 				if (i%2 == 0) == payload.Parity { //sender
-					if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING_REWARD {
-						emap[string(transfer.Asset)][publickeylist[i].String()] = encryptedBalance.Serialize() // reserialize and store
-					}
+					update = true
 				} else { //receiver
 					if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) || !hasRollovers[publickeylist[i].String()] {
-						emap[string(transfer.Asset)][publickeylist[i].String()] = encryptedBalance.Serialize() // reserialize and store
+						update = true
 					}
+				}
+				if update {
+					var encryptedBalance *crypto.ElGamal
+					if encryptedBalance, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][publickeylist[i].String()]); err != nil {
+						return
+					}
+					echanges := crypto.ConstructElGamal(statement.C[i], statement.D)
+					encryptedBalance = encryptedBalance.Add(echanges) // homomorphic addition of changes
+
+					emap[string(transfer.Asset)][publickeylist[i].String()] = encryptedBalance.Serialize() // reserialize and store
 				}
 			}
 		}
