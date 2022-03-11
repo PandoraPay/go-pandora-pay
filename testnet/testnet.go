@@ -278,7 +278,7 @@ func (testnet *Testnet) run() {
 						return
 					}
 
-					time.Sleep(time.Millisecond * 2000) //making sure the block got propagated
+					time.Sleep(time.Millisecond * 3000) //making sure the block got propagated
 
 					if stakingAmount > config_coins.ConvertToUnitsUint64Forced(120000) {
 						over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(100000)

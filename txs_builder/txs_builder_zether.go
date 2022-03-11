@@ -600,9 +600,9 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 
 	gui.GUI.Info("CreateForgingTransactions 3")
 
-	//if err = builder.txsValidator.MarkAsValidatedTx(tx); err != nil {
-	//	return nil, err
-	//}
+	if err = builder.txsValidator.MarkAsValidatedTx(tx); err != nil {
+		return nil, err
+	}
 
 	gui.GUI.Info("CreateForgingTransactions 4")
 
