@@ -191,7 +191,7 @@ func (w *ForgingWallet) runProcessUpdates() {
 						return errors.New("Account was not found")
 					}
 
-					if update.account.DelegatedStake == nil || !update.account.DelegatedStake.HasDelegatedStake() {
+					if !update.account.DelegatedStake.HasDelegatedStake() {
 						return errors.New("Delegated stake is not matching")
 					}
 

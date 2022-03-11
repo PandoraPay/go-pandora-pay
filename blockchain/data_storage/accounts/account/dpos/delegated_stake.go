@@ -22,7 +22,7 @@ func (dstake *DelegatedStake) Validate() error {
 }
 
 func (dstake *DelegatedStake) HasDelegatedStake() bool {
-	return dstake.Version == STAKING
+	return dstake != nil && dstake.Version == STAKING
 }
 
 func (dstake *DelegatedStake) CreateDelegatedStake(spendPublicKey []byte) error {

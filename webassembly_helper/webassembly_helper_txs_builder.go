@@ -129,7 +129,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 					return
 				}
 				emap[string(ast)][p.G1().String()] = acc.Balance.Amount.Serialize()
-				hasRollovers[p.G1().String()] = acc != nil && acc.DelegatedStake != nil && acc.DelegatedStake.HasDelegatedStake()
+				hasRollovers[p.G1().String()] = acc != nil && acc.DelegatedStake.HasDelegatedStake()
 			} else {
 				var acckey crypto.Point
 				if err = acckey.DecodeCompressed(addr.PublicKey); err != nil {

@@ -27,19 +27,17 @@ import (
 	"pandora-pay/wallet/wallet_address"
 )
 
-func (builder *TxsBuilder) getRandomAccount(accs *accounts.Accounts) (addr *addresses.Address, err error) {
-
-	var acc *account.Account
+func (builder *TxsBuilder) getRandomAccount(accs *accounts.Accounts) (addr *addresses.Address, acc *account.Account, err error) {
 
 	if acc, err = accs.GetRandomAccount(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if acc == nil {
-		return nil, errors.New("Error getting any random account")
+		return nil, nil, errors.New("Error getting any random account")
 	}
 
 	if addr, err = addresses.CreateAddr(acc.PublicKey, nil, nil, 0, nil); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	return
@@ -86,6 +84,7 @@ func (builder *TxsBuilder) presetZetherRing(ringConfiguration *ZetherRingConfigu
 func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []byte, ringConfiguration *ZetherRingConfiguration, dataStorage *data_storage.DataStorage) ([]string, []string, error) {
 
 	var addr *addresses.Address
+	var acc *account.Account
 	var err error
 
 	var accs *accounts.Accounts
@@ -95,14 +94,17 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 
 	alreadyUsed := make(map[string]bool)
 
-	setAddress := func(address *string) (err error) {
+	setAddress := func(address *string, requireDelegatedAccounts bool) (err error) {
 		if *address == "" {
 			if accs.Count == uint64(len(alreadyUsed)) {
 				return errors.New("Accounts have only member. Impossible to get random recipient")
 			}
 			for {
-				if addr, err = builder.getRandomAccount(accs); err != nil {
+				if addr, acc, err = builder.getRandomAccount(accs); err != nil {
 					return err
+				}
+				if requireDelegatedAccounts && !acc.DelegatedStake.HasDelegatedStake() {
+					continue
 				}
 				if alreadyUsed[string(addr.PublicKey)] {
 					continue
@@ -154,7 +156,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 		return
 	}
 
-	newRandomAccounts := func(ring *[]string) (err error) {
+	newRandomAccounts := func(ring *[]string, requireDelegatedAccounts bool) (err error) {
 
 		for len(*ring) < ringConfiguration.RingSize/2-1 {
 
@@ -164,8 +166,11 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 					return
 				}
 			} else {
-				if addr, err = builder.getRandomAccount(accs); err != nil {
+				if addr, acc, err = builder.getRandomAccount(accs); err != nil {
 					return
+				}
+				if requireDelegatedAccounts && !acc.DelegatedStake.HasDelegatedStake() {
+					continue
 				}
 			}
 
@@ -179,10 +184,10 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 		return
 	}
 
-	if err = setAddress(sender); err != nil {
+	if err = setAddress(sender, ringConfiguration.SenderRingType.RequireDelegatedAccounts); err != nil {
 		return nil, nil, err
 	}
-	if err = setAddress(receiver); err != nil {
+	if err = setAddress(receiver, ringConfiguration.SenderRingType.RequireDelegatedAccounts); err != nil {
 		return nil, nil, err
 	}
 
@@ -203,10 +208,10 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 		return nil, nil, err
 	}
 
-	if err = newRandomAccounts(&senderRing); err != nil {
+	if err = newRandomAccounts(&senderRing, ringConfiguration.SenderRingType.RequireDelegatedAccounts); err != nil {
 		return nil, nil, err
 	}
-	if err = newRandomAccounts(&recipientRing); err != nil {
+	if err = newRandomAccounts(&recipientRing, ringConfiguration.SenderRingType.RequireDelegatedAccounts); err != nil {
 		return nil, nil, err
 	}
 
@@ -383,7 +388,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 						return
 					}
 
-					hasRollover := acc != nil && acc.DelegatedStake != nil && acc.DelegatedStake.HasDelegatedStake()
+					hasRollover := acc != nil && acc.DelegatedStake.HasDelegatedStake()
 
 					var newBalance *crypto.ElGamal
 					if acc != nil {
@@ -553,7 +558,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				decryptedBalance,
 				"",
 				blkComplete.StakingAmount,
-				&ZetherRingConfiguration{64, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
+				&ZetherRingConfiguration{64, &ZetherSenderRingType{true, nil, 0}, &ZetherRecipientRingType{true, nil, 0}},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStaking{},
@@ -565,7 +570,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				reward, //reward will be the encrypted Balance
 				forger.EncodeAddr(),
 				0,
-				&ZetherRingConfiguration{64, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
+				&ZetherRingConfiguration{64, &ZetherSenderRingType{true, nil, 0}, &ZetherRecipientRingType{true, nil, 0}},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStakingReward{nil, reward},

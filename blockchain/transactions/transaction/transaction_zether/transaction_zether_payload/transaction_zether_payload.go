@@ -135,6 +135,10 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		//verify sender
 		if (i%2 == 0) == payload.Parity { //sender
 
+			if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING && !acc.DelegatedStake.HasDelegatedStake() {
+				return errors.New("Senders used in Staking requires all to be delegated")
+			}
+
 			verify := true
 			if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD && uint64(i) != payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).TemporaryAccountRegistrationIndex {
 				verify = false
