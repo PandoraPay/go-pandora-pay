@@ -553,7 +553,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				decryptedBalance,
 				"",
 				blkComplete.StakingAmount,
-				&ZetherRingConfiguration{32, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
+				&ZetherRingConfiguration{64, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStaking{},
@@ -565,7 +565,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				reward, //reward will be the encrypted Balance
 				forger.EncodeAddr(),
 				0,
-				&ZetherRingConfiguration{32, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
+				&ZetherRingConfiguration{64, &ZetherSenderRingType{}, &ZetherRecipientRingType{}},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStakingReward{nil, reward},

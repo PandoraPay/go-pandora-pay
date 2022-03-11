@@ -278,6 +278,8 @@ func (testnet *Testnet) run() {
 						return
 					}
 
+					time.Sleep(time.Millisecond * 2000) //making sure the block got propagated
+
 					if stakingAmount > config_coins.ConvertToUnitsUint64Forced(120000) {
 						over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(100000)
 						testnet.testnetCreateTransfers(0, over, ctx)
@@ -297,7 +299,6 @@ func (testnet *Testnet) run() {
 							}
 						}
 
-						time.Sleep(time.Millisecond * 500) //making sure the block got propagated
 						for i := 2; i < 5; i++ {
 							testnet.testnetCreateTransfers(i, 0, ctx)
 							time.Sleep(time.Millisecond * 5000)

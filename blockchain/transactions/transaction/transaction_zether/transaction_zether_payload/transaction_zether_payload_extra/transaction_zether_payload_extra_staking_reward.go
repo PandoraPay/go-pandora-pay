@@ -78,7 +78,7 @@ func (payloadExtra *TransactionZetherPayloadExtraStakingReward) Validate(payload
 		return errors.New("RegistrationIndex is invalid")
 	}
 
-	if len(payloadStatement.C) < 32 {
+	if len(payloadStatement.C) < 64 {
 		return errors.New("Payload Extra Reward should had 256 ring members")
 	}
 
