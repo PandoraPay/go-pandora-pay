@@ -152,7 +152,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				anonset_publickeys = anonset_publickeys[1:]
 			}
 			publickeylists[t] = append(publickeylists[t], publicKey)
-			unique[string(publicKey.EncodeCompressed())] = true
+			unique[publicKey.String()] = true
 		}
 		if len(unique) != len(rings[t]) {
 			return errors.New("Duplicates detected")
