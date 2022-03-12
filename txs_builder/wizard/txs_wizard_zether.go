@@ -394,11 +394,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 			transfer.SenderDecryptedBalance = value + fee + burn_value
 
-			var acckey crypto.Point
-			if err = acckey.DecodeCompressed(senderKey.GeneratePublicKey()); err != nil {
-				return
-			}
-			balance := crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
+			balance := crypto.ConstructElGamal(sender, crypto.ElGamal_BASE_G)
 			balance = balance.Plus(new(big.Int).SetUint64(transfer.SenderDecryptedBalance))
 
 			emap[string(transfer.Asset)][sender.String()] = balance.Serialize()
@@ -467,7 +463,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 			var ebalance *crypto.ElGamal
 
-			if (i%2 == 0) == parities[t] && (payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING_REWARD || uint64(i) == payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).TemporaryAccountRegistrationIndex) { // sender
+			if (i%2 == 0) == parities[t] { // sender
 				ebalance = ebalances_list[i]
 			} else {
 				ebalance = crypto.ConstructElGamal(pulibcKeyPoint, crypto.ElGamal_BASE_G)

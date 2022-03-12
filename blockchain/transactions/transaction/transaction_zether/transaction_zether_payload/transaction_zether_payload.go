@@ -149,6 +149,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 					return fmt.Errorf("CLn or CRn is not matching for %d", i)
 				}
 			}
+
 		}
 
 		/**
