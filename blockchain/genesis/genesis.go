@@ -1,7 +1,6 @@
 package genesis
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"io/ioutil"
@@ -18,15 +17,9 @@ import (
 	"time"
 )
 
-type DelegatedStakeOutput struct {
-	Address                      string `json:"address" msgpack:"address"`
-	DelegatedStakeSpendPublicKey []byte `json:"delegatedStakeSpendPublicKey" msgpack:"delegatedStakeSpendPublicKey"`
-}
-
 type GenesisDataAirDropType struct {
-	Address        string `json:"address" msgpack:"address"`
-	Amount         uint64 `json:"amount" msgpack:"amount"`
-	SpendPublicKey []byte `json:"spendPublicKey" msgpack:"spendPublicKey"`
+	Address string `json:"address" msgpack:"address"`
+	Amount  uint64 `json:"amount" msgpack:"amount"`
 }
 
 type GenesisDataType struct {
@@ -115,32 +108,38 @@ func createNewGenesis(v []string) (err error) {
 			return
 		}
 
-		delegatedStakeOutput := &DelegatedStakeOutput{}
-		if err = json.Unmarshal(data, delegatedStakeOutput); err != nil {
+		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
+			Address: string(data), //registered address
+			Amount:  amount,
+		})
+
+	}
+
+	var addr *addresses.Address
+
+	//let's create 1000 zero wallets
+	for i := 0; i < 1000; i++ {
+		priv := addresses.GenerateNewPrivateKey()
+		if addr, err = priv.GenerateAddress(true, helpers.RandomBytes(cryptography.PublicKeySize), true, nil, 0, nil); err != nil {
 			return
 		}
 
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			Address:        delegatedStakeOutput.Address,
-			Amount:         amount,
-			SpendPublicKey: []byte{},
+			Address: addr.EncodeAddr(),
+			Amount:  0,
 		})
-
 	}
 
 	//let's create 1000 zero wallets
 	for i := 0; i < 1000; i++ {
 		priv := addresses.GenerateNewPrivateKey()
-
-		var addr *addresses.Address
-		if addr, err = priv.GenerateAddress(true, nil, 0, nil); err != nil {
+		if addr, err = priv.GenerateAddress(false, nil, true, nil, 0, nil); err != nil {
 			return
 		}
 
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			Address:        addr.EncodeAddr(),
-			Amount:         0,
-			SpendPublicKey: []byte{},
+			Address: addr.EncodeAddr(),
+			Amount:  0,
 		})
 	}
 
@@ -155,7 +154,7 @@ func createNewGenesis(v []string) (err error) {
 	return
 }
 
-func createSimpleGenesis(walletGetFirstAddressForDevnetGenesisAirdrop func() (string, []byte, error)) (err error) {
+func createSimpleGenesis(walletGetFirstAddressForDevnetGenesisAirdrop func() (string, error)) (err error) {
 
 	var file *os.File
 
@@ -166,16 +165,15 @@ func createSimpleGenesis(walletGetFirstAddressForDevnetGenesisAirdrop func() (st
 	GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
 	GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 
-	address, delegatedStakePublicKey, err := walletGetFirstAddressForDevnetGenesisAirdrop()
+	address, err := walletGetFirstAddressForDevnetGenesisAirdrop()
 	if err != nil {
 		return
 	}
 
 	amount := 100 * config_stake.GetRequiredStake(0)
 	GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-		Address:        address,
-		Amount:         amount,
-		SpendPublicKey: delegatedStakePublicKey,
+		Address: address,
+		Amount:  amount,
 	})
 
 	if file, err = os.OpenFile("./genesis.data", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
@@ -195,7 +193,7 @@ func createSimpleGenesis(walletGetFirstAddressForDevnetGenesisAirdrop func() (st
 	return
 }
 
-func GenesisInit(walletGetFirstAddressForDevnetGenesisAirdrop func() (string, []byte, error)) (err error) {
+func GenesisInit(walletGetFirstAddressForDevnetGenesisAirdrop func() (string, error)) (err error) {
 
 	if GenesisData, err = getGenesis(); err != nil {
 		return

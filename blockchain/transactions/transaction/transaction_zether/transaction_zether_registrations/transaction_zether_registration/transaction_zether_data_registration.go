@@ -7,13 +7,19 @@ import (
 )
 
 type TransactionZetherDataRegistration struct {
-	RegistrationType      TransactionZetherDataRegistrationType
-	RegistrationSignature []byte
+	RegistrationType           TransactionZetherDataRegistrationType
+	RegistrationDelegated      bool
+	RegistrationSpendPublicKey []byte
+	RegistrationSignature      []byte
 }
 
 func (registration *TransactionZetherDataRegistration) Serialize(w *helpers.BufferWriter) {
 	w.WriteByte(byte(registration.RegistrationType))
 	if registration.RegistrationType == NOT_REGISTERED {
+		w.WriteBool(registration.RegistrationDelegated)
+		if registration.RegistrationDelegated {
+			w.Write(registration.RegistrationSpendPublicKey)
+		}
 		w.Write(registration.RegistrationSignature)
 	}
 }
@@ -29,6 +35,14 @@ func (registration *TransactionZetherDataRegistration) Deserialize(r *helpers.Bu
 
 	switch registration.RegistrationType {
 	case NOT_REGISTERED:
+		if registration.RegistrationDelegated, err = r.ReadBool(); err != nil {
+			return
+		}
+		if registration.RegistrationDelegated {
+			if registration.RegistrationSpendPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+				return
+			}
+		}
 		if registration.RegistrationSignature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {
 			return
 		}

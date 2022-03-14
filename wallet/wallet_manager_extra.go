@@ -49,7 +49,7 @@ func (wallet *Wallet) createEmptyWallet() (err error) {
 	if err = wallet.createSeed(false); err != nil {
 		return
 	}
-	if _, err = wallet.AddNewAddress(false, ""); err != nil {
+	if _, err = wallet.AddNewAddress(false, "", false); err != nil {
 		return
 	}
 

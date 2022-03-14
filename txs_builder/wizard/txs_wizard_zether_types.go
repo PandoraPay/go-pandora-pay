@@ -18,6 +18,10 @@ type WizardZetherPayloadExtraAssetCreate struct {
 	Asset                    *asset.Asset `json:"asset" msgpack:"asset"`
 }
 
+type WizardZetherPayloadExtraUnstake struct {
+	WizardZetherPayloadExtra `json:"-" msgpack:""`
+}
+
 type WizardZetherPayloadExtraAssetSupplyIncrease struct {
 	WizardZetherPayloadExtra `json:"-" msgpack:""`
 	AssetId                  []byte `json:"assetId" msgpack:"assetId"`
@@ -31,8 +35,10 @@ type WizardZetherPayloadExtra interface {
 
 type WizardZetherTransfer struct {
 	Asset                  []byte                   `json:"asset" msgpack:"asset"`
-	Sender                 []byte                   `json:"sender" msgpack:"sender"` //private key
+	SenderPrivateKey       []byte                   `json:"senderPrivateKey" msgpack:"senderPrivateKey"` //private key
 	SenderDecryptedBalance uint64                   `json:"senderDecryptedBalance" msgpack:"senderDecryptedBalance"`
+	SenderUnstakeRequired  bool                     `json:"senderUnstakeRequired" msgpack:"senderUnstakeRequired"`
+	SenderSpendPrivateKey  []byte                   `json:"senderSpendPrivateKey" msgpack:"senderSpendPrivateKey"`
 	Recipient              string                   `json:"recipient" msgpack:"recipient"`
 	Amount                 uint64                   `json:"amount" msgpack:"amount"`
 	Burn                   uint64                   `json:"burn" msgpack:"burn"`
@@ -44,9 +50,11 @@ type WizardZetherTransfer struct {
 }
 
 type WizardZetherPublicKeyIndex struct {
-	Registered            bool   `json:"registered" msgpack:"registered"`
-	RegisteredIndex       uint64 `json:"registeredIndex" msgpack:"registeredIndex"`
-	RegistrationSignature []byte `json:"registrationSignature" msgpack:"registrationSignature"`
+	Registered                 bool   `json:"registered" msgpack:"registered"`
+	RegisteredIndex            uint64 `json:"registeredIndex" msgpack:"registeredIndex"`
+	RegistrationDelegated      bool   `json:"registrationDelegated" msgpack:"registrationDelegated"`
+	RegistrationSpendPublicKey []byte `json:"registrationSpendPublicKey" msgpack:"registrationSpendPublicKey"`
+	RegistrationSignature      []byte `json:"registrationSignature" msgpack:"registrationSignature"`
 }
 
 type WizardZetherTransactionFee struct {

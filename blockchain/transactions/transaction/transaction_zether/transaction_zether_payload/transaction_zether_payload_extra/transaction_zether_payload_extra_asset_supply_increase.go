@@ -39,7 +39,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) AfterInclu
 		return errors.New("Asset SupplyPublicKey is not matching")
 	}
 
-	accs, acc, err := dataStorage.GetOrCreateAccount(payloadExtra.AssetId, payloadExtra.ReceiverPublicKey, true)
+	accs, acc, err := dataStorage.CreateAccount(payloadExtra.AssetId, payloadExtra.ReceiverPublicKey, false, nil, true)
 	if err != nil {
 		return
 	}
@@ -62,7 +62,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) ComputeAll
 	out[string(payloadExtra.ReceiverPublicKey)] = true
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) VerifyExtraSignature(hashForSignature []byte) bool {
+func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) VerifyExtraSignature(hashForSignature []byte, payloadStatement *crypto.Statement) bool {
 	return crypto.VerifySignature(hashForSignature, payloadExtra.AssetSignature, payloadExtra.AssetSupplyPublicKey)
 }
 

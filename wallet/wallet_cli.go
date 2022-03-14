@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -16,7 +15,6 @@ import (
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
-	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
@@ -27,14 +25,16 @@ import (
 	"strconv"
 )
 
-func (wallet *Wallet) deriveDelegatedStakeSpendKey(addr *wallet_address.WalletAddress, path string, print bool) (err error) {
+func (wallet *Wallet) exportDelegatedAddress(addr *wallet_address.WalletAddress, path string, print bool) (err error) {
 
-	key := addresses.GenerateNewPrivateKey()
+	if addr.Version != wallet_address.VERSION_DELEGATED_STAKE {
+		return errors.New("Address is not VERSION_DELEGATED_STAKE")
+	}
 
 	if print {
-		gui.GUI.OutputWrite("Delegated stake:")
-		gui.GUI.OutputWrite("   PublicKey", key.GeneratePublicKey())
-		gui.GUI.OutputWrite("   PrivateKey", key.Key)
+		gui.GUI.OutputWrite("Address:")
+		gui.GUI.OutputWrite("   Encoded", addr.AddressEncoded)
+		gui.GUI.OutputWrite("   Encoded with Registration", addr.AddressRegistrationEncoded)
 	}
 
 	if path != "" {
@@ -46,17 +46,7 @@ func (wallet *Wallet) deriveDelegatedStakeSpendKey(addr *wallet_address.WalletAd
 
 		defer f.Close()
 
-		delegatedStakeOut := &genesis.DelegatedStakeOutput{
-			addr.AddressRegistrationEncoded,
-			key.GeneratePublicKey(),
-		}
-
-		var marshal []byte
-		if marshal, err = json.Marshal(delegatedStakeOut); err != nil {
-			return
-		}
-
-		if _, err = fmt.Fprint(f, string(marshal)); err != nil {
+		if _, err = fmt.Fprint(f, addr.AddressRegistrationEncoded); err != nil {
 			return err
 		}
 	}
@@ -383,7 +373,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 		name := gui.GUI.OutputReadFilename("Name of your new address", "")
 
-		if _, err = wallet.AddNewAddress(true, name); err != nil {
+		if _, err = wallet.AddNewAddress(true, name, false); err != nil {
 			return
 		}
 		return wallet.CliListAddresses(cmd, ctx)
@@ -412,16 +402,16 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliDeriveDelegatedStake := func(cmd string, ctx context.Context) (err error) {
+	cliExportDelegatedAddress := func(cmd string, ctx context.Context) (err error) {
 
-		addr, _, _, err := wallet.CliSelectAddress("Select Address to Derive Delegated Stake", ctx)
+		addr, _, _, err := wallet.CliSelectAddress("Select Address to Export Delegated Address", ctx)
 		if err != nil {
 			return
 		}
 
 		path := gui.GUI.OutputReadFilename("Path to export to a file", "delegatedStake")
 
-		return wallet.deriveDelegatedStakeSpendKey(addr, path, true)
+		return wallet.exportDelegatedAddress(addr, path, true)
 
 	}
 
@@ -515,7 +505,7 @@ func (wallet *Wallet) initWalletCLI() {
 	gui.GUI.CommandDefineCallback("Show Private Key", cliShowPrivateKey, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Import Private Key", cliImportPrivateKey, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Remove Address", cliRemoveAddress, wallet.Loaded)
-	gui.GUI.CommandDefineCallback("Derive Delegated Stake", cliDeriveDelegatedStake, wallet.Loaded)
+	gui.GUI.CommandDefineCallback("Export Delegated Address", cliExportDelegatedAddress, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Export Addresses", cliExportAddresses, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Export Address JSON", cliExportAddressJSON, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Import Address JSON", cliImportAddressJSON, wallet.Loaded)

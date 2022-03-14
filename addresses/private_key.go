@@ -20,22 +20,37 @@ func (pk *PrivateKey) GeneratePublicKey() []byte {
 	return publicKey.EncodeCompressed()
 }
 
-func (pk *PrivateKey) GenerateAddress(registration bool, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+func (pk *PrivateKey) GenerateAddress(delegated bool, spendPublicKey []byte, registration bool, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	publicKey := pk.GeneratePublicKey()
+
+	var version AddressVersion
+	if delegated {
+		version = SIMPLE_DELEGATED
+	} else {
+		version = SIMPLE_PUBLIC_KEY
+	}
 
 	var reg []byte
 	var err error
+
 	if registration {
-		if reg, err = pk.GetRegistration(); err != nil {
+		if reg, err = pk.GetRegistration(delegated, spendPublicKey); err != nil {
 			return nil, err
 		}
 	}
 
-	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY, publicKey, reg, paymentID, paymentAmount, paymentAsset)
+	return NewAddr(config.NETWORK_SELECTED, version, publicKey, spendPublicKey, reg, paymentID, paymentAmount, paymentAsset)
 }
 
-func (pk *PrivateKey) GetRegistration() ([]byte, error) {
-	return pk.Sign([]byte("registration"))
+func (pk *PrivateKey) GetRegistration(delegated bool, spendPublicKey []byte) ([]byte, error) {
+	data := []byte("registration")
+	if delegated {
+		data = append(data, 1)
+		data = append(data, spendPublicKey...)
+	} else {
+		data = append(data, 0)
+	}
+	return pk.Sign(data)
 }
 
 //make sure message is a hash to avoid leaking any parts of the private key

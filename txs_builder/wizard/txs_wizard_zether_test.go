@@ -53,7 +53,7 @@ func TestCreateZetherTx(t *testing.T) {
 	diff := amount / uint64(count)
 
 	publicKeyIndexes := make(map[string]*WizardZetherPublicKeyIndex)
-	publicKeyIndexes[string(senderAdress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, senderAdress.Registration}
+	publicKeyIndexes[string(senderAdress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, false, nil, senderAdress.Registration}
 
 	fees := make([]*WizardTransactionFee, count)
 
@@ -63,7 +63,7 @@ func TestCreateZetherTx(t *testing.T) {
 		recipientPrivateKey := addresses.GenerateNewPrivateKey()
 		recipientAddress, _ := recipientPrivateKey.GenerateAddress(true, nil, 0, nil)
 
-		publicKeyIndexes[string(recipientAddress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, recipientAddress.Registration}
+		publicKeyIndexes[string(recipientAddress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, false, nil, recipientAddress.Registration}
 
 		transfers[i] = &WizardZetherTransfer{
 			Asset:                  config_coins.NATIVE_ASSET_FULL,
@@ -92,7 +92,7 @@ func TestCreateZetherTx(t *testing.T) {
 			ringMemberPrivateKey := addresses.GenerateNewPrivateKey()
 			ringMemberAddress, _ := ringMemberPrivateKey.GenerateAddress(true, nil, 0, nil)
 
-			publicKeyIndexes[string(ringMemberAddress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, ringMemberAddress.Registration}
+			publicKeyIndexes[string(ringMemberAddress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, false, nil, ringMemberAddress.Registration}
 
 			ringMemberPoint, _ := ringMemberAddress.GetPoint()
 			rings[i][j] = ringMemberPoint.G1()

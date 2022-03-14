@@ -12,18 +12,15 @@ import (
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
-	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/config/config_assets"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/txs_builder/wizard"
-	"pandora-pay/wallet/wallet_address"
 )
 
 func (builder *TxsBuilder) showWarningIfNotSyncCLI() {
@@ -183,29 +180,6 @@ func (builder *TxsBuilder) readAsset(text string, allowEmptyAsset bool) []byte {
 		assetId = config_coins.NATIVE_ASSET_FULL
 	}
 	return assetId
-}
-
-func (builder *TxsBuilder) readDelegatedStakingUpdate(delegatedStakingUpdate *transaction_data.TransactionDataDelegatedStakingUpdate, delegateWalletPublicKey []byte) (err error) {
-	delegatedStakingUpdate.DelegatedStakingHasNewInfo = gui.GUI.OutputReadBool("New Delegate Info? y/n. Leave empty for no", true, false)
-
-	if delegatedStakingUpdate.DelegatedStakingHasNewInfo {
-
-		delegatedStakingUpdate.DelegatedStakingNewPublicKey = gui.GUI.OutputReadBytes("Delegated Staking New PublicKey. Leave Empty to automatically derive pubKey", func(input []byte) bool {
-			return len(input) == 0 || len(input) == cryptography.PublicKeySize
-		})
-
-		if len(delegatedStakingUpdate.DelegatedStakingNewPublicKey) == 0 {
-			if delegatedStakingUpdate.DelegatedStakingNewPublicKey, _, err = builder.DeriveDelegatedStake(0, delegateWalletPublicKey); err != nil {
-				return
-			}
-		}
-
-		delegatedStakingUpdate.DelegatedStakingNewFee = gui.GUI.OutputReadUint64("Delegated Staking New Fee. Leave empty for zero fee", true, 0, func(value uint64) bool {
-			return value <= config_stake.DELEGATING_STAKING_FEE_MAX_VALUE
-		})
-	}
-
-	return
 }
 
 func (builder *TxsBuilder) initCLI() {
@@ -378,41 +352,41 @@ func (builder *TxsBuilder) initCLI() {
 
 	cliUpdateDelegate := func(cmd string, ctx context.Context) (err error) {
 
-		builder.showWarningIfNotSyncCLI()
-
-		txExtra := &wizard.WizardTxSimpleExtraUpdateDelegate{DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{}}
-		txData := &TxBuilderCreateSimpleTx{Extra: txExtra}
-
-		var delegateWalletAddress *wallet_address.WalletAddress
-		if delegateWalletAddress, txData.Sender, _, err = builder.wallet.CliSelectAddress("Select Address to Update Delegate", ctx); err != nil {
-			return
-		}
-
-		txData.Nonce = gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
-
-		if err = builder.readDelegatedStakingUpdate(txExtra.DelegatedStakingUpdate, delegateWalletAddress.PublicKey); err != nil {
-			return
-		}
-
-		if txExtra.DelegatedStakingClaimAmount, err = builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Update Delegated Staking Amount"); err != nil {
-			return
-		}
-
-		txData.FeeVersion = gui.GUI.OutputReadBool("Subtract the fee from unclaimed? y/n. Leave empty for no", true, false)
-
-		txData.Data = builder.readData()
-		txData.Fee = builder.readFee(config_coins.NATIVE_ASSET_FULL)
-
-		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
-
-		tx, err := builder.CreateSimpleTx(txData, propagate, true, true, false, ctx, func(status string) {
-			gui.GUI.OutputWrite(status)
-		})
-		if err != nil {
-			return
-		}
-
-		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
+		//builder.showWarningIfNotSyncCLI()
+		//
+		//txExtra := &wizard.WizardTxSimpleExtraUpdateDelegate{DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{}}
+		//txData := &TxBuilderCreateSimpleTx{Extra: txExtra}
+		//
+		//var delegateWalletAddress *wallet_address.WalletAddress
+		//if delegateWalletAddress, txData.Sender, _, err = builder.wallet.CliSelectAddress("Select Address to Update Delegate", ctx); err != nil {
+		//	return
+		//}
+		//
+		//txData.Nonce = gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
+		//
+		//if err = builder.readDelegatedStakingUpdate(txExtra.DelegatedStakingUpdate, delegateWalletAddress.PublicKey); err != nil {
+		//	return
+		//}
+		//
+		//if txExtra.DelegatedStakingClaimAmount, err = builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Update Delegated Staking Amount"); err != nil {
+		//	return
+		//}
+		//
+		//txData.FeeVersion = gui.GUI.OutputReadBool("Subtract the fee from unclaimed? y/n. Leave empty for no", true, false)
+		//
+		//txData.Data = builder.readData()
+		//txData.Fee = builder.readFee(config_coins.NATIVE_ASSET_FULL)
+		//
+		//propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
+		//
+		//tx, err := builder.CreateSimpleTx(txData, propagate, true, true, false, ctx, func(status string) {
+		//	gui.GUI.OutputWrite(status)
+		//})
+		//if err != nil {
+		//	return
+		//}
+		//
+		//gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
 		return
 	}
 

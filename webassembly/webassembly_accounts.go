@@ -32,7 +32,7 @@ func createAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		addr, err := addresses.CreateAddr(parameters.PublicKey, parameters.Registration, parameters.PaymentID, parameters.PaymentAmount, parameters.PaymentAsset)
+		addr, err := addresses.CreateAddr(parameters.PublicKey, false, nil, parameters.Registration, parameters.PaymentID, parameters.PaymentAmount, parameters.PaymentAsset)
 		if err != nil {
 			return nil, err
 		}
@@ -48,7 +48,7 @@ func createAddress(this js.Value, args []js.Value) interface{} {
 func generateNewAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		priv := addresses.GenerateNewPrivateKey()
-		addr, err := priv.GenerateAddress(true, nil, 0, nil)
+		addr, err := priv.GenerateAddress(false, nil, true, nil, 0, nil)
 
 		if err != nil {
 			return nil, err
@@ -75,7 +75,7 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		addr, err := priv.GenerateAddress(true, nil, 0, nil)
+		addr, err := priv.GenerateAddress(false, nil, true, nil, 0, nil)
 
 		if err != nil {
 			return nil, err

@@ -10,6 +10,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets/asset"
+	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -73,7 +74,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 			return errors.New("Amount, PaymentID or IntegratedPaymentAsset are not allowed in the airdrop address")
 		}
 
-		if dataStorage.Regs.VerifyRegistration(addr.PublicKey, addr.Registration) == false {
+		if registrations.VerifyRegistration(addr.PublicKey, addr.Version == addresses.SIMPLE_DELEGATED, addr.SpendPublicKey, addr.Registration) == false {
 			return errors.New("Registration verification is false")
 		}
 
@@ -83,16 +84,10 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 		var accs *accounts.Accounts
 		var acc *account.Account
 
-		if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey, false); err != nil {
+		if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey, addr.Version == addresses.SIMPLE_DELEGATED, addr.SpendPublicKey, false); err != nil {
 			return
 		}
 		acc.Balance.AddBalanceUint(airdrop.Amount)
-
-		if airdrop.SpendPublicKey != nil {
-			if err = acc.DelegatedStake.CreateDelegatedStake(airdrop.SpendPublicKey); err != nil {
-				return
-			}
-		}
 
 		if err = accs.Update(string(addr.PublicKey), acc); err != nil {
 			return

@@ -1,6 +1,7 @@
 package data_storage
 
 import (
+	"bytes"
 	"errors"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -32,7 +33,7 @@ type DataStorage struct {
 	AstsFeeLiquidityCollection *assets.AssetsFeeLiquidityCollection
 }
 
-func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
+func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, delegated bool, spendPublicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
 
 	if validateRegistration {
 		exists, err := dataStorage.Regs.Exists(string(publicKey))
@@ -62,10 +63,16 @@ func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, va
 		return nil, nil, err
 	}
 
+	if bytes.Equal(assetId, config_coins.NATIVE_ASSET_FULL) && delegated {
+		if err = acc.DelegatedStake.CreateDelegatedStake(spendPublicKey); err != nil {
+			return nil, nil, err
+		}
+	}
+
 	return accs, acc, nil
 }
 
-func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
+func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte, delegated bool, spendPublicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
 
 	if validateRegistration {
 		exists, err := dataStorage.Regs.Exists(string(publicKey))
@@ -94,6 +101,12 @@ func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte, validat
 	acc, err := accs.CreateNewAccount(publicKey)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if bytes.Equal(assetId, config_coins.NATIVE_ASSET_FULL) && delegated {
+		if err = acc.DelegatedStake.CreateDelegatedStake(spendPublicKey); err != nil {
+			return nil, nil, err
+		}
 	}
 
 	return accs, acc, nil

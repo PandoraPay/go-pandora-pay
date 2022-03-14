@@ -12,39 +12,36 @@ import (
 )
 
 type Address struct {
-	Network       uint64         `json:"network" msgpack:"network"`
-	Version       AddressVersion `json:"version" msgpack:"version"`
-	PublicKey     []byte         `json:"publicKey" msgpack:"publicKey"`
-	Registration  []byte         `json:"registration" msgpack:"registration"`
-	PaymentID     []byte         `json:"paymentId" msgpack:"paymentId"`         // payment id
-	PaymentAmount uint64         `json:"paymentAmount" msgpack:"paymentAmount"` // amount to be paid
-	PaymentAsset  []byte         `json:"paymentAsset" msgpack:"paymentAsset"`
+	Network        uint64         `json:"network" msgpack:"network"`
+	Version        AddressVersion `json:"version" msgpack:"version"`
+	PublicKey      []byte         `json:"publicKey" msgpack:"publicKey"`
+	SpendPublicKey []byte         `json:"spendPublicKey" msgpack:"spendPublicKey"`
+	Registration   []byte         `json:"registration" msgpack:"registration"`
+	PaymentID      []byte         `json:"paymentId" msgpack:"paymentId"`         // payment id
+	PaymentAmount  uint64         `json:"paymentAmount" msgpack:"paymentAmount"` // amount to be paid
+	PaymentAsset   []byte         `json:"paymentAsset" msgpack:"paymentAsset"`
 }
 
-func NewAddr(network uint64, version AddressVersion, publicKey []byte, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+func NewAddr(network uint64, version AddressVersion, publicKey, spendPublicKey []byte, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	if len(paymentID) != 8 && len(paymentID) != 0 {
 		return nil, errors.New("Invalid PaymentID. It must be an 8 byte")
 	}
 	if len(paymentAsset) != 0 && len(paymentAsset) != 20 {
 		return nil, errors.New("Invalid PaymentAsset size")
 	}
-	return &Address{network, version, publicKey, registration, paymentID, paymentAmount, paymentAsset}, nil
+	return &Address{network, version, publicKey, spendPublicKey, registration, paymentID, paymentAmount, paymentAsset}, nil
 }
 
-func CreateAddr(key, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
-
-	var publicKey []byte
+func CreateAddr(publicKey []byte, delegated bool, spendPublicKey, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 
 	var version AddressVersion
-	switch len(key) {
-	case cryptography.PublicKeySize:
-		publicKey = key
+	if delegated {
 		version = SIMPLE_PUBLIC_KEY
-	default:
-		return nil, errors.New("Invalid Key length")
+	} else {
+		version = SIMPLE_DELEGATED
 	}
 
-	return NewAddr(config.NETWORK_SELECTED, version, publicKey, registration, paymentID, paymentAmount, paymentAsset)
+	return NewAddr(config.NETWORK_SELECTED, version, publicKey, spendPublicKey, registration, paymentID, paymentAmount, paymentAsset)
 }
 
 func (a *Address) EncodeAddr() string {
@@ -68,9 +65,11 @@ func (a *Address) EncodeAddr() string {
 
 	writer.WriteUvarint(uint64(a.Version))
 
-	switch a.Version {
-	case SIMPLE_PUBLIC_KEY:
-		writer.Write(a.PublicKey)
+	writer.Write(a.PublicKey)
+
+	if a.Version == SIMPLE_DELEGATED {
+		writer.WriteBool(len(a.SpendPublicKey) > 0)
+		writer.Write(a.SpendPublicKey)
 	}
 
 	writer.WriteByte(a.IntegrationByte())
@@ -142,10 +141,21 @@ func DecodeAddr(input string) (*Address, error) {
 	}
 	adr.Version = AddressVersion(version)
 
+	if adr.PublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+		return nil, err
+	}
+
 	switch adr.Version {
 	case SIMPLE_PUBLIC_KEY:
-		if adr.PublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+	case SIMPLE_DELEGATED:
+		var hasSpendPublicKey bool
+		if hasSpendPublicKey, err = reader.ReadBool(); err != nil {
 			return nil, err
+		}
+		if hasSpendPublicKey {
+			if adr.SpendPublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+				return nil, err
+			}
 		}
 	default:
 		return nil, errors.New("Invalid Address Version")

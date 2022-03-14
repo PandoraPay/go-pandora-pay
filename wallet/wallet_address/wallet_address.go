@@ -1,11 +1,8 @@
 package wallet_address
 
 import (
-	"bytes"
 	"errors"
-	"github.com/tyler-smith/go-bip32"
 	"pandora-pay/addresses"
-	"pandora-pay/cryptography"
 )
 
 type WalletAddress struct {
@@ -14,57 +11,23 @@ type WalletAddress struct {
 	SeedIndex                  uint32                `json:"seedIndex" msgpack:"seedIndex"`
 	IsMine                     bool                  `json:"isMine" msgpack:"isMine"`
 	PrivateKey                 *addresses.PrivateKey `json:"privateKey" msgpack:"privateKey"`
+	SpendPrivateKey            *addresses.PrivateKey `json:"spendPrivateKey" msgpack:"spendPrivateKey"`
 	Registration               []byte                `json:"registration" msgpack:"registration"`
 	PublicKey                  []byte                `json:"publicKey" msgpack:"publicKey"`
+	SpendPublicKey             []byte                `json:"spendPublicKey" msgpack:"spendPublicKey"`
 	AddressEncoded             string                `json:"addressEncoded" msgpack:"addressEncoded"`
 	AddressRegistrationEncoded string                `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
 }
 
-func (addr *WalletAddress) FindDelegatedStake(currentNonce, lastKnownNonce uint32, delegatedStakePublicKey []byte) (*WalletAddressDelegatedStake, error) {
-
-	for nonce := lastKnownNonce; nonce <= currentNonce; nonce++ {
-
-		delegatedStake, err := addr.DeriveDelegatedStake(nonce)
-		if err != nil {
-			return nil, err
-		}
-		if bytes.Equal(delegatedStake.PublicKey, delegatedStakePublicKey) {
-			return delegatedStake, nil
-		}
-
-	}
-
-	return nil, errors.New("Nonce not found")
-}
-
-func (addr *WalletAddress) DeriveDelegatedStake(nonce uint32) (*WalletAddressDelegatedStake, error) {
+func (addr *WalletAddress) DeriveDelegatedStake() (*WalletAddressDelegatedStake, error) {
 
 	if addr.PrivateKey == nil {
 		return nil, errors.New("Private Key is missing")
 	}
 
-	masterKey, err := bip32.NewMasterKey(addr.PrivateKey.Key)
-	if err != nil {
-		return nil, err
-	}
-
-	key, err := masterKey.NewChildKey(nonce)
-	if err != nil {
-		return nil, err
-	}
-
-	finalKey := cryptography.SHA3(key.Key)
-	privateKey := &addresses.PrivateKey{Key: finalKey}
-
-	address, err := privateKey.GenerateAddress(false, nil, 0, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	return &WalletAddressDelegatedStake{
-		PrivateKey:     privateKey,
-		PublicKey:      address.PublicKey,
-		LastKnownNonce: nonce,
+		PrivateKey: addr.PrivateKey,
+		PublicKey:  addr.PublicKey,
 	}, nil
 }
 
@@ -109,8 +72,10 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		addr.SeedIndex,
 		addr.IsMine,
 		addr.PrivateKey,
+		addr.SpendPrivateKey,
 		addr.Registration,
 		addr.PublicKey,
+		addr.SpendPublicKey,
 		addr.AddressEncoded,
 		addr.AddressRegistrationEncoded,
 	}

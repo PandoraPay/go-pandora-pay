@@ -25,8 +25,10 @@ import (
 )
 
 type json_TransactionDataRegistration struct {
-	RegistrationType      transaction_zether_registration.TransactionZetherDataRegistrationType `json:"registrationType"  msgpack:"registrationType"`
-	RegistrationSignature []byte
+	RegistrationType           transaction_zether_registration.TransactionZetherDataRegistrationType `json:"registrationType"  msgpack:"registrationType"`
+	RegistrationDelegated      bool                                                                  `json:"registrationDelegated" msgpack:"registrationDelegated"`
+	RegistrationSpendPublicKey []byte                                                                `json:"registrationSpendPublicKey" msgpack:"registrationSpendPublicKey"`
+	RegistrationSignature      []byte
 }
 
 type json_TransactionDataDelegatedStakingUpdate struct {
@@ -64,10 +66,6 @@ type json_Only_TransactionSimpleExtraUpdateDelegate struct {
 	DelegatedStakingUpdate      *json_TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"  msgpack:"delegatedStakingUpdate"`
 }
 
-type json_Only_TransactionSimpleExtraUnstake struct {
-	Amount uint64 `json:"amount"  msgpack:"amount"`
-}
-
 type json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity struct {
 	Liquidities     []*asset_fee_liquidity.AssetFeeLiquidity `json:"liquidities"`
 	CollectorHasNew bool                                     `json:"collectorHasNew"`
@@ -86,6 +84,11 @@ type json_Only_TransactionZetherPayloadExtraStaking struct {
 type json_Only_TransactionZetherPayloadExtraStakingReward struct {
 	Reward                            uint64 `json:"reward"  msgpack:"reward"`
 	TemporaryAccountRegistrationIndex uint64 `json:"temporaryAccountRegistrationIndex"  msgpack:"temporaryAccountRegistrationIndex"`
+}
+
+type json_Only_TransactionZetherPayloadExtraUnstake struct {
+	SenderIndex     uint64 `json:"senderIndex"  msgpack:"senderIndex"`
+	SenderSignature []byte `json:"senderSignature"  msgpack:"senderSignature"`
 }
 
 type json_Only_TransactionZetherPayloadExtraAssetCreate struct {
@@ -173,11 +176,6 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 					extra.DelegatedStakingUpdate.DelegatedStakingNewFee,
 				},
 			}
-		case transaction_simple.SCRIPT_UNSTAKE:
-			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraUnstake)
-			simpleJson.Extra = json_Only_TransactionSimpleExtraUnstake{
-				extra.Amount,
-			}
 		case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
 			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity)
 			simpleJson.Extra = json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity{
@@ -202,6 +200,8 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 				if reg != nil {
 					registrations[i] = &json_TransactionDataRegistration{
 						reg.RegistrationType,
+						reg.RegistrationDelegated,
+						reg.RegistrationSpendPublicKey,
 						reg.RegistrationSignature,
 					}
 				}
@@ -234,6 +234,12 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 				extra = &json_Only_TransactionZetherPayloadExtraStakingReward{
 					payloadExtra.Reward,
 					payloadExtra.TemporaryAccountRegistrationIndex,
+				}
+			case transaction_zether_payload_script.SCRIPT_UNSTAKE:
+				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake)
+				extra = &json_Only_TransactionZetherPayloadExtraUnstake{
+					payloadExtra.SenderIndex,
+					payloadExtra.SenderSignature,
 				}
 			case transaction_zether_payload_script.SCRIPT_ASSET_CREATE:
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate)
@@ -375,15 +381,6 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				},
 			}
 
-		case transaction_simple.SCRIPT_UNSTAKE:
-			extraJson := &json_Only_TransactionSimpleExtraUnstake{}
-			if err = json.Unmarshal(data, extraJson); err != nil {
-				return
-			}
-
-			base.Extra = &transaction_simple_extra.TransactionSimpleExtraUnstake{
-				Amount: extraJson.Amount,
-			}
 		case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
 			extraJson := &json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity{}
 			if err = json.Unmarshal(data, extraJson); err != nil {
@@ -466,6 +463,8 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				if reg != nil {
 					payloads[i].Registrations.Registrations[i] = &transaction_zether_registration.TransactionZetherDataRegistration{
 						reg.RegistrationType,
+						reg.RegistrationDelegated,
+						reg.RegistrationSpendPublicKey,
 						reg.RegistrationSignature,
 					}
 				}
@@ -494,7 +493,16 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 					extraJson.Reward,
 					extraJson.TemporaryAccountRegistrationIndex,
 				}
-
+			case transaction_zether_payload_script.SCRIPT_UNSTAKE:
+				extraJson := &json_Only_TransactionZetherPayloadExtraUnstake{}
+				if err := json.Unmarshal(data, extraJson); err != nil {
+					return err
+				}
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake{
+					nil,
+					extraJson.SenderIndex,
+					extraJson.SenderSignature,
+				}
 			case transaction_zether_payload_script.SCRIPT_ASSET_CREATE:
 				extraJson := &json_Only_TransactionZetherPayloadExtraAssetCreate{}
 				if err := json.Unmarshal(data, extraJson); err != nil {

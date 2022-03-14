@@ -1,8 +1,8 @@
 package testnet
 
 import (
+	"bytes"
 	"context"
-	"encoding/base64"
 	"github.com/tevino/abool"
 	"math"
 	"math/rand"
@@ -46,21 +46,6 @@ func (testnet *Testnet) testnetGetZetherRingConfiguration() *txs_builder.ZetherR
 	return zetherRingConfiguration
 }
 
-func (testnet *Testnet) testnetCreateUnstakeTx(blockHeight uint64, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
-
-	addr, err := testnet.wallet.GetWalletAddress(0, true)
-	if err != nil {
-		return
-	}
-
-	if tx, err = testnet.txsBuilder.CreateSimpleTx(&txs_builder.TxBuilderCreateSimpleTx{addr.AddressEncoded, 0, nil, nil, false, &wizard.WizardTxSimpleExtraUnstake{Amount: amount}}, true, true, true, false, ctx, func(string) {}); err != nil {
-		return nil, err
-	}
-
-	gui.GUI.Info("Unstake tx was created: " + base64.StdEncoding.EncodeToString(tx.Bloom.Hash))
-	return
-}
-
 func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
 	txData := &txs_builder.TxBuilderCreateZetherTxData{
@@ -95,12 +80,9 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 	return
 }
 
-func (testnet *Testnet) testnetCreateClaimTx(recipientAddressWalletIndex int, sendAmount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
+func (testnet *Testnet) testnetCreateClaimTx(senderAddr *wallet_address.WalletAddress, recipientAddressWalletIndex int, sendAmount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
-	var addrSender, addrRecipient *wallet_address.WalletAddress
-	if addrSender, err = testnet.wallet.GetWalletAddress(0, true); err != nil {
-		return
-	}
+	var addrRecipient *wallet_address.WalletAddress
 
 	if addrRecipient, err = testnet.wallet.GetWalletAddress(recipientAddressWalletIndex, true); err != nil {
 		return
@@ -141,7 +123,7 @@ func (testnet *Testnet) testnetCreateClaimTx(recipientAddressWalletIndex int, se
 
 	txData := &txs_builder.TxBuilderCreateZetherTxData{
 		Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{{
-			Sender:            addrSender.AddressEncoded,
+			Sender:            senderAddr.AddressEncoded,
 			Amount:            sendAmount,
 			Recipient:         addrRecipient.AddressRegistrationEncoded,
 			Data:              &wizard.WizardTransactionData{nil, false},
@@ -160,7 +142,7 @@ func (testnet *Testnet) testnetCreateClaimTx(recipientAddressWalletIndex int, se
 	return
 }
 
-func (testnet *Testnet) testnetCreateTransfers(senderAddressWalletIndex int, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
+func (testnet *Testnet) testnetCreateTransfers(senderAddr *wallet_address.WalletAddress, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
 	select {
 	case <-ctx.Done():
@@ -168,14 +150,9 @@ func (testnet *Testnet) testnetCreateTransfers(senderAddressWalletIndex int, amo
 	default:
 	}
 
-	senderAddr, err := testnet.wallet.GetWalletAddress(senderAddressWalletIndex, true)
-	if err != nil {
-		return
-	}
-
 	privateKey := addresses.GenerateNewPrivateKey()
 
-	addr, err := privateKey.GenerateAddress(true, nil, 0, nil)
+	addr, err := privateKey.GenerateAddress(false, nil, true, nil, 0, nil)
 	if err != nil {
 		return
 	}
@@ -211,9 +188,9 @@ func (testnet *Testnet) run() {
 
 	creatingTransactions := abool.New()
 
-	for i := uint64(0); i < testnet.nodes; i++ {
+	for i := uint64(0); i < 10; i++ {
 		if uint64(testnet.wallet.GetAddressesCount()) <= i+1 {
-			if _, err := testnet.wallet.AddNewAddress(true, "Testnet wallet"); err != nil {
+			if _, err := testnet.wallet.AddNewAddress(true, "Testnet wallet", false); err != nil {
 				return
 			}
 		}
@@ -249,8 +226,8 @@ func (testnet *Testnet) run() {
 					creatingTransactions.Set()
 					defer creatingTransactions.UnSet()
 
-					var addr *wallet_address.WalletAddress
-					addr, _ = testnet.wallet.GetWalletAddress(0, true)
+					var addr, tempAddr *wallet_address.WalletAddress
+					addr, _ = testnet.wallet.GetFirstDelegatedAddress(true)
 
 					var acc *account.Account
 
@@ -273,6 +250,10 @@ func (testnet *Testnet) run() {
 						return
 					}
 
+					if acc == nil {
+						return
+					}
+
 					var stakingAmount uint64
 					if stakingAmount, err = testnet.wallet.DecryptBalance(addr, acc.Balance.Amount.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, true, ctx, func(string) {}); err != nil {
 						return
@@ -282,7 +263,7 @@ func (testnet *Testnet) run() {
 
 					if stakingAmount > config_coins.ConvertToUnitsUint64Forced(120000) {
 						over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(100000)
-						testnet.testnetCreateTransfers(0, over, ctx)
+						testnet.testnetCreateTransfers(addr, over, ctx)
 
 						stakingAmount = generics.Max(0, config_coins.ConvertToUnitsUint64Forced(100000))
 					}
@@ -292,15 +273,24 @@ func (testnet *Testnet) run() {
 						if stakingAmount > config_coins.ConvertToUnitsUint64Forced(20000) {
 							over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(10000)
 							if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload_script.SCRIPT_TRANSFER) {
-								testnet.testnetCreateClaimTx(1, over/5, ctx)
-								testnet.testnetCreateClaimTx(2, over/5, ctx)
-								testnet.testnetCreateClaimTx(3, over/5, ctx)
-								testnet.testnetCreateClaimTx(4, over/5, ctx)
+								testnet.testnetCreateClaimTx(addr, 1, over/5, ctx)
+								testnet.testnetCreateClaimTx(addr, 2, over/5, ctx)
+								testnet.testnetCreateClaimTx(addr, 3, over/5, ctx)
+								testnet.testnetCreateClaimTx(addr, 4, over/5, ctx)
 							}
 						}
 
 						for i := 2; i < 5; i++ {
-							testnet.testnetCreateTransfers(i, 0, ctx)
+
+							if tempAddr, err = testnet.wallet.GetWalletAddress(i, true); err != nil {
+								return
+							}
+
+							if bytes.Equal(addr.PublicKey, tempAddr.PublicKey) {
+								continue
+							}
+
+							testnet.testnetCreateTransfers(tempAddr, 0, ctx)
 							time.Sleep(time.Millisecond * 5000)
 						}
 					}

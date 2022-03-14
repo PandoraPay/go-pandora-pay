@@ -6,7 +6,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	"pandora-pay/webassembly/webassembly_utils"
-	"strconv"
 	"syscall/js"
 )
 
@@ -93,7 +92,7 @@ func addNewWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		adr, err := app.Wallet.AddNewAddress(false, "")
+		adr, err := app.Wallet.AddNewAddress(false, "", false)
 		if err != nil {
 			return nil, err
 		}
@@ -278,17 +277,12 @@ func deriveDelegatedStakeWalletAddress(this js.Value, args []js.Value) interface
 			return false, err
 		}
 
-		nonce, err := strconv.ParseUint(args[0].String(), 10, 64)
-		if err != nil {
-			return nil, err
-		}
-
 		addr, err := app.Wallet.GetWalletAddressByEncodedAddress(args[1].String(), true)
 		if err != nil {
 			return nil, err
 		}
 
-		delegatedStake, err := addr.DeriveDelegatedStake(uint32(nonce))
+		delegatedStake, err := addr.DeriveDelegatedStake()
 		if err != nil {
 			return nil, err
 		}

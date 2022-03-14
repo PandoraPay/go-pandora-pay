@@ -83,7 +83,7 @@ func (tx *TransactionSimple) Validate() (err error) {
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
+	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
 		if tx.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
@@ -130,8 +130,6 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 
 	tx.TxScript = ScriptType(n)
 	switch tx.TxScript {
-	case SCRIPT_UNSTAKE:
-		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraUnstake{}
 	case SCRIPT_UPDATE_DELEGATE:
 		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{}
 	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:

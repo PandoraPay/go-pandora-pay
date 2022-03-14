@@ -36,6 +36,9 @@ type TxPreviewZetherPayloadExtraStakingReward struct {
 type TxPreviewZetherPayloadExtraStaking struct {
 }
 
+type TxPreviewZetherPayloadExtraUnstake struct {
+}
+
 type TxPreviewZetherPayload struct {
 	PayloadScript transaction_zether_payload_script.PayloadScriptType `json:"payloadScript" msgpack:"payloadScript"`
 	Asset         []byte                                              `json:"asset" msgpack:"asset"`
@@ -70,9 +73,6 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 		case transaction_simple.SCRIPT_UPDATE_DELEGATE: //nothing to be copied
 			txExtra := txBase.Extra.(*transaction_simple_extra.TransactionSimpleExtraUpdateDelegate)
 			baseExtra = &TxPreviewSimpleExtraUpdateDelegate{txExtra.DelegatedStakingClaimAmount}
-		case transaction_simple.SCRIPT_UNSTAKE:
-			txExtra := txBase.Extra.(*transaction_simple_extra.TransactionSimpleExtraUnstake)
-			baseExtra = &TxPreviewSimpleExtraUnstake{txExtra.Amount}
 		}
 
 		var dataPublic []byte
@@ -111,6 +111,8 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 			case transaction_zether_payload_script.SCRIPT_STAKING:
 				//txPayloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStaking)
 				payloadExtra = &TxPreviewZetherPayloadExtraStaking{}
+			case transaction_zether_payload_script.SCRIPT_UNSTAKE:
+				payloadExtra = &TxPreviewZetherPayloadExtraUnstake{}
 			}
 
 			payloads[i] = &TxPreviewZetherPayload{

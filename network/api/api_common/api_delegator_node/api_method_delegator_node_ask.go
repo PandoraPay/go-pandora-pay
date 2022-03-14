@@ -28,7 +28,7 @@ func (api *DelegatorNode) DelegatorAsk(r *http.Request, args *ApiDelegatorNodeAs
 
 	publicKey := args.PublicKey
 
-	address, err := addresses.CreateAddr(publicKey, nil, nil, 0, nil)
+	address, err := addresses.CreateAddr(publicKey, false, nil, nil, nil, 0, nil)
 	if err != nil {
 		return nil
 	}

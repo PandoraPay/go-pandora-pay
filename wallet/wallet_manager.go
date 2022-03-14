@@ -12,6 +12,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/config/globals"
+	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/wallet/wallet_address"
 	"strconv"
@@ -30,22 +31,38 @@ func (wallet *Wallet) GetRandomAddress() *wallet_address.WalletAddress {
 	return wallet.Addresses[index]
 }
 
-func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, []byte, error) {
+func (wallet *Wallet) GetFirstDelegatedAddress(lock bool) (*wallet_address.WalletAddress, error) {
 
-	wallet.Lock.RLock()
-	defer wallet.Lock.RUnlock()
-
-	if len(wallet.Addresses) == 0 || !wallet.Loaded {
-		return "", nil, errors.New("Wallet is empty")
+	if lock {
+		wallet.Lock.RLock()
 	}
 
-	addr := wallet.Addresses[0]
-	delegatedStake, err := addr.DeriveDelegatedStake(0)
+	var found *wallet_address.WalletAddress
+	for _, addr := range wallet.Addresses {
+		if addr.Version == wallet_address.VERSION_DELEGATED_STAKE {
+			found = addr
+			break
+		}
+	}
+
+	if lock {
+		wallet.Lock.RUnlock()
+	}
+	if found != nil {
+		return found, nil
+	}
+
+	return wallet.AddNewAddress(true, "", true)
+}
+
+func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, error) {
+
+	addr, err := wallet.GetFirstDelegatedAddress(true)
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
-	return addr.AddressRegistrationEncoded, delegatedStake.PublicKey, nil
+	return addr.AddressRegistrationEncoded, nil
 }
 
 func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string, lock bool) (*wallet_address.WalletAddress, error) {
@@ -83,7 +100,7 @@ func (wallet *Wallet) ImportPrivateKey(name string, privateKey []byte) (*wallet_
 	}
 
 	priv := &addresses.PrivateKey{Key: privateKey}
-	reg, err := priv.GetRegistration()
+	reg, err := priv.GetRegistration(false, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +133,7 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 		return errors.New("DELEGATES_MAXIMUM exceeded")
 	}
 
-	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, adr.PublicKey, nil, nil, 0, nil)
+	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, adr.PublicKey, adr.SpendPublicKey, nil, nil, 0, nil)
 	if err != nil {
 		return
 	}
@@ -155,12 +172,16 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 		return errors.New("Wallet was not loaded!")
 	}
 
+	if adr.SpendPrivateKey != nil {
+		adr.SpendPublicKey = adr.SpendPrivateKey.GeneratePublicKey()
+	}
+
 	var addr1, addr2 *addresses.Address
-	if addr1, err = adr.PrivateKey.GenerateAddress(false, nil, 0, nil); err != nil {
+	if addr1, err = adr.PrivateKey.GenerateAddress(adr.Version == wallet_address.VERSION_DELEGATED_STAKE, adr.SpendPublicKey, false, nil, 0, nil); err != nil {
 		return
 	}
 
-	if addr2, err = adr.PrivateKey.GenerateAddress(true, nil, 0, nil); err != nil {
+	if addr2, err = adr.PrivateKey.GenerateAddress(adr.Version == wallet_address.VERSION_DELEGATED_STAKE, adr.SpendPublicKey, true, nil, 0, nil); err != nil {
 		return
 	}
 
@@ -223,12 +244,40 @@ func (wallet *Wallet) GeneratePrivateKey(seedIndex uint32, lock bool) ([]byte, e
 	return key.Key, nil
 }
 
-func (wallet *Wallet) AddNewAddress(lock bool, name string) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) GenerateSpendPrivateKey(seedIndex uint32, lock bool) ([]byte, error) {
+	if lock {
+		wallet.Lock.Lock()
+		defer wallet.Lock.Unlock()
+	}
+
+	if !wallet.Loaded {
+		return nil, errors.New("Wallet was not loaded!")
+	}
+
+	masterKey, err := bip32.NewMasterKey(cryptography.SHA3(cryptography.SHA3(wallet.Seed)))
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := masterKey.NewChildKey(seedIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	return key.Key, nil
+}
+
+func (wallet *Wallet) AddNewAddress(lock bool, name string, delegated bool) (*wallet_address.WalletAddress, error) {
 
 	//avoid generating the same address twice
 	if lock {
 		wallet.Lock.Lock()
 		defer wallet.Lock.Unlock()
+	}
+
+	version := wallet_address.VERSION_NORMAL
+	if delegated {
+		version = wallet_address.VERSION_DELEGATED_STAKE
 	}
 
 	if !wallet.Loaded {
@@ -240,8 +289,15 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string) (*wallet_address.Wal
 		return nil, err
 	}
 
-	key := &addresses.PrivateKey{Key: privateKey}
-	reg, err := key.GetRegistration()
+	spendPrivateKey, err := wallet.GenerateSpendPrivateKey(wallet.SeedIndex, false)
+	if err != nil {
+		return nil, err
+	}
+
+	privKey := &addresses.PrivateKey{Key: privateKey}
+	spendPrivKey := &addresses.PrivateKey{Key: spendPrivateKey}
+
+	reg, err := privKey.GetRegistration(delegated, spendPrivKey.GeneratePublicKey())
 	if err != nil {
 		return nil, err
 	}
@@ -251,34 +307,20 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string) (*wallet_address.Wal
 	}
 
 	adr := &wallet_address.WalletAddress{
-		Name:         name,
-		PrivateKey:   key,
-		Registration: reg,
-		SeedIndex:    wallet.SeedIndex,
-		IsMine:       true,
+		Version:         version,
+		Name:            name,
+		PrivateKey:      privKey,
+		Registration:    reg,
+		SpendPrivateKey: spendPrivKey,
+		SeedIndex:       wallet.SeedIndex,
+		IsMine:          true,
 	}
 
 	if err = wallet.AddAddress(adr, false, true, false); err != nil {
 		return nil, err
 	}
 
-	return adr, nil
-}
-
-func (wallet *Wallet) DeriveDelegatedStakeByPublicKey(addressPublicKey []byte, nonce uint64) ([]byte, []byte, error) {
-	wallet.Lock.RLock()
-	defer wallet.Lock.RUnlock()
-
-	addr := wallet.GetWalletAddressByPublicKey(addressPublicKey, false)
-	if addr == nil {
-		return nil, nil, errors.New("Wallet was not found")
-	}
-
-	walletAddressDelegatedStake, err := addr.DeriveDelegatedStake(uint32(nonce))
-	if err != nil {
-		return nil, nil, err
-	}
-	return walletAddressDelegatedStake.PublicKey, walletAddressDelegatedStake.PrivateKey.Key, nil
+	return adr.Clone(), nil
 }
 
 func (wallet *Wallet) RemoveAddressByIndex(index int, lock bool) (bool, error) {

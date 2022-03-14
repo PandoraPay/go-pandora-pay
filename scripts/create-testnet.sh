@@ -79,7 +79,7 @@ if [ $continue == false ]; then
       rm ./_build/devnet_$i/DEV/store/wallet_store.bolt 2>/dev/null
 
       echo "running $i"
-      xterm -e go run main.go --instance="devnet" --instance-id="$i" --network="devnet" --wallet-derive-delegated-stake="0,0,delegated.stake" --exit
+      xterm -e go run main.go --instance="devnet" --instance-id="$i" --network="devnet" --wallet-export-delegated-address="auto,0,delegated.stake" --exit
       mv ./_build/devnet_$i/DEV/delegated.stake ./_build/devnet_0/DEV/$i.stake
       echo "executed"
 

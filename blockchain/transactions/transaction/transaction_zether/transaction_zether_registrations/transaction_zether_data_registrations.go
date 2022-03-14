@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
-	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -24,7 +24,7 @@ func (self *TransactionZetherDataRegistrations) ValidateRegistrations(publickeyl
 	for i, reg := range self.Registrations {
 		if reg != nil {
 			publicKey := publickeylist[i]
-			if crypto.VerifySignaturePoint([]byte("registration"), reg.RegistrationSignature, publicKey) == false {
+			if registrations.VerifyRegistrationPoint(publicKey, reg.RegistrationDelegated, reg.RegistrationSpendPublicKey, reg.RegistrationSignature) == false {
 				return fmt.Errorf("Registration is invalid for %d", i)
 			}
 		}
@@ -45,11 +45,11 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataSt
 
 	for i, reg := range self.Registrations {
 		if reg != nil && reg.RegistrationType == transaction_zether_registration.NOT_REGISTERED {
-			if _, _, err = dataStorage.CreateAccount(asset, publicKeyList[i], true); err != nil {
+			if _, _, err = dataStorage.CreateAccount(asset, publicKeyList[i], reg.RegistrationDelegated, reg.RegistrationSpendPublicKey, true); err != nil {
 				return
 			}
 		} else {
-			if _, _, err = dataStorage.GetOrCreateAccount(asset, publicKeyList[i], true); err != nil {
+			if _, _, err = dataStorage.GetOrCreateAccount(asset, publicKeyList[i], false, nil, true); err != nil {
 				return
 			}
 		}

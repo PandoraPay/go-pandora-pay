@@ -13,12 +13,26 @@ type Registrations struct {
 	*hash_map.HashMap
 }
 
-func (registrations *Registrations) VerifyRegistration(publicKey, registrationSignature []byte) bool {
-	return crypto.VerifySignature([]byte("registration"), registrationSignature, publicKey)
+func VerifyRegistration(publicKey []byte, delegated bool, spendPublicKey, registrationSignature []byte) bool {
+	data := []byte("registration")
+	if delegated {
+		data = append(data, 1)
+		data = append(data, spendPublicKey...)
+	} else {
+		data = append(data, 0)
+	}
+	return crypto.VerifySignature(data, registrationSignature, publicKey)
 }
 
-func (registrations *Registrations) VerifyRegistrationPoint(publicKey *bn256.G1, registrationSignature []byte) bool {
-	return crypto.VerifySignaturePoint([]byte("registration"), registrationSignature, publicKey)
+func VerifyRegistrationPoint(publicKey *bn256.G1, delegated bool, spendPublicKey, registrationSignature []byte) bool {
+	data := []byte("registration")
+	if delegated {
+		data = append(data, 1)
+		data = append(data, spendPublicKey...)
+	} else {
+		data = append(data, 0)
+	}
+	return crypto.VerifySignaturePoint(data, registrationSignature, publicKey)
 }
 
 //WARNING: should NOT be used manually without being called from DataStorage

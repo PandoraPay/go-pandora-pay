@@ -35,31 +35,35 @@ func (wallet *Wallet) ProcessWalletArguments() (err error) {
 		}
 	}
 
-	if str := globals.Arguments["--wallet-derive-delegated-stake"]; str != nil {
+	if str := globals.Arguments["--wallet-export-delegated-address"]; str != nil {
 		v := strings.Split(str.(string), ",")
 
 		var addr *wallet_address.WalletAddress
 
-		var index int
-		if index, err = strconv.Atoi(v[0]); err != nil {
-			return
+		if v[0] == "auto" {
+			if addr, err = wallet.GetFirstDelegatedAddress(true); err != nil {
+				return
+			}
 		} else {
-			if addr, err = wallet.GetWalletAddress(index, true); err != nil {
+			var index int
+			if index, err = strconv.Atoi(v[0]); err != nil {
 				return
+			} else {
+				if addr, err = wallet.GetWalletAddress(index, true); err != nil {
+					return
+				}
+			}
+			if addr == nil {
+				if addr, err = wallet.GetWalletAddressByEncodedAddress(v[0], true); err != nil {
+					return
+				}
 			}
 		}
 
 		if addr == nil {
-			if addr, err = wallet.GetWalletAddressByEncodedAddress(v[0], true); err != nil {
-				return
-			}
+			return errors.New("Address specified by --wallet-export-delegated-address was not found")
 		}
-
-		if addr == nil {
-			return errors.New("Address specified by --wallet-derive-delegated-stake was not found")
-		}
-
-		if err = wallet.deriveDelegatedStakeSpendKey(addr, v[2], false); err != nil {
+		if err = wallet.exportDelegatedAddress(addr, v[2], false); err != nil {
 			return
 		}
 

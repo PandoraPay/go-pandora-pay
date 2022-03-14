@@ -108,7 +108,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 	for t, transfer := range transfers {
 
-		secretPoint := new(crypto.BNRed).SetBytes(transfer.Sender)
+		secretPoint := new(crypto.BNRed).SetBytes(transfer.SenderPrivateKey)
 		sender := crypto.GPoint.ScalarMult(secretPoint).G1()
 
 		var recipientAddr *addresses.Address
@@ -189,6 +189,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 				registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
 					transaction_zether_registration.NOT_REGISTERED,
+					publicKeyIndex.RegistrationDelegated,
+					publicKeyIndex.RegistrationSpendPublicKey,
 					publicKeyIndex.RegistrationSignature,
 				}
 
@@ -218,9 +220,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 	for t, transfer := range transfers {
 
-		publickeylist := publickeylists[t]
-		senderKey := &addresses.PrivateKey{Key: transfer.Sender}
-
 		payloads[t] = &transaction_zether_payload.TransactionZetherPayload{
 			Parity: parities[t],
 		}
@@ -236,35 +235,32 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			case *WizardZetherPayloadExtraStakingReward:
 				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_STAKING_REWARD
 
-				var temporaryAccountRegistrationIndex uint64
-
-				senderPublicKey := senderKey.GeneratePublicKey()
-				for i := range registrations[t] {
-					if bytes.Equal(publickeylist[i].EncodeCompressed(), senderPublicKey) {
-						temporaryAccountRegistrationIndex = uint64(i)
-						break
-					}
-				}
-
 				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward{
 					Reward:                            payloadExtra.Reward,
-					TemporaryAccountRegistrationIndex: temporaryAccountRegistrationIndex,
+					TemporaryAccountRegistrationIndex: uint64(transfer.WitnessIndexes[0]),
 				}
 
 				//space extra is 0
-
 			case *WizardZetherPayloadExtraStaking:
 				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_STAKING
 
 				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraStaking{}
 
 			case *WizardZetherPayloadExtraAssetCreate:
+
 				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_ASSET_CREATE
 				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{
 					Asset: payloadExtra.Asset,
 				}
 
 				spaceExtra += config_coins.ASSET_LENGTH + len(helpers.SerializeToBytes(payloadExtra.Asset))
+
+			case *WizardZetherPayloadExtraUnstake:
+
+				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_UNSTAKE
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake{
+					SenderIndex: uint64(transfer.WitnessIndexes[0]),
+				}
 
 			case *WizardZetherPayloadExtraAssetSupplyIncrease:
 				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE
@@ -304,7 +300,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		publickeylist := publickeylists[t]
 		witness_index := transfers[t].WitnessIndexes
 
-		senderKey := &addresses.PrivateKey{Key: transfer.Sender}
+		senderKey := &addresses.PrivateKey{Key: transfer.SenderPrivateKey}
 		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
 		sender := crypto.GPoint.ScalarMult(secretPoint).G1()
 		sender_secrets[t] = secretPoint.BigInt()
@@ -596,6 +592,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			switch txBase.Payloads[t].PayloadScript {
 			case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
 				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease).AssetSignature = signature
+			case transaction_zether_payload_script.SCRIPT_UNSTAKE:
+				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake).SenderSignature = signature
 			case transaction_zether_payload_script.SCRIPT_STAKING, transaction_zether_payload_script.SCRIPT_STAKING_REWARD: //na
 			}
 
@@ -607,6 +605,18 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 }
 
 func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, rings [][]*bn256.G1, chainHeight uint64, chainKernelHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, fees []*WizardTransactionFee, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+
+	for i, transfer := range transfers {
+		if transfer.SenderUnstakeRequired {
+			if len(transfer.SenderSpendPrivateKey) != cryptography.PrivateKeySize {
+				return nil, fmt.Errorf("SpendPrivateKey is invalid for payload %d", i)
+			}
+			if transfer.PayloadExtra != nil {
+				return nil, fmt.Errorf("Payload %d requires no payload extra as it will be set automatically to Unstake extra", i)
+			}
+			transfer.PayloadExtra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake{}
+		}
+	}
 
 	txBase := &transaction_zether.TransactionZether{
 		ChainHeight:     chainHeight,

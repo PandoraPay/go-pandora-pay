@@ -2,16 +2,10 @@ package txs_builder
 
 import (
 	"context"
-	"encoding/binary"
-	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data_storage/assets/asset"
-	"pandora-pay/blockchain/data_storage/plain_accounts"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/mempool"
-	"pandora-pay/store"
-	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
@@ -30,32 +24,6 @@ func (builder *TxsBuilder) getNonce(nonce uint64, publicKey []byte, accNonce uin
 		return nonce
 	}
 	return builder.mempool.GetNonce(publicKey, accNonce)
-}
-
-func (builder *TxsBuilder) DeriveDelegatedStake(nonce uint64, addressPublicKey []byte) (delegatedStakePublicKey []byte, delegatedStakePrivateKey []byte, err error) {
-
-	var accNonce uint64
-	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
-		plainAccs := plain_accounts.NewPlainAccounts(reader)
-
-		var plainAcc *plain_account.PlainAccount
-		if plainAcc, err = plainAccs.GetPlainAccount(addressPublicKey, chainHeight); err != nil {
-			return
-		}
-		if plainAcc == nil {
-			return errors.New("Plain Account doesn't exist")
-		}
-
-		return
-	}); err != nil {
-		return
-	}
-
-	nonce = builder.getNonce(nonce, addressPublicKey, accNonce)
-
-	return builder.wallet.DeriveDelegatedStakeByPublicKey(addressPublicKey, nonce)
 }
 
 func (builder *TxsBuilder) convertFloatAmounts(amounts []float64, ast *asset.Asset) ([]uint64, error) {

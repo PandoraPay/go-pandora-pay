@@ -6,7 +6,7 @@ package arguments
 const commands = `PANDORA PAY WASM.
 
 Usage:
-  pandorapay [--pprof] [--version] [--network=network] [--debug] [--forging] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-derive-delegated-stake=args] [--instance=prefix] [--instance-id=id] [--exit]
+  pandorapay [--pprof] [--version] [--network=network] [--debug] [--forging] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-delegated-address=args] [--instance=prefix] [--instance-id=id] [--exit]
   pandorapay -h | --help
   pandorapay -v | --version
 
@@ -29,6 +29,6 @@ Options:
   --wallet-encrypt=args                              Encrypt wallet. Argument must be "password,difficulty".
   --wallet-decrypt=password                          Decrypt wallet.
   --wallet-remove-encryption                         Remove wallet encryption.
-  --wallet-derive-delegated-stake=args               Derive and export Delegated Stake. Argument must be "account,nonce,path".
+  --wallet-export-delegated-address=args             Export Delegated Address. Argument must be "account,nonce,path".
   --exit                                             Exit node.
 `
