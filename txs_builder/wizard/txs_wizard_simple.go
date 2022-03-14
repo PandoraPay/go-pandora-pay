@@ -56,13 +56,6 @@ func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTx
 		//if txExtra.DelegatedStakingClaimAmount > 0 {
 		//	spaceExtra += len(helpers.SerializeToBytes(&dpos.DelegatedStakePending{nil, txExtra.DelegatedStakingClaimAmount, chainHeight + 100, dpos.DelegatedStakePendingStake}))
 		//}
-	case *WizardTxSimpleExtraUnstake:
-		//extraFinal = &transaction_simple_extra.TransactionSimpleExtraUnstake{
-		//	Amount: txExtra.Amount,
-		//}
-		//txScript = transaction_simple.SCRIPT_UNSTAKE
-		//
-		//spaceExtra += len(helpers.SerializeToBytes(&dpos.DelegatedStakePending{nil, txExtra.Amount, chainHeight + 100, dpos.DelegatedStakePendingUnstake}))
 	case *WizardTxSimpleExtraUpdateAssetFeeLiquidity:
 		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{
 			Liquidities:     txExtra.Liquidities,

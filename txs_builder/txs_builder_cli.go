@@ -390,39 +390,6 @@ func (builder *TxsBuilder) initCLI() {
 		return
 	}
 
-	cliUnstake := func(cmd string, ctx context.Context) (err error) {
-
-		builder.showWarningIfNotSyncCLI()
-
-		txExtra := &wizard.WizardTxSimpleExtraUnstake{}
-		txData := &TxBuilderCreateSimpleTx{Extra: txExtra}
-		if _, txData.Sender, _, err = builder.wallet.CliSelectAddress("Select Address to Unstake", ctx); err != nil {
-			return
-		}
-
-		txData.Nonce = gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
-
-		if txExtra.Amount, err = builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Amount"); err != nil {
-			return
-		}
-
-		txData.FeeVersion = gui.GUI.OutputReadBool("Subtract the fee from unclaimed? y/n. Leave empty for no", true, false)
-
-		txData.Data = builder.readData()
-		txData.Fee = builder.readFee(config_coins.NATIVE_ASSET_FULL)
-		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
-
-		tx, err := builder.CreateSimpleTx(txData, propagate, true, true, false, ctx, func(status string) {
-			gui.GUI.OutputWrite(status)
-		})
-		if err != nil {
-			return
-		}
-
-		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
-		return
-	}
-
 	cliUpdateAssetFeeLiquidity := func(cmd string, ctx context.Context) (err error) {
 
 		builder.showWarningIfNotSyncCLI()
@@ -481,7 +448,6 @@ func (builder *TxsBuilder) initCLI() {
 	gui.GUI.CommandDefineCallback("Private Asset Create", cliPrivateAssetCreate, true)
 	gui.GUI.CommandDefineCallback("Private Asset Supply Increase", cliPrivateAssetSupplyIncrease, true)
 	gui.GUI.CommandDefineCallback("Update Delegate", cliUpdateDelegate, true)
-	gui.GUI.CommandDefineCallback("Unstake", cliUnstake, true)
 	gui.GUI.CommandDefineCallback("Update Asset Fee Liquidity", cliUpdateAssetFeeLiquidity, true)
 
 }

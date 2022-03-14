@@ -11,11 +11,6 @@ type WizardTxSimpleExtraUpdateDelegate struct {
 	DelegatedStakingUpdate      *transaction_data.TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"  msgpack:"delegatedStakingUpdate"`
 }
 
-type WizardTxSimpleExtraUnstake struct {
-	WizardTxSimpleExtra `json:"-"  msgpack:"-"`
-	Amount              uint64 `json:"amount"  msgpack:"amount"`
-}
-
 type WizardTxSimpleExtraUpdateAssetFeeLiquidity struct {
 	WizardTxSimpleExtra `json:"-"  msgpack:"-"`
 	Liquidities         []*asset_fee_liquidity.AssetFeeLiquidity `json:"liquidities"  msgpack:"liquidities"`

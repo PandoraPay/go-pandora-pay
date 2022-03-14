@@ -119,7 +119,6 @@ func Initialize(startMainCb func()) {
 				}),
 				"transactionSimple": js.ValueOf(map[string]interface{}{
 					"ScriptType": js.ValueOf(map[string]interface{}{
-						"SCRIPT_UNSTAKE":                    js.ValueOf(uint64(transaction_simple.SCRIPT_UNSTAKE)),
 						"SCRIPT_UPDATE_DELEGATE":            js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_DELEGATE)),
 						"SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY": js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY)),
 					}),
@@ -129,6 +128,7 @@ func Initialize(startMainCb func()) {
 						"SCRIPT_TRANSFER":              js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_TRANSFER)),
 						"SCRIPT_STAKING":               js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_STAKING)),
 						"SCRIPT_STAKING_REWARD":        js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_STAKING_REWARD)),
+						"SCRIPT_UNSTAKE":               js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_UNSTAKE)),
 						"SCRIPT_ASSET_CREATE":          js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_ASSET_CREATE)),
 						"SCRIPT_ASSET_SUPPLY_INCREASE": js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE)),
 					}),
