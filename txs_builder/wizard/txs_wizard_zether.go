@@ -258,8 +258,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			case *WizardZetherPayloadExtraUnstake:
 
 				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_UNSTAKE
+
+				privateKeysForSign[t] = &addresses.PrivateKey{Key: transfer.SenderSpendPrivateKey}
 				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake{
-					SenderIndex: uint64(transfer.WitnessIndexes[0]),
+					SenderSpendPublicKey: privateKeysForSign[t].GeneratePublicKeyPoint(),
 				}
 
 			case *WizardZetherPayloadExtraAssetSupplyIncrease:
@@ -593,8 +595,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
 				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease).AssetSignature = signature
 			case transaction_zether_payload_script.SCRIPT_UNSTAKE:
-				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake).SenderSignature = signature
-			case transaction_zether_payload_script.SCRIPT_STAKING, transaction_zether_payload_script.SCRIPT_STAKING_REWARD: //na
+				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake).SenderSpendSignature = signature
 			}
 
 		}
@@ -614,7 +615,7 @@ func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[strin
 			if transfer.PayloadExtra != nil {
 				return nil, fmt.Errorf("Payload %d requires no payload extra as it will be set automatically to Unstake extra", i)
 			}
-			transfer.PayloadExtra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake{}
+			transfer.PayloadExtra = &WizardZetherPayloadExtraUnstake{}
 		}
 	}
 

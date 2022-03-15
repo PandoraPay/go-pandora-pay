@@ -1,7 +1,6 @@
 package data_storage
 
 import (
-	"bytes"
 	"errors"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -59,14 +58,8 @@ func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, de
 		return accs, acc, nil
 	}
 
-	if acc, err = accs.CreateNewAccount(publicKey); err != nil {
+	if acc, err = accs.CreateNewAccount(publicKey, delegated, spendPublicKey); err != nil {
 		return nil, nil, err
-	}
-
-	if bytes.Equal(assetId, config_coins.NATIVE_ASSET_FULL) && delegated {
-		if err = acc.DelegatedStake.CreateDelegatedStake(spendPublicKey); err != nil {
-			return nil, nil, err
-		}
 	}
 
 	return accs, acc, nil
@@ -98,15 +91,9 @@ func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte, delegat
 		return nil, nil, errors.New("Account already exists")
 	}
 
-	acc, err := accs.CreateNewAccount(publicKey)
+	acc, err := accs.CreateNewAccount(publicKey, delegated, spendPublicKey)
 	if err != nil {
 		return nil, nil, err
-	}
-
-	if bytes.Equal(assetId, config_coins.NATIVE_ASSET_FULL) && delegated {
-		if err = acc.DelegatedStake.CreateDelegatedStake(spendPublicKey); err != nil {
-			return nil, nil, err
-		}
 	}
 
 	return accs, acc, nil

@@ -122,7 +122,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 
 			var acc *account.Account
 			if accData := txData.Accs[base64.StdEncoding.EncodeToString(ast)][base64.StdEncoding.EncodeToString(addr.PublicKey)]; len(accData) > 0 {
-				if acc, err = account.NewAccount(addr.PublicKey, 0, ast); err != nil {
+				if acc, err = account.NewAccount(addr.PublicKey, 0, ast, false, nil); err != nil {
 					return
 				}
 				if err = acc.Deserialize(helpers.NewBufferReader(accData)); err != nil {

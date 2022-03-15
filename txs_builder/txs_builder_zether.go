@@ -12,6 +12,7 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/accounts/account/dpos"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -104,7 +105,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 				if addr, acc, err = builder.getRandomAccount(accs); err != nil {
 					return err
 				}
-				if acc.DelegatedStake.HasDelegatedStake() != requireDelegatedAccounts {
+				if (requireDelegatedAccounts && !acc.DelegatedStake.HasDelegatedStake()) || (!requireDelegatedAccounts && acc.DelegatedStake.HasDelegatedStake() && acc.DelegatedStake.Version == dpos.STAKING_SPEND_REQUIRED) {
 					continue
 				}
 				if alreadyUsed[string(addr.PublicKey)] {
@@ -170,7 +171,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 				if addr, acc, err = builder.getRandomAccount(accs); err != nil {
 					return
 				}
-				if acc.DelegatedStake.HasDelegatedStake() != requireDelegatedAccounts {
+				if (requireDelegatedAccounts && !acc.DelegatedStake.HasDelegatedStake()) || (!requireDelegatedAccounts && acc.DelegatedStake.HasDelegatedStake() && acc.DelegatedStake.Version == dpos.STAKING_SPEND_REQUIRED) {
 					continue
 				}
 			}
@@ -403,8 +404,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 					if payload.Sender == address { //sender
 						sendersEncryptedBalances[t] = newBalance.Serialize()
 
-						if acc != nil && acc.DelegatedStake.HasDelegatedStake() && len(acc.DelegatedStake.SpendPublicKey) > 0 && payload.Extra == nil {
-
+						if acc != nil && acc.DelegatedStake.HasDelegatedStake() && acc.DelegatedStake.Version == dpos.STAKING_SPEND_REQUIRED && payload.Extra == nil {
 							transfers[t].SenderUnstakeRequired = true
 							if sendersWalletAddresses[t].SpendPrivateKey == nil {
 								return errors.New("Spend Private Key is missing")

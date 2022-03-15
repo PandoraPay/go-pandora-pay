@@ -14,6 +14,12 @@ type PrivateKey struct {
 	Key []byte `json:"key" msgpack:"key"` //32 byte
 }
 
+func (pk *PrivateKey) GeneratePublicKeyPoint() *bn256.G1 {
+	priv := new(crypto.BNRed).SetBytes(pk.Key)
+	publicKey := crypto.GPoint.ScalarMult(priv)
+	return publicKey.G1()
+}
+
 func (pk *PrivateKey) GeneratePublicKey() []byte {
 	priv := new(crypto.BNRed).SetBytes(pk.Key)
 	publicKey := crypto.GPoint.ScalarMult(priv)

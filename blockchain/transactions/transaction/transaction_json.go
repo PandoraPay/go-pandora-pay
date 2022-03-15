@@ -87,8 +87,8 @@ type json_Only_TransactionZetherPayloadExtraStakingReward struct {
 }
 
 type json_Only_TransactionZetherPayloadExtraUnstake struct {
-	SenderIndex     uint64 `json:"senderIndex"  msgpack:"senderIndex"`
-	SenderSignature []byte `json:"senderSignature"  msgpack:"senderSignature"`
+	SenderSpendPublicKey []byte `json:"senderSpendPublicKey"  msgpack:"senderSpendPublicKey"`
+	SenderSpendSignature []byte `json:"senderSpendSignature"  msgpack:"senderSpendSignature"`
 }
 
 type json_Only_TransactionZetherPayloadExtraAssetCreate struct {
@@ -238,8 +238,8 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 			case transaction_zether_payload_script.SCRIPT_UNSTAKE:
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake)
 				extra = &json_Only_TransactionZetherPayloadExtraUnstake{
-					payloadExtra.SenderIndex,
-					payloadExtra.SenderSignature,
+					payloadExtra.SenderSpendPublicKey.EncodeCompressed(),
+					payloadExtra.SenderSpendSignature,
 				}
 			case transaction_zether_payload_script.SCRIPT_ASSET_CREATE:
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate)
@@ -498,10 +498,16 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				if err := json.Unmarshal(data, extraJson); err != nil {
 					return err
 				}
+
+				senderSpendPublicKey := new(bn256.G1)
+				if err = senderSpendPublicKey.DecodeCompressed(extraJson.SenderSpendPublicKey); err != nil {
+					return
+				}
+
 				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake{
 					nil,
-					extraJson.SenderIndex,
-					extraJson.SenderSignature,
+					senderSpendPublicKey,
+					extraJson.SenderSpendSignature,
 				}
 			case transaction_zether_payload_script.SCRIPT_ASSET_CREATE:
 				extraJson := &json_Only_TransactionZetherPayloadExtraAssetCreate{}

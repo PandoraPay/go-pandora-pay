@@ -16,8 +16,8 @@ type Accounts struct {
 }
 
 //WARNING: should NOT be used manually without being called from DataStorage
-func (accounts *Accounts) CreateNewAccount(publicKey []byte) (*account.Account, error) {
-	acc, err := account.NewAccount(publicKey, 0, accounts.Asset) //will be set by update
+func (accounts *Accounts) CreateNewAccount(publicKey []byte, delegated bool, spendPublicKey []byte) (*account.Account, error) {
+	acc, err := account.NewAccount(publicKey, 0, accounts.Asset, delegated, spendPublicKey) //will be set by update
 	if err != nil {
 		return nil, err
 	}

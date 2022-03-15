@@ -88,7 +88,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					var acc *account.Account
 					if data.Data != nil {
 
-						if acc, err = account.NewAccount(data.Key, 0, nil); err != nil {
+						if acc, err = account.NewAccount(data.Key, 0, nil, false, nil); err != nil {
 							continue
 						}
 						if err = acc.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {

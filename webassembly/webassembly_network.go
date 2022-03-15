@@ -142,7 +142,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 
 			result.Accs = make([]*account.Account, len(result.AccsSerialized))
 			for i := range result.AccsSerialized {
-				if result.Accs[i], err = account.NewAccount(publicKey, result.AccsExtra[i].Index, result.AccsExtra[i].Asset); err != nil {
+				if result.Accs[i], err = account.NewAccount(publicKey, result.AccsExtra[i].Index, result.AccsExtra[i].Asset, false, nil); err != nil {
 					return nil, err
 				}
 				if err = result.Accs[i].Deserialize(helpers.NewBufferReader(result.AccsSerialized[i])); err != nil {

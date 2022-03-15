@@ -81,6 +81,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 		if _, err = dataStorage.CreateRegistration(addr.PublicKey); err != nil {
 			return
 		}
+
 		var accs *accounts.Accounts
 		var acc *account.Account
 

@@ -84,7 +84,7 @@ func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 	return
 }
 
-func NewAccount(publicKey []byte, index uint64, asset []byte) (*Account, error) {
+func NewAccount(publicKey []byte, index uint64, asset []byte, delegated bool, spendPublicKey []byte) (*Account, error) {
 
 	balance, err := account_balance_homomorphic.NewBalanceHomomorphicEmptyBalance(publicKey)
 	if err != nil {
@@ -99,8 +99,18 @@ func NewAccount(publicKey []byte, index uint64, asset []byte) (*Account, error) 
 		Balance:   balance,
 	}
 
-	if bytes.Equal(asset, config_coins.NATIVE_ASSET_FULL) {
+	isNativeToken := bytes.Equal(asset, config_coins.NATIVE_ASSET_FULL)
+	if isNativeToken {
 		acc.DelegatedStake = &dpos.DelegatedStake{Version: dpos.NO_STAKING}
+		if delegated {
+			if err = acc.DelegatedStake.CreateDelegatedStake(spendPublicKey); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if (!isNativeToken || !delegated) && len(spendPublicKey) > 0 {
+		return nil, errors.New("Spend Public Key should have been empty")
 	}
 
 	return acc, nil
