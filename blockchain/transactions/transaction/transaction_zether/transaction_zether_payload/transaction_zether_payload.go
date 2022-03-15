@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
@@ -93,6 +94,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 
 	var accs *accounts.Accounts
 	var acc *account.Account
+	var reg *registration.Registration
 	var balance *crypto.ElGamal
 
 	if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
@@ -120,12 +122,15 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 	}
 
 	for i, publicKey := range publicKeyList {
+
 		if acc, err = accs.GetAccount(publicKey); err != nil {
 			return
 		}
-
 		if acc == nil {
 			return errors.New("Private Account doesn't exist")
+		}
+		if reg, err = dataStorage.Regs.GetRegistration(publicKey); err != nil {
+			return
 		}
 
 		balance = acc.GetBalance()
@@ -135,7 +140,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		//verify sender
 		if (i%2 == 0) == payload.Parity { //sender
 
-			if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING && !acc.DelegatedStake.HasDelegatedStake() {
+			if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING && !reg.Stakable {
 				return errors.New("Senders used in Staking requires all to be delegated")
 			}
 
@@ -166,7 +171,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 					update = true
 				}
 			} else { //recipient
-				if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && acc.DelegatedStake.HasDelegatedStake() {
+				if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && reg.Stakable {
 					if err = dataStorage.AddStakePendingStake(publicKey, echanges, blockHeight+config_stake.GetPendingStakeWindow(blockHeight)); err != nil {
 						return
 					}

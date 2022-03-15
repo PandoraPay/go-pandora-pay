@@ -39,7 +39,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) AfterInclu
 		return errors.New("Asset SupplyPublicKey is not matching")
 	}
 
-	accs, acc, err := dataStorage.CreateAccount(payloadExtra.AssetId, payloadExtra.ReceiverPublicKey, false, nil, true)
+	accs, acc, err := dataStorage.CreateAccount(payloadExtra.AssetId, payloadExtra.ReceiverPublicKey, true)
 	if err != nil {
 		return
 	}

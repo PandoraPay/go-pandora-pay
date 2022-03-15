@@ -14,6 +14,7 @@ type WalletAddress struct {
 	SpendPrivateKey            *addresses.PrivateKey `json:"spendPrivateKey" msgpack:"spendPrivateKey"`
 	Registration               []byte                `json:"registration" msgpack:"registration"`
 	PublicKey                  []byte                `json:"publicKey" msgpack:"publicKey"`
+	Stakable                   bool                  `json:"stakable" msgpack:"stakable"`
 	SpendPublicKey             []byte                `json:"spendPublicKey" msgpack:"spendPublicKey"`
 	AddressEncoded             string                `json:"addressEncoded" msgpack:"addressEncoded"`
 	AddressRegistrationEncoded string                `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
@@ -75,6 +76,7 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		addr.SpendPrivateKey,
 		addr.Registration,
 		addr.PublicKey,
+		addr.Stakable,
 		addr.SpendPublicKey,
 		addr.AddressEncoded,
 		addr.AddressRegistrationEncoded,

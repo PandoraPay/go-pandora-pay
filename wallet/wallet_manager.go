@@ -39,7 +39,7 @@ func (wallet *Wallet) GetFirstDelegatedAddress(lock bool) (*wallet_address.Walle
 
 	var found *wallet_address.WalletAddress
 	for _, addr := range wallet.Addresses {
-		if addr.Version == wallet_address.VERSION_DELEGATED_STAKE {
+		if addr.Stakable {
 			found = addr
 			break
 		}
@@ -133,7 +133,7 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 		return errors.New("DELEGATES_MAXIMUM exceeded")
 	}
 
-	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, adr.PublicKey, adr.SpendPublicKey, nil, nil, 0, nil)
+	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, adr.PublicKey, adr.Stakable, adr.SpendPublicKey, nil, nil, 0, nil)
 	if err != nil {
 		return
 	}
@@ -147,7 +147,7 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 	wallet.Addresses = append(wallet.Addresses, adr)
 	wallet.addressesMap[string(adr.PublicKey)] = adr
 
-	wallet.forging.Wallet.AddWallet(adr.PrivateKey.Key, adr.PublicKey, false, nil, 0)
+	wallet.forging.Wallet.AddWallet(adr.PrivateKey.Key, adr.PublicKey, false, nil, nil, 0)
 
 	wallet.Count += 1
 
@@ -177,11 +177,11 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 	}
 
 	var addr1, addr2 *addresses.Address
-	if addr1, err = adr.PrivateKey.GenerateAddress(adr.Version == wallet_address.VERSION_DELEGATED_STAKE, adr.SpendPublicKey, false, nil, 0, nil); err != nil {
+	if addr1, err = adr.PrivateKey.GenerateAddress(adr.Stakable, adr.SpendPublicKey, false, nil, 0, nil); err != nil {
 		return
 	}
 
-	if addr2, err = adr.PrivateKey.GenerateAddress(adr.Version == wallet_address.VERSION_DELEGATED_STAKE, adr.SpendPublicKey, true, nil, 0, nil); err != nil {
+	if addr2, err = adr.PrivateKey.GenerateAddress(adr.Stakable, adr.SpendPublicKey, true, nil, 0, nil); err != nil {
 		return
 	}
 
@@ -208,7 +208,7 @@ func (wallet *Wallet) AddAddress(adr *wallet_address.WalletAddress, lock bool, i
 		wallet.CountImportedIndex += 1
 	}
 
-	wallet.forging.Wallet.AddWallet(adr.PrivateKey.Key, adr.PublicKey, false, nil, 0)
+	wallet.forging.Wallet.AddWallet(adr.PrivateKey.Key, adr.PublicKey, false, nil, nil, 0)
 
 	wallet.updateWallet()
 
@@ -267,7 +267,7 @@ func (wallet *Wallet) GenerateSpendPrivateKey(seedIndex uint32, lock bool) ([]by
 	return key.Key, nil
 }
 
-func (wallet *Wallet) AddNewAddress(lock bool, name string, delegated bool) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) AddNewAddress(lock bool, name string, stakable bool) (*wallet_address.WalletAddress, error) {
 
 	//avoid generating the same address twice
 	if lock {
@@ -276,9 +276,6 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string, delegated bool) (*wa
 	}
 
 	version := wallet_address.VERSION_NORMAL
-	if delegated {
-		version = wallet_address.VERSION_DELEGATED_STAKE
-	}
 
 	if !wallet.Loaded {
 		return nil, errors.New("Wallet was not loaded!")
@@ -289,15 +286,20 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string, delegated bool) (*wa
 		return nil, err
 	}
 
-	spendPrivateKey, err := wallet.GenerateSpendPrivateKey(wallet.SeedIndex, false)
-	if err != nil {
-		return nil, err
+	var spendPrivKey *addresses.PrivateKey
+	var spendPublicKey []byte
+	if stakable {
+		spendPrivateKey, err := wallet.GenerateSpendPrivateKey(wallet.SeedIndex, false)
+		if err != nil {
+			return nil, err
+		}
+		spendPrivKey = &addresses.PrivateKey{Key: spendPrivateKey}
+		spendPublicKey = spendPrivKey.GeneratePublicKey()
 	}
 
 	privKey := &addresses.PrivateKey{Key: privateKey}
-	spendPrivKey := &addresses.PrivateKey{Key: spendPrivateKey}
 
-	reg, err := privKey.GetRegistration(delegated, spendPrivKey.GeneratePublicKey())
+	reg, err := privKey.GetRegistration(stakable, spendPublicKey)
 	if err != nil {
 		return nil, err
 	}
@@ -313,6 +315,8 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string, delegated bool) (*wa
 		Registration:    reg,
 		SpendPrivateKey: spendPrivKey,
 		SeedIndex:       wallet.SeedIndex,
+		SpendPublicKey:  spendPublicKey,
+		Stakable:        stakable,
 		IsMine:          true,
 	}
 
@@ -348,7 +352,7 @@ func (wallet *Wallet) RemoveAddressByIndex(index int, lock bool) (bool, error) {
 
 	wallet.Count -= 1
 
-	wallet.forging.Wallet.RemoveWallet(removing.PublicKey, false, nil, 0)
+	wallet.forging.Wallet.RemoveWallet(removing.PublicKey, false, nil, nil, 0)
 
 	wallet.updateWallet()
 	if err := wallet.saveWallet(index, index+1, wallet.Count, false); err != nil {

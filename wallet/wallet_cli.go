@@ -11,7 +11,6 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/blockchain/data_storage/accounts/account/dpos"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
@@ -27,7 +26,7 @@ import (
 
 func (wallet *Wallet) exportDelegatedAddress(addr *wallet_address.WalletAddress, path string, print bool) (err error) {
 
-	if addr.Version != wallet_address.VERSION_DELEGATED_STAKE {
+	if !addr.Stakable {
 		return errors.New("Address is not VERSION_DELEGATED_STAKE")
 	}
 
@@ -57,10 +56,9 @@ func (wallet *Wallet) exportDelegatedAddress(addr *wallet_address.WalletAddress,
 func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err error) {
 
 	type AddressAsset struct {
-		balance        *crypto.ElGamal
-		assetId        []byte
-		ast            *asset.Asset
-		delegatedStake *dpos.DelegatedStake
+		balance *crypto.ElGamal
+		assetId []byte
+		ast     *asset.Asset
 	}
 	type Address struct {
 		isReg         bool
@@ -129,7 +127,6 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 						acc.Balance.Amount,
 						assetId,
 						ast,
-						acc.DelegatedStake,
 					})
 
 				}

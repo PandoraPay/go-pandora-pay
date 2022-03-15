@@ -26,36 +26,31 @@ func (pk *PrivateKey) GeneratePublicKey() []byte {
 	return publicKey.EncodeCompressed()
 }
 
-func (pk *PrivateKey) GenerateAddress(delegated bool, spendPublicKey []byte, registration bool, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+func (pk *PrivateKey) GenerateAddress(stakable bool, spendPublicKey []byte, registration bool, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	publicKey := pk.GeneratePublicKey()
 
-	var version AddressVersion
-	if delegated {
-		version = SIMPLE_DELEGATED
-	} else {
-		version = SIMPLE_PUBLIC_KEY
-	}
+	version := SIMPLE_PUBLIC_KEY
 
 	var reg []byte
 	var err error
 
 	if registration {
-		if reg, err = pk.GetRegistration(delegated, spendPublicKey); err != nil {
+		if reg, err = pk.GetRegistration(stakable, spendPublicKey); err != nil {
 			return nil, err
 		}
 	}
 
-	return NewAddr(config.NETWORK_SELECTED, version, publicKey, spendPublicKey, reg, paymentID, paymentAmount, paymentAsset)
+	return NewAddr(config.NETWORK_SELECTED, version, publicKey, stakable, spendPublicKey, reg, paymentID, paymentAmount, paymentAsset)
 }
 
-func (pk *PrivateKey) GetRegistration(delegated bool, spendPublicKey []byte) ([]byte, error) {
+func (pk *PrivateKey) GetRegistration(stakable bool, spendPublicKey []byte) ([]byte, error) {
 	data := []byte("registration")
-	if delegated {
+	if stakable {
 		data = append(data, 1)
-		data = append(data, spendPublicKey...)
 	} else {
 		data = append(data, 0)
 	}
+	data = append(data, spendPublicKey...)
 	return pk.Sign(data)
 }
 

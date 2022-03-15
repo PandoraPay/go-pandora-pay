@@ -10,6 +10,7 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/cryptography/crypto"
@@ -35,13 +36,14 @@ type ForgingWallet struct {
 }
 
 type ForgingWalletAddressUpdate struct {
-	chainHeight uint64
-	privateKey  []byte
-	publicKey   []byte
-	account     *account.Account
+	chainHeight  uint64
+	privateKey   []byte
+	publicKey    []byte
+	account      *account.Account
+	registration *registration.Registration
 }
 
-func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasAccount bool, account *account.Account, chainHeight uint64) (err error) {
+func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasAccount bool, account *account.Account, reg *registration.Registration, chainHeight uint64) (err error) {
 
 	if !config_forging.FORGING_ENABLED {
 		return
@@ -63,6 +65,9 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasAccoun
 			if account, err = accs.GetAccount(pubKey); err != nil {
 				return
 			}
+			if reg, err = dataStorage.Regs.GetRegistration(pubKey); err != nil {
+				return
+			}
 
 			return
 		}); err != nil {
@@ -76,12 +81,13 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasAccoun
 		delegatedPriv,
 		pubKey,
 		account,
+		reg,
 	}
 	return
 }
 
-func (w *ForgingWallet) RemoveWallet(DelegatedStakePublicKey []byte, hasAccount bool, acc *account.Account, chainHeight uint64) { //20 byte
-	w.AddWallet(nil, DelegatedStakePublicKey, hasAccount, acc, chainHeight)
+func (w *ForgingWallet) RemoveWallet(DelegatedStakePublicKey []byte, hasAccount bool, acc *account.Account, reg *registration.Registration, chainHeight uint64) { //20 byte
+	w.AddWallet(nil, DelegatedStakePublicKey, hasAccount, acc, reg, chainHeight)
 }
 
 func (w *ForgingWallet) runDecryptBalanceAndNotifyWorkers() {
@@ -190,9 +196,12 @@ func (w *ForgingWallet) runProcessUpdates() {
 					if update.account == nil {
 						return errors.New("Account was not found")
 					}
+					if update.registration == nil {
+						return errors.New("Registration was not found")
+					}
 
-					if !update.account.DelegatedStake.HasDelegatedStake() {
-						return errors.New("Delegated stake is not matching")
+					if !update.registration.Stakable {
+						return errors.New("It is no longer stakable")
 					}
 
 					address := w.addressesMap[key]
@@ -230,27 +239,28 @@ func (w *ForgingWallet) runProcessUpdates() {
 
 			chainHash = update.BlockHash
 
+			for k, v := range update.Registrations.Committed {
+				if w.addressesMap[k] != nil {
+					if v.Stored == "update" {
+						reg := v.Element.(*registration.Registration)
+						if !reg.Stakable {
+							w.deleteAccount(k)
+						}
+					} else if v.Stored == "delete" {
+						w.deleteAccount(k)
+					}
+				}
+			}
+
 			for k, v := range accs.HashMap.Committed {
 				if w.addressesMap[k] != nil {
 					if v.Stored == "update" {
 
 						acc := v.Element.(*account.Account)
 
-						if err = func() (err error) {
-
-							if !acc.DelegatedStake.HasDelegatedStake() {
-								return errors.New("has no longer delegated stake")
-							}
-
-							w.addressesMap[k].account = acc
-							w.addressesMap[k].chainHash = chainHash
-							w.updateAccountToForgingWorkers(w.addressesMap[k])
-
-							return
-						}(); err != nil {
-							w.deleteAccount(k)
-							gui.GUI.Error(err)
-						}
+						w.addressesMap[k].account = acc
+						w.addressesMap[k].chainHash = chainHash
+						w.updateAccountToForgingWorkers(w.addressesMap[k])
 
 					} else if v.Stored == "delete" {
 						w.deleteAccount(k)

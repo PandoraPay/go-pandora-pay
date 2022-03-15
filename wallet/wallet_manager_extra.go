@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/tyler-smith/go-bip39"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
@@ -61,11 +62,11 @@ func (wallet *Wallet) updateWallet() {
 }
 
 //it must be locked and use original walletAddresses, not cloned ones
-func (wallet *Wallet) refreshWalletAccount(acc *account.Account, chainHeight uint64, addr *wallet_address.WalletAddress) (err error) {
+func (wallet *Wallet) refreshWalletAccount(acc *account.Account, reg *registration.Registration, chainHeight uint64, addr *wallet_address.WalletAddress) (err error) {
 
 	deleted := false
 
-	if acc == nil || !acc.DelegatedStake.HasDelegatedStake() {
+	if acc == nil || reg == nil || !reg.Stakable {
 		deleted = true
 	} else {
 
@@ -84,7 +85,7 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, chainHeight uin
 
 	if deleted {
 
-		wallet.forging.Wallet.RemoveWallet(addr.PublicKey, true, acc, chainHeight)
+		wallet.forging.Wallet.RemoveWallet(addr.PublicKey, true, acc, reg, chainHeight)
 
 		if addr.PrivateKey == nil {
 			_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, true)
@@ -92,7 +93,7 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, chainHeight uin
 		}
 
 	} else {
-		wallet.forging.Wallet.AddWallet(addr.PrivateKey.Key, addr.PublicKey, true, acc, chainHeight)
+		wallet.forging.Wallet.AddWallet(addr.PrivateKey.Key, addr.PublicKey, true, acc, reg, chainHeight)
 	}
 
 	return

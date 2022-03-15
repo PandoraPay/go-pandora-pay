@@ -5,6 +5,7 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/gui"
@@ -25,6 +26,7 @@ func (wallet *Wallet) processRefreshWallets() {
 			if config_forging.FORGING_ENABLED {
 
 				accsList := []*account.Account{}
+				regsList := []*registration.Registration{}
 				addressesList := []*wallet_address.WalletAddress{}
 				var chainHeight uint64
 
@@ -48,11 +50,17 @@ func (wallet *Wallet) processRefreshWallets() {
 						visited[string(addr.PublicKey)] = true
 
 						var acc *account.Account
+						var reg *registration.Registration
+
 						if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
+							return
+						}
+						if reg, err = dataStorage.Regs.GetRegistration(addr.PublicKey); err != nil {
 							return
 						}
 
 						accsList = append(accsList, acc)
+						regsList = append(regsList, reg)
 						addressesList = append(addressesList, addr)
 					}
 
@@ -62,7 +70,7 @@ func (wallet *Wallet) processRefreshWallets() {
 				}
 
 				for i, acc := range accsList {
-					if err = wallet.refreshWalletAccount(acc, chainHeight, wallet.GetWalletAddressByPublicKey(addressesList[i].PublicKey, true)); err != nil {
+					if err = wallet.refreshWalletAccount(acc, regsList[i], chainHeight, wallet.GetWalletAddressByPublicKey(addressesList[i].PublicKey, true)); err != nil {
 						return
 					}
 				}

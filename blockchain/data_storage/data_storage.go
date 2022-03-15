@@ -58,14 +58,14 @@ func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, de
 		return accs, acc, nil
 	}
 
-	if acc, err = accs.CreateNewAccount(publicKey, delegated, spendPublicKey); err != nil {
+	if acc, err = accs.CreateNewAccount(publicKey); err != nil {
 		return nil, nil, err
 	}
 
 	return accs, acc, nil
 }
 
-func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte, delegated bool, spendPublicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
+func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
 
 	if validateRegistration {
 		exists, err := dataStorage.Regs.Exists(string(publicKey))
@@ -91,7 +91,7 @@ func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte, delegat
 		return nil, nil, errors.New("Account already exists")
 	}
 
-	acc, err := accs.CreateNewAccount(publicKey, delegated, spendPublicKey)
+	acc, err := accs.CreateNewAccount(publicKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -125,7 +125,7 @@ func (dataStorage *DataStorage) CreatePlainAccount(publicKey []byte, validateReg
 	return dataStorage.PlainAccs.CreateNewPlainAccount(publicKey)
 }
 
-func (dataStorage *DataStorage) CreateRegistration(publicKey []byte) (*registration.Registration, error) {
+func (dataStorage *DataStorage) CreateRegistration(publicKey []byte, stakable bool, spendPublicKey []byte) (*registration.Registration, error) {
 
 	exists, err := dataStorage.PlainAccs.Exists(string(publicKey))
 	if err != nil {
@@ -135,27 +135,22 @@ func (dataStorage *DataStorage) CreateRegistration(publicKey []byte) (*registrat
 		return nil, errors.New("Can't register as a plain Account already exists")
 	}
 
-	return dataStorage.Regs.CreateNewRegistration(publicKey)
+	return dataStorage.Regs.CreateNewRegistration(publicKey, stakable, spendPublicKey)
 }
 
 func (dataStorage *DataStorage) AddStakePendingStake(publicKey []byte, amount *crypto.ElGamal, blockHeight uint64) error {
 
-	accs, err := dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL)
+	reg, err := dataStorage.Regs.GetRegistration(publicKey)
 	if err != nil {
 		return err
 	}
 
-	acc, err := accs.GetAccount(publicKey)
-	if err != nil {
-		return err
+	if reg == nil {
+		return errors.New("Account was not registered")
 	}
 
-	if acc == nil {
-		return errors.New("Account doesn't exist")
-	}
-
-	if !acc.DelegatedStake.HasDelegatedStake() {
-		return errors.New("acc.HasDelegatedStake is false")
+	if !reg.Stakable {
+		return errors.New("reg.Stakable is false")
 	}
 
 	delegatedPendingStakes, err := dataStorage.DelegatedPendingStakes.GetDelegatedPendingStakes(blockHeight)

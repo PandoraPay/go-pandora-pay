@@ -12,8 +12,8 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/blockchain/data_storage/accounts/account/dpos"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
+	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/config_coins"
@@ -29,17 +29,21 @@ import (
 	"pandora-pay/wallet/wallet_address"
 )
 
-func (builder *TxsBuilder) getRandomAccount(accs *accounts.Accounts) (addr *addresses.Address, acc *account.Account, err error) {
+func (builder *TxsBuilder) getRandomAccount(accs *accounts.Accounts, regs *registrations.Registrations) (addr *addresses.Address, acc *account.Account, reg *registration.Registration, err error) {
 
 	if acc, err = accs.GetRandomAccount(); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	if acc == nil {
-		return nil, nil, errors.New("Error getting any random account")
+		return nil, nil, nil, errors.New("Error getting any random account")
+	}
+
+	if reg, err = regs.GetRegistration(acc.PublicKey); err != nil {
+		return nil, nil, nil, err
 	}
 
 	if addr, err = addresses.CreateAddr(acc.PublicKey, false, nil, nil, nil, 0, nil); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	return
@@ -86,7 +90,8 @@ func (builder *TxsBuilder) presetZetherRing(ringConfiguration *ZetherRingConfigu
 func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []byte, ringConfiguration *ZetherRingConfiguration, dataStorage *data_storage.DataStorage) ([]string, []string, error) {
 
 	var addr *addresses.Address
-	var acc *account.Account
+	var reg *registration.Registration
+
 	var err error
 
 	var accs *accounts.Accounts
@@ -102,10 +107,10 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 				return errors.New("Accounts have only member. Impossible to get random recipient")
 			}
 			for {
-				if addr, acc, err = builder.getRandomAccount(accs); err != nil {
+				if addr, _, reg, err = builder.getRandomAccount(accs, dataStorage.Regs); err != nil {
 					return err
 				}
-				if (requireDelegatedAccounts && !acc.DelegatedStake.HasDelegatedStake()) || (!requireDelegatedAccounts && acc.DelegatedStake.HasDelegatedStake() && acc.DelegatedStake.Version == dpos.STAKING_SPEND_REQUIRED) {
+				if (requireDelegatedAccounts && !reg.Stakable) || (!requireDelegatedAccounts && reg.Stakable && len(reg.SpendPublicKey) > 0) {
 					continue
 				}
 				if alreadyUsed[string(addr.PublicKey)] {
@@ -168,10 +173,10 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 					return
 				}
 			} else {
-				if addr, acc, err = builder.getRandomAccount(accs); err != nil {
+				if addr, _, reg, err = builder.getRandomAccount(accs, dataStorage.Regs); err != nil {
 					return
 				}
-				if (requireDelegatedAccounts && !acc.DelegatedStake.HasDelegatedStake()) || (!requireDelegatedAccounts && acc.DelegatedStake.HasDelegatedStake() && acc.DelegatedStake.Version == dpos.STAKING_SPEND_REQUIRED) {
+				if (requireDelegatedAccounts && !reg.Stakable) || (!requireDelegatedAccounts && reg.Stakable && len(reg.SpendPublicKey) > 0) {
 					continue
 				}
 			}
@@ -386,11 +391,16 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 				if emap[string(payload.Asset)][p.G1().String()] == nil {
 
 					var acc *account.Account
+					var reg *registration.Registration
+
 					if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
 						return
 					}
+					if reg, err = dataStorage.Regs.GetRegistration(addr.PublicKey); err != nil {
+						return
+					}
 
-					hasRollover := acc != nil && acc.DelegatedStake.HasDelegatedStake()
+					hasRollover := acc != nil && reg.Stakable
 
 					var newBalance *crypto.ElGamal
 					if acc != nil {
@@ -404,13 +414,14 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 					if payload.Sender == address { //sender
 						sendersEncryptedBalances[t] = newBalance.Serialize()
 
-						if acc != nil && acc.DelegatedStake.HasDelegatedStake() && acc.DelegatedStake.Version == dpos.STAKING_SPEND_REQUIRED && payload.Extra == nil {
+						if acc != nil && len(reg.SpendPublicKey) > 0 && payload.Extra == nil {
 							transfers[t].SenderUnstakeRequired = true
 							if sendersWalletAddresses[t].SpendPrivateKey == nil {
 								return errors.New("Spend Private Key is missing")
 							}
 							transfers[t].SenderSpendPrivateKey = sendersWalletAddresses[t].SpendPrivateKey.Key
 						}
+
 					}
 
 					emap[string(payload.Asset)][p.G1().String()] = newBalance.Serialize()
@@ -434,7 +445,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 						if len(addr.Registration) == 0 {
 							return fmt.Errorf("Signature is missing for %s", addr.EncodeAddr())
 						}
-						publicKeyIndex.RegistrationDelegated = addr.Version == addresses.SIMPLE_DELEGATED
+						publicKeyIndex.RegistrationStakable = addr.Stakable
 						publicKeyIndex.RegistrationSpendPublicKey = addr.SpendPublicKey
 						publicKeyIndex.RegistrationSignature = addr.Registration
 					}

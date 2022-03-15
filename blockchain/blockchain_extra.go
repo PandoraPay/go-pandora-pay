@@ -74,18 +74,18 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 			return errors.New("Amount, PaymentID or IntegratedPaymentAsset are not allowed in the airdrop address")
 		}
 
-		if registrations.VerifyRegistration(addr.PublicKey, addr.Version == addresses.SIMPLE_DELEGATED, addr.SpendPublicKey, addr.Registration) == false {
+		if registrations.VerifyRegistration(addr.PublicKey, addr.Stakable, addr.SpendPublicKey, addr.Registration) == false {
 			return errors.New("Registration verification is false")
 		}
 
-		if _, err = dataStorage.CreateRegistration(addr.PublicKey); err != nil {
+		if _, err = dataStorage.CreateRegistration(addr.PublicKey, addr.Stakable, addr.SpendPublicKey); err != nil {
 			return
 		}
 
 		var accs *accounts.Accounts
 		var acc *account.Account
 
-		if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey, addr.Version == addresses.SIMPLE_DELEGATED, addr.SpendPublicKey, false); err != nil {
+		if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey, false); err != nil {
 			return
 		}
 		acc.Balance.AddBalanceUint(airdrop.Amount)

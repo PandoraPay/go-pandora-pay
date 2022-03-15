@@ -189,7 +189,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 				registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
 					transaction_zether_registration.NOT_REGISTERED,
-					publicKeyIndex.RegistrationDelegated,
+					publicKeyIndex.RegistrationStakable,
 					publicKeyIndex.RegistrationSpendPublicKey,
 					publicKeyIndex.RegistrationSignature,
 				}
