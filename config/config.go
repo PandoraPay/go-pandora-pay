@@ -48,7 +48,7 @@ const (
 
 const (
 	BLOCK_MAX_SIZE          uint64 = 1024 * 1024
-	BLOCK_TIME              uint64 = 60 //seconds
+	BLOCK_TIME              uint64 = 90 //seconds
 	DIFFICULTY_BLOCK_WINDOW uint64 = 10
 	FORK_MAX_UNCLE_ALLOWED  uint64 = 60
 	FORK_MAX_DOWNLOAD       uint64 = 20
