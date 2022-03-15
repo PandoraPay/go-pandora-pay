@@ -427,14 +427,14 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliShowPrivateKey := func(cmd string, ctx context.Context) (err error) {
+	cliShowSecretKey := func(cmd string, ctx context.Context) (err error) {
 
-		_, _, index, err := wallet.CliSelectAddress("Select Address to show the private key", ctx)
+		_, _, index, err := wallet.CliSelectAddress("Select Address to show the secret key", ctx)
 		if err != nil {
 			return
 		}
 
-		privateKey, err := wallet.GetPrivateKey(index)
+		privateKey, err := wallet.GetSecretKey(index)
 		if err != nil {
 			return
 		}
@@ -443,16 +443,16 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliImportPrivateKey := func(cmd string, ctx context.Context) (err error) {
+	cliImportSecretKey := func(cmd string, ctx context.Context) (err error) {
 
-		privateKey := gui.GUI.OutputReadBytes("Write Private key", func(input []byte) bool {
+		privateKey := gui.GUI.OutputReadBytes("Write Secret key", func(input []byte) bool {
 			return len(input) == 32
 		})
 
 		name := gui.GUI.OutputReadString("Write Name of the newly imported address")
 
 		var adr *wallet_address.WalletAddress
-		if adr, err = wallet.ImportPrivateKey(name, privateKey); err != nil {
+		if adr, err = wallet.ImportSecretKey(name, privateKey, false, false); err != nil {
 			return
 		}
 
@@ -499,8 +499,8 @@ func (wallet *Wallet) initWalletCLI() {
 	gui.GUI.CommandDefineCallback("List Addresses", wallet.CliListAddresses, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Create New Address", cliCreateNewAddress, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Show Mnemnonic", cliShowMnemonic, wallet.Loaded)
-	gui.GUI.CommandDefineCallback("Show Private Key", cliShowPrivateKey, wallet.Loaded)
-	gui.GUI.CommandDefineCallback("Import Private Key", cliImportPrivateKey, wallet.Loaded)
+	gui.GUI.CommandDefineCallback("Show Secret Key", cliShowSecretKey, wallet.Loaded)
+	gui.GUI.CommandDefineCallback("Import Secret Key", cliImportSecretKey, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Remove Address", cliRemoveAddress, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Export Delegated Address", cliExportDelegatedAddress, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Export Addresses", cliExportAddresses, wallet.Loaded)

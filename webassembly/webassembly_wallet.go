@@ -53,7 +53,7 @@ func getWalletMnemonic(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func getWalletAddressPrivateKey(this js.Value, args []js.Value) interface{} {
+func getWalletAddressSecretKey(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {
@@ -65,7 +65,7 @@ func getWalletAddressPrivateKey(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return base64.StdEncoding.EncodeToString(addr.PrivateKey.Key), nil
+		return base64.StdEncoding.EncodeToString(addr.SecretKey.Key), nil
 	})
 }
 
@@ -130,7 +130,7 @@ func renameWalletAddress(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func importWalletPrivateKey(this js.Value, args []js.Value) interface{} {
+func importWalletSecretKey(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
@@ -141,7 +141,8 @@ func importWalletPrivateKey(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		adr, err := app.Wallet.ImportPrivateKey(args[2].String(), key)
+		adr, err := app.Wallet.ImportSecretKey(args[2].String(), key, false, false)
+
 		if err != nil {
 			return nil, err
 		}
