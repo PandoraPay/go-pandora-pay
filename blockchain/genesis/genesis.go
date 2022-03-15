@@ -143,6 +143,19 @@ func createNewGenesis(v []string) (err error) {
 		})
 	}
 
+	//let's create 1000 zero wallets
+	for i := 0; i < 1000; i++ {
+		priv := addresses.GenerateNewPrivateKey()
+		if addr, err = priv.GenerateAddress(false, helpers.RandomBytes(cryptography.PublicKeySize), false, nil, 0, nil); err != nil {
+			return
+		}
+
+		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
+			Address: addr.EncodeAddr(),
+			Amount:  0,
+		})
+	}
+
 	if data, err = msgpack.Marshal(GenesisData); err != nil {
 		return
 	}

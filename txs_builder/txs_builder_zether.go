@@ -110,7 +110,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 				if addr, _, reg, err = builder.getRandomAccount(accs, dataStorage.Regs); err != nil {
 					return err
 				}
-				if (requireDelegatedAccounts && !reg.Stakable) || (!requireDelegatedAccounts && reg.Stakable && len(reg.SpendPublicKey) > 0) {
+				if (requireDelegatedAccounts && !reg.Stakable) || (!requireDelegatedAccounts && len(reg.SpendPublicKey) > 0) {
 					continue
 				}
 				if alreadyUsed[string(addr.PublicKey)] {
@@ -176,7 +176,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 				if addr, _, reg, err = builder.getRandomAccount(accs, dataStorage.Regs); err != nil {
 					return
 				}
-				if (requireDelegatedAccounts && !reg.Stakable) || (!requireDelegatedAccounts && reg.Stakable && len(reg.SpendPublicKey) > 0) {
+				if (requireDelegatedAccounts && !reg.Stakable) || (!requireDelegatedAccounts && len(reg.SpendPublicKey) > 0) {
 					continue
 				}
 			}

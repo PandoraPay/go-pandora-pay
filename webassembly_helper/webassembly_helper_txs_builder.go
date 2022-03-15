@@ -62,7 +62,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 
 		transfers[t] = &wizard.WizardZetherTransfer{
 			Asset:                  ast,
-			Sender:                 txData.Senders[t].PrivateKey,
+			SenderPrivateKey:       txData.Senders[t].PrivateKey,
 			SenderDecryptedBalance: txData.Senders[t].DecryptedBalance,
 			Recipient:              txData.Recipients[t],
 			Amount:                 txData.Amounts[t],
@@ -120,16 +120,24 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 				return
 			}
 
+			var reg *registration.Registration
+			if regData := txData.Regs[base64.StdEncoding.EncodeToString(addr.PublicKey)]; len(regData) > 0 {
+				reg = registration.NewRegistration(addr.PublicKey, 0)
+				if err = reg.Deserialize(helpers.NewBufferReader(regData)); err != nil {
+					return
+				}
+			}
+
 			var acc *account.Account
 			if accData := txData.Accs[base64.StdEncoding.EncodeToString(ast)][base64.StdEncoding.EncodeToString(addr.PublicKey)]; len(accData) > 0 {
-				if acc, err = account.NewAccount(addr.PublicKey, 0, ast, false, nil); err != nil {
+				if acc, err = account.NewAccount(addr.PublicKey, 0, ast); err != nil {
 					return
 				}
 				if err = acc.Deserialize(helpers.NewBufferReader(accData)); err != nil {
 					return
 				}
 				emap[string(ast)][p.G1().String()] = acc.Balance.Amount.Serialize()
-				hasRollovers[p.G1().String()] = acc != nil && acc.DelegatedStake.HasDelegatedStake()
+				hasRollovers[p.G1().String()] = acc != nil && reg.Stakable
 			} else {
 				var acckey crypto.Point
 				if err = acckey.DecodeCompressed(addr.PublicKey); err != nil {
@@ -139,14 +147,6 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 			}
 
 			ring = append(ring, p.G1())
-
-			var reg *registration.Registration
-			if regData := txData.Regs[base64.StdEncoding.EncodeToString(addr.PublicKey)]; len(regData) > 0 {
-				reg = registration.NewRegistration(addr.PublicKey, 0)
-				if err = reg.Deserialize(helpers.NewBufferReader(regData)); err != nil {
-					return
-				}
-			}
 
 			publicKeyIndex := &wizard.WizardZetherPublicKeyIndex{}
 			publicKeyIndexes[string(addr.PublicKey)] = publicKeyIndex
@@ -158,7 +158,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 				if len(addr.Registration) == 0 {
 					return fmt.Errorf("Signature is missing for %s", addr.EncodeAddr())
 				}
-				publicKeyIndex.RegistrationStakable = addr.Version == addresses.SIMPLE_DELEGATED
+				publicKeyIndex.RegistrationStakable = reg.Stakable
 				publicKeyIndex.RegistrationSpendPublicKey = addr.SpendPublicKey
 				publicKeyIndex.RegistrationSignature = addr.Registration
 			}
