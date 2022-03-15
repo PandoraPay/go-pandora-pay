@@ -165,6 +165,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	registrationsAlready := make(map[string]bool)
 
 	unregisteredAccounts := make([]int, len(transfers))
+	unregisteredSpendablePublicKey := make([]int, len(transfers))
 	emptyAccounts := make([]int, len(transfers))
 
 	for t, publickeylist := range publickeylists {
@@ -194,7 +195,11 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					publicKeyIndex.RegistrationSignature,
 				}
 
-				unregisteredAccounts[t] += 1
+				unregisteredAccounts[t]++
+
+				if len(publicKeyIndex.RegistrationSpendPublicKey) > 0 {
+					unregisteredSpendablePublicKey[t]++
+				}
 
 			} else if emap[string(transfers[t].Asset)][publicKeyPoint.String()] == nil {
 				registrations[t][i] = nil //transaction_zether_registration.REGISTERED_EMPTY_ACCOUNT
@@ -224,8 +229,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			Parity: parities[t],
 		}
 
-		spaceExtra += unregisteredAccounts[t] * (cryptography.PublicKeySize + 1 + cryptography.SignatureSize)
-		spaceExtra += (unregisteredAccounts[t] + emptyAccounts[t]) * (cryptography.PublicKeySize + 1 + 66)
+		spaceExtra += unregisteredAccounts[t] * (cryptography.PublicKeySize + 3 + cryptography.SignatureSize) //no of new registrations
+		spaceExtra += unregisteredSpendablePublicKey[t] * cryptography.PublicKeySize                          //no of new registrations that will store spend public keys
+		spaceExtra += (unregisteredAccounts[t] + emptyAccounts[t]) * (cryptography.PublicKeySize + 1 + 66)    // no of new accounts
 
 		if transfers[t].PayloadExtra == nil {
 			payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_TRANSFER
@@ -359,9 +365,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		} else {
 			extraBytes += 1 + len(payload.Asset)
 		}
-		extraBytes += len(rings[t])*1 + unregisteredAccounts[t]*cryptography.SignatureSize //registrations length
-		extraBytes += 1 + dataLength                                                       //dataVersion + data
-		extraBytes += len(rings[t])*33*2 + (len(rings[t])-emptyAccounts[t])*33*2 + 33 + 1  //statement
+		extraBytes += len(rings[t]) * 1                                                   //registrations length
+		extraBytes += unregisteredAccounts[t] * (1 + cryptography.SignatureSize)          //1 byte if it is stakable
+		extraBytes += 1 + dataLength                                                      //dataVersion + data
+		extraBytes += len(rings[t])*33*2 + (len(rings[t])-emptyAccounts[t])*33*2 + 33 + 1 //statement
 		if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
 			extraBytes += helpers.BytesLengthSerialized(transfers[t].FeeRate) + 1 //feeRate + FeeLeadingZeros
 		}
