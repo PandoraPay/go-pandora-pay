@@ -52,7 +52,7 @@ func (wallet *Wallet) GetFirstDelegatedAddress(lock bool) (*wallet_address.Walle
 		return found, nil
 	}
 
-	return wallet.AddNewAddress(true, "", true)
+	return wallet.AddNewAddress(true, "", true, true)
 }
 
 func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, error) {
@@ -267,7 +267,7 @@ func (wallet *Wallet) GenerateSpendPrivateKey(seedIndex uint32, lock bool) ([]by
 	return key.Key, nil
 }
 
-func (wallet *Wallet) AddNewAddress(lock bool, name string, stakable bool) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) AddNewAddress(lock bool, name string, stakable, spendRequire bool) (*wallet_address.WalletAddress, error) {
 
 	//avoid generating the same address twice
 	if lock {
@@ -288,7 +288,8 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string, stakable bool) (*wal
 
 	var spendPrivKey *addresses.PrivateKey
 	var spendPublicKey []byte
-	if stakable {
+
+	if spendRequire {
 		spendPrivateKey, err := wallet.GenerateSpendPrivateKey(wallet.SeedIndex, false)
 		if err != nil {
 			return nil, err

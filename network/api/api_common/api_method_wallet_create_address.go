@@ -20,7 +20,7 @@ func (api *APICommon) GetWalletCreateAddress(r *http.Request, args *APIWalletCre
 		return errors.New("Invalid User or Password")
 	}
 
-	addr, err := api.wallet.AddNewAddress(true, args.Name, false)
+	addr, err := api.wallet.AddNewAddress(true, args.Name, false, false)
 	if err != nil {
 		return err
 	}

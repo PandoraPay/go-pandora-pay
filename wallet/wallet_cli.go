@@ -370,7 +370,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 		name := gui.GUI.OutputReadFilename("Name of your new address", "")
 
-		if _, err = wallet.AddNewAddress(true, name, false); err != nil {
+		if _, err = wallet.AddNewAddress(true, name, false, false); err != nil {
 			return
 		}
 		return wallet.CliListAddresses(cmd, ctx)

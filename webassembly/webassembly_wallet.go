@@ -92,7 +92,7 @@ func addNewWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		adr, err := app.Wallet.AddNewAddress(false, "", false)
+		adr, err := app.Wallet.AddNewAddress(false, "", false, false)
 		if err != nil {
 			return nil, err
 		}
