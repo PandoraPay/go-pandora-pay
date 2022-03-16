@@ -445,14 +445,14 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliImportSecretKey := func(cmd string, ctx context.Context) (err error) {
 
-		privateKey := gui.GUI.OutputReadBytes("Write Secret key", func(input []byte) bool {
-			return len(input) == 32
+		secretKey := gui.GUI.OutputReadBytes("Write Secret key", func(input []byte) bool {
+			return len(input) > 80
 		})
 
 		name := gui.GUI.OutputReadString("Write Name of the newly imported address")
 
 		var adr *wallet_address.WalletAddress
-		if adr, err = wallet.ImportSecretKey(name, privateKey, false, false); err != nil {
+		if adr, err = wallet.ImportSecretKey(name, secretKey, false, false); err != nil {
 			return
 		}
 

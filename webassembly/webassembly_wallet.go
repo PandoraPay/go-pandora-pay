@@ -65,7 +65,7 @@ func getWalletAddressSecretKey(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return base64.StdEncoding.EncodeToString(addr.SecretKey.Key), nil
+		return base64.StdEncoding.EncodeToString(addr.SecretKey), nil
 	})
 }
 
@@ -141,7 +141,7 @@ func importWalletSecretKey(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		adr, err := app.Wallet.ImportSecretKey(args[2].String(), key, false, false)
+		adr, err := app.Wallet.ImportSecretKey(args[2].String(), key, args[3].Bool(), args[4].Bool())
 
 		if err != nil {
 			return nil, err

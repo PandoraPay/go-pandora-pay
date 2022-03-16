@@ -93,23 +93,19 @@ func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte, lock bool) *
 	return wallet.addressesMap[string(publicKey)].Clone()
 }
 
-func (wallet *Wallet) ImportSecretKey(name string, secretPrivateKey []byte, stakable, spendRequire bool) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte, stakable, spendRequired bool) (*wallet_address.WalletAddress, error) {
 
-	if len(secretPrivateKey) != 32 {
-		return nil, errors.New("Invalid PrivateKey length")
-	}
-
-	secretPrivKey, err := bip32.NewMasterKey(secretPrivateKey)
+	secretChild, err := bip32.Deserialize(secretKey)
 	if err != nil {
 		return nil, err
 	}
 
-	privKey, err := secretPrivKey.NewChildKey(0)
+	privKey, err := secretChild.NewChildKey(0)
 	if err != nil {
 		return nil, err
 	}
 
-	spendPrivKey, err := secretPrivKey.NewChildKey(1)
+	spendPrivKey, err := secretChild.NewChildKey(1)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +114,7 @@ func (wallet *Wallet) ImportSecretKey(name string, secretPrivateKey []byte, stak
 	spendPrivateKey := &addresses.PrivateKey{Key: spendPrivKey.Key}
 
 	var spendPublicKey []byte
-	if spendRequire {
+	if spendRequired {
 		spendPublicKey = spendPrivateKey.GeneratePublicKey()
 	}
 
@@ -129,6 +125,7 @@ func (wallet *Wallet) ImportSecretKey(name string, secretPrivateKey []byte, stak
 
 	addr := &wallet_address.WalletAddress{
 		Name:            name,
+		SecretKey:       secretKey,
 		PrivateKey:      privateKey,
 		Registration:    reg,
 		SeedIndex:       1,
@@ -276,7 +273,12 @@ func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte,
 		return nil, nil, nil, err
 	}
 
-	return secret.Key, key2.Key, key3.Key, nil
+	secretSerialized, err := secret.Serialize()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return secretSerialized, key2.Key, key3.Key, nil
 }
 
 func (wallet *Wallet) GenerateSpendPrivateKey(seedIndex uint32, lock bool) ([]byte, error) {
@@ -302,7 +304,7 @@ func (wallet *Wallet) GenerateSpendPrivateKey(seedIndex uint32, lock bool) ([]by
 	return key.Key, nil
 }
 
-func (wallet *Wallet) AddNewAddress(lock bool, name string, stakable, spendRequire bool) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) AddNewAddress(lock bool, name string, stakable, spendRequired bool) (*wallet_address.WalletAddress, error) {
 
 	//avoid generating the same address twice
 	if lock {
@@ -316,22 +318,20 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string, stakable, spendRequi
 		return nil, errors.New("Wallet was not loaded!")
 	}
 
-	secretPrivateKey, privateKey, spendPrivateKey, err := wallet.GenerateKeys(wallet.SeedIndex, false)
+	secret, privateKey, spendPrivateKey, err := wallet.GenerateKeys(wallet.SeedIndex, false)
 	if err != nil {
 		return nil, err
 	}
 
-	secretKey := &addresses.PrivateKey{Key: secretPrivateKey}
 	privKey := &addresses.PrivateKey{Key: privateKey}
 	spendPrivKey := &addresses.PrivateKey{Key: spendPrivateKey}
 
-	spendPublicKey := spendPrivKey.GeneratePublicKey()
-	var spendPublicKey2 []byte
-	if spendRequire {
-		spendPublicKey2 = spendPublicKey
+	var spendPublicKey []byte
+	if spendRequired {
+		spendPublicKey = spendPrivKey.GeneratePublicKey()
 	}
 
-	reg, err := privKey.GetRegistration(stakable, spendPublicKey2)
+	reg, err := privKey.GetRegistration(stakable, spendPublicKey)
 	if err != nil {
 		return nil, err
 	}
@@ -343,7 +343,7 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string, stakable, spendRequi
 	addr := &wallet_address.WalletAddress{
 		Version:         version,
 		Name:            name,
-		SecretKey:       secretKey,
+		SecretKey:       secret,
 		PrivateKey:      privKey,
 		Registration:    reg,
 		SpendPrivateKey: spendPrivKey,
@@ -467,7 +467,7 @@ func (wallet *Wallet) GetSecretKey(index int) ([]byte, error) { //32 byte
 	if index < 0 || index > len(wallet.Addresses) {
 		return nil, errors.New("Invalid Address Index")
 	}
-	return wallet.Addresses[index].SecretKey.Key, nil
+	return wallet.Addresses[index].SecretKey, nil
 }
 
 func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.WalletAddress, error) {

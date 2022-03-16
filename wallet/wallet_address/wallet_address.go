@@ -10,7 +10,7 @@ type WalletAddress struct {
 	Name                       string                `json:"name" msgpack:"name"`
 	SeedIndex                  uint32                `json:"seedIndex" msgpack:"seedIndex"`
 	IsMine                     bool                  `json:"isMine" msgpack:"isMine"`
-	SecretKey                  *addresses.PrivateKey `json:"secretKey" msgpack:"secretKey"`
+	SecretKey                  []byte                `json:"secretKey" msgpack:"secretKey"`
 	PrivateKey                 *addresses.PrivateKey `json:"privateKey" msgpack:"privateKey"`
 	SpendPrivateKey            *addresses.PrivateKey `json:"spendPrivateKey" msgpack:"spendPrivateKey"`
 	Registration               []byte                `json:"registration" msgpack:"registration"`
