@@ -88,39 +88,6 @@ func (testnet *Testnet) testnetCreateClaimTx(senderAddr *wallet_address.WalletAd
 		return
 	}
 
-	var acc *account.Account
-	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-		dataStorage := data_storage.NewDataStorage(reader)
-
-		var accs *accounts.Accounts
-		if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
-			return
-		}
-
-		if acc, err = accs.GetAccount(addrRecipient.PublicKey); err != nil {
-			return
-		}
-		return
-	}); err != nil {
-		return
-	}
-
-	var amount uint64
-	if acc != nil {
-		if amount, err = testnet.wallet.DecryptBalance(addrRecipient, acc.Balance.Amount.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, true, ctx, func(string) {}); err != nil {
-			return
-		}
-	}
-
-	if amount > config_coins.ConvertToUnitsUint64Forced(10000) {
-		return nil, nil
-	}
-
-	if sendAmount > amount+config_coins.ConvertToUnitsUint64Forced(10000) {
-		sendAmount = (config_coins.ConvertToUnitsUint64Forced(10000) + amount) - sendAmount
-	}
-
 	txData := &txs_builder.TxBuilderCreateZetherTxData{
 		Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{{
 			Sender:            senderAddr.AddressEncoded,
@@ -273,19 +240,26 @@ func (testnet *Testnet) run() {
 						if stakingAmount > config_coins.ConvertToUnitsUint64Forced(20000) {
 							over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(10000)
 							if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload_script.SCRIPT_TRANSFER) {
-								testnet.testnetCreateClaimTx(addr, 1, over/5, ctx)
-								testnet.testnetCreateClaimTx(addr, 2, over/5, ctx)
-								testnet.testnetCreateClaimTx(addr, 3, over/5, ctx)
-								testnet.testnetCreateClaimTx(addr, 4, over/5, ctx)
+								for i := 0; i < 5; i++ {
+
+									if tempAddr, err = testnet.wallet.GetWalletAddress(i, true); err != nil {
+										return
+									}
+									if bytes.Equal(addr.PublicKey, tempAddr.PublicKey) {
+										continue
+									}
+
+									testnet.testnetCreateClaimTx(addr, i, over/5, ctx)
+									time.Sleep(time.Millisecond * 1000)
+								}
 							}
 						}
 
-						for i := 2; i < 5; i++ {
+						for i := 1; i < 5; i++ {
 
 							if tempAddr, err = testnet.wallet.GetWalletAddress(i, true); err != nil {
 								return
 							}
-
 							if bytes.Equal(addr.PublicKey, tempAddr.PublicKey) {
 								continue
 							}

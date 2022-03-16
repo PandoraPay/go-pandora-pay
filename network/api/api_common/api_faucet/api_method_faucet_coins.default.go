@@ -25,7 +25,7 @@ func (api *Faucet) GetFaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, 
 		return errors.New("Faucet token is invalid")
 	}
 
-	addr, err := api.wallet.GetWalletAddress(1, true)
+	addr, err := api.wallet.GetWalletAddress(0, true)
 	if err != nil {
 		return err
 	}

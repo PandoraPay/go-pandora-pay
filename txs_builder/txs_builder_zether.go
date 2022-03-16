@@ -419,6 +419,9 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 							if sendersWalletAddresses[t].SpendPrivateKey == nil {
 								return errors.New("Spend Private Key is missing")
 							}
+							if !bytes.Equal(sendersWalletAddresses[t].SpendPublicKey, sendersWalletAddresses[t].SpendPublicKey) {
+								return errors.New("Wallet Spend Public Key is not matching")
+							}
 							transfers[t].SenderSpendPrivateKey = sendersWalletAddresses[t].SpendPrivateKey.Key
 						}
 

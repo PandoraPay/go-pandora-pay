@@ -155,6 +155,17 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 				}
 			}
 
+			if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING && payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING_REWARD {
+				if len(reg.SpendPublicKey) > 0 {
+					if payload.Extra == nil || payload.PayloadScript != transaction_zether_payload_script.SCRIPT_UNSTAKE {
+						return errors.New("PayloadScript should be unstake")
+					}
+					if !bytes.Equal(reg.SpendPublicKey, payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake).SenderSpendPublicKey.EncodeCompressed()) {
+						return errors.New("Spend Public Key is not matching")
+					}
+				}
+			}
+
 		}
 
 		/**
@@ -187,17 +198,6 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 				}
 			}
 
-		}
-
-		if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING && payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING_REWARD {
-			if len(reg.SpendPublicKey) > 0 {
-				if payload.Extra == nil || payload.PayloadScript != transaction_zether_payload_script.SCRIPT_UNSTAKE {
-					return errors.New("PayloadScript should be unstake")
-				}
-				if !bytes.Equal(reg.SpendPublicKey, payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake).SenderSpendPublicKey.EncodeCompressed()) {
-					return errors.New("Spend Public Key is not matching")
-				}
-			}
 		}
 
 	}
