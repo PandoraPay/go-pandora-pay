@@ -3,6 +3,7 @@ package connection
 import (
 	"bytes"
 	"errors"
+	"golang.org/x/exp/slices"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
@@ -79,7 +80,7 @@ func (s *Subscriptions) RemoveSubscription(subscriptionType api_types.Subscripti
 
 	for i, subscription := range s.list {
 		if subscription.Type == subscriptionType && bytes.Equal(subscription.Key, key) {
-			s.list = append(s.list[:i], s.list[i+1:]...)
+			s.list = slices.Delete(s.list, i, i+1)
 			s.removeSubscriptionCn <- &SubscriptionNotification{subscription, s.conn}
 			return nil
 		}

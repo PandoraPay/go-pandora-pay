@@ -3,6 +3,7 @@ package asset_fee_liquidity
 import (
 	"bytes"
 	"errors"
+	"golang.org/x/exp/slices"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
@@ -58,7 +59,7 @@ func (self *AssetFeeLiquidities) UpdateLiquidity(updateLiquidity *AssetFeeLiquid
 	if updateLiquidity.Rate == 0 {
 		for i, it := range self.List {
 			if bytes.Equal(it.Asset, updateLiquidity.Asset) {
-				self.List = append(self.List[:i], self.List[i+1:]...)
+				self.List = slices.Delete(self.List, i, i+1)
 
 				if len(self.List) == 0 {
 					self.Clear()

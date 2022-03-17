@@ -1,19 +1,26 @@
 package multicast
 
 import (
-	"pandora-pay/helpers/container_list"
+	"golang.org/x/exp/slices"
 	"pandora-pay/helpers/linked_list"
+	"sync"
 )
 
 type MulticastChannel[T any] struct {
-	listeners           *container_list.ContainerList[chan T]
+	listeners           []chan T
 	queueBroadcastCn    chan T
 	internalBroadcastCn chan T
 	count               int
+	lock                *sync.RWMutex
 }
 
 func (self *MulticastChannel[T]) AddListener() chan T {
-	return self.listeners.Push(make(chan T))
+	cn := make(chan T)
+
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	self.listeners = append(self.listeners, cn)
+	return cn
 }
 
 func (self *MulticastChannel[T]) Broadcast(data T) {
@@ -22,8 +29,13 @@ func (self *MulticastChannel[T]) Broadcast(data T) {
 
 func (self *MulticastChannel[T]) RemoveChannel(channel chan T) bool {
 
-	if self.listeners.Remove(channel) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	x := slices.Index(self.listeners, channel)
+	if x != -1 {
 		close(channel)
+		slices.Delete(self.listeners, x, x+1)
 		return true
 	}
 
@@ -32,10 +44,13 @@ func (self *MulticastChannel[T]) RemoveChannel(channel chan T) bool {
 
 func (self *MulticastChannel[T]) CloseAll() {
 
-	list := self.listeners.RemoveAll()
-	for _, channel := range list {
-		close(channel)
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	for _, cn := range self.listeners {
+		close(cn)
 	}
+	self.listeners = []chan T{}
 	close(self.internalBroadcastCn)
 }
 
@@ -75,7 +90,10 @@ func (self *MulticastChannel[T]) runInternalBroadcast() {
 			return
 		}
 
-		listeners := self.listeners.Get()
+		self.lock.RLock()
+		listeners := slices.Clone(self.listeners)
+		self.lock.RUnlock()
+
 		for _, channel := range listeners {
 			channel <- data
 		}
@@ -85,10 +103,11 @@ func (self *MulticastChannel[T]) runInternalBroadcast() {
 func NewMulticastChannel[T any]() *MulticastChannel[T] {
 
 	multicast := &MulticastChannel[T]{
-		container_list.NewContainerList[chan T](),
+		[]chan T{},
 		make(chan T),
 		make(chan T),
 		0,
+		&sync.RWMutex{},
 	}
 
 	go multicast.runInternalBroadcast()

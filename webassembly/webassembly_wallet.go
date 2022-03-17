@@ -322,7 +322,7 @@ func tryDecryptBalance(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func getPrivateDataForDecryptingBalanceWalletAddress(this js.Value, args []js.Value) interface{} {
+func getPrivateKeysWalletAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if err := app.Wallet.Encryption.CheckPassword(args[1].String(), false); err != nil {
@@ -338,12 +338,13 @@ func getPrivateDataForDecryptingBalanceWalletAddress(this js.Value, args []js.Va
 			return nil, err
 		}
 
-		privateKey, previousValue := app.Wallet.GetDataForDecryptingBalance(parameters.PublicKey, parameters.Asset)
+		privateKey, spendPrivateKey, previousValue := app.Wallet.GetPrivateKeys(parameters.PublicKey, parameters.Asset)
 
 		return webassembly_utils.ConvertJSONBytes(struct {
-			PrivateKey    []byte `json:"privateKey"`
-			PreviousValue uint64 `json:"previousValue"`
-		}{privateKey, previousValue})
+			PrivateKey      []byte `json:"privateKey"`
+			SpendPrivateKey []byte `json:"spendPrivateKey"`
+			PreviousValue   uint64 `json:"previousValue"`
+		}{privateKey, spendPrivateKey, previousValue})
 
 	})
 }

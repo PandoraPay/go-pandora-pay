@@ -22,6 +22,7 @@ import (
 
 type zetherTxDataSender struct {
 	PrivateKey       []byte `json:"privateKey"`
+	SpendPrivateKey  []byte `json:"spendPrivateKey"`
 	DecryptedBalance uint64 `json:"decryptedBalance"`
 }
 

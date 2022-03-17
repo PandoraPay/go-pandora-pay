@@ -2,6 +2,7 @@ package min_max_heap
 
 import (
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/exp/slices"
 	"math/rand"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -59,7 +60,7 @@ func TestCreateMaxHeapMemory(t *testing.T) {
 	}
 
 	index := rand.Intn(len(v))
-	x := append(v[:index], v[index+1:]...)
+	x := slices.Delete(v, index, index+1)
 	assert.Nil(t, maxHeap.DeleteByKey(keys[index]))
 
 	assert.Equal(t, maxHeap.GetSize(), uint64(len(x)))
@@ -98,7 +99,7 @@ func TestCreateMaxHeapMemory2(t *testing.T) {
 	}
 
 	index := rand.Intn(len(v))
-	x := append(v[:index], v[index+1:]...)
+	x := slices.Delete(v, index, index+1)
 	assert.Nil(t, maxHeap.DeleteByKey(keys[index]))
 
 	assert.Equal(t, maxHeap.GetSize(), uint64(len(x)))
@@ -137,7 +138,7 @@ func TestCreateMinHeapMemory(t *testing.T) {
 	}
 
 	index := rand.Intn(len(v))
-	x := append(v[:index], v[index+1:]...)
+	x := slices.Delete(v, index, index+1)
 	assert.Nil(t, minHeap.DeleteByKey(keys[index]))
 
 	assert.Equal(t, minHeap.GetSize(), uint64(len(x)))

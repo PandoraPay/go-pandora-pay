@@ -21,6 +21,7 @@ func (c *ContainerList[T]) Push(el T) T {
 	return el
 }
 
+// order is not kept
 func (c *ContainerList[T]) Remove(el T) bool {
 
 	c.lock.Lock()
@@ -29,7 +30,7 @@ func (c *ContainerList[T]) Remove(el T) bool {
 	all := c.list.Load()
 	for i, el2 := range all {
 		if el2 == el {
-			//removing from array array
+			//removing from array
 			list2 := make([]T, len(all)-1)
 			copy(list2, all)
 			if len(all) > 1 && i != len(all)-1 {

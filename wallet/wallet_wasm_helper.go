@@ -1,12 +1,19 @@
 package wallet
 
-func (wallet *Wallet) GetDataForDecryptingBalance(publicKey, asset []byte) (privateKey []byte, previousValue uint64) {
+func (wallet *Wallet) GetPrivateKeys(publicKey, asset []byte) (privateKey, spendPrivateKey []byte, previousValue uint64) {
 
 	wallet.Lock.RLock()
 	defer wallet.Lock.RUnlock()
 
 	addr := wallet.addressesMap[string(publicKey)]
-	privateKey = addr.PrivateKey.Key
+
+	if addr.PrivateKey != nil {
+		privateKey = addr.PrivateKey.Key
+	}
+
+	if addr.SpendPrivateKey != nil {
+		spendPrivateKey = addr.SpendPrivateKey.Key
+	}
 
 	return
 }

@@ -2,6 +2,7 @@ package mempool
 
 import (
 	"errors"
+	"golang.org/x/exp/slices"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/config"
 	"pandora-pay/store"
@@ -280,7 +281,7 @@ func (worker *mempoolWorker) processing(
 						if newAddTx == nil {
 							//removing
 							//this is done because it was inserted before
-							txsList = append(txsList[:listIndex-1], txsList[listIndex:]...)
+							txsList = slices.Delete(txsList, listIndex-1, listIndex)
 							listIndex--
 						}
 						removeTxNow(tx, newAddTx == nil, exists)

@@ -17,7 +17,8 @@ require (
 	go.etcd.io/bbolt v1.3.5
 	go.jolheiser.com/hcaptcha v0.0.4
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
-	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
+	golang.org/x/exp v0.0.0-20220317015231-48e79f11773a
+	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654
 	nhooyr.io/websocket v1.8.7
 )
 

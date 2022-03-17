@@ -1,8 +1,8 @@
 package generics
 
 import (
-	"constraints"
 	"github.com/vmihailenco/msgpack/v5"
+	"golang.org/x/exp/constraints"
 )
 
 // usage: Zero(T)()
