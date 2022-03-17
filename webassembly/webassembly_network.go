@@ -115,7 +115,36 @@ func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return webassembly_utils.ConvertToJSONBytes(connection.SendJSONAwaitAnswer[api_common.APIAccountsByKeysReply](app.Network.Websockets.GetFirstSocket(), []byte("accounts/by-keys"), request, nil, 0))
+		data, err := connection.SendJSONAwaitAnswer[api_common.APIAccountsByKeysReply](app.Network.Websockets.GetFirstSocket(), []byte("accounts/by-keys"), request, nil, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		data.Acc = make([]*account.Account, len(data.AccSerialized))
+		data.Reg = make([]*registration.Registration, len(data.RegSerialized))
+
+		for i, it := range data.AccSerialized {
+			if it != nil {
+				if data.Acc[i], err = account.NewAccountClear(request.Keys[i].PublicKey, 0, request.Asset); err != nil {
+					return nil, err
+				}
+
+				if err = data.Acc[i].Deserialize(helpers.NewBufferReader(it)); err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		for i, it := range data.RegSerialized {
+			if it != nil {
+				data.Reg[i] = registration.NewRegistration(request.Keys[i].PublicKey, 0)
+				if err = data.Reg[i].Deserialize(helpers.NewBufferReader(it)); err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		return webassembly_utils.ConvertToJSONBytes(data, nil)
 	})
 }
 

@@ -24,8 +24,8 @@ type APIAccountsByKeysRequest struct {
 }
 
 type APIAccountsByKeysReply struct {
-	Acc           []*account.Account           `json:"acc,omitempty" msgpack:"acc,omitempty"`
-	AccSerialized [][]byte                     `json:"accSerialized,omitempty" msgpack:"accSerialized,omitempty"`
+	Acc           []*account.Account           `json:"account,omitempty" msgpack:"account,omitempty"`
+	AccSerialized [][]byte                     `json:"accountSerialized,omitempty" msgpack:"accountSerialized,omitempty"`
 	Reg           []*registration.Registration `json:"registration,omitempty" msgpack:"registration,omitempty"`
 	RegSerialized [][]byte                     `json:"registrationSerialized,omitempty" msgpack:"registrationSerialized,omitempty"`
 }

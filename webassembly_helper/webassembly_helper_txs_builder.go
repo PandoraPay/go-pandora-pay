@@ -158,7 +158,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 				if len(addr.Registration) == 0 {
 					return fmt.Errorf("Signature is missing for %s", addr.EncodeAddr())
 				}
-				publicKeyIndex.RegistrationStakable = reg.Stakable
+				publicKeyIndex.RegistrationStakable = addr.Stakable
 				publicKeyIndex.RegistrationSpendPublicKey = addr.SpendPublicKey
 				publicKeyIndex.RegistrationSignature = addr.Registration
 			}
