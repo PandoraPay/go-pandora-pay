@@ -20,7 +20,7 @@ func (plainAccounts *PlainAccounts) CreateNewPlainAccount(publicKey []byte) (*pl
 	return plainAcc, nil
 }
 
-func (plainAccounts *PlainAccounts) GetPlainAccount(key []byte, blockHeight uint64) (*plain_account.PlainAccount, error) {
+func (plainAccounts *PlainAccounts) GetPlainAccount(key []byte) (*plain_account.PlainAccount, error) {
 
 	data, err := plainAccounts.Get(string(key))
 	if data == nil || err != nil {

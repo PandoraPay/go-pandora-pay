@@ -99,8 +99,8 @@ func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte, validat
 	return accs, acc, nil
 }
 
-func (dataStorage *DataStorage) GetOrCreatePlainAccount(publicKey []byte, blockHeight uint64, validateRegistration bool) (*plain_account.PlainAccount, error) {
-	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(publicKey, blockHeight)
+func (dataStorage *DataStorage) GetOrCreatePlainAccount(publicKey []byte, validateRegistration bool) (*plain_account.PlainAccount, error) {
+	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(publicKey)
 	if err != nil {
 		return nil, err
 	}

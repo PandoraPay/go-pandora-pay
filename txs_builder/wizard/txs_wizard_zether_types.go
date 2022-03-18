@@ -30,6 +30,11 @@ type WizardZetherPayloadExtraAssetSupplyIncrease struct {
 	AssetSupplyPrivateKey    []byte `json:"assetSupplyPublicKey" msgpack:"assetSupplyPublicKey"`
 }
 
+type WizardZetherPayloadExtraPlainAccountFund struct {
+	WizardZetherPayloadExtra `json:"-" msgpack:""`
+	PlainAccountPublicKey    []byte `json:"plainAccountPublicKey" msgpack:"plainAccountPublicKey"`
+}
+
 type WizardZetherPayloadExtra interface {
 }
 

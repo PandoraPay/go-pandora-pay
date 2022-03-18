@@ -131,6 +131,7 @@ func Initialize(startMainCb func()) {
 						"SCRIPT_UNSTAKE":               js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_UNSTAKE)),
 						"SCRIPT_ASSET_CREATE":          js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_ASSET_CREATE)),
 						"SCRIPT_ASSET_SUPPLY_INCREASE": js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE)),
+						"SCRIPT_PLAIN_ACCOUNT_FUND":    js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND)),
 					}),
 				}),
 			}),

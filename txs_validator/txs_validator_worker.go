@@ -46,7 +46,6 @@ func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidatedWork) error {
 				if payload.Extra.VerifyExtraSignature(hashForSignature, payload.Statement) == false {
 					return errors.New("Extra signature failed")
 				}
-			case transaction_zether_payload_script.SCRIPT_STAKING_REWARD, transaction_zether_payload_script.SCRIPT_STAKING: //na
 			}
 		}
 	default:

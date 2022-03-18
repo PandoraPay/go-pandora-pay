@@ -9,6 +9,7 @@ const (
 	SCRIPT_STAKING_REWARD
 	SCRIPT_ASSET_CREATE
 	SCRIPT_ASSET_SUPPLY_INCREASE
+	SCRIPT_PLAIN_ACCOUNT_FUND
 )
 
 func (t PayloadScriptType) String() string {
@@ -25,6 +26,8 @@ func (t PayloadScriptType) String() string {
 		return "SCRIPT_ASSET_CREATE"
 	case SCRIPT_ASSET_SUPPLY_INCREASE:
 		return "SCRIPT_ASSET_SUPPLY_INCREASE"
+	case SCRIPT_PLAIN_ACCOUNT_FUND:
+		return "SCRIPT_PLAIN_ACCOUNT_FUND"
 	default:
 		return "Unknown ScriptType"
 	}

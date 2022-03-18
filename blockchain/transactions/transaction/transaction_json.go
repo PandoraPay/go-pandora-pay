@@ -103,6 +103,10 @@ type json_Only_TransactionZetherPayloadExtraAssetSupplyIncrease struct {
 	AssetSignature       []byte `json:"assetSignature"  msgpack:"assetSignature"`
 }
 
+type json_Only_TransactionZetherPayloadExtraPlainAccountFund struct {
+	PlainAccountPublicKey []byte `json:"plainAccountPublicKey"  msgpack:"plainAccountPublicKey"`
+}
+
 type json_Only_TransactionZetherStatement struct {
 	RingSize      int      `json:"ringSize"  msgpack:"ringSize"`
 	CLn           [][]byte `json:"cLn"  msgpack:"cLn"`
@@ -254,6 +258,11 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 					payloadExtra.Value,
 					payloadExtra.AssetSignature,
 					payloadExtra.AssetSupplyPublicKey,
+				}
+			case transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND:
+				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraPlainAccountFund)
+				extra = &json_Only_TransactionZetherPayloadExtraPlainAccountFund{
+					payloadExtra.PlainAccountPublicKey,
 				}
 			default:
 				return nil, errors.New("Invalid zether.TxScript")
@@ -474,7 +483,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 			case transaction_zether_payload_script.SCRIPT_TRANSFER:
 			case transaction_zether_payload_script.SCRIPT_STAKING:
 				extraJson := &json_Only_TransactionZetherPayloadExtraStaking{}
-				if err := json.Unmarshal(data, extraJson); err != nil {
+				if err = json.Unmarshal(data, extraJson); err != nil {
 					return err
 				}
 
@@ -484,7 +493,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 
 			case transaction_zether_payload_script.SCRIPT_STAKING_REWARD:
 				extraJson := &json_Only_TransactionZetherPayloadExtraStakingReward{}
-				if err := json.Unmarshal(data, extraJson); err != nil {
+				if err = json.Unmarshal(data, extraJson); err != nil {
 					return err
 				}
 
@@ -495,7 +504,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				}
 			case transaction_zether_payload_script.SCRIPT_UNSTAKE:
 				extraJson := &json_Only_TransactionZetherPayloadExtraUnstake{}
-				if err := json.Unmarshal(data, extraJson); err != nil {
+				if err = json.Unmarshal(data, extraJson); err != nil {
 					return err
 				}
 
@@ -511,7 +520,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				}
 			case transaction_zether_payload_script.SCRIPT_ASSET_CREATE:
 				extraJson := &json_Only_TransactionZetherPayloadExtraAssetCreate{}
-				if err := json.Unmarshal(data, extraJson); err != nil {
+				if err = json.Unmarshal(data, extraJson); err != nil {
 					return err
 				}
 				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{
@@ -519,7 +528,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				}
 			case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
 				extraJson := &json_Only_TransactionZetherPayloadExtraAssetSupplyIncrease{}
-				if err := json.Unmarshal(data, extraJson); err != nil {
+				if err = json.Unmarshal(data, extraJson); err != nil {
 					return err
 				}
 				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{
@@ -530,7 +539,15 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 					extraJson.AssetSignature,
 					extraJson.AssetSupplyPublicKey,
 				}
-
+			case transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND:
+				extraJson := &json_Only_TransactionZetherPayloadExtraPlainAccountFund{}
+				if err = json.Unmarshal(data, extraJson); err != nil {
+					return err
+				}
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPlainAccountFund{
+					nil,
+					extraJson.PlainAccountPublicKey,
+				}
 			default:
 				return errors.New("Invalid Zether TxScript")
 			}

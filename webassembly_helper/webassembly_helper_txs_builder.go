@@ -93,6 +93,8 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 			payloadExtra = &wizard.WizardZetherPayloadExtraAssetCreate{}
 		case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
 			payloadExtra = &wizard.WizardZetherPayloadExtraAssetSupplyIncrease{}
+		case transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND:
+			payloadExtra = &wizard.WizardZetherPayloadExtraPlainAccountFund{}
 		default:
 			err = errors.New("Invalid PayloadScriptType")
 			return
