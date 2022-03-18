@@ -122,7 +122,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 				return
 			}
 			if uniqueMap[string(addr.PublicKey)] {
-				return errors.New("Ring Member detected twice")
+				return
 			}
 			uniqueMap[string(addr.PublicKey)] = true
 
