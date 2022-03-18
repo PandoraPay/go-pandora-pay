@@ -372,7 +372,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 			var ring []*bn256.G1
 			uniqueMap := make(map[string]bool)
 
-			addPoint := func(address string) (err error) {
+			addPoint := func(address string, isSender bool) (err error) {
 				var addr *addresses.Address
 				var p *crypto.Point
 
@@ -411,65 +411,60 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 						return
 					}
 
-					if payload.Sender == address { //sender
+					if isSender { //sender
 						sendersEncryptedBalances[t] = newBalance.Serialize()
 
-						if acc != nil && len(reg.SpendPublicKey) > 0 && payload.Extra == nil {
+						if reg != nil && len(reg.SpendPublicKey) > 0 && payload.Extra == nil {
 							transfers[t].SenderUnstakeRequired = true
 							if sendersWalletAddresses[t].SpendPrivateKey == nil {
 								return errors.New("Spend Private Key is missing")
 							}
-							if !bytes.Equal(sendersWalletAddresses[t].SpendPublicKey, sendersWalletAddresses[t].SpendPublicKey) {
+							if !bytes.Equal(sendersWalletAddresses[t].SpendPublicKey, reg.SpendPublicKey) {
 								return errors.New("Wallet Spend Public Key is not matching")
 							}
 							transfers[t].SenderSpendPrivateKey = sendersWalletAddresses[t].SpendPrivateKey.Key
 						}
-
 					}
 
 					emap[string(payload.Asset)][p.G1().String()] = newBalance.Serialize()
 					hasRollovers[p.G1().String()] = hasRollover
+
+					if publicKeyIndexes[string(addr.PublicKey)] == nil {
+
+						publicKeyIndex := &wizard.WizardZetherPublicKeyIndex{}
+						publicKeyIndexes[string(addr.PublicKey)] = publicKeyIndex
+
+						if reg != nil {
+							publicKeyIndex.Registered = true
+							publicKeyIndex.RegisteredIndex = reg.Index
+						} else {
+							if len(addr.Registration) == 0 {
+								return fmt.Errorf("Signature is missing for %s", addr.EncodeAddr())
+							}
+							publicKeyIndex.RegistrationStakable = addr.Stakable
+							publicKeyIndex.RegistrationSpendPublicKey = addr.SpendPublicKey
+							publicKeyIndex.RegistrationSignature = addr.Registration
+						}
+					}
 				}
 				ring = append(ring, p.G1())
 
-				if publicKeyIndexes[string(addr.PublicKey)] == nil {
-					var reg *registration.Registration
-					if reg, err = dataStorage.Regs.GetRegistration(addr.PublicKey); err != nil {
-						return
-					}
-
-					publicKeyIndex := &wizard.WizardZetherPublicKeyIndex{}
-					publicKeyIndexes[string(addr.PublicKey)] = publicKeyIndex
-
-					if reg != nil {
-						publicKeyIndex.Registered = true
-						publicKeyIndex.RegisteredIndex = reg.Index
-					} else {
-						if len(addr.Registration) == 0 {
-							return fmt.Errorf("Signature is missing for %s", addr.EncodeAddr())
-						}
-						publicKeyIndex.RegistrationStakable = addr.Stakable
-						publicKeyIndex.RegistrationSpendPublicKey = addr.SpendPublicKey
-						publicKeyIndex.RegistrationSignature = addr.Registration
-					}
-				}
-
 				return
 			}
 
-			if err = addPoint(payload.Sender); err != nil {
+			if err = addPoint(payload.Sender, true); err != nil {
 				return
 			}
-			if err = addPoint(payload.Recipient); err != nil {
+			if err = addPoint(payload.Recipient, false); err != nil {
 				return
 			}
 			for _, ringMember := range senderRingMembers[t] {
-				if err = addPoint(ringMember); err != nil {
+				if err = addPoint(ringMember, false); err != nil {
 					return
 				}
 			}
 			for _, ringMember := range recipientRingMembers[t] {
-				if err = addPoint(ringMember); err != nil {
+				if err = addPoint(ringMember, false); err != nil {
 					return
 				}
 			}

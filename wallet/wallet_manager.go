@@ -227,7 +227,9 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, stakable, s
 		wallet.CountImportedIndex += 1
 	}
 
-	wallet.forging.Wallet.AddWallet(addr.PrivateKey.Key, addr.PublicKey, false, nil, nil, 0)
+	if err = wallet.forging.Wallet.AddWallet(addr.PrivateKey.Key, addr.PublicKey, false, nil, nil, 0); err != nil {
+		return
+	}
 
 	wallet.updateWallet()
 

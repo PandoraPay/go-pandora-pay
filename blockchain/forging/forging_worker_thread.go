@@ -260,7 +260,7 @@ func (worker *ForgingWorkerThread) forge() {
 		atomic.AddUint32(&worker.hashes, uint32(hashes))
 
 		if hashes == 0 && !hasNewWork {
-			time.Sleep(time.Duration(time.Now().Unix() - timeLimitMs*1000000))
+			time.Sleep(time.Duration(((timeLimitMs/1000+1)*1000 - timeLimitMs) * 1000000))
 		}
 
 	}

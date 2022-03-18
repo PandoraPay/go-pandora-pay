@@ -35,7 +35,7 @@ func (self *MulticastChannel[T]) RemoveChannel(channel chan T) bool {
 	x := slices.Index(self.listeners, channel)
 	if x != -1 {
 		close(channel)
-		slices.Delete(self.listeners, x, x+1)
+		self.listeners = slices.Delete(self.listeners, x, x+1)
 		return true
 	}
 
