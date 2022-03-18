@@ -5,7 +5,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
-	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
@@ -15,10 +14,6 @@ import (
 
 type TxPreviewSimpleExtraUnstake struct {
 	Amount uint64 `json:"amount" msgpack:"amount"`
-}
-
-type TxPreviewSimpleExtraUpdateDelegate struct {
-	DelegatedStakingClaimAmount uint64 `json:"delegatedStakingClaimAmount" msgpack:"delegatedStakingClaimAmount"`
 }
 
 type TxPreviewSimple struct {
@@ -69,11 +64,6 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 		txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
 		var baseExtra interface{}
-		switch txBase.TxScript {
-		case transaction_simple.SCRIPT_UPDATE_DELEGATE: //nothing to be copied
-			txExtra := txBase.Extra.(*transaction_simple_extra.TransactionSimpleExtraUpdateDelegate)
-			baseExtra = &TxPreviewSimpleExtraUpdateDelegate{txExtra.DelegatedStakingClaimAmount}
-		}
 
 		var dataPublic []byte
 		if txBase.DataVersion == transaction_data.TX_DATA_PLAIN_TEXT {

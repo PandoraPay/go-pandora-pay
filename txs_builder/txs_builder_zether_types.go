@@ -5,15 +5,15 @@ import (
 )
 
 type ZetherSenderRingType struct {
-	RequireDelegatedAccounts bool     `json:"requireDelegatedAccounts" msgpack:"requireDelegatedAccounts"`
-	IncludeMembers           []string `json:"includeMembers" msgpack:"includeMembers"`
-	NewAccounts              int      `json:"newAccounts" msgpack:"newAccounts"`
+	RequireStakedAccounts bool     `json:"requireStakedAccounts" msgpack:"requireStakedAccounts"`
+	IncludeMembers        []string `json:"includeMembers" msgpack:"includeMembers"`
+	NewAccounts           int      `json:"newAccounts" msgpack:"newAccounts"`
 }
 
 type ZetherRecipientRingType struct {
-	RequireDelegatedAccounts bool     `json:"requireDelegatedAccounts" msgpack:"requireDelegatedAccounts"`
-	IncludeMembers           []string `json:"includeMembers" msgpack:"includeMembers"`
-	NewAccounts              int      `json:"newAccounts" msgpack:"newAccounts"`
+	RequireStakedAccounts bool     `json:"requireStakedAccounts" msgpack:"requireStakedAccounts"`
+	IncludeMembers        []string `json:"includeMembers" msgpack:"includeMembers"`
+	NewAccounts           int      `json:"newAccounts" msgpack:"newAccounts"`
 }
 
 type ZetherRingConfiguration struct {

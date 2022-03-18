@@ -51,7 +51,6 @@ type json_TransactionSimple struct {
 	Data        []byte                                  `json:"data" msgpack:"data"`
 	Nonce       uint64                                  `json:"nonce" msgpack:"nonce"`
 	Fee         uint64                                  `json:"fee" msgpack:"fee"`
-	FeeVersion  bool                                    `json:"feeVersion" msgpack:"feeVersion"`
 	Vin         *json_TransactionSimpleInput            `json:"vin" msgpack:"vin"`
 	Extra       interface{}                             `json:"extra" msgpack:"extra"`
 }
@@ -59,11 +58,6 @@ type json_TransactionSimple struct {
 type json_TransactionSimpleInput struct {
 	PublicKey []byte `json:"publicKey,omitempty" msgpack:"publicKey,omitempty"` //32
 	Signature []byte `json:"signature" msgpack:"signature"`                     //64
-}
-
-type json_Only_TransactionSimpleExtraUpdateDelegate struct {
-	DelegatedStakingClaimAmount uint64                                      `json:"delegatedStakingClaimAmount"  msgpack:"delegatedStakingClaimAmount"`
-	DelegatedStakingUpdate      *json_TransactionDataDelegatedStakingUpdate `json:"delegatedStakingUpdate"  msgpack:"delegatedStakingUpdate"`
 }
 
 type json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity struct {
@@ -164,22 +158,11 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 			base.Data,
 			base.Nonce,
 			base.Fee,
-			base.FeeVersion,
 			vinJson,
 			nil,
 		}
 
 		switch base.TxScript {
-		case transaction_simple.SCRIPT_UPDATE_DELEGATE:
-			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraUpdateDelegate)
-			simpleJson.Extra = &json_Only_TransactionSimpleExtraUpdateDelegate{
-				extra.DelegatedStakingClaimAmount,
-				&json_TransactionDataDelegatedStakingUpdate{
-					extra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
-					extra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
-					extra.DelegatedStakingUpdate.DelegatedStakingNewFee,
-				},
-			}
 		case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
 			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity)
 			simpleJson.Extra = json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity{
@@ -366,30 +349,12 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 			simpleJson.Data,
 			simpleJson.Nonce,
 			simpleJson.Fee,
-			simpleJson.FeeVersion,
 			vin,
 			nil,
 		}
 		tx.TransactionBaseInterface = base
 
 		switch simpleJson.TxScript {
-		case transaction_simple.SCRIPT_UPDATE_DELEGATE:
-
-			extraJson := &json_Only_TransactionSimpleExtraUpdateDelegate{}
-			if err = json.Unmarshal(data, extraJson); err != nil {
-				return
-			}
-
-			base.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{
-				nil,
-				extraJson.DelegatedStakingClaimAmount,
-				&transaction_data.TransactionDataDelegatedStakingUpdate{
-					extraJson.DelegatedStakingUpdate.DelegatedStakingHasNewInfo,
-					extraJson.DelegatedStakingUpdate.DelegatedStakingNewPublicKey,
-					extraJson.DelegatedStakingUpdate.DelegatedStakingNewFee,
-				},
-			}
-
 		case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
 			extraJson := &json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity{}
 			if err = json.Unmarshal(data, extraJson); err != nil {

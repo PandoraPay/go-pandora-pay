@@ -49,7 +49,7 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [x] Timestamp maximum drift    
 - [x] Forging
     - [x] Forging with wallets Multithreading    
-    - [X] Forging with delegated stakes
+    - [X] Forging with stakable accounts
         - [x] Accepting to delegate stakes from network
         - [x] Integrating delegate stakes fee 
 - [x] Balances

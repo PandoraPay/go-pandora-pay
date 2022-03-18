@@ -191,10 +191,10 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 		return
 	}
 
-	if err = setAddress(sender, ringConfiguration.SenderRingType.RequireDelegatedAccounts); err != nil {
+	if err = setAddress(sender, ringConfiguration.SenderRingType.RequireStakedAccounts); err != nil {
 		return nil, nil, err
 	}
-	if err = setAddress(receiver, ringConfiguration.SenderRingType.RequireDelegatedAccounts); err != nil {
+	if err = setAddress(receiver, ringConfiguration.SenderRingType.RequireStakedAccounts); err != nil {
 		return nil, nil, err
 	}
 
@@ -215,10 +215,10 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 		return nil, nil, err
 	}
 
-	if err = newRandomAccounts(&senderRing, ringConfiguration.SenderRingType.RequireDelegatedAccounts); err != nil {
+	if err = newRandomAccounts(&senderRing, ringConfiguration.SenderRingType.RequireStakedAccounts); err != nil {
 		return nil, nil, err
 	}
-	if err = newRandomAccounts(&recipientRing, ringConfiguration.SenderRingType.RequireDelegatedAccounts); err != nil {
+	if err = newRandomAccounts(&recipientRing, ringConfiguration.SenderRingType.RequireStakedAccounts); err != nil {
 		return nil, nil, err
 	}
 

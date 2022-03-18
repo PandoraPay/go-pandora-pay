@@ -366,7 +366,7 @@ func (builder *TxsBuilder) initCLI() {
 		}
 
 		var plainAccountAddress *addresses.Address
-		if plainAccountAddress, _, txData.Payloads[0].Amount, err = builder.readAddressOptional("Plain Account", config_coins.NATIVE_ASSET_FULL, false); err != nil {
+		if plainAccountAddress, _, txData.Payloads[0].Burn, err = builder.readAddressOptional("Plain Account", config_coins.NATIVE_ASSET_FULL, false); err != nil {
 			return
 		}
 

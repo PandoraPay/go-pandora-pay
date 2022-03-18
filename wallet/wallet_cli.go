@@ -13,6 +13,7 @@ import (
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
+	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
@@ -26,7 +27,7 @@ import (
 func (wallet *Wallet) exportDelegatedAddress(addr *wallet_address.WalletAddress, path string, print bool) (err error) {
 
 	if !addr.Stakable {
-		return errors.New("Address is not VERSION_DELEGATED_STAKE")
+		return errors.New("Address is not Stakable")
 	}
 
 	if print {
@@ -60,7 +61,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 		ast     *asset.Asset
 	}
 	type Address struct {
-		isReg         bool
+		registration  *registration.Registration
 		plainAcc      *plain_account.PlainAccount
 		assetsList    []*AddressAsset
 		publicKey     []byte
@@ -93,7 +94,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 		for i, address := range addresses {
 
-			if addresses[i].isReg, err = dataStorage.Regs.Exists(string(address.publicKey)); err != nil {
+			if addresses[i].registration, err = dataStorage.Regs.GetRegistration(address.publicKey); err != nil {
 				return
 			}
 
@@ -148,9 +149,13 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 			continue
 		}
 
+		if addresses[i].registration != nil {
+			gui.GUI.OutputWrite(fmt.Sprintf("%18s: Stakable: %v SpendPublicKey: %s", "Registered", addresses[i].registration.Stakable, base64.StdEncoding.EncodeToString(addresses[i].registration.SpendPublicKey)))
+		}
+
 		if addresses[i].plainAcc != nil {
 
-			//gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Unclaimed", strconv.FormatFloat(config_coins.ConvertToBase(addresses[i].plainAcc.Unclaimed), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
+			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Unclaimed", strconv.FormatFloat(config_coins.ConvertToBase(addresses[i].plainAcc.Unclaimed), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
 
 			if addresses[i].plainAcc.AssetFeeLiquidities.HasAssetFeeLiquidities() {
 

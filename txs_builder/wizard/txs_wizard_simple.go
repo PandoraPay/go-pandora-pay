@@ -78,7 +78,6 @@ func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTx
 		Data:        dataFinal,
 		Nonce:       nonce,
 		Fee:         0,
-		FeeVersion:  feeVersion,
 		Extra:       extraFinal,
 		Vin: &transaction_simple_parts.TransactionSimpleInput{
 			PublicKey: privateKey.GeneratePublicKey(),

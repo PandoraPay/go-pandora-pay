@@ -2,7 +2,9 @@ package transaction_simple
 
 import (
 	"errors"
+	"fmt"
 	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
@@ -20,47 +22,39 @@ type TransactionSimple struct {
 	Data        []byte
 	Nonce       uint64
 	Fee         uint64
-	FeeVersion  bool
 	Vin         *transaction_simple_parts.TransactionSimpleInput
 	Bloom       *TransactionSimpleBloom
 }
 
 func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byte, dataStorage *data_storage.DataStorage) (err error) {
 
-	//var plainAcc *plain_account.PlainAccount
-	//if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(tx.Vin.PublicKey, blockHeight); err != nil {
-	//	return
-	//}
-	//if plainAcc == nil {
-	//	return errors.New("Plain Account was not found")
-	//}
-	//
-	//if plainAcc.Nonce != tx.Nonce {
-	//	return fmt.Errorf("Account nonce doesn't match %d %d", plainAcc.Nonce, tx.Nonce)
-	//}
-	//if err = plainAcc.IncrementNonce(true); err != nil {
-	//	return
-	//}
-	//
-	//if tx.FeeVersion {
-	//	if err = dataStorage.SubtractUnclaimed(plainAcc, tx.Fee, blockHeight); err != nil {
-	//		return errors.New("Not enought Unclaimed funds to substract Tx.Fee")
-	//	}
-	//} else {
-	//	if err = plainAcc.DelegatedStake.AddStakeAvailable(false, tx.Fee); err != nil {
-	//		return errors.New("Not enought StakeAvailable funds to subtract Tx.Fee")
-	//	}
-	//}
-	//
-	//switch tx.TxScript {
-	//case SCRIPT_UPDATE_DELEGATE, SCRIPT_UNSTAKE, SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
-	//	if err = tx.Extra.IncludeTransactionVin0(blockHeight, plainAcc, dataStorage); err != nil {
-	//		return
-	//	}
-	//}
-	//
-	//return dataStorage.PlainAccs.Update(string(tx.Vin.PublicKey), plainAcc)
-	return
+	var plainAcc *plain_account.PlainAccount
+	if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(tx.Vin.PublicKey); err != nil {
+		return
+	}
+	if plainAcc == nil {
+		return errors.New("Plain Account was not found")
+	}
+
+	if plainAcc.Nonce != tx.Nonce {
+		return fmt.Errorf("Account nonce doesn't match %d %d", plainAcc.Nonce, tx.Nonce)
+	}
+	if err = plainAcc.IncrementNonce(true); err != nil {
+		return
+	}
+
+	if err = dataStorage.SubtractUnclaimed(plainAcc, tx.Fee, blockHeight); err != nil {
+		return errors.New("Not enought Unclaimed funds to substract Tx.Fee")
+	}
+
+	switch tx.TxScript {
+	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
+		if err = tx.Extra.IncludeTransactionVin0(blockHeight, plainAcc, dataStorage); err != nil {
+			return
+		}
+	}
+
+	return dataStorage.PlainAccs.Update(string(tx.Vin.PublicKey), plainAcc)
 }
 
 func (tx *TransactionSimple) ComputeFee() (uint64, error) {
@@ -83,7 +77,7 @@ func (tx *TransactionSimple) Validate() (err error) {
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_DELEGATE, SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
+	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
 		if tx.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
@@ -108,7 +102,6 @@ func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 
 	w.WriteUvarint(tx.Nonce)
 	w.WriteUvarint(tx.Fee)
-	w.WriteBool(tx.FeeVersion)
 
 	tx.Vin.Serialize(w, inclSignature)
 
@@ -130,8 +123,6 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 
 	tx.TxScript = ScriptType(n)
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_DELEGATE:
-		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{}
 	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
 		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{}
 	default:
@@ -159,9 +150,6 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 
 	if tx.Fee, err = r.ReadUvarint(); err != nil {
-		return
-	}
-	if tx.FeeVersion, err = r.ReadBool(); err != nil {
 		return
 	}
 
