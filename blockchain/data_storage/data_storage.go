@@ -6,8 +6,8 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/accounts/account/account_balance_homomorphic"
 	"pandora-pay/blockchain/data_storage/assets"
-	"pandora-pay/blockchain/data_storage/delegated_pending_stakes_list"
-	"pandora-pay/blockchain/data_storage/delegated_pending_stakes_list/delegated_pending_stakes"
+	"pandora-pay/blockchain/data_storage/pending_stakes_list"
+	"pandora-pay/blockchain/data_storage/pending_stakes_list/pending_stakes"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
@@ -27,12 +27,12 @@ type DataStorage struct {
 	Regs                       *registrations.Registrations
 	PlainAccs                  *plain_accounts.PlainAccounts
 	AccsCollection             *accounts.AccountsCollection
-	DelegatedPendingStakes     *delegated_pending_stakes_list.DelegatedPendingStakesList
+	PendingStakes              *pending_stakes_list.PendingStakesList
 	Asts                       *assets.Assets
 	AstsFeeLiquidityCollection *assets.AssetsFeeLiquidityCollection
 }
 
-func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, delegated bool, spendPublicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
+func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
 
 	if validateRegistration {
 		exists, err := dataStorage.Regs.Exists(string(publicKey))
@@ -153,13 +153,13 @@ func (dataStorage *DataStorage) AddStakePendingStake(publicKey []byte, amount *c
 		return errors.New("reg.Stakable is false")
 	}
 
-	delegatedPendingStakes, err := dataStorage.DelegatedPendingStakes.GetDelegatedPendingStakes(blockHeight)
+	pendingStakes, err := dataStorage.PendingStakes.GetPendingStakes(blockHeight)
 	if err != nil {
 		return err
 	}
 
-	if delegatedPendingStakes == nil {
-		if delegatedPendingStakes, err = dataStorage.DelegatedPendingStakes.CreateNewDelegatedPendingStakes(blockHeight); err != nil {
+	if pendingStakes == nil {
+		if pendingStakes, err = dataStorage.PendingStakes.CreateNewPendingStakes(blockHeight); err != nil {
 			return err
 		}
 	}
@@ -169,12 +169,12 @@ func (dataStorage *DataStorage) AddStakePendingStake(publicKey []byte, amount *c
 		return err
 	}
 
-	delegatedPendingStakes.Pending = append(delegatedPendingStakes.Pending, &delegated_pending_stakes.DelegatedPendingStake{
+	pendingStakes.Pending = append(pendingStakes.Pending, &pending_stakes.PendingStake{
 		PublicKey:     publicKey,
 		PendingAmount: pendingAmount,
 	})
 
-	return dataStorage.DelegatedPendingStakes.Update(strconv.FormatUint(blockHeight, 10), delegatedPendingStakes)
+	return dataStorage.PendingStakes.Update(strconv.FormatUint(blockHeight, 10), pendingStakes)
 }
 
 func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
@@ -184,16 +184,16 @@ func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
 		return err
 	}
 
-	delegatedPendingStakes, err := dataStorage.DelegatedPendingStakes.GetDelegatedPendingStakes(blockHeight)
+	pendingStakes, err := dataStorage.PendingStakes.GetPendingStakes(blockHeight)
 	if err != nil {
 		return err
 	}
 
-	if delegatedPendingStakes == nil {
+	if pendingStakes == nil {
 		return nil
 	}
 
-	for _, pending := range delegatedPendingStakes.Pending {
+	for _, pending := range pendingStakes.Pending {
 
 		var acc *account.Account
 		if acc, err = accs.GetAccount(pending.PublicKey); err != nil {
@@ -211,7 +211,7 @@ func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
 		}
 	}
 
-	dataStorage.DelegatedPendingStakes.Delete(strconv.FormatUint(blockHeight, 10))
+	dataStorage.PendingStakes.Delete(strconv.FormatUint(blockHeight, 10))
 	return nil
 }
 
@@ -266,7 +266,7 @@ func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *D
 		registrations.NewRegistrations(dbTx),
 		plain_accounts.NewPlainAccounts(dbTx),
 		accounts.NewAccountsCollection(dbTx),
-		delegated_pending_stakes_list.NewDelegatedPendingStakesList(dbTx),
+		pending_stakes_list.NewPendingStakesList(dbTx),
 		assets.NewAssets(dbTx),
 		assets.NewAssetsFeeLiquidityCollection(dbTx),
 	}
@@ -276,7 +276,7 @@ func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *D
 		list = []*hash_map.HashMap{
 			out.Regs.HashMap,
 			out.PlainAccs.HashMap,
-			out.DelegatedPendingStakes.HashMap,
+			out.PendingStakes.HashMap,
 			out.Asts.HashMap,
 		}
 		list = append(list, out.AccsCollection.GetAllHashmaps()...)

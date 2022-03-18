@@ -31,12 +31,6 @@ type json_TransactionDataRegistration struct {
 	RegistrationSignature      []byte
 }
 
-type json_TransactionDataDelegatedStakingUpdate struct {
-	DelegatedStakingHasNewInfo   bool   `json:"delegatedStakingHasNewInfo" msgpack:"delegatedStakingHasNewInfo"`
-	DelegatedStakingNewPublicKey []byte `json:"delegatedStakingNewPublicKey" msgpack:"delegatedStakingNewPublicKey"` //20 byte
-	DelegatedStakingNewFee       uint64 `json:"delegatedStakingNewFee" msgpack:"delegatedStakingNewFee"`
-}
-
 type Json_Transaction struct {
 	Version    transaction_type.TransactionVersion `json:"version" msgpack:"version"`
 	Size       uint64                              `json:"size" msgpack:"size"`

@@ -101,7 +101,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 
 	alreadyUsed := make(map[string]bool)
 
-	setAddress := func(address *string, requireDelegatedAccounts bool) (err error) {
+	setAddress := func(address *string, requireStakedAccounts bool) (err error) {
 		if *address == "" {
 			if accs.Count == uint64(len(alreadyUsed)) {
 				return errors.New("Accounts have only member. Impossible to get random recipient")
@@ -110,7 +110,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 				if addr, _, reg, err = builder.getRandomAccount(accs, dataStorage.Regs); err != nil {
 					return err
 				}
-				if (requireDelegatedAccounts && !reg.Stakable) || (!requireDelegatedAccounts && len(reg.SpendPublicKey) > 0) {
+				if (requireStakedAccounts && !reg.Stakable) || (!requireStakedAccounts && len(reg.SpendPublicKey) > 0) {
 					continue
 				}
 				if alreadyUsed[string(addr.PublicKey)] {
@@ -163,7 +163,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 		return
 	}
 
-	newRandomAccounts := func(ring *[]string, requireDelegatedAccounts bool) (err error) {
+	newRandomAccounts := func(ring *[]string, requireStakedAccounts bool) (err error) {
 
 		for len(*ring) < ringConfiguration.RingSize/2-1 {
 
@@ -176,7 +176,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 				if addr, _, reg, err = builder.getRandomAccount(accs, dataStorage.Regs); err != nil {
 					return
 				}
-				if (requireDelegatedAccounts && !reg.Stakable) || (!requireDelegatedAccounts && len(reg.SpendPublicKey) > 0) {
+				if (requireStakedAccounts && !reg.Stakable) || (!requireStakedAccounts && len(reg.SpendPublicKey) > 0) {
 					continue
 				}
 			}

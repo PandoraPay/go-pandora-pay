@@ -48,7 +48,7 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataSt
 				return
 			}
 		} else {
-			if _, _, err = dataStorage.GetOrCreateAccount(asset, publicKeyList[i], false, nil, true); err != nil {
+			if _, _, err = dataStorage.GetOrCreateAccount(asset, publicKeyList[i], true); err != nil {
 				return
 			}
 		}

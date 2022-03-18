@@ -81,7 +81,7 @@ func (payload *TransactionZetherPayload) processAssetFee(assetId []byte, txFee, 
 		return
 	}
 
-	accs, acc, err := dataStorage.GetOrCreateAccount(assetId, plainAcc.AssetFeeLiquidities.Collector, false, nil, true)
+	accs, acc, err := dataStorage.GetOrCreateAccount(assetId, plainAcc.AssetFeeLiquidities.Collector, true)
 	if err != nil {
 		return
 	}
@@ -141,7 +141,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		if (i%2 == 0) == payload.Parity { //sender
 
 			if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING && !reg.Stakable {
-				return errors.New("Senders used in Staking requires all to be delegated")
+				return errors.New("Senders used in Staking requires all to be staked")
 			}
 
 			verify := true
@@ -174,7 +174,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		*/
 		if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING {
 
-			//Recipient, in case it is delegated it must be a pending stake
+			//Recipient, in case it is staked it must be a pending stake
 			update := false
 			if (i%2 == 0) == payload.Parity { //sender
 				if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING_REWARD {

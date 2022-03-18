@@ -42,20 +42,6 @@ func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTx
 	var txScript transaction_simple.ScriptType
 	var extraFinal transaction_simple_extra.TransactionSimpleExtraInterface
 	switch txExtra := extra.(type) {
-	case *WizardTxSimpleExtraUpdateDelegate:
-		//extraFinal = &transaction_simple_extra.TransactionSimpleExtraUpdateDelegate{
-		//	DelegatedStakingClaimAmount: txExtra.DelegatedStakingClaimAmount,
-		//	DelegatedStakingUpdate:      txExtra.DelegatedStakingUpdate,
-		//}
-		//txScript = transaction_simple.SCRIPT_UPDATE_DELEGATE
-		//
-		//if txExtra.DelegatedStakingUpdate.DelegatedStakingHasNewInfo {
-		//	spaceExtra += len(txExtra.DelegatedStakingUpdate.DelegatedStakingNewPublicKey)
-		//	spaceExtra += helpers.BytesLengthSerialized(txExtra.DelegatedStakingUpdate.DelegatedStakingNewFee)
-		//}
-		//if txExtra.DelegatedStakingClaimAmount > 0 {
-		//	spaceExtra += len(helpers.SerializeToBytes(&dpos.DelegatedStakePending{nil, txExtra.DelegatedStakingClaimAmount, chainHeight + 100, dpos.DelegatedStakePendingStake}))
-		//}
 	case *WizardTxSimpleExtraUpdateAssetFeeLiquidity:
 		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{
 			Liquidities:     txExtra.Liquidities,

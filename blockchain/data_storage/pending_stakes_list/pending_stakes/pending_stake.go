@@ -1,4 +1,4 @@
-package delegated_pending_stakes
+package pending_stakes
 
 import (
 	"errors"
@@ -7,27 +7,25 @@ import (
 	"pandora-pay/helpers"
 )
 
-type DelegatedPendingStakeType bool
-
-type DelegatedPendingStake struct {
+type PendingStake struct {
 	helpers.SerializableInterface `json:"-"  msgpack:"-"`
 	PublicKey                     []byte                                          `json:"publicKey" msgpack:"publicKey"`
 	PendingAmount                 *account_balance_homomorphic.BalanceHomomorphic `json:"balance" msgpack:"balance"`
 }
 
-func (d *DelegatedPendingStake) Validate() error {
+func (d *PendingStake) Validate() error {
 	if len(d.PublicKey) != cryptography.PublicKeySize {
-		return errors.New("DelegatedPendingStake PublicKey size is invalid")
+		return errors.New("PendingStake PublicKey size is invalid")
 	}
 	return nil
 }
 
-func (d *DelegatedPendingStake) Serialize(w *helpers.BufferWriter) {
+func (d *PendingStake) Serialize(w *helpers.BufferWriter) {
 	w.Write(d.PublicKey)
 	d.PendingAmount.Serialize(w)
 }
 
-func (d *DelegatedPendingStake) Deserialize(r *helpers.BufferReader) (err error) {
+func (d *PendingStake) Deserialize(r *helpers.BufferReader) (err error) {
 	if d.PublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
