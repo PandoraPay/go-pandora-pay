@@ -361,7 +361,7 @@ func (builder *TxsBuilder) initCLI() {
 			}},
 		}
 
-		if _, txData.Payloads[0].Sender, _, err = builder.wallet.CliSelectAddress("Select Address which will increase the supply of asset", ctx); err != nil {
+		if _, txData.Payloads[0].Sender, _, err = builder.wallet.CliSelectAddress("Select Address which will fund a plain account", ctx); err != nil {
 			return
 		}
 

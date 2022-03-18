@@ -283,6 +283,12 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 				spaceExtra += binary.MaxVarintLen64
 
+			case *WizardZetherPayloadExtraPlainAccountFund:
+				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPlainAccountFund{
+					PlainAccountPublicKey: payloadExtra.PlainAccountPublicKey,
+				}
+
 			default:
 				return errors.New("Invalid payload")
 			}
