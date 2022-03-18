@@ -15,7 +15,7 @@ type Address struct {
 	Network        uint64         `json:"network" msgpack:"network"`
 	Version        AddressVersion `json:"version" msgpack:"version"`
 	PublicKey      []byte         `json:"publicKey" msgpack:"publicKey"`
-	Stakable       bool           `json:"stakable" msgpack:"stakable"`
+	Staked         bool           `json:"staked" msgpack:"staked"`
 	SpendPublicKey []byte         `json:"spendPublicKey" msgpack:"spendPublicKey"`
 	Registration   []byte         `json:"registration" msgpack:"registration"`
 	PaymentID      []byte         `json:"paymentId" msgpack:"paymentId"`         // payment id
@@ -23,18 +23,18 @@ type Address struct {
 	PaymentAsset   []byte         `json:"paymentAsset" msgpack:"paymentAsset"`
 }
 
-func NewAddr(network uint64, version AddressVersion, publicKey []byte, stakable bool, spendPublicKey []byte, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+func NewAddr(network uint64, version AddressVersion, publicKey []byte, staked bool, spendPublicKey []byte, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	if len(paymentID) != 8 && len(paymentID) != 0 {
 		return nil, errors.New("Invalid PaymentID. It must be an 8 byte")
 	}
 	if len(paymentAsset) != 0 && len(paymentAsset) != 20 {
 		return nil, errors.New("Invalid PaymentAsset size")
 	}
-	return &Address{network, version, publicKey, stakable, spendPublicKey, registration, paymentID, paymentAmount, paymentAsset}, nil
+	return &Address{network, version, publicKey, staked, spendPublicKey, registration, paymentID, paymentAmount, paymentAsset}, nil
 }
 
-func CreateAddr(publicKey []byte, stakable bool, spendPublicKey, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
-	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY, publicKey, stakable, spendPublicKey, registration, paymentID, paymentAmount, paymentAsset)
+func CreateAddr(publicKey []byte, staked bool, spendPublicKey, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY, publicKey, staked, spendPublicKey, registration, paymentID, paymentAmount, paymentAsset)
 }
 
 func (a *Address) EncodeAddr() string {
@@ -60,7 +60,7 @@ func (a *Address) EncodeAddr() string {
 
 	writer.Write(a.PublicKey)
 
-	writer.WriteBool(a.Stakable)
+	writer.WriteBool(a.Staked)
 	writer.WriteBool(len(a.SpendPublicKey) > 0)
 	writer.Write(a.SpendPublicKey)
 
@@ -143,7 +143,7 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, errors.New("Invalid Address Version")
 	}
 
-	if adr.Stakable, err = reader.ReadBool(); err != nil {
+	if adr.Staked, err = reader.ReadBool(); err != nil {
 		return nil, err
 	}
 

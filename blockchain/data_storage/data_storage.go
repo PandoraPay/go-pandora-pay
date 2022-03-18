@@ -125,7 +125,7 @@ func (dataStorage *DataStorage) CreatePlainAccount(publicKey []byte, validateReg
 	return dataStorage.PlainAccs.CreateNewPlainAccount(publicKey)
 }
 
-func (dataStorage *DataStorage) CreateRegistration(publicKey []byte, stakable bool, spendPublicKey []byte) (*registration.Registration, error) {
+func (dataStorage *DataStorage) CreateRegistration(publicKey []byte, staked bool, spendPublicKey []byte) (*registration.Registration, error) {
 
 	exists, err := dataStorage.PlainAccs.Exists(string(publicKey))
 	if err != nil {
@@ -135,7 +135,7 @@ func (dataStorage *DataStorage) CreateRegistration(publicKey []byte, stakable bo
 		return nil, errors.New("Can't register as a plain Account already exists")
 	}
 
-	return dataStorage.Regs.CreateNewRegistration(publicKey, stakable, spendPublicKey)
+	return dataStorage.Regs.CreateNewRegistration(publicKey, staked, spendPublicKey)
 }
 
 func (dataStorage *DataStorage) AddStakePendingStake(publicKey []byte, amount *crypto.ElGamal, blockHeight uint64) error {
@@ -149,8 +149,8 @@ func (dataStorage *DataStorage) AddStakePendingStake(publicKey []byte, amount *c
 		return errors.New("Account was not registered")
 	}
 
-	if !reg.Stakable {
-		return errors.New("reg.Stakable is false")
+	if !reg.Staked {
+		return errors.New("reg.Staked is false")
 	}
 
 	pendingStakes, err := dataStorage.PendingStakes.GetPendingStakes(blockHeight)

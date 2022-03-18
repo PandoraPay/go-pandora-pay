@@ -8,7 +8,7 @@ import (
 
 type TransactionZetherDataRegistration struct {
 	RegistrationType           TransactionZetherDataRegistrationType
-	RegistrationStakable       bool
+	RegistrationStaked         bool
 	RegistrationSpendPublicKey []byte
 	RegistrationSignature      []byte
 }
@@ -16,7 +16,7 @@ type TransactionZetherDataRegistration struct {
 func (registration *TransactionZetherDataRegistration) Serialize(w *helpers.BufferWriter) {
 	w.WriteByte(byte(registration.RegistrationType))
 	if registration.RegistrationType == NOT_REGISTERED {
-		w.WriteBool(registration.RegistrationStakable)
+		w.WriteBool(registration.RegistrationStaked)
 		w.WriteBool(len(registration.RegistrationSpendPublicKey) > 0)
 		w.Write(registration.RegistrationSpendPublicKey)
 		w.Write(registration.RegistrationSignature)
@@ -34,7 +34,7 @@ func (registration *TransactionZetherDataRegistration) Deserialize(r *helpers.Bu
 
 	switch registration.RegistrationType {
 	case NOT_REGISTERED:
-		if registration.RegistrationStakable, err = r.ReadBool(); err != nil {
+		if registration.RegistrationStaked, err = r.ReadBool(); err != nil {
 			return
 		}
 		var hasSpendPublicKey bool

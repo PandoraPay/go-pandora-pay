@@ -57,7 +57,7 @@ type WizardZetherTransfer struct {
 type WizardZetherPublicKeyIndex struct {
 	Registered                 bool   `json:"registered" msgpack:"registered"`
 	RegisteredIndex            uint64 `json:"registeredIndex" msgpack:"registeredIndex"`
-	RegistrationStakable       bool   `json:"registrationStakable" msgpack:"registrationStakable"`
+	RegistrationStaked         bool   `json:"registrationStaked" msgpack:"registrationStaked"`
 	RegistrationSpendPublicKey []byte `json:"registrationSpendPublicKey" msgpack:"registrationSpendPublicKey"`
 	RegistrationSignature      []byte `json:"registrationSignature" msgpack:"registrationSignature"`
 }

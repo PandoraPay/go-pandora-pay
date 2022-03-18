@@ -158,7 +158,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 					emap[string(payload.Asset)][p.G1().String()] = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G).Serialize()
 				}
 
-				hasRollovers[p.G1().String()] = reg != nil && reg.Stakable
+				hasRollovers[p.G1().String()] = reg != nil && reg.Staked
 
 				if isSender { //sender
 					if reg != nil && len(reg.SpendPublicKey) > 0 && payload.Extra == nil {
@@ -185,7 +185,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 						if len(addr.Registration) == 0 {
 							return fmt.Errorf("Signature is missing for %s", addr.EncodeAddr())
 						}
-						publicKeyIndex.RegistrationStakable = addr.Stakable
+						publicKeyIndex.RegistrationStaked = addr.Staked
 						publicKeyIndex.RegistrationSpendPublicKey = addr.SpendPublicKey
 						publicKeyIndex.RegistrationSignature = addr.Registration
 					}

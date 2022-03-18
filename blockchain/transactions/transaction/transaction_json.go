@@ -26,7 +26,7 @@ import (
 
 type json_TransactionDataRegistration struct {
 	RegistrationType           transaction_zether_registration.TransactionZetherDataRegistrationType `json:"registrationType"  msgpack:"registrationType"`
-	RegistrationStakable       bool                                                                  `json:"registrationStakable" msgpack:"registrationStakable"`
+	RegistrationStaked         bool                                                                  `json:"registrationStaked" msgpack:"registrationStaked"`
 	RegistrationSpendPublicKey []byte                                                                `json:"registrationSpendPublicKey" msgpack:"registrationSpendPublicKey"`
 	RegistrationSignature      []byte
 }
@@ -181,7 +181,7 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 				if reg != nil {
 					registrations[i] = &json_TransactionDataRegistration{
 						reg.RegistrationType,
-						reg.RegistrationStakable,
+						reg.RegistrationStaked,
 						reg.RegistrationSpendPublicKey,
 						reg.RegistrationSignature,
 					}
@@ -431,7 +431,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				if reg != nil {
 					payloads[i].Registrations.Registrations[i] = &transaction_zether_registration.TransactionZetherDataRegistration{
 						reg.RegistrationType,
-						reg.RegistrationStakable,
+						reg.RegistrationStaked,
 						reg.RegistrationSpendPublicKey,
 						reg.RegistrationSignature,
 					}

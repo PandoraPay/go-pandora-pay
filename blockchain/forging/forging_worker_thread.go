@@ -84,15 +84,15 @@ func (worker *ForgingWorkerThread) forge() {
 	buf := make([]byte, binary.MaxVarintLen64)
 
 	wallets := make(map[string]*ForgingWorkerThreadAddress)
-	walletsStakable := make(map[string]*ForgingWorkerThreadAddress)
-	walletsStakableTimestamp := make(map[string]uint64)
-	walletsStakableStaked := make(map[string]bool)
+	walletsStaked := make(map[string]*ForgingWorkerThreadAddress)
+	walletsStakedTimestamp := make(map[string]uint64)
+	walletsStakedUsed := make(map[string]bool)
 
 	waitCn := make(chan struct{})
 	waitCnClosed := false
 
 	validateWork := func() {
-		if work == nil || len(walletsStakable) == 0 {
+		if work == nil || len(walletsStaked) == 0 {
 			if waitCnClosed {
 				waitCn = make(chan struct{})
 				waitCnClosed = false
@@ -115,14 +115,14 @@ func (worker *ForgingWorkerThread) forge() {
 
 		n = binary.PutUvarint(buf, timestamp)
 
-		walletsStakable = make(map[string]*ForgingWorkerThreadAddress)
-		walletsStakableTimestamp = make(map[string]uint64)
-		walletsStakableStaked = make(map[string]bool)
+		walletsStaked = make(map[string]*ForgingWorkerThreadAddress)
+		walletsStakedTimestamp = make(map[string]uint64)
+		walletsStakedUsed = make(map[string]bool)
 
 		for _, walletAddr := range wallets {
 			if worker.computeStakingAmount(walletAddr, work) {
-				walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
-				walletsStakableTimestamp[walletAddr.walletAdr.publicKeyStr] = timestamp
+				walletsStaked[walletAddr.walletAdr.publicKeyStr] = walletAddr
+				walletsStakedTimestamp[walletAddr.walletAdr.publicKeyStr] = timestamp
 			}
 		}
 
@@ -146,13 +146,13 @@ func (worker *ForgingWorkerThread) forge() {
 		if work != nil {
 			if worker.computeStakingAmount(walletAddr, work) {
 				if walletAddr.walletAdr.chainHash == nil || bytes.Equal(walletAddr.walletAdr.chainHash, work.BlkComplete.PrevHash) {
-					if !walletsStakableStaked[walletAddr.walletAdr.publicKeyStr] {
-						walletsStakable[walletAddr.walletAdr.publicKeyStr] = walletAddr
-						walletsStakableTimestamp[walletAddr.walletAdr.publicKeyStr] = timestamp
+					if !walletsStakedUsed[walletAddr.walletAdr.publicKeyStr] {
+						walletsStaked[walletAddr.walletAdr.publicKeyStr] = walletAddr
+						walletsStakedTimestamp[walletAddr.walletAdr.publicKeyStr] = timestamp
 					}
 				}
 			} else {
-				delete(walletsStakable, walletAddr.walletAdr.publicKeyStr)
+				delete(walletsStaked, walletAddr.walletAdr.publicKeyStr)
 			}
 		}
 
@@ -162,7 +162,7 @@ func (worker *ForgingWorkerThread) forge() {
 	removeWalletAddr := func(publicKeyStr string) {
 		if wallets[publicKeyStr] != nil {
 			delete(wallets, publicKeyStr)
-			delete(walletsStakable, publicKeyStr)
+			delete(walletsStaked, publicKeyStr)
 		}
 		validateWork()
 	}
@@ -182,7 +182,7 @@ func (worker *ForgingWorkerThread) forge() {
 		case <-waitCn:
 		}
 
-		if len(walletsStakable) == 0 || work == nil {
+		if len(walletsStaked) == 0 || work == nil {
 			validateWork()
 			continue
 		}
@@ -194,8 +194,8 @@ func (worker *ForgingWorkerThread) forge() {
 
 		hasNewWork := func() bool {
 
-			for key, address := range walletsStakable {
-				localTimestamp, ok = walletsStakableTimestamp[key]
+			for key, address := range walletsStaked {
+				localTimestamp, ok = walletsStakedTimestamp[key]
 				if ok && localTimestamp < timeLimit {
 
 					select {
@@ -242,14 +242,14 @@ func (worker *ForgingWorkerThread) forge() {
 
 						worker.workerSolutionCn <- solution
 
-						delete(walletsStakable, key)
-						walletsStakableStaked[key] = true
+						delete(walletsStaked, key)
+						walletsStakedUsed[key] = true
 
 					} /* else { // for debugging only
 						gui.GUI.Log(base64.StdEncoding.EncodeToString(kernelHash), strconv.FormatUint(timestamp, 10 ))
 					}*/
 
-					walletsStakableTimestamp[key] += 1
+					walletsStakedTimestamp[key] += 1
 					hashes++
 				}
 

@@ -194,7 +194,7 @@ func (testnet *Testnet) run() {
 					defer creatingTransactions.UnSet()
 
 					var addr, tempAddr *wallet_address.WalletAddress
-					addr, _ = testnet.wallet.GetFirstDelegatedAddress(true)
+					addr, _ = testnet.wallet.GetFirstStakedAddress(true)
 
 					var acc *account.Account
 

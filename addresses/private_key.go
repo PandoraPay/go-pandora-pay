@@ -26,7 +26,7 @@ func (pk *PrivateKey) GeneratePublicKey() []byte {
 	return publicKey.EncodeCompressed()
 }
 
-func (pk *PrivateKey) GenerateAddress(stakable bool, spendPublicKey []byte, registration bool, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+func (pk *PrivateKey) GenerateAddress(staked bool, spendPublicKey []byte, registration bool, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	publicKey := pk.GeneratePublicKey()
 
 	version := SIMPLE_PUBLIC_KEY
@@ -35,17 +35,17 @@ func (pk *PrivateKey) GenerateAddress(stakable bool, spendPublicKey []byte, regi
 	var err error
 
 	if registration {
-		if reg, err = pk.GetRegistration(stakable, spendPublicKey); err != nil {
+		if reg, err = pk.GetRegistration(staked, spendPublicKey); err != nil {
 			return nil, err
 		}
 	}
 
-	return NewAddr(config.NETWORK_SELECTED, version, publicKey, stakable, spendPublicKey, reg, paymentID, paymentAmount, paymentAsset)
+	return NewAddr(config.NETWORK_SELECTED, version, publicKey, staked, spendPublicKey, reg, paymentID, paymentAmount, paymentAsset)
 }
 
-func (pk *PrivateKey) GetRegistration(stakable bool, spendPublicKey []byte) ([]byte, error) {
+func (pk *PrivateKey) GetRegistration(staked bool, spendPublicKey []byte) ([]byte, error) {
 	data := []byte("registration")
-	if stakable {
+	if staked {
 		data = append(data, 1)
 	} else {
 		data = append(data, 0)

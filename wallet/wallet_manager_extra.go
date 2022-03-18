@@ -66,7 +66,7 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, reg *registrati
 
 	deleted := false
 
-	if acc == nil || reg == nil || !reg.Stakable {
+	if acc == nil || reg == nil || !reg.Staked {
 		deleted = true
 	} else {
 

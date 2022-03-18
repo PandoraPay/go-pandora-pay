@@ -74,11 +74,11 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 			return errors.New("Amount, PaymentID or IntegratedPaymentAsset are not allowed in the airdrop address")
 		}
 
-		if registrations.VerifyRegistration(addr.PublicKey, addr.Stakable, addr.SpendPublicKey, addr.Registration) == false {
+		if registrations.VerifyRegistration(addr.PublicKey, addr.Staked, addr.SpendPublicKey, addr.Registration) == false {
 			return errors.New("Registration verification is false")
 		}
 
-		if _, err = dataStorage.CreateRegistration(addr.PublicKey, addr.Stakable, addr.SpendPublicKey); err != nil {
+		if _, err = dataStorage.CreateRegistration(addr.PublicKey, addr.Staked, addr.SpendPublicKey); err != nil {
 			return
 		}
 

@@ -190,7 +190,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 				registrations[t][i] = &transaction_zether_registration.TransactionZetherDataRegistration{
 					transaction_zether_registration.NOT_REGISTERED,
-					publicKeyIndex.RegistrationStakable,
+					publicKeyIndex.RegistrationStaked,
 					publicKeyIndex.RegistrationSpendPublicKey,
 					publicKeyIndex.RegistrationSignature,
 				}
@@ -372,7 +372,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			extraBytes += 1 + len(payload.Asset)
 		}
 		extraBytes += len(rings[t]) * 1                                                   //registrations length
-		extraBytes += unregisteredAccounts[t] * (1 + cryptography.SignatureSize)          //1 byte if it is stakable
+		extraBytes += unregisteredAccounts[t] * (1 + cryptography.SignatureSize)          //1 byte if it is staked
 		extraBytes += 1 + dataLength                                                      //dataVersion + data
 		extraBytes += len(rings[t])*33*2 + (len(rings[t])-emptyAccounts[t])*33*2 + 33 + 1 //statement
 		if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {

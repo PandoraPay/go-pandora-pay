@@ -31,7 +31,7 @@ func (wallet *Wallet) GetRandomAddress() *wallet_address.WalletAddress {
 	return wallet.Addresses[index]
 }
 
-func (wallet *Wallet) GetFirstDelegatedAddress(lock bool) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) GetFirstStakedAddress(lock bool) (*wallet_address.WalletAddress, error) {
 
 	if lock {
 		wallet.Lock.RLock()
@@ -39,7 +39,7 @@ func (wallet *Wallet) GetFirstDelegatedAddress(lock bool) (*wallet_address.Walle
 
 	var found *wallet_address.WalletAddress
 	for _, addr := range wallet.Addresses {
-		if addr.Stakable {
+		if addr.Staked {
 			found = addr
 			break
 		}
@@ -57,7 +57,7 @@ func (wallet *Wallet) GetFirstDelegatedAddress(lock bool) (*wallet_address.Walle
 
 func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, error) {
 
-	addr, err := wallet.GetFirstDelegatedAddress(true)
+	addr, err := wallet.GetFirstStakedAddress(true)
 	if err != nil {
 		return "", err
 	}
@@ -93,7 +93,7 @@ func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte, lock bool) *
 	return wallet.addressesMap[string(publicKey)].Clone()
 }
 
-func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte, stakable, spendRequired bool) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte, staked, spendRequired bool) (*wallet_address.WalletAddress, error) {
 
 	secretChild, err := bip32.Deserialize(secretKey)
 	if err != nil {
@@ -122,7 +122,7 @@ func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte, stakable, s
 		IsMine:          true,
 	}
 
-	if err := wallet.AddAddress(addr, stakable, spendRequired, true, false, false); err != nil {
+	if err := wallet.AddAddress(addr, staked, spendRequired, true, false, false); err != nil {
 		return nil, err
 	}
 
@@ -142,7 +142,7 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 		return errors.New("DELEGATES_MAXIMUM exceeded")
 	}
 
-	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, adr.PublicKey, adr.Stakable, adr.SpendPublicKey, nil, nil, 0, nil)
+	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, adr.PublicKey, adr.Staked, adr.SpendPublicKey, nil, nil, 0, nil)
 	if err != nil {
 		return
 	}
@@ -170,7 +170,7 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 	return
 }
 
-func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, stakable, spendRequired, lock bool, incrementSeedIndex bool, incrementImportedCountIndex bool) (err error) {
+func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spendRequired, lock bool, incrementSeedIndex bool, incrementImportedCountIndex bool) (err error) {
 
 	if lock {
 		wallet.Lock.Lock()
@@ -194,17 +194,17 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, stakable, s
 	}
 
 	var addr1, addr2 *addresses.Address
-	if addr1, err = addr.PrivateKey.GenerateAddress(stakable, spendPublicKey, false, nil, 0, nil); err != nil {
+	if addr1, err = addr.PrivateKey.GenerateAddress(staked, spendPublicKey, false, nil, 0, nil); err != nil {
 		return
 	}
 
-	if addr2, err = addr.PrivateKey.GenerateAddress(stakable, spendPublicKey, true, nil, 0, nil); err != nil {
+	if addr2, err = addr.PrivateKey.GenerateAddress(staked, spendPublicKey, true, nil, 0, nil); err != nil {
 		return
 	}
 
 	publicKey := addr.PrivateKey.GeneratePublicKey()
 
-	addr.Stakable = stakable
+	addr.Staked = staked
 	addr.SpendRequired = spendRequired
 	addr.AddressEncoded = addr1.EncodeAddr()
 	addr.AddressRegistrationEncoded = addr2.EncodeAddr()
@@ -304,7 +304,7 @@ func (wallet *Wallet) GenerateSpendPrivateKey(seedIndex uint32, lock bool) ([]by
 	return key.Key, nil
 }
 
-func (wallet *Wallet) AddNewAddress(lock bool, name string, stakable, spendRequired bool) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) AddNewAddress(lock bool, name string, staked, spendRequired bool) (*wallet_address.WalletAddress, error) {
 
 	//avoid generating the same address twice
 	if lock {
@@ -340,7 +340,7 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string, stakable, spendRequi
 		IsMine:          true,
 	}
 
-	if err = wallet.AddAddress(addr, stakable, spendRequired, false, true, false); err != nil {
+	if err = wallet.AddAddress(addr, staked, spendRequired, false, true, false); err != nil {
 		return nil, err
 	}
 
@@ -485,7 +485,7 @@ func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.Wall
 		addr.SeedIndex = 0
 	}
 
-	if err := wallet.AddAddress(addr, addr.Stakable, addr.SpendRequired, false, false, isMine); err != nil {
+	if err := wallet.AddAddress(addr, addr.Staked, addr.SpendRequired, false, false, isMine); err != nil {
 		return nil, err
 	}
 

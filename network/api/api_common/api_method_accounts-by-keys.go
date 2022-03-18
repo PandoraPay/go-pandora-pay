@@ -65,7 +65,7 @@ func (api *APICommon) GetAccountsByKeys(r *http.Request, args *APIAccountsByKeys
 			if reply.Reg[i], err = regs.GetRegistration(publicKeys[i]); err != nil {
 				return
 			}
-			hasRollovers[i] = reply.Acc[i] != nil && reply.Reg[i].Stakable
+			hasRollovers[i] = reply.Acc[i] != nil && reply.Reg[i].Staked
 		}
 
 		return

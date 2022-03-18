@@ -23,7 +23,7 @@ func (self *TransactionZetherDataRegistrations) ValidateRegistrations(publickeyl
 
 	for i, reg := range self.Registrations {
 		if reg != nil {
-			if registrations.VerifyRegistrationPoint(publickeylist[i], reg.RegistrationStakable, reg.RegistrationSpendPublicKey, reg.RegistrationSignature) == false {
+			if registrations.VerifyRegistrationPoint(publickeylist[i], reg.RegistrationStaked, reg.RegistrationSpendPublicKey, reg.RegistrationSignature) == false {
 				return fmt.Errorf("Registration is invalid for %d", i)
 			}
 		}
@@ -36,7 +36,7 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataSt
 
 	for i, reg := range self.Registrations {
 		if reg != nil {
-			if _, err = dataStorage.CreateRegistration(publicKeyList[i], reg.RegistrationStakable, reg.RegistrationSpendPublicKey); err != nil {
+			if _, err = dataStorage.CreateRegistration(publicKeyList[i], reg.RegistrationStaked, reg.RegistrationSpendPublicKey); err != nil {
 				return
 			}
 		}

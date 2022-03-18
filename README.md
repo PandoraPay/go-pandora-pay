@@ -49,13 +49,11 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [x] Timestamp maximum drift    
 - [x] Forging
     - [x] Forging with wallets Multithreading    
-    - [X] Forging with stakable accounts
-        - [x] Accepting to delegate stakes from network
-        - [x] Integrating delegate stakes fee 
+    - [X] Forging with staked accounts
+        - [x] Accepting to stakes from network
 - [x] Balances
     - [x] Balance and Nonce Update
-    - [x] Delegating stake
-    - [x] Support for Multiple Assets
+    - [x] Liquidity fee
 - [x] Homomorphic Balances
     - [x] Homomorphic balance and nonce   
     - [x] Multiple Assets
@@ -73,11 +71,14 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [x] Multi Threading signature verification   
 - [x] Simple Transactions
   - [x] Unstake Tx
-  - [x] Update Delegate Tx
-- [x] Zether Transactions 
-  - [x] Claim Tx
-  - [x] Delegate Stake
-  - [x] Transfer Tx
+- [x] Zether Transactions
+  - [x] Transfer
+  - [x] Unstake
+  - [x] Staking
+  - [x] Staking Reward
+  - [x] Asset Create
+  - [x] Asset Supply Increase
+  - [x] Plain Account Fund
 - [ ] Mem Pool
     - [ ] Saving/Loading **
     - [X] Inserting Txs

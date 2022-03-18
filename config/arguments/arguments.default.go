@@ -8,7 +8,7 @@ package arguments
 const commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--pprof] [--network=network] [--debug] [--forging] [--new-devnet] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tcp-server-auto-tls-certificate] [--tor-onion=onion] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-delegated-address=args] [--hcaptcha-site-key=args] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegator-enabled=bool] [--delegator-require-auth=bool] [--delegates-maximum=args] [--delegator-fee=args] [--delegator-reward-collector-pub-key=args] [--delegator-accept-custom-keys=bool] [--auth-users=args] [--light-computations] [--exit] [--skip-init-sync]
+  pandorapay [--pprof] [--network=network] [--debug] [--forging] [--new-devnet] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tcp-server-auto-tls-certificate] [--tor-onion=onion] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-staked-address=args] [--hcaptcha-site-key=args] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegator-enabled=bool] [--delegator-require-auth=bool] [--delegates-maximum=args] [--delegator-fee=args] [--delegator-reward-collector-pub-key=args] [--delegator-accept-custom-keys=bool] [--auth-users=args] [--light-computations] [--exit] [--skip-init-sync]
   pandorapay -h | --help
   pandorapay -v | --version
 
@@ -18,7 +18,7 @@ Options:
   --network=network                                  Select network. Accepted values: "mainnet|testnet|devnet". [default: mainnet]
   --new-devnet                                       Create a new devnet genesis.
   --set-genesis=genesis                              Manually set the Genesis via a JSON. By using argument "file" it will read it via a file.
-  --create-new-genesis=args                          Create a new Genesis. Useful for creating a new private testnet. Argument must be "0.delegatedStake,1.delegatedStake,2.delegatedStake"
+  --create-new-genesis=args                          Create a new Genesis. Useful for creating a new private testnet. Argument must be "0.stake,1.stake,2.stake"
   --store-wallet-type=type                           Set Wallet Store Type. Accepted values: "bolt|bunt|bunt-memory|memory". [default: bolt]
   --store-chain-type=type                            Set Chain Store Type. Accepted values: "bolt|bunt|bunt-memory|memory".  [default: bolt]
   --debug                                            Debug mode enabled (print log message).
@@ -37,7 +37,7 @@ Options:
   --wallet-encrypt=args                              Encrypt wallet. Argument must be "password,difficulty".
   --wallet-decrypt=password                          Decrypt wallet.
   --wallet-remove-encryption                         Remove wallet encryption.
-  --wallet-export-delegated-address=args               Derive and export Delegated Stake. Argument must be "account,nonce,path".
+  --wallet-export-staked-address=args                Derive and export Staked address. Argument must be "account,nonce,path".
   --hcaptcha-site-key=args                           hcaptcha Site key.
   --hcaptcha-secret=args                             hcaptcha Secret.
   --faucet-testnet-enabled=args                      Enable Faucet Testnet. Use "true" to enable it
@@ -46,7 +46,7 @@ Options:
   --delegates-maximum=args                           Maximum number of Delegates
   --delegator-fee=args                               Fee required for Delegates
   --delegator-reward-collector-pub-key=args          Delegator Reward Collector Address
-  --delegator-accept-custom-keys=bool                Delegator accept custom private keys for delegated stakes. This should not be allowed in pools where the reward is split.
+  --delegator-accept-custom-keys=bool                Delegator accept custom private keys for staked addresses. This should not be allowed in pools where the reward is split.
   --auth-users=args                                  Credential for Authenticated Users. Arguments must be a JSON "[{'user': 'username', 'pass': 'secret'}]".
   --light-computations                               Reduces the computations for a testnet node.
   --exit                                             Exit node.

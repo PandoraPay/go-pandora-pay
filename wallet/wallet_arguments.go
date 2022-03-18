@@ -35,13 +35,13 @@ func (wallet *Wallet) ProcessWalletArguments() (err error) {
 		}
 	}
 
-	if str := globals.Arguments["--wallet-export-delegated-address"]; str != nil {
+	if str := globals.Arguments["--wallet-export-staked-address"]; str != nil {
 		v := strings.Split(str.(string), ",")
 
 		var addr *wallet_address.WalletAddress
 
 		if v[0] == "auto" {
-			if addr, err = wallet.GetFirstDelegatedAddress(true); err != nil {
+			if addr, err = wallet.GetFirstStakedAddress(true); err != nil {
 				return
 			}
 		} else {
@@ -61,7 +61,7 @@ func (wallet *Wallet) ProcessWalletArguments() (err error) {
 		}
 
 		if addr == nil {
-			return errors.New("Address specified by --wallet-export-delegated-address was not found")
+			return errors.New("Address specified by --wallet-export-staked-address was not found")
 		}
 		if err = wallet.exportDelegatedAddress(addr, v[2], false); err != nil {
 			return

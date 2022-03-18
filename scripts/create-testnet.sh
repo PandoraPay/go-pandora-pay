@@ -70,7 +70,7 @@ if [ $continue == false ]; then
 
   sleep 0.2
 
-  # In case the genesis file is not found, let's create new wallets and generate the delegated stakes files
+  # In case the genesis file is not found, let's create new wallets and generate the staked addresses files
   if [ $genesisExists == false ]; then
 
     for ((i = 0; i < $nodes; ++i)); do
@@ -79,8 +79,8 @@ if [ $continue == false ]; then
       rm ./_build/devnet_$i/DEV/store/wallet_store.bolt 2>/dev/null
 
       echo "running $i"
-      xterm -e go run main.go --instance="devnet" --instance-id="$i" --network="devnet" --wallet-export-delegated-address="auto,0,delegated.stake" --exit
-      mv ./_build/devnet_$i/DEV/delegated.stake ./_build/devnet_0/DEV/$i.stake
+      xterm -e go run main.go --instance="devnet" --instance-id="$i" --network="devnet" --wallet-export-staked-address="auto,0,staked.address" --exit
+      mv ./_build/devnet_$i/DEV/staked.address ./_build/devnet_0/DEV/$i.stake
       echo "executed"
 
     done

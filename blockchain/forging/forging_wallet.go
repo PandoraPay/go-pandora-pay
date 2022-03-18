@@ -86,8 +86,8 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasAccoun
 	return
 }
 
-func (w *ForgingWallet) RemoveWallet(DelegatedStakePublicKey []byte, hasAccount bool, acc *account.Account, reg *registration.Registration, chainHeight uint64) { //20 byte
-	w.AddWallet(nil, DelegatedStakePublicKey, hasAccount, acc, reg, chainHeight)
+func (w *ForgingWallet) RemoveWallet(delegatedPublicKey []byte, hasAccount bool, acc *account.Account, reg *registration.Registration, chainHeight uint64) { //20 byte
+	w.AddWallet(nil, delegatedPublicKey, hasAccount, acc, reg, chainHeight)
 }
 
 func (w *ForgingWallet) runDecryptBalanceAndNotifyWorkers() {
@@ -200,8 +200,8 @@ func (w *ForgingWallet) runProcessUpdates() {
 						return errors.New("Registration was not found")
 					}
 
-					if !update.registration.Stakable {
-						return errors.New("It is no longer stakable")
+					if !update.registration.Staked {
+						return errors.New("It is no longer staked")
 					}
 
 					address := w.addressesMap[key]
@@ -243,7 +243,7 @@ func (w *ForgingWallet) runProcessUpdates() {
 				if w.addressesMap[k] != nil {
 					if v.Stored == "update" {
 						reg := v.Element.(*registration.Registration)
-						if !reg.Stakable {
+						if !reg.Staked {
 							w.deleteAccount(k)
 						}
 					} else if v.Stored == "delete" {

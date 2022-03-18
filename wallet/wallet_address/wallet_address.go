@@ -15,20 +15,20 @@ type WalletAddress struct {
 	SpendPrivateKey            *addresses.PrivateKey `json:"spendPrivateKey" msgpack:"spendPrivateKey"`
 	Registration               []byte                `json:"registration" msgpack:"registration"`
 	PublicKey                  []byte                `json:"publicKey" msgpack:"publicKey"`
-	Stakable                   bool                  `json:"stakable" msgpack:"stakable"`
+	Staked                     bool                  `json:"staked" msgpack:"staked"`
 	SpendRequired              bool                  `json:"spendRequired" msgpack:"spendRequired"`
 	SpendPublicKey             []byte                `json:"spendPublicKey" msgpack:"spendPublicKey"`
 	AddressEncoded             string                `json:"addressEncoded" msgpack:"addressEncoded"`
 	AddressRegistrationEncoded string                `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
 }
 
-func (addr *WalletAddress) DeriveDelegatedStake() (*WalletAddressDelegatedStake, error) {
+func (addr *WalletAddress) DeriveDelegatedStake() (*WalletAddressSharedStake, error) {
 
 	if addr.PrivateKey == nil {
 		return nil, errors.New("Private Key is missing")
 	}
 
-	return &WalletAddressDelegatedStake{
+	return &WalletAddressSharedStake{
 		PrivateKey: addr.PrivateKey,
 		PublicKey:  addr.PublicKey,
 	}, nil
@@ -79,7 +79,7 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		addr.SpendPrivateKey,
 		addr.Registration,
 		addr.PublicKey,
-		addr.Stakable,
+		addr.Staked,
 		addr.SpendRequired,
 		addr.SpendPublicKey,
 		addr.AddressEncoded,

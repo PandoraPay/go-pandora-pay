@@ -13,9 +13,9 @@ type Registrations struct {
 	*hash_map.HashMap
 }
 
-func VerifyRegistration(publicKey []byte, stakable bool, spendPublicKey, registrationSignature []byte) bool {
+func VerifyRegistration(publicKey []byte, staked bool, spendPublicKey, registrationSignature []byte) bool {
 	data := []byte("registration")
-	if stakable {
+	if staked {
 		data = append(data, 1)
 	} else {
 		data = append(data, 0)
@@ -24,9 +24,9 @@ func VerifyRegistration(publicKey []byte, stakable bool, spendPublicKey, registr
 	return crypto.VerifySignature(data, registrationSignature, publicKey)
 }
 
-func VerifyRegistrationPoint(publicKey *bn256.G1, stakable bool, spendPublicKey, registrationSignature []byte) bool {
+func VerifyRegistrationPoint(publicKey *bn256.G1, staked bool, spendPublicKey, registrationSignature []byte) bool {
 	data := []byte("registration")
-	if stakable {
+	if staked {
 		data = append(data, 1)
 	} else {
 		data = append(data, 0)
@@ -36,9 +36,9 @@ func VerifyRegistrationPoint(publicKey *bn256.G1, stakable bool, spendPublicKey,
 }
 
 //WARNING: should NOT be used manually without being called from DataStorage
-func (registrations *Registrations) CreateNewRegistration(publicKey []byte, stakable bool, spendPublicKey []byte) (*registration.Registration, error) {
+func (registrations *Registrations) CreateNewRegistration(publicKey []byte, staked bool, spendPublicKey []byte) (*registration.Registration, error) {
 	reg := registration.NewRegistration(publicKey, 0) //index will be set by update
-	reg.Stakable = stakable
+	reg.Staked = staked
 	reg.SpendPublicKey = spendPublicKey
 	if err := registrations.HashMap.Create(string(publicKey), reg); err != nil {
 		return nil, err

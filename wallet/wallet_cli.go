@@ -26,8 +26,8 @@ import (
 
 func (wallet *Wallet) exportDelegatedAddress(addr *wallet_address.WalletAddress, path string, print bool) (err error) {
 
-	if !addr.Stakable {
-		return errors.New("Address is not Stakable")
+	if !addr.Staked {
+		return errors.New("Address is not Staked")
 	}
 
 	if print {
@@ -150,7 +150,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 		}
 
 		if addresses[i].registration != nil {
-			gui.GUI.OutputWrite(fmt.Sprintf("%18s: Stakable: %v SpendPublicKey: %s", "Registered", addresses[i].registration.Stakable, base64.StdEncoding.EncodeToString(addresses[i].registration.SpendPublicKey)))
+			gui.GUI.OutputWrite(fmt.Sprintf("%18s: Staked: %v SpendPublicKey: %s", "Registered", addresses[i].registration.Staked, base64.StdEncoding.EncodeToString(addresses[i].registration.SpendPublicKey)))
 		}
 
 		if addresses[i].plainAcc != nil {
@@ -409,7 +409,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		path := gui.GUI.OutputReadFilename("Path to export to a file", "delegatedStake")
+		path := gui.GUI.OutputReadFilename("Path to export to a file", "staked")
 
 		return wallet.exportDelegatedAddress(addr, path, true)
 

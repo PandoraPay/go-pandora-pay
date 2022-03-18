@@ -110,7 +110,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 				if addr, _, reg, err = builder.getRandomAccount(accs, dataStorage.Regs); err != nil {
 					return err
 				}
-				if (requireStakedAccounts && !reg.Stakable) || (!requireStakedAccounts && len(reg.SpendPublicKey) > 0) {
+				if (requireStakedAccounts && !reg.Staked) || (!requireStakedAccounts && len(reg.SpendPublicKey) > 0) {
 					continue
 				}
 				if alreadyUsed[string(addr.PublicKey)] {
@@ -176,7 +176,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 				if addr, _, reg, err = builder.getRandomAccount(accs, dataStorage.Regs); err != nil {
 					return
 				}
-				if (requireStakedAccounts && !reg.Stakable) || (!requireStakedAccounts && len(reg.SpendPublicKey) > 0) {
+				if (requireStakedAccounts && !reg.Staked) || (!requireStakedAccounts && len(reg.SpendPublicKey) > 0) {
 					continue
 				}
 			}
@@ -400,7 +400,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 						return
 					}
 
-					hasRollover := acc != nil && reg.Stakable
+					hasRollover := acc != nil && reg.Staked
 
 					var newBalance *crypto.ElGamal
 					if acc != nil {
@@ -441,7 +441,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 							if len(addr.Registration) == 0 {
 								return fmt.Errorf("Signature is missing for %s", addr.EncodeAddr())
 							}
-							publicKeyIndex.RegistrationStakable = addr.Stakable
+							publicKeyIndex.RegistrationStaked = addr.Staked
 							publicKeyIndex.RegistrationSpendPublicKey = addr.SpendPublicKey
 							publicKeyIndex.RegistrationSignature = addr.Registration
 						}

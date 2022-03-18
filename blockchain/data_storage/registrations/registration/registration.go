@@ -12,7 +12,7 @@ type Registration struct {
 	PublicKey                                    []byte `json:"-" msgpack:"-"` //hashMap key
 	Index                                        uint64 `json:"-" msgpack:"-"` //hashMap index
 	Version                                      uint64 `json:"version" msgpack:"version"`
-	Stakable                                     bool   `json:"stakable" msgpack:"stakable"`
+	Staked                                       bool   `json:"staked" msgpack:"staked"`
 	SpendPublicKey                               []byte `json:"spendPublicKey" msgpack:"spendPublicKey"`
 }
 
@@ -40,7 +40,7 @@ func (registration *Registration) Validate() error {
 
 func (registration *Registration) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(registration.Version)
-	w.WriteBool(registration.Stakable)
+	w.WriteBool(registration.Staked)
 	w.WriteBool(len(registration.SpendPublicKey) > 0)
 	w.Write(registration.SpendPublicKey)
 }
@@ -49,7 +49,7 @@ func (registration *Registration) Deserialize(r *helpers.BufferReader) (err erro
 	if registration.Version, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if registration.Stakable, err = r.ReadBool(); err != nil {
+	if registration.Staked, err = r.ReadBool(); err != nil {
 		return
 	}
 
@@ -70,7 +70,7 @@ func NewRegistration(publicKey []byte, index uint64) *Registration {
 		PublicKey:      publicKey,
 		Index:          index,
 		Version:        0,
-		Stakable:       false,
+		Staked:         false,
 		SpendPublicKey: nil,
 	}
 }
