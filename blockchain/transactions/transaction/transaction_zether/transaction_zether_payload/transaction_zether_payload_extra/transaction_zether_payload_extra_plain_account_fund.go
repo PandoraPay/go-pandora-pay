@@ -37,7 +37,7 @@ func (payloadExtra *TransactionZetherPayloadExtraPlainAccountFund) ComputeAllKey
 }
 
 func (payloadExtra *TransactionZetherPayloadExtraPlainAccountFund) VerifyExtraSignature(hashForSignature []byte, payloadStatement *crypto.Statement) bool {
-
+	return false
 }
 
 func (payloadExtra *TransactionZetherPayloadExtraPlainAccountFund) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, payloadParity bool) error {

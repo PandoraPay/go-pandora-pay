@@ -56,7 +56,7 @@ func (payload *TransactionZetherPayload) processAssetFee(assetId []byte, txFee, 
 		return errors.New("There is no Asset Fee Liquidity Available")
 	}
 
-	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(key, blockHeight)
+	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(key)
 	if err != nil {
 		return
 	}

@@ -347,7 +347,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 
 			if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && payload.Fee.Auto {
 				var assetFeeLiquidity *asset_fee_liquidity.AssetFeeLiquidity
-				if assetFeeLiquidity, err = dataStorage.GetAssetFeeLiquidityTop(payload.Asset, chainHeight); err != nil {
+				if assetFeeLiquidity, err = dataStorage.GetAssetFeeLiquidityTop(payload.Asset); err != nil {
 					return
 				}
 				if assetFeeLiquidity == nil {

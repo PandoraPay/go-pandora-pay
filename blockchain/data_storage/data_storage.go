@@ -232,18 +232,18 @@ func (dataStorage *DataStorage) SubtractUnclaimed(plainAcc *plain_account.PlainA
 	return nil
 }
 
-func (dataStorage *DataStorage) GetWhoHasAssetTopLiquidity(assetId []byte, blockHeight uint64) (*plain_account.PlainAccount, error) {
+func (dataStorage *DataStorage) GetWhoHasAssetTopLiquidity(assetId []byte) (*plain_account.PlainAccount, error) {
 	key, err := dataStorage.AstsFeeLiquidityCollection.GetTopLiquidity(assetId)
 	if err != nil || key == nil {
 		return nil, err
 	}
 
-	return dataStorage.PlainAccs.GetPlainAccount(key, blockHeight)
+	return dataStorage.PlainAccs.GetPlainAccount(key)
 }
 
-func (dataStorage *DataStorage) GetAssetFeeLiquidityTop(assetId []byte, blockHeight uint64) (*asset_fee_liquidity.AssetFeeLiquidity, error) {
+func (dataStorage *DataStorage) GetAssetFeeLiquidityTop(assetId []byte) (*asset_fee_liquidity.AssetFeeLiquidity, error) {
 
-	plainAcc, err := dataStorage.GetWhoHasAssetTopLiquidity(assetId, blockHeight)
+	plainAcc, err := dataStorage.GetWhoHasAssetTopLiquidity(assetId)
 	if err != nil || plainAcc == nil {
 		return nil, err
 	}

@@ -350,6 +350,50 @@ func (builder *TxsBuilder) initCLI() {
 		return
 	}
 
+	cliPrivatePlainAccountFund := func(cmd string, ctx context.Context) (err error) {
+		builder.showWarningIfNotSyncCLI()
+
+		extra := &wizard.WizardZetherPayloadExtraPlainAccountFund{}
+		txData := &TxBuilderCreateZetherTxData{
+			Payloads: []*TxBuilderCreateZetherTxPayload{{
+				Extra: extra,
+				Asset: config_coins.NATIVE_ASSET_FULL,
+			}},
+		}
+
+		if _, txData.Payloads[0].Sender, _, err = builder.wallet.CliSelectAddress("Select Address which will increase the supply of asset", ctx); err != nil {
+			return
+		}
+
+		var plainAccountAddress *addresses.Address
+		if plainAccountAddress, _, txData.Payloads[0].Amount, err = builder.readAddressOptional("Plain Account", config_coins.NATIVE_ASSET_FULL, false); err != nil {
+			return
+		}
+
+		extra.PlainAccountPublicKey = plainAccountAddress.PublicKey
+
+		if _, txData.Payloads[0].Recipient, txData.Payloads[0].Amount, err = builder.readAddressOptional("Transfer Address", config_coins.NATIVE_ASSET_FULL, true); err != nil {
+			return
+		}
+
+		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
+		txData.Payloads[0].Data = builder.readData()
+		txData.Payloads[0].Fee = builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
+
+		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
+
+		tx, err := builder.CreateZetherTx(txData, nil, propagate, true, true, false, ctx, func(status string) {
+			gui.GUI.OutputWrite(status)
+		})
+		if err != nil {
+			return
+		}
+
+		gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
+
+		return
+	}
+
 	cliUpdateDelegate := func(cmd string, ctx context.Context) (err error) {
 
 		//builder.showWarningIfNotSyncCLI()
@@ -447,6 +491,7 @@ func (builder *TxsBuilder) initCLI() {
 	gui.GUI.CommandDefineCallback("Private Transfer", cliPrivateTransfer, true)
 	gui.GUI.CommandDefineCallback("Private Asset Create", cliPrivateAssetCreate, true)
 	gui.GUI.CommandDefineCallback("Private Asset Supply Increase", cliPrivateAssetSupplyIncrease, true)
+	gui.GUI.CommandDefineCallback("Private Plain Account Fund", cliPrivatePlainAccountFund, true)
 	gui.GUI.CommandDefineCallback("Update Delegate", cliUpdateDelegate, true)
 	gui.GUI.CommandDefineCallback("Update Asset Fee Liquidity", cliUpdateAssetFeeLiquidity, true)
 

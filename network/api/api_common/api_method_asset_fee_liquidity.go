@@ -1,7 +1,6 @@
 package api_common
 
 import (
-	"encoding/binary"
 	"errors"
 	"net/http"
 	"pandora-pay/blockchain/data_storage"
@@ -33,11 +32,10 @@ func (api *APICommon) GetAssetFeeLiquidity(r *http.Request, args *APIAssetFeeLiq
 			}
 		}
 
-		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 		dataStorage := data_storage.NewDataStorage(reader)
 
 		var plainAcc *plain_account.PlainAccount
-		if plainAcc, err = dataStorage.GetWhoHasAssetTopLiquidity(args.Hash, chainHeight); err != nil || plainAcc == nil {
+		if plainAcc, err = dataStorage.GetWhoHasAssetTopLiquidity(args.Hash); err != nil || plainAcc == nil {
 			return helpers.ReturnErrorIfNot(err, "Error retrieving Who Has Asset TopLiqiduity")
 		}
 

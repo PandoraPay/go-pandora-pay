@@ -1,7 +1,6 @@
 package api_common
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"net/http"
@@ -58,7 +57,7 @@ func (api *APICommon) GetWalletBalances(r *http.Request, args *APIWalletGetBalan
 	reply.Results = make([]*APIWalletGetBalancesResultReply, len(publicKeys))
 
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
+
 		dataStorage := data_storage.NewDataStorage(reader)
 
 		for i, publicKey := range publicKeys {
@@ -73,7 +72,7 @@ func (api *APICommon) GetWalletBalances(r *http.Request, args *APIWalletGetBalan
 			reply.Results[i].Address = walletAddresses[i].GetAddress(isReg)
 
 			var plainAcc *plain_account.PlainAccount
-			if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(publicKey, chainHeight); err != nil {
+			if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(publicKey); err != nil {
 				return
 			}
 

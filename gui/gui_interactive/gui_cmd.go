@@ -48,6 +48,7 @@ var commands = []Command{
 	{Name: "Wallet:TX", Text: "Private Claim"},
 	{Name: "Wallet:TX", Text: "Private Asset Create"},
 	{Name: "Wallet:TX", Text: "Private Asset Supply Increase"},
+	{Name: "Wallet:TX", Text: "Private Plain Account Fund"},
 	{Name: "Wallet:TX", Text: "Update Delegate"},
 	{Name: "Wallet:TX", Text: "Update Asset Fee Liquidity"},
 	{Name: "Wallet", Text: "Export Addresses"},

@@ -3,7 +3,6 @@ package wallet
 import (
 	"context"
 	"encoding/base64"
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -86,7 +85,6 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 		dataStorage := data_storage.NewDataStorage(reader)
 
 		var ast *asset.Asset
@@ -104,7 +102,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 				return
 			}
 
-			if addresses[i].plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(address.publicKey, chainHeight); err != nil {
+			if addresses[i].plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(address.publicKey); err != nil {
 				return
 			}
 
