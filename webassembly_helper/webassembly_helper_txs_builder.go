@@ -122,7 +122,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 				return
 			}
 			if uniqueMap[string(addr.PublicKey)] {
-				return
+				return errors.New("Ring Member detected twice")
 			}
 			uniqueMap[string(addr.PublicKey)] = true
 
@@ -148,7 +148,6 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 						return
 					}
 					emap[string(payload.Asset)][p.G1().String()] = acc.Balance.Amount.Serialize()
-					hasRollovers[p.G1().String()] = acc != nil && reg.Stakable
 				} else {
 					var acckey crypto.Point
 					if err = acckey.DecodeCompressed(addr.PublicKey); err != nil {
@@ -156,6 +155,8 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 					}
 					emap[string(payload.Asset)][p.G1().String()] = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G).Serialize()
 				}
+
+				hasRollovers[p.G1().String()] = reg != nil && reg.Stakable
 
 				if isSender { //sender
 					if reg != nil && len(reg.SpendPublicKey) > 0 && payload.Extra == nil {
