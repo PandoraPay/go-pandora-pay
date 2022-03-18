@@ -22,7 +22,7 @@ type WalletAddress struct {
 	AddressRegistrationEncoded string                `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
 }
 
-func (addr *WalletAddress) DeriveDelegatedStake() (*WalletAddressSharedStake, error) {
+func (addr *WalletAddress) DeriveSharedStake() (*WalletAddressSharedStake, error) {
 
 	if addr.PrivateKey == nil {
 		return nil, errors.New("Private Key is missing")

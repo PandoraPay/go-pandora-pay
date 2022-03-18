@@ -157,10 +157,10 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 
 			if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING && payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING_REWARD {
 				if len(reg.SpendPublicKey) > 0 {
-					if payload.Extra == nil || payload.PayloadScript != transaction_zether_payload_script.SCRIPT_UNSTAKE {
-						return errors.New("PayloadScript should be unstake")
+					if payload.Extra == nil || payload.PayloadScript != transaction_zether_payload_script.SCRIPT_SPEND {
+						return errors.New("PayloadScript should be spend")
 					}
-					if !bytes.Equal(reg.SpendPublicKey, payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake).SenderSpendPublicKey.EncodeCompressed()) {
+					if !bytes.Equal(reg.SpendPublicKey, payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraSpend).SenderSpendPublicKey.EncodeCompressed()) {
 						return errors.New("Spend Public Key is not matching")
 					}
 				}
@@ -258,7 +258,7 @@ func (payload *TransactionZetherPayload) Validate(payloadIndex byte) (err error)
 
 	switch payload.PayloadScript {
 	case transaction_zether_payload_script.SCRIPT_TRANSFER:
-	case transaction_zether_payload_script.SCRIPT_STAKING, transaction_zether_payload_script.SCRIPT_STAKING_REWARD, transaction_zether_payload_script.SCRIPT_UNSTAKE, transaction_zether_payload_script.SCRIPT_ASSET_CREATE, transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE, transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND:
+	case transaction_zether_payload_script.SCRIPT_STAKING, transaction_zether_payload_script.SCRIPT_STAKING_REWARD, transaction_zether_payload_script.SCRIPT_SPEND, transaction_zether_payload_script.SCRIPT_ASSET_CREATE, transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE, transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND:
 		if payload.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
@@ -333,8 +333,8 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{}
 	case transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND:
 		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPlainAccountFund{}
-	case transaction_zether_payload_script.SCRIPT_UNSTAKE:
-		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake{}
+	case transaction_zether_payload_script.SCRIPT_SPEND:
+		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraSpend{}
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}

@@ -18,7 +18,7 @@ type WizardZetherPayloadExtraAssetCreate struct {
 	Asset                    *asset.Asset `json:"asset" msgpack:"asset"`
 }
 
-type WizardZetherPayloadExtraUnstake struct {
+type WizardZetherPayloadExtraSpend struct {
 	WizardZetherPayloadExtra `json:"-" msgpack:""`
 }
 
@@ -42,7 +42,7 @@ type WizardZetherTransfer struct {
 	Asset                  []byte                   `json:"asset" msgpack:"asset"`
 	SenderPrivateKey       []byte                   `json:"senderPrivateKey" msgpack:"senderPrivateKey"` //private key
 	SenderDecryptedBalance uint64                   `json:"senderDecryptedBalance" msgpack:"senderDecryptedBalance"`
-	SenderUnstakeRequired  bool                     `json:"senderUnstakeRequired" msgpack:"senderUnstakeRequired"`
+	SenderSpendRequired    bool                     `json:"senderSpendRequired" msgpack:"senderSpendRequired"`
 	SenderSpendPrivateKey  []byte                   `json:"senderSpendPrivateKey" msgpack:"senderSpendPrivateKey"`
 	Recipient              string                   `json:"recipient" msgpack:"recipient"`
 	Amount                 uint64                   `json:"amount" msgpack:"amount"`

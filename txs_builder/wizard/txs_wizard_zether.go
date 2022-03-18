@@ -261,12 +261,12 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 				spaceExtra += config_coins.ASSET_LENGTH + len(helpers.SerializeToBytes(payloadExtra.Asset))
 
-			case *WizardZetherPayloadExtraUnstake:
+			case *WizardZetherPayloadExtraSpend:
 
-				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_UNSTAKE
+				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_SPEND
 
 				privateKeysForSign[t] = &addresses.PrivateKey{Key: transfer.SenderSpendPrivateKey}
-				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake{
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraSpend{
 					SenderSpendPublicKey: privateKeysForSign[t].GeneratePublicKeyPoint(),
 				}
 
@@ -607,8 +607,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			switch txBase.Payloads[t].PayloadScript {
 			case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
 				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease).AssetSignature = signature
-			case transaction_zether_payload_script.SCRIPT_UNSTAKE:
-				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake).SenderSpendSignature = signature
+			case transaction_zether_payload_script.SCRIPT_SPEND:
+				txBase.Payloads[t].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraSpend).SenderSpendSignature = signature
 			}
 
 		}
@@ -621,14 +621,14 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, rings [][]*bn256.G1, chainHeight uint64, chainKernelHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, fees []*WizardTransactionFee, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	for i, transfer := range transfers {
-		if transfer.SenderUnstakeRequired {
+		if transfer.SenderSpendRequired {
 			if len(transfer.SenderSpendPrivateKey) != cryptography.PrivateKeySize {
 				return nil, fmt.Errorf("SpendPrivateKey is invalid for payload %d", i)
 			}
 			if transfer.PayloadExtra != nil {
-				return nil, fmt.Errorf("Payload %d requires no payload extra as it will be set automatically to Unstake extra", i)
+				return nil, fmt.Errorf("Payload %d requires no payload extra as it will be set automatically to Spend extra", i)
 			}
-			transfer.PayloadExtra = &WizardZetherPayloadExtraUnstake{}
+			transfer.PayloadExtra = &WizardZetherPayloadExtraSpend{}
 		}
 	}
 

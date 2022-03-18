@@ -10,15 +10,15 @@ import (
 	"strconv"
 )
 
-type DelegateNode struct {
+type DelegatorNode struct {
 	Url  string `json:"url" msgpack:"url" `
 	Name string `json:"name" msgpack:"name" `
 }
 
 var (
-	MAIN_NET_DELEGATES_NODES = []*DelegateNode{}
+	MAIN_NET_DELEGATOR_NODES = []*DelegatorNode{}
 
-	TEST_NET_DELEGATES_NODES = []*DelegateNode{
+	TEST_NET_DELEGATOR_NODES = []*DelegatorNode{
 		{
 			"ws://helloworldx.ddns.net:16000/ws",
 			"helloworldx 1",
@@ -37,7 +37,7 @@ var (
 		},
 	}
 
-	DEV_NET_DELEGATES_NODES = []*DelegateNode{
+	DEV_NET_DELEGATOR_NODES = []*DelegatorNode{
 		{
 			"ws://127.0.0.1:5230/ws",
 			"127.0.0.1 1",

@@ -74,7 +74,7 @@ type json_Only_TransactionZetherPayloadExtraStakingReward struct {
 	TemporaryAccountRegistrationIndex uint64 `json:"temporaryAccountRegistrationIndex"  msgpack:"temporaryAccountRegistrationIndex"`
 }
 
-type json_Only_TransactionZetherPayloadExtraUnstake struct {
+type json_Only_TransactionZetherPayloadExtraSpend struct {
 	SenderSpendPublicKey []byte `json:"senderSpendPublicKey"  msgpack:"senderSpendPublicKey"`
 	SenderSpendSignature []byte `json:"senderSpendSignature"  msgpack:"senderSpendSignature"`
 }
@@ -216,9 +216,9 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 					payloadExtra.Reward,
 					payloadExtra.TemporaryAccountRegistrationIndex,
 				}
-			case transaction_zether_payload_script.SCRIPT_UNSTAKE:
-				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake)
-				extra = &json_Only_TransactionZetherPayloadExtraUnstake{
+			case transaction_zether_payload_script.SCRIPT_SPEND:
+				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraSpend)
+				extra = &json_Only_TransactionZetherPayloadExtraSpend{
 					payloadExtra.SenderSpendPublicKey.EncodeCompressed(),
 					payloadExtra.SenderSpendSignature,
 				}
@@ -461,8 +461,8 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 					extraJson.Reward,
 					extraJson.TemporaryAccountRegistrationIndex,
 				}
-			case transaction_zether_payload_script.SCRIPT_UNSTAKE:
-				extraJson := &json_Only_TransactionZetherPayloadExtraUnstake{}
+			case transaction_zether_payload_script.SCRIPT_SPEND:
+				extraJson := &json_Only_TransactionZetherPayloadExtraSpend{}
 				if err = json.Unmarshal(data, extraJson); err != nil {
 					return err
 				}
@@ -472,7 +472,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 					return
 				}
 
-				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraUnstake{
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraSpend{
 					nil,
 					senderSpendPublicKey,
 					extraJson.SenderSpendSignature,

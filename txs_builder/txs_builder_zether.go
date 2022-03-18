@@ -415,7 +415,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 						sendersEncryptedBalances[t] = newBalance.Serialize()
 
 						if reg != nil && len(reg.SpendPublicKey) > 0 && payload.Extra == nil {
-							transfers[t].SenderUnstakeRequired = true
+							transfers[t].SenderSpendRequired = true
 							if sendersWalletAddresses[t].SpendPrivateKey == nil {
 								return errors.New("Spend Private Key is missing")
 							}

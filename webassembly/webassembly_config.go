@@ -121,9 +121,9 @@ func getNetworkSelectedSeeds(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func getNetworkSelectedDelegatesNodes(this js.Value, args []js.Value) interface{} {
+func getNetworkDelegatorNodes(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-		value := config.NETWORK_SELECTED_DELEGATES_NODES
+		value := config.NETWORK_SELECTED_DELEGATOR_NODES
 		return webassembly_utils.ConvertJSONBytes(value)
 	})
 }

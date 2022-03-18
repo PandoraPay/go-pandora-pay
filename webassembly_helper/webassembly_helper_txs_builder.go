@@ -162,7 +162,7 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 
 				if isSender { //sender
 					if reg != nil && len(reg.SpendPublicKey) > 0 && payload.Extra == nil {
-						transfers[t].SenderUnstakeRequired = true
+						transfers[t].SenderSpendRequired = true
 						if payload.Sender.SpendPrivateKey == nil {
 							return errors.New("Spend Private Key is missing")
 						}

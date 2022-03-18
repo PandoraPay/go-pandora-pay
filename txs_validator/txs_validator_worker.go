@@ -42,7 +42,7 @@ func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidatedWork) error {
 
 		for _, payload := range base.Payloads {
 			switch payload.PayloadScript {
-			case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE, transaction_zether_payload_script.SCRIPT_UNSTAKE:
+			case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE, transaction_zether_payload_script.SCRIPT_SPEND:
 				if payload.Extra.VerifyExtraSignature(hashForSignature, payload.Statement) == false {
 					return errors.New("Extra signature failed")
 				}

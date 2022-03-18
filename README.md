@@ -70,10 +70,9 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [x] Fee calculator
     - [x] Multi Threading signature verification   
 - [x] Simple Transactions
-  - [x] Unstake Tx
 - [x] Zether Transactions
   - [x] Transfer
-  - [x] Unstake
+  - [x] Spend Tx
   - [x] Staking
   - [x] Staking Reward
   - [x] Asset Create

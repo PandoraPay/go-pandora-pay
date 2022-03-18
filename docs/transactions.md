@@ -8,7 +8,6 @@ Transaction Scripts in PandoraPay
 
 a. Simple Transactions
   1. **SCRIPT_UPDATE_DELEGATE** will update delegate information and/or convert unclaimed funds into staking. 
-  2. **SCRIPT_UNSTAKE** will unstake a certain amount and move the amount to unclaimed funds.
   3. **SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY** will allow a liquidity offer for a certain asset. 
   
 b. Zether Transaction
