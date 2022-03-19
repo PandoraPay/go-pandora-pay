@@ -271,7 +271,7 @@ func decryptMessageWalletAddress(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func deriveSharedStakeWalletAddress(this js.Value, args []js.Value) interface{} {
+func deriveSharedStakedWalletAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		if err := app.Wallet.Encryption.CheckPassword(args[2].String(), false); err != nil {
@@ -283,12 +283,12 @@ func deriveSharedStakeWalletAddress(this js.Value, args []js.Value) interface{} 
 			return nil, err
 		}
 
-		sharedStake, err := addr.DeriveSharedStake()
+		sharedStaked, err := addr.DeriveSharedStaked()
 		if err != nil {
 			return nil, err
 		}
 
-		return webassembly_utils.ConvertJSONBytes(sharedStake)
+		return webassembly_utils.ConvertJSONBytes(sharedStaked)
 
 	})
 }

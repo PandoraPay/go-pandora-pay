@@ -35,7 +35,7 @@ func (wallet *Wallet) ProcessWalletArguments() (err error) {
 		}
 	}
 
-	if str := globals.Arguments["--wallet-export-staked-address"]; str != nil {
+	if str := globals.Arguments["--wallet-export-shared-staked-address"]; str != nil {
 		v := strings.Split(str.(string), ",")
 
 		var addr *wallet_address.WalletAddress
@@ -61,9 +61,9 @@ func (wallet *Wallet) ProcessWalletArguments() (err error) {
 		}
 
 		if addr == nil {
-			return errors.New("Address specified by --wallet-export-staked-address was not found")
+			return errors.New("Address specified by --wallet-export-shared-staked-address was not found")
 		}
-		if err = wallet.exportDelegatedAddress(addr, v[2], false); err != nil {
+		if err = wallet.exportSharedStakedAddress(addr, v[2], false); err != nil {
 			return
 		}
 

@@ -24,7 +24,7 @@ import (
 	"strconv"
 )
 
-func (wallet *Wallet) exportDelegatedAddress(addr *wallet_address.WalletAddress, path string, print bool) (err error) {
+func (wallet *Wallet) exportSharedStakedAddress(addr *wallet_address.WalletAddress, path string, print bool) (err error) {
 
 	if !addr.Staked {
 		return errors.New("Address is not Staked")
@@ -402,16 +402,16 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliExportDelegatedAddress := func(cmd string, ctx context.Context) (err error) {
+	cliExportSharedStakedAddress := func(cmd string, ctx context.Context) (err error) {
 
-		addr, _, _, err := wallet.CliSelectAddress("Select Address to Export Delegated Address", ctx)
+		addr, _, _, err := wallet.CliSelectAddress("Select Address to Export Shared Staked Address", ctx)
 		if err != nil {
 			return
 		}
 
 		path := gui.GUI.OutputReadFilename("Path to export to a file", "staked")
 
-		return wallet.exportDelegatedAddress(addr, path, true)
+		return wallet.exportSharedStakedAddress(addr, path, true)
 
 	}
 
@@ -505,7 +505,7 @@ func (wallet *Wallet) initWalletCLI() {
 	gui.GUI.CommandDefineCallback("Show Secret Key", cliShowSecretKey, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Import Secret Key", cliImportSecretKey, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Remove Address", cliRemoveAddress, wallet.Loaded)
-	gui.GUI.CommandDefineCallback("Export Delegated Address", cliExportDelegatedAddress, wallet.Loaded)
+	gui.GUI.CommandDefineCallback("Export Staked Staked Address", cliExportSharedStakedAddress, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Export Addresses", cliExportAddresses, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Export Address JSON", cliExportAddressJSON, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Import Address JSON", cliImportAddressJSON, wallet.Loaded)

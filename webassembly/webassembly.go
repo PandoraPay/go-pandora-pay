@@ -59,12 +59,12 @@ func Initialize(startMainCb func()) {
 					"logoutWallet":           js.FuncOf(logoutWallet),
 				}),
 			}),
-			"decryptMessageWalletAddress":    js.FuncOf(decryptMessageWalletAddress),
-			"signMessageWalletAddress":       js.FuncOf(signMessageWalletAddress),
-			"deriveSharedStakeWalletAddress": js.FuncOf(deriveSharedStakeWalletAddress),
-			"tryDecryptBalance":              js.FuncOf(tryDecryptBalance),
-			"getPrivateKeysWalletAddress":    js.FuncOf(getPrivateKeysWalletAddress),
-			"decryptTx":                      js.FuncOf(decryptTx),
+			"decryptMessageWalletAddress":     js.FuncOf(decryptMessageWalletAddress),
+			"signMessageWalletAddress":        js.FuncOf(signMessageWalletAddress),
+			"deriveSharedStakedWalletAddress": js.FuncOf(deriveSharedStakedWalletAddress),
+			"tryDecryptBalance":               js.FuncOf(tryDecryptBalance),
+			"getPrivateKeysWalletAddress":     js.FuncOf(getPrivateKeysWalletAddress),
+			"decryptTx":                       js.FuncOf(decryptTx),
 		}),
 		"addresses": js.ValueOf(map[string]interface{}{
 			"createAddress":      js.FuncOf(createAddress),
@@ -119,7 +119,6 @@ func Initialize(startMainCb func()) {
 				}),
 				"transactionSimple": js.ValueOf(map[string]interface{}{
 					"ScriptType": js.ValueOf(map[string]interface{}{
-						"SCRIPT_UPDATE_DELEGATE":            js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_DELEGATE)),
 						"SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY": js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY)),
 					}),
 				}),
