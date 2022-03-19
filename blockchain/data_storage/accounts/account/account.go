@@ -17,6 +17,10 @@ type Account struct {
 	Balance                                      *account_balance_homomorphic.BalanceHomomorphic `json:"balance" msgpack:"balance"`
 }
 
+func (account *Account) IsDeletable() bool {
+	return false
+}
+
 func (account *Account) SetKey(key []byte) {
 	account.PublicKey = key
 }

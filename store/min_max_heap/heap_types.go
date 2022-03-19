@@ -18,6 +18,10 @@ type HeapDictElement struct {
 	Index uint64
 }
 
+func (self *HeapElement) IsDeletable() bool {
+	return false
+}
+
 func (self *HeapElement) SetKey(key []byte) {
 	self.HeapKey = key
 }
@@ -43,6 +47,10 @@ func (self *HeapElement) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 	self.Score, err = r.ReadFloat64()
 	return
+}
+
+func (self *HeapDictElement) IsDeletable() bool {
+	return false
 }
 
 func (self *HeapDictElement) SetKey(key []byte) {

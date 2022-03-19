@@ -15,6 +15,13 @@ type PlainAccount struct {
 	AssetFeeLiquidities                          *asset_fee_liquidity.AssetFeeLiquidities `json:"assetFeeLiquidities" msgpack:"assetFeeLiquidities"`
 }
 
+func (plainAccount *PlainAccount) IsDeletable() bool {
+	if plainAccount.Unclaimed == 0 && plainAccount.Nonce == 0 && !plainAccount.AssetFeeLiquidities.HasAssetFeeLiquidities() {
+		return true
+	}
+	return false
+}
+
 func (plainAccount *PlainAccount) SetKey(key []byte) {
 	plainAccount.PublicKey = key
 }

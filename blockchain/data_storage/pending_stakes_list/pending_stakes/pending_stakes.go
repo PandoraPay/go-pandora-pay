@@ -13,6 +13,10 @@ type PendingStakes struct {
 	Pending                                      []*PendingStake `json:"list" msgpack:"list"`
 }
 
+func (d *PendingStakes) IsDeletable() bool {
+	return false
+}
+
 func (d *PendingStakes) SetKey(key []byte) {
 	d.Key = key
 }

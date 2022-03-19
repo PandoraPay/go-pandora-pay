@@ -16,6 +16,10 @@ type Registration struct {
 	SpendPublicKey                               []byte `json:"spendPublicKey" msgpack:"spendPublicKey"`
 }
 
+func (registration *Registration) IsDeletable() bool {
+	return false
+}
+
 func (registration *Registration) SetKey(key []byte) {
 	registration.PublicKey = key
 }

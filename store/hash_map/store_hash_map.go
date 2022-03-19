@@ -186,6 +186,11 @@ func (hashMap *HashMap) Update(key string, data HashMapElementSerializableInterf
 		return err
 	}
 
+	if data.IsDeletable() {
+		hashMap.Delete(key)
+		return nil
+	}
+
 	exists := hashMap.Changes[key]
 
 	increase := false

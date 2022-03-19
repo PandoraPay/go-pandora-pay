@@ -7,6 +7,7 @@ type HashMapElementSerializableInterface interface {
 	SetIndex(index uint64)
 	SetKey(key []byte)
 	GetIndex() uint64
+	IsDeletable() bool
 }
 
 type ChangesMapElement struct {

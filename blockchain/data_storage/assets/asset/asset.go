@@ -40,6 +40,10 @@ type Asset struct {
 	Data                                         []byte `json:"data,omitempty" msgpack:"data,omitempty"`
 }
 
+func (asset *Asset) IsDeletable() bool {
+	return false
+}
+
 func (asset *Asset) SetKey(key []byte) {
 	asset.PublicKey = key
 }
