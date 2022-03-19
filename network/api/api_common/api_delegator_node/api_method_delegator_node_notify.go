@@ -87,7 +87,7 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 	//		return errors.New("Your stake is not accepted because you will need at least the minimum staking amount")
 	//	}
 	//
-	//	return api.wallet.AddDelegateStakeAddress(&wallet_address.WalletAddress{
+	//	return api.wallet.AddSharedStakedAddress(&wallet_address.WalletAddress{
 	//		wallet_address.VERSION_NORMAL,
 	//		"Delegated Stake",
 	//		0,

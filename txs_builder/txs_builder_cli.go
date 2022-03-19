@@ -394,46 +394,6 @@ func (builder *TxsBuilder) initCLI() {
 		return
 	}
 
-	cliUpdateDelegate := func(cmd string, ctx context.Context) (err error) {
-
-		//builder.showWarningIfNotSyncCLI()
-		//
-		//txExtra := &wizard.WizardTxSimpleExtraUpdateDelegate{DelegatedStakingUpdate: &transaction_data.TransactionDataDelegatedStakingUpdate{}}
-		//txData := &TxBuilderCreateSimpleTx{Extra: txExtra}
-		//
-		//var delegateWalletAddress *wallet_address.WalletAddress
-		//if delegateWalletAddress, txData.Sender, _, err = builder.wallet.CliSelectAddress("Select Address to Update Delegate", ctx); err != nil {
-		//	return
-		//}
-		//
-		//txData.Nonce = gui.GUI.OutputReadUint64("Nonce. Leave empty for automatically detection", true, 0, nil)
-		//
-		//if err = builder.readDelegatedStakingUpdate(txExtra.DelegatedStakingUpdate, delegateWalletAddress.PublicKey); err != nil {
-		//	return
-		//}
-		//
-		//if txExtra.DelegatedStakingClaimAmount, err = builder.readAmount(config_coins.NATIVE_ASSET_FULL, "Update Delegated Staking Amount"); err != nil {
-		//	return
-		//}
-		//
-		//txData.FeeVersion = gui.GUI.OutputReadBool("Subtract the fee from unclaimed? y/n. Leave empty for no", true, false)
-		//
-		//txData.Data = builder.readData()
-		//txData.Fee = builder.readFee(config_coins.NATIVE_ASSET_FULL)
-		//
-		//propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
-		//
-		//tx, err := builder.CreateSimpleTx(txData, propagate, true, true, false, ctx, func(status string) {
-		//	gui.GUI.OutputWrite(status)
-		//})
-		//if err != nil {
-		//	return
-		//}
-		//
-		//gui.GUI.OutputWrite(fmt.Sprintf("Tx created: %s %s", base64.StdEncoding.EncodeToString(tx.Bloom.Hash), cmd))
-		return
-	}
-
 	cliUpdateAssetFeeLiquidity := func(cmd string, ctx context.Context) (err error) {
 
 		builder.showWarningIfNotSyncCLI()
@@ -492,7 +452,6 @@ func (builder *TxsBuilder) initCLI() {
 	gui.GUI.CommandDefineCallback("Private Asset Create", cliPrivateAssetCreate, true)
 	gui.GUI.CommandDefineCallback("Private Asset Supply Increase", cliPrivateAssetSupplyIncrease, true)
 	gui.GUI.CommandDefineCallback("Private Plain Account Fund", cliPrivatePlainAccountFund, true)
-	gui.GUI.CommandDefineCallback("Update Delegate", cliUpdateDelegate, true)
 	gui.GUI.CommandDefineCallback("Update Asset Fee Liquidity", cliUpdateAssetFeeLiquidity, true)
 
 }

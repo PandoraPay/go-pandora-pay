@@ -210,7 +210,7 @@ func (wallet *Wallet) InitForgingWallet() (err error) {
 	}
 
 	for _, addr := range wallet.Addresses {
-		if err = wallet.forging.Wallet.AddWallet(addr.PrivateKey.Key, addr.PublicKey, false, nil, nil, 0); err != nil {
+		if err = wallet.forging.Wallet.AddWallet(addr.PublicKey, addr.SharedStaked, false, nil, nil, 0); err != nil {
 			return
 		}
 	}

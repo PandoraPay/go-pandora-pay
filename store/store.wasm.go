@@ -44,7 +44,7 @@ func create_db() (err error) {
 	if StoreBlockchain, err = createStoreNow(prefix+"/blockchain", getStoreType(globals.Arguments["--store-chain-type"].(string), allowedStores)); err != nil {
 		return
 	}
-	if StoreWallet, err = createStoreNow(prefix+"/wallet2", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
+	if StoreWallet, err = createStoreNow(prefix+"/wallet3", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
 		return
 	}
 	if StoreSettings, err = createStoreNow(prefix+"/settings", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {

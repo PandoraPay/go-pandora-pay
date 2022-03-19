@@ -60,11 +60,11 @@ func (a *Address) EncodeAddr() string {
 
 	writer.Write(a.PublicKey)
 
-	writer.WriteBool(a.Staked)
-	writer.WriteBool(len(a.SpendPublicKey) > 0)
-	writer.Write(a.SpendPublicKey)
+	writer.WriteUvarint(a.IntegrationBytes())
 
-	writer.WriteByte(a.IntegrationByte())
+	if a.IsIntegratedSpendPublicKey() {
+		writer.Write(a.SpendPublicKey)
+	}
 
 	if a.IsIntegratedRegistration() {
 		writer.Write(a.Registration)
@@ -89,7 +89,7 @@ func (a *Address) EncodeAddr() string {
 }
 func DecodeAddr(input string) (*Address, error) {
 
-	adr := &Address{PublicKey: []byte{}, PaymentID: []byte{}}
+	addr := &Address{PublicKey: []byte{}, PaymentID: []byte{}}
 
 	if len(input) < config.NETWORK_BYTE_PREFIX_LENGTH {
 		return nil, errors.New("Invalid Address length")
@@ -99,16 +99,16 @@ func DecodeAddr(input string) (*Address, error) {
 
 	switch prefix {
 	case config.MAIN_NET_NETWORK_BYTE_PREFIX:
-		adr.Network = config.MAIN_NET_NETWORK_BYTE
+		addr.Network = config.MAIN_NET_NETWORK_BYTE
 	case config.TEST_NET_NETWORK_BYTE_PREFIX:
-		adr.Network = config.TEST_NET_NETWORK_BYTE
+		addr.Network = config.TEST_NET_NETWORK_BYTE
 	case config.DEV_NET_NETWORK_BYTE_PREFIX:
-		adr.Network = config.DEV_NET_NETWORK_BYTE
+		addr.Network = config.DEV_NET_NETWORK_BYTE
 	default:
 		return nil, errors.New("Invalid Address Network PREFIX!")
 	}
 
-	if adr.Network != config.NETWORK_SELECTED {
+	if addr.Network != config.NETWORK_SELECTED {
 		return nil, errors.New("Address network is invalid")
 	}
 
@@ -131,79 +131,80 @@ func DecodeAddr(input string) (*Address, error) {
 	if version, err = reader.ReadUvarint(); err != nil {
 		return nil, err
 	}
-	adr.Version = AddressVersion(version)
+	addr.Version = AddressVersion(version)
 
-	if adr.PublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+	if addr.PublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return nil, err
 	}
 
-	switch adr.Version {
+	switch addr.Version {
 	case SIMPLE_PUBLIC_KEY:
 	default:
 		return nil, errors.New("Invalid Address Version")
 	}
 
-	if adr.Staked, err = reader.ReadBool(); err != nil {
+	var integrationBytes uint64
+	if integrationBytes, err = reader.ReadUvarint(); err != nil {
 		return nil, err
 	}
 
-	var hasSpendPublicKey bool
-	if hasSpendPublicKey, err = reader.ReadBool(); err != nil {
-		return nil, err
+	addr.Staked = integrationBytes&1 != 0
+
+	if integrationBytes&(1<<1) != 0 {
+		if addr.SpendPublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+			return nil, err
+		}
 	}
-	if hasSpendPublicKey {
-		if adr.SpendPublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+	if integrationBytes&(1<<2) != 0 {
+		if addr.Registration, err = reader.ReadBytes(cryptography.SignatureSize); err != nil {
+			return nil, err
+		}
+	}
+	if integrationBytes&(1<<3) != 0 {
+		if addr.PaymentID, err = reader.ReadBytes(8); err != nil {
+			return nil, err
+		}
+	}
+	if integrationBytes&(1<<4) != 0 {
+		if addr.PaymentAmount, err = reader.ReadUvarint(); err != nil {
+			return nil, err
+		}
+	}
+	if integrationBytes&(1<<5) != 0 {
+		if addr.PaymentAsset, err = reader.ReadBytes(config_coins.ASSET_LENGTH); err != nil {
 			return nil, err
 		}
 	}
 
-	var integrationByte byte
-	if integrationByte, err = reader.ReadByte(); err != nil {
-		return nil, err
-	}
-
-	if integrationByte&1 != 0 {
-		if adr.Registration, err = reader.ReadBytes(cryptography.SignatureSize); err != nil {
-			return nil, err
-		}
-	}
-	if integrationByte&(1<<1) != 0 {
-		if adr.PaymentID, err = reader.ReadBytes(8); err != nil {
-			return nil, err
-		}
-	}
-	if integrationByte&(1<<2) != 0 {
-		if adr.PaymentAmount, err = reader.ReadUvarint(); err != nil {
-			return nil, err
-		}
-	}
-	if integrationByte&(1<<3) != 0 {
-		if adr.PaymentAsset, err = reader.ReadBytes(config_coins.ASSET_LENGTH); err != nil {
-			return nil, err
-		}
-	}
-
-	return adr, nil
+	return addr, nil
 }
 
-func (a *Address) IntegrationByte() (out byte) {
+func (a *Address) IntegrationBytes() (out uint64) {
 
 	out = 0
 
-	if len(a.Registration) > 0 {
+	if a.Staked {
 		out |= 1
 	}
 
-	if len(a.PaymentID) > 0 {
+	if len(a.SpendPublicKey) > 0 {
 		out |= 1 << 1
 	}
 
-	if a.PaymentAmount > 0 {
+	if len(a.Registration) > 0 {
 		out |= 1 << 2
 	}
 
-	if len(a.PaymentAsset) > 0 {
+	if len(a.PaymentID) > 0 {
 		out |= 1 << 3
+	}
+
+	if a.PaymentAmount > 0 {
+		out |= 1 << 4
+	}
+
+	if len(a.PaymentAsset) > 0 {
+		out |= 1 << 5
 	}
 
 	return
@@ -212,6 +213,10 @@ func (a *Address) IntegrationByte() (out byte) {
 // if address contains a paymentId
 func (a *Address) IsIntegratedRegistration() bool {
 	return len(a.Registration) > 0
+}
+
+func (a *Address) IsIntegratedSpendPublicKey() bool {
+	return len(a.SpendPublicKey) > 0
 }
 
 // if address contains amount

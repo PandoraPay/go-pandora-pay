@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"pandora-pay/address_balance_decryptor"
-	"pandora-pay/addresses"
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
@@ -19,6 +18,7 @@ import (
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
+	"pandora-pay/wallet/wallet_address"
 	"time"
 )
 
@@ -37,13 +37,13 @@ type ForgingWallet struct {
 
 type ForgingWalletAddressUpdate struct {
 	chainHeight  uint64
-	privateKey   []byte
 	publicKey    []byte
+	sharedStaked *wallet_address.WalletAddressSharedStaked
 	account      *account.Account
 	registration *registration.Registration
 }
 
-func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasAccount bool, account *account.Account, reg *registration.Registration, chainHeight uint64) (err error) {
+func (w *ForgingWallet) AddWallet(publicKey []byte, sharedStaked *wallet_address.WalletAddressSharedStaked, hasAccount bool, account *account.Account, reg *registration.Registration, chainHeight uint64) (err error) {
 
 	if !config_forging.FORGING_ENABLED {
 		return
@@ -62,10 +62,10 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasAccoun
 				return
 			}
 
-			if account, err = accs.GetAccount(pubKey); err != nil {
+			if account, err = accs.GetAccount(publicKey); err != nil {
 				return
 			}
-			if reg, err = dataStorage.Regs.GetRegistration(pubKey); err != nil {
+			if reg, err = dataStorage.Regs.GetRegistration(publicKey); err != nil {
 				return
 			}
 
@@ -78,16 +78,16 @@ func (w *ForgingWallet) AddWallet(delegatedPriv []byte, pubKey []byte, hasAccoun
 
 	w.updateWalletAddressCn <- &ForgingWalletAddressUpdate{
 		chainHeight,
-		delegatedPriv,
-		pubKey,
+		publicKey,
+		sharedStaked,
 		account,
 		reg,
 	}
 	return
 }
 
-func (w *ForgingWallet) RemoveWallet(delegatedPublicKey []byte, hasAccount bool, acc *account.Account, reg *registration.Registration, chainHeight uint64) { //20 byte
-	w.AddWallet(nil, delegatedPublicKey, hasAccount, acc, reg, chainHeight)
+func (w *ForgingWallet) RemoveWallet(publicKey []byte, hasAccount bool, acc *account.Account, reg *registration.Registration, chainHeight uint64) { //20 byte
+	w.AddWallet(publicKey, nil, hasAccount, acc, reg, chainHeight)
 }
 
 func (w *ForgingWallet) runDecryptBalanceAndNotifyWorkers() {
@@ -187,7 +187,7 @@ func (w *ForgingWallet) runProcessUpdates() {
 			key := string(update.publicKey)
 
 			//let's delete it
-			if update.privateKey == nil {
+			if update.sharedStaked == nil || update.sharedStaked.PrivateKey == nil {
 				w.removeAccountFromForgingWorkers(key)
 			} else {
 
@@ -207,10 +207,10 @@ func (w *ForgingWallet) runProcessUpdates() {
 					address := w.addressesMap[key]
 					if address == nil {
 
-						keyPoint := new(crypto.BNRed).SetBytes(update.privateKey)
+						keyPoint := new(crypto.BNRed).SetBytes(update.sharedStaked.PrivateKey.Key)
 
 						address = &ForgingWalletAddress{
-							&addresses.PrivateKey{Key: update.privateKey},
+							update.sharedStaked.PrivateKey,
 							keyPoint.BigInt(),
 							update.publicKey,
 							string(update.publicKey),

@@ -129,7 +129,8 @@ func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte, staked, spe
 	return addr, nil
 }
 
-func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress, lock bool) (err error) {
+func (wallet *Wallet) AddSharedStakedAddress(adr *wallet_address.WalletAddress, lock bool) (err error) {
+
 	if lock {
 		wallet.Lock.Lock()
 		defer wallet.Lock.Unlock()
@@ -156,7 +157,7 @@ func (wallet *Wallet) AddDelegateStakeAddress(adr *wallet_address.WalletAddress,
 	wallet.Addresses = append(wallet.Addresses, adr)
 	wallet.addressesMap[string(adr.PublicKey)] = adr
 
-	wallet.forging.Wallet.AddWallet(adr.PrivateKey.Key, adr.PublicKey, false, nil, nil, 0)
+	wallet.forging.Wallet.AddWallet(adr.PublicKey, adr.SharedStaked, false, nil, nil, 0)
 
 	wallet.Count += 1
 
@@ -194,10 +195,10 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spe
 	}
 
 	var addr1, addr2 *addresses.Address
+
 	if addr1, err = addr.PrivateKey.GenerateAddress(staked, spendPublicKey, false, nil, 0, nil); err != nil {
 		return
 	}
-
 	if addr2, err = addr.PrivateKey.GenerateAddress(staked, spendPublicKey, true, nil, 0, nil); err != nil {
 		return
 	}
@@ -209,6 +210,10 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spe
 	addr.AddressEncoded = addr1.EncodeAddr()
 	addr.AddressRegistrationEncoded = addr2.EncodeAddr()
 	addr.PublicKey = publicKey
+
+	if addr.PrivateKey != nil {
+		addr.SharedStaked = &wallet_address.WalletAddressSharedStaked{addr.PrivateKey, addr.PublicKey}
+	}
 
 	if wallet.addressesMap[string(addr.PublicKey)] != nil {
 		return errors.New("Address exists")
@@ -227,7 +232,7 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spe
 		wallet.CountImportedIndex += 1
 	}
 
-	if err = wallet.forging.Wallet.AddWallet(addr.PrivateKey.Key, addr.PublicKey, false, nil, nil, 0); err != nil {
+	if err = wallet.forging.Wallet.AddWallet(addr.PublicKey, addr.SharedStaked, false, nil, nil, 0); err != nil {
 		return
 	}
 
