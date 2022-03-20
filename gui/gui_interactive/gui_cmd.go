@@ -2,7 +2,7 @@ package gui_interactive
 
 import (
 	"context"
-	"encoding/hex"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	ui "github.com/gizak/termui/v3"
@@ -369,10 +369,10 @@ func (g *GUIInteractive) OutputReadBytes(text string, validateCb func([]byte) bo
 
 	for {
 		str := g.OutputReadString(text)
-		input, err := hex.DecodeString(str)
+		input, err := base64.StdEncoding.DecodeString(str)
 
 		if err != nil {
-			g.OutputWrite("Invalid Data. The input has to be a hex")
+			g.OutputWrite("Invalid Data. The input has to be a base64")
 			continue
 		}
 

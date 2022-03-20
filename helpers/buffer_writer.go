@@ -2,8 +2,8 @@ package helpers
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/binary"
-	"encoding/hex"
 	"math"
 	"pandora-pay/config/config_coins"
 )
@@ -78,9 +78,9 @@ func (writer *BufferWriter) Bytes() (out []byte) {
 	return
 }
 
-func (writer *BufferWriter) Hex() string {
+func (writer *BufferWriter) Base64() string {
 	data := writer.Bytes()
-	return hex.EncodeToString(data)
+	return base64.StdEncoding.EncodeToString(data)
 }
 
 func (writer *BufferWriter) Length() int {

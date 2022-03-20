@@ -1,12 +1,12 @@
 package config_nodes
 
 import (
+	"encoding/base64"
 	"errors"
 	"math"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/config/globals"
-	"pandora-pay/helpers"
 	"strconv"
 )
 
@@ -97,7 +97,9 @@ func InitConfig() (err error) {
 	}
 
 	if globals.Arguments["--delegator-reward-collector-pub-key"] != nil {
-		DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY = helpers.DecodeHex(globals.Arguments["--delegator-reward-collector-pub-key"].(string))
+		if DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY, err = base64.StdEncoding.DecodeString(globals.Arguments["--delegator-reward-collector-pub-key"].(string)); err != nil {
+			return
+		}
 	} else {
 		DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY = config_coins.BURN_PUBLIC_KEY
 	}

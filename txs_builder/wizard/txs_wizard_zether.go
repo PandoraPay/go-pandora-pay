@@ -3,7 +3,6 @@ package wizard
 import (
 	"bytes"
 	"context"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
@@ -281,7 +280,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					AssetSignature:       helpers.EmptyBytes(cryptography.SignatureSize),
 				}
 
-				spaceExtra += binary.MaxVarintLen64
+				spaceExtra += 1 + len(payloadExtra.ReceiverPublicKey) + 66
 
 			case *WizardZetherPayloadExtraPlainAccountFund:
 				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND
