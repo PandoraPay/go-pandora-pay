@@ -81,6 +81,10 @@ func (payload *TransactionZetherPayload) processAssetFee(assetId []byte, txFee, 
 		return
 	}
 
+	if err = dataStorage.PlainAccs.Update(string(key), plainAcc); err != nil {
+		return
+	}
+
 	accs, acc, err := dataStorage.GetOrCreateAccount(assetId, plainAcc.AssetFeeLiquidities.Collector, true)
 	if err != nil {
 		return
