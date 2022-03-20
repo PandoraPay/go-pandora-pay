@@ -5,8 +5,6 @@ import (
 	"pandora-pay/config/globals"
 )
 
-var DELEGATING_STAKING_FEE_MAX_VALUE = uint64(100000)
-
 func GetRequiredStake(blockHeight uint64) (requiredStake uint64) {
 
 	var err error

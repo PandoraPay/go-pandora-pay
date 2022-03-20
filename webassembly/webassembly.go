@@ -7,7 +7,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/config/config_stake"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
@@ -196,8 +195,7 @@ func Initialize(startMainCb func()) {
 				"assetsConvertToBase":  js.FuncOf(assetsConvertToBase),
 			}),
 			"stake": js.ValueOf(map[string]interface{}{
-				"getRequiredStake":                 js.FuncOf(getRequiredStake),
-				"DELEGATING_STAKING_FEE_MAX_VALUE": js.ValueOf(config_stake.DELEGATING_STAKING_FEE_MAX_VALUE),
+				"getRequiredStake": js.FuncOf(getRequiredStake),
 			}),
 			"constants": js.ValueOf(map[string]interface{}{
 				"API_MEMPOOL_MAX_TRANSACTIONS": js.ValueOf(config.API_MEMPOOL_MAX_TRANSACTIONS),
