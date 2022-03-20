@@ -12,10 +12,6 @@ import (
 	"pandora-pay/cryptography/crypto"
 )
 
-type TxPreviewSimpleExtraSpend struct {
-	Amount uint64 `json:"amount" msgpack:"amount"`
-}
-
 type TxPreviewSimple struct {
 	Extra       interface{}                             `json:"extra" msgpack:"extra"`
 	TxScript    transaction_simple.ScriptType           `json:"txScript" msgpack:"txScript"`
@@ -99,7 +95,6 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 				txPayloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward)
 				payloadExtra = &TxPreviewZetherPayloadExtraStakingReward{txPayloadExtra.Reward}
 			case transaction_zether_payload_script.SCRIPT_STAKING:
-				//txPayloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStaking)
 				payloadExtra = &TxPreviewZetherPayloadExtraStaking{}
 			case transaction_zether_payload_script.SCRIPT_SPEND:
 				payloadExtra = &TxPreviewZetherPayloadExtraSpend{}

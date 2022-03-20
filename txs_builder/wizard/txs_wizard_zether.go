@@ -394,9 +394,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		if !bytes.Equal(transfers[t].Asset, config_coins.NATIVE_ASSET_FULL) {
 			payload.FeeRate = transfers[t].FeeRate
 			payload.FeeLeadingZeros = transfers[t].FeeLeadingZeros
-
-			fee = (fee * helpers.Pow10(transfers[t].FeeLeadingZeros)) / transfers[t].FeeRate
-			statusCallback("Transaction Set conversion fee")
 		}
 
 		//fake balance

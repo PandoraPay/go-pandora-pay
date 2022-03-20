@@ -216,9 +216,11 @@ func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
 }
 
 func (dataStorage *DataStorage) SubtractUnclaimed(plainAcc *plain_account.PlainAccount, amount, blockHeight uint64) (err error) {
+
 	if err = plainAcc.AddUnclaimed(false, amount); err != nil {
 		return
 	}
+
 	if plainAcc.AssetFeeLiquidities.HasAssetFeeLiquidities() && plainAcc.Unclaimed < config_asset_fee.GetRequiredAssetFee(blockHeight) {
 
 		for _, assetFeeLiquidity := range plainAcc.AssetFeeLiquidities.List {
@@ -229,7 +231,7 @@ func (dataStorage *DataStorage) SubtractUnclaimed(plainAcc *plain_account.PlainA
 
 		plainAcc.AssetFeeLiquidities.Clear()
 	}
-	return nil
+	return
 }
 
 func (dataStorage *DataStorage) GetWhoHasAssetTopLiquidity(assetId []byte) (*plain_account.PlainAccount, error) {

@@ -75,7 +75,7 @@ func (payload *TransactionZetherPayload) processAssetFee(assetId []byte, txFee, 
 	if err = helpers.SafeUint64Mul(&final, txFeeRate); err != nil {
 		return
 	}
-	final = final / helpers.Pow10(txFeeLeadingZeros)
+	final /= helpers.Pow10(txFeeLeadingZeros)
 
 	if err = dataStorage.SubtractUnclaimed(plainAcc, final, blockHeight); err != nil {
 		return

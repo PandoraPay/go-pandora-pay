@@ -73,6 +73,7 @@ func (self *AssetFeeLiquidities) UpdateLiquidity(updateLiquidity *AssetFeeLiquid
 		for _, it := range self.List {
 			if bytes.Equal(it.Asset, updateLiquidity.Asset) {
 				it.Rate = updateLiquidity.Rate
+				it.LeadingZeros = updateLiquidity.LeadingZeros
 				return UPDATE_LIQUIDITY_OVERWRITTEN, nil
 			}
 		}
