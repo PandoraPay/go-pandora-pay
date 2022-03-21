@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"golang.org/x/exp/slices"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/blocks/block_complete"
@@ -374,7 +375,19 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 				PayloadExtra:     payload.Extra,
 			}
 
-			transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(payload.RingConfiguration.RingSize)
+			if payload.Extra != nil {
+				switch payload.Extra.(type) {
+				case *wizard.WizardZetherPayloadExtraStakingReward:
+					transfers[t].WitnessIndexes = slices.Clone(transfers[t-1].WitnessIndexes)
+					aux := transfers[t].WitnessIndexes[0]
+					transfers[t].WitnessIndexes[0] = transfers[t].WitnessIndexes[1]
+					transfers[t].WitnessIndexes[1] = aux
+				}
+			}
+
+			if transfers[t].WitnessIndexes == nil {
+				transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(payload.RingConfiguration.RingSize)
+			}
 
 			//parity := transfers[t].WitnessIndexes[0]%2 == 0
 
