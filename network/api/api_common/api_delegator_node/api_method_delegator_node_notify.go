@@ -67,7 +67,7 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 			return
 		}
 
-		if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
+		if acc, err = accs.GetAccount(sharedStakedPublicKey); err != nil {
 			return
 		}
 		if acc == nil {
@@ -94,7 +94,7 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 		0,
 		false,
 		nil,
-		nil,
+		sharedStakedPrivateKey,
 		nil,
 		nil,
 		sharedStakedPublicKey,
