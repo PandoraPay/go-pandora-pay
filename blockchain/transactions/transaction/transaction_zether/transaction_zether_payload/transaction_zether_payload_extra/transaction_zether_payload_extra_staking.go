@@ -41,7 +41,7 @@ func (payloadExtra *TransactionZetherPayloadExtraStaking) Validate(payloadRegist
 		}
 	}
 
-	if len(payloadStatement.C) < 32 {
+	if len(payloadStatement.C) < 64 {
 		return errors.New("Payload Extra Staking should had 256 ring members")
 	}
 
