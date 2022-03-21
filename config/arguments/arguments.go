@@ -9,7 +9,7 @@ import (
 
 func InitArguments(argv []string) (err error) {
 
-	if globals.Arguments, err = docopt.Parse(commands, argv, false, config.VERSION, false, false); err != nil {
+	if globals.Arguments, err = docopt.Parse(commands, argv, false, config.VERSION_STRING, false, false); err != nil {
 		return errors.New("Error processing arguments" + err.Error())
 	}
 

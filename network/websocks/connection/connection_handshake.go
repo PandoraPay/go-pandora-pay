@@ -2,6 +2,7 @@ package connection
 
 import (
 	"errors"
+	"github.com/blang/semver/v4"
 	"pandora-pay/config"
 )
 
@@ -13,14 +14,19 @@ type ConnectionHandshake struct {
 	URL       string               `json:"url" msgpack:"url"`
 }
 
-func (handshake *ConnectionHandshake) ValidateHandshake() error {
+func (handshake *ConnectionHandshake) ValidateHandshake() (*semver.Version, error) {
 
 	if handshake.Network != config.NETWORK_SELECTED {
-		return errors.New("Network is different")
+		return nil, errors.New("Network is different")
 	}
 	if handshake.Consensus >= config.CONSENSUS_TYPE_END {
-		return errors.New("INVALID CONSENSUS")
+		return nil, errors.New("Invalid CONSENSUS")
 	}
 
-	return nil
+	version, err := semver.Parse(handshake.Version)
+	if err != nil {
+		return nil, errors.New("Invalid VERSION format")
+	}
+
+	return &version, nil
 }

@@ -14,7 +14,7 @@ type APIInfoReply struct {
 
 func (api *APICommon) GetInfo(r *http.Request, args *struct{}, reply *APIInfoReply) error {
 	reply.Name = config.NAME
-	reply.Version = config.VERSION
+	reply.Version = config.VERSION_STRING
 	reply.Network = config.NETWORK_SELECTED
 	reply.CPUThreads = config.CPU_THREADS
 	return nil

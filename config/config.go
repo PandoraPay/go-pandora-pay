@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"github.com/blang/semver/v4"
 	"math/big"
 	"math/rand"
 	"pandora-pay/config/config_auth"
@@ -19,7 +20,8 @@ var (
 	ARCHITECTURE       = ""
 	OS                 = ""
 	NAME               = "PANDORA PAY"
-	VERSION            = "0.01"
+	VERSION            = semver.MustParse("0.0.1-test.0")
+	VERSION_STRING     = VERSION.String()
 	BUILD_VERSION      = ""
 	LIGHT_COMPUTATIONS = false
 	ORIGINAL_PATH      = "" //the original path where the software is located

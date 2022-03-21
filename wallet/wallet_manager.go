@@ -209,6 +209,7 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spe
 	addr.SpendRequired = spendRequired
 	addr.AddressEncoded = addr1.EncodeAddr()
 	addr.AddressRegistrationEncoded = addr2.EncodeAddr()
+	addr.Registration = addr2.Registration
 	addr.PublicKey = publicKey
 
 	if addr.PrivateKey != nil {

@@ -3,6 +3,7 @@ package connection
 import (
 	"context"
 	"errors"
+	"github.com/blang/semver/v4"
 	"github.com/tevino/abool"
 	"github.com/vmihailenco/msgpack/v5"
 	"nhooyr.io/websocket"
@@ -32,6 +33,7 @@ type AdvancedConnection struct {
 	UUID                   advanced_connection_types.UUID
 	Conn                   *websocket.Conn
 	Handshake              *ConnectionHandshake
+	Version                *semver.Version
 	KnownNode              *known_nodes.KnownNodeScored
 	RemoteAddr             string
 	answerCounter          uint32
@@ -337,6 +339,7 @@ func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *k
 		abool.New(),
 		uuid,
 		conn,
+		nil,
 		nil,
 		knownNode,
 		remoteAddr,

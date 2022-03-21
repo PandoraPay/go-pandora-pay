@@ -224,7 +224,8 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 		return errors.New("Handshake received was invalid")
 	}
 
-	if err := handshakeReceived.ValidateHandshake(); err != nil {
+	version, err := handshakeReceived.ValidateHandshake()
+	if err != nil {
 		return errors.New("Handshake is invalid")
 	}
 
@@ -233,6 +234,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	}
 
 	conn.Handshake = handshakeReceived
+	conn.Version = version
 
 	if conn.IsClosed.IsSet() {
 		return

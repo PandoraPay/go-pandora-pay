@@ -151,7 +151,13 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 	newAccounts := func(ring *[]string, newAccounts int) (err error) {
 		for i := 0; i < newAccounts && len(*ring) < ringConfiguration.RingSize/2-1; i++ {
 			priv := addresses.GenerateNewPrivateKey()
-			if addr, err = priv.GenerateAddress(false, nil, true, nil, 0, nil); err != nil {
+
+			staked := false
+			if rand.Intn(100) < 10 {
+				staked = true
+			}
+
+			if addr, err = priv.GenerateAddress(staked, nil, true, nil, 0, nil); err != nil {
 				return
 			}
 			if alreadyUsed[string(addr.PublicKey)] {
