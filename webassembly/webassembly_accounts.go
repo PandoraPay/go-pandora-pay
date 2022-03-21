@@ -7,6 +7,15 @@ import (
 	"syscall/js"
 )
 
+type AddressGenerateArgument struct {
+	Staked         bool   `json:"staked,omitempty"`
+	SpendPublicKey []byte `json:"spendPublicKey,omitempty"`
+	Registration   bool   `json:"registration,omitempty"`
+	PaymentID      []byte `json:"paymentID,omitempty"`
+	PaymentAmount  uint64 `json:"paymentAmount,omitempty"`
+	PaymentAsset   []byte `json:"paymentAsset,omitempty"`
+}
+
 func decodeAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 		address, err := addresses.DecodeAddr(args[0].String())
@@ -47,8 +56,15 @@ func createAddress(this js.Value, args []js.Value) interface{} {
 
 func generateNewAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+
 		priv := addresses.GenerateNewPrivateKey()
-		addr, err := priv.GenerateAddress(false, nil, true, nil, 0, nil)
+
+		parameters := &AddressGenerateArgument{}
+		if err := webassembly_utils.UnmarshalBytes(args[0], &parameters); err != nil {
+			return nil, err
+		}
+
+		addr, err := priv.GenerateAddress(parameters.Staked, parameters.SpendPublicKey, parameters.Registration, parameters.PaymentID, parameters.PaymentAmount, parameters.PaymentAsset)
 
 		if err != nil {
 			return nil, err
@@ -75,7 +91,12 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		addr, err := priv.GenerateAddress(false, nil, true, nil, 0, nil)
+		parameters := &AddressGenerateArgument{}
+		if err := webassembly_utils.UnmarshalBytes(args[0], &parameters); err != nil {
+			return nil, err
+		}
+
+		addr, err := priv.GenerateAddress(parameters.Staked, parameters.SpendPublicKey, parameters.Registration, parameters.PaymentID, parameters.PaymentAmount, parameters.PaymentAsset)
 
 		if err != nil {
 			return nil, err
