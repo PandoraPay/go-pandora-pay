@@ -27,16 +27,17 @@ type zetherTxDataSender struct {
 }
 
 type zetherTxDataPayloadBase struct {
-	Sender      *zetherTxDataSender                                 `json:"sender"`
-	Asset       []byte                                              `json:"asset"`
-	Amount      uint64                                              `json:"amount"`
-	Recipient   string                                              `json:"recipient"`
-	Burn        uint64                                              `json:"burn"`
-	RingMembers []string                                            `json:"ringMembers"`
-	Data        *wizard.WizardTransactionData                       `json:"data"`
-	Fees        *wizard.WizardZetherTransactionFee                  `json:"fees"`
-	ScriptType  transaction_zether_payload_script.PayloadScriptType `json:"scriptType"`
-	Extra       wizard.WizardZetherPayloadExtra                     `json:"extra"`
+	Sender               *zetherTxDataSender                                 `json:"sender"`
+	Asset                []byte                                              `json:"asset"`
+	Amount               uint64                                              `json:"amount"`
+	Recipient            string                                              `json:"recipient"`
+	Burn                 uint64                                              `json:"burn"`
+	RingSenderMembers    []string                                            `json:"ringSenderMembers"`
+	RingRecipientMembers []string                                            `json:"ringRecipientMembers"`
+	Data                 *wizard.WizardTransactionData                       `json:"data"`
+	Fees                 *wizard.WizardZetherTransactionFee                  `json:"fees"`
+	ScriptType           transaction_zether_payload_script.PayloadScriptType `json:"scriptType"`
+	Extra                wizard.WizardZetherPayloadExtra                     `json:"extra"`
 }
 
 type zetherTxDataBase struct {
@@ -47,10 +48,12 @@ type zetherTxDataBase struct {
 	ChainKernelHash   []byte                       `json:"chainKernelHash"`
 }
 
-func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, rings [][]*bn256.G1, publicKeyIndexes map[string]*wizard.WizardZetherPublicKeyIndex, err error) {
+func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, ringsSenderMembers, ringsRecipientMembers [][]*bn256.G1, publicKeyIndexes map[string]*wizard.WizardZetherPublicKeyIndex, err error) {
 
 	transfers = make([]*wizard.WizardZetherTransfer, len(txData.Payloads))
-	rings = make([][]*bn256.G1, len(txData.Payloads))
+	ringsSenderMembers = make([][]*bn256.G1, len(txData.Payloads))
+	ringsRecipientMembers = make([][]*bn256.G1, len(txData.Payloads))
+
 	publicKeyIndexes = make(map[string]*wizard.WizardZetherPublicKeyIndex)
 	hasRollovers = make(map[string]bool)
 
@@ -113,9 +116,10 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 		transfers[t].PayloadExtra = payloadExtra
 
 		uniqueMap := make(map[string]bool)
-		var ring []*bn256.G1
+		ringSender := make([]*bn256.G1, 0)
+		ringRecipient := make([]*bn256.G1, 0)
 
-		addPoint := func(address string, isSender bool) (err error) {
+		addPoint := func(address string, sender, isSender bool) (err error) {
 
 			var addr *addresses.Address
 			var p *crypto.Point
@@ -132,14 +136,15 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 				return
 			}
 
-			if emap[string(payload.Asset)][p.G1().String()] == nil {
-				var reg *registration.Registration
-				if regData := txData.Regs[base64.StdEncoding.EncodeToString(addr.PublicKey)]; len(regData) > 0 {
-					reg = registration.NewRegistration(addr.PublicKey, 0)
-					if err = reg.Deserialize(helpers.NewBufferReader(regData)); err != nil {
-						return
-					}
+			var reg *registration.Registration
+			if regData := txData.Regs[base64.StdEncoding.EncodeToString(addr.PublicKey)]; len(regData) > 0 {
+				reg = registration.NewRegistration(addr.PublicKey, 0)
+				if err = reg.Deserialize(helpers.NewBufferReader(regData)); err != nil {
+					return
 				}
+			}
+
+			if emap[string(payload.Asset)][p.G1().String()] == nil {
 
 				var acc *account.Account
 				if accData := txData.Accs[base64.StdEncoding.EncodeToString(payload.Asset)][base64.StdEncoding.EncodeToString(addr.PublicKey)]; len(accData) > 0 {
@@ -160,20 +165,6 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 
 				hasRollovers[p.G1().String()] = reg != nil && reg.Staked
 
-				if isSender { //sender
-					if reg != nil && len(reg.SpendPublicKey) > 0 && payload.Extra == nil {
-						transfers[t].SenderSpendRequired = true
-						if payload.Sender.SpendPrivateKey == nil {
-							return errors.New("Spend Private Key is missing")
-						}
-						spendPublicKey := (&addresses.PrivateKey{Key: payload.Sender.SpendPrivateKey}).GeneratePublicKey()
-						if !bytes.Equal(spendPublicKey, reg.SpendPublicKey) {
-							return errors.New("Wallet Spend Public Key is not matching")
-						}
-						transfers[t].SenderSpendPrivateKey = payload.Sender.SpendPrivateKey
-					}
-				}
-
 				if publicKeyIndexes[string(addr.PublicKey)] == nil {
 					publicKeyIndex := &wizard.WizardZetherPublicKeyIndex{}
 					publicKeyIndexes[string(addr.PublicKey)] = publicKeyIndex
@@ -192,26 +183,50 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 				}
 			}
 
-			ring = append(ring, p.G1())
+			if isSender { //sender
+				if reg != nil && len(reg.SpendPublicKey) > 0 && payload.Extra == nil {
+					transfers[t].SenderSpendRequired = true
+					if payload.Sender.SpendPrivateKey == nil {
+						return errors.New("Spend Private Key is missing")
+					}
+					spendPublicKey := (&addresses.PrivateKey{Key: payload.Sender.SpendPrivateKey}).GeneratePublicKey()
+					if !bytes.Equal(spendPublicKey, reg.SpendPublicKey) {
+						return errors.New("Wallet Spend Public Key is not matching")
+					}
+					transfers[t].SenderSpendPrivateKey = payload.Sender.SpendPrivateKey
+				}
+			}
+
+			if sender {
+				ringSender = append(ringSender, p.G1())
+			} else {
+				ringRecipient = append(ringRecipient, p.G1())
+			}
 
 			return
 		}
 
-		if err = addPoint(senderAddr.EncodeAddr(), true); err != nil {
+		if err = addPoint(senderAddr.EncodeAddr(), true, true); err != nil {
 			return
 		}
-		if err = addPoint(payload.Recipient, false); err != nil {
+		if err = addPoint(payload.Recipient, false, false); err != nil {
 			return
 		}
-		for _, ringMember := range payload.RingMembers {
-			if err = addPoint(ringMember, false); err != nil {
+		for _, ringMember := range payload.RingSenderMembers {
+			if err = addPoint(ringMember, true, false); err != nil {
+				return
+			}
+		}
+		for _, ringMember := range payload.RingRecipientMembers {
+			if err = addPoint(ringMember, false, false); err != nil {
 				return
 			}
 		}
 
-		rings[t] = ring
-		transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(len(ring))
+		ringsSenderMembers[t] = ringSender
+		ringsRecipientMembers[t] = ringRecipient
 
+		transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(len(payload.RingSenderMembers) + len(payload.RingRecipientMembers))
 	}
 
 	return
@@ -232,7 +247,7 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		transfers, emap, hasRollovers, rings, publicKeyIndexes, err := prepareData(txData)
+		transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, err := prepareData(txData)
 		if err != nil {
 			return nil, err
 		}
@@ -242,7 +257,7 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 			feesFinal[t] = payload.Fees.WizardTransactionFee
 		}
 
-		tx, err := wizard.CreateZetherTx(transfers, emap, hasRollovers, rings, txData.ChainKernelHeight, txData.ChainKernelHash, publicKeyIndexes, feesFinal, ctx, func(status string) {
+		tx, err := wizard.CreateZetherTx(transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, txData.ChainKernelHeight, txData.ChainKernelHash, publicKeyIndexes, feesFinal, ctx, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {

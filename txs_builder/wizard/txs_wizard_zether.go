@@ -98,7 +98,7 @@ func InitializeEmap(assets [][]byte) map[string]map[string][]byte {
 	return emap
 }
 
-func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, rings [][]*bn256.G1, myFees []*WizardTransactionFee, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
+func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.TransactionZether, transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, ringsSenderMembers, ringsRecipientMembers [][]*bn256.G1, myFees []*WizardTransactionFee, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, ctx context.Context, statusCallback func(string)) (err error) {
 
 	statusCallback("Transaction Signing...")
 
@@ -124,36 +124,49 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		if bytes.Equal(sender.EncodeUncompressed(), recipient.EncodeCompressed()) {
 			return errors.New("Sender must NOT be the recipient")
 		}
-		if bytes.Equal(rings[t][0].EncodeUncompressed(), sender.EncodeCompressed()) {
+		if bytes.Equal(ringsSenderMembers[t][0].EncodeUncompressed(), sender.EncodeCompressed()) {
 			return errors.New("Rings[0] must be the sender")
 		}
-		if bytes.Equal(rings[t][1].EncodeUncompressed(), recipient.EncodeCompressed()) {
+		if bytes.Equal(ringsRecipientMembers[t][0].EncodeUncompressed(), recipient.EncodeCompressed()) {
 			return errors.New("Rings[1] must be the recipient")
 		}
 
 		witness_indexes := transfer.WitnessIndexes
-		anonset_publickeys := rings[t][2:]
 		publickeylists[t] = make([]*bn256.G1, 0)
 
+		if len(ringsSenderMembers[t]) != len(ringsRecipientMembers[t]) {
+			return fmt.Errorf("Ring Sender %d and Ring Recipient %d should have same length", len(ringsSenderMembers[t]), len(ringsRecipientMembers[t]))
+		}
+		if len(transfer.WitnessIndexes) != len(ringsSenderMembers[t])+len(ringsRecipientMembers[t]) {
+			return errors.New("Witness Indexes length is invalid")
+		}
+
 		parities[t] = witness_indexes[0]%2 == 0
+
+		ringSenderIndex := 1
+		ringRecipientIndex := 1
 
 		unique := make(map[string]bool)
 		for i := range witness_indexes {
 
 			var publicKey *bn256.G1
-			switch i {
-			case witness_indexes[0]:
+
+			if i == witness_indexes[0] {
 				publicKey = sender
-			case witness_indexes[1]:
+			} else if i == witness_indexes[1] {
 				publicKey = recipient
-			default:
-				publicKey = anonset_publickeys[0]
-				anonset_publickeys = anonset_publickeys[1:]
+			} else if (i%2 == 0) == parities[t] { //sender
+				publicKey = ringsSenderMembers[t][ringSenderIndex]
+				ringSenderIndex++
+			} else { //recipient
+				publicKey = ringsRecipientMembers[t][ringRecipientIndex]
+				ringRecipientIndex++
 			}
 			publickeylists[t] = append(publickeylists[t], publicKey)
 			unique[publicKey.String()] = true
 		}
-		if len(unique) != len(rings[t]) {
+
+		if len(unique) != len(witness_indexes) {
 			return errors.New("Duplicates detected")
 		}
 
@@ -312,6 +325,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 		publickeylist := publickeylists[t]
 		witness_index := transfers[t].WitnessIndexes
+		ringSize := len(witness_index)
 
 		senderKey := &addresses.PrivateKey{Key: transfer.SenderPrivateKey}
 		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
@@ -362,7 +376,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			dataLength = transaction_zether_payload.PAYLOAD_LIMIT
 		}
 
-		m := int(math.Log2(float64(len(rings[t]))))
+		m := int(math.Log2(float64(ringSize)))
 
 		extraBytes := helpers.BytesLengthSerialized(uint64(payload.PayloadScript)) + helpers.BytesLengthSerialized(payload.BurnValue) //PayloadScript + Burn
 		if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {                                                               //Asset Length
@@ -370,10 +384,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		} else {
 			extraBytes += 1 + len(payload.Asset)
 		}
-		extraBytes += len(rings[t]) * 1                                                   //registrations length
-		extraBytes += unregisteredAccounts[t] * (1 + cryptography.SignatureSize)          //1 byte if it is staked
-		extraBytes += 1 + dataLength                                                      //dataVersion + data
-		extraBytes += len(rings[t])*33*2 + (len(rings[t])-emptyAccounts[t])*33*2 + 33 + 1 //statement
+		extraBytes += ringSize * 1                                               //registrations length
+		extraBytes += unregisteredAccounts[t] * (1 + cryptography.SignatureSize) //1 byte if it is staked
+		extraBytes += 1 + dataLength                                             //dataVersion + data
+		extraBytes += ringSize*33*2 + (ringSize-emptyAccounts[t])*33*2 + 33 + 1  //statement
 		if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
 			extraBytes += helpers.BytesLengthSerialized(transfers[t].FeeRate) + 1 //feeRate + FeeLeadingZeros
 		}
@@ -408,7 +422,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		}
 
 		// Lots of ToDo for this, enables satisfying lots of  other things
-		ebalances_list := make([]*crypto.ElGamal, len(rings[t]))
+		ebalances_list := make([]*crypto.ElGamal, ringSize)
 		for i := range witness_index {
 			var pt *crypto.ElGamal
 			if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][publickeylist[i].String()]); err != nil {
@@ -614,7 +628,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	return
 }
 
-func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, rings [][]*bn256.G1, chainHeight uint64, chainKernelHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, fees []*WizardTransactionFee, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
+func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, ringsSenderMembers, ringsRecipientMembers [][]*bn256.G1, chainHeight uint64, chainKernelHash []byte, publicKeyIndexes map[string]*WizardZetherPublicKeyIndex, fees []*WizardTransactionFee, ctx context.Context, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
 	for i, transfer := range transfers {
 		if transfer.SenderSpendRequired {
@@ -638,7 +652,7 @@ func CreateZetherTx(transfers []*WizardZetherTransfer, emap map[string]map[strin
 		TransactionBaseInterface: txBase,
 	}
 
-	if err = signZetherTx(tx, txBase, transfers, emap, hasRollovers, rings, fees, publicKeyIndexes, ctx, statusCallback); err != nil {
+	if err = signZetherTx(tx, txBase, transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, fees, publicKeyIndexes, ctx, statusCallback); err != nil {
 		return
 	}
 	if err = bloomAllTx(tx, statusCallback); err != nil {

@@ -228,11 +228,11 @@ func (testnet *Testnet) run() {
 
 					time.Sleep(time.Millisecond * 3000) //making sure the block got propagated
 
-					if stakingAmount > config_coins.ConvertToUnitsUint64Forced(120000) {
-						over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(100000)
+					if stakingAmount > config_coins.ConvertToUnitsUint64Forced(50000) {
+						over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(40000)
 						testnet.testnetCreateTransfers(addr, over, ctx)
 
-						stakingAmount = generics.Max(0, config_coins.ConvertToUnitsUint64Forced(100000))
+						stakingAmount = generics.Max(0, config_coins.ConvertToUnitsUint64Forced(40000))
 					}
 
 					if syncTime > 0 {

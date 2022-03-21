@@ -6,6 +6,7 @@ import (
 	"github.com/tevino/abool"
 	"math"
 	"math/big"
+	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
@@ -56,7 +57,11 @@ func (self *BalanceDecryptorType) SetTableSize(newTableSize int, ctx context.Con
 
 		if newTableSize == 0 {
 			if runtime.GOARCH != "wasm" {
-				newTableSize = 1 << 23 //32mb ram
+				if config.DEBUG {
+					newTableSize = 1 << 20 //8mb ram
+				} else {
+					newTableSize = 1 << 23 //32mb ram
+				}
 			} else {
 				newTableSize = 1 << 16 //4mb ram
 			}
@@ -77,7 +82,7 @@ func (self *BalanceDecryptorType) SetTableSize(newTableSize int, ctx context.Con
 		}
 		self.info.Store(info)
 
-		gui.GUI.Info2Update("Decrypter", "Init... "+strconv.Itoa(int(math.Log2(float64(info.tableSize)))))
+		gui.GUI.Info2Update("Decryptor", "Init... "+strconv.Itoa(int(math.Log2(float64(info.tableSize)))))
 
 		if oldInfo != nil && oldInfo.hasError.SetToIf(false, true) {
 			close(oldInfo.readyCn)
@@ -93,7 +98,7 @@ func (self *BalanceDecryptorType) SetTableSize(newTableSize int, ctx context.Con
 				close(info.readyCn)
 			}
 			info.tableLookup.Store(tableLookup)
-			gui.GUI.Info2Update("Decrypter", "Ready "+strconv.Itoa(int(math.Log2(float64(info.tableSize)))))
+			gui.GUI.Info2Update("Decryptor", "Ready "+strconv.Itoa(int(math.Log2(float64(info.tableSize)))))
 			return tableLookup
 		case <-ctx.Done():
 			if info.hasError.SetToIf(false, true) {

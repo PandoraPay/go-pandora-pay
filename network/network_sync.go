@@ -33,10 +33,6 @@ func (network *Network) continuouslyConnectNewPeers() {
 			_, exists := network.Websockets.AllAddresses.Load(knownNode.URL)
 			if !exists {
 
-				if config.DEBUG {
-					gui.GUI.Log("connecting to: " + knownNode.URL)
-				}
-
 				if knownNode != nil {
 					_, err := websocks.NewWebsocketClient(network.Websockets, knownNode)
 					if err != nil {
@@ -46,9 +42,6 @@ func (network *Network) continuouslyConnectNewPeers() {
 								network.KnownNodes.RemoveKnownNode(knownNode)
 							}
 
-							if config.DEBUG {
-								gui.GUI.Error("error connecting to: "+knownNode.URL, err)
-							}
 						}
 
 					} else {

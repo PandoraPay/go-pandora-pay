@@ -128,7 +128,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 			return errors.New("Address was used before")
 		}
 		alreadyUsed[string(addr.PublicKey)] = true
-		return nil
+		return
 	}
 
 	includeMembers := func(ring *[]string, includeMembers []string) (err error) {
@@ -225,7 +225,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 	return senderRing, recipientRing, err
 }
 
-func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pendingTxs []*transaction.Transaction, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, map[string]bool, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
+func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pendingTxs []*transaction.Transaction, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, map[string]bool, [][]*bn256.G1, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
 
 	sendersPrivateKeys := make([]*addresses.PrivateKey, len(txData.Payloads))
 	sendersWalletAddresses := make([]*wallet_address.WalletAddress, len(txData.Payloads))
@@ -252,7 +252,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 			sendersPrivateKeys[t] = addresses.GenerateNewPrivateKey()
 			addr, err := sendersPrivateKeys[t].GenerateAddress(false, nil, true, nil, 0, nil)
 			if err != nil {
-				return nil, nil, nil, nil, nil, 0, nil, err
+				return nil, nil, nil, nil, nil, nil, 0, nil, err
 			}
 			payload.Sender = addr.EncodeAddr()
 
@@ -260,11 +260,11 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 
 			addr, err := builder.wallet.GetWalletAddressByEncodedAddress(payload.Sender, true)
 			if err != nil {
-				return nil, nil, nil, nil, nil, 0, nil, err
+				return nil, nil, nil, nil, nil, nil, 0, nil, err
 			}
 
 			if addr.PrivateKey == nil {
-				return nil, nil, nil, nil, nil, 0, nil, errors.New("Can't be used for transactions as the private key is missing")
+				return nil, nil, nil, nil, nil, nil, 0, nil, errors.New("Can't be used for transactions as the private key is missing")
 			}
 
 			sendersPrivateKeys[t] = &addresses.PrivateKey{Key: addr.PrivateKey.Key[:]}
@@ -281,14 +281,19 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 	emap := wizard.InitializeEmap(sendAssets)
 	hasRollovers := make(map[string]bool)
 
-	rings := make([][]*bn256.G1, len(txData.Payloads))
+	ringsSenderMembers := make([][]*bn256.G1, len(txData.Payloads))
+	ringsRecipientMembers := make([][]*bn256.G1, len(txData.Payloads))
+	for i := range txData.Payloads {
+		ringsSenderMembers[i] = make([]*bn256.G1, 0)
+		ringsRecipientMembers[i] = make([]*bn256.G1, 0)
+	}
 	publicKeyIndexes := make(map[string]*wizard.WizardZetherPublicKeyIndex)
 
 	sendersEncryptedBalances := make([][]byte, len(txData.Payloads))
 
 	for _, payload := range txData.Payloads {
 		if err := builder.presetZetherRing(payload.RingConfiguration); err != nil {
-			return nil, nil, nil, nil, nil, 0, nil, err
+			return nil, nil, nil, nil, nil, nil, 0, nil, err
 		}
 	}
 
@@ -325,7 +330,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 
 		return
 	}); err != nil {
-		return nil, nil, nil, nil, nil, 0, nil, err
+		return nil, nil, nil, nil, nil, nil, 0, nil, err
 	}
 
 	var chainHeight uint64
@@ -369,10 +374,16 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 				PayloadExtra:     payload.Extra,
 			}
 
-			var ring []*bn256.G1
+			transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(payload.RingConfiguration.RingSize)
+
+			//parity := transfers[t].WitnessIndexes[0]%2 == 0
+
 			uniqueMap := make(map[string]bool)
 
-			addPoint := func(address string, isSender bool) (err error) {
+			ringSender := make([]*bn256.G1, 0)
+			ringRecipient := make([]*bn256.G1, 0)
+
+			addPoint := func(address string, sender, isSender bool) (err error) {
 				var addr *addresses.Address
 				var p *crypto.Point
 
@@ -380,7 +391,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 					return
 				}
 				if uniqueMap[string(addr.PublicKey)] {
-					return
+					return errors.New("A ring member was detected twice")
 				}
 				uniqueMap[string(addr.PublicKey)] = true
 
@@ -388,15 +399,16 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 					return
 				}
 
+				var reg *registration.Registration
+				if reg, err = dataStorage.Regs.GetRegistration(addr.PublicKey); err != nil {
+					return
+				}
+
 				if emap[string(payload.Asset)][p.G1().String()] == nil {
 
 					var acc *account.Account
-					var reg *registration.Registration
 
 					if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
-						return
-					}
-					if reg, err = dataStorage.Regs.GetRegistration(addr.PublicKey); err != nil {
 						return
 					}
 
@@ -413,17 +425,6 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 
 					if isSender { //sender
 						sendersEncryptedBalances[t] = newBalance.Serialize()
-
-						if reg != nil && len(reg.SpendPublicKey) > 0 && payload.Extra == nil {
-							transfers[t].SenderSpendRequired = true
-							if sendersWalletAddresses[t].SpendPrivateKey == nil {
-								return errors.New("Spend Private Key is missing")
-							}
-							if !bytes.Equal(sendersWalletAddresses[t].SpendPublicKey, reg.SpendPublicKey) {
-								return errors.New("Wallet Spend Public Key is not matching")
-							}
-							transfers[t].SenderSpendPrivateKey = sendersWalletAddresses[t].SpendPrivateKey.Key
-						}
 					}
 
 					emap[string(payload.Asset)][p.G1().String()] = newBalance.Serialize()
@@ -447,37 +448,54 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 						}
 					}
 				}
-				ring = append(ring, p.G1())
+
+				if sender {
+					if reg != nil && len(reg.SpendPublicKey) > 0 && payload.Extra == nil {
+						transfers[t].SenderSpendRequired = true
+						if sendersWalletAddresses[t].SpendPrivateKey == nil {
+							return errors.New("Spend Private Key is missing")
+						}
+						if !bytes.Equal(sendersWalletAddresses[t].SpendPublicKey, reg.SpendPublicKey) {
+							return errors.New("Wallet Spend Public Key is not matching")
+						}
+						transfers[t].SenderSpendPrivateKey = sendersWalletAddresses[t].SpendPrivateKey.Key
+					}
+				}
+
+				if sender {
+					ringSender = append(ringSender, p.G1())
+				} else {
+					ringRecipient = append(ringRecipient, p.G1())
+				}
 
 				return
 			}
 
-			if err = addPoint(payload.Sender, true); err != nil {
+			if err = addPoint(payload.Sender, true, true); err != nil {
 				return
 			}
-			if err = addPoint(payload.Recipient, false); err != nil {
+			if err = addPoint(payload.Recipient, false, false); err != nil {
 				return
 			}
 			for _, ringMember := range senderRingMembers[t] {
-				if err = addPoint(ringMember, false); err != nil {
+				if err = addPoint(ringMember, true, false); err != nil {
 					return
 				}
 			}
 			for _, ringMember := range recipientRingMembers[t] {
-				if err = addPoint(ringMember, false); err != nil {
+				if err = addPoint(ringMember, false, false); err != nil {
 					return
 				}
 			}
 
-			transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(payload.RingConfiguration.RingSize)
-
-			rings[t] = ring
+			ringsSenderMembers[t] = ringSender
+			ringsRecipientMembers[t] = ringRecipient
 		}
 		statusCallback("Wallet Addresses Found")
 
 		return
 	}); err != nil {
-		return nil, nil, nil, nil, nil, 0, nil, err
+		return nil, nil, nil, nil, nil, nil, 0, nil, err
 	}
 	statusCallback("Balances checked")
 
@@ -488,29 +506,29 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 			if txData.Payloads[t].DecryptedBalance > 0 {
 				decrypted, err := builder.wallet.DecryptBalanceByPublicKey(sendersWalletAddresses[t].PublicKey, sendersEncryptedBalances[t], transfers[t].Asset, true, txData.Payloads[t].DecryptedBalance, true, true, ctx, statusCallback)
 				if err != nil {
-					return nil, nil, nil, nil, nil, 0, nil, err
+					return nil, nil, nil, nil, nil, nil, 0, nil, err
 				}
 				transfers[t].SenderDecryptedBalance = decrypted
 			} else {
 				decrypted, err := builder.wallet.DecryptBalanceByPublicKey(sendersWalletAddresses[t].PublicKey, sendersEncryptedBalances[t], transfers[t].Asset, false, 0, true, true, ctx, statusCallback)
 				if err != nil {
-					return nil, nil, nil, nil, nil, 0, nil, err
+					return nil, nil, nil, nil, nil, nil, 0, nil, err
 				}
 				transfers[t].SenderDecryptedBalance = decrypted
 			}
 
 		}
 		if transfers[t].SenderDecryptedBalance == 0 {
-			return nil, nil, nil, nil, nil, 0, nil, errors.New("You have no funds")
+			return nil, nil, nil, nil, nil, nil, 0, nil, errors.New("You have no funds")
 		}
 		if transfers[t].SenderDecryptedBalance < txData.Payloads[t].Amount {
-			return nil, nil, nil, nil, nil, 0, nil, errors.New("Not enough funds")
+			return nil, nil, nil, nil, nil, nil, 0, nil, errors.New("Not enough funds")
 		}
 	}
 
 	statusCallback("Balances decoded")
 
-	return transfers, emap, hasRollovers, rings, publicKeyIndexes, chainHeight, chainKernelHash, nil
+	return transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, chainHeight, chainKernelHash, nil
 }
 
 func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, pendingTxs []*transaction.Transaction, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
@@ -522,7 +540,7 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	transfers, emap, hasRollovers, ringMembers, publicKeyIndexes, chainHeight, chainKernelHash, err := builder.prebuild(txData, pendingTxs, ctx, statusCallback)
+	transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, chainHeight, chainKernelHash, err := builder.prebuild(txData, pendingTxs, ctx, statusCallback)
 	if err != nil {
 		return nil, err
 	}
@@ -533,7 +551,7 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringMembers, chainHeight-1, chainKernelHash, publicKeyIndexes, feesFinal, ctx, statusCallback); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, chainHeight-1, chainKernelHash, publicKeyIndexes, feesFinal, ctx, statusCallback); err != nil {
 		return nil, err
 	}
 
@@ -602,7 +620,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 		},
 	}
 
-	transfers, emap, hasRollovers, ringMembers, publicKeyIndexes, _, chainKernelHash2, err := builder.prebuild(txData, pendingTxs, context.Background(), func(string) {})
+	transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, _, chainKernelHash2, err := builder.prebuild(txData, pendingTxs, context.Background(), func(string) {})
 	if err != nil {
 		return nil, err
 	}
@@ -623,7 +641,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringMembers, chainHeight, chainKernelHash2, publicKeyIndexes, feesFinal, context.Background(), func(string) {}); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, chainHeight, chainKernelHash2, publicKeyIndexes, feesFinal, context.Background(), func(string) {}); err != nil {
 		return nil, err
 	}
 
