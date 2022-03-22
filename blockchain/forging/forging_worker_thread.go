@@ -163,6 +163,7 @@ func (worker *ForgingWorkerThread) forge() {
 		if wallets[publicKeyStr] != nil {
 			delete(wallets, publicKeyStr)
 			delete(walletsStaked, publicKeyStr)
+			delete(walletsStakedTimestamp, publicKeyStr)
 		}
 		validateWork()
 	}
@@ -230,7 +231,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 						requireStakingAmount := new(big.Int).Div(new(big.Int).SetBytes(kernelHash), work.Target)
 
-						gui.GUI.Log("forged", work.BlkHeight, work.BlkComplete.PrevHash, address.walletAdr.decryptedStakingBalance)
+						gui.GUI.Log("forged", worker.index, " -> ", work.BlkHeight, work.BlkComplete.PrevHash, address.walletAdr.decryptedStakingBalance)
 
 						solution := &ForgingSolution{
 							localTimestamp,

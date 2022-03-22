@@ -41,15 +41,19 @@ func (chain *Blockchain) LoadBlockHash(reader store_db_interface.StoreDBTransact
 	return hash, nil
 }
 
-func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, dataStorage *data_storage.DataStorage) {
+func (chain *Blockchain) deleteUnusedBlocksComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, dataStorage *data_storage.DataStorage) error {
 
 	blockHeightStr := strconv.FormatUint(blockHeight, 10)
 
-	dataStorage.DeleteTransitionalChangesFromStore(blockHeightStr)
+	if err := dataStorage.DeleteTransitionalChangesFromStore(blockHeightStr); err != nil {
+		return err
+	}
 
 	writer.Delete("blockHash_ByHeight" + blockHeightStr)
 	writer.Delete("blockKernelHash_ByHeight" + blockHeightStr)
 	writer.Delete("blockTxs" + blockHeightStr)
+
+	return nil
 }
 
 func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTransactionInterface, blockHeight uint64, removedTxHashes map[string][]byte, allTransactionsChanges []*blockchain_types.BlockchainTransactionUpdate, dataStorage *data_storage.DataStorage) (allTransactionsChanges2 []*blockchain_types.BlockchainTransactionUpdate, err error) {

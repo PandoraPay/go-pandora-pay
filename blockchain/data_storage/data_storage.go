@@ -16,13 +16,11 @@ import (
 	"pandora-pay/config/config_asset_fee"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
 
 type DataStorage struct {
-	hash_map.StoreHashMapRepository
 	DBTx                       store_db_interface.StoreDBTransactionInterface
 	Regs                       *registrations.Registrations
 	PlainAccs                  *plain_accounts.PlainAccounts
@@ -253,17 +251,9 @@ func (dataStorage *DataStorage) GetAssetFeeLiquidityTop(assetId []byte) (*asset_
 	return plainAcc.AssetFeeLiquidities.GetLiquidity(assetId), nil
 }
 
-func (dataStorage *DataStorage) SetTx(dbTx store_db_interface.StoreDBTransactionInterface) {
-	dataStorage.DBTx = dbTx
-	dataStorage.StoreHashMapRepository.SetTx(dbTx)
-	dataStorage.AccsCollection.SetTx(dbTx)
-	dataStorage.AstsFeeLiquidityCollection.SetTx(dbTx)
-}
-
 func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *DataStorage) {
 
 	out = &DataStorage{
-		hash_map.StoreHashMapRepository{},
 		dbTx,
 		registrations.NewRegistrations(dbTx),
 		plain_accounts.NewPlainAccounts(dbTx),
@@ -271,23 +261,6 @@ func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *D
 		pending_stakes_list.NewPendingStakesList(dbTx),
 		assets.NewAssets(dbTx),
 		assets.NewAssetsFeeLiquidityCollection(dbTx),
-	}
-
-	out.GetList = func(computeChangesSize bool) (list []*hash_map.HashMap) {
-
-		list = []*hash_map.HashMap{
-			out.Regs.HashMap,
-			out.PlainAccs.HashMap,
-			out.PendingStakes.HashMap,
-			out.Asts.HashMap,
-		}
-		list = append(list, out.AccsCollection.GetAllHashmaps()...)
-
-		if !computeChangesSize {
-			list = append(list, out.AstsFeeLiquidityCollection.GetAllHashmaps()...)
-		}
-
-		return
 	}
 
 	return

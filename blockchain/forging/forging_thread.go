@@ -101,10 +101,6 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 	newBlk.Block.Timestamp = solution.timestamp
 	newBlk.Block.StakingAmount = solution.stakingAmount
 
-	if newBlk.Block.Timestamp < uint64(time.Now().Unix()-10*60) {
-		time.Sleep(5 * time.Second)
-	}
-
 	txs, _ := thread.mempool.GetNextTransactionsToInclude(newBlk.Block.PrevHash)
 
 	txStakingReward, err := thread.createForgingTransactions(newBlk, solution.address.publicKey, solution.address.decryptedStakingBalance, txs)

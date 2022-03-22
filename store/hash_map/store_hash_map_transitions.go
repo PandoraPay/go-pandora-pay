@@ -15,8 +15,9 @@ type transactionChanges struct {
 	List []*transactionChange
 }
 
-func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err error) {
+func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (bool, error) {
 
+	empty := true
 	changes := &transactionChanges{}
 	for k, v := range hashMap.Changes {
 		if v.Status == "del" || v.Status == "update" {
@@ -36,18 +37,23 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (err erro
 				change.Transition = hashMap.Tx.Get(hashMap.name + ":map:" + k)
 			}
 
+			empty = false
 			changes.List = append(changes.List, change)
 		}
 	}
 
+	if empty {
+		return false, nil
+	}
+
 	marshal, err := msgpack.Marshal(changes)
 	if err != nil {
-		return
+		return false, nil
 	}
 
 	hashMap.Tx.Put(hashMap.name+":transitions:"+prefix, marshal)
 
-	return nil
+	return true, nil
 }
 
 func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) {

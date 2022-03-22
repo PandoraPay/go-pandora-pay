@@ -224,19 +224,19 @@ func (wallet *Wallet) InitForgingWallet() (err error) {
 			return
 		}
 
-		for _, adr := range wallet.Addresses {
+		for _, addr := range wallet.Addresses {
 
 			var acc *account.Account
 			var reg *registration.Registration
 
-			if acc, err = accs.GetAccount(adr.PublicKey); err != nil {
+			if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
 				return
 			}
-			if reg, err = dataStorage.Regs.GetRegistration(adr.PublicKey); err != nil {
+			if reg, err = dataStorage.Regs.GetRegistration(addr.PublicKey); err != nil {
 				return
 			}
 
-			if err = wallet.refreshWalletAccount(acc, reg, chainHeight, adr); err != nil {
+			if err = wallet.refreshWalletAccount(acc, reg, chainHeight, addr); err != nil {
 				return
 			}
 		}

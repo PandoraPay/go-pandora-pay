@@ -11,7 +11,6 @@ import (
 	"pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
-	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -78,6 +77,9 @@ func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockCo
 
 func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplete, calledByForging bool, exceptSocketUUID advanced_connection_types.UUID) (err error) {
 
+	if calledByForging {
+		return
+	}
 	if err = chain.validateBlocks(blocksComplete); err != nil {
 		return
 	}
@@ -143,14 +145,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 			dataStorage = data_storage.NewDataStorage(writer)
 
-			var accs *accounts.Accounts
-			if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
-				return
-			}
-			if accs.Count != dataStorage.Regs.Count {
-				gui.GUI.Log(fmt.Sprintf("accs != regs %d != %d", accs.Count, dataStorage.Regs.Count))
-			}
-
 			//let's filter existing blocks
 			for i := len(blocksComplete) - 1; i >= 0; i-- {
 
@@ -210,9 +204,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					return
 				}
 
-			}
-			if accs.Count != dataStorage.Regs.Count {
-				gui.GUI.Log(fmt.Sprintf("accs != regs %d != %d", accs.Count, dataStorage.Regs.Count))
 			}
 
 			if blocksComplete[0].Block.Height != newChainData.Height {
@@ -335,7 +326,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 
 					if err = blkComplete.IncludeBlockComplete(dataStorage); err != nil {
-						return errors.New("Error including block into Blockchain: " + err.Error())
+						return fmt.Errorf("Error including block %d into Blockchain: %s", blkComplete.Height, err.Error())
 					}
 
 					if err = dataStorage.ProcessPendingStakes(blkComplete.Height); err != nil {
@@ -415,7 +406,9 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 					//remove unused blocks
 					for _, removedBlock := range removedBlocksHeights {
-						chain.deleteUnusedBlocksComplete(writer, removedBlock, dataStorage)
+						if err = chain.deleteUnusedBlocksComplete(writer, removedBlock, dataStorage); err != nil {
+							panic(err)
+						}
 					}
 
 					//removing unused transactions

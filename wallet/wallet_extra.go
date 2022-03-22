@@ -70,7 +70,7 @@ func (wallet *Wallet) processRefreshWallets() {
 				}
 
 				for i, acc := range accsList {
-					if err = wallet.refreshWalletAccount(acc, regsList[i], chainHeight, wallet.GetWalletAddressByPublicKey(addressesList[i].PublicKey, true)); err != nil {
+					if err = wallet.refreshWalletAccount(acc, regsList[i], chainHeight, addressesList[i]); err != nil {
 						return
 					}
 				}

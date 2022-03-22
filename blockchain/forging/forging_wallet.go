@@ -106,8 +106,7 @@ func (w *ForgingWallet) runDecryptBalanceAndNotifyWorkers() {
 			time.Sleep(10 * time.Millisecond)
 			continue
 		} else {
-			stakingAmountEncryptedBalance := addr.account.Balance.Amount
-			stakingAmountEncryptedBalanceSerialized := stakingAmountEncryptedBalance.Serialize()
+			stakingAmountEncryptedBalanceSerialized := addr.account.Balance.Amount.Serialize()
 			addr.decryptedStakingBalance, _ = w.addressBalanceDecryptor.DecryptBalance("staking", addr.publicKey, addr.privateKey.Key, stakingAmountEncryptedBalanceSerialized, config_coins.NATIVE_ASSET_FULL, false, 0, true, context.Background(), func(string) {})
 
 			w.workers[addr.workerIndex].addWalletAddressCn <- addr

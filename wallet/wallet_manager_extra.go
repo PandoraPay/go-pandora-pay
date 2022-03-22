@@ -66,7 +66,7 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, reg *registrati
 
 	deleted := false
 
-	if acc == nil || reg == nil || !reg.Staked {
+	if acc == nil || reg == nil || !reg.Staked || addr.SharedStaked == nil {
 		deleted = true
 	} else {
 
@@ -81,16 +81,13 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, reg *registrati
 			deleted = true
 		}
 
-		if addr.SharedStaked == nil {
-			deleted = true
-		}
 	}
 
 	if deleted {
 
 		wallet.forging.Wallet.RemoveWallet(addr.PublicKey, true, acc, reg, chainHeight)
 
-		if addr.PrivateKey == nil {
+		if !addr.IsMine {
 			_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, true)
 			return
 		}

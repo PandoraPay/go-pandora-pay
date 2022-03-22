@@ -18,6 +18,10 @@ type AssetsFeeLiquidityCollection struct {
 	listMaps          []*hash_map.HashMap
 }
 
+func (collection *AssetsFeeLiquidityCollection) GetAllMaps() map[string]*min_max_heap.HeapStoreHashMap {
+	return collection.liquidityMaxHeaps
+}
+
 func (collection *AssetsFeeLiquidityCollection) SetTx(tx store_db_interface.StoreDBTransactionInterface) {
 	collection.tx = tx
 }

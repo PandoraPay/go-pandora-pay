@@ -3,6 +3,7 @@ package txs_validator
 import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
+	"pandora-pay/gui"
 	"pandora-pay/helpers/generics"
 	"sync/atomic"
 	"time"
@@ -17,6 +18,7 @@ type TxsValidator struct {
 func (validator *TxsValidator) MarkAsValidatedTx(tx *transaction.Transaction) error {
 
 	foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidatedWork{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
+
 	if !loaded {
 		if err := foundWork.tx.BloomAll(); err != nil {
 			foundWork.result = err
@@ -27,16 +29,20 @@ func (validator *TxsValidator) MarkAsValidatedTx(tx *transaction.Transaction) er
 		atomic.StoreInt32(&foundWork.status, TX_VALIDATED_PROCCESSED)
 		close(foundWork.wait)
 		return nil
+	} else {
+
+		if atomic.LoadInt32(&foundWork.status) == TX_VALIDATED_PROCCESSED {
+			if foundWork.result != nil {
+				gui.GUI.Error("Strange Error. FoundWork.result is false")
+				return foundWork.result
+			}
+			tx.TransactionBaseInterface.SetBloomExtra(foundWork.bloomExtra)
+			return nil
+		}
+
+		return tx.BloomAll()
 	}
 
-	<-foundWork.wait
-	if err := foundWork.result; err != nil {
-		return err
-	}
-
-	tx.TransactionBaseInterface.SetBloomExtra(foundWork.bloomExtra)
-
-	return nil
 }
 
 //blocking

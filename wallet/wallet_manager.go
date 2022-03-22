@@ -28,7 +28,7 @@ func (wallet *Wallet) GetRandomAddress() *wallet_address.WalletAddress {
 	wallet.Lock.RLock()
 	defer wallet.Lock.RUnlock()
 	index := rand.Intn(len(wallet.Addresses))
-	return wallet.Addresses[index]
+	return wallet.Addresses[index].Clone()
 }
 
 func (wallet *Wallet) GetFirstStakedAddress(lock bool) (*wallet_address.WalletAddress, error) {
