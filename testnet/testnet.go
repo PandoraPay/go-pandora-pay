@@ -150,8 +150,8 @@ func (testnet *Testnet) testnetCreateTransfers(senderAddr *wallet_address.Wallet
 
 func (testnet *Testnet) run() {
 
-	updateChannel := testnet.chain.UpdateNewChain.AddListener()
-	defer testnet.chain.UpdateNewChain.RemoveChannel(updateChannel)
+	updateChannel := testnet.chain.UpdateNewChainDataUpdate.AddListener()
+	defer testnet.chain.UpdateNewChainDataUpdate.RemoveChannel(updateChannel)
 
 	creatingTransactions := abool.New()
 
@@ -168,12 +168,15 @@ func (testnet *Testnet) run() {
 
 	for {
 
-		blockHeight, ok := <-updateChannel
+		chainData, ok := <-updateChannel
 		if !ok {
 			return
 		}
 
 		syncTime := testnet.chain.Sync.GetSyncTime()
+
+		blockHeight := chainData.Update.Height
+		blockTimestamp := chainData.Update.Timestamp
 
 		recovery.SafeGo(func() {
 
@@ -188,7 +191,11 @@ func (testnet *Testnet) run() {
 					}
 				}
 
-				if blockHeight >= 30 {
+				if blockTimestamp < uint64(time.Now().Unix()-10*60) {
+					return
+				}
+
+				if blockHeight >= 20 {
 
 					creatingTransactions.Set()
 					defer creatingTransactions.UnSet()
