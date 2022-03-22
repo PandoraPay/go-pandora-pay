@@ -528,6 +528,10 @@ func (wallet *Wallet) TryDecryptBalanceByPublicKey(publicKey []byte, encryptedBa
 		return false, errors.New("address was not found")
 	}
 
+	return wallet.TryDecryptBalance(addr, encryptedBalance, matchValue)
+}
+
+func (wallet *Wallet) TryDecryptBalance(addr *wallet_address.WalletAddress, encryptedBalance []byte, matchValue uint64) (bool, error) {
 	balance, err := new(crypto.ElGamal).Deserialize(encryptedBalance)
 	if err != nil {
 		return false, err

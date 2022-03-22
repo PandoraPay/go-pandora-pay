@@ -274,9 +274,9 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 				return nil, nil, nil, nil, nil, nil, 0, nil, errors.New("Can't be used for transactions as the private key is missing")
 			}
 
-			sendersPrivateKeys[t] = &addresses.PrivateKey{Key: addr.PrivateKey.Key[:]}
-			payload.Sender = addr.AddressRegistrationEncoded
+			sendersPrivateKeys[t] = &addresses.PrivateKey{Key: addr.PrivateKey.Key}
 			sendersWalletAddresses[t] = addr
+
 		}
 
 	}
@@ -523,7 +523,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 			transfers[t].SenderDecryptedBalance = transfers[t].Amount
 		} else {
 			if txData.Payloads[t].DecryptedBalance > 0 { // in case it was specified to avoid getting stuck
-				success, err := builder.wallet.TryDecryptBalanceByPublicKey(sendersWalletAddresses[t].PublicKey, sendersEncryptedBalances[t], false, txData.Payloads[t].DecryptedBalance)
+				success, err := builder.wallet.TryDecryptBalance(sendersWalletAddresses[t], sendersEncryptedBalances[t], txData.Payloads[t].DecryptedBalance)
 				if err != nil {
 					return nil, nil, nil, nil, nil, nil, 0, nil, err
 				}
