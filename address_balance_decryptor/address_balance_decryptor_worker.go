@@ -1,9 +1,7 @@
 package address_balance_decryptor
 
 import (
-	"pandora-pay/addresses"
 	"pandora-pay/config"
-	"pandora-pay/cryptography/crypto"
 	"sync/atomic"
 	"time"
 )
@@ -13,20 +11,7 @@ type AddressBalanceDecryptorWorker struct {
 }
 
 func (worker *AddressBalanceDecryptorWorker) processWork(work *addressBalanceDecryptorWork) (uint64, error) {
-
-	balancePoint, err := new(crypto.ElGamal).Deserialize(work.encryptedBalance)
-	if err != nil {
-		return 0, err
-	}
-
-	priv := &addresses.PrivateKey{work.privateKey}
-
-	decrypted, err := priv.DecryptBalance(balancePoint, work.previousValue, work.ctx, work.statusCallback)
-	if err != nil {
-		return 0, err
-	}
-
-	return decrypted, nil
+	return work.privateKey.DecryptBalance(work.encryptedBalance, false, work.previousValue, work.ctx, work.statusCallback)
 }
 
 func (worker *AddressBalanceDecryptorWorker) run() {

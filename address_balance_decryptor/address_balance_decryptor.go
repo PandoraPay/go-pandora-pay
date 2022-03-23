@@ -4,6 +4,7 @@ import (
 	"context"
 	"pandora-pay/addresses"
 	"pandora-pay/config"
+	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers/generics"
 )
 
@@ -34,7 +35,17 @@ func (decryptor *AddressBalanceDecryptor) DecryptBalance(decryptionName string, 
 		previousValue, _ = decryptor.previousValues.Load(string(publicKey) + "_" + string(asset) + "_" + decryptionName)
 	}
 
-	foundWork, loaded := decryptor.all.LoadOrStore(string(publicKey)+"_"+string(encryptedBalance), &addressBalanceDecryptorWork{encryptedBalance, privateKey, previousValue, make(chan struct{}), ADDRESS_BALANCE_DECRYPTED_INIT, 0, nil, ctx, statusCallback})
+	balancePoint, err := new(crypto.ElGamal).Deserialize(encryptedBalance)
+	if err != nil {
+		return 0, err
+	}
+
+	priv := &addresses.PrivateKey{Key: privateKey}
+	if priv.TryDecryptBalance(balancePoint, previousValue) {
+		return previousValue, nil
+	}
+
+	foundWork, loaded := decryptor.all.LoadOrStore(string(publicKey)+"_"+string(encryptedBalance), &addressBalanceDecryptorWork{balancePoint, priv, previousValue, make(chan struct{}), ADDRESS_BALANCE_DECRYPTED_INIT, 0, nil, ctx, statusCallback})
 	if !loaded {
 		decryptor.newWorkCn <- foundWork
 	}

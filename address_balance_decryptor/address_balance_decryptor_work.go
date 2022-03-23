@@ -1,6 +1,10 @@
 package address_balance_decryptor
 
-import "context"
+import (
+	"context"
+	"pandora-pay/addresses"
+	"pandora-pay/cryptography/crypto"
+)
 
 type addressBalanceDecryptorWorkResult struct {
 	decryptedBalance uint64
@@ -8,8 +12,8 @@ type addressBalanceDecryptorWorkResult struct {
 }
 
 type addressBalanceDecryptorWork struct {
-	encryptedBalance []byte
-	privateKey       []byte
+	encryptedBalance *crypto.ElGamal
+	privateKey       *addresses.PrivateKey
 	previousValue    uint64
 	wait             chan struct{}
 	status           int32 //use atomic

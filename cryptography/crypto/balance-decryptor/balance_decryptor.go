@@ -36,10 +36,12 @@ func (self *BalanceDecryptorType) TryDecryptBalance(p *bn256.G1, matchBalance ui
 	return acc.String() == p.String()
 }
 
-func (self *BalanceDecryptorType) DecryptBalance(p *bn256.G1, previousBalance uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
+func (self *BalanceDecryptorType) DecryptBalance(p *bn256.G1, tryPreviousValue bool, previousBalance uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
-	if self.TryDecryptBalance(p, previousBalance) {
-		return previousBalance, nil
+	if tryPreviousValue {
+		if self.TryDecryptBalance(p, previousBalance) {
+			return previousBalance, nil
+		}
 	}
 
 	tableLookup := self.SetTableSize(0, ctx, statusCallback)

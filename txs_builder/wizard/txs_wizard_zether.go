@@ -503,7 +503,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		statusCallback("Homomorphic balance Decrypting...")
 
 		var balance uint64
-		if balance, err = senderKey.DecryptBalance(pt, transfer.SenderDecryptedBalance, ctx, statusCallback); err != nil {
+		if balance, err = senderKey.DecryptBalance(pt, true, transfer.SenderDecryptedBalance, ctx, statusCallback); err != nil {
 			return
 		}
 		transfer.SenderDecryptedBalance = balance //let's update it for the next

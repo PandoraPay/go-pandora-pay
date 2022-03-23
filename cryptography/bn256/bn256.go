@@ -56,6 +56,9 @@ func (g *G1) String() string {
 
 func (g *G1) Equal(g2 *G1) bool {
 	g.p.MakeAffine()
+	x, y := &gfP{}, &gfP{}
+	montDecode(x, &g.p.x)
+	montDecode(y, &g.p.y)
 	return g.p.x[0] == g2.p.x[0] && g.p.x[1] == g2.p.x[1] && g.p.x[2] == g2.p.x[2] && g.p.x[3] == g2.p.x[3] &&
 		g.p.y[0] == g2.p.y[0] && g.p.y[1] == g2.p.y[1] && g.p.y[2] == g2.p.y[2] && g.p.y[3] == g2.p.y[3]
 }

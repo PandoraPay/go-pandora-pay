@@ -523,16 +523,13 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 			transfers[t].SenderDecryptedBalance = transfers[t].Amount
 		} else {
 			if txData.Payloads[t].DecryptedBalance > 0 { // in case it was specified to avoid getting stuck
-				success, err := builder.wallet.TryDecryptBalance(sendersWalletAddresses[t], sendersEncryptedBalances[t], txData.Payloads[t].DecryptedBalance)
+				decrypted, err := builder.wallet.DecryptBalance(sendersWalletAddresses[t], sendersEncryptedBalances[t], transfers[t].Asset, true, txData.Payloads[t].DecryptedBalance, true, ctx, statusCallback)
 				if err != nil {
 					return nil, nil, nil, nil, nil, nil, 0, nil, err
 				}
-				if !success {
-					return nil, nil, nil, nil, nil, nil, 0, nil, fmt.Errorf("TxsBuilderZether TryDecryptBalanceByPublicKey returned false for balance %d", txData.Payloads[t].DecryptedBalance)
-				}
-				transfers[t].SenderDecryptedBalance = txData.Payloads[t].DecryptedBalance
+				transfers[t].SenderDecryptedBalance = decrypted
 			} else {
-				decrypted, err := builder.wallet.DecryptBalanceByPublicKey(sendersWalletAddresses[t].PublicKey, sendersEncryptedBalances[t], transfers[t].Asset, false, 0, true, true, ctx, statusCallback)
+				decrypted, err := builder.wallet.DecryptBalance(sendersWalletAddresses[t], sendersEncryptedBalances[t], transfers[t].Asset, false, 0, true, ctx, statusCallback)
 				if err != nil {
 					return nil, nil, nil, nil, nil, nil, 0, nil, err
 				}

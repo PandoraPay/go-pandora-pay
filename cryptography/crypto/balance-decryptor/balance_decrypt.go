@@ -170,7 +170,7 @@ func (t *LookupTable) Lookup(p *bn256.G1, ctx context.Context, statusCallback fu
 				acc.ScalarMult(crypto.G, new(big.Int).SetUint64(balance+balance_part))
 
 				//if bytes.Equal(acc.EncodeUncompressed(), p.EncodeUncompressed()) { // since we may have part collisions, make sure full point is checked
-				if acc.Equal(p) { // since we may have part collisions, make sure full point is checked
+				if acc.String() == p.String() { // since we may have part collisions, make sure full point is checked
 					balance += balance_part
 					// fmt.Printf("balance found  %d part(%d) index %d   big part %x\n",balance,balance_part, index, big_part );
 
