@@ -205,8 +205,14 @@ func (worker *ForgingWorkerThread) forge() {
 						return true
 					case newWalletAddr := <-worker.addWalletAddressCn:
 						newWalletAddress(newWalletAddr)
+						if _, ok = walletsStakedTimestamp[key]; !ok { // in case it was deleted
+							continue
+						}
 					case publicKeyStr := <-worker.removeWalletAddressCn:
 						removeWalletAddr(publicKeyStr)
+						if _, ok = walletsStakedTimestamp[key]; !ok { // in case it was deleted
+							continue
+						}
 					default:
 					}
 
@@ -241,10 +247,27 @@ func (worker *ForgingWorkerThread) forge() {
 							address.stakingNonce,
 						}
 
-						worker.workerSolutionCn <- solution
-
-						delete(walletsStaked, key)
-						walletsStakedUsed[key] = true
+					repeat:
+						select {
+						case newWorkReceived := <-worker.workCn: //or the work was changed meanwhile
+							newWork(newWorkReceived)
+							return true
+						case newWalletAddr := <-worker.addWalletAddressCn:
+							newWalletAddress(newWalletAddr)
+							if _, ok = walletsStakedTimestamp[key]; !ok { // in case it was deleted
+								continue
+							}
+							goto repeat
+						case publicKeyStr := <-worker.removeWalletAddressCn:
+							removeWalletAddr(publicKeyStr)
+							if _, ok = walletsStakedTimestamp[key]; !ok { // in case it was deleted
+								continue
+							}
+							goto repeat
+						case worker.workerSolutionCn <- solution:
+							delete(walletsStaked, key)
+							walletsStakedUsed[key] = true
+						}
 
 					} /* else { // for debugging only
 						gui.GUI.Log(base64.StdEncoding.EncodeToString(kernelHash), strconv.FormatUint(timestamp, 10 ))
