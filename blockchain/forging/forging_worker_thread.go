@@ -241,8 +241,6 @@ func (worker *ForgingWorkerThread) forge() {
 
 						gui.GUI.Log("forged", worker.index, " -> ", work.BlkHeight, work.BlkComplete.PrevHash, address.walletAdr.decryptedStakingBalance)
 
-					repeat:
-
 						solution := &ForgingSolution{
 							localTimestamp,
 							address.walletAdr,
@@ -257,16 +255,14 @@ func (worker *ForgingWorkerThread) forge() {
 							return true
 						case newWalletAddr := <-worker.addWalletAddressCn:
 							newWalletAddress(newWalletAddr)
-							if _, ok = walletsStakedTimestamp[key]; !ok { // in case it was deleted
+							if key == newWalletAddr.publicKeyStr { // in case it was deleted
 								continue
 							}
-							goto repeat
 						case publicKeyStr := <-worker.removeWalletAddressCn:
 							removeWalletAddr(publicKeyStr)
-							if _, ok = walletsStakedTimestamp[key]; !ok { // in case it was deleted
+							if key == publicKeyStr { // in case it was deleted
 								continue
 							}
-							goto repeat
 						case worker.workerSolutionCn <- solution:
 							delete(walletsStaked, key)
 							walletsStakedUsed[key] = true

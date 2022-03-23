@@ -18,7 +18,8 @@ type WalletAddress struct {
 	Staked                     bool                       `json:"staked" msgpack:"staked"`
 	SpendRequired              bool                       `json:"spendRequired" msgpack:"spendRequired"`
 	SpendPublicKey             []byte                     `json:"spendPublicKey" msgpack:"spendPublicKey"`
-	SharedStaked               *WalletAddressSharedStaked `json:"sharedStaked" msgpack:"sharedStaked"`
+	IsSharedStaked             bool                       `json:"isSharedStaked,omitempty" msgpack:"isSharedStaked,omitempty"`
+	SharedStaked               *WalletAddressSharedStaked `json:"sharedStaked,omitempty" msgpack:"sharedStaked,omitempty"`
 	AddressEncoded             string                     `json:"addressEncoded" msgpack:"addressEncoded"`
 	AddressRegistrationEncoded string                     `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
 }
@@ -89,6 +90,7 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		addr.Staked,
 		addr.SpendRequired,
 		addr.SpendPublicKey,
+		addr.IsSharedStaked,
 		sharedStaked,
 		addr.AddressEncoded,
 		addr.AddressRegistrationEncoded,

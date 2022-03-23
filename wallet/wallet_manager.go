@@ -447,7 +447,7 @@ func (wallet *Wallet) GetWalletAddress(index int, lock bool) (*wallet_address.Wa
 		defer wallet.Lock.RUnlock()
 	}
 
-	if index < 0 || index > len(wallet.Addresses) {
+	if index < 0 || index >= len(wallet.Addresses) {
 		return nil, errors.New("Invalid Address Index")
 	}
 	return wallet.Addresses[index].Clone(), nil

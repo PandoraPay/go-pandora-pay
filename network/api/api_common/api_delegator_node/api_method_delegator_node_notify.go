@@ -101,6 +101,7 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 		true,
 		false,
 		nil,
+		true,
 		&wallet_address.WalletAddressSharedStaked{
 			sharedStakedPrivateKey,
 			sharedStakedPublicKey,

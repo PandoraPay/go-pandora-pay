@@ -87,7 +87,7 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, reg *registrati
 
 		wallet.forging.Wallet.RemoveWallet(addr.PublicKey, true, acc, reg, chainHeight)
 
-		if !addr.IsMine {
+		if !addr.IsSharedStaked {
 			_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, true)
 			return
 		}
