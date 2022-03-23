@@ -1,7 +1,6 @@
 package hash_map
 
 import (
-	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/helpers"
 )
@@ -65,7 +64,7 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 	//Clone required to avoid changing the data afterwards
 	data := hashMap.Tx.Get(hashMap.name + ":transitions:" + prefix)
 	if data == nil {
-		return errors.New("transitions didn't exist")
+		return
 	}
 
 	changes := &transactionChanges{}

@@ -144,15 +144,15 @@ func (worker *ForgingWorkerThread) forge() {
 		}
 
 		if work != nil {
-			if worker.computeStakingAmount(walletAddr, work) {
-				if walletAddr.walletAdr.chainHash == nil || bytes.Equal(walletAddr.walletAdr.chainHash, work.BlkComplete.PrevHash) {
+			if walletAddr.walletAdr.chainHash == nil || bytes.Equal(walletAddr.walletAdr.chainHash, work.BlkComplete.PrevHash) {
+				if worker.computeStakingAmount(walletAddr, work) {
 					if !walletsStakedUsed[walletAddr.walletAdr.publicKeyStr] {
 						walletsStaked[walletAddr.walletAdr.publicKeyStr] = walletAddr
 						walletsStakedTimestamp[walletAddr.walletAdr.publicKeyStr] = timestamp
 					}
+				} else {
+					delete(walletsStaked, walletAddr.walletAdr.publicKeyStr)
 				}
-			} else {
-				delete(walletsStaked, walletAddr.walletAdr.publicKeyStr)
 			}
 		}
 

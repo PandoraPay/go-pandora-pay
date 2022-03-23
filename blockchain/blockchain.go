@@ -77,9 +77,6 @@ func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockCo
 
 func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplete, calledByForging bool, exceptSocketUUID advanced_connection_types.UUID) (err error) {
 
-	if calledByForging {
-		return
-	}
 	if err = chain.validateBlocks(blocksComplete); err != nil {
 		return
 	}
