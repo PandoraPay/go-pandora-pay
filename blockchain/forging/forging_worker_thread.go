@@ -239,6 +239,8 @@ func (worker *ForgingWorkerThread) forge() {
 
 						gui.GUI.Log("forged", worker.index, " -> ", work.BlkHeight, work.BlkComplete.PrevHash, address.walletAdr.decryptedStakingBalance)
 
+					repeat:
+
 						solution := &ForgingSolution{
 							localTimestamp,
 							address.walletAdr,
@@ -247,7 +249,6 @@ func (worker *ForgingWorkerThread) forge() {
 							address.stakingNonce,
 						}
 
-					repeat:
 						select {
 						case newWorkReceived := <-worker.workCn: //or the work was changed meanwhile
 							newWork(newWorkReceived)

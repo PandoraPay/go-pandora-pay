@@ -301,7 +301,7 @@ func getNetworkAsset(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		ast := asset.NewAsset(nil, 0)
+		ast := asset.NewAsset(hash, 0)
 		if err = ast.Deserialize(helpers.NewBufferReader(final.Serialized)); err != nil {
 			return nil, err
 		}

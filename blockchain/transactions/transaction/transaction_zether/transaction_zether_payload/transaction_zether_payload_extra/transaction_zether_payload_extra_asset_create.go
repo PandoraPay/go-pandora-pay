@@ -32,6 +32,10 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) AfterIncludeTxPayl
 
 	hash := payloadExtra.GetAssetId(txHash, payloadIndex)
 
+	if bytes.Equal(hash, config_coins.NATIVE_ASSET_FULL) {
+		return errors.New("invalid hash")
+	}
+
 	//existence verification is done in CreateAsset
 	if err = dataStorage.Asts.CreateAsset(hash, payloadExtra.Asset); err != nil {
 		return
@@ -61,7 +65,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Serialize(w *helpe
 }
 
 func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Deserialize(r *helpers.BufferReader) (err error) {
-	payloadExtra.Asset = asset.NewAsset(nil, 0)
+	payloadExtra.Asset = asset.NewAsset(helpers.EmptyBytes(cryptography.RipemdSize), 0)
 	return payloadExtra.Asset.Deserialize(r)
 }
 

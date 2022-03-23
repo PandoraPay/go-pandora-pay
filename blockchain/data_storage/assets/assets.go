@@ -1,7 +1,6 @@
 package assets
 
 import (
-	"encoding/hex"
 	"errors"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/config/config_coins"
@@ -55,14 +54,12 @@ func NewAssets(tx store_db_interface.StoreDBTransactionInterface) (assets *Asset
 
 		asset := element.Element.(*asset.Asset)
 
-		tokenIdentification := asset.Ticker + "-" + hex.EncodeToString(key[:3])
-
-		if usedBy := tx.Get("assets:tickers:used:" + tokenIdentification); usedBy != nil {
+		if usedBy := tx.Get("assets:tickers:used:" + asset.Identification); usedBy != nil {
 			return errors.New("tokenIdentification already! Try again")
 		}
 
-		tx.Put("assets:tickers:by:"+string(key), []byte(tokenIdentification))
-		tx.Put("assets:tickers:used:"+tokenIdentification, []byte{1})
+		tx.Put("assets:tickers:by:"+string(key), []byte(asset.Identification))
+		tx.Put("assets:tickers:used:"+asset.Identification, []byte{1})
 
 		return
 	}

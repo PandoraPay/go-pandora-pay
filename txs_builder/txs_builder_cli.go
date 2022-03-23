@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,6 +19,7 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
+	"pandora-pay/helpers"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/txs_builder/wizard"
@@ -237,6 +239,9 @@ func (builder *TxsBuilder) initCLI() {
 		if err = json.Unmarshal([]byte(str), extra.Asset); err != nil {
 			return
 		}
+		extra.Asset.PublicKey = helpers.RandomBytes(cryptography.RipemdSize)
+		extra.Asset.Identification = extra.Asset.Ticker + "-" + hex.EncodeToString(extra.Asset.PublicKey[:3])
+
 		if err = extra.Asset.Validate(); err != nil {
 			return
 		}

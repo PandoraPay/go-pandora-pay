@@ -2,7 +2,9 @@ package asset
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"math"
 	"pandora-pay/config/config_assets"
 	"pandora-pay/config/config_coins"
@@ -36,6 +38,7 @@ type Asset struct {
 	SupplyPublicKey                              []byte `json:"supplyPublicKey,omitempty" msgpack:"supplyPublicKey,omitempty"` //33 byte
 	Name                                         string `json:"name" msgpack:"name"`
 	Ticker                                       string `json:"ticker" msgpack:"ticker"`
+	Identification                               string `json:"identification" msgpack:"identification"`
 	Description                                  string `json:"description,omitempty" msgpack:"description,omitempty"`
 	Data                                         []byte `json:"data,omitempty" msgpack:"data,omitempty"`
 }
@@ -45,7 +48,10 @@ func (asset *Asset) IsDeletable() bool {
 }
 
 func (asset *Asset) SetKey(key []byte) {
-	asset.PublicKey = key
+	if !bytes.Equal(key, asset.PublicKey) {
+		asset.PublicKey = key
+		asset.setIdentification()
+	}
 }
 
 func (asset *Asset) SetIndex(value uint64) {
@@ -57,7 +63,6 @@ func (asset *Asset) GetIndex() uint64 {
 }
 
 func (asset *Asset) Validate() error {
-
 	if asset.DecimalSeparator > config_assets.ASSETS_DECIMAL_SEPARATOR_MAX_BYTE {
 		return errors.New("asset decimal separator is invalid")
 	}
@@ -85,6 +90,10 @@ func (asset *Asset) Validate() error {
 		return errors.New("Asset description is invalid")
 	}
 
+	if len(asset.PublicKey) != cryptography.RipemdSize {
+		return errors.New("Asset Public key is invalid")
+	}
+
 	if !bytes.Equal(asset.PublicKey, config_coins.NATIVE_ASSET_FULL) {
 
 		if strings.ToUpper(asset.Name) == config_coins.NATIVE_ASSET_NAME {
@@ -92,6 +101,19 @@ func (asset *Asset) Validate() error {
 		}
 		if asset.Ticker == config_coins.NATIVE_ASSET_TICKER {
 			return errors.New("Asset can not contain same ticker")
+		}
+
+		identification := asset.Ticker + "-" + hex.EncodeToString(asset.PublicKey[:3])
+		if asset.Identification != identification {
+			return fmt.Errorf("Asset identification is not matching %s != %s", asset.Identification, identification)
+		}
+
+	} else {
+		if asset.Identification != config_coins.NATIVE_ASSET_IDENTIFICATION {
+			return errors.New("Asset native identification is not matching")
+		}
+		if asset.Ticker != config_coins.NATIVE_ASSET_TICKER {
+			return errors.New("Asset ticker is not matching")
 		}
 
 	}
@@ -176,6 +198,14 @@ func (asset *Asset) Serialize(w *helpers.BufferWriter) {
 	w.WriteVariableBytes(asset.Data)
 }
 
+func (asset *Asset) setIdentification() {
+	if bytes.Equal(asset.PublicKey, config_coins.NATIVE_ASSET_FULL) {
+		asset.Identification = config_coins.NATIVE_ASSET_IDENTIFICATION
+	} else {
+		asset.Identification = asset.Ticker + "-" + hex.EncodeToString(asset.PublicKey[:3])
+	}
+}
+
 func (asset *Asset) Deserialize(r *helpers.BufferReader) (err error) {
 
 	if asset.Version, err = r.ReadUvarint(); err != nil {
@@ -229,6 +259,8 @@ func (asset *Asset) Deserialize(r *helpers.BufferReader) (err error) {
 	if asset.Data, err = r.ReadVariableBytes(5120); err != nil {
 		return
 	}
+
+	asset.setIdentification()
 
 	return
 }

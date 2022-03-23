@@ -88,6 +88,7 @@ func saveAssetsInfo(asts *assets.Assets) (err error) {
 				ast.Version,
 				ast.Name,
 				ast.Ticker,
+				ast.Identification,
 				ast.DecimalSeparator,
 				ast.Description[:generics.Min(100, len(ast.Description))],
 				[]byte(k),

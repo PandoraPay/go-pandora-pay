@@ -115,6 +115,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 		config_coins.BURN_PUBLIC_KEY,
 		config_coins.NATIVE_ASSET_NAME,
 		config_coins.NATIVE_ASSET_TICKER,
+		config_coins.NATIVE_ASSET_IDENTIFICATION,
 		config_coins.NATIVE_ASSET_DESCRIPTION,
 		nil,
 	}
