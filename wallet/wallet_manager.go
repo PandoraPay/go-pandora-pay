@@ -287,29 +287,6 @@ func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte,
 	return secretSerialized, key2.Key, key3.Key, nil
 }
 
-func (wallet *Wallet) GenerateSpendPrivateKey(seedIndex uint32, lock bool) ([]byte, error) {
-	if lock {
-		wallet.Lock.Lock()
-		defer wallet.Lock.Unlock()
-	}
-
-	if !wallet.Loaded {
-		return nil, errors.New("Wallet was not loaded!")
-	}
-
-	masterKey, err := bip32.NewMasterKey(cryptography.SHA3(cryptography.SHA3(wallet.Seed)))
-	if err != nil {
-		return nil, err
-	}
-
-	key, err := masterKey.NewChildKey(seedIndex)
-	if err != nil {
-		return nil, err
-	}
-
-	return key.Key, nil
-}
-
 func (wallet *Wallet) AddNewAddress(lock bool, name string, staked, spendRequired bool) (*wallet_address.WalletAddress, error) {
 
 	//avoid generating the same address twice

@@ -72,7 +72,7 @@ func CreateWallet(forging *forging.Forging, mempool *mempool.Mempool, addressBal
 		if err.Error() != "Wallet doesn't exist" {
 			return nil, err
 		}
-		if err = wallet.createEmptyWallet(); err != nil {
+		if err = wallet.CreateEmptyWallet(); err != nil {
 			return nil, err
 		}
 	}

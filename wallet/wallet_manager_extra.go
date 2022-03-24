@@ -42,14 +42,41 @@ func (wallet *Wallet) createSeed(lock bool) error {
 	return nil
 }
 
-func (wallet *Wallet) createEmptyWallet() (err error) {
+func (wallet *Wallet) CreateEmptyWallet() (err error) {
+
 	wallet.Lock.Lock()
 	defer wallet.Lock.Unlock()
 
+	wallet.clearWallet()
 	wallet.setLoaded(true)
+
 	if err = wallet.createSeed(false); err != nil {
 		return
 	}
+	if _, err = wallet.AddNewAddress(false, "", false, false); err != nil {
+		return
+	}
+
+	return
+}
+
+func (wallet *Wallet) ImportMnemonic(mnemonic string) (err error) {
+
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
+
+	wallet.clearWallet()
+	wallet.setLoaded(true)
+
+	wallet.Mnemonic = mnemonic
+
+	seed, err := bip39.NewSeedWithErrorChecking(mnemonic, "SEED Secret Passphrase")
+	if err != nil {
+		return err
+	}
+
+	wallet.Seed = seed
+
 	if _, err = wallet.AddNewAddress(false, "", false, false); err != nil {
 		return
 	}

@@ -14,7 +14,7 @@ func getWallet(this js.Value, args []js.Value) interface{} {
 		app.Wallet.Lock.RLock()
 		defer app.Wallet.Lock.RUnlock()
 
-		data, err := helpers.GetJSONDataExcept(app.Wallet, "mnemonic")
+		data, err := helpers.GetJSONDataExcept(app.Wallet, "mnemonic", "seed")
 		if err != nil {
 			return nil, err
 		}
@@ -50,6 +50,35 @@ func getWalletMnemonic(this js.Value, args []js.Value) interface{} {
 		app.Wallet.Lock.RLock()
 		defer app.Wallet.Lock.RUnlock()
 		return app.Wallet.Mnemonic, nil
+	})
+}
+
+func getWalletSeed(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+			return nil, err
+		}
+		app.Wallet.Lock.RLock()
+		defer app.Wallet.Lock.RUnlock()
+		return base64.StdEncoding.EncodeToString(app.Wallet.Seed), nil
+	})
+}
+
+func createNewWallet(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+			return nil, err
+		}
+		return nil, app.Wallet.CreateEmptyWallet()
+	})
+}
+
+func importNewMnemonic(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
+			return nil, err
+		}
+		return nil, app.Wallet.ImportMnemonic(args[1].String())
 	})
 }
 

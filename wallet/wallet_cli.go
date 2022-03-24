@@ -432,6 +432,41 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
+	cliClearWallet := func(cmd string, ctx context.Context) (err error) {
+
+		gui.GUI.OutputWrite("WARNING!!! THIS COMMAND WILL DELETE YOUR EXISTING WALLET!\n\n")
+
+		if !gui.GUI.OutputReadBool("Are you sure you want to clear the existing wallet and get a new one? y/n", false, false) {
+			return
+		}
+
+		if err = wallet.CreateEmptyWallet(); err != nil {
+			return
+		}
+
+		gui.GUI.Info("A new wallet has been created!")
+
+		return
+	}
+
+	cliImportMnemonic := func(cmd string, ctx context.Context) (err error) {
+		gui.GUI.OutputWrite("WARNING!!! THIS COMMAND WILL DELETE YOUR EXISTING WALLET!\n\n")
+
+		if !gui.GUI.OutputReadBool("Are you sure you want to clear the existing wallet and import a mnemonic? y/n", false, false) {
+			return
+		}
+
+		mnemonic := gui.GUI.OutputReadString("Provide the mnemonic")
+
+		if err = wallet.ImportMnemonic(mnemonic); err != nil {
+			return
+		}
+
+		gui.GUI.Info("A new wallet has been created using the mnemonic provided!")
+
+		return
+	}
+
 	cliShowSecretKey := func(cmd string, ctx context.Context) (err error) {
 
 		_, _, index, err := wallet.CliSelectAddress("Select Address to show the secret key", ctx)
@@ -505,7 +540,9 @@ func (wallet *Wallet) initWalletCLI() {
 
 	gui.GUI.CommandDefineCallback("List Addresses", wallet.CliListAddresses, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Create New Address", cliCreateNewAddress, wallet.Loaded)
+	gui.GUI.CommandDefineCallback("Clear & Create new empty Wallet", cliClearWallet, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Show Mnemnonic", cliShowMnemonic, wallet.Loaded)
+	gui.GUI.CommandDefineCallback("Import Mnemnonic", cliImportMnemonic, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Show Secret Key", cliShowSecretKey, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Import Secret Key", cliImportSecretKey, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Remove Address", cliRemoveAddress, wallet.Loaded)

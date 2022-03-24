@@ -40,7 +40,10 @@ func Initialize(startMainCb func()) {
 		"wallet": js.ValueOf(map[string]interface{}{
 			"getWallet":                 js.FuncOf(getWallet),
 			"getWalletMnemonic":         js.FuncOf(getWalletMnemonic),
+			"getWalletSeed":             js.FuncOf(getWalletSeed),
 			"getWalletAddressSecretKey": js.FuncOf(getWalletAddressSecretKey),
+			"createNewWallet":           js.FuncOf(createNewWallet),
+			"importNewMnemonic":         js.FuncOf(importNewMnemonic),
 			"manager": js.ValueOf(map[string]interface{}{
 				"getWalletAddress":        js.FuncOf(getWalletAddress),
 				"addNewWalletAddress":     js.FuncOf(addNewWalletAddress),
