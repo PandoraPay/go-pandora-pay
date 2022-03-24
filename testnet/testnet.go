@@ -125,7 +125,7 @@ func (testnet *Testnet) testnetCreateTransfers(senderAddr *wallet_address.Wallet
 	}
 
 	if amount == 0 {
-		amount = uint64(rand.Int63n(6))
+		amount = uint64(rand.Int63n(100))
 	}
 
 	txData := &txs_builder.TxBuilderCreateZetherTxData{
@@ -203,7 +203,19 @@ func (testnet *Testnet) run() {
 					var addr, tempAddr *wallet_address.WalletAddress
 					addr, _ = testnet.wallet.GetFirstStakedAddress(true)
 
-					var acc *account.Account
+					addressesList := []*wallet_address.WalletAddress{}
+					for i := 0; i < 5; i++ {
+						if tempAddr, err = testnet.wallet.GetWalletAddress(i, true); err != nil {
+							return
+						}
+						addressesList = append(addressesList, tempAddr)
+					}
+
+					type AccMapElement struct {
+						account *account.Account
+						index   int
+					}
+					accMap := map[string]*AccMapElement{}
 
 					gui.GUI.Log("UpdateNewChain received! 2")
 
@@ -212,26 +224,41 @@ func (testnet *Testnet) run() {
 						dataStorage := data_storage.NewDataStorage(reader)
 
 						var accs *accounts.Accounts
+						var acc *account.Account
+
 						if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
 							return
 						}
-
-						if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
-							return
+						for i := 0; i < 5; i++ {
+							if acc, err = accs.GetAccount(addressesList[i].PublicKey); err != nil {
+								return
+							}
+							accMap[string(addressesList[i].PublicKey)] = &AccMapElement{
+								acc,
+								i,
+							}
 						}
+
 						return
 					}); err != nil {
 						return
 					}
 
-					if acc == nil {
+					if accMap[string(addr.PublicKey)] == nil {
 						return
 					}
 
-					var stakingAmount uint64
-					if stakingAmount, err = testnet.wallet.DecryptBalance(addr, acc.Balance.Amount.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, true, ctx, func(string) {}); err != nil {
-						return
+					balances := map[string]uint64{}
+
+					for k, v := range accMap {
+						if v.account != nil {
+							if balances[k], err = testnet.wallet.DecryptBalance(addressesList[v.index], v.account.Balance.Amount.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, true, ctx, func(string) {}); err != nil {
+								return
+							}
+						}
 					}
+
+					stakingAmount := balances[string(addr.PublicKey)]
 
 					time.Sleep(time.Millisecond * 3000) //making sure the block got propagated
 
@@ -249,29 +276,27 @@ func (testnet *Testnet) run() {
 							if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload_script.SCRIPT_TRANSFER) {
 								for i := 0; i < 5; i++ {
 
-									if tempAddr, err = testnet.wallet.GetWalletAddress(i, true); err != nil {
-										return
-									}
-									if bytes.Equal(addr.PublicKey, tempAddr.PublicKey) {
+									if bytes.Equal(addr.PublicKey, addressesList[i].PublicKey) {
 										continue
 									}
 
-									testnet.testnetCreateClaimTx(addr, i, over/5, ctx)
-									time.Sleep(time.Millisecond * 1000)
+									if balances[string(addressesList[i].PublicKey)] < config_coins.ConvertToUnitsUint64Forced(10000) {
+										amount := generics.Min(over/5, config_coins.ConvertToUnitsUint64Forced(10000)-balances[string(addressesList[i].PublicKey)])
+										testnet.testnetCreateClaimTx(addr, i, amount, ctx)
+										time.Sleep(time.Millisecond * 1000)
+									}
+
 								}
 							}
 						}
 
 						for i := 1; i < 5; i++ {
 
-							if tempAddr, err = testnet.wallet.GetWalletAddress(i, true); err != nil {
-								return
-							}
-							if bytes.Equal(addr.PublicKey, tempAddr.PublicKey) {
+							if bytes.Equal(addr.PublicKey, addressesList[i].PublicKey) {
 								continue
 							}
 
-							testnet.testnetCreateTransfers(tempAddr, 0, ctx)
+							testnet.testnetCreateTransfers(addressesList[i], 0, ctx)
 							time.Sleep(time.Millisecond * 5000)
 						}
 					}
