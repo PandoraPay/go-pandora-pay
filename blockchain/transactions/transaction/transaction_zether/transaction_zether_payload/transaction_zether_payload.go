@@ -144,6 +144,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		//verify sender
 		if (i%2 == 0) == payload.Parity { //sender
 
+			//all sender accounts must be staked
 			if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING && !reg.Staked {
 				return errors.New("Senders used in Staking requires all to be staked")
 			}
@@ -186,7 +187,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 					update = true
 				}
 			} else { //recipient
-				if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && reg.Staked {
+				if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && (reg.Staked || payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD) {
 					if err = dataStorage.AddStakePendingStake(publicKey, echanges, blockHeight+config_stake.GetPendingStakeWindow(blockHeight)); err != nil {
 						return
 					}
