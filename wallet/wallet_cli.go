@@ -372,8 +372,10 @@ func (wallet *Wallet) initWalletCLI() {
 	cliCreateNewAddress := func(cmd string, ctx context.Context) (err error) {
 
 		name := gui.GUI.OutputReadFilename("Name of your new address", "")
+		staked := gui.GUI.OutputReadBool("Staked address ? y/n. Leave empty for n", true, false)
+		spendRequired := gui.GUI.OutputReadBool("Spend Key required ? y/n. Leave empty for n", true, false)
 
-		if _, err = wallet.AddNewAddress(true, name, false, false); err != nil {
+		if _, err = wallet.AddNewAddress(true, name, staked, spendRequired); err != nil {
 			return
 		}
 		return wallet.CliListAddresses(cmd, ctx)
@@ -453,9 +455,11 @@ func (wallet *Wallet) initWalletCLI() {
 		})
 
 		name := gui.GUI.OutputReadString("Write Name of the newly imported address")
+		staked := gui.GUI.OutputReadBool("Staked address ? y/n. Leave empty for n", true, false)
+		spendRequired := gui.GUI.OutputReadBool("Spend Key required ? y/n. Leave empty for n", true, false)
 
 		var adr *wallet_address.WalletAddress
-		if adr, err = wallet.ImportSecretKey(name, secretKey, false, false); err != nil {
+		if adr, err = wallet.ImportSecretKey(name, secretKey, staked, spendRequired); err != nil {
 			return
 		}
 
