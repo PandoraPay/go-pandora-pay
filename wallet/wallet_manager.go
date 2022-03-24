@@ -129,7 +129,7 @@ func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte, staked, spe
 	return addr, nil
 }
 
-func (wallet *Wallet) AddSharedStakedAddress(adr *wallet_address.WalletAddress, lock bool) (err error) {
+func (wallet *Wallet) AddSharedStakedAddress(addr *wallet_address.WalletAddress, lock bool) (err error) {
 
 	if lock {
 		wallet.Lock.Lock()
@@ -143,21 +143,21 @@ func (wallet *Wallet) AddSharedStakedAddress(adr *wallet_address.WalletAddress, 
 		return errors.New("DELEGATES_MAXIMUM exceeded")
 	}
 
-	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, adr.PublicKey, adr.Staked, adr.SpendPublicKey, nil, nil, 0, nil)
+	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, addr.PublicKey, addr.Staked, addr.SpendPublicKey, nil, nil, 0, nil)
 	if err != nil {
 		return
 	}
 
-	adr.AddressEncoded = address.EncodeAddr()
+	addr.AddressEncoded = address.EncodeAddr()
 
-	if wallet.addressesMap[string(adr.PublicKey)] != nil {
+	if wallet.addressesMap[string(addr.PublicKey)] != nil {
 		return errors.New("Address exists")
 	}
 
-	wallet.Addresses = append(wallet.Addresses, adr)
-	wallet.addressesMap[string(adr.PublicKey)] = adr
+	wallet.Addresses = append(wallet.Addresses, addr)
+	wallet.addressesMap[string(addr.PublicKey)] = addr
 
-	wallet.forging.Wallet.AddWallet(adr.PublicKey, adr.SharedStaked, false, nil, nil, 0)
+	wallet.forging.Wallet.AddWallet(addr.PublicKey, addr.SharedStaked, false, nil, nil, 0)
 
 	wallet.Count += 1
 
@@ -166,7 +166,7 @@ func (wallet *Wallet) AddSharedStakedAddress(adr *wallet_address.WalletAddress, 
 	if err = wallet.saveWallet(len(wallet.Addresses)-1, len(wallet.Addresses), -1, false); err != nil {
 		return
 	}
-	globals.MainEvents.BroadcastEvent("wallet/added", adr)
+	globals.MainEvents.BroadcastEvent("wallet/added", addr)
 
 	return
 }
@@ -524,9 +524,10 @@ func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {
 		return errors.New("Error unmarshaling wallet")
 	}
 
-	wallet.Lock.RLock()
-	defer wallet.Lock.RUnlock()
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
 
+	wallet.clearWallet()
 	if err = json.Unmarshal(data, wallet); err != nil {
 		return errors.New("Error unmarshaling wallet 2")
 	}
@@ -535,8 +536,11 @@ func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {
 	for _, adr := range wallet.Addresses {
 		wallet.addressesMap[string(adr.PublicKey)] = adr
 	}
+	wallet.setLoaded(true)
 
-	return
+	globals.MainEvents.BroadcastEvent("wallet/loaded", wallet.Count)
+
+	return wallet.saveWalletEntire(false)
 }
 
 func (wallet *Wallet) GetDelegatesCount() int {
