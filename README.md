@@ -29,6 +29,7 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [x] HD Wallet
 - [x] Commit/Rollback Database
 - [x] Wallet
+    - [x] Menomic Seed
     - [x] Save and Load
     - [x] Print Wallet Simple Balances
     - [x] Print Wallet Homomorphic Balances
@@ -68,8 +69,10 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [x] Transaction Wizard
     - [x] Transaction Builder
     - [x] Fee calculator
-    - [x] Multi Threading signature verification   
+    - [x] Multi Threading signature verification
 - [x] Simple Transactions
+  - [x] Fee calculator
+  - [x] Update Asset Fee Liquidity
 - [x] Zether Transactions
   - [x] Transfer
   - [x] Spend Tx
@@ -89,9 +92,9 @@ The main design pattern that has been taken in consideration is to be **dead-sim
     - [x] HTTP websocket client
     - [X] TOR Integration
     - [x] P2P network
-- [ ] API
+- [x] API
     - [X] API blockchain explorers
-    - [ ] API wallets    
+    - [x] API wallets    
 - [X] Consensus
   - [X] API websockets for Forks
   - [X] Fork manager and downloader
@@ -108,15 +111,21 @@ The main design pattern that has been taken in consideration is to be **dead-sim
 
 ** later on optimizations and improvements
 
-The main reasons why DPOS has been chosen over POS:
-1. Delegating your stake increases security. 
-2. Delegating your stake to someone to stake increases privacy as you don't need to be online for staking. 
-3. Completely offline can be done to increase the security. 
-4. Griding technique and short range attack vector attack is solved using DPOS
-5. Future proposals:
-    1. state trie proofs to prove to light clients the state.
-    2. creating macro blocks by selecting specific nodes for a meta chain. This allows light consensus.
-    3. scalability. There will be research done to understand the best way to scale up the technology.
+### Consensus UPPOS
+
+The initial version of the consensus was DPOS, but it required all delegated accounts to have public balances and be plain accounts. Later, we switched the consensus from DPOS to a novel consensus we designed named UPPOS (Unspendable Private Proof of Stake), which is a private of stake consensus with confidential amounts and ring signatures. The block forger will prove that he has a balance >= value T (with T being public). For cold staking or even security, the private key of the account can be "shared" with a delegator full node. Thus, the node will generate special zether transactions that proves that the account has a balance >= T. To avoid the delegator steal the coins, accounts will have to have a special SpendPublicKey attached to the account. Only the real owner of the account will know the private key of this SpendKey and can move coins out his this account.    
+
+The main reasons why UPPOS has been chosen over POS:
+
+  1. Sharing your stake to a third party node increases security as your wallet can be secured with a cold spend private key. 
+  2. Sharing your stake to someone to stake increases the privacy as you don't need to be online for staking. 
+  3. Completely offline can be done to increase the security. 
+  4. Griding technique and short range attack vector attack is solved using rollover window for staked accounts requiring them to get into a pending queue.
+
+### Future proposals
+  1. state trie proofs to prove to light clients the state.
+  2. creating macro blocks by selecting specific nodes for a meta chain. This allows light consensus.
+  3. scalability. There will be research done to understand the best way to scale up the technology.
 
 # DISCLAIMER:
 This source code is released for research purposes only, with the intent of researching and studying a decentralized p2p network protocol.
