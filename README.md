@@ -119,11 +119,11 @@ The initial version of the consensus was DPOS, but it required all delegated acc
 known. Later, we switched the consensus from DPOS to a novel consensus we designed named UPPOS (Unspendable Private
 Proof of Stake), which is a proof of stake consensus with confidential amounts and ring signatures.
 
-The block forger will prove that he has a balance >= value B (with T being public) that solves the staking
-equation. `Hash(PublicKey + Timestamp) / B <= Target`
+The block forger will prove that he has owns coins >= value B (with B being public) that solves the staking
+equation. `Hash( PrevBlockKernelHash + StakingNonce + Timestamp) / B <= Target`
 
 where `B` is the balance and could be between (0..Account Balance]. By `B` we understand the minimum value that
-satisfies the above equation.
+satisfies the above equation. StakingNonce is unique per address for each new block.
 
 For cold staking or even more security, the private key of the account can be "shared" with a delegator full node. Thus,
 the node will generate the special zether transactions that prove that the shared account has a balance >= B. To avoid
