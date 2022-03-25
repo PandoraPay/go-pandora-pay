@@ -53,7 +53,7 @@ func (wallet *Wallet) CreateEmptyWallet() (err error) {
 	if err = wallet.createSeed(false); err != nil {
 		return
 	}
-	if _, err = wallet.AddNewAddress(false, "", false, false); err != nil {
+	if _, err = wallet.AddNewAddress(false, "", false, false, true); err != nil {
 		return
 	}
 
@@ -77,7 +77,7 @@ func (wallet *Wallet) ImportMnemonic(mnemonic string) (err error) {
 
 	wallet.Seed = seed
 
-	if _, err = wallet.AddNewAddress(false, "", false, false); err != nil {
+	if _, err = wallet.AddNewAddress(false, "", false, false, true); err != nil {
 		return
 	}
 

@@ -375,7 +375,7 @@ func (wallet *Wallet) initWalletCLI() {
 		staked := gui.GUI.OutputReadBool("Staked address ? y/n. Leave empty for n", true, false)
 		spendRequired := gui.GUI.OutputReadBool("Spend Key required ? y/n. Leave empty for n", true, false)
 
-		if _, err = wallet.AddNewAddress(true, name, staked, spendRequired); err != nil {
+		if _, err = wallet.AddNewAddress(true, name, staked, spendRequired, true); err != nil {
 			return
 		}
 		return wallet.CliListAddresses(cmd, ctx)

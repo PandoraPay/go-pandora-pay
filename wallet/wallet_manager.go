@@ -52,7 +52,7 @@ func (wallet *Wallet) GetFirstStakedAddress(lock bool) (*wallet_address.WalletAd
 		return found, nil
 	}
 
-	return wallet.AddNewAddress(true, "", true, true)
+	return wallet.AddNewAddress(true, "", true, true, true)
 }
 
 func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, error) {
@@ -122,7 +122,7 @@ func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte, staked, spe
 		IsMine:          true,
 	}
 
-	if err := wallet.AddAddress(addr, staked, spendRequired, true, false, false); err != nil {
+	if err := wallet.AddAddress(addr, staked, spendRequired, true, false, false, true); err != nil {
 		return nil, err
 	}
 
@@ -171,7 +171,7 @@ func (wallet *Wallet) AddSharedStakedAddress(addr *wallet_address.WalletAddress,
 	return
 }
 
-func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spendRequired, lock bool, incrementSeedIndex bool, incrementImportedCountIndex bool) (err error) {
+func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spendRequired, lock bool, incrementSeedIndex, incrementImportedCountIndex, save bool) (err error) {
 
 	if lock {
 		wallet.Lock.Lock()
@@ -237,12 +237,14 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spe
 		return
 	}
 
-	wallet.updateWallet()
+	if save {
+		wallet.updateWallet()
 
-	if err = wallet.saveWallet(len(wallet.Addresses)-1, len(wallet.Addresses), -1, false); err != nil {
-		return
+		if err = wallet.saveWallet(len(wallet.Addresses)-1, len(wallet.Addresses), -1, false); err != nil {
+			return
+		}
+		globals.MainEvents.BroadcastEvent("wallet/added", addr)
 	}
-	globals.MainEvents.BroadcastEvent("wallet/added", addr)
 
 	return
 
@@ -287,7 +289,7 @@ func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte,
 	return secretSerialized, key2.Key, key3.Key, nil
 }
 
-func (wallet *Wallet) AddNewAddress(lock bool, name string, staked, spendRequired bool) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) AddNewAddress(lock bool, name string, staked, spendRequired, save bool) (*wallet_address.WalletAddress, error) {
 
 	//avoid generating the same address twice
 	if lock {
@@ -323,7 +325,7 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string, staked, spendRequire
 		IsMine:          true,
 	}
 
-	if err = wallet.AddAddress(addr, staked, spendRequired, false, true, false); err != nil {
+	if err = wallet.AddAddress(addr, staked, spendRequired, false, true, false, save); err != nil {
 		return nil, err
 	}
 
@@ -468,7 +470,7 @@ func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.Wall
 		addr.SeedIndex = 0
 	}
 
-	if err := wallet.AddAddress(addr, addr.Staked, addr.SpendRequired, false, false, isMine); err != nil {
+	if err := wallet.AddAddress(addr, addr.Staked, addr.SpendRequired, false, false, isMine, true); err != nil {
 		return nil, err
 	}
 

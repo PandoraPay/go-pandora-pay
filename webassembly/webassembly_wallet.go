@@ -121,7 +121,7 @@ func addNewWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		adr, err := app.Wallet.AddNewAddress(false, args[1].String(), args[2].Bool(), args[3].Bool())
+		adr, err := app.Wallet.AddNewAddress(false, args[1].String(), args[2].Bool(), args[3].Bool(), true)
 		if err != nil {
 			return nil, err
 		}
