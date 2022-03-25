@@ -257,7 +257,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 							it = it.Next
 						}
 
-						if err := thread.chain.AddBlocks(blocks, false, advanced_connection_types.UUID_ALL); err != nil {
+						if _, err := thread.chain.AddBlocks(blocks, false, advanced_connection_types.UUID_ALL); err != nil {
 							if config.DEBUG {
 								gui.GUI.Error("Invalid Fork", err)
 							}

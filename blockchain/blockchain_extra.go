@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/big"
 	"pandora-pay/addresses"
+	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
@@ -245,8 +246,12 @@ func (chain *Blockchain) InitForging() {
 				return
 			}
 
-			forgingErr := chain.AddBlocks([]*block_complete.BlockComplete{solution.BlkComplete}, true, advanced_connection_types.UUID_ALL)
-			solution.Done <- forgingErr
+			kernelHash, err := chain.AddBlocks([]*block_complete.BlockComplete{solution.BlkComplete}, true, advanced_connection_types.UUID_ALL)
+
+			solution.Done <- &blockchain_types.BlockchainSolutionAnswer{
+				err,
+				kernelHash,
+			}
 		}
 
 	})

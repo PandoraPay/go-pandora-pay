@@ -73,7 +73,7 @@ func (thread *ForgingThread) startForging() {
 				return
 			}
 
-			if !bytes.Equal(solution.work.BlkComplete.PrevKernelHash, thread.lastPrevKernelHash.Load()) {
+			if solution.work.BlkComplete.Height > 1 && !bytes.Equal(solution.work.BlkComplete.PrevKernelHash, thread.lastPrevKernelHash.Load()) {
 				return
 			}
 
@@ -132,7 +132,7 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) ([]byte,
 
 	newBlk.Bloom = nil
 	if err = newBlk.BloomAll(); err != nil {
-		return
+		return nil, err
 	}
 
 	//send message to blockchain
