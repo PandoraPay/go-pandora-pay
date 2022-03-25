@@ -1,6 +1,7 @@
 package blockchain_types
 
 import (
+	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
@@ -38,4 +39,14 @@ type BlockchainUpdates struct {
 	Registrations  *registrations.Registrations
 	BlockHeight    uint64
 	BlockHash      []byte
+}
+
+type BlockchainSolutionAnswer struct {
+	Err             error
+	ChainKernelHash []byte
+}
+
+type BlockchainSolution struct {
+	BlkComplete *block_complete.BlockComplete
+	Done        chan *BlockchainSolutionAnswer
 }

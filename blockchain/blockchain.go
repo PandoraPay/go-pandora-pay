@@ -45,7 +45,7 @@ type Blockchain struct {
 	txsValidator                            *txs_validator.TxsValidator
 	mutex                                   *sync.Mutex //writing mutex
 	updatesQueue                            *BlockchainUpdatesQueue
-	ForgingSolutionCn                       chan *block_complete.BlockComplete
+	ForgingSolutionCn                       chan *blockchain_types.BlockchainSolution
 	UpdateNewChain                          *multicast.MulticastChannel[uint64]
 	UpdateNewChainDataUpdate                *multicast.MulticastChannel[*BlockchainDataUpdate]
 	UpdateNewChainUpdate                    *multicast.MulticastChannel[*blockchain_types.BlockchainUpdates]
@@ -511,7 +511,7 @@ func CreateBlockchain(mempool *mempool.Mempool, txsValidator *txs_validator.TxsV
 		txsValidator,
 		&sync.Mutex{},
 		createBlockchainUpdatesQueue(txsValidator),
-		make(chan *block_complete.BlockComplete),
+		make(chan *blockchain_types.BlockchainSolution),
 		multicast.NewMulticastChannel[uint64](),
 		multicast.NewMulticastChannel[*BlockchainDataUpdate](),
 		multicast.NewMulticastChannel[*blockchain_types.BlockchainUpdates](),

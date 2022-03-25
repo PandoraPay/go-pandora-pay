@@ -25,7 +25,6 @@ import (
 	"pandora-pay/recovery"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
-	"strconv"
 )
 
 func (chain *Blockchain) GetChainData() *BlockchainData {
@@ -241,16 +240,13 @@ func (chain *Blockchain) InitForging() {
 
 		for {
 
-			blkComplete, ok := <-chain.ForgingSolutionCn
+			solution, ok := <-chain.ForgingSolutionCn
 			if !ok {
 				return
 			}
 
-			if forgingErr := chain.AddBlocks([]*block_complete.BlockComplete{blkComplete}, true, advanced_connection_types.UUID_ALL); forgingErr == nil {
-				gui.GUI.Info("Block was forged! " + strconv.FormatUint(blkComplete.Block.Height, 10))
-			} else {
-				gui.GUI.Error("Error forging block "+strconv.FormatUint(blkComplete.Block.Height, 10), forgingErr)
-			}
+			forgingErr := chain.AddBlocks([]*block_complete.BlockComplete{solution.BlkComplete}, true, advanced_connection_types.UUID_ALL)
+			solution.Done <- forgingErr
 		}
 
 	})

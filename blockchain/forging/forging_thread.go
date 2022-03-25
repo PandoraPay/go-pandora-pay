@@ -1,12 +1,16 @@
 package forging
 
 import (
+	"bytes"
+	"fmt"
 	"pandora-pay/address_balance_decryptor"
+	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
 	"strconv"
@@ -17,12 +21,13 @@ import (
 type ForgingThread struct {
 	mempool                   *mempool.Mempool
 	addressBalanceDecryptor   *address_balance_decryptor.AddressBalanceDecryptor
-	threads                   int                                    //number of threads
-	solutionCn                chan<- *block_complete.BlockComplete   //broadcasting that a solution thread was received
-	nextBlockCreatedCn        <-chan *forging_block_work.ForgingWork //detect if a new work was published
+	threads                   int                                         //number of threads
+	solutionCn                chan<- *blockchain_types.BlockchainSolution //broadcasting that a solution thread was received
+	nextBlockCreatedCn        <-chan *forging_block_work.ForgingWork      //detect if a new work was published
 	workers                   []*ForgingWorkerThread
 	workersCreatedCn          chan []*ForgingWorkerThread
 	workersDestroyedCn        chan struct{}
+	lastPrevKernelHash        *generics.Value[[]byte]
 	createForgingTransactions func(*block_complete.BlockComplete, []byte, uint64, []*transaction.Transaction) (*transaction.Transaction, error)
 }
 
@@ -60,15 +65,25 @@ func (thread *ForgingThread) startForging() {
 
 	recovery.SafeGo(func() {
 		var err error
+		var newKernelHash []byte
+
 		for {
 			solution, ok := <-forgingWorkerSolutionCn
 			if !ok {
 				return
 			}
 
-			if err = thread.publishSolution(solution); err != nil {
-				gui.GUI.Error("Error publishing solution", err)
+			if !bytes.Equal(solution.work.BlkComplete.PrevKernelHash, thread.lastPrevKernelHash.Load()) {
+				return
 			}
+
+			if newKernelHash, err = thread.publishSolution(solution); err != nil {
+				gui.GUI.Error(fmt.Errorf("Error publishing solution: %d error: %s ", solution.work.BlkHeight, err))
+			} else {
+				gui.GUI.Info(fmt.Errorf("Block was forged! %d ", solution.work.BlkHeight))
+				thread.lastPrevKernelHash.Store(newKernelHash)
+			}
+
 		}
 	})
 
@@ -79,22 +94,25 @@ func (thread *ForgingThread) startForging() {
 				return
 			}
 
+			thread.lastPrevKernelHash.Store(newWork.BlkComplete.PrevKernelHash)
+
 			for i := 0; i < thread.threads; i++ {
 				thread.workers[i].workCn <- newWork
 			}
+
 			gui.GUI.InfoUpdate("Hash Block", strconv.FormatUint(newWork.BlkHeight, 10))
 		}
 	})
 
 }
 
-func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err error) {
+func (thread *ForgingThread) publishSolution(solution *ForgingSolution) ([]byte, error) {
 
 	work := solution.work
 
 	newBlk := block_complete.CreateEmptyBlockComplete()
-	if err = newBlk.Deserialize(helpers.NewBufferReader(work.BlkComplete.SerializeToBytes())); err != nil {
-		return
+	if err := newBlk.Deserialize(helpers.NewBufferReader(work.BlkComplete.SerializeToBytes())); err != nil {
+		return nil, err
 	}
 
 	newBlk.Block.StakingNonce = solution.stakingNonce
@@ -105,7 +123,7 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 
 	txStakingReward, err := thread.createForgingTransactions(newBlk, solution.address.publicKey, solution.address.decryptedStakingBalance, txs)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	newBlk.Txs = append(txs, txStakingReward)
@@ -118,12 +136,17 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) (err err
 	}
 
 	//send message to blockchain
-	thread.solutionCn <- newBlk
+	result := make(chan *blockchain_types.BlockchainSolutionAnswer)
+	thread.solutionCn <- &blockchain_types.BlockchainSolution{
+		newBlk,
+		result,
+	}
 
-	return
+	res := <-result
+	return res.ChainKernelHash, res.Err
 }
 
-func createForgingThread(threads int, createForgingTransactions func(*block_complete.BlockComplete, []byte, uint64, []*transaction.Transaction) (*transaction.Transaction, error), mempool *mempool.Mempool, addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor, solutionCn chan<- *block_complete.BlockComplete, nextBlockCreatedCn <-chan *forging_block_work.ForgingWork) *ForgingThread {
+func createForgingThread(threads int, createForgingTransactions func(*block_complete.BlockComplete, []byte, uint64, []*transaction.Transaction) (*transaction.Transaction, error), mempool *mempool.Mempool, addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor, solutionCn chan<- *blockchain_types.BlockchainSolution, nextBlockCreatedCn <-chan *forging_block_work.ForgingWork) *ForgingThread {
 	return &ForgingThread{
 		mempool,
 		addressBalanceDecryptor,
@@ -133,6 +156,7 @@ func createForgingThread(threads int, createForgingTransactions func(*block_comp
 		[]*ForgingWorkerThread{},
 		make(chan []*ForgingWorkerThread),
 		make(chan struct{}),
+		&generics.Value[[]byte]{},
 		createForgingTransactions,
 	}
 }

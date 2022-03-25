@@ -22,7 +22,7 @@ type Forging struct {
 	started                 *abool.AtomicBool
 	forgingThread           *ForgingThread
 	nextBlockCreatedCn      <-chan *forging_block_work.ForgingWork
-	forgingSolutionCn       chan<- *block_complete.BlockComplete
+	forgingSolutionCn       chan<- *blockchain_types.BlockchainSolution
 }
 
 func CreateForging(mempool *mempool.Mempool, addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor) (*Forging, error) {
@@ -51,7 +51,7 @@ func CreateForging(mempool *mempool.Mempool, addressBalanceDecryptor *address_ba
 	return forging, nil
 }
 
-func (forging *Forging) InitializeForging(createForgingTransactions func(*block_complete.BlockComplete, []byte, uint64, []*transaction.Transaction) (*transaction.Transaction, error), nextBlockCreatedCn <-chan *forging_block_work.ForgingWork, updateNewChainUpdate *multicast.MulticastChannel[*blockchain_types.BlockchainUpdates], forgingSolutionCn chan<- *block_complete.BlockComplete) {
+func (forging *Forging) InitializeForging(createForgingTransactions func(*block_complete.BlockComplete, []byte, uint64, []*transaction.Transaction) (*transaction.Transaction, error), nextBlockCreatedCn <-chan *forging_block_work.ForgingWork, updateNewChainUpdate *multicast.MulticastChannel[*blockchain_types.BlockchainUpdates], forgingSolutionCn chan<- *blockchain_types.BlockchainSolution) {
 
 	forging.nextBlockCreatedCn = nextBlockCreatedCn
 	forging.Wallet.updateNewChainUpdate = updateNewChainUpdate
