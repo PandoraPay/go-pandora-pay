@@ -41,6 +41,7 @@ func CreateForging(mempool *mempool.Mempool, addressBalanceDecryptor *address_ba
 			nil,
 			&generics.Map[string, *ForgingWalletAddress]{},
 			nil,
+			abool.New(),
 		},
 		abool.New(),
 		nil, nil, nil,
@@ -60,6 +61,7 @@ func (forging *Forging) InitializeForging(createForgingTransactions func(*block_
 	forging.Wallet.workersCreatedCn = forging.forgingThread.workersCreatedCn
 	forging.Wallet.workersDestroyedCn = forging.forgingThread.workersDestroyedCn
 
+	forging.Wallet.initialized.Set()
 	recovery.SafeGo(forging.Wallet.runProcessUpdates)
 	recovery.SafeGo(forging.Wallet.runDecryptBalanceAndNotifyWorkers)
 

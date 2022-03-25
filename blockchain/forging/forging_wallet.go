@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"github.com/tevino/abool"
 	"pandora-pay/address_balance_decryptor"
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/data_storage"
@@ -33,6 +34,7 @@ type ForgingWallet struct {
 	workersDestroyedCn      <-chan struct{}
 	decryptBalancesUpdates  *generics.Map[string, *ForgingWalletAddress]
 	forging                 *Forging
+	initialized             *abool.AtomicBool
 }
 
 type ForgingWalletAddressUpdate struct {
@@ -45,7 +47,7 @@ type ForgingWalletAddressUpdate struct {
 
 func (w *ForgingWallet) AddWallet(publicKey []byte, sharedStaked *wallet_address.WalletAddressSharedStaked, hasAccount bool, account *account.Account, reg *registration.Registration, chainHeight uint64) (err error) {
 
-	if !config_forging.FORGING_ENABLED {
+	if !config_forging.FORGING_ENABLED || w.initialized.IsNotSet() {
 		return
 	}
 
