@@ -73,8 +73,9 @@ func (thread *ForgingThread) startForging() {
 				return
 			}
 
-			if solution.work.BlkComplete.Height > 1 && !bytes.Equal(solution.work.BlkComplete.PrevKernelHash, thread.lastPrevKernelHash.Load()) {
-				return
+			lastPrevKernelHash := thread.lastPrevKernelHash.Load()
+			if lastPrevKernelHash != nil && solution.work.BlkComplete.Height > 1 && !bytes.Equal(solution.work.BlkComplete.PrevKernelHash, lastPrevKernelHash) {
+				continue
 			}
 
 			if newKernelHash, err = thread.publishSolution(solution); err != nil {
