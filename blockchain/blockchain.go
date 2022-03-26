@@ -285,7 +285,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return
 					}
 
-					if finalForgerReward < foundStakingRewardTxBase.Payloads[1].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).Reward {
+					if finalForgerReward > foundStakingRewardTxBase.Payloads[1].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).Reward {
 						return errors.New("Reward is bigger than it should be")
 					}
 

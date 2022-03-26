@@ -67,7 +67,7 @@ func (dataStorage *DataStorage) CommitChanges() (err error) {
 
 func (dataStorage *DataStorage) SetTx(dbTx store_db_interface.StoreDBTransactionInterface) {
 	dataStorage.DBTx = dbTx
-	list := dataStorage.GetList(true)
+	list := dataStorage.GetList(false)
 	for _, it := range list {
 		it.SetTx(dbTx)
 	}
