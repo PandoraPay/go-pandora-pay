@@ -20,7 +20,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/config/config_reward"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -268,20 +267,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 
 					//verify forger reward
-					reward := config_reward.GetRewardAt(blkComplete.Height)
-
-					var finalFees, fee uint64
-					for _, tx := range blkComplete.Txs {
-						if fee, err = tx.ComputeFee(); err != nil {
-							return
-						}
-						if err = helpers.SafeUint64Add(&finalFees, fee); err != nil {
-							return
-						}
-					}
-
-					finalForgerReward := reward
-					if err = helpers.SafeUint64Add(&finalForgerReward, finalFees); err != nil {
+					var reward, finalForgerReward uint64
+					if reward, finalForgerReward, err = blockchain_types.ComputeBlockReward(blkComplete.Height, blkComplete.Txs); err != nil {
 						return
 					}
 

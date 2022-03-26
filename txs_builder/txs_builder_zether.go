@@ -9,6 +9,7 @@ import (
 	"golang.org/x/exp/slices"
 	"math/rand"
 	"pandora-pay/addresses"
+	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
@@ -18,7 +19,6 @@ import (
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/config/config_reward"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
@@ -599,7 +599,10 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 		return nil, err
 	}
 
-	reward := config_reward.GetRewardAt(blkComplete.Height)
+	_, finalForgerReward, err := blockchain_types.ComputeBlockReward(blkComplete.Height, pendingTxs)
+	if err != nil {
+		return nil, err
+	}
 
 	chainHeight := blkComplete.Height
 	if chainHeight > 0 {
@@ -627,14 +630,14 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 			{
 				"",
 				config_coins.NATIVE_ASSET_FULL,
-				reward,
-				reward, //reward will be the encrypted Balance
+				finalForgerReward,
+				finalForgerReward, //reward will be the encrypted Balance
 				forger.EncodeAddr(),
 				0,
 				&ZetherRingConfiguration{64, &ZetherSenderRingType{true, nil, 0}, &ZetherRecipientRingType{true, nil, 0}},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
-				&wizard.WizardZetherPayloadExtraStakingReward{nil, reward},
+				&wizard.WizardZetherPayloadExtraStakingReward{nil, finalForgerReward},
 			},
 		},
 	}

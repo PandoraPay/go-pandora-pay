@@ -7,6 +7,8 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/config/config_reward"
+	"pandora-pay/helpers"
 )
 
 type BlockchainTransactionKeyUpdate struct {
@@ -49,4 +51,26 @@ type BlockchainSolutionAnswer struct {
 type BlockchainSolution struct {
 	BlkComplete *block_complete.BlockComplete
 	Done        chan *BlockchainSolutionAnswer
+}
+
+func ComputeBlockReward(height uint64, txs []*transaction.Transaction) (blockReward uint64, finalForgerReward uint64, err error) {
+
+	blockReward = config_reward.GetRewardAt(height)
+
+	var finalFees, fee uint64
+	for _, tx := range txs {
+		if fee, err = tx.ComputeFee(); err != nil {
+			return
+		}
+		if err = helpers.SafeUint64Add(&finalFees, fee); err != nil {
+			return
+		}
+	}
+
+	finalForgerReward = blockReward
+	if err = helpers.SafeUint64Add(&finalForgerReward, finalFees); err != nil {
+		return
+	}
+
+	return
 }

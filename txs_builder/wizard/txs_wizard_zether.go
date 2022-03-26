@@ -424,11 +424,16 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		// Lots of ToDo for this, enables satisfying lots of  other things
 		ebalances_list := make([]*crypto.ElGamal, ringSize)
 		for i := range witness_index {
-			var pt *crypto.ElGamal
-			if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][publickeylist[i].String()]); err != nil {
-				return
+			//in case it is a receiver, it has empty balance
+			if (i%2 == 1) == parities[t] || (payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD && i != witness_index[0]) {
+				ebalances_list[i] = crypto.ConstructElGamal(publickeylist[i], crypto.ElGamal_BASE_G)
+			} else {
+				var pt *crypto.ElGamal
+				if pt, err = new(crypto.ElGamal).Deserialize(emap[string(transfer.Asset)][publickeylist[i].String()]); err != nil {
+					return
+				}
+				ebalances_list[i] = pt
 			}
-			ebalances_list[i] = pt
 		}
 
 		for i := range publickeylist { // setup commitments
@@ -480,15 +485,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		D.ScalarMult(crypto.G, r)
 
 		//fmt.Printf("t %d publickeylist %d\n", t, len(publickeylist))
-		for i, pulibcKeyPoint := range publickeylist {
+		for i := range publickeylist {
 
-			var ebalance *crypto.ElGamal
-
-			if (i%2 == 0) == parities[t] { // sender
-				ebalance = ebalances_list[i]
-			} else {
-				ebalance = crypto.ConstructElGamal(pulibcKeyPoint, crypto.ElGamal_BASE_G)
-			}
+			ebalance := ebalances_list[i]
 
 			CLn = append(CLn, new(bn256.G1).Add(ebalance.Left, C[i]))
 			CRn = append(CRn, new(bn256.G1).Add(ebalance.Right, &D))
