@@ -285,8 +285,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return
 					}
 
-					if finalForgerReward > foundStakingRewardTxBase.Payloads[1].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).Reward {
-						return errors.New("Reward is bigger than it should be")
+					if foundStakingRewardTxBase.Payloads[1].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).Reward > finalForgerReward {
+						return fmt.Errorf("Payload Reward %d is bigger than it should be %d", foundStakingRewardTxBase.Payloads[1].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).Reward, finalForgerReward)
 					}
 
 					//increase supply

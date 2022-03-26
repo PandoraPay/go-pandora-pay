@@ -34,6 +34,9 @@ func (payloadExtra *TransactionZetherPayloadExtraStaking) Validate(payloadRegist
 	if payloadBurnValue == 0 {
 		return errors.New("Payload burn value must be greater than zero")
 	}
+	if payloadStatement.Fee != 0 {
+		return errors.New("Payload Fee should have been zero")
+	}
 
 	for _, registration := range payloadRegistrations.Registrations {
 		if registration != nil {
