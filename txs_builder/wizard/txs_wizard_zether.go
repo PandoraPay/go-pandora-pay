@@ -566,7 +566,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	assetIndexes := make([]int, len(transfers))
 	for t := range transfers {
 		assetIndexes[t] = assetMap[string(txBase.Payloads[t].Asset)]
-		assetMap[string(txBase.Payloads[t].Asset)] = assetMap[string(txBase.Payloads[t].Asset)] + 1
+		assetMap[string(txBase.Payloads[t].Asset)]++
 	}
 
 	//make it concurrent

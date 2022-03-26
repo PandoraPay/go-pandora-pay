@@ -2,6 +2,7 @@ package txs_validator
 
 import (
 	"errors"
+	"fmt"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
@@ -34,8 +35,9 @@ func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidatedWork) error {
 		base := foundWork.tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
 		//verify signature
 		assetMap := map[string]int{}
-		for _, payload := range base.Payloads {
-			if payload.Proof.Verify(payload.Asset, assetMap[string(payload.Asset)], base.ChainKernelHash, payload.Statement, hashForSignature, payload.BurnValue) == false {
+		for payloadIndex, payload := range base.Payloads {
+			if !payload.Proof.Verify(payload.Asset, assetMap[string(payload.Asset)], base.ChainKernelHash, payload.Statement, hashForSignature, payload.BurnValue) {
+				return fmt.Errorf("Proof payload %d failed", payloadIndex)
 			}
 			assetMap[string(payload.Asset)] = assetMap[string(payload.Asset)] + 1
 		}

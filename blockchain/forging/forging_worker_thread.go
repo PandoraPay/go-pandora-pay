@@ -111,7 +111,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 		serialized = helpers.CloneBytes(work.BlkSerialized)
 
-		timestamp = work.BlkTimestmap + 1
+		timestamp = work.BlkTimestmap
 
 		n = binary.PutUvarint(buf, timestamp)
 
