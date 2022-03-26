@@ -122,7 +122,7 @@ func _startMain() (err error) {
 		return
 	}
 
-	if globals.Arguments["--new-devnet"] == true && runtime.GOARCH != "wasm" {
+	if globals.Arguments["--run-testnet-script"] == true {
 		myTestnet := testnet.TestnetInit(app.Wallet, app.Mempool, app.Chain, app.TxsBuilder)
 		globals.Data["testnet"] = myTestnet
 	}

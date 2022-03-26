@@ -24,7 +24,9 @@ you can also create an account on hcaptcha
         - copy your onion address `sudo nano /var/lib/tor/pandora_pay_hidden_service/`
         - use the parameter `--tor-onion="YOUR_ONION_ADDRESS_FROM_ABOVE"`
 
+#### Running testnet script
 
+`--run-testnet-script` will enable the testnet script which will create dummy transactions.
 
 # DISCLAIMER:
 This source code is released for research purposes only, with the intent of researching and studying a decentralized p2p network protocol.
