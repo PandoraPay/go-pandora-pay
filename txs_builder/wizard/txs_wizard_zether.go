@@ -37,11 +37,11 @@ func GetZetherBalance(publicKey []byte, balanceInit *crypto.ElGamal, asset []byt
 
 func GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGamal, asset []byte, hasRollovers []bool, txs []*transaction.Transaction) ([]*crypto.ElGamal, error) {
 
-	var balance *crypto.ElGamal
 	output := make([]*crypto.ElGamal, len(publicKeys))
 	for i, publicKey := range publicKeys {
 
 		changed := false
+		var balance *crypto.ElGamal
 
 		for _, tx := range txs {
 			if tx.Version == transaction_type.TX_ZETHER {
