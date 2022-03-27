@@ -88,7 +88,7 @@ func (builder *TxsBuilder) presetZetherRing(ringConfiguration *ZetherRingConfigu
 	return nil
 }
 
-func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []byte, ringConfiguration *ZetherRingConfiguration, dataStorage *data_storage.DataStorage) ([]string, []string, error) {
+func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []byte, ringConfiguration *ZetherRingConfiguration, hasRollovers map[string]bool, dataStorage *data_storage.DataStorage) ([]string, []string, error) {
 
 	var addr *addresses.Address
 	var reg *registration.Registration
@@ -124,6 +124,11 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 			if addr, err = addresses.DecodeAddr(*address); err != nil {
 				return err
 			}
+			var p *crypto.Point
+			if p, err = addr.GetPoint(); err != nil {
+				return
+			}
+			hasRollovers[p.String()] = addr.Staked
 		}
 		if alreadyUsed[string(addr.PublicKey)] {
 			return errors.New("Address was used before")
@@ -165,6 +170,8 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 				continue
 			}
 			alreadyUsed[string(addr.PublicKey)] = true
+			hasRollovers[priv.GeneratePublicKeyPoint().String()] = staked
+
 			*ring = append(*ring, addr.EncodeAddr())
 		}
 		return
@@ -232,11 +239,13 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 	return senderRing, recipientRing, err
 }
 
-func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pendingTxs []*transaction.Transaction, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, map[string]bool, [][]*bn256.G1, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
+func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pendingTxs []*transaction.Transaction, blockHeight uint64, prevKernelHash []byte, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, map[string]bool, [][]*bn256.G1, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
 
 	sendersPrivateKeys := make([]*addresses.PrivateKey, len(txData.Payloads))
 	sendersWalletAddresses := make([]*wallet_address.WalletAddress, len(txData.Payloads))
 	sendAssets := make([][]byte, len(txData.Payloads))
+
+	hasRollovers := make(map[string]bool)
 
 	for t, payload := range txData.Payloads {
 
@@ -286,7 +295,6 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 
 	transfers := make([]*wizard.WizardZetherTransfer, len(txData.Payloads))
 	emap := wizard.InitializeEmap(sendAssets)
-	hasRollovers := make(map[string]bool)
 
 	ringsSenderMembers := make([][]*bn256.G1, len(txData.Payloads))
 	ringsRecipientMembers := make([][]*bn256.G1, len(txData.Payloads))
@@ -330,7 +338,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 				}
 			}
 
-			if senderRingMembers[t], recipientRingMembers[t], err = builder.createZetherRing(&payload.Sender, &payload.Recipient, payload.Asset, payload.RingConfiguration, dataStorage); err != nil {
+			if senderRingMembers[t], recipientRingMembers[t], err = builder.createZetherRing(&payload.Sender, &payload.Recipient, payload.Asset, payload.RingConfiguration, hasRollovers, dataStorage); err != nil {
 				return
 			}
 		}
@@ -349,6 +357,10 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 		chainKernelHash = reader.Get("chainKernelHash")
+
+		if chainHeight > 0 && prevKernelHash != nil && !bytes.Equal(chainKernelHash, prevKernelHash) {
+			return errors.New("KernelHash is already too old")
+		}
 
 		for t, payload := range txData.Payloads {
 
@@ -431,23 +443,31 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 						return
 					}
 
-					hasRollover := acc != nil && reg.Staked
+					hasRollover := reg != nil && bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && reg.Staked
+					if hasRollover {
+						hasRollovers[p.G1().String()] = hasRollover
+					}
 
 					var newBalance *crypto.ElGamal
 					if acc != nil {
 						newBalance = acc.Balance.Amount
 					}
 
-					if newBalance, err = wizard.GetZetherBalance(addr.PublicKey, newBalance, payload.Asset, hasRollover, true, pendingTxs); err != nil {
+					if newBalance, err = wizard.GetZetherBalance(addr.PublicKey, newBalance, payload.Asset, hasRollovers[p.G1().String()], pendingTxs); err != nil {
 						return
 					}
 
-					if isSender { //sender
-						sendersEncryptedBalances[t] = newBalance.Serialize()
+					if newBalance != nil {
+						emap[string(payload.Asset)][p.G1().String()] = newBalance.Serialize()
 					}
 
-					emap[string(payload.Asset)][p.G1().String()] = newBalance.Serialize()
-					hasRollovers[p.G1().String()] = hasRollover
+					if isSender { //sender
+						if newBalance != nil {
+							sendersEncryptedBalances[t] = newBalance.Serialize()
+						} else {
+							sendersEncryptedBalances[t] = crypto.ConstructElGamal(p.G1(), crypto.ElGamal_BASE_G).Serialize()
+						}
+					}
 
 					if publicKeyIndexes[string(addr.PublicKey)] == nil {
 
@@ -559,7 +579,7 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 	builder.lock.Lock()
 	defer builder.lock.Unlock()
 
-	transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, chainHeight, chainKernelHash, err := builder.prebuild(txData, pendingTxs, ctx, statusCallback)
+	transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, chainHeight, chainKernelHash, err := builder.prebuild(txData, pendingTxs, 0, nil, ctx, statusCallback)
 	if err != nil {
 		return nil, err
 	}
@@ -642,17 +662,9 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 		},
 	}
 
-	transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, _, chainKernelHash2, err := builder.prebuild(txData, pendingTxs, context.Background(), func(string) {})
+	transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, _, _, err := builder.prebuild(txData, pendingTxs, blkComplete.Height, blkComplete.PrevKernelHash, context.Background(), func(string) {})
 	if err != nil {
 		return nil, err
-	}
-
-	if chainHeight == 0 {
-		chainKernelHash2 = blkComplete.PrevKernelHash
-	}
-
-	if !bytes.Equal(chainKernelHash2, blkComplete.PrevKernelHash) {
-		return nil, errors.New("Block already changed")
 	}
 
 	gui.GUI.Info("CreateForgingTransactions 2")
@@ -663,7 +675,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 	}
 
 	var tx *transaction.Transaction
-	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, chainHeight, chainKernelHash2, publicKeyIndexes, feesFinal, context.Background(), func(string) {}); err != nil {
+	if tx, err = wizard.CreateZetherTx(transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, chainHeight, blkComplete.PrevKernelHash, publicKeyIndexes, feesFinal, context.Background(), func(string) {}); err != nil {
 		return nil, err
 	}
 

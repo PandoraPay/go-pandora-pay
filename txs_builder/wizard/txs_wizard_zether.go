@@ -27,29 +27,19 @@ import (
 	"strconv"
 )
 
-func GetZetherBalance(publicKey []byte, balanceInit *crypto.ElGamal, asset []byte, hasRollover bool, returnNewEmptyBalances bool, txs []*transaction.Transaction) (*crypto.ElGamal, error) {
-	result, err := GetZetherBalanceMultiple([][]byte{publicKey}, []*crypto.ElGamal{balanceInit}, asset, []bool{hasRollover}, returnNewEmptyBalances, txs)
+func GetZetherBalance(publicKey []byte, balanceInit *crypto.ElGamal, asset []byte, hasRollover bool, txs []*transaction.Transaction) (*crypto.ElGamal, error) {
+	result, err := GetZetherBalanceMultiple([][]byte{publicKey}, []*crypto.ElGamal{balanceInit}, asset, []bool{hasRollover}, txs)
 	if err != nil {
 		return nil, err
 	}
 	return result[0], nil
 }
 
-func GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGamal, asset []byte, hasRollovers []bool, returnNewEmptyBalances bool, txs []*transaction.Transaction) ([]*crypto.ElGamal, error) {
+func GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGamal, asset []byte, hasRollovers []bool, txs []*transaction.Transaction) ([]*crypto.ElGamal, error) {
 
 	var balance *crypto.ElGamal
 	output := make([]*crypto.ElGamal, len(publicKeys))
 	for i, publicKey := range publicKeys {
-
-		if balancesInit[i] != nil {
-			balance = balancesInit[i]
-		} else {
-			var acckey crypto.Point
-			if err := acckey.DecodeCompressed(publicKey); err != nil {
-				return nil, err
-			}
-			balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
-		}
 
 		changed := false
 
@@ -67,6 +57,19 @@ func GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGama
 								}
 
 								if update {
+
+									if balance == nil {
+										if balancesInit[i] != nil {
+											balance = balancesInit[i]
+										} else {
+											var acckey crypto.Point
+											if err := acckey.DecodeCompressed(publicKey); err != nil {
+												return nil, err
+											}
+											balance = crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)
+										}
+									}
+
 									echanges := crypto.ConstructElGamal(payload.Statement.C[j], payload.Statement.D)
 									balance = balance.Add(echanges) // homomorphic addition of changes
 									changed = true
@@ -80,8 +83,10 @@ func GetZetherBalanceMultiple(publicKeys [][]byte, balancesInit []*crypto.ElGama
 			}
 		}
 
-		if returnNewEmptyBalances || (balancesInit[i] != nil || changed) {
+		if changed {
 			output[i] = balance
+		} else if balancesInit[i] != nil {
+			output[i] = balancesInit[i]
 		}
 	}
 

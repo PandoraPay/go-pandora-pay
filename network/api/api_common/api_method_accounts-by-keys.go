@@ -80,7 +80,7 @@ func (api *APICommon) GetAccountsByKeys(r *http.Request, args *APIAccountsByKeys
 				balancesInit[i] = acc.Balance.Amount
 			}
 		}
-		if balancesInit, err = wizard.GetZetherBalanceMultiple(publicKeys, balancesInit, args.Asset, hasRollovers, false, api.mempool.Txs.GetTxsOnlyList()); err != nil {
+		if balancesInit, err = wizard.GetZetherBalanceMultiple(publicKeys, balancesInit, args.Asset, hasRollovers, api.mempool.Txs.GetTxsOnlyList()); err != nil {
 			return
 		}
 		for i, acc := range reply.Acc {
