@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math"
@@ -1065,6 +1066,11 @@ func GenerateProof(assetId []byte, assetIndex int, chainHash []byte, s *Statemen
 		}
 		proof.ip = NewInnerProductProof(ipstatement, ipwitness, o)
 	*/
+
+	A_t2 := proof.GetA_t(txid)
+	if !bytes.Equal(A_t.Marshal(), A_t2) {
+		return nil, errors.New("A_t is not matching A_t2")
+	}
 
 	return &proof, nil
 

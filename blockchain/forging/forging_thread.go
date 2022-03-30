@@ -74,14 +74,14 @@ func (thread *ForgingThread) startForging() {
 			}
 
 			lastPrevKernelHash := thread.lastPrevKernelHash.Load()
-			if lastPrevKernelHash != nil && solution.work.BlkComplete.Height > 1 && !bytes.Equal(solution.work.BlkComplete.PrevKernelHash, lastPrevKernelHash) {
+			if lastPrevKernelHash != nil && solution.blkComplete.Height > 1 && !bytes.Equal(solution.blkComplete.PrevKernelHash, lastPrevKernelHash) {
 				continue
 			}
 
 			if newKernelHash, err = thread.publishSolution(solution); err != nil {
-				gui.GUI.Error(fmt.Errorf("Error publishing solution: %d error: %s ", solution.work.BlkHeight, err))
+				gui.GUI.Error(fmt.Errorf("Error publishing solution: %d error: %s ", solution.blkComplete.Height, err))
 			} else {
-				gui.GUI.Info(fmt.Errorf("Block was forged! %d ", solution.work.BlkHeight))
+				gui.GUI.Info(fmt.Errorf("Block was forged! %d ", solution.blkComplete.Height))
 				thread.lastPrevKernelHash.Store(newKernelHash)
 			}
 
@@ -109,10 +109,8 @@ func (thread *ForgingThread) startForging() {
 
 func (thread *ForgingThread) publishSolution(solution *ForgingSolution) ([]byte, error) {
 
-	work := solution.work
-
 	newBlk := block_complete.CreateEmptyBlockComplete()
-	if err := newBlk.Deserialize(helpers.NewBufferReader(work.BlkComplete.SerializeToBytes())); err != nil {
+	if err := newBlk.Deserialize(helpers.NewBufferReader(solution.blkComplete.SerializeToBytes())); err != nil {
 		return nil, err
 	}
 
@@ -122,7 +120,7 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) ([]byte,
 
 	txs, _ := thread.mempool.GetNextTransactionsToInclude(newBlk.Block.PrevHash)
 
-	txStakingReward, err := thread.createForgingTransactions(newBlk, solution.address.publicKey, solution.address.decryptedStakingBalance, txs)
+	txStakingReward, err := thread.createForgingTransactions(newBlk, solution.publicKey, solution.decryptedStakingBalance, txs)
 	if err != nil {
 		return nil, err
 	}

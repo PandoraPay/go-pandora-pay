@@ -23,7 +23,6 @@ import (
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
-	"pandora-pay/recovery"
 	"strconv"
 )
 
@@ -581,23 +580,24 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	hash := tx.GetHashSigningManually()
 	for i := range transfers {
 		proofsCn[i] = make(chan *crypto.Proof)
-		func(t int) {
-			recovery.SafeGo(func() {
+		go func(t int) {
 
-				// the u is dependent on roothash,SCID and counter ( counter is dynamic and depends on order of assets)
-				uinput := append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), txBase.ChainKernelHash[:]...)
-				uinput = append(uinput, txBase.Payloads[t].Asset[:]...)
-				uinput = append(uinput, strconv.Itoa(assetIndexes[t])...)
+			// the u is dependent on roothash,SCID and counter ( counter is dynamic and depends on order of assets)
+			uinput := append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), txBase.ChainKernelHash[:]...)
+			uinput = append(uinput, txBase.Payloads[t].Asset[:]...)
+			uinput = append(uinput, strconv.Itoa(assetIndexes[t])...)
 
-				u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), sender_secrets[t])
+			u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), sender_secrets[t])
 
-				proof, proofErr := crypto.GenerateProof(txBase.Payloads[t].Asset, assetIndexes[t], txBase.ChainKernelHash, txBase.Payloads[t].Statement, &witness_list[t], u, hash, txBase.Payloads[t].BurnValue)
-				if proofErr != nil {
-					proofsCn[t] <- nil
-					return
-				}
-				proofsCn[t] <- proof
-			})
+			proof, proofErr := crypto.GenerateProof(txBase.Payloads[t].Asset, assetIndexes[t], txBase.ChainKernelHash, txBase.Payloads[t].Statement, &witness_list[t], u, hash, txBase.Payloads[t].BurnValue)
+			if proofErr != nil {
+				proofsCn[t] <- nil
+				return
+			}
+
+			txBase.Payloads[t].Proof = proof
+
+			proofsCn[t] <- proof
 		}(i)
 	}
 
@@ -607,7 +607,6 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		if proof == nil {
 			return errors.New("Error generating zk proofs")
 		}
-		txBase.Payloads[t].Proof = proof
 	}
 
 	for t := range transfers {

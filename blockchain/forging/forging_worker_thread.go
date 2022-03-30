@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"math/big"
 	"pandora-pay/address_balance_decryptor"
+	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
@@ -20,11 +21,12 @@ import (
 )
 
 type ForgingSolution struct {
-	timestamp     uint64
-	address       *ForgingWalletAddress
-	work          *forging_block_work.ForgingWork
-	stakingAmount uint64
-	stakingNonce  []byte
+	timestamp               uint64
+	publicKey               []byte
+	decryptedStakingBalance uint64
+	blkComplete             *block_complete.BlockComplete
+	stakingAmount           uint64
+	stakingNonce            []byte
 }
 
 type ForgingWorkerThread struct {
@@ -243,8 +245,9 @@ func (worker *ForgingWorkerThread) forge() {
 
 						solution := &ForgingSolution{
 							localTimestamp,
-							address.walletAdr,
-							work,
+							address.walletAdr.publicKey,
+							address.walletAdr.decryptedStakingBalance,
+							work.BlkComplete,
 							generics.Max(generics.Min(requireStakingAmount.Uint64()+1, address.stakingAmount), work.MinimumStake),
 							address.stakingNonce,
 						}

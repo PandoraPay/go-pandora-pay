@@ -165,10 +165,7 @@ func (builder *TxsBuilder) createZetherRing(sender, receiver *string, assetId []
 			if addr, err = priv.GenerateAddress(staked, nil, true, nil, 0, nil); err != nil {
 				return
 			}
-			if alreadyUsed[string(addr.PublicKey)] {
-				i--
-				continue
-			}
+
 			alreadyUsed[string(addr.PublicKey)] = true
 			hasRollovers[priv.GeneratePublicKeyPoint().String()] = staked
 
@@ -684,6 +681,10 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 	if err = builder.txsValidator.MarkAsValidatedTx(tx); err != nil {
 		return nil, err
 	}
+
+	//if err = builder.txsValidator.ValidateTx(tx); err != nil {
+	//	return nil, err
+	//}
 
 	gui.GUI.Info("CreateForgingTransactions 4")
 
