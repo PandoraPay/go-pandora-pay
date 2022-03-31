@@ -10,7 +10,7 @@ type Store struct {
 	DB     store_db_interface.StoreDBInterface
 }
 
-var StoreBlockchain, StoreWallet, StoreSettings, StoreMempool *Store
+var StoreBlockchain, StoreWallet, StoreSettings, StoreMempool, StoreBalancesDecrypted *Store
 
 func (store *Store) close() error {
 	return store.DB.Close()
@@ -44,6 +44,9 @@ func DBClose() (err error) {
 		return
 	}
 	if err = StoreMempool.close(); err != nil {
+		return
+	}
+	if err = StoreBalancesDecrypted.close(); err != nil {
 		return
 	}
 	return

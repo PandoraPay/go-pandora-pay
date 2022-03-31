@@ -76,6 +76,10 @@ func NewAddressBalanceDecryptor() (*AddressBalanceDecryptor, error) {
 		make(chan *addressBalanceDecryptorWork, 1),
 	}
 
+	if err := addressBalanceDecryptor.loadFromStore(); err != nil {
+		return nil, err
+	}
+
 	for i := range addressBalanceDecryptor.workers {
 		addressBalanceDecryptor.workers[i] = newAddressBalanceDecryptorWorker(addressBalanceDecryptor.newWorkCn)
 	}
@@ -83,6 +87,8 @@ func NewAddressBalanceDecryptor() (*AddressBalanceDecryptor, error) {
 	for _, worker := range addressBalanceDecryptor.workers {
 		worker.start()
 	}
+
+	go addressBalanceDecryptor.saveToStore()
 
 	return addressBalanceDecryptor, nil
 }

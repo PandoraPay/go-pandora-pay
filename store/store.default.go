@@ -60,6 +60,9 @@ func create_db() (err error) {
 	if StoreMempool, err = createStoreNow(prefix+"/mempool", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
 		return
 	}
+	if StoreBalancesDecrypted, err = createStoreNow(prefix+"/balancesDecrypted", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
+		return
+	}
 
 	return
 }
