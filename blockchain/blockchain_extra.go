@@ -76,12 +76,12 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 		var accs *accounts.Accounts
 		var acc *account.Account
 
-		if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey); err != nil {
+		if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKeyHash); err != nil {
 			return
 		}
 		acc.Balance = airdrop.Amount
 
-		if err = accs.Update(string(addr.PublicKey), acc); err != nil {
+		if err = accs.Update(string(addr.PublicKeyHash), acc); err != nil {
 			return
 		}
 

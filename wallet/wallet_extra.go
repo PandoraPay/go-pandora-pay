@@ -45,11 +45,11 @@ func (wallet *Wallet) processRefreshWallets() {
 						if visited[string(addr.PublicKey)] {
 							continue
 						}
-						visited[string(addr.PublicKey)] = true
+						visited[string(addr.PublicKeyHash)] = true
 
 						var acc *account.Account
 
-						if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
+						if acc, err = accs.GetAccount(addr.PublicKeyHash); err != nil {
 							return
 						}
 

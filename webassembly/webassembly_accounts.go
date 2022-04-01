@@ -8,12 +8,9 @@ import (
 )
 
 type AddressGenerateArgument struct {
-	Staked         bool   `json:"staked,omitempty"`
-	SpendPublicKey []byte `json:"spendPublicKey,omitempty"`
-	Registration   bool   `json:"registration,omitempty"`
-	PaymentID      []byte `json:"paymentID,omitempty"`
-	PaymentAmount  uint64 `json:"paymentAmount,omitempty"`
-	PaymentAsset   []byte `json:"paymentAsset,omitempty"`
+	PaymentID     []byte `json:"paymentID,omitempty"`
+	PaymentAmount uint64 `json:"paymentAmount,omitempty"`
+	PaymentAsset  []byte `json:"paymentAsset,omitempty"`
 }
 
 func decodeAddress(this js.Value, args []js.Value) interface{} {
@@ -73,7 +70,7 @@ func generateNewAddress(this js.Value, args []js.Value) interface{} {
 		return webassembly_utils.ConvertJSONBytes([]interface{}{
 			base64.StdEncoding.EncodeToString(priv.Key),
 			addr.EncodeAddr(),
-			base64.StdEncoding.EncodeToString(addr.PublicKey),
+			base64.StdEncoding.EncodeToString(addr.PublicKeyHash),
 		})
 	})
 }
@@ -105,7 +102,7 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 		return webassembly_utils.ConvertJSONBytes([]interface{}{
 			base64.StdEncoding.EncodeToString(priv.Key),
 			addr.EncodeAddr(),
-			base64.StdEncoding.EncodeToString(addr.PublicKey),
+			base64.StdEncoding.EncodeToString(addr.PublicKeyHash),
 		})
 	})
 }

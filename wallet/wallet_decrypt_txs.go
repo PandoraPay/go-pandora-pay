@@ -25,7 +25,7 @@ type DecryptedTx struct {
 	ZetherTx *DecryptTxZether                    `json:"zetherTx" msgpack:"zetherTx"`
 }
 
-func (w *Wallet) DecryptTx(tx *transaction.Transaction, walletPublicKey []byte) (*DecryptedTx, error) {
+func (w *Wallet) DecryptTx(tx *transaction.Transaction, publicKeyHash []byte) (*DecryptedTx, error) {
 
 	if tx == nil {
 		return nil, errors.New("Transaction is invalid")

@@ -11,6 +11,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/config/globals"
+	"pandora-pay/cryptography"
 	"pandora-pay/wallet/wallet_address"
 	"strconv"
 )
@@ -55,25 +56,25 @@ func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string, lo
 		return nil, err
 	}
 
-	return wallet.GetWalletAddressByPublicKey(address.PublicKey, lock), nil
+	return wallet.GetWalletAddressByPublicKeyHash(address.PublicKeyHash, lock), nil
 }
 
-func (wallet *Wallet) GetWalletAddressByPublicKeyString(publicKeyStr string, lock bool) (*wallet_address.WalletAddress, error) {
-	publicKey, err := base64.StdEncoding.DecodeString(publicKeyStr)
+func (wallet *Wallet) GetWalletAddressByPublicKeyHashString(publicKeyHashStr string, lock bool) (*wallet_address.WalletAddress, error) {
+	publicKeyHash, err := base64.StdEncoding.DecodeString(publicKeyHashStr)
 	if err != nil {
 		return nil, err
 	}
-	return wallet.GetWalletAddressByPublicKey(publicKey, lock), nil
+	return wallet.GetWalletAddressByPublicKeyHash(publicKeyHash, lock), nil
 }
 
-func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte, lock bool) *wallet_address.WalletAddress {
+func (wallet *Wallet) GetWalletAddressByPublicKeyHash(publicKeyHash []byte, lock bool) *wallet_address.WalletAddress {
 
 	if lock {
 		wallet.Lock.RLock()
 		defer wallet.Lock.RUnlock()
 	}
 
-	return wallet.addressesMap[string(publicKey)].Clone()
+	return wallet.addressesMap[string(publicKeyHash)].Clone()
 }
 
 func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte) (*wallet_address.WalletAddress, error) {
@@ -119,21 +120,21 @@ func (wallet *Wallet) AddSharedStakedAddress(addr *wallet_address.WalletAddress,
 		return errors.New("DELEGATES_MAXIMUM exceeded")
 	}
 
-	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, addr.PublicKey, nil, 0, nil)
+	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY_HASH, addr.PublicKeyHash, nil, 0, nil)
 	if err != nil {
 		return
 	}
 
 	addr.AddressEncoded = address.EncodeAddr()
 
-	if wallet.addressesMap[string(addr.PublicKey)] != nil {
+	if wallet.addressesMap[string(addr.PublicKeyHash)] != nil {
 		return errors.New("Address exists")
 	}
 
 	wallet.Addresses = append(wallet.Addresses, addr)
-	wallet.addressesMap[string(addr.PublicKey)] = addr
+	wallet.addressesMap[string(addr.PublicKeyHash)] = addr
 
-	wallet.forging.Wallet.AddWallet(addr.PublicKey, addr.SharedStaked, false, nil, 0)
+	wallet.forging.Wallet.AddWallet(addr.PublicKeyHash, addr.SharedStaked, false, nil, 0)
 
 	wallet.Count += 1
 
@@ -165,20 +166,22 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, lock bool, 
 	}
 
 	publicKey := addr.PrivateKey.GeneratePublicKey()
+	publicKeyHash := cryptography.GetPublicKeyHash(publicKey)
 
 	addr.AddressEncoded = addr1.EncodeAddr()
 	addr.PublicKey = publicKey
+	addr.PublicKeyHash = publicKeyHash
 
 	if addr.PrivateKey != nil {
-		addr.SharedStaked = &wallet_address.WalletAddressSharedStaked{addr.PrivateKey, addr.PublicKey}
+		addr.SharedStaked = &wallet_address.WalletAddressSharedStaked{addr.PrivateKey, addr.PublicKeyHash}
 	}
 
-	if wallet.addressesMap[string(addr.PublicKey)] != nil {
+	if wallet.addressesMap[string(addr.PublicKeyHash)] != nil {
 		return errors.New("Address exists")
 	}
 
 	wallet.Addresses = append(wallet.Addresses, addr)
-	wallet.addressesMap[string(addr.PublicKey)] = addr
+	wallet.addressesMap[string(addr.PublicKeyHash)] = addr
 
 	wallet.Count += 1
 
@@ -190,7 +193,7 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, lock bool, 
 		wallet.CountImportedIndex += 1
 	}
 
-	if err = wallet.forging.Wallet.AddWallet(addr.PublicKey, addr.SharedStaked, false, nil, 0); err != nil {
+	if err = wallet.forging.Wallet.AddWallet(addr.PublicKeyHash, addr.SharedStaked, false, nil, 0); err != nil {
 		return
 	}
 
@@ -303,11 +306,11 @@ func (wallet *Wallet) RemoveAddressByIndex(index int, lock bool) (bool, error) {
 
 	wallet.Addresses[index] = wallet.Addresses[len(wallet.Addresses)-1]
 	wallet.Addresses = wallet.Addresses[:len(wallet.Addresses)-1]
-	delete(wallet.addressesMap, string(adr.PublicKey))
+	delete(wallet.addressesMap, string(adr.PublicKeyHash))
 
 	wallet.Count -= 1
 
-	wallet.forging.Wallet.RemoveWallet(removing.PublicKey, false, nil, 0)
+	wallet.forging.Wallet.RemoveWallet(removing.PublicKeyHash, false, nil, 0)
 
 	wallet.updateWallet()
 	if err := wallet.saveWallet(index, index+1, wallet.Count, false); err != nil {
@@ -325,10 +328,10 @@ func (wallet *Wallet) RemoveAddress(encodedAddress string, lock bool) (bool, err
 		return false, err
 	}
 
-	return wallet.RemoveAddressByPublicKey(addr.PublicKey, lock)
+	return wallet.RemoveAddressByPublicKeyHash(addr.PublicKeyHash, lock)
 }
 
-func (wallet *Wallet) RemoveAddressByPublicKey(publicKey []byte, lock bool) (bool, error) {
+func (wallet *Wallet) RemoveAddressByPublicKeyHash(publicKeyHash []byte, lock bool) (bool, error) {
 
 	if lock {
 		wallet.Lock.Lock()
@@ -340,7 +343,7 @@ func (wallet *Wallet) RemoveAddressByPublicKey(publicKey []byte, lock bool) (boo
 	}
 
 	for i, addr := range wallet.Addresses {
-		if bytes.Equal(addr.PublicKey, publicKey) {
+		if bytes.Equal(addr.PublicKeyHash, publicKeyHash) {
 			return wallet.RemoveAddressByIndex(i, false)
 		}
 	}
@@ -348,7 +351,7 @@ func (wallet *Wallet) RemoveAddressByPublicKey(publicKey []byte, lock bool) (boo
 	return false, nil
 }
 
-func (wallet *Wallet) RenameAddressByPublicKey(publicKey []byte, newName string, lock bool) (bool, error) {
+func (wallet *Wallet) RenameAddressByPublicKeyHash(publicKeyHash []byte, newName string, lock bool) (bool, error) {
 
 	if lock {
 		wallet.Lock.Lock()
@@ -359,7 +362,7 @@ func (wallet *Wallet) RenameAddressByPublicKey(publicKey []byte, newName string,
 		return false, errors.New("Wallet was not loaded!")
 	}
 
-	addr := wallet.GetWalletAddressByPublicKey(publicKey, false)
+	addr := wallet.GetWalletAddressByPublicKeyHash(publicKeyHash, false)
 	if addr == nil {
 		return false, nil
 	}
@@ -444,7 +447,7 @@ func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {
 
 	wallet.addressesMap = make(map[string]*wallet_address.WalletAddress)
 	for _, adr := range wallet.Addresses {
-		wallet.addressesMap[string(adr.PublicKey)] = adr
+		wallet.addressesMap[string(adr.PublicKeyHash)] = adr
 	}
 	wallet.setLoaded(true)
 

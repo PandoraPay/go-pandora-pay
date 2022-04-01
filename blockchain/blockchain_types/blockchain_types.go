@@ -11,8 +11,8 @@ import (
 )
 
 type BlockchainTransactionKeyUpdate struct {
-	PublicKey []byte
-	TxsCount  uint64
+	PublicKeyHash []byte
+	TxsCount      uint64
 }
 
 type BlockchainTransactionUpdate struct {

@@ -28,7 +28,7 @@ type APIAccountReply struct {
 
 func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply *APIAccountReply) (err error) {
 
-	publicKey, err := args.GetPublicKey(true)
+	publicKeyHash, err := args.GetPublicKeyHash(true)
 	if err != nil {
 		return
 	}
@@ -38,7 +38,7 @@ func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply
 		accsCollection := accounts.NewAccountsCollection(reader)
 		plainAccs := plain_accounts.NewPlainAccounts(reader)
 
-		assetsList, err := accsCollection.GetAccountAssets(publicKey)
+		assetsList, err := accsCollection.GetAccountAssets(publicKeyHash)
 		if err != nil {
 			return
 		}
@@ -54,7 +54,7 @@ func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply
 			}
 
 			var acc *account.Account
-			if acc, err = accs.GetAccount(publicKey); err != nil {
+			if acc, err = accs.GetAccount(publicKeyHash); err != nil {
 				return
 			}
 
@@ -67,7 +67,7 @@ func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply
 			}
 		}
 
-		if reply.PlainAcc, err = plainAccs.GetPlainAccount(publicKey); err != nil {
+		if reply.PlainAcc, err = plainAccs.GetPlainAccount(publicKeyHash); err != nil {
 			return
 		}
 		if reply.PlainAcc != nil {

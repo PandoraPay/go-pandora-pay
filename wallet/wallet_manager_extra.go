@@ -109,15 +109,15 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, chainHeight uin
 
 	if deleted {
 
-		wallet.forging.Wallet.RemoveWallet(addr.PublicKey, true, acc, chainHeight)
+		wallet.forging.Wallet.RemoveWallet(addr.PublicKeyHash, true, acc, chainHeight)
 
 		if addr.IsSharedStaked {
-			_, err = wallet.RemoveAddressByPublicKey(addr.PublicKey, true)
+			_, err = wallet.RemoveAddressByPublicKeyHash(addr.PublicKeyHash, true)
 			return
 		}
 
 	} else {
-		wallet.forging.Wallet.AddWallet(addr.PublicKey, addr.SharedStaked, true, acc, chainHeight)
+		wallet.forging.Wallet.AddWallet(addr.PublicKeyHash, addr.SharedStaked, true, acc, chainHeight)
 	}
 
 	return

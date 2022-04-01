@@ -16,17 +16,24 @@ func (pk *PrivateKey) GeneratePublicKey() []byte {
 	return pk.Key[32:]
 }
 
+func (pk *PrivateKey) GeneratePublicKeyHash() []byte {
+	pb := pk.Key[32:]
+	return cryptography.GetPublicKeyHash(pb)
+}
+
 func (pk *PrivateKey) GenerateAddress(paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	publicKey := pk.GeneratePublicKey()
-
-	version := SIMPLE_PUBLIC_KEY
-
-	return NewAddr(config.NETWORK_SELECTED, version, publicKey, paymentID, paymentAmount, paymentAsset)
+	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY_HASH, publicKey, paymentID, paymentAmount, paymentAsset)
 }
 
 //make sure message is a hash to avoid leaking any parts of the private key
 func (pk *PrivateKey) Sign(message []byte) ([]byte, error) {
 	return ed25519.Sign(pk.Key, message), nil
+}
+
+func (pk *PrivateKey) Verify(message, signature []byte) bool {
+	pb := pk.GeneratePublicKey()
+	return ed25519.Verify(pb, message, signature)
 }
 
 func (pk *PrivateKey) Decrypt(message []byte) ([]byte, error) {

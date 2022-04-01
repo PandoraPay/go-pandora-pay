@@ -22,16 +22,16 @@ type APIAccountTxsReply struct {
 
 func (api *APICommon) GetAccountTxs(r *http.Request, args *APIAccountTxsRequest, reply *APIAccountTxsReply) (err error) {
 
-	publicKey, err := args.GetPublicKey(true)
+	publicKeyHash, err := args.GetPublicKeyHash(true)
 	if err != nil {
 		return
 	}
 
-	publicKeyStr := string(publicKey)
+	publicKeyHashStr := string(publicKeyHash)
 
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
-		data := reader.Get("addrTxsCount:" + publicKeyStr)
+		data := reader.Get("addrTxsCount:" + publicKeyHashStr)
 		if data == nil {
 			return nil
 		}
@@ -51,7 +51,7 @@ func (api *APICommon) GetAccountTxs(r *http.Request, args *APIAccountTxsRequest,
 
 		reply.Txs = make([][]byte, args.Next-index)
 		for i := index; i < args.Next; i++ {
-			hash := reader.Get("addrTx:" + publicKeyStr + ":" + strconv.FormatUint(i, 10))
+			hash := reader.Get("addrTx:" + publicKeyHashStr + ":" + strconv.FormatUint(i, 10))
 			if hash == nil {
 				return errors.New("Error reading address transaction")
 			}

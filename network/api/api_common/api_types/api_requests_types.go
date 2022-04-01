@@ -27,25 +27,25 @@ const (
 )
 
 type APIAccountBaseRequest struct {
-	Address   string         `json:"address,omitempty" msgpack:"address,omitempty"`
-	PublicKey helpers.Base64 `json:"publicKey,omitempty"  msgpack:"publicKey,omitempty"`
+	Address       string         `json:"address,omitempty" msgpack:"address,omitempty"`
+	PublicKeyHash helpers.Base64 `json:"publicKeyHash,omitempty"  msgpack:"publicKeyHash,omitempty"`
 }
 
-func (request *APIAccountBaseRequest) GetPublicKey(required bool) ([]byte, error) {
-	var publicKey []byte
+func (request *APIAccountBaseRequest) GetPublicKeyHash(required bool) ([]byte, error) {
+	var publicKeyHash []byte
 	if request.Address != "" {
 		address, err := addresses.DecodeAddr(request.Address)
 		if err != nil {
 			return nil, errors.New("Invalid address")
 		}
-		publicKey = address.PublicKey
-	} else if request.PublicKey != nil && len(request.PublicKey) == cryptography.PublicKeySize {
-		publicKey = request.PublicKey
+		publicKeyHash = address.PublicKeyHash
+	} else if request.PublicKeyHash != nil && len(request.PublicKeyHash) == cryptography.PublicKeySize {
+		publicKeyHash = request.PublicKeyHash
 	} else {
 		return nil, errors.New("Invalid address or publicKey")
 	}
 
-	return publicKey, nil
+	return publicKeyHash, nil
 }
 
 type APISubscriptionRequest struct {

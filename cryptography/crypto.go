@@ -1,6 +1,7 @@
 package cryptography
 
 import (
+	"crypto/sha256"
 	"errors"
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/sha3"
@@ -13,6 +14,12 @@ func SHA3(b []byte) []byte {
 	return h.Sum(nil)
 }
 
+func SHA256(b []byte) []byte {
+	h := sha256.New()
+	h.Write(b)
+	return h.Sum(nil)
+}
+
 func RIPEMD(b []byte) []byte {
 	h := ripemd160.New()
 	h.Write(b)
@@ -21,6 +28,10 @@ func RIPEMD(b []byte) []byte {
 
 func GetChecksum(b []byte) []byte {
 	return RIPEMD(b)[:ChecksumSize]
+}
+
+func GetPublicKeyHash(publicKey []byte) []byte {
+	return RIPEMD(SHA256(publicKey))
 }
 
 func ComputeKernelHash(hash []byte, stakingAmount uint64) ([]byte, error) {

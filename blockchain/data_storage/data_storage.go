@@ -22,14 +22,14 @@ type DataStorage struct {
 	Asts           *assets.Assets
 }
 
-func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte) (*accounts.Accounts, *account.Account, error) {
+func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKeyHash []byte) (*accounts.Accounts, *account.Account, error) {
 
 	accs, err := dataStorage.AccsCollection.GetMap(assetId)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	acc, err := accs.GetAccount(publicKey)
+	acc, err := accs.GetAccount(publicKeyHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -38,21 +38,21 @@ func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte) (*
 		return accs, acc, nil
 	}
 
-	if acc, err = accs.CreateNewAccount(publicKey); err != nil {
+	if acc, err = accs.CreateNewAccount(publicKeyHash); err != nil {
 		return nil, nil, err
 	}
 
 	return accs, acc, nil
 }
 
-func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte) (*accounts.Accounts, *account.Account, error) {
+func (dataStorage *DataStorage) CreateAccount(assetId, publicKeyHash []byte) (*accounts.Accounts, *account.Account, error) {
 
 	accs, err := dataStorage.AccsCollection.GetMap(assetId)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	exists, err := accs.Exists(string(publicKey))
+	exists, err := accs.Exists(string(publicKeyHash))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -61,7 +61,7 @@ func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte) (*accou
 		return nil, nil, errors.New("Account already exists")
 	}
 
-	acc, err := accs.CreateNewAccount(publicKey)
+	acc, err := accs.CreateNewAccount(publicKeyHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -69,22 +69,22 @@ func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte) (*accou
 	return accs, acc, nil
 }
 
-func (dataStorage *DataStorage) GetOrCreatePlainAccount(publicKey []byte) (*plain_account.PlainAccount, error) {
-	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(publicKey)
+func (dataStorage *DataStorage) GetOrCreatePlainAccount(publicKeyHash []byte) (*plain_account.PlainAccount, error) {
+	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(publicKeyHash)
 	if err != nil {
 		return nil, err
 	}
 	if plainAcc != nil {
 		return plainAcc, nil
 	}
-	return dataStorage.CreatePlainAccount(publicKey)
+	return dataStorage.CreatePlainAccount(publicKeyHash)
 }
 
-func (dataStorage *DataStorage) CreatePlainAccount(publicKey []byte) (*plain_account.PlainAccount, error) {
-	return dataStorage.PlainAccs.CreateNewPlainAccount(publicKey)
+func (dataStorage *DataStorage) CreatePlainAccount(publicKeyHash []byte) (*plain_account.PlainAccount, error) {
+	return dataStorage.PlainAccs.CreateNewPlainAccount(publicKeyHash)
 }
 
-func (dataStorage *DataStorage) AddStakePendingStake(publicKey []byte, amount uint64, pendingType bool, blockHeight uint64) error {
+func (dataStorage *DataStorage) AddStakePendingStake(publicKeyHash []byte, amount uint64, pendingType bool, blockHeight uint64) error {
 
 	pendingStakes, err := dataStorage.PendingStakes.GetPendingStakes(blockHeight)
 	if err != nil {
@@ -98,7 +98,7 @@ func (dataStorage *DataStorage) AddStakePendingStake(publicKey []byte, amount ui
 	}
 
 	pendingStakes.Pending = append(pendingStakes.Pending, &pending_stakes.PendingStake{
-		PublicKey:     publicKey,
+		PublicKey:     publicKeyHash,
 		PendingAmount: amount,
 		PendingType:   pendingType,
 	})

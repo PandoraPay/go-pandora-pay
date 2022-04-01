@@ -39,39 +39,39 @@ func (api *APICommon) GetWalletBalances(r *http.Request, args *APIWalletGetBalan
 		return errors.New("Invalid User or Password")
 	}
 
-	publicKeys := make([][]byte, len(args.List))
+	publicKeyHashes := make([][]byte, len(args.List))
 	for i, it := range args.List {
-		if publicKeys[i], err = it.GetPublicKey(true); err != nil {
+		if publicKeyHashes[i], err = it.GetPublicKeyHash(true); err != nil {
 			return
 		}
 	}
 
-	walletAddresses := make([]*wallet_address.WalletAddress, len(publicKeys))
-	for i, publicKey := range publicKeys {
-		if walletAddresses[i] = api.wallet.GetWalletAddressByPublicKey(publicKey, false); walletAddresses[i] == nil {
+	walletAddresses := make([]*wallet_address.WalletAddress, len(publicKeyHashes))
+	for i, publicKey := range publicKeyHashes {
+		if walletAddresses[i] = api.wallet.GetWalletAddressByPublicKeyHash(publicKey, false); walletAddresses[i] == nil {
 			return errors.New(fmt.Sprintf("input %d doesn't exist in your wallet", i))
 		}
 	}
 
-	reply.Results = make([]*APIWalletGetBalancesResultReply, len(publicKeys))
+	reply.Results = make([]*APIWalletGetBalancesResultReply, len(publicKeyHashes))
 
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		dataStorage := data_storage.NewDataStorage(reader)
 
-		for i, publicKey := range publicKeys {
+		for i, publicKeyHash := range publicKeyHashes {
 
 			reply.Results[i] = &APIWalletGetBalancesResultReply{}
 
 			reply.Results[i].Address = walletAddresses[i].GetAddress()
 
 			var plainAcc *plain_account.PlainAccount
-			if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(publicKey); err != nil {
+			if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(publicKeyHash); err != nil {
 				return
 			}
 
 			var assetsList [][]byte
-			if assetsList, err = dataStorage.AccsCollection.GetAccountAssets(publicKey); err != nil {
+			if assetsList, err = dataStorage.AccsCollection.GetAccountAssets(publicKeyHash); err != nil {
 				return
 			}
 

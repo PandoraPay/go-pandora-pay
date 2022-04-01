@@ -89,7 +89,7 @@ func getWalletAddressSecretKey(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		addr, err := app.Wallet.GetWalletAddressByPublicKeyString(args[1].String(), true)
+		addr, err := app.Wallet.GetWalletAddressByPublicKeyHashString(args[1].String(), true)
 		if err != nil {
 			return nil, err
 		}
@@ -105,7 +105,7 @@ func getWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		adr, err := app.Wallet.GetWalletAddressByPublicKeyString(args[1].String(), true)
+		adr, err := app.Wallet.GetWalletAddressByPublicKeyHashString(args[1].String(), true)
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +140,7 @@ func removeWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return app.Wallet.RemoveAddressByPublicKey(publicKey, true)
+		return app.Wallet.RemoveAddressByPublicKeyHash(publicKey, true)
 	})
 }
 
@@ -155,7 +155,7 @@ func renameWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		return app.Wallet.RenameAddressByPublicKey(publicKey, args[2].String(), true)
+		return app.Wallet.RenameAddressByPublicKeyHash(publicKey, args[2].String(), true)
 	})
 }
 
@@ -330,20 +330,19 @@ func getPrivateKeysWalletAddress(this js.Value, args []js.Value) interface{} {
 		}
 
 		parameters := &struct {
-			PublicKey []byte `json:"publicKey"`
-			Asset     []byte `json:"asset"`
+			PublicKeyHash []byte `json:"publicKeyHash"`
+			Asset         []byte `json:"asset"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[1], parameters); err != nil {
 			return nil, err
 		}
 
-		privateKey, previousValue := app.Wallet.GetPrivateKeys(parameters.PublicKey, parameters.Asset)
+		privateKey := app.Wallet.GetPrivateKeys(parameters.PublicKeyHash, parameters.Asset)
 
 		return webassembly_utils.ConvertJSONBytes(struct {
-			PrivateKey    []byte `json:"privateKey"`
-			PreviousValue uint64 `json:"previousValue"`
-		}{privateKey, previousValue})
+			PrivateKey []byte `json:"privateKey"`
+		}{privateKey})
 
 	})
 }
@@ -351,7 +350,7 @@ func getPrivateKeysWalletAddress(this js.Value, args []js.Value) interface{} {
 func decryptTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		publicKey, err := base64.StdEncoding.DecodeString(args[1].String())
+		publicKeyHash, err := base64.StdEncoding.DecodeString(args[1].String())
 		if err != nil {
 			return nil, err
 		}
@@ -363,7 +362,7 @@ func decryptTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		decrypted, err := app.Wallet.DecryptTx(tx, publicKey)
+		decrypted, err := app.Wallet.DecryptTx(tx, publicKeyHash)
 		if err != nil {
 			return nil, err
 		}

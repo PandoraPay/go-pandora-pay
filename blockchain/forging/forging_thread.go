@@ -110,7 +110,6 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) ([]byte,
 		return nil, err
 	}
 
-	newBlk.Block.StakingNonce = solution.stakingNonce
 	newBlk.Block.Timestamp = solution.timestamp
 	newBlk.Block.StakingAmount = solution.stakingAmount
 

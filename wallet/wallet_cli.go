@@ -54,7 +54,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 	type Address struct {
 		plainAcc      *plain_account.PlainAccount
 		assetsList    []*AddressAsset
-		publicKey     []byte
+		publicKeyHash []byte
 		name          string
 		addressString string
 	}
@@ -70,7 +70,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 	addresses := make([]*Address, len(wallet.Addresses))
 
 	for i, walletAddress := range wallet.Addresses {
-		addresses[i] = &Address{publicKey: helpers.CloneBytes(walletAddress.PublicKey), name: walletAddress.Name, addressString: walletAddress.GetAddress()}
+		addresses[i] = &Address{publicKeyHash: helpers.CloneBytes(walletAddress.PublicKeyHash), name: walletAddress.Name, addressString: walletAddress.GetAddress()}
 	}
 	wallet.Lock.RUnlock()
 
@@ -85,11 +85,11 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 		for i, address := range addresses {
 
 			var assetsList [][]byte
-			if assetsList, err = dataStorage.AccsCollection.GetAccountAssets(address.publicKey); err != nil {
+			if assetsList, err = dataStorage.AccsCollection.GetAccountAssets(address.publicKeyHash); err != nil {
 				return
 			}
 
-			if addresses[i].plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(address.publicKey); err != nil {
+			if addresses[i].plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(address.publicKeyHash); err != nil {
 				return
 			}
 
@@ -104,7 +104,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 						return
 					}
 
-					if acc, err = accs.GetAccount(address.publicKey); err != nil {
+					if acc, err = accs.GetAccount(address.publicKeyHash); err != nil {
 						return
 					}
 

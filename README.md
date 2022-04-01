@@ -7,6 +7,8 @@ bug free and easy to be developed and improved over time.
 
 # Progress
 
+Under development. Not working right now.
+
 [X] Removing Zether
 [X] Integration of ED25519
 [X] Using PublicKeyHashes instead of PublicKeys

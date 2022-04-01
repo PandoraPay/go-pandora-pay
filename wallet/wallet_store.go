@@ -165,7 +165,7 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 				}
 
 				wallet.Addresses = append(wallet.Addresses, newWalletAddress)
-				wallet.addressesMap[string(newWalletAddress.PublicKey)] = newWalletAddress
+				wallet.addressesMap[string(newWalletAddress.PublicKeyHash)] = newWalletAddress
 
 			}
 
@@ -209,7 +209,7 @@ func (wallet *Wallet) InitForgingWallet() (err error) {
 	}
 
 	for _, addr := range wallet.Addresses {
-		if err = wallet.forging.Wallet.AddWallet(addr.PublicKey, addr.SharedStaked, false, nil, 0); err != nil {
+		if err = wallet.forging.Wallet.AddWallet(addr.PublicKeyHash, addr.SharedStaked, false, nil, 0); err != nil {
 			return
 		}
 	}
@@ -227,7 +227,7 @@ func (wallet *Wallet) InitForgingWallet() (err error) {
 
 			var acc *account.Account
 
-			if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
+			if acc, err = accs.GetAccount(addr.PublicKeyHash); err != nil {
 				return
 			}
 

@@ -18,6 +18,7 @@ import (
 )
 
 type ApiDelegatorNodeNotifyRequest struct {
+	PublicKeyHash          helpers.Base64 `json:"publicKeyHash" msgpack:"publicKeyHash"`
 	SharedStakedPrivateKey helpers.Base64 `json:"sharedStakedPrivateKey" msgpack:"sharedStakedPrivateKey"`
 	SharedStakedBalance    uint64         `json:"sharedStakedBalance" msgpack:"sharedStakedBalance"`
 }
@@ -35,7 +36,7 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 	sharedStakedPrivateKey := &addresses.PrivateKey{args.SharedStakedPrivateKey}
 	sharedStakedPublicKey := sharedStakedPrivateKey.GeneratePublicKey()
 
-	addr := api.wallet.GetWalletAddressByPublicKey(sharedStakedPublicKey, true)
+	addr := api.wallet.GetWalletAddressByPublicKeyHash(args.PublicKeyHash, true)
 	if addr != nil && addr.PrivateKey == nil {
 		reply.Result = true
 		return
@@ -54,7 +55,7 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 			return
 		}
 
-		if acc, err = accs.GetAccount(sharedStakedPublicKey); err != nil {
+		if acc, err = accs.GetAccount(args.PublicKeyHash); err != nil {
 			return
 		}
 		if acc == nil {
@@ -78,7 +79,8 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 		false,
 		nil,
 		nil,
-		sharedStakedPublicKey,
+		nil,
+		args.PublicKeyHash,
 		true,
 		&wallet_address.WalletAddressSharedStaked{
 			sharedStakedPrivateKey,

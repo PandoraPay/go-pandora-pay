@@ -1,17 +1,18 @@
 package cryptography
 
 import (
+	"crypto/ed25519"
 	"math/rand"
 )
 
 type Bytes []byte
 
 const HashSize = 32
-const PrivateKeySize = 32
-const PublicKeySize = 33
+const PrivateKeySize = ed25519.PrivateKeySize
+const PublicKeySize = ed25519.PublicKeySize
 const PublicKeyHashSize = 20
 const RipemdSize = 20
-const SignatureSize = 64
+const SignatureSize = ed25519.SignatureSize
 const ChecksumSize = 4
 
 func RandomHash() (hash []byte) {

@@ -13,6 +13,7 @@ type WalletAddress struct {
 	SecretKey      []byte                     `json:"secretKey" msgpack:"secretKey"`
 	PrivateKey     *addresses.PrivateKey      `json:"privateKey" msgpack:"privateKey"`
 	PublicKey      []byte                     `json:"publicKey" msgpack:"publicKey"`
+	PublicKeyHash  []byte                     `json:"publicKeyHash" msgpack:"publicKeyHash"`
 	IsSharedStaked bool                       `json:"isSharedStaked,omitempty" msgpack:"isSharedStaked,omitempty"`
 	SharedStaked   *WalletAddressSharedStaked `json:"sharedStaked,omitempty" msgpack:"sharedStaked,omitempty"`
 	AddressEncoded string                     `json:"addressEncoded" msgpack:"addressEncoded"`
@@ -50,11 +51,7 @@ func (addr *WalletAddress) SignMessage(message []byte) ([]byte, error) {
 }
 
 func (addr *WalletAddress) VerifySignedMessage(message, signature []byte) (bool, error) {
-	address, err := addresses.DecodeAddr(addr.GetAddress())
-	if err != nil {
-		return false, err
-	}
-	return address.VerifySignedMessage(message, signature), nil
+	return addr.PrivateKey.Verify(message, signature), nil
 }
 
 func (addr *WalletAddress) Clone() *WalletAddress {
@@ -76,6 +73,7 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		addr.SecretKey,
 		addr.PrivateKey,
 		addr.PublicKey,
+		addr.PublicKeyHash,
 		addr.IsSharedStaked,
 		sharedStaked,
 		addr.AddressEncoded,
