@@ -1,6 +1,7 @@
 package transaction_simple
 
 import (
+	"crypto/ed25519"
 	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
@@ -10,7 +11,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
 	"pandora-pay/config"
-	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 )
 
@@ -48,10 +48,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
-		if err = tx.Extra.IncludeTransactionVin0(blockHeight, plainAcc, dataStorage); err != nil {
-			return
-		}
+	case SCRIPT_TRANSFER:
 	}
 
 	return dataStorage.PlainAccs.Update(string(tx.Vin.PublicKey), plainAcc)
@@ -67,7 +64,7 @@ func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
 }
 
 func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bool {
-	return crypto.VerifySignature(hashForSignature, tx.Vin.Signature, tx.Vin.PublicKey)
+	return ed25519.Verify(tx.Vin.PublicKey, hashForSignature, tx.Vin.Signature)
 }
 
 func (tx *TransactionSimple) Validate() (err error) {
@@ -77,13 +74,7 @@ func (tx *TransactionSimple) Validate() (err error) {
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
-		if tx.Extra == nil {
-			return errors.New("extra is not assigned")
-		}
-		if err = tx.Extra.Validate(); err != nil {
-			return
-		}
+	case SCRIPT_TRANSFER:
 	default:
 		return errors.New("Invalid Simple TxScript")
 	}
@@ -123,8 +114,7 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 
 	tx.TxScript = ScriptType(n)
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
-		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{}
+	case SCRIPT_TRANSFER:
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}

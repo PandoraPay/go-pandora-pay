@@ -6,22 +6,20 @@ import (
 )
 
 type WalletAddress struct {
-	Version                    Version                    `json:"version" msgpack:"version"`
-	Name                       string                     `json:"name" msgpack:"name"`
-	SeedIndex                  uint32                     `json:"seedIndex" msgpack:"seedIndex"`
-	IsMine                     bool                       `json:"isMine" msgpack:"isMine"`
-	SecretKey                  []byte                     `json:"secretKey" msgpack:"secretKey"`
-	PrivateKey                 *addresses.PrivateKey      `json:"privateKey" msgpack:"privateKey"`
-	SpendPrivateKey            *addresses.PrivateKey      `json:"spendPrivateKey" msgpack:"spendPrivateKey"`
-	Registration               []byte                     `json:"registration" msgpack:"registration"`
-	PublicKey                  []byte                     `json:"publicKey" msgpack:"publicKey"`
-	Staked                     bool                       `json:"staked" msgpack:"staked"`
-	SpendRequired              bool                       `json:"spendRequired" msgpack:"spendRequired"`
-	SpendPublicKey             []byte                     `json:"spendPublicKey" msgpack:"spendPublicKey"`
-	IsSharedStaked             bool                       `json:"isSharedStaked,omitempty" msgpack:"isSharedStaked,omitempty"`
-	SharedStaked               *WalletAddressSharedStaked `json:"sharedStaked,omitempty" msgpack:"sharedStaked,omitempty"`
-	AddressEncoded             string                     `json:"addressEncoded" msgpack:"addressEncoded"`
-	AddressRegistrationEncoded string                     `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
+	Version         Version                    `json:"version" msgpack:"version"`
+	Name            string                     `json:"name" msgpack:"name"`
+	SeedIndex       uint32                     `json:"seedIndex" msgpack:"seedIndex"`
+	IsMine          bool                       `json:"isMine" msgpack:"isMine"`
+	SecretKey       []byte                     `json:"secretKey" msgpack:"secretKey"`
+	PrivateKey      *addresses.PrivateKey      `json:"privateKey" msgpack:"privateKey"`
+	SpendPrivateKey *addresses.PrivateKey      `json:"spendPrivateKey" msgpack:"spendPrivateKey"`
+	PublicKey       []byte                     `json:"publicKey" msgpack:"publicKey"`
+	Staked          bool                       `json:"staked" msgpack:"staked"`
+	SpendRequired   bool                       `json:"spendRequired" msgpack:"spendRequired"`
+	SpendPublicKey  []byte                     `json:"spendPublicKey" msgpack:"spendPublicKey"`
+	IsSharedStaked  bool                       `json:"isSharedStaked,omitempty" msgpack:"isSharedStaked,omitempty"`
+	SharedStaked    *WalletAddressSharedStaked `json:"sharedStaked,omitempty" msgpack:"sharedStaked,omitempty"`
+	AddressEncoded  string                     `json:"addressEncoded" msgpack:"addressEncoded"`
 }
 
 func (addr *WalletAddress) DeriveSharedStaked() (*WalletAddressSharedStaked, error) {
@@ -37,11 +35,8 @@ func (addr *WalletAddress) DeriveSharedStaked() (*WalletAddressSharedStaked, err
 
 }
 
-func (addr *WalletAddress) GetAddress(registered bool) string {
-	if registered {
-		return addr.AddressEncoded
-	}
-	return addr.AddressRegistrationEncoded
+func (addr *WalletAddress) GetAddress() string {
+	return addr.AddressEncoded
 }
 
 func (addr *WalletAddress) DecryptMessage(message []byte) ([]byte, error) {
@@ -59,7 +54,7 @@ func (addr *WalletAddress) SignMessage(message []byte) ([]byte, error) {
 }
 
 func (addr *WalletAddress) VerifySignedMessage(message, signature []byte) (bool, error) {
-	address, err := addresses.DecodeAddr(addr.GetAddress(false))
+	address, err := addresses.DecodeAddr(addr.GetAddress())
 	if err != nil {
 		return false, err
 	}
@@ -85,7 +80,6 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		addr.SecretKey,
 		addr.PrivateKey,
 		addr.SpendPrivateKey,
-		addr.Registration,
 		addr.PublicKey,
 		addr.Staked,
 		addr.SpendRequired,
@@ -93,6 +87,5 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		addr.IsSharedStaked,
 		sharedStaked,
 		addr.AddressEncoded,
-		addr.AddressRegistrationEncoded,
 	}
 }

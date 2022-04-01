@@ -29,8 +29,7 @@ type APIWalletGetBalancesResultReply struct {
 }
 
 type APIWalletGetBalanceDataReply struct {
-	Balance []byte `json:"balance" msgpack:"balance"`
-	Amount  uint64 `json:"amount" msgpack:"amount"`
+	Balance uint64 `json:"balance" msgpack:"balance"`
 	Asset   []byte `json:"asset" msgpack:"asset"`
 }
 
@@ -62,14 +61,9 @@ func (api *APICommon) GetWalletBalances(r *http.Request, args *APIWalletGetBalan
 
 		for i, publicKey := range publicKeys {
 
-			var isReg bool
-			if isReg, err = dataStorage.Regs.Exists(string(publicKey)); err != nil {
-				return
-			}
-
 			reply.Results[i] = &APIWalletGetBalancesResultReply{}
 
-			reply.Results[i].Address = walletAddresses[i].GetAddress(isReg)
+			reply.Results[i].Address = walletAddresses[i].GetAddress()
 
 			var plainAcc *plain_account.PlainAccount
 			if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(publicKey); err != nil {
@@ -96,8 +90,7 @@ func (api *APICommon) GetWalletBalances(r *http.Request, args *APIWalletGetBalan
 				}
 
 				reply.Results[i].Balances[j] = &APIWalletGetBalanceDataReply{
-					acc.Balance.Amount.Serialize(),
-					0,
+					acc.Balance,
 					assetId,
 				}
 
@@ -108,15 +101,6 @@ func (api *APICommon) GetWalletBalances(r *http.Request, args *APIWalletGetBalan
 		return
 	}); err != nil {
 		return
-	}
-
-	for i, publicKey := range publicKeys {
-		for _, data := range reply.Results[i].Balances {
-
-			if data.Amount, err = api.wallet.DecryptBalanceByPublicKey(publicKey, data.Balance, data.Asset, false, 0, true, true, nil, func(status string) {}); err != nil {
-				return
-			}
-		}
 	}
 
 	return

@@ -120,7 +120,7 @@ func createNewGenesis(v []string) (err error) {
 	//let's create 1000 zero wallets
 	for i := 0; i < 1000; i++ {
 		priv := addresses.GenerateNewPrivateKey()
-		if addr, err = priv.GenerateAddress(true, helpers.RandomBytes(cryptography.PublicKeySize), true, nil, 0, nil); err != nil {
+		if addr, err = priv.GenerateAddress(true, helpers.RandomBytes(cryptography.PublicKeySize), nil, 0, nil); err != nil {
 			return
 		}
 
@@ -133,7 +133,7 @@ func createNewGenesis(v []string) (err error) {
 	//let's create 1000 zero wallets
 	for i := 0; i < 5000; i++ {
 		priv := addresses.GenerateNewPrivateKey()
-		if addr, err = priv.GenerateAddress(false, nil, true, nil, 0, nil); err != nil {
+		if addr, err = priv.GenerateAddress(false, nil, nil, 0, nil); err != nil {
 			return
 		}
 
@@ -146,7 +146,7 @@ func createNewGenesis(v []string) (err error) {
 	//let's create 1000 zero wallets
 	for i := 0; i < 5000; i++ {
 		priv := addresses.GenerateNewPrivateKey()
-		if addr, err = priv.GenerateAddress(false, helpers.RandomBytes(cryptography.PublicKeySize), true, nil, 0, nil); err != nil {
+		if addr, err = priv.GenerateAddress(false, helpers.RandomBytes(cryptography.PublicKeySize), nil, 0, nil); err != nil {
 			return
 		}
 

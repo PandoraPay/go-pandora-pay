@@ -2,11 +2,11 @@ package addresses
 
 import (
 	"bytes"
+	"crypto/ed25519"
 	"errors"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/custom_base64"
 )
@@ -17,24 +17,23 @@ type Address struct {
 	PublicKey      []byte         `json:"publicKey" msgpack:"publicKey"`
 	Staked         bool           `json:"staked" msgpack:"staked"`
 	SpendPublicKey []byte         `json:"spendPublicKey" msgpack:"spendPublicKey"`
-	Registration   []byte         `json:"registration" msgpack:"registration"`
 	PaymentID      []byte         `json:"paymentId" msgpack:"paymentId"`         // payment id
 	PaymentAmount  uint64         `json:"paymentAmount" msgpack:"paymentAmount"` // amount to be paid
 	PaymentAsset   []byte         `json:"paymentAsset" msgpack:"paymentAsset"`
 }
 
-func NewAddr(network uint64, version AddressVersion, publicKey []byte, staked bool, spendPublicKey []byte, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+func NewAddr(network uint64, version AddressVersion, publicKey []byte, staked bool, spendPublicKey []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	if len(paymentID) != 8 && len(paymentID) != 0 {
 		return nil, errors.New("Invalid PaymentID. It must be an 8 byte")
 	}
 	if len(paymentAsset) != 0 && len(paymentAsset) != 20 {
 		return nil, errors.New("Invalid PaymentAsset size")
 	}
-	return &Address{network, version, publicKey, staked, spendPublicKey, registration, paymentID, paymentAmount, paymentAsset}, nil
+	return &Address{network, version, publicKey, staked, spendPublicKey, paymentID, paymentAmount, paymentAsset}, nil
 }
 
-func CreateAddr(publicKey []byte, staked bool, spendPublicKey, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
-	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY, publicKey, staked, spendPublicKey, registration, paymentID, paymentAmount, paymentAsset)
+func CreateAddr(publicKey []byte, staked bool, spendPublicKey []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY, publicKey, staked, spendPublicKey, paymentID, paymentAmount, paymentAsset)
 }
 
 func (a *Address) EncodeAddr() string {
@@ -66,9 +65,6 @@ func (a *Address) EncodeAddr() string {
 		writer.Write(a.SpendPublicKey)
 	}
 
-	if a.IsIntegratedRegistration() {
-		writer.Write(a.Registration)
-	}
 	if a.IsIntegratedPaymentID() {
 		writer.Write(a.PaymentID)
 	}
@@ -155,22 +151,17 @@ func DecodeAddr(input string) (*Address, error) {
 			return nil, err
 		}
 	}
-	if integrationBytes&(1<<2) != 0 {
-		if addr.Registration, err = reader.ReadBytes(cryptography.SignatureSize); err != nil {
-			return nil, err
-		}
-	}
-	if integrationBytes&(1<<3) != 0 {
+	if integrationBytes&(1<<1) != 0 {
 		if addr.PaymentID, err = reader.ReadBytes(8); err != nil {
 			return nil, err
 		}
 	}
-	if integrationBytes&(1<<4) != 0 {
+	if integrationBytes&(1<<2) != 0 {
 		if addr.PaymentAmount, err = reader.ReadUvarint(); err != nil {
 			return nil, err
 		}
 	}
-	if integrationBytes&(1<<5) != 0 {
+	if integrationBytes&(1<<3) != 0 {
 		if addr.PaymentAsset, err = reader.ReadBytes(config_coins.ASSET_LENGTH); err != nil {
 			return nil, err
 		}
@@ -191,30 +182,22 @@ func (a *Address) IntegrationBytes() (out uint64) {
 		out |= 1 << 1
 	}
 
-	if len(a.Registration) > 0 {
+	if len(a.PaymentID) > 0 {
 		out |= 1 << 2
 	}
 
-	if len(a.PaymentID) > 0 {
+	if a.PaymentAmount > 0 {
 		out |= 1 << 3
 	}
 
-	if a.PaymentAmount > 0 {
-		out |= 1 << 4
-	}
-
 	if len(a.PaymentAsset) > 0 {
-		out |= 1 << 5
+		out |= 1 << 4
 	}
 
 	return
 }
 
 // if address contains a paymentId
-func (a *Address) IsIntegratedRegistration() bool {
-	return len(a.Registration) > 0
-}
-
 func (a *Address) IsIntegratedSpendPublicKey() bool {
 	return len(a.SpendPublicKey) > 0
 }
@@ -239,16 +222,5 @@ func (a *Address) EncryptMessage(message []byte) ([]byte, error) {
 }
 
 func (a *Address) VerifySignedMessage(message, signature []byte) bool {
-	return crypto.VerifySignature(message, signature, a.PublicKey)
-}
-
-func (a *Address) GetPoint() (*crypto.Point, error) {
-	var point crypto.Point
-	var err error
-
-	if err = point.DecodeCompressed(a.PublicKey); err != nil {
-		return nil, err
-	}
-
-	return &point, nil
+	return ed25519.Verify(a.PublicKey, message, signature)
 }

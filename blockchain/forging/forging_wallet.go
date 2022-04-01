@@ -1,19 +1,15 @@
 package forging
 
 import (
-	"context"
 	"encoding/binary"
 	"errors"
 	"github.com/tevino/abool"
-	"pandora-pay/address_balance_decryptor"
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_forging"
-	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
@@ -24,17 +20,16 @@ import (
 )
 
 type ForgingWallet struct {
-	addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor
-	addressesMap            map[string]*ForgingWalletAddress
-	workersAddresses        []int
-	workers                 []*ForgingWorkerThread
-	updateNewChainUpdate    *multicast.MulticastChannel[*blockchain_types.BlockchainUpdates]
-	updateWalletAddressCn   chan *ForgingWalletAddressUpdate
-	workersCreatedCn        <-chan []*ForgingWorkerThread
-	workersDestroyedCn      <-chan struct{}
-	decryptBalancesUpdates  *generics.Map[string, *ForgingWalletAddress]
-	forging                 *Forging
-	initialized             *abool.AtomicBool
+	addressesMap           map[string]*ForgingWalletAddress
+	workersAddresses       []int
+	workers                []*ForgingWorkerThread
+	updateNewChainUpdate   *multicast.MulticastChannel[*blockchain_types.BlockchainUpdates]
+	updateWalletAddressCn  chan *ForgingWalletAddressUpdate
+	workersCreatedCn       <-chan []*ForgingWorkerThread
+	workersDestroyedCn     <-chan struct{}
+	decryptBalancesUpdates *generics.Map[string, *ForgingWalletAddress]
+	forging                *Forging
+	initialized            *abool.AtomicBool
 }
 
 type ForgingWalletAddressUpdate struct {
@@ -42,10 +37,9 @@ type ForgingWalletAddressUpdate struct {
 	publicKey    []byte
 	sharedStaked *wallet_address.WalletAddressSharedStaked
 	account      *account.Account
-	registration *registration.Registration
 }
 
-func (w *ForgingWallet) AddWallet(publicKey []byte, sharedStaked *wallet_address.WalletAddressSharedStaked, hasAccount bool, account *account.Account, reg *registration.Registration, chainHeight uint64) (err error) {
+func (w *ForgingWallet) AddWallet(publicKey []byte, sharedStaked *wallet_address.WalletAddressSharedStaked, hasAccount bool, account *account.Account, chainHeight uint64) (err error) {
 
 	if !config_forging.FORGING_ENABLED || w.initialized.IsNotSet() {
 		return
@@ -67,9 +61,6 @@ func (w *ForgingWallet) AddWallet(publicKey []byte, sharedStaked *wallet_address
 			if account, err = accs.GetAccount(publicKey); err != nil {
 				return
 			}
-			if reg, err = dataStorage.Regs.GetRegistration(publicKey); err != nil {
-				return
-			}
 
 			return
 		}); err != nil {
@@ -83,13 +74,12 @@ func (w *ForgingWallet) AddWallet(publicKey []byte, sharedStaked *wallet_address
 		publicKey,
 		sharedStaked,
 		account,
-		reg,
 	}
 	return
 }
 
-func (w *ForgingWallet) RemoveWallet(publicKey []byte, hasAccount bool, acc *account.Account, reg *registration.Registration, chainHeight uint64) { //20 byte
-	w.AddWallet(publicKey, nil, hasAccount, acc, reg, chainHeight)
+func (w *ForgingWallet) RemoveWallet(publicKey []byte, hasAccount bool, acc *account.Account, chainHeight uint64) { //20 byte
+	w.AddWallet(publicKey, nil, hasAccount, acc, chainHeight)
 }
 
 func (w *ForgingWallet) runDecryptBalanceAndNotifyWorkers() {
@@ -108,9 +98,7 @@ func (w *ForgingWallet) runDecryptBalanceAndNotifyWorkers() {
 			time.Sleep(10 * time.Millisecond)
 			continue
 		} else {
-			stakingAmountEncryptedBalanceSerialized := addr.account.Balance.Amount.Serialize()
-			addr.decryptedStakingBalance, _ = w.addressBalanceDecryptor.DecryptBalance("staking", addr.publicKey, addr.privateKey.Key, stakingAmountEncryptedBalanceSerialized, config_coins.NATIVE_ASSET_FULL, false, 0, true, context.Background(), func(string) {})
-
+			addr.decryptedStakingBalance = 0
 			w.workers[addr.workerIndex].addWalletAddressCn <- addr
 		}
 	}
@@ -197,22 +185,12 @@ func (w *ForgingWallet) runProcessUpdates() {
 					if update.account == nil {
 						return errors.New("Account was not found")
 					}
-					if update.registration == nil {
-						return errors.New("Registration was not found")
-					}
-
-					if !update.registration.Staked {
-						return errors.New("It is no longer staked")
-					}
 
 					address := w.addressesMap[key]
 					if address == nil {
 
-						keyPoint := new(crypto.BNRed).SetBytes(update.sharedStaked.PrivateKey.Key)
-
 						address = &ForgingWalletAddress{
 							update.sharedStaked.PrivateKey,
-							keyPoint.BigInt(),
 							update.publicKey,
 							string(update.publicKey),
 							update.account,
@@ -239,19 +217,6 @@ func (w *ForgingWallet) runProcessUpdates() {
 			}
 
 			chainHash = update.BlockHash
-
-			for k, v := range update.Registrations.Committed {
-				if w.addressesMap[k] != nil {
-					if v.Stored == "update" {
-						reg := v.Element.(*registration.Registration)
-						if !reg.Staked {
-							w.deleteAccount(k)
-						}
-					} else if v.Stored == "delete" {
-						w.deleteAccount(k)
-					}
-				}
-			}
 
 			for k, v := range accs.HashMap.Committed {
 				if w.addressesMap[k] != nil {

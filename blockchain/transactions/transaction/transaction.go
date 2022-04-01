@@ -7,7 +7,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
@@ -105,8 +104,6 @@ func (tx *Transaction) Deserialize(r *helpers.BufferReader) (err error) {
 	switch tx.Version {
 	case transaction_type.TX_SIMPLE:
 		tx.TransactionBaseInterface = &transaction_simple.TransactionSimple{}
-	case transaction_type.TX_ZETHER:
-		tx.TransactionBaseInterface = &transaction_zether.TransactionZether{}
 	default:
 		return errors.New("Invalid TxType")
 	}

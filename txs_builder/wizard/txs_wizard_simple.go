@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
 )
 
 func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.PrivateKey, fee *WizardTransactionFee, statusCallback func(string)) (err error) {
@@ -41,21 +40,8 @@ func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTx
 
 	var txScript transaction_simple.ScriptType
 	var extraFinal transaction_simple_extra.TransactionSimpleExtraInterface
-	switch txExtra := extra.(type) {
-	case *WizardTxSimpleExtraUpdateAssetFeeLiquidity:
-		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{
-			Liquidities:     txExtra.Liquidities,
-			CollectorHasNew: txExtra.CollectorHasNew,
-			Collector:       txExtra.Collector,
-		}
-		txScript = transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY
-
-		spaceExtra += 1 + len(txExtra.Collector) + 1
-		for _, liquidity := range txExtra.Liquidities {
-			if liquidity.Rate > 0 {
-				spaceExtra += len(helpers.SerializeToBytes(liquidity))
-			}
-		}
+	switch extra.(type) {
+	case nil:
 	}
 
 	txBase := &transaction_simple.TransactionSimple{

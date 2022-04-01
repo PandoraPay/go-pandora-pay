@@ -11,7 +11,6 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets/asset"
-	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -74,21 +73,13 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 			return errors.New("Amount, PaymentID or IntegratedPaymentAsset are not allowed in the airdrop address")
 		}
 
-		if registrations.VerifyRegistration(addr.PublicKey, addr.Staked, addr.SpendPublicKey, addr.Registration) == false {
-			return errors.New("Registration verification is false")
-		}
-
-		if _, err = dataStorage.CreateRegistration(addr.PublicKey, addr.Staked, addr.SpendPublicKey); err != nil {
-			return
-		}
-
 		var accs *accounts.Accounts
 		var acc *account.Account
 
-		if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey, false); err != nil {
+		if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey); err != nil {
 			return
 		}
-		acc.Balance.AddBalanceUint(airdrop.Amount)
+		acc.Balance = airdrop.Amount
 
 		if err = accs.Update(string(addr.PublicKey), acc); err != nil {
 			return
@@ -129,7 +120,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 	}
 
 	chainData.AssetsCount = dataStorage.Asts.Count
-	chainData.AccountsCount = dataStorage.Regs.Count + dataStorage.PlainAccs.Count
+	chainData.AccountsCount = dataStorage.PlainAccs.Count
 
 	return
 }

@@ -83,7 +83,6 @@ func (queue *BlockchainUpdatesQueue) executeUpdate(update *BlockchainUpdate) (er
 		update.dataStorage.AccsCollection,
 		update.dataStorage.PlainAccs,
 		update.dataStorage.Asts,
-		update.dataStorage.Regs,
 		update.newChainData.Height,
 		update.newChainData.Hash,
 	})

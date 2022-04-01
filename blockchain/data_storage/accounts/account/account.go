@@ -2,19 +2,17 @@ package account
 
 import (
 	"errors"
-	"pandora-pay/blockchain/data_storage/accounts/account/account_balance_homomorphic"
-	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash_map"
 )
 
 type Account struct {
 	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
-	Key                                          []byte                                          `json:"-" msgpack:"-"` //hashmap key
-	Asset                                        []byte                                          `json:"-" msgpack:"-"` //collection asset
-	Index                                        uint64                                          `json:"-" msgpack:"-"` //hashmap Index
-	Version                                      uint64                                          `json:"version" msgpack:"version"`
-	Balance                                      *account_balance_homomorphic.BalanceHomomorphic `json:"balance" msgpack:"balance"`
+	Key                                          []byte `json:"-" msgpack:"-"` //hashmap key
+	Asset                                        []byte `json:"-" msgpack:"-"` //collection asset
+	Index                                        uint64 `json:"-" msgpack:"-"` //hashmap Index
+	Version                                      uint64 `json:"version" msgpack:"version"`
+	Balance                                      uint64 `json:"balance" msgpack:"balance"`
 }
 
 func (account *Account) IsDeletable() bool {
@@ -40,13 +38,9 @@ func (account *Account) Validate() error {
 	return nil
 }
 
-func (account *Account) GetBalance() (result *crypto.ElGamal) {
-	return account.Balance.Amount
-}
-
 func (account *Account) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(account.Version)
-	account.Balance.Serialize(w)
+	w.WriteUvarint(account.Balance)
 }
 
 func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
@@ -60,7 +54,8 @@ func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 
 	account.Version = n
-	if err = account.Balance.Deserialize(r); err != nil {
+
+	if account.Balance, err = r.ReadUvarint(); err != nil {
 		return
 	}
 
@@ -69,17 +64,12 @@ func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 
 func NewAccount(key []byte, index uint64, asset []byte) (*Account, error) {
 
-	balance, err := account_balance_homomorphic.NewBalanceHomomorphicEmptyBalance(key)
-	if err != nil {
-		return nil, err
-	}
-
 	acc := &Account{
 		Key:     key,
 		Version: 0,
 		Asset:   asset,
 		Index:   index,
-		Balance: balance,
+		Balance: 0,
 	}
 
 	return acc, nil
@@ -91,7 +81,7 @@ func NewAccountClear(key []byte, index uint64, asset []byte) (*Account, error) {
 		Version: 0,
 		Asset:   asset,
 		Index:   index,
-		Balance: &account_balance_homomorphic.BalanceHomomorphic{nil, nil},
+		Balance: 0,
 	}
 
 	return acc, nil

@@ -209,15 +209,6 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
-			for k, v := range dataStorage.Regs.HashMap.Committed {
-				if list := this.accountsSubscriptions[k]; list != nil {
-
-					this.send(api_types.SUBSCRIPTION_REGISTRATION, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationRegistrationExtra{
-						this.getElementIndex(v.Element),
-					})
-				}
-			}
-
 		case txsUpdates, ok := <-updateTransactionsCn:
 			if !ok {
 				return

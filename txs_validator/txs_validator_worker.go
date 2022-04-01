@@ -2,11 +2,8 @@ package txs_validator
 
 import (
 	"errors"
-	"fmt"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config"
 	"sync/atomic"
 	"time"
@@ -29,26 +26,6 @@ func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidatedWork) error {
 		base := foundWork.tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 		if !base.VerifySignatureManually(hashForSignature) {
 			return errors.New("Signature Verified failed")
-		}
-
-	case transaction_type.TX_ZETHER:
-		base := foundWork.tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-		//verify signature
-		assetMap := map[string]int{}
-		for payloadIndex, payload := range base.Payloads {
-			if !payload.Proof.Verify(payload.Asset, assetMap[string(payload.Asset)], base.ChainKernelHash, payload.Statement, hashForSignature, payload.BurnValue) {
-				return fmt.Errorf("Proof payload %d failed", payloadIndex)
-			}
-			assetMap[string(payload.Asset)] = assetMap[string(payload.Asset)] + 1
-		}
-
-		for _, payload := range base.Payloads {
-			switch payload.PayloadScript {
-			case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE, transaction_zether_payload_script.SCRIPT_SPEND:
-				if payload.Extra.VerifyExtraSignature(hashForSignature, payload.Statement) == false {
-					return errors.New("Extra signature failed")
-				}
-			}
 		}
 	default:
 		return errors.New("Invalid Tx Version")

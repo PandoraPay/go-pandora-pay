@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/config/globals"
@@ -210,7 +209,7 @@ func (wallet *Wallet) InitForgingWallet() (err error) {
 	}
 
 	for _, addr := range wallet.Addresses {
-		if err = wallet.forging.Wallet.AddWallet(addr.PublicKey, addr.SharedStaked, false, nil, nil, 0); err != nil {
+		if err = wallet.forging.Wallet.AddWallet(addr.PublicKey, addr.SharedStaked, false, nil, 0); err != nil {
 			return
 		}
 	}
@@ -227,16 +226,12 @@ func (wallet *Wallet) InitForgingWallet() (err error) {
 		for _, addr := range wallet.Addresses {
 
 			var acc *account.Account
-			var reg *registration.Registration
 
 			if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
 				return
 			}
-			if reg, err = dataStorage.Regs.GetRegistration(addr.PublicKey); err != nil {
-				return
-			}
 
-			if err = wallet.refreshWalletAccount(acc, reg, chainHeight, addr); err != nil {
+			if err = wallet.refreshWalletAccount(acc, chainHeight, addr); err != nil {
 				return
 			}
 		}

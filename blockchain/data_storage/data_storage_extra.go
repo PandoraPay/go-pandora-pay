@@ -14,7 +14,6 @@ type dataStorageTransitionCollectionsKeys struct {
 
 func (dataStorage *DataStorage) GetListWithoutCollections() (list []*hash_map.HashMap) {
 	return []*hash_map.HashMap{
-		dataStorage.Regs.HashMap,
 		dataStorage.PlainAccs.HashMap,
 		dataStorage.PendingStakes.HashMap,
 		dataStorage.Asts.HashMap,
