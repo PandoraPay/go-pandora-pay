@@ -239,8 +239,8 @@ func (builder *TxsBuilder) initCLI() {
 		if err = json.Unmarshal([]byte(str), extra.Asset); err != nil {
 			return
 		}
-		extra.Asset.PublicKey = helpers.RandomBytes(cryptography.RipemdSize)
-		extra.Asset.Identification = extra.Asset.Ticker + "-" + hex.EncodeToString(extra.Asset.PublicKey[:3])
+		extra.Asset.PublicKeyHash = helpers.RandomBytes(cryptography.PublicKeyHashSize)
+		extra.Asset.Identification = extra.Asset.Ticker + "-" + hex.EncodeToString(extra.Asset.PublicKeyHash[:3])
 
 		if err = extra.Asset.Validate(); err != nil {
 			return

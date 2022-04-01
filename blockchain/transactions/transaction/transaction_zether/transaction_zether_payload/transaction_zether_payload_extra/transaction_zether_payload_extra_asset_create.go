@@ -65,7 +65,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Serialize(w *helpe
 }
 
 func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Deserialize(r *helpers.BufferReader) (err error) {
-	payloadExtra.Asset = asset.NewAsset(helpers.EmptyBytes(cryptography.RipemdSize), 0)
+	payloadExtra.Asset = asset.NewAsset(helpers.EmptyBytes(cryptography.PublicKeyHashSize), 0)
 	return payloadExtra.Asset.Deserialize(r)
 }
 

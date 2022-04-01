@@ -10,7 +10,7 @@ import (
 var BURN_PUBLIC_KEY = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xd, 0xe, 0xa, 0xd}
 
 const (
-	ASSET_LENGTH = cryptography.RipemdSize
+	ASSET_LENGTH = cryptography.PublicKeyHashSize
 )
 
 var (

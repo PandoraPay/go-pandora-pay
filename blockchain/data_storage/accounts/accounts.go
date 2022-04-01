@@ -85,7 +85,7 @@ func (accounts *Accounts) saveAssetsCount(key []byte, sign bool) (uint64, error)
 
 func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []byte) (accounts *Accounts, err error) {
 
-	if AssetId == nil || len(AssetId) != cryptography.RipemdSize {
+	if AssetId == nil || len(AssetId) != cryptography.PublicKeyHashSize {
 		return nil, errors.New("Asset length is invalid")
 	}
 

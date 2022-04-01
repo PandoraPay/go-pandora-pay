@@ -21,7 +21,7 @@ var regexAssetDescription = regexp.MustCompile("[\\w|\\W]+")
 
 type Asset struct {
 	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
-	PublicKey                                    []byte `json:"-" msgpack:"-"` //hashmap key
+	PublicKeyHash                                []byte `json:"-" msgpack:"-"` //hashmap key
 	Index                                        uint64 `json:"-" msgpack:"-"` //hashMap index
 	Version                                      uint64 `json:"version,omitempty" msgpack:"version,omitempty"`
 	CanUpgrade                                   bool   `json:"canUpgrade,omitempty" msgpack:"canUpgrade,omitempty"`                             //upgrade different setting s
@@ -48,8 +48,8 @@ func (asset *Asset) IsDeletable() bool {
 }
 
 func (asset *Asset) SetKey(key []byte) {
-	if !bytes.Equal(key, asset.PublicKey) {
-		asset.PublicKey = key
+	if !bytes.Equal(key, asset.PublicKeyHash) {
+		asset.PublicKeyHash = key
 		asset.setIdentification()
 	}
 }
@@ -90,11 +90,11 @@ func (asset *Asset) Validate() error {
 		return errors.New("Asset description is invalid")
 	}
 
-	if len(asset.PublicKey) != cryptography.RipemdSize {
+	if len(asset.PublicKeyHash) != cryptography.PublicKeyHashSize {
 		return errors.New("Asset Public key is invalid")
 	}
 
-	if !bytes.Equal(asset.PublicKey, config_coins.NATIVE_ASSET_FULL) {
+	if !bytes.Equal(asset.PublicKeyHash, config_coins.NATIVE_ASSET_FULL) {
 
 		if strings.ToUpper(asset.Name) == config_coins.NATIVE_ASSET_NAME {
 			return errors.New("Asset can not contain same name")
@@ -103,7 +103,7 @@ func (asset *Asset) Validate() error {
 			return errors.New("Asset can not contain same ticker")
 		}
 
-		identification := asset.Ticker + "-" + hex.EncodeToString(asset.PublicKey[:3])
+		identification := asset.Ticker + "-" + hex.EncodeToString(asset.PublicKeyHash[:3])
 		if asset.Identification != identification {
 			return fmt.Errorf("Asset identification is not matching %s != %s", asset.Identification, identification)
 		}
@@ -199,10 +199,10 @@ func (asset *Asset) Serialize(w *helpers.BufferWriter) {
 }
 
 func (asset *Asset) setIdentification() {
-	if bytes.Equal(asset.PublicKey, config_coins.NATIVE_ASSET_FULL) {
+	if bytes.Equal(asset.PublicKeyHash, config_coins.NATIVE_ASSET_FULL) {
 		asset.Identification = config_coins.NATIVE_ASSET_IDENTIFICATION
 	} else {
-		asset.Identification = asset.Ticker + "-" + hex.EncodeToString(asset.PublicKey[:3])
+		asset.Identification = asset.Ticker + "-" + hex.EncodeToString(asset.PublicKeyHash[:3])
 	}
 }
 
@@ -265,9 +265,9 @@ func (asset *Asset) Deserialize(r *helpers.BufferReader) (err error) {
 	return
 }
 
-func NewAsset(publicKey []byte, index uint64) *Asset {
+func NewAsset(publicKeyHash []byte, index uint64) *Asset {
 	return &Asset{
-		PublicKey: publicKey,
-		Index:     index,
+		PublicKeyHash: publicKeyHash,
+		Index:         index,
 	}
 }
