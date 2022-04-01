@@ -1,9 +1,20 @@
-# go-pandora-pay
+# WebDollar2
 
-PandoraPay blockchain in go
+WebDollar2 is a fork of PandoraPay in go
 
 The main design pattern that has been taken in consideration is to be **dead-simple**. A source code that is simple is
 bug free and easy to be developed and improved over time.
+
+# Progress
+
+[X] Removing Zether
+[X] Integration of ED25519
+[X] Using PublicKeyHashes instead of PublicKeys
+[X] Removing Address (stakable, spendPublicKey, registration)
+[ ] DPOS contracts
+[ ] DPOS consensus
+[ ] WebDollar Address Format
+[ ] Multi Transfer
 
 ### DOCS
 
