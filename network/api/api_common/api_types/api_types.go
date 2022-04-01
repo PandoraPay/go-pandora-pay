@@ -36,10 +36,6 @@ type APISubscriptionNotificationPlainAccExtra struct {
 	Index uint64 `json:"index" msgpack:"index"`
 }
 
-type APISubscriptionNotificationRegistrationExtra struct {
-	Index uint64 `json:"index" msgpack:"index"`
-}
-
 type APISubscriptionNotificationAssetExtra struct {
 	Index uint64 `json:"index" msgpack:"index"`
 }

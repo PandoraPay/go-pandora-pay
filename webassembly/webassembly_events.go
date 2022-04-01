@@ -9,7 +9,6 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
@@ -116,15 +115,6 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					object = ast
 
 					extra = &api_types.APISubscriptionNotificationAssetExtra{}
-				case api_types.SUBSCRIPTION_REGISTRATION:
-					reg := registration.NewRegistration(data.Key, 0)
-					if data.Data != nil {
-						if err = reg.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
-							continue
-						}
-					}
-					object = reg
-					extra = &api_types.APISubscriptionNotificationRegistrationExtra{}
 				case api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
 					object = data.Data
 					extra = &api_types.APISubscriptionNotificationAccountTxExtra{}

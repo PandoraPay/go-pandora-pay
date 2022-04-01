@@ -322,35 +322,6 @@ func deriveSharedStakedWalletAddress(this js.Value, args []js.Value) interface{}
 	})
 }
 
-func tryDecryptBalance(this js.Value, args []js.Value) interface{} {
-	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-
-		if err := app.Wallet.Encryption.CheckPassword(args[0].String(), false); err != nil {
-			return false, err
-		}
-
-		parameters := &struct {
-			PublicKey  []byte `json:"publicKey"`
-			Asset      []byte `json:"asset"`
-			Balance    []byte `json:"balance"`
-			MatchValue uint64 `json:"matchValue"`
-		}{}
-
-		if err := webassembly_utils.UnmarshalBytes(args[1], parameters); err != nil {
-			return nil, err
-		}
-
-		decrypted, err := app.Wallet.TryDecryptBalanceByPublicKey(parameters.PublicKey, parameters.Balance, true, parameters.MatchValue)
-		if err != nil {
-			return nil, err
-		}
-
-		return webassembly_utils.ConvertJSONBytes(struct {
-			Decrypted bool `json:"decrypted"`
-		}{decrypted})
-	})
-}
-
 func getPrivateKeysWalletAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 

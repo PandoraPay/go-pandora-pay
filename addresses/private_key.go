@@ -16,12 +16,12 @@ func (pk *PrivateKey) GeneratePublicKey() []byte {
 	return pk.Key[32:]
 }
 
-func (pk *PrivateKey) GenerateAddress(staked bool, spendPublicKey []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+func (pk *PrivateKey) GenerateAddress(paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	publicKey := pk.GeneratePublicKey()
 
 	version := SIMPLE_PUBLIC_KEY
 
-	return NewAddr(config.NETWORK_SELECTED, version, publicKey, staked, spendPublicKey, paymentID, paymentAmount, paymentAsset)
+	return NewAddr(config.NETWORK_SELECTED, version, publicKey, paymentID, paymentAmount, paymentAsset)
 }
 
 //make sure message is a hash to avoid leaking any parts of the private key

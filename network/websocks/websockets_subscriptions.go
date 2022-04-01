@@ -96,7 +96,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 
 func (this *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.SubscriptionType) (subsMap map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification) {
 	switch subscriptionType {
-	case api_types.SUBSCRIPTION_ACCOUNT, api_types.SUBSCRIPTION_PLAIN_ACCOUNT, api_types.SUBSCRIPTION_REGISTRATION:
+	case api_types.SUBSCRIPTION_ACCOUNT, api_types.SUBSCRIPTION_PLAIN_ACCOUNT:
 		subsMap = this.accountsSubscriptions
 	case api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
 		subsMap = this.accountsTransactionsSubscriptions

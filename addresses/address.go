@@ -12,28 +12,26 @@ import (
 )
 
 type Address struct {
-	Network        uint64         `json:"network" msgpack:"network"`
-	Version        AddressVersion `json:"version" msgpack:"version"`
-	PublicKey      []byte         `json:"publicKey" msgpack:"publicKey"`
-	Staked         bool           `json:"staked" msgpack:"staked"`
-	SpendPublicKey []byte         `json:"spendPublicKey" msgpack:"spendPublicKey"`
-	PaymentID      []byte         `json:"paymentId" msgpack:"paymentId"`         // payment id
-	PaymentAmount  uint64         `json:"paymentAmount" msgpack:"paymentAmount"` // amount to be paid
-	PaymentAsset   []byte         `json:"paymentAsset" msgpack:"paymentAsset"`
+	Network       uint64         `json:"network" msgpack:"network"`
+	Version       AddressVersion `json:"version" msgpack:"version"`
+	PublicKey     []byte         `json:"publicKey" msgpack:"publicKey"`
+	PaymentID     []byte         `json:"paymentId" msgpack:"paymentId"`         // payment id
+	PaymentAmount uint64         `json:"paymentAmount" msgpack:"paymentAmount"` // amount to be paid
+	PaymentAsset  []byte         `json:"paymentAsset" msgpack:"paymentAsset"`
 }
 
-func NewAddr(network uint64, version AddressVersion, publicKey []byte, staked bool, spendPublicKey []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+func NewAddr(network uint64, version AddressVersion, publicKey []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	if len(paymentID) != 8 && len(paymentID) != 0 {
 		return nil, errors.New("Invalid PaymentID. It must be an 8 byte")
 	}
 	if len(paymentAsset) != 0 && len(paymentAsset) != 20 {
 		return nil, errors.New("Invalid PaymentAsset size")
 	}
-	return &Address{network, version, publicKey, staked, spendPublicKey, paymentID, paymentAmount, paymentAsset}, nil
+	return &Address{network, version, publicKey, paymentID, paymentAmount, paymentAsset}, nil
 }
 
-func CreateAddr(publicKey []byte, staked bool, spendPublicKey []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
-	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY, publicKey, staked, spendPublicKey, paymentID, paymentAmount, paymentAsset)
+func CreateAddr(publicKey []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY, publicKey, paymentID, paymentAmount, paymentAsset)
 }
 
 func (a *Address) EncodeAddr() string {
@@ -60,10 +58,6 @@ func (a *Address) EncodeAddr() string {
 	writer.Write(a.PublicKey)
 
 	writer.WriteUvarint(a.IntegrationBytes())
-
-	if a.IsIntegratedSpendPublicKey() {
-		writer.Write(a.SpendPublicKey)
-	}
 
 	if a.IsIntegratedPaymentID() {
 		writer.Write(a.PaymentID)
@@ -144,24 +138,17 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, err
 	}
 
-	addr.Staked = integrationBytes&1 != 0
-
-	if integrationBytes&(1<<1) != 0 {
-		if addr.SpendPublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
-			return nil, err
-		}
-	}
-	if integrationBytes&(1<<1) != 0 {
+	if integrationBytes&1 != 0 {
 		if addr.PaymentID, err = reader.ReadBytes(8); err != nil {
 			return nil, err
 		}
 	}
-	if integrationBytes&(1<<2) != 0 {
+	if integrationBytes&(1<<1) != 0 {
 		if addr.PaymentAmount, err = reader.ReadUvarint(); err != nil {
 			return nil, err
 		}
 	}
-	if integrationBytes&(1<<3) != 0 {
+	if integrationBytes&(1<<2) != 0 {
 		if addr.PaymentAsset, err = reader.ReadBytes(config_coins.ASSET_LENGTH); err != nil {
 			return nil, err
 		}
@@ -174,32 +161,19 @@ func (a *Address) IntegrationBytes() (out uint64) {
 
 	out = 0
 
-	if a.Staked {
+	if len(a.PaymentID) > 0 {
 		out |= 1
 	}
 
-	if len(a.SpendPublicKey) > 0 {
+	if a.PaymentAmount > 0 {
 		out |= 1 << 1
 	}
 
-	if len(a.PaymentID) > 0 {
+	if len(a.PaymentAsset) > 0 {
 		out |= 1 << 2
 	}
 
-	if a.PaymentAmount > 0 {
-		out |= 1 << 3
-	}
-
-	if len(a.PaymentAsset) > 0 {
-		out |= 1 << 4
-	}
-
 	return
-}
-
-// if address contains a paymentId
-func (a *Address) IsIntegratedSpendPublicKey() bool {
-	return len(a.SpendPublicKey) > 0
 }
 
 // if address contains amount

@@ -41,7 +41,7 @@ func createAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		addr, err := addresses.CreateAddr(parameters.PublicKey, false, nil, parameters.Registration, parameters.PaymentID, parameters.PaymentAmount, parameters.PaymentAsset)
+		addr, err := addresses.CreateAddr(parameters.PublicKey, parameters.PaymentID, parameters.PaymentAmount, parameters.PaymentAsset)
 		if err != nil {
 			return nil, err
 		}
@@ -64,7 +64,7 @@ func generateNewAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		addr, err := priv.GenerateAddress(parameters.Staked, parameters.SpendPublicKey, parameters.Registration, parameters.PaymentID, parameters.PaymentAmount, parameters.PaymentAsset)
+		addr, err := priv.GenerateAddress(parameters.PaymentID, parameters.PaymentAmount, parameters.PaymentAsset)
 
 		if err != nil {
 			return nil, err
@@ -96,7 +96,7 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		addr, err := priv.GenerateAddress(parameters.Staked, parameters.SpendPublicKey, parameters.Registration, parameters.PaymentID, parameters.PaymentAmount, parameters.PaymentAsset)
+		addr, err := priv.GenerateAddress(parameters.PaymentID, parameters.PaymentAmount, parameters.PaymentAsset)
 
 		if err != nil {
 			return nil, err

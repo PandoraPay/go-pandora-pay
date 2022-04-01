@@ -11,7 +11,6 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/config/globals"
-	"pandora-pay/cryptography"
 	"pandora-pay/wallet/wallet_address"
 	"strconv"
 )
@@ -141,7 +140,7 @@ func (wallet *Wallet) AddSharedStakedAddress(addr *wallet_address.WalletAddress,
 		return errors.New("DELEGATES_MAXIMUM exceeded")
 	}
 
-	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, addr.PublicKey, addr.Staked, addr.SpendPublicKey, nil, 0, nil)
+	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, addr.PublicKey, nil, 0, nil)
 	if err != nil {
 		return
 	}
@@ -184,17 +183,9 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spe
 		addr.SpendPublicKey = addr.SpendPrivateKey.GeneratePublicKey()
 	}
 
-	var spendPublicKey []byte
-	if spendRequired {
-		if len(addr.SpendPublicKey) != cryptography.PublicKeySize {
-			return errors.New("Spend Public Key is missing")
-		}
-		spendPublicKey = addr.SpendPublicKey
-	}
-
 	var addr1 *addresses.Address
 
-	if addr1, err = addr.PrivateKey.GenerateAddress(staked, spendPublicKey, nil, 0, nil); err != nil {
+	if addr1, err = addr.PrivateKey.GenerateAddress(nil, 0, nil); err != nil {
 		return
 	}
 
