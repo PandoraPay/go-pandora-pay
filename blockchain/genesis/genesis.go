@@ -8,6 +8,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
@@ -18,8 +19,10 @@ import (
 )
 
 type GenesisDataAirDropType struct {
-	Address string `json:"address" msgpack:"address"`
-	Amount  uint64 `json:"amount" msgpack:"amount"`
+	Address                 string `json:"address" msgpack:"address"`
+	Amount                  uint64 `json:"amount" msgpack:"amount"`
+	DelegatedStakePublicKey []byte `json:"delegatedPublicKey" msgpack:"delegatedPublicKey"`
+	DelegatedStakeFee       uint64 `json:"delegatedStakeFee" msgpack:"delegatedStakeFee"`
 }
 
 type GenesisDataType struct {
@@ -109,8 +112,10 @@ func createNewGenesis(v []string) (err error) {
 		}
 
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			Address: string(data), //registered address
-			Amount:  amount,
+			string(data), //registered address
+			amount,
+			nil,
+			0,
 		})
 
 	}
@@ -125,34 +130,25 @@ func createNewGenesis(v []string) (err error) {
 		}
 
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			Address: addr.EncodeAddr(),
-			Amount:  0,
+			addr.EncodeAddr(),
+			config_coins.ConvertToUnitsUint64Forced(100),
+			nil,
+			0,
 		})
 	}
 
 	//let's create 1000 zero wallets
-	for i := 0; i < 5000; i++ {
+	for i := 0; i < 1000; i++ {
 		priv := addresses.GenerateNewPrivateKey()
 		if addr, err = priv.GenerateAddress(nil, 0, nil); err != nil {
 			return
 		}
 
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			Address: addr.EncodeAddr(),
-			Amount:  0,
-		})
-	}
-
-	//let's create 1000 zero wallets
-	for i := 0; i < 5000; i++ {
-		priv := addresses.GenerateNewPrivateKey()
-		if addr, err = priv.GenerateAddress(nil, 0, nil); err != nil {
-			return
-		}
-
-		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			Address: addr.EncodeAddr(),
-			Amount:  0,
+			addr.EncodeAddr(),
+			config_coins.ConvertToUnitsUint64Forced(100),
+			helpers.RandomBytes(cryptography.PublicKeySize),
+			0,
 		})
 	}
 

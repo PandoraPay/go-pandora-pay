@@ -3,6 +3,7 @@ package wallet_address
 import (
 	"errors"
 	"pandora-pay/addresses"
+	"pandora-pay/cryptography/derivation"
 )
 
 type WalletAddress struct {
@@ -19,15 +20,35 @@ type WalletAddress struct {
 	AddressEncoded string                     `json:"addressEncoded" msgpack:"addressEncoded"`
 }
 
-func (addr *WalletAddress) DeriveSharedStaked() (*WalletAddressSharedStaked, error) {
+func (addr *WalletAddress) DeriveSharedStaked(nonce uint32) (*WalletAddressSharedStaked, error) {
 
 	if addr.PrivateKey == nil {
 		return nil, errors.New("Private Key is missing")
 	}
 
+	secretKey, err := derivation.NewMasterKey(addr.SecretKey)
+	if err != nil {
+		return nil, err
+	}
+
+	firstSecretKey, err := secretKey.Derive(1)
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := firstSecretKey.Derive(nonce)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey, err := key.PublicKey()
+	if err != nil {
+		return nil, err
+	}
+
 	return &WalletAddressSharedStaked{
-		PrivateKey: addr.PrivateKey,
-		PublicKey:  addr.PublicKey,
+		PrivateKey: &addresses.PrivateKey{key.Key},
+		PublicKey:  publicKey,
 	}, nil
 
 }

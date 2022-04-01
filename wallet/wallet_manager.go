@@ -5,13 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/tyler-smith/go-bip32"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/config"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
+	"pandora-pay/cryptography/derivation"
 	"pandora-pay/wallet/wallet_address"
 	"strconv"
 )
@@ -39,14 +39,19 @@ func (wallet *Wallet) GetFirstStakedAddress(lock bool) (*wallet_address.WalletAd
 	return wallet.Addresses[0].Clone(), nil
 }
 
-func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, error) {
+func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, []byte, error) {
 
 	addr, err := wallet.GetFirstStakedAddress(true)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
-	return addr.AddressEncoded, nil
+	sharedStake, err := addr.DeriveSharedStaked(0)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return addr.AddressEncoded, sharedStake.PublicKey, nil
 }
 
 func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string, lock bool) (*wallet_address.WalletAddress, error) {
@@ -79,12 +84,12 @@ func (wallet *Wallet) GetWalletAddressByPublicKeyHash(publicKeyHash []byte, lock
 
 func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte) (*wallet_address.WalletAddress, error) {
 
-	secretChild, err := bip32.Deserialize(secretKey)
+	secretChild, err := derivation.NewMasterKey(secretKey)
 	if err != nil {
 		return nil, err
 	}
 
-	privKey, err := secretChild.NewChildKey(0)
+	privKey, err := secretChild.Derive(0)
 	if err != nil {
 		return nil, err
 	}
@@ -221,27 +226,24 @@ func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte,
 		return nil, nil, errors.New("Wallet was not loaded!")
 	}
 
-	masterKey, err := bip32.NewMasterKey(wallet.Seed)
+	masterKey, err := derivation.NewMasterKey(wallet.Seed)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	secret, err := masterKey.NewChildKey(seedIndex)
+	secret, err := masterKey.Derive(seedIndex)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	key2, err := secret.NewChildKey(0)
+	privateKey, err := secret.Derive(0)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	secretSerialized, err := secret.Serialize()
-	if err != nil {
-		return nil, nil, err
-	}
+	seed := secret.RawSeed()
 
-	return secretSerialized, key2.Key, nil
+	return seed[:], privateKey.Key, nil
 }
 
 func (wallet *Wallet) AddNewAddress(lock bool, name string, save bool) (*wallet_address.WalletAddress, error) {

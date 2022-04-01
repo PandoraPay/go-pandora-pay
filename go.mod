@@ -11,7 +11,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tevino/abool v1.2.0
 	github.com/tidwall/buntdb v1.2.3
-	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	go.etcd.io/bbolt v1.3.5
