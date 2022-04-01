@@ -121,7 +121,7 @@ func addNewWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		adr, err := app.Wallet.AddNewAddress(false, args[1].String(), args[2].Bool(), args[3].Bool(), true)
+		adr, err := app.Wallet.AddNewAddress(false, args[1].String(), true)
 		if err != nil {
 			return nil, err
 		}
@@ -170,7 +170,7 @@ func importWalletSecretKey(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
-		adr, err := app.Wallet.ImportSecretKey(args[2].String(), key, args[3].Bool(), args[4].Bool())
+		adr, err := app.Wallet.ImportSecretKey(args[2].String(), key)
 
 		if err != nil {
 			return nil, err
@@ -338,13 +338,12 @@ func getPrivateKeysWalletAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		privateKey, spendPrivateKey, previousValue := app.Wallet.GetPrivateKeys(parameters.PublicKey, parameters.Asset)
+		privateKey, previousValue := app.Wallet.GetPrivateKeys(parameters.PublicKey, parameters.Asset)
 
 		return webassembly_utils.ConvertJSONBytes(struct {
-			PrivateKey      []byte `json:"privateKey"`
-			SpendPrivateKey []byte `json:"spendPrivateKey"`
-			PreviousValue   uint64 `json:"previousValue"`
-		}{privateKey, spendPrivateKey, previousValue})
+			PrivateKey    []byte `json:"privateKey"`
+			PreviousValue uint64 `json:"previousValue"`
+		}{privateKey, previousValue})
 
 	})
 }

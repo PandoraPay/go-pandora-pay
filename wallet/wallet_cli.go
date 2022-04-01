@@ -23,10 +23,6 @@ import (
 
 func (wallet *Wallet) exportSharedStakedAddress(addr *wallet_address.WalletAddress, path string, print bool) (err error) {
 
-	if !addr.Staked {
-		return errors.New("Address is not Staked")
-	}
-
 	if print {
 		gui.GUI.OutputWrite("Address:")
 		gui.GUI.OutputWrite("   Encoded", addr.AddressEncoded)
@@ -335,10 +331,8 @@ func (wallet *Wallet) initWalletCLI() {
 	cliCreateNewAddress := func(cmd string, ctx context.Context) (err error) {
 
 		name := gui.GUI.OutputReadFilename("Name of your new address", "")
-		staked := gui.GUI.OutputReadBool("Staked address ? y/n. Leave empty for n", true, false)
-		spendRequired := gui.GUI.OutputReadBool("Spend Key required ? y/n. Leave empty for n", true, false)
 
-		if _, err = wallet.AddNewAddress(true, name, staked, spendRequired, true); err != nil {
+		if _, err = wallet.AddNewAddress(true, name, true); err != nil {
 			return
 		}
 		return wallet.CliListAddresses(cmd, ctx)
@@ -453,11 +447,9 @@ func (wallet *Wallet) initWalletCLI() {
 		})
 
 		name := gui.GUI.OutputReadString("Write Name of the newly imported address")
-		staked := gui.GUI.OutputReadBool("Staked address ? y/n. Leave empty for n", true, false)
-		spendRequired := gui.GUI.OutputReadBool("Spend Key required ? y/n. Leave empty for n", true, false)
 
 		var adr *wallet_address.WalletAddress
-		if adr, err = wallet.ImportSecretKey(name, secretKey, staked, spendRequired); err != nil {
+		if adr, err = wallet.ImportSecretKey(name, secretKey); err != nil {
 			return
 		}
 

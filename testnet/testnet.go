@@ -133,7 +133,7 @@ func (testnet *Testnet) run() {
 
 	for i := uint64(0); i < 10; i++ {
 		if uint64(testnet.wallet.GetAddressesCount()) <= i+1 {
-			if _, err := testnet.wallet.AddNewAddress(true, "Testnet wallet", false, false, true); err != nil {
+			if _, err := testnet.wallet.AddNewAddress(true, "Testnet wallet", true); err != nil {
 				return
 			}
 		}
