@@ -9,20 +9,17 @@ import (
 	"pandora-pay/blockchain/data_storage/pending_stakes_list/pending_stakes"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
-	"pandora-pay/config/config_asset_fee"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
 
 type DataStorage struct {
-	DBTx                       store_db_interface.StoreDBTransactionInterface
-	PlainAccs                  *plain_accounts.PlainAccounts
-	AccsCollection             *accounts.AccountsCollection
-	PendingStakes              *pending_stakes_list.PendingStakesList
-	Asts                       *assets.Assets
-	AstsFeeLiquidityCollection *assets.AssetsFeeLiquidityCollection
+	DBTx           store_db_interface.StoreDBTransactionInterface
+	PlainAccs      *plain_accounts.PlainAccounts
+	AccsCollection *accounts.AccountsCollection
+	PendingStakes  *pending_stakes_list.PendingStakesList
+	Asts           *assets.Assets
 }
 
 func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte) (*accounts.Accounts, *account.Account, error) {
@@ -148,41 +145,10 @@ func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
 }
 
 func (dataStorage *DataStorage) SubtractUnclaimed(plainAcc *plain_account.PlainAccount, amount, blockHeight uint64) (err error) {
-
 	if err = plainAcc.AddUnclaimed(false, amount); err != nil {
 		return
 	}
-
-	if plainAcc.AssetFeeLiquidities.HasAssetFeeLiquidities() && plainAcc.Unclaimed < config_asset_fee.GetRequiredAssetFee(blockHeight) {
-
-		for _, assetFeeLiquidity := range plainAcc.AssetFeeLiquidities.List {
-			if err = dataStorage.AstsFeeLiquidityCollection.UpdateLiquidity(plainAcc.Key, 0, 0, assetFeeLiquidity.Asset, asset_fee_liquidity.UPDATE_LIQUIDITY_DELETED); err != nil {
-				return
-			}
-		}
-
-		plainAcc.AssetFeeLiquidities.Clear()
-	}
 	return
-}
-
-func (dataStorage *DataStorage) GetWhoHasAssetTopLiquidity(assetId []byte) (*plain_account.PlainAccount, error) {
-	key, err := dataStorage.AstsFeeLiquidityCollection.GetTopLiquidity(assetId)
-	if err != nil || key == nil {
-		return nil, err
-	}
-
-	return dataStorage.PlainAccs.GetPlainAccount(key)
-}
-
-func (dataStorage *DataStorage) GetAssetFeeLiquidityTop(assetId []byte) (*asset_fee_liquidity.AssetFeeLiquidity, error) {
-
-	plainAcc, err := dataStorage.GetWhoHasAssetTopLiquidity(assetId)
-	if err != nil || plainAcc == nil {
-		return nil, err
-	}
-
-	return plainAcc.AssetFeeLiquidities.GetLiquidity(assetId), nil
 }
 
 func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *DataStorage) {
@@ -193,7 +159,6 @@ func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *D
 		accounts.NewAccountsCollection(dbTx),
 		pending_stakes_list.NewPendingStakesList(dbTx),
 		assets.NewAssets(dbTx),
-		assets.NewAssetsFeeLiquidityCollection(dbTx),
 	}
 
 	return

@@ -26,7 +26,6 @@ func (dataStorage *DataStorage) GetList(computeChangesSize bool) (list []*hash_m
 	list = append(list, dataStorage.AccsCollection.GetAllHashmaps()...)
 
 	if !computeChangesSize {
-		list = append(list, dataStorage.AstsFeeLiquidityCollection.GetAllHashmaps()...)
 	}
 
 	return
@@ -71,7 +70,6 @@ func (dataStorage *DataStorage) SetTx(dbTx store_db_interface.StoreDBTransaction
 		it.SetTx(dbTx)
 	}
 	dataStorage.AccsCollection.SetTx(dbTx)
-	dataStorage.AstsFeeLiquidityCollection.SetTx(dbTx)
 }
 
 func (dataStorage *DataStorage) WriteTransitionalChangesToStore(prefix string) (err error) {
@@ -89,26 +87,13 @@ func (dataStorage *DataStorage) WriteTransitionalChangesToStore(prefix string) (
 	}
 
 	accounts := dataStorage.AccsCollection.GetAllMaps()
-	var hasData, hasData2 bool
+	var hasData bool
 	for _, it := range accounts {
 		if hasData, err = it.WriteTransitionalChangesToStore(prefix); err != nil {
 			return
 		}
 		if hasData {
 			transitionCollectionsKeys.Accounts = append(transitionCollectionsKeys.Accounts, it.Asset)
-		}
-	}
-
-	liquidityMaxHeaps := dataStorage.AstsFeeLiquidityCollection.GetAllMaps()
-	for key, it := range liquidityMaxHeaps {
-		if hasData, err = it.HashMap.WriteTransitionalChangesToStore(prefix); err != nil {
-			return
-		}
-		if hasData2, err = it.DictMap.WriteTransitionalChangesToStore(prefix); err != nil {
-			return
-		}
-		if hasData || hasData2 {
-			transitionCollectionsKeys.AssetsFeeLiquidities = append(transitionCollectionsKeys.AssetsFeeLiquidities, []byte(key))
 		}
 	}
 
@@ -151,19 +136,6 @@ func (dataStorage *DataStorage) ReadTransitionalChangesFromStore(prefix string) 
 		}
 	}
 
-	for _, key := range transitionCollectionsKeys.AssetsFeeLiquidities {
-		maxHeap, err := dataStorage.AstsFeeLiquidityCollection.GetMaxHeap(key)
-		if err != nil {
-			return err
-		}
-		if err := maxHeap.HashMap.ReadTransitionalChangesFromStore(prefix); err != nil {
-			return err
-		}
-		if err := maxHeap.DictMap.ReadTransitionalChangesFromStore(prefix); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 func (dataStorage *DataStorage) DeleteTransitionalChangesFromStore(prefix string) error {
@@ -189,15 +161,6 @@ func (dataStorage *DataStorage) DeleteTransitionalChangesFromStore(prefix string
 			return err
 		}
 		accs.DeleteTransitionalChangesFromStore(prefix)
-	}
-
-	for _, key := range transitionCollectionsKeys.AssetsFeeLiquidities {
-		maxHeap, err := dataStorage.AstsFeeLiquidityCollection.GetMaxHeap(key)
-		if err != nil {
-			return err
-		}
-		maxHeap.HashMap.DeleteTransitionalChangesFromStore(prefix)
-		maxHeap.DictMap.DeleteTransitionalChangesFromStore(prefix)
 	}
 
 	dataStorage.DBTx.Delete("dataStorage:transitionsCollectionsKeys:" + prefix)

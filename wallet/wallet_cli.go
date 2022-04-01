@@ -2,7 +2,6 @@ package wallet
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -138,15 +137,6 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 		if addresses[i].plainAcc != nil {
 
 			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Unclaimed", strconv.FormatFloat(config_coins.ConvertToBase(addresses[i].plainAcc.Unclaimed), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
-
-			if addresses[i].plainAcc.AssetFeeLiquidities.HasAssetFeeLiquidities() {
-
-				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %d", "Liquidities", len(addresses[i].plainAcc.AssetFeeLiquidities.List)))
-				for i, assetFeeLiquidity := range addresses[i].plainAcc.AssetFeeLiquidities.List {
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %20s Rate %d LeadingZeros %d", strconv.Itoa(i), base64.StdEncoding.EncodeToString(assetFeeLiquidity.Asset), assetFeeLiquidity.Rate, assetFeeLiquidity.LeadingZeros))
-				}
-
-			}
 
 		}
 

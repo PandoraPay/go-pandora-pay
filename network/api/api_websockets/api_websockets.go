@@ -82,7 +82,6 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		"account":               handle[api_common.APIAccountRequest, api_common.APIAccountReply](api.apiCommon.GetAccount),
 		"accounts/count":        handle[api_common.APIAccountsCountRequest, api_common.APIAccountsCountReply](api.apiCommon.GetAccountsCount),
 		"asset":                 handle[api_common.APIAssetRequest, api_common.APIAssetReply](api.apiCommon.GetAsset),
-		"asset/fee-liquidity":   handle[api_common.APIAssetFeeLiquidityFeeRequest, api_common.APIAssetFeeLiquidityFeeReply](api.apiCommon.GetAssetFeeLiquidity),
 		"mempool":               handle[api_common.APIMempoolRequest, api_common.APIMempoolReply](api.apiCommon.GetMempool),
 		"mempool/tx-exists":     handle[api_common.APIMempoolExistsRequest, api_common.APIMempoolExistsReply](api.apiCommon.GetMempoolExists),
 		"mempool/new-tx":        handle[api_common.APIMempoolNewTxRequest, api_common.APIMempoolNewTxReply](api.apiCommon.MempoolNewTx),
