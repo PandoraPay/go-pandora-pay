@@ -144,13 +144,6 @@ func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
 	return nil
 }
 
-func (dataStorage *DataStorage) SubtractUnclaimed(plainAcc *plain_account.PlainAccount, amount, blockHeight uint64) (err error) {
-	if err = plainAcc.AddUnclaimed(false, amount); err != nil {
-		return
-	}
-	return
-}
-
 func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *DataStorage) {
 
 	out = &DataStorage{

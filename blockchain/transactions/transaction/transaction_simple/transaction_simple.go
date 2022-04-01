@@ -43,10 +43,6 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 		return
 	}
 
-	if err = dataStorage.SubtractUnclaimed(plainAcc, tx.Fee, blockHeight); err != nil {
-		return errors.New("Not enought Unclaimed funds to substract Tx.Fee")
-	}
-
 	switch tx.TxScript {
 	case SCRIPT_TRANSFER:
 	}
