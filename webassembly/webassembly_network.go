@@ -103,7 +103,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		publicKey, err := request.GetPublicKey(true)
+		publicKey, err := request.GetPublicKeyHash(true)
 		if err != nil {
 			return nil, err
 		}
@@ -273,18 +273,6 @@ func postNetworkMempoolBroadcastTransaction(this js.Value, args []js.Value) inte
 		}
 
 		return true, nil
-	})
-}
-
-func getNetworkFeeLiquidity(this js.Value, args []js.Value) interface{} {
-	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-
-		hash, err := base64.StdEncoding.DecodeString(args[1].String())
-		if err != nil {
-			return nil, err
-		}
-
-		return webassembly_utils.ConvertToJSONBytes(connection.SendJSONAwaitAnswer[api_common.APIAssetFeeLiquidityFeeReply](app.Network.Websockets.GetFirstSocket(), []byte("asset/fee-liquidity"), &api_common.APIAssetFeeLiquidityFeeRequest{uint64(args[0].Int()), hash}, nil, 0))
 	})
 }
 
