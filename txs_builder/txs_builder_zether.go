@@ -39,11 +39,11 @@ func (builder *TxsBuilder) getRandomAccount(accs *accounts.Accounts, regs *regis
 		return nil, nil, nil, errors.New("Error getting any random account")
 	}
 
-	if reg, err = regs.GetRegistration(acc.PublicKey); err != nil {
+	if reg, err = regs.GetRegistration(acc.Key); err != nil {
 		return nil, nil, nil, err
 	}
 
-	if addr, err = addresses.CreateAddr(acc.PublicKey, false, nil, nil, nil, 0, nil); err != nil {
+	if addr, err = addresses.CreateAddr(acc.Key, false, nil, nil, nil, 0, nil); err != nil {
 		return nil, nil, nil, err
 	}
 

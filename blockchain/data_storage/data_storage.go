@@ -222,7 +222,7 @@ func (dataStorage *DataStorage) SubtractUnclaimed(plainAcc *plain_account.PlainA
 	if plainAcc.AssetFeeLiquidities.HasAssetFeeLiquidities() && plainAcc.Unclaimed < config_asset_fee.GetRequiredAssetFee(blockHeight) {
 
 		for _, assetFeeLiquidity := range plainAcc.AssetFeeLiquidities.List {
-			if err = dataStorage.AstsFeeLiquidityCollection.UpdateLiquidity(plainAcc.PublicKey, 0, 0, assetFeeLiquidity.Asset, asset_fee_liquidity.UPDATE_LIQUIDITY_DELETED); err != nil {
+			if err = dataStorage.AstsFeeLiquidityCollection.UpdateLiquidity(plainAcc.Key, 0, 0, assetFeeLiquidity.Asset, asset_fee_liquidity.UPDATE_LIQUIDITY_DELETED); err != nil {
 				return
 			}
 		}

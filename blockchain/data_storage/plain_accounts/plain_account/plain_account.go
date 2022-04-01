@@ -8,7 +8,7 @@ import (
 
 type PlainAccount struct {
 	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
-	PublicKey                                    []byte                                   `json:"-" msgpack:"-"` //hashMap key
+	Key                                          []byte                                   `json:"-" msgpack:"-"` //hashMap key
 	Index                                        uint64                                   `json:"-" msgpack:"-"` //hashMap index
 	Nonce                                        uint64                                   `json:"nonce" msgpack:"nonce"`
 	Unclaimed                                    uint64                                   `json:"unclaimed" msgpack:"unclaimed"`
@@ -23,7 +23,7 @@ func (plainAccount *PlainAccount) IsDeletable() bool {
 }
 
 func (plainAccount *PlainAccount) SetKey(key []byte) {
-	plainAccount.PublicKey = key
+	plainAccount.Key = key
 }
 
 func (plainAccount *PlainAccount) SetIndex(value uint64) {
@@ -70,9 +70,9 @@ func (plainAccount *PlainAccount) Deserialize(r *helpers.BufferReader) (err erro
 	return
 }
 
-func NewPlainAccount(publicKey []byte, index uint64) *PlainAccount {
+func NewPlainAccount(key []byte, index uint64) *PlainAccount {
 	return &PlainAccount{
-		PublicKey:           publicKey,
+		Key:                 key,
 		Index:               index,
 		AssetFeeLiquidities: &asset_fee_liquidity.AssetFeeLiquidities{},
 	}

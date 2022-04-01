@@ -10,7 +10,7 @@ import (
 
 type Account struct {
 	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
-	PublicKey                                    []byte                                          `json:"-" msgpack:"-"` //hashmap key
+	Key                                          []byte                                          `json:"-" msgpack:"-"` //hashmap key
 	Asset                                        []byte                                          `json:"-" msgpack:"-"` //collection asset
 	Index                                        uint64                                          `json:"-" msgpack:"-"` //hashmap Index
 	Version                                      uint64                                          `json:"version" msgpack:"version"`
@@ -22,7 +22,7 @@ func (account *Account) IsDeletable() bool {
 }
 
 func (account *Account) SetKey(key []byte) {
-	account.PublicKey = key
+	account.Key = key
 }
 
 func (account *Account) SetIndex(value uint64) {
@@ -67,31 +67,31 @@ func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
 	return
 }
 
-func NewAccount(publicKey []byte, index uint64, asset []byte) (*Account, error) {
+func NewAccount(key []byte, index uint64, asset []byte) (*Account, error) {
 
-	balance, err := account_balance_homomorphic.NewBalanceHomomorphicEmptyBalance(publicKey)
+	balance, err := account_balance_homomorphic.NewBalanceHomomorphicEmptyBalance(key)
 	if err != nil {
 		return nil, err
 	}
 
 	acc := &Account{
-		PublicKey: publicKey,
-		Version:   0,
-		Asset:     asset,
-		Index:     index,
-		Balance:   balance,
+		Key:     key,
+		Version: 0,
+		Asset:   asset,
+		Index:   index,
+		Balance: balance,
 	}
 
 	return acc, nil
 }
 
-func NewAccountClear(publicKey []byte, index uint64, asset []byte) (*Account, error) {
+func NewAccountClear(key []byte, index uint64, asset []byte) (*Account, error) {
 	acc := &Account{
-		PublicKey: publicKey,
-		Version:   0,
-		Asset:     asset,
-		Index:     index,
-		Balance:   &account_balance_homomorphic.BalanceHomomorphic{nil, nil},
+		Key:     key,
+		Version: 0,
+		Asset:   asset,
+		Index:   index,
+		Balance: &account_balance_homomorphic.BalanceHomomorphic{nil, nil},
 	}
 
 	return acc, nil
