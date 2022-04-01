@@ -149,7 +149,7 @@ func (worker *ForgingWorkerThread) forge() {
 			if walletAddr.walletAdr.chainHash == nil || bytes.Equal(walletAddr.walletAdr.chainHash, work.BlkComplete.PrevHash) {
 				oldDecryptedStakingBalance := walletAddr.stakingAmount
 				if worker.computeStakingAmount(walletAddr, work) {
-					if !walletsStakedUsed[walletAddr.walletAdr.publicKeyStr] || walletAddr.stakingAmount != oldDecryptedStakingBalance {
+					if !walletsStakedUsed[walletAddr.walletAdr.publicKeyStr] || walletAddr.stakingAmount > oldDecryptedStakingBalance {
 						walletsStaked[walletAddr.walletAdr.publicKeyStr] = walletAddr
 						walletsStakedTimestamp[walletAddr.walletAdr.publicKeyStr] = timestamp
 						delete(walletsStakedUsed, walletAddr.walletAdr.publicKeyStr)
