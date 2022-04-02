@@ -3,7 +3,6 @@ package addresses
 import (
 	"context"
 	"errors"
-	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -29,8 +28,6 @@ func (pk *PrivateKey) GeneratePublicKey() []byte {
 func (pk *PrivateKey) GenerateAddress(staked bool, spendPublicKey []byte, registration bool, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	publicKey := pk.GeneratePublicKey()
 
-	version := SIMPLE_PUBLIC_KEY
-
 	var reg []byte
 	var err error
 
@@ -40,7 +37,7 @@ func (pk *PrivateKey) GenerateAddress(staked bool, spendPublicKey []byte, regist
 		}
 	}
 
-	return NewAddr(config.NETWORK_SELECTED, version, publicKey, staked, spendPublicKey, reg, paymentID, paymentAmount, paymentAsset)
+	return CreateAddr(publicKey, staked, spendPublicKey, reg, paymentID, paymentAmount, paymentAsset)
 }
 
 func (pk *PrivateKey) GetRegistration(staked bool, spendPublicKey []byte) ([]byte, error) {

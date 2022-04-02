@@ -9,7 +9,6 @@ import (
 	"github.com/tyler-smith/go-bip32"
 	"math/rand"
 	"pandora-pay/addresses"
-	"pandora-pay/config"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
@@ -156,7 +155,7 @@ func (wallet *Wallet) AddSharedStakedAddress(addr *wallet_address.WalletAddress,
 		return errors.New("DELEGATES_MAXIMUM exceeded")
 	}
 
-	address, err := addresses.NewAddr(config.NETWORK_SELECTED, addresses.SIMPLE_PUBLIC_KEY, addr.PublicKey, addr.Staked, addr.SpendPublicKey, nil, nil, 0, nil)
+	address, err := addresses.CreateAddr(addr.PublicKey, addr.Staked, addr.SpendPublicKey, nil, nil, 0, nil)
 	if err != nil {
 		return
 	}

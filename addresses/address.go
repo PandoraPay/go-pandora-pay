@@ -23,7 +23,7 @@ type Address struct {
 	PaymentAsset   []byte         `json:"paymentAsset" msgpack:"paymentAsset"`
 }
 
-func NewAddr(network uint64, version AddressVersion, publicKey []byte, staked bool, spendPublicKey []byte, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+func newAddr(network uint64, version AddressVersion, publicKey []byte, staked bool, spendPublicKey []byte, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	if len(publicKey) != cryptography.PublicKeySize {
 		return nil, errors.New("Invalid PublicKey size")
 	}
@@ -43,7 +43,7 @@ func NewAddr(network uint64, version AddressVersion, publicKey []byte, staked bo
 }
 
 func CreateAddr(publicKey []byte, staked bool, spendPublicKey, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
-	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY, publicKey, staked, spendPublicKey, registration, paymentID, paymentAmount, paymentAsset)
+	return newAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY, publicKey, staked, spendPublicKey, registration, paymentID, paymentAmount, paymentAsset)
 }
 
 func (a *Address) EncodeAddr() string {
