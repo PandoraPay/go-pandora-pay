@@ -1,6 +1,7 @@
 package genesis
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"io/ioutil"
@@ -13,6 +14,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/wallet/wallet_address/shared_staked"
 	"runtime"
 	"strings"
 	"time"
@@ -111,8 +113,13 @@ func createNewGenesis(v []string) (err error) {
 			return
 		}
 
+		sharedStakedAddress := &shared_staked.WalletAddressSharedStakedAddressExported{}
+		if err = json.Unmarshal(data, sharedStakedAddress); err != nil {
+			return
+		}
+
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			string(data), //registered address
+			sharedStakedAddress.Address, //registered address
 			amount,
 			nil,
 			0,
@@ -163,7 +170,7 @@ func createNewGenesis(v []string) (err error) {
 	return
 }
 
-func createSimpleGenesis(walletGetFirstAddressForDevnetGenesisAirdrop func() (string, error)) (err error) {
+func createSimpleGenesis(walletGetFirstAddressForDevnetGenesisAirdrop func() (string, *shared_staked.WalletAddressSharedStakedAddressExported, error)) (err error) {
 
 	var file *os.File
 
@@ -174,7 +181,7 @@ func createSimpleGenesis(walletGetFirstAddressForDevnetGenesisAirdrop func() (st
 	GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
 	GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 
-	address, err := walletGetFirstAddressForDevnetGenesisAirdrop()
+	address, _, err := walletGetFirstAddressForDevnetGenesisAirdrop()
 	if err != nil {
 		return
 	}
@@ -202,7 +209,7 @@ func createSimpleGenesis(walletGetFirstAddressForDevnetGenesisAirdrop func() (st
 	return
 }
 
-func GenesisInit(walletGetFirstAddressForDevnetGenesisAirdrop func() (string, error)) (err error) {
+func GenesisInit(walletGetFirstAddressForDevnetGenesisAirdrop func() (string, *shared_staked.WalletAddressSharedStakedAddressExported, error)) (err error) {
 
 	if GenesisData, err = getGenesis(); err != nil {
 		return

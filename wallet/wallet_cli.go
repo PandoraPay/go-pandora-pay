@@ -17,31 +17,39 @@ import (
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/wallet/wallet_address"
+	"pandora-pay/wallet/wallet_address/shared_staked"
 	"strconv"
 )
 
-func (wallet *Wallet) exportSharedStakedAddress(addr *wallet_address.WalletAddress, path string, print bool) (err error) {
+func (wallet *Wallet) exportSharedStakedAddress(addr *wallet_address.WalletAddress, path string, print bool) (*shared_staked.WalletAddressSharedStakedAddressExported, error) {
 
 	if print {
 		gui.GUI.OutputWrite("Address:")
 		gui.GUI.OutputWrite("   Encoded", addr.AddressEncoded)
 	}
 
+	sharedStakedAddress := &shared_staked.WalletAddressSharedStakedAddressExported{addr.AddressRegistrationEncoded}
+
 	if path != "" {
 
-		var f *os.File
-		if f, err = os.Create(path); err != nil {
-			return
+		f, err := os.Create(path)
+		if err != nil {
+			return nil, err
 		}
 
 		defer f.Close()
 
-		if _, err = fmt.Fprint(f, addr.AddressEncoded); err != nil {
-			return err
+		bytes, err := json.Marshal(sharedStakedAddress)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, err = fmt.Fprint(f, string(bytes)); err != nil {
+			return nil, err
 		}
 	}
 
-	return
+	return sharedStakedAddress, nil
 }
 
 func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err error) {
@@ -358,7 +366,8 @@ func (wallet *Wallet) initWalletCLI() {
 
 		path := gui.GUI.OutputReadFilename("Path to export to a file", "staked")
 
-		return wallet.exportSharedStakedAddress(addr, path, true)
+		_, err = wallet.exportSharedStakedAddress(addr, path, true)
+		return err
 
 	}
 
