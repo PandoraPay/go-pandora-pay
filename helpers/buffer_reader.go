@@ -8,7 +8,6 @@ import (
 	"math/big"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/bn256"
 )
 
 type BufferReader struct {
@@ -58,21 +57,6 @@ func (reader *BufferReader) ReadBigInt() (p *big.Int, err error) {
 	}
 
 	return new(big.Int).SetBytes(bufp[:]), nil
-}
-
-func (reader *BufferReader) ReadBN256G1() (p *bn256.G1, err error) {
-
-	var bufp []byte
-	if bufp, err = reader.ReadBytes(33); err != nil {
-		return
-	}
-
-	p = new(bn256.G1)
-	if err = p.DecodeCompressed(bufp[:]); err != nil {
-		return
-	}
-
-	return
 }
 
 func (reader *BufferReader) ReadString(limit uint64) (string, error) {
