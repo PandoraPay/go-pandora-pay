@@ -28,7 +28,12 @@ func (wallet *Wallet) exportSharedStakedAddress(addr *wallet_address.WalletAddre
 		gui.GUI.OutputWrite("   Encoded", addr.AddressEncoded)
 	}
 
-	sharedStakedAddress := &shared_staked.WalletAddressSharedStakedAddressExported{addr.AddressRegistrationEncoded}
+	sharedStaked, err := addr.DeriveSharedStaked(0)
+	if err != nil {
+		return nil, err
+	}
+
+	sharedStakedAddress := &shared_staked.WalletAddressSharedStakedAddressExported{addr.AddressEncoded, sharedStaked.PublicKey}
 
 	if path != "" {
 

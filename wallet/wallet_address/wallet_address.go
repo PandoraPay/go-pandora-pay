@@ -8,20 +8,20 @@ import (
 )
 
 type WalletAddress struct {
-	Version        Version                    `json:"version" msgpack:"version"`
-	Name           string                     `json:"name" msgpack:"name"`
-	SeedIndex      uint32                     `json:"seedIndex" msgpack:"seedIndex"`
-	IsMine         bool                       `json:"isMine" msgpack:"isMine"`
-	SecretKey      []byte                     `json:"secretKey" msgpack:"secretKey"`
-	PrivateKey     *addresses.PrivateKey      `json:"privateKey" msgpack:"privateKey"`
-	PublicKey      []byte                     `json:"publicKey" msgpack:"publicKey"`
-	PublicKeyHash  []byte                     `json:"publicKeyHash" msgpack:"publicKeyHash"`
-	IsSharedStaked bool                       `json:"isSharedStaked,omitempty" msgpack:"isSharedStaked,omitempty"`
-	SharedStaked   *WalletAddressSharedStaked `json:"sharedStaked,omitempty" msgpack:"sharedStaked,omitempty"`
-	AddressEncoded string                     `json:"addressEncoded" msgpack:"addressEncoded"`
+	Version        Version                                  `json:"version" msgpack:"version"`
+	Name           string                                   `json:"name" msgpack:"name"`
+	SeedIndex      uint32                                   `json:"seedIndex" msgpack:"seedIndex"`
+	IsMine         bool                                     `json:"isMine" msgpack:"isMine"`
+	SecretKey      []byte                                   `json:"secretKey" msgpack:"secretKey"`
+	PrivateKey     *addresses.PrivateKey                    `json:"privateKey" msgpack:"privateKey"`
+	PublicKey      []byte                                   `json:"publicKey" msgpack:"publicKey"`
+	PublicKeyHash  []byte                                   `json:"publicKeyHash" msgpack:"publicKeyHash"`
+	IsSharedStaked bool                                     `json:"isSharedStaked,omitempty" msgpack:"isSharedStaked,omitempty"`
+	SharedStaked   *shared_staked.WalletAddressSharedStaked `json:"sharedStaked,omitempty" msgpack:"sharedStaked,omitempty"`
+	AddressEncoded string                                   `json:"addressEncoded" msgpack:"addressEncoded"`
 }
 
-func (addr *WalletAddress) DeriveSharedStaked(nonce uint32) (*WalletAddressSharedStaked, error) {
+func (addr *WalletAddress) DeriveSharedStaked(nonce uint32) (*shared_staked.WalletAddressSharedStaked, error) {
 
 	if addr.PrivateKey == nil {
 		return nil, errors.New("Private Key is missing")
@@ -47,7 +47,7 @@ func (addr *WalletAddress) DeriveSharedStaked(nonce uint32) (*WalletAddressShare
 		return nil, err
 	}
 
-	return &WalletAddressSharedStaked{
+	return &shared_staked.WalletAddressSharedStaked{
 		PrivateKey: &addresses.PrivateKey{key.Key},
 		PublicKey:  publicKey,
 	}, nil

@@ -121,7 +121,7 @@ func createNewGenesis(v []string) (err error) {
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
 			sharedStakedAddress.Address, //registered address
 			amount,
-			nil,
+			sharedStakedAddress.DelegatedPublicKey,
 			0,
 		})
 
@@ -139,7 +139,7 @@ func createNewGenesis(v []string) (err error) {
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
 			addr.EncodeAddr(),
 			config_coins.ConvertToUnitsUint64Forced(100),
-			nil,
+			helpers.RandomBytes(cryptography.PublicKeySize),
 			0,
 		})
 	}

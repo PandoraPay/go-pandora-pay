@@ -312,7 +312,7 @@ func deriveSharedStakedWalletAddress(this js.Value, args []js.Value) interface{}
 			return nil, err
 		}
 
-		sharedStaked, err := addr.DeriveSharedStaked()
+		sharedStaked, err := addr.DeriveSharedStaked(args[2].Number())
 		if err != nil {
 			return nil, err
 		}
