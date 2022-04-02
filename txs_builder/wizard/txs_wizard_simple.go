@@ -13,11 +13,6 @@ import (
 
 func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
-	privateKey, err := addresses.NewPrivateKey(transfer.VinKey)
-	if err != nil {
-		return nil, err
-	}
-
 	dataFinal, err := transfer.Data.getData()
 	if err != nil {
 		return
@@ -69,6 +64,10 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 	statusCallback("Transaction Fee set")
 
 	statusCallback("Transaction Signing...")
+	var privateKey *addresses.PrivateKey
+	if privateKey, err = addresses.NewPrivateKey(transfer.Key); err != nil {
+		return nil, err
+	}
 	if txBase.Vin.Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 		return nil, err
 	}
