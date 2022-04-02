@@ -111,7 +111,13 @@ func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propa
 	txData.Nonce = builder.getNonce(txData.Nonce, sendersWalletAddresses[0].PublicKey, plainAcc.Nonce)
 	statusCallback("Getting Nonce from Mempool")
 
-	if tx, err = wizard.CreateSimpleTx(txData.Nonce, sendersWalletAddresses[0].PrivateKey.Key, chainHeight, txData.Extra, txData.Data, txData.Fee, txData.FeeVersion, false, statusCallback); err != nil {
+	if tx, err = wizard.CreateSimpleTx(&wizard.WizardTxSimpleTransfer{
+		txData.Extra,
+		txData.Data,
+		txData.Fee,
+		txData.Nonce,
+		sendersWalletAddresses[0].PrivateKey.Key,
+	}, false, statusCallback); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Created")
