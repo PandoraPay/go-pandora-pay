@@ -12,8 +12,8 @@ import (
 func TestGenerateNewPrivateKey(t *testing.T) {
 
 	privateKey := GenerateNewPrivateKey()
-	assert.Equal(t, len(privateKey.Key), 32, "Invalid private key length")
-	assert.NotEqual(t, privateKey.Key, helpers.EmptyBytes(32), "Invalid private key is empty")
+	assert.Equal(t, len(privateKey.Key), cryptography.PrivateKeySize, "Invalid private key length")
+	assert.Equal(t, bytes.Equal(privateKey.Key, helpers.EmptyBytes(cryptography.PrivateKeySize)), false, "Invalid private key is empty")
 	assert.Equal(t, bytes.Equal(privateKey.Key, privateKey.GeneratePublicKey()), false)
 
 }
@@ -45,7 +45,7 @@ func TestPrivateKey_GenerateAddress(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, len(address.PublicKey), cryptography.PublicKeySize)
-	assert.NotEqual(t, address.PublicKey, helpers.EmptyBytes(cryptography.PublicKeySize))
+	assert.Equal(t, bytes.Equal(address.PublicKey, helpers.EmptyBytes(cryptography.PublicKeySize)), false)
 	assert.Equal(t, address.PaymentAmount, uint64(20))
 	assert.Equal(t, len(address.PaymentID), 8)
 

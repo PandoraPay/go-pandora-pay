@@ -17,7 +17,7 @@ func Test_VerifySignedMessage(t *testing.T) {
 		address, err := privateKey.GenerateAddress(false, nil, false, nil, 0, nil)
 		assert.Nil(t, err, "Error generating key")
 
-		message := helpers.RandomBytes(32)
+		message := helpers.RandomBytes(cryptography.HashSize)
 		signature, err := privateKey.Sign(message)
 		assert.Nil(t, err, "Error signing")
 
