@@ -6,6 +6,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers/generics"
+	"runtime"
 )
 
 type AddressBalanceDecryptor struct {
@@ -83,8 +84,10 @@ func NewAddressBalanceDecryptor() (*AddressBalanceDecryptor, error) {
 		make(chan *addressBalanceDecryptorWork, 1),
 	}
 
-	if err := addressBalanceDecryptor.loadFromStore(); err != nil {
-		return nil, err
+	if runtime.GOARCH != "wasm" {
+		if err := addressBalanceDecryptor.loadFromStore(); err != nil {
+			return nil, err
+		}
 	}
 
 	for i := range addressBalanceDecryptor.workers {
@@ -95,7 +98,9 @@ func NewAddressBalanceDecryptor() (*AddressBalanceDecryptor, error) {
 		worker.start()
 	}
 
-	go addressBalanceDecryptor.saveToStore()
+	if runtime.GOARCH != "wasm" {
+		go addressBalanceDecryptor.saveToStore()
+	}
 
 	return addressBalanceDecryptor, nil
 }
