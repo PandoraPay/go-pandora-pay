@@ -38,7 +38,7 @@ Options:
   --wallet-encrypt=args                              Encrypt wallet. Argument must be "password,difficulty".
   --wallet-decrypt=password                          Decrypt wallet.
   --wallet-remove-encryption                         Remove wallet encryption.
-  --wallet-export-shared-staked-address=args                Derive and export Staked address. Argument must be "account,nonce,path".
+  --wallet-export-shared-staked-address=args         Derive and export Staked address. Argument must be "account,nonce,path".
   --hcaptcha-site-key=args                           hcaptcha Site key.
   --hcaptcha-secret=args                             hcaptcha Secret.
   --faucet-testnet-enabled=args                      Enable Faucet Testnet. Use "true" to enable it

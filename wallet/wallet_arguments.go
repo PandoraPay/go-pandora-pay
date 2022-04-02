@@ -63,7 +63,7 @@ func (wallet *Wallet) ProcessWalletArguments() (err error) {
 		if addr == nil {
 			return errors.New("Address specified by --wallet-export-shared-staked-address was not found")
 		}
-		if err = wallet.exportSharedStakedAddress(addr, v[2], false); err != nil {
+		if _, err = wallet.exportSharedStakedAddress(addr, v[2], false); err != nil {
 			return
 		}
 

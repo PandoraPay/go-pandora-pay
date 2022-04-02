@@ -56,14 +56,19 @@ func (wallet *Wallet) GetFirstStakedAddress(lock bool) (*wallet_address.WalletAd
 	return wallet.AddNewAddress(true, "", true, true, true)
 }
 
-func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, error) {
+func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, *shared_staked.WalletAddressSharedStakedAddressExported, error) {
 
 	addr, err := wallet.GetFirstStakedAddress(true)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
-	return addr.AddressRegistrationEncoded, nil
+	sharedStakedAddress, err := wallet.exportSharedStakedAddress(addr, "", false)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return addr.AddressRegistrationEncoded, sharedStakedAddress, nil
 }
 
 func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string, lock bool) (*wallet_address.WalletAddress, error) {
@@ -214,7 +219,9 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spe
 	addr.PublicKey = publicKey
 
 	if addr.PrivateKey != nil {
-		addr.SharedStaked = &shared_staked.WalletAddressSharedStaked{addr.PrivateKey, addr.PublicKey}
+		if addr.SharedStaked, err = addr.DeriveSharedStaked(); err != nil {
+			return
+		}
 	}
 
 	if wallet.addressesMap[string(addr.PublicKey)] != nil {
