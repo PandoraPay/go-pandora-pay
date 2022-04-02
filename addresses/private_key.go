@@ -4,7 +4,6 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"errors"
-	"pandora-pay/config"
 	"pandora-pay/cryptography"
 )
 
@@ -23,7 +22,7 @@ func (pk *PrivateKey) GeneratePublicKeyHash() []byte {
 
 func (pk *PrivateKey) GenerateAddress(paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
 	publicKeyHash := pk.GeneratePublicKeyHash()
-	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY_HASH, publicKeyHash, paymentID, paymentAmount, paymentAsset)
+	return CreateAddr(publicKeyHash, paymentID, paymentAmount, paymentAsset)
 }
 
 //make sure message is a hash to avoid leaking any parts of the private key
