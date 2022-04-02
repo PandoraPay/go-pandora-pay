@@ -44,10 +44,9 @@ func (a *Address) EncodeAddr() string {
 	if a == nil {
 		return ""
 	}
-
 	writer := helpers.NewBufferWriter()
 
-	var prefix string
+	var prefix []byte
 	switch a.Network {
 	case config.MAIN_NET_NETWORK_BYTE:
 		prefix = config.MAIN_NET_NETWORK_BYTE_PREFIX
@@ -59,7 +58,7 @@ func (a *Address) EncodeAddr() string {
 		panic("Invalid network")
 	}
 
-	writer.WriteUvarint(uint64(a.Version))
+	writer.WriteByte(byte(a.Version))
 
 	writer.Write(a.PublicKeyHash)
 
@@ -80,29 +79,31 @@ func (a *Address) EncodeAddr() string {
 	buffer := writer.Bytes()
 
 	checksum := cryptography.GetChecksum(buffer)
-	buffer = append(buffer, checksum...)
-	ret := custom_base64.Base64Encoder.EncodeToString(buffer)
 
-	return prefix + ret + "$"
+	final := prefix
+	final = append(final, buffer...)
+	final = append(final, checksum...)
+	final = append(final, byte(255))
+
+	return custom_base64.Base64Encoder.EncodeToString(final)
 }
 func DecodeAddr(input string) (*Address, error) {
 
 	addr := &Address{PublicKeyHash: []byte{}, PaymentID: []byte{}}
 
-	if len(input) < config.NETWORK_BYTE_PREFIX_LENGTH {
-		return nil, errors.New("Invalid Address length")
+	buf, err := custom_base64.Base64Encoder.DecodeString(input)
+	if err != nil {
+		return nil, err
 	}
 
-	prefix := input[0:config.NETWORK_BYTE_PREFIX_LENGTH]
-
-	switch prefix {
-	case config.MAIN_NET_NETWORK_BYTE_PREFIX:
+	prefix := buf[:config.NETWORK_BYTE_PREFIX_LENGTH]
+	if bytes.Equal(prefix, config.MAIN_NET_NETWORK_BYTE_PREFIX) {
 		addr.Network = config.MAIN_NET_NETWORK_BYTE
-	case config.TEST_NET_NETWORK_BYTE_PREFIX:
+	} else if bytes.Equal(prefix, config.TEST_NET_NETWORK_BYTE_PREFIX) {
 		addr.Network = config.TEST_NET_NETWORK_BYTE
-	case config.DEV_NET_NETWORK_BYTE_PREFIX:
+	} else if bytes.Equal(prefix, config.DEV_NET_NETWORK_BYTE_PREFIX) {
 		addr.Network = config.DEV_NET_NETWORK_BYTE
-	default:
+	} else {
 		return nil, errors.New("Invalid Address Network PREFIX!")
 	}
 
@@ -110,23 +111,22 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, errors.New("Address network is invalid")
 	}
 
-	buf, err := custom_base64.Base64Encoder.DecodeString(input[config.NETWORK_BYTE_PREFIX_LENGTH:])
-	if err != nil {
-		return nil, err
+	if buf[len(buf)-1] != 255 {
+		return nil, errors.New("Suffix is not matching")
 	}
 
-	checksum := cryptography.GetChecksum(buf[:len(buf)-cryptography.ChecksumSize])
+	checksum := cryptography.GetChecksum(buf[config.NETWORK_BYTE_PREFIX_LENGTH : len(buf)-cryptography.ChecksumSize-1])
 
-	if !bytes.Equal(checksum, buf[len(buf)-cryptography.ChecksumSize:]) {
+	if !bytes.Equal(checksum, buf[len(buf)-cryptography.ChecksumSize-1:len(buf)-1]) {
 		return nil, errors.New("Invalid Checksum")
 	}
 
-	buf = buf[0 : len(buf)-cryptography.ChecksumSize] // remove the checksum
+	buf = buf[config.NETWORK_BYTE_PREFIX_LENGTH : len(buf)-cryptography.ChecksumSize-1] // remove the checksum
 
 	reader := helpers.NewBufferReader(buf)
 
-	var version uint64
-	if version, err = reader.ReadUvarint(); err != nil {
+	var version byte
+	if version, err = reader.ReadByte(); err != nil {
 		return nil, err
 	}
 	addr.Version = AddressVersion(version)
@@ -161,15 +161,6 @@ func DecodeAddr(input string) (*Address, error) {
 				return nil, err
 			}
 		}
-	}
-
-	var finalByte byte
-	if finalByte, err = reader.ReadByte(); err != nil {
-		return nil, err
-	}
-
-	if finalByte != 255 {
-		return nil, errors.New("Suffix is not matching")
 	}
 
 	return addr, nil

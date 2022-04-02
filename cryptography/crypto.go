@@ -27,7 +27,7 @@ func RIPEMD(b []byte) []byte {
 }
 
 func GetChecksum(b []byte) []byte {
-	return RIPEMD(b)[:ChecksumSize]
+	return SHA256(SHA256(b))[:ChecksumSize]
 }
 
 func GetPublicKeyHash(publicKey []byte) []byte {

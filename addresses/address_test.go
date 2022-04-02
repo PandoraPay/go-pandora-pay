@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
-	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
@@ -26,9 +25,9 @@ func TestAddress_EncodeAddr(t *testing.T) {
 
 	encoded := address.EncodeAddr()
 
-	decoded, err := custom_base64.Base64Encoder.DecodeString(encoded[config.NETWORK_BYTE_PREFIX_LENGTH : len(encoded)-1])
+	decoded, err := custom_base64.Base64Encoder.DecodeString(encoded)
 	assert.NoError(t, err, "Address Decoding raised an error")
-	assert.Equal(t, len(decoded), 1+cryptography.PublicKeyHashSize+1+4, "AddressEncoded length is invalid")
+	assert.Equal(t, len(decoded), 4+cryptography.PublicKeyHashSize+1+4+1, "AddressEncoded length is invalid")
 
 	address, err = privateKey.GenerateAddress(nil, 1235312323551220, nil)
 	assert.NoError(t, err)
@@ -51,6 +50,15 @@ func TestAddress_EncodeAddr(t *testing.T) {
 	assert.NotEqual(t, len(encoded), len(encodedAmountPaymentID))
 	assert.NotEqual(t, encodedAmount, encodedAmountPaymentID)
 	assert.NotEqual(t, encoded, encodedAmountPaymentID)
+
+	for _, addr := range []string{"WEBD$gCIp5P8vx+KPtLfU0X#BY6rtRB5d5oMALL$", "WEBD$gDte9guyT5bj95UqZzBnk1ICnPwNvBnjCv$",
+		"WEBD$gCL22f5C#$Z2xeMuDL$sawfRzo3XjwIDjH$", "WEBD$gAMy1tXQ9ExvzABGVZd9wuLhASqXREXWS3$",
+		"WEBD$gDVhpghJF5fDrhU9Qi9Ai@H2CtGzxyzeRf$", "WEBD$gCSW90oM1+36FDh55YsP2FKSKHPB0IgwUH$",
+		"WEBD$gCH6mHEUA$y7qkQC4N9RUSQzEiRW4uBE5$$", "WEBD$gD93dVbmy1bYJ0zbG@h0NxghzjaomaANaz$",
+		"WEBD$gDw+VL6mUuIe3I4krb#v9B14X9rQnWxzPr$"} {
+		_, err = DecodeAddr(addr)
+		assert.Nil(t, err)
+	}
 
 }
 

@@ -17,7 +17,7 @@ Under development. Not working right now.
 - [X] Creating Testnet Genesis
 - [ ] DPOS contracts
 - [ ] DPOS consensus
-- [ ] WebDollar Address Format
+- [X] WebDollar Address Format
 - [ ] Multi Transfer
 - [ ] Web Wallet
 
