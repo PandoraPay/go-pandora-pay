@@ -2,10 +2,10 @@ package addresses
 
 import (
 	"crypto/ed25519"
+	"crypto/rand"
 	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
 )
 
 type PrivateKey struct {
@@ -22,7 +22,7 @@ func (pk *PrivateKey) GeneratePublicKeyHash() []byte {
 }
 
 func (pk *PrivateKey) GenerateAddress(paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
-	publicKey := pk.GeneratePublicKey()
+	publicKey := pk.GeneratePublicKeyHash()
 	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY_HASH, publicKey, paymentID, paymentAmount, paymentAsset)
 }
 
@@ -41,7 +41,11 @@ func (pk *PrivateKey) Decrypt(message []byte) ([]byte, error) {
 }
 
 func GenerateNewPrivateKey() *PrivateKey {
-	privateKey := helpers.RandomBytes(cryptography.PrivateKeySize)
+	var err error
+	var privateKey []byte
+	for _, privateKey, err = ed25519.GenerateKey(rand.Reader); err != nil; {
+		continue
+	}
 	return &PrivateKey{Key: privateKey}
 }
 

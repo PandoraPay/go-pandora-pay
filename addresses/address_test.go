@@ -28,7 +28,7 @@ func TestAddress_EncodeAddr(t *testing.T) {
 
 	decoded, err := custom_base64.Base64Encoder.DecodeString(encoded[config.NETWORK_BYTE_PREFIX_LENGTH:])
 	assert.NoError(t, err, "Address Decoding raised an error")
-	assert.Equal(t, len(decoded), 1+cryptography.PublicKeySize+1+4, "AddressEncoded length is invalid")
+	assert.Equal(t, len(decoded), 1+cryptography.PublicKeyHashSize+1+4, "AddressEncoded length is invalid")
 
 	address, err = privateKey.GenerateAddress(helpers.EmptyBytes(0), 20, helpers.EmptyBytes(0))
 	assert.NoError(t, err)
@@ -38,12 +38,11 @@ func TestAddress_EncodeAddr(t *testing.T) {
 	assert.Equal(t, address.PaymentAmount, uint64(20))
 
 	encodedAmount := address.EncodeAddr()
-	assert.NotEqual(t, len(encoded), len(encodedAmount), "Encoded Amounts are invalid")
 	assert.NotEqual(t, encoded, encodedAmount, "Encoded Amounts are invalid")
 
 	address, err = privateKey.GenerateAddress(helpers.EmptyBytes(8), 20, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, len(address.PublicKeyHash), cryptography.PublicKeySize)
+	assert.Equal(t, len(address.PublicKeyHash), cryptography.PublicKeyHashSize)
 	assert.Equal(t, len(address.PaymentID), 8)
 	assert.Equal(t, address.PaymentAmount, uint64(20))
 
