@@ -35,15 +35,15 @@ const (
 
 const (
 	MAIN_NET_NETWORK_BYTE           uint64 = 0
-	MAIN_NET_NETWORK_BYTE_PREFIX           = "PANDORA" // must have 7 characters
-	MAIN_NET_NETWORK_NAME                  = "MAIN"    // must have 7 characters
+	MAIN_NET_NETWORK_BYTE_PREFIX           = "WEBD$" // must have 7 characters
+	MAIN_NET_NETWORK_NAME                  = "MAIN"  // must have 7 characters
 	TEST_NET_NETWORK_BYTE           uint64 = 1033
-	TEST_NET_NETWORK_BYTE_PREFIX           = "PANTEST" // must have 7 characters
-	TEST_NET_NETWORK_NAME                  = "TEST"    // must have 7 characters
+	TEST_NET_NETWORK_BYTE_PREFIX           = "webdT" // must have 7 characters
+	TEST_NET_NETWORK_NAME                  = "TEST"  // must have 7 characters
 	DEV_NET_NETWORK_BYTE            uint64 = 4255
-	DEV_NET_NETWORK_BYTE_PREFIX            = "PANDDEV" // must have 7 characters
-	DEV_NET_NETWORK_NAME                   = "DEV"     // must have 7 characters
-	NETWORK_BYTE_PREFIX_LENGTH             = 7
+	DEV_NET_NETWORK_BYTE_PREFIX            = "webdD" // must have 7 characters
+	DEV_NET_NETWORK_NAME                   = "DEV"   // must have 7 characters
+	NETWORK_BYTE_PREFIX_LENGTH             = 5
 	NETWORK_TIMESTAMP_DRIFT_MAX     uint64 = 10
 	NETWORK_TIMESTAMP_DRIFT_MAX_INT int64  = 10
 )

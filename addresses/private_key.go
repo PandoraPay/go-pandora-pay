@@ -22,8 +22,8 @@ func (pk *PrivateKey) GeneratePublicKeyHash() []byte {
 }
 
 func (pk *PrivateKey) GenerateAddress(paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
-	publicKey := pk.GeneratePublicKeyHash()
-	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY_HASH, publicKey, paymentID, paymentAmount, paymentAsset)
+	publicKeyHash := pk.GeneratePublicKeyHash()
+	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY_HASH, publicKeyHash, paymentID, paymentAmount, paymentAsset)
 }
 
 //make sure message is a hash to avoid leaking any parts of the private key

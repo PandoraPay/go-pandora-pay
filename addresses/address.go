@@ -33,7 +33,11 @@ func NewAddr(network uint64, version AddressVersion, publicKeyHash []byte, payme
 }
 
 func CreateAddr(publicKeyHash []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
-	return NewAddr(config.NETWORK_SELECTED, SIMPLE_PUBLIC_KEY_HASH, publicKeyHash, paymentID, paymentAmount, paymentAsset)
+	version := SIMPLE_PUBLIC_KEY_HASH
+	if paymentAmount > 0 || len(paymentID) > 0 || len(paymentAsset) > 0 {
+		version = SIMPLE_PUBLIC_KEY_HASH_INTEGRATED
+	}
+	return NewAddr(config.NETWORK_SELECTED, version, publicKeyHash, paymentID, paymentAmount, paymentAsset)
 }
 
 func (a *Address) EncodeAddr() string {
@@ -59,16 +63,18 @@ func (a *Address) EncodeAddr() string {
 
 	writer.Write(a.PublicKeyHash)
 
-	writer.WriteUvarint(a.IntegrationBytes())
+	if a.Version == SIMPLE_PUBLIC_KEY_HASH_INTEGRATED {
+		writer.WriteUvarint(a.IntegrationBytes())
 
-	if a.IsIntegratedPaymentID() {
-		writer.Write(a.PaymentID)
-	}
-	if a.IsIntegratedAmount() {
-		writer.WriteUvarint(a.PaymentAmount)
-	}
-	if a.IsIntegratedPaymentAsset() {
-		writer.Write(a.PaymentAsset)
+		if a.IsIntegratedPaymentID() {
+			writer.Write(a.PaymentID)
+		}
+		if a.IsIntegratedAmount() {
+			writer.WriteUvarint(a.PaymentAmount)
+		}
+		if a.IsIntegratedPaymentAsset() {
+			writer.Write(a.PaymentAsset)
+		}
 	}
 
 	buffer := writer.Bytes()
@@ -77,7 +83,7 @@ func (a *Address) EncodeAddr() string {
 	buffer = append(buffer, checksum...)
 	ret := custom_base64.Base64Encoder.EncodeToString(buffer)
 
-	return prefix + ret
+	return prefix + ret + "$"
 }
 func DecodeAddr(input string) (*Address, error) {
 
@@ -126,7 +132,7 @@ func DecodeAddr(input string) (*Address, error) {
 	addr.Version = AddressVersion(version)
 
 	switch addr.Version {
-	case SIMPLE_PUBLIC_KEY_HASH:
+	case SIMPLE_PUBLIC_KEY_HASH, SIMPLE_PUBLIC_KEY_HASH_INTEGRATED:
 		if addr.PublicKeyHash, err = reader.ReadBytes(cryptography.PublicKeyHashSize); err != nil {
 			return nil, err
 		}
@@ -134,25 +140,36 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, errors.New("Invalid Address Version")
 	}
 
-	var integrationBytes uint64
-	if integrationBytes, err = reader.ReadUvarint(); err != nil {
+	if addr.Version == SIMPLE_PUBLIC_KEY_HASH_INTEGRATED {
+		var integrationBytes uint64
+		if integrationBytes, err = reader.ReadUvarint(); err != nil {
+			return nil, err
+		}
+
+		if integrationBytes&1 != 0 {
+			if addr.PaymentID, err = reader.ReadBytes(8); err != nil {
+				return nil, err
+			}
+		}
+		if integrationBytes&(1<<1) != 0 {
+			if addr.PaymentAmount, err = reader.ReadUvarint(); err != nil {
+				return nil, err
+			}
+		}
+		if integrationBytes&(1<<2) != 0 {
+			if addr.PaymentAsset, err = reader.ReadBytes(config_coins.ASSET_LENGTH); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	var finalByte byte
+	if finalByte, err = reader.ReadByte(); err != nil {
 		return nil, err
 	}
 
-	if integrationBytes&1 != 0 {
-		if addr.PaymentID, err = reader.ReadBytes(8); err != nil {
-			return nil, err
-		}
-	}
-	if integrationBytes&(1<<1) != 0 {
-		if addr.PaymentAmount, err = reader.ReadUvarint(); err != nil {
-			return nil, err
-		}
-	}
-	if integrationBytes&(1<<2) != 0 {
-		if addr.PaymentAsset, err = reader.ReadBytes(config_coins.ASSET_LENGTH); err != nil {
-			return nil, err
-		}
+	if finalByte != 255 {
+		return nil, errors.New("Suffix is not matching")
 	}
 
 	return addr, nil
