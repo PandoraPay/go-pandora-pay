@@ -11,6 +11,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets/asset"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -75,13 +76,23 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 
 		var accs *accounts.Accounts
 		var acc *account.Account
+		var plainAcc *plain_account.PlainAccount
 
 		if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKeyHash); err != nil {
 			return
 		}
-		acc.Balance = airdrop.Amount
+
+		if plainAcc, err = dataStorage.GetOrCreatePlainAccount(addr.PublicKeyHash); err != nil {
+			return
+		}
+		if err = plainAcc.DelegatedStake.CreateDelegatedStake(airdrop.Amount, 0, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
+			return
+		}
 
 		if err = accs.Update(string(addr.PublicKeyHash), acc); err != nil {
+			return
+		}
+		if err = dataStorage.PlainAccs.Update(string(addr.PublicKeyHash), plainAcc); err != nil {
 			return
 		}
 
