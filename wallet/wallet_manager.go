@@ -13,6 +13,7 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/derivation"
 	"pandora-pay/wallet/wallet_address"
+	"pandora-pay/wallet/wallet_address/shared_staked"
 	"strconv"
 )
 
@@ -178,7 +179,7 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, lock bool, 
 	addr.PublicKeyHash = publicKeyHash
 
 	if addr.PrivateKey != nil {
-		addr.SharedStaked = &wallet_address.WalletAddressSharedStaked{addr.PrivateKey, addr.PublicKeyHash}
+		addr.SharedStaked = &shared_staked.WalletAddressSharedStaked{addr.PrivateKey, addr.PublicKey}
 	}
 
 	if wallet.addressesMap[string(addr.PublicKeyHash)] != nil {

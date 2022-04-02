@@ -4,6 +4,7 @@ import (
 	"errors"
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography/derivation"
+	"pandora-pay/wallet/wallet_address/shared_staked"
 )
 
 type WalletAddress struct {
@@ -81,9 +82,9 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		return nil
 	}
 
-	var sharedStaked *WalletAddressSharedStaked
+	var sharedStaked *shared_staked.WalletAddressSharedStaked
 	if addr.SharedStaked != nil {
-		sharedStaked = &WalletAddressSharedStaked{addr.SharedStaked.PrivateKey, addr.SharedStaked.PublicKey}
+		sharedStaked = &shared_staked.WalletAddressSharedStaked{addr.SharedStaked.PrivateKey, addr.SharedStaked.PublicKey}
 	}
 
 	return &WalletAddress{
