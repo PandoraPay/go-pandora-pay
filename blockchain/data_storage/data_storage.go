@@ -1,7 +1,6 @@
 package data_storage
 
 import (
-	"bytes"
 	"errors"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -47,12 +46,6 @@ func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKeyHash []byte
 }
 
 func (dataStorage *DataStorage) CreateAccount(assetId, publicKeyHash []byte) (*accounts.Accounts, *account.Account, error) {
-
-	if bytes.Equal(assetId, config_coins.NATIVE_ASSET_FULL) {
-		if _, err := dataStorage.GetOrCreatePlainAccount(publicKeyHash); err != nil {
-			return nil, nil, err
-		}
-	}
 
 	accs, err := dataStorage.AccsCollection.GetMap(assetId)
 	if err != nil {

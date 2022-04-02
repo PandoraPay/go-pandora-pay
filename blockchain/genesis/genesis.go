@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/blocks/block"
@@ -136,25 +137,15 @@ func createNewGenesis(v []string) (err error) {
 			return
 		}
 
-		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			addr.EncodeAddr(),
-			config_coins.ConvertToUnitsUint64Forced(100),
-			helpers.RandomBytes(cryptography.PublicKeySize),
-			0,
-		})
-	}
-
-	//let's create 1000 zero wallets
-	for i := 0; i < 1000; i++ {
-		priv := addresses.GenerateNewPrivateKey()
-		if addr, err = priv.GenerateAddress(nil, 0, nil); err != nil {
-			return
+		var delegatedStakePublicKey []byte
+		if rand.Intn(2) == 1 {
+			delegatedStakePublicKey = helpers.RandomBytes(cryptography.PublicKeySize)
 		}
 
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
 			addr.EncodeAddr(),
 			config_coins.ConvertToUnitsUint64Forced(100),
-			helpers.RandomBytes(cryptography.PublicKeySize),
+			delegatedStakePublicKey,
 			0,
 		})
 	}
