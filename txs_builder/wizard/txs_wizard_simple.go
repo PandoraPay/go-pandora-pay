@@ -10,31 +10,14 @@ import (
 	"pandora-pay/cryptography"
 )
 
-func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.PrivateKey, fee *WizardTransactionFee, statusCallback func(string)) (err error) {
+func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
-	txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-
-	extraBytes := cryptography.SignatureSize
-	txBase.Fee = setFee(tx, extraBytes, fee.Clone(), true)
-	statusCallback("Transaction Fee set")
-
-	statusCallback("Transaction Signing...")
-	if txBase.Vin.Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
-		return err
-	}
-	statusCallback("Transaction Signed")
-
-	return
-}
-
-func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTxSimpleExtra, data *WizardTransactionData, fee *WizardTransactionFee, feeVersion bool, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
-
-	privateKey, err := addresses.NewPrivateKey(key)
+	privateKey, err := addresses.NewPrivateKey(transfer.VinKey)
 	if err != nil {
 		return nil, err
 	}
 
-	dataFinal, err := data.getData()
+	dataFinal, err := transfer.Data.getData()
 	if err != nil {
 		return
 	}
@@ -43,15 +26,16 @@ func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTx
 
 	var txScript transaction_simple.ScriptType
 	var extraFinal transaction_simple_extra.TransactionSimpleExtraInterface
-	switch extra.(type) {
+
+	switch transfer.Extra.(type) {
 	case nil:
 	}
 
 	txBase := &transaction_simple.TransactionSimple{
 		TxScript:    txScript,
-		DataVersion: data.getDataVersion(),
+		DataVersion: transfer.Data.getDataVersion(),
 		Data:        dataFinal,
-		Nonce:       nonce,
+		Nonce:       transfer.Nonce,
 		Fee:         0,
 		Extra:       extraFinal,
 		Vin: &transaction_simple_parts.TransactionSimpleInput{
@@ -66,9 +50,16 @@ func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTx
 	}
 	statusCallback("Transaction Created")
 
-	if err = signSimpleTransaction(tx, privateKey, fee, statusCallback); err != nil {
-		return
+	extraBytes := cryptography.SignatureSize
+	txBase.Fee = setFee(tx, extraBytes, transfer.Fee.Clone(), true)
+	statusCallback("Transaction Fee set")
+
+	statusCallback("Transaction Signing...")
+	if txBase.Vin.Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
+		return nil, err
 	}
+	statusCallback("Transaction Signed")
+
 	if err = bloomAllTx(tx, statusCallback); err != nil {
 		return
 	}
