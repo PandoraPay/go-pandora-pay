@@ -11,8 +11,10 @@ Under development. Not working right now.
 
 [X] Removing Zether
 [X] Integration of ED25519
+[X] Integration of BIP32 for ED25519
 [X] Using PublicKeyHashes instead of PublicKeys
 [X] Removing Address (stakable, spendPublicKey, registration)
+[X] Creating Testnet Genesis
 [ ] DPOS contracts
 [ ] DPOS consensus
 [ ] WebDollar Address Format
