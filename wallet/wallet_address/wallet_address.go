@@ -3,34 +3,35 @@ package wallet_address
 import (
 	"errors"
 	"pandora-pay/addresses"
+	"pandora-pay/wallet/wallet_address/shared_staked"
 )
 
 type WalletAddress struct {
-	Version                    Version                    `json:"version" msgpack:"version"`
-	Name                       string                     `json:"name" msgpack:"name"`
-	SeedIndex                  uint32                     `json:"seedIndex" msgpack:"seedIndex"`
-	IsMine                     bool                       `json:"isMine" msgpack:"isMine"`
-	SecretKey                  []byte                     `json:"secretKey" msgpack:"secretKey"`
-	PrivateKey                 *addresses.PrivateKey      `json:"privateKey" msgpack:"privateKey"`
-	SpendPrivateKey            *addresses.PrivateKey      `json:"spendPrivateKey" msgpack:"spendPrivateKey"`
-	Registration               []byte                     `json:"registration" msgpack:"registration"`
-	PublicKey                  []byte                     `json:"publicKey" msgpack:"publicKey"`
-	Staked                     bool                       `json:"staked" msgpack:"staked"`
-	SpendRequired              bool                       `json:"spendRequired" msgpack:"spendRequired"`
-	SpendPublicKey             []byte                     `json:"spendPublicKey" msgpack:"spendPublicKey"`
-	IsSharedStaked             bool                       `json:"isSharedStaked,omitempty" msgpack:"isSharedStaked,omitempty"`
-	SharedStaked               *WalletAddressSharedStaked `json:"sharedStaked,omitempty" msgpack:"sharedStaked,omitempty"`
-	AddressEncoded             string                     `json:"addressEncoded" msgpack:"addressEncoded"`
-	AddressRegistrationEncoded string                     `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
+	Version                    Version                                  `json:"version" msgpack:"version"`
+	Name                       string                                   `json:"name" msgpack:"name"`
+	SeedIndex                  uint32                                   `json:"seedIndex" msgpack:"seedIndex"`
+	IsMine                     bool                                     `json:"isMine" msgpack:"isMine"`
+	SecretKey                  []byte                                   `json:"secretKey" msgpack:"secretKey"`
+	PrivateKey                 *addresses.PrivateKey                    `json:"privateKey" msgpack:"privateKey"`
+	SpendPrivateKey            *addresses.PrivateKey                    `json:"spendPrivateKey" msgpack:"spendPrivateKey"`
+	Registration               []byte                                   `json:"registration" msgpack:"registration"`
+	PublicKey                  []byte                                   `json:"publicKey" msgpack:"publicKey"`
+	Staked                     bool                                     `json:"staked" msgpack:"staked"`
+	SpendRequired              bool                                     `json:"spendRequired" msgpack:"spendRequired"`
+	SpendPublicKey             []byte                                   `json:"spendPublicKey" msgpack:"spendPublicKey"`
+	IsSharedStaked             bool                                     `json:"isSharedStaked,omitempty" msgpack:"isSharedStaked,omitempty"`
+	SharedStaked               *shared_staked.WalletAddressSharedStaked `json:"sharedStaked,omitempty" msgpack:"sharedStaked,omitempty"`
+	AddressEncoded             string                                   `json:"addressEncoded" msgpack:"addressEncoded"`
+	AddressRegistrationEncoded string                                   `json:"addressRegistrationEncoded" msgpack:"addressRegistrationEncoded"`
 }
 
-func (addr *WalletAddress) DeriveSharedStaked() (*WalletAddressSharedStaked, error) {
+func (addr *WalletAddress) DeriveSharedStaked() (*shared_staked.WalletAddressSharedStaked, error) {
 
 	if addr.PrivateKey == nil {
 		return nil, errors.New("Private Key is missing")
 	}
 
-	return &WalletAddressSharedStaked{
+	return &shared_staked.WalletAddressSharedStaked{
 		PrivateKey: addr.PrivateKey,
 		PublicKey:  addr.PublicKey,
 	}, nil
@@ -72,9 +73,9 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		return nil
 	}
 
-	var sharedStaked *WalletAddressSharedStaked
+	var sharedStaked *shared_staked.WalletAddressSharedStaked
 	if addr.SharedStaked != nil {
-		sharedStaked = &WalletAddressSharedStaked{addr.SharedStaked.PrivateKey, addr.SharedStaked.PublicKey}
+		sharedStaked = &shared_staked.WalletAddressSharedStaked{addr.SharedStaked.PrivateKey, addr.SharedStaked.PublicKey}
 	}
 
 	return &WalletAddress{

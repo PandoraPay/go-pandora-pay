@@ -19,7 +19,7 @@ import (
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
-	"pandora-pay/wallet/wallet_address"
+	"pandora-pay/wallet/wallet_address/shared_staked"
 	"time"
 )
 
@@ -40,12 +40,12 @@ type ForgingWallet struct {
 type ForgingWalletAddressUpdate struct {
 	chainHeight  uint64
 	publicKey    []byte
-	sharedStaked *wallet_address.WalletAddressSharedStaked
+	sharedStaked *shared_staked.WalletAddressSharedStaked
 	account      *account.Account
 	registration *registration.Registration
 }
 
-func (w *ForgingWallet) AddWallet(publicKey []byte, sharedStaked *wallet_address.WalletAddressSharedStaked, hasAccount bool, account *account.Account, reg *registration.Registration, chainHeight uint64) (err error) {
+func (w *ForgingWallet) AddWallet(publicKey []byte, sharedStaked *shared_staked.WalletAddressSharedStaked, hasAccount bool, account *account.Account, reg *registration.Registration, chainHeight uint64) (err error) {
 
 	if !config_forging.FORGING_ENABLED || w.initialized.IsNotSet() {
 		return

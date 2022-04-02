@@ -1,4 +1,4 @@
-package wallet_address
+package shared_staked
 
 import (
 	"pandora-pay/addresses"

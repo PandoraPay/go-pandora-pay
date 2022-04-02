@@ -15,6 +15,7 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/wallet/wallet_address"
+	"pandora-pay/wallet/wallet_address/shared_staked"
 	"strconv"
 )
 
@@ -213,7 +214,7 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spe
 	addr.PublicKey = publicKey
 
 	if addr.PrivateKey != nil {
-		addr.SharedStaked = &wallet_address.WalletAddressSharedStaked{addr.PrivateKey, addr.PublicKey}
+		addr.SharedStaked = &shared_staked.WalletAddressSharedStaked{addr.PrivateKey, addr.PublicKey}
 	}
 
 	if wallet.addressesMap[string(addr.PublicKey)] != nil {

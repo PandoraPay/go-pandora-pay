@@ -16,6 +16,7 @@ import (
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/wallet/wallet_address"
+	"pandora-pay/wallet/wallet_address/shared_staked"
 )
 
 type ApiDelegatorNodeNotifyRequest struct {
@@ -102,7 +103,7 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 		false,
 		nil,
 		true,
-		&wallet_address.WalletAddressSharedStaked{
+		&shared_staked.WalletAddressSharedStaked{
 			sharedStakedPrivateKey,
 			sharedStakedPublicKey,
 		},
