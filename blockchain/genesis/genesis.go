@@ -116,8 +116,8 @@ func createNewGenesis(v []string) (err error) {
 		}
 
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			Address: sharedStakedAddress.Address, //registered address
-			Amount:  amount,
+			sharedStakedAddress.Address, //registered address
+			amount,
 		})
 
 	}
@@ -132,8 +132,8 @@ func createNewGenesis(v []string) (err error) {
 		}
 
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			Address: addr.EncodeAddr(),
-			Amount:  0,
+			addr.EncodeAddr(),
+			0,
 		})
 	}
 
@@ -145,8 +145,8 @@ func createNewGenesis(v []string) (err error) {
 		}
 
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			Address: addr.EncodeAddr(),
-			Amount:  0,
+			addr.EncodeAddr(),
+			0,
 		})
 	}
 
@@ -158,8 +158,8 @@ func createNewGenesis(v []string) (err error) {
 		}
 
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			Address: addr.EncodeAddr(),
-			Amount:  0,
+			addr.EncodeAddr(),
+			0,
 		})
 	}
 
