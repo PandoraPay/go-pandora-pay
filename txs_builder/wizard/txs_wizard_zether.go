@@ -281,14 +281,18 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_SPEND
 
-				privateKeysForSign[t] = &addresses.PrivateKey{Key: transfer.SenderSpendPrivateKey}
+				if privateKeysForSign[t], err = addresses.NewPrivateKey(transfer.SenderSpendPrivateKey); err != nil {
+					return
+				}
 				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraSpend{
 					SenderSpendPublicKey: privateKeysForSign[t].GeneratePublicKeyPoint(),
 				}
 
 			case *WizardZetherPayloadExtraAssetSupplyIncrease:
 				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE
-				privateKeysForSign[t] = &addresses.PrivateKey{Key: payloadExtra.AssetSupplyPrivateKey}
+				if privateKeysForSign[t], err = addresses.NewPrivateKey(payloadExtra.AssetSupplyPrivateKey); err != nil {
+					return
+				}
 				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{
 					AssetId:              payloadExtra.AssetId,
 					ReceiverPublicKey:    payloadExtra.ReceiverPublicKey,
@@ -331,7 +335,10 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		witness_index := transfers[t].WitnessIndexes
 		ringSize := len(witness_index)
 
-		senderKey := &addresses.PrivateKey{Key: transfer.SenderPrivateKey}
+		var senderKey *addresses.PrivateKey
+		if senderKey, err = addresses.NewPrivateKey(transfer.SenderPrivateKey); err != nil {
+			return
+		}
 		secretPoint := new(crypto.BNRed).SetBytes(senderKey.Key)
 		sender := crypto.GPoint.ScalarMult(secretPoint).G1()
 		sender_secrets[t] = secretPoint.BigInt()

@@ -17,7 +17,10 @@ type AddressBalanceDecryptor struct {
 
 func (decryptor *AddressBalanceDecryptor) DecryptBalanceByPrivateKey(decryptionName string, privateKey, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, storeNewPreviousValue bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
-	priv := &addresses.PrivateKey{privateKey}
+	priv, err := addresses.NewPrivateKey(privateKey)
+	if err != nil {
+		return 0, err
+	}
 
 	return decryptor.DecryptBalance(decryptionName, priv.GeneratePublicKey(), privateKey, encryptedBalance, asset, useNewPreviousValue, newPreviousValue, storeNewPreviousValue, ctx, statusCallback)
 }
@@ -40,7 +43,11 @@ func (decryptor *AddressBalanceDecryptor) DecryptBalance(decryptionName string, 
 		return 0, err
 	}
 
-	priv := &addresses.PrivateKey{Key: privateKey}
+	priv, err := addresses.NewPrivateKey(privateKey)
+	if err != nil {
+		return 0, err
+	}
+
 	if priv.TryDecryptBalance(balancePoint, previousValue) {
 		return previousValue, nil
 	}

@@ -24,10 +24,19 @@ type Address struct {
 }
 
 func NewAddr(network uint64, version AddressVersion, publicKey []byte, staked bool, spendPublicKey []byte, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+	if len(publicKey) != cryptography.PublicKeySize {
+		return nil, errors.New("Invalid PublicKey size")
+	}
+	if len(spendPublicKey) != 0 && len(spendPublicKey) != cryptography.PublicKeySize {
+		return nil, errors.New("Invalid Spend Public Key size")
+	}
+	if len(registration) != 0 && len(registration) != cryptography.SignatureSize {
+		return nil, errors.New("Invalid Registration size")
+	}
 	if len(paymentID) != 8 && len(paymentID) != 0 {
 		return nil, errors.New("Invalid PaymentID. It must be an 8 byte")
 	}
-	if len(paymentAsset) != 0 && len(paymentAsset) != 20 {
+	if len(paymentAsset) != 0 && len(paymentAsset) != config_coins.ASSET_LENGTH {
 		return nil, errors.New("Invalid PaymentAsset size")
 	}
 	return &Address{network, version, publicKey, staked, spendPublicKey, registration, paymentID, paymentAmount, paymentAsset}, nil
@@ -133,12 +142,11 @@ func DecodeAddr(input string) (*Address, error) {
 	}
 	addr.Version = AddressVersion(version)
 
-	if addr.PublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
-		return nil, err
-	}
-
 	switch addr.Version {
 	case SIMPLE_PUBLIC_KEY:
+		if addr.PublicKey, err = reader.ReadBytes(cryptography.PublicKeySize); err != nil {
+			return nil, err
+		}
 	default:
 		return nil, errors.New("Invalid Address Version")
 	}

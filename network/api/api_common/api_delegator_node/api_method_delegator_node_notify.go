@@ -34,7 +34,10 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 		return errors.New("Invalid User or Password")
 	}
 
-	sharedStakedPrivateKey := &addresses.PrivateKey{args.SharedStakedPrivateKey}
+	sharedStakedPrivateKey, err := addresses.NewPrivateKey(args.SharedStakedPrivateKey)
+	if err != nil {
+		return
+	}
 	sharedStakedPublicKey := sharedStakedPrivateKey.GeneratePublicKey()
 
 	addr := api.wallet.GetWalletAddressByPublicKey(sharedStakedPublicKey, true)

@@ -75,6 +75,13 @@ func (pk *PrivateKey) TryDecryptBalance(balance *crypto.ElGamal, matchValue uint
 	return balance_decryptor.BalanceDecryptor.TryDecryptBalance(balancePoint, matchValue)
 }
 
+func NewPrivateKey(key []byte) (*PrivateKey, error) {
+	if len(key) != cryptography.PrivateKeySize {
+		return nil, errors.New("Private Key length is invalid")
+	}
+	return &PrivateKey{Key: key}, nil
+}
+
 func GenerateNewPrivateKey() *PrivateKey {
 	seed := crypto.RandomScalarBNRed()
 	privateKey := seed.ToBytes()

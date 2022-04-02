@@ -116,8 +116,15 @@ func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte, staked, spe
 		return nil, err
 	}
 
-	privateKey := &addresses.PrivateKey{Key: privKey.Key}
-	spendPrivateKey := &addresses.PrivateKey{Key: spendPrivKey.Key}
+	privateKey, err := addresses.NewPrivateKey(privKey.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	spendPrivateKey, err := addresses.NewPrivateKey(spendPrivKey.Key)
+	if err != nil {
+		return nil, err
+	}
 
 	addr := &wallet_address.WalletAddress{
 		Name:            name,
@@ -316,8 +323,15 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string, staked, spendRequire
 		return nil, err
 	}
 
-	privKey := &addresses.PrivateKey{Key: privateKey}
-	spendPrivKey := &addresses.PrivateKey{Key: spendPrivateKey}
+	privKey, err := addresses.NewPrivateKey(privateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	spendPrivKey, err := addresses.NewPrivateKey(spendPrivateKey)
+	if err != nil {
+		return nil, err
+	}
 
 	if name == "" {
 		name = "Addr_" + strconv.FormatUint(uint64(wallet.SeedIndex), 10)

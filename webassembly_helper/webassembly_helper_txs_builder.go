@@ -189,7 +189,13 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 					if payload.Sender.SpendPrivateKey == nil {
 						return errors.New("Spend Private Key is missing")
 					}
-					spendPublicKey := (&addresses.PrivateKey{Key: payload.Sender.SpendPrivateKey}).GeneratePublicKey()
+
+					var spendPrivateKey *addresses.PrivateKey
+					if spendPrivateKey, err = addresses.NewPrivateKey(payload.Sender.SpendPrivateKey); err != nil {
+						return
+					}
+
+					spendPublicKey := spendPrivateKey.GeneratePublicKey()
 					if !bytes.Equal(spendPublicKey, reg.SpendPublicKey) {
 						return errors.New("Wallet Spend Public Key is not matching")
 					}

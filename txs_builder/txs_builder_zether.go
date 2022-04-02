@@ -280,7 +280,9 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 				return nil, nil, nil, nil, nil, nil, 0, nil, errors.New("Can't be used for transactions as the private key is missing")
 			}
 
-			sendersPrivateKeys[t] = &addresses.PrivateKey{Key: addr.PrivateKey.Key}
+			if sendersPrivateKeys[t], err = addresses.NewPrivateKey(addr.PrivateKey.Key); err != nil {
+				return nil, nil, nil, nil, nil, nil, 0, nil, err
+			}
 			sendersWalletAddresses[t] = addr
 
 		}
