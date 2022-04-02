@@ -2,13 +2,13 @@ package addresses
 
 import (
 	"bytes"
-	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/custom_base64"
 	"testing"
 )
 
@@ -26,7 +26,7 @@ func TestAddress_EncodeAddr(t *testing.T) {
 
 	encoded := address.EncodeAddr()
 
-	decoded, err := base58.Decode(encoded[config.NETWORK_BYTE_PREFIX_LENGTH:])
+	decoded, err := custom_base64.Base64Encoder.DecodeString(encoded[config.NETWORK_BYTE_PREFIX_LENGTH:])
 	assert.NoError(t, err, "Address Decoding raised an error")
 	assert.Equal(t, len(decoded), 1+cryptography.PublicKeyHashSize+1+4, "AddressEncoded length is invalid")
 
@@ -48,7 +48,6 @@ func TestAddress_EncodeAddr(t *testing.T) {
 
 	encodedAmountPaymentID := address.EncodeAddr()
 	assert.Nil(t, err, "Encoding Address raised an error")
-	assert.NotEqual(t, len(encodedAmount), len(encodedAmountPaymentID))
 	assert.NotEqual(t, len(encoded), len(encodedAmountPaymentID))
 	assert.NotEqual(t, encodedAmount, encodedAmountPaymentID)
 	assert.NotEqual(t, encoded, encodedAmountPaymentID)
