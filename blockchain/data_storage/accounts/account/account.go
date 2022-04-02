@@ -38,6 +38,10 @@ func (account *Account) Validate() error {
 	return nil
 }
 
+func (account *Account) AddBalance(sign bool, value uint64) error {
+	return helpers.SafeUint64Update(sign, &account.Balance, value)
+}
+
 func (account *Account) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(account.Version)
 	w.WriteUvarint(account.Balance)

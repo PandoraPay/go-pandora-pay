@@ -128,7 +128,7 @@ func (wallet *Wallet) AddSharedStakedAddress(addr *wallet_address.WalletAddress,
 		return errors.New("DELEGATES_MAXIMUM exceeded")
 	}
 
-	address, err := addresses.CreateAddr(addr.PublicKeyHash, nil, nil, 0, nil)
+	address, err := addresses.CreateAddr(addr.PublicKeyHash, nil, 0, nil)
 	if err != nil {
 		return
 	}

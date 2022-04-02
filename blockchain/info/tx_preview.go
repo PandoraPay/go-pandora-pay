@@ -8,12 +8,25 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 )
 
+type TxPreviewSimpleVin struct {
+	PublicKey []byte `json:"publicKey" msgpack:"publicKey"`
+	Amount    uint64 `json:"amount" msgpack:"amount"`
+	Asset     []byte `json:"asset" msgpack:"asset"`
+}
+
+type TxPreviewSimpleVout struct {
+	PublicKeyHash []byte `json:"publicKeyHash" msgpack:"publicKeyHash"`
+	Amount        uint64 `json:"amount" msgpack:"amount"`
+	Asset         []byte `json:"asset" msgpack:"asset"`
+}
+
 type TxPreviewSimple struct {
 	Extra       interface{}                             `json:"extra" msgpack:"extra"`
 	TxScript    transaction_simple.ScriptType           `json:"txScript" msgpack:"txScript"`
 	DataVersion transaction_data.TransactionDataVersion `json:"dataVersion" msgpack:"dataVersion"`
 	DataPublic  []byte                                  `json:"dataPublic" msgpack:"dataPublic"`
-	Vin         []byte                                  `json:"vin" msgpack:"vin"`
+	Vin         []*TxPreviewSimpleVin                   `json:"vin" msgpack:"vin"`
+	Vout        []*TxPreviewSimpleVout                  `json:"vout" msgpack:"vout"`
 }
 
 type TxPreview struct {
@@ -38,12 +51,31 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 			dataPublic = txBase.Data
 		}
 
+		previewVin := make([]*TxPreviewSimpleVin, len(txBase.Vin))
+		for i, vin := range txBase.Vin {
+			previewVin[i] = &TxPreviewSimpleVin{
+				vin.PublicKey,
+				vin.Amount,
+				vin.Asset,
+			}
+		}
+
+		previewVout := make([]*TxPreviewSimpleVout, len(txBase.Vin))
+		for i, vout := range txBase.Vout {
+			previewVout[i] = &TxPreviewSimpleVout{
+				vout.PublicKeyHash,
+				vout.Amount,
+				vout.Asset,
+			}
+		}
+
 		base = &TxPreviewSimple{
 			baseExtra,
 			txBase.TxScript,
 			txBase.DataVersion,
 			dataPublic,
-			txBase.Vin.PublicKey,
+			previewVin,
+			previewVout,
 		}
 
 	default:

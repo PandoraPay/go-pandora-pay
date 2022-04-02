@@ -26,11 +26,11 @@ type TxsBuilder struct {
 	lock         *sync.Mutex
 }
 
-func (builder *TxsBuilder) getNonce(nonce uint64, publicKey []byte, accNonce uint64) uint64 {
+func (builder *TxsBuilder) getNonce(nonce uint64, publicKeyHash []byte, accNonce uint64) uint64 {
 	if nonce != 0 {
 		return nonce
 	}
-	return builder.mempool.GetNonce(publicKey, accNonce)
+	return builder.mempool.GetNonce(publicKeyHash, accNonce)
 }
 
 func (builder *TxsBuilder) convertFloatAmounts(amounts []float64, ast *asset.Asset) ([]uint64, error) {

@@ -24,14 +24,22 @@ type json_TransactionSimple struct {
 	DataVersion transaction_data.TransactionDataVersion `json:"dataVersion" msgpack:"dataVersion"`
 	Data        []byte                                  `json:"data" msgpack:"data"`
 	Nonce       uint64                                  `json:"nonce" msgpack:"nonce"`
-	Fee         uint64                                  `json:"fee" msgpack:"fee"`
-	Vin         *json_TransactionSimpleInput            `json:"vin" msgpack:"vin"`
+	Vin         []*json_TransactionSimpleInput          `json:"vin" msgpack:"vin"`
+	Vout        []*json_TransactionSimpleOutput         `json:"vout" msgpack:"vout"`
 	Extra       interface{}                             `json:"extra" msgpack:"extra"`
 }
 
 type json_TransactionSimpleInput struct {
-	PublicKey []byte `json:"publicKey,omitempty" msgpack:"publicKey,omitempty"` //32
-	Signature []byte `json:"signature" msgpack:"signature"`                     //64
+	PublicKey []byte `json:"publicKey" msgpack:"publicKey"` //32
+	Amount    uint64 `json:"amount" msgpack:"amount"`       //32
+	Asset     []byte `json:"asset" msgpack:"asset"`
+	Signature []byte `json:"signature" msgpack:"signature"` //64
+}
+
+type json_TransactionSimpleOutput struct {
+	PublicKeyHash []byte `json:"publicKeyHash" msgpack:"publicKeyHash"` //32
+	Amount        uint64 `json:"amount" msgpack:"amount"`               //32
+	Asset         []byte `json:"asset" msgpack:"asset"`
 }
 
 func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, error) {
@@ -47,9 +55,23 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 	case transaction_type.TX_SIMPLE:
 		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
-		vinJson := &json_TransactionSimpleInput{
-			base.Vin.PublicKey,
-			base.Vin.Signature,
+		vinJson := make([]*json_TransactionSimpleInput, len(base.Vin))
+		for i, vin := range base.Vin {
+			vinJson[i] = &json_TransactionSimpleInput{
+				vin.PublicKey,
+				vin.Amount,
+				vin.Asset,
+				vin.Signature,
+			}
+		}
+
+		voutJson := make([]*json_TransactionSimpleOutput, len(base.Vout))
+		for i, vout := range base.Vout {
+			voutJson[i] = &json_TransactionSimpleOutput{
+				vout.PublicKeyHash,
+				vout.Amount,
+				vout.Asset,
+			}
 		}
 
 		simpleJson := &json_TransactionSimple{
@@ -58,8 +80,8 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 			base.DataVersion,
 			base.Data,
 			base.Nonce,
-			base.Fee,
 			vinJson,
+			voutJson,
 			nil,
 		}
 
@@ -127,9 +149,23 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 			return errors.New("Invalid tx.DataVersion")
 		}
 
-		vin := &transaction_simple_parts.TransactionSimpleInput{
-			PublicKey: simpleJson.Vin.PublicKey,
-			Signature: simpleJson.Vin.Signature,
+		vin := make([]*transaction_simple_parts.TransactionSimpleInput, len(simpleJson.Vin))
+		for i, jsonVin := range simpleJson.Vin {
+			vin[i] = &transaction_simple_parts.TransactionSimpleInput{
+				jsonVin.PublicKey,
+				jsonVin.Amount,
+				jsonVin.Asset,
+				jsonVin.Signature,
+			}
+		}
+
+		vout := make([]*transaction_simple_parts.TransactionSimpleOutput, len(simpleJson.Vin))
+		for i, jsonVout := range simpleJson.Vout {
+			vout[i] = &transaction_simple_parts.TransactionSimpleOutput{
+				jsonVout.PublicKeyHash,
+				jsonVout.Amount,
+				jsonVout.Asset,
+			}
 		}
 
 		base := &transaction_simple.TransactionSimple{
@@ -139,8 +175,8 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 			simpleJson.DataVersion,
 			simpleJson.Data,
 			simpleJson.Nonce,
-			simpleJson.Fee,
 			vin,
+			vout,
 			nil,
 		}
 		tx.TransactionBaseInterface = base

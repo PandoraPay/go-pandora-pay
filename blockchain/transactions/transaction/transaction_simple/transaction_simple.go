@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_base_interface"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
@@ -21,52 +23,129 @@ type TransactionSimple struct {
 	DataVersion transaction_data.TransactionDataVersion
 	Data        []byte
 	Nonce       uint64
-	Fee         uint64
-	Vin         *transaction_simple_parts.TransactionSimpleInput
+	Vin         []*transaction_simple_parts.TransactionSimpleInput
+	Vout        []*transaction_simple_parts.TransactionSimpleOutput
 	Bloom       *TransactionSimpleBloom
 }
 
 func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byte, dataStorage *data_storage.DataStorage) (err error) {
 
 	var plainAcc *plain_account.PlainAccount
-	if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(tx.Vin.PublicKey); err != nil {
-		return
-	}
-	if plainAcc == nil {
-		return errors.New("Plain Account was not found")
+	var acc *account.Account
+	var accs *accounts.Accounts
+
+	for i, vin := range tx.Vin {
+
+		if i == 0 {
+			if plainAcc, err = dataStorage.GetOrCreatePlainAccount(tx.Bloom.VinPublicKeyHashes[i]); err != nil {
+				return
+			}
+			if plainAcc == nil {
+				return errors.New("Plain Account was not found")
+			}
+
+			if plainAcc.Nonce != tx.Nonce {
+				return fmt.Errorf("Account nonce doesn't match %d %d", plainAcc.Nonce, tx.Nonce)
+			}
+			if err = plainAcc.IncrementNonce(true); err != nil {
+				return
+			}
+
+			if err = dataStorage.PlainAccs.Update(string(tx.Bloom.VinPublicKeyHashes[i]), plainAcc); err != nil {
+				return
+			}
+		}
+
+		if accs, err = dataStorage.AccsCollection.GetMap(vin.Asset); err != nil {
+			return
+		}
+		if acc, err = accs.GetAccount(tx.Bloom.VinPublicKeyHashes[i]); err != nil {
+			return
+		}
+		if err = acc.AddBalance(false, vin.Amount); err != nil {
+			return
+		}
+		if err = accs.Update(string(tx.Bloom.VinPublicKeyHashes[i]), acc); err != nil {
+			return
+		}
 	}
 
-	if plainAcc.Nonce != tx.Nonce {
-		return fmt.Errorf("Account nonce doesn't match %d %d", plainAcc.Nonce, tx.Nonce)
-	}
-	if err = plainAcc.IncrementNonce(true); err != nil {
-		return
+	for _, vout := range tx.Vout {
+		if accs, err = dataStorage.AccsCollection.GetMap(vout.Asset); err != nil {
+			return
+		}
+		if acc, err = accs.GetAccount(vout.PublicKeyHash); err != nil {
+			return
+		}
+		if err = acc.AddBalance(true, vout.Amount); err != nil {
+			return
+		}
+		if err = accs.Update(string(vout.PublicKeyHash), acc); err != nil {
+			return
+		}
 	}
 
 	switch tx.TxScript {
 	case SCRIPT_TRANSFER:
 	}
 
-	return dataStorage.PlainAccs.Update(string(tx.Vin.PublicKey), plainAcc)
+	return nil
 }
 
 func (tx *TransactionSimple) ComputeFee() (uint64, error) {
-	return tx.Fee, nil
+	return 0, nil
 }
 
 func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
-	out[string(tx.Vin.PublicKey)] = true
+	for i := range tx.Vin {
+		out[string(tx.Bloom.VinPublicKeyHashes[i])] = true
+	}
+	for _, vout := range tx.Vout {
+		out[string(vout.PublicKeyHash)] = true
+	}
 	return
 }
 
 func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bool {
-	return ed25519.Verify(tx.Vin.PublicKey, hashForSignature, tx.Vin.Signature)
+	for _, vin := range tx.Vin {
+		if !ed25519.Verify(vin.PublicKey, hashForSignature, vin.Signature) {
+			return false
+		}
+	}
+	return true
 }
 
 func (tx *TransactionSimple) Validate() (err error) {
 
-	if err = tx.Vin.Validate(); err != nil {
-		return
+	if len(tx.Vin) == 0 || len(tx.Vin) > 255 {
+		return errors.New("Invalid Vin length")
+	}
+	if len(tx.Vout) > 255 {
+		return errors.New("Invalid Vout length")
+	}
+
+	amounts := make(map[string]uint64)
+
+	for _, vin := range tx.Vin {
+		if err = vin.Validate(); err != nil {
+			return
+		}
+
+		sum := amounts[string(vin.Asset)]
+		if err = helpers.SafeUint64Add(&sum, vin.Amount); err != nil {
+			return
+		}
+	}
+
+	for _, vout := range tx.Vout {
+		if err = vout.Validate(); err != nil {
+			return
+		}
+
+		sum := amounts[string(vout.Asset)]
+		if err = helpers.SafeUint64Sub(&sum, vout.Amount); err != nil {
+			return
+		}
 	}
 
 	switch tx.TxScript {
@@ -88,9 +167,16 @@ func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 	}
 
 	w.WriteUvarint(tx.Nonce)
-	w.WriteUvarint(tx.Fee)
 
-	tx.Vin.Serialize(w, inclSignature)
+	w.WriteByte(byte(len(tx.Vin)))
+	for _, vin := range tx.Vin {
+		vin.Serialize(w, inclSignature)
+	}
+
+	w.WriteByte(byte(len(tx.Vout)))
+	for _, vout := range tx.Vout {
+		vout.Serialize(w)
+	}
 
 	if tx.Extra != nil {
 		tx.Extra.Serialize(w, inclSignature)
@@ -135,13 +221,28 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 		return
 	}
 
-	if tx.Fee, err = r.ReadUvarint(); err != nil {
+	var c byte
+	if c, err = r.ReadByte(); err != nil {
 		return
 	}
 
-	tx.Vin = &transaction_simple_parts.TransactionSimpleInput{}
-	if err = tx.Vin.Deserialize(r); err != nil {
+	tx.Vin = make([]*transaction_simple_parts.TransactionSimpleInput, c)
+	for i := range tx.Vin {
+		tx.Vin[i] = &transaction_simple_parts.TransactionSimpleInput{}
+		if err = tx.Vin[i].Deserialize(r); err != nil {
+			return
+		}
+	}
+
+	if c, err = r.ReadByte(); err != nil {
 		return
+	}
+	tx.Vout = make([]*transaction_simple_parts.TransactionSimpleOutput, c)
+	for i := range tx.Vout {
+		tx.Vout[i] = &transaction_simple_parts.TransactionSimpleOutput{}
+		if err = tx.Vout[i].Deserialize(r); err != nil {
+			return
+		}
 	}
 
 	if tx.Extra != nil {
