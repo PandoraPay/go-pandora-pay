@@ -29,7 +29,10 @@ func signSimpleTransaction(tx *transaction.Transaction, privateKey *addresses.Pr
 
 func CreateSimpleTx(nonce uint64, key []byte, chainHeight uint64, extra WizardTxSimpleExtra, data *WizardTransactionData, fee *WizardTransactionFee, feeVersion bool, validateTx bool, statusCallback func(string)) (tx2 *transaction.Transaction, err error) {
 
-	privateKey := &addresses.PrivateKey{Key: key}
+	privateKey, err := addresses.NewPrivateKey(key)
+	if err != nil {
+		return nil, err
+	}
 
 	dataFinal, err := data.getData()
 	if err != nil {

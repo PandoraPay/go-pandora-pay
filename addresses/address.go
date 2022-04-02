@@ -20,10 +20,13 @@ type Address struct {
 }
 
 func NewAddr(network uint64, version AddressVersion, publicKeyHash []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+	if len(publicKeyHash) != cryptography.PublicKeyHashSize {
+		return nil, errors.New("Invalid PublicKeyHash size")
+	}
 	if len(paymentID) != 8 && len(paymentID) != 0 {
 		return nil, errors.New("Invalid PaymentID. It must be an 8 byte")
 	}
-	if len(paymentAsset) != 0 && len(paymentAsset) != 20 {
+	if len(paymentAsset) != 0 && len(paymentAsset) != config_coins.ASSET_LENGTH {
 		return nil, errors.New("Invalid PaymentAsset size")
 	}
 	return &Address{network, version, publicKeyHash, paymentID, paymentAmount, paymentAsset}, nil
@@ -122,12 +125,11 @@ func DecodeAddr(input string) (*Address, error) {
 	}
 	addr.Version = AddressVersion(version)
 
-	if addr.PublicKeyHash, err = reader.ReadBytes(cryptography.PublicKeyHashSize); err != nil {
-		return nil, err
-	}
-
 	switch addr.Version {
 	case SIMPLE_PUBLIC_KEY_HASH:
+		if addr.PublicKeyHash, err = reader.ReadBytes(cryptography.PublicKeyHashSize); err != nil {
+			return nil, err
+		}
 	default:
 		return nil, errors.New("Invalid Address Version")
 	}

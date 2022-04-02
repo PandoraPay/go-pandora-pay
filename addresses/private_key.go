@@ -40,6 +40,13 @@ func (pk *PrivateKey) Decrypt(message []byte) ([]byte, error) {
 	return nil, errors.New("Encryption is not supported right now")
 }
 
+func NewPrivateKey(key []byte) (*PrivateKey, error) {
+	if len(key) != cryptography.PrivateKeySize {
+		return nil, errors.New("Private Key length is invalid")
+	}
+	return &PrivateKey{Key: key}, nil
+}
+
 func GenerateNewPrivateKey() *PrivateKey {
 	var err error
 	var privateKey []byte
