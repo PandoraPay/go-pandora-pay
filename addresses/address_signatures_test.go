@@ -1,7 +1,6 @@
 package addresses
 
 import (
-	"bytes"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"pandora-pay/cryptography"
@@ -22,7 +21,7 @@ func Test_VerifySignedMessage(t *testing.T) {
 		assert.Equal(t, len(signature), cryptography.SignatureSize, "signature length is invalid")
 
 		emptySignature := helpers.EmptyBytes(cryptography.SignatureSize)
-		assert.Equal(t, bytes.Equal(signature, emptySignature), false, "Signing is empty...")
+		assert.NotEqual(t, signature, emptySignature, "Signing is empty...")
 
 		assert.Equal(t, privateKey.Verify(message, signature), true, "verification failed")
 

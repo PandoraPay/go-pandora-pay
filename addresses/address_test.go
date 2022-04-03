@@ -1,7 +1,6 @@
 package addresses
 
 import (
-	"bytes"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"pandora-pay/config/config_coins"
@@ -86,8 +85,8 @@ func TestDecodeAddr(t *testing.T) {
 
 		assert.Equal(t, decodedAddress.PublicKeyHash, address.PublicKeyHash)
 		assert.Equal(t, decodedAddress.PaymentAmount, paymentAmount)
-		assert.Equal(t, bytes.Equal(decodedAddress.PaymentID, paymentID), true)
-		assert.Equal(t, bytes.Equal(decodedAddress.PaymentAsset, paymentAsset), true)
+		assert.Equal(t, decodedAddress.PaymentID, paymentID)
+		assert.Equal(t, decodedAddress.PaymentAsset, paymentAsset)
 
 		encoded2 := decodedAddress.EncodeAddr()
 

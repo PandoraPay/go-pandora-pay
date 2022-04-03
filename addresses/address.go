@@ -89,7 +89,7 @@ func (a *Address) EncodeAddr() string {
 }
 func DecodeAddr(input string) (*Address, error) {
 
-	addr := &Address{PublicKeyHash: []byte{}, PaymentID: []byte{}}
+	addr := &Address{}
 
 	buf, err := custom_base64.Base64Encoder.DecodeString(input)
 	if err != nil {
