@@ -1,6 +1,7 @@
 package cryptography
 
 import (
+	"crypto/ed25519"
 	"crypto/sha256"
 	"errors"
 	"golang.org/x/crypto/ripemd160"
@@ -47,4 +48,12 @@ func ComputeKernelHash(hash []byte, stakingAmount uint64) ([]byte, error) {
 	copy(out[HashSize-len(buf):], buf[:])
 
 	return out[:], nil
+}
+
+func VerifySignature(publicKey, message, signature []byte) bool {
+	return ed25519.Verify(publicKey, message, signature)
+}
+
+func SignMessage(privateKey, message []byte) []byte {
+	return ed25519.Sign(privateKey, message)
 }

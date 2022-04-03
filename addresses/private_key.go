@@ -27,12 +27,11 @@ func (pk *PrivateKey) GenerateAddress(paymentID []byte, paymentAmount uint64, pa
 
 //make sure message is a hash to avoid leaking any parts of the private key
 func (pk *PrivateKey) Sign(message []byte) ([]byte, error) {
-	return ed25519.Sign(pk.Key, message), nil
+	return cryptography.SignMessage(pk.Key, message), nil
 }
 
 func (pk *PrivateKey) Verify(message, signature []byte) bool {
-	pb := pk.GeneratePublicKey()
-	return ed25519.Verify(pb, message, signature)
+	return cryptography.VerifySignature(pk.GeneratePublicKey(), message, signature)
 }
 
 func (pk *PrivateKey) Decrypt(message []byte) ([]byte, error) {

@@ -68,6 +68,10 @@ func (blkComplete *BlockComplete) ComputeFees() (uint64, error) {
 
 func (blkComplete *BlockComplete) IncludeBlockComplete(dataStorage *data_storage.DataStorage) (err error) {
 
+	if err = blkComplete.IncludeBlock(dataStorage, fees); err != nil {
+		return
+	}
+
 	for _, tx := range blkComplete.Txs {
 		if err = tx.IncludeTransaction(blkComplete.Block.Height, dataStorage); err != nil {
 			return

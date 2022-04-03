@@ -1,7 +1,6 @@
 package transaction_simple
 
 import (
-	"crypto/ed25519"
 	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
@@ -14,6 +13,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
+	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
@@ -112,7 +112,7 @@ func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
 
 func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bool {
 	for _, vin := range tx.Vin {
-		if !ed25519.Verify(vin.PublicKey, hashForSignature, vin.Signature) {
+		if !cryptography.VerifySignature(vin.PublicKey, hashForSignature, vin.Signature) {
 			return false
 		}
 	}

@@ -11,11 +11,9 @@ import (
 	"pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
-	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
-	"pandora-pay/config/config_coins"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
@@ -216,45 +214,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					//check block height
 					if blkComplete.Block.Height != newChainData.Height {
 						return errors.New("Block Height is not right!")
-					}
-
-					////check blkComplete balance
-					//foundStakingRewardTxBase := foundStakingRewardTx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-					//if foundStakingRewardTxBase.Payloads[0].BurnValue < config_stake.GetRequiredStake(blkComplete.Block.Height) {
-					//	return errors.New("Staked amount is not enough!")
-					//}
-					//
-					////verify staking amount
-					//if foundStakingRewardTxBase.Payloads[0].BurnValue != blkComplete.StakingAmount {
-					//	return errors.New("Staked amount is different that the burn value")
-					//}
-					//
-					//if !bytes.Equal(foundStakingRewardTxBase.Payloads[0].Proof.Nonce(), blkComplete.StakingNonce) {
-					//	return errors.New("Staked Proof Nonce is not matching with the one specified in the block")
-					//}
-					//
-					////verify forger reward
-					//var reward, finalForgerReward uint64
-					//if reward, finalForgerReward, err = blockchain_types.ComputeBlockReward(blkComplete.Height, blkComplete.Txs); err != nil {
-					//	return
-					//}
-					//
-					//if foundStakingRewardTxBase.Payloads[1].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).Reward > finalForgerReward {
-					//	return fmt.Errorf("Payload Reward %d is bigger than it should be %d", foundStakingRewardTxBase.Payloads[1].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).Reward, finalForgerReward)
-					//}
-					reward := uint64(5)
-
-					//increase supply
-					var ast *asset.Asset
-					if ast, err = dataStorage.Asts.GetAsset(config_coins.NATIVE_ASSET_FULL); err != nil {
-						return
-					}
-
-					if err = ast.AddNativeSupply(true, reward); err != nil {
-						return
-					}
-					if err = dataStorage.Asts.Update(string(config_coins.NATIVE_ASSET_FULL), ast); err != nil {
-						return
 					}
 
 					if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHashStaked, newChainData.Target) != true {

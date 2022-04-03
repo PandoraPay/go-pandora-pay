@@ -10,6 +10,7 @@ type BlockBloom struct {
 	Hash              []byte `json:"hash" msgpack:"hash"`
 	KernelHash        []byte `json:"kernelHash" msgpack:"kernelHash"`
 	KernelHashStaked  []byte `json:"-" msgpack:"-"`
+	SignatureVerified bool   `json:"signatureVerified" msgpack:"signatureVerified"`
 	bloomedHash       bool
 	bloomedKernelHash bool
 }
@@ -42,6 +43,13 @@ func (blk *Block) BloomNow() (err error) {
 		blk.Bloom.KernelHash = blk.ComputeKernelHash()
 		if blk.Bloom.KernelHashStaked, err = cryptography.ComputeKernelHash(blk.Bloom.KernelHash, blk.StakingAmount); err != nil {
 			return
+		}
+
+		hashForSignature := blk.SerializeForSigning()
+
+		blk.Bloom.SignatureVerified = cryptography.VerifySignature(hashForSignature, blk.Signature, blk.DelegatedStakePublicKey)
+		if !blk.Bloom.SignatureVerified {
+			return errors.New("Block signature is invalid")
 		}
 
 		blk.Bloom.bloomedKernelHash = true
