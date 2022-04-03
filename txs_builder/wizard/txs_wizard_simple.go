@@ -37,6 +37,28 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 		Vout:        make([]*transaction_simple_parts.TransactionSimpleOutput, len(transfer.Vout)),
 	}
 
+	privateKeys := make([]*addresses.PrivateKey, len(transfer.Vin))
+
+	for i, vin := range transfer.Vin {
+		if privateKeys[i], err = addresses.NewPrivateKey(transfer.Vin[i].Key); err != nil {
+			return nil, err
+		}
+		txBase.Vin[i] = &transaction_simple_parts.TransactionSimpleInput{
+			privateKeys[i].GeneratePublicKey(),
+			vin.Amount,
+			vin.Asset,
+			nil,
+		}
+	}
+
+	for i, vout := range transfer.Vout {
+		txBase.Vout[i] = &transaction_simple_parts.TransactionSimpleOutput{
+			vout.PublicKeyHash,
+			vout.Amount,
+			vout.Asset,
+		}
+	}
+
 	tx := &transaction.Transaction{
 		Version:                  transaction_type.TX_SIMPLE,
 		SpaceExtra:               uint64(spaceExtra),
@@ -54,11 +76,7 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 
 	statusCallback("Transaction Signing...")
 	for i, vin := range txBase.Vin {
-		var privateKey *addresses.PrivateKey
-		if privateKey, err = addresses.NewPrivateKey(transfer.Vin[i].Key); err != nil {
-			return nil, err
-		}
-		if vin.Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
+		if vin.Signature, err = privateKeys[i].Sign(tx.SerializeForSigning()); err != nil {
 			return nil, err
 		}
 	}

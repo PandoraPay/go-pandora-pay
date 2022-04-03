@@ -13,6 +13,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/helpers"
 )
 
@@ -93,7 +94,10 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 }
 
 func (tx *TransactionSimple) ComputeFee() (uint64, error) {
-	return 0, nil
+	if err := tx.Bloom.verifyIfBloomed(); err != nil {
+		return 0, err
+	}
+	return tx.Bloom.TransferMap[string(config_coins.NATIVE_ASSET_FULL)], nil
 }
 
 func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
@@ -124,26 +128,14 @@ func (tx *TransactionSimple) Validate() (err error) {
 		return errors.New("Invalid Vout length")
 	}
 
-	amounts := make(map[string]uint64)
-
 	for _, vin := range tx.Vin {
 		if err = vin.Validate(); err != nil {
-			return
-		}
-
-		sum := amounts[string(vin.Asset)]
-		if err = helpers.SafeUint64Add(&sum, vin.Amount); err != nil {
 			return
 		}
 	}
 
 	for _, vout := range tx.Vout {
 		if err = vout.Validate(); err != nil {
-			return
-		}
-
-		sum := amounts[string(vout.Asset)]
-		if err = helpers.SafeUint64Sub(&sum, vout.Amount); err != nil {
 			return
 		}
 	}

@@ -18,7 +18,7 @@ Under development. Not working right now.
 - [ ] DPOS contracts
 - [ ] DPOS consensus
 - [X] WebDollar Address Format
-- [ ] Multi Transfer
+- [X] Multi Transfer
 - [ ] Web Wallet
 
 ### DOCS
