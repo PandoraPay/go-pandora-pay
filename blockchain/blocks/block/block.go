@@ -3,6 +3,7 @@ package block
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -69,6 +70,10 @@ func (blk *Block) Verify() error {
 
 func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees uint64) (err error) {
 
+	if blk.StakingAmount < config_stake.GetRequiredStake(blk.Height) {
+		return errors.New("Stake amount is not enought")
+	}
+
 	reward := config_reward.GetRewardAt(blk.Height)
 
 	var plainAcc *plain_account.PlainAccount
@@ -79,8 +84,12 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 		return errors.New("Plain Account not found")
 	}
 
-	if blk.StakingAmount > plainAcc.DelegatedStake.StakeAvailable {
-		return errors.New("Staking Amount is invalid")
+	if blk.StakingAmount != plainAcc.DelegatedStake.StakeAvailable {
+		return fmt.Errorf("Block Staking Amount doesn't match %d %d", blk.StakingAmount, plainAcc.DelegatedStake.StakeAvailable)
+	}
+
+	if blk.DelegatedStakeFee != plainAcc.DelegatedStake.DelegatedStakeFee {
+		return fmt.Errorf("Block Delegated Stake Fee doesn't match %d %d", blk.DelegatedStakeFee, plainAcc.DelegatedStake.DelegatedStakeFee)
 	}
 
 	var accs *accounts.Accounts
