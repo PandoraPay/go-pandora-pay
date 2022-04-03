@@ -76,7 +76,7 @@ func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propa
 		txData.Fee = &wizard.WizardTransactionFee{0, 0, 0, true}
 	}
 
-	sendersWalletAddresses, err := builder.getWalletAddresses([]string{txData.Sender})
+	sendersWalletAddresses, err := builder.getWalletAddresses([]string{txData.Vin[0].Sender})
 	if err != nil {
 		return nil, err
 	}
@@ -111,12 +111,31 @@ func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propa
 	txData.Nonce = builder.getNonce(txData.Nonce, sendersWalletAddresses[0].PublicKey, plainAcc.Nonce)
 	statusCallback("Getting Nonce from Mempool")
 
+	vin := make([]*wizard.WizardTxSimpleTransferVin, len(txData.Vin))
+	for i, v := range txData.Vin {
+		vin[i] = &wizard.WizardTxSimpleTransferVin{
+			sendersWalletAddresses[i].PrivateKey.Key,
+			v.Amount,
+			v.Asset,
+		}
+	}
+
+	vout := make([]*wizard.WizardTxSimpleTransferVout, len(txData.Vout))
+	for i, v := range txData.Vout {
+		vout[i] = &wizard.WizardTxSimpleTransferVout{
+			v.PublicKeyHash,
+			v.Amount,
+			v.Asset,
+		}
+	}
+
 	if tx, err = wizard.CreateSimpleTx(&wizard.WizardTxSimpleTransfer{
 		txData.Extra,
 		txData.Data,
 		txData.Fee,
 		txData.Nonce,
-		sendersWalletAddresses[0].PrivateKey.Key,
+		vin,
+		vout,
 	}, false, statusCallback); err != nil {
 		return nil, err
 	}
