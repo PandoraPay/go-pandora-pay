@@ -98,7 +98,7 @@ func (a *Address) EncodeAddr() string {
 }
 func DecodeAddr(input string) (*Address, error) {
 
-	addr := &Address{PublicKey: []byte{}, PaymentID: []byte{}}
+	addr := &Address{}
 
 	if len(input) < config.NETWORK_BYTE_PREFIX_LENGTH {
 		return nil, errors.New("Invalid Address length")

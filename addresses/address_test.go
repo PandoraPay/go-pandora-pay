@@ -1,7 +1,6 @@
 package addresses
 
 import (
-	"bytes"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
@@ -91,9 +90,9 @@ func TestDecodeAddr(t *testing.T) {
 
 		assert.Equal(t, decodedAddress.PublicKey, address.PublicKey)
 		assert.Equal(t, decodedAddress.PaymentAmount, paymentAmount)
-		assert.Equal(t, bytes.Equal(decodedAddress.PaymentID, paymentID), true)
-		assert.Equal(t, bytes.Equal(decodedAddress.PaymentAsset, paymentAsset), true)
-		assert.Equal(t, bytes.Equal(decodedAddress.SpendPublicKey, spendPublicKey), true)
+		assert.Equal(t, decodedAddress.PaymentID, paymentID)
+		assert.Equal(t, decodedAddress.PaymentAsset, paymentAsset)
+		assert.Equal(t, decodedAddress.SpendPublicKey, spendPublicKey)
 		if registration {
 			assert.Equal(t, len(decodedAddress.Registration), cryptography.SignatureSize)
 		} else {
