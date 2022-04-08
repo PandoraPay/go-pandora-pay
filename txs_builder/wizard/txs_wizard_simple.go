@@ -40,6 +40,11 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 		}
 	}
 
+	var privateKey *addresses.PrivateKey
+	if privateKey, err = addresses.NewPrivateKey(transfer.Key); err != nil {
+		return nil, err
+	}
+
 	txBase := &transaction_simple.TransactionSimple{
 		TxScript:    txScript,
 		DataVersion: transfer.Data.getDataVersion(),
@@ -64,10 +69,7 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 	statusCallback("Transaction Fee set")
 
 	statusCallback("Transaction Signing...")
-	var privateKey *addresses.PrivateKey
-	if privateKey, err = addresses.NewPrivateKey(transfer.Key); err != nil {
-		return nil, err
-	}
+
 	if txBase.Vin.Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
 		return nil, err
 	}
