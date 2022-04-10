@@ -63,7 +63,13 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("Can't be used for transactions as the private key is missing")
 		}
 
-		tx, err := wizard.CreateSimpleTx(txData.Nonce, senderWalletAddr.PrivateKey.Key, txData.Height, payloadExtra, txData.Data, txData.Fee, txData.FeeVersion, false, func(status string) {
+		tx, err := wizard.CreateSimpleTx(&wizard.WizardTxSimpleTransfer{
+			payloadExtra,
+			txData.Data,
+			txData.Fee,
+			txData.Nonce,
+			senderWalletAddr.PrivateKey.Key,
+		}, false, func(status string) {
 			args[1].Invoke(status)
 		})
 		if err != nil {
