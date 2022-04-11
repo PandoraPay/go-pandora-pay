@@ -114,7 +114,7 @@ func StartConfig() {
 
 func InitConfig() (err error) {
 
-	if globals.Arguments["--network"] == "mainet" {
+	if globals.Arguments["--network"] == "mainnet" {
 
 	} else if globals.Arguments["--network"] == "testnet" {
 		NETWORK_SELECTED = TEST_NET_NETWORK_BYTE
@@ -129,7 +129,7 @@ func InitConfig() (err error) {
 		NETWORK_SELECTED_NAME = DEV_NET_NETWORK_NAME
 		NETWORK_SELECTED_BYTE_PREFIX = DEV_NET_NETWORK_BYTE_PREFIX
 	} else {
-		return errors.New("selected --network is invalid. Accepted only: mainet, testnet, devnet")
+		return errors.New("selected --network is invalid. Accepted only: mainnet, testnet, devnet")
 	}
 
 	if globals.Arguments["--debug"] == true {
