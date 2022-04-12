@@ -21,7 +21,6 @@ import (
 	"pandora-pay/txs_builder"
 	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
-	"runtime"
 )
 
 func _startMain() (err error) {
@@ -88,7 +87,7 @@ func _startMain() (err error) {
 		return
 	}
 
-	if runtime.GOARCH != "wasm" {
+	if globals.Arguments["--initialize-balance-decryptor"] == true {
 		go func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()

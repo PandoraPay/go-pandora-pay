@@ -6,7 +6,7 @@ package arguments
 const commands = `PANDORA PAY WASM.
 
 Usage:
-  pandorapay [--pprof] [--version] [--network=network] [--debug] [--forging] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--instance=prefix] [--instance-id=id] [--exit]
+  pandorapay [--pprof] [--version] [--network=network] [--debug] [--forging] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--instance=prefix] [--instance-id=id] [--initialize-balance-decryptor] [--exit]
   pandorapay -h | --help
   pandorapay -v | --version
 
@@ -30,5 +30,6 @@ Options:
   --wallet-decrypt=password                          Decrypt wallet.
   --wallet-remove-encryption                         Remove wallet encryption.
   --wallet-export-shared-staked-address=args         Derive and export Staked address. Argument must be "account,nonce,path".
+  --initialize-balance-decryptor                     Initialize Balance Decryptor.
   --exit                                             Exit node.
 `
