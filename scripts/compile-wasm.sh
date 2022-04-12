@@ -1,5 +1,10 @@
 if [ $# -eq 0 ]; then
-  echo "argument missing"
+  echo "arguments missing"
+fi
+
+if [[ "$*" == "help" ]]; then
+    echo "main|helper, dev|wallet-dev|wallet-build, brotli|zopfli|gzip"
+    exit 1
 fi
 
 gitVersion=$(git log -n1 --format=format:"%H")
@@ -8,54 +13,66 @@ gitVersionShort=${gitVersion:0:12}
 src=""
 buildOutput=""
 
-if [ "$2" == "dev" ]; then
+if [[ "$*" == *dev* ]]; then
   buildOutput="./dist/PandoraPay"
-fi
-if [ "$2" == "wallet-dev" ]; then
+elif [[ "$*" == *wallet-dev* ]]; then
   buildOutput="./dist/PandoraPay-wallet"
-fi
-if [ "$2" == "wallet-build" ]; then
+elif [[ "$*" == *wallet-build* ]]; then
   buildOutput="./dist/PandoraPay-wallet"
+else
+  echo "argument dev|wallet-dev|wallet-build missing"
+  exit 1
 fi
 
-if [ "$1" == "main" ]; then
+if [[ "$*" == *main* ]]; then
   buildOutput="./webassembly/"${buildOutput}"-main"
   src="./"
-fi
-if [ "$1" == "helper" ]; then
-  buildOutput=${buildOutput}"-helper"
+elif [[ "$*" == *helper* ]]; then
+  buildOutput+="-helper"
   src="webassembly_helper/"
+else
+  echo "argument main|helper missing"
+  exit 1
 fi
 
-buildOutput=${buildOutput}".wasm"
+buildOutput+=".wasm"
+
+echo ${buildOutput}
 
 go version
 (cd ${src} && GOOS=js GOARCH=wasm go build -ldflags "-X pandora-pay/config.BUILD_VERSION=${gitVersionShort}" -o ${buildOutput} )
 
 buildOutput=${src}${buildOutput}
 
-if [ "$2" == "wallet-dev" ]; then
-  cp ${buildOutput} ../PandoraPay-wallet/dist/dev/wasm
-  exit 1
+finalOutput="../PandoraPay-wallet/dist/"
+
+if [[ "$*" == *wallet-dev* ]]; then
+  finalOutput+="dev/wasm/"
+elif [[ "$*" == *wallet-build* ]]; then
+  finalOutput+="build/wasm/"
 fi
 
-if [ "$2" == "wallet-build" ]; then
+stat --printf="%s \n" ${buildOutput}
 
-  stat --printf="%s \n" ${buildOutput}
+echo "Deleting..."
 
-  echo "Deleting..."
-  if [ "$3" == "brotli" ]; then
-    rm ${buildOutput}.br 2>/dev/null
-  else
-    rm ${buildOutput}.gz 2>/dev/null
-  fi
+rm ${buildOutput}.br 2>/dev/null
+rm ${buildOutput}.gz 2>/dev/null
 
-  finalOutput="../PandoraPay-wallet/dist/build/wasm"
+mkdir -p ${finalOutput}
 
-  echo "Copy to wallet/build..."
-  cp ${buildOutput} ${finalOutput}
+if [[ "$*" == *main* ]]; then
+  finalOutput+="PandoraPay-wallet-main.wasm"
+elif [[ "$*" == *helper* ]]; then
+  finalOutput+="PandoraPay-wallet-helper.wasm"
+fi
 
-  if [ "$3" == "brotli" ]; then
+echo "Copy to wallet/build..."
+cp ${buildOutput} ${finalOutput}
+
+if [[ "$*" == *wallet-build* ]]; then
+
+  if [[ "$*" == *brotli* ]]; then
     echo "Zipping using brotli..."
     if ! brotli -o ${buildOutput}.br ${buildOutput}; then
       echo "sudo apt-get install brotli"
@@ -63,8 +80,10 @@ if [ "$2" == "wallet-build" ]; then
     fi
     stat --printf="brotli size %s \n" ${buildOutput}.br
     echo "Copy to wallet/build..."
-    cp ${buildOutput}.br ${finalOutput}
-  elif [ "$3" == "zopfli" ]; then
+    cp ${buildOutput}.br ${finalOutput}.br
+  fi
+
+  if [[ "$*" == *zopfli* ]]; then
     echo "Zipping using zopfli..."
     if ! zopfli ${buildOutput}; then
       echo "sudo apt-get install zopfli"
@@ -72,17 +91,13 @@ if [ "$2" == "wallet-build" ]; then
     fi
     stat --printf="zopfli gzip size: %s \n" ${buildOutput}.gz
     echo "Copy to wallet/build..."
-    cp ${buildOutput}.gz ${finalOutput}
-  else
+    cp ${buildOutput}.gz ${finalOutput}.gz
+  elfi [[ "$*" == *gzip* ]]; then
     echo "Gzipping..."
     gzip --best ${buildOutput}
     stat --printf="gzip size %s \n" ${buildOutput}.gz
     echo "Copy to wallet/build..."
-    cp ${buildOutput}.gz ${finalOutput}
+    cp ${buildOutput}.gz ${finalOutput}.gz
   fi
 
-  exit 1
 fi
-
-
-echo "'main' | 'helper', 'dev', 'wallet-dev', 'wallet-build | brotli | zopfli'"

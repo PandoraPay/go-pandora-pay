@@ -3,11 +3,13 @@ module pandora-pay
 go 1.18
 
 require (
+	github.com/blang/semver/v4 v4.0.0
 	github.com/docopt/docopt.go v0.0.0-20180111231733-ee0de3bc6815
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/gorilla/rpc v1.2.0
 	github.com/gorilla/schema v1.2.0
 	github.com/mackerelio/go-osstat v0.1.0
+	github.com/mr-tron/base58 v1.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/tevino/abool v1.2.0
 	github.com/tidwall/buntdb v1.2.3
@@ -24,7 +26,6 @@ require (
 require (
 	github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e // indirect
 	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec // indirect
-	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/codemodus/kace v0.5.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/klauspost/compress v1.10.3 // indirect

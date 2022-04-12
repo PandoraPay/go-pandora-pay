@@ -1,13 +1,16 @@
 package helpers
 
 import (
+	"crypto/rand"
 	"encoding/hex"
-	"math/rand"
 )
 
 func RandomBytes(size int) []byte {
 	a := make([]byte, size)
-	rand.Read(a)
+	_, err := rand.Read(a)
+	for err != nil {
+		_, err = rand.Read(a)
+	}
 	return a
 }
 
