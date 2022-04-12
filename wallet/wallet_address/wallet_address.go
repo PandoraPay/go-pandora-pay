@@ -2,9 +2,12 @@ package wallet_address
 
 import (
 	"errors"
+	"fmt"
 	"pandora-pay/addresses"
+	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/derivation"
 	"pandora-pay/wallet/wallet_address/shared_staked"
+	"strconv"
 )
 
 type WalletAddress struct {
@@ -27,30 +30,45 @@ func (addr *WalletAddress) DeriveSharedStaked(nonce uint32) (*shared_staked.Wall
 		return nil, errors.New("Private Key is missing")
 	}
 
-	secretKey, err := derivation.NewMasterKey(addr.SecretKey)
-	if err != nil {
-		return nil, err
-	}
+	if len(addr.SecretKey) != 0 {
 
-	firstSecretKey, err := secretKey.Derive(1)
-	if err != nil {
-		return nil, err
-	}
+		secretKey, err := derivation.DeriveForPath(fmt.Sprintf(derivation.WebDollarAccountPathFormat, 0), addr.SecretKey)
+		if err != nil {
+			return nil, err
+		}
 
-	key, err := firstSecretKey.Derive(nonce)
-	if err != nil {
-		return nil, err
-	}
+		secretSeed := secretKey.RawSeed()
 
-	publicKey, err := key.PublicKey()
-	if err != nil {
-		return nil, err
-	}
+		key, err := derivation.DeriveForPath(fmt.Sprintf(derivation.WebDollarAccountPathFormat, nonce), secretSeed[:])
+		if err != nil {
+			return nil, err
+		}
 
-	return &shared_staked.WalletAddressSharedStaked{
-		PrivateKey: &addresses.PrivateKey{key.Key},
-		PublicKey:  publicKey,
-	}, nil
+		publicKey, err := key.PublicKey()
+		if err != nil {
+			return nil, err
+		}
+
+		return &shared_staked.WalletAddressSharedStaked{
+			&addresses.PrivateKey{key.Key},
+			publicKey,
+		}, nil
+
+	} else { //webd1 legacy when no HD seed
+
+		bytes := cryptography.SHA3(cryptography.SHA3(addr.PrivateKey.Key))
+		suffix := strconv.FormatUint( uint64(nonce), 10)
+		key := cryptography.SHA256( cryptography.SHA256(cryptography.SHA3(append( bytes, suffix... )) )
+		privateKey, err := addresses.NewPrivateKey(key)
+		if err != nil {
+			return nil, err
+		}
+
+		return &shared_staked.WalletAddressSharedStaked{
+			privateKey,
+			privateKey.GeneratePublicKey(),
+		}, nil
+	}
 
 }
 

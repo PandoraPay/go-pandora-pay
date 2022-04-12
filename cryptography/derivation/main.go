@@ -16,12 +16,12 @@ import (
 
 const (
 	// StellarAccountPrefix is a prefix for Stellar key pairs derivation.
-	StellarAccountPrefix = "m/44'/148'"
+	WebDollarAccountPrefix = "m/44'/149'"
 	// StellarPrimaryAccountPath is a derivation path of the primary account.
-	StellarPrimaryAccountPath = "m/44'/148'/0'"
+	WebDollarPrimaryAccountPath = "m/44'/149'/0'"
 	// StellarAccountPathFormat is a path format used for Stellar key pair
 	// derivation as described in SEP-00XX. Use with `fmt.Sprintf` and `DeriveForPath`.
-	StellarAccountPathFormat = "m/44'/148'/%d'"
+	WebDollarAccountPathFormat = "m/44'/149'/%d'"
 	// FirstHardenedIndex is the index of the first hardened key.
 	FirstHardenedIndex = uint32(0x80000000)
 	// As in https://github.com/satoshilabs/slips/blob/master/slip-0010.md

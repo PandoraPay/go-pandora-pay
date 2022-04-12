@@ -20,21 +20,29 @@ func (wallet *Wallet) createSeed(lock bool) error {
 		return errors.New("Wallet was not loaded!")
 	}
 
-	entropy, err := bip39.NewEntropy(256)
-	if err != nil {
-		return errors.New("Entropy of the address raised an error")
+	for {
+		entropy, err := bip39.NewEntropy(256)
+		if err != nil {
+			continue
+		}
+
+		mnemonic, err := bip39.NewMnemonic(entropy)
+		if err != nil {
+			continue
+		}
+
+		wallet.Mnemonic = mnemonic
+
+		// Generate a Bip32 HD wallet for the mnemonic and a user supplied password
+		seed, err := bip39.NewSeedWithErrorChecking(mnemonic, "SEED Secret Passphrase")
+		if err != nil {
+			continue
+		}
+
+		wallet.Seed = seed
+		break
 	}
 
-	mnemonic, err := bip39.NewMnemonic(entropy)
-	if err != nil {
-		return errors.New("Mnemonic couldn't be created")
-	}
-
-	wallet.Mnemonic = mnemonic
-
-	// Generate a Bip32 HD wallet for the mnemonic and a user supplied password
-	seed := bip39.NewSeed(mnemonic, "SEED Secret Passphrase")
-	wallet.Seed = seed
 	return nil
 }
 

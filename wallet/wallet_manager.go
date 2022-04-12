@@ -107,7 +107,7 @@ func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte) (*wallet_ad
 		IsMine:     true,
 	}
 
-	if err := wallet.AddAddress(addr, true, false, false, true); err != nil {
+	if err = wallet.AddAddress(addr, true, false, false, true); err != nil {
 		return nil, err
 	}
 
