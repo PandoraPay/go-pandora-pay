@@ -3,13 +3,16 @@ package wallet
 type Version int
 
 const (
-	VERSION_SIMPLE Version = 0
+	VERSION_SIMPLE Version = iota
+	VERSION_SIMPLE_HARDENED
 )
 
 func (e Version) String() string {
 	switch e {
 	case VERSION_SIMPLE:
 		return "VERSION_SIMPLE"
+	case VERSION_SIMPLE_HARDENED:
+		return "VERSION_SIMPLE_HARDENED"
 	default:
 		return "Unknown Version"
 	}
