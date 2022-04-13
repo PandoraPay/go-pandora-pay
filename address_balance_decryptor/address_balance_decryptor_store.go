@@ -32,8 +32,14 @@ func (decryptor *AddressBalanceDecryptor) loadFromStore() error {
 func (decryptor *AddressBalanceDecryptor) saveToStore() {
 	for {
 		time.Sleep(2 * time.Minute)
-		data := make(map[string]uint64)
 
+		if decryptor.previousValuesChanged.IsNotSet() {
+			continue
+		}
+
+		decryptor.previousValuesChanged.UnSet()
+
+		data := make(map[string]uint64)
 		decryptor.previousValues.Range(func(key string, value uint64) bool {
 			data[key] = value
 			return true

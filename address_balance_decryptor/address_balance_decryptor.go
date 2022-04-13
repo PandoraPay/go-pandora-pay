@@ -2,6 +2,7 @@ package address_balance_decryptor
 
 import (
 	"context"
+	"github.com/tevino/abool"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -11,10 +12,11 @@ import (
 )
 
 type AddressBalanceDecryptor struct {
-	all            *generics.Map[string, *addressBalanceDecryptorWork]
-	previousValues *generics.Map[string, uint64]
-	workers        []*AddressBalanceDecryptorWorker
-	newWorkCn      chan *addressBalanceDecryptorWork
+	all                   *generics.Map[string, *addressBalanceDecryptorWork]
+	previousValues        *generics.Map[string, uint64]
+	previousValuesChanged *abool.AtomicBool
+	workers               []*AddressBalanceDecryptorWorker
+	newWorkCn             chan *addressBalanceDecryptorWork
 }
 
 func (decryptor *AddressBalanceDecryptor) DecryptBalance(decryptionName string, publicKey, privateKey, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, storeNewPreviousValue bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
@@ -52,6 +54,7 @@ func (decryptor *AddressBalanceDecryptor) DecryptBalance(decryptionName string, 
 
 	if storeNewPreviousValue {
 		decryptor.previousValues.Store(string(publicKey)+"_"+string(asset)+"_"+decryptionName, foundWork.result.decryptedBalance)
+		decryptor.previousValuesChanged.Set()
 	}
 
 	return foundWork.result.decryptedBalance, nil
@@ -67,6 +70,7 @@ func NewAddressBalanceDecryptor() (*AddressBalanceDecryptor, error) {
 	addressBalanceDecryptor := &AddressBalanceDecryptor{
 		&generics.Map[string, *addressBalanceDecryptorWork]{},
 		&generics.Map[string, uint64]{},
+		abool.New(),
 		make([]*AddressBalanceDecryptorWorker, threadsCount),
 		make(chan *addressBalanceDecryptorWork, 1),
 	}
