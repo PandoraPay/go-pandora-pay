@@ -84,10 +84,46 @@ func (wallet *Wallet) ImportMnemonic(mnemonic string) (err error) {
 
 	seed, err := bip39.NewSeedWithErrorChecking(mnemonic, "SEED Secret Passphrase")
 	if err != nil {
+		return
+	}
+
+	seedExtended, err := addresses.NewPrivateKeyExtended(seed)
+	if err != nil {
+		return
+	}
+
+	wallet.Seed = seedExtended.Serialize()
+
+	if _, err = wallet.AddNewAddress(false, "", false, false, true); err != nil {
+		return
+	}
+
+	return
+}
+
+func (wallet *Wallet) ImportEntropy(entropy []byte) (err error) {
+
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
+
+	wallet.clearWallet()
+	wallet.setLoaded(true)
+
+	if wallet.Mnemonic, err = bip39.NewMnemonic(entropy); err != nil {
+		return
+	}
+
+	seed, err := bip39.NewSeedWithErrorChecking(wallet.Mnemonic, "SEED Secret Passphrase")
+	if err != nil {
 		return err
 	}
 
-	wallet.Seed = seed
+	seedExtended, err := addresses.NewPrivateKeyExtended(seed)
+	if err != nil {
+		return
+	}
+
+	wallet.Seed = seedExtended.Serialize()
 
 	if _, err = wallet.AddNewAddress(false, "", false, false, true); err != nil {
 		return

@@ -473,7 +473,7 @@ func (wallet *Wallet) GetWalletAddress(index int, lock bool) (*wallet_address.Wa
 	return wallet.Addresses[index].Clone(), nil
 }
 
-func (wallet *Wallet) GetSecretKey(index int) ([]byte, error) { //32 byte
+func (wallet *Wallet) GetAddressSecretKey(index int) ([]byte, error) { //32 byte
 
 	wallet.Lock.RLock()
 	defer wallet.Lock.RUnlock()
