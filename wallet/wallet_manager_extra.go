@@ -40,10 +40,8 @@ func (wallet *Wallet) createSeed(lock bool) error {
 		}
 
 		wallet.Seed = seed
-		break
+		return nil
 	}
-
-	return nil
 }
 
 func (wallet *Wallet) CreateEmptyWallet() (err error) {
