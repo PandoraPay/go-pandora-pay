@@ -138,7 +138,8 @@ func Initialize(startMainCb func()) {
 			}),
 			"wallet": js.ValueOf(map[string]interface{}{
 				"version": js.ValueOf(map[string]interface{}{
-					"VERSION_SIMPLE": js.ValueOf(int(wallet.VERSION_SIMPLE)),
+					"VERSION_SIMPLE":          js.ValueOf(int(wallet.VERSION_SIMPLE)),
+					"VERSION_SIMPLE_HARDENED": js.ValueOf(int(wallet.VERSION_SIMPLE_HARDENED)),
 				}),
 				"encryptedVersion": js.ValueOf(map[string]interface{}{
 					"ENCRYPTED_VERSION_PLAIN_TEXT":        js.ValueOf(int(wallet.ENCRYPTED_VERSION_PLAIN_TEXT)),

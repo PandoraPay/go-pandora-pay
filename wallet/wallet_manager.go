@@ -105,12 +105,17 @@ func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte, staked, spe
 		return nil, err
 	}
 
-	privKey, err := secretChild.NewChildKey(0)
+	start := uint32(0)
+	if wallet.Version >= VERSION_SIMPLE_HARDENED {
+		start = bip32.FirstHardenedChild
+	}
+
+	privKey, err := secretChild.NewChildKey(start + 0)
 	if err != nil {
 		return nil, err
 	}
 
-	spendPrivKey, err := secretChild.NewChildKey(1)
+	spendPrivKey, err := secretChild.NewChildKey(start + 1)
 	if err != nil {
 		return nil, err
 	}
@@ -280,17 +285,22 @@ func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte,
 		return nil, nil, nil, err
 	}
 
-	secret, err := masterKey.NewChildKey(seedIndex)
+	index := uint32(0)
+	if wallet.Version != VERSION_SIMPLE_HARDENED {
+		index = bip32.FirstHardenedChild
+	}
+
+	secret, err := masterKey.NewChildKey(index + seedIndex)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	key2, err := secret.NewChildKey(0)
+	key2, err := secret.NewChildKey(index + 0)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	key3, err := secret.NewChildKey(1)
+	key3, err := secret.NewChildKey(index + 1)
 	if err != nil {
 		return nil, nil, nil, err
 	}
