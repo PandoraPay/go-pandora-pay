@@ -84,12 +84,12 @@ func (wallet *Wallet) GetWalletAddressByPublicKeyHash(publicKeyHash []byte, lock
 
 func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte) (*wallet_address.WalletAddress, error) {
 
-	secretChild, err := derivation.NewMasterKey(secretKey)
+	masterKey, err := derivation.NewMasterKey(secretKey)
 	if err != nil {
 		return nil, err
 	}
 
-	privKey, err := secretChild.Derive(0)
+	privKey, err := masterKey.Derive(derivation.FirstHardenedIndex) //0
 	if err != nil {
 		return nil, err
 	}
@@ -236,12 +236,12 @@ func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte,
 		return nil, nil, err
 	}
 
-	secret, err := masterKey.Derive(seedIndex)
+	secret, err := masterKey.Derive(derivation.FirstHardenedIndex + seedIndex)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	privateKey, err := secret.Derive(0)
+	privateKey, err := secret.Derive(derivation.FirstHardenedIndex)
 	if err != nil {
 		return nil, nil, err
 	}
