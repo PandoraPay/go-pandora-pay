@@ -65,7 +65,10 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 
 	for t, payload := range txData.Payloads {
 
-		key := addresses.PrivateKey{Key: payload.Sender.PrivateKey}
+		var key *addresses.PrivateKey
+		if key, err = addresses.NewPrivateKey(payload.Sender.PrivateKey); err != nil {
+			return
+		}
 
 		var senderAddr *addresses.Address
 		senderAddr, err = key.GenerateAddress(false, nil, txData.Regs[string(key.GeneratePublicKey())] == nil, nil, 0, nil)
