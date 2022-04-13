@@ -2,9 +2,10 @@ package address_balance_decryptor
 
 import (
 	"context"
-	"pandora-pay/addresses"
 	"pandora-pay/config"
+	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
+	balance_decryptor "pandora-pay/cryptography/crypto/balance-decryptor"
 	"pandora-pay/helpers/generics"
 	"runtime"
 )
@@ -14,16 +15,6 @@ type AddressBalanceDecryptor struct {
 	previousValues *generics.Map[string, uint64]
 	workers        []*AddressBalanceDecryptorWorker
 	newWorkCn      chan *addressBalanceDecryptorWork
-}
-
-func (decryptor *AddressBalanceDecryptor) DecryptBalanceByPrivateKey(decryptionName string, privateKey, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, storeNewPreviousValue bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
-
-	priv, err := addresses.NewPrivateKey(privateKey)
-	if err != nil {
-		return 0, err
-	}
-
-	return decryptor.DecryptBalance(decryptionName, priv.GeneratePublicKey(), privateKey, encryptedBalance, asset, useNewPreviousValue, newPreviousValue, storeNewPreviousValue, ctx, statusCallback)
 }
 
 func (decryptor *AddressBalanceDecryptor) DecryptBalance(decryptionName string, publicKey, privateKey, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, storeNewPreviousValue bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
@@ -39,21 +30,17 @@ func (decryptor *AddressBalanceDecryptor) DecryptBalance(decryptionName string, 
 		previousValue, _ = decryptor.previousValues.Load(string(publicKey) + "_" + string(asset) + "_" + decryptionName)
 	}
 
-	balancePoint, err := new(crypto.ElGamal).Deserialize(encryptedBalance)
+	balance, err := new(crypto.ElGamal).Deserialize(encryptedBalance)
 	if err != nil {
 		return 0, err
 	}
 
-	priv, err := addresses.NewPrivateKey(privateKey)
-	if err != nil {
-		return 0, err
-	}
-
-	if priv.TryDecryptBalance(balancePoint, previousValue) {
+	balancePoint := new(bn256.G1).Add(balance.Left, new(bn256.G1).Neg(new(bn256.G1).ScalarMult(balance.Right, new(crypto.BNRed).SetBytes(privateKey).BigInt())))
+	if balance_decryptor.BalanceDecryptor.TryDecryptBalance(balancePoint, previousValue) {
 		return previousValue, nil
 	}
 
-	foundWork, loaded := decryptor.all.LoadOrStore(string(publicKey)+"_"+string(encryptedBalance), &addressBalanceDecryptorWork{balancePoint, priv, previousValue, make(chan struct{}), ADDRESS_BALANCE_DECRYPTED_INIT, 0, nil, ctx, statusCallback})
+	foundWork, loaded := decryptor.all.LoadOrStore(string(publicKey)+"_"+string(encryptedBalance), &addressBalanceDecryptorWork{balancePoint, previousValue, make(chan struct{}), ADDRESS_BALANCE_DECRYPTED_INIT, 0, nil, ctx, statusCallback})
 	if !loaded {
 		decryptor.newWorkCn <- foundWork
 	}

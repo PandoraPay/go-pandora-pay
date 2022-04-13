@@ -27,6 +27,7 @@ func decryptBalance(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		parameters := &struct {
+			PublicKey     []byte `json:"publicKey"`
 			PrivateKey    []byte `json:"privateKey"`
 			PreviousValue uint64 `json:"previousValue"`
 			Balance       []byte `json:"balance"`
@@ -48,7 +49,7 @@ func decryptBalance(this js.Value, args []js.Value) interface{} {
 
 			time.Sleep(time.Millisecond * 10)
 
-			value, finalErr = AddressBalanceDecryptor.DecryptBalanceByPrivateKey("wallet", parameters.PrivateKey, parameters.Balance, parameters.Asset, true, parameters.PreviousValue, true, ctx, func(status string) {
+			value, finalErr = AddressBalanceDecryptor.DecryptBalance("wallet", parameters.PublicKey, parameters.PrivateKey, parameters.Balance, parameters.Asset, true, parameters.PreviousValue, true, ctx, func(status string) {
 				args[1].Invoke(status)
 				time.Sleep(500 * time.Microsecond)
 			})

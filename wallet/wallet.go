@@ -43,7 +43,7 @@ func createWallet(forging *forging.Forging, mempool *mempool.Mempool, addressBal
 
 //must be locked before
 func (wallet *Wallet) clearWallet() {
-	wallet.Version = VERSION_SIMPLE_HARDENED
+	wallet.Version = VERSION_SIMPLE
 	wallet.Mnemonic = ""
 	wallet.Seed = nil
 	wallet.SeedIndex = 0

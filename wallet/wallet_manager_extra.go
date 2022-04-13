@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/tyler-smith/go-bip39"
+	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/config/config_coins"
@@ -42,7 +43,13 @@ func (wallet *Wallet) createSeed(lock bool) error {
 		if err != nil {
 			continue
 		}
-		wallet.Seed = seed
+
+		var seedExtended *addresses.PrivateKeyExtended
+		if seedExtended, err = addresses.NewPrivateKeyExtended(seed); err != nil {
+			continue
+		}
+
+		wallet.Seed = seedExtended.Serialize()
 		return nil
 	}
 }

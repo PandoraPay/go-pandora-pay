@@ -2,6 +2,7 @@ package address_balance_decryptor
 
 import (
 	"pandora-pay/config"
+	balance_decryptor "pandora-pay/cryptography/crypto/balance-decryptor"
 	"sync/atomic"
 	"time"
 )
@@ -11,7 +12,7 @@ type AddressBalanceDecryptorWorker struct {
 }
 
 func (worker *AddressBalanceDecryptorWorker) processWork(work *addressBalanceDecryptorWork) (uint64, error) {
-	return work.privateKey.DecryptBalance(work.encryptedBalance, false, work.previousValue, work.ctx, work.statusCallback)
+	return balance_decryptor.BalanceDecryptor.DecryptBalance(work.encryptedBalance, false, 0, work.ctx, work.statusCallback)
 }
 
 func (worker *AddressBalanceDecryptorWorker) run() {

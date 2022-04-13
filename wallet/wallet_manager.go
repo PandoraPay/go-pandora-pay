@@ -98,15 +98,20 @@ func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte, lock bool) *
 	return wallet.addressesMap[string(publicKey)].Clone()
 }
 
-func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte, staked, spendRequired bool) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) ImportSecretKey(name string, secret []byte, staked, spendRequired bool) (*wallet_address.WalletAddress, error) {
 
-	secretChild, err := bip32.Deserialize(secretKey)
+	secretPrivateKeyExtended := &addresses.PrivateKeyExtended{}
+	if err := secretPrivateKeyExtended.Deserialize(secret); err != nil {
+		return nil, err
+	}
+
+	secretChild, err := bip32.Deserialize(secretPrivateKeyExtended.Key)
 	if err != nil {
 		return nil, err
 	}
 
 	start := uint32(0)
-	if wallet.Version >= VERSION_SIMPLE_HARDENED {
+	if secretPrivateKeyExtended.Version == addresses.SIMPLE_PRIVATE_KEY_WIF { //hardened
 		start = bip32.FirstHardenedChild
 	}
 
@@ -132,14 +137,14 @@ func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte, staked, spe
 
 	addr := &wallet_address.WalletAddress{
 		Name:            name,
-		SecretKey:       secretKey,
+		SecretKey:       secret,
 		PrivateKey:      privateKey,
 		SeedIndex:       1,
 		SpendPrivateKey: spendPrivateKey,
 		IsMine:          true,
 	}
 
-	if err := wallet.AddAddress(addr, staked, spendRequired, true, false, false, true); err != nil {
+	if err = wallet.AddAddress(addr, staked, spendRequired, true, false, false, true); err != nil {
 		return nil, err
 	}
 
@@ -280,13 +285,18 @@ func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte,
 		return nil, nil, nil, errors.New("Wallet was not loaded!")
 	}
 
-	masterKey, err := bip32.NewMasterKey(wallet.Seed)
+	seedExtend := &addresses.PrivateKeyExtended{}
+	if err := seedExtend.Deserialize(wallet.Seed); err != nil {
+		return nil, nil, nil, err
+	}
+
+	masterKey, err := bip32.NewMasterKey(seedExtend.Key)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	index := uint32(0)
-	if wallet.Version != VERSION_SIMPLE_HARDENED {
+	var index uint32
+	if seedExtend.Version == addresses.SIMPLE_PRIVATE_KEY_WIF {
 		index = bip32.FirstHardenedChild
 	}
 

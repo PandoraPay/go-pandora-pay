@@ -3,6 +3,7 @@ package addresses
 import (
 	"context"
 	"errors"
+	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -10,7 +11,7 @@ import (
 )
 
 type PrivateKey struct {
-	Key []byte `json:"key" msgpack:"key"` //32 byte
+	KeyWIF
 }
 
 func (pk *PrivateKey) GeneratePublicKeyPoint() *bn256.G1 {
@@ -72,23 +73,42 @@ func (pk *PrivateKey) TryDecryptBalance(balance *crypto.ElGamal, matchValue uint
 	return balance_decryptor.BalanceDecryptor.TryDecryptBalance(balancePoint, matchValue)
 }
 
-func NewPrivateKey(key []byte) (*PrivateKey, error) {
-	if len(key) != cryptography.PrivateKeySize {
-		return nil, errors.New("Private Key length is invalid")
-	}
-	return &PrivateKey{Key: key}, nil
+func (pk *PrivateKey) Deserialize(buffer []byte) error {
+	return pk.deserialize(buffer, cryptography.PrivateKeySize)
 }
 
 func GenerateNewPrivateKey() *PrivateKey {
-	seed := crypto.RandomScalarBNRed()
-	privateKey := seed.ToBytes()
+	for {
+		seed := crypto.RandomScalarBNRed()
+		key := seed.ToBytes()
 
-	return &PrivateKey{Key: privateKey}
+		privateKey, err := NewPrivateKey(key)
+		if err != nil {
+			continue
+		}
+		return privateKey
+	}
 }
 
-func CreatePrivateKeyFromSeed(key []byte) (*PrivateKey, error) {
+func NewPrivateKey(key []byte) (*PrivateKey, error) {
+
 	if len(key) != cryptography.PrivateKeySize {
-		return nil, errors.New("Private key length is invalid")
+		return nil, errors.New("Private Key length is invalid")
 	}
-	return &PrivateKey{Key: key}, nil
+
+	version := SIMPLE_PRIVATE_KEY_WIF
+	network := config.NETWORK_SELECTED
+
+	privateKey := &PrivateKey{
+		KeyWIF{
+			version,
+			network,
+			key,
+			nil,
+		},
+	}
+
+	privateKey.Checksum = privateKey.computeCheckSum()
+
+	return privateKey, nil
 }
