@@ -96,13 +96,10 @@ func NewPrivateKey(key []byte) (*PrivateKey, error) {
 		return nil, errors.New("Private Key length is invalid")
 	}
 
-	version := SIMPLE_PRIVATE_KEY_WIF
-	network := config.NETWORK_SELECTED
-
 	privateKey := &PrivateKey{
 		KeyWIF{
-			version,
-			network,
+			SIMPLE_PRIVATE_KEY_WIF,
+			config.NETWORK_SELECTED,
 			key,
 			nil,
 		},

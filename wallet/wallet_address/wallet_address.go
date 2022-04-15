@@ -11,6 +11,7 @@ type WalletAddress struct {
 	Name                       string                                   `json:"name" msgpack:"name"`
 	SeedIndex                  uint32                                   `json:"seedIndex" msgpack:"seedIndex"`
 	IsMine                     bool                                     `json:"isMine" msgpack:"isMine"`
+	IsImported                 bool                                     `json:"isImported" msgpack:"isImported"`
 	SecretKey                  []byte                                   `json:"secretKey" msgpack:"secretKey"`
 	PrivateKey                 *addresses.PrivateKey                    `json:"privateKey" msgpack:"privateKey"`
 	SpendPrivateKey            *addresses.PrivateKey                    `json:"spendPrivateKey" msgpack:"spendPrivateKey"`
@@ -83,6 +84,7 @@ func (addr *WalletAddress) Clone() *WalletAddress {
 		addr.Name,
 		addr.SeedIndex,
 		addr.IsMine,
+		addr.IsImported,
 		addr.SecretKey,
 		addr.PrivateKey,
 		addr.SpendPrivateKey,
