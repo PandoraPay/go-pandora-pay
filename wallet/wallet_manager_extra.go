@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/tyler-smith/go-bip39"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
@@ -76,6 +77,10 @@ func (wallet *Wallet) ImportMnemonic(mnemonic string) (err error) {
 	wallet.Lock.Lock()
 	defer wallet.Lock.Unlock()
 
+	if wallet.Mnemonic == mnemonic {
+		return errors.New("Imported Mnemonic is identical with yours")
+	}
+
 	wallet.clearWallet()
 	wallet.setLoaded(true)
 
@@ -105,12 +110,19 @@ func (wallet *Wallet) ImportEntropy(entropy []byte) (err error) {
 	wallet.Lock.Lock()
 	defer wallet.Lock.Unlock()
 
+	var mnemonic string
+	if mnemonic, err = bip39.NewMnemonic(entropy); err != nil {
+		return
+	}
+
+	if mnemonic == wallet.Mnemonic {
+		return errors.New("Your mnemonic is identical")
+	}
+
 	wallet.clearWallet()
 	wallet.setLoaded(true)
 
-	if wallet.Mnemonic, err = bip39.NewMnemonic(entropy); err != nil {
-		return
-	}
+	wallet.Mnemonic = mnemonic
 
 	seed, err := bip39.NewSeedWithErrorChecking(wallet.Mnemonic, "SEED Secret Passphrase")
 	if err != nil {

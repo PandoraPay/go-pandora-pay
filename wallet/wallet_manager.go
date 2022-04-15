@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"github.com/tyler-smith/go-bip32"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/config/config_nodes"
