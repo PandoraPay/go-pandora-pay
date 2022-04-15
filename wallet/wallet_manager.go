@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/tyler-smith/go-bip32"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/config/config_nodes"
@@ -100,19 +99,15 @@ func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte, lock bool) *
 
 func (wallet *Wallet) ImportSecretKey(name string, secret []byte, staked, spendRequired bool) (*wallet_address.WalletAddress, error) {
 
-	secretPrivateKeyExtended := &addresses.PrivateKeyExtended{}
-	if err := secretPrivateKeyExtended.Deserialize(secret); err != nil {
-		return nil, err
-	}
-
-	secretChild, err := bip32.Deserialize(secretPrivateKeyExtended.Key)
+	secretChild, err := bip32.Deserialize(secret)
 	if err != nil {
 		return nil, err
 	}
 
-	start := uint32(0)
-	if secretPrivateKeyExtended.Version == addresses.SIMPLE_PRIVATE_KEY_WIF { //hardened
-		start = bip32.FirstHardenedChild
+	start := bip32.FirstHardenedChild
+
+	if wallet.nonHardening { //non hardened
+		start = 0
 	}
 
 	privKey, err := secretChild.NewChildKey(start + 0)
@@ -139,7 +134,8 @@ func (wallet *Wallet) ImportSecretKey(name string, secret []byte, staked, spendR
 		Name:            name,
 		SecretKey:       secret,
 		PrivateKey:      privateKey,
-		SeedIndex:       1,
+		SeedIndex:       0,
+		IsImported:      true,
 		SpendPrivateKey: spendPrivateKey,
 		IsMine:          true,
 	}
@@ -285,7 +281,7 @@ func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte,
 		return nil, nil, nil, errors.New("Wallet was not loaded!")
 	}
 
-	seedExtend := &addresses.PrivateKeyExtended{}
+	seedExtend := &addresses.SeedExtended{}
 	if err := seedExtend.Deserialize(wallet.Seed); err != nil {
 		return nil, nil, nil, err
 	}
@@ -295,22 +291,23 @@ func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte,
 		return nil, nil, nil, err
 	}
 
-	var index uint32
-	if seedExtend.Version == addresses.SIMPLE_PRIVATE_KEY_WIF {
-		index = bip32.FirstHardenedChild
+	start := bip32.FirstHardenedChild
+
+	if seedExtend.Version == addresses.SIMPLE_PRIVATE_KEY || wallet.nonHardening { //non hardening
+		start = 0
 	}
 
-	secret, err := masterKey.NewChildKey(index + seedIndex)
+	secret, err := masterKey.NewChildKey(start + seedIndex)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	key2, err := secret.NewChildKey(index + 0)
+	key2, err := secret.NewChildKey(start + 0)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	key3, err := secret.NewChildKey(index + 1)
+	key3, err := secret.NewChildKey(start + 1)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -507,9 +504,10 @@ func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.Wall
 	}
 
 	if !isMine {
-		addr.IsMine = false
 		addr.SeedIndex = 0
+		addr.IsImported = true
 	}
+	addr.IsMine = true
 
 	if err := wallet.AddAddress(addr, addr.Staked, addr.SpendRequired, false, false, isMine, true); err != nil {
 		return nil, err
@@ -591,6 +589,12 @@ func (wallet *Wallet) GetDelegatesCount() int {
 	defer wallet.Lock.RUnlock()
 
 	return wallet.DelegatesCount
+}
+
+func (wallet *Wallet) SetNonHardening(value bool) {
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
+	wallet.nonHardening = value
 }
 
 func (wallet *Wallet) Close() {

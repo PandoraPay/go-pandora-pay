@@ -60,6 +60,7 @@ func Initialize(startMainCb func()) {
 					"removeEncryptionWallet": js.FuncOf(removeEncryptionWallet),
 					"logoutWallet":           js.FuncOf(logoutWallet),
 				}),
+				"setWalletNonHardening": js.FuncOf(setWalletNonHardening),
 			}),
 			"decryptMessageWalletAddress":     js.FuncOf(decryptMessageWalletAddress),
 			"signMessageWalletAddress":        js.FuncOf(signMessageWalletAddress),

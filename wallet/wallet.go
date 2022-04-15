@@ -27,6 +27,7 @@ type Wallet struct {
 	mempool                 *mempool.Mempool
 	addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor
 	updateNewChainUpdate    *multicast.MulticastChannel[*blockchain_types.BlockchainUpdates]
+	nonHardening            bool         `json:"nonHardening" msgpack:"nonHardening"`
 	Lock                    sync.RWMutex `json:"-" msgpack:"-"`
 }
 
@@ -52,6 +53,7 @@ func (wallet *Wallet) clearWallet() {
 	wallet.Addresses = make([]*wallet_address.WalletAddress, 0)
 	wallet.addressesMap = make(map[string]*wallet_address.WalletAddress)
 	wallet.Encryption = createEncryption(wallet)
+	wallet.nonHardening = false
 	wallet.setLoaded(false)
 }
 

@@ -8,6 +8,7 @@ import (
 	"pandora-pay/helpers"
 )
 
+//omitempty because of non-wif version
 type KeyWIF struct {
 	Version  PrivateKeyVersion `json:"version,omitempty" msgpack:"version,omitempty"`
 	Network  uint64            `json:"network,omitempty" msgpack:"network,omitempty"` //replay protection from one network to another one
@@ -22,6 +23,8 @@ func (pk *KeyWIF) deserialize(buffer []byte, keySize int) (err error) {
 		pk.Network = config.MAIN_NET_NETWORK_BYTE
 		pk.Key = buffer
 		pk.Checksum = pk.computeCheckSum()
+
+		return
 	} else if len(buffer) >= 1+1+keySize+cryptography.ChecksumSize { //wif
 
 		//let's check the checksum
@@ -38,16 +41,18 @@ func (pk *KeyWIF) deserialize(buffer []byte, keySize int) (err error) {
 		if pk.Network, err = r.ReadUvarint(); err != nil {
 			return
 		}
-		if pk.Key, err = r.ReadBytes(cryptography.PrivateKeySize); err != nil {
-			return
-		}
-		if pk.Checksum, err = r.ReadBytes(cryptography.PrivateKeySize); err != nil {
+		if pk.Key, err = r.ReadBytes(keySize); err != nil {
 			return
 		}
 
+		if pk.Checksum, err = r.ReadBytes(cryptography.ChecksumSize); err != nil {
+			return
+		}
 		if !bytes.Equal(pk.Checksum, checksum) {
 			return errors.New("Private Key WIF Checksum is not matching")
 		}
+
+		return
 	}
 
 	return errors.New("Private Key length is invalid")
@@ -75,6 +80,5 @@ func (pk *KeyWIF) computeCheckSum() []byte {
 	w.WriteUvarint(pk.Network)
 	w.Write(pk.Key)
 
-	b := w.Bytes()
-	return cryptography.GetChecksum(b)
+	return cryptography.GetChecksum(w.Bytes())
 }

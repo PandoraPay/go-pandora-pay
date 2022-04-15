@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/tyler-smith/go-bip39"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
@@ -44,8 +43,8 @@ func (wallet *Wallet) createSeed(lock bool) error {
 			continue
 		}
 
-		var seedExtended *addresses.PrivateKeyExtended
-		if seedExtended, err = addresses.NewPrivateKeyExtended(seed); err != nil {
+		var seedExtended *addresses.SeedExtended
+		if seedExtended, err = addresses.NewSeedExtended(seed); err != nil {
 			continue
 		}
 
@@ -87,7 +86,7 @@ func (wallet *Wallet) ImportMnemonic(mnemonic string) (err error) {
 		return
 	}
 
-	seedExtended, err := addresses.NewPrivateKeyExtended(seed)
+	seedExtended, err := addresses.NewSeedExtended(seed)
 	if err != nil {
 		return
 	}
@@ -118,7 +117,7 @@ func (wallet *Wallet) ImportEntropy(entropy []byte) (err error) {
 		return err
 	}
 
-	seedExtended, err := addresses.NewPrivateKeyExtended(seed)
+	seedExtended, err := addresses.NewSeedExtended(seed)
 	if err != nil {
 		return
 	}
