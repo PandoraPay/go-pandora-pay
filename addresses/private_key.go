@@ -1,11 +1,10 @@
 package addresses
 
 import (
-	"crypto/ed25519"
-	"crypto/rand"
 	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
+	"pandora-pay/helpers"
 )
 
 type PrivateKey struct {
@@ -45,10 +44,8 @@ func (pk *PrivateKey) Deserialize(buffer []byte) error {
 
 func GenerateNewPrivateKey() *PrivateKey {
 	for {
-		seed := crypto.RandomScalarBNRed()
-		key := seed.ToBytes()
 
-		privateKey, err := NewPrivateKey(key)
+		privateKey, err := NewPrivateKey(helpers.RandomBytes(cryptography.PrivateKeySize))
 		if err != nil {
 			continue
 		}
@@ -75,4 +72,3 @@ func NewPrivateKey(key []byte) (*PrivateKey, error) {
 
 	return privateKey, nil
 }
-

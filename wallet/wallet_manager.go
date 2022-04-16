@@ -100,16 +100,15 @@ func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte) (*wallet_ad
 	}
 
 	addr := &wallet_address.WalletAddress{
-		Name:            name,
-		SecretKey:       secret,
-		PrivateKey:      privateKey,
-		SeedIndex:       0,
-		IsImported:      true,
-		SpendPrivateKey: spendPrivateKey,
-		IsMine:          true,
+		Name:       name,
+		SecretKey:  secretKey,
+		PrivateKey: privateKey,
+		SeedIndex:  0,
+		IsImported: true,
+		IsMine:     true,
 	}
 
-	if err = wallet.AddAddress(addr, staked, spendRequired, true, false, false, true); err != nil {
+	if err = wallet.AddAddress(addr, true, false, false, true); err != nil {
 		return nil, err
 	}
 
@@ -233,7 +232,12 @@ func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte,
 		return nil, nil, errors.New("Wallet was not loaded!")
 	}
 
-	masterKey, err := derivation.NewMasterKey(wallet.Seed)
+	seedExtend := &addresses.SeedExtended{}
+	if err := seedExtend.Deserialize(wallet.Seed); err != nil {
+		return nil, nil, err
+	}
+
+	masterKey, err := derivation.NewMasterKey(seedExtend.Key)
 	if err != nil {
 		return nil, nil, err
 	}
