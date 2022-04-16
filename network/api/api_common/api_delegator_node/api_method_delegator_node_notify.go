@@ -81,6 +81,7 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 		"Delegated Stake",
 		0,
 		false,
+		true,
 		nil,
 		nil,
 		nil,

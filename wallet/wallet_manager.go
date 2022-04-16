@@ -100,14 +100,16 @@ func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte) (*wallet_ad
 	}
 
 	addr := &wallet_address.WalletAddress{
-		Name:       name,
-		SecretKey:  secretKey,
-		PrivateKey: privateKey,
-		SeedIndex:  1,
-		IsMine:     true,
+		Name:            name,
+		SecretKey:       secret,
+		PrivateKey:      privateKey,
+		SeedIndex:       0,
+		IsImported:      true,
+		SpendPrivateKey: spendPrivateKey,
+		IsMine:          true,
 	}
 
-	if err = wallet.AddAddress(addr, true, false, false, true); err != nil {
+	if err = wallet.AddAddress(addr, staked, spendRequired, true, false, false, true); err != nil {
 		return nil, err
 	}
 
@@ -395,7 +397,7 @@ func (wallet *Wallet) GetWalletAddress(index int, lock bool) (*wallet_address.Wa
 	return wallet.Addresses[index].Clone(), nil
 }
 
-func (wallet *Wallet) GetSecretKey(index int) ([]byte, error) { //32 byte
+func (wallet *Wallet) GetAddressSecretKey(index int) ([]byte, error) { //32 byte
 
 	wallet.Lock.RLock()
 	defer wallet.Lock.RUnlock()
@@ -429,9 +431,10 @@ func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.Wall
 	}
 
 	if !isMine {
-		addr.IsMine = false
 		addr.SeedIndex = 0
+		addr.IsImported = true
 	}
+	addr.IsMine = true
 
 	if err := wallet.AddAddress(addr, false, false, isMine, true); err != nil {
 		return nil, err
@@ -471,6 +474,12 @@ func (wallet *Wallet) GetDelegatesCount() int {
 	defer wallet.Lock.RUnlock()
 
 	return wallet.DelegatesCount
+}
+
+func (wallet *Wallet) SetNonHardening(value bool) {
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
+	wallet.nonHardening = value
 }
 
 func (wallet *Wallet) Close() {

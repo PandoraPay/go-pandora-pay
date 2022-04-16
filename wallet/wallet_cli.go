@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/tyler-smith/go-bip39"
 	"os"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
@@ -382,11 +383,18 @@ func (wallet *Wallet) initWalletCLI() {
 		gui.GUI.OutputWrite("---------------------")
 		gui.GUI.OutputWrite(wallet.Mnemonic)
 
-		gui.GUI.OutputWrite("\n")
+		return
+	}
 
-		gui.GUI.OutputWrite("Seed")
+	cliShowEntropy := func(cmd string, ctx context.Context) (err error) {
+
+		gui.GUI.OutputWrite("Entropy")
 		gui.GUI.OutputWrite("---------------------")
-		gui.GUI.OutputWrite(wallet.Seed)
+		entropy, err := bip39.EntropyFromMnemonic(wallet.Mnemonic)
+		if err != nil {
+			return
+		}
+		gui.GUI.OutputWrite(entropy)
 
 		return
 	}
@@ -426,23 +434,44 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliShowSecretKey := func(cmd string, ctx context.Context) (err error) {
+	cliImportEntropy := func(cmd string, ctx context.Context) (err error) {
+
+		gui.GUI.OutputWrite("WARNING!!! THIS COMMAND WILL DELETE YOUR EXISTING WALLET!\n\n")
+
+		if !gui.GUI.OutputReadBool("Are you sure you want to clear the existing wallet and import an entropy? y/n", false, false) {
+			return
+		}
+
+		entropy := gui.GUI.OutputReadBytes("Provide the entropy", func(b []byte) bool {
+			return len(b) == 16 || len(b) == 32
+		})
+
+		if err = wallet.ImportEntropy(entropy); err != nil {
+			return
+		}
+
+		gui.GUI.Info("A new wallet has been created using the seed provided!")
+
+		return
+	}
+
+	cliShowAddressSecretKey := func(cmd string, ctx context.Context) (err error) {
 
 		_, _, index, err := wallet.CliSelectAddress("Select Address to show the secret key", ctx)
 		if err != nil {
 			return
 		}
 
-		privateKey, err := wallet.GetSecretKey(index)
+		secret, err := wallet.GetAddressSecretKey(index)
 		if err != nil {
 			return
 		}
-		gui.GUI.OutputWrite(privateKey)
+		gui.GUI.OutputWrite(secret)
 
 		return
 	}
 
-	cliImportSecretKey := func(cmd string, ctx context.Context) (err error) {
+	cliImportAddressSecretKey := func(cmd string, ctx context.Context) (err error) {
 
 		secretKey := gui.GUI.OutputReadBytes("Write Secret key", func(input []byte) bool {
 			return len(input) > 80
@@ -500,8 +529,10 @@ func (wallet *Wallet) initWalletCLI() {
 	gui.GUI.CommandDefineCallback("Clear & Create new empty Wallet", cliClearWallet, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Show Mnemnonic", cliShowMnemonic, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Import Mnemnonic", cliImportMnemonic, wallet.Loaded)
-	gui.GUI.CommandDefineCallback("Show Secret Key", cliShowSecretKey, wallet.Loaded)
-	gui.GUI.CommandDefineCallback("Import Secret Key", cliImportSecretKey, wallet.Loaded)
+	gui.GUI.CommandDefineCallback("Show Entropy", cliShowEntropy, wallet.Loaded)
+	gui.GUI.CommandDefineCallback("Import Entropy", cliImportEntropy, wallet.Loaded)
+	gui.GUI.CommandDefineCallback("Show Address Secret Key", cliShowAddressSecretKey, wallet.Loaded)
+	gui.GUI.CommandDefineCallback("Import Address Secret Key", cliImportAddressSecretKey, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Remove Address", cliRemoveAddress, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Export Staked Staked Address", cliExportSharedStakedAddress, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Export Addresses", cliExportAddresses, wallet.Loaded)

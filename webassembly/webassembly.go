@@ -59,6 +59,7 @@ func Initialize(startMainCb func()) {
 					"removeEncryptionWallet": js.FuncOf(removeEncryptionWallet),
 					"logoutWallet":           js.FuncOf(logoutWallet),
 				}),
+				"setWalletNonHardening": js.FuncOf(setWalletNonHardening),
 			}),
 			"decryptMessageWalletAddress":     js.FuncOf(decryptMessageWalletAddress),
 			"signMessageWalletAddress":        js.FuncOf(signMessageWalletAddress),
@@ -121,8 +122,7 @@ func Initialize(startMainCb func()) {
 			}),
 			"wallet": js.ValueOf(map[string]interface{}{
 				"version": js.ValueOf(map[string]interface{}{
-					"VERSION_SIMPLE":          js.ValueOf(int(wallet.VERSION_SIMPLE)),
-					"VERSION_SIMPLE_HARDENED": js.ValueOf(int(wallet.VERSION_SIMPLE_HARDENED)),
+					"VERSION_SIMPLE": js.ValueOf(int(wallet.VERSION_SIMPLE)),
 				}),
 				"encryptedVersion": js.ValueOf(map[string]interface{}{
 					"ENCRYPTED_VERSION_PLAIN_TEXT":        js.ValueOf(int(wallet.ENCRYPTED_VERSION_PLAIN_TEXT)),

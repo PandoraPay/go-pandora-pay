@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"encoding/base64"
 	"errors"
 	"pandora-pay/config/globals"
 	"pandora-pay/wallet/wallet_address"
@@ -9,6 +10,22 @@ import (
 )
 
 func (wallet *Wallet) ProcessWalletArguments() (err error) {
+
+	if mnemonic := globals.Arguments["--wallet-import-secret-mnemonic"]; mnemonic != nil {
+		if err = wallet.ImportMnemonic(mnemonic.(string)); err != nil {
+			return
+		}
+	}
+
+	if entropy := globals.Arguments["--wallet-import-secret-entropy"]; entropy != nil {
+		var bytes []byte
+		if bytes, err = base64.StdEncoding.DecodeString(entropy.(string)); err != nil {
+			return
+		}
+		if err = wallet.ImportEntropy(bytes); err != nil {
+			return
+		}
+	}
 
 	if str := globals.Arguments["--wallet-encrypt"]; str != nil {
 		v := strings.Split(str.(string), ",")

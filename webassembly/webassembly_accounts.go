@@ -83,7 +83,7 @@ func generateAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		priv, err := addresses.CreatePrivateKeyFromSeed(privateKey)
+		priv, err := addresses.NewPrivateKey(privateKey)
 		if err != nil {
 			return nil, err
 		}

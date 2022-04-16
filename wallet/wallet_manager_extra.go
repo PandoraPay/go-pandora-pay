@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/tyler-smith/go-bip39"
+	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/gui"
 	"pandora-pay/wallet/wallet_address"
@@ -39,7 +40,12 @@ func (wallet *Wallet) createSeed(lock bool) error {
 			continue
 		}
 
-		wallet.Seed = seed
+		var seedExtended *addresses.SeedExtended
+		if seedExtended, err = addresses.NewSeedExtended(seed); err != nil {
+			continue
+		}
+
+		wallet.Seed = seedExtended.Serialize()
 		return nil
 	}
 }
@@ -67,6 +73,10 @@ func (wallet *Wallet) ImportMnemonic(mnemonic string) (err error) {
 	wallet.Lock.Lock()
 	defer wallet.Lock.Unlock()
 
+	if wallet.Mnemonic == mnemonic {
+		return
+	}
+
 	wallet.clearWallet()
 	wallet.setLoaded(true)
 
@@ -74,10 +84,53 @@ func (wallet *Wallet) ImportMnemonic(mnemonic string) (err error) {
 
 	seed, err := bip39.NewSeedWithErrorChecking(mnemonic, "SEED Secret Passphrase")
 	if err != nil {
+		return
+	}
+
+	seedExtended, err := addresses.NewSeedExtended(seed)
+	if err != nil {
+		return
+	}
+
+	wallet.Seed = seedExtended.Serialize()
+
+	if _, err = wallet.AddNewAddress(false, "", false, false, true); err != nil {
+		return
+	}
+
+	return
+}
+
+func (wallet *Wallet) ImportEntropy(entropy []byte) (err error) {
+
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
+
+	var mnemonic string
+	if mnemonic, err = bip39.NewMnemonic(entropy); err != nil {
+		return
+	}
+
+	if mnemonic == wallet.Mnemonic {
+		return
+	}
+
+	wallet.clearWallet()
+	wallet.setLoaded(true)
+
+	wallet.Mnemonic = mnemonic
+
+	seed, err := bip39.NewSeedWithErrorChecking(wallet.Mnemonic, "SEED Secret Passphrase")
+	if err != nil {
 		return err
 	}
 
-	wallet.Seed = seed
+	seedExtended, err := addresses.NewSeedExtended(seed)
+	if err != nil {
+		return
+	}
+
+	wallet.Seed = seedExtended.Serialize()
 
 	if _, err = wallet.AddNewAddress(false, "", true); err != nil {
 		return

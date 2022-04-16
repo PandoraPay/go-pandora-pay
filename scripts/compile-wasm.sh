@@ -92,7 +92,7 @@ if [[ "$*" == *wallet-build* ]]; then
     stat --printf="zopfli gzip size: %s \n" ${buildOutput}.gz
     echo "Copy to wallet/build..."
     cp ${buildOutput}.gz ${finalOutput}.gz
-  elfi [[ "$*" == *gzip* ]]; then
+  elif [[ "$*" == *gzip* ]]; then
     echo "Gzipping..."
     gzip --best ${buildOutput}
     stat --printf="gzip size %s \n" ${buildOutput}.gz

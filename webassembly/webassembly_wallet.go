@@ -175,6 +175,7 @@ func importWalletSecretKey(this js.Value, args []js.Value) interface{} {
 		if err != nil {
 			return nil, err
 		}
+
 		return webassembly_utils.ConvertJSONBytes(adr)
 	})
 }
@@ -368,5 +369,12 @@ func decryptTx(this js.Value, args []js.Value) interface{} {
 		}
 
 		return webassembly_utils.ConvertJSONBytes(decrypted)
+	})
+}
+
+func setWalletNonHardening(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+		app.Wallet.SetNonHardening(args[0].Bool())
+		return true, nil
 	})
 }

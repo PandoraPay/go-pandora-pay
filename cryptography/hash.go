@@ -8,11 +8,14 @@ import (
 type Bytes []byte
 
 const HashSize = 32
-const PrivateKeySize = ed25519.PrivateKeySize
-const PublicKeySize = ed25519.PublicKeySize
-const PublicKeyHashSize = 20
+
+const PrivateKeySize = 32
+const SeedSize = 64
+const PublicKeySize = 33
+const SignatureSize = 64
+
 const RipemdSize = 20
-const SignatureSize = ed25519.SignatureSize
+const PublicKeyHashSize = RipemdSize
 const ChecksumSize = 4
 
 func RandomHash() (hash []byte) {
