@@ -81,10 +81,22 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 	bannedNodes.Ban(server.URL, "", "You can't connect to yourself", 10*365*24*time.Hour)
 	bannedNodes.Ban(&url.URL{Scheme: "ws", Host: "127.0.0.1:" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
 
-	var tlsConfig *tls.Config
-	if _, err = os.Stat(path.Join(config.ORIGINAL_PATH, "certificate.crt")); err == nil {
+	var certPath, keyPath string
+	if globals.Arguments["--tcp-server-tls-cert-file"] != nil {
+		certPath = globals.Arguments["--tcp-server-tls-cert-file"].(string)
+	} else {
+		certPath = path.Join(config.ORIGINAL_PATH, "certificate.crt")
+	}
 
-		cer, err := tls.LoadX509KeyPair(path.Join(config.ORIGINAL_PATH, "certificate.crt"), path.Join(config.ORIGINAL_PATH, "certificate.key"))
+	if globals.Arguments["--tcp-server-tls-key-file"] != nil {
+		keyPath = globals.Arguments["--tcp-server-tls-key-file"].(string)
+	} else {
+		certPath = path.Join(config.ORIGINAL_PATH, "certificate.key")
+	}
+
+	var tlsConfig *tls.Config
+	if _, err = os.Stat(certPath); err == nil {
+		cer, err := tls.LoadX509KeyPair(certPath, keyPath)
 		if err != nil {
 			return nil, err
 		}
