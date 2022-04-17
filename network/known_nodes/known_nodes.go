@@ -35,6 +35,10 @@ func (self *KnownNodes) GetRandomKnownNode() *KnownNodeScored {
 
 func (self *KnownNodes) AddKnownNode(url string, isSeed bool) (*KnownNodeScored, error) {
 
+	if url == "" {
+		return nil, errors.New("url is empty")
+	}
+
 	if atomic.LoadInt32(&self.knownCount) > config.NETWORK_KNOWN_NODES_LIMIT {
 		return nil, errors.New("Too many nodes already in the list")
 	}
