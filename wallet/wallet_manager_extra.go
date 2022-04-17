@@ -78,7 +78,7 @@ func (wallet *Wallet) ImportMnemonic(mnemonic string) (err error) {
 	defer wallet.Lock.Unlock()
 
 	if wallet.Mnemonic == mnemonic {
-		return errors.New("Imported Mnemonic is identical with yours")
+		return
 	}
 
 	wallet.clearWallet()
@@ -116,7 +116,7 @@ func (wallet *Wallet) ImportEntropy(entropy []byte) (err error) {
 	}
 
 	if mnemonic == wallet.Mnemonic {
-		return errors.New("Your mnemonic is identical")
+		return
 	}
 
 	wallet.clearWallet()
