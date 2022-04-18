@@ -62,29 +62,49 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 		address = globals.Arguments["--tcp-server-address"].(string)
 	}
 
-	if address == "" {
-		conn, err := net.Dial("udp", "8.8.8.8:80")
-		if err != nil {
-			return nil, errors.New("Error dialing dns to discover my own ip" + err.Error())
-		}
-		address = conn.LocalAddr().(*net.UDPAddr).IP.String()
-		if err = conn.Close(); err != nil {
-			return nil, errors.New("Error closing the connection" + err.Error())
-		}
-	}
-	server.Address = address
 	server.Port = port
-	server.URL = &url.URL{Scheme: "ws", Host: address + ":" + port, Path: "/ws"}
 
-	config.NETWORK_ADDRESS_URL_STRING = server.URL.String()
+	shareAddress := true
+	if address == "na" {
+		shareAddress = false
+		address = ""
+	}
 
-	bannedNodes.Ban(server.URL, "", "You can't connect to yourself", 10*365*24*time.Hour)
+	if shareAddress {
+		if address == "" {
+			conn, err := net.Dial("udp", "8.8.8.8:80")
+			if err != nil {
+				return nil, errors.New("Error dialing dns to discover my own ip" + err.Error())
+			}
+			address = conn.LocalAddr().(*net.UDPAddr).IP.String()
+			if err = conn.Close(); err != nil {
+				return nil, errors.New("Error closing the connection" + err.Error())
+			}
+		}
+		server.Address = address
+		server.URL = &url.URL{Scheme: "ws", Host: address + ":" + port, Path: "/ws"}
+		config.NETWORK_ADDRESS_URL_STRING = server.URL.String()
+		bannedNodes.Ban(server.URL, "", "You can't connect to yourself", 10*365*24*time.Hour)
+	}
+
 	bannedNodes.Ban(&url.URL{Scheme: "ws", Host: "127.0.0.1:" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
 
-	var tlsConfig *tls.Config
-	if _, err = os.Stat(path.Join(config.ORIGINAL_PATH, "certificate.crt")); err == nil {
+	var certPath, keyPath string
+	if globals.Arguments["--tcp-server-tls-cert-file"] != nil {
+		certPath = globals.Arguments["--tcp-server-tls-cert-file"].(string)
+	} else {
+		certPath = path.Join(config.ORIGINAL_PATH, "certificate.crt")
+	}
 
-		cer, err := tls.LoadX509KeyPair(path.Join(config.ORIGINAL_PATH, "certificate.crt"), path.Join(config.ORIGINAL_PATH, "certificate.key"))
+	if globals.Arguments["--tcp-server-tls-key-file"] != nil {
+		keyPath = globals.Arguments["--tcp-server-tls-key-file"].(string)
+	} else {
+		keyPath = path.Join(config.ORIGINAL_PATH, "certificate.key")
+	}
+
+	var tlsConfig *tls.Config
+	if _, err = os.Stat(certPath); err == nil {
+		cer, err := tls.LoadX509KeyPair(certPath, keyPath)
 		if err != nil {
 			return nil, err
 		}
@@ -124,6 +144,7 @@ func NewTcpServer(bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes
 		if server.tcpListener, err = net.Listen("tcp", ":"+port); err != nil {
 			return nil, errors.New("Error creating TcpServer" + err.Error())
 		}
+		gui.GUI.Warning("No TLS Certificate")
 	}
 
 	gui.GUI.InfoUpdate("TCP", address+":"+port)
