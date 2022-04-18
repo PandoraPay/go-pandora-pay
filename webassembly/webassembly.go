@@ -4,7 +4,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/network/api/api_common/api_types"
@@ -65,7 +64,6 @@ func Initialize(startMainCb func()) {
 			"decryptMessageWalletAddress":     js.FuncOf(decryptMessageWalletAddress),
 			"signMessageWalletAddress":        js.FuncOf(signMessageWalletAddress),
 			"deriveSharedStakedWalletAddress": js.FuncOf(deriveSharedStakedWalletAddress),
-			"tryDecryptBalance":               js.FuncOf(tryDecryptBalance),
 			"getPrivateKeysWalletAddress":     js.FuncOf(getPrivateKeysWalletAddress),
 			"decryptTx":                       js.FuncOf(decryptTx),
 		}),
@@ -82,8 +80,6 @@ func Initialize(startMainCb func()) {
 			"getNetworkFaucetCoins":                  js.FuncOf(getNetworkFaucetCoins),
 			"getNetworkBlockchain":                   js.FuncOf(getNetworkBlockchain),
 			"getNetworkAccountsCount":                js.FuncOf(getNetworkAccountsCount),
-			"getNetworkAccountsKeysByIndex":          js.FuncOf(getNetworkAccountsKeysByIndex),
-			"getNetworkAccountsByKeys":               js.FuncOf(getNetworkAccountsByKeys),
 			"getNetworkBlockInfo":                    js.FuncOf(getNetworkBlockInfo),
 			"getNetworkBlockWithTxs":                 js.FuncOf(getNetworkBlockWithTxs),
 			"getNetworkTx":                           js.FuncOf(getNetworkTx),
@@ -96,7 +92,6 @@ func Initialize(startMainCb func()) {
 			"getNetworkAsset":                        js.FuncOf(getNetworkAsset),
 			"getNetworkMempool":                      js.FuncOf(getNetworkMempool),
 			"postNetworkMempoolBroadcastTransaction": js.FuncOf(postNetworkMempoolBroadcastTransaction),
-			"getNetworkFeeLiquidity":                 js.FuncOf(getNetworkFeeLiquidity),
 			"subscribeNetwork":                       js.FuncOf(subscribeNetwork),
 			"unsubscribeNetwork":                     js.FuncOf(unsubscribeNetwork),
 		}),
@@ -113,7 +108,6 @@ func Initialize(startMainCb func()) {
 			"transactions": js.ValueOf(map[string]interface{}{
 				"TransactionVersion": js.ValueOf(map[string]interface{}{
 					"TX_SIMPLE": js.ValueOf(uint64(transaction_type.TX_SIMPLE)),
-					"TX_ZETHER": js.ValueOf(uint64(transaction_type.TX_ZETHER)),
 				}),
 				"TransactionDataVersion": js.ValueOf(map[string]interface{}{
 					"TX_DATA_NONE":       js.ValueOf(uint64(transaction_data.TX_DATA_NONE)),
@@ -122,18 +116,7 @@ func Initialize(startMainCb func()) {
 				}),
 				"transactionSimple": js.ValueOf(map[string]interface{}{
 					"ScriptType": js.ValueOf(map[string]interface{}{
-						"SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY": js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY)),
-					}),
-				}),
-				"transactionZether": js.ValueOf(map[string]interface{}{
-					"PayloadScriptType": js.ValueOf(map[string]interface{}{
-						"SCRIPT_TRANSFER":              js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_TRANSFER)),
-						"SCRIPT_STAKING":               js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_STAKING)),
-						"SCRIPT_STAKING_REWARD":        js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_STAKING_REWARD)),
-						"SCRIPT_SPEND":                 js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_SPEND)),
-						"SCRIPT_ASSET_CREATE":          js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_ASSET_CREATE)),
-						"SCRIPT_ASSET_SUPPLY_INCREASE": js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE)),
-						"SCRIPT_PLAIN_ACCOUNT_FUND":    js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND)),
+						"SCRIPT_TRANSFER": js.ValueOf(uint64(transaction_simple.SCRIPT_TRANSFER)),
 					}),
 				}),
 			}),
@@ -158,7 +141,6 @@ func Initialize(startMainCb func()) {
 						"SUBSCRIPTION_PLAIN_ACCOUNT":        js.ValueOf(int(api_types.SUBSCRIPTION_PLAIN_ACCOUNT)),
 						"SUBSCRIPTION_ACCOUNT_TRANSACTIONS": js.ValueOf(int(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS)),
 						"SUBSCRIPTION_ASSET":                js.ValueOf(int(api_types.SUBSCRIPTION_ASSET)),
-						"SUBSCRIPTION_REGISTRATION":         js.ValueOf(int(api_types.SUBSCRIPTION_REGISTRATION)),
 						"SUBSCRIPTION_TRANSACTION":          js.ValueOf(int(api_types.SUBSCRIPTION_TRANSACTION)),
 					}),
 				}),

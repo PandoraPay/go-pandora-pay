@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"github.com/vmihailenco/msgpack/v5"
-	"pandora-pay/cryptography/bn256"
 )
 
 // HexBytes is a byte array that serializes to hex
@@ -33,27 +32,6 @@ func (s *Base64) DecodeMsgpack(dec *msgpack.Decoder) error {
 	}
 	*s = bytes
 	return nil
-}
-
-func ConvertBN256Array(array []*bn256.G1) [][]byte {
-	out := make([][]byte, len(array))
-	for i, it := range array {
-		out[i] = it.EncodeCompressed()
-	}
-	return out
-}
-
-func ConvertToBN256Array(array [][]byte) ([]*bn256.G1, error) {
-	out := make([]*bn256.G1, len(array))
-	for i := range array {
-
-		p := new(bn256.G1)
-		if err := p.DecodeCompressed(array[i]); err != nil {
-			return nil, err
-		}
-		out[i] = p
-	}
-	return out, nil
 }
 
 func GetMarshalledDataExcept(obj interface{}, ignoreFields ...string) ([]byte, error) {

@@ -1,9 +1,26 @@
-# go-pandora-pay
+# WebDollar2
 
-PandoraPay blockchain in go
+WebDollar2 is a fork of PandoraPay in go
 
 The main design pattern that has been taken in consideration is to be **dead-simple**. A source code that is simple is
 bug free and easy to be developed and improved over time.
+
+# Progress
+
+Under development. Not working right now.
+
+- [X] Removing Zether
+- [X] Integration of ED25519
+- [X] Integration of BIP32 for ED25519
+- [X] Using PublicKeyHashes instead of PublicKeys
+- [X] Removing Address (stakable, spendPublicKey, registration)
+- [X] Creating Testnet Genesis
+- [ ] DPOS contracts
+- [ ] DPOS consensus
+- [ ] Staking
+- [X] WebDollar Address Format
+- [X] Multi Transfer
+- [ ] Web Wallet
 
 ### DOCS
 
@@ -56,17 +73,12 @@ bug free and easy to be developed and improved over time.
         - [x] Accepting to stakes from network
 - [x] Balances
     - [x] Balance and Nonce Update
-    - [x] Liquidity fee
-- [x] Homomorphic Balances
-    - [x] Homomorphic balance and nonce
-    - [x] Multiple Assets
 - [ ] Patricia Trie ? **
 - [ ] Assets
     - [X] Asset
     - [x] Creation
     - [x] Increase Supply
     - [ ] Decrease Supply
-    - [x] Liquidity Pools for Tx Fees
 - [x] Transactions
     - [x] Transaction Wizard
     - [x] Transaction Builder
@@ -74,15 +86,6 @@ bug free and easy to be developed and improved over time.
     - [x] Multi Threading signature verification
 - [x] Simple Transactions
     - [x] Fee calculator
-    - [x] Update Asset Fee Liquidity
-- [x] Zether Transactions
-    - [x] Transfer
-    - [x] Spend Tx
-    - [x] Staking
-    - [x] Staking Reward
-    - [x] Asset Create
-    - [x] Asset Supply Increase
-    - [x] Plain Account Fund
 - [ ] Mem Pool
     - [ ] Saving/Loading **
     - [X] Inserting Txs

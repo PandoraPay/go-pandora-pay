@@ -1,6 +1,7 @@
 package cryptography
 
 import (
+	"crypto/ed25519"
 	"math/rand"
 )
 

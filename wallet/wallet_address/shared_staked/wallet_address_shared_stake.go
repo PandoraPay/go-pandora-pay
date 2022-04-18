@@ -10,5 +10,6 @@ type WalletAddressSharedStaked struct {
 }
 
 type WalletAddressSharedStakedAddressExported struct {
-	Address string `json:"address" msgpack:"address"`
+	Address            string `json:"address" msgpack:"address"`
+	DelegatedPublicKey []byte `json:"delegatedPublicKey" msgpack:"delegatedPublicKey"`
 }

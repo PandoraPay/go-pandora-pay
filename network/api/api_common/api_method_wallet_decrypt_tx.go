@@ -26,7 +26,7 @@ func (api *APICommon) GetWalletDecryptTx(r *http.Request, args *APIWalletDecrypt
 		return errors.New("Invalid User or Password")
 	}
 
-	publicKey, err := args.GetPublicKey(false)
+	publicKeyHash, err := args.GetPublicKeyHash(false)
 	if err != nil {
 		return
 	}
@@ -50,7 +50,7 @@ func (api *APICommon) GetWalletDecryptTx(r *http.Request, args *APIWalletDecrypt
 		return
 	}
 
-	reply.Decrypted, err = api.wallet.DecryptTx(tx, publicKey)
+	reply.Decrypted, err = api.wallet.DecryptTx(tx, publicKeyHash)
 
 	return
 }

@@ -5,8 +5,6 @@ import (
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config/config_fees"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -84,16 +82,6 @@ func (mempool *Mempool) processTxsToMempool(txs []*transaction.Transaction, heig
 		default:
 		}
 
-		if tx.Version == transaction_type.TX_ZETHER {
-			txBase := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-			for _, payload := range txBase.Payloads {
-				if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD || payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING {
-					errs[i] = errors.New("Transaction is not accepted in the mempool")
-					return
-				}
-			}
-		}
-
 		if errs[i] = mempool.txsValidator.ValidateTx(tx); errs[i] != nil {
 			return
 		}
@@ -119,8 +107,6 @@ func (mempool *Mempool) processTxsToMempool(txs []*transaction.Transaction, heig
 		switch tx.Version {
 		case transaction_type.TX_SIMPLE:
 			requiredFeePerByte = config_fees.FEE_PER_BYTE
-		case transaction_type.TX_ZETHER:
-			requiredFeePerByte = config_fees.FEE_PER_BYTE_ZETHER
 		default:
 			errs[i] = errors.New("Invalid Tx.Version")
 			continue

@@ -4,70 +4,46 @@ import (
 	"bytes"
 	"encoding/binary"
 	"math/big"
-	"pandora-pay/address_balance_decryptor"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/config"
-	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/bn256"
-	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
-	"pandora-pay/helpers/generics"
-	"strconv"
 	"sync/atomic"
 	"time"
 )
 
 type ForgingSolution struct {
-	timestamp               uint64
-	publicKey               []byte
-	decryptedStakingBalance uint64
-	blkComplete             *block_complete.BlockComplete
-	stakingAmount           uint64
-	stakingNonce            []byte
+	timestamp     uint64
+	publicKeyHash []byte
+	blkComplete   *block_complete.BlockComplete
+	stakingAmount uint64
 }
 
 type ForgingWorkerThread struct {
-	addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor
-	hashes                  uint32
-	index                   int
-	workCn                  chan *forging_block_work.ForgingWork
-	workerSolutionCn        chan *ForgingSolution
-	addWalletAddressCn      chan *ForgingWalletAddress
-	removeWalletAddressCn   chan string //publicKey
+	hashes                uint32
+	index                 int
+	workCn                chan *forging_block_work.ForgingWork
+	workerSolutionCn      chan *ForgingSolution
+	addWalletAddressCn    chan *ForgingWalletAddress
+	removeWalletAddressCn chan string //publicKey
 }
 
 type ForgingWorkerThreadAddress struct {
-	walletAdr                       *ForgingWalletAddress
-	stakingAmount                   uint64
-	stakingNonce                    []byte
-	stakingNoncePrevChainKernelHash []byte
+	walletAdr *ForgingWalletAddress
 }
 
 func (worker *ForgingWorkerThread) computeStakingAmount(threadAddr *ForgingWorkerThreadAddress, work *forging_block_work.ForgingWork) bool {
 
-	if threadAddr.walletAdr.account != nil && threadAddr.walletAdr.privateKey != nil {
+	if threadAddr.walletAdr.account != nil && threadAddr.walletAdr.delegatedStakePrivateKey != nil {
 
-		if threadAddr.walletAdr.decryptedStakingBalance >= work.MinimumStake {
-
-			if !bytes.Equal(threadAddr.stakingNoncePrevChainKernelHash, work.BlkComplete.PrevKernelHash) {
-				uinput := append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), work.BlkComplete.PrevKernelHash[:]...)
-				uinput = append(uinput, config_coins.NATIVE_ASSET_FULL...)
-				uinput = append(uinput, strconv.Itoa(0)...)
-				u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), threadAddr.walletAdr.privateKeyPoint)
-				threadAddr.stakingNonce = cryptography.SHA3(u.EncodeCompressed())
-				threadAddr.stakingNoncePrevChainKernelHash = work.BlkComplete.PrevKernelHash
-			}
-
-			threadAddr.stakingAmount = threadAddr.walletAdr.decryptedStakingBalance
+		if threadAddr.walletAdr.stakingAvailable >= work.MinimumStake {
 			return true
 		}
 
 	}
 
-	threadAddr.stakingAmount = 0
 	return false
 }
 
@@ -123,8 +99,8 @@ func (worker *ForgingWorkerThread) forge() {
 
 		for _, walletAddr := range wallets {
 			if worker.computeStakingAmount(walletAddr, work) {
-				walletsStaked[walletAddr.walletAdr.publicKeyStr] = walletAddr
-				walletsStakedTimestamp[walletAddr.walletAdr.publicKeyStr] = timestamp
+				walletsStaked[walletAddr.walletAdr.publicKeyHashStr] = walletAddr
+				walletsStakedTimestamp[walletAddr.walletAdr.publicKeyHashStr] = timestamp
 			}
 		}
 
@@ -132,30 +108,26 @@ func (worker *ForgingWorkerThread) forge() {
 	}
 
 	newWalletAddress := func(newWalletAddr *ForgingWalletAddress) {
-		walletAddr := wallets[newWalletAddr.publicKeyStr]
+		walletAddr := wallets[newWalletAddr.publicKeyHashStr]
 		if walletAddr == nil {
 			walletAddr = &ForgingWorkerThreadAddress{ //making sure the has a copy
 				newWalletAddr, //already it is cloned
-				0,
-				nil,
-				nil,
 			}
-			wallets[newWalletAddr.publicKeyStr] = walletAddr
+			wallets[newWalletAddr.publicKeyHashStr] = walletAddr
 		} else {
 			walletAddr.walletAdr = newWalletAddr
 		}
 
 		if work != nil {
 			if walletAddr.walletAdr.chainHash == nil || bytes.Equal(walletAddr.walletAdr.chainHash, work.BlkComplete.PrevHash) {
-				oldDecryptedStakingBalance := walletAddr.stakingAmount
 				if worker.computeStakingAmount(walletAddr, work) {
-					if !walletsStakedUsed[walletAddr.walletAdr.publicKeyStr] || walletAddr.stakingAmount > oldDecryptedStakingBalance {
-						walletsStaked[walletAddr.walletAdr.publicKeyStr] = walletAddr
-						walletsStakedTimestamp[walletAddr.walletAdr.publicKeyStr] = timestamp
-						delete(walletsStakedUsed, walletAddr.walletAdr.publicKeyStr)
+					if !walletsStakedUsed[walletAddr.walletAdr.publicKeyHashStr] {
+						walletsStaked[walletAddr.walletAdr.publicKeyHashStr] = walletAddr
+						walletsStakedTimestamp[walletAddr.walletAdr.publicKeyHashStr] = timestamp
+						delete(walletsStakedUsed, walletAddr.walletAdr.publicKeyHashStr)
 					}
 				} else {
-					delete(walletsStaked, walletAddr.walletAdr.publicKeyStr)
+					delete(walletsStaked, walletAddr.walletAdr.publicKeyHashStr)
 				}
 			}
 		}
@@ -209,7 +181,7 @@ func (worker *ForgingWorkerThread) forge() {
 						return true
 					case newWalletAddr := <-worker.addWalletAddressCn:
 						newWalletAddress(newWalletAddr)
-						if key == newWalletAddr.publicKeyStr {
+						if key == newWalletAddr.publicKeyHashStr {
 							goto done
 						}
 					case publicKeyStr := <-worker.removeWalletAddressCn:
@@ -231,25 +203,21 @@ func (worker *ForgingWorkerThread) forge() {
 
 					//optimized POS
 					copy(serialized[len(serialized)-32-n2:len(serialized)-32], buf)
-					copy(serialized[len(serialized)-32:], address.stakingNonce)
+					copy(serialized[len(serialized)-32:], address.walletAdr.publicKeyHash)
 
 					kernelHash := cryptography.SHA3(serialized)
 
-					kernel := new(big.Int).Div(new(big.Int).SetBytes(kernelHash), new(big.Int).SetUint64(address.stakingAmount))
+					kernel := new(big.Int).Div(new(big.Int).SetBytes(kernelHash), new(big.Int).SetUint64(address.walletAdr.stakingAvailable))
 
 					if kernel.Cmp(work.Target) <= 0 {
 
-						requireStakingAmount := new(big.Int).Div(new(big.Int).SetBytes(kernelHash), work.Target)
-
-						gui.GUI.Log("forged", worker.index, " -> ", work.BlkHeight, work.BlkComplete.PrevHash, address.walletAdr.decryptedStakingBalance)
+						gui.GUI.Log("forged", worker.index, " -> ", work.BlkHeight, work.BlkComplete.PrevHash, address.walletAdr.stakingAvailable)
 
 						solution := &ForgingSolution{
 							localTimestamp,
-							address.walletAdr.publicKey,
-							address.walletAdr.decryptedStakingBalance,
+							address.walletAdr.publicKeyHash,
 							work.BlkComplete,
-							generics.Max(generics.Min(requireStakingAmount.Uint64()+1, address.stakingAmount), work.MinimumStake),
-							address.stakingNonce,
+							address.walletAdr.stakingAvailable,
 						}
 
 						select {
@@ -258,7 +226,7 @@ func (worker *ForgingWorkerThread) forge() {
 							return true
 						case newWalletAddr := <-worker.addWalletAddressCn:
 							newWalletAddress(newWalletAddr)
-							if key == newWalletAddr.publicKeyStr { // in case it was deleted
+							if key == newWalletAddr.publicKeyHashStr { // in case it was deleted
 								goto done
 							}
 						case publicKeyStr := <-worker.removeWalletAddressCn:
@@ -294,13 +262,12 @@ func (worker *ForgingWorkerThread) forge() {
 
 }
 
-func createForgingWorkerThread(index int, workerSolutionCn chan *ForgingSolution, addressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor) *ForgingWorkerThread {
+func createForgingWorkerThread(index int, workerSolutionCn chan *ForgingSolution) *ForgingWorkerThread {
 	return &ForgingWorkerThread{
-		addressBalanceDecryptor: addressBalanceDecryptor,
-		index:                   index,
-		workCn:                  make(chan *forging_block_work.ForgingWork),
-		workerSolutionCn:        workerSolutionCn,
-		addWalletAddressCn:      make(chan *ForgingWalletAddress),
-		removeWalletAddressCn:   make(chan string),
+		index:                 index,
+		workCn:                make(chan *forging_block_work.ForgingWork),
+		workerSolutionCn:      workerSolutionCn,
+		addWalletAddressCn:    make(chan *ForgingWalletAddress),
+		removeWalletAddressCn: make(chan string),
 	}
 }

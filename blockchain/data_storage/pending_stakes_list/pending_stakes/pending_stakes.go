@@ -1,7 +1,6 @@
 package pending_stakes
 
 import (
-	"pandora-pay/blockchain/data_storage/accounts/account/account_balance_homomorphic"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash_map"
 )
@@ -59,7 +58,7 @@ func (d *PendingStakes) Deserialize(r *helpers.BufferReader) (err error) {
 
 	d.Pending = make([]*PendingStake, n)
 	for i := range d.Pending {
-		d.Pending[i] = &PendingStake{PendingAmount: &account_balance_homomorphic.BalanceHomomorphic{nil, nil}}
+		d.Pending[i] = &PendingStake{}
 		if err = d.Pending[i].Deserialize(r); err != nil {
 			return
 		}

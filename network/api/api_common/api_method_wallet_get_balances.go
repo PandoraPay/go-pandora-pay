@@ -29,8 +29,7 @@ type APIWalletGetBalancesResultReply struct {
 }
 
 type APIWalletGetBalanceDataReply struct {
-	Balance []byte `json:"balance" msgpack:"balance"`
-	Amount  uint64 `json:"amount" msgpack:"amount"`
+	Balance uint64 `json:"balance" msgpack:"balance"`
 	Asset   []byte `json:"asset" msgpack:"asset"`
 }
 
@@ -40,44 +39,39 @@ func (api *APICommon) GetWalletBalances(r *http.Request, args *APIWalletGetBalan
 		return errors.New("Invalid User or Password")
 	}
 
-	publicKeys := make([][]byte, len(args.List))
+	publicKeyHashes := make([][]byte, len(args.List))
 	for i, it := range args.List {
-		if publicKeys[i], err = it.GetPublicKey(true); err != nil {
+		if publicKeyHashes[i], err = it.GetPublicKeyHash(true); err != nil {
 			return
 		}
 	}
 
-	walletAddresses := make([]*wallet_address.WalletAddress, len(publicKeys))
-	for i, publicKey := range publicKeys {
-		if walletAddresses[i] = api.wallet.GetWalletAddressByPublicKey(publicKey, false); walletAddresses[i] == nil {
+	walletAddresses := make([]*wallet_address.WalletAddress, len(publicKeyHashes))
+	for i, publicKey := range publicKeyHashes {
+		if walletAddresses[i] = api.wallet.GetWalletAddressByPublicKeyHash(publicKey, false); walletAddresses[i] == nil {
 			return errors.New(fmt.Sprintf("input %d doesn't exist in your wallet", i))
 		}
 	}
 
-	reply.Results = make([]*APIWalletGetBalancesResultReply, len(publicKeys))
+	reply.Results = make([]*APIWalletGetBalancesResultReply, len(publicKeyHashes))
 
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		dataStorage := data_storage.NewDataStorage(reader)
 
-		for i, publicKey := range publicKeys {
-
-			var isReg bool
-			if isReg, err = dataStorage.Regs.Exists(string(publicKey)); err != nil {
-				return
-			}
+		for i, publicKeyHash := range publicKeyHashes {
 
 			reply.Results[i] = &APIWalletGetBalancesResultReply{}
 
-			reply.Results[i].Address = walletAddresses[i].GetAddress(isReg)
+			reply.Results[i].Address = walletAddresses[i].GetAddress()
 
 			var plainAcc *plain_account.PlainAccount
-			if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(publicKey); err != nil {
+			if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(publicKeyHash); err != nil {
 				return
 			}
 
 			var assetsList [][]byte
-			if assetsList, err = dataStorage.AccsCollection.GetAccountAssets(publicKey); err != nil {
+			if assetsList, err = dataStorage.AccsCollection.GetAccountAssets(publicKeyHash); err != nil {
 				return
 			}
 
@@ -96,8 +90,7 @@ func (api *APICommon) GetWalletBalances(r *http.Request, args *APIWalletGetBalan
 				}
 
 				reply.Results[i].Balances[j] = &APIWalletGetBalanceDataReply{
-					acc.Balance.Amount.Serialize(),
-					0,
+					acc.Balance,
 					assetId,
 				}
 
@@ -108,15 +101,6 @@ func (api *APICommon) GetWalletBalances(r *http.Request, args *APIWalletGetBalan
 		return
 	}); err != nil {
 		return
-	}
-
-	for i, publicKey := range publicKeys {
-		for _, data := range reply.Results[i].Balances {
-
-			if data.Amount, err = api.wallet.DecryptBalanceByPublicKey(publicKey, data.Balance, data.Asset, false, 0, true, true, nil, func(status string) {}); err != nil {
-				return
-			}
-		}
 	}
 
 	return

@@ -11,16 +11,9 @@ import (
 	"pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
-	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/blockchain/transactions/transaction/transaction_type"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
-	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config"
-	"pandora-pay/config/config_coins"
-	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
@@ -223,72 +216,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return errors.New("Block Height is not right!")
 					}
 
-					//check existance of a tx with payloads
-					var foundStakingRewardTx *transaction.Transaction
-					for index, tx := range blkComplete.Txs {
-						if tx.Version == transaction_type.TX_ZETHER {
-							txBase := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-							if len(txBase.Payloads) == 2 && txBase.Payloads[0].PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING && txBase.Payloads[1].PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD {
-								if foundStakingRewardTx != nil {
-									return errors.New("Multiple txs with staking & reward payloads")
-								}
-								foundStakingRewardTx = tx
-								if index != len(blkComplete.Txs)-1 {
-									return errors.New("Staking reward tx should be the last one")
-								}
-								continue
-							}
-							for _, payload := range txBase.Payloads {
-								if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING || payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD {
-									return errors.New("Block contains other staking/reward payloads")
-								}
-							}
-						}
-					}
-
-					// not staking and reward tx
-					if foundStakingRewardTx == nil {
-						return errors.New("Block is missing Staking and Reward Transaction")
-					}
-
-					//check blkComplete balance
-					foundStakingRewardTxBase := foundStakingRewardTx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-					if foundStakingRewardTxBase.Payloads[0].BurnValue < config_stake.GetRequiredStake(blkComplete.Block.Height) {
-						return errors.New("Staked amount is not enough!")
-					}
-
-					//verify staking amount
-					if foundStakingRewardTxBase.Payloads[0].BurnValue != blkComplete.StakingAmount {
-						return errors.New("Staked amount is different that the burn value")
-					}
-
-					if !bytes.Equal(foundStakingRewardTxBase.Payloads[0].Proof.Nonce(), blkComplete.StakingNonce) {
-						return errors.New("Staked Proof Nonce is not matching with the one specified in the block")
-					}
-
-					//verify forger reward
-					var reward, finalForgerReward uint64
-					if reward, finalForgerReward, err = blockchain_types.ComputeBlockReward(blkComplete.Height, blkComplete.Txs); err != nil {
-						return
-					}
-
-					if foundStakingRewardTxBase.Payloads[1].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).Reward > finalForgerReward {
-						return fmt.Errorf("Payload Reward %d is bigger than it should be %d", foundStakingRewardTxBase.Payloads[1].Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraStakingReward).Reward, finalForgerReward)
-					}
-
-					//increase supply
-					var ast *asset.Asset
-					if ast, err = dataStorage.Asts.GetAsset(config_coins.NATIVE_ASSET_FULL); err != nil {
-						return
-					}
-
-					if err = ast.AddNativeSupply(true, reward); err != nil {
-						return
-					}
-					if err = dataStorage.Asts.Update(string(config_coins.NATIVE_ASSET_FULL), ast); err != nil {
-						return
-					}
-
 					if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHashStaked, newChainData.Target) != true {
 						return errors.New("KernelHash Difficulty is not met")
 					}
@@ -437,7 +364,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 				}
 
 				newChainData.AssetsCount = dataStorage.Asts.Count
-				newChainData.AccountsCount = dataStorage.Regs.Count + dataStorage.PlainAccs.Count
+				newChainData.AccountsCount = dataStorage.PlainAccs.Count
 
 			} else if err == nil { //only rollback
 				err = errors.New("Rollback")

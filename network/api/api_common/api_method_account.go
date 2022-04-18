@@ -6,8 +6,6 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/blockchain/data_storage/registrations"
-	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/store"
@@ -20,20 +18,17 @@ type APIAccountRequest struct {
 }
 
 type APIAccountReply struct {
-	Accs               []*account.Account                                      `json:"accounts,omitempty" msgpack:"accounts,omitempty"`
-	AccsSerialized     [][]byte                                                `json:"accountsSerialized,omitempty" msgpack:"accountsSerialized,omitempty"`
-	AccsExtra          []*api_types.APISubscriptionNotificationAccountExtra    `json:"accountsExtra,omitempty" msgpack:"accountsExtra,omitempty"`
-	PlainAcc           *plain_account.PlainAccount                             `json:"plainAccount,omitempty" msgpack:"plainAccount,omitempty"`
-	PlainAccSerialized []byte                                                  `json:"plainAccountSerialized,omitempty" msgpack:"plainAccountSerialized,omitempty"`
-	PlainAccExtra      *api_types.APISubscriptionNotificationPlainAccExtra     `json:"plainAccountExtra,omitempty" msgpack:"plainAccountExtra,omitempty"`
-	Reg                *registration.Registration                              `json:"registration,omitempty" msgpack:"registration,omitempty"`
-	RegSerialized      []byte                                                  `json:"registrationSerialized,omitempty" msgpack:"registrationSerialized,omitempty"`
-	RegExtra           *api_types.APISubscriptionNotificationRegistrationExtra `json:"registrationExtra,omitempty" msgpack:"registrationExtra,omitempty"`
+	Accs               []*account.Account                                   `json:"accounts,omitempty" msgpack:"accounts,omitempty"`
+	AccsSerialized     [][]byte                                             `json:"accountsSerialized,omitempty" msgpack:"accountsSerialized,omitempty"`
+	AccsExtra          []*api_types.APISubscriptionNotificationAccountExtra `json:"accountsExtra,omitempty" msgpack:"accountsExtra,omitempty"`
+	PlainAcc           *plain_account.PlainAccount                          `json:"plainAccount,omitempty" msgpack:"plainAccount,omitempty"`
+	PlainAccSerialized []byte                                               `json:"plainAccountSerialized,omitempty" msgpack:"plainAccountSerialized,omitempty"`
+	PlainAccExtra      *api_types.APISubscriptionNotificationPlainAccExtra  `json:"plainAccountExtra,omitempty" msgpack:"plainAccountExtra,omitempty"`
 }
 
 func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply *APIAccountReply) (err error) {
 
-	publicKey, err := args.GetPublicKey(true)
+	publicKeyHash, err := args.GetPublicKeyHash(true)
 	if err != nil {
 		return
 	}
@@ -42,9 +37,8 @@ func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply
 
 		accsCollection := accounts.NewAccountsCollection(reader)
 		plainAccs := plain_accounts.NewPlainAccounts(reader)
-		regs := registrations.NewRegistrations(reader)
 
-		assetsList, err := accsCollection.GetAccountAssets(publicKey)
+		assetsList, err := accsCollection.GetAccountAssets(publicKeyHash)
 		if err != nil {
 			return
 		}
@@ -60,7 +54,7 @@ func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply
 			}
 
 			var acc *account.Account
-			if acc, err = accs.GetAccount(publicKey); err != nil {
+			if acc, err = accs.GetAccount(publicKeyHash); err != nil {
 				return
 			}
 
@@ -73,21 +67,12 @@ func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply
 			}
 		}
 
-		if reply.PlainAcc, err = plainAccs.GetPlainAccount(publicKey); err != nil {
+		if reply.PlainAcc, err = plainAccs.GetPlainAccount(publicKeyHash); err != nil {
 			return
 		}
 		if reply.PlainAcc != nil {
 			reply.PlainAccExtra = &api_types.APISubscriptionNotificationPlainAccExtra{
 				reply.PlainAcc.Index,
-			}
-		}
-
-		if reply.Reg, err = regs.GetRegistration(publicKey); err != nil {
-			return
-		}
-		if reply.Reg != nil {
-			reply.RegExtra = &api_types.APISubscriptionNotificationRegistrationExtra{
-				reply.Reg.Index,
 			}
 		}
 
@@ -107,10 +92,6 @@ func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply
 		if reply.PlainAcc != nil {
 			reply.PlainAccSerialized = helpers.SerializeToBytes(reply.PlainAcc)
 			reply.PlainAcc = nil
-		}
-		if reply.Reg != nil {
-			reply.RegSerialized = helpers.SerializeToBytes(reply.Reg)
-			reply.Reg = nil
 		}
 
 	}

@@ -96,7 +96,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 
 func (this *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.SubscriptionType) (subsMap map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification) {
 	switch subscriptionType {
-	case api_types.SUBSCRIPTION_ACCOUNT, api_types.SUBSCRIPTION_PLAIN_ACCOUNT, api_types.SUBSCRIPTION_REGISTRATION:
+	case api_types.SUBSCRIPTION_ACCOUNT, api_types.SUBSCRIPTION_PLAIN_ACCOUNT:
 		subsMap = this.accountsSubscriptions
 	case api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
 		subsMap = this.accountsTransactionsSubscriptions
@@ -209,15 +209,6 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 			}
 
-			for k, v := range dataStorage.Regs.HashMap.Committed {
-				if list := this.accountsSubscriptions[k]; list != nil {
-
-					this.send(api_types.SUBSCRIPTION_REGISTRATION, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationRegistrationExtra{
-						this.getElementIndex(v.Element),
-					})
-				}
-			}
-
 		case txsUpdates, ok := <-updateTransactionsCn:
 			if !ok {
 				return
@@ -225,8 +216,8 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 
 			for _, v := range txsUpdates {
 				for _, key := range v.Keys {
-					if list := this.accountsTransactionsSubscriptions[string(key.PublicKey)]; list != nil {
-						this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), key.PublicKey, list, nil, v.TxHash, &api_types.APISubscriptionNotificationAccountTxExtra{
+					if list := this.accountsTransactionsSubscriptions[string(key.PublicKeyHash)]; list != nil {
+						this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), key.PublicKeyHash, list, nil, v.TxHash, &api_types.APISubscriptionNotificationAccountTxExtra{
 							Blockchain: &api_types.APISubscriptionNotificationAccountTxExtraBlockchain{
 								v.Inserted, key.TxsCount, v.BlockHeight, v.BlockTimestamp, v.Height,
 							},

@@ -16,12 +16,12 @@ type Accounts struct {
 }
 
 //WARNING: should NOT be used manually without being called from DataStorage
-func (accounts *Accounts) CreateNewAccount(publicKey []byte) (*account.Account, error) {
-	acc, err := account.NewAccount(publicKey, 0, accounts.Asset) //will be set by update
+func (accounts *Accounts) CreateNewAccount(publicKeyHash []byte) (*account.Account, error) {
+	acc, err := account.NewAccount(publicKeyHash, 0, accounts.Asset) //will be set by update
 	if err != nil {
 		return nil, err
 	}
-	if err = accounts.Create(string(publicKey), acc); err != nil {
+	if err = accounts.Create(string(publicKeyHash), acc); err != nil {
 		return nil, err
 	}
 	return acc, nil

@@ -23,7 +23,7 @@ type Subscriptions struct {
 func checkSubscriptionLength(key []byte, subscriptionType api_types.SubscriptionType) error {
 	var length int
 	switch subscriptionType {
-	case api_types.SUBSCRIPTION_PLAIN_ACCOUNT, api_types.SUBSCRIPTION_ACCOUNT, api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, api_types.SUBSCRIPTION_REGISTRATION:
+	case api_types.SUBSCRIPTION_PLAIN_ACCOUNT, api_types.SUBSCRIPTION_ACCOUNT, api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
 		length = cryptography.PublicKeySize
 	case api_types.SUBSCRIPTION_ASSET:
 		length = config_coins.ASSET_LENGTH
@@ -38,7 +38,7 @@ func checkSubscriptionLength(key []byte, subscriptionType api_types.Subscription
 
 func (s *Subscriptions) AddSubscription(subscriptionType api_types.SubscriptionType, key []byte, returnType api_types.APIReturnType) error {
 
-	if subscriptionType == api_types.SUBSCRIPTION_PLAIN_ACCOUNT || subscriptionType == api_types.SUBSCRIPTION_REGISTRATION {
+	if subscriptionType == api_types.SUBSCRIPTION_PLAIN_ACCOUNT {
 		return errors.New("These subscriptions are automatically. They can't be subsribed manually")
 	}
 

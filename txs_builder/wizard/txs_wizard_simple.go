@@ -23,21 +23,8 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 	var txScript transaction_simple.ScriptType
 	var extraFinal transaction_simple_extra.TransactionSimpleExtraInterface
 
-	switch txExtra := transfer.Extra.(type) {
-	case *WizardTxSimpleExtraUpdateAssetFeeLiquidity:
-		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{
-			Liquidities:     txExtra.Liquidities,
-			CollectorHasNew: txExtra.CollectorHasNew,
-			Collector:       txExtra.Collector,
-		}
-		txScript = transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY
-
-		spaceExtra += 1 + len(txExtra.Collector) + 1
-		for _, liquidity := range txExtra.Liquidities {
-			if liquidity.Rate > 0 {
-				spaceExtra += len(helpers.SerializeToBytes(liquidity))
-			}
-		}
+	switch transfer.Extra.(type) {
+	case nil:
 	}
 
 	var privateKey *addresses.PrivateKey
@@ -50,11 +37,31 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 		DataVersion: transfer.Data.getDataVersion(),
 		Data:        dataFinal,
 		Nonce:       transfer.Nonce,
-		Fee:         0,
 		Extra:       extraFinal,
-		Vin: &transaction_simple_parts.TransactionSimpleInput{
-			PublicKey: privateKey.GeneratePublicKey(),
-		},
+		Vin:         make([]*transaction_simple_parts.TransactionSimpleInput, len(transfer.Vin)),
+		Vout:        make([]*transaction_simple_parts.TransactionSimpleOutput, len(transfer.Vout)),
+	}
+
+	privateKeys := make([]*addresses.PrivateKey, len(transfer.Vin))
+
+	for i, vin := range transfer.Vin {
+		if privateKeys[i], err = addresses.NewPrivateKey(transfer.Vin[i].Key); err != nil {
+			return nil, err
+		}
+		txBase.Vin[i] = &transaction_simple_parts.TransactionSimpleInput{
+			privateKeys[i].GeneratePublicKey(),
+			vin.Amount,
+			vin.Asset,
+			nil,
+		}
+	}
+
+	for i, vout := range transfer.Vout {
+		txBase.Vout[i] = &transaction_simple_parts.TransactionSimpleOutput{
+			vout.PublicKeyHash,
+			vout.Amount,
+			vout.Asset,
+		}
 	}
 
 	tx := &transaction.Transaction{
@@ -64,14 +71,19 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 	}
 	statusCallback("Transaction Created")
 
-	extraBytes := cryptography.SignatureSize
-	txBase.Fee = setFee(tx, extraBytes, transfer.Fee.Clone(), true)
+	extraBytes := len(transfer.Vin) * cryptography.SignatureSize
+	fee := setFee(tx, extraBytes, transfer.Fee.Clone(), true)
+	if err = helpers.SafeUint64Add(&transfer.Vin[0].Amount, fee); err != nil {
+		return nil, err
+	}
+
 	statusCallback("Transaction Fee set")
 
 	statusCallback("Transaction Signing...")
-
-	if txBase.Vin.Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
-		return nil, err
+	for i, vin := range txBase.Vin {
+		if vin.Signature, err = privateKeys[i].Sign(tx.SerializeForSigning()); err != nil {
+			return nil, err
+		}
 	}
 	statusCallback("Transaction Signed")
 

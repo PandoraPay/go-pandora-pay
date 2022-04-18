@@ -2,17 +2,15 @@ package wallet
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/tyler-smith/go-bip32"
 	"math/rand"
 	"pandora-pay/addresses"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
-	"pandora-pay/cryptography/crypto"
+	"pandora-pay/cryptography/derivation"
 	"pandora-pay/wallet/wallet_address"
 	"pandora-pay/wallet/wallet_address/shared_staked"
 	"strconv"
@@ -35,24 +33,10 @@ func (wallet *Wallet) GetFirstStakedAddress(lock bool) (*wallet_address.WalletAd
 
 	if lock {
 		wallet.Lock.RLock()
+		defer wallet.Lock.RUnlock()
 	}
 
-	var found *wallet_address.WalletAddress
-	for _, addr := range wallet.Addresses {
-		if addr.Staked {
-			found = addr
-			break
-		}
-	}
-
-	if lock {
-		wallet.Lock.RUnlock()
-	}
-	if found != nil {
-		return found, nil
-	}
-
-	return wallet.AddNewAddress(true, "", true, true, true)
+	return wallet.Addresses[0].Clone(), nil
 }
 
 func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, *shared_staked.WalletAddressSharedStakedAddressExported, error) {
@@ -67,7 +51,7 @@ func (wallet *Wallet) GetFirstAddressForDevnetGenesisAirdrop() (string, *shared_
 		return "", nil, err
 	}
 
-	return addr.AddressRegistrationEncoded, sharedStakedAddress, nil
+	return addr.AddressEncoded, sharedStakedAddress, nil
 }
 
 func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string, lock bool) (*wallet_address.WalletAddress, error) {
@@ -77,46 +61,35 @@ func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string, lo
 		return nil, err
 	}
 
-	return wallet.GetWalletAddressByPublicKey(address.PublicKey, lock), nil
+	return wallet.GetWalletAddressByPublicKeyHash(address.PublicKeyHash, lock), nil
 }
 
-func (wallet *Wallet) GetWalletAddressByPublicKeyString(publicKeyStr string, lock bool) (*wallet_address.WalletAddress, error) {
-	publicKey, err := base64.StdEncoding.DecodeString(publicKeyStr)
+func (wallet *Wallet) GetWalletAddressByPublicKeyHashString(publicKeyHashStr string, lock bool) (*wallet_address.WalletAddress, error) {
+	publicKeyHash, err := base64.StdEncoding.DecodeString(publicKeyHashStr)
 	if err != nil {
 		return nil, err
 	}
-	return wallet.GetWalletAddressByPublicKey(publicKey, lock), nil
+	return wallet.GetWalletAddressByPublicKeyHash(publicKeyHash, lock), nil
 }
 
-func (wallet *Wallet) GetWalletAddressByPublicKey(publicKey []byte, lock bool) *wallet_address.WalletAddress {
+func (wallet *Wallet) GetWalletAddressByPublicKeyHash(publicKeyHash []byte, lock bool) *wallet_address.WalletAddress {
 
 	if lock {
 		wallet.Lock.RLock()
 		defer wallet.Lock.RUnlock()
 	}
 
-	return wallet.addressesMap[string(publicKey)].Clone()
+	return wallet.addressesMap[string(publicKeyHash)].Clone()
 }
 
-func (wallet *Wallet) ImportSecretKey(name string, secret []byte, staked, spendRequired bool) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte) (*wallet_address.WalletAddress, error) {
 
-	secretChild, err := bip32.Deserialize(secret)
+	masterKey, err := derivation.NewMasterKey(secretKey)
 	if err != nil {
 		return nil, err
 	}
 
-	start := bip32.FirstHardenedChild
-
-	if wallet.nonHardening { //non hardened
-		start = 0
-	}
-
-	privKey, err := secretChild.NewChildKey(start + 0)
-	if err != nil {
-		return nil, err
-	}
-
-	spendPrivKey, err := secretChild.NewChildKey(start + 1)
+	privKey, err := masterKey.Derive(derivation.FirstHardenedIndex) //0
 	if err != nil {
 		return nil, err
 	}
@@ -126,22 +99,16 @@ func (wallet *Wallet) ImportSecretKey(name string, secret []byte, staked, spendR
 		return nil, err
 	}
 
-	spendPrivateKey, err := addresses.NewPrivateKey(spendPrivKey.Key)
-	if err != nil {
-		return nil, err
-	}
-
 	addr := &wallet_address.WalletAddress{
-		Name:            name,
-		SecretKey:       secret,
-		PrivateKey:      privateKey,
-		SeedIndex:       0,
-		IsImported:      true,
-		SpendPrivateKey: spendPrivateKey,
-		IsMine:          true,
+		Name:       name,
+		SecretKey:  secretKey,
+		PrivateKey: privateKey,
+		SeedIndex:  0,
+		IsImported: true,
+		IsMine:     true,
 	}
 
-	if err = wallet.AddAddress(addr, staked, spendRequired, true, false, false, true); err != nil {
+	if err = wallet.AddAddress(addr, true, false, false, true); err != nil {
 		return nil, err
 	}
 
@@ -162,21 +129,21 @@ func (wallet *Wallet) AddSharedStakedAddress(addr *wallet_address.WalletAddress,
 		return errors.New("DELEGATES_MAXIMUM exceeded")
 	}
 
-	address, err := addresses.CreateAddr(addr.PublicKey, addr.Staked, addr.SpendPublicKey, nil, nil, 0, nil)
+	address, err := addresses.CreateAddr(addr.PublicKeyHash, nil, 0, nil)
 	if err != nil {
 		return
 	}
 
 	addr.AddressEncoded = address.EncodeAddr()
 
-	if wallet.addressesMap[string(addr.PublicKey)] != nil {
+	if wallet.addressesMap[string(addr.PublicKeyHash)] != nil {
 		return errors.New("Address exists")
 	}
 
 	wallet.Addresses = append(wallet.Addresses, addr)
-	wallet.addressesMap[string(addr.PublicKey)] = addr
+	wallet.addressesMap[string(addr.PublicKeyHash)] = addr
 
-	wallet.forging.Wallet.AddWallet(addr.PublicKey, addr.SharedStaked, false, nil, nil, 0)
+	wallet.forging.Wallet.AddWallet(addr.PublicKeyHash, addr.SharedStaked, false, nil, 0)
 
 	wallet.Count += 1
 
@@ -190,7 +157,7 @@ func (wallet *Wallet) AddSharedStakedAddress(addr *wallet_address.WalletAddress,
 	return
 }
 
-func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spendRequired, lock bool, incrementSeedIndex, incrementImportedCountIndex, save bool) (err error) {
+func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, lock bool, incrementSeedIndex, incrementImportedCountIndex, save bool) (err error) {
 
 	if lock {
 		wallet.Lock.Lock()
@@ -201,48 +168,31 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spe
 		return errors.New("Wallet was not loaded!")
 	}
 
-	if addr.SpendPrivateKey != nil {
-		addr.SpendPublicKey = addr.SpendPrivateKey.GeneratePublicKey()
-	}
+	var addr1 *addresses.Address
 
-	var spendPublicKey []byte
-	if spendRequired {
-		if len(addr.SpendPublicKey) != cryptography.PublicKeySize {
-			return errors.New("Spend Public Key is missing")
-		}
-		spendPublicKey = addr.SpendPublicKey
-	}
-
-	var addr1, addr2 *addresses.Address
-
-	if addr1, err = addr.PrivateKey.GenerateAddress(staked, spendPublicKey, false, nil, 0, nil); err != nil {
-		return
-	}
-	if addr2, err = addr.PrivateKey.GenerateAddress(staked, spendPublicKey, true, nil, 0, nil); err != nil {
+	if addr1, err = addr.PrivateKey.GenerateAddress(nil, 0, nil); err != nil {
 		return
 	}
 
 	publicKey := addr.PrivateKey.GeneratePublicKey()
+	publicKeyHash := cryptography.GetPublicKeyHash(publicKey)
 
-	addr.Staked = staked
-	addr.SpendRequired = spendRequired
 	addr.AddressEncoded = addr1.EncodeAddr()
-	addr.AddressRegistrationEncoded = addr2.EncodeAddr()
-	addr.Registration = addr2.Registration
 	addr.PublicKey = publicKey
+	addr.PublicKeyHash = publicKeyHash
 
 	if addr.PrivateKey != nil {
-		if addr.SharedStaked, err = addr.DeriveSharedStaked(); err != nil {
+		if addr.SharedStaked, err = addr.DeriveSharedStaked(0); err != nil {
 			return
 		}
 	}
 
-	if wallet.addressesMap[string(addr.PublicKey)] != nil {
+	if wallet.addressesMap[string(addr.PublicKeyHash)] != nil {
 		return errors.New("Address exists")
 	}
 
 	wallet.Addresses = append(wallet.Addresses, addr)
-	wallet.addressesMap[string(addr.PublicKey)] = addr
+	wallet.addressesMap[string(addr.PublicKeyHash)] = addr
 
 	wallet.Count += 1
 
@@ -254,7 +204,7 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spe
 		wallet.CountImportedIndex += 1
 	}
 
-	if err = wallet.forging.Wallet.AddWallet(addr.PublicKey, addr.SharedStaked, false, nil, nil, 0); err != nil {
+	if err = wallet.forging.Wallet.AddWallet(addr.PublicKeyHash, addr.SharedStaked, false, nil, 0); err != nil {
 		return
 	}
 
@@ -271,7 +221,7 @@ func (wallet *Wallet) AddAddress(addr *wallet_address.WalletAddress, staked, spe
 
 }
 
-func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte, []byte, error) {
+func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte, error) {
 
 	if lock {
 		wallet.Lock.Lock()
@@ -279,49 +229,35 @@ func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte,
 	}
 
 	if !wallet.Loaded {
-		return nil, nil, nil, errors.New("Wallet was not loaded!")
+		return nil, nil, errors.New("Wallet was not loaded!")
 	}
 
 	seedExtend := &addresses.SeedExtended{}
 	if err := seedExtend.Deserialize(wallet.Seed); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	masterKey, err := bip32.NewMasterKey(seedExtend.Key)
+	masterKey, err := derivation.NewMasterKey(seedExtend.Key)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	start := bip32.FirstHardenedChild
-
-	if seedExtend.Version == addresses.SIMPLE_PRIVATE_KEY || wallet.nonHardening { //non hardening
-		start = 0
-	}
-
-	secret, err := masterKey.NewChildKey(start + seedIndex)
+	secret, err := masterKey.Derive(derivation.FirstHardenedIndex + seedIndex)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	key2, err := secret.NewChildKey(start + 0)
+	privateKey, err := secret.Derive(derivation.FirstHardenedIndex)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	key3, err := secret.NewChildKey(start + 1)
-	if err != nil {
-		return nil, nil, nil, err
-	}
+	seed := secret.RawSeed()
 
-	secretSerialized, err := secret.Serialize()
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return secretSerialized, key2.Key, key3.Key, nil
+	return seed[:], privateKey.Key, nil
 }
 
-func (wallet *Wallet) AddNewAddress(lock bool, name string, staked, spendRequired, save bool) (*wallet_address.WalletAddress, error) {
+func (wallet *Wallet) AddNewAddress(lock bool, name string, save bool) (*wallet_address.WalletAddress, error) {
 
 	//avoid generating the same address twice
 	if lock {
@@ -335,7 +271,7 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string, staked, spendRequire
 		return nil, errors.New("Wallet was not loaded!")
 	}
 
-	secret, privateKey, spendPrivateKey, err := wallet.GenerateKeys(wallet.SeedIndex, false)
+	secret, privateKey, err := wallet.GenerateKeys(wallet.SeedIndex, false)
 	if err != nil {
 		return nil, err
 	}
@@ -345,26 +281,20 @@ func (wallet *Wallet) AddNewAddress(lock bool, name string, staked, spendRequire
 		return nil, err
 	}
 
-	spendPrivKey, err := addresses.NewPrivateKey(spendPrivateKey)
-	if err != nil {
-		return nil, err
-	}
-
 	if name == "" {
 		name = "Addr_" + strconv.FormatUint(uint64(wallet.SeedIndex), 10)
 	}
 
 	addr := &wallet_address.WalletAddress{
-		Version:         version,
-		Name:            name,
-		SecretKey:       secret,
-		PrivateKey:      privKey,
-		SpendPrivateKey: spendPrivKey,
-		SeedIndex:       wallet.SeedIndex,
-		IsMine:          true,
+		Version:    version,
+		Name:       name,
+		SecretKey:  secret,
+		PrivateKey: privKey,
+		SeedIndex:  wallet.SeedIndex,
+		IsMine:     true,
 	}
 
-	if err = wallet.AddAddress(addr, staked, spendRequired, false, true, false, save); err != nil {
+	if err = wallet.AddAddress(addr, false, true, false, save); err != nil {
 		return nil, err
 	}
 
@@ -392,11 +322,11 @@ func (wallet *Wallet) RemoveAddressByIndex(index int, lock bool) (bool, error) {
 
 	wallet.Addresses[index] = wallet.Addresses[len(wallet.Addresses)-1]
 	wallet.Addresses = wallet.Addresses[:len(wallet.Addresses)-1]
-	delete(wallet.addressesMap, string(adr.PublicKey))
+	delete(wallet.addressesMap, string(adr.PublicKeyHash))
 
 	wallet.Count -= 1
 
-	wallet.forging.Wallet.RemoveWallet(removing.PublicKey, false, nil, nil, 0)
+	wallet.forging.Wallet.RemoveWallet(removing.PublicKeyHash, false, nil, 0)
 
 	wallet.updateWallet()
 	if err := wallet.saveWallet(index, index+1, wallet.Count, false); err != nil {
@@ -414,10 +344,10 @@ func (wallet *Wallet) RemoveAddress(encodedAddress string, lock bool) (bool, err
 		return false, err
 	}
 
-	return wallet.RemoveAddressByPublicKey(addr.PublicKey, lock)
+	return wallet.RemoveAddressByPublicKeyHash(addr.PublicKeyHash, lock)
 }
 
-func (wallet *Wallet) RemoveAddressByPublicKey(publicKey []byte, lock bool) (bool, error) {
+func (wallet *Wallet) RemoveAddressByPublicKeyHash(publicKeyHash []byte, lock bool) (bool, error) {
 
 	if lock {
 		wallet.Lock.Lock()
@@ -429,7 +359,7 @@ func (wallet *Wallet) RemoveAddressByPublicKey(publicKey []byte, lock bool) (boo
 	}
 
 	for i, addr := range wallet.Addresses {
-		if bytes.Equal(addr.PublicKey, publicKey) {
+		if bytes.Equal(addr.PublicKeyHash, publicKeyHash) {
 			return wallet.RemoveAddressByIndex(i, false)
 		}
 	}
@@ -437,7 +367,7 @@ func (wallet *Wallet) RemoveAddressByPublicKey(publicKey []byte, lock bool) (boo
 	return false, nil
 }
 
-func (wallet *Wallet) RenameAddressByPublicKey(publicKey []byte, newName string, lock bool) (bool, error) {
+func (wallet *Wallet) RenameAddressByPublicKeyHash(publicKeyHash []byte, newName string, lock bool) (bool, error) {
 
 	if lock {
 		wallet.Lock.Lock()
@@ -448,7 +378,7 @@ func (wallet *Wallet) RenameAddressByPublicKey(publicKey []byte, newName string,
 		return false, errors.New("Wallet was not loaded!")
 	}
 
-	addr := wallet.GetWalletAddressByPublicKey(publicKey, false)
+	addr := wallet.GetWalletAddressByPublicKeyHash(publicKeyHash, false)
 	if addr == nil {
 		return false, nil
 	}
@@ -498,7 +428,7 @@ func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.Wall
 
 	isMine := false
 	if wallet.SeedIndex != 0 {
-		key, _, _, err := wallet.GenerateKeys(addr.SeedIndex, false)
+		key, _, err := wallet.GenerateKeys(addr.SeedIndex, false)
 		if err == nil && key != nil && bytes.Equal(key, addr.PrivateKey.Key) {
 			isMine = true
 		}
@@ -510,58 +440,16 @@ func (wallet *Wallet) ImportWalletAddressJSON(data []byte) (*wallet_address.Wall
 	}
 	addr.IsMine = true
 
-	if err := wallet.AddAddress(addr, addr.Staked, addr.SpendRequired, false, false, isMine, true); err != nil {
+	if err := wallet.AddAddress(addr, false, false, isMine, true); err != nil {
 		return nil, err
 	}
 
 	return addr, nil
 }
 
-func (wallet *Wallet) DecryptBalance(addr *wallet_address.WalletAddress, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, store bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
-
-	if len(encryptedBalance) == 0 {
-		return 0, errors.New("Encrypted Balance is nil")
-	}
-
-	return wallet.addressBalanceDecryptor.DecryptBalance("wallet", addr.PublicKey, addr.PrivateKey.Key, encryptedBalance, asset, useNewPreviousValue, newPreviousValue, store, ctx, statusCallback)
-}
-
-func (wallet *Wallet) DecryptBalanceByPublicKey(publicKey []byte, encryptedBalance, asset []byte, useNewPreviousValue bool, newPreviousValue uint64, store, lock bool, ctx context.Context, statusCallback func(string)) (uint64, error) {
-
-	addr := wallet.GetWalletAddressByPublicKey(publicKey, lock)
-	if addr == nil {
-		return 0, errors.New("address was not found")
-	}
-
-	return wallet.DecryptBalance(addr, encryptedBalance, asset, useNewPreviousValue, newPreviousValue, store, ctx, statusCallback)
-}
-
-func (wallet *Wallet) TryDecryptBalanceByPublicKey(publicKey []byte, encryptedBalance []byte, lock bool, matchValue uint64) (bool, error) {
-
-	if len(encryptedBalance) == 0 {
-		return false, errors.New("Encrypted Balance is nil")
-	}
-
-	addr := wallet.GetWalletAddressByPublicKey(publicKey, lock)
-	if addr == nil {
-		return false, errors.New("address was not found")
-	}
-
-	return wallet.TryDecryptBalance(addr, encryptedBalance, matchValue)
-}
-
-func (wallet *Wallet) TryDecryptBalance(addr *wallet_address.WalletAddress, encryptedBalance []byte, matchValue uint64) (bool, error) {
-	balance, err := new(crypto.ElGamal).Deserialize(encryptedBalance)
-	if err != nil {
-		return false, err
-	}
-
-	return addr.PrivateKey.TryDecryptBalance(balance, matchValue), nil
-}
-
 func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {
 
-	wallet2 := createWallet(wallet.forging, wallet.mempool, wallet.addressBalanceDecryptor, wallet.updateNewChainUpdate)
+	wallet2 := createWallet(wallet.forging, wallet.mempool, wallet.updateNewChainUpdate)
 	if err = json.Unmarshal(data, wallet2); err != nil {
 		return errors.New("Error unmarshaling wallet")
 	}
@@ -576,7 +464,7 @@ func (wallet *Wallet) ImportWalletJSON(data []byte) (err error) {
 
 	wallet.addressesMap = make(map[string]*wallet_address.WalletAddress)
 	for _, adr := range wallet.Addresses {
-		wallet.addressesMap[string(adr.PublicKey)] = adr
+		wallet.addressesMap[string(adr.PublicKeyHash)] = adr
 	}
 	wallet.setLoaded(true)
 

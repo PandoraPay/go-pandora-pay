@@ -10,6 +10,8 @@ import (
 
 type TransactionSimpleInput struct {
 	PublicKey []byte //33
+	Amount    uint64
+	Asset     []byte
 	Signature []byte //64
 }
 
@@ -25,11 +27,16 @@ func (vin *TransactionSimpleInput) Validate() error {
 	if len(vin.Signature) != cryptography.SignatureSize {
 		return errors.New("Vin.Signature length is invalid")
 	}
+	if len(vin.Asset) != config_coins.ASSET_LENGTH {
+		return errors.New("Vin.Asset is invalid")
+	}
 	return nil
 }
 
 func (vin *TransactionSimpleInput) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.Write(vin.PublicKey)
+	w.WriteUvarint(vin.Amount)
+	w.WriteAsset(vin.Asset)
 	if inclSignature {
 		w.Write(vin.Signature)
 	}
@@ -37,6 +44,12 @@ func (vin *TransactionSimpleInput) Serialize(w *helpers.BufferWriter, inclSignat
 
 func (vin *TransactionSimpleInput) Deserialize(r *helpers.BufferReader) (err error) {
 	if vin.PublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
+		return
+	}
+	if vin.Amount, err = r.ReadUvarint(); err != nil {
+		return
+	}
+	if vin.Asset, err = r.ReadAsset(); err != nil {
 		return
 	}
 	if vin.Signature, err = r.ReadBytes(cryptography.SignatureSize); err != nil {

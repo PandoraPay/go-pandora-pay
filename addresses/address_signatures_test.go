@@ -13,8 +13,6 @@ func Test_VerifySignedMessage(t *testing.T) {
 	for i := 0; i < 100; i++ {
 
 		privateKey := GenerateNewPrivateKey()
-		address, err := privateKey.GenerateAddress(false, nil, false, nil, 0, nil)
-		assert.Nil(t, err, "Error generating key")
 
 		message := helpers.RandomBytes(cryptography.HashSize)
 		signature, err := privateKey.Sign(message)
@@ -25,7 +23,7 @@ func Test_VerifySignedMessage(t *testing.T) {
 		emptySignature := helpers.EmptyBytes(cryptography.SignatureSize)
 		assert.NotEqual(t, signature, emptySignature, "Signing is empty...")
 
-		assert.Equal(t, address.VerifySignedMessage(message, signature), true, "verification failed")
+		assert.Equal(t, privateKey.Verify(message, signature), true, "verification failed")
 
 		var signature2 = helpers.CloneBytes(signature)
 		copy(signature2, signature)
@@ -37,7 +35,7 @@ func Test_VerifySignedMessage(t *testing.T) {
 			signature2[2] = value
 		}
 
-		assert.Equal(t, address.VerifySignedMessage(message, signature2), false, "Changed Signature was validated")
+		assert.Equal(t, privateKey.Verify(message, signature2), false, "Changed Signature was validated")
 
 	}
 

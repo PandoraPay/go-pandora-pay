@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_nodes"
 	"pandora-pay/config/config_stake"
@@ -20,6 +19,7 @@ import (
 )
 
 type ApiDelegatorNodeNotifyRequest struct {
+	PublicKeyHash          helpers.Base64 `json:"publicKeyHash" msgpack:"publicKeyHash"`
 	SharedStakedPrivateKey helpers.Base64 `json:"sharedStakedPrivateKey" msgpack:"sharedStakedPrivateKey"`
 	SharedStakedBalance    uint64         `json:"sharedStakedBalance" msgpack:"sharedStakedBalance"`
 }
@@ -40,7 +40,7 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 	}
 	sharedStakedPublicKey := sharedStakedPrivateKey.GeneratePublicKey()
 
-	addr := api.wallet.GetWalletAddressByPublicKey(sharedStakedPublicKey, true)
+	addr := api.wallet.GetWalletAddressByPublicKeyHash(args.PublicKeyHash, true)
 	if addr != nil && addr.PrivateKey == nil {
 		reply.Result = true
 		return
@@ -54,24 +54,12 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 		chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 		dataStorage := data_storage.NewDataStorage(reader)
 
-		var reg *registration.Registration
-		if reg, err = dataStorage.Regs.GetRegistration(sharedStakedPublicKey); err != nil {
-			return
-		}
-		if reg == nil {
-			return errors.New("Registration doesn't exist")
-		}
-
-		if !reg.Staked {
-			return errors.New("Account is not staked")
-		}
-
 		var accs *accounts.Accounts
 		if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
 			return
 		}
 
-		if acc, err = accs.GetAccount(sharedStakedPublicKey); err != nil {
+		if acc, err = accs.GetAccount(args.PublicKeyHash); err != nil {
 			return
 		}
 		if acc == nil {
@@ -82,10 +70,6 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 
 	}); err != nil {
 		return err
-	}
-
-	if !sharedStakedPrivateKey.TryDecryptBalance(acc.Balance.Amount, args.SharedStakedBalance) {
-		return errors.New("Decrypt Balance Doesn't match. Try again")
 	}
 
 	if args.SharedStakedBalance < config_stake.GetRequiredStake(chainHeight) {
@@ -99,19 +83,14 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 		false,
 		true,
 		nil,
-		sharedStakedPrivateKey,
 		nil,
 		nil,
-		sharedStakedPublicKey,
-		true,
-		false,
-		nil,
+		args.PublicKeyHash,
 		true,
 		&shared_staked.WalletAddressSharedStaked{
 			sharedStakedPrivateKey,
 			sharedStakedPublicKey,
 		},
-		"",
 		"",
 	}, true); err != nil {
 		return

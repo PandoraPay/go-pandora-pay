@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
@@ -95,59 +94,6 @@ func getNetworkAccountsCount(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func getNetworkAccountsKeysByIndex(this js.Value, args []js.Value) interface{} {
-	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-
-		request := &api_common.APIAccountsKeysByIndexRequest{nil, nil, false}
-		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
-			return nil, err
-		}
-
-		return webassembly_utils.ConvertToJSONBytes(connection.SendJSONAwaitAnswer[api_common.APIAccountsKeysByIndexReply](app.Network.Websockets.GetFirstSocket(), []byte("accounts/keys-by-index"), request, nil, 0))
-	})
-}
-
-func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
-	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-
-		request := &api_common.APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
-		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
-			return nil, err
-		}
-
-		data, err := connection.SendJSONAwaitAnswer[api_common.APIAccountsByKeysReply](app.Network.Websockets.GetFirstSocket(), []byte("accounts/by-keys"), request, nil, 0)
-		if err != nil {
-			return nil, err
-		}
-
-		data.Acc = make([]*account.Account, len(data.AccSerialized))
-		data.Reg = make([]*registration.Registration, len(data.RegSerialized))
-
-		for i, it := range data.AccSerialized {
-			if it != nil {
-				if data.Acc[i], err = account.NewAccountClear(request.Keys[i].PublicKey, 0, request.Asset); err != nil {
-					return nil, err
-				}
-
-				if err = data.Acc[i].Deserialize(helpers.NewBufferReader(it)); err != nil {
-					return nil, err
-				}
-			}
-		}
-
-		for i, it := range data.RegSerialized {
-			if it != nil {
-				data.Reg[i] = registration.NewRegistration(request.Keys[i].PublicKey, 0)
-				if err = data.Reg[i].Deserialize(helpers.NewBufferReader(it)); err != nil {
-					return nil, err
-				}
-			}
-		}
-
-		return webassembly_utils.ConvertToJSONBytes(data, nil)
-	})
-}
-
 func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
@@ -157,7 +103,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		publicKey, err := request.GetPublicKey(true)
+		publicKey, err := request.GetPublicKeyHash(true)
 		if err != nil {
 			return nil, err
 		}
@@ -186,14 +132,6 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 					return nil, err
 				}
 				result.PlainAccSerialized = nil
-			}
-
-			if result.RegSerialized != nil {
-				result.Reg = registration.NewRegistration(publicKey, result.RegExtra.Index)
-				if err = result.Reg.Deserialize(helpers.NewBufferReader(result.RegSerialized)); err != nil {
-					return nil, err
-				}
-				result.RegSerialized = nil
 			}
 
 		}
@@ -335,18 +273,6 @@ func postNetworkMempoolBroadcastTransaction(this js.Value, args []js.Value) inte
 		}
 
 		return true, nil
-	})
-}
-
-func getNetworkFeeLiquidity(this js.Value, args []js.Value) interface{} {
-	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-
-		hash, err := base64.StdEncoding.DecodeString(args[1].String())
-		if err != nil {
-			return nil, err
-		}
-
-		return webassembly_utils.ConvertToJSONBytes(connection.SendJSONAwaitAnswer[api_common.APIAssetFeeLiquidityFeeReply](app.Network.Websockets.GetFirstSocket(), []byte("asset/fee-liquidity"), &api_common.APIAssetFeeLiquidityFeeRequest{uint64(args[0].Int()), hash}, nil, 0))
 	})
 }
 

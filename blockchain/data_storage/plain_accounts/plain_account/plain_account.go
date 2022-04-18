@@ -1,25 +1,21 @@
 package plain_account
 
 import (
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/dpos"
 	"pandora-pay/helpers"
 	"pandora-pay/store/hash_map"
 )
 
 type PlainAccount struct {
 	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
-	Key                                          []byte                                   `json:"-" msgpack:"-"` //hashMap key
-	Index                                        uint64                                   `json:"-" msgpack:"-"` //hashMap index
-	Nonce                                        uint64                                   `json:"nonce" msgpack:"nonce"`
-	Unclaimed                                    uint64                                   `json:"unclaimed" msgpack:"unclaimed"`
-	AssetFeeLiquidities                          *asset_fee_liquidity.AssetFeeLiquidities `json:"assetFeeLiquidities" msgpack:"assetFeeLiquidities"`
+	Key                                          []byte               `json:"-" msgpack:"-"` //hashMap key
+	Index                                        uint64               `json:"-" msgpack:"-"` //hashMap index
+	Nonce                                        uint64               `json:"nonce" msgpack:"nonce"`
+	DelegatedStake                               *dpos.DelegatedStake `json:"delegatedStake" msgpack:"delegatedStake"`
 }
 
 func (plainAccount *PlainAccount) IsDeletable() bool {
-	if plainAccount.Unclaimed == 0 && plainAccount.Nonce == 0 && !plainAccount.AssetFeeLiquidities.HasAssetFeeLiquidities() {
-		return true
-	}
-	return false
+	return plainAccount.Nonce == 0 && plainAccount.DelegatedStake.IsDeletable()
 }
 
 func (plainAccount *PlainAccount) SetKey(key []byte) {
@@ -35,7 +31,7 @@ func (plainAccount *PlainAccount) GetIndex() uint64 {
 }
 
 func (plainAccount *PlainAccount) Validate() error {
-	if err := plainAccount.AssetFeeLiquidities.Validate(); err != nil {
+	if err := plainAccount.DelegatedStake.Validate(); err != nil {
 		return err
 	}
 	return nil
@@ -45,14 +41,9 @@ func (plainAccount *PlainAccount) IncrementNonce(sign bool) error {
 	return helpers.SafeUint64Update(sign, &plainAccount.Nonce, 1)
 }
 
-func (plainAccount *PlainAccount) AddUnclaimed(sign bool, amount uint64) error {
-	return helpers.SafeUint64Update(sign, &plainAccount.Unclaimed, amount)
-}
-
 func (plainAccount *PlainAccount) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(plainAccount.Nonce)
-	w.WriteUvarint(plainAccount.Unclaimed)
-	plainAccount.AssetFeeLiquidities.Serialize(w)
+	plainAccount.DelegatedStake.Serialize(w)
 }
 
 func (plainAccount *PlainAccount) Deserialize(r *helpers.BufferReader) (err error) {
@@ -60,20 +51,14 @@ func (plainAccount *PlainAccount) Deserialize(r *helpers.BufferReader) (err erro
 	if plainAccount.Nonce, err = r.ReadUvarint(); err != nil {
 		return
 	}
-	if plainAccount.Unclaimed, err = r.ReadUvarint(); err != nil {
-		return
-	}
-	if err = plainAccount.AssetFeeLiquidities.Deserialize(r); err != nil {
-		return
-	}
+	return plainAccount.DelegatedStake.Deserialize(r)
 
-	return
 }
 
 func NewPlainAccount(key []byte, index uint64) *PlainAccount {
 	return &PlainAccount{
-		Key:                 key,
-		Index:               index,
-		AssetFeeLiquidities: &asset_fee_liquidity.AssetFeeLiquidities{},
+		Key:            key,
+		Index:          index,
+		DelegatedStake: &dpos.DelegatedStake{Version: dpos.NO_STAKING},
 	}
 }

@@ -21,8 +21,6 @@ func setFee(tx *transaction.Transaction, extraBytes int, fee *WizardTransactionF
 		switch tx.Version {
 		case transaction_type.TX_SIMPLE:
 			fee.PerByte = config_fees.FEE_PER_BYTE
-		case transaction_type.TX_ZETHER:
-			fee.PerByte = config_fees.FEE_PER_BYTE_ZETHER
 		}
 		fee.PerByteExtraSpace = config_fees.FEE_PER_BYTE_EXTRA_SPACE
 	}

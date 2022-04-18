@@ -12,9 +12,9 @@ type PlainAccounts struct {
 }
 
 //WARNING: should NOT be used manually without being called from DataStorage
-func (plainAccounts *PlainAccounts) CreateNewPlainAccount(publicKey []byte) (*plain_account.PlainAccount, error) {
-	plainAcc := plain_account.NewPlainAccount(publicKey, 0) //index will be set by update
-	if err := plainAccounts.Create(string(publicKey), plainAcc); err != nil {
+func (plainAccounts *PlainAccounts) CreateNewPlainAccount(publicKeyHash []byte) (*plain_account.PlainAccount, error) {
+	plainAcc := plain_account.NewPlainAccount(publicKeyHash, 0) //index will be set by update
+	if err := plainAccounts.Create(string(publicKeyHash), plainAcc); err != nil {
 		return nil, err
 	}
 	return plainAcc, nil

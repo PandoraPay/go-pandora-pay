@@ -19,11 +19,11 @@ func (api *APICommon) GetWalletDeleteAddress(r *http.Request, args *APIWalletDel
 		return errors.New("Invalid User or Password")
 	}
 
-	publicKey, err := args.GetPublicKey(true)
+	publicKeyHash, err := args.GetPublicKeyHash(true)
 	if err != nil {
 		return err
 	}
 
-	reply.Status, err = api.wallet.RemoveAddressByPublicKey(publicKey, true)
+	reply.Status, err = api.wallet.RemoveAddressByPublicKeyHash(publicKeyHash, true)
 	return err
 }

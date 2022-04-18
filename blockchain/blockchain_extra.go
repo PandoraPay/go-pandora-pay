@@ -11,7 +11,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets/asset"
-	"pandora-pay/blockchain/data_storage/registrations"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -74,24 +74,27 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 			return errors.New("Amount, PaymentID or IntegratedPaymentAsset are not allowed in the airdrop address")
 		}
 
-		if registrations.VerifyRegistration(addr.PublicKey, addr.Staked, addr.SpendPublicKey, addr.Registration) == false {
-			return errors.New("Registration verification is false")
-		}
-
-		if _, err = dataStorage.CreateRegistration(addr.PublicKey, addr.Staked, addr.SpendPublicKey); err != nil {
-			return
-		}
-
 		var accs *accounts.Accounts
 		var acc *account.Account
+		var plainAcc *plain_account.PlainAccount
 
-		if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKey, false); err != nil {
-			return
-		}
-		acc.Balance.AddBalanceUint(airdrop.Amount)
-
-		if err = accs.Update(string(addr.PublicKey), acc); err != nil {
-			return
+		if len(airdrop.DelegatedStakePublicKey) == cryptography.PublicKeySize {
+			if plainAcc, err = dataStorage.GetOrCreatePlainAccount(addr.PublicKeyHash); err != nil {
+				return
+			}
+			if err = plainAcc.DelegatedStake.CreateDelegatedStake(airdrop.Amount, 0, airdrop.DelegatedStakePublicKey, airdrop.DelegatedStakeFee); err != nil {
+				return
+			}
+			if err = dataStorage.PlainAccs.Update(string(addr.PublicKeyHash), plainAcc); err != nil {
+				return
+			}
+		} else {
+			if accs, acc, err = dataStorage.CreateAccount(config_coins.NATIVE_ASSET_FULL, addr.PublicKeyHash); err != nil {
+				return
+			}
+			if err = accs.Update(string(addr.PublicKeyHash), acc); err != nil {
+				return
+			}
 		}
 
 	}
@@ -129,7 +132,7 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 	}
 
 	chainData.AssetsCount = dataStorage.Asts.Count
-	chainData.AccountsCount = dataStorage.Regs.Count + dataStorage.PlainAccs.Count
+	chainData.AccountsCount = dataStorage.PlainAccs.Count
 
 	return
 }
@@ -206,7 +209,9 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 			}
 		}
 
-		blk.StakingNonce = make([]byte, 32)
+		blk.Forger = make([]byte, cryptography.PublicKeyHashSize)
+		blk.DelegatedStakePublicKey = make([]byte, cryptography.PublicKeySize)
+		blk.Signature = make([]byte, cryptography.SignatureSize)
 
 		blk.BloomSerializedNow(blk.SerializeManualToBytes())
 

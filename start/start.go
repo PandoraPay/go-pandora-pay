@@ -1,16 +1,13 @@
 package start
 
 import (
-	"context"
 	"os"
-	"pandora-pay/address_balance_decryptor"
 	"pandora-pay/app"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/config/globals"
-	balance_decoder "pandora-pay/cryptography/crypto/balance-decryptor"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/debugging_pprof"
 	"pandora-pay/mempool"
@@ -21,8 +18,6 @@ import (
 	"pandora-pay/txs_builder"
 	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
-	"runtime"
-	"strconv"
 )
 
 func _startMain() (err error) {
@@ -53,9 +48,6 @@ func _startMain() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "txs validator initialized")
 
-	if app.AddressBalanceDecryptor, err = address_balance_decryptor.NewAddressBalanceDecryptor(); err != nil {
-		return
-	}
 	globals.MainEvents.BroadcastEvent("main", "address balance decryptor validator initialized")
 
 	if app.Mempool, err = mempool.CreateMempool(app.TxsValidator); err != nil {
@@ -63,7 +55,7 @@ func _startMain() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "mempool initialized")
 
-	if app.Forging, err = forging.CreateForging(app.Mempool, app.AddressBalanceDecryptor); err != nil {
+	if app.Forging, err = forging.CreateForging(app.Mempool); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "forging initialized")
@@ -73,7 +65,7 @@ func _startMain() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
 
-	if app.Wallet, err = wallet.CreateWallet(app.Forging, app.Mempool, app.AddressBalanceDecryptor); err != nil {
+	if app.Wallet, err = wallet.CreateWallet(app.Forging, app.Mempool); err != nil {
 		return
 	}
 	if err = app.Wallet.ProcessWalletArguments(); err != nil {
@@ -89,20 +81,6 @@ func _startMain() (err error) {
 		return
 	}
 
-	if runtime.GOARCH != "wasm" && globals.Arguments["--balance-decryptor-disable-init"] == false {
-		var tableSize int
-		if globals.Arguments["--balance-decryptor-disable-init"] != nil {
-			if tableSize, err = strconv.Atoi(globals.Arguments["--balance-decryptor-disable-init"].(string)); err != nil {
-				return
-			}
-		}
-		go func() {
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			balance_decoder.BalanceDecryptor.SetTableSize(tableSize, ctx, func(string) {})
-		}()
-	}
-
 	app.Wallet.InitializeWallet(app.Chain.UpdateNewChainUpdate)
 	if err = app.Wallet.StartWallet(); err != nil {
 		return
@@ -116,7 +94,7 @@ func _startMain() (err error) {
 	app.TxsBuilder = txs_builder.TxsBuilderInit(app.Wallet, app.Mempool, app.TxsValidator)
 	globals.MainEvents.BroadcastEvent("main", "transactions builder initialized")
 
-	app.Forging.InitializeForging(app.TxsBuilder.CreateForgingTransactions, app.Chain.NextBlockCreatedCn, app.Chain.UpdateNewChainUpdate, app.Chain.ForgingSolutionCn)
+	app.Forging.InitializeForging(app.Chain.NextBlockCreatedCn, app.Chain.UpdateNewChainUpdate, app.Chain.ForgingSolutionCn)
 
 	if config_forging.FORGING_ENABLED {
 		app.Forging.StartForging()

@@ -4,50 +4,32 @@ import (
 	"errors"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/blockchain/data_storage/accounts/account/account_balance_homomorphic"
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/pending_stakes_list"
 	"pandora-pay/blockchain/data_storage/pending_stakes_list/pending_stakes"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
-	"pandora-pay/blockchain/data_storage/registrations"
-	"pandora-pay/blockchain/data_storage/registrations/registration"
-	"pandora-pay/config/config_asset_fee"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/cryptography/crypto"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
 
 type DataStorage struct {
-	DBTx                       store_db_interface.StoreDBTransactionInterface
-	Regs                       *registrations.Registrations
-	PlainAccs                  *plain_accounts.PlainAccounts
-	AccsCollection             *accounts.AccountsCollection
-	PendingStakes              *pending_stakes_list.PendingStakesList
-	Asts                       *assets.Assets
-	AstsFeeLiquidityCollection *assets.AssetsFeeLiquidityCollection
+	DBTx           store_db_interface.StoreDBTransactionInterface
+	PlainAccs      *plain_accounts.PlainAccounts
+	AccsCollection *accounts.AccountsCollection
+	PendingStakes  *pending_stakes_list.PendingStakesList
+	Asts           *assets.Assets
 }
 
-func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
-
-	if validateRegistration {
-		exists, err := dataStorage.Regs.Exists(string(publicKey))
-		if err != nil {
-			return nil, nil, err
-		}
-		if !exists {
-			return nil, nil, errors.New("Can't create Account as it is not Registered")
-		}
-	}
+func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKeyHash []byte) (*accounts.Accounts, *account.Account, error) {
 
 	accs, err := dataStorage.AccsCollection.GetMap(assetId)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	acc, err := accs.GetAccount(publicKey)
+	acc, err := accs.GetAccount(publicKeyHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -56,31 +38,21 @@ func (dataStorage *DataStorage) GetOrCreateAccount(assetId, publicKey []byte, va
 		return accs, acc, nil
 	}
 
-	if acc, err = accs.CreateNewAccount(publicKey); err != nil {
+	if acc, err = accs.CreateNewAccount(publicKeyHash); err != nil {
 		return nil, nil, err
 	}
 
 	return accs, acc, nil
 }
 
-func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte, validateRegistration bool) (*accounts.Accounts, *account.Account, error) {
-
-	if validateRegistration {
-		exists, err := dataStorage.Regs.Exists(string(publicKey))
-		if err != nil {
-			return nil, nil, err
-		}
-		if !exists {
-			return nil, nil, errors.New("Can't create Account as it is not Registered")
-		}
-	}
+func (dataStorage *DataStorage) CreateAccount(assetId, publicKeyHash []byte) (*accounts.Accounts, *account.Account, error) {
 
 	accs, err := dataStorage.AccsCollection.GetMap(assetId)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	exists, err := accs.Exists(string(publicKey))
+	exists, err := accs.Exists(string(publicKeyHash))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -89,7 +61,7 @@ func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte, validat
 		return nil, nil, errors.New("Account already exists")
 	}
 
-	acc, err := accs.CreateNewAccount(publicKey)
+	acc, err := accs.CreateNewAccount(publicKeyHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -97,59 +69,22 @@ func (dataStorage *DataStorage) CreateAccount(assetId, publicKey []byte, validat
 	return accs, acc, nil
 }
 
-func (dataStorage *DataStorage) GetOrCreatePlainAccount(publicKey []byte, validateRegistration bool) (*plain_account.PlainAccount, error) {
-	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(publicKey)
+func (dataStorage *DataStorage) GetOrCreatePlainAccount(publicKeyHash []byte) (*plain_account.PlainAccount, error) {
+	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(publicKeyHash)
 	if err != nil {
 		return nil, err
 	}
 	if plainAcc != nil {
 		return plainAcc, nil
 	}
-	return dataStorage.CreatePlainAccount(publicKey, validateRegistration)
+	return dataStorage.CreatePlainAccount(publicKeyHash)
 }
 
-func (dataStorage *DataStorage) CreatePlainAccount(publicKey []byte, validateRegistration bool) (*plain_account.PlainAccount, error) {
-
-	if validateRegistration {
-		exists, err := dataStorage.Regs.Exists(string(publicKey))
-		if err != nil {
-			return nil, err
-		}
-		if exists {
-			return nil, errors.New("PlainAccount should not have been registered before")
-		}
-	}
-
-	return dataStorage.PlainAccs.CreateNewPlainAccount(publicKey)
+func (dataStorage *DataStorage) CreatePlainAccount(publicKeyHash []byte) (*plain_account.PlainAccount, error) {
+	return dataStorage.PlainAccs.CreateNewPlainAccount(publicKeyHash)
 }
 
-func (dataStorage *DataStorage) CreateRegistration(publicKey []byte, staked bool, spendPublicKey []byte) (*registration.Registration, error) {
-
-	exists, err := dataStorage.PlainAccs.Exists(string(publicKey))
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, errors.New("Can't register as a plain Account already exists")
-	}
-
-	return dataStorage.Regs.CreateNewRegistration(publicKey, staked, spendPublicKey)
-}
-
-func (dataStorage *DataStorage) AddStakePendingStake(publicKey []byte, amount *crypto.ElGamal, blockHeight uint64) error {
-
-	reg, err := dataStorage.Regs.GetRegistration(publicKey)
-	if err != nil {
-		return err
-	}
-
-	if reg == nil {
-		return errors.New("Account was not registered")
-	}
-
-	if !reg.Staked {
-		return errors.New("reg.Staked is false")
-	}
+func (dataStorage *DataStorage) AddStakePendingStake(publicKeyHash []byte, amount uint64, pendingType bool, blockHeight uint64) error {
 
 	pendingStakes, err := dataStorage.PendingStakes.GetPendingStakes(blockHeight)
 	if err != nil {
@@ -162,14 +97,10 @@ func (dataStorage *DataStorage) AddStakePendingStake(publicKey []byte, amount *c
 		}
 	}
 
-	pendingAmount, err := account_balance_homomorphic.NewBalanceHomomorphic(amount)
-	if err != nil {
-		return err
-	}
-
 	pendingStakes.Pending = append(pendingStakes.Pending, &pending_stakes.PendingStake{
-		PublicKey:     publicKey,
-		PendingAmount: pendingAmount,
+		PublicKey:     publicKeyHash,
+		PendingAmount: amount,
+		PendingType:   pendingType,
 	})
 
 	return dataStorage.PendingStakes.Update(strconv.FormatUint(blockHeight, 10), pendingStakes)
@@ -202,7 +133,7 @@ func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
 			return errors.New("Account doesn't exist")
 		}
 
-		acc.Balance.AddEchanges(pending.PendingAmount.Amount)
+		panic("todo")
 
 		if err = accs.Update(string(pending.PublicKey), acc); err != nil {
 			return err
@@ -213,54 +144,14 @@ func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
 	return nil
 }
 
-func (dataStorage *DataStorage) SubtractUnclaimed(plainAcc *plain_account.PlainAccount, amount, blockHeight uint64) (err error) {
-
-	if err = plainAcc.AddUnclaimed(false, amount); err != nil {
-		return
-	}
-
-	if plainAcc.AssetFeeLiquidities.HasAssetFeeLiquidities() && plainAcc.Unclaimed < config_asset_fee.GetRequiredAssetFee(blockHeight) {
-
-		for _, assetFeeLiquidity := range plainAcc.AssetFeeLiquidities.List {
-			if err = dataStorage.AstsFeeLiquidityCollection.UpdateLiquidity(plainAcc.Key, 0, 0, assetFeeLiquidity.Asset, asset_fee_liquidity.UPDATE_LIQUIDITY_DELETED); err != nil {
-				return
-			}
-		}
-
-		plainAcc.AssetFeeLiquidities.Clear()
-	}
-	return
-}
-
-func (dataStorage *DataStorage) GetWhoHasAssetTopLiquidity(assetId []byte) (*plain_account.PlainAccount, error) {
-	key, err := dataStorage.AstsFeeLiquidityCollection.GetTopLiquidity(assetId)
-	if err != nil || key == nil {
-		return nil, err
-	}
-
-	return dataStorage.PlainAccs.GetPlainAccount(key)
-}
-
-func (dataStorage *DataStorage) GetAssetFeeLiquidityTop(assetId []byte) (*asset_fee_liquidity.AssetFeeLiquidity, error) {
-
-	plainAcc, err := dataStorage.GetWhoHasAssetTopLiquidity(assetId)
-	if err != nil || plainAcc == nil {
-		return nil, err
-	}
-
-	return plainAcc.AssetFeeLiquidities.GetLiquidity(assetId), nil
-}
-
 func NewDataStorage(dbTx store_db_interface.StoreDBTransactionInterface) (out *DataStorage) {
 
 	out = &DataStorage{
 		dbTx,
-		registrations.NewRegistrations(dbTx),
 		plain_accounts.NewPlainAccounts(dbTx),
 		accounts.NewAccountsCollection(dbTx),
 		pending_stakes_list.NewPendingStakesList(dbTx),
 		assets.NewAssets(dbTx),
-		assets.NewAssetsFeeLiquidityCollection(dbTx),
 	}
 
 	return

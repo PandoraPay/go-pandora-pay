@@ -2,7 +2,6 @@ package wallet
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,10 +12,7 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
-	"pandora-pay/blockchain/data_storage/registrations"
-	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/store"
@@ -28,17 +24,17 @@ import (
 
 func (wallet *Wallet) exportSharedStakedAddress(addr *wallet_address.WalletAddress, path string, print bool) (*shared_staked.WalletAddressSharedStakedAddressExported, error) {
 
-	if !addr.Staked {
-		return nil, errors.New("Address is not Staked")
-	}
-
 	if print {
 		gui.GUI.OutputWrite("Address:")
 		gui.GUI.OutputWrite("   Encoded", addr.AddressEncoded)
-		gui.GUI.OutputWrite("   Encoded with Registration", addr.AddressRegistrationEncoded)
 	}
 
-	sharedStakedAddress := &shared_staked.WalletAddressSharedStakedAddressExported{addr.AddressRegistrationEncoded}
+	sharedStaked, err := addr.DeriveSharedStaked(0)
+	if err != nil {
+		return nil, err
+	}
+
+	sharedStakedAddress := &shared_staked.WalletAddressSharedStakedAddressExported{addr.AddressEncoded, sharedStaked.PublicKey}
 
 	if path != "" {
 
@@ -65,15 +61,14 @@ func (wallet *Wallet) exportSharedStakedAddress(addr *wallet_address.WalletAddre
 func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err error) {
 
 	type AddressAsset struct {
-		balance *crypto.ElGamal
+		balance uint64
 		assetId []byte
 		ast     *asset.Asset
 	}
 	type Address struct {
-		registration  *registration.Registration
 		plainAcc      *plain_account.PlainAccount
 		assetsList    []*AddressAsset
-		publicKey     []byte
+		publicKeyHash []byte
 		name          string
 		addressString string
 	}
@@ -89,7 +84,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 	addresses := make([]*Address, len(wallet.Addresses))
 
 	for i, walletAddress := range wallet.Addresses {
-		addresses[i] = &Address{publicKey: helpers.CloneBytes(walletAddress.PublicKey), name: walletAddress.Name, addressString: walletAddress.GetAddress(false)}
+		addresses[i] = &Address{publicKeyHash: helpers.CloneBytes(walletAddress.PublicKeyHash), name: walletAddress.Name, addressString: walletAddress.GetAddress()}
 	}
 	wallet.Lock.RUnlock()
 
@@ -103,16 +98,12 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 		for i, address := range addresses {
 
-			if addresses[i].registration, err = dataStorage.Regs.GetRegistration(address.publicKey); err != nil {
-				return
-			}
-
 			var assetsList [][]byte
-			if assetsList, err = dataStorage.AccsCollection.GetAccountAssets(address.publicKey); err != nil {
+			if assetsList, err = dataStorage.AccsCollection.GetAccountAssets(address.publicKeyHash); err != nil {
 				return
 			}
 
-			if addresses[i].plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(address.publicKey); err != nil {
+			if addresses[i].plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(address.publicKeyHash); err != nil {
 				return
 			}
 
@@ -127,12 +118,12 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 						return
 					}
 
-					if acc, err = accs.GetAccount(address.publicKey); err != nil {
+					if acc, err = accs.GetAccount(address.publicKeyHash); err != nil {
 						return
 					}
 
 					addresses[i].assetsList = append(addresses[i].assetsList, &AddressAsset{
-						acc.Balance.Amount,
+						acc.Balance,
 						assetId,
 						ast,
 					})
@@ -148,7 +139,6 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 		return
 	}
 
-	var decrypted uint64
 	for i, address := range addresses {
 
 		gui.GUI.OutputWrite(fmt.Sprintf("%d) %s :: %s", i, address.name, address.addressString))
@@ -158,46 +148,14 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 			continue
 		}
 
-		if addresses[i].registration != nil {
-			gui.GUI.OutputWrite(fmt.Sprintf("%18s: Staked: %v SpendPublicKey: %s", "Registered", addresses[i].registration.Staked, base64.StdEncoding.EncodeToString(addresses[i].registration.SpendPublicKey)))
-		}
-
 		if addresses[i].plainAcc != nil {
-
-			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Unclaimed", strconv.FormatFloat(config_coins.ConvertToBase(addresses[i].plainAcc.Unclaimed), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
-
-			if addresses[i].plainAcc.AssetFeeLiquidities.HasAssetFeeLiquidities() {
-
-				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %d", "Liquidities", len(addresses[i].plainAcc.AssetFeeLiquidities.List)))
-				for i, assetFeeLiquidity := range addresses[i].plainAcc.AssetFeeLiquidities.List {
-					gui.GUI.OutputWrite(fmt.Sprintf("%18s: %20s Rate %d LeadingZeros %d", strconv.Itoa(i), base64.StdEncoding.EncodeToString(assetFeeLiquidity.Asset), assetFeeLiquidity.Rate, assetFeeLiquidity.LeadingZeros))
-				}
-
-			}
-
+			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "Staked", strconv.FormatFloat(config_coins.ConvertToBase(addresses[i].plainAcc.DelegatedStake.GetDelegatedStakeAvailable()), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
 		}
 
 		if len(addresses[i].assetsList) > 0 {
-
-			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s %d", "BALANCES ENCRYPTED", "", len(addresses[i].assetsList)))
 			for _, data := range addresses[i].assetsList {
-				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %64s", data.ast.Name, base64.StdEncoding.EncodeToString(data.balance.Serialize())))
+				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %18s", data.ast.Name, strconv.FormatFloat(config_coins.ConvertToBase(data.balance), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
 			}
-
-			gui.GUI.OutputWrite(fmt.Sprintf("%18s", "Decrypting...."))
-
-			for _, data := range addresses[i].assetsList {
-				gui.GUI.Info2Update("Decrypting", "")
-
-				if decrypted, err = wallet.DecryptBalanceByPublicKey(address.publicKey, data.balance.Serialize(), data.assetId, false, 0, true, true, ctx, func(status string) {
-					gui.GUI.Info2Update("Decrypted", status)
-				}); err != nil {
-					return
-				}
-
-				gui.GUI.OutputWrite(fmt.Sprintf("%18s: %18s", data.ast.Name, strconv.FormatFloat(config_coins.ConvertToBase(decrypted), 'f', config_coins.DECIMAL_SEPARATOR, 64)))
-			}
-
 		}
 
 		gui.GUI.Info2Update("Decoding", "")
@@ -243,16 +201,10 @@ func (wallet *Wallet) initWalletCLI() {
 		defer wallet.Lock.RUnlock()
 
 		if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-			regs := registrations.NewRegistrations(reader)
 
 			for _, walletAddress := range wallet.Addresses {
 
-				var isReg bool
-				if isReg, err = regs.Exists(string(walletAddress.PublicKey)); err != nil {
-					return
-				}
-
-				addressStr := walletAddress.GetAddress(isReg)
+				addressStr := walletAddress.GetAddress()
 				if _, err = fmt.Fprintln(f, addressStr); err != nil {
 					return
 				}
@@ -381,10 +333,8 @@ func (wallet *Wallet) initWalletCLI() {
 	cliCreateNewAddress := func(cmd string, ctx context.Context) (err error) {
 
 		name := gui.GUI.OutputReadFilename("Name of your new address", "")
-		staked := gui.GUI.OutputReadBool("Staked address ? y/n. Leave empty for n", true, false)
-		spendRequired := gui.GUI.OutputReadBool("Spend Key required ? y/n. Leave empty for n", true, false)
 
-		if _, err = wallet.AddNewAddress(true, name, staked, spendRequired, true); err != nil {
+		if _, err = wallet.AddNewAddress(true, name, true); err != nil {
 			return
 		}
 		return wallet.CliListAddresses(cmd, ctx)
@@ -528,11 +478,9 @@ func (wallet *Wallet) initWalletCLI() {
 		})
 
 		name := gui.GUI.OutputReadString("Write Name of the newly imported address")
-		staked := gui.GUI.OutputReadBool("Staked address ? y/n. Leave empty for n", true, false)
-		spendRequired := gui.GUI.OutputReadBool("Spend Key required ? y/n. Leave empty for n", true, false)
 
 		var adr *wallet_address.WalletAddress
-		if adr, err = wallet.ImportSecretKey(name, secretKey, staked, spendRequired); err != nil {
+		if adr, err = wallet.ImportSecretKey(name, secretKey); err != nil {
 			return
 		}
 

@@ -5,10 +5,12 @@ import (
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
@@ -20,8 +22,10 @@ import (
 )
 
 type GenesisDataAirDropType struct {
-	Address string `json:"address" msgpack:"address"`
-	Amount  uint64 `json:"amount" msgpack:"amount"`
+	Address                 string `json:"address" msgpack:"address"`
+	Amount                  uint64 `json:"amount" msgpack:"amount"`
+	DelegatedStakePublicKey []byte `json:"delegatedPublicKey" msgpack:"delegatedPublicKey"`
+	DelegatedStakeFee       uint64 `json:"delegatedStakeFee" msgpack:"delegatedStakeFee"`
 }
 
 type GenesisDataType struct {
@@ -118,6 +122,8 @@ func createNewGenesis(v []string) (err error) {
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
 			sharedStakedAddress.Address, //registered address
 			amount,
+			sharedStakedAddress.DelegatedPublicKey,
+			0,
 		})
 
 	}
@@ -127,38 +133,19 @@ func createNewGenesis(v []string) (err error) {
 	//let's create 1000 zero wallets
 	for i := 0; i < 1000; i++ {
 		priv := addresses.GenerateNewPrivateKey()
-		if addr, err = priv.GenerateAddress(true, helpers.RandomBytes(cryptography.PublicKeySize), true, nil, 0, nil); err != nil {
+		if addr, err = priv.GenerateAddress(nil, 0, nil); err != nil {
 			return
+		}
+
+		var delegatedStakePublicKey []byte
+		if rand.Intn(2) == 1 {
+			delegatedStakePublicKey = helpers.RandomBytes(cryptography.PublicKeySize)
 		}
 
 		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
 			addr.EncodeAddr(),
-			0,
-		})
-	}
-
-	//let's create 1000 zero wallets
-	for i := 0; i < 5000; i++ {
-		priv := addresses.GenerateNewPrivateKey()
-		if addr, err = priv.GenerateAddress(false, nil, true, nil, 0, nil); err != nil {
-			return
-		}
-
-		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			addr.EncodeAddr(),
-			0,
-		})
-	}
-
-	//let's create 1000 zero wallets
-	for i := 0; i < 5000; i++ {
-		priv := addresses.GenerateNewPrivateKey()
-		if addr, err = priv.GenerateAddress(false, helpers.RandomBytes(cryptography.PublicKeySize), true, nil, 0, nil); err != nil {
-			return
-		}
-
-		GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-			addr.EncodeAddr(),
+			config_coins.ConvertToUnitsUint64Forced(100),
+			delegatedStakePublicKey,
 			0,
 		})
 	}

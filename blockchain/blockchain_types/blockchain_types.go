@@ -5,15 +5,14 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
-	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config/config_reward"
 	"pandora-pay/helpers"
 )
 
 type BlockchainTransactionKeyUpdate struct {
-	PublicKey []byte
-	TxsCount  uint64
+	PublicKeyHash []byte
+	TxsCount      uint64
 }
 
 type BlockchainTransactionUpdate struct {
@@ -38,7 +37,6 @@ type BlockchainUpdates struct {
 	AccsCollection *accounts.AccountsCollection
 	PlainAccounts  *plain_accounts.PlainAccounts
 	Assets         *assets.Assets
-	Registrations  *registrations.Registrations
 	BlockHeight    uint64
 	BlockHash      []byte
 }
