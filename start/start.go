@@ -22,6 +22,7 @@ import (
 	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
 	"runtime"
+	"strconv"
 )
 
 func _startMain() (err error) {
@@ -88,11 +89,17 @@ func _startMain() (err error) {
 		return
 	}
 
-	if runtime.GOARCH != "wasm" && globals.Arguments["--disable-init-balance-decryptor"] == false {
+	if runtime.GOARCH != "wasm" && globals.Arguments["--balance-decryptor-disable-init"] == false {
+		var tableSize int
+		if globals.Arguments["--balance-decryptor-disable-init"] != nil {
+			if tableSize, err = strconv.Atoi(globals.Arguments["--balance-decryptor-disable-init"].(string)); err != nil {
+				return
+			}
+		}
 		go func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			balance_decoder.BalanceDecryptor.SetTableSize(0, ctx, func(string) {})
+			balance_decoder.BalanceDecryptor.SetTableSize(tableSize, ctx, func(string) {})
 		}()
 	}
 

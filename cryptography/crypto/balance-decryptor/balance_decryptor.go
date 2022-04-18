@@ -6,7 +6,6 @@ import (
 	"github.com/tevino/abool"
 	"math"
 	"math/big"
-	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
@@ -59,13 +58,9 @@ func (self *BalanceDecryptorType) SetTableSize(newTableSize int, ctx context.Con
 
 		if newTableSize == 0 {
 			if runtime.GOARCH != "wasm" {
-				if config.DEBUG {
-					newTableSize = 1 << 20 //8mb ram
-				} else {
-					newTableSize = 1 << 23 //32mb ram
-				}
-			} else {
 				newTableSize = 1 << 16 //4mb ram
+			} else {
+				newTableSize = 1 << 20 //32mb ram
 			}
 		}
 		if newTableSize > 1<<24 {
