@@ -77,6 +77,7 @@ func Initialize(startMainCb func()) {
 			"generateNewAddress": js.FuncOf(generateNewAddress),
 		}),
 		"cryptography": js.ValueOf(map[string]interface{}{
+			"HASH_SIZE":            js.ValueOf(cryptography.HashSize),
 			"PRIVATE_KEY_SIZE":     js.ValueOf(cryptography.PrivateKeySize),
 			"SEED_SIZE":            js.ValueOf(cryptography.SeedSize),
 			"PUBLIC_KEY_SIZE":      js.ValueOf(cryptography.PublicKeySize),
