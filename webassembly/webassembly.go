@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
+	"pandora-pay/cryptography"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
@@ -75,7 +76,15 @@ func Initialize(startMainCb func()) {
 			"generateAddress":    js.FuncOf(generateAddress),
 			"generateNewAddress": js.FuncOf(generateNewAddress),
 		}),
-		"cryptography": js.ValueOf(map[string]interface{}{}),
+		"cryptography": js.ValueOf(map[string]interface{}{
+			"PRIVATE_KEY_SIZE":     js.ValueOf(cryptography.PrivateKeySize),
+			"SEED_SIZE":            js.ValueOf(cryptography.SeedSize),
+			"PUBLIC_KEY_SIZE":      js.ValueOf(cryptography.PublicKeySize),
+			"SIGNATURE_SIZE":       js.ValueOf(cryptography.SignatureSize),
+			"RIPEMD_SIZE":          js.ValueOf(cryptography.RipemdSize),
+			"PUBLIC_KEY_HASH_SIZE": js.ValueOf(cryptography.PublicKeyHashSize),
+			"CHECK_SUM_SIZE":       js.ValueOf(cryptography.ChecksumSize),
+		}),
 		"network": js.ValueOf(map[string]interface{}{
 			"networkDisconnect":                      js.FuncOf(networkDisconnect),
 			"getNetworkFaucetInfo":                   js.FuncOf(getNetworkFaucetInfo),
@@ -169,6 +178,12 @@ func Initialize(startMainCb func()) {
 			"NETWORK_SELECTED":        js.ValueOf(config.NETWORK_SELECTED),
 			"NETWORK_SELECTED_NAME":   js.ValueOf(config.NETWORK_SELECTED_NAME),
 			"NETWORK_SELECTED_PREFIX": js.ValueOf(config.NETWORK_SELECTED_BYTE_PREFIX),
+			"MAIN_NET_NETWORK_BYTE":   js.ValueOf(config.MAIN_NET_NETWORK_BYTE),
+			"MAIN_NET_NETWORK_NAME":   js.ValueOf(config.MAIN_NET_NETWORK_NAME),
+			"TEST_NET_NETWORK_BYTE":   js.ValueOf(config.TEST_NET_NETWORK_BYTE),
+			"TEST_NET_NETWORK_NAME":   js.ValueOf(config.TEST_NET_NETWORK_NAME),
+			"DEV_NET_NETWORK_BYTE":    js.ValueOf(config.DEV_NET_NETWORK_BYTE),
+			"DEV_NET_NETWORK_NAME":    js.ValueOf(config.DEV_NET_NETWORK_NAME),
 			"CONSENSUS":               js.ValueOf(uint8(config.CONSENSUS)),
 			"VERSION":                 js.ValueOf(config.VERSION_STRING),
 			"BUILD_VERSION":           js.ValueOf(config.BUILD_VERSION),
