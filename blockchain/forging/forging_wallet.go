@@ -162,7 +162,7 @@ func (w *ForgingWallet) runProcessUpdates() {
 							update.sharedStaked.PrivateKey.Key,
 							update.sharedStaked.PublicKey,
 							update.plainAcc,
-							0,
+							update.plainAcc.DelegatedStake.GetDelegatedStakeAvailable(),
 							-1,
 							chainHash,
 						}
