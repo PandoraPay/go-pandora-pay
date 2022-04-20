@@ -9,10 +9,10 @@ type Bytes []byte
 
 const HashSize = 32
 
-const PrivateKeySize = 32
+const PrivateKeySize = ed25519.PrivateKeySize
 const SeedSize = 64
-const PublicKeySize = 33
-const SignatureSize = 64
+const PublicKeySize = ed25519.PublicKeySize
+const SignatureSize = ed25519.SignatureSize
 
 const RipemdSize = 20
 const PublicKeyHashSize = RipemdSize

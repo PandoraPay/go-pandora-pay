@@ -6,9 +6,7 @@ import (
 	"github.com/tevino/abool"
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/data_storage"
-	"pandora-pay/blockchain/data_storage/accounts"
-	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/config/config_coins"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
@@ -33,10 +31,10 @@ type ForgingWalletAddressUpdate struct {
 	chainHeight   uint64
 	publicKeyHash []byte
 	sharedStaked  *shared_staked.WalletAddressSharedStaked
-	account       *account.Account
+	plainAcc      *plain_account.PlainAccount
 }
 
-func (w *ForgingWallet) AddWallet(publicKeyHash []byte, sharedStaked *shared_staked.WalletAddressSharedStaked, hasAccount bool, account *account.Account, chainHeight uint64) (err error) {
+func (w *ForgingWallet) AddWallet(publicKeyHash []byte, sharedStaked *shared_staked.WalletAddressSharedStaked, hasAccount bool, plainAcc *plain_account.PlainAccount, chainHeight uint64) (err error) {
 
 	if !config_forging.FORGING_ENABLED || w.initialized.IsNotSet() {
 		return
@@ -50,12 +48,7 @@ func (w *ForgingWallet) AddWallet(publicKeyHash []byte, sharedStaked *shared_sta
 			chainHeight, _ = binary.Uvarint(reader.Get("chainHeight"))
 			dataStorage := data_storage.NewDataStorage(reader)
 
-			var accs *accounts.Accounts
-			if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
-				return
-			}
-
-			if account, err = accs.GetAccount(publicKeyHash); err != nil {
+			if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(publicKeyHash); err != nil {
 				return
 			}
 
@@ -70,13 +63,13 @@ func (w *ForgingWallet) AddWallet(publicKeyHash []byte, sharedStaked *shared_sta
 		chainHeight,
 		publicKeyHash,
 		sharedStaked,
-		account,
+		plainAcc,
 	}
 	return
 }
 
-func (w *ForgingWallet) RemoveWallet(publicKeyHash []byte, hasAccount bool, acc *account.Account, chainHeight uint64) { //20 byte
-	w.AddWallet(publicKeyHash, nil, hasAccount, acc, chainHeight)
+func (w *ForgingWallet) RemoveWallet(publicKeyHash []byte, hasAccount bool, plainAcc *plain_account.PlainAccount, chainHeight uint64) { //20 byte
+	w.AddWallet(publicKeyHash, nil, hasAccount, plainAcc, chainHeight)
 }
 
 func (w *ForgingWallet) updateAccountToForgingWorkers(addr *ForgingWalletAddress) {
@@ -156,7 +149,7 @@ func (w *ForgingWallet) runProcessUpdates() {
 
 				if err = func() (err error) {
 
-					if update.account == nil {
+					if update.plainAcc == nil {
 						return errors.New("Account was not found")
 					}
 
@@ -168,7 +161,7 @@ func (w *ForgingWallet) runProcessUpdates() {
 							string(update.publicKeyHash),
 							update.sharedStaked.PrivateKey.Key,
 							update.sharedStaked.PublicKey,
-							update.account,
+							update.plainAcc,
 							0,
 							-1,
 							chainHash,
@@ -186,20 +179,15 @@ func (w *ForgingWallet) runProcessUpdates() {
 			}
 		case update := <-updateNewChainCn:
 
-			accs, _ := update.AccsCollection.GetOnlyMap(config_coins.NATIVE_ASSET_FULL)
-			if accs == nil {
-				continue
-			}
-
 			chainHash = update.BlockHash
 
-			for k, v := range accs.HashMap.Committed {
+			for k, v := range update.PlainAccounts.HashMap.Committed {
 				if w.addressesMap[k] != nil {
 					if v.Stored == "update" {
 
-						acc := v.Element.(*account.Account)
+						plainAcc := v.Element.(*plain_account.PlainAccount)
 
-						w.addressesMap[k].account = acc
+						w.addressesMap[k].plainAcc = plainAcc
 						w.addressesMap[k].chainHash = chainHash
 						w.updateAccountToForgingWorkers(w.addressesMap[k])
 

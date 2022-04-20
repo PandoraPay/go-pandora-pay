@@ -89,7 +89,7 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 		return nil, errors.New("Asset length is invalid")
 	}
 
-	hashmap := hash_map.CreateNewHashMap(tx, "accounts_"+string(AssetId), cryptography.PublicKeySize, true)
+	hashmap := hash_map.CreateNewHashMap(tx, "accounts_"+string(AssetId), cryptography.PublicKeyHashSize, false)
 
 	accounts = &Accounts{
 		HashMap: hashmap,

@@ -172,15 +172,16 @@ func createSimpleGenesis(walletGetFirstAddressForDevnetGenesisAirdrop func() (st
 	GenesisData.Hash = helpers.RandomBytes(cryptography.HashSize)
 	GenesisData.Timestamp = uint64(time.Now().Unix()) //the reason is to forge first block fast in tests
 
-	address, _, err := walletGetFirstAddressForDevnetGenesisAirdrop()
+	address, sharedStake, err := walletGetFirstAddressForDevnetGenesisAirdrop()
 	if err != nil {
 		return
 	}
 
 	amount := 100 * config_stake.GetRequiredStake(0)
 	GenesisData.AirDrops = append(GenesisData.AirDrops, &GenesisDataAirDropType{
-		Address: address,
-		Amount:  amount,
+		Address:                 address,
+		Amount:                  amount,
+		DelegatedStakePublicKey: sharedStake.DelegatedPublicKey,
 	})
 
 	if file, err = os.OpenFile("./genesis.data", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {

@@ -254,7 +254,12 @@ func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte,
 
 	seed := secret.RawSeed()
 
-	return seed[:], privateKey.Key, nil
+	privKey, err := privateKey.GetPrivateKey()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return seed[:], privKey[:], nil
 }
 
 func (wallet *Wallet) AddNewAddress(lock bool, name string, save bool) (*wallet_address.WalletAddress, error) {
@@ -478,12 +483,6 @@ func (wallet *Wallet) GetDelegatesCount() int {
 	defer wallet.Lock.RUnlock()
 
 	return wallet.DelegatesCount
-}
-
-func (wallet *Wallet) SetNonHardening(value bool) {
-	wallet.Lock.Lock()
-	defer wallet.Lock.Unlock()
-	wallet.nonHardening = value
 }
 
 func (wallet *Wallet) Close() {

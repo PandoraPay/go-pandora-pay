@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"github.com/tyler-smith/go-bip39"
 	"pandora-pay/addresses"
-	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/wallet/wallet_address"
 )
@@ -94,7 +95,7 @@ func (wallet *Wallet) ImportMnemonic(mnemonic string) (err error) {
 
 	wallet.Seed = seedExtended.Serialize()
 
-	if _, err = wallet.AddNewAddress(false, "", false, false, true); err != nil {
+	if _, err = wallet.AddNewAddress(false, "", true); err != nil {
 		return
 	}
 
@@ -144,31 +145,21 @@ func (wallet *Wallet) updateWallet() {
 }
 
 //it must be locked and use original walletAddresses, not cloned ones
-func (wallet *Wallet) refreshWalletAccount(acc *account.Account, chainHeight uint64, addr *wallet_address.WalletAddress) (err error) {
+func (wallet *Wallet) refreshWalletAccount(plainAcc *plain_account.PlainAccount, chainHeight uint64, addr *wallet_address.WalletAddress) (err error) {
 
 	deleted := false
 
-	if acc == nil || addr.SharedStaked == nil {
+	if plainAcc == nil || !plainAcc.DelegatedStake.HasDelegatedStake() || addr.SharedStaked == nil {
 		deleted = true
 	} else {
-
-		panic("not implemented")
-		//stakingAmountBalance := acc.Balance.Amount.Serialize()
-		//
-		//var stakingAmount uint64
-		//if stakingAmountBalance != nil {
-		//	stakingAmount, _ = wallet.DecryptBalance(addr, stakingAmountBalance, config_coins.NATIVE_ASSET_FULL, false, 0, true, context.Background(), func(string) {})
-		//}
-		//
-		//if stakingAmount < config_stake.GetRequiredStake(chainHeight) {
-		//	deleted = true
-		//}
-
+		if plainAcc.DelegatedStake.GetDelegatedStakeAvailable() < config_stake.GetRequiredStake(chainHeight) {
+			deleted = true
+		}
 	}
 
 	if deleted {
 
-		wallet.forging.Wallet.RemoveWallet(addr.PublicKeyHash, true, acc, chainHeight)
+		wallet.forging.Wallet.RemoveWallet(addr.PublicKeyHash, true, plainAcc, chainHeight)
 
 		if addr.IsSharedStaked {
 			_, err = wallet.RemoveAddressByPublicKeyHash(addr.PublicKeyHash, true)
@@ -176,7 +167,7 @@ func (wallet *Wallet) refreshWalletAccount(acc *account.Account, chainHeight uin
 		}
 
 	} else {
-		wallet.forging.Wallet.AddWallet(addr.PublicKeyHash, addr.SharedStaked, true, acc, chainHeight)
+		wallet.forging.Wallet.AddWallet(addr.PublicKeyHash, addr.SharedStaked, true, plainAcc, chainHeight)
 	}
 
 	return

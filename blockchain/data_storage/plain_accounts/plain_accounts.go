@@ -32,7 +32,7 @@ func (plainAccounts *PlainAccounts) GetPlainAccount(key []byte) (*plain_account.
 
 func NewPlainAccounts(tx store_db_interface.StoreDBTransactionInterface) (plainAccs *PlainAccounts) {
 
-	hashmap := hash_map.CreateNewHashMap(tx, "plainAccs", cryptography.PublicKeySize, false)
+	hashmap := hash_map.CreateNewHashMap(tx, "plainAccs", cryptography.PublicKeyHashSize, false)
 
 	plainAccs = &PlainAccounts{
 		HashMap: hashmap,

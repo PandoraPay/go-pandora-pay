@@ -12,7 +12,7 @@ type WalletAddress struct {
 	Name           string                                   `json:"name" msgpack:"name"`
 	SeedIndex      uint32                                   `json:"seedIndex" msgpack:"seedIndex"`
 	IsMine         bool                                     `json:"isMine" msgpack:"isMine"`
-	IsImported                 bool                                     `json:"isImported" msgpack:"isImported"`
+	IsImported     bool                                     `json:"isImported" msgpack:"isImported"`
 	SecretKey      []byte                                   `json:"secretKey" msgpack:"secretKey"`
 	PrivateKey     *addresses.PrivateKey                    `json:"privateKey" msgpack:"privateKey"`
 	PublicKey      []byte                                   `json:"publicKey" msgpack:"publicKey"`
@@ -48,8 +48,18 @@ func (addr *WalletAddress) DeriveSharedStaked(nonce uint32) (*shared_staked.Wall
 		return nil, err
 	}
 
+	privKey, err := key.GetPrivateKey()
+	if err != nil {
+		return nil, err
+	}
+
+	priv, err := addresses.NewPrivateKey(privKey)
+	if err != nil {
+		return nil, err
+	}
+
 	return &shared_staked.WalletAddressSharedStaked{
-		&addresses.PrivateKey{key.Key},
+		priv,
 		publicKey,
 	}, nil
 

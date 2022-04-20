@@ -44,7 +44,7 @@ func createStoreNow(name, storeType string) (*Store, error) {
 
 func create_db() (err error) {
 
-	var prefix = "/webd2"
+	var prefix = ""
 
 	allowedStores := map[string]bool{"bolt": true, "bunt": true, "bunt-memory": true, "memory": true}
 
@@ -58,9 +58,6 @@ func create_db() (err error) {
 		return
 	}
 	if StoreMempool, err = createStoreNow(prefix+"/mempool", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
-		return
-	}
-	if StoreBalancesDecrypted, err = createStoreNow(prefix+"/balancesDecrypted", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
 		return
 	}
 

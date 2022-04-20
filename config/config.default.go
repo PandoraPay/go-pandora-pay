@@ -25,6 +25,16 @@ func config_init() (err error) {
 		return
 	}
 
+	if _, err = os.Stat("./webd2"); os.IsNotExist(err) {
+		if err = os.Mkdir("./webd2", 0755); err != nil {
+			return
+		}
+	}
+
+	if err = os.Chdir("./webd2"); err != nil {
+		return
+	}
+
 	var prefix string
 	if globals.Arguments["--instance"] != nil {
 		INSTANCE = globals.Arguments["--instance"].(string)

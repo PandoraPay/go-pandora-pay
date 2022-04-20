@@ -36,7 +36,7 @@ type ForgingWorkerThreadAddress struct {
 
 func (worker *ForgingWorkerThread) computeStakingAmount(threadAddr *ForgingWorkerThreadAddress, work *forging_block_work.ForgingWork) bool {
 
-	if threadAddr.walletAdr.account != nil && threadAddr.walletAdr.delegatedStakePrivateKey != nil {
+	if threadAddr.walletAdr.plainAcc != nil && threadAddr.walletAdr.delegatedStakePrivateKey != nil {
 
 		if threadAddr.walletAdr.stakingAvailable >= work.MinimumStake {
 			return true

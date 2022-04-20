@@ -19,7 +19,7 @@ var (
 	CPU_THREADS        = 1
 	ARCHITECTURE       = ""
 	OS                 = ""
-	NAME               = "PANDORA PAY"
+	NAME               = "WEBDOLLAR"
 	VERSION            = semver.MustParse("0.0.1-test.0")
 	VERSION_STRING     = VERSION.String()
 	BUILD_VERSION      = ""
@@ -28,9 +28,7 @@ var (
 )
 
 const (
-	TRANSACTIONS_MAX_DATA_LENGTH    = 512
-	TRANSACTIONS_ZETHER_RING_MAX    = 256
-	PROTOCOL_CRYPTOPGRAPHY_CONSTANT = "PANDORA"
+	TRANSACTIONS_MAX_DATA_LENGTH = 512
 )
 
 var (

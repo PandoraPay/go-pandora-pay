@@ -3,9 +3,7 @@ package wallet
 import (
 	"encoding/binary"
 	"pandora-pay/blockchain/data_storage"
-	"pandora-pay/blockchain/data_storage/accounts"
-	"pandora-pay/blockchain/data_storage/accounts/account"
-	"pandora-pay/config/config_coins"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/gui"
 	"pandora-pay/recovery"
@@ -24,7 +22,7 @@ func (wallet *Wallet) processRefreshWallets() {
 
 			if config_forging.FORGING_ENABLED {
 
-				accsList := []*account.Account{}
+				plainAccsList := []*plain_account.PlainAccount{}
 				addressesList := []*wallet_address.WalletAddress{}
 				var chainHeight uint64
 
@@ -34,11 +32,6 @@ func (wallet *Wallet) processRefreshWallets() {
 
 					dataStorage := data_storage.NewDataStorage(reader)
 
-					var accs *accounts.Accounts
-					if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
-						return
-					}
-
 					visited := make(map[string]bool)
 					for i := 0; i < 50; i++ {
 						addr := wallet.GetRandomAddress()
@@ -47,13 +40,13 @@ func (wallet *Wallet) processRefreshWallets() {
 						}
 						visited[string(addr.PublicKeyHash)] = true
 
-						var acc *account.Account
+						var plainAcc *plain_account.PlainAccount
 
-						if acc, err = accs.GetAccount(addr.PublicKeyHash); err != nil {
+						if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(addr.PublicKeyHash); err != nil {
 							return
 						}
 
-						accsList = append(accsList, acc)
+						plainAccsList = append(plainAccsList, plainAcc)
 						addressesList = append(addressesList, addr)
 					}
 
@@ -62,8 +55,8 @@ func (wallet *Wallet) processRefreshWallets() {
 					gui.GUI.Error("Error processRefreshWallets", err)
 				}
 
-				for i, acc := range accsList {
-					if err = wallet.refreshWalletAccount(acc, chainHeight, addressesList[i]); err != nil {
+				for i, plainAcc := range plainAccsList {
+					if err = wallet.refreshWalletAccount(plainAcc, chainHeight, addressesList[i]); err != nil {
 						return
 					}
 				}

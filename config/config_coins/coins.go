@@ -7,7 +7,7 @@ import (
 	"pandora-pay/cryptography"
 )
 
-var BURN_PUBLIC_KEY = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xd, 0xe, 0xa, 0xd}
+var BURN_PUBLIC_KEY = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xd, 0xe, 0xa, 0xd}
 
 const (
 	ASSET_LENGTH = cryptography.PublicKeyHashSize
@@ -21,10 +21,10 @@ var (
 	MAX_SUPPLY_COINS       = uint64(42000000000)
 	MAX_SUPPLY_COINS_UNITS = ConvertToUnitsUint64Forced(MAX_SUPPLY_COINS)
 
-	NATIVE_ASSET_NAME           = "NATIVE"
-	NATIVE_ASSET_TICKER         = "NATIVE"
-	NATIVE_ASSET_IDENTIFICATION = "NATIVE"
-	NATIVE_ASSET_DESCRIPTION    = "NATIVE ASSET"
+	NATIVE_ASSET_NAME           = "WEBD"
+	NATIVE_ASSET_TICKER         = "WEBD"
+	NATIVE_ASSET_IDENTIFICATION = "WEBD"
+	NATIVE_ASSET_DESCRIPTION    = "WEBDOLLAR"
 
 	NATIVE_ASSET_FULL               = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	NATIVE_ASSET_FULL_STRING        = string(NATIVE_ASSET_FULL)

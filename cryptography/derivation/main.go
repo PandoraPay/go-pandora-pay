@@ -119,6 +119,15 @@ func (k *Key) PublicKey() ([]byte, error) {
 	return pub[:], nil
 }
 
+func (k *Key) GetPrivateKey() ([]byte, error) {
+	reader := bytes.NewReader(k.Key)
+	_, priv, err := ed25519.GenerateKey(reader)
+	if err != nil {
+		return nil, err
+	}
+	return priv, nil
+}
+
 // RawSeed returns raw seed bytes
 func (k *Key) RawSeed() [32]byte {
 	var rawSeed [32]byte

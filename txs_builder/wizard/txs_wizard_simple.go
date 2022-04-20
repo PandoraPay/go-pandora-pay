@@ -27,11 +27,6 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 	case nil:
 	}
 
-	var privateKey *addresses.PrivateKey
-	if privateKey, err = addresses.NewPrivateKey(transfer.Key); err != nil {
-		return nil, err
-	}
-
 	txBase := &transaction_simple.TransactionSimple{
 		TxScript:    txScript,
 		DataVersion: transfer.Data.getDataVersion(),
