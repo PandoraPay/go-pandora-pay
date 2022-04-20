@@ -98,6 +98,9 @@ func _startMain() (err error) {
 
 	if config_forging.FORGING_ENABLED {
 		app.Forging.StartForging()
+		if err = app.Wallet.InitForgingWallet(); err != nil {
+			return
+		}
 	}
 
 	app.Chain.InitForging()

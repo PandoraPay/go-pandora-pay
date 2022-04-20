@@ -94,7 +94,7 @@ func (wallet *Wallet) saveWallet(start, end, deleteIndex int, lock bool) error {
 	})
 }
 
-func (wallet *Wallet) loadWallet(password string, first bool) error {
+func (wallet *Wallet) loadWallet(password string, firstTime bool) error {
 	wallet.Lock.Lock()
 	defer wallet.Lock.Unlock()
 
@@ -168,8 +168,8 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 			}
 
 			wallet.setLoaded(true)
-			if !first {
-				if err = wallet.walletLoaded(); err != nil {
+			if !firstTime {
+				if err = wallet.walletLoaded(firstTime); err != nil {
 					return
 				}
 			}
@@ -181,10 +181,12 @@ func (wallet *Wallet) loadWallet(password string, first bool) error {
 	})
 }
 
-func (wallet *Wallet) walletLoaded() error {
+func (wallet *Wallet) walletLoaded(firstTime bool) error {
 
-	if err := wallet.InitForgingWallet(); err != nil {
-		return err
+	if !firstTime {
+		if err := wallet.InitForgingWallet(); err != nil {
+			return err
+		}
 	}
 
 	wallet.updateWallet()
@@ -199,7 +201,7 @@ func (wallet *Wallet) StartWallet() error {
 	wallet.Lock.Lock()
 	defer wallet.Lock.Unlock()
 
-	return wallet.walletLoaded()
+	return wallet.walletLoaded(true)
 }
 
 func (wallet *Wallet) InitForgingWallet() (err error) {
