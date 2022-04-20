@@ -15,7 +15,23 @@ import (
 
 func (chain *Blockchain) OpenExistsTx(hash []byte) (exists bool, errFinal error) {
 	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-		exists = reader.Exists("txHash:" + string(hash))
+		exists = reader.Exists("txHash:" + string(hash)) //optimized
+		return nil
+	})
+	return
+}
+
+func (chain *Blockchain) OpenExistsBlock(hash []byte) (exists bool, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		exists = reader.Exists("blockHeight_ByHash" + string(hash)) //optimized
+		return nil
+	})
+	return
+}
+
+func (chain *Blockchain) OpenExistsAsset(hash []byte) (exists bool, errFinal error) {
+	errFinal = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+		exists = reader.Exists("assets:exists:" + string(hash)) //optimized
 		return nil
 	})
 	return

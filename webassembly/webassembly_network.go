@@ -241,12 +241,12 @@ func getNetworkAccountMempoolNonce(this js.Value, args []js.Value) interface{} {
 func getNetworkTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		request := &api_common.APITransactionRequest{0, nil, api_types.RETURN_SERIALIZED}
+		request := &api_common.APITxRequest{0, nil, api_types.RETURN_SERIALIZED}
 		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
 
-		received, err := connection.SendJSONAwaitAnswer[api_common.APITransactionReply](app.Network.Websockets.GetFirstSocket(), []byte("tx"), request, nil, 0)
+		received, err := connection.SendJSONAwaitAnswer[api_common.APITxReply](app.Network.Websockets.GetFirstSocket(), []byte("tx"), request, nil, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -257,6 +257,40 @@ func getNetworkTx(this js.Value, args []js.Value) interface{} {
 		}
 
 		return webassembly_utils.ConvertJSONBytes(received)
+	})
+}
+
+func getNetworkTxExists(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+
+		request := &api_common.APITxExistsRequest{}
+		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
+			return nil, err
+		}
+
+		received, err := connection.SendJSONAwaitAnswer[api_common.APITxExistsReply](app.Network.Websockets.GetFirstSocket(), []byte("tx/exists"), request, nil, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		return received.Exists, nil
+	})
+}
+
+func getNetworkBlockExists(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+
+		request := &api_common.APIBlockExistsRequest{}
+		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
+			return nil, err
+		}
+
+		received, err := connection.SendJSONAwaitAnswer[api_common.APIBlockExistsReply](app.Network.Websockets.GetFirstSocket(), []byte("block/exists"), request, nil, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		return received.Exists, nil
 	})
 }
 
