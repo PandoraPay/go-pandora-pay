@@ -95,6 +95,7 @@ func _startMain() (err error) {
 			if tableSize, err = strconv.Atoi(globals.Arguments["--balance-decryptor-table-size"].(string)); err != nil {
 				return
 			}
+			tableSize = 1 << tableSize
 		}
 		go func() {
 			ctx, cancel := context.WithCancel(context.Background())
