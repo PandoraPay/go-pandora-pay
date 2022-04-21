@@ -16,8 +16,8 @@ Under development. Not working right now.
 - [X] Removing Address (stakable, spendPublicKey, registration)
 - [X] Creating Testnet Genesis
 - [ ] DPOS contracts
-- [ ] DPOS consensus
-- [ ] Staking
+- [X] DPOS consensus
+- [X] Staking
 - [X] WebDollar Address Format
 - [X] Multi Transfer
 - [ ] Web Wallet
