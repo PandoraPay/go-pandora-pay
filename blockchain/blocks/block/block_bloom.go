@@ -47,7 +47,7 @@ func (blk *Block) BloomNow() (err error) {
 
 		hashForSignature := blk.SerializeForSigning()
 
-		blk.Bloom.SignatureVerified = cryptography.VerifySignature(hashForSignature, blk.Signature, blk.DelegatedStakePublicKey)
+		blk.Bloom.SignatureVerified = cryptography.VerifySignature(blk.DelegatedStakePublicKey, hashForSignature, blk.Signature)
 		if !blk.Bloom.SignatureVerified {
 			return errors.New("Block signature is invalid")
 		}

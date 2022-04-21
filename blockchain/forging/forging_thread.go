@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/forging/forging_block_work"
+	"pandora-pay/config/config_nodes"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
@@ -110,6 +111,7 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) ([]byte,
 		return nil, err
 	}
 
+	newBlk.Block.Forger = solution.address.publicKeyHash
 	newBlk.Block.Timestamp = solution.timestamp
 	newBlk.Block.StakingAmount = solution.stakingAmount
 
@@ -119,7 +121,26 @@ func (thread *ForgingThread) publishSolution(solution *ForgingSolution) ([]byte,
 
 	newBlk.Block.MerkleHash = newBlk.MerkleHash()
 
+	newBlk.Block.DelegatedStakePublicKey = solution.address.delegatedStakePublicKey
+	newBlk.Block.DelegatedStakeFee = solution.address.delegatedStakeFee
+
+	if newBlk.Block.DelegatedStakeFee > 0 {
+		newBlk.Block.RewardCollector = config_nodes.DELEGATOR_REWARD_COLLECTOR_PUBLIC_KEY
+	}
+
+	hashForSignature := newBlk.Block.SerializeForSigning()
+
+	var err error
+
+	if newBlk.Block.Signature, err = solution.address.delegatedStakePrivateKey.Sign(hashForSignature); err != nil {
+		return nil, err
+	}
+
 	newBlk.Bloom = nil
+
+	if err = newBlk.BloomAll(); err != nil {
+		return nil, err
+	}
 
 	//send message to blockchain
 	result := make(chan *blockchain_types.BlockchainSolutionAnswer)

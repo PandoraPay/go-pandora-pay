@@ -1,15 +1,15 @@
 package forging
 
 import (
-	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
+	"pandora-pay/addresses"
 )
 
 type ForgingWalletAddress struct {
 	publicKeyHash            []byte
 	publicKeyHashStr         string
-	delegatedStakePrivateKey []byte
+	delegatedStakePrivateKey *addresses.PrivateKey
 	delegatedStakePublicKey  []byte
-	plainAcc                 *plain_account.PlainAccount
+	delegatedStakeFee        uint64
 	stakingAvailable         uint64
 	workerIndex              int
 	chainHash                []byte
@@ -21,7 +21,7 @@ func (walletAddr *ForgingWalletAddress) clone() *ForgingWalletAddress {
 		walletAddr.publicKeyHashStr,
 		walletAddr.delegatedStakePrivateKey,
 		walletAddr.delegatedStakePublicKey,
-		walletAddr.plainAcc,
+		walletAddr.delegatedStakeFee,
 		walletAddr.stakingAvailable,
 		walletAddr.workerIndex,
 		walletAddr.chainHash,

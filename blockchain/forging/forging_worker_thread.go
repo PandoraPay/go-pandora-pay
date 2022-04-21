@@ -16,7 +16,7 @@ import (
 
 type ForgingSolution struct {
 	timestamp     uint64
-	publicKeyHash []byte
+	address       *ForgingWalletAddress
 	blkComplete   *block_complete.BlockComplete
 	stakingAmount uint64
 }
@@ -35,16 +35,7 @@ type ForgingWorkerThreadAddress struct {
 }
 
 func (worker *ForgingWorkerThread) computeStakingAmount(threadAddr *ForgingWorkerThreadAddress, work *forging_block_work.ForgingWork) bool {
-
-	if threadAddr.walletAdr.plainAcc != nil && threadAddr.walletAdr.delegatedStakePrivateKey != nil {
-
-		if threadAddr.walletAdr.stakingAvailable >= work.MinimumStake {
-			return true
-		}
-
-	}
-
-	return false
+	return threadAddr.walletAdr.stakingAvailable >= work.MinimumStake
 }
 
 /**
@@ -196,14 +187,14 @@ func (worker *ForgingWorkerThread) forge() {
 
 					if n2 != n {
 						newSerialized := make([]byte, len(serialized)-n+n2)
-						copy(newSerialized, serialized[:n-32])
+						copy(newSerialized, serialized[:-n-cryptography.PublicKeyHashSize])
 						serialized = newSerialized
 						n = n2
 					}
 
 					//optimized POS
-					copy(serialized[len(serialized)-32-n2:len(serialized)-32], buf)
-					copy(serialized[len(serialized)-32:], address.walletAdr.publicKeyHash)
+					copy(serialized[len(serialized)-cryptography.PublicKeyHashSize-n2:len(serialized)-cryptography.PublicKeyHashSize], buf)
+					copy(serialized[len(serialized)-cryptography.PublicKeyHashSize:], address.walletAdr.publicKeyHash)
 
 					kernelHash := cryptography.SHA3(serialized)
 
@@ -215,7 +206,7 @@ func (worker *ForgingWorkerThread) forge() {
 
 						solution := &ForgingSolution{
 							localTimestamp,
-							address.walletAdr.publicKeyHash,
+							address.walletAdr,
 							work.BlkComplete,
 							address.walletAdr.stakingAvailable,
 						}

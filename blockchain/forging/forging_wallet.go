@@ -1,6 +1,7 @@
 package forging
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"github.com/tevino/abool"
@@ -8,6 +9,8 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_forging"
+	"pandora-pay/config/config_nodes"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/store"
@@ -153,16 +156,30 @@ func (w *ForgingWallet) runProcessUpdates() {
 						return errors.New("Account was not found")
 					}
 
+					if !update.plainAcc.DelegatedStake.HasDelegatedStake() || !bytes.Equal(update.plainAcc.DelegatedStake.DelegatedStakePublicKey, update.sharedStaked.PublicKey) {
+						return errors.New("Delegated stake is not matching")
+					}
+
+					if update.plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE {
+						return errors.New("DelegatedStakeFee is less than it should be")
+					}
+
+					stakingAvailable := update.plainAcc.DelegatedStake.GetDelegatedStakeAvailable()
+
+					if stakingAvailable < config_stake.GetRequiredStake(update.chainHeight) {
+						return errors.New("Your stake is not accepted because you will need at least the minimum staking amount")
+					}
+
 					address := w.addressesMap[key]
 					if address == nil {
 
 						address = &ForgingWalletAddress{
 							update.publicKeyHash,
 							string(update.publicKeyHash),
-							update.sharedStaked.PrivateKey.Key,
+							update.sharedStaked.PrivateKey,
 							update.sharedStaked.PublicKey,
-							update.plainAcc,
-							update.plainAcc.DelegatedStake.GetDelegatedStakeAvailable(),
+							update.plainAcc.DelegatedStake.DelegatedStakeFee,
+							stakingAvailable,
 							-1,
 							chainHash,
 						}
@@ -187,9 +204,37 @@ func (w *ForgingWallet) runProcessUpdates() {
 
 						plainAcc := v.Element.(*plain_account.PlainAccount)
 
-						w.addressesMap[k].plainAcc = plainAcc
-						w.addressesMap[k].chainHash = chainHash
-						w.updateAccountToForgingWorkers(w.addressesMap[k])
+						if err = func() (err error) {
+
+							if !plainAcc.DelegatedStake.HasDelegatedStake() {
+								return errors.New("has no longer delegated stake")
+							}
+
+							if !bytes.Equal(plainAcc.DelegatedStake.DelegatedStakePublicKey, w.addressesMap[k].delegatedStakePublicKey) {
+								return errors.New("delegated public key is no longer matching")
+							}
+
+							if plainAcc.DelegatedStake.DelegatedStakeFee < config_nodes.DELEGATOR_FEE {
+								return errors.New("DelegatedStakeFee is less than it should be")
+							}
+
+							stakingAvailable := plainAcc.DelegatedStake.GetDelegatedStakeAvailable()
+
+							if stakingAvailable < config_stake.GetRequiredStake(update.BlockHeight) {
+								return errors.New("Your stake is not accepted because you will need at least the minimum staking amount")
+							}
+
+							w.addressesMap[k].delegatedStakeFee = plainAcc.DelegatedStake.DelegatedStakeFee
+							w.addressesMap[k].stakingAvailable = stakingAvailable
+							w.addressesMap[k].chainHash = chainHash
+
+							w.updateAccountToForgingWorkers(w.addressesMap[k])
+
+							return
+						}(); err != nil {
+							w.deleteAccount(k)
+							gui.GUI.Error(err)
+						}
 
 					} else if v.Stored == "delete" {
 						w.deleteAccount(k)

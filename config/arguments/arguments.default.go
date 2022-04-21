@@ -8,7 +8,7 @@ package arguments
 const commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--pprof] [--network=network] [--debug] [--forging] [--new-devnet] [--run-testnet-script] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tcp-server-auto-tls-certificate] [--tcp-server-tls-cert-file=path] [--tcp-server-tls-key-file=path] [--tor-onion=onion] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--wallet-import-secret-mnemonic=mnemonic] [--wallet-import-secret-entropy=entropy] [--hcaptcha-site-key=args] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegator-enabled=bool] [--delegator-require-auth=bool] [--delegates-maximum=args] [--auth-users=args] [--light-computations] [--exit] [--skip-init-sync]
+  pandorapay [--pprof] [--network=network] [--debug] [--forging] [--new-devnet] [--run-testnet-script] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tcp-server-auto-tls-certificate] [--tcp-server-tls-cert-file=path] [--tcp-server-tls-key-file=path] [--tor-onion=onion] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--seed-wallet-nodes-info=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--wallet-import-secret-mnemonic=mnemonic] [--wallet-import-secret-entropy=entropy] [--hcaptcha-site-key=args] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegator-enabled=bool] [--delegator-require-auth=bool] [--delegates-maximum=args] [--auth-users=args] [--light-computations] [--delegator-fee=fee] [--delegator-reward-collector-pub-key=pubKey] [--delegator-accept-custom-keys=bool] [--exit] [--skip-init-sync]
   pandorapay -h | --help
   pandorapay -v | --version
 
@@ -49,6 +49,9 @@ Options:
   --delegator-enabled=bool                           Enable Delegator. Will allow other users to Delegate to the node. Use "true" to enable it
   --delegator-require-auth=bool                      Delegator will require authentication.
   --delegates-maximum=args                           Maximum number of Delegates
+  --delegator-fee=fee                                Fee required for Delegates
+  --delegator-reward-collector-pub-key=pubKey          Delegator Reward Collector Address
+  --delegator-accept-custom-keys=bool                Delegator accept custom private keys for delegated stakes. This should not be allowed in pools where the reward is split.
   --auth-users=args                                  Credential for Authenticated Users. Arguments must be a JSON "[{'user': 'username', 'pass': 'secret'}]".
   --light-computations                               Reduces the computations for a testnet node.
   --exit                                             Exit node.

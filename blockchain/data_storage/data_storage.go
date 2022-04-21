@@ -98,7 +98,7 @@ func (dataStorage *DataStorage) AddStakePendingStake(publicKeyHash []byte, amoun
 	}
 
 	pendingStakes.Pending = append(pendingStakes.Pending, &pending_stakes.PendingStake{
-		PublicKey:     publicKeyHash,
+		PublicKeyHash: publicKeyHash,
 		PendingAmount: amount,
 		PendingType:   pendingType,
 	})
@@ -107,11 +107,6 @@ func (dataStorage *DataStorage) AddStakePendingStake(publicKeyHash []byte, amoun
 }
 
 func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
-
-	accs, err := dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL)
-	if err != nil {
-		return err
-	}
 
 	pendingStakes, err := dataStorage.PendingStakes.GetPendingStakes(blockHeight)
 	if err != nil {
@@ -124,20 +119,48 @@ func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
 
 	for _, pending := range pendingStakes.Pending {
 
-		var acc *account.Account
-		if acc, err = accs.GetAccount(pending.PublicKey); err != nil {
-			return err
+		if pending.PendingType { //add
+
+			var plainAcc *plain_account.PlainAccount
+			if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(pending.PublicKeyHash); err != nil {
+				return err
+			}
+
+			if plainAcc == nil {
+				return errors.New("Account doesn't exist")
+			}
+
+			if !plainAcc.DelegatedStake.HasDelegatedStake() {
+				return errors.New("Plain Account has not delegated stake")
+			}
+
+			if err = plainAcc.DelegatedStake.AddStakeAvailable(true, pending.PendingAmount); err != nil {
+				return err
+			}
+
+			if err = dataStorage.PlainAccs.Update(string(pending.PublicKeyHash), plainAcc); err != nil {
+				return err
+			}
+
+		} else {
+
+			var acc *account.Account
+			var accs *accounts.Accounts
+
+			if accs, acc, err = dataStorage.GetOrCreateAccount(config_coins.NATIVE_ASSET_FULL, pending.PublicKeyHash); err != nil {
+				return err
+			}
+
+			if err = acc.AddBalance(true, pending.PendingAmount); err != nil {
+				return err
+			}
+
+			if err = accs.Update(string(pending.PublicKeyHash), acc); err != nil {
+				return err
+			}
+
 		}
 
-		if acc == nil {
-			return errors.New("Account doesn't exist")
-		}
-
-		panic("todo")
-
-		if err = accs.Update(string(pending.PublicKey), acc); err != nil {
-			return err
-		}
 	}
 
 	dataStorage.PendingStakes.Delete(strconv.FormatUint(blockHeight, 10))

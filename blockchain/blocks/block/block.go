@@ -193,6 +193,7 @@ func (blk *Block) AdvancedSerialization(w *helpers.BufferWriter, kernelHash bool
 	w.WriteUvarint(blk.Timestamp)
 
 	w.Write(blk.Forger)
+
 	if !kernelHash {
 		w.Write(blk.DelegatedStakePublicKey)
 		w.WriteUvarint(blk.DelegatedStakeFee)
