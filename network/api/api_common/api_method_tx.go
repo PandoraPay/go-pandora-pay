@@ -14,20 +14,20 @@ import (
 	"pandora-pay/store/store_db/store_db_interface"
 )
 
-type APITransactionRequest struct {
+type APITxRequest struct {
 	Height     uint64                  `json:"height,omitempty" msgpack:"height,omitempty"`
 	Hash       helpers.Base64          `json:"hash,omitempty" msgpack:"hash,omitempty"`
 	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
-type APITransactionReply struct {
+type APITxReply struct {
 	Tx           *transaction.Transaction `json:"tx,omitempty" msgpack:"tx,omitempty"`
 	TxSerialized []byte                   `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
 	Mempool      bool                     `json:"mempool,omitempty" msgpack:"mempool,omitempty"`
 	Info         *info.TxInfo             `json:"info,omitempty" msgpack:"info,omitempty"`
 }
 
-func (api *APICommon) openLoadTx(args *APITransactionRequest, reply *APITransactionReply) error {
+func (api *APICommon) openLoadTx(args *APITxRequest, reply *APITxReply) error {
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if len(args.Hash) == 0 {
@@ -66,7 +66,7 @@ func (api *APICommon) openLoadTx(args *APITransactionRequest, reply *APITransact
 	})
 }
 
-func (api *APICommon) GetTx(r *http.Request, args *APITransactionRequest, reply *APITransactionReply) error {
+func (api *APICommon) GetTx(r *http.Request, args *APITxRequest, reply *APITxReply) error {
 
 	if len(args.Hash) == cryptography.HashSize {
 		txMempool := api.mempool.Txs.Get(string(args.Hash))

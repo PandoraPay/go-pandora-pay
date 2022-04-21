@@ -9,16 +9,16 @@ import (
 	"pandora-pay/store/store_db/store_db_interface"
 )
 
-type APITransactionRawRequest struct {
+type APITxRawRequest struct {
 	Height uint64         `json:"height,omitempty" msgpack:"height,omitempty"`
 	Hash   helpers.Base64 `json:"hash,omitempty" msgpack:"hash,omitempty"`
 }
 
-type APITransactionRawReply struct {
+type APITxRawReply struct {
 	Tx []byte `json:"tx" msgpack:"tx"`
 }
 
-func (api *APICommon) openLoadTxOnly(args *APITransactionRawRequest, reply *APITransactionRawReply) error {
+func (api *APICommon) openLoadTxOnly(args *APITxRawRequest, reply *APITxRawReply) error {
 	return store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		if len(args.Hash) == 0 {
@@ -37,7 +37,7 @@ func (api *APICommon) openLoadTxOnly(args *APITransactionRawRequest, reply *APIT
 	})
 }
 
-func (api *APICommon) GetTxRaw(r *http.Request, args *APITransactionRawRequest, reply *APITransactionRawReply) error {
+func (api *APICommon) GetTxRaw(r *http.Request, args *APITxRawRequest, reply *APITxRawReply) error {
 
 	if len(args.Hash) == cryptography.HashSize {
 		txMempool := api.mempool.Txs.Get(string(args.Hash))

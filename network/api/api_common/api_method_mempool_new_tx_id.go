@@ -44,7 +44,7 @@ func (api *APICommon) mempoolNewTxIdProcess(conn *connection.AdvancedConnection,
 		close(processedAlreadyFound.wait)
 	}()
 
-	result, err := connection.SendJSONAwaitAnswer[APITransactionRawReply](conn, []byte("tx-raw"), &APITransactionRawRequest{0, hash}, nil, 0)
+	result, err := connection.SendJSONAwaitAnswer[APITxRawReply](conn, []byte("tx-raw"), &APITxRawRequest{0, hash}, nil, 0)
 	if err != nil {
 		closeConnection = true
 		return
