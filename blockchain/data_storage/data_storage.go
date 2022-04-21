@@ -130,11 +130,7 @@ func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
 				return errors.New("Account doesn't exist")
 			}
 
-			if !plainAcc.DelegatedStake.HasDelegatedStake() {
-				return errors.New("Plain Account has not delegated stake")
-			}
-
-			if err = plainAcc.DelegatedStake.AddStakeAvailable(true, pending.PendingAmount); err != nil {
+			if err = plainAcc.AddStakeAvailable(true, pending.PendingAmount); err != nil {
 				return err
 			}
 

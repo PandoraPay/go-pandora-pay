@@ -11,6 +11,7 @@ type PlainAccount struct {
 	Key                                          []byte               `json:"-" msgpack:"-"` //hashMap key
 	Index                                        uint64               `json:"-" msgpack:"-"` //hashMap index
 	Nonce                                        uint64               `json:"nonce" msgpack:"nonce"`
+	StakeAvailable                               uint64               `json:"stakeAvailable,omitempty" msgpack:"stakeAvailable,omitempty"` //confirmed stake
 	DelegatedStake                               *dpos.DelegatedStake `json:"delegatedStake" msgpack:"delegatedStake"`
 }
 
@@ -41,18 +42,24 @@ func (plainAccount *PlainAccount) IncrementNonce(sign bool) error {
 	return helpers.SafeUint64Update(sign, &plainAccount.Nonce, 1)
 }
 
+func (plainAccount *PlainAccount) AddStakeAvailable(sign bool, amount uint64) error {
+	return helpers.SafeUint64Update(sign, &plainAccount.StakeAvailable, amount)
+}
+
 func (plainAccount *PlainAccount) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(plainAccount.Nonce)
+	w.WriteUvarint(plainAccount.StakeAvailable)
 	plainAccount.DelegatedStake.Serialize(w)
 }
 
 func (plainAccount *PlainAccount) Deserialize(r *helpers.BufferReader) (err error) {
-
 	if plainAccount.Nonce, err = r.ReadUvarint(); err != nil {
 		return
 	}
+	if plainAccount.StakeAvailable, err = r.ReadUvarint(); err != nil {
+		return
+	}
 	return plainAccount.DelegatedStake.Deserialize(r)
-
 }
 
 func NewPlainAccount(key []byte, index uint64) *PlainAccount {

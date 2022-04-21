@@ -10,7 +10,6 @@ import (
 type DelegatedStake struct {
 	helpers.SerializableInterface `json:"-" msgpack:"-"`
 	Version                       DelegatedStakeVersion `json:"version" msgpack:"version"`
-	StakeAvailable                uint64                `json:"stakeAvailable,omitempty" msgpack:"stakeAvailable,omitempty"` //confirmed stake
 	DelegatedStakeNonce           uint64                `json:"delegatedStakeNonce" msgpack:"delegatedStakeNonce"`
 	DelegatedStakePublicKey       []byte                `json:"delegatedStakePublicKey,omitempty" msgpack:"delegatedStakePublicKey,omitempty"` //public key for delegation  20 bytes
 	DelegatedStakeFee             uint64                `json:"delegatedStakeFee,omitempty" msgpack:"delegatedStakeFee,omitempty"`
@@ -23,7 +22,7 @@ func (dstake *DelegatedStake) IsDeletable() bool {
 func (dstake *DelegatedStake) Validate() error {
 	switch dstake.Version {
 	case NO_STAKING:
-		if len(dstake.DelegatedStakePublicKey) > 0 || dstake.DelegatedStakeFee > 0 || dstake.DelegatedStakeNonce > 0 || dstake.StakeAvailable > 0 {
+		if len(dstake.DelegatedStakePublicKey) > 0 || dstake.DelegatedStakeFee > 0 || dstake.DelegatedStakeNonce > 0 {
 			return errors.New("DelegatedStake should have empty data")
 		}
 	case STAKING:
@@ -43,15 +42,7 @@ func (dstake *DelegatedStake) HasDelegatedStake() bool {
 	return dstake.Version == STAKING
 }
 
-func (dstake *DelegatedStake) AddStakeAvailable(sign bool, amount uint64) error {
-	if !dstake.HasDelegatedStake() {
-		return errors.New("plainAccount.HasDelegatedStake is false")
-	}
-
-	return helpers.SafeUint64Update(sign, &dstake.StakeAvailable, amount)
-}
-
-func (dstake *DelegatedStake) CreateDelegatedStake(amount uint64, delegatedStakeNonce uint64, delegatedStakePublicKey []byte, delegatedStakeFee uint64) error {
+func (dstake *DelegatedStake) CreateDelegatedStake(delegatedStakeNonce uint64, delegatedStakePublicKey []byte, delegatedStakeFee uint64) error {
 
 	if len(delegatedStakePublicKey) != cryptography.PublicKeySize {
 		return errors.New("delegatedStakePublicKey is Invalid")
@@ -64,9 +55,6 @@ func (dstake *DelegatedStake) CreateDelegatedStake(amount uint64, delegatedStake
 		dstake.Version = STAKING
 	}
 
-	if err := helpers.SafeUint64Add(&dstake.StakeAvailable, amount); err != nil {
-		return err
-	}
 	dstake.DelegatedStakeNonce = delegatedStakeNonce
 	dstake.DelegatedStakePublicKey = delegatedStakePublicKey
 	dstake.DelegatedStakeFee = delegatedStakeFee
@@ -78,7 +66,6 @@ func (dstake *DelegatedStake) Serialize(w *helpers.BufferWriter) {
 
 	w.WriteUvarint(uint64(dstake.Version))
 	if dstake.Version == STAKING {
-		w.WriteUvarint(dstake.StakeAvailable)
 		w.WriteUvarint(dstake.DelegatedStakeNonce)
 		w.Write(dstake.DelegatedStakePublicKey)
 		w.WriteUvarint(dstake.DelegatedStakeFee)
@@ -96,9 +83,6 @@ func (dstake *DelegatedStake) Deserialize(r *helpers.BufferReader) (err error) {
 	switch dstake.Version {
 	case NO_STAKING:
 	case STAKING:
-		if dstake.StakeAvailable, err = r.ReadUvarint(); err != nil {
-			return
-		}
 		if dstake.DelegatedStakeNonce, err = r.ReadUvarint(); err != nil {
 			return
 		}
@@ -113,11 +97,4 @@ func (dstake *DelegatedStake) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 
 	return
-}
-
-func (dstake *DelegatedStake) GetDelegatedStakeAvailable() uint64 {
-	if !dstake.HasDelegatedStake() {
-		return 0
-	}
-	return dstake.StakeAvailable
 }

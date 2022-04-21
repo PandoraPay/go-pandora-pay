@@ -164,7 +164,7 @@ func (w *ForgingWallet) runProcessUpdates() {
 						return errors.New("DelegatedStakeFee is less than it should be")
 					}
 
-					stakingAvailable := update.plainAcc.DelegatedStake.GetDelegatedStakeAvailable()
+					stakingAvailable := update.plainAcc.StakeAvailable
 
 					if stakingAvailable < config_stake.GetRequiredStake(update.chainHeight) {
 						return errors.New("Your stake is not accepted because you will need at least the minimum staking amount")
@@ -218,7 +218,7 @@ func (w *ForgingWallet) runProcessUpdates() {
 								return errors.New("DelegatedStakeFee is less than it should be")
 							}
 
-							stakingAvailable := plainAcc.DelegatedStake.GetDelegatedStakeAvailable()
+							stakingAvailable := plainAcc.StakeAvailable
 
 							if stakingAvailable < config_stake.GetRequiredStake(update.BlockHeight) {
 								return errors.New("Your stake is not accepted because you will need at least the minimum staking amount")

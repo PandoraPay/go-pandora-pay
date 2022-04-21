@@ -84,8 +84,8 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 		return errors.New("Plain Account not found")
 	}
 
-	if blk.StakingAmount != plainAcc.DelegatedStake.StakeAvailable {
-		return fmt.Errorf("Block Staking Amount doesn't match %d %d", blk.StakingAmount, plainAcc.DelegatedStake.StakeAvailable)
+	if blk.StakingAmount != plainAcc.StakeAvailable {
+		return fmt.Errorf("Block Staking Amount doesn't match %d %d", blk.StakingAmount, plainAcc.StakeAvailable)
 	}
 
 	if blk.DelegatedStakeFee != plainAcc.DelegatedStake.DelegatedStakeFee {

@@ -152,7 +152,7 @@ func (wallet *Wallet) refreshWalletAccount(plainAcc *plain_account.PlainAccount,
 	if plainAcc == nil || !plainAcc.DelegatedStake.HasDelegatedStake() || addr.SharedStaked == nil {
 		deleted = true
 	} else {
-		if plainAcc.DelegatedStake.GetDelegatedStakeAvailable() < config_stake.GetRequiredStake(chainHeight) {
+		if plainAcc.StakeAvailable < config_stake.GetRequiredStake(chainHeight) {
 			deleted = true
 		}
 	}
