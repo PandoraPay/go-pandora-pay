@@ -5,7 +5,6 @@ import (
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
-	"pandora-pay/config/config_stake"
 	"pandora-pay/helpers"
 )
 
@@ -36,7 +35,7 @@ func (txExtra *TransactionSimpleExtraUnstake) IncludeTransactionExtra(blockHeigh
 			return
 		}
 
-		if err = dataStorage.AddStakePendingStake(vinPublicKeyHashes[i], txExtra.Amount, false, config_stake.GetPendingStakeWindow(blockHeight)); err != nil {
+		if err = dataStorage.AddStakePendingStake(vinPublicKeyHashes[i], txExtra.Amount, false, blockHeight); err != nil {
 			return
 		}
 

@@ -30,3 +30,16 @@ func GetPendingStakeWindow(blockHeight uint64) uint64 {
 
 	return 60
 }
+
+func GetPendingUnstakeWindow(blockHeight uint64) uint64 {
+
+	if globals.Arguments["--new-devnet"] == true {
+
+		if blockHeight == 0 {
+			return 1
+		}
+		return 10
+	}
+
+	return 60
+}

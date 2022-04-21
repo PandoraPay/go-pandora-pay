@@ -10,6 +10,7 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_coins"
+	"pandora-pay/config/config_stake"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
@@ -85,6 +86,12 @@ func (dataStorage *DataStorage) CreatePlainAccount(publicKeyHash []byte) (*plain
 }
 
 func (dataStorage *DataStorage) AddStakePendingStake(publicKeyHash []byte, amount uint64, pendingType bool, blockHeight uint64) error {
+
+	if pendingType {
+		blockHeight += config_stake.GetPendingStakeWindow(blockHeight)
+	} else {
+		blockHeight -= config_stake.GetPendingUnstakeWindow(blockHeight)
+	}
 
 	pendingStakes, err := dataStorage.PendingStakes.GetPendingStakes(blockHeight)
 	if err != nil {

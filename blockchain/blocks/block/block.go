@@ -109,13 +109,13 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 		}
 
 		//let's add the commission
-		if err = dataStorage.AddStakePendingStake(blk.RewardCollector, commission, true, config_stake.GetPendingStakeWindow(blk.Height)); err != nil {
+		if err = dataStorage.AddStakePendingStake(blk.RewardCollector, commission, true, blk.Height); err != nil {
 			return
 		}
 
 	}
 
-	if err = dataStorage.AddStakePendingStake(blk.Forger, final, true, config_stake.GetPendingStakeWindow(blk.Height)); err != nil {
+	if err = dataStorage.AddStakePendingStake(blk.Forger, final, true, blk.Height); err != nil {
 		return
 	}
 
