@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"pandora-pay/blockchain/data_storage"
-	"pandora-pay/blockchain/data_storage/accounts"
-	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/config/config_coins"
@@ -90,12 +88,6 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 
 	if blk.DelegatedStakeFee != plainAcc.DelegatedStake.DelegatedStakeFee {
 		return fmt.Errorf("Block Delegated Stake Fee doesn't match %d %d", blk.DelegatedStakeFee, plainAcc.DelegatedStake.DelegatedStakeFee)
-	}
-
-	var accs *accounts.Accounts
-	var acc *account.Account
-	if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
-		return
 	}
 
 	final := reward

@@ -3,6 +3,11 @@ package wizard
 type WizardTxSimpleExtra interface {
 }
 
+type WizardTxSimpleExtraUnstake struct {
+	WizardTxSimpleExtra
+	Amount uint64
+}
+
 type WizardTxSimpleTransferVin struct {
 	Key    []byte `json:"key" msgpack:"key"`
 	Amount uint64 `json:"amount" msgpack:"amount"`

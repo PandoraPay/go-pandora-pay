@@ -101,6 +101,13 @@ func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propa
 			return errors.New("Plain Account doesn't exist")
 		}
 
+		switch txExtra := txData.Extra.(type) {
+		case *wizard.WizardTxSimpleExtraUnstake:
+			if plainAcc.StakeAvailable < txExtra.Amount {
+				return errors.New("You don't have enough staked coins")
+			}
+		}
+
 		return
 	}); err != nil {
 		return nil, err

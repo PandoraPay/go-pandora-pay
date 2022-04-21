@@ -23,8 +23,12 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 	var txScript transaction_simple.ScriptType
 	var extraFinal transaction_simple_extra.TransactionSimpleExtraInterface
 
-	switch transfer.Extra.(type) {
-	case nil:
+	switch txExtra := transfer.Extra.(type) {
+	case *WizardTxSimpleExtraUnstake:
+		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUnstake{
+			Amount: txExtra.Amount,
+		}
+		txScript = transaction_simple.SCRIPT_UNSTAKE
 	}
 
 	txBase := &transaction_simple.TransactionSimple{

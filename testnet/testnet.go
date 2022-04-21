@@ -2,13 +2,24 @@ package testnet
 
 import (
 	"context"
+	"github.com/tevino/abool"
 	"pandora-pay/blockchain"
+	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/accounts"
+	"pandora-pay/blockchain/data_storage/accounts/account"
+	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
+	"pandora-pay/store"
+	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/txs_builder"
+	"pandora-pay/txs_builder/wizard"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
 	"time"
@@ -56,31 +67,30 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 	return
 }
 
-func (testnet *Testnet) testnetCreateClaimTx(senderAddr *wallet_address.WalletAddress, recipientAddressWalletIndex int, sendAmount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
+func (testnet *Testnet) testnetCreateUnstakeTx(senderAddr *wallet_address.WalletAddress, sendAmount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
-	//var addrRecipient *wallet_address.WalletAddress
-	//
-	//if addrRecipient, err = testnet.wallet.GetWalletAddress(recipientAddressWalletIndex, true); err != nil {
-	//	return
-	//}
-	//
-	//txData := &txs_builder.TxBuilderCreateZetherTxData{
-	//	Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{{
-	//		Sender:            senderAddr.AddressEncoded,
-	//		Amount:            sendAmount,
-	//		Recipient:         addrRecipient.AddressRegistrationEncoded,
-	//		Data:              &wizard.WizardTransactionData{nil, false},
-	//		Fee:               &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0},
-	//		Asset:             config_coins.NATIVE_ASSET_FULL,
-	//		RingConfiguration: testnet.testnetGetZetherRingConfiguration(),
-	//	}},
-	//}
-	//
-	//if tx, err = testnet.txsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
-	//	return nil, err
-	//}
-	//
-	//gui.GUI.Info("Create Claim Stake Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).ChainHeight, tx.Bloom.Hash)
+	txData := &txs_builder.TxBuilderCreateSimpleTx{
+		0,
+		&wizard.WizardTransactionData{nil, false},
+		&wizard.WizardTransactionFee{0, 0, 0, true},
+		true,
+		&wizard.WizardTxSimpleExtraUnstake{
+			nil,
+			sendAmount,
+		},
+		[]*txs_builder.TxBuilderCreateSimpleTxVin{{
+			senderAddr.AddressEncoded,
+			0,
+			config_coins.NATIVE_ASSET_FULL,
+		}},
+		[]*txs_builder.TxBuilderCreateSimpleTxVout{},
+	}
+
+	if tx, err = testnet.txsBuilder.CreateSimpleTx(txData, true, true, true, false, ctx, func(string) {}); err != nil {
+		return nil, err
+	}
+
+	gui.GUI.Info("Create Unstake Tx: ", tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce, tx.Bloom.Hash)
 
 	return
 }
@@ -129,7 +139,7 @@ func (testnet *Testnet) run() {
 	updateChannel := testnet.chain.UpdateNewChainDataUpdate.AddListener()
 	defer testnet.chain.UpdateNewChainDataUpdate.RemoveChannel(updateChannel)
 
-	//creatingTransactions := abool.New()
+	creatingTransactions := abool.New()
 
 	for i := uint64(0); i < 10; i++ {
 		if uint64(testnet.wallet.GetAddressesCount()) <= i+1 {
@@ -173,78 +183,77 @@ func (testnet *Testnet) run() {
 
 				if blockHeight >= 20 {
 
-					//creatingTransactions.Set()
-					//defer creatingTransactions.UnSet()
-					//
-					//var addr, tempAddr *wallet_address.WalletAddress
-					//addr, _ = testnet.wallet.GetFirstStakedAddress(true)
-					//
-					//addressesList := []*wallet_address.WalletAddress{}
-					//for i := 0; i < 5; i++ {
-					//	if tempAddr, err = testnet.wallet.GetWalletAddress(i, true); err != nil {
-					//		return
-					//	}
-					//	addressesList = append(addressesList, tempAddr)
-					//}
-					//
-					//type AccMapElement struct {
-					//	account *account.Account
-					//	index   int
-					//}
-					//accMap := map[string]*AccMapElement{}
-					//
-					//gui.GUI.Log("UpdateNewChain received! 2")
-					//
-					//if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-					//
-					//	dataStorage := data_storage.NewDataStorage(reader)
-					//
-					//	var accs *accounts.Accounts
-					//	var acc *account.Account
-					//
-					//	if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
-					//		return
-					//	}
-					//	for i := 0; i < 5; i++ {
-					//		if acc, err = accs.GetAccount(addressesList[i].PublicKey); err != nil {
-					//			return
-					//		}
-					//		accMap[string(addressesList[i].PublicKey)] = &AccMapElement{
-					//			acc,
-					//			i,
-					//		}
-					//	}
-					//
-					//	return
-					//}); err != nil {
-					//	return
-					//}
-					//
-					//if accMap[string(addr.PublicKey)] == nil {
-					//	return
-					//}
-					//
-					//balances := map[string]uint64{}
-					//
-					//for k, v := range accMap {
-					//	if v.account != nil {
-					//		if balances[k], err = testnet.wallet.DecryptBalance(addressesList[v.index], v.account.Balance.Amount.Serialize(), config_coins.NATIVE_ASSET_FULL, false, 0, true, ctx, func(string) {}); err != nil {
-					//			return
-					//		}
-					//	}
-					//}
-					//
-					//stakingAmount := balances[string(addr.PublicKey)]
-					//
-					//time.Sleep(time.Millisecond * 3000) //making sure the block got propagated
-					//
-					//if stakingAmount > config_coins.ConvertToUnitsUint64Forced(50000) {
-					//	over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(40000)
-					//	testnet.testnetCreateTransfers(addr, over, ctx)
-					//
-					//	stakingAmount = generics.Max(0, config_coins.ConvertToUnitsUint64Forced(40000))
-					//}
-					//
+					creatingTransactions.Set()
+					defer creatingTransactions.UnSet()
+
+					var addr, tempAddr *wallet_address.WalletAddress
+					addr, _ = testnet.wallet.GetFirstStakedAddress(true)
+
+					addressesList := []*wallet_address.WalletAddress{}
+					for i := 0; i < 5; i++ {
+						if tempAddr, err = testnet.wallet.GetWalletAddress(i, true); err != nil {
+							return
+						}
+						addressesList = append(addressesList, tempAddr)
+					}
+
+					type AccMapElement struct {
+						index          int
+						balance        uint64
+						stakeAvailable uint64
+					}
+					accMap := map[string]*AccMapElement{}
+
+					gui.GUI.Log("UpdateNewChain received! 2")
+
+					if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+						dataStorage := data_storage.NewDataStorage(reader)
+
+						var accs *accounts.Accounts
+						var acc *account.Account
+						var plainAccount *plain_account.PlainAccount
+
+						if accs, err = dataStorage.AccsCollection.GetMap(config_coins.NATIVE_ASSET_FULL); err != nil {
+							return
+						}
+						for i := 0; i < 5; i++ {
+
+							if acc, err = accs.GetAccount(addressesList[i].PublicKeyHash); err != nil {
+								return
+							}
+							accMap[string(addressesList[i].PublicKeyHash)] = &AccMapElement{
+								i,
+								0, 0,
+							}
+
+							if plainAccount, err = dataStorage.PlainAccs.GetPlainAccount(addressesList[i].PublicKeyHash); err != nil {
+								return
+							}
+							if plainAccount != nil {
+								accMap[string(addressesList[i].PublicKeyHash)].stakeAvailable = plainAccount.StakeAvailable
+							}
+							if acc != nil {
+								accMap[string(addressesList[i].PublicKeyHash)].balance = acc.Balance
+							}
+						}
+
+						return
+					}); err != nil {
+						return
+					}
+
+					stakingAmount := accMap[string(addr.PublicKeyHash)].stakeAvailable
+
+					time.Sleep(time.Millisecond * 3000) //making sure the block got propagated
+
+					if stakingAmount > config_coins.ConvertToUnitsUint64Forced(50000) {
+						over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(40000)
+						testnet.testnetCreateUnstakeTx(addr, over, ctx)
+
+						stakingAmount = generics.Max(0, config_coins.ConvertToUnitsUint64Forced(40000))
+					}
+
 					//if syncTime > 0 {
 					//
 					//	if stakingAmount > config_coins.ConvertToUnitsUint64Forced(20000) {
