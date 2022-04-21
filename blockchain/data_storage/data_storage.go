@@ -122,12 +122,8 @@ func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
 		if pending.PendingType { //add
 
 			var plainAcc *plain_account.PlainAccount
-			if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(pending.PublicKeyHash); err != nil {
+			if plainAcc, err = dataStorage.GetOrCreatePlainAccount(pending.PublicKeyHash); err != nil {
 				return err
-			}
-
-			if plainAcc == nil {
-				return errors.New("Account doesn't exist")
 			}
 
 			if err = plainAcc.AddStakeAvailable(true, pending.PendingAmount); err != nil {

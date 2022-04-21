@@ -23,10 +23,10 @@ type Block struct {
 	PrevKernelHash          []byte      `json:"prevKernelHash"  msgpack:"prevKernelHash"` //32 byte
 	Timestamp               uint64      `json:"timestamp" msgpack:"timestamp"`
 	StakingAmount           uint64      `json:"stakingAmount" msgpack:"stakingAmount"`
-	Forger                  []byte      `json:"forger" msgpack:"forger"`                                   // 33 byte public key
+	Forger                  []byte      `json:"forger" msgpack:"forger"`                                   // 20 byte public key
 	DelegatedStakePublicKey []byte      `json:"delegatedStakePublicKey" msgpack:"delegatedStakePublicKey"` // 33 byte public key can also be found into the accounts tree
 	DelegatedStakeFee       uint64      `json:"delegatedStakeFee" msgpack:"delegatedStakeFee"`
-	RewardCollector         []byte      `json:"rewardCollector" msgpack:"rewardCollector"` // 33 byte public key only if rewardFee > 0
+	RewardCollector         []byte      `json:"rewardCollector" msgpack:"rewardCollector"` // 20 byte public key only if rewardFee > 0
 	Signature               []byte      `json:"signature" msgpack:"signature"`             // 64 byte signature
 	Bloom                   *BlockBloom `json:"bloom" msgpack:"bloom"`
 }
@@ -117,25 +117,8 @@ func (blk *Block) IncludeBlock(dataStorage *data_storage.DataStorage, allFees ui
 		}
 
 		//let's add the commission
-		var plainAccRewardCollector *plain_account.PlainAccount
-		if plainAccRewardCollector, err = dataStorage.GetOrCreatePlainAccount(blk.RewardCollector); err != nil {
+		if err = dataStorage.AddStakePendingStake(blk.RewardCollector, commission, true, config_stake.GetPendingStakeWindow(blk.Height)); err != nil {
 			return
-		}
-
-		if plainAccRewardCollector.DelegatedStake.HasDelegatedStake() {
-			if err = dataStorage.AddStakePendingStake(blk.RewardCollector, commission, true, config_stake.GetPendingStakeWindow(blk.Height)); err != nil {
-				return
-			}
-		} else {
-			if acc, err = accs.GetAccount(blk.RewardCollector); err != nil {
-				return
-			}
-			if err = acc.AddBalance(true, commission); err != nil {
-				return
-			}
-			if err = accs.Update(string(blk.RewardCollector), acc); err != nil {
-				return
-			}
 		}
 
 	}
