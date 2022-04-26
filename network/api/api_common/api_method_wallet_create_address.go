@@ -8,7 +8,9 @@ import (
 )
 
 type APIWalletCreateAddressRequest struct {
-	Name string `json:"name" msgpack:"name"`
+	Name          string `json:"name" msgpack:"name"`
+	Staked        bool   `json:"staked" msgpack:"staked"`
+	SpendRequired bool   `json:"spendRequired" msgpack:"spendRequired"`
 }
 
 type APIWalletCreateAddressReply struct {
@@ -20,7 +22,7 @@ func (api *APICommon) GetWalletCreateAddress(r *http.Request, args *APIWalletCre
 		return errors.New("Invalid User or Password")
 	}
 
-	addr, err := api.wallet.AddNewAddress(true, args.Name, false, false, true)
+	addr, err := api.wallet.AddNewAddress(true, args.Name, args.Staked, args.SpendRequired, true)
 	if err != nil {
 		return err
 	}

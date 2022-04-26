@@ -54,6 +54,7 @@ func (api *APICommon) readLocalBlockchain(newChainDataUpdate *blockchain.Blockch
 		newChainDataUpdate.Update.AccountsCount,
 		newChainDataUpdate.Update.AssetsCount,
 		newChainDataUpdate.Update.Target.String(),
+		newChainDataUpdate.Update.Supply,
 		newChainDataUpdate.Update.BigTotalDifficulty.String(),
 	}
 	api.localChain.Store(newLocalChain)

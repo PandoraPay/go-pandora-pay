@@ -106,7 +106,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		chainData.TransactionsCount,                    //atomic copy
 		chainData.AccountsCount,                        //atomic copy
 		chainData.AssetsCount,                          //atomic copy
-		chainData.ConsecutiveSelfForged,                //atomic copy
+		chainData.Supply,
+		chainData.ConsecutiveSelfForged, //atomic copy
 	}
 
 	allTransactionsChanges := []*blockchain_types.BlockchainTransactionUpdate{}
@@ -288,6 +289,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					if err = dataStorage.Asts.Update(string(config_coins.NATIVE_ASSET_FULL), ast); err != nil {
 						return
 					}
+
+					chainData.Supply = ast.Supply
 
 					if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHashStaked, newChainData.Target) != true {
 						return errors.New("KernelHash Difficulty is not met")

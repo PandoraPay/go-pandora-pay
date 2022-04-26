@@ -30,6 +30,9 @@ func (self *KnownNodes) GetList() []*KnownNodeScored {
 func (self *KnownNodes) GetRandomKnownNode() *KnownNodeScored {
 	self.knownListMutex.RLock()
 	defer self.knownListMutex.RUnlock()
+	if len(self.knownList) == 0 {
+		return nil
+	}
 	return self.knownList[rand.Intn(len(self.knownList))]
 }
 
