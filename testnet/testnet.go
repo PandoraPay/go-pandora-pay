@@ -1,8 +1,11 @@
 package testnet
 
 import (
+	"bytes"
 	"context"
 	"github.com/tevino/abool"
+	"math/rand"
+	"pandora-pay/addresses"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
@@ -67,16 +70,15 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 	return
 }
 
-func (testnet *Testnet) testnetCreateUnstakeTx(senderAddr *wallet_address.WalletAddress, sendAmount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
+func (testnet *Testnet) testnetCreateUnstakeTx(senderAddr *wallet_address.WalletAddress, unstakeAmount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
 	txData := &txs_builder.TxBuilderCreateSimpleTx{
 		0,
 		&wizard.WizardTransactionData{nil, false},
 		&wizard.WizardTransactionFee{0, 0, 0, true},
-		true,
 		&wizard.WizardTxSimpleExtraUnstake{
 			nil,
-			sendAmount,
+			[]uint64{unstakeAmount},
 		},
 		[]*txs_builder.TxBuilderCreateSimpleTxVin{{
 			senderAddr.AddressEncoded,
@@ -97,40 +99,78 @@ func (testnet *Testnet) testnetCreateUnstakeTx(senderAddr *wallet_address.Wallet
 
 func (testnet *Testnet) testnetCreateTransfers(senderAddr *wallet_address.WalletAddress, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
-	//select {
-	//case <-ctx.Done():
-	//	return
-	//default:
-	//}
-	//
-	//privateKey := addresses.GenerateNewPrivateKey()
-	//
-	//addr, err := privateKey.GenerateAddress(false, nil, true, nil, 0, nil)
-	//if err != nil {
-	//	return
-	//}
-	//
-	//if amount == 0 {
-	//	amount = uint64(rand.Int63n(100))
-	//}
-	//
-	//txData := &txs_builder.TxBuilderCreateZetherTxData{
-	//	Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{{
-	//		Sender:            senderAddr.AddressEncoded,
-	//		Amount:            amount,
-	//		Recipient:         addr.EncodeAddr(),
-	//		Data:              &wizard.WizardTransactionData{nil, false},
-	//		Fee:               &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0},
-	//		Asset:             config_coins.NATIVE_ASSET_FULL,
-	//		RingConfiguration: testnet.testnetGetZetherRingConfiguration(),
-	//	}},
-	//}
-	//
-	//if tx, err = testnet.txsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
-	//	return nil, err
-	//}
-	//
-	//gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_zether.TransactionZether).ChainHeight, tx.Bloom.Hash)
+	var addr *addresses.Address
+	vout := []*txs_builder.TxBuilderCreateSimpleTxVout{}
+	total := uint64(0)
+
+	for i := 0; i < 6; i++ {
+
+		privateKey := addresses.GenerateNewPrivateKey()
+		if addr, err = privateKey.GenerateAddress(nil, 0, nil); err != nil {
+			return
+		}
+
+		if amount == 0 {
+			amount = uint64(rand.Int63n(100))
+		}
+		total += amount
+		vout = append(vout, &txs_builder.TxBuilderCreateSimpleTxVout{
+			addr.PublicKeyHash,
+			amount,
+			config_coins.NATIVE_ASSET_FULL,
+		})
+	}
+
+	txData := &txs_builder.TxBuilderCreateSimpleTx{
+		0,
+		&wizard.WizardTransactionData{nil, false},
+		&wizard.WizardTransactionFee{0, 0, 0, true},
+		nil,
+		[]*txs_builder.TxBuilderCreateSimpleTxVin{{
+			senderAddr.AddressEncoded,
+			total,
+			config_coins.NATIVE_ASSET_FULL,
+		}},
+		vout,
+	}
+
+	if tx, err = testnet.txsBuilder.CreateSimpleTx(txData, true, true, true, false, ctx, func(string) {}); err != nil {
+		return nil, err
+	}
+
+	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce, tx.Bloom.Hash)
+	return
+}
+
+func (testnet *Testnet) testnetCreateRecipientTransfers(senderAddr *wallet_address.WalletAddress, recipient int, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
+
+	var addrRecipient *wallet_address.WalletAddress
+	if addrRecipient, err = testnet.wallet.GetWalletAddress(recipient, true); err != nil {
+		return
+	}
+
+	txData := &txs_builder.TxBuilderCreateSimpleTx{
+		0,
+		&wizard.WizardTransactionData{nil, false},
+		&wizard.WizardTransactionFee{0, 0, 0, true},
+		nil,
+		[]*txs_builder.TxBuilderCreateSimpleTxVin{{
+			senderAddr.AddressEncoded,
+			amount,
+			config_coins.NATIVE_ASSET_FULL,
+		}},
+		[]*txs_builder.TxBuilderCreateSimpleTxVout{{
+			addrRecipient.PublicKeyHash,
+			amount,
+			config_coins.NATIVE_ASSET_FULL,
+		}},
+	}
+
+	if tx, err = testnet.txsBuilder.CreateSimpleTx(txData, true, true, true, false, ctx, func(string) {}); err != nil {
+		return nil, err
+	}
+
+	gui.GUI.Info("Create Transfers Tx: ", tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple).Nonce, tx.Bloom.Hash)
 	return
 }
 
@@ -159,7 +199,7 @@ func (testnet *Testnet) run() {
 			return
 		}
 
-		//syncTime := testnet.chain.Sync.GetSyncTime()
+		syncTime := testnet.chain.Sync.GetSyncTime()
 
 		blockHeight := chainData.Update.Height
 		blockTimestamp := chainData.Update.Timestamp
@@ -251,40 +291,40 @@ func (testnet *Testnet) run() {
 						over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(40000)
 						testnet.testnetCreateUnstakeTx(addr, over, ctx)
 
-						stakingAmount = generics.Max(0, config_coins.ConvertToUnitsUint64Forced(40000))
+						stakingAmount = generics.Max(0, stakingAmount-over)
 					}
 
-					//if syncTime > 0 {
-					//
-					//	if stakingAmount > config_coins.ConvertToUnitsUint64Forced(20000) {
-					//		over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(10000)
-					//		if !testnet.mempool.ExistsTxZetherVersion(addr.PublicKey, transaction_zether_payload_script.SCRIPT_TRANSFER) {
-					//			for i := 0; i < 5; i++ {
-					//
-					//				if bytes.Equal(addr.PublicKey, addressesList[i].PublicKey) {
-					//					continue
-					//				}
-					//
-					//				if balances[string(addressesList[i].PublicKey)] < config_coins.ConvertToUnitsUint64Forced(10000) {
-					//					amount := generics.Min(over/5, config_coins.ConvertToUnitsUint64Forced(10000)-balances[string(addressesList[i].PublicKey)])
-					//					testnet.testnetCreateClaimTx(addr, i, amount, ctx)
-					//					time.Sleep(time.Millisecond * 1000)
-					//				}
-					//
-					//			}
-					//		}
-					//	}
-					//
-					//	for i := 1; i < 5; i++ {
-					//
-					//		if bytes.Equal(addr.PublicKey, addressesList[i].PublicKey) {
-					//			continue
-					//		}
-					//
-					//		testnet.testnetCreateTransfers(addressesList[i], 0, ctx)
-					//		time.Sleep(time.Millisecond * 5000)
-					//	}
-					//}
+					if syncTime > 0 {
+
+						if stakingAmount > config_coins.ConvertToUnitsUint64Forced(20000) {
+							over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(10000)
+							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_TRANSFER) {
+								for i := 0; i < 5; i++ {
+
+									if bytes.Equal(addr.PublicKey, addressesList[i].PublicKey) {
+										continue
+									}
+
+									if accMap[string(addressesList[i].PublicKeyHash)].balance < config_coins.ConvertToUnitsUint64Forced(10000) {
+										amount := generics.Min(over/5, config_coins.ConvertToUnitsUint64Forced(10000)-accMap[string(addressesList[i].PublicKeyHash)].balance)
+										testnet.testnetCreateRecipientTransfers(addr, i, amount, ctx)
+										time.Sleep(time.Millisecond * 1000)
+									}
+
+								}
+							}
+						}
+
+						for i := 1; i < 5; i++ {
+
+							if bytes.Equal(addr.PublicKey, addressesList[i].PublicKey) {
+								continue
+							}
+
+							testnet.testnetCreateTransfers(addressesList[i], 0, ctx)
+							time.Sleep(time.Millisecond * 2000)
+						}
+					}
 
 				}
 

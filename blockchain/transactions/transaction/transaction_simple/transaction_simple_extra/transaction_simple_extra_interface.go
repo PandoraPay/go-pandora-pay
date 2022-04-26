@@ -8,7 +8,7 @@ import (
 
 type TransactionSimpleExtraInterface interface {
 	IncludeTransactionExtra(blockHeight uint64, vinPublicKeyHashes [][]byte, vin []*transaction_simple_parts.TransactionSimpleInput, vout []*transaction_simple_parts.TransactionSimpleOutput, dataStorage *data_storage.DataStorage) error
-	Serialize(w *helpers.BufferWriter, inclSignature bool)
-	Deserialize(r *helpers.BufferReader) error
-	Validate() error
+	Serialize(w *helpers.BufferWriter, vin []*transaction_simple_parts.TransactionSimpleInput, vout []*transaction_simple_parts.TransactionSimpleOutput, inclSignature bool)
+	Deserialize(r *helpers.BufferReader, vin []*transaction_simple_parts.TransactionSimpleInput, vout []*transaction_simple_parts.TransactionSimpleOutput) error
+	Validate(vin []*transaction_simple_parts.TransactionSimpleInput, vout []*transaction_simple_parts.TransactionSimpleOutput) error
 }

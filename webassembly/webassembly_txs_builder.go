@@ -22,14 +22,13 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 		}
 
 		txData := &struct {
-			TxScript   transaction_simple.ScriptType `json:"txScript"`
-			Sender     string                        `json:"sender"`
-			Nonce      uint64                        `json:"nonce"`
-			Extra      wizard.WizardTxSimpleExtra    `json:"extra"`
-			Data       *wizard.WizardTransactionData `json:"data"`
-			Fee        *wizard.WizardTransactionFee  `json:"fee"`
-			FeeVersion bool                          `json:"feeVersion"`
-			Height     uint64                        `json:"height"`
+			TxScript transaction_simple.ScriptType `json:"txScript"`
+			Sender   string                        `json:"sender"`
+			Nonce    uint64                        `json:"nonce"`
+			Extra    wizard.WizardTxSimpleExtra    `json:"extra"`
+			Data     *wizard.WizardTransactionData `json:"data"`
+			Fee      *wizard.WizardTransactionFee  `json:"fee"`
+			Height   uint64                        `json:"height"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {

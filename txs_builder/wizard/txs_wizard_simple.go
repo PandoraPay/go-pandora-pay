@@ -1,7 +1,10 @@
 package wizard
 
 import (
+	"golang.org/x/exp/slices"
+	"math"
 	"pandora-pay/addresses"
+	"pandora-pay/blockchain/data_storage/pending_stakes_list/pending_stakes"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
@@ -26,9 +29,10 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 	switch txExtra := transfer.Extra.(type) {
 	case *WizardTxSimpleExtraUnstake:
 		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUnstake{
-			Amount: txExtra.Amount,
+			Amounts: slices.Clone(txExtra.Amounts),
 		}
 		txScript = transaction_simple.SCRIPT_UNSTAKE
+		spaceExtra += len(txExtra.Amounts) * len(helpers.SerializeToBytes(&pending_stakes.PendingStakes{nil, nil, math.MaxUint64, []*pending_stakes.PendingStake{{nil, helpers.RandomBytes(cryptography.PublicKeyHashSize), txExtra.Amounts[0], true}}}))
 	}
 
 	txBase := &transaction_simple.TransactionSimple{
@@ -72,7 +76,7 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 
 	extraBytes := len(transfer.Vin) * cryptography.SignatureSize
 	fee := setFee(tx, extraBytes, transfer.Fee.Clone(), true)
-	if err = helpers.SafeUint64Add(&transfer.Vin[0].Amount, fee); err != nil {
+	if err = helpers.SafeUint64Add(&txBase.Vin[0].Amount, fee); err != nil {
 		return nil, err
 	}
 

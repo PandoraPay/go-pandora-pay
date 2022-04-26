@@ -94,17 +94,19 @@ func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propa
 
 		plainAccs := plain_accounts.NewPlainAccounts(reader)
 
-		if plainAcc, err = plainAccs.GetPlainAccount(sendersWalletAddresses[0].PublicKey); err != nil {
-			return
-		}
-		if plainAcc == nil {
-			return errors.New("Plain Account doesn't exist")
-		}
+		for i := range sendersWalletAddresses {
+			if plainAcc, err = plainAccs.GetPlainAccount(sendersWalletAddresses[i].PublicKeyHash); err != nil {
+				return
+			}
+			if plainAcc == nil {
+				return errors.New("Plain Account doesn't exist")
+			}
 
-		switch txExtra := txData.Extra.(type) {
-		case *wizard.WizardTxSimpleExtraUnstake:
-			if plainAcc.StakeAvailable < txExtra.Amount {
-				return errors.New("You don't have enough staked coins")
+			switch txExtra := txData.Extra.(type) {
+			case *wizard.WizardTxSimpleExtraUnstake:
+				if plainAcc.StakeAvailable < txExtra.Amounts[i] {
+					return errors.New("You don't have enough staked coins")
+				}
 			}
 		}
 

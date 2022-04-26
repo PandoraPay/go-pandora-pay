@@ -14,7 +14,7 @@ Creating a Unstake Pending
 */
 type TransactionSimpleExtraUnstake struct {
 	TransactionSimpleExtraInterface
-	Amount uint64
+	Amounts []uint64
 }
 
 func (txExtra *TransactionSimpleExtraUnstake) IncludeTransactionExtra(blockHeight uint64, vinPublicKeyHashes [][]byte, vin []*transaction_simple_parts.TransactionSimpleInput, vout []*transaction_simple_parts.TransactionSimpleOutput, dataStorage *data_storage.DataStorage) (err error) {
@@ -27,7 +27,7 @@ func (txExtra *TransactionSimpleExtraUnstake) IncludeTransactionExtra(blockHeigh
 			return
 		}
 
-		if err = plainAcc.AddStakeAvailable(false, txExtra.Amount); err != nil {
+		if err = plainAcc.AddStakeAvailable(false, txExtra.Amounts[i]); err != nil {
 			return
 		}
 
@@ -35,7 +35,7 @@ func (txExtra *TransactionSimpleExtraUnstake) IncludeTransactionExtra(blockHeigh
 			return
 		}
 
-		if err = dataStorage.AddStakePendingStake(vinPublicKeyHashes[i], txExtra.Amount, false, blockHeight); err != nil {
+		if err = dataStorage.AddStakePendingStake(vinPublicKeyHashes[i], txExtra.Amounts[i], false, blockHeight); err != nil {
 			return
 		}
 
@@ -44,20 +44,30 @@ func (txExtra *TransactionSimpleExtraUnstake) IncludeTransactionExtra(blockHeigh
 	return
 }
 
-func (txExtra *TransactionSimpleExtraUnstake) Validate() error {
-	if txExtra.Amount == 0 {
-		return errors.New("Unstake must be greater than zero")
+func (txExtra *TransactionSimpleExtraUnstake) Validate(vin []*transaction_simple_parts.TransactionSimpleInput, vout []*transaction_simple_parts.TransactionSimpleOutput) error {
+	if len(vin) != len(txExtra.Amounts) {
+		return errors.New("Invalid length")
+	}
+	for _, amount := range txExtra.Amounts {
+		if amount == 0 {
+			return errors.New("Unstake must be greater than zero")
+		}
 	}
 	return nil
 }
 
-func (txExtra *TransactionSimpleExtraUnstake) Serialize(w *helpers.BufferWriter, inclSignature bool) {
-	w.WriteUvarint(txExtra.Amount)
+func (txExtra *TransactionSimpleExtraUnstake) Serialize(w *helpers.BufferWriter, vin []*transaction_simple_parts.TransactionSimpleInput, vout []*transaction_simple_parts.TransactionSimpleOutput, inclSignature bool) {
+	for _, amount := range txExtra.Amounts {
+		w.WriteUvarint(amount)
+	}
 }
 
-func (txExtra *TransactionSimpleExtraUnstake) Deserialize(r *helpers.BufferReader) (err error) {
-	if txExtra.Amount, err = r.ReadUvarint(); err != nil {
-		return
+func (txExtra *TransactionSimpleExtraUnstake) Deserialize(r *helpers.BufferReader, vin []*transaction_simple_parts.TransactionSimpleInput, vout []*transaction_simple_parts.TransactionSimpleOutput) (err error) {
+	txExtra.Amounts = make([]uint64, len(vin))
+	for i := range txExtra.Amounts {
+		if txExtra.Amounts[i], err = r.ReadUvarint(); err != nil {
+			return
+		}
 	}
 	return
 }

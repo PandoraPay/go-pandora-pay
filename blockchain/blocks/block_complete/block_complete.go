@@ -71,17 +71,12 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(dataStorage *data_storage
 	var finalFees, fee uint64
 
 	for _, tx := range blkComplete.Txs {
-
 		if fee, err = tx.ComputeFee(); err != nil {
 			return
 		}
 		if err = helpers.SafeUint64Add(&finalFees, fee); err != nil {
 			return
 		}
-		if err = tx.IncludeTransaction(blkComplete.Block.Height, dataStorage); err != nil {
-			return
-		}
-
 	}
 
 	if err = blkComplete.Block.IncludeBlock(dataStorage, finalFees); err != nil {

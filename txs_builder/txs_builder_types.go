@@ -15,11 +15,10 @@ type TxBuilderCreateSimpleTxVout struct {
 }
 
 type TxBuilderCreateSimpleTx struct {
-	Nonce      uint64                         `json:"nonce" msgpack:"nonce"`
-	Data       *wizard.WizardTransactionData  `json:"data" msgpack:"data"`
-	Fee        *wizard.WizardTransactionFee   `json:"fee" msgpack:"fee"`
-	FeeVersion bool                           `json:"feeVersion" msgpack:"feeVersion"`
-	Extra      wizard.WizardTxSimpleExtra     `json:"extra" msgpack:"sender"`
-	Vin        []*TxBuilderCreateSimpleTxVin  `json:"vin" msgpack:"vin"`
-	Vout       []*TxBuilderCreateSimpleTxVout `json:"vout" msgpack:"vout"`
+	Nonce uint64                         `json:"nonce" msgpack:"nonce"`
+	Data  *wizard.WizardTransactionData  `json:"data" msgpack:"data"`
+	Fee   *wizard.WizardTransactionFee   `json:"fee" msgpack:"fee"`
+	Extra wizard.WizardTxSimpleExtra     `json:"extra" msgpack:"sender"`
+	Vin   []*TxBuilderCreateSimpleTxVin  `json:"vin" msgpack:"vin"`
+	Vout  []*TxBuilderCreateSimpleTxVout `json:"vout" msgpack:"vout"`
 }

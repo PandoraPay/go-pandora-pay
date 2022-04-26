@@ -150,7 +150,7 @@ func (tx *TransactionSimple) Validate() (err error) {
 		if tx.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
-		if err = tx.Extra.Validate(); err != nil {
+		if err = tx.Extra.Validate(tx.Vin, tx.Vout); err != nil {
 			return
 		}
 	default:
@@ -182,7 +182,7 @@ func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 	}
 
 	if tx.Extra != nil {
-		tx.Extra.Serialize(w, inclSignature)
+		tx.Extra.Serialize(w, tx.Vin, tx.Vout, inclSignature)
 	}
 }
 
@@ -251,7 +251,7 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 
 	if tx.Extra != nil {
-		return tx.Extra.Deserialize(r)
+		return tx.Extra.Deserialize(r, tx.Vin, tx.Vout)
 	}
 
 	return
