@@ -12,10 +12,10 @@ import (
 )
 
 type APIWalletGenerateAddressRequest struct {
-	Addr          *api_types.APIAccountBaseRequest `json:"addr" msgpack:"addr"`
-	PaymentID     helpers.Base64                   `json:"paymentID" msgpack:"paymentID"`
-	PaymentAmount uint64                           `json:"paymentAmount" msgpack:"paymentAmount"`
-	PaymentAsset  helpers.Base64                   `json:"paymentAsset" msgpack:"paymentAsset"`
+	api_types.APIAccountBaseRequest
+	PaymentID     helpers.Base64 `json:"paymentID" msgpack:"paymentID"`
+	PaymentAmount uint64         `json:"paymentAmount" msgpack:"paymentAmount"`
+	PaymentAsset  helpers.Base64 `json:"paymentAsset" msgpack:"paymentAsset"`
 }
 
 type APIWalletGenerateAddressReply struct {
@@ -28,7 +28,7 @@ func (api *APICommon) GetWalletGenerateAddress(r *http.Request, args *APIWalletG
 		return errors.New("Invalid User or Password")
 	}
 
-	publicKey, err := args.Addr.GetPublicKey(true)
+	publicKey, err := args.GetPublicKey(true)
 	if err != nil {
 		return err
 	}

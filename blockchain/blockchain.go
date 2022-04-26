@@ -423,6 +423,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						removedTxsList[removedCount] = writer.Get("tx:" + change.TxHashStr) //required because the garbage collector sometimes it deletes the underlying buffers
 						writer.Delete("tx:" + change.TxHashStr)
 						writer.Delete("txHash:" + change.TxHashStr)
+						writer.Delete("txBlock:" + change.TxHashStr)
 						removedCount += 1
 					}
 					if change.Inserted && insertedTxs[change.TxHashStr] != nil && removedTxHashes[change.TxHashStr] == nil {

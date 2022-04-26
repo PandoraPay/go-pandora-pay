@@ -25,7 +25,7 @@ type APIWalletGetBalancesReply struct {
 type APIWalletGetBalancesResultReply struct {
 	Address  string                          `json:"address" msgpack:"address"`
 	PlainAcc *plain_account.PlainAccount     `json:"plainAcc" msgpack:"plainAcc"`
-	Balances []*APIWalletGetBalanceDataReply `json:"balance" msgpack:"balance"`
+	Balances []*APIWalletGetBalanceDataReply `json:"balances" msgpack:"balances"`
 }
 
 type APIWalletGetBalanceDataReply struct {

@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"encoding/binary"
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain/blockchain_types"
@@ -173,6 +174,10 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 		if removedTxHashes[tx.Bloom.HashStr] == nil {
 			writer.Put("tx:"+tx.Bloom.HashStr, tx.Bloom.Serialized)
 			writer.Put("txHash:"+tx.Bloom.HashStr, []byte{1})
+
+			buf := make([]byte, binary.MaxVarintLen64)
+			n := binary.PutUvarint(buf, blkComplete.Block.Height)
+			writer.Put("txBlock:"+tx.Bloom.HashStr, buf[:n])
 		} else {
 			delete(removedTxHashes, tx.Bloom.HashStr)
 		}

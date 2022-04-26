@@ -1,6 +1,7 @@
 package api_common
 
 import (
+	"encoding/binary"
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
@@ -21,10 +22,11 @@ type APITxRequest struct {
 }
 
 type APITxReply struct {
-	Tx           *transaction.Transaction `json:"tx,omitempty" msgpack:"tx,omitempty"`
-	TxSerialized []byte                   `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
-	Mempool      bool                     `json:"mempool,omitempty" msgpack:"mempool,omitempty"`
-	Info         *info.TxInfo             `json:"info,omitempty" msgpack:"info,omitempty"`
+	Tx            *transaction.Transaction `json:"tx,omitempty" msgpack:"tx,omitempty"`
+	TxSerialized  []byte                   `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
+	Mempool       bool                     `json:"mempool,omitempty" msgpack:"mempool,omitempty"`
+	Info          *info.TxInfo             `json:"info,omitempty" msgpack:"info,omitempty"`
+	Confirmations uint64                   `json:"confirmations,omitempty" msgpack:"confirmations,omitempty"`
 }
 
 func (api *APICommon) openLoadTx(args *APITxRequest, reply *APITxReply) error {
@@ -50,6 +52,17 @@ func (api *APICommon) openLoadTx(args *APITxRequest, reply *APITxReply) error {
 			if err = reply.Tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
 				return err
 			}
+		}
+
+		if data = reader.Get("txBlock:" + hashStr); data != nil {
+			var blockHeight, chainHeight uint64
+			if blockHeight, _ = binary.Uvarint(data); err != nil {
+				return err
+			}
+			if chainHeight, _ = binary.Uvarint(reader.Get("chainHeight")); err != nil {
+				return err
+			}
+			reply.Confirmations = chainHeight - blockHeight
 		}
 
 		if config.SEED_WALLET_NODES_INFO {

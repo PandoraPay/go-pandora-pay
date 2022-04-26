@@ -153,7 +153,7 @@ Output
     "results":[{
             "address": "PANDDEVABc3D9FePUuPADupO1p8jvtwEAVG5L3>sDttvmCw><jgAAABpTAR",
             "plainAcc": null,
-            "balance":[ {
+            "balances":[ {
                     "balance": "FfgTaGSxwG6+2cA6AGphOG2dLJMxD/l1i306VYCkmm0AGLgixCwnrYTSlxVE10NBe7KP91MPhI6dUsI1mKZlsB0B",
                     "amount": 65205984,
                     "asset": "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
