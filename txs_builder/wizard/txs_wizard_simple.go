@@ -35,6 +35,8 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 		spaceExtra += len(txExtra.Amounts) * len(helpers.SerializeToBytes(&pending_stakes.PendingStakes{nil, nil, math.MaxUint64, []*pending_stakes.PendingStake{{nil, helpers.RandomBytes(cryptography.PublicKeyHashSize), txExtra.Amounts[0], true}}}))
 	}
 
+	spaceExtra += len(transfer.Vout) * 50
+
 	txBase := &transaction_simple.TransactionSimple{
 		TxScript:    txScript,
 		DataVersion: transfer.Data.getDataVersion(),

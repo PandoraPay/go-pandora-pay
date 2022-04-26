@@ -284,11 +284,12 @@ func (testnet *Testnet) run() {
 					}
 
 					stakingAmount := accMap[string(addr.PublicKeyHash)].stakeAvailable
+					balance := accMap[string(addr.PublicKeyHash)].balance
 
 					time.Sleep(time.Millisecond * 3000) //making sure the block got propagated
 
-					if stakingAmount > config_coins.ConvertToUnitsUint64Forced(50000) {
-						over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(40000)
+					if stakingAmount > config_coins.ConvertToUnitsUint64Forced(100000) {
+						over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(80000)
 						testnet.testnetCreateUnstakeTx(addr, over, ctx)
 
 						stakingAmount = generics.Max(0, stakingAmount-over)
@@ -296,8 +297,8 @@ func (testnet *Testnet) run() {
 
 					if syncTime > 0 {
 
-						if stakingAmount > config_coins.ConvertToUnitsUint64Forced(20000) {
-							over := stakingAmount - config_coins.ConvertToUnitsUint64Forced(10000)
+						if balance > config_coins.ConvertToUnitsUint64Forced(20000) {
+							over := balance - config_coins.ConvertToUnitsUint64Forced(10000)
 							if !testnet.mempool.ExistsTxSimpleVersion(addr.PublicKey, transaction_simple.SCRIPT_TRANSFER) {
 								for i := 0; i < 5; i++ {
 

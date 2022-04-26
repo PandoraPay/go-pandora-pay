@@ -90,7 +90,7 @@ func (dataStorage *DataStorage) AddStakePendingStake(publicKeyHash []byte, amoun
 	if pendingType {
 		blockHeight += config_stake.GetPendingStakeWindow(blockHeight)
 	} else {
-		blockHeight -= config_stake.GetPendingUnstakeWindow(blockHeight)
+		blockHeight += config_stake.GetPendingUnstakeWindow(blockHeight)
 	}
 
 	pendingStakes, err := dataStorage.PendingStakes.GetPendingStakes(blockHeight)
