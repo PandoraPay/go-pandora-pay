@@ -49,7 +49,7 @@ func (api *APICommon) GetWalletGenerateAddress(r *http.Request, args *APIWalletG
 
 		var addr *addresses.Address
 
-		if isReg {
+		if !isReg {
 			addr, err = addresses.CreateAddr(publicKey, walletAddr.Staked, walletAddr.SpendPublicKey, walletAddr.Registration, args.PaymentID, args.PaymentAmount, args.PaymentAsset)
 		} else {
 			addr, err = addresses.CreateAddr(publicKey, false, nil, nil, args.PaymentID, args.PaymentAmount, args.PaymentAsset)
