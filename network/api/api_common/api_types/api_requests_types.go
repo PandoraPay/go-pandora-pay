@@ -33,6 +33,10 @@ type APIAccountBaseRequest struct {
 }
 
 func (request *APIAccountBaseRequest) GetPublicKey(required bool) ([]byte, error) {
+	if request == nil {
+		return nil, errors.New("argument missing")
+	}
+
 	var publicKey []byte
 	if request.Address != "" {
 		address, err := addresses.DecodeAddr(request.Address)
