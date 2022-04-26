@@ -15,6 +15,7 @@ type APIBlockchain struct {
 	AccountsCount     uint64 `json:"accounts" msgpack:"accounts"`
 	AssetsCount       uint64 `json:"assets" msgpack:"assets"`
 	Target            string `json:"target" msgpack:"target"`
+	Supply            uint64 `json:"supply" msgpack:"supply"`
 	TotalDifficulty   string `json:"totalDifficulty" msgpack:"totalDifficulty"`
 }
 

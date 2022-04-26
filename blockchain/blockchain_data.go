@@ -23,6 +23,7 @@ type BlockchainData struct {
 	TransactionsCount     uint64   `json:"transactionsCount" msgpack:"transactionsCount"` //count of the number of txs
 	AccountsCount         uint64   `json:"accountsCount" msgpack:"accountsCount"`         //count of the number of assets
 	AssetsCount           uint64   `json:"assetsCount" msgpack:"assetsCount"`             //count of the number of assets
+	Supply                uint64   `json:"supply" msgpack:"supply"`
 	ConsecutiveSelfForged uint64   `json:"consecutiveSelfForged" msgpack:"consecutiveSelfForged"`
 }
 

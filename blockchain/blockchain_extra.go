@@ -50,6 +50,7 @@ func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 		0,
 		0,
 		0,
+		0,
 	}
 }
 
