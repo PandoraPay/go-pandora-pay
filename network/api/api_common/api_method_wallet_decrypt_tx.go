@@ -1,6 +1,7 @@
 package api_common
 
 import (
+	"encoding/binary"
 	"errors"
 	"net/http"
 	"pandora-pay/blockchain/transactions/transaction"
@@ -17,7 +18,8 @@ type APIWalletDecryptTxRequest struct {
 }
 
 type APIWalletDecryptTxReply struct {
-	Decrypted *wallet.DecryptedTx `json:"decrypted" msgpack:"decrypted"`
+	Decrypted     *wallet.DecryptedTx `json:"decrypted" msgpack:"decrypted"`
+	Confirmations uint64              `json:"confirmations" msgpack:"confirmations"`
 }
 
 func (api *APICommon) GetWalletDecryptTx(r *http.Request, args *APIWalletDecryptTxRequest, reply *APIWalletDecryptTxReply, authenticated bool) (err error) {
@@ -35,6 +37,17 @@ func (api *APICommon) GetWalletDecryptTx(r *http.Request, args *APIWalletDecrypt
 	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
 		txSerialized = reader.Get("tx:" + string(args.Hash))
+
+		if data := reader.Get("txBlock:" + string(args.Hash)); data != nil {
+			var blockHeight, chainHeight uint64
+			if blockHeight, _ = binary.Uvarint(data); err != nil {
+				return err
+			}
+			if chainHeight, _ = binary.Uvarint(reader.Get("chainHeight")); err != nil {
+				return err
+			}
+			reply.Confirmations = chainHeight - blockHeight
+		}
 
 		return
 	}); err != nil {
