@@ -27,7 +27,7 @@ bug free and easy to be developed and improved over time.
 - [x] CLI commands
 - [x] ECDSA
     - [x] Private Key
-    - [x] Public Address (amount and paymentId)
+    - [x] Public Address (amount and paymentID)
     - [x] HD Wallet
 - [x] Commit/Rollback Database
 - [x] Wallet

@@ -18,7 +18,7 @@ type Address struct {
 	Staked         bool           `json:"staked" msgpack:"staked"`
 	SpendPublicKey []byte         `json:"spendPublicKey" msgpack:"spendPublicKey"`
 	Registration   []byte         `json:"registration" msgpack:"registration"`
-	PaymentID      []byte         `json:"paymentId" msgpack:"paymentId"`         // payment id
+	PaymentID      []byte         `json:"paymentID" msgpack:"paymentID"`         // payment id
 	PaymentAmount  uint64         `json:"paymentAmount" msgpack:"paymentAmount"` // amount to be paid
 	PaymentAsset   []byte         `json:"paymentAsset" msgpack:"paymentAsset"`
 }
@@ -218,7 +218,7 @@ func (a *Address) IntegrationBytes() (out uint64) {
 	return
 }
 
-// if address contains a paymentId
+// if address contains a paymentID
 func (a *Address) IsIntegratedRegistration() bool {
 	return len(a.Registration) > 0
 }
@@ -232,7 +232,7 @@ func (a *Address) IsIntegratedAmount() bool {
 	return a.PaymentAmount > 0
 }
 
-// if address contains a paymentId
+// if address contains a paymentID
 func (a *Address) IsIntegratedPaymentID() bool {
 	return len(a.PaymentID) > 0
 }
