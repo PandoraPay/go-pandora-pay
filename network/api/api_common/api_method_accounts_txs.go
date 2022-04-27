@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"pandora-pay/config"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -12,7 +13,8 @@ import (
 
 type APIAccountTxsRequest struct {
 	api_types.APIAccountBaseRequest
-	Next uint64 `json:"next,omitempty" msgpack:"next,omitempty"`
+	Start uint64 `json:"start,omitempty" msgpack:"start,omitempty"`
+	Dsc   bool   `json:"dsc,omitempty" msgpack:"dsc,omitempty"`
 }
 
 type APIAccountTxsReply struct {
@@ -40,22 +42,19 @@ func (api *APICommon) GetAccountTxs(r *http.Request, args *APIAccountTxsRequest,
 			return
 		}
 
-		if args.Next > reply.Count {
-			args.Next = reply.Count
+		s := generics.Min(generics.Max(args.Start, 0), reply.Count)
+		if args.Dsc {
+			s = generics.Max(args.Start-config.API_ACCOUNT_MAX_TXS, 0)
 		}
+		n := generics.Min(s+config.API_ACCOUNT_MAX_TXS, reply.Count)
 
-		index := uint64(0)
-		if args.Next > config.API_ACCOUNT_MAX_TXS {
-			index = args.Next - config.API_ACCOUNT_MAX_TXS
-		}
-
-		reply.Txs = make([][]byte, args.Next-index)
-		for i := index; i < args.Next; i++ {
+		reply.Txs = make([][]byte, n-s)
+		for i := s; i < n; i++ {
 			hash := reader.Get("addrTx:" + publicKeyStr + ":" + strconv.FormatUint(i, 10))
 			if hash == nil {
 				return errors.New("Error reading address transaction")
 			}
-			reply.Txs[args.Next-i-1] = hash
+			reply.Txs[s-i-1] = hash
 		}
 
 		return
