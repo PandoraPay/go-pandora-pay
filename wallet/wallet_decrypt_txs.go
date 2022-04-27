@@ -23,6 +23,7 @@ type DecryptZetherPayloadOutput struct {
 	ReceivedAmount        uint64 `json:"receivedAmount" msgpack:"receivedAmount"`
 	RecipientIndex        int    `json:"recipientIndex" msgpack:"recipientIndex"`
 	Message               []byte `json:"message" msgpack:"message"`
+	Asset                 []byte `json:"asset" msgpack:"asset"`
 }
 
 type DecryptTxZether struct {
@@ -66,6 +67,7 @@ func (w *Wallet) DecryptTx(tx *transaction.Transaction, walletPublicKey []byte) 
 
 					decyptedZetherPayload := &DecryptZetherPayloadOutput{
 						RecipientIndex: -1,
+						Asset:          payload.Asset,
 					}
 					output.ZetherTx.Payloads[t] = decyptedZetherPayload
 

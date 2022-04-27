@@ -14,7 +14,7 @@ import (
 
 type APIWalletDecryptTxRequest struct {
 	api_types.APIAccountBaseRequest
-	Hash []byte `json:"hash" msgpack:"hash"`
+	Hash helpers.Base64 `json:"hash" msgpack:"hash"`
 }
 
 type APIWalletDecryptTxReply struct {
