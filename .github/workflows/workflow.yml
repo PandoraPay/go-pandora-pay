@@ -27,6 +27,13 @@ jobs:
           GOPROXY: "https://proxy.golang.org"
         run: go build .
 
+      - name: Test
+        env:
+          GOPROXY: "https://proxy.golang.org"
+        run: |
+          go test -v ./addresses/.
+          go test -v ./helpers/.
+
       - name: Build webassembly
         env:
           GOPROXY: "https://proxy.golang.org"
