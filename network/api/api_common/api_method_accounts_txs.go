@@ -44,17 +44,25 @@ func (api *APICommon) GetAccountTxs(r *http.Request, args *APIAccountTxsRequest,
 
 		s := generics.Min(generics.Max(args.Start, 0), reply.Count)
 		if args.Dsc {
-			s = generics.Max(args.Start-config.API_ACCOUNT_MAX_TXS, 0)
+			if s < config.API_ACCOUNT_MAX_TXS {
+				s = 0
+			} else {
+				s -= config.API_ACCOUNT_MAX_TXS
+			}
 		}
 		n := generics.Min(s+config.API_ACCOUNT_MAX_TXS, reply.Count)
 
 		reply.Txs = make([][]byte, n-s)
-		for i := s; i < n; i++ {
-			hash := reader.Get("addrTx:" + publicKeyStr + ":" + strconv.FormatUint(i, 10))
+		for i := 0; i < len(reply.Txs); i++ {
+			hash := reader.Get("addrTx:" + publicKeyStr + ":" + strconv.FormatUint(s+uint64(i), 10))
 			if hash == nil {
 				return errors.New("Error reading address transaction")
 			}
-			reply.Txs[s-i-1] = hash
+			if args.Dsc {
+				reply.Txs[len(reply.Txs)-i-1] = hash
+			} else {
+				reply.Txs[i] = hash
+			}
 		}
 
 		return
