@@ -5,8 +5,8 @@ Go **1.18** is required as go-pandora-pay uses generics.
 
 1. Install golang https://golang.org/doc/install
    1. For Linux
-      1. `$ wget https://go.dev/dl/go1.17.3.linux-amd64.tar.gz`
-      2. `$ sudo rm -rf /usr/local/go && tar -C /usr/local -xzf go1.17.3.linux-amd64.tar.gz`
+      1. `$ wget https://go.dev/dl/go1.18.1.linux-amd64.tar.gz`
+      2. `$ sudo rm -rf /usr/local/go && tar -C /usr/local -xzf go1.18.1.linux-amd64.tar.gz`
       3. `$ sudo nano ~/.bashrc`
       4. Add at the bottom of the file
          ```

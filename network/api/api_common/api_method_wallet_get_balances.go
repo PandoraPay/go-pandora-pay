@@ -25,7 +25,7 @@ type APIWalletGetBalancesReply struct {
 type APIWalletGetBalancesResultReply struct {
 	Address  string                          `json:"address" msgpack:"address"`
 	PlainAcc *plain_account.PlainAccount     `json:"plainAcc" msgpack:"plainAcc"`
-	Balances []*APIWalletGetBalanceDataReply `json:"balance" msgpack:"balance"`
+	Balances []*APIWalletGetBalanceDataReply `json:"balances" msgpack:"balances"`
 }
 
 type APIWalletGetBalanceDataReply struct {
@@ -48,7 +48,7 @@ func (api *APICommon) GetWalletBalances(r *http.Request, args *APIWalletGetBalan
 
 	walletAddresses := make([]*wallet_address.WalletAddress, len(publicKeyHashes))
 	for i, publicKey := range publicKeyHashes {
-		if walletAddresses[i] = api.wallet.GetWalletAddressByPublicKeyHash(publicKey, false); walletAddresses[i] == nil {
+		if walletAddresses[i] = api.wallet.GetWalletAddressByPublicKeyHash(publicKey, true); walletAddresses[i] == nil {
 			return errors.New(fmt.Sprintf("input %d doesn't exist in your wallet", i))
 		}
 	}

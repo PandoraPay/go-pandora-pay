@@ -101,7 +101,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		chainData.TransactionsCount,                    //atomic copy
 		chainData.AccountsCount,                        //atomic copy
 		chainData.AssetsCount,                          //atomic copy
-		chainData.ConsecutiveSelfForged,                //atomic copy
+		chainData.Supply,
+		chainData.ConsecutiveSelfForged, //atomic copy
 	}
 
 	allTransactionsChanges := []*blockchain_types.BlockchainTransactionUpdate{}
@@ -243,6 +244,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return errors.New("Delegated stake ready amount is not enought")
 					}
 
+					chainData.Supply = ast.Supply
+
 					if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHashStaked, newChainData.Target) != true {
 						return errors.New("KernelHash Difficulty is not met")
 					}
@@ -374,6 +377,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						removedTxsList[removedCount] = writer.Get("tx:" + change.TxHashStr) //required because the garbage collector sometimes it deletes the underlying buffers
 						writer.Delete("tx:" + change.TxHashStr)
 						writer.Delete("txHash:" + change.TxHashStr)
+						writer.Delete("txBlock:" + change.TxHashStr)
 						removedCount += 1
 					}
 					if change.Inserted && insertedTxs[change.TxHashStr] != nil && removedTxHashes[change.TxHashStr] == nil {

@@ -50,6 +50,7 @@ func (chain *Blockchain) createGenesisBlockchainData() *BlockchainData {
 		0,
 		0,
 		0,
+		0,
 	}
 }
 
@@ -167,8 +168,10 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 		dataStorage := data_storage.NewDataStorage(writer)
 
-		if err = chain.initializeNewChain(chainData, dataStorage); err != nil {
-			return
+		if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
+			if err = chain.initializeNewChain(chainData, dataStorage); err != nil {
+				return
+			}
 		}
 
 		if config.SEED_WALLET_NODES_INFO {

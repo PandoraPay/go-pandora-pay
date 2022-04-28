@@ -31,7 +31,11 @@ type APIAccountBaseRequest struct {
 	PublicKeyHash helpers.Base64 `json:"publicKeyHash,omitempty"  msgpack:"publicKeyHash,omitempty"`
 }
 
-func (request *APIAccountBaseRequest) GetPublicKeyHash(required bool) ([]byte, error) {
+func (request *APIAccountBaseRequest) GetPublicKey(required bool) ([]byte, error) {
+	if request == nil {
+		return nil, errors.New("argument missing")
+	}
+
 	var publicKeyHash []byte
 	if request.Address != "" {
 		address, err := addresses.DecodeAddr(request.Address)

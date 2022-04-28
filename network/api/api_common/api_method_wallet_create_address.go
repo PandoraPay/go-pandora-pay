@@ -8,7 +8,7 @@ import (
 )
 
 type APIWalletCreateAddressRequest struct {
-	Name string `json:"name" msgpack:"name"`
+	Name          string `json:"name" msgpack:"name"`
 }
 
 type APIWalletCreateAddressReply struct {

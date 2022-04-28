@@ -14,7 +14,7 @@ type Address struct {
 	Network       uint64         `json:"network" msgpack:"network"`
 	Version       AddressVersion `json:"version" msgpack:"version"`
 	PublicKeyHash []byte         `json:"publicKeyHash" msgpack:"publicKeyHash"`
-	PaymentID     []byte         `json:"paymentId" msgpack:"paymentId"`         // payment id
+	PaymentID     []byte         `json:"paymentID" msgpack:"paymentID"`         // payment id
 	PaymentAmount uint64         `json:"paymentAmount" msgpack:"paymentAmount"` // amount to be paid
 	PaymentAsset  []byte         `json:"paymentAsset" msgpack:"paymentAsset"`
 }
@@ -190,7 +190,7 @@ func (a *Address) IsIntegratedAmount() bool {
 	return a.PaymentAmount > 0
 }
 
-// if address contains a paymentId
+// if address contains a paymentID
 func (a *Address) IsIntegratedPaymentID() bool {
 	return len(a.PaymentID) > 0
 }
