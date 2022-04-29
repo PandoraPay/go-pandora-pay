@@ -316,14 +316,14 @@ func (testnet *Testnet) run() {
 							}
 						}
 
-						for i := 1; i < 5; i++ {
+						for i := 1; i < 20; i++ {
 
 							if bytes.Equal(addr.PublicKey, addressesList[i].PublicKey) {
 								continue
 							}
 
 							testnet.testnetCreateTransfers(addressesList[i], 0, ctx)
-							time.Sleep(time.Millisecond * 2000)
+							time.Sleep(time.Millisecond * 200)
 						}
 					}
 
