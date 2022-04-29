@@ -101,6 +101,10 @@ func DecodeAddr(input string) (*Address, error) {
 		return nil, err
 	}
 
+	if len(buf) <= config.NETWORK_BYTE_PREFIX_LENGTH {
+		return nil, errors.New("Invalid Address Size")
+	}
+
 	prefix := buf[:config.NETWORK_BYTE_PREFIX_LENGTH]
 	if bytes.Equal(prefix, config.MAIN_NET_NETWORK_BYTE_PREFIX) {
 		addr.Network = config.MAIN_NET_NETWORK_BYTE
