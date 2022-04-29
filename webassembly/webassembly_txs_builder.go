@@ -3,8 +3,10 @@ package webassembly
 import (
 	"encoding/json"
 	"errors"
+	"pandora-pay/addresses"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
+	"pandora-pay/txs_builder"
 	"pandora-pay/txs_builder/wizard"
 	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
@@ -22,13 +24,13 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 		}
 
 		txData := &struct {
-			TxScript transaction_simple.ScriptType `json:"txScript"`
-			Sender   string                        `json:"sender"`
-			Nonce    uint64                        `json:"nonce"`
-			Extra    wizard.WizardTxSimpleExtra    `json:"extra"`
-			Data     *wizard.WizardTransactionData `json:"data"`
-			Fee      *wizard.WizardTransactionFee  `json:"fee"`
-			Height   uint64                        `json:"height"`
+			TxScript transaction_simple.ScriptType              `json:"txScript"`
+			Nonce    uint64                                     `json:"nonce"`
+			Extra    wizard.WizardTxSimpleExtra                 `json:"extra"`
+			Data     *wizard.WizardTransactionData              `json:"data"`
+			Fee      *wizard.WizardTransactionFee               `json:"fee"`
+			Vin      []*txs_builder.TxBuilderCreateSimpleTxVin  `json:"vin"`
+			Vout     []*txs_builder.TxBuilderCreateSimpleTxVout `json:"vout"`
 		}{}
 
 		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
@@ -52,13 +54,40 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			}
 		}
 
-		senderWalletAddr, err := app.Wallet.GetWalletAddressByEncodedAddress(txData.Sender, true)
-		if err != nil {
-			return nil, err
+		vin := make([]*wizard.WizardTxSimpleTransferVin, len(txData.Vin))
+		vout := make([]*wizard.WizardTxSimpleTransferVout, len(txData.Vout))
+
+		for i, v := range txData.Vin {
+
+			senderWalletAddr, err := app.Wallet.GetWalletAddressByEncodedAddress(v.Sender, true)
+			if err != nil {
+				return nil, err
+			}
+
+			if senderWalletAddr.PrivateKey.Key == nil {
+				return nil, errors.New("Can't be used for transactions as the private key is missing")
+			}
+
+			vin[i] = &wizard.WizardTxSimpleTransferVin{
+				senderWalletAddr.PrivateKey.Key,
+				v.Amount,
+				v.Asset,
+			}
+
 		}
 
-		if senderWalletAddr.PrivateKey.Key == nil {
-			return nil, errors.New("Can't be used for transactions as the private key is missing")
+		for i, v := range txData.Vout {
+			addr, err := addresses.DecodeAddr(v.Address)
+			if err != nil {
+				return nil, err
+			}
+
+			vout[i] = &wizard.WizardTxSimpleTransferVout{
+				addr.PublicKeyHash,
+				v.Amount,
+				v.Asset,
+			}
+
 		}
 
 		tx, err := wizard.CreateSimpleTx(&wizard.WizardTxSimpleTransfer{
@@ -66,7 +95,8 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			txData.Data,
 			txData.Fee,
 			txData.Nonce,
-			senderWalletAddr.PrivateKey.Key,
+			vin,
+			vout,
 		}, false, func(status string) {
 			args[1].Invoke(status)
 		})
