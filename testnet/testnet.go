@@ -115,7 +115,7 @@ func (testnet *Testnet) testnetCreateTransfers(senderAddr *wallet_address.Wallet
 		}
 		total += amount
 		vout = append(vout, &txs_builder.TxBuilderCreateSimpleTxVout{
-			addr.PublicKeyHash,
+			addr.EncodeAddr(),
 			amount,
 			config_coins.NATIVE_ASSET_FULL,
 		})
@@ -160,7 +160,7 @@ func (testnet *Testnet) testnetCreateRecipientTransfers(senderAddr *wallet_addre
 			config_coins.NATIVE_ASSET_FULL,
 		}},
 		[]*txs_builder.TxBuilderCreateSimpleTxVout{{
-			addrRecipient.PublicKeyHash,
+			addrRecipient.AddressEncoded,
 			amount,
 			config_coins.NATIVE_ASSET_FULL,
 		}},
@@ -199,7 +199,7 @@ func (testnet *Testnet) run() {
 			return
 		}
 
-		syncTime := testnet.chain.Sync.GetSyncTime()
+		//syncTime := testnet.chain.Sync.GetSyncTime()
 
 		blockHeight := chainData.Update.Height
 		blockTimestamp := chainData.Update.Timestamp
@@ -295,7 +295,8 @@ func (testnet *Testnet) run() {
 						stakingAmount = generics.Max(0, stakingAmount-over)
 					}
 
-					if syncTime > 0 {
+					//if syncTime > 0 {
+					if true {
 
 						if balance > config_coins.ConvertToUnitsUint64Forced(20000) {
 							over := balance - config_coins.ConvertToUnitsUint64Forced(10000)
@@ -309,7 +310,6 @@ func (testnet *Testnet) run() {
 									if accMap[string(addressesList[i].PublicKeyHash)].balance < config_coins.ConvertToUnitsUint64Forced(10000) {
 										amount := generics.Min(over/5, config_coins.ConvertToUnitsUint64Forced(10000)-accMap[string(addressesList[i].PublicKeyHash)].balance)
 										testnet.testnetCreateRecipientTransfers(addr, i, amount, ctx)
-										time.Sleep(time.Millisecond * 1000)
 									}
 
 								}

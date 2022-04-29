@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
@@ -131,8 +132,12 @@ func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propa
 
 	vout := make([]*wizard.WizardTxSimpleTransferVout, len(txData.Vout))
 	for i, v := range txData.Vout {
+		var addr *addresses.Address
+		if addr, err = addresses.DecodeAddr(v.Address); err != nil {
+			return nil, err
+		}
 		vout[i] = &wizard.WizardTxSimpleTransferVout{
-			v.PublicKeyHash,
+			addr.PublicKeyHash,
 			v.Amount,
 			v.Asset,
 		}

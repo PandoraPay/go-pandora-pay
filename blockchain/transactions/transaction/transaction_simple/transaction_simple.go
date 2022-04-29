@@ -72,10 +72,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 	}
 
 	for _, vout := range tx.Vout {
-		if accs, err = dataStorage.AccsCollection.GetMap(vout.Asset); err != nil {
-			return
-		}
-		if acc, err = accs.GetAccount(vout.PublicKeyHash); err != nil {
+		if accs, acc, err = dataStorage.GetOrCreateAccount(vout.Asset, vout.PublicKeyHash); err != nil {
 			return
 		}
 		if err = acc.AddBalance(true, vout.Amount); err != nil {

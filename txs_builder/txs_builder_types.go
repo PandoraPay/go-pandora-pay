@@ -9,9 +9,9 @@ type TxBuilderCreateSimpleTxVin struct {
 }
 
 type TxBuilderCreateSimpleTxVout struct {
-	PublicKeyHash []byte `json:"publicKeyHash" msgpack:"publicKeyHash"`
-	Amount        uint64 `json:"amount" msgpack:"amount"`
-	Asset         []byte `json:"asset" msgpack:"asset"`
+	Address string `json:"address" msgpack:"address"`
+	Amount  uint64 `json:"amount" msgpack:"amount"`
+	Asset   []byte `json:"asset" msgpack:"asset"`
 }
 
 type TxBuilderCreateSimpleTx struct {

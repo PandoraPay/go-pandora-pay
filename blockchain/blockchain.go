@@ -244,8 +244,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return errors.New("Delegated stake ready amount is not enought")
 					}
 
-					chainData.Supply = ast.Supply
-
 					if difficulty.CheckKernelHashBig(blkComplete.Block.Bloom.KernelHashStaked, newChainData.Target) != true {
 						return errors.New("KernelHash Difficulty is not met")
 					}
