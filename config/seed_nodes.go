@@ -9,16 +9,16 @@ var (
 
 	TEST_NET_SEED_NODES = []*SeedNode{
 		{
-			"ws://helloworldx.ddns.net:16000/ws",
+			"wss://webdexplorer.ddns.net:17000/ws",
 		},
 		{
-			"ws://helloworldx.ddns.net:16001/ws",
+			"wss://webdexplorer.ddns.net:17001/ws",
 		},
 		{
-			"ws://helloworldx.ddns.net:16002/ws",
+			"wss://webdexplorer.ddns.net:17002/ws",
 		},
 		{
-			"ws://helloworldx.ddns.net:16003/ws",
+			"wss://webdexplorer.ddns.net:17003/ws",
 		},
 	}
 
