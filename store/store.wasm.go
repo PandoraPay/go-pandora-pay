@@ -37,7 +37,7 @@ func createStoreNow(name string, storeType string) (*Store, error) {
 
 func create_db() (err error) {
 
-	var prefix = "/webd2"
+	var prefix = "webd2"
 
 	allowedStores := map[string]bool{"bunt-memory": true, "memory": true, "js": true}
 

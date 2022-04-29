@@ -80,6 +80,7 @@ func (mempool *Mempool) GetNonce(publicKeyHash []byte, nonce uint64) uint64 {
 	}
 
 	return nonce
+
 }
 
 func (mempool *Mempool) GetNextTransactionsToInclude(chainHash []byte) (out []*transaction.Transaction, outChainHash []byte) {

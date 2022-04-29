@@ -320,7 +320,7 @@ func (testnet *Testnet) run() {
 							if bytes.Equal(addr.PublicKey, addressesList[i].PublicKey) {
 								continue
 							}
-							for q := 0; q < 5; q++ {
+							for q := 0; q < 3; q++ {
 								testnet.testnetCreateTransfers(addressesList[i], 0, ctx)
 								time.Sleep(time.Millisecond * 200)
 							}

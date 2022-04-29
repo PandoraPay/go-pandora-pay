@@ -43,7 +43,7 @@ func (request *APIAccountBaseRequest) GetPublicKeyHash(required bool) ([]byte, e
 			return nil, errors.New("Invalid address")
 		}
 		publicKeyHash = address.PublicKeyHash
-	} else if request.PublicKeyHash != nil && len(request.PublicKeyHash) == cryptography.PublicKeySize {
+	} else if request.PublicKeyHash != nil && len(request.PublicKeyHash) == cryptography.PublicKeyHashSize {
 		publicKeyHash = request.PublicKeyHash
 	} else if required {
 		return nil, errors.New("Invalid address or publicKey")

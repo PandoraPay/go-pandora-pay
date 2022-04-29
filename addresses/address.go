@@ -20,6 +20,11 @@ type Address struct {
 }
 
 func newAddr(network uint64, version AddressVersion, publicKeyHash []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
+
+	if len(publicKeyHash) == cryptography.PublicKeySize {
+		publicKeyHash = cryptography.GetPublicKeyHash(publicKeyHash)
+	}
+
 	if len(publicKeyHash) != cryptography.PublicKeyHashSize {
 		return nil, errors.New("Invalid PublicKeyHash size")
 	}

@@ -2,7 +2,10 @@ package api_common
 
 import (
 	"net/http"
+	"pandora-pay/blockchain/data_storage/plain_accounts"
 	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/store"
+	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type APIAccountMempoolNonceRequest struct {
@@ -19,23 +22,22 @@ func (api *APICommon) GetAccountMempoolNonce(r *http.Request, args *APIAccountMe
 		return err
 	}
 
-	//if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) error {
-	//
-	//	chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
-	//	plainAccs := plain_accounts.NewPlainAccounts(reader)
-	//
-	//	plainAcc, err := plainAccs.GetPlainAccount(publicKey, chainHeight)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	if plainAcc != nil {
-	//		reply.Nonce = plainAcc.Nonce
-	//	}
-	//
-	//	return nil
-	//}); err != nil {
-	//	return err
-	//}
+	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) error {
+
+		plainAccs := plain_accounts.NewPlainAccounts(reader)
+
+		plainAcc, err := plainAccs.GetPlainAccount(publicKeyHash)
+		if err != nil {
+			return err
+		}
+		if plainAcc != nil {
+			reply.Nonce = plainAcc.Nonce
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
 
 	reply.Nonce = api.mempool.GetNonce(publicKeyHash, reply.Nonce)
 	return nil

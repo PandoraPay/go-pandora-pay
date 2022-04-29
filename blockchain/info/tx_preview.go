@@ -60,7 +60,7 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 			}
 		}
 
-		previewVout := make([]*TxPreviewSimpleVout, len(txBase.Vin))
+		previewVout := make([]*TxPreviewSimpleVout, len(txBase.Vout))
 		for i, vout := range txBase.Vout {
 			previewVout[i] = &TxPreviewSimpleVout{
 				vout.PublicKeyHash,

@@ -27,7 +27,7 @@ func TestPrivateKey_GenerateAddress(t *testing.T) {
 	assert.NotEqual(t, address.PublicKeyHash, privateKey.Key)
 
 	assert.Equal(t, len(address.PublicKeyHash), cryptography.PublicKeyHashSize)
-	assert.NotEqual(t, address.PublicKeyHash, helpers.EmptyBytes(cryptography.PublicKeySize))
+	assert.NotEqual(t, address.PublicKeyHash, helpers.EmptyBytes(cryptography.PublicKeyHashSize))
 	assert.Equal(t, address.PaymentAmount, uint64(0))
 	assert.Equal(t, len(address.PaymentID), 0)
 

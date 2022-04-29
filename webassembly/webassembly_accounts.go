@@ -3,6 +3,7 @@ package webassembly
 import (
 	"encoding/base64"
 	"pandora-pay/addresses"
+	"pandora-pay/cryptography"
 	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
 )
@@ -27,8 +28,7 @@ func createAddress(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		parameters := struct {
-			PublicKey     []byte `json:"publicKey"`
-			Registration  []byte `json:"registration"`
+			PublicKeyHash []byte `json:"publicKeyHash"`
 			PaymentID     []byte `json:"paymentID"`
 			PaymentAmount uint64 `json:"paymentAmount"`
 			PaymentAsset  []byte `json:"paymentAsset"`
@@ -38,7 +38,7 @@ func createAddress(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		addr, err := addresses.CreateAddr(parameters.PublicKey, parameters.PaymentID, parameters.PaymentAmount, parameters.PaymentAsset)
+		addr, err := addresses.CreateAddr(parameters.PublicKeyHash, parameters.PaymentID, parameters.PaymentAmount, parameters.PaymentAsset)
 		if err != nil {
 			return nil, err
 		}
@@ -48,6 +48,18 @@ func createAddress(this js.Value, args []js.Value) interface{} {
 			addr.EncodeAddr(),
 		})
 
+	})
+}
+
+func getPublicKeyHash(this js.Value, args []js.Value) interface{} {
+	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
+
+		publicKey, err := base64.StdEncoding.DecodeString(args[0].String())
+		if err != nil {
+			return nil, err
+		}
+
+		return cryptography.GetPublicKeyHash(publicKey), nil
 	})
 }
 

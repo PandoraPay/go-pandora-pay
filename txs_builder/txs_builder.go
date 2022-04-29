@@ -125,7 +125,7 @@ func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propa
 				return
 			}
 
-			if i == 0 && plainAcc != nil {
+			if i == 0 && plainAcc != nil && nonce == 0 {
 				nonce = plainAcc.Nonce
 			}
 
@@ -147,7 +147,7 @@ func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propa
 
 	statusCallback("Balances checked")
 
-	txData.Nonce = builder.getNonce(txData.Nonce, sendersWalletAddresses[0].PublicKey, nonce)
+	txData.Nonce = builder.getNonce(txData.Nonce, sendersWalletAddresses[0].PublicKeyHash, nonce)
 	statusCallback("Getting Nonce from Mempool")
 
 	vin := make([]*wizard.WizardTxSimpleTransferVin, len(txData.Vin))

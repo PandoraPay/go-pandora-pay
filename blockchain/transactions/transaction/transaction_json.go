@@ -57,6 +57,7 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 
 		vinJson := make([]*json_TransactionSimpleInput, len(base.Vin))
 		for i, vin := range base.Vin {
+
 			vinJson[i] = &json_TransactionSimpleInput{
 				vin.PublicKey,
 				vin.Amount,
