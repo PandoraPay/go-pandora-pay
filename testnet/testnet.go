@@ -199,7 +199,7 @@ func (testnet *Testnet) run() {
 			return
 		}
 
-		//syncTime := testnet.chain.Sync.GetSyncTime()
+		syncTime := testnet.chain.Sync.GetSyncTime()
 
 		blockHeight := chainData.Update.Height
 		blockTimestamp := chainData.Update.Timestamp
@@ -295,8 +295,7 @@ func (testnet *Testnet) run() {
 						stakingAmount = generics.Max(0, stakingAmount-over)
 					}
 
-					//if syncTime > 0 {
-					if true {
+					if syncTime > 0 {
 
 						if balance > config_coins.ConvertToUnitsUint64Forced(20000) {
 							over := balance - config_coins.ConvertToUnitsUint64Forced(10000)
