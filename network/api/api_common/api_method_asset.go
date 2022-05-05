@@ -17,7 +17,7 @@ type APIAssetRequest struct {
 }
 
 type APIAssetReply struct {
-	Asset      *asset.Asset `json:"account,omitempty" msgpack:"account,omitempty"`
+	Asset      *asset.Asset `json:"asset,omitempty" msgpack:"asset,omitempty"`
 	Serialized []byte       `json:"serialized,omitempty" msgpack:"serialized,omitempty"`
 }
 
