@@ -6,6 +6,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
+	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/config"
@@ -16,6 +17,10 @@ type Json_Transaction struct {
 	Size       uint64                              `json:"size" msgpack:"size"`
 	SpaceExtra uint64                              `json:"spaceExtra" msgpack:"spaceExtra"`
 	Hash       []byte                              `json:"hash" msgpack:"hash"`
+}
+
+type json_TransactionSimple_Extra_Unstake struct {
+	Amounts []uint64 `json:"amounts" msgpack:"amounts"`
 }
 
 type json_TransactionSimple struct {
@@ -88,6 +93,11 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 
 		switch base.TxScript {
 		case transaction_simple.SCRIPT_TRANSFER:
+		case transaction_simple.SCRIPT_UNSTAKE:
+			extra := &json_TransactionSimple_Extra_Unstake{
+				base.Extra.(*transaction_simple_extra.TransactionSimpleExtraUnstake).Amounts,
+			}
+			simpleJson.Extra = extra
 		default:
 			return nil, errors.New("Invalid simple.TxScript")
 		}
@@ -184,6 +194,10 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 
 		switch simpleJson.TxScript {
 		case transaction_simple.SCRIPT_TRANSFER:
+		case transaction_simple.SCRIPT_UNSTAKE:
+			base.Extra = &transaction_simple_extra.TransactionSimpleExtraUnstake{
+				nil, simpleJson.Extra.(*json_TransactionSimple_Extra_Unstake).Amounts,
+			}
 		default:
 			return errors.New("Invalid json Simple TxScript")
 		}
