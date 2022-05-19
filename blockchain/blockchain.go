@@ -11,10 +11,12 @@ import (
 	"pandora-pay/blockchain/blocks/block/difficulty"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/config"
+	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_stake"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
@@ -267,6 +269,12 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					if err = blkComplete.IncludeBlockComplete(dataStorage); err != nil {
 						return fmt.Errorf("Error including block %d into Blockchain: %s", blkComplete.Height, err.Error())
 					}
+
+					var ast *asset.Asset
+					if ast, err = dataStorage.Asts.GetAsset(config_coins.NATIVE_ASSET_FULL); err != nil {
+						return
+					}
+					newChainData.Supply = ast.Supply
 
 					if err = dataStorage.ProcessPendingStakes(blkComplete.Height); err != nil {
 						return errors.New("Error Processing Pending Stakes: " + err.Error())
