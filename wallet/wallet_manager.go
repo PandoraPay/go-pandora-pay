@@ -77,7 +77,12 @@ func (wallet *Wallet) GetWalletAddressByEncodedAddress(addressEncoded string, lo
 		return nil, err
 	}
 
-	return wallet.GetWalletAddressByPublicKey(address.PublicKey, lock), nil
+	addr := wallet.GetWalletAddressByPublicKey(address.PublicKey, lock)
+	if addr == nil {
+		return nil, errors.New("Address was not found")
+	}
+
+	return addr, nil
 }
 
 func (wallet *Wallet) GetWalletAddressByPublicKeyString(publicKeyStr string, lock bool) (*wallet_address.WalletAddress, error) {
