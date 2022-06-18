@@ -75,6 +75,7 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		"blockchain/staking-info": handle[api_common.APIStakingInfoRequest, api_common.APIStakingInfoReply](api.apiCommon.GetStakingInfo),
 		"blockchain/genesis-info": handle[api_common.APIGenesisInfoRequest, api_common.APIGenesisInfoReply](api.apiCommon.GetGenesisInfo),
 		"blockchain/supply":       handle[struct{}, api_common.APISupply](api.apiCommon.GetSupply),
+		"blockchain/supply-only":  handle[struct{}, uint64](api.apiCommon.GetSupplyOnly),
 		"sync":                    handle[struct{}, blockchain_sync.BlockchainSyncData](api.apiCommon.GetBlockchainSync),
 		"block-hash":              handle[api_common.APIBlockHashRequest, api_common.APIBlockHashReply](api.apiCommon.GetBlockHash),
 		"block":                   handle[api_common.APIBlockRequest, api_common.APIBlockReply](api.apiCommon.GetBlock),
