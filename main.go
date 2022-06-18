@@ -10,8 +10,28 @@ import (
 	"pandora-pay/helpers/events"
 	"pandora-pay/recovery"
 	"pandora-pay/start"
+	"runtime"
 	"syscall"
 )
+
+func saveError(err error) {
+
+	fmt.Println(err)
+
+	if runtime.GOARCH != "wasm" {
+		return
+	}
+
+	file, err2 := os.Create("./error.txt")
+	if err2 != nil {
+		panic(err2)
+	}
+	defer file.Close()
+	if _, err2 = file.Write([]byte(err.Error())); err2 != nil {
+		panic(err2)
+	}
+
+}
 
 func main() {
 
@@ -22,10 +42,12 @@ func main() {
 
 	argv := os.Args[1:]
 	if err = arguments.InitArguments(argv); err != nil {
+		saveError(err)
 		panic(err)
 	}
 
 	if err = config.InitConfig(); err != nil {
+		saveError(err)
 		panic(err)
 	}
 	globals.MainEvents.BroadcastEvent("main", "config initialized")
