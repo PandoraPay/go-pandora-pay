@@ -16,24 +16,25 @@ buildOutput=""
 if [[ "$*" == *dev* ]]; then
   buildOutput="./dist/PandoraPay"
 elif [[ "$*" == *wallet-dev* ]]; then
-  buildOutput="./dist/PandoraPay-wallet"
+  buildOutput="./dist/PandoraPay-wallet-dev"
 elif [[ "$*" == *wallet-build* ]]; then
-  buildOutput="./dist/PandoraPay-wallet"
+  buildOutput="./dist/PandoraPay-wallet-build"
 else
   echo "argument dev|wallet-dev|wallet-build missing"
   exit 1
 fi
 
 if [[ "$*" == *main* ]]; then
-  buildOutput="./webassembly/"${buildOutput}"-main"
+  buildOutput+="-main"
   src="./"
 elif [[ "$*" == *helper* ]]; then
   buildOutput+="-helper"
-  src="webassembly_helper/"
+  src="./webassembly_helper/"
 else
   echo "argument main|helper missing"
   exit 1
 fi
+
 
 buildOutput+=".wasm"
 
@@ -44,13 +45,24 @@ go version
 
 buildOutput=${src}${buildOutput}
 
-finalOutput="../PandoraPay-wallet/dist/"
+finalOutput="../PandoraPay-wallet/"
+
+cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" "${finalOutput}src/webworkers/dist/wasm_exec.js"
+sriOutput="${finalOutput}src/webworkers/dist/sri/"
+
+finalOutput+="dist/"
+
+mkdir -p "${finalOutput}"
+mkdir -p "${sriOutput}"
 
 if [[ "$*" == *wallet-dev* ]]; then
-  finalOutput+="dev/wasm/"
+  finalOutput+="dev/"
 elif [[ "$*" == *wallet-build* ]]; then
-  finalOutput+="build/wasm/"
+  finalOutput+="build/"
+  sriOutput+="build"
 fi
+
+mkdir -p "${finalOutput}"
 
 stat --printf="%s \n" ${buildOutput}
 
@@ -59,12 +71,21 @@ echo "Deleting..."
 rm ${buildOutput}.br 2>/dev/null
 rm ${buildOutput}.gz 2>/dev/null
 
-mkdir -p ${finalOutput}
+sha256_wasm=$(sha256sum  "${buildOutput}" | awk '{print $1}')
+mkdir -p "${finalOutput}wasm"
 
 if [[ "$*" == *main* ]]; then
-  finalOutput+="PandoraPay-wallet-main.wasm"
+  finalOutput+="wasm/PandoraPay-wallet-main.wasm"
+  sriOutput+="-main.js"
 elif [[ "$*" == *helper* ]]; then
-  finalOutput+="PandoraPay-wallet-helper.wasm"
+  finalOutput+="wasm/PandoraPay-wallet-helper.wasm"
+  sriOutput+="-helper.js"
+fi
+
+if [[ "$*" == *wallet-build* ]]; then
+  echo "export default {
+    'wasm': '${sha256_wasm}',
+  }" > "${sriOutput}"
 fi
 
 echo "Copy to wallet/build..."
