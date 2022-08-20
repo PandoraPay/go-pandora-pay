@@ -18,14 +18,14 @@ func main() {
 
 	config.StartConfig()
 	argv := os.Args[1:]
-	if err := arguments.InitArguments(argv); err != nil {
+	if err = arguments.InitArguments(argv); err != nil {
 		panic(err)
 	}
-	if err := config.InitConfig(); err != nil {
+	if err = config.InitConfig(); err != nil {
 		panic(err)
 	}
 
-	if err := gui.InitGUI(); err != nil {
+	if err = gui.InitGUI(); err != nil {
 		panic(err)
 	}
 
@@ -33,7 +33,7 @@ func main() {
 		return
 	}
 
-	js.Global().Set("PandoraPay", js.ValueOf(map[string]interface{}{
+	js.Global().Set("PandoraPayHelper", js.ValueOf(map[string]interface{}{
 		"helloPandoraHelper": js.FuncOf(helloPandoraHelper),
 		"wallet": js.ValueOf(map[string]interface{}{
 			"initializeBalanceDecryptor": js.FuncOf(initializeBalanceDecryptor),
