@@ -1,10 +1,11 @@
-package webassembly
+package main
 
 import (
 	"encoding/base64"
 	"fmt"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/identicon"
+	"pandora-pay/start"
 	"pandora-pay/webassembly/webassembly_utils"
 	"strconv"
 	"syscall/js"
@@ -17,10 +18,10 @@ func helloPandora(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func start(this js.Value, args []js.Value) interface{} {
+func startLibrary(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-		startMainCallback()
-		return true, nil
+		err := start.StartMainNow()
+		return true, err
 	})
 }
 

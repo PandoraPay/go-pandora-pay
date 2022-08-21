@@ -1,3 +1,1 @@
-package webassembly
-
-import ()
+package main

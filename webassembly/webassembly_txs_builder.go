@@ -1,4 +1,4 @@
-package webassembly
+package main
 
 import (
 	"encoding/json"
