@@ -46,6 +46,8 @@ func main() {
 		}),
 	}))
 
+	js.Global().Call("WASMLoaded")
+
 	exitSignal := make(chan os.Signal, 10)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 	<-exitSignal
