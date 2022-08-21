@@ -1,9 +1,14 @@
+buildFlag="pandora-pay/config.BUILD_VERSION"
+frontend="../PandoraPay-wallet/"
+mainWasmOutput="PandoraPay-wallet-main.wasm"
+helperWasmOutput="PandoraPay-wallet-helper.wasm"
+
 if [ $# -eq 0 ]; then
   echo "arguments missing"
 fi
 
 if [[ "$*" == "help" ]]; then
-    echo "main|helper, dev|wallet-dev|wallet-build, brotli|zopfli|gzip"
+    echo "main|helper, test|dev|build, brotli|zopfli|gzip"
     exit 1
 fi
 
@@ -11,41 +16,44 @@ gitVersion=$(git log -n1 --format=format:"%H")
 gitVersionShort=${gitVersion:0:12}
 
 src=""
-buildOutput=""
+buildOutput="./dist/"
 
-if [[ "$*" == *dev* ]]; then
-  buildOutput="./dist/PandoraPay"
-elif [[ "$*" == *wallet-dev* ]]; then
-  buildOutput="./dist/PandoraPay-wallet-dev"
-elif [[ "$*" == *wallet-build* ]]; then
-  buildOutput="./dist/PandoraPay-wallet-build"
-else
-  echo "argument dev|wallet-dev|wallet-build missing"
-  exit 1
+if [[ "$*" == *test* ]]; then
+    cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" "${buildOutput}/wasm_exec.js"
 fi
 
 if [[ "$*" == *main* ]]; then
-  buildOutput+="-main"
-  src="./"
+  buildOutput+="main"
+  src="./webassembly/"
 elif [[ "$*" == *helper* ]]; then
-  buildOutput+="-helper"
+  buildOutput+="helper"
   src="./webassembly_helper/"
 else
   echo "argument main|helper missing"
   exit 1
 fi
 
+if [[ "$*" == *test* ]]; then
+  buildOutput+="-test"
+elif [[ "$*" == *dev* ]]; then
+  buildOutput+="-dev"
+elif [[ "$*" == *build* ]]; then
+  buildOutput+="-build"
+else
+  echo "argument test|dev|build missing"
+  exit 1
+fi
 
 buildOutput+=".wasm"
 
 echo ${buildOutput}
 
 go version
-(cd ${src} && GOOS=js GOARCH=wasm go build -ldflags "-X pandora-pay/config.BUILD_VERSION=${gitVersionShort}" -o ${buildOutput} )
+(cd ${src} && GOOS=js GOARCH=wasm go build -ldflags "-X ${buildFlag}=${gitVersionShort}" -o ${buildOutput} )
 
 buildOutput=${src}${buildOutput}
 
-finalOutput="../PandoraPay-wallet/"
+finalOutput=${frontend}
 
 cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" "${finalOutput}src/webworkers/dist/wasm_exec.js"
 sriOutput="${finalOutput}src/webworkers/dist/sri/"
@@ -55,43 +63,44 @@ finalOutput+="dist/"
 mkdir -p "${finalOutput}"
 mkdir -p "${sriOutput}"
 
-if [[ "$*" == *wallet-dev* ]]; then
+if [[ "$*" == *dev* ]]; then
   finalOutput+="dev/"
-elif [[ "$*" == *wallet-build* ]]; then
+elif [[ "$*" == *build* ]]; then
   finalOutput+="build/"
   sriOutput+="build"
 fi
 
-mkdir -p "${finalOutput}"
+if ! [[ "$*" == *test* ]]; then
 
-stat --printf="%s \n" ${buildOutput}
+  mkdir -p "${finalOutput}"
+  mkdir -p "${finalOutput}wasm"
 
-echo "Deleting..."
+  stat --printf="%s \n" ${buildOutput}
 
-rm ${buildOutput}.br 2>/dev/null
-rm ${buildOutput}.gz 2>/dev/null
+  echo "Deleting..."
 
-sha256_wasm=$(sha256sum  "${buildOutput}" | awk '{print $1}')
-mkdir -p "${finalOutput}wasm"
+  rm ${buildOutput}.br 2>/dev/null
+  rm ${buildOutput}.gz 2>/dev/null
 
-if [[ "$*" == *main* ]]; then
-  finalOutput+="wasm/PandoraPay-wallet-main.wasm"
-  sriOutput+="-main.js"
-elif [[ "$*" == *helper* ]]; then
-  finalOutput+="wasm/PandoraPay-wallet-helper.wasm"
-  sriOutput+="-helper.js"
+  if [[ "$*" == *main* ]]; then
+    finalOutput+="wasm/${mainWasmOutput}"
+    sriOutput+="-main.js"
+  elif [[ "$*" == *helper* ]]; then
+    finalOutput+="wasm/${helperWasmOutput}"
+    sriOutput+="-helper.js"
+  fi
+
+  echo "Copy to frontend/dist..."
+  cp ${buildOutput} ${finalOutput}
 fi
 
-if [[ "$*" == *wallet-build* ]]; then
+if [[ "$*" == *build* ]]; then
+
+  sha256_wasm=$(sha256sum  "${buildOutput}" | awk '{print $1}')
+
   echo "export default {
     'wasm': '${sha256_wasm}',
   }" > "${sriOutput}"
-fi
-
-echo "Copy to wallet/build..."
-cp ${buildOutput} ${finalOutput}
-
-if [[ "$*" == *wallet-build* ]]; then
 
   if [[ "$*" == *brotli* ]]; then
     echo "Zipping using brotli..."
@@ -100,7 +109,7 @@ if [[ "$*" == *wallet-build* ]]; then
       exit 1
     fi
     stat --printf="brotli size %s \n" ${buildOutput}.br
-    echo "Copy to wallet/build..."
+    echo "Copy to frontend/dist..."
     cp ${buildOutput}.br ${finalOutput}.br
   fi
 
@@ -111,13 +120,13 @@ if [[ "$*" == *wallet-build* ]]; then
       exit 1
     fi
     stat --printf="zopfli gzip size: %s \n" ${buildOutput}.gz
-    echo "Copy to wallet/build..."
+    echo "Copy to frontend/build..."
     cp ${buildOutput}.gz ${finalOutput}.gz
   elif [[ "$*" == *gzip* ]]; then
     echo "Gzipping..."
     gzip --best ${buildOutput}
     stat --printf="gzip size %s \n" ${buildOutput}.gz
-    echo "Copy to wallet/build..."
+    echo "Copy to frontend/build..."
     cp ${buildOutput}.gz ${finalOutput}.gz
   fi
 

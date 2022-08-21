@@ -5,5 +5,7 @@ import (
 )
 
 func main() {
-	start.InitMain(nil)
+	start.InitMain(func() {
+		Initialize()
+	})
 }

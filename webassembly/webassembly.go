@@ -1,4 +1,4 @@
-package webassembly
+package main
 
 import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
@@ -16,18 +16,15 @@ import (
 )
 
 var subscriptionsIndex uint64
-var startMainCallback func()
 
 var mutex sync.Mutex
 
-func Initialize(startMainCb func()) {
-
-	startMainCallback = startMainCb
+func Initialize() {
 
 	js.Global().Set("PandoraPay", js.ValueOf(map[string]interface{}{
 		"helpers": js.ValueOf(map[string]interface{}{
 			"helloPandora":            js.FuncOf(helloPandora),
-			"start":                   js.FuncOf(start),
+			"start":                   js.FuncOf(startLibrary),
 			"getIdenticon":            js.FuncOf(getIdenticon),
 			"randomUint64":            js.FuncOf(randomUint64),
 			"randomUint64N":           js.FuncOf(randomUint64N),

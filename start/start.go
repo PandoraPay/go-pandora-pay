@@ -2,17 +2,22 @@ package start
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"os/signal"
 	"pandora-pay/address_balance_decryptor"
 	"pandora-pay/app"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
+	"pandora-pay/config"
+	"pandora-pay/config/arguments"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/config/globals"
 	balance_decoder "pandora-pay/cryptography/crypto/balance-decryptor"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/debugging_pprof"
+	"pandora-pay/helpers/events"
 	"pandora-pay/mempool"
 	"pandora-pay/network"
 	"pandora-pay/settings"
@@ -23,9 +28,10 @@ import (
 	"pandora-pay/wallet"
 	"runtime"
 	"strconv"
+	"syscall"
 )
 
-func _startMain() (err error) {
+func StartMainNow() (err error) {
 
 	if globals.MainStarted {
 		return
@@ -146,10 +152,31 @@ func _startMain() (err error) {
 	return
 }
 
-func startMain() {
+func InitMain(ready func()) {
+	var err error
+	globals.MainEvents = events.NewEvents[any]()
 
-	if err := _startMain(); err != nil {
-		gui.GUI.Error(err)
+	config.StartConfig()
+
+	argv := os.Args[1:]
+	if err = arguments.InitArguments(argv); err != nil {
+		saveError(err)
 	}
 
+	if err = config.InitConfig(); err != nil {
+		saveError(err)
+	}
+	globals.MainEvents.BroadcastEvent("main", "config initialized")
+
+	startMain()
+
+	if ready != nil {
+		ready()
+	}
+
+	exitSignal := make(chan os.Signal, 10)
+	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
+	<-exitSignal
+
+	fmt.Println("Shutting down")
 }

@@ -12,7 +12,7 @@
                 '--consensus=wallet',
                 '--tcp-max-clients=1',
             ]
-            WebAssembly.instantiateStreaming(fetch("./PandoraPay.wasm"), go.importObject).then( result =>{
+            WebAssembly.instantiateStreaming(fetch("./main-test.wasm"), go.importObject).then( result =>{
                 go.run(result.instance)
                 PandoraPay.events.subscribe((name, data)=>{
                     console.log("JS NAME:", name, "data", data)

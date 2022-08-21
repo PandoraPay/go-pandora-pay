@@ -1,1 +1,1 @@
-package webassembly
+package main
