@@ -96,12 +96,6 @@ fi
 
 if [[ "$*" == *build* ]]; then
 
-  sha256_wasm=$(sha256sum  "${buildOutput}" | awk '{print $1}')
-
-  echo "export default {
-    'wasm': '${sha256_wasm}',
-  }" > "${sriOutput}"
-
   if [[ "$*" == *brotli* ]]; then
     echo "Zipping using brotli..."
     if ! brotli -o ${buildOutput}.br ${buildOutput}; then
