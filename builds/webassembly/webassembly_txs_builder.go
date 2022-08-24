@@ -5,8 +5,8 @@ import (
 	"errors"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
+	"pandora-pay/builds/webassembly/webassembly_utils"
 	"pandora-pay/txs_builder/wizard"
-	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
 )
 

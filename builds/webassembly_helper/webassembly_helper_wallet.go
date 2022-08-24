@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"pandora-pay/cryptography/crypto/balance-decryptor"
-	"pandora-pay/webassembly/webassembly_utils"
+	"pandora-pay/builds/builds_data"
+	"pandora-pay/builds/webassembly/webassembly_utils"
+	"pandora-pay/cryptography/crypto/balance_decryptor"
 	"strconv"
 	"syscall/js"
 	"time"
@@ -15,7 +16,12 @@ func initializeBalanceDecryptor(this js.Value, args []js.Value) interface{} {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		balance_decryptor.BalanceDecryptor.SetTableSize(args[0].Int(), ctx, func(status string) {
+		parameters := &builds_data.WalletInitializeBalanceDecryptorReq{}
+		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
+			return nil, err
+		}
+
+		balance_decryptor.BalanceDecryptor.SetTableSize(parameters.TableSize, ctx, func(status string) {
 			args[1].Invoke(status)
 		})
 
@@ -26,14 +32,7 @@ func initializeBalanceDecryptor(this js.Value, args []js.Value) interface{} {
 func decryptBalance(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		parameters := &struct {
-			PublicKey     []byte `json:"publicKey"`
-			PrivateKey    []byte `json:"privateKey"`
-			PreviousValue uint64 `json:"previousValue"`
-			Balance       []byte `json:"balance"`
-			Asset         []byte `json:"asset"`
-		}{}
-
+		parameters := &builds_data.WalletDecryptBalanceReq{}
 		if err := webassembly_utils.UnmarshalBytes(args[0], parameters); err != nil {
 			return nil, err
 		}

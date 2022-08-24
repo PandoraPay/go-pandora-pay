@@ -14,10 +14,8 @@ import (
 	"pandora-pay/config/arguments"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/config/globals"
-	balance_decoder "pandora-pay/cryptography/crypto/balance-decryptor"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/debugging_pprof"
-	"pandora-pay/helpers/events"
 	"pandora-pay/mempool"
 	"pandora-pay/network"
 	"pandora-pay/settings"
@@ -59,7 +57,7 @@ func StartMainNow() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "txs validator initialized")
 
-	if app.AddressBalanceDecryptor, err = address_balance_decryptor.NewAddressBalanceDecryptor(); err != nil {
+	if app.AddressBalanceDecryptor, err = address_balance_decryptor.NewAddressBalanceDecryptor(true); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "address balance decryptor validator initialized")
@@ -154,9 +152,6 @@ func StartMainNow() (err error) {
 
 func InitMain(ready func()) {
 	var err error
-	globals.MainEvents = events.NewEvents[any]()
-
-	config.StartConfig()
 
 	argv := os.Args[1:]
 	if err = arguments.InitArguments(argv); err != nil {

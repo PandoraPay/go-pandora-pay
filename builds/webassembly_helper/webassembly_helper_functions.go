@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"pandora-pay/webassembly/webassembly_utils"
+	"pandora-pay/builds/webassembly/webassembly_utils"
 	"syscall/js"
 )
 

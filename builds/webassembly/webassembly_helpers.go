@@ -3,10 +3,10 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"pandora-pay/builds/webassembly/webassembly_utils"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/identicon"
 	"pandora-pay/start"
-	"pandora-pay/webassembly/webassembly_utils"
 	"strconv"
 	"syscall/js"
 )

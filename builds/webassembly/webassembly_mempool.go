@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/builds/webassembly/webassembly_utils"
 	"pandora-pay/mempool"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
-	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
 )
 

@@ -16,7 +16,6 @@ var AddressBalanceDecryptor *address_balance_decryptor.AddressBalanceDecryptor
 func main() {
 	var err error
 
-	config.StartConfig()
 	argv := os.Args[1:]
 	if err = arguments.InitArguments(argv); err != nil {
 		panic(err)
@@ -29,7 +28,7 @@ func main() {
 		panic(err)
 	}
 
-	if AddressBalanceDecryptor, err = address_balance_decryptor.NewAddressBalanceDecryptor(); err != nil {
+	if AddressBalanceDecryptor, err = address_balance_decryptor.NewAddressBalanceDecryptor(false); err != nil {
 		return
 	}
 

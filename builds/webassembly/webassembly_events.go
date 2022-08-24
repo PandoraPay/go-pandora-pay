@@ -10,11 +10,11 @@ import (
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
+	"pandora-pay/builds/webassembly/webassembly_utils"
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/recovery"
-	"pandora-pay/webassembly/webassembly_utils"
 	"sync/atomic"
 	"syscall/js"
 )

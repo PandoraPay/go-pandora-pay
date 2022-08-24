@@ -7,7 +7,7 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/cryptography/crypto/balance-decryptor"
+	"pandora-pay/cryptography/crypto/balance_decryptor"
 )
 
 type PrivateKey struct {
