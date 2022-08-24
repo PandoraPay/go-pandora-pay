@@ -1,8 +1,7 @@
-package main
+package builds_data
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -16,39 +15,9 @@ import (
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
 	"pandora-pay/txs_builder/wizard"
-	"pandora-pay/webassembly/webassembly_utils"
-	"syscall/js"
 )
 
-type zetherTxDataSender struct {
-	PrivateKey       []byte `json:"privateKey"`
-	SpendPrivateKey  []byte `json:"spendPrivateKey"`
-	DecryptedBalance uint64 `json:"decryptedBalance"`
-}
-
-type zetherTxDataPayloadBase struct {
-	Sender               *zetherTxDataSender                                 `json:"sender"`
-	Asset                []byte                                              `json:"asset"`
-	Amount               uint64                                              `json:"amount"`
-	Recipient            string                                              `json:"recipient"`
-	Burn                 uint64                                              `json:"burn"`
-	RingSenderMembers    []string                                            `json:"ringSenderMembers"`
-	RingRecipientMembers []string                                            `json:"ringRecipientMembers"`
-	Data                 *wizard.WizardTransactionData                       `json:"data"`
-	Fees                 *wizard.WizardZetherTransactionFee                  `json:"fees"`
-	ScriptType           transaction_zether_payload_script.PayloadScriptType `json:"scriptType"`
-	Extra                wizard.WizardZetherPayloadExtra                     `json:"extra"`
-}
-
-type zetherTxDataBase struct {
-	Payloads          []*zetherTxDataPayloadBase   `json:"payloads"`
-	Accs              map[string]map[string][]byte `json:"accs"`
-	Regs              map[string][]byte            `json:"regs"`
-	ChainKernelHeight uint64                       `json:"chainKernelHeight"`
-	ChainKernelHash   []byte                       `json:"chainKernelHash"`
-}
-
-func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, ringsSenderMembers, ringsRecipientMembers [][]*bn256.G1, publicKeyIndexes map[string]*wizard.WizardZetherPublicKeyIndex, err error) {
+func PrepareData(txData *TransactionsBuilderCreateZetherTxReq) (transfers []*wizard.WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, ringsSenderMembers, ringsRecipientMembers [][]*bn256.G1, publicKeyIndexes map[string]*wizard.WizardZetherPublicKeyIndex, feesFinal []*wizard.WizardTransactionFee, err error) {
 
 	transfers = make([]*wizard.WizardZetherTransfer, len(txData.Payloads))
 	ringsSenderMembers = make([][]*bn256.G1, len(txData.Payloads))
@@ -238,49 +207,10 @@ func prepareData(txData *zetherTxDataBase) (transfers []*wizard.WizardZetherTran
 		transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(len(payload.RingSenderMembers) + len(payload.RingRecipientMembers))
 	}
 
+	feesFinal = make([]*wizard.WizardTransactionFee, len(txData.Payloads))
+	for t, payload := range txData.Payloads {
+		feesFinal[t] = payload.Fees.WizardTransactionFee
+	}
+
 	return
-}
-
-func createZetherTx(this js.Value, args []js.Value) interface{} {
-	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-
-		if len(args) != 2 || args[0].Type() != js.TypeObject || args[1].Type() != js.TypeFunction {
-			return nil, errors.New("Argument must be a string and a callback")
-		}
-
-		txData := &zetherTxDataBase{}
-		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
-			return nil, err
-		}
-
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, err := prepareData(txData)
-		if err != nil {
-			return nil, err
-		}
-
-		feesFinal := make([]*wizard.WizardTransactionFee, len(txData.Payloads))
-		for t, payload := range txData.Payloads {
-			feesFinal[t] = payload.Fees.WizardTransactionFee
-		}
-
-		tx, err := wizard.CreateZetherTx(transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, txData.ChainKernelHeight, txData.ChainKernelHash, publicKeyIndexes, feesFinal, ctx, func(status string) {
-			args[1].Invoke(status)
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		txJson, err := json.Marshal(tx)
-		if err != nil {
-			return nil, err
-		}
-
-		return []interface{}{
-			webassembly_utils.ConvertBytes(txJson),
-			webassembly_utils.ConvertBytes(tx.Bloom.Serialized),
-		}, nil
-	})
 }

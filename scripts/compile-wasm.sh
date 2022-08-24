@@ -1,5 +1,5 @@
 buildFlag="pandora-pay/config.BUILD_VERSION"
-frontend="../PandoraPay-wallet/"
+frontend="../../PandoraPay-wallet/"
 mainWasmOutput="PandoraPay-wallet-main.wasm"
 helperWasmOutput="PandoraPay-wallet-helper.wasm"
 
@@ -24,10 +24,10 @@ fi
 
 if [[ "$*" == *main* ]]; then
   buildOutput+="main"
-  src="./webassembly/"
+  src="./builds/webassembly/"
 elif [[ "$*" == *helper* ]]; then
   buildOutput+="helper"
-  src="./webassembly_helper/"
+  src="./builds/webassembly_helper/"
 else
   echo "argument main|helper missing"
   exit 1

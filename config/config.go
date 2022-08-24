@@ -105,13 +105,6 @@ var (
 	NETWORK_KNOWN_NODES_LIST_RETURN       = 100
 )
 
-func StartConfig() {
-	rand.Seed(time.Now().UnixNano())
-	CPU_THREADS = runtime.GOMAXPROCS(0)
-	ARCHITECTURE = runtime.GOARCH
-	OS = runtime.GOOS
-}
-
 func InitConfig() (err error) {
 
 	if globals.Arguments["--network"] == "mainnet" {
@@ -199,4 +192,11 @@ func InitConfig() (err error) {
 	}
 
 	return
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+	CPU_THREADS = runtime.GOMAXPROCS(0)
+	ARCHITECTURE = runtime.GOARCH
+	OS = runtime.GOOS
 }

@@ -6,9 +6,8 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
-	balance_decryptor "pandora-pay/cryptography/crypto/balance-decryptor"
+	"pandora-pay/cryptography/crypto/balance_decryptor"
 	"pandora-pay/helpers/generics"
-	"runtime"
 )
 
 type AddressBalanceDecryptor struct {
@@ -60,7 +59,7 @@ func (decryptor *AddressBalanceDecryptor) DecryptBalance(decryptionName string, 
 	return foundWork.result.decryptedBalance, nil
 }
 
-func NewAddressBalanceDecryptor() (*AddressBalanceDecryptor, error) {
+func NewAddressBalanceDecryptor(useStore bool) (*AddressBalanceDecryptor, error) {
 
 	threadsCount := config.CPU_THREADS
 	if config.LIGHT_COMPUTATIONS {
@@ -75,7 +74,7 @@ func NewAddressBalanceDecryptor() (*AddressBalanceDecryptor, error) {
 		make(chan *addressBalanceDecryptorWork, 1),
 	}
 
-	if runtime.GOARCH != "wasm" {
+	if useStore {
 		if err := addressBalanceDecryptor.loadFromStore(); err != nil {
 			return nil, err
 		}
@@ -89,7 +88,7 @@ func NewAddressBalanceDecryptor() (*AddressBalanceDecryptor, error) {
 		worker.start()
 	}
 
-	if runtime.GOARCH != "wasm" {
+	if useStore {
 		go addressBalanceDecryptor.saveToStore()
 	}
 

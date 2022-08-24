@@ -4,8 +4,8 @@ import (
 	"encoding/base64"
 	"pandora-pay/app"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/builds/webassembly/webassembly_utils"
 	"pandora-pay/helpers"
-	"pandora-pay/webassembly/webassembly_utils"
 	"syscall/js"
 )
 
