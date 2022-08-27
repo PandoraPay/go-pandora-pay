@@ -1,5 +1,5 @@
 buildFlag="pandora-pay/config.BUILD_VERSION"
-frontend="../../PandoraPay-wallet/"
+frontend="../PandoraPay-wallet/"
 mainWasmOutput="PandoraPay-wallet-main.wasm"
 helperWasmOutput="PandoraPay-wallet-helper.wasm"
 
