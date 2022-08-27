@@ -5,9 +5,9 @@ package start
 
 import (
 	"fmt"
-	"market/helpers/recovery"
 	"os"
 	"pandora-pay/gui"
+	"pandora-pay/recovery"
 )
 
 func saveError(err error) {
