@@ -58,7 +58,7 @@ func StartMainNow() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "txs validator initialized")
 
-	if app.AddressBalanceDecryptor, err = address_balance_decryptor.NewAddressBalanceDecryptor(true); err != nil {
+	if app.AddressBalanceDecryptor, err = address_balance_decryptor.NewAddressBalanceDecryptor(runtime.GOARCH != "wasm"); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "address balance decryptor validator initialized")
