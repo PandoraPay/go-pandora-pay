@@ -1,4 +1,6 @@
-output="./bin/pandora"
+cd ./builds/electron_helper || exit
+
+output="./bin/pandora-electron-helper"
 
 #linux
 echo "build linux..."

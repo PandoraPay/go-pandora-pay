@@ -1,6 +1,10 @@
 ### Scripts
 
-`scripts/compile-wasm.sh` compiles to WASM
+`scripts/build.sh` build binaries
+
+`scripts/build-wasm.sh` builds WASM files for wallet app
+
+`scripts/build-electron-helper.sh` builds binaries for electron app
 
 `scripts/create-testnet.sh` creates a new testnet, but it will require some parameters
 
