@@ -18,6 +18,7 @@
 
 # Remove local storage
 /_build
+/bin
 
 # Remove certificates
 ./certificate.crt
