@@ -16,7 +16,7 @@ gitVersion=$(git log -n1 --format=format:"%H")
 gitVersionShort=${gitVersion:0:12}
 
 src=""
-buildOutput="./dist/"
+buildOutput="./bin/"
 
 if [[ "$*" == *test* ]]; then
     cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" "${buildOutput}/wasm_exec.js"
