@@ -39,13 +39,13 @@ func (api *APICommon) GetList(reply *APINetworkNodesReply) (err error) {
 		includedMap := make(map[string]bool)
 
 		//1st my address
-		if config.NETWORK_ADDRESS_URL_STRING != "" {
+		if config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING != "" {
 			newTemporaryList.Nodes[0] = &APINetworkNode{
-				config.NETWORK_ADDRESS_URL_STRING,
+				config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING,
 				3000,
 			}
 			index = 1
-			includedMap[config.NETWORK_ADDRESS_URL_STRING] = true
+			includedMap[config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING] = true
 		}
 
 		//50% top

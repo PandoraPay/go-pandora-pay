@@ -100,9 +100,10 @@ var (
 )
 
 var (
-	NETWORK_ADDRESS_URL_STRING      string
-	NETWORK_KNOWN_NODES_LIMIT       int32 = 5000
-	NETWORK_KNOWN_NODES_LIST_RETURN       = 100
+	NETWORK_ADDRESS_URL_STRING           string
+	NETWORK_WEBSOCKET_ADDRESS_URL_STRING string
+	NETWORK_KNOWN_NODES_LIMIT            int32 = 5000
+	NETWORK_KNOWN_NODES_LIST_RETURN            = 100
 )
 
 func InitConfig() (err error) {
@@ -162,14 +163,11 @@ func InitConfig() (err error) {
 
 	if NETWORK_SELECTED == TEST_NET_NETWORK_BYTE || NETWORK_SELECTED == DEV_NET_NETWORK_BYTE {
 
-		if globals.Arguments["--hcaptcha-site-key"] != nil {
-			HCAPTCHA_SITE_KEY = globals.Arguments["--hcaptcha-site-key"].(string)
-		}
 		if globals.Arguments["--hcaptcha-secret"] != nil {
 			HCAPTCHA_SECRET_KEY = globals.Arguments["--hcaptcha-secret"].(string)
 		}
 
-		if HCAPTCHA_SECRET_KEY != "" && HCAPTCHA_SITE_KEY != "" && globals.Arguments["--faucet-testnet-enabled"] == "true" {
+		if HCAPTCHA_SECRET_KEY != "" && globals.Arguments["--faucet-testnet-enabled"] == "true" {
 			FAUCET_TESTNET_ENABLED = true
 		}
 

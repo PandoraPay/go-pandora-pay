@@ -18,7 +18,7 @@ type WebsocketServer struct {
 	knownNodes *known_nodes.KnownNodes
 }
 
-func (wserver *WebsocketServer) handleUpgradeConnection(w http.ResponseWriter, r *http.Request) {
+func (wserver *WebsocketServer) HandleUpgradeConnection(w http.ResponseWriter, r *http.Request) {
 
 	if atomic.LoadInt64(&wserver.websockets.serverSockets) >= config.WEBSOCKETS_NETWORK_SERVER_MAX {
 		http.Error(w, "Too many websockets", 400)
@@ -54,8 +54,6 @@ func NewWebsocketServer(websockets *Websockets, knownNodes *known_nodes.KnownNod
 		websockets: websockets,
 		knownNodes: knownNodes,
 	}
-
-	http.HandleFunc("/ws", wserver.handleUpgradeConnection)
 
 	return wserver
 }
