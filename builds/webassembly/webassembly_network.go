@@ -325,17 +325,17 @@ func getNetworkAssetInfo(this js.Value, args []js.Value) interface{} {
 func getNetworkAsset(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		hash, err := base64.StdEncoding.DecodeString(args[1].String())
+		request := &api_common.APIAssetInfoRequest{}
+		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
+			return nil, err
+		}
+
+		final, err := connection.SendJSONAwaitAnswer[api_common.APIAssetReply](app.Network.Websockets.GetFirstSocket(), []byte("asset"), &api_common.APIAssetRequest{request.Height, request.Hash, api_types.RETURN_SERIALIZED}, nil, 0)
 		if err != nil {
 			return nil, err
 		}
 
-		final, err := connection.SendJSONAwaitAnswer[api_common.APIAssetReply](app.Network.Websockets.GetFirstSocket(), []byte("asset"), &api_common.APIAssetRequest{uint64(args[0].Int()), hash, api_types.RETURN_SERIALIZED}, nil, 0)
-		if err != nil {
-			return nil, err
-		}
-
-		ast := asset.NewAsset(hash, 0)
+		ast := asset.NewAsset(request.Hash, 0)
 		if err = ast.Deserialize(helpers.NewBufferReader(final.Serialized)); err != nil {
 			return nil, err
 		}
