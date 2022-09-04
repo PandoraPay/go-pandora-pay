@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Challenge</title>
+        <script src="vue.global.js"></script>
+        <script src="hcaptcha-vue3.umd.js"></script>
+    </head>
+    <body>
+        <div id="app">
+            Please solve captcha below...
+            <vue-hcaptcha sitekey="10000000-ffff-ffff-ffff-000000000001" @error="onError" @verify="onVerify"></vue-hcaptcha>
+            <template v-if="error" style="color: red">
+                Error {{ error }}
+            </template>
+            <template v-if="showResult && solution">
+                Copy and Paste this token: <br/>
+                <textarea cols="100" rows="5">{{solution}}</textarea>
+            </template>
+        </div>
+    </body>
+    <script type="module">
+        function getSearchParameters() {
+            const prmstr = window.location.search.substr(1);
+            return prmstr != null && prmstr != "" ? transformToAssocArray(prmstr) : {};
+        }
+
+        function transformToAssocArray( prmstr ) {
+            const params = {};
+            const prmarr = prmstr.split("&");
+            for ( var i = 0; i < prmarr.length; i++) {
+                const tmparr = prmarr[i].split("=");
+                params[tmparr[0]] = tmparr[1];
+            }
+            return params;
+        }
+
+        const params = getSearchParameters();
+        console.log(params)
+
+        Vue.createApp({
+            data(){
+                return{
+                    error: "",
+                    showResult: params.showResult && params.showResult === "true",
+                    solution: ""
+                }
+            },
+            methods:{
+                onError(e){
+                    this.error = e
+                },
+                onVerify(token, eKey) {
+                    this.solution = token
+                    console.log("solution", token)
+                    window.top.postMessage({type: "solution", solution: token}, "*")
+                }
+            },
+        }).component('VueHcaptcha', VueHcaptcha)
+        .mount('#app')
+    </script>
+</html>

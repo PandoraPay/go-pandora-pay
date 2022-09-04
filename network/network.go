@@ -47,7 +47,6 @@ func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempo
 		MempoolSync:    mempool_sync.NewMempoolSync(tcpServer.HttpServer.Websockets),
 		KnownNodesSync: known_nodes_sync.NewNodesKnownSync(tcpServer.HttpServer.Websockets, knownNodes),
 	}
-	tcpServer.HttpServer.Initialize()
 
 	network.continuouslyConnectNewPeers()
 
