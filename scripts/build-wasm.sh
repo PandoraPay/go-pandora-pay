@@ -105,6 +105,8 @@ if [[ "$*" == *build* ]]; then
     stat --printf="brotli size %s \n" ${buildOutput}.br
     echo "Copy to frontend/dist..."
     cp ${buildOutput}.br ${finalOutput}.br
+  else
+    rm ${finalOutput}.br 2>/dev/null
   fi
 
   if [[ "$*" == *zopfli* ]]; then
@@ -122,6 +124,8 @@ if [[ "$*" == *build* ]]; then
     stat --printf="gzip size %s \n" ${buildOutput}.gz
     echo "Copy to frontend/build..."
     cp ${buildOutput}.gz ${finalOutput}.gz
+  else
+    rm ${finalOutput}.gz 2>/dev/null
   fi
 
 fi
