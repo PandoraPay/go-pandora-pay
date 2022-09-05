@@ -9,6 +9,7 @@ import (
 	"pandora-pay/network/api/api_http"
 	"pandora-pay/network/api/api_websockets"
 	"pandora-pay/network/banned_nodes"
+	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/server/node_http_rpc"
 	"pandora-pay/network/websocks"
@@ -28,7 +29,7 @@ type HttpServer struct {
 	PostMap         map[string]func(values io.ReadCloser) (any, error)
 }
 
-func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, wallet *wallet.Wallet, txsValidator *txs_validator.TxsValidator, txsBuilder *txs_builder.TxsBuilder) (*HttpServer, error) {
+func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, wallet *wallet.Wallet, txsValidator *txs_validator.TxsValidator, txsBuilder *txs_builder.TxsBuilder) (*HttpServer, error) {
 
 	apiStore := api_common.NewAPIStore(chain)
 	apiCommon, err := api_common.NewAPICommon(knownNodes, mempool, chain, wallet, txsValidator, txsBuilder, apiStore)
@@ -39,10 +40,10 @@ func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, ba
 	apiWebsockets := api_websockets.NewWebsocketsAPI(apiStore, apiCommon, chain, settings, mempool, txsValidator)
 	api := api_http.NewAPI(apiStore, apiCommon, chain)
 
-	websockets := websocks.NewWebsockets(chain, mempool, settings, bannedNodes, api, apiWebsockets)
+	websockets := websocks.NewWebsockets(chain, mempool, settings, connectedNodes, knownNodes, bannedNodes, api, apiWebsockets)
 
 	server := &HttpServer{
-		websocketServer: websocks.NewWebsocketServer(websockets, knownNodes),
+		websocketServer: websocks.NewWebsocketServer(websockets, connectedNodes, knownNodes),
 		Websockets:      websockets,
 		GetMap:          make(map[string]func(values url.Values) (any, error)),
 		PostMap:         make(map[string]func(values io.ReadCloser) (any, error)),

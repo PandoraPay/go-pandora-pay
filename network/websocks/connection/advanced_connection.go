@@ -10,7 +10,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
-	"pandora-pay/network/known_nodes"
+	"pandora-pay/network/known_nodes/known_node"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 	"sync"
@@ -29,24 +29,25 @@ const (
 var uuidGenerator uint32 //use atomic
 
 type AdvancedConnection struct {
-	Authenticated          *abool.AtomicBool
-	UUID                   advanced_connection_types.UUID
-	Conn                   *websocket.Conn
-	Handshake              *ConnectionHandshake
-	Version                *semver.Version
-	KnownNode              *known_nodes.KnownNodeScored
-	RemoteAddr             string
-	answerCounter          uint32
-	Closed                 chan struct{}
-	InitializedStatus      InitializedStatusType //use the mutex
-	InitializedStatusMutex *sync.Mutex
-	IsClosed               *abool.AtomicBool
-	getMap                 map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)
-	answerMap              map[uint32]chan *advanced_connection_types.AdvancedConnectionReply
-	answerMapLock          *sync.Mutex
-	Subscriptions          *Subscriptions
-	ConnectionType         bool
-	onClosedConnection     func(c *AdvancedConnection)
+	Authenticated            *abool.AtomicBool
+	UUID                     advanced_connection_types.UUID
+	Conn                     *websocket.Conn
+	Handshake                *ConnectionHandshake
+	Version                  *semver.Version
+	KnownNode                *known_node.KnownNodeScored
+	RemoteAddr               string
+	answerCounter            uint32
+	Closed                   chan struct{}
+	InitializedStatus        InitializedStatusType //use the mutex
+	InitializedStatusMutex   *sync.Mutex
+	IsClosed                 *abool.AtomicBool
+	getMap                   map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)
+	answerMap                map[uint32]chan *advanced_connection_types.AdvancedConnectionReply
+	answerMapLock            *sync.Mutex
+	Subscriptions            *Subscriptions
+	ConnectionType           bool
+	onClosedConnection       func(c *AdvancedConnection)
+	onIncreaseKnownNodeScore func(knownNode *known_node.KnownNodeScored, delta int32, isServer bool) bool
 }
 
 func (c *AdvancedConnection) GetTimeout() time.Duration {
@@ -320,14 +321,14 @@ func (c *AdvancedConnection) IncreaseKnownNodeScore() {
 			return
 		}
 
-		if c.KnownNode.IncreaseScore(1, c.ConnectionType) {
+		if !c.onIncreaseKnownNodeScore(c.KnownNode, 1, c.ConnectionType) {
 			break
 		}
 	}
 
 }
 
-func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification, onClosedConnection func(c *AdvancedConnection)) (*AdvancedConnection, error) {
+func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *known_node.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification, onClosedConnection func(*AdvancedConnection), onIncreaseKnownNodeScore func(*known_node.KnownNodeScored, int32, bool) bool) (*AdvancedConnection, error) {
 
 	//making sure u is not collided with UUID_ALL and UUID_SKIP_ALL
 	uuid := advanced_connection_types.UUID(atomic.AddUint32(&uuidGenerator, 1))
@@ -354,6 +355,7 @@ func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *k
 		nil,
 		connectionType,
 		onClosedConnection,
+		onIncreaseKnownNodeScore,
 	}
 	advancedConnection.Subscriptions = NewSubscriptions(advancedConnection, newSubscriptionCn, removeSubscriptionCn)
 	return advancedConnection, nil
