@@ -120,7 +120,7 @@ func (m *Heap) downHeapify(current uint64) (err error) {
 	return
 }
 
-//https://stackoverflow.com/a/12664523/14319261
+// https://stackoverflow.com/a/12664523/14319261
 func (m *Heap) Delete(index uint64) error {
 
 	element, err := m.removeElement()
@@ -128,7 +128,7 @@ func (m *Heap) Delete(index uint64) error {
 		return err
 	}
 
-	if index == m.GetSize() {
+	if index == m.GetSize() || m.GetSize() == 0 {
 		return nil
 	}
 
@@ -176,16 +176,18 @@ func (m *Heap) GetTop() (*HeapElement, error) {
 	return m.getElement(0)
 }
 
-/**
+/*
 Minheap
-func (a,b uint64) bool{
-	return a < b
-}
+
+	func (a,b uint64) bool{
+		return a < b
+	}
 
 Maxheap
-func (a,b uint64) bool{
-	return b < a
-}
+
+	func (a,b uint64) bool{
+		return b < a
+	}
 */
 func NewHeap(compare func(a, b float64) bool) *Heap {
 	return &Heap{

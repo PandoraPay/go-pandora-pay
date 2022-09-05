@@ -73,6 +73,10 @@ func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, na
 
 	heap.removeElement = func() (*HeapElement, error) {
 
+		if hashMap.Count == 0 {
+			return nil, nil
+		}
+
 		index := hashMap.Count - 1
 
 		x, err := heap.getElement(index)

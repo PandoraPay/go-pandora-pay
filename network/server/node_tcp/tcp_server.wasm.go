@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/mempool"
 	"pandora-pay/network/banned_nodes"
+	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/server/node_http"
 	"pandora-pay/settings"

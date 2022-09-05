@@ -51,6 +51,10 @@ func NewHeapMemory(compare func(a, b float64) bool) *HeapMemory {
 	}
 	heap.removeElement = func() (*HeapElement, error) {
 
+		if size == 0 {
+			return nil, nil
+		}
+
 		size -= 1
 
 		x := array[size]
