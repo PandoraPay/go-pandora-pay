@@ -4,17 +4,17 @@ import (
 	"context"
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
-	"pandora-pay/network/known_nodes"
+	"pandora-pay/network/known_nodes/known_node"
 	"pandora-pay/network/websocks/connection"
 )
 
 type WebsocketClient struct {
-	knownNode  *known_nodes.KnownNodeScored
+	knownNode  *known_node.KnownNodeScored
 	conn       *connection.AdvancedConnection
 	websockets *Websockets
 }
 
-func NewWebsocketClient(websockets *Websockets, knownNode *known_nodes.KnownNodeScored) (*WebsocketClient, error) {
+func NewWebsocketClient(websockets *Websockets, knownNode *known_node.KnownNodeScored) (*WebsocketClient, error) {
 
 	wsClient := &WebsocketClient{
 		knownNode:  knownNode,

@@ -1,4 +1,4 @@
-package known_nodes
+package known_node
 
 import (
 	"sync/atomic"
@@ -20,24 +20,25 @@ func (self *KnownNodeScored) IncreaseScore(delta int32, isServer bool) bool {
 
 	if newScore > 100 && !isServer {
 		atomic.StoreInt32(&self.Score, 100)
-		return true
+		return false
 	}
 	if newScore > 300 && isServer {
 		atomic.StoreInt32(&self.Score, 300)
-		return true
+		return false
 	}
 
-	return false
+	return true
 }
 
-func (self *KnownNodeScored) DecreaseScore(delta int32, isServer bool) bool {
+func (self *KnownNodeScored) DecreaseScore(delta int32, isServer bool) (bool, bool) {
 
 	newScore := atomic.AddInt32(&self.Score, delta)
 	if newScore < -100 {
 		if !self.IsSeed {
-			return true
+			return true, true
 		}
 		atomic.StoreInt32(&self.Score, -100)
+		return false, false
 	}
-	return false
+	return true, false
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"nhooyr.io/websocket"
 	"pandora-pay/config"
+	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/recovery"
@@ -14,13 +15,14 @@ import (
 )
 
 type WebsocketServer struct {
-	websockets *Websockets
-	knownNodes *known_nodes.KnownNodes
+	websockets     *Websockets
+	connectedNodes *connected_nodes.ConnectedNodes
+	knownNodes     *known_nodes.KnownNodes
 }
 
 func (wserver *WebsocketServer) HandleUpgradeConnection(w http.ResponseWriter, r *http.Request) {
 
-	if atomic.LoadInt64(&wserver.websockets.serverSockets) >= config.WEBSOCKETS_NETWORK_SERVER_MAX {
+	if atomic.LoadInt64(&wserver.connectedNodes.ServerSockets) >= config.WEBSOCKETS_NETWORK_SERVER_MAX {
 		http.Error(w, "Too many websockets", 400)
 		return
 	}
@@ -48,11 +50,12 @@ func (wserver *WebsocketServer) HandleUpgradeConnection(w http.ResponseWriter, r
 
 }
 
-func NewWebsocketServer(websockets *Websockets, knownNodes *known_nodes.KnownNodes) *WebsocketServer {
+func NewWebsocketServer(websockets *Websockets, connectedNodes *connected_nodes.ConnectedNodes, knownNodes *known_nodes.KnownNodes) *WebsocketServer {
 
 	wserver := &WebsocketServer{
-		websockets: websockets,
-		knownNodes: knownNodes,
+		websockets,
+		connectedNodes,
+		knownNodes,
 	}
 
 	return wserver

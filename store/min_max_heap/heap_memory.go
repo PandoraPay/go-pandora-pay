@@ -13,7 +13,20 @@ func (self *HeapMemory) DeleteByKey(key []byte) error {
 		return errors.New("Key is not found")
 	}
 
-	return self.Delete(value)
+	if err := self.Delete(value); err != nil {
+		return err
+	}
+
+	delete(self.dict, string(key))
+	return nil
+}
+
+func (self *HeapMemory) Update(score float64, key []byte) error {
+	value, ok := self.dict[string(key)]
+	if ok {
+		return self.Delete(value)
+	}
+	return self.Insert(score, key)
 }
 
 func NewHeapMemory(compare func(a, b float64) bool) *HeapMemory {
@@ -37,6 +50,7 @@ func NewHeapMemory(compare func(a, b float64) bool) *HeapMemory {
 		return nil
 	}
 	heap.removeElement = func() (*HeapElement, error) {
+
 		size -= 1
 
 		x := array[size]
@@ -46,6 +60,9 @@ func NewHeapMemory(compare func(a, b float64) bool) *HeapMemory {
 		return x, nil
 	}
 	heap.getElement = func(index uint64) (*HeapElement, error) {
+		if index >= uint64(len(array)) {
+			return nil, nil
+		}
 		return array[index], nil
 	}
 	heap.GetSize = func() uint64 {
@@ -56,4 +73,16 @@ func NewHeapMemory(compare func(a, b float64) bool) *HeapMemory {
 		heap,
 		dict,
 	}
+}
+
+func NewMinMemoryHeap(name string) *HeapMemory {
+	return NewHeapMemory(func(a, b float64) bool {
+		return a < b
+	})
+}
+
+func NewMaxMemoryHeap() *HeapMemory {
+	return NewHeapMemory(func(a, b float64) bool {
+		return b < a
+	})
 }
