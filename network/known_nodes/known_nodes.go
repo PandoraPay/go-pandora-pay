@@ -26,11 +26,12 @@ type KnownNodes struct {
 
 func (self *KnownNodes) GetList() []*known_node.KnownNodeScored {
 	self.knownListMutex.RLock()
+	defer self.knownListMutex.RUnlock()
+
 	knownList := make([]*known_node.KnownNodeScored, len(self.knownList))
 	for i, knowNode := range self.knownList {
 		knownList[i] = knowNode
 	}
-	self.knownListMutex.RUnlock()
 
 	return knownList
 }
@@ -51,32 +52,35 @@ func (self *KnownNodes) GetBestNotConnectedKnownNode() *known_node.KnownNodeScor
 	if top == nil {
 		return nil
 	}
+	if top.Score == float64(known_node.KNOWN_KNODE_SCORE_MINIMUM) {
+		return self.GetRandomKnownNode()
+	}
 	knownNode, _ := self.knownMap.Load(string(top.Key))
 	return knownNode
 }
 
 func (self *KnownNodes) IncreaseKnownNodeScore(knownNode *known_node.KnownNodeScored, delta int32, isServer bool) bool {
-	update := knownNode.IncreaseScore(delta, isServer)
+	update, score := knownNode.IncreaseScore(delta, isServer)
 	if update {
 		self.knownNotConnectedMaxHeapMutex.Lock()
-		self.knownNotConnectedMaxHeap.Update(float64(knownNode.Score), []byte(knownNode.URL))
-		self.knownNotConnectedMaxHeapMutex.Unlock()
+		defer self.knownNotConnectedMaxHeapMutex.Unlock()
+		self.knownNotConnectedMaxHeap.Update(float64(score), []byte(knownNode.URL))
 	}
 	return update
 }
 
 func (self *KnownNodes) DecreaseKnownNodeScore(knownNode *known_node.KnownNodeScored, delta int32, isServer bool) (bool, bool) {
-	update, removed := knownNode.DecreaseScore(delta, isServer)
+	update, removed, score := knownNode.DecreaseScore(delta, isServer)
 	if removed {
 		self.RemoveKnownNode(knownNode)
 	}
 	if update || removed {
 		self.knownNotConnectedMaxHeapMutex.Lock()
+		defer self.knownNotConnectedMaxHeapMutex.Unlock()
 		self.knownNotConnectedMaxHeap.DeleteByKey([]byte(knownNode.URL))
 		if !removed {
-			self.knownNotConnectedMaxHeap.Insert(float64(knownNode.Score), []byte(knownNode.URL))
+			self.knownNotConnectedMaxHeap.Insert(float64(score), []byte(knownNode.URL))
 		}
-		self.knownNotConnectedMaxHeapMutex.Unlock()
 	}
 	return update, removed
 }
@@ -90,7 +94,7 @@ func (self *KnownNodes) MarkKnownNodeConnected(knownNode *known_node.KnownNodeSc
 func (self *KnownNodes) MarkKnownNodeDisconnected(knownNode *known_node.KnownNodeScored) {
 	self.knownNotConnectedMaxHeapMutex.Lock()
 	defer self.knownNotConnectedMaxHeapMutex.Unlock()
-	self.knownNotConnectedMaxHeap.Update(float64(knownNode.Score), []byte(knownNode.URL))
+	self.knownNotConnectedMaxHeap.Update(float64(atomic.LoadInt32(&knownNode.Score)), []byte(knownNode.URL))
 }
 
 func (self *KnownNodes) AddKnownNode(url string, isSeed bool) (*known_node.KnownNodeScored, error) {

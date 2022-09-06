@@ -14,31 +14,33 @@ type KnownNodeScored struct {
 	Score int32 //use atomic
 }
 
-func (self *KnownNodeScored) IncreaseScore(delta int32, isServer bool) bool {
+var KNOWN_KNODE_SCORE_MINIMUM = int32(-1000)
+
+func (self *KnownNodeScored) IncreaseScore(delta int32, isServer bool) (bool, int32) {
 
 	newScore := atomic.AddInt32(&self.Score, delta)
 
 	if newScore > 100 && !isServer {
 		atomic.StoreInt32(&self.Score, 100)
-		return false
+		return false, 100
 	}
 	if newScore > 300 && isServer {
 		atomic.StoreInt32(&self.Score, 300)
-		return false
+		return false, 100
 	}
 
-	return true
+	return true, newScore
 }
 
-func (self *KnownNodeScored) DecreaseScore(delta int32, isServer bool) (bool, bool) {
+func (self *KnownNodeScored) DecreaseScore(delta int32, isServer bool) (bool, bool, int32) {
 
 	newScore := atomic.AddInt32(&self.Score, delta)
-	if newScore < -100 {
+	if newScore < KNOWN_KNODE_SCORE_MINIMUM {
 		if !self.IsSeed {
-			return true, true
+			return true, true, KNOWN_KNODE_SCORE_MINIMUM
 		}
-		atomic.StoreInt32(&self.Score, -100)
-		return false, false
+		atomic.StoreInt32(&self.Score, KNOWN_KNODE_SCORE_MINIMUM)
+		return true, false, KNOWN_KNODE_SCORE_MINIMUM
 	}
-	return true, false
+	return true, false, newScore
 }

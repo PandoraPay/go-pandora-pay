@@ -111,6 +111,10 @@ func TestCreateMaxHeapMemory2(t *testing.T) {
 		final2 += el.Score
 	}
 	assert.Equal(t, sum(x), final2)
+
+	top, err := maxHeap.GetTop()
+	assert.Nil(t, top)
+	assert.Nil(t, err)
 }
 
 func TestCreateMinHeapMemory(t *testing.T) {
@@ -150,4 +154,8 @@ func TestCreateMinHeapMemory(t *testing.T) {
 		final2 += el.Score
 	}
 	assert.Equal(t, sum(x), final2)
+
+	top, err := minHeap.GetTop()
+	assert.Nil(t, top)
+	assert.Nil(t, err)
 }

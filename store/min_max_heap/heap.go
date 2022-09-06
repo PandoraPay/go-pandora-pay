@@ -99,15 +99,15 @@ func (m *Heap) downHeapify(current uint64) (err error) {
 	}
 
 	if rightRightIndex < m.GetSize() {
-		if m.compare(a.Score, b.Score) {
-			if a, err = m.getElement(rightRightIndex); err != nil {
-				return
-			}
-			if b, err = m.getElement(smallest); err != nil {
-				return
-			}
+		if a, err = m.getElement(rightRightIndex); err != nil {
+			return
 		}
-		smallest = rightRightIndex
+		if b, err = m.getElement(smallest); err != nil {
+			return
+		}
+		if m.compare(a.Score, b.Score) {
+			smallest = rightRightIndex
+		}
 	}
 	if smallest != current {
 		if err = m.swap(current, smallest); err != nil {
@@ -123,36 +123,38 @@ func (m *Heap) downHeapify(current uint64) (err error) {
 // https://stackoverflow.com/a/12664523/14319261
 func (m *Heap) Delete(index uint64) error {
 
-	element, err := m.removeElement()
-	if err != nil {
+	if m.GetSize() == 0 {
+		return nil
+	}
+
+	if m.GetSize() == 1 {
+		_, err := m.removeElement()
 		return err
 	}
 
-	if index == m.GetSize() || m.GetSize() == 0 {
-		return nil
+	element, err := m.removeElement()
+	if err != nil {
+		return err
 	}
 
 	if err = m.updateElement(index, element); err != nil {
 		return err
 	}
 
-	if index > 0 {
-		middle, err := m.getElement((index - 1) / 2)
+	if index > 1 {
+		p, err := m.getElement(m.parent(index))
 		if err != nil {
 			return err
 		}
 
-		if index > 0 && m.compare(middle.Score, element.Score) {
+		if m.compare(element.Score, p.Score) {
 			return m.upHeapify(index)
+		} else {
+			return m.downHeapify(index)
 		}
-
 	}
 
-	if index < m.GetSize()/2 {
-		return m.downHeapify(index)
-	}
-
-	return nil
+	return m.downHeapify(0)
 }
 
 func (m *Heap) RemoveTop() (*HeapElement, error) {

@@ -22,26 +22,24 @@ func (network *Network) continuouslyConnectingNewPeers() {
 			}
 
 			knownNode := network.KnownNodes.GetBestNotConnectedKnownNode()
-			if knownNode == nil {
-				continue
-			}
 
 			if knownNode != nil {
 
+				//gui.GUI.Log("connecting to", knownNode.URL, atomic.LoadInt32(&knownNode.Score))
+
 				if network.BannedNodes.IsBanned(knownNode.URL) {
 					network.KnownNodes.DecreaseKnownNodeScore(knownNode, -10, false)
-					continue //banned already
-				}
-
-				_, err := websocks.NewWebsocketClient(network.Websockets, knownNode)
-				if err != nil {
-
-					if err.Error() != "Already connected" {
-						network.KnownNodes.DecreaseKnownNodeScore(knownNode, -20, false)
-					}
-
 				} else {
-					gui.GUI.Log("connected to: " + knownNode.URL)
+					_, err := websocks.NewWebsocketClient(network.Websockets, knownNode)
+					if err != nil {
+
+						if err.Error() != "Already connected" {
+							network.KnownNodes.DecreaseKnownNodeScore(knownNode, -20, false)
+						}
+
+					} else {
+						gui.GUI.Log("connected to: " + knownNode.URL)
+					}
 				}
 			}
 
