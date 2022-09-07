@@ -3,6 +3,7 @@ module pandora-pay
 go 1.19
 
 require (
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/blang/semver/v4 v4.0.0
 	github.com/docopt/docopt.go v0.0.0-20180111231733-ee0de3bc6815
 	github.com/gizak/termui/v3 v3.1.0
@@ -10,6 +11,7 @@ require (
 	github.com/gorilla/schema v1.2.0
 	github.com/mackerelio/go-osstat v0.1.0
 	github.com/mr-tron/base58 v1.2.0
+	github.com/rs/cors v1.8.2
 	github.com/stretchr/testify v1.7.0
 	github.com/tevino/abool v1.2.0
 	github.com/tidwall/buntdb v1.2.3
@@ -34,7 +36,6 @@ require (
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/nsf/termbox-go v0.0.0-20190121233118-02980233997d // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rs/cors v1.8.2 // indirect
 	github.com/tidwall/btree v0.4.2 // indirect
 	github.com/tidwall/gjson v1.7.4 // indirect
 	github.com/tidwall/grect v0.1.1 // indirect
