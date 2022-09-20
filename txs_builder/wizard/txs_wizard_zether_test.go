@@ -33,7 +33,7 @@ func getNewBalance(addr *addresses.Address, amount uint64) *crypto.ElGamal {
 func TestCreateZetherTx(t *testing.T) {
 
 	senderPrivateKey := addresses.GenerateNewPrivateKey()
-	senderAdress, err := senderPrivateKey.GenerateAddress(true, nil, 0, nil)
+	senderAdress, err := senderPrivateKey.GenerateAddress(false, nil, true, nil, 0, nil)
 	assert.NoError(t, err)
 
 	var amount uint64
@@ -43,7 +43,8 @@ func TestCreateZetherTx(t *testing.T) {
 
 	count := 5
 	emap := make(map[string]map[string][]byte)
-	rings := make([][]*bn256.G1, count)
+	ringsSenders := make([][]*bn256.G1, count)
+	ringsReceivers := make([][]*bn256.G1, count)
 
 	emap[config_coins.NATIVE_ASSET_FULL_STRING] = make(map[string][]byte)
 
@@ -61,42 +62,52 @@ func TestCreateZetherTx(t *testing.T) {
 	for i := range transfers {
 
 		recipientPrivateKey := addresses.GenerateNewPrivateKey()
-		recipientAddress, _ := recipientPrivateKey.GenerateAddress(true, nil, 0, nil)
+		recipientAddress, _ := recipientPrivateKey.GenerateAddress(false, nil, true, nil, 0, nil)
 
 		publicKeyIndexes[string(recipientAddress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, false, nil, recipientAddress.Registration}
-
-		transfers[i] = &WizardZetherTransfer{
-			Asset:                  config_coins.NATIVE_ASSET_FULL,
-			Sender:                 senderPrivateKey.Key,
-			SenderDecryptedBalance: amount,
-			Recipient:              recipientAddress.EncodeAddr(),
-			Amount:                 diff,
-			Burn:                   0,
-			Data:                   &WizardTransactionData{[]byte{}, false},
-		}
-		amount -= diff
 
 		power := rand.Intn(4)
 		power += 2
 		ringSize := int(math.Pow(2, float64(power)))
 
-		rings[i] = make([]*bn256.G1, ringSize)
+		transfers[i] = &WizardZetherTransfer{
+			Asset:                  config_coins.NATIVE_ASSET_FULL,
+			SenderPrivateKey:       senderPrivateKey.Key,
+			SenderDecryptedBalance: amount,
+			Recipient:              recipientAddress.EncodeAddr(),
+			Amount:                 diff,
+			Burn:                   0,
+			Data:                   &WizardTransactionData{[]byte{}, false},
+			WitnessIndexes:         helpers.ShuffleArray_for_Zether(ringSize),
+		}
+		amount -= diff
 
-		rings[i][0] = senderPoint.G1()
+		ringsSenders[i] = make([]*bn256.G1, ringSize/2)
+		ringsReceivers[i] = make([]*bn256.G1, ringSize/2)
 
-		recipientPoint, _ := recipientAddress.GetPoint()
-		rings[i][1] = recipientPoint.G1()
+		ringsSenders[i][0] = senderPoint.G1()
+
+		recipientPoint, err := recipientAddress.GetPoint()
+		assert.NoError(t, err)
+
+		ringsReceivers[i][0] = recipientPoint.G1()
 		emap[config_coins.NATIVE_ASSET_FULL_STRING][recipientPoint.G1().String()] = getNewBalance(recipientAddress, 0).Serialize()
 
-		for j := 2; j < ringSize; j++ {
-			ringMemberPrivateKey := addresses.GenerateNewPrivateKey()
-			ringMemberAddress, _ := ringMemberPrivateKey.GenerateAddress(true, nil, 0, nil)
+		for c := 0; c <= 1; c++ {
+			for j := 1; j < ringSize/2; j++ {
+				ringMemberPrivateKey := addresses.GenerateNewPrivateKey()
+				ringMemberAddress, _ := ringMemberPrivateKey.GenerateAddress(false, nil, true, nil, 0, nil)
 
-			publicKeyIndexes[string(ringMemberAddress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, false, nil, ringMemberAddress.Registration}
+				publicKeyIndexes[string(ringMemberAddress.PublicKey)] = &WizardZetherPublicKeyIndex{false, 0, false, nil, ringMemberAddress.Registration}
 
-			ringMemberPoint, _ := ringMemberAddress.GetPoint()
-			rings[i][j] = ringMemberPoint.G1()
-			emap[config_coins.NATIVE_ASSET_FULL_STRING][ringMemberPoint.G1().String()] = getNewBalance(ringMemberAddress, 0).Serialize()
+				ringMemberPoint, _ := ringMemberAddress.GetPoint()
+				if c == 0 {
+					ringsSenders[i][j] = ringMemberPoint.G1()
+				} else {
+					ringsReceivers[i][j] = ringMemberPoint.G1()
+				}
+				emap[config_coins.NATIVE_ASSET_FULL_STRING][ringMemberPoint.G1().String()] = getNewBalance(ringMemberAddress, 0).Serialize()
+			}
 		}
 
 		fees[i] = &WizardTransactionFee{0, 0, 0, false}
@@ -105,8 +116,10 @@ func TestCreateZetherTx(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	hasRollovers := make(map[string]bool)
+
 	hash := helpers.RandomBytes(32)
-	tx, err := CreateZetherTx(transfers, emap, rings, 0, hash, publicKeyIndexes, fees, true, ctx, func(status string) {})
+	tx, err := CreateZetherTx(transfers, emap, hasRollovers, ringsSenders, ringsReceivers, 0, hash, publicKeyIndexes, fees, ctx, func(status string) {})
 	assert.NoError(t, err)
 	assert.NotNil(t, t, tx)
 
