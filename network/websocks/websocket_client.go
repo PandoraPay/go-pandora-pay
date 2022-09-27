@@ -1,11 +1,9 @@
 package websocks
 
 import (
-	"context"
-	"nhooyr.io/websocket"
-	"pandora-pay/config"
 	"pandora-pay/network/known_nodes/known_node"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/network/websocks/websock"
 )
 
 type WebsocketClient struct {
@@ -21,10 +19,7 @@ func NewWebsocketClient(websockets *Websockets, knownNode *known_node.KnownNodeS
 		websockets: websockets,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
-	defer cancel()
-
-	c, _, err := websocket.Dial(ctx, knownNode.URL, nil)
+	c, err := websock.Dial(knownNode.URL)
 	if err != nil {
 		return nil, err
 	}

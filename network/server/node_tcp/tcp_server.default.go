@@ -86,6 +86,7 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 	}
 
 	bannedNodes.Ban(&url.URL{Scheme: "ws", Host: "127.0.0.1:" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
+	bannedNodes.Ban(&url.URL{Scheme: "ws", Host: address + ":" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
 
 	var certPath, keyPath string
 	if globals.Arguments["--tcp-server-tls-cert-file"] != nil {

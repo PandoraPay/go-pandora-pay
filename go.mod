@@ -9,6 +9,7 @@ require (
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/gorilla/rpc v1.2.0
 	github.com/gorilla/schema v1.2.0
+	github.com/gorilla/websocket v1.5.0
 	github.com/mackerelio/go-osstat v0.1.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/rs/cors v1.8.2
@@ -23,7 +24,6 @@ require (
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	golang.org/x/exp v0.0.0-20220317015231-48e79f11773a
 	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654
-	nhooyr.io/websocket v1.8.7
 )
 
 require (

@@ -1,15 +1,14 @@
-//go:build !wasm
-// +build !wasm
+//go:build !js
+// +build !js
 
 package websocks
 
 import (
 	"net/http"
-	"nhooyr.io/websocket"
 	"pandora-pay/config"
 	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes"
-	"pandora-pay/network/websocks/connection"
+	"pandora-pay/network/websocks/websock"
 	"pandora-pay/recovery"
 	"sync/atomic"
 )
@@ -27,17 +26,13 @@ func (wserver *WebsocketServer) HandleUpgradeConnection(w http.ResponseWriter, r
 		return
 	}
 
-	var err error
-
-	var c *websocket.Conn
-	var conn *connection.AdvancedConnection
-
-	if c, err = websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true}); err != nil {
-		//http.Error is not required because websocket.Accept will automatically send the error to the socket!
+	c, err := websock.Upgrade(w, r)
+	if err != nil {
 		return
 	}
 
-	if conn, err = wserver.websockets.NewConnection(c, r.RemoteAddr, nil, true); err != nil {
+	conn, err := wserver.websockets.NewConnection(c, r.RemoteAddr, nil, true)
+	if err != nil {
 		return
 	}
 

@@ -50,7 +50,7 @@ func (consensus *Consensus) ChainUpdateProcess(conn *connection.AdvancedConnecti
 
 	} else {
 		//let's notify him tha we have a better chain
-		conn.SendJSON([]byte("chain-update"), consensus.GetUpdateNotification(nil), nil, 0)
+		conn.SendJSON([]byte("chain-update"), consensus.GetUpdateNotification(nil), 0)
 	}
 
 	return nil, nil
