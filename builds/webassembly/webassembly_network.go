@@ -125,10 +125,7 @@ func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
 
 		for i, it := range data.AccSerialized {
 			if it != nil {
-				if data.Acc[i], err = account.NewAccountClear(request.Keys[i].PublicKey, 0, request.Asset); err != nil {
-					return nil, err
-				}
-
+				data.Acc[i] = account.NewAccountClear(request.Keys[i].PublicKey, 0, request.Asset)
 				if err = data.Acc[i].Deserialize(helpers.NewBufferReader(it)); err != nil {
 					return nil, err
 				}

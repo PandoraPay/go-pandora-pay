@@ -30,7 +30,7 @@ func (api *APICommon) GetAsset(r *http.Request, args *APIAssetRequest, reply *AP
 			}
 		}
 
-		reply.Asset, err = assets.NewAssets(reader).GetAsset(args.Hash)
+		reply.Asset, err = assets.NewAssets(reader).Get(string(args.Hash))
 		return
 	}); err != nil || reply.Asset == nil {
 		return helpers.ReturnErrorIfNot(err, "Asset was not found")

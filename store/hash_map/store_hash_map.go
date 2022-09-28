@@ -5,39 +5,41 @@ import (
 	"errors"
 	"math/rand"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
 
-type HashMap struct {
+type HashMap[T HashMapElementSerializableInterface] struct {
+	HashMapInterface
 	name           string
 	Tx             store_db_interface.StoreDBTransactionInterface
 	Count          uint64
 	countCommitted uint64
-	Changes        map[string]*ChangesMapElement
+	Changes        map[string]*ChangesMapElement[T]
 	changed        bool
-	changesSize    map[string]*ChangesMapElement //used for computing the
-	Committed      map[string]*CommittedMapElement
+	changesSize    map[string]*ChangesMapElement[T] //used for computing the
+	Committed      map[string]*CommittedMapElement[T]
 	keyLength      int
-	CreateObject   func(key []byte, index uint64) (HashMapElementSerializableInterface, error)
-	DeletedEvent   func([]byte) error
-	StoredEvent    func([]byte, *CommittedMapElement) error
+	CreateObject   func(key []byte, index uint64) (T, error)
+	DeletedEvent   func(key []byte) error
+	StoredEvent    func(key []byte, committed *CommittedMapElement[T], index uint64) error
 	Indexable      bool
 }
 
-func (hashMap *HashMap) deserialize(key, data []byte, index uint64) (HashMapElementSerializableInterface, error) {
-	obj, err := hashMap.CreateObject(key, index)
+func (hashMap *HashMap[T]) deserialize(key, data []byte, index uint64) (T, error) {
+	out, err := hashMap.CreateObject(key, index)
 	if err != nil {
-		return nil, err
+		return generics.Zero[T](), err
 	}
-	if err := obj.Deserialize(helpers.NewBufferReader(data)); err != nil {
-		return nil, err
+	if err = out.Deserialize(helpers.NewBufferReader(data)); err != nil {
+		return generics.Zero[T](), err
 	}
-	return obj, nil
+	return out, nil
 }
 
-//support only for commited data
-func (hashMap *HashMap) GetIndexByKey(key string) (uint64, error) {
+// support only for commited data
+func (hashMap *HashMap[T]) GetIndexByKey(key string) (uint64, error) {
 	if !hashMap.Indexable {
 		return 0, errors.New("HashMap is not Indexable")
 	}
@@ -55,8 +57,8 @@ func (hashMap *HashMap) GetIndexByKey(key string) (uint64, error) {
 	return strconv.ParseUint(string(data), 10, 64)
 }
 
-//support only for commited data
-func (hashMap *HashMap) GetKeyByIndex(index uint64) ([]byte, error) {
+// support only for commited data
+func (hashMap *HashMap[T]) GetKeyByIndex(index uint64) ([]byte, error) {
 	if !hashMap.Indexable {
 		return nil, errors.New("HashMap is not Indexable")
 	}
@@ -78,31 +80,32 @@ func (hashMap *HashMap) GetKeyByIndex(index uint64) ([]byte, error) {
 	return key, nil
 }
 
-//support only for commited data
-func (hashMap *HashMap) GetByIndex(index uint64) (data helpers.SerializableInterface, err error) {
+// support only for commited data
+func (hashMap *HashMap[T]) GetByIndex(index uint64) (T, error) {
 
 	key, err := hashMap.GetKeyByIndex(index)
 	if err != nil {
-		return nil, err
+		return generics.Zero[T](), err
 	}
 
 	return hashMap.Get(string(key))
 }
 
-//support only for commited data
-func (hashMap *HashMap) GetRandom() (data helpers.SerializableInterface, err error) {
+// support only for commited data
+func (hashMap *HashMap[T]) GetRandom() (T, error) {
+
 	if !hashMap.Indexable {
-		return nil, errors.New("HashMap is not Indexable")
+		return generics.Zero[T](), errors.New("HashMap is not Indexable")
 	}
 
 	index := rand.Uint64() % hashMap.Count
 	return hashMap.GetByIndex(index)
 }
 
-func (hashMap *HashMap) Get(key string) (out HashMapElementSerializableInterface, err error) {
+func (hashMap *HashMap[T]) Get(key string) (out T, err error) {
 
 	if hashMap.keyLength != 0 && len(key) != hashMap.keyLength {
-		return nil, errors.New("key length is invalid")
+		return generics.Zero[T](), errors.New("key length is invalid")
 	}
 	if exists := hashMap.Changes[key]; exists != nil {
 		return exists.Element, nil
@@ -111,11 +114,11 @@ func (hashMap *HashMap) Get(key string) (out HashMapElementSerializableInterface
 	var outData []byte
 	var index uint64
 
-	if exists2 := hashMap.Committed[key]; exists2 != nil {
-		if exists2.Element != nil {
-			outData = helpers.CloneBytes(exists2.serialized)
+	if exists := hashMap.Committed[key]; exists != nil {
+		if !generics.IsZero(exists.Element) {
+			outData = helpers.CloneBytes(exists.serialized)
 			if hashMap.Indexable {
-				index = exists2.Element.GetIndex()
+				index = exists.Element.GetIndex()
 			}
 		}
 	} else {
@@ -126,7 +129,7 @@ func (hashMap *HashMap) Get(key string) (out HashMapElementSerializableInterface
 			//safe because the bytes will be converted into an integer
 			data := hashMap.Tx.Get(hashMap.name + ":listKeys:" + key)
 			if data == nil {
-				return nil, errors.New("Key not found")
+				return generics.Zero[T](), errors.New("Key not found")
 			}
 
 			if index, err = strconv.ParseUint(string(data), 10, 64); err != nil {
@@ -137,30 +140,30 @@ func (hashMap *HashMap) Get(key string) (out HashMapElementSerializableInterface
 
 	if outData != nil {
 		if out, err = hashMap.deserialize([]byte(key), outData, index); err != nil {
-			return nil, err
+			return generics.Zero[T](), err
 		}
 	}
-	hashMap.Changes[key] = &ChangesMapElement{out, "view", 0, false}
+	hashMap.Changes[key] = &ChangesMapElement[T]{out, "view", 0, false}
 	return
 }
 
-func (hashMap *HashMap) Exists(key string) (bool, error) {
+func (hashMap *HashMap[T]) Exists(key string) (bool, error) {
 
 	if hashMap.keyLength != 0 && len(key) != hashMap.keyLength {
 		return false, errors.New("key length is invalid")
 	}
 	if exists := hashMap.Changes[key]; exists != nil {
-		return exists.Element != nil, nil
+		return !generics.IsZero(exists.Element), nil
 	}
-	if exists2 := hashMap.Committed[key]; exists2 != nil {
-		return exists2.Element != nil, nil
+	if exists := hashMap.Committed[key]; exists != nil {
+		return !generics.IsZero(exists.Element), nil
 	}
 
 	return hashMap.Tx.Exists(hashMap.name + ":exists:" + key), nil
 }
 
-//this will verify if the data still exists
-func (hashMap *HashMap) Create(key string, data HashMapElementSerializableInterface) error {
+// this will verify if the data still exists
+func (hashMap *HashMap[T]) Create(key string, data T) error {
 	exists, err := hashMap.Exists(key)
 	if err != nil {
 		return err
@@ -171,12 +174,12 @@ func (hashMap *HashMap) Create(key string, data HashMapElementSerializableInterf
 	return hashMap.Update(key, data)
 }
 
-func (hashMap *HashMap) Update(key string, data HashMapElementSerializableInterface) error {
+func (hashMap *HashMap[T]) Update(key string, data T) error {
 
 	if hashMap.keyLength != 0 && len(key) != hashMap.keyLength {
 		return errors.New("key length is invalid")
 	}
-	if data == nil {
+	if generics.IsZero(data) {
 		return errors.New("Data is null and it should not be")
 	}
 
@@ -194,13 +197,13 @@ func (hashMap *HashMap) Update(key string, data HashMapElementSerializableInterf
 	exists := hashMap.Changes[key]
 
 	increase := false
-	if (exists != nil && exists.Element == nil) ||
+	if (exists != nil && generics.IsZero(exists.Element)) ||
 		(exists == nil && !hashMap.Tx.Exists(hashMap.name+":exists:"+key)) {
 		increase = true
 	}
 
 	if exists == nil {
-		exists = new(ChangesMapElement)
+		exists = new(ChangesMapElement[T])
 		hashMap.Changes[key] = exists
 		hashMap.changesSize[key] = exists
 	}
@@ -221,23 +224,23 @@ func (hashMap *HashMap) Update(key string, data HashMapElementSerializableInterf
 	return nil
 }
 
-func (hashMap *HashMap) Delete(key string) {
+func (hashMap *HashMap[T]) Delete(key string) {
 
 	exists := hashMap.Changes[key]
 
 	decrease := false
-	if (exists != nil && exists.Element != nil) ||
+	if (exists != nil && !generics.IsZero[T](exists.Element)) ||
 		(exists == nil && hashMap.Tx.Exists(hashMap.name+":exists:"+key)) {
 		decrease = true
 	}
 
 	if exists == nil {
-		exists = new(ChangesMapElement)
+		exists = new(ChangesMapElement[T])
 		hashMap.Changes[key] = exists
 		hashMap.changesSize[key] = exists
 	}
 	exists.Status = "del"
-	exists.Element = nil
+	exists.Element = generics.Zero[T]()
 
 	hashMap.changed = true
 
@@ -249,7 +252,7 @@ func (hashMap *HashMap) Delete(key string) {
 				for _, v := range hashMap.Changes {
 					if v.index > exists.index {
 						v.index -= 1
-						if v.Element != nil {
+						if !generics.IsZero(v.Element) {
 							v.Element.SetIndex(v.index)
 						}
 					}
@@ -266,15 +269,15 @@ func (hashMap *HashMap) Delete(key string) {
 	return
 }
 
-func (hashMap *HashMap) UpdateOrDelete(key string, data HashMapElementSerializableInterface) error {
-	if data == nil {
+func (hashMap *HashMap[T]) UpdateOrDelete(key string, data T) error {
+	if generics.IsZero(data) {
 		hashMap.Delete(key)
 		return nil
 	}
 	return hashMap.Update(key, data)
 }
 
-func (hashMap *HashMap) ComputeChangesSize() (out uint64) {
+func (hashMap *HashMap[T]) ComputeChangesSize() (out uint64) {
 
 	for k, v := range hashMap.changesSize {
 		if v.Status == "update" {
@@ -288,7 +291,7 @@ func (hashMap *HashMap) ComputeChangesSize() (out uint64) {
 
 			if exists := hashMap.Committed[k]; exists != nil {
 				oldSize = exists.size
-				if exists.Element == nil {
+				if generics.IsZero(exists.Element) {
 					isNew = true
 				}
 			} else {
@@ -313,11 +316,11 @@ func (hashMap *HashMap) ComputeChangesSize() (out uint64) {
 	return
 }
 
-func (hashMap *HashMap) ResetChangesSize() {
-	hashMap.changesSize = make(map[string]*ChangesMapElement)
+func (hashMap *HashMap[T]) ResetChangesSize() {
+	hashMap.changesSize = make(map[string]*ChangesMapElement[T])
 }
 
-func (hashMap *HashMap) CommitChanges() (err error) {
+func (hashMap *HashMap[T]) CommitChanges() (err error) {
 
 	removed := make([]string, len(hashMap.Changes))
 
@@ -338,13 +341,13 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 
 			committed := hashMap.Committed[k]
 			if committed == nil {
-				committed = new(CommittedMapElement)
+				committed = new(CommittedMapElement[T])
 				hashMap.Committed[k] = committed
 			}
 
 			v.Status = "view"
 			committed.Status = "view"
-			committed.Element = nil
+			committed.Element = generics.Zero[T]()
 			committed.size = 0
 			committed.serialized = nil
 
@@ -384,7 +387,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 
 			committed := hashMap.Committed[k]
 			if committed == nil {
-				committed = new(CommittedMapElement)
+				committed = new(CommittedMapElement[T])
 				hashMap.Committed[k] = committed
 			}
 
@@ -407,7 +410,7 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 				}
 
 				if hashMap.StoredEvent != nil {
-					if err = hashMap.StoredEvent([]byte(k), committed); err != nil {
+					if err = hashMap.StoredEvent([]byte(k), committed, v.index); err != nil {
 						return
 					}
 				}
@@ -446,39 +449,45 @@ func (hashMap *HashMap) CommitChanges() (err error) {
 	return
 }
 
-func (hashMap *HashMap) SetTx(dbTx store_db_interface.StoreDBTransactionInterface) {
+func (hashMap *HashMap[T]) SetTx(dbTx store_db_interface.StoreDBTransactionInterface) {
 	hashMap.Tx = dbTx
 }
 
-func (hashMap *HashMap) Rollback() {
-	hashMap.Changes = make(map[string]*ChangesMapElement)
-	hashMap.changesSize = make(map[string]*ChangesMapElement)
+func (hashMap *HashMap[T]) Rollback() {
+	hashMap.Changes = make(map[string]*ChangesMapElement[T])
+	hashMap.changesSize = make(map[string]*ChangesMapElement[T])
 	hashMap.Count = hashMap.countCommitted
 	hashMap.changed = false
 }
 
-func (hashMap *HashMap) Reset() {
-	hashMap.Committed = make(map[string]*CommittedMapElement)
-	hashMap.Changes = make(map[string]*ChangesMapElement)
-	hashMap.changesSize = make(map[string]*ChangesMapElement)
+func (hashMap *HashMap[T]) Reset() {
+	hashMap.Committed = make(map[string]*CommittedMapElement[T])
+	hashMap.Changes = make(map[string]*ChangesMapElement[T])
+	hashMap.changesSize = make(map[string]*ChangesMapElement[T])
 	hashMap.changed = false
 }
 
-func CreateNewHashMap(tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int, indexable bool) (hashMap *HashMap) {
+func CreateNewHashMap[T HashMapElementSerializableInterface](tx store_db_interface.StoreDBTransactionInterface, name string, keyLength int, indexable bool) (hashMap *HashMap[T]) {
 
 	if len(name) <= 4 {
 		panic("Invalid name")
 	}
 
-	hashMap = &HashMap{
-		name:        name,
-		Committed:   make(map[string]*CommittedMapElement),
-		Changes:     make(map[string]*ChangesMapElement),
-		changesSize: make(map[string]*ChangesMapElement),
-		Tx:          tx,
-		Count:       0,
-		keyLength:   keyLength,
-		Indexable:   indexable,
+	hashMap = &HashMap[T]{
+		nil,
+		name,
+		tx,
+		0,
+		0,
+		make(map[string]*ChangesMapElement[T]),
+		false,
+		make(map[string]*ChangesMapElement[T]),
+		make(map[string]*CommittedMapElement[T]),
+		keyLength,
+		nil,
+		nil,
+		nil,
+		indexable,
 	}
 
 	//safe to Get because data will be converted into an integer

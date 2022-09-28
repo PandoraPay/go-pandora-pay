@@ -11,11 +11,11 @@ import (
 )
 
 type Accounts struct {
-	*hash_map.HashMap
+	*hash_map.HashMap[*account.Account]
 	Asset []byte
 }
 
-//WARNING: should NOT be used manually without being called from DataStorage
+// WARNING: should NOT be used manually without being called from DataStorage
 func (accounts *Accounts) CreateNewAccount(publicKey []byte) (*account.Account, error) {
 	acc, err := account.NewAccount(publicKey, 0, accounts.Asset) //will be set by update
 	if err != nil {
@@ -25,30 +25,6 @@ func (accounts *Accounts) CreateNewAccount(publicKey []byte) (*account.Account, 
 		return nil, err
 	}
 	return acc, nil
-}
-
-func (accounts *Accounts) GetAccount(key []byte) (*account.Account, error) {
-
-	data, err := accounts.Get(string(key))
-	if data == nil || err != nil {
-		return nil, err
-	}
-
-	acc := data.(*account.Account)
-
-	return acc, nil
-}
-
-func (accounts *Accounts) ExistAccount(key []byte) (bool, error) {
-	return accounts.Exists(string(key))
-}
-
-func (accounts *Accounts) GetRandomAccount() (*account.Account, error) {
-	data, err := accounts.GetRandom()
-	if err != nil {
-		return nil, err
-	}
-	return data.(*account.Account), nil
 }
 
 func (accounts *Accounts) saveAssetsCount(key []byte, sign bool) (uint64, error) {
@@ -89,18 +65,16 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 		return nil, errors.New("Asset length is invalid")
 	}
 
-	hashmap := hash_map.CreateNewHashMap(tx, "accounts_"+string(AssetId), cryptography.PublicKeySize, true)
-
 	accounts = &Accounts{
-		HashMap: hashmap,
-		Asset:   AssetId,
+		hash_map.CreateNewHashMap[*account.Account](tx, "accounts_"+string(AssetId), cryptography.PublicKeySize, true),
+		AssetId,
 	}
 
-	accounts.HashMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
-		return account.NewAccountClear(key, index, accounts.Asset)
+	accounts.HashMap.CreateObject = func(key []byte, index uint64) (*account.Account, error) {
+		return account.NewAccountClear(key, index, accounts.Asset), nil
 	}
 
-	accounts.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) (err error) {
+	accounts.HashMap.StoredEvent = func(key []byte, committed *hash_map.CommittedMapElement[*account.Account], index uint64) (err error) {
 
 		if !tx.IsWritable() {
 			return
@@ -111,7 +85,7 @@ func NewAccounts(tx store_db_interface.StoreDBTransactionInterface, AssetId []by
 			return
 		}
 
-		tx.Put("accounts:assetByIndex:"+string(key)+":"+strconv.FormatUint(count, 10), element.Element.(*account.Account).Asset)
+		tx.Put("accounts:assetByIndex:"+string(key)+":"+strconv.FormatUint(count, 10), committed.Element.Asset)
 		return
 	}
 

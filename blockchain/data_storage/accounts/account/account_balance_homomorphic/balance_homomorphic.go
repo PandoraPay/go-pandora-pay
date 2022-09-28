@@ -9,8 +9,7 @@ import (
 )
 
 type BalanceHomomorphic struct {
-	helpers.SerializableInterface `json:"-" msgpack:"-"`
-	Amount                        *crypto.ElGamal `json:"amount" msgpack:"amount"`
+	Amount *crypto.ElGamal `json:"amount" msgpack:"amount"`
 }
 
 // MarshalJSON serializes ElGamal into byteArray
@@ -81,7 +80,7 @@ func NewBalanceHomomorphicEmptyBalance(publicKey []byte) (*BalanceHomomorphic, e
 		return nil, err
 	}
 
-	return &BalanceHomomorphic{nil, crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)}, nil
+	return &BalanceHomomorphic{crypto.ConstructElGamal(acckey.G1(), crypto.ElGamal_BASE_G)}, nil
 }
 
 func NewBalanceHomomorphic(amount *crypto.ElGamal) (*BalanceHomomorphic, error) {
@@ -89,5 +88,5 @@ func NewBalanceHomomorphic(amount *crypto.ElGamal) (*BalanceHomomorphic, error) 
 	if err != nil {
 		return nil, err
 	}
-	return &BalanceHomomorphic{nil, el}, nil
+	return &BalanceHomomorphic{el}, nil
 }

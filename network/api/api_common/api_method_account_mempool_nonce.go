@@ -24,7 +24,7 @@ func (api *APICommon) GetAccountMempoolNonce(r *http.Request, args *APIAccountMe
 	//	chainHeight, _ := binary.Uvarint(reader.Get("chainHeight"))
 	//	plainAccs := plain_accounts.NewPlainAccounts(reader)
 	//
-	//	plainAcc, err := plainAccs.GetPlainAccount(publicKey, chainHeight)
+	//	plainAcc, err := plainAccs.Get(publicKey)
 	//	if err != nil {
 	//		return err
 	//	}

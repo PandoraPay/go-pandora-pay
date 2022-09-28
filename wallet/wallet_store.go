@@ -233,10 +233,10 @@ func (wallet *Wallet) InitForgingWallet() (err error) {
 			var acc *account.Account
 			var reg *registration.Registration
 
-			if acc, err = accs.GetAccount(addr.PublicKey); err != nil {
+			if acc, err = accs.Get(string(addr.PublicKey)); err != nil {
 				return
 			}
-			if reg, err = dataStorage.Regs.GetRegistration(addr.PublicKey); err != nil {
+			if reg, err = dataStorage.Regs.Get(string(addr.PublicKey)); err != nil {
 				return
 			}
 

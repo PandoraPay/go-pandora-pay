@@ -10,7 +10,6 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
-	"pandora-pay/store/hash_map"
 	"regexp"
 	"strings"
 )
@@ -20,27 +19,26 @@ var regexAssetTicker = regexp.MustCompile("^[A-Z0-9]+$") // only lowercase ascii
 var regexAssetDescription = regexp.MustCompile("[\\w|\\W]+")
 
 type Asset struct {
-	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
-	PublicKeyHash                                []byte `json:"-" msgpack:"-"` //hashmap key
-	Index                                        uint64 `json:"-" msgpack:"-"` //hashMap index
-	Version                                      uint64 `json:"version,omitempty" msgpack:"version,omitempty"`
-	CanUpgrade                                   bool   `json:"canUpgrade,omitempty" msgpack:"canUpgrade,omitempty"`                             //upgrade different setting s
-	CanMint                                      bool   `json:"canMint,omitempty" msgpack:"canMint,omitempty"`                                   //increase supply
-	CanBurn                                      bool   `json:"canBurn,omitempty" msgpack:"canBurn,omitempty"`                                   //decrease supply
-	CanChangeUpdatePublicKey                     bool   `json:"canChangeUpdatePublicKey,omitempty" msgpack:"canChangeUpdatePublicKey,omitempty"` //can change key
-	CanChangeSupplyPublicKey                     bool   `json:"canChangeSupplyPublicKey,omitempty" msgpack:"canChangeSupplyPublicKey,omitempty"` //can change supply key
-	CanPause                                     bool   `json:"canPause,omitempty" msgpack:"canPause,omitempty"`                                 //can pause (suspend transactions)
-	CanFreeze                                    bool   `json:"canFreeze,omitempty" msgpack:"canFreeze,omitempty"`                               //freeze supply changes
-	DecimalSeparator                             byte   `json:"decimalSeparator,omitempty" msgpack:"decimalSeparator,omitempty"`
-	MaxSupply                                    uint64 `json:"maxSupply,omitempty" msgpack:"maxSupply,omitempty"`
-	Supply                                       uint64 `json:"supply,omitempty" msgpack:"supply,omitempty"`
-	UpdatePublicKey                              []byte `json:"updatePublicKey,omitempty" msgpack:"updatePublicKey,omitempty"` //33 byte
-	SupplyPublicKey                              []byte `json:"supplyPublicKey,omitempty" msgpack:"supplyPublicKey,omitempty"` //33 byte
-	Name                                         string `json:"name" msgpack:"name"`
-	Ticker                                       string `json:"ticker" msgpack:"ticker"`
-	Identification                               string `json:"identification" msgpack:"identification"`
-	Description                                  string `json:"description,omitempty" msgpack:"description,omitempty"`
-	Data                                         []byte `json:"data,omitempty" msgpack:"data,omitempty"`
+	PublicKeyHash            []byte `json:"-" msgpack:"-"` //hashmap key
+	Index                    uint64 `json:"-" msgpack:"-"` //hashMap index
+	Version                  uint64 `json:"version,omitempty" msgpack:"version,omitempty"`
+	CanUpgrade               bool   `json:"canUpgrade,omitempty" msgpack:"canUpgrade,omitempty"`                             //upgrade different setting s
+	CanMint                  bool   `json:"canMint,omitempty" msgpack:"canMint,omitempty"`                                   //increase supply
+	CanBurn                  bool   `json:"canBurn,omitempty" msgpack:"canBurn,omitempty"`                                   //decrease supply
+	CanChangeUpdatePublicKey bool   `json:"canChangeUpdatePublicKey,omitempty" msgpack:"canChangeUpdatePublicKey,omitempty"` //can change key
+	CanChangeSupplyPublicKey bool   `json:"canChangeSupplyPublicKey,omitempty" msgpack:"canChangeSupplyPublicKey,omitempty"` //can change supply key
+	CanPause                 bool   `json:"canPause,omitempty" msgpack:"canPause,omitempty"`                                 //can pause (suspend transactions)
+	CanFreeze                bool   `json:"canFreeze,omitempty" msgpack:"canFreeze,omitempty"`                               //freeze supply changes
+	DecimalSeparator         byte   `json:"decimalSeparator,omitempty" msgpack:"decimalSeparator,omitempty"`
+	MaxSupply                uint64 `json:"maxSupply,omitempty" msgpack:"maxSupply,omitempty"`
+	Supply                   uint64 `json:"supply,omitempty" msgpack:"supply,omitempty"`
+	UpdatePublicKey          []byte `json:"updatePublicKey,omitempty" msgpack:"updatePublicKey,omitempty"` //33 byte
+	SupplyPublicKey          []byte `json:"supplyPublicKey,omitempty" msgpack:"supplyPublicKey,omitempty"` //33 byte
+	Name                     string `json:"name" msgpack:"name"`
+	Ticker                   string `json:"ticker" msgpack:"ticker"`
+	Identification           string `json:"identification" msgpack:"identification"`
+	Description              string `json:"description,omitempty" msgpack:"description,omitempty"`
+	Data                     []byte `json:"data,omitempty" msgpack:"data,omitempty"`
 }
 
 func (asset *Asset) IsDeletable() bool {
