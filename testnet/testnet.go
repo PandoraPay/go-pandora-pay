@@ -39,7 +39,7 @@ type Testnet struct {
 }
 
 func (testnet *Testnet) testnetGetZetherRingConfiguration() *txs_builder.ZetherRingConfiguration {
-	zetherRingConfiguration := &txs_builder.ZetherRingConfiguration{-1, &txs_builder.ZetherSenderRingType{}, &txs_builder.ZetherRecipientRingType{false, nil, -1}}
+	zetherRingConfiguration := &txs_builder.ZetherRingConfiguration{-1, &txs_builder.ZetherSenderRingType{-1, false, false, []string{}, 0}, &txs_builder.ZetherRecipientRingType{-1, false, false, nil, -1}}
 	if config.LIGHT_COMPUTATIONS {
 		zetherRingConfiguration.RingSize = int(math.Pow(2, float64(rand.Intn(2)+3)))
 	}
@@ -230,7 +230,7 @@ func (testnet *Testnet) run() {
 							return
 						}
 						for i := 0; i < 5; i++ {
-							if acc, err = accs.GetAccount(addressesList[i].PublicKey); err != nil {
+							if acc, err = accs.Get(string(addressesList[i].PublicKey)); err != nil {
 								return
 							}
 							accMap[string(addressesList[i].PublicKey)] = &AccMapElement{

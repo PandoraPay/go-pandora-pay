@@ -8,41 +8,32 @@ import (
 )
 
 type PendingStakesList struct {
-	*hash_map.HashMap
+	*hash_map.HashMap[*pending_stakes.PendingStakes]
 }
 
-func (self *PendingStakesList) CreateNewPendingStakes(blockHeight uint64) (*pending_stakes.PendingStakes, error) {
+func (this *PendingStakesList) CreateNewPendingStakes(blockHeight uint64) (*pending_stakes.PendingStakes, error) {
 	key := strconv.FormatUint(blockHeight, 10)
 
 	pendingStakes := pending_stakes.NewPendingStakes([]byte(key), 0) //index will be set by update
 	pendingStakes.Height = blockHeight
 
-	if err := self.Create(key, pendingStakes); err != nil {
+	if err := this.Create(key, pendingStakes); err != nil {
 		return nil, err
 	}
 	return pendingStakes, nil
 }
 
-func (self *PendingStakesList) GetPendingStakes(blockHeight uint64) (*pending_stakes.PendingStakes, error) {
-	key := strconv.FormatUint(blockHeight, 10)
-
-	data, err := self.Get(key)
-	if data == nil || err != nil {
-		return nil, err
-	}
-
-	return data.(*pending_stakes.PendingStakes), nil
+func (this *PendingStakesList) GetPendingStakes(blockHeight uint64) (*pending_stakes.PendingStakes, error) {
+	return this.Get(strconv.FormatUint(blockHeight, 10))
 }
 
-func NewPendingStakesList(tx store_db_interface.StoreDBTransactionInterface) (self *PendingStakesList) {
+func NewPendingStakesList(tx store_db_interface.StoreDBTransactionInterface) (this *PendingStakesList) {
 
-	hashmap := hash_map.CreateNewHashMap(tx, "pendingStakes", 0, false)
-
-	self = &PendingStakesList{
-		HashMap: hashmap,
+	this = &PendingStakesList{
+		hash_map.CreateNewHashMap[*pending_stakes.PendingStakes](tx, "pendingStakes", 0, false),
 	}
 
-	self.HashMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
+	this.HashMap.CreateObject = func(key []byte, index uint64) (*pending_stakes.PendingStakes, error) {
 		return pending_stakes.NewPendingStakes(key, index), nil
 	}
 

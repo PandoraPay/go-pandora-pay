@@ -34,7 +34,7 @@ func (payloadExtra *TransactionZetherPayloadExtraStakingReward) BeforeIncludeTxP
 	}
 
 	var tempAcc *account.Account
-	if tempAcc, err = accs.GetAccount(newAccountPublicKey); err != nil {
+	if tempAcc, err = accs.Get(string(newAccountPublicKey)); err != nil {
 		return
 	}
 

@@ -2,15 +2,13 @@ package pending_stakes
 
 import (
 	"errors"
-	"pandora-pay/blockchain/data_storage/accounts/account/account_balance_homomorphic"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 )
 
 type PendingStake struct {
-	helpers.SerializableInterface `json:"-"  msgpack:"-"`
-	PublicKey                     []byte                                          `json:"publicKey" msgpack:"publicKey"`
-	PendingAmount                 *account_balance_homomorphic.BalanceHomomorphic `json:"balance" msgpack:"balance"`
+	PublicKey     []byte `json:"publicKey" msgpack:"publicKey"`
+	PendingAmount []byte `json:"pendingAmount" msgpack:"pendingAmount"`
 }
 
 func (d *PendingStake) Validate() error {
@@ -22,14 +20,14 @@ func (d *PendingStake) Validate() error {
 
 func (d *PendingStake) Serialize(w *helpers.BufferWriter) {
 	w.Write(d.PublicKey)
-	d.PendingAmount.Serialize(w)
+	w.Write(d.PendingAmount)
 }
 
 func (d *PendingStake) Deserialize(r *helpers.BufferReader) (err error) {
 	if d.PublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}
-	if err = d.PendingAmount.Deserialize(r); err != nil {
+	if d.PendingAmount, err = r.ReadBytes(66); err != nil {
 		return
 	}
 	return
