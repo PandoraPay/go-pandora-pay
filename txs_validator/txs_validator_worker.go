@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
+	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
@@ -22,16 +23,27 @@ func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidatedWork) error {
 		return err
 	}
 
-	hashForSignature := foundWork.tx.GetHashSigningManually()
-
 	switch foundWork.tx.Version {
 	case transaction_type.TX_SIMPLE:
 		base := foundWork.tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-		if !base.VerifySignatureManually(hashForSignature) {
-			return errors.New("Signature Verified failed")
+		switch base.TxScript {
+		case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
+			hashForSignature := foundWork.tx.GetHashSigningManually()
+			if !base.VerifySignatureManually(hashForSignature) {
+				return errors.New("Signature Verification failed")
+			}
+		case transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE:
+			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture)
+			if !extra.VerifySignature() {
+				return errors.New("Signature Verification failed for extra")
+			}
+		default:
+			return errors.New("Invalid simple tx script type ")
 		}
 
 	case transaction_type.TX_ZETHER:
+		hashForSignature := foundWork.tx.GetHashSigningManually()
+
 		base := foundWork.tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
 		//verify signature
 		assetMap := map[string]int{}

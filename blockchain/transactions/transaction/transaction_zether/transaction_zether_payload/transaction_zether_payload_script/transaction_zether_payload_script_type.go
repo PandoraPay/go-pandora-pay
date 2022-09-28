@@ -10,6 +10,7 @@ const (
 	SCRIPT_ASSET_CREATE
 	SCRIPT_ASSET_SUPPLY_INCREASE
 	SCRIPT_PLAIN_ACCOUNT_FUND
+	SCRIPT_PAY_IN_FUTURE
 )
 
 func (t PayloadScriptType) String() string {
@@ -28,6 +29,8 @@ func (t PayloadScriptType) String() string {
 		return "SCRIPT_ASSET_SUPPLY_INCREASE"
 	case SCRIPT_PLAIN_ACCOUNT_FUND:
 		return "SCRIPT_PLAIN_ACCOUNT_FUND"
+	case SCRIPT_PAY_IN_FUTURE:
+		return "SCRIPT_PAY_IN_FUTURE"
 	default:
 		return "Unknown ScriptType"
 	}

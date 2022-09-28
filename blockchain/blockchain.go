@@ -91,7 +91,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 		return
 	}
 
-	gui.GUI.Info("Including blocks " + strconv.FormatUint(chainData.Height, 10) + " ... " + strconv.FormatUint(chainData.Height+uint64(len(blocksComplete)), 10))
+	gui.GUI.Info("Including blocks " + strconv.FormatUint(blocksComplete[0].Height, 10) + " ... " + strconv.FormatUint(blocksComplete[len(blocksComplete)-1].Height, 10))
 
 	//chain.RLock() is not required because it is guaranteed that no other thread is writing now in the chain
 	var newChainData = &BlockchainData{
@@ -279,7 +279,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 					//increase supply
 					var ast *asset.Asset
-					if ast, err = dataStorage.Asts.GetAsset(config_coins.NATIVE_ASSET_FULL); err != nil {
+					if ast, err = dataStorage.Asts.Get(string(config_coins.NATIVE_ASSET_FULL)); err != nil {
 						return
 					}
 
@@ -318,6 +318,10 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 
 					if err = dataStorage.ProcessPendingStakes(blkComplete.Height); err != nil {
 						return errors.New("Error Processing Pending Stakes: " + err.Error())
+					}
+
+					if err = dataStorage.ProcessPendingFuture(blkComplete.Height); err != nil {
+						return errors.New("Error Processing Pending Future: " + err.Error())
 					}
 
 					//to detect if the savedBlock was done correctly

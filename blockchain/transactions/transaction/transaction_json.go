@@ -55,9 +55,9 @@ type json_TransactionSimpleInput struct {
 }
 
 type json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity struct {
-	Liquidities     []*asset_fee_liquidity.AssetFeeLiquidity `json:"liquidities"`
-	CollectorHasNew bool                                     `json:"collectorHasNew"`
-	Collector       []byte                                   `json:"collector"`
+	Liquidities  []*asset_fee_liquidity.AssetFeeLiquidity `json:"liquidities"`
+	NewCollector bool                                     `json:"newCollector"`
+	Collector    []byte                                   `json:"collector"`
 }
 
 type json_Only_TransactionZether struct {
@@ -93,6 +93,12 @@ type json_Only_TransactionZetherPayloadExtraAssetSupplyIncrease struct {
 
 type json_Only_TransactionZetherPayloadExtraPlainAccountFund struct {
 	PlainAccountPublicKey []byte `json:"plainAccountPublicKey"  msgpack:"plainAccountPublicKey"`
+}
+
+type json_Only_TransactionZetherPayloadExtraPayInFuture struct {
+	RefundTime         uint64   `json:"refundTime" msgpack:"refundTime"`
+	MultisigThreshold  byte     `json:"multisigThreshold" msgpack:"multisigThreshold"`
+	MultisigPublicKeys [][]byte `json:"multisigPublicKeys" msgpack:"multisigPublicKeys"`
 }
 
 type json_Only_TransactionZetherStatement struct {
@@ -161,7 +167,7 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity)
 			simpleJson.Extra = json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity{
 				extra.Liquidities,
-				extra.CollectorHasNew,
+				extra.NewCollector,
 				extra.Collector,
 			}
 		default:
@@ -240,6 +246,13 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraPlainAccountFund)
 				extra = &json_Only_TransactionZetherPayloadExtraPlainAccountFund{
 					payloadExtra.PlainAccountPublicKey,
+				}
+			case transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE:
+				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture)
+				extra = &json_Only_TransactionZetherPayloadExtraPayInFuture{
+					payloadExtra.RefundTime,
+					payloadExtra.MultisigThreshold,
+					payloadExtra.MultisigPublicKeys,
 				}
 			default:
 				return nil, errors.New("Invalid zether.TxScript")
@@ -358,7 +371,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 			base.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{
 				nil,
 				extraJson.Liquidities,
-				extraJson.CollectorHasNew,
+				extraJson.NewCollector,
 				extraJson.Collector,
 			}
 		default:
@@ -506,6 +519,17 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPlainAccountFund{
 					nil,
 					extraJson.PlainAccountPublicKey,
+				}
+			case transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE:
+				extraJson := &json_Only_TransactionZetherPayloadExtraPayInFuture{}
+				if err = json.Unmarshal(data, extraJson); err != nil {
+					return err
+				}
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture{
+					nil,
+					extraJson.RefundTime,
+					extraJson.MultisigThreshold,
+					extraJson.MultisigPublicKeys,
 				}
 			default:
 				return errors.New("Invalid Zether TxScript")

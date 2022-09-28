@@ -66,13 +66,20 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 			dataPublic = txBase.Data
 		}
 
-		base = &TxPreviewSimple{
+		previewBase := &TxPreviewSimple{
 			baseExtra,
 			txBase.TxScript,
 			txBase.DataVersion,
 			dataPublic,
-			txBase.Vin.PublicKey,
+			nil,
 		}
+
+		switch txBase.TxScript {
+		case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
+			previewBase.Vin = txBase.Vin.PublicKey
+		}
+
+		base = previewBase
 
 	case transaction_type.TX_ZETHER:
 		txBase := tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
@@ -112,9 +119,11 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 
 		}
 
-		base = &TxPreviewZether{
+		previewBase := &TxPreviewZether{
 			Payloads: payloads,
 		}
+
+		base = previewBase
 	default:
 		return nil, errors.New("Invalid tx.Version")
 	}

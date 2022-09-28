@@ -53,7 +53,9 @@ var commands = []Command{
 	{Name: "Wallet:TX", Text: "Private Asset Create"},
 	{Name: "Wallet:TX", Text: "Private Asset Supply Increase"},
 	{Name: "Wallet:TX", Text: "Private Plain Account Fund"},
-	{Name: "Wallet:TX", Text: "Update Asset Fee Liquidity"},
+	{Name: "Wallet:TX", Text: "Private Pay In Future"},
+	{Name: "Wallet:TX", Text: "Public Update Asset Fee Liquidity"},
+	{Name: "Wallet:TX", Text: "Public Resolution Pay in Future"},
 	{Name: "Wallet", Text: "Export Addresses"},
 	{Name: "Wallet", Text: "Export Address JSON"},
 	{Name: "Wallet", Text: "Import Address JSON"},
@@ -62,6 +64,9 @@ var commands = []Command{
 	{Name: "Wallet", Text: "Encrypt Wallet"},
 	{Name: "Wallet", Text: "Decrypt Wallet"},
 	{Name: "Wallet", Text: "Remove Encryption"},
+	{Name: "Utils", Text: "Create (PublicKey, PrivateKey) pair"},
+	{Name: "Utils", Text: "Sign message using PrivateKey"},
+	{Name: "Utils", Text: "Sign Resolution Pay in Future"},
 	{Name: "Mempool", Text: "Show Txs"},
 	{Name: "App", Text: "Exit"},
 }
@@ -274,12 +279,21 @@ func (g *GUIInteractive) OutputReadString(text string) string {
 
 }
 
-func (g *GUIInteractive) OutputReadFilename(text, extension string) string {
-	out := g.OutputReadString(text)
-	if path.Ext(out) == "" {
-		out += "." + extension
+func (g *GUIInteractive) OutputReadFilename(text, extension string, allowEmpty bool) string {
+	for {
+		out := g.OutputReadString(text)
+		if len(out) == 0 {
+			if allowEmpty {
+				return ""
+			} else {
+				continue
+			}
+		}
+		if path.Ext(out) == "" {
+			out += "." + extension
+		}
+		return out
 	}
-	return out
 }
 
 func (g *GUIInteractive) OutputReadInt(text string, allowEmpty bool, emptyValue int, validateCb func(value int) bool) int {

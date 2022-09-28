@@ -56,7 +56,7 @@ func (payload *TransactionZetherPayload) processAssetFee(assetId []byte, txFee, 
 		return errors.New("There is no Asset Fee Liquidity Available")
 	}
 
-	plainAcc, err := dataStorage.PlainAccs.GetPlainAccount(key)
+	plainAcc, err := dataStorage.PlainAccs.Get(string(key))
 	if err != nil {
 		return
 	}
@@ -125,21 +125,26 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 		return errors.New("publicKeyList was not precomputed")
 	}
 
+	echangesAll := make([]*crypto.ElGamal, len(publicKeyList))
 	for i, publicKey := range publicKeyList {
 
-		if acc, err = accs.GetAccount(publicKey); err != nil {
+		if acc, err = accs.Get(string(publicKey)); err != nil {
 			return
 		}
 		if acc == nil {
 			return errors.New("Private Account doesn't exist")
 		}
-		if reg, err = dataStorage.Regs.GetRegistration(publicKey); err != nil {
+		if reg, err = dataStorage.Regs.Get(string(publicKey)); err != nil {
 			return
+		}
+		if reg == nil {
+			return errors.New("Accoun not registered")
 		}
 
 		balance = acc.GetBalance()
 		echanges := crypto.ConstructElGamal(payload.Statement.C[i], payload.Statement.D)
 		balance = balance.Add(echanges) // homomorphic addition of changes
+		echangesAll[i] = echanges
 
 		//verify sender
 		if (i%2 == 0) == payload.Parity { //sender
@@ -156,7 +161,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 
 			if verify {
 				if payload.Statement.CLn[i].String() != balance.Left.String() || payload.Statement.CRn[i].String() != balance.Right.String() {
-					return fmt.Errorf("CLn or CRn is not matching for %d", i)
+					return fmt.Errorf("CLn or CRn is not matching for %d - payload %d", i, payloadIndex)
 				}
 			}
 
@@ -187,8 +192,10 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 					update = true
 				}
 			} else { //recipient
-				if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && (reg.Staked || payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD) {
-					if err = dataStorage.AddStakePendingStake(publicKey, echanges, blockHeight+config_stake.GetPendingStakeWindow(blockHeight)); err != nil {
+				if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE { //nothing
+
+				} else if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && (reg.Staked || payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD) {
+					if err = dataStorage.AddPendingStake(publicKey, echanges, blockHeight+config_stake.GetPendingStakeWindow(blockHeight)); err != nil {
 						return
 					}
 				} else {
@@ -205,6 +212,13 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 
 		}
 
+	}
+
+	if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE {
+		extra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture)
+		if err = dataStorage.AddPendingFuture(blockHeight+extra.RefundTime, txHash, payloadIndex, payload.Asset, payload.Parity, publicKeyList, echangesAll, extra.MultisigThreshold, extra.MultisigPublicKeys); err != nil {
+			return
+		}
 	}
 
 	if payload.Extra != nil {
@@ -263,7 +277,7 @@ func (payload *TransactionZetherPayload) Validate(payloadIndex byte) (err error)
 
 	switch payload.PayloadScript {
 	case transaction_zether_payload_script.SCRIPT_TRANSFER:
-	case transaction_zether_payload_script.SCRIPT_STAKING, transaction_zether_payload_script.SCRIPT_STAKING_REWARD, transaction_zether_payload_script.SCRIPT_SPEND, transaction_zether_payload_script.SCRIPT_ASSET_CREATE, transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE, transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND:
+	case transaction_zether_payload_script.SCRIPT_STAKING, transaction_zether_payload_script.SCRIPT_STAKING_REWARD, transaction_zether_payload_script.SCRIPT_SPEND, transaction_zether_payload_script.SCRIPT_ASSET_CREATE, transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE, transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND, transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE:
 		if payload.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
@@ -340,6 +354,8 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPlainAccountFund{}
 	case transaction_zether_payload_script.SCRIPT_SPEND:
 		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraSpend{}
+	case transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE:
+		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture{}
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}

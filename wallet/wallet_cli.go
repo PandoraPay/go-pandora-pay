@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/tyler-smith/go-bip39"
+	"math/rand"
 	"os"
+	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/blockchain/data_storage/accounts"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -15,10 +17,13 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
+	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/config/config_coins"
+	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/files"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/wallet/wallet_address"
@@ -42,21 +47,15 @@ func (wallet *Wallet) exportSharedStakedAddress(addr *wallet_address.WalletAddre
 
 	if path != "" {
 
-		f, err := os.Create(path)
-		if err != nil {
-			return nil, err
-		}
-
-		defer f.Close()
-
 		bytes, err := json.Marshal(sharedStakedAddress)
 		if err != nil {
 			return nil, err
 		}
 
-		if _, err = fmt.Fprint(f, string(bytes)); err != nil {
+		if err := files.WriteFile(path, string(bytes)); err != nil {
 			return nil, err
 		}
+
 	}
 
 	return sharedStakedAddress, nil
@@ -103,7 +102,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 		for i, address := range addresses {
 
-			if addresses[i].registration, err = dataStorage.Regs.GetRegistration(address.publicKey); err != nil {
+			if addresses[i].registration, err = dataStorage.Regs.Get(string(address.publicKey)); err != nil {
 				return
 			}
 
@@ -112,7 +111,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 				return
 			}
 
-			if addresses[i].plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(address.publicKey); err != nil {
+			if addresses[i].plainAcc, err = dataStorage.PlainAccs.Get(string(address.publicKey)); err != nil {
 				return
 			}
 
@@ -120,14 +119,14 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 
 				for _, assetId := range assetsList {
 
-					if ast, err = dataStorage.Asts.GetAsset(assetId); err != nil {
+					if ast, err = dataStorage.Asts.Get(string(assetId)); err != nil {
 						return
 					}
 					if accs, err = dataStorage.AccsCollection.GetMap(assetId); err != nil {
 						return
 					}
 
-					if acc, err = accs.GetAccount(address.publicKey); err != nil {
+					if acc, err = accs.Get(string(address.publicKey)); err != nil {
 						return
 					}
 
@@ -230,14 +229,9 @@ func (wallet *Wallet) CliSelectAddress(text string, ctx context.Context) (*walle
 func (wallet *Wallet) initWalletCLI() {
 
 	cliExportAddresses := func(cmd string, ctx context.Context) (err error) {
-		filename := gui.GUI.OutputReadFilename("Path to export", "txt")
+		filename := gui.GUI.OutputReadFilename("Path to export", "txt", false)
 
-		f, err := os.Create(filename)
-		if err != nil {
-			return
-		}
-
-		defer f.Close()
+		lines := []string{}
 
 		wallet.Lock.RLock()
 		defer wallet.Lock.RUnlock()
@@ -253,9 +247,7 @@ func (wallet *Wallet) initWalletCLI() {
 				}
 
 				addressStr := walletAddress.GetAddress(isReg)
-				if _, err = fmt.Fprintln(f, addressStr); err != nil {
-					return
-				}
+				lines = append(lines, addressStr)
 			}
 
 			return
@@ -263,7 +255,11 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		gui.GUI.Info("Exported successfully to: ", filename)
+		if err := files.WriteFile(filename, lines...); err != nil {
+			return err
+		}
+
+		gui.GUI.OutputWrite("Exported successfully to: ", filename)
 		return
 	}
 
@@ -274,14 +270,7 @@ func (wallet *Wallet) initWalletCLI() {
 		}
 
 		index := gui.GUI.OutputReadInt("Select Address to be Exported", false, 0, nil)
-		filename := gui.GUI.OutputReadFilename("Path to export", "pandora")
-
-		f, err := os.Create(filename)
-		if err != nil {
-			return
-		}
-
-		defer f.Close()
+		filename := gui.GUI.OutputReadFilename("Path to export", "pandora", false)
 
 		wallet.Lock.RLock()
 		defer wallet.Lock.RUnlock()
@@ -303,17 +292,17 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		if _, err = fmt.Fprint(f, string(marshal)); err != nil {
-			return
+		if err = files.WriteFile(filename, string(marshal)); err != nil {
+			return err
 		}
 
-		gui.GUI.Info("Exported successfully to: ", filename)
+		gui.GUI.OutputWrite("Exported successfully to: ", filename)
 		return
 	}
 
 	cliImportAddressJSON := func(cmd string, ctx context.Context) (err error) {
 
-		str := gui.GUI.OutputReadFilename("Path to import Address", "pandora")
+		str := gui.GUI.OutputReadFilename("Path to import Address", "pandora", false)
 
 		data, err := os.ReadFile(str)
 		if err != nil {
@@ -324,20 +313,13 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		gui.GUI.Info("Imported successfully from: ", str)
+		gui.GUI.OutputWrite("Imported successfully from: ", str)
 		return
 	}
 
 	cliExportWalletJSON := func(cmd string, ctx context.Context) (err error) {
 
-		filename := gui.GUI.OutputReadFilename("Path to export", "pandorawallet")
-
-		f, err := os.Create(filename)
-		if err != nil {
-			return
-		}
-
-		defer f.Close()
+		filename := gui.GUI.OutputReadFilename("Path to export", "pandorawallet", false)
 
 		wallet.Lock.RLock()
 		defer wallet.Lock.RUnlock()
@@ -347,17 +329,17 @@ func (wallet *Wallet) initWalletCLI() {
 			return errors.New("Error marshaling wallet")
 		}
 
-		if _, err = fmt.Fprint(f, string(marshal)); err != nil {
+		if err = files.WriteFile(filename, string(marshal)); err != nil {
 			return
 		}
 
-		gui.GUI.Info("Wallet Exported successfully to: ", filename)
+		gui.GUI.OutputWrite("Wallet Exported successfully to: ", filename)
 		return
 	}
 
 	cliImportWalletJSON := func(cmd string, ctx context.Context) (err error) {
 
-		str := gui.GUI.OutputReadFilename("Path to import Wallet", "pandorawallet")
+		str := gui.GUI.OutputReadFilename("Path to import Wallet", "pandorawallet", false)
 
 		done := gui.GUI.OutputReadBool("Your wallet will be REPLACED with this one! y/n", false, false)
 
@@ -374,17 +356,17 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		gui.GUI.Info("Wallet Imported Successfully from: ", str)
+		gui.GUI.OutputWrite("Wallet Imported Successfully from: ", str)
 		return
 	}
 
 	cliCreateNewAddress := func(cmd string, ctx context.Context) (err error) {
 
-		name := gui.GUI.OutputReadFilename("Name of your new address", "")
+		filename := gui.GUI.OutputReadFilename("Name of your new address", "", false)
 		staked := gui.GUI.OutputReadBool("Staked address ? y/n. Leave empty for n", true, false)
 		spendRequired := gui.GUI.OutputReadBool("Spend Key required ? y/n. Leave empty for n", true, false)
 
-		if _, err = wallet.AddNewAddress(true, name, staked, spendRequired, true); err != nil {
+		if _, err = wallet.AddNewAddress(true, filename, staked, spendRequired, true); err != nil {
 			return
 		}
 		return wallet.CliListAddresses(cmd, ctx)
@@ -420,9 +402,9 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		path := gui.GUI.OutputReadFilename("Path to export to a file", "staked")
+		filename := gui.GUI.OutputReadFilename("Path to export to a file", "staked", false)
 
-		_, err = wallet.exportSharedStakedAddress(addr, path, true)
+		_, err = wallet.exportSharedStakedAddress(addr, filename, true)
 		return err
 
 	}
@@ -461,7 +443,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		gui.GUI.Info("A new wallet has been created!")
+		gui.GUI.OutputWrite("A new wallet has been created!")
 
 		return
 	}
@@ -479,7 +461,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		gui.GUI.Info("A new wallet has been created using the mnemonic provided!")
+		gui.GUI.OutputWrite("A new wallet has been created using the mnemonic provided!")
 
 		return
 	}
@@ -500,7 +482,7 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		gui.GUI.Info("A new wallet has been created using the seed provided!")
+		gui.GUI.OutputWrite("A new wallet has been created using the seed provided!")
 
 		return
 	}
@@ -576,6 +558,106 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
+	cliCreatePair := func(cmd string, ctx context.Context) (err error) {
+		key := addresses.GenerateNewPrivateKey()
+		pub := key.GeneratePublicKey()
+
+		gui.GUI.OutputWrite("PRIVATE KEY", key.Key)
+		gui.GUI.OutputWrite("PUBLIC KEY", pub, "\n\n")
+
+		if filename := gui.GUI.OutputReadFilename("Path to export", "txt", true); len(filename) > 0 {
+
+			if err = files.WriteFile(filename, fmt.Sprintf("PRIVATE KEY: %s\n", base64.StdEncoding.EncodeToString(key.Key)), fmt.Sprintf("PUBLIC KEY: %s\n", base64.StdEncoding.EncodeToString(pub))); err != nil {
+				return
+			}
+
+			gui.GUI.OutputWrite("Exported successfully to: ", filename)
+		}
+		return
+	}
+
+	cliSignMessage := func(cmd string, ctx context.Context) (err error) {
+		privatekey := gui.GUI.OutputReadBytes("Private Key", func(val []byte) bool {
+			return len(val) == cryptography.PrivateKeySize
+		})
+
+		var message []byte
+
+		if gui.GUI.OutputReadBool("Base64 message y/n. Leave empty for yes.", true, true) {
+			message = gui.GUI.OutputReadBytes("Message", nil)
+		} else {
+			message = []byte(gui.GUI.OutputReadString("Message"))
+		}
+
+		if gui.GUI.OutputReadBool("Hashing message using SHA3 y/n. Leave empty for yes.", true, true) {
+			message = cryptography.SHA3(message)
+		}
+
+		signature, err := crypto.SignMessage(message, privatekey)
+		if err != nil {
+			return
+		}
+
+		gui.GUI.OutputWrite("Signature: ", signature, "\n\n")
+
+		if filename := gui.GUI.OutputReadFilename("Path to export", "txt", true); len(filename) > 0 {
+
+			if err = files.WriteFile(filename, fmt.Sprintf("Signature: %s\n", base64.StdEncoding.EncodeToString(signature))); err != nil {
+				return
+			}
+
+			gui.GUI.OutputWrite("Exported successfully to: ", filename)
+		}
+
+		return
+	}
+
+	cliSignResolutionPayInFuture := func(cmd string, ctx context.Context) (err error) {
+
+		extra := &transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture{}
+
+		privateKey := gui.GUI.OutputReadBytes("Private Key", func(value []byte) bool {
+			return len(value) == cryptography.PrivateKeySize
+		})
+		pk, err := addresses.NewPrivateKey(privateKey)
+		if err != nil {
+			return
+		}
+
+		extra.TxId = gui.GUI.OutputReadBytes("Provide TxId", func(val []byte) bool {
+			return len(val) == cryptography.HashSize
+		})
+
+		extra.PayloadIndex = byte(gui.GUI.OutputReadInt("Payload index", false, 0, func(val int) bool {
+			return val >= 0 && val < 255
+		}))
+
+		extra.Resolution = gui.GUI.OutputReadBool("Resolution.  Use y/n for voting", false, false)
+
+		nonce := rand.Uint64()
+		signature, err := crypto.SignMessage(extra.MessageForSigning(nonce), privateKey)
+		if err != nil {
+			return
+		}
+
+		gui.GUI.OutputWrite(fmt.Sprintf("Public Key: %s", base64.StdEncoding.EncodeToString(pk.GeneratePublicKey())))
+		gui.GUI.OutputWrite(fmt.Sprintf("Nonce: %d", nonce))
+		gui.GUI.OutputWrite(fmt.Sprintf("Signature: %s", base64.StdEncoding.EncodeToString(signature)))
+
+		if filename := gui.GUI.OutputReadFilename("Path to export", "txt", true); len(filename) > 0 {
+
+			if err = files.WriteFile(filename, fmt.Sprintf("Public Key: %s\n", base64.StdEncoding.EncodeToString(pk.GeneratePublicKey())),
+				fmt.Sprintf("Nonce: %d\n", nonce),
+				fmt.Sprintf("Signature: %s\n", base64.StdEncoding.EncodeToString(signature))); err != nil {
+				return
+			}
+
+			gui.GUI.OutputWrite("Exported successfully to: ", filename)
+		}
+
+		return
+	}
+
 	gui.GUI.CommandDefineCallback("List Addresses", wallet.CliListAddresses, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Create New Address", cliCreateNewAddress, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Clear & Create new empty Wallet", cliClearWallet, wallet.Loaded)
@@ -595,5 +677,9 @@ func (wallet *Wallet) initWalletCLI() {
 	gui.GUI.CommandDefineCallback("Encrypt Wallet", cliEncryptWallet, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Remove Encryption", cliRemoveEncryption, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Decrypt Wallet", cliDecryptWallet, !wallet.Loaded)
+
+	gui.GUI.CommandDefineCallback("Create (PublicKey, PrivateKey) pair", cliCreatePair, true)
+	gui.GUI.CommandDefineCallback("Sign message using PrivateKey", cliSignMessage, true)
+	gui.GUI.CommandDefineCallback("Sign Resolution Pay in Future", cliSignResolutionPayInFuture, true)
 
 }

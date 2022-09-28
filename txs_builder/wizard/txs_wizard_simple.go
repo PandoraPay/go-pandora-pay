@@ -1,6 +1,7 @@
 package wizard
 
 import (
+	"errors"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
@@ -20,17 +21,25 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 
 	spaceExtra := 0
 
-	var txScript transaction_simple.ScriptType
-	var extraFinal transaction_simple_extra.TransactionSimpleExtraInterface
+	txBase := &transaction_simple.TransactionSimple{
+		nil,
+		nil,
+		0,
+		transfer.Data.getDataVersion(),
+		dataFinal,
+		transfer.Nonce,
+		0,
+		nil, nil,
+	}
 
 	switch txExtra := transfer.Extra.(type) {
 	case *WizardTxSimpleExtraUpdateAssetFeeLiquidity:
-		extraFinal = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{
-			Liquidities:     txExtra.Liquidities,
-			CollectorHasNew: txExtra.CollectorHasNew,
-			Collector:       txExtra.Collector,
+		txBase.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{nil,
+			txExtra.Liquidities,
+			txExtra.NewCollector,
+			txExtra.Collector,
 		}
-		txScript = transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY
+		txBase.TxScript = transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY
 
 		spaceExtra += 1 + len(txExtra.Collector) + 1
 		for _, liquidity := range txExtra.Liquidities {
@@ -38,23 +47,33 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 				spaceExtra += len(helpers.SerializeToBytes(liquidity))
 			}
 		}
+	case *WizardTxSimpleExtraResolutionPayInFuture:
+		txBase.Extra = &transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture{nil,
+			txExtra.TxId,
+			txExtra.PayloadIndex,
+			txExtra.Resolution,
+			txExtra.MultisigPublicKeys,
+			txExtra.Nonces,
+			txExtra.Signatures,
+		}
+		txBase.TxScript = transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE
 	}
 
 	var privateKey *addresses.PrivateKey
-	if privateKey, err = addresses.NewPrivateKey(transfer.Key); err != nil {
-		return nil, err
-	}
 
-	txBase := &transaction_simple.TransactionSimple{
-		TxScript:    txScript,
-		DataVersion: transfer.Data.getDataVersion(),
-		Data:        dataFinal,
-		Nonce:       transfer.Nonce,
-		Fee:         0,
-		Extra:       extraFinal,
-		Vin: &transaction_simple_parts.TransactionSimpleInput{
+	switch txBase.TxScript {
+	case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
+		if privateKey, err = addresses.NewPrivateKey(transfer.Key); err != nil {
+			return nil, err
+		}
+
+		txBase.Vin = &transaction_simple_parts.TransactionSimpleInput{
 			PublicKey: privateKey.GeneratePublicKey(),
-		},
+		}
+
+	case transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE:
+	default:
+		return nil, errors.New("Invalid Tx Script")
 	}
 
 	tx := &transaction.Transaction{
@@ -70,10 +89,12 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 
 	statusCallback("Transaction Signing...")
 
-	if txBase.Vin.Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
-		return nil, err
+	if privateKey != nil {
+		if txBase.Vin.Signature, err = privateKey.Sign(tx.SerializeForSigning()); err != nil {
+			return nil, err
+		}
+		statusCallback("Transaction Signed")
 	}
-	statusCallback("Transaction Signed")
 
 	if err = bloomAllTx(tx, statusCallback); err != nil {
 		return

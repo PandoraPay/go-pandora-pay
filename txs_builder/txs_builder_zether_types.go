@@ -5,13 +5,17 @@ import (
 )
 
 type ZetherSenderRingType struct {
+	CopyRingMembers       int      `json:"copyRingMembers" msgpack:"copyRingMembers"`
 	RequireStakedAccounts bool     `json:"requireStakedAccounts" msgpack:"requireStakedAccounts"`
+	AvoidStakedAccounts   bool     `json:"avoidStakedAccounts" msgpack:"avoidStakedAccounts"`
 	IncludeMembers        []string `json:"includeMembers" msgpack:"includeMembers"`
 	NewAccounts           int      `json:"newAccounts" msgpack:"newAccounts"`
 }
 
 type ZetherRecipientRingType struct {
+	CopyRingMembers       int      `json:"copyRingMembers" msgpack:"copyRingMembers"`
 	RequireStakedAccounts bool     `json:"requireStakedAccounts" msgpack:"requireStakedAccounts"`
+	AvoidStakedAccounts   bool     `json:"avoidStakedAccounts" msgpack:"avoidStakedAccounts"`
 	IncludeMembers        []string `json:"includeMembers" msgpack:"includeMembers"`
 	NewAccounts           int      `json:"newAccounts" msgpack:"newAccounts"`
 }
@@ -33,6 +37,7 @@ type TxBuilderCreateZetherTxPayload struct {
 	Data              *wizard.WizardTransactionData      `json:"data" msgpack:"data"`
 	Fee               *wizard.WizardZetherTransactionFee `json:"fee" msgpack:"fee"`
 	Extra             wizard.WizardZetherPayloadExtra    `json:"extra" msgpack:"extra"`
+	WitnessIndexes    []int                              `json:"witnessIndexes" msgpack:"witnessIndexes"`
 }
 
 type TxBuilderCreateZetherTxData struct {

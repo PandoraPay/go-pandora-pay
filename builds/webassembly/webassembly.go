@@ -132,6 +132,7 @@ func Initialize() {
 				"transactionSimple": js.ValueOf(map[string]interface{}{
 					"ScriptType": js.ValueOf(map[string]interface{}{
 						"SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY": js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY)),
+						"SCRIPT_RESOLUTION_PAY_IN_FUTURE":   js.ValueOf(uint64(transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE)),
 					}),
 				}),
 				"transactionZether": js.ValueOf(map[string]interface{}{
@@ -143,6 +144,7 @@ func Initialize() {
 						"SCRIPT_ASSET_CREATE":          js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_ASSET_CREATE)),
 						"SCRIPT_ASSET_SUPPLY_INCREASE": js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE)),
 						"SCRIPT_PLAIN_ACCOUNT_FUND":    js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND)),
+						"SCRIPT_PAY_IN_FUTURE":         js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE)),
 					}),
 				}),
 			}),

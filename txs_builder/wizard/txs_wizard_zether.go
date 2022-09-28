@@ -142,7 +142,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			return fmt.Errorf("Ring Sender %d and Ring Recipient %d should have same length", len(ringsSenderMembers[t]), len(ringsRecipientMembers[t]))
 		}
 		if len(transfer.WitnessIndexes) != len(ringsSenderMembers[t])+len(ringsRecipientMembers[t]) {
-			return errors.New("Witness Indexes length is invalid")
+			return fmt.Errorf("Payloadd %d Witness Indexes %d length is invalid %d", t, len(transfer.WitnessIndexes), len(ringsSenderMembers[t])+len(ringsRecipientMembers[t]))
 		}
 
 		parities[t] = witness_indexes[0]%2 == 0
@@ -271,8 +271,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			case *WizardZetherPayloadExtraAssetCreate:
 
 				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_ASSET_CREATE
-				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{
-					Asset: payloadExtra.Asset,
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetCreate{nil,
+					payloadExtra.Asset,
 				}
 
 				spaceExtra += config_coins.ASSET_LENGTH + len(helpers.SerializeToBytes(payloadExtra.Asset))
@@ -284,8 +284,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				if privateKeysForSign[t], err = addresses.NewPrivateKey(transfer.SenderSpendPrivateKey); err != nil {
 					return
 				}
-				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraSpend{
-					SenderSpendPublicKey: privateKeysForSign[t].GeneratePublicKeyPoint(),
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraSpend{nil,
+					privateKeysForSign[t].GeneratePublicKeyPoint(),
+					nil,
 				}
 
 			case *WizardZetherPayloadExtraAssetSupplyIncrease:
@@ -293,12 +294,12 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				if privateKeysForSign[t], err = addresses.NewPrivateKey(payloadExtra.AssetSupplyPrivateKey); err != nil {
 					return
 				}
-				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{
-					AssetId:              payloadExtra.AssetId,
-					ReceiverPublicKey:    payloadExtra.ReceiverPublicKey,
-					Value:                payloadExtra.Value,
-					AssetSupplyPublicKey: privateKeysForSign[t].GeneratePublicKey(),
-					AssetSignature:       helpers.EmptyBytes(cryptography.SignatureSize),
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraAssetSupplyIncrease{nil,
+					payloadExtra.AssetId,
+					payloadExtra.ReceiverPublicKey,
+					payloadExtra.Value,
+					privateKeysForSign[t].GeneratePublicKey(),
+					helpers.EmptyBytes(cryptography.SignatureSize),
 				}
 
 				spaceExtra += 1 + len(payloadExtra.ReceiverPublicKey) + 66
@@ -308,7 +309,14 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPlainAccountFund{
 					PlainAccountPublicKey: payloadExtra.PlainAccountPublicKey,
 				}
-
+			case *WizardZetherPayloadExtraPayInFuture:
+				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture{
+					nil,
+					payloadExtra.RefundTime,
+					payloadExtra.Threshold,
+					payloadExtra.PublicKeys,
+				}
 			default:
 				return errors.New("Invalid payload")
 			}
@@ -320,6 +328,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 	var witness_list []crypto.Witness
 	sender_secrets := make([]*big.Int, len(transfers))
 
+	otherFee := uint64(0)
 	for t, transfer := range transfers {
 
 		select {
@@ -412,13 +421,21 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		extraBytes += len(payload.WhisperRecipient)
 		extraBytes += len(payload.WhisperSender)
 
-		fee := setFee(tx, extraBytes, myFees[t].Clone(), t == 0)
+		fee := setFee(tx, extraBytes, myFees[t].Clone(), t == 0) + otherFee
+		otherFee = 0
 
 		statusCallback("Transaction Set fee")
 
 		if !bytes.Equal(transfers[t].Asset, config_coins.NATIVE_ASSET_FULL) {
 			payload.FeeRate = transfers[t].FeeRate
 			payload.FeeLeadingZeros = transfers[t].FeeLeadingZeros
+		}
+
+		if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE {
+			otherFee = fee
+			fee = 0
+			payload.FeeRate = 0
+			payload.FeeLeadingZeros = 0
 		}
 
 		//fake balance
@@ -541,12 +558,13 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		if payload.PayloadScript != transaction_zether_payload_script.SCRIPT_STAKING {
 			for i := range publickeylist {
 
-				update := false
+				update := true
 				if (i%2 == 0) == payload.Parity { //sender
-					update = true
+
 				} else { //receiver
-					if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) || !hasRollovers[publickeylist[i].String()] {
-						update = true
+					if (bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && hasRollovers[publickeylist[i].String()]) ||
+						payload.PayloadScript == transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE {
+						update = false
 					}
 				}
 				if update {
