@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"pandora-pay/config"
 	"pandora-pay/helpers/generics"
-	"pandora-pay/network/known_nodes"
+	"pandora-pay/network/known_nodes/known_node"
 	"pandora-pay/store/min_max_heap"
 	"sync/atomic"
 	"time"
@@ -39,13 +39,13 @@ func (api *APICommon) GetList(reply *APINetworkNodesReply) (err error) {
 		includedMap := make(map[string]bool)
 
 		//1st my address
-		if config.NETWORK_ADDRESS_URL_STRING != "" {
+		if config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING != "" {
 			newTemporaryList.Nodes[0] = &APINetworkNode{
-				config.NETWORK_ADDRESS_URL_STRING,
+				config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING,
 				3000,
 			}
 			index = 1
-			includedMap[config.NETWORK_ADDRESS_URL_STRING] = true
+			includedMap[config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING] = true
 		}
 
 		//50% top
@@ -53,7 +53,7 @@ func (api *APICommon) GetList(reply *APINetworkNodesReply) (err error) {
 			return b < a
 		})
 
-		allKnowNodes := map[string]*known_nodes.KnownNodeScored{}
+		allKnowNodes := map[string]*known_node.KnownNodeScored{}
 
 		for _, knownNode := range knownList {
 			if err = maxHeap.Insert(float64(atomic.LoadInt32(&knownNode.Score)), []byte(knownNode.URL)); err != nil {

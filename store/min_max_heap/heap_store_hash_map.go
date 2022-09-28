@@ -22,7 +22,12 @@ func (self *HeapStoreHashMap) DeleteByKey(key []byte) error {
 		return errors.New("Key is not found")
 	}
 
-	return self.Delete(found.(*HeapDictElement).Index)
+	if err := self.Delete(found.(*HeapDictElement).Index); err != nil {
+		return err
+	}
+
+	self.DictMap.Delete(string(key))
+	return nil
 }
 
 func (self *HeapStoreHashMap) GetKey(Key []byte) (*HeapDictElement, error) {
@@ -67,6 +72,10 @@ func NewHeapStoreHashMap(dbTx store_db_interface.StoreDBTransactionInterface, na
 	}
 
 	heap.removeElement = func() (*HeapElement, error) {
+
+		if hashMap.Count == 0 {
+			return nil, nil
+		}
 
 		index := hashMap.Count - 1
 

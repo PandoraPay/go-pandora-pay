@@ -43,7 +43,6 @@ Options:
   --wallet-decrypt=password                          Decrypt wallet.
   --wallet-remove-encryption                         Remove wallet encryption.
   --wallet-export-shared-staked-address=args         Derive and export Staked address. Argument must be "account,nonce,path".
-  --hcaptcha-site-key=args                           hcaptcha Site key.
   --hcaptcha-secret=args                             hcaptcha Secret.
   --faucet-testnet-enabled=args                      Enable Faucet Testnet. Use "true" to enable it
   --delegator-enabled=bool                           Enable Delegator. Will allow other users to Delegate to the node. Use "true" to enable it

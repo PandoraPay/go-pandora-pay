@@ -5,21 +5,21 @@ import (
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"math/rand"
-	"nhooyr.io/websocket"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
-	"pandora-pay/helpers/container_list"
-	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_http"
 	"pandora-pay/network/api/api_websockets"
 	"pandora-pay/network/banned_nodes"
+	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes"
+	"pandora-pay/network/known_nodes/known_node"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
+	"pandora-pay/network/websocks/websock"
 	"pandora-pay/recovery"
 	"pandora-pay/settings"
 	"strconv"
@@ -28,12 +28,9 @@ import (
 )
 
 type Websockets struct {
-	AllAddresses                 *generics.Map[string, *connection.AdvancedConnection]
+	connectedNodes               *connected_nodes.ConnectedNodes
+	knownNodes                   *known_nodes.KnownNodes
 	ApiWebsockets                *api_websockets.APIWebsockets
-	allList                      *container_list.ContainerList[*connection.AdvancedConnection]
-	clients                      int64 //use atomic
-	serverSockets                int64 //use atomic
-	totalSockets                 int64 //use atomic
 	UpdateNewConnectionMulticast *multicast.MulticastChannel[*connection.AdvancedConnection]
 	bannedNodes                  *banned_nodes.BannedNodes
 	subscriptions                *WebsocketSubscriptions
@@ -42,15 +39,15 @@ type Websockets struct {
 }
 
 func (websockets *Websockets) GetClients() int64 {
-	return atomic.LoadInt64(&websockets.clients)
+	return atomic.LoadInt64(&websockets.connectedNodes.Clients)
 }
 
 func (websockets *Websockets) GetServerSockets() int64 {
-	return atomic.LoadInt64(&websockets.serverSockets)
+	return atomic.LoadInt64(&websockets.connectedNodes.ServerSockets)
 }
 
 func (websockets *Websockets) GetFirstSocket() *connection.AdvancedConnection {
-	list := websockets.allList.Get()
+	list := websockets.connectedNodes.AllList.Get()
 	if len(list) > 0 {
 		return list[0]
 	}
@@ -58,7 +55,7 @@ func (websockets *Websockets) GetFirstSocket() *connection.AdvancedConnection {
 }
 
 func (websockets *Websockets) GetAllSockets() []*connection.AdvancedConnection {
-	return websockets.allList.Get()
+	return websockets.connectedNodes.AllList.Get()
 }
 
 func (websockets *Websockets) GetRandomSocket() *connection.AdvancedConnection {
@@ -73,12 +70,12 @@ func (websockets *Websockets) GetRandomSocket() *connection.AdvancedConnection {
 func (websockets *Websockets) Disconnect() int {
 	list := websockets.GetAllSockets()
 	for _, sock := range list {
-		sock.Close("Forcefully disconnected")
+		sock.Close()
 	}
 	return len(list)
 }
 
-func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) {
+func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctxDuration time.Duration) {
 
 	if exceptSocketUUID == advanced_connection_types.UUID_SKIP_ALL {
 		return
@@ -89,7 +86,7 @@ func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeA
 	for i, conn := range all {
 		if conn.UUID != exceptSocketUUID && consensusTypeAccepted[conn.Handshake.Consensus] {
 			go func(conn *connection.AdvancedConnection, i int) {
-				conn.Send(name, data, ctx, ctxDuration)
+				conn.Send(name, data, ctxDuration)
 			}(conn, i)
 		}
 	}
@@ -131,60 +128,53 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 	return out
 }
 
-func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) {
+func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctxDuration time.Duration) {
 	out, _ := msgpack.Marshal(data)
-	websockets.Broadcast(name, out, consensusTypeAccepted, exceptSocketUUID, ctx, ctxDuration)
+	websockets.Broadcast(name, out, consensusTypeAccepted, exceptSocketUUID, ctxDuration)
 }
 
 func (websockets *Websockets) BroadcastJSONAwaitAnswer(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) []*advanced_connection_types.AdvancedConnectionReply {
 	out, _ := msgpack.Marshal(data)
 	return websockets.BroadcastAwaitAnswer(name, out, consensusTypeAccepted, exceptSocketUUID, ctx, ctxDuration)
 }
-
-func (websockets *Websockets) closedConnectionNow(conn *connection.AdvancedConnection) bool {
-
-	conn.InitializedStatusMutex.Lock()
-	defer conn.InitializedStatusMutex.Unlock()
-
-	if conn.InitializedStatus != connection.INITIALIZED_STATUS_INITIALIZED {
-		return false
-	}
-
-	websockets.AllAddresses.LoadAndDelete(conn.RemoteAddr)
-
-	websockets.allList.Remove(conn)
-	conn.InitializedStatus = connection.INITIALIZED_STATUS_CLOSED
-
-	return true
-}
-
 func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnection) {
 
-	if !websockets.closedConnectionNow(conn) {
+	if conn.KnownNode != nil {
+		websockets.knownNodes.MarkKnownNodeDisconnected(conn.KnownNode)
+	}
+	websockets.connectedNodes.JustDisconnected(conn)
+
+	conn.InitializedStatusMutex.Lock()
+
+	if conn.InitializedStatus != connection.INITIALIZED_STATUS_INITIALIZED {
+		conn.InitializedStatusMutex.Unlock()
 		return
 	}
+
+	conn.InitializedStatus = connection.INITIALIZED_STATUS_CLOSED
+	conn.InitializedStatusMutex.Unlock()
+
+	totalSockets := websockets.connectedNodes.Disconnected(conn)
 
 	if config.SEED_WALLET_NODES_INFO {
 		websockets.subscriptions.websocketClosedCn <- conn
 	}
 
-	if conn.ConnectionType {
-		atomic.AddInt64(&websockets.serverSockets, -1)
-	} else {
-		atomic.AddInt64(&websockets.clients, -1)
-	}
-	totalSockets := atomic.AddInt64(&websockets.totalSockets, -1)
 	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
 }
 
-func (websockets *Websockets) NewConnection(c *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, connectionType bool) (*connection.AdvancedConnection, error) {
+func (websockets *Websockets) increaseScoreKnownNode(knownNode *known_node.KnownNodeScored, delta int32, isServer bool) bool {
+	return websockets.knownNodes.IncreaseKnownNodeScore(knownNode, delta, isServer)
+}
 
-	conn, err := connection.NewAdvancedConnection(c, remoteAddr, knownNode, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn, websockets.subscriptions.removeSubscriptionCn, websockets.closedConnection)
+func (websockets *Websockets) NewConnection(c *websock.Conn, remoteAddr string, knownNode *known_node.KnownNodeScored, connectionType bool) (*connection.AdvancedConnection, error) {
+
+	conn, err := connection.NewAdvancedConnection(c, remoteAddr, knownNode, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn, websockets.subscriptions.removeSubscriptionCn, websockets.closedConnection, websockets.increaseScoreKnownNode)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, exists := websockets.AllAddresses.LoadOrStore(remoteAddr, conn); exists {
+	if !websockets.connectedNodes.JustConnected(conn, remoteAddr) {
 		return nil, errors.New("Already connected")
 	}
 
@@ -192,6 +182,7 @@ func (websockets *Websockets) NewConnection(c *websocket.Conn, remoteAddr string
 	recovery.SafeGo(conn.SendPings)
 
 	if knownNode != nil {
+		websockets.knownNodes.MarkKnownNodeConnected(knownNode)
 		recovery.SafeGo(conn.IncreaseKnownNodeScore)
 	}
 
@@ -206,7 +197,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 
 	defer func() {
 		if err != nil {
-			conn.Close(err.Error())
+			conn.Close()
 		}
 	}()
 
@@ -241,17 +232,10 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	}
 
 	conn.InitializedStatusMutex.Lock()
-	websockets.allList.Push(conn)
 	conn.InitializedStatus = connection.INITIALIZED_STATUS_INITIALIZED
 	conn.InitializedStatusMutex.Unlock()
 
-	if conn.ConnectionType {
-		atomic.AddInt64(&websockets.serverSockets, +1)
-	} else {
-		atomic.AddInt64(&websockets.clients, +1)
-	}
-	totalSockets := atomic.AddInt64(&websockets.totalSockets, +1)
-
+	totalSockets := websockets.connectedNodes.ConnectedHandshakeValidated(conn)
 	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
 
 	websockets.UpdateNewConnectionMulticast.Broadcast(conn)
@@ -259,13 +243,11 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	return nil
 }
 
-func NewWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, settings *settings.Settings, bannedNodes *banned_nodes.BannedNodes, api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
+func NewWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, settings *settings.Settings, connectedNodes *connected_nodes.ConnectedNodes, knownNodes *known_nodes.KnownNodes, bannedNodes *banned_nodes.BannedNodes, api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
-		AllAddresses:                 &generics.Map[string, *connection.AdvancedConnection]{},
-		clients:                      0,
-		serverSockets:                0,
-		allList:                      container_list.NewContainerList[*connection.AdvancedConnection](),
+		connectedNodes:               connectedNodes,
+		knownNodes:                   knownNodes,
 		UpdateNewConnectionMulticast: multicast.NewMulticastChannel[*connection.AdvancedConnection](),
 		api:                          api,
 		ApiWebsockets:                apiWebsockets,
@@ -277,7 +259,7 @@ func NewWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, setti
 
 	recovery.SafeGo(func() {
 		for {
-			gui.GUI.InfoUpdate("sockets", strconv.FormatInt(atomic.LoadInt64(&websockets.clients), 32)+" "+strconv.FormatInt(atomic.LoadInt64(&websockets.serverSockets), 32))
+			gui.GUI.InfoUpdate("sockets", strconv.FormatInt(atomic.LoadInt64(&connectedNodes.Clients), 32)+" "+strconv.FormatInt(atomic.LoadInt64(&connectedNodes.ServerSockets), 32))
 			time.Sleep(1 * time.Second)
 		}
 	})

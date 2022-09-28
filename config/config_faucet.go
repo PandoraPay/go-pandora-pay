@@ -3,7 +3,6 @@ package config
 import "pandora-pay/config/config_coins"
 
 var (
-	HCAPTCHA_SITE_KEY          = ""
 	HCAPTCHA_SECRET_KEY        = ""
 	FAUCET_TESTNET_ENABLED     = false
 	FAUCET_TESTNET_COINS       = uint64(100)

@@ -89,7 +89,18 @@ func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte) (*wallet_ad
 		return nil, err
 	}
 
-	privKey, err := masterKey.Derive(derivation.FirstHardenedIndex) //0
+	start := bip32.FirstHardenedChild
+
+	if wallet.nonHardening { //non hardened
+		start = 0
+	}
+
+	privKey, err := secretChild.NewChildKey(start + 0)
+	if err != nil {
+		return nil, err
+	}
+
+	spendPrivKey, err := secretChild.NewChildKey(start + 1)
 	if err != nil {
 		return nil, err
 	}

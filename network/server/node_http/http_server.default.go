@@ -6,13 +6,13 @@ package node_http
 import (
 	"encoding/json"
 	"errors"
+	"github.com/rs/cors"
 	"net/http"
 	"net/url"
+	"pandora-pay/config"
 )
 
 func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -60,8 +60,6 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 
 func (server *HttpServer) post(w http.ResponseWriter, req *http.Request) {
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
 	defer func() {
 		if err := recover(); err != nil {
 			http.Error(w, err.(error).Error(), http.StatusInternalServerError)
@@ -100,16 +98,27 @@ func (server *HttpServer) post(w http.ResponseWriter, req *http.Request) {
 	w.Write(final)
 }
 
-func (server *HttpServer) Initialize() {
+func (server *HttpServer) GetHttpHandler() *http.Handler {
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/ws", server.websocketServer.HandleUpgradeConnection)
+
+	if config.FAUCET_TESTNET_ENABLED {
+		fs := http.FileServer(http.Dir("../../../static/challenge"))
+		mux.Handle("/static/challenge/", http.StripPrefix("/static/challenge/", fs))
+	}
 
 	for key, callback := range server.Api.GetMap {
-		http.HandleFunc("/"+key, server.get)
+		mux.HandleFunc("/"+key, server.get)
 		server.GetMap["/"+key] = callback
 	}
 
 	for key, callback := range server.Api.PostMap {
-		http.HandleFunc("/"+key, server.post)
+		mux.HandleFunc("/"+key, server.post)
 		server.PostMap["/"+key] = callback
 	}
 
+	handler := cors.AllowAll().Handler(mux)
+	return &handler
 }

@@ -99,15 +99,15 @@ func (m *Heap) downHeapify(current uint64) (err error) {
 	}
 
 	if rightRightIndex < m.GetSize() {
-		if m.compare(a.Score, b.Score) {
-			if a, err = m.getElement(rightRightIndex); err != nil {
-				return
-			}
-			if b, err = m.getElement(smallest); err != nil {
-				return
-			}
+		if a, err = m.getElement(rightRightIndex); err != nil {
+			return
 		}
-		smallest = rightRightIndex
+		if b, err = m.getElement(smallest); err != nil {
+			return
+		}
+		if m.compare(a.Score, b.Score) {
+			smallest = rightRightIndex
+		}
 	}
 	if smallest != current {
 		if err = m.swap(current, smallest); err != nil {
@@ -120,39 +120,41 @@ func (m *Heap) downHeapify(current uint64) (err error) {
 	return
 }
 
-//https://stackoverflow.com/a/12664523/14319261
+// https://stackoverflow.com/a/12664523/14319261
 func (m *Heap) Delete(index uint64) error {
+
+	if m.GetSize() == 0 {
+		return nil
+	}
+
+	if m.GetSize() == 1 {
+		_, err := m.removeElement()
+		return err
+	}
 
 	element, err := m.removeElement()
 	if err != nil {
 		return err
 	}
 
-	if index == m.GetSize() {
-		return nil
-	}
-
 	if err = m.updateElement(index, element); err != nil {
 		return err
 	}
 
-	if index > 0 {
-		middle, err := m.getElement((index - 1) / 2)
+	if index > 1 {
+		p, err := m.getElement(m.parent(index))
 		if err != nil {
 			return err
 		}
 
-		if index > 0 && m.compare(middle.Score, element.Score) {
+		if m.compare(element.Score, p.Score) {
 			return m.upHeapify(index)
+		} else {
+			return m.downHeapify(index)
 		}
-
 	}
 
-	if index < m.GetSize()/2 {
-		return m.downHeapify(index)
-	}
-
-	return nil
+	return m.downHeapify(0)
 }
 
 func (m *Heap) RemoveTop() (*HeapElement, error) {
@@ -176,16 +178,18 @@ func (m *Heap) GetTop() (*HeapElement, error) {
 	return m.getElement(0)
 }
 
-/**
+/*
 Minheap
-func (a,b uint64) bool{
-	return a < b
-}
+
+	func (a,b uint64) bool{
+		return a < b
+	}
 
 Maxheap
-func (a,b uint64) bool{
-	return b < a
-}
+
+	func (a,b uint64) bool{
+		return b < a
+	}
 */
 func NewHeap(compare func(a, b float64) bool) *Heap {
 	return &Heap{

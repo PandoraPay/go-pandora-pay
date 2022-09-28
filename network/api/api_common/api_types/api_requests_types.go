@@ -66,7 +66,7 @@ type APIUnsubscriptionRequest struct {
 type APIAuthenticated[T any] struct {
 	User string `json:"user" msgpack:"user"`
 	Pass string `json:"pass" msgpack:"pass"`
-	Data T      `json:",inline" msgpack:",inline"`
+	Data *T     `json:"req" msgpack:"req"`
 }
 
 func CheckAuthenticated(args url.Values) bool {

@@ -18,9 +18,12 @@
 
 # Remove local storage
 /_build
+/bin
 
 # Remove certificates
 ./certificate.crt
 ./certificate.key
 
-/webassembly/dist/PandoraPay.wasm
+/builds/webassembly/bin
+/builds/webassembly_helper/bin
+/builds/electron_helper/bin

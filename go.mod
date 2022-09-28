@@ -1,15 +1,18 @@
 module pandora-pay
 
-go 1.18
+go 1.19
 
 require (
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/blang/semver/v4 v4.0.0
 	github.com/docopt/docopt.go v0.0.0-20180111231733-ee0de3bc6815
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/gorilla/rpc v1.2.0
 	github.com/gorilla/schema v1.2.0
+	github.com/gorilla/websocket v1.5.0
 	github.com/mackerelio/go-osstat v0.1.0
 	github.com/mr-tron/base58 v1.2.0
+	github.com/rs/cors v1.8.2
 	github.com/stretchr/testify v1.7.0
 	github.com/tevino/abool v1.2.0
 	github.com/tidwall/buntdb v1.2.3
@@ -20,7 +23,6 @@ require (
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	golang.org/x/exp v0.0.0-20220317015231-48e79f11773a
 	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654
-	nhooyr.io/websocket v1.8.7
 )
 
 require (

@@ -6,12 +6,12 @@ import (
 	"github.com/blang/semver/v4"
 	"github.com/tevino/abool"
 	"github.com/vmihailenco/msgpack/v5"
-	"nhooyr.io/websocket"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
-	"pandora-pay/network/known_nodes"
+	"pandora-pay/network/known_nodes/known_node"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
+	"pandora-pay/network/websocks/websock"
 	"pandora-pay/recovery"
 	"sync"
 	"sync/atomic"
@@ -29,40 +29,42 @@ const (
 var uuidGenerator uint32 //use atomic
 
 type AdvancedConnection struct {
-	Authenticated          *abool.AtomicBool
-	UUID                   advanced_connection_types.UUID
-	Conn                   *websocket.Conn
-	Handshake              *ConnectionHandshake
-	Version                *semver.Version
-	KnownNode              *known_nodes.KnownNodeScored
-	RemoteAddr             string
-	answerCounter          uint32
-	Closed                 chan struct{}
-	InitializedStatus      InitializedStatusType //use the mutex
-	InitializedStatusMutex *sync.Mutex
-	IsClosed               *abool.AtomicBool
-	getMap                 map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)
-	answerMap              map[uint32]chan *advanced_connection_types.AdvancedConnectionReply
-	answerMapLock          *sync.Mutex
-	Subscriptions          *Subscriptions
-	ConnectionType         bool
-	onClosedConnection     func(c *AdvancedConnection)
+	Authenticated            *abool.AtomicBool
+	UUID                     advanced_connection_types.UUID
+	Conn                     *websock.Conn
+	Handshake                *ConnectionHandshake
+	Version                  *semver.Version
+	KnownNode                *known_node.KnownNodeScored
+	RemoteAddr               string
+	answerCounter            uint32
+	Closed                   chan struct{}
+	InitializedStatus        InitializedStatusType //use the mutex
+	InitializedStatusMutex   *sync.Mutex
+	IsClosed                 *abool.AtomicBool
+	getMap                   map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)
+	answerMap                map[uint32]chan *advanced_connection_types.AdvancedConnectionReply
+	answerMapLock            *sync.Mutex
+	Subscriptions            *Subscriptions
+	writeLock                *sync.Mutex
+	ConnectionType           bool
+	onClosedConnection       func(c *AdvancedConnection)
+	onIncreaseKnownNodeScore func(knownNode *known_node.KnownNodeScored, delta int32, isServer bool) bool
 }
 
 func (c *AdvancedConnection) GetTimeout() time.Duration {
 	return config.WEBSOCKETS_TIMEOUT
 }
 
-func (c *AdvancedConnection) Close(reason string) error {
+func (c *AdvancedConnection) Close() error {
 	if c.IsClosed.SetToIf(false, true) {
 		close(c.Closed)
 		c.onClosedConnection(c)
-		return c.Conn.Close(websocket.StatusNormalClosure, reason[:generics.Min(100, len(reason))])
+		return c.Conn.Close()
 	}
 	return nil
 }
 
-func (c *AdvancedConnection) connSendMessage(message interface{}, ctxParent context.Context, ctxDuration time.Duration) error {
+func (c *AdvancedConnection) connSendMessage(message any, ctxDuration time.Duration) error {
 
 	data, err := msgpack.Marshal(message)
 	if err != nil {
@@ -73,13 +75,14 @@ func (c *AdvancedConnection) connSendMessage(message interface{}, ctxParent cont
 		return errors.New("Closed")
 	}
 
-	ctx, cancel := context.WithTimeout(helpers.GetContext(ctxParent), generics.Max(ctxDuration, config.WEBSOCKETS_TIMEOUT))
-	defer cancel()
+	c.writeLock.Lock()
+	defer c.writeLock.Unlock()
 
-	return c.Conn.Write(ctx, websocket.MessageBinary, data)
+	c.Conn.SetWriteDeadline(time.Now().Add(generics.Max(ctxDuration, config.WEBSOCKETS_TIMEOUT)))
+	return c.Conn.WriteMessage(websock.BinaryMessage, data)
 }
 
-func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byte, reply bool, ctxParent context.Context, ctxDuration time.Duration) error {
+func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byte, reply bool, ctxDuration time.Duration) error {
 	message := &advanced_connection_types.AdvancedConnectionMessage{
 		replyBackId,
 		reply,
@@ -87,7 +90,7 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 		name,
 		data,
 	}
-	return c.connSendMessage(message, ctxParent, ctxDuration)
+	return c.connSendMessage(message, ctxDuration)
 }
 
 func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, ctxParent context.Context, ctxDuration time.Duration) *advanced_connection_types.AdvancedConnectionReply {
@@ -98,9 +101,17 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 	replyBackId := atomic.AddUint32(&c.answerCounter, 1)
 
 	eventCn := make(chan *advanced_connection_types.AdvancedConnectionReply)
-	c.answerMapLock.Lock()
-	c.answerMap[replyBackId] = eventCn
-	c.answerMapLock.Unlock()
+
+	defer func() {
+
+		c.answerMapLock.Lock()
+		if c.answerMap[replyBackId] != nil {
+			delete(c.answerMap, replyBackId)
+		}
+		c.answerMapLock.Unlock()
+
+		close(eventCn)
+	}()
 
 	message := &advanced_connection_types.AdvancedConnectionMessage{
 		replyBackId,
@@ -110,7 +121,11 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 		data,
 	}
 
-	if err := c.connSendMessage(message, ctx, ctxDuration); err != nil {
+	c.answerMapLock.Lock()
+	c.answerMap[replyBackId] = eventCn
+	c.answerMapLock.Unlock()
+
+	if err := c.connSendMessage(message, ctxDuration); err != nil {
 		return &advanced_connection_types.AdvancedConnectionReply{nil, err}
 	}
 
@@ -120,34 +135,20 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 	case <-c.Closed:
 		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout Closed")}
 	case <-ctx.Done():
-
-		var closeChannel bool
-
-		c.answerMapLock.Lock()
-		if c.answerMap[replyBackId] != nil {
-			delete(c.answerMap, replyBackId)
-			closeChannel = true
-		}
-		c.answerMapLock.Unlock()
-
-		if closeChannel {
-			close(eventCn)
-		}
-
 		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout")}
 	}
 }
 
-func (c *AdvancedConnection) Send(name []byte, data []byte, ctxParent context.Context, ctxDuration time.Duration) error {
-	return c.sendNow(0, name, data, false, ctxParent, ctxDuration)
+func (c *AdvancedConnection) Send(name []byte, data []byte, ctxDuration time.Duration) error {
+	return c.sendNow(0, name, data, false, ctxDuration)
 }
 
-func (c *AdvancedConnection) SendJSON(name []byte, data interface{}, ctxParent context.Context, ctxDuration time.Duration) error {
+func (c *AdvancedConnection) SendJSON(name []byte, data any, ctxDuration time.Duration) error {
 	out, err := msgpack.Marshal(data)
 	if err != nil {
 		return err
 	}
-	return c.sendNow(0, name, out, false, ctxParent, ctxDuration)
+	return c.sendNow(0, name, out, false, ctxDuration)
 }
 
 func (c *AdvancedConnection) SendAwaitAnswer(name []byte, data []byte, ctxParent context.Context, ctxDuration time.Duration) *advanced_connection_types.AdvancedConnectionReply {
@@ -178,35 +179,34 @@ func (c *AdvancedConnection) get(message *advanced_connection_types.AdvancedConn
 
 	defer func() {
 		if err2 := recover(); err2 != nil {
+			final = nil
 			err = err2.(error)
 		}
 	}()
 
-	var output interface{}
+	var output any
 
 	route := string(message.Name)
-	var callback func(conn *AdvancedConnection, values []byte) (interface{}, error)
-	if callback = c.getMap[route]; callback != nil {
+	if callback := c.getMap[route]; callback != nil {
 		output, err = callback(c, message.Data)
-		if err != nil {
-			return nil, err
-		}
 	} else {
 		err = errors.New("Unknown request")
 	}
 
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	switch v := output.(type) {
 	case string:
-		return []byte(v), nil
+		final = []byte(v)
 	case []byte:
-		return v, nil
+		final = v
 	default:
-		return msgpack.Marshal(output)
+		final, err = msgpack.Marshal(output)
 	}
+
+	return
 
 }
 
@@ -218,9 +218,9 @@ func (c *AdvancedConnection) processRead(message *advanced_connection_types.Adva
 
 		if message.ReplyAwait {
 			if err != nil {
-				_ = c.sendNow(message.ReplyId, []byte{0}, []byte(err.Error()), true, nil, config.WEBSOCKETS_TIMEOUT)
+				_ = c.sendNow(message.ReplyId, []byte{0}, []byte(err.Error()), true, 0)
 			} else {
-				_ = c.sendNow(message.ReplyId, []byte{1}, out, true, nil, config.WEBSOCKETS_TIMEOUT)
+				_ = c.sendNow(message.ReplyId, []byte{1}, out, true, 0)
 			}
 		}
 
@@ -235,13 +235,13 @@ func (c *AdvancedConnection) processRead(message *advanced_connection_types.Adva
 
 		c.answerMapLock.Lock()
 		cn := c.answerMap[message.ReplyId]
-		if cn != nil {
-			delete(c.answerMap, message.ReplyId)
-		}
 		c.answerMapLock.Unlock()
 
 		if cn != nil {
-			cn <- output
+			select {
+			case cn <- output:
+			default:
+			}
 		}
 	}
 }
@@ -249,16 +249,16 @@ func (c *AdvancedConnection) processRead(message *advanced_connection_types.Adva
 func (c *AdvancedConnection) ReadPump() {
 
 	c.Conn.SetReadLimit(int64(config.WEBSOCKETS_MAX_READ))
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+	c.Conn.SetReadDeadline(time.Now().Add(config.WEBSOCKETS_PONG_WAIT))
+	c.Conn.SetPongHandler(func(string) error {
+		c.Conn.SetReadDeadline(time.Now().Add(config.WEBSOCKETS_PONG_WAIT))
+		return nil
+	})
 	for {
 
-		_, read, err := c.Conn.Read(ctx)
-
+		_, read, err := c.Conn.ReadMessage()
 		if err != nil {
-			c.Close("Error reading")
+			c.Close()
 			return
 		}
 
@@ -273,16 +273,14 @@ func (c *AdvancedConnection) ReadPump() {
 
 }
 
-func (c *AdvancedConnection) connSendPing() error {
-
-	if c.IsClosed.IsSet() {
-		return errors.New("Closed")
+func (c *AdvancedConnection) connSendPing() (err error) {
+	c.writeLock.Lock()
+	defer c.writeLock.Unlock()
+	c.Conn.SetWriteDeadline(time.Now().Add(config.WEBSOCKETS_TIMEOUT))
+	if err = c.Conn.WriteMessage(websock.PingMessage, nil); err != nil {
+		return
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_PONG_WAIT)
-	defer cancel()
-
-	return c.Conn.Ping(ctx)
+	return
 }
 
 func (c *AdvancedConnection) SendPings() {
@@ -294,12 +292,11 @@ func (c *AdvancedConnection) SendPings() {
 
 		select {
 		case <-pingTicker.C:
+			if err := c.connSendPing(); err != nil {
+				c.Close()
+				return
+			}
 		case <-c.Closed:
-			return
-		}
-
-		if err := c.connSendPing(); err != nil {
-			c.Close(err.Error())
 			return
 		}
 
@@ -316,18 +313,18 @@ func (c *AdvancedConnection) IncreaseKnownNodeScore() {
 
 		select {
 		case <-ticker.C:
+			if !c.onIncreaseKnownNodeScore(c.KnownNode, 1, c.ConnectionType) {
+				break
+			}
 		case <-c.Closed:
 			return
 		}
 
-		if c.KnownNode.IncreaseScore(1, c.ConnectionType) {
-			break
-		}
 	}
 
 }
 
-func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *known_nodes.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification, onClosedConnection func(c *AdvancedConnection)) (*AdvancedConnection, error) {
+func NewAdvancedConnection(conn *websock.Conn, remoteAddr string, knownNode *known_node.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification, onClosedConnection func(*AdvancedConnection), onIncreaseKnownNodeScore func(*known_node.KnownNodeScored, int32, bool) bool) (*AdvancedConnection, error) {
 
 	//making sure u is not collided with UUID_ALL and UUID_SKIP_ALL
 	uuid := advanced_connection_types.UUID(atomic.AddUint32(&uuidGenerator, 1))
@@ -352,8 +349,10 @@ func NewAdvancedConnection(conn *websocket.Conn, remoteAddr string, knownNode *k
 		make(map[uint32]chan *advanced_connection_types.AdvancedConnectionReply),
 		&sync.Mutex{},
 		nil,
+		&sync.Mutex{},
 		connectionType,
 		onClosedConnection,
+		onIncreaseKnownNodeScore,
 	}
 	advancedConnection.Subscriptions = NewSubscriptions(advancedConnection, newSubscriptionCn, removeSubscriptionCn)
 	return advancedConnection, nil

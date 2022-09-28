@@ -226,6 +226,8 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return
 					}
 
+					newChainData.Supply = ast.Supply
+
 					if plainAcc == nil {
 						return errors.New("Forger Account deson't exist or hasn't delegated stake")
 					}

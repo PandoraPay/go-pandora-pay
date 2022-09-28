@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func (network *Network) continuouslyConnectNewPeers() {
+func (network *Network) continuouslyConnectingNewPeers() {
 
 	recovery.SafeGo(func() {
 
@@ -21,27 +21,20 @@ func (network *Network) continuouslyConnectNewPeers() {
 				continue
 			}
 
-			knownNode := network.KnownNodes.GetRandomKnownNode()
-			if knownNode == nil {
-				continue
-			}
+			knownNode := network.KnownNodes.GetBestNotConnectedKnownNode()
 
-			if network.BannedNodes.IsBanned(knownNode.URL) {
-				continue //banned already
-			}
+			if knownNode != nil {
 
-			_, exists := network.Websockets.AllAddresses.Load(knownNode.URL)
-			if !exists {
+				//gui.GUI.Log("connecting to", knownNode.URL, atomic.LoadInt32(&knownNode.Score))
 
-				if knownNode != nil {
+				if network.BannedNodes.IsBanned(knownNode.URL) {
+					network.KnownNodes.DecreaseKnownNodeScore(knownNode, -10, false)
+				} else {
 					_, err := websocks.NewWebsocketClient(network.Websockets, knownNode)
 					if err != nil {
 
 						if err.Error() != "Already connected" {
-							if knownNode.DecreaseScore(-5, false) {
-								network.KnownNodes.RemoveKnownNode(knownNode)
-							}
-
+							network.KnownNodes.DecreaseKnownNodeScore(knownNode, -20, false)
 						}
 
 					} else {
@@ -52,7 +45,6 @@ func (network *Network) continuouslyConnectNewPeers() {
 
 			time.Sleep(100 * time.Millisecond)
 		}
-
 	})
 
 }

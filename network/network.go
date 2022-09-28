@@ -5,6 +5,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/mempool"
 	"pandora-pay/network/banned_nodes"
+	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/known_nodes_sync"
 	"pandora-pay/network/mempool_sync"
@@ -19,6 +20,7 @@ import (
 type Network struct {
 	tcpServer      *node_tcp.TcpServer
 	Websockets     *websocks.Websockets
+	ConnectedNodes *connected_nodes.ConnectedNodes
 	KnownNodes     *known_nodes.KnownNodes
 	BannedNodes    *banned_nodes.BannedNodes
 	MempoolSync    *mempool_sync.MempoolSync
@@ -27,14 +29,15 @@ type Network struct {
 
 func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, txsValidator *txs_validator.TxsValidator, txsBuilder *txs_builder.TxsBuilder) (*Network, error) {
 
-	knownNodes := known_nodes.NewKnownNodes()
+	connectedNodes := connected_nodes.NewConnectedNodes()
+	bannedNodes := banned_nodes.NewBannedNodes()
+
+	knownNodes := known_nodes.NewKnownNodes(connectedNodes, bannedNodes)
 	for _, seed := range config.NETWORK_SELECTED_SEEDS {
 		knownNodes.AddKnownNode(seed.Url, true)
 	}
 
-	bannedNodes := banned_nodes.NewBannedNodes()
-
-	tcpServer, err := node_tcp.NewTcpServer(bannedNodes, knownNodes, settings, chain, mempool, wallet, txsValidator, txsBuilder)
+	tcpServer, err := node_tcp.NewTcpServer(connectedNodes, bannedNodes, knownNodes, settings, chain, mempool, wallet, txsValidator, txsBuilder)
 	if err != nil {
 		return nil, err
 	}
@@ -42,14 +45,14 @@ func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempo
 	network := &Network{
 		tcpServer:      tcpServer,
 		Websockets:     tcpServer.HttpServer.Websockets,
+		ConnectedNodes: connectedNodes,
 		KnownNodes:     knownNodes,
 		BannedNodes:    bannedNodes,
 		MempoolSync:    mempool_sync.NewMempoolSync(tcpServer.HttpServer.Websockets),
 		KnownNodesSync: known_nodes_sync.NewNodesKnownSync(tcpServer.HttpServer.Websockets, knownNodes),
 	}
-	tcpServer.HttpServer.Initialize()
 
-	network.continuouslyConnectNewPeers()
+	network.continuouslyConnectingNewPeers()
 
 	network.continuouslyDownloadChain()
 

@@ -12,8 +12,8 @@ import (
 	"time"
 )
 
-func (websockets *Websockets) broadcastChain(newChainData *blockchain.BlockchainData, ctxParent context.Context) {
-	websockets.BroadcastJSON([]byte("chain-update"), websockets.ApiWebsockets.Consensus.GetUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true}, advanced_connection_types.UUID_ALL, ctxParent, 0)
+func (websockets *Websockets) broadcastChain(newChainData *blockchain.BlockchainData, ctxDuration time.Duration) {
+	websockets.BroadcastJSON([]byte("chain-update"), websockets.ApiWebsockets.Consensus.GetUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true}, advanced_connection_types.UUID_ALL, ctxDuration)
 }
 
 func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID, ctxParent context.Context) []error {
@@ -45,7 +45,7 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 					}
 				}
 			} else {
-				websockets.BroadcastJSON([]byte("mempool/new-tx"), data, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctxParent, 0)
+				websockets.BroadcastJSON([]byte("mempool/new-tx"), data, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, 0)
 			}
 
 		} else {
@@ -57,7 +57,7 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 					}
 				}
 			} else {
-				websockets.Broadcast([]byte("mempool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctxParent, 0)
+				websockets.Broadcast([]byte("mempool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, 0)
 			}
 		}
 
@@ -73,23 +73,15 @@ func (websockets *Websockets) initializeConsensus(chain *blockchain.Blockchain, 
 		updateNewChainUpdateListener := chain.UpdateNewChainDataUpdate.AddListener()
 		defer chain.UpdateNewChainDataUpdate.RemoveChannel(updateNewChainUpdateListener)
 
-		var cancelOld context.CancelFunc
-
 		for {
 			newChainDataUpdate, ok := <-updateNewChainUpdateListener
 			if !ok {
 				return
 			}
 
-			if cancelOld != nil { //let's cancel the previous one
-				cancelOld()
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
-			cancelOld = cancel
-
 			//it is safe to read
 			recovery.SafeGo(func() {
-				websockets.broadcastChain(newChainDataUpdate.Update, ctx)
+				websockets.broadcastChain(newChainDataUpdate.Update, 0)
 			})
 		}
 
