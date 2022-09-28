@@ -1,11 +1,15 @@
 package start
 
 import (
+	"fmt"
 	"os"
+	"os/signal"
 	"pandora-pay/app"
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
+	"pandora-pay/config"
+	"pandora-pay/config/arguments"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
@@ -18,6 +22,7 @@ import (
 	"pandora-pay/txs_builder"
 	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
+	"syscall"
 )
 
 func StartMainNow() (err error) {

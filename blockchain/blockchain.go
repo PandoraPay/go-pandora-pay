@@ -221,12 +221,29 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return errors.New("Block Height is not right!")
 					}
 
+					//increase supply
+					var ast *asset.Asset
+					if ast, err = dataStorage.Asts.GetAsset(config_coins.NATIVE_ASSET_FULL); err != nil {
+						return
+					}
+
+					var reward, _ uint64
+					if reward, _, err = blockchain_types.ComputeBlockReward(blkComplete.Height, blkComplete.Txs); err != nil {
+						return
+					}
+
+					if err = ast.AddNativeSupply(true, reward); err != nil {
+						return
+					}
+					if err = dataStorage.Asts.Update(string(config_coins.NATIVE_ASSET_FULL), ast); err != nil {
+						return
+					}
+					newChainData.Supply = ast.Supply
+
 					var plainAcc *plain_account.PlainAccount
 					if plainAcc, err = dataStorage.PlainAccs.GetPlainAccount(blkComplete.Block.Forger); err != nil {
 						return
 					}
-
-					newChainData.Supply = ast.Supply
 
 					if plainAcc == nil {
 						return errors.New("Forger Account deson't exist or hasn't delegated stake")
@@ -271,12 +288,6 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					if err = blkComplete.IncludeBlockComplete(dataStorage); err != nil {
 						return fmt.Errorf("Error including block %d into Blockchain: %s", blkComplete.Height, err.Error())
 					}
-
-					var ast *asset.Asset
-					if ast, err = dataStorage.Asts.GetAsset(config_coins.NATIVE_ASSET_FULL); err != nil {
-						return
-					}
-					newChainData.Supply = ast.Supply
 
 					if err = dataStorage.ProcessPendingStakes(blkComplete.Height); err != nil {
 						return errors.New("Error Processing Pending Stakes: " + err.Error())

@@ -84,36 +84,32 @@ func (wallet *Wallet) GetWalletAddressByPublicKeyHash(publicKeyHash []byte, lock
 
 func (wallet *Wallet) ImportSecretKey(name string, secretKey []byte) (*wallet_address.WalletAddress, error) {
 
-	masterKey, err := derivation.NewMasterKey(secretKey)
+	secret, err := derivation.NewMasterKey(secretKey)
 	if err != nil {
 		return nil, err
 	}
 
-	start := bip32.FirstHardenedChild
+	secretRaw := secret.RawSeed()
 
-	if wallet.nonHardening { //non hardened
-		start = 0
-	}
-
-	privKey, err := secretChild.NewChildKey(start + 0)
+	privateKey, err := secret.Derive(derivation.FirstHardenedIndex)
 	if err != nil {
 		return nil, err
 	}
 
-	spendPrivKey, err := secretChild.NewChildKey(start + 1)
+	privKey, err := privateKey.GetPrivateKey()
 	if err != nil {
 		return nil, err
 	}
 
-	privateKey, err := addresses.NewPrivateKey(privKey.Key)
+	privKeyObj, err := addresses.NewPrivateKey(privKey)
 	if err != nil {
 		return nil, err
 	}
 
 	addr := &wallet_address.WalletAddress{
 		Name:       name,
-		SecretKey:  secretKey,
-		PrivateKey: privateKey,
+		SecretKey:  secretRaw[:],
+		PrivateKey: privKeyObj,
 		SeedIndex:  0,
 		IsImported: true,
 		IsMine:     true,
