@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"math/rand"
-	"nhooyr.io/websocket"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
@@ -20,6 +19,7 @@ import (
 	"pandora-pay/network/known_nodes/known_node"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
+	"pandora-pay/network/websocks/websock"
 	"pandora-pay/recovery"
 	"pandora-pay/settings"
 	"strconv"
@@ -70,12 +70,12 @@ func (websockets *Websockets) GetRandomSocket() *connection.AdvancedConnection {
 func (websockets *Websockets) Disconnect() int {
 	list := websockets.GetAllSockets()
 	for _, sock := range list {
-		sock.Close("Forcefully disconnected")
+		sock.Close()
 	}
 	return len(list)
 }
 
-func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) {
+func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctxDuration time.Duration) {
 
 	if exceptSocketUUID == advanced_connection_types.UUID_SKIP_ALL {
 		return
@@ -86,7 +86,7 @@ func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeA
 	for i, conn := range all {
 		if conn.UUID != exceptSocketUUID && consensusTypeAccepted[conn.Handshake.Consensus] {
 			go func(conn *connection.AdvancedConnection, i int) {
-				conn.Send(name, data, ctx, ctxDuration)
+				conn.Send(name, data, ctxDuration)
 			}(conn, i)
 		}
 	}
@@ -128,9 +128,9 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 	return out
 }
 
-func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) {
+func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctxDuration time.Duration) {
 	out, _ := msgpack.Marshal(data)
-	websockets.Broadcast(name, out, consensusTypeAccepted, exceptSocketUUID, ctx, ctxDuration)
+	websockets.Broadcast(name, out, consensusTypeAccepted, exceptSocketUUID, ctxDuration)
 }
 
 func (websockets *Websockets) BroadcastJSONAwaitAnswer(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) []*advanced_connection_types.AdvancedConnectionReply {
@@ -167,7 +167,7 @@ func (websockets *Websockets) increaseScoreKnownNode(knownNode *known_node.Known
 	return websockets.knownNodes.IncreaseKnownNodeScore(knownNode, delta, isServer)
 }
 
-func (websockets *Websockets) NewConnection(c *websocket.Conn, remoteAddr string, knownNode *known_node.KnownNodeScored, connectionType bool) (*connection.AdvancedConnection, error) {
+func (websockets *Websockets) NewConnection(c *websock.Conn, remoteAddr string, knownNode *known_node.KnownNodeScored, connectionType bool) (*connection.AdvancedConnection, error) {
 
 	conn, err := connection.NewAdvancedConnection(c, remoteAddr, knownNode, websockets.ApiWebsockets.GetMap, connectionType, websockets.subscriptions.newSubscriptionCn, websockets.subscriptions.removeSubscriptionCn, websockets.closedConnection, websockets.increaseScoreKnownNode)
 	if err != nil {
@@ -197,7 +197,7 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 
 	defer func() {
 		if err != nil {
-			conn.Close(err.Error())
+			conn.Close()
 		}
 	}()
 
