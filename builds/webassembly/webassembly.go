@@ -189,6 +189,9 @@ func Initialize() {
 			"CONSENSUS":               js.ValueOf(uint8(config.CONSENSUS)),
 			"VERSION":                 js.ValueOf(config.VERSION_STRING),
 			"BUILD_VERSION":           js.ValueOf(config.BUILD_VERSION),
+			"BLOCK_TIME":              js.ValueOf(config.BLOCK_TIME),
+			"BLOCK_MAX_SIZE":          js.ValueOf(config.BLOCK_MAX_SIZE),
+			"DIFFICULTY_BLOCK_WINDOW": js.ValueOf(config.DIFFICULTY_BLOCK_WINDOW),
 			"coins": js.ValueOf(map[string]interface{}{
 				"DECIMAL_SEPARATOR":               js.ValueOf(config_coins.DECIMAL_SEPARATOR),
 				"COIN_DENOMINATION":               js.ValueOf(config_coins.COIN_DENOMINATION),

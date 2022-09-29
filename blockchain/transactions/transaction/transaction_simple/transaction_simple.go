@@ -30,7 +30,7 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 
 	var plainAcc *plain_account.PlainAccount
 
-	if tx.TxScript == SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY {
+	if tx.HasVin() {
 		if plainAcc, err = dataStorage.PlainAccs.Get(string(tx.Vin.PublicKey)); err != nil {
 			return
 		}
@@ -50,14 +50,13 @@ func (tx *TransactionSimple) IncludeTransaction(blockHeight uint64, txHash []byt
 		}
 	}
 
-	switch tx.TxScript {
-	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY, SCRIPT_RESOLUTION_PAY_IN_FUTURE:
+	if tx.Extra != nil {
 		if err = tx.Extra.IncludeTransactionVin0(blockHeight, plainAcc, dataStorage); err != nil {
 			return
 		}
 	}
 
-	if tx.TxScript == SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY {
+	if tx.HasVin() {
 		return dataStorage.PlainAccs.Update(string(tx.Vin.PublicKey), plainAcc)
 	}
 
@@ -69,10 +68,11 @@ func (tx *TransactionSimple) ComputeFee() (uint64, error) {
 }
 
 func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
-	switch tx.TxScript {
-	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
+
+	if tx.HasVin() {
 		out[string(tx.Vin.PublicKey)] = true
 	}
+
 	return
 }
 
@@ -82,7 +82,7 @@ func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bo
 
 func (tx *TransactionSimple) Validate() (err error) {
 
-	if tx.Vin != nil {
+	if tx.HasVin() {
 		if err = tx.Vin.Validate(); err != nil {
 			return
 		}
@@ -112,7 +112,7 @@ func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 		w.WriteVariableBytes(tx.Data)
 	}
 
-	if tx.TxScript == SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY {
+	if tx.HasVin() {
 		w.WriteUvarint(tx.Nonce)
 		w.WriteUvarint(tx.Fee)
 		tx.Vin.Serialize(w, inclSignature)
@@ -160,7 +160,7 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 		return errors.New("Invalid Tx.DataVersion")
 	}
 
-	if tx.TxScript == SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY {
+	if tx.HasVin() {
 		if tx.Nonce, err = r.ReadUvarint(); err != nil {
 			return
 		}
@@ -178,6 +178,15 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 	}
 
 	return
+}
+
+func (tx *TransactionSimple) HasVin() bool {
+	switch tx.TxScript {
+	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
+		return true
+	default:
+		return false
+	}
 }
 
 func (tx *TransactionSimple) VerifyBloomAll() error {

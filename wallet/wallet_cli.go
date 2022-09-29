@@ -69,12 +69,13 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 		ast     *asset.Asset
 	}
 	type Address struct {
-		registration  *registration.Registration
-		plainAcc      *plain_account.PlainAccount
-		assetsList    []*AddressAsset
-		publicKey     []byte
-		name          string
-		addressString string
+		registration            *registration.Registration
+		plainAcc                *plain_account.PlainAccount
+		assetsList              []*AddressAsset
+		publicKey               []byte
+		name                    string
+		addressString           string
+		addressRegisteredString string
 	}
 
 	wallet.Lock.RLock()
@@ -88,7 +89,7 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 	addresses := make([]*Address, len(wallet.Addresses))
 
 	for i, walletAddress := range wallet.Addresses {
-		addresses[i] = &Address{publicKey: helpers.CloneBytes(walletAddress.PublicKey), name: walletAddress.Name, addressString: walletAddress.GetAddress(false)}
+		addresses[i] = &Address{publicKey: helpers.CloneBytes(walletAddress.PublicKey), name: walletAddress.Name, addressString: walletAddress.GetAddress(false), addressRegisteredString: walletAddress.GetAddress(true)}
 	}
 	wallet.Lock.RUnlock()
 
@@ -150,7 +151,11 @@ func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err err
 	var decrypted uint64
 	for i, address := range addresses {
 
-		gui.GUI.OutputWrite(fmt.Sprintf("%d) %s :: %s", i, address.name, address.addressString))
+		if addresses[i].registration != nil {
+			gui.GUI.OutputWrite(fmt.Sprintf("%d) %s :: %s", i, address.name, address.addressRegisteredString))
+		} else {
+			gui.GUI.OutputWrite(fmt.Sprintf("%d) %s :: %s", i, address.name, address.addressString))
+		}
 
 		if len(addresses[i].assetsList) == 0 && addresses[i].plainAcc == nil {
 			gui.GUI.OutputWrite(fmt.Sprintf("%18s: %s", "", "EMPTY"))

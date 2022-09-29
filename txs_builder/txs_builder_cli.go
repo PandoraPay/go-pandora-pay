@@ -412,9 +412,11 @@ func (builder *TxsBuilder) initCLI() {
 		}
 		txData.Payloads[1].Recipient = txData.Payloads[0].Recipient
 
-		extra.RefundTime = gui.GUI.OutputReadUint64("Refund Time", true, 10, func(val uint64) bool {
+		extra.Deadline = gui.GUI.OutputReadUint64("Deadline", true, 10, func(val uint64) bool {
 			return val >= 10 && val <= 100000
 		})
+
+		extra.DefaultResolution = gui.GUI.OutputReadBool("Default Resolution: y - reciever, n - sender", false, false)
 
 		extra.Threshold = byte(gui.GUI.OutputReadUint64("Threshold", true, 1, func(val uint64) bool {
 			return val >= 1 && val <= 5
@@ -432,13 +434,17 @@ func (builder *TxsBuilder) initCLI() {
 		}
 
 		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
+		if err = builder.presetZetherRing(txData.Payloads[0].RingConfiguration); err != nil {
+			return err
+		}
+
 		txData.Payloads[0].RingConfiguration.SenderRingType.AvoidStakedAccounts = true
 		txData.Payloads[0].RingConfiguration.RecipientRingType.AvoidStakedAccounts = true
 
 		txData.Payloads[1].RingConfiguration = &ZetherRingConfiguration{
 			txData.Payloads[0].RingConfiguration.RingSize,
-			&ZetherSenderRingType{0, false, true, []string{}, txData.Payloads[0].RingConfiguration.SenderRingType.NewAccounts},
-			&ZetherRecipientRingType{-1, false, false, []string{}, txData.Payloads[0].RingConfiguration.RecipientRingType.NewAccounts},
+			&ZetherSenderRingType{0, false, true, []string{}, 0},
+			&ZetherRecipientRingType{-1, false, true, []string{}, txData.Payloads[0].RingConfiguration.RecipientRingType.NewAccounts},
 		}
 
 		txData.Payloads[0].Data = builder.readData()

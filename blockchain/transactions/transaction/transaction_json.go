@@ -96,7 +96,8 @@ type json_Only_TransactionZetherPayloadExtraPlainAccountFund struct {
 }
 
 type json_Only_TransactionZetherPayloadExtraPayInFuture struct {
-	RefundTime         uint64   `json:"refundTime" msgpack:"refundTime"`
+	Deadline           uint64   `json:"deadline" msgpack:"deadline"`
+	DefaultResolution  bool     `json:"defaultResolution" msgpack:"defaultResolution"`
 	MultisigThreshold  byte     `json:"multisigThreshold" msgpack:"multisigThreshold"`
 	MultisigPublicKeys [][]byte `json:"multisigPublicKeys" msgpack:"multisigPublicKeys"`
 }
@@ -146,9 +147,13 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 	case transaction_type.TX_SIMPLE:
 		base := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 
-		vinJson := &json_TransactionSimpleInput{
-			base.Vin.PublicKey,
-			base.Vin.Signature,
+		var vinJson *json_TransactionSimpleInput
+
+		if base.HasVin() {
+			vinJson = &json_TransactionSimpleInput{
+				base.Vin.PublicKey,
+				base.Vin.Signature,
+			}
 		}
 
 		simpleJson := &json_TransactionSimple{
@@ -250,7 +255,8 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 			case transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE:
 				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture)
 				extra = &json_Only_TransactionZetherPayloadExtraPayInFuture{
-					payloadExtra.RefundTime,
+					payloadExtra.Deadline,
+					payloadExtra.DefaultResolution,
 					payloadExtra.MultisigThreshold,
 					payloadExtra.MultisigPublicKeys,
 				}
@@ -527,7 +533,8 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				}
 				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture{
 					nil,
-					extraJson.RefundTime,
+					extraJson.Deadline,
+					extraJson.DefaultResolution,
 					extraJson.MultisigThreshold,
 					extraJson.MultisigPublicKeys,
 				}

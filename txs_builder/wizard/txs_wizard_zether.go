@@ -142,7 +142,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			return fmt.Errorf("Ring Sender %d and Ring Recipient %d should have same length", len(ringsSenderMembers[t]), len(ringsRecipientMembers[t]))
 		}
 		if len(transfer.WitnessIndexes) != len(ringsSenderMembers[t])+len(ringsRecipientMembers[t]) {
-			return fmt.Errorf("Payloadd %d Witness Indexes %d length is invalid %d", t, len(transfer.WitnessIndexes), len(ringsSenderMembers[t])+len(ringsRecipientMembers[t]))
+			return fmt.Errorf("Payload %d Witness Indexes length %d is invalid %d", t, len(transfer.WitnessIndexes), len(ringsSenderMembers[t])+len(ringsRecipientMembers[t]))
 		}
 
 		parities[t] = witness_indexes[0]%2 == 0
@@ -313,7 +313,8 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE
 				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture{
 					nil,
-					payloadExtra.RefundTime,
+					payloadExtra.Deadline,
+					payloadExtra.DefaultResolution,
 					payloadExtra.Threshold,
 					payloadExtra.PublicKeys,
 				}

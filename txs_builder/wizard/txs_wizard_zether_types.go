@@ -37,9 +37,10 @@ type WizardZetherPayloadExtraPlainAccountFund struct {
 
 type WizardZetherPayloadExtraPayInFuture struct {
 	WizardZetherPayloadExtra `json:"-" msgpack:""`
-	RefundTime               uint64   `json:"refundTime"`
-	Threshold                byte     `json:"threshold"`
-	PublicKeys               [][]byte `json:"publicKeys"`
+	Deadline                 uint64   `json:"deadline" msgpack:"deadline"`
+	DefaultResolution        bool     `json:"defaultResolution" msgpack:"defaultResolution"`
+	Threshold                byte     `json:"threshold" msgpack:"threshold"`
+	PublicKeys               [][]byte `json:"publicKeys" msgpack:"publicKeys"`
 }
 
 type WizardZetherPayloadExtra interface {

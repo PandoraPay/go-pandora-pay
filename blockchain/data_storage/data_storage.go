@@ -215,7 +215,7 @@ func (dataStorage *DataStorage) ProcessPendingStakes(blockHeight uint64) error {
 	return nil
 }
 
-func (dataStorage *DataStorage) AddPendingFuture(blockHeight uint64, txId []byte, payloadIndex byte, asset []byte, parity bool, publicKeyList [][]byte, echangesAll []*crypto.ElGamal, multisigThreshold byte, multisigPublicKeys [][]byte) error {
+func (dataStorage *DataStorage) AddPendingFuture(blockHeight uint64, txId []byte, payloadIndex byte, asset []byte, defaultResolution bool, parity bool, publicKeyList [][]byte, echangesAll []*crypto.ElGamal, multisigThreshold byte, multisigPublicKeys [][]byte) error {
 
 	for i, publicKey := range publicKeyList {
 		reg, err := dataStorage.Regs.Get(string(publicKey))
@@ -249,20 +249,21 @@ func (dataStorage *DataStorage) AddPendingFuture(blockHeight uint64, txId []byte
 	pendingFuture = pending_future.NewPendingFuture([]byte(key), 0, blockHeight)
 	pendingFuture.TxId = txId
 	pendingFuture.Asset = asset
+	pendingFuture.DefaultResolution = defaultResolution
 	pendingFuture.PayloadIndex = payloadIndex
 
-	pendingFuture.PendingPublicKeys = make([][]byte, len(publicKeyList)/2)
-	pendingFuture.PendingAmounts = make([][]byte, len(publicKeyList)/2)
-	pendingFuture.RevertPublicKeys = make([][]byte, len(publicKeyList)/2)
-	pendingFuture.RevertAmounts = make([][]byte, len(publicKeyList)/2)
+	pendingFuture.ReceiverPublicKeys = make([][]byte, len(publicKeyList)/2)
+	pendingFuture.ReceiverAmounts = make([][]byte, len(publicKeyList)/2)
+	pendingFuture.SenderPublicKeys = make([][]byte, len(publicKeyList)/2)
+	pendingFuture.SenderAmounts = make([][]byte, len(publicKeyList)/2)
 
 	for i := range publicKeyList {
 		if (i%2 == 0) == parity { //sender
-			pendingFuture.RevertPublicKeys[i/2] = publicKeyList[i]
-			pendingFuture.RevertAmounts[i/2] = echangesAll[i].Serialize()
+			pendingFuture.SenderPublicKeys[i/2] = publicKeyList[i]
+			pendingFuture.SenderAmounts[i/2] = echangesAll[i].Serialize()
 		} else { //receiver
-			pendingFuture.PendingPublicKeys[i/2] = publicKeyList[i]
-			pendingFuture.PendingAmounts[i/2] = echangesAll[i].Serialize()
+			pendingFuture.ReceiverPublicKeys[i/2] = publicKeyList[i]
+			pendingFuture.ReceiverAmounts[i/2] = echangesAll[i].Serialize()
 		}
 	}
 
@@ -272,6 +273,59 @@ func (dataStorage *DataStorage) AddPendingFuture(blockHeight uint64, txId []byte
 	return pendingFutureMap.Update(key, pendingFuture)
 }
 
+func (dataStorage *DataStorage) ProceedPendingFuture(resolution bool, pendingFuture *pending_future.PendingFuture) (err error) {
+
+	if pendingFuture.Processed {
+		return errors.New("pending Future already processed")
+	}
+
+	pendingFuture.Processed = true
+
+	var acc *account.Account
+	var pendingAmount *crypto.ElGamal
+
+	accs, err := dataStorage.AccsCollection.GetMap(pendingFuture.Asset)
+	if err != nil {
+		return
+	}
+
+	for i := range pendingFuture.ReceiverPublicKeys {
+		var key, amount []byte
+		if resolution {
+			key = pendingFuture.ReceiverPublicKeys[i]
+			amount = pendingFuture.ReceiverAmounts[i]
+		} else {
+			key = pendingFuture.SenderPublicKeys[i]
+			amount = pendingFuture.SenderAmounts[i]
+		}
+
+		if acc, err = accs.Get(string(key)); err != nil {
+			return
+		}
+		if acc == nil {
+			if acc, err = accs.CreateNewAccount(key); err != nil {
+				return
+			}
+		}
+
+		if pendingAmount, err = new(crypto.ElGamal).Deserialize(amount); err != nil {
+			return
+		}
+
+		if !resolution {
+			pendingAmount = pendingAmount.Neg()
+		}
+
+		acc.Balance.AddEchanges(pendingAmount) //neg is required to reverse
+		if err = accs.Update(string(key), acc); err != nil {
+			return
+		}
+
+	}
+
+	return nil
+}
+
 func (dataStorage *DataStorage) ProcessPendingFuture(blockHeight uint64) error {
 
 	pendingFutureMap, err := dataStorage.PendingFutureCollection.GetMap(blockHeight)
@@ -279,7 +333,7 @@ func (dataStorage *DataStorage) ProcessPendingFuture(blockHeight uint64) error {
 		return err
 	}
 
-	keys := make([]string, pendingFutureMap.Count)
+	deleteKeys := make([]string, pendingFutureMap.Count)
 	for i := uint64(0); i < pendingFutureMap.Count; i++ {
 
 		pending, err := pendingFutureMap.GetByIndex(i)
@@ -287,42 +341,17 @@ func (dataStorage *DataStorage) ProcessPendingFuture(blockHeight uint64) error {
 			return err
 		}
 
-		keys[i] = string(pending.TxId) + "_" + strconv.Itoa(int(pending.PayloadIndex))
+		deleteKeys[i] = string(pending.TxId) + "_" + strconv.Itoa(int(pending.PayloadIndex))
 
 		if !pending.Processed {
-			accs, err := dataStorage.AccsCollection.GetMap(pending.Asset)
-			if err != nil {
+			if err = dataStorage.ProceedPendingFuture(pending.DefaultResolution, pending); err != nil {
 				return err
-			}
-
-			for i := range pending.RevertPublicKeys {
-				var acc *account.Account
-				if acc, err = accs.Get(string(pending.RevertPublicKeys[i])); err != nil {
-					return err
-				}
-
-				if acc == nil {
-					if acc, err = accs.CreateNewAccount(pending.RevertPublicKeys[i]); err != nil {
-						return err
-					}
-				}
-
-				pendingAmount, err := new(crypto.ElGamal).Deserialize(pending.RevertAmounts[i])
-				if err != nil {
-					return err
-				}
-
-				acc.Balance.AddEchanges(pendingAmount.Neg()) //neg is required to reverse
-
-				if err = accs.Update(string(pending.RevertPublicKeys[i]), acc); err != nil {
-					return err
-				}
 			}
 		}
 
 	}
 
-	for _, key := range keys {
+	for _, key := range deleteKeys {
 		pendingFutureMap.Delete(key)
 	}
 

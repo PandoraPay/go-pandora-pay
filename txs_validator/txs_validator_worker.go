@@ -28,8 +28,7 @@ func (worker *TxsValidatorWorker) verifyTx(foundWork *txValidatedWork) error {
 		base := foundWork.tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
 		switch base.TxScript {
 		case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
-			hashForSignature := foundWork.tx.GetHashSigningManually()
-			if !base.VerifySignatureManually(hashForSignature) {
+			if !foundWork.tx.VerifySignatureManually() {
 				return errors.New("Signature Verification failed")
 			}
 		case transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE:

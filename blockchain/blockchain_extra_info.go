@@ -88,7 +88,7 @@ func saveAssetsInfo(asts *assets.Assets) (err error) {
 				v.Element.Ticker,
 				v.Element.Identification,
 				v.Element.DecimalSeparator,
-				v.Element.Description[:generics.Min(100, len(ast.Description))],
+				v.Element.Description[:generics.Min(100, len(v.Element.Description))],
 				[]byte(k),
 			}
 			var data []byte

@@ -81,6 +81,7 @@ func (dataStorage *DataStorage) SetTx(dbTx store_db_interface.StoreDBTransaction
 	}
 	dataStorage.AccsCollection.SetTx(dbTx)
 	dataStorage.AstsFeeLiquidityCollection.SetTx(dbTx)
+	dataStorage.PendingFutureCollection.SetTx(dbTx)
 }
 
 func (dataStorage *DataStorage) WriteTransitionalChangesToStore(prefix string) (err error) {

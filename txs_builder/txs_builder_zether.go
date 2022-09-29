@@ -91,7 +91,7 @@ func (builder *TxsBuilder) presetZetherRing(ringConfiguration *ZetherRingConfigu
 func (builder *TxsBuilder) createZetherRing(senderRing *[]string, recipientRing *[]string, sender, receiver *string, assetId []byte, ringConfiguration *ZetherRingConfiguration, hasRollovers map[string]bool, dataStorage *data_storage.DataStorage) (err error) {
 
 	alreadyUsed := make(map[string]bool)
-	var addr *addresses.Address
+	var addr, addrtemp *addresses.Address
 
 	for i := 0; i < len(*senderRing); i++ {
 		if addr, err = addresses.DecodeAddr((*senderRing)[i]); err != nil {
@@ -146,18 +146,28 @@ func (builder *TxsBuilder) createZetherRing(senderRing *[]string, recipientRing 
 		}
 		if alreadyUsed[string(addr.PublicKey)] {
 			for i := range *ring {
-				if (*ring)[i] == *address {
+				if addrtemp, err = addresses.DecodeAddr((*ring)[i]); err != nil {
+					return
+				}
+				if bytes.Equal(addr.PublicKey, addrtemp.PublicKey) {
+					if i == 0 {
+						return
+					}
+					temp := (*ring)[0]
+					(*ring)[0] = (*ring)[i]
+					(*ring)[i] = temp
 					return
 				}
 			}
 			return errors.New("Address was used before")
 		}
+		*ring = append([]string{*address}, *ring...)
 		alreadyUsed[string(addr.PublicKey)] = true
 		return
 	}
 
 	includeMembers := func(ring *[]string, includeMembers []string) (err error) {
-		for i := 0; i < len(includeMembers) && len(*ring) < ringConfiguration.RingSize/2-1; i++ {
+		for i := 0; i < len(includeMembers) && len(*ring) < ringConfiguration.RingSize/2; i++ {
 			if addr, err = addresses.DecodeAddr(includeMembers[i]); err != nil {
 				return
 			}
@@ -171,7 +181,7 @@ func (builder *TxsBuilder) createZetherRing(senderRing *[]string, recipientRing 
 	}
 
 	newAccounts := func(ring *[]string, newAccounts int, avoidStakedAccounts bool) (err error) {
-		for i := 0; i < newAccounts && len(*ring) < ringConfiguration.RingSize/2-1; i++ {
+		for i := 0; i < newAccounts && len(*ring) < ringConfiguration.RingSize/2; i++ {
 			priv := addresses.GenerateNewPrivateKey()
 
 			staked := false
@@ -193,7 +203,7 @@ func (builder *TxsBuilder) createZetherRing(senderRing *[]string, recipientRing 
 
 	newRandomAccounts := func(ring *[]string, requireStakedAccounts, avoidStakedAccounts bool) (err error) {
 
-		for len(*ring) < ringConfiguration.RingSize/2-1 {
+		for len(*ring) < ringConfiguration.RingSize/2 {
 
 			if accs.Count <= uint64(len(alreadyUsed)) {
 				priv := addresses.GenerateNewPrivateKey()
@@ -354,6 +364,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 						return
 					}
 					payload.Sender = addr.EncodeAddr()
+					senderRingMembers[t][0] = payload.Sender
 
 					payload.WitnessIndexes = slices.Clone(txData.Payloads[t-1].WitnessIndexes)
 					aux := payload.WitnessIndexes[0]
@@ -364,28 +375,46 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 				}
 			}
 
-			if payload.RingConfiguration.SenderRingType.CopyRingMembers != -1 || payload.RingConfiguration.RecipientRingType.CopyRingMembers != -1 {
-				if t == 0 || payload.RingConfiguration.RingSize != txData.Payloads[payload.RingConfiguration.SenderRingType.CopyRingMembers].RingConfiguration.RingSize {
-					return fmt.Errorf("Ring size needs to be identical for payloads %d and %d", t-1, t)
+			copyRingConfiguration := func(ringMembers [][]string, copyRingMembers int, ringType int) (err error) {
+				if copyRingMembers == -1 {
+					return
 				}
-			}
 
-			if payload.RingConfiguration.SenderRingType.CopyRingMembers != -1 {
-				senderRingMembers[t] = append(senderRingMembers[t], senderRingMembers[payload.RingConfiguration.SenderRingType.CopyRingMembers]...)
+				if t == 0 || payload.RingConfiguration.RingSize != txData.Payloads[copyRingMembers].RingConfiguration.RingSize {
+					return fmt.Errorf("ring size needs to be identical for payloads %d and %d", t-1, t)
+				}
+
+				ringMembers[t] = append(ringMembers[t], ringMembers[copyRingMembers]...)
+
+				permutation := make([]int, len(payload.WitnessIndexes)/2)
 				for i := range payload.WitnessIndexes {
-					if i%2 == 0 {
-						payload.WitnessIndexes[i] = txData.Payloads[payload.RingConfiguration.SenderRingType.CopyRingMembers].WitnessIndexes[i]
+					if i%2 == ringType {
+						payload.WitnessIndexes[i] = txData.Payloads[copyRingMembers].WitnessIndexes[i]
+					} else {
+						permutation[i/2] = txData.Payloads[copyRingMembers].WitnessIndexes[i]
 					}
 				}
+
+				for {
+					permutationIndex := helpers.ShuffleArray(len(permutation))
+					for i := range payload.WitnessIndexes {
+						if i%2 != ringType {
+							payload.WitnessIndexes[i] = permutation[permutationIndex[i/2]]
+						}
+					}
+					if payload.WitnessIndexes[0]%2 != payload.WitnessIndexes[1]%2 {
+						break
+					}
+
+				}
+				return
 			}
 
-			if payload.RingConfiguration.RecipientRingType.CopyRingMembers != -1 {
-				recipientRingMembers[t] = append(recipientRingMembers[t], recipientRingMembers[payload.RingConfiguration.RecipientRingType.CopyRingMembers]...)
-				for i := range payload.WitnessIndexes {
-					if i%2 == 1 {
-						payload.WitnessIndexes[i] = txData.Payloads[payload.RingConfiguration.RecipientRingType.CopyRingMembers].WitnessIndexes[i]
-					}
-				}
+			if err = copyRingConfiguration(senderRingMembers, payload.RingConfiguration.SenderRingType.CopyRingMembers, 0); err != nil {
+				return
+			}
+			if err = copyRingConfiguration(recipientRingMembers, payload.RingConfiguration.RecipientRingType.CopyRingMembers, 1); err != nil {
+				return
 			}
 
 			if err = builder.createZetherRing(&senderRingMembers[t], &recipientRingMembers[t], &payload.Sender, &payload.Recipient, payload.Asset, payload.RingConfiguration, hasRollovers, dataStorage); err != nil {
@@ -546,14 +575,8 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 				return
 			}
 
-			if err = addPoint(payload.Sender, true, true); err != nil {
-				return
-			}
-			if err = addPoint(payload.Recipient, false, false); err != nil {
-				return
-			}
-			for _, ringMember := range senderRingMembers[t] {
-				if err = addPoint(ringMember, true, false); err != nil {
+			for i, ringMember := range senderRingMembers[t] {
+				if err = addPoint(ringMember, true, i == 0); err != nil {
 					return
 				}
 			}
