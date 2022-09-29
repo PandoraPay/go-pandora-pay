@@ -99,7 +99,6 @@ func (chain *Blockchain) initializeNewChain(chainData *BlockchainData, dataStora
 
 	ast := &asset.Asset{
 		nil,
-		nil,
 		0,
 		0,
 		false,

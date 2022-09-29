@@ -6,7 +6,6 @@ import (
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage/assets"
-	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -83,14 +82,13 @@ func saveAssetsInfo(asts *assets.Assets) (err error) {
 			asts.Tx.Delete("assetInfo_ByHash:" + k)
 		} else if v.Stored == "update" {
 
-			ast := v.Element.(*asset.Asset)
 			astInfo := &info.AssetInfo{
-				ast.Version,
-				ast.Name,
-				ast.Ticker,
-				ast.Identification,
-				ast.DecimalSeparator,
-				ast.Description[:generics.Min(100, len(ast.Description))],
+				v.Element.Version,
+				v.Element.Name,
+				v.Element.Ticker,
+				v.Element.Identification,
+				v.Element.DecimalSeparator,
+				v.Element.Description[:generics.Min(100, len(v.Element.Description))],
 				[]byte(k),
 			}
 			var data []byte

@@ -3,6 +3,7 @@ package hash_map
 import (
 	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/generics"
 )
 
 type transactionChange struct {
@@ -14,7 +15,7 @@ type transactionChanges struct {
 	List []*transactionChange
 }
 
-func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (bool, error) {
+func (hashMap *HashMap[T]) WriteTransitionalChangesToStore(prefix string) (bool, error) {
 
 	empty := true
 	changes := &transactionChanges{}
@@ -28,7 +29,7 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (bool, er
 			}
 
 			if existsCommitted != nil {
-				if existsCommitted.Element != nil {
+				if !generics.IsZero(existsCommitted.Element) {
 					change.Transition = helpers.SerializeToBytes(existsCommitted.Element)
 				}
 			} else {
@@ -55,20 +56,20 @@ func (hashMap *HashMap) WriteTransitionalChangesToStore(prefix string) (bool, er
 	return true, nil
 }
 
-func (hashMap *HashMap) DeleteTransitionalChangesFromStore(prefix string) {
+func (hashMap *HashMap[T]) DeleteTransitionalChangesFromStore(prefix string) {
 	hashMap.Tx.Delete(hashMap.name + ":transitions:" + prefix)
 }
 
-func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err error) {
+func (hashMap *HashMap[T]) ReadTransitionalChangesFromStore(prefix string) error {
 
 	//Clone required to avoid changing the data afterwards
 	data := hashMap.Tx.Get(hashMap.name + ":transitions:" + prefix)
 	if data == nil {
-		return
+		return nil
 	}
 
 	changes := &transactionChanges{}
-	if err = msgpack.Unmarshal(data, changes); err != nil {
+	if err := msgpack.Unmarshal(data, changes); err != nil {
 		return err
 	}
 
@@ -83,13 +84,13 @@ func (hashMap *HashMap) ReadTransitionalChangesFromStore(prefix string) (err err
 
 		} else {
 
-			var element HashMapElementSerializableInterface
-			if element, err = hashMap.deserialize(change.Key, change.Transition, 0); err != nil {
-				return
+			element, err := hashMap.deserialize(change.Key, change.Transition, 0)
+			if err != nil {
+				return err
 			}
 
 			if err = hashMap.Update(string(change.Key), element); err != nil {
-				return
+				return err
 			}
 		}
 

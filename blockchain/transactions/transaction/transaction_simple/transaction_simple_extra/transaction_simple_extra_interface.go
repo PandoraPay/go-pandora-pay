@@ -10,5 +10,5 @@ type TransactionSimpleExtraInterface interface {
 	IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) error
 	Serialize(w *helpers.BufferWriter, inclSignature bool)
 	Deserialize(r *helpers.BufferReader) error
-	Validate() error
+	Validate(fee uint64) error
 }

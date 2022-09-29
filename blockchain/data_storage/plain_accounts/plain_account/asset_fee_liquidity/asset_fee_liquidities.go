@@ -9,10 +9,9 @@ import (
 )
 
 type AssetFeeLiquidities struct {
-	helpers.SerializableInterface `json:"-" msgpack:"-"`
-	Version                       AssetFeeLiquiditiesVersion `json:"version" msgpack:"version"`
-	List                          []*AssetFeeLiquidity       `json:"list" msgpack:"list"`
-	Collector                     []byte                     `json:"collector" msgpack:"collector"`
+	Version   AssetFeeLiquiditiesVersion `json:"version" msgpack:"version"`
+	List      []*AssetFeeLiquidity       `json:"list" msgpack:"list"`
+	Collector []byte                     `json:"collector" msgpack:"collector"`
 }
 
 func (self *AssetFeeLiquidities) HasAssetFeeLiquidities() bool {
@@ -81,7 +80,6 @@ func (self *AssetFeeLiquidities) UpdateLiquidity(updateLiquidity *AssetFeeLiquid
 			return 0, errors.New("AssetFeeLiquidityList will exceed the max")
 		}
 		self.List = append(self.List, &AssetFeeLiquidity{
-			nil,
 			updateLiquidity.Asset,
 			updateLiquidity.Rate,
 			updateLiquidity.LeadingZeros,

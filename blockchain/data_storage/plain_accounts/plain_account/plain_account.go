@@ -3,16 +3,14 @@ package plain_account
 import (
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/helpers"
-	"pandora-pay/store/hash_map"
 )
 
 type PlainAccount struct {
-	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
-	Key                                          []byte                                   `json:"-" msgpack:"-"` //hashMap key
-	Index                                        uint64                                   `json:"-" msgpack:"-"` //hashMap index
-	Nonce                                        uint64                                   `json:"nonce" msgpack:"nonce"`
-	Unclaimed                                    uint64                                   `json:"unclaimed" msgpack:"unclaimed"`
-	AssetFeeLiquidities                          *asset_fee_liquidity.AssetFeeLiquidities `json:"assetFeeLiquidities" msgpack:"assetFeeLiquidities"`
+	Key                 []byte                                   `json:"-" msgpack:"-"` //hashMap key
+	Index               uint64                                   `json:"-" msgpack:"-"` //hashMap index
+	Nonce               uint64                                   `json:"nonce" msgpack:"nonce"`
+	Unclaimed           uint64                                   `json:"unclaimed" msgpack:"unclaimed"`
+	AssetFeeLiquidities *asset_fee_liquidity.AssetFeeLiquidities `json:"assetFeeLiquidities" msgpack:"assetFeeLiquidities"`
 }
 
 func (plainAccount *PlainAccount) IsDeletable() bool {

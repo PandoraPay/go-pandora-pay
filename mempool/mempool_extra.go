@@ -68,21 +68,18 @@ func (mempool *Mempool) CountInputTxs(publicKey []byte) uint64 {
 	for _, tx := range txs {
 		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			if bytes.Equal(base.Vin.PublicKey, publicKey) {
+			if base.HasVin() && bytes.Equal(base.Vin.PublicKey, publicKey) {
 				count++
 			}
 		}
 		if tx.Tx.Version == transaction_type.TX_ZETHER {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_zether.TransactionZether)
-			for _, payload := range base.Payloads {
-
-				for _, payloadPoint := range payload.Statement.Publickeylist {
-					txPublicKey := payloadPoint.EncodeCompressed()
+			for i, _ := range base.Payloads {
+				for _, txPublicKey := range base.Bloom.PublicKeyLists[i] {
 					if bytes.Equal(publicKey, txPublicKey) {
 						count++
 					}
 				}
-
 			}
 		}
 	}
@@ -98,7 +95,7 @@ func (mempool *Mempool) GetNonce(publicKey []byte, nonce uint64) uint64 {
 	for _, tx := range txs {
 		if tx.Tx.Version == transaction_type.TX_SIMPLE {
 			base := tx.Tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			if bytes.Equal(base.Vin.PublicKey, publicKey) {
+			if base.HasVin() && bytes.Equal(base.Vin.PublicKey, publicKey) {
 				nonces[base.Nonce] = true
 			}
 		}

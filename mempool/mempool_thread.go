@@ -35,7 +35,7 @@ type MempoolWorkerInsertTxs struct {
 	Result chan<- bool
 }
 
-//process the worker for transactions to prepare the transactions to the forger
+// process the worker for transactions to prepare the transactions to the forger
 func (worker *mempoolWorker) processing(
 	newWorkCn <-chan *mempoolWork,
 	suspendProcessingCn <-chan struct{},
@@ -199,10 +199,7 @@ func (worker *mempoolWorker) processing(
 					case newAddTx = <-addTransactionCn:
 						tx = newAddTx.Tx
 						if txsMap[tx.Tx.Bloom.HashStr] != nil {
-							if newAddTx.Result != nil {
-								newAddTx.Result <- errors.New("Already found")
-							}
-							continue
+							tx = nil
 						}
 					}
 				} else {
@@ -224,6 +221,9 @@ func (worker *mempoolWorker) processing(
 				}
 
 				if tx == nil {
+					if newAddTx != nil && newAddTx.Result != nil {
+						newAddTx.Result <- errors.New("Already found")
+					}
 					continue
 				}
 
@@ -246,6 +246,7 @@ func (worker *mempoolWorker) processing(
 
 						if err = tx.Tx.IncludeTransaction(work.chainHeight, dataStorage); err != nil {
 							dataStorage.Rollback()
+							return
 						} else {
 
 							if includedTotalSize+tx.Tx.Bloom.Size < config.BLOCK_MAX_SIZE {
@@ -287,10 +288,10 @@ func (worker *mempoolWorker) processing(
 						removeTxNow(tx, newAddTx == nil, exists)
 					}
 
-					if newAddTx != nil && newAddTx.Result != nil {
-						newAddTx.Result <- finalErr
-					}
+				}
 
+				if newAddTx != nil && newAddTx.Result != nil {
+					newAddTx.Result <- finalErr
 				}
 			}
 

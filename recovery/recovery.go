@@ -1,8 +1,6 @@
 package recovery
 
 import (
-	"fmt"
-	"os"
 	"pandora-pay/gui"
 	"runtime/debug"
 )
@@ -24,8 +22,6 @@ func Safe(cb func()) {
 				gui.GUI.Error(stackTrace)
 			}
 
-			fmt.Println("Error: \n\n", err, stackTrace)
-			os.Exit(1)
 		}
 	}()
 	cb()

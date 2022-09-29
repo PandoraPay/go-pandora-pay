@@ -9,10 +9,9 @@ import (
 )
 
 type AssetFeeLiquidity struct {
-	helpers.SerializableInterface `json:"-" msgpack:"-"`
-	Asset                         []byte `json:"assetId" msgpack:"assetId"`
-	Rate                          uint64 `json:"rate" msgpack:"rate"`
-	LeadingZeros                  byte   `json:"leadingZeros" msgpack:"leadingZeros"`
+	Asset        []byte `json:"assetId" msgpack:"assetId"`
+	Rate         uint64 `json:"rate" msgpack:"rate"`
+	LeadingZeros byte   `json:"leadingZeros" msgpack:"leadingZeros"`
 }
 
 func (self *AssetFeeLiquidity) Validate() error {

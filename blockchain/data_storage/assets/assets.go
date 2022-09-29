@@ -9,70 +9,56 @@ import (
 )
 
 type Assets struct {
-	*hash_map.HashMap
+	*hash_map.HashMap[*asset.Asset]
 }
 
-func (assets *Assets) GetAsset(key []byte) (*asset.Asset, error) {
-
-	data, err := assets.HashMap.Get(string(key))
-	if data == nil || err != nil {
-		return nil, err
-	}
-
-	return data.(*asset.Asset), nil
-}
-
-func (assets *Assets) CreateAsset(key []byte, ast *asset.Asset) (err error) {
+func (this *Assets) CreateAsset(key []byte, ast *asset.Asset) (err error) {
 
 	var exists bool
-	if exists, err = assets.Exists(string(key)); err != nil {
+	if exists, err = this.Exists(string(key)); err != nil {
 		return
 	}
 	if exists {
 		return errors.New("Asset already exists")
 	}
 
-	return assets.Update(string(key), ast)
+	return this.Update(string(key), ast)
 }
 
-func NewAssets(tx store_db_interface.StoreDBTransactionInterface) (assets *Assets) {
+func NewAssets(tx store_db_interface.StoreDBTransactionInterface) (this *Assets) {
 
-	hashMap := hash_map.CreateNewHashMap(tx, "assets", config_coins.ASSET_LENGTH, true)
-
-	assets = &Assets{
-		hashMap,
+	this = &Assets{
+		hash_map.CreateNewHashMap[*asset.Asset](tx, "assets", config_coins.ASSET_LENGTH, true),
 	}
 
-	assets.HashMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
+	this.HashMap.CreateObject = func(key []byte, index uint64) (*asset.Asset, error) {
 		return asset.NewAsset(key, index), nil
 	}
 
-	assets.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) (err error) {
-		if !tx.IsWritable() {
+	this.HashMap.StoredEvent = func(key []byte, committed *hash_map.CommittedMapElement[*asset.Asset], index uint64) (err error) {
+		if !this.Tx.IsWritable() {
 			return
 		}
 
-		asset := element.Element.(*asset.Asset)
-
-		if usedBy := tx.Get("assets:tickers:used:" + asset.Identification); usedBy != nil {
+		if usedBy := this.Tx.Get("assets:tickers:used:" + committed.Element.Identification); usedBy != nil {
 			return errors.New("tokenIdentification already! Try again")
 		}
 
-		tx.Put("assets:tickers:by:"+string(key), []byte(asset.Identification))
-		tx.Put("assets:tickers:used:"+asset.Identification, []byte{1})
+		this.Tx.Put("assets:tickers:by:"+string(key), []byte(committed.Element.Identification))
+		this.Tx.Put("assets:tickers:used:"+committed.Element.Identification, []byte{1})
 
 		return
 	}
 
-	assets.HashMap.DeletedEvent = func(key []byte) (err error) {
-		if !tx.IsWritable() {
+	this.HashMap.DeletedEvent = func(key []byte) (err error) {
+		if !this.Tx.IsWritable() {
 			return
 		}
 
-		tokenIdentification := tx.Get("assets:tickers:by:" + string(key))
+		tokenIdentification := this.Tx.Get("assets:tickers:by:" + string(key))
 
-		tx.Delete("assets:tickers:by:" + string(key))
-		tx.Delete("assets:tickers:used:" + string(tokenIdentification))
+		this.Tx.Delete("assets:tickers:by:" + string(key))
+		this.Tx.Delete("assets:tickers:used:" + string(tokenIdentification))
 		return
 	}
 

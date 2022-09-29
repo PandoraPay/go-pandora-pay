@@ -141,8 +141,11 @@ func (thread *ConsensusProcessForksThread) downloadFork(fork *Fork) bool {
 
 	for {
 
-		if start == 0 || ((chainData.Height-start > config.FORK_MAX_UNCLE_ALLOWED+chainData.ConsecutiveSelfForged) && (chainData.Height-start > chainData.ConsecutiveSelfForged)) {
+		if start == 0 { //let's exit
 			break
+		}
+		if (chainData.Height-start > config.FORK_MAX_UNCLE_ALLOWED+chainData.ConsecutiveSelfForged) && (chainData.Height-start > chainData.ConsecutiveSelfForged) {
+			return false
 		}
 
 		if fork.errors > 2 {

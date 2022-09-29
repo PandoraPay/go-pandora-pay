@@ -10,7 +10,7 @@ import (
 )
 
 type Registrations struct {
-	*hash_map.HashMap
+	*hash_map.HashMap[*registration.Registration]
 }
 
 func VerifyRegistration(publicKey []byte, staked bool, spendPublicKey, registrationSignature []byte) bool {
@@ -35,50 +35,25 @@ func VerifyRegistrationPoint(publicKey *bn256.G1, staked bool, spendPublicKey, r
 	return crypto.VerifySignaturePoint(data, registrationSignature, publicKey)
 }
 
-//WARNING: should NOT be used manually without being called from DataStorage
-func (registrations *Registrations) CreateNewRegistration(publicKey []byte, staked bool, spendPublicKey []byte) (*registration.Registration, error) {
+// WARNING: should NOT be used manually without being called from DataStorage
+func (this *Registrations) CreateNewRegistration(publicKey []byte, staked bool, spendPublicKey []byte) (*registration.Registration, error) {
 	reg := registration.NewRegistration(publicKey, 0) //index will be set by update
 	reg.Staked = staked
 	reg.SpendPublicKey = spendPublicKey
-	if err := registrations.HashMap.Create(string(publicKey), reg); err != nil {
+	if err := this.HashMap.Create(string(publicKey), reg); err != nil {
 		return nil, err
 	}
 	return reg, nil
 }
 
-func (registrations *Registrations) GetRegistration(key []byte) (*registration.Registration, error) {
+func NewRegistrations(tx store_db_interface.StoreDBTransactionInterface) (this *Registrations) {
 
-	data, err := registrations.HashMap.Get(string(key))
-	if data == nil || err != nil {
-		return nil, err
+	this = &Registrations{
+		hash_map.CreateNewHashMap[*registration.Registration](tx, "registrations", cryptography.PublicKeySize, true),
 	}
 
-	reg := data.(*registration.Registration)
-	return reg, nil
-}
-
-func (registrations *Registrations) GetRandomRegistration() (*registration.Registration, error) {
-	data, err := registrations.HashMap.GetRandom()
-	if err != nil {
-		return nil, err
-	}
-	return data.(*registration.Registration), nil
-}
-
-func NewRegistrations(tx store_db_interface.StoreDBTransactionInterface) (registrations *Registrations) {
-
-	hashmap := hash_map.CreateNewHashMap(tx, "registrations", cryptography.PublicKeySize, true)
-
-	registrations = &Registrations{
-		HashMap: hashmap,
-	}
-
-	registrations.HashMap.CreateObject = func(key []byte, index uint64) (hash_map.HashMapElementSerializableInterface, error) {
+	this.HashMap.CreateObject = func(key []byte, index uint64) (*registration.Registration, error) {
 		return registration.NewRegistration(key, index), nil
-	}
-
-	registrations.HashMap.StoredEvent = func(key []byte, element *hash_map.CommittedMapElement) error {
-		return nil
 	}
 
 	return

@@ -55,7 +55,7 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 		dataStorage := data_storage.NewDataStorage(reader)
 
 		var reg *registration.Registration
-		if reg, err = dataStorage.Regs.GetRegistration(sharedStakedPublicKey); err != nil {
+		if reg, err = dataStorage.Regs.Get(string(sharedStakedPublicKey)); err != nil {
 			return
 		}
 		if reg == nil {
@@ -71,7 +71,7 @@ func (api *DelegatorNode) DelegatorNotify(r *http.Request, args *ApiDelegatorNod
 			return
 		}
 
-		if acc, err = accs.GetAccount(sharedStakedPublicKey); err != nil {
+		if acc, err = accs.Get(string(sharedStakedPublicKey)); err != nil {
 			return
 		}
 		if acc == nil {

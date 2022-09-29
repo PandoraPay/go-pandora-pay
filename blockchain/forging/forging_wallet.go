@@ -64,10 +64,10 @@ func (w *ForgingWallet) AddWallet(publicKey []byte, sharedStaked *shared_staked.
 				return
 			}
 
-			if account, err = accs.GetAccount(publicKey); err != nil {
+			if account, err = accs.Get(string(publicKey)); err != nil {
 				return
 			}
-			if reg, err = dataStorage.Regs.GetRegistration(publicKey); err != nil {
+			if reg, err = dataStorage.Regs.Get(string(publicKey)); err != nil {
 				return
 			}
 
@@ -233,7 +233,7 @@ func (w *ForgingWallet) runProcessUpdates() {
 			}
 		case update := <-updateNewChainCn:
 
-			accs, _ := update.AccsCollection.GetOnlyMap(config_coins.NATIVE_ASSET_FULL)
+			accs, _ := update.AccsCollection.GetMapIfExists(config_coins.NATIVE_ASSET_FULL)
 			if accs == nil {
 				continue
 			}
@@ -243,8 +243,7 @@ func (w *ForgingWallet) runProcessUpdates() {
 			for k, v := range update.Registrations.Committed {
 				if w.addressesMap[k] != nil {
 					if v.Stored == "update" {
-						reg := v.Element.(*registration.Registration)
-						if !reg.Staked {
+						if !v.Element.Staked {
 							w.deleteAccount(k)
 						}
 					} else if v.Stored == "delete" {
@@ -257,9 +256,7 @@ func (w *ForgingWallet) runProcessUpdates() {
 				if w.addressesMap[k] != nil {
 					if v.Stored == "update" {
 
-						acc := v.Element.(*account.Account)
-
-						w.addressesMap[k].account = acc
+						w.addressesMap[k].account = v.Element
 						w.addressesMap[k].chainHash = chainHash
 						w.updateAccountToForgingWorkers(w.addressesMap[k])
 

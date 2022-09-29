@@ -59,10 +59,10 @@ func (api *APICommon) GetAccountsByKeys(r *http.Request, args *APIAccountsByKeys
 		reply.Reg = make([]*registration.Registration, len(publicKeys))
 
 		for i := 0; i < len(publicKeys); i++ {
-			if reply.Acc[i], err = accs.GetAccount(publicKeys[i]); err != nil {
+			if reply.Acc[i], err = accs.Get(string(publicKeys[i])); err != nil {
 				return
 			}
-			if reply.Reg[i], err = regs.GetRegistration(publicKeys[i]); err != nil {
+			if reply.Reg[i], err = regs.Get(string(publicKeys[i])); err != nil {
 				return
 			}
 			hasRollovers[i] = reply.Acc[i] != nil && reply.Reg[i].Staked
@@ -85,7 +85,7 @@ func (api *APICommon) GetAccountsByKeys(r *http.Request, args *APIAccountsByKeys
 		}
 		for i, acc := range reply.Acc {
 			if balancesInit[i] != nil {
-				acc.Balance = &account_balance_homomorphic.BalanceHomomorphic{nil, balancesInit[i]}
+				acc.Balance = &account_balance_homomorphic.BalanceHomomorphic{balancesInit[i]}
 			}
 		}
 	}

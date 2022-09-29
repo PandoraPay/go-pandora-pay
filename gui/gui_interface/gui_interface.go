@@ -22,7 +22,7 @@ type GUIInterface interface {
 	OutputWrite(any ...interface{})
 	CommandDefineCallback(Text string, callback func(string, context.Context) error, useIt bool)
 	OutputReadString(text string) string
-	OutputReadFilename(text, extension string) string
+	OutputReadFilename(text, extension string, allowEmpty bool) string
 	OutputReadInt(text string, allowEmpty bool, emptyValue int, validateCb func(int) bool) int
 	OutputReadUint64(text string, allowEmpty bool, emptyValue uint64, validateCb func(uint64) bool) uint64
 	OutputReadFloat64(text string, allowEmpty bool, emptyValue float64, validateCb func(float64) bool) float64

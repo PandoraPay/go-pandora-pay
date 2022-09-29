@@ -5,16 +5,14 @@ import (
 	"pandora-pay/blockchain/data_storage/accounts/account/account_balance_homomorphic"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
-	"pandora-pay/store/hash_map"
 )
 
 type Account struct {
-	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
-	Key                                          []byte                                          `json:"-" msgpack:"-"` //hashmap key
-	Asset                                        []byte                                          `json:"-" msgpack:"-"` //collection asset
-	Index                                        uint64                                          `json:"-" msgpack:"-"` //hashmap Index
-	Version                                      uint64                                          `json:"version" msgpack:"version"`
-	Balance                                      *account_balance_homomorphic.BalanceHomomorphic `json:"balance" msgpack:"balance"`
+	Key     []byte                                          `json:"-" msgpack:"-"` //hashmap key
+	Asset   []byte                                          `json:"-" msgpack:"-"` //collection asset
+	Index   uint64                                          `json:"-" msgpack:"-"` //hashmap Index
+	Version uint64                                          `json:"version" msgpack:"version"`
+	Balance *account_balance_homomorphic.BalanceHomomorphic `json:"balance" msgpack:"balance"`
 }
 
 func (account *Account) IsDeletable() bool {
@@ -74,25 +72,21 @@ func NewAccount(key []byte, index uint64, asset []byte) (*Account, error) {
 		return nil, err
 	}
 
-	acc := &Account{
-		Key:     key,
-		Version: 0,
-		Asset:   asset,
-		Index:   index,
-		Balance: balance,
-	}
-
-	return acc, nil
+	return &Account{
+		key,
+		asset,
+		index,
+		0,
+		balance,
+	}, nil
 }
 
-func NewAccountClear(key []byte, index uint64, asset []byte) (*Account, error) {
-	acc := &Account{
-		Key:     key,
-		Version: 0,
-		Asset:   asset,
-		Index:   index,
-		Balance: &account_balance_homomorphic.BalanceHomomorphic{nil, nil},
+func NewAccountClear(key []byte, index uint64, asset []byte) *Account {
+	return &Account{
+		key,
+		asset,
+		index,
+		0,
+		&account_balance_homomorphic.BalanceHomomorphic{nil},
 	}
-
-	return acc, nil
 }

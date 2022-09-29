@@ -10,51 +10,48 @@ import (
 )
 
 type AccountsCollection struct {
-	tx       store_db_interface.StoreDBTransactionInterface
-	accsMap  map[string]*Accounts
-	listMaps []*hash_map.HashMap
+	tx   store_db_interface.StoreDBTransactionInterface
+	maps map[string]*Accounts
+	list []hash_map.HashMapInterface
 }
 
-func (collection *AccountsCollection) SetTx(tx store_db_interface.StoreDBTransactionInterface) {
-	collection.tx = tx
+func (this *AccountsCollection) SetTx(tx store_db_interface.StoreDBTransactionInterface) {
+	this.tx = tx
 }
 
-func (collection *AccountsCollection) GetAllMaps() map[string]*Accounts {
-	return collection.accsMap
+func (this *AccountsCollection) GetAllMaps() map[string]*Accounts {
+	return this.maps
 }
 
-func (collection *AccountsCollection) GetAllHashmaps() []*hash_map.HashMap {
-	return collection.listMaps
+func (this *AccountsCollection) GetAllHashmaps() []hash_map.HashMapInterface {
+	return this.list
 }
 
-func (collection *AccountsCollection) GetMap(assetId []byte) (*Accounts, error) {
+func (this *AccountsCollection) GetMap(assetId []byte) (*Accounts, error) {
 
 	if len(assetId) != config_coins.ASSET_LENGTH {
 		return nil, errors.New("Asset was not found")
 	}
 
-	accs := collection.accsMap[string(assetId)]
+	accs := this.maps[string(assetId)]
 	if accs == nil {
 		var err error
-		if accs, err = NewAccounts(collection.tx, assetId); err != nil {
+		if accs, err = NewAccounts(this.tx, assetId); err != nil {
 			return nil, err
 		}
-		collection.listMaps = append(collection.listMaps, accs.HashMap)
-		collection.accsMap[string(assetId)] = accs
+		this.list = append(this.list, accs.HashMap)
+		this.maps[string(assetId)] = accs
 	}
 	return accs, nil
 }
 
-func (collection *AccountsCollection) GetOnlyMap(assetId []byte) (*Accounts, error) {
-	if len(assetId) != config_coins.ASSET_LENGTH {
-		return nil, errors.New("Asset was not found")
-	}
-	return collection.accsMap[string(assetId)], nil
+func (this *AccountsCollection) GetMapIfExists(assetId []byte) (*Accounts, error) {
+	return this.maps[string(assetId)], nil
 }
 
-func (collection *AccountsCollection) GetAccountAssetsCount(key []byte) (uint64, error) {
+func (this *AccountsCollection) GetAccountAssetsCount(key []byte) (uint64, error) {
 
-	data := collection.tx.Get("accounts:assetsCount:" + string(key))
+	data := this.tx.Get("accounts:assetsCount:" + string(key))
 	if data != nil {
 		count, err := helpers.NewBufferReader(data).ReadUvarint()
 		if err != nil {
@@ -66,9 +63,9 @@ func (collection *AccountsCollection) GetAccountAssetsCount(key []byte) (uint64,
 	return 0, nil
 }
 
-func (collection *AccountsCollection) GetAccountAssets(key []byte) ([][]byte, error) {
+func (this *AccountsCollection) GetAccountAssets(key []byte) ([][]byte, error) {
 
-	count, err := collection.GetAccountAssetsCount(key)
+	count, err := this.GetAccountAssetsCount(key)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +73,7 @@ func (collection *AccountsCollection) GetAccountAssets(key []byte) ([][]byte, er
 	out := make([][]byte, count)
 
 	for i := uint64(0); i < count; i++ {
-		assetId := collection.tx.Get("accounts:assetByIndex:" + string(key) + ":" + strconv.FormatUint(i, 10))
+		assetId := this.tx.Get("accounts:assetByIndex:" + string(key) + ":" + strconv.FormatUint(i, 10))
 		if assetId == nil {
 			return nil, errors.New("Error reading AssetId")
 		}
@@ -90,6 +87,6 @@ func NewAccountsCollection(tx store_db_interface.StoreDBTransactionInterface) *A
 	return &AccountsCollection{
 		tx,
 		make(map[string]*Accounts),
-		make([]*hash_map.HashMap, 0),
+		make([]hash_map.HashMapInterface, 0),
 	}
 }

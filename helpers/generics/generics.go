@@ -11,6 +11,10 @@ func Zero[T any]() (z T) {
 	return
 }
 
+func IsZero[T comparable](v T) bool {
+	return v == *new(T)
+}
+
 func Clone[T any](a, z T) (T, error) {
 	data, err := msgpack.Marshal(a)
 	if err != nil {

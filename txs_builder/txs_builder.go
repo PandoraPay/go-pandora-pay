@@ -76,9 +76,12 @@ func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propa
 		txData.Fee = &wizard.WizardTransactionFee{0, 0, 0, true}
 	}
 
-	sendersWalletAddresses, err := builder.getWalletAddresses([]string{txData.Sender})
-	if err != nil {
-		return nil, err
+	var sendersWalletAddresses []*wallet_address.WalletAddress
+	var err error
+	if txData.Sender != "" {
+		if sendersWalletAddresses, err = builder.getWalletAddresses([]string{txData.Sender}); err != nil {
+			return nil, err
+		}
 	}
 
 	builder.lock.Lock()
@@ -86,38 +89,42 @@ func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propa
 
 	statusCallback("Wallet Addresses Found")
 
-	var tx *transaction.Transaction
-	var plainAcc *plain_account.PlainAccount
-	var chainHeight uint64
-
-	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
-
-		plainAccs := plain_accounts.NewPlainAccounts(reader)
-
-		if plainAcc, err = plainAccs.GetPlainAccount(sendersWalletAddresses[0].PublicKey); err != nil {
-			return
-		}
-		if plainAcc == nil {
-			return errors.New("Plain Account doesn't exist")
-		}
-
-		return
-	}); err != nil {
-		return nil, err
-	}
-
-	statusCallback("Balances checked")
-
-	txData.Nonce = builder.getNonce(txData.Nonce, sendersWalletAddresses[0].PublicKey, plainAcc.Nonce)
-	statusCallback("Getting Nonce from Mempool")
-
-	if tx, err = wizard.CreateSimpleTx(&wizard.WizardTxSimpleTransfer{
+	transfer := &wizard.WizardTxSimpleTransfer{
 		txData.Extra,
 		txData.Data,
 		txData.Fee,
 		txData.Nonce,
-		sendersWalletAddresses[0].PrivateKey.Key,
-	}, false, statusCallback); err != nil {
+		nil,
+	}
+
+	var tx *transaction.Transaction
+	var plainAcc *plain_account.PlainAccount
+	var chainHeight uint64
+
+	if len(sendersWalletAddresses) > 0 {
+
+		if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+			plainAccs := plain_accounts.NewPlainAccounts(reader)
+
+			if plainAcc, err = plainAccs.Get(string(sendersWalletAddresses[0].PublicKey)); err != nil {
+				return
+			}
+			if plainAcc == nil {
+				return errors.New("Plain Account doesn't exist")
+			}
+
+			return
+		}); err != nil {
+			return nil, err
+		}
+
+		statusCallback("Getting Nonce from Mempool")
+		transfer.Nonce = builder.getNonce(txData.Nonce, sendersWalletAddresses[0].PublicKey, plainAcc.Nonce)
+		transfer.Key = sendersWalletAddresses[0].PrivateKey.Key
+	}
+
+	if tx, err = wizard.CreateSimpleTx(transfer, false, statusCallback); err != nil {
 		return nil, err
 	}
 	statusCallback("Transaction Created")

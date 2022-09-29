@@ -60,7 +60,7 @@ func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply
 			}
 
 			var acc *account.Account
-			if acc, err = accs.GetAccount(publicKey); err != nil {
+			if acc, err = accs.Get(string(publicKey)); err != nil {
 				return
 			}
 
@@ -73,7 +73,7 @@ func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply
 			}
 		}
 
-		if reply.PlainAcc, err = plainAccs.GetPlainAccount(publicKey); err != nil {
+		if reply.PlainAcc, err = plainAccs.Get(string(publicKey)); err != nil {
 			return
 		}
 		if reply.PlainAcc != nil {
@@ -82,7 +82,7 @@ func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply
 			}
 		}
 
-		if reply.Reg, err = regs.GetRegistration(publicKey); err != nil {
+		if reply.Reg, err = regs.Get(string(publicKey)); err != nil {
 			return
 		}
 		if reply.Reg != nil {

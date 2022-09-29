@@ -13,9 +13,9 @@ import (
 
 type TransactionSimpleExtraUpdateAssetFeeLiquidity struct {
 	TransactionSimpleExtraInterface
-	Liquidities     []*asset_fee_liquidity.AssetFeeLiquidity
-	CollectorHasNew bool
-	Collector       []byte
+	Liquidities  []*asset_fee_liquidity.AssetFeeLiquidity
+	NewCollector bool
+	Collector    []byte
 }
 
 func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
@@ -24,7 +24,7 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransaction
 		return fmt.Errorf("Unclaimed must be greater than %d", config_asset_fee.GetRequiredAssetFee(blockHeight))
 	}
 
-	if txExtra.CollectorHasNew {
+	if txExtra.NewCollector {
 		var isReg bool
 		if isReg, err = dataStorage.Regs.Exists(string(txExtra.Collector)); err != nil {
 			return
@@ -58,7 +58,7 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) IncludeTransaction
 	return
 }
 
-func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Validate() (err error) {
+func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Validate(fee uint64) (err error) {
 
 	for _, liquidity := range txExtra.Liquidities {
 		if err = liquidity.Validate(); err != nil {
@@ -70,7 +70,7 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Validate() (err er
 }
 
 func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Serialize(w *helpers.BufferWriter, inclSignature bool) {
-	w.WriteBool(txExtra.CollectorHasNew)
+	w.WriteBool(txExtra.NewCollector)
 	w.Write(txExtra.Collector)
 
 	w.WriteByte(byte(len(txExtra.Liquidities)))
@@ -81,11 +81,11 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Serialize(w *helpe
 
 func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Deserialize(r *helpers.BufferReader) (err error) {
 
-	if txExtra.CollectorHasNew, err = r.ReadBool(); err != nil {
+	if txExtra.NewCollector, err = r.ReadBool(); err != nil {
 		return
 	}
 
-	if txExtra.CollectorHasNew {
+	if txExtra.NewCollector {
 		if txExtra.Collector, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 			return
 		}

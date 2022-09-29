@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
@@ -102,6 +103,8 @@ func (mempool *Mempool) processTxsToMempool(txs []*transaction.Transaction, heig
 			continue
 		}
 
+		checkFee := true
+
 		minerFee, err := tx.GetAllFee()
 		if err != nil {
 			errs[i] = err
@@ -119,6 +122,10 @@ func (mempool *Mempool) processTxsToMempool(txs []*transaction.Transaction, heig
 		switch tx.Version {
 		case transaction_type.TX_SIMPLE:
 			requiredFeePerByte = config_fees.FEE_PER_BYTE
+			txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
+			if txBase.TxScript == transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE {
+				checkFee = false
+			}
 		case transaction_type.TX_ZETHER:
 			requiredFeePerByte = config_fees.FEE_PER_BYTE_ZETHER
 		default:
@@ -126,9 +133,11 @@ func (mempool *Mempool) processTxsToMempool(txs []*transaction.Transaction, heig
 			continue
 		}
 
-		if computedFeePerByte < requiredFeePerByte {
-			errs[i] = errors.New("Transaction fee was not accepted")
-			continue
+		if checkFee {
+			if computedFeePerByte < requiredFeePerByte {
+				errs[i] = errors.New("Transaction fee was not accepted")
+				continue
+			}
 		}
 
 		finalTxs[i] = &mempoolTx{

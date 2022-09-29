@@ -10,12 +10,12 @@ import (
 	"pandora-pay/store/store_db/store_db_interface"
 )
 
-//internal
-//RED BLACK TREE should be better than Heap
+// internal
+// RED BLACK TREE should be better than Heap
 type AssetsFeeLiquidityCollection struct {
 	tx                store_db_interface.StoreDBTransactionInterface
 	liquidityMaxHeaps map[string]*min_max_heap.HeapStoreHashMap
-	listMaps          []*hash_map.HashMap
+	listMaps          []hash_map.HashMapInterface
 }
 
 func (collection *AssetsFeeLiquidityCollection) GetAllMaps() map[string]*min_max_heap.HeapStoreHashMap {
@@ -26,7 +26,7 @@ func (collection *AssetsFeeLiquidityCollection) SetTx(tx store_db_interface.Stor
 	collection.tx = tx
 }
 
-func (collection *AssetsFeeLiquidityCollection) GetAllHashmaps() []*hash_map.HashMap {
+func (collection *AssetsFeeLiquidityCollection) GetAllHashmaps() []hash_map.HashMapInterface {
 	return collection.listMaps
 }
 
@@ -89,6 +89,6 @@ func NewAssetsFeeLiquidityCollection(tx store_db_interface.StoreDBTransactionInt
 	return &AssetsFeeLiquidityCollection{
 		tx,
 		make(map[string]*min_max_heap.HeapStoreHashMap),
-		make([]*hash_map.HashMap, 0),
+		make([]hash_map.HashMapInterface, 0),
 	}
 }

@@ -4,16 +4,14 @@ import (
 	"errors"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
-	"pandora-pay/store/hash_map"
 )
 
 type Registration struct {
-	hash_map.HashMapElementSerializableInterface `json:"-" msgpack:"-"`
-	PublicKey                                    []byte `json:"-" msgpack:"-"` //hashMap key
-	Index                                        uint64 `json:"-" msgpack:"-"` //hashMap index
-	Version                                      uint64 `json:"version" msgpack:"version"`
-	Staked                                       bool   `json:"staked" msgpack:"staked"`
-	SpendPublicKey                               []byte `json:"spendPublicKey" msgpack:"spendPublicKey"`
+	PublicKey      []byte `json:"-" msgpack:"-"` //hashMap key
+	Index          uint64 `json:"-" msgpack:"-"` //hashMap index
+	Version        uint64 `json:"version" msgpack:"version"`
+	Staked         bool   `json:"staked" msgpack:"staked"`
+	SpendPublicKey []byte `json:"spendPublicKey" msgpack:"spendPublicKey"`
 }
 
 func (registration *Registration) IsDeletable() bool {
