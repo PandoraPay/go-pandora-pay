@@ -115,7 +115,7 @@ func (c *Conn) SetPongHandler(cb func(string) error) error {
 		for {
 			select {
 			case <-c.closed:
-				break
+				return
 			default:
 				cb("PING")
 				time.Sleep(config.WEBSOCKETS_PING_INTERVAL)
@@ -146,7 +146,7 @@ func (c *Conn) ReadMessage() (int, []byte, error) {
 		return 0, nil, c.readCtx.Err()
 	case <-c.readSignal:
 	case <-c.closed:
-		return 0, nil, c.closedErr.Load()
+		return 0, nil, errors.New("Closed")
 	}
 
 	c.readBufMu.Lock()

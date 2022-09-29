@@ -179,7 +179,6 @@ func (c *AdvancedConnection) get(message *advanced_connection_types.AdvancedConn
 
 	defer func() {
 		if err2 := recover(); err2 != nil {
-			final = nil
 			err = err2.(error)
 		}
 	}()

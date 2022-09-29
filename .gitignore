@@ -27,3 +27,5 @@
 /builds/webassembly/bin
 /builds/webassembly_helper/bin
 /builds/electron_helper/bin
+
+./error.txt
