@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/tyler-smith/go-bip39"
-	"math/rand"
 	"os"
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage"
@@ -639,20 +638,17 @@ func (wallet *Wallet) initWalletCLI() {
 
 		extra.Resolution = gui.GUI.OutputReadBool("Resolution.  Use y/n for voting", false, false)
 
-		nonce := rand.Uint64()
-		signature, err := crypto.SignMessage(extra.MessageForSigning(nonce), privateKey)
+		signature, err := crypto.SignMessage(extra.MessageForSigning(), privateKey)
 		if err != nil {
 			return
 		}
 
 		gui.GUI.OutputWrite(fmt.Sprintf("Public Key: %s", base64.StdEncoding.EncodeToString(pk.GeneratePublicKey())))
-		gui.GUI.OutputWrite(fmt.Sprintf("Nonce: %d", nonce))
 		gui.GUI.OutputWrite(fmt.Sprintf("Signature: %s", base64.StdEncoding.EncodeToString(signature)))
 
 		if filename := gui.GUI.OutputReadFilename("Path to export", "txt", true); len(filename) > 0 {
 
 			if err = files.WriteFile(filename, fmt.Sprintf("Public Key: %s\n", base64.StdEncoding.EncodeToString(pk.GeneratePublicKey())),
-				fmt.Sprintf("Nonce: %d\n", nonce),
 				fmt.Sprintf("Signature: %s\n", base64.StdEncoding.EncodeToString(signature))); err != nil {
 				return
 			}

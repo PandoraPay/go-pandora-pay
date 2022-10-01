@@ -20,7 +20,6 @@ type WizardTxSimpleExtraResolutionPayInFuture struct {
 	PayloadIndex        byte     `json:"payloadIndex" msgpack:"payloadIndex"`
 	Resolution          bool     `json:"resolution" msgpack:"resolution"`
 	MultisigPublicKeys  [][]byte `json:"multisigPublicKeys" msgpack:"multisigPublicKeys"`
-	Nonces              []uint64 `json:"nonces" msgpack:"nonces"`
 	Signatures          [][]byte `json:"signatures" msgpack:"signatures"`
 }
 

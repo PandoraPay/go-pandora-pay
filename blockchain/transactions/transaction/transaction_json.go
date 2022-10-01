@@ -60,6 +60,14 @@ type json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity struct {
 	Collector    []byte                                   `json:"collector"`
 }
 
+type json_Only_TransactionSimpleExtraResolutionPayInFuture struct {
+	TxId               []byte   `json:"txId"`
+	PayloadIndex       byte     `json:"payloadIndex"`
+	Resolution         bool     `json:"resolution"`
+	MultisigPublicKeys [][]byte `json:"multisigPublicKeys"`
+	Signatures         [][]byte `json:"signatures"`
+}
+
 type json_Only_TransactionZether struct {
 	ChainHeight     uint64                          `json:"chainHeight"  msgpack:"chainHeight"`
 	ChainKernelHash []byte                          `json:"chainKernelHash"  msgpack:"chainKernelHash"`
@@ -174,6 +182,15 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 				extra.Liquidities,
 				extra.NewCollector,
 				extra.Collector,
+			}
+		case transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE:
+			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture)
+			simpleJson.Extra = json_Only_TransactionSimpleExtraResolutionPayInFuture{
+				extra.TxId,
+				extra.PayloadIndex,
+				extra.Resolution,
+				extra.MultisigPublicKeys,
+				extra.Signatures,
 			}
 		default:
 			return nil, errors.New("Invalid simple.TxScript")
@@ -374,11 +391,23 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				return
 			}
 
-			base.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{
-				nil,
+			base.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{nil,
 				extraJson.Liquidities,
 				extraJson.NewCollector,
 				extraJson.Collector,
+			}
+		case transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE:
+			extraJson := &json_Only_TransactionSimpleExtraResolutionPayInFuture{}
+			if err = json.Unmarshal(data, extraJson); err != nil {
+				return
+			}
+
+			base.Extra = &transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture{nil,
+				extraJson.TxId,
+				extraJson.PayloadIndex,
+				extraJson.Resolution,
+				extraJson.MultisigPublicKeys,
+				extraJson.Signatures,
 			}
 		default:
 			return errors.New("Invalid json Simple TxScript")

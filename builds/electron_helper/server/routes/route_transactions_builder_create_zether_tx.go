@@ -7,17 +7,17 @@ import (
 	"pandora-pay/txs_builder/wizard"
 )
 
-func RouteTransactionsBuilderCreateZetherTx(req *builds_data.TransactionsBuilderCreateZetherTxReq) (any, error) {
+func RouteTransactionsBuilderCreateZetherTx(req []byte) (any, error) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, feesFinal, err := builds_data.PrepareData(req)
+	txData, transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, feesFinal, err := builds_data.PrepareData(req)
 	if err != nil {
 		return nil, err
 	}
 
-	tx, err := wizard.CreateZetherTx(transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, req.ChainKernelHeight, req.ChainKernelHash, publicKeyIndexes, feesFinal, ctx, func(status string) {})
+	tx, err := wizard.CreateZetherTx(transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, txData.ChainKernelHeight, txData.ChainKernelHash, publicKeyIndexes, feesFinal, ctx, func(status string) {})
 	if err != nil {
 		return nil, err
 	}

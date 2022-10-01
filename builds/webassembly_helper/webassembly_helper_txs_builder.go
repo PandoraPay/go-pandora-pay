@@ -17,15 +17,10 @@ func createZetherTx(this js.Value, args []js.Value) interface{} {
 			return nil, errors.New("Argument must be a string and a callback")
 		}
 
-		txData := &builds_data.TransactionsBuilderCreateZetherTxReq{}
-		if err := webassembly_utils.UnmarshalBytes(args[0], txData); err != nil {
-			return nil, err
-		}
-
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, feesFinal, err := builds_data.PrepareData(txData)
+		txData, transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, feesFinal, err := builds_data.PrepareData(webassembly_utils.GetBytes(args[0]))
 		if err != nil {
 			return nil, err
 		}

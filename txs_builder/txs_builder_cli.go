@@ -12,6 +12,7 @@ import (
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
+	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/config/config_assets"
@@ -423,12 +424,17 @@ func (builder *TxsBuilder) initCLI() {
 		}))
 
 		extra.PublicKeys = [][]byte{}
+		unique := make(map[string]bool)
 		for {
 			pubKey := gui.GUI.OutputReadBytes(fmt.Sprintf("PublicKey %d used in multisig payment", len(extra.PublicKeys)), func(val []byte) bool {
 				return len(val) == 0 || len(val) == cryptography.PublicKeySize
 			})
 			if len(pubKey) == 0 {
 				break
+			}
+			if unique[string(pubKey)] {
+				gui.GUI.OutputWrite("PublicKey already include")
+				continue
 			}
 			extra.PublicKeys = append(extra.PublicKeys, pubKey)
 		}
@@ -524,7 +530,6 @@ func (builder *TxsBuilder) initCLI() {
 
 		txExtra := &wizard.WizardTxSimpleExtraResolutionPayInFuture{
 			MultisigPublicKeys: make([][]byte, 0),
-			Nonces:             make([]uint64, 0),
 			Signatures:         make([][]byte, 0),
 		}
 		txData := &TxBuilderCreateSimpleTx{
@@ -551,16 +556,27 @@ func (builder *TxsBuilder) initCLI() {
 			if len(key) == 0 {
 				break
 			}
-			nonce := gui.GUI.OutputReadUint64("Nonce", false, 0, func(value uint64) bool {
-				return true
-			})
+
 			signature := gui.GUI.OutputReadBytes("Signature", func(sign []byte) bool {
 				return len(sign) == cryptography.SignatureSize
 			})
 
+			extra := &transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture{nil,
+				txExtra.TxId,
+				txExtra.PayloadIndex,
+				txExtra.Resolution,
+				[][]byte{key},
+				[][]byte{signature},
+			}
+
+			if !extra.VerifySignature() {
+				gui.GUI.Error("provided resolution signature is not valid")
+				break
+			}
+
 			txExtra.MultisigPublicKeys = append(txExtra.MultisigPublicKeys, key)
-			txExtra.Nonces = append(txExtra.Nonces, nonce)
 			txExtra.Signatures = append(txExtra.Signatures, signature)
+
 			i++
 		}
 

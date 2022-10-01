@@ -77,7 +77,19 @@ func (tx *TransactionSimple) ComputeAllKeys(out map[string]bool) {
 }
 
 func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bool {
-	return crypto.VerifySignature(hashForSignature, tx.Vin.Signature, tx.Vin.PublicKey)
+	if tx.HasVin() {
+		if !crypto.VerifySignature(hashForSignature, tx.Vin.Signature, tx.Vin.PublicKey) {
+			return false
+		}
+	}
+	if tx.TxScript == SCRIPT_RESOLUTION_PAY_IN_FUTURE {
+		extra := tx.Extra.(*transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture)
+		if !extra.VerifySignature() {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (tx *TransactionSimple) Validate() (err error) {
