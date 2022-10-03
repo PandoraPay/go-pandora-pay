@@ -44,7 +44,7 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		switch txData.TxScript {
+		switch txScript.TxScript {
 		case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
 			txData.Extra = &wizard.WizardTxSimpleExtraUpdateAssetFeeLiquidity{}
 		case transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE:
@@ -66,7 +66,7 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 			nil,
 		}
 
-		if txData.Sender != "" {
+		if len(txData.Sender) > 0 {
 			senderWalletAddr, err := app.Wallet.GetWalletAddressByEncodedAddress(txData.Sender, true)
 			if err != nil {
 				return nil, err

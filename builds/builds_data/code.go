@@ -21,7 +21,7 @@ func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, tra
 
 	txScripts := &struct {
 		Payloads []*struct {
-			ScriptType transaction_zether_payload_script.PayloadScriptType `json:"scriptType"`
+			PayloadScript transaction_zether_payload_script.PayloadScriptType `json:"payloadScript"`
 		}
 	}{}
 
@@ -36,7 +36,7 @@ func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, tra
 
 		txData.Payloads[t] = &zetherTxDataPayloadBase{}
 
-		switch txScripts.Payloads[t].ScriptType {
+		switch txScripts.Payloads[t].PayloadScript {
 		case transaction_zether_payload_script.SCRIPT_TRANSFER:
 			txData.Payloads[t].Extra = nil
 		case transaction_zether_payload_script.SCRIPT_ASSET_CREATE:
@@ -45,6 +45,8 @@ func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, tra
 			txData.Payloads[t].Extra = &wizard.WizardZetherPayloadExtraAssetSupplyIncrease{}
 		case transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND:
 			txData.Payloads[t].Extra = &wizard.WizardZetherPayloadExtraPlainAccountFund{}
+		case transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE:
+			txData.Payloads[t].Extra = &wizard.WizardZetherPayloadExtraPayInFuture{}
 		default:
 			err = errors.New("Invalid PayloadScriptType")
 			return
@@ -70,17 +72,6 @@ func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, tra
 	emap = wizard.InitializeEmap(sendAssets)
 
 	for t, payload := range txData.Payloads {
-
-		var key *addresses.PrivateKey
-		if key, err = addresses.NewPrivateKey(payload.Sender.PrivateKey); err != nil {
-			return
-		}
-
-		var senderAddr *addresses.Address
-		senderAddr, err = key.GenerateAddress(false, nil, txData.Regs[string(key.GeneratePublicKey())] == nil, nil, 0, nil)
-		if err != nil {
-			return
-		}
 
 		transfers[t] = &wizard.WizardZetherTransfer{
 			Asset:                  payload.Asset,
@@ -195,18 +186,12 @@ func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, tra
 			return
 		}
 
-		if err = addPoint(senderAddr.EncodeAddr(), true, true); err != nil {
-			return
-		}
-		if err = addPoint(payload.Recipient, false, false); err != nil {
-			return
-		}
-		for _, ringMember := range payload.RingSenderMembers {
-			if err = addPoint(ringMember, true, false); err != nil {
+		for i, ringMember := range payload.SenderRingMembers {
+			if err = addPoint(ringMember, true, i == 0); err != nil {
 				return
 			}
 		}
-		for _, ringMember := range payload.RingRecipientMembers {
+		for _, ringMember := range payload.RecipientRingMembers {
 			if err = addPoint(ringMember, false, false); err != nil {
 				return
 			}
@@ -215,7 +200,7 @@ func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, tra
 		ringsSenderMembers[t] = ringSender
 		ringsRecipientMembers[t] = ringRecipient
 
-		transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(len(payload.RingSenderMembers) + len(payload.RingRecipientMembers))
+		transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(len(ringSender) + len(ringRecipient))
 	}
 
 	feesFinal = make([]*wizard.WizardTransactionFee, len(txData.Payloads))

@@ -88,7 +88,7 @@ func (builder *TxsBuilder) presetZetherRing(ringConfiguration *ZetherRingConfigu
 	return nil
 }
 
-func (builder *TxsBuilder) createZetherRing(senderRing *[]string, recipientRing *[]string, sender, receiver *string, assetId []byte, ringConfiguration *ZetherRingConfiguration, hasRollovers map[string]bool, dataStorage *data_storage.DataStorage) (err error) {
+func (builder *TxsBuilder) createZetherRing(allAlreadyUsed map[string]bool, senderRing *[]string, recipientRing *[]string, sender, receiver *string, assetId []byte, ringConfiguration *ZetherRingConfiguration, hasRollovers map[string]bool, dataStorage *data_storage.DataStorage) (err error) {
 
 	alreadyUsed := make(map[string]bool)
 	var addr, addrtemp *addresses.Address
@@ -128,7 +128,7 @@ func (builder *TxsBuilder) createZetherRing(senderRing *[]string, recipientRing 
 				if (requireStakedAccounts && !reg.Staked) || (!requireStakedAccounts && len(reg.SpendPublicKey) > 0) {
 					continue
 				}
-				if alreadyUsed[string(addr.PublicKey)] {
+				if alreadyUsed[string(addr.PublicKey)] || allAlreadyUsed[string(addr.PublicKey)] {
 					continue
 				}
 				*address = addr.EncodeAddr()
@@ -163,6 +163,7 @@ func (builder *TxsBuilder) createZetherRing(senderRing *[]string, recipientRing 
 		}
 		*ring = append([]string{*address}, *ring...)
 		alreadyUsed[string(addr.PublicKey)] = true
+		allAlreadyUsed[string(addr.PublicKey)] = true
 		return
 	}
 
@@ -175,6 +176,7 @@ func (builder *TxsBuilder) createZetherRing(senderRing *[]string, recipientRing 
 				continue
 			}
 			alreadyUsed[string(addr.PublicKey)] = true
+			allAlreadyUsed[string(addr.PublicKey)] = true
 			*ring = append(*ring, addr.EncodeAddr())
 		}
 		return
@@ -194,6 +196,7 @@ func (builder *TxsBuilder) createZetherRing(senderRing *[]string, recipientRing 
 			}
 
 			alreadyUsed[string(addr.PublicKey)] = true
+			allAlreadyUsed[string(addr.PublicKey)] = true
 			hasRollovers[priv.GeneratePublicKeyPoint().String()] = staked
 
 			*ring = append(*ring, addr.EncodeAddr())
@@ -214,16 +217,17 @@ func (builder *TxsBuilder) createZetherRing(senderRing *[]string, recipientRing 
 				if addr, _, reg, err = builder.getRandomAccount(accs, dataStorage.Regs); err != nil {
 					return
 				}
-				if alreadyUsed[string(addr.PublicKey)] {
+				if alreadyUsed[string(addr.PublicKey)] || allAlreadyUsed[string(addr.PublicKey)] {
 					continue
 				}
-				alreadyUsed[string(addr.PublicKey)] = true
 				if avoidStakedAccounts && reg.Staked {
 					continue
 				}
 				if (requireStakedAccounts && !reg.Staked) || (!requireStakedAccounts && len(reg.SpendPublicKey) > 0) {
 					continue
 				}
+				alreadyUsed[string(addr.PublicKey)] = true
+				allAlreadyUsed[string(addr.PublicKey)] = true
 			}
 
 			*ring = append(*ring, addr.EncodeAddr())
@@ -280,7 +284,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 			payload.Data = &wizard.WizardTransactionData{[]byte{}, false}
 		}
 		if payload.RingConfiguration == nil {
-			payload.RingConfiguration = &ZetherRingConfiguration{-1, &ZetherSenderRingType{-1, false, false, nil, 0}, &ZetherRecipientRingType{-1, false, false, nil, 0}}
+			payload.RingConfiguration = &ZetherRingConfiguration{-1, &ZetherSenderRingType{false, false, nil, 0}, &ZetherRecipientRingType{false, false, nil, 0}}
 		}
 		if payload.Fee == nil {
 			payload.Fee = &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0}
@@ -337,6 +341,8 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 			return nil, nil, nil, nil, nil, nil, 0, nil, err
 		}
 	}
+
+	allAlreadyUsed := make(map[string]bool) //avoid having same decoy twice
 
 	if err := store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
 
@@ -410,14 +416,28 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 				return
 			}
 
-			if err = copyRingConfiguration(senderRingMembers, payload.RingConfiguration.SenderRingType.CopyRingMembers, 0); err != nil {
+			copySenderRing := -1
+			copyRecipientRing := -1
+			for i := 0; i < t; i++ {
+				if copySenderRing == -1 && txData.Payloads[i].Sender == payload.Sender {
+					copySenderRing = i
+				}
+				if copyRecipientRing == -1 && txData.Payloads[i].Recipient == payload.Recipient {
+					copyRecipientRing = i
+				}
+				if txData.Payloads[i].Sender == payload.Sender && txData.Payloads[i].Recipient == payload.Recipient {
+					return errors.New("Sender and Recipient rings would be identical and leak the sender and receiver")
+				}
+			}
+
+			if err = copyRingConfiguration(senderRingMembers, copySenderRing, 0); err != nil {
 				return
 			}
-			if err = copyRingConfiguration(recipientRingMembers, payload.RingConfiguration.RecipientRingType.CopyRingMembers, 1); err != nil {
+			if err = copyRingConfiguration(recipientRingMembers, copyRecipientRing, 1); err != nil {
 				return
 			}
 
-			if err = builder.createZetherRing(&senderRingMembers[t], &recipientRingMembers[t], &payload.Sender, &payload.Recipient, payload.Asset, payload.RingConfiguration, hasRollovers, dataStorage); err != nil {
+			if err = builder.createZetherRing(allAlreadyUsed, &senderRingMembers[t], &recipientRingMembers[t], &payload.Sender, &payload.Recipient, payload.Asset, payload.RingConfiguration, hasRollovers, dataStorage); err != nil {
 				return
 			}
 		}
@@ -710,7 +730,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				decryptedBalance,
 				"",
 				blkComplete.StakingAmount,
-				&ZetherRingConfiguration{64, &ZetherSenderRingType{-1, true, false, nil, 0}, &ZetherRecipientRingType{-1, true, false, nil, 0}},
+				&ZetherRingConfiguration{64, &ZetherSenderRingType{true, false, nil, 0}, &ZetherRecipientRingType{true, false, nil, 0}},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStaking{},
@@ -723,7 +743,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 				finalForgerReward, //reward will be the encrypted Balance
 				forger.EncodeAddr(),
 				0,
-				&ZetherRingConfiguration{64, &ZetherSenderRingType{-1, true, false, nil, 0}, &ZetherRecipientRingType{-1, true, false, nil, 0}},
+				&ZetherRingConfiguration{64, &ZetherSenderRingType{true, false, nil, 0}, &ZetherRecipientRingType{true, false, nil, 0}},
 				nil,
 				&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, false}, false, 0, 0},
 				&wizard.WizardZetherPayloadExtraStakingReward{nil, finalForgerReward},

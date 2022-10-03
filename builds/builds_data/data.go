@@ -29,11 +29,11 @@ type zetherTxDataPayloadBase struct {
 	Amount               uint64                                              `json:"amount"`
 	Recipient            string                                              `json:"recipient"`
 	Burn                 uint64                                              `json:"burn"`
-	RingSenderMembers    []string                                            `json:"ringSenderMembers"`
-	RingRecipientMembers []string                                            `json:"ringRecipientMembers"`
+	SenderRingMembers    []string                                            `json:"senderRingMembers"`
+	RecipientRingMembers []string                                            `json:"recipientRingMembers"`
 	Data                 *wizard.WizardTransactionData                       `json:"data"`
 	Fees                 *wizard.WizardZetherTransactionFee                  `json:"fees"`
-	ScriptType           transaction_zether_payload_script.PayloadScriptType `json:"scriptType"`
+	PayloadScript        transaction_zether_payload_script.PayloadScriptType `json:"payloadScript"`
 	Extra                wizard.WizardZetherPayloadExtra                     `json:"extra"`
 }
 

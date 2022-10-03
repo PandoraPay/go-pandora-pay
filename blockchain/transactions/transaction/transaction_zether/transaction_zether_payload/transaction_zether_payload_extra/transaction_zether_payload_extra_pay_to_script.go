@@ -24,7 +24,7 @@ func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) BeforeIncludeTxPay
 func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) AfterIncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 	//to pay for registering accounts
 	for _, publicKey := range publicKeyList {
-		if _, _, err = dataStorage.GetOrCreateAccount(payloadAsset, publicKey, false); err != nil {
+		if _, _, err = dataStorage.GetOrCreateAccount(payloadAsset, publicKey, true); err != nil {
 			return
 		}
 	}
