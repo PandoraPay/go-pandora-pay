@@ -16,7 +16,6 @@ type TransactionSimpleExtraResolutionPayInFuture struct {
 	PayloadIndex       byte
 	Resolution         bool
 	MultisigPublicKeys [][]byte
-	Nonces             []uint64
 	Signatures         [][]byte
 }
 
@@ -82,18 +81,17 @@ func (this *TransactionSimpleExtraResolutionPayInFuture) IncludeTransactionVin0(
 	return
 }
 
-func (this *TransactionSimpleExtraResolutionPayInFuture) MessageForSigning(nonce uint64) []byte {
+func (this *TransactionSimpleExtraResolutionPayInFuture) MessageForSigning() []byte {
 	w := helpers.NewBufferWriter()
 	w.Write(this.TxId)
 	w.WriteByte(this.PayloadIndex)
 	w.WriteBool(this.Resolution)
-	w.WriteUvarint(nonce)
 	return cryptography.SHA3(w.Bytes())
 }
 
 func (this *TransactionSimpleExtraResolutionPayInFuture) VerifySignature() bool {
 	for i := range this.MultisigPublicKeys {
-		msg := this.MessageForSigning(this.Nonces[i])
+		msg := this.MessageForSigning()
 		if !crypto.VerifySignature(msg, this.Signatures[i], this.MultisigPublicKeys[i]) {
 			return false
 		}
@@ -127,7 +125,6 @@ func (this *TransactionSimpleExtraResolutionPayInFuture) Serialize(w *helpers.Bu
 	w.WriteBool(this.Resolution)
 	w.WriteByte(byte(len(this.Signatures)))
 	for i := range this.MultisigPublicKeys {
-		w.WriteUvarint(this.Nonces[i])
 		w.Write(this.MultisigPublicKeys[i])
 		w.Write(this.Signatures[i])
 	}
@@ -150,11 +147,7 @@ func (this *TransactionSimpleExtraResolutionPayInFuture) Deserialize(r *helpers.
 	}
 	this.MultisigPublicKeys = make([][]byte, n)
 	this.Signatures = make([][]byte, n)
-	this.Nonces = make([]uint64, n)
 	for i := range this.MultisigPublicKeys {
-		if this.Nonces[i], err = r.ReadUvarint(); err != nil {
-			return
-		}
 		if this.MultisigPublicKeys[i], err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 			return
 		}

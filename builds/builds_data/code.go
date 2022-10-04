@@ -17,7 +17,46 @@ import (
 	"pandora-pay/txs_builder/wizard"
 )
 
-func PrepareData(txData *TransactionsBuilderCreateZetherTxReq) (transfers []*wizard.WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, ringsSenderMembers, ringsRecipientMembers [][]*bn256.G1, publicKeyIndexes map[string]*wizard.WizardZetherPublicKeyIndex, feesFinal []*wizard.WizardTransactionFee, err error) {
+func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, transfers []*wizard.WizardZetherTransfer, emap map[string]map[string][]byte, hasRollovers map[string]bool, ringsSenderMembers, ringsRecipientMembers [][]*bn256.G1, publicKeyIndexes map[string]*wizard.WizardZetherPublicKeyIndex, feesFinal []*wizard.WizardTransactionFee, err error) {
+
+	txScripts := &struct {
+		Payloads []*struct {
+			PayloadScript transaction_zether_payload_script.PayloadScriptType `json:"payloadScript"`
+		}
+	}{}
+
+	if err = json.Unmarshal(data, txScripts); err != nil {
+		return
+	}
+
+	txData = &TransactionsBuilderCreateZetherTxReq{}
+	txData.Payloads = make([]*zetherTxDataPayloadBase, len(txScripts.Payloads))
+
+	for t := range txScripts.Payloads {
+
+		txData.Payloads[t] = &zetherTxDataPayloadBase{}
+
+		switch txScripts.Payloads[t].PayloadScript {
+		case transaction_zether_payload_script.SCRIPT_TRANSFER:
+			txData.Payloads[t].Extra = nil
+		case transaction_zether_payload_script.SCRIPT_ASSET_CREATE:
+			txData.Payloads[t].Extra = &wizard.WizardZetherPayloadExtraAssetCreate{}
+		case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
+			txData.Payloads[t].Extra = &wizard.WizardZetherPayloadExtraAssetSupplyIncrease{}
+		case transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND:
+			txData.Payloads[t].Extra = &wizard.WizardZetherPayloadExtraPlainAccountFund{}
+		case transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE:
+			txData.Payloads[t].Extra = &wizard.WizardZetherPayloadExtraPayInFuture{}
+		default:
+			err = errors.New("Invalid PayloadScriptType")
+			return
+		}
+
+	}
+
+	if err = json.Unmarshal(data, txData); err != nil {
+		return
+	}
 
 	transfers = make([]*wizard.WizardZetherTransfer, len(txData.Payloads))
 	ringsSenderMembers = make([][]*bn256.G1, len(txData.Payloads))
@@ -34,17 +73,6 @@ func PrepareData(txData *TransactionsBuilderCreateZetherTxReq) (transfers []*wiz
 
 	for t, payload := range txData.Payloads {
 
-		var key *addresses.PrivateKey
-		if key, err = addresses.NewPrivateKey(payload.Sender.PrivateKey); err != nil {
-			return
-		}
-
-		var senderAddr *addresses.Address
-		senderAddr, err = key.GenerateAddress(false, nil, txData.Regs[string(key.GeneratePublicKey())] == nil, nil, 0, nil)
-		if err != nil {
-			return
-		}
-
 		transfers[t] = &wizard.WizardZetherTransfer{
 			Asset:                  payload.Asset,
 			SenderPrivateKey:       payload.Sender.PrivateKey,
@@ -53,39 +81,13 @@ func PrepareData(txData *TransactionsBuilderCreateZetherTxReq) (transfers []*wiz
 			Amount:                 payload.Amount,
 			Burn:                   payload.Burn,
 			Data:                   payload.Data,
+			PayloadExtra:           payload.Extra,
 		}
 
 		if !bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) {
 			transfers[t].FeeRate = payload.Fees.Rate
 			transfers[t].FeeLeadingZeros = payload.Fees.LeadingZeros
 		}
-
-		var payloadExtra wizard.WizardZetherPayloadExtra
-		switch payload.ScriptType {
-		case transaction_zether_payload_script.SCRIPT_TRANSFER:
-			payloadExtra = nil
-		case transaction_zether_payload_script.SCRIPT_ASSET_CREATE:
-			payloadExtra = &wizard.WizardZetherPayloadExtraAssetCreate{}
-		case transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE:
-			payloadExtra = &wizard.WizardZetherPayloadExtraAssetSupplyIncrease{}
-		case transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND:
-			payloadExtra = &wizard.WizardZetherPayloadExtraPlainAccountFund{}
-		default:
-			err = errors.New("Invalid PayloadScriptType")
-			return
-		}
-
-		if payloadExtra != nil {
-			var data []byte
-			if data, err = json.Marshal(payload.Extra); err != nil {
-				return
-			}
-			if err = json.Unmarshal(data, payloadExtra); err != nil {
-				return
-			}
-		}
-
-		transfers[t].PayloadExtra = payloadExtra
 
 		uniqueMap := make(map[string]bool)
 		ringSender := make([]*bn256.G1, 0)
@@ -184,18 +186,12 @@ func PrepareData(txData *TransactionsBuilderCreateZetherTxReq) (transfers []*wiz
 			return
 		}
 
-		if err = addPoint(senderAddr.EncodeAddr(), true, true); err != nil {
-			return
-		}
-		if err = addPoint(payload.Recipient, false, false); err != nil {
-			return
-		}
-		for _, ringMember := range payload.RingSenderMembers {
-			if err = addPoint(ringMember, true, false); err != nil {
+		for i, ringMember := range payload.SenderRingMembers {
+			if err = addPoint(ringMember, true, i == 0); err != nil {
 				return
 			}
 		}
-		for _, ringMember := range payload.RingRecipientMembers {
+		for _, ringMember := range payload.RecipientRingMembers {
 			if err = addPoint(ringMember, false, false); err != nil {
 				return
 			}
@@ -204,7 +200,7 @@ func PrepareData(txData *TransactionsBuilderCreateZetherTxReq) (transfers []*wiz
 		ringsSenderMembers[t] = ringSender
 		ringsRecipientMembers[t] = ringRecipient
 
-		transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(len(payload.RingSenderMembers) + len(payload.RingRecipientMembers))
+		transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(len(ringSender) + len(ringRecipient))
 	}
 
 	feesFinal = make([]*wizard.WizardTransactionFee, len(txData.Payloads))

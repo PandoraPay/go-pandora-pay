@@ -5,7 +5,6 @@ import (
 )
 
 type ZetherSenderRingType struct {
-	CopyRingMembers       int      `json:"copyRingMembers" msgpack:"copyRingMembers"`
 	RequireStakedAccounts bool     `json:"requireStakedAccounts" msgpack:"requireStakedAccounts"`
 	AvoidStakedAccounts   bool     `json:"avoidStakedAccounts" msgpack:"avoidStakedAccounts"`
 	IncludeMembers        []string `json:"includeMembers" msgpack:"includeMembers"`
@@ -13,7 +12,6 @@ type ZetherSenderRingType struct {
 }
 
 type ZetherRecipientRingType struct {
-	CopyRingMembers       int      `json:"copyRingMembers" msgpack:"copyRingMembers"`
 	RequireStakedAccounts bool     `json:"requireStakedAccounts" msgpack:"requireStakedAccounts"`
 	AvoidStakedAccounts   bool     `json:"avoidStakedAccounts" msgpack:"avoidStakedAccounts"`
 	IncludeMembers        []string `json:"includeMembers" msgpack:"includeMembers"`

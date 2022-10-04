@@ -15,7 +15,7 @@ func CreateServer() error {
 
 	mux.HandleFunc("/wallet/initialize-balance-decryptor", serverMethod[builds_data.WalletInitializeBalanceDecryptorReq](routes.RouteWalletInitializeBalanceDecryptor))
 	mux.HandleFunc("/wallet/decrypt-balance", serverMethod[builds_data.WalletDecryptBalanceReq](routes.RouteWalletDecryptBalance))
-	mux.HandleFunc("/transactions/builder/create-zether-transaction", serverMethod[builds_data.TransactionsBuilderCreateZetherTxReq](routes.RouteTransactionsBuilderCreateZetherTx))
+	mux.HandleFunc("/transactions/builder/create-zether-transaction", serverMethodBytes(routes.RouteTransactionsBuilderCreateZetherTx))
 	mux.HandleFunc("/", routes.RouteHome)
 
 	port := globals.Arguments["--tcp-server-port"].(string)

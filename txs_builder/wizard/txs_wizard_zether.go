@@ -316,7 +316,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 					payloadExtra.Deadline,
 					payloadExtra.DefaultResolution,
 					payloadExtra.Threshold,
-					payloadExtra.PublicKeys,
+					payloadExtra.MultisigPublicKeys,
 				}
 			default:
 				return errors.New("Invalid payload")

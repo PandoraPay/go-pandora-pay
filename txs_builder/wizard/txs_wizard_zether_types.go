@@ -40,7 +40,7 @@ type WizardZetherPayloadExtraPayInFuture struct {
 	Deadline                 uint64   `json:"deadline" msgpack:"deadline"`
 	DefaultResolution        bool     `json:"defaultResolution" msgpack:"defaultResolution"`
 	Threshold                byte     `json:"threshold" msgpack:"threshold"`
-	PublicKeys               [][]byte `json:"publicKeys" msgpack:"publicKeys"`
+	MultisigPublicKeys       [][]byte `json:"multisigPublicKeys" msgpack:"multisigPublicKeys"`
 }
 
 type WizardZetherPayloadExtra interface {

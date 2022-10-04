@@ -53,10 +53,10 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 			txExtra.PayloadIndex,
 			txExtra.Resolution,
 			txExtra.MultisigPublicKeys,
-			txExtra.Nonces,
 			txExtra.Signatures,
 		}
 		txBase.TxScript = transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE
+		transfer.Fee = &WizardTransactionFee{0, 0, 0, false}
 	}
 
 	var privateKey *addresses.PrivateKey
@@ -99,5 +99,19 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 	if err = bloomAllTx(tx, statusCallback); err != nil {
 		return
 	}
+
+	if err = tx.TransactionBaseInterface.Validate(); err != nil {
+		return nil, err
+	}
+	if err = tx.Verify(); err != nil {
+		return nil, err
+	}
+
+	if validateTx {
+		if !tx.VerifySignatureManually() {
+			return nil, errors.New("Created Transaction is invalid. Possible there are wrong signatures.")
+		}
+	}
+
 	return tx, nil
 }

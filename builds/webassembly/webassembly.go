@@ -82,6 +82,10 @@ func Initialize() {
 			"RIPEMD_SIZE":          js.ValueOf(cryptography.RipemdSize),
 			"PUBLIC_KEY_HASH_SIZE": js.ValueOf(cryptography.PublicKeyHashSize),
 			"CHECK_SUM_SIZE":       js.ValueOf(cryptography.ChecksumSize),
+			"sha3":                 js.FuncOf(sha3),
+			"ripemd":               js.FuncOf(ripemd),
+			"sign":                 js.FuncOf(sign),
+			"verify":               js.FuncOf(verify),
 		}),
 		"network": js.ValueOf(map[string]interface{}{
 			"networkDisconnect":                      js.FuncOf(networkDisconnect),
@@ -113,6 +117,7 @@ func Initialize() {
 			"builder": js.ValueOf(map[string]interface{}{
 				"createSimpleTx": js.FuncOf(createSimpleTx),
 			}),
+			"signResolutionPayInFuture": js.FuncOf(signResolutionPayInFuture),
 		}),
 		"mempool": js.ValueOf(map[string]interface{}{
 			"mempoolRemoveTx": js.FuncOf(mempoolRemoveTx),

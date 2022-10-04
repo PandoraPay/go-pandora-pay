@@ -12,6 +12,7 @@ import (
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
+	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_extra"
 	"pandora-pay/config/config_assets"
@@ -97,8 +98,7 @@ func (builder *TxsBuilder) readAddressOptional(text string, assetId []byte, allo
 			return
 		}
 
-		address, err = addresses.DecodeAddr(str)
-		if err != nil {
+		if address, err = addresses.DecodeAddr(str); err != nil {
 			gui.GUI.OutputWrite("Invalid Address")
 			continue
 		}
@@ -116,7 +116,7 @@ func (builder *TxsBuilder) readAddressOptional(text string, assetId []byte, allo
 func (builder *TxsBuilder) readZetherRingConfiguration() *ZetherRingConfiguration {
 
 	configuration := &ZetherRingConfiguration{
-		-1, &ZetherSenderRingType{CopyRingMembers: -1}, &ZetherRecipientRingType{CopyRingMembers: -1},
+		-1, &ZetherSenderRingType{}, &ZetherRecipientRingType{},
 	}
 	configuration.RingSize = gui.GUI.OutputReadInt("Ring Size (2,4,8,16,32,64,128,256). Leave empty for random", true, -1, func(value int) bool {
 		switch value {
@@ -410,7 +410,6 @@ func (builder *TxsBuilder) initCLI() {
 		if _, txData.Payloads[0].Recipient, txData.Payloads[0].Amount, err = builder.readAddressOptional("Recipient Address", txData.Payloads[0].Asset, false); err != nil {
 			return
 		}
-		txData.Payloads[1].Recipient = txData.Payloads[0].Recipient
 
 		extra.Deadline = gui.GUI.OutputReadUint64("Deadline", true, 10, func(val uint64) bool {
 			return val >= 10 && val <= 100000
@@ -422,15 +421,24 @@ func (builder *TxsBuilder) initCLI() {
 			return val >= 1 && val <= 5
 		}))
 
-		extra.PublicKeys = [][]byte{}
+		extra.MultisigPublicKeys = [][]byte{}
+		unique := make(map[string]bool)
 		for {
-			pubKey := gui.GUI.OutputReadBytes(fmt.Sprintf("PublicKey %d used in multisig payment", len(extra.PublicKeys)), func(val []byte) bool {
+			pubKey := gui.GUI.OutputReadBytes(fmt.Sprintf("PublicKey %d used in multisig payment", len(extra.MultisigPublicKeys)), func(val []byte) bool {
 				return len(val) == 0 || len(val) == cryptography.PublicKeySize
 			})
 			if len(pubKey) == 0 {
 				break
 			}
-			extra.PublicKeys = append(extra.PublicKeys, pubKey)
+			if unique[string(pubKey)] {
+				gui.GUI.OutputWrite("PublicKey already include")
+				continue
+			}
+			extra.MultisigPublicKeys = append(extra.MultisigPublicKeys, pubKey)
+		}
+
+		if _, txData.Payloads[1].Recipient, txData.Payloads[1].Amount, err = builder.readAddressOptional("Transfer Address (optional)", config_coins.NATIVE_ASSET_FULL, true); err != nil {
+			return
 		}
 
 		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
@@ -443,8 +451,8 @@ func (builder *TxsBuilder) initCLI() {
 
 		txData.Payloads[1].RingConfiguration = &ZetherRingConfiguration{
 			txData.Payloads[0].RingConfiguration.RingSize,
-			&ZetherSenderRingType{0, false, true, []string{}, 0},
-			&ZetherRecipientRingType{-1, false, true, []string{}, txData.Payloads[0].RingConfiguration.RecipientRingType.NewAccounts},
+			&ZetherSenderRingType{false, true, []string{}, 0},
+			&ZetherRecipientRingType{false, true, []string{}, txData.Payloads[0].RingConfiguration.RecipientRingType.NewAccounts},
 		}
 
 		txData.Payloads[0].Data = builder.readData()
@@ -524,7 +532,6 @@ func (builder *TxsBuilder) initCLI() {
 
 		txExtra := &wizard.WizardTxSimpleExtraResolutionPayInFuture{
 			MultisigPublicKeys: make([][]byte, 0),
-			Nonces:             make([]uint64, 0),
 			Signatures:         make([][]byte, 0),
 		}
 		txData := &TxBuilderCreateSimpleTx{
@@ -551,16 +558,27 @@ func (builder *TxsBuilder) initCLI() {
 			if len(key) == 0 {
 				break
 			}
-			nonce := gui.GUI.OutputReadUint64("Nonce", false, 0, func(value uint64) bool {
-				return true
-			})
+
 			signature := gui.GUI.OutputReadBytes("Signature", func(sign []byte) bool {
 				return len(sign) == cryptography.SignatureSize
 			})
 
+			extra := &transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture{nil,
+				txExtra.TxId,
+				txExtra.PayloadIndex,
+				txExtra.Resolution,
+				[][]byte{key},
+				[][]byte{signature},
+			}
+
+			if !extra.VerifySignature() {
+				gui.GUI.Error("provided resolution signature is not valid")
+				break
+			}
+
 			txExtra.MultisigPublicKeys = append(txExtra.MultisigPublicKeys, key)
-			txExtra.Nonces = append(txExtra.Nonces, nonce)
 			txExtra.Signatures = append(txExtra.Signatures, signature)
+
 			i++
 		}
 
