@@ -47,8 +47,8 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 		switch txScript.TxScript {
 		case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
 			txData.Extra = &wizard.WizardTxSimpleExtraUpdateAssetFeeLiquidity{}
-		case transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE:
-			txData.Extra = &wizard.WizardTxSimpleExtraResolutionPayInFuture{}
+		case transaction_simple.SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT:
+			txData.Extra = &wizard.WizardTxSimpleExtraResolutionConditionalPayment{}
 		default:
 			txData.Extra = nil
 			return nil, errors.New("Invalid Tx Simple Script")
@@ -98,7 +98,7 @@ func createSimpleTx(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-func signResolutionPayInFuture(this js.Value, args []js.Value) interface{} {
+func signResolutionConditionalPayment(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		data := &struct {
@@ -117,8 +117,7 @@ func signResolutionPayInFuture(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		extra := &transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture{
-			nil,
+		extra := &transaction_simple_extra.TransactionSimpleExtraResolutionConditionalPayment{nil,
 			data.TxId,
 			data.PayloadIndex,
 			data.Resolution,

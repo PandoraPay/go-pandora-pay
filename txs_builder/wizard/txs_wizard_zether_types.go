@@ -35,7 +35,7 @@ type WizardZetherPayloadExtraPlainAccountFund struct {
 	PlainAccountPublicKey    []byte `json:"plainAccountPublicKey" msgpack:"plainAccountPublicKey"`
 }
 
-type WizardZetherPayloadExtraPayInFuture struct {
+type WizardZetherPayloadExtraConditionalPayment struct {
 	WizardZetherPayloadExtra `json:"-" msgpack:""`
 	Deadline                 uint64   `json:"deadline" msgpack:"deadline"`
 	DefaultResolution        bool     `json:"defaultResolution" msgpack:"defaultResolution"`

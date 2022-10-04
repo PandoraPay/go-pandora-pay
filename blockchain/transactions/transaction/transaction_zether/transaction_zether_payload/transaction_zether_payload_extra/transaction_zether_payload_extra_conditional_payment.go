@@ -9,7 +9,7 @@ import (
 	"pandora-pay/helpers"
 )
 
-type TransactionZetherPayloadExtraPayInFuture struct {
+type TransactionZetherPayloadExtraConditionalPayment struct {
 	TransactionZetherPayloadExtraInterface
 	Deadline           uint64
 	DefaultResolution  bool //true for receiver, false for refunding sender
@@ -17,11 +17,11 @@ type TransactionZetherPayloadExtraPayInFuture struct {
 	MultisigPublicKeys [][]byte
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) BeforeIncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) BeforeIncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 	return
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) AfterIncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) AfterIncludeTxPayload(txHash []byte, payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, publicKeyList [][]byte, blockHeight uint64, dataStorage *data_storage.DataStorage) (err error) {
 	//to pay for registering accounts
 	for _, publicKey := range publicKeyList {
 		if _, _, err = dataStorage.GetOrCreateAccount(payloadAsset, publicKey, true); err != nil {
@@ -31,14 +31,14 @@ func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) AfterIncludeTxPayl
 	return
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) ComputeAllKeys(out map[string]bool) {
+func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) ComputeAllKeys(out map[string]bool) {
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) VerifyExtraSignature(hashForSignature []byte, payloadStatement *crypto.Statement) bool {
+func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) VerifyExtraSignature(hashForSignature []byte, payloadStatement *crypto.Statement) bool {
 	return false
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, payloadParity bool) error {
+func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) Validate(payloadRegistrations *transaction_zether_registrations.TransactionZetherDataRegistrations, payloadIndex byte, payloadAsset []byte, payloadBurnValue uint64, payloadStatement *crypto.Statement, payloadParity bool) error {
 	if payloadExtra.Deadline > 100000 {
 		return errors.New("Deadline should be smaller than 100000")
 	}
@@ -70,7 +70,7 @@ func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) Validate(payloadRe
 	return nil
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(payloadExtra.Deadline)
 	w.WriteBool(payloadExtra.DefaultResolution)
 	w.WriteByte(payloadExtra.MultisigThreshold)
@@ -80,7 +80,7 @@ func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) Serialize(w *helpe
 	}
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) Deserialize(r *helpers.BufferReader) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) Deserialize(r *helpers.BufferReader) (err error) {
 
 	if payloadExtra.Deadline, err = r.ReadUvarint(); err != nil {
 		return
@@ -107,6 +107,6 @@ func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) Deserialize(r *hel
 	return
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraPayInFuture) UpdateStatement(payloadStatement *crypto.Statement) error {
+func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) UpdateStatement(payloadStatement *crypto.Statement) error {
 	return nil
 }

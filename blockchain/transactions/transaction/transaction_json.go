@@ -60,7 +60,7 @@ type json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity struct {
 	Collector    []byte                                   `json:"collector"`
 }
 
-type json_Only_TransactionSimpleExtraResolutionPayInFuture struct {
+type json_Only_TransactionSimpleExtraResolutionConditionalPayment struct {
 	TxId               []byte   `json:"txId"`
 	PayloadIndex       byte     `json:"payloadIndex"`
 	Resolution         bool     `json:"resolution"`
@@ -103,7 +103,7 @@ type json_Only_TransactionZetherPayloadExtraPlainAccountFund struct {
 	PlainAccountPublicKey []byte `json:"plainAccountPublicKey"  msgpack:"plainAccountPublicKey"`
 }
 
-type json_Only_TransactionZetherPayloadExtraPayInFuture struct {
+type json_Only_TransactionZetherPayloadExtraConditionalPayment struct {
 	Deadline           uint64   `json:"deadline" msgpack:"deadline"`
 	DefaultResolution  bool     `json:"defaultResolution" msgpack:"defaultResolution"`
 	MultisigThreshold  byte     `json:"multisigThreshold" msgpack:"multisigThreshold"`
@@ -183,9 +183,9 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 				extra.NewCollector,
 				extra.Collector,
 			}
-		case transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE:
-			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture)
-			simpleJson.Extra = json_Only_TransactionSimpleExtraResolutionPayInFuture{
+		case transaction_simple.SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT:
+			extra := base.Extra.(*transaction_simple_extra.TransactionSimpleExtraResolutionConditionalPayment)
+			simpleJson.Extra = json_Only_TransactionSimpleExtraResolutionConditionalPayment{
 				extra.TxId,
 				extra.PayloadIndex,
 				extra.Resolution,
@@ -269,9 +269,9 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 				extra = &json_Only_TransactionZetherPayloadExtraPlainAccountFund{
 					payloadExtra.PlainAccountPublicKey,
 				}
-			case transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE:
-				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture)
-				extra = &json_Only_TransactionZetherPayloadExtraPayInFuture{
+			case transaction_zether_payload_script.SCRIPT_CONDITIONAL_PAYMENT:
+				payloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraConditionalPayment)
+				extra = &json_Only_TransactionZetherPayloadExtraConditionalPayment{
 					payloadExtra.Deadline,
 					payloadExtra.DefaultResolution,
 					payloadExtra.MultisigThreshold,
@@ -396,13 +396,13 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 				extraJson.NewCollector,
 				extraJson.Collector,
 			}
-		case transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE:
-			extraJson := &json_Only_TransactionSimpleExtraResolutionPayInFuture{}
+		case transaction_simple.SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT:
+			extraJson := &json_Only_TransactionSimpleExtraResolutionConditionalPayment{}
 			if err = json.Unmarshal(data, extraJson); err != nil {
 				return
 			}
 
-			base.Extra = &transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture{nil,
+			base.Extra = &transaction_simple_extra.TransactionSimpleExtraResolutionConditionalPayment{nil,
 				extraJson.TxId,
 				extraJson.PayloadIndex,
 				extraJson.Resolution,
@@ -555,12 +555,12 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 					nil,
 					extraJson.PlainAccountPublicKey,
 				}
-			case transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE:
-				extraJson := &json_Only_TransactionZetherPayloadExtraPayInFuture{}
+			case transaction_zether_payload_script.SCRIPT_CONDITIONAL_PAYMENT:
+				extraJson := &json_Only_TransactionZetherPayloadExtraConditionalPayment{}
 				if err = json.Unmarshal(data, extraJson); err != nil {
 					return err
 				}
-				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture{
+				payloads[i].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraConditionalPayment{
 					nil,
 					extraJson.Deadline,
 					extraJson.DefaultResolution,

@@ -45,8 +45,8 @@ func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, tra
 			txData.Payloads[t].Extra = &wizard.WizardZetherPayloadExtraAssetSupplyIncrease{}
 		case transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND:
 			txData.Payloads[t].Extra = &wizard.WizardZetherPayloadExtraPlainAccountFund{}
-		case transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE:
-			txData.Payloads[t].Extra = &wizard.WizardZetherPayloadExtraPayInFuture{}
+		case transaction_zether_payload_script.SCRIPT_CONDITIONAL_PAYMENT:
+			txData.Payloads[t].Extra = &wizard.WizardZetherPayloadExtraConditionalPayment{}
 		default:
 			err = errors.New("Invalid PayloadScriptType")
 			return

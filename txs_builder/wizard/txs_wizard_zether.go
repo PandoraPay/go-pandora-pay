@@ -309,9 +309,9 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPlainAccountFund{
 					PlainAccountPublicKey: payloadExtra.PlainAccountPublicKey,
 				}
-			case *WizardZetherPayloadExtraPayInFuture:
-				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE
-				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture{
+			case *WizardZetherPayloadExtraConditionalPayment:
+				payloads[t].PayloadScript = transaction_zether_payload_script.SCRIPT_CONDITIONAL_PAYMENT
+				payloads[t].Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraConditionalPayment{
 					nil,
 					payloadExtra.Deadline,
 					payloadExtra.DefaultResolution,
@@ -432,7 +432,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 			payload.FeeLeadingZeros = transfers[t].FeeLeadingZeros
 		}
 
-		if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE {
+		if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_CONDITIONAL_PAYMENT {
 			otherFee = fee
 			fee = 0
 			payload.FeeRate = 0
@@ -564,7 +564,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 
 				} else { //receiver
 					if (bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && hasRollovers[publickeylist[i].String()]) ||
-						payload.PayloadScript == transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE {
+						payload.PayloadScript == transaction_zether_payload_script.SCRIPT_CONDITIONAL_PAYMENT {
 						update = false
 					}
 				}

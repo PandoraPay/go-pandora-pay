@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-type TransactionSimpleExtraResolutionPayInFuture struct {
+type TransactionSimpleExtraResolutionConditionalPayment struct {
 	TransactionSimpleExtraInterface
 	TxId               []byte
 	PayloadIndex       byte
@@ -19,7 +19,7 @@ type TransactionSimpleExtraResolutionPayInFuture struct {
 	Signatures         [][]byte
 }
 
-func (this *TransactionSimpleExtraResolutionPayInFuture) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
+func (this *TransactionSimpleExtraResolutionConditionalPayment) IncludeTransactionVin0(blockHeight uint64, plainAcc *plain_account.PlainAccount, dataStorage *data_storage.DataStorage) (err error) {
 
 	key := string(this.TxId) + "_" + strconv.Itoa(int(this.PayloadIndex))
 
@@ -81,7 +81,7 @@ func (this *TransactionSimpleExtraResolutionPayInFuture) IncludeTransactionVin0(
 	return
 }
 
-func (this *TransactionSimpleExtraResolutionPayInFuture) MessageForSigning() []byte {
+func (this *TransactionSimpleExtraResolutionConditionalPayment) MessageForSigning() []byte {
 	w := helpers.NewBufferWriter()
 	w.Write(this.TxId)
 	w.WriteByte(this.PayloadIndex)
@@ -89,7 +89,7 @@ func (this *TransactionSimpleExtraResolutionPayInFuture) MessageForSigning() []b
 	return cryptography.SHA3(w.Bytes())
 }
 
-func (this *TransactionSimpleExtraResolutionPayInFuture) VerifySignature() bool {
+func (this *TransactionSimpleExtraResolutionConditionalPayment) VerifySignature() bool {
 	for i := range this.MultisigPublicKeys {
 		msg := this.MessageForSigning()
 		if !crypto.VerifySignature(msg, this.Signatures[i], this.MultisigPublicKeys[i]) {
@@ -99,7 +99,7 @@ func (this *TransactionSimpleExtraResolutionPayInFuture) VerifySignature() bool 
 	return true
 }
 
-func (this *TransactionSimpleExtraResolutionPayInFuture) Validate(fee uint64) (err error) {
+func (this *TransactionSimpleExtraResolutionConditionalPayment) Validate(fee uint64) (err error) {
 	if len(this.MultisigPublicKeys) != len(this.Signatures) {
 		return errors.New("Signatures and Public Keys Mismatch")
 	}
@@ -119,7 +119,7 @@ func (this *TransactionSimpleExtraResolutionPayInFuture) Validate(fee uint64) (e
 	return
 }
 
-func (this *TransactionSimpleExtraResolutionPayInFuture) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (this *TransactionSimpleExtraResolutionConditionalPayment) Serialize(w *helpers.BufferWriter, inclSignature bool) {
 	w.Write(this.TxId)
 	w.WriteByte(this.PayloadIndex)
 	w.WriteBool(this.Resolution)
@@ -130,7 +130,7 @@ func (this *TransactionSimpleExtraResolutionPayInFuture) Serialize(w *helpers.Bu
 	}
 }
 
-func (this *TransactionSimpleExtraResolutionPayInFuture) Deserialize(r *helpers.BufferReader) (err error) {
+func (this *TransactionSimpleExtraResolutionConditionalPayment) Deserialize(r *helpers.BufferReader) (err error) {
 	if this.TxId, err = r.ReadBytes(cryptography.HashSize); err != nil {
 		return
 	}

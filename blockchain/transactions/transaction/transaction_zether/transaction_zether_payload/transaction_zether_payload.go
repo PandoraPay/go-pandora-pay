@@ -192,7 +192,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 					update = true
 				}
 			} else { //recipient
-				if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE { //nothing
+				if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_CONDITIONAL_PAYMENT { //nothing
 
 				} else if bytes.Equal(payload.Asset, config_coins.NATIVE_ASSET_FULL) && (reg.Staked || payload.PayloadScript == transaction_zether_payload_script.SCRIPT_STAKING_REWARD) {
 					if err = dataStorage.AddPendingStake(publicKey, echanges, blockHeight+config_stake.GetPendingStakeWindow(blockHeight)); err != nil {
@@ -214,8 +214,8 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 
 	}
 
-	if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE {
-		extra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture)
+	if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_CONDITIONAL_PAYMENT {
+		extra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraConditionalPayment)
 		if err = dataStorage.AddPendingFuture(blockHeight+extra.Deadline, txHash, payloadIndex, payload.Asset, extra.DefaultResolution, payload.Parity, publicKeyList, echangesAll, extra.MultisigThreshold, extra.MultisigPublicKeys); err != nil {
 			return
 		}
@@ -277,7 +277,7 @@ func (payload *TransactionZetherPayload) Validate(payloadIndex byte) (err error)
 
 	switch payload.PayloadScript {
 	case transaction_zether_payload_script.SCRIPT_TRANSFER:
-	case transaction_zether_payload_script.SCRIPT_STAKING, transaction_zether_payload_script.SCRIPT_STAKING_REWARD, transaction_zether_payload_script.SCRIPT_SPEND, transaction_zether_payload_script.SCRIPT_ASSET_CREATE, transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE, transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND, transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE:
+	case transaction_zether_payload_script.SCRIPT_STAKING, transaction_zether_payload_script.SCRIPT_STAKING_REWARD, transaction_zether_payload_script.SCRIPT_SPEND, transaction_zether_payload_script.SCRIPT_ASSET_CREATE, transaction_zether_payload_script.SCRIPT_ASSET_SUPPLY_INCREASE, transaction_zether_payload_script.SCRIPT_PLAIN_ACCOUNT_FUND, transaction_zether_payload_script.SCRIPT_CONDITIONAL_PAYMENT:
 		if payload.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
@@ -354,8 +354,8 @@ func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (e
 		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPlainAccountFund{}
 	case transaction_zether_payload_script.SCRIPT_SPEND:
 		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraSpend{}
-	case transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE:
-		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture{}
+	case transaction_zether_payload_script.SCRIPT_CONDITIONAL_PAYMENT:
+		payload.Extra = &transaction_zether_payload_extra.TransactionZetherPayloadExtraConditionalPayment{}
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}

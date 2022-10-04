@@ -82,8 +82,8 @@ func (tx *TransactionSimple) VerifySignatureManually(hashForSignature []byte) bo
 			return false
 		}
 	}
-	if tx.TxScript == SCRIPT_RESOLUTION_PAY_IN_FUTURE {
-		extra := tx.Extra.(*transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture)
+	if tx.TxScript == SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT {
+		extra := tx.Extra.(*transaction_simple_extra.TransactionSimpleExtraResolutionConditionalPayment)
 		if !extra.VerifySignature() {
 			return false
 		}
@@ -101,7 +101,7 @@ func (tx *TransactionSimple) Validate() (err error) {
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY, SCRIPT_RESOLUTION_PAY_IN_FUTURE:
+	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY, SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT:
 		if tx.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
@@ -150,8 +150,8 @@ func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
 	switch tx.TxScript {
 	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
 		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{}
-	case SCRIPT_RESOLUTION_PAY_IN_FUTURE:
-		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture{}
+	case SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT:
+		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraResolutionConditionalPayment{}
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}

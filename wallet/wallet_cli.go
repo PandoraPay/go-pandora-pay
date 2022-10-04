@@ -616,9 +616,9 @@ func (wallet *Wallet) initWalletCLI() {
 		return
 	}
 
-	cliSignResolutionPayInFuture := func(cmd string, ctx context.Context) (err error) {
+	cliSignResolutionConditionalPayment := func(cmd string, ctx context.Context) (err error) {
 
-		extra := &transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture{}
+		extra := &transaction_simple_extra.TransactionSimpleExtraResolutionConditionalPayment{}
 
 		privateKey := gui.GUI.OutputReadBytes("Private Key", func(value []byte) bool {
 			return len(value) == cryptography.PrivateKeySize
@@ -681,6 +681,6 @@ func (wallet *Wallet) initWalletCLI() {
 
 	gui.GUI.CommandDefineCallback("Create (PublicKey, PrivateKey) pair", cliCreatePair, true)
 	gui.GUI.CommandDefineCallback("Sign message using PrivateKey", cliSignMessage, true)
-	gui.GUI.CommandDefineCallback("Sign Resolution Pay in Future", cliSignResolutionPayInFuture, true)
+	gui.GUI.CommandDefineCallback("Sign Resolution Conditional Payment", cliSignResolutionConditionalPayment, true)
 
 }

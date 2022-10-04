@@ -5,7 +5,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple"
 )
 
-type TxPreviewSimpleExtraResolutionPayInFuture struct {
+type TxPreviewSimpleExtraResolutionConditionalPayment struct {
 	TxId         []byte `json:"txId" msgpack:"txId"`
 	PayloadIndex byte   `json:"payloadIndex" msgpack:"payloadIndex"`
 	Resolution   bool   `json:"resolution" msgpack:"resolution"`

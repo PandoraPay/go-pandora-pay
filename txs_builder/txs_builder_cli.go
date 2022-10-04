@@ -389,10 +389,10 @@ func (builder *TxsBuilder) initCLI() {
 		return
 	}
 
-	cliPrivatePayInFuture := func(cmd string, ctx context.Context) (err error) {
+	cliPrivateConditionalPayment := func(cmd string, ctx context.Context) (err error) {
 		builder.showWarningIfNotSyncCLI()
 
-		extra := &wizard.WizardZetherPayloadExtraPayInFuture{}
+		extra := &wizard.WizardZetherPayloadExtraConditionalPayment{}
 		txData := &TxBuilderCreateZetherTxData{
 			Payloads: []*TxBuilderCreateZetherTxPayload{{
 				Extra: extra,
@@ -526,11 +526,11 @@ func (builder *TxsBuilder) initCLI() {
 		return
 	}
 
-	cliResolutionPayInFuture := func(cmd string, ctx context.Context) (err error) {
+	cliResolutionConditionalPayment := func(cmd string, ctx context.Context) (err error) {
 
 		builder.showWarningIfNotSyncCLI()
 
-		txExtra := &wizard.WizardTxSimpleExtraResolutionPayInFuture{
+		txExtra := &wizard.WizardTxSimpleExtraResolutionConditionalPayment{
 			MultisigPublicKeys: make([][]byte, 0),
 			Signatures:         make([][]byte, 0),
 		}
@@ -563,7 +563,7 @@ func (builder *TxsBuilder) initCLI() {
 				return len(sign) == cryptography.SignatureSize
 			})
 
-			extra := &transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture{nil,
+			extra := &transaction_simple_extra.TransactionSimpleExtraResolutionConditionalPayment{nil,
 				txExtra.TxId,
 				txExtra.PayloadIndex,
 				txExtra.Resolution,
@@ -602,8 +602,8 @@ func (builder *TxsBuilder) initCLI() {
 	gui.GUI.CommandDefineCallback("Private Asset Create", cliPrivateAssetCreate, true)
 	gui.GUI.CommandDefineCallback("Private Asset Supply Increase", cliPrivateAssetSupplyIncrease, true)
 	gui.GUI.CommandDefineCallback("Private Plain Account Fund", cliPrivatePlainAccountFund, true)
-	gui.GUI.CommandDefineCallback("Private Pay In Future", cliPrivatePayInFuture, true)
+	gui.GUI.CommandDefineCallback("Private Conditional Payment", cliPrivateConditionalPayment, true)
 	gui.GUI.CommandDefineCallback("Public Update Asset Fee Liquidity", cliUpdateAssetFeeLiquidity, true)
-	gui.GUI.CommandDefineCallback("Public Resolution Pay in Future", cliResolutionPayInFuture, true)
+	gui.GUI.CommandDefineCallback("Public Resolution Conditional Payment", cliResolutionConditionalPayment, true)
 
 }

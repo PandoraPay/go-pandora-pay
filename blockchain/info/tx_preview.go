@@ -47,11 +47,11 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 
 		switch txBase.TxScript {
 		case transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY:
-		case transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE:
+		case transaction_simple.SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT:
 
-			txBaseExtra := txBase.Extra.(*transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture)
+			txBaseExtra := txBase.Extra.(*transaction_simple_extra.TransactionSimpleExtraResolutionConditionalPayment)
 
-			previewBase.Extra = &TxPreviewSimpleExtraResolutionPayInFuture{
+			previewBase.Extra = &TxPreviewSimpleExtraResolutionConditionalPayment{
 				txBaseExtra.TxId,
 				txBaseExtra.PayloadIndex,
 				txBaseExtra.Resolution,
@@ -84,8 +84,8 @@ func CreateTxPreviewFromTx(tx *transaction.Transaction) (*TxPreview, error) {
 				payloadExtra = &TxPreviewZetherPayloadExtraStaking{}
 			case transaction_zether_payload_script.SCRIPT_SPEND:
 				payloadExtra = &TxPreviewZetherPayloadExtraSpend{}
-			case transaction_zether_payload_script.SCRIPT_PAY_IN_FUTURE:
-				txPayloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraPayInFuture)
+			case transaction_zether_payload_script.SCRIPT_CONDITIONAL_PAYMENT:
+				txPayloadExtra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraConditionalPayment)
 				payloadExtra = &TxPreviewZetherPayloadExtraPayToScript{txPayloadExtra.Deadline, txPayloadExtra.DefaultResolution, txPayloadExtra.MultisigThreshold}
 			}
 

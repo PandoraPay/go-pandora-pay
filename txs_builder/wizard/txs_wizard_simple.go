@@ -47,15 +47,15 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 				spaceExtra += len(helpers.SerializeToBytes(liquidity))
 			}
 		}
-	case *WizardTxSimpleExtraResolutionPayInFuture:
-		txBase.Extra = &transaction_simple_extra.TransactionSimpleExtraResolutionPayInFuture{nil,
+	case *WizardTxSimpleExtraResolutionConditionalPayment:
+		txBase.Extra = &transaction_simple_extra.TransactionSimpleExtraResolutionConditionalPayment{nil,
 			txExtra.TxId,
 			txExtra.PayloadIndex,
 			txExtra.Resolution,
 			txExtra.MultisigPublicKeys,
 			txExtra.Signatures,
 		}
-		txBase.TxScript = transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE
+		txBase.TxScript = transaction_simple.SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT
 		transfer.Fee = &WizardTransactionFee{0, 0, 0, false}
 	}
 
@@ -71,7 +71,7 @@ func CreateSimpleTx(transfer *WizardTxSimpleTransfer, validateTx bool, statusCal
 			PublicKey: privateKey.GeneratePublicKey(),
 		}
 
-	case transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE:
+	case transaction_simple.SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT:
 	default:
 		return nil, errors.New("Invalid Tx Script")
 	}

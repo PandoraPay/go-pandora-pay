@@ -123,7 +123,7 @@ func (mempool *Mempool) processTxsToMempool(txs []*transaction.Transaction, heig
 		case transaction_type.TX_SIMPLE:
 			requiredFeePerByte = config_fees.FEE_PER_BYTE
 			txBase := tx.TransactionBaseInterface.(*transaction_simple.TransactionSimple)
-			if txBase.TxScript == transaction_simple.SCRIPT_RESOLUTION_PAY_IN_FUTURE {
+			if txBase.TxScript == transaction_simple.SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT {
 				checkFee = false
 			}
 		case transaction_type.TX_ZETHER:
@@ -208,7 +208,7 @@ func (mempool *Mempool) AddTxsToMempool(txs []*transaction.Transaction, height u
 	return errs
 }
 
-//reset the forger
+// reset the forger
 func (mempool *Mempool) UpdateWork(hash []byte, height uint64) {
 
 	result := &MempoolResult{

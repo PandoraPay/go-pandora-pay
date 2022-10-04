@@ -14,7 +14,7 @@ type WizardTxSimpleExtraUpdateAssetFeeLiquidity struct {
 	Collector           []byte                                   `json:"collector"  msgpack:"collector"`
 }
 
-type WizardTxSimpleExtraResolutionPayInFuture struct {
+type WizardTxSimpleExtraResolutionConditionalPayment struct {
 	WizardTxSimpleExtra `json:"-"  msgpack:"-"`
 	TxId                []byte   `json:"txId" msgpack:"txId"`
 	PayloadIndex        byte     `json:"payloadIndex" msgpack:"payloadIndex"`
