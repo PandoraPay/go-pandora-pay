@@ -23,7 +23,7 @@ func (this *TransactionSimpleExtraResolutionConditionalPayment) IncludeTransacti
 
 	key := string(this.TxId) + "_" + strconv.Itoa(int(this.PayloadIndex))
 
-	val := dataStorage.DBTx.Get("pendingFuture:all:" + string(key))
+	val := dataStorage.DBTx.Get("conditionalPayments:all:" + string(key))
 	if val == nil {
 		return errors.New("Pending Future not found by key")
 	}
@@ -37,31 +37,31 @@ func (this *TransactionSimpleExtraResolutionConditionalPayment) IncludeTransacti
 		return errors.New("Pending Future Expired")
 	}
 
-	pendingFutureMap, err := dataStorage.PendingFutureCollection.GetMap(txBlockHeight)
+	conditionalPaymentsMap, err := dataStorage.ConditionalPaymentsCollection.GetMap(txBlockHeight)
 	if err != nil {
 		return err
 	}
 
-	pendingFuture, err := pendingFutureMap.Get(key)
+	condPayment, err := conditionalPaymentsMap.Get(key)
 	if err != nil {
 		return
 	}
 
-	if pendingFuture == nil {
+	if condPayment == nil {
 		return errors.New("Pending Future not found")
 	}
 
-	if pendingFuture.Processed {
+	if condPayment.Processed {
 		return errors.New("Pending Future was already processed")
 	}
 
-	if int(pendingFuture.MultisigThreshold) > len(this.MultisigPublicKeys) {
+	if int(condPayment.MultisigThreshold) > len(this.MultisigPublicKeys) {
 		return errors.New("Threshold not met")
 	}
 
 	unique := make(map[string]bool)
-	for i := range pendingFuture.MultisigPublicKeys {
-		unique[string(pendingFuture.MultisigPublicKeys[i])] = true
+	for i := range condPayment.MultisigPublicKeys {
+		unique[string(condPayment.MultisigPublicKeys[i])] = true
 	}
 
 	for i := range this.MultisigPublicKeys {
@@ -70,11 +70,11 @@ func (this *TransactionSimpleExtraResolutionConditionalPayment) IncludeTransacti
 		}
 	}
 
-	if err = dataStorage.ProceedPendingFuture(this.Resolution, pendingFuture); err != nil {
+	if err = dataStorage.ProceedConditionalPayment(this.Resolution, condPayment); err != nil {
 		return
 	}
 
-	if err = pendingFutureMap.Update(key, pendingFuture); err != nil {
+	if err = conditionalPaymentsMap.Update(key, condPayment); err != nil {
 		return
 	}
 

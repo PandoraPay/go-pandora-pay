@@ -216,7 +216,7 @@ func (payload *TransactionZetherPayload) IncludePayload(txHash []byte, payloadIn
 
 	if payload.PayloadScript == transaction_zether_payload_script.SCRIPT_CONDITIONAL_PAYMENT {
 		extra := payload.Extra.(*transaction_zether_payload_extra.TransactionZetherPayloadExtraConditionalPayment)
-		if err = dataStorage.AddPendingFuture(blockHeight+extra.Deadline, txHash, payloadIndex, payload.Asset, extra.DefaultResolution, payload.Parity, publicKeyList, echangesAll, extra.MultisigThreshold, extra.MultisigPublicKeys); err != nil {
+		if err = dataStorage.AddConditionalPayment(blockHeight+extra.Deadline, txHash, payloadIndex, payload.Asset, extra.DefaultResolution, payload.Parity, publicKeyList, echangesAll, extra.MultisigThreshold, extra.MultisigPublicKeys); err != nil {
 			return
 		}
 	}

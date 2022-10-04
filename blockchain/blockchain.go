@@ -320,7 +320,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 						return errors.New("Error Processing Pending Stakes: " + err.Error())
 					}
 
-					if err = dataStorage.ProcessPendingFuture(blkComplete.Height); err != nil {
+					if err = dataStorage.ProcessConditionalPayments(blkComplete.Height); err != nil {
 						return errors.New("Error Processing Pending Future: " + err.Error())
 					}
 

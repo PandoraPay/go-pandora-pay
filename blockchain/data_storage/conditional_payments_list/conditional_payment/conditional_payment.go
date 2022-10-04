@@ -1,4 +1,4 @@
-package pending_future
+package conditional_payment
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"pandora-pay/helpers"
 )
 
-type PendingFuture struct {
+type ConditionalPayment struct {
 	Key                []byte   `json:"-" msgpack:"-"` //hashmap key
 	BlockHeight        uint64   `json:"-" msgpack:"-"` //collection height
 	Index              uint64   `json:"-" msgpack:"-"` //hashmap Index
@@ -24,27 +24,27 @@ type PendingFuture struct {
 	MultisigPublicKeys [][]byte `json:"multisigPublicKeys" msgpack:"multisigPublicKeys"`
 }
 
-func (this *PendingFuture) IsDeletable() bool {
+func (this *ConditionalPayment) IsDeletable() bool {
 	return false
 }
 
-func (this *PendingFuture) SetKey(key []byte) {
+func (this *ConditionalPayment) SetKey(key []byte) {
 	this.Key = key
 }
 
-func (this *PendingFuture) GetKey() []byte {
+func (this *ConditionalPayment) GetKey() []byte {
 	return this.Key
 }
 
-func (this *PendingFuture) SetIndex(value uint64) {
+func (this *ConditionalPayment) SetIndex(value uint64) {
 	this.Index = value
 }
 
-func (this *PendingFuture) GetIndex() uint64 {
+func (this *ConditionalPayment) GetIndex() uint64 {
 	return this.Index
 }
 
-func (this *PendingFuture) Validate() error {
+func (this *ConditionalPayment) Validate() error {
 	switch this.Version {
 	case 0:
 	default:
@@ -73,7 +73,7 @@ func (this *PendingFuture) Validate() error {
 	return nil
 }
 
-func (this *PendingFuture) Serialize(w *helpers.BufferWriter) {
+func (this *ConditionalPayment) Serialize(w *helpers.BufferWriter) {
 	w.WriteUvarint(this.Version)
 	w.Write(this.TxId)
 	w.WriteByte(this.PayloadIndex)
@@ -102,7 +102,7 @@ func (this *PendingFuture) Serialize(w *helpers.BufferWriter) {
 	}
 }
 
-func (this *PendingFuture) Deserialize(r *helpers.BufferReader) (err error) {
+func (this *ConditionalPayment) Deserialize(r *helpers.BufferReader) (err error) {
 	if this.Version, err = r.ReadUvarint(); err != nil {
 		return
 	}
@@ -172,8 +172,8 @@ func (this *PendingFuture) Deserialize(r *helpers.BufferReader) (err error) {
 	return
 }
 
-func NewPendingFuture(key []byte, index uint64, blockHeight uint64) *PendingFuture {
-	return &PendingFuture{
+func NewConditionalPayment(key []byte, index uint64, blockHeight uint64) *ConditionalPayment {
+	return &ConditionalPayment{
 		key,
 		blockHeight,
 		index,

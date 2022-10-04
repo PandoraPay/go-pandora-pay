@@ -10,7 +10,7 @@ import (
 type dataStorageTransitionCollectionsKeys struct {
 	Accounts             [][]byte
 	AssetsFeeLiquidities [][]byte
-	PendingFuture        []uint64
+	ConditionalPayments  []uint64
 }
 
 func (dataStorage *DataStorage) GetListWithoutCollections() (list []hash_map.HashMapInterface) {
@@ -35,7 +35,7 @@ func (dataStorage *DataStorage) GetList(computeChangesSize bool) (list []hash_ma
 
 	if !computeChangesSize {
 		list = append(list, dataStorage.AstsFeeLiquidityCollection.GetAllHashmaps()...)
-		list = append(list, dataStorage.PendingFutureCollection.GetAllHashmaps()...)
+		list = append(list, dataStorage.ConditionalPaymentsCollection.GetAllHashmaps()...)
 	}
 
 	return
@@ -81,7 +81,7 @@ func (dataStorage *DataStorage) SetTx(dbTx store_db_interface.StoreDBTransaction
 	}
 	dataStorage.AccsCollection.SetTx(dbTx)
 	dataStorage.AstsFeeLiquidityCollection.SetTx(dbTx)
-	dataStorage.PendingFutureCollection.SetTx(dbTx)
+	dataStorage.ConditionalPaymentsCollection.SetTx(dbTx)
 }
 
 func (dataStorage *DataStorage) WriteTransitionalChangesToStore(prefix string) (err error) {
@@ -123,13 +123,13 @@ func (dataStorage *DataStorage) WriteTransitionalChangesToStore(prefix string) (
 		}
 	}
 
-	pendingFutures := dataStorage.PendingFutureCollection.GetAllMaps()
-	for key := range pendingFutures {
-		if hasData, err = pendingFutures[key].WriteTransitionalChangesToStore(prefix); err != nil {
+	conditionalPayments := dataStorage.ConditionalPaymentsCollection.GetAllMaps()
+	for key := range conditionalPayments {
+		if hasData, err = conditionalPayments[key].WriteTransitionalChangesToStore(prefix); err != nil {
 			return
 		}
 		if hasData {
-			transitionCollectionsKeys.PendingFuture = append(transitionCollectionsKeys.PendingFuture, pendingFutures[key].BlockHeight)
+			transitionCollectionsKeys.ConditionalPayments = append(transitionCollectionsKeys.ConditionalPayments, conditionalPayments[key].BlockHeight)
 		}
 	}
 
@@ -185,8 +185,8 @@ func (dataStorage *DataStorage) ReadTransitionalChangesFromStore(prefix string) 
 		}
 	}
 
-	for _, key := range transitionCollectionsKeys.PendingFuture {
-		hashmap, err := dataStorage.PendingFutureCollection.GetMap(key)
+	for _, key := range transitionCollectionsKeys.ConditionalPayments {
+		hashmap, err := dataStorage.ConditionalPaymentsCollection.GetMap(key)
 		if err != nil {
 			return err
 		}
@@ -231,8 +231,8 @@ func (dataStorage *DataStorage) DeleteTransitionalChangesFromStore(prefix string
 		maxHeap.DictMap.DeleteTransitionalChangesFromStore(prefix)
 	}
 
-	for _, key := range transitionCollectionsKeys.PendingFuture {
-		hashmap, err := dataStorage.PendingFutureCollection.GetMap(key)
+	for _, key := range transitionCollectionsKeys.ConditionalPayments {
+		hashmap, err := dataStorage.ConditionalPaymentsCollection.GetMap(key)
 		if err != nil {
 			return err
 		}
