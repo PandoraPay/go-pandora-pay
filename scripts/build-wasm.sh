@@ -56,18 +56,15 @@ buildOutput=${src}${buildOutput}
 finalOutput=${frontend}
 
 cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" "${finalOutput}src/webworkers/dist/wasm_exec.js"
-sriOutput="${finalOutput}src/webworkers/dist/sri/"
 
 finalOutput+="dist/"
 
 mkdir -p "${finalOutput}"
-mkdir -p "${sriOutput}"
 
 if [[ "$*" == *dev* ]]; then
   finalOutput+="dev/"
 elif [[ "$*" == *build* ]]; then
   finalOutput+="build/"
-  sriOutput+="build"
 fi
 
 if ! [[ "$*" == *test* ]]; then
@@ -84,10 +81,8 @@ if ! [[ "$*" == *test* ]]; then
 
   if [[ "$*" == *main* ]]; then
     finalOutput+="wasm/${mainWasmOutput}"
-    sriOutput+="-main.js"
   elif [[ "$*" == *helper* ]]; then
     finalOutput+="wasm/${helperWasmOutput}"
-    sriOutput+="-helper.js"
   fi
 
   echo "Copy to frontend/dist..."
