@@ -273,30 +273,30 @@ func (dataStorage *DataStorage) AddConditionalPayment(blockHeight uint64, txId [
 	return conditionalPaymentsMap.Update(key, condPayment)
 }
 
-func (dataStorage *DataStorage) ProceedConditionalPayment(resolution bool, conditionalPayment *conditional_payment.ConditionalPayment) (err error) {
+func (dataStorage *DataStorage) ProceedConditionalPayment(resolution bool, condPayment *conditional_payment.ConditionalPayment) (err error) {
 
-	if conditionalPayment.Processed {
+	if condPayment.Processed {
 		return errors.New("pending Future already processed")
 	}
 
-	conditionalPayment.Processed = true
+	condPayment.Processed = true
 
 	var acc *account.Account
 	var pendingAmount *crypto.ElGamal
 
-	accs, err := dataStorage.AccsCollection.GetMap(conditionalPayment.Asset)
+	accs, err := dataStorage.AccsCollection.GetMap(condPayment.Asset)
 	if err != nil {
 		return
 	}
 
-	for i := range conditionalPayment.ReceiverPublicKeys {
+	for i := range condPayment.ReceiverPublicKeys {
 		var key, amount []byte
 		if resolution {
-			key = conditionalPayment.ReceiverPublicKeys[i]
-			amount = conditionalPayment.ReceiverAmounts[i]
+			key = condPayment.ReceiverPublicKeys[i]
+			amount = condPayment.ReceiverAmounts[i]
 		} else {
-			key = conditionalPayment.SenderPublicKeys[i]
-			amount = conditionalPayment.SenderAmounts[i]
+			key = condPayment.SenderPublicKeys[i]
+			amount = condPayment.SenderAmounts[i]
 		}
 
 		if acc, err = accs.Get(string(key)); err != nil {
