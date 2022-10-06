@@ -67,7 +67,6 @@ var (
 )
 
 const (
-	WEBSOCKETS_TIMEOUT                            = 5 * time.Second //seconds
 	WEBSOCKETS_MAX_READ_THREADS                   = 5
 	WEBSOCKETS_PONG_WAIT                          = 60 * time.Second // Time allowed to read the next pong message from the peer.
 	WEBSOCKETS_PING_INTERVAL                      = (WEBSOCKETS_PONG_WAIT * 8) / 10

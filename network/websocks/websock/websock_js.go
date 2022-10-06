@@ -119,7 +119,7 @@ func Dial(url string) (c *Conn, err error) {
 	select {
 	case <-ctx.Done():
 		c.ws.Close(StatusPolicyViolation, "dial timed out")
-		return nil, ctx.Err()
+		return nil, errors.New("dial timed out")
 	case <-c.opened:
 		return c, nil
 	}
