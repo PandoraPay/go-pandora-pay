@@ -7,7 +7,10 @@ import (
 	"os"
 	"pandora-pay/config/globals"
 	"strconv"
+	"time"
 )
+
+const WEBSOCKETS_TIMEOUT = 5 * time.Second //seconds
 
 func config_init() (err error) {
 

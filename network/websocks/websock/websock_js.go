@@ -17,6 +17,7 @@ type Conn struct {
 	ws               *WebSocket
 	limit            *generics.Value[int64]
 	opened           chan struct{}
+	openedOnce       *sync.Once
 	closed           chan struct{}
 	closedErrorOnce  *sync.Once
 	closedErr        *generics.Value[error]
@@ -47,6 +48,7 @@ func Dial(url string) (c *Conn, err error) {
 		ws,
 		&generics.Value[int64]{},
 		make(chan struct{}),
+		&sync.Once{},
 		make(chan struct{}),
 		&sync.Once{},
 		&generics.Value[error]{},
@@ -63,6 +65,9 @@ func Dial(url string) (c *Conn, err error) {
 	c.limit.Store(32 * 1024)
 
 	c.releaseOnClose = c.ws.onClose(func(e *CloseEvent) {
+		if c == nil {
+			return
+		}
 
 		c.closedEvent(&CloseError{
 			Code:   StatusCode(e.Code),
@@ -76,6 +81,10 @@ func Dial(url string) (c *Conn, err error) {
 	})
 
 	c.releaseOnMessage = c.ws.onMessage(func(data any) {
+		if c == nil {
+			return
+		}
+
 		c.readBufMu.Lock()
 		defer c.readBufMu.Unlock()
 
@@ -89,10 +98,18 @@ func Dial(url string) (c *Conn, err error) {
 	})
 
 	c.releaseOnOpen = c.ws.onOpen(func() {
-		close(c.opened)
+		if c == nil {
+			return
+		}
+		c.openedOnce.Do(func() {
+			close(c.opened)
+		})
 	})
 
 	c.releaseOnError = c.ws.onError(func() {
+		if c == nil {
+			return
+		}
 		fmt.Println("Web Socket error")
 	})
 
@@ -102,7 +119,7 @@ func Dial(url string) (c *Conn, err error) {
 	select {
 	case <-ctx.Done():
 		c.ws.Close(StatusPolicyViolation, "dial timed out")
-		return nil, ctx.Err()
+		return nil, errors.New("dial timed out")
 	case <-c.opened:
 		return c, nil
 	}
