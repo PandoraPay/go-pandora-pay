@@ -21,6 +21,8 @@ bug free and easy to be developed and improved over time.
 
 [Transactions](/docs/transactions.md)
 
+[Master Thesis: Privacy-Preserving and Horizontally Scalable Blockchain using Zero Knowledge and Distributed Computing](/docs/master-thesis-privacy-preserving-and-horizontally-scalable-blockchain-using-zero-knowledge-and-distributed-computing.pdf)
+
 ## Status of Blockchain implementation:
 
 - [x] Simple GUI
