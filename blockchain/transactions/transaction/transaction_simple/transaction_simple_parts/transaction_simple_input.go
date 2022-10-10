@@ -5,7 +5,7 @@ import (
 	"errors"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type TransactionSimpleInput struct {
@@ -28,14 +28,14 @@ func (vin *TransactionSimpleInput) Validate() error {
 	return nil
 }
 
-func (vin *TransactionSimpleInput) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (vin *TransactionSimpleInput) Serialize(w *advanced_buffers.BufferWriter, inclSignature bool) {
 	w.Write(vin.PublicKey)
 	if inclSignature {
 		w.Write(vin.Signature)
 	}
 }
 
-func (vin *TransactionSimpleInput) Deserialize(r *helpers.BufferReader) (err error) {
+func (vin *TransactionSimpleInput) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	if vin.PublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}

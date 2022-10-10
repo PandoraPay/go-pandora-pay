@@ -9,7 +9,7 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type TransactionZetherPayloadExtraPlainAccountFund struct {
@@ -53,11 +53,11 @@ func (payloadExtra *TransactionZetherPayloadExtraPlainAccountFund) Validate(payl
 	return nil
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraPlainAccountFund) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (payloadExtra *TransactionZetherPayloadExtraPlainAccountFund) Serialize(w *advanced_buffers.BufferWriter, inclSignature bool) {
 	w.Write(payloadExtra.PlainAccountPublicKey)
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraPlainAccountFund) Deserialize(r *helpers.BufferReader) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraPlainAccountFund) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	if payloadExtra.PlainAccountPublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return errors.New("PlainAccountPublicKey was not found")
 	}

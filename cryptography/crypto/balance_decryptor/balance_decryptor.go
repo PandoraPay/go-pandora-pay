@@ -3,47 +3,38 @@ package balance_decryptor
 import (
 	"context"
 	"errors"
-	"github.com/tevino/abool"
-	"math"
 	"math/big"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/gui"
-	"pandora-pay/helpers/generics"
 	"runtime"
-	"strconv"
+	"sync"
 )
 
 // table size cannot be more than 1<<24
 
-type BalanceDecoderInfo struct {
-	tableSize       int
-	tableLookup     *generics.Value[*LookupTable]
-	tableComputedCn chan *LookupTable
-	ctx             context.Context
-	readyCn         chan struct{}
-	hasError        *abool.AtomicBool
-}
-
 type BalanceDecryptorType struct {
-	info *generics.Value[*BalanceDecoderInfo]
+	once            *sync.Once
+	tableComputedCn chan *LookupTable
+	tableSize       int
+	tableLookup     *LookupTable
+	readyCn         chan struct{}
 }
 
-func (self *BalanceDecryptorType) TryDecryptBalance(p *bn256.G1, matchBalance uint64) bool {
+func (this *BalanceDecryptorType) TryDecryptBalance(p *bn256.G1, matchBalance uint64) bool {
 	var acc bn256.G1
 	acc.ScalarMult(crypto.G, new(big.Int).SetUint64(matchBalance))
 	return acc.String() == p.String()
 }
 
-func (self *BalanceDecryptorType) DecryptBalance(p *bn256.G1, tryPreviousValue bool, previousBalance uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
+func (this *BalanceDecryptorType) DecryptBalance(p *bn256.G1, tryPreviousValue bool, previousBalance uint64, ctx context.Context, statusCallback func(string)) (uint64, error) {
 
 	if tryPreviousValue {
-		if self.TryDecryptBalance(p, previousBalance) {
+		if this.TryDecryptBalance(p, previousBalance) {
 			return previousBalance, nil
 		}
 	}
 
-	tableLookup := self.SetTableSize(0, ctx, statusCallback)
+	tableLookup := this.SetTableSize(0, context.Background(), statusCallback)
 	if tableLookup == nil {
 		return 0, errors.New("It was stopped")
 	}
@@ -51,10 +42,9 @@ func (self *BalanceDecryptorType) DecryptBalance(p *bn256.G1, tryPreviousValue b
 	return tableLookup.Lookup(p, ctx, statusCallback)
 }
 
-func (self *BalanceDecryptorType) SetTableSize(newTableSize int, ctx context.Context, statusCallback func(string)) *LookupTable {
+func (this *BalanceDecryptorType) SetTableSize(newTableSize int, ctx context.Context, statusCallback func(string)) *LookupTable {
 
-	info := self.info.Load()
-	if info.tableSize == 0 || info.tableSize < newTableSize || info.hasError.IsSet() {
+	this.once.Do(func() {
 
 		if newTableSize == 0 {
 			if runtime.GOARCH != "wasm" {
@@ -67,50 +57,22 @@ func (self *BalanceDecryptorType) SetTableSize(newTableSize int, ctx context.Con
 			panic("Table Size is incorrect")
 		}
 
-		oldInfo := info
-
-		info = &BalanceDecoderInfo{
-			newTableSize,
-			&generics.Value[*LookupTable]{},
-			make(chan *LookupTable),
-			ctx,
-			make(chan struct{}),
-			abool.New(),
-		}
-		self.info.Store(info)
-
-		gui.GUI.Info2Update("Decryptor", "Init... "+strconv.Itoa(int(math.Log2(float64(info.tableSize)))))
-
-		if oldInfo != nil && oldInfo.hasError.SetToIf(false, true) {
-			close(oldInfo.readyCn)
-		}
+		this.tableSize = newTableSize
 
 		go func() {
-			createLookupTable(1, newTableSize, info.tableComputedCn, info.readyCn, ctx, statusCallback)
+			createLookupTable(1, newTableSize, this.tableComputedCn, ctx, statusCallback)
 		}()
 
-		select {
-		case tableLookup := <-info.tableComputedCn:
-			if tableLookup == nil && info.hasError.SetToIf(false, true) {
-				close(info.readyCn)
-			}
-			info.tableLookup.Store(tableLookup)
-			gui.GUI.Info2Update("Decryptor", "Ready "+strconv.Itoa(int(math.Log2(float64(info.tableSize)))))
-			return tableLookup
-		case <-ctx.Done():
-			if info.hasError.SetToIf(false, true) {
-				close(info.readyCn)
-			}
-			return nil
-		}
+		tableLookup := <-this.tableComputedCn
+		this.tableLookup = tableLookup
+		close(this.readyCn)
+		close(this.tableComputedCn)
 
-	}
+	})
 
-	select {
-	case <-info.ctx.Done():
-	}
+	<-this.readyCn
 
-	return info.tableLookup.Load()
+	return this.tableLookup
 }
 
 var BalanceDecryptor *BalanceDecryptorType
@@ -118,14 +80,11 @@ var BalanceDecryptor *BalanceDecryptorType
 func init() {
 
 	BalanceDecryptor = &BalanceDecryptorType{
-		&generics.Value[*BalanceDecoderInfo]{},
+		&sync.Once{},
+		make(chan *LookupTable),
+		0,
+		nil,
+		make(chan struct{}),
 	}
 
-	info := &BalanceDecoderInfo{
-		tableSize: 0,
-		readyCn:   make(chan struct{}),
-		hasError:  abool.New(),
-	}
-	info.hasError.SetTo(true)
-	BalanceDecryptor.info.Store(info)
 }

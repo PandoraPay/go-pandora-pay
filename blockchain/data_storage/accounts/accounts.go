@@ -4,7 +4,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
@@ -34,7 +34,7 @@ func (accounts *Accounts) saveAssetsCount(key []byte, sign bool) (uint64, error)
 
 	data := accounts.Tx.Get("accounts:assetsCount:" + string(key))
 	if data != nil {
-		if count, err = helpers.NewBufferReader(data).ReadUvarint(); err != nil {
+		if count, err = advanced_buffers.NewBufferReader(data).ReadUvarint(); err != nil {
 			return 0, err
 		}
 	}
@@ -49,7 +49,7 @@ func (accounts *Accounts) saveAssetsCount(key []byte, sign bool) (uint64, error)
 	}
 
 	if count > 0 {
-		w := helpers.NewBufferWriter()
+		w := advanced_buffers.NewBufferWriter()
 		w.WriteUvarint(count)
 		accounts.Tx.Put("accounts:assetsCount:"+string(key), w.Bytes())
 	} else {

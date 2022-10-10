@@ -10,6 +10,7 @@ const FIELDELEMENT_SIZE = 32 // why not have bigger curves
 
 // protocol supports amounts upto this amounts
 const MAX_AMOUNT = 18446744073709551616 // 2^64 - 1,
+const PROTOCOL_CRYPTOPGRAPHY_CONSTANT = "PANDORA"
 
 // checks a number is power of 2
 func IsPowerOf2(num int) bool {

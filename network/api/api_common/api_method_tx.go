@@ -10,6 +10,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -49,7 +50,7 @@ func (api *APICommon) openLoadTx(args *APITxRequest, reply *APITxReply) error {
 			reply.TxSerialized = data
 		} else {
 			reply.Tx = &transaction.Transaction{}
-			if err = reply.Tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
+			if err = reply.Tx.Deserialize(advanced_buffers.NewBufferReader(data)); err != nil {
 				return err
 			}
 		}

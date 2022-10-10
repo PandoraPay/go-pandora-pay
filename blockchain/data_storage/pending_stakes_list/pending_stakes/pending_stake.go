@@ -3,7 +3,7 @@ package pending_stakes
 import (
 	"errors"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type PendingStake struct {
@@ -18,12 +18,12 @@ func (d *PendingStake) Validate() error {
 	return nil
 }
 
-func (d *PendingStake) Serialize(w *helpers.BufferWriter) {
+func (d *PendingStake) Serialize(w *advanced_buffers.BufferWriter) {
 	w.Write(d.PublicKey)
 	w.Write(d.PendingAmount)
 }
 
-func (d *PendingStake) Deserialize(r *helpers.BufferReader) (err error) {
+func (d *PendingStake) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	if d.PublicKey, err = r.ReadBytes(cryptography.PublicKeySize); err != nil {
 		return
 	}

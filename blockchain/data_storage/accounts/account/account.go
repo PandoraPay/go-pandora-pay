@@ -4,7 +4,7 @@ import (
 	"errors"
 	"pandora-pay/blockchain/data_storage/accounts/account/account_balance_homomorphic"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type Account struct {
@@ -42,12 +42,12 @@ func (account *Account) GetBalance() (result *crypto.ElGamal) {
 	return account.Balance.Amount
 }
 
-func (account *Account) Serialize(w *helpers.BufferWriter) {
+func (account *Account) Serialize(w *advanced_buffers.BufferWriter) {
 	w.WriteUvarint(account.Version)
 	account.Balance.Serialize(w)
 }
 
-func (account *Account) Deserialize(r *helpers.BufferReader) (err error) {
+func (account *Account) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	var n uint64
 	if n, err = r.ReadUvarint(); err != nil {

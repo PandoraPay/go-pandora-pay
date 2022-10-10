@@ -3,6 +3,7 @@ package block
 import (
 	"errors"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type BlockHeader struct {
@@ -18,12 +19,12 @@ func (blockHeader *BlockHeader) validate() error {
 	return nil
 }
 
-func (blockHeader *BlockHeader) Serialize(w *helpers.BufferWriter) {
+func (blockHeader *BlockHeader) Serialize(w *advanced_buffers.BufferWriter) {
 	w.WriteUvarint(blockHeader.Version)
 	w.WriteUvarint(blockHeader.Height)
 }
 
-func (blockHeader *BlockHeader) Deserialize(r *helpers.BufferReader) (err error) {
+func (blockHeader *BlockHeader) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	if blockHeader.Version, err = r.ReadUvarint(); err != nil {
 		return
 	}

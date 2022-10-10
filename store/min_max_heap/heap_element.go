@@ -1,6 +1,8 @@
 package min_max_heap
 
-import "pandora-pay/helpers"
+import (
+	"pandora-pay/helpers/advanced_buffers"
+)
 
 type HeapElement struct {
 	HashmapKey []byte
@@ -27,13 +29,13 @@ func (this *HeapElement) Validate() error {
 	return nil
 }
 
-func (this *HeapElement) Serialize(w *helpers.BufferWriter) {
+func (this *HeapElement) Serialize(w *advanced_buffers.BufferWriter) {
 	w.WriteByte(byte(len(this.Key)))
 	w.Write(this.Key)
 	w.WriteFloat64(this.Score)
 }
 
-func (this *HeapElement) Deserialize(r *helpers.BufferReader) (err error) {
+func (this *HeapElement) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	var count byte
 	if count, err = r.ReadByte(); err != nil {
 		return

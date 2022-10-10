@@ -4,48 +4,58 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/network/api/api_websockets/consensus"
+	"pandora-pay/network/known_nodes/known_node"
 	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/recovery"
+	"sync/atomic"
 	"time"
 )
 
 func (network *Network) continuouslyConnectingNewPeers() {
 
-	recovery.SafeGo(func() {
+	for i := 0; i < config.WEBSOCKETS_CONCURRENT_NEW_CONENCTIONS; i++ {
+		recovery.SafeGo(func() {
 
-		for {
+			for {
 
-			if network.Websockets.GetClients() >= config.WEBSOCKETS_NETWORK_CLIENTS_MAX {
-				time.Sleep(500 * time.Millisecond)
-				continue
-			}
+				if network.Websockets.GetClients() >= config.WEBSOCKETS_NETWORK_CLIENTS_MAX {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
 
-			knownNode := network.KnownNodes.GetBestNotConnectedKnownNode()
-
-			if knownNode != nil {
-
-				//gui.GUI.Log("connecting to", knownNode.URL, atomic.LoadInt32(&knownNode.Score))
-
-				if network.BannedNodes.IsBanned(knownNode.URL) {
-					network.KnownNodes.DecreaseKnownNodeScore(knownNode, -10, false)
+				var knownNode *known_node.KnownNodeScored
+				if i == 0 {
+					knownNode = network.KnownNodes.GetBestNotConnectedKnownNode()
 				} else {
-					_, err := websocks.NewWebsocketClient(network.Websockets, knownNode)
-					if err != nil {
+					knownNode = network.KnownNodes.GetRandomKnownNode()
+				}
+				if knownNode != nil {
 
-						if err.Error() != "Already connected" {
-							network.KnownNodes.DecreaseKnownNodeScore(knownNode, -20, false)
-						}
+					gui.GUI.Log("connecting to", knownNode.URL, atomic.LoadInt32(&knownNode.Score))
 
+					if network.BannedNodes.IsBanned(knownNode.URL) {
+						network.KnownNodes.DecreaseKnownNodeScore(knownNode, -10, false)
 					} else {
-						gui.GUI.Log("connected to: " + knownNode.URL)
+						_, err := websocks.NewWebsocketClient(network.Websockets, knownNode)
+						if err != nil {
+
+							gui.GUI.Error("error connecting", knownNode.URL, err)
+
+							if err.Error() != "Already connected" {
+								network.KnownNodes.DecreaseKnownNodeScore(knownNode, -20, false)
+							}
+
+						} else {
+							gui.GUI.Log("connected to: " + knownNode.URL)
+						}
 					}
 				}
-			}
 
-			time.Sleep(100 * time.Millisecond)
-		}
-	})
+				time.Sleep(100 * time.Millisecond)
+			}
+		})
+	}
 
 }
 

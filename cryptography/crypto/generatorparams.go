@@ -3,7 +3,6 @@ package crypto
 import (
 	"fmt"
 	"math/big"
-	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 )
 
@@ -11,8 +10,8 @@ func NewGeneratorParams(count int) *GeneratorParams {
 	GP := &GeneratorParams{}
 	var zeroes [64]byte
 
-	GP.G = HashToPoint(HashtoNumber([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT + "G"))) // this is same as mybase or vice-versa
-	GP.H = HashToPoint(HashtoNumber([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT + "H")))
+	GP.G = HashToPoint(HashtoNumber([]byte(PROTOCOL_CRYPTOPGRAPHY_CONSTANT + "G"))) // this is same as mybase or vice-versa
+	GP.H = HashToPoint(HashtoNumber([]byte(PROTOCOL_CRYPTOPGRAPHY_CONSTANT + "H")))
 
 	var gs, hs []*bn256.G1
 
@@ -20,8 +19,8 @@ func NewGeneratorParams(count int) *GeneratorParams {
 	GP.GSUM.Unmarshal(zeroes[:])
 
 	for i := 0; i < count; i++ {
-		gs = append(gs, HashToPoint(HashtoNumber(append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT+"G"), hextobytes(makestring64(fmt.Sprintf("%x", i)))...))))
-		hs = append(hs, HashToPoint(HashtoNumber(append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT+"H"), hextobytes(makestring64(fmt.Sprintf("%x", i)))...))))
+		gs = append(gs, HashToPoint(HashtoNumber(append([]byte(PROTOCOL_CRYPTOPGRAPHY_CONSTANT+"G"), hextobytes(makestring64(fmt.Sprintf("%x", i)))...))))
+		hs = append(hs, HashToPoint(HashtoNumber(append([]byte(PROTOCOL_CRYPTOPGRAPHY_CONSTANT+"H"), hextobytes(makestring64(fmt.Sprintf("%x", i)))...))))
 
 		GP.GSUM = new(bn256.G1).Add(GP.GSUM, gs[i])
 	}
@@ -34,7 +33,7 @@ func NewGeneratorParams(count int) *GeneratorParams {
 func NewGeneratorParams3(h *bn256.G1, gs, hs *PointVector) *GeneratorParams {
 	GP := &GeneratorParams{}
 
-	GP.G = HashToPoint(HashtoNumber([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT + "G"))) // this is same as mybase or vice-versa
+	GP.G = HashToPoint(HashtoNumber([]byte(PROTOCOL_CRYPTOPGRAPHY_CONSTANT + "G"))) // this is same as mybase or vice-versa
 	GP.H = h
 	GP.Gs = gs
 	GP.Hs = hs

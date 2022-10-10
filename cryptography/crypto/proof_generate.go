@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"strconv"
 )
 
@@ -62,7 +61,7 @@ func (p *Proof) Parity() bool {
 	return false
 }
 
-func (p *Proof) Serialize(w *helpers.BufferWriter) {
+func (p *Proof) Serialize(w *advanced_buffers.BufferWriter) {
 
 	w.Write(p.BA.EncodeCompressed())
 	w.Write(p.BS.EncodeCompressed())
@@ -116,7 +115,7 @@ func (p *Proof) Serialize(w *helpers.BufferWriter) {
 	p.ip.Serialize(w)
 }
 
-func (proof *Proof) Deserialize(r *helpers.BufferReader, ringPower int) (err error) {
+func (proof *Proof) Deserialize(r *advanced_buffers.BufferReader, ringPower int) (err error) {
 
 	if proof.BA, err = r.ReadBN256G1(); err != nil {
 		return
@@ -978,7 +977,7 @@ func GenerateProof(assetId []byte, assetIndex int, chainHash []byte, s *Statemen
 
 	{
 		var input []byte
-		input = append(input, []byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT)...)
+		input = append(input, []byte(PROTOCOL_CRYPTOPGRAPHY_CONSTANT)...)
 		input = append(input, chainHash[:]...)
 
 		input = append(input, assetId[:]...)

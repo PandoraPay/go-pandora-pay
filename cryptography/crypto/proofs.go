@@ -6,7 +6,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/cryptography/bn256"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type Statement struct {
@@ -27,7 +27,7 @@ type Witness struct {
 	Index          []int  // index of sender in the public key list
 }
 
-func (s *Statement) SerializeRingSize(w *helpers.BufferWriter) {
+func (s *Statement) SerializeRingSize(w *advanced_buffers.BufferWriter) {
 	pow, err := GetPowerof2(len(s.C))
 	if err != nil {
 		panic(err)
@@ -36,7 +36,7 @@ func (s *Statement) SerializeRingSize(w *helpers.BufferWriter) {
 	w.WriteByte(byte(pow)) // len(s.Publickeylist) is always power of 2
 }
 
-func (s *Statement) Serialize(w *helpers.BufferWriter, payloadRegistrations []*transaction_zether_registration.TransactionZetherDataRegistration, parity bool, payloadScript transaction_zether_payload_script.PayloadScriptType) {
+func (s *Statement) Serialize(w *advanced_buffers.BufferWriter, payloadRegistrations []*transaction_zether_registration.TransactionZetherDataRegistration, parity bool, payloadScript transaction_zether_payload_script.PayloadScriptType) {
 
 	w.WriteUvarint(s.Fee)
 	w.Write(s.D.EncodeCompressed())
@@ -52,7 +52,7 @@ func (s *Statement) Serialize(w *helpers.BufferWriter, payloadRegistrations []*t
 
 }
 
-func (s *Statement) DeserializeRingSize(r *helpers.BufferReader) (byte, int, error) {
+func (s *Statement) DeserializeRingSize(r *advanced_buffers.BufferReader) (byte, int, error) {
 
 	length, err := r.ReadByte()
 	if err != nil {
@@ -68,7 +68,7 @@ func (s *Statement) DeserializeRingSize(r *helpers.BufferReader) (byte, int, err
 	return length, s.RingSize, nil
 }
 
-func (s *Statement) Deserialize(r *helpers.BufferReader, payloadRegistrations []*transaction_zether_registration.TransactionZetherDataRegistration, parity bool, payloadScript transaction_zether_payload_script.PayloadScriptType) (err error) {
+func (s *Statement) Deserialize(r *advanced_buffers.BufferReader, payloadRegistrations []*transaction_zether_registration.TransactionZetherDataRegistration, parity bool, payloadScript transaction_zether_payload_script.PayloadScriptType) (err error) {
 
 	if s.Fee, err = r.ReadUvarint(); err != nil {
 		return

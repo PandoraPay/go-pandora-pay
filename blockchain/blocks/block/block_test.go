@@ -5,6 +5,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"testing"
 	"time"
 )
@@ -34,7 +35,7 @@ func TestBlock_Serialize(t *testing.T) {
 
 	blk2 := &Block{BlockHeader: &BlockHeader{}}
 
-	r := helpers.NewBufferReader(buf)
+	r := advanced_buffers.NewBufferReader(buf)
 	err = blk2.Deserialize(r)
 	assert.NoError(t, err, "Error...?")
 

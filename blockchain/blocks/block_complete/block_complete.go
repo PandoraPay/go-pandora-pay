@@ -9,6 +9,7 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/merkle_tree"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type BlockComplete struct {
@@ -77,7 +78,7 @@ func (blkComplete *BlockComplete) IncludeBlockComplete(dataStorage *data_storage
 	return
 }
 
-func (blkComplete *BlockComplete) AdvancedSerialization(w *helpers.BufferWriter) {
+func (blkComplete *BlockComplete) AdvancedSerialization(w *advanced_buffers.BufferWriter) {
 
 	w.Write(blkComplete.Block.Bloom.Serialized)
 
@@ -88,7 +89,7 @@ func (blkComplete *BlockComplete) AdvancedSerialization(w *helpers.BufferWriter)
 	}
 }
 
-func (blkComplete *BlockComplete) Serialize(w *helpers.BufferWriter) {
+func (blkComplete *BlockComplete) Serialize(w *advanced_buffers.BufferWriter) {
 	w.Write(blkComplete.BloomBlkComplete.Serialized)
 }
 
@@ -97,12 +98,12 @@ func (blkComplete *BlockComplete) SerializeToBytes() []byte {
 }
 
 func (blkComplete *BlockComplete) SerializeManualToBytes() []byte {
-	writer := helpers.NewBufferWriter()
+	writer := advanced_buffers.NewBufferWriter()
 	blkComplete.AdvancedSerialization(writer)
 	return writer.Bytes()
 }
 
-func (blkComplete *BlockComplete) Deserialize(r *helpers.BufferReader) (err error) {
+func (blkComplete *BlockComplete) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	if uint64(len(r.Buf)) > config.BLOCK_MAX_SIZE {
 		return errors.New("COMPLETE BLOCK EXCEEDS MAX SIZE")

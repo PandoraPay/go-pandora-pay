@@ -3,6 +3,7 @@ package plain_account
 import (
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type PlainAccount struct {
@@ -47,13 +48,13 @@ func (plainAccount *PlainAccount) AddUnclaimed(sign bool, amount uint64) error {
 	return helpers.SafeUint64Update(sign, &plainAccount.Unclaimed, amount)
 }
 
-func (plainAccount *PlainAccount) Serialize(w *helpers.BufferWriter) {
+func (plainAccount *PlainAccount) Serialize(w *advanced_buffers.BufferWriter) {
 	w.WriteUvarint(plainAccount.Nonce)
 	w.WriteUvarint(plainAccount.Unclaimed)
 	plainAccount.AssetFeeLiquidities.Serialize(w)
 }
 
-func (plainAccount *PlainAccount) Deserialize(r *helpers.BufferReader) (err error) {
+func (plainAccount *PlainAccount) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	if plainAccount.Nonce, err = r.ReadUvarint(); err != nil {
 		return

@@ -6,7 +6,7 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/blockchain/info"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
@@ -51,7 +51,7 @@ func (chain *APIStore) loadBlock(reader store_db_interface.StoreDBTransactionInt
 		return nil, errors.New("Block was not found")
 	}
 	blk := block.CreateEmptyBlock()
-	return blk, blk.Deserialize(helpers.NewBufferReader(blockData))
+	return blk, blk.Deserialize(advanced_buffers.NewBufferReader(blockData))
 }
 
 func NewAPIStore(chain *blockchain.Blockchain) *APIStore {

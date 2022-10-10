@@ -3,7 +3,7 @@ package conditional_payment
 import (
 	"errors"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type ConditionalPayment struct {
@@ -73,7 +73,7 @@ func (this *ConditionalPayment) Validate() error {
 	return nil
 }
 
-func (this *ConditionalPayment) Serialize(w *helpers.BufferWriter) {
+func (this *ConditionalPayment) Serialize(w *advanced_buffers.BufferWriter) {
 	w.WriteUvarint(this.Version)
 	w.Write(this.TxId)
 	w.WriteByte(this.PayloadIndex)
@@ -102,7 +102,7 @@ func (this *ConditionalPayment) Serialize(w *helpers.BufferWriter) {
 	}
 }
 
-func (this *ConditionalPayment) Deserialize(r *helpers.BufferReader) (err error) {
+func (this *ConditionalPayment) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	if this.Version, err = r.ReadUvarint(); err != nil {
 		return
 	}

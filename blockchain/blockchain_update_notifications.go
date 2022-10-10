@@ -3,7 +3,7 @@ package blockchain
 import (
 	"bytes"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/recovery"
 )
 
@@ -52,7 +52,7 @@ func (queue *BlockchainUpdatesQueue) processBlockchainUpdateMempool() {
 				removedTxs := make([]*transaction.Transaction, len(update.removedTxsList))
 				for i, txData := range update.removedTxsList {
 					tx := &transaction.Transaction{}
-					if err = tx.Deserialize(helpers.NewBufferReader(txData)); err != nil {
+					if err = tx.Deserialize(advanced_buffers.NewBufferReader(txData)); err != nil {
 						return
 					}
 					if err = queue.txsValidator.MarkAsValidatedTx(tx); err != nil {

@@ -1,7 +1,7 @@
 package pending_stakes
 
 import (
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type PendingStakes struct {
@@ -34,7 +34,7 @@ func (d *PendingStakes) Validate() error {
 	return nil
 }
 
-func (d *PendingStakes) Serialize(w *helpers.BufferWriter) {
+func (d *PendingStakes) Serialize(w *advanced_buffers.BufferWriter) {
 	w.WriteUvarint(d.Height)
 
 	w.WriteUvarint(uint64(len(d.Pending)))
@@ -43,7 +43,7 @@ func (d *PendingStakes) Serialize(w *helpers.BufferWriter) {
 	}
 }
 
-func (d *PendingStakes) Deserialize(r *helpers.BufferReader) (err error) {
+func (d *PendingStakes) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	var n uint64
 
 	if d.Height, err = r.ReadUvarint(); err != nil {

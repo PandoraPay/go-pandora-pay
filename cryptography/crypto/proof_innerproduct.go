@@ -4,7 +4,7 @@ import (
 	"math"
 	"math/big"
 	"pandora-pay/cryptography/bn256"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 // basically the Σ-protocol
@@ -18,7 +18,7 @@ func (ip *InnerProduct) Size() int {
 }
 
 // since our bulletproofs are 128 bits, we can get away hard coded 7 entries
-func (ip *InnerProduct) Serialize(w *helpers.BufferWriter) {
+func (ip *InnerProduct) Serialize(w *advanced_buffers.BufferWriter) {
 
 	w.Write(ConvertBigIntToByte(ip.a))
 	w.Write(ConvertBigIntToByte(ip.b))
@@ -30,7 +30,7 @@ func (ip *InnerProduct) Serialize(w *helpers.BufferWriter) {
 	}
 }
 
-func (ip *InnerProduct) Deserialize(r *helpers.BufferReader) (err error) {
+func (ip *InnerProduct) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	if ip.a, err = r.ReadBigInt(); err != nil {
 		return

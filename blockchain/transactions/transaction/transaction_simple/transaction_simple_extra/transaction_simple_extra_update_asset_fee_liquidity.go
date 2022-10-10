@@ -8,7 +8,7 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account/asset_fee_liquidity"
 	"pandora-pay/config/config_asset_fee"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type TransactionSimpleExtraUpdateAssetFeeLiquidity struct {
@@ -69,7 +69,7 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Validate(fee uint6
 	return
 }
 
-func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Serialize(w *advanced_buffers.BufferWriter, inclSignature bool) {
 	w.WriteBool(txExtra.NewCollector)
 	w.Write(txExtra.Collector)
 
@@ -79,7 +79,7 @@ func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Serialize(w *helpe
 	}
 }
 
-func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Deserialize(r *helpers.BufferReader) (err error) {
+func (txExtra *TransactionSimpleExtraUpdateAssetFeeLiquidity) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	if txExtra.NewCollector, err = r.ReadBool(); err != nil {
 		return
