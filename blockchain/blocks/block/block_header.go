@@ -2,14 +2,12 @@ package block
 
 import (
 	"errors"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/advanced_buffers"
 )
 
 type BlockHeader struct {
-	helpers.SerializableInterface `json:"-" msgpack:"-"`
-	Version                       uint64 `json:"version" msgpack:"version"`
-	Height                        uint64 `json:"height" msgpack:"height"`
+	Version uint64 `json:"version" msgpack:"version"`
+	Height  uint64 `json:"height" msgpack:"height"`
 }
 
 func (blockHeader *BlockHeader) validate() error {
