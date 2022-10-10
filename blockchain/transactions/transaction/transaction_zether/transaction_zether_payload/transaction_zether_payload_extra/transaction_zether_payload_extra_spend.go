@@ -9,7 +9,7 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type TransactionZetherPayloadExtraSpend struct {
@@ -43,14 +43,14 @@ func (payloadExtra *TransactionZetherPayloadExtraSpend) Validate(payloadRegistra
 	return nil
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraSpend) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (payloadExtra *TransactionZetherPayloadExtraSpend) Serialize(w *advanced_buffers.BufferWriter, inclSignature bool) {
 	w.Write(payloadExtra.SenderSpendPublicKey.EncodeCompressed())
 	if inclSignature {
 		w.Write(payloadExtra.SenderSpendSignature)
 	}
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraSpend) Deserialize(r *helpers.BufferReader) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraSpend) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	if payloadExtra.SenderSpendPublicKey, err = r.ReadBN256G1(); err != nil {
 		return
 	}

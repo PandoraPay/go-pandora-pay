@@ -1,6 +1,8 @@
 package min_max_heap
 
-import "pandora-pay/helpers"
+import (
+	"pandora-pay/helpers/advanced_buffers"
+)
 
 type HeapDictElement struct {
 	HashmapKey []byte //hashmap key
@@ -26,11 +28,11 @@ func (this *HeapDictElement) Validate() error {
 	return nil
 }
 
-func (this *HeapDictElement) Serialize(w *helpers.BufferWriter) {
+func (this *HeapDictElement) Serialize(w *advanced_buffers.BufferWriter) {
 	w.WriteUvarint(this.Position)
 }
 
-func (this *HeapDictElement) Deserialize(r *helpers.BufferReader) (err error) {
+func (this *HeapDictElement) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	this.Position, err = r.ReadUvarint()
 	return
 }

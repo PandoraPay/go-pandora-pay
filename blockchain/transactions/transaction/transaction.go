@@ -9,7 +9,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type Transaction struct {
@@ -46,7 +46,7 @@ func (tx *Transaction) GetAllKeys() map[string]bool {
 }
 
 func (tx *Transaction) SerializeForSigning() []byte {
-	writer := helpers.NewBufferWriter()
+	writer := advanced_buffers.NewBufferWriter()
 	tx.SerializeAdvanced(writer, false)
 	return cryptography.SHA3(writer.Bytes())
 }
@@ -60,18 +60,18 @@ func (tx *Transaction) GetHashSigningManually() []byte {
 	return tx.SerializeForSigning()
 }
 
-func (tx *Transaction) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
+func (tx *Transaction) SerializeAdvanced(w *advanced_buffers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(uint64(tx.Version))
 	w.WriteUvarint(tx.SpaceExtra)
 	tx.TransactionBaseInterface.SerializeAdvanced(w, inclSignature)
 }
 
-func (tx *Transaction) Serialize(w *helpers.BufferWriter) {
+func (tx *Transaction) Serialize(w *advanced_buffers.BufferWriter) {
 	w.Write(tx.Bloom.Serialized)
 }
 
 func (tx *Transaction) SerializeManualToBytes() []byte {
-	writer := helpers.NewBufferWriter()
+	writer := advanced_buffers.NewBufferWriter()
 	tx.SerializeAdvanced(writer, true)
 	return writer.Bytes()
 }
@@ -92,7 +92,7 @@ func (tx *Transaction) Verify() error {
 	return tx.VerifyBloomAll()
 }
 
-func (tx *Transaction) Deserialize(r *helpers.BufferReader) (err error) {
+func (tx *Transaction) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	first := r.Position
 

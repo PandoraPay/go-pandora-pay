@@ -6,7 +6,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type TransactionZetherPayloadExtraConditionalPayment struct {
@@ -70,7 +70,7 @@ func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) Validate(pa
 	return nil
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) Serialize(w *advanced_buffers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(payloadExtra.Deadline)
 	w.WriteBool(payloadExtra.DefaultResolution)
 	w.WriteByte(payloadExtra.MultisigThreshold)
@@ -80,7 +80,7 @@ func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) Serialize(w
 	}
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) Deserialize(r *helpers.BufferReader) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraConditionalPayment) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	if payloadExtra.Deadline, err = r.ReadUvarint(); err != nil {
 		return

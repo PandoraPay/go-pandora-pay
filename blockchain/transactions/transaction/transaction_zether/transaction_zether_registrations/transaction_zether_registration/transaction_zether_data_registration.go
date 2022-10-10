@@ -3,7 +3,7 @@ package transaction_zether_registration
 import (
 	"errors"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type TransactionZetherDataRegistration struct {
@@ -13,7 +13,7 @@ type TransactionZetherDataRegistration struct {
 	RegistrationSignature      []byte
 }
 
-func (registration *TransactionZetherDataRegistration) Serialize(w *helpers.BufferWriter) {
+func (registration *TransactionZetherDataRegistration) Serialize(w *advanced_buffers.BufferWriter) {
 	w.WriteByte(byte(registration.RegistrationType))
 	if registration.RegistrationType == NOT_REGISTERED {
 		w.WriteBool(registration.RegistrationStaked)
@@ -23,7 +23,7 @@ func (registration *TransactionZetherDataRegistration) Serialize(w *helpers.Buff
 	}
 }
 
-func (registration *TransactionZetherDataRegistration) Deserialize(r *helpers.BufferReader) (err error) {
+func (registration *TransactionZetherDataRegistration) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	var n byte
 	if n, err = r.ReadByte(); err != nil {

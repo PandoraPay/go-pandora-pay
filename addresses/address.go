@@ -8,7 +8,7 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type Address struct {
@@ -51,7 +51,7 @@ func (a *Address) EncodeAddr() string {
 		return ""
 	}
 
-	writer := helpers.NewBufferWriter()
+	writer := advanced_buffers.NewBufferWriter()
 
 	var prefix string
 	switch a.Network {
@@ -134,7 +134,7 @@ func DecodeAddr(input string) (*Address, error) {
 
 	buf = buf[0 : len(buf)-cryptography.ChecksumSize] // remove the checksum
 
-	reader := helpers.NewBufferReader(buf)
+	reader := advanced_buffers.NewBufferReader(buf)
 
 	var version uint64
 	if version, err = reader.ReadUvarint(); err != nil {

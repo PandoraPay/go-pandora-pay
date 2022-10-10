@@ -1,7 +1,7 @@
 package hash_map
 
 import (
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/store/store_db/store_db_interface"
 )
 
@@ -19,8 +19,8 @@ type HashMapInterface interface {
 type HashMapElementSerializableInterface interface {
 	comparable
 	Validate() error
-	Serialize(w *helpers.BufferWriter)
-	Deserialize(r *helpers.BufferReader) error
+	Serialize(w *advanced_buffers.BufferWriter)
+	Deserialize(r *advanced_buffers.BufferReader) error
 	SetIndex(index uint64)
 	SetKey(key []byte)
 	GetIndex() uint64

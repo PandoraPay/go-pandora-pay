@@ -18,6 +18,7 @@ import (
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type TransactionZetherPayload struct {
@@ -291,7 +292,7 @@ func (payload *TransactionZetherPayload) Validate(payloadIndex byte) (err error)
 	return
 }
 
-func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (payload *TransactionZetherPayload) Serialize(w *advanced_buffers.BufferWriter, inclSignature bool) {
 
 	w.WriteUvarint(uint64(payload.PayloadScript))
 
@@ -331,7 +332,7 @@ func (payload *TransactionZetherPayload) Serialize(w *helpers.BufferWriter, incl
 	}
 }
 
-func (payload *TransactionZetherPayload) Deserialize(r *helpers.BufferReader) (err error) {
+func (payload *TransactionZetherPayload) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	var n uint64
 	if n, err = r.ReadUvarint(); err != nil {

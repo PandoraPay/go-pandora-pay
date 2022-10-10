@@ -3,7 +3,7 @@ package accounts
 import (
 	"errors"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
@@ -53,7 +53,7 @@ func (this *AccountsCollection) GetAccountAssetsCount(key []byte) (uint64, error
 
 	data := this.tx.Get("accounts:assetsCount:" + string(key))
 	if data != nil {
-		count, err := helpers.NewBufferReader(data).ReadUvarint()
+		count, err := advanced_buffers.NewBufferReader(data).ReadUvarint()
 		if err != nil {
 			return 0, err
 		}

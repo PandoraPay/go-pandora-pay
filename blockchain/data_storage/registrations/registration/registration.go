@@ -3,7 +3,7 @@ package registration
 import (
 	"errors"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type Registration struct {
@@ -40,14 +40,14 @@ func (registration *Registration) Validate() error {
 	return nil
 }
 
-func (registration *Registration) Serialize(w *helpers.BufferWriter) {
+func (registration *Registration) Serialize(w *advanced_buffers.BufferWriter) {
 	w.WriteUvarint(registration.Version)
 	w.WriteBool(registration.Staked)
 	w.WriteBool(len(registration.SpendPublicKey) > 0)
 	w.Write(registration.SpendPublicKey)
 }
 
-func (registration *Registration) Deserialize(r *helpers.BufferReader) (err error) {
+func (registration *Registration) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	if registration.Version, err = r.ReadUvarint(); err != nil {
 		return
 	}

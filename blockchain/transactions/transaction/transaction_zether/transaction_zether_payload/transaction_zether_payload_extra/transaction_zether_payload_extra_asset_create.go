@@ -10,6 +10,7 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type TransactionZetherPayloadExtraAssetCreate struct {
@@ -22,7 +23,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) BeforeIncludeTxPay
 }
 
 func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) GetAssetId(txHash []byte, payloadIndex byte) []byte {
-	list := helpers.NewBufferWriter()
+	list := advanced_buffers.NewBufferWriter()
 	list.WriteByte(payloadIndex)
 	list.Write(txHash)
 	return cryptography.RIPEMD(cryptography.SHA3(list.Bytes()))
@@ -60,11 +61,11 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) ComputeAllKeys(out
 
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Serialize(w *advanced_buffers.BufferWriter, inclSignature bool) {
 	payloadExtra.Asset.Serialize(w)
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Deserialize(r *helpers.BufferReader) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraAssetCreate) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	payloadExtra.Asset = asset.NewAsset(helpers.EmptyBytes(cryptography.PublicKeyHashSize), 0)
 	return payloadExtra.Asset.Deserialize(r)
 }

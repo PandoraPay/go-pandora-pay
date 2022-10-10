@@ -11,7 +11,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_parts"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type TransactionSimple struct {
@@ -115,7 +115,7 @@ func (tx *TransactionSimple) Validate() (err error) {
 	return
 }
 
-func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
+func (tx *TransactionSimple) SerializeAdvanced(w *advanced_buffers.BufferWriter, inclSignature bool) {
 
 	w.WriteUvarint(uint64(tx.TxScript))
 
@@ -135,11 +135,11 @@ func (tx *TransactionSimple) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 	}
 }
 
-func (tx *TransactionSimple) Serialize(w *helpers.BufferWriter) {
+func (tx *TransactionSimple) Serialize(w *advanced_buffers.BufferWriter) {
 	tx.SerializeAdvanced(w, true)
 }
 
-func (tx *TransactionSimple) Deserialize(r *helpers.BufferReader) (err error) {
+func (tx *TransactionSimple) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	var n uint64
 	if n, err = r.ReadUvarint(); err != nil {

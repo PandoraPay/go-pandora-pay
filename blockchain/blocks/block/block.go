@@ -3,6 +3,7 @@ package block
 import (
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type Block struct {
@@ -39,18 +40,18 @@ func (blk *Block) computeHash() []byte {
 }
 
 func (blk *Block) ComputeKernelHash() []byte {
-	writer := helpers.NewBufferWriter()
+	writer := advanced_buffers.NewBufferWriter()
 	blk.AdvancedSerialization(writer, true, false)
 	return cryptography.SHA3(writer.Bytes())
 }
 
 func (blk *Block) SerializeForSigning() []byte {
-	writer := helpers.NewBufferWriter()
+	writer := advanced_buffers.NewBufferWriter()
 	blk.AdvancedSerialization(writer, false, false)
 	return cryptography.SHA3(writer.Bytes())
 }
 
-func (blk *Block) AdvancedSerialization(w *helpers.BufferWriter, kernelHash bool, inclSignature bool) {
+func (blk *Block) AdvancedSerialization(w *advanced_buffers.BufferWriter, kernelHash bool, inclSignature bool) {
 
 	blk.BlockHeader.Serialize(w)
 
@@ -71,21 +72,21 @@ func (blk *Block) AdvancedSerialization(w *helpers.BufferWriter, kernelHash bool
 
 }
 
-func (blk *Block) SerializeForForging(w *helpers.BufferWriter) {
+func (blk *Block) SerializeForForging(w *advanced_buffers.BufferWriter) {
 	blk.AdvancedSerialization(w, true, false)
 }
 
-func (blk *Block) Serialize(w *helpers.BufferWriter) {
+func (blk *Block) Serialize(w *advanced_buffers.BufferWriter) {
 	w.Write(blk.Bloom.Serialized)
 }
 
 func (blk *Block) SerializeManualToBytes() []byte {
-	writer := helpers.NewBufferWriter()
+	writer := advanced_buffers.NewBufferWriter()
 	blk.AdvancedSerialization(writer, false, true)
 	return writer.Bytes()
 }
 
-func (blk *Block) Deserialize(r *helpers.BufferReader) (err error) {
+func (blk *Block) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	first := r.Position
 

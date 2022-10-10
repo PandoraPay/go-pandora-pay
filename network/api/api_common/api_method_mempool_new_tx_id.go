@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/network/websocks/connection"
 )
 
@@ -51,7 +51,7 @@ func (api *APICommon) mempoolNewTxIdProcess(conn *connection.AdvancedConnection,
 	}
 
 	tx := &transaction.Transaction{}
-	if err = tx.Deserialize(helpers.NewBufferReader(result.Tx)); err != nil {
+	if err = tx.Deserialize(advanced_buffers.NewBufferReader(result.Tx)); err != nil {
 		closeConnection = true
 		return
 	}

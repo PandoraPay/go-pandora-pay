@@ -3,7 +3,6 @@ package crypto
 import (
 	"math"
 	"math/big"
-	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 	"strconv"
 )
@@ -349,7 +348,7 @@ func (proof *Proof) Verify(assetId []byte, assetIndex int, chainHash []byte, s *
 
 	{
 		var input []byte
-		input = append(input, []byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT)...)
+		input = append(input, []byte(PROTOCOL_CRYPTOPGRAPHY_CONSTANT)...)
 		input = append(input, chainHash[:]...)
 
 		input = append(input, assetId[:]...)

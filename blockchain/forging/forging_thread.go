@@ -9,7 +9,7 @@ import (
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/mempool"
 	"pandora-pay/recovery"
@@ -110,7 +110,7 @@ func (thread *ForgingThread) startForging() {
 func (thread *ForgingThread) publishSolution(solution *ForgingSolution) ([]byte, error) {
 
 	newBlk := block_complete.CreateEmptyBlockComplete()
-	if err := newBlk.Deserialize(helpers.NewBufferReader(solution.blkComplete.SerializeToBytes())); err != nil {
+	if err := newBlk.Deserialize(advanced_buffers.NewBufferReader(solution.blkComplete.SerializeToBytes())); err != nil {
 		return nil, err
 	}
 

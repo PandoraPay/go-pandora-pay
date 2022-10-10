@@ -12,7 +12,7 @@ import (
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/builds/webassembly/webassembly_utils"
 	"pandora-pay/config/globals"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/recovery"
 	"sync/atomic"
@@ -91,7 +91,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 						if acc, err = account.NewAccount(data.Key, 0, nil); err != nil {
 							continue
 						}
-						if err = acc.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
+						if err = acc.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
 							continue
 						}
 					}
@@ -100,7 +100,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 				case api_types.SUBSCRIPTION_PLAIN_ACCOUNT:
 					plainAcc := plain_account.NewPlainAccount(data.Key, 0)
 					if data.Data != nil {
-						if err = plainAcc.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
+						if err = plainAcc.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
 							continue
 						}
 					}
@@ -109,7 +109,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 				case api_types.SUBSCRIPTION_ASSET:
 					ast := asset.NewAsset(data.Key, 0)
 					if data.Data != nil {
-						if err = ast.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
+						if err = ast.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
 							continue
 						}
 					}
@@ -119,7 +119,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 				case api_types.SUBSCRIPTION_REGISTRATION:
 					reg := registration.NewRegistration(data.Key, 0)
 					if data.Data != nil {
-						if err = reg.Deserialize(helpers.NewBufferReader(data.Data)); err != nil {
+						if err = reg.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
 							continue
 						}
 					}

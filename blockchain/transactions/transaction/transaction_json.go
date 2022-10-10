@@ -22,6 +22,7 @@ import (
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type json_TransactionDataRegistration struct {
@@ -226,7 +227,7 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 				payload.Statement.Fee,
 			}
 
-			w := helpers.NewBufferWriter()
+			w := advanced_buffers.NewBufferWriter()
 			payload.Proof.Serialize(w)
 			proofJson := w.Bytes()
 
@@ -452,7 +453,7 @@ func (tx *Transaction) UnmarshalJSON(data []byte) (err error) {
 			}
 
 			proof := &crypto.Proof{}
-			if err = proof.Deserialize(helpers.NewBufferReader(payload.Proof), m); err != nil {
+			if err = proof.Deserialize(advanced_buffers.NewBufferReader(payload.Proof), m); err != nil {
 				return err
 			}
 

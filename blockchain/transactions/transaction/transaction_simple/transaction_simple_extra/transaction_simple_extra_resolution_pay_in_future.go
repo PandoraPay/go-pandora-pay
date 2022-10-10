@@ -6,7 +6,7 @@ import (
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"strconv"
 )
 
@@ -82,7 +82,7 @@ func (this *TransactionSimpleExtraResolutionConditionalPayment) IncludeTransacti
 }
 
 func (this *TransactionSimpleExtraResolutionConditionalPayment) MessageForSigning() []byte {
-	w := helpers.NewBufferWriter()
+	w := advanced_buffers.NewBufferWriter()
 	w.Write(this.TxId)
 	w.WriteByte(this.PayloadIndex)
 	w.WriteBool(this.Resolution)
@@ -119,7 +119,7 @@ func (this *TransactionSimpleExtraResolutionConditionalPayment) Validate(fee uin
 	return
 }
 
-func (this *TransactionSimpleExtraResolutionConditionalPayment) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (this *TransactionSimpleExtraResolutionConditionalPayment) Serialize(w *advanced_buffers.BufferWriter, inclSignature bool) {
 	w.Write(this.TxId)
 	w.WriteByte(this.PayloadIndex)
 	w.WriteBool(this.Resolution)
@@ -130,7 +130,7 @@ func (this *TransactionSimpleExtraResolutionConditionalPayment) Serialize(w *hel
 	}
 }
 
-func (this *TransactionSimpleExtraResolutionConditionalPayment) Deserialize(r *helpers.BufferReader) (err error) {
+func (this *TransactionSimpleExtraResolutionConditionalPayment) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	if this.TxId, err = r.ReadBytes(cryptography.HashSize); err != nil {
 		return
 	}

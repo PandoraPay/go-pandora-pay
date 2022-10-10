@@ -5,7 +5,7 @@ import (
 	"errors"
 	"pandora-pay/config/config_assets"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type AssetFeeLiquidity struct {
@@ -29,13 +29,13 @@ func (self *AssetFeeLiquidity) Validate() error {
 	return nil
 }
 
-func (self *AssetFeeLiquidity) Serialize(w *helpers.BufferWriter) {
+func (self *AssetFeeLiquidity) Serialize(w *advanced_buffers.BufferWriter) {
 	w.Write(self.Asset)
 	w.WriteUvarint(self.Rate)
 	w.WriteByte(self.LeadingZeros)
 }
 
-func (self *AssetFeeLiquidity) Deserialize(r *helpers.BufferReader) (err error) {
+func (self *AssetFeeLiquidity) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	if self.Asset, err = r.ReadBytes(config_coins.ASSET_LENGTH); err != nil {
 		return
 	}

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"pandora-pay/config"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 //omitempty because of non-wif version
@@ -30,7 +30,7 @@ func (pk *KeyWIF) deserialize(buffer []byte, keySize int) (err error) {
 		//let's check the checksum
 		checksum := cryptography.GetChecksum(buffer[:len(buffer)-cryptography.ChecksumSize])
 
-		r := helpers.NewBufferReader(buffer)
+		r := advanced_buffers.NewBufferReader(buffer)
 
 		var version uint64
 		if version, err = r.ReadUvarint(); err != nil {
@@ -59,7 +59,7 @@ func (pk *KeyWIF) deserialize(buffer []byte, keySize int) (err error) {
 }
 
 func (pk *KeyWIF) Serialize() []byte {
-	w := helpers.NewBufferWriter()
+	w := advanced_buffers.NewBufferWriter()
 
 	if pk.Version == SIMPLE_PRIVATE_KEY {
 		w.Write(pk.Key)
@@ -75,7 +75,7 @@ func (pk *KeyWIF) Serialize() []byte {
 
 func (pk *KeyWIF) computeCheckSum() []byte {
 
-	w := helpers.NewBufferWriter()
+	w := advanced_buffers.NewBufferWriter()
 	w.WriteUvarint(uint64(pk.Version))
 	w.WriteUvarint(pk.Network)
 	w.Write(pk.Key)
