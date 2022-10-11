@@ -53,7 +53,7 @@ func (worker *ForgingWorkerThread) computeStakingAmount(threadAddr *ForgingWorke
 		if threadAddr.walletAdr.decryptedStakingBalance >= work.MinimumStake {
 
 			if !bytes.Equal(threadAddr.stakingNoncePrevChainKernelHash, work.BlkComplete.PrevKernelHash) {
-				uinput := append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), work.BlkComplete.PrevKernelHash[:]...)
+				uinput := append([]byte(crypto.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), work.BlkComplete.PrevKernelHash[:]...)
 				uinput = append(uinput, config_coins.NATIVE_ASSET_FULL...)
 				uinput = append(uinput, strconv.Itoa(0)...)
 				u := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(uinput)), threadAddr.walletAdr.privateKeyPoint)
@@ -71,7 +71,8 @@ func (worker *ForgingWorkerThread) computeStakingAmount(threadAddr *ForgingWorke
 	return false
 }
 
-/**
+/*
+*
 "Staking multiple wallets simultaneously"
 */
 func (worker *ForgingWorkerThread) forge() {

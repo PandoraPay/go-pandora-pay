@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_data"
 	"pandora-pay/blockchain/transactions/transaction/transaction_type"
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether"
-	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
@@ -111,7 +110,7 @@ func (w *Wallet) DecryptTx(tx *transaction.Transaction, walletPublicKey []byte) 
 							rinputs = append(rinputs, publicKey2...)
 						}
 
-						rencrypted := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), rinputs...))), secretPoint.BigInt())
+						rencrypted := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(append([]byte(crypto.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), rinputs...))), secretPoint.BigInt())
 						r := crypto.ReducedHash(rencrypted.EncodeCompressed())
 
 						parity := payload.Proof.Parity()

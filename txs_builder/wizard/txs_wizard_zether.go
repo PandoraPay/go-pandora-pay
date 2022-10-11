@@ -361,7 +361,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		for i := range publickeylist {
 			rinputs = append(rinputs, publickeylist[i].EncodeCompressed()...)
 		}
-		rencrypted := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), rinputs...))), sender_secrets[t])
+		rencrypted := new(bn256.G1).ScalarMult(crypto.HashToPoint(crypto.HashtoNumber(append([]byte(crypto.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), rinputs...))), sender_secrets[t])
 		r := crypto.ReducedHash(rencrypted.EncodeCompressed())
 
 		payload := payloads[t]
@@ -609,7 +609,7 @@ func signZetherTx(tx *transaction.Transaction, txBase *transaction_zether.Transa
 		go func(t int) {
 
 			// the u is dependent on roothash,SCID and counter ( counter is dynamic and depends on order of assets)
-			uinput := append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), txBase.ChainKernelHash[:]...)
+			uinput := append([]byte(crypto.PROTOCOL_CRYPTOPGRAPHY_CONSTANT), txBase.ChainKernelHash[:]...)
 			uinput = append(uinput, txBase.Payloads[t].Asset[:]...)
 			uinput = append(uinput, strconv.Itoa(assetIndexes[t])...)
 

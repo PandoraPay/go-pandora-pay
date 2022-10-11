@@ -24,7 +24,7 @@ func (blk *Block) BloomSerializedNow(serialized []byte) {
 
 func (blk *Block) BloomNow() (err error) {
 
-	if err = blk.validate(); err != nil {
+	if err = blk.Validate(); err != nil {
 		return
 	}
 

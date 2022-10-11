@@ -23,8 +23,8 @@ func CreateEmptyBlock() *Block {
 	}
 }
 
-func (blk *Block) validate() error {
-	if err := blk.BlockHeader.validate(); err != nil {
+func (blk *Block) Validate() error {
+	if err := blk.BlockHeader.Validate(); err != nil {
 		return err
 	}
 

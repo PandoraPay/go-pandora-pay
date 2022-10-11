@@ -8,13 +8,13 @@ import (
 	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/recovery"
-	"sync/atomic"
 	"time"
 )
 
 func (network *Network) continuouslyConnectingNewPeers() {
 
 	for i := 0; i < config.WEBSOCKETS_CONCURRENT_NEW_CONENCTIONS; i++ {
+		index := i
 		recovery.SafeGo(func() {
 
 			for {
@@ -25,14 +25,14 @@ func (network *Network) continuouslyConnectingNewPeers() {
 				}
 
 				var knownNode *known_node.KnownNodeScored
-				if i == 0 {
+				if index == 0 {
 					knownNode = network.KnownNodes.GetBestNotConnectedKnownNode()
 				} else {
 					knownNode = network.KnownNodes.GetRandomKnownNode()
 				}
 				if knownNode != nil {
 
-					gui.GUI.Log("connecting to", knownNode.URL, atomic.LoadInt32(&knownNode.Score))
+					//gui.GUI.Log("connecting to", knownNode.URL, atomic.LoadInt32(&knownNode.Score))
 
 					if network.BannedNodes.IsBanned(knownNode.URL) {
 						network.KnownNodes.DecreaseKnownNodeScore(knownNode, -10, false)
@@ -40,7 +40,7 @@ func (network *Network) continuouslyConnectingNewPeers() {
 						_, err := websocks.NewWebsocketClient(network.Websockets, knownNode)
 						if err != nil {
 
-							gui.GUI.Error("error connecting", knownNode.URL, err)
+							//gui.GUI.Error("error connecting", knownNode.URL, err)
 
 							if err.Error() != "Already connected" {
 								network.KnownNodes.DecreaseKnownNodeScore(knownNode, -20, false)
