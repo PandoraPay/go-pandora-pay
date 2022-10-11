@@ -8,7 +8,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type TransactionZetherDataRegistrations struct {
@@ -57,7 +57,7 @@ func (self *TransactionZetherDataRegistrations) RegisterNow(asset []byte, dataSt
 	return
 }
 
-func (self *TransactionZetherDataRegistrations) Serialize(w *helpers.BufferWriter) {
+func (self *TransactionZetherDataRegistrations) Serialize(w *advanced_buffers.BufferWriter) {
 
 	count := uint64(0)
 	for _, registration := range self.Registrations {
@@ -75,7 +75,7 @@ func (self *TransactionZetherDataRegistrations) Serialize(w *helpers.BufferWrite
 	}
 }
 
-func (self *TransactionZetherDataRegistrations) Deserialize(r *helpers.BufferReader, ringSize int) (err error) {
+func (self *TransactionZetherDataRegistrations) Deserialize(r *advanced_buffers.BufferReader, ringSize int) (err error) {
 
 	var count uint64
 	if count, err = r.ReadUvarint(); err != nil {

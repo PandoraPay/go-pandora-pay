@@ -11,7 +11,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_common"
 	"pandora-pay/network/api/api_common/api_types"
@@ -49,7 +49,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 	}
 
 	blkWithTx.Block = block.CreateEmptyBlock()
-	if err = blkWithTx.Block.Deserialize(helpers.NewBufferReader(blkWithTx.BlockSerialized)); err != nil {
+	if err = blkWithTx.Block.Deserialize(advanced_buffers.NewBufferReader(blkWithTx.BlockSerialized)); err != nil {
 		return nil, err
 	}
 
@@ -100,7 +100,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connectio
 
 		for i, missingTx := range missingTxs {
 			tx := &transaction.Transaction{}
-			if err = tx.Deserialize(helpers.NewBufferReader(blkCompleteMissingTxs.Txs[i])); err != nil {
+			if err = tx.Deserialize(advanced_buffers.NewBufferReader(blkCompleteMissingTxs.Txs[i])); err != nil {
 				return nil, err
 			}
 			txs[missingTx] = tx

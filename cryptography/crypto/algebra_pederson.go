@@ -3,7 +3,6 @@ package crypto
 import (
 	"fmt"
 	"math/big"
-	"pandora-pay/config"
 	"pandora-pay/cryptography/bn256"
 )
 
@@ -14,15 +13,15 @@ func init() {
 	var zeroes [64]byte
 	var gs, hs []*bn256.G1
 
-	global_pedersen_values.G = HashToPoint(HashtoNumber([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT + "G"))) // this is same as mybase or vice-versa
-	global_pedersen_values.H = HashToPoint(HashtoNumber([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT + "H")))
+	global_pedersen_values.G = HashToPoint(HashtoNumber([]byte(PROTOCOL_CRYPTOPGRAPHY_CONSTANT + "G"))) // this is same as mybase or vice-versa
+	global_pedersen_values.H = HashToPoint(HashtoNumber([]byte(PROTOCOL_CRYPTOPGRAPHY_CONSTANT + "H")))
 
 	global_pedersen_values.GSUM = new(bn256.G1)
 	global_pedersen_values.GSUM.Unmarshal(zeroes[:])
 
 	for i := 0; i < 128; i++ {
-		gs = append(gs, HashToPoint(HashtoNumber(append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT+"G"), hextobytes(makestring64(fmt.Sprintf("%x", i)))...))))
-		hs = append(hs, HashToPoint(HashtoNumber(append([]byte(config.PROTOCOL_CRYPTOPGRAPHY_CONSTANT+"H"), hextobytes(makestring64(fmt.Sprintf("%x", i)))...))))
+		gs = append(gs, HashToPoint(HashtoNumber(append([]byte(PROTOCOL_CRYPTOPGRAPHY_CONSTANT+"G"), hextobytes(makestring64(fmt.Sprintf("%x", i)))...))))
+		hs = append(hs, HashToPoint(HashtoNumber(append([]byte(PROTOCOL_CRYPTOPGRAPHY_CONSTANT+"H"), hextobytes(makestring64(fmt.Sprintf("%x", i)))...))))
 
 		global_pedersen_values.GSUM = new(bn256.G1).Add(global_pedersen_values.GSUM, gs[i])
 	}

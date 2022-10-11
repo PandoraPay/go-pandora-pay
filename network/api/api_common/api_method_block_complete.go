@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -51,7 +52,7 @@ func (api *APICommon) GetBlockComplete(r *http.Request, args *APIBlockCompleteRe
 		for i, txHash := range txHashes {
 			data = reader.Get("tx:" + string(txHash))
 			reply.BlockComplete.Txs[i] = &transaction.Transaction{}
-			if err = reply.BlockComplete.Txs[i].Deserialize(helpers.NewBufferReader(data)); err != nil {
+			if err = reply.BlockComplete.Txs[i].Deserialize(advanced_buffers.NewBufferReader(data)); err != nil {
 				return
 			}
 		}

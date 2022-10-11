@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/builds/webassembly/webassembly_utils"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"syscall/js"
 )
 
@@ -390,7 +391,7 @@ func decryptTx(this js.Value, args []js.Value) interface{} {
 		data := webassembly_utils.GetBytes(args[0])
 
 		tx := &transaction.Transaction{}
-		if err := tx.Deserialize(helpers.NewBufferReader(data)); err != nil {
+		if err := tx.Deserialize(advanced_buffers.NewBufferReader(data)); err != nil {
 			return nil, err
 		}
 

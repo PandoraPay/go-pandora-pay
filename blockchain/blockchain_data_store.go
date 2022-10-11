@@ -6,7 +6,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"math"
 	"math/big"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
@@ -15,7 +15,7 @@ import (
 func (chainData *BlockchainData) saveTotalDifficultyExtra(writer store_db_interface.StoreDBTransactionInterface) {
 	key := "totalDifficulty" + strconv.FormatUint(chainData.Height, 10)
 
-	bufferWriter := helpers.NewBufferWriter()
+	bufferWriter := advanced_buffers.NewBufferWriter()
 	bufferWriter.WriteUvarint(chainData.Timestamp)
 
 	bytes := chainData.BigTotalDifficulty.Bytes()
@@ -34,7 +34,7 @@ func (chainData *BlockchainData) LoadTotalDifficultyExtra(reader store_db_interf
 		return nil, 0, errors.New("Couldn't read difficulty from DB")
 	}
 
-	bufferReader := helpers.NewBufferReader(buf)
+	bufferReader := advanced_buffers.NewBufferReader(buf)
 	timestamp, err := bufferReader.ReadUvarint()
 
 	if err != nil {

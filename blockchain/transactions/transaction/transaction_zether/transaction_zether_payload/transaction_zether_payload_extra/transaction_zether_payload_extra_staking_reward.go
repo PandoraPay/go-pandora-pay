@@ -10,7 +10,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_registrations/transaction_zether_registration"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type TransactionZetherPayloadExtraStakingReward struct {
@@ -96,12 +96,12 @@ func (payloadExtra *TransactionZetherPayloadExtraStakingReward) Validate(payload
 	return nil
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraStakingReward) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (payloadExtra *TransactionZetherPayloadExtraStakingReward) Serialize(w *advanced_buffers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(payloadExtra.Reward)
 	w.WriteUvarint(payloadExtra.TemporaryAccountRegistrationIndex)
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraStakingReward) Deserialize(r *helpers.BufferReader) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraStakingReward) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	if payloadExtra.Reward, err = r.ReadUvarint(); err != nil {
 		return
 	}

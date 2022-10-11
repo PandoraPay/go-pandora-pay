@@ -11,6 +11,7 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"strconv"
 )
 
@@ -111,7 +112,7 @@ func (tx *TransactionZether) VerifySignatureManually(txHash []byte) bool {
 	return true
 }
 
-func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSignature bool) {
+func (tx *TransactionZether) SerializeAdvanced(w *advanced_buffers.BufferWriter, inclSignature bool) {
 	w.WriteUvarint(tx.ChainHeight)
 	w.Write(tx.ChainKernelHash)
 
@@ -122,11 +123,11 @@ func (tx *TransactionZether) SerializeAdvanced(w *helpers.BufferWriter, inclSign
 
 }
 
-func (tx *TransactionZether) Serialize(w *helpers.BufferWriter) {
+func (tx *TransactionZether) Serialize(w *advanced_buffers.BufferWriter) {
 	tx.SerializeAdvanced(w, true)
 }
 
-func (tx *TransactionZether) Deserialize(r *helpers.BufferReader) (err error) {
+func (tx *TransactionZether) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	if tx.ChainHeight, err = r.ReadUvarint(); err != nil {
 		return

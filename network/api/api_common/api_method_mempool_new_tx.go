@@ -6,6 +6,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 )
 
@@ -48,7 +49,7 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 	}()
 
 	tx := &transaction.Transaction{}
-	if err = tx.Deserialize(helpers.NewBufferReader(args.Tx)); err != nil {
+	if err = tx.Deserialize(advanced_buffers.NewBufferReader(args.Tx)); err != nil {
 		return err
 	}
 

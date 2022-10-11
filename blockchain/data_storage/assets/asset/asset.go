@@ -10,6 +10,7 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"regexp"
 	"strings"
 )
@@ -171,7 +172,7 @@ func (asset *Asset) AddSupply(sign bool, amount uint64) error {
 	return helpers.SafeUint64Sub(&asset.Supply, amount)
 }
 
-func (asset *Asset) Serialize(w *helpers.BufferWriter) {
+func (asset *Asset) Serialize(w *advanced_buffers.BufferWriter) {
 
 	w.WriteUvarint(asset.Version)
 
@@ -204,7 +205,7 @@ func (asset *Asset) setIdentification() {
 	}
 }
 
-func (asset *Asset) Deserialize(r *helpers.BufferReader) (err error) {
+func (asset *Asset) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	if asset.Version, err = r.ReadUvarint(); err != nil {
 		return

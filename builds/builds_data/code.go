@@ -14,6 +14,7 @@ import (
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/txs_builder/wizard"
 )
 
@@ -113,7 +114,7 @@ func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, tra
 			var reg *registration.Registration
 			if regData := txData.Regs[base64.StdEncoding.EncodeToString(addr.PublicKey)]; len(regData) > 0 {
 				reg = registration.NewRegistration(addr.PublicKey, 0)
-				if err = reg.Deserialize(helpers.NewBufferReader(regData)); err != nil {
+				if err = reg.Deserialize(advanced_buffers.NewBufferReader(regData)); err != nil {
 					return
 				}
 			}
@@ -125,7 +126,7 @@ func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, tra
 					if acc, err = account.NewAccount(addr.PublicKey, 0, payload.Asset); err != nil {
 						return
 					}
-					if err = acc.Deserialize(helpers.NewBufferReader(accData)); err != nil {
+					if err = acc.Deserialize(advanced_buffers.NewBufferReader(accData)); err != nil {
 						return
 					}
 					emap[string(payload.Asset)][p.G1().String()] = acc.Balance.Amount.Serialize()

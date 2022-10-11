@@ -12,7 +12,7 @@ import (
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/builds/webassembly/webassembly_utils"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/network/api/api_common"
 	"pandora-pay/network/api/api_common/api_faucet"
 	"pandora-pay/network/api/api_common/api_types"
@@ -72,7 +72,7 @@ func getNetworkBlockWithTxs(this js.Value, args []js.Value) interface{} {
 		}
 
 		blkWithTxs.Block = block.CreateEmptyBlock()
-		if err := blkWithTxs.Block.Deserialize(helpers.NewBufferReader(blkWithTxs.BlockSerialized)); err != nil {
+		if err := blkWithTxs.Block.Deserialize(advanced_buffers.NewBufferReader(blkWithTxs.BlockSerialized)); err != nil {
 			return nil, err
 		}
 		if err := blkWithTxs.Block.BloomNow(); err != nil {
@@ -126,7 +126,7 @@ func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
 		for i, it := range data.AccSerialized {
 			if it != nil {
 				data.Acc[i] = account.NewAccountClear(request.Keys[i].PublicKey, 0, request.Asset)
-				if err = data.Acc[i].Deserialize(helpers.NewBufferReader(it)); err != nil {
+				if err = data.Acc[i].Deserialize(advanced_buffers.NewBufferReader(it)); err != nil {
 					return nil, err
 				}
 			}
@@ -135,7 +135,7 @@ func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
 		for i, it := range data.RegSerialized {
 			if it != nil {
 				data.Reg[i] = registration.NewRegistration(request.Keys[i].PublicKey, 0)
-				if err = data.Reg[i].Deserialize(helpers.NewBufferReader(it)); err != nil {
+				if err = data.Reg[i].Deserialize(advanced_buffers.NewBufferReader(it)); err != nil {
 					return nil, err
 				}
 			}
@@ -171,7 +171,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 				if result.Accs[i], err = account.NewAccount(publicKey, result.AccsExtra[i].Index, result.AccsExtra[i].Asset); err != nil {
 					return nil, err
 				}
-				if err = result.Accs[i].Deserialize(helpers.NewBufferReader(result.AccsSerialized[i])); err != nil {
+				if err = result.Accs[i].Deserialize(advanced_buffers.NewBufferReader(result.AccsSerialized[i])); err != nil {
 					return nil, err
 				}
 			}
@@ -179,7 +179,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 
 			if result.PlainAccSerialized != nil {
 				result.PlainAcc = plain_account.NewPlainAccount(publicKey, result.PlainAccExtra.Index)
-				if err = result.PlainAcc.Deserialize(helpers.NewBufferReader(result.PlainAccSerialized)); err != nil {
+				if err = result.PlainAcc.Deserialize(advanced_buffers.NewBufferReader(result.PlainAccSerialized)); err != nil {
 					return nil, err
 				}
 				result.PlainAccSerialized = nil
@@ -187,7 +187,7 @@ func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 
 			if result.RegSerialized != nil {
 				result.Reg = registration.NewRegistration(publicKey, result.RegExtra.Index)
-				if err = result.Reg.Deserialize(helpers.NewBufferReader(result.RegSerialized)); err != nil {
+				if err = result.Reg.Deserialize(advanced_buffers.NewBufferReader(result.RegSerialized)); err != nil {
 					return nil, err
 				}
 				result.RegSerialized = nil
@@ -249,7 +249,7 @@ func getNetworkTx(this js.Value, args []js.Value) interface{} {
 		}
 
 		received.Tx = &transaction.Transaction{}
-		if err := received.Tx.Deserialize(helpers.NewBufferReader(received.TxSerialized)); err != nil {
+		if err := received.Tx.Deserialize(advanced_buffers.NewBufferReader(received.TxSerialized)); err != nil {
 			return nil, err
 		}
 
@@ -333,7 +333,7 @@ func getNetworkAsset(this js.Value, args []js.Value) interface{} {
 		}
 
 		ast := asset.NewAsset(request.Hash, 0)
-		if err = ast.Deserialize(helpers.NewBufferReader(final.Serialized)); err != nil {
+		if err = ast.Deserialize(advanced_buffers.NewBufferReader(final.Serialized)); err != nil {
 			return nil, err
 		}
 		return webassembly_utils.ConvertJSONBytes(ast)
@@ -356,7 +356,7 @@ func postNetworkMempoolBroadcastTransaction(this js.Value, args []js.Value) inte
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
 		tx := &transaction.Transaction{}
-		if err := tx.Deserialize(helpers.NewBufferReader(webassembly_utils.GetBytes(args[0]))); err != nil {
+		if err := tx.Deserialize(advanced_buffers.NewBufferReader(webassembly_utils.GetBytes(args[0]))); err != nil {
 			return nil, err
 		}
 

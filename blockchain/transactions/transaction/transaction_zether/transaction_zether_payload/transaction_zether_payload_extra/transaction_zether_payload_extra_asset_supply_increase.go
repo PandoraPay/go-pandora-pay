@@ -8,7 +8,7 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type TransactionZetherPayloadExtraAssetSupplyIncrease struct {
@@ -82,7 +82,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) Validate(p
 	return nil
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) Serialize(w *helpers.BufferWriter, inclSignature bool) {
+func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) Serialize(w *advanced_buffers.BufferWriter, inclSignature bool) {
 	w.Write(payloadExtra.AssetId)
 	w.Write(payloadExtra.ReceiverPublicKey)
 	w.WriteUvarint(payloadExtra.Value)
@@ -92,7 +92,7 @@ func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) Serialize(
 	}
 }
 
-func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) Deserialize(r *helpers.BufferReader) (err error) {
+func (payloadExtra *TransactionZetherPayloadExtraAssetSupplyIncrease) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 	if payloadExtra.AssetId, err = r.ReadBytes(config_coins.ASSET_LENGTH); err != nil {
 		return
 	}

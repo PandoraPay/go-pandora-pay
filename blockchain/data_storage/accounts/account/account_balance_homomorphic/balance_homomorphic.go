@@ -5,7 +5,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"math/big"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type BalanceHomomorphic struct {
@@ -57,11 +57,11 @@ func (balance *BalanceHomomorphic) AddEchanges(amount *crypto.ElGamal) {
 	balance.Amount = balance.Amount.Add(amount)
 }
 
-func (balance *BalanceHomomorphic) Serialize(w *helpers.BufferWriter) {
+func (balance *BalanceHomomorphic) Serialize(w *advanced_buffers.BufferWriter) {
 	w.Write(balance.Amount.Serialize())
 }
 
-func (balance *BalanceHomomorphic) Deserialize(r *helpers.BufferReader) (err error) {
+func (balance *BalanceHomomorphic) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	var amount []byte
 	if amount, err = r.ReadBytes(66); err != nil {

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"golang.org/x/exp/slices"
 	"pandora-pay/cryptography"
-	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 )
 
 type AssetFeeLiquidities struct {
@@ -89,7 +89,7 @@ func (self *AssetFeeLiquidities) UpdateLiquidity(updateLiquidity *AssetFeeLiquid
 
 }
 
-func (self *AssetFeeLiquidities) Serialize(w *helpers.BufferWriter) {
+func (self *AssetFeeLiquidities) Serialize(w *advanced_buffers.BufferWriter) {
 
 	w.WriteUvarint(uint64(self.Version))
 
@@ -103,7 +103,7 @@ func (self *AssetFeeLiquidities) Serialize(w *helpers.BufferWriter) {
 	}
 }
 
-func (self *AssetFeeLiquidities) Deserialize(r *helpers.BufferReader) (err error) {
+func (self *AssetFeeLiquidities) Deserialize(r *advanced_buffers.BufferReader) (err error) {
 
 	var n uint64
 	if n, err = r.ReadUvarint(); err != nil {

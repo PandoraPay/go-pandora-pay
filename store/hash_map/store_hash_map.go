@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/rand"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
@@ -32,7 +33,7 @@ func (hashMap *HashMap[T]) deserialize(key, data []byte, index uint64) (T, error
 	if err != nil {
 		return generics.Zero[T](), err
 	}
-	if err = out.Deserialize(helpers.NewBufferReader(data)); err != nil {
+	if err = out.Deserialize(advanced_buffers.NewBufferReader(data)); err != nil {
 		return generics.Zero[T](), err
 	}
 	return out, nil

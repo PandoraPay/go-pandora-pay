@@ -3,6 +3,7 @@ package start
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"os/signal"
 	"pandora-pay/address_balance_decryptor"
@@ -95,7 +96,7 @@ func StartMainNow() (err error) {
 	}
 
 	if runtime.GOARCH != "wasm" && globals.Arguments["--balance-decryptor-disable-init"] == false {
-		var tableSize int
+		tableSize := 0
 		if globals.Arguments["--balance-decryptor-table-size"] != nil {
 			if tableSize, err = strconv.Atoi(globals.Arguments["--balance-decryptor-table-size"].(string)); err != nil {
 				return
@@ -105,7 +106,9 @@ func StartMainNow() (err error) {
 		go func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
+			gui.GUI.Info2Update("Decryptor", "Init... "+strconv.Itoa(int(math.Log2(float64(tableSize)))))
 			balance_decryptor.BalanceDecryptor.SetTableSize(tableSize, ctx, func(string) {})
+			gui.GUI.Info2Update("Decryptor", "Ready "+strconv.Itoa(int(math.Log2(float64(tableSize)))))
 		}()
 	}
 

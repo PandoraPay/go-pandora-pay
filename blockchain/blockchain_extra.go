@@ -22,6 +22,7 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/recovery"
 	"pandora-pay/store"
@@ -221,7 +222,7 @@ func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, ne
 			return
 		}
 
-		writer := helpers.NewBufferWriter()
+		writer := advanced_buffers.NewBufferWriter()
 		blk.SerializeForForging(writer)
 
 		chain.NextBlockCreatedCn <- &forging_block_work.ForgingWork{

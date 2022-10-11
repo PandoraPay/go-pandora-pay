@@ -15,6 +15,7 @@ import (
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"testing"
 )
 
@@ -129,7 +130,7 @@ func TestCreateZetherTx(t *testing.T) {
 	serialized := tx.SerializeManualToBytes()
 
 	tx2 := &transaction.Transaction{}
-	assert.NoError(t, tx2.Deserialize(helpers.NewBufferReader(serialized)))
+	assert.NoError(t, tx2.Deserialize(advanced_buffers.NewBufferReader(serialized)))
 	assert.NotNil(t, t, tx2)
 
 	assert.NoError(t, tx2.BloomAll())

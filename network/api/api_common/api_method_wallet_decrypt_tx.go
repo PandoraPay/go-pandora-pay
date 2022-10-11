@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -59,7 +60,7 @@ func (api *APICommon) GetWalletDecryptTx(r *http.Request, args *APIWalletDecrypt
 	}
 
 	tx := &transaction.Transaction{}
-	if err = tx.Deserialize(helpers.NewBufferReader(txSerialized)); err != nil {
+	if err = tx.Deserialize(advanced_buffers.NewBufferReader(txSerialized)); err != nil {
 		return
 	}
 
