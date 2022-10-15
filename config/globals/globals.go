@@ -1,11 +1,14 @@
 package globals
 
-import "pandora-pay/helpers/events"
+import (
+	"market/helpers/generics"
+	"pandora-pay/helpers/events"
+)
 
 // arguments
 var (
 	Arguments   map[string]interface{}
 	Data        = map[string]interface{}{}
 	MainEvents  = events.NewEvents[any]()
-	MainStarted = false
+	MainStarted = generics.Value[bool]{}
 )

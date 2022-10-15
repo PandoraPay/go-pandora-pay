@@ -33,10 +33,9 @@ import (
 
 func StartMainNow() (err error) {
 
-	if globals.MainStarted {
+	if !globals.MainStarted.CompareAndSwap(false, true) {
 		return
 	}
-	globals.MainStarted = true
 
 	if globals.Arguments["--pprof"] == true {
 		if err = debugging_pprof.Start(); err != nil {
@@ -140,7 +139,7 @@ func StartMainNow() (err error) {
 
 	if globals.Arguments["--run-testnet-script"] == true {
 		myTestnet := testnet.TestnetInit(app.Wallet, app.Mempool, app.Chain, app.TxsBuilder)
-		globals.Data["testnet"] = myTestnet
+		app.Testnet = myTestnet
 	}
 
 	if app.Network, err = network.NewNetwork(app.Settings, app.Chain, app.Mempool, app.Wallet, app.TxsValidator, app.TxsBuilder); err != nil {
@@ -161,6 +160,7 @@ func InitMain(ready func()) {
 	if err = arguments.InitArguments(argv); err != nil {
 		saveError(err)
 	}
+	globals.MainEvents.BroadcastEvent("main", "arguments initialized")
 
 	if err = config.InitConfig(); err != nil {
 		saveError(err)
@@ -178,4 +178,5 @@ func InitMain(ready func()) {
 	<-exitSignal
 
 	fmt.Println("Shutting down")
+	app.Close()
 }

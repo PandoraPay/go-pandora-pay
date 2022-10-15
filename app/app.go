@@ -9,6 +9,7 @@ import (
 	"pandora-pay/network"
 	"pandora-pay/settings"
 	"pandora-pay/store"
+	"pandora-pay/testnet"
 	"pandora-pay/txs_builder"
 	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
@@ -24,6 +25,7 @@ var (
 	Chain                   *blockchain.Blockchain
 	Network                 *network.Network
 	TxsBuilder              *txs_builder.TxsBuilder
+	Testnet                 *testnet.Testnet
 )
 
 func Close() {
