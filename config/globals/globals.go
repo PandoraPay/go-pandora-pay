@@ -11,3 +11,7 @@ var (
 	MainEvents  = events.NewEvents[any]()
 	MainStarted = generics.Value[bool]{}
 )
+
+func init() {
+	MainStarted.Store(false)
+}
