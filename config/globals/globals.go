@@ -8,7 +8,6 @@ import (
 // arguments
 var (
 	Arguments   map[string]interface{}
-	Data        = map[string]interface{}{}
 	MainEvents  = events.NewEvents[any]()
 	MainStarted = generics.Value[bool]{}
 )
