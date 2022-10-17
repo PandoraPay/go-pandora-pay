@@ -9,6 +9,7 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/start"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
 	"sync"
@@ -19,7 +20,7 @@ var subscriptionsIndex uint64
 
 var mutex sync.Mutex
 
-func Initialize() {
+func initialize() {
 
 	js.Global().Set("PandoraPay", js.ValueOf(map[string]interface{}{
 		"helpers": js.ValueOf(map[string]interface{}{
@@ -234,4 +235,11 @@ func Initialize() {
 		}),
 	}))
 
+}
+
+func main() {
+	start.InitMain(func() {
+		initialize()
+		js.Global().Call("WASMLoaded")
+	})
 }
