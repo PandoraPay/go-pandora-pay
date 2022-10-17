@@ -64,6 +64,9 @@ func (m *Heap) upHeapify(index uint64) (err error) {
 			return
 		}
 
+		if b == nil {
+			return
+		}
 		if !m.compare(a.Score, b.Score) {
 			return
 		}
