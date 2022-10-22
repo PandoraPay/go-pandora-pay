@@ -107,9 +107,6 @@ func Dial(url string) (c *Conn, err error) {
 	})
 
 	c.releaseOnError = c.ws.onError(func() {
-		if c == nil {
-			return
-		}
 		fmt.Println("Web Socket error")
 	})
 
