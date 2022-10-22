@@ -223,6 +223,10 @@ func (worker *mempoolWorker) processing(
 
 				}
 
+				if tx == nil {
+					continue
+				}
+
 				var finalErr error
 				var exists bool
 
