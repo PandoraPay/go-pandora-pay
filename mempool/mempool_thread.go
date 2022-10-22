@@ -197,7 +197,7 @@ func (worker *mempoolWorker) processing(
 					case data := <-insertTransactionsCn:
 						insertTxs(data)
 					case newAddTx = <-addTransactionCn:
-						if txsMap[tx.Tx.Bloom.HashStr] != nil {
+						if txsMap[newAddTx.Tx.Tx.Bloom.HashStr] != nil {
 							if newAddTx.Result != nil {
 								newAddTx.Result <- nil //no error, already included in mempool
 							}
