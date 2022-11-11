@@ -13,8 +13,8 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography/bn256"
 	"pandora-pay/cryptography/crypto"
-	"pandora-pay/helpers"
 	"pandora-pay/helpers/advanced_buffers"
+	"pandora-pay/txs_builder/txs_builder_zether_helper"
 	"pandora-pay/txs_builder/wizard"
 )
 
@@ -72,12 +72,22 @@ func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, tra
 	}
 	emap = wizard.InitializeEmap(sendAssets)
 
+	senderRingMembers := make([][]string, len(txData.Payloads))
+	recipientRingMembers := make([][]string, len(txData.Payloads))
+
+	txDataPayloads := &txs_builder_zether_helper.TxsBuilderZetherTxDataBase{
+		Payloads: make([]*txs_builder_zether_helper.TxsBuilderZetherTxPayloadBase, len(txData.Payloads)),
+	}
+	for i := range txDataPayloads.Payloads {
+		txDataPayloads.Payloads[i] = &txData.Payloads[i].TxsBuilderZetherTxPayloadBase
+	}
+
 	for t, payload := range txData.Payloads {
 
 		transfers[t] = &wizard.WizardZetherTransfer{
 			Asset:                  payload.Asset,
-			SenderPrivateKey:       payload.Sender.PrivateKey,
-			SenderDecryptedBalance: payload.Sender.DecryptedBalance,
+			SenderPrivateKey:       payload.SenderData.PrivateKey,
+			SenderDecryptedBalance: payload.SenderData.DecryptedBalance,
 			Recipient:              payload.Recipient,
 			Amount:                 payload.Amount,
 			Burn:                   payload.Burn,
@@ -161,12 +171,12 @@ func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, tra
 			if isSender { //sender
 				if reg != nil && len(reg.SpendPublicKey) > 0 && payload.Extra == nil {
 					transfers[t].SenderSpendRequired = true
-					if payload.Sender.SpendPrivateKey == nil {
+					if payload.SenderData.SpendPrivateKey == nil {
 						return errors.New("Spend Private Key is missing")
 					}
 
 					var spendPrivateKey *addresses.PrivateKey
-					if spendPrivateKey, err = addresses.NewPrivateKey(payload.Sender.SpendPrivateKey); err != nil {
+					if spendPrivateKey, err = addresses.NewPrivateKey(payload.SenderData.SpendPrivateKey); err != nil {
 						return
 					}
 
@@ -174,7 +184,7 @@ func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, tra
 					if !bytes.Equal(spendPublicKey, reg.SpendPublicKey) {
 						return errors.New("Wallet Spend Public Key is not matching")
 					}
-					transfers[t].SenderSpendPrivateKey = payload.Sender.SpendPrivateKey
+					transfers[t].SenderSpendPrivateKey = payload.SenderData.SpendPrivateKey
 				}
 			}
 
@@ -201,7 +211,16 @@ func PrepareData(data []byte) (txData *TransactionsBuilderCreateZetherTxReq, tra
 		ringsSenderMembers[t] = ringSender
 		ringsRecipientMembers[t] = ringRecipient
 
-		transfers[t].WitnessIndexes = helpers.ShuffleArray_for_Zether(len(ringSender) + len(ringRecipient))
+		txs_builder_zether_helper.InitRing(t, senderRingMembers, recipientRingMembers, &payload.TxsBuilderZetherTxPayloadBase)
+
+		senderRingMembers[t] = payload.SenderRingMembers
+		recipientRingMembers[t] = payload.RecipientRingMembers
+
+		if err = txs_builder_zether_helper.ProcessRing(t, senderRingMembers, recipientRingMembers, txDataPayloads); err != nil {
+			return
+		}
+
+		transfers[t].WitnessIndexes = payload.WitnessIndexes
 	}
 
 	feesFinal = make([]*wizard.WizardTransactionFee, len(txData.Payloads))

@@ -2,6 +2,7 @@ package builds_data
 
 import (
 	"pandora-pay/blockchain/transactions/transaction/transaction_zether/transaction_zether_payload/transaction_zether_payload_script"
+	"pandora-pay/txs_builder/txs_builder_zether_helper"
 	"pandora-pay/txs_builder/wizard"
 )
 
@@ -24,10 +25,10 @@ type zetherTxDataSender struct {
 }
 
 type zetherTxDataPayloadBase struct {
-	Sender               *zetherTxDataSender                                 `json:"sender"`
+	txs_builder_zether_helper.TxsBuilderZetherTxPayloadBase
+	SenderData           *zetherTxDataSender                                 `json:"senderData"`
 	Asset                []byte                                              `json:"asset"`
 	Amount               uint64                                              `json:"amount"`
-	Recipient            string                                              `json:"recipient"`
 	Burn                 uint64                                              `json:"burn"`
 	SenderRingMembers    []string                                            `json:"senderRingMembers"`
 	RecipientRingMembers []string                                            `json:"recipientRingMembers"`

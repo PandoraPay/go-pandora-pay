@@ -11,6 +11,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/txs_builder"
+	"pandora-pay/txs_builder/txs_builder_zether_helper"
 	"pandora-pay/txs_builder/wizard"
 )
 
@@ -32,13 +33,20 @@ func (api *Faucet) GetFaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, 
 
 	txData := &txs_builder.TxBuilderCreateZetherTxData{
 		Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{{
-			Sender:            addr.AddressEncoded,
-			Asset:             config_coins.NATIVE_ASSET_FULL,
-			Recipient:         args.Address,
-			Data:              &wizard.WizardTransactionData{[]byte("Testnet Faucet Tx"), true},
-			Fee:               &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0},
-			Amount:            config.FAUCET_TESTNET_COINS_UNITS,
-			RingConfiguration: &txs_builder.ZetherRingConfiguration{128, &txs_builder.ZetherSenderRingType{}, &txs_builder.ZetherRecipientRingType{}},
+			txs_builder_zether_helper.TxsBuilderZetherTxPayloadBase{
+				addr.AddressEncoded,
+				args.Address,
+				128,
+				nil,
+			},
+			config_coins.NATIVE_ASSET_FULL,
+			config.FAUCET_TESTNET_COINS_UNITS,
+			0,
+			&txs_builder.ZetherRingConfiguration{&txs_builder.ZetherSenderRingType{}, &txs_builder.ZetherRecipientRingType{}},
+			0,
+			&wizard.WizardTransactionData{[]byte("Testnet Faucet Tx"), true},
+			&wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0},
+			nil,
 		}},
 	}
 

@@ -1,6 +1,7 @@
 package txs_builder
 
 import (
+	"pandora-pay/txs_builder/txs_builder_zether_helper"
 	"pandora-pay/txs_builder/wizard"
 )
 
@@ -19,23 +20,20 @@ type ZetherRecipientRingType struct {
 }
 
 type ZetherRingConfiguration struct {
-	RingSize          int                      `json:"ringSize"  msgpack:"ringSize"`
 	SenderRingType    *ZetherSenderRingType    `json:"senderRingType" msgpack:"senderRingType"`
 	RecipientRingType *ZetherRecipientRingType `json:"recipientRingType" msgpack:"recipientRingType"`
 }
 
 type TxBuilderCreateZetherTxPayload struct {
-	Sender            string                             `json:"sender" msgpack:"sender"`
+	txs_builder_zether_helper.TxsBuilderZetherTxPayloadBase
 	Asset             []byte                             `json:"asset" msgpack:"asset"`
 	Amount            uint64                             `json:"amount" msgpack:"amount"`
 	DecryptedBalance  uint64                             `json:"decryptedBalance" msgpack:"decryptedBalance"`
-	Recipient         string                             `json:"recipient" msgpack:"recipient"`
-	Burn              uint64                             `json:"burn" msgpack:"burn"`
 	RingConfiguration *ZetherRingConfiguration           `json:"ringConfiguration" msgpack:"ringConfiguration"`
+	Burn              uint64                             `json:"burn" msgpack:"burn"`
 	Data              *wizard.WizardTransactionData      `json:"data" msgpack:"data"`
 	Fee               *wizard.WizardZetherTransactionFee `json:"fee" msgpack:"fee"`
 	Extra             wizard.WizardZetherPayloadExtra    `json:"extra" msgpack:"extra"`
-	WitnessIndexes    []int                              `json:"witnessIndexes" msgpack:"witnessIndexes"`
 }
 
 type TxBuilderCreateZetherTxData struct {

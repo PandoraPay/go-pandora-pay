@@ -24,7 +24,7 @@ import (
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/txs_builder"
-	"pandora-pay/txs_builder/wizard"
+	"pandora-pay/txs_builder/txs_builder_zether_helper"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
 	"time"
@@ -38,12 +38,13 @@ type Testnet struct {
 	nodes      uint64
 }
 
-func (testnet *Testnet) testnetGetZetherRingConfiguration() *txs_builder.ZetherRingConfiguration {
-	zetherRingConfiguration := &txs_builder.ZetherRingConfiguration{-1, &txs_builder.ZetherSenderRingType{false, false, []string{}, 0}, &txs_builder.ZetherRecipientRingType{false, false, nil, -1}}
+func (testnet *Testnet) testnetGetZetherRingConfiguration(payload *txs_builder.TxBuilderCreateZetherTxPayload) *txs_builder.TxBuilderCreateZetherTxPayload {
+	payload.RingSize = -1
+	payload.RingConfiguration = &txs_builder.ZetherRingConfiguration{&txs_builder.ZetherSenderRingType{false, false, []string{}, 0}, &txs_builder.ZetherRecipientRingType{false, false, nil, -1}}
 	if config.LIGHT_COMPUTATIONS {
-		zetherRingConfiguration.RingSize = int(math.Pow(2, float64(rand.Intn(2)+3)))
+		payload.RingSize = int(math.Pow(2, float64(rand.Intn(2)+3)))
 	}
-	return zetherRingConfiguration
+	return payload
 }
 
 func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
@@ -63,13 +64,17 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 			return
 		}
 
-		txData.Payloads = append(txData.Payloads, &txs_builder.TxBuilderCreateZetherTxPayload{
-			Sender:            addrSender.AddressEncoded,
-			Asset:             config_coins.NATIVE_ASSET_FULL,
-			Amount:            config_stake.GetRequiredStake(blockHeight),
-			Recipient:         addrRecipient.AddressEncoded,
-			RingConfiguration: testnet.testnetGetZetherRingConfiguration(),
-		})
+		txData.Payloads = append(txData.Payloads, testnet.testnetGetZetherRingConfiguration(&txs_builder.TxBuilderCreateZetherTxPayload{
+			txs_builder_zether_helper.TxsBuilderZetherTxPayloadBase{
+				addrSender.AddressEncoded,
+				addrRecipient.AddressEncoded,
+				-1,
+				nil,
+			},
+			config_coins.NATIVE_ASSET_FULL,
+			config_stake.GetRequiredStake(blockHeight),
+			0, nil, 0, nil, nil, nil,
+		}))
 	}
 
 	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
@@ -89,15 +94,17 @@ func (testnet *Testnet) testnetCreateClaimTx(senderAddr *wallet_address.WalletAd
 	}
 
 	txData := &txs_builder.TxBuilderCreateZetherTxData{
-		Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{{
-			Sender:            senderAddr.AddressEncoded,
-			Amount:            sendAmount,
-			Recipient:         addrRecipient.AddressRegistrationEncoded,
-			Data:              &wizard.WizardTransactionData{nil, false},
-			Fee:               &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0},
-			Asset:             config_coins.NATIVE_ASSET_FULL,
-			RingConfiguration: testnet.testnetGetZetherRingConfiguration(),
-		}},
+		Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{testnet.testnetGetZetherRingConfiguration(&txs_builder.TxBuilderCreateZetherTxPayload{
+			txs_builder_zether_helper.TxsBuilderZetherTxPayloadBase{
+				senderAddr.AddressEncoded,
+				addrRecipient.AddressRegistrationEncoded,
+				-1,
+				nil,
+			},
+			config_coins.NATIVE_ASSET_FULL,
+			sendAmount,
+			0, nil, 0, nil, nil, nil,
+		})},
 	}
 
 	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
@@ -129,15 +136,18 @@ func (testnet *Testnet) testnetCreateTransfers(senderAddr *wallet_address.Wallet
 	}
 
 	txData := &txs_builder.TxBuilderCreateZetherTxData{
-		Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{{
-			Sender:            senderAddr.AddressEncoded,
-			Amount:            amount,
-			Recipient:         addr.EncodeAddr(),
-			Data:              &wizard.WizardTransactionData{nil, false},
-			Fee:               &wizard.WizardZetherTransactionFee{&wizard.WizardTransactionFee{0, 0, 0, true}, false, 0, 0},
-			Asset:             config_coins.NATIVE_ASSET_FULL,
-			RingConfiguration: testnet.testnetGetZetherRingConfiguration(),
-		}},
+		Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{
+			testnet.testnetGetZetherRingConfiguration(&txs_builder.TxBuilderCreateZetherTxPayload{
+				txs_builder_zether_helper.TxsBuilderZetherTxPayloadBase{
+					senderAddr.AddressEncoded,
+					addr.EncodeAddr(),
+					-1,
+					nil,
+				},
+				config_coins.NATIVE_ASSET_FULL,
+				amount,
+				0, nil, 0, nil, nil, nil,
+			})},
 	}
 
 	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
