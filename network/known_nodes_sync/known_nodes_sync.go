@@ -19,6 +19,10 @@ func (self *KnownNodesSync) DownloadNetworkNodes(conn *connection.AdvancedConnec
 		return err
 	}
 
+	if data == nil || data.Nodes == nil {
+		return nil
+	}
+
 	for _, node := range data.Nodes {
 		self.knownNodes.AddKnownNode(node.URL, false)
 	}
