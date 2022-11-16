@@ -63,10 +63,6 @@ func (m *Heap) upHeapify(index uint64) (err error) {
 		if b, err = m.getElement(m.parent(index)); err != nil {
 			return
 		}
-
-		if b == nil {
-			return
-		}
 		if !m.compare(a.Score, b.Score) {
 			return
 		}
@@ -130,7 +126,7 @@ func (m *Heap) Delete(index uint64) error {
 		return nil
 	}
 
-	if m.GetSize() == 1 {
+	if index == m.GetSize()-1 {
 		_, err := m.removeElement()
 		return err
 	}
@@ -144,22 +140,24 @@ func (m *Heap) Delete(index uint64) error {
 		return err
 	}
 
-	if index > 1 {
+	if index > 0 {
+
 		p, err := m.getElement(m.parent(index))
 		if err != nil {
 			return err
 		}
 
-		if p != nil {
-			if m.compare(element.Score, p.Score) {
-				return m.upHeapify(index)
-			} else {
-				return m.downHeapify(index)
-			}
+		if m.compare(element.Score, p.Score) {
+			return m.upHeapify(index)
 		}
+
 	}
 
-	return m.downHeapify(0)
+	if index < m.GetSize()/2 {
+		return m.downHeapify(index)
+	}
+
+	return nil
 }
 
 func (m *Heap) RemoveTop() (*HeapElement, error) {
