@@ -13,13 +13,14 @@ import (
 	"os"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
-	"pandora-pay/config/globals"
+	"pandora-pay/config/arguments"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
 	"pandora-pay/network/banned_nodes"
 	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes"
+	"pandora-pay/network/network_config"
 	"pandora-pay/network/server/node_http"
 	"pandora-pay/settings"
 	"pandora-pay/txs_builder"
@@ -44,7 +45,7 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 
 	// Create local listener on next available port
 
-	port := globals.Arguments["--tcp-server-port"].(string)
+	port := arguments.Arguments["--tcp-server-port"].(string)
 
 	portNumber, err := strconv.Atoi(port)
 	if err != nil {
@@ -56,11 +57,11 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 	port = strconv.Itoa(portNumber)
 
 	var address string
-	if globals.Arguments["--tor-onion"] != nil {
-		address = globals.Arguments["--tor-onion"].(string)
+	if arguments.Arguments["--tor-onion"] != nil {
+		address = arguments.Arguments["--tor-onion"].(string)
 	}
-	if globals.Arguments["--tcp-server-address"] != nil {
-		address = globals.Arguments["--tcp-server-address"].(string)
+	if arguments.Arguments["--tcp-server-address"] != nil {
+		address = arguments.Arguments["--tcp-server-address"].(string)
 	}
 
 	server.Port = port
@@ -89,14 +90,14 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 	bannedNodes.Ban(&url.URL{Scheme: "ws", Host: address + ":" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
 
 	var certPath, keyPath string
-	if globals.Arguments["--tcp-server-tls-cert-file"] != nil {
-		certPath = globals.Arguments["--tcp-server-tls-cert-file"].(string)
+	if arguments.Arguments["--tcp-server-tls-cert-file"] != nil {
+		certPath = arguments.Arguments["--tcp-server-tls-cert-file"].(string)
 	} else {
 		certPath = path.Join(config.ORIGINAL_PATH, "certificate.crt")
 	}
 
-	if globals.Arguments["--tcp-server-tls-key-file"] != nil {
-		keyPath = globals.Arguments["--tcp-server-tls-key-file"].(string)
+	if arguments.Arguments["--tcp-server-tls-key-file"] != nil {
+		keyPath = arguments.Arguments["--tcp-server-tls-key-file"].(string)
 	} else {
 		keyPath = path.Join(config.ORIGINAL_PATH, "certificate.key")
 	}
@@ -108,9 +109,9 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 			return nil, err
 		}
 		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cer}}
-	} else if globals.Arguments["--tcp-server-auto-tls-certificate"] == true {
+	} else if arguments.Arguments["--tcp-server-auto-tls-certificate"] == true {
 
-		if globals.Arguments["--tcp-server-address"] == "" {
+		if arguments.Arguments["--tcp-server-address"] == "" {
 			return nil, errors.New("To get an automatic Automatic you need to specify a domain --tcp-server-address=\"domain.com\"")
 		}
 
@@ -140,8 +141,8 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 			websocketUrl.Scheme += "s"
 			url.Scheme += "s"
 		}
-		config.NETWORK_ADDRESS_URL_STRING = url.String()
-		config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING = websocketUrl.String()
+		network_config.NETWORK_ADDRESS_URL_STRING = url.String()
+		network_config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING = websocketUrl.String()
 
 		bannedNodes.Ban(websocketUrl, "", "You can't connect to yourself", 10*365*24*time.Hour)
 		server.URL = url

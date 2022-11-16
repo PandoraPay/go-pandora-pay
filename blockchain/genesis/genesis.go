@@ -9,8 +9,8 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/config"
+	"pandora-pay/config/arguments"
 	"pandora-pay/config/config_stake"
-	"pandora-pay/config/globals"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/wallet/wallet_address/shared_staked"
@@ -178,7 +178,7 @@ func createSimpleGenesis(walletGetFirstAddressForDevnetGenesisAirdrop func() (st
 
 	var file *os.File
 
-	if globals.Arguments["--new-devnet"] == false {
+	if arguments.Arguments["--new-devnet"] == false {
 		return errors.New("Genesis Data was not found and --new-devnet is missing")
 	}
 
@@ -219,13 +219,13 @@ func GenesisInit(walletGetFirstAddressForDevnetGenesisAirdrop func() (string, *s
 		return
 	}
 
-	if dataArguments := globals.Arguments["--create-new-genesis"]; dataArguments != nil {
+	if dataArguments := arguments.Arguments["--create-new-genesis"]; dataArguments != nil {
 		if err = createNewGenesis(strings.Split(dataArguments.(string), ",")); err != nil {
 			return
 		}
 	}
 
-	if dataArgument := globals.Arguments["--set-genesis"]; dataArgument != nil {
+	if dataArgument := arguments.Arguments["--set-genesis"]; dataArgument != nil {
 
 		data := []byte(dataArgument.(string))
 

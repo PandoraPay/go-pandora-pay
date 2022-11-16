@@ -1,4 +1,4 @@
-package config
+package network_config
 
 type ConsensusType uint8
 

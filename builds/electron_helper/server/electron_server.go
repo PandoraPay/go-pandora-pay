@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"pandora-pay/builds/builds_data"
 	"pandora-pay/builds/electron_helper/server/routes"
-	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"strconv"
 )
@@ -18,7 +17,7 @@ func CreateServer() error {
 	mux.HandleFunc("/transactions/builder/create-zether-transaction", serverMethodBytes(routes.RouteTransactionsBuilderCreateZetherTx))
 	mux.HandleFunc("/", routes.RouteHome)
 
-	port := globals.Arguments["--tcp-server-port"].(string)
+	port := arguments.Arguments["--tcp-server-port"].(string)
 
 	portNumber, err := strconv.Atoi(port)
 	if err != nil {

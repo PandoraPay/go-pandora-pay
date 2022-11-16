@@ -3,11 +3,11 @@ package websocks
 import (
 	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain"
-	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/network/network_config"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 )
@@ -37,7 +37,7 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
 	}
 
-	if config.SEED_WALLET_NODES_INFO {
+	if network_config.NODE_PROVIDE_INFO_WEB_WALLET {
 		recovery.SafeGo(subs.processSubscriptions)
 	}
 

@@ -1,11 +1,11 @@
 package network
 
 import (
-	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/network/api/api_websockets/consensus"
 	"pandora-pay/network/known_nodes/known_node"
+	"pandora-pay/network/network_config"
 	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection"
 	"time"
@@ -13,13 +13,13 @@ import (
 
 func (network *Network) continuouslyConnectingNewPeers() {
 
-	for i := 0; i < config.WEBSOCKETS_CONCURRENT_NEW_CONENCTIONS; i++ {
+	for i := 0; i < network_config.WEBSOCKETS_CONCURRENT_NEW_CONENCTIONS; i++ {
 		index := i
 		recovery.SafeGo(func() {
 
 			for {
 
-				if network.Websockets.GetClients() >= config.WEBSOCKETS_NETWORK_CLIENTS_MAX {
+				if network.Websockets.GetClients() >= network_config.WEBSOCKETS_NETWORK_CLIENTS_MAX {
 					time.Sleep(500 * time.Millisecond)
 					continue
 				}
@@ -84,7 +84,7 @@ func (network *Network) continuouslyDownloadMempool() {
 		for {
 
 			if conn := network.Websockets.GetRandomSocket(); conn != nil {
-				if config.CONSENSUS == config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.CONSENSUS_TYPE_FULL {
+				if network_config.CONSENSUS == network_config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == network_config.CONSENSUS_TYPE_FULL {
 					network.MempoolSync.DownloadMempool(conn)
 				}
 			}
@@ -105,7 +105,7 @@ func (network *Network) continuouslyDownloadNetworkNodes() {
 			conn := network.Websockets.GetRandomSocket()
 			if conn != nil {
 
-				if config.CONSENSUS == config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.CONSENSUS_TYPE_FULL {
+				if network_config.CONSENSUS == network_config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == network_config.CONSENSUS_TYPE_FULL {
 					network.KnownNodesSync.DownloadNetworkNodes(conn)
 				}
 

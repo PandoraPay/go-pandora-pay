@@ -5,12 +5,9 @@ package config
 
 import (
 	"os"
-	"pandora-pay/config/globals"
+	"pandora-pay/config/arguments"
 	"strconv"
-	"time"
 )
-
-const WEBSOCKETS_TIMEOUT = 5 * time.Second //seconds
 
 func config_init() (err error) {
 
@@ -29,15 +26,15 @@ func config_init() (err error) {
 	}
 
 	var prefix string
-	if globals.Arguments["--instance"] != nil {
-		INSTANCE = globals.Arguments["--instance"].(string)
+	if arguments.Arguments["--instance"] != nil {
+		INSTANCE = arguments.Arguments["--instance"].(string)
 		prefix = INSTANCE
 	} else {
 		prefix = "default"
 	}
 
-	if globals.Arguments["--instance-id"] != nil {
-		a := globals.Arguments["--instance-id"].(string)
+	if arguments.Arguments["--instance-id"] != nil {
+		a := arguments.Arguments["--instance-id"].(string)
 		if INSTANCE_ID, err = strconv.Atoi(a); err != nil {
 			return
 		}

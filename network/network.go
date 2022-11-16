@@ -9,6 +9,7 @@ import (
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/known_nodes_sync"
 	"pandora-pay/network/mempool_sync"
+	"pandora-pay/network/network_config"
 	"pandora-pay/network/server/node_tcp"
 	"pandora-pay/network/websocks"
 	"pandora-pay/settings"
@@ -56,7 +57,7 @@ func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempo
 
 	network.continuouslyDownloadChain()
 
-	if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
+	if network_config.CONSENSUS == network_config.CONSENSUS_TYPE_FULL {
 		network.continuouslyDownloadMempool()
 		network.continuouslyDownloadNetworkNodes()
 	}

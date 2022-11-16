@@ -14,6 +14,7 @@ import (
 	"pandora-pay/network/api/api_common/api_faucet"
 	"pandora-pay/network/api/api_common/api_types"
 	"pandora-pay/network/api/api_websockets/consensus"
+	"pandora-pay/network/network_config"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/settings"
 	"pandora-pay/txs_validator"
@@ -115,7 +116,7 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		"unsub":             api.unsubscribe,
 	}
 
-	if config.SEED_WALLET_NODES_INFO {
+	if network_config.NODE_PROVIDE_INFO_WEB_WALLET {
 		api.GetMap["asset-info"] = handle[api_common.APIAssetInfoRequest, info.AssetInfo](api.apiCommon.GetAssetInfo)
 		api.GetMap["block-info"] = handle[api_common.APIBlockInfoRequest, info.BlockInfo](api.apiCommon.GetBlockInfo)
 		api.GetMap["tx-info"] = handle[api_common.APITransactionInfoRequest, info.TxInfo](api.apiCommon.GetTxInfo)
@@ -125,7 +126,7 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		api.GetMap["account/mempool-nonce"] = handle[api_common.APIAccountMempoolNonceRequest, api_common.APIAccountMempoolNonceReply](api.apiCommon.GetAccountMempoolNonce)
 	}
 
-	if config.CONSENSUS == config.CONSENSUS_TYPE_WALLET {
+	if network_config.CONSENSUS == network_config.CONSENSUS_TYPE_WALLET {
 		api.GetMap["sub/notify"] = api.subscribedNotificationReceived
 	}
 

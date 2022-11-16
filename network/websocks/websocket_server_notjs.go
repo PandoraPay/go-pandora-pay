@@ -5,10 +5,10 @@ package websocks
 
 import (
 	"net/http"
-	"pandora-pay/config"
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes"
+	"pandora-pay/network/network_config"
 	"pandora-pay/network/websocks/websock"
 	"sync/atomic"
 )
@@ -21,7 +21,7 @@ type WebsocketServer struct {
 
 func (wserver *WebsocketServer) HandleUpgradeConnection(w http.ResponseWriter, r *http.Request) {
 
-	if atomic.LoadInt64(&wserver.connectedNodes.ServerSockets) >= config.WEBSOCKETS_NETWORK_SERVER_MAX {
+	if atomic.LoadInt64(&wserver.connectedNodes.ServerSockets) >= network_config.WEBSOCKETS_NETWORK_SERVER_MAX {
 		http.Error(w, "Too many websockets", 400)
 		return
 	}

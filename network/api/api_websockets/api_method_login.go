@@ -2,7 +2,7 @@ package api_websockets
 
 import (
 	"github.com/vmihailenco/msgpack/v5"
-	"pandora-pay/config/config_auth"
+	"pandora-pay/network/network_config/network_config_auth"
 	"pandora-pay/network/websocks/connection"
 )
 
@@ -22,7 +22,7 @@ func (api *APIWebsockets) login(conn *connection.AdvancedConnection, values []by
 	}
 	reply := &APILoginReply{}
 
-	user := config_auth.CONFIG_AUTH_USERS_MAP[args.Username]
+	user := network_config_auth.CONFIG_AUTH_USERS_MAP[args.Username]
 	if user == nil || user.Password != args.Password {
 		return reply, nil
 	}

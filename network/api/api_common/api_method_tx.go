@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
-	"pandora-pay/config"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/network/network_config"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 )
@@ -66,7 +66,7 @@ func (api *APICommon) openLoadTx(args *APITxRequest, reply *APITxReply) error {
 			reply.Confirmations = chainHeight - blockHeight
 		}
 
-		if config.SEED_WALLET_NODES_INFO {
+		if network_config.NODE_PROVIDE_INFO_WEB_WALLET {
 			if data = reader.Get("txInfo_ByHash" + hashStr); data == nil {
 				return errors.New("TxInfo was not found")
 			}

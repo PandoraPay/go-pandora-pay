@@ -1,7 +1,7 @@
 package settings
 
 import (
-	"pandora-pay/config/globals"
+	"pandora-pay/config/arguments"
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"sync"
@@ -25,8 +25,8 @@ func SettingsInit() (*Settings, error) {
 	}
 
 	var changed bool
-	if globals.Arguments["--node-name"] != nil {
-		settings.Name = globals.Arguments["--node-name"].(string)
+	if arguments.Arguments["--node-name"] != nil {
+		settings.Name = arguments.Arguments["--node-name"].(string)
 		changed = true
 	}
 

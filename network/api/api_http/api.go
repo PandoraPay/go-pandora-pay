@@ -14,6 +14,7 @@ import (
 	"pandora-pay/network/api/api_common/api_delegator_node"
 	"pandora-pay/network/api/api_common/api_faucet"
 	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/network/network_config"
 )
 
 type API struct {
@@ -128,7 +129,7 @@ func NewAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chai
 		"wallet/private-transfer": handlePOSTAuthenticated[api_common.APIWalletPrivateTransferRequest, api_common.APIWalletPrivateTransferReply](api.apiCommon.WalletPrivateTransfer),
 	}
 
-	if config.SEED_WALLET_NODES_INFO {
+	if network_config.NODE_PROVIDE_INFO_WEB_WALLET {
 		api.GetMap["asset-info"] = handle[api_common.APIAssetInfoRequest, info.AssetInfo](api.apiCommon.GetAssetInfo)
 		api.GetMap["block-info"] = handle[api_common.APIBlockInfoRequest, info.BlockInfo](api.apiCommon.GetBlockInfo)
 		api.GetMap["tx-info"] = handle[api_common.APITransactionInfoRequest, info.TxInfo](api.apiCommon.GetTxInfo)

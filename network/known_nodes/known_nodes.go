@@ -3,11 +3,11 @@ package known_nodes
 import (
 	"errors"
 	"math/rand"
-	"pandora-pay/config"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/network/banned_nodes"
 	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes/known_node"
+	"pandora-pay/network/network_config"
 	"pandora-pay/store/min_max_heap"
 	"sync"
 	"sync/atomic"
@@ -103,7 +103,7 @@ func (self *KnownNodes) AddKnownNode(url string, isSeed bool) (*known_node.Known
 		return nil, errors.New("url is empty")
 	}
 
-	if atomic.LoadInt32(&self.knownCount) > config.NETWORK_KNOWN_NODES_LIMIT {
+	if atomic.LoadInt32(&self.knownCount) > network_config.NETWORK_KNOWN_NODES_LIMIT {
 		return nil, errors.New("Too many nodes already in the list")
 	}
 

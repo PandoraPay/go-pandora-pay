@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"golang.org/x/exp/slices"
-	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/network/network_config"
 	"sync"
 )
 
@@ -49,7 +49,7 @@ func (s *Subscriptions) AddSubscription(subscriptionType api_types.SubscriptionT
 	s.Lock()
 	defer s.Unlock()
 
-	if len(s.list) > config.WEBSOCKETS_MAX_SUBSCRIPTIONS {
+	if len(s.list) > network_config.WEBSOCKETS_MAX_SUBSCRIPTIONS {
 		return errors.New("Too many subscriptions")
 	}
 

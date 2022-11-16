@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/url"
 	"pandora-pay/addresses"
-	"pandora-pay/config/config_auth"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/network/network_config/network_config_auth"
 )
 
 type SubscriptionType uint8
@@ -72,7 +72,7 @@ type APIAuthenticated[T any] struct {
 
 func CheckAuthenticated(args url.Values) bool {
 
-	user := config_auth.CONFIG_AUTH_USERS_MAP[args.Get("user")]
+	user := network_config_auth.CONFIG_AUTH_USERS_MAP[args.Get("user")]
 	if user == nil {
 		return false
 	}
@@ -81,7 +81,7 @@ func CheckAuthenticated(args url.Values) bool {
 }
 
 func (authenticated *APIAuthenticated[T]) CheckAuthenticated() bool {
-	user := config_auth.CONFIG_AUTH_USERS_MAP[authenticated.User]
+	user := network_config_auth.CONFIG_AUTH_USERS_MAP[authenticated.User]
 	if user == nil {
 		return false
 	}

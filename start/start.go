@@ -20,6 +20,7 @@ import (
 	"pandora-pay/helpers/debugging_pprof"
 	"pandora-pay/mempool"
 	"pandora-pay/network"
+	"pandora-pay/network/network_config"
 	"pandora-pay/settings"
 	"pandora-pay/store"
 	"pandora-pay/testnet"
@@ -37,7 +38,8 @@ func StartMainNow() (err error) {
 		return
 	}
 
-	if globals.Arguments["--pprof"] == true {
+	arguments.VERSION_STRING = config.VERSION_STRING
+	if arguments.Arguments["--pprof"] == true {
 		if err = debugging_pprof.Start(); err != nil {
 			return
 		}
@@ -94,10 +96,10 @@ func StartMainNow() (err error) {
 		return
 	}
 
-	if runtime.GOARCH != "wasm" && globals.Arguments["--balance-decryptor-disable-init"] == false {
+	if runtime.GOARCH != "wasm" && arguments.Arguments["--balance-decryptor-disable-init"] == false {
 		tableSize := 0
-		if globals.Arguments["--balance-decryptor-table-size"] != nil {
-			if tableSize, err = strconv.Atoi(globals.Arguments["--balance-decryptor-table-size"].(string)); err != nil {
+		if arguments.Arguments["--balance-decryptor-table-size"] != nil {
+			if tableSize, err = strconv.Atoi(arguments.Arguments["--balance-decryptor-table-size"].(string)); err != nil {
 				return
 			}
 			tableSize = 1 << tableSize
@@ -132,12 +134,12 @@ func StartMainNow() (err error) {
 
 	app.Chain.InitForging()
 
-	if globals.Arguments["--exit"] == true {
+	if arguments.Arguments["--exit"] == true {
 		os.Exit(1)
 		return
 	}
 
-	if globals.Arguments["--run-testnet-script"] == true {
+	if arguments.Arguments["--run-testnet-script"] == true {
 		myTestnet := testnet.TestnetInit(app.Wallet, app.Mempool, app.Chain, app.TxsBuilder)
 		app.Testnet = myTestnet
 	}
@@ -166,6 +168,9 @@ func InitMain(ready func()) {
 		saveError(err)
 	}
 	globals.MainEvents.BroadcastEvent("main", "config initialized")
+	if err = network_config.InitConfig(); err != nil {
+		return
+	}
 
 	startMain()
 

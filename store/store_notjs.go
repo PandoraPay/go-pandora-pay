@@ -5,7 +5,7 @@ package store
 
 import (
 	"errors"
-	"pandora-pay/config/globals"
+	"pandora-pay/config/arguments"
 	"pandora-pay/store/store_db/store_db_bolt"
 	"pandora-pay/store/store_db/store_db_bunt"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -48,19 +48,19 @@ func create_db() (err error) {
 
 	allowedStores := map[string]bool{"bolt": true, "bunt": true, "bunt-memory": true, "memory": true}
 
-	if StoreBlockchain, err = createStoreNow(prefix+"/blockchain", getStoreType(globals.Arguments["--store-chain-type"].(string), allowedStores)); err != nil {
+	if StoreBlockchain, err = createStoreNow(prefix+"/blockchain", getStoreType(arguments.Arguments["--store-chain-type"].(string), allowedStores)); err != nil {
 		return
 	}
-	if StoreWallet, err = createStoreNow(prefix+"/wallet", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
+	if StoreWallet, err = createStoreNow(prefix+"/wallet", getStoreType(arguments.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
 		return
 	}
-	if StoreSettings, err = createStoreNow(prefix+"/settings", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
+	if StoreSettings, err = createStoreNow(prefix+"/settings", getStoreType(arguments.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
 		return
 	}
-	if StoreMempool, err = createStoreNow(prefix+"/mempool", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
+	if StoreMempool, err = createStoreNow(prefix+"/mempool", getStoreType(arguments.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
 		return
 	}
-	if StoreBalancesDecrypted, err = createStoreNow(prefix+"/balancesDecrypted", getStoreType(globals.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
+	if StoreBalancesDecrypted, err = createStoreNow(prefix+"/balancesDecrypted", getStoreType(arguments.Arguments["--store-wallet-type"].(string), allowedStores)); err != nil {
 		return
 	}
 

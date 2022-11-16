@@ -3,9 +3,9 @@ package api_common
 import (
 	"math/rand"
 	"net/http"
-	"pandora-pay/config"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/network/known_nodes/known_node"
+	"pandora-pay/network/network_config"
 	"pandora-pay/store/min_max_heap"
 	"sync/atomic"
 	"time"
@@ -29,7 +29,7 @@ func (api *APICommon) GetList(reply *APINetworkNodesReply) (err error) {
 
 		knownList := api.knownNodes.GetList()
 
-		count := generics.Min(config.NETWORK_KNOWN_NODES_LIST_RETURN, len(knownList))
+		count := generics.Min(network_config.NETWORK_KNOWN_NODES_LIST_RETURN, len(knownList))
 
 		index := 0
 		newTemporaryList := &APINetworkNodesReply{
@@ -39,13 +39,13 @@ func (api *APICommon) GetList(reply *APINetworkNodesReply) (err error) {
 		includedMap := make(map[string]bool)
 
 		//1st my address
-		if config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING != "" {
+		if network_config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING != "" {
 			newTemporaryList.Nodes[0] = &APINetworkNode{
-				config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING,
+				network_config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING,
 				3000,
 			}
 			index = 1
-			includedMap[config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING] = true
+			includedMap[network_config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING] = true
 		}
 
 		//50% top

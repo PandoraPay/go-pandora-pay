@@ -1,8 +1,8 @@
-package config_auth
+package network_config_auth
 
 import (
 	"encoding/json"
-	"pandora-pay/config/globals"
+	"pandora-pay/config/arguments"
 )
 
 type ConfigAuth struct {
@@ -17,7 +17,7 @@ var (
 
 func InitConfig() (err error) {
 
-	if str := globals.Arguments["--auth-users"]; str != nil {
+	if str := arguments.Arguments["--auth-users"]; str != nil {
 		if err = json.Unmarshal([]byte(str.(string)), &CONFIG_AUTH_USERS_LIST); err != nil {
 			return
 		}
