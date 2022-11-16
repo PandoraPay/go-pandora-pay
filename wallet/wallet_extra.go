@@ -9,7 +9,7 @@ import (
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/gui"
-	"pandora-pay/recovery"
+	"pandora-pay/helpers/recovery"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/wallet/wallet_address"

@@ -10,8 +10,8 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
+	"pandora-pay/helpers/recovery"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
-	"pandora-pay/recovery"
 	"pandora-pay/txs_validator"
 )
 

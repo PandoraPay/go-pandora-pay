@@ -9,7 +9,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
-	"pandora-pay/recovery"
+	"pandora-pay/helpers/recovery"
 	"strconv"
 	"sync"
 	"sync/atomic"

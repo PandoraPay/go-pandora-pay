@@ -23,8 +23,8 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/advanced_buffers"
+	"pandora-pay/helpers/recovery"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
-	"pandora-pay/recovery"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 )

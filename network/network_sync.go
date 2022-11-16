@@ -3,11 +3,11 @@ package network
 import (
 	"pandora-pay/config"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/recovery"
 	"pandora-pay/network/api/api_websockets/consensus"
 	"pandora-pay/network/known_nodes/known_node"
 	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection"
-	"pandora-pay/recovery"
 	"time"
 )
 

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 	"pandora-pay/gui"
-	"pandora-pay/recovery"
+	"pandora-pay/helpers/recovery"
 )
 
 func saveError(err error) {

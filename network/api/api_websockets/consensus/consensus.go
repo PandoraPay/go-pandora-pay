@@ -3,8 +3,8 @@ package consensus
 import (
 	"pandora-pay/blockchain"
 	"pandora-pay/helpers/generics"
+	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
-	"pandora-pay/recovery"
 	"pandora-pay/txs_validator"
 )
 

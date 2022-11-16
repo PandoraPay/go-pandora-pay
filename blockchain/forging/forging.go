@@ -11,8 +11,8 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
+	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
-	"pandora-pay/recovery"
 )
 
 type Forging struct {

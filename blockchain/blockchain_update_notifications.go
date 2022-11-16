@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers/advanced_buffers"
-	"pandora-pay/recovery"
+	"pandora-pay/helpers/recovery"
 )
 
 func (queue *BlockchainUpdatesQueue) processBlockchainUpdateNotifications() {

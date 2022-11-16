@@ -13,8 +13,8 @@ import (
 	"pandora-pay/builds/webassembly/webassembly_utils"
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers/advanced_buffers"
+	"pandora-pay/helpers/recovery"
 	"pandora-pay/network/api/api_common/api_types"
-	"pandora-pay/recovery"
 	"sync/atomic"
 	"syscall/js"
 )

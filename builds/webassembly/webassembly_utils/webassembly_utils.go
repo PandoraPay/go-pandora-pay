@@ -2,7 +2,7 @@ package webassembly_utils
 
 import (
 	"encoding/json"
-	"pandora-pay/recovery"
+	"pandora-pay/helpers/recovery"
 	"syscall/js"
 )
 
