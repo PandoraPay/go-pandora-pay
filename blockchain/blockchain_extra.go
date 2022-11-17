@@ -149,7 +149,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 			}
 		}
 
-		if config.NODE_PROVIDE_INFO_WEB_WALLET {
+		if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 			if err = saveAssetsInfo(dataStorage.Asts); err != nil {
 				return
 			}

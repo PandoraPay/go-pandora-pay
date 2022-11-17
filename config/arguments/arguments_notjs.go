@@ -8,7 +8,7 @@ package arguments
 const commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--pprof] [--network=network] [--debug] [--forging] [--new-devnet] [--run-testnet-script] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tcp-server-auto-tls-certificate] [--tcp-server-tls-cert-file=path] [--tcp-server-tls-key-file=path] [--tor-onion=onion] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--node-provide-info-web-wallet=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--wallet-import-secret-mnemonic=mnemonic] [--wallet-import-secret-entropy=entropy] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegator-enabled=bool] [--delegator-require-auth=bool] [--delegates-maximum=args] [--auth-users=args] [--light-computations] [--balance-decryptor-disable-init] [--balance-decryptor-table-size=size] [--exit] [--skip-init-sync]
+  pandorapay [--pprof] [--network=network] [--debug] [--forging] [--new-devnet] [--run-testnet-script] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tcp-server-auto-tls-certificate] [--tcp-server-tls-cert-file=path] [--tcp-server-tls-key-file=path] [--tor-onion=onion] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--node-consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--node-provide-extended-info-app=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--wallet-import-secret-mnemonic=mnemonic] [--wallet-import-secret-entropy=entropy] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegator-enabled=bool] [--delegator-require-auth=bool] [--delegates-maximum=args] [--auth-users=args] [--light-computations] [--balance-decryptor-disable-init] [--balance-decryptor-table-size=size] [--exit] [--skip-init-sync]
   pandorapay -h | --help
   pandorapay -v | --version
 
@@ -35,8 +35,8 @@ Options:
   --tcp-server-tls-cert-file=path                    Load TLS certificate file from given path.
   --tcp-server-tls-key-file=path                     Load TLS ke file from given path.
   --tor-onion=onion                                  Define your tor onion address to be used.
-  --consensus=type                                   Consensus type. Accepted values: "full|wallet|none" [default: full].
-  --node-provide-info-web-wallet=bool                      Storing and serving additional info to wallet nodes. [default: true]. To enable, it requires full node
+  --node-consensus=type                                   Consensus type. Accepted values: "full|wallet|none" [default: full].
+  --node-provide-extended-info-app=bool                      Storing and serving additional info to wallet nodes. [default: true]. To enable, it requires full node
   --wallet-import-secret-mnemonic=mnemonic           Import Wallet from a given Mnemonic. It will delete your existing wallet. 
   --wallet-import-secret-entropy=entropy             Import Wallet from a given Entropy. It will delete your existing wallet.
   --wallet-encrypt=args                              Encrypt wallet. Argument must be "password,difficulty".

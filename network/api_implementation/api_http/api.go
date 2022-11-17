@@ -70,7 +70,7 @@ func NewAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chai
 		"wallet/private-transfer": api_code_http.HandlePOSTAuthenticated[api_common.APIWalletPrivateTransferRequest, api_common.APIWalletPrivateTransferReply](api.apiCommon.WalletPrivateTransfer),
 	}
 
-	if config.NODE_PROVIDE_INFO_WEB_WALLET {
+	if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 		api.GetMap["asset-info"] = api_code_http.Handle[api_common.APIAssetInfoRequest, info.AssetInfo](api.apiCommon.GetAssetInfo)
 		api.GetMap["block-info"] = api_code_http.Handle[api_common.APIBlockInfoRequest, info.BlockInfo](api.apiCommon.GetBlockInfo)
 		api.GetMap["tx-info"] = api_code_http.Handle[api_common.APITransactionInfoRequest, info.TxInfo](api.apiCommon.GetTxInfo)

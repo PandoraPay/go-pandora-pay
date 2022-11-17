@@ -46,7 +46,7 @@ func InitConfig() (err error) {
 		return
 	}
 
-	NETWORK_ENABLE_SUBSCRIPTIONS = config.NODE_PROVIDE_INFO_WEB_WALLET
+	NETWORK_ENABLE_SUBSCRIPTIONS = config.NODE_PROVIDE_EXTENDED_INFO_APP
 
 	return
 }

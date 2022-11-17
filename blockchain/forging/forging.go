@@ -70,7 +70,7 @@ func (forging *Forging) InitializeForging(createForgingTransactions func(*block_
 func (forging *Forging) StartForging() bool {
 
 	if config.NODE_CONSENSUS != config.NODE_CONSENSUS_TYPE_FULL {
-		gui.GUI.Warning(`Staking was not started as "--consensus=full" is missing`)
+		gui.GUI.Warning(`Staking was not started as "--node-consensus=full" is missing`)
 		return false
 	}
 

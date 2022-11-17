@@ -403,7 +403,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 
 					//removing unused transactions
-					if config.NODE_PROVIDE_INFO_WEB_WALLET {
+					if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 						removeUnusedTransactions(writer, newChainData.TransactionsCount, removedBlocksTransactionsCount)
 					}
 				}
@@ -436,7 +436,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 				}
 
-				if config.NODE_PROVIDE_INFO_WEB_WALLET {
+				if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 					removeTxsInfo(writer, removedTxHashes)
 				}
 

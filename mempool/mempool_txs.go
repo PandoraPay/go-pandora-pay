@@ -38,7 +38,7 @@ func (self *MempoolTxs) insertTx(tx *mempoolTx) bool {
 }
 
 func (self *MempoolTxs) inserted(tx *mempoolTx) {
-	if config.NODE_PROVIDE_INFO_WEB_WALLET {
+	if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 
 		keys := tx.Tx.GetAllKeys()
 		for key := range keys {
@@ -79,7 +79,7 @@ func (self *MempoolTxs) deleteTx(hashStr string) bool {
 }
 
 func (self *MempoolTxs) deleted(tx *mempoolTx, broadcastNotifications, includedInBlockchainNotification bool) {
-	if config.NODE_PROVIDE_INFO_WEB_WALLET {
+	if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 
 		keys := tx.Tx.GetAllKeys()
 		for key := range keys {
@@ -158,7 +158,7 @@ func (self *MempoolTxs) Get(txId string) *mempoolTx {
 
 func (self *MempoolTxs) GetAccountTxs(publicKey []byte) []*mempoolTx {
 
-	if config.NODE_PROVIDE_INFO_WEB_WALLET {
+	if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 		if foundMap, found := self.accountsMapTxs.Load(string(publicKey)); found {
 
 			foundMap.RLock()

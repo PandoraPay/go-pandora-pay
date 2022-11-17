@@ -66,7 +66,7 @@ func (api *APICommon) openLoadTx(args *APITxRequest, reply *APITxReply) error {
 			reply.Confirmations = chainHeight - blockHeight
 		}
 
-		if config.NODE_PROVIDE_INFO_WEB_WALLET {
+		if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 			if data = reader.Get("txInfo_ByHash" + hashStr); data == nil {
 				return errors.New("TxInfo was not found")
 			}
