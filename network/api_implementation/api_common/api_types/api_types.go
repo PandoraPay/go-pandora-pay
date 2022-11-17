@@ -1,12 +1,5 @@
 package api_types
 
-type APISubscriptionNotification struct {
-	SubscriptionType SubscriptionType `json:"type,omitempty" msgpack:"type,omitempty"`
-	Key              []byte           `json:"key,omitempty" msgpack:"key,omitempty"`
-	Data             []byte           `json:"data,omitempty" msgpack:"data,omitempty"`
-	Extra            []byte           `json:"extra,omitempty" msgpack:"extra,omitempty"`
-}
-
 type APISubscriptionNotificationTxExtraBlockchain struct {
 	Inserted     bool   `json:"inserted,omitempty" msgpack:"inserted,omitempty"`
 	BlkHeight    uint64 `json:"blkHeight" msgpack:"blkHeight"`

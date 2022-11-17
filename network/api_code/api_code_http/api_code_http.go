@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/helpers/urldecoder"
-	"pandora-pay/network/api_implementation/api_common/api_types"
+	"pandora-pay/network/api_code/api_code_types"
 )
 
 func HandleAuthenticated[T any, B any](callback func(r *http.Request, args *T, reply *B, authenticated bool) error) func(values url.Values) (interface{}, error) {
 	return func(values url.Values) (interface{}, error) {
 
-		authenticated := api_types.CheckAuthenticated(values)
+		authenticated := api_code_types.CheckAuthenticated(values)
 		values.Del("user")
 		values.Del("pass")
 
@@ -41,7 +41,7 @@ func Handle[T any, B any](callback func(r *http.Request, args *T, reply *B) erro
 func HandlePOSTAuthenticated[T any, B any](callback func(r *http.Request, args *T, reply *B, authenticated bool) error) func(values io.ReadCloser) (interface{}, error) {
 	return func(values io.ReadCloser) (interface{}, error) {
 
-		authenticated := new(api_types.APIAuthenticated[T])
+		authenticated := new(api_code_types.APIAuthenticated[T])
 		if err := json.NewDecoder(values).Decode(authenticated); err != nil {
 			return nil, err
 		}

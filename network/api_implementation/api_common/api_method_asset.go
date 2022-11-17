@@ -5,15 +5,15 @@ import (
 	"pandora-pay/blockchain/data_storage/assets"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/helpers"
-	"pandora-pay/network/api_implementation/api_common/api_types"
+	"pandora-pay/network/api_code/api_code_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type APIAssetRequest struct {
-	Height     uint64                  `json:"height,omitempty" msgpack:"height,omitempty"`
-	Hash       helpers.Base64          `json:"hash,omitempty" msgpack:"hash,omitempty"`
-	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
+	Height     uint64                       `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash       helpers.Base64               `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	ReturnType api_code_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APIAssetReply struct {
@@ -36,7 +36,7 @@ func (api *APICommon) GetAsset(r *http.Request, args *APIAssetRequest, reply *AP
 		return helpers.ReturnErrorIfNot(err, "Asset was not found")
 	}
 
-	if args.ReturnType == api_types.RETURN_SERIALIZED {
+	if args.ReturnType == api_code_types.RETURN_SERIALIZED {
 		reply.Serialized = helpers.SerializeToBytes(reply.Asset)
 		reply.Asset = nil
 	}

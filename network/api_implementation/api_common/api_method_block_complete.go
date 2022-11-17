@@ -8,16 +8,16 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/advanced_buffers"
-	"pandora-pay/network/api_implementation/api_common/api_types"
+	"pandora-pay/network/api_code/api_code_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
 
 type APIBlockCompleteRequest struct {
-	Height     uint64                  `json:"height,omitempty" msgpack:"height,omitempty"`
-	Hash       helpers.Base64          `json:"hash,omitempty" msgpack:"hash,omitempty"`
-	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
+	Height     uint64                       `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash       helpers.Base64               `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	ReturnType api_code_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APIBlockCompleteReply struct {
@@ -62,7 +62,7 @@ func (api *APICommon) GetBlockComplete(r *http.Request, args *APIBlockCompleteRe
 		return err
 	}
 
-	if args.ReturnType == api_types.RETURN_SERIALIZED {
+	if args.ReturnType == api_code_types.RETURN_SERIALIZED {
 		reply.Serialized = reply.BlockComplete.BloomBlkComplete.Serialized
 		reply.BlockComplete = nil
 	}

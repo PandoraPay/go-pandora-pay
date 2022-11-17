@@ -10,6 +10,7 @@ import (
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers"
+	"pandora-pay/network/api_code/api_code_types"
 	"pandora-pay/network/api_implementation/api_common/api_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -20,7 +21,7 @@ type APIAccountsByKeysRequest struct {
 	Keys           []*api_types.APIAccountBaseRequest `json:"keys,omitempty" msgpack:"keys,omitempty"`
 	Asset          helpers.Base64                     `json:"asset,omitempty" msgpack:"asset,omitempty"`
 	IncludeMempool bool                               `json:"includeMempool,omitempty" msgpack:"includeMempool,omitempty"`
-	ReturnType     api_types.APIReturnType            `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
+	ReturnType     api_code_types.APIReturnType       `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APIAccountsByKeysReply struct {
@@ -90,7 +91,7 @@ func (api *APICommon) GetAccountsByKeys(r *http.Request, args *APIAccountsByKeys
 		}
 	}
 
-	if args.ReturnType == api_types.RETURN_SERIALIZED {
+	if args.ReturnType == api_code_types.RETURN_SERIALIZED {
 		reply.AccSerialized = make([][]byte, len(reply.Acc))
 		for i, acc := range reply.Acc {
 			if acc != nil {

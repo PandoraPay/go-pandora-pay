@@ -8,7 +8,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
-	"pandora-pay/network/api_implementation/api_common/api_types"
+	"pandora-pay/network/api_code/api_code_types"
 	"pandora-pay/start"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
@@ -171,12 +171,12 @@ func initialize() {
 			"api": js.ValueOf(map[string]interface{}{
 				"websockets": js.ValueOf(map[string]interface{}{
 					"subscriptionType": js.ValueOf(map[string]interface{}{
-						"SUBSCRIPTION_ACCOUNT":              js.ValueOf(int(api_types.SUBSCRIPTION_ACCOUNT)),
-						"SUBSCRIPTION_PLAIN_ACCOUNT":        js.ValueOf(int(api_types.SUBSCRIPTION_PLAIN_ACCOUNT)),
-						"SUBSCRIPTION_ACCOUNT_TRANSACTIONS": js.ValueOf(int(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS)),
-						"SUBSCRIPTION_ASSET":                js.ValueOf(int(api_types.SUBSCRIPTION_ASSET)),
-						"SUBSCRIPTION_REGISTRATION":         js.ValueOf(int(api_types.SUBSCRIPTION_REGISTRATION)),
-						"SUBSCRIPTION_TRANSACTION":          js.ValueOf(int(api_types.SUBSCRIPTION_TRANSACTION)),
+						"SUBSCRIPTION_ACCOUNT":              js.ValueOf(int(api_code_types.SUBSCRIPTION_ACCOUNT)),
+						"SUBSCRIPTION_PLAIN_ACCOUNT":        js.ValueOf(int(api_code_types.SUBSCRIPTION_PLAIN_ACCOUNT)),
+						"SUBSCRIPTION_ACCOUNT_TRANSACTIONS": js.ValueOf(int(api_code_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS)),
+						"SUBSCRIPTION_ASSET":                js.ValueOf(int(api_code_types.SUBSCRIPTION_ASSET)),
+						"SUBSCRIPTION_REGISTRATION":         js.ValueOf(int(api_code_types.SUBSCRIPTION_REGISTRATION)),
+						"SUBSCRIPTION_TRANSACTION":          js.ValueOf(int(api_code_types.SUBSCRIPTION_TRANSACTION)),
 					}),
 				}),
 			}),

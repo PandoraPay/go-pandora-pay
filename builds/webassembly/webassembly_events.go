@@ -13,6 +13,7 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/helpers/recovery"
+	"pandora-pay/network/api_code/api_code_types"
 	"pandora-pay/network/api_code/api_code_websockets"
 	"pandora-pay/network/api_implementation/api_common/api_types"
 	"sync/atomic"
@@ -84,7 +85,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 				//gui.GUI.Log(int(data.SubscriptionType))
 
 				switch data.SubscriptionType {
-				case api_types.SUBSCRIPTION_ACCOUNT:
+				case api_code_types.SUBSCRIPTION_ACCOUNT:
 					var acc *account.Account
 					if data.Data != nil {
 
@@ -97,7 +98,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					}
 					object = acc
 					extra = &api_types.APISubscriptionNotificationAccountExtra{}
-				case api_types.SUBSCRIPTION_PLAIN_ACCOUNT:
+				case api_code_types.SUBSCRIPTION_PLAIN_ACCOUNT:
 					plainAcc := plain_account.NewPlainAccount(data.Key, 0)
 					if data.Data != nil {
 						if err = plainAcc.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
@@ -106,7 +107,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					}
 					object = plainAcc
 					extra = &api_types.APISubscriptionNotificationPlainAccExtra{}
-				case api_types.SUBSCRIPTION_ASSET:
+				case api_code_types.SUBSCRIPTION_ASSET:
 					ast := asset.NewAsset(data.Key, 0)
 					if data.Data != nil {
 						if err = ast.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
@@ -116,7 +117,7 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					object = ast
 
 					extra = &api_types.APISubscriptionNotificationAssetExtra{}
-				case api_types.SUBSCRIPTION_REGISTRATION:
+				case api_code_types.SUBSCRIPTION_REGISTRATION:
 					reg := registration.NewRegistration(data.Key, 0)
 					if data.Data != nil {
 						if err = reg.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
@@ -125,10 +126,10 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					}
 					object = reg
 					extra = &api_types.APISubscriptionNotificationRegistrationExtra{}
-				case api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
+				case api_code_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
 					object = data.Data
 					extra = &api_types.APISubscriptionNotificationAccountTxExtra{}
-				case api_types.SUBSCRIPTION_TRANSACTION:
+				case api_code_types.SUBSCRIPTION_TRANSACTION:
 					object = data.Data
 					extra = &api_types.APISubscriptionNotificationTxExtra{}
 				}

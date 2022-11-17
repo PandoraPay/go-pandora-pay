@@ -9,6 +9,7 @@ import (
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/helpers"
+	"pandora-pay/network/api_code/api_code_types"
 	"pandora-pay/network/api_implementation/api_common/api_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -16,7 +17,7 @@ import (
 
 type APIAccountRequest struct {
 	api_types.APIAccountBaseRequest
-	ReturnType api_types.APIReturnType `json:"returnType,omitempty"  msgpack:"returnType,omitempty" `
+	ReturnType api_code_types.APIReturnType `json:"returnType,omitempty"  msgpack:"returnType,omitempty" `
 }
 
 type APIAccountReply struct {
@@ -96,7 +97,7 @@ func (api *APICommon) GetAccount(r *http.Request, args *APIAccountRequest, reply
 		return err
 	}
 
-	if args.ReturnType == api_types.RETURN_SERIALIZED {
+	if args.ReturnType == api_code_types.RETURN_SERIALIZED {
 
 		reply.AccsSerialized = make([][]byte, len(reply.Accs))
 		for i, acc := range reply.Accs {

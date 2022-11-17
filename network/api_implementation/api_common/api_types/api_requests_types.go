@@ -2,29 +2,9 @@ package api_types
 
 import (
 	"errors"
-	"net/url"
 	"pandora-pay/addresses"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
-	"pandora-pay/network/network_config/network_config_auth"
-)
-
-type SubscriptionType uint8
-
-const (
-	SUBSCRIPTION_ACCOUNT SubscriptionType = iota
-	SUBSCRIPTION_PLAIN_ACCOUNT
-	SUBSCRIPTION_ACCOUNT_TRANSACTIONS
-	SUBSCRIPTION_ASSET
-	SUBSCRIPTION_REGISTRATION
-	SUBSCRIPTION_TRANSACTION
-)
-
-type APIReturnType uint8
-
-const (
-	RETURN_SERIALIZED APIReturnType = iota
-	RETURN_JSON
 )
 
 type APIAccountBaseRequest struct {
@@ -51,40 +31,4 @@ func (request *APIAccountBaseRequest) GetPublicKey(required bool) ([]byte, error
 	}
 
 	return publicKey, nil
-}
-
-type APISubscriptionRequest struct {
-	Key        helpers.Base64   `json:"key,omitempty" msgpack:"key,omitempty"`
-	Type       SubscriptionType `json:"type,omitempty"  msgpack:"type,omitempty"`
-	ReturnType APIReturnType    `json:"returnType,omitempty"  msgpack:"returnType,omitempty"`
-}
-
-type APIUnsubscriptionRequest struct {
-	Key  helpers.Base64   `json:"key,omitempty" msgpack:"key,omitempty"`
-	Type SubscriptionType `json:"type,omitempty" msgpack:"type,omitempty"`
-}
-
-type APIAuthenticated[T any] struct {
-	User string `json:"user" msgpack:"user"`
-	Pass string `json:"pass" msgpack:"pass"`
-	Data *T     `json:"req" msgpack:"req"`
-}
-
-func CheckAuthenticated(args url.Values) bool {
-
-	user := network_config_auth.CONFIG_AUTH_USERS_MAP[args.Get("user")]
-	if user == nil {
-		return false
-	}
-
-	return user.Password == args.Get("pass")
-}
-
-func (authenticated *APIAuthenticated[T]) CheckAuthenticated() bool {
-	user := network_config_auth.CONFIG_AUTH_USERS_MAP[authenticated.User]
-	if user == nil {
-		return false
-	}
-
-	return user.Password == authenticated.Pass
 }

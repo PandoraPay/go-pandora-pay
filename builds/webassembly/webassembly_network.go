@@ -13,6 +13,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/builds/webassembly/webassembly_utils"
 	"pandora-pay/helpers/advanced_buffers"
+	"pandora-pay/network/api_code/api_code_types"
 	"pandora-pay/network/api_implementation/api_common"
 	"pandora-pay/network/api_implementation/api_common/api_faucet"
 	"pandora-pay/network/api_implementation/api_common/api_types"
@@ -61,7 +62,7 @@ func getNetworkBlockInfo(this js.Value, args []js.Value) interface{} {
 func getNetworkBlockWithTxs(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		request := &api_common.APIBlockRequest{0, nil, api_types.RETURN_SERIALIZED}
+		request := &api_common.APIBlockRequest{0, nil, api_code_types.RETURN_SERIALIZED}
 		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
@@ -110,7 +111,7 @@ func getNetworkAccountsKeysByIndex(this js.Value, args []js.Value) interface{} {
 func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		request := &api_common.APIAccountsByKeysRequest{nil, nil, false, api_types.RETURN_SERIALIZED}
+		request := &api_common.APIAccountsByKeysRequest{nil, nil, false, api_code_types.RETURN_SERIALIZED}
 		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
@@ -148,7 +149,7 @@ func getNetworkAccountsByKeys(this js.Value, args []js.Value) interface{} {
 func getNetworkAccount(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		request := &api_common.APIAccountRequest{api_types.APIAccountBaseRequest{}, api_types.RETURN_SERIALIZED}
+		request := &api_common.APIAccountRequest{api_types.APIAccountBaseRequest{}, api_code_types.RETURN_SERIALIZED}
 		err := webassembly_utils.UnmarshalBytes(args[0], request)
 		if err != nil {
 			return nil, err
@@ -238,7 +239,7 @@ func getNetworkAccountMempoolNonce(this js.Value, args []js.Value) interface{} {
 func getNetworkTx(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
 
-		request := &api_common.APITxRequest{0, nil, api_types.RETURN_SERIALIZED}
+		request := &api_common.APITxRequest{0, nil, api_code_types.RETURN_SERIALIZED}
 		if err := webassembly_utils.UnmarshalBytes(args[0], request); err != nil {
 			return nil, err
 		}
@@ -327,7 +328,7 @@ func getNetworkAsset(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		final, err := connection.SendJSONAwaitAnswer[api_common.APIAssetReply](app.Network.Websockets.GetFirstSocket(), []byte("asset"), &api_common.APIAssetRequest{request.Height, request.Hash, api_types.RETURN_SERIALIZED}, nil, 0)
+		final, err := connection.SendJSONAwaitAnswer[api_common.APIAssetReply](app.Network.Websockets.GetFirstSocket(), []byte("asset"), &api_common.APIAssetRequest{request.Height, request.Hash, api_code_types.RETURN_SERIALIZED}, nil, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -389,7 +390,7 @@ func subscribeNetwork(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		req := &api_types.APISubscriptionRequest{key, api_types.SubscriptionType(args[1].Int()), api_types.RETURN_SERIALIZED}
+		req := &api_code_types.APISubscriptionRequest{key, api_code_types.SubscriptionType(args[1].Int()), api_code_types.RETURN_SERIALIZED}
 		_, err = connection.SendJSONAwaitAnswer[any](app.Network.Websockets.GetFirstSocket(), []byte("sub"), req, nil, 0)
 		if err != nil {
 			return nil, err
@@ -406,7 +407,7 @@ func unsubscribeNetwork(this js.Value, args []js.Value) interface{} {
 			return nil, err
 		}
 
-		_, err = connection.SendJSONAwaitAnswer[any](app.Network.Websockets.GetFirstSocket(), []byte("unsub"), &api_types.APIUnsubscriptionRequest{key, api_types.SubscriptionType(args[1].Int())}, nil, 0)
+		_, err = connection.SendJSONAwaitAnswer[any](app.Network.Websockets.GetFirstSocket(), []byte("unsub"), &api_code_types.APIUnsubscriptionRequest{key, api_code_types.SubscriptionType(args[1].Int())}, nil, 0)
 		if err != nil {
 			return nil, err
 		}

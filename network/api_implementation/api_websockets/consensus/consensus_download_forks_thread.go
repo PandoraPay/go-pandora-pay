@@ -13,8 +13,8 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/mempool"
+	"pandora-pay/network/api_code/api_code_types"
 	"pandora-pay/network/api_implementation/api_common"
-	"pandora-pay/network/api_implementation/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/txs_validator"
@@ -43,7 +43,7 @@ func (thread *ConsensusProcessForksThread) downloadBlockHash(conn *connection.Ad
 
 func (thread *ConsensusProcessForksThread) downloadBlockComplete(conn *connection.AdvancedConnection, fork *Fork, height uint64) (*block_complete.BlockComplete, error) {
 
-	blkWithTx, err := connection.SendJSONAwaitAnswer[api_common.APIBlockReply](conn, []byte("block"), &api_common.APIBlockRequest{height, nil, api_types.RETURN_SERIALIZED}, nil, 0)
+	blkWithTx, err := connection.SendJSONAwaitAnswer[api_common.APIBlockReply](conn, []byte("block"), &api_common.APIBlockRequest{height, nil, api_code_types.RETURN_SERIALIZED}, nil, 0)
 	if err != nil {
 		return nil, err
 	}

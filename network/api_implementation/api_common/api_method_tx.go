@@ -11,15 +11,15 @@ import (
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/advanced_buffers"
-	"pandora-pay/network/api_implementation/api_common/api_types"
+	"pandora-pay/network/api_code/api_code_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 )
 
 type APITxRequest struct {
-	Height     uint64                  `json:"height,omitempty" msgpack:"height,omitempty"`
-	Hash       helpers.Base64          `json:"hash,omitempty" msgpack:"hash,omitempty"`
-	ReturnType api_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
+	Height     uint64                       `json:"height,omitempty" msgpack:"height,omitempty"`
+	Hash       helpers.Base64               `json:"hash,omitempty" msgpack:"hash,omitempty"`
+	ReturnType api_code_types.APIReturnType `json:"returnType,omitempty" msgpack:"returnType,omitempty"`
 }
 
 type APITxReply struct {
@@ -46,7 +46,7 @@ func (api *APICommon) openLoadTx(args *APITxRequest, reply *APITxReply) error {
 			return errors.New("Tx not found")
 		}
 
-		if args.ReturnType == api_types.RETURN_SERIALIZED {
+		if args.ReturnType == api_code_types.RETURN_SERIALIZED {
 			reply.TxSerialized = data
 		} else {
 			reply.Tx = &transaction.Transaction{}
@@ -87,7 +87,7 @@ func (api *APICommon) GetTx(r *http.Request, args *APITxRequest, reply *APITxRep
 		if txMempool != nil {
 			reply.Mempool = true
 			reply.Tx = txMempool.Tx
-			if args.ReturnType == api_types.RETURN_SERIALIZED {
+			if args.ReturnType == api_code_types.RETURN_SERIALIZED {
 				reply.TxSerialized = reply.Tx.Bloom.Serialized
 				reply.Tx = nil
 			}

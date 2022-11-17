@@ -6,7 +6,7 @@ import (
 	"golang.org/x/exp/slices"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
-	"pandora-pay/network/api_implementation/api_common/api_types"
+	"pandora-pay/network/api_code/api_code_types"
 	"pandora-pay/network/network_config"
 	"sync"
 )
@@ -20,14 +20,14 @@ type Subscriptions struct {
 	sync.Mutex
 }
 
-func checkSubscriptionLength(key []byte, subscriptionType api_types.SubscriptionType) error {
+func checkSubscriptionLength(key []byte, subscriptionType api_code_types.SubscriptionType) error {
 	var length int
 	switch subscriptionType {
-	case api_types.SUBSCRIPTION_PLAIN_ACCOUNT, api_types.SUBSCRIPTION_ACCOUNT, api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, api_types.SUBSCRIPTION_REGISTRATION:
+	case api_code_types.SUBSCRIPTION_PLAIN_ACCOUNT, api_code_types.SUBSCRIPTION_ACCOUNT, api_code_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, api_code_types.SUBSCRIPTION_REGISTRATION:
 		length = cryptography.PublicKeySize
-	case api_types.SUBSCRIPTION_ASSET:
+	case api_code_types.SUBSCRIPTION_ASSET:
 		length = config_coins.ASSET_LENGTH
-	case api_types.SUBSCRIPTION_TRANSACTION:
+	case api_code_types.SUBSCRIPTION_TRANSACTION:
 		length = cryptography.HashSize
 	}
 	if len(key) != length {
@@ -36,9 +36,9 @@ func checkSubscriptionLength(key []byte, subscriptionType api_types.Subscription
 	return nil
 }
 
-func (s *Subscriptions) AddSubscription(subscriptionType api_types.SubscriptionType, key []byte, returnType api_types.APIReturnType) error {
+func (s *Subscriptions) AddSubscription(subscriptionType api_code_types.SubscriptionType, key []byte, returnType api_code_types.APIReturnType) error {
 
-	if subscriptionType == api_types.SUBSCRIPTION_PLAIN_ACCOUNT || subscriptionType == api_types.SUBSCRIPTION_REGISTRATION {
+	if subscriptionType == api_code_types.SUBSCRIPTION_PLAIN_ACCOUNT || subscriptionType == api_code_types.SUBSCRIPTION_REGISTRATION {
 		return errors.New("These subscriptions are automatically. They can't be subsribed manually")
 	}
 
@@ -69,7 +69,7 @@ func (s *Subscriptions) AddSubscription(subscriptionType api_types.SubscriptionT
 	return nil
 }
 
-func (s *Subscriptions) RemoveSubscription(subscriptionType api_types.SubscriptionType, key []byte) error {
+func (s *Subscriptions) RemoveSubscription(subscriptionType api_code_types.SubscriptionType, key []byte) error {
 
 	if err := checkSubscriptionLength(key, subscriptionType); err != nil {
 		return err
