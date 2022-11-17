@@ -28,7 +28,7 @@ Options:
   --store-chain-type=type                            Set Chain Store Type. Accepted values: "bolt|bunt|bunt-memory|memory".  [default: bolt]
   --forging                                          Start Forging blocks.
   --node-name=name                                   Change node name.
-  --node-consensus=type                              Consensus type. Accepted values: "full|wallet|none" [default: full].
+  --node-consensus=type                              Consensus type. Accepted values: "full|app|none" [default: full].
   --node-provide-extended-info-app=bool              Storing and serving additional info to wallet nodes. [default: true]. To enable, it requires full node
   --tcp-server-port=port                             Change node tcp server port [default: 8080].
   --tcp-max-clients=limit                            Change limit of clients [default: 50].
