@@ -192,7 +192,7 @@ func initialize() {
 			"TEST_NET_NETWORK_NAME":   js.ValueOf(config.TEST_NET_NETWORK_NAME),
 			"DEV_NET_NETWORK_BYTE":    js.ValueOf(config.DEV_NET_NETWORK_BYTE),
 			"DEV_NET_NETWORK_NAME":    js.ValueOf(config.DEV_NET_NETWORK_NAME),
-			"CONSENSUS":               js.ValueOf(uint8(config.CONSENSUS)),
+			"CONSENSUS":               js.ValueOf(uint8(config.NODE_CONSENSUS)),
 			"VERSION":                 js.ValueOf(config.VERSION_STRING),
 			"BUILD_VERSION":           js.ValueOf(config.BUILD_VERSION),
 			"BLOCK_TIME":              js.ValueOf(config.BLOCK_TIME),
