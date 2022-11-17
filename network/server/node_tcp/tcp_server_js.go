@@ -23,10 +23,7 @@ type TcpServer struct {
 func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, txsValidator *txs_validator.TxsValidator, txsBuilder *txs_builder.TxsBuilder) (*TcpServer, error) {
 
 	server := &TcpServer{}
-	var err error
-	if server.HttpServer, err = node_http.NewHttpServer(chain, settings, connectedNodes, bannedNodes, knownNodes, mempool, wallet, txsValidator, txsBuilder); err != nil {
-		return nil, err
-	}
+	server.HttpServer = node_http.NewHttpServer()
 
 	return server, nil
 }

@@ -3,6 +3,9 @@
 
 package node_http
 
-func (server *HttpServer) Initialize() {
+type HttpServer struct {
+}
 
+func NewHttpServer() (*HttpServer, error) {
+	return &HttpServer{}, nil
 }
