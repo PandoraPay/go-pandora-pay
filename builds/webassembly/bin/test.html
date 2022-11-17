@@ -9,7 +9,7 @@
                 '--devnet',
                 '--new-devnet',
                 '--store-wallet-type=memory',
-                '--node-consensus=wallet',
+                '--node-consensus=app',
                 '--tcp-max-clients=1',
             ]
             WebAssembly.instantiateStreaming(fetch("./main-test.wasm"), go.importObject).then( result =>{
