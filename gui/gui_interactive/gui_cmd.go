@@ -270,11 +270,11 @@ func (g *GUIInteractive) OutputReadString(text string) string {
 	select {
 	case out, ok := <-dataCn:
 		if !ok {
-			panic(gui_interface.GUIInterfaceError)
+			panic(gui_interface.ErrorGUISuspended)
 		}
 		return out
 	case <-ctx.Done():
-		panic(gui_interface.GUIInterfaceError)
+		panic(gui_interface.ErrorGUISuspended)
 	}
 
 }

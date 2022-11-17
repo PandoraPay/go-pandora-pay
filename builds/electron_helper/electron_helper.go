@@ -31,7 +31,9 @@ func main() {
 		return
 	}
 
-	server.CreateServer()
+	if err = server.CreateServer(); err != nil {
+		panic(err)
+	}
 
 	exitSignal := make(chan os.Signal, 10)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)

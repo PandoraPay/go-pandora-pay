@@ -3,25 +3,25 @@
 
 package arguments
 
-const commands = `PANDORA PAY WASM.
+var commands = `PANDORA PAY WASM.
 
 Usage:
-  pandorapay [--pprof] [--version] [--network=network] [--debug] [--forging] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--node-consensus=type] [--tcp-max-clients=limit] [--node-provide-extended-info-app=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--wallet-import-secret-mnemonic=mnemonic] [--wallet-import-secret-entropy=entropy] [--instance=prefix] [--instance-id=id] [--balance-decryptor-disable-init] [--exit]
+  pandorapay [--pprof] [--version] [--network=network] [--debug] [--gui-type=type] [--forging] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--node-consensus=type] [--tcp-max-clients=limit] [--node-provide-extended-info-app=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--wallet-import-secret-mnemonic=mnemonic] [--wallet-import-secret-entropy=entropy] [--instance=prefix] [--instance-id=id] [--balance-decryptor-disable-init] [--exit]
   pandorapay -h | --help
   pandorapay -v | --version
 
 Options:
   -h --help                                          Show this screen.
   --version                                          Show version.
+  --debug                                            Debug mode enabled (print log message).
+  --instance=prefix                                  Prefix of the instance [default: 0].
+  --instance-id=id                                   Number of forked instance (when you open multiple instances). It should be a string number like "1","2","3","4" etc
   --network=network                                  Select network. Accepted values: "mainnet|testnet|devnet". [default: mainnet]
   --new-devnet                                       Create a new devnet genesis.
   --set-genesis=genesis                              Manually set the Genesis via a JSON. Used for devnet genesis in Browser.
   --store-wallet-type=type                           Set Wallet Store Type. Accepted values: "bunt-memory|memory|js". [default: js]
   --store-chain-type=type                            Set Chain Store Type. Accepted values: "bunt-memory|memory|js". [default: memory].
-  --debug                                            Debug mode enabled (print log message).
   --forging                                          Start forging blocks.
-  --instance=prefix                                  Prefix of the instance [default: 0].
-  --instance-id=id                                   Number of forked instance (when you open multiple instances). It should be a string number like "1","2","3","4" etc
   --tcp-max-clients=limit                            Change limit of clients [default: 1].
   --node-name=name                                   Change node name.
   --node-consensus=type                                   Consensus type. Accepted values: "full|wallet|none". [default: full]

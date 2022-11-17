@@ -5,16 +5,20 @@ package arguments
 
 //use spaces for default https://github.com/docopt/docopt.go/issues/57
 
-const commands = `PANDORA PAY.
+var commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--pprof] [--network=network] [--debug] [--forging] [--new-devnet] [--run-testnet-script] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tcp-server-auto-tls-certificate] [--tcp-server-tls-cert-file=path] [--tcp-server-tls-key-file=path] [--tor-onion=onion] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--node-consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--node-provide-extended-info-app=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--wallet-import-secret-mnemonic=mnemonic] [--wallet-import-secret-entropy=entropy] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegator-enabled=bool] [--delegator-require-auth=bool] [--delegates-maximum=args] [--auth-users=args] [--light-computations] [--balance-decryptor-disable-init] [--balance-decryptor-table-size=size] [--exit] [--skip-init-sync]
+  pandorapay [--pprof] [--network=network] [--debug] [--gui-type=type] [--forging] [--new-devnet] [--run-testnet-script] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tcp-server-auto-tls-certificate] [--tcp-server-tls-cert-file=path] [--tcp-server-tls-key-file=path] [--tor-onion=onion] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--node-consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--node-provide-extended-info-app=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--wallet-import-secret-mnemonic=mnemonic] [--wallet-import-secret-entropy=entropy] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegator-enabled=bool] [--delegator-require-auth=bool] [--delegates-maximum=args] [--auth-users=args] [--light-computations] [--balance-decryptor-disable-init] [--balance-decryptor-table-size=size] [--exit] [--skip-init-sync]
   pandorapay -h | --help
   pandorapay -v | --version
 
 Options:
   -h --help                                          Show this screen.
   --version                                          Show version.
+  --gui-type=type                                    GUI format. Accepted values: "interactive|non-interactive".  [default: interactive]
+  --debug                                            Debug mode enabled (print log message).
+  --instance=prefix                                  Prefix of the instance [default: 0].
+  --instance-id=id                                   Number of forked instance (when you open multiple instances). It should be a string number like "1","2","3","4" etc
   --network=network                                  Select network. Accepted values: "mainnet|testnet|devnet". [default: mainnet]
   --new-devnet                                       Create a new devnet genesis.
   --run-testnet-script                               Run testnet script which will create dummy transactions in the network.
@@ -22,11 +26,10 @@ Options:
   --create-new-genesis=args                          Create a new Genesis. Useful for creating a new private testnet. Argument must be "0.stake,1.stake,2.stake"
   --store-wallet-type=type                           Set Wallet Store Type. Accepted values: "bolt|bunt|bunt-memory|memory". [default: bolt]
   --store-chain-type=type                            Set Chain Store Type. Accepted values: "bolt|bunt|bunt-memory|memory".  [default: bolt]
-  --debug                                            Debug mode enabled (print log message).
   --forging                                          Start Forging blocks.
   --node-name=name                                   Change node name.
-  --instance=prefix                                  Prefix of the instance [default: 0].
-  --instance-id=id                                   Number of forked instance (when you open multiple instances). It should be a string number like "1","2","3","4" etc
+  --node-consensus=type                              Consensus type. Accepted values: "full|wallet|none" [default: full].
+  --node-provide-extended-info-app=bool              Storing and serving additional info to wallet nodes. [default: true]. To enable, it requires full node
   --tcp-server-port=port                             Change node tcp server port [default: 8080].
   --tcp-max-clients=limit                            Change limit of clients [default: 50].
   --tcp-max-server-sockets=limit                     Change limit of servers [default: 500].
@@ -35,8 +38,6 @@ Options:
   --tcp-server-tls-cert-file=path                    Load TLS certificate file from given path.
   --tcp-server-tls-key-file=path                     Load TLS ke file from given path.
   --tor-onion=onion                                  Define your tor onion address to be used.
-  --node-consensus=type                                   Consensus type. Accepted values: "full|wallet|none" [default: full].
-  --node-provide-extended-info-app=bool                      Storing and serving additional info to wallet nodes. [default: true]. To enable, it requires full node
   --wallet-import-secret-mnemonic=mnemonic           Import Wallet from a given Mnemonic. It will delete your existing wallet. 
   --wallet-import-secret-entropy=entropy             Import Wallet from a given Entropy. It will delete your existing wallet.
   --wallet-encrypt=args                              Encrypt wallet. Argument must be "password,difficulty".
