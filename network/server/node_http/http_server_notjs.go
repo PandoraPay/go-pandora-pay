@@ -159,7 +159,7 @@ func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, co
 	apiWebsockets := api_websockets.NewWebsocketsAPI(apiStore, apiCommon, chain, settings, mempool, txsValidator)
 	api := api_http.NewAPI(apiStore, apiCommon, chain)
 
-	websockets := websocks.NewWebsockets(chain, mempool, settings, connectedNodes, knownNodes, bannedNodes, api, apiWebsockets)
+	websockets := websocks.NewWebsockets(chain, mempool, settings, connectedNodes, knownNodes, bannedNodes, apiWebsockets)
 
 	server := &HttpServer{
 		websocketServer: websocks.NewWebsocketServer(websockets, connectedNodes, knownNodes),

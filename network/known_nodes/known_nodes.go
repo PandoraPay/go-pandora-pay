@@ -131,7 +131,7 @@ func (self *KnownNodes) AddKnownNode(url string, isSeed bool) (*known_node.Known
 
 	if _, ok := self.connectedNodes.AllAddresses.Load(url); !ok {
 		self.knownNotConnectedMaxHeapMutex.Lock()
-		self.knownNotConnectedMaxHeap.Update(0, []byte(url))
+		self.knownNotConnectedMaxHeap.Update(float64(knownNode.Score), []byte(url))
 		self.knownNotConnectedMaxHeapMutex.Unlock()
 	}
 
@@ -158,6 +158,58 @@ func (self *KnownNodes) RemoveKnownNode(knownNode *known_node.KnownNodeScored) {
 		}
 	}
 
+}
+
+func (self *KnownNodes) Reset(urls []string, isSeed bool) (err error) {
+
+	self.knownNotConnectedMaxHeapMutex.Lock()
+	defer self.knownNotConnectedMaxHeapMutex.Unlock()
+
+	self.knownListMutex.Lock()
+	defer self.knownListMutex.Unlock()
+
+	self.knownList = []*known_node.KnownNodeScored{}
+	self.knownNotConnectedMaxHeap.Reset()
+	atomic.StoreInt32(&self.knownCount, 0)
+
+	changes := true
+	for changes {
+		changes = false
+		self.knownMap.Range(func(key string, value *known_node.KnownNodeScored) bool {
+			self.knownMap.Delete(key)
+			changes = true
+			return true
+		})
+	}
+
+	for _, url := range urls {
+
+		if atomic.LoadInt32(&self.knownCount) > network_config.NETWORK_KNOWN_NODES_LIMIT {
+			return
+		}
+
+		if self.bannedNodes.IsBanned(url) {
+			continue
+		}
+
+		knownNode := &known_node.KnownNodeScored{
+			KnownNode: known_node.KnownNode{
+				URL:    url,
+				IsSeed: isSeed,
+			},
+			Score: 0,
+		}
+
+		self.knownMap.LoadOrStore(url, knownNode)
+		self.knownList = append(self.knownList, knownNode)
+		if err = self.knownNotConnectedMaxHeap.Update(float64(knownNode.Score), []byte(url)); err != nil {
+			return
+		}
+
+		atomic.AddInt32(&self.knownCount, 1)
+
+	}
+	return
 }
 
 func NewKnownNodes(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *banned_nodes.BannedNodes) (knownNodes *KnownNodes) {

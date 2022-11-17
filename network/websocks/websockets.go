@@ -12,7 +12,6 @@ import (
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
-	"pandora-pay/network/api_implementation/api_http"
 	"pandora-pay/network/api_implementation/api_websockets"
 	"pandora-pay/network/banned_nodes"
 	"pandora-pay/network/connected_nodes"
@@ -35,7 +34,6 @@ type Websockets struct {
 	UpdateNewConnectionMulticast *multicast.MulticastChannel[*connection.AdvancedConnection]
 	bannedNodes                  *banned_nodes.BannedNodes
 	subscriptions                *WebsocketSubscriptions
-	api                          *api_http.API
 	settings                     *settings.Settings
 }
 
@@ -244,13 +242,12 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 	return nil
 }
 
-func NewWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, settings *settings.Settings, connectedNodes *connected_nodes.ConnectedNodes, knownNodes *known_nodes.KnownNodes, bannedNodes *banned_nodes.BannedNodes, api *api_http.API, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
+func NewWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, settings *settings.Settings, connectedNodes *connected_nodes.ConnectedNodes, knownNodes *known_nodes.KnownNodes, bannedNodes *banned_nodes.BannedNodes, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
 		connectedNodes:               connectedNodes,
 		knownNodes:                   knownNodes,
 		UpdateNewConnectionMulticast: multicast.NewMulticastChannel[*connection.AdvancedConnection](),
-		api:                          api,
 		ApiWebsockets:                apiWebsockets,
 		settings:                     settings,
 		bannedNodes:                  bannedNodes,

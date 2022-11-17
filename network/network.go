@@ -33,8 +33,13 @@ func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempo
 	bannedNodes := banned_nodes.NewBannedNodes()
 
 	knownNodes := known_nodes.NewKnownNodes(connectedNodes, bannedNodes)
-	for _, seed := range config.NETWORK_SELECTED_SEEDS {
-		knownNodes.AddKnownNode(seed.Url, true)
+
+	list := make([]string, len(config.NETWORK_SELECTED_SEEDS))
+	for i, seed := range config.NETWORK_SELECTED_SEEDS {
+		list[i] = seed.Url
+	}
+	if err := knownNodes.Reset(list, true); err != nil {
+		return nil, err
 	}
 
 	tcpServer, err := node_tcp.NewTcpServer(connectedNodes, bannedNodes, knownNodes, settings, chain, mempool, wallet, txsValidator, txsBuilder)
