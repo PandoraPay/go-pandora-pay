@@ -96,7 +96,7 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 		api.GetMap["account/mempool-nonce"] = api_code_websockets.Handle[api_common.APIAccountMempoolNonceRequest, api_common.APIAccountMempoolNonceReply](api.apiCommon.GetAccountMempoolNonce)
 	}
 
-	if config.NODE_CONSENSUS == config.NODE_CONSENSUS_TYPE_WALLET {
+	if config.NODE_CONSENSUS == config.NODE_CONSENSUS_TYPE_APP {
 		api.GetMap["sub/notify"] = api_code_websockets.SubscribedNotificationReceived
 	}
 

@@ -23,7 +23,7 @@ func (handshake *ConnectionHandshake) ValidateHandshake() (*semver.Version, erro
 	switch handshake.Consensus {
 	case config.NODE_CONSENSUS_TYPE_NONE:
 	case config.NODE_CONSENSUS_TYPE_FULL:
-	case config.NODE_CONSENSUS_TYPE_WALLET:
+	case config.NODE_CONSENSUS_TYPE_APP:
 	default:
 		return nil, errors.New("Invalid CONSENSUS")
 	}

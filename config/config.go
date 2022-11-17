@@ -132,7 +132,7 @@ func InitConfig() (err error) {
 			NODE_PROVIDE_INFO_WEB_WALLET = true
 		}
 	case "wallet":
-		NODE_CONSENSUS = NODE_CONSENSUS_TYPE_WALLET
+		NODE_CONSENSUS = NODE_CONSENSUS_TYPE_APP
 	case "none":
 		NODE_CONSENSUS = NODE_CONSENSUS_TYPE_NONE
 	default:
