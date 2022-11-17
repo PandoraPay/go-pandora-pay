@@ -76,7 +76,7 @@ var (
 
 var (
 	NODE_PROVIDE_INFO_WEB_WALLET bool
-	NODE_CONSENSUS               ConsensusType = CONSENSUS_TYPE_FULL
+	NODE_CONSENSUS               NodeConsensusType = NODE_CONSENSUS_TYPE_FULL
 )
 
 var (
@@ -127,14 +127,14 @@ func InitConfig() (err error) {
 	NODE_PROVIDE_INFO_WEB_WALLET = false
 	switch arguments.Arguments["--consensus"] {
 	case "full":
-		NODE_CONSENSUS = CONSENSUS_TYPE_FULL
+		NODE_CONSENSUS = NODE_CONSENSUS_TYPE_FULL
 		if arguments.Arguments["--node-provide-info-web-wallet"] == "true" {
 			NODE_PROVIDE_INFO_WEB_WALLET = true
 		}
 	case "wallet":
-		NODE_CONSENSUS = CONSENSUS_TYPE_WALLET
+		NODE_CONSENSUS = NODE_CONSENSUS_TYPE_WALLET
 	case "none":
-		NODE_CONSENSUS = CONSENSUS_TYPE_NONE
+		NODE_CONSENSUS = NODE_CONSENSUS_TYPE_NONE
 	default:
 		return errors.New("invalid consensus argument")
 	}

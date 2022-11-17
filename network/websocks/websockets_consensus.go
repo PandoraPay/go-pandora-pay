@@ -14,7 +14,7 @@ import (
 )
 
 func (websockets *Websockets) broadcastChain(newChainData *blockchain.BlockchainData, ctxDuration time.Duration) {
-	websockets.BroadcastJSON([]byte("chain-update"), websockets.ApiWebsockets.Consensus.GetUpdateNotification(newChainData), map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true, config.CONSENSUS_TYPE_WALLET: true}, advanced_connection_types.UUID_ALL, ctxDuration)
+	websockets.BroadcastJSON([]byte("chain-update"), websockets.ApiWebsockets.Consensus.GetUpdateNotification(newChainData), map[config.NodeConsensusType]bool{config.NODE_CONSENSUS_TYPE_FULL: true, config.NODE_CONSENSUS_TYPE_WALLET: true}, advanced_connection_types.UUID_ALL, ctxDuration)
 }
 
 func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justCreated, awaitPropagation bool, exceptSocketUUID advanced_connection_types.UUID, ctxParent context.Context) []error {
@@ -39,26 +39,26 @@ func (websockets *Websockets) BroadcastTxs(txs []*transaction.Transaction, justC
 			data := &api_common.APIMempoolNewTxRequest{Tx: tx.Bloom.Serialized}
 
 			if awaitPropagation {
-				out := websockets.BroadcastJSONAwaitAnswer([]byte("mempool/new-tx"), data, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctxParent, timeout)
+				out := websockets.BroadcastJSONAwaitAnswer([]byte("mempool/new-tx"), data, map[config.NodeConsensusType]bool{config.NODE_CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctxParent, timeout)
 				for _, o := range out {
 					if o != nil && o.Err != nil {
 						errs[i] = o.Err
 					}
 				}
 			} else {
-				websockets.BroadcastJSON([]byte("mempool/new-tx"), data, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, 0)
+				websockets.BroadcastJSON([]byte("mempool/new-tx"), data, map[config.NodeConsensusType]bool{config.NODE_CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, 0)
 			}
 
 		} else {
 			if awaitPropagation {
-				out := websockets.BroadcastAwaitAnswer([]byte("mempool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctxParent, timeout)
+				out := websockets.BroadcastAwaitAnswer([]byte("mempool/new-tx-id"), tx.Bloom.Hash, map[config.NodeConsensusType]bool{config.NODE_CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, ctxParent, timeout)
 				for _, o := range out {
 					if o != nil && o.Err != nil {
 						errs[i] = o.Err
 					}
 				}
 			} else {
-				websockets.Broadcast([]byte("mempool/new-tx-id"), tx.Bloom.Hash, map[config.ConsensusType]bool{config.CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, 0)
+				websockets.Broadcast([]byte("mempool/new-tx-id"), tx.Bloom.Hash, map[config.NodeConsensusType]bool{config.NODE_CONSENSUS_TYPE_FULL: true}, exceptSocketUUID, 0)
 			}
 		}
 

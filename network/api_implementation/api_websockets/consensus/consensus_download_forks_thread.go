@@ -243,7 +243,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 			willRemove := true
 
-			if config.NODE_CONSENSUS == config.CONSENSUS_TYPE_FULL {
+			if config.NODE_CONSENSUS == config.NODE_CONSENSUS_TYPE_FULL {
 
 				if thread.downloadFork(fork) {
 

@@ -85,7 +85,7 @@ func (network *Network) continuouslyDownloadMempool() {
 		for {
 
 			if conn := network.Websockets.GetRandomSocket(); conn != nil {
-				if config.NODE_CONSENSUS == config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.CONSENSUS_TYPE_FULL {
+				if config.NODE_CONSENSUS == config.NODE_CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.NODE_CONSENSUS_TYPE_FULL {
 					network.MempoolSync.DownloadMempool(conn)
 				}
 			}
@@ -106,7 +106,7 @@ func (network *Network) continuouslyDownloadNetworkNodes() {
 			conn := network.Websockets.GetRandomSocket()
 			if conn != nil {
 
-				if config.NODE_CONSENSUS == config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.CONSENSUS_TYPE_FULL {
+				if config.NODE_CONSENSUS == config.NODE_CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.NODE_CONSENSUS_TYPE_FULL {
 					network.KnownNodesSync.DownloadNetworkNodes(conn)
 				}
 

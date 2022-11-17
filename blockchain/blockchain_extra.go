@@ -143,7 +143,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 		dataStorage := data_storage.NewDataStorage(writer)
 
-		if config.NODE_CONSENSUS == config.CONSENSUS_TYPE_FULL {
+		if config.NODE_CONSENSUS == config.NODE_CONSENSUS_TYPE_FULL {
 			if err = chain.initializeNewChain(chainData, dataStorage); err != nil {
 				return
 			}
@@ -167,7 +167,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, newWork bool) {
 
-	if config.NODE_CONSENSUS != config.CONSENSUS_TYPE_FULL {
+	if config.NODE_CONSENSUS != config.NODE_CONSENSUS_TYPE_FULL {
 		return
 	}
 

@@ -56,7 +56,7 @@ func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempo
 
 	network.continuouslyDownloadChain()
 
-	if config.NODE_CONSENSUS == config.CONSENSUS_TYPE_FULL {
+	if config.NODE_CONSENSUS == config.NODE_CONSENSUS_TYPE_FULL {
 		network.continuouslyDownloadMempool()
 		network.continuouslyDownloadNetworkNodes()
 	}

@@ -88,7 +88,7 @@ func (wallet *Wallet) InitializeWallet(updateNewChainUpdate *multicast.Multicast
 	wallet.updateNewChainUpdate = updateNewChainUpdate
 	wallet.Lock.Unlock()
 
-	if config.NODE_CONSENSUS == config.CONSENSUS_TYPE_FULL {
+	if config.NODE_CONSENSUS == config.NODE_CONSENSUS_TYPE_FULL {
 		wallet.processRefreshWallets()
 	}
 }
