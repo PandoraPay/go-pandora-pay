@@ -6,13 +6,14 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"math/rand"
 	"pandora-pay/blockchain"
+	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
-	"pandora-pay/network/api/api_http"
-	"pandora-pay/network/api/api_websockets"
+	"pandora-pay/network/api_implementation/api_http"
+	"pandora-pay/network/api_implementation/api_websockets"
 	"pandora-pay/network/banned_nodes"
 	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes"
@@ -75,7 +76,7 @@ func (websockets *Websockets) Disconnect() int {
 	return len(list)
 }
 
-func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeAccepted map[network_config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctxDuration time.Duration) {
+func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctxDuration time.Duration) {
 
 	if exceptSocketUUID == advanced_connection_types.UUID_SKIP_ALL {
 		return
@@ -93,7 +94,7 @@ func (websockets *Websockets) Broadcast(name []byte, data []byte, consensusTypeA
 
 }
 
-func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusTypeAccepted map[network_config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) []*advanced_connection_types.AdvancedConnectionReply {
+func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) []*advanced_connection_types.AdvancedConnectionReply {
 
 	if exceptSocketUUID == advanced_connection_types.UUID_SKIP_ALL {
 		return nil
@@ -128,12 +129,12 @@ func (websockets *Websockets) BroadcastAwaitAnswer(name, data []byte, consensusT
 	return out
 }
 
-func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, consensusTypeAccepted map[network_config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctxDuration time.Duration) {
+func (websockets *Websockets) BroadcastJSON(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctxDuration time.Duration) {
 	out, _ := msgpack.Marshal(data)
 	websockets.Broadcast(name, out, consensusTypeAccepted, exceptSocketUUID, ctxDuration)
 }
 
-func (websockets *Websockets) BroadcastJSONAwaitAnswer(name []byte, data interface{}, consensusTypeAccepted map[network_config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) []*advanced_connection_types.AdvancedConnectionReply {
+func (websockets *Websockets) BroadcastJSONAwaitAnswer(name []byte, data interface{}, consensusTypeAccepted map[config.ConsensusType]bool, exceptSocketUUID advanced_connection_types.UUID, ctx context.Context, ctxDuration time.Duration) []*advanced_connection_types.AdvancedConnectionReply {
 	out, _ := msgpack.Marshal(data)
 	return websockets.BroadcastAwaitAnswer(name, out, consensusTypeAccepted, exceptSocketUUID, ctx, ctxDuration)
 }
@@ -156,7 +157,7 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 
 	totalSockets := websockets.connectedNodes.Disconnected(conn)
 
-	if network_config.NODE_PROVIDE_INFO_WEB_WALLET {
+	if network_config.NETWORK_ENABLE_SUBSCRIPTIONS {
 		websockets.subscriptions.websocketClosedCn <- conn
 	}
 

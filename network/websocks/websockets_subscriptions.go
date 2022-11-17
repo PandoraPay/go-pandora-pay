@@ -6,7 +6,7 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
-	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/network/api_implementation/api_common/api_types"
 	"pandora-pay/network/network_config"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
@@ -37,7 +37,7 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
 	}
 
-	if network_config.NODE_PROVIDE_INFO_WEB_WALLET {
+	if network_config.NETWORK_ENABLE_SUBSCRIPTIONS {
 		recovery.SafeGo(subs.processSubscriptions)
 	}
 

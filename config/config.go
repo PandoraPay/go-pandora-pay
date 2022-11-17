@@ -75,6 +75,11 @@ var (
 )
 
 var (
+	NODE_PROVIDE_INFO_WEB_WALLET bool
+	NODE_CONSENSUS               ConsensusType = CONSENSUS_TYPE_FULL
+)
+
+var (
 	INSTANCE    = ""
 	INSTANCE_ID = 0
 )
@@ -117,6 +122,21 @@ func InitConfig() (err error) {
 			FAUCET_TESTNET_ENABLED = true
 		}
 
+	}
+
+	NODE_PROVIDE_INFO_WEB_WALLET = false
+	switch arguments.Arguments["--consensus"] {
+	case "full":
+		NODE_CONSENSUS = CONSENSUS_TYPE_FULL
+		if arguments.Arguments["--node-provide-info-web-wallet"] == "true" {
+			NODE_PROVIDE_INFO_WEB_WALLET = true
+		}
+	case "wallet":
+		NODE_CONSENSUS = CONSENSUS_TYPE_WALLET
+	case "none":
+		NODE_CONSENSUS = CONSENSUS_TYPE_NONE
+	default:
+		return errors.New("invalid consensus argument")
 	}
 
 	if err = config_nodes.InitConfig(); err != nil {

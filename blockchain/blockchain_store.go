@@ -7,8 +7,8 @@ import (
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
+	"pandora-pay/config"
 	"pandora-pay/helpers"
-	"pandora-pay/network/network_config"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
@@ -117,7 +117,7 @@ func (chain *Blockchain) removeBlockComplete(writer store_db_interface.StoreDBTr
 		removedTxHashes[txChange.TxHashStr] = txHash
 	}
 
-	if network_config.SEED_WALLET_NODES_INFO {
+	if config.NODE_PROVIDE_INFO_WEB_WALLET {
 		if err = removeBlockCompleteInfo(writer, hash, txHashes, localTransactionChanges); err != nil {
 			return
 		}
@@ -184,7 +184,7 @@ func (chain *Blockchain) saveBlockComplete(writer store_db_interface.StoreDBTran
 
 	}
 
-	if network_config.SEED_WALLET_NODES_INFO {
+	if config.NODE_PROVIDE_INFO_WEB_WALLET {
 		if err := saveBlockCompleteInfo(writer, blkComplete, transactionsCount, localTransactionChanges); err != nil {
 			return allTransactionsChanges, err
 		}
@@ -197,7 +197,7 @@ func (chain *Blockchain) saveBlockchainHashmaps(dataStorage *data_storage.DataSt
 
 	dataStorage.Rollback()
 
-	if network_config.SEED_WALLET_NODES_INFO {
+	if config.NODE_PROVIDE_INFO_WEB_WALLET {
 		if err = saveAssetsInfo(dataStorage.Asts); err != nil {
 			return
 		}

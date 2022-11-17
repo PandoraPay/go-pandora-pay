@@ -2,7 +2,7 @@ package mempool_sync
 
 import (
 	"pandora-pay/config"
-	"pandora-pay/network/api/api_common"
+	"pandora-pay/network/api_implementation/api_common"
 	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection"
 )

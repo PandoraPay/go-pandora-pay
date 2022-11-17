@@ -1,7 +1,7 @@
 package known_nodes_sync
 
 import (
-	"pandora-pay/network/api/api_common"
+	"pandora-pay/network/api_implementation/api_common"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection"

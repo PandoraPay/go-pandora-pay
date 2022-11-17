@@ -6,7 +6,7 @@ import (
 	"pandora-pay/addresses"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/helpers"
-	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/network/api_implementation/api_common/api_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 )

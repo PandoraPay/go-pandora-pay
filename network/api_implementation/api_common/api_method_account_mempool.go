@@ -2,7 +2,7 @@ package api_common
 
 import (
 	"net/http"
-	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/network/api_implementation/api_common/api_types"
 )
 
 type APIAccountMempoolRequest struct {

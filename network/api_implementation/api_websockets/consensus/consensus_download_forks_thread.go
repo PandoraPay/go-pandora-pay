@@ -13,9 +13,8 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/mempool"
-	"pandora-pay/network/api/api_common"
-	"pandora-pay/network/api/api_common/api_types"
-	"pandora-pay/network/network_config"
+	"pandora-pay/network/api_implementation/api_common"
+	"pandora-pay/network/api_implementation/api_common/api_types"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/txs_validator"
@@ -244,7 +243,7 @@ func (thread *ConsensusProcessForksThread) execute() {
 
 			willRemove := true
 
-			if network_config.CONSENSUS == network_config.CONSENSUS_TYPE_FULL {
+			if config.NODE_CONSENSUS == config.CONSENSUS_TYPE_FULL {
 
 				if thread.downloadFork(fork) {
 

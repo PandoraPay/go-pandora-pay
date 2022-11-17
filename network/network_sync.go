@@ -1,9 +1,10 @@
 package network
 
 import (
+	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/recovery"
-	"pandora-pay/network/api/api_websockets/consensus"
+	"pandora-pay/network/api_implementation/api_websockets/consensus"
 	"pandora-pay/network/known_nodes/known_node"
 	"pandora-pay/network/network_config"
 	"pandora-pay/network/websocks"
@@ -84,7 +85,7 @@ func (network *Network) continuouslyDownloadMempool() {
 		for {
 
 			if conn := network.Websockets.GetRandomSocket(); conn != nil {
-				if network_config.CONSENSUS == network_config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == network_config.CONSENSUS_TYPE_FULL {
+				if config.NODE_CONSENSUS == config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.CONSENSUS_TYPE_FULL {
 					network.MempoolSync.DownloadMempool(conn)
 				}
 			}
@@ -105,7 +106,7 @@ func (network *Network) continuouslyDownloadNetworkNodes() {
 			conn := network.Websockets.GetRandomSocket()
 			if conn != nil {
 
-				if network_config.CONSENSUS == network_config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == network_config.CONSENSUS_TYPE_FULL {
+				if config.NODE_CONSENSUS == config.CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.CONSENSUS_TYPE_FULL {
 					network.KnownNodesSync.DownloadNetworkNodes(conn)
 				}
 

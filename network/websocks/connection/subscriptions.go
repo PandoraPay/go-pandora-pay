@@ -6,7 +6,7 @@ import (
 	"golang.org/x/exp/slices"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
-	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/network/api_implementation/api_common/api_types"
 	"pandora-pay/network/network_config"
 	"sync"
 )

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
-	"pandora-pay/app"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
@@ -14,7 +13,8 @@ import (
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/helpers/recovery"
-	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/network/api_code/api_code_websockets"
+	"pandora-pay/network/api_implementation/api_common/api_types"
 	"sync/atomic"
 	"syscall/js"
 )
@@ -66,11 +66,11 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 		}
 		callback := args[0]
 
-		subscriptionsCn := app.Network.Websockets.ApiWebsockets.SubscriptionNotifications.AddListener()
+		subscriptionsCn := api_code_websockets.SubscriptionNotifications.AddListener()
 
 		recovery.SafeGo(func() {
 
-			defer app.Network.Websockets.ApiWebsockets.SubscriptionNotifications.RemoveChannel(subscriptionsCn)
+			defer api_code_websockets.SubscriptionNotifications.RemoveChannel(subscriptionsCn)
 
 			var err error
 			for {

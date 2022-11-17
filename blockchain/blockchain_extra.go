@@ -15,6 +15,7 @@ import (
 	"pandora-pay/blockchain/forging/forging_block_work"
 	"pandora-pay/blockchain/genesis"
 	"pandora-pay/blockchain/transactions/transaction"
+	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/config/config_stake"
@@ -23,7 +24,6 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/helpers/recovery"
-	"pandora-pay/network/network_config"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -143,13 +143,13 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 		dataStorage := data_storage.NewDataStorage(writer)
 
-		if network_config.CONSENSUS == network_config.CONSENSUS_TYPE_FULL {
+		if config.NODE_CONSENSUS == config.CONSENSUS_TYPE_FULL {
 			if err = chain.initializeNewChain(chainData, dataStorage); err != nil {
 				return
 			}
 		}
 
-		if network_config.SEED_WALLET_NODES_INFO {
+		if config.NODE_PROVIDE_INFO_WEB_WALLET {
 			if err = saveAssetsInfo(dataStorage.Asts); err != nil {
 				return
 			}
@@ -167,7 +167,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, newWork bool) {
 
-	if network_config.CONSENSUS != network_config.CONSENSUS_TYPE_FULL {
+	if config.NODE_CONSENSUS != config.CONSENSUS_TYPE_FULL {
 		return
 	}
 

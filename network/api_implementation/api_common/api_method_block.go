@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"pandora-pay/blockchain/blocks/block"
 	"pandora-pay/helpers"
-	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/network/api_implementation/api_common/api_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"

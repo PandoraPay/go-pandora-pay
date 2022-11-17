@@ -8,7 +8,7 @@ import (
 	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
-	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/network/api_implementation/api_common/api_types"
 	"pandora-pay/start"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"

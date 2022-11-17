@@ -4,9 +4,9 @@ import (
 	"pandora-pay/address_balance_decryptor"
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/forging"
+	"pandora-pay/config"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
-	"pandora-pay/network/network_config"
 	"pandora-pay/wallet/wallet_address"
 	"sync"
 )
@@ -88,7 +88,7 @@ func (wallet *Wallet) InitializeWallet(updateNewChainUpdate *multicast.Multicast
 	wallet.updateNewChainUpdate = updateNewChainUpdate
 	wallet.Lock.Unlock()
 
-	if network_config.CONSENSUS == network_config.CONSENSUS_TYPE_FULL {
+	if config.NODE_CONSENSUS == config.CONSENSUS_TYPE_FULL {
 		wallet.processRefreshWallets()
 	}
 }

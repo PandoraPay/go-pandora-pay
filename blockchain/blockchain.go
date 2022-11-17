@@ -26,7 +26,6 @@ import (
 	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/mempool"
-	"pandora-pay/network/network_config"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
@@ -404,7 +403,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 
 					//removing unused transactions
-					if network_config.SEED_WALLET_NODES_INFO {
+					if config.NODE_PROVIDE_INFO_WEB_WALLET {
 						removeUnusedTransactions(writer, newChainData.TransactionsCount, removedBlocksTransactionsCount)
 					}
 				}
@@ -437,7 +436,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 				}
 
-				if network_config.SEED_WALLET_NODES_INFO {
+				if config.NODE_PROVIDE_INFO_WEB_WALLET {
 					removeTxsInfo(writer, removedTxHashes)
 				}
 

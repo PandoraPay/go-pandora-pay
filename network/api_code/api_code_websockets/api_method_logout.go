@@ -1,4 +1,4 @@
-package api_websockets
+package api_code_websockets
 
 import (
 	"pandora-pay/network/websocks/connection"
@@ -8,7 +8,7 @@ type APILogoutReply struct {
 	Status bool `json:"status" msgpack:""`
 }
 
-func (api *APIWebsockets) logout(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
+func Logout(conn *connection.AdvancedConnection, values []byte) (interface{}, error) {
 
 	reply := &APILogoutReply{}
 

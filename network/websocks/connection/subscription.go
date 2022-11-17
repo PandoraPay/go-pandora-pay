@@ -1,6 +1,6 @@
 package connection
 
-import "pandora-pay/network/api/api_common/api_types"
+import "pandora-pay/network/api_implementation/api_common/api_types"
 
 type Subscription struct {
 	Type       api_types.SubscriptionType
