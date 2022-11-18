@@ -33,6 +33,10 @@ func (network *Network) continuouslyConnectingNewPeers() {
 				}
 				if knownNode != nil {
 
+					if _, loaded := network.ConnectedNodes.AllAddresses.Load(knownNode.URL); loaded {
+						continue
+					}
+
 					//gui.GUI.Log("connecting to", knownNode.URL, atomic.LoadInt32(&knownNode.Score))
 
 					if network.BannedNodes.IsBanned(knownNode.URL) {

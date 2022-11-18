@@ -16,10 +16,10 @@ type ConnectedNodes struct {
 }
 
 func (this *ConnectedNodes) JustConnected(c *connection.AdvancedConnection, remoteAddr string) bool {
-	if _, ok := this.AllAddresses.LoadOrStore(remoteAddr, c); !ok {
-		return true
+	if _, ok := this.AllAddresses.LoadOrStore(remoteAddr, c); ok {
+		return false
 	}
-	return false
+	return true
 }
 
 func (this *ConnectedNodes) JustDisconnected(c *connection.AdvancedConnection) {
