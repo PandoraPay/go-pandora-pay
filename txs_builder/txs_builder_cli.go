@@ -26,11 +26,11 @@ import (
 	"pandora-pay/txs_builder/wizard"
 )
 
-func (builder *TxsBuilder) showWarningIfNotSyncCLI() {
+func (builder *TxsBuilderType) showWarningIfNotSyncCLI() {
 
 }
 
-func (builder *TxsBuilder) readData() (out *wizard.WizardTransactionData) {
+func (builder *TxsBuilderType) readData() (out *wizard.WizardTransactionData) {
 
 	data := &wizard.WizardTransactionData{}
 	str := gui.GUI.OutputReadString("Message (data). Leave empty for none")
@@ -43,7 +43,7 @@ func (builder *TxsBuilder) readData() (out *wizard.WizardTransactionData) {
 	return data
 }
 
-func (builder *TxsBuilder) readAmount(assetId []byte, text string) (amount uint64, err error) {
+func (builder *TxsBuilderType) readAmount(assetId []byte, text string) (amount uint64, err error) {
 
 	amountFloat := gui.GUI.OutputReadFloat64(text, false, 0, nil)
 
@@ -66,7 +66,7 @@ func (builder *TxsBuilder) readAmount(assetId []byte, text string) (amount uint6
 	return
 }
 
-func (builder *TxsBuilder) readAddress(text string, leaveEmpty bool) (address *addresses.Address, err error) {
+func (builder *TxsBuilderType) readAddress(text string, leaveEmpty bool) (address *addresses.Address, err error) {
 
 	for {
 		str := gui.GUI.OutputReadString(text)
@@ -85,7 +85,7 @@ func (builder *TxsBuilder) readAddress(text string, leaveEmpty bool) (address *a
 	return
 }
 
-func (builder *TxsBuilder) readAddressOptional(text string, assetId []byte, allowRandomAddress bool) (address *addresses.Address, addressEncoded string, amount uint64, err error) {
+func (builder *TxsBuilderType) readAddressOptional(text string, assetId []byte, allowRandomAddress bool) (address *addresses.Address, addressEncoded string, amount uint64, err error) {
 
 	text2 := text
 	if allowRandomAddress {
@@ -113,7 +113,7 @@ func (builder *TxsBuilder) readAddressOptional(text string, assetId []byte, allo
 	return
 }
 
-func (builder *TxsBuilder) readZetherRingConfiguration(payload *TxBuilderCreateZetherTxPayload) {
+func (builder *TxsBuilderType) readZetherRingConfiguration(payload *TxBuilderCreateZetherTxPayload) {
 
 	payload.RingSize = -1
 	payload.RingConfiguration = &ZetherRingConfiguration{
@@ -136,7 +136,7 @@ func (builder *TxsBuilder) readZetherRingConfiguration(payload *TxBuilderCreateZ
 
 }
 
-func (builder *TxsBuilder) readFee(assetId []byte) (fee *wizard.WizardTransactionFee) {
+func (builder *TxsBuilderType) readFee(assetId []byte) (fee *wizard.WizardTransactionFee) {
 
 	var err error
 	fee = &wizard.WizardTransactionFee{}
@@ -158,7 +158,7 @@ func (builder *TxsBuilder) readFee(assetId []byte) (fee *wizard.WizardTransactio
 	return
 }
 
-func (builder *TxsBuilder) readZetherFee(assetId []byte) (fee *wizard.WizardZetherTransactionFee) {
+func (builder *TxsBuilderType) readZetherFee(assetId []byte) (fee *wizard.WizardZetherTransactionFee) {
 
 	fee = &wizard.WizardZetherTransactionFee{}
 	fee.WizardTransactionFee = builder.readFee(assetId)
@@ -176,7 +176,7 @@ func (builder *TxsBuilder) readZetherFee(assetId []byte) (fee *wizard.WizardZeth
 	return
 }
 
-func (builder *TxsBuilder) readAsset(text string, allowEmptyAsset bool) []byte {
+func (builder *TxsBuilderType) readAsset(text string, allowEmptyAsset bool) []byte {
 	assetId := gui.GUI.OutputReadBytes(text, func(input []byte) bool {
 		return (allowEmptyAsset && len(input) == 0) || len(input) == config_coins.ASSET_LENGTH
 	})
@@ -186,7 +186,7 @@ func (builder *TxsBuilder) readAsset(text string, allowEmptyAsset bool) []byte {
 	return assetId
 }
 
-func (builder *TxsBuilder) initCLI() {
+func (builder *TxsBuilderType) initCLI() {
 
 	cliPrivateTransfer := func(cmd string, ctx context.Context) (err error) {
 		builder.showWarningIfNotSyncCLI()

@@ -5,27 +5,24 @@ import (
 	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
-	"pandora-pay/txs_validator"
 )
 
 type Consensus struct {
-	chain        *blockchain.Blockchain
-	txsValidator *txs_validator.TxsValidator
-	mempool      *mempool.Mempool
-	forks        *Forks
+	chain   *blockchain.Blockchain
+	mempool *mempool.Mempool
+	forks   *Forks
 }
 
 func (consensus *Consensus) execute() {
 	//discover forks
-	processForksThread := newConsensusProcessForksThread(consensus.forks, consensus.chain, consensus.mempool, consensus.txsValidator)
+	processForksThread := newConsensusProcessForksThread(consensus.forks, consensus.chain, consensus.mempool)
 	recovery.SafeGo(processForksThread.execute)
 }
 
-func NewConsensus(chain *blockchain.Blockchain, mempool *mempool.Mempool, txsValidator *txs_validator.TxsValidator) *Consensus {
+func NewConsensus(chain *blockchain.Blockchain, mempool *mempool.Mempool) *Consensus {
 
 	consensus := &Consensus{
 		chain,
-		txsValidator,
 		mempool,
 		&Forks{
 			hashes: &generics.Map[string, *Fork]{},

@@ -9,13 +9,15 @@ import (
 	"time"
 )
 
-type TxsValidator struct {
+type TxsValidatorType struct {
 	all                 *generics.Map[string, *txValidatedWork]
 	workers             []*TxsValidatorWorker
 	newValidationWorkCn chan *txValidatedWork
 }
 
-func (validator *TxsValidator) MarkAsValidatedTx(tx *transaction.Transaction) error {
+var TxsValidator *TxsValidatorType
+
+func (validator *TxsValidatorType) MarkAsValidatedTx(tx *transaction.Transaction) error {
 
 	foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidatedWork{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
 
@@ -46,7 +48,7 @@ func (validator *TxsValidator) MarkAsValidatedTx(tx *transaction.Transaction) er
 }
 
 //blocking
-func (validator *TxsValidator) ValidateTx(tx *transaction.Transaction) error {
+func (validator *TxsValidatorType) ValidateTx(tx *transaction.Transaction) error {
 
 	foundWork, loaded := validator.all.LoadOrStore(tx.Bloom.HashStr, &txValidatedWork{make(chan struct{}), TX_VALIDATED_INIT, tx, 0, nil, nil})
 	if !loaded {
@@ -63,7 +65,7 @@ func (validator *TxsValidator) ValidateTx(tx *transaction.Transaction) error {
 	return nil
 }
 
-func (validator *TxsValidator) ValidateTxs(txs []*transaction.Transaction) error {
+func (validator *TxsValidatorType) ValidateTxs(txs []*transaction.Transaction) error {
 
 	outputs := make([]*txValidatedWork, len(txs))
 	for i, tx := range txs {
@@ -88,7 +90,7 @@ func (validator *TxsValidator) ValidateTxs(txs []*transaction.Transaction) error
 	return nil
 }
 
-func (validator *TxsValidator) runRemoveExpiredTransactions() {
+func (validator *TxsValidatorType) runRemoveExpiredTransactions() {
 
 	c := 0
 	for {
@@ -116,28 +118,28 @@ func (validator *TxsValidator) runRemoveExpiredTransactions() {
 	}
 }
 
-func NewTxsValidator() (*TxsValidator, error) {
+func NewTxsValidator() error {
 
 	threadsCount := config.CPU_THREADS
 	if config.LIGHT_COMPUTATIONS {
 		threadsCount = generics.Max(1, config.CPU_THREADS/2)
 	}
 
-	txsValidator := &TxsValidator{
+	TxsValidator = &TxsValidatorType{
 		&generics.Map[string, *txValidatedWork]{},
 		make([]*TxsValidatorWorker, threadsCount),
 		make(chan *txValidatedWork, 1),
 	}
 
-	for i := range txsValidator.workers {
-		txsValidator.workers[i] = newTxsValidatorWorker(txsValidator.newValidationWorkCn)
+	for i := range TxsValidator.workers {
+		TxsValidator.workers[i] = newTxsValidatorWorker(TxsValidator.newValidationWorkCn)
 	}
 
-	for _, worker := range txsValidator.workers {
+	for _, worker := range TxsValidator.workers {
 		worker.start()
 	}
 
-	go txsValidator.runRemoveExpiredTransactions()
+	go TxsValidator.runRemoveExpiredTransactions()
 
-	return txsValidator, nil
+	return nil
 }

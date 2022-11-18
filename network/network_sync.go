@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func (network *Network) continuouslyConnectingNewPeers() {
+func (network *NetworkType) continuouslyConnectingNewPeers() {
 
 	for i := 0; i < network_config.WEBSOCKETS_CONCURRENT_NEW_CONENCTIONS; i++ {
 		index := i
@@ -34,6 +34,7 @@ func (network *Network) continuouslyConnectingNewPeers() {
 				if knownNode != nil {
 
 					if _, loaded := network.ConnectedNodes.AllAddresses.Load(knownNode.URL); loaded {
+						time.Sleep(100 * time.Millisecond)
 						continue
 					}
 
@@ -64,7 +65,7 @@ func (network *Network) continuouslyConnectingNewPeers() {
 
 }
 
-func (network *Network) continuouslyDownloadChain() {
+func (network *NetworkType) continuouslyDownloadChain() {
 	recovery.SafeGo(func() {
 
 		for {
@@ -82,7 +83,7 @@ func (network *Network) continuouslyDownloadChain() {
 	})
 }
 
-func (network *Network) continuouslyDownloadMempool() {
+func (network *NetworkType) continuouslyDownloadMempool() {
 
 	recovery.SafeGo(func() {
 
@@ -101,7 +102,7 @@ func (network *Network) continuouslyDownloadMempool() {
 
 }
 
-func (network *Network) continuouslyDownloadNetworkNodes() {
+func (network *NetworkType) continuouslyDownloadNetworkNodes() {
 
 	recovery.SafeGo(func() {
 
@@ -123,7 +124,7 @@ func (network *Network) continuouslyDownloadNetworkNodes() {
 
 }
 
-func (network *Network) syncBlockchainNewConnections() {
+func (network *NetworkType) syncBlockchainNewConnections() {
 	recovery.SafeGo(func() {
 
 		cn := network.Websockets.UpdateNewConnectionMulticast.AddListener()

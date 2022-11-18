@@ -6,7 +6,7 @@ package arguments
 var commands = `PANDORA PAY WASM.
 
 Usage:
-  pandorapay [--pprof] [--version] [--network=network] [--debug] [--gui-type=type] [--forging] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--node-consensus=type] [--tcp-max-clients=limit] [--node-provide-extended-info-app=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--wallet-import-secret-mnemonic=mnemonic] [--wallet-import-secret-entropy=entropy] [--instance=prefix] [--instance-id=id] [--balance-decryptor-disable-init] [--exit]
+  pandorapay [--pprof] [--version] [--network=network] [--debug] [--gui-type=type] [--forging] [--new-devnet] [--node-name=name] [--set-genesis=genesis] [--store-wallet-type=type] [--store-chain-type=type] [--node-consensus=type] [--tcp-max-clients=limit] [--node-provide-extended-info-app=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--wallet-import-secret-mnemonic=mnemonic] [--wallet-import-secret-entropy=entropy] [--instance=prefix] [--instance-id=id] [--balance-decryptor-disable-init] [--tcp-connections-ready=threshold] [--exit]
   pandorapay -h | --help
   pandorapay -v | --version
 
@@ -23,9 +23,10 @@ Options:
   --store-chain-type=type                            Set Chain Store Type. Accepted values: "bunt-memory|memory|js". [default: memory].
   --forging                                          Start forging blocks.
   --tcp-max-clients=limit                            Change limit of clients [default: 1].
+  --tcp-connections-ready=threshold                  Number of connections to become "ready" state [default: 1].
   --node-name=name                                   Change node name.
-  --node-consensus=type                                   Consensus type. Accepted values: "full|wallet|none". [default: full]
-  --node-provide-extended-info-app=bool                Storing and serving additional info to wallet nodes. [default: true]. To enable, it requires full node
+  --node-consensus=type                              Consensus type. Accepted values: "full|wallet|none". [default: full]
+  --node-provide-extended-info-app=bool              Storing and serving additional info to wallet nodes. [default: true]. To enable, it requires full node
   --wallet-import-secret-mnemonic=mnemonic           Import Wallet from a given Mnemonic. It will delete your existing wallet. 
   --wallet-import-secret-entropy=entropy             Import Wallet from a given Entropy. It will delete your existing wallet.
   --wallet-encrypt=args                              Encrypt wallet. Argument must be "password,difficulty".

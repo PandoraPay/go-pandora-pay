@@ -8,6 +8,7 @@ import (
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
+	"pandora-pay/txs_validator"
 )
 
 type APIMempoolNewTxRequest struct {
@@ -53,7 +54,7 @@ func (api *APICommon) mempoolNewTx(args *APIMempoolNewTxRequest, reply *APIMempo
 		return err
 	}
 
-	if err = api.txsValidator.ValidateTx(tx); err != nil {
+	if err = txs_validator.TxsValidator.ValidateTx(tx); err != nil {
 		return
 	}
 

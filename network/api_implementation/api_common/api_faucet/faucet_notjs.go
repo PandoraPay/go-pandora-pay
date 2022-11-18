@@ -8,7 +8,6 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/mempool"
-	"pandora-pay/txs_builder"
 	"pandora-pay/wallet"
 )
 
@@ -16,14 +15,13 @@ type Faucet struct {
 	mempool        *mempool.Mempool
 	chain          *blockchain.Blockchain
 	wallet         *wallet.Wallet
-	txsBuilder     *txs_builder.TxsBuilder
 	hcpatchaClient *hcaptcha.Client
 }
 
-func NewFaucet(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, txsBuilder *txs_builder.TxsBuilder) (*Faucet, error) {
+func NewFaucet(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet) (*Faucet, error) {
 
 	api := &Faucet{
-		mempool, chain, wallet, txsBuilder, nil,
+		mempool, chain, wallet, nil,
 	}
 
 	if config.FAUCET_TESTNET_ENABLED {

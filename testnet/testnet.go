@@ -30,15 +30,16 @@ import (
 	"time"
 )
 
-type Testnet struct {
-	wallet     *wallet.Wallet
-	mempool    *mempool.Mempool
-	chain      *blockchain.Blockchain
-	txsBuilder *txs_builder.TxsBuilder
-	nodes      uint64
+type TestnetType struct {
+	wallet  *wallet.Wallet
+	mempool *mempool.Mempool
+	chain   *blockchain.Blockchain
+	nodes   uint64
 }
 
-func (testnet *Testnet) testnetGetZetherRingConfiguration(payload *txs_builder.TxBuilderCreateZetherTxPayload) *txs_builder.TxBuilderCreateZetherTxPayload {
+var Testnet *TestnetType
+
+func (testnet *TestnetType) testnetGetZetherRingConfiguration(payload *txs_builder.TxBuilderCreateZetherTxPayload) *txs_builder.TxBuilderCreateZetherTxPayload {
 	payload.RingSize = -1
 	payload.RingConfiguration = &txs_builder.ZetherRingConfiguration{&txs_builder.ZetherSenderRingType{false, false, []string{}, 0}, &txs_builder.ZetherRecipientRingType{false, false, nil, -1}}
 	if config.LIGHT_COMPUTATIONS {
@@ -47,7 +48,7 @@ func (testnet *Testnet) testnetGetZetherRingConfiguration(payload *txs_builder.T
 	return payload
 }
 
-func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
+func (testnet *TestnetType) testnetCreateTransfersNewWallets(blockHeight uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
 	txData := &txs_builder.TxBuilderCreateZetherTxData{
 		Payloads: []*txs_builder.TxBuilderCreateZetherTxPayload{},
@@ -77,7 +78,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 		}))
 	}
 
-	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = txs_builder.TxsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -85,7 +86,7 @@ func (testnet *Testnet) testnetCreateTransfersNewWallets(blockHeight uint64, ctx
 	return
 }
 
-func (testnet *Testnet) testnetCreateClaimTx(senderAddr *wallet_address.WalletAddress, recipientAddressWalletIndex int, sendAmount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
+func (testnet *TestnetType) testnetCreateClaimTx(senderAddr *wallet_address.WalletAddress, recipientAddressWalletIndex int, sendAmount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
 	var addrRecipient *wallet_address.WalletAddress
 
@@ -107,7 +108,7 @@ func (testnet *Testnet) testnetCreateClaimTx(senderAddr *wallet_address.WalletAd
 		})},
 	}
 
-	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = txs_builder.TxsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -116,7 +117,7 @@ func (testnet *Testnet) testnetCreateClaimTx(senderAddr *wallet_address.WalletAd
 	return
 }
 
-func (testnet *Testnet) testnetCreateTransfers(senderAddr *wallet_address.WalletAddress, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
+func (testnet *TestnetType) testnetCreateTransfers(senderAddr *wallet_address.WalletAddress, amount uint64, ctx context.Context) (tx *transaction.Transaction, err error) {
 
 	select {
 	case <-ctx.Done():
@@ -150,7 +151,7 @@ func (testnet *Testnet) testnetCreateTransfers(senderAddr *wallet_address.Wallet
 			})},
 	}
 
-	if tx, err = testnet.txsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
+	if tx, err = txs_builder.TxsBuilder.CreateZetherTx(txData, nil, true, true, true, false, ctx, func(string) {}); err != nil {
 		return nil, err
 	}
 
@@ -158,7 +159,7 @@ func (testnet *Testnet) testnetCreateTransfers(senderAddr *wallet_address.Wallet
 	return
 }
 
-func (testnet *Testnet) run() {
+func (testnet *TestnetType) run() {
 
 	updateChannel := testnet.chain.UpdateNewChainDataUpdate.AddListener()
 	defer testnet.chain.UpdateNewChainDataUpdate.RemoveChannel(updateChannel)
@@ -325,17 +326,16 @@ func (testnet *Testnet) run() {
 
 }
 
-func TestnetInit(wallet *wallet.Wallet, mempool *mempool.Mempool, chain *blockchain.Blockchain, txsBuilder *txs_builder.TxsBuilder) (testnet *Testnet) {
+func TestnetInit(wallet *wallet.Wallet, mempool *mempool.Mempool, chain *blockchain.Blockchain) error {
 
-	testnet = &Testnet{
-		wallet:     wallet,
-		mempool:    mempool,
-		chain:      chain,
-		txsBuilder: txsBuilder,
-		nodes:      uint64(config.CPU_THREADS),
+	Testnet = &TestnetType{
+		wallet,
+		mempool,
+		chain,
+		uint64(config.CPU_THREADS),
 	}
 
-	recovery.SafeGo(testnet.run)
+	recovery.SafeGo(Testnet.run)
 
-	return
+	return nil
 }

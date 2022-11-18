@@ -28,7 +28,6 @@ type mempoolTx struct {
 }
 
 type Mempool struct {
-	txsValidator              *txs_validator.TxsValidator
 	result                    *generics.Value[*MempoolResult]
 	SuspendProcessingCn       chan struct{}
 	ContinueProcessingCn      chan ContinueProcessingType
@@ -95,7 +94,7 @@ func (mempool *Mempool) processTxsToMempool(txs []*transaction.Transaction, heig
 			}
 		}
 
-		if errs[i] = mempool.txsValidator.ValidateTx(tx); errs[i] != nil {
+		if errs[i] = txs_validator.TxsValidator.ValidateTx(tx); errs[i] != nil {
 			return
 		}
 
@@ -234,12 +233,11 @@ func (mempool *Mempool) ContinueWork() {
 	mempool.newWorkCn <- newWork
 }
 
-func CreateMempool(txsValidator *txs_validator.TxsValidator) (*Mempool, error) {
+func CreateMempool() (*Mempool, error) {
 
 	gui.GUI.Log("Mempool init...")
 
 	mempool := &Mempool{
-		txsValidator,
 		&generics.Value[*MempoolResult]{},
 		make(chan struct{}),
 		make(chan ContinueProcessingType),

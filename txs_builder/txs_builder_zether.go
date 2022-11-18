@@ -27,10 +27,11 @@ import (
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/txs_builder/txs_builder_zether_helper"
 	"pandora-pay/txs_builder/wizard"
+	"pandora-pay/txs_validator"
 	"pandora-pay/wallet/wallet_address"
 )
 
-func (builder *TxsBuilder) getRandomAccount(accs *accounts.Accounts, regs *registrations.Registrations) (addr *addresses.Address, acc *account.Account, reg *registration.Registration, err error) {
+func (builder *TxsBuilderType) getRandomAccount(accs *accounts.Accounts, regs *registrations.Registrations) (addr *addresses.Address, acc *account.Account, reg *registration.Registration, err error) {
 
 	if acc, err = accs.GetRandom(); err != nil {
 		return nil, nil, nil, err
@@ -50,7 +51,7 @@ func (builder *TxsBuilder) getRandomAccount(accs *accounts.Accounts, regs *regis
 	return
 }
 
-func (builder *TxsBuilder) presetZetherRing(payload *TxBuilderCreateZetherTxPayload) error {
+func (builder *TxsBuilderType) presetZetherRing(payload *TxBuilderCreateZetherTxPayload) error {
 
 	if payload.RingSize == -1 {
 		probability := rand.Intn(1000)
@@ -88,7 +89,7 @@ func (builder *TxsBuilder) presetZetherRing(payload *TxBuilderCreateZetherTxPayl
 	return nil
 }
 
-func (builder *TxsBuilder) createZetherRing(allAlreadyUsed map[string]bool, senderRing *[]string, recipientRing *[]string, payload *TxBuilderCreateZetherTxPayload, hasRollovers map[string]bool, dataStorage *data_storage.DataStorage) (err error) {
+func (builder *TxsBuilderType) createZetherRing(allAlreadyUsed map[string]bool, senderRing *[]string, recipientRing *[]string, payload *TxBuilderCreateZetherTxPayload, hasRollovers map[string]bool, dataStorage *data_storage.DataStorage) (err error) {
 
 	alreadyUsed := make(map[string]bool)
 	var addr, addrtemp *addresses.Address
@@ -267,7 +268,7 @@ func (builder *TxsBuilder) createZetherRing(allAlreadyUsed map[string]bool, send
 	return
 }
 
-func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pendingTxs []*transaction.Transaction, blockHeight uint64, prevKernelHash []byte, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, map[string]bool, [][]*bn256.G1, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
+func (builder *TxsBuilderType) prebuild(txData *TxBuilderCreateZetherTxData, pendingTxs []*transaction.Transaction, blockHeight uint64, prevKernelHash []byte, ctx context.Context, statusCallback func(string)) ([]*wizard.WizardZetherTransfer, map[string]map[string][]byte, map[string]bool, [][]*bn256.G1, [][]*bn256.G1, map[string]*wizard.WizardZetherPublicKeyIndex, uint64, []byte, error) {
 
 	sendersPrivateKeys := make([]*addresses.PrivateKey, len(txData.Payloads))
 	sendersWalletAddresses := make([]*wallet_address.WalletAddress, len(txData.Payloads))
@@ -608,7 +609,7 @@ func (builder *TxsBuilder) prebuild(txData *TxBuilderCreateZetherTxData, pending
 	return transfers, emap, hasRollovers, ringsSenderMembers, ringsRecipientMembers, publicKeyIndexes, chainHeight, chainKernelHash, nil
 }
 
-func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, pendingTxs []*transaction.Transaction, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
+func (builder *TxsBuilderType) CreateZetherTx(txData *TxBuilderCreateZetherTxData, pendingTxs []*transaction.Transaction, propagateTx, awaitAnswer, awaitBroadcast bool, validateTx bool, ctx context.Context, statusCallback func(string)) (*transaction.Transaction, error) {
 
 	if pendingTxs == nil {
 		pendingTxs = builder.mempool.Txs.GetTxsOnlyList()
@@ -632,7 +633,7 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 		return nil, err
 	}
 
-	if err = builder.txsValidator.MarkAsValidatedTx(tx); err != nil {
+	if err = txs_validator.TxsValidator.MarkAsValidatedTx(tx); err != nil {
 		return nil, err
 	}
 
@@ -645,7 +646,7 @@ func (builder *TxsBuilder) CreateZetherTx(txData *TxBuilderCreateZetherTxData, p
 	return tx, nil
 }
 
-func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete.BlockComplete, forgerPublicKey []byte, decryptedBalance uint64, pendingTxs []*transaction.Transaction) (*transaction.Transaction, error) {
+func (builder *TxsBuilderType) CreateForgingTransactions(blkComplete *block_complete.BlockComplete, forgerPublicKey []byte, decryptedBalance uint64, pendingTxs []*transaction.Transaction) (*transaction.Transaction, error) {
 
 	if pendingTxs == nil {
 		pendingTxs = builder.mempool.Txs.GetTxsOnlyList()
@@ -727,7 +728,7 @@ func (builder *TxsBuilder) CreateForgingTransactions(blkComplete *block_complete
 
 	gui.GUI.Info("CreateForgingTransactions 3")
 
-	if err = builder.txsValidator.MarkAsValidatedTx(tx); err != nil {
+	if err = txs_validator.TxsValidator.MarkAsValidatedTx(tx); err != nil {
 		return nil, err
 	}
 

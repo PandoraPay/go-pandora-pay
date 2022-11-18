@@ -12,8 +12,6 @@ import (
 	"pandora-pay/network/api_implementation/api_common/api_delegator_node"
 	"pandora-pay/network/api_implementation/api_common/api_faucet"
 	"pandora-pay/network/known_nodes"
-	"pandora-pay/txs_builder"
-	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
 	"time"
 )
@@ -26,8 +24,6 @@ type mempoolNewTxReply struct {
 
 type APICommon struct {
 	mempool                   *mempool.Mempool
-	txsValidator              *txs_validator.TxsValidator
-	txsBuilder                *txs_builder.TxsBuilder
 	chain                     *blockchain.Blockchain
 	wallet                    *wallet.Wallet
 	knownNodes                *known_nodes.KnownNodes
@@ -65,11 +61,11 @@ func (api *APICommon) readLocalBlockchainSync(newLocalSync *blockchain_sync.Bloc
 	api.localChainSync.Store(newLocalSync)
 }
 
-func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, txsValidator *txs_validator.TxsValidator, txsBuilder *txs_builder.TxsBuilder, apiStore *APIStore) (api *APICommon, err error) {
+func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, apiStore *APIStore) (api *APICommon, err error) {
 
 	var faucet *api_faucet.Faucet
 	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
-		if faucet, err = api_faucet.NewFaucet(mempool, chain, wallet, txsBuilder); err != nil {
+		if faucet, err = api_faucet.NewFaucet(mempool, chain, wallet); err != nil {
 			return
 		}
 	}
@@ -81,8 +77,6 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 
 	api = &APICommon{
 		mempool,
-		txsValidator,
-		txsBuilder,
 		chain,
 		wallet,
 		knownNodes,

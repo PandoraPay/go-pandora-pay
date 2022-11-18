@@ -7,6 +7,7 @@ import (
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/network/websocks/connection"
+	"pandora-pay/txs_validator"
 )
 
 func (api *APICommon) mempoolNewTxIdProcess(conn *connection.AdvancedConnection, hash []byte, reply *APIMempoolNewTxReply) (err error) {
@@ -56,7 +57,7 @@ func (api *APICommon) mempoolNewTxIdProcess(conn *connection.AdvancedConnection,
 		return
 	}
 
-	if err = api.txsValidator.ValidateTx(tx); err != nil {
+	if err = txs_validator.TxsValidator.ValidateTx(tx); err != nil {
 		closeConnection = true
 		return
 	}

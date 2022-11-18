@@ -126,16 +126,16 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 	c.answerMapLock.Unlock()
 
 	if err := c.connSendMessage(message, ctxDuration); err != nil {
-		return &advanced_connection_types.AdvancedConnectionReply{nil, err}
+		return &advanced_connection_types.AdvancedConnectionReply{nil, err, false}
 	}
 
 	select {
 	case out := <-eventCn:
 		return out
 	case <-c.Closed:
-		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout Closed")}
+		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout Closed"), true}
 	case <-ctx.Done():
-		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout")}
+		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout"), true}
 	}
 }
 

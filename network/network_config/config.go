@@ -16,6 +16,7 @@ var (
 	NETWORK_KNOWN_NODES_LIMIT            int32 = 5000
 	NETWORK_KNOWN_NODES_LIST_RETURN            = 100
 	NETWORK_ENABLE_SUBSCRIPTIONS               = false
+	NETWORK_CONNECTIONS_READY_THRESHOLD        = int64(1)
 )
 
 const (
@@ -38,6 +39,12 @@ func InitConfig() (err error) {
 
 	if arguments.Arguments["--tcp-max-server-sockets"] != nil {
 		if WEBSOCKETS_NETWORK_SERVER_MAX, err = strconv.ParseInt(arguments.Arguments["--tcp-max-server-sockets"].(string), 10, 64); err != nil {
+			return
+		}
+	}
+
+	if arguments.Arguments["--tcp-connections-ready=threshold"] != nil {
+		if NETWORK_CONNECTIONS_READY_THRESHOLD, err = strconv.ParseInt(arguments.Arguments["--tcp-connections-ready"].(string), 10, 64); err != nil {
 			return
 		}
 	}

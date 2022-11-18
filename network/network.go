@@ -1,6 +1,8 @@
 package network
 
 import (
+	"context"
+	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/mempool"
@@ -11,13 +13,13 @@ import (
 	"pandora-pay/network/mempool_sync"
 	"pandora-pay/network/server/node_tcp"
 	"pandora-pay/network/websocks"
+	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/settings"
-	"pandora-pay/txs_builder"
-	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
+	"time"
 )
 
-type Network struct {
+type NetworkType struct {
 	tcpServer      *node_tcp.TcpServer
 	Websockets     *websocks.Websockets
 	ConnectedNodes *connected_nodes.ConnectedNodes
@@ -27,7 +29,80 @@ type Network struct {
 	KnownNodesSync *known_nodes_sync.KnownNodesSync
 }
 
-func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet, txsValidator *txs_validator.TxsValidator, txsBuilder *txs_builder.TxsBuilder) (*Network, error) {
+var Network *NetworkType
+
+func (network *NetworkType) Send(name, data []byte, ctxDuration time.Duration) error {
+
+	for {
+
+		<-network.Websockets.ReadyCn.Load()
+		list := network.ConnectedNodes.AllList.Get()
+		if len(list) > 0 {
+			sock := list[0]
+			if err := sock.Send(name, data, ctxDuration); err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+}
+
+func (network *NetworkType) SendJSON(name, data []byte, ctxDuration time.Duration) error {
+	out, err := msgpack.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	return network.Send(name, out, ctxDuration)
+}
+
+func (network *NetworkType) SendAwaitAnswer(name, data []byte, ctxParent context.Context, ctxDuration time.Duration) *advanced_connection_types.AdvancedConnectionReply {
+	for {
+		<-network.Websockets.ReadyCn.Load()
+		list := network.ConnectedNodes.AllList.Get()
+		if len(list) > 0 {
+			sock := list[0]
+			result := sock.SendAwaitAnswer(name, data, ctxParent, ctxDuration)
+			if result.Timeout {
+				continue
+			}
+			return result
+		}
+	}
+}
+
+func SendJSONAwaitAnswer[T any](name []byte, data any, ctxParent context.Context, ctxDuration time.Duration) (*T, error) {
+
+	out, err := msgpack.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		<-Network.Websockets.ReadyCn.Load()
+		list := Network.ConnectedNodes.AllList.Get()
+		if len(list) > 0 {
+			sock := list[0]
+
+			out := sock.SendAwaitAnswer(name, out, ctxParent, ctxDuration)
+			if out.Err != nil {
+				if out.Timeout {
+					continue
+				}
+				return nil, out.Err
+			}
+
+			final := new(T)
+			if err = msgpack.Unmarshal(out.Out, final); err != nil {
+				return nil, err
+			}
+			return final, nil
+		}
+	}
+}
+
+func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet) error {
 
 	connectedNodes := connected_nodes.NewConnectedNodes()
 	bannedNodes := banned_nodes.NewBannedNodes()
@@ -39,22 +114,22 @@ func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempo
 		list[i] = seed.Url
 	}
 	if err := knownNodes.Reset(list, true); err != nil {
-		return nil, err
+		return err
 	}
 
-	tcpServer, err := node_tcp.NewTcpServer(connectedNodes, bannedNodes, knownNodes, settings, chain, mempool, wallet, txsValidator, txsBuilder)
+	tcpServer, err := node_tcp.NewTcpServer(connectedNodes, bannedNodes, knownNodes, settings, chain, mempool, wallet)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	network := &Network{
-		tcpServer:      tcpServer,
-		Websockets:     tcpServer.HttpServer.Websockets,
-		ConnectedNodes: connectedNodes,
-		KnownNodes:     knownNodes,
-		BannedNodes:    bannedNodes,
-		MempoolSync:    mempool_sync.NewMempoolSync(tcpServer.HttpServer.Websockets),
-		KnownNodesSync: known_nodes_sync.NewNodesKnownSync(tcpServer.HttpServer.Websockets, knownNodes),
+	network := &NetworkType{
+		tcpServer,
+		tcpServer.HttpServer.Websockets,
+		connectedNodes,
+		knownNodes,
+		bannedNodes,
+		mempool_sync.NewMempoolSync(tcpServer.HttpServer.Websockets),
+		known_nodes_sync.NewNodesKnownSync(tcpServer.HttpServer.Websockets, knownNodes),
 	}
 
 	network.continuouslyConnectingNewPeers()
@@ -68,5 +143,6 @@ func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempo
 
 	network.syncBlockchainNewConnections()
 
-	return network, nil
+	Network = network
+	return nil
 }

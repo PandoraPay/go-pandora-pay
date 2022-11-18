@@ -24,7 +24,7 @@ func (api *APICommon) WalletPrivateTransfer(r *http.Request, args *APIWalletPriv
 		return errors.New("Invalid User or Password")
 	}
 
-	if reply.Tx, err = api.txsBuilder.CreateZetherTx(args.Data, nil, args.Propagate, true, true, false, context.Background(), func(string) {}); err != nil {
+	if reply.Tx, err = txs_builder.TxsBuilder.CreateZetherTx(args.Data, nil, args.Propagate, true, true, false, context.Background(), func(string) {}); err != nil {
 		return
 	}
 

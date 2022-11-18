@@ -3,12 +3,14 @@ package websocks
 import (
 	"context"
 	"errors"
+	"github.com/tevino/abool"
 	"github.com/vmihailenco/msgpack/v5"
 	"math/rand"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/config/globals"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
@@ -27,6 +29,12 @@ import (
 	"time"
 )
 
+type SocketEvent struct {
+	Type         string
+	Conn         *connection.AdvancedConnection
+	TotalSockets int64
+}
+
 type Websockets struct {
 	connectedNodes               *connected_nodes.ConnectedNodes
 	knownNodes                   *known_nodes.KnownNodes
@@ -34,6 +42,9 @@ type Websockets struct {
 	UpdateNewConnectionMulticast *multicast.MulticastChannel[*connection.AdvancedConnection]
 	bannedNodes                  *banned_nodes.BannedNodes
 	subscriptions                *WebsocketSubscriptions
+	UpdateSocketEventMulticast   *multicast.MulticastChannel[*SocketEvent]
+	ReadyCn                      *generics.Value[chan struct{}]
+	ReadyCnClosed                *abool.AtomicBool
 	settings                     *settings.Settings
 }
 
@@ -43,14 +54,6 @@ func (websockets *Websockets) GetClients() int64 {
 
 func (websockets *Websockets) GetServerSockets() int64 {
 	return atomic.LoadInt64(&websockets.connectedNodes.ServerSockets)
-}
-
-func (websockets *Websockets) GetFirstSocket() *connection.AdvancedConnection {
-	list := websockets.connectedNodes.AllList.Get()
-	if len(list) > 0 {
-		return list[0]
-	}
-	return nil
 }
 
 func (websockets *Websockets) GetAllSockets() []*connection.AdvancedConnection {
@@ -160,6 +163,13 @@ func (websockets *Websockets) closedConnection(conn *connection.AdvancedConnecti
 	}
 
 	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
+	websockets.UpdateSocketEventMulticast.Broadcast(&SocketEvent{"disconnected", conn, totalSockets})
+
+	if totalSockets < network_config.NETWORK_CONNECTIONS_READY_THRESHOLD {
+		if websockets.ReadyCnClosed.SetToIf(true, false) {
+			websockets.ReadyCn.Store(make(chan struct{}))
+		}
+	}
 }
 
 func (websockets *Websockets) increaseScoreKnownNode(knownNode *known_node.KnownNodeScored, delta int32, isServer bool) bool {
@@ -236,8 +246,15 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 
 	totalSockets := websockets.connectedNodes.ConnectedHandshakeValidated(conn)
 	globals.MainEvents.BroadcastEvent("sockets/totalSocketsChanged", totalSockets)
-
+	websockets.UpdateSocketEventMulticast.Broadcast(&SocketEvent{"connected", conn, totalSockets})
 	websockets.UpdateNewConnectionMulticast.Broadcast(conn)
+
+	if totalSockets >= network_config.NETWORK_CONNECTIONS_READY_THRESHOLD {
+		cn := websockets.ReadyCn.Load()
+		if websockets.ReadyCnClosed.SetToIf(false, true) {
+			close(cn)
+		}
+	}
 
 	return nil
 }
@@ -245,13 +262,19 @@ func (websockets *Websockets) InitializeConnection(conn *connection.AdvancedConn
 func NewWebsockets(chain *blockchain.Blockchain, mempool *mempool.Mempool, settings *settings.Settings, connectedNodes *connected_nodes.ConnectedNodes, knownNodes *known_nodes.KnownNodes, bannedNodes *banned_nodes.BannedNodes, apiWebsockets *api_websockets.APIWebsockets) *Websockets {
 
 	websockets := &Websockets{
-		connectedNodes:               connectedNodes,
-		knownNodes:                   knownNodes,
-		UpdateNewConnectionMulticast: multicast.NewMulticastChannel[*connection.AdvancedConnection](),
-		ApiWebsockets:                apiWebsockets,
-		settings:                     settings,
-		bannedNodes:                  bannedNodes,
+		connectedNodes,
+		knownNodes,
+		apiWebsockets,
+		multicast.NewMulticastChannel[*connection.AdvancedConnection](),
+		bannedNodes,
+		nil,
+		multicast.NewMulticastChannel[*SocketEvent](),
+		&generics.Value[chan struct{}]{},
+		abool.NewBool(false),
+		settings,
 	}
+
+	websockets.ReadyCn.Store(make(chan struct{}))
 
 	websockets.subscriptions = newWebsocketSubscriptions(websockets, chain, mempool)
 

@@ -55,7 +55,7 @@ func StartMainNow() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "database initialized")
 
-	if app.TxsValidator, err = txs_validator.NewTxsValidator(); err != nil {
+	if err = txs_validator.NewTxsValidator(); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "txs validator initialized")
@@ -65,7 +65,7 @@ func StartMainNow() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "address balance decryptor validator initialized")
 
-	if app.Mempool, err = mempool.CreateMempool(app.TxsValidator); err != nil {
+	if app.Mempool, err = mempool.CreateMempool(); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "mempool initialized")
@@ -75,7 +75,7 @@ func StartMainNow() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "forging initialized")
 
-	if app.Chain, err = blockchain.CreateBlockchain(app.Mempool, app.TxsValidator); err != nil {
+	if app.Chain, err = blockchain.CreateBlockchain(app.Mempool); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "blockchain initialized")
@@ -123,10 +123,12 @@ func StartMainNow() (err error) {
 	}
 	globals.MainEvents.BroadcastEvent("main", "settings initialized")
 
-	app.TxsBuilder = txs_builder.TxsBuilderInit(app.Wallet, app.Mempool, app.TxsValidator)
+	if err = txs_builder.TxsBuilderInit(app.Wallet, app.Mempool); err != nil {
+		return
+	}
 	globals.MainEvents.BroadcastEvent("main", "transactions builder initialized")
 
-	app.Forging.InitializeForging(app.TxsBuilder.CreateForgingTransactions, app.Chain.NextBlockCreatedCn, app.Chain.UpdateNewChainUpdate, app.Chain.ForgingSolutionCn)
+	app.Forging.InitializeForging(txs_builder.TxsBuilder.CreateForgingTransactions, app.Chain.NextBlockCreatedCn, app.Chain.UpdateNewChainUpdate, app.Chain.ForgingSolutionCn)
 
 	if config_forging.FORGING_ENABLED {
 		app.Forging.StartForging()
@@ -140,11 +142,12 @@ func StartMainNow() (err error) {
 	}
 
 	if arguments.Arguments["--run-testnet-script"] == true {
-		myTestnet := testnet.TestnetInit(app.Wallet, app.Mempool, app.Chain, app.TxsBuilder)
-		app.Testnet = myTestnet
+		if err = testnet.TestnetInit(app.Wallet, app.Mempool, app.Chain); err != nil {
+			return
+		}
 	}
 
-	if app.Network, err = network.NewNetwork(app.Settings, app.Chain, app.Mempool, app.Wallet, app.TxsValidator, app.TxsBuilder); err != nil {
+	if err = network.NewNetwork(app.Settings, app.Chain, app.Mempool, app.Wallet); err != nil {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "network initialized")

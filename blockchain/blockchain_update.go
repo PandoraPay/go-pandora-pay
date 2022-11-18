@@ -12,7 +12,6 @@ import (
 	"pandora-pay/helpers/multicast"
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
-	"pandora-pay/txs_validator"
 )
 
 type BlockchainDataUpdate struct {
@@ -39,16 +38,14 @@ type BlockchainUpdatesQueue struct {
 	updatesMempool       *multicast.MulticastChannel[*BlockchainUpdate]
 	updatesNotifications *multicast.MulticastChannel[*BlockchainUpdate]
 	chain                *Blockchain
-	txsValidator         *txs_validator.TxsValidator
 }
 
-func createBlockchainUpdatesQueue(txsValidator *txs_validator.TxsValidator) *BlockchainUpdatesQueue {
+func createBlockchainUpdatesQueue() *BlockchainUpdatesQueue {
 	return &BlockchainUpdatesQueue{
 		make(chan *BlockchainUpdate, 100),
 		multicast.NewMulticastChannel[*BlockchainUpdate](),
 		multicast.NewMulticastChannel[*BlockchainUpdate](),
 		nil,
-		txsValidator,
 	}
 }
 
