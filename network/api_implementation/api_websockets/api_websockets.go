@@ -11,6 +11,7 @@ import (
 	"pandora-pay/network/api_implementation/api_common/api_delegator_node"
 	"pandora-pay/network/api_implementation/api_common/api_faucet"
 	"pandora-pay/network/api_implementation/api_websockets/consensus"
+	"pandora-pay/network/network_config"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/settings"
 )
@@ -103,7 +104,7 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 
 	if api.apiCommon.Faucet != nil {
 		api.GetMap["faucet/info"] = api_code_websockets.Handle[struct{}, api_faucet.APIFaucetInfo](api.apiCommon.Faucet.GetFaucetInfo)
-		if config.FAUCET_TESTNET_ENABLED {
+		if network_config.FAUCET_TESTNET_ENABLED {
 			api.GetMap["faucet/coins"] = api_code_websockets.Handle[api_faucet.APIFaucetCoinsRequest, api_faucet.APIFaucetCoinsReply](api.apiCommon.Faucet.GetFaucetCoins)
 		}
 	}

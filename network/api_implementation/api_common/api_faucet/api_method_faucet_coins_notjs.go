@@ -8,8 +8,8 @@ import (
 	"errors"
 	"go.jolheiser.com/hcaptcha"
 	"net/http"
-	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
+	"pandora-pay/network/network_config"
 	"pandora-pay/txs_builder"
 	"pandora-pay/txs_builder/txs_builder_zether_helper"
 	"pandora-pay/txs_builder/wizard"
@@ -40,7 +40,7 @@ func (api *Faucet) GetFaucetCoins(r *http.Request, args *APIFaucetCoinsRequest, 
 				nil,
 			},
 			config_coins.NATIVE_ASSET_FULL,
-			config.FAUCET_TESTNET_COINS_UNITS,
+			network_config.FAUCET_TESTNET_COINS_UNITS,
 			0,
 			&txs_builder.ZetherRingConfiguration{&txs_builder.ZetherSenderRingType{}, &txs_builder.ZetherRecipientRingType{}},
 			0,

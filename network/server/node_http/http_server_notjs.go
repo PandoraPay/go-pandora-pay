@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/url"
 	"pandora-pay/blockchain"
-	"pandora-pay/config"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api_implementation/api_common"
 	"pandora-pay/network/api_implementation/api_http"
@@ -19,6 +18,7 @@ import (
 	"pandora-pay/network/banned_nodes"
 	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes"
+	"pandora-pay/network/network_config"
 	"pandora-pay/network/server/node_http_rpc"
 	"pandora-pay/network/websocks"
 	"pandora-pay/settings"
@@ -127,9 +127,9 @@ func (server *HttpServer) GetHttpHandler() *http.Handler {
 
 	mux.HandleFunc("/ws", server.websocketServer.HandleUpgradeConnection)
 
-	if config.FAUCET_TESTNET_ENABLED {
-		fs := http.FileServer(http.Dir("../../../static/challenge"))
-		mux.Handle("/static/challenge/", http.StripPrefix("/static/challenge/", fs))
+	for key, filepath := range network_config.STATIC_FILES {
+		fs := http.FileServer(http.Dir(filepath))
+		mux.Handle(key, http.StripPrefix(key, fs))
 	}
 
 	for key, callback := range server.Api.GetMap {

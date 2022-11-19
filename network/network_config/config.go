@@ -17,6 +17,7 @@ var (
 	NETWORK_KNOWN_NODES_LIST_RETURN            = 100
 	NETWORK_ENABLE_SUBSCRIPTIONS               = false
 	NETWORK_CONNECTIONS_READY_THRESHOLD        = int64(1)
+	STATIC_FILES                               = map[string]string{}
 )
 
 const (
@@ -47,6 +48,22 @@ func InitConfig() (err error) {
 		if NETWORK_CONNECTIONS_READY_THRESHOLD, err = strconv.ParseInt(arguments.Arguments["--tcp-connections-ready"].(string), 10, 64); err != nil {
 			return
 		}
+	}
+
+	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
+
+		if arguments.Arguments["--hcaptcha-secret"] != nil {
+			HCAPTCHA_SECRET_KEY = arguments.Arguments["--hcaptcha-secret"].(string)
+		}
+
+		if HCAPTCHA_SECRET_KEY != "" && arguments.Arguments["--faucet-testnet-enabled"] == "true" {
+			FAUCET_TESTNET_ENABLED = true
+		}
+
+	}
+
+	if FAUCET_TESTNET_ENABLED {
+		STATIC_FILES["/static/challenge/"] = "../../../static/challenge"
 	}
 
 	if err = network_config_auth.InitConfig(); err != nil {

@@ -112,18 +112,6 @@ func InitConfig() (err error) {
 		LIGHT_COMPUTATIONS = true
 	}
 
-	if NETWORK_SELECTED == TEST_NET_NETWORK_BYTE || NETWORK_SELECTED == DEV_NET_NETWORK_BYTE {
-
-		if arguments.Arguments["--hcaptcha-secret"] != nil {
-			HCAPTCHA_SECRET_KEY = arguments.Arguments["--hcaptcha-secret"].(string)
-		}
-
-		if HCAPTCHA_SECRET_KEY != "" && arguments.Arguments["--faucet-testnet-enabled"] == "true" {
-			FAUCET_TESTNET_ENABLED = true
-		}
-
-	}
-
 	NODE_PROVIDE_EXTENDED_INFO_APP = false
 	switch arguments.Arguments["--node-consensus"] {
 	case "full":

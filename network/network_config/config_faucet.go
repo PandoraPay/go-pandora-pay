@@ -1,4 +1,4 @@
-package config
+package network_config
 
 import "pandora-pay/config/config_coins"
 

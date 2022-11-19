@@ -11,6 +11,7 @@ import (
 	"pandora-pay/network/api_implementation/api_common"
 	"pandora-pay/network/api_implementation/api_common/api_delegator_node"
 	"pandora-pay/network/api_implementation/api_common/api_faucet"
+	"pandora-pay/network/network_config"
 )
 
 type API struct {
@@ -84,7 +85,7 @@ func NewAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chai
 
 	if api.apiCommon.Faucet != nil {
 		api.GetMap["faucet/info"] = api_code_http.Handle[struct{}, api_faucet.APIFaucetInfo](api.apiCommon.Faucet.GetFaucetInfo)
-		if config.FAUCET_TESTNET_ENABLED {
+		if network_config.FAUCET_TESTNET_ENABLED {
 			api.GetMap["faucet/coins"] = api_code_http.Handle[api_faucet.APIFaucetCoinsRequest, api_faucet.APIFaucetCoinsReply](api.apiCommon.Faucet.GetFaucetCoins)
 		}
 	}
