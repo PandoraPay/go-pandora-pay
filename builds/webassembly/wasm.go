@@ -22,8 +22,8 @@ var mutex sync.Mutex
 
 func initialize() {
 
-	js.Global().Set("PandoraPay", js.ValueOf(map[string]interface{}{
-		"helpers": js.ValueOf(map[string]interface{}{
+	js.Global().Set("PandoraPay", js.ValueOf(map[string]any{
+		"helpers": js.ValueOf(map[string]any{
 			"helloPandora":            js.FuncOf(helloPandora),
 			"start":                   js.FuncOf(startLibrary),
 			"getIdenticon":            js.FuncOf(getIdenticon),
@@ -32,18 +32,18 @@ func initialize() {
 			"shuffleArray":            js.FuncOf(shuffleArray),
 			"shuffleArray_for_Zether": js.FuncOf(shuffleArray_for_Zether),
 		}),
-		"events": js.ValueOf(map[string]interface{}{
+		"events": js.ValueOf(map[string]any{
 			"listenEvents":               js.FuncOf(listenEvents),
 			"listenNetworkNotifications": js.FuncOf(listenNetworkNotifications),
 		}),
-		"wallet": js.ValueOf(map[string]interface{}{
+		"wallet": js.ValueOf(map[string]any{
 			"getWallet":                 js.FuncOf(getWallet),
 			"getWalletMnemonic":         js.FuncOf(getWalletMnemonic),
 			"getWalletSeed":             js.FuncOf(getWalletSeed),
 			"getWalletAddressSecretKey": js.FuncOf(getWalletAddressSecretKey),
 			"createNewWallet":           js.FuncOf(createNewWallet),
 			"importMnemonic":            js.FuncOf(importMnemonic),
-			"manager": js.ValueOf(map[string]interface{}{
+			"manager": js.ValueOf(map[string]any{
 				"getWalletAddress":        js.FuncOf(getWalletAddress),
 				"addNewWalletAddress":     js.FuncOf(addNewWalletAddress),
 				"removeWalletAddress":     js.FuncOf(removeWalletAddress),
@@ -52,7 +52,7 @@ func initialize() {
 				"importWalletJSON":        js.FuncOf(importWalletJSON),
 				"exportWalletJSON":        js.FuncOf(exportWalletJSON),
 				"importWalletAddressJSON": js.FuncOf(importWalletAddressJSON),
-				"encryption": js.ValueOf(map[string]interface{}{
+				"encryption": js.ValueOf(map[string]any{
 					"checkPasswordWallet":    js.FuncOf(checkPasswordWallet),
 					"encryptWallet":          js.FuncOf(encryptWallet),
 					"decryptWallet":          js.FuncOf(decryptWallet),
@@ -68,13 +68,13 @@ func initialize() {
 			"getPrivateKeysWalletAddress":     js.FuncOf(getPrivateKeysWalletAddress),
 			"decryptTx":                       js.FuncOf(decryptTx),
 		}),
-		"addresses": js.ValueOf(map[string]interface{}{
+		"addresses": js.ValueOf(map[string]any{
 			"createAddress":      js.FuncOf(createAddress),
 			"decodeAddress":      js.FuncOf(decodeAddress),
 			"generateAddress":    js.FuncOf(generateAddress),
 			"generateNewAddress": js.FuncOf(generateNewAddress),
 		}),
-		"cryptography": js.ValueOf(map[string]interface{}{
+		"cryptography": js.ValueOf(map[string]any{
 			"HASH_SIZE":            js.ValueOf(cryptography.HashSize),
 			"PRIVATE_KEY_SIZE":     js.ValueOf(cryptography.PrivateKeySize),
 			"SEED_SIZE":            js.ValueOf(cryptography.SeedSize),
@@ -88,7 +88,7 @@ func initialize() {
 			"sign":                 js.FuncOf(sign),
 			"verify":               js.FuncOf(verify),
 		}),
-		"network": js.ValueOf(map[string]interface{}{
+		"network": js.ValueOf(map[string]any{
 			"networkDisconnect":                      js.FuncOf(networkDisconnect),
 			"getNetworkFaucetInfo":                   js.FuncOf(getNetworkFaucetInfo),
 			"getNetworkFaucetCoins":                  js.FuncOf(getNetworkFaucetCoins),
@@ -114,35 +114,35 @@ func initialize() {
 			"subscribeNetwork":                       js.FuncOf(subscribeNetwork),
 			"unsubscribeNetwork":                     js.FuncOf(unsubscribeNetwork),
 		}),
-		"transactions": js.ValueOf(map[string]interface{}{
-			"builder": js.ValueOf(map[string]interface{}{
+		"transactions": js.ValueOf(map[string]any{
+			"builder": js.ValueOf(map[string]any{
 				"createSimpleTx": js.FuncOf(createSimpleTx),
 			}),
 			"signResolutionConditionalPayment": js.FuncOf(signResolutionConditionalPayment),
 		}),
-		"mempool": js.ValueOf(map[string]interface{}{
+		"mempool": js.ValueOf(map[string]any{
 			"mempoolRemoveTx": js.FuncOf(mempoolRemoveTx),
 			"mempoolInsertTx": js.FuncOf(mempoolInsertTx),
 		}),
-		"enums": js.ValueOf(map[string]interface{}{
-			"transactions": js.ValueOf(map[string]interface{}{
-				"TransactionVersion": js.ValueOf(map[string]interface{}{
+		"enums": js.ValueOf(map[string]any{
+			"transactions": js.ValueOf(map[string]any{
+				"TransactionVersion": js.ValueOf(map[string]any{
 					"TX_SIMPLE": js.ValueOf(uint64(transaction_type.TX_SIMPLE)),
 					"TX_ZETHER": js.ValueOf(uint64(transaction_type.TX_ZETHER)),
 				}),
-				"TransactionDataVersion": js.ValueOf(map[string]interface{}{
+				"TransactionDataVersion": js.ValueOf(map[string]any{
 					"TX_DATA_NONE":       js.ValueOf(uint64(transaction_data.TX_DATA_NONE)),
 					"TX_DATA_PLAIN_TEXT": js.ValueOf(uint64(transaction_data.TX_DATA_PLAIN_TEXT)),
 					"TX_DATA_ENCRYPTED":  js.ValueOf(uint64(transaction_data.TX_DATA_ENCRYPTED)),
 				}),
-				"transactionSimple": js.ValueOf(map[string]interface{}{
-					"ScriptType": js.ValueOf(map[string]interface{}{
+				"transactionSimple": js.ValueOf(map[string]any{
+					"ScriptType": js.ValueOf(map[string]any{
 						"SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY":     js.ValueOf(uint64(transaction_simple.SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY)),
 						"SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT": js.ValueOf(uint64(transaction_simple.SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT)),
 					}),
 				}),
-				"transactionZether": js.ValueOf(map[string]interface{}{
-					"PayloadScriptType": js.ValueOf(map[string]interface{}{
+				"transactionZether": js.ValueOf(map[string]any{
+					"PayloadScriptType": js.ValueOf(map[string]any{
 						"SCRIPT_TRANSFER":              js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_TRANSFER)),
 						"SCRIPT_STAKING":               js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_STAKING)),
 						"SCRIPT_STAKING_REWARD":        js.ValueOf(uint64(transaction_zether_payload_script.SCRIPT_STAKING_REWARD)),
@@ -154,23 +154,23 @@ func initialize() {
 					}),
 				}),
 			}),
-			"wallet": js.ValueOf(map[string]interface{}{
-				"version": js.ValueOf(map[string]interface{}{
+			"wallet": js.ValueOf(map[string]any{
+				"version": js.ValueOf(map[string]any{
 					"VERSION_SIMPLE": js.ValueOf(int(wallet.VERSION_SIMPLE)),
 				}),
-				"encryptedVersion": js.ValueOf(map[string]interface{}{
+				"encryptedVersion": js.ValueOf(map[string]any{
 					"ENCRYPTED_VERSION_PLAIN_TEXT":        js.ValueOf(int(wallet.ENCRYPTED_VERSION_PLAIN_TEXT)),
 					"ENCRYPTED_VERSION_ENCRYPTION_ARGON2": js.ValueOf(int(wallet.ENCRYPTED_VERSION_ENCRYPTION_ARGON2)),
 				}),
-				"address": js.ValueOf(map[string]interface{}{
-					"version": js.ValueOf(map[string]interface{}{
+				"address": js.ValueOf(map[string]any{
+					"version": js.ValueOf(map[string]any{
 						"VERSION_NORMAL": js.ValueOf(int(wallet_address.VERSION_NORMAL)),
 					}),
 				}),
 			}),
-			"api": js.ValueOf(map[string]interface{}{
-				"websockets": js.ValueOf(map[string]interface{}{
-					"subscriptionType": js.ValueOf(map[string]interface{}{
+			"api": js.ValueOf(map[string]any{
+				"websockets": js.ValueOf(map[string]any{
+					"subscriptionType": js.ValueOf(map[string]any{
 						"SUBSCRIPTION_ACCOUNT":              js.ValueOf(int(api_code_types.SUBSCRIPTION_ACCOUNT)),
 						"SUBSCRIPTION_PLAIN_ACCOUNT":        js.ValueOf(int(api_code_types.SUBSCRIPTION_PLAIN_ACCOUNT)),
 						"SUBSCRIPTION_ACCOUNT_TRANSACTIONS": js.ValueOf(int(api_code_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS)),
@@ -181,7 +181,7 @@ func initialize() {
 				}),
 			}),
 		}),
-		"config": js.ValueOf(map[string]interface{}{
+		"config": js.ValueOf(map[string]any{
 			"NAME":                    js.ValueOf(config.NAME),
 			"NETWORK_SELECTED":        js.ValueOf(config.NETWORK_SELECTED),
 			"NETWORK_SELECTED_NAME":   js.ValueOf(config.NETWORK_SELECTED_NAME),
@@ -198,7 +198,7 @@ func initialize() {
 			"BLOCK_TIME":              js.ValueOf(config.BLOCK_TIME),
 			"BLOCK_MAX_SIZE":          js.ValueOf(config.BLOCK_MAX_SIZE),
 			"DIFFICULTY_BLOCK_WINDOW": js.ValueOf(config.DIFFICULTY_BLOCK_WINDOW),
-			"coins": js.ValueOf(map[string]interface{}{
+			"coins": js.ValueOf(map[string]any{
 				"DECIMAL_SEPARATOR":               js.ValueOf(config_coins.DECIMAL_SEPARATOR),
 				"COIN_DENOMINATION":               js.ValueOf(config_coins.COIN_DENOMINATION),
 				"COIN_DENOMINATION_FLOAT":         js.ValueOf(config_coins.COIN_DENOMINATION_FLOAT),
@@ -213,21 +213,21 @@ func initialize() {
 				"convertToUnits":                  js.FuncOf(convertToUnits),
 				"convertToBase":                   js.FuncOf(convertToBase),
 			}),
-			"helpers": js.ValueOf(map[string]interface{}{
+			"helpers": js.ValueOf(map[string]any{
 				"getNetworkSelectedSeeds":  js.FuncOf(getNetworkSelectedSeeds),
 				"getNetworkDelegatorNodes": js.FuncOf(getNetworkDelegatorNodes),
 			}),
-			"reward": js.ValueOf(map[string]interface{}{
+			"reward": js.ValueOf(map[string]any{
 				"getRewardAt": js.FuncOf(getRewardAt),
 			}),
-			"assets": js.ValueOf(map[string]interface{}{
+			"assets": js.ValueOf(map[string]any{
 				"assetsConvertToUnits": js.FuncOf(assetsConvertToUnits),
 				"assetsConvertToBase":  js.FuncOf(assetsConvertToBase),
 			}),
-			"stake": js.ValueOf(map[string]interface{}{
+			"stake": js.ValueOf(map[string]any{
 				"getRequiredStake": js.FuncOf(getRequiredStake),
 			}),
-			"constants": js.ValueOf(map[string]interface{}{
+			"constants": js.ValueOf(map[string]any{
 				"API_MEMPOOL_MAX_TRANSACTIONS": js.ValueOf(config.API_MEMPOOL_MAX_TRANSACTIONS),
 				"API_ACCOUNT_MAX_TXS":          js.ValueOf(config.API_ACCOUNT_MAX_TXS),
 				"API_ASSETS_INFO_MAX_RESULTS":  js.ValueOf(config.API_ASSETS_INFO_MAX_RESULTS),
