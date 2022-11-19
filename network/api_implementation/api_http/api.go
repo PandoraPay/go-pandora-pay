@@ -21,9 +21,11 @@ type API struct {
 	apiStore  *api_common.APIStore
 }
 
+var ConfigureAPIRoutes func(api *API)
+
 func NewAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain) *API {
 
-	api := API{
+	api := &API{
 		chain:     chain,
 		apiStore:  apiStore,
 		apiCommon: apiCommon,
@@ -92,5 +94,9 @@ func NewAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chai
 		api.GetMap["delegator-node/notify"] = api_code_http.HandleAuthenticated[api_delegator_node.ApiDelegatorNodeNotifyRequest, api_delegator_node.ApiDelegatorNodeNotifyReply](api.apiCommon.DelegatorNode.DelegatorNotify)
 	}
 
-	return &api
+	if ConfigureAPIRoutes != nil {
+		ConfigureAPIRoutes(api)
+	}
+
+	return api
 }

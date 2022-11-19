@@ -25,6 +25,8 @@ type APIWebsockets struct {
 	apiStore  *api_common.APIStore
 }
 
+var ConfigureAPIRoutes func(api *APIWebsockets)
+
 func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICommon, chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool) *APIWebsockets {
 
 	api := &APIWebsockets{
@@ -109,6 +111,10 @@ func NewWebsocketsAPI(apiStore *api_common.APIStore, apiCommon *api_common.APICo
 	if api.apiCommon.DelegatorNode != nil {
 		api.GetMap["delegator-node/info"] = api_code_websockets.Handle[struct{}, api_delegator_node.ApiDelegatorNodeInfoReply](api.apiCommon.DelegatorNode.GetDelegatorNodeInfo)
 		api.GetMap["delegator-node/notify"] = api_code_websockets.HandleAuthenticated[api_delegator_node.ApiDelegatorNodeNotifyRequest, api_delegator_node.ApiDelegatorNodeNotifyReply](api.apiCommon.DelegatorNode.DelegatorNotify)
+	}
+
+	if ConfigureAPIRoutes != nil {
+		ConfigureAPIRoutes(api)
 	}
 
 	return api
