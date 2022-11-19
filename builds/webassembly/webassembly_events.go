@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain/data_storage/accounts/account"
@@ -80,80 +79,81 @@ func listenNetworkNotifications(this js.Value, args []js.Value) interface{} {
 					return
 				}
 
-				var object, extra interface{}
+				func() {
 
-				//gui.GUI.Log(int(data.SubscriptionType))
+					var object, extra any
 
-				switch data.SubscriptionType {
-				case api_code_types.SUBSCRIPTION_ACCOUNT:
-					var acc *account.Account
-					if data.Data != nil {
+					//gui.GUI.Log(int(data.SubscriptionType))
 
-						if acc, err = account.NewAccount(data.Key, 0, nil); err != nil {
-							continue
+					switch data.SubscriptionType {
+					case api_code_types.SUBSCRIPTION_ACCOUNT:
+						var acc *account.Account
+						if data.Data != nil {
+
+							if acc, err = account.NewAccount(data.Key, 0, nil); err != nil {
+								return
+							}
+							if err = acc.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
+								return
+							}
 						}
-						if err = acc.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
-							continue
+						object = acc
+						extra = &api_types.APISubscriptionNotificationAccountExtra{}
+					case api_code_types.SUBSCRIPTION_PLAIN_ACCOUNT:
+						plainAcc := plain_account.NewPlainAccount(data.Key, 0)
+						if data.Data != nil {
+							if err = plainAcc.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
+								return
+							}
 						}
+						object = plainAcc
+						extra = &api_types.APISubscriptionNotificationPlainAccExtra{}
+					case api_code_types.SUBSCRIPTION_ASSET:
+						ast := asset.NewAsset(data.Key, 0)
+						if data.Data != nil {
+							if err = ast.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
+								return
+							}
+						}
+						object = ast
+
+						extra = &api_types.APISubscriptionNotificationAssetExtra{}
+					case api_code_types.SUBSCRIPTION_REGISTRATION:
+						reg := registration.NewRegistration(data.Key, 0)
+						if data.Data != nil {
+							if err = reg.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
+								return
+							}
+						}
+						object = reg
+						extra = &api_types.APISubscriptionNotificationRegistrationExtra{}
+					case api_code_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
+						object = data.Data
+						extra = &api_types.APISubscriptionNotificationAccountTxExtra{}
+					case api_code_types.SUBSCRIPTION_TRANSACTION:
+						object = data.Data
+						extra = &api_types.APISubscriptionNotificationTxExtra{}
+					default:
+						return //invalid
 					}
-					object = acc
-					extra = &api_types.APISubscriptionNotificationAccountExtra{}
-				case api_code_types.SUBSCRIPTION_PLAIN_ACCOUNT:
-					plainAcc := plain_account.NewPlainAccount(data.Key, 0)
-					if data.Data != nil {
-						if err = plainAcc.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
-							continue
+
+					if data.Extra != nil {
+						if err = msgpack.Unmarshal(data.Extra, extra); err != nil {
+							return
 						}
+					} else {
+						extra = nil
 					}
-					object = plainAcc
-					extra = &api_types.APISubscriptionNotificationPlainAccExtra{}
-				case api_code_types.SUBSCRIPTION_ASSET:
-					ast := asset.NewAsset(data.Key, 0)
-					if data.Data != nil {
-						if err = ast.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
-							continue
-						}
+
+					jsOutData, err1 := webassembly_utils.ConvertJSONBytes(object)
+					jsOutExtra, err2 := webassembly_utils.ConvertJSONBytes(extra)
+
+					if err1 != nil || err2 != nil {
+						return
 					}
-					object = ast
+					callback.Invoke(int(data.SubscriptionType), base64.StdEncoding.EncodeToString(data.Key), jsOutData, jsOutExtra)
 
-					extra = &api_types.APISubscriptionNotificationAssetExtra{}
-				case api_code_types.SUBSCRIPTION_REGISTRATION:
-					reg := registration.NewRegistration(data.Key, 0)
-					if data.Data != nil {
-						if err = reg.Deserialize(advanced_buffers.NewBufferReader(data.Data)); err != nil {
-							continue
-						}
-					}
-					object = reg
-					extra = &api_types.APISubscriptionNotificationRegistrationExtra{}
-				case api_code_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
-					object = data.Data
-					extra = &api_types.APISubscriptionNotificationAccountTxExtra{}
-				case api_code_types.SUBSCRIPTION_TRANSACTION:
-					object = data.Data
-					extra = &api_types.APISubscriptionNotificationTxExtra{}
-				}
-
-				if err = msgpack.Unmarshal(data.Extra, extra); err != nil {
-					return
-				}
-
-				var output, extraOutput []byte
-				if output, err = json.Marshal(object); err != nil {
-					continue
-				}
-
-				if extraOutput, err = json.Marshal(extra); err != nil {
-					continue
-				}
-
-				jsOutData := js.Global().Get("Uint8Array").New(len(output))
-				js.CopyBytesToJS(jsOutData, output)
-
-				jsOutExtra := js.Global().Get("Uint8Array").New(len(extraOutput))
-				js.CopyBytesToJS(jsOutExtra, extraOutput)
-
-				callback.Invoke(int(data.SubscriptionType), base64.StdEncoding.EncodeToString(data.Key), jsOutData, jsOutExtra)
+				}()
 
 			}
 		})
